@@ -1,29 +1,4 @@
 #!/usr/bin/env python3
-"""E2E 导出件验证（Tier 2 总验收 C.1-C.3）。
-
-C.1  e2e_export.rpy ↔ games/replays/th13_01.rpy 逐字段比对：
-     - 顶层头（0x74）：名字/分数/角色/机体/难度/关卡数/练习位/模式位全等；
-       date(+0x0C)/slow(+0x54) 记录实际值、不要求相等；
-     - 全部 stage 头（0xC4）逐字节全等（关卡号/seed/帧数/起始分/装备区/符卡时
-       间数组——对局同态时全部确定字段）；
-     - 逐帧输入 6 字节（态/按下/释放）全等；
-     - 事件流长度全等；事件数值（原版 FPS 采样，浏览器时序相关）记录差异不计。
-C.2  Unicorn 直调原版装载器 0x448c40（EBX=0x4c22e0 supervisor、ECX=文件名、
-     DAT_004be830|=0x40 走 0x4724c0 整文件读路径、CreateFileA/ReadFile 桩）：
-     断言装载成功、stage 链/帧数/种子与预期一致。
-C.3  e2e_score.dat：oracle.scorefmt 解析（TH31/版本 4/块校验），断言
-     灵梦(记录列0)/Normal(难度1) 榜首含本局成绩（分数/名字 ARINATEI/时间戳）；
-     Unicorn 直调 0x449be0（→0x449b00→0x449cd0 装载链）喂该文件（CreateFileA
-     读桩），断言装载成功且成绩落入 DAT_004c22cc 内存结构。
-
-用法（容器内，外层仓库根）：
-  python3 eagler-touhou/ports/th13/tools/e2e_verify.py verify-all \
-      --export artifacts/tmp-scratch/e2e/e2e_export.rpy \
-      --score  artifacts/tmp-scratch/e2e/e2e_score.dat \
-      --original games/replays/th13_01.rpy
-子命令：verify-replay / verify-replay-loader / verify-score / verify-score-loader /
-verify-all。退出码 0 = 全部断言通过；输出 JSON 摘要供登记。
-"""
 from __future__ import annotations
 
 import argparse
@@ -36,26 +11,24 @@ OUTER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, OUTER)
 sys.path.insert(0, os.path.join(OUTER, "..", "..", "..", ".."))
 
-from oracle import replayfmt  # noqa: E402
-from oracle import scorefmt  # noqa: E402
+from oracle import replayfmt
+from oracle import scorefmt
 
 EXE = os.path.join("games", "th13", "th13.exe")
 MALLOC = 0x47A0ED
 GETPTD = 0x47FE5A
 GETPTD_NOEXIT = 0x47FDE1
 CHDIR = 0x47AB92
-SUPERVISOR = 0x4C22E0       # 0x452300 调用点 EBX = DAT_004c22e0
-REPLAY_FLAGS = 0x4BE830     # bit0x40 → 0x448c40 走 0x4724c0 原始读路径
+SUPERVISOR = 0x4C22E0
+REPLAY_FLAGS = 0x4BE830
 
 
-# ---------------------------------------------------------------- Unicorn 会话
 class Session:
-    """score_golden_gen.ScoreSession 同款最小桩环境（malloc/PTD/堆/临界区）。"""
 
     def __init__(self):
         from oracle.machine import Machine
         self.m = Machine(EXE)
-        self.read_file = None        # (name, bytes) CreateFileA 读路径数据源
+        self.read_file = None
         self.writes = []
         self._install_stubs()
 
@@ -72,14 +45,8 @@ class Session:
         self.m.override_call(CHDIR, lambda machine: 0)
         self.m.override_call(GETPTD, lambda machine: self.ptd)
         self.m.override_call(GETPTD_NOEXIT, lambda machine: self.ptd)
-        # 直调环境无 CRT 启动：stdio/流首次使用会走 _lock(0x47bf27) 慢路径并
-        # 落 ExitProcess+int3。单线程模拟下锁为空转（_unlock 快路径经
-        # GetModuleHandleW=0 自然走 ret，无需覆写）。
         self.m.override_call(0x47BF27, lambda machine: 0)
 
-        # 0x448c40 的 sprintf(0x47a3d8) 同样拖起 CRT stdio 初始化（_getstream
-        # 流表分配即写穿）。这里只替换该调用点为最小 %s 格式化（栈参 cdecl：
-        # [esp+4]=buf、[esp+8]=fmt、[esp+0xC]=name；调用方自清栈）。
         def mini_sprintf(machine):
             buf = self._arg(0)
             fmt = self.m.read_cstr(self._arg(1))
@@ -105,7 +72,6 @@ class Session:
                 self.m.uc.mem_write(slot + 8, b"\xC3")
                 self.m.stub(imp.name, (lambda s: (lambda machine: s + 8))(slot), args_pop=4)
 
-        # CRT 线程块：零块直供（__initptd 在最小环境触异常，见 score_golden_gen）。
         self.ptd = self.m.malloc(0x214)
         self.m.uc.mem_write(self.ptd, b"\x00" * 0x214)
 
@@ -159,8 +125,6 @@ class Session:
         self.m.stub("setcurrentdirectorya", lambda machine: 1, args_pop=4)
         self.m.stub("getcurrentdirectorya", lambda machine: 3, args_pop=8)
 
-
-# ---------------------------------------------------------------- C.1 比对
 def verify_replay(export_path: str, original_path: str) -> dict:
     def decode(path):
         r = replayfmt.ReplayFile()
@@ -172,10 +136,6 @@ def verify_replay(export_path: str, original_path: str) -> dict:
     report = {"export": export_path, "original": original_path}
     failures = []
 
-    # 顶层头：比对规格 = 名字/总分/角色/机体/难度/关卡数/练习位/模式位/+0x68
-    # 保存流程字段全等；date(+0x0C)/slow(+0x54) 记录实际值不要求相等；
-    # +0x18..+0x53 为原版 0x447900 快照区（移植 top_snapshot 不写、恒 0），
-    # 逐 dword 记录实际值不参与判定（规格未列、原版装载器亦不读）。
     top_o, top_e = bytearray(orig.top_header), bytearray(ours.top_header)
     (ours_score,) = struct.unpack_from("<i", ours.top_header, 0x14)
     (orig_score,) = struct.unpack_from("<i", orig.top_header, 0x14)
@@ -217,11 +177,6 @@ def verify_replay(export_path: str, original_path: str) -> dict:
         if top_o[off:off + 4] != top_e[off:off + 4]:
             failures.append(f"top field +{off:#x} differ")
 
-    # stage 链：比对规格 = 关卡号/stamp(种子)/帧数/数据长/起始分 + 装备区
-    # (+0x14..+0x6c，0x449070 关首恢复的 22 dword) 全等；+0x70 起的符卡时间
-    # 数组为实机时长打包值（对局时序环境相关），逐 dword 记录不参与判定；
-    # 装备区外的 +0x34（原版关首累计量，移植 stage_snapshot 无此字段写 0）
-    # 单独列出。
     if len(ours.stages) != len(orig.stages):
         failures.append("stage count %d != %d" % (len(ours.stages), len(orig.stages)))
     stages_report = []
@@ -234,9 +189,6 @@ def verify_replay(export_path: str, original_path: str) -> dict:
             srep[name] = {"ours": b, "orig": a, "equal": a == b}
         equip_o = o.header[0x14:0x6C]
         equip_e = e.header[0x14:0x6C]
-        # +0x34：原版关首累计量（0x449070 恢复块内，移植 ReplayRecorder::
-        # stage_snapshot 无此字段、恒写 0）——按已定位的移植录制快照缺口
-        # 如实记录（逐关实际值见 equipment_0x34_recorded_only），不参与判定。
         srep["equipment_0x34_recorded_only"] = {
             "orig": struct.unpack_from("<I", o.header, 0x34)[0],
             "ours": struct.unpack_from("<I", e.header, 0x34)[0]}
@@ -264,7 +216,6 @@ def verify_replay(export_path: str, original_path: str) -> dict:
             failures.append(f"stage[{idx}] frames {e.frame_count} != {o.frame_count}")
         if len(o.events) != len(e.events):
             failures.append(f"stage[{idx}] event stream length {len(e.events)} != {len(o.events)}")
-        # 逐帧 6 字节。
         n = min(o.frame_count, e.frame_count)
         bad = []
         for i in range(n):
@@ -278,8 +229,6 @@ def verify_replay(export_path: str, original_path: str) -> dict:
             srep["input_mismatch_detail"] = [
                 {"frame": i, "ours": list(e.frame(i)), "orig": list(o.frame(i))}
                 for i in bad[:8]]
-            # 关首第 0 帧按下沿差异 = 已知移植侧录制管线差异（原版关首清按键
-            # 沿基线；移植 controls 跨关持续）——单独归类，不与真实分歧混淆。
             boundary = [i for i in bad if i == 0]
             others = [i for i in bad if i != 0]
             if boundary:
@@ -289,7 +238,6 @@ def verify_replay(export_path: str, original_path: str) -> dict:
                                 f"{others[:8]} ({len(others)} total)")
             elif not boundary:
                 failures.append(f"stage[{idx}] input frames mismatch incl non-boundary")
-        # 事件流：数值记录（fps 采样，浏览器时序相关），长度已单独断言。
         if len(o.events) == len(e.events):
             differing = sum(1 for a, b in zip(o.events, e.events) if a != b)
             srep["event_bytes_differing"] = differing
@@ -299,13 +247,8 @@ def verify_replay(export_path: str, original_path: str) -> dict:
     report["failures"] = failures
     return report
 
-
-# ---------------------------------------------------------------- C.2 装载器
 def verify_replay_loader(export_path: str, expected_frames: list[int],
                          expected_seeds: list[int]) -> dict:
-    """直调 0x448c40（普通分支，bit0x40 清）：sprintf("replay/%s") →
-    0x472680 存在检查 / 0x472900 CreateFileA 开档 / 0x472a20 GetFileSize+
-    ReadFile 整读——全部经 CreateFileA/ReadFile/CloseHandle 桩供字节。"""
     sess = Session()
     with open(export_path, "rb") as f:
         sess.read_file = f.read()
@@ -344,7 +287,7 @@ def verify_replay_loader(export_path: str, expected_frames: list[int],
     report["score"] = score
     stages = []
     for idx, want_frames in enumerate(expected_frames[:min(stage_count, len(expected_frames))]):
-        number = idx + 1  # 0x448c40 表按关号 1..6 索引（*psVar8 = stage number）
+        number = idx + 1
         header_ptr = m.read_u32(SUPERVISOR + 0xD8 + number * 0x28)
         input_ptr = m.read_u32(SUPERVISOR + (number * 5 + 0x19) * 8)
         end_ptr = m.read_u32(SUPERVISOR + 0xD0 + number * 0x28)
@@ -375,7 +318,6 @@ def verify_replay_loader(export_path: str, expected_frames: list[int],
     return report
 
 
-# ---------------------------------------------------------------- C.3 存档
 def verify_score(score_path: str, want_name: str, want_score: int,
                  character: int = 0, rank_index: int = 1) -> dict:
     with open(score_path, "rb") as f:
@@ -393,7 +335,7 @@ def verify_score(score_path: str, want_name: str, want_score: int,
     if block is None:
         failures.append("character CR column missing (dropped)")
     else:
-        entry = block.entries[rank_index][0]  # 榜首
+        entry = block.entries[rank_index][0]
         report["character_normal_rank1"] = {
             "score": entry.score, "name": entry.name.decode("ascii", "replace").rstrip("\x00 "),
             "stage": entry.stage, "clear": entry.clear,
@@ -405,7 +347,6 @@ def verify_score(score_path: str, want_name: str, want_score: int,
             failures.append("rank1 name %r != %r" % (entry.name, want_name))
         if entry.time_lo == 0 and entry.time_hi == 0:
             failures.append("rank1 timestamp missing")
-        # 榜内插入语义自查：其余行分数应 ≤ 本行（新成绩插入榜首）。
         row = block.entries[rank_index]
         for r in range(1, 10):
             if row[r].score > row[0].score:
@@ -413,7 +354,6 @@ def verify_score(score_path: str, want_name: str, want_score: int,
     report["verdict"] = "PASS" if not failures else "FAIL"
     report["failures"] = failures
     return report
-
 
 def verify_score_loader(score_path: str, want_score: int, want_name: str,
                         character: int = 0, rank_index: int = 1) -> dict:
@@ -432,7 +372,6 @@ def verify_score_loader(score_path: str, want_score: int, want_name: str,
         report["verdict"] = "FAIL"
         report["failures"] = failures
         return report
-    # CR 记录列 = 结构 +0x8 + character*0x56DC；Normal 榜首 = +0x10 + rank*0x118。
     block_addr = base + 0x8 + character * 0x56DC
     magic, version = struct.unpack("<HH", bytes(m.uc.mem_read(block_addr, 4)))
     entry_addr = block_addr + 0x10 + rank_index * 0x118
@@ -452,7 +391,6 @@ def verify_score_loader(score_path: str, want_score: int, want_name: str,
     report["verdict"] = "PASS" if not failures else "FAIL"
     report["failures"] = failures
     return report
-
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -500,7 +438,6 @@ def main() -> int:
             return 1
     print("E2E-VERIFY PASS" if a.cmd.startswith("verify") else "")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

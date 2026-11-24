@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""Compare a recorded real-asset Session with production spectator prefix replay.
-
-The 320-frame fixture triggers a clear through a public API; it is not a natural
-clear, browser, network, or GPU certification. --rebuild compiles the supplied
-production object set once after header/layout changes; subsequent runs reuse its
-manifest. --runtime-source supports an immutable old adapter semantic negative.
-"""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
@@ -15,10 +8,8 @@ from pathlib import Path
 import subprocess
 import time
 
-
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
 
 def extract(source, signature):
     start = source.index(signature)
@@ -28,7 +19,6 @@ def extract(source, signature):
         depth += (source[cursor] == "{") - (source[cursor] == "}")
         cursor += 1
     return source[start:cursor]
-
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -102,7 +92,6 @@ def main():
     print(json.dumps(report))
     print((out / "run.log").read_text().splitlines()[-1])
     raise SystemExit(result.returncode)
-
 
 if __name__ == "__main__":
     main()

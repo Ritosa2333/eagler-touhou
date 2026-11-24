@@ -11,10 +11,6 @@ struct Provider final : EclResourceProvider {
         th13test::emit(target, 0, 515, 0, 255, 0, {0});
         th13test::emit(target, 0, 23, 0, 255, 0, {600});
         th13test::emit(target, 0, 10, 0, 255, 0, {});
-        // Health interrupt 0 at 790 HP whose target routine exists in the
-        // SCPT but has a zero-length body. EclThreads::restart then fails at
-        // bind_code (size < 16); a missing label instead takes start()'s
-        // id<0 path, which terminates the main thread without an error.
         const char label[] = "BrokenInterrupt";
         th13test::emit(interrupt, 0, 515, 0, 255, 0, {0});
         th13test::emit(interrupt, 0, 514, 0, 255, 0, {0, 790, 9999, sizeof(label)}, label, sizeof(label));
@@ -23,7 +19,6 @@ struct Provider final : EclResourceProvider {
         th13test::emit(root, 0, 502, 0, 255, 0, {0x20});
         th13test::emit(root, 0, 23, 0, 255, 0, {600});
         th13test::emit(root, 0, 10, 0, 255, 0, {});
-        // find_index binary-searches definitions, so keep the SCPT order sorted.
         out = th13test::build_scpt(
             {{"BrokenInterrupt", broken}, {"InterruptTarget", interrupt}, {"Target", target}, {"main", root}},
             {"enemy.anm", "st01enm.anm"});
@@ -128,8 +123,6 @@ TEST(hit_sound_override_is_read_from_ecl_and_low_health_boss_uses_voice35) {
     CHECK_EQ(r.sounds.size(), size_t(2));
     if (r.sounds.size() == 2) CHECK_EQ(r.sounds[1], 38);
 }
-// 00419a90 走到尾部 0041a39b 时才做 hit_anim_timer(+0x4004)-1；存活敌机
-// 受击当帧 30 递减为 29，下一无命中帧为 28。
 TEST(surviving_hit_timer_decrements_once_on_hit_frame_and_once_after) {
     Rig r;
     r.shot();
@@ -139,9 +132,6 @@ TEST(surviving_hit_timer_decrements_once_on_hit_frame_and_once_after) {
     CHECK_EQ(r.target->hit_anim_timer, 28);
 }
 
-// 0041a39b 的 +0x4004 递减只在 0041a8a0 尾部执行；0x419f07 call 0x478db0
-// 返回非零时 0x419f10 直接 ret -1，跳过 0x41a39b。中断 restart 失败使
-// StageSim 置 error_，本帧不得再把刚置入的 30 递减为 29。
 TEST(restart_failure_keeps_hit_timer_at_thirty) {
     Rig r("InterruptTarget");
     r.shot();
@@ -152,12 +142,6 @@ TEST(restart_failure_keeps_hit_timer_at_thirty) {
     CHECK_EQ(r.target->life, 790.f);
 }
 
-// 00419d2f（test esi,esi; je 00419fb3）在 00419d37 的 ÷30 之前判定：
-// ÷30 前的整数伤害非零即进入 00419d55 尾段，00419fa9 随后无条件置
-// 0x400000。符卡炸弹保护下 10 伤害 ÷30 得 0：本帧不扣血、不累加，
-// 但仍算一次有效命中，0041a227 反馈分支照常播 hit 音。原生 S4 hit
-// trace f11101/11102/11104..11111 的 serial 389 即此形态（÷30 前
-// esi=26/28/17/9，÷30 后 0，00419fa9 仍执行）。
 TEST(spell_bomb_protection_zero_after_div30_still_marks_hit) {
     Rig r;
     r.battle.sim.spell.begin(7, "Test", 600, 2, 3, true);
@@ -168,10 +152,6 @@ TEST(spell_bomb_protection_zero_after_div30_still_marks_hit) {
     CHECK((r.target->flags & 0x400000u) != 0);
 }
 
-// 00419a90 在 41aad0 击杀/retire 路径上提前返回，不执行 0041a39b 尾递减，
-// 死亡帧 +0x4004 保持刚置入的 30。retire_sink 在摘链前同步调用；本测试
-// 只在回调内存活读取，step 之后只用快照，避免悬垂指针。此测试覆盖自机弹
-// 致死的 retire 早退；中断 restart 失败的早退见上一测试。
 TEST(lethal_hit_retire_sink_sees_unclamped_00419a90_hit_timer) {
     Rig r;
     i32 timer_at_retire = -1;
@@ -189,5 +169,5 @@ TEST(lethal_hit_retire_sink_sees_unclamped_00419a90_hit_timer) {
     CHECK_EQ(timer_at_retire, 30);
 }
 
-}  // namespace
+}
 int main() { return th13test::run_all("enemy-hit-feedback"); }

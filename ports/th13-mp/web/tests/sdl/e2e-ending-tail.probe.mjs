@@ -1,11 +1,3 @@
-// Ending 尾段探针：th13_debug_ending(0,1) 直入 Reimu/Normal 结局（与全通同一
-// 生产入口链 0x43c1c0 case0xf），验证 Z 连打推进（op5/6 等待的按下沿放行）→
-// staff roll → AfterEnding → 标题 reason 3 结算屏（ResultName）→ 回主菜单。
-// 说明：debug 入口 recorder 无数据 → result_replay_save_available()=false，
-// 名录入 END 后直接回主菜单（不进回放保存屏）——保存链本身由全量运行验证。
-// 用法（外层仓库根，shot 镜像）：
-//   make shot CMD='node eagler-touhou/ports/th13/web/tests/sdl/e2e-ending-tail.probe.mjs \
-//     --out artifacts/tmp-scratch/ending-tail'
 import {createServer} from 'node:http';
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
 import {dirname, join, resolve} from 'node:path';
@@ -90,15 +82,12 @@ try {
       },
     };
   });
-  // 结算覆盖层直入（生产 debug 入口）：Reimu/Normal 无续关通关态。
-  // 入口要求 running==false：先 loop_stop（rAF 已被暂停包装冻结）。
   const ok = await page.evaluate(() => { window.mod._th13_loop_stop();
                                          return window.mod._th13_debug_ending(0, 1); });
   if (!ok) throw Error('th13_debug_ending failed: ' +
     await page.evaluate(() => window.mod.UTF8ToString(window.mod._th13_error())));
   mark('ending-entered');
 
-  // Z 连打推进直到标题结算屏（ResultName=14）。
   let pumps = 0;
   for (;;) {
     const r = await page.evaluate(({cap}) => {
@@ -127,7 +116,6 @@ try {
     throw Error('Result screen must play Player\'s Score: ' + JSON.stringify(scoreAudio));
   await page.screenshot({path: join(outDir, 'result-name.png')});
 
-  // 结算名屏（debug 态 rank<0 = 锁定）：Z → case3 → 无回放保存 → 回主菜单。
   for (;;) {
     const r = await page.evaluate(({cap}) => {
       for (let i = 0; i < cap; ++i) {

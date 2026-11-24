@@ -21,7 +21,6 @@ TEST(random_velocity_operands_are_evaluated_once_and_trace_observes_the_same_val
             ctx.instruction = reinterpret_cast<const EclInstruction*>(code.data());
             CHECK_EQ(sim.commands.execute(ctx, op), 0);
             const auto& mover = op == 404 || op == 428 ? enemy.vel : enemy.pos;
-            // Actual4772a0 ->41b260 ->478ee0 ->420d00 from seed51548.
             CHECK_EQ(float_to_bits(mover.angle), mirrored && (op == 404 || op == 406) ? 1041519904u : 1077922441u);
             CHECK_EQ(float_to_bits(mover.speed), 1053609165u);
             CHECK_EQ(sim.random.seed(), 25616);

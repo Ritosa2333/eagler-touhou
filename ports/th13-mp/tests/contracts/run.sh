@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# 多人版契约测试：会话身份线格式（容器内 g++，无外部依赖与原版资源）。
-# JS 契约（选项校验、观战生成块）另经 node --test tests/contracts/ 运行。
-# 用法：tests/contracts/run.sh [--debug]
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

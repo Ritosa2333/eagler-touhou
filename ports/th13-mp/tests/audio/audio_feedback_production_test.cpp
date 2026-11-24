@@ -86,7 +86,6 @@ struct Rig {
 };
 
 void check_audible(Host& host, i32 voice) {
-    // Isolate the award voice: pickup PCM alone must not satisfy audibility.
     for (const auto& request : host.requests)
         if (request.id != voice) CHECK(host.audio.stop(request.id));
     host.audio.update();
@@ -97,7 +96,7 @@ void check_audible(Host& host, i32 voice) {
     CHECK(host.audio.mix(pcm.data(), 4096));
     CHECK(std::any_of(pcm.begin(), pcm.end(), [](float v) { return v != 0.f; }));
 }
-}  // namespace
+}
 
 TEST(spirit_birth_flag_and_pan) {
     auto r = std::make_unique<Rig>();
@@ -141,8 +140,6 @@ TEST(big_power_full_plays_level_sound_before_pickup) {
     }
 }
 
-// 0043d530: crossing each 200 segment requests 0x44, then creates
-// front108/109/110 at the player's world position minus 32 on Y.
 TEST(spirit_segments_create_real_notices_and_audible_pcm) {
     for (i32 level = 1; level <= 3; ++level) {
         auto r = std::make_unique<Rig>();
@@ -169,7 +166,6 @@ TEST(spirit_segments_create_real_notices_and_audible_pcm) {
     }
 }
 
-// 0043d330: the threshold award plays 0x11 and creates front63 once.
 TEST(life_piece_extend_creates_real_banner_and_audible_pcm) {
     auto r = std::make_unique<Rig>();
     CHECK(r->init());

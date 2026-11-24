@@ -25,7 +25,7 @@ struct Host final : StageBattleServices {
     bool request_game_over() override { return true; }
     bool hud_sound(i32) override { return true; }
 };
-}  // namespace
+}
 
 TEST(firing_waits_for_original_startup_gate) {
     Provider provider;

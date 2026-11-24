@@ -34,32 +34,22 @@ score*.dat
 **/__pycache__/
 *.py[cod]
 
-# ECL 单测本地构建产物
 tests/ecl/build/
 
-# ANM 单测本地构建产物
 tests/anm/build/
 
-# UI 单测本地构建产物
 tests/ui/build/
 
-# 录像单测本地构建产物
 tests/replay/build/
 
-# 端到端验收本地构建产物（native 二进制 + run 目录内导出的 th13_NN.rpy）
 tests/e2e/build/
 
-# 存档格式单测本地构建产物
 tests/score/build/
 
-# 战斗单测本地构建产物
 tests/combat/build/
 
-# 道具单测本地构建产物
 tests/items/build/
 
-# 契约测试本地构建产物
 tests/contracts/build/
 
-# 网页运行时资源（原版权材料，prepare-assets.mjs 从 raw 解包目录拷贝）
 web/sdl-runtime/assets/

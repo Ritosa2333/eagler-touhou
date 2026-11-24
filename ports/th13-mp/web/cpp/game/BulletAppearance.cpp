@@ -1,8 +1,3 @@
-// th13 弹幕外观表（0x4bbe30 起 38 项 × 0x114 字节，th13.exe v1.00c .data 提取；
-// 字段序 = BulletAppearance.hpp：脚本、16 色 × {弹体,命中,出生,消去} 精灵、
-// 缩放、命中种类、消去种类、出生特效脚本）。
-// 弹体精灵解析回调 0x4120b0：项首色弹体精灵 <0 时原样返回参数（不映射），
-// 否则取 表[类型].色[颜色].参数位。
 #include "BulletAppearance.hpp"
 
 namespace th13 {
@@ -813,4 +808,4 @@ const BulletAppearance* bullet_appearance(i32 type) noexcept {
     return type >= 0 && type < i32(bullet_appearances.size()) ? &bullet_appearances[u32(type)] : nullptr;
 }
 
-}  // namespace th13
+}

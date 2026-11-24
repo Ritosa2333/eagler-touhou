@@ -27,7 +27,6 @@ TEST(enemy_position_read_uses_requested_live_enemy_and_float_destinations) {
     std::memcpy(&y, ctx.stack.data() + 4, 4);
     CHECK_EQ(x, 12.25f);
     CHECK_EQ(y, 87.5f);
-    // 417f40's original nonzero-ID miss returns the final examined live enemy.
     code.clear();
     th13test::emit(code, 0, 801, 3, 255, 0, {th13test::bits_of(0.f), th13test::bits_of(4.f), 99});
     ctx.instruction = reinterpret_cast<const EclInstruction*>(code.data());

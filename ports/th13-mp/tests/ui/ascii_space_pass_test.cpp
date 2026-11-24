@@ -18,14 +18,12 @@ struct Sink : AsciiGlyphServices {
         return true;
     }
 };
-}  // namespace
+}
 TEST(large_countdown_glyph_layout_matches_original_center_and_right_alignment) {
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager(random, environment);
     CHECK(load_bank(manager, 2, synthetic_anm(302, trivial_scripts(1))));
-    // Unicorn executes original 004042a0 up to each glyph submission.
-    // For "3.63s": x = 163,193,203,233,263 at anchor224, font7, scale1.
     const char* strings[] = {"3.63s", "10.00s", "0.02s"};
     for (i32 font : {6, 7})
         for (i32 alignment : {0, 2})
@@ -82,10 +80,6 @@ TEST(ascii_pass_one_preserves_screen_coordinates_without_scene_origin) {
     }
 }
 TEST(ascii_space1_text_consumes_same_frame_at_original_priorities) {
-    // 2026-11-05 试玩回归：Clear Bonus/符卡数字（space1）曾永不绘制——端口
-    // 生产者@76 晚于 pass1 消费者@51，入队次帧被 AsciiText::update 判死。
-    // 原版 0x424f4b/0x403a54：生产者 0x2e=46 先于 pass1 0x2f=47 同帧消费，
-    // 队列寿命 0（0x4db2e0 零填充）。本测试用真实注册优先级锁死该顺序。
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager(random, environment);
@@ -119,7 +113,6 @@ TEST(ascii_space1_text_consumes_same_frame_at_original_priorities) {
     CHECK(scheduler.draw() > 0);
     CHECK(chain.drew);
     CHECK(!sink.positions.empty());
-    // 寿命 0 语义保持：同帧消费完成后，下一次队列 update 即移除该 entry。
     CHECK_EQ(text.count(), 1u);
     text.update();
     CHECK_EQ(text.count(), 0u);

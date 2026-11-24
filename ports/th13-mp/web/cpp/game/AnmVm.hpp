@@ -1,8 +1,3 @@
-// ANM 虚拟机：脚本指令执行载体（生命周期见 AnmManager/AnmRegistry）。
-// th13 差异（相对 th15 参照实现，依据 docs/plans/anm-pipeline.md §四/§五）：
-//   - 前置回调 pre_tick（原版 vm+0x590，00462450.c:293-300：非零返回即整帧跳过）；
-//   - 变量表无 10033-10035（见 AnmVariables.hpp）；
-//   - 10026 父链旋转只看一层父（00461e80.c case 0x272a），不递归。
 #pragma once
 #include "AnmEnvironment.hpp"
 #include "AnmGeometry.hpp"
@@ -15,7 +10,7 @@ namespace th13 {
 namespace multiplayer {
 class WorldState;
 class DigestSink;
-}  // namespace multiplayer
+}
 struct AnmSpriteSource {
     virtual ~AnmSpriteSource() = default;
     virtual i32 sprite_index(i32 parameter) const noexcept = 0;
@@ -30,19 +25,16 @@ struct AnmObjectHost {
     virtual i32 update_effect(AnmVm&, float) { return -1; }
     virtual bool interrupt_effect(AnmVm&, i32, float) { return true; }
 };
-// Animation instruction execution. Drawing/spawning commands are integration
-// work; unsupported instructions stop explicitly and are never silently skipped.
 class AnmVm {
     friend class AnmFile;
     friend class AnmRegistry;
     friend class multiplayer::DigestSink;
-    friend class multiplayer::WorldState;  // M6 快照：saved_offset/saved_timer（中断保存点）
+    friend class multiplayer::WorldState;
     std::vector<u8>* script = nullptr;
     u32 saved_offset = 0;
     Timer saved_timer{};
 
 public:
-    // One-based owner of a shot or shooting effect. Zero is unowned.
     u8 shot_effect_owner = 0;
     bool player_support_effect = false;
     inline static u64 presentation_counter = 0;
@@ -57,15 +49,11 @@ public:
     bool visible = false;
     i32 pending_interrupt = 0;
     float slowdown = 0;
-    // 前置回调（原版 vm+0x590）：tick 入口最先调用，非零返回则本帧不执行任何指令。
     i32 (*pre_tick)(AnmVm&) = nullptr;
     AnmEnvironment* environment = nullptr;
     AnmVm* rotation_parent = nullptr;
     AnmVm* creation_parent = nullptr;
     AnmObjectHost* object_host = nullptr;
-    // Resource scripts can select logical sprite parameters. Bullet instances
-    // resolve these against their current type and colour. Binding a new script
-    // clears the source; its owner installs it after the bind.
     const AnmSpriteSource* sprite_source = nullptr;
     AnmResource* resource = nullptr;
     const AnmSprite* sprite = nullptr;
@@ -76,9 +64,6 @@ public:
                    ? index
                    : i32(resource->scripts[u32(source_script)].script_base) + index;
     }
-    // Keep visual.sprite equal to the original file-local VM field. The
-    // renderer and diagnostics share the resolved sprite, including fallback
-    // selections and scripts that draw before their first sprite instruction.
     const AnmSprite* texture_sprite() const noexcept {
         if (sprite) return sprite;
         const auto* source = sprite_resource ? sprite_resource : resource;
@@ -164,4 +149,4 @@ public:
     Vec3 total_rotation(u32 depth = 0) noexcept;
     float effective_slowdown() const noexcept;
 };
-}  // namespace th13
+}

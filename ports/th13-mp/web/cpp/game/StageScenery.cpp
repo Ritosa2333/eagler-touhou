@@ -1,20 +1,8 @@
-// STD 舞台背景实现。绘制语义（th15 StageScene 同族，锚点见文件头）：
-//   - 实例平移 = 图元位置 + 实例位置；缩放 = STD 尺寸 / 精灵尺寸（flags|=8
-//     触发变换重算）；雾仅 mode 8/24；深度写由 flags 0x2000 取反决定；
-//   - 帧内先把上一帧视线归一化再执行脚本（原版快照序）；
-//   - 相机快照落 AnmEnvironment（camera_origin/screen_translation/
-//     reference_position —— ANM 变量 10016-10021 的数据源）。
 #include "StageScenery.hpp"
 #include "AnmTransforms.hpp"
 #include "SceneMatrices.hpp"
 namespace th13 {
 namespace {
-// 对象包围盒 16 顶点投影裁剪（th13 原版 0x4076c0）：16 点（8 角点 + 面心/
-// 边中点）投影后取屏幕 x/y 聚合，与绝对矩形 [128,512]x[16,464] 做 overlap。
-// 窗口常量 0x4ae9e8=128、0x4aead8=512、0x4aea88=16、0x4aec48=464
-// （0x407c83/0x407c96/0x407ca9/0x407cbc）；聚合种子 520/120/472/8
-// （0x4aec98/0x4aec90/0x4aec94/0x4aea74）= origin+extent+8 / origin-8。
-// z 过滤为 0<=z<=1（0x407a69 比较 0.0、0x407a75 比较 1.0；NaN 剔除）。
 bool stage_visible(const StageObject& object, const Vec3& instance, const AnmCamera& camera,
                    const GraphicsViewport& viewport, Vec2 origin, Vec2 extent, float distance_squared) noexcept {
     const Vec3 delta{float(float(object.position.x + instance.x) - camera.eye.x),
@@ -76,7 +64,7 @@ bool stage_visible(const StageObject& object, const Vec3& instance, const AnmCam
     return max_x >= origin.x && min_x <= float(origin.x + extent.x) && max_y >= origin.y &&
            min_y <= float(origin.y + extent.y);
 }
-}  // namespace
+}
 void StageScenery::begin_exit() noexcept {
     lifecycle_flags = (lifecycle_flags | 2u | 1u) & ~8u;
     lifecycle_timer.set(30);
@@ -134,21 +122,6 @@ bool StageScenery::initialize(AnmManager& animations, i32 bank) {
     if (!file.error.empty()) return fail(file.error);
     if (!animations.resource(bank)) return fail("Stage scenery animation bank unavailable");
     script.state.timer.set(0);
-    // 原版 0x406120 场景创建先把全局 0x4dcaf4 块的 0x49 dword 拷入
-    // scene+0x409c（STD 相机块），再覆写前段字段（0x406165..0x406255 直读）：
-    //   0x409c..0x40a4 position = (0,0,-600)   [0x4af024=0xc4160000；0x409c/
-    //                                          0x40a0 由 fldz 残值清零]
-    //   0x40a8..0x40b0 direction = (0,300,600) [0x4af020=300, 0x4af01c=600]
-    //   0x40b4..0x40bc up = (0,1,0)            [fld1；两侧 fldz]
-    //   0x40d8..0x40e0 eye_offset = (0,0,0)    （六条 fldz 残值写）
-    //   0x40e4..0x40ec target_offset = (0,0,0)
-    // 其余 0x1069-0x106f（fov/雾）来自全局块初值 0（.data BSS，0x4b8000
-    // raw 0x9400 只覆盖到 0x4c1400）。0x2f2c = 9610000.0f（0x4af018）见下。
-    // 关键语义：op2 的首帧差分以该 position 为基线（00408390.c:74-82），
-    // st01.std off=100 的 (-80,0,900) 因此得到 delta.z=1500（native 实测）。
-    // 生产路径的 StageScenery 恒以默认零相机块构造（RunScene::initialize /
-    // prepare_transition 都在新对象上调用）；预置就绪的非零相机块（单测显式
-    // 装配的相机）不覆盖，保持 initialize 对调用方相机状态的不干扰。
     auto& camera = script.state.camera;
     const bool default_camera =
         camera.position.x == 0.f && camera.position.y == 0.f && camera.position.z == 0.f && camera.direction.x == 0.f &&
@@ -166,9 +139,6 @@ bool StageScenery::initialize(AnmManager& animations, i32 bank) {
         camera.fov = 0;
         camera.fog = {};
     }
-    // 原版 0x406120 场景创建时写 scene+0x2f2c = 0x4b12a310 = 9610000.0f
-    // （3100^2；0x40622f fstp；0x40815b/0x408164 作为 0x4076c0 的距离门参数，
-    // 0x40779f..0x4077af fcompp + test ah,5/jnp：dist² > 阈值才裁，等值保留）。
     script.state.culling_distance_squared = 9610000.f;
     script.background_command = [this, &animations, bank](i32 slot, i32 template_index) {
         auto& vm = background_slots[u32(slot)];
@@ -202,7 +172,6 @@ bool StageScenery::update(AnmManager& animations, AnmEnvironment& environment, f
     if ((lifecycle_flags & 4u) && lifecycle_timer.current >= 60) return true;
     transition_color = (transition_color & 0xff000000u) | 0x00808080u;
     script.state.camera.animation_delta = {};
-    // 先归一化上一帧视线（含 target_offset）再执行脚本。
     const auto& direction = script.state.camera.direction;
     const auto& offset = script.state.camera.target_offset;
     view_direction = normalize_scene_vector(
@@ -240,9 +209,6 @@ bool StageScenery::interrupt_objects(i32 label) {
 bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphics& graphics, i32 layer_first,
                         i32 layer_last, const GraphicsViewport& viewport, Vec2 cull_extent, Vec2 screen_shake) {
     (void)animations;
-    // cull_extent 仅为 RunScene 调用兼容保留：th13 裁剪窗是绝对屏幕矩形
-    // [128,512]x[16,464]（0x407c83/0x407c96/0x407ca9/0x407cbc），不是
-    // 视口原点/尺寸；viewport {116,2,408,476} 只是它内缩 12/14 px 的来源。
     (void)cull_extent;
     if (!error.empty()) return false;
     if (!initialized) return fail("Stage scenery not initialized");
@@ -255,7 +221,6 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
             renderer.set_viewport(viewport);
             AnmCamera overlay_camera;
             const float fov = script.state.camera.fov;
-            // 0x43b900 同式：tan 结果先舍入 f32（0x43cf51 fstp dword）再除。
             const float distance = float(240.0 / float(std::tan(double(float(fov * .5f)))));
             overlay_camera.eye = {320, 240, distance};
             overlay_camera.view = scene_look_at(overlay_camera.eye, {320, 240, 0}, {0, -1, 0});
@@ -280,14 +245,7 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
     renderer.set_viewport(viewport);
     renderer.set_camera(camera);
     graphics.presentation_camera(true);
-    // 406d90/407310 copy4dcbe8/ec into camera+f4/f8;43ba20 then
-    // sets ANM manager+d0/d4. This is a projected/screen-quad offset,
-    // not a displacement of the eye, world geometry, or culling volume.
     renderer.offset = screen_shake;
-    // 原版按层分趟绘制：0x406d90 对 layer 0..7 逐个调用 0x4080b0(scene, layer)，
-    // 0x407310 对 8..11 同式；0x4080b0 内部按实例表顺序、仅处理
-    // object.layer==layer 的实例。故提交顺序是层主序（非实例主序），
-    // alpha 混合次序依赖于此（st01: layer0 obj1×3 → layer1 obj0×80 → layer2 obj2）。
     for (i32 layer = layer_first; layer <= layer_last; ++layer) {
         for (u32 i = 0; i < file.instances.size(); ++i) {
             const auto& instance = file.instances[i];
@@ -310,8 +268,6 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
                     visual.translation = {float(primitive.position.x + instance.position.x),
                                           float(primitive.position.y + instance.position.y),
                                           float(primitive.position.z + instance.position.z)};
-                    // STD 尺寸 → 精灵缩放（延迟的 ins_300 可能尚未选精灵：仅非零
-                    // 尺寸查表，与原版 40f99c 行为一致）。
                     if (primitive.size.x != 0 || primitive.size.y != 0) {
                         const auto* selected = vm.texture_sprite();
                         if (!selected) return fail("Stage scenery primitive sprite unavailable");
@@ -343,7 +299,6 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
     return true;
 }
 
-// ---- M6/P3.2 快照面：值域全量拷贝（file/接线回调不快照，见头文件注释）。
 StageScenery::ExtraSnapshot StageScenery::capture_extra() const {
     ExtraSnapshot out;
     out.primitives = primitives;
@@ -361,8 +316,6 @@ StageScenery::ExtraSnapshot StageScenery::capture_extra() const {
 }
 
 void StageScenery::restore_extra(const ExtraSnapshot& source) {
-    // 前提：本对象已 initialize（回滚不跨装配期）。VM 池按值整场替换；
-    // 标志数组尺寸随 file 的对象/实例数（只读资源，两侧一致）。
     primitives = source.primitives;
     background_slots = source.background_slots;
     object_flags = source.object_flags;
@@ -375,4 +328,4 @@ void StageScenery::restore_extra(const ExtraSnapshot& source) {
     view_direction = source.view_direction;
     frames = source.frames;
 }
-}  // namespace th13
+}

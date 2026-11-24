@@ -1,12 +1,3 @@
-// 符卡练习三级菜单（原版标题 supervisor 0x44c570 case 0x11/0x12/0x13 →
-// 0x4560a0/0x456650/0x4576c0）：
-//   stage（1..6 与 Extra）→ spell 槽（0x456650 local_24 = 每 stage 槽数
-//   {4,4,4,4,5,7,13}）→ 难度变体（5 槽；DAT_004be7d4 = 选中 spell id，
-//   DAT_004bbd30[id] = 原版 rank）。左/右在 0x12/0x13 切换角色（0x4564c0），
-//   0x4576c0 启动拍写 DAT_004be81c = stage+1、DAT_004be7b8 = character。
-// 本类只做只读/交互状态机与选择输出；数据、解锁（0x456af0）与真实启动路由
-// 全部由宿主提供。缺省 stage_count()==0 / unlock=false / spell_id=-1，
-// 显式失败或空列表，不制造卡。
 #pragma once
 
 #include "Types.hpp"
@@ -27,29 +18,21 @@ struct SpellPracticeRecord {
     bool encountered = false;
 };
 
-// stage 参数均为原版 1 基编号（1..6，Extra=7）。slot 为 stage 内 0 基槽位；
-// difficulty 为 0..4 的变体槽（原版 +0x5d24 数组下标）。
 struct TitleSpellPracticePlatform {
     virtual ~TitleSpellPracticePlatform() = default;
     virtual bool spell_record(i32, i32, SpellPracticeRecord&) const { return false; }
     virtual i32 stage_count() const { return 0; }
-    virtual bool stage_available(i32 /*stage*/) const { return false; }
-    virtual std::string stage_name(i32 /*stage*/) const { return {}; }
-    virtual i32 spell_count(i32 /*stage*/) const { return 0; }
-    // 0x456af0：任意变体已记录（score 数据 0x16578 + id*0x9c）才可确认。
-    virtual bool spell_unlocked(i32 /*stage*/, i32 /*slot*/) const { return false; }
-    virtual std::string spell_name(i32 /*stage*/, i32 /*slot*/) const { return {}; }
-    // DAT_004be7d4；-1 = 该难度槽无此卡。
-    virtual i32 spell_id(i32 /*stage*/, i32 /*slot*/, i32 /*difficulty*/) const { return -1; }
-    // DAT_004bbd30[spell_id]；-1 = 无 rank，禁止启动（不推断难度）。
-    virtual i32 spell_rank(i32 /*stage*/, i32 /*slot*/, i32 /*difficulty*/) const { return -1; }
-    // 00456b50 gates each variant separately after the family gate 00456af0.
-    virtual bool spell_variant_available(i32 stage, i32 slot, i32 /*difficulty*/) const {
-        return spell_unlocked(stage, slot);
-    }
-    virtual std::string spell_variant_name(i32 /*stage*/, i32 /*slot*/, i32 /*difficulty*/) const { return {}; }
+    virtual bool stage_available(i32) const { return false; }
+    virtual std::string stage_name(i32) const { return {}; }
+    virtual i32 spell_count(i32) const { return 0; }
+    virtual bool spell_unlocked(i32, i32) const { return false; }
+    virtual std::string spell_name(i32, i32) const { return {}; }
+    virtual i32 spell_id(i32, i32, i32) const { return -1; }
+    virtual i32 spell_rank(i32, i32, i32) const { return -1; }
+    virtual bool spell_variant_available(i32 stage, i32 slot, i32) const { return spell_unlocked(stage, slot); }
+    virtual std::string spell_variant_name(i32, i32, i32) const { return {}; }
     virtual i32 character_count() const { return 0; }
-    virtual std::string character_name(i32 /*character*/) const { return {}; }
+    virtual std::string character_name(i32) const { return {}; }
 };
 
 struct SpellPracticeStageRow {
@@ -99,7 +82,6 @@ class TitleSpellPracticeMenu {
 public:
     explicit TitleSpellPracticeMenu(TitleSpellPracticePlatform& platform, i32 initial_character = 0);
 
-    // 单帧输入；返回 true 表示产生 Terminal 事件（Cancel/Launch）。
     bool update(const SpellPracticeInput& input);
 
     SpellPracticeLevel level() const noexcept { return level_; }
@@ -116,13 +98,10 @@ public:
     const SpellPracticeCommand& command() const noexcept { return command_; }
     void clear_command() noexcept { command_ = {}; }
 
-    // 对局返回级联（0x4561bf/0x45673a 读 DAT_004bb4c4/c8）：以启动时保存的
-    // stage/slot/difficulty 光标（0x45792b/c8/cc 写点）直入难度层。槽位/难度
-    // 行由宿主按 spell_id 反查后传入；失败 = 目录已不含该卡，不臆造状态。
     bool restore_selection(i32 stage, i32 slot, i32 difficulty);
 
     std::string error;
-    std::string blocked;  // 最近一次被禁用原因（锁定卡/不可用变体等）
+    std::string blocked;
 
 private:
     TitleSpellPracticePlatform& platform_;
@@ -147,4 +126,4 @@ private:
     void emit(SpellPracticeAction action);
 };
 
-}  // namespace th13
+}

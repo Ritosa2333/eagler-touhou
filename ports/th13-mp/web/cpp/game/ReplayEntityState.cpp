@@ -19,7 +19,7 @@ void field(std::string& out, const char* name, u32 value) {
     out += "\":";
     str(out, value);
 }
-}  // namespace
+}
 
 ReplayEntityState sample_replay_entities(const StageBattle& battle) {
     ReplayEntityState s;
@@ -326,4 +326,4 @@ std::string ReplayEntityState::json() const {
     out += '}';
     return out;
 }
-}  // namespace th13
+}

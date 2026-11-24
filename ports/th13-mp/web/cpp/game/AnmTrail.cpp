@@ -25,8 +25,6 @@ void AnmTrail::initialize_orange(const Vec3& position, GameRandom& random) {
         colors[i] = color;
     }
 }
-// 4bba80[1] init 401000（8 段）：seg0=(x+320,y+16)、angle=rand11*PI、Timer{0,1,1.0}；
-// 8 色 [B,G,R,A]=[FF,80,255-32i,A]，A=255（i<4）、255-16*(i-4)（i≥4）。
 void AnmTrail::initialize_small(const Vec3& position, GameRandom& random) {
     points = {};
     colors = {};
@@ -43,7 +41,7 @@ void AnmTrail::initialize_small(const Vec3& position, GameRandom& random) {
     }
 }
 i32 AnmTrail::update(GameRandom& random, float rate) {
-    if (age.current >= segment_count) return 1;  // 401190@40119f：idx>=8（kind1）；64 点族 >=64⟺>63
+    if (age.current >= segment_count) return 1;
     if (age.current != age.previous) {
         const i32 count = age.current;
         if (count < 1) {
@@ -56,9 +54,9 @@ i32 AnmTrail::update(GameRandom& random, float rate) {
         }
         const float speed = float(float(random.unit() * 5.f) + 4.f);
         auto& p = points[u32(count)];
-        if (segment_count == 8) {  // 401490：fsincos 后先存 cos·s 到 x、sin·s 到 y
+        if (segment_count == 8) {
             p = {float(std::cos(double(angle)) * double(speed)), float(std::sin(double(angle)) * double(speed))};
-        } else {  // 既有 64 点基未动
+        } else {
             p = {float(std::cos(double(angle)) * double(speed)), float(std::sin(double(angle)) * double(speed))};
         }
         p.x = float(points[u32(count) - 1].x + p.x);
@@ -68,4 +66,4 @@ i32 AnmTrail::update(GameRandom& random, float rate) {
     age.tick(&rate);
     return 0;
 }
-}  // namespace th13
+}

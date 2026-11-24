@@ -1,9 +1,5 @@
-// 角度归一 see Types.hpp normalize_angle（th13 统一实现，fmod 双精度路径；
-// 原版 0x472f30 为 33 次循环减 2π 版，常规角度域内两者等价）。
 #include "AnmVisualState.hpp"
 namespace th13 {
-// op304 层写入（00462450.c:1479-1491）：层号取 u8；3..18 置 0x40000，否则清之。
-// th15 的 20-23 → 0x80000 与 0x600000 屏幕层段是 th15 专属，th13 无此分支。
 void AnmVisualState::set_layer(i32 value) noexcept {
     layer = value;
     if (value > 2 && value < 0x13)
@@ -40,4 +36,4 @@ void AnmVisualState::advance(Vec3& rotation, float rate) noexcept {
             *uv[i] = value;
         }
 }
-}  // namespace th13
+}

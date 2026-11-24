@@ -9,7 +9,7 @@ std::vector<u8> asset(const char* name) {
     std::ifstream f(std::string("artifacts/reference/raw/") + name, std::ios::binary);
     return {std::istreambuf_iterator<char>(f), {}};
 }
-}  // namespace
+}
 TEST(real_loading_prayer_uses_ascii_script17_at_original_screen_position) {
     GameRandom random;
     AnmEnvironment env;
@@ -28,8 +28,6 @@ TEST(real_loading_prayer_uses_ascii_script17_at_original_screen_position) {
     CHECK_EQ(vm->visual.render_flags & 0x200u, 0x200u);
     const auto before = random.index();
     CHECK(manager.update());
-    // Retail 46f990 first ticks ascii script16 while spawning it from 17:
-    // 12 signed/unit variable reads, each advancing the visual index by two.
     CHECK_EQ(random.index() - before, 24u);
     for (int i = 1; i < 10; ++i)
         CHECK(manager.update());

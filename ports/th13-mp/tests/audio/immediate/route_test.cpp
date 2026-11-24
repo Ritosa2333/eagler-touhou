@@ -13,7 +13,7 @@ const void* started_voice() {
         if (row.second.starts) return row.first;
     return nullptr;
 }
-}  // namespace
+}
 TEST(immediate_output_preserves_frame_coalescing_pan_attenuation_and_does_not_double_mix) {
     sdl::AudioDevice audio;
     CHECK(audio.initialize_effects_for_test("artifacts/reference/raw"));
@@ -68,7 +68,7 @@ TEST(immediate_output_reuploads_after_context_replacement_and_reports_output_fai
     output::voices.at(key).cursor = 128;
     float pcm[2] = {};
     CHECK(audio.mix(pcm, 1));
-    output::voices.clear();  // Context replacement while this voice is live.
+    output::voices.clear();
     CHECK(audio.mix(pcm, 1));
     CHECK(output::contains(key));
     CHECK(output::playing(key));

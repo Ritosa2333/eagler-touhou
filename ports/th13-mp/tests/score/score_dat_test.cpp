@@ -1,5 +1,3 @@
-// ScoreDat 原始容器与字段视图测试。
-// 黄金样本组依赖 artifacts/score_golden/（gitignored）；字段视图组无需资产。
 #include "../harness/test_framework.hpp"
 
 #include "game/ScoreDat.hpp"
@@ -256,6 +254,6 @@ TEST(parse_failure_paths) {
     CHECK(!dat.parse_image(broken_image.data(), broken_image.size()));
 }
 
-}  // namespace
+}
 
 int main() { return th13test::run_all("ScoreDat scoreth13.dat 容器"); }

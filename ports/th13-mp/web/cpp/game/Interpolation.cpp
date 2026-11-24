@@ -1,4 +1,3 @@
-// th13 缓动权重与插值通道步进（行为规格见 Interpolation.hpp 文件头）。
 #include "Interpolation.hpp"
 
 #include <cmath>
@@ -8,12 +7,6 @@ namespace th13 {
 float interpolation_weight(i32 mode, float elapsed, float duration) noexcept {
     if (duration == 0 || std::isnan(duration)) return 1;
     float t = static_cast<float>(elapsed / duration);
-    // 0x473a40 精度链（draw_compare f159 帧位级实证）：除 t 入口一次落
-    // f32 后，幂/二次曲线族的全部中间量在 x87 80 位寄存器链上流转，
-    // 仅最终结果一次落 f32（逐分支 fstps 唯一）。逐步 f32 舍入会在
-    // (2-(2-t2)²)×0.5 等链上漂 1-16 ULP（f159 神灵 world[12] 实测
-    // c0c0a8d0 vs oracle c0c0a8e0，double 链复现精确命中）。
-    // ⟹ 中间量走 double，最终单次落 float。
     auto power = [](double v, u32 exponent) {
         double r = v;
         for (u32 i = 1; i < exponent; i++)
@@ -24,7 +17,6 @@ float interpolation_weight(i32 mode, float elapsed, float duration) noexcept {
     if (mode >= 4 && mode <= 6) return static_cast<float>(1 - power(1 - double(t), u32(mode - 2)));
     if (mode >= 9 && mode <= 14) {
         const u32 exponent = u32((mode - 9) % 3 + 2);
-        // mode9 族加倍点 t2 落 f32（0x473b65 fstps 实证）——保持单次舍入。
         const double t2 = static_cast<float>(t * 2);
         if (mode <= 11)
             return t2 < 1 ? static_cast<float>(power(t2, exponent) * .5)
@@ -63,9 +55,6 @@ float interpolation_weight(i32 mode, float elapsed, float duration) noexcept {
         constexpr float scale[] = {.888888895511627197265625f, .81632649898529052734375f, .71005916595458984375f,
                                    .624349653720855712890625f, .5555555820465087890625f};
         const u32 i = u32((mode - 22) % 5);
-        // 同 0x473a40 单次落位链：二次曲线族中间量 double。
-        // 0x473fb6/0x473ff4/0x474030/0x47406e/0x4740ae：mode 0x1b..0x1f 的
-        // (1-t) 先 fstp dword 落 f32，再与常量相减；不落位会在末位差 1 ULP。
         double v = mode >= 27 ? double(static_cast<float>(1 - t)) : double(t);
         v = v - shift[i];
         v = v * v;
@@ -96,7 +85,7 @@ float EclInterpolation::evaluate() noexcept {
         if (mode == 17) control2 = static_cast<float>(control2 + end);
         return current;
     }
-    if (mode == 8) {  // Hermite：指令 92 的控制点在参数 6/7。
+    if (mode == 8) {
         const float t = static_cast<float>(timer.fractional / static_cast<float>(duration));
         const float twice = static_cast<float>(t * 2);
         const float a = static_cast<float>(t - 1);
@@ -117,4 +106,4 @@ float EclInterpolation::evaluate() noexcept {
     return current;
 }
 
-}  // namespace th13
+}

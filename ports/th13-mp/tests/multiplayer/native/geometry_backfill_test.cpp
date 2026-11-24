@@ -1,23 +1,3 @@
-// m1.unit_geometry_backfill_timing —— M1/T5 玩法几何回填时点探针（workflow
-// m1.update_present_equivalence 的本层 unit 件之一）。RunScene::update@20
-// （RunScene.cpp:689/724 的 presentation->sync）把敌机模拟位回填进表现层
-// VM visual.translation（StagePresentation.cpp:1480-1482 敌机槽 VM 跟随）；
-// 本测试经 scheduler.add 公开面在 Update 优先级 19（回填前）与 21（回填后）
-// 挂探针，逐帧采样 app.run->battle.sim.enemies 的 position 与槽0 VM 的
-// visual.translation，断言：
-//   1) 敌机模拟位跨帧冻结：position@19 == position@上一帧@21（sim 只在
-//      battle.step@20 内推进——若 sim 泄漏进 22..34/commit/present，此断言红）。
-//   2) 回填新鲜：translation@21 == anm_slot_offset@21 + position@21 逐位成立
-//      （sync 在 (19,21) 内随本帧步进完成——若 sync 被搬到 Draw/commit，
-//      @21 采样仍是上帧值而 position@21 已前移，此断言红）。
-//   3) 移动敌机（position@21 != position@19）的回填跟随：translation@21
-//      跟踪新位，同时 translation@19 == offset@19 + position@19（上帧 sync 值，
-//      实测 ANM 主链@34 不触碰槽0 VM translation——若未来 ANM 脚本开始写
-//      translation，此半断言给出明确红灯供人复核，不静默放宽）。
-//   4) 出生帧：@19 不存在、@21 出现的敌机（ECL 303/306 于 battle.step@20 同步
-//      建槽 VM）其 translation 在 @21 已按出生位回填。
-// 探针零生产钩子；窗口=回放 th13_01 battle f55..f100（敌机存活且逐帧移动，
-// 含 f98 掉落道具新敌机出生帧）。
 #include "../../harness/test_framework.hpp"
 
 #include "game/GameInput.hpp"
@@ -87,7 +67,6 @@ bool boot_replay_battle(App& app, const std::vector<u8>& rpy, const char* save_n
     return app.run != nullptr && app.failure.empty();
 }
 
-// ---- 敌机几何采样（serial/position/槽0 VM translation+offset，位级）----
 struct EnemySample {
     u32 serial = 0;
     float position[3] = {};
@@ -128,21 +107,19 @@ bool floats_eq(const float* a, const float* b) {
     return std::memcmp(a, b, sizeof(float) * 3) == 0;
 }
 
-// StagePresentation.cpp:1480-1482 的回填式（offset + position，逐位）。
 bool translation_synced(const EnemySample& s) {
     return s.vm_present && s.translation[0] == s.offset[0] + s.position[0] &&
            s.translation[1] == s.offset[1] + s.position[1] &&
            s.translation[2] == s.offset[2] + s.position[2];
 }
 
-// ---- Update 段 @19/@21 探针 ----
 std::vector<std::vector<EnemySample>>* g_at19 = nullptr;
 std::vector<std::vector<EnemySample>>* g_at21 = nullptr;
 
 struct GeometryProbe {
     th13::FrameCallback callback{};
     App* app = nullptr;
-    th13::FrameScheduler* attached_scheduler = nullptr;  // 登记归属（FrameCallback::scheduler private）
+    th13::FrameScheduler* attached_scheduler = nullptr;
     int priority = 0;
     static i32 run(void* p) {
         auto& probe = *static_cast<GeometryProbe*>(p);
@@ -168,7 +145,7 @@ struct GeometryProbe {
     ~GeometryProbe() { detach(); }
 };
 
-}  // namespace
+}
 
 TEST(geometry_backfill_probe_19_21) {
     std::vector<u8> rpy;
@@ -190,7 +167,6 @@ TEST(geometry_backfill_probe_19_21) {
         return;
     }
     th13::GameInput input;
-    // warm f0..f54（对话窗，无敌机）；采样窗 f55..f100（敌机存活逐帧移动）。
     for (int F = 0; F < 55; ++F) {
         input.update(0);
         CHECK(app.update(input, false));
@@ -201,8 +177,8 @@ TEST(geometry_backfill_probe_19_21) {
             return;
         }
     }
-    constexpr int kSampleFrames = 46;  // battle f55..f100
-    g_at19->clear();  // 探针自 battle f0 起随 update 触发；采样窗从 f55 重新计
+    constexpr int kSampleFrames = 46;
+    g_at19->clear();
     g_at21->clear();
     int checked_pairs = 0, checked_sync21 = 0, checked_sync19 = 0, moving_pairs = 0;
     int spawn_checked = 0;
@@ -223,10 +199,9 @@ TEST(geometry_backfill_probe_19_21) {
         const std::vector<EnemySample>& post21 = (*g_at21)[size_t(F)];
         const std::vector<EnemySample>* prev21 =
             F > 0 ? &(*g_at21)[size_t(F - 1)] : nullptr;
-        CHECK_EQ(app.progress.stage_frame - 1, 55 + F);  // battle 帧号对齐
+        CHECK_EQ(app.progress.stage_frame - 1, 55 + F);
 
         for (const EnemySample& a : pre19) {
-            // (1) 位置跨帧冻结（sim 只在 battle.step@20 内推进）。
             if (prev21) {
                 if (const EnemySample* pp = find_serial(*prev21, a.serial)) {
                     ++checked_pairs;
@@ -239,7 +214,6 @@ TEST(geometry_backfill_probe_19_21) {
                     }
                 }
             }
-            // (3a) @19 的 translation 是上一帧 sync 值（offset+position）。
             if (a.vm_present) {
                 ++checked_sync19;
                 if (!translation_synced(a)) {
@@ -253,7 +227,6 @@ TEST(geometry_backfill_probe_19_21) {
                     fail_sync19 = true;
                 }
             }
-            // (2)(3b) @21 回填新鲜 + 移动跟随。
             if (const EnemySample* b = find_serial(post21, a.serial)) {
                 if (b->vm_present) {
                     ++checked_sync21;
@@ -276,7 +249,6 @@ TEST(geometry_backfill_probe_19_21) {
                 }
             }
         }
-        // (4) 出生帧：@19 不存在、@21 出现且带槽 VM 的敌机已按出生位回填。
         for (const EnemySample& b : post21) {
             if (!find_serial(pre19, b.serial) && b.vm_present) {
                 ++spawn_checked;
@@ -294,7 +266,6 @@ TEST(geometry_backfill_probe_19_21) {
     delete g_at19;
     delete g_at21;
     g_at19 = g_at21 = nullptr;
-    // 采样面非空转：窗口内必须观察到移动敌机与（f98 掉落）出生 VM。
     std::printf("# geometry probe: pairs=%d sync19=%d sync21=%d moving=%d spawn=%d\n",
                 checked_pairs, checked_sync19, checked_sync21, moving_pairs, spawn_checked);
     CHECK(checked_pairs > 0);

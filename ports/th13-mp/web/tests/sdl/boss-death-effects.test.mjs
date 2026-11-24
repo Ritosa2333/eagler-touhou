@@ -1,35 +1,3 @@
-// Real-browser scenario for the Stage 1 boss death on the production WASM build.
-//
-// Covered behaviour (all expected values come from the original v1.00c data,
-// never from this Web build's output):
-//   1. Boss-death explosion ANM identity and timing.
-//      artifacts/reference/dumps/ecl/st01bs.txt BossDead(): on the death frame
-//      ins_307(1,25) then ins_307(1,96); after the +60 wait ins_307(1,25),
-//      ins_307(1,97), ins_516(5). artifacts/reference/dumps/ecl/st01.txt
-//      MBossDead() uses ins_307(1,98) and ins_516(5) for the midboss.
-//      artifacts/reference/dumps/anm-list.txt effect.anm entry2 is
-//      effect/eff_base.png; scripts 25/96/97/98/99 run on layer 16
-//      (ins_304(16)); script25 selects sprite25, script99 selects sprite31;
-//      scripts 96/97/98 are blank roots that spawn script99 children
-//      (script96 loop count 30, script97 60+60, script98 30+30).
-//   2. Blue HP-ring (front.anm scripts 240/241/242/243) appearance on layer 17
-//      with texture front/lifebar.png (sprites 150/151/152) and the
-//      proximity-driven 10-frame alpha fade.
-//      artifacts/decomp/jp/functions/004265a0.c compares the player/boss
-//      distance against 6400 (enter, label 3) and 9216 (leave, label 2); the
-//      front.anm scripts answer with ins_409(10,0,64) (dim to alpha 64 over
-//      10 frames) and ins_409(10,0,255) (restore over 10 frames). The same
-//      function's gate-failure branch marks the seven ring VMs with
-//      render_flags 0x20, which 0x46f170 collects on its next pass.
-//   3. Audio death markers from the checked-in native trace
-//      artifacts/audio-probe-tmp/native-full/battle-sound-trace.jsonl:
-//      voice 5 at frames 3232 (x_bits 3249647124), 11251 (x_bits 0) and
-//      11311 (x_bits 1101497631); voice 46 at 11311; voice 33 at 9914.
-//   4. No pageerror and no unexpected console error on the production page.
-//
-// The scenario uses the real Reimu Stage 1 replay (games/replays/th13_01.rpy,
-// byte-identical fixture in web/sdl-runtime/replays) and only reads the
-// existing debug exports; no product source or probe is changed.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -46,7 +14,7 @@ const buildDir = join(buildRoot, 'sdl3');
 const replayPath = join(runtimeDir, 'replays', 'th13_01.rpy');
 const REPLAY_SHA256 = '2869c854167537e066579c1435d794bbefb06ed49b771a74904b0c394a5f9d09';
 const STAGE_FRAMES = 11675;
-const STOP_FRAME = 11325;  // covers the +60 BossDead batch at 11311
+const STOP_FRAME = 11325;
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -113,7 +81,6 @@ async function withProductionPage(run) {
     page.on('pageerror', error => pageErrors.push(String(error)));
     page.on('console', message => consoleMessages.push({type: message.type(), text: message.text(),
       url: message.location().url}));
-    // The original reference trace was produced with synthetic boot clock 0.
     await page.addInitScript(() => { window.__th13_boot_seed = 0; });
     await page.goto(`http://127.0.0.1:${server.address().port}/sdl-runtime/th13.html`,
       {waitUntil: 'domcontentloaded'});
@@ -149,8 +116,6 @@ function startReplay(page, bytes) {
   }, {bytes: [...bytes], replayName: 'th13_01.rpy'});
 }
 
-// Frames are reported as game frames (consumed replay inputs - 1), the same
-// numbering used by the native sound trace and the replay state probes.
 function collectScenario(page) {
   return page.evaluate(({windows, stopFrame}) => {
     const mod = window.mod;
@@ -218,11 +183,8 @@ test('stage-1 real replay: boss explosion ANM, blue HP ring fade and clean page'
     return collectScenario(page);
   });
 
-  // ---- production page cleanliness ----
   assert.equal(result.error, '');
   assert.deepEqual(result.pageErrors, [], 'pageerror raised by the runtime page');
-  // The test server has no favicon.ico; that 404 is host-page noise, not a
-  // product failure. Every other console error fails the scenario.
   const unexpectedConsole = result.consoleMessages.filter(message =>
     message.type === 'error' && !message.url.endsWith('/favicon.ico'));
   assert.deepEqual(unexpectedConsole, [], 'unexpected console errors');
@@ -245,7 +207,6 @@ test('stage-1 real replay: boss explosion ANM, blue HP ring fade and clean page'
     return vm ? vm.alpha : null;
   };
 
-  // ---- native death audio markers ----
   const voice = result.events.filter(event => event.kind === 'voice');
   const voiceAt = (id, frame) =>
     voice.filter(event => event.id === id && event.frame === frame);
@@ -263,7 +224,6 @@ test('stage-1 real replay: boss explosion ANM, blue HP ring fade and clean page'
   assert.equal(voiceAt(33, 9914).length, 1,
     'the final spell start frame must match the native trace');
 
-  // ---- midboss explosion: MBossDead ins_307(1,98) / ins_516(5) ----
   const midboss = effectsAt(3232);
   const midbossRoot = midboss.filter(vm => vm.script === 98);
   assert.equal(midbossRoot.length, 1, 'MBossDead must create exactly one effect.anm script98');
@@ -281,7 +241,6 @@ test('stage-1 real replay: boss explosion ANM, blue HP ring fade and clean page'
   assert.equal(midbossChildren(3235).length, 60,
     'script98 spawns 30+30 particles in total');
 
-  // ---- blue HP ring appearance on the last spell (front.anm 240-243) ----
   const ring = ringAt(11250);
   assert.deepEqual(ring.map(vm => vm.script).sort((a, b) => a - b),
     [240, 241, 242, 243, 243, 243, 243],
@@ -299,7 +258,6 @@ test('stage-1 real replay: boss explosion ANM, blue HP ring fade and clean page'
     assert.deepEqual(vm.translation, arc.translation,
       'the three ring bands share the boss world position (0x4265a0 write)');
 
-  // ---- proximity alpha fade timing: 004265a0 6400/9216 + ins_409(10,...) ----
   const fadeWindows = [[6638, 6670], [9980, 10022]];
   const fades = [];
   for (const [first, last] of fadeWindows) {
@@ -349,7 +307,6 @@ test('stage-1 real replay: boss explosion ANM, blue HP ring fade and clean page'
       dim: dim.map(row => row.alphas[0]), lift: lift.map(row => row.alphas[0])});
   }
 
-  // ---- main-boss death: ring retirement and effect.anm identity ----
   assert.deepEqual(effectsAt(11250), [],
     'no death explosion may exist before the BossDead frame');
   assert.equal(ringAt(11251).length, 0,

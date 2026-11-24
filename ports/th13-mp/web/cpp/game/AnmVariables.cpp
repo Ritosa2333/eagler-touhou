@@ -1,8 +1,5 @@
 #include "AnmVariables.hpp"
 namespace th13 {
-// id→字段映射依据：004621b0.c（整数读）/00461e80.c（浮点读）逐 case；
-// 写侧 00462380.c/004622c0.c 给出可写子集（10000-10003/10008/10009/10029 与
-// 10004-10007/10013-10015/10023-10025/10027/10028），其余 id 回落原地址。
 i32 AnmVariables::integer(i32 value, GameRandom& rng) noexcept {
     if (value >= 10000 && value <= 10003) return integers[value - 10000];
     if (value >= 10004 && value <= 10007) return truncate_int(floats[value - 10004]);
@@ -48,7 +45,6 @@ float AnmVariables::floating(float value, GameRandom& rng) noexcept {
     if (id == 10027) return random_scale;
     if (id == 10028) return random_angle;
     if (id == 10029) return float(random_bound);
-    // Callers pass the stream selected by 461e80: 10030–10032 use game RNG.
     if (id == 10030) {
         GameRandom::tag(14);
         return float(rng.signed_unit() * random_angle);
@@ -83,4 +79,4 @@ float* AnmVariables::float_destination(float* argument) noexcept {
     if (id == 10028) return &random_angle;
     return argument;
 }
-}  // namespace th13
+}

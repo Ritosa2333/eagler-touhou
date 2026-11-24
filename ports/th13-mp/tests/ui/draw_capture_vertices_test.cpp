@@ -1,7 +1,3 @@
-// DrawCapture UP 序列化契约：op 的 count 字段 = D3D 图元参数，verts 数组 =
-// vertex_count(topology, count)（与 oracle/render_oracle.py 的
-// d3d_vertex_count 同式）。修复前 emit_up 只写 count 个顶点，strip/fan 的
-// 顶点列表被截断，title01/rank00/shape 的几何比对因此失效。
 #include "../harness/test_framework.hpp"
 #include "game/DrawCapture.hpp"
 
@@ -47,7 +43,6 @@ i32 field(const std::string& line, const char* key) {
 i32 vertex_count_of(const std::string& line) {
     const size_t at = line.find("\"verts\":[");
     if (at == std::string::npos) return -1;
-    // verts 是 up op 的最后一个键（"…"]}），顶点数组闭合在行尾 "]}".
     const size_t end = line.rfind("]}");
     if (end == std::string::npos || end < at) return -1;
     i32 vertices = 0;
@@ -72,7 +67,7 @@ CaptureVertex fan[5] = {
     {0, 1, 0, 1, 0xff112233u, 0, 1}, {0, 0, 0, 1, 0xff112233u, 0, 0},
 };
 
-}  // namespace
+}
 
 TEST(draw_capture_strip_serializes_all_four_vertices) {
     const std::string line = capture(Topology::Strip, 2, quad, kStride);
@@ -98,10 +93,6 @@ TEST(draw_capture_fan_serializes_count_plus_two) {
     CHECK_EQ(field(line, "prim"), 6);
 }
 
-// [反证 #4] 矩阵路径（WorldUv 静态 VB + DrawPrimitive）此前固定写
-// "verts":[]，oracle 却按 D3D 顶点口径读回 4 个顶点（窗B 15k+ ascii/loading
-// 粒子 quad 因此首色 None vs 0）。矩阵路径必须序列化 4 顶点，且 WorldUv
-// 走 oracle _read_vertices 的 per==5/fvf==0x102 分支 [x,y,z,0,0,u,v]。
 struct WorldUvVertex {
     float x, y, z, u, v;
 };
@@ -120,15 +111,12 @@ TEST(draw_capture_matrix_path_serializes_all_four_vertices) {
     CHECK_EQ(field(line, "count"), 2);
     CHECK_EQ(vertex_count_of(line), 4);
     CHECK_EQ(field(line, "prim"), 5);
-    // oracle 格式：float 串 + w/color 为 JSON int 0。
     CHECK(line.find("\"verts\":[[\"-128\",\"-128\",\"0\",0,0,\"0\",\"0\"],"
                     "[\"128\",\"-128\",\"0\",0,0,\"1\",\"0\"],"
                     "[\"-128\",\"128\",\"0\",0,0,\"0\",\"1\"],"
                     "[\"128\",\"128\",\"0\",0,0,\"1\",\"1\"]]") != std::string::npos);
 }
 
-// [反证 #7] strip/fan 的 0 图元特例：oracle d3d_vertex_count 返回 0，
-// port 此前返回 count+1 / count+2。0 图元绘制不产生顶点。
 TEST(draw_capture_zero_count_strip_serializes_no_vertices) {
     const std::string line =
         capture(Topology::Strip, 0, world_quad, kWorldUvStride, touhou::graphics::VertexLayout::WorldUv);

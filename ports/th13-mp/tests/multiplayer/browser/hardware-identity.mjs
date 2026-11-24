@@ -5,8 +5,6 @@ export function assertHardwareIdentity(identity) {
   const {devices, auxAttributes, featureStatus} = identity.gpu;
   const renderer = auxAttributes?.glRenderer;
   assert(renderer && !software.test(renderer), "Actual hardware renderer");
-  // EGL reports zero PCI IDs in Chromium. Its device/driver strings and the
-  // actual game's unmasked context must still identify the same hardware.
   const device = devices.find(row => row.deviceString === renderer &&
     row.driverVendor && row.driverVersion && !software.test(row.deviceString));
   assert(device, "Matching GPU device and driver identity");
@@ -21,9 +19,6 @@ export function assertHardwareIdentity(identity) {
     ? renderer.slice(0, -driverSuffix.length) + ")" : renderer;
   for (const context of identity.contexts) {
     assert.match(context.version, /^WebGL 2\.0/, "Actual game WebGL2 context");
-    // Chromium's WebGL string omits the driver suffix exposed through CDP.
-    // Strip exactly the independently recorded suffix, preserving the complete
-    // device model, bus/backend and OpenGL version.
     assert(context.renderer === renderer || context.renderer === publicRenderer,
       "Game context matches browser GPU");
     assert.equal(context.vendor, auxAttributes.glVendor, "Game context GPU vendor");

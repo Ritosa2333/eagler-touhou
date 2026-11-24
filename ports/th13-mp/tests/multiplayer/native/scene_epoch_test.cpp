@@ -1,5 +1,3 @@
-// A retained production engine must start the same world after each room return.
-// Capture objects deliberately survive their old scene and its ANM resources.
 #include "../../harness/test_framework.hpp"
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/Session.hpp"
@@ -25,7 +23,7 @@ bool boot(App& app, i32 client) {
 bool title_frame(App& app) {
     return app.update(GameInput{}, false) && app.commit(60.f) && app.present() && app.failure.empty();
 }
-} // namespace
+}
 
 TEST(retained_engine_three_runs_replace_scene_epoch_snapshots) {
     using namespace multiplayer;
@@ -37,7 +35,6 @@ TEST(retained_engine_three_runs_replace_scene_epoch_snapshots) {
         WorldState reused;
         StagePresentation::SnapshotData reused_presentation;
         for (i32 round = 0; round < 3; ++round) {
-            // Unequal title and previous-run lifetimes must not enter a new world.
             for (i32 i = 0; i < client * 37 + round * 13; ++i) CHECK(title_frame(app));
             CHECK(app.configure_multiplayer(2, {0, 0, 0}, client));
             SessionSetup setup;
@@ -59,8 +56,6 @@ TEST(retained_engine_three_runs_replace_scene_epoch_snapshots) {
                 CHECK(app.run->presentation->capture_presentation(fresh_presentation));
                 CHECK_EQ(reused_presentation.has_player, fresh_presentation.has_player);
                 if (!fresh_presentation.has_player) {
-                    // Check bindings before digesting, so the regression reports
-                    // the dangling old-scene reference without dereferencing it.
                     CHECK(reused_presentation.player.resource == nullptr);
                     CHECK_EQ(reused_presentation.player.source_script, -1);
                     if (reused_presentation.player.resource) return false;

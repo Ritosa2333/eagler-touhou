@@ -144,5 +144,5 @@ TEST(retail_bullet_scripts_submit_the_requested_blend_for_stage5_types) {
         }
     }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("enemy bullet blend"); }

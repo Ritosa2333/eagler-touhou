@@ -1,4 +1,3 @@
-// H-ENEMY-FOG: ECL629 ->17x17 geometry ->text82/layer29 production strips.
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "game/StagePresentation.hpp"
 #include <cmath>
@@ -91,9 +90,6 @@ TEST(enemy_fog_production_submits_same_grid_after_anm_tick) {
         auto* vm = layer[col];
         CHECK_EQ(vm->source_script, 82);
         CHECK_EQ(vm->visual.draw_mode(), 12u);
-        // 0x43cac0 mask 0xd9ffffff|0x18000000 only replaces the draw mode;
-        // 0x4159c0 then clears VM+0x18 bits 0x1e0, so script82's op303 blend 3
-        // does not survive and the strip renders with blend 0.
         CHECK_EQ(vm->visual.blend_mode(), 0u);
         CHECK_EQ(vm->visual.layer, 29);
         CHECK_EQ(vm->geometry.screen_vertices.size(), 34u);
@@ -110,30 +106,23 @@ TEST(enemy_fog_production_submits_same_grid_after_anm_tick) {
     CHECK_EQ(r.graphics.vertices, 544u);
 }
 TEST(enemy_fog_geometry_matches_original_grid_uv_and_playfield_clamps) {
-    // 0x415ae0 builds both the source and destination grid in the 640x480 @R
-    // domain: local_10 = (enemy.x - r - 20) + 320, fVar3 = (enemy.y - r - 20)
-    // + 16; span = 2r + 40 with 17 samples. 0x41a3d0 UVs are source/640 and
-    // source/480, clamps x<=128→129 / x>512→511 and y<=16→17 / y>=464→463.
     EnemyFog fog;
     fog.target = fog.radius = 32.0f;
     fog.color = 0x00102030u;
     fog.update({140.0f, 0.0f, 0.0f});
     const auto& top_left = fog.vertices[0];
-    CHECK_EQ(top_left.position.x, 408.0f);  // (140-32-20)+320
-    CHECK_EQ(top_left.position.y, 17.0f);   // (-32-20)+16 = -36 -> clamp y<=16
+    CHECK_EQ(top_left.position.x, 408.0f);
+    CHECK_EQ(top_left.position.y, 17.0f);
     CHECK(std::fabs(top_left.uv.x - 408.0f / 640.0f) < 1e-6f);
     CHECK(std::fabs(top_left.uv.y - 17.0f / 480.0f) < 1e-6f);
-    CHECK_EQ(top_left.color & 0xff000000u, 0u);  // outside radius: alpha 0
-    // Column 16 starts at exactly x=512. 0x41a3d0 clamps only when x > 512.
+    CHECK_EQ(top_left.color & 0xff000000u, 0u);
     const auto& east = fog.vertices[16 * EnemyFog::side];
     CHECK_EQ(east.position.x, 512.0f);
-    CHECK(std::fabs(east.uv.x - 0.8f) < 1e-6f);  // 512/640, not 511/640
+    CHECK(std::fabs(east.uv.x - 0.8f) < 1e-6f);
     CHECK_EQ(east.color & 0xff000000u, 0u);
-    // An interior sample keeps alpha 255.
     const auto& inside = fog.vertices[8 * EnemyFog::side + 4];
     CHECK_EQ(inside.color & 0xff000000u, 0xff000000u);
-    CHECK(std::fabs(inside.uv.x - 460.0f / 640.0f) < 1e-6f);  // 408 + 8*(104/16)
-    // Bottom clamp: y=464 collapses to 463 (0x41a3d0 `464.0 <= y`).
+    CHECK(std::fabs(inside.uv.x - 460.0f / 640.0f) < 1e-6f);
     EnemyFog bottom;
     bottom.target = bottom.radius = 32.0f;
     bottom.update({0.0f, 396.0f, 0.0f});
@@ -142,7 +131,6 @@ TEST(enemy_fog_geometry_matches_original_grid_uv_and_playfield_clamps) {
     CHECK(std::fabs(south.uv.y - 463.0f / 480.0f) < 1e-6f);
 }
 TEST(real_stage1_mboss_ecl_updates_fog_in_constructor_and_later_ticks) {
-    // StageSim.cpp:110 第二参数是 EventSink 输出路径；/tmp 自生成，真实 st01.ecl 驱动 MBoss。
     Rig r;
     CHECK(r.init());
     CHECK(r.sim.load("artifacts/reference/raw", "/tmp/th13-enemy-fog-events.jsonl", "st01.ecl"));
@@ -151,7 +139,7 @@ TEST(real_stage1_mboss_ecl_updates_fog_in_constructor_and_later_ticks) {
     if (!enemy || !enemy->fog) return;
     CHECK_EQ(enemy->fog->target, 128.f);
     CHECK_EQ(enemy->fog->color, 5181359u);
-    CHECK_EQ(enemy->fog->radius, 18.f);  // constructor41a8a0 includes41a3d0
+    CHECK_EQ(enemy->fog->radius, 18.f);
     CHECK(r.manager.update());
     CHECK_EQ(r.manager.registry.layer(29).size(), 16u);
     for (r.sim.frame = 1; r.sim.frame <= 80; ++r.sim.frame)
@@ -162,5 +150,5 @@ TEST(real_stage1_mboss_ecl_updates_fog_in_constructor_and_later_ticks) {
     CHECK(r.manager.update());
     CHECK(r.manager.registry.layer(29).empty());
 }
-}  // namespace
+}
 int main() { return th13test::run_all("enemy-fog"); }

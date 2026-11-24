@@ -31,8 +31,6 @@ TEST(accelerated_bullet_rounds_squared_speed_before_sqrt) {
     for (int f = 0; f <= 150; ++f) {
         sim.advance_bullets();
         CHECK(sim.error().empty());
-        //Original40db10 with explicit x87 FPCW037f; default Machine FPCW0
-        //is a different component environment and not the reference for these words.
         if (f == 127) CHECK_EQ(word(sim.bullets[0].speed), 1039481920u);
         if (f == 133) CHECK_EQ(word(sim.bullets[0].speed), 1042618191u);
         if (f == 150) CHECK_EQ(word(sim.bullets[0].speed), 1050697578u);
@@ -53,7 +51,6 @@ TEST(fan_spoke_and_offset_stores_match_original_sanae_stage5_birth) {
     sim.emit_et(et, 7, 0, origin, 0);
     CHECK_EQ(sim.bullets.size(), size_t(9));
     if (sim.bullets.size() != 9) return;
-    // 40e840 raw-angle probe, mode10,way2,idx1, frame252.
     CHECK_EQ(word(sim.bullets[7].angle), 1060151598u);
     CHECK_EQ(word(sim.bullets[7].vel[0]), 1044738578u);
     CHECK_EQ(word(sim.bullets[7].vel[1]), 1042477581u);

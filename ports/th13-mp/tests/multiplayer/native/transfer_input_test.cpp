@@ -1,5 +1,3 @@
-// R-I9/R-G production input coverage: every gesture enters GameInput::update
-// and StageBattle::step, never the transfer helper or direct HUD transactions.
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 #include "multiplayer/WorldState.hpp"
@@ -101,7 +99,7 @@ TEST(life_three_seat_priority_and_fixed_donor_order) {
     for(i32 tap=0;tap<5;++tap){same.frame(8,8);if(tap<4)same.frame();}
     same.settle();
     CHECK(!same.battle.seats[2].ghost);CHECK_EQ(same.battle.seat_huds[0].extra_lives,1);
-    CHECK_EQ(same.battle.seat_huds[1].extra_lives,1); // second donor gifts to now-live seat2
+    CHECK_EQ(same.battle.seat_huds[1].extra_lives,1);
     CHECK_EQ(same.battle.seat_huds[2].extra_lives,1);
 }
 TEST(ghost_rescue_stock_power_bombs_protection_no_cancel) {
@@ -187,5 +185,4 @@ TEST(rollback_pending_gesture_and_inflight_gift_matches_forward) {
     multiplayer::WorldState restored_gift;CHECK(restored_gift.capture(f.battle,visual));CHECK_EQ(restored_gift.digest(),target_digest);
     f.battle.defer_item_side=false;f.settle();multiplayer::WorldState replay;CHECK(replay.capture(f.battle,visual));CHECK_EQ(replay.digest(),expected);
 }
-// Keep standalone execution while sharing the m3 cumulative test registry.
 int __attribute__((weak)) main(){return run_all("transfer.production_input");}

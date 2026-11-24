@@ -45,5 +45,5 @@ TEST(reimu_late_orbit_continues_radial_growth_after_age90) {
     orb.step(160, 7, 0, 300, nullptr);
     CHECK_EQ(orb.radius, launched);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("reimu-bomb-motion"); }

@@ -6,7 +6,7 @@ namespace {
 Vec2 radial(float angle, float radius) {
     return {float(std::cos(double(angle)) * double(radius)), float(std::sin(double(angle)) * double(radius))};
 }
-}  // namespace
+}
 bool anm_update_strip(AnmVm& vm) noexcept {
     auto& v = vm.visual;
     const u32 mode = v.draw_mode();
@@ -83,4 +83,4 @@ bool anm_update_strip(AnmVm& vm) noexcept {
     }
     return true;
 }
-}  // namespace th13
+}

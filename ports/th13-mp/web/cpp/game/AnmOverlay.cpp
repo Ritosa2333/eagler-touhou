@@ -16,8 +16,6 @@ bool AnmOverlay::initialize(AnmResource& effect, AnmResource* astral, AnmVm& own
         if (!vm.bind(effect, i + 3) || vm.tick(random, 1) < 0) return false;
         vm.visual.translation = {320, 240, 0};
     }
-    // The fifth slot always exists inside the native 0x1c3c block; without
-    // AstralInf it stays unbound, and draw() skips it via its default flags.
     panels[4] = std::make_unique<AnmVm>();
     panels[4]->environment = owner.environment;
     panels[4]->object_host = owner.object_host;
@@ -44,7 +42,7 @@ i32 AnmOverlay::tick(GameRandom& random, float rate) {
     return 0;
 }
 bool AnmOverlay::interrupt(i32 label, GameRandom& random, float rate) {
-    if (label == 1) {  //4035fe replaces the four scripts with7..10, then ticks once.
+    if (label == 1) {
         for (u32 i = 0; i < 4; ++i) {
             auto& vm = *panels[i];
             auto* resource = vm.resource;
@@ -57,4 +55,4 @@ bool AnmOverlay::interrupt(i32 label, GameRandom& random, float rate) {
     }
     return true;
 }
-}  // namespace th13
+}

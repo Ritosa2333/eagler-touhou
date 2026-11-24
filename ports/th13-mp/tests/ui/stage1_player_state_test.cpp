@@ -1,6 +1,3 @@
-// Stage1 玩家生产状态：死亡灵力扣步长/底限，以及灵界激活时的 Bomb 共享门。
-// 夹具复用 P2 snapshot 已成功的真实资源装载路径（artifacts/reference/raw 的
-// st01.ecl + pl02a.sht）；不复制资产、不内嵌外部 artifact 源码、不跳过装载失败。
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 
@@ -17,8 +14,6 @@ namespace {
 
 constexpr const char* kEventPath = "eagler-touhou/ports/th13/tests/ui/build/stage1_player_state.events.jsonl";
 
-// 与 P2 snapshot 的 Resources::read/animation 同路径：按相对仓库根读取
-// artifacts/reference/raw/<name>，ANIM 名单由真实 st01.ecl 驱动并登记。
 class Provider final : public EclResourceProvider {
 public:
     bool read(const std::string& name, std::vector<u8>& data) override {
@@ -303,8 +298,7 @@ struct Fixture {
         player.power = power;
         player.power_step = power_step;
         player.extra_lives = extra_lives;
-        progress.character = character;  // bomb/射击均为分角色实装（vtable 004aa5bc）
-        // 0x4057f0:15：激活门槛=满 600；只置位不置槽值会被首帧 drain 立即结束。
+        progress.character = character;
         if (trance) {
             progress.run_mode_flags |= kTranceActiveFlag;
             progress.ending_points = 600;
@@ -359,8 +353,6 @@ i32 death_power(i32 start, bool capture, i32 step = 100, StateSections* state = 
     if (!f.loaded) return -1;
     f.place_bullet_at_player();
     CHECK(f.step(0, 0));
-    // 00444ca0/00443240：碰撞先入 8 帧决死窗口（不 bomb 则死亡），Dying 第
-    // 3 帧才扣 power（0x445a20）。推进到 Dying 第 4 帧，远离 30 帧复活点。
     for (int frame = 0; frame < 12; ++frame)
         CHECK(f.step(0, 0));
     if (state) *state = production_state(f.battle, f.progress, f.player, f.score);
@@ -368,12 +360,12 @@ i32 death_power(i32 start, bool capture, i32 step = 100, StateSections* state = 
     return f.player.power;
 }
 
-}  // namespace
+}
 
 TEST(death_power_deducts_step) {
     CHECK_EQ(death_power(300, false), 200);
     CHECK_EQ(death_power(201, false), 101);
-    CHECK_EQ(death_power(120, false, 50), 70);  // 扣的是 power_step，不是固定 100
+    CHECK_EQ(death_power(120, false, 50), 70);
 }
 
 TEST(death_power_clamps_at_step) {
@@ -431,10 +423,6 @@ TEST(game_clock_same_with_and_without_events) {
 }
 
 TEST(shot_table_fields_match_original_layout) {
-    // 00445c40: damage = signed record+2; speed = record+0x18.
-    // 00445e0c–00445e47: ANM script = signed record+0x22 + 10.
-    // The first unfocused main shot in each of the four real SHT files is
-    // damage 15, speed 24 and script 10, not script 15 and damage 24.
     const char* files[] = {"pl00a.sht", "pl01a.sht", "pl02a.sht", "pl03a.sht"};
     for (const char* name : files) {
         Fixture f(nullptr, 2, 100, false, 99, 100, name);
@@ -455,23 +443,17 @@ TEST(main_shot_uses_record_speed_damage_and_animation) {
         Fixture f(nullptr, 2, 100, false, 99, 100, files[character], character);
         CHECK(f.loaded);
         if (!f.loaded) continue;
-        // 0x443240：射击控制器启动计时器 >19 才使能，且自机 60 帧入场期间
-        //（Entering）不射。先空跑过入场与启动门，再按住射击键。
         for (u32 frame = 0; frame < 65; ++frame)
             CHECK(f.step(0, 0));
         for (u32 frame = 1; frame <= 2; ++frame)
             CHECK(f.step(0x01u, frame == 1 ? 0x01u : 0u));
-        // 出膛帧不移动（0x445c40 建伤害矩形于出身位，次帧才起步）。
         bool found = false;
         for (const auto& shot : f.battle.shots) {
-            // 0x473780 尾部经 0x497670(floor) 做 floor(x*100)/100 量化；
-            // vx = 24*cos(-π/2-ε) 恒负（f32 角度略过 π/2），x = -10-1e-6
-            // 量化到 -10.01（+10 侧对称到 9.99），非 -10.00。
             if (shot.script != 10 || shot.x != f.battle.player_x - 10.01f) continue;
             found = true;
             CHECK_EQ(shot.damage, 15.0f);
             CHECK_EQ(shot.speed, 24.0f);
-            CHECK_EQ(shot.y, f.battle.player_y - 8.0f - 24.0f);  // 次帧移动一个 speed
+            CHECK_EQ(shot.y, f.battle.player_y - 8.0f - 24.0f);
         }
         CHECK(found);
     }
@@ -504,17 +486,14 @@ TEST(bomb_normal_edge_still_consumes_one_stock) {
     CHECK(f.battle.bomb_timer > 0);
 }
 
-// 00443240 case1：Bomb 分派(0040a540)先于移动(00442960)，而 0xa2b4 的
-// 0.2 倍率由 Marisa Bomb 的逐帧更新(0040a860，param_1[7] < 0x12d)写入，
-// 并在 00443240 末尾复位 1.0f。因此按键当帧仍是常速，减速从下一帧起。
 TEST(marisa_bomb_slow_multiplier_starts_on_the_frame_after_the_press) {
     Fixture f(nullptr, 2, 100, false, 99, 100, "pl02a.sht", 1);
     CHECK(f.loaded);
     if (!f.loaded) return;
     for (int i = 0; i < 70; ++i)
-        CHECK(f.step(0, 0));  // 00443240 case0 入场 60 帧
+        CHECK(f.step(0, 0));
     const i32 before_press = f.battle.pos_fx;
-    CHECK(f.step(0x80u, 0x02u));  // 同一帧按下 Bomb 并向右
+    CHECK(f.step(0x80u, 0x02u));
     const i32 press_frame = f.battle.pos_fx - before_press;
     CHECK_EQ(press_frame, f.battle.speed_orth);
     const i32 before_slow = f.battle.pos_fx;
@@ -523,7 +502,6 @@ TEST(marisa_bomb_slow_multiplier_starts_on_the_frame_after_the_press) {
     CHECK_EQ(slow_frame, i32(float(f.battle.speed_orth) * 0.2f));
 }
 
-// 反向对照：非 Marisa 不读 0xa2b4 的 0.2 倍率，Bomb 后下一帧仍常速。
 TEST(reimu_bomb_keeps_full_speed_on_the_frame_after_the_press) {
     Fixture f(nullptr, 2, 100, false, 99, 100, "pl02a.sht", 0);
     CHECK(f.loaded);
@@ -552,13 +530,6 @@ TEST(bomb_preserves_stage_controller) {
     Fixture f;
     CHECK(f.loaded);
     if (!f.loaded) return;
-    // 敌机序号从计数器首值 1 起（0x418d30/0x4191a7-0x4191d1）：
-    // 0x418d30 把 ctl+0xbc 计数器（memset 0）复制到 ctl+0xc0（保留 0 号）
-    // 后 inc 回写为 1；0x418f40 的 0x4191a7-0x4191c0 再把 ctl+0xbc 复制到
-    // enemy+0x11e4（oracle raw state 的 serial 字段）并 inc。故 root main
-    // 取首值 1、首个 ECL 敌机（Maple）=2。原生 S4 raw state frame 0 实证：
-    // slot1 serial=1 trace_id=0（root）、slot0 serial=2 trace_id=1。
-    // round-22 的「root serial 0」裁决与原生不符，已按上列地址更正。
     auto* root = f.enemy(1);
     CHECK(root != nullptr);
     if (!root) return;
@@ -582,7 +553,6 @@ TEST(bomb_respects_enemy_damage_gate) {
     if (!target) return;
     const u32 serial = target->serial;
     const float life = target->life;
-    // 00419a90: flags & 0x21 gates the normal damage path.
     target->flags |= 1u;
     CHECK(f.step(0x02, 0x02));
     target = f.enemy(serial);
@@ -593,26 +563,18 @@ TEST(bomb_respects_enemy_damage_gate) {
 }
 
 TEST(bomb_still_damages_vulnerable_enemy) {
-    // 霊夢 bomb（vtable 004aa5bc 之一）：8 个环绕 orb（vtable 004aa5bc），触发
-    // 帧 age=0（%3==0）对 56px 内敌机每 orb +10，单帧 00446870 上限 80。
-    // 敌机默认自顶部入场，距玩家远：搬进 orb 范围并抬高 life 观察每帧伤害。
     Fixture f(nullptr, 2, 100, false, 99, 100, "pl00a.sht", 0);
     CHECK(f.loaded);
     if (!f.loaded) return;
     auto* target = f.vulnerable_enemy();
     CHECK(target != nullptr);
     if (!target) return;
-    // A newly constructed enemy skips its next manager visit (0041a8a0).
-    // Let that birth gate clear before measuring an age-0 Bomb damage tick.
     CHECK(f.step(0, 0));
     const u32 serial = target->serial;
     target->life = 1000.0f;
     target->invulnerable = 0;
     target->position[0] = f.battle.player_x;
     target->position[1] = f.battle.player_y - 30.0f;
-    // Enemy motion precedes damage (0041a8a0). Move the authoritative ECL
-    // absolute position too; changing only its published position is undone
-    // by that frame's movement before any Bomb geometry can be tested.
     target->vel.pos[0] = target->position[0];
     target->vel.pos[1] = target->position[1];
     const float life = target->life;
@@ -621,7 +583,7 @@ TEST(bomb_still_damages_vulnerable_enemy) {
     CHECK(target != nullptr);
     if (!target) return;
     CHECK_EQ(target->life, life - 80.0f);
-    CHECK(f.step(0, 0));  // age=1 %3!=0，不得重复结算上一帧伤害。
+    CHECK(f.step(0, 0));
     target = f.enemy(serial);
     CHECK(target != nullptr);
     if (!target) return;

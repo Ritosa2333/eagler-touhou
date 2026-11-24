@@ -1,4 +1,3 @@
-// H-CURVE-PRODUCTION: 41eaf3/434f10/4366c0/4355f0.
 #include "ecl_test_fixtures.hpp"
 #include "game/StageSim.hpp"
 using namespace th13;
@@ -102,7 +101,6 @@ TEST(curve_samples_follow_fractional_path_time_during_slowdown) {
     r.enemy.position[1] = 200;
     r.sim.set_time_rate(.25f);
     CHECK_EQ(r.run(711, {0}), 0);
-    // Original435b80 mode0: origin + (direction*time)*speed, speed4.
     for (int frame = 0; frame < 12; ++frame) {
         r.sim.advance_lasers();
         CHECK_EQ(r.sim.lasers.size(), size_t(1));
@@ -118,7 +116,6 @@ TEST(real_stage3_card_emits_curve_lasers_through_711) {
     StageSim sim;
     CHECK(sim.load("artifacts/reference/raw", th13test::evidence_sink("real-script-events.jsonl").c_str(), "st03.ecl"));
     if (!sim.error().empty()) return;
-    // BossCard3 sets I1 to16 before calling this emission routine on Normal.
     StageSpawnArguments args;
     args.integers[1] = 16;
     sim.spawn_enemy("BossCard3_at", 0, 128, 100, nullptr, false, false, &args);
@@ -133,5 +130,5 @@ TEST(real_stage3_card_emits_curve_lasers_through_711) {
     for (const auto& laser : sim.lasers)
         CHECK_EQ(laser.curve_path.segments.size(), 5u);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("curve-laser-production"); }

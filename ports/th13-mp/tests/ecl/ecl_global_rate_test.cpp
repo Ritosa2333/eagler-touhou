@@ -19,7 +19,6 @@ TEST(global_rate_ecl_keeps_the_call_snapshot_but_updates_the_enemy_tail) {
     th13test::emit(script, 2, 547, 0, 255, 0, {float_to_bits(1.f)});
     th13test::emit(script, 100, 1, 0, 255, 0, {});
     attach(sim, script);
-    // Independent4772a0/41f242 samples, including ECL547's own frame.
     const float times[] = {1, 1.5f, 1.75f, 2, 2.25f, 3.25f, 4.25f, 5.25f, 6.25f};
     const float rates[] = {.5f, .25f, .25f, .25f, 1, 1, 1, 1, 1};
     auto* e = sim.spawn_enemy("main", 0, 100, 100, nullptr, false);
@@ -108,5 +107,5 @@ TEST(global_rate_does_not_quantize_or_clamp_ecl_arguments) {
         CHECK_EQ(notified, rate);
     }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("global-rate"); }

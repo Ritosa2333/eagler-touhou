@@ -1,4 +1,3 @@
-// Real single-player Launcher replay, ordinary RAF only. Evidence is append-only.
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
@@ -14,7 +13,7 @@ const origin=process.env.TH13_ORIGIN || 'http://127.0.0.1:18764';
 const dir=resolve(process.env.TH13_SP_PERF_DIR || '/work/artifacts/sp-performance-'+Date.now());
 const replay='/work/games/replays/th13_udN01.rpy';
 const build=process.env.TH13_SP_BUILD || '/work/artifacts/work-observer-sp-20261112';
-await mkdir(dir); // no overwrite of prior evidence
+await mkdir(dir);
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const replayBytes=await readFile(replay);
 const py=spawnSync('python3',['-c',`import sys,json,hashlib
@@ -73,7 +72,6 @@ try{
  const actualStorage=await page.evaluate(async()=>{const s=localStorage.getItem('th13.replay.th13_01.rpy');if(!s)return null;const bytes=Uint8Array.from(atob(s),c=>c.charCodeAt(0));const digest=await crypto.subtle.digest('SHA-256',bytes);return {bytes:bytes.length,sha256:[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')}});report.importedStorage=actualStorage;assert.equal(actualStorage?.sha256,hash(replayBytes),'Actual persisted replay bytes');
  const postStartId=await browser.newBrowserCDPSession();report.browser.postStartGpu=(await postStartId.send('SystemInfo.getInfo')).gpu;await postStartId.detach();
  const actualContext=await page.evaluate(()=>{const canvas=document.querySelector('#gameFrame').contentDocument.querySelector('canvas'),gl=canvas.getContext('webgl2'),ext=gl?.getExtension('WEBGL_debug_renderer_info');return gl&&{seat:0,version:gl.getParameter(gl.VERSION),renderer:ext&&gl.getParameter(ext.UNMASKED_RENDERER_WEBGL),vendor:ext&&gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)}});report.actualHardware={gpu:report.browser.postStartGpu,seats:[0],contexts:[actualContext]};assertHardwareIdentity(report.actualHardware);await page.frameLocator('#gameFrame').locator('canvas').focus();
- // Main menu: Extra locked, so three down presses select Replay.
  await key('ArrowDown');await key('ArrowDown');await key('ArrowDown');await key('z');await waitFrames(60);
  await key('z');await waitFrames(40);await key('z');
  await page.waitForFunction(()=>{const w=document.querySelector('#gameFrame')?.contentWindow,m=w?.Module;return m?._th13_debug_replay_progress && JSON.parse(m.UTF8ToString(m._th13_debug_replay_progress())).active},null,{timeout:120000});
@@ -82,7 +80,6 @@ try{
  while(Date.now()<deadline&&!failure){await new Promise(r=>setTimeout(r,1000));await runDrain();const p=report.last?.progress;if(Date.now()-lastProgress>30000){console.log('Replay progress',JSON.stringify(p));lastProgress=Date.now()}if(p?.active&&p.slot_index===5&&p.slot_number===6&&p.overlay===3&&(p.scene_flags&0x4000)!==0&&p.environment_paused){report.clearTerminal=structuredClone(report.last);break;}}
  if(failure)throw Error(failure);
  if(!report.clearTerminal)throw Error('Stage6 clear overlay not observed before deadline');
- // PracticeEnd cursor 1 is title; cursor 4 is retry. Verify rather than guess.
  const pause=await page.evaluate(()=>{const m=document.querySelector('#gameFrame').contentWindow.Module;return JSON.parse(m.UTF8ToString(m._th13_debug_pause_state()))});
  if(pause.screen!==3||pause.phase!==6||pause.cursor!==1)throw Error('Unexpected clear menu; refusing to select retry: '+JSON.stringify(pause));
  report.clearMenu=pause;await key('z');

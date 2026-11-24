@@ -32,4 +32,4 @@ const std::array<const char*, 60> sound_samples{{
     "se_lgods1.wav", "se_lgods2.wav",   "se_lgods3.wav",   "se_lgods4.wav",   "se_lgodsget.wav", "se_msl.wav",
     "se_msl2.wav",   "se_pldead01.wav", "se_heal.wav",     "se_astralup.wav", "se_fault.wav",    "se_noise.wav",
 }};
-}  // namespace th13
+}

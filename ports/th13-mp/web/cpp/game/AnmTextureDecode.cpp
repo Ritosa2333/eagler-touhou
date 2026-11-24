@@ -1,7 +1,6 @@
 #include "AnmTextureDecode.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_STDIO
-// stb_image 是第三方单头库，它的告警不属于本移植的代码质量口径。
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmisleading-indentation"
@@ -23,4 +22,4 @@ bool anm_decode_png(const u8* bytes, u32 size, u32& width, u32& height, std::vec
     stbi_image_free(pixels);
     return true;
 }
-}  // namespace th13
+}

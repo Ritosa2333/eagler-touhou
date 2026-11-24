@@ -1,7 +1,3 @@
-// th13 ECL 取参/栈机/调用帧（锚点：0x478e60 整型取参、0x478ee0 浮点取参、
-// 0x479a20 stackAlloc、0x479a60 stackFree、0x477030 调用帧压入——均经容器内
-// capstone 直读 th13.exe 反汇编逐条核对，浮点判定常量 -100.0/-1.0/8.0
-// 位于 .rdata 0x4ae900/0x4ae908/0x4ae910）。
 #include "EclContext.hpp"
 
 namespace th13 {
@@ -11,7 +7,7 @@ float as_float(u32 bits) {
     std::memcpy(&value, &bits, 4);
     return value;
 }
-}  // namespace
+}
 
 bool EclContext::referenced(u32 argument) const noexcept {
     return instruction && (instruction->parameter_mask & (1u << (argument & 31)));
@@ -48,14 +44,12 @@ bool EclContext::integer(u32 argument, i32 literal, i32& value, bool pop) noexce
         value = literal;
         return true;
     }
-    // 0x478e80：raw >= 0 → 局部变量（地址 = 栈基 + FP + raw）。
     if (literal >= 0) {
         i32 address;
         if (!local_offset(literal, address)) return false;
         value = signed_bits(bits(address));
         return true;
     }
-    // 0x478e9b：raw >= -100 → 表达式栈（SP + raw*8 + 4 为值、-4 为类型；'f' 经 0x4971f0 向零截断）。
     if (literal >= -100) {
         u32 raw;
         u8 type;
@@ -65,7 +59,6 @@ bool EclContext::integer(u32 argument, i32 literal, i32& value, bool pop) noexce
         value = type == 'f' ? truncate_int(as_float(raw)) : signed_bits(raw);
         return true;
     }
-    // 0x478ecb：raw < -100 → 宿主全局码（虚表 +4 → 0x420380）。
     if (!variables || !variables->integer(literal, value)) {
         error = "ECL integer global not bound";
         return false;
@@ -78,15 +71,12 @@ bool EclContext::floating(u32 argument, float literal, float& value, bool pop) n
         value = literal;
         return true;
     }
-    // 0x478efe：param > 0（含 ==0 落局部[0]）→ 局部变量 float 视图。
     if (!(literal < 0.f)) {
         i32 address;
         if (!local_offset(truncate_int(literal), address)) return false;
         value = as_float(bits(address));
         return true;
     }
-    // 0x478f24：param ∈ [-100.0, -1.0] → 表达式栈（偏移 = SP + truncate(param×8.0)，
-    // -1.0 为栈顶；'i' 条目经 fild 转浮点）。
     if (literal >= -100.f && literal <= -1.f) {
         u32 raw;
         u8 type;
@@ -97,7 +87,6 @@ bool EclContext::floating(u32 argument, float literal, float& value, bool pop) n
         value = type == 'i' ? static_cast<float>(signed_bits(raw)) : as_float(raw);
         return true;
     }
-    // 0x478f7f：其余（<-100，如 -9989.0f）→ 全局码（虚表 +0xC → 0x420d00）。
     if (!variables || !variables->floating(truncate_int(literal), value)) {
         error = "ECL float global not bound";
         return false;
@@ -189,7 +178,6 @@ bool EclContext::pop(float& value) noexcept {
 }
 
 bool EclContext::enter_frame(i32 size) noexcept {
-    // 0x479a20：SP+size 溢出 0x1000 拒绝；压旧 FP，FP=旧 SP。
     const i64 end = i64(stack_pointer) + size;
     if (end < 0 || end > i64(stack.size()) - 4) {
         error = "ECL local frame overflow";
@@ -204,7 +192,6 @@ bool EclContext::enter_frame(i32 size) noexcept {
 }
 
 bool EclContext::leave_frame() noexcept {
-    // 0x479a60：SP-=4 取回保存的 FP，SP 恢复为 FP。
     if (stack_pointer < 4 || stack_pointer > i32(stack.size()) || local_base < 0 || local_base > i32(stack.size())) {
         error = "ECL local frame underflow";
         return false;
@@ -249,9 +236,6 @@ bool EclContext::bind(EclProgram& source, i32 routine_id) noexcept {
     return bind_code(code, code_size, routine_id);
 }
 
-// 同步调用（0x477030）：被调者（target）为新线程或本线程切换；调用实参按名字后的
-// 8 字节描述符 {char 源类型; char 目标类型; u32 原始值} 逐个解析写入被调者栈帧，
-// 栈底首帧在栈头保留 4 字零字（saved_pointer==0 支路）。
 bool EclContext::call_into(EclContext& target, u32 skipped_arguments) {
     if (!instruction || instruction->length < 24 || !program) {
         error = "ECL call program unavailable";
@@ -349,10 +333,7 @@ bool EclContext::call_into(EclContext& target, u32 skipped_arguments) {
     return true;
 }
 
-// 返回（0x4772a0 case 10）：弹帧恢复 {SP,time,Q,routine}；栈底帧返回 = 线程结束。
 int EclContext::return_from_call() noexcept {
-    //4772ff calls479a60 even for a root with SP=FP=0. It restores SP
-    // from FP, then477307 sees zero and terminates. No caller frame exists.
     if (stack_pointer == 0 && local_base == 0) {
         routine = instruction_offset = -1;
         instruction = nullptr;
@@ -391,4 +372,4 @@ int EclContext::return_from_call() noexcept {
     return 0;
 }
 
-}  // namespace th13
+}

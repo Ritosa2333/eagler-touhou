@@ -33,8 +33,6 @@ bool TitlePlayerDataView::update(const TitlePlayerDataMenu& menu, const Rasteriz
     if (!error.empty()) return false;
     if (!menu.opened()) return true;
     if (!opened_) {
-        // 00453259 ascii19; 004532c1 title105; then character/rank and the
-        // exact fixed title script sequence 155..158,152..154,159.
         u32 handle = 0;
         if (!create(handle, banks_.ascii, 19)) return false;
         roots_.push_back(handle);
@@ -115,9 +113,6 @@ bool TitlePlayerDataView::draw(const TitlePlayerDataMenu& menu, HudDrawServices&
     if (!error.empty()) return false;
     if (menu.phase() != 2) return true;
     HudTextStyle style;
-    // 00453de8 sets +0x19174, which is the shadow flag (00403da0 +0x124,
-    // consumed by 004042a0). Font +0x19178 remains the default0; alignment
-    // +0x19184 remains1 (left), coordinate-space +0x1917c remains0.
     style.font = 0;
     style.shadow = true;
     style.alignment = 1;
@@ -180,4 +175,4 @@ void TitlePlayerDataView::release() {
     old_character_ = old_difficulty_ = old_page_ = -1;
 }
 
-}  // namespace th13
+}

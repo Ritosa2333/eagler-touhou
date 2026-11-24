@@ -31,8 +31,6 @@ struct Case {
     u32 integers;
     std::vector<int> positive, zero;
 };
-// Signed indices encode type: positive=index+1 float; negative=-(index+1) int.
-// Expected sequences captured from original478ee0/478e60, not port order.
 TEST(movement_operands_follow_original_read_order_and_zero_duration_gates) {
     const std::vector<Case> cases = {{400, {1, 2}, 0, {1, 2}, {}},
                                      {402, {1, 2}, 0, {1, 2}, {}},
@@ -95,5 +93,5 @@ TEST(movement_operands_follow_original_read_order_and_zero_duration_gates) {
             }
         }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("movement-operand-order"); }

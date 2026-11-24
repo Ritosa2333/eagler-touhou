@@ -1,19 +1,3 @@
-// Real-browser multiplayer performance probe for boss cards.
-//
-// Two (or three) headless Chromium clients join a local relay, start the same
-// production session inside one Spell Practice card (or a stage from frame 0)
-// and run the real rAF loop with a scripted pilot. The probe reports callback
-// cost, logical-frame throughput (game speed), stalls, rollbacks and
-// presentation cadence per client.
-//
-//   TH13_STAGE=3 TH13_SLOT=3 TH13_DURATION=40 TH13_CPU=4,1 \
-//     node tests/multiplayer/browser/mp-spell-perf.mjs [--out dir]
-//
-// Environment: TH13_STAGE (default 3), TH13_SLOT (spell slot, -1 = whole stage),
-// TH13_PLAYERS (2), TH13_DIFF (3 = Lunatic), TH13_DURATION (seconds, 40),
-// TH13_WARMUP (seconds, 8), TH13_CPU (per-seat CDP CPU throttle, e.g. "4,1"),
-// TH13_DELAY (input delay frames, 0), TH13_GOV (1 = frame-rate-drop handling, 0 = off), TH13_PROFILE (seat to CPU-profile, -1 = off),
-// TH13_CHROME_FLAGS (extra space-separated Chrome flags), PLAYWRIGHT_MODULE, CHROME_PATH.
 import {createRequire} from 'node:module';
 import {spawn} from 'node:child_process';
 import {mkdir, readFile, writeFile} from 'node:fs/promises';

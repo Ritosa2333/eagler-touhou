@@ -13,7 +13,7 @@ Vec3 mul(Vec3 a, float b) { return {float(a.x * b), float(a.y * b), float(a.z * 
 Vec3 sub(Vec3 a, Vec3 b) { return {float(a.x - b.x), float(a.y - b.y), float(a.z - b.z)}; }
 float magnitude(Vec3 a) { return float(std::sqrt(double(a.x) * a.x + double(a.y) * a.y + double(a.z) * a.z)); }
 float direction_angle(Vec3 a) { return float(std::atan2(double(a.y), double(a.x))); }
-}  // namespace
+}
 CurveLaserSample CurveLaserSegment::head(float time) const {
     CurveLaserSample out;
     const float t = time - start_time;
@@ -131,4 +131,4 @@ void CurveLaserPath::sample(float time, std::vector<CurveLaserSample>& points) c
         }
     }
 }
-}  // namespace th13
+}

@@ -20,7 +20,6 @@ struct Rig {
     }
 };
 TEST(protection_checks_final_spawn_and_preserves_boundary_contact) {
-    // Native40e840 gate; stop before ANM creation, observe accepted/rejected.
     const float cases[][5] = {{40, 39, 0, 0, 0},  {40, 40, 0, 0, 1},  {40, 41, 0, 0, 1},
                               {-40, 39, 0, 0, 0}, {0, 0, 0, 0, 1},    {40, 0, 0, 40, 1},
                               {40, 0, 0, 39, 0},  {40, 24, 32, 0, 1}, {40, 24, 31, 0, 0}};
@@ -55,5 +54,5 @@ TEST(protection_does_not_skip_random_sampling_or_leak_to_another_enemy) {
     CHECK_EQ(r.op(601, {0}), 0);
     CHECK_EQ(r.sim.bullets.size(), 1u);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("ecl-bullet-protection"); }

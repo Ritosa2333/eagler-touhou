@@ -38,10 +38,8 @@ template <class T, class M> i32 table_index(const std::vector<T>& table, const M
     const auto offset = address - base, index = offset / sizeof(T);
     return offset % sizeof(T) == 0 && index < table.size() ? i32(index) : -2;
 }
-}  // namespace
+}
 namespace {
-// 单文件 entry 链解析（open 与 append 共用）：内容追加到 target，
-// sprite 的纹理索引加 texture_base。返回 false 即整体无效。
 bool parse_entries(const u8* data, u32 size, AnmResource& target) {
     if (!data) return false;
     const u32 sprite_base = u32(target.sprites.size()), script_base = u32(target.scripts.size());
@@ -140,7 +138,7 @@ bool parse_entries(const u8* data, u32 size, AnmResource& target) {
     } while (true);
     return true;
 }
-}  // namespace
+}
 
 bool AnmResource::open(const u8* data, u32 size) {
     textures.clear();
@@ -235,9 +233,7 @@ bool AnmTexture::rgba(std::vector<u8>& out) const {
             q[1] = p[1];
             q[2] = p[0];
             q[3] = pixel_format == 1 ? p[3] : 255;
-        }
-        // TH15 format table at 0x4cb568 maps file format 7 to alpha-only A8.
-        else if (pixel_format == 6) {
+        } else if (pixel_format == 6) {
             const u16 value = read<u16>(p);
             q[0] = u8((((value >> 5) & 7) * 255 + 3) / 7);
             q[1] = u8((((value >> 2) & 7) * 255 + 3) / 7);
@@ -269,4 +265,4 @@ bool AnmTexture::rgba(std::vector<u8>& out) const {
     }
     return true;
 }
-}  // namespace th13
+}

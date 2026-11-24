@@ -1,6 +1,3 @@
-// Original 00461a60 selects sprites from the owning ANM file; 0046f990 /
-// 0046fab0 likewise resolve child scripts in that file. Packing files into
-// one web bank must preserve those domains, including portrait children.
 #include "anm_test_fixtures.hpp"
 #include "game/AnmRenderer.hpp"
 
@@ -41,8 +38,6 @@ void compare_tree(AnmManager& packed, AnmVm& actual, AnmManager& separate, AnmVm
         CHECK_EQ(actual.visual.sprite_size.y, expected.visual.sprite_size.y);
         CHECK_EQ(actual.visual.uv[0].x, expected.visual.uv[0].x);
         CHECK_EQ(actual.visual.uv[0].y, expected.visual.uv[0].y);
-        // Check the material that production rendering actually submits,
-        // not just the pointer used by the animation interpreter.
         TextureGraphics ag, eg;
         AnmRenderer ar{ag}, er{eg};
         CHECK_EQ(ar.draw(actual), er.draw(expected));
@@ -133,6 +128,6 @@ TEST(merged_detached_children_and_fallback_keep_file_identity) {
     CHECK(child->texture_sprite() == &fallback.sprites[301]);
     CHECK_EQ(child->visual.sprite, 301);
 }
-}  // namespace
+}
 
 int main() { return th13test::run_all("anm-merged-archive"); }

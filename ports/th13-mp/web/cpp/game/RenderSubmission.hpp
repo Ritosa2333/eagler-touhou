@@ -4,10 +4,6 @@
 #include <limits>
 
 namespace th13 {
-// State is the actual portable/sdl State in production, not a parallel device
-// model. Own the small snapshot; borrow geometry only until both synchronous
-// consumers return. Renderer owns any bytes it defers. Async observers must copy.
-// Templating keeps native semantic tests independent of SDL/GLES headers.
 template <class State> struct BasicRenderSubmission {
     enum class Kind { Draw, Clear, Target, Update, Prepare, Release, Present, Flush };
     Kind kind;
@@ -65,11 +61,9 @@ template <class State> struct BasicRenderSubmission {
     }
     template <class Renderer, class Observer, class Resolve>
     bool dispatch(Renderer& renderer, Observer& observer, Resolve resolve, void* owner) const {
-        // Trace sees pre-operation resource versions. Failure must not suppress
-        // or add production operations. No capture-only renderer/state exists.
         const bool ok = observer.consume(*this, resolve, owner);
         consume(renderer);
         return ok;
     }
 };
-}  // namespace th13
+}

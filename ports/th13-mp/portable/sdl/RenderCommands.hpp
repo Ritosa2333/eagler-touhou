@@ -9,8 +9,6 @@ enum class ColorOp { SelectFirst, Modulate };
 enum class TextureArg { Diffuse, Texture, Factor };
 enum class BlendMode { One, InverseSourceAlpha };
 
-// Semantic operations are used directly in production. Original numeric
-// calls below exist only for independent executable comparison fixtures.
 template <class Backend> class RenderCommands {
     Backend& backend;
     static std::uint32_t bits(float value) {
@@ -80,4 +78,4 @@ private:
     }
 #endif
 };
-}  // namespace touhou::graphics
+}

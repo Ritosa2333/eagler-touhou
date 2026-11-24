@@ -1,7 +1,3 @@
-// 返回主菜单灵梦可见性（H01-1）：
-//   0x44cdb9 返回路径重建 89/94；新 89 的 90/91 仍带 ins_6(170) 初延迟，
-//   必须立即发 label2（90/91 label2 = ins_409(60,0,255)）才能在 65f 内
-//   回到 alpha255。重复进入/返回同样成立。
 #include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 
@@ -38,8 +34,6 @@ std::vector<u8> title_anm_fixture() {
     }
     spawn_range(1, 23, 48);
     spawn_range(2, 49, 82);
-    // 真实 title.anm 89-93 的时序：90/91 先 ins_6(170) 再 60f 淡入；
-    // label3 淡出、label2 淡入。返回路径必须用 label2 跳过初延迟。
     scripts[89] = {spawn(92), spawn(93), spawn(91), spawn(90), wait(), label(3),
                    wait(),    label(2),  wait(),    label(1),  stop()};
     scripts[90] = {AnmIns{6, 0, {170}},
@@ -136,37 +130,32 @@ struct Harness {
         CHECK_EQ(int(scene->state.screen), int(TitleScreen::MusicRoom));
     }
     void leave_music_room() {
-        advance(20);   // case0/1 → case2
-        frame(0x100);  // X → case3
-        advance(11);   // >9 帧 → Main（返回路径重建 89/94）
+        advance(20);
+        frame(0x100);
+        advance(11);
         CHECK_EQ(int(scene->state.screen), int(TitleScreen::Main));
     }
 };
 
-}  // namespace
+}
 
 TEST(return_path_rebuilds_background_and_restores_portrait) {
     Harness h;
     h.reach_menu();
-    h.advance(200);  // boot 90/91 170f 延迟 + 60f 淡入
+    h.advance(200);
     CHECK_EQ(h.background_alpha(90), 255u);
     CHECK_EQ(h.background_alpha(91), 255u);
     const u32 first_root = h.scene->state.handles[89];
     h.enter_music_room();
     h.leave_music_room();
-    // 0x44cddb 返回分支：89 已存在则复用（0x44cdef jne 0x44ce0c），不重建。
     CHECK(h.scene->state.handles[89] != 0);
     CHECK_EQ(h.scene->state.handles[89], first_root);
-    // 原版 0x44bb80 不回收旧树：旧 90/91 保持 alpha255，65f 窗口内灵梦不消失。
     CHECK(h.manager.registry.find(first_root) != nullptr);
     CHECK_EQ(h.root_alpha(first_root, 90), 255u);
     CHECK_EQ(h.root_alpha(first_root, 91), 255u);
-    // 返回分支对复用树再发 label2（0x44ce0c/0x44ce19）：65f 后 90/91
-    // 回到 alpha255。
     h.advance(65);
     CHECK_EQ(h.background_alpha(90), 255u);
     CHECK_EQ(h.background_alpha(91), 255u);
-    // 重复进入/返回：89 持续存在 → 每次复用并重发 label2；树保留。
     const u32 second_root = h.scene->state.handles[89];
     h.advance(kTitleMenuReadyDelay + 1);
     h.enter_music_room();

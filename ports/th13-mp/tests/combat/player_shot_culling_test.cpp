@@ -1,5 +1,3 @@
-// H-SHOT-HIT-480: 004464d0 tests the preceding ANM quad before writing the
-// current shot position. Exercise the public battle snapshot and real ANM path.
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "../ui/ui_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
@@ -86,13 +84,9 @@ i32 float_bits(float value) {
     return result;
 }
 
-// External synthetic texture plus real ANM script 10. Each VM tick adds 0.25
-// to x scale, so renderer quad width exposes both rebinding and animation age.
 std::vector<u8> animated_shot_bank() {
     using namespace th13::test;
     auto scripts = trivial_scripts(11);
-    // Real plXX.anm shot scripts select layer 11 (op304) and draw mode 1;
-    // the layer bucket is the production draw contract for registered shots.
     scripts[10] = {AnmIns{304, 0, {11}},
                    sprite(0),
                    AnmIns{302, 0, {1}},
@@ -108,8 +102,6 @@ std::vector<u8> animated_shot_bank() {
     return bytes;
 }
 
-// 8x8 sprite with a scripted end: op1 at time1 fires on the first main-chain
-// tick after the birth tick (0x462450 birth + 0x46f170 chain tick).
 std::vector<u8> ending_shot_bank() {
     using namespace th13::test;
     auto scripts = trivial_scripts(11);
@@ -123,9 +115,6 @@ std::vector<u8> ending_shot_bank() {
     return bytes;
 }
 
-// op1 at time0 fires during the birth tick (0x462450 returns 1) but the VM is
-// still tail-inserted; subsequent 0x46f170 ticks see instruction_offset<0 and
-// return 0, so the shot keeps flying until the battle retires it.
 std::vector<u8> birth_op1_shot_bank() {
     using namespace th13::test;
     auto scripts = trivial_scripts(11);
@@ -139,8 +128,6 @@ std::vector<u8> birth_op1_shot_bank() {
     return bytes;
 }
 
-// script10 = op424 bit6 + op401 z=-1 (pl00/pl01 shot shape);
-// script11 = op401 z=-1 only (raw pl03.anm script11/12 shape, no op424).
 std::vector<u8> rotation_bank() {
     using namespace th13::test;
     auto scripts = trivial_scripts(12);
@@ -191,16 +178,12 @@ struct PresentationFixture : Fixture {
 
     bool init(const std::vector<u8>& player_bank) {
         if (!Fixture::init()) return false;
-        battle.player_dead = true;  // isolate shot VMs from player/option visuals
+        battle.player_dead = true;
         const auto empty = th13::test::synthetic_anm(1, th13::test::trivial_scripts(1));
         return th13::test::load_bank(manager, 4, empty) && th13::test::load_bank(manager, 5, empty) &&
                th13::test::load_bank(manager, 6, player_bank);
     }
     bool init() { return init(animated_shot_bank()); }
-    // One production frame: sync (Update 20) → main chain (Update 34,
-    // 0x46f170) → post-chain hook → draw schedule layers 11/13 (priorities
-    // 23/27). The shot VM is a registered main-chain member now, so the
-    // direct pass-0 draw no longer submits it.
     bool sync_and_draw() {
         graphics.shots.clear();
         if (!presentation.sync(battle, 0)) return false;
@@ -212,7 +195,7 @@ struct PresentationFixture : Fixture {
         return presentation.error().empty();
     }
 };
-}  // namespace
+}
 
 TEST(culling_age_gate_uses_pre_step_age_nine_and_ten) {
     for (i32 age : {9, 10}) {
@@ -265,7 +248,7 @@ TEST(culling_precedes_compaction_when_an_earlier_shot_retires) {
     CHECK(fixture.init());
     auto first = Fixture::shot(11);
     first.script = -1;
-    first.y = -33;  // animation-free center bound retires the first slot
+    first.y = -33;
     fixture.battle.shots = {first, Fixture::shot(22), Fixture::shot(33)};
     fixture.snapshot(1, rectangle(200, 0, 210, 8));
     fixture.snapshot(2, rectangle(200, 200, 210, 210));
@@ -322,8 +305,6 @@ TEST(production_anm_quad_snapshot_is_consumed_without_post_step_translation) {
     if (fixture.graphics.shots.empty()) return;
     for (const auto& point : fixture.graphics.shots[0].quad)
         CHECK(point.y < 16);
-    // The next frame's new position is inside, but 004464d0 culls against the
-    // preceding ANM quad before writing its new translation into the ANM VM.
     fixture.battle.shots[0].y = 200;
     CHECK(fixture.battle.step(fixture.idle));
     CHECK(fixture.battle.shots.empty());
@@ -379,28 +360,21 @@ TEST(compaction_preserves_surviving_animation_age_and_scale) {
     CHECK_EQ(survivor_after.width(), survivor_before.width() + 2.0f);
 }
 
-// The 0x4464d0 quad snapshot must be taken after the 0x46f170 main-chain
-// traversal: sync alone (Update 20) does not tick the shot VM and must not
-// publish geometry. The next battle step then has no snapshot to consume.
 TEST(geometry_snapshot_is_produced_by_the_post_chain_hook) {
     PresentationFixture fixture;
     CHECK(fixture.init());
     auto shot = Fixture::shot(81);
     shot.y = 8;
     fixture.battle.shots.push_back(shot);
-    CHECK(fixture.presentation.sync(fixture.battle, 0));  // no chain tick yet
+    CHECK(fixture.presentation.sync(fixture.battle, 0));
     CHECK(fixture.battle.step(fixture.idle));
-    CHECK_EQ(fixture.battle.shots.size(), size_t(1));  // no snapshot -> no cull
-    // sync + main chain: post_chain_update records the post-tick quad at age11.
+    CHECK_EQ(fixture.battle.shots.size(), size_t(1));
     CHECK(fixture.presentation.sync(fixture.battle, 0));
     CHECK(fixture.manager.update(false));
-    CHECK(fixture.battle.step(fixture.idle));  // age12 consumes the age11 quad
+    CHECK(fixture.battle.step(fixture.idle));
     CHECK(fixture.battle.shots.empty());
 }
 
-// A paused frame returns from sync before the shot section: frame_synced_
-// stays false, so the post-chain hook must not publish a stale snapshot for
-// the shot state left over from the previous frame.
 TEST(paused_frame_does_not_publish_stale_shot_geometry) {
     PresentationFixture fixture;
     CHECK(fixture.init());
@@ -408,16 +382,14 @@ TEST(paused_frame_does_not_publish_stale_shot_geometry) {
     shot.y = 8;
     fixture.battle.shots.push_back(shot);
     fixture.environment.paused = true;
-    CHECK(fixture.presentation.sync(fixture.battle, 0));  // early return
+    CHECK(fixture.presentation.sync(fixture.battle, 0));
     fixture.environment.paused = false;
-    CHECK(fixture.manager.update(false));  // hook skips: no frame sync
+    CHECK(fixture.manager.update(false));
     CHECK(fixture.battle.step(fixture.idle));
-    CHECK_EQ(fixture.battle.shots.size(), size_t(1));  // no snapshot -> no cull
+    CHECK_EQ(fixture.battle.shots.size(), size_t(1));
     CHECK(fixture.presentation.error().empty());
 }
 
-// The main chain still runs on a paused frame; the registered shot VM carries
-// the same pause pre_tick as player effect VMs, so it must not advance.
 TEST(paused_chain_does_not_advance_the_shot_vm) {
     PresentationFixture fixture;
     CHECK(fixture.init());
@@ -429,15 +401,12 @@ TEST(paused_chain_does_not_advance_the_shot_vm) {
     if (!vm) return;
     const i32 age = vm->age.current;
     fixture.environment.paused = true;
-    CHECK(fixture.presentation.sync(fixture.battle, 0));  // early return
-    CHECK(fixture.manager.update(false));                 // chain tick frozen
+    CHECK(fixture.presentation.sync(fixture.battle, 0));
+    CHECK(fixture.manager.update(false));
     CHECK_EQ(vm->age.current, age);
     fixture.environment.paused = false;
 }
 
-// A script op1 executed by the main chain retires the VM inside the same
-// update; post_chain_update mirrors 0x4464d0's 0x46fb90 lookup failure by
-// setting animation_finished before the next step_shots.
 TEST(chain_op1_sets_animation_finished_before_the_next_step) {
     PresentationFixture fixture;
     CHECK(fixture.init(ending_shot_bank()));
@@ -445,16 +414,13 @@ TEST(chain_op1_sets_animation_finished_before_the_next_step) {
     shot.script = 10;
     fixture.battle.shots.push_back(shot);
     CHECK(fixture.presentation.sync(fixture.battle, 0));
-    CHECK(fixture.manager.update(false));  // chain tick executes op1 at time1
+    CHECK(fixture.manager.update(false));
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));
     CHECK(fixture.battle.shots[0].animation_finished);
-    CHECK(fixture.battle.step(fixture.idle));  // step_shots retires it
+    CHECK(fixture.battle.step(fixture.idle));
     CHECK(fixture.battle.shots.empty());
 }
 
-// 0x445c40 still tail-inserts a VM whose birth tick op1s (0x462450 returns 1
-// on op1 but 0 for instruction_offset<0 afterwards); the shot keeps flying and
-// the pool slot is only reclaimed when the battle retires it (0x470110).
 TEST(birth_tick_op1_keeps_the_vm_until_the_shot_dies) {
     PresentationFixture fixture;
     CHECK(fixture.init(birth_op1_shot_bank()));
@@ -466,10 +432,9 @@ TEST(birth_tick_op1_keeps_the_vm_until_the_shot_dies) {
     const u32 handle = fixture.manager.registry.ordered_handle(false, 0);
     CHECK(handle != 0);
     CHECK(fixture.manager.registry.find(handle) != nullptr);
-    CHECK(fixture.manager.update(false));  // instruction_offset<0 -> tick 0
+    CHECK(fixture.manager.update(false));
     CHECK(fixture.manager.registry.find(handle) != nullptr);
     CHECK(!fixture.battle.shots[0].animation_finished);
-    // Death: the registered VM is retired (0x20) and the chain reclaims it.
     fixture.battle.shots[0].alive = false;
     fixture.battle.shots[0].state = 0;
     CHECK(fixture.presentation.sync(fixture.battle, 0));
@@ -478,8 +443,6 @@ TEST(birth_tick_op1_keeps_the_vm_until_the_shot_dies) {
     CHECK_EQ(fixture.manager.registry.count(), 0u);
 }
 
-// 0x446670 writes vm+0x50 only when render_flags bit6 is set (op424). Raw
-// pl03.anm script11/12 have no op424 and must keep op401's -π/2 rotation.
 TEST(rotation_write_requires_render_flags_bit6) {
     PresentationFixture fixture;
     CHECK(fixture.init(rotation_bank()));
@@ -498,13 +461,11 @@ TEST(rotation_write_requires_render_flags_bit6) {
     auto* b = fixture.manager.registry.find(second);
     CHECK(a && b);
     if (!a || !b) return;
-    CHECK_NEAR(a->variables.rotation.z, 0.75, 1e-6);  // 0x446670 bit6 branch
+    CHECK_NEAR(a->variables.rotation.z, 0.75, 1e-6);
     CHECK(a->visual.flags & 4u);
-    CHECK_NEAR(b->variables.rotation.z, -1.0, 1e-6);  // op401 value preserved
+    CHECK_NEAR(b->variables.rotation.z, -1.0, 1e-6);
 }
 
-// 钩子失败的具体原因必须上报 AnmManager（Application 只读 animations.error），
-// 不能被 update 的通用 "post-update hook failed" 覆盖。
 TEST(post_chain_geometry_failure_forwards_the_presentation_error) {
     PresentationFixture fixture;
     CHECK(fixture.init());
@@ -514,14 +475,11 @@ TEST(post_chain_geometry_failure_forwards_the_presentation_error) {
     auto* vm = fixture.manager.registry.find(handle);
     CHECK(vm != nullptr);
     if (!vm) return;
-    // ax = flags>>21&3 = 3 → anm_quad_positions 拒绝（0x4464d0 四角几何不可用）。
     vm->visual.flags |= (3u << 21);
     CHECK(!fixture.manager.update(false));
     CHECK(fixture.manager.error.find("Player shot geometry snapshot unavailable") != std::string::npos);
 }
 
-// 没有上一帧四角时，中心已经离开 script<0 那只盒子的 SHT 弹必须退休。
-// 龄门与四角相同：步进前 age==9 留下，age==10 出界后退休。
 TEST(missing_quad_retires_only_after_the_quad_age_gate) {
     for (i32 age : {9, 10}) {
         Fixture fixture;
@@ -556,7 +514,6 @@ TEST(missing_quad_retires_each_center_bound_and_keeps_the_interior) {
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));
 }
 
-// 中心已出盒，但匹配到的四角仍有一角在场内：零售保留，兜底不得覆盖。
 TEST(center_bound_does_not_override_a_matching_inside_quad) {
     Fixture fixture;
     CHECK(fixture.init());
@@ -568,8 +525,6 @@ TEST(center_bound_does_not_override_a_matching_inside_quad) {
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));
 }
 
-// 连续射击、不提供任何四角快照：飞出中心盒的弹必须离开向量。
-// 修前这一路径一发不删，120 帧后向量与出膛数同阶。
 TEST(sustained_fire_without_quads_stays_bounded) {
     Fixture fixture;
     CHECK(fixture.init());

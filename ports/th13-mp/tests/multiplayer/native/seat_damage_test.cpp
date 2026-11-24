@@ -1,5 +1,3 @@
-// R-G: real enemy_hit -> damage registration collision -> enemy HP. The
-// fixture supplies registered projectiles, never a replacement damage formula.
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "multiplayer/WorldState.hpp"
 #include <fstream>
@@ -78,7 +76,6 @@ TEST(all_seats_sum_hits_once_and_keep_their_registration_side_effects) {
     for(i32 count:{2,3}) for(bool boss:{false,true}) {
         Fixture f;CHECK(f.boot(count));if(boss)f.enemy().flags|=0x1000000u;
         for(i32 seat=0;seat<count;++seat)f.arm(seat,12);
-        // Boss absorbs 40% of 24 (two seats) or 60% of 36 (three seats).
         CHECK_EQ(f.collide(),float(boss?14:count*12));
         CHECK_EQ(f.score.score,count);
         for(i32 seat=0;seat<count;++seat) {
@@ -94,7 +91,7 @@ TEST(owner_phase_reductions_and_ghosts_do_not_follow_observer_window) {
     f.battle.seats[0].phase=StagePlayerState::Phase::Dying;
     f.battle.seats[2].ghost=true;
     for(i32 seat=0;seat<3;++seat)f.arm(seat,25);
-    CHECK_EQ(f.collide(),30.f); // P1 25/5 + P2 25; ghost contributes nothing.
+    CHECK_EQ(f.collide(),30.f);
     CHECK_EQ(f.battle.seats[2].shots[0].state,1);
     CHECK_EQ(f.score.score,2);
     CHECK_EQ(f.battle.active_seat,0);
@@ -102,7 +99,6 @@ TEST(owner_phase_reductions_and_ghosts_do_not_follow_observer_window) {
 TEST(boss_fractional_damage_survives_dynamic_operable_counts) {
     for(i32 count:{2,3}) {
         Fixture f;CHECK(f.boot(count));f.enemy().flags|=0x1000000u;
-        // Two seats: 3/5 per point lands as 0,1,0,1; three seats: 2/5 as 0,0,1,0.
         const std::array<float,4> expected=count==2?std::array<float,4>{0,1,0,1}
                                                   :std::array<float,4>{0,0,1,0};
         for(i32 hit=0;hit<4;++hit) { f.arm(1,1);CHECK_EQ(f.collide(),expected[size_t(hit)]); }
@@ -117,8 +113,6 @@ TEST(boss_fractional_damage_survives_dynamic_operable_counts) {
     f.arm(0,1);CHECK_EQ(f.collide(),1.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,0);
     f.battle.seats[1].ghost=false;
     f.arm(0,1);CHECK_EQ(f.collide(),0.f);CHECK_EQ(f.enemy().mp_boss_damage_remainder,3);
-    // A pilot on their final death stops counting before the later ghost
-    // transition; a pilot with remaining lives still counts while respawning.
     Fixture final;CHECK(final.boot());final.enemy().flags|=0x1000000u;
     final.battle.seat_huds[1].extra_lives=-1;
     final.battle.seats[1].phase=StagePlayerState::Phase::Dying;
@@ -174,22 +168,14 @@ TEST(owner_protection_and_spell_damage_gates_precede_boss_cooperation) {
     for(bool protected_owner:{false,true}) {
         Fixture f;CHECK(f.boot());f.enemy().flags|=0x1000000u;f.enemy().life=1000;
         SpellSnapshot spell;spell.id=102;spell.flags=kSpellActive;f.battle.sim.spell.restore(spell);
-        // P1 is protected, but its observation window must not reduce P2.
         f.battle.seats[0].invulnerable=120;
         f.battle.seats[1].invulnerable=protected_owner?120:0;
-        // Owner gates precede boss cooperation: unprotected P2 keeps 20
-        // through owner_reduction, then absorb keeps 3/5 -> 12; protected
-        // P2 divides by 5 first (4), then 3/5 -> 2. (Legacy /4 mitigation
-        // before the 2026-11-16 ruling computed 15 and 3; 77ce24210 raised
-        // the mitigation to 40%/60% and recomputed five tests, missing this
-        // one until now.)
         f.arm(1,20);CHECK_EQ(f.collide(),protected_owner?2.f:12.f);
     }
     Fixture reduced;CHECK(reduced.boot());reduced.enemy().flags|=0x1000000u;
     SpellSnapshot spell;spell.id=1;spell.flags=kSpellActive|kSpellBombProtection;
     reduced.battle.sim.spell.restore(spell);
     reduced.arm(0,60);reduced.arm(1,60);
-    // Bomb-protection divides the summed 120 by 30 -> 4, absorb keeps 3/5 -> 2.
     CHECK_EQ(reduced.collide(),2.f);CHECK_EQ(reduced.enemy().spirit_accum,2.f);
     Fixture immune;CHECK(immune.boot());immune.enemy().flags|=0x1000000u;
     spell.id=109;spell.flags=kSpellActive;immune.battle.sim.spell.restore(spell);

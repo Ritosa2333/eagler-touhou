@@ -2,7 +2,6 @@
 #include "game/StageSim.hpp"
 using namespace th13;
 TEST(move_rand_boundaries_keep_native_draw_count_and_direction) {
-    // Native41b260/412 with duration40, mode4, speed2.5, limits(0,128,280,192).
     struct Case {
         u16 seed;
         float x, y, player_x;
@@ -39,7 +38,6 @@ TEST(move_rand_boundaries_keep_native_draw_count_and_direction) {
     }
 }
 TEST(random16_returns_the_post_rotation_seed) {
-    // Direct472c20 observations; its return and stored seed are identical.
     struct Case {
         u16 seed, next;
     };

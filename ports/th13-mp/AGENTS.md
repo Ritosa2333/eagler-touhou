@@ -12,9 +12,9 @@
 
 ## 工作方式
 
-- 外层仓库根是 `/home/mystia/项目/th13`（容器内 `/work`）；先读外层 `AGENTS.md`，再按当前产品任务施工。
-- 构建、测试、原版分析经 `make exec CMD='...'`，浏览器验证经 `make shot CMD='...'`；不要在宿主安装依赖。
-- `scripts/verify.py`、`resume` 和 `BLOCKED` 是统一工具契约中的固定入口/状态词。它们用于诊断和证据登记，不阻止用户已授权且范围明确的产品修复。
+- 构建、测试与原版分析都在容器里跑，入口是 `tools/container.sh`（浏览器验证加 `--shot`）；不要在宿主安装依赖，持久写入只落本仓库和外层工作区的 `artifacts/`、`.cache/`。命令见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。
+- 提交前跑 `tools/gate.sh`：排版检查、harness 构建、回归摘要、全部套件与基线比对。
+- 源码不写注释：依据、契约和原版地址写进提交说明、测试与[普通版的保真地图](../th13/docs/fidelity-map.md)，`node tools/no-comments.mjs` 在门槛里强制。
 - 不从旧 HANDOFF、旧报告或代理自报恢复状态；每个修改绑定具名假设、原版依据和最窄回归。
 
 ## 不可破坏边界
@@ -25,4 +25,4 @@
 - 行为、资源、绘制语义、音频时序和最终 framebuffer 分别验证；缺独立原版 GPU 参考时最终输出保持 BLOCKED。
 - 文档、状态文件、golden、比较器字段和容差不是制造通过的手段；无法证明的结果原样保留。
 
-接口和契约见本目录 `docs/`；工具协议见外层 `verification/README.md`。
+接口和契约见本目录 `docs/`。

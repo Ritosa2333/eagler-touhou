@@ -1,9 +1,3 @@
-// Independent production-Renderer WebGL fixture for COLOR-01.
-//
-// It compiles the unmodified portable/sdl/Renderer.cpp and drives its public
-// API through an offscreen 256x16 GL_RGBA8 target. The reference arithmetic is
-// the independently measured Wine/Mesa UNORM8 formula, not a copy of the
-// shader: round(src*alpha/255) + round(dst*(255-alpha)/255).
 #include <emscripten.h>
 
 #include "../../../portable/sdl/Renderer.hpp"
@@ -70,10 +64,10 @@ struct Owner {
     Owner() : source(kWidth * 4), target(kWidth * kRows * 4), target_rgb(kWidth * kRows * 4) {
         for (u32 x = 0; x < kWidth; ++x) {
             auto* p = source.data() + x * 4;
-            p[0] = expected::kSourceRgb[2];  // B
-            p[1] = expected::kSourceRgb[1];  // G
-            p[2] = expected::kSourceRgb[0];  // R
-            p[3] = u8(x);                    // source alpha sweep
+            p[0] = expected::kSourceRgb[2];
+            p[1] = expected::kSourceRgb[1];
+            p[2] = expected::kSourceRgb[0];
+            p[3] = u8(x);
         }
         reset_target(target, target_version);
         reset_target(target_rgb, target_rgb_version);
@@ -82,10 +76,10 @@ struct Owner {
     static void reset_target(std::vector<u8>& pixels, u32& version) {
         for (u32 i = 0; i < kWidth * kRows; ++i) {
             auto* p = pixels.data() + i * 4;
-            p[0] = expected::kDestinationRgb[2];  // B
-            p[1] = expected::kDestinationRgb[1];  // G
-            p[2] = expected::kDestinationRgb[0];  // R
-            p[3] = 255;                           // A
+            p[0] = expected::kDestinationRgb[2];
+            p[1] = expected::kDestinationRgb[1];
+            p[2] = expected::kDestinationRgb[0];
+            p[3] = 255;
         }
         ++version;
     }
@@ -247,13 +241,11 @@ std::string run() {
         const char* gl_name = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
         gl_renderer = gl_name ? gl_name : "";
 
-        // Blend disabled must reproduce the source RGB (no accidental preweight).
         set_pipeline(renderer, kTargetId, BlendFactor::InverseSourceAlpha, false, false);
         Owner::reset_target(owner.target, owner.target_version);
         draw(renderer, kTargetId);
         add_test(tests, "blend_off_source", [](u32) { return std::array<u8, 3>{15, 1, 15}; }, owner.target);
 
-        // The measured default: SRCALPHA / INVSRCALPHA / ADD.
         set_pipeline(renderer, kTargetId, BlendFactor::InverseSourceAlpha, true, false);
         Owner::reset_target(owner.target, owner.target_version);
         draw(renderer, kTargetId);
@@ -274,7 +266,6 @@ std::string run() {
             tests.push_back(problem);
         }
 
-        // Additive and replace destination factors.
         set_pipeline(renderer, kTargetId, BlendFactor::One, true, false);
         Owner::reset_target(owner.target, owner.target_version);
         draw(renderer, kTargetId);
@@ -298,7 +289,6 @@ std::string run() {
             },
             owner.target);
 
-        // Cached transitions: off -> on -> same on -> off -> on.
         set_pipeline(renderer, kTargetId, BlendFactor::InverseSourceAlpha, false, false);
         Owner::reset_target(owner.target, owner.target_version);
         draw(renderer, kTargetId);
@@ -323,10 +313,6 @@ std::string run() {
         draw(renderer, kTargetId);
         add_test(tests, "cache_off_to_on_again", expected_blend, owner.target);
 
-        // Separate alpha factors are safe when neither factor reads the
-        // preweighted source RGB. One/Zero reads no source color, so the RGB
-        // lowering remains valid; SourceColor reads the preweighted RGB, so it
-        // must stay on the old GLES path.
         set_pipeline(renderer, kTargetId, BlendFactor::InverseSourceAlpha, true, true);
         Owner::reset_target(owner.target, owner.target_version);
         draw(renderer, kTargetId);
@@ -337,10 +323,6 @@ std::string run() {
         draw(renderer, kTargetId);
         add_test(tests, "separate_alpha_source_color_falls_back", expected_single, owner.target);
 
-        // Target-format cache transitions. The proven target type is Bgra8
-        // (GL_RGBA8). Bgrx8 (GL_RGB8) must restore the GLES source factor even
-        // though the pipeline fields are unchanged, and switching back must
-        // restore the preweighted factor.
         set_pipeline(renderer, kTargetId, BlendFactor::InverseSourceAlpha, true, false);
         Owner::reset_target(owner.target, owner.target_version);
         draw(renderer, kTargetId);
@@ -357,9 +339,6 @@ std::string run() {
         add_test(tests, "target_format_bgra8_after_bgrx8", expected_blend, owner.target);
     }
 
-    // Default profile: the unmodified PR-head behavior. This is a separate
-    // Renderer instance with no profile configuration. SwiftShader's combined
-    // rounding is the independent reference for the full 256-alpha sweep.
     {
         Renderer renderer(10, resolve_surface, &owner);
         if (!renderer.initialize()) {
@@ -440,7 +419,7 @@ std::string run() {
     return out;
 }
 
-}  // namespace
+}
 
 extern "C" {
 

@@ -35,9 +35,8 @@ TEST(boss_and_dialog_wait_freeze_script_time_until_release) {
             CHECK_EQ(ctx.time, frame < 5 ? 0.f : float(frame - 4) * .5f);
             CHECK_EQ(ctx.instruction_offset, frame < 5 ? 0 : 16);
         }
-        // Pending61-timestamp work was not silently consumed while waiting.
         CHECK_EQ(ctx.routine, 0);
     }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("ecl-wait-clock"); }

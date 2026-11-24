@@ -1,5 +1,3 @@
-// Production VM binding identities flow through the actual host registry
-// digest, so this suite can also share the cumulative m6 binary.
 #include "../../anm/anm_test_fixtures.hpp"
 #include "multiplayer/WorldState.hpp"
 #include "multiplayer/HostState.hpp"
@@ -18,13 +16,11 @@ u64 vm_digest(const AnmVm& vm) {
 
 std::vector<u8> archive(i32 marker = 0) {
     std::vector<u8> script;
-    push_insn(script, 2, 0); // valid template that stops without destroying
+    push_insn(script, 2, 0);
     push_terminator(script);
     SyntheticTexture texture;
     texture.name = "@identity" + std::to_string(marker);
     texture.has_data = false;
-    // Identical sprite values make table identity, rather than geometry, the
-    // only distinction when the actual pointer is deliberately rebound.
     return build_anm(texture, {{0,0,0,2,2}, {0,0,0,2,2}},
                      {{0,script}, {1,script}});
 }
@@ -48,7 +44,6 @@ TEST(content_identity_is_address_independent_and_complete) {
     CHECK(original != b.content_identity());
     b = a; b.textures[0].pixels.push_back(1); b.refresh_identity();
     CHECK(original != b.content_identity());
-    // Synthetic resources have no asset-file identity to fall back to.
     AnmResource synthetic;
     synthetic.scripts = a.scripts;
     CHECK(synthetic.content_identity() != AnmResource{}.content_identity());
@@ -69,7 +64,7 @@ TEST(resource_and_actual_sprite_bindings_change_the_vm_digest) {
     CHECK(vm_digest(x) != original);
     x = y; x.sprite_resource = &other; x.sprite = &other.sprites[0];
     CHECK(vm_digest(x) != original);
-    x = y; x.sprite = &b.sprites[1]; // same content, different real table entry
+    x = y; x.sprite = &b.sprites[1];
     CHECK(x.visual.sprite == y.visual.sprite);
     CHECK(vm_digest(x) != original);
     x = y; x.sprite = nullptr;
@@ -84,7 +79,7 @@ TEST(actual_script_binding_and_raw_script_content_are_visible) {
     CHECK(resource.open(bytes.data(), bytes.size()));
     AnmVm a, b;
     CHECK(a.bind(resource, 0)); CHECK(b.bind(resource, 1));
-    b.source_script = a.source_script; // retain equal old digest numerics
+    b.source_script = a.source_script;
     CHECK(vm_digest(a) != vm_digest(b));
     CHECK(resource.script_index(&resource.scripts[0].bytes) == 0);
     CHECK(resource.script_index(&resource.scripts[1].bytes) == 1);
@@ -93,7 +88,7 @@ TEST(actual_script_binding_and_raw_script_content_are_visible) {
     CHECK(a.bind(raw_a)); CHECK(b.bind(raw_b));
     CHECK(vm_digest(a) == vm_digest(b));
     raw_b.bytes.back() ^= 1;
-    CHECK(vm_digest(a) != vm_digest(b)); // actual bytes, no stale bind cache
+    CHECK(vm_digest(a) != vm_digest(b));
     CHECK(resource.script_index(&raw_a.bytes) == -2);
 }
 
@@ -143,8 +138,6 @@ TEST(retired_resource_identity_and_registry_restore_keep_bindings) {
     CHECK(manager.retired_resource_count() == 1);
     CHECK(vm->resource == resource);
     CHECK(vm->resource->content_identity() == identity);
-    // A retired VM may freeze numeric presentation state; its bindings must
-    // remain identifiable after the active bank map has forgotten it.
     CHECK(resource->sprite_index(vm->sprite) == 1);
     const auto different = archive(9);
     CHECK(manager.load(7, different.data(), different.size()));

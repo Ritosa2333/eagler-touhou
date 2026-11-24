@@ -37,7 +37,7 @@ TEST(circle_time_interpolates_radial_speed_instead_of_instantly_shrinking) {
         CHECK(r.sim.step_frame());
     CHECK_EQ(r.e->vel.radius, 63.5f);
     CHECK_EQ(r.e->vel.growth, -.5f);
-    CHECK(r.e->position[0] > 60);  // old immediate -2 collapses to x~6 here
+    CHECK(r.e->position[0] > 60);
     for (int i = 30; i < 120; ++i)
         CHECK(r.sim.step_frame());
     CHECK_EQ(r.e->vel.radius, 62.f);
@@ -80,5 +80,5 @@ TEST(real_stage5_phantom_retains_radius_during_opening) {
     CHECK_EQ(e->vel.growth, -.5f);
     CHECK(e->position[0] > 60);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("circle-time"); }

@@ -24,7 +24,7 @@ std::vector<u8> asset(const char* name) {
     std::ifstream f(std::string("artifacts/reference/raw/") + name, std::ios::binary);
     return {std::istreambuf_iterator<char>(f), {}};
 }
-}  // namespace
+}
 TEST(real_enemy_bullets_initialize_before_interrupt_and_survive_pool_growth) {
     GameRandom rng;
     AnmEnvironment env;
@@ -40,7 +40,6 @@ TEST(real_enemy_bullets_initialize_before_interrupt_and_survive_pool_growth) {
     CHECK(load_bank(a, 6, empty));
     auto bytes = asset("bullet.anm");
     CHECK(a.load(5, bytes.data(), u32(bytes.size())));
-    // Three types use animated sprite selection, across repeated pool growth.
     for (u32 gen = 1; gen <= 160; ++gen) {
         StageBullet bullet;
         bullet.generation = gen;
@@ -59,7 +58,6 @@ TEST(real_enemy_bullets_initialize_before_interrupt_and_survive_pool_growth) {
     CHECK_EQ(g.vertices, 160u * 6);
     const auto report = presentation.debug_report();
     CHECK(report.find("size=0x0") == std::string::npos);
-    // The surviving generation must retain its own VM and sprite callback.
     battle.sim.bullets.erase(battle.sim.bullets.begin(), battle.sim.bullets.begin() + 120);
     CHECK(presentation.sync(battle, 0));
     g.vertices = 0;
@@ -115,8 +113,6 @@ TEST(enemy_hit_queues_original_hit_voice_before_damage) {
         ++hits;
         return true;
     };
-    // StageBattle owns geometric acceptance; this callback contract is exercised
-    // directly here so duplicate damage paths cannot silently omit the voice.
     CHECK(sim.enemy_hit_sound(1, 12.f));
     CHECK_EQ(hits, 1);
 }

@@ -5,7 +5,6 @@ import {createRequire} from 'node:module';
 import {runInNewContext} from 'node:vm';
 
 const require = createRequire(new URL('../../../launcher/package.json', import.meta.url));
-// acorn：先取 launcher 的依赖，没有时用镜像内 emsdk 自带的一份。
 let acorn;
 try { acorn = require('acorn'); }
 catch { acorn = createRequire(import.meta.url)(`${process.env.EMSDK ?? '/opt/emsdk'}/upstream/emscripten/node_modules/acorn`); }
@@ -131,8 +130,6 @@ test('managed frame callback reports the actual SDL audio queue', () => {
     _th13_phase: () => 1}, launched: true, roomOwned: false, options: {},
     music: true, ticks: 0, presents: 0, maxFrameMs: 0,
     first: true, last: 0, performance: {now: () => 1000},
-    // P5 后 onGameFrame 泵多人桥帧（生产 shell 的模块级 let multiplayerBridge
-    // = null——沙箱同型提供绑定，可选链对 null 无操作）。
     multiplayerBridge: {frame() { calls2.push('frame'); }},
     emit: (event, fields) => emitted.push([event, fields])};
   const calls2 = [];

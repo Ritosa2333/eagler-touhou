@@ -5,10 +5,6 @@
 using namespace th13;
 
 namespace {
-// H-BIRTH-ORDER: 00445de6 computes initial velocity and subtracts it from
-// every launch position; 004464d0 updates even age-zero straight shots, and
-// 00473780 quantizes the resulting position. Quarter-pixel launch coordinates
-// expose an implementation that leaves straight shots unquantized at age zero.
 class Provider final : public EclResourceProvider {
 public:
     Provider() {
@@ -72,10 +68,6 @@ struct Fixture {
         battle.sim.enemies.clear();
         return true;
     }
-    // 0x442a19-0x442a57 focus 三重门：stage ctl 非空、ctl+0xb8（存活敌机
-    // 链计数）非 0、player+0x67c>=4 同时成立才保留 Shift 位。init() 清空
-    // 敌机后链计数为 0，依赖聚焦的用例需补一个 inert 敌机（threads 为空，
-    // tick_enemy 跳过解释器；位置远离玩家与弹道，默认 hurtbox 不接触）。
     void retain_focus() {
         auto anchor = std::make_unique<StageEnemy>();
         anchor->serial = 9999;
@@ -95,7 +87,7 @@ struct Fixture {
         CHECK_EQ(battle.sim.frame, 20u);
     }
 };
-}  // namespace
+}
 
 TEST(age_zero_straight_shot_moves_then_quantizes) {
     Fixture fixture;
@@ -149,14 +141,13 @@ TEST(sht_shot_sound_uses_pre_update_birth_position) {
     fixture.reach_first_launch();
     CHECK_EQ(fixture.host.sounds.size(), size_t(1));
     CHECK_EQ(fixture.host.sounds[0].first, 7);
-    CHECK_EQ(fixture.host.sounds[0].second, 4.125f);  // offset - velocity + player x
+    CHECK_EQ(fixture.host.sounds[0].second, 4.125f);
 }
 
 TEST(marisa_beam_follows_option_and_grows_damage_rectangle) {
     Fixture fixture;
     CHECK(fixture.init());
     fixture.player.power = 100;
-    // Exercise 446f20 with one active option and a no-cull type-2 beam.
     fixture.battle.option_count = 1;
     fixture.battle.options[0].active = true;
     fixture.battle.options[0].x = 10.f;
@@ -173,7 +164,6 @@ TEST(marisa_beam_follows_option_and_grows_damage_rectangle) {
     beam.width = 0;
     beam.height = 16;
     fixture.battle.shots.push_back(beam);
-    // Firing clock remains active after the startup gate.
     for (int i = 0; i < 20; ++i)
         CHECK(fixture.battle.step(fixture.idle));
     const auto& shot = fixture.battle.shots.front();
@@ -182,14 +172,10 @@ TEST(marisa_beam_follows_option_and_grows_damage_rectangle) {
     CHECK_NEAR(shot.damage_y, shot.y - 9.f, 1e-5);
 }
 
-// H-REGISTRATION: 4457e0 allocates a record at the cursor, 443240 ages
-// existing records before firing, and 446870 scans the registration rather
-// than the presentation shot.  447230 shrinks the beam at every overlap but
-// returns damage only on every fourth shot-age tick.
 TEST(marisa_registration_callback_shrinks_beam_and_uses_shot_age) {
     Fixture fixture;
     CHECK(fixture.init());
-    CHECK(fixture.battle.step(fixture.idle));  // advance the player clock gate
+    CHECK(fixture.battle.step(fixture.idle));
     i32 effects = 0;
     Vec3 effect_position{}, effect_displacement{};
     fixture.battle.beam_hit_effect = [&](const Vec3& pos, const Vec3& move, float, i32) {
@@ -211,7 +197,7 @@ TEST(marisa_registration_callback_shrinks_beam_and_uses_shot_age) {
     beam.height = 16;
     beam.beam_visual_width = 200;
     beam.registration_slot = 0;
-    beam.age_clock.set(5);  // changed age, not a damage tick
+    beam.age_clock.set(5);
     fixture.battle.shots.push_back(beam);
     auto& reg = fixture.battle.damage_registrations[0];
     reg.active = true;
@@ -231,10 +217,10 @@ TEST(marisa_registration_callback_shrinks_beam_and_uses_shot_age) {
     enemy.hurtbox[0] = enemy.hurtbox[1] = 16;
     fixture.battle.sim.enemy_hit(enemy);
     CHECK_EQ(enemy.life, 100.f);
-    CHECK_EQ(reg.width, 76.f);  // sqrt((0-0)^2 + (100-200)^2) - 24
+    CHECK_EQ(reg.width, 76.f);
     CHECK_EQ(fixture.battle.shots[0].width, 76.f);
     CHECK_EQ(fixture.battle.shots[0].beam_visual_width, 200.f);
-    CHECK_EQ(reg.accumulated_damage, 15);  // nominal damage even on zero return
+    CHECK_EQ(reg.accumulated_damage, 15);
     CHECK(reg.active);
     CHECK_EQ(effects, 0);
     CHECK_EQ(fixture.battle.shots[0].beam_interrupt, 2);
@@ -246,7 +232,6 @@ TEST(marisa_registration_callback_shrinks_beam_and_uses_shot_age) {
     CHECK_EQ(reg.accumulated_damage, 30);
     CHECK(reg.active);
     CHECK_EQ(effects, 1);
-    // Beam angle defaults to -pi/2; the impact begins at its shortened tip.
     CHECK_NEAR(effect_position.x, 0.f, 1e-4f);
     CHECK_NEAR(effect_position.y, 124.f, 1e-4f);
     CHECK_NEAR(effect_displacement.y, -64.f, 1e-4f);
@@ -255,7 +240,7 @@ TEST(marisa_registration_callback_shrinks_beam_and_uses_shot_age) {
     reg.clock.set(9999975);
     fixture.battle.sim.enemy_hit(enemy);
     CHECK_EQ(enemy.life, 85.f);
-    CHECK_EQ(reg.width, 200.f);  // odd registration timer misses interval gate
+    CHECK_EQ(reg.width, 200.f);
     reg.clock.set(9999974);
     reg.threshold = 45;
     fixture.battle.sim.enemy_hit(enemy);
@@ -292,9 +277,6 @@ TEST(fired_shots_allocate_independent_registration_slots) {
 }
 
 TEST(marisa_beam_hit_distance_stores_square_sum_once) {
-    // Retail 44728e..4472a2, replay frame188: separate f32 products
-    // produce 0x430aae56, while the x87 sum followed by one f32 store
-    // produces the observed 0x430aae55.
     Fixture fixture;
     CHECK(fixture.init());
     CHECK(fixture.battle.step(fixture.idle));
@@ -353,7 +335,7 @@ TEST(marisa_contact_end_uses_label_three_without_retiring_beam) {
     enemy.hurtbox[0] = enemy.hurtbox[1] = 16;
     fixture.battle.sim.enemy_hit(enemy);
     CHECK_EQ(beam.beam_interrupt, 2);
-    beam.beam_interrupt = 0;  // presentation consumed label2
+    beam.beam_interrupt = 0;
     CHECK(fixture.battle.step(fixture.idle));
     CHECK_EQ(fixture.battle.shots[0].beam_interrupt, 0);
     CHECK(fixture.battle.step(fixture.idle));
@@ -366,7 +348,6 @@ TEST(reimu_orbs_share_registration_slots_and_age_after_birth) {
     Fixture fixture;
     CHECK(fixture.init());
     fixture.player.bombs = 2;
-    // 4456e0 leaves the previous rectangle's dimensions and angle untouched.
     fixture.battle.damage_registrations[0].width = 123;
     fixture.battle.damage_registrations[0].height = 45;
     fixture.battle.damage_registrations[0].angle = .5f;
@@ -400,7 +381,6 @@ TEST(bomb_rectangles_share_pool_and_expire_on_next_player_update) {
         fixture.progress.character = character;
         CHECK(fixture.init());
         fixture.player.bombs = 2;
-        // 4457e0 leaves the previous circle's radius/growth words untouched.
         fixture.battle.damage_registrations[0].radius = 56;
         fixture.battle.damage_registrations[0].radius_growth = 8;
         GameInput bomb;
@@ -420,8 +400,6 @@ TEST(bomb_rectangles_share_pool_and_expire_on_next_player_update) {
             CHECK_EQ(reg.damage, character == 1 && i == 0 ? 60.f : character == 1 ? 20.f : 10.f);
         }
         CHECK(fixture.battle.step(fixture.idle));
-        // Marisa creates no new rectangles at age1. Sanae begins its next
-        // scan at the previous cursor (slot4), then wraps through 5..8.
         const auto& first = fixture.battle.damage_registrations[0];
         CHECK(!first.active);
         if (character == 2) {
@@ -469,8 +447,6 @@ TEST(youmu_new_option_uses_history_saturated_at_previous_option_count) {
     for (int i = 0; i < 24; ++i)
         CHECK(fixture.battle.step(move));
     CHECK_EQ(fixture.battle.player_x, 108.f);
-    // count2 retains the history[16] tail. At step24 it is the position from
-    // step7 (31.5), not the stale history[23] from a full 32-entry shift.
     fixture.player.power = 300;
     CHECK(fixture.battle.step(fixture.idle));
     CHECK_EQ(fixture.battle.option_count, 3);
@@ -498,7 +474,7 @@ TEST(youmu_focus_charge_releases_forty_frames_from_saved_origin) {
     Fixture fixture;
     fixture.progress.character = 3;
     CHECK(fixture.init());
-    fixture.retain_focus();  // 0x442a19-0x442a57：聚焦门需要存活敌机链
+    fixture.retain_focus();
     fixture.battle.sht_shots_loaded = true;
     ShtShotRecord record;
     record.interval = 1;
@@ -519,7 +495,7 @@ TEST(youmu_focus_charge_releases_forty_frames_from_saved_origin) {
         return true;
     };
     GameInput charging;
-    charging.update(9);  // held focus + fire
+    charging.update(9);
     for (int i = 0; i < 60; ++i)
         CHECK(fixture.battle.step(charging));
     CHECK(fixture.battle.shots.empty());
@@ -528,8 +504,6 @@ TEST(youmu_focus_charge_releases_forty_frames_from_saved_origin) {
     CHECK_EQ(fixture.host.sounds[1].first, 55);
     CHECK_EQ(fixture.host.stopped_sounds.size(), size_t(1));
     CHECK_EQ(fixture.host.stopped_sounds[0], 30);
-    // 446174/4461aa run in this order each charge frame; the ready
-    // transition follows the final pair of direct buffer writes.
     const auto& events = fixture.host.audio_events;
     CHECK_EQ(events.size(), size_t(123));
     CHECK_EQ(fixture.host.pans.size(), size_t(120));
@@ -548,7 +522,7 @@ TEST(youmu_focus_charge_releases_forty_frames_from_saved_origin) {
     GameInput release;
     release.update(8);
     CHECK(fixture.battle.step(release));
-    CHECK(fixture.battle.shots.empty());  // 446208 sets -40; no shot yet
+    CHECK(fixture.battle.shots.empty());
     const float origin = fixture.battle.player_x;
     CHECK_EQ(fixture.host.stopped_sounds.size(), size_t(3));
     CHECK_EQ(fixture.host.stopped_sounds[1], 30);
@@ -568,7 +542,7 @@ TEST(youmu_early_charge_release_produces_no_charge_shots) {
     Fixture fixture;
     fixture.progress.character = 3;
     CHECK(fixture.init());
-    fixture.retain_focus();  // 0x442a19-0x442a57：聚焦门需要存活敌机链
+    fixture.retain_focus();
     fixture.battle.sht_shots_loaded = true;
     ShtShotRecord record;
     record.interval = 1;
@@ -607,7 +581,7 @@ TEST(deathbomb_resumes_the_frozen_shot_clock_instead_of_starting_a_new_burst) {
     record.speed = 0;
     fixture.battle.sht_shots_loaded = true;
     fixture.battle.sht_shots[0].push_back(record);
-    fixture.reach_first_launch();  // counter0 fires; next counter1
+    fixture.reach_first_launch();
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));
     fixture.battle.player_phase = StageBattle::PlayerPhase::Deathbomb;
     fixture.battle.player_phase_frame = 0;
@@ -617,7 +591,7 @@ TEST(deathbomb_resumes_the_frozen_shot_clock_instead_of_starting_a_new_burst) {
         CHECK(fixture.battle.step(held));
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));
     held.update(3);
-    CHECK(fixture.battle.step(held));  // Bomb resumes counter1
+    CHECK(fixture.battle.step(held));
     CHECK(fixture.battle.player_phase == StageBattle::PlayerPhase::Active);
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));
     for (int i = 0; i < 2; ++i) {
@@ -625,7 +599,7 @@ TEST(deathbomb_resumes_the_frozen_shot_clock_instead_of_starting_a_new_burst) {
         CHECK(fixture.battle.step(held));
     }
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));
-    CHECK(fixture.battle.step(held));  // counter4, the next scheduled shot
+    CHECK(fixture.battle.step(held));
     CHECK_EQ(fixture.battle.shots.size(), size_t(2));
 }
 TEST(slow_firing_uses_integer_clock_edges_and_rate_scaled_rewind) {
@@ -642,12 +616,6 @@ TEST(slow_firing_uses_integer_clock_edges_and_rate_scaled_rewind) {
     fixture.progress.rate = .5f;
     GameInput fire;
     fire.update(1);
-    // 00443240:317-331 ticks the startup timer +0x690 through the same rate
-    // pointer (+0x698 = &DAT_004c0a28) as the firing rewind, so at rate .5 the
-    // 20-frame gate is reached on the second held update: startup 19 -> 19.5
-    // (trunc 19) fails, 20.5 (trunc 20) passes. Counter0 then fires there and
-    // every 2 updates afterwards (0,2,..14 -> updates 1,3,..29); rewind -14*.5
-    // leaves 7, emitted on update 30 and then every 2 updates.
     for (int frame = 0; frame < 36; ++frame) {
         fixture.battle.shots.clear();
         CHECK(fixture.battle.step(fire));
@@ -685,7 +653,6 @@ TEST(homing_angle_matches_native_wrap_and_float_store_sequence) {
     for (int i = 0; i < 24; ++i)
         CHECK(f.battle.step(f.idle));
     const auto& shot = f.battle.shots[0];
-    // Original446cb0+4736a0+473780, explicit037f component fixture.
     CHECK_EQ(float_to_bits(shot.x), 3234856960u);
     CHECK_EQ(float_to_bits(shot.y), 1122795520u);
     CHECK_EQ(float_to_bits(shot.angle), 3202060183u);
@@ -736,9 +703,6 @@ TEST(retail447510_scales_active_speed_with_original_f64_constant) {
     CHECK_EQ(float_to_bits(f.battle.shots[0].speed), 0x40cccccdu);
 }
 
-// H-HIT-CALLBACKS: the actual table at 004bb8e8 maps SHT hit2 to
-// 4475b0 and hit4 to447530. Verify return values, slot-scan order and the
-// copied missile mover, rather than approximating both as generic retirement.
 TEST(retail447530_returns_decremented_damage_and_keeps_projectile_live) {
     Fixture f;
     CHECK(f.init());
@@ -767,7 +731,7 @@ TEST(retail447530_returns_decremented_damage_and_keeps_projectile_live) {
     f.battle.sim.enemy_hit(enemy);
     CHECK_EQ(enemy.life, 98.f);
     CHECK_EQ(f.battle.shots[0].damage, 2.f);
-    CHECK_EQ(reg.accumulated_damage, 3);  // nominal registration is unchanged
+    CHECK_EQ(reg.accumulated_damage, 3);
     f.battle.sim.enemy_hit(enemy);
     CHECK_EQ(enemy.life, 97.f);
     CHECK_EQ(f.battle.shots[0].damage, 1.f);
@@ -844,9 +808,6 @@ TEST(retail4475b0_allocates_before_retirement_and_obeys_slot_scan_order) {
     }
 }
 
-// H-HIT-RETIRE: 00446c8d/004474eb clear shot+0x98 after disabling the
-// record, so a later real .sht allocation may reuse it without the old
-// shot's retirement (00446542, no owner/generation check) clearing it.
 TEST(retail446c8d_generic_hit_clears_slot_before_reallocation) {
     for (i32 hit_behavior : {0, 3}) {
         for (i32 old_slot : {0, 255}) {
@@ -891,9 +852,6 @@ TEST(retail446c8d_generic_hit_clears_slot_before_reallocation) {
             CHECK(!old_reg.active);
             CHECK_EQ(old_reg.flags & 1u, 0u);
             CHECK_EQ(old_reg.damage, 0.f);
-            // Boundary: every other record is held active so the next real
-            // allocation must land on the freed slot regardless of whether
-            // the pool cursor names the next or the last used record.
             for (i32 i = 0; i < 256; ++i) {
                 if (i == old_slot) continue;
                 auto& area = f.battle.damage_registrations[size_t(i)];
@@ -936,11 +894,6 @@ TEST(retail446c8d_generic_hit_clears_slot_before_reallocation) {
     }
 }
 
-// Stage6 21976: an owner that already left state1 must not keep a stale
-// shot+0x98. 004464d0's later animation retirement has no owner/generation
-// check, so sync must clear the owner pointer when it disables the record;
-// otherwise it can erase a respawn area that reused the slot (native slot15
-// lived 21968..21996 and supplied 17 further hit-score frames).
 TEST(inactive_owner_registration_sync_clears_stale_shot_pointer) {
     Fixture f;
     CHECK(f.init());
@@ -989,9 +942,6 @@ TEST(inactive_owner_registration_sync_clears_stale_shot_pointer) {
     CHECK_EQ(old_reg.flags & 1u, 1u);
 }
 
-// H-BEAM-RETIRE: 004471b7 frees the beam record but intentionally leaves
-// shot+0x98 stale; 00446542 later clears the enable bit of a reallocated
-// record with no owner/generation guard.  Preserve that original exception.
 TEST(retail4471b7_beam_termination_keeps_stale_slot_for_retirement) {
     Fixture f;
     CHECK(f.init());
@@ -1070,9 +1020,6 @@ TEST(retail4471b7_beam_termination_keeps_stale_slot_for_retirement) {
     CHECK_EQ(new_reg.flags & 1u, 0u);
 }
 
-// Two seats firing together fill the 256-slot damage table. The native
-// allocator hands back one past the end; indexing that pointer is the
-// Wasm trap "memory access out of bounds". Reuse must stay inside 0..255.
 TEST(full_damage_pool_reuses_a_slot_inside_the_table) {
     Fixture f;
     CHECK(f.init());
@@ -1111,8 +1058,6 @@ TEST(full_damage_pool_reuses_a_slot_inside_the_table) {
     CHECK(f.battle.damage_registrations[17].active);
 }
 
-// registration_slot defaults to -1. Indexing that as size_t is a Wasm trap
-// the moment the respawn aura is marked active.
 TEST(respawn_damage_with_a_stale_slot_does_not_index_past_the_table) {
     Fixture f;
     CHECK(f.init());
@@ -1122,8 +1067,6 @@ TEST(respawn_damage_with_a_stale_slot_does_not_index_past_the_table) {
     f.battle.respawn_damage.radius = 42.f;
     CHECK(f.battle.step(f.idle));
     CHECK(!f.battle.respawn_damage.active);
-    // Indexing slot -1 reads off the table and copies that word back.
-    // A rejected slot leaves the aura where the caller put it, then clears it.
     CHECK_EQ(f.battle.respawn_damage.center.x, 1234.f);
     CHECK_EQ(f.battle.respawn_damage.center.y, 5678.f);
     CHECK_EQ(f.battle.respawn_damage.radius, 42.f);

@@ -33,7 +33,7 @@ struct Host : EndingPlatform {
     bool advance_sound() override { return true; }
     bool ending_page_line(i32, u32, const std::string&) override { return true; }
 };
-}  // namespace
+}
 int main() {
     SessionState progress;
     GameInput ctrl;
@@ -42,7 +42,7 @@ int main() {
     EndingScene unseen(progress, first);
     assert(unseen.initialize());
     assert(unseen.update(ctrl));
-    assert(!unseen.should_restart(ctrl));  // 00416637: first good ending, even in staff.
+    assert(!unseen.should_restart(ctrl));
     Host multiplayer;
     EndingScene mp_staff(progress, multiplayer, true);
     assert(mp_staff.initialize() && mp_staff.update(ctrl));
@@ -69,6 +69,6 @@ int main() {
     text.save.bytes[12] = 1;
     EndingScene before_staff(progress, text);
     assert(before_staff.initialize() && before_staff.update(ctrl));
-    assert(!before_staff.should_restart(ctrl));  // 0041663d: staff/reload bit required.
+    assert(!before_staff.should_restart(ctrl));
     std::puts("ending_fast_forward_test: PASS (first-view gate, staff gate, Ctrl/Z, 12-frame phase)");
 }

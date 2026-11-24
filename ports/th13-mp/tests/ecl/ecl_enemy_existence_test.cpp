@@ -35,7 +35,7 @@ TEST(existence_query_does_not_use_missing_target_lookup_fallback) {
     r.sim.enemies.erase(r.sim.enemies.begin());
     CHECK_EQ(r.exists(2), 0);
     CHECK_EQ(r.exists(7), 1);
-    r.sim.enemies.back()->dead = true;  // original417f10 reads membership until manager removal
+    r.sim.enemies.back()->dead = true;
     CHECK_EQ(r.exists(7), 1);
     r.sim.enemies.clear();
     CHECK_EQ(r.exists(7), 0);
@@ -70,7 +70,7 @@ TEST(death_effect_instruction_does_not_drop_or_terminate_and_forced_drop_is_sepa
     code.clear();
     th13test::emit(code, 0, 562, 0, 255, 0, {});
     r.context.instruction = reinterpret_cast<const EclInstruction*>(code.data());
-    r.sim.mode_flags = 0x20;  //562 is unconditional;509 has a mode gate
+    r.sim.mode_flags = 0x20;
     CHECK_EQ(r.sim.commands.execute(r.context, 562), 0);
     CHECK(!r.caller.dead);
     CHECK_EQ(r.caller.drop_main, 0);
@@ -94,5 +94,5 @@ TEST(ecl_sound_uses_enemy_x) {
     CHECK_EQ(r.sim.commands.execute(r.context, 516), 0);
     CHECK_EQ(sounds, 1);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("enemy-existence"); }

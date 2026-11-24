@@ -1,4 +1,3 @@
-// R-G: clearing a stage revives exhausted seats before the next HUD is built.
 #include "../../harness/test_framework.hpp"
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/Session.hpp"
@@ -51,8 +50,6 @@ void cross_stage(unsigned exhausted_seat, bool ghost, const char* name, bool rew
     exhausted.final_death = rewarded;
     auto& hud = old.seat_huds[exhausted_seat];
     const i32 stock = rewarded ? 1 : -1;
-    // CHECK_EQ binds references; materialize max() to avoid retaining its
-    // reference to a temporary zero when stock is negative.
     const i32 expected_stock = std::max(0, stock);
     hud.extra_lives = stock;
     hud.life_pieces = 2;
@@ -66,8 +63,6 @@ void cross_stage(unsigned exhausted_seat, bool ghost, const char* name, bool rew
     old.seat_huds[survivor].bombs = 3;
     old.seat_huds[survivor].power = 315;
     old.seat_huds[survivor].life_piece_threshold_index = 2;
-    // Raw chapter snapshots must preserve ghosts and the in-flight death;
-    // only the explicit stage-clear activation is allowed to revive them.
     multiplayer::StageEntry raw;
     raw.Capture(old, app.progress, app.selection_score, 1234, 0, 1234, 0);
     CHECK_EQ(raw.seats[exhausted_seat].extra_lives, stock);
@@ -208,7 +203,6 @@ TEST(marisa_beams_stop_after_stage_clear_reuses_shot_generations) {
         CHECK(frames(0, 40));
         for (i32 cycle = 0; cycle < 3; ++cycle) {
             set_power();
-            // Keep stage hazards from interrupting the scripted firing cycles.
             for (i32 seat = 0; seat < count; ++seat)
                 battle.seats[size_t(seat)].invulnerable = 180;
             CHECK(frames(1, 60));

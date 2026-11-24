@@ -1,4 +1,3 @@
-// ImGui GPU adapter reused from TH11; only render-scale handling differs.
 #if TH_ENABLE_THPRAC
 namespace {
 constexpr const char* imguiVertexSource = R"(#version 300 es
@@ -20,11 +19,9 @@ out vec4 Out_Color;
 void main(){Out_Color=Frag_Color*texture(Texture,Frag_UV.st);}
 )";
 
-}  // namespace
+}
 void Renderer::render_imgui(const ImDrawData* data, u32 targetHandle) {
     if (!data || data->CmdListsCount <= 0 || data->TotalVtxCount <= 0 || data->TotalIdxCount <= 0) return;
-    // TH11's backbuffer is handle 1 and depth buffer is handle 2. The TH10
-    // sentinel 0xffffffff is not a valid TH11 surface; ImGui needs no depth.
     flush();
     auto& output = target(targetHandle, 0);
     if (!imguiProgram) {
@@ -104,9 +101,6 @@ void Renderer::render_imgui(const ImDrawData* data, u32 targetHandle) {
     const float displayWidth = data->DisplaySize.x * clipScale.x, displayHeight = data->DisplaySize.y * clipScale.y,
                 left = data->DisplayPos.x, right = left + data->DisplaySize.x, top = data->DisplayPos.y,
                 bottom = top + data->DisplaySize.y;
-    // The backbuffer is presented with a vertical flip (see commit()), so draw
-    // ImGui pre-flipped: mirror the projection Y and skip the GL-origin scissor
-    // conversion below. The two flips compose to identity for the overlay.
     const float projection[4][4] = {{2.0f / (right - left), 0, 0, 0},
                                     {0, 2.0f / (bottom - top), 0, 0},
                                     {0, 0, -1, 0},
@@ -160,10 +154,6 @@ void Renderer::render_imgui(const ImDrawData* data, u32 targetHandle) {
         vertexOffset += vertexBytes;
         indexOffset += indexBytes;
     }
-    // ImGui is an end-of-frame overlay on the existing GPU backbuffer.  Keep the
-    // GPU copy synchronized with the current CPU revision: advancing the private
-    // GPU version here makes surface() treat the unchanged CPU pixels as newer on
-    // the next paused/menu frame and upload them over the overlay/game image.
     output.rendered = true;
     drawState = DrawStateCache{};
     currentProgram = 0;

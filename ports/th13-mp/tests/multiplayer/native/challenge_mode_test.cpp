@@ -1,4 +1,3 @@
-// R-C：挑战模式禁雷、记录 Miss、灵界槽恒为零。
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 
@@ -96,7 +95,7 @@ void separate_seats(Fixture& fixture, i32 target) {
     }
 }
 
-}  // namespace
+}
 
 TEST(challenge_blocks_bombs_counts_misses_and_locks_trance) {
     Fixture f;

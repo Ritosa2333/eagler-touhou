@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-"""E2E 逐帧键态生成器：th13_01.rpy → 每关 held u16 数组（JSON）。
-
-外层 oracle/replayfmt.py 解码（ReplayFile.cpp 的 python 孪生），把每关
-「当前态」u16 流原样导出，供浏览器端 E2E 驱动作为玩家键盘键态（每游戏帧
-一个 held 值，经 _th13_key 键沿注入生产 GameKeyboard/GameInput 链）。
-
-用法（容器内；$ 经外层 make exec 会被吞，复合命令落脚本文件）：
-  python3 eagler-touhou/ports/th13/tools/e2e_inputs_gen.py \
-      --replay games/replays/th13_01.rpy --out artifacts/tmp-scratch/e2e_inputs.json
-"""
 from __future__ import annotations
 
 import argparse
@@ -18,7 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."))
 
-from oracle import replayfmt  # noqa: E402
+from oracle import replayfmt
 
 
 def main() -> int:
@@ -36,8 +26,6 @@ def main() -> int:
         held = []
         for i in range(s.frame_count):
             h, _p, _r = s.frame(i)
-            # 注入映射只覆盖这些位；0x800(C) 恒与 0x200(Ctrl) 同现于原版流
-            #（录侧 quirk：C 键 = 0x200|0x800，GameKeyboard vk67 同源）。
             unknown = h & ~0x0BFF
             if unknown:
                 raise SystemExit("stage %d frame %d: unmapped held bits %#x"
@@ -72,7 +60,6 @@ def main() -> int:
     print("wrote %s: %d stages, %d frames, seeds=%s"
           % (args.out, len(stages), total, [s["seed"] for s in stages]))
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

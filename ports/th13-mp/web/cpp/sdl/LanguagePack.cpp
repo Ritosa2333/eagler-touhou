@@ -18,11 +18,8 @@ bool safe_relative(std::string_view name) {
     }
     return true;
 }
-}  // namespace
+}
 bool language_asset_allowed(std::string_view base) {
-    // Dialogue and comments are CP932. thcrap Simplified Chinese msg text is
-    // UTF-8, so applying those files would render as mojibake. Bitmap and
-    // animation replacements are the verified surface.
     return safe_relative(base) && (suffix(base, ".anm") || suffix(base, ".png"));
 }
 bool language_texture_allowed(std::string_view name) { return language_asset_allowed(name) && suffix(name, ".png"); }
@@ -62,4 +59,4 @@ bool read_language_file(const std::string& path, std::vector<u8>& bytes) {
     SDL_free(data);
     return true;
 }
-}  // namespace th13::sdl
+}

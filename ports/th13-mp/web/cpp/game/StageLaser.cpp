@@ -9,18 +9,17 @@ bool on_screen(const Vec3& p, float margin) {
     return double(p.x) + margin >= -192 && double(p.x) - margin < 192 && double(p.y) + margin >= 0 &&
            double(p.y) - margin < 448;
 }
-}  // namespace
+}
 
 float StageLaser::collision_width() const {
-    if (kind == Kind::Curve) return width * .5f;  // 435a07: every segment, all widths
-    // 4336cd/4336d8: narrowed full width passed to 444260.
+    if (kind == Kind::Curve) return width * .5f;
     return width < 32.0f        ? width * 0.5f
            : kind == Kind::Line ? float(double(width) - (double(width) + 16.0) * 0.5)
                                 : float(double(width) - (double(width) + 16.0) / 3.0);
 }
 
 i32 StageLaser::player_contact(float x, float y, float half_x, float half_y) const {
-    if (kind == Kind::Beam) return 0;  // 438000: no collision.
+    if (kind == Kind::Beam) return 0;
     float ox = origin[0], oy = origin[1], span = length;
     if (kind == Kind::Line) {
         float dx, dy;
@@ -43,8 +42,7 @@ i32 StageLaser::player_contact(float x, float y, float half_x, float half_y) con
 }
 
 bool StageLaser::update(const float* first_boss_position, float rate) {
-    if (kind == Kind::Beam) return true;  // 437ff0: no-op update.
-    // Split children have an empty line descriptor queue (433870/4342e0).
+    if (kind == Kind::Beam) return true;
     if (kind == Kind::Line) {
         if (target_length <= length) {
             start_offset = float(double(length_speed) * rate + start_offset);
@@ -68,9 +66,6 @@ bool StageLaser::update(const float* first_boss_position, float rate) {
         anm_flags |= 8;
         return true;
     }
-    // 434cc0: infinite lasers have their own queue interpreter. In particular
-    // 0x100000 changes ANM blend bits, not player collision. Unknown queue ops
-    // advance as in the retail function, without ordinary-bullet semantics.
     while (ex_cursor < 18) {
         const auto& entry = ex[ex_cursor];
         if (!entry.op || (!entry.flags && behavior_flags)) break;
@@ -102,7 +97,6 @@ bool StageLaser::update(const float* first_boss_position, float rate) {
             reset_time();
             phase = 4;
         }
-        // This transition does not fall through to opening's width formula.
     } else {
         if (phase == 4) {
             if (time >= timing[1]) {
@@ -121,7 +115,7 @@ bool StageLaser::update(const float* first_boss_position, float rate) {
             width = float(double(target_width) - double(time_fraction) * double(target_width) / double(timing[3]));
         }
     }
-    anm_flags |= 8;  // width/length scale is refreshed before the body's ANM tick.
+    anm_flags |= 8;
     return true;
 }
 
@@ -133,7 +127,6 @@ StageLaser* StageSim::find_laser(i32 id) {
 }
 
 void StageSim::emit_infinite_laser(const StageEt& et, const StageEnemy& enemy, i32 id) {
-    // 42fed0 caps the entire live list, including nodes pending retirement.
     if (lasers.size() >= 256) return;
     StageLaser laser;
     laser.id = id;
@@ -173,12 +166,11 @@ void StageSim::append_laser(StageLaser laser) {
     laser.generation = laser_serial;
     if (laser.kind != StageLaser::Kind::Infinite && laser.kind != StageLaser::Kind::Beam)
         laser.id = signed_bits(laser_serial);
-    lasers.push_back(laser);  // 42fed0 appends, including duplicate IDs.
+    lasers.push_back(laser);
     if (laser_birth && !laser_birth(lasers.back())) {
         error_ = "Infinite laser animation birth failed";
         return;
     }
-    // 4333c1 passes a literal zero pan to 460c50.
     if (laser.kind != StageLaser::Kind::Beam && laser.sound >= 0 && laser_sound && !laser_sound(laser.sound))
         error_ = "Infinite laser birth sound failed";
 }
@@ -195,8 +187,6 @@ void StageSim::emit_beam_laser(const StageEt& et, const StageEnemy& enemy, i32 i
         laser.origin[1] = et.offset[1] + et.absolute[1];
         laser.origin[2] = 0;
     }
-    // 437d70 copies descriptor +18 angle and +20 width; 713 writes
-    // emitter speed1 to +20, and its explicit ID to +28.
     laser.angle = wrap_angle(et.angle1);
     laser.width = et.speed1;
     laser.sprite = et.sprite;
@@ -262,8 +252,6 @@ void StageSim::emit_curve_laser(const StageEt& et, const StageEnemy& enemy) {
         laser.origin[0] += x;
         laser.origin[1] += y;
     }
-    // 41ec71 -> descriptor+20 ->434f10(+5e0): number of history
-    // samples, taken from701 arg1, independent of700's length fields.
     if (et.laser_timing[0] < 1) {
         error_ = "Curve laser sample count must be positive";
         return;
@@ -286,9 +274,6 @@ void StageSim::emit_curve_laser(const StageEt& et, const StageEnemy& enemy) {
 bool StageSim::advance_line_behaviors(StageLaser& laser) {
     const float rate = time_rate();
     const float tick = rate > .99f && rate < 1.01f ? 1.f : rate;
-    // 4306e0 -> 4315d0; completion re-enters the descriptor queue in the
-    // SAME update, before length growth or movement. Line op4 differs from
-    // bullet op4: scalar speed is accumulated, never replaced by hypot.
     u32 finished = 0;
     do {
         while (laser.ex_cursor < 18) {
@@ -299,7 +284,7 @@ bool StageSim::advance_line_behaviors(StageLaser& laser) {
             case 1:
             case 8:
                 laser.behavior_flags |= entry.op;
-                break;  // native virtual handlers are42f690/42f6b0 stubs
+                break;
             case 4: {
                 laser.behavior_flags |= 4;
                 laser.acceleration_time = 0;
@@ -356,7 +341,7 @@ bool StageSim::advance_line_behaviors(StageLaser& laser) {
                 error_ = "Unimplemented line laser queue operation " + std::to_string(entry.op);
                 return false;
             default:
-                break;  // retail4306e0 default advances unrecognized entries
+                break;
             }
             ++laser.ex_cursor;
         }
@@ -399,8 +384,6 @@ void StageSim::advance_lasers() {
             split_laser(index, {player_x, player_y, 0}, {32, 32, 0}, 0, false, false, true);
             return result;
         }
-        // A prior contact may have made children containing the next contact.
-        // Keep this query's fragments in fixed order and cut every hit once.
         std::vector<size_t> fragments{index};
         for (i32 hit = 0; hit < laser_collision_count; ++hit) {
             const size_t before = lasers.size();
@@ -413,8 +396,6 @@ void StageSim::advance_lasers() {
         laser_collision_count = 0;
         return result;
     };
-    // Only boss slot0 is followed (43350e); do not substitute slot1/slot2 or
-    // the enemy that originally emitted this laser.
     const float* first_boss = nullptr;
     for (const auto& enemy : enemies)
         if (!enemy->dead && enemy->script_id == boss_slot[0]) {
@@ -422,8 +403,6 @@ void StageSim::advance_lasers() {
             break;
         }
     for (size_t index = 0; index < lasers.size();) {
-        // 42fcd0 saves next BEFORE the callback. New children of the old tail
-        // wait a frame; children appended earlier may be reached this frame.
         const bool had_next = index + 1 < lasers.size();
         if (lasers[index].active && lasers[index].kind == StageLaser::Kind::Curve && !lasers[index].pending_remove &&
             lasers[index].phase != 1) {
@@ -444,11 +423,7 @@ void StageSim::advance_lasers() {
                     curve.anm_flags = ex.args[4] == 0 ? curve.anm_flags & ~0x1e0u : (curve.anm_flags & ~0x3e0u) | 0x20u;
                 ++curve.ex_cursor;
             }
-            //4355f0 samples path at float timer+44 minus segment index;
-            // quantizing to the integer timer makes slowed curves jump.
             curve.curve_path.sample(curve.time_fraction, curve.curve_samples);
-            // 4355f0 retires once all samples leave the playfield, after
-            // the thirty-update grace period. A curve is not an immortal chord.
             if (curve.cull_timer < 1 && !(curve.behavior_flags & 0x100u) &&
                 std::none_of(
                     curve.curve_samples.begin(), curve.curve_samples.end(),
@@ -459,12 +434,6 @@ void StageSim::advance_lasers() {
                 continue;
             }
             if (curve.cull_timer > 0) --curve.cull_timer;
-            // 4355f0 updates the sample array, not the base origin/angle.
-            // Drawing consumes that array directly; do not replace the curve
-            // with a head-to-tail chord or overwrite its emitter state.
-            // 435996: accumulate signed segment speeds, query from16px inclusive,
-            // query at sample+half-speed. A hit splits the original curve
-            // immediately; subsequent iterations observe its new sample count.
             float distance = 0;
             for (size_t sample = 0; sample + 1 < lasers[index].curve_samples.size(); ++sample) {
                 const auto point = lasers[index].curve_samples[sample];
@@ -487,7 +456,6 @@ void StageSim::advance_lasers() {
                 collide(index, segment);
                 if (!error_.empty()) return;
             }
-            // Splitting can append nodes and reallocate the vector.
             auto& updated = lasers[index];
             if (laser_animation && !laser_animation(updated)) {
                 error_ = "Curve laser animation update failed";
@@ -552,12 +520,11 @@ bool StageSim::laser_effect(const StageLaser& laser, const Vec3& pos, bool recta
 
 void StageSim::split_laser(size_t index, const Vec3& center, const Vec3& size, float angle, bool circle,
                            bool spawn_items, bool respect_protection) {
-    if (lasers[index].kind == StageLaser::Kind::Beam) return;  // 438010/438020: no-op
+    if (lasers[index].kind == StageLaser::Kind::Beam) return;
     if (lasers[index].kind == StageLaser::Kind::Curve) {
         split_curve_laser(index, center, size, angle, circle, spawn_items, respect_protection);
         return;
     }
-    // 433870/4342e0 and 431bf0/4327c0 sample segment centers every16px.
     const StageLaser source = lasers[index];
     if (respect_protection && source.cancel_protection) return;
     const bool line = source.kind == StageLaser::Kind::Line;
@@ -625,7 +592,7 @@ void StageSim::split_laser(size_t index, const Vec3& center, const Vec3& size, f
     size_t end = first;
     while (end < removed.size() && !removed[end])
         ++end;
-    if (!line && first) end = first;  // the infinite parent must retain its original origin
+    if (!line && first) end = first;
     if (end == removed.size() && (line || !first)) return;
     const float retained = float(end - first) * 16;
     if (line) {
@@ -633,8 +600,6 @@ void StageSim::split_laser(size_t index, const Vec3& center, const Vec3& size, f
         if (retained < 24) parent.pending_remove = true;
     }
     parent.length = retained;
-    // Parent updates are committed before appending; vector growth cannot
-    // invalidate references used by the manager or the presentation callback.
     for (size_t begin = end; begin < removed.size();) {
         if (removed[begin]) {
             ++begin;
@@ -672,8 +637,6 @@ void StageSim::split_laser(size_t index, const Vec3& center, const Vec3& size, f
 
 void StageSim::split_curve_laser(size_t index, const Vec3& center, const Vec3& size, float angle, bool circle,
                                  bool spawn_items, bool protection) {
-    // 4371b0 rectangle /4378d0 circle: cancellation tests sample points,
-    // not the rendered ribbon width and not fixed16px line segments.
     const StageLaser source = lasers[index];
     if (protection && source.cancel_protection) return;
     const size_t count = source.curve_samples.size();
@@ -706,9 +669,6 @@ void StageSim::split_curve_laser(size_t index, const Vec3& center, const Vec3& s
     while (first < count && removed[first])
         ++first;
     if (circle) {
-        // 4378d0 does not create children or rewind the path timer. A leading
-        // hit run shifts sample data; an interior run discards the prefix
-        // through that run if a surviving tail exists, otherwise truncates.
         size_t shift = first, keep = count - first;
         if (!first) {
             size_t hit = 0;
@@ -737,7 +697,7 @@ void StageSim::split_curve_laser(size_t index, const Vec3& center, const Vec3& s
         parent.previous_time = parent.time;
         parent.time -= i32(first);
         parent.time_fraction -= float(first);
-        parent.curve_samples.resize(count - first);  // native leaves the array unshifted
+        parent.curve_samples.resize(count - first);
         if (count - first <= 3) {
             parent.pending_remove = true;
             return;
@@ -747,8 +707,6 @@ void StageSim::split_curve_laser(size_t index, const Vec3& center, const Vec3& s
     while (end < count && !removed[end])
         ++end;
     const size_t prefix = end - first;
-    // 4371b0 copies the original descriptor/path into each surviving run
-    // longer than3. The parent retains the first run with its current array.
     for (size_t at = end; at < count;) {
         while (at < count && removed[at])
             ++at;
@@ -807,10 +765,8 @@ void StageSim::cancel_lasers_box(const Vec3& pos, const Vec3& size, float angle,
 }
 
 void StageSim::cancel_lasers(bool reset_protection) {
-    // 430220 clears protection before invoking every infinite laser's
-    // full cancellation method434940. No item spawn occurs in this method.
     for (auto& laser : lasers) {
-        if (!reset_protection && laser.phase == 1) continue;  // 430300 skip gate
+        if (!reset_protection && laser.phase == 1) continue;
         if (reset_protection) {
             laser.cancel_protection = 0;
             laser.cull_timer = 0;
@@ -823,16 +779,13 @@ bool StageSim::cancel_laser(StageLaser& laser) {
     if (laser.kind == StageLaser::Kind::Beam) {
         laser.pending_remove = true;
         return true;
-    }  // 438050(mode 0)
+    }
     if (laser.kind == StageLaser::Kind::Curve) {
-        // 437b80: no screen cull; sample0,3,6... even on a short curve.
         for (size_t i = 0; i < laser.curve_samples.size(); i += 3)
             if (!laser_effect(laser, laser.curve_samples[i].position)) return false;
         laser.phase = 1;
         return true;
     }
-    // 432e00 / 434940, mode arguments both zero: bypass protection.
-    // Infinite cancellation culls particles to the playfield; line does not.
     float dx, dy;
     polar_xy(laser.angle, 8.0f, dx, dy);
     Vec3 pos{laser.origin[0] + dx, laser.origin[1] + dy, laser.origin[2]};
@@ -847,8 +800,8 @@ bool StageSim::cancel_laser(StageLaser& laser) {
             distance += 16;
         } while (double(distance) + 8 < double(laser.length));
     }
-    laser.phase = 1;  // manager removes it on its next traversal
+    laser.phase = 1;
     return true;
 }
 
-}  // namespace th13
+}

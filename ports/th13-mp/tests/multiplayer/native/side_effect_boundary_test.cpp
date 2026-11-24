@@ -1,29 +1,3 @@
-// m1.side_effect_boundary —— M1/T7 固定 case：T2 探针 (a)(b)(c)(d) 收全 +
-// T3 冲账/录制 + T4 队列收全（workflow T7「Title/Run/Ending/NextStage/
-// AfterEnding 五条转换路径『先画后拆/只置 flag』+ 装载幕末次 present +
-// 冲账时机 + 录制恰好一次」）。
-//
-// 被测生产面（全部 public/struct 公开态，零生产钩子）：
-//   - present 段（Application.cpp:1618-1632）：pause->draw_overlay →
-//     display->draw() → destination 尾。五条路径的消费点：
-//       Run(13)/Ending(15) ⇒ draw_loading(false)+pending_load=1（「只置
-//       幕」，次帧头 complete_loading→begin_run）；Title(4/2/14)/Ending/
-//       AfterEnding(16) ⇒ present 尾 apply_destination 同帧拆建（「先画后
-//       拆」）；NextStage(100) ⇒ 只置 stage_transition_loading 不拆场景。
-//   - AfterEnding native 合成（Application.cpp:1217-1232）：活动 run 上直接
-//       置 pending_destination=AfterEnding(16)；ending==nullptr 前置断言
-//       （非空即停用例换证据路径）；apply_destination 跳过 if(ending) 拆卸
-//       块，直接 save_score+begin_title(3)（reason 3 专属 AfterEnding）。
-//   - ending clear 迁移（T2 解耦(b)）：select_target/clear_target 已从
-//       update_scene_pass 移至 present 头——submission_trace 断言 update 段
-//       零 screen Clear 项、present 段先 Clear 后场景 Draw。
-//   - T3：pending_play_frames_ 镜像（commit 头冲账）+ PendingReplayRecorder
-//       挂起槽（record_input 输入沿/update_spell_time 钟值，帧身份幂等、
-//       同帧双 commit 不双记）。
-//   - T4：PendingFileEvent 八捕获点三档（帧失败/吞错/菜单错误——本件钉
-//       捕获序冲账与 update-only 不变性，档位失败语义由 unit 件逐点保真）
-//       + PendingVoicePan（捕获拍 tap 恰一次、commit apply-only）+
-//       save_replay_slot 确认拍原位（不进待确认队列）。
 #include "../../harness/test_framework.hpp"
 
 #include "game/GameInput.hpp"
@@ -65,10 +39,6 @@ const char* repo_root() {
     return root && *root ? root : "../../..";
 }
 
-// 测试产物（存档/ending trace）落到 runner 的 case 运行目录：
-// TH13_NATIVE_RUN_DIR 由 tests/multiplayer/lib/native-runner.mjs 注入
-// （= <outer>/artifacts/mp-native-run/<case>/）。未注入时保持旧行为
-// （相对 cwd），供直接运行二进制时使用。
 std::string run_output_path(const char* name) {
     const char* dir = std::getenv("TH13_NATIVE_RUN_DIR");
     if (!dir || !*dir) return name;
@@ -151,12 +121,11 @@ i32 total_frames(const App& app) {
     return app.files.ordinary_records[size_t(app.progress.character)].total_frames;
 }
 
-// ---- Draw 段探针：闩锁第一次 Draw 拍，按模式断言帧内状态面（先画后拆）。
 struct DrawProbe {
     enum class Mode { RunBaffle, BaffleLast, NextStage, AfterEnding, Title, Ending };
     th13::FrameCallback callback{};
     App* app = nullptr;
-    th13::FrameScheduler* attached_scheduler = nullptr;  // 登记归属（FrameCallback::scheduler private）
+    th13::FrameScheduler* attached_scheduler = nullptr;
     Mode mode = Mode::RunBaffle;
     int fires = 0;
     bool observed_ok = false;
@@ -166,34 +135,28 @@ struct DrawProbe {
         ++probe.fires;
         switch (probe.mode) {
         case Mode::RunBaffle:
-            // (b) Run destination 帧：Draw 拍内 pending_load==0、title 存活。
             probe.observed_ok = app.pending_load == 0 && app.title != nullptr && app.run == nullptr;
             break;
         case Mode::BaffleLast:
-            // 装载幕末次 present 帧：update 头已 begin_run，装载 caption 仍存活。
             probe.observed_ok = app.run != nullptr && app.pending_load == 0 &&
                                 app.loading_prayer != 0 && app.progress.stage_frame == 1;
             break;
         case Mode::NextStage:
-            // (c) NextStage 帧：Draw 拍内 run 存活且 flag 仍 false（只置 flag）。
             probe.observed_ok = app.run != nullptr && !app.stage_transition_loading;
             break;
         case Mode::AfterEnding:
-            // AfterEnding 合成帧：Draw 拍内活动 run 存活（先画）。
             probe.observed_ok = app.run != nullptr &&
                                 app.pending_destination == i32(Destination::AfterEnding);
             break;
         case Mode::Title:
-            // (a) Title destination 帧：Draw 拍内 run 存活且 pause active（先画）。
             probe.observed_ok = app.run != nullptr && app.pause != nullptr && app.pause->active();
             break;
         case Mode::Ending:
-            // Ending 帧：Draw 拍内 run 存活（先画后拆）。
             probe.observed_ok = app.run != nullptr &&
                                 app.pending_destination == i32(Destination::Ending);
             break;
         }
-        probe.callback.enabled = false;  // 闩锁
+        probe.callback.enabled = false;
         return i32(th13::FrameAction::Continue);
     }
     bool attach(App& target, Mode m) {
@@ -207,7 +170,6 @@ struct DrawProbe {
         return true;
     }
     void detach() {
-        // FrameScheduler::remove 对未注册回调按 c.scheduler!=this 幂等跳过。
         if (attached_scheduler) attached_scheduler->remove(callback);
         attached_scheduler = nullptr;
         app = nullptr;
@@ -215,7 +177,6 @@ struct DrawProbe {
     ~DrawProbe() { detach(); }
 };
 
-// 行级 kind 统计（trace 行内 "kind":"clear"/"draw" 计数与首个位置）。
 struct KindSpan {
     int clear = 0, draw = 0;
     int first_clear = -1, first_draw = -1;
@@ -246,16 +207,14 @@ KindSpan scan_span(const std::string& text, size_t begin, size_t end) {
     return span;
 }
 
-}  // namespace
+}
 
-// ---- 1) 五条转换路径探针（(b)→末次 present→(c)→AfterEnding 合成→(a)→Ending）----
 TEST(side_effect_transition_probes_five_paths) {
     App app;
     CHECK(boot_live_run(app, "t7se-paths-save.bin"));
     if (app.failure.empty()) {
         GameInput input;
 
-        // ---- (b) Run destination：先画（Draw 拍 pending_load==0）后建幕 ----
         CHECK_EQ(app.pending_destination, i32(Destination::Run));
         {
             DrawProbe probe;
@@ -264,13 +223,12 @@ TEST(side_effect_transition_probes_five_paths) {
             CHECK(app.failure.empty());
             CHECK_EQ(probe.fires, 1);
             CHECK(probe.observed_ok);
-            CHECK_EQ(app.pending_load, 1u);        // present 尾置位
+            CHECK_EQ(app.pending_load, 1u);
             CHECK_EQ(app.loading_frames, 0u);
             CHECK(app.loading_prayer != 0);
-            CHECK_EQ(app.pending_destination, i32(Destination::Run));  // Run 分支不消费
+            CHECK_EQ(app.pending_destination, i32(Destination::Run));
             probe.detach();
         }
-        // ---- 装载幕末次 present：update 头 complete_loading→begin_run ----
         {
             DrawProbe probe;
             CHECK(probe.attach(app, DrawProbe::Mode::BaffleLast));
@@ -278,17 +236,15 @@ TEST(side_effect_transition_probes_five_paths) {
             CHECK(app.failure.empty());
             CHECK_EQ(probe.fires, 1);
             CHECK(probe.observed_ok);
-            CHECK_EQ(app.pending_load, 0u);        // 已消费
+            CHECK_EQ(app.pending_load, 0u);
             CHECK(app.run != nullptr);
-            CHECK_EQ(app.progress.stage_frame, 1);  // battle f0
+            CHECK_EQ(app.progress.stage_frame, 1);
             probe.detach();
         }
-        // 稳态对局 ×2。
         for (int F = 1; F <= 2; ++F) {
             CHECK(drive(app, input, kZ));
             CHECK_EQ(app.progress.stage_frame, F + 1);
         }
-        // ---- (c) NextStage：只置 flag 不拆场景；Draw 拍内 flag 仍 false ----
         {
             DrawProbe probe;
             app.pending_destination = i32(Destination::NextStage);
@@ -297,19 +253,17 @@ TEST(side_effect_transition_probes_five_paths) {
             CHECK(app.failure.empty());
             CHECK_EQ(probe.fires, 1);
             CHECK(probe.observed_ok);
-            CHECK(app.stage_transition_loading);          // present 尾置位
-            CHECK(app.run != nullptr);                    // 场景不拆
+            CHECK(app.stage_transition_loading);
+            CHECK(app.run != nullptr);
             CHECK_EQ(app.pending_destination, -1);
             CHECK_EQ(app.current_destination, i32(Destination::Run));
             probe.detach();
-            app.stage_transition_loading = false;  // 单帧后复位防污染（同 unit 件）
+            app.stage_transition_loading = false;
         }
         CHECK(drive(app, input, 0));
         CHECK(!app.stage_transition_loading);
 
-        // ---- AfterEnding 合成：活动 run 上置 16，ending==nullptr 前置断言 ----
         {
-            // 前置断言（非空即停用例换证据路径——工单显式条款）。
             CHECK(app.ending == nullptr);
             if (app.ending != nullptr) return;
             DrawProbe probe;
@@ -318,30 +272,27 @@ TEST(side_effect_transition_probes_five_paths) {
             CHECK(drive(app, input, 0));
             CHECK(app.failure.empty());
             CHECK_EQ(probe.fires, 1);
-            CHECK(probe.observed_ok);              // Draw 拍内 run 存活（先画）
-            CHECK(app.run == nullptr);             // 后拆（16∉{Run,Ending} 走 apply_destination）
-            CHECK(app.ending == nullptr);          // if(ending) 拆卸块被跳过
+            CHECK(probe.observed_ok);
+            CHECK(app.run == nullptr);
+            CHECK(app.ending == nullptr);
             CHECK(app.title != nullptr);
-            CHECK_EQ(app.title->state.return_reason, 3);  // reason 3 专属 AfterEnding
+            CHECK_EQ(app.title->state.return_reason, 3);
             CHECK_EQ(app.current_destination, i32(Destination::Title));
             CHECK_EQ(app.pending_destination, -1);
-            CHECK_EQ(app.pending_load, 0u);        // 不走装载幕分支
+            CHECK_EQ(app.pending_load, 0u);
             probe.detach();
         }
-        // 战后标题可继续开局（begin_title(3) 链健康）。Run destination 两拍：
-        // 第一拍 present 尾建装载幕，第二拍 update 头 begin_run（battle f0）。
         CHECK(app.start_game(1));
-        CHECK(drive(app, input, 0));  // 屏障帧（建幕）
-        CHECK(drive(app, input, 0));  // complete_loading→begin_run
+        CHECK(drive(app, input, 0));
+        CHECK(drive(app, input, 0));
         CHECK(app.run != nullptr);
         for (int F = 0; F < 2; ++F) CHECK(drive(app, input, kZ));
 
-        // ---- (a) Title destination：先画（run 存活 + pause active）后拆 ----
         {
             CHECK(app.pause != nullptr);
             CHECK(app.pause->open(th13::PauseEntrance::Pause));
             CHECK(app.pause->active());
-            CHECK(app.return_to_title());  // RunPause 平台回调（生产链）
+            CHECK(app.return_to_title());
             CHECK_EQ(app.pending_destination, i32(Destination::Title));
             DrawProbe probe;
             CHECK(probe.attach(app, DrawProbe::Mode::Title));
@@ -356,16 +307,12 @@ TEST(side_effect_transition_probes_five_paths) {
             CHECK_EQ(app.current_destination, i32(Destination::Title));
             probe.detach();
         }
-        // ---- Ending 经装载幕两拍消费（0xf 与 Run 同走 present 尾建幕分支，
-        // 拆建在次帧头 complete_loading→apply_destination：先画后拆）----
         {
             CHECK(app.start_game(1));
-            CHECK(drive(app, input, 0));  // 屏障帧（建幕）
-            CHECK(drive(app, input, 0));  // complete_loading→begin_run → battle f0
+            CHECK(drive(app, input, 0));
+            CHECK(drive(app, input, 0));
             CHECK(app.run != nullptr);
             CHECK(drive(app, input, kZ));
-            // th13_debug_ending 同款字段（BrowserRuntime.cpp:581-597 语义），
-            // 但 destination 走 present 尾消费（真实 0x42c550 帧尾拍）。
             app.progress.character = 0;
             app.progress.difficulty = 1;
             app.progress.continues = 0;
@@ -377,33 +324,30 @@ TEST(side_effect_transition_probes_five_paths) {
             CHECK(drive(app, input, 0));
             CHECK(app.failure.empty());
             CHECK_EQ(probe.fires, 1);
-            CHECK(probe.observed_ok);              // Draw 拍内 run 存活（先画）
-            CHECK(app.run != nullptr);             // 幕分支不拆场景（同 Run）
-            CHECK_EQ(app.pending_load, 1u);        // 装载幕建立（Ending∈幕分支）
+            CHECK(probe.observed_ok);
+            CHECK(app.run != nullptr);
+            CHECK_EQ(app.pending_load, 1u);
             CHECK_EQ(app.pending_destination, i32(Destination::Ending));
             probe.detach();
-            // 次帧头 complete_loading→apply_destination→Ending 分支：拆 run、建结局。
             CHECK(drive(app, input, 0));
             CHECK(app.failure.empty());
-            CHECK(app.run == nullptr);             // 后拆（release_run）
-            CHECK(app.ending != nullptr);          // Ending 场景已建
+            CHECK(app.run == nullptr);
+            CHECK(app.ending != nullptr);
             CHECK_EQ(app.current_destination, i32(Destination::Ending));
             CHECK_EQ(app.pending_destination, -1);
             CHECK_EQ(app.pending_load, 0u);
-            // ending 稳态帧可跑。
             CHECK(drive(app, input, 0));
             CHECK(app.failure.empty());
         }
     }
 }
 
-// ---- 2) (d) ending clear 迁移：update 段零 Clear、present 段先 Clear 后 Draw ----
 TEST(side_effect_ending_clear_migration_trace) {
     App app;
     CHECK(boot_live_run(app, "t7se-trace-save.bin"));
     if (app.failure.empty()) {
         GameInput input;
-        CHECK(drive(app, input, 0));  // 屏障帧
+        CHECK(drive(app, input, 0));
         CHECK(drive(app, input, kZ));
         app.progress.character = 0;
         app.progress.difficulty = 1;
@@ -416,7 +360,7 @@ TEST(side_effect_ending_clear_migration_trace) {
         CHECK(app.failure.empty());
         CHECK(app.ending != nullptr);
         CHECK(app.run == nullptr);
-        CHECK_EQ(app.pending_load, 0u);  // 稳态 ending 帧（无屏障帧混入）
+        CHECK_EQ(app.pending_load, 0u);
 
         const std::string trace_path = run_output_path("t7se-ending-trace.jsonl");
         CHECK(app.graphics.submission_trace.open(trace_path.c_str()));
@@ -470,7 +414,6 @@ TEST(side_effect_ending_clear_migration_trace) {
             present_clear_total += present_span.clear;
             total_present_draws += present_span.draw;
             if (present_span.draw > 0) ++draw_frames;
-            // update 段零 screen Clear（select_target/clear_target 已迁出模拟段）。
             if (update_span.clear != 0)
                 std::printf("  失败 trace f%d: update 段含 %d 个 Clear 项（clear 未迁出模拟段）\n",
                             frame, update_span.clear);
@@ -497,14 +440,12 @@ TEST(side_effect_ending_clear_migration_trace) {
     }
 }
 
-// ---- 3) T3 冲账/录制：镜像只在 commit、录制恰一次、双 commit 幂等、钟值随槽 ----
 TEST(side_effect_reconcile_record_once) {
     constexpr int kFrames = 60;
     App app;
     CHECK(boot_live_run(app, "t7se-rec-save.bin"));
     if (app.failure.empty()) {
         GameInput input;
-        // 屏障帧（Shift 预持；present 尾置 pending_load）。
         input.update(kShift);
         CHECK(drive(app, input, 0));
         CHECK_EQ(app.pending_load, 1u);
@@ -515,7 +456,7 @@ TEST(side_effect_reconcile_record_once) {
         auto pattern = [](u32 f) {
             u32 held = 0;
             if (f % 12 < 7) held |= kZ;
-            if (f % 19 >= 11 && f % 19 < 15) held |= 0x80u;  // 右移
+            if (f % 19 >= 11 && f % 19 < 15) held |= 0x80u;
             return held;
         };
         int advanced_total = 0;
@@ -529,7 +470,6 @@ TEST(side_effect_reconcile_record_once) {
             CHECK(app.update(input, false));
             CHECK(app.failure.empty());
             const bool advanced = app.progress.stage_frame != stage_pre;
-            // update-only 段：镜像/dirty/frames 不变；槽随推进帧恰 +1。
             CHECK_EQ(total_frames(app), mirror_pre);
             CHECK_EQ(app.ordinary_records_dirty, dirty_pre);
             CHECK_EQ(app.frames, frames_pre);
@@ -539,35 +479,34 @@ TEST(side_effect_reconcile_record_once) {
                 CHECK(!app.recorder.pending_inputs.empty());
                 if (app.recorder.pending_inputs.empty()) return;
                 const auto& slot = app.recorder.pending_inputs.back();
-                CHECK_EQ(slot.frame, frames_pre);   // 帧身份 = update 段头 frames
-                CHECK_EQ(slot.slow, u8(60));        // 恒 60fps 窗
-                CHECK_EQ(slot.edge_reset, f == 0);  // D-fix 仅关首帧（begin_run 拍置位）
+                CHECK_EQ(slot.frame, frames_pre);
+                CHECK_EQ(slot.slow, u8(60));
+                CHECK_EQ(slot.edge_reset, f == 0);
             }
             int commits = 1;
-            if (f >= 20 && f <= 22) commits = 0;    // update-only 三帧窗
-            if (f == 40) commits = 2;               // 同帧双 commit 反例位
+            if (f >= 20 && f <= 22) commits = 0;
+            if (f == 40) commits = 2;
             for (int c = 0; c < commits; ++c) {
                 CHECK(app.commit(kFps));
                 CHECK(app.failure.empty());
                 if (c == 0) {
                     CHECK_EQ(app.recorder.pending_inputs.size(), size_t(0));
-                    CHECK_EQ(app.pending_play_frames_, 0u);   // 冲账即清
-                    CHECK_EQ(total_frames(app), advanced_total);  // 恰一次
+                    CHECK_EQ(app.pending_play_frames_, 0u);
+                    CHECK_EQ(total_frames(app), advanced_total);
                     CHECK_EQ(app.ordinary_records_dirty, true);
                     CHECK_EQ(app.frames, frames_pre + 1u);
                 } else {
-                    CHECK_EQ(total_frames(app), advanced_total);  // 双 commit 不双记
+                    CHECK_EQ(total_frames(app), advanced_total);
                     CHECK_EQ(app.pending_play_frames_, 0u);
                     CHECK_EQ(app.frames, frames_pre + 2u);
                 }
             }
-            if (commits == 0) CHECK_EQ(app.pending_play_frames_, u32(f - 19));  // 窗内累计
+            if (commits == 0) CHECK_EQ(app.pending_play_frames_, u32(f - 19));
             CHECK(app.present());
             CHECK(app.failure.empty());
         }
         CHECK_EQ(advanced_total, kFrames);
         CHECK_EQ(total_frames(app), kFrames);
-        // 录制恰一次：decode 帧数 == 推进帧数 == 逐帧输入沿对账。
         std::vector<u8> enc;
         CHECK(encode_pinned(app, enc));
         th13::ReplayFile decoded;
@@ -579,12 +518,9 @@ TEST(side_effect_reconcile_record_once) {
         for (u32 i = 0; i < stage.frame_count; ++i) {
             const th13::ReplayFrame frame = stage.frame(i);
             const u32 f = i == 0 ? (kShift | kZ) : pattern(i);
-            // 关首 D-fix 帧（i==0）pressed=全量 held；此后 pressed=新增位。
-            // 逐帧 state 必须等于合成 held（输入沿恰一次、无重复/丢帧）。
             CHECK_EQ(u32(frame.state), f);
             if (u32(frame.state) != f) break;
         }
-        // update_spell_time 槽：Begin→End 成对捕获、commit 冲账、双 commit 幂等。
         CHECK(app.recorder.ready());
         CHECK_EQ(app.recorder.pending_spell_times.size(), size_t(0));
         app.update_spell_time(true);
@@ -593,13 +529,13 @@ TEST(side_effect_reconcile_record_once) {
         if (app.recorder.pending_spell_times.size() == 1) {
             const auto& entry = app.recorder.pending_spell_times.front();
             CHECK_EQ(entry.index, 0u);
-            CHECK_EQ(entry.packed, app.spell_time_packed);  // 钟值捕获一次随槽
+            CHECK_EQ(entry.packed, app.spell_time_packed);
             std::vector<u8> before;
             CHECK(encode_pinned(app, before));
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
             CHECK(app.commit(kFps));
-            CHECK_EQ(app.recorder.pending_spell_times.size(), size_t(0));  // 冲账清槽
-            CHECK_EQ(app.spell_time_packed, entry.packed);  // commit 不重算钟值
+            CHECK_EQ(app.recorder.pending_spell_times.size(), size_t(0));
+            CHECK_EQ(app.spell_time_packed, entry.packed);
             std::vector<u8> after;
             CHECK(encode_pinned(app, after));
             CHECK(!bytes_equal(after, before));
@@ -611,13 +547,12 @@ TEST(side_effect_reconcile_record_once) {
                 CHECK(st.header.size() >= size_t(0xC4));
                 const u32 stored = u32(st.header[0x70]) | u32(st.header[0x71]) << 8 |
                                    u32(st.header[0x72]) << 16 | u32(st.header[0x73]) << 24;
-                CHECK_EQ(i32(stored), entry.packed);  // 落流 = 捕获拍钟值
+                CHECK_EQ(i32(stored), entry.packed);
             }
         }
     }
 }
 
-// ---- 4) T4 队列收全：八捕获点入队序冲账 + pan 挂起队 + 确认拍原位 ----
 TEST(side_effect_file_event_queue_full) {
     App app;
     CHECK(pin_boot(app, "t7se-queue-save.bin"));
@@ -625,15 +560,14 @@ TEST(side_effect_file_event_queue_full) {
         GameInput input;
         app.progress.character = 0;
         app.progress.selected_spell_id = 0;
-        // 捕获序（顺序敏感对：同字段 row0 音量两笔，冲账序可辨）。
-        CHECK(app.record_spell_event(begin_event(2, "T7queue")));       // 1 SpellEvent
-        CHECK(app.record_spell_practice_score(12345));                  // 2
-        CHECK(app.change_pause_option(0, +10));                         // 3（序敏感对 a）
-        CHECK(app.change_pause_option(0, -30));                         // 4（序敏感对 b）
-        CHECK(app.record_music_unlocked(3));                            // 5
-        app.mark_heard(5);                                              // 6（吞错档正控）
-        CHECK(app.persist_options(th13::TitleOptionVolumes{40, 60}));   // 7（菜单错误档）
-        CHECK(app.record_result_entry("T7QUEUE", 8));                  // 8
+        CHECK(app.record_spell_event(begin_event(2, "T7queue")));
+        CHECK(app.record_spell_practice_score(12345));
+        CHECK(app.change_pause_option(0, +10));
+        CHECK(app.change_pause_option(0, -30));
+        CHECK(app.record_music_unlocked(3));
+        app.mark_heard(5);
+        CHECK(app.persist_options(th13::TitleOptionVolumes{40, 60}));
+        CHECK(app.record_result_entry("T7QUEUE", 8));
 
         const u32 capture_frame = app.recorder.capture_frame;
         CHECK_EQ(app.pending_file_events_.size(), size_t(8));
@@ -644,11 +578,10 @@ TEST(side_effect_file_event_queue_full) {
                 EventKind::MusicUnlocked, EventKind::MarkHeard,
                 EventKind::PersistOptions, EventKind::ResultEntry};
             for (size_t i = 0; i < 8 && i < app.pending_file_events_.size(); ++i) {
-                CHECK(app.pending_file_events_[i].kind == expected[i]);  // 捕获序
+                CHECK(app.pending_file_events_[i].kind == expected[i]);
                 CHECK_EQ(app.pending_file_events_[i].capture_frame, capture_frame);
             }
         }
-        // update-only 段：files 字段/设备音量/存储镜像全部不变。
         const i32 attempts_before =
             app.files.spell_counters(0, 2) ? app.files.spell_counters(0, 2)->attempts[0] : -1;
         const i32 best_before =
@@ -668,43 +601,34 @@ TEST(side_effect_file_event_queue_full) {
         CHECK_EQ(app.audio_device.effect_volume, dev_eff_before);
         CHECK_EQ(app.files.music_heard(3), heard3_before);
         CHECK_EQ(app.files.music_heard(5), heard5_before);
-        CHECK(app.title->option_menu().error.empty());  // 触发面之前 error 空
+        CHECK(app.title->option_menu().error.empty());
 
-        // pan 挂起队：捕获拍 tap 恰一次、设备应用延至 commit。
         std::vector<th13::sdl::AudioDevice::RequestObservation> pan_log;
         app.audio_device.request_observer =
             [&pan_log](const th13::sdl::AudioDevice::RequestObservation& obs) {
                 pan_log.push_back(obs);
             };
         CHECK(app.set_voice_pan(55, 100.0f));
-        CHECK_EQ(pan_log.size(), size_t(1));  // 观察在捕获拍单次发射
+        CHECK_EQ(pan_log.size(), size_t(1));
         CHECK_EQ(pan_log.front().kind, th13::sdl::AudioDevice::RequestObservation::Kind::Pan);
         CHECK_EQ(app.pending_voice_pans_.size(), size_t(1));
         CHECK_EQ(app.pending_voice_pans_.front().id, 55);
 
-        // 单次 commit：全队列按捕获序冲账恰一次。
         CHECK(app.commit(kFps));
         CHECK(app.failure.empty());
         CHECK_EQ(app.pending_file_events_.size(), size_t(0));
         CHECK_EQ(app.files.spell_counters(0, 2)->attempts[0], attempts_before + 1);
         CHECK(app.files.spell_counters(0, 0)->practice_best_score >= 12340);
-        // 序敏感对：+10 → 100 钳位，再 −30 → 70（反序得 80）；设备音量在
-        // 该对冲账拍已触达（apply_volumes 随 PauseOption 冲账）——其后
-        // PersistOptions 冲账按捕获序覆写 files 字段（40/60）但不再触设备
-        // ——files 终值 40 即「persist 晚于暂停选项对冲账」的捕获序证据。
         CHECK_EQ(app.files.bgm_volume, 40);
         CHECK_EQ(app.audio_device.music_volume, 70);
         CHECK_EQ(app.files.effect_volume, 60);
         CHECK_EQ(app.audio_device.effect_volume, eff_before);
         CHECK_EQ(app.files.music_heard(3), true);
         CHECK_EQ(app.files.music_heard(5), true);
-        CHECK(app.title->option_menu().error.empty());  // save 成功 → 无补记
-        // pan 冲账：apply-only 无第二次 tap、挂起队清空（buffer pan 设备面
-        // 由 m1.unit_audio_pan_boundary 经 PCM 钉住——本件钉队列机制面）。
+        CHECK(app.title->option_menu().error.empty());
         CHECK_EQ(pan_log.size(), size_t(1));
         CHECK_EQ(app.pending_voice_pans_.size(), size_t(0));
 
-        // 双 commit 幂等：第二次 commit 无任何重复结算。
         const i32 attempts_mid = app.files.spell_counters(0, 2)->attempts[0];
         const i32 bgm_mid = app.files.bgm_volume;
         CHECK(app.commit(kFps));
@@ -712,26 +636,22 @@ TEST(side_effect_file_event_queue_full) {
         CHECK_EQ(app.files.bgm_volume, bgm_mid);
         CHECK_EQ(app.files.music_heard(3), true);
         CHECK_EQ(pan_log.size(), size_t(1));
-        // 观察器卸载（守卫语义）：request_observer 持栈上 vector 引用，
-        // release_run 的 stop(-1) 在 app 析构期仍会发射 Stop 观察事件——
-        // 悬空引用会写已销毁 vector（heap corruption），必须显式复位。
         app.audio_device.request_observer = nullptr;
 
-        // F2：save_replay_slot 确认拍宿主事件原位——不进待确认队列、同步完成。
         CHECK(app.start_game(1));
         input.update(0);
         CHECK(app.update(input, false));
         CHECK(app.commit(kFps));
-        CHECK(app.present());   // 屏障帧（建幕）
+        CHECK(app.present());
         input.update(0);
         CHECK(app.update(input, false));
         CHECK(app.commit(kFps));
-        CHECK(app.present());   // complete_loading→begin_run（recorder ready）
+        CHECK(app.present());
         CHECK(app.recorder.ready());
         CHECK_EQ(app.pending_file_events_.size(), size_t(0));
-        CHECK(app.save_replay_slot(1, "T7SE"));  // 同步 IO（确认拍）
-        CHECK_EQ(app.pending_file_events_.size(), size_t(0));  // 不入待确认队列
-        CHECK(app.replay_slots[0].decoded != nullptr);          // 编号槽 1 → slot0
+        CHECK(app.save_replay_slot(1, "T7SE"));
+        CHECK_EQ(app.pending_file_events_.size(), size_t(0));
+        CHECK(app.replay_slots[0].decoded != nullptr);
         CHECK_EQ(app.replay_slots[0].name, std::string("th13_01.rpy"));
     }
 }

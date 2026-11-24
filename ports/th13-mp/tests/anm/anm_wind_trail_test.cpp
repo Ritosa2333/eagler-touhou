@@ -55,7 +55,7 @@ TEST(wind_native_initialization_rng_and_history_samples) {
     CHECK_EQ(bits(wind.points[0].x), 3266271069u);
     CHECK_EQ(bits(wind.points[0].y), 1145162470u);
     CHECK_EQ(bits(wind.points[0].z), 1145815878u);
-    CHECK_EQ(random.index(), 21u);  // updates do not consume RNG
+    CHECK_EQ(random.index(), 21u);
 }
 TEST(wind_real_effect_script_fades_and_retires_through_manager) {
     GameRandom random{0};
@@ -102,5 +102,5 @@ TEST(wind_real_effect_script_fades_and_retires_through_manager) {
     CHECK(!manager.registry.find(handle));
     CHECK(manager.error.empty());
 }
-}  // namespace
+}
 int main() { return th13test::run_all("anm-wind-trail"); }

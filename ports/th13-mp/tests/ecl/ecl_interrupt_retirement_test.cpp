@@ -45,7 +45,7 @@ TEST(interrupt_deletion_does_not_repeat_death_drops_or_spirits) {
     CHECK_EQ(sounds, 0);
     CHECK_EQ(effects, 0);
     CHECK_EQ(retired, 1);
-    CHECK_EQ(sim.random.index() - before, 10u);  // scatter initial + two*(unit,angle)
+    CHECK_EQ(sim.random.index() - before, 10u);
     sim.damage(*e, 30);
     CHECK_EQ(items.ordinary, 3);
     CHECK_EQ(retired, 1);
@@ -54,7 +54,6 @@ TEST(create_arguments_are_visible_before_constructor_and_preserve_main_drop) {
     StageSim sim;
     std::vector<u8> child, root;
     th13test::emit(child, 0, 506, 0, 255, 0, {});
-    // Constructor reads inherited F0/F1 and I0 immediately.
     th13test::emit(child, 0, 500, 3, 255, 0, {float_to_bits(-9981.f), float_to_bits(-9980.f)});
     th13test::emit(child, 0, 1001, 1, 255, 0, {u32(-9985)});
     th13test::emit(child, 0, 23, 0, 255, 0, {600});
@@ -138,5 +137,5 @@ TEST(kill_all_emits_effects_then_runs_death_script_with_cleared_drops) {
     CHECK_EQ(e->drop_area[0], 32.f);
     CHECK_EQ(e->drop_area[1], 32.f);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("interrupt-retirement"); }

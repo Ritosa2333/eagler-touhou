@@ -58,6 +58,16 @@ make extract   # 解包 th13ogg.7z → games/th13/，生成 SHA256 清单与版�
 
 参考工作流（th10）采用机械静态重编译 + 渐进类型化替换的双层形态（`rebuild/` 与 `game/` 并存）。本项目当前为 clean-room + oracle 验收路线，Stage 1 事件流已逐字节对齐证明可行；若后续关卡/Boss 重符卡段频繁卡在浮点或边界语义，启动最小转译层（页级翻译仅覆盖卡住的函数，与 `game/` 并存），向参考工作流的混合形态收敛。
 
+## 源码不写注释
+
+多人版目录与普通版执行同一条规则：源码、脚本、测试、页面与配置文件不带注释，依据写进提交说明和测试。工具与豁免范围见[普通版开发指南](../../th13/docs/DEVELOPMENT.md)“源码不写注释”。
+
+```sh
+ports/th13/tools/container.sh --mp bash -lc 'node tools/no-comments.mjs'
+```
+
+`tests/no-comments.test.mjs` 把规则纳入门槛。`shell.mjs` 的观战生成块与 `common/browser/spectator-playback.mjs` 逐字节一致，原样保留，由 `tests/contracts/spectator-bridge.test.mjs` 守住。
+
 ## 测试
 
 ```sh

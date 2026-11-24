@@ -159,6 +159,6 @@ TEST(enemy_invalid_death_spirit_divisor_is_reported) {
     CHECK_EQ(f->spirits(), 0);
     CHECK_EQ(f->count(), 0);
 }
-}  // namespace
+}
 
 int main() { return th13test::run_all("Enemy death drops"); }

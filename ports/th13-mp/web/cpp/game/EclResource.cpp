@@ -1,5 +1,3 @@
-// th13 SCPT 容器解析与聚合查找（规格见 EclResource.hpp 文件头；th15 EclResource 骨架
-// 按 §1.1 逐字段对 th13 复核后沿用——两代容器头同构，st01.ecl 头部字节已实证）。
 #include "EclResource.hpp"
 
 #include <algorithm>
@@ -21,10 +19,9 @@ bool name(const u8* bytes, u32& position, u32 limit, std::string& out) {
     ++position;
     return true;
 }
-}  // namespace
+}
 
 bool EclResource::open(const u8* source, u32 size) {
-    // “SCPT” + version 1；include_length 给出 ANIM+ECLI 区长度（st01 = 0x40）。
     if (!source || size < 36 || read<u32>(source) != 0x54504353 || read<u16>(source + 4) != 1) return false;
     const u32 header = read<u16>(source + 6), count = read<u16>(source + 16), table = 36 + header;
     if (!span(table, count * 4, size)) return false;
@@ -33,7 +30,7 @@ bool EclResource::open(const u8* source, u32 size) {
         u32 position = 36;
         const u32 limit = table;
         if (!span(position, 8, limit)) return false;
-        if (read<u32>(source + position) == 0x4d494e41) {  // “ANIM”
+        if (read<u32>(source + position) == 0x4d494e41) {
             const u32 animations = read<u32>(source + position + 4);
             position += 8;
             if (animations > limit - position) return false;
@@ -44,7 +41,7 @@ bool EclResource::open(const u8* source, u32 size) {
             }
             position = (position + 3) & ~3u;
             if (!span(position, 8, limit)) return false;
-            if (read<u32>(source + position) == 0x494c4345) {  // “ECLI”
+            if (read<u32>(source + position) == 0x494c4345) {
                 const u32 includes = read<u32>(source + position + 4);
                 position += 8;
                 if (includes > limit - position) return false;
@@ -56,7 +53,6 @@ bool EclResource::open(const u8* source, u32 size) {
             }
         }
     }
-    // 子程序偏移表 + 名字表 + 指令流长度校验（每条指令 4 对齐、>=16 字节）。
     u32 names = table + count * 4;
     std::vector<u32> offsets;
     offsets.reserve(count);
@@ -101,7 +97,6 @@ i32 EclProgram::attach(const u8* data, u32 size, EclResourceProvider* provider) 
     const auto* current = file.get();
     const bool first = files.empty();
     files.push_back(std::move(file));
-    // 首文件保持原序，后续文件按名插入维持全局字典序（原版 0x4795b0 注册序）。
     for (u32 i = 0; i < current->subroutines.size(); ++i) {
         Definition definition{current, i};
         if (first)
@@ -160,4 +155,4 @@ const EclInstruction* EclProgram::find(const char* name) const noexcept {
     return reinterpret_cast<const EclInstruction*>(definition.file->bytes.data() + subroutine(index).offset + 16);
 }
 
-}  // namespace th13
+}

@@ -1,6 +1,3 @@
-// text.anm 对话动态纹理提交定向测试（不依赖 SDL/字体资产）。
-// 正控：四 VM 创建、texture0 sprite 条带写入、changed 区域、行块缓存/清空/释放。
-// 负控：非 ARGB4444 texture0、缺失 text.anm、越界行都必须显式失败。
 #include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 
@@ -25,10 +22,6 @@ struct AnmInstructionSpec {
 
 u32 encoded_length(const AnmInstructionSpec& instruction) { return u32(8 + instruction.args.size() * 4); }
 
-// 合成 text.anm entry0：Blank "@" 512x512 format5(ARGB4444)、四 sprite
-// (0,1/24/47/70,512,20)、四脚本（sprite i + 层 26 + 位置 + 真实 ins_4
-// 隐藏等待 + label2/label3/label1 分支）。0x428ae0 用 0x46fc30(handle,2)
-// 让 ins_4 等待中的 VM 跳到显示分支；label3 用于块首清槽、label1 释放。
 std::vector<u8> synthetic_text_anm() {
     constexpr u32 kSprites = 4, kScripts = 4;
     const u32 table_end = 64 + kSprites * 4 + kScripts * 8;
@@ -70,7 +63,6 @@ std::vector<u8> synthetic_text_anm() {
             cursor += encoded_length(instruction);
         }
     }
-    // 位置参数改写为真实浮点（2,22 / 2,42 / 16,16 / 16,36）。
     for (u32 index = 0; index < kScripts; index++) {
         const u32 at = script_offsets[index] + encoded_length({300, 0, {0}}) + encoded_length({304, 0, {0}}) + 8;
         const float values[3] = {index < 2 ? 2.f : 16.f,
@@ -89,7 +81,7 @@ std::vector<u8> synthetic_text_anm() {
     put16(12, 512);
     put16(14, 5);
     put32(16, name_at);
-    chunk[32] = 0;  // hasData=0；name "@" → Blank
+    chunk[32] = 0;
     put32(36, 0);
     for (u32 index = 0; index < kSprites; index++)
         put32(64 + index * 4, sprite_offsets[index]);
@@ -148,7 +140,6 @@ AnmVm* script_vm(AnmManager& manager, i32 script) {
 std::vector<u8> read_reference_anm(const char* name) {
     std::vector<std::string> candidates;
     if (const char* dir = std::getenv("TH13_RAW_DIR")) candidates.push_back(std::string(dir) + "/" + name);
-    // run.sh 的工作目录是外层工作区，原版资源在其 artifacts/ 下（与各套件其余测试一致）。
     candidates.push_back(std::string("artifacts/reference/raw/") + name);
     candidates.push_back(std::string("../artifacts/reference/raw/") + name);
     candidates.push_back(std::string("../../../artifacts/reference/raw/") + name);
@@ -175,7 +166,7 @@ bool raster_block(TextureImage& image, i32 x, i32 y, bool, u32, const std::strin
     return true;
 }
 
-}  // namespace
+}
 
 TEST(dialogue_text_submits_body_strip_and_owns_four_vms) {
     GameRandom random;
@@ -192,25 +183,22 @@ TEST(dialogue_text_submits_body_strip_and_owns_four_vms) {
     std::string error;
     CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, raster_block, error));
     CHECK_EQ(error, std::string());
-    CHECK_EQ(manager.registry.count(), 4u);  // 0x4282b0 四文本 VM
+    CHECK_EQ(manager.registry.count(), 4u);
     CHECK_EQ(sink.texture_calls, 1u);
     CHECK(region_has_pixel(sink.image, 0, 1, 512, 20));
     CHECK(!region_has_pixel(sink.image, 0, 24, 512, 20));
-    CHECK_EQ(sink.last_region[1], 47u);  // ruby slot0 条带清空也提交 changed
-    // script 以 ins_4 隐藏等待；0x428ae0 在写入后发 label2 deferred 中断。
+    CHECK_EQ(sink.last_region[1], 47u);
     AnmVm* row0 = script_vm(manager, 0);
     CHECK(row0 != nullptr);
-    CHECK(!row0->visible);  // 中断尚未被 ANM update 消费
+    CHECK(!row0->visible);
     CHECK(manager.update());
-    CHECK(row0->visible);  // label2 显示分支
+    CHECK(row0->visible);
     CHECK_EQ(row0->visual.flags & 1u, 1u);
 
-    // 同行同块重复提交不得重传（原版 opcode 17 只在指令执行时栅格化）。
     const u32 uploads = sink.uploads;
     CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, raster_block, error));
     CHECK_EQ(sink.uploads, uploads);
 
-    // 新行块必须清空旧条带并重新写入。
     MsgLine next = line;
     next.block = 2;
     CHECK(text.submit(manager, sink, 0, next, 100.f, 200.f, raster_block, error));
@@ -223,12 +211,11 @@ TEST(dialogue_text_submits_body_strip_and_owns_four_vms) {
     CHECK(region_has_pixel(sink.image, 0, 24, 512, 20));
     AnmVm* row1 = script_vm(manager, 1);
     CHECK(row1 != nullptr);
-    CHECK(!row1->visible);  // label2 deferred，未 tick 前仍隐藏
+    CHECK(!row1->visible);
     CHECK(manager.update());
     CHECK(row1->visible);
-    CHECK(row0->visible);  // 已显示行不被无关行提交隐藏
+    CHECK(row0->visible);
 
-    // opcode 6/18 的 clear/fade 只发 label，不清 texture0 像素。
     const u32 uploads_before_fade = sink.uploads;
     const auto pixels_before_fade = sink.image.pixels;
     CHECK(text.clear(sink, error));
@@ -236,7 +223,6 @@ TEST(dialogue_text_submits_body_strip_and_owns_four_vms) {
     CHECK(sink.image.pixels == pixels_before_fade);
     CHECK(region_has_pixel(sink.image, 0, 1, 512, 20));
     CHECK(region_has_pixel(sink.image, 0, 24, 512, 20));
-    // cached 保留：RunScene 继续提交同一行不得重新上传/重发 label2。
     CHECK(text.submit(manager, sink, 0, next, 100.f, 200.f, raster_block, error));
     CHECK_EQ(sink.uploads, uploads_before_fade);
 
@@ -246,8 +232,6 @@ TEST(dialogue_text_submits_body_strip_and_owns_four_vms) {
 }
 
 TEST(dialogue_text_ruby_uses_second_parameter_as_spacing) {
-    // 0x428ae0:464/529：ruby 第一数 = x，第二数 = 逐字步进。
-    // 真实 st01a `|4,14,ここ` → scratch x=4*2，第二字 x=8+14*2。
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager{random, environment};
@@ -277,22 +261,21 @@ TEST(dialogue_text_ruby_uses_second_parameter_as_spacing) {
     line.has_ruby = true;
     line.ruby_x = 4;
     line.ruby_spacing = 14;
-    line.ruby_cp932 = "\x82\xb1\x82\xb1";  // ここ
+    line.ruby_cp932 = "\x82\xb1\x82\xb1";
     CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, record, error));
     CHECK_EQ(calls.size(), 3u);
-    CHECK(!calls[0].ruby);  // 正文
+    CHECK(!calls[0].ruby);
     CHECK_EQ(calls[0].x, 0);
-    CHECK(calls[1].ruby);  // ruby 第一字
+    CHECK(calls[1].ruby);
     CHECK_EQ(calls[1].x, 8);
     CHECK_EQ(calls[1].text, std::string("\x82\xb1", 2));
-    CHECK(calls[2].ruby);  // ruby 第二字 = 第一字 + 14*2
+    CHECK(calls[2].ruby);
     CHECK_EQ(calls[2].x, 8 + 14 * 2);
     CHECK_EQ(calls[2].text, std::string("\x82\xb1", 2));
-    CHECK(region_has_pixel(sink.image, 4, 48, 2, 2));    // 8/2
-    CHECK(region_has_pixel(sink.image, 18, 48, 2, 2));   // 36/2
-    CHECK(!region_has_pixel(sink.image, 7, 48, 10, 2));  // 两字间无像素
+    CHECK(region_has_pixel(sink.image, 4, 48, 2, 2));
+    CHECK(region_has_pixel(sink.image, 18, 48, 2, 2));
+    CHECK(!region_has_pixel(sink.image, 7, 48, 10, 2));
 
-    // spacing=0：0x45aef0 param_9==0 走连续排版，整串只调一次。
     calls.clear();
     MsgLine continuous = line;
     continuous.block = 2;
@@ -305,8 +288,6 @@ TEST(dialogue_text_ruby_uses_second_parameter_as_spacing) {
 }
 
 TEST(dialogue_text_real_text_anm_label2_visibility) {
-    // 真实 text.anm（资产缺席时跳过）：script 以 ins_4 隐藏等待，原版
-    // 0x46fc30(handle,2) 后才显示。这里验证 port 的 deferred label 路径。
     const std::vector<u8> bytes = read_reference_anm("text.anm");
     if (bytes.empty()) {
         std::printf("# 跳过：text.anm 不在本机（相对 repo 根）\n");
@@ -319,7 +300,6 @@ TEST(dialogue_text_real_text_anm_label2_visibility) {
     FakeSink sink;
     DialogueText text;
     MsgLine line;
-    // st01a.msg entry0 首句（さーて、幽霊の親玉を倒さないとね！）。
     line.text_cp932 = "\x82\xb3\x81\x5b\x82\xc4\x81\x41\x97\x48\x97\xec\x82\xcc"
                       "\x90\x65\x8b\xca\x82\xf0\x93\x7c\x82\xb3\x82\xc8\x82\xa2"
                       "\x82\xc6\x82\xcb\x81\x49";
@@ -328,7 +308,7 @@ TEST(dialogue_text_real_text_anm_label2_visibility) {
     CHECK(text.submit(manager, sink, 0, line, 112.f, 288.f, raster_block, error));
     AnmVm* row0 = script_vm(manager, 0);
     CHECK(row0 != nullptr);
-    CHECK(!row0->visible);  // ins_4 隐藏等待
+    CHECK(!row0->visible);
     for (int frame = 0; frame < 10; frame++)
         CHECK(manager.update());
     CHECK(row0->visible);
@@ -339,9 +319,6 @@ TEST(dialogue_text_real_text_anm_label2_visibility) {
 }
 
 TEST(dialogue_text_real_front_bubble_and_side_position) {
-    // 0x428ae0:485-553：front.anm script224+param（param=side+2*variant）
-    // 创建对话框；child 176+param/208+param 的 variables.floats[0]=宽度。
-    // 正文 x：左=box_x，右=box_x-(width+30)；文本 VM 创建位 0。
     const std::vector<u8> text_bytes = read_reference_anm("text.anm");
     const std::vector<u8> front_bytes = read_reference_anm("front.anm");
     if (text_bytes.empty() || front_bytes.empty()) {
@@ -364,11 +341,11 @@ TEST(dialogue_text_real_front_bubble_and_side_position) {
     line.side = 0;
     CHECK(text.submit(manager, sink, 0, line, 112.f, 288.f, raster_block, error));
     CHECK(text.bubble_handle() != 0);
-    AnmVm* root = script_vm(manager, 224);  // 左 variant 0 根
+    AnmVm* root = script_vm(manager, 224);
     CHECK(root != nullptr);
     AnmVm* vm0 = script_vm(manager, 0);
     CHECK(vm0 != nullptr);
-    CHECK_EQ(vm0->visual.translation.x, 112.f);  // 左侧文字 x=box_x
+    CHECK_EQ(vm0->visual.translation.x, 112.f);
     CHECK_EQ(vm0->visual.translation.y, 288.f);
     bool left_cap = false, right_cap = false;
     for (AnmVm* child : manager.registry.children(*root)) {
@@ -389,7 +366,6 @@ TEST(dialogue_text_real_front_bubble_and_side_position) {
     CHECK(double_root);
     CHECK_EQ(double_root->source_script, 232);
 
-    // opcode 29 的 bit2-5 = variant：text_attr=4 → param=2 → 根 script226。
     MsgLine variant = line;
     variant.block = 2;
     variant.text_attr = 4;
@@ -397,7 +373,6 @@ TEST(dialogue_text_real_front_bubble_and_side_position) {
     CHECK(text.submit(manager, sink, 0, variant, 112.f, 288.f, raster_block, error));
     CHECK(script_vm(manager, 226) != nullptr);
 
-    // 右说话人：variant 同一行块，side=1 → 根 225，文字右对齐。
     MsgLine right = line;
     right.block = 3;
     right.side = 1;
@@ -427,8 +402,6 @@ TEST(dialogue_text_downsampling_preserves_subpixel_strokes_and_argb_channels) {
     line.text_cp932 = "stroke";
     std::string error;
     const auto stroke = [](TextureImage& image, i32, i32, bool, u32, const std::string&) {
-        // An odd source column disappears entirely with the former point
-        // sampler. Keep all rows opaque to isolate horizontal filtering.
         for (u32 row = 0; row < 44; ++row) {
             const u16 pixel = 0xF987;
             std::memcpy(image.pixels.data() + size_t(row) * image.pitch + 2, &pixel, 2);
@@ -441,12 +414,10 @@ TEST(dialogue_text_downsampling_preserves_subpixel_strokes_and_argb_channels) {
         std::memcpy(&value, sink.image.pixels.data() + size_t(y) * sink.image.pitch + x * 2, 2);
         return value;
     };
-    // At destination x0 the triangle gives source x1 weight 3/8.
-    // The channel values 15/9/8/7 become 6/3/3/3 after ARGB4444 rounding.
     CHECK_EQ(pixel(0, 6), u16(0x6333));
     CHECK_EQ(pixel(1, 6), u16(0x2111));
     CHECK_EQ(pixel(2, 6), u16(0));
-    CHECK_EQ(pixel(0, 24), u16(0));  // the other dialogue row is untouched
+    CHECK_EQ(pixel(0, 24), u16(0));
 }
 
 TEST(dialogue_text_triangle_wraps_original_source_rect_edges) {
@@ -462,7 +433,7 @@ TEST(dialogue_text_triangle_wraps_original_source_rect_edges) {
     std::string error;
     const auto stroke = [](TextureImage& image, i32, i32, bool, u32, const std::string&) {
         for (u32 row = 0; row < 44; ++row) {
-            const u16 pixel = 0xF000;  // black dialogue ink with full coverage
+            const u16 pixel = 0xF000;
             std::memcpy(image.pixels.data() + size_t(row) * image.pitch + 1023 * 2, &pixel, 2);
         }
         return true;
@@ -473,8 +444,8 @@ TEST(dialogue_text_triangle_wraps_original_source_rect_edges) {
         std::memcpy(&value, sink.image.pixels.data() + 6 * sink.image.pitch + x * 2, 2);
         return value;
     };
-    CHECK_EQ(pixel(0), u16(0x2000));    // wrapped -1 sample, weight 1/8
-    CHECK_EQ(pixel(511), u16(0x6000));  // edge stroke survives at weight 3/8
+    CHECK_EQ(pixel(0), u16(0x2000));
+    CHECK_EQ(pixel(511), u16(0x6000));
     CHECK_EQ(pixel(1), u16(0));
 }
 
@@ -488,19 +459,16 @@ TEST(dialogue_text_negative_controls) {
     line.text_cp932 = "\x82\xb1";
     std::string error;
 
-    // 缺失 text.anm bank 0：拒绝，不建 VM。
     CHECK(!text.submit(manager, sink, 0, line, 0.f, 0.f, raster_block, error));
     CHECK(!error.empty());
     CHECK_EQ(manager.registry.count(), 0u);
 
     const auto bytes = synthetic_text_anm();
     CHECK(manager.load(0, bytes.data(), u32(bytes.size())));
-    // 越界行：拒绝。
     error.clear();
     CHECK(!text.submit(manager, sink, 2, line, 0.f, 0.f, raster_block, error));
     CHECK(!error.empty());
 
-    // texture0 非 ARGB4444：拒绝在写入前失败。
     FakeSink wrong;
     wrong.image.format = touhou::graphics::PixelFormat::Bgra8;
     wrong.image.pitch = wrong.image.width * 4;
@@ -526,7 +494,7 @@ TEST(dialogue_rollback_restores_cache_handles_and_pixels) {
     CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, raster_block, error));
     const auto saved = text.capture_rollback(manager, sink);
     const auto again = text.capture_rollback(manager, sink);
-    CHECK(saved.pixels == again.pixels);  // No texture copy on unchanged frames.
+    CHECK(saved.pixels == again.pixels);
     AnmRegistry::SnapshotData registry;
     CHECK(manager.registry.capture(registry));
     const auto expected = sink.image.pixels;
@@ -537,7 +505,7 @@ TEST(dialogue_rollback_restores_cache_handles_and_pixels) {
         return true;
     };
     CHECK(text.submit(manager, sink, 0, line, 120.f, 240.f, erase, error));
-    CHECK(sink.image.pixels != expected);  // Negative control: speculative write.
+    CHECK(sink.image.pixels != expected);
     text.release(manager);
     CHECK(manager.update(false));
     CHECK(manager.registry.restore(registry));
@@ -553,7 +521,7 @@ TEST(dialogue_rollback_restores_cache_handles_and_pixels) {
     line.text_cp932 = "first";
     line.block = 1;
     CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, erase, error));
-    CHECK_EQ(sink.uploads, uploads);  // Saved cache prevents duplicate submission.
+    CHECK_EQ(sink.uploads, uploads);
     CHECK_EQ(manager.registry.count(), count);
     CHECK(sink.image.pixels == expected_with_spell);
     auto broken = saved;
@@ -592,7 +560,6 @@ TEST(independent_real_bubble_restore_and_missing_restore_negative_control) {
     CHECK(dialogue.submit(manager, sink, 0, speculative, 288.f, 64.f, raster_block, error));
     CHECK(dialogue.bubble_handle() != saved_box);
     CHECK(manager.registry.restore(registry));
-    // Deliberately omit the host dialogue restore: reproduces the mechanism.
     CHECK(dialogue.submit(manager, sink, 0, first, 288.f, 64.f, raster_block, error));
     AnmRegistry::SnapshotData negative;
     CHECK(manager.registry.capture(negative));

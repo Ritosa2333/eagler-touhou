@@ -1,6 +1,3 @@
-# th13 C++ 排版规范。编辑器按本文件格式化，统一入口 tools/format.mjs。
-# 内联 JS（EM_JS / EM_ASM）必须放在 clang-format off/on 之间，规则见
-# docs/DEVELOPMENT.md“代码排版”。追溯历史行时配合仓库根的 .git-blame-ignore-revs。
 Language: Cpp
 BasedOnStyle: LLVM
 Standard: c++17
@@ -19,5 +16,5 @@ AllowShortLoopsOnASingleLine: false
 SortIncludes: CaseSensitive
 IncludeBlocks: Preserve
 ReflowComments: false
-FixNamespaceComments: true
+FixNamespaceComments: false
 KeepEmptyLinesAtTheStartOfBlocks: false

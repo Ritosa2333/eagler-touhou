@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# UI 基座单测构建与运行（容器内 g++，无外部依赖；同 tests/ecl 约定）。
-# 自动发现 tests/ui/*_test.cpp 套件；用 --debug 切 -O0 -g。
-# 用法：tests/ui/run.sh [--debug]
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,10 +12,8 @@ flags="-O2 -Wall -Wextra"
 out_dir="$port_dir/tests/ui/build"
 mkdir -p "$out_dir"
 
-# 游戏源与套件均自动发现，使任意历史提交点可独立构建当时的测试。
 sources=(eagler-touhou/ports/th13-mp/web/cpp/game/*.cpp)
 
-# 每次运行使用独立目录，新编译对象与套件，不读取旧产物。
 run_dir="$(mktemp -d "$out_dir/run.XXXXXX")"
 object_dir="$run_dir/objects"
 mkdir -p "$object_dir"
@@ -34,7 +29,6 @@ for source in "${sources[@]}"; do
 done
 (( status )) && exit 1
 
-# 仅记录本轮链接成功的套件；失败不能回退执行旧二进制。
 built=()
 for suite in "$script_dir"/*_test.cpp; do
   name="$(basename "$suite" .cpp)"

@@ -1,5 +1,3 @@
-// Link conditions affect only bytes sent by the real transport. The reliable
-// repair channel stays available when input datagrams are deliberately lost.
 export function installWireConditions({
   route = "rtc",
   rtt = 0,

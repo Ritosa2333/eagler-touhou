@@ -86,14 +86,12 @@ TEST(replay_load_and_transition_have_distinct_rng_restoration) {
     ReplayRestoreTarget target{&progress, &player, &score, &game, &visual};
     ReplayRestoreLog log;
     std::string error;
-    // 00447900:200-201: game seed and counter only, preserving visual state.
     CHECK(ReplaySession::restore_stage(file, 0, target, log, error, ReplayRestorePhase::Load));
     CHECK_EQ(game.seed(), u16(0x1234));
     CHECK_EQ(game.index(), 0u);
     CHECK_EQ(visual.seed(), visual_seed);
     CHECK_EQ(visual.index(), visual_index);
     game.next();
-    // 00449070:40-42: both seeds, only the game counter is reset.
     CHECK(ReplaySession::restore_stage(file, 0, target, log, error, ReplayRestorePhase::Transition));
     CHECK_EQ(game.seed(), u16(0x1234));
     CHECK_EQ(game.index(), 0u);
@@ -191,9 +189,8 @@ TEST(youmu_option_uses_history_entry_seven_for_first_option) {
         CHECK(battle.step_transition(input));
     CHECK_EQ(battle.options[0].x, 0.f);
     CHECK(battle.step_transition(input));
-    // 00445660: +14770 is entry 7 relative to +14738, not entry 8.
     CHECK(battle.options[0].x > 0.f);
 }
-}  // namespace
+}
 
 int main() { return th13test::run_all("Replay stage restoration"); }

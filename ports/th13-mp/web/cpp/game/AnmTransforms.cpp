@@ -2,9 +2,6 @@
 #include <cmath>
 namespace th13 {
 Matrix4 matrix_product(const Matrix4& a, const Matrix4& b) noexcept {
-    // D3DXMatrixMultiply（x87 80 位中间量；oracle 桩 = double 左结合累加后一次
-    // f32 舍入）：逐项 f32 乘加会在组合矩阵元素上漂 1-5 ULP（f33 world[4]
-    // 对拍实证），全部中间量走 double。
     Matrix4 out;
     for (u32 r = 0; r < 4; r++)
         for (u32 c = 0; c < 4; c++) {
@@ -51,7 +48,7 @@ bool resolution(AnmVm& vm) {
     vm.visual.transform_matrix.m[5] = float(factor * vm.visual.transform_matrix.m[5]);
     return true;
 }
-}  // namespace
+}
 bool anm_billboard_transform(AnmVm& vm, Matrix4& out) noexcept {
     auto& v = vm.visual;
     if (!(v.flags & 0x10000)) {
@@ -123,4 +120,4 @@ Matrix4 anm_texture_transform(const AnmVm& vm) noexcept {
     out.m[9] = float(v.uv[0].y + v.uv_offset.y);
     return out;
 }
-}  // namespace th13
+}

@@ -1,10 +1,3 @@
-// ReplayFile::deflate（0x458c30 bit-exact 移植）验证：
-// 1) Unicorn 黄金向量（deflate_golden.hpp，容器内直调原版压缩器生成）；
-// 2) 真机 .rpy：解码平流 → deflate → 与文件内解密后的压缩段逐字节相等
-//    （C.1 核心口径：每份样本 = 双趟 XOR 解密后的密文段）；
-// 3) deflate ↔ inflate 互逆（合成与真机平流）；
-// 4) 终止符/自复位语义：空输入 = 单个 0x00（14 个 0 位不满字节不落盘），
-//    同一进程多次调用结果与首调一致（0x458c30 入口自初始化）。
 #include "../harness/test_framework.hpp"
 
 #include "deflate_golden.hpp"
@@ -70,19 +63,16 @@ TEST(deflate_matches_original_on_unicorn_golden_vectors) {
 }
 
 TEST(deflate_empty_input_is_single_zero_byte) {
-    // 结尾 14 个 0 位：8 位落入首字节，余 6 位不满字节不落盘（0x458f1d 出口
-    // 写实际字节数）。
     const std::vector<u8> packed = th13::ReplayFile::deflate(nullptr, 0);
     CHECK_EQ(packed.size(), size_t(1));
     CHECK_EQ(packed[0], u8(0x00));
 }
 
 TEST(deflate_is_self_resetting_across_calls) {
-    // 入口自初始化（环 memset + 树清零），同进程重复调用与首调逐字节一致。
     const std::vector<u8> data = pattern_bytes(3000, 42);
     const std::vector<u8> first = th13::ReplayFile::deflate(data.data(), data.size());
     for (int round = 0; round < 3; ++round) {
-        th13::ReplayFile::deflate(nullptr, 0);  // 中间穿插空调用
+        th13::ReplayFile::deflate(nullptr, 0);
         const std::vector<u8> again = th13::ReplayFile::deflate(data.data(), data.size());
         CHECK(again == first);
     }
@@ -96,7 +86,6 @@ TEST(deflate_inflate_roundtrip_synthetic) {
     CHECK(out == data);
 }
 
-// 真机样本清单（games/ 只读；与 replay_test.cpp 同一解析约定）。
 struct Sample {
     const char* path;
 };
@@ -113,14 +102,11 @@ bool decode_sample(const Sample& sample, th13::ReplayFile& replay, std::vector<u
     if (!replay.decode(bytes.data(), bytes.size())) return false;
     if (bytes.size() < size_t(replay.comp_size) + 0x24) return false;
     packed.assign(bytes.begin() + ptrdiff_t(0x24), bytes.begin() + ptrdiff_t(0x24 + replay.comp_size));
-    // 装载解密序（0x448d43/0x448d5d 两趟）还原压缩流。
     th13::ReplayFile::xor_decrypt(packed.data(), packed.size(), 0x5C, 0xE1, 0x400);
     th13::ReplayFile::xor_decrypt(packed.data(), packed.size(), 0x7D, 0x3A, 0x100);
     return true;
 }
 
-// 解码结构 → 完整平流（顶层 0x74 + stage 块链）。平流必须与文件头声明的
-// uncomp_size 一致，否则解码侧丢了字节。
 std::vector<u8> rebuild_plain(const th13::ReplayFile& replay) {
     std::vector<u8> plain = replay.top_header;
     for (const th13::ReplayStage& stage : replay.stages) {
@@ -157,13 +143,12 @@ TEST(deflate_reproduces_real_replay_packed_stream) {
                         compressed.size(), diverge);
         }
         CHECK(equal);
-        // 互逆：deflate 输出经 inflate 还原平流。
         std::vector<u8> restored;
         CHECK(th13::ReplayFile::inflate(compressed.data(), compressed.size(), restored, plain.size()));
         CHECK(restored == plain);
     }
 }
 
-}  // namespace
+}
 
 int main() { return th13test::run_all("ReplayFile::deflate 0x458c30"); }

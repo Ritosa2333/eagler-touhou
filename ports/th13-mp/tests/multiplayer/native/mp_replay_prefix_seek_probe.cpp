@@ -1,5 +1,3 @@
-// Standalone fixture for tests/multiplayer/replay-prefix-seek.py.
-// The generated include contains exact production BrowserRuntime functions.
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/Session.hpp"
 #include "multiplayer/InputLanes.hpp"
@@ -31,8 +29,6 @@ static unsigned clear_calls=0,checks=0,failures=0;
 static bool terminal_mode=false;
 static void check(bool ok,const char* name){++checks;failures+=!ok;printf("CHECK passed=%d name=%s frame=%u chapter=%u target=%u error=%s\n",ok,name,mp_playback_frame,mp_playback_chapter,mp_playback_seek_target,last_error.c_str());}
 static i32 clear_event(void*){
-    // A bounded API fixture triggers the production clear path, identically
-    // on continuous playback and every prefix reconstruction. Not a clear proof.
     if(app->frames==8){++clear_calls;app->run->battle.sim.dialog_host->open_dialog(-2);}
     if(terminal_mode&&app->frames==200)app->request_destination(0xf);
     return 1;
@@ -58,8 +54,6 @@ static State state(){multiplayer::WorldState world;State s;if(!app->run){check(f
 static bool tick(){if(app->loading_waiting()&&!app->complete_loading())return false;unsigned simulated=0;return mp_tick_playback(60.f,simulated);}
 static bool drain(unsigned target){unsigned calls=0;while(mp_playback_seek_target!=Netplay::INVALID_FRAME&&calls++<400){if(!tick())return false;}return mp_playback_frame==target&&mp_playback_seek_target==Netplay::INVALID_FRAME;}
 static void compare(const State& actual,const State& expected,const char* name){const bool ok=actual==expected;if(!ok){printf("DIFF name=%s world=%llx/%llx host=%llx/%llx gi=%u/%u vi=%u/%u stage=%d/%d sim=%d/%d chapter=%d/%d\n",name,(unsigned long long)actual.world,(unsigned long long)expected.world,(unsigned long long)actual.host,(unsigned long long)expected.host,actual.game_index,expected.game_index,actual.visual_index,expected.visual_index,actual.stage,expected.stage,actual.sim,expected.sim,actual.chapter,expected.chapter);printf("ACTUAL_DOMAINS %s\nEXPECTED_DOMAINS %s\nACTUAL_DETAIL %s\nEXPECTED_DETAIL %s\nACTUAL_HOST %s\nEXPECTED_HOST %s\n",actual.domains.c_str(),expected.domains.c_str(),actual.detail.c_str(),expected.detail.c_str(),actual.host_detail.c_str(),expected.host_detail.c_str());}check(ok,name);}
-// Record an independent live Session before invoking any replay function.
-// Its pre-input root and eight resulting worlds are the expected authority.
 static void compare_recorded_root(unsigned count,unsigned rank,unsigned stage,unsigned character){
     auto& session=multiplayer::session;
     session.Stop();last_error.clear();auto s=setup(count);s.difficulty=rank;for(unsigned seat=0;seat<count;++seat)s.selections[seat]=character;
@@ -95,7 +89,6 @@ static void compare_recorded_root(unsigned count,unsigned rank,unsigned stage,un
     }
     check(captured==1&&confirmed==8&&recorded.FrameCount()==8&&session.Committed()==8,"record contiguous actual Session archive");
     std::vector<u8> wire;check(recorded.Encode(wire,"ROOT",0,false),"record archive encode");
-    // replay_load uses Configure to retire the live Session before reconstruction.
     check(session.Configure(words.data(),words.size()),"replay configure replaces live Session");
     mp_replay_loaded=std::make_unique<multiplayer::ReplayArchive>();check(mp_replay_loaded->Load(wire.data(),wire.size()),"record archive reload");
     mp_playback_pending=mp_started=true;mp_playback_frame=mp_playback_chapter=0;mp_playback_seek_target=Netplay::INVALID_FRAME;mp_playback_paused=false;mp_playback_rate=1;
@@ -113,7 +106,6 @@ int main(){setvbuf(stdout,nullptr,_IOLBF,0);
         const auto recorded_root=state();check(mp_start_playback(),"root start");compare(state(),recorded_root,"saved root rebuild equals live initialized world");std::vector<State> expected(221);expected[0]=state();multiplayer::StageEntry wrong;
         for(unsigned f=0;f<220;++f){check(tick(),"continuous frame");expected[f+1]=state();if(f+1==9)wrong.Capture(app->run->battle,app->progress,app->run->score_view(),app->game_random.seed(),app->game_random.index(),app->visual.seed(),app->visual.index());}
         check(expected[9].stage==6&&expected[9].sim==9,"chapter label precedes world activation");check(expected[165].stage==6&&expected[165].sim<20,"real transition activates new world");
-        // Preserve the actual production wrong carry in the saved archive.
         multiplayer::ReplayArchive saved;check(saved.Begin(setup(count),42),"save begin");check(saved.AppendStageEntry(5,*mp_replay_loaded->StageEntryAt(5)),"save root entry");check(saved.AppendStageEntry(6,wrong.Encode()),"save real intermediate carry");
         for(unsigned f=0;f<220;++f)check(saved.Append(f,f<9?5:6,mp_replay_loaded->FrameAt(f)->data(),count),"save input");std::vector<u8> wire;check(saved.Encode(wire,"BOUNDARY",0,false),"save encode");check(mp_replay_loaded->Load(wire.data(),wire.size()),"saved archive reload");
         for(unsigned target:{9u,0u,165u,177u,220u,100u,9u}){
@@ -122,11 +114,9 @@ int main(){setvbuf(stdout,nullptr,_IOLBF,0);
         mp_playback_paused=true;mp_playback_rate=7;check(th13_mp_replay_seek_stage(6)==1,"chapter seek accepted");check(mp_playback_chapter==6&&mp_playback_frame==0&&mp_playback_seek_target==9,"chapter request retained while root replay pending");check(drain(9),"chapter seek drains saved prefix");compare(state(),expected[9],"chapter seek real state");
         check(th13_mp_replay_seek(176)==1&&drain(176)&&app->pause->active(),"seek reaches actual paused game");check(th13_mp_replay_seek(203)==1&&drain(203)&&!app->pause->active(),"seek reconstructs pause resume edges after real animation gates");
         const unsigned frame_before_invalid=mp_playback_frame;check(!th13_mp_replay_seek(221)&&!th13_mp_replay_seek_stage(7)&&mp_playback_frame==frame_before_invalid,"invalid seek leaves cursor intact");
-        // Rate batches must apply the clear destination at the exact frame.
         check(th13_mp_replay_seek(0)==1,"rate replay restart");mp_playback_paused=false;mp_playback_rate=8;unsigned guard=0;while(mp_playback_frame<220&&guard++<100){check(tick(),"rate8 frame batch");compare(state(),expected[mp_playback_frame],"rate8 identical at batch frontier");}
         multiplayer::ReplayArchive terminal;check(terminal.Begin(setup(count),42),"terminal fixture begin");check(terminal.AppendStageEntry(5,*mp_replay_loaded->StageEntryAt(5))&&terminal.AppendStageEntry(6,wrong.Encode()),"terminal fixture entries");for(unsigned f=0;f<201;++f)check(terminal.Append(f,f<9?5:6,mp_replay_loaded->FrameAt(f)->data(),count),"terminal fixture inputs");std::vector<u8> end_wire;check(terminal.Encode(end_wire,"TERMINAL",0,true)&&mp_replay_loaded->Load(end_wire.data(),end_wire.size()),"terminal fixture saved and loaded");terminal_mode=true;
         mp_playback_paused=true;check(th13_mp_replay_seek(201)==1&&drain(201),"seek end includes final handoff input");check(tick()&&!app->run&&bool(app->ending)&&mp_playback_frame==201,"end tick completes real loading and releases world");check(tick()&&mp_playback_frame==201,"end tick never dereferences absent run");check(th13_mp_replay_seek(0)==1&&app->run&&!app->ending&&mp_playback_frame==0,"backward seek from Ending builds root");terminal_mode=false;
-        // Old direct stage+carry path is a semantic negative, not malformed data.
         check(app->begin_title(0)&&app->configure_multiplayer(count,{0,0,0},0)&&app->start_game(6),"negative direct stage construct");app->pending_destination=-1;app->progress.stage=app->progress.starting_stage=app->selected_stage=6;app->progress.difficulty=setup(count).difficulty;app->frames=0;app->game_random.reseed_restore(8719);app->visual.reseed_restore(8719);check(app->begin_run(),"negative direct stage begin");u16 gs=0,vs=0;u32 gi=0,vi=0;wrong.Restore(app->run->battle,app->progress,app->run->score_view(),gs,gi,vs,vi);app->game_random.reseed_restore(gs);app->game_random.set_index(gi);app->visual.reseed_restore(vs);app->visual.set_index(vi);check(!(state()==expected[9]),"negative old direct carry restoration diverges");
         app->scheduler.remove(trigger);app.reset();multiplayer::session.Stop();
     }

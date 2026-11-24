@@ -1,5 +1,3 @@
-// 房间选项到会话身份的映射契约。线上词表与 session_setup_wire_test.cpp 的
-// C++ 向量含义相同：任一侧改动线格式或校验规则，另一侧必须显式跟进。
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {multiplayerBuildWords, multiplayerSetupWords, validateMultiplayerOptions}
@@ -13,7 +11,6 @@ const room = {
   netplayDifficulty: 2, netplaySeed: 0x1234, netplayMode: 'lan',
   netplayLoadouts: [{character: 0, shot: 0}, {character: 3}],
 };
-// 会话号 = SHA-256('th13mp:' + 房间 + ':' + 对局) 的前两词（小端）。
 const session = [1657783559, 1038279571];
 const identity = (delay, mode, automatic, reserve, flags) =>
   [2, 2, 0, 2, 0x1234, ...session, delay, 0, 3, 0, 0, 0, 0, mode, automatic, reserve, ...build, flags];
@@ -42,7 +39,6 @@ test('session identity words cover rollback, manual delay and challenge rooms', 
 test('timing defaults differ between rollback and manual delay', () => {
   assert.equal(validateMultiplayerOptions(room).delay, 0);
   assert.equal(validateMultiplayerOptions({...room, netplayAdonisMode: 1}).delay, 2);
-  // 现状：回滚模式带非零延迟被接受，难度 5 在运行时桥接层合法。
   const rollbackWithDelay = validateMultiplayerOptions({...room, netplayInputDelay: 3});
   assert.equal(rollbackWithDelay.mode, 2);
   assert.equal(rollbackWithDelay.delay, 3);

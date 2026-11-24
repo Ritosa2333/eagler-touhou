@@ -74,4 +74,4 @@ void MenuCursor::pop() noexcept {
     }
     disabled_count = 0;
 }
-}  // namespace th13
+}

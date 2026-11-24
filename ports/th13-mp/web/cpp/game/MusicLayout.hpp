@@ -10,7 +10,6 @@ struct MusicTrack {
     u32 frames() const { return loop_end / alignment; }
     u32 loop_frame() const { return loop_start / alignment; }
 };
-// thbgm.fmt is a zero-terminated array of original 52-byte records.
 class MusicLayout {
     std::vector<MusicTrack> tracks;
 
@@ -23,4 +22,4 @@ public:
     }
     i32 index(const std::string&) const;
 };
-}  // namespace th13
+}

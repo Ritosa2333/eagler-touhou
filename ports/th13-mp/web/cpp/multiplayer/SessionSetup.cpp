@@ -1,11 +1,9 @@
-// TH13 MP 会话身份实现（M7）。语义表见 SessionSetup.hpp 文件头。
 #include "SessionSetup.hpp"
 
 namespace th13::multiplayer {
 
 bool SessionSetup::valid() const {
     if (keep_bullets_on_miss && (!challenge || version == LegacyVersion)) return false;
-    // 线格式：v1 纯延迟 / v2 预测；v1 不允许预测模式字段。
     if ((version != LegacyVersion && version != Version) || mode > 2 ||
         (version == LegacyVersion && mode != 1) ||
         prediction_limit != MaxRollbackFrames || measured_prediction > 2 ||
@@ -18,7 +16,6 @@ bool SessionSetup::valid() const {
         prediction_reserve > 2 || (automatic && requested_delay) ||
         !(build[0] | build[1] | build[2] | build[3]))
         return false;
-    // 选人：0..3（四角色，允许重复）；未用席必须为 0。
     for (unsigned seat = 0; seat < 3; ++seat)
         if (selections[seat] >= MaxCharacters ||
             (seat >= player_count && selections[seat]))
@@ -79,8 +76,7 @@ std::uint32_t GameplayAbi(const SessionSetup& setup) {
             hash *= 16777619u;
         }
     };
-    // 身份面：作品标记 + 线格式 + 规则版本（RULES.md v2）+ 玩法版本。
-    word(0x54483133u);  // 'TH13'
+    word(0x54483133u);
     word(SessionSetup::GameplayVersion);
     word(SessionSetup::RulesVersion);
     word(setup.player_count);
@@ -92,7 +88,6 @@ std::uint32_t GameplayAbi(const SessionSetup& setup) {
     word(setup.input_delay);
     word(setup.prediction_reserve);
     for (auto build : setup.build) word(build);
-    // 预测模式附加语义策略与历史窗（纯延迟与预测哈希同一玩法修订面）。
     if (setup.mode != 1) {
         word(0x52423600u);
         word(setup.mode);
@@ -101,4 +96,4 @@ std::uint32_t GameplayAbi(const SessionSetup& setup) {
     return hash ? hash : 1;
 }
 
-}  // namespace th13::multiplayer
+}

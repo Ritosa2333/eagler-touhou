@@ -9,4 +9,4 @@ struct TextureImage {
     std::vector<u8> pixels;
     bool load(const AnmTexture&, bool low_color = false);
 };
-}  // namespace th13
+}

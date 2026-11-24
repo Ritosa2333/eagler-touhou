@@ -1,12 +1,4 @@
 <!doctype html>
-<!-- Render workload probe. It boots the production runtime, enters a run or a
-     Spell Practice card (th13_debug_start_run with a spell slot) and pumps
-     deterministic frames while a scripted pilot holds shot and weaves. Every
-     frame records its wall cost together with the renderer statistics delta
-     (draw calls, batches, vertex bytes, texture/framebuffer binds, buffer
-     replacements), so the per-frame GPU submission workload of a card can be
-     read independently of this machine's GPU.
-     Query: stage, slot (-1 = whole stage), char, diff, frames, runtime, present. -->
 <html lang="zh">
 <head>
 <meta charset="utf-8">
@@ -65,11 +57,9 @@ try {
   if (!mod._th13_initialize()) throw new Error(runtimeError());
   if (!mod._th13_debug_start_run(stage, character, diff, slot)) throw new Error('start_run: ' + runtimeError());
 
-  // Renderer statistics (portable/sdl/Renderer.hpp Statistics, u32 fields).
   const fields = ['calls', 'batches', 'uploadBytes', 'readBytes', 'frames', 'presentations',
     'bufferReplacements', 'bufferSubUpdates', 'vertexUploadBytes', 'directBytes', 'copiedBytes',
     'layoutSetups', 'textureBinds', 'framebufferBinds', 'programCompiles', 'genericBatches', 'resamples'];
-  // Both ports export HEAPU8; a fresh view follows memory growth.
   const stats = () => {
     const words = new Uint32Array(mod.HEAPU8.buffer, mod._th13_debug_stats(), fields.length);
     const out = {};
@@ -78,7 +68,6 @@ try {
   };
   const samples = window.__probe.samples;
   let previous = stats();
-  // Scripted pilot: hold shot, weave left/right every 40 frames, focus every other weave.
   mod._th13_key(44, 1);
   window.__probe.started = true;
   let n = 0;
@@ -86,9 +75,9 @@ try {
     let slice = performance.now();
     while (n < frames) {
       const phase = Math.floor(n / 40) % 4;
-      mod._th13_key(79, phase === 0 ? 1 : 0);   // right
-      mod._th13_key(80, phase === 2 ? 1 : 0);   // left
-      mod._th13_key(225, phase % 2 ? 1 : 0);    // focus (shift)
+      mod._th13_key(79, phase === 0 ? 1 : 0);
+      mod._th13_key(80, phase === 2 ? 1 : 0);
+      mod._th13_key(225, phase % 2 ? 1 : 0);
       const begin = performance.now();
       if (!mod._th13_debug_frame_present(present ? 1 : 0)) throw new Error('frame: ' + runtimeError());
       const ms = performance.now() - begin;

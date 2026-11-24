@@ -1,13 +1,4 @@
 <!doctype html>
-<!-- Single-player stage transition probe. It boots the production runtime,
-     enters a run through the title's start_game entry (th13_debug_start_run),
-     plays `frames` frames with the deterministic pump, triggers the stage clear
-     (th13_debug_stage_clear = dialogue opcode 21) and keeps pumping until the
-     next stage has run `after` frames. Every frame records its wall cost and
-     the transition state, so the door, gate and activation frames can be read
-     against the ordinary frame cost.
-     Query: stage, char, diff, frames, after, runtime (module path), mode
-     (pump = th13_debug_frame loop, raf = production rAF loop). -->
 <html lang="zh">
 <head>
 <meta charset="utf-8">
@@ -70,8 +61,6 @@ try {
   const samples = window.__probe.samples;
   let lastWork = null;
   mod.onGameWorkFrame = row => { lastWork = row; };
-  // Each sample carries the state before the frame (b*) and after it, so a
-  // frame's cost can be attributed to the transition step it executed.
   let before = transition();
   const record = (ms, extra) => {
     const t = transition();
@@ -80,7 +69,6 @@ try {
       b_pending: before.pending_destination, b_pending_load: before.pending_load, ...t, ...extra});
     before = t;
   };
-  // Hold the shot key so the pilot behaves like a player.
   mod._th13_key(44, 1);
   window.__probe.started = true;
   let cleared = false, clearedAt = -1, finished = false, sawTransition = false;
@@ -107,8 +95,6 @@ try {
     };
     mod._th13_loop_start();
   } else {
-    // Frames draw fully but only present to the canvas once per yield, so the
-    // headless compositor's canvas throttle never lands inside a measured frame.
     let slice = performance.now();
     while (!finished) {
       const begin = performance.now();

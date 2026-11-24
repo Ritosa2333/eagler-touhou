@@ -1,6 +1,3 @@
-// th13 ECL 基础解释器（0x4772a0 主循环，§3.2/§4.1 行为表）。
-// opcode <= 93 内联执行；> 93 经 EclCommands（原版 EnemyInf 虚表槽 +0）分发。
-// 无指令条数预算的原版会因纯 goto 环挂死，此处按 th15 经验保留 100000 步保险。
 #include "EclContext.hpp"
 
 #include <cmath>
@@ -23,7 +20,7 @@ enum class Op : u16 {
     ResumeAsync = 19,
     SetThreadState = 20,
     KillAllAsync = 21,
-    Nop22 = 22,  // §4.1：22/30/31 为 nop 变体
+    Nop22 = 22,
     WaitInteger = 23,
     WaitFloat = 24,
     EnterFrame = 40,
@@ -81,7 +78,7 @@ enum class Op : u16 {
 };
 constexpr float kPi = 3.1415927410125732421875f;
 constexpr float kTwoPi = 6.283185482025146484375f;
-}  // namespace
+}
 
 int EclContext::step(float elapsed) {
     if (!code || routine < 0 || instruction_offset < 0) return -1;
@@ -89,8 +86,6 @@ int EclContext::step(float elapsed) {
         error = message;
         return -2;
     };
-    // 帧尾步进 8 条插值通道（§3.2）：duration != 0 的通道以挂接指令为取参上下文
-    // 向目标变量（参数 1）写当前值。
     auto finish = [&](float rate) {
         const auto* saved = instruction;
         for (u32 slot = 0; slot < interpolators.size(); slot++)
@@ -105,8 +100,6 @@ int EclContext::step(float elapsed) {
         return 0;
     };
     for (u32 steps = 0; steps < 100000; steps++) {
-        // 游标恰在例程末尾：原版继续读后续字节（相邻 ECLH 头的时钟值）而挂起，
-        // th13 脚本恒以 ret 收尾，此处按线程结束处理（内存安全优先）。
         if (instruction_offset == i32(code_size)) {
             routine = instruction_offset = -1;
             instruction = nullptr;
@@ -123,7 +116,6 @@ int EclContext::step(float elapsed) {
         if (length < 16 || length % 4 || length > code_size - u32(instruction_offset))
             return fail("Invalid ECL instruction length");
         const Op op = Op(instruction->opcode);
-        // 难度门（§3.4）：rank_mask 与线程难度字节按位与为零则仅前移。
         const bool enabled = (instruction->rank_mask & difficulty) != 0;
         bool ok = true, adjust = false;
         auto integer_arg = [&](u32 n, bool consume = false) {
@@ -202,8 +194,6 @@ int EclContext::step(float elapsed) {
                 adjust = true;
                 break;
             }
-            // 004772a0 case0xb passes the current context to00477030.
-            // The callee shares its stack and suspends the caller until ret.
             case Op::Call:
                 const_cast<EclInstruction*>(instruction)->stack_adjust = 0;
                 if (!call_into(*this)) return -2;
@@ -212,7 +202,7 @@ int EclContext::step(float elapsed) {
             case Op::CallAsyncId: {
                 if (!threads) return fail("ECL thread host not bound");
                 i32 id = -1;
-                if (op == Op::CallAsyncId) {  // id 为名字后的内联参数（0x479480 按 id 查找）
+                if (op == Op::CallAsyncId) {
                     const u32 offset = instruction->argument<u32>(0) + 20;
                     if (offset + 4 > length) return fail("Truncated ECL thread identifier");
                     i32 literal;
@@ -245,7 +235,6 @@ int EclContext::step(float elapsed) {
                 if (!threads) return fail("ECL thread host not bound");
                 threads->terminate_children();
                 break;
-            // 跳转双参数：{相对本指令的 Δ, 绝对重置的 time}。
             case Op::Jump:
             case Op::JumpIfZero:
             case Op::JumpIfNonzero: {
@@ -407,7 +396,7 @@ int EclContext::step(float elapsed) {
             case Op::NegateFloat:
                 push_float(float(-pop_float()));
                 break;
-            case Op::PostDecrement: {  // $A--：压旧值，目标写回 旧值-1
+            case Op::PostDecrement: {
                 const i32 value = integer_arg(0);
                 store_int(0, wrapping_add(value, -1));
                 push_int(value);
@@ -420,7 +409,6 @@ int EclContext::step(float elapsed) {
                 push_float(float(op == Op::Sin ? std::sin(value) : op == Op::Cos ? std::cos(value) : std::sqrt(value)));
                 break;
             }
-            // circlePos（0x479540）：角度/半径 → 目标 0/1 写 cosθ·r, sinθ·r。
             case Op::CirclePos: {
                 const float angle = float_arg(2), radius = float_arg(3);
                 const float x = float(std::cos(double(angle)) * double(radius));
@@ -437,22 +425,18 @@ int EclContext::step(float elapsed) {
             case Op::SquareSum:
             case Op::SquareSumRoot: {
                 const float x = float_arg(1), y = float_arg(2);
-                // x87「积和宽精度、和存 f32 再开方」链（三点实证 e77/e78/e80）：
-                // s = f32(x²+y²)（积与和在 80 位精确，存和时一次舍入），
-                // r = f32(sqrt(s))。f32 逐级舍入与全程 double 均与 oracle
-                // 存在单 ulp 偏差，勿改。
                 const float sum = float(double(y) * double(y) + double(x) * double(x));
                 store_float(0, op == Op::SquareSumRoot ? float(std::sqrt(double(sum))) : sum);
                 adjust = true;
                 break;
             }
-            case Op::GetAngle: {  // 0x4977aa 两点 atan2
+            case Op::GetAngle: {
                 const float ax = float_arg(1), ay = float_arg(2), bx = float_arg(3), by = float_arg(4);
                 store_float(0, float(std::atan2(double(float(by - ay)), double(float(bx - ax)))));
                 adjust = true;
                 break;
             }
-            case Op::LinearFunc: {  // 0x4794d0 角差 wrap ±π
+            case Op::LinearFunc: {
                 const float from = float_arg(1), to = float_arg(2);
                 float difference = float(to - from);
                 if (difference > kPi)
@@ -473,8 +457,6 @@ int EclContext::step(float elapsed) {
                 adjust = true;
                 break;
             }
-            // 插值通道（0x4772a0 case 0x5b/0x5c）：参数 0=槽号、2=帧数、3=模式、
-            // 4/5=起止；目标 1 写起始值；本指令挂接到通道（帧尾取参上下文）。
             case Op::Interpolate:
             case Op::InterpolateHermite: {
                 const i32 slot = integer_arg(0);
@@ -493,7 +475,7 @@ int EclContext::step(float elapsed) {
                 adjust = true;
                 break;
             }
-            case Op::RandomPolar: {  // 0x472e10 两次 rand 合成环内随机点
+            case Op::RandomPolar: {
                 if (!random) return fail("ECL random generator not bound");
                 const float minimum = float_arg(2), maximum = float_arg(3);
                 const float angle = float(random->signed_unit() * kPi);
@@ -504,10 +486,6 @@ int EclContext::step(float elapsed) {
                 break;
             }
             default:
-                // 游戏指令（>93）：0 前移 / 1 让出本帧 / -1 终止 / -2 错误。
-                // Port result1 is StageCommands' blocked519/520 result.
-                // Retail returns-1 here and jumps478bac ->4773a3,
-                // bypassing the time increment; interpolation still ticks.
                 if (commands) {
                     const int result = commands->execute(*this, u16(op));
                     if (result == -2) return result;
@@ -523,7 +501,6 @@ int EclContext::step(float elapsed) {
                 break;
             }
         if (!ok) return -2;
-        // 执行成功后统一扣 stack_adjust（0x4772a0 caseD_0；难度过滤跳过的指令不扣）。
         if (enabled && adjust && instruction->stack_adjust) {
             if (stack_pointer < 0 || u32(stack_pointer) < instruction->stack_adjust)
                 return fail("ECL instruction stack cleanup underflow");
@@ -534,4 +511,4 @@ int EclContext::step(float elapsed) {
     return fail("ECL instruction budget exceeded");
 }
 
-}  // namespace th13
+}

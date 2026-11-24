@@ -35,7 +35,7 @@ struct Host final : TitleScenePlatform {
     i32 spell_rank(i32, i32, i32 row) const override { return row == 0 ? 2 : -1; }
     i32 character_count() const override { return 4; }
 };
-}  // namespace
+}
 
 TEST(selected_spell_is_delivered_to_the_production_launch_service) {
     GameRandom random;

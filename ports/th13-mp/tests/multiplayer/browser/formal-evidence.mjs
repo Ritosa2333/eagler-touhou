@@ -1,5 +1,3 @@
-// Independent verification of captured production-room evidence. No browser
-// control or game-state mutation. Run after formal-flow.mjs completes.
 import assert from 'node:assert/strict';
 import {readFile, writeFile, readdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -195,7 +193,6 @@ export function verifyTiming(chunks, audit, seat, configuration) {
         pendingRead = null;
         assert.equal(frame, sampled.size, 'Exactly one contiguous saved local sample per frame');
         sampled.set(frame, event);
-        // This is a measured queue, separate from the configured frame offset.
         if (inRange(frame)) sampleQueueFrames.push(frame - freshFrame);
       } else if (kind === 'send' || kind === 'schedule') {
         assert(sampled.has(frame), 'Send requires a saved sample');
@@ -459,8 +456,6 @@ export async function verifyDirectory(directory, {prefix = false} = {}) {
   const frames = prefix ? Math.min(...audit.map(rows => rows.length)) : report.terminal.frames;
   if (prefix) audit.forEach((rows, seat) => { audit[seat] = rows.slice(0, frames); });
   compareAudit(...audit, frames);
-  // Keep the entire event history: a prefix's samples can precede a replay and
-  // its confirmation/presentation can arrive later. Only statistics use 0..N.
   const timing = await Promise.all(Array.from({length: seatCount}, (_, seat) => lines(dir + `/timing-${seat}.ndjson`)));
   const seats = timing.map((chunks, seat) => {
     const options = report.current?.[seat]?.runtime?.options;
@@ -472,8 +467,6 @@ export async function verifyDirectory(directory, {prefix = false} = {}) {
       adonisMode: options.netplayAdonisMode, localSeat: options.netplayPlayer, players: options.netplayPlayerCount,
     });
   });
-  // Each negative control changes captured evidence, never the game or the
-  // acceptance result. A comparator that misses any corruption must fail.
   assert(frames >= 3, 'Enough real frames for evidence negative controls');
   const controls = [];
   for (let seat = 1; seat < seatCount; ++seat) {

@@ -7,7 +7,6 @@
 #include <vector>
 using th13::multiplayer::DigestSink;
 
-// Independent literal bytewise FNV reference, with no zero-run optimization.
 struct Reference {
     uint64_t h=0xcbf29ce484222325ull;
     void byte(uint8_t x) { h=(h^x)*0x100000001b3ull; }

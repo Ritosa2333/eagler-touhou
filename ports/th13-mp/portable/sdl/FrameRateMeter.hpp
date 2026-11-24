@@ -3,12 +3,6 @@
 #include <algorithm>
 #include <cmath>
 namespace touhou::sdl {
-// The original fps manager (0x424990) counts logic frames, frameskip
-// included, and divides by the wall time of a window of at least one second.
-// Here the window is the time credited to the frame clock, and the clock's
-// fractional phase at each end is folded in: display jitter only moves time
-// between the window and the clock, so a game that runs every credited frame
-// reads exactly 60, while clamped or stalled time reads as slowdown.
 struct FrameRateMeter {
     double window = 0, phase = 0;
     unsigned frames = 0;
@@ -27,7 +21,6 @@ struct FrameRateMeter {
     void frame(unsigned count = 1) {
         if (open) frames += count;
     }
-    // credit = time the clock holds before this callback's elapse.
     float sample(double credit) {
         const double now = fraction(credit);
         if (!open) {
@@ -46,4 +39,4 @@ struct FrameRateMeter {
         return fps;
     }
 };
-}  // namespace touhou::sdl
+}

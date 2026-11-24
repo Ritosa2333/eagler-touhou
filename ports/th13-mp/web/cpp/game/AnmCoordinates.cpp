@@ -82,8 +82,6 @@ bool anm_quad_positions(AnmVm& vm, Vec3 (&out)[4]) noexcept {
         x = float(x * scale_x);
         y = float(y * scale_y);
         if (mode == 1) {
-            // 0x467e80: x*cos - y*sin + center.x 与 x*sin + y*cos + center.y
-            // 全程 x87 80-bit，仅 0x468077/0x46808e 各 fstp 一次到 f32。
             const double rx = double(x) * double(cosine) - double(y) * double(sine);
             const double ry = double(x) * double(sine) + double(y) * double(cosine);
             out[i] = {float(double(center.x) + rx), float(double(center.y) + ry), z};
@@ -92,4 +90,4 @@ bool anm_quad_positions(AnmVm& vm, Vec3 (&out)[4]) noexcept {
     }
     return true;
 }
-}  // namespace th13
+}

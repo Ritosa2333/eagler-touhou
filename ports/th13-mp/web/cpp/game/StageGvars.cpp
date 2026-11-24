@@ -1,5 +1,3 @@
-// stage1 全局变量供给（0x420380 int 视图 / 0x420d00 float 视图的行为子集）。
-// 语义依据与【待校准】清单见 docs/plans/event-contract.md；事件字段是 oracle 合同。
 #include "SessionState.hpp"
 #include "StageSim.hpp"
 
@@ -16,9 +14,7 @@ const StageEnemy* primary_boss(const StageSim& sim) {
         if (!enemy->dead && enemy->script_id == sim.boss_slot[0]) return enemy.get();
     return nullptr;
 }
-}  // namespace
-
-// ---------------- 全局变量（0x420380 int 视图 / 0x420d00 float 视图） ----------------
+}
 
 bool StageGvars::integer(i32 id, i32& value) {
     StageSim& sim = *this->sim;
@@ -32,30 +28,25 @@ bool StageGvars::integer(i32 id, i32& value) {
     }
     StageEnemy* e = sim.current;
     switch (id) {
-    case -10000:  // RAND（0x472c90 & 0x7fffffff）
+    case -10000:
         GameRandom::tag(0);
         value = i32(sim.random.next() & 0x7fffffffu);
         return true;
-    case -9999:  // RANDF 的 int 视图：ftol 截断（消耗一次抽取）
+    case -9999:
         GameRandom::tag(1);
         value = i32(sim.random.unit());
         return true;
-    case -9988:  // TIME int 视图（+0x14A8）
+    case -9988:
         value = i32(e ? e->age : 0);
         return true;
-    case -9987:  // RANDF2 int 视图：0x472e10 → ftol
-        // 0x420380 跳转表 case 0xffffd8fd（index 13）→ 0x4203cc
-        // `mov ecx,0x4dc324; call 0x472e10`：**game 流**。round-22 曾把
-        // 0x40120b/0x401342/0x401835（ANM 轨迹/特效处理器，非 ECL 求值器）
-        // 当作 ECL rand 调用点改读 visual 流，导致 udN01 S1 f60 起
-        // game_index 0 vs native 2、visual_index +2（S1 捕获 f1626 死亡）。
+    case -9987:
         GameRandom::tag(2);
         value = i32(sim.random.signed_unit());
         return true;
-    case -9986:  // 00420380: enemy+0x521c bit25, set by timeout interruption
+    case -9986:
         value = e && e->phase_timed_out ? 1 : 0;
         return true;
-    case -9998:  // int getter 无对应 case，走 default 0（不消耗 RNG）
+    case -9998:
         value = 0;
         return true;
     case -9985:
@@ -67,17 +58,16 @@ bool StageGvars::integer(i32 id, i32& value) {
     case -9981:
     case -9980:
     case -9979:
-    case -9978:  // F0-F3 int 视图（ftol）
+    case -9978:
         value = e ? i32(e->f_slots[id + 9981]) : 0;
         return true;
     case -9935:
     case -9934:
     case -9933:
-    case -9932:  // F4-F7, 00420380.
+    case -9932:
         value = e ? truncate_int(e->f_slots[id + 9939]) : 0;
         return true;
     case -9965: {
-        // M3：最近合格玩家（R-G；查询时点 = ECL 变量求值，敌机位置基准）。
         float aim_x, aim_y;
         sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         value = i32(aim_x);
@@ -89,7 +79,7 @@ bool StageGvars::integer(i32 id, i32& value) {
         value = i32(aim_y);
         return true;
     }
-    case -9944: {  // 00420669: player distance, rounded to f32 before ftol.
+    case -9944: {
         float distance = 0.0f;
         floating(id, distance);
         value = truncate_int(distance);
@@ -121,52 +111,45 @@ bool StageGvars::integer(i32 id, i32& value) {
         value = boss ? i32(boss->position[1]) : 0;
         return true;
     }
-    case -9960:  // RANK
+    case -9960:
         value = sim.rank;
         return true;
-    case -9959:  // DIFF
+    case -9959:
         value = sim.diff;
         return true;
-    case -9958:  // 420380: atan2(inner+0x7c, inner+0x78), then ftol.
+    case -9958:
         value = e ? i32(std::atan2(double(e->motion_delta[1]), double(e->motion_delta[0]))) : 0;
         return true;
-    case -9954:  // LIFE (+0x5138 in the enemy ECL manager)
+    case -9954:
         value = e ? i32(e->life) : 0;
         return true;
     case -9953:
     case -9952:
     case -9951:
-    case -9950:  // EASY/NORMAL/HARD/LUNATIC flags, distinct from RANK
+    case -9950:
         value = sim.diff == id + 9953;
         return true;
     case -9957:
         value = 1;
         return true;
     case -9946:
-        // ENM_CNT_REAL（mgr+0xB8）：0x420638 直读计数器，计数在链表摘除时
-        // 才减——遍历中途读取时，已标 dead 但未被本趟游标到达的敌机仍在列。
-        // 移植侧 vector 摘除同拍（step_frame 游标到达时擦除），故计数 =
-        // 当前 vector 大小（含 root；勿用 !dead 过滤——会把已标未摘者漏计，
-        // 回放实测 frame 3252 由此少 1 导致 Phantom01 生成门 [-9946]<11 误开）。
         value = i32(sim.enemies.size());
         return true;
-    case -9909:  // 0x420380 case 0xffffd94b：+0x11E8（trace_id，0x4183f0:61 的
-        // param2[0x14]）。oracle 实测 Phantom01（MBoss1_at 子线程创建）求值
-        // 得 75 = MBoss id（433 的 moveEnm 目标）。
+    case -9909:
         value = e ? e->trace_id : 0;
         return true;
-    case -9908:  // 00417e90: count eligible nodes still linked to the manager.
+    case -9908:
         value = 0;
         for (const auto& enemy : sim.enemies)
             if ((enemy->flags & 0x31u) == 0 && enemy->invulnerable < 1) ++value;
         return true;
-    case -9907:  // SPELL_ID
+    case -9907:
         value = sim.session ? sim.session->selected_spell_id : -1;
         return true;
-    case -9914:  // ID（+0x11E4）
+    case -9914:
         value = e ? e->script_id : 0;
         return true;
-    case -9931:  // 420380: enemy manager+0xc0, last constructor-assigned ID.
+    case -9931:
         value = sim.last_created_enemy_id;
         return true;
     default:
@@ -200,29 +183,29 @@ bool StageGvars::floating(i32 id, float& value) {
         GameRandom::tag(3);
         value = float(sim.random.next() & 0x7fffffffu);
         return true;
-    case -9999:  // RANDF（0x472de0）
+    case -9999:
         GameRandom::tag(4);
         value = sim.random.unit();
         return true;
-    case -9998:  // RANDRAD（0x472e10 × π）
+    case -9998:
         GameRandom::tag(5);
         value = float(sim.random.signed_unit() * 3.1415927410125732);
         return true;
-    case -9997:  // FINAL_X/Y（主位置 +0x1230）
+    case -9997:
     case -9996:
         value = e ? e->position[id == -9997 ? 0 : 1] : 0.0f;
         return true;
-    case -9995:  // ABS_X/Y（+0x1274，ctor 写出生点后未见解更新——窗口内无人读）
+    case -9995:
     case -9994:
         value = e ? e->vel.pos[id == -9995 ? 0 : 1] : 0.0f;
         return true;
-    case -9993:  // REL_X/Y（+0x12B8，恒 0）
+    case -9993:
     case -9992:
         value = 0.0f;
         return true;
     case -9965:
     case -9991: {
-        float aim_x, aim_y;  // M3：最近合格玩家
+        float aim_x, aim_y;
         sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         value = aim_x;
         return true;
@@ -234,8 +217,8 @@ bool StageGvars::floating(i32 id, float& value) {
         value = aim_y;
         return true;
     }
-    case -9989: {            // ANGLE_PLAYER（0x443f60：自机位置指向玩家）
-        float aim_x, aim_y;  // M3：最近合格玩家
+    case -9989: {
+        float aim_x, aim_y;
         sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         const float dy = aim_y - (e ? e->position[1] : 0.0f);
         const float dx = aim_x - (e ? e->position[0] : 0.0f);
@@ -250,8 +233,6 @@ bool StageGvars::floating(i32 id, float& value) {
         value = e ? e->age : 0.0f;
         return true;
     case -9987:
-        // 0x420d00 跳转表 case 0xffffd8fd（index 13）→ 0x420d5b
-        // `mov ecx,0x4dc324; call 0x472e10`：game 流（与 int 视图同源）。
         GameRandom::tag(6);
         value = sim.random.signed_unit();
         return true;
@@ -273,7 +254,7 @@ bool StageGvars::floating(i32 id, float& value) {
     case -9935:
     case -9934:
     case -9933:
-    case -9932:  // +0x1494..0x14a0.
+    case -9932:
         value = e ? e->f_slots[id + 9939] : 0.0f;
         return true;
     case -9963: {
@@ -289,16 +270,14 @@ bool StageGvars::floating(i32 id, float& value) {
     case -9960:
         value = float(sim.rank);
         return true;
-    case -9958:  // 421107 reads the pre-quantization movement delta, not velocity.
+    case -9958:
         value = e ? float(std::atan2(double(e->motion_delta[1]), double(e->motion_delta[0]))) : 0.f;
         return true;
-    case -9944: {            // 00421367 -> 00423e20: current enemy to player distance.
-        float aim_x, aim_y;  // M3：最近合格玩家
+    case -9944: {
+        float aim_x, aim_y;
         sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f, aim_x, aim_y);
         const double dx = double(e ? e->position[0] : 0.0f) - double(aim_x);
         const double dy = double(e ? e->position[1] : 0.0f) - double(aim_y);
-        // x87 keeps the differences/products wide, then stores the squared
-        // distance as f32 before sqrt; the returned distance is also f32.
         const float squared = float(dx * dx + dy * dy);
         value = float(std::sqrt(double(squared)));
         return true;
@@ -334,13 +313,13 @@ bool StageGvars::floating(i32 id, float& value) {
     case -9957:
         value = 1.0f;
         return true;
-    case -9908: {  // 00420d00 calls the same 00417e90 as the integer getter.
+    case -9908: {
         i32 count = 0;
         integer(id, count);
         value = float(count);
         return true;
     }
-    case -9907:  // 00420d00: the float view of DAT_004be7d4, including -1.
+    case -9907:
         value = float(sim.session ? sim.session->selected_spell_id : -1);
         return true;
     default:
@@ -356,7 +335,7 @@ i32* StageGvars::integer_destination(i32 id) {
     if (id == -9914 && e) return &e->script_id;
     for (auto& pair : writable_ints_)
         if (pair.first == id) return &pair.second;
-    if (id == -9949 || id == -9948 || id == -9947) {  // MISS/BOMB/CAPTURE 计数（MBoss 族写入）
+    if (id == -9949 || id == -9948 || id == -9947) {
         writable_ints_.emplace_back(id, 0);
         return &writable_ints_.back().second;
     }
@@ -371,4 +350,4 @@ float* StageGvars::float_destination(i32 id) {
     return nullptr;
 }
 
-}  // namespace th13
+}

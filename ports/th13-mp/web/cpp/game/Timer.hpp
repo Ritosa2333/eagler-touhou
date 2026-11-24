@@ -1,5 +1,3 @@
-// 帧计时器：ANM/ECL 共用的整数帧 + 浮点分数双轨（对齐 th15 Timer 行为；
-// th13 世代共享同族实现，rate_index 字段保留原版 autosave 布局位）。
 #pragma once
 
 #include "Types.hpp"
@@ -48,4 +46,4 @@ struct Timer {
 
 static_assert(sizeof(Timer) == 20);
 
-}  // namespace th13
+}

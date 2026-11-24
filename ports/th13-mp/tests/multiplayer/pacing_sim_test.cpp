@@ -1,9 +1,3 @@
-// Discrete-time model of two rollback peers driven by the production
-// FrameSchedule and SlowdownGovernor. It reproduces the browser callback shape
-// (vsync-aligned callbacks, a work budget per callback, a prediction window
-// that stalls simulation, packets that wake a waiting peer) so pacing policy can
-// be judged at a true 60 Hz cadence: game speed, freeze length and prediction
-// depth under unequal peers, latency and hitches.
 #include "../../web/cpp/multiplayer/FrameSchedule.hpp"
 #include <algorithm>
 #include <cassert>
@@ -20,15 +14,15 @@ constexpr unsigned kWindow = SlowdownGovernor::kWindow;
 constexpr double kLegacyBudget = 11.5;
 
 struct Scenario {
-    double cost_ms[2] = {2, 2};     // simulation + draw cost per frame
-    double raf_ms[2] = {kInterval, kInterval};  // display cadence (GPU-bound peers present slower)
-    double latency_ms = 30;         // one way
-    double hitch_at_ms = -1, hitch_ms = 0;  // peer 0 freezes once
-    bool handling = true;           // governor + multi-step catch-up
+    double cost_ms[2] = {2, 2};
+    double raf_ms[2] = {kInterval, kInterval};
+    double latency_ms = 30;
+    double hitch_at_ms = -1, hitch_ms = 0;
+    bool handling = true;
 };
 
 struct Metrics {
-    double speed[2] = {0, 0};       // fraction of 60 Hz over the measured window
+    double speed[2] = {0, 0};
     double max_freeze_ms[2] = {0, 0};
     double mean_depth[2] = {0, 0};
     unsigned stalled_callbacks[2] = {0, 0};
@@ -39,7 +33,7 @@ struct Peer {
     FrameSchedule schedule;
     SlowdownGovernor governor;
     double busy_until = 0, next_callback = 0, previous = -1, step_cost = 0;
-    std::vector<double> captured;   // wall time each own frame's input existed
+    std::vector<double> captured;
     unsigned arrived_seen = 0;
     std::vector<double> sim_times;
     double depth_sum = 0;
@@ -71,8 +65,6 @@ Metrics run(const Scenario& scenario, double seconds = 40) {
                 peer.busy_until = now + scenario.hitch_ms;
                 continue;
             }
-            // A received input wakes the peer the way the production socket does,
-            // including credit a slow display has not spent yet.
             const bool wake = arrived(index, now) != peer.arrived_seen &&
                 (peer.schedule.retry_pending() || peer.schedule.has_work());
             if (now < peer.next_callback && !wake) continue;
@@ -164,44 +156,36 @@ Metrics both(const char* name, Scenario scenario, Metrics* on_out = nullptr) {
     if (on_out) *on_out = on;
     return off;
 }
-}  // namespace
+}
 
 int main() {
     std::setvbuf(stdout, nullptr, _IONBF, 0);
     Metrics on, off;
-    // Healthy peers: handling is invisible.
     off = both("healthy 2ms/2ms 30ms", {}, &on);
     for (int i = 0; i < 2; ++i) assert(on.speed[i] > .99 && off.speed[i] > .99);
 
-    // High latency: stays at full speed (no phantom slowdown from ordinary depth).
     Scenario far; far.latency_ms = 100;
     off = both("healthy 2ms/2ms 100ms", far, &on);
     for (int i = 0; i < 2; ++i) assert(on.speed[i] > .98);
 
-    // One peer needs 24 ms per frame: the pair settles at that peer's pace.
     Scenario slow; slow.cost_ms[0] = 24;
     off = both("peer0 24ms/frame", slow, &on);
-    for (int i = 0; i < 2; ++i) assert(on.speed[i] > .5 * .95);  // vsync-quantized: 30 Hz
+    for (int i = 0; i < 2; ++i) assert(on.speed[i] > .5 * .95);
 
-    // 2x slower peer, 8 ms.
     Scenario mid; mid.cost_ms[0] = 12;
     off = both("peer0 12ms/frame", mid, &on);
     for (int i = 0; i < 2; ++i) assert(on.speed[i] > .95);
 
-    // Both peers overloaded.
     Scenario both_slow; both_slow.cost_ms[0] = both_slow.cost_ms[1] = 22;
     off = both("both 22ms/frame", both_slow, &on);
     for (int i = 0; i < 2; ++i) assert(on.speed[i] > .5 * .95);
 
-    // A 400 ms hitch on peer 0.
     Scenario hitch; hitch.hitch_at_ms = 15000; hitch.hitch_ms = 400;
     off = both("400ms hitch peer0", hitch, &on);
 
-    // A GPU-bound peer presents at 20 Hz: ordinary cheap frames keep game speed.
     Scenario display; display.raf_ms[0] = 50;
     off = both("peer0 presents at 20 Hz", display, &on);
     assert(on.speed[0] > .97 && on.speed[1] > .97);
-    // Four steps per callback cannot cover a 5 Hz present; crediting the gap can.
     Scenario slow_display; slow_display.raf_ms[0] = slow_display.raf_ms[1] = 200;
     off = both("both present at 5 Hz", slow_display, &on);
     assert(on.speed[0] > .9 && on.speed[1] > .9);
@@ -217,13 +201,10 @@ int main() {
     Scenario crawl3 = crawl; crawl3.raf_ms[1] = 700;
     off = both("1.4/1.4 Hz", crawl3, &on);
 
-    // Display-bound with weighty frames: the longer callback fits inside the
-    // slow display interval, so more logic frames ride on each present.
     Scenario weighty; weighty.raf_ms[0] = 100; weighty.cost_ms[0] = 6;
     off = both("peer0 10 Hz, 6ms frames", weighty, &on);
     assert(on.speed[0] > .97 && on.speed[1] > .97);
 
-    // Heavy and far.
     Scenario heavy; heavy.cost_ms[0] = 16; heavy.cost_ms[1] = 10; heavy.latency_ms = 80;
     off = both("16ms/10ms 80ms", heavy, &on);
     return 0;

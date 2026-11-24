@@ -1,8 +1,5 @@
-// Real native serialization regression for Practice stage-played data.
-#include "../harness/test_framework.hpp"
-// tests/ui/run.sh deliberately links only game/*.cpp, so include this isolated,
-// platform-free storage implementation here rather than changing the shared runner.
 #include "../../web/cpp/sdl/FileStore.cpp"
+#include "../harness/test_framework.hpp"
 #include <array>
 #include <cstdio>
 #include <cstdlib>
@@ -19,7 +16,6 @@ std::string fixture_path() {
     static int next = 0;
     const char* directory = std::getenv("TH13_TEST_OUTPUT");
     if (directory) {
-        // 测试指定的输出目录可能不存在：自建，不因 fopen 失败误报套件红。
         std::filesystem::create_directories(directory);
     }
     const std::string path = std::string(directory ? directory : "/tmp") + "/practice-save-" +
@@ -45,7 +41,7 @@ std::vector<u8> legacy_save() {
     put32(bytes, 24, 0x85);
     return bytes;
 }
-}  // namespace
+}
 
 TEST(practice_missing_save_does_not_invent_stage1_unlock) {
     fixture_path();
@@ -62,7 +58,7 @@ TEST(practice_v1_preserves_settings_and_clears_unknown_played_data) {
     const std::string path = fixture_path();
     write_fixture(path, legacy_save());
     FileStore files;
-    files.mark_practice_stage_played(0, 0, 1);  // initialize must clear stale instance state
+    files.mark_practice_stage_played(0, 0, 1);
     CHECK(files.initialize());
     CHECK(files.loaded);
     CHECK_EQ(files.bgm_volume, 41);
@@ -112,13 +108,13 @@ TEST(practice_corrupt_truncated_or_overlong_saves_revert_to_defaults) {
     invalid.push_back(bytes);
     bytes = legacy_save();
     put32(bytes, 8, 2);
-    invalid.push_back(bytes);  // v2 truncated to v1 size
+    invalid.push_back(bytes);
     bytes = legacy_save();
     bytes.resize(35);
     invalid.push_back(bytes);
     bytes = legacy_save();
     bytes.resize(52);
-    invalid.push_back(bytes);  // v1 wrong size
+    invalid.push_back(bytes);
     bytes = legacy_save();
     put32(bytes, 8, 2);
     bytes.resize(53);
@@ -139,9 +135,6 @@ TEST(practice_corrupt_truncated_or_overlong_saves_revert_to_defaults) {
     }
 }
 
-// Extra 解锁位持久化（0x416130 通关落档 0x1b26b+char*2 bit0x10 → port
-// v2 reserved[0] 低 4 位）：写点 Application.cpp 通关结算（难度>0），读点
-// TitleMainMenu::extra_gate（0x44c570 case0 +0x5c40 bit1，任一角色即开）。
 TEST(practice_v2_roundtrips_extra_unlock_mask) {
     fixture_path();
     {
@@ -158,7 +151,6 @@ TEST(practice_v2_roundtrips_extra_unlock_mask) {
     CHECK(!reloaded.extra_unlocked(1));
     CHECK(!reloaded.extra_unlocked(2));
     CHECK(reloaded.extra_unlocked(3));
-    // v1 档（合法，无 extra 字节）：装载成功但不发明解锁位（缺省 0）。
     const std::string legacy = fixture_path();
     write_fixture(legacy, legacy_save());
     FileStore v1;
@@ -166,7 +158,6 @@ TEST(practice_v2_roundtrips_extra_unlock_mask) {
     CHECK(v1.loaded);
     for (i32 character = 0; character < 4; ++character)
         CHECK(!v1.extra_unlocked(character));
-    // 默认手柄五键绑定
     const std::array<i16, 5> expected_defaults = {0, 1, 2, 3, 4};
     CHECK(v1.pad_bindings == expected_defaults);
 }

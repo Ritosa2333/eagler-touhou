@@ -38,8 +38,6 @@ TEST(synchronous_call_wait_preserves_caller_and_has_no_child_context) {
     CHECK_EQ(threads.step(1), 0);
     CHECK_EQ(commands.calls.size(), 2u);
     CHECK_EQ(threads.step(1), 0);
-    // 004772a0/00477030: the original binary emits [1,2] at frame0,
-    // then [4,3] at frame3, with one unchanged context address throughout.
     CHECK_EQ(commands.calls.size(), 4u);
     CHECK_EQ(commands.calls[2].ints[0], 4);
     CHECK_EQ(commands.calls[3].ints[0], 3);
@@ -47,6 +45,6 @@ TEST(synchronous_call_wait_preserves_caller_and_has_no_child_context) {
     CHECK_EQ(threads.main.time, -99.f);
     CHECK_EQ(threads.count(), 1u);
 }
-}  // namespace
+}
 
 int main() { return th13test::run_all("ecl-call-wait-contract"); }

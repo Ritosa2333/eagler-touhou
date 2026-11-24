@@ -1,21 +1,3 @@
-// 立绘/名牌角色身份回归（独立于生产映射的 expected）。
-//
-// 预期身份来源（不是 MsgPresentation::kStageRows / side_portrait 的复制）：
-//   - 原版 ECL ANIM 名单（st03.ecl 头，原版数据实读）：
-//       [enemy.anm, st03enm.anm, st03menm.anm]
-//     原版 0x418990 把名单第 i 项注册到敌机 ANM 管理器 bank 2+i
-//     （0x4c2188+0x88+i*4，管理器槽号 i+10）；因此 stage 表 bank 3 =
-//     st03enm.anm、bank 4 = st03menm.anm。
-//   - 原版 st03*.msg 文本与 0x428ae0 opcode 2/20 分支：
-//       entry 0/1（芳香 宮古芳香，boss）→ entry<2 → stage 表 +0x6c/+0x70
-//         = bank3/st03enm；
-//       entry 2（小傘 多々良小傘，中boss）→ entry>=2 → +0x64/+0x68
-//         = bank4/st03menm。
-//   - 原版 ANM 内嵌纹理（st03enm.anm face/enemy3/face03bs.png、
-//     face/enemy3/ename01.png=宮古芳香；st03menm.anm
-//     face/enemy3m/face03mbs.png、face/enemy3m/ename01.png=多々良小傘）。
-//   合并 bank 内全局脚本号 = 名单前序文件脚本数之和 + 文件内脚本号；
-//   该计数在本测试内由原版 ANM 字节独立解析，不读取生产表。
 #include "../anm/anm_test_fixtures.hpp"
 #include "game/RunScene.hpp"
 
@@ -79,7 +61,6 @@ struct Host final : RunSceneServices {
     }
 };
 
-// 原版 ANM 文件的脚本总数（chunk 链：version@0、脚本数@6、stride@36）。
 bool anm_script_count(const std::vector<u8>& bytes, u32& count) {
     u32 base = 0, total = 0;
     for (;;) {
@@ -100,7 +81,7 @@ bool anm_script_count(const std::vector<u8>& bytes, u32& count) {
 
 struct StageAssets {
     std::vector<std::string> anim_list;
-    std::vector<u32> script_base;  // 名单序 i 的全局脚本基号
+    std::vector<u32> script_base;
     std::vector<u8> msg;
     std::vector<u8> ecl;
     std::string std_name;
@@ -129,8 +110,6 @@ bool load_stage_assets(th13test::TestFileReader& reader, i32 stage, StageAssets&
     return true;
 }
 
-// 独立身份判定：entry 0/1 = 芳香（st03enm face/enemy3），entry 2 = 小傘
-// （st03menm face/enemy3m）。纹理路径来自原版 ANM 内嵌 THTX 名。
 bool expected_family(i32 entry, const std::string& texture) {
     if (entry == 2) return texture.rfind("face/enemy3m/", 0) == 0;
     return texture.rfind("face/enemy3/", 0) == 0;
@@ -241,12 +220,11 @@ struct Scene {
         scene.reset();
         animations.unload(4);
         animations.unload(5);
-        animations.unload(7);  // scenery bank (stXXwl.anm) must be reloaded per stage
+        animations.unload(7);
         animations.unload(9);
         animations.unload(26);
     }
 
-    // 推进对话到结束或 max_frames；返回本 entry 内观察到的全部 VM。
     bool play(i32 entry, int max_frames, std::vector<Observation>& seen, bool& closed) {
         scene->open_dialog(entry);
         if (!scene->dialog_active()) {
@@ -255,7 +233,6 @@ struct Scene {
         }
         GameInput& input = this->input;
         scene->controls(input);
-        // Isolated entry probes start after ECL 524's original chapter write.
         progress.chapter = entry == 2 ? 4 : 6;
         closed = false;
         for (int frame = 0; frame < max_frames; ++frame) {
@@ -264,9 +241,6 @@ struct Scene {
                              int(progress.stage));
             input.held = input.pressed = (frame % 30 == 0) ? 1u : 0u;
             input.duration[0] = input.held ? 1 : 0;
-            // 0x4265a0 家族按优先级经调度器驱动（对话解释器在 Update 28，
-            // 0x424f46/0x424f4b）；只直调 update()（任务 20）对话永不步进。
-            // 与生产/run_scene 夹具同构：整帧 scheduler.update()。
             if (scheduler.update() < 0 || !scene->error.empty()) {
                 std::printf("stage %d entry %d update: %s\n", int(progress.stage), int(entry), scene->error.c_str());
                 return false;
@@ -283,17 +257,15 @@ struct Scene {
     }
 };
 
-// 合并 bank 全局脚本号：名单序 index 的基号 + 文件内脚本号。
 i32 script_of(const StageAssets& assets, const char* file, i32 local) {
     for (u32 i = 0; i < assets.anim_list.size(); ++i)
         if (assets.anim_list[i] == file) return i32(assets.script_base[i]) + local;
     return -1;
 }
 
-}  // namespace
+}
 
 TEST(portrait_identity_expected_mapping_rejects_other_family) {
-    // 独立负控：expected 判定对另一角色族必须为 false。
     CHECK(!expected_family(0, "face/enemy3m/face03mbs.png"));
     CHECK(!expected_family(1, "face/enemy3m/ename01.png"));
     CHECK(!expected_family(2, "face/enemy3/face03bs.png"));
@@ -306,7 +278,7 @@ TEST(portrait_identity_expected_mapping_rejects_other_family) {
 
 TEST(stage3_boss_entry0_yoshika_portrait_and_nameplate) {
     Scene s;
-    CHECK(s.build(3, 1));  // Marisa st03b.msg
+    CHECK(s.build(3, 1));
     if (!s.scene) return;
     const i32 boss_base = script_of(s.assets, "st03enm.anm", 0);
     CHECK(boss_base >= 0);
@@ -314,9 +286,7 @@ TEST(stage3_boss_entry0_yoshika_portrait_and_nameplate) {
     bool closed = false;
     CHECK(s.play(0, 2400, seen, closed));
     CHECK(closed);
-    // 芳香立绘：st03enm 的 face/enemy3/face03bs.png（原版 ANM 内嵌纹理）。
     CHECK(has_texture(seen, "face/enemy3/face03bs.png"));
-    // 根脚本 = bank3（st03enm）文件基号 + 11；子脚本 9/10 承载可见面片。
     bool root = false;
     for (const auto& vm : seen) {
         if (vm.source_script == boss_base + 11 && vm.bank == 4) root = true;
@@ -325,13 +295,11 @@ TEST(stage3_boss_entry0_yoshika_portrait_and_nameplate) {
             CHECK(expected_family(0, vm.texture));
     }
     CHECK(root);
-    // 名牌 = st03enm ename01（宮古芳香），根脚本基号+16。
     CHECK(has_texture(seen, "face/enemy3/ename01.png"));
     bool name_root = false;
     for (const auto& vm : seen)
         if (vm.source_script == boss_base + 16 && vm.bank == 4) name_root = true;
     CHECK(name_root);
-    // 负控：entry 0 不允许出现小傘族。
     CHECK(!has_prefix(seen, "face/enemy3m/"));
 }
 
@@ -359,26 +327,22 @@ TEST(stage3_midboss_entry2_kogasa_portrait_and_nameplate) {
     for (const auto& vm : seen)
         if (vm.source_script == mid_base + 16 && vm.bank == 4) name_root = true;
     CHECK(name_root);
-    // 负控：entry 2 不允许出现芳香族。
     CHECK(!has_prefix(seen, "face/enemy3/"));
 }
 
 TEST(stage2_to_stage3_lifecycle_drops_old_portrait_identity) {
     Scene s;
-    CHECK(s.build(2, 1));  // st02b.msg, 小傘? no: stage2 boss 響子 face/enemy2
+    CHECK(s.build(2, 1));
     if (!s.scene) return;
     std::vector<Observation> seen2;
     bool closed = false;
     CHECK(s.play(0, 2400, seen2, closed));
     CHECK(closed);
     CHECK(has_prefix(seen2, "face/enemy2/"));
-    // 关闭后旧立绘/名牌必须退出。
     for (const auto& vm : observe(s.animations)) {
         if (!vm.visible || !vm.alpha) continue;
         CHECK(vm.texture.rfind("face/enemy2/", 0) != 0);
     }
-    // 模拟换关：Application 在换关时卸载 stage/bullet/spirit/logo bank，
-    // 再把新关 ANM 名单合并进同一 kStageBank(4)。
     s.drop();
     CHECK(s.build(3, 1));
     if (!s.scene) return;
@@ -387,7 +351,6 @@ TEST(stage2_to_stage3_lifecycle_drops_old_portrait_identity) {
     CHECK(closed);
     CHECK(has_texture(seen3, "face/enemy3/face03bs.png"));
     CHECK(has_texture(seen3, "face/enemy3/ename01.png"));
-    // 旧关资源不得残留在可见 VM 上。
     CHECK(!has_prefix(seen3, "face/enemy2/"));
 }
 

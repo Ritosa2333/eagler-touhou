@@ -4,9 +4,6 @@ import {createHash} from 'node:crypto';
 
 const root = resolve(import.meta.dirname, '..');
 const game = 'th13';
-// 多人变体（对照 th15-mp package-eagler.mjs 的 multiplayer 分支）：独立输出
-// 目录 + multiplayer.mjs + shell 构建标记；产物 manifest 必须让桥的身份
-// 校验（game/product/variant/features.multiplayer/execution.sha256）通过。
 const multiplayer = process.argv.includes('--multiplayer');
 const out = process.env.EAGLER_RUNTIME_OUTPUT
   ? resolve(process.env.EAGLER_RUNTIME_OUTPUT)
@@ -81,8 +78,6 @@ write(entry, html);
 
 for (const name of runtimeNames) {
   if (name === 'shell.mjs') {
-    // 构建标记（对照 th15-mp）：runtimeBuild.multiplayer 是 shell 多人分支
-    // 与桥加载的唯一开关；标记原样保留会让多人页静默退回单席。
     const marker = "/*TH13_BUILD_INFO*/{version: 'development-incomplete', completeGame: false}";
     const shell = readFileSync(resolve(shellRoot, 'shell.mjs'), 'utf8');
     if (!shell.includes(marker)) throw Error('Missing build-info marker');

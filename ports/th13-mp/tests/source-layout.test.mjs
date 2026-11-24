@@ -1,5 +1,3 @@
-// 排版范围与内联 JS 保护规则的单元测试；两个真实目录上的检查在
-// tests/shared-sources.test.mjs。
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtempSync, mkdirSync, rmSync, writeFileSync} from 'node:fs';

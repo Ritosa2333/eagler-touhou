@@ -1,5 +1,3 @@
-// FileStore 与 ScoreDat 的应用档权威、原版格式镜像和导入裁决测试。
-// 黄金样本不在此处重复验证；原始容器见 score_dat_test.cpp，资产依赖见 run.sh。
 #include "../harness/test_framework.hpp"
 
 #include "game/ScoreDat.hpp"
@@ -305,6 +303,6 @@ TEST(original_youmu_fixture_import) {
     CHECK(store.last_name == "YOUMU001");
 }
 
-}  // namespace
+}
 
 int main() { return th13test::run_all("FileStore scoreth13.dat 通道"); }

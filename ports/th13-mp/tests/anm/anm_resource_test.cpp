@@ -1,9 +1,3 @@
-// AnmResource 单测：
-// 1) golden：真实 front.anm entry0 数值表逐字段断言（计划 §二 表）；
-// 2) 指令流解码：script0 前 7 条 + 终止符 + script1 起点闭环；
-// 3) 跨 entry 全局编号：153 精灵/244 脚本按 entry 表序追加（风险表 #5）；
-// 4) text.anm 的 @/@R/外部名 Kind 判定；effect.anm rgba() 尺寸闭环；
-// 5) 合成归档解析 + anm_decode_png（stb_image）。
 #include "anm_test_fixtures.hpp"
 #include "game/AnmTextureDecode.hpp"
 #include "rgba64_png.hpp"
@@ -20,12 +14,11 @@ th13test::TestFileReader& reader() {
 }
 
 TEST(front_entry0_golden) {
-    // 计划 §二 字段表（raw front.anm 逐字节实测）。
     std::vector<th13::u8> bytes;
     CHECK(reader().read("artifacts/reference/raw/front.anm", bytes));
     th13::AnmResource resource;
     CHECK(resource.open(bytes.data(), th13::u32(bytes.size())));
-    CHECK_EQ(resource.textures.size(), 11u);  // 11 个 entry
+    CHECK_EQ(resource.textures.size(), 11u);
     const auto& texture = resource.textures[0];
     CHECK_EQ(texture.width, 512);
     CHECK_EQ(texture.height, 512);
@@ -35,14 +28,12 @@ TEST(front_entry0_golden) {
     CHECK_EQ(texture.source_y, 0);
     CHECK_EQ(texture.priority, 10u);
     CHECK(texture.kind == th13::AnmTexture::Kind::Embedded);
-    CHECK(!texture.low_resolution_scale);  // lowResScale 全 0
+    CHECK(!texture.low_resolution_scale);
     CHECK_EQ(texture.pixel_format, 1);
     CHECK_EQ(texture.pixel_width, 512);
     CHECK_EQ(texture.pixel_height, 512);
-    // THTX 像素量 0x100000 = 512*512*4，nextentry 0x108C18 = 0x8C08+16+0x100000 闭环。
     CHECK_EQ(texture.pixels.size(), 0x100000u);
-    // entry0 sprite 记录：82 个（首项见偏移表 0x528）。
-    CHECK_EQ(resource.sprites.size(), 153u);  // 全 11 entry 合计
+    CHECK_EQ(resource.sprites.size(), 153u);
     CHECK_EQ(resource.sprites[0].source_id, 0u);
 }
 
@@ -54,9 +45,8 @@ TEST(front_script0_decode) {
     CHECK_EQ(resource.scripts.size(), 244u);
     const auto& script0 = resource.scripts[0];
     CHECK_EQ(script0.source_id, 0);
-    CHECK_EQ(script0.file_offset, 0xB90u);   // 脚本表 {0, 0xB90}
-    CHECK_EQ(script0.bytes.size(), 0x160u);  // 0xCF0 - 0xB90
-    // 前 7 条（本轮 python 复核）：op438 / op500×6。
+    CHECK_EQ(script0.file_offset, 0xB90u);
+    CHECK_EQ(script0.bytes.size(), 0x160u);
     const th13::AnmInstruction* insns[7] = {};
     for (int i = 0; i < 7; i++)
         insns[i] = reinterpret_cast<const th13::AnmInstruction*>(script0.bytes.data() + i * 12);
@@ -69,7 +59,6 @@ TEST(front_script0_decode) {
         CHECK_EQ(th13::u32(insns[i]->references), 0u);
         CHECK_EQ(insns[i]->argument<th13::i32>(0), expect_arg[i]);
     }
-    // 终止符：script0 尾 8 字节 opcode=-1 size=0；script1 起点恰在 0xCF0 闭环。
     th13::i16 opcode;
     std::memcpy(&opcode, script0.bytes.data() + script0.bytes.size() - 8, 2);
     CHECK_EQ(opcode, th13::i16(-1));
@@ -78,7 +67,6 @@ TEST(front_script0_decode) {
 }
 
 TEST(front_global_numbering) {
-    // 风险表 #5：ins_300 的编号是归档内全局 sprite 序号，解析必须按 entry 表序追加。
     std::vector<th13::u8> bytes;
     CHECK(reader().read("artifacts/reference/raw/front.anm", bytes));
     th13::AnmResource resource;
@@ -87,23 +75,20 @@ TEST(front_global_numbering) {
     const th13::u16 scripts_per_entry[11] = {112, 3, 2, 32, 6, 16, 0, 5, 16, 48, 4};
     th13::u32 script_base = 0, sprite_base = 0;
     for (u32 e = 0; e < 11; e++) {
-        // 脚本 id 只是文件元数据（entry3 起编号跳到 219），全局序号 = 追加位置；
-        // 此处校验每 entry 段内 id 连续递增 + 段内偏移单调。
         for (u32 i = 0; i < scripts_per_entry[e]; i++) {
             const auto& entry_script = resource.scripts[script_base + i];
             CHECK_EQ(entry_script.source_id, resource.scripts[script_base].source_id + th13::i32(i));
             if (i) CHECK(entry_script.file_offset > resource.scripts[script_base + i - 1].file_offset);
         }
-        CHECK(resource.sprites[sprite_base].texture == e);  // entry 边界换纹理
+        CHECK(resource.sprites[sprite_base].texture == e);
         sprite_base += sprites_per_entry[e];
         script_base += scripts_per_entry[e];
     }
-    CHECK_EQ(sprite_base, 153u);  // 全局 sprite 序号 0..152 连续
+    CHECK_EQ(sprite_base, 153u);
     CHECK_EQ(script_base, 244u);
 }
 
 TEST(text_anm_special_names) {
-    // §一：text.anm 含 @R（渲染目标）×2 与 @（空白）；hasData=0 为外部名。
     std::vector<th13::u8> bytes;
     CHECK(reader().read("artifacts/reference/raw/text.anm", bytes));
     th13::AnmResource resource;
@@ -117,7 +102,7 @@ TEST(text_anm_special_names) {
             ++blanks;
             CHECK(texture.kind == th13::AnmTexture::Kind::Blank);
         } else if (texture.kind == th13::AnmTexture::Kind::External) {
-            ++external;  // hasData=0：外部名，像素由外部供给
+            ++external;
         }
     }
     CHECK_EQ(render_targets, 2u);
@@ -147,18 +132,14 @@ TEST(synthetic_archive_and_invalid) {
     CHECK_EQ(resource.sprites.size(), 1u);
     CHECK_EQ(resource.scripts.size(), 1u);
     CHECK_EQ(resource.scripts[0].bytes.size(), script.size());
-    CHECK_EQ(resource.sprites[0].u1, 1.f);  // 2/2 全覆盖 → u1=1
-    // 版本非 8 拒收。
+    CHECK_EQ(resource.sprites[0].u1, 1.f);
     auto bad = bytes;
     bad[0] = 7;
     CHECK(!resource.open(bad.data(), th13::u32(bad.size())));
-    // 截断拒收。
     CHECK(!resource.open(bytes.data(), 40));
 }
 
 TEST(png_decode_stb) {
-    // 8-bit RGBA PNG（内嵌夹具，像素公式见 rgba64_png.hpp）经 stb_image 装载：
-    // 尺寸与像素逐字节闭环。
     th13::u32 width = 0, height = 0;
     std::vector<th13::u8> rgba;
     CHECK(th13::anm_decode_png(th13test::rgba64_png, th13::u32(sizeof(th13test::rgba64_png)), width, height, rgba));
@@ -177,6 +158,6 @@ TEST(png_decode_stb) {
     CHECK(!th13::anm_decode_png(nullptr, 0, width, height, rgba));
 }
 
-}  // namespace
+}
 
 int main() { return th13test::run_all("anm-resource"); }

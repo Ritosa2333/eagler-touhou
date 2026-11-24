@@ -1,9 +1,7 @@
-// Generated from eagler-common/browser/StartupBranding.hpp.
 #pragma once
 #include "Renderer.hpp"
 #include <algorithm>
 
-// The shell supplies only a transparent credit layer, never retail pixels.
 namespace touhou::sdl::startup_branding {
 inline std::vector<u8> load() {
     size_t size = 0;
@@ -50,4 +48,4 @@ inline void draw(Renderer& renderer, u32 texture, u32 target, u32 tint = 0xfffff
     renderer.flush();
     renderer.state = saved;
 }
-}  // namespace touhou::sdl::startup_branding
+}

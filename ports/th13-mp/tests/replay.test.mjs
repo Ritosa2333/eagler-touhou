@@ -1,5 +1,3 @@
-// 录像单测包装：编译并运行 tests/replay/run.sh（g++ 原生套件），
-// 汇入 node --test 统一入口；失败时透传完整输出。
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';

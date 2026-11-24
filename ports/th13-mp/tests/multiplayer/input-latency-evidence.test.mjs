@@ -96,8 +96,6 @@ test('a depth-three correction rejects an intermediate presentation before compl
   assert.equal(result.replayedApplications, 3);
   const changed = events.flatMap(event => event === intermediateCompletion
     ? [event, {...event, kind: 'present'}] : [event]);
-  // The first replayed frame has two frames left. This must reach the new
-  // presentation guard, rather than the earlier completed-correction guard.
   assert.throws(() => verifyTiming([{...chunks[0], events: changed}], audit, 0, config),
     error => error.message.startsWith('Presentation waits for the complete correction\n') &&
       error.actual?.complete === false && error.actual?.replayed === 1 &&
@@ -124,7 +122,6 @@ function bufferedTapCapture({cycle = false} = {}) {
   read(1, 0); apply(1, 0); add('present', 1);
   add('restore', 1, 1);
   add('device', 2, 44, 1); add('device-map', 2, 1, (44 << 1) | 1);
-  // Repeated keydown never creates another logical press.
   add('device', 2, 44, 1); add('device-map', 2, 1, (44 << 1) | 1);
   add('device', 2, 44, 0); add('device-map', 2, 1, 44 << 1);
   if (cycle) {

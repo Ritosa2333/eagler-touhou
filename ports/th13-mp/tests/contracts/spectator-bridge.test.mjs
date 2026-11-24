@@ -1,6 +1,3 @@
-// 观战桥是 common/browser/spectator-playback.mjs 的内嵌副本（运行包不携带
-// common/）。两侧逐字节一致，观战的暂停、拖动、回到直播与结束结算才只随
-// common 源码变化。
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';

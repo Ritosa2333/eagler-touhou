@@ -1,5 +1,3 @@
-// RULES R-X: MP results and archives must not modify retail single-player data.
-// The terminal fixtures exercise persistence APIs; they do not claim a game clear.
 #include "../../harness/test_framework.hpp"
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/Session.hpp"
@@ -90,7 +88,6 @@ void stale_events(App& app) {
 }
 
 bool seed_save(App& app) {
-    // Preserve existing nonzero data, not just an initially empty FileStore.
     app.files.record_run_start(1);
     app.files.record_run_clear(1, 2, true);
     app.files.set_extra_unlocked(1);
@@ -98,7 +95,7 @@ bool seed_save(App& app) {
     app.files.ending_seen_bytes[3] = 17;
     return app.files.save_score();
 }
-} // namespace
+}
 
 TEST(mp_save_isolation_keeps_single_player_persistence_working) {
     multiplayer::session.Stop();
@@ -137,8 +134,6 @@ TEST(mp_save_isolation_still_persists_device_volume_options) {
         CHECK(seed_save(app));
         const auto before = bytes(file);
         CHECK(!before.empty());
-        // Compare the entire persisted file to an independent FileStore write
-        // with only the expected device-volume values changed.
         auto expected = app.files;
         if (phase == 0) {
             CHECK(app.change_pause_option(0, -7));

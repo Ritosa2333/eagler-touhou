@@ -1,5 +1,3 @@
-// H-SPELL-NAME-RASTER: explicit synthetic glyph coverage verifies the production
-// texture path; it supplies no substitute font and certifies no original glyph.
 #include "../harness/test_framework.hpp"
 #include "game/SpellPresentation.hpp"
 
@@ -75,7 +73,7 @@ void mask(TextureImage& image, i32 left, i32 right) {
             std::memcpy(image.pixels.data() + size_t(y) * image.pitch + size_t(x) * 2, &value, 2);
         }
 }
-}  // namespace
+}
 
 TEST(spell_name_raster_writes_real_text74_sprite_region_and_uploads_once) {
     Fixture fixture;
@@ -86,8 +84,6 @@ TEST(spell_name_raster_writes_real_text74_sprite_region_and_uploads_once) {
             CHECK_EQ(image.width, 1024u);
             CHECK_EQ(image.height, 40u);
             CHECK_EQ(image.pitch, 2048u);
-            // 004135c3 -> 0046e970 (right): width320 - 8*15 = 200
-            // layout pixels; 0045afcf doubles that to TextOutA x400.
             CHECK_EQ(x, 400);
             CHECK_EQ(y, 2);
             CHECK_EQ(color, 0xffffffffu);
@@ -110,13 +106,12 @@ TEST(spell_name_raster_writes_real_text74_sprite_region_and_uploads_once) {
             }
         }
     CHECK(foreground > 0);
-    CHECK(outline > 0);  // black border coverage survives the ARGB4444 path
+    CHECK(outline > 0);
     CHECK_EQ(fixture.sink.pixel(319, 108), u16(0));
 }
 
 TEST(spell_name_production_alignment_matches_original_right_aligned_entry) {
     Fixture fixture;
-    // Independent 0046e970 executions, nominal17 and sprite width320.
     const std::pair<i32, i32> cases[] = {{12, 448}, {14, 416}, {16, 384}, {20, 320}, {32, 128}};
     for (const auto& item : cases) {
         auto snapshot = fixture.presentation.snapshot();

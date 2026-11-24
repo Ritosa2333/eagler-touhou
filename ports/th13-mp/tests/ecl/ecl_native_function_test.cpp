@@ -1,4 +1,3 @@
-// H-NATIVE-FUNCTION: 41d137/41d15d/41d1bb ->41a8a0 ->4bb9fc table.
 #include "ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 using namespace th13;
@@ -259,10 +258,8 @@ TEST(real_stage2_boss_attack_registers_and_applies_moving_wall_callback) {
     for (sim.frame = 1; sim.frame <= 300; ++sim.frame)
         CHECK(sim.step_frame());
     CHECK(sim.error().empty());
-    // The isolated subroutine returns and its owner is removed, unlike the
-    // real synchronous Boss2 caller. Do not dereference that retired owner.
     for (const auto& live : sim.enemies)
         CHECK(live->serial != serial);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("native-functions"); }

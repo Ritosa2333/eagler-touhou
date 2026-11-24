@@ -3,8 +3,6 @@
 #include <unordered_map>
 #include <vector>
 
-// Output-service double only. AudioDevice's decoder, frame-channel table,
-// attenuation and music/PCM separation are the production implementation.
 namespace eagler::audio::web_sfx {
 struct Voice {
     std::vector<float> pcm;
@@ -48,4 +46,4 @@ inline void pan(const void* key, float balance) {
 inline unsigned cursor(const void* key) { return contains(key) ? voices.at(key).cursor : 0; }
 inline bool playing(const void* key) { return contains(key) && voices.at(key).active; }
 inline void suspend(bool value) { paused = value; }
-}  // namespace eagler::audio::web_sfx
+}

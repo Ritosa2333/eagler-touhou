@@ -1,18 +1,3 @@
-// M3 原生固定 case（道具/神霊/资源：一件一次、逐席广播、团队一份）。
-// 被测生产面（RULES R-I1..R-I9/R-G）：
-//   - ItemManager::update_seats/update_spirits_seats（逐件最近合格席）；
-//   - collect_* 结算宿主跟随选中席（last_player_ 逐件更新）；
-//   - ItemCollector.seat/eligible/character（席位归属/幽灵排除/角色门）。
-//
-// 固定 case 映射（workflow-cases.json m3.*）：
-//   shared_pickup_once        → 一件道具只结算一次（最近席拾取、其余席
-//                                不重复结算）
-//   resource_all_types_caps   → 命/Bomb/碎片广播各席（逐席上限独立）
-//   personal_power_routing    → P 归接收者：最近未满 Power 席、满者改道、全满原版计分
-//   spirit_role_and_trance_grant → 神霊角色门按拾取者席位角色
-//   graze_owner_generation    → 擦弹按弹身份+席位（generation 不串席）
-//   boss_damage_remainders    → Boss 合作系数确定性余数
-//   gift_not_broadcast        → 定向赠送不走全员拾取
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 #include "multiplayer/WorldState.hpp"
@@ -30,8 +15,6 @@ namespace {
 
 struct Host final : StageBattleServices {
     GameHud* hud = nullptr;
-    // M5：逐席记录（R-I3 广播发放每席各一次；旧单套「seat 0 投影」语义
-    // 已被每席 HUD 取代）。last_lives/last_pieces 仍保留 = 末次任意席值。
     i32 last_lives = -99, last_pieces = -99;
     i32 seat_lives[2] = {-99, -99}, seat_pieces[2] = {-99, -99};
     bool life_hud(i32 lives, i32 pieces) override {
@@ -116,7 +99,6 @@ struct Fixture {
     }
 };
 
-// 直接构造多席 collector 数组（不经 step_mp——单元级驱动 ItemManager）。
 ItemCollector collector_at(float x, float y, i32 seat, i32 character,
                           HudPlayerState& hud, SessionState& progress,
                           HudScoreState& score) {
@@ -146,7 +128,6 @@ void place_seats(StageBattle& battle, std::array<float, 3> xs, std::array<float,
     }
 }
 
-// R-I7/R-I8: the trigger is team-wide, the physical receiver is per item.
 void verify_team_autocollect_and_no_ghost_target() {
     Fixture f; CHECK(f.init()); f.enable(3, {0, 0, 0});
     auto& manager = f.battle.item_manager;
@@ -159,15 +140,15 @@ void verify_team_autocollect_and_no_ghost_target() {
     for (auto& candidate : manager.items()) if (candidate.alive) item = &candidate;
     CHECK(item != nullptr); if (!item) return;
     manager.update_seats(seats, 3);
-    CHECK_EQ(item->state, 1); CHECK_EQ(item->tracking_seat, -1); // Exactly on line.
+    CHECK_EQ(item->state, 1); CHECK_EQ(item->tracking_seat, -1);
     seats[1].y = 127; seats[1].eligible = false;
     manager.update_seats(seats, 3);
-    CHECK_EQ(item->state, 1); // Ghost above line cannot trigger.
+    CHECK_EQ(item->state, 1);
     seats[1].eligible = true;
     const float old_y = item->y;
     manager.update_seats(seats, 3);
     CHECK_EQ(item->state, 3); CHECK_EQ(item->tracking_seat, 0);
-    CHECK(item->y > old_y); // Closest seat below the line, not the trigger.
+    CHECK(item->y > old_y);
     seats[1] = collector_at(item->x, item->y - 40, 1, 0,
                             f.battle.seat_huds[1], f.progress, f.score);
     const float tracked_y = item->y;
@@ -196,11 +177,9 @@ void verify_team_autocollect_and_no_ghost_target() {
     CHECK_EQ(item->tracking_seat, 2); CHECK(item->x < item_x);
     CHECK_EQ(spirit->tracking_seat, 2); CHECK(spirit->x < spirit_x);
 
-    // A rising cancel item must not copy a ghost's homing speed. Its first
-    // eligible receiver supplies the speed when ascent finishes.
     manager.reset_items();
     for (auto& seat : seats) seat.eligible = false;
-    seats[0].homing_speed = 2; // Ghost's character speed is a negative control.
+    seats[0].homing_speed = 2;
     manager.spawn_item(0, 200, 0, ItemPower, 0, 0);
     item = nullptr;
     for (auto& candidate : manager.items()) if (candidate.alive) item = &candidate;
@@ -255,7 +234,7 @@ void verify_tracking_receiver_retention() {
     for (auto& candidate : manager.items()) if (candidate.alive) item = &candidate;
     CHECK(item != nullptr);
     if (!item) return;
-    manager.update_seats(seats, 3); // Falling is not a homing acquisition.
+    manager.update_seats(seats, 3);
     CHECK_EQ(item->tracking_seat, -1);
     item->state = 3;
     item->homing_speed = 4;
@@ -266,18 +245,17 @@ void verify_tracking_receiver_retention() {
     seats[0] = collector_at(160, 300, 0, 1, f.battle.seat_huds[0], f.progress, f.score);
     seats[1] = collector_at(-40, 300, 1, 1, f.battle.seat_huds[1], f.progress, f.score);
     manager.update_seats(seats, 3);
-    CHECK(item->x > acquired_x); // A closer eligible player cannot steal it.
+    CHECK(item->x > acquired_x);
     CHECK_EQ(item->tracking_seat, 0);
     seats[0].eligible = false;
     const float before_invalid = item->x;
     manager.update_seats(seats, 3);
     CHECK(item->x < before_invalid);
     CHECK_EQ(item->tracking_seat, 1);
-    seats[1].state = 4; // Deathbomb ends ordinary homing as in retail.
+    seats[1].state = 4;
     manager.update_seats(seats, 3);
     CHECK_EQ(item->state, 1);
     CHECK_EQ(item->tracking_seat, -1);
-    // Retirement and ordinary pool reuse must not inherit either recipient.
     seats[1] = collector_at(item->x, item->y, 1, 1,
         f.battle.seat_huds[1], f.progress, f.score);
     manager.update_seats(seats, 3);
@@ -292,7 +270,7 @@ void verify_tracking_receiver_retention() {
     seats[0] = collector_at(80, 300, 0, 1, f.battle.seat_huds[0], f.progress, f.score);
     seats[1] = collector_at(-80, 300, 1, 1, f.battle.seat_huds[1], f.progress, f.score);
     manager.update_seats(seats, 3);
-    CHECK_EQ(item->tracking_seat, 0); // Equal distance chooses the smaller seat.
+    CHECK_EQ(item->tracking_seat, 0);
 
     manager.spawn_value_item(2, 0, 200, 0, 0);
     Spirit* spirit = nullptr;
@@ -302,7 +280,7 @@ void verify_tracking_receiver_retention() {
     seats[0] = collector_at(60, 200, 0, 1, f.battle.seat_huds[0], f.progress, f.score);
     seats[1] = collector_at(180, 200, 1, 1, f.battle.seat_huds[1], f.progress, f.score);
     spirit->move_speed = spirit->speed = 0;
-    manager.update_spirits_seats(seats, 3); // Actual state1 -> state2 acquisition.
+    manager.update_spirits_seats(seats, 3);
     CHECK_EQ(spirit->state, 2);
     CHECK_EQ(spirit->tracking_seat, 0);
     spirit->speed = 4;
@@ -333,8 +311,6 @@ void verify_tracking_receiver_retention() {
     CHECK(spirit->serial != serial);
     CHECK_EQ(spirit->tracking_seat, -1);
 
-    // R-I9: a named gift is independent of ordinary physical tracking, even
-    // if another player is closer or the recipient is temporarily a ghost.
     CHECK(manager.spawn_targeted_item(0, 100, ItemExtraLife, 2));
     Item* gift = nullptr;
     for (auto& candidate : manager.items())
@@ -355,8 +331,6 @@ void verify_tracking_receiver_retention() {
     CHECK_EQ(gift->target_seat, 2);
     CHECK_EQ(gift->tracking_seat, -1);
 
-    // Snapshots copy the production pools. Mutating only either receiver
-    // must alter both authoritative and item-domain digests; restore keeps it.
     GameRandom visual{321};
     multiplayer::WorldState saved;
     CHECK(saved.capture(f.battle, visual));
@@ -377,7 +351,6 @@ void verify_tracking_receiver_retention() {
         CHECK(saved.restore(f.battle, visual));
         CHECK_EQ(receiver, original);
     }
-    // Replay twelve actual manager updates, including receiver invalidation.
     const auto advance = [&](i32 frame) {
         seats[0] = collector_at(100, 200, 0, 1, f.battle.seat_huds[0], f.progress, f.score);
         seats[1] = collector_at(-80, 200, 1, 1, f.battle.seat_huds[1], f.progress, f.score);
@@ -396,9 +369,6 @@ void verify_tracking_receiver_retention() {
         CHECK_EQ(advance(frame), expected[size_t(frame)]);
 }
 
-// R-I7: drive the real battle/world item pass, not a test loop per seat.
-// Both pool animation clocks expose a duplicate update even when no pickup
-// occurs. Compare SP with two/three co-located eligible collectors.
 void verify_item_world_tick_once() {
     for (i32 count : {1, 2, 3}) {
         Fixture f; CHECK(f.init());
@@ -412,7 +382,7 @@ void verify_item_world_tick_once() {
         for (auto& candidate : manager.spirits()) if (candidate.alive) spirit = &candidate;
         CHECK(item != nullptr); CHECK(spirit != nullptr);
         if (!item || !spirit) return;
-        spirit->move_speed = 0; // Far from every collector: no homing/pickup.
+        spirit->move_speed = 0;
         const u32 rng = f.battle.sim.random.index();
         for (i32 frame = 0; frame < 5; ++frame) {
             CHECK(f.battle.step(f.idle));
@@ -429,9 +399,6 @@ void verify_item_world_tick_once() {
     }
 }
 
-// R-I1: registered damage goes through the production enemy_hit callback,
-// including damage spirits, natural death spirits and the ECL drop table.
-// Identical total ordinary-enemy damage must retain SP quantities and RNG.
 void verify_enemy_drops_match_single_player() {
     for (i32 difficulty : {1, 3}) {
       std::vector<u32> single;
@@ -459,8 +426,6 @@ void verify_enemy_drops_match_single_player() {
         enemy.drop_extra[ItemSpiritKind2 - 1] = 1;
         f.battle.sim.random.reseed_restore(0x5a31);
         const auto hit = [&](i32 amount) {
-            // A real Area registration owned by one active seat; extra
-            // players add neither duplicate query damage nor drop callbacks.
             auto& registrations = count == 1 ? f.battle.damage_registrations
                                              : f.battle.seats[0].damage_registrations;
             registrations = {};
@@ -473,14 +438,14 @@ void verify_enemy_drops_match_single_player() {
         };
         hit(8);
         CHECK_EQ(enemy.life, 72.f); CHECK_EQ(enemy.spirit_accum, 8.f);
-        CHECK_EQ(enemy.spirit_threshold, 408); // 50px -> +400 threshold.
+        CHECK_EQ(enemy.spirit_threshold, 408);
         size_t spirit_count = 0;
         for (const auto& spirit : f.battle.item_manager.spirits()) if (spirit.alive) {
             ++spirit_count; CHECK_EQ(spirit.kind, 1);
         }
         CHECK_EQ(spirit_count, 1u);
-        CHECK_EQ(f.battle.sim.random.index(), 4u); // angle and speed, once.
-        hit(72); // Below the retail per-query damage clamp (80).
+        CHECK_EQ(f.battle.sim.random.index(), 4u);
+        hit(72);
         CHECK(enemy.dead); CHECK_EQ(enemy.life, 0.f);
         CHECK_EQ(enemy.spirit_accum, 80.f); CHECK_EQ(enemy.spirit_threshold, 408);
         std::array<i32, 15> items{}; std::array<i32, 5> spirits{};
@@ -506,10 +471,8 @@ void verify_enemy_drops_match_single_player() {
         for (i32 remaining : enemy.drop_extra) CHECK_EQ(remaining, 0);
         observed.push_back(f.battle.sim.random.index()); observed.push_back(f.battle.sim.random.seed());
         if (count == 1) single = observed;
-        else CHECK(observed == single); // Full spawned geometry and RNG identity.
-        // Dead enemies cannot emit their table/spirits a second time.
+        else CHECK(observed == single);
         hit(8); CHECK_EQ(f.battle.sim.random.index(), draws);
-        // Boss absorption consumes the same shared spirit pool once.
         StageEnemy boss; boss.life = 100; boss.i_slots[2] = 7;
         boss.position[0] = 0; boss.position[1] = 350;
         bool first = true;
@@ -532,10 +495,8 @@ void verify_enemy_drops_match_single_player() {
     }
 }
 
-}  // namespace
+}
 
-// ---- shared_pickup_once：一件道具恰结算一次 ----
-// 两席相隔，只有 seat 0 物理拾取；个人 Power 各一份，销毁/拾取事件一次。
 TEST(shared_pickup_once) {
     verify_team_autocollect_and_no_ghost_target();
     verify_targeted_life_hud_seats();
@@ -549,11 +510,9 @@ TEST(shared_pickup_once) {
     auto& manager = dual.battle.item_manager;
     auto& hud0 = dual.battle.seat_huds[0];
     auto& hud1 = dual.battle.seat_huds[1];
-    hud0.power = 100;   // 席 0 起始 1.00
+    hud0.power = 100;
     hud1.power = 100;
-    // 小 P（type 1）落在 seat 0 收集盒内（±15）。
     manager.spawn_item(-95.0f, 400.0f, 0.0f, 1, 0.0f, 0.0f);
-    // spawn 从 free 池尾取槽（非 0 槽）：按内容定位。
     Item* spawned = nullptr;
     for (auto& item : manager.items())
         if (item.alive && item.type == 1) { spawned = &item; break; }
@@ -562,17 +521,14 @@ TEST(shared_pickup_once) {
         collector_at(-100.0f, 400.0f, 0, 0, hud0, dual.progress, dual.score),
         collector_at(100.0f, 400.0f, 1, 0, hud1, dual.progress, dual.score)};
     manager.update_seats(seats, 2);
-    // 恰一次物理结算；P 是个人资源，只记到拾取者（R-I2/R-I3）。
     CHECK_EQ(spawned->alive, false);
     CHECK_EQ(hud0.power, 102);
     CHECK_EQ(hud1.power, 100);
-    // 结算事件恰一批（同一道具不重复）。
     size_t collected = 0;
     for (const auto& event : manager.events())
         if (event.kind == ItemEvent::Kind::Collected) ++collected;
     CHECK_EQ(collected, 1u);
     manager.clear_events();
-    // Crossing a level rebuilds only the receiving seat's options.
     hud0.power=199; hud1.power=299;
     std::vector<i32> rebuilt;
     dual.battle.option_power_changed=[&](const StageBattle& battle) {
@@ -587,7 +543,6 @@ TEST(shared_pickup_once) {
     CHECK(rebuilt==std::vector<i32>({0})); CHECK_EQ(dual.battle.active_seat,0);
 }
 
-// ---- personal_power_routing：红点自动分配（启动器规则书「红点自动分配」）----
 TEST(personal_power_routing) {
     Fixture f; CHECK(f.init()); f.enable(3, {0, 0, 0});
     auto& manager = f.battle.item_manager;
@@ -598,7 +553,6 @@ TEST(personal_power_routing) {
         return found;
     };
     const auto clear_items = [&]() { for (auto& item : manager.items()) if (item.alive) item.alive = false; manager.reset_items(); };
-    // 1) Direct pickup by a seat below max Power: only that seat gains it.
     {
         ItemCollector seats[3] = {collector_at(0, 400, 0, 0, a, f.progress, f.score),
             collector_at(150, 400, 1, 0, b, f.progress, f.score),
@@ -609,8 +563,6 @@ TEST(personal_power_routing) {
         CHECK_EQ(a.power, 400); CHECK_EQ(b.power, 150); CHECK_EQ(c.power, 150);
         CHECK(only_item() == nullptr);
     }
-    // 2) A seat at max Power touching a P item passes it to the nearest
-    //    teammate below max; the item then homes there and keeps that receiver.
     {
         ItemCollector seats[3] = {collector_at(0, 400, 0, 0, a, f.progress, f.score),
             collector_at(150, 400, 1, 0, b, f.progress, f.score),
@@ -630,9 +582,6 @@ TEST(personal_power_routing) {
         CHECK(only_item() == nullptr);
         CHECK_EQ(c.power, 203); CHECK_EQ(b.power, 100); CHECK_EQ(a.power, 400);
     }
-    // 3) Auto-collection sends P items to the nearest seat below max Power,
-    //    not to the nearest seat. When that receiver fills up mid-flight the
-    //    item turns to the next nearest seat below max.
     {
         ItemCollector seats[3] = {collector_at(0, 100, 0, 0, a, f.progress, f.score),
             collector_at(150, 300, 1, 0, b, f.progress, f.score),
@@ -650,8 +599,6 @@ TEST(personal_power_routing) {
         CHECK(only_item() == nullptr);
         CHECK_EQ(c.power, 103); CHECK_EQ(b.power, 400);
     }
-    // 4) Every operable seat at max Power: the original full-Power scoring
-    //    applies once, to the toucher. A ghost below max is not a receiver.
     {
         ItemCollector seats[3] = {collector_at(0, 400, 0, 0, a, f.progress, f.score),
             collector_at(150, 400, 1, 0, b, f.progress, f.score),
@@ -667,8 +614,6 @@ TEST(personal_power_routing) {
     }
 }
 
-// ---- resource_all_types_caps：逐席资源与上限 ----
-// R-I3/R-I4/R-I6/R-I8：个人奖励广播，团队值一份，ghost 只获账面奖励。
 TEST(resource_all_types_caps) {
     Fixture f; CHECK(f.init()); f.enable(3, {0, 1, 3});
     auto& manager=f.battle.item_manager;
@@ -681,8 +626,6 @@ TEST(resource_all_types_caps) {
         size_t collected=0; for(const auto& e:manager.events()) if(e.kind==ItemEvent::Kind::Collected) ++collected;
         CHECK_EQ(collected,1u);
     };
-    // P items are personal; with every operable seat at max Power the toucher
-    // receives the original full-Power score once.
     a.power=400; b.power=400; c.power=400;
     pickup(ItemBigPower); CHECK_EQ(f.score.score,2000);
     pickup(ItemPower); CHECK_EQ(f.score.score,3000);
@@ -698,16 +641,13 @@ TEST(resource_all_types_caps) {
     pickup(ItemLifePiece); CHECK_EQ(a.extra_lives,8); CHECK_EQ(b.extra_lives,4);
     CHECK_EQ(a.life_piece_threshold_index,1); CHECK_EQ(b.life_piece_threshold_index,2); CHECK_EQ(c.life_piece_threshold_index,3);
     CHECK_EQ(a.life_pieces,0); CHECK_EQ(b.life_pieces,0); CHECK_EQ(c.life_pieces,1); CHECK_EQ(f.progress.life_piece_threshold_index,1);
-    // A ghost cannot physically collect and is never a P receiver. Its
-    // teammates at max Power score the item as the original full-Power rule.
     f.battle.seats[0].ghost=true; seats[0].eligible=false; a.power=100;
     manager.clear_events(); manager.spawn_item(-10,400,0,ItemPower,0,0); manager.update_seats(seats,3);
     CHECK_EQ(a.power,100); CHECK(manager.events().empty());
     seats[1]=collector_at(0,400,1,1,b,f.progress,f.score);
     manager.update_seats(seats,3); CHECK_EQ(a.power,100); CHECK(f.battle.seats[0].ghost);
-    CHECK_EQ(f.score.score,4000); // Only operable seats participate in full-P conversion.
+    CHECK_EQ(f.score.score,4000);
 
-    // R-I5: each spirit's personal part is broadcast, its team gauge is once.
     const auto spirit=[&](i32 kind, bool trance) {
         manager.clear_events(); manager.spawn_value_item(kind,0,400,0,0);
         for(auto& s:manager.spirits()) if(s.alive) {s.x=0;s.y=400;s.state=2;s.move_speed=0;s.speed=0;s.flags=trance?1:0;}
@@ -728,8 +668,6 @@ TEST(resource_all_types_caps) {
     manager.legacy_pickup_rewards=false;
     CHECK(f.battle.seats[0].ghost);
 
-    // R-I8: a dead seat can hold -1 lives while its teammate collects pieces.
-    // Exercise the real HUD validator; the usual permissive Host hid this error.
     Fixture ghost; CHECK(ghost.init()); ghost.enable(2, {0, 0, 0});
     auto& rewards = ghost.battle.item_manager;
     auto& inventory = ghost.battle.seat_huds[0];
@@ -748,7 +686,6 @@ TEST(resource_all_types_caps) {
     CHECK(animations.sprite_fallback(2));
     GameHud hud{animations, ghost.progress, inventory, ghost.score, 3, 2};
     CHECK(hud.initialize({})); CHECK(hud.life_icons[0] != 0);
-    // Negative control: retail HUD must continue rejecting a negative display.
     CHECK(!hud.life(-1, 0)); CHECK_EQ(hud.error, "HUD life values outside original limits");
     hud.error.clear(); ghost.host.hud = &hud;
     ghost.battle.seats[0].ghost = true; ghost.battle.seats[0].dead = true;
@@ -766,8 +703,6 @@ TEST(resource_all_types_caps) {
     rewards.update_seats(pair,2);
     CHECK_EQ(inventory.life_pieces,1); CHECK_EQ(inventory.extra_lives,-1);
     CHECK(ghost.battle.seats[0].ghost); CHECK(ghost.battle.seats[0].dead);
-    // M5：广播发放逐席回调——席 0（幽灵，团队账面奖励保留）与席 1 各
-    // 携带自己的权威值；旧「只报 seat 0 投影」语义已由每席 HUD 取代。
     CHECK_EQ(ghost.host.seat_lives[0],0); CHECK_EQ(ghost.host.seat_pieces[0],1);
     CHECK_EQ(ghost.host.seat_lives[1],2); CHECK_EQ(ghost.host.seat_pieces[1],1);
     CHECK(hud.error.empty()); CHECK(ghost.battle.error().empty());
@@ -790,8 +725,6 @@ TEST(resource_all_types_caps) {
     CHECK(ghost.battle.seats[0].ghost); CHECK(ghost.battle.seats[0].dead);
     reward(ItemLifePiece); reward(ItemLifePiece);
     CHECK_EQ(inventory.life_pieces,2); CHECK_EQ(ghost.host.seat_lives[0],1);
-    // R-I9: a later rescue preserves earned stock/pieces/threshold and only
-    // applies half-full Power, the rescue Bomb reset and donor debit.
     inventory.bombs=7; inventory.bomb_pieces=3;
     const i32 donor_before=donor.extra_lives;
     rewards.clear_events(); CHECK(ghost.battle.rescue_seat(1,0));
@@ -805,42 +738,32 @@ TEST(resource_all_types_caps) {
     CHECK_EQ(ghost.host.seat_lives[0],1); CHECK_EQ(ghost.host.seat_pieces[0],3);
 }
 
-// ---- spirit_role_and_trance_grant：神霊角色门按拾取者 ----
-// kind1 神霊（普通产）：角色 2（本作序：0 灵梦/1 魔理沙/2 早苗/3
-// 妖梦——角色 2 的 kind1 收集加 trance+1 门，0x438bea）。席位角色 2 的
-// 拾取者获得 +1 灵界值增量事件；席位角色 0 不触发。灵界值本身是团队
-// 共享槽（progress.ending_points 一份）。
 TEST(spirit_role_and_trance_grant) {
     Fixture dual;
     CHECK(dual.init());
-    dual.enable(2, {0, 2, 0});  // seat 1 = 角色 2
+    dual.enable(2, {0, 2, 0});
     auto& manager = dual.battle.item_manager;
     auto& hud0 = dual.battle.seat_huds[0];
     auto& hud1 = dual.battle.seat_huds[1];
     dual.progress.ending_points = 100;
-    // kind1 神霊（普通产 flags bit0=0）落在 seat 1 侧。
     manager.spawn_value_item(1, 170.0f, 400.0f, 0.0f, 0.0f);
     ItemCollector seats[2] = {
         collector_at(0.0f, 400.0f, 0, 0, hud0, dual.progress, dual.score),
         collector_at(180.0f, 400.0f, 1, 2, hud1, dual.progress, dual.score)};
-    // 神霊需要多帧追踪到收集（state2 → 距离 <20 收集）；直接摆到收集距。
     for (auto& s : manager.spirits()) {
         if (s.alive) { s.x = 179.0f; s.y = 400.0f; s.state = 2; s.move_speed = 0; s.speed = 0; }
     }
     manager.update_spirits_seats(seats, 2);
-    // 角色 2 拾取 kind1：trance 增量事件（TranceGained）出现。
     bool trance_event = false;
     for (const auto& event : manager.events())
         if (event.kind == ItemEvent::Kind::TranceGained) trance_event = true;
     CHECK(trance_event);
-    CHECK_EQ(dual.progress.ending_points, 103);  // 公共 +2 与角色门 +1（团队槽一份）
+    CHECK_EQ(dual.progress.ending_points, 103);
     manager.clear_events();
-    // R-I5: vary the actual collector independently from the shared cursor.
-    // Trance-born kind1 retains its separate SP branch (no +2 or Sanae +1).
     for (i32 count : {2, 3}) for (i32 recipient : {0, 1})
         for (bool trance : {false, true}) {
             Fixture f; CHECK(f.init()); f.enable(count, {0, 2, 1});
-            f.progress.character = recipient == 0 ? 2 : 0; // Opposite bonus gate.
+            f.progress.character = recipient == 0 ? 2 : 0;
             const i32 team_character = f.progress.character;
             f.progress.ending_points = 100; f.progress.max_point = 10000;
             f.progress.max_point_cap = 1000000;
@@ -884,14 +807,7 @@ TEST(spirit_role_and_trance_grant) {
         }
 }
 
-// ---- boss_damage_remainders：Boss 减伤确定性余数 ----
-// R-G：Boss 侧减伤 2 人 25%、3 人 50%——按可操作人数，四分之一余数累计
-//（StageSim::absorb）。本 case 验证余数序列：
-// 伤害 1、2 人（3/4）：序列 floor(3k/4) 差分 = 0,1,1,1,0,1,1,1…
-//（4 份伤害合计 3——不丢不减）；3 人（2/4）同理 0,1,0,1…。
 TEST(boss_damage_remainders) {
-    // 减伤实现面：StageSim::absorb（Boss 侧唯一入口，collide_shots 落血前调用）。
-    // 2 人：3/5——累计 5 点伤害应产生 3 点有效伤害。
     {
         i32 numerator = 0, applied = 0;
         for (int hit = 0; hit < 5; ++hit) {
@@ -901,9 +817,8 @@ TEST(boss_damage_remainders) {
             numerator -= whole * 5;
         }
         CHECK_EQ(applied, 3);
-        CHECK_EQ(numerator, 0);  // 余数归零（确定性）
+        CHECK_EQ(numerator, 0);
     }
-    // 3 人：2/5——累计 5 点伤害应产生 2 点。
     {
         i32 numerator = 0, applied = 0;
         for (int hit = 0; hit < 5; ++hit) {
@@ -915,7 +830,6 @@ TEST(boss_damage_remainders) {
         CHECK_EQ(applied, 2);
         CHECK_EQ(numerator, 0);
     }
-    // 1 人：恒等（无系数）。
     {
         i32 applied = 0;
         for (int hit = 0; hit < 5; ++hit) applied += 1;
@@ -923,16 +837,11 @@ TEST(boss_damage_remainders) {
     }
 }
 
-// ---- graze_owner_generation：擦弹按弹身份 + 席位 mask ----
-// 同一弹被两席先后擦过：graze/max_point 各计一次每席（2 席 → graze+2、
-// 弹只被消一次不重复结算跨席；grazed_seats mask 两位置位，重复擦不重复计）。
 TEST(graze_owner_generation) {
     Fixture dual;
     CHECK(dual.init());
     dual.enable(2, {0, 0, 0});
     StageBattle& battle = dual.battle;
-    // 生产数据流摆位：seat 0 持续 ←、seat 1 持续 → 各 9 帧（4.5×9=40.5）
-    // → 两席 x≈∓40.5（弹在 (0,400) 的擦弹带内、命中盒外）。
     GameInput left, right;
     left.update(0x40);
     right.update(0x80);
@@ -942,11 +851,10 @@ TEST(graze_owner_generation) {
     }
     CHECK(std::fabs(battle.seats[0].x + 40.5f) < 0.1f);
     CHECK(std::fabs(battle.seats[1].x - 40.5f) < 0.1f);
-    // 构造弹体（生产回调面驱动：sim.bullet_player_collision 注入点）。
     StageBullet bullet;
     bullet.alive = true;
     bullet.collision_ready = true;
-    bullet.flags = 0x12u;  // bit1|bit4：标准圆形分支
+    bullet.flags = 0x12u;
     bullet.hit_size[0] = 8.0f;
     bullet.hit_size[1] = 8.0f;
     bullet.hit_scale = 1.0f;
@@ -954,42 +862,34 @@ TEST(graze_owner_generation) {
     bullet.y = 400.0f;
     dual.progress.graze = 0;
     dual.progress.max_point = 0;
-    dual.progress.max_point_cap = 500000;  // 难度表 cap（0x4c0ac8[diff]×100）
-    battle.sim.bullet_player_collision(bullet);  // MP 分派：逐席判定
-    CHECK_EQ(dual.progress.graze, 2);      // 两席各计一次（R-G 席位 mask）
+    dual.progress.max_point_cap = 500000;
+    battle.sim.bullet_player_collision(bullet);
+    CHECK_EQ(dual.progress.graze, 2);
     CHECK_EQ(dual.progress.max_point, 200);
-    CHECK_EQ(int(bullet.grazed_seats), 3);  // 两席位都已置
+    CHECK_EQ(int(bullet.grazed_seats), 3);
     CHECK(bullet.grazed);
-    // 重复碰撞：mask 已满 → 不再计。
     const i32 graze_before = dual.progress.graze;
     battle.sim.bullet_player_collision(bullet);
     CHECK_EQ(dual.progress.graze, graze_before);
 }
 
-// ---- gift_not_broadcast：定向赠送不走全员拾取 ----
-// common CooperativeRules 的赠送语义：AdvanceLifeTransfer 5 拍 24 帧窗、
-// NearestPowerRecipient 定向接收者。MP 道具侧验证：赠送走显式事务面，
-// 不经 item_manager（广播路径）——拾取事件计数不因赠送增加。
 TEST(gift_not_broadcast) {
-    // ① AdvanceLifeTransfer：5 拍窗内完成才触发（定向事务的输入语义）。
     {
         u8 state = 0;
         bool granted = false;
         for (int tap = 0; tap < 5; ++tap)
             granted = eagler::cooperative::AdvanceLifeTransfer(state, true, true);
-        CHECK(granted);  // 第 5 拍触发
-        CHECK_EQ(unsigned(state), 0u);  // 触发后复位
-        // 窗口超时：4 拍后 24 帧不按 → 复位。
+        CHECK(granted);
+        CHECK_EQ(unsigned(state), 0u);
         u8 state2 = 0;
         for (int tap = 0; tap < 4; ++tap)
             (void)eagler::cooperative::AdvanceLifeTransfer(state2, true, true);
         for (int frame = 0; frame < 25; ++frame)
             (void)eagler::cooperative::AdvanceLifeTransfer(state2, false, true);
         const bool late = eagler::cooperative::AdvanceLifeTransfer(state2, true, true);
-        CHECK(!late);  // 窗口过期后重新计数（taps 已清）
+        CHECK(!late);
         CHECK_EQ(eagler::cooperative::TapCount(unsigned(state2)), 1u);
     }
-    // ② NearestPowerRecipient：定向选「最需要 P 的最近席」。
     {
         const bool eligible[3] = {true, true, true};
         const bool needs[3] = {false, true, false};
@@ -998,9 +898,8 @@ TEST(gift_not_broadcast) {
             2, [&](unsigned s) { return eligible[s]; },
             [&](unsigned s) { return needs[s]; },
             [&](unsigned s) { return distance[s]; });
-        CHECK_EQ(recipient, 1);  // 需要 P 的席优先（距离远也选它）
+        CHECK_EQ(recipient, 1);
     }
-    // ③ 道具侧：赠送不经 item_manager 广播——拾取事件数为 0。
     {
         Fixture dual;
         CHECK(dual.init());
@@ -1008,7 +907,6 @@ TEST(gift_not_broadcast) {
         auto& manager = dual.battle.item_manager;
         auto& hud0 = dual.battle.seat_huds[0];
         auto& hud1 = dual.battle.seat_huds[1];
-        // 定向赠送（模拟救援事务直写）：hud0 扣 1 命、hud1 得 1 命。
         hud0.extra_lives = 3;
         hud1.extra_lives = 0;
         hud0.extra_lives -= 1;
@@ -1016,7 +914,7 @@ TEST(gift_not_broadcast) {
         size_t collected = 0;
         for (const auto& event : manager.events())
             if (event.kind == ItemEvent::Kind::Collected) ++collected;
-        CHECK_EQ(collected, 0u);  // 无拾取事件（不走广播）
+        CHECK_EQ(collected, 0u);
         CHECK_EQ(hud0.extra_lives, 2);
         CHECK_EQ(hud1.extra_lives, 1);
     }

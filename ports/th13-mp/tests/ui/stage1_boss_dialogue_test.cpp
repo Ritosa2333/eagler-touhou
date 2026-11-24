@@ -1,5 +1,3 @@
-// Real Stage 1 MSG -> RunScene -> MsgPresentation -> ANM file routing.
-// Covers all four character scripts; GPU/font output is checked in-browser.
 #include "../anm/anm_test_fixtures.hpp"
 #include "game/RunScene.hpp"
 #include <algorithm>
@@ -117,9 +115,6 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
     GameInput input;
     scene.controls(input);
     if (score_gate_run) {
-        // 42c550:20-23: (scene_flags & 0x4010)==0x4010 returns before the :261
-        // score convergence; :263 freezes the battle frame for 0x10/0x20/0x40
-        // after convergence. Bit4 skips only score; its frame push is unproven.
         env.paused = false;
         struct GateCase {
             u32 flags;
@@ -140,8 +135,6 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
                 std::printf("score gate %u: %s\n", gate.flags, scene.error.c_str());
                 return;
             }
-            // GameHud::update_score: change=3200>>5=100 -> clamp [1,578910] ->
-            // score_increment=100 -> displayed=0+100; 3200>100 keeps the step.
             CHECK_EQ(scene.hud.displayed_score, gate.converges ? 100 : 0);
             if (gate.frame_known) CHECK_EQ(scene.battle.sim.frame, frame);
         }
@@ -166,7 +159,6 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
             for (i32 dialog_frame = 0; dialog_frame < 900 && scene.dialog_active(); ++dialog_frame) {
                 input.held = input.pressed = (dialog_frame % 30 == 0) ? 1 : 0;
                 input.duration[0] = input.held ? 1 : 0;
-                // 对话解释器在 Update 28（0x424f46/0x424f4b）：整帧调度驱动。
                 if (scheduler.update() < 0) {
                     std::printf("natural dialogue frame %d: %s\n", dialog_frame, scene.error.c_str());
                     CHECK(false);
@@ -194,15 +186,11 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
         return;
     }
     if (portrait_identity_run) {
-        // Stage 3 real .std: entry2 Kogasa (enemy3m), entry0/1 Yoshika
-        // (enemy3). Identity comes from the real ECL/ANM texture paths; the
-        // visible/alpha VM path is asserted, not a production-table copy.
         CHECK_EQ(stage, 3);
         auto identity = [](i32 entry, const std::string& name) {
             if (entry == 2) return name.find("face/enemy3m/face03m") != std::string::npos;
             return name.find("face/enemy3/face03") != std::string::npos;
         };
-        // Negative control: the predicate rejects the other family.
         CHECK(!identity(0, "face/enemy3m/face03m01.png"));
         CHECK(!identity(2, "face/enemy3/face0301.png"));
         CHECK(identity(0, "face/enemy3/face0301.png"));
@@ -233,7 +221,6 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
             for (int frame = 0; frame < 2400 && scene.dialog_active(); ++frame) {
                 input.held = input.pressed = frame % 30 == 0 ? 1 : 0;
                 input.duration[0] = input.held ? 1 : 0;
-                // 对话解释器在 Update 28（0x424f46/0x424f4b）：整帧调度驱动。
                 if (scheduler.update() < 0) {
                     std::printf("stage3 entry %d update: %s\n", entry, scene.error.c_str());
                     CHECK(false);
@@ -259,7 +246,6 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
             CHECK(host.lines > previous_lines);
             CHECK(saw_portrait);
             if (entry == 0 || entry == 2) CHECK(saw_name);
-            // Old portrait must be gone once this entry has closed.
             scan();
             for (const auto& name : visible)
                 if (name.find("/face03") != std::string::npos) {
@@ -293,13 +279,10 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
         return;
     }
     if (hud_run) {
-        // Isolated original Boss entry, not a claim of natural stage completion.
         auto* boss = scene.battle.sim.spawn_enemy("Boss", 144, -16, 40, nullptr, false);
         CHECK(boss);
         if (!boss) return;
         for (int frame = 0; frame < 180; ++frame) {
-            // Boss HUD 面在 Update 28（0x4265a0，0x424f46/0x424f4b）：整帧
-            // 调度驱动，直调 update()（任务 20）HUD 永不装配。
             CHECK(scheduler.update() >= 0);
             CHECK(animations.update());
             if (!scene.error.empty()) {
@@ -319,7 +302,7 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
         CHECK(scene.hud.boss_hud.timer_seconds() > 30 && scene.hud.boss_hud.timer_seconds() < 35);
         CHECK_EQ(scene.hud.boss_hud.timer_centiseconds(), scene.battle.sim.boss_timer_centiseconds);
         CHECK(scene.hud.boss_hud.ring_arc_handle() != 0);
-        CHECK_EQ(scene.battle.sim.boss_remaining_stars, 2);  // Easy/Normal Boss1
+        CHECK_EQ(scene.battle.sim.boss_remaining_stars, 2);
         bool star68 = false, star69 = false;
         for (u32 i = 0; i < animations.registry.ordered_count(false); ++i)
             if (auto* vm = animations.registry.find(animations.registry.ordered_handle(false, i)))
@@ -403,7 +386,6 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
         for (int frame = 0; frame < 2400 && scene.dialog_active(); ++frame) {
             input.held = input.pressed = frame % 30 == 0 ? 1 : 0;
             input.duration[0] = input.held ? 1 : 0;
-            // 对话解释器在 Update 28（0x424f46/0x424f4b）：整帧调度驱动。
             if (scheduler.update() < 0) {
                 CHECK(scene.error.empty());
                 std::printf("update: %s\n", scene.error.c_str());
@@ -418,7 +400,7 @@ void dialogue(i32 character, bool bomb_run = false, bool hud_run = false, i32 st
                     const auto& name = source->textures[vm->texture_sprite()->texture].name;
                     if (name.find("face/enemy1/face01") != std::string::npos) saw_portrait = true;
                     if (name == "face/enemy1/ename01.png") saw_name = true;
-                    CHECK(renderer.draw(*vm) != -2);  // -1 is a normal culled/hidden VM.
+                    CHECK(renderer.draw(*vm) != -2);
                 }
             renderer.flush();
         }
@@ -445,7 +427,7 @@ TEST(youmu_bomb_real_animation_lifecycle) { dialogue(3, true); }
 TEST(stage1_original_boss_scripts_drive_production_hud) { dialogue(0, false, true); }
 TEST(stage4_original_maple_enemy_creates_and_draws_wind_trails) { dialogue(0, false, false, 4); }
 TEST(stage1_score_gate_freezes_0x4010_and_bit4) { dialogue(0, false, false, 1, true); }
-}  // namespace
+}
 TEST(stage3_reimu_portrait_identity) { dialogue(0, false, false, 3, false, true); }
 TEST(stage3_marisa_portrait_identity) { dialogue(1, false, false, 3, false, true); }
 TEST(stage3_marisa_natural_midboss_dialogue_portrait_lifecycle) { dialogue(1, false, false, 3, false, false, true); }

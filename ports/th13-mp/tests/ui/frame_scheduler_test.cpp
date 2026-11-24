@@ -1,4 +1,3 @@
-// 调度器与光标单测：FrameScheduler 优先级序/Remove/Stop，MenuCursor 历史/禁用。
 #include "../harness/test_framework.hpp"
 
 #include "game/FrameScheduler.hpp"
@@ -35,7 +34,7 @@ TEST(scheduler_runs_by_priority) {
     CHECK(scheduler.add(high, FramePass::Update, 1) == 0);
     CHECK(scheduler.add(middle, FramePass::Update, 5) == 0);
     CHECK(scheduler.update() == 3);
-    CHECK_EQ(order, std::string("cba"));  // 优先级 1(c) → 5(b) → 10(a)
+    CHECK_EQ(order, std::string("cba"));
 }
 
 TEST(scheduler_remove_and_stop) {
@@ -61,7 +60,7 @@ TEST(scheduler_remove_and_stop) {
     scheduler.add(counter, FramePass::Update, 1);
     scheduler.add(stopper, FramePass::Update, 2);
     runs = 0;
-    CHECK(scheduler.update() == 0);  // Stop 返回 0
+    CHECK(scheduler.update() == 0);
     CHECK_EQ(runs, 2);
     scheduler.remove(stopper);
     runs = 0;
@@ -79,7 +78,7 @@ TEST(menu_cursor_select_and_move) {
     menu.move(1);
     menu.move(1);
     CHECK_EQ(menu.cursor, 3);
-    menu.move(1);  // wrapping=true 回绕
+    menu.move(1);
     CHECK_EQ(menu.cursor, 0);
     menu.move(-1);
     CHECK_EQ(menu.cursor, 3);
@@ -91,7 +90,7 @@ TEST(menu_cursor_disable_skips) {
     menu.select(0);
     CHECK(menu.disable(1));
     menu.move(1);
-    CHECK_EQ(menu.cursor, 2);  // 跳过禁用项 1
+    CHECK_EQ(menu.cursor, 2);
     menu.move(1);
     CHECK_EQ(menu.cursor, 0);
 }
@@ -100,15 +99,15 @@ TEST(menu_cursor_history_push_pop) {
     MenuCursor menu;
     menu.count = 5;
     menu.select(2);
-    menu.push();  // 进入子菜单
+    menu.push();
     menu.count = 4;
     menu.select(0);
     menu.move(1);
     CHECK_EQ(menu.cursor, 1);
-    menu.pop();  // 回主菜单
+    menu.pop();
     CHECK_EQ(menu.cursor, 2);
     CHECK_EQ(menu.count, 5);
-    CHECK_EQ(menu.disabled_count, 0);  // 子菜单禁用不带回
+    CHECK_EQ(menu.disabled_count, 0);
 }
 
 int main() { return th13test::run_all("调度器与光标"); }

@@ -1,14 +1,3 @@
-// Production multiplayer performance evaluation and untimed pilot bridge.
-// Wraps unmodified evaluateFrameWork with anti-dilution gates:
-//   1. Active callbacks with simulated > 0 must independently satisfy
-//      P95 <= 16.67ms overall and in every observed stage. Menu, loading and
-//      ending rows stay out of this distribution.
-//   2. Active gameplay forward progression ((simulated - rollback) / wall)
-//      must stay >= minForwardFps, and each required stage must advance at
-//      least minForwardFramesPerStage. Wall time keeps same-stage pauses
-//      inside the active segment.
-//   3. Production wire digests stay on the 60-frame cadence and mismatch-free
-//      while per-frame audit stays disabled.
 import {evaluateFrameWork} from './frame-work.mjs';
 
 const LIMIT_MS = 16.67;
@@ -28,9 +17,6 @@ export function distribution(values) {
 }
 
 function computeActiveProgression(samples) {
-  // Same-stage pause, suspend and loading rows stay inside the open active
-  // segment, so a stall is charged as wall time. A menu or another stage
-  // closes the segment.
   const byStage = new Map();
   let current = null;
   const flush = () => {
@@ -263,9 +249,6 @@ export function verifyProductionWireDigest({
   return {passed: errors.length === 0, errors};
 }
 
-// Serialized into the page. Keeps shell.mjs's production onGameFrame inside the
-// timed C++ callback window while deferring the test pilot's debug JSON reads
-// until onGameWorkFrame has already recorded the callback's end timestamp.
 export function installUntimedPilot({seat, pilotSource}) {
   const w = document.querySelector('#gameFrame')?.contentWindow;
   const m = w?.Module;

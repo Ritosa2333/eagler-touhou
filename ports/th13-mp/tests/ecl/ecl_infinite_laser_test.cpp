@@ -1,6 +1,3 @@
-// H-INFINITE-LASER: retail 41e77a/418300/433260/433470/42fcd0.
-// Boundary expectations come from literal original EXE probes (graphics,
-// audio, allocation and player collision are outside this scalar test).
 #include "ecl_test_fixtures.hpp"
 #include "game/StageSim.hpp"
 
@@ -42,11 +39,10 @@ TEST(infinite_laser_ids_are_labels_and_generation_is_birth_identity) {
     CHECK_EQ(r.sim.lasers[1].generation, 0x10002u);
     CHECK_EQ(r.run(708, {257, float_to_bits(8)}), 0);
     CHECK_EQ(r.run(708, {0, float_to_bits(10)}), 0);
-    CHECK_EQ(r.sim.lasers[0].angle, 8.0f);  // raw write; wrapping occurs at update
+    CHECK_EQ(r.sim.lasers[0].angle, 8.0f);
     CHECK_EQ(r.sim.lasers[1].angle, 0.0f);
     CHECK_EQ(r.sim.lasers[2].angle, 0.0f);
     CHECK(r.sim.find_laser(0) == nullptr);
-    // Invalid variable source must not be read if the global ID is absent.
     CHECK_EQ(r.run(708, {999, float_to_bits(-12345)}, 2), 0);
     CHECK(r.context.error.empty());
     CHECK_EQ(r.run(708, {257, float_to_bits(-12345)}, 2), -2);
@@ -62,7 +58,7 @@ TEST(infinite_laser_capacity_does_not_wrap_ids_or_overwrite_survivors) {
     CHECK_EQ(r.sim.lasers.front().id, 1);
     CHECK_EQ(r.sim.lasers.back().id, 256);
     r.sim.lasers.front().phase = 1;
-    CHECK_EQ(r.run(703, {0, 999}), 0);  // pending retirement still counts
+    CHECK_EQ(r.run(703, {0, 999}), 0);
     CHECK_EQ(r.sim.lasers.size(), 256u);
     r.step(1);
     CHECK_EQ(r.run(703, {0, 999}), 0);
@@ -144,7 +140,7 @@ TEST(infinite_laser_growth_follow_and_queue_are_independent_of_width) {
     CHECK_EQ(l.transform_sound, -1);
     CHECK_EQ(l.length, 17.0f);
     CHECK_EQ(l.target_length, 96.0f);
-    CHECK_EQ(r.run(600, {0}), 0);  // existing laser owns a snapshot
+    CHECK_EQ(r.run(600, {0}), 0);
     r.step(1);
     CHECK_EQ(l.length, 25.0f);
     CHECK_EQ(l.width, 2.0f);
@@ -158,7 +154,7 @@ TEST(infinite_laser_growth_follow_and_queue_are_independent_of_width) {
     r.sim.boss_slot[1] = 10;
     r.sim.enemies.push_back(std::move(other));
     r.step(1);
-    CHECK_EQ(l.origin[0], 98.0f);  // slot1 is not followed
+    CHECK_EQ(l.origin[0], 98.0f);
     r.sim.boss_slot[0] = 10;
     r.step(1);
     CHECK_EQ(l.origin[0], 23.0f);
@@ -166,7 +162,7 @@ TEST(infinite_laser_growth_follow_and_queue_are_independent_of_width) {
     r.sim.enemies.front()->dead = true;
     r.step(1);
     CHECK_EQ(l.origin[0], 23.0f);
-    CHECK_EQ(r.sim.lasers.size(), 1u);  // emitter/boss lifetime does not own laser
+    CHECK_EQ(r.sim.lasers.size(), 1u);
     r.step(6);
     CHECK_EQ(l.length, 96.0f);
     CHECK_EQ(l.width, 2.0f);
@@ -253,7 +249,6 @@ TEST(laser_position_velocity_speed_width_and_rotation_are_distinct_fields) {
     CHECK_EQ(laser.origin[1], 17.f);
     CHECK_EQ(laser.angle, .25f);
     CHECK_EQ(laser.width, 24.f);
-    // Native 4182b0's raw descriptor offsets have different meanings on lines.
     laser.kind = StageLaser::Kind::Line;
     laser.velocity[0] = 7;
     CHECK_EQ(r.run(705, {7, float_to_bits(.75f), float_to_bits(64)}), 0);
@@ -294,7 +289,7 @@ TEST(laser_cancel_id_clears_all_duplicates_and_preserves_unrelated_lasers) {
     for (auto& laser : r.sim.lasers)
         laser.cancel_protection = 20;
     CHECK_EQ(r.run(710, {7}), 0);
-    CHECK_EQ(r.sim.lasers.size(), 4u);  // removal belongs to the laser manager
+    CHECK_EQ(r.sim.lasers.size(), 4u);
     CHECK_EQ(r.sim.lasers[0].id, 0);
     CHECK_EQ(r.sim.lasers[2].id, 0);
     CHECK_EQ(r.sim.lasers[0].phase, 1);
@@ -354,9 +349,6 @@ TEST(line_laser_travel_limit_retires_after_tail_reaches_limit) {
     CHECK(r.sim.lasers.empty());
 }
 
-// Retail41eaf3 ->42fed0(2) is711. 713 goes to LaserBeamInf (type3),
-// and its old curve expectation tested the wrong dispatch. Keep32 samples
-// here by supplying the actual701 count rather than assuming a constant.
 TEST(curve_laser_711_creates_time_segmented_head_and_tail_samples) {
     Rig r;
     CHECK_EQ(r.run(600, {0}), 0);
@@ -384,5 +376,5 @@ TEST(curve_laser_711_creates_time_segmented_head_and_tail_samples) {
           curve.curve_samples[0].position.y != curve.curve_samples.back().position.y);
     CHECK(r.sim.error().empty());
 }
-}  // namespace
+}
 int main() { return th13test::run_all("infinite-laser-scalars"); }

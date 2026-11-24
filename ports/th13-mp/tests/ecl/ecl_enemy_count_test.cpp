@@ -14,7 +14,6 @@ TEST(enemy_count_matches_original_flag_and_invulnerability_predicate) {
             float floating = -1;
             CHECK(sim.gvars.integer(-9908, integer));
             CHECK(sim.gvars.floating(-9908, floating));
-            // 256 native00417e90 cases; bits0/4/5 exclude, other bits do not.
             const i32 expected = (flags & 0x31u) == 0 && invulnerable < 1;
             CHECK_EQ(integer, expected);
             CHECK_EQ(floating, float(expected));

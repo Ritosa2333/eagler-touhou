@@ -1,6 +1,3 @@
-// STD 相机脚本执行体（th15 同族 StageScript 的 th13 指令面；插值通道复用
-// Interpolation.hpp 的 Vec3 通道与缓动权重，雾通道按 StageFog 独立插值——
-// 通道语义同 th15 StageFog.cpp，浮点算术序保持一致）。
 #include "StageScript.hpp"
 #include <cmath>
 namespace th13 {
@@ -54,7 +51,7 @@ void interpolate(Vec3Interpolation& v, const Vec3& from, const StageInstruction&
 }
 float sine(float phase) { return float(std::sin(double(phase))); }
 float cosine(float phase) { return float(std::cos(double(phase))); }
-}  // namespace
+}
 StageFog StageFogInterpolation::step(float rate) noexcept {
     if (duration > 0) {
         timer.tick(&rate);
@@ -109,7 +106,6 @@ bool StageScript::step(float rate) {
             error = "STD instruction loop limit";
             return false;
         }
-        // th13 实测指令面的最小参数量（st01-st07 dump 全集；ins_14 需 2 参）。
         static constexpr u8 minimum[13] = {0, 2, 3, 5, 3, 5, 3, 1, 3, 5, 11, 11, 1};
         if ((c->opcode >= 0 && c->opcode <= 12 && c->arguments.size() < minimum[u32(c->opcode)]) ||
             (c->opcode == 14 && c->arguments.size() < 2)) {
@@ -163,7 +159,7 @@ bool StageScript::step(float rate) {
             if (!s.camera_effect) s.camera.eye_offset = {};
             s.effect_timer.set(0);
             break;
-        case 14: {  // 0x408a43：背景子 ANM 槽隐藏/模板重挂（arg0=槽、arg1=模板号）
+        case 14: {
             const i32 slot = command.argument<i32>(0), template_index = command.argument<i32>(1);
             if (slot < 0 || slot >= i32(s.background.size())) {
                 error = "STD ins_14 slot outside background pool";
@@ -186,9 +182,8 @@ bool StageScript::step(float rate) {
             break;
         }
         case 16:
-            break;  // 中断标号（interrupt 扫描锚点，顺序执行无动作）
+            break;
         default:
-            // 未定域指令：显式停机，不静默近似。
             error = "STD camera opcode not yet implemented: " + std::to_string(command.opcode);
             return false;
         }
@@ -229,8 +224,6 @@ void StageScript::camera_effect(float rate) noexcept {
     i32 period = 512;
     switch (kind) {
     case 1:
-        // 0x408c8a（unicorn 直跑实测 + 常量池 0x4aef78=-120.0/0x4aef70=-50.0）：
-        // eye.x=−120·sin(φ)、eye.z=−50·sin(2φ)；up/target 公式不变。
         phase = normalize_angle(float(phase * (1.f / 512)));
         wave = sine(phase);
         s.camera.eye_offset.x = float(wave * -120);
@@ -290,4 +283,4 @@ void StageScript::camera_effect(float rate) noexcept {
     s.effect_timer.tick(&rate);
     if (s.effect_timer.current >= period) s.effect_timer.set(0);
 }
-}  // namespace th13
+}

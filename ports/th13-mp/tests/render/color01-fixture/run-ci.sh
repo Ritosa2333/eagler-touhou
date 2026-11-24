@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Host-side CI entry for the independent production-Renderer WebGL fixture.
-# It uses only the repository's sanctioned container targets:
-#   dev container: build the fixture with the real Renderer.cpp
-#   shot container: run it in Chromium/SwiftShader
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

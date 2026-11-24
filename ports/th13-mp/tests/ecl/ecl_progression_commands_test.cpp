@@ -60,22 +60,6 @@ TEST(curve_followed_by_plain_position_interpolation_clears_axis_mode) {
     CHECK_EQ(r.enemy.vel.pos[1], 46.0f);
 }
 TEST(shared_position_interpolation_rounds_each_stage_to_f32) {
-    // 0x422f80 共享权重路径（0x423200 起）三处 f32 落点：
-    //   0x423218-0x423230 (target-start) fstp dword [ebp-0x4c/-0x48/-0x44]；
-    //   0x423233-0x42324d (delta*w)      fstp dword [ebp-0x40/-0x3c/-0x38]；
-    //   0x423250-0x423273 (+start)       fstp dword [ebp-0x4c/-0x48/-0x44]。
-    // 观测点 vel.pos 在 accumulate（0x473780）尾部还要过一次 round001
-    // （StageMath.hpp:58，floor(x*100)/100），所以用例必须落在 0.01 边界
-    // 才能区分 f32 三段落点与 double 单次落点；旧的 [30,1,80,0] 在
-    // 44.4444 处两条链都被 round001 抹成 44.44，断言的是不可观测量。
-    // 现用例：op401 [12,1,-109.91,0]，start x=-74、elapsed=8 →
-    //   w=f32((8/12)²)=0x3ee38e3a；delta=0xc20fa3d8(-35.910004)；
-    //   prod=0xc17f5c2c → out=0xc2b3eb86(-89.96001)；
-    //   round001(-8996.001)=floor→-8997 → 0xc2b3f0a4(-89.97)。
-    //   double 单次落点 out=0xc2b3eb85(-89.96) → round001=-89.96
-    //   (0xc2b3eb85)，与 f32 链差 0.01 ——S4 实体面 f80 serial 3 的
-    //   0.01 翻转即该族（r23f 0xc2ad0aec vs 原生/f32 0xc2ad05cd；
-    //   S4 全窗实体面 43+1142 → 0）。
     Rig r;
     r.enemy.vel.pos[0] = -74.0f;
     r.enemy.vel.pos[1] = 0.0f;
@@ -101,7 +85,7 @@ struct Provider final : EclResourceProvider {
     std::vector<std::string>* names = nullptr;
     Provider() {
         std::vector<u8> root, death;
-        th13test::emit(root, 0, 556, 0, 255, 0, {8, 0x68746165, 0x00000044});  // string corrected below
+        th13test::emit(root, 0, 556, 0, 255, 0, {8, 0x68746165, 0x00000044});
         const char name[] = "Death";
         std::memcpy(root.data() + 20, name, sizeof name);
         th13test::emit(root, 0, 23, 0, 255, 0, {600});
@@ -135,7 +119,7 @@ TEST(death_subroutine_executes_once_before_enemy_retirement) {
     CHECK_EQ(enemy->hitbox[0], 31.0f);
     CHECK_EQ(enemy->hitbox[1], 47.0f);
 }
-}  // namespace
+}
 TEST(chapter_changes_reset_only_the_chapter_clock) {
     StageSim sim;
     SessionState state;

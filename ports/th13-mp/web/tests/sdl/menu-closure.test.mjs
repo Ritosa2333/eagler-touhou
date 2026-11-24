@@ -78,8 +78,6 @@ test('production Manual, Music Room and menu return survive repeated entry with 
         const second = report();
         if (!/script=9\b/.test(second)) throw Error('Manual next-page VM is missing');
         tap(1); frame(35);
-        // Manual end needs age>29 (0x42da10) and the rebuilt 90/91 fade is
-        // ins_409(60,0,255); allow both before asserting alpha 255.
         tap(1); frame(100);
         if (state()[8] !== 1 || state()[9] !== 2 || !portrait())
           throw Error('Manual return did not restore the title portrait: ' + JSON.stringify(state()) + '\n' + report());
@@ -121,8 +119,6 @@ test('production Manual, Music Room and menu return survive repeated entry with 
       };
       await context.resume();
       mod._th13_loop_start();
-      // 此前的手动泵帧把 WebGL 命令排进渲染队列，软件渲染器要数秒才排空，
-      // 期间 rAF 不送达。按游戏帧数等而不是按固定时长等，断言才与渲染速度无关。
       const waitForFrames = async count => {
         const start = mod._th13_frame(), deadline = performance.now() + 90000;
         while (mod._th13_frame() - start < count && performance.now() < deadline)
@@ -148,7 +144,6 @@ test('production Manual, Music Room and menu return survive repeated entry with 
     assert.ok(result.running >= 10 && result.resumed >= 10, 'production loop advances game frames');
     assert.ok(result.runningPcm.nonzero > 0, 'actual Web Audio output contains PCM');
     assert.equal(result.pausedFrames, 0, 'paused loop does not advance game frames');
-    // 队列里最多 3072 帧（双声道 6144 采样）在暂停后播完；持续供料 700ms 会超过 6 万。
     assert.ok(result.paused.nonzero - result.runningPcm.nonzero <= 32768,
       'paused loop stops feeding audio once the queued frames have played');
     assert.ok(result.resumedPcm.nonzero - result.paused.nonzero > 0, 'actual PCM output resumes');

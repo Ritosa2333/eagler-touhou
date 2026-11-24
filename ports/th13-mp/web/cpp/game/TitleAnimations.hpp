@@ -2,7 +2,6 @@
 #include "AnmManager.hpp"
 #include "TitleState.hpp"
 namespace th13 {
-// 标题公共动画操作：只操作 title bank，bank 号由构造方传入（常驻 bank 表见 Application.cpp kBanks）。
 class TitleAnimations {
     TitleState& state;
     AnmManager& animations;
@@ -20,4 +19,4 @@ public:
     bool child_interrupt(i32 root, i32 script, i32 label, bool immediate = false);
     bool hide_child(i32 root, i32 script);
 };
-}  // namespace th13
+}

@@ -1,15 +1,3 @@
-// 换关资产预备（0xc 换关门内分摊）。
-//
-// 原版 0x42b990 在关首激活帧同步读入下一关的 ECL ANIM 表、bullet.anm、
-// astral.anm 与关卡 logo，并逐张上传纹理。端口保留 0x42b990 的 bank 接管
-// 与模板预热时点（预热的 RNG 抽取仍发生在激活帧），把其中与时点无关的
-// 工作——文件读取、ANM 解析、纹理解码与上传——在关终门（HUD 120 帧 +
-// 装载 30 帧）内逐帧推进：每帧只做一个文件或一个 bank 的上传。激活帧
-// 到来时，begin_run 直接接管已就绪的 AnmResource。
-//
-// 门内任何一步失败即整体放弃：激活帧退回同步装载路径，由该路径产出原有
-// 的错误消息。门被打断（回标题/Retry/Game Over）时 discard() 释放已上传
-// 的纹理。
 #pragma once
 
 #include "../game/AnmResource.hpp"
@@ -30,7 +18,6 @@ public:
 
     static constexpr const char* kStageKey = "stage";
 
-    // 关终门首调用：登记下一关的资产清单。stage 为 1..7 的关号。
     void begin(i32 stage, GraphicsDevice* graphics, Reader reader) {
         discard();
         stage_ = stage;
@@ -56,7 +43,6 @@ public:
         return true;
     }
 
-    // 门内每帧一步。返回 false 表示预备已放弃（激活帧走同步路径）。
     bool step() {
         if (!active()) return false;
         if (!ecl_.empty()) {
@@ -86,8 +72,6 @@ public:
         return true;
     }
 
-    // 取走已就绪的资源（未就绪的步骤在此同步补齐）。预备已放弃或无此项
-    // 时返回空，调用方走同步装载。
     std::unique_ptr<AnmResource> take(const std::string& key) {
         if (!active()) return nullptr;
         for (auto& entry : entries_) {
@@ -99,7 +83,6 @@ public:
         return nullptr;
     }
 
-    // 释放尚未被接管的纹理并清空清单。
     void discard() {
         if (graphics_) {
             for (auto& entry : entries_)
@@ -142,4 +125,4 @@ private:
     std::vector<Entry> entries_;
 };
 
-}  // namespace th13::sdl
+}

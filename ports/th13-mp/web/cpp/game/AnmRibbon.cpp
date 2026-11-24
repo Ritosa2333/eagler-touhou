@@ -2,7 +2,6 @@
 
 namespace th13 {
 void AnmRibbon::initialize(GameRandom& random) {
-    // 00402a20: 418-byte state, sixteen (3,0,-16) segments, timer=1.
     *this = {};
     angle = float(double(random.signed_unit()) * double(3.1415927f));
     for (auto& segment : segments)
@@ -11,8 +10,6 @@ void AnmRibbon::initialize(GameRandom& random) {
 }
 
 void AnmRibbon::update(GameRandom& random, float rate) {
-    // 00402b20 shifts the segment history every fourth timer tick. Its
-    // callback runs before the ordinary ANM instructions/UV scroll.
     if (age.current % 4 == 0) {
         for (size_t i = segments.size() - 1; i > 0; --i)
             segments[i] = segments[i - 1];
@@ -31,12 +28,10 @@ void AnmRibbon::update(GameRandom& random, float rate) {
         if (width < 8) width += 2;
         point = {float(point.x + segments[i].x), float(point.y + segments[i].y), float(point.z + segments[i].z)};
     }
-    // Native vertex alpha pattern, including the deliberately asymmetric
-    // intermediate vertices (402e36..402ead); no uniform-opacity substitute.
     for (u32 i : {30u, 31u, 0u, 1u, 15u, 10u, 24u, 3u, 12u, 27u})
         vertices[i].color = 0x00ffffffu;
     vertices[28].color = vertices[29].color = 0x50ffffffu;
     vertices[26].color = 0xb0ffffffu;
     age.tick(&rate);
 }
-}  // namespace th13
+}

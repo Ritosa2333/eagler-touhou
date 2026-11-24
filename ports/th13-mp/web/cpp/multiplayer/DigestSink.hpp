@@ -11,9 +11,6 @@ namespace th13::multiplayer {
 #else
 #define TH13_DIGEST_INLINE
 #endif
-// FNV-1a 64（与 tests/multiplayer/native/state_digest.hpp 的 DigestSink 同
-// 族：域分隔、顺序敏感；此处为生产侧 hash——回滚一致性与锁步确认帧共用。
-// 具名作用域（非匿名）：WorldState.hpp 的成员声明前向引用此类。
 class DigestSink {
 public:
     void vm(const AnmVm& value);
@@ -24,8 +21,6 @@ public:
     }
     TH13_DIGEST_INLINE void u8(uint8_t value) { mix(value); }
     TH13_DIGEST_INLINE void u32(uint32_t value) {
-        // Four zero bytes multiply by P^4 modulo 2^64. Keep the exact
-        // serialized bytes while avoiding four dependent multiplies.
         if (value == 0) { zero_bytes_ += 4; return; }
         mix(value & 0xffu); mix((value >> 8) & 0xffu);
         mix((value >> 16) & 0xffu); mix((value >> 24) & 0xffu);
@@ -42,9 +37,7 @@ public:
         u32(bits);
     }
     TH13_DIGEST_INLINE void boolean(bool value) { u8(value ? 1 : 0); }
-    // Append known serialized zero bytes without visiting each scalar.
     void zero_bytes(uint64_t count) { zero_bytes_ += count; }
-    // Apply an exactly precomputed fixed byte stream after pending zero bytes.
     void fixed_stream(uint64_t factor, const std::array<uint64_t, 256>& adjustment) {
         state_ = with_zeros(state_, zero_bytes_);
         zero_bytes_ = 0;

@@ -1,4 +1,3 @@
-// Synthetic t13r input for browser regressions; no original replay bytes are stored.
 export function replayFixture({frames = 1, spellId = -1, mode = 0, stage = 1} = {}) {
   const count = frames + 1;
   const plain = Buffer.alloc(0x74 + 0xc4 + count * 6 + Math.ceil(count / 30));

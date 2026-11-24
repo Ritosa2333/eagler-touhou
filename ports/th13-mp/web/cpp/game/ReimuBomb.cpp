@@ -8,8 +8,6 @@ void PlayerBombOrb::step(i32 age, i32 index, float player_x, float player_y, con
     if (age < launch) {
         if (age < 90) radius += 1;
         angle = wrap_angle(float(double(angle) + double(.10471976f)));
-        // 40b590 initializes mover+24 to0x3d490fdb. 4736a0 adds this
-        // radial growth in addition to40ae30's first90 updates of +1.
         radius += .04908738657832146f;
         float dx, dy;
         polar_xy(angle, radius, dx, dy);
@@ -46,4 +44,4 @@ void PlayerBombOrb::step(i32 age, i32 index, float player_x, float player_y, con
     velocity_x = x - old_x;
     velocity_y = y - old_y;
 }
-}  // namespace th13
+}

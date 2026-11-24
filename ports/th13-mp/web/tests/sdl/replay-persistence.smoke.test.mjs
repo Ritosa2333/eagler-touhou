@@ -1,16 +1,3 @@
-// Replay localStorage 持久化冒烟（th13.html standalone 壳；Playwright 无头）。
-// 断言链（真实用户路径：隐藏 file input 导入，不走任何测试后门）：
-//   1. setInputFiles 导入合成 th13_21.rpy → 成功后 localStorage 落
-//      索引 th13.replays（{name,size,ts}）+ blob th13.replay.th13_21.rpy，
-//      blob base64 解码与输入字节一致。
-//   2. page.reload() 整页刷新（wasm catalog 归零）→ 启动序列跑完
-//      __th13_replay_restore_done → 索引/blob 仍在，__th13_log 无
-//      'replay-restore' 失败记录。
-//   3. catalog 回灌直证：th13_replay_import_hint() === 20（th13_21.rpy →
-//      编号槽 21-1；标题层未进 Replay 子菜单，hint 未被消费）。
-// 合成 .rpy 与 replay-fixture.mjs 同源（t13r 容器，无原版字节入库）。
-// 运行（th13-shot 镜像；需 web 构建产物 sdl3/th13-sdl.mjs）：
-//   make shot CMD='node --test eagler-touhou/ports/th13/web/tests/sdl/replay-persistence.smoke.test.mjs'
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -71,14 +58,12 @@ test('replay import persists across page reload and is restored into the catalog
     const boot = async () => {
       await page.goto(`http://127.0.0.1:${server.address().port}/sdl-runtime/th13.html`,
                       {waitUntil: 'domcontentloaded'});
-      // 页面壳启动序到标题 + 内置/恢复导入序列全部完成。
       await page.waitForFunction(
         'window.mod && window.mod._th13_phase() === 0 && window.__th13_builtin_replays_done === true' +
         ' && window.__th13_replay_restore_done === true', null, {timeout: 300000});
     };
     await boot();
 
-    // 1) 真实导入路径（隐藏 file input）：合成 th13_21.rpy。
     await page.setInputFiles('#replay-file', {name: 'th13_21.rpy',
       mimeType: 'application/octet-stream', buffer: fixture});
     await page.waitForFunction(
@@ -95,7 +80,6 @@ test('replay import persists across page reload and is restored into the catalog
     assert.ok(stored.blob, 'blob key must exist');
     assert.ok(Buffer.from(stored.blob, 'base64').equals(fixture), 'blob bytes must match input');
 
-    // 2) 整页刷新：catalog（wasm 内存）归零后由启动序列恢复。
     await page.reload({waitUntil: 'domcontentloaded'});
     await boot();
     const after = await page.evaluate(() => ({
@@ -108,7 +92,6 @@ test('replay import persists across page reload and is restored into the catalog
     assert.equal(after.blob, stored.blob, 'blob must survive reload');
     assert.deepEqual(after.restoreFailures, [], 'restore must not log failures');
 
-    // 3) catalog 回灌直证：编号名 → 槽 21-1，hint 未被标题层消费。
     assert.equal(after.hint, 20, 'th13_21.rpy must be restored into catalog slot 20');
     assert.deepEqual(pageErrors, [], 'no page-level exceptions');
   } finally {

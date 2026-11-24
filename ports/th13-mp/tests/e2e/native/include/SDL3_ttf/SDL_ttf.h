@@ -1,7 +1,4 @@
 #pragma once
-// Native E2E TTF 接口声明：由 tests/e2e/native/native_stub.cpp 以 freetype
-// （系统 libfreetype.so.6 + emscripten-cache 头）真实实现。仅覆盖
-// common/include/eagler/text/RuntimeFontRaster.hpp 消费的面。
 #include "SDL3/SDL.h"
 
 struct TTF_Font;

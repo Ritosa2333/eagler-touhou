@@ -1,4 +1,3 @@
-// th13 ECL 线程组实现（锚点见 EclThreads.hpp 文件头）。
 #include "EclThreads.hpp"
 
 namespace th13 {
@@ -47,7 +46,6 @@ bool EclThreads::start(const char* name, u8 difficulty) {
     children.clear();
     main.difficulty = difficulty;
     main.stack_pointer = main.local_base = 0;
-    // 查名失败（0x4797d0 返回 -1）→ 主线程立即结束，非错误。
     if (id < 0) {
         main.routine = -1;
         main.instruction_offset = 0;
@@ -72,7 +70,6 @@ bool EclThreads::restart(const char* name, u8 difficulty) {
     return start(name, difficulty);
 }
 
-// 派生（0x4793e0）：新线程难度拷自调用者，匿名 id=-1；头插链表。
 bool EclThreads::spawn(EclContext& source, i32 id, u32 skipped_arguments) {
     auto context = std::make_unique<EclContext>();
     context->thread_id = id;
@@ -89,14 +86,14 @@ bool EclThreads::spawn(EclContext& source, i32 id, u32 skipped_arguments) {
     return true;
 }
 
-EclContext* EclThreads::find(i32 id) {  // 0x479480 按 id 查线程
+EclContext* EclThreads::find(i32 id) {
     if (main.thread_id == id) return &main;
     for (auto& child : children)
         if (child->thread_id == id) return child.get();
     return nullptr;
 }
 
-void EclThreads::terminate_children() {  // 0x4794b0 killAllAsync
+void EclThreads::terminate_children() {
     for (auto& child : children)
         child->routine = child->instruction_offset = -1;
 }
@@ -108,8 +105,6 @@ EclContext* EclThreads::at(u32 index) noexcept {
     return nullptr;
 }
 
-// 每帧步进（0x478db0）：主线程先行；子线程按遍历游标步进，当帧新建者不在游标内。
-// 主线程结束返回 -1（非错误，宿主自行决定存活）；子线程结束即摘链释放。
 int EclThreads::step(float elapsed) {
     auto next = children.begin();
     const int result = main.step(elapsed);
@@ -119,7 +114,6 @@ int EclThreads::step(float elapsed) {
     }
     while (next != children.end()) {
         auto current = next++;
-        // pauseAsync（+0x11C0 bit0）：暂停线程本帧不执行（resumeAsync 清位后恢复）。
         if ((*current)->thread_flags & 1u) continue;
         const int child_result = (*current)->step(elapsed);
         if (child_result == -2) {
@@ -131,4 +125,4 @@ int EclThreads::step(float elapsed) {
     return 0;
 }
 
-}  // namespace th13
+}

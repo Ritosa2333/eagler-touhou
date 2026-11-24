@@ -1,4 +1,3 @@
-// Real-asset live Session versus exact production spectator adapter.
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/Session.hpp"
 #include "multiplayer/InputLanes.hpp"
@@ -61,7 +60,6 @@ int main(){setvbuf(stdout,nullptr,_IOLBF,0);
   check(p.Control(Netplay::SpectatorStagePlayback::Action::Pause)&&p.Control(Netplay::SpectatorStagePlayback::Action::Seek,0),"seek root after gameplay pause and transition");drain(tape,0);
   app->scheduler.remove(trigger);app.reset();multiplayer::session.Stop();
  }
- // Complete, valid wire events with an illegal root must never build a world.
  auto s=setup(2,1);auto tape=record(2,1);auto words=multiplayer::EncodeSessionSetup(s);
  for(unsigned mutation=0;mutation<5;++mutation){check(multiplayer::session.Configure(words.data(),words.size()),"configure malformed root negative");auto&p=multiplayer::session.Runtime().StagePlayback();auto root=event(s,0,1,1,tape.entries[0]);if(mutation==0)root.frame=9;if(mutation==1)root.stage=2;if(mutation==2)root.sessionId++;if(mutation==3){multiplayer::StageEntry e;multiplayer::StageEntry::Decode(root.state.data(),root.state.size(),e);e.seat_count=3;root.state=e.Encode();}if(mutation==4){multiplayer::StageEntry e;multiplayer::StageEntry::Decode(root.state.data(),root.state.size(),e);e.chapter_frame=1;root.state=e.Encode();}check(p.Receive(root),"negative root wire remains valid");auto boot=root;boot.kind=Netplay::SpectatorEventKind::Bootstrap;boot.schema=0;boot.state.clear();check(p.Receive(boot),"negative bootstrap accepted by generic wire controller");check(!tick()&&p.Failed(),"illegal TH13 root rejected at production world boundary");}
  app->scheduler.remove(trigger);app.reset();multiplayer::session.Stop();printf("SUMMARY checks=%u failures=%u scope=recorded-live-session-vs-spectator-full-prefix natural_clear=0 frames=320\n",checks,failures);return failures?1:0;

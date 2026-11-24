@@ -1,4 +1,3 @@
-// H-CURVE-CANCEL: 4371b0/4378d0/437b80 retail component captures.
 #include "ecl_test_fixtures.hpp"
 #include "game/StageSim.hpp"
 using namespace th13;
@@ -88,8 +87,6 @@ TEST(curve_cancellation_item_gate_does_not_disable_laser_removal) {
     } items;
     Rig r;
     r.sim.items = &items;
-    // 004372b1..004372cf reads the caller's spell-controlled flag only for
-    // type-9 production. A spell does not protect the laser from splitting.
     r.sim.spell.begin(1, "test", 1000, 3, 0);
     r.sim.split_laser(0, {-100, 128, 0}, {512, 512, 0}, 0, false, !r.sim.spell.state().active(), true);
     CHECK(r.sim.lasers[0].pending_remove);
@@ -101,5 +98,5 @@ TEST(curve_cancellation_item_gate_does_not_disable_laser_removal) {
     CHECK(other.sim.lasers[0].pending_remove);
     CHECK(items.spawned > 0);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("curve-cancel"); }

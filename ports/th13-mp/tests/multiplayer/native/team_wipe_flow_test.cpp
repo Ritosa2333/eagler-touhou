@@ -1,4 +1,3 @@
-// R-G: the production scene must end an exhausted team after 180 active ticks.
 #include "../../harness/test_framework.hpp"
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/Session.hpp"
@@ -60,8 +59,6 @@ TEST(team_wipe_production_180) {
         if (!app.run) return;
         exhaust(app);
         CHECK(app.run->battle.team_wiped());
-        // The final seat enters ghost state in StageBattle's normal dying
-        // update; that same logical tick starts the scene's wait interval.
         auto& last = app.run->battle.seats[size_t(seats - 1)];
         last.ghost = false;
         last.dead = false;
@@ -119,8 +116,6 @@ TEST(team_wipe_pause_and_rescue) {
     }
     app.run->transition_wait = false;
 
-    // A production revival interrupts the interval; five real Shift edges
-    // then rescue a ghost through RunScene -> StageBattle's input path.
     auto& battle = app.run->battle;
     battle.revive_all_on_stage_clear();
     CHECK(frame(app, input));
@@ -163,8 +158,6 @@ TEST(team_wipe_restore_replay) {
     CHECK(world(app, checkpoint));
     CHECK_EQ(app.run->capture_rollback().team_wipe_frames, 175u);
 
-    // Change only each countdown field. Full/core and the scene domain must
-    // all detect state that changes the next terminal update.
     const auto original_scene = app.run->capture_rollback();
     char original_domains[4096]{};
     checkpoint.digest_domains(original_domains, sizeof(original_domains));
@@ -263,7 +256,6 @@ TEST(team_wipe_terminal_delayed_confirmation_requires_handoff) {
     const bool started = session.BeginLocalSimulation();
     CHECK(started); if (!started) { session.Stop(); return; }
     app.wire_multiplayer_audio();
-    // No terminal overlay: even an empty record ledger must not end gameplay.
     CHECK(session.AllFramesCommitted());
     CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::NotReady);
     CHECK(session.Simulating());
@@ -271,16 +263,11 @@ TEST(team_wipe_terminal_delayed_confirmation_requires_handoff) {
     const bool granted = session.CanSimulate(); CHECK(granted);
     if (!granted) { session.Stop(); return; }
     CHECK(app.update(session.MenuInput(), false)); CHECK(app.commit(60.f));
-    // Final-frame requests are deferred until the remote inputs arrive.
-    // Use the real device observer/validation and capture all applied events.
     CHECK(app.audio_device.stop(-1));
     CHECK(app.audio_device.observe_voice_pan(55, 192.f));
     CHECK(app.audio_device.queue_music(2, -1, "th128_08.wav"));
     session.OnFrameSimulated();
     CHECK(app.pause->state.screen == PauseScreen::BGameOver);
-    // Each terminal screen uses the same existing present-tail handoff.
-    // The team-wipe fixture reaches BGameOver; the other two screens are
-    // selected here solely to exercise that common handoff boundary.
     app.pause->state.screen = screen;
     CHECK(!session.AllFramesCommitted());
     CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::NotReady);
@@ -299,8 +286,6 @@ TEST(team_wipe_terminal_delayed_confirmation_requires_handoff) {
     CHECK(session.Pump(2));
     CHECK(session.AllFramesCommitted()); CHECK(session.Simulating());
     using Kind = sdl::AudioDevice::RequestObservation::Kind;
-    // The production game-over update queued its own music before our three
-    // requests; it must survive and stay first in the confirmed sequence.
     const std::array<Kind, 4> audio_kinds{Kind::Music, Kind::Stop, Kind::Pan, Kind::Music};
     CHECK_EQ(session.AudioOut().size(), audio_kinds.size());
     const auto applied_before = session.AppliedAudio().size();
@@ -312,8 +297,6 @@ TEST(team_wipe_terminal_delayed_confirmation_requires_handoff) {
     multiplayer::WorldState before; CHECK(world(app, before));
     if (pending_title) app.pending_destination = i32(sdl::Destination::TitleFromGameOver);
     if (fail_audio) {
-        // A device failure must propagate without presenting or tearing down
-        // the world; confirmed requests remain queued for the failed frame.
         CHECK(!app.audio_device.stop(99999));
         CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::Failed);
         CHECK(!app.failure.empty()); CHECK(session.Simulating());
@@ -325,8 +308,6 @@ TEST(team_wipe_terminal_delayed_confirmation_requires_handoff) {
         session.Stop();
         continue;
     }
-    // This is the terminal handoff required after a receive-only callback;
-    // no next gameplay input is available or needed.
     CHECK(complete_terminal_handoff(app, session) == TerminalHandoff::Finished);
     CHECK(!session.Simulating());
     CHECK(session.AudioOut().empty());
@@ -338,7 +319,6 @@ TEST(team_wipe_terminal_delayed_confirmation_requires_handoff) {
             CHECK_EQ(applied.frame, 0u);
         }
     }
-    // Returning to title also performs its own immediate stop-all.
     CHECK_EQ(app.audio_device.statistics().stopped, stopped_before + (pending_title ? 2 : 1));
     CHECK_EQ(session.MusicApplied(), music_before + 2);
     CHECK_EQ(session.WorldCompleted(), screen == PauseScreen::ExtraEnd);

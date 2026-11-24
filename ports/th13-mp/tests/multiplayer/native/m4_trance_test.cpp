@@ -1,21 +1,3 @@
-// M4 原生固定 case（全队灵界射击与唯一死亡责任；RULES R-T1..T10）。
-// 被测生产面：
-//   - StageBattle 团队灵界状态机（trance_mode/owner_seat/generation）；
-//   - update_trance_mp（R-T8 Manual 请求逐席仲裁：席位升序第一个有效者）；
-//   - commit_death 的 DeathProtection owner 记录（R-T5/R-T9）；
-//   - end_trance owner 定向死亡（R-T5：owner 死一次，队友不进死亡演出）；
-//   - Bomb 入口（R-T2：灵界期间全员禁雷）；
-//   - 槽消耗全场一次（R-T3：step_mp 每帧恰一次）。
-//
-// 固定 case 映射（workflow-cases.json m4.*）：
-//   team_trance_shooting_four_roles → 全队灵界射击（弹型块 10 全席生效）
-//   protection_owner_only_death    → 保护灵界结束只有 owner 死
-//   gauge_once_thresholds          → 199/200/599/600 阈值 + 槽每帧 -1 一次
-//   all_collision_invulnerability  → 灵界期间全席免疫三类受击
-//   simultaneous_requests          → 同帧多席 C 请求仲裁（席位升序）
-//   deathbomb_manual_c             → 决死窗内 C 开启记 Manual（结束 -200 不死）
-//   generation_respawn_pause_stage → owner 重生/暂停/跨关不清新代灵界
-//   peer_bomb_policy               → 灵界期间全席禁雷、结束后恢复
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 #include "multiplayer/WorldState.hpp"
@@ -97,7 +79,6 @@ struct Fixture {
     void enable(i32 count, std::array<i32, 3> characters) {
         CHECK(battle.enable_seats(provider, count, characters));
     }
-    // 灵界就绪态：满槽 600 + 任务计时 ≥30（零输入推进 30 帧）。
     void arm_trance() {
         progress.ending_points = 600;
         GameInput none;
@@ -127,36 +108,32 @@ void separate_seats(Fixture& fixture, i32 target) {
     }
 }
 
-}  // namespace
+}
 
-// ---- gauge_once_thresholds：阈值行为 + 槽每帧 -1 恰一次 ----
 TEST(gauge_once_thresholds) {
-    // ① 阈值单元：trance_ready 600 门槛；trance_add 封顶；trance_end -200。
     {
         SessionState state;
         state.ending_points = 599;
-        CHECK(!trance_ready(state));   // 599 不可激活
+        CHECK(!trance_ready(state));
         state.ending_points = 600;
-        CHECK(trance_ready(state));    // 600 可激活
+        CHECK(trance_ready(state));
         trance_begin(state);
-        CHECK(!trance_ready(state));   // 激活中不可再激活
-        trance_end(state, false);      // 正常结束 -200
+        CHECK(!trance_ready(state));
+        trance_end(state, false);
         CHECK_EQ(state.ending_points, 400);
-        trance_add(state, 250);        // 封顶 600
+        trance_add(state, 250);
         CHECK_EQ(state.ending_points, 600);
         trance_add(state, 100);
         CHECK_EQ(state.ending_points, 600);
         state.ending_points = 199;
-        trance_end(state, false);      // 199 - 200 → 0（无负值）
+        trance_end(state, false);
         CHECK_EQ(state.ending_points, 0);
     }
-    // ② MP 槽消耗一次：2 席会话激活灵界后推进 10 帧——槽 -10（不是 -20）。
     {
         Fixture dual;
         CHECK(dual.init());
         dual.enable(2, {0, 0, 0});
         dual.arm_trance();
-        // seat 0 按 C 激活（经 step 参数注入 C 沿）。
         GameInput trigger;
         trigger.update(kCKey);
         CHECK(dual.battle.step(trigger));
@@ -166,10 +143,8 @@ TEST(gauge_once_thresholds) {
         const i32 slot_at_start = dual.progress.ending_points;
         GameInput none;
         for (int frame = 0; frame < 10; ++frame) CHECK(dual.battle.step(none));
-        CHECK_EQ(dual.progress.ending_points, slot_at_start - 10);  // R-T3：一次/帧
+        CHECK_EQ(dual.progress.ending_points, slot_at_start - 10);
     }
-    // R-T6: 199 must follow actual collision/death/drop/respawn, whereas 200
-    // enters protection without immediately charging a life or lowering Power.
     for (i32 gauge : {199, 200}) {
         Fixture boundary;
         CHECK(boundary.init());
@@ -215,8 +190,6 @@ TEST(gauge_once_thresholds) {
             CHECK_EQ(boundary.battle.seat_huds[0].deaths, 0);
         }
     }
-    // R-T4: actual C activation converts existing spirits, newborn spirits
-    // inherit trance, and end_trance resets their lifetime exactly once.
     {
         Fixture spirits;
         CHECK(spirits.init());
@@ -257,7 +230,7 @@ TEST(gauge_once_thresholds) {
         const i32 old_frame = old->frame, born_frame = born->frame;
         CHECK(old_frame >= 0);
         CHECK(born_frame >= 0);
-        CHECK(spirits.battle.end_trance()); // Already idle: no repeated reset.
+        CHECK(spirits.battle.end_trance());
         CHECK_EQ(old->frame, old_frame);
         CHECK_EQ(born->frame, born_frame);
         CHECK(spirits.battle.step(idle));
@@ -266,13 +239,11 @@ TEST(gauge_once_thresholds) {
     }
 }
 
-// ---- simultaneous_requests：同帧多席 C 请求仲裁 ----
 TEST(simultaneous_requests) {
     Fixture triple;
     CHECK(triple.init());
     triple.enable(3, {0, 0, 0});
     triple.arm_trance();
-    // 三席同帧按 C：席位升序第一个有效者（seat 0）成为 owner。
     GameInput seat0;
     seat0.update(kCKey);
     triple.battle.seat_inputs[1].update(kCKey);
@@ -280,24 +251,21 @@ TEST(simultaneous_requests) {
     CHECK(triple.battle.step(seat0));
     CHECK(triple.battle.team_trance_active());
     CHECK_EQ(triple.battle.trance_mode, StageBattle::TranceMode::Manual);
-    CHECK_EQ(triple.battle.trance_owner_seat, 0);  // R-T8：升序第一
+    CHECK_EQ(triple.battle.trance_owner_seat, 0);
     CHECK_EQ(triple.battle.trance_generation, 1u);
-    // seat 0 Bomb 中时跳过 → seat 1 成为 owner。
     Fixture triple2;
     CHECK(triple2.init());
     triple2.enable(3, {0, 0, 0});
     triple2.arm_trance();
-    // seat 0 Bomb 中（无效请求）：bomb_timer 每帧递减，设 1 保证当帧有效。
     triple2.battle.seats[0].bomb_timer = 1;
     GameInput seat0b;
     seat0b.update(kCKey);
     triple2.battle.seat_inputs[1].update(kCKey);
     CHECK(triple2.battle.step(seat0b));
     CHECK(triple2.battle.team_trance_active());
-    CHECK_EQ(triple2.battle.trance_owner_seat, 1);  // 跳过 Bomb 席
+    CHECK_EQ(triple2.battle.trance_owner_seat, 1);
 }
 
-// ---- peer_bomb_policy：主动和保护灵界期间全员禁雷 ----
 TEST(peer_bomb_policy) {
     constexpr u32 kBombKey = 0x02;
     using Mode = StageBattle::TranceMode;
@@ -331,7 +299,6 @@ TEST(peer_bomb_policy) {
         triple.battle.sim.bullet_player_collision(bullet);
         CHECK_EQ(triple.battle.seats[1].phase, Phase::Deathbomb);
         if (mode == Mode::Manual) {
-            // 同帧 C 先于 X；发动者在决死窗内也不能扔雷。
             step(kBombKey, kCKey | kBombKey, kBombKey);
         } else {
             for (i32 frame = 0; frame < 20 && !triple.battle.team_trance_active(); ++frame)
@@ -348,7 +315,6 @@ TEST(peer_bomb_policy) {
         for (i32 frame = 0; frame < 20 && triple.battle.seats[1].phase == Phase::Deathbomb; ++frame)
             step(0, 0, 0);
         CHECK_EQ(triple.battle.seats[1].phase, Phase::Active);
-        // 走正常的槽耗尽路径，再验证每个恢复可操作的席位能发动 Bomb。
         triple.progress.ending_points = 1;
         step(0, 0, 0);
         CHECK(!triple.battle.team_trance_active());
@@ -368,9 +334,6 @@ TEST(peer_bomb_policy) {
     }
 }
 
-// ---- team_trance_shooting_four_roles：全队灵界射击 ----
-// 灵界激活后每席的弹型块 = 10（trance 块）：开火后 shots 非空、弹型域
-// 来自块 10（各角色 SHT 的 trance 弹型）。
 TEST(team_trance_shooting_four_roles) {
     for (i32 role = 0; role < 4; ++role) {
         Fixture dual;
@@ -381,7 +344,6 @@ TEST(team_trance_shooting_four_roles) {
         trigger.update(kCKey);
         CHECK(dual.battle.step(trigger));
         CHECK(dual.battle.team_trance_active());
-        // 两席都开火（Z）：灵界弹型生效（shots 生成）。
         GameInput none;
         for (int frame = 0; frame < 5; ++frame) {
             GameInput seat0;
@@ -390,20 +352,17 @@ TEST(team_trance_shooting_four_roles) {
             CHECK(dual.battle.step(seat0));
         }
         CHECK(!dual.battle.seats[0].shots.empty());
-        CHECK(!dual.battle.seats[1].shots.empty());  // 全队灵界射击（非仅 owner）
+        CHECK(!dual.battle.seats[1].shots.empty());
     }
-    // R-T2/R-T8: observe births on the actual activation frame, including
-    // an expired collision window in a later seat. Post-activation firing
-    // cannot detect a one-frame ordinary-shot leak from an earlier seat.
     const std::array<i32, 4> shot_counts{2, 4, 2, 1};
     const std::array<std::array<i32, 4>, 4> damages{{
         {{22, 22, 0, 0}}, {{22, 22, 11, 11}},
         {{22, 22, 0, 0}}, {{25, 0, 0, 0}}
-    }}; // Independently read raw SHT block10, phase0.
+    }};
     for (i32 role = 0; role < 4; ++role) for (i32 count : {2, 3})
         for (i32 hit_seat = 0; hit_seat < count; ++hit_seat)
             for (bool manual : {false, true}) for (bool transition : {false, true}) {
-                if (manual && transition) continue; // Transition does not arbitrate C.
+                if (manual && transition) continue;
                 Fixture activation;
                 CHECK(activation.init());
                 activation.enable(count, {role, role, role});
@@ -424,7 +383,6 @@ TEST(team_trance_shooting_four_roles) {
                     born[size_t(shot.owner_seat)].push_back(shot);
                     return true;
                 };
-                // A peer's Manual C wins before collision expiry is resolved.
                 const i32 requester = (hit_seat + 1) % count;
                 GameInput local;
                 for (i32 seat = 0; seat < count; ++seat) {
@@ -455,12 +413,7 @@ TEST(team_trance_shooting_four_roles) {
             }
 }
 
-// ---- protection_owner_only_death：保护灵界 owner 唯一死亡 ----
-// 槽 200 时 seat 1 撞弹 → DeathProtection（owner=1）；槽耗尽 → 只有
-// seat 1 死亡（seat 0 存活、不进死亡演出）。
 TEST(protection_owner_only_death) {
-    // R-T5: the observer window is not authoritative. Exercise every owner /
-    // observer pairing on a final life, including owner == active observer.
     for (i32 count : {2, 3}) for (i32 owner = 0; owner < count; ++owner)
         for (i32 observer = 0; observer < count; ++observer) {
             Fixture final;
@@ -510,19 +463,16 @@ TEST(protection_owner_only_death) {
     Fixture dual;
     CHECK(dual.init());
     dual.enable(2, {0, 0, 0});
-    // 槽设 200（保护灵界可开不可续）；走步进建立任务计时。
     dual.progress.ending_points = 200;
     GameInput none;
     for (int frame = 0; frame < 32; ++frame) CHECK(dual.battle.step(none));
-    // seat 0 移开（生产数据流：左移 60 帧 ≈ 270px，远离撞弹点）；
-    // seat 1 清无敌撞弹。弹只压 seat 1（一弹消一次：seat 0 不在弹道）。
     GameInput left;
     for (int frame = 0; frame < 60; ++frame) {
         left.update(0x40);
         CHECK(dual.battle.step(left));
     }
     left.update(0x00);
-    CHECK(std::fabs(dual.battle.seats[0].x) > 150.0f);  // seat 0 已离场（钳制边界 182）
+    CHECK(std::fabs(dual.battle.seats[0].x) > 150.0f);
     dual.battle.seats[1].invulnerable = 0;
     StageBullet bullet;
     bullet.alive = true;
@@ -534,32 +484,26 @@ TEST(protection_owner_only_death) {
     bullet.y = dual.battle.seats[1].y;
     const i32 lives0 = dual.battle.seat_huds[0].extra_lives;
     const i32 lives1 = dual.battle.seat_huds[1].extra_lives;
-    dual.battle.sim.bullet_player_collision(bullet);  // MP 逐席：seat 1 命中
-    // R-G doubles the retail eight-frame deathbomb window to sixteen.
-    // Observe its actual expiration before checking protection ownership.
+    dual.battle.sim.bullet_player_collision(bullet);
     GameInput none2;
     for (int frame = 0; frame < 20 &&
          dual.battle.seats[1].phase == StagePlayerState::Phase::Deathbomb; ++frame)
         CHECK(dual.battle.step(none2));
     CHECK(dual.battle.team_trance_active());
     CHECK_EQ(dual.battle.trance_mode, StageBattle::TranceMode::DeathProtection);
-    CHECK_EQ(dual.battle.trance_owner_seat, 1);  // 撞弹者 = owner
+    CHECK_EQ(dual.battle.trance_owner_seat, 1);
     CHECK_EQ(dual.battle.trance_generation, 1u);
-    // Protection begins with 200 and then consumes once per logical frame.
     for (int frame = 0; frame < 203; ++frame) CHECK(dual.battle.step(none));
     CHECK(!dual.battle.team_trance_active());
-    // owner（seat 1）进入死亡演出（phase Dying/Deathbomb 或已扣命）；
-    // seat 0 存活且不扣命。
     const auto& s0 = dual.battle.seats[0];
     const auto& s1 = dual.battle.seats[1];
-    CHECK_EQ(dual.battle.seat_huds[0].extra_lives, lives0);  // 队友不扣命
+    CHECK_EQ(dual.battle.seat_huds[0].extra_lives, lives0);
     CHECK(s1.phase == StagePlayerState::Phase::Dying ||
           s1.phase == StagePlayerState::Phase::Deathbomb ||
-          dual.battle.seat_huds[1].extra_lives < lives1);   // owner 死亡责任
-    CHECK(s0.phase == StagePlayerState::Phase::Active);     // 队友不进死亡演出
+          dual.battle.seat_huds[1].extra_lives < lives1);
+    CHECK(s0.phase == StagePlayerState::Phase::Active);
 }
 
-// ---- all_collision_invulnerability：灵界期间全席免疫三类受击 ----
 TEST(all_collision_invulnerability) {
     for (i32 character = 0; character < 4; ++character) {
         Fixture startup;
@@ -576,8 +520,6 @@ TEST(all_collision_invulnerability) {
             CHECK_EQ(startup.battle.seats[size_t(target)].phase, StagePlayerState::Phase::Active);
         }
     }
-    // Overlapping sources survive either owner's termination and round-trip
-    // independently through the rollback snapshot and digest.
     {
         Fixture overlap;
         CHECK(overlap.init()); overlap.enable(2, {0, 0, 0}); overlap.arm_trance();
@@ -619,9 +561,6 @@ TEST(all_collision_invulnerability) {
         staggered.battle.sim.bullet_player_collision(unprotected);
         CHECK_EQ(staggered.battle.seats[0].phase, StagePlayerState::Phase::Deathbomb);
     }
-    // Bomb sources apply to every seat after the complete player pass. Test
-    // both seat orders, all collision consumers, startup, active and tail;
-    // clearing the sole source is the matching vulnerable negative control.
     for (i32 owner : {0, 1}) for (i32 kind : {0, 1, 2})
         for (i32 when : {0, 20, 220, 240}) {
         Fixture bomb;
@@ -659,8 +598,6 @@ TEST(all_collision_invulnerability) {
         CHECK_EQ(bomb.battle.seats[size_t(target)].phase, protected_now
             ? StagePlayerState::Phase::Active : StagePlayerState::Phase::Deathbomb);
     }
-    // R-T2: the production shared-world callbacks must traverse every seat.
-    // Non-trance controls prove these exact laser/body geometries really hit.
     for (bool trance : {false, true}) for (i32 target = 0; target < 3; ++target)
         for (bool laser_hit : {false, true}) {
             Fixture collision;
@@ -673,7 +610,6 @@ TEST(all_collision_invulnerability) {
                 CHECK(collision.battle.step(c));
             }
             separate_seats(collision, target);
-            // Synchronize the observation window via the normal frame path.
             CHECK(collision.battle.step(GameInput{}));
             if (laser_hit) {
                 StageLaser laser;
@@ -698,9 +634,6 @@ TEST(all_collision_invulnerability) {
             for (i32 seat = 0; seat < 3; ++seat) if (seat != target)
                 CHECK_EQ(collision.battle.seats[size_t(seat)].phase, StagePlayerState::Phase::Active);
         }
-    // The manager must split at every actual hit location, even when seat0
-    // (the legacy sim.player_x/y) is nowhere near the laser. A second hit
-    // must also cut the fragment created by the first hit in this traversal.
     for (i32 hits : {1, 2}) {
         Fixture manager;
         CHECK(manager.init());
@@ -746,7 +679,6 @@ TEST(all_collision_invulnerability) {
         }
         CHECK_EQ(manager.battle.sim.player_x, 160.f);
     }
-    // Ending a team trance cannot shorten preexisting personal protection.
     for (i32 owner : {0, 1}) {
         Fixture protection;
         CHECK(protection.init());
@@ -771,10 +703,8 @@ TEST(all_collision_invulnerability) {
     trigger.update(kCKey);
     CHECK(dual.battle.step(trigger));
     CHECK(dual.battle.team_trance_active());
-    // 两席清个人无敌（灵界保护 ≠ 个人无敌）。
     dual.battle.seats[0].invulnerable = 0;
     dual.battle.seats[1].invulnerable = 0;
-    // 弹直接压在两席上：不 kill（团队灵界免疫）。
     StageBullet bullet;
     bullet.alive = true;
     bullet.collision_ready = true;
@@ -788,11 +718,7 @@ TEST(all_collision_invulnerability) {
     CHECK_EQ(dual.battle.seats[1].phase, StagePlayerState::Phase::Active);
 }
 
-// ---- deathbomb_manual_c：决死窗内 C 开启记 Manual ----
-// 灵界已激活时撞弹（早退出口保命）+ 槽耗尽正常 -200 不触发死亡。
 TEST(deathbomb_manual_c) {
-    // The MP preparation pass resolves phase16 only. Phase15 remains the
-    // last valid Bomb input opportunity; expiry at16 keeps the old ordering.
     for (i32 owner : {0, 1}) for (i32 response_frame : {15, 16})
         for (bool transition : {false, true}) {
         Fixture bomb_window;
@@ -824,8 +750,6 @@ TEST(deathbomb_manual_c) {
         CHECK_EQ(bomb_window.battle.seats[size_t(owner)].bomb_timer > 0,
                  response_frame == 15);
     }
-    // R-T10: enter the genuine collision window first, then press C. Manual
-    // is preserved through expiry, and an early normal end subtracts 200 only.
     for (i32 owner : {0, 1}) {
         Fixture window;
         CHECK(window.init());
@@ -862,7 +786,6 @@ TEST(deathbomb_manual_c) {
     trigger.update(kCKey);
     CHECK(dual.battle.step(trigger));
     CHECK_EQ(dual.battle.trance_mode, StageBattle::TranceMode::Manual);
-    // 灵界中 seat 0 撞弹：团队无敌救下，不改 mode/owner（R-T8）。
     dual.battle.seats[0].invulnerable = 0;
     StageBullet bullet;
     bullet.alive = true;
@@ -878,10 +801,7 @@ TEST(deathbomb_manual_c) {
     CHECK_EQ(dual.battle.seats[0].phase, StagePlayerState::Phase::Active);
 }
 
-// ---- generation_respawn_pause_stage：代数防串 + 暂停不耗槽 ----
 TEST(generation_respawn_pause_stage) {
-    // Transition advances players but neither accepts Manual C nor drains
-    // an already active team gauge, including a real protection activation.
     for (i32 owner : {0, 1, 2}) {
         Fixture transition;
         CHECK(transition.init());
@@ -911,9 +831,6 @@ TEST(generation_respawn_pause_stage) {
         CHECK_EQ(transition.progress.ending_points, 200);
         CHECK_EQ(transition.battle.seat_huds[size_t(owner)].deaths, 0);
     }
-    // ① 代数单元：两次激活 generation 递增；owner 重生只清当前代
-    //（R-T9 的 generation 检查面——重生清槽路径在 update_player 第 30
-    // 帧，M4 记录代数；清槽语义由 SP 路径保留）。
     {
         Fixture dual;
         CHECK(dual.init());
@@ -923,11 +840,9 @@ TEST(generation_respawn_pause_stage) {
         trigger.update(kCKey);
         CHECK(dual.battle.step(trigger));
         const u32 gen1 = dual.battle.trance_generation;
-        // 槽耗尽 → 结束。
         GameInput none;
         for (int frame = 0; frame < 700; ++frame) CHECK(dual.battle.step(none));
         CHECK(!dual.battle.team_trance_active());
-        // 再充再开：generation 递增（新代）。
         dual.progress.ending_points = 600;
         for (int frame = 0; frame < 32; ++frame) CHECK(dual.battle.step(none));
         GameInput trigger2;
@@ -935,9 +850,6 @@ TEST(generation_respawn_pause_stage) {
         CHECK(dual.battle.step(trigger2));
         CHECK_EQ(dual.battle.trance_generation, gen1 + 1);
     }
-    // ①-2 R-T9 跨代守卫（负控）：owner 保护灵界耗尽死亡的演出期间，
-    // 队友撞弹开启的新一代保护灵界不得被 owner 重生第 30 帧的清槽路径
-    // 清掉——否则新代槽瞬间归零、新 owner 被错误判定死亡。
     {
         Fixture dual;
         CHECK(dual.init());
@@ -965,11 +877,9 @@ TEST(generation_respawn_pause_stage) {
              dual.battle.seats[1].phase == StagePlayerState::Phase::Deathbomb; ++frame)
             CHECK(dual.battle.step(none));
         CHECK_EQ(dual.battle.trance_mode, StageBattle::TranceMode::DeathProtection);
-        // 槽耗尽：owner（seat 1）进入死亡演出。
         for (int frame = 0; frame < 203; ++frame) CHECK(dual.battle.step(none));
         CHECK(!dual.battle.team_trance_active());
         CHECK_EQ(dual.battle.seats[1].phase, StagePlayerState::Phase::Dying);
-        // 演出期间充槽（神霊拾取值域）+ seat 0 撞弹 → 新一代保护灵界。
         dual.progress.ending_points = 600;
         dual.battle.seats[0].invulnerable = 0;
         StageBullet second;
@@ -988,16 +898,13 @@ TEST(generation_respawn_pause_stage) {
         CHECK_EQ(dual.battle.trance_generation, 2u);
         CHECK_EQ(dual.battle.trance_owner_seat, 0);
         const i32 slot = dual.progress.ending_points;
-        // 推进越过 seat 1 重生第 30 帧清槽点：新代槽只按每帧 −1 消耗。
         for (int frame = 0; frame < 30; ++frame) CHECK(dual.battle.step(none));
-        CHECK(dual.battle.team_trance_active());  // 新代未被旧重生清槽打断
+        CHECK(dual.battle.team_trance_active());
         CHECK_EQ(dual.battle.trance_generation, 2u);
         CHECK(dual.progress.ending_points > 0);
-        CHECK(dual.progress.ending_points < slot);  // 仍在正常消耗（非清零）
-        CHECK_EQ(dual.battle.seats[0].phase, StagePlayerState::Phase::Active);  // 新 owner 未被误判死亡
+        CHECK(dual.progress.ending_points < slot);
+        CHECK_EQ(dual.battle.seats[0].phase, StagePlayerState::Phase::Active);
     }
-    // ② 暂停不耗槽：灵界中 defer 模式（step_transition 不走 update_trance
-    // 扣槽——转场帧保持槽值）。
     {
         Fixture dual;
         CHECK(dual.init());
@@ -1007,16 +914,12 @@ TEST(generation_respawn_pause_stage) {
         trigger.update(kCKey);
         CHECK(dual.battle.step(trigger));
         const i32 slot = dual.progress.ending_points;
-        // 转场帧（step_transition）不扣槽（暂停语义：不推进灵界计时）。
         for (int frame = 0; frame < 5; ++frame)
             CHECK(dual.battle.step_transition(GameInput{}));
         CHECK_EQ(dual.progress.ending_points, slot);
     }
 }
 
-// ---- trance_exit_protection：退出灵界时全体可操作席位获得原版 70 帧保护 ----
-// 0x405b80 收尾 push 0x46 → 0x405440：player+0x14688 = 70。MP 里每个可操作
-// 席位各自拥有这份计时，不能只落在发动者（owner）一席。
 TEST(trance_exit_protection) {
     constexpr i32 kExitFrames = 70;
     const std::array<i32, 3> roles = {0, 1, 3};
@@ -1039,7 +942,6 @@ TEST(trance_exit_protection) {
             f.battle.seats[size_t(seat)].invulnerable = 0;
         }
     };
-    // ① 手动灵界耗尽：退出帧所有席位都拿到保护（同帧递减后 69），而不是只有 owner。
     for (i32 count : {2, 3}) for (i32 owner = 0; owner < count; ++owner) {
         Fixture f;
         CHECK(f.init());
@@ -1053,7 +955,6 @@ TEST(trance_exit_protection) {
         CHECK(!f.battle.team_trance_active());
         for (i32 seat = 0; seat < count; ++seat)
             CHECK_EQ(f.battle.seats[size_t(seat)].invulnerable, kExitFrames - 1);
-        // 保护期内真实碰撞不致命，70 帧过后恢复致命。
         for (i32 frame = 0; frame < kExitFrames - 2; ++frame) {
             for (i32 seat = 0; seat < count; ++seat) {
                 auto hit = bullet_at(f.battle.seats[size_t(seat)].x, f.battle.seats[size_t(seat)].y);
@@ -1070,7 +971,6 @@ TEST(trance_exit_protection) {
             CHECK(f.battle.seats[size_t(seat)].phase == StagePlayerState::Phase::Deathbomb);
         }
     }
-    // ② 直接 end_trance：只抬高短于 70 的席位，不缩短更长的个人保护，幽灵席不动。
     {
         Fixture f;
         CHECK(f.init());
@@ -1090,7 +990,6 @@ TEST(trance_exit_protection) {
         CHECK_EQ(f.battle.seats[0].invulnerable, kExitFrames - 1);
         CHECK_EQ(f.battle.seats[1].invulnerable, 499);
     }
-    // ③ 保护灵界耗尽：owner 进入死亡演出，其余席位同样拿到 70 帧保护。
     for (i32 count : {2, 3}) for (i32 owner = 0; owner < count; ++owner) {
         Fixture f;
         CHECK(f.init());

@@ -1,5 +1,3 @@
-// Named hypotheses: legacy archival migration is lossless; new Practice and
-// Extra writes are independent; spell counters retain mode/character identity.
 #include "../../web/cpp/sdl/FileStore.cpp"
 #include "../harness/test_framework.hpp"
 
@@ -37,16 +35,16 @@ std::vector<u8> legacy(i32 version) {
     put32(bytes.data() + 16, 43);
     put32(bytes.data() + 20, 65);
     put32(bytes.data() + 24, 0xfedcba85);
-    if (version > 1) bytes[36] = 0xd5;  // played=0x15, legacy Extra=5
+    if (version > 1) bytes[36] = 0xd5;
     if (version > 2) {
         bytes[52] = 7;
         bytes[53] = 0;
         bytes[54] = 0xff;
-        bytes[55] = 0xff;  // invalid binding remains archived
+        bytes[55] = 0xff;
     }
     return bytes;
 }
-}  // namespace
+}
 
 TEST(legacy_v1_v2_v3_raw_bytes_and_observable_state_survive_repeated_v4_saves) {
     for (i32 version = 1; version <= 3; ++version) {
@@ -59,7 +57,7 @@ TEST(legacy_v1_v2_v3_raw_bytes_and_observable_state_survive_repeated_v4_saves) {
         CHECK_EQ(initial.bgm_volume, 43);
         CHECK_EQ(initial.effect_volume, 65);
         CHECK_EQ(initial.heard_mask, 0xfedcba85u);
-        CHECK(initial.heard_mask != 0x85u);  // 低 8 位截断不等价
+        CHECK(initial.heard_mask != 0x85u);
         CHECK_EQ(initial.cleared_mask, 0xf0010001u);
         CHECK_EQ(initial.legacy_save_size(), bytes.size());
         CHECK(std::equal(bytes.begin(), bytes.end(), initial.legacy_save_bytes().begin()));
@@ -149,15 +147,15 @@ TEST(spell_modes_characters_aggregate_saturation_best_and_names_roundtrip) {
     CHECK_EQ(one->attempts[1], 1);
     CHECK_EQ(one->captures[0], 1);
     CHECK_EQ(one->captures[1], 1);
-    CHECK_EQ(one->practice_best_score, 12340);  // original stores internal tens
+    CHECK_EQ(one->practice_best_score, 12340);
     CHECK_EQ(all->attempts[0], 2);
     CHECK_EQ(all->attempts[1], 2);
     CHECK_EQ(all->captures[0], 1);
     CHECK_EQ(all->captures[1], 1);
-    CHECK_EQ(all->practice_best_score, 12340);  // 合计列与个人列同点维护
+    CHECK_EQ(all->practice_best_score, 12340);
     CHECK_EQ(restored.spell_counters(0, 12)->attempts[0], 0);
     TitlePlayerDataRecord row;
-    CHECK(restored.player_data_record(2, 1, 3, row));  // fourth Hard slot is id12
+    CHECK(restored.player_data_record(2, 1, 3, row));
     CHECK_EQ(row.slot, 12);
     CHECK(row.recorded);
     CHECK_EQ(row.normal_captures, 1);

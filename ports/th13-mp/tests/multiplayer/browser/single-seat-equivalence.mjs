@@ -1,5 +1,3 @@
-// Real SP build versus real MP build, using the same original replay input.
-// Compare every field exported by each shared read-only state projection.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
@@ -25,14 +23,12 @@ const cases = [
   {id: 'character-1', character: 1, replay: 'th13_udMy25.rpy'},
   {id: 'character-2', character: 2, replay: 'th13_udSr01.rpy'},
   {id: 'character-3', character: 3, replay: 'th13_udN01.rpy'},
-  // Extra replay contains an actual X press within the fixed window. Its
-  // header, difficulty, seed and all six input bytes still come from the file.
   {id: 'character-2-extra', character: 2, replay: 'th13_udWi11.rpy', requiresBomb: true},
 ].filter(value => process.env.TH13_EQ_CHARACTER === undefined ||
   value.character === Number(process.env.TH13_EQ_CHARACTER));
 assert(cases.length > 0, 'Requested character exists');
 await mkdir(resolve(output, '..'), {recursive: true});
-await mkdir(output); // Never append a rerun to old evidence.
+await mkdir(output);
 await writeFile(resolve(output, 'single-seat-equivalence.mjs'), await readFile(fileURLToPath(import.meta.url)));
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const report = {started: new Date().toISOString(), passed: false,

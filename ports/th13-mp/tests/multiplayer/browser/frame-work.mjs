@@ -1,9 +1,3 @@
-// Complete work observations. Sources: 1=RAF, 2=network wake, 3=manual
-// frame, 4=prepare_loading, 5=initialize, 6=draw_startup, 7=room_preview,
-// 8=mp_start, 9=room_return, 10=mp_start waiting at the READY barrier.
-// Startup sources cover
-// each synchronous exported call in full and never overlap a frame callback.
-// The caller persists every sample and supplies the required coverage.
 const phases = new Set(['active', 'menu', 'loading', 'suspended', 'paused']);
 const distribution = values => {
   if (!values.length) return {count: 0};
@@ -88,9 +82,6 @@ export function evaluateFrameWork(samples, {expectedStages, expectedPhases, expe
   const sources = Object.fromEntries([...sourceRows].map(([key, values]) => [key, distribution(values)]));
   if (total.count && total.p95 > limitMs) errors.push('Overall work p95 exceeds limit');
   for (const [stage, stats] of Object.entries(stages))
-    // Zero denotes startup before a world exists. Keep every such duration
-    // in the overall distribution and the phase/source breakdown, without
-    // inventing a separate "Stage 0" in the game's required stage list.
     if (+stage > 0 && stats.p95 > limitMs) errors.push(`Stage ${stage} work p95 exceeds limit`);
   return {passed: errors.length === 0, errors, total, stages, phases: phaseStats, sources, coverage,
     requirements: {expectedStages, expectedPhases, expectedFirstSequence,
@@ -98,8 +89,6 @@ export function evaluateFrameWork(samples, {expectedStages, expectedPhases, expe
     presentationIntervals: distribution(intervals), ambiguousPresentationIntervals: ambiguous};
 }
 
-// Installs exactly one observer, preserving an existing observer and every row.
-// Stop is explicit so the caller controls evidence boundaries and persistence.
 export function installFrameWorkCapture(module) {
   if (!module || typeof module !== 'object') throw new TypeError('Module required');
   const samples = [], previous = module.onGameWorkFrame;

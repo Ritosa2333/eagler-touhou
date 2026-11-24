@@ -1,5 +1,3 @@
-// A timed-out operation may still finish later: keep ownership until the real
-// promise settles, rather than releasing it when its caller stops waiting.
 export function createInspectionGuard() {
   const running=new Set();
   return async function guarded(key, operation) {

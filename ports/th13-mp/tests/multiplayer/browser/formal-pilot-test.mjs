@@ -5,8 +5,6 @@ import {webcrypto} from 'node:crypto';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {installPilot} from './formal-pilot.mjs';
-// Fault mutation for the old unconditional firing gap. The independent
-// artifact review also compared against the retained prior module bytes.
 const pilotSource=String(installPilot), priorGate='if (dialogue && state.lastFrame % 60 < 10)';
 assert.equal(pilotSource.split(priorGate).length,2);
 const baselinePilot=(0,eval)(`(${pilotSource.replace(priorGate,'if (state.lastFrame % 60 < 10)')})`);
@@ -51,7 +49,6 @@ async function decide({bytes = marisa, trance = false, serialized = false, insta
   }}}};
   globalThis.document = {querySelector: () => ({contentWindow: window})};
   try {
-    // Playwright serializes this function; exercise that boundary as well.
     const install = serialized ? (0, eval)(`(${String(installer)})`) : installer;
     install({seat: 0});
     const initial={mask:window.__pilot.mask,keys:structuredClone(keys)};
@@ -83,7 +80,6 @@ test('wrong role asset uses the prior movement estimate', async () => {
   const {state} = await decide({bytes: reimu});
   assert.equal(state.movementPrediction.mode, 'fallback');
   assert.equal(state.movementPrediction.reason, 'sht-role-sha-mismatch');
-  // The prior movement choice is retained; ordinary fire remains held outside dialogue.
   assert.equal(state.mask, 25);
   assert.equal(state.direction, 3);
 });
@@ -101,7 +97,6 @@ test('malformed SHT never enables the new estimate', async () => {
   assert.equal(state.movementPrediction.mode, 'fallback');
   assert.equal(state.movementPrediction.reason, 'sht-read:sht-speed-invalid');
 });
-
 
 test('outside dialogue the serialized pilot holds ordinary fire through all 60 frames', async () => {
   const candidate = await decide({serialized:true, empty:true, until:61});
@@ -123,7 +118,6 @@ test('real dialogue observations retain the existing Z and Ctrl release/press ca
     assert.ok(candidate.keys.some(([key,down]) => key===scan && down===1));
   }
 });
-
 
 test('serialized installation preserves baseline key state', async () => {
   const candidate=await decide({serialized:true}),baseline=await decide({serialized:true,installer:baselinePilot});

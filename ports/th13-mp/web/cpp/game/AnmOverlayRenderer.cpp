@@ -48,4 +48,4 @@ int AnmRenderer::overlay(AnmVm& vm) {
     }
     return 0;
 }
-}  // namespace th13
+}

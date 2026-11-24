@@ -1,5 +1,3 @@
-// stage1 事件落盘实现。JSON 键序与 event-contract.md §4 一致；
-// 浮点 %.9g（float32 往返无损），整数十进制。
 #include "StageEvent.hpp"
 
 #include "StageMath.hpp"
@@ -32,7 +30,7 @@ void StageEventSink::key(const char* name) {
 
 void StageEventSink::num(float value) {
     if (!std::isfinite(value)) {
-        failed_ = true;  // 契约域外值：以失败暴露，不产出非法 JSON
+        failed_ = true;
         raw("null");
         return;
     }
@@ -56,7 +54,6 @@ void StageEventSink::enemy_spawn(u32 enemy, const std::string& routine, float x,
                   enemy);
     raw(head);
     raw(",\"routine\":\"");
-    // 子程序名字符集为 [A-Za-z0-9_]（SCPT 名表约束），仍做最小转义防御。
     for (char c : routine) {
         if (c == '"' || c == '\\' || c < 0x20) {
             char escape[8];
@@ -182,4 +179,4 @@ void StageEventSink::boss_op(u32 enemy, u16 op, const i32* args, u32 count, cons
     raw("\"}\n");
 }
 
-}  // namespace th13
+}

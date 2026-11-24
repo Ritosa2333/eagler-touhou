@@ -79,4 +79,4 @@ void main(){
  outputColor=mix(vec4(1),vec4(packed)/max(vec4(mask),vec4(1)),greaterThan(mask,uvec4(0)));
 }
 )GLSL";
-}  // namespace touhou::sdl
+}

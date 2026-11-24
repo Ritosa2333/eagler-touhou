@@ -33,12 +33,12 @@ struct Fixture {
         vm.sprite = &sprite;
     }
 };
-}  // namespace
+}
 
 TEST(anm_text_original_left_center_right_offsets_use_cp932_bytes) {
     Fixture fixture;
     const std::string text = "\x81\x48\x81\x48"
-                             "ABCD";  // eight original bytes
+                             "ABCD";
     for (const auto& entry : {std::pair<AnmTextAlignment, i32>{AnmTextAlignment::Left, 0},
                               {AnmTextAlignment::Center, 256},
                               {AnmTextAlignment::Right, 512}}) {

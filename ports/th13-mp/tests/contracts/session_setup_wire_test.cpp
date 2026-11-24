@@ -1,7 +1,3 @@
-// 会话身份线格式契约：钉住房间选项在线上的现有编码。
-// 线格式、版本常量或 GameplayAbi 任一处变化都会让对局双方在握手层互斥，
-// 所以这些值只随明确的设计变更更新，不随重构漂移。期望值取自独立算式
-//（multiplayer-options.test.mjs 持有同一身份的 JS 向量），不从此处实现反推。
 #include "../harness/test_framework.hpp"
 
 #include "multiplayer/SessionSetup.hpp"
@@ -59,7 +55,6 @@ SessionSetup legacy_setup() {
     return setup;
 }
 
-// 整体拒绝：解码失败时调用方的会话身份必须原样保留。
 bool rejects(const Words& words) {
     SessionSetup out = delayed_challenge_setup();
     const Words before = th13::multiplayer::EncodeSessionSetup(out);
@@ -67,7 +62,7 @@ bool rejects(const Words& words) {
     return th13::multiplayer::EncodeSessionSetup(out) == before;
 }
 
-}  // namespace
+}
 
 TEST(constants) {
     CHECK_EQ(SessionSetup::Version, 2u);
@@ -142,20 +137,20 @@ TEST(rejects_out_of_range_fields) {
         changed[index] = value;
         invalid.push_back(changed);
     };
-    variant(0, 3);      // 未知线格式版本
-    variant(14, 3);     // 未知时序模式
-    variant(15, 2);     // automatic 只能取 0/1
-    variant(21, 2);     // Miss 不清屏必须伴随挑战模式
-    variant(1, 1);      // 少于 2 席
-    variant(1, 4);      // 多于 3 席
-    variant(2, 2);      // 本地席位越界
-    variant(3, 6);      // 难度越界
-    variant(4, 65536);  // 种子越界
-    variant(7, 10);     // 延迟越界
-    variant(16, 0);     // 预测保留越界
-    variant(16, 3);     // 预测保留越界
-    variant(8, 4);      // 角色越界
-    variant(10, 1);     // 未用席位必须为 0
+    variant(0, 3);
+    variant(14, 3);
+    variant(15, 2);
+    variant(21, 2);
+    variant(1, 1);
+    variant(1, 4);
+    variant(2, 2);
+    variant(3, 6);
+    variant(4, 65536);
+    variant(7, 10);
+    variant(16, 0);
+    variant(16, 3);
+    variant(8, 4);
+    variant(10, 1);
     Words no_session = base;
     no_session[5] = no_session[6] = 0;
     invalid.push_back(no_session);

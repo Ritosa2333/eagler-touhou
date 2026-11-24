@@ -1,20 +1,3 @@
-// M5 原生固定 case：多人右侧资源 HUD（每席图标集 + 每席文本行 + 逐席回调）。
-// 被测生产面：
-//   - GameHud::enable_multiplayer（席 1/2 图标 VM 组、kMpRowPitch 平移、
-//     共享得点/Graze 标签下移、非法席数拒绝、幂等）；
-//   - GameHud::life_seat/bombs_seat（每席 interrupt 布局、逐席阈值
-//     R-A、seat 0 /单席回落单套面且互不串扰）；
-//   - GameHud::draw 的 MpHudSeats 分支（每席行标签/碎片/Power 的坐标、
-//     颜色（本地席黄、幽灵后缀）、共享行下移；mp==null 时 SP 原位布局）；
-//   - ItemManager::grant_resources（R-I3 广播逐席回调）与 on_bomb_key
-//     （active_seat 归属）；
-//   - GameHud::RollbackState 快照/恢复包含 MP 域。
-//
-// 固定 case 映射（workflow-cases.json m5.mp_hud_seat_rows）：
-//   mp_hud_seat_icon_layout    → 图标集创建/平移/interrupt/阈值/隔离
-//   mp_hud_text_rows           → 文本面 MP 布局与 SP 零变化
-//   mp_hud_seat_callbacks      → 逐席资源回调（发放/Bomb/定向赠送）
-//   mp_hud_rollback_roundtrip  → 快照恢复含 MP 域
 #include "../../ui/ui_test_fixtures.hpp"
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "../../harness/test_framework.hpp"
@@ -39,11 +22,10 @@
 
 using namespace th13;
 using namespace th13::test;
-using namespace th13test;  // ecl/harness 夹具命名空间（emit/build_scpt/TEST 宏体）
+using namespace th13test;
 
 namespace {
 
-// ---- GameHud 级夹具（同 tests/ui/hud_test.cpp：合成 front/ascii bank）----
 struct HudHarness {
     GameRandom random;
     AnmEnvironment environment;
@@ -88,7 +70,6 @@ float translation_y(AnmManager& manager, u32 handle) {
     return vm ? vm->visual.translation.y : -1.f;
 }
 
-// ---- 战斗级夹具（同 m5_lifecycle_test：记录逐席 HUD 回调）----
 struct RecordingHost final : StageBattleServices {
     std::vector<std::array<i32, 3>> life_calls, bomb_calls;
     bool life_hud(i32, i32) override { return true; }
@@ -176,23 +157,18 @@ struct BattleFixture {
     }
 };
 
-}  // namespace
+}
 
-// ---- mp_hud_seat_icon_layout：图标集创建 / 平移 / interrupt / 阈值 / 隔离 ----
 TEST(mp_hud_seat_icon_layout) {
     HudHarness harness;
-    // 非法席数拒绝；未启用的席位回落单套面。
     CHECK(!harness.hud.enable_multiplayer(1));
     CHECK(!harness.hud.enable_multiplayer(4));
     CHECK(harness.hud.enable_multiplayer(2));
     CHECK_EQ(harness.hud.mp_seat_count, 2);
-    // 幂等：重复启用不重复建组。
     const u32 seat1_first = harness.hud.mp_life_icons[0][0];
     CHECK(harness.hud.enable_multiplayer(2));
     CHECK_EQ(harness.hud.mp_life_icons[0][0], seat1_first);
 
-    // 席 1 图标组：8 残机 + 8 灵击，平移 = 1*pitch；render_flags 清 0xc000
-    //（与 initialize 的单套同式）。
     for (u32 i = 0; i < 8; ++i) {
         CHECK(harness.hud.mp_life_icons[0][i] != 0);
         CHECK(harness.hud.mp_bomb_icons[0][i] != 0);
@@ -204,10 +180,8 @@ TEST(mp_hud_seat_icon_layout) {
             harness.hud.mp_life_icons[0][i]);
         CHECK(vm && (vm->visual.render_flags & 0xc000u) == 0);
     }
-    // 席 0 单套仍在 SP 原位（不平移）。
     CHECK_EQ(translation_y(harness.manager, harness.hud.life_icons[0]), 0.f);
 
-    // life_seat(1, 2, 5, idx0)：阈值 8 → 碎片档位 (5*5)/8+7 = 10。
     CHECK(harness.hud.life_seat(1, 2, 5, 0));
     for (u32 i = 0; i < 2; ++i)
         CHECK_EQ(pending(harness.manager, harness.hud.mp_life_icons[0][i]), 2);
@@ -215,31 +189,26 @@ TEST(mp_hud_seat_icon_layout) {
     for (u32 i = 3; i < 8; ++i)
         CHECK_EQ(pending(harness.manager, harness.hud.mp_life_icons[0][i]), 3);
 
-    // 逐席阈值（R-A）：同碎片数、席阈值索引 1（阈值 10）→ 档位 9。
     CHECK(harness.hud.life_seat(1, 2, 5, 1));
     CHECK_EQ(pending(harness.manager, harness.hud.mp_life_icons[0][2]), 9);
 
-    // bombs_seat(1, 1, 4)：碎片档位 (4*6)/8+7 = 10。
     CHECK(harness.hud.bombs_seat(1, 1, 4));
     CHECK_EQ(pending(harness.manager, harness.hud.mp_bomb_icons[0][0]), 2);
     CHECK_EQ(pending(harness.manager, harness.hud.mp_bomb_icons[0][1]), 10);
     for (u32 i = 2; i < 8; ++i)
         CHECK_EQ(pending(harness.manager, harness.hud.mp_bomb_icons[0][i]), 3);
 
-    // 席位刷新不串扰席 0 单套：先定席 0 状态，再刷席 1，席 0 pending 不变。
     CHECK(harness.hud.life(3, 0));
     CHECK_EQ(pending(harness.manager, harness.hud.life_icons[0]), 2);
-    CHECK_EQ(pending(harness.manager, harness.hud.life_icons[3]), 7);  // 0 碎片 → 档 7
+    CHECK_EQ(pending(harness.manager, harness.hud.life_icons[3]), 7);
     CHECK(harness.hud.life_seat(1, 2, 5, 0));
     CHECK_EQ(pending(harness.manager, harness.hud.life_icons[0]), 2);
     CHECK_EQ(pending(harness.manager, harness.hud.life_icons[3]), 7);
 
-    // 1P 图标与数字都应使用该席阈值，即使单人兼容字段仍为初值。
     CHECK_EQ(harness.progress.life_piece_threshold_index, 0);
     CHECK(harness.hud.life_seat(0, 3, 5, 2));
     CHECK_EQ(pending(harness.manager, harness.hud.life_icons[3]), 9);
 
-    // 3 席：席 2 组平移 = 2*pitch。
     CHECK(harness.hud.enable_multiplayer(3));
     CHECK_EQ(harness.hud.mp_seat_count, 3);
     for (u32 i = 0; i < 8; ++i)
@@ -247,7 +216,6 @@ TEST(mp_hud_seat_icon_layout) {
                  2 * GameHud::kMpRowPitch);
 }
 
-// ---- mp_hud_text_rows：真实生产文本及 ANM 几何共用同帧状态 ----
 TEST(mp_hud_text_rows) {
     HudHarness harness;
     CHECK(harness.hud.enable_multiplayer(2));
@@ -346,7 +314,6 @@ TEST(mp_hud_text_rows) {
         CHECK(icons[a].r>icons[a].l && icons[a].b>icons[a].t);
         for(size_t b=a+1;b<icons.size();++b) CHECK(!intersects(icons[a],icons[b]));
     }
-    // 所有生产字形和移动后的负控字形使用同一碰撞检测器。
     const auto collides_icon=[&](const Rect& r) {
         return std::any_of(icons.begin(),icons.end(),[&](const Rect& icon){return intersects(r,icon);});
     };
@@ -364,8 +331,6 @@ TEST(mp_hud_text_rows) {
         auto* vm=anm.registry.find_child_script(*root_vm,13+i,0);CHECK(vm != nullptr);if(!vm) return;
         label_handles[15+i]=anm.registry.handle(*vm);
     }
-    // At 45 ticks original front scripts 8/9 have begun fading in; the
-    // later scripts have alpha zero and must not acquire synthetic draws.
     {
         struct StartupGraphics final:ZunGraphics {
             touhou::graphics::PipelineState state;size_t vertices=0;
@@ -390,13 +355,10 @@ TEST(mp_hud_text_rows) {
             else {CHECK_EQ(result,-1);CHECK_EQ(g.vertices,before);}
         }
     }
-    // Finish the genuine front.anm startup before testing all labels as drawn.
     for(int i=0;i<65;++i) CHECK(anm.update());
     const auto collides_label=[&](const Rect& r) {
         return std::any_of(labels.begin(),labels.end(),[&](const Rect& label){return intersects(r,label);});
     };
-    // Capture the actual SP Power glyphs for exact comparison with each MP
-    // row. Only the vertical translation and authorized ghost alpha differ.
     base.power=400;base.max_power=400;base.power_step=100;
     HudHarness::TextSink sp_power;CHECK(real.draw(HudDrawContext{},sp_power));
     const HudTextDraw* sp_segments[]={sp_power.find("4.",540,216),sp_power.find("00",560,223),
@@ -406,7 +368,6 @@ TEST(mp_hud_text_rows) {
         CHECK(sp_segments[i] != nullptr);if(!sp_segments[i])return;
         AsciiText t{anm,env};CHECK(t.initialize(2));CHECK(t.hud_text(*sp_segments[i]));CHECK(t.draw(0,sp_glyphs[i]));
     }
-    // Record actual op606 production vertices, including original shared lines.
     struct RuleGraphics final:ZunGraphics {
         struct V {Vec3 p;float w;u32 color;};std::vector<V> vertices;touhou::graphics::PipelineState state;
         touhou::graphics::PipelineState& pipeline()override{return state;}
@@ -431,7 +392,6 @@ TEST(mp_hud_text_rows) {
             } rules[size_t(script-19)]=box;
         }return true;
     };
-    // Let the original line expansion complete naturally before capturing it.
     for(int i=0;i<25;++i) CHECK(anm.update());CHECK(capture_rules());
     for(size_t i=0;i<6;++i) {
         const float y=175.f+80.f*float(i/2);CHECK_EQ(rules[i].t,y);CHECK_EQ(rules[i].b,y+2);
@@ -552,7 +512,6 @@ TEST(mp_hud_text_rows) {
             CHECK(rejected);
         }
     }
-    // A two-seat HUD must collapse only the absent third pair to zero area.
     {
         GameRandom two_rng;AnmEnvironment two_env;AnmManager two{two_rng,two_env};
         CHECK(two.load(3,front.data(),u32(front.size())));CHECK(two.load(2,ascii.data(),u32(ascii.size())));CHECK(two.sprite_fallback(2));
@@ -568,8 +527,6 @@ TEST(mp_hud_text_rows) {
             else {CHECK(l<r);CHECK(t<b);}
         }
     }
-    // Draw identical production state three times: only selected seat sprites
-    // may fade, and clearing ghost must restore their original colors.
     struct Graphics final:ZunGraphics {
         touhou::graphics::PipelineState state;
         touhou::graphics::VertexLayout layout=touhou::graphics::VertexLayout::WorldUv;
@@ -636,9 +593,6 @@ TEST(mp_hud_text_rows) {
         else {CHECK_EQ(a.color&0xffffffu,b.color&0xffffffu);CHECK_EQ(b.color>>24,((a.color>>24)*140u+127u)/255u);faded=true;}
     }
     CHECK(faded && unchanged); CHECK_EQ(selected->visual.color,original_color);
-    // Every native label must produce actual scheduler vertices. Compare its
-    // isolated production draw with a contiguous quad in the scheduler output,
-    // then repeat at ghost opacity and verify its VM state is unchanged.
     for(const auto handle:label_handles) {
         auto* vm=anm.registry.find(handle);CHECK(vm != nullptr);if(!vm)return;
         graphics.sprites.clear();renderer.invalidate();CHECK(renderer.draw(*vm)!=-2);renderer.flush();
@@ -667,8 +621,6 @@ TEST(mp_hud_text_rows) {
         CHECK_EQ(vm->timer.current,time);CHECK_EQ(vm->pending_interrupt,pending);
     }
 
-    // An empty registry and multiplayer selection must submit no new backing
-    // geometry. Later submissions still set their own vertex layout and stride.
     {
         GameRandom empty_rng; AnmEnvironment empty_env; AnmManager empty{empty_rng,empty_env};
         Graphics state_graphics; AnmRenderer state_renderer{state_graphics};
@@ -701,7 +653,6 @@ TEST(mp_hud_text_rows) {
 
 }
 
-// ---- mp_hud_seat_callbacks：逐席资源回调（R-I3 发放 / Bomb / 定向赠送）----
 ItemCollector collector_at(float x, float y, i32 seat, i32 character,
                           HudPlayerState& hud, SessionState& progress,
                           HudScoreState& score) {
@@ -736,8 +687,6 @@ TEST(mp_hud_seat_callbacks) {
     battle.seats[1].y = 400.f;
     battle.seat_huds[1].life_pieces = 3;
 
-    // R-I3 广播发放：残机碎片被席 0 拾取 → 全员各 +1 碎片，逐席回调携带
-    // 各席权威值（update_seats → collect_check → grant_resources 公共路径）。
     manager.spawn_item(-95.f, 400.f, 0.f, ItemLifePiece, 0.f, 0.f);
     ItemCollector seats[2] = {
         collector_at(-100.f, 400.f, 0, 0, battle.seat_huds[0], dual.progress, dual.score),
@@ -750,13 +699,12 @@ TEST(mp_hud_seat_callbacks) {
     CHECK_EQ(dual.host.life_calls[0][2], 1);
     CHECK_EQ(dual.host.life_calls[1][0], 1);
     CHECK_EQ(dual.host.life_calls[1][2], 4);
-    CHECK(dual.host.bomb_calls.empty());  // 无 Bomb 资源 → 不触发
+    CHECK(dual.host.bomb_calls.empty());
 
-    // Bomb 键：席位输入沿独立，X 边沿扣该席 Bomb 并按 active_seat 回调。
     dual.host.life_calls.clear();
     GameInput none;
     for (int frame = 0; frame < 25; ++frame) CHECK(battle.step(none));
-    battle.seat_inputs[1].update(0x02);  // 席 1 按 X
+    battle.seat_inputs[1].update(0x02);
     CHECK(battle.step(none));
     CHECK_EQ(battle.seat_huds[1].bombs, 1);
     bool seat1_bomb = false;
@@ -765,15 +713,11 @@ TEST(mp_hud_seat_callbacks) {
     CHECK(seat1_bomb);
     bool foreign_seat = false;
     for (const auto& call : dual.host.bomb_calls) foreign_seat |= call[0] != 1;
-    CHECK(!foreign_seat);  // 席 0 未按 X，不被串扰
+    CHECK(!foreign_seat);
 
-    // R-I9 定向赠送（update_transfers）：席 0 五拍送残给幽灵席 1 →
-    // 救援事务只刷受影响席（donor 残机回调 + 接收席 Bomb 回调）。
-    // MP 下 step 参数写本地席（mp_local_seat=0）的输入沿，远端席直写
-    // seat_inputs；送残 = Shift 边沿且全程不按 Z。
     dual.host.life_calls.clear();
     dual.host.bomb_calls.clear();
-    battle.seats[1].ghost = true;      // 席 1 幽灵可被救
+    battle.seats[1].ghost = true;
     battle.seat_huds[0].extra_lives = 2;
     GameInput shift;
     for (int tap = 0; tap < 6; ++tap) {
@@ -782,7 +726,7 @@ TEST(mp_hud_seat_callbacks) {
         shift.update(0x00);
         CHECK(battle.step(shift));
     }
-    CHECK(!battle.seats[1].ghost);  // 救援成功
+    CHECK(!battle.seats[1].ghost);
     bool donor_life = false, rescued_bomb = false;
     for (const auto& call : dual.host.life_calls)
         donor_life |= call[0] == 0 && call[1] == 1;
@@ -790,12 +734,10 @@ TEST(mp_hud_seat_callbacks) {
         rescued_bomb |= call[0] == 1 && call[1] == 2;
     CHECK(donor_life);
     CHECK(rescued_bomb);
-    // 只有受影响席位被回调（不重发无关席——避免复位图标插值）。
     for (const auto& call : dual.host.life_calls) CHECK_EQ(call[0], 0);
     for (const auto& call : dual.host.bomb_calls) CHECK_EQ(call[0], 1);
 }
 
-// ---- mp_hud_rollback_roundtrip：快照恢复含 MP 域 ----
 TEST(mp_hud_rollback_roundtrip) {
     HudHarness harness;
     CHECK(harness.hud.enable_multiplayer(2));
@@ -804,14 +746,12 @@ TEST(mp_hud_rollback_roundtrip) {
     CHECK(snapshot.mp_seat_count == 2);
     CHECK(snapshot.mp_life_icons[0][2] == harness.hud.mp_life_icons[0][2]);
 
-    // 扰动：扩到 3 席并改句柄。
     CHECK(harness.hud.enable_multiplayer(3));
     CHECK(harness.hud.mp_life_icons[1][2] != 0);
     harness.hud.restore_rollback(snapshot);
     CHECK_EQ(harness.hud.mp_seat_count, 2);
     CHECK_EQ(harness.hud.mp_life_icons[0][2], snapshot.mp_life_icons[0][2]);
-    CHECK_EQ(harness.hud.mp_life_icons[1][2], 0u);  // 席 2 组被恢复清除
-    // 单套域照旧恢复。
+    CHECK_EQ(harness.hud.mp_life_icons[1][2], 0u);
     CHECK_EQ(harness.hud.life_icons[2], snapshot.life_icons[2]);
 }
 
@@ -847,7 +787,7 @@ TEST(mp_hud_world_restore_immediate_draw) {
     battle.seats[1].ghost = false;
     battle.seats[1].dead = false;
     battle.seat_huds[1].power = 400;
-    battle.mp_local_seat = 2; // local presentation is not rollback state.
+    battle.mp_local_seat = 2;
     app.run->sync_mp_hud_view();
     CHECK(saved.restore(battle, app.visual, nullptr, app.run->presentation.get(), app.run.get()));
     CHECK(battle.seats[1].ghost);
@@ -861,7 +801,7 @@ TEST(mp_hud_world_restore_immediate_draw) {
     CHECK(restored.capture(battle, app.visual, nullptr, app.run->presentation.get(),
                            app.run.get(), app.run_transition.handle()));
     CHECK_EQ(restored.digest(), baseline);
-    CHECK(app.present()); // no update or sync between restore and draw
+    CHECK(app.present());
     multiplayer::WorldState drawn;
     CHECK(drawn.capture(battle, app.visual, nullptr, app.run->presentation.get(),
                         app.run.get(), app.run_transition.handle()));

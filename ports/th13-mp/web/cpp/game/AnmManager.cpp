@@ -4,7 +4,7 @@ namespace th13 {
 using AnmRandomObserver = void (*)(const AnmVm&, i32, i32, i32, u32, u32, u32, u32, bool);
 extern AnmRandomObserver anm_random_observer;
 AnmSpawnObserver anm_spawn_observer = nullptr;
-}  // namespace th13
+}
 
 #include "AnmOverlay.hpp"
 namespace th13 {
@@ -72,19 +72,6 @@ bool AnmManager::adopt_bank(i32 id, std::unique_ptr<Bank> bank) {
             return false;
         }
         vm.prepare_template();
-        // 模板预热：00461bf0.c:22 在预热 tick 前置 0x8000（清 0x4000），
-        // 使预热不受暂停门影响。⚠ 证据归属（round-21 复核更正）：原版
-        // 0x46e0b0 预热链（0x405010→0x461bf0→0x462450）此后**无任何
-        // 0xc000 转换**，0x46f820 create 也只拷模板 + or 0x200，主链提交
-        // 不清位——原版模板/主链稳态是 **0x8000**，0x462450:308 暂停门
-        // 只可能命中 0x461cb0:37-38 类内嵌 VM（弹/激光体，bind 后转
-        // 0x4000）。port 在 tick 后转回 0x4000 是 BUG 8 的**有意机制
-        // 替换**（原版第三条件 GameInf+0x60 bit1 经穷尽取证恒 0——
-        // 0x4c2194 是指针，GameInf+0x60 全部 19 处写入的位全集
-        // {2,3,4,7,11,14}，无 bit1 写入、.data 零初始化，该门在 v1.00c
-        // 永不触发；原版暂停冻结是结构性的——暂停期游戏任务整表不 tick。
-        // port 单一常更新 manager 架构下以稳态 0x4000 + 门复刻同等可观测
-        // 行为：主链特效冻结、副链暂停菜单/黑幕继续）。
         vm.visual.render_flags = (vm.visual.render_flags & ~0xc000u) | 0x8000u;
         const int warmed = vm.tick(random, rate);
         if ((vm.visual.render_flags & 0xc000u) == 0x8000u)
@@ -163,10 +150,6 @@ AnmVm* AnmManager::instantiate_preserve_ip(AnmResource& resource, i32 script) {
     return nullptr;
 }
 bool AnmManager::initial_tick(AnmVm& vm) {
-    // 首拍必须执行（0x46f820/0x46f990/0x46fab0 的模板拷贝后立即 0x462450）：
-    // 00461bf0.c:22 在首次 tick 前置 render_flags 0x8000（清 0x4000）以绕过
-    // 暂停门，00461cb0.c:37-38 在 tick 后把仍是 0x8000 的值转回 0x4000。
-    // 否则暂停中创建的 VM（暂停菜单 ins_501 子体等）会丢掉首拍。
     vm.visual.render_flags = (vm.visual.render_flags & ~0xc000u) | 0x8000u;
     const int result = vm.tick(random, rate);
     if ((vm.visual.render_flags & 0xc000u) == 0x8000u)
@@ -178,8 +161,6 @@ bool AnmManager::initial_tick(AnmVm& vm) {
     }
     return true;
 }
-// 0x46f820：池分配→模板复制+时间重置→0x200 活动→layer∈[0,21)→0x40000→
-// 位置（bit0 时 +320/+16）→anmArg→立即 tick→按 flags 入链（Registry::submit）。
 u32 AnmManager::create(i32 id, i32 script, i32 layer, u32 ordering, const Vec3& translation, float anm_arg,
                        bool game_coordinates, u8 shot_effect_owner) {
     auto* source = resource(id);
@@ -200,7 +181,7 @@ u32 AnmManager::create(i32 id, i32 script, i32 layer, u32 ordering, const Vec3& 
         vm->visual.translation.x = float(vm->visual.translation.x + 320.f);
         vm->visual.translation.y = float(vm->visual.translation.y + 16.f);
     }
-    vm->variables.rotation.z = anm_arg;  // anmArg 落 vm+0x50（变量 10025 槽）
+    vm->variables.rotation.z = anm_arg;
     if (!initial_tick(*vm)) return 0;
     if (anm_random_observer) anm_random_observer(*vm, -1, 0, 0, 0, 0, 0, 0, false);
     vm->ordering = ordering;
@@ -229,8 +210,6 @@ u32 AnmManager::create_preserve_ip(i32 id, i32 script, i32 layer, u32 ordering, 
     if (!initial_tick(*vm)) return 0;
     if (anm_random_observer) anm_random_observer(*vm, -1, 0, 0, 0, 0, 0, 0, false);
     vm->ordering = ordering;
-    // submit 失败的 registry 文案必须冒泡到 manager.error（调用方的
-    // fail 链读 manager.error——M8 回滚重放实证曾静默丢失该文案）。
     const u32 handle = registry.submit(*vm, ordering);
     if (!handle) {
         if (error.empty()) error = registry.error.empty() ? "Animation registry rejected the instance" : registry.error;
@@ -247,7 +226,6 @@ AnmVm* AnmManager::spawn_child(AnmVm& source, i32 script, u32 ordering) {
     if (!vm) return nullptr;
     vm->shot_effect_owner = source.shot_effect_owner;
     vm->player_support_effect = source.player_support_effect;
-    // 0x46f990：位置清零、layer 继承父、父指针直挂本源、0x200 活动位。
     vm->visual.translation = {};
     vm->visual.layer = source.visual.layer;
     vm->creation_parent = &source;
@@ -273,7 +251,6 @@ AnmVm* AnmManager::spawn_detached(AnmVm& source, i32 script) {
     if (!vm) return nullptr;
     vm->shot_effect_owner = source.shot_effect_owner;
     vm->player_support_effect = source.player_support_effect;
-    // 0x46fab0：layer/平移/旋转继承父，锚点=父脚本位置，主链尾入链。
     vm->visual.render_flags |= 0x200;
     vm->visual.layer = source.visual.layer;
     vm->visual.translation = source.visual.translation;
@@ -292,9 +269,6 @@ AnmVm* AnmManager::spawn_detached(AnmVm& source, i32 script) {
 bool AnmManager::spawn_effect(AnmVm& vm, i32 script) {
     if (effect) return effect(vm, script);
     if (script == 0) {
-        // 402ff0 copies four effect templates; the fifth astral panel is conditional
-        // on [0x4c2164] (AstralInf), which is null at the title launch. Resolve the
-        // astral bank by name and pass it through as optional.
         AnmResource* astral = nullptr;
         for (const auto& item : resource_names)
             if (item.second == "astral.anm") {
@@ -345,15 +319,11 @@ bool AnmManager::spawn_effect(AnmVm& vm, i32 script) {
         return true;
     }
     if (script == 1 || script == 3) {
-        // 4bba80[1]（401000/401190/4012c0）：8 段轨迹；位置=op334 传入的敌机 VM+0x44
-        // （41b7ac→415650），经 translation 携带；415650 先清 VM 绘制位再调 init，故读后清零。
         vm.geometry.clear();
         vm.geometry.trail = std::make_unique<AnmTrail>();
         const Vec3 effect_position = vm.visual.translation;
         vm.geometry.trail->initialize_small(effect_position, random);
         if (script == 3) {
-            // 401310 shares 401190/4012c0 with kind1, but starts in the
-            // supplied coordinate system and uses the blue/green palette.
             vm.geometry.trail->points[0] = {effect_position.x, effect_position.y};
             for (u32 i = 0; i < 8; ++i) {
                 u32 color = 0xff40ff00u | u32(u8(255 - i * 32));
@@ -367,9 +337,6 @@ bool AnmManager::spawn_effect(AnmVm& vm, i32 script) {
         if (script == 1) vm.visual.flags = (vm.visual.flags & ~0xfffffe3fu) | 0x20u;
         return true;
     }
-    // 0x402ff0 族表外 script（含 4 = 0x4bba80 表行 -1）：原版 0x415650/0x46fab0
-    // 对该输入无「错误」概念（表行 script<0 直接返回），ANM ins_508 的表外
-    // script 同降级为无几何空操作并留证——不让对局失败（Game Over 卡死同族）。
     std::fprintf(stderr, "[scene-effect] spawn_effect unhandled script %d (no-op)\n", script);
     return true;
 }
@@ -449,7 +416,6 @@ bool AnmManager::update() {
         return false;
     }
     collect_resources();
-    // 0x46f170+0x46f240 两遍完成后恰一次；失败必须传播（不得静默吞掉）。
     if (after_main_update && !after_main_update()) {
         if (error.empty()) error = "Animation post-update hook failed";
         return false;
@@ -462,7 +428,6 @@ bool AnmManager::update(bool alternate) {
         return false;
     }
     collect_resources();
-    // 副链（0x46f240，Application Update 9）不触发主链收尾钩子。
     if (!alternate && after_main_update && !after_main_update()) {
         if (error.empty()) error = "Animation post-update hook failed";
         return false;
@@ -475,10 +440,6 @@ int AnmManager::tick_instance(AnmVm& vm) {
     return result;
 }
 bool AnmManager::queue_capture(const AnmVm& vm) {
-    // 0x4418b0（004418b0.c）：VM 当前精灵 → {file=VM+0x30, texture=精灵+4,
-    // src=(32,16,384,448) 战场, dst=精灵 (x,y,w,h)}。4 槽只在首字段<0 的
-    // 空槽写入，**满时丢弃新请求**（不覆盖旧槽；单帧 ≥5 个截取才可见，
-    // port 当前唯一入队点是暂停 backdrop，不可达，仍按原版对齐）。
     if (!vm.sprite_resource || !vm.sprite) return false;
     if (captures_.size() >= 4) return false;
     CaptureRequest request;
@@ -500,4 +461,4 @@ std::vector<AnmManager::CaptureRequest> AnmManager::take_captures() {
     captures_.clear();
     return result;
 }
-}  // namespace th13
+}

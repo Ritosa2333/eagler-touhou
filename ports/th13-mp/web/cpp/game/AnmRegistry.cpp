@@ -4,7 +4,6 @@
 #include <unordered_map>
 namespace th13 {
 ChainEntryObserver chain_entry_observer = nullptr;
-// 卸载资源时把绑定它的 VM 标待回收（0x46fea0 语义：render_flags |= 0x20）。
 void AnmRegistry::retire_resource(const AnmResource* resource) noexcept {
     if (!resource) return;
     for (auto& group : groups)
@@ -38,11 +37,6 @@ AnmRegistry::Node* AnmRegistry::node(AnmVm& vm) const noexcept {
     return borrowed == external.end() ? nullptr : borrowed->second.get();
 }
 AnmVm* AnmRegistry::allocate() {
-    // 池复用路径的键注册必须幂等（operator[]）：回滚 restore 会
-    // nodes.clear() 后只按快照 entries 重建键——发散期新分配的槽
-    // Node 残留在 pool 且仍在快照 free_slots 里，后续 allocate 复用
-    // 该槽时 pool[slot] 非空、旧实现跳过 emplace → 悬空键 → submit
-    // "no registry node"（M8 回滚重放实证）。operator[] 对已有键幂等。
     Node* entry = nullptr;
     if (!free_slots.empty()) {
         const u32 slot = free_slots.back();
@@ -75,7 +69,6 @@ AnmVm* AnmRegistry::allocate() {
 u32 AnmRegistry::submit(AnmVm& vm, u32 ordering) {
     auto* entry = node(vm);
     if (!entry || entry->borrowed || !entry->active || entry->registered) {
-        // 拒绝原因细分（M8 回滚重放诊断：池残留状态定位）。
         error = entry ? "Animation instance cannot be registered (" +
                             std::string(!entry->active      ? "inactive"
                                         : entry->registered ? "registered"
@@ -84,7 +77,6 @@ u32 AnmRegistry::submit(AnmVm& vm, u32 ordering) {
                       : "Animation instance has no registry node";
         return 0;
     }
-    // 句柄 = generation<<13 | slot（0x46f3f0：低 13 位槽、高 19 位代，代跳 0）。
     generation = (generation + 1) & 0x7ffff;
     if (!generation) generation = 1;
     entry->handle = (generation << 13) | (entry->slot & 0x1fff);
@@ -95,11 +87,6 @@ u32 AnmRegistry::submit(AnmVm& vm, u32 ordering) {
     else
         entry->position = list.insert(list.end(), entry);
     entry->registered = true;
-    // 副链插入清 0xc000（0046f820.c:65,71：bit2/bit1|bit2 两路插入后均清）。
-    // port 在 submit 统一执行，同时覆盖 0x46f990 spawn_child（ins_501→ordering4，
-    // 暂停菜单子体 117/118 等）：port 模板稳态是 0x4000，若不清 0，这些子体会
-    // 被 00462450.c:308 的暂停门冻结；原版 0x46f990 未清位（其模板预热值
-    // 0x8000，子体天然不受门影响），故此处清位是 port 侧必要的等价手段。
     if (entry->alternate) vm.visual.render_flags &= ~0xc000u;
     return entry->handle;
 }
@@ -116,14 +103,12 @@ AnmVm* AnmRegistry::find(u32 handle) const noexcept {
     return nullptr;
 }
 bool AnmRegistry::attach(AnmVm& child, AnmVm& parent) {
-    // 子 VM 保留资源脚本身份供游戏回调（原版子链 vm+0x560/0x564 + 父指针）。
     auto* entry = node(child);
     auto* owner = node(parent);
     if (!entry || entry->borrowed || !entry->active || entry == owner || entry->parent) {
         error = "Animation child relationship invalid";
         return false;
     }
-    // 玩家/弹幕对象内嵌根 VM：只跟踪子链，不接管生命周期。
     if (!owner) {
         auto borrowed = std::make_unique<Node>();
         borrowed->borrowed = &parent;
@@ -146,7 +131,6 @@ bool AnmRegistry::attach(AnmVm& child, AnmVm& parent) {
     return true;
 }
 void AnmRegistry::collect(Node& entry) {
-    // Host bookkeeping must not occupy native render bit6: ins424 writes it.
     if (entry.queued_deletion) return;
     entry.queued_deletion = true;
     for (auto* child : entry.children)
@@ -156,18 +140,12 @@ void AnmRegistry::collect(Node& entry) {
     entry.vm.visual.render_flags |= 0x20u;
 }
 void AnmRegistry::requeue_to_back(AnmVm& vm) {
-    // [f389 标题批序] 把已注册 VM 挪到其链表尾（不改变任何运行态；仅
-    // 绘制提交序受影响）。oracle 侧重挂语义（0x46f3f0 尾插）的同构物。
     auto* entry = node(vm);
     if (!entry || !entry->registered || entry->alternate) return;
     groups[0].erase(entry->position);
     entry->position = groups[0].insert(groups[0].end(), entry);
 }
 void AnmRegistry::erase(Node& entry) {
-    // 幂等守卫：原版 0x46f690 对池内节点内联回收恰一次（子链只打 0x20 下帧
-    // 链扫自回收，无二次路径）；移植侧直毁（destroy_tree/discard/spawn 失败
-    // 清理）与延迟队列双路径并存，已回收节点必须静默跳过（collect 幂等的
-    // defence in depth：直毁子后 update 队列残留项不再二次释放槽位）。
     if (!entry.active && !entry.borrowed) return;
     if (entry.borrowed) {
         external.erase(entry.borrowed);
@@ -186,7 +164,6 @@ void AnmRegistry::erase(Node& entry) {
         }
     if (entry.registered) groups[entry.alternate].erase(entry.position);
     if (entry.parent) entry.parent->children.remove(&entry);
-    // 0x46f690：子链全体摘父指针并标待回收（0x20），下帧由链扫描回收。
     for (auto* child : entry.children) {
         child->parent = nullptr;
         child->vm.rotation_parent = child->vm.creation_parent = nullptr;
@@ -198,9 +175,6 @@ void AnmRegistry::erase(Node& entry) {
     entry.active = entry.registered = entry.queued_deletion = entry.alternate = false;
     entry.handle = 0;
     active_count--;
-    // A freed pool slot owns no script, sprite or allocated geometry. Keeping
-    // these bindings after the bank unloads makes a later snapshot dereference
-    // released storage. allocate callers install a complete template on reuse.
     entry.vm.script = nullptr;
     entry.vm.resource = entry.vm.sprite_resource = nullptr;
     entry.vm.sprite = nullptr;
@@ -270,8 +244,6 @@ bool AnmRegistry::retire_children(AnmVm& vm) {
         retire(*child);
     return true;
 }
-// 单条链一遍（0x46f170 主链 / 0x46f240 副链同构）：待回收(0x20)不 tick 直接
-// 回收；tick 非零回收；零则归桶。副链层 ∉{31,32} 钳到 31（0x46f240:31-33）。
 bool AnmRegistry::tick_chain(u32 alternate, GameRandom& random, float rate) {
     if (!alternate && chain_entry_observer) chain_entry_observer(*this, false);
     auto next = groups[alternate].begin();
@@ -309,7 +281,6 @@ bool AnmRegistry::update(GameRandom& random, float rate) {
     pending_deletion.clear();
     if (!tick_chain(0, random, rate)) return false;
     if (!tick_chain(1, random, rate)) return false;
-    // 原版先队列子节点再前插，释放顺序为父先；空出的槽放回空闲链头部。
     for (auto it = pending_deletion.rbegin(); it != pending_deletion.rend(); ++it)
         erase(**it);
     pending_deletion.clear();
@@ -349,7 +320,6 @@ bool AnmRegistry::pause_tree(AnmVm& vm, bool paused) {
     return true;
 }
 bool AnmRegistry::interrupt(AnmVm& vm, i32 label, GameRandom& random, float rate, bool immediate) {
-    // 0x46fca0：子中断回调(vm+0x59c) → pending=label → 立即 tick，逐子传播。
     auto* entry = node(vm);
     if (!entry || !entry->active) return true;
     if (vm.object_host && !vm.object_host->interrupt_effect(vm, label, rate)) return false;
@@ -408,7 +378,6 @@ void AnmRegistry::append_draw(AnmVm& vm) {
     layers[u32(layer)].push_back(&vm);
 }
 
-// ---- M6 / Contract v2：回滚快照面（存活态 + 绘制引用 + 回收栈专用实现）----
 u32 AnmRegistry::pool_slot(const AnmVm& vm) const noexcept { return slot(const_cast<AnmVm&>(vm)); }
 bool AnmRegistry::is_embedded_referenced(const AnmVm* vm) const noexcept {
     if (!vm || external.empty()) return false;
@@ -484,8 +453,6 @@ void AnmRegistry::poison_dead_slots_for_test() {
     }
 }
 bool AnmRegistry::capture(SnapshotData& out, const std::vector<const AnmVm*>& embedded) const {
-    // 契约 v2：仅保存存活或仍被绘制层/父子链引用的池内节点 + overflow + external，
-    // 回收栈与代计数原样保存；死槽位内容不属于回滚权威状态。
     out.version = SnapshotData::kContractVersion;
     for (auto& layer : out.layers)
         layer.clear();
@@ -513,9 +480,6 @@ bool AnmRegistry::capture(SnapshotData& out, const std::vector<const AnmVm*>& em
         s.external_nodes.push_back(entry.second.get());
     std::sort(s.external_nodes.begin(), s.external_nodes.end(), by_ordinal);
     s.ordered.insert(s.ordered.end(), s.external_nodes.begin(), s.external_nodes.end());
-    // 节点 → 快照序号映射（指针比较，仅本函数内使用，不落盘）。
-    // Pool slots already give stable direct lookup. Overflow and borrowed
-    // nodes use a flat sorted scratch array instead of per-capture hash nodes.
     std::array<u32, 0x1fff> pool_indices;
     pool_indices.fill(SnapshotData::kNoVm);
     s.external_indices.clear();
@@ -536,8 +500,6 @@ bool AnmRegistry::capture(SnapshotData& out, const std::vector<const AnmVm*>& em
                                             [](const auto& a, const auto& b) { return a.first < b.first; });
         return (found != s.external_indices.end() && found->first == node) ? found->second : SnapshotData::kNoVm;
     };
-    // Record each chain once. Scanning both chains for every pool slot makes
-    // a checkpoint quadratic in the number of live effects/bullets.
     s.chain_indices.assign(s.ordered.size(), {0xFFFFFFFFu, 0xFFFFFFFFu});
     for (u32 chain = 0; chain < 2; ++chain) {
         u32 position = 0;
@@ -551,9 +513,6 @@ bool AnmRegistry::capture(SnapshotData& out, const std::vector<const AnmVm*>& em
         if (!vm) return SnapshotData::kNoVm;
         return index_of(node(*const_cast<AnmVm*>(vm)));
     };
-    // Checkpoint ring slots are reused. Assign into their existing entries so
-    // ANM geometry and child vectors keep capacity across captures, including
-    // inactive nodes; resize still removes entries when the source shrinks.
     out.entries.resize(s.ordered.size());
     for (u32 index = 0; index < s.ordered.size(); ++index) {
         const Node* node = s.ordered[index];
@@ -581,7 +540,6 @@ bool AnmRegistry::capture(SnapshotData& out, const std::vector<const AnmVm*>& em
             const auto child_index = index_of(child);
             if (child_index != SnapshotData::kNoVm) entry.children.push_back(child_index);
         }
-        // 链序号：groups[alternate] 的列表位置（restore 按序重插）。
         entry.chain_index[0] = s.chain_indices[index][0];
         entry.chain_index[1] = s.chain_indices[index][1];
         if (node->borrowed) out.borrowed_roots.push_back(node->borrowed);
@@ -619,7 +577,6 @@ bool AnmRegistry::capture(SnapshotData& out, const std::vector<const AnmVm*>& em
 }
 bool AnmRegistry::restore(const SnapshotData& source, const std::unordered_map<const AnmVm*, AnmVm*>& remapped,
                           const std::vector<AnmVm*>* embedded_vms) {
-    // Validate every draw binding before replacing the live registry.
     for (const auto& layer : source.layers)
         for (const auto& reference : layer) {
             if (reference.entry != SnapshotData::kNoVm) {
@@ -640,9 +597,6 @@ bool AnmRegistry::restore(const SnapshotData& source, const std::unordered_map<c
                 }
             }
         }
-    // Contract v2: remove speculative overflow and canonicalize uncaptured
-    // pool slots in place so allocate() reuses existing Node allocations with
-    // zero heap churn while dead slots hold no speculative resources or state.
     if (source.version != SnapshotData::kContractVersion) {
         error = "Animation snapshot contract version mismatch";
         return false;
@@ -695,9 +649,6 @@ bool AnmRegistry::restore(const SnapshotData& source, const std::unordered_map<c
     auto& rs = restore_scratch_;
     rs.restored.assign(source.entries.size(), nullptr);
     auto& restored = rs.restored;
-    // borrowed 根按 capture 时的宿主指针序（borrowed_roots 与 entries 中
-    // borrowed=true 的条目按序对应）回 external 表——宿主对象由外层持有，
-    // 快照存活期不卸载（红线）。
     {
         u32 borrowed_index = 0;
         for (u32 i = 0; i < source.entries.size(); ++i) {
@@ -764,7 +715,6 @@ bool AnmRegistry::restore(const SnapshotData& source, const std::unordered_map<c
         if (node->active) ++active_count;
         restored[i] = node;
     }
-    // 第二遍：父子链（快照内序号 → 节点指针）。
     for (u32 i = 0; i < source.entries.size(); ++i) {
         const SnapshotData::Entry& entry = source.entries[i];
         Node* node = restored[i];
@@ -782,7 +732,6 @@ bool AnmRegistry::restore(const SnapshotData& source, const std::unordered_map<c
         for (const u32 child : entry.children)
             if (child < restored.size() && restored[child]) node->children.push_back(restored[child]);
     }
-    // 第三遍：链表（按快照链序号重插；position 迭代器语义：insert(end)）。
     for (u32 chain = 0; chain < 2; ++chain) {
         rs.chain_members.clear();
         for (u32 i = 0; i < source.entries.size(); ++i) {
@@ -823,4 +772,4 @@ bool AnmRegistry::restore(const SnapshotData& source, const std::unordered_map<c
     free_slots.assign(source.free_slots.begin(), source.free_slots.end());
     return true;
 }
-}  // namespace th13
+}

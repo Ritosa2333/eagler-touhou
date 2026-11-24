@@ -1,22 +1,3 @@
-// m1.unit_draw_purity_probes —— M1/T5 Draw 纯度探针（workflow m1.draw_purity_rng
-// 的本层 unit 件）。全部经公开观测面（GameRandom::instance_draw_observer、
-// ApplicationState 三段入口、scheduler.add Draw 探针、AnmRegistry/AnmVm 字段），
-// 零生产钩子；实测窗口=回放 th13_01 对局帧（games/replays/th13_01.rpy 生产资产）。
-//
-// 断言命题（M1「Draw 不得推进模拟/RNG」+ 装载 caption 绘制半段 alpha 覆写
-// save/restore，ApplicationState.hpp:592-593 副作用台账 / Application.cpp:310-370）：
-//   1) present×0/1/3 后双流（game 0x4dc324 / visual 0x4dc31c，ApplicationState.hpp:389-394）
-//      observer 抽取计数恒 0、种子与 index 不变。正控：同一观察器在 update+commit
-//      段计数 >0（两流都被模拟消费）——证明计数面本身在真实抽取上会亮，纯度断言
-//      不是空转。
-//   2) update+commit+present 与 update+commit 双实例 RNG 流（seed+index）逐帧全等
-//      ——present 次数不改变任何流的取值序列（跨实例口径，非自比）。
-//   3) 装载 caption 绘制半段（Draw72=draw_loading_battle 的 alpha 覆写
-//      save/restore）：Draw 探针挂 scheduler.add 公开面 priority 73（Draw72 之后、
-//      layer28@74 之前）采样 loading_animations 层31 前池 VM visual.color/
-//      secondary_color，与 commit 后快照逐 VM 位级全等——覆写在半段内已恢复；
-//      并逐帧验证覆写本身非空转（commit 值 ≠ 覆写值，f1..f9 至少一 VM），
-//      使 save/restore 断言对「覆写被移除」与「恢复被移除」两类变异都敏感。
 #include "../../harness/test_framework.hpp"
 
 #include "game/GameInput.hpp"
@@ -54,7 +35,6 @@ bool read_repo_file(const std::string& relative, std::vector<u8>& out) {
     return got == out.size();
 }
 
-// 确定性回放 boot（m1.unit_frame_split_signature 同款拍：真实资产 + 回放种子恢复）。
 bool boot_replay_battle(App& app, const std::vector<u8>& rpy, const char* save_name) {
     ::setenv("TH13_SAVE_PATH", save_name, 1);
     const char* asset_root = std::getenv("TH13_NATIVE_ASSET_ROOT");
@@ -87,7 +67,6 @@ bool boot_replay_battle(App& app, const std::vector<u8>& rpy, const char* save_n
     return app.run != nullptr && app.failure.empty();
 }
 
-// ---- 双流抽取计数器：GameRandom::instance_draw_observer 公开面 ----
 struct StreamCounters {
     const th13::GameRandom* visual = nullptr;
     const th13::GameRandom* game = nullptr;
@@ -96,7 +75,7 @@ struct StreamCounters {
 };
 StreamCounters* g_counters = nullptr;
 
-void counting_observer(const th13::GameRandom* stream, u32 /*before*/, u32 /*after*/) {
+void counting_observer(const th13::GameRandom* stream, u32 , u32 ) {
     if (!g_counters || !stream) return;
     if (stream == g_counters->visual) ++g_counters->visual_draws;
     else if (stream == g_counters->game) ++g_counters->game_draws;
@@ -122,7 +101,6 @@ struct ObserverGuard {
     ~ObserverGuard() { uninstall(); }
 };
 
-// RNG 流身份（seed+index 位级；GameRandom 0x472c90 镜像的状态对）。
 struct StreamState {
     u32 visual_seed = 0, visual_index = 0;
     u32 game_seed = 0, game_index = 0;
@@ -142,14 +120,11 @@ bool operator==(const StreamState& a, const StreamState& b) {
            a.game_seed == b.game_seed && a.game_index == b.game_index;
 }
 
-// ---- Draw 段 caption 探针（priority 73：Draw72=loading_battle_draw 之后、
-// layer28@74 之前；与 m1.unit_frame_split_order_probes 的 Draw73 空位一致）。
 struct CaptionColorProbe {
     th13::FrameCallback callback{};
     App* app = nullptr;
-    th13::FrameScheduler* attached_scheduler = nullptr;  // 登记归属（FrameCallback::scheduler private）
+    th13::FrameScheduler* attached_scheduler = nullptr;
     int fires = 0;
-    // 最近一次 Draw73 拍的层31 前池 (source_script, color, secondary_color) 序列。
     std::vector<std::tuple<u32, u32, u32>> snapshot;
     static i32 run(void* p) {
         auto& probe = *static_cast<CaptionColorProbe*>(p);
@@ -173,7 +148,6 @@ struct CaptionColorProbe {
         return true;
     }
     void detach() {
-        // FrameScheduler::remove 对未注册回调幂等（c.scheduler!=this 跳过）。
         if (attached_scheduler) attached_scheduler->remove(callback);
         attached_scheduler = nullptr;
         app = nullptr;
@@ -181,7 +155,6 @@ struct CaptionColorProbe {
     ~CaptionColorProbe() { detach(); }
 };
 
-// commit 后的层31 前池 (script,color,secondary) 快照（与探针同式读法）。
 std::vector<std::tuple<u32, u32, u32>> commit_caption_colors(const App& app) {
     std::vector<std::tuple<u32, u32, u32>> out;
     const std::vector<th13::AnmVm*>& fore = app.loading_animations.registry.layer(31);
@@ -192,9 +165,8 @@ std::vector<std::tuple<u32, u32, u32>> commit_caption_colors(const App& app) {
     return out;
 }
 
-}  // namespace
+}
 
-// ---- 1) present×0/1/3：双流 observer 抽取计数恒 0、index 不变 ----
 TEST(draw_purity_present_x0_x1_x3_observer_zero) {
     std::vector<u8> rpy;
     CHECK(read_repo_file("games/replays/th13_01.rpy", rpy));
@@ -207,7 +179,6 @@ TEST(draw_purity_present_x0_x1_x3_observer_zero) {
     counters.visual = &app.visual;
     counters.game = &app.game_random;
 
-    // 预热回放对话窗（battle f0..f59）：零输入驱动，物理键不参与对局。
     for (int F = 0; F < 60; ++F) {
         input.update(0);
         CHECK(app.update(input, false));
@@ -219,9 +190,6 @@ TEST(draw_purity_present_x0_x1_x3_observer_zero) {
         }
     }
 
-    // (a) 观察器正控：update+commit 段双流都发生真实抽取（battle f60..f70 实测
-    // game 流 ECL/弹幕抽 + visual 流 sync 特效 VM 出生抽）。若观察器计数在此为 0，
-    // 后续「present 段为 0」即为计数面空转，断言无效。
     {
         ObserverGuard guard;
         guard.install(counters);
@@ -235,13 +203,11 @@ TEST(draw_purity_present_x0_x1_x3_observer_zero) {
                 return;
             }
         }
-        CHECK(counters.game_draws > 0);   // game 流被模拟段真实消费
-        CHECK(counters.visual_draws > 0); // visual 流被模拟段真实消费
+        CHECK(counters.game_draws > 0);
+        CHECK(counters.visual_draws > 0);
         guard.uninstall();
     }
 
-    // (b) 纯度窗口：destination-free 帧上 present×{0,1,3}，双流抽取计数恒 0、
-    // 种子与 index 不变。0/1/3 三臂各自从同一 commit 后状态出发。
     for (int F = 71; F <= 74; ++F) {
         input.update(0);
         CHECK(app.update(input, false));
@@ -250,7 +216,7 @@ TEST(draw_purity_present_x0_x1_x3_observer_zero) {
             std::printf("  失败 purity update f%d: %s\n", F, app.failure.c_str());
             return;
         }
-        CHECK_EQ(app.pending_destination, -1);  // 屏障帧不入纯度窗口
+        CHECK_EQ(app.pending_destination, -1);
         for (const int presents : {0, 1, 3}) {
             ObserverGuard guard;
             guard.install(counters);
@@ -282,20 +248,16 @@ TEST(draw_purity_present_x0_x1_x3_observer_zero) {
     }
 }
 
-// ---- 2) update+commit+present 与 update+commit：双流 RNG 逐帧全等 ----
 TEST(draw_purity_update_present_rng_streams_frame_equal) {
     std::vector<u8> rpy;
     CHECK(read_repo_file("games/replays/th13_01.rpy", rpy));
     if (rpy.empty()) return;
-    // 双实例同 boot（回放种子恢复同一状态）；A 臂全 step、B 臂止于 commit。
     App arm_full, arm_split;
     CHECK(boot_replay_battle(arm_full, rpy, "t5dp-armfull-save.bin"));
     CHECK(boot_replay_battle(arm_split, rpy, "t5dp-armsplit-save.bin"));
     if (!arm_full.failure.empty() || !arm_split.failure.empty() || !arm_full.run || !arm_split.run)
         return;
     th13::GameInput in_full, in_split;
-    // battle f0..f44：装载 caption 窗（f0..f9 retire 面）+ 对话开局——present 侧
-    // 绘制回调最多的窗；RNG 流必须与不 present 的臂逐帧一致。
     for (int F = 0; F <= 44; ++F) {
         in_full.update(0);
         CHECK(arm_full.update(in_full, false));
@@ -322,7 +284,6 @@ TEST(draw_purity_update_present_rng_streams_frame_equal) {
     }
 }
 
-// ---- 3) caption 绘制半段 alpha 覆写 save/restore：Draw73 探针 VM visual 位不变 ----
 TEST(draw_purity_caption_alpha_save_restore_visual_bits) {
     std::vector<u8> rpy;
     CHECK(read_repo_file("games/replays/th13_01.rpy", rpy));
@@ -330,11 +291,10 @@ TEST(draw_purity_caption_alpha_save_restore_visual_bits) {
     App app;
     CHECK(boot_replay_battle(app, rpy, "t5dp-caption-save.bin"));
     if (!app.failure.empty() || !app.run) return;
-    CHECK(app.loading_prayer != 0);  // 装载树随 draw_loading(false) 建立
-    CaptionColorProbe probe;         // 先于 app 声明序要求：probe 在 app 之后析构安全
+    CHECK(app.loading_prayer != 0);
+    CaptionColorProbe probe;
     CHECK(probe.attach(app));
     th13::GameInput input;
-    // battle f0..f10：Draw72 alpha 覆写窗（f10 retire 后树只标 0x20 不再覆写）。
     for (int F = 0; F <= 10; ++F) {
         input.update(0);
         CHECK(app.update(input, false));
@@ -351,7 +311,7 @@ TEST(draw_purity_caption_alpha_save_restore_visual_bits) {
             std::printf("  失败 caption present f%d: %s\n", F, app.failure.c_str());
             return;
         }
-        CHECK_EQ(probe.fires, F + 1);  // 探针在每次 present 的 Draw72 之后真实触发
+        CHECK_EQ(probe.fires, F + 1);
         if (probe.snapshot != commit_colors) {
             std::printf("  失败 caption f%d: Draw73 拍 VM visual 位与 commit 后不一致"
                         "（alpha 覆写 save/restore 泄漏）；commit=%zu 项\n", F,
@@ -365,8 +325,6 @@ TEST(draw_purity_caption_alpha_save_restore_visual_bits) {
             }
         }
         CHECK(probe.snapshot == commit_colors);
-        // 覆写非空转（f1..f9）：script14/16 的覆写值至少在一枚 VM 上与 commit 值
-        // 不同——否则 save/restore 断言对「覆写被移除」类变异不敏感。
         if (battle_frame >= 1 && battle_frame <= 9) {
             const u32 fade = u32(30 - battle_frame);
             bool overwrite_visible = false;

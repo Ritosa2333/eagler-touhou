@@ -29,7 +29,7 @@ TEST(infinite_laser_scales_motion_and_preserves_fractional_phase_time) {
     CHECK_EQ(sim.lasers[0].phase, 4);
     CHECK_EQ(sim.lasers[0].time, 0);
     CHECK_EQ(sim.lasers[0].time_fraction, .25f);
-    CHECK_EQ(sim.lasers[0].width, 37.f);  // transition does not fall through
+    CHECK_EQ(sim.lasers[0].width, 37.f);
     sim.advance_lasers();
     CHECK_EQ(sim.lasers[0].width, float(37. * .25 / 7.));
 }

@@ -15,4 +15,4 @@ struct AnmCamera {
 };
 Vec3 project_vertex(const Vec3&, const Matrix4& world, const AnmCamera&, const GraphicsViewport&) noexcept;
 int anm_projected_quad(AnmVm&, const AnmCamera&, const GraphicsViewport&, Vec3 (&out)[4]) noexcept;
-}  // namespace th13
+}
