@@ -62,5 +62,8 @@ public:
     void commit(HDC target){
         if(!memory_||!BitBlt(target,0,0,width_,height_,memory_,0,0,SRCCOPY))throw std::runtime_error("Frame presentation failed");
     }
+    void repaint(HDC target,int width,int height){
+        if(memory_&&width==width_&&height==height_)commit(target);
+    }
 };
 }

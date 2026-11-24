@@ -672,15 +672,38 @@ void measured_frame_rate(){
         check(cadence.consume(now));
         full.submitted(now);
         if(frame%2==0)half.submitted(now);
-        if(frame<60)check(!full.fps(now)&&!half.fps(now));
+        if(frame<60)check(!full.tenths(now)&&!half.tenths(now));
     }
-    check(full.fps(begin+1'000'000)==60&&half.fps(begin+1'000'000)==30);
+    check(full.tenths(begin+1'000'000)==600&&half.tenths(begin+1'000'000)==300);
     constexpr auto later=begin+2'000'001;
-    check(!full.fps(later)&&!half.fps(later));
+    check(!full.tenths(later)&&!half.tenths(later));
     full.submitted(later);
-    check(!full.fps(later));
+    check(!full.tenths(later));
     half.reset();
-    check(!half.fps(begin+1'000'000));
+    check(!half.tenths(begin+1'000'000));
+}
+
+void original_gameplay_lock(){
+    constexpr std::uint64_t start=1'000'000;
+    DisplayCadence cadence;cadence.reset(start);
+    FrameRateMeter meter;
+    LockedGameClock full,half,third;
+    unsigned full_ticks=0,half_ticks=0,third_ticks=0;
+    for(unsigned frame=0;frame<3400;++frame){
+        const auto due=cadence.deadline();
+        check(due==start+(frame*9'328'000'000ull+526314)/526315);
+        check(!cadence.consume(due-1)&&cadence.consume(due)&&!cadence.consume(due));
+        full_ticks+=full.advance(1);half_ticks+=half.advance(2);third_ticks+=third.advance(3);
+        check(full_ticks==frame+1&&half_ticks==(frame+1)/2&&third_ticks==(frame+1)/3);
+        check(full.subframe(1,256)==256&&half.subframe(2,256)==(frame%2?0:128));
+        meter.submitted(due);
+        if(frame>=57)check(meter.tenths(due)==564);
+    }
+    // A 100 ms overrun grants exactly one frame; no backlog or short follow-up.
+    const auto stall=cadence.deadline()+100'000;
+    check(cadence.consume(stall)&&cadence.late_us==100'000&&full.advance(1)==1);
+    check(!cadence.consume(stall)&&cadence.deadline()==stall+17'724);
+    check(cadence.consume(stall+17'724)&&full.advance(1)==1);
 }
 
 void interpolated_gameplay(const fs::path &root){
@@ -753,6 +776,7 @@ int main(int argc,char **argv){
             background_smoothing_is_read_only(root);
             paced_background_positions();
             measured_frame_rate();
+            original_gameplay_lock();
             interpolated_gameplay(root);
             std::cout<<"background_smoothing_checks="<<checks<<" failures=0\n";
             return 0;

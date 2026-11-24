@@ -941,6 +941,9 @@ struct App {
     soew::MotionFrame motion_before;
     unsigned motion_stride=1;
     bool display_frames_active=false;
+    bool paced_paint_due=false;
+    soew::LockedGameClock locked_clock;
+    HostTimingSample locked_timing{};
     soew::FrameRateMeter frame_rate;
     AudioPreview audio;
     std::array<std::vector<std::byte>,15> songs,midi_songs;
@@ -1190,7 +1193,7 @@ void begin_title_demo_pcm(App &app){
 }
 
 // No normal-game stage, input sampler, recorder or score-review state is used here.
-bool advance_title_demo(HWND hwnd,App &app,std::uint64_t now,unsigned fractional_us){
+bool advance_title_demo(HWND hwnd,App &app,std::uint64_t now){
     if(!app.title_demo)return false;
     auto &demo=*app.title_demo;
     const bool focused=title_demo_foreground(hwnd,app);
@@ -1264,11 +1267,11 @@ bool advance_title_demo(HWND hwnd,App &app,std::uint64_t now,unsigned fractional
     }else{
         const auto *scene=demo.controller.scene();
         const auto pace=scene?scene->presentation_slowdown():1;
-        const auto steps=demo.clock.advance(now,true,pace);
-        if(app.display_frames_active)demo.scroll_phase=soew::display_subframe(demo.scroll_phase,demo.clock.subframe(pace,soew::scroll_subpixels,fractional_us),steps);
+        const auto steps=app.display_frames_active?app.locked_clock.advance(pace):demo.clock.advance(now,true,pace);
+        if(app.display_frames_active)demo.scroll_phase=soew::display_subframe(demo.scroll_phase,app.locked_clock.subframe(pace,soew::scroll_subpixels),steps);
         const HostPerf::Span span(steps&&scene?app.host_perf.get():nullptr,HostPerf::Metric::Simulation);
         for(unsigned i=0;i<steps&&demo.controller.phase()==phase;++i){
-            if(scene&&app.display_frames_active)scene->capture_motion(demo.motion_before);
+            if(scene&&app.display_frames_active&&app.menu.smooth_background)scene->capture_motion(demo.motion_before);
             demo.controller.update(true,false,no_title_demo_scene);
             if(phase==DemoPhase::Score)++demo.score_frame;
         }
@@ -2219,6 +2222,13 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(!dc){app->failed=true;std::cerr<<"BeginPaint failed\n";PostMessageW(hwnd,WM_CLOSE,0,0);return 0;}
         try {
         RECT client{}; GetClientRect(hwnd, &client);
+        if(app->display_frames_active){
+            if(!app->paced_paint_due){
+                app->presenter.repaint(dc,client.right,client.bottom);
+                EndPaint(hwnd,&ps);return 0;
+            }
+            app->paced_paint_due=false;
+        }
         const auto lang=app->menu.language;
         const auto tr=[&](const wchar_t* ja,const wchar_t* en,const wchar_t* hans,const wchar_t* hant){return soew::localized(lang,ja,en,hans,hant);};
         const auto draw=[&](std::wstring_view text,int x,int y,std::uint32_t color,int max_width=640){display_text(app->composed,text,x,y,color,lang,max_width);};
@@ -2393,8 +2403,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             const bool show_fps=app->focused&&!app->minimized&&!app->resizing&&
                 (active_play||(demo&&!demo->paused))&&view.w>16&&view.h>16;
             if(show_fps){
-                const auto fps=app->frame_rate.fps(host_us());
-                app->presenter.corner_label(fps?L"FPS "+std::to_wstring(*fps):L"FPS --",
+                const auto fps=app->frame_rate.tenths(host_us());
+                app->presenter.corner_label(fps?L"FPS "+std::to_wstring(*fps/10)+L"."+std::to_wstring(*fps%10):L"FPS --",
                     {view.x,view.y,view.x+view.w-8,view.y+view.h-8});
             }else app->frame_rate.reset();
             {const HostPerf::Span span(app->host_perf.get(),HostPerf::Metric::PresentCommit);app->presenter.commit(dc);}
@@ -2490,8 +2500,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             return 0;
         }
         if(w==2){
-            const auto sample_us=host_us(),now=sample_us/1000;
-            const auto fractional_us=static_cast<unsigned>(sample_us%1000);
+            const auto now=host_ms();
             ++app->timer_callbacks;
             if(!app->stage_scene||!app->gameplay_audio_enabled||app->practice_builder||app->practice_load||app->practice_audio_load)drain_gameplay_audio(*app);
             if(app->focused&&GetForegroundWindow()==hwnd&&practice_keys_released())app->practice_menu.update(0);
@@ -2506,7 +2515,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if((!app->stage_scene&&!app->audio.pause(!enabled||app->practice_builder.has_value()||app->practice_load.has_value()||app->practice_audio_load.has_value()))||!app->audio.pump()){audio_error(*app);caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);}
             }
             app->retry_probe.audio_pumped(*app);
-            if(advance_title_demo(hwnd,*app,now,fractional_us))return 0;
+            if(advance_title_demo(hwnd,*app,now))return 0;
             if(replay_menu_active){
                 app->staff_music_poll=0;
                 app->stage_clock.advance(now,false);
@@ -2572,9 +2581,12 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     !app->stage_scene->continue_prompt()&&soew::replay_tick_context(*app->stage_scene)==soew::NativeReplayContext::Gameplay;
                 HostTimingSample timing;
                 const bool stage_active=enabled&&!app->stage_scene->paused;
-                const auto base_steps=app->stage_clock.advance(now,stage_active,pace,(timing_active||app->host_perf)?&timing:nullptr);
+                unsigned base_steps=0;
+                if(app->display_frames_active&&stage_active){
+                    base_steps=app->locked_clock.advance(pace);timing=app->locked_timing;
+                }else base_steps=app->stage_clock.advance(now,stage_active,pace,(timing_active||app->host_perf)?&timing:nullptr);
                 if(app->display_frames_active&&stage_active)
-                    app->scroll_phase=soew::display_subframe(app->scroll_phase,app->stage_clock.subframe(pace,soew::scroll_subpixels,fractional_us),base_steps);
+                    app->scroll_phase=soew::display_subframe(app->scroll_phase,app->locked_clock.subframe(pace,soew::scroll_subpixels),base_steps);
                 app->recording_timing.observe(timing_active,timing);
                 if(app->host_perf)app->host_perf->schedule(pace,stage_active,base_steps,timing.lost_ms,timing.active_ms);
                 // Replay never reads from the live stage-entry release gate.
@@ -2597,7 +2609,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 const HostPerf::Span span(steps?app->host_perf.get():nullptr,HostPerf::Metric::Simulation);
                 for(unsigned i=0;i<steps&&app->stage_scene;++i){
                     ++iterations;
-                    if(app->display_frames_active&&i%stride==0){
+                    if(app->display_frames_active&&app->menu.smooth_background&&i%stride==0){
                         app->stage_scene->capture_motion(app->motion_before);
                         app->motion_stride=stride;
                     }
@@ -3296,8 +3308,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     }
     return DefWindowProcW(hwnd, message, w, l);
 }
-bool smooth_display_active(HWND hwnd,const App &app){
-    if(!app.menu.smooth_background||app.smoke||app.timed_test||app.score_timed_test||app.async_practice_test||
+bool locked_display_active(HWND hwnd,const App &app){
+    if(app.smoke||app.timed_test||app.score_timed_test||app.async_practice_test||app.retry_probe.mode>=0||
        !app.focused||app.minimized||app.resizing||GetForegroundWindow()!=hwnd)return false;
     if(app.stage_scene)return !app.stage_intro.active()&&!app.ending_player&&!app.replay_menu.active()&&
         !app.practice_retry&&!app.score_release&&app.score_review==App::ScoreReview::None&&app.stage_scene->motion_active();
@@ -3305,13 +3317,6 @@ bool smooth_display_active(HWND hwnd,const App &app){
         if(const auto *scene=app.title_demo->controller.scene())return scene->motion_active();
     }
     return false;
-}
-unsigned monitor_refresh_hz(HMONITOR monitor){
-    MONITORINFOEXW info{};info.cbSize=sizeof(info);
-    DEVMODEW mode{};mode.dmSize=sizeof(mode);
-    if(GetMonitorInfoW(monitor,&info)&&EnumDisplaySettingsW(info.szDevice,ENUM_CURRENT_SETTINGS,&mode)&&mode.dmDisplayFrequency>1)
-        return mode.dmDisplayFrequency;
-    return 60;
 }
 void run_window_loop(HWND hwnd,App &app){
     struct DisplayTimer {
@@ -3329,27 +3334,44 @@ void run_window_loop(HWND hwnd,App &app){
         }
     } timer;
     soew::DisplayCadence cadence;
-    HMONITOR monitor=nullptr;
+    std::uint64_t last_frame_us=0;
     MSG msg{};
     for(;;){
-        const bool precise=smooth_display_active(hwnd,app);
+        const bool precise=locked_display_active(hwnd,app);
         if(precise!=app.display_frames_active){
             app.display_frames_active=precise;
-            if(precise){KillTimer(hwnd,2);monitor=nullptr;}
+            app.frame_rate.reset();
+            if(precise){
+                KillTimer(hwnd,2);
+                cadence.reset(host_us());last_frame_us=0;app.locked_clock={};
+            }
             else{
                 if(PeekMessageW(&msg,nullptr,WM_QUIT,WM_QUIT,PM_REMOVE))break;
+                const auto now=host_ms();
+                app.stage_clock.reset(now);
+                if(app.title_demo)app.title_demo->clock.reset(now);
                 if(!SetTimer(hwnd,2,10,nullptr))throw std::runtime_error("Opening timer failed");
             }
         }
         if(precise){
-            const auto current=MonitorFromWindow(hwnd,MONITOR_DEFAULTTONEAREST);
             const auto now=host_us();
-            if(current!=monitor){monitor=current;cadence.reset(now,monitor_refresh_hz(monitor));}
-            if(!PeekMessageW(&msg,nullptr,0,0,PM_REMOVE)){
-                if(cadence.consume(now)){
-                    SendMessageW(hwnd,WM_TIMER,2,0);
-                    UpdateWindow(hwnd);
-                }else timer.wait(cadence.deadline()-now);
+            // Service a due frame before ordinary messages so a busy queue
+            // cannot hold up simulation/presentation until it becomes empty.
+            if(cadence.consume(now)){
+                const auto elapsed_ms=last_frame_us?now/1000-last_frame_us/1000:0;
+                const auto lost_ms=cadence.late_us>=cadence.period_numerator()/cadence.rate/2?cadence.late_us/1000:0;
+                app.locked_timing={elapsed_ms,std::min(elapsed_ms,lost_ms)};
+                last_frame_us=now;
+                app.paced_paint_due=true;
+                InvalidateRect(hwnd,nullptr,FALSE);
+                SendMessageW(hwnd,WM_TIMER,2,0);
+                if(app.paced_paint_due)UpdateWindow(hwnd);
+                app.paced_paint_due=false;
+                // Even when rendering runs over budget, let input/close through.
+                if(!PeekMessageW(&msg,nullptr,0,0,PM_REMOVE))continue;
+            }else if(!PeekMessageW(&msg,nullptr,0,0,PM_REMOVE)){
+                const auto before_wait=host_us();
+                if(before_wait<cadence.deadline())timer.wait(cadence.deadline()-before_wait);
                 continue;
             }
             if(msg.hwnd==hwnd&&msg.message==WM_TIMER&&msg.wParam==2)continue;
