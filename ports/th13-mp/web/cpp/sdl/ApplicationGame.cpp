@@ -14,6 +14,7 @@
 #include <ctime>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+// clang-format off
 EM_JS(bool, th13_download_recorded_replay, (const unsigned char* bytes, int size, int slot), {
     try {
         const name = 'th13_' + String(slot).padStart(2, '0') + '.rpy';
@@ -32,6 +33,7 @@ EM_JS(bool, th13_download_recorded_replay, (const unsigned char* bytes, int size
         link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); return true;
     } catch (_) { return false; }
 });
+// clang-format on
 #endif
 
 namespace th13::sdl {
