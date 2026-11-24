@@ -311,7 +311,7 @@ struct ReplayRunSession {
     th13::FrameScheduler scheduler;
 #ifndef TH13_WASI_HARNESS
     th13::sdl::GraphicsDevice text_device;
-    th13::sdl::FontDevice fonts{text_device};
+    th13::sdl::FontDevice fonts;
 #endif
     th13::SessionState progress;
     th13::HudPlayerState player;
@@ -656,7 +656,7 @@ int replay_runscene(const char* replay_path, const char* resource_dir,
         input.update(frame.state);
         session->run->controls(input);
         if (freeze_at && consumed + 1 >= freeze_at) session->progress.scene_flags |= 0x10u;
-        const u32 frame_before = session->progress.stage_frame;
+        const i32 frame_before = session->progress.stage_frame;
         if (session->scheduler.update() < 0) {
             std::printf("replay-runscene error at frame %u: %s\n", consumed,
                         session->run->error.empty() ? session->animations.error.c_str()

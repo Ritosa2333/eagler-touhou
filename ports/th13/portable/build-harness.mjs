@@ -47,7 +47,7 @@ const main = resolve(workspace, 'tests/harness/harness.cpp');
 const sources = [...gameSources, main];
 
 const compileFlags = [
-  '--target=wasm32-wasip1', '-O2', '-std=c++17',
+  '--target=wasm32-wasip1', '-O2', '-std=c++17', '-Wall', '-Wextra', '-Wall', '-Wextra',
   '-fno-exceptions', '-fno-rtti',
   '-ffp-contract=off', '-DTH13_WASI_HARNESS=1', '-DTH13_DRAW_CAPTURE=1',
   '-I' + resolve(root, 'cpp'),

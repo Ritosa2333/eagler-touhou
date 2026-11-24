@@ -1,6 +1,22 @@
 // The existing repository's stb_vorbis decoder is used only for the installed
 // OGG soundtrack. All voice IDs/gains and loop boundaries are TH13's own data.
+// 第三方单头库的告警不属于本移植的代码质量口径。
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtautological-compare"
+#endif
+// 第三方单头库的告警不属于本移植的代码质量口径。
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtautological-compare"
+#endif
 #include "../../../portable/sdl/third_party/stb_vorbis.h"
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 #include "AudioDevice.hpp"
 #include "../game/SoundEffects.hpp"
 #include "../game/MusicLayout.hpp"

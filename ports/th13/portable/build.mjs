@@ -43,7 +43,7 @@ const run = (args) => new Promise((done, reject) => {
   p.on('close', (code, signal) => code !== 0 || signal ? reject(Error('emcc failed ' + (signal || code) + '\n' + log)) : done());
 });
 
-const common = ['-O2', '-g0', '-fno-strict-aliasing', '-ffp-contract=off',
+const common = ['-O2', '-g0', '-Wall', '-Wextra', '-fno-strict-aliasing', '-ffp-contract=off',
   '-DTH_SDL3=1', '-DTH_NATIVE_PLATFORM=1', '--use-port=sdl3', '--use-port=sdl3_ttf',
   '-I' + resolve(root, 'cpp'),
   // 公共字体栅格头（eagler/text/RuntimeFontRaster.hpp；th15 同源约定）。

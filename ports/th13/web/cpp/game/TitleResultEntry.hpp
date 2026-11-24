@@ -44,8 +44,7 @@ class TitleResultEntry {
     bool slot_selector(u32 pressed, u32 repeated); // 0x4549d0 case2
     bool slot_name_editor(u32 pressed, u32 repeated);  // 0x4549d0 case3
     bool edit_name(u32 pressed, u32 repeated, bool save_to_replay);
-    bool draw_score_rows(HudDrawServices&, const TitleResultScreenData&,
-                         const std::string& current_name);
+    bool draw_score_rows(HudDrawServices&, const TitleResultScreenData&);
     bool draw_name_editor(HudDrawServices&, float name_x, float name_y);
     bool draw_slot_list(HudDrawServices&);
     bool draw_slot_selected(HudDrawServices&);

@@ -18,7 +18,7 @@ namespace th13::sdl {
 class FontDevice {
 public:
     std::string error;
-    explicit FontDevice(GraphicsDevice& g) : graphics_(g) {}
+    FontDevice() = default;
     bool initialize();  // 字体文件缺席 = false + error（显式 BLOCKED 面）
     bool ready() const noexcept { return ready_; }
     // 真实字体度量（接入 RuntimeFontRaster 实际字形 metric）
@@ -37,7 +37,6 @@ public:
                               u32 color = 0xffffffff);
 
 private:
-    GraphicsDevice& graphics_;
     // 字号/字重槽集按原版 0x45ac90 CreateFontA 参数族对齐（0x45aef0 样式→槽）：
     // 样式0→槽0 (0x20,400)；样式1→槽2 (0x20,600)；样式2/3→槽4 (0xf,700)；
     // 样式4/5→槽1/3 (0x28,400/600)——0x428ae0 case 0xf/0x10 宣言大字专用，

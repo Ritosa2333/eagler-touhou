@@ -208,11 +208,11 @@ void ApplicationState::dialogue_clear() {
 void ApplicationState::dialogue_end() { dialogue_text.release(animations); }
 
 bool ApplicationState::life_hud(i32 stock, i32 pieces) {
-    return run && run->hud.life(stock, pieces) || fail(run ? run->hud.error : "Life HUD has no scene");
+    return (run && run->hud.life(stock, pieces)) || fail(run ? run->hud.error : "Life HUD has no scene");
 }
 
 bool ApplicationState::bomb_hud(i32 stock, i32 pieces) {
-    return run && run->hud.bombs(stock, pieces) ||
+    return (run && run->hud.bombs(stock, pieces)) ||
            fail(run ? run->hud.error : "Bomb HUD has no scene");
 }
 
@@ -233,7 +233,7 @@ bool ApplicationState::game_over() {
 }
 
 bool ApplicationState::request_pause() {
-    return pause && pause->open(PauseEntrance::Pause) || fail(pause ? pause->error : "Pause has no owner");
+    return (pause && pause->open(PauseEntrance::Pause)) || fail(pause ? pause->error : "Pause has no owner");
 }
 
 bool ApplicationState::request_game_over() {
@@ -277,12 +277,12 @@ bool ApplicationState::resume_music() {
 }
 
 bool ApplicationState::request_practice_end() {
-    return pause && pause->open(PauseEntrance::PracticeEnd) ||
+    return (pause && pause->open(PauseEntrance::PracticeEnd)) ||
            fail(pause ? pause->error : "Practice end has no overlay");
 }
 
 bool ApplicationState::request_extra_results() {
-    return pause && pause->open(PauseEntrance::ExtraEnd) ||
+    return (pause && pause->open(PauseEntrance::ExtraEnd)) ||
            fail(pause ? pause->error : "Extra results have no overlay");
 }
 

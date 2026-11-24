@@ -6,8 +6,6 @@ namespace th13 {
 
 namespace {
 constexpr i32 kKeyConfigRoot = 2;       // title.anm script2：spawn 49-82
-constexpr i32 kGreyRowFirst = 49;       // 7 行灰字条（层26）
-constexpr i32 kWhiteRowFirst = 56;      // 7 行白字条（层25）
 constexpr i32 kGreyDigitFirst = 63;     // 5 行×2 位灰数字
 constexpr i32 kWhiteDigitFirst = 73;    // 同位白数字（00450020 同写灰 sprite）
 constexpr i32 kDigitSpriteBase = 50;    // 00461a60(+0x32)：0..9

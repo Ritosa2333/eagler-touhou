@@ -385,8 +385,7 @@ std::string TitleResultEntry::score_row_text(const TitlePlayerDataScore& record,
 }
 
 bool TitleResultEntry::draw_score_rows(HudDrawServices& draw,
-                                       const TitleResultScreenData& data,
-                                       const std::string& current_name) {
+                                       const TitleResultScreenData& data) {
     HudTextStyle style;
     style.font = 0;
     style.shadow = true;
@@ -544,7 +543,7 @@ bool TitleResultEntry::draw_texts(HudDrawServices& draw) {
             data = {};
             data.rank = state.result_rank;
         }
-        if (!draw_score_rows(draw, data, state.result_name)) return false;
+        if (!draw_score_rows(draw, data)) return false;
         if (!data_loaded_ || state.result_rank >= 0) {
             const float name_y = 160 + float(std::max(state.result_rank, 0)) * 18;
             if (!draw_name_editor(draw, 84, name_y)) return false;

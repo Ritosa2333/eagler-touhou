@@ -1037,8 +1037,8 @@ void StageBattle::consume_player_shot_geometry() {
 }
 
 bool damage_probe_enabled = false;
-int damage_probe_first_frame = 7970;
-int damage_probe_last_frame = 7985;
+u32 damage_probe_first_frame = 7970;
+u32 damage_probe_last_frame = 7985;
 bool rng_probe_on = false;
 
 float StageBattle::query_enemy_damage(StageEnemy& state, float width, float height) {

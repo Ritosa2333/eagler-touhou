@@ -167,7 +167,7 @@ enum class Destination : i32 {
 struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePlatform,
                                 EndingPlatform {
     GraphicsDevice graphics;
-    FontDevice fonts{graphics};
+    FontDevice fonts;
     // 字体设备初始化失败的显式记录（原版 MS Gothic 启动资产缺席 → 对话日文
     // 渲染 BLOCKED；空 = 字体可用）。标题/HUD ASCII 文本不依赖字体设备。
     std::string fonts_failure;

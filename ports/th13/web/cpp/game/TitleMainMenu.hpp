@@ -97,9 +97,6 @@ class TitleMainMenu {
     bool interrupt(i32, i32, bool);
     bool child_interrupt(i32, i32, bool);
     bool sound(i32);
-    // [蓝图 §8.3/§8.9] 绘制侧层偏移由 apply_draw_layers 统一落码（VM 层保持
-    // 脚本 ins_304 真值；op 层 +1/+2 只在捕获钩子覆盖）。
-    i32 pending_frame_gap = 0;
     i32 menu_age = -1;
     bool open_menu();     // g361 菜单展开（root0+版本条+全项入场+禁用黑化）
     bool select_entry();  // interrupt(0,7+cursor) 选中入场
