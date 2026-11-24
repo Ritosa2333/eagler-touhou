@@ -1,0 +1,104 @@
+{
+  "demo1": {
+    "digests": {
+      "digest": "4e697d1017b47f86",
+      "enemies": "3fc83d0cd4f0eab7",
+      "enemy_vms": "168a167d9f08f389",
+      "bullets": "a98b5b64fe9dd314",
+      "items": "fbba3f77b9e37418",
+      "spell": "2ce3ebfda20ba10d",
+      "lasers": "6bea4a14897a71a8",
+      "bombs": "195519e2f42e3a3c",
+      "menu": "5667b62a7ec4a28a",
+      "sound": "d0646aa24812acca"
+    },
+    "scene_exit": 4,
+    "exit_frame": 3902,
+    "errors": []
+  },
+  "demo2": {
+    "digests": {
+      "digest": "2b53d1056183552a",
+      "enemies": "615ad5a332ae8abd",
+      "enemy_vms": "7d04794bbe44a6cb",
+      "bullets": "9ac950814d26d219",
+      "items": "279c0c658a370c6b",
+      "spell": "9e635035d749c3df",
+      "lasers": "6bea4a14897a71a8",
+      "bombs": "a133c0885bee42bc",
+      "menu": "6097faaff6c7feac",
+      "sound": "f9baf7fa363d4d2d"
+    },
+    "scene_exit": 4,
+    "exit_frame": 3902,
+    "errors": []
+  },
+  "demo3": {
+    "digests": {
+      "digest": "96a5103a5507ccb4",
+      "enemies": "b5fde81d58728f32",
+      "enemy_vms": "b943f18105accf4f",
+      "bullets": "63b8fbe028062012",
+      "items": "f3c565f9f176a601",
+      "spell": "6b7671d5ae336f5f",
+      "lasers": "6bea4a14897a71a8",
+      "bombs": "33d7c894e5c71383",
+      "menu": "3ddb9b3f69277342",
+      "sound": "2c73610393292b55"
+    },
+    "scene_exit": 4,
+    "exit_frame": 3902,
+    "errors": []
+  },
+  "demo4": {
+    "digests": {
+      "digest": "acced1e5f0f77a2a",
+      "enemies": "cde608251f474fea",
+      "enemy_vms": "b2b93d0193c0044a",
+      "bullets": "f31e9c18aaae8a34",
+      "items": "a641dc0b23107d15",
+      "spell": "5f383499f071f067",
+      "lasers": "6bea4a14897a71a8",
+      "bombs": "f02a1165bbddb614",
+      "menu": "6c7b16bbc2f63998",
+      "sound": "dd9438999f0fb6b4"
+    },
+    "scene_exit": 4,
+    "exit_frame": 3902,
+    "errors": []
+  },
+  "recorded": {
+    "digests": {
+      "digest": "869b80c6bae25b8e",
+      "enemies": "a662be029d0e72bb",
+      "enemy_vms": "1fb661699d7bc81e",
+      "bullets": "113998b2ad9a54f2",
+      "items": "f747c726430889fc",
+      "spell": "79676bb18f73b28d",
+      "lasers": "46916e5313814d06",
+      "bombs": "42cc17fdd0ef4112",
+      "menu": "96defc7aae480dbd",
+      "sound": "d2524771ff66cd5e"
+    },
+    "scene_exit": -1,
+    "exit_frame": 0,
+    "errors": []
+  },
+  "recorded_multi": {
+    "digests": {
+      "digest": "8c6a0810c5aa62c8",
+      "enemies": "17bba7368b24a21a",
+      "enemy_vms": "61d87841a0c229fc",
+      "bullets": "1d03a057c1178133",
+      "items": "b974cbb547ea2353",
+      "spell": "7d6b5eabbfe79618",
+      "lasers": "c5bcb01ee7d85c0f",
+      "bombs": "18f4b4e6392b283b",
+      "menu": "9a5cd351b2fe45e0",
+      "sound": "7873301b02c416b8"
+    },
+    "scene_exit": -1,
+    "exit_frame": 0,
+    "errors": []
+  }
+}

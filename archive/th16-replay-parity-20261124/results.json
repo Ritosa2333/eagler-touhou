@@ -1085,14 +1085,18 @@
     }
   ],
   "tests": {
-    "related_passed": 48,
+    "related_passed": 83,
     "related_failed": 0,
     "full_suite_run": false,
     "additional_item_tests": {
-      "passed": 30,
-      "failed": 5,
-      "baseline_failed": 5
-    }
+      "passed": 9,
+      "failed": 0,
+      "original_digest_fields_matched": 20,
+      "reference": "item-assertions.json"
+    },
+    "expanded_suite_notes": "Broader diagnostic run stopped after missing ANM reference dumps and outdated demo replay golden mismatches. Demo replay expectations subsequently verified against original and updated. Full suite remains unverified.",
+    "demo_replay_original_digest_fields_matched": 60,
+    "demo_reference": "demo-assertions.json"
   },
   "coverage": {
     "lunatic": [
