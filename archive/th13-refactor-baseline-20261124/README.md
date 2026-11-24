@@ -45,6 +45,8 @@ TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --mp bash -lc \
   'node ../th13/tools/gate.mjs --group all --compare ../../archive/th13-refactor-baseline-20261124/baseline_th13_mp.json'
 ```
 
+一键复跑：`ports/th13/tools/gate.sh` 与 `ports/th13/tools/gate.sh --mp`，在容器里依次执行排版检查、WASI harness 构建、三项回归摘要（普通版）、网页运行时构建、上述套件与基线比对。
+
 `baseline_th13.json` 与 `baseline_th13_mp.json` 是供 `--compare` 读取的逐套件失败清单。带 `--compare` 时，退出码只反映基线之外的新失败；基线中的失败被修好时列为“修复”。
 
 基线记录之后，表中测试侧的成因已消除：事件出口改写到 `artifacts/verification/th13-ecl/`，anm 套件的两个用例改用内嵌 PNG 夹具，`submission.test.mjs` 补齐编译单元，两个 ui 测试补上与其余测试相同的资源路径。复跑时普通版 9 项、多人版 10 项列为“修复”。
@@ -57,7 +59,7 @@ TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --mp bash -lc \
 
 ```sh
 TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --shot bash -lc \
-  'cd /work/eagler-touhou/ports/th13 && node --test web/tests/sdl/*.test.mjs'
+  'cd /work/eagler-touhou/ports/th13 && node --test --test-concurrency=4 web/tests/sdl/*.test.mjs'
 ```
 
 | 端口 | 用例 | 通过 | 失败 |
@@ -72,3 +74,40 @@ TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --shot bash -lc \
 | 缺原版字体 `assets/msgothic.ttc`：对话与 ANM 文本栅格化、调试页启动报“资源缺失”，两个触屏用例因该 404 触发控制台错误断言（其行为证据均符合预期） | 7 |
 | 缺外层 `oracle.replayfmt` 模块（独立 Python 录像读取器） | 1 |
 | 缺 launcher 的 `node_modules`（`shell-replay-channel.test.mjs` 需要 acorn） | 1 |
+
+### 替代字体下的复跑
+
+本机没有原版字体 `msgothic.ttc`。验证时把系统字体 `NotoSansCJK-Regular.ttc` 复制为 `ports/th13/web/sdl-runtime/assets/msgothic.ttc`（该目录被 Git 忽略，旁边放 `msgothic.ttc.SUBSTITUTE.txt` 标记），两侧共用。替代字体只让套件跑起来，不进产物；文字外观类断言不在覆盖范围内。两侧各约 6.5 分钟。
+
+| 端口 | 用例 | 通过 | 失败 | 跳过 |
+| --- | ---: | ---: | ---: | ---: |
+| 普通版 | 22 | 13 | 1 | 8 |
+| 多人版 | 22 | 13 | 1 | 8 |
+
+| 去向 | 用例数 | 说明 |
+| --- | ---: | --- |
+| 失败 | 1 | `browser EOF fixture…` 依赖外层 `oracle.replayfmt` 模块，本机没有 |
+| 跳过 | 8 | `shell-replay-channel.test.mjs` 需要 acorn，`th13-shot` 镜像里没有；该文件由 `th13-dev` 镜像的 js 套件运行 |
+
+并发固定为 4：按 `node --test` 的默认并发（本机约 22）时，无头 Chromium 的音频线程被饿死，报 `The AudioContext encountered an error from the audio device or the WebAudio renderer.`，两个断言“零控制台错误”的用例因此失败。`tools/gate.sh --browser` 已固定 4 并发，两侧按此复跑结果一致。
+
+## 一键门槛与回归摘要
+
+| 端口 | 耗时 | 套件 | 排版 |
+| --- | ---: | --- | --- |
+| 普通版 | 383 秒 | 980 项通过；e2e 1 项基线内失败 | 484 个文件通过 |
+| 多人版 | 255 秒 | 1017 项通过（含 M1–M9 累计原生工作流 56 项、78,781 条断言）；combat、e2e、js 各 1 项基线内失败 | 479 个文件通过 |
+
+两侧均为“相对基线无新增失败”。三项基线内失败都来自环境输入：e2e 需要原版字体，combat 需要镜像外的 libdatachannel。多人版的 js 失败（`managed-shell.test.mjs` 缺 acorn）在这次运行之后改用镜像内 emsdk 自带的 acorn，复跑 30 项全过。
+
+普通版三项回归摘要全部 digest-ok（10 份录像、35 关、580,001 帧），harness 哈希 `6bf3bdd4…`；多人版网页运行时 wasm 哈希 `2de61752…`，与本轮保真地图和注释修正之前相同。
+
+## 多人版浏览器验收
+
+`tests/multiplayer/acceptance.mjs`（th13-shot 镜像，逐例打开生产调试页）：
+
+| 里程碑 | 用例 | 结果 |
+| --- | ---: | --- |
+| M1–M6 | 12 | 全部通过，共 11,283 条断言 |
+| M9 | 10 | 9 项通过，共 515 条断言，含观战者加入与观看（`spectator_confirmed_latejoin`、`slow_spectator_isolation`） |
+| M7、M8、M9 `runtime_page_soak` | 13 | 未运行：本机 relay 服务缺 `ws` 依赖，启动即退出 |
