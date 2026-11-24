@@ -72,7 +72,7 @@ bool TitleMusicRoomMenu::update(u32 pressed, u32 repeated) {
             row_ = (row_ + 1) % count;  // ↓
         if (row_ != previous) {
             if (!sound(10)) return false;
-            // 0x455d76-0x455d86：仅当注释已满 8 行时清 +0x754（导航分支）。
+            // 0x455d76-0x455d7f：仅当注释已满 8 行时清 +0x754（导航分支）。
             if (reveal_lines_ >= kCommentLines) locked_armed_ = false;
         }
         if (pressed & 0x80001) {  // Z：0x4554f0:344 播放路径（仅 pressed）

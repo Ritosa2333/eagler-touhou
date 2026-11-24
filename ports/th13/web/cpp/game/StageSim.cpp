@@ -821,7 +821,7 @@ bool StageSim::step_frame() {
 // 未实现的 op 显式报错，不静默跳过。
 void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
     (void)spawn_time;  // 0x40f030 的两种调用点共用同一消费语义
-    // LAB_0040f1b5-0x40f1dd（op 4/8/0x200000 的共同汇点）：非定位（0x460bc0）
+    // LAB_0040f1b5-0x40f1dc（op 4/8/0x200000 的共同汇点）：非定位（0x460bc0）
     // 播弹体 +0xbcc = slot+0x374（etNew 默认 38、etSound 第二参覆写，
     // 0x40e840 0x40ee8c 拷入弹体）。门与原序一致：当前指令索引≠0 且
     // id≠-1（0x40f1b5 test+jne / cmp+jle）。原生调用无失败返回；回调为空
@@ -947,7 +947,7 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
                 bullet.ex10_angle = wrap_angle(value);
                 break;
             }
-            case 6:  // 原始 signed_unit×f0，不 wrap（0x40f3f6）
+            case 6:  // 原始 signed_unit×f0，不 wrap（0x40f3f4）
                 GameRandom::tag(11);
                 bullet.ex10_angle = random.signed_unit() * f0;
                 break;
@@ -955,7 +955,7 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
                 error_ = "etEx op 0x10 unknown angle mode " + std::to_string(i32(entry.args[6]));
                 return;
             }
-            // f1 <= -999 → 保持当前速度（0x40f40b 的 fcomi 链）。
+            // f1 <= -999 → 保持当前速度（0x40f3b8 的 fcomp -999.0）。
             bullet.ex10_speed = args[1] <= -999.0f ? bullet.speed : args[1];
             bullet.ex10_duration = i4;
             bullet.ex10_repeats = i5;
@@ -1265,7 +1265,7 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
                 target = bullet.ex10_angle;
                 break;
             default:
-                break;  // 0x410616 default：跳过转向，仅恢复速度
+                break;  // 模式 >6 直落 0x410681：跳过转向，仅恢复速度
             }
             bullet.angle = wrap_angle(target);
             // 0x4106xx：转向帧把速度域直接写为恢复速度并复位计时；未达重复

@@ -464,7 +464,7 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
             if (!visual(visuals.interrupt(menu_root, 3, true))) return false;
             if (!enter_portrait(title_character_at(state.menu.cursor), 7)) return false;
         }
-        // [r4-M] clear-tag 可见门（0x45145f-0x451734 四路展开判定：score_data
+        // [r4-M] clear-tag 可见门（0x45145d-0x451731 四路展开判定：score_data
         // +0x56dc*c+0x7e4+DAT_004be7c4(当前难度)*4 == 0 → 00470030 递归清
         // script 0x83+c 子树可见位）。缺关（子不存在）原版为空指针 no-op。
         // 00470030 clears bit1 while retaining script execution and bit0.

@@ -1663,8 +1663,8 @@ void StageBattle::collide_player_bullet(StageBullet& bullet) {
     // 标准弹走 0x444140 圆形分支；bit4=0 走 0x443fd0 矩形分支；bit6 时
     // 尺寸先乘 +0x1324。两分支回 2 才由 0x40db10:228-231/286-288 调
     // 0x445900（且 +0x20 bit2 防重复）；回 1 消弹；已擦弹弹仍可命中。
-    // 0x444140:13 另有 be830 bit0x100（灵界）整段绕过门；本作未实现灵界，
-    // 正常 Stage1 该位为 0（设置点 0x405a20 需 be808>=200）。
+    // 0x444140:13 另有 be830 bit0x100（灵界）整段绕过门，对应下方的灵界提前返回
+    // （置位点 0x405a20 需 be808>=200）。
     // 玩家门 = 0x2190 dialog/state 2/3/4/14698 bit1；本作无真实状态机：
     // player_dead 近似 state4、invulnerable>0 近似 state2/0x14688。此映射
     // 未闭合（0x444a10 置 state2+0x14688=180，0x444ca0 置 state4+6），
@@ -1771,7 +1771,7 @@ i32 StageBattle::collide_laser(const StageLaser& laser) {
             error_ = sim.error();
             return contact;
         }
-        // 0x431957 → 0x445900：激光擦弹声与特效同点定位播（声像随位置）。
+        // 0x431942-0x431a1a → 0x445900：激光擦弹声与特效同点定位播（声像随位置）。
         if (!host_->hud_sound(42, player_x)) error_ = "Laser graze sound failed";
     }
     return contact;

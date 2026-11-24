@@ -1082,7 +1082,7 @@ bool ApplicationState::prepare_next_stage() {
     // 坐标核对（th13.exe 原始字节）：00417370(0x417376/0x41738a) 以
     // {480.0, 392.0, 0.0} 组 vec3；0xc 调用点 0x42bffd 与 0xa/0xb
     // 分支 0x42c09b 都从 0x4aef14(=392.0f) 取 Y。400.0f(0x4af084)
-    // 全 exe 仅 0x441e94 一处引用（boss 世界位 +0x5bc），与字幕无关，
+    // 全 exe 仅 0x441e92 一处引用（boss 世界位 +0x5bc），与字幕无关，
     // 故 0xc 路径保持 392，不改 400（改则造成 8px 视觉回归）。
     if (!transition_prayer) {
         transition_prayer = animations.create(2, 17, -1, 0, {480, 392, 0});

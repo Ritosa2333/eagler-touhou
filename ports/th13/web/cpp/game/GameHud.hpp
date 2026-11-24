@@ -1,5 +1,5 @@
-// 游戏 HUD（th15 GameHud 裁剪：残机/灵击/分数/灵力保留；boss 血环、符卡计时、
-// pointdevice、chapter 通知延后；trance 槽仅留成员占位，docs/plans/ui-base.md §五）。
+// 游戏 HUD：残机/灵击图标、分数、灵界计（agauge）、boss 血环与符卡面
+// （BossPresentation/SpellPresentation）。
 // HUD 只持动画句柄；文本/数字绘制是独立表现 pass，不持设备对象。
 #pragma once
 

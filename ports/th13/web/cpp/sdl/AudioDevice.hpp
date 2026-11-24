@@ -59,7 +59,7 @@ public:
     // 0x460d40: id >= 0 queues a stop for that voice ID (negative count in the
     // 12-slot frame channel table); id < 0 stops every original voice object.
     bool stop(i32 id);
-    // 0x446174/0x4461aa directly update the existing buffer pan without
+    // 0x446174/0x44619a directly update the existing buffer pan without
     // restarting the voice or changing the queued start-time pan.
     bool set_voice_pan(i32 id, float pan);
 #ifdef TH13_AUDIO_MIXER_ONLY

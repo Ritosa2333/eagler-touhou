@@ -2,7 +2,7 @@
 // 字节级直抄，锚点 0x42abf0 / 0x42cd40 / 0x42ce96-0x42ced0 / 0x42cfb3）。
 //
 // 点值制：内部分 DAT_004be7c0 = 显示分/10（尾位显示另补），所有 bonus 以
-// bonus/10 记入，封顶 999,999,999（0x3b9ac9ff，比较 0x3b9aca00 @0x42cef3/
+// bonus/10 记入，封顶 999,999,999（0x3b9ac9ff，比较 0x3b9aca00 @0x42cefe/
 // 0x42cfe7）。移植侧 HudScoreState.score 即该点值（StageBattle kKillScore
 // 同约定）。
 #pragma once

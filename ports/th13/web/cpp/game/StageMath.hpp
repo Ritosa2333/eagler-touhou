@@ -52,7 +52,7 @@ inline void polar_xy(float angle, float radius, float& out_x, float& out_y) {
     out_y = static_cast<float>(std::sin(static_cast<double>(angle)) * static_cast<double>(radius));
 }
 
-// 0x497690 + 0x473780 尾部：坐标量化到 0.01（floor，向负无穷）。
+// 0x49768f + 0x473780 尾部：坐标量化到 0.01（floor，向负无穷）。
 // 原版序列（0x4739c0..0x4739f0）：f32 值 ×100.0 落 f32 → 转 double →
 // floor → /100.0 落 f32。实测 -163.783264 → -163.79（round 会给 -163.78）。
 inline float round001(float value) {
