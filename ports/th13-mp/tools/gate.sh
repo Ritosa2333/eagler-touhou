@@ -7,7 +7,8 @@
 #
 # 选项：
 #   --mp       检查多人版 ports/th13-mp（默认 ports/th13）
-#   --browser  追加浏览器套件（th13-shot 镜像；需要运行时资源目录与字体）
+#   --browser  追加浏览器套件（th13-shot 镜像；需要运行时资源目录与字体）。固定 4 并发：
+#              更多会让无头 Chromium 的音频线程饿死，报 AudioContext 错误
 #
 # 步骤（th13-dev 镜像，于端口目录执行）：
 #   1. 排版检查             node tools/format.mjs --check
@@ -53,5 +54,5 @@ step "全部套件与基线比对"; node "$tools/gate.mjs" --group all \
   --compare "../../archive/th13-refactor-baseline-20261124/$baseline"
 '
 if [[ "$browser" == 1 ]]; then
-  "$container" --shot "${port_flag[@]}" bash -lc 'node --test web/tests/sdl/*.test.mjs'
+  "$container" --shot "${port_flag[@]}" bash -lc 'node --test --test-concurrency=4 web/tests/sdl/*.test.mjs'
 fi
