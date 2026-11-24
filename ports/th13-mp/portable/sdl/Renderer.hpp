@@ -63,7 +63,8 @@ public:
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
 private:
-    struct GPU {GLuint texture=0,framebuffer=0;u32 version=~0u,dirtyBase=~0u;std::array<u32,4> dirty{};bool rendered=false;GLuint attached=~0u;std::array<GLint,4> sampler{};};
+    // verified: 当前附着组合已通过完整性检查；附着变化时复位。
+    struct GPU {GLuint texture=0,framebuffer=0;u32 version=~0u,dirtyBase=~0u;std::array<u32,4> dirty{};bool rendered=false;GLuint attached=~0u;bool verified=false;std::array<GLint,4> sampler{};};
     struct Depth {GLuint buffer=0;bool stencil=false;};
     struct Uniform {GLint location=-1;std::array<float,16> value{};int count=-1;};
     struct Program {GLuint id=0;std::array<Uniform,28> uniforms{};};
@@ -85,6 +86,7 @@ private:
     std::vector<u8> batchBytes,batchScratch,quad,worlds,pixels;Topology batchTopology=Topology::Triangles;bool batching=false,instancing=false;
     u32 batchCount=0,pending=0,presented=0;std::string failure;
     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32);
+    void verify_framebuffer(u32);
     void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
     void select(const State&);void uniform(int,int,const float*);void integer(int,int);
     u32 upload(Stream&,GLenum,const void*,u32,u32);
@@ -95,6 +97,7 @@ Renderer* current();void set_current(Renderer*);
 extern "C" {
 __attribute__((export_name("sdl_stats"))) const touhou::sdl::Statistics* sdl_stats();
 __attribute__((export_name("sdl_defer"))) void sdl_defer(int);
+__attribute__((export_name("sdl_gl_checks"))) void sdl_gl_checks(int);
 __attribute__((export_name("sdl_commit"))) int sdl_commit();
 __attribute__((export_name("sdl_error"))) const char* sdl_error();
 __attribute__((export_name("sdl_version"))) int sdl_version();

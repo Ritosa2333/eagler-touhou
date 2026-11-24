@@ -1,7 +1,7 @@
 import {installStartupBranding, finishStartupAnimation} from './startup-branding.mjs';
 import createModule from './th13-sdl.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
-import {installLowLatencyCanvas} from './low-latency-canvas.mjs';
+import {installContextAttributes} from './context-attributes.mjs';
 import {installLanguagePack} from './language-pack.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {runtimeAssets} from './runtime-assets.mjs';
@@ -18,17 +18,6 @@ let spectatorPlayback = null;
 let roomPreview = false, roomOwned = false, launchSerial = 0;
 const emit = (event, fields = {}) => parent.postMessage({protocol, game, epoch, event,
   ...((event === 'first-frame' || event === 'room-menu') ? {launchSerial} : {}), ...fields}, location.origin);
-// E2 input kick：壳消息路径 down 边沿后的即时微拍（?inputKick=0 关闭，默认开）。
-// launcher 内嵌时 iframe URL 由 launcher 自构（不透传站点页 query）；
-// 同源下回退读父窗 query——把 ?inputKick=0 加到站点 URL 重载即可关闭
-//（生产回退路径；跨源读不到时保持默认开）。
-const inputKickParam = () => {
-  let value = query.get('inputKick');
-  if (value === null && parent !== window)
-    try { value = new URLSearchParams(parent.location.search).get('inputKick'); } catch {}
-  return value;
-};
-const inputKick = inputKickParam() !== '0';
 // 触摸坐标换算的 canvas 包围盒缓存：resize/视口变化时失效，避免每次
 // pointermove 消息都强制布局（getBoundingClientRect）。
 let canvasBox = null;
@@ -36,12 +25,8 @@ const invalidateCanvasBox = () => { canvasBox = null; };
 addEventListener('resize', invalidateCanvasBox);
 visualViewport?.addEventListener?.('resize', invalidateCanvasBox);
 const canvasRect = () => canvasBox ??= canvas.getBoundingClientRect();
-// 低延迟画布：SP/MP shell 与独立 th13.html 共用模块（详见 low-latency-canvas.mjs）。
-// desynchronized 让支持的平台的画布绕过合成器排队，提前一个刷新周期上屏；
-// high-performance 在双显卡机器上选独显。实际生效情况记入 renderer 报告。
-const lowLatency = installLowLatencyCanvas(canvas);
-const canvasPresentation = () => lowLatency?.presentation() ?? {desynchronized: false, powerPreference: null};
-const rendererReport = () => lowLatency?.rendererReport() ?? 'SDL3 / WebGL2 / C++';
+// WebGL 上下文属性：必须在模块创建上下文之前装好（详见 context-attributes.mjs）。
+installContextAttributes(canvas);
 const keyboard = createBrowserKeyboard({
   hostContext: {
     protocol,
@@ -54,7 +39,6 @@ const keyboard = createBrowserKeyboard({
   accept: code => !!scanCodes[code],
   send: (code, down) => {
     core?._th13_key(scanCodes[code], +down);
-    if (+down && inputKick) core?._th13_input_kick?.(performance.now());
   },
 });
 function clearKeyboard() {
@@ -171,7 +155,7 @@ function offerMultiplayerReport(message, stack) {
     browser: navigator.userAgent,
     presentation: {canvas: [canvas.width, canvas.height], devicePixelRatio,
       visibility: document.visibilityState, fps: window.__eaglerNetplayPresentationFps ?? null,
-      playerAnimation, ...canvasPresentation()},
+      playerAnimation},
     network: {route: ['rtc', 'relay'].includes(route) ? route : null,
       transport: (() => {
         const t = globalThis.__eaglerPeerTransport;
@@ -715,8 +699,7 @@ async function command(m) {
         // 会话游戏内保存的）：晚于 loop_start，与 th13.html 内置预装同一拍。
         // 多人 Replay 使用独立命名空间，不回灌单席 catalog。
         if (!runtimeBuild.multiplayer) restoreReplaysToCatalog();
-        emit('runtime-info', {renderer: rendererReport(), presentation: canvasPresentation(),
-          architecture: protocol, ...runtimeBuild});
+        emit('runtime-info', {renderer: 'SDL3 / WebGL2 / C++', architecture: protocol, ...runtimeBuild});
       }
       return {};
     case 'spectator-playback':
@@ -888,6 +871,8 @@ canvas.addEventListener('webglcontextlost', e => {
   e.preventDefault();
   fatal(Error('图形环境失效，请退出后重新开始。'));
 });
+// 浏览器会自动恢复上下文，但运行时持有的 GPU 资源不会随之重建；重新启动游戏才会重建。
+canvas.addEventListener('webglcontextrestored', () => console.warn('[th13] 图形上下文已恢复，请重新启动游戏。'));
 window.addEventListener('error', event => {
   if (launched && runtimeBuild.multiplayer && options.netplayMode === 'lan' &&
       event.error instanceof WebAssembly.RuntimeError) fatal(event.error);
@@ -945,6 +930,8 @@ const initialized = (async () => {
   });
 
   core.SDL3 = core.SDL3 || {};
+  // ?glDebug=1：每帧提交后检查 GL 错误，变化经 printErr 写入控制台。
+  if (query.get('glDebug') === '1') core._th13_debug_gl_checks?.(1);
   if (parent !== window && parent.__touhouAudioContext) core.SDL3.audioContext = parent.__touhouAudioContext;
   window.Module = core;
   window.FS = core.FS;

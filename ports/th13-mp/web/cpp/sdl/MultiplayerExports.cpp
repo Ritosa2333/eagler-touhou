@@ -41,10 +41,4 @@ EMSCRIPTEN_KEEPALIVE int th13_mp_run_frame(double delta_ms) {
     return th13::sdl::mp_run_frame(delta_ms);
 }
 
-// E2 input kick：页面 keydown 锁存后的即时微拍（与 SP 侧同名同语义）。
-// 导出缺席时页面向后兼容（可选链调用）。
-EMSCRIPTEN_KEEPALIVE int th13_input_kick(double now_ms) {
-    return th13::sdl::input_kick(now_ms);
-}
-
 }  // extern "C"

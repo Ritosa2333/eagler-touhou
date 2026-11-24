@@ -24,7 +24,7 @@
 //   - 驱动面全部为现有生产导出（BrowserRuntime.cpp）：手动泵客户端 =
 //     th13-debug.html（页内 rAF 不启动）逐帧 th13_debug_frame()；rAF 客户端 =
 //     th13_loop_start() 自然泵；每帧观测 th13_probe_state()+th13_frame()。
-//     不用 th13_frame_tick 做手动泵（loop_pause 后 no-op、不暂停则与 rAF
+//     不用 th13_mp_run_frame 做手动泵（会话未建立时它按墙钟推进、与 rAF
 //     双泵，r4 F3 实证）；不等待 __e2e_loop_paused 之类页内不存在的信号
 //     （debug 页只暴露 __th13_debug / __th13_debug_failed，r4 R4）。
 import {createHash} from 'node:crypto';

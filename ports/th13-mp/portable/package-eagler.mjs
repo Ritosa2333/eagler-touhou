@@ -36,7 +36,7 @@ const runtimeNames = [
   'keyboard.mjs',
   'directory-keyboard.mjs',
   'runtime-assets.mjs',
-  'low-latency-canvas.mjs',
+  'context-attributes.mjs',
   'language-pack.mjs',
   'practice-catalog.mjs',
   ...(multiplayer ? ['multiplayer.mjs'] : []),
