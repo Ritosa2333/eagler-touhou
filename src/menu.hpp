@@ -2,6 +2,7 @@
 #include "th03/assets/decode.hpp"
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <string_view>
 #include <string>
@@ -42,6 +43,8 @@ struct Menu {
     bool autofire=false,fast_autofire=true; // Host-only assist; old ON setting used the 2+2 waveform.
     soew::Language language=soew::Language::Japanese;
     soew::Language language_preference=soew::Language::Japanese;
+    std::optional<soew::Language> practice_language_preference;
+    soew::Language practice_language()const{return practice_language_preference.value_or(language);}
     bool chinese_available=false;
     void set_language_preference(soew::Language value){
         language_preference=value;

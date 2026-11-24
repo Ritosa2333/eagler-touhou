@@ -54,6 +54,18 @@ int main(int argc,char**argv){try{
     }
     put(p,"{\"version\":2,\"autofire\":true}");
     const auto old=soew::SettingsStore(p).load();check(old.language==L::Japanese&&old.autofire&&old.fast_autofire&&!old.fullscreen&&old.hitboxes==soew::HitboxMode::Off&&old.stage_intro&&old.smooth_background);
+    check(!old.practice_language);
+    for(const auto lang:{L::Japanese,L::English,L::ChineseSimplified,L::ChineseTraditional}){
+        soew::SettingsStore store(p);auto value=store.load();value.language=L::English;value.practice_language=lang;
+        check(store.save(value));
+        const auto loaded=soew::SettingsStore(p).load();check(loaded==value);
+        Menu menu;loaded.apply(menu);check(!menu.chinese_available&&menu.language==L::English&&menu.practice_language()==lang);
+        menu.practice_language_preference.reset();check(menu.practice_language()==L::English&&store.save(soew::Settings::from(menu)));
+        check(!soew::SettingsStore(p).load().practice_language);
+    }
+    put(p,"{\"version\":2,\"language\":\"en\",\"practice_language\":\"fr\"}");
+    soew::SettingsStore invalid_practice(p);const auto fallback=invalid_practice.load();
+    check(!fallback.practice_language&&fallback.language==L::English&&invalid_practice.writable&&!invalid_practice.warning.empty());
     for(const auto *bad:{"1","null","\"false\""}){
         put(p,std::string("{\"version\":2,\"stage_intro\":")+bad+"}");
         soew::SettingsStore store(p);check(store.load().stage_intro&&store.writable&&!store.warning.empty());

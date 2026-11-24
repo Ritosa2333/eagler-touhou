@@ -1,5 +1,6 @@
 #pragma once
 #include "practice_menu.hpp"
+#include "practice_window.hpp"
 
 namespace soew {
 // Navigation and layout only. PracticeMenu still owns the recipe and numeric editor.
@@ -11,9 +12,20 @@ struct PracticePanel {
     Page page=Page::Stages;
     Field focus=Field::Start;
     int stage_cursor=0,shot=0;
+    PracticeWindow window;
+    static constexpr int shadow=practice_shadow_extent,stage_pitch=24,setup_pitch=19;
+    static constexpr PracticeBounds stages_box{280,140,592,316},setup_box{232,44,592,352};
+    static constexpr int stages_y=160,setup_y=80;
+
+    PracticeBounds base()const{return page==Page::Stages?stages_box:setup_box;}
+    bool in_header(PracticePoint p)const{
+        auto header=base();header.bottom=page==Page::Stages?stages_y:setup_y;
+        return header.contains(window.local(p));
+    }
+    void show(Page target){page=target;window.move(base(),window.offset,shadow);}
 
     void open(const PracticeMenu &menu,Page target=Page::Stages){
-        page=target;stage_cursor=menu.spec.stage;shot=menu.spec.shot;
+        show(target);stage_cursor=menu.spec.stage;shot=menu.spec.shot;
         focus=Field::Start;
     }
     bool open_from_shot(PracticeMenu &menu,Menu &native){
@@ -44,6 +56,26 @@ struct PracticePanel {
         out.push_back(F::Start);return out;
     }
     bool focused(Field field)const{return page==Page::Setup&&focus==field;}
+    unsigned point(PracticeMenu &menu,PracticePoint p){
+        if(menu.number_editing())return 0;
+        p=window.local(p);
+        if(!base().contains(p))return 0;
+        if(page==Page::Stages){
+            if(p.y<stages_y||p.y>=stages_y+stage_pitch*practice_stage_count)return 0;
+            stage_cursor=(p.y-stages_y)/stage_pitch;
+            return PracticeMenu::confirm;
+        }
+        if(p.y<setup_y)return 0;
+        const auto visible=fields(menu);
+        const auto slot=std::size_t((p.y-setup_y)/setup_pitch);
+        if(slot>=visible.size())return 0;
+        focus=visible[slot];
+        if(!is_value(focus))return PracticeMenu::confirm;
+        if(p.x<425)return 0;
+        if(focus==Field::Seed||focus==Field::DynamicRank||focus==Field::Power||focus==Field::Lives||
+            focus==Field::Bombs||focus==Field::RespawnBombs)return PracticeMenu::confirm;
+        return p.x<500?PracticeMenu::left:PracticeMenu::right;
+    }
     PracticeMenu::Action update(PracticeMenu &menu,unsigned input){
         using A=PracticeMenu::Action;using F=Field;using M=PracticeMenu;
         if(!input||!menu.allowed||menu.number_editing())return menu.update(input);
@@ -52,10 +84,10 @@ struct PracticePanel {
             if(input&M::cancel)return A::Back;
             if(input&M::up)stage_cursor=Menu::ring(stage_cursor,-1,practice_stage_count);
             if(input&M::down)stage_cursor=Menu::ring(stage_cursor,1,practice_stage_count);
-            if(input&M::confirm){menu.spec.shot=shot;menu.select_stage(stage_cursor);page=Page::Setup;focus=F::Start;}
+            if(input&M::confirm){menu.spec.shot=shot;menu.select_stage(stage_cursor);show(Page::Setup);focus=F::Start;}
             return A::None;
         }
-        if(input&M::cancel){page=Page::Stages;menu.allowed=false;return A::None;}
+        if(input&M::cancel){show(Page::Stages);menu.allowed=false;return A::None;}
         if(input&(M::up|M::down)){
             const auto visible=fields(menu);
             const auto at=std::find(visible.begin(),visible.end(),focus)-visible.begin();
@@ -79,6 +111,38 @@ struct PracticePanel {
 
 enum class PracticeText { Body, Small, Stage };
 
+struct PracticeLanguages {
+    static constexpr std::array<std::optional<Language>,5> choices={std::nullopt,Language::Japanese,
+        Language::English,Language::ChineseSimplified,Language::ChineseTraditional};
+    static constexpr LocalizedText follow_game{L"ゲームに合わせる",L"Follow game",L"跟随游戏",L"跟隨遊戲"};
+    static constexpr int pitch=22,rows_y=265,shadow=practice_shadow_extent;
+    static constexpr PracticeBounds base{16,230,216,rows_y+int(choices.size())*pitch+8};
+    PracticeWindow window;
+    bool open=false;
+    int focus=0;
+
+    bool toggle(bool available,bool repeat,std::optional<Language> current){
+        if(repeat||(!open&&!available))return false;
+        open=!open;
+        if(open)focus=int(std::find(choices.begin(),choices.end(),current)-choices.begin());
+        return true;
+    }
+    void navigate(int delta){focus=Menu::ring(focus,delta,int(choices.size()));}
+    bool in_header(PracticePoint p)const{
+        return PracticeBounds{base.left,base.top,base.right,rows_y}.contains(window.local(p));
+    }
+    int row_at(PracticePoint p)const{
+        p=window.local(p);
+        return p.x>=base.left&&p.x<base.right&&p.y>=rows_y&&p.y<rows_y+int(choices.size())*pitch?(p.y-rows_y)/pitch:-1;
+    }
+};
+
+inline std::wstring practice_stage_name(Language lang,int stage){
+    return stage==practice_extra_stage?std::wstring(lang==Language::English?L"EXTRA":text::extra(lang)):
+        localized(lang,L"ステージ ",L"STAGE ",L"第",L"第")+std::to_wstring(stage+1)+
+        localized(lang,L"",L"",L"关",L"關");
+}
+
 constexpr std::array<LocalizedText,14> practice_panel_labels={{{L"開始地点",L"Start point",L"起点",L"起點"},{L"区間",L"Chapter",L"区段",L"區段"},
     {L"ボスの段階",L"Boss phase",L"首领阶段",L"頭目階段"},{L"難易度",L"Difficulty",L"难度",L"難度"},
     {L"変動ランク",L"Dynamic rank",L"动态难度",L"動態難度"},{L"パワー",L"Power",L"火力",L"火力"},{L"残機",L"Spare lives",L"剩余命数",L"剩餘命數"},
@@ -93,31 +157,28 @@ template<class Box,class Draw>
 void draw_practice_panel(std::vector<std::uint32_t> &pixels,const PracticePanel &panel,const PracticeMenu &menu,
                          Language lang,bool loading,std::uint32_t active,std::uint32_t normal,Box &&box,Draw &&draw){
     using P=PracticePanel::Page;using F=PracticePanel::Field;using T=PracticeText;
-    constexpr int right=592;
+    const auto offset=panel.window.offset;
+    const auto bounds=panel.window.bounds(panel.base());
     const auto rect=[&](int l,int t,int r,int b,std::uint32_t color){
-        for(int y=t;y<b;++y)std::fill_n(pixels.begin()+y*640+l,r-l,color);
+        for(int y=t;y<b;++y)std::fill_n(pixels.begin()+(y+offset.y)*640+l+offset.x,r-l,color);
     };
     const auto tr=[&](const wchar_t *ja,const wchar_t *en,const wchar_t *hans,const wchar_t *hant){return localized(lang,ja,en,hans,hant);};
     const auto label=[&](F field){return practice_panel_labels[unsigned(field)](lang);};
     const auto text=[&](std::wstring_view value,int x,int y,int r,int h,std::uint32_t color,T style=T::Body,bool right=false){
-        draw(value,x,y,r,h,color,style,right);
+        draw(value,x+offset.x,y+offset.y,r+offset.x,h,color,style,right);
     };
     for(auto &p:pixels)p=(p&0xfefefeu)>>1;
-    const auto stage_name=[&](int stage){
-        return stage==practice_extra_stage?std::wstring(L"EXTRA"):L"STAGE "+std::to_wstring(stage+1);
-    };
+    box(bounds.left,bounds.top,bounds.right,bounds.bottom,active);
     if(panel.page==P::Stages){
-        box(280,140,right,316,active);
         for(int stage=0;stage<practice_stage_count;++stage)
-            text(stage_name(stage),296,160+stage*24,576,16,stage==panel.stage_cursor?active:normal,T::Stage);
+            text(practice_stage_name(lang,stage),296,PracticePanel::stages_y+stage*PracticePanel::stage_pitch,576,16,stage==panel.stage_cursor?active:normal,T::Stage);
         return;
     }
-    constexpr int left=232,content_left=248,content_right=576,pitch=19;
-    box(left,44,right,352,active);
-    text(stage_name(menu.spec.stage),content_left,57,content_right,16,active,T::Stage);
+    constexpr int content_left=248,content_right=576,pitch=PracticePanel::setup_pitch;
+    text(practice_stage_name(lang,menu.spec.stage),content_left,57,content_right,16,active,T::Stage);
     int slot=0;
     for(const auto field:PracticePanel::fields(menu)){
-        const int y=80+slot++*pitch;
+        const int y=PracticePanel::setup_y+slot++*pitch;
         const bool selected=panel.focused(field),editing=selected&&menu.number_editing();
         if(selected)rect(240,y+5,243,y+14,active);
         text(label(field),content_left,y,424,pitch,selected?active:normal);

@@ -1,5 +1,6 @@
 #pragma once
 #include "locale.hpp"
+#include "practice_window.hpp"
 #include <array>
 #include <cstdint>
 
@@ -8,13 +9,20 @@ enum class PracticeTool : unsigned { Invincible, Lives, Rank, Bombs, Power, Time
 struct PracticeAssist {
     std::uint8_t tools=0;
     bool open=false,info=false;
+    PracticeWindow window;
     bool enabled(PracticeTool tool)const{return (tools&(1u<<unsigned(tool)))!=0;}
     void toggle(PracticeTool tool){tools^=std::uint8_t(1u<<unsigned(tool));}
     static constexpr int left=40,top=24,width=208,pitch=18,tool_rows=8,rows=tool_rows+1;
+    static constexpr int header=12;
+    static constexpr PracticeBounds base{left,top-header,left+width,top+rows*pitch};
     bool active_row(int row)const{return row==tool_rows?info:enabled(PracticeTool(row));}
     void toggle_row(int row){if(row==tool_rows)info=!info;else toggle(PracticeTool(row));}
     static int row_at(int x,int y){
         return x>=left&&x<left+width&&y>=top&&y<top+rows*pitch?(y-top)/pitch:-1;
+    }
+    int row_at(PracticePoint p)const{p=window.local(p);return row_at(p.x,p.y);}
+    bool in_header(PracticePoint p)const{
+        return PracticeBounds{left,top-header,left+width,top}.contains(window.local(p));
     }
 };
 inline constexpr std::array<LocalizedText,PracticeAssist::rows> practice_tool_labels={{{L"無敵",L"Invincible",L"无敌",L"無敵"},

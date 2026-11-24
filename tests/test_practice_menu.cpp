@@ -1,5 +1,6 @@
 #include "practice_targets.hpp"
 #include "practice_panel.hpp"
+#include "practice_assist.hpp"
 #include "stage3_practice_evidence.hpp"
 #include "practice_music.hpp"
 #include <iostream>
@@ -233,7 +234,7 @@ void test_panel_layout(){
                 check(!label.empty()&&x>=left+16&&x<r&&r<592&&y>top&&y+h<bottom);
                 if(page==P::Stages){
                     check(style==PracticeText::Stage&&x==296&&y==160+24*stage_rows&&h==16);
-                    check(label==(stage_rows==practice_extra_stage?L"EXTRA":L"STAGE "+std::to_wstring(stage_rows+1)));
+                    check(label==practice_stage_name(lang,stage_rows));
                     check(color==(stage_rows==menu.spec.stage?selected:unselected));
                     ++stage_rows;
                 }else if(x==248&&style==PracticeText::Body){
@@ -246,6 +247,85 @@ void test_panel_layout(){
             check(pixels[top*640+left-1]==0x6f6053u&&pixels[(bottom+9)*640+500]==0x6f6053u);
         }
     }
+}
+void test_floating_panels(){
+    using namespace soew;
+    using P=PracticePanel;
+    using M=PracticeMenu;
+    using L=Language;
+    M menu;menu.capabilities=practice_capabilities();
+    P panel;panel.open(menu);
+    PracticeDrag drag;
+    const PracticePoint grab{316,152};
+    check(panel.in_header(grab)&&!panel.in_header({316,160}));
+    drag.begin(panel.window,panel.base(),grab,P::shadow);
+    drag.move({116,52});
+    const auto moved=panel.window.bounds(panel.base());
+    check(moved.left==80&&moved.top==40&&moved.right==392&&moved.bottom==216);
+    check(panel.in_header({116,52})&&!panel.in_header(grab));
+    drag.end();check(!drag.window);
+    check(!panel.point(menu,{296,284}));
+    const auto picked=panel.point(menu,{96,111});
+    check(picked==M::confirm&&panel.stage_cursor==2);
+    panel.update(menu,0);panel.update(menu,picked);
+    check(panel.page==P::Page::Setup&&menu.spec.stage==2);
+    const auto setup=panel.window.bounds(panel.base());
+    check(setup.left==32&&setup.top==0);
+    const auto start=PracticePoint{setup.left+16,setup.top+P::setup_y-P::setup_box.top+
+        (int(P::fields(menu).size())-1)*P::setup_pitch};
+    const auto begin=panel.point(menu,start);panel.update(menu,0);
+    check(begin==M::confirm&&panel.update(menu,begin)==M::Action::Start);
+    const auto fields=P::fields(menu);
+    const int power_y=P::setup_y+panel.window.offset.y+
+        int(std::find(fields.begin(),fields.end(),P::Field::Power)-fields.begin())*P::setup_pitch;
+    check(!panel.point(menu,{setup.left+16,power_y})&&panel.focused(P::Field::Power));
+    const auto edit=panel.point(menu,{setup.right-24,power_y});panel.update(menu,0);
+    check(edit==M::confirm&&panel.update(menu,edit)==M::Action::EditNumber&&menu.number_editing());
+    check(!panel.point(menu,start)&&panel.focused(P::Field::Power));menu.number_cancel();
+
+    drag.begin(panel.window,panel.base(),{setup.left+16,setup.top+14},P::shadow);
+    drag.move({2000,2000});drag.end();
+    const auto edge=panel.window.bounds(panel.base());
+    check(edge.right+P::shadow==640&&edge.bottom+P::shadow==400);
+    std::vector<std::uint32_t> pixels(640*400,0);
+    constexpr std::uint32_t active=0xff88ff;
+    int boxes=0,labels=0;
+    draw_practice_panel(pixels,panel,menu,L::ChineseTraditional,false,active,0xaaaaaa,
+        [&](int l,int t,int r,int b,std::uint32_t){++boxes;check(l==edge.left&&t==edge.top&&r==edge.right&&b==edge.bottom);},
+        [&](std::wstring_view label,int x,int y,int r,int h,std::uint32_t,PracticeText style,bool){
+            check(x>=edge.left&&y>=edge.top&&r<=edge.right&&y+h<=edge.bottom);
+            if(style==PracticeText::Stage){++labels;check(label==L"第3關");}
+        });
+    check(boxes==1&&labels==1);
+    check(practice_stage_name(L::Japanese,0)==L"ステージ 1"&&practice_stage_name(L::ChineseSimplified,0)==L"第1关"&&practice_stage_name(L::English,5)==L"EXTRA");
+
+    const PracticeBounds view{0,50,800,550};
+    check(!practice_pointer(view,{400,49},false)&&!practice_pointer(view,{800,300},false));
+    const auto center=practice_pointer(view,{400,300},false),outside=practice_pointer(view,{1000,-50},true);
+    check(center&&center->x==320&&center->y==200&&outside&&outside->x==800&&outside->y==-80);
+    const auto crt=practice_pointer({125,0,925,600},{525,300},false);
+    check(crt&&crt->x==320&&crt->y==200);
+
+    PracticeAssist assist;using A=PracticeAssist;
+    drag.begin(assist.window,A::base,{50,18});drag.move({90,108});drag.end();
+    check(assist.in_header({90,108})&&assist.row_at({90,108})<0);
+    const int assist_row=assist.row_at({90,A::top+90+6*A::pitch});
+    check(assist_row==6&&assist.row_at({50,18})<0);
+    assist.toggle_row(assist_row);check(assist.enabled(PracticeTool::AutoBomb));
+
+    PracticeLanguages language;Menu native;native.set_language_preference(L::English);
+    check(!language.toggle(false,false,std::nullopt)&&!language.toggle(true,true,std::nullopt));
+    check(language.toggle(true,false,std::nullopt)&&language.open&&language.focus==0);
+    language.navigate(-1);check(language.focus==4);
+    drag.begin(language.window,language.base,{56,240},language.shadow);drag.move({256,40});drag.end();
+    const int row=language.row_at({256,language.rows_y-200+3*language.pitch});
+    check(language.in_header({256,40})&&row==3);
+    native.practice_language_preference=language.choices[row];
+    check(native.practice_language()==L::ChineseSimplified&&native.language==L::English&&!native.chinese_available);
+    check(!language.toggle(true,true,native.practice_language_preference)&&language.open);
+    check(language.toggle(true,false,native.practice_language_preference)&&!language.open);
+    check(language.toggle(true,false,native.practice_language_preference)&&language.focus==3);
+    native.practice_language_preference=language.choices[0];check(native.practice_language()==native.language);
 }
 void test_store(const std::filesystem::path &root){
     using namespace soew;
@@ -323,7 +403,7 @@ int main(int argc,char **argv){
     try{
         if(argc!=2)throw std::runtime_error("Need an explicit fresh isolated test root");
         const auto root=std::filesystem::path(argv[1]);if(!root.is_absolute())throw std::runtime_error("Isolated test root must be absolute");
-        test_editor();test_model();test_panel();test_panel_layout();test_store(root);
+        test_editor();test_model();test_panel();test_panel_layout();test_floating_panels();test_store(root);
         {const auto &a=soew::stage3_practice_evidence;check(a.size()==8);check(a[0].id==0&&a[0].progress==0);check(a[1].id==3&&a[1].progress==53&&a[1].measure==17);check(a[2].id==15&&a[2].progress==103&&a[2].measure==34);check(a[7].id==55&&a[7].progress==265&&a[7].measure==88);for(std::size_t i=1;i<a.size();++i)check(a[i-1].progress<a[i].progress);check(soew::stage3_boss_entry_ids==std::array<int,6>{0x10,0x17,0x18,0x27,0x48,0x49});check(!soew::PracticeCapabilities{}.allows(2,soew::PracticeSection::Boss));}
         {soew::PracticeSpec spec;spec.stage=2;for(const auto &anchor:soew::stage3_practice_evidence){spec.section=anchor.id==0x0f?soew::PracticeSection::Midboss:soew::PracticeSection::Chapter;spec.chapter_id=anchor.id==0x0f?-1:anchor.id;check(soew::practice_music_measure(spec)==anchor.measure);}
          spec.section=soew::PracticeSection::Chapter;spec.chapter_id=48;check(soew::practice_music_measure(spec)==0);spec.stage=1;check(soew::practice_music_measure(spec)==58);}

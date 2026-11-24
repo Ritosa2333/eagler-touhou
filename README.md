@@ -85,9 +85,14 @@ windows for inspection. Shift is recorded in new replays and is not needed
 for playback.
 
 Practice uses the same shot selection screen as the main game. Choose Reimu's
-shot type with Left/Right, then use Up/Down in the stage popup. Z or Enter
-confirms; X or Esc closes the popup back to shot selection. The setup popup
-shows the starting point, difficulty, stocks and seed together.
+shot type with Left/Right, then use Up/Down or click a stage in the popup.
+Z or Enter confirms; X or Esc returns to the previous selection. The setup
+popup shows the starting point, difficulty, stocks and seed together.
+
+Drag the top of any practice panel to move it. F12 opens or closes the
+language panel from practice selection or during live play. Practice follows
+the game language by default; you can independently choose Japanese, English,
+Simplified Chinese or Traditional Chinese without changing the game's language.
 
 During live Story, Extra, or Practice play, Backspace opens the assist overlay. Click a row or use
 F1–F7 / U: invincibility, infinite lives, lock dynamic rank, infinite bombs,

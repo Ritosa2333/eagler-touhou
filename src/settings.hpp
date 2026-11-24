@@ -48,8 +48,9 @@ struct Settings {
     HitboxMode hitboxes=HitboxMode::Off;
     Language language=Language::Japanese;
     bool stage_intro=true,smooth_background=true;
-    static Settings from(const Menu &m){return {m.rank,m.music,m.lives,m.bombs,m.reduced,m.autofire,m.show_more_info,m.fullscreen,m.fast_autofire,m.hitboxes,m.language_preference,m.stage_intro,m.smooth_background};}
-    void apply(Menu &m)const{m.rank=rank;m.music=music;m.lives=lives;m.bombs=bombs;m.reduced=reduced;m.autofire=autofire;m.show_more_info=show_more_info;m.fullscreen=fullscreen;m.fast_autofire=fast_autofire;m.hitboxes=hitboxes;m.set_language_preference(language);m.stage_intro=stage_intro;m.smooth_background=smooth_background;}
+    std::optional<Language> practice_language;
+    static Settings from(const Menu &m){return {m.rank,m.music,m.lives,m.bombs,m.reduced,m.autofire,m.show_more_info,m.fullscreen,m.fast_autofire,m.hitboxes,m.language_preference,m.stage_intro,m.smooth_background,m.practice_language_preference};}
+    void apply(Menu &m)const{m.rank=rank;m.music=music;m.lives=lives;m.bombs=bombs;m.reduced=reduced;m.autofire=autofire;m.show_more_info=show_more_info;m.fullscreen=fullscreen;m.fast_autofire=fast_autofire;m.hitboxes=hitboxes;m.set_language_preference(language);m.stage_intro=stage_intro;m.smooth_background=smooth_background;m.practice_language_preference=practice_language;}
     static constexpr const char* language_id(Language language){return localized(language,"ja","en","zh-Hans","zh-Hant");}
     static constexpr const wchar_t* wide_language_id(Language language){return localized(language,L"ja",L"en",L"zh-Hans",L"zh-Hant");}
     bool operator==(const Settings&)const=default;
@@ -118,7 +119,7 @@ struct SettingsStore {
             std::ifstream f(path,std::ios::binary|std::ios::ate);if(!f)throw std::runtime_error("Cannot read settings; file protected");const auto n=f.tellg();if(n<2||n>16384)throw std::runtime_error("Invalid settings size; file protected");std::string data(static_cast<std::size_t>(n),' ');f.seekg(0);if(!f.read(data.data(),static_cast<std::streamsize>(n)))throw std::runtime_error("Cannot read settings; file protected");const auto fields=parse(data);
             const auto version=fields.find("version");if(version==fields.end()||!version->second.integer||(version->second.text!="1"&&version->second.text!="2")){writable=false;warning="Unsupported settings version; file protected";saved=out;return out;}
             needs_migration=version->second.text=="1";
-            constexpr std::array<std::string_view,14> known={"version","rank","music","lives","bombs","reduced","autofire","show_more_info","fullscreen","fast_autofire","hitboxes","language","stage_intro","smooth_background"};
+            constexpr std::array<std::string_view,15> known={"version","rank","music","lives","bombs","reduced","autofire","show_more_info","fullscreen","fast_autofire","hitboxes","language","stage_intro","smooth_background","practice_language"};
             for(const auto &[key,value]:fields){(void)value;if(std::find(known.begin(),known.end(),key)==known.end()){writable=false;warning="Unknown settings field; file protected";}}
             const auto invalid=[&]{if(writable)warning="Some settings fields invalid; defaults used";};
             auto integer=[&](const char*key,int &v,int max){const auto it=fields.find(key);if(it==fields.end())return;int n=0;const auto &x=it->second;if(!x.integer){invalid();return;}std::from_chars(x.text.data(),x.text.data()+x.text.size(),n);if(n<0||n>max){invalid();return;}v=n;};
@@ -126,13 +127,15 @@ struct SettingsStore {
             integer("rank",out.rank,3);integer("music",out.music,2);integer("lives",out.lives,4);integer("bombs",out.bombs,3);boolean("reduced",out.reduced);boolean("autofire",out.autofire);boolean("show_more_info",out.show_more_info);boolean("fullscreen",out.fullscreen);boolean("fast_autofire",out.fast_autofire);boolean("stage_intro",out.stage_intro);if(!out.autofire)out.fast_autofire=true;
             boolean("smooth_background",out.smooth_background);
             int hitboxes=0;integer("hitboxes",hitboxes,2);out.hitboxes=static_cast<HitboxMode>(hitboxes);
-            if(const auto it=fields.find("language");it!=fields.end()){
-                const auto &value=it->second;
-                if(value.string&&value.text=="en")out.language=Language::English;
-                else if(value.string&&value.text=="zh-Hans")out.language=Language::ChineseSimplified;
-                else if(value.string&&value.text=="zh-Hant")out.language=Language::ChineseTraditional;
-                else if(!value.string||value.text!="ja")invalid();
-            }
+            const auto language=[&](const char *key)->std::optional<Language>{
+                const auto it=fields.find(key);
+                if(it==fields.end())return std::nullopt;
+                for(const auto lang:{Language::Japanese,Language::English,Language::ChineseSimplified,Language::ChineseTraditional})
+                    if(it->second.string&&it->second.text==Settings::language_id(lang))return lang;
+                invalid();return std::nullopt;
+            };
+            out.language=language("language").value_or(out.language);
+            out.practice_language=language("practice_language");
         }catch(const std::exception &e){warning=e.what();writable=false;out=Settings{};}
         saved=out;return out;
     }
@@ -143,7 +146,8 @@ struct SettingsStore {
         try{
             if(!path.parent_path().empty())std::filesystem::create_directories(path.parent_path());
             static std::atomic<unsigned long long> sequence{0};temp=path;temp+=".tmp-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(sequence++);
-            const auto data=std::string("{\n  \"version\": 2,\n  \"rank\": ")+std::to_string(value.rank)+",\n  \"music\": "+std::to_string(value.music)+",\n  \"lives\": "+std::to_string(value.lives)+",\n  \"bombs\": "+std::to_string(value.bombs)+",\n  \"reduced\": "+(value.reduced?"true":"false")+",\n  \"autofire\": "+(value.autofire?"true":"false")+",\n  \"show_more_info\": "+(value.show_more_info?"true":"false")+(value.fullscreen?",\n  \"fullscreen\": true":"")+(value.stage_intro?"":",\n  \"stage_intro\": false")+(value.smooth_background?"":",\n  \"smooth_background\": false")+(value.autofire&&!value.fast_autofire?",\n  \"fast_autofire\": false":"")+(value.hitboxes==HitboxMode::Off?std::string{}:",\n  \"hitboxes\": "+std::to_string(static_cast<int>(value.hitboxes)))+",\n  \"language\": \""+Settings::language_id(value.language)+"\"\n}\n";
+            const auto practice=value.practice_language?std::string(",\n  \"practice_language\": \"")+Settings::language_id(*value.practice_language)+"\"":std::string{};
+            const auto data=std::string("{\n  \"version\": 2,\n  \"rank\": ")+std::to_string(value.rank)+",\n  \"music\": "+std::to_string(value.music)+",\n  \"lives\": "+std::to_string(value.lives)+",\n  \"bombs\": "+std::to_string(value.bombs)+",\n  \"reduced\": "+(value.reduced?"true":"false")+",\n  \"autofire\": "+(value.autofire?"true":"false")+",\n  \"show_more_info\": "+(value.show_more_info?"true":"false")+(value.fullscreen?",\n  \"fullscreen\": true":"")+(value.stage_intro?"":",\n  \"stage_intro\": false")+(value.smooth_background?"":",\n  \"smooth_background\": false")+(value.autofire&&!value.fast_autofire?",\n  \"fast_autofire\": false":"")+(value.hitboxes==HitboxMode::Off?std::string{}:",\n  \"hitboxes\": "+std::to_string(static_cast<int>(value.hitboxes)))+",\n  \"language\": \""+Settings::language_id(value.language)+"\""+practice+"\n}\n";
 #ifdef _WIN32
             const auto file=CreateFileW(temp.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);if(file==INVALID_HANDLE_VALUE)throw std::runtime_error("Cannot create temporary settings");
             DWORD written=0;const bool flushed=WriteFile(file,data.data(),static_cast<DWORD>(data.size()),&written,nullptr)&&written==data.size()&&FlushFileBuffers(file);const bool closed=CloseHandle(file)!=0;if(!flushed||!closed)throw std::runtime_error("Cannot flush settings");
