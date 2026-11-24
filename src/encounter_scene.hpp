@@ -1306,12 +1306,9 @@ private:
         }
         constexpr std::array<unsigned,8> pellet={0x3c,0x7e,0xff,0xff,0xff,0xff,0x7e,0x3c}; // th02/sprites/pellet.bmp
         const auto pellet_color=stage5_rgb(background.palette[15]);
-        const bool show_contact=focus&&life.hit&&!life.invincibility&&!life.bomb_invincible;
         for(unsigned i=0;i<bullet_core.bullets.size();++i){
-            // The simulation removes a colliding shot immediately. Focus shows
-            // its sampled contact for this frame only, never an extrapolated hit.
-            const auto &b=bullet_core.bullets[i];
-            if(b.flag!=1&&!(show_contact&&focus_frame->projectile_contacts[i]))continue;
+            // TH02 removes a colliding bullet before drawing that frame.
+            const auto &b=bullet_core.bullets[i];if(b.flag!=1)continue;
             const auto current=motion_q4(b.position[rendered_page]);
             const auto p=focus?current.snapped():motion.at(T::Bullet,i,current,unsigned(b.kind));
             if(b.kind==EnemyBulletRequest::Bullet16)put(b.pattern,p);

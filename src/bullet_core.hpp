@@ -132,16 +132,13 @@ struct BulletCore {
         const auto pellet_window=bullet_hit_window(player,true),bullet_window=bullet_hit_window(player,false);
         const bool capture_bullets=display&&display->mode==HitboxMode::All;
         bool hit=false;
-        for(unsigned i=0;i<bullets.size();++i){auto &b=bullets[i];if(b.flag!=1)continue;for(unsigned c=0;c<2;++c)b.position[page][c]=static_cast<std::uint16_t>(b.position[page][c]+b.velocity[c]);
+        for(auto &b:bullets){if(b.flag!=1)continue;for(unsigned c=0;c<2;++c)b.position[page][c]=static_cast<std::uint16_t>(b.position[page][c]+b.velocity[c]);
             update_special(b,page,player_x,player_y,stage_frame);
             const int x=pixel(b.position[page][0]),y=pixel(b.position[page][1]);
             bool erase=x<=20||x>=416||y>=384||y<=0;
             if(!erase){const bool small=b.kind==EnemyBulletRequest::Pellet;
                 if(capture_bullets)display->bullet({x,y},small);
-                if((small?pellet_window:bullet_window).contains({x,y})){
-                    if(display)display->projectile_contacts[i]=true;
-                    erase=true;hit=true;
-                }
+                if((small?pellet_window:bullet_window).contains({x,y})){erase=true;hit=true;}
             }
             if(erase){b.flag=2;++removed;}
         }

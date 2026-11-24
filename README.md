@@ -77,11 +77,11 @@ scrolling without filtering the player, bullets, or HUD. Stage 4's terrain
 motif no longer flashes between render pages, and shot-hit sparks are
 half-transparent in either rendering mode.
 
-Hold either Shift key during play to move at half speed. The white dot marks
-Reimu's center; the red corners mark where the center of a small white pellet
-can hit her. While focused, Reimu and enemy bullets are drawn at their checked
-positions, including the frame a bullet hits. Large bullets still use their
-original, larger window. Shift is recorded in new replays and is not needed
+Hold either Shift key during play to move at half speed and show a small dot
+at Reimu's center. It is a guide, not the shape or size of a hitbox. Shift does
+not change the hit windows. As in the original game, a bullet that hits is
+removed before drawing. The Hitboxes option shows the actual collision
+windows for inspection. Shift is recorded in new replays and is not needed
 for playback.
 
 Practice uses the same shot selection screen as the main game. Choose Reimu's

@@ -2,7 +2,6 @@
 #include "render_motion.hpp"
 #include <algorithm>
 #include <array>
-#include <bitset>
 #include <cstdint>
 #include <limits>
 #include <optional>
@@ -43,6 +42,8 @@ struct CollisionBounds {
 };
 
 constexpr CollisionBounds bullet_hit_window(CollisionPoint player,bool pellet){
+    // TH02 MAIN.EXE compares the two sprite origins, with an exclusive
+    // right edge and inclusive vertical edges. This is not a player-only box.
     return {CollisionAxis::half_open(player.x+(pellet?7:-3),player.x+(pellet?17:19)),
             CollisionAxis::closed(player.y+(pellet?12:4),player.y+(pellet?22:24))};
 }
@@ -52,26 +53,12 @@ constexpr int bullet_center_offset(bool pellet){return pellet?4:8;}
 inline void draw_player_focus_point(std::span<std::uint32_t> pixels,CollisionPoint player,int view_shift_x=0){
     constexpr SpriteClip clip;
     constexpr std::uint32_t rose=0xff456b,ink=0x230d19;
-    const auto dot=[&](int x,int y,std::uint32_t color){
-        x+=view_shift_x;
-        if(x>=clip.left&&x<clip.right&&y>=clip.top&&y<clip.bottom)pixels[y*640+x]=color;
-    };
-    const auto box=bullet_hit_window(player,true);
-    constexpr int offset=bullet_center_offset(true);
-    const int left=int(box.x.first())+offset,right=int(box.x.last())+offset;
-    const int top=int(box.y.first())+offset,bottom=int(box.y.last())+offset;
-    // Rose corners mark the exact window for white pellet centers; the core
-    // is a position reference, not a circular hitbox.
-    for(int x:{left,right})for(int y:{top,bottom}){
-        const int dx=x==left?1:-1,dy=y==top?1:-1;
-        for(int i=0;i<3;++i){dot(x+i*dx,y-dy,ink);dot(x-dx,y+i*dy,ink);}
-        dot(x-dx,y-dy,ink);
-        for(int i=0;i<3;++i){dot(x+i*dx,y,rose);dot(x,y+i*dy,rose);}
-    }
-    const int cx=player.x+player_projectile_offset.x,cy=player.y+player_projectile_offset.y;
+    const int cx=player.x+player_projectile_offset.x+view_shift_x,cy=player.y+player_projectile_offset.y;
     for(int dy=-2;dy<=2;++dy)for(int dx=-2;dx<=2;++dx){
         const int d=dx*dx+dy*dy;
-        if(d<=5)dot(cx+dx,cy+dy,d<=1?0xffffff:d<=4?rose:ink);
+        const int x=cx+dx,y=cy+dy;
+        if(d<=5&&x>=clip.left&&x<clip.right&&y>=clip.top&&y<clip.bottom)
+            pixels[y*640+x]=d<=1?0xffffff:d<=4?rose:ink;
     }
 }
 
@@ -87,7 +74,6 @@ struct CollisionFrame {
     static constexpr unsigned bullet_capacity=150;
     static constexpr unsigned hazard_capacity=12+25+(1+40)+(1+4)+(1+8+1)+(1+16+1);
     std::array<BulletPoint,bullet_capacity> bullets{};
-    std::bitset<bullet_capacity> projectile_contacts;
     std::array<Hazard,hazard_capacity> hazards{};
     std::array<std::optional<CollisionPoint>,static_cast<unsigned>(CollisionSample::Count)> player{};
     unsigned bullet_count=0,hazard_count=0;
@@ -100,7 +86,7 @@ struct CollisionFrame {
 
     void begin(HitboxMode value,std::uint32_t frame,unsigned back){
         scene=nullptr;mode=value;logic_frame=frame;page=back;
-        bullet_count=hazard_count=0;player={};projectile_contacts.reset();
+        bullet_count=hazard_count=0;player={};
     }
     void publish(const void *owner,std::uint64_t tick,bool shifted){
         scene=owner;completed_tick=tick;shake=shifted;

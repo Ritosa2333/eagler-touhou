@@ -35,11 +35,10 @@ static void projectile_sampling(){
     CHECK(b.update(1,player.x,player.y,8,&f));
     CHECK(f.bullet_count==2&&f.bullets[0].position==CollisionPoint{207,312}&&f.bullets[0].pellet);
     CHECK(b.bullets[0].flag==2&&b.bullets[2].flag==2);
-    CHECK(f.projectile_contacts.count()==1&&f.projectile_contacts[0]);
     CHECK(f.bullets[1].position==CollisionPoint{40,362}&&!f.bullets[1].pellet&&b.bullets[1].velocity[1]==-32);
     CHECK(f.player[static_cast<unsigned>(CollisionSample::Projectile)]==player);
     f.begin(HitboxMode::Self,9,1);CHECK(!b.update(1,player.x,player.y,9,&f));
-    CHECK(f.bullet_count==0&&f.projectile_contacts.none()&&f.player[static_cast<unsigned>(CollisionSample::Projectile)]==player);
+    CHECK(f.bullet_count==0&&f.player[static_cast<unsigned>(CollisionSample::Projectile)]==player);
     b.clear(0);f.begin(HitboxMode::All,10,0);CHECK(!b.update(0,player.x,player.y,10,&f)&&f.bullet_count==0);
 
     LaserCore laser;
@@ -53,6 +52,25 @@ static void projectile_sampling(){
     CHECK(beam.contains({209,70})&&!beam.contains({208,70})&&!beam.contains({240,70})&&!beam.contains({209,69}));
     f.begin(HitboxMode::All,9,1);CHECK(!laser.update(9,208,70,false,{},&f)&&count(f,CollisionSource::Laser)==1);
     f.begin(HitboxMode::All,10,0);CHECK(!laser.update(10,209,70,false,{},&f)&&count(f,CollisionSource::Laser)==0);
+}
+
+static void original_projectile_window(){
+    // Independent oracle from the ordinary-bullet comparisons in the TH02
+    // PC-98 executable (routine offsets 11BB–1213). Include both rejected
+    // edges, the opposite VRAM page, and fractional post-update positions.
+    constexpr CollisionPoint player{208,336};
+    BulletCore bullets;
+    auto &shot=bullets.bullets[0];
+    for(const bool pellet:{false,true})for(const unsigned page:{0u,1u})
+        for(int y=2;y<=26;++y)for(int x=-5;x<=21;++x){
+            const bool expected=pellet?x>=7&&x<17&&y>=12&&y<=22:x>=-3&&x<19&&y>=4&&y<=24;
+            shot.flag=1;
+            shot.kind=pellet?EnemyBulletRequest::Pellet:EnemyBulletRequest::Bullet16;
+            shot.velocity={3,-5};
+            shot.position[page]={std::uint16_t((player.x+x)*16+12),std::uint16_t((player.y+y)*16+5)};
+            CHECK(bullets.update(page,player.x,player.y)==expected);
+            CHECK(shot.flag==(expected?2u:1u));
+        }
 }
 
 static void vertical_projectile_contact(){
@@ -96,7 +114,7 @@ static void focus_projectile_presentation(const std::filesystem::path &assets){
         CHECK(!scene.life.hit&&pellet.flag==1&&!scene.collision_snapshot());
         for(const unsigned phase:{0u,128u,256u}){
             scene.render(pixels,true,true,phase,&previous);
-            CHECK(pixels[at(cx,cy)]==0xffffff&&pixels[at(cx-5,first_hit)]==0xff456b);
+            CHECK(pixels[at(cx,cy)]==0xffffff);
             CHECK(pixels[at(cx,last_visible)]==pellet_color);
             pellet.flag=0;scene.render(without,true,true,phase,&previous);pellet.flag=1;
             CHECK(without[at(cx,last_visible)]!=pellet_color);
@@ -111,10 +129,7 @@ static void focus_projectile_presentation(const std::filesystem::path &assets){
         CHECK(scene.life.hit&&pellet.flag==2);
         CHECK(BulletCore::pixel(pellet.position[scene.rendered_page][1])+offset==first_hit);
         scene.render(pixels,true,true,0,&previous);
-        CHECK(pixels[at(cx,first_hit)]==pellet_color);
-        CHECK(pixels[at(cx-5,first_hit)]==0xff456b);
-        scene.player.focused=false;scene.render(without,true,true,0,&previous);
-        CHECK(without[at(cx,first_hit)]!=pellet_color); // No contact cue outside Shift.
+        CHECK(pixels[at(cx,first_hit)]!=pellet_color); // Original removal precedes rendering, even with Shift.
         scene.tick(Focus);
         CHECK(scene.life.stage_misses==1&&pellet.flag==0);
         scene.render(pixels);
@@ -459,7 +474,7 @@ static void v2_playback(const std::filesystem::path &assets,const std::filesyste
 
 int main(int argc,char **argv){
     CHECK(argc>=2&&argc<=4);
-    projectile_sampling();vertical_projectile_contact();focus_projectile_presentation(argv[1]);
+    projectile_sampling();original_projectile_window();vertical_projectile_contact();focus_projectile_presentation(argv[1]);
     boss_sampling();render_bounds();scene_lifetime(argv[1]);player_reference_lifetime(argv[1]);
     marisa_practice_overlay(argv[1]);marisa_contact_edges(argv[1]);
     if(argc==3){CHECK(std::string_view(argv[2])=="--timing");dense_pool_timings();}
