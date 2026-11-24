@@ -39,6 +39,13 @@ for (const c of golden.cases) {
   });
 }
 
+test('灵梦向右上移动时，场地右半边的自机弹仍留场', needDat, () => {
+  // 0x4457df：640×480 下场地的屏幕坐标是 (128,16) 到 (512,464)。
+  const {frames} = JSON.parse(run(['game-run', dat, '1', '0', '0', '35', '0:0x91', '', '', '3']));
+  assert.equal(frames[33].player.bullets.length, 13);
+  assert.equal(frames[34].player.bullets.length, 16);
+});
+
 test('player: creation state (0x440fb0) — 灵梦 .sht 速度 ×128、半径常量、子机初值、首帧复位', needDat, () => {
   const c = golden.cases[0];
   const first = gameRun(c, 1).frames[0];
@@ -129,10 +136,10 @@ test('player shooting (0x4455d0 / 0x445470 / 0x444e10 / 0x4456d0) — 琪露诺 
   // 主射击计时 0..14 环绕（0x4455d0 到 15 归零），第二计时继续增长
   assert.deepEqual(frames[34].player.shot_timers.map(t => t[1]), [0, 15]);
   assert.deepEqual(frames[35].player.shot_timers.map(t => t[1]), [1, 16]);
-  // 直线弹 24/帧 向上，第 41 帧出界回收（四角全部 y ≤ 0）
-  assert.ok(frames[39].player.bullets.some(b => b.index === 0));
-  assert.ok(!frames[40].player.bullets.some(b => b.index === 0));
-  assert.ok(!frames[40].player.damage_sources.some(d => d.index === 2), '伤害源随弹失活');
+  // 直线弹 24/帧 向上，四角越过屏幕 y=16 的场地上缘后于第 40 帧回收。
+  assert.ok(frames[38].player.bullets.some(b => b.index === 0));
+  assert.ok(!frames[39].player.bullets.some(b => b.index === 0));
+  assert.ok(!frames[39].player.damage_sources.some(d => d.index === 2), '伤害源随弹失活');
   const last = frames.at(-1).player;
   assert.equal(last.bullets.length, c.shooting.bullets);
   assert.equal(last.damage_sources.length, c.shooting.damage_sources);

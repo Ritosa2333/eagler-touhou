@@ -4,6 +4,7 @@
 
 #include "AnmManager.hpp"
 #include "AnmRenderer.hpp"
+#include "Bomb.hpp"
 #include "GameGlobals.hpp"
 #include "Item.hpp"
 #include "Motion.hpp"
@@ -689,9 +690,11 @@ void BulletManager::convert_cancel_item(const Vec3& pos, i32 mode) {
     if (mode == 4) {
         const float a = float(rng->signed_unit() * kSpread) - kHalfPi;
         spawn_item(0x10, pos, a, 2.2f, 1);
-        if (season_release_active) {
+        // 0x416bc2：解放首帧也在敌机 / 弹幕更新之前消弹，直接读取解放对象。
+        const Bomb* release = player != nullptr ? player->season_release : nullptr;
+        if (release != nullptr && release->active == 1) {
             const float a2 = float(rng->signed_unit() * kSpread) - kHalfPi;
-            spawn_item(season_release_item + 8, pos, a2, 2.2f, 0);
+            spawn_item(release->release_level + 8, pos, a2, 2.2f, 0);
         }
     }
 }

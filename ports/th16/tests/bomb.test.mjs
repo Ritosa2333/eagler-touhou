@@ -18,6 +18,7 @@ const golden = JSON.parse(readFileSync(resolve(here, 'golden/bomb.json'), 'utf8'
 
 const kEnter = 0, kNormal = 1, kRespawnWait = 2, kDying = 4;   // Player::State
 const kOrbit = 2, kStraight = 0;                   // MotionState::mode
+const kReleaseFrame = 854;                        // 原版第 853 帧积满一级量表
 
 function run(args) {
   return execFileSync(harness, args, {encoding: 'utf8', maxBuffer: 1 << 28});
@@ -104,19 +105,22 @@ test('复活入场结束的当帧可按 X 发动炸弹', needDat, () => {
   assert.equal(resumed.resources.bombs, entering.resources.bombs - 1);
 });
 
-test('季节解放：量表过阈值 100 后等级 1，第 850 帧按 C 发动；结束后计时 -45 冷却（0x40e040）回到 0 才可再发；飘字 180 帧', needDat, () => {
+test('季节解放：一级量表积满后按 C 发动，结束后冷却 45 帧并显示奖励 180 帧', needDat, () => {
   const c = byName('st1-release-autumn-1100');
   const frames = gameRun(c);
-  assert.ok(frames[849].season_gauge >= 100);
-  assert.equal(frames[849].bombs.sub.active, 0);
-  const start = frames[850].bombs.sub;
+  const before = frames[kReleaseFrame - 2];
+  const startFrame = frames[kReleaseFrame - 1];
+  assert.equal(before.season_gauge, 100);
+  assert.equal(before.bombs.sub.active, 0);
+  const start = startFrame.bombs.sub;
   assert.equal(start.active, 1);
   assert.equal(start.level, 1);
   assert.equal(start.class, 'AyaSub');
   // 秋：量表清零、自机移动倍率 1.5、光环贴着自机
-  assert.equal(frames[850].season_gauge, 0);
-  assert.equal(f32(frames[860].player.speed_mult), 1.5);
-  assert.deepEqual(frames[860].bombs.sub.pos, frames[860].player.pos);
+  assert.equal(startFrame.season_gauge, 0);
+  const moving = frames[kReleaseFrame + 9];
+  assert.equal(f32(moving.player.speed_mult), 1.5);
+  assert.deepEqual(moving.bombs.sub.pos, moving.player.pos);
   const active = activeFrames(frames, 'sub');
   const end = active.at(-1);                       // 最后一个活动帧（持续 70 帧：等级 1 查表）
   assert.equal(active.length, 71);
@@ -134,7 +138,7 @@ test('季节解放：五个子季节各自的类与持续帧数（等级 1：春
     const c = byName(`st1-release-${season}-1100`);
     assert.equal(c.sub_class, cls, season);
     assert.equal(c.sub_active_frames[2], duration + 1, season);   // 活动帧含发动当帧
-    assert.equal(c.sub_active_frames[0], 851, season);
+    assert.equal(c.sub_active_frames[0], kReleaseFrame, season);
   }
 });
 

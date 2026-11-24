@@ -352,7 +352,8 @@ void Player::respawn(AnmManager& manager, GameGlobals& globals) {
     // Bomb 回 3，pos 副本 = pos，回到 (0, 480)，无敌 0x118、状态计时清零
     (void)manager;
     state = kEnter;
-    if (global_game_speed != nullptr) *global_game_speed = 1.0f;
+    game_speed_ = 1.0f;
+    if (global_game_speed != nullptr) *global_game_speed = game_speed_;
     alloc_circle_damage_source(pos, 32.0f, 16.0f, 0x1e, 0x96);
     globals.bombs = 3;
     if (gui != nullptr) gui->refresh_bombs_display(3, globals.bomb_fragments);
@@ -587,6 +588,8 @@ void Player::update(AnmManager& manager, GameGlobals& globals, const InputState&
                 state_timer.tick(game_speed);
             } else {
                 respawn(manager, globals);
+                // 0x4428fd：复活当帧后续的计时器和伤害源更新使用恢复后的速度。
+                game_speed = game_speed_;
             }
         }
         break;
@@ -930,6 +933,10 @@ bool Player::spawn_bullet(AnmManager& manager, GameGlobals& globals, u32 shot_id
 void Player::tick_bullets(AnmManager& manager, const GameGlobals& globals, const PlayerWorld& world,
                           const AnmGeometry& geometry, float game_speed) {
     // 0x4456d0
+    const float field_left = geometry.field_offset_x - 192.0f;
+    const float field_top = geometry.field_offset_y;
+    const float field_right = geometry.field_offset_x + 192.0f;
+    const float field_bottom = field_top + 448.0f;
     for (int i = 0; i < kBulletCount; ++i) {
         PlayerBullet& b = bullets[i];
         if (b.active == 0) continue;
@@ -997,9 +1004,10 @@ void Player::tick_bullets(AnmManager& manager, const GameGlobals& globals, const
             geometry.vm_corners(*vmp, c);
             if (b.timer.current < 0xf) inside = true;
             else {
-                // DAT_004d9d38/3c（恒 0）起 384×448 的开区间
+                // 0x4457df：四角已处于屏幕坐标，场地边界从 DAT_004d9d38/3c 起算。
                 for (int k = 0; k < 4 && !inside; ++k) {
-                    inside = 0.0f < c[k][0] && c[k][0] < 384.0f && 0.0f < c[k][1] && c[k][1] < 448.0f;
+                    inside = field_left < c[k][0] && c[k][0] < field_right &&
+                             field_top < c[k][1] && c[k][1] < field_bottom;
                 }
             }
         }

@@ -170,7 +170,7 @@ constexpr AddressAnchor kAnchors[] = {
     {"player-bullet-create-cb", 0x445ED0, "game/Player.cpp Player::spawn_bullet（回调 1：target=0；回调 4 0x447450：伤害源类型 2）"},
     {"player-bullet-tick-cb", 0x445EE0, "game/Player.cpp Player::tick_bullets（回调 1 追踪：0x425240 找 256 内最近敌机转向加减速；回调 5 0x447480：active==1 时 speed+=0.5）"},
     {"player-homing-target", 0x425240, "game/Player.cpp Player::tick_bullets（在 (flags&0xc000021)==0 的敌机中找距离 <256 且最近者）"},
-    {"player-bullets", 0x4456D0, "game/Player.cpp Player::tick_bullets（回调→运动→VM；in-bounds = 类型 2 || 计时<0xf || 四角任一严格在 (0,0)-(384,448) 内；否则 kill VM 并回收）"},
+    {"player-bullets", 0x4456D0, "game/Player.cpp Player::tick_bullets（回调→运动→VM；类型 2、计时<0xf 或任一四角严格位于场地屏幕矩形内时留场，640×480 下为 (128,16)–(512,464)）"},
     {"damage-source-alloc", 0x444B20, "game/Player.cpp Player::alloc_damage_source（从上次下标后首个空位，1 起编号；类型 1、f7c=10000000、计时 9999999）"},
     {"damage-source-apply", 0x445A30, "game/Player.cpp Player::apply_damage_sources（0x403d30 旋转矩形-圆相交、f84 防同帧重入、按 kind 分派命中回调、sht.damage_cap 封顶）"},
     {"rect-circle-hit", 0x403D30, "game/Player.cpp Player::apply_damage_sources rect_circle"},

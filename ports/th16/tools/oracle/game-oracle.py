@@ -868,8 +868,9 @@ class GameOracle(Oracle):
         uc.mem_write(DAT_SCENE_CURRENT, struct.pack('<II', 7, 7))  # 0x43ce10 case 7 之后：当前 / 请求场景均为 Game
         if self.lives is not None:
             uc.mem_write(0x4A57F4, struct.pack('<i', self.lives))  # DAT_004a57f4：残机覆盖（长程无输入对拍不被 Game Over 截断）
-        # Supervisor 绘制链 0x43b3d0 每帧写的场地屏幕偏移 DAT_004d9d50/54 = 640/2、(480-448)/2：
-        # 自机弹出界判定 0x4456d0 → 0x468c00 → 0x406c40 读它们；oracle 不跑绘制链，在此一次性写入
+        # 原版启动用 640×480 时，场地矩形从 (128, 16) 起，宽 384、高 448。
+        # 无头启动要补这组屏幕坐标；0x4456d0 比较的是 ANM 顶点与场地矩形。
+        uc.mem_write(0x4D9D38, struct.pack('<iiii', 128, 16, 448, 384))
         uc.mem_write(0x4D9D50, struct.pack('<ii', 320, 16))
         self.frame = 0
         self.scene_exit = None   # 游戏场景之外的 DAT_004c17c4 请求（标题 4 / 结局 0xf / 0x10 / 退出 2）

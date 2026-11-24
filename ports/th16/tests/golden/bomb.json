@@ -1,5 +1,5 @@
 {
- "note": "tools/oracle/game-oracle.py --enemies --bullets --items --lasers --bombs（Unicorn 直跑 th16.exe 全游戏）的 Bomb / 季节解放快照 bomb_digest 与同场景 player / enemy / bullet / item / spell / laser digest 的 FNV-1a 64；harness game-digest 同口径（--lives 8 --refill-lives，replay_slot -1 = 普通模式）。输入位：0x1 射击 0x2 炸弹 0x8 低速 0x10 上 0x800 季节解放。四机体主炸弹在第 120 帧按下 X（0x40db20）；解放用例先按住上 + 射击把季节量表攒过阈值 100（第 835 帧起等级 1），第 850 帧按 C；决死用例在第 892 帧被弹后第 895 帧按 X（0x442560 决死猶予 ≤ 7 帧 → 0x444070 回到状态 1）。魔理沙用例同时覆盖 .sht 类型 2 激光（0x446200 / 0x446260 / 0x446870）与低速 / 移动下的朝向与截断。",
+ "note": "tools/oracle/game-oracle.py --enemies --bullets --items --lasers --bombs（Unicorn 直跑 th16.exe 全游戏）的 Bomb / 季节解放快照 bomb_digest 与同场景 player / enemy / bullet / item / spell / laser digest 的 FNV-1a 64；harness game-digest 同口径（--lives 8 --refill-lives，replay_slot -1 = 普通模式）。输入位：0x1 射击 0x2 炸弹 0x8 低速 0x10 上 0x800 季节解放。四机体主炸弹在第 120 帧按下 X（0x40db20）；解放用例先按住上 + 射击把季节量表攒过阈值 100（第 853 帧起等级 1），下一帧按 C；决死用例在第 892 帧被弹后第 895 帧按 X（0x442560 决死猶予 ≤ 7 帧 → 0x444070 回到状态 1）。魔理沙用例同时覆盖 .sht 类型 2 激光（0x446200 / 0x446260 / 0x446870）与低速 / 移动下的朝向与截断。",
  "cases": [
   {
    "name": "st1-reimu-bomb-400",
@@ -12,14 +12,14 @@
    "refill": 1,
    "frames": 400,
    "input": "0:0x1,120:0x3,125:0x1",
-   "player_digest": "47cb8701eec234bb",
-   "enemy_digest": "0a42651f5c33b0fb",
+   "player_digest": "d249088f7c4f2ac0",
+   "enemy_digest": "734e171c9563a640",
    "bullet_digest": "d4eb11299bf1c13a",
-   "enemy_vm_digest": "8514b41a6e6b5bcc",
-   "item_digest": "006515885da6a05d",
-   "spell_digest": "ed3a6743c9a37e78",
+   "enemy_vm_digest": "d6273ae19aaecad5",
+   "item_digest": "62cfadce86dc37d2",
+   "spell_digest": "1f8fb6fea9f26635",
    "laser_digest": "d4eb11299bf1c13a",
-   "bomb_digest": "024173f4d76f3dbd",
+   "bomb_digest": "53a65af99a1e4b4d",
    "main_class": "ReimuA",
    "sub_class": "ReimuSub",
    "main_active_frames": [
@@ -51,12 +51,12 @@
    "refill": 1,
    "frames": 500,
    "input": "0:0x1,120:0x3,125:0x1",
-   "player_digest": "73057c389124fe0f",
-   "enemy_digest": "5fba3e6670ab823c",
+   "player_digest": "159ce4c140220658",
+   "enemy_digest": "cff20072f431cfe4",
    "bullet_digest": "f12c263b04d2ae42",
-   "enemy_vm_digest": "2f5f6890edf005f1",
-   "item_digest": "ea8a701337930942",
-   "spell_digest": "50d311bb312bb347",
+   "enemy_vm_digest": "6d86273929b07a5f",
+   "item_digest": "6bfcb4a8846d3853",
+   "spell_digest": "d45c0cf2e800cc7b",
    "laser_digest": "f12c263b04d2ae42",
    "bomb_digest": "440693c91a5441d3",
    "main_class": "CirnoA",
@@ -73,11 +73,11 @@
    ],
    "sub_level": 0,
    "last_resources": {
-    "score": 2534,
+    "score": 3259,
     "lives": 8,
     "bombs": 2
    },
-   "last_season_gauge": 51
+   "last_season_gauge": 53
   },
   {
    "name": "st1-aya-bomb-500",
@@ -90,11 +90,11 @@
    "refill": 1,
    "frames": 500,
    "input": "0:0x1,120:0x3,125:0x1",
-   "player_digest": "d191044a3b72fd6d",
-   "enemy_digest": "ffcc39d9b0e6c7fa",
+   "player_digest": "f09e05eeaebc96c3",
+   "enemy_digest": "f27fccf6478570fa",
    "bullet_digest": "f12c263b04d2ae42",
-   "enemy_vm_digest": "f7d1daf52b32c245",
-   "item_digest": "74b92415cd2abda8",
+   "enemy_vm_digest": "874fe0489def53dd",
+   "item_digest": "48f8e48cfc08cb89",
    "spell_digest": "ebabd1f587ca06fc",
    "laser_digest": "f12c263b04d2ae42",
    "bomb_digest": "b0aa6f498ee7d02e",
@@ -112,7 +112,7 @@
    ],
    "sub_level": 0,
    "last_resources": {
-    "score": 6335,
+    "score": 6333,
     "lives": 8,
     "bombs": 2
    },
@@ -129,11 +129,11 @@
    "refill": 1,
    "frames": 500,
    "input": "0:0x1,120:0x3,125:0x1",
-   "player_digest": "2eb4d07c454e16a4",
-   "enemy_digest": "6e303d82c55cd29b",
+   "player_digest": "d25c51c61e569d55",
+   "enemy_digest": "d26c434d4344717b",
    "bullet_digest": "f12c263b04d2ae42",
-   "enemy_vm_digest": "3f20b483821d2757",
-   "item_digest": "010e68c90731e80c",
+   "enemy_vm_digest": "553d879680358895",
+   "item_digest": "ec964c5e0133aaca",
    "spell_digest": "b2bf7a94bb5264b7",
    "laser_digest": "f12c263b04d2ae42",
    "bomb_digest": "99bc1e2b8401d4d3",
@@ -151,7 +151,7 @@
    ],
    "sub_level": 0,
    "last_resources": {
-    "score": 7345,
+    "score": 7342,
     "lives": 8,
     "bombs": 2
    },
@@ -168,11 +168,11 @@
    "refill": 1,
    "frames": 900,
    "input": "0:0x1,60:0x9,200:0x49,300:0x89,400:0x19,500:0x29,600:0x3,606:0x1,700:0x41",
-   "player_digest": "2e2ba9990590c6ab",
-   "enemy_digest": "ffe77e5676c589a2",
+   "player_digest": "f831fd45d16c40ef",
+   "enemy_digest": "0073172e5c547bc2",
    "bullet_digest": "e92f02fa97b2a961",
-   "enemy_vm_digest": "3aea5a4666cab0b5",
-   "item_digest": "e31a781767df5568",
+   "enemy_vm_digest": "9e2153473e62265b",
+   "item_digest": "f2ab8309be2ac420",
    "spell_digest": "d96501c0afb1eee9",
    "laser_digest": "a531a93e47d70c5c",
    "bomb_digest": "263273efb79d4c2a",
@@ -190,7 +190,7 @@
    ],
    "sub_level": 0,
    "last_resources": {
-    "score": 12595,
+    "score": 12588,
     "lives": 8,
     "bombs": 2
    },
@@ -206,15 +206,15 @@
    "lives": 8,
    "refill": 1,
    "frames": 1100,
-   "input": "0:0x11,850:0x811,855:0x11",
-   "player_digest": "c4ecd579272600c8",
-   "enemy_digest": "6aa9fa65d9173c2c",
-   "bullet_digest": "4afd47c2727c3a26",
-   "enemy_vm_digest": "c30938a60280d3cf",
-   "item_digest": "5cb95c2a24508e3b",
-   "spell_digest": "0b23fb79926ed7da",
+   "input": "0:0x11,853:0x811,858:0x11",
+   "player_digest": "694cd44caa659eee",
+   "enemy_digest": "64164e597efe94f0",
+   "bullet_digest": "d562784d914ed946",
+   "enemy_vm_digest": "58d7768dff682557",
+   "item_digest": "3999d65577e77dae",
+   "spell_digest": "4dc4368c30e107ff",
    "laser_digest": "7088cca8a3c48c8d",
-   "bomb_digest": "255c92fb0f2c6741",
+   "bomb_digest": "5770f275ea160515",
    "main_class": "ReimuA",
    "sub_class": "ReimuSub",
    "main_active_frames": [
@@ -223,17 +223,17 @@
     0
    ],
    "sub_active_frames": [
-    851,
-    891,
+    854,
+    894,
     41
    ],
    "sub_level": 1,
    "last_resources": {
-    "score": 15885,
+    "score": 15864,
     "lives": 8,
     "bombs": 3
    },
-   "last_season_gauge": 59
+   "last_season_gauge": 56
   },
   {
    "name": "st1-release-summer-1100",
@@ -245,15 +245,15 @@
    "lives": 8,
    "refill": 1,
    "frames": 1100,
-   "input": "0:0x11,850:0x811,855:0x11",
-   "player_digest": "6fb41ceddda74bd7",
-   "enemy_digest": "7ced00d2ecd2b2b5",
+   "input": "0:0x11,853:0x811,858:0x11",
+   "player_digest": "bcd1b40592a9b901",
+   "enemy_digest": "d74c6703b49c8ef0",
    "bullet_digest": "ee3afcc494b1eb77",
-   "enemy_vm_digest": "6b012446132d6274",
-   "item_digest": "f3d8162b4af2c145",
-   "spell_digest": "018fab2208142cdd",
+   "enemy_vm_digest": "1c784c4c0807aff1",
+   "item_digest": "ef72f62cf480f111",
+   "spell_digest": "ed97c1862e16a820",
    "laser_digest": "7088cca8a3c48c8d",
-   "bomb_digest": "6d6cf8e8e62f93fd",
+   "bomb_digest": "3bdb81df899e5ad5",
    "main_class": "ReimuA",
    "sub_class": "CirnoSub",
    "main_active_frames": [
@@ -262,17 +262,17 @@
     0
    ],
    "sub_active_frames": [
-    851,
-    911,
+    854,
+    914,
     61
    ],
    "sub_level": 1,
    "last_resources": {
-    "score": 12145,
+    "score": 13131,
     "lives": 8,
     "bombs": 3
    },
-   "last_season_gauge": 38
+   "last_season_gauge": 43
   },
   {
    "name": "st1-release-autumn-1100",
@@ -284,15 +284,15 @@
    "lives": 8,
    "refill": 1,
    "frames": 1100,
-   "input": "0:0x11,850:0x811,855:0x11",
-   "player_digest": "fa3051916b187e44",
-   "enemy_digest": "35500658bf52e93f",
-   "bullet_digest": "c7364656bb5b87bb",
-   "enemy_vm_digest": "b675661678307883",
-   "item_digest": "04a8cd5ee2f1c702",
-   "spell_digest": "4336583c3522d9a8",
+   "input": "0:0x11,853:0x811,858:0x11",
+   "player_digest": "d122a94315f32a18",
+   "enemy_digest": "8fa59cea30719b72",
+   "bullet_digest": "2c1671d591a1892d",
+   "enemy_vm_digest": "d2151bddbb7b3b60",
+   "item_digest": "f9baada28607d179",
+   "spell_digest": "ee93b3ffac768c9b",
    "laser_digest": "7088cca8a3c48c8d",
-   "bomb_digest": "7b15dad1377b96d8",
+   "bomb_digest": "0beab088ce84e45f",
    "main_class": "ReimuA",
    "sub_class": "AyaSub",
    "main_active_frames": [
@@ -301,17 +301,17 @@
     0
    ],
    "sub_active_frames": [
-    851,
-    921,
+    854,
+    924,
     71
    ],
    "sub_level": 1,
    "last_resources": {
-    "score": 11938,
+    "score": 12915,
     "lives": 8,
     "bombs": 3
    },
-   "last_season_gauge": 40
+   "last_season_gauge": 39
   },
   {
    "name": "st1-release-winter-1100",
@@ -323,15 +323,15 @@
    "lives": 8,
    "refill": 1,
    "frames": 1100,
-   "input": "0:0x11,850:0x811,855:0x11",
-   "player_digest": "9d6b8ef82bba26d5",
-   "enemy_digest": "7995a04ecc2e41a9",
-   "bullet_digest": "4acc725b2ba2f491",
-   "enemy_vm_digest": "c55b5acaa47b8c7f",
-   "item_digest": "f4c0ad5ad38d44e0",
-   "spell_digest": "7c69a3d475d56761",
+   "input": "0:0x11,853:0x811,858:0x11",
+   "player_digest": "b3cf75511fad6e8a",
+   "enemy_digest": "39d890a04b0e623a",
+   "bullet_digest": "03fe3a51d28f3984",
+   "enemy_vm_digest": "ff36a98c85ca5642",
+   "item_digest": "dcb1ad6dd06ffc95",
+   "spell_digest": "1b1854e2d3575a16",
    "laser_digest": "7088cca8a3c48c8d",
-   "bomb_digest": "42735d2204400bca",
+   "bomb_digest": "c931e363b48a77ae",
    "main_class": "ReimuA",
    "sub_class": "MarisaSub",
    "main_active_frames": [
@@ -340,17 +340,17 @@
     0
    ],
    "sub_active_frames": [
-    851,
-    911,
+    854,
+    914,
     61
    ],
    "sub_level": 1,
    "last_resources": {
-    "score": 18260,
+    "score": 12139,
     "lives": 8,
     "bombs": 3
    },
-   "last_season_gauge": 56
+   "last_season_gauge": 32
   },
   {
    "name": "st1-release-doyou-1100",
@@ -362,15 +362,15 @@
    "lives": 8,
    "refill": 1,
    "frames": 1100,
-   "input": "0:0x11,850:0x811,855:0x11",
-   "player_digest": "d1bb2e4c1af8a1bd",
-   "enemy_digest": "4fc6993ead9a3d5b",
-   "bullet_digest": "b0aae66064908d8b",
-   "enemy_vm_digest": "09ec12feaa4caba3",
-   "item_digest": "9d6a594d5e1557af",
-   "spell_digest": "f977fc0739b7110d",
+   "input": "0:0x11,853:0x811,858:0x11",
+   "player_digest": "4fd8dd48c24626e5",
+   "enemy_digest": "24427d10a114e832",
+   "bullet_digest": "6dd929c15019c4f4",
+   "enemy_vm_digest": "1920d617c1cc1666",
+   "item_digest": "56cfa86b9f69f9c8",
+   "spell_digest": "df63654870aae436",
    "laser_digest": "7088cca8a3c48c8d",
-   "bomb_digest": "ad87a484124c67fc",
+   "bomb_digest": "d193ce05dcc00413",
    "main_class": "ReimuA",
    "sub_class": "AllSub",
    "main_active_frames": [
@@ -379,17 +379,17 @@
     0
    ],
    "sub_active_frames": [
-    851,
-    921,
+    854,
+    924,
     71
    ],
    "sub_level": 1,
    "last_resources": {
-    "score": 14261,
+    "score": 13933,
     "lives": 8,
     "bombs": 3
    },
-   "last_season_gauge": 30
+   "last_season_gauge": 28
   },
   {
    "name": "st1-reimu-deathbomb-1000",
@@ -402,14 +402,14 @@
    "refill": 1,
    "frames": 1000,
    "input": "0:0x11,895:0x13,898:0x11",
-   "player_digest": "1cf160ecd0a4fc2c",
-   "enemy_digest": "a1d7da994fbef21c",
+   "player_digest": "8d91b55ba9446f34",
+   "enemy_digest": "a63db5d1c078f5f8",
    "bullet_digest": "a6116ed9a708bb3b",
-   "enemy_vm_digest": "c486c352c67ca518",
-   "item_digest": "e09c1b6e0a38a124",
-   "spell_digest": "d7c2a24269f45c2c",
+   "enemy_vm_digest": "8eee364a94c91ad6",
+   "item_digest": "10a499ca9feec499",
+   "spell_digest": "4e4005d47861c715",
    "laser_digest": "8f60e4e832d7439c",
-   "bomb_digest": "43d2d1ae92b08366",
+   "bomb_digest": "b416d8cd3cdd22af",
    "main_class": "ReimuA",
    "sub_class": "ReimuSub",
    "main_active_frames": [
@@ -424,11 +424,11 @@
    ],
    "sub_level": 0,
    "last_resources": {
-    "score": 24716,
+    "score": 24709,
     "lives": 8,
     "bombs": 2
    },
-   "last_season_gauge": 163
+   "last_season_gauge": 173
   },
   {
    "name": "st1-aya-deathbomb-1000",
@@ -441,11 +441,11 @@
    "refill": 1,
    "frames": 1000,
    "input": "0:0x11,895:0x13,898:0x11",
-   "player_digest": "d9733aaa1a50197f",
-   "enemy_digest": "1ea3dc5f854e5900",
+   "player_digest": "48cfe061ced56674",
+   "enemy_digest": "53c5af8e94d1c4f8",
    "bullet_digest": "57e6c827e731d316",
-   "enemy_vm_digest": "ae50e5e04530c098",
-   "item_digest": "81315f36592e807f",
+   "enemy_vm_digest": "d4119b31694bf47c",
+   "item_digest": "120f75a77d9d90d0",
    "spell_digest": "92fb7420fc93e927",
    "laser_digest": "8f60e4e832d7439c",
    "bomb_digest": "0ab008dd4557f268",
@@ -463,7 +463,7 @@
    ],
    "sub_level": 0,
    "last_resources": {
-    "score": 22685,
+    "score": 22689,
     "lives": 8,
     "bombs": 2
    },
@@ -480,7 +480,7 @@
    "refill": 1,
    "frames": 1000,
    "input": "0:0x11,895:0x13,898:0x11",
-   "player_digest": "119e01f87b71efec",
+   "player_digest": "6e0ff3d1b75ca4d3",
    "enemy_digest": "22a6e6d96ae0138a",
    "bullet_digest": "3730ccd8ae5011b1",
    "enemy_vm_digest": "ef2c0075f10acb05",

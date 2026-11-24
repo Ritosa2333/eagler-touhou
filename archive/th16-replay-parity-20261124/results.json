@@ -1,0 +1,1113 @@
+{
+  "baseline": "24a3485cb409d8bbafa09220f2a929e31a9c2462",
+  "score_units": "Internal score. Multiply by 10 for the displayed game score.",
+  "replay_results": [
+    {
+      "difficulty": "Lunatic",
+      "shot": "Reimu Spring",
+      "path": "Lunatic/Reimu-Spring/th16_ud1o17.rpy",
+      "sha256": "31ac4e7cc70dd261ba494f9b62164205c710fd136d7b4b3242e18c84cb26de81",
+      "detail": "https://www.silentselene.net/replays/th16/77803",
+      "expected_score": 531482809,
+      "actual_score": 531482809,
+      "lives": 3,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Reimu Spring",
+      "path": "Lunatic/Reimu-Spring/th16_ud1oc8.rpy",
+      "sha256": "d22143ce2cf3b14b8f4dc17456e232a0f77e194ee08ae5d7665729d91f5a08f4",
+      "detail": "https://www.silentselene.net/replays/th16/78200",
+      "expected_score": 427391508,
+      "actual_score": 427391508,
+      "lives": 2,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Reimu Spring",
+      "path": "Lunatic/Reimu-Spring/th16_ud1siu.rpy",
+      "sha256": "6603ceb34869ddbe4b5d7977713c0220efe9f6f9c2344e4a06a3ccf84ce1d199",
+      "detail": "https://www.silentselene.net/replays/th16/83622",
+      "expected_score": 397114081,
+      "actual_score": 397114081,
+      "lives": 0,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Reimu Spring",
+      "path": "Lunatic/Reimu-Spring/th16_ud1hat.rpy",
+      "sha256": "0b26490c883b61a2017e58f0537a89c7bf752f1eeee792487bd10d9f04ad66ac",
+      "detail": "https://www.silentselene.net/replays/th16/69077",
+      "expected_score": 386410142,
+      "actual_score": 386410142,
+      "lives": 2,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Reimu Spring",
+      "path": "Lunatic/Reimu-Spring/th16_ud1sxw.rpy",
+      "sha256": "4b3a75efc90f3fd759efaa8a3141f1fe389b60eab41584fbdbeada1fc845c171",
+      "detail": "https://www.silentselene.net/replays/th16/84164",
+      "expected_score": 344716160,
+      "actual_score": 344716160,
+      "lives": 1,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Cirno Winter",
+      "path": "Lunatic/Cirno-Winter/th16_ud1h7n.rpy",
+      "sha256": "3f9cf43ec56db5c2303b85a8986574b83f177ad9120cbfd56ba0653ceec960fe",
+      "detail": "https://www.silentselene.net/replays/th16/68963",
+      "expected_score": 614208257,
+      "actual_score": 614208257,
+      "lives": 2,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Cirno Winter",
+      "path": "Lunatic/Cirno-Winter/th16_ud1o87.rpy",
+      "sha256": "e5f64967dc368427787e356d36a2f0b6311338c4d400bc23bb643396fa9debde",
+      "detail": "https://www.silentselene.net/replays/th16/78055",
+      "expected_score": 609864713,
+      "actual_score": 609864713,
+      "lives": 2,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Cirno Winter",
+      "path": "Lunatic/Cirno-Winter/th16_ud1hd5.rpy",
+      "sha256": "294c7b9f9604f4720fa5c8a73c74b7a147a3ffab79f34e180441686030d416ce",
+      "detail": "https://www.silentselene.net/replays/th16/69161",
+      "expected_score": 606250009,
+      "actual_score": 606250009,
+      "lives": 1,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Cirno Winter",
+      "path": "Lunatic/Cirno-Winter/th16_ud1wcg.rpy",
+      "sha256": "e097a641d29a2a7a42738d0072e4751fa3b96dbb4c71fc4f71af32d481b90962",
+      "detail": "https://www.silentselene.net/replays/th16/88576",
+      "expected_score": 605502103,
+      "actual_score": 605502103,
+      "lives": 1,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Cirno Winter",
+      "path": "Lunatic/Cirno-Winter/th16_ud1h3v.rpy",
+      "sha256": "40ce21d892a3363a71f73c0464c1716f66a5b9efb8a9f1801029bdc2bbffa060",
+      "detail": "https://www.silentselene.net/replays/th16/68827",
+      "expected_score": 488385059,
+      "actual_score": 488385059,
+      "lives": 0,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Aya Autumn",
+      "path": "Lunatic/Aya-Autumn/th16_ud1h6i.rpy",
+      "sha256": "ea70cd51167dd4c079eddf68e3b6b8fc9e9ec2936f7dacf8a22a8f93901f7346",
+      "detail": "https://www.silentselene.net/replays/th16/68922",
+      "expected_score": 915340436,
+      "actual_score": 915340436,
+      "lives": 4,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Aya Autumn",
+      "path": "Lunatic/Aya-Autumn/th16_ud1h4e.rpy",
+      "sha256": "c78743679ede2f2a004aba456dbac500b91a8756693912e7575b52d40421388e",
+      "detail": "https://www.silentselene.net/replays/th16/68846",
+      "expected_score": 871221181,
+      "actual_score": 871221181,
+      "lives": 2,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Aya Autumn",
+      "path": "Lunatic/Aya-Autumn/th16_ud1h4b.rpy",
+      "sha256": "b8984dcde6ba871895a5b74be16a60fd228dad01a3fa7375867fae1b96363719",
+      "detail": "https://www.silentselene.net/replays/th16/68843",
+      "expected_score": 820501613,
+      "actual_score": 820501613,
+      "lives": 3,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Aya Autumn",
+      "path": "Lunatic/Aya-Autumn/th16_ud1hms.rpy",
+      "sha256": "3a69b20928d3775b4058cfa1d6312f55bffc1344e447829ad81b6d92fc8f94fd",
+      "detail": "https://www.silentselene.net/replays/th16/69508",
+      "expected_score": 815888139,
+      "actual_score": 815888139,
+      "lives": 8,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Aya Autumn",
+      "path": "Lunatic/Aya-Autumn/th16_ud1pqh.rpy",
+      "sha256": "90b14630a6adf8539c885d9fcd83f9dedc4683635a24bd7cc379fb872b346bf0",
+      "detail": "https://www.silentselene.net/replays/th16/80009",
+      "expected_score": 807464322,
+      "actual_score": 807464322,
+      "lives": 1,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Reimu",
+      "path": "Extra/Reimu/th16_ud1nt0.rpy",
+      "sha256": "a1974e69ccf2972df13c19530d706e6435bc96784ba44f3c5c5af996fbf41ca1",
+      "detail": "https://www.silentselene.net/replays/th16/77508",
+      "expected_score": 350747838,
+      "actual_score": 350747838,
+      "lives": 2,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Reimu",
+      "path": "Extra/Reimu/th16_ud1mma.rpy",
+      "sha256": "64140ffb6118950511c9d27a903a3984a5b0b2f3346be0edfa24728346bd94e7",
+      "detail": "https://www.silentselene.net/replays/th16/75970",
+      "expected_score": 345941668,
+      "actual_score": 345941668,
+      "lives": 3,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Reimu",
+      "path": "Extra/Reimu/th16_ud1hl0.rpy",
+      "sha256": "ef1428b946e0a1ebc3a87f4599327046a7a9a0293fe20c7b7c672ff097d04c71",
+      "detail": "https://www.silentselene.net/replays/th16/69444",
+      "expected_score": 333637830,
+      "actual_score": 333637830,
+      "lives": 4,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Reimu",
+      "path": "Extra/Reimu/th16_ud1h3u.rpy",
+      "sha256": "e0fd35da68bf2719580182e9503fbe7a61de0d9596eb85b0187f40ba106081c6",
+      "detail": "https://www.silentselene.net/replays/th16/68826",
+      "expected_score": 292272305,
+      "actual_score": 292272305,
+      "lives": 0,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Reimu",
+      "path": "Extra/Reimu/th16_ud1hl4.rpy",
+      "sha256": "266865c68808f6e7051ba2bfb6c1f550ee76d2c678c52503790f25a16ac11fb6",
+      "detail": "https://www.silentselene.net/replays/th16/69448",
+      "expected_score": 291320267,
+      "actual_score": 291320267,
+      "lives": 3,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Cirno",
+      "path": "Extra/Cirno/th16_ud1nul.rpy",
+      "sha256": "e36ccec238201286c33027b7e39fad086377734a9c9d68d198ee4eb3f06619d5",
+      "detail": "https://www.silentselene.net/replays/th16/77565",
+      "expected_score": 351846194,
+      "actual_score": 351846194,
+      "lives": 3,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Cirno",
+      "path": "Extra/Cirno/th16_ud1mm9.rpy",
+      "sha256": "f324dd25fa6fae2549889581f2256d2812973ecd73d6cb1d2aec7222ef7d17d7",
+      "detail": "https://www.silentselene.net/replays/th16/75969",
+      "expected_score": 346621463,
+      "actual_score": 346621463,
+      "lives": 1,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Cirno",
+      "path": "Extra/Cirno/th16_ud1hm1.rpy",
+      "sha256": "daa64efc12c72b5716536f0e11143ab3ed918a778f385d1c64160ce895315073",
+      "detail": "https://www.silentselene.net/replays/th16/69481",
+      "expected_score": 331939544,
+      "actual_score": 331939544,
+      "lives": 0,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Cirno",
+      "path": "Extra/Cirno/th16_ud1mhy.rpy",
+      "sha256": "fedd5c527846f153d26be68008ae60ed18541633d53e4dc02095cb86e5fcfab0",
+      "detail": "https://www.silentselene.net/replays/th16/75814",
+      "expected_score": 267088721,
+      "actual_score": 267088721,
+      "lives": 0,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Cirno",
+      "path": "Extra/Cirno/th16_ud1vxz.rpy",
+      "sha256": "b96a630e1165105b5bad47e711f0b511a78e62761f49ff5f6b3090a9a2dbc458",
+      "detail": "https://www.silentselene.net/replays/th16/88055",
+      "expected_score": 257978526,
+      "actual_score": 257978526,
+      "lives": 5,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1nwy.rpy",
+      "sha256": "2d12e9e56fdc3d0aa58843ccc199b806863e1a9be387cf704e2fa0cc2e7612cb",
+      "detail": "https://www.silentselene.net/replays/th16/77650",
+      "expected_score": 354945490,
+      "actual_score": 354945490,
+      "lives": 1,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1mm8.rpy",
+      "sha256": "7f19572f8b0e3e92bc2c1c2730cb85da9de1f3cb01f65d789045974edf784500",
+      "detail": "https://www.silentselene.net/replays/th16/75968",
+      "expected_score": 348509793,
+      "actual_score": 287662479,
+      "lives": -25,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1s1j.rpy",
+      "sha256": "ffe528925b39eb0b44fe7e7bcd1912d5dc056bb1b8449e76bc70e576f3ede0e6",
+      "detail": "https://www.silentselene.net/replays/th16/82999",
+      "expected_score": 304713069,
+      "actual_score": 304713069,
+      "lives": 0,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1h4l.rpy",
+      "sha256": "6f54032823a304d3f5ca229f9e426502a7a8edb221fd6a52e8d129ae015d9a3c",
+      "detail": "https://www.silentselene.net/replays/th16/68853",
+      "expected_score": 255138425,
+      "actual_score": 255138425,
+      "lives": 2,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1h84.rpy",
+      "sha256": "5917d1c19dfc1c8e55540d72756f6c832ed5d451751643a37decbabe981c588a",
+      "detail": "https://www.silentselene.net/replays/th16/68980",
+      "expected_score": 244524412,
+      "actual_score": 244524412,
+      "lives": 3,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1hl6.rpy",
+      "sha256": "49cda0e16b74d35b364ce0f12afb4f3f974413131a1b709ee5168eebe8e739bc",
+      "detail": "https://www.silentselene.net/replays/th16/69450",
+      "expected_score": 236226777,
+      "actual_score": 236226777,
+      "lives": 0,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1hra.rpy",
+      "sha256": "5d8a82457478deb6721cdcdec504a747d83719dc93fbd41568794fab5410cdde",
+      "detail": "https://www.silentselene.net/replays/th16/69670",
+      "expected_score": 220804251,
+      "actual_score": 188524972,
+      "lives": -13,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1qt4.rpy",
+      "sha256": "7ff95cdbc2728580e921df561131f51a61dfca2dccf1c06a0cd30e44daa0ba36",
+      "detail": "https://www.silentselene.net/replays/th16/81400",
+      "expected_score": 218525563,
+      "actual_score": 218525563,
+      "lives": 3,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1hn4.rpy",
+      "sha256": "4d5044cffe8a0991e07379cb42c4b9cb973c5c074c34900ae2ab4f6cfc995c22",
+      "detail": "https://www.silentselene.net/replays/th16/69520",
+      "expected_score": 208569744,
+      "actual_score": 208569744,
+      "lives": 0,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Aya",
+      "path": "Extra/Aya/th16_ud1hj2.rpy",
+      "sha256": "32907f5ddf50440c4465b9cdaff19b71ae44a766ba1821aa68c8f7ee9bad85d3",
+      "detail": "https://www.silentselene.net/replays/th16/69374",
+      "expected_score": 207405584,
+      "actual_score": 207405584,
+      "lives": 0,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1wdp.rpy",
+      "sha256": "d32263d09c3fe86838374d6a777db6ad6f71a945f432bd1a58d708eb6e5bfd7f",
+      "detail": "https://www.silentselene.net/replays/th16/88621",
+      "expected_score": 457652350,
+      "actual_score": 457652350,
+      "lives": 2,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1w34.rpy",
+      "sha256": "65cd16a9e10a7f3c4e0fe800c3e58917b48bf3e94a9764dcf9dc2170caee14b8",
+      "detail": "https://www.silentselene.net/replays/th16/88240",
+      "expected_score": 404286882,
+      "actual_score": 404286882,
+      "lives": 0,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1ovx.rpy",
+      "sha256": "ee88c2cdf274b1ed786a46ef0e45ffc30519ee8c0acb88e4df15aa77442f4726",
+      "detail": "https://www.silentselene.net/replays/th16/78909",
+      "expected_score": 345300952,
+      "actual_score": 345300952,
+      "lives": 1,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1hii.rpy",
+      "sha256": "f6968fbf3b1f8040210f1db488c93365d06cc431000402c40b6f7c23a4fce943",
+      "detail": "https://www.silentselene.net/replays/th16/69354",
+      "expected_score": 333800430,
+      "actual_score": 333800430,
+      "lives": 1,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1hfc.rpy",
+      "sha256": "463a29b40edcf8332cbe0757b43ee278d36b752073265446c88604780c235a18",
+      "detail": "https://www.silentselene.net/replays/th16/69240",
+      "expected_score": 305394412,
+      "actual_score": 305394412,
+      "lives": 1,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1hbi.rpy",
+      "sha256": "5394fdb779b26649785a24da52e916dfc02b58458ca3342eb5b5ba641efad0d8",
+      "detail": "https://www.silentselene.net/replays/th16/69102",
+      "expected_score": 289145901,
+      "actual_score": 289145901,
+      "lives": 0,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1hpx.rpy",
+      "sha256": "eaca1922357cd5ee646daec703a31cf78de2dc39e585e44c90f4506016b91bfd",
+      "detail": "https://www.silentselene.net/replays/th16/69621",
+      "expected_score": 144196506,
+      "actual_score": 144196506,
+      "lives": 3,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1wqo.rpy",
+      "sha256": "126eca3a1e4e6640b85d4834914b728f623f3df738a71f2869a687c2f6c6c7a0",
+      "detail": "https://www.silentselene.net/replays/th16/89088",
+      "expected_score": 124927586,
+      "actual_score": 124927586,
+      "lives": 1,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1vxe.rpy",
+      "sha256": "ec5fafaf2e3b0ecb6fcf88fc5eb683451f821f27665cf62be053a605bbadea32",
+      "detail": "https://www.silentselene.net/replays/th16/88034",
+      "expected_score": 121423121,
+      "actual_score": 121423121,
+      "lives": 1,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Lunatic",
+      "shot": "Marisa Summer",
+      "path": "Lunatic/Marisa-Summer/th16_ud1hh2.rpy",
+      "sha256": "dc50c4abed571b68265a27d628d7d7cba417ea59c3e1b18c721f9603cb3558c4",
+      "detail": "https://www.silentselene.net/replays/th16/69302",
+      "expected_score": 77938465,
+      "actual_score": 77938465,
+      "lives": 2,
+      "stages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Marisa",
+      "path": "Extra/Marisa/th16_ud1nw6.rpy",
+      "sha256": "a8375bc82febfb704fa6b704882fc3c504a5a5ba65798785a45bbef108fb826b",
+      "detail": "https://www.silentselene.net/replays/th16/77622",
+      "expected_score": 351968020,
+      "actual_score": 351968020,
+      "lives": 2,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Marisa",
+      "path": "Extra/Marisa/th16_ud1mm7.rpy",
+      "sha256": "539f0f116fd19e7614672ee50d57c6b5b174f750800523e68a17063457cd1251",
+      "detail": "https://www.silentselene.net/replays/th16/75967",
+      "expected_score": 348390609,
+      "actual_score": 348390609,
+      "lives": 3,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Marisa",
+      "path": "Extra/Marisa/th16_ud1h4u.rpy",
+      "sha256": "6c8d52271ca818e90bd29d55e7dd3c751496e54c50e9d83fe943bffc4beaaedc",
+      "detail": "https://www.silentselene.net/replays/th16/68862",
+      "expected_score": 268340992,
+      "actual_score": 268340992,
+      "lives": 4,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Marisa",
+      "path": "Extra/Marisa/th16_ud1vxq.rpy",
+      "sha256": "6882b608d05ecab87ce5fa8b188c52d306b8f3dbe8ca8d9d4ec8934bf440d36b",
+      "detail": "https://www.silentselene.net/replays/th16/88046",
+      "expected_score": 258426568,
+      "actual_score": 258426568,
+      "lives": 1,
+      "stages": [
+        7
+      ]
+    },
+    {
+      "difficulty": "Extra",
+      "shot": "Marisa",
+      "path": "Extra/Marisa/th16_ud1h5r.rpy",
+      "sha256": "e9eb83f8e37b31364cbf687283b5c0f9530b6928c08710d6f85eaece44c925a4",
+      "detail": "https://www.silentselene.net/replays/th16/68895",
+      "expected_score": 232674915,
+      "actual_score": 232674915,
+      "lives": 2,
+      "stages": [
+        7
+      ]
+    }
+  ],
+  "aya_original_verified": [
+    {
+      "replay": "th16_ud1h84.rpy",
+      "port": {
+        "tag": "1h84",
+        "expected": 244524412,
+        "archive": "https://www.silentselene.net/replays/th16/68980",
+        "score": 244524412,
+        "lives": 3,
+        "power": 357,
+        "gauge": 359,
+        "position": [
+          1479,
+          34412
+        ],
+        "visual_seed": 25101,
+        "visual_calls": 336789,
+        "stage_frame": 87759
+      },
+      "original": {
+        "scene": 7,
+        "stage": 7,
+        "stage_frame": 87759,
+        "score": 244524412,
+        "lives": 3,
+        "power": 357,
+        "gauge": 359,
+        "visual_seed": 25101,
+        "visual_calls": 336789,
+        "position": [
+          1479,
+          34412
+        ],
+        "wall_seconds": 458.77,
+        "result": "stable_endpoint",
+        "playback": "Ctrl fast-forward"
+      },
+      "differences": {},
+      "verified": true
+    },
+    {
+      "replay": "th16_ud1hl6.rpy",
+      "port": {
+        "tag": "1hl6",
+        "expected": 236226777,
+        "archive": "https://www.silentselene.net/replays/th16/69450",
+        "score": 236226777,
+        "lives": 0,
+        "power": 400,
+        "gauge": 335,
+        "position": [
+          278,
+          40640
+        ],
+        "visual_seed": 61938,
+        "visual_calls": 323284,
+        "stage_frame": 78122
+      },
+      "original": {
+        "scene": 7,
+        "stage": 7,
+        "stage_frame": 78122,
+        "score": 236226777,
+        "lives": 0,
+        "power": 400,
+        "gauge": 335,
+        "visual_seed": 61938,
+        "visual_calls": 323284,
+        "position": [
+          278,
+          40640
+        ],
+        "wall_seconds": 431.95,
+        "result": "stable_endpoint",
+        "playback": "Ctrl fast-forward"
+      },
+      "differences": {},
+      "verified": true
+    },
+    {
+      "replay": "th16_ud1qt4.rpy",
+      "port": {
+        "tag": "1qt4",
+        "expected": 218525563,
+        "archive": "https://www.silentselene.net/replays/th16/81400",
+        "score": 218525563,
+        "lives": 3,
+        "power": 357,
+        "gauge": 254,
+        "position": [
+          -1493,
+          20725
+        ],
+        "visual_seed": 10269,
+        "visual_calls": 303539,
+        "stage_frame": 75755
+      },
+      "original": {
+        "scene": 7,
+        "stage": 7,
+        "stage_frame": 75755,
+        "score": 218525563,
+        "lives": 3,
+        "power": 357,
+        "gauge": 254,
+        "visual_seed": 10269,
+        "visual_calls": 303539,
+        "position": [
+          -1493,
+          20725
+        ],
+        "wall_seconds": 416.54,
+        "result": "stable_endpoint",
+        "playback": "Ctrl fast-forward"
+      },
+      "differences": {},
+      "verified": true
+    },
+    {
+      "replay": "th16_ud1hn4.rpy",
+      "port": {
+        "tag": "1hn4",
+        "expected": 208569744,
+        "archive": "https://www.silentselene.net/replays/th16/69520",
+        "score": 208569744,
+        "lives": 0,
+        "power": 400,
+        "gauge": 129,
+        "position": [
+          5893,
+          47252
+        ],
+        "visual_seed": 5004,
+        "visual_calls": 282057,
+        "stage_frame": 76438
+      },
+      "original": {
+        "scene": 7,
+        "stage": 7,
+        "stage_frame": 76438,
+        "score": 208569744,
+        "lives": 0,
+        "power": 400,
+        "gauge": 129,
+        "visual_seed": 5004,
+        "visual_calls": 282057,
+        "position": [
+          5893,
+          47252
+        ],
+        "wall_seconds": 422.54,
+        "result": "stable_endpoint",
+        "playback": "Ctrl fast-forward"
+      },
+      "differences": {},
+      "verified": true
+    },
+    {
+      "replay": "th16_ud1hj2.rpy",
+      "port": {
+        "tag": "1hj2",
+        "expected": 207405584,
+        "archive": "https://www.silentselene.net/replays/th16/69374",
+        "score": 207405584,
+        "lives": 0,
+        "power": 357,
+        "gauge": 244,
+        "position": [
+          -445,
+          4863
+        ],
+        "visual_seed": 27605,
+        "visual_calls": 306769,
+        "stage_frame": 80756
+      },
+      "original": {
+        "scene": 7,
+        "stage": 7,
+        "stage_frame": 80756,
+        "score": 207405584,
+        "lives": 0,
+        "power": 357,
+        "gauge": 244,
+        "visual_seed": 27605,
+        "visual_calls": 306769,
+        "position": [
+          -445,
+          4863
+        ],
+        "wall_seconds": 437.02,
+        "result": "stable_endpoint",
+        "playback": "Ctrl fast-forward"
+      },
+      "differences": {},
+      "verified": true
+    },
+    {
+      "replay": "th16_ud1hdt.rpy",
+      "port": {
+        "tag": "1hdt",
+        "expected": 20129213,
+        "archive": "https://www.silentselene.net/replays/th16/69185",
+        "score": 20129213,
+        "lives": 0,
+        "power": 268,
+        "gauge": 962,
+        "position": [
+          -18733,
+          7589
+        ],
+        "visual_seed": 47940,
+        "visual_calls": 165206,
+        "stage_frame": 43420
+      },
+      "original": {
+        "scene": 7,
+        "stage": 7,
+        "stage_frame": 43420,
+        "score": 20129213,
+        "lives": 0,
+        "power": 268,
+        "gauge": 962,
+        "visual_seed": 47940,
+        "visual_calls": 165206,
+        "position": [
+          -18733,
+          7589
+        ],
+        "wall_seconds": 242.97,
+        "result": "stable_endpoint",
+        "playback": "Ctrl fast-forward"
+      },
+      "differences": {},
+      "verified": true
+    }
+  ],
+  "original_replay_exceptions": [
+    {
+      "replay": "th16_ud1mm8",
+      "sha256": "7f19572f8b0e3e92bc2c1c2730cb85da9de1f3cb01f65d789045974edf784500",
+      "recorded_score": 348509793,
+      "original_playback": {
+        "scene": 7,
+        "stage": 7,
+        "stage_frame": 121296,
+        "score": 287662479,
+        "lives": -25,
+        "power": 107,
+        "gauge": 180,
+        "visual_seed": 1708,
+        "visual_calls": 378855,
+        "position": [
+          0,
+          51200
+        ]
+      },
+      "port_playback": {
+        "stage": 7,
+        "stage_frame": 121296,
+        "score": 287662479,
+        "lives": -25,
+        "power": 107,
+        "gauge": 180,
+        "position": [
+          0,
+          51200
+        ],
+        "visual_seed": 1708,
+        "visual_calls": 378855
+      }
+    },
+    {
+      "replay": "th16_ud1hra",
+      "sha256": "5d8a82457478deb6721cdcdec504a747d83719dc93fbd41568794fab5410cdde",
+      "recorded_score": 220804251,
+      "original_playback": {
+        "scene": 7,
+        "stage": 7,
+        "stage_frame": 72688,
+        "score": 188524972,
+        "lives": -13,
+        "power": 107,
+        "gauge": 206,
+        "visual_seed": 20951,
+        "visual_calls": 277949,
+        "position": [
+          1694,
+          22910
+        ]
+      },
+      "port_playback": {
+        "stage": 7,
+        "stage_frame": 72688,
+        "score": 188524972,
+        "lives": -13,
+        "power": 107,
+        "gauge": 206,
+        "position": [
+          1694,
+          22910
+        ],
+        "visual_seed": 20951,
+        "visual_calls": 277949
+      }
+    }
+  ],
+  "tests": {
+    "related_passed": 48,
+    "related_failed": 0,
+    "full_suite_run": false,
+    "additional_item_tests": {
+      "passed": 30,
+      "failed": 5,
+      "baseline_failed": 5
+    }
+  },
+  "coverage": {
+    "lunatic": [
+      "Reimu Spring",
+      "Cirno Winter",
+      "Aya Autumn",
+      "Marisa Summer"
+    ],
+    "extra": [
+      "Reimu",
+      "Cirno",
+      "Aya",
+      "Marisa"
+    ],
+    "full_game_visual_parity": false,
+    "original_normal_speed_exceptions_completed": false
+  }
+}

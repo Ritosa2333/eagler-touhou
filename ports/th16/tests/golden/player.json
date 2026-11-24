@@ -219,7 +219,7 @@
    "frames": 110,
    "input": "0:0,20:0x1",
    "enemies": "0:1,12:2",
-   "digest": "224ead67d4c0c621",
+   "digest": "0dd4c3f3e6dbaabc",
    "last": {
     "state": 1,
     "pos_fixed": [
@@ -253,8 +253,8 @@
     ]
    },
    "shooting": {
-    "bullets": 25,
-    "damage_sources": 25,
+    "bullets": 28,
+    "damage_sources": 28,
     "last_damage_index": 90,
     "shot_timers": [
      [
@@ -292,7 +292,7 @@
    "frames": 110,
    "input": "0:0,20:0x9,70:0x1",
    "enemies": "0:1,12:2",
-   "digest": "61da2d130b26f70b",
+   "digest": "4e8b81f4c511242e",
    "last": {
     "state": 1,
     "pos_fixed": [
@@ -326,8 +326,8 @@
     ]
    },
    "shooting": {
-    "bullets": 26,
-    "damage_sources": 26,
+    "bullets": 28,
+    "damage_sources": 28,
     "last_damage_index": 90,
     "shot_timers": [
      [
@@ -365,7 +365,7 @@
    "frames": 110,
    "input": "0:0,20:0x1,60:0x9",
    "enemies": "0:1,12:2",
-   "digest": "644a25580f311c63",
+   "digest": "99a3fa3ff366e07b",
    "last": {
     "state": 1,
     "pos_fixed": [
@@ -438,7 +438,7 @@
    "frames": 113,
    "input": "0:0,30:0x1,120:0x41",
    "enemies": "0:1,1:2,12:3",
-   "digest": "f52fdf850489386f",
+   "digest": "ebaa78e4405c5d78",
    "last": {
     "state": 1,
     "pos_fixed": [
@@ -472,8 +472,8 @@
     ]
    },
    "shooting": {
-    "bullets": 51,
-    "damage_sources": 51,
+    "bullets": 52,
+    "damage_sources": 52,
     "last_damage_index": 141,
     "shot_timers": [
      [
@@ -486,20 +486,7 @@
      ]
     ],
     "sfx": [],
-    "bullet0": {
-     "index": 0,
-     "shot_id": 1024,
-     "damage": 14,
-     "active": 1,
-     "damage_source": 134,
-     "timer": [
-      4,
-      5,
-      1084227584,
-      0,
-      1
-     ]
-    }
+    "bullet0": null
    },
    "note": "火力 400：组 4（7 条）+ 秋组；120 帧前的命中在 114 帧"
   }

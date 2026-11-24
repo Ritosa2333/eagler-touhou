@@ -1259,6 +1259,9 @@ bool GameSession::next_stage() {
     // 0x42d200 末：场地清屏色回到黑（换关路径 bit0 必为 0，不会走全透明分支）
     compositor.background_color = (globals.flags & 1u) != 0 ? 0u : 0xff000000u;
     globals.post_load_frames = 1;
+    // 0x45cd30 / 0x45cf10：原版换关装载期间结束仍在运行的震屏。
+    // 这里同步完成装载，更新链看不到装载标记，因此在切换关卡时清除。
+    clear_screen_shake();
 
     // ---- 0x42d700 + 0x42cb60（DAT_004c17d0 == 0）----
     mark_stage_reached();
@@ -1377,10 +1380,6 @@ void GameSession::sync_bomb_state() {
     const bool release_active = release != nullptr && release->active == 1;
     game.enemies.bomb_active = main_active;
     game.enemies.release_active = release_active;
-    if (game.bullets_live) {
-        game.bullets->season_release_active = release_active;
-        game.bullets->season_release_item = release != nullptr ? release->release_level : 0;
-    }
     if (game.items_live) {
         game.items->bomb_attract = main_active && main->timer.current < 0x3c;
         game.items->release_attract = release_active && release->timer.current < 10000;
@@ -1440,6 +1439,12 @@ void GameSession::create_screen_shake(const EnemyManager::ShakeRequest& request)
     };
     shake_chains_.push_back(entry);
     chains.enable(entry);
+}
+
+void GameSession::clear_screen_shake() {
+    for (ChainEntry* shake : shake_chains_) chains.remove(shake);
+    shake_chains_.clear();
+    screen_shake = ScreenShakeOffset{};
 }
 
 // 0x45d150 / 0x45d1a0 及其内联副本（0x40c0d0 / 0x409f90 / 0x4199f0）：更新链 0x13 + 绘制链
@@ -1594,9 +1599,7 @@ void GameSession::leave_game() {
         animations.kill_file(Gui::kLogoSlot);
         animations.unload(Gui::kLogoSlot);
     }
-    for (ChainEntry* shake : shake_chains_) chains.remove(shake);
-    shake_chains_.clear();
-    screen_shake = ScreenShakeOffset{};
+    clear_screen_shake();
     for (ChainEntry* fade : fade_chains_) chains.remove(fade);
     fade_chains_.clear();
     screen_fades.clear();
