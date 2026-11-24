@@ -183,6 +183,11 @@ bool DrawCapture::end_frame() {
         fail("draws write failed");
         return false;
     }
+    if (digest_enabled_)
+        for (unsigned char byte : out) {
+            digest_ ^= byte;
+            digest_ *= 0x100000001b3ull;
+        }
     if (seq_ == 0) zero_frames_++;
     frames_out_++;
     return true;

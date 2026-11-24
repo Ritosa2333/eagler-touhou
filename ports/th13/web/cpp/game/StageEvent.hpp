@@ -17,6 +17,14 @@ public:
     bool ok() const { return !failed_; }  // close() 后仍可查询（落盘失败亦置位）
     u64 emitted() const { return emitted_; }
     void set_frame(u32 frame) { frame_ = frame; seq_ = 0; }
+    // 回归 digest（tests/harness 用，默认关闭）：置位后 raw() 的每个字节按
+    // FNV-1a 64 混入，初值可由调用方续接（跨关累计）。关闭时 raw() 只多一条
+    // 可预测分支，不改变任何输出字节。
+    u64 digest() const { return digest_; }
+    void seed_digest(u64 value) {
+        digest_ = value;
+        digest_enabled_ = true;
+    }
 
     void enemy_spawn(u32 enemy, const std::string& routine, float x, float y, float z, float life, u32 parent);
     void enemy_move(u32 enemy, u16 op, const u32* integral, const float* values, u32 count);
@@ -28,14 +36,24 @@ public:
     void boss_op(u32 enemy, u16 op, const i32* args, u32 count, const char* name);
 
 private:
-    void raw(const char* text) { if (std::fputs(text, out_) < 0) failed_ = true; }
+    void raw(const char* text) {
+        if (digest_enabled_)
+            for (const char* p = text; *p; ++p) {
+                digest_ ^= static_cast<unsigned char>(*p);
+                digest_ *= kDigestPrime;
+            }
+        if (std::fputs(text, out_) < 0) failed_ = true;
+    }
     void key(const char* name);          // ,"name":
     void num(float value);               // %.9g（非有限值置失败标记）
     void unum(u32 value);                // %u
+    static constexpr u64 kDigestPrime = 0x100000001b3ull;
     std::FILE* out_ = nullptr;
     u32 frame_ = 0, seq_ = 0;
     u64 emitted_ = 0;
+    u64 digest_ = 0xcbf29ce484222325ull;
     bool failed_ = false;
+    bool digest_enabled_ = false;
 };
 
 }  // namespace th13

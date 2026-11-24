@@ -12,7 +12,7 @@ export function guestPath(workspace, value) {
   return '/' + path.replace(/^\/+/, '');
 }
 
-export function harnessPaths(workspace, argv) {
+export function harnessPaths(workspace, argv, environment = {}) {
   const args = ['th13-harness', ...argv];
   const mode = args[1];
   const outputs = [];
@@ -21,13 +21,16 @@ export function harnessPaths(workspace, argv) {
     if (!value) throw Error(`${mode}: missing input at argument ${index}`);
     args[index] = guestPath(workspace, value);
   };
-  const output = (index, fallback) => {
-    args[index] = guestPath(workspace, args[index] || fallback);
-    const host = resolve(workspace, '.' + args[index]);
+  const declare = guest => {
+    const host = resolve(workspace, '.' + guest);
     const inside = relative(resolve(workspace), host);
     if (!inside || inside === '..' || inside.startsWith('..' + sep))
-      throw Error(`${mode}: output must be inside the workspace: ${args[index]}`);
-    outputs.push({guest: args[index], host});
+      throw Error(`${mode}: output must be inside the workspace: ${guest}`);
+    outputs.push({guest, host});
+  };
+  const output = (index, fallback) => {
+    args[index] = guestPath(workspace, args[index] || fallback);
+    declare(args[index]);
   };
 
   switch (mode) {
@@ -55,6 +58,11 @@ export function harnessPaths(workspace, argv) {
       output(3, `${draws}/title-draws${mode === 'title-b' ? '-b' : ''}.jsonl`);
       break;
   }
+  // TH13_DIGEST_LOG（guest 路径）：只有 replay/draws-replay 写回归 digest 日志。
+  // 纳入声明输出 → 目录自动创建 + 复用「必须重新生成且非空」校验。
+  const digest = environment.TH13_DIGEST_LOG;
+  if (digest && (mode === 'replay' || mode === 'draws-replay'))
+    declare(guestPath(workspace, digest));
   return {args, outputs};
 }
 

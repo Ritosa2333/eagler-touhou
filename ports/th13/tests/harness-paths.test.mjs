@@ -41,6 +41,32 @@ test('拒绝缺输入、越界输出以及空输出', () => {
   assert.throws(() => validateHarnessOutput({host: '/work/out'}, null, {size: 0n}), /nonempty/);
 });
 
+test('replay/draws-replay 把 digest 日志声明为输出（建目录 + 非空校验）', () => {
+  const env = {TH13_DIGEST_LOG: '/work/artifacts/digests/case.log'};
+  const replay = harnessPaths(workspace,
+    ['replay', 'games/replays/case.rpy', 'artifacts/reference/raw', '/artifacts/e.jsonl', '0', '0'],
+    env);
+  assert.deepEqual(replay.outputs.map(output => output.host),
+    ['/work/artifacts/e.jsonl', '/work/artifacts/digests/case.log']);
+  const draws = harnessPaths(workspace,
+    ['draws-replay', 'games/replays/case.rpy', 'artifacts/reference/raw', '/artifacts/d.jsonl'],
+    env);
+  assert.equal(draws.outputs.length, 2);
+  assert.equal(draws.outputs[1].guest, '/artifacts/digests/case.log');
+  // 相对 guest 路径同样归一。
+  const relative = harnessPaths(workspace,
+    ['replay', 'a.rpy', 'artifacts/reference/raw', '/artifacts/e.jsonl'],
+    {TH13_DIGEST_LOG: 'artifacts/digests/x.log'});
+  assert.equal(relative.outputs[1].guest, '/artifacts/digests/x.log');
+  // 非回放模式不声明 digest 日志。
+  assert.equal(harnessPaths(workspace, ['stage1', 'artifacts/reference/raw', '/artifacts/s.jsonl'],
+    env).outputs.length, 1);
+  // 越界/空路径拒绝。
+  assert.throws(() => harnessPaths(workspace,
+    ['replay', 'a.rpy', 'artifacts/reference/raw', '/artifacts/e.jsonl'],
+    {TH13_DIGEST_LOG: '/../escape.log'}), /inside the workspace/);
+});
+
 test('旧文件存在不能冒充本次产物', () => {
   const old = {size: 120n, ino: 3n, mtimeNs: 100n, ctimeNs: 100n};
   assert.throws(() => validateHarnessOutput({host: '/work/out'}, old, {...old}), /not regenerated/);

@@ -58,6 +58,14 @@ public:
     u64 quads() const noexcept { return quads_; }
     u64 ups() const noexcept { return ups_; }
     u32 zero_op_frames() const noexcept { return zero_frames_; }
+    // 回归 digest（tests/harness 用，默认关闭）：置位后 end_frame() 把整行
+    // 字节（含末尾 '\n'）混入 FNV-1a 64；初值可由调用方续接（跨关累计）。
+    // 关闭时 end_frame() 只多一条可预测分支，不改变任何输出字节。
+    u64 digest() const noexcept { return digest_; }
+    void seed_digest(u64 value) noexcept {
+        digest_ = value;
+        digest_enabled_ = true;
+    }
     const std::string& error() const noexcept { return error_; }
     // 已写输出字节偏移（web 影子分块导出：MEMFS 文件按偏移切片拉走）。
     long output_position() const noexcept { return out_ ? std::ftell(out_) : 0; }
@@ -108,6 +116,8 @@ private:
     std::string line_;
     u32 frame_ = 0, seq_ = 0, zero_frames_ = 0;
     u64 frames_out_ = 0, quads_ = 0, ups_ = 0;
+    u64 digest_ = 0xcbf29ce484222325ull;
+    bool digest_enabled_ = false;
     std::string error_;
 
     void fail(const char* why) {

@@ -14,7 +14,7 @@ import {WASI} from 'node:wasi';
 import {readFileSync, mkdirSync, statSync} from 'node:fs';
 import {resolve, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {harnessPaths, validateHarnessOutput} from './harness-paths.mjs';
+import {harnessPaths, validateHarnessOutput, guestPath} from './harness-paths.mjs';
 
 const port = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const workspace = resolve(port, '../../..');
@@ -27,7 +27,24 @@ const wasmPath = process.env.TH13_HARNESS_WASM
 const bytes = readFileSync(wasmPath);
 
 // WASI 的 '/' 对应外层工作区；容器宿主路径 /work/... 需去掉 /work。
-const {args, outputs} = harnessPaths(workspace, process.argv.slice(2));
+// TH13_DUMPCHECK / TH13_SHOT_PROBE / TH13_LIFE_PROBE / TH13_STATE_LOG
+// （可选宿主环境变量）：透传给 wasm——前者 harness 侧 dump 层 2 插值通道字段，
+// 中者 StageBattle 出膛/命中探针，再次者敌机生命轨迹对拍探针，末者 replay
+// 模式对局状态流输出路径（guest 路径，oracle battle_oracle TH13_STATE_LOG
+// 对等，取证脚手架，见 tests/harness/harness.cpp 与 oracle/state_compare.py）。
+// TH13_FREEZE_AT / TH13_NO_ECL_SLOT_ANM（r4/harness）：replay 同源路径的
+// freeze 门/ANM sync 诊断自证开关（只观察，不改评分字段）。
+// TH13_DIGEST_LOG / TH13_DIGEST_STRIDE：全回放回归 digest（tools/regression-digest.mjs）；
+// TH13_REPLAY_ALL / TH13_REPLAY_FULL：整段录像全 stage 链 + 完整窗口。
+// digest 日志路径按 guest 视界归一，并声明为输出（建目录 + 非空/重生成校验）。
+const env = {};
+for (const key of ['TH13_DUMPCHECK', 'TH13_SHOT_PROBE', 'TH13_LIFE_PROBE', 'TH13_STATE_LOG',
+                   'TH13_FREEZE_AT', 'TH13_NO_ECL_SLOT_ANM', 'TH13_RNG_TRACE',
+                   'TH13_SPIRIT_PROBE', 'TH13_DAMAGE_PROBE', 'TH13_DIGEST_LOG',
+                   'TH13_DIGEST_STRIDE', 'TH13_REPLAY_ALL', 'TH13_REPLAY_FULL'])
+  if (process.env[key]) env[key] = process.env[key];
+if (env.TH13_DIGEST_LOG) env.TH13_DIGEST_LOG = guestPath(workspace, env.TH13_DIGEST_LOG);
+const {args, outputs} = harnessPaths(workspace, process.argv.slice(2), env);
 const before = new Map();
 const snapshot = path => {
   try { return statSync(path, {bigint: true}); }
@@ -40,18 +57,6 @@ for (const output of outputs) {
   mkdirSync(dirname(output.host), {recursive: true});
   before.set(output.host, snapshot(output.host));
 }
-// TH13_DUMPCHECK / TH13_SHOT_PROBE / TH13_LIFE_PROBE / TH13_STATE_LOG
-// （可选宿主环境变量）：透传给 wasm——前者 harness 侧 dump 层 2 插值通道字段，
-// 中者 StageBattle 出膛/命中探针，再次者敌机生命轨迹对拍探针，末者 replay
-// 模式对局状态流输出路径（guest 路径，oracle battle_oracle TH13_STATE_LOG
-// 对等，取证脚手架，见 tests/harness/harness.cpp 与 oracle/state_compare.py）。
-// TH13_FREEZE_AT / TH13_NO_ECL_SLOT_ANM（r4/harness）：replay 同源路径的
-// freeze 门/ANM sync 诊断自证开关（只观察，不改评分字段）。
-const env = {};
-for (const key of ['TH13_DUMPCHECK', 'TH13_SHOT_PROBE', 'TH13_LIFE_PROBE', 'TH13_STATE_LOG',
-                   'TH13_FREEZE_AT', 'TH13_NO_ECL_SLOT_ANM', 'TH13_RNG_TRACE',
-                   'TH13_SPIRIT_PROBE', 'TH13_DAMAGE_PROBE'])
-  if (process.env[key]) env[key] = process.env[key];
 const wasi = new WASI({version: 'preview1', args, env, preopens: {'/': workspace}, returnOnExit: true});
 const module = await WebAssembly.compile(bytes);
 const instance = await WebAssembly.instantiate(module, wasi.getImportObject());
