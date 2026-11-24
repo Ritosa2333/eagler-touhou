@@ -6,6 +6,7 @@ export function createAudio() {
   const buffers = new Map();
   const voices = new Map();
   const plays = [];
+  const failedMusic = [];
 
   function context() {
     if (!ctx) {
@@ -25,7 +26,9 @@ export function createAudio() {
       get currentTime() {
         return ctx ? ctx.currentTime : 0;
       },
-      plays: playsNow
+      plays: playsNow,
+      failedMusic: failedMusic.slice(),
+      musicFailures: failedMusic.length,
     };
   }
 
@@ -133,6 +136,9 @@ export function createAudio() {
       .catch(() => {
         rec.failed = true;
         rec.waiters = [];
+        if (busOf({ bufferId: rec.id }) === "music" || /(?:^|\/)BGM\//i.test(rec.url)) {
+          if (!failedMusic.includes(rec.url)) failedMusic.push(rec.url);
+        }
         publish();
       });
     return rec.id;

@@ -119,6 +119,7 @@ try {
     "host/replay/playback.mjs": await text(resolve(wwwroot, "host/replay/playback.mjs")),
     "host/replay/describe.mjs": await text(resolve(wwwroot, "host/replay/describe.mjs")),
     "host/replay/local-replay.mjs": await text(resolve(repo, "../../common/browser/local-replay.mjs")),
+    "host/audio/music-transfer.mjs": await text(resolve(wwwroot, "host/audio/music-transfer.mjs")),
     "directory-keyboard.mjs": await text(resolve(wwwroot, "directory-keyboard.mjs")),
     "eagler-host.mjs": await text(resolve(wwwroot, "eagler-host.mjs")),
     "runtime-files.mjs": await text(resolve(wwwroot, "runtime-files.mjs")),

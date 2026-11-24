@@ -7,7 +7,8 @@ import { createGamepadKeys } from "./host/input/gamepad-keys.mjs";
 import { prepareRuntime, launchRuntime } from "./main.js";
 import { bindCanvasDirectTouch } from "./host/input/canvas-direct-touch.mjs";
 import { createTouchBridge } from "./host/input/touch-bridge.mjs";
-import { installRemoteResources, installRuntimeFileSystem } from "./runtime-files.mjs";
+import { installRuntimeFileSystem } from "./runtime-files.mjs";
+import { createMusicTransfer } from "./host/audio/music-transfer.mjs";
 import { seedSettingIni } from "./host/storage/setting-ini.mjs";
 import { mountPracticePanel } from "./host/practice/practice-panel.mjs";
 import { createReplayPlayback } from "./host/replay/playback.mjs";
@@ -21,14 +22,6 @@ const parentWindow = window.parent;
 
 installRuntimeFileSystem(window);
 
-const keys = createKeyOwners((name, down) => {
-  if (!runtime || !runtime.host) return;
-  try {
-    runtime.host.OnKey(name, down ? 1 : 0);
-  } catch (err) {
-    emit("error", { message: String(err && err.message || err) });
-  }
-}, { sampleTaps: true });
 let phase = "booting";
 let starting = false;
 let runtime = null;
@@ -52,6 +45,17 @@ function post(message) {
 function emit(event, fields) {
   post(Object.assign({ protocol, game, epoch, event }, fields || {}));
 }
+
+const musicTransfer = createMusicTransfer({ emit });
+
+const keys = createKeyOwners((name, down) => {
+  if (!runtime || !runtime.host) return;
+  try {
+    runtime.host.OnKey(name, down ? 1 : 0);
+  } catch (err) {
+    emit("error", { message: String(err && err.message || err) });
+  }
+}, { sampleTaps: true });
 
 function reply(message, ok, extra) {
   if (!message || message.request == null) return;
@@ -157,14 +161,15 @@ async function handle(message) {
       return;
     }
     if (window.Module) window.Module.touhouMusicMode = music === "ogg" ? "ogg" : "none";
+    if (music === "none") musicTransfer.clear();
     if (runtime) runtime.options = options;
     practice.configure(options);
-    await installRemoteResources([message.resources, message.runtimeResources, message.sharedResources]);
+    await musicTransfer.install([message.resources, message.runtimeResources, message.sharedResources]);
     reply(message, true, {});
     return;
   }
   if (command === "resources") {
-    await installRemoteResources([message.resources]);
+    await musicTransfer.install([message.resources]);
     reply(message, true, {});
     return;
   }
@@ -229,7 +234,16 @@ async function handle(message) {
     reply(message, true, {});
     return;
   }
-  if (command === "network-cancel" || command === "retry-music") {
+  if (command === "retry-music") {
+    try {
+      const result = await musicTransfer.retry();
+      reply(message, true, { failed: result.failed, pending: result.pending });
+    } catch (err) {
+      reply(message, false, { error: String(err && err.message || err) });
+    }
+    return;
+  }
+  if (command === "network-cancel") {
     rejectInapplicable(message);
   }
 }
@@ -267,6 +281,8 @@ function publishHealth() {
     backend: audio.backend || "script",
     underruns: audio.underruns || 0,
     minQueuedMs: audio.minQueuedMs == null ? null : audio.minQueuedMs,
+    musicFailures: audio.musicFailures || 0,
+    pendingMusic: musicTransfer.pendingCount(),
   });
 }
 
