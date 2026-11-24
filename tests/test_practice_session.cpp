@@ -1,4 +1,4 @@
-#include "practice_session.hpp"
+#include "replay_session.hpp"
 #include <iostream>
 #include <source_location>
 
@@ -90,7 +90,7 @@ void test_assists(const std::filesystem::path &root){
         s->tick(0);check(!s->life.miss_active&&s->life.invincibility&&s->life.stage_misses==0);
     }
     {
-        auto s=scenario();s->practice_assist.toggle(Tool::Invincible);s->practice_mode=false;
+        auto s=scenario();s->practice_assist.toggle(Tool::Invincible);s->preparation_only=true;
         s->life.register_hit();s->tick(0);check(s->life.miss_active&&s->life.stage_misses==1);
     }
     {
@@ -122,12 +122,39 @@ void test_assists(const std::filesystem::path &root){
         s->practice_assist.toggle(Tool::Timeout);s->tick(0);check(s->midboss2.dying);
     }
 }
+void test_live_assists(const std::filesystem::path &root){
+    using namespace soew;
+    for(bool extra:{false,true}){
+        NativeReplayConfig config;
+        config.extra=extra;
+        if(extra){config.stage=5;config.rank=4;config.bombs=1;}
+        auto scene=std::make_unique<EncounterScene>(load_replay_scene(root,config));
+        check(!scene->practice_mode&&scene->practice_assist.tools==0);
+        ReplaySession session(config);
+        scene->practice_assist.toggle(PracticeTool::Invincible);
+        scene->life.register_hit();
+        auto step=session.tick(*scene,normalize_replay_tick(0));
+        check(step.status==ReplayStepStatus::Running&&step.consumed_tick);
+        check(!scene->life.miss_active&&scene->life.invincibility&&scene->life.stage_misses==0);
+        scene->practice_assist.toggle(PracticeTool::Invincible);
+        scene->life.invincibility=0;
+        scene->life.register_hit();
+        step=session.tick(*scene,normalize_replay_tick(0));
+        check(step.status==ReplayStepStatus::Running&&scene->life.miss_active&&scene->life.stage_misses==1);
+        if(!extra){
+            scene->transition.phase=StageTransition::Phase::Ready;
+            step=session.tick(*scene,normalize_replay_tick(0));
+            check(step.status==ReplayStepStatus::Running&&step.stage_advanced&&scene->stage==1);
+        }
+    }
+}
 }
 int main(int argc,char **argv){
     try {
         if(argc!=2)throw std::runtime_error("Usage: test_practice_session <assets>");
         const std::filesystem::path root=argv[1];
         test_assists(root);
+        test_live_assists(root);
         {
             soew::PracticeSpec spec;spec.stage=4;spec.section=soew::PracticeSection::Boss;
             auto normal=build(root,spec,256);auto reduced=build(root,spec,256,true);

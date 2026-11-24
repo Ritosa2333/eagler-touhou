@@ -837,7 +837,7 @@ endif()
 # native_replay.hpp is header-only, so its users need both the includes and the archive.
 target_link_libraries(SoEW-Native-Prototype PRIVATE ${SOEW_ZLIB_TARGET})
 if(BUILD_TESTING)
-foreach(target soew-native-replay-tests soew-replay-session-tests
+foreach(target soew-native-replay-tests soew-replay-session-tests soew-practice-session-tests
                soew-collision-display-tests soew-dialogue-tests)
     target_link_libraries(${target} PRIVATE ${SOEW_ZLIB_TARGET})
 endforeach()

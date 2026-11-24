@@ -914,6 +914,7 @@ struct App {
     soew::PracticeMenu practice_menu;
     soew::PracticePanel practice_panel;
     soew::PracticeAssist practice_assist;
+    bool run_assisted=false;
     std::optional<soew::PracticeStore> practice_store;
     std::optional<soew::PracticeBuilder> practice_builder;
     std::optional<std::future<soew::PracticeBuilder>> practice_load;
@@ -1116,6 +1117,22 @@ using DemoPhase=soew::TitleDemoPhase;
 using DemoOutcome=soew::TitleDemoOutcome;
 
 bool title_demo_active(const App &app){return app.title_demo&&app.title_demo->controller.phase()!=DemoPhase::Idle;}
+bool live_assist_controls(const App &app){
+    return app.stage_scene&&!app.replay_playback&&!title_demo_active(app)&&!app.stage_scene->paused&&
+        !app.stage_scene->life.game_over&&!app.stage_scene->continue_prompt()&&!app.stage_scene->extra_settlement.terminal()&&
+        !app.stage_scene->extra_settlement.showing_bonus()&&!app.stage_scene->stage5_result&&
+        !app.stage_intro.active()&&!app.ending_player&&app.score_review==App::ScoreReview::None&&!app.score_release&&
+        !app.run_pause_menu&&!app.practice_result&&!app.practice_escape&&!app.practice_visible&&
+        !app.practice_builder&&!app.practice_load&&!app.practice_audio_load&&!app.replay_menu.active();
+}
+void apply_live_assists(App &app){
+    app.stage_scene->practice_assist.tools=app.practice_assist.tools;
+    if(app.practice_assist.tools){
+        // Replay events carry inputs, not live simulation modifiers.
+        app.run_assisted=true;
+        app.recorder.reset();
+    }
+}
 bool title_demo_foreground(HWND hwnd,const App &app){
     return app.focused&&GetForegroundWindow()==hwnd&&!app.minimized&&!app.resizing&&IsWindowEnabled(hwnd)&&!app.title_demo->menu_loop;
 }
@@ -1384,6 +1401,8 @@ void arm_stage_intro(App &app,bool authentic_entry){
 }
 void launch_stage(App &app,int id,bool stage4_trial=false){
     app.death_presented=false;app.score_review=App::ScoreReview::None;app.pending_score.reset();
+    if(!app.stage_scene)app.practice_assist.info=app.menu.show_more_info;
+    app.run_assisted=false;
     app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
     app.dialogue_hold.clear();
     cancel_gameplay_audio(app);
@@ -1497,7 +1516,7 @@ void finalize_replay(App &app){
        !app.recorder->replay().summary&&!app.recorder->finalize(*app.replay_session->summary()))app.recorder.reset();
 }
 bool begin_replay_save(App &app,soew::ReplaySaveOrigin origin){
-    if(!app.recorder||!app.recorder->can_save())return false;
+    if(app.run_assisted||!app.recorder||!app.recorder->can_save())return false;
     try{
         auto recorder=*app.recorder;
         if(!recorder.replay().summary){
@@ -1740,7 +1759,43 @@ void open_score_review(App &app,App::ScoreReview review,unsigned rank){
 void open_terminal_score_review(App &app,soew::NativeScoreEntry entry){
     open_score_review(app,App::ScoreReview::Terminal,entry.difficulty);
     app.pending_score.reset();app.score_signature={};
-    if(app.native_scores&&app.native_scores->qualifies(entry))app.pending_score=std::move(entry);
+    if(!app.run_assisted&&app.native_scores&&app.native_scores->qualifies(entry))app.pending_score=std::move(entry);
+}
+void test_live_assist_host(){
+    auto host=std::make_unique<App>();
+    auto &app=*host;
+    const auto check=[](bool pass){if(!pass)throw std::runtime_error("Live assist host test failed");};
+    check(!live_assist_controls(app));
+    app.stage_scene.emplace();
+    check(live_assist_controls(app));
+    app.stage_scene->paused=true;
+    check(!live_assist_controls(app));
+    app.stage_scene->paused=false;
+    app.replay_playback.emplace();
+    check(!live_assist_controls(app)&&app.stage_scene->practice_assist.tools==0);
+    app.replay_playback.reset();
+    app.recorder.emplace();
+    check(app.recorder->tick(0,false));
+    app.practice_assist.open=true;
+    app.practice_assist.toggle_row(soew::PracticeAssist::tool_rows);
+    apply_live_assists(app);
+    check(!app.run_assisted&&app.recorder->can_save());
+    app.native_scores.emplace(fs::current_path());
+    const soew::NativeScoreEntry score{"",1,0,0,100000,false,1};
+    open_terminal_score_review(app,score);
+    check(app.pending_score.has_value()&&!live_assist_controls(app));
+    app.score_review=App::ScoreReview::None;
+    app.practice_assist.toggle(soew::PracticeTool::Invincible);
+    apply_live_assists(app);
+    check(app.run_assisted&&!app.recorder&&app.stage_scene->practice_assist.enabled(soew::PracticeTool::Invincible));
+    app.stage_scene.emplace(); // The next stage has a new scene.
+    apply_live_assists(app);
+    check(app.stage_scene->practice_assist.enabled(soew::PracticeTool::Invincible));
+    app.practice_assist.toggle(soew::PracticeTool::Invincible);
+    apply_live_assists(app);
+    check(app.run_assisted&&app.stage_scene->practice_assist.tools==0);
+    open_terminal_score_review(app,score);
+    check(!app.pending_score&&app.score_review==App::ScoreReview::Terminal);
 }
 void finish_score_flow(App &app,soew::ReplaySaveOrigin origin){
     app.score_review=App::ScoreReview::None;app.pending_score.reset();
@@ -1795,7 +1850,7 @@ void start_stage5_ending(App &app){
     const bool good=!extra&&s.stage5_result&&s.stage5_result->good_ending;
     const soew::NativeScoreEntry entry{"",run.rank,run.shot_type,run.continues_used,s.score_core.score,good,
         extra&&!cleared?soew::NativeScoreEntry::extra_stage:soew::NativeScoreEntry::all_stages};
-    if(app.native_scores&&!app.replay_playback){
+    if(app.native_scores&&!app.replay_playback&&!app.run_assisted){
         const auto status=cleared?app.native_scores->record_extra_clear(entry.shot_type):
             good?app.native_scores->record_good_clear(entry.shot_type):soew::NativeScoreStore::Status::Ok;
         if(status!=soew::NativeScoreStore::Status::Ok)app.settings_warning="Could not save the native clear record";
@@ -1916,6 +1971,7 @@ void advance_practice(App &app){
     if(!replace_output)stop_gameplay_bgm(app);
     app.practice_retry_release=app.practice_retry&&!app.smoke;app.practice_retry=false;app.last_paint_practice=false;
     app.stage_scene.emplace(std::move(*next));app.practice_session.emplace(recipe,soew::practice_checkpoint(recipe),seed);app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=false;
+    app.run_assisted=false;
     app.stage_scene->sound.enabled=app.menu.music!=0;
     app.stage_scene->sound_output=[&app](unsigned id){if(app.gameplay_audio_enabled&&app.menu.music!=0&&!app.effect_bank.empty()&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
     app.stage_entry_release=true;app.z_input.clear();app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.motion_before.stage=-1;app.gameplay_audio_attempted=-1;
@@ -2119,15 +2175,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 else if(m.spec!=before)save_practice(*app);
             }caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
         }
-        if(app->stage_scene&&app->practice_session){
-            if(!app->practice_escape&&!app->practice_result&&!app->stage_scene->paused){
-                auto &assist=app->practice_assist;
-                const int row=w>=VK_F1&&w<=VK_F7?int(w-VK_F1):w=='U'?7:w==VK_TAB?8:-1;
-                if(w==VK_BACK||row>=0){
-                    if(!repeat){if(w==VK_BACK)assist.open=!assist.open;else assist.toggle_row(row);InvalidateRect(hwnd,nullptr,FALSE);}
-                    return 0;
-                }
+        if(live_assist_controls(*app)){
+            auto &assist=app->practice_assist;
+            const int row=w>=VK_F1&&w<=VK_F7?int(w-VK_F1):w=='U'?7:w==VK_TAB?8:-1;
+            if(w==VK_BACK||row>=0){
+                if(!repeat){if(w==VK_BACK)assist.open=!assist.open;else assist.toggle_row(row);InvalidateRect(hwnd,nullptr,FALSE);}
+                return 0;
             }
+        }
+        if(app->stage_scene&&app->practice_session){
             if(!repeat&&w=='R'){begin_practice(*app,app->practice_session->recipe);InvalidateRect(hwnd,nullptr,FALSE);return 0;}
             if(!repeat&&w=='Q'&&(app->practice_escape||app->practice_result)){
                 leave_practice(*app,false);caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
@@ -2301,8 +2357,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         }
         break;
     case WM_LBUTTONDOWN:
-        if(app->practice_assist.open&&app->practice_session&&app->stage_scene&&!app->stage_scene->paused&&
-           !app->practice_builder&&!app->practice_load&&!app->practice_audio_load&&!app->replay_menu.active()&&!app->stage_intro.active()){
+        if(app->practice_assist.open&&live_assist_controls(*app)){
             RECT client{};GetClientRect(hwnd,&client);
             const auto view=fit(client.right,client.bottom,app->crt);
             const int x=static_cast<short>(LOWORD(l))-view.x,y=static_cast<short>(HIWORD(l))-view.y;
@@ -2406,7 +2461,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             soew::HudState hud;hud.score=app->stage_scene->score_core.score;hud.high_score=hud.score;hud.lives=app->stage_scene->life.lives;hud.bombs=app->stage_scene->life.bombs;hud.power=int(app->stage_scene->pickups.power);hud.difficulty=app->stage_scene->rank;
             if(app->scores){const auto stored=app->scores->at(std::min(4,app->stage_scene->rank)).entries[0].score;hud.high_score=std::max(hud.high_score,stored/10);hud.high_continues=stored%10;}
             soew::draw_original_hud(app->composed.pixels,app->font,hud);
-            const bool show_details=app->practice_session?app->practice_assist.info:app->menu.show_more_info;
+            const bool show_details=app->replay_playback&&!app->practice_session?app->menu.show_more_info:app->practice_assist.info;
             if(!app->stage_intro.active()&&!show_stage_intro&&(show_details||app->practice_session))draw_debug_info(app->composed,*app->stage_scene,app->practice_session,show_details,app->menu.language);
             if(app->run_pause_menu||app->practice_escape){
                 const auto center=[&](std::wstring_view text,int y,std::uint32_t color){draw(text,224-display_text_width(text,lang)/2,y,color);};
@@ -2487,8 +2542,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 draw(items[i],80,164+i*32,disabled?0x777777:app->practice_choice==i?0xffff00:0xaaaaaa,304);
             }
         }
-        if(app->practice_assist.open&&app->practice_session&&app->stage_scene&&!app->stage_scene->paused&&
-           !app->practice_visible&&!app->stage_intro.active()&&!app->replay_menu.active())
+        if(app->practice_assist.open&&live_assist_controls(*app))
             draw_practice_assist(app->composed,app->practice_assist,lang);
         if(app->replay_menu.active())compose_replay_menu(*app);
         if(app->legacy_content&&app->menu_visible&&!app->opening.active&&!app->menu.options&&!app->menu.shot_screen&&!app->menu.music_room&&!app->scores_visible&&!app->stage_scene&&!app->ending_surface&&!app->practice_visible&&!app->replay_menu.active()){
@@ -2739,12 +2793,10 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             app->mima_dialogue_tap.reset(z_held);
                             fast=app->dialogue_hold.poll(now,!app->stage_entry_release&&z_held&&app->stage_scene->dialogue.active());
                         }
+                        apply_live_assists(*app);
                         if(app->practice_session){
                             const auto event=soew::practice_replay_tick(*app->stage_scene,input,group,fast);
                             const auto samples=app->practice_session->samples();
-                            app->stage_scene->practice_assist.tools=app->practice_assist.tools;
-                            // RPY records input, not live simulation modifiers.
-                            if(app->practice_assist.tools)app->recorder.reset();
                             app->practice_session->tick(*app->stage_scene,event.input,event.dialogue_group,event.dialogue_fast_forward);
                             if(app->recorder&&app->practice_session->samples()!=samples&&!app->recorder->record(event))app->recorder.reset();
                             if(app->practice_session->result()!=soew::PracticeSession::Result::Running){
@@ -3654,6 +3706,7 @@ int wmain(int argc, wchar_t **argv) {
             Frame sample{640,400,std::vector<std::uint32_t>(640*400,0)};
             jp_text(sample,L"演出",10,10,0xffffff);++jp_checks;
             if(std::count_if(sample.pixels.begin(),sample.pixels.end(),[](auto p){return p!=0;})<10)throw std::runtime_error("Japanese glyph rendering failed");
+            test_live_assist_host();
             std::cout << "viewport_checks=" << checks + 2 << " menu_checks=" << test_menu() << " japanese_checks=" << jp_checks << " chinese_ascii_checks=" << test_chinese_ascii() << " opening_checks=" << test_opening() << " failures=0\n"; return 0;
         }
         if(async_practice_test&&(smoke||test||dump_only||timed_test||score_timed_test))throw std::runtime_error("Async practice test cannot be combined with other test modes");

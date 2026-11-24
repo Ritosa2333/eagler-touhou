@@ -497,13 +497,13 @@ public:
         update_sound();
         const std::uint32_t logic_frame=rika_enabled?rika_stage_frame:static_cast<std::uint32_t>(ticks);
         const auto page=runtime.page;
-        const auto assist=[&](PracticeTool tool){return practice_mode&&!preparation_only&&practice_assist.enabled(tool);};
+        const auto assist=[&](PracticeTool tool){return !preparation_only&&practice_assist.enabled(tool);};
         const bool infinite_bombs=assist(PracticeTool::Bombs),enemy_invincible=assist(PracticeTool::EnemyInvincible),lock_timeout=assist(PracticeTool::Timeout);
         const auto start_bomb=[&]{
             if(!bomb_enabled||!bomb.start(life.bombs,unsigned(player.shot),infinite_bombs))return false;
             life.bomb_invincible=true;return true;
         };
-        const auto handle_practice_hit=[&]{
+        const auto handle_assisted_hit=[&]{
             if(!life.hit||life.miss_active||(!assist(PracticeTool::Invincible)&&!assist(PracticeTool::AutoBomb)))return;
             life.negate();if(!life.hit)return;
             if(assist(PracticeTool::Invincible)){request_sound(2);life.invincibility=30;life.hit=false;}
@@ -552,7 +552,7 @@ public:
         // Original invalidation carries pages, but does NOT refresh cached
         // player_topleft while a miss blocks input. Preserve that phase lag.
         bool accepts_input=true;
-        if(survival_enabled){life.begin_frame(page);handle_practice_hit();accepts_input=life.input_allowed();if(accepts_input){player.x=life.positions[page].x;player.y=life.positions[page].y;}}
+        if(survival_enabled){life.begin_frame(page);handle_assisted_hit();accepts_input=life.input_allowed();if(accepts_input){player.x=life.positions[page].x;player.y=life.positions[page].y;}}
         player.back_page=page;
         if(accepts_input){player.tick(input);if(survival_enabled)life.moved(page,player.x,player.y);}
         if(survival_enabled){player.x=life.current.x;player.y=life.current.y;}
@@ -731,7 +731,7 @@ public:
             h.spark=[&](int x,int y,int speed,int count,bool sprite){if(effects_enabled)sparks.add(x,y,speed,count,sprite,page);};
             rika.update(page,logic_frame,h);shots.target_x=rika.target_x;shots.target_y=rika.target_y;
         }
-        if(survival_enabled){handle_practice_hit();life.player_phase_begin();}
+        if(survival_enabled){handle_assisted_hit();life.player_phase_begin();}
         if(combat_enabled)shots.update(page,logic_frame);
         if(survival_enabled){
             const unsigned normal=player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0;
