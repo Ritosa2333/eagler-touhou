@@ -1,6 +1,12 @@
 {
   "schema": "eagler-touhou/port-sync/1",
   "pairs": {
+    "th128": {
+      "normal": "ports/th128",
+      "multiplayer": "ports/th128-mp",
+      "base": "5fd2c9187e33ec758aa3870e938d7e450e3a16f3",
+      "history": []
+    },
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",

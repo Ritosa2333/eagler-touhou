@@ -44,6 +44,7 @@ import {relocateReplayPlayback} from '../services/replay-relocation';
 import {createMetadataService} from '../services/metadata';
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
+import {th128RequestedMusic} from '../../src/launcher/th128-installed-config.mts';
 import {musicModeLabel} from '../services/game-resources';
 import {createPreparationNetwork} from '../services/preparation-network';
 import {createRoomPreparation} from '../services/room-preparation';
@@ -291,7 +292,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     testBuild});
   function settingsContext(product: ProductId, locale: string) {const room = roomSession?.service.getSnapshot(); return {...metadata.settingsContext(product, locale), mobile: preferTouchSettings(), forbidUnlimitedMovement: !!room?.room?.disableCheatMovement && room.seat != null};}
   const directoryEntry = /\/lobby(?:\.html)?\/?$/.test(entryUrl.pathname);
-  const rawInitialProduct = directoryEntry ? null : routedProductFromUrl(entryUrl, new Set(PRODUCT_IDS));
+  const rawInitialProduct = directoryEntry ? null : routedProductFromUrl(entryUrl, new Set([...PRODUCT_IDS, 'th128mp' as const]));
   const initialProduct = rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild) ? rawInitialProduct : DEFAULT_PRODUCT_ID;
   settings.hydrate(settingsContext(DEFAULT_PRODUCT_ID, snapshot.locale));
   if (initialProduct !== DEFAULT_PRODUCT_ID) settings.hydrate(settingsContext(initialProduct, snapshot.locale));
@@ -314,7 +315,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       const firstHost = appliedHost === null, host = current.siteManifest;
       const previousProduct = settings.getSnapshot()!.context.productId;
       let product = previousProduct;
-      if (!Object.hasOwn(host.games, gameIdForProduct(product))) {
+      if (firstHost && rawInitialProduct === 'th128mp' && current.products.includes('th128mp') &&
+          routedProductFromUrl(window.location.href, new Set(['th128mp'])) === 'th128mp') product = 'th128mp';
+      if (!Object.hasOwn(host.games, gameIdForProduct(product)) || product === 'th128mp' && !current.products.includes(product)) {
         const fallback = Object.keys(PRODUCT_GAMES).find(game => Object.hasOwn(host.games, game)) as ProductId | undefined;
         if (!fallback) throw new Error('Site Manifest 没有可用游戏');
         product = fallback;
@@ -327,7 +330,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (firstHost && !runtime?.getSnapshot().launched) settings.restoreHostPreferences(settingsContext(product, snapshot.locale));
       appliedHost = host;
       localPackageMaintenance.schedule();
-    const hadSelection = pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild));
+    const hadSelection = product === 'th128mp' || (pendingHostSelection?.hasSelection ?? navigation?.hasSelection ?? (!!rawInitialProduct && productEnabledForBuild(rawInitialProduct, testBuild)));
       pendingHostSelection = {productId: product, hasSelection: hadSelection && current.products.includes(product)};
       if (navigation) {navigation.applyHostSelection(pendingHostSelection); pendingHostSelection = null;}
       if (roomSession?.service.getSnapshot().room && host.shared.netplayRelay) roomSession.service.reconnect();
@@ -545,6 +548,15 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       return context.isCurrent();
     } catch(error) {reportError(error);return false;}
   }
+  function requiresManualImport(game: GameId) {
+    const {siteManifest, releaseCatalog} = metadata.getSnapshot();
+    if (siteManifest?.shared.resourceMode === 'import') return true;
+    if (!productRequiresImport(game)) return false;
+    const published = releaseCatalog?.games.th128;
+    const pointer = siteManifest?.games.th128?.package;
+    return game !== 'th128' || !published || !pointer || typeof pointer !== 'object' ||
+      !('revision' in pointer) || pointer.revision !== published.revision;
+  }
   const gameData = createGameDataImportModel({acquisition: testBuild ? acquisition : {
     importPackage: acquisition.importPackage,
     importFiles: acquisition.importFiles,
@@ -554,7 +566,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
       runtimeReady: runtime?.getSnapshot().ready === true && !roomPreload, launched: runtime?.getSnapshot().launched === true,
-      playerOpen: snapshot.playerOpen, importServer: productRequiresImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
+      playerOpen: snapshot.playerOpen, importServer: requiresManualImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)),
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
     ports: {
       pickFile: ({accept}) => ports.pickFile(accept), pickFiles: ({accept}) => ports.pickFiles(accept), feedback, showGameDataTransfer: transfer.revealGameData,
@@ -812,7 +824,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   async function confirmMusicWarnings() {
     const state = settings.getSnapshot(); if (!state) return false;
-    const music = state.music;
+    let music = state.music;
+    if (state.gameId === 'th128') music = th128RequestedMusic(state.musicPreference, state.context.musicAvailability.audio);
     if (music === 'none' || music === 'midi') return decisions.askConfirmation({message: t(music === 'none' ? 'music.noneLaunchWarning' : 'music.midiLaunchWarning'), confirmText: t('music.startAnyway')});
     return true;
   }
@@ -947,6 +960,15 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     publish({roomLaunchStage: null});
   }
   async function checkRoom(context: RoomOperationContext) {
+    if (context.product === 'th128mp') {
+      // The room already owns its loaded title; this title-only check never
+      // fabricates a live opponent or a first gameplay frame.
+      await roomPreloadTask;
+      const owner = requiredRuntime(), state = owner.getSnapshot();
+      if (!context.isCurrent() || state.game !== 'th128' || state.runtimeVariant !== 'multiplayer' || !state.roomPreview)
+        throw new Error(t('room.resourcesUnavailable'));
+      return;
+    }
     if (!await confirmTouchInput('multiplayer', context.signal)) return;
     const owner = requiredRuntime();
     await roomPreloadTask;
@@ -1092,7 +1114,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (isMultiplayerProductId(product)) {await roomSession!.service.launch(); return;}
       cloudSync?.prepareLocalLaunch();
       const game = gameIdForProduct(product);
-      if ((productRequiresImport(game) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import') && !(await acquisition.readCurrent(game)).generation) {
+      const requiresImport = requiresManualImport(game);
+      const installed = requiresImport ? (await acquisition.readCurrent(game)).generation : null;
+      if (requiresImport && !installed) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
       if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings()) return;
@@ -1264,6 +1288,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const roomPreparation = createRoomPreparation({acquisition, metadataReady: metadata.initialize, baseUrl, translate: t,
     activeWorker: () => appShellOwner.activeWorker(), network});
   roomSession = createRoomSession({document, window, storage, identity, sessions, memberId: multiplayerMemberId,
+    th128LocalRoomAvailable: () => metadata.getSnapshot().products.includes('th128mp'),
     publicRelayUrl: () => metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? '',
     createSocket: url => relayRouting.createSocket(url), relayUrl: () => relayRouting.resolve(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? ''),
     settingsModel: settings, sitePreferences: preferences, runtime: () => runtime, replayViewer: () => snapshot.replayViewer,
@@ -1405,6 +1430,14 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   });
   function restoreRoomFromUrl(url: string): Promise<void> {
     const expected = resolveRoomInvite(url); if (!expected?.r) return Promise.resolve();
+    if (expected.g === 'th128mp' && !metadata.getSnapshot().products.includes('th128mp')) {
+      if (metadata.getSnapshot().phase === 'ready') return Promise.resolve();
+      return metadata.initialize().then(() => {
+        const current = resolveRoomInvite(window.location.href);
+        if (!disposed && current?.g === expected.g && current.r === expected.r && metadata.getSnapshot().products.includes('th128mp'))
+          return restoreRoomFromUrl(window.location.href);
+      });
+    }
     const existing = room.service.getSnapshot();
     // Retained membership is independent of later Host business fallback.
     if (existing.room?.code === expected.r && existing.product === expected.g) return Promise.resolve();

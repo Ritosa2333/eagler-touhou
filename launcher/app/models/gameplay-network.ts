@@ -147,9 +147,18 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
       const poll = () => {
         if (disposed || !context.isCurrent() || !runtime.getSnapshot().launched || !token || runtime.getSnapshot().epoch !== token.epoch || runtime.getMidiEventContext()?.document !== token.document) {finish(new RuntimeSessionSupersededError()); return;}
         if (now() >= deadline) {finish(new Error(options.translate('room.gameplayPathTimeout'))); return;}
-        const net = read(), state = options.context();
+        const current = runtime.getSnapshot(), state = options.context();
+        if (current.game === 'th128' && current.runtimeVariant === 'multiplayer' && state.product === 'th128mp') {
+          // The managed owner has no legacy Module/peer globals. Only its
+          // authenticated and serial-checked, native first-frame receipt can
+          // prove a usable route; runtime-info/socket open are insufficient.
+          if (current.phase === 'error') {finish(new Error(current.error || options.translate('room.unavailable'))); return;}
+          const path = current.th128RoomPath;
+          if (current.firstFrame && (state.spectator ? path === 'spectator-relay' : path === 'rtc' || path === 'relay')) {finish(); return;}
+          wait.timer = timers.setTimeout(poll, 250); return;
+        }
+        const net = read();
         if (net?.failed) {finish(new Error(net.error || options.translate('room.unavailable'))); return;}
-        const current = runtime.getSnapshot();
         // An open spectator socket precedes checkpoint installation. Keep the
         // initial bounded reconstruction hidden until native reports completion.
         const restoreReady = !net?.spectator || current.game === 'th09' ||

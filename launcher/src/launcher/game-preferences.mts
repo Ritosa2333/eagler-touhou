@@ -203,6 +203,7 @@ export interface NormalizeGamePreferencesContext {
   uiLocale?: string;
   thpracAvailable: boolean;
   webAudioAvailable: boolean;
+  defaultTouchMovementMode?: TouchMovementMode;
   // The remembered external MIDI output is only meaningful where the product
   // owns a MIDI music path and the browsing context exposes Web MIDI; a stored
   // device id must never survive into a place it cannot be used.
@@ -260,7 +261,7 @@ export function normalizeStoredGamePreferences(
     TOUCH_MOVEMENT_MODES.has(movementCandidate as TouchMovementMode)
     ? movementCandidate as TouchMovementMode
     : rawOptions?.unlimitedTouch === true ? "touch-unlimited"
-    : rawOptions?.unlimitedTouch === false ? "touch" : DEFAULT_GAME_OPTIONS.touchMovementMode;
+    : rawOptions?.unlimitedTouch === false ? "touch" : context.defaultTouchMovementMode ?? DEFAULT_GAME_OPTIONS.touchMovementMode;
 
   const focusCandidate = rawOptions?.touchFocusMode;
   let focusMode: TouchFocusMode = typeof focusCandidate === "string" &&

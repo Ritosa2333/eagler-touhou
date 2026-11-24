@@ -1,0 +1,526 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-17",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "latestHuman": "第三步如果都完成了 就可以打包了",
+  "sourceBaseCommit": "0886d0f0d4a5ed5bc272eeafdc6e6f5b66ee4a08",
+  "stage3": {
+    "functionalComplete": true,
+    "percent": 100,
+    "percentKind": "agreed finite functionality acceptance, not test/line calculation",
+    "items": [
+      "协议",
+      "高刷新率",
+      "触控",
+      "多语言",
+      "thprac",
+      "Replay"
+    ],
+    "otherFiveEvidencePreserved": true,
+    "correctedThpracAccepted": [
+      "1006",
+      "1008"
+    ]
+  },
+  "runtime": {
+    "authority": "MAIN",
+    "ordinal": 1009,
+    "version": 8,
+    "core": 116,
+    "generation": "3eb2586dcfda0e1af6e69fb57d9eeb615c40e11c12fc7792c1d2cf0b5321b47c",
+    "zip": {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/Web-delivery-20261117/th128-runtime116-dat-ogg-v8.zip",
+      "bytes": 3591694,
+      "sha256": "044745547e771bf46e2d69d160c91840c1a22e169d6c8e414a620de379c1794b"
+    },
+    "extracted": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/Web-delivery-20261117/runtime116-dat-ogg-v8",
+    "files": [
+      {
+        "path": "licenses/kikones34-MIT.txt",
+        "bytes": 1066,
+        "sha256": "37c0d62283a5ccae830e3f909b3dd2b4d9b2398fd30d3178d7413ebad3bd2e82"
+      },
+      {
+        "path": "licenses/THPRAC-MIT.txt",
+        "bytes": 1060,
+        "sha256": "1056dbd420e0889f5bb9479f82b38bcfded26443d1107f2f4ea299d2f3eb8158"
+      },
+      {
+        "path": "licenses/Tweet-META-MIT.txt",
+        "bytes": 1067,
+        "sha256": "bbb03aab0b0998c7fb644ef3992c623cdcdd3709d74f03c731bd27d3acd64a4b"
+      },
+      {
+        "path": "NOTICE.md",
+        "bytes": 2687,
+        "sha256": "a1bff598d6abbd41c93f4c63a9a1ac4e02b9867f490ce57b439c500cbc55c3db"
+      },
+      {
+        "path": "README.md",
+        "bytes": 1637,
+        "sha256": "af11dba37ee1cd916868488f1cc6d18150dfd89c263060a40f9d704eb55fe561"
+      },
+      {
+        "path": "serve.py",
+        "bytes": 4436,
+        "sha256": "089982a276c56927aa798e73d3011baa79ed5cb8b5eaa69a7dd71d9c2873234b"
+      },
+      {
+        "path": "site/import-entry.mjs",
+        "bytes": 10827,
+        "sha256": "045c797c6ff602b6d9821edbc8292a9e0b486338a8ad74be79196b6dd9aa9919"
+      },
+      {
+        "path": "site/inspector.mjs",
+        "bytes": 1164,
+        "sha256": "33852a94a0ece2099323b28d6711120cef26535e244a54e5027809b276d2f15a"
+      },
+      {
+        "path": "site/play.css",
+        "bytes": 21541,
+        "sha256": "2aa9525ccce26ad560c56563fadeaa47b53f0a22aa0b244b468a0c01b77265d0"
+      },
+      {
+        "path": "site/play.html",
+        "bytes": 28868,
+        "sha256": "e83e7f19a1da90cf4f4523b8fefc8ddbeacdd39a54b17b99913a5bb63b51ace6"
+      },
+      {
+        "path": "site/play.mjs",
+        "bytes": 333590,
+        "sha256": "00a11b7fd4d9d574bdbb665ec13cc8beecb9b14bc225e28f5d01d5fdad712b86"
+      },
+      {
+        "path": "site/resource-fetch.mjs",
+        "bytes": 4697,
+        "sha256": "9fe2401d530d6cf86655d3aa4633674e64a1bf274525f8fa1078821b971abb67"
+      },
+      {
+        "path": "site/runtime/background.mjs",
+        "bytes": 69,
+        "sha256": "1c7c40173a80ab3a203bb68e2bcbe8b3b6b02765652370e777f43ad4aff4260b"
+      },
+      {
+        "path": "site/runtime/build.json",
+        "bytes": 758,
+        "sha256": "148ead334e3dc56b5fd961eac3810114ea3a8afe8d82fec0f9004fc060d05373"
+      },
+      {
+        "path": "site/runtime/builds/3eb2586dcfda0e1af6e69fb57d9eeb615c40e11c12fc7792c1d2cf0b5321b47c/core.mjs",
+        "bytes": 139581,
+        "sha256": "59d84acd49810199f85b7851a77896209aeb410f89f04c4579d3b9ca6908615d"
+      },
+      {
+        "path": "site/runtime/builds/3eb2586dcfda0e1af6e69fb57d9eeb615c40e11c12fc7792c1d2cf0b5321b47c/core.wasm",
+        "bytes": 2432947,
+        "sha256": "c7fd33030c67bc3357e28f66b7e340f74130d9a3e1cf146dc672923d7e53d537"
+      },
+      {
+        "path": "site/runtime/bullet-type9-profile.json",
+        "bytes": 876,
+        "sha256": "2c06af10c2a939b5a3cc555682f015ee8815a2b58c14228d40ba6549620d70f4"
+      },
+      {
+        "path": "site/runtime/crc32.mjs",
+        "bytes": 423,
+        "sha256": "ea26e27a20200da6f3e9f16597078ce0e8e77d68795d218a4ab29207fba2ef8d"
+      },
+      {
+        "path": "site/runtime/dat-ogg-provider.mjs",
+        "bytes": 15449,
+        "sha256": "9c01216743bf3f352d2d174ee7be8dd619676be5b9f86868bbd76c165c6e0246"
+      },
+      {
+        "path": "site/runtime/dat-package-install.mjs",
+        "bytes": 4840,
+        "sha256": "6b62adf866bc1751ec4a0296b40fc824b1e749bfda43e311e15850d58de9aabc"
+      },
+      {
+        "path": "site/runtime/draw.mjs",
+        "bytes": 38727,
+        "sha256": "f3411dabf3fff893e461c5d00383a3204d84d6210e9cea6a372ebfe89dcdf7da"
+      },
+      {
+        "path": "site/runtime/ecl-includes.mjs",
+        "bytes": 1724,
+        "sha256": "0adc05c87df352e73352125ea3bd15c9b54a988dfba2c5ecab78414ba2d79541"
+      },
+      {
+        "path": "site/runtime/ex-qualification.mjs",
+        "bytes": 16097,
+        "sha256": "756f7efbb6494d7d7b73bf5a48db3a93b7decfe22f333e241239144d4d66961b"
+      },
+      {
+        "path": "site/runtime/extra-eligibility.mjs",
+        "bytes": 6554,
+        "sha256": "a5d0daada2f73d2905942c0b849798a6ef1705617746e25d638969f309b674ac"
+      },
+      {
+        "path": "site/runtime/extra-menu.css",
+        "bytes": 1243,
+        "sha256": "d60c9748c5854aa67d0edc1fed7cb90498fde6436a03f0b0ad629b625b238141"
+      },
+      {
+        "path": "site/runtime/extra-menu.mjs",
+        "bytes": 3343,
+        "sha256": "3e25a96f0588d53a7b742a30a97c828d894d21ceaec68d8d9a5ca7597228ea9e"
+      },
+      {
+        "path": "site/runtime/last-name-field.mjs",
+        "bytes": 7150,
+        "sha256": "b41b6ef7a0e85540b418c311e7a5ff863f351fa6024dc850ab0a05141d9ac5a0"
+      },
+      {
+        "path": "site/runtime/launcher-session.mjs",
+        "bytes": 8784,
+        "sha256": "f9250d8f7666ded2652d85a063fcc769790a96e8bb40caf06272aa7d0004594f"
+      },
+      {
+        "path": "site/runtime/managed-dat-owner.mjs",
+        "bytes": 6679,
+        "sha256": "6cf13cc415dcf08173ab55416783098702db24223cfe20cae2159334f352891f"
+      },
+      {
+        "path": "site/runtime/music-output.mjs",
+        "bytes": 1238,
+        "sha256": "bb2a350e337b24c79ca0076d5988cb0502d853524ae58d9d4207c2220c13ee0b"
+      },
+      {
+        "path": "site/runtime/native-ending-bridge-v6.mjs",
+        "bytes": 21990,
+        "sha256": "ecc4b75e296c2f68b0e8db03e80eac3d899c075c2fcb490da259b7606c28509f"
+      },
+      {
+        "path": "site/runtime/native-ending-browser-host-v4.mjs",
+        "bytes": 35527,
+        "sha256": "d380c4ee78fea0d290cdef1f9a83b5424423b30d3ea6d7a581892782ab0da8e0"
+      },
+      {
+        "path": "site/runtime/native-ending-pixels.mjs",
+        "bytes": 6175,
+        "sha256": "197c4a87d3b740f9bde145fd47350e291ef8a5f9957d3836e40b0981ddafebd0"
+      },
+      {
+        "path": "site/runtime/native-extra-run.mjs",
+        "bytes": 11576,
+        "sha256": "68d002edc8119b1faf643c599f5a8667a8850fb3f85d661227597ea015d200d1"
+      },
+      {
+        "path": "site/runtime/native-normal-postrun.mjs",
+        "bytes": 34119,
+        "sha256": "9ced7aacd4c0f2c2ad966ac6068becf2595eb097c5cbb09af1ee3fe4a6ee4d95"
+      },
+      {
+        "path": "site/runtime/native-score-file.mjs",
+        "bytes": 4649,
+        "sha256": "2a2229b0cfce16a85a25cdf4d6b3513b2b100322ac2b109a5b24d33461f34c42"
+      },
+      {
+        "path": "site/runtime/online-resources.mjs",
+        "bytes": 8811,
+        "sha256": "65a7ee3fc4d8bdd171ea49e086b059711dad91c6f54e9d8fd6cc849a0230b01d"
+      },
+      {
+        "path": "site/runtime/original-bullet-type33-record.mjs",
+        "bytes": 2548,
+        "sha256": "38d5bb7292797af073ea54d226fae2a27c226bb2edd48f77c237e84b7622c984"
+      },
+      {
+        "path": "site/runtime/original-bullet-type33.mjs",
+        "bytes": 4090,
+        "sha256": "31035df1fffdf16a5f43abd8a47cdccf0a340448c2a1249d31d5cf54b11a9bd0"
+      },
+      {
+        "path": "site/runtime/page-launch-context.mjs",
+        "bytes": 2104,
+        "sha256": "e3f336b545167dbcf3ba9943a873409e34c356a13b683b73ea1fb9a29ae25cea"
+      },
+      {
+        "path": "site/runtime/renderer-owned-ending-v2.mjs",
+        "bytes": 60906,
+        "sha256": "fc23142e4f8fee6ec6bfb91c5f8e099547d72023498496990e67dbc416f597cf"
+      },
+      {
+        "path": "site/runtime/renderer.mjs",
+        "bytes": 40916,
+        "sha256": "0c95e0c592adaf8bb9be08ff1b153ae689eac3965725ac5f78b7699bb858cbd3"
+      },
+      {
+        "path": "site/runtime/replay-file-bridge.mjs",
+        "bytes": 4826,
+        "sha256": "6d9c2d465047e577a0a7d7ce593a3290bbd57fecf3ed329d539e0b1d536fcbd9"
+      },
+      {
+        "path": "site/runtime/replay.mjs",
+        "bytes": 17771,
+        "sha256": "1400d56457bfffad9f301696bc82545a74aab065b52496b8d6dd4d36af137366"
+      },
+      {
+        "path": "site/runtime/sound.mjs",
+        "bytes": 91559,
+        "sha256": "f0e9d0f6bc5174c8ecfdd1b1d48ed3739198093d516dd4d7da73bb33503ee930"
+      },
+      {
+        "path": "site/runtime/th128-dat.mjs",
+        "bytes": 8104,
+        "sha256": "2180aba79b7af9082daf92e2bc43f986a0535e70c2f15f33148226fe5725de92"
+      },
+      {
+        "path": "site/runtime/thprac128-catalog.mjs",
+        "bytes": 20666,
+        "sha256": "3e16e7211eeba3ee47a066d41eeae6e3a874096e91b34ee74a67ae6763525485"
+      },
+      {
+        "path": "site/runtime/thprac128-menu.mjs",
+        "bytes": 13353,
+        "sha256": "5f91eda72c430dcbd0660999638da33396c469bff4dc49e7d7001fbe9f91b777"
+      },
+      {
+        "path": "site/runtime/thprac128-recording.mjs",
+        "bytes": 2784,
+        "sha256": "b2310c76adb878c29b24bd971707e333ffad520751721aa90f5b9c91f8ddca9d"
+      },
+      {
+        "path": "site/runtime/thprac128-replay.mjs",
+        "bytes": 8733,
+        "sha256": "4b52644a430972e237069d8b6a5caf70bc2a982a099b4bbc6030e4768513dd85"
+      },
+      {
+        "path": "site/runtime/thprac128-tools.mjs",
+        "bytes": 13800,
+        "sha256": "86d410905ad918abfcde3ad17039ec1b6620de9e2e6f014dd7427163c7feac0a"
+      },
+      {
+        "path": "site/runtime/thprac128.mjs",
+        "bytes": 6148,
+        "sha256": "0767058c01b847f0822843dd338e4ec22098a78f7483987f8d80e00f5f18de93"
+      },
+      {
+        "path": "site/runtime/timing.mjs",
+        "bytes": 11482,
+        "sha256": "702cfc91365b64bdaf7a2cba13f6129379003940cfa54e4e3ca8d8043e9d7c4d"
+      },
+      {
+        "path": "site/runtime/title-records.mjs",
+        "bytes": 4080,
+        "sha256": "1b0511fa9c765e50d5311400af572fb2ababe96a733bf60cc55cf86e079f1c2c"
+      },
+      {
+        "path": "site/runtime/web-input.mjs",
+        "bytes": 6767,
+        "sha256": "0080bdcc409d233271a72e62ab7e425dc433a68eadff31acb09133c26abd61dd"
+      },
+      {
+        "path": "site/runtime/world-presentation.mjs",
+        "bytes": 6466,
+        "sha256": "7288ccc4f6c874a81cbc791dc13e253b838e6e581f75ac15f9858a5c3638babd"
+      },
+      {
+        "path": "site/runtime/zip-reader.mjs",
+        "bytes": 8348,
+        "sha256": "fcc1868d96ebb068b2b53a43de2b92abaab5fbc5affbba897b890a908fbf0d8f"
+      },
+      {
+        "path": "site/style.css",
+        "bytes": 9499,
+        "sha256": "75dc915eaa2eb8bb56676f2b5a074b808fb7e4255adfaeb0ff14ff5e227a9c67"
+      },
+      {
+        "path": "Start.ps1",
+        "bytes": 308,
+        "sha256": "5b1c39654ca0a5620bcfff9a425945a79b43aa181e74598012f6614c067d5d6a"
+      },
+      {
+        "path": "manifest.json",
+        "bytes": 10385,
+        "sha256": "5c51264349c78826ea4c4eaae6c925586cebc627ba9d0099d2b967b2c22adb84"
+      },
+      {
+        "path": "SHA256SUMS.txt",
+        "bytes": 5812,
+        "sha256": "f5387c58b51cd292bf73d841f4e2268c26b45286f2098ca7711f20bc16cbfa41"
+      }
+    ],
+    "siteSourceExact": 49,
+    "moduleEdges": 74,
+    "syntaxChecks": 44,
+    "network": {
+      "Factory": 0,
+      "World": 0,
+      "browser": 0,
+      "nativeCompiles": 0,
+      "zipEntriesExact": 61,
+      "servedFilesExact": 52,
+      "core116Ready": true,
+      "MIME": true,
+      "WASMRange206": true,
+      "HEAD": true,
+      "pathRejection": true,
+      "serverClosed": true
+    },
+    "resource": {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/Web-delivery-20261116/resource-package-dat-ogg-v2/th128-dat-ogg-5e3bcbd5ebb8b171.zip",
+      "bytes": 93317333,
+      "sha256": "f8eec6698f3ecdc94f6d64ce3413800a7558201d365e468e9c27ac61fc2504a5"
+    },
+    "oldV7Unchanged": true,
+    "nativeCompiles": 0,
+    "Factories": 0,
+    "Worlds": 0,
+    "browser": 0,
+    "publicPublished": false
+  },
+  "packageBrowser": {
+    "authority": "MAIN",
+    "ordinal": 1010,
+    "passed": true,
+    "checks": [
+      {
+        "name": "actualZIPfilechooser+productioninstall+realIDBresource ready",
+        "passed": true
+      },
+      {
+        "name": "unmodifiedpackagedimport-entry+fullproductionpage+core116originalTitle",
+        "passed": true
+      },
+      {
+        "name": "actualnativeTitleDifficultyRoute opensoriginalthpracmenu",
+        "passed": true
+      },
+      {
+        "name": "actualpackagedWASM startsandpresentsoriginalgame",
+        "passed": true
+      },
+      {
+        "name": "packagedoriginalF12+Backspace styling andnoproductionteststrip",
+        "passed": true
+      },
+      {
+        "name": "no runtime or CSP errors",
+        "passed": true
+      }
+    ],
+    "browser": 1,
+    "wholePackageEntry": true,
+    "resourceImportRealIndexedDB": true,
+    "core": 116,
+    "nativeCompiles": 0,
+    "GPU": true,
+    "exactNativeCountsInstrumented": false,
+    "WorldUpper": 4,
+    "FactoryUpper": 12,
+    "ticksUpper": 30000,
+    "evidence": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1010-runtime116-v8-actual-import-start\\evidence.json",
+      "bytes": 1782,
+      "sha256": "21437680e16b1ab1450ffa3bc785f776d7005390b599fcdb2fe2082c028b4e16"
+    },
+    "windowMs": 24198,
+    "evidenceDetails": {
+      "authority": "MAIN",
+      "ordinal": 1010,
+      "passed": true,
+      "personalDataTouched": false,
+      "ownTabClosed": true,
+      "checks": [
+        {
+          "name": "actualZIPfilechooser+productioninstall+realIDBresource ready",
+          "passed": true
+        },
+        {
+          "name": "unmodifiedpackagedimport-entry+fullproductionpage+core116originalTitle",
+          "passed": true
+        },
+        {
+          "name": "actualnativeTitleDifficultyRoute opensoriginalthpracmenu",
+          "passed": true
+        },
+        {
+          "name": "actualpackagedWASM startsandpresentsoriginalgame",
+          "passed": true
+        },
+        {
+          "name": "packagedoriginalF12+Backspace styling andnoproductionteststrip",
+          "passed": true
+        },
+        {
+          "name": "no runtime or CSP errors",
+          "passed": true
+        }
+      ],
+      "snapshots": [
+        {
+          "frame": 15,
+          "highFramerate": false,
+          "interpolation": 1,
+          "nativePlayerX": 320,
+          "displayedPlayerX": 320,
+          "stage": 1,
+          "messageActive": false,
+          "messageClock": 0,
+          "dialogueText": "",
+          "bossAnimations": [
+            {
+              "id": 2000032,
+              "script": 2,
+              "sprite": 6,
+              "clock": 14,
+              "visualTicks": 14,
+              "x": 231.639999,
+              "y": 55.6399994,
+              "flags": 7,
+              "flags2": 0
+            }
+          ]
+        }
+      ],
+      "screenshot": {
+        "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1010-runtime116-v8-actual-import-start/actual-packaged-F12.jpg",
+        "bytes": 108313,
+        "sha256": "fcd6ddc98fa9eefb6723e871740f95147fd3507ad7c212d7e857805c32c2fb18",
+        "fullPage": true,
+        "gameDocumentBounds": {
+          "height": 912.75,
+          "width": 1217,
+          "x": 24,
+          "y": 115.796875
+        }
+      },
+      "console": [],
+      "unexpectedConsole": [],
+      "windowMs": 24198
+    },
+    "screenshotCrop": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1010-runtime116-v8-actual-import-start\\actual-packaged-F12-panel.png",
+      "bytes": 613136,
+      "sha256": "705bbbcde75b3d7b16573363e9fe4ba107ba8c17835e04fd6380dd37f34d7342"
+    },
+    "screenshotVisuallyInspected": true,
+    "ownTab": "34",
+    "serverClosed": {
+      "closed": true,
+      "pid": 85776,
+      "stderr": "",
+      "at": "2026-11-17T15:05:02.831Z"
+    },
+    "ROOTReleased": {
+      "owner": "MAIN-PACKAGE-BROWSER1010",
+      "pid": 238828,
+      "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+      "token": "31b458ed-10a5-448f-ba94-e33d2e6ba1b7",
+      "releasedAt": "2026-11-17T15:05:02.832Z"
+    }
+  },
+  "protected": {
+    "oldV7Unchanged": true,
+    "resourceV2Unchanged": true,
+    "core116ExactNoCompile": true,
+    "personalDataPagesVolumeUnchanged": true,
+    "publicPublishingPaused": true,
+    "multiplayerPausedPrototypesPreserved": true,
+    "old772ExternalPythonUnresolvedStill1": true,
+    "automationDeletedNotRecreated": true
+  },
+  "review": "MAINauthor self-review;no independentworker approval",
+  "publicURL": null
+}

@@ -26,6 +26,8 @@
     "resources": "services/resource-router",
     "th12": "ports/th12",
     "th12mp": "ports/th12-mp",
+    "th128": "ports/th128",
+    "th128mp": "ports/th128-mp",
     "th13": "ports/th13",
     "th13mp": "ports/th13-mp",
     "th17": "ports/th17",

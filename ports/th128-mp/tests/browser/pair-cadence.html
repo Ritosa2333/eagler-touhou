@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TH128 双席实时验证</title>
+<link rel="stylesheet" href="/ports/th128-mp/tests/browser/pair-cadence.css">
+<h1>TH128 双席实时验证</h1>
+<p id="display-clock" role="status">等待显示时钟</p>
+<main>
+  <iframe id="first-seat" src="/seat-0" title="玩家一"></iframe>
+  <iframe id="second-seat" src="/seat-1" title="玩家二"></iframe>
+  <iframe id="observer" src="/watch" title="旁观"></iframe>
+</main>
+<script type="module" src="/ports/th128-mp/tests/browser/pair-cadence.mjs"></script>
+</html>

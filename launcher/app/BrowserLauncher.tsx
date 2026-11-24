@@ -72,7 +72,9 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const [settingsClosing, setSettingsClosing] = useState(false);
   const assetUrl = useMemo(() => (path: string) => new URL(path, session.baseUrl).href, [session]);
   const products = useMemo(() => createLibraryProducts(metadataProducts, assetUrl, id => `?game=${id}`), [metadataProducts, assetUrl]);
-  const catalogProducts = useMemo(() => createLibraryProducts(PRODUCT_IDS, assetUrl, id => `?game=${id}`), [assetUrl]);
+  const localPreviewRoom = metadataProducts.includes('th128mp');
+  const catalogProducts = useMemo(() => createLibraryProducts(localPreviewRoom ? [...PRODUCT_IDS, 'th128mp'] : PRODUCT_IDS,
+    assetUrl, id => `?game=${id}`), [assetUrl, localPreviewRoom]);
   const masthead = <Header session={session} firstUse={firstUse} donationAvailable={donationAvailable}/>;
   const host: LauncherHost = {
     desktopLibraryDetails: true,

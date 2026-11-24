@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "date": "2026-11-16",
+  "sourceCore": 104,
+  "sourceCandidate": "case636-spell-stage-bonus-green/candidate",
+  "candidateOverlayFiles": 47,
+  "frontend": "case619 unchanged",
+  "nativeChanges": [
+    "src/game/SpellRules.hpp",
+    "src/game/StageWorld.cpp",
+    "src/game/StageWorld.hpp"
+  ],
+  "source": {
+    "evidence": "MAIN-spell-stage-bonus635-source-20261116.json",
+    "originalJAExeSHA256": "ba515750ece845b56640fe440592fc39ebb7bdd1ed87c541b67a19b148e767d4",
+    "verifiedInstructions": 34,
+    "map": [
+      0,
+      0,
+      1,
+      2,
+      1,
+      2,
+      0,
+      1,
+      2,
+      1,
+      2,
+      0,
+      1,
+      2,
+      1,
+      2,
+      3
+    ],
+    "normalStageDepths": [
+      1,
+      2,
+      3
+    ],
+    "EXConstant": 500000,
+    "originalInstructionsExecuted": 0
+  },
+  "primary": {
+    "red": 635,
+    "green": 636,
+    "checks": 66,
+    "redFailures": 51,
+    "greenPasses": 66,
+    "WorldStartsRed": 66,
+    "WorldStartsGreen": 69,
+    "ticksRed": 120,
+    "ticksGreen": 552,
+    "inputPins": 87,
+    "translationUnits": 28,
+    "relativeHeaderEdges": 98,
+    "syntheticECL": true,
+    "syntheticEffectCallback": true,
+    "originalGameplay": false,
+    "UBSan": true
+  },
+  "compatibility": {
+    "case": 637,
+    "checks": 54,
+    "WorldStarts": 36,
+    "ticks": 176,
+    "flagChecks": 8202,
+    "inputPins": 90,
+    "compilerCalls": 2,
+    "allFourJobsExit": 0,
+    "stderrBytes": 0,
+    "oldSuccessfulCasesReexecuted": false,
+    "priorFixturesFrozenInputs": true
+  },
+  "build": {
+    "case": 638,
+    "authority": "MAIN",
+    "ordinal": 638,
+    "coreOrdinal": 104,
+    "passed": true,
+    "compilerCalls": 1,
+    "compiler": {
+      "status": 0,
+      "error": null,
+      "signal": null
+    },
+    "artifacts": {
+      "core.mjs": {
+        "bytes": 134120,
+        "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+      },
+      "core.wasm": {
+        "bytes": 2169703,
+        "sha256": "3916c97f0b3561ecb25cc203d4d471343d50b223a9565c5fa255faeaac6f3247"
+      }
+    },
+    "generation": "64c7db1a1496bc54a2bff08a70a3c89baddbc3095e107562a03fabe6298f523f",
+    "sourceCount": 226,
+    "translationUnits": 83,
+    "exports": 205,
+    "changedSources": [
+      "src/game/SpellRules.hpp",
+      "src/game/StageWorld.cpp",
+      "src/game/StageWorld.hpp"
+    ],
+    "Factories": 0,
+    "Worlds": 0,
+    "browser": false,
+    "publication": false,
+    "at": "2026-11-15T23:40:48.692Z"
+  },
+  "actualABI": {
+    "case": 639,
+    "passed": true,
+    "coreOrdinal": 104,
+    "generation": "64c7db1a1496bc54a2bff08a70a3c89baddbc3095e107562a03fabe6298f523f",
+    "actualExports": 205,
+    "Factories": 1,
+    "WorldStarts": 0,
+    "unownedActionsRejected": 5,
+    "postrunOwnersMinted": 0,
+    "browser": 0,
+    "storageWrites": 0,
+    "sourceStarts": 0,
+    "scope": "actual produced104instantiate/export/memory and noownerrejection only;stagebonuscomponents636637 separatelytested,notoriginalgameplay"
+  },
+  "review": {
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/dsh-web-completion-20261115/timing-focus/spell-stage636-review/REVIEW.md",
+    "bytes": 13385,
+    "sha256": "96b962c6bba50e0a87c6186b5412d809d1ae92b266578a6e04425c019b14fce3"
+  },
+  "publicRuntimeChanged": false,
+  "oldCoresRebuilt": false,
+  "acceptedRoutesRerun": false,
+  "limits": [
+    "original fullstage spellscore trajectory notrerun",
+    "617 earlyGameOver cause orfix notestablished",
+    "unknowngenericStageWorld names deliberatelyretain legacydepth1;notoriginalunknownmappingproof",
+    "634same-suppliedmode equivalence retained;actualproductionplayerMode wiring remainsseparate",
+    "browser/device/JA/continuedterminal/independentdeployment remainunaccepted"
+  ]
+}

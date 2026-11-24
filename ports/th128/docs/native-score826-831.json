@@ -1,0 +1,282 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-17",
+  "scope": "Browser native T821 score codec and read-only export from an existing validated owned native record",
+  "baseCommit": "3b4a05bd02f36160df832b263934b38b3dd18a24",
+  "core": 112,
+  "cases": {
+    "826": {
+      "pass": 0,
+      "fail": 15,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 15,
+      "passed": false,
+      "inputs": 12,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case826-native-score-codec-red\\result.json",
+        "bytes": 294,
+        "sha256": "22420fbcc1ebfff1a5cd64c1b73464c91955760490c51736705abd5aeb17b061"
+      }
+    },
+    "827": {
+      "pass": 15,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 15,
+      "passed": true,
+      "inputs": 13,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case827-native-score-codec-green\\result.json",
+        "bytes": 293,
+        "sha256": "f012ec37f6d0041cae6211750d5a139d22409b9ca3563edb7895cc40c7268fbc"
+      }
+    },
+    "828": {
+      "pass": 7,
+      "fail": 2,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 9,
+      "passed": false,
+      "inputs": 18,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case828-current-native-score-export-caller-red\\result.json",
+        "bytes": 292,
+        "sha256": "32224b148eba7910c9b7b5142013c72410a248b76a11f264f7a21093f8ca4172"
+      }
+    },
+    "829": {
+      "pass": 24,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 24,
+      "passed": true,
+      "inputs": 19,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case829-current-native-score-export-green\\result.json",
+        "bytes": 293,
+        "sha256": "e5494c2783bcef78c7929a57fa9652a95b96ebcc9e903bd9cb0e6e00613c7957"
+      }
+    },
+    "830": {
+      "passed": true,
+      "inputs": 31,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case830-native-score-production-codec-differential\\result.json",
+        "bytes": 884,
+        "sha256": "7168553d0b323c9acd6241082a5f9332a07696460b9db26b606081c8d611c3fa"
+      }
+    },
+    "831": {
+      "pass": 144,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 144,
+      "passed": true,
+      "inputs": 40,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case831-native-score-export-affected-regressions\\result.json",
+        "bytes": 295,
+        "sha256": "50c3d87750f302172cc9525dae9a6b690ee17a5f3ead3cc2b2d4d88e511afd04"
+      }
+    }
+  },
+  "sourcePins": [
+    {
+      "path": "site/import-entry.mjs",
+      "bytes": 10540,
+      "sha256": "50f73da5f9bc3dd5304a8ca46329eecf5c9eceaa22e426ac863d555d310f2906"
+    },
+    {
+      "path": "site/runtime/replay-file-bridge.mjs",
+      "bytes": 4826,
+      "sha256": "6d9c2d465047e577a0a7d7ce593a3290bbd57fecf3ed329d539e0b1d536fcbd9"
+    },
+    {
+      "path": "site/runtime/native-score-file.mjs",
+      "bytes": 4649,
+      "sha256": "2a2229b0cfce16a85a25cdf4d6b3513b2b100322ac2b109a5b24d33461f34c42"
+    },
+    {
+      "path": "tools/package-online-site.mjs",
+      "bytes": 23018,
+      "sha256": "d8a0511d86f93c9529f2838b90a858fd27526025509400f5c77653ad56bbcd76"
+    },
+    {
+      "path": "tests/launcher-session/replay-idb.mjs",
+      "bytes": 4867,
+      "sha256": "40c81876de101a421e2bc1004fc59182502eb2d222e8c70a24fc56ff97c4ff69"
+    },
+    {
+      "path": "tests/launcher-session/replay-files-entry.test.mjs",
+      "bytes": 9498,
+      "sha256": "8555ed5b2ed481c21cae775c6e99fff3f0a1e85f17c3e97d732d3f8044d1dae7"
+    },
+    {
+      "path": "tests/launcher-session/replay-closure.test.mjs",
+      "bytes": 1477,
+      "sha256": "e28dc959d18a53b7b304caddb52d52e53979b0b327637f639f5516f0c2955ded"
+    },
+    {
+      "path": "tests/native-score/score-fixture.mjs",
+      "bytes": 2175,
+      "sha256": "070ec528ba07364218c18261f3fb7c46d8fdcfb616a06d85988fbf084ae18005"
+    },
+    {
+      "path": "tests/native-score/score-file.test.mjs",
+      "bytes": 3671,
+      "sha256": "621108b8ee53d4b1e54ca3bf07557853c2bc4a95eb57df614c4e0578329f3f98"
+    }
+  ],
+  "codec": {
+    "container": "T821",
+    "headerBytes": 24,
+    "memoryBytes": 52232,
+    "fileBlockOrder": [
+      "CR0..7",
+      "CD",
+      "ST"
+    ],
+    "memoryBlockOrder": [
+      "CR0..7",
+      "ST",
+      "CD"
+    ],
+    "cipher": {
+      "blockBytes": 16,
+      "mask": 172,
+      "increment": 53
+    },
+    "compression": {
+      "decode": "8192-byte zero-initialized ring LZSS with bounded native implicit zero tail",
+      "encode": "deterministic valid literal stream",
+      "nativeCompressionByteIdentical": false
+    },
+    "canonicalFields": "Native assemble recomputes block checksums and route index; all other 52160 profile bytes preserved",
+    "storageWrites": false,
+    "defaults": false,
+    "bootstrap": false
+  },
+  "export": {
+    "path": "scoreth128.dat",
+    "adapterOwnedName": true,
+    "originalFilenameProven": false,
+    "source": "OwnedNativeTitleRecordStore.observe validated existing profile/provenance/SHA",
+    "readOnly": true,
+    "commands": [
+      "list",
+      "read"
+    ],
+    "absentErrno": 44,
+    "sourceProfileSHASeparateFromFileSHA": true,
+    "scoreImport": false
+  },
+  "nativeDifferential": {
+    "case": 830,
+    "source": "accepted case560 actual-final-profile-52232.bin",
+    "sourceBytes": 52232,
+    "sourceSHA256": "52e005acee659448d6dd08d2100e4eae184ee9cab1d00e187fa0e1eeede73a8a",
+    "productionCPPHeaders": [
+      "NativeRecordCipher.hpp",
+      "NativeScoreContainer.hpp",
+      "NativeScoreProfile.hpp",
+      "NativeBstCodec.hpp"
+    ],
+    "compilerCalls": 1,
+    "translationUnits": 1,
+    "fullCoreBuilds": 0,
+    "JSFileBytes": 58787,
+    "nativeFileBytes": 9380,
+    "nativeFileSHA256": "af5545669d9dded1e626f8ac41ad80c8b62e26771e723f2380601a5061033049",
+    "productionDecoderAcceptsJS": true,
+    "JSDecoderAcceptsProductionEncoder": true,
+    "completeCanonicalProfileEqual": true,
+    "retailFileOrOriginalEXE": false
+  },
+  "boundaries": {
+    "currentCaller": true,
+    "indexedDB": "explicitly seeded synthetic transactional backend",
+    "browser": 0,
+    "Worlds": 0,
+    "Factories": 0,
+    "GPU": false,
+    "physicalAudio": false,
+    "scoreImport": false,
+    "nativeConfig": false,
+    "fullFileBridge": false,
+    "stage3Complete": false,
+    "stage4Implemented": false,
+    "publicURL": null,
+    "localPackagingPaused": true
+  },
+  "history": {
+    "range": "770..831",
+    "total": 1232,
+    "liveExact": 1030,
+    "archivedExact": 202,
+    "unresolved": 0,
+    "requestsRawGrantsImmutable": true
+  },
+  "rulings": [
+    {
+      "topic": "Native oracle",
+      "decision": "No pre-existing standalone score container found; new bounded C++ component uses existing production codec headers. No core recompilation or new native export.",
+      "costIfWrong": "Does not independently establish retail/original EXE file interoperability."
+    },
+    {
+      "topic": "Compression choices",
+      "decision": "Valid literal encoding accepted by production decoder is sufficient; compression byte identity is not promised.",
+      "costIfWrong": "Export is about 58KB rather than the native 9KB specimen; generic consumers must accept valid BST literal streams."
+    },
+    {
+      "topic": "Score import",
+      "decision": "Remain export-only; external bytes cannot be mislabeled as ordinary/extra native postrun capture.",
+      "costIfWrong": "Generic launcher score upload remains unsupported until a distinct truthful import owner is implemented."
+    }
+  ],
+  "review": {
+    "worker": "th128-c1-verification",
+    "seq": 8264,
+    "sourceOnly": true,
+    "path": "W/dsh-web-completion-20261115/localization/native-score829-review-20261117/REVIEW.md",
+    "bytes": 13624,
+    "sha256": "59325414ec36cf4329cad4725894bee4740909437d1e6b6d50896b61530e0d87",
+    "noScopedBlocker": true,
+    "MAINRulings": [
+      {
+        "id": "E4",
+        "decision": "sync remains explicitly Replay-only and is not a global file inventory; docs now say score is omitted."
+      },
+      {
+        "id": "E5",
+        "decision": "Keep native assembly canonicalization; source profileSHA and fileSHA are distinct, neither is unforgeable authentication."
+      },
+      {
+        "id": "C7",
+        "decision": "Header+8 is0 in existing production wrap; codec preserves profile semantics, not arbitrary unknown container metadata."
+      }
+    ],
+    "deferredMinors": [
+      {
+        "id": "E6",
+        "item": "Normalize unavailable-vs-internal-error for absent enumeration while retaining fail-closed behavior."
+      },
+      {
+        "id": "T1",
+        "item": "Additional compressed-tail1/2/3 vectors remain unverified; no blanket original-file claim."
+      },
+      {
+        "id": "T2",
+        "item": "Dedicated assertion of nativeScoreExport advertisement."
+      }
+    ],
+    "corrections": [
+      "Cipher processes compressed payload lengths58763(mod16=11,odd) and9356(mod16=12),not52232 or fullfile9380; odd branch is exercised by830JSexport. Review C3/T1 unreachable/tail4 claims are incorrect.",
+      "Schema/provenance strings plusSHA validate record consistency; they do not cryptographically authenticate World origin. This change adds no external write/import path."
+    ]
+  }
+}

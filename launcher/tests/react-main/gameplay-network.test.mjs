@@ -21,6 +21,18 @@ function rtcStats({rttSeconds=.077,localType='host',remoteType='srflx',candidate
  return new Map(reports);
 }
 test('room/native transport connection is not ready until all actual input and control channels open',async()=>{const f=fixture();let done=false;const waiting=f.model.waitForGameplayPath({isCurrent:()=>true}).then(()=>done=true);await Promise.resolve();assert.equal(done,false);assert.equal([...f.timeouts.values()][0].ms,250);f.peer.inputOpen=true;f.poll();await Promise.resolve();assert.equal(done,false);f.peer.controlOpen=true;f.poll();await waiting;assert.equal(done,true);f.model.dispose();});
+test('TH128 cover accepts only a managed first presentation of the matching role, not generic transport status',async()=>{
+ for(const spectator of [false,true]){
+  const f=fixture();Object.assign(f.state,{game:'th128',runtimeVariant:'multiplayer',firstFrame:false,runtimeInfo:{netplayTransport:'rtc'}});
+  Object.assign(f.context,{product:'th128mp',spectator});delete f.target.Module;
+  let done=false;const waiting=f.model.waitForGameplayPath({isCurrent:()=>true}).then(()=>done=true);void waiting.catch(()=>{});
+  try{
+   f.state.th128RoomPath=spectator?'spectator-relay':'rtc';f.poll();await Promise.resolve();assert.equal(done,false);
+   f.state.firstFrame=true;f.state.th128RoomPath=spectator?'relay':'spectator-relay';f.poll();await Promise.resolve();assert.equal(done,false);
+   f.state.th128RoomPath=spectator?'spectator-relay':'rtc';f.poll();await Promise.resolve();assert.equal(done,true);await waiting;
+  }finally{f.model.dispose();}
+ }
+});
 const playback={version:1,run:'run_1',revision:1,min:0,position:600,received:1200,edge:1190,target:900,paused:false,seeking:true,following:false,ended:false,nodes:[]};
 test('relay and spectator use actual launched relay socket rather than room probes',async()=>{for(const spectator of [false,true]){const f=fixture();f.context.spectator=spectator;f.state.runtimeInfo={spectatorPlayback:{...playback,seeking:false,position:900}};f.target.__eaglerNetplayTransport='relay';let done=false;const wait=f.model.waitForGameplayPath({isCurrent:()=>true}).then(()=>done=true);f.poll();await Promise.resolve();assert.equal(done,false);f.transport.relay.readyState=1;f.poll();await wait;assert.equal(done,true);f.model.dispose();}});
 test('cooperative spectator loading cover waits for a valid completed native restore',async()=>{

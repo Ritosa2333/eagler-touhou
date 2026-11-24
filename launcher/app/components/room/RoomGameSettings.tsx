@@ -1,5 +1,6 @@
 import {Button as UiButton} from '../../ui/controls';
 import {FieldHelp} from '../../ui/field-help';
+import {TH128_FREEZE_MOTIVATION_MULTIPLIERS,validTh128FreezeMotivationMultiplier} from '../../../src/launcher/th128-freeze-motivation.mts';
 import {defaultTh15ChapterThreshold} from "../../../src/launcher/th15-chapter-reward.mts";
 import {TH05_INITIAL_STOCK} from '../../../src/launcher/th05-initial-stock.mts';
 import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
@@ -87,6 +88,15 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
           <OptionSwitch id={id} label={label} describedBy={hint} checked={cheat ? !!room.disableCheatMovement : !!room.challengeMode} disabled={disabled} onChange={() => service.setRoomSettings(cheat ? {disableCheatMovement:!room.disableCheatMovement} : {challengeMode:!room.challengeMode})}/>
         </div>;
       })}
+      {state.product === 'th128mp' && typeof room.randomCirnoPalette === 'boolean' &&
+        <div className="room-rule-field">
+          <div className="flex items-center gap-1">
+            <label htmlFor="mpRoomRandomCirnoPalette">{t('room.randomCirnoPalette')}</label>
+            <FieldHelp id="mpRoomRandomCirnoPaletteHint" label={t('room.randomCirnoPalette')}>{t('room.randomCirnoPaletteHint')}</FieldHelp>
+          </div>
+          <OptionSwitch id="mpRoomRandomCirnoPalette" label={t('room.randomCirnoPalette')} describedBy="mpRoomRandomCirnoPaletteHint"
+            checked={room.randomCirnoPalette} disabled={disabled} onChange={()=>service.setRoomSettings({randomCirnoPalette:!room.randomCirnoPalette})}/>
+        </div>}
       {config.challengeKeepBullets && room.challengeKeepBullets !== undefined && room.challengeMode &&
         <div className="room-rule-field">
           <div className="flex items-center gap-1">
@@ -110,6 +120,20 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
       {state.product === 'th03mp' && <div className="room-rule-field"><div><strong>{t('settings.alwaysHitbox')}</strong></div><OptionSwitch id="mpTh03ShowHitboxes" label={t('settings.alwaysHitbox')} checked={room.showHitboxes === true} disabled={disabled} onChange={()=>service.setRoomSettings({showHitboxes:room.showHitboxes !== true})}/></div>}
       {state.product === 'th03mp' && <div className="room-rule-field"><div><strong>{t('room.th03SpecialFocus')}</strong></div><OptionSwitch id="mpTh03DisableFocus" label={t('room.th03SpecialFocus')} checked={room.disableFocus === false} disabled={disabled} onChange={()=>service.setRoomSettings({disableFocus:room.disableFocus === false})}/></div>}
       {state.product === 'th02mp' && <div className="room-rule-field"><div><strong>{t('room.th02DisableFocus')}</strong></div><OptionSwitch id="mpTh02DisableFocus" label={t('room.th02DisableFocus')} checked={room.disableFocus === true} disabled={disabled} onChange={()=>service.setRoomSettings({disableFocus:room.disableFocus !== true})}/></div>}
+      {state.product === 'th128mp' && room.freezeMotivationMultiplier !== undefined &&
+        <div className="room-rule-field">
+          <div className="flex items-center gap-1">
+            <label htmlFor="mpRoomFreezeMotivationMultiplier-trigger">{t('room.freezeMotivationMultiplier')}</label>
+            <FieldHelp id="mpRoomFreezeMotivationHint" label={t('room.freezeMotivationMultiplier')}>{t('room.freezeMotivationHint')}</FieldHelp>
+          </div>
+          <MainSelect id="mpRoomFreezeMotivationMultiplier" aria-label={t('room.freezeMotivationMultiplier')} aria-describedby="mpRoomFreezeMotivationHint"
+            value={room.freezeMotivationMultiplier} disabled={disabled} onChange={event=>{
+              const value=Number(event.target.value);
+              if(validTh128FreezeMotivationMultiplier(value))service.setRoomSettings({freezeMotivationMultiplier:value});
+            }}>
+            {TH128_FREEZE_MOTIVATION_MULTIPLIERS.map(multiplier=><option key={multiplier} value={multiplier}>{multiplier===1?t('room.freezeMotivationDefault'):`×${multiplier.toFixed(multiplier===0.75?2:1)}`}</option>)}
+          </MainSelect>
+        </div>}
     </section>
     {!owner && <p className="room-setting-description" id="mpRoomSettingsHint">{t(!room.seats?.[0] ? 'room.hostAvailable' : 'multiplayer.ownerRemoteHint')}</p>}
     <UiButton id="mpTakeHostSeat" type="button" hidden={!!room.seats?.[0] || owner} disabled={!ready || room.phase !== 'lobby'} onClick={()=>{void service.takeSeat(0);}}>{t('room.takeHostSeat')}</UiButton>

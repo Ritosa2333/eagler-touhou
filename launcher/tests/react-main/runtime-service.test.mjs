@@ -9,6 +9,7 @@ import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
+import {verifyTh128MultiplayerParent} from './th128-multiplayer-owner.integration.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const origin = 'https://launcher.invalid', baseUrl = `${origin}/deploy/`;
 let work, owners; const fixtures = [];
@@ -17,9 +18,12 @@ before(async () => {
   const outfile = resolve(work, 'actual-service.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export {createRuntimeService, RuntimeWaitTimeoutError} from './app/services/runtime.ts';
+    export {prepareGame} from './app/services/game-preparation.ts';
     export {readManagedRuntimeData} from './src/launcher/runtime-preparation.mts';
     export {RUNTIME_EPOCH_QUERY_PARAMETER} from './src/contracts/runtime-protocol.mts';
-    export {PRODUCT_GAMES} from './src/contracts/product-catalog.mts';
+    export {PRODUCT_GAMES, PRODUCT_IDS, gameIdForProduct, multiplayerConfigForProduct, productEnabledForBuild} from './src/contracts/product-catalog.mts';
+    export {buildMultiplayerRuntimeOptions} from './src/launcher/multiplayer-runtime-options.mts';
+    export {validateSiteManifest} from './src/contracts/site-manifest.mts';
   `}, outfile, bundle: true, platform: 'node', format: 'esm', packages: 'external', logLevel: 'silent',
     plugins: [authoredSourcesPlugin(project)],
   }); owners = await import(pathToFileURL(outfile).href);
@@ -27,6 +31,10 @@ before(async () => {
 afterEach(async () => {for (const fixture of fixtures.splice(0)) {await fixture.service.close({discardUnsaved: true}); fixture.service.dispose(); assert.equal(fixture.timers.pending.size, 0);}});
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 const flush = async () => {for (let i = 0; i < 30; i++) await Promise.resolve();};
+
+test('TH128 multiplayer preview owns a pinned local program, package and room lifecycle', async () => {
+  await verifyTh128MultiplayerParent(owners);
+});
 
 test('spectator gameplay rejects input and its authenticated native result menu owns local input',async()=>{
   const f=fixture();await f.prepare(managedPlan('th11',{netplayMode:'lan',netplaySpectator:true}));

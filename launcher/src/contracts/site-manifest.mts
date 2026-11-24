@@ -18,6 +18,14 @@ import {
 
 export const SITE_MANIFEST_SCHEMA = "eagler-touhou/site-manifest/1";
 export const SITE_MANIFEST_FILE = "site-manifest.json";
+export const TH128_MULTIPLAYER_PREVIEW_PROFILE = "th128-multiplayer-local-preview";
+
+/** The unpublished TH128 preview has an immutable program separate from normal. */
+export function th128MultiplayerPreviewGeneration(entry: unknown): string | null {
+  if (typeof entry !== "string") return null;
+  const path = parseRuntimeGenerationPath(entry);
+  return path?.root === "runtime/th128/multiplayer/" && path.file === "th128.html" ? path.generation : null;
+}
 
 export interface SiteGameData {
   path: string;
@@ -159,37 +167,38 @@ function sameLanguagePack(left: SiteLanguagePack, right: SiteLanguagePack): bool
     left.runtimeVersion === right.runtimeVersion && left.files === right.files;
 }
 
-function validLanguageCatalogs(value: UnknownRecord): boolean {
+function validLanguageCatalogs(value: UnknownRecord, localBaseline: readonly string[] | null): boolean {
   const hasLanguages = value.languages != null;
   const hasOptions = value.languageOptions != null;
   // Development and old third-party schema-1 manifests may omit both fields.
-  if (!hasLanguages && !hasOptions) return true;
+  if (!hasLanguages && !hasOptions) return localBaseline === null;
   if (!Array.isArray(value.languages) || !Array.isArray(value.languageOptions)) return false;
 
+  const baseline = new Set(localBaseline ?? ["ja"]);
   const packaged = new Map<string, SiteLanguagePack>();
   for (const raw of value.languages) {
-    if (!isRecord(raw) || typeof raw.id !== "string" || !raw.id || raw.id === "ja" ||
+    if (!isRecord(raw) || typeof raw.id !== "string" || !raw.id || baseline.has(raw.id) ||
         packaged.has(raw.id) || !validLanguagePack(raw.pack)) return false;
     packaged.set(raw.id, raw.pack);
   }
 
   const selectable = new Set<string>();
-  let japanese = 0;
+  let builtIn = 0;
   for (const raw of value.languageOptions) {
     if (!isRecord(raw) || typeof raw.id !== "string" || !raw.id || selectable.has(raw.id)) return false;
     selectable.add(raw.id);
-    if (raw.id === "ja") {
+    if (baseline.has(raw.id)) {
       if (raw.pack != null) return false;
-      japanese++;
+      builtIn++;
       continue;
     }
     const pack = packaged.get(raw.id);
     if (!pack || !validLanguagePack(raw.pack) || !sameLanguagePack(pack, raw.pack)) return false;
   }
-  return japanese === 1 && selectable.size === packaged.size + 1;
+  return builtIn === baseline.size && selectable.size === packaged.size + baseline.size;
 }
 
-function validOfflineCompatibility(item: UnknownRecord, resourceMode: ResourceMode, gameId: GameId): boolean {
+function validOfflineCompatibility(item: UnknownRecord, resourceMode: ResourceMode, gameId: GameId, localBaseline: readonly string[] | null): boolean {
   if (resourceMode !== RESOURCE_MODE_IMPORT && !productRequiresImport(gameId)) return true;
   const compatibility = item.offlineCompatibility;
   const gameData = item.gameData;
@@ -207,7 +216,9 @@ function validOfflineCompatibility(item: UnknownRecord, resourceMode: ResourceMo
     Array.isArray(requiredShared) &&
     expectedShared.every(target => requiredShared.includes(target)) &&
     languages.source === "offline-pack" &&
-    Array.isArray(languages.baseline) && languages.baseline.includes("ja");
+    Array.isArray(languages.baseline) && (localBaseline
+      ? languages.baseline.length === localBaseline.length && localBaseline.every(id => (languages.baseline as unknown[]).includes(id))
+      : languages.baseline.includes("ja"));
 }
 
 function validHostRuntimeFeatures(value: unknown): value is HostRuntimeFeatures | undefined {
@@ -216,18 +227,23 @@ function validHostRuntimeFeatures(value: unknown): value is HostRuntimeFeatures 
   return Object.entries(value).every(([key, item]) => isHostRuntimeFeatureId(key) && typeof item === "boolean");
 }
 
-function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): value is SiteGameManifest {
+function validGame(gameId: string, value: unknown, resourceMode: ResourceMode,
+  th128LocalPreview: boolean): value is SiteGameManifest {
   if (!isGameId(gameId) || !isRecord(value) || typeof value.runtime !== "string" || !value.runtime) return false;
   const music = value.music;
   const gameData = value.gameData;
   if (!isRecord(music) || !validMidiManifest(music.midi) || !isRecord(gameData)) return false;
   const product = PRODUCT_GAMES[gameId];
+  const localBaseline = "localLanguageOptions" in product ? product.localLanguageOptions.map(option => option.id) : null;
+  if (localBaseline && productRequiresImport(gameId) && gameData.source != null) return false;
   // Multiplayer support is a product capability ceiling, not a requirement
   // that every deployment publish the multiplayer Runtime. A deployment may
   // deliberately withhold one title's MP build while keeping the ordinary
   // game available; Launcher availability is derived from this Host field.
   if (value.multiplayerRuntime != null &&
-      (!("multiplayerRuntime" in product) || typeof value.multiplayerRuntime !== "string" || !value.multiplayerRuntime)) return false;
+      (typeof value.multiplayerRuntime !== "string" || !value.multiplayerRuntime ||
+       (!("multiplayerRuntime" in product) && !(gameId === "th128" && th128LocalPreview &&
+        th128MultiplayerPreviewGeneration(value.multiplayerRuntime))))) return false;
   const split = value.th075MultiplayerAssets;
   if (split !== undefined && (gameId !== "th075" || resourceMode === RESOURCE_MODE_IMPORT || !value.multiplayerRuntime ||
       !isRecord(split) || typeof split.path !== "string" || typeof split.sha256 !== "string" ||
@@ -244,8 +260,8 @@ function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): 
     Number.isSafeInteger(gameData.bytes) && Number(gameData.bytes) > 0 &&
     typeof gameData.sha256 === "string" && SHA256.test(gameData.sha256) &&
     validExternalPackage && validHostRuntimeFeatures(value.features) && validOggManifest(music.ogg, gameId) &&
-    validLanguageCatalogs(value) &&
-    validOfflineCompatibility(value, resourceMode, gameId);
+    validLanguageCatalogs(value, localBaseline) &&
+    validOfflineCompatibility(value, resourceMode, gameId, localBaseline);
 }
 
 function validOptionalUrl(value: unknown, protocols: ReadonlySet<string>): value is string | null | undefined {
@@ -321,8 +337,10 @@ export function validateSiteManifest(value: unknown): SiteManifest {
   }
   const games = value.games;
   const actualGames = Object.keys(games).sort();
+  const th128LocalPreview = value.profile === TH128_MULTIPLAYER_PREVIEW_PROFILE && value.shared.testBuild === true &&
+    resourceMode === RESOURCE_MODE_IMPORT && value.shared.runtimeManifest === RUNTIME_MANIFEST_FILE;
   if (!actualGames.length || actualGames.some(game => !isGameId(game)) ||
-      actualGames.some(game => !validGame(game, games[game], resourceMode))) {
+      actualGames.some(game => !validGame(game, games[game], resourceMode, th128LocalPreview))) {
     throw new Error("invalid Site Manifest games");
   }
   return {

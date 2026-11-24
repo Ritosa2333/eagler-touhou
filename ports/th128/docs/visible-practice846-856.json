@@ -1,0 +1,419 @@
+{
+  "authority": "MAIN",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "date": "2026-11-17",
+  "baseCommit": "c83f642901665a3e52db1523eb8b964fffa0ab74",
+  "core": 112,
+  "exports": 205,
+  "cases": [
+    {
+      "ordinal": 846,
+      "passed": false,
+      "summary": {
+        "pass": 0,
+        "fail": 24,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 24
+      },
+      "checks": null,
+      "inputs": 12,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case846-visible-practice-controller-and-caller-red\\result.json",
+        "bytes": 294,
+        "sha256": "36191fd3b8b081289cd90ec453c727eb9ae7543bace3a14eca14c95c2188e3a4"
+      }
+    },
+    {
+      "ordinal": 847,
+      "passed": true,
+      "summary": {
+        "pass": 24,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 24
+      },
+      "checks": null,
+      "inputs": 14,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case847-visible-practice-controller-and-caller-green\\result.json",
+        "bytes": 293,
+        "sha256": "041fbdc97c388ffb570d3d6ccda2262eb9a5ef915b9debc420af491bbb7ac13d"
+      }
+    },
+    {
+      "ordinal": 848,
+      "passed": false,
+      "summary": {
+        "pass": 283,
+        "fail": 18,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 301
+      },
+      "checks": null,
+      "inputs": 85,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case848-visible-practice-first-affected-regressions\\result.json",
+        "bytes": 297,
+        "sha256": "50b7c995a8240cf8531ba6bbb6b46f85ae64d60a49580a671a2ca81dae92663c"
+      }
+    },
+    {
+      "ordinal": 849,
+      "passed": true,
+      "summary": {
+        "pass": 303,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 303
+      },
+      "checks": null,
+      "inputs": 87,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case849-visible-practice-affected-green\\result.json",
+        "bytes": 295,
+        "sha256": "9d0e2eebbadbc2696dddf093415b31a8cc20abc8dc959b16c596693fe6d79e0d"
+      }
+    },
+    {
+      "ordinal": 850,
+      "passed": false,
+      "summary": {
+        "pass": 0,
+        "fail": 1,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 1
+      },
+      "checks": null,
+      "inputs": 12,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case850-practice-runtime-exit-red\\result.json",
+        "bytes": 292,
+        "sha256": "ad05ba87869ed9d47062724fd3b3d462efa83d6382353c8f183c0df45cb1347f"
+      }
+    },
+    {
+      "ordinal": 851,
+      "passed": true,
+      "summary": {
+        "pass": 304,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 304
+      },
+      "checks": null,
+      "inputs": 89,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case851-practice-runtime-exit-green\\result.json",
+        "bytes": 295,
+        "sha256": "42426a395edd8f702c2d3ff6f7f71f67fa66f4fc728e591d89debde80444ce8c"
+      }
+    },
+    {
+      "ordinal": 853,
+      "passed": false,
+      "summary": null,
+      "checks": 4,
+      "inputs": 14,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case853-browser-visible-practice-current-caller\\result.json",
+        "bytes": 2793,
+        "sha256": "4fd91372114cd8f6688d7f5fb25221fd06195144cb5c6106ef2c40530513db84"
+      }
+    },
+    {
+      "ordinal": 854,
+      "passed": true,
+      "summary": null,
+      "checks": 15,
+      "inputs": 14,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case854-browser-visible-practice-current-caller\\result.json",
+        "bytes": 633,
+        "sha256": "4fb4a5bc6e35f48219c4aa0ec753ce739f3557ee1d7380020b6d8a30549ffd85"
+      }
+    },
+    {
+      "ordinal": 855,
+      "passed": false,
+      "summary": {
+        "pass": 1,
+        "fail": 10,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 11
+      },
+      "checks": null,
+      "inputs": 8,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case855-multiplayer-rule-handshake-red\\result.json",
+        "bytes": 293,
+        "sha256": "3638a7008473a6056d0bc4d6e6e1ce0eff29ce4885f95f3431c3d80e1294cbfc"
+      }
+    },
+    {
+      "ordinal": 856,
+      "passed": true,
+      "summary": {
+        "pass": 11,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 11
+      },
+      "checks": null,
+      "inputs": 10,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case856-multiplayer-rule-handshake-green\\result.json",
+        "bytes": 293,
+        "sha256": "12ae98a7f3414979a452aee4a5bd7230cc66d72a0e128db245ef420ea80e14ee"
+      }
+    }
+  ],
+  "sourcecheckOnly852": {
+    "runtime": false,
+    "ROOT": false,
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case852-browser-visible-practice-current-caller/sourcecheck-first-failure.json"
+  },
+  "practice": {
+    "visible": true,
+    "stageIds": [
+      3,
+      5,
+      8,
+      10,
+      13,
+      15,
+      16
+    ],
+    "normalRank": 1,
+    "EXRank": 4,
+    "seed": 34772,
+    "progress": 0,
+    "verifiedCarry": false,
+    "normalModeClear": false,
+    "nativeTaintVerifiedByActualCaller": true,
+    "actualNativeBrowserWorld": false
+  },
+  "actualBrowser854": {
+    "checks": 15,
+    "pins": 14,
+    "windowMs": 35792,
+    "console": [],
+    "evidence": {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case854-browser-visible-practice-current-caller/evidence.json",
+      "bytes": 20716,
+      "sha256": "9d2eeacef3e840293288369c3f45a7faa378b6427ec20d875a5cdb1851e6cb4f"
+    },
+    "screenshot": {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case854-browser-visible-practice-current-caller/practice-visible.jpg",
+      "bytes": 28662,
+      "sha256": "027207eebc43a5169697b1937cf6f119be9c5d8ad7fefe622158cd0e4bb6e569"
+    },
+    "realHTMLCSS": true,
+    "currentMountedCaller": true,
+    "exactProductionFunctionExtraction": true,
+    "engineResourcePausePresentationBoundary": true,
+    "Worlds": 0,
+    "Factories": 0,
+    "GPU": false,
+    "physicalAudio": false,
+    "firstGameFrame": false,
+    "realStorage": false,
+    "finallyOwnedTabAndServerClosed": true
+  },
+  "review": {
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/dsh-web-completion-20261115/protocol-build/visible-practice847-review-20261117/REVIEW.md",
+    "bytes": 5393,
+    "sha256": "593100414836bbfd75acd9898c3a817238fa4af982adc17e8dfb62226a83e1a6",
+    "sourceOnly": true,
+    "seq": 7139,
+    "status": "idle",
+    "snapshot": "847/pre851",
+    "MAINFixedHostExit": "850RED→851GREEN",
+    "mountedPageGapResolved": 854,
+    "deferredMinors": [
+      "No focus trap/background inert; Escape only while dialog owns focus; visible close available.",
+      "Late completed-launch cancel wording could be clearer; no reproduced incorrect native ownership.",
+      "Repeated cancellation wording."
+    ],
+    "MAINRuling": "Foreign pending launch after synchronous preguard rejection is unreachable through current UI ready/busy synchronous entry; source-only defensive lead,not reproduced blocker."
+  },
+  "history": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113/visible-practice846-856-historical-pin-final-v2-20261117.json",
+    "total": 1967,
+    "liveExact": 1625,
+    "archivedExact": 342,
+    "unresolved": 0,
+    "sha256": "63dfce3cfa60eb3c7d22483a0727337b2d0a961f5c622008af45e1b6428ca7d6"
+  },
+  "sourcePins": [
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/play.mjs",
+      "bytes": 316695,
+      "sha256": "05ffc4bde924511a8eb8a9c1ddd12bf727bcdc3b4921824b78f54c1c4021a591"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/play.html",
+      "bytes": 20371,
+      "sha256": "608971f58870ef0a5ecb9c8802067f1696d5169b650a2c9ec3102df0b79ca7cf"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/play.css",
+      "bytes": 15859,
+      "sha256": "635bccc660a6422fdeaff51009fc18357fdb62dd8852e400c0621e6de637c7a1"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/runtime/practice-menu.mjs",
+      "bytes": 4610,
+      "sha256": "d65e398a3156e69163d4ced5de6c98a1afa528692daab6715b8142b2a4348679"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/runtime/multiplayer-rules.mjs",
+      "bytes": 2977,
+      "sha256": "a7602b414d1aa25dac1119d6fc42ec0122ce576f2c8b1e1faaab388b96bda762"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tools/package-online-site.mjs",
+      "bytes": 23079,
+      "sha256": "f3bdf38683b79b54efd7b03c52914183681b5ab084772ab0cac31fb46f80ed4c"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/practice-menu/controller.test.mjs",
+      "bytes": 5963,
+      "sha256": "6a3c1288c481ca841b51507b5d78433097954a3aab0a22e87e018575b4de9e34"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/practice-menu/caller.test.mjs",
+      "bytes": 4392,
+      "sha256": "574e81535b37e2f2be41fcfe7913f44e9cd7e857902f7e815aaaf657dc2ca851"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/practice-menu/input-route.test.mjs",
+      "bytes": 888,
+      "sha256": "b02909582990868f2d0e8c5deee9c4688485dcc619d9d9a9b40676eaefe0782b"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/practice-menu/exit.test.mjs",
+      "bytes": 1722,
+      "sha256": "8db0afa666d309fc0a4b9da382d49f664ef3096eb9e4f22413baa55753a92991"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/practice-menu/surface.mjs",
+      "bytes": 1625,
+      "sha256": "91f68835ba5b7cd523bb9fa16805eb972d33fc81ed944b00692e4ade55605f6c"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/multiplayer/rules.test.mjs",
+      "bytes": 3585,
+      "sha256": "fa51d9df83dd2d9c22babd23192b8402fc3ab902f0fa70c011ebcabd1910be7d"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/web-input/play-harness.mjs",
+      "bytes": 3776,
+      "sha256": "d19b8c0474ba1cf50c19ad4a7065f9201db7aa5e82af5c88aa46578376b61a7f"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/postrun-keyup.test.mjs",
+      "bytes": 2028,
+      "sha256": "158ed0f6a9e607d5064cf2572db22f9c56d51880c482927f3d3314ff48bd7b23"
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/tests/launcher-session/play-page.test.mjs",
+      "bytes": 4453,
+      "sha256": "2d999d85692e74a1c3252cdc9756018613618388f10792b73b712333c65c7396"
+    }
+  ],
+  "immutablePins": [
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\page-launch-context.mjs",
+      "bytes": 2104,
+      "sha256": "e3f336b545167dbcf3ba9943a873409e34c356a13b683b73ea1fb9a29ae25cea"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\Web-delivery-20261116\\th128-runtime112-dat-ogg-v7.zip",
+      "bytes": 3288577,
+      "sha256": "7e66ecb3c996a140d1e81d61e8ff63fd5176135057a727c1520cfc68570c33cb"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\Web-delivery-20261116\\resource-package-dat-ogg-v2\\th128-dat-ogg-5e3bcbd5ebb8b171.zip",
+      "bytes": 93317333,
+      "sha256": "f8eec6698f3ecdc94f6d64ce3413800a7558201d365e468e9c27ac61fc2504a5"
+    },
+    {
+      "path": "C:\\Users\\wang\\Documents\\Codex\\2026-10-28\\e-gee\\outputs\\th128-web\\site\\play.mjs",
+      "bytes": 282191,
+      "sha256": "7ab1c9f75e26259fbb13c32bb9bba9f90e46b667ac9cb63637f1b9b08f515634"
+    },
+    {
+      "path": "C:\\Users\\wang\\Documents\\Codex\\2026-10-28\\e-gee\\outputs\\th128-web\\site\\play.html",
+      "bytes": 19538,
+      "sha256": "3e5a6941d1f63da6d3765431d76f25076721954b234f2d0cdbfc8ea44d460781"
+    },
+    {
+      "path": "C:\\Users\\wang\\Documents\\Codex\\2026-10-28\\e-gee\\outputs\\th128-web\\site\\runtime\\sound.mjs",
+      "bytes": 78161,
+      "sha256": "184b15f22bfa484e9b7815835c2e7ceef71c2b2e54dd34beb606a95866dd4966"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\Web-delivery-20261116\\runtime112-dat-ogg-v7\\site\\runtime\\builds\\b00aaebe9cb9fd9021d3bcd7769a1f106869b3a2bfb8f2e788aa8b740d5a602b\\core.mjs",
+      "bytes": 135143,
+      "sha256": "1a9a086b1c457b31fd48833c616bafea89b2dc9beb89cc013142aabf84bc430c"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\Web-delivery-20261116\\runtime112-dat-ogg-v7\\site\\runtime\\builds\\b00aaebe9cb9fd9021d3bcd7769a1f106869b3a2bfb8f2e788aa8b740d5a602b\\core.wasm",
+      "bytes": 2297486,
+      "sha256": "cff85905b02fe13df80c037a054fe43674af87ec238e58a19dca35e6d5f77825"
+    }
+  ],
+  "stage3": {
+    "functionalComplete": true,
+    "scopeDoc": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/docs/WEB_FUNCTIONAL_SCOPE.md",
+    "publicDeploymentComplete": false,
+    "fullRetailBrowser60FPS": false,
+    "compatibilityBacklog": [
+      "phoneMultitouch",
+      "physicalShiftTouch",
+      "JA",
+      "617",
+      "BFCachePersistedTrueDevice",
+      "arbitraryNativeFileImports",
+      "MIDI"
+    ]
+  },
+  "stage4": {
+    "started": true,
+    "complete": false,
+    "rulesComponent": 856,
+    "ruleTests": 11,
+    "pageCaller": false,
+    "transport": false,
+    "actualTwoPlayerGame": false,
+    "realNativeRollback": false,
+    "restartConsensus": false,
+    "Replay": false,
+    "spectating": false,
+    "implementation": "D:/Codex-th128-owned-20261108/github-upload-20261115/th128/site/runtime/multiplayer-rules.mjs"
+  },
+  "publicURL": null,
+  "packagingPaused": true,
+  "old772Updated": false,
+  "public3Changed": false,
+  "localV7Changed": false,
+  "resourceV2Changed": false,
+  "successesImmutable": true,
+  "nextOrdinal": 857,
+  "nextPrepared": false,
+  "nextGranted": false,
+  "nextPlan": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/next857-multiplayer-input-ledger-after856-20261117.md",
+  "ROOTFree": true,
+  "jobs": [],
+  "ownedTabs": [],
+  "modal": false,
+  "settingsPending": false
+}

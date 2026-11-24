@@ -1,0 +1,1250 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-17",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "baseCommit": "e2b56009238c720adb3cefccc08d2dcabb02a198",
+  "fullComplete": false,
+  "phase3Complete": false,
+  "progressEstimate": {
+    "percent": 90,
+    "kind": "roughfunctional/notmeasured/notwholeproject"
+  },
+  "actualAudio996": {
+    "authority": "MAIN",
+    "ordinal": 996,
+    "passed": true,
+    "checks": [
+      {
+        "name": "wholecurrentcaller nativepractice andrealAudioContext started",
+        "passed": true
+      },
+      {
+        "name": "realoriginalWAVandOGG actualAudioBuffersandnonzeroPCM",
+        "passed": true
+      },
+      {
+        "name": "nativeF1F7mask65ownsrealMusic",
+        "passed": true
+      },
+      {
+        "name": "samepractice restart retainsactualsourcecontext",
+        "passed": true
+      },
+      {
+        "name": "naturalnativeMSGstrictACKwithrealrunningWebAudio",
+        "passed": true
+      },
+      {
+        "name": "boundedrealnativeWorldticks",
+        "passed": true
+      },
+      {
+        "name": "F7off actualscheduledaudiofadefiresended",
+        "passed": true
+      },
+      {
+        "name": "allownrealAudioContextsandsourcesclosed",
+        "passed": true
+      },
+      {
+        "name": "finaloriginalChineseF12visible",
+        "passed": true
+      },
+      {
+        "name": "consoleempty",
+        "passed": true
+      }
+    ],
+    "inputs": 45,
+    "browser": 1,
+    "realHTMLCSS": true,
+    "actualPracticeCaller": true,
+    "nativeResourcePauseSeams": false,
+    "realLocalStorage": true,
+    "realIndexedDB": true,
+    "Worlds": 2,
+    "Factories": 4,
+    "actualNativeCPU": true,
+    "nativeCompiles": 0,
+    "GPU": false,
+    "physicalAudioGraph": true,
+    "physicalHeard": false,
+    "evidence": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case996-browser-real-WebAudio-visible-ended-receipt\\evidence.json",
+      "bytes": 217164,
+      "sha256": "e14c98fe336afeed3c8d9913ba11c7cbc81ecb1a65524e51239e6c29b6dbef5d"
+    },
+    "windowMs": 30934,
+    "firstFailure": null,
+    "ticks": 771,
+    "actualNativeFunctions": 65,
+    "decoded": {
+      "contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "currentTime": 0.9306666666666666,
+          "actual": true
+        }
+      ],
+      "buffers": [
+        {
+          "id": 0,
+          "actual": true,
+          "length": 7732,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 1,
+          "actual": true,
+          "length": 7732,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 2,
+          "actual": true,
+          "length": 66185,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 3,
+          "actual": true,
+          "length": 31416,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 4,
+          "actual": true,
+          "length": 31416,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 5,
+          "actual": true,
+          "length": 125248,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 6,
+          "actual": true,
+          "length": 63287,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 7,
+          "actual": true,
+          "length": 23579,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 8,
+          "actual": true,
+          "length": 23579,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 9,
+          "actual": true,
+          "length": 29622,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 10,
+          "actual": true,
+          "length": 2398,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 11,
+          "actual": true,
+          "length": 20932,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 12,
+          "actual": true,
+          "length": 20932,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 13,
+          "actual": true,
+          "length": 99857,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 14,
+          "actual": true,
+          "length": 72724,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 15,
+          "actual": true,
+          "length": 121262,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 16,
+          "actual": true,
+          "length": 28800,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 17,
+          "actual": true,
+          "length": 34189,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 18,
+          "actual": true,
+          "length": 76347,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 19,
+          "actual": true,
+          "length": 48000,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 20,
+          "actual": true,
+          "length": 52294,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 21,
+          "actual": true,
+          "length": 9600,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 22,
+          "actual": true,
+          "length": 32774,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 23,
+          "actual": true,
+          "length": 32774,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 24,
+          "actual": true,
+          "length": 25388,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 25,
+          "actual": true,
+          "length": 32774,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 26,
+          "actual": true,
+          "length": 32774,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 27,
+          "actual": true,
+          "length": 25388,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 28,
+          "actual": true,
+          "length": 32774,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 29,
+          "actual": true,
+          "length": 95153,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 30,
+          "actual": true,
+          "length": 66105,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 31,
+          "actual": true,
+          "length": 95153,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 32,
+          "actual": true,
+          "length": 32721,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 33,
+          "actual": true,
+          "length": 146433,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 34,
+          "actual": true,
+          "length": 91541,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 35,
+          "actual": true,
+          "length": 7198,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 36,
+          "actual": true,
+          "length": 29248,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 37,
+          "actual": true,
+          "length": 7200,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 38,
+          "actual": true,
+          "length": 7886,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 39,
+          "actual": true,
+          "length": 69923,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 40,
+          "actual": true,
+          "length": 76334,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 41,
+          "actual": true,
+          "length": 47420,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 42,
+          "actual": true,
+          "length": 27890,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 43,
+          "actual": true,
+          "length": 76334,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 44,
+          "actual": true,
+          "length": 4800,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 45,
+          "actual": true,
+          "length": 4800,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 46,
+          "actual": true,
+          "length": 59578,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 47,
+          "actual": true,
+          "length": 59578,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 48,
+          "actual": true,
+          "length": 121262,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 49,
+          "actual": true,
+          "length": 49205,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 50,
+          "actual": true,
+          "length": 49205,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 51,
+          "actual": true,
+          "length": 244645,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 52,
+          "actual": true,
+          "length": 96000,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 53,
+          "actual": true,
+          "length": 24000,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 54,
+          "actual": true,
+          "length": 24000,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 55,
+          "actual": true,
+          "length": 30183,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 56,
+          "actual": true,
+          "length": 19200,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 57,
+          "actual": true,
+          "length": 77375,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 58,
+          "actual": true,
+          "length": 77375,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 59,
+          "actual": true,
+          "length": 77375,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 60,
+          "actual": true,
+          "length": 25077,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 61,
+          "actual": true,
+          "length": 80396,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 62,
+          "actual": true,
+          "length": 33648,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 63,
+          "actual": true,
+          "length": 4460,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 64,
+          "actual": true,
+          "length": 42217,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 65,
+          "actual": true,
+          "length": 18786,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 66,
+          "actual": true,
+          "length": 48000,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 67,
+          "actual": true,
+          "length": 48065,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 68,
+          "actual": true,
+          "length": 51401,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 69,
+          "actual": true,
+          "length": 14400,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 70,
+          "actual": true,
+          "length": 14400,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 71,
+          "actual": true,
+          "length": 23858,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 72,
+          "actual": true,
+          "length": 30073,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 73,
+          "actual": true,
+          "length": 19200,
+          "channels": 1,
+          "sampleRate": 48000
+        },
+        {
+          "id": 74,
+          "actual": true,
+          "length": 34160,
+          "channels": 2,
+          "sampleRate": 48000
+        },
+        {
+          "id": 75,
+          "actual": true,
+          "length": 35238,
+          "channels": 1,
+          "sampleRate": 48000
+        }
+      ],
+      "music": {
+        "track": "th128_02.wav",
+        "actualBuffer": true,
+        "length": 3546705,
+        "channels": 2,
+        "duration": 73.8896875,
+        "actualSource": true,
+        "actualGain": true,
+        "loop": true,
+        "loopStart": 0.9765079365079365,
+        "loopEnd": 73.8897052154195,
+        "retained": false,
+        "fadeEnded": false,
+        "closed": false,
+        "endedSources": [
+          {
+            "ended": false,
+            "frame": 0
+          }
+        ]
+      },
+      "sampledEnergy": 26.02776887316923,
+      "nonzeroSamples": 445,
+      "resourceReceipts": [
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_plst00.wav",
+          "bytes": 3596,
+          "sha256": "3af00e5bc936626bb52cc14b472ca726269a30ab5a6d44d482437fc0611c233f"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/music/ogg/th128_02.ogg",
+          "bytes": 1616396,
+          "sha256": "42f57080aa8cd59736005bf9a9eda98e2e582f1936cc87288514ec6a45714b82"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_pldead00.wav",
+          "bytes": 60852,
+          "sha256": "571c1272aa9ea1d82779f897021226959888f6a915a7b20fdab59de3af6df2b8"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_enep00.wav",
+          "bytes": 115584,
+          "sha256": "e81bf126739df5e0dc3fdaada135a65738bfc82e37b0ae97654ebe413d27abb2"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_enep01.wav",
+          "bytes": 230300,
+          "sha256": "4f24499e56320d672061076a3e63b0a0466c82baf83974ea3f8f84420096521a"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_enep02.wav",
+          "bytes": 232708,
+          "sha256": "9ac545959d56ad995220007eb90a82b3cabd3d73ef18846d3c4d5d547a7bf362"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_ok00.wav",
+          "bytes": 10876,
+          "sha256": "78ca9f9fdfe69ff24581c8c2a3c226e5b62eff175330f9bef25a49b490e46815"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_cancel00.wav",
+          "bytes": 13652,
+          "sha256": "ca2ea7b33553c10458a943303ee90a8fb8bd24f483f92903e6612fe753d45294"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_select00.wav",
+          "bytes": 1146,
+          "sha256": "3e4face4547ffde93b387e5d64183179d718a1c4ebff1c34fc98f94c945592a3"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_timeout.wav",
+          "bytes": 19390,
+          "sha256": "b96ffd1f914d0e1597b04189ca2044a06378e53c91d18dfbcbc947a4a2dde21f"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_timeout2.wav",
+          "bytes": 19388,
+          "sha256": "7223e92514a21ea2ca7a5a99f715afaa4b9d324de0db7f081b6046eb6ce600c2"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_powerup.wav",
+          "bytes": 367106,
+          "sha256": "8f371aa483160793834df66f54e978d6ff4812b619b72f4eb9e6f94b4abe2016"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_pause.wav",
+          "bytes": 133676,
+          "sha256": "5d69f408049765fb1e4c3361b5dd8e49e646adba63767b7995cdf9dd7625f235"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_cardget.wav",
+          "bytes": 222864,
+          "sha256": "825b2e9657219a3800add15dde3346ba95455c10e55fa7953b5c547816ac96ab"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_option.wav",
+          "bytes": 26980,
+          "sha256": "fc7a1fbee8ddb48f77f052712ee5cbae126524dd0f6bc36e993afbf20b7d2a9a"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_invalid.wav",
+          "bytes": 62950,
+          "sha256": "e747b6b52e036fc1e6141da79eaeefecb0bd1dee555aa6a7cf50d77de252c967"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_extend.wav",
+          "bytes": 70188,
+          "sha256": "1cf15b01b3480309c6e469ffe1aa80f1aa36b3b34de3535260190e0fb7c9b722"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_lazer00.wav",
+          "bytes": 22182,
+          "sha256": "d9a3c2a404a1ca06c344c8efe5f8a912dc5c1265ce6ddd653d14a92d6d0aa9f7"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_lazer01.wav",
+          "bytes": 24182,
+          "sha256": "21c5c1d0eb8635564a4cc620a3c0437b8042c3b2f4723322d3ba7b7afa8ccaab"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_lazer02.wav",
+          "bytes": 17768,
+          "sha256": "f1b20302842b7ecd31d1094d65d73a1686386a37e102ae09aeb5b4079c206a07"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_tan00.wav",
+          "bytes": 15100,
+          "sha256": "f29bffaef4186fb2ba2bf8d1ecbe1c689f036bb9d742606465268229686da87e"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_tan01.wav",
+          "bytes": 15100,
+          "sha256": "50579bd19596b5dd0258e63a3c27b395d0c75ad9a5a1eb5f9ca612e89a26ead6"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_tan02.wav",
+          "bytes": 11708,
+          "sha256": "790d9c5759912489aa2ad94c9df25a08f999ea2fb40dde2e7a370f866c8645f0"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_power0.wav",
+          "bytes": 88052,
+          "sha256": "6aa7237c5fe2f69e420a7397d0e95e3e5f662091640822d8957df6236f6cf3bf"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_power1.wav",
+          "bytes": 30412,
+          "sha256": "0817535be3608754e065b289753fcd7a7cb7f5b0591e2888dd95afb4d259556e"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_ch00.wav",
+          "bytes": 87564,
+          "sha256": "a62988fcb445777ed15a36ce28eee1c9f8542adaebd5bd1c87ff4550c9816128"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_ch01.wav",
+          "bytes": 60286,
+          "sha256": "b00a682f3099cb8ba8f2e2861c607167de7015e447749ee9ed13c64c958eadc7"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_gun00.wav",
+          "bytes": 134694,
+          "sha256": "08b2ef872dcf04ce23f12559399640d3064283cf33f69b4b02b6490a557a9a0e"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_cat00.wav",
+          "bytes": 84260,
+          "sha256": "2ce7c84a41a87b94980b3076b6060e325a8a4f4e97f7024836e0689197a99123"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_damage00.wav",
+          "bytes": 6772,
+          "sha256": "65005a55fc76953ae5953a158a9cf3ef8970bf69552328ebbc9f2d073db1a8f6"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_damage01.wav",
+          "bytes": 27028,
+          "sha256": "ea007e46843e724aed7454be86229f6b00b97c9a5464a58bd7d3c364f80254a8"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_nodamage.wav",
+          "bytes": 13358,
+          "sha256": "8d19805532f902a87efb95c944957e8bad7406917e26a03cdf6a656b3d5a7c67"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_item00.wav",
+          "bytes": 7378,
+          "sha256": "4368fac39524f00236c476feab41084c95bba5cb8c5496af538cee8cd9551e50"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_item01.wav",
+          "bytes": 64874,
+          "sha256": "79c720ec710427e6368f998490483f8cef94194e133555d6f4a8f9f1605424e9"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_kira00.wav",
+          "bytes": 35222,
+          "sha256": "3e00ab7cef811a3ee71252a4968183750a558e04a873f81f451477edd8a61666"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_kira01.wav",
+          "bytes": 21940,
+          "sha256": "efc36ce49509bdadf4e8587f71b54f6162c8516091ca84c100fee2f8816ef632"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_kira02.wav",
+          "bytes": 25782,
+          "sha256": "e4399c45fa320195b97279378a10223801559294d1b2c91bf0ad0d7f6981516d"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_graze.wav",
+          "bytes": 4542,
+          "sha256": "cca0bb46e2936548e582ebd94c995174f3a565839f32ac2950bba9459b1499e9"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_slash.wav",
+          "bytes": 54782,
+          "sha256": "0b81607ea9f2f7edd72cd92114548ee3f075c834c0ec3451062dd382501e806a"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_bonus.wav",
+          "bytes": 45336,
+          "sha256": "c40a1c57b3d73c75e1a508884bee3ce472508a7f9a6af60db8ac6eec7d0c1da3"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_bonus2.wav",
+          "bytes": 45336,
+          "sha256": "d7943c70dba49574e45f66f1ed697000b66288e791834cd82b6527270c03e985"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_nep00.wav",
+          "bytes": 224926,
+          "sha256": "2a7560aa679941c48b992bec677cb2420379171850efc9f8a07959d702afe023"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_ufo.wav",
+          "bytes": 176528,
+          "sha256": "aa928a4e1bd29b6dd02ebbfe6c6f87c7b41dc7dc2d72acb08a841d07e3462e5e"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_changeitem.wav",
+          "bytes": 44228,
+          "sha256": "50cc3f83d6209249aabd3d6e18bee73fd0c6fdbf6e5912a62915d8e7a61de588"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_ufoalert.wav",
+          "bytes": 44228,
+          "sha256": "d7449a8d02f6075b8def89b02383bc1fc5101015555c883ba669c14c3e407049"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_piyo.wav",
+          "bytes": 55590,
+          "sha256": "e1a293ccc48c6ad696c4cdeb82a36746b681afb79751a23400f0047026382ebf"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_boon00.wav",
+          "bytes": 35408,
+          "sha256": "c957004db6a32b3cb965631a2fa9f599b8bbe9881774aa227f597f183000a050"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_don00.wav",
+          "bytes": 142782,
+          "sha256": "096a573464381647330372815b3697221eb44b3a27cf6ac19a1d4e3f79d4bc9e"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_boon01.wav",
+          "bytes": 142782,
+          "sha256": "860f9041b48d95ed867261495c31ad094c4c26b25b2132b65a76b637822e6dda"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_shutter.wav",
+          "bytes": 23248,
+          "sha256": "7a8642c9b439916d49eb38f55cb7af20abc003f78291ba94d51f077bc99b8f5c"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_focus.wav",
+          "bytes": 148338,
+          "sha256": "1db04fd7fc5879ccd34bd128a8dd026c3942ac2cf9fc3812222af8c86ddf9d75"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_nice.wav",
+          "bytes": 123880,
+          "sha256": "3a8ee393a6d0c3b89c06ae4dc5c14c01e8589163ba646f33d792a662b1d84a6d"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_focusin.wav",
+          "bytes": 4142,
+          "sha256": "85ca9bb7cbb9b4c04c08e71c74085972d8c0dbb41cf2d1bdf4f659f263ba3418"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_focusfix.wav",
+          "bytes": 38832,
+          "sha256": "8349a5708dec92bbc732dd34278e4cdfc2c9c9c1b9b7ebe735fd440962e6c6e5"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_focusfix2.wav",
+          "bytes": 17304,
+          "sha256": "22f79cd5bae578b36f5bd7ce602f853357368f2dc02804f5b55bc53a146c86b8"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_focusrot.wav",
+          "bytes": 88810,
+          "sha256": "2bac52f35c15544c8fc78f6070d158569befb29d532841fa50584ecc499f1d6e"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_ch02.wav",
+          "bytes": 44314,
+          "sha256": "c07f1381ee5ab35a118d130a66ee79c265cb39b13879d532f8feb72e061acfad"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_cat01.wav",
+          "bytes": 188944,
+          "sha256": "40c39a558804e35334b7b5a75ad1d8d3696a22800f82df35e38aa279c4929727"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_ice.wav",
+          "bytes": 26590,
+          "sha256": "50a117bee27d1dab2341497fa5c28c21db795cde57c08efdec7ba8142060def1"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/music/ogg/th128_00.ogg",
+          "bytes": 2218223,
+          "sha256": "377b58974177cc0d27f563799058c80c2b7944e032c26ad0e2cffef4bf3d9ca5"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_ch03.wav",
+          "bytes": 26590,
+          "sha256": "59d31683dc8dcbbcc1f02e96b774d5b48dbe49ac20ee5a1030d9684f5e21edd3"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_ice2.wav",
+          "bytes": 87810,
+          "sha256": "3a11d8591d26065bf1bd032d0eedf2e60067ce2ea7003901e47dfbaae26fec13"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_extend2.wav",
+          "bytes": 27674,
+          "sha256": "f3d1c6f737e0d52141750b2d124e52fe3110a1b2d277b6a68f3a1aca4040a16b"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_pin00.wav",
+          "bytes": 35410,
+          "sha256": "99ddb5329f5f825a8a32dfff743274ca20cc851cd904cb2f36f4ec0b1e18b8ff"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_pin01.wav",
+          "bytes": 125670,
+          "sha256": "78af4f8bf3e3cfa220e0b14f8993f8634f2df4952538d89f3627260f98323872"
+        },
+        {
+          "url": "http://127.0.0.1:14704/assets/generations/8c71c316a4b24e68827f9fc560242050/zh/sounds/se_down.wav",
+          "bytes": 66940,
+          "sha256": "a2ce764510d0443ae9c4dd6ee03e1fd97f013e84d1c25e9f127b9b27c1663ec3"
+        }
+      ]
+    },
+    "nativeACK": {
+      "serial": 1,
+      "operation": 5,
+      "durationFrames": 480,
+      "durationSeconds": 8,
+      "immediate": false,
+      "acknowledged": true
+    },
+    "sourceRetained": true,
+    "actualEndedAndCleared": true,
+    "allOwnedAudioClosed": true,
+    "outputHeard": false,
+    "console": []
+  },
+  "visual": {
+    "fullPage": {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case996-browser-real-WebAudio-visible-ended-receipt/actual-WebAudio-final-F12-full.jpg",
+      "bytes": 55274,
+      "sha256": "19382a26008b885925f6b7749fb73193a87b8c9b511376a59f7f946b312a0c27",
+      "fullPage": true,
+      "gameDocumentBounds": {
+        "height": 480,
+        "scrollX": 0,
+        "scrollY": 76,
+        "width": 640,
+        "x": 312.5,
+        "y": 195.796875
+      }
+    },
+    "crop": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case996-browser-real-WebAudio-visible-ended-receipt\\actual-WebAudio-final-F12-panel.png",
+      "bytes": 93315,
+      "sha256": "70dd89d79f5fc5b30db99651fc99e09e9592538ed4fcd709ad6bac077e431b37"
+    },
+    "cropBox": [
+      312,
+      195,
+      953,
+      676
+    ],
+    "inspected": true,
+    "internalTestStripExcluded": true,
+    "neutralBackground": true,
+    "originalGameGPU": false
+  },
+  "cases": [
+    {
+      "ordinal": 991,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case991-browser-real-WebAudio-currentcaller",
+      "result": null,
+      "request": null,
+      "manifest": null,
+      "grant": null,
+      "passed": false,
+      "checks": 0,
+      "Factories": 0,
+      "Worlds": 0,
+      "ticks": 0,
+      "preAdmissionOnly": true,
+      "failure": null,
+      "underlyingFixtureFailure": null
+    },
+    {
+      "ordinal": 992,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case992-browser-real-WebAudio-currentcaller",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case992-browser-real-WebAudio-currentcaller\\result.json",
+        "bytes": 2643,
+        "sha256": "a8be1f0053c7fd7724c4a7be82aac959603dfacb7cf3b1490d4d4c9269c3afb8"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case992-browser-real-WebAudio-currentcaller\\request.json",
+        "bytes": 26220,
+        "sha256": "02e82c1f402bd2fbe9addaaa91aef63b1666ffb6f5e69680e16f0960da5d3019"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case992-browser-real-WebAudio-currentcaller\\actual-manifest.json",
+        "bytes": 28108,
+        "sha256": "242bd0cdeb583881d85c4c02023ce6287798b9ff9911a653ba65945a9f41f753"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case992-browser-real-WebAudio-currentcaller\\MAIN-APPROVAL.json",
+        "bytes": 578,
+        "sha256": "e60fa38191d1152170004b4ed958fa610f03af9ac4c9e30f417f1e43b7524b29"
+      },
+      "passed": false,
+      "checks": 3,
+      "Factories": 4,
+      "Worlds": 2,
+      "ticks": 0,
+      "preAdmissionOnly": false,
+      "failure": {
+        "message": "Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"device-restarted\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"device-restarted\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}",
+        "stack": "Error: Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"device-restarted\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"device-restarted\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}\n    at Sl (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:99610)\n    at e.actionError (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:108237)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async e.waitFor (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:105640)\n    at async phase (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case992-browser-real-WebAudio-currentcaller\\cua-workflow.mjs:6:243)\n    at async Module.run992 (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case992-browser-real-WebAudio-currentcaller\\cua-workflow.mjs:9:193)\n    at async C:\\Users\\wang\\Documents\\Codex\\2026-11-13\\c-users-wang-documents-codex-2026-3\\.node_repl_cell_33.mjs:38:323"
+      },
+      "underlyingFixtureFailure": null
+    },
+    {
+      "ordinal": 993,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case993-browser-real-WebAudio-state-observer",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case993-browser-real-WebAudio-state-observer\\result.json",
+        "bytes": 2651,
+        "sha256": "f4b8c290fd08a6042e7c11c6c014a2b1bc91155acc2abf956026b7ec4aabb0ec"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case993-browser-real-WebAudio-state-observer\\request.json",
+        "bytes": 26238,
+        "sha256": "5a4e66dbe7c3d9cf0264c3c3bb04d03c73e1214a3e2e9e03e4a1cf2013dba1be"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case993-browser-real-WebAudio-state-observer\\actual-manifest.json",
+        "bytes": 28130,
+        "sha256": "dcda635e6e16113ca9091df79cf3d816dfd8adacfdeaa985a92c5f527b523b26"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case993-browser-real-WebAudio-state-observer\\MAIN-APPROVAL.json",
+        "bytes": 569,
+        "sha256": "eaacce0d6ee4ad110ac02cd83f08215775d0fc324be9211db60f837277785c9d"
+      },
+      "passed": false,
+      "checks": 6,
+      "Factories": 4,
+      "Worlds": 2,
+      "ticks": 771,
+      "preAdmissionOnly": false,
+      "failure": {
+        "message": "Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"device-fade-ended\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"device-fade-ended\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}",
+        "stack": "Error: Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"device-fade-ended\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"device-fade-ended\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}\n    at Sl (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:99610)\n    at e.actionError (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:108237)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async e.waitFor (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:105640)\n    at async phase (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case993-browser-real-WebAudio-state-observer\\cua-workflow.mjs:6:243)\n    at async Module.run993 (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case993-browser-real-WebAudio-state-observer\\cua-workflow.mjs:11:97)\n    at async C:\\Users\\wang\\Documents\\Codex\\2026-11-13\\c-users-wang-documents-codex-2026-3\\.node_repl_cell_34.mjs:39:326"
+      },
+      "underlyingFixtureFailure": "actualWebAudiofadeScheduled"
+    },
+    {
+      "ordinal": 994,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case994-browser-real-WebAudio-ended-timing",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case994-browser-real-WebAudio-ended-timing\\result.json",
+        "bytes": 2645,
+        "sha256": "f13c4d64c99710e30a40c7e1afa2b42fae6b8493cf7b2ac853964d1889db7dd7"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case994-browser-real-WebAudio-ended-timing\\request.json",
+        "bytes": 26202,
+        "sha256": "60f721c6082d220a7c2a39b24fe54d612b170bed6a10909fca3ead008def9fd3"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case994-browser-real-WebAudio-ended-timing\\actual-manifest.json",
+        "bytes": 28086,
+        "sha256": "d63f513fbca4e3178f593833381ee106c3c52f2f04c9ea0ab6e28074396412df"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case994-browser-real-WebAudio-ended-timing\\MAIN-APPROVAL.json",
+        "bytes": 561,
+        "sha256": "16e11de800ffff5cae33ffe69c4c0836a12d9bebd3bafc0f3424a8b6b2672e96"
+      },
+      "passed": false,
+      "checks": 6,
+      "Factories": 4,
+      "Worlds": 2,
+      "ticks": 771,
+      "preAdmissionOnly": false,
+      "failure": {
+        "message": "Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"device-fade-ended\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"device-fade-ended\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}",
+        "stack": "Error: Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"device-fade-ended\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"device-fade-ended\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}\n    at Sl (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:99610)\n    at e.actionError (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:108237)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async e.waitFor (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:105640)\n    at async phase (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case994-browser-real-WebAudio-ended-timing\\cua-workflow.mjs:6:243)\n    at async Module.run994 (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case994-browser-real-WebAudio-ended-timing\\cua-workflow.mjs:11:97)\n    at async C:\\Users\\wang\\Documents\\Codex\\2026-11-13\\c-users-wang-documents-codex-2026-3\\.node_repl_cell_35.mjs:40:324"
+      },
+      "underlyingFixtureFailure": "actualWebAudiofadeScheduled"
+    },
+    {
+      "ordinal": 995,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case995-browser-real-WebAudio-fade-receipt",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case995-browser-real-WebAudio-fade-receipt\\result.json",
+        "bytes": 2645,
+        "sha256": "57e1947cc359da21d53ee49053157ff70f320c7d048d45b014c9c934c97481b6"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case995-browser-real-WebAudio-fade-receipt\\request.json",
+        "bytes": 26202,
+        "sha256": "1ea46fa3b10ff60cea25ca37c2d86ac936c5ec13799fd0279df31697c6dd7126"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case995-browser-real-WebAudio-fade-receipt\\actual-manifest.json",
+        "bytes": 28086,
+        "sha256": "0e4057d63c73a1697b7037048148fd325f53c5fb6dac1163b01e4ec4728adbd9"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case995-browser-real-WebAudio-fade-receipt\\MAIN-APPROVAL.json",
+        "bytes": 596,
+        "sha256": "b001dad3e4367fa74cacaa09550b8fceaafb182122a82b9716e34816703087a6"
+      },
+      "passed": false,
+      "checks": 6,
+      "Factories": 4,
+      "Worlds": 2,
+      "ticks": 771,
+      "preAdmissionOnly": false,
+      "failure": {
+        "message": "Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"device-fade-ended\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"device-fade-ended\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}",
+        "stack": "Error: Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"device-fade-ended\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"device-fade-ended\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}\n    at Sl (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:99610)\n    at e.actionError (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:108237)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async e.waitFor (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:105640)\n    at async phase (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case995-browser-real-WebAudio-fade-receipt\\cua-workflow.mjs:6:243)\n    at async Module.run995 (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case995-browser-real-WebAudio-fade-receipt\\cua-workflow.mjs:11:97)\n    at async C:\\Users\\wang\\Documents\\Codex\\2026-11-13\\c-users-wang-documents-codex-2026-3\\.node_repl_cell_36.mjs:41:324"
+      },
+      "underlyingFixtureFailure": "actualAudioBufferSourceendedandcleared"
+    },
+    {
+      "ordinal": 996,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case996-browser-real-WebAudio-visible-ended-receipt",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case996-browser-real-WebAudio-visible-ended-receipt\\result.json",
+        "bytes": 723,
+        "sha256": "02900045b6236de34da39b64e3495e097028971525b0d37290b198e0e3d4c0c1"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case996-browser-real-WebAudio-visible-ended-receipt\\request.json",
+        "bytes": 26364,
+        "sha256": "5af6cec1f57d1e1238b66dfa50804db94a25266e94074c1786caf7df0a6ca58a"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case996-browser-real-WebAudio-visible-ended-receipt\\actual-manifest.json",
+        "bytes": 28284,
+        "sha256": "fda8f2c0d732da563e522ec12d8addc198de84827a7e21f5c2fda968912ace53"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case996-browser-real-WebAudio-visible-ended-receipt\\MAIN-APPROVAL.json",
+        "bytes": 596,
+        "sha256": "24f13b573a288927d6dc64164f215f1674465be4843f0923fcb6b69180215576"
+      },
+      "passed": true,
+      "checks": 10,
+      "Factories": 4,
+      "Worlds": 2,
+      "ticks": 771,
+      "preAdmissionOnly": false,
+      "failure": null,
+      "underlyingFixtureFailure": null
+    }
+  ],
+  "review": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\MAIN-thprac-realAudio991-996-self-review-20261117.md",
+    "bytes": 3839,
+    "sha256": "2741aa212ce821bd7f3def682d275c2293ce78c505f16e632eb800c800848232"
+  },
+  "pins": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac128-realAudio991-996-incremental-pin-readback-20261117.json",
+    "bytes": 2592,
+    "sha256": "a0df94ff29efaf8d2833b30e269926106e018701e8d5cf7f8a8e87a706d1334e"
+  },
+  "productionCodeChanges": 0,
+  "nativeCompiles": 0,
+  "coreBuilds": 0,
+  "core116": {
+    "successful": true,
+    "unchanged": true,
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case961-private-core116-routechoice-practice-recorder/run/runtime",
+    "generation": "3eb2586dcfda0e1af6e69fb57d9eeb615c40e11c12fc7792c1d2cf0b5321b47c",
+    "wasm": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case961-private-core116-routechoice-practice-recorder\\run\\runtime\\core.wasm",
+      "bytes": 2432947,
+      "sha256": "c7fd33030c67bc3357e28f66b7e340f74130d9a3e1cf146dc672923d7e53d537"
+    }
+  },
+  "old772ExternalPythonUnresolved": 1,
+  "protectedPins": 8,
+  "remainingSeams": [
+    "GPUupload/render",
+    "fonttextraster",
+    "ending",
+    "fullTitleentry"
+  ],
+  "ROOTFree": true,
+  "ownedTabsClosed": true,
+  "publicDeployment": false
+}

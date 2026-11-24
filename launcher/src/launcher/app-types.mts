@@ -81,6 +81,8 @@ export interface MultiplayerRoomState {
   showHitboxes?: boolean;
   ballCount?: number;
   challengeMode?: boolean;
+  randomCirnoPalette?: boolean;
+  freezeMotivationMultiplier?: import("./th128-freeze-motivation.mjs").Th128FreezeMotivationMultiplier;
   challengeKeepBullets?: boolean;
   chapterThreshold?: number;
   prankMode?: boolean;

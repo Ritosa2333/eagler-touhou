@@ -188,6 +188,31 @@ test('published experimental games and multiplayer runtimes require the visibili
   }
 });
 
+test('TH128 room product requires the pinned local preview Host and a loopback Relay', async () => {
+  const layout = `sha256-${'b'.repeat(64)}`, lang = 'lang_zh-hans';
+  const game = hostGame('th128', {runtime: `runtime/th128/${hash}/th128.html`,
+    multiplayerRuntime: `runtime/th128/multiplayer/${hash}/th128.html`,
+    gameData: {...hostGame('th128').gameData, path: 'th128.dat', layout},
+    languageOptions: [{id: lang, pack: null}], languages: [],
+    offlineCompatibility: {schema: 'eagler-touhou/offline-game-pack/1', requiredShared: [],
+      runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: layout, versionSource: 'offline-pack'},
+      languages: {source: 'offline-pack', baseline: [lang]}}});
+  const manifest = {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'th128-multiplayer-local-preview',
+    shared: {resourceMode: 'import', testBuild: true, runtimeManifest: 'runtime-manifest.json', netplayRelay: 'ws://127.0.0.1:49285/'}, games: {th128: game}};
+  const own = 'http://127.0.0.1:49284/deploy/';
+  for (const [published, baseUrl, expected] of [[manifest, own, true], [manifest, 'https://public.invalid/?test', false],
+    [{...manifest, profile: 'web-validation-test'}, own, false],
+    [{...manifest, shared: {...manifest.shared, netplayRelay: 'wss://public.invalid/'}}, own, false],
+    [{...manifest, shared: {...manifest.shared, netplayRelayFallbacks: ['wss://public.invalid/']}}, own, false],
+    [{...manifest, shared: {...manifest.shared, netplayRelay: undefined}}, own, false]]) {
+    const service = fixture(network(published), {baseUrl, testBuild: true});
+    assert.equal(service.getSnapshot().products.includes('th128mp'), false, 'boot must not advertise the room');
+    await service.initialize();
+    assert.equal(service.getSnapshot().products.includes('th128mp'), expected);
+    service.dispose();
+  }
+});
+
 test('visibility mode shows test products while metadata and Runtime identities stay on the same publication', async () => {
   const published = host({th06: hostGame('th06'), th075: hostGame('th075', {multiplayerRuntime: 'runtime/th075/mp.html'}),
     th20: hostGame('th20')});

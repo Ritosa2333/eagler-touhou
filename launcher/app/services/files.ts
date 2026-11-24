@@ -42,6 +42,10 @@ const maxSaveArchiveExpandedBytes = 256 * 1024 * 1024;
 const isCheckpointPath = (path: string): boolean => /^autosave\/save[0-3]_[0-4]\.dat$/.test(path);
 const isHsobSavePath = (path: string): boolean => path === 'config.dat' || /^Package_common_[A-Za-z0-9_-]+\.dat$/.test(path);
 const supportsSaveArchive = (game: string): boolean => game === 'th15' || game === 'hsob';
+function scoreReadOnly(product: ProductId): boolean {
+  const storage = PRODUCT_GAMES[gameIdForProduct(product)].storage;
+  return 'scoreReadOnly' in storage && storage.scoreReadOnly;
+}
 function message(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (error && typeof error === 'object' && !Array.isArray(error) && 'message' in error && typeof error.message === 'string') return error.message;
@@ -136,6 +140,7 @@ export function createFileActions(options: FileActionsOptions) {
       if (error instanceof RuntimeSessionSupersededError) throw error;
       const missingSave = kind === 'save' && error !== null && typeof error === 'object' && 'errno' in error && error.errno === 44;
       const missingReplay = kind === 'replay' && message(error) === t('file.noReplayToExport');
+      if (missingSave && scoreReadOnly(product)) throw new Error(t('file.noScoreToExport'));
       if (missingSave || missingReplay) {
         if (await options.confirm({message: t(missingSave ? 'file.missingSavePrompt' : 'file.missingReplayPrompt'), confirmText: t('file.selectImport')})) {
           const file = await options.pickFile(missingSave ? saveAccept(product) : replay.replayImportAcceptFor(product));
@@ -237,6 +242,7 @@ export function createFileActions(options: FileActionsOptions) {
     if (keepViewer) feedback.playerStatus('');
   }
   function importFile(kind: ImportFileKind, file: File, product: ProductId): Promise<void> {
+    if (kind === 'save' && scoreReadOnly(product)) return Promise.reject(new Error(t('file.scoreReadOnly')));
     const context = options.captureImportContext(product);
     return kind === 'replay' ? options.replayMutations.run(() => importExclusive(kind, file, product, context)) : importExclusive(kind, file, product, context);
   }
@@ -262,6 +268,7 @@ export function createFileActions(options: FileActionsOptions) {
       else if (action === 'export-save' || action === 'export-replay') await exportFiles(action === 'export-save' ? 'save' : 'replay', product);
       else {
         const kind = action === 'import-save' ? 'save' : 'hint';
+        if (kind === 'save' && scoreReadOnly(product)) throw new Error(t('file.scoreReadOnly'));
         if (kind === 'save' && !await options.confirm({message: t('file.importSaveOverwrite'), confirmText: t('file.continueImport'), tone: 'danger'})) return;
         const file = await options.pickFile(kind === 'hint' ? '.txt' : saveAccept(product));
         if (file) await importFile(kind, file, product);

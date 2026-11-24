@@ -1,0 +1,648 @@
+{
+  "authority": "MAIN",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "date": "2026-11-17",
+  "scope": "RequestedTH128webthpracfunctionalacceptance",
+  "functionalComplete": true,
+  "percent": 100,
+  "percentKind": "acceptancedecision/notcaseorlinecalculation",
+  "wholeProjectComplete": false,
+  "multiplayerComplete": false,
+  "packagingComplete": false,
+  "publicRelease": false,
+  "stage3": {
+    "functionalComplete": true,
+    "scope": "TH128webthprac",
+    "previousPrematureConclusionRetracted": true,
+    "newAcceptanceEvidence": true
+  },
+  "humanGPUApproval": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\MAIN-thprac999-human-WebGL-approval-20261117.json",
+    "bytes": 525,
+    "sha256": "3ef8c4ad069375fa7599fa30fe2c782e234060ef92647fe8f7c3535ec5d19e38"
+  },
+  "actualProductionDevice1006": {
+    "evidencePassed": true,
+    "wrapperPassed": false,
+    "wrapperFailure": "obsolete requiredGET /runtime/renderer.mjs;actualproductionuses /runtime/renderer-owned-ending-v2.mjs",
+    "rawResult": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\result.json",
+      "bytes": 491,
+      "sha256": "4f6775391c662c1390c05631d4946a1cb5f816e05daa5e67030a89ba849385ff"
+    },
+    "rawFailure": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\wrapper-first-failure.json",
+      "bytes": 402,
+      "sha256": "7aafd7570b9f2b76600f9faabefeadd40aa95438b121bc0f4c36b388b285695f"
+    },
+    "evidence": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\evidence.json",
+      "bytes": 7733,
+      "sha256": "5e79cdf4114b5246d00b7bc674bce539004bf734e03ff8d86b8ec091814d7a46"
+    },
+    "checks": [
+      {
+        "name": "entireproductionpage reaches actualoriginalTitle andreadymain",
+        "passed": true
+      },
+      {
+        "name": "nativeTitleDifficultyRoute automaticallyopensactualpracticeUI",
+        "passed": true
+      },
+      {
+        "name": "normaloriginalpanel showsonlystartmode",
+        "passed": true
+      },
+      {
+        "name": "originalpracticefields/percent/sectionrestored",
+        "passed": true
+      },
+      {
+        "name": "actualproductionrenderer originalstageplayerbackgroundpresents",
+        "passed": true
+      },
+      {
+        "name": "actualgameBackspace sevenoriginalrowsandnativepolicyUI",
+        "passed": true
+      },
+      {
+        "name": "actualF12fullgamesurfaceandoriginalfont",
+        "passed": true
+      },
+      {
+        "name": "realgameF12pending120appliesandhidesApply",
+        "passed": true
+      },
+      {
+        "name": "currentproductionUI restart adoptsfreshsamepracticegame",
+        "passed": true
+      },
+      {
+        "name": "noauthorrender/text/audio seams andnointernalteststrip",
+        "passed": true
+      },
+      {
+        "name": "consoleempty",
+        "passed": true
+      }
+    ],
+    "windowMs": 64519,
+    "wholeProductionPage": true,
+    "productionRenderer": "/runtime/renderer-owned-ending-v2.mjs",
+    "productionRendererPin": {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\renderer-owned-ending-v2.mjs",
+      "bytes": 60906,
+      "sha256": "fc23142e4f8fee6ec6bfb91c5f8e099547d72023498496990e67dbc416f597cf"
+    },
+    "renderNativeFontAudioSeams": false,
+    "DOMObserverAndTransportHarness": true,
+    "presentationReceipts": {
+      "wholeProductionPage": true,
+      "worldPresentationChanges": 105,
+      "observedStage": 1,
+      "lastFrame": 91,
+      "frameResetCount": 1,
+      "observedFrameAdvances": 109,
+      "menuPresentation": {
+        "frame": 145,
+        "page": 2,
+        "selection": 0,
+        "ready": true,
+        "transitioning": false
+      },
+      "worldPresentation": {
+        "frame": 91,
+        "highFramerate": false,
+        "interpolation": 1,
+        "nativePlayerX": 320,
+        "displayedPlayerX": 320,
+        "stage": 1,
+        "messageActive": false,
+        "messageClock": 0,
+        "dialogueText": "",
+        "bossAnimations": [
+          {
+            "id": 2000032,
+            "script": 4,
+            "sprite": 1,
+            "clock": 30,
+            "visualTicks": 30,
+            "x": 320,
+            "y": 167.449997,
+            "flags": 7,
+            "flags2": 0
+          }
+        ]
+      },
+      "errors": [],
+      "runtimeReady": true
+    },
+    "WorldStartsUpper": 4,
+    "FactoryUpper": 12,
+    "logicTicksUpper": 30000,
+    "exactActualNativeTickFactoryCountsClaimed": false,
+    "console": [],
+    "closedOwnTabServerROOT": true
+  },
+  "finalReadOnly1008": {
+    "authority": "MAIN",
+    "ordinal": 1008,
+    "passed": true,
+    "summary": {
+      "pass": 5,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 5
+    },
+    "runtime": 0,
+    "productWorlds": 0,
+    "nativeCompiles": 0,
+    "browser": 0,
+    "inputs": 86,
+    "at": "2026-11-17T14:43:36.880Z",
+    "freshBrowserGPUWorldFactoryCompiles": 0,
+    "artifact": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1008-final-thprac-acceptance-owned-root\\result.json",
+      "bytes": 292,
+      "sha256": "138622beba386db4b08b56878aae2fd74a096c0ddf6edd348aee2edcc06bfed4"
+    }
+  },
+  "images": [
+    {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1006-final-production-page-native-pause-resume/actual-original-game.jpg",
+      "bytes": 108118,
+      "sha256": "6eed08abdf20073df69b12cd75f88165d1ff15f0cb65844059f2a0e0975bd65b",
+      "fullPage": true,
+      "gameDocumentBounds": {
+        "height": 582.75,
+        "scrollX": 0,
+        "scrollY": 0,
+        "width": 777,
+        "x": 24,
+        "y": 115.796875
+      },
+      "crop": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\actual-original-game-panel.png",
+        "bytes": 689150,
+        "sha256": "1da3ba54c2958d8bfdbe89f741587906ea101007b86014414c05462d9dbf6e62"
+      },
+      "cropBox": [
+        24,
+        115,
+        801,
+        699
+      ],
+      "visuallyInspected": true,
+      "originalGameBackground": true,
+      "testStripExcluded": true
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1006-final-production-page-native-pause-resume/actual-original-Backspace.jpg",
+      "bytes": 110107,
+      "sha256": "aa98b58296fb27a705f104eb715539ee3966353fec25039b50175e7febd16316",
+      "fullPage": true,
+      "gameDocumentBounds": {
+        "height": 582.75,
+        "scrollX": 0,
+        "scrollY": 0,
+        "width": 777,
+        "x": 24,
+        "y": 115.796875
+      },
+      "crop": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\actual-original-Backspace-panel.png",
+        "bytes": 700095,
+        "sha256": "651a0538000eb86ec8dc8ce9861e6b8a5bfea3de5c33a0d7d43a6e13e3cddd46"
+      },
+      "cropBox": [
+        24,
+        115,
+        801,
+        699
+      ],
+      "visuallyInspected": true,
+      "originalGameBackground": true,
+      "testStripExcluded": true
+    },
+    {
+      "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1006-final-production-page-native-pause-resume/actual-original-F12.jpg",
+      "bytes": 67684,
+      "sha256": "07321075e03161af8cca8634c8db02f0da3b63f30b6687a5b31e4b240a676d9e",
+      "fullPage": true,
+      "gameDocumentBounds": {
+        "height": 582.75,
+        "scrollX": 0,
+        "scrollY": 0,
+        "width": 777,
+        "x": 24,
+        "y": 115.796875
+      },
+      "crop": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\actual-original-F12-panel.png",
+        "bytes": 366268,
+        "sha256": "e239cc59670618f2928abb6bb15c3533cb2a1da04ba24826444cbe3574463cf7"
+      },
+      "cropBox": [
+        24,
+        115,
+        801,
+        699
+      ],
+      "visuallyInspected": true,
+      "originalGameBackground": true,
+      "testStripExcluded": true
+    }
+  ],
+  "priorAcceptedEvidence": {
+    "parametersSections": [
+      "888",
+      "892",
+      "897",
+      "898"
+    ],
+    "WebMenu": [
+      "903",
+      "908",
+      "912",
+      "914"
+    ],
+    "Replay": [
+      "920",
+      "921",
+      "930",
+      "933",
+      "934"
+    ],
+    "tools": [
+      "937",
+      "947",
+      "949",
+      "954"
+    ],
+    "currentCPU": [
+      "963",
+      "966",
+      "967"
+    ],
+    "currentBrowser": [
+      "978",
+      "989"
+    ],
+    "WebAffected": [
+      "990:273PASS0skip"
+    ],
+    "actualAudio": [
+      "996:10PASS/2World4Factory771ticks"
+    ]
+  },
+  "knownDifferences": [
+    "browserfontnotpixel-identicalImGui",
+    "sharedDebugaccnopinnedTH128consumer/notfaked"
+  ],
+  "cases": [
+    {
+      "ordinal": 1000,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1000-final-production-page-WebGL-thprac",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1000-final-production-page-WebGL-thprac\\request.json",
+        "bytes": 38493,
+        "sha256": "892431a05c161df32146e57a713cd44fdf2b015e65847896a5a9f0699a1d64b3"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1000-final-production-page-WebGL-thprac\\actual-manifest.json",
+        "bytes": 40985,
+        "sha256": "281e215e7c943584a98a7ae6179ac143e72c7100daedf6f1b00d8c6913fb31b0"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1000-final-production-page-WebGL-thprac\\MAIN-APPROVAL.json",
+        "bytes": 568,
+        "sha256": "0b14a4e604a9230d698c55413fb9cc5048698e40795dc2402db73f63cc7d6b70"
+      },
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1000-final-production-page-WebGL-thprac\\result.json",
+        "bytes": 1199,
+        "sha256": "d3fa0fc7a9a803950bb74ce2a14cca573724b39e989805478f2b42f294d934e9"
+      },
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 0,
+      "tabCreated": false,
+      "firstFailure": "entryreserve"
+    },
+    {
+      "ordinal": 1001,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1001-final-production-page-WebGL-admission-clock",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1001-final-production-page-WebGL-admission-clock\\request.json",
+        "bytes": 38627,
+        "sha256": "7899f48fd679f252026f0f14f79373f0bf49f7dd3aa0c86c3825c0d4349be461"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1001-final-production-page-WebGL-admission-clock\\actual-manifest.json",
+        "bytes": 41155,
+        "sha256": "61d00a36e47c77c628322815c58d3fe504a7800050d0b6daf2bd57f04908ef91"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1001-final-production-page-WebGL-admission-clock\\MAIN-APPROVAL.json",
+        "bytes": 565,
+        "sha256": "ff63a14f29313e88beb2bb084b214fbf99b54b7a420173946f0de3e0b35b7221"
+      },
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1001-final-production-page-WebGL-admission-clock\\result.json",
+        "bytes": 1526,
+        "sha256": "3d0ec110af48c1ac6d2fc4675ad0f92ab337d49d1a5a2f2bfc879bcf4b5fab20"
+      },
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 4,
+      "tabCreated": true,
+      "firstFailure": "originalpracticefields/percent/sectionrestored"
+    },
+    {
+      "ordinal": 1002,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1002-final-production-page-WebGL-menu-observation",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1002-final-production-page-WebGL-menu-observation\\request.json",
+        "bytes": 38642,
+        "sha256": "ac1f5fea995a4e1d5b74a28e8ec6091c8453559a87024a37ffc8bfec6926c287"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1002-final-production-page-WebGL-menu-observation\\actual-manifest.json",
+        "bytes": 41174,
+        "sha256": "3973b2df094aab6d0ef076307be98597314c22a2588e029a8cc068afdc6fac17"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1002-final-production-page-WebGL-menu-observation\\MAIN-APPROVAL.json",
+        "bytes": 600,
+        "sha256": "18e00e751d132fa34a89e1b6ad7e0a00de1f4e6c39a7f363ea0242ff54491289"
+      },
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1002-final-production-page-WebGL-menu-observation\\result.json",
+        "bytes": 1529,
+        "sha256": "2920f9c4ea66524ef11c0f3daf9a94b34796d43493cb1860d30cdd00c663a5c7"
+      },
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 4,
+      "tabCreated": true,
+      "firstFailure": "originalpracticefields/percent/sectionrestored"
+    },
+    {
+      "ordinal": 1003,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1003-final-production-page-WebGL-correct-percent",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1003-final-production-page-WebGL-correct-percent\\request.json",
+        "bytes": 38627,
+        "sha256": "f229347295eb5016066dc853602a725f66cca54ca3e4e92abee479b97e0ce1db"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1003-final-production-page-WebGL-correct-percent\\actual-manifest.json",
+        "bytes": 41155,
+        "sha256": "0f3901ee29d08f42efe6ea3b73d80dc42c4d4485d414b8df45ebd23cf404329e"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1003-final-production-page-WebGL-correct-percent\\MAIN-APPROVAL.json",
+        "bytes": 616,
+        "sha256": "097d620c82f0ca570891d1cc7a62f2ae06d66e9837692e9f51427deba2351f2f"
+      },
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1003-final-production-page-WebGL-correct-percent\\result.json",
+        "bytes": 1009,
+        "sha256": "e99b669b7564bd8f963de77e5daf45a21750ad0a887ebc24016ae7a8d7a65281"
+      },
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 0,
+      "tabCreated": false,
+      "firstFailure": "CUA preflight completeREADY: workflow compared ready.ordinal!==1002 butactual1003; thrown beforecreatingtab; rawtooloutputpreserved"
+    },
+    {
+      "ordinal": 1004,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1004-final-production-page-WebGL-fullgame",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1004-final-production-page-WebGL-fullgame\\request.json",
+        "bytes": 38522,
+        "sha256": "badd8d4dd042d961a481f342e19f3c1b4c252b56f3dca844a3708fa564f7a206"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1004-final-production-page-WebGL-fullgame\\actual-manifest.json",
+        "bytes": 41022,
+        "sha256": "df7b76a06731ffc603683935c6ffb5e34a983770a4231a6096aba492a2846e07"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1004-final-production-page-WebGL-fullgame\\MAIN-APPROVAL.json",
+        "bytes": 563,
+        "sha256": "87150aa7da9c0e75ce71464f18185c16626c9ae7784aa30c444d39cb2fbe2434"
+      },
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1004-final-production-page-WebGL-fullgame\\result.json",
+        "bytes": 3238,
+        "sha256": "9bea11e270dc544ec989e9a45ef76bb9042b97f7ee33ab3b7d75022727ac97e6"
+      },
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 0,
+      "tabCreated": true,
+      "firstFailure": "Error: Playwright selector deadline exceeded\nlocator.waitFor(visible) timed out for selector #game[data-native-menu-presentation*='\"page\":0'][data-native-menu-presentation*='\"ready\":true'][data-native-menu-presentation*='\"transitioning\":false']\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#game[data-native-menu-presentation*='\\\"page\\\":0'][data-native-menu-presentation*='\\\"ready\\\":true'][data-native-menu-presentation*='\\\"transitioning\\\":false']\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}"
+    },
+    {
+      "ordinal": 1005,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1005-final-production-page-visible-pause",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1005-final-production-page-visible-pause\\request.json",
+        "bytes": 38508,
+        "sha256": "89af7b5bc9b8cbf876b0d60b7425d61f5a471fc3b3cce9e4bc62fd5bb96e4c6b"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1005-final-production-page-visible-pause\\actual-manifest.json",
+        "bytes": 41004,
+        "sha256": "6c19fc5bc74ca0cd8a438f1412179467f7802b953692e1605180a1dca1d9d05d"
+      },
+      "grant": null,
+      "result": null,
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 0,
+      "tabCreated": false,
+      "firstFailure": null
+    },
+    {
+      "ordinal": 1006,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1006-final-production-page-native-pause-resume",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\request.json",
+        "bytes": 38598,
+        "sha256": "f73f4a78cbba13b5dddfb83f259595ea6372b23099f673089b8ea739cde4a63c"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\actual-manifest.json",
+        "bytes": 41118,
+        "sha256": "d0686e9f801272fb13e2d63ccc24cde5682621347019587b7f62a9252c3f09be"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\MAIN-APPROVAL.json",
+        "bytes": 562,
+        "sha256": "62b88ad64b06279b4d3269a0ae4e5605cbe5563e893145b54841eaa17219c171"
+      },
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1006-final-production-page-native-pause-resume\\result.json",
+        "bytes": 491,
+        "sha256": "4f6775391c662c1390c05631d4946a1cb5f816e05daa5e67030a89ba849385ff"
+      },
+      "wrapperPassed": false,
+      "deviceEvidencePassed": true,
+      "deviceChecks": 11,
+      "tabCreated": true,
+      "firstFailure": "The expression evaluated to a falsy value:\n\n  assert(requests.some(x=>x.path===p))\n"
+    },
+    {
+      "ordinal": 1007,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1007-final-thprac-acceptance-receipt",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1007-final-thprac-acceptance-receipt\\request.json",
+        "bytes": 21819,
+        "sha256": "d7c69474268705d2bcec1814366d8ff1fca0012e2d882a9f6e4012b3269a38bb"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1007-final-thprac-acceptance-receipt\\actual-manifest.json",
+        "bytes": 23593,
+        "sha256": "e00271ef0f7028f88e18d48560438e74e869aeea32c5c5c0d1a533736b4dd98b"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1007-final-thprac-acceptance-receipt\\MAIN-APPROVAL.json",
+        "bytes": 653,
+        "sha256": "fab28d706aab2573b8093ef94b446e7539d59fb655f1a7fda1d995d83eab962a"
+      },
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1007-final-thprac-acceptance-receipt\\result.json",
+        "bytes": 293,
+        "sha256": "850bc55f7734bfb2c9c9892c8b2b984e1323575abf0afd4fdb28274036872058"
+      },
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 0,
+      "tabCreated": false,
+      "firstFailure": null
+    },
+    {
+      "ordinal": 1008,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case1008-final-thprac-acceptance-owned-root",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1008-final-thprac-acceptance-owned-root\\request.json",
+        "bytes": 21831,
+        "sha256": "35803b2cfb33377c8e2e2c69c42bffb5c8a3e3fd132e483eadde6c7f7d01e1ff"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1008-final-thprac-acceptance-owned-root\\actual-manifest.json",
+        "bytes": 23614,
+        "sha256": "cb04cc393a0eb368c96f0cb2ddd2848617ca2c844c5f02433b0ab232bd8c98de"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1008-final-thprac-acceptance-owned-root\\MAIN-APPROVAL.json",
+        "bytes": 589,
+        "sha256": "d247af6d58fb6cbd973686c38f8517343f06e797ef3393b37c20e464f3452224"
+      },
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case1008-final-thprac-acceptance-owned-root\\result.json",
+        "bytes": 292,
+        "sha256": "138622beba386db4b08b56878aae2fd74a096c0ddf6edd348aee2edcc06bfed4"
+      },
+      "wrapperPassed": true,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 0,
+      "tabCreated": false,
+      "firstFailure": null
+    },
+    {
+      "ordinal": 997,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case997-final-actual-page-acceptance-ready",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case997-final-actual-page-acceptance-ready\\request.json",
+        "bytes": 34471,
+        "sha256": "c8ee2fcb58da022b0e22176bc638a9149d36ac185717d6914d9fa0e31a056283"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case997-final-actual-page-acceptance-ready\\actual-manifest.json",
+        "bytes": 36895,
+        "sha256": "30877d7dc91333987774eba8742e9b723df87405863012b3620c4c5af812c3d5"
+      },
+      "grant": null,
+      "result": null,
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 0,
+      "tabCreated": false,
+      "firstFailure": null
+    },
+    {
+      "ordinal": 998,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case998-final-actual-page-acceptance-ready",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case998-final-actual-page-acceptance-ready\\request.json",
+        "bytes": 34471,
+        "sha256": "a2f1aec96c592864f4a8c3baba3e39d5324064a4ca4eb1bd6544c6d7d0a26db9"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case998-final-actual-page-acceptance-ready\\actual-manifest.json",
+        "bytes": 36897,
+        "sha256": "46d5aff6136856bd2389eaae421e96bfacf6287731edbaedccef2b5def6c06ec"
+      },
+      "grant": null,
+      "result": null,
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 0,
+      "tabCreated": false,
+      "firstFailure": null
+    },
+    {
+      "ordinal": 999,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case999-final-production-page-WebGL-thprac",
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case999-final-production-page-WebGL-thprac\\request.json",
+        "bytes": 38473,
+        "sha256": "d3011b23e3a1a345b0ee5758c63badc7619a2c7dd87b2bcfbc6233f03d1ed3c8"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case999-final-production-page-WebGL-thprac\\actual-manifest.json",
+        "bytes": 40959,
+        "sha256": "ca42e8632f0e819d5e560bd6be672eaa4a00ebcdf3f7dbc4e95a254088744b92"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case999-final-production-page-WebGL-thprac\\MAIN-APPROVAL.json",
+        "bytes": 628,
+        "sha256": "2ada874f06c504abddcf8f4ab563a122d6e2d718238f85a45dbf2e989ab4595d"
+      },
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case999-final-production-page-WebGL-thprac\\result.json",
+        "bytes": 660,
+        "sha256": "0e71d37ae5bcb5fa40696912b5c24f703ac9cd3bfdcb6f9d94152afb1847737a"
+      },
+      "wrapperPassed": false,
+      "deviceEvidencePassed": false,
+      "deviceChecks": 0,
+      "tabCreated": false,
+      "firstFailure": "entryreserve"
+    }
+  ],
+  "review": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\MAIN-thprac-final997-1008-self-review-20261117.md",
+    "bytes": 4870,
+    "sha256": "f209abbb9cce7f1ffb272e558fce6c19d96e5f4e65aac7dcc7139fb809e29485"
+  },
+  "independentWorkerApproval": false,
+  "pinReadback": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac128-final997-1008-incremental-pin-readback-20261117.json",
+    "bytes": 2330,
+    "sha256": "a56488361a631ea72af2c4acae43d44e3ff46e7a88f628147d4d4953351ba762"
+  },
+  "old772Unresolved": 1,
+  "protectedPins": 8,
+  "successfulCores93To116Recompiled": false,
+  "productionCodeChanges": 0,
+  "nativeCompiles": 0,
+  "newCoreBuilds": 0,
+  "ROOTFree": true,
+  "ownedTabsClosed": true
+}

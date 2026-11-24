@@ -121,6 +121,8 @@ export interface RuntimeConfigureOptions {
   netplaySeed?: number;
   netplayDifficulty?: number;
   netplayChallengeMode?: boolean;
+  netplayRandomCirnoPalette?: boolean;
+  netplayFreezeMotivationMultiplier?: number;
   netplayChallengeKeepBullets?: boolean;
   netplayDisableLocalChargePriority?: boolean;
   netplayDisableFocus?: boolean;
@@ -187,6 +189,8 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplayPlayerCount: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplaySeed: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
   netplayChallengeMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "Cooperative multiplayer; fixed before start" }),
+  netplayRandomCirnoPalette: Object.freeze({requirement:"optional",capability:"multiplayer",when:"TH128 co-op; fixed before start and recorded in its agreed rules"}),
+  netplayFreezeMotivationMultiplier: Object.freeze({requirement:"optional",capability:"multiplayer",when:"TH128 co-op; multiplier of original ice-damage motivation; fixed before start"}),
   netplayChallengeKeepBullets: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "Supported cooperative challenge rooms with bullet clearing disabled" }),
   netplayDisableLocalChargePriority: Object.freeze({requirement: "profile-required", capability: "multiplayer", when: "TH09 multiplayer; true restores native charge progression and Replay; fixed before HELLO"}),
   netplayBallCount: Object.freeze({requirement:"profile-required",capability:"multiplayer",when:"TH01 multiplayer ball count"}),
@@ -370,7 +374,7 @@ export interface RuntimeCommandPayloads {
 export interface RuntimeEventPayloads {
   ready: { saveRoot?: string; roomPreview?: boolean; roomReturn?: boolean };
   transfer: { mode?: string; loaded?: number; total?: number; failed?: number; path?: string; [key: string]: unknown };
-  "first-frame": {launchSerial?: number};
+  "first-frame": {launchSerial?: number; th128RoomPath?: 'rtc' | 'relay' | 'spectator-relay'};
   "room-menu": {launchSerial?: number};
   "runtime-info": { renderer?: string; architecture?: string; version?: string; [key: string]: unknown };
   "frame-health": { fps?: number; maxGapMs?: number; frameMs?: number; [key: string]: unknown };

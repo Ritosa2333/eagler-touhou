@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>TH128 本机验收回执</title>
+<form id="device-form">
+  <label for="receipt">仅本轮原生测试回执</label>
+  <textarea id="receipt" required maxlength="49152" cols="40" rows="10"></textarea>
+  <button type="submit">提交本机回执</button>
+</form>
+<p id="receipt-status" role="status">等待已关闭的测试页回执</p>
+<script type="module" src="/ports/th128-mp/tests/browser/device-receipt.mjs"></script>
+</html>

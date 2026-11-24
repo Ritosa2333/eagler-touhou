@@ -1,0 +1,21 @@
+{
+  "schema": "eagler-touhou/source-fork/1",
+  "game": "th128mp",
+  "sourceKind": "monorepo-directory-fork",
+  "destination": "ports/th128-mp",
+  "commit": "c2a33cd5d09b957727c24d75fb3ec5b35042c0af",
+  "currentMode": "git-subtree",
+  "derivedFrom": {
+    "directory": "ports/th128",
+    "registration": "docs/migration/th128-eagler-20261121.json",
+    "split": "c2a33cd5d09b957727c24d75fb3ec5b35042c0af",
+    "monorepoCommit": "5fd2c9187e33ec758aa3870e938d7e450e3a16f3"
+  },
+  "subtree": {
+    "upstreamCommit": "c2a33cd5d09b957727c24d75fb3ec5b35042c0af",
+    "initialJoin": "06ac983e63a6b9f05d25a13c512f8ce44716cf40",
+    "initialSplit": "edaf870e0052576049efbe825f9aa9d16aad40af",
+    "latestJoin": "06ac983e63a6b9f05d25a13c512f8ce44716cf40",
+    "currentSplit": "edaf870e0052576049efbe825f9aa9d16aad40af"
+  }
+}

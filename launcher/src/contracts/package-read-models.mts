@@ -8,6 +8,7 @@ export interface PackageFileDeclaration {
   target: string;
   bytes?: number;
   sha256?: string;
+  parts?: {source: string; bytes: number; sha256: string}[];
   [key: string]: unknown;
 }
 

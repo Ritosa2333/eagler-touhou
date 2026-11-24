@@ -5,6 +5,7 @@ export const COOPERATIVE_SPECTATOR_MARKERS = Object.freeze({
 const markers = new Set(Object.values(COOPERATIVE_SPECTATOR_MARKERS));
 export const SPECTATOR_STAGE_LIMITS = Object.freeze({ stateBytes: 4 * 1024, historyBytes: 16 * 1024 * 1024, historyFrames: 108000 });
 export const TH13_SPECTATOR_RUN_FRAMES = Math.floor(SPECTATOR_STAGE_LIMITS.historyBytes / (24 + 12 * 3));
+const TH128_COOP_SPECTATOR_RUN_FRAMES = 216000;
 
 export function parseSpectatorStageEvent(payload, marker, count) {
   if (!markers.has(marker) || !(payload instanceof Uint8Array) || payload.length < 32 || payload.length > 40 + (payload[4] === 1 ? 60 * 1024 : SPECTATOR_STAGE_LIMITS.stateBytes) ||
@@ -58,6 +59,8 @@ export class SpectatorStageRelay {
         const th14OrTh17Run = (this.marker === COOPERATIVE_SPECTATOR_MARKERS.th14mp ||
           this.marker === COOPERATIVE_SPECTATOR_MARKERS.th17mp) &&
           event.version === 2 && event.schema === 3;
+        const th128Coop = this.marker === COOPERATIVE_SPECTATOR_MARKERS.th128mp &&
+          event.version === 2 && event.abi === 2 && event.schema === 1;
         const retainsRun = th13Run || th14OrTh17Run;
         if (!this.session && th13Run && (event.frame !== 0 || ![1, 7].includes(event.stage)))
           throw Error('TH13 spectator run root missing');
@@ -73,8 +76,11 @@ export class SpectatorStageRelay {
         const bytes = replacement.reduce((sum, row) => sum + row.length, 0);
         if (bytes > this.limits.historyBytes) throw Error('spectator stage history limit');
         this.history = replacement; this.bytes = bytes; this.frames = 0; this.retainsRun = retainsRun;
-        this.frameLimit = th13Run && this.limits === SPECTATOR_STAGE_LIMITS
-          ? TH13_SPECTATOR_RUN_FRAMES : this.limits.historyFrames;
+        this.frameLimit = this.limits.historyFrames;
+        if (this.limits === SPECTATOR_STAGE_LIMITS) {
+          if (th13Run) this.frameLimit = TH13_SPECTATOR_RUN_FRAMES;
+          if (th128Coop) this.frameLimit = TH128_COOP_SPECTATOR_RUN_FRAMES;
+        }
         this.session = event.session; this.version = event.version; this.abi = event.abi; this.next = event.frame;
         this.stage = event.stage; this.serial = this.checkpoint = event.serial;
         this.checkpointFrame = event.frame;

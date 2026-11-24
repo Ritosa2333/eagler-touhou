@@ -606,6 +606,23 @@ export const PRODUCT_GAMES = Object.freeze({
         }),
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),
+    th128: Object.freeze({
+        testOnly: true, buildOptIn: true, importOnly: true,
+        number: "12.8", title: "妖精大戦争", subtitle: "東方三月精", cardArtwork: "th128.jpg",
+        storage: Object.freeze({saveRoot: "/savesth128", scoreFile: "scoreth128.dat", scoreReadOnly: true, configFiles: Object.freeze([])}),
+        runtime: "./runtime/th128/th128.html", runtimeFileLayout: "directory", runtimeFileTree: true,
+        runtimeAssets: Object.freeze(["th128.html", "manifest.json", "import-entry.mjs", "play.mjs", "play.css",
+            "runtime/build.json", "runtime/launcher-session.mjs", "runtime/managed-dat-owner.mjs", "runtime/dat-ogg-provider.mjs"]),
+        requiredShared: Object.freeze([]), dataProvider: "retail-memory", runtimeResourceTransport: "resources",
+        package: Object.freeze({dataFileId: "game-data", dataTarget: "/th128.dat",
+            musicSourceDirectories: Object.freeze({ogg: "music/ogg"}), musicMounts: Object.freeze({ogg: "/music"})}),
+        musicCapabilities: Object.freeze({midi: false}),
+        musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection", requiresCompleteOgg: true}),
+        localLanguageOptions: Object.freeze([Object.freeze({id: "lang_zh-hans", title: "简体中文", pack: null})]),
+        touchFire: TOGGLE_TOUCH_FIRE, support: Object.freeze({highRefreshRate: true}),
+        replay: Object.freeze({prefix: "th128", slotPrefix: "th128_", slots: 25, extensions: Object.freeze(["rpy"])}),
+        features: Object.freeze({thprac: true, languages: false, focusHitbox: false}),
+    }),
     th13: Object.freeze({
         testOnly: true,
         buildOptIn: true,
@@ -881,6 +898,12 @@ const productGameEntries = Object.entries(PRODUCT_GAMES);
 const multiplayerProductGames = Object.freeze(Object.fromEntries(productGameEntries
     .filter((entry) => "multiplayerRuntime" in entry[1] && "multiplayer" in entry[1])
     .map(([gameId]) => [`${gameId}mp`, gameId])));
+// A routable identity for the local Host opt-in, not a default build product.
+const TH128_PREVIEW_ROOM = Object.freeze({titleKey: 'game.title.th128mp', gameplay: 'parallel',
+    playerCounts: Object.freeze([2]), difficulties: Object.freeze(['Normal']),
+    loadouts: Object.freeze([Object.freeze({labelKey: 'multiplayer.loadout.cirno', glyph: '⑨', character: 0, shot: 0})]),
+    peerTransportGlobal: 'Th128PeerTransport', relaySourceEnvelope: true, spectator: true, titleRoomEntry: false,
+    challengeMode: false, inputTiming: Object.freeze({rollbackLimit: 2, sendPredictionLimit: 2, manualDelayLimit: 8})});
 export const PRODUCT_IDS = Object.freeze([
     ...Object.keys(PRODUCT_GAMES),
     ...Object.keys(multiplayerProductGames),
@@ -898,7 +921,7 @@ export function productRequiresImport(gameId) {
 }
 
 export function productEnabledForBuild(productId, testBuild = false) {
-    if (!isProductId(productId))
+    if (!PRODUCT_IDS.includes(productId))
         return false;
     const game = PRODUCT_GAMES[gameIdForProduct(productId)];
     if ("hidden" in game && game.hidden)
@@ -906,19 +929,20 @@ export function productEnabledForBuild(productId, testBuild = false) {
     return !("testOnly" in game && game.testOnly) || testBuild === true;
 }
 export function isProductId(value) {
-    return PRODUCT_IDS.includes(value);
+    return value === 'th128mp' || PRODUCT_IDS.includes(value);
 }
 export function isMultiplayerProductId(productId) {
-    return Object.hasOwn(multiplayerProductGames, productId);
+    return productId === 'th128mp' || Object.hasOwn(multiplayerProductGames, productId);
 }
 export function gameIdForProduct(productId) {
-    return isMultiplayerProductId(productId) ? multiplayerProductGames[productId] ?? productId : productId;
+    return productId === 'th128mp' ? 'th128' : isMultiplayerProductId(productId) ? multiplayerProductGames[productId] ?? productId : productId;
 }
 export function multiplayerProductIdForGame(gameId) {
     const productId = `${gameId}mp`;
-    return isMultiplayerProductId(productId) ? productId : null;
+    return Object.hasOwn(multiplayerProductGames, productId) ? productId : null;
 }
 export function multiplayerConfigForProduct(productId) {
+    if (productId === 'th128mp') return TH128_PREVIEW_ROOM;
     const gameId = gameIdForProduct(productId);
     if (!isGameId(gameId))
         return null;
@@ -947,7 +971,8 @@ export function createLocalProductManifest() {
         games: Object.fromEntries(productGameEntries.map(([game, product]) => [game, {
                 ...product,
                 music: { midi: product.musicCapabilities.midi ? { files: [] } : { files: [], supported: false } },
-                languageOptions: [{ id: "ja", title: "日本語(原版)", pack: null }],
+                languageOptions: 'localLanguageOptions' in product ? product.localLanguageOptions.map(option => ({...option}))
+                    : [{ id: "ja", title: "日本語(原版)", pack: null }],
             }])),
     };
 }

@@ -188,5 +188,5 @@ export function resolvePreferredGameLanguage(
   if (savedLanguage && available.has(savedLanguage)) return savedLanguage;
   const defaults = /^zh(?:-|$)/i.test(uiLocale) ? ["lang_zh-hans", "lang_zh-hant"]
     : /^en(?:-|$)/i.test(uiLocale) ? ["lang_en"] : [];
-  return defaults.find(id => available.has(id)) || "ja";
+  return defaults.find(id => available.has(id)) ?? (available.has("ja") ? "ja" : catalog[0]?.id ?? "ja");
 }

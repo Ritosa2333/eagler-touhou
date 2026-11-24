@@ -1,0 +1,13 @@
+// Run using Bun's TS resolver, against a fresh dedicated local Launcher source tree.
+import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {pathToFileURL} from 'node:url';import {join,resolve} from 'node:path';
+const [src,gen,hostPath]=process.argv.slice(2),mod=path=>import(pathToFileURL(join(resolve(src),path)).href);
+const catalog=await mod('common/contracts/product-catalog.mjs'),{buildMultiplayerRuntimeOptions}=await mod('launcher/src/launcher/multiplayer-runtime-options.mts');const policy=catalog.multiplayerConfigForProduct('th128mp');
+assert.equal(policy.gameplay,'cooperative');assert.ok(!catalog.PRODUCT_IDS.includes('th128mp'));assert.equal(policy.challengeMode,true);assert.equal(policy.spectator,true);assert.deepEqual(policy.playerCounts,[2,3]);assert.deepEqual(policy.difficulties,['Easy','Normal','Hard','Lunatic','Extra']);
+const loader=await mod('launcher/app/services/runtime-entry-authority.ts');const host=JSON.parse(await readFile(hostPath,'utf8'));host.profile='th128-multiplayer-local-coop';host.shared.netplayRelay='ws://127.0.0.1:49920';const base='http://127.0.0.1:49182/',entry=`runtime/th128/multiplayer/${gen}/th128.html`;host.games.th128.multiplayerRuntime=entry;
+const plan=h=>({entry:h.games.th128.multiplayerRuntime,publishedRuntime:true,runtimeHost:h});assert.equal(loader.th128LocalRoomAvailable(host,base),true);assert.equal(loader.requireTh128MultiplayerPreview(plan(host),base),gen);
+for(const edit of [h=>h.profile='th128-multiplayer-local-preview',h=>h.games.th128.multiplayerRuntime=entry.replace(gen,'0'.repeat(64)),h=>h.shared.testBuild=false,h=>h.shared.netplayRelay='wss://outside.invalid/',h=>h.shared.netplayRelayFallbacks=['wss://outside.invalid/']]){const bad=structuredClone(host);edit(bad);assert.equal(loader.th128LocalRoomAvailable(bad,base),false);assert.throws(()=>loader.requireTh128MultiplayerPreview(plan(bad),base));}
+assert.equal(loader.th128LocalRoomAvailable(host,'https://outside.invalid'),false);
+let configs=0;for(const playerCount of [2,3])for(const difficulty of [0,1,2,3,4])for(const challengeMode of [false,true]){
+ const options=buildMultiplayerRuntimeOptions({url:'ws://127.0.0.1:49920/?room=th128mp-4812',player:playerCount-1,playerCount,seed:4812,difficulty,challengeMode,spectator:false,spectatorId:'',spectatorCount:0,iceServers:[],loadouts:Array.from({length:playerCount},()=>({character:0,shot:0}))},policy);
+ assert.equal(options.netplayDifficulty,difficulty);assert.equal(options.netplayChallengeMode,challengeMode);assert.equal(options.netplayPlayerCount,playerCount);assert.equal(options.netplayPlayer,playerCount-1);configs++;
+}console.log(JSON.stringify({configs,profile:host.profile,generation:gen,legacyDenied:true,publicCatalog:false}));
