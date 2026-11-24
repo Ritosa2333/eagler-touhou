@@ -620,9 +620,8 @@
     }
     .book-compact-categories .book-categories {
       display: flex;
+      flex-wrap: wrap;
       gap: 4px;
-      overflow: auto;
-      scrollbar-width: thin;
     }
     .book-view-covers .book-grid {
       gap: 16px 10px;

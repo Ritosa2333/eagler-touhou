@@ -32,6 +32,7 @@
   .clear-loadout-name {position:relative;top:calc(var(--clear-branch-offset) * (var(--clear-row-height) + var(--clear-row-gap)))}
   .clear-loadout-name::after {content:"";position:absolute;top:50%;left:calc(100% + 1px);width:calc(var(--clear-branch-width) / 2 + 2px);border-top:1px solid var(--kit-muted-foreground);opacity:.65}
   .clear-loadout-label i[data-branch="middle"]::after {position:absolute;inset:50% 1px auto 50%;border-top:1px solid currentColor;content:""}
+  .clear-matrix[data-loadouts="true"] table {min-width:0}
   .clear-matrix[data-loadouts="true"] tr[data-group-start="true"]:not(:first-child) > * {border-top:5px solid transparent}
   .clear-matrix-modes {display:flex;justify-content:flex-end;margin-block:0 8px}
   @media(max-width:600px) {
@@ -39,9 +40,9 @@
     .clear-matrix th[data-difficulty] {font-size:8px}
     .clear-matrix :is(thead,tbody) th:first-child {position:sticky;left:0;z-index:1;background:var(--kit-background);width:96px}
     .clear-matrix[data-loadouts="true"] thead th:first-child {width:96px}
-    .clear-matrix[data-loadouts="true"]:lang(en) thead th:first-child {width:144px}
     .clear-matrix[data-loadouts="true"] tbody tr[data-group-start="true"] th:first-child {z-index:2}
-    .clear-matrix th[data-difficulty="phantasm"], .clear-matrix th[data-difficulty="overdrive"] {width:53px}
+    .clear-matrix[data-loadouts="true"] :is(th,td) {overflow-wrap:anywhere}
+    .clear-matrix[data-loadouts="true"]:lang(en) thead th:first-child {width:clamp(96px,32%,124px)}
     .clear-loadout-label {--clear-branch-width:10px;grid-template-columns:minmax(0,1fr) var(--clear-branch-width) 13px;gap:2px}
     .clear-loadout-label > span {font-size:12px}
   }

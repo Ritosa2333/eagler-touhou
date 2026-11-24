@@ -32,10 +32,9 @@
   .masthead-account-entry .account-avatar {--account-avatar-size:24px}
   .masthead-library-search,.site-bottom-navigation.launcher-bottom-navigation,.launcher-back.launcher-mobile-back {display:none}
   .launcher-home {width:min(100%,580px);margin-inline:auto;padding:16px}
-  .launcher-home h1 {margin:0 0 18px;font-size:21px;font-weight:600}
-  .launcher-home-account {--launcher-account-height:86px;--launcher-counts-height:55px;min-block-size:calc(var(--launcher-account-height) + var(--launcher-counts-height));margin-block-end:27px}
-  .launcher-home-account .launcher-account-row {min-height:var(--launcher-account-height);padding-inline:13px}
-  .launcher-home-account[data-member="false"] .launcher-account-row:not([aria-busy]) {min-height:calc(var(--launcher-account-height) + var(--launcher-counts-height))}
+  .launcher-home h1 {margin:0 0 12px;font-size:21px;font-weight:600}
+  .launcher-home-account {--launcher-account-height:74px;--launcher-counts-height:55px;margin-block-end:20px}
+  .launcher-home-account .launcher-account-row {min-height:var(--launcher-account-height);padding-inline:12px}
   .launcher-home-counts {min-block-size:var(--launcher-counts-height)}
   .launcher-home-account .launcher-account-name > strong {font-weight:450}
   .launcher-home-account .launcher-social-counts strong {font-weight:450}
@@ -113,7 +112,10 @@
     .launcher-bottom-navigation .site-navigation-link[aria-current="page"] > svg {background:color-mix(in srgb,var(--kit-brand) 15%,var(--kit-card))}
     body:is(.mp-room-active,.player-active,.library-tools-open,.library-tools-closing) .launcher-bottom-navigation {visibility:hidden}
     .launcher-bottom-navigation + .launcher-page-surface {padding-bottom:calc(60px + max(4px,env(safe-area-inset-bottom)))}
-    .launcher-home {padding-top:max(16px,env(safe-area-inset-top))}
+    .launcher-home {
+      padding-block-start:calc(16px + env(safe-area-inset-top));
+      padding-inline:max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right));
+    }
     html[data-ui-home] body:not(.mp-room-active) .main.library-layout {min-height:0}
     .book-masthead .masthead-links {grid-area:1 / 1;margin:0}
     .book-masthead .masthead-links::before {display:none}

@@ -198,7 +198,7 @@ function Header({session, firstUse, donationAvailable, librarySearchRef}: {
 }
 function LanguageControl({session, id}: {session: BrowserSession; id?: string}) {
   const {locale, t} = useLocale();
-  return <MainSelect id={id} className="option-select ui-language-select" data-trigger-i18n="ui.language.menu"
+  return <MainSelect id={id} density="compact" className="option-select ui-language-select" data-trigger-i18n="ui.language.menu"
     aria-label={t('ui.language')} value={locale} onChange={event => {if (isUiLocale(event.target.value)) session.setLocale(event.target.value);}}>
     {UI_LOCALES.map(value => <option key={value} value={value}>{t(UI_LOCALE_LABELS[value])}</option>)}
   </MainSelect>;

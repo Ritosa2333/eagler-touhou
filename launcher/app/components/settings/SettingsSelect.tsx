@@ -5,7 +5,7 @@ import {MainSelect, type MainSelectProps} from '../launcher/MainSelect';
 
 export function SettingsSelect({id, label, description, hidden, className = '', ...props}: MainSelectProps & {id: string; label: ReactNode; description?: string}) {
   const descriptionId = description ? `${id}-description` : undefined;
-  return <Field className={`settings-field settings-choice-row ${className}`} hidden={hidden} orientation="responsive">
+  return <Field className={`settings-field settings-choice-row ${className}`} hidden={hidden} orientation="horizontal">
     <FieldContent>
       <div className="option-label-with-help">
         <FieldLabel id={`${id}-label`} htmlFor={`${id}-trigger`}>{label}</FieldLabel>
@@ -13,6 +13,6 @@ export function SettingsSelect({id, label, description, hidden, className = '', 
           option>{description}</FieldHelp>}
       </div>
     </FieldContent>
-    <MainSelect {...props} id={id} aria-labelledby={`${id}-label`} aria-describedby={descriptionId} className="option-select"/>
+    <MainSelect {...props} id={id} density="compact" aria-labelledby={`${id}-label`} aria-describedby={descriptionId} className="option-select"/>
   </Field>;
 }

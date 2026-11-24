@@ -25,17 +25,20 @@ export function MobileGameDetail({product, cover, actions, statistics, friends, 
     <div className="options-scroll mobile-game-view" hidden={settings} inert={settings}>
       <header className="game-detail-hero mobile-game-hero">
         {cover && <img className="game-detail-backdrop" src={cover} alt="" aria-hidden="true" decoding="async"/>}
-        <Button variant="ghost" size="icon" className="mobile-game-back" id={settings ? undefined : 'libraryBack'}
-          onClick={onBack} aria-label={t('library.back')}><ArrowLeft aria-hidden="true"/></Button>
+        <div className="mobile-game-toolbar">
+          <Button variant="ghost" size="icon" className="mobile-game-back" id={settings ? undefined : 'libraryBack'}
+            onClick={onBack} aria-label={t('library.back')}><ArrowLeft aria-hidden="true"/></Button>
+          <GameDetailFavorite productId={product.id}/>
+        </div>
         <GameDetailIdentity product={product} cover={cover} titleId={settings ? undefined : 'gameTitle'}>
           <GameDetailMetrics productId={product.id} playtime={playtime} saved={saved}/>
         </GameDetailIdentity>
         <div className="mobile-game-actions">
           {actions}
-          <Button variant="outline" id={settings ? undefined : 'gameSettingsOpen'} ref={settingsButton} onClick={() => setSettings(true)}>
-            <Settings2 aria-hidden="true"/><span>{t('game.settings')}</span>
+          <Button variant="outline" className="mobile-game-settings-button" id={settings ? undefined : 'gameSettingsOpen'}
+            ref={settingsButton} onClick={() => setSettings(true)}>
+            <Settings2 aria-hidden="true"/><span className="mobile-game-settings-label">{t('game.settings')}</span>
           </Button>
-          <GameDetailFavorite productId={product.id}/>
         </div>
       </header>
       <div className="mobile-game-progress">

@@ -322,6 +322,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.ui-select[data-density="compact"] {
+  inline-size: fit-content;
+  min-inline-size: 0;
+}
+.ui-select[data-density="compact"] .ui-select-trigger {
+  min-block-size: 34px;
+  padding: 4px 8px 4px 10px;
+  gap: 8px;
+}
+.ui-select[data-density="compact"] .ui-select-trigger > svg { width: 14px; height: 14px; }
+@media (max-width: 780px), (pointer: coarse) {
+  .ui-select[data-density="compact"] .ui-select-trigger { min-block-size: 44px; }
+}
 .ui-select-trigger svg,
 .ui-select-content svg {
   width: 16px;

@@ -1,6 +1,6 @@
 @layer components {
   .tools[data-options-panel][data-full-page] {
-    --options-width: var(--options-view-width, 100vw);
+    --options-width: var(--options-view-width, 100%);
     --options-height: var(--options-view-height, 100dvh);
     top: var(--options-view-top, 0px);
     left: var(--options-view-left, 0px);
@@ -19,30 +19,38 @@
     padding: max(6px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
   }
   .mobile-game-back { flex: none; color: inherit; }
-  .mobile-game-hero > .mobile-game-back { margin-inline-start: -4px; }
+  .mobile-game-toolbar { display: flex; justify-content: space-between; align-items: center; }
+  .mobile-game-toolbar > .mobile-game-back { margin-inline-start: -4px; }
+  .mobile-game-toolbar > .game-detail-favorite { flex: none; inline-size: 44px; block-size: 44px; }
   .mobile-game-hero .game-detail-identity { margin-block: 8px 30px; }
   .mobile-game-hero .game-detail-title { gap: 0 6px; }
   .mobile-game-hero .game-detail-metrics { gap: 8px; margin-block-start: 8px; }
   .mobile-game-hero .game-detail-metrics > svg { width: 18px; height: 18px; }
   .mobile-game-hero .game-detail-metrics dl { column-gap: 12px; }
-  .mobile-game-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; }
+  .mobile-game-actions { display: flex; align-items: stretch; gap: 6px; container-type: inline-size; }
   .mobile-game-actions :is(.launch, [data-slot="button"]) {
     min-block-size: 44px;
     min-inline-size: 0;
     width: auto;
     padding-inline: 9px;
     gap: 6px;
-    white-space: normal;
+    white-space: nowrap;
     font-size: 12px;
     line-height: 1.25;
   }
-  .mobile-game-actions .launch:not(.launch-secondary) { flex: 1 1 82px; }
-  .mobile-game-actions [data-size="icon"] { flex: 0 0 44px; }
+  .mobile-game-actions .launch:not(.launch-secondary) { flex: 1; }
+  .mobile-game-actions .launch { min-inline-size: 44px; }
+  .mobile-game-actions .launch > span { overflow: hidden; text-overflow: ellipsis; }
+  @container (max-width: 330px) {
+    .mobile-game-actions .mobile-game-settings-button { position: relative; inline-size: 44px; flex: none; }
+    .mobile-game-settings-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+  }
   .mobile-game-progress {
     display: grid;
     gap: 22px;
     padding: 18px max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
   }
   .tools[data-options-panel][data-full-page] .mobile-game-settings {
     padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));

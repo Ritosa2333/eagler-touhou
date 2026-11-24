@@ -42,7 +42,7 @@
 }
 .profile-game-data .profile-game-return {min-height:32px;padding:0;gap:8px;font-weight:400;color:var(--kit-muted-foreground)}
 @media(max-width:600px) {
-  .profile-game-work + .clear-matrix table {--clear-row-height:22px;min-width:344px}
+  .profile-game-work + .clear-matrix table {--clear-row-height:22px}
   .profile-game-work + .clear-matrix th[data-difficulty] {width:auto}
   .profile-game-work + .clear-matrix tbody .clear-mark {height:22px}
   .profile-game-work + .clear-matrix .clear-matrix-legend {gap:5px 8px;padding-inline:5px;font-size:9px}

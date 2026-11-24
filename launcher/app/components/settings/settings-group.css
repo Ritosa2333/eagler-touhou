@@ -72,7 +72,24 @@
 .game-settings-page .settings-disclosure-content > div > :not([hidden]) ~ :not([hidden]) {
   border-block-start:1px solid var(--kit-border)
 }
-.game-settings-page .options-settings :is(.settings-field,.file-tool-item) {padding-block:0;min-height:44px}
+.game-settings-page .options-settings .settings-field {padding-block:0;min-height:44px}
+.ui-field.settings-choice-row[data-orientation="horizontal"] {gap:8px;align-items:center;min-height:50px}
+.settings-choice-row > .ui-select {flex:0 1 auto;max-inline-size:60%}
+.game-settings-page .options-settings .settings-choice-row {padding-block:4px}
+.game-settings-page .options-settings .file-tool-item {padding-block:5px;min-height:54px;gap:10px}
+.game-settings-page .file-tool-item .ui-field-label {overflow-wrap:anywhere}
+.game-settings-page .settings-file-actions {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex:0 1 15rem;min-width:0;max-width:75%
+}
+.game-settings-page .settings-file-actions [data-slot="button"] {
+  min-width:0;height:auto;padding-inline:6px;white-space:normal;overflow-wrap:anywhere
+}
+@container fields (max-width:480px) {
+  .game-settings-page .input-settings-content .input-settings-entries {grid-template-columns:minmax(0,1fr);gap:0}
+  .game-settings-page .input-settings-entry {justify-content:start;gap:10px;padding-inline:0;text-align:start}
+  .game-settings-page .input-settings-entry > svg:last-child {margin-inline-start:auto}
+  .game-settings-page .input-settings-entry + .input-settings-entry {border-block-start:1px solid var(--kit-border)}
+}
 .game-settings-page .touch-layout-option {padding-inline:0}
 .game-settings-page .settings-file-actions {gap:6px}
 .game-settings-page .settings-file-actions > [data-slot='button'] {margin-inline-start:0;border-radius:var(--radius-md)}
