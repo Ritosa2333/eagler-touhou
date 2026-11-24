@@ -26,3 +26,17 @@ test('an arriving packet can consume time already due; prediction is a bounded f
   assert.equal(clock.advance(3*step+200,true).advanced,2,'large debt is capped at three steps and one remains reserved');
   assert.equal(clock.input().advanced,0,'network input callbacks cannot run speculative frames');
 });
+
+test('co-op can predict at the first due tick without running ahead of the presentation clock',()=>{
+  const calls=[];
+  const clock=createMatchClock({predictWhenDue:true,stepFrame({allowPrediction}){
+    calls.push(allowPrediction);
+    return {advanced:allowPrediction,reason:'waiting-input'};
+  }});
+  clock.advance(0,true);
+  assert.equal(clock.advance(step*.5,true).advanced,0);
+  assert.equal(clock.advance(step,true).advanced,1);
+  assert.equal(clock.input().advanced,0);
+  assert.equal(clock.advance(step*2,true).advanced,1);
+  assert.deepEqual(calls,[true,true]);
+});

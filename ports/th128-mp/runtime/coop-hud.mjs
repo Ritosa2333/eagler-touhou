@@ -109,7 +109,7 @@ function validSeats(seats,challenge) {
     if(!s || !Number.isInteger(s.seat) || s.seat<0 || s.seat>=seats.length || (seen & (1<<s.seat)) ||
       !Number.isInteger(s.icePower) || s.icePower<0 || s.icePower>10000)return false;
     if(challenge ? !Number.isSafeInteger(s.deaths) || s.deaths<0 :
-      !Number.isSafeInteger(s.motivation) || !Number.isInteger(s.charge) || s.charge<0 || s.charge>50000)return false;
+      !Number.isSafeInteger(s.motivation) || !Number.isInteger(s.charge) || s.charge<0 || s.charge>20000)return false;
     seen|=1<<s.seat;
   }
   return true;

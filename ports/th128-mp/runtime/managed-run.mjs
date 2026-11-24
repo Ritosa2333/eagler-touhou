@@ -202,7 +202,8 @@ export async function launchManagedRun({room,view,build,signal,openPeer,present,
       if(!live.aborted){const state=match.status();syncPlayerAudio(state);adoptPlayerEpoch(state);reportArchive();}
     },live);
     if(live.aborted){link.close();live.throwIfAborted();}
-    readyClock=createMatchClock({stepFrame:options=>match.tick(sample,options)});attachKeyboard();
+    readyClock=createMatchClock({stepFrame:options=>match.tick(sample,options),
+      predictWhenDue:cooperative&&room.rules.rollbackWindow>0});attachKeyboard();
 
     async function publishSpectator(){
       if(!publisher||observerFailed||!match.status().startup.canStart)return;
