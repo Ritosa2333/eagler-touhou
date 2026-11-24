@@ -45,12 +45,17 @@ const clang = resolve(wasi, 'bin', 'clang++');
 const gameSources = readdirSync(resolve(root, 'cpp/game')).filter(n => n.endsWith('.cpp')).map(n => resolve(root, 'cpp/game/' + n));
 const main = resolve(workspace, 'tests/harness/harness.cpp');
 const sources = [...gameSources, main];
+// 游戏源直接包含共用库头（如 eagler/gameplay/CooperativeRules.hpp）；共享头
+// 变化同样使对象缓存失效。
+const sharedInclude = resolve(workspace, '../../common/include');
+const headers = headerInputs(resolve(root, 'cpp'), resolve(workspace, 'tests/harness'), sharedInclude);
 
 const compileFlags = [
   '--target=wasm32-wasip1', '-O2', '-std=c++17',
   '-fno-exceptions', '-fno-rtti',
   '-ffp-contract=off', '-DTH13_WASI_HARNESS=1', '-DTH13_DRAW_CAPTURE=1',
   '-I' + resolve(root, 'cpp'),
+  '-I' + sharedInclude,
 ];
 const linkFlags = [
   '--target=wasm32-wasip1', '-O2',
@@ -58,13 +63,12 @@ const linkFlags = [
   '-Wl,-z,stack-size=1048576',
 ];
 await printRuntimeInputs({workspace, root, sources,
-  headers: headerInputs(resolve(root, 'cpp'), resolve(workspace, 'tests/harness')), flags: [...compileFlags, ...linkFlags]});
+  headers, flags: [...compileFlags, ...linkFlags]});
 
 const version = spawnSync(clang, ['--version'], {encoding: 'utf8'});
 checkProcess(version);
 const toolchain = {path: clang, version: version.stdout.trim(), sha256: createHash('sha256').update(readFileSync(clang)).digest('hex')};
 const sha = data => createHash('sha256').update(data).digest('hex');
-const headers = headerInputs(resolve(root, 'cpp'), resolve(workspace, 'tests/harness'));
 const selfFiles = [fileURLToPath(import.meta.url)];
 const sourceFiles = [...new Set([...sources, ...headers, ...selfFiles])].sort();
 const inventory = Object.fromEntries(sourceFiles.map(path => [path, sha(readFileSync(path))]));
