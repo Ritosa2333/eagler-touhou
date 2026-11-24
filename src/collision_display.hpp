@@ -52,12 +52,15 @@ constexpr CollisionBounds bullet_hit_window(CollisionPoint player,bool pellet){
 constexpr int bullet_center_offset(bool pellet){return pellet?4:8;}
 
 inline void draw_player_focus_point(std::span<std::uint32_t> pixels,CollisionPoint player,int view_shift_x=0){
-    // The first native focus sprite, anchored to the checked coordinates.
+    // Keep the white core at the small pellet window's vertical midpoint.
+    // Its horizontal midpoint is half a pixel left of the sprite center.
+    constexpr auto pellet_y=bullet_hit_window({0,0},true).y;
+    constexpr int focus_offset_y=int((pellet_y.first()+pellet_y.last())/2)+bullet_center_offset(true);
     constexpr std::array<std::string_view,9> shape={
         "   ###   "," ##+++## "," #+rrr+# ","#+r...r+#","#+r.W.r+#",
         "#+r...r+#"," #+rrr+# "," ##+++## ","   ###   "};
     const auto center=RenderPoint::pixels(player.x+player_projectile_offset.x+view_shift_x,
-                                         player.y+player_projectile_offset.y);
+                                         player.y+focus_offset_y);
     blit_motion_sprite(pixels,center.offset(-4,-4),9,9,[&](int x,int y)->std::uint32_t{
         switch(shape[y][x]){
         case '#':return 0x281020;

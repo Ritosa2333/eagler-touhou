@@ -75,7 +75,7 @@ static void original_projectile_window(){
 
 static void vertical_projectile_contact(){
     constexpr CollisionPoint player{208,336};
-    constexpr int marker_y=player.y+player_projectile_offset.y;
+    constexpr int player_center_y=player.y+24;
     for(bool pellet:{false,true})for(int dy:{1,-1}){
         const int center_offset=pellet?4:8;
         const int first_hit=dy>0?(pellet?-8:-12):(pellet?2:8);
@@ -84,17 +84,17 @@ static void vertical_projectile_contact(){
         shot.flag=1;
         shot.kind=pellet?EnemyBulletRequest::Pellet:EnemyBulletRequest::Bullet16;
         shot.position[0]={std::uint16_t((player.x+player_projectile_offset.x-center_offset)*16),
-                          std::uint16_t((marker_y+first_hit-center_offset-2*dy)*16)};
+                          std::uint16_t((player_center_y+first_hit-center_offset-2*dy)*16)};
         shot.velocity={0,dy*16};
         CHECK(!bullets.update(0,player.x,player.y)&&shot.flag==1);
         CHECK(bullets.update(0,player.x,player.y)&&shot.flag==2);
-        CHECK(BulletCore::pixel(shot.position[0][1])+center_offset==marker_y+first_hit);
+        CHECK(BulletCore::pixel(shot.position[0][1])+center_offset==player_center_y+first_hit);
     }
 }
 
 static void focus_projectile_presentation(const std::filesystem::path &assets){
     constexpr CollisionPoint player{208,336};
-    constexpr int cx=player.x+player_projectile_offset.x,cy=player.y+player_projectile_offset.y;
+    constexpr int cx=player.x+16,player_center_y=player.y+24,marker_y=player.y+21;
     constexpr int offset=bullet_center_offset(true);
     constexpr std::uint32_t pellet_color=0xfffdfb;
     std::vector<std::uint32_t> pixels(640*400),without(pixels.size());
@@ -105,7 +105,7 @@ static void focus_projectile_presentation(const std::filesystem::path &assets){
         scene.script.formations.clear();scene.script.declared_formations=0;
         scene.background.palette[15]={255,253,251};
         auto &pellet=scene.bullet_core.bullets[0];
-        constexpr int first_hit=cy-8;
+        constexpr int first_hit=player_center_y-8;
         const int last_visible=first_hit-speed,old=last_visible-speed;
         pellet.flag=1;pellet.velocity={0,speed*16};
         pellet.position.fill({std::uint16_t((cx-offset)*16),std::uint16_t((old-offset)*16)});
@@ -114,7 +114,7 @@ static void focus_projectile_presentation(const std::filesystem::path &assets){
         CHECK(!scene.life.hit&&pellet.flag==1&&!scene.collision_snapshot());
         for(const unsigned phase:{0u,128u,256u}){
             scene.render(pixels,true,true,phase,&previous);
-            CHECK(pixels[at(cx,cy)]==0xffffff);
+            CHECK(pixels[at(cx,marker_y)]==0xffffff&&pixels[at(cx,player_center_y)]!=0xffffff);
             CHECK(pixels[at(cx,last_visible)]==pellet_color);
             pellet.flag=0;scene.render(without,true,true,phase,&previous);pellet.flag=1;
             CHECK(without[at(cx,last_visible)]!=pellet_color);

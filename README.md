@@ -78,8 +78,9 @@ motif no longer flashes between render pages, and shot-hit sparks are
 half-transparent in either rendering mode.
 
 Hold either Shift key during play to move at half speed and show a small dot
-at Reimu's center. It is a guide, not the shape or size of a hitbox. Shift does
-not change the hit windows. As in the original game, a bullet that hits is
+centered vertically on Reimu's small-pellet hit window. It marks the center,
+not the shape or size of the window. Shift does not change the hit windows.
+As in the original game, a bullet that hits is
 removed before drawing. The Hitboxes option shows the actual collision
 windows for inspection. Shift is recorded in new replays and is not needed
 for playback.

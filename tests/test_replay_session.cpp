@@ -791,9 +791,9 @@ bool is_focus_red(std::uint32_t rgb){
     return r-g>128&&r-b>100;
 }
 void focus_marker_appearance(){
-    constexpr int x=224,y=360;
+    constexpr int x=224,y=357;
     constexpr auto at=[](int px,int py){return (y+py)*640+x+px;};
-    constexpr CollisionPoint player{x-player_projectile_offset.x,y-player_projectile_offset.y};
+    constexpr CollisionPoint player{208,336};
     std::vector<std::uint32_t> pixels(640*400);
     for(const auto bg:{0x20283cu,0xf8eacbu}){
         std::fill(pixels.begin(),pixels.end(),bg);
@@ -827,9 +827,9 @@ void focus_mode(const fs::path &root){
     check(live->player.x==209&&live->player.focus_rx==1);
     const auto state=replay_state_digest(*live);
     live->render(pixels);
-    check(pixels[at(225,360)]==0xffffff&&is_focus_red(pixels[at(223,360)]));
+    check(pixels[at(225,357)]==0xffffff&&is_focus_red(pixels[at(223,357)]));
     live->render(pixels,true,true,0,&previous);
-    check(pixels[at(225,360)]==0xffffff&&is_focus_red(pixels[at(223,360)]));
+    check(pixels[at(225,357)]==0xffffff&&is_focus_red(pixels[at(223,357)]));
     check(replay_state_digest(*live)==state&&live->collision_snapshot()==nullptr);
     live->paused=true;live->render(pixels);
     live->player.focused=false;live->render(without_marker);
