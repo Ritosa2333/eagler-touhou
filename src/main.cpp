@@ -361,9 +361,9 @@ void draw_practice_grip(Frame &frame,soew::PracticeBounds b,std::uint32_t color)
         for(int y=b.top+5;y<b.top+7;++y)
             std::fill_n(frame.pixels.begin()+y*frame.w+b.right-20+i*5,2,color);
 }
-void dim_practice_overlay(Frame &frame,soew::PracticeBounds b){
+void dim_practice_overlay(Frame &frame,soew::PracticeBounds b,unsigned shift=1){
     for(int y=b.top;y<b.bottom;++y)for(int x=b.left;x<b.right;++x){
-        auto &pixel=frame.pixels[y*frame.w+x];pixel=(pixel&0xfefefeu)>>1;
+        auto &pixel=frame.pixels[y*frame.w+x];pixel=(pixel&(shift==1?0xfefefeu:0xfcfcfcu))>>shift;
     }
 }
 constexpr std::array<std::wstring_view,soew::PracticeAssist::rows> practice_tool_keys={L"F1",L"F2",L"F3",L"F4",L"F5",L"F6",L"F7",L"U",L"Tab"};
@@ -931,6 +931,10 @@ struct App {
     soew::PracticeAssist practice_assist;
     soew::PracticeToolsPanel practice_tools;
     soew::PracticeDrag practice_drag;
+    unsigned fast_retry_left=0;
+    bool skip_retry_intro=false;
+    soew::EncounterInfoKind lock_timer_kind=soew::EncounterInfoKind::None;
+    unsigned lock_timer_phase=0,lock_timer_frames=0;
     bool run_assisted=false;
     std::optional<soew::PracticeStore> practice_store;
     std::optional<soew::PracticeBuilder> practice_builder;
@@ -1098,7 +1102,7 @@ Frame opening_frame(const App &app) {
     }
     return output;
 }
-void save_settings(App &app){if(!app.settings_enabled||!app.settings||app.replay_playback)return;if(!app.settings->save(soew::Settings::from(app.menu))){app.settings_warning=app.settings->warning;std::cerr<<"Settings not saved: "<<app.settings_warning<<'\n';}else app.settings_warning=app.settings->warning;}
+void save_settings(App &app){if(!app.settings_enabled||!app.settings||app.replay_playback)return;if(!app.settings->save(soew::Settings::from(app.menu,app.practice_tools.options))){app.settings_warning=app.settings->warning;std::cerr<<"Settings not saved: "<<app.settings_warning<<'\n';}else app.settings_warning=app.settings->warning;}
 void audio_error(App &app){std::cerr<<"Audio preview error: "<<app.audio.error()<<'\n';app.audio_status={L"音声の出力を停止しました",L"Audio error; output stopped"};app.audio.stop();app.fm_enabled=false;}
 void cancel_gameplay_audio(App &app){
     ++app.gameplay_audio_generation;
@@ -1152,11 +1156,24 @@ soew::PracticeToolsPanel::Mode practice_tools_mode(const App &app){
 }
 void apply_live_assists(App &app){
     app.stage_scene->practice_assist.tools=app.practice_assist.tools;
+    app.stage_scene->practice_assist.protect_last=app.practice_tools.options.enabled(soew::PracticeAdvanced::LastLife);
+    const auto &advanced=app.practice_tools.options;
+    if(advanced.rate_num()!=advanced.rate_den()||advanced.changes_input())
+        app.run_assisted=true;
     if(app.practice_assist.tools){
         // Replay events carry inputs, not live simulation modifiers.
         app.run_assisted=true;
         app.recorder.reset();
     }
+}
+void update_practice_lock_timer(App &app){
+    const auto &options=app.practice_tools.options;
+    const auto key=options.enabled(soew::PracticeAdvanced::LockTimer)&&app.practice_assist.enabled(soew::PracticeTool::Timeout)?
+        soew::encounter_info(*app.stage_scene):soew::EncounterInfo{};
+    if(!key.active||key.dying||key.pending)app.lock_timer_frames=0;
+    else if(key.kind!=app.lock_timer_kind||key.phase!=app.lock_timer_phase)app.lock_timer_frames=1;
+    else ++app.lock_timer_frames;
+    app.lock_timer_kind=key.kind;app.lock_timer_phase=key.phase;
 }
 bool title_demo_foreground(HWND hwnd,const App &app){
     return app.focused&&GetForegroundWindow()==hwnd&&!app.minimized&&!app.resizing&&IsWindowEnabled(hwnd)&&!app.title_demo->menu_loop;
@@ -1373,7 +1390,7 @@ void sync_gameplay_bgm(App &app,bool foreground){
     const int wanted=scene_music_track(s);
     if(wanted>=6&&wanted!=13&&wanted!=s.stage+1&&!app.stage_scene->transition.boss_music_frame)
         app.stage_scene->transition.boss_music_frame=s.ticks;
-    const bool pause=app.stage_intro.active()||app.practice_tools.open||soew::gameplay_music_paused(foreground,s.paused,s.life.game_over,s.stage2_preview_boundary||s.stage3_preview_boundary||(s.rika_enabled&&s.rika.done&&!s.transitions_enabled));
+    const bool pause=app.stage_intro.active()||app.practice_tools.open||app.fast_retry_left||soew::gameplay_music_paused(foreground,s.paused,s.life.game_over,s.stage2_preview_boundary||s.stage3_preview_boundary||(s.rika_enabled&&s.rika.done&&!s.transitions_enabled));
     if(app.smoke){
         if(app.gameplay_audio_attempted!=wanted){app.gameplay_audio_attempted=wanted;start_preview(app,wanted,false,app.practice_bgm_measure);app.practice_bgm_measure=0;if(app.audio.active())++app.gameplay_audio_starts;}
     }else{
@@ -1428,6 +1445,7 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
     app.death_presented=false;app.score_review=App::ScoreReview::None;app.pending_score.reset();
     if(!app.stage_scene)app.practice_assist.info=app.menu.show_more_info;
     app.run_assisted=false;
+    app.fast_retry_left=app.lock_timer_frames=0;
     app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
     app.dialogue_hold.clear();
     cancel_gameplay_audio(app);
@@ -1676,44 +1694,112 @@ Frame practice_frame(const App &app){
 void draw_practice_tools(Frame &frame,const App &app){
     using P=soew::PracticeToolsPanel;using K=P::Kind;
     const auto &panel=app.practice_tools;
+    const auto &options=panel.options;
+    const auto &reaction=panel.reaction;
     const auto b=panel.window.bounds(P::base);
     const auto lang=app.menu.practice_language();
-    dim_practice_overlay(frame,b);
+    dim_practice_overlay(frame,b,2);
     draw_practice_grip(frame,b,app.unselected_color);
-    const int width=P::base.right-P::base.left,height=P::base.bottom-P::base.top;
-    Frame labels{width,height,std::vector<std::uint32_t>(width*height)};
-    display_text(labels,P::title(lang),8,5,app.selected_color,lang);
-    for(int i=panel.first;i<std::min(panel.count(),panel.first+P::visible);++i){
+    const auto tr=[&](const wchar_t *ja,const wchar_t *en,const wchar_t *hans,const wchar_t *hant){return soew::localized(lang,ja,en,hans,hant);};
+    const auto rect=[&](int l,int t,int r,int bottom,std::uint32_t color){
+        const auto box=panel.window.bounds({l,t,r,bottom});
+        for(int y=box.top;y<box.bottom;++y)std::fill_n(frame.pixels.begin()+y*frame.w+box.left,box.right-box.left,color);
+    };
+    const auto print=[&](std::wstring_view label,int x,int y,std::uint32_t color,soew::Language language,int width=250){
+        display_text(frame,label,x+panel.window.offset.x,y+panel.window.offset.y,color,language,width);
+    };
+    const auto heading=[&](std::wstring_view label,int x,int y){print(label,x,y,app.selected_color,lang);};
+    const auto slider=[&](int i,int y,int value,int limit,bool selected){
+        const auto track=panel.track(i);
+        const int x=track.position(value,1,limit);
+        const auto color=selected?app.selected_color:app.unselected_color;
+        rect(track.left-2,y+8,track.right+3,y+11,0x4c4653);
+        rect(track.left-2,y+8,x+1,y+11,0x797180);
+        rect(x-2,y+5,x+3,y+14,color);
+    };
+    heading(P::title(lang),29,21);
+    heading(tr(L"ゲーム速度",L"Game speed",L"游戏速度",L"遊戲速度"),340,28);
+    heading(soew::text::option_labels[unsigned(Menu::Option::Language)](lang),340,111);
+    heading(tr(L"反応速度テスト",L"Reaction test",L"反应测试",L"反應測試"),340,227);
+    for(int i=0;i<P::count;++i){
+        if(!panel.available_row(i))continue;
         const auto row=panel.row(i);
-        const int y=P::rows_y-P::base.top+(i-panel.first)*P::pitch;
-        if(i==panel.focus)for(int line=y+4;line<y+13;++line)
-            std::fill_n(labels.pixels.begin()+line*width+3,2,app.selected_color);
+        const auto [x,y,right,bottom]=row.bounds;
+        const bool selected=i==panel.focus;
+        if(selected)rect(x-8,y+4,x-6,y+13,app.selected_color);
         std::wstring label;
         auto color=0xffffffu;
         auto row_lang=lang;
-        if(row.kind==K::Tool){
+        int text_x=x;
+        const auto mark=[&](bool on){if(on)color=0x66ff88;return on?L"[+] ":L"[ ] ";};
+        switch(row.kind){
+        case K::Tool:{
             const bool on=app.practice_assist.active_row(row.index);
-            label=practice_tool_label(row.index,on,lang);if(on)color=0x66ff88;
-        }else if(row.kind==K::Retry){
+            label=practice_tool_label(row.index,on,lang);
+            if(on)color=0x66ff88;
+            break;
+        }
+        case K::Option:
+            label=mark(options.enabled(soew::PracticeAdvanced::Option(row.index)));
+            label+=soew::practice_advanced_labels[row.index](lang);break;
+        case K::Retry:
             label=L"R: ";label+=soew::text::restart(lang);
-        }else if(row.kind==K::LanguageHeading){
-            label=soew::text::option_labels[unsigned(Menu::Option::Language)](lang);
-            color=app.selected_color;
-        }else{
+            break;
+        case K::Speed:{
+            slider(i,y,panel.speed_draft,panel.speed_max(),selected);text_x=506;
+            const auto fps=options.free_fps?unsigned(panel.speed_draft):options.preset_to_fps(unsigned(panel.speed_draft));
+            constexpr std::array fractions={L".00",L".25",L".50",L".75"};
+            if(!options.free_fps)label=L"x"+std::to_wstring(panel.speed_draft/4)+fractions[panel.speed_draft%4]+L" ";
+            label+=std::to_wstring(fps)+L" fps";break;
+        }
+        case K::FreeSpeed:
+            label=mark(options.free_fps);label+=tr(L"フレームレート指定",L"Custom FPS",L"自定义帧率",L"自訂幀率");break;
+        case K::Apply:
+            label=tr(L"適用",L"Apply",L"应用",L"套用");
+            color=panel.speed_dirty()?app.selected_color:app.unselected_color;break;
+        case K::Language:{
             const auto choice=P::choices[row.index];
             label=choice?soew::text::language_names[unsigned(*choice)]:P::follow_game(lang);
             row_lang=choice.value_or(lang);
             if(choice==app.menu.practice_language_preference)color=0x66ff88;
+            break;
         }
-        display_text(labels,label,8,y+1,color,row_lang,width-24);
+        case K::ReactionMode:
+            label=reaction.release?tr(L"方向キーを離す",L"Release an arrow key",L"松开方向键",L"放開方向鍵"):
+                tr(L"方向キーを押す",L"Press an arrow key",L"按下方向键",L"按下方向鍵");break;
+        case K::ReactionProgress:
+            label=mark(reaction.progress);label+=tr(L"待ち時間を表示",L"Show wait progress",L"显示等待进度",L"顯示等待進度");break;
+        case K::Trials:
+            slider(i,y,reaction.trials,20,selected);
+            print(std::to_wstring(reaction.trials),568,y+1,color,lang);
+            label=tr(L"試行回数",L"Trials",L"测试次数",L"測試次數");break;
+        case K::ReactionStart:
+            label=tr(L"テスト開始",L"Start test",L"开始测试",L"開始測試");break;
+        }
+        print(label,text_x,y+1,color,row_lang,right-text_x);
     }
-    for(int y=0;y<height;++y)for(int x=0;x<width;++x)
-        if(const auto glyph=labels.pixels[y*width+x])frame.pixels[(b.top+y)*frame.w+b.left+x]=glyph;
-    if(panel.max_first()){
-        const auto rail=panel.window.bounds(panel.rail()),thumb=panel.window.bounds(panel.thumb());
-        auto shade=rail;shade.left+=2;shade.right-=2;dim_practice_overlay(frame,shade);
-        for(int y=thumb.top;y<thumb.bottom;++y)
-            std::fill_n(frame.pixels.begin()+y*frame.w+thumb.left+1,thumb.right-thumb.left-2,app.unselected_color);
+    using R=soew::PracticeReaction;
+    if(reaction.active()){
+        const bool ready=reaction.state==R::Ready,hold=reaction.state==R::WaitHold;
+        rect(340,258,606,310,ready?0x268044:hold?0x8c712e:0x993333);
+        print(hold?tr(L"方向キーを押し続ける",L"Hold an arrow key",L"按住方向键",L"按住方向鍵"):
+            ready?(reaction.release?tr(L"離す",L"Release",L"松开",L"放開"):tr(L"押す",L"Press",L"按下",L"按下")):
+            tr(L"緑になるまで待つ",L"Wait for green",L"等待变绿",L"等待變綠"),352,276,0xffffff,lang);
+        if(reaction.progress&&!hold){
+            const auto elapsed=std::min(panel.reaction_now-reaction.start,reaction.delay);
+            rect(340,314,606,318,0x4c4653);
+            rect(340,314,340+int(266*elapsed/reaction.delay),318,app.selected_color);
+        }
+    }else if(reaction.state==R::Early){
+        print(tr(L"早すぎます",L"Too early",L"太早了",L"太早了"),340,323,0xff9999,lang);
+    }else if(reaction.count){
+        const auto milliseconds=[](std::int64_t us){
+            const auto ms=us/1000;
+            return std::wstring(us<0&&ms==0?L"-":L"")+std::to_wstring(ms)+L" ms";
+        };
+        print(std::to_wstring(reaction.count)+L"/"+std::to_wstring(reaction.trials)+L"  "+milliseconds(reaction.last),340,323,0xffffff,lang);
+        if(reaction.count>=reaction.trials)
+            print(tr(L"平均 ",L"Average ",L"平均 ",L"平均 ")+milliseconds(reaction.total/reaction.count),340,342,0xffffff,lang);
     }
 }
 void compose_replay_menu(App &app){
@@ -1851,22 +1937,23 @@ void test_live_assist_host(){
     app.practice_session.emplace(soew::PracticeSpec{});
     check(practice_tools_mode(app)==P::Mode::Practice);
     app.practice_session.reset();
-    check(app.practice_tools.toggle(true,false,P::Mode::Practice,std::nullopt));
+    check(app.practice_tools.toggle(true,false,P::Mode::Practice));
     app.menu.language=soew::Language::English;
     constexpr std::uint32_t backdrop=0xc0a080;
     Frame overlay{640,400,std::vector<std::uint32_t>(640*400,backdrop)};
     const auto pixel=[&](int x,int y){return overlay.pixels[y*overlay.w+x];};
-    const auto thumb=app.practice_tools.thumb();
+    const int speed_knob=P::speed_track.position(4,1,12);
     draw_practice_tools(overlay,app);
     check(pixel(P::base.left-1,P::base.top)==backdrop);
-    check(pixel(P::base.left,P::base.top)==0x605040);
-    check(pixel(thumb.left+1,thumb.top)==app.unselected_color);
-    app.practice_tools.scroll_to(app.practice_tools.max_first());
+    check(pixel(P::base.left,P::base.top)==0x302820);
+    check(pixel(speed_knob,P::rows_y+8)==app.unselected_color);
+    app.practice_tools.focus=P::speed_row;
+    check(app.practice_tools.adjust(1));
     std::fill(overlay.pixels.begin(),overlay.pixels.end(),backdrop);
     draw_practice_tools(overlay,app);
-    check(pixel(thumb.left+3,thumb.top)==0x302820);
-    check(pixel(thumb.left+1,app.practice_tools.thumb().bottom-1)==app.unselected_color);
-    check(app.practice_tools.toggle(true,false,P::Mode::Practice,std::nullopt));
+    check(pixel(speed_knob,P::rows_y+8)==0x797180);
+    check(pixel(P::speed_track.position(5,1,12),P::rows_y+8)==app.selected_color);
+    check(app.practice_tools.toggle(true,false,P::Mode::Practice));
     app.stage_scene->paused=true;
     check(!live_assist_controls(app)&&!practice_tools_available(app));
     app.stage_scene->paused=false;
@@ -2010,7 +2097,7 @@ void apply_next_stage(App &app){
 bool practice_keys_released(){for(int key:{VK_UP,VK_DOWN,VK_LEFT,VK_RIGHT,VK_NUMPAD8,VK_NUMPAD2,VK_NUMPAD4,VK_NUMPAD6,VK_NUMPAD1,VK_NUMPAD3,VK_NUMPAD7,VK_NUMPAD9,int('Z'),int('X'),VK_SPACE,VK_RETURN,VK_ESCAPE,VK_PRIOR,VK_NEXT,int('R'),int('Q')})if(GetAsyncKeyState(key)&0x8000)return false;return true;}
 void reset_practice_to_menu(App &app,const std::string &warning){app.practice_retry=app.practice_retry_release=false;stop_gameplay_bgm(app);app.stage_scene.reset();app.recorder.reset();app.practice_session.reset();app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=true;app.practice_choice=0;app.practice_panel.open(app.practice_menu,soew::PracticePanel::Page::Setup);app.practice_menu.allowed=false;app.practice_menu.warning=warning;app.z_input.clear();app.stage_clock.reset(host_ms());app.menu.shot_screen=false;app.menu_visible=true;app.notice=soew::practice_warning(warning,app.menu.practice_language());}
 void save_practice(App &app){if(app.practice_store&&!app.practice_store->save(app.practice_menu.spec)){app.practice_menu.warning=app.practice_store->warning;app.notice=soew::localized(app.menu.practice_language(),L"練習設定を保存できませんでした",L"Practice settings could not be saved",L"无法保存练习设置",L"無法儲存練習設定");}}
-void begin_practice(App &app,const soew::PracticeSpec &spec){
+void begin_practice(App &app,const soew::PracticeSpec &spec,bool fast_retry=false){
     app.practice_started=host_ms();
     if(app.practice_load||app.practice_builder||app.practice_audio_load){app.practice_menu.warning="Previous request is still cancelling";return;}
     const bool retry=app.stage_scene&&app.practice_session;
@@ -2026,6 +2113,7 @@ void begin_practice(App &app,const soew::PracticeSpec &spec){
     // The request now owns its seed and worker. Only accepted attempts replace the recording.
     app.recorder.reset();app.recording_timing={};cancel_gameplay_audio(app);app.gameplay_audio_attempted=-1;
     app.practice_audio_started=false;app.practice_bgm_measure=0;app.practice_retry=retry;
+    app.fast_retry_left=0;app.skip_retry_intro=fast_retry;app.lock_timer_frames=0;
     if(!retry){app.practice_visible=true;app.practice_result=app.practice_escape=false;app.practice_choice=0;app.practice_assist.info=app.menu.show_more_info;}
     app.z_input.clear();
     if(app.stage_scene)app.stage_scene->paused=true;
@@ -2074,7 +2162,8 @@ void advance_practice(App &app){
     app.stage_scene->sound.enabled=app.menu.music!=0;
     app.stage_scene->sound_output=[&app](unsigned id){if(app.gameplay_audio_enabled&&app.menu.music!=0&&!app.effect_bank.empty()&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
     app.stage_entry_release=true;app.z_input.clear();app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.motion_before.stage=-1;app.gameplay_audio_attempted=-1;
-    arm_stage_intro(app,recipe.section==soew::PracticeSection::StageStart);
+    arm_stage_intro(app,recipe.section==soew::PracticeSection::StageStart&&!app.skip_retry_intro);
+    app.skip_retry_intro=false;
     app.practice_bgm_measure=soew::practice_music_measure(recipe);
     const bool practice_window_enabled=(app.smoke||app.retry_probe.mode>=0||app.focused)&&!app.minimized&&!app.resizing;
     if(prepared_audio){const bool paused=app.stage_intro.active()||!practice_window_enabled;if(!app.audio.publish(std::move(*prepared_audio),WAVE_MAPPER,paused,replace_output)){const auto error=app.audio.error();reset_practice_to_menu(app,error);return;}app.gameplay_audio_attempted=app.practice_audio_track;app.loaded_track=app.practice_audio_track;app.playing_track=app.menu.music==0?-1:app.practice_audio_track;app.midi_mode=app.menu.music==2;app.fm_enabled=app.menu.music!=0;++app.gameplay_audio_starts;app.practice_bgm_measure=0;app.practice_audio_started=false;}
@@ -2107,9 +2196,13 @@ void update_practice_panel(App &app,unsigned input){
     else if(action==A::NewSeed){m.spec.seed=std::random_device{}();save_practice(app);}
     else if(m.spec!=before)save_practice(app);
 }
-bool practice_pointer_captured(const App &app){return app.practice_drag.window||app.practice_tools.thumb_grab.has_value();}
+bool practice_pointer_captured(const App &app){return app.practice_drag.window||app.practice_panel.slider_drag||app.practice_tools.slider_drag;}
+void clear_practice_capture(App &app){
+    app.practice_drag.end();app.practice_tools.slider_drag.reset();
+    if(app.practice_panel.end_slider(app.practice_menu))save_practice(app);
+}
 void end_practice_drag(HWND hwnd,App &app){
-    app.practice_drag.end();app.practice_tools.thumb_grab.reset();
+    clear_practice_capture(app);
     if(GetCapture()==hwnd)ReleaseCapture();
 }
 void start_practice_drag(HWND hwnd,App &app,soew::PracticeWindow &window,soew::PracticeBounds base,soew::PracticePoint point,int shadow=0){
@@ -2123,9 +2216,9 @@ std::optional<soew::PracticePoint> practice_mouse(HWND hwnd,const App &app,soew:
     return soew::practice_pointer({v.x,v.y,v.x+v.w,v.y+v.h},point,captured);
 }
 void practice_tools_boundary(HWND hwnd,App &app){
-    if(practice_pointer_captured(app))end_practice_drag(hwnd,app);
+    if(practice_pointer_captured(app)||GetCapture()==hwnd)end_practice_drag(hwnd,app);
     if(app.stage_scene){
-        app.stage_clock.reset(host_ms());app.recording_timing.boundary();
+        app.stage_clock.reset(host_ms());app.locked_clock={};app.recording_timing.boundary();
         app.z_input.clear();app.dialogue_hold.clear();
         app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
         app.stage_entry_release=true;
@@ -2136,16 +2229,28 @@ void practice_tools_boundary(HWND hwnd,App &app){
 void activate_practice_tool_row(HWND hwnd,App &app,int index){
     using P=soew::PracticeToolsPanel;using K=P::Kind;
     auto &panel=app.practice_tools;
-    panel.select(index);
+    if(!panel.available_row(index))return;
+    panel.focus=index;
     const auto row=panel.row(index);
     switch(row.kind){
     case K::Tool:app.practice_assist.toggle_row(row.index);break;
+    case K::Option:panel.options.toggle(soew::PracticeAdvanced::Option(row.index));save_settings(app);break;
     case K::Retry:
-        panel.open=false;practice_tools_boundary(hwnd,app);
+        panel.close();practice_tools_boundary(hwnd,app);
         begin_practice(app,app.practice_session->recipe);break;
+    case K::Speed:break;
+    case K::FreeSpeed:panel.toggle_free_speed();save_settings(app);break;
+    case K::Apply:panel.apply_speed();save_settings(app);break;
     case K::Language:
         app.menu.practice_language_preference=P::choices[row.index];save_settings(app);break;
-    case K::LanguageHeading:break;
+    case K::ReactionMode:panel.reaction.release=!panel.reaction.release;panel.reaction.reset_series();break;
+    case K::ReactionProgress:panel.reaction.progress=!panel.reaction.progress;panel.reaction.reset_series();break;
+    case K::Trials:break;
+    case K::ReactionStart:{
+        static std::mt19937 random{std::random_device{}()};
+        panel.reaction_now=host_us();
+        panel.reaction.begin(panel.reaction_now,std::uniform_int_distribution<unsigned>(1200,3500)(random)*1000ull);break;
+    }
     }
 }
 bool set_fullscreen(HWND hwnd,App &app,bool enabled){
@@ -2254,22 +2359,26 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(title_demo_keydown(hwnd,*app,w,repeat))return 0;
         if(title_demo_active(*app))break;
         if(w==VK_F12){
-            if(app->practice_tools.toggle(practice_tools_available(*app),repeat,practice_tools_mode(*app),app->menu.practice_language_preference))
+            if(app->practice_tools.toggle(practice_tools_available(*app),repeat,practice_tools_mode(*app)))
                 practice_tools_boundary(hwnd,*app);
             return 0;
         }
         if(!repeat&&practice_pointer_captured(*app))end_practice_drag(hwnd,*app);
         if(app->practice_tools.open){
+            using P=soew::PracticeToolsPanel;
             auto &panel=app->practice_tools;
-            if(w==VK_UP||w==VK_NUMPAD8)panel.navigate(-1);
+            if(w==VK_ESCAPE||w=='X'){
+                if(!repeat){panel.close();practice_tools_boundary(hwnd,*app);}
+            }else if(panel.reaction.active())return 0;
+            else if(w==VK_UP||w==VK_NUMPAD8)panel.navigate(-1);
             else if(w==VK_DOWN||w==VK_NUMPAD2)panel.navigate(1);
-            else if(w==VK_PRIOR||w==VK_NEXT)panel.scroll_to(panel.first+(w==VK_PRIOR?-1:1)*panel.visible);
+            else if(w==VK_LEFT||w==VK_NUMPAD4)panel.adjust(-1);
+            else if(w==VK_RIGHT||w==VK_NUMPAD6)panel.adjust(1);
             else if(!repeat){
-                if(w==VK_ESCAPE||w=='X'){panel.open=false;practice_tools_boundary(hwnd,*app);}
-                else if(w==VK_RETURN||w=='Z')activate_practice_tool_row(hwnd,*app,panel.focus);
-                else if(w=='R'&&panel.mode==soew::PracticeToolsPanel::Mode::Practice)activate_practice_tool_row(hwnd,*app,panel.tool_count());
-                else if(w>=VK_F1&&w<=VK_F7&&panel.tool_count())activate_practice_tool_row(hwnd,*app,int(w-VK_F1));
-                else if(w=='U'&&panel.tool_count())activate_practice_tool_row(hwnd,*app,7);
+                if(w==VK_RETURN||w=='Z')activate_practice_tool_row(hwnd,*app,panel.focus);
+                else if(w=='R'&&panel.mode==P::Mode::Practice)activate_practice_tool_row(hwnd,*app,P::retry_row);
+                else if(w>=VK_F1&&w<=VK_F7)activate_practice_tool_row(hwnd,*app,int(w-VK_F1));
+                else if(w=='U')activate_practice_tool_row(hwnd,*app,7);
             }
             InvalidateRect(hwnd,nullptr,FALSE);
             return 0;
@@ -2345,6 +2454,18 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         }
         if(live_assist_controls(*app)){
             auto &assist=app->practice_assist;
+            auto &advanced=app->practice_tools.options;
+            using O=soew::PracticeAdvanced;
+            if(!repeat&&(GetKeyState(VK_SHIFT)&0x8000)){
+                if(w=='D'||w=='A'||w=='S'){
+                    advanced.toggle(w=='D'?O::DisableBomb:w=='A'?O::DisableFocus:O::DisableShot);
+                    save_settings(*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
+                }
+                if(w=='F'&&app->practice_session&&advanced.enabled(O::FastRetry)){
+                    if(!app->fast_retry_left)app->fast_retry_left=O::retry_frames;
+                    return 0;
+                }
+            }
             const int row=w>=VK_F1&&w<=VK_F7?int(w-VK_F1):w=='U'?7:w==VK_TAB?8:-1;
             if(w==VK_BACK||row>=0){
                 if(!repeat){if(w==VK_BACK)assist.open=!assist.open;else assist.toggle_row(row);InvalidateRect(hwnd,nullptr,FALSE);}
@@ -2527,33 +2648,43 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     case WM_MOUSEMOVE:
         if(practice_pointer_captured(*app)){
             if(const auto point=practice_mouse(hwnd,*app,message_point(l),true)){
-                if(app->practice_tools.thumb_grab)app->practice_tools.move_thumb(*point);
+                if(app->practice_panel.slider_drag)app->practice_panel.move_slider(app->practice_menu,*point);
+                else if(app->practice_tools.slider_drag)app->practice_tools.move_slider(*point);
                 else app->practice_drag.move(*point);
             }
             InvalidateRect(hwnd,nullptr,FALSE);return 0;
         }
         break;
     case WM_LBUTTONUP:
-        if(practice_pointer_captured(*app)){end_practice_drag(hwnd,*app);return 0;}
+        if(practice_pointer_captured(*app)){
+            if(app->practice_panel.slider_drag)
+                if(const auto point=practice_mouse(hwnd,*app,message_point(l),true))app->practice_panel.move_slider(app->practice_menu,*point);
+            if(app->practice_tools.slider_drag)
+                if(const auto point=practice_mouse(hwnd,*app,message_point(l),true))app->practice_tools.move_slider(*point);
+            end_practice_drag(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
+        }
         break;
     case WM_CANCELMODE:
         if(practice_pointer_captured(*app))end_practice_drag(hwnd,*app);
         break;
     case WM_CAPTURECHANGED:
-        app->practice_drag.end();app->practice_tools.thumb_grab.reset();
+        clear_practice_capture(*app);
         break;
     case WM_LBUTTONDOWN:
         if(const auto point=practice_mouse(hwnd,*app,message_point(l))){
             auto &tools=app->practice_tools;
             if(tools.open){
                 if(tools.in_header(*point))start_practice_drag(hwnd,*app,tools.window,tools.base,*point);
-                else if(tools.scrollbar_click(*point))SetCapture(hwnd);
-                else if(const int row=tools.row_at(*point);row>=0)activate_practice_tool_row(hwnd,*app,row);
+                else if(const int row=tools.row_at(*point);row>=0){
+                    if(tools.begin_slider(row,*point))SetCapture(hwnd);
+                    else activate_practice_tool_row(hwnd,*app,row);
+                }
                 InvalidateRect(hwnd,nullptr,FALSE);return 0;
             }
             if(app->practice_visible&&practice_tools_available(*app)){
                 auto &panel=app->practice_panel;
                 if(panel.in_header(*point))start_practice_drag(hwnd,*app,panel.window,panel.base(),*point,panel.shadow);
+                else if(panel.begin_slider(app->practice_menu,*point))SetCapture(hwnd);
                 else if(const auto input=panel.point(app->practice_menu,*point)){
                     app->practice_menu.update(0);
                     update_practice_panel(*app,input);caption(hwnd,*app);
@@ -2571,16 +2702,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         title_demo_activity(*app);
         break;
     case WM_MOUSEWHEEL:
-        if(app->practice_tools.open){
-            const auto p=message_point(l);
-            POINT client{p.x,p.y};ScreenToClient(hwnd,&client);
-            auto &tools=app->practice_tools;
-            if(const auto point=practice_mouse(hwnd,*app,{client.x,client.y});point&&
-               tools.window.bounds(tools.base).contains(*point)&&!practice_pointer_captured(*app)){
-                tools.wheel(static_cast<short>(HIWORD(w)));InvalidateRect(hwnd,nullptr,FALSE);
-            }
-            return 0;
-        }
+        if(app->practice_tools.open)return 0;
         title_demo_activity(*app);
         break;
     case WM_DPICHANGED: {
@@ -2679,6 +2801,12 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             if(!app->stage_intro.active()&&!show_stage_intro&&(show_details||app->practice_session))
                 draw_debug_info(app->composed,*app->stage_scene,app->practice_session,show_details,lang,
                     app->replay_playback?std::nullopt:app->menu.practice_language_preference);
+            if(!app->replay_playback&&!app->practice_tools.open&&!app->stage_scene->paused&&app->lock_timer_frames){
+                const auto centis=app->lock_timer_frames*100ull*soew::pc98_refresh_den/soew::pc98_refresh_num;
+                const auto text=std::to_wstring(centis/100)+L"."+(centis%100<10?L"0":L"")+std::to_wstring(centis%100)+L" s";
+                dim_practice_overlay(app->composed,{32,16,120,34});
+                display_text(app->composed,text,35,17,0xffffff,practice_lang,83);
+            }
             if(app->run_pause_menu||app->practice_escape){
                 const auto ml=app->practice_escape?practice_lang:lang;
                 const auto menu_text=[&](const wchar_t *ja,const wchar_t *en,const wchar_t *hans,const wchar_t *hant){return soew::localized(ml,ja,en,hans,hant);};
@@ -2899,7 +3027,16 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if((!app->stage_scene&&!app->audio.pause(!enabled||app->practice_builder.has_value()||app->practice_load.has_value()||app->practice_audio_load.has_value()))||!app->audio.pump()){audio_error(*app);caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);}
             }
             app->retry_probe.audio_pumped(*app);
-            if(app->practice_tools.open){app->stage_clock.advance(now,false);return 0;}
+            if(app->practice_tools.open){
+                app->stage_clock.advance(now,false);
+                auto &panel=app->practice_tools;
+                if(enabled&&panel.reaction.active()){
+                    const bool arrows=(GetAsyncKeyState(VK_UP)|GetAsyncKeyState(VK_DOWN)|GetAsyncKeyState(VK_LEFT)|GetAsyncKeyState(VK_RIGHT))&0x8000;
+                    panel.reaction_now=host_us();panel.reaction.observe(panel.reaction_now,arrows);
+                    InvalidateRect(hwnd,nullptr,FALSE);
+                }
+                return 0;
+            }
             if(advance_title_demo(hwnd,*app,now))return 0;
             if(replay_menu_active){
                 app->staff_music_poll=0;
@@ -2960,6 +3097,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     app->practice_retry_release=false;
                 }
                 const auto pace=app->stage_scene->presentation_slowdown();
+                const auto &advanced=app->practice_tools.options;
+                const unsigned speed_num=app->replay_playback?1:advanced.rate_num();
+                const unsigned speed_den=app->replay_playback?1:advanced.rate_den();
                 const bool timing_active=enabled&&app->recorder&&!app->replay_playback&&!app->stage_scene->paused&&
                     !app->stage_entry_release&&!app->ending_player&&!app->stage_scene->life.game_over&&
                     !app->stage_scene->transition.active()&&!app->stage_scene->dialogue.active()&&
@@ -2968,10 +3108,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 const bool stage_active=enabled&&!app->stage_scene->paused;
                 unsigned base_steps=0;
                 if(app->display_frames_active&&stage_active){
-                    base_steps=app->locked_clock.advance(pace);timing=app->locked_timing;
-                }else base_steps=app->stage_clock.advance(now,stage_active,pace,(timing_active||app->host_perf)?&timing:nullptr);
+                    base_steps=app->locked_clock.advance(pace,speed_num,speed_den);timing=app->locked_timing;
+                }else base_steps=app->stage_clock.advance(now,stage_active,pace,(timing_active||app->host_perf)?&timing:nullptr,speed_num,speed_den);
                 if(app->display_frames_active&&stage_active)
-                    app->scroll_phase=soew::display_subframe(app->scroll_phase,app->locked_clock.subframe(pace,soew::scroll_subpixels),base_steps);
+                    app->scroll_phase=soew::display_subframe(app->scroll_phase,app->locked_clock.subframe(pace,soew::scroll_subpixels,speed_num,speed_den),base_steps);
+                if(app->fast_retry_left&&app->practice_session&&!app->replay_playback){
+                    app->fast_retry_left-=std::min(app->fast_retry_left,base_steps);
+                    if(!app->fast_retry_left)begin_practice(*app,app->practice_session->recipe,true);
+                    return 0;
+                }
                 app->recording_timing.observe(timing_active,timing);
                 if(app->host_perf)app->host_perf->schedule(pace,stage_active,base_steps,timing.lost_ms,timing.active_ms);
                 // Replay never reads from the live stage-entry release gate.
@@ -3004,6 +3149,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     if(app->replay_playback){
                         step=app->replay_session->step_playback(*app->stage_scene,*app->replay_playback,app->replay_cursor);
                     }else{
+                        const auto prior_tick=app->stage_scene->ticks;
+                        const auto prior_misses=app->stage_scene->life.total_misses;
+                        const bool gameplay=soew::replay_tick_context(*app->stage_scene)==soew::NativeReplayContext::Gameplay;
                         pressed.z=!app->stage_entry_release&&app->z_input.tick(shot_mode(*app));
                         auto input=soew::sense(pressed);
                         bool group=dialog_group&&!app->stage_entry_release;
@@ -3016,12 +3164,17 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             app->mima_dialogue_tap.reset(z_held);
                             fast=app->dialogue_hold.poll(now,!app->stage_entry_release&&z_held&&app->stage_scene->dialogue.active());
                         }
+                        input=advanced.filter(input,gameplay);
                         apply_live_assists(*app);
                         if(app->practice_session){
                             const auto event=soew::practice_replay_tick(*app->stage_scene,input,group,fast);
                             const auto samples=app->practice_session->samples();
                             app->practice_session->tick(*app->stage_scene,event.input,event.dialogue_group,event.dialogue_fast_forward);
                             if(app->recorder&&app->practice_session->samples()!=samples&&!app->recorder->record(event))app->recorder.reset();
+                            if(advanced.enabled(soew::PracticeAdvanced::FastRetry)&&app->stage_scene->life.total_misses!=prior_misses){
+                                app->fast_retry_left=soew::PracticeAdvanced::retry_frames;
+                                InvalidateRect(hwnd,nullptr,FALSE);break;
+                            }
                             if(app->practice_session->result()!=soew::PracticeSession::Result::Running){
                                 if(app->practice_session->simulation_error()){
                                     app->recorder.reset();
@@ -3036,6 +3189,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             if(app->recorder&&step.consumed_tick&&(!app->recorder->record(step.event)||(step.stage_advanced&&!app->recorder->next_stage())))app->recorder.reset();
                             finalize_replay(*app);
                         }
+                        if(step.stage_advanced)app->lock_timer_frames=0;
+                        else if(app->stage_scene->ticks!=prior_tick&&gameplay)update_practice_lock_timer(*app);
                     }
                     if(step.status==soew::ReplayStepStatus::Failed){
                         app->stage_scene->invalidate_hitboxes();
@@ -3953,7 +4108,7 @@ int wmain(int argc, wchar_t **argv) {
         app.menu.set_chinese_available(app.chinese_text.has_value());
         if(app.settings_enabled){
             app.settings.emplace(settings_dir/"soew-settings.json");
-            app.settings->load().apply(app.menu);
+            const auto settings=app.settings->load();settings.apply(app.menu);app.practice_tools.options=settings.practice_advanced;
             std::ifstream replay_preferences(settings_dir/"replay-options.txt",std::ios::binary);
             char option[5]{};replay_preferences.read(option,sizeof(option));
             if(replay_preferences.gcount()==4&&std::string_view(option,4)=="off\n")app.replay_recording=false;
@@ -4011,7 +4166,7 @@ int wmain(int argc, wchar_t **argv) {
             app.practice_panel.open(app.practice_menu,*practice_dump);
             auto frame=practice_frame(app);
             if(practice_tools_dump){
-                app.practice_tools.toggle(true,false,*practice_tools_dump,app.menu.practice_language_preference);
+                app.practice_tools.toggle(true,false,*practice_tools_dump);
                 draw_practice_tools(frame,app);
             }
             dump(frame,dump_path);

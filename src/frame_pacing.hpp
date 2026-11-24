@@ -27,16 +27,19 @@ struct DisplayCadence {
     }
 };
 
-// One opportunity per rendered retrace, even after a stall. The original
-// scripted slowdown consumes extra retraces, not extra simulation steps.
+// At native speed each rendered retrace provides at most one logic step,
+// even after a stall. Practice can explicitly scale that opportunity.
 struct LockedGameClock {
-    unsigned retraces=0;
-    unsigned advance(unsigned slowdown){
-        if(++retraces<slowdown)return 0;
-        retraces=0;return 1;
+    std::uint64_t retraces=0;
+    unsigned advance(unsigned slowdown,unsigned num=1,unsigned den=1){
+        retraces+=num;
+        const auto period=std::uint64_t(slowdown)*den;
+        const auto steps=retraces/period;
+        retraces%=period;
+        return num==den?unsigned(steps!=0):unsigned(steps);
     }
-    unsigned subframe(unsigned slowdown,unsigned scale)const{
-        return slowdown==1?scale:std::min(scale,retraces*scale/slowdown);
+    unsigned subframe(unsigned slowdown,unsigned scale,unsigned num=1,unsigned den=1)const{
+        return slowdown==1&&num==den?scale:unsigned(std::min<std::uint64_t>(scale,retraces*scale/(std::uint64_t(slowdown)*den)));
     }
 };
 

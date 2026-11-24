@@ -8,7 +8,7 @@ namespace soew {
 enum class PracticeTool : unsigned { Invincible, Lives, Rank, Bombs, Power, Timeout, AutoBomb, EnemyInvincible };
 struct PracticeAssist {
     std::uint8_t tools=0;
-    bool open=false,info=false;
+    bool open=false,info=false,protect_last=false;
     PracticeWindow window;
     bool enabled(PracticeTool tool)const{return (tools&(1u<<unsigned(tool)))!=0;}
     void toggle(PracticeTool tool){tools^=std::uint8_t(1u<<unsigned(tool));}

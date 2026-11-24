@@ -34,6 +34,17 @@ struct PracticeDrag {
     void end(){window=nullptr;}
 };
 
+struct PracticeSlider {
+    int left,right; // inclusive handle centres
+    int position(int value,int minimum,int maximum)const{
+        return left+((value-minimum)*(right-left)+(maximum-minimum)/2)/(maximum-minimum);
+    }
+    int value(int x,int minimum,int maximum)const{
+        return minimum+((std::clamp(x,left,right)-left)*(maximum-minimum)+(right-left)/2)/(right-left);
+    }
+    PracticeBounds hit(int top,int bottom)const{return {left-3,top,right+4,bottom};}
+};
+
 inline std::optional<PracticePoint> practice_pointer(PracticeBounds view,PracticePoint client,bool captured){
     const int w=view.right-view.left,h=view.bottom-view.top;
     if(!w||!h||(!captured&&!view.contains(client)))return std::nullopt;

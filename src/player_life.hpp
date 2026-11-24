@@ -31,7 +31,7 @@ struct PlayerLife {
     // Called before shots_update, matching original negate/decrement order.
     void player_phase_begin(){negate();if(invincibility)--invincibility;}
     void sparks(unsigned back,int count){effects.push_back({Sparks,positions[back].x+16,positions[back].y+24,128,count,false,true});}
-    void player_phase_end(unsigned back,unsigned normal_pattern,bool infinite_lives=false,bool keep_power=false,bool lock_rank=false){
+    void player_phase_end(unsigned back,unsigned normal_pattern,bool infinite_lives=false,bool keep_power=false,bool lock_rank=false,bool protect_last=false){
         if(game_over)return;
         if(!hit){if((invincibility&3)<3){draw=current;pattern=normal_pattern;}return;}
         if(miss_frame==0){effects.push_back({Sound,0,0,2});miss_active=true;++stage_misses;++total_misses;effects.push_back({ScoreCommit});sparks(back,16);}
@@ -44,7 +44,7 @@ struct PlayerLife {
             else{if(!keep_power){power=1;effects.push_back({PowerChanged,0,0,1});}effects.push_back({MissItems,positions[back].x,positions[back].y,0,0,false});}
         }else if(miss_frame<43)positions[back].y+=4;
         else if(miss_frame==43){
-            if(!infinite_lives){--lives;effects.push_back({LivesChanged,0,0,lives});}bombs=static_cast<std::uint8_t>(start_bombs+(lives==0?2:0));effects.push_back({BombsChanged,0,0,bombs});sparks(back,16);
+            if(!infinite_lives||(protect_last&&lives>0)){--lives;effects.push_back({LivesChanged,0,0,lives});}bombs=static_cast<std::uint8_t>(start_bombs+(lives==0?2:0));effects.push_back({BombsChanged,0,0,bombs});sparks(back,16);
             positions[0]=positions[1]={208,366};
         }else if(miss_frame<68){positions[back].y-=2;draw=positions[back];pattern=0;}
         else{miss_frame=0;miss_active=false;hit=false;}

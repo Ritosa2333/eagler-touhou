@@ -88,14 +88,20 @@ for playback.
 Practice uses the same shot selection screen as the main game. Choose Reimu's
 shot type with Left/Right, then use Up/Down or click a stage in the popup.
 Z or Enter confirms; X or Esc returns to the previous selection. The setup
-popup shows the starting point, difficulty, stocks and seed together.
+popup shows the starting point, difficulty, stocks and seed together. Drag the
+horizontal sliders to set power, lives, bombs, respawn bombs and dynamic rank.
+Left/Right still adjusts the selected value; click its number or press Enter
+on the row to type an exact value.
 
 Drag the top of any practice panel to move it. F12 opens or closes the
-translucent Practice Tools panel. During live play it offers the same battle
-assists as Backspace, and in Practice it also offers Retry. Scroll with the
-mouse wheel or drag the scrollbar to reach more rows. Practice follows the
-game language by default; you can independently choose Japanese, English,
-Simplified Chinese or Traditional Chinese without changing the game's language.
+translucent Practice Tools panel and pauses live play while open. It includes
+the Backspace assists, a game-speed slider (Apply commits the change without
+changing music speed), last-life protection for F2, X/Shift/Z restrictions,
+forced focus, F6 phase timing, and a reaction test. During live play Shift+D/A/S
+toggles X/Shift/Z restrictions respectively. In Practice, Retry on Miss also
+enables Shift+F; both restart after 15 frames and skip the stage intro.
+Practice follows the game language by default. Its Japanese, English,
+Simplified Chinese and Traditional Chinese options are independent of the game.
 
 During live Story, Extra, or Practice play, Backspace opens the assist overlay. Click a row or use
 F1–F7 / U: invincibility, infinite lives, lock dynamic rank, infinite bombs,

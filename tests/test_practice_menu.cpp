@@ -282,7 +282,28 @@ void test_floating_panels(){
     check(!panel.point(menu,{setup.left+16,power_y})&&panel.focused(P::Field::Power));
     const auto edit=panel.point(menu,{setup.right-24,power_y});panel.update(menu,0);
     check(edit==M::confirm&&panel.update(menu,edit)==M::Action::EditNumber&&menu.number_editing());
-    check(!panel.point(menu,start)&&panel.focused(P::Field::Power));menu.number_cancel();
+    const auto power_track=P::slider(P::Field::Power);
+    check(!panel.point(menu,start)&&panel.focused(P::Field::Power));
+    check(!panel.begin_slider(menu,{power_track.left+panel.window.offset.x,power_y}));menu.number_cancel();
+    for(const auto field:{P::Field::Power,P::Field::Lives,P::Field::Bombs,P::Field::RespawnBombs,P::Field::DynamicRank}){
+        const auto row=P::recipe_row(field);
+        const auto range=*menu.slider_value(row);
+        const auto track=P::slider(field);
+        const int y=P::setup_y+panel.window.offset.y+int(std::find(fields.begin(),fields.end(),field)-fields.begin())*P::setup_pitch;
+        check(panel.begin_slider(menu,{track.left+panel.window.offset.x,y})&&panel.focused(field));
+        check(menu.slider_value(row)->value==range.minimum&&!menu.number_editing());
+        panel.move_slider(menu,{1000,y+1000});check(menu.slider_value(row)->value==range.maximum);
+        panel.move_slider(menu,{-1000,y-1000});check(menu.slider_value(row)->value==range.minimum);
+        const int mid=(range.minimum+range.maximum)/2;
+        panel.move_slider(menu,{track.position(mid,range.minimum,range.maximum)+panel.window.offset.x,y});
+        check(menu.slider_value(row)->value==mid&&panel.end_slider(menu)==(range.value!=mid));
+        check(!panel.end_slider(menu));
+    }
+    menu.spec.rank=0;
+    check(menu.slider_value(M::Row::DynamicRank)->maximum==4);
+    const int rank_y=P::setup_y+panel.window.offset.y+int(std::find(fields.begin(),fields.end(),P::Field::DynamicRank)-fields.begin())*P::setup_pitch;
+    check(panel.begin_slider(menu,{P::slider(P::Field::DynamicRank).right+panel.window.offset.x,rank_y}));
+    check(menu.spec.dynamic_rank==4&&panel.end_slider(menu));
 
     drag.begin(panel.window,panel.base(),{setup.left+16,setup.top+14},P::shadow);
     drag.move({2000,2000});drag.end();
@@ -316,43 +337,68 @@ void test_floating_panels(){
 
     PracticeToolsPanel tools;using T=PracticeToolsPanel;using Mode=T::Mode;using K=T::Kind;
     Menu native;native.set_language_preference(L::English);
-    check(!tools.toggle(false,false,Mode::Setup,std::nullopt)&&!tools.toggle(true,true,Mode::Setup,std::nullopt));
-    check(tools.toggle(true,false,Mode::Setup,std::nullopt)&&tools.open&&tools.focus==1&&tools.count()==6&&!tools.max_first());
-    check(!tools.scrollbar_click({T::rail_left,T::rows_y})&&tools.row_at({40,T::rows_y})<0);
-    tools.navigate(-1);check(tools.focus==5);
-    drag.begin(tools.window,T::base,{40,146});drag.move({240,46});drag.end();
-    const int index=tools.row_at({240,T::rows_y-100+4*T::pitch});
-    check(tools.in_header({240,46})&&index==4);
+    check(!tools.toggle(false,false,Mode::Setup)&&!tools.toggle(true,true,Mode::Setup));
+    check(tools.toggle(true,false,Mode::Setup)&&tools.open&&tools.focus==T::speed_row);
+    tools.navigate(-1);check(tools.focus==T::retry_row-1);
+    tools.navigate(1);check(tools.focus==T::speed_row);
+    drag.begin(tools.window,T::base,{40,16});drag.move({46,20});drag.end();
+    const int index=tools.row_at({346,T::rows_y+82+3*T::pitch+4});
+    check(tools.in_header({46,20})&&index==T::first_language+3);
     const auto row=tools.row(index);check(row.kind==K::Language&&row.index==3);
     native.practice_language_preference=T::choices[row.index];
     check(native.practice_language()==L::ChineseSimplified&&native.language==L::English&&!native.chinese_available);
-    check(!tools.toggle(true,true,Mode::Setup,native.practice_language_preference)&&tools.open);
-    check(tools.toggle(true,false,Mode::Setup,native.practice_language_preference)&&!tools.open);
-    check(tools.toggle(true,false,Mode::Setup,native.practice_language_preference)&&tools.focus==4);
+    check(!tools.toggle(true,true,Mode::Setup)&&tools.open);
+    check(tools.toggle(true,false,Mode::Setup)&&!tools.open);
     native.practice_language_preference=T::choices[0];check(native.practice_language()==native.language);
 
-    check(tools.toggle(true,false,Mode::Live,std::nullopt)&&tools.toggle(true,false,Mode::Live,std::nullopt));
-    check(tools.first==0&&tools.focus==0&&tools.count()==14&&tools.row(8).kind==K::LanguageHeading);
+    check(tools.toggle(true,false,Mode::Live)&&tools.focus==0&&!tools.available_row(T::retry_row));
     const auto auto_bomb=tools.row(int(PracticeTool::AutoBomb));
     check(auto_bomb.kind==K::Tool&&auto_bomb.index==assist_row);
-    tools.select(7);tools.navigate(1);check(tools.focus==9&&tools.first==2);
-    tools.wheel(-60);check(tools.first==2);tools.wheel(-60);check(tools.first==5);
-    tools.wheel(240);check(tools.first==0&&tools.focus<T::visible);
+    check(tools.toggle(true,false,Mode::Live)&&tools.toggle(true,false,Mode::Practice));
+    check(tools.available_row(T::retry_row)&&tools.row(T::retry_row).kind==K::Retry);
+    const auto speed=tools.row(T::speed_row).bounds;
+    check(tools.begin_slider(T::speed_row,{T::speed_track.left+6,speed.top+4})&&tools.speed_draft==1);
+    tools.move_slider({1000,500});check(tools.speed_draft==12&&tools.options.speed==4&&tools.speed_dirty());
+    tools.move_slider({-1000,-50});check(tools.speed_draft==1);
+    tools.slider_drag.reset();tools.apply_speed();check(!tools.speed_dirty()&&tools.options.speed==1);
+    tools.toggle_free_speed();check(tools.speed_draft==14&&tools.speed_dirty());
+    tools.apply_speed();check(tools.options.speed_in_fps&&tools.options.speed==14);
+    tools.close();check(!tools.open&&!tools.slider_drag);
+}
+void test_advanced(){
+    using namespace soew;
+    using A=PracticeAdvanced;
+    A options;
+    const auto buttons=Up|Shot|Bomb|Focus;
+    check(options.rate_num()==options.rate_den()&&options.filter(buttons,true)==buttons);
+    options.toggle(A::DisableBomb);options.toggle(A::DisableShot);options.toggle(A::DisableFocus);
+    check(options.filter(buttons,true)==Up&&options.filter(buttons,false)==buttons);
+    options.toggle(A::ForceFocus);
+    check(options.filter(buttons,true)==(Up|Focus)&&options.filter(Up,false)==Up);
+    check(A::preset_to_fps(4)==56&&A::fps_to_preset(56)==4);
+    for(unsigned speed=1;speed<=A::max_preset;++speed){
+        options.speed=speed;
+        LockedGameClock clock;
+        unsigned steps=0;
+        for(int i=0;i<24;++i)steps+=clock.advance(2,options.rate_num(),options.rate_den());
+        check(steps==speed*3);
+    }
+    options.speed=120;options.speed_in_fps=true;
+    LockedGameClock custom;
+    unsigned steps=0;
+    for(unsigned i=0;i<pc98_refresh_num;++i)steps+=custom.advance(1,options.rate_num(),options.rate_den());
+    check(steps==120*pc98_refresh_den);
 
-    check(tools.toggle(true,false,Mode::Practice,std::nullopt)&&tools.toggle(true,false,Mode::Practice,std::nullopt));
-    check(tools.count()==15&&tools.row(8).kind==K::Retry&&tools.row(9).kind==K::LanguageHeading);
-    const auto track=tools.window.bounds(tools.rail()),thumb=tools.window.bounds(tools.thumb());
-    check(thumb.top==track.top&&tools.row_at({thumb.left,thumb.top})<0);
-    check(tools.scrollbar_click({thumb.left,thumb.top+4})&&tools.thumb_grab==4&&tools.first==0);
-    tools.move_thumb({thumb.left,500});
-    check(tools.first==tools.max_first()&&tools.window.bounds(tools.thumb()).bottom==track.bottom);
-    const int last=tools.row_at({240,track.bottom-1});
-    check(last==14&&tools.row(last).kind==K::Language&&tools.row(last).index==4);
-    tools.move_thumb({thumb.left,-50});check(tools.first==0);
-    tools.thumb_grab.reset();
-    check(tools.scrollbar_click({track.left,track.bottom-1})&&tools.first==tools.max_first());
-    tools.thumb_grab.reset();
-    tools.select(8);tools.navigate(1);check(tools.focus==10);
+    using R=PracticeReaction;
+    R reaction;
+    reaction.begin(1000,1300);reaction.observe(2200,true);check(reaction.state==R::Early&&reaction.count==0);
+    reaction.begin(3000,1300);reaction.observe(4300,false);check(reaction.state==R::Ready);
+    reaction.observe(4450,true);check(reaction.state==R::Result&&reaction.last==150&&reaction.count==1);
+    reaction.release=true;reaction.begin(5000,2000);reaction.observe(8000,false);check(reaction.state==R::WaitHold);
+    reaction.observe(8100,true);check(reaction.state==R::Waiting&&reaction.deadline==10100);
+    reaction.observe(10500,false);check(reaction.state==R::Result&&reaction.last==400&&reaction.total==550);
+    reaction.release=false;reaction.progress=true;reaction.begin(11000,2000);reaction.observe(12500,true);
+    check(reaction.state==R::Result&&reaction.last==-500&&reaction.total==1050);
 }
 void test_store(const std::filesystem::path &root){
     using namespace soew;
@@ -430,7 +476,7 @@ int main(int argc,char **argv){
     try{
         if(argc!=2)throw std::runtime_error("Need an explicit fresh isolated test root");
         const auto root=std::filesystem::path(argv[1]);if(!root.is_absolute())throw std::runtime_error("Isolated test root must be absolute");
-        test_editor();test_model();test_panel();test_panel_layout();test_floating_panels();test_store(root);
+        test_editor();test_model();test_panel();test_panel_layout();test_floating_panels();test_advanced();test_store(root);
         {const auto &a=soew::stage3_practice_evidence;check(a.size()==8);check(a[0].id==0&&a[0].progress==0);check(a[1].id==3&&a[1].progress==53&&a[1].measure==17);check(a[2].id==15&&a[2].progress==103&&a[2].measure==34);check(a[7].id==55&&a[7].progress==265&&a[7].measure==88);for(std::size_t i=1;i<a.size();++i)check(a[i-1].progress<a[i].progress);check(soew::stage3_boss_entry_ids==std::array<int,6>{0x10,0x17,0x18,0x27,0x48,0x49});check(!soew::PracticeCapabilities{}.allows(2,soew::PracticeSection::Boss));}
         {soew::PracticeSpec spec;spec.stage=2;for(const auto &anchor:soew::stage3_practice_evidence){spec.section=anchor.id==0x0f?soew::PracticeSection::Midboss:soew::PracticeSection::Chapter;spec.chapter_id=anchor.id==0x0f?-1:anchor.id;check(soew::practice_music_measure(spec)==anchor.measure);}
          spec.section=soew::PracticeSection::Chapter;spec.chapter_id=48;check(soew::practice_music_measure(spec)==0);spec.stage=1;check(soew::practice_music_measure(spec)==58);}

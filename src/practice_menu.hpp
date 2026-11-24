@@ -162,19 +162,35 @@ struct PracticeMenu {
         if(index<0||index>=row_count())throw std::out_of_range("Practice row");
         return static_cast<Row>(index+(spec.section!=PracticeSection::Chapter&&index>=2?1:0));
     }
+    struct SliderValue {int value,minimum,maximum;};
+    std::optional<SliderValue> slider_value(Row which)const{
+        switch(which){
+        case Row::DynamicRank:return SliderValue{spec.dynamic_rank,-6,spec.rank==0?4:16};
+        case Row::Power:return SliderValue{spec.power,1,80};
+        case Row::Lives:return SliderValue{spec.lives,0,5};
+        case Row::Bombs:return SliderValue{spec.bombs,0,5};
+        case Row::RespawnBombs:return SliderValue{spec.respawn_bombs,0,3};
+        default:return std::nullopt;
+        }
+    }
+    void set_number(Row which,std::int64_t value){
+        switch(which){
+        case Row::DynamicRank:spec.dynamic_rank=static_cast<int>(value);break;
+        case Row::Power:spec.power=static_cast<int>(value);break;
+        case Row::Lives:spec.lives=static_cast<int>(value);break;
+        case Row::Bombs:spec.bombs=static_cast<int>(value);break;
+        case Row::RespawnBombs:spec.respawn_bombs=static_cast<int>(value);break;
+        case Row::Seed:spec.seed=static_cast<std::uint32_t>(value);break;
+        default:break;
+        }
+        warning.clear();
+    }
     bool begin_number_edit(Row which){
         if(number_editing())return false;
-        std::int64_t value=0,minimum=0,maximum=0;
-        switch(which){
-        case Row::DynamicRank:value=spec.dynamic_rank;minimum=-6;maximum=spec.rank==0?4:16;break;
-        case Row::Power:value=spec.power;minimum=1;maximum=80;break;
-        case Row::Lives:value=spec.lives;maximum=5;break;
-        case Row::Bombs:value=spec.bombs;maximum=5;break;
-        case Row::RespawnBombs:value=spec.respawn_bombs;maximum=3;break;
-        case Row::Seed:value=spec.seed;maximum=std::numeric_limits<std::uint32_t>::max();break;
-        default:return false;
-        }
-        editing_row=which;number_editor.begin(value,minimum,maximum);allowed=false;warning.clear();return true;
+        if(const auto slider=slider_value(which))number_editor.begin(slider->value,slider->minimum,slider->maximum);
+        else if(which==Row::Seed)number_editor.begin(spec.seed,0,std::numeric_limits<std::uint32_t>::max());
+        else return false;
+        editing_row=which;allowed=false;warning.clear();return true;
     }
     bool number_digit(unsigned digit){return number_editor.digit(digit);}
     bool number_minus(){return number_editor.minus();}
@@ -191,16 +207,7 @@ struct PracticeMenu {
             if(!checked.paste(number_editor.buffer)){warning="Number out of range";return false;}
         }
         if(!number_editor.accept(value)){warning="Number out of range";return false;}
-        switch(editing_row){
-        case Row::DynamicRank:spec.dynamic_rank=static_cast<int>(value);break;
-        case Row::Power:spec.power=static_cast<int>(value);break;
-        case Row::Lives:spec.lives=static_cast<int>(value);break;
-        case Row::Bombs:spec.bombs=static_cast<int>(value);break;
-        case Row::RespawnBombs:spec.respawn_bombs=static_cast<int>(value);break;
-        case Row::Seed:spec.seed=static_cast<std::uint32_t>(value);break;
-        default:break;
-        }
-        allowed=false;warning.clear();return true;
+        set_number(editing_row,value);allowed=false;return true;
     }
     void number_cancel(){number_editor.cancel();allowed=false;warning.clear();}
     void begin_seed_edit(){begin_number_edit(Row::Seed);}

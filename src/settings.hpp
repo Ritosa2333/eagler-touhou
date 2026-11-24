@@ -1,4 +1,5 @@
 #pragma once
+#include "practice_advanced.hpp"
 #include "menu.hpp"
 #include <algorithm>
 #include <atomic>
@@ -49,7 +50,8 @@ struct Settings {
     Language language=Language::Japanese;
     bool stage_intro=true,smooth_background=true;
     std::optional<Language> practice_language;
-    static Settings from(const Menu &m){return {m.rank,m.music,m.lives,m.bombs,m.reduced,m.autofire,m.show_more_info,m.fullscreen,m.fast_autofire,m.hitboxes,m.language_preference,m.stage_intro,m.smooth_background,m.practice_language_preference};}
+    PracticeAdvanced practice_advanced;
+    static Settings from(const Menu &m,PracticeAdvanced advanced={}){return {m.rank,m.music,m.lives,m.bombs,m.reduced,m.autofire,m.show_more_info,m.fullscreen,m.fast_autofire,m.hitboxes,m.language_preference,m.stage_intro,m.smooth_background,m.practice_language_preference,advanced};}
     void apply(Menu &m)const{m.rank=rank;m.music=music;m.lives=lives;m.bombs=bombs;m.reduced=reduced;m.autofire=autofire;m.show_more_info=show_more_info;m.fullscreen=fullscreen;m.fast_autofire=fast_autofire;m.hitboxes=hitboxes;m.set_language_preference(language);m.stage_intro=stage_intro;m.smooth_background=smooth_background;m.practice_language_preference=practice_language;}
     static constexpr const char* language_id(Language language){return localized(language,"ja","en","zh-Hans","zh-Hant");}
     static constexpr const wchar_t* wide_language_id(Language language){return localized(language,L"ja",L"en",L"zh-Hans",L"zh-Hant");}
@@ -119,7 +121,7 @@ struct SettingsStore {
             std::ifstream f(path,std::ios::binary|std::ios::ate);if(!f)throw std::runtime_error("Cannot read settings; file protected");const auto n=f.tellg();if(n<2||n>16384)throw std::runtime_error("Invalid settings size; file protected");std::string data(static_cast<std::size_t>(n),' ');f.seekg(0);if(!f.read(data.data(),static_cast<std::streamsize>(n)))throw std::runtime_error("Cannot read settings; file protected");const auto fields=parse(data);
             const auto version=fields.find("version");if(version==fields.end()||!version->second.integer||(version->second.text!="1"&&version->second.text!="2")){writable=false;warning="Unsupported settings version; file protected";saved=out;return out;}
             needs_migration=version->second.text=="1";
-            constexpr std::array<std::string_view,15> known={"version","rank","music","lives","bombs","reduced","autofire","show_more_info","fullscreen","fast_autofire","hitboxes","language","stage_intro","smooth_background","practice_language"};
+            constexpr std::array<std::string_view,19> known={"version","rank","music","lives","bombs","reduced","autofire","show_more_info","fullscreen","fast_autofire","hitboxes","language","stage_intro","smooth_background","practice_language","practice_speed_preset","practice_speed_fps","practice_free_fps","practice_flags"};
             for(const auto &[key,value]:fields){(void)value;if(std::find(known.begin(),known.end(),key)==known.end()){writable=false;warning="Unknown settings field; file protected";}}
             const auto invalid=[&]{if(writable)warning="Some settings fields invalid; defaults used";};
             auto integer=[&](const char*key,int &v,int max){const auto it=fields.find(key);if(it==fields.end())return;int n=0;const auto &x=it->second;if(!x.integer){invalid();return;}std::from_chars(x.text.data(),x.text.data()+x.text.size(),n);if(n<0||n>max){invalid();return;}v=n;};
@@ -136,6 +138,15 @@ struct SettingsStore {
             };
             out.language=language("language").value_or(out.language);
             out.practice_language=language("practice_language");
+            auto &advanced=out.practice_advanced;
+            int preset=PracticeAdvanced::native_speed,fps=0,flags=0;
+            integer("practice_speed_preset",preset,PracticeAdvanced::max_preset);
+            integer("practice_speed_fps",fps,PracticeAdvanced::max_fps);
+            integer("practice_flags",flags,(1u<<(PracticeAdvanced::FastRetry+1))-1);
+            boolean("practice_free_fps",advanced.free_fps);
+            advanced.flags=std::uint8_t(flags);advanced.speed_in_fps=fps>0;
+            if(!preset)invalid();
+            advanced.speed=unsigned(fps?fps:preset?preset:PracticeAdvanced::native_speed);
         }catch(const std::exception &e){warning=e.what();writable=false;out=Settings{};}
         saved=out;return out;
     }
@@ -146,7 +157,12 @@ struct SettingsStore {
         try{
             if(!path.parent_path().empty())std::filesystem::create_directories(path.parent_path());
             static std::atomic<unsigned long long> sequence{0};temp=path;temp+=".tmp-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(sequence++);
-            const auto practice=value.practice_language?std::string(",\n  \"practice_language\": \"")+Settings::language_id(*value.practice_language)+"\"":std::string{};
+            auto practice=value.practice_language?std::string(",\n  \"practice_language\": \"")+Settings::language_id(*value.practice_language)+"\"":std::string{};
+            const auto &advanced=value.practice_advanced;
+            if(advanced.speed_in_fps||advanced.speed!=PracticeAdvanced::native_speed)
+                practice+=std::string(advanced.speed_in_fps?",\n  \"practice_speed_fps\": ":",\n  \"practice_speed_preset\": ")+std::to_string(advanced.speed);
+            if(advanced.free_fps)practice+=",\n  \"practice_free_fps\": true";
+            if(advanced.flags)practice+=",\n  \"practice_flags\": "+std::to_string(advanced.flags);
             const auto data=std::string("{\n  \"version\": 2,\n  \"rank\": ")+std::to_string(value.rank)+",\n  \"music\": "+std::to_string(value.music)+",\n  \"lives\": "+std::to_string(value.lives)+",\n  \"bombs\": "+std::to_string(value.bombs)+",\n  \"reduced\": "+(value.reduced?"true":"false")+",\n  \"autofire\": "+(value.autofire?"true":"false")+",\n  \"show_more_info\": "+(value.show_more_info?"true":"false")+(value.fullscreen?",\n  \"fullscreen\": true":"")+(value.stage_intro?"":",\n  \"stage_intro\": false")+(value.smooth_background?"":",\n  \"smooth_background\": false")+(value.autofire&&!value.fast_autofire?",\n  \"fast_autofire\": false":"")+(value.hitboxes==HitboxMode::Off?std::string{}:",\n  \"hitboxes\": "+std::to_string(static_cast<int>(value.hitboxes)))+",\n  \"language\": \""+Settings::language_id(value.language)+"\""+practice+"\n}\n";
 #ifdef _WIN32
             const auto file=CreateFileW(temp.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);if(file==INVALID_HANDLE_VALUE)throw std::runtime_error("Cannot create temporary settings");

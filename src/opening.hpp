@@ -32,7 +32,7 @@ struct PresentationClock {
     unsigned subframe(unsigned slowdown,unsigned scale,unsigned fractional_us=0)const{
         return static_cast<unsigned>(std::min<std::uint64_t>(scale,(remainder*1000+fractional_us)*scale/(period_ms(slowdown)*1000)));
     }
-    unsigned advance(std::uint64_t now,bool enabled,unsigned slowdown=1,HostTimingSample *sample=nullptr) {
+    unsigned advance(std::uint64_t now,bool enabled,unsigned slowdown=1,HostTimingSample *sample=nullptr,unsigned num=1,unsigned den=1) {
         if(sample)*sample={};
         if(!initialized||now<last){reset(now);running=enabled;return 0;}
         const auto delta=now-last;last=now;
@@ -41,12 +41,13 @@ struct PresentationClock {
         if(sample)sample->active_ms=delta;
         // Discard long stalls instead of jumping through unseen animation frames.
         if(delta>250){if(sample)sample->lost_ms=delta;remainder=0;return 0;}
-        remainder+=delta;
-        const auto period=period_ms(slowdown);
+        remainder+=delta*num;
+        const auto period=std::uint64_t(period_ms(slowdown))*den;
         const auto due=remainder/period;
-        const auto steps=std::min<std::uint64_t>(8,due);
-        if(sample)sample->lost_ms=std::min(delta,(due-steps)*period);
-        remainder=steps==8?0:remainder-steps*period;
+        const auto limit=std::max<std::uint64_t>(8,(8ull*num+den-1)/den);
+        const auto steps=std::min(limit,due);
+        if(sample)sample->lost_ms=std::min(delta,(due-steps)*period/num);
+        remainder=steps==limit?0:remainder-steps*period;
         return static_cast<unsigned>(steps);
     }
 };

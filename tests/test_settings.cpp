@@ -55,6 +55,15 @@ int main(int argc,char**argv){try{
     put(p,"{\"version\":2,\"autofire\":true}");
     const auto old=soew::SettingsStore(p).load();check(old.language==L::Japanese&&old.autofire&&old.fast_autofire&&!old.fullscreen&&old.hitboxes==soew::HitboxMode::Off&&old.stage_intro&&old.smooth_background);
     check(!old.practice_language);
+    {
+        using A=soew::PracticeAdvanced;
+        soew::SettingsStore store(p);auto value=store.load();
+        value.practice_advanced.toggle(A::DisableBomb);value.practice_advanced.toggle(A::FastRetry);
+        value.practice_advanced.free_fps=true;value.practice_advanced.speed_in_fps=true;value.practice_advanced.speed=120;
+        check(store.save(value)&&soew::SettingsStore(p).load()==value);
+        value.practice_advanced.free_fps=false;value.practice_advanced.speed_in_fps=false;value.practice_advanced.speed=7;
+        check(store.save(value)&&soew::SettingsStore(p).load()==value);
+    }
     for(const auto lang:{L::Japanese,L::English,L::ChineseSimplified,L::ChineseTraditional}){
         soew::SettingsStore store(p);auto value=store.load();value.language=L::English;value.practice_language=lang;
         check(store.save(value));

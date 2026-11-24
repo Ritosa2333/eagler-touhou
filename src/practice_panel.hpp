@@ -13,6 +13,8 @@ struct PracticePanel {
     Field focus=Field::Start;
     int stage_cursor=0,shot=0;
     PracticeWindow window;
+    struct SliderDrag {Field field;int initial;};
+    std::optional<SliderDrag> slider_drag;
     static constexpr int shadow=practice_shadow_extent,stage_pitch=24,setup_pitch=19;
     static constexpr PracticeBounds stages_box{280,140,592,316},setup_box{232,44,592,352};
     static constexpr int stages_y=160,setup_y=80;
@@ -42,6 +44,8 @@ struct PracticePanel {
         return rows[unsigned(f)];
     }
     static bool is_value(Field f){return f<Field::NewSeed;}
+    static PracticeSlider slider(Field f){return f==Field::Power?PracticeSlider{396,484}:PracticeSlider{430,515};}
+    static int value_left(Field f){return f==Field::Power?491:524;}
     static std::vector<Field> fields(const PracticeMenu &menu){
         using F=Field;
         std::vector<F> out={F::Section};
@@ -56,6 +60,31 @@ struct PracticePanel {
         out.push_back(F::Start);return out;
     }
     bool focused(Field field)const{return page==Page::Setup&&focus==field;}
+    bool begin_slider(PracticeMenu &menu,PracticePoint p){
+        if(page!=Page::Setup||menu.number_editing())return false;
+        const auto local=window.local(p);
+        int y=setup_y;
+        for(const auto field:fields(menu)){
+            const auto track=slider(field);
+            if(track.hit(y,y+setup_pitch).contains(local)){
+                if(const auto range=menu.slider_value(recipe_row(field))){
+                    focus=field;slider_drag=SliderDrag{field,range->value};move_slider(menu,p);return true;
+                }
+            }
+            y+=setup_pitch;
+        }
+        return false;
+    }
+    void move_slider(PracticeMenu &menu,PracticePoint p)const{
+        const auto field=slider_drag->field;
+        const auto row=recipe_row(field);
+        const auto range=*menu.slider_value(row);
+        menu.set_number(row,slider(field).value(window.local(p).x,range.minimum,range.maximum));
+    }
+    bool end_slider(const PracticeMenu &menu){
+        const bool changed=slider_drag&&menu.slider_value(recipe_row(slider_drag->field))->value!=slider_drag->initial;
+        slider_drag.reset();return changed;
+    }
     unsigned point(PracticeMenu &menu,PracticePoint p){
         if(menu.number_editing())return 0;
         p=window.local(p);
@@ -72,8 +101,8 @@ struct PracticePanel {
         focus=visible[slot];
         if(!is_value(focus))return PracticeMenu::confirm;
         if(p.x<425)return 0;
-        if(focus==Field::Seed||focus==Field::DynamicRank||focus==Field::Power||focus==Field::Lives||
-            focus==Field::Bombs||focus==Field::RespawnBombs)return PracticeMenu::confirm;
+        if(menu.slider_value(recipe_row(focus)))return p.x>=value_left(focus)?unsigned(PracticeMenu::confirm):0u;
+        if(focus==Field::Seed)return PracticeMenu::confirm;
         return p.x<500?PracticeMenu::left:PracticeMenu::right;
     }
     PracticeMenu::Action update(PracticeMenu &menu,unsigned input){
@@ -155,11 +184,21 @@ void draw_practice_panel(std::vector<std::uint32_t> &pixels,const PracticePanel 
         const int y=PracticePanel::setup_y+slot++*pitch;
         const bool selected=panel.focused(field),editing=selected&&menu.number_editing();
         if(selected)rect(240,y+5,243,y+14,active);
-        text(label(field),content_left,y,424,pitch,selected?active:normal);
+        text(label(field),content_left,y,field==F::Power?392:424,pitch,selected?active:normal);
         if(PracticePanel::is_value(field)){
+            const auto row=PracticePanel::recipe_row(field);
+            const auto range=menu.slider_value(row);
             if(editing)rect(430,y+1,577,y+pitch-1,(active&0xfcfcfcu)>>2);
+            else if(range){
+                const auto track=PracticePanel::slider(field);
+                const int handle=track.position(range->value,range->minimum,range->maximum);
+                const auto color=selected?active:normal;
+                rect(track.left-2,y+8,track.right+3,y+11,(color&0xfcfcfcu)>>2);
+                rect(track.left-2,y+8,handle+1,y+11,(color&0xfefefeu)>>1);
+                rect(handle-2,y+5,handle+3,y+14,color);
+            }
             else if(selected)text(L"›",572,y,586,pitch,active);
-            text(practice_value(menu,PracticePanel::recipe_row(field),lang),434,y,568,pitch,selected?active:normal,T::Body,true);
+            text(practice_value(menu,row,lang),range&&!editing?PracticePanel::value_left(field):434,y,568,pitch,selected?active:normal,T::Body,true);
         }
     }
     const auto status=[&]() -> std::wstring {

@@ -745,7 +745,7 @@ public:
         if(combat_enabled)shots.update(page,logic_frame);
         if(survival_enabled){
             const unsigned normal=player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0;
-            life.player_phase_end(page,normal,assist(PracticeTool::Lives),assist(PracticeTool::Power),assist(PracticeTool::Rank));player.x=life.current.x;player.y=life.current.y;
+            life.player_phase_end(page,normal,assist(PracticeTool::Lives),assist(PracticeTool::Power),assist(PracticeTool::Rank),practice_assist.protect_last);player.x=life.current.x;player.y=life.current.y;
             lives=life.lives;bombs=life.bombs;bullet_core.playperf=life.playperf;
         }
         if(effects_enabled){
