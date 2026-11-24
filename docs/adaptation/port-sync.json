@@ -1764,7 +1764,7 @@
     "th13": {
       "normal": "ports/th13",
       "multiplayer": "ports/th13-mp",
-      "base": "9fe317d7bc17169bc3b5fe5e6edfcff51b86a59e",
+      "base": "6788776fcd2addd84570201a492c79ecc245cd16",
       "history": [
         {
           "kind": "manual",
@@ -3025,6 +3025,60 @@
             "ports/th13-mp/web/tests/sdl/touch-lifecycle.test.mjs"
           ],
           "note": "去注释：两侧用 tools/no-comments.mjs 成对落地，源码与脚本里的依据改写进提交说明、测试与 docs/fidelity-map.md；等价性由预处理分词、语法树对照与构建产物哈希验证。"
+        },
+        {
+          "kind": "manual",
+          "base": "9fe317d7bc17169bc3b5fe5e6edfcff51b86a59e",
+          "source": "cd8050e39ea9343779992b8316a3de8c7354e0e0",
+          "targetHead": "9e50b9c24f4251910723fcf2848d14bbba458836",
+          "paths": [
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp"
+          ],
+          "note": "旋转碰撞盒粗筛（shot_hits_enemy_box）：多人版同名函数与普通版逐字节一致，成对提交 9e50b9c24。"
+        },
+        {
+          "kind": "manual",
+          "base": "cd8050e39ea9343779992b8316a3de8c7354e0e0",
+          "source": "d210b1439aec2f864183abab9658eb83d579c59b",
+          "targetHead": "21f7f8fbca8ebdb20973e415aa59275e78cf1ad5",
+          "paths": [
+            "ports/th13-mp/web/cpp/game/StageCommands.cpp",
+            "ports/th13-mp/web/cpp/game/StageSim.hpp",
+            "ports/th13-mp/web/cpp/game/TitleFailure.hpp",
+            "ports/th13-mp/web/cpp/game/TitleKeyConfigMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleKeyConfigMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitleMainMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleMainMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitleManualMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleManualMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitleMusicRoomMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleMusicRoomMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitleOptionsMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleOptionsMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitlePlayerDataMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitlePlayerDataMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitlePlayerDataView.cpp",
+            "ports/th13-mp/web/cpp/game/TitlePlayerDataView.hpp",
+            "ports/th13-mp/web/cpp/game/TitleReplayMenu.cpp",
+            "ports/th13-mp/web/cpp/game/TitleReplayMenu.hpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeView.cpp",
+            "ports/th13-mp/web/cpp/game/TitleSpellPracticeView.hpp"
+          ],
+          "note": "命令分派拆分（StageCommands.cpp、StageSim.hpp）与标题菜单错误处理去重（九个 Title 类 + TitleFailure.hpp）：两侧用同一脚本落地，Title 文件逐字节一致，多人版 nearest_player 调用保持原样。"
+        },
+        {
+          "kind": "manual",
+          "base": "d210b1439aec2f864183abab9658eb83d579c59b",
+          "source": "6788776fcd2addd84570201a492c79ecc245cd16",
+          "targetHead": "bfefdcafefbec96a246eb90902530959bfcf6c20",
+          "paths": [
+            "ports/th13-mp/docs/DEVELOPMENT.md",
+            "ports/th13-mp/tests/regression-digest.test.mjs",
+            "ports/th13-mp/tools/regression-digest.mjs",
+            "ports/th13-mp/web/cpp/game/StagePresentation.cpp",
+            "ports/th13-mp/web/cpp/game/StagePresentation.hpp"
+          ],
+          "note": "呈现同步拆分（StagePresentation.cpp、StagePresentation.hpp）：两侧用同一脚本拆为六个 pass 函数，多人版多座位的 sync_player_shots 自取资源、队友机体循环留在 sync 内未动。regression-digest.mjs 默认比对、重生成需显式 --write：该工具仅普通版有，无需同步。"
         }
       ]
     },
