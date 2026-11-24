@@ -30,7 +30,14 @@ test('inter-scene transition binds the original Loading ANM without the boot sig
   const renderer={render(_records,options){assert.ok(!options?.nativeMenu);draws++;}};
   const owner=titleScenes.showOriginalTransition({module,renderer,document,window,signal:abort.signal});
   assert.deepEqual(binds,[[11,22]]);
-  for(let n=0;n<26;n++){const [id,fn]=frames.entries().next().value;frames.delete(id);fn(n*1000/60);}
+  const present=timestamp=>{const [id,fn]=frames.entries().next().value;frames.delete(id);fn(timestamp);};
+  present(0);present(1000/60);
+  let ready=false;owner.ready.then(()=>{ready=true;});
+  document.hidden=true;listeners.get('visibilitychange')();present(250);
+  await Promise.resolve();assert.equal(ready,false);assert.equal(draws,1);
+  document.hidden=false;listeners.get('visibilitychange')();
+  present(60000);assert.equal(draws,1,'the time spent hidden must not become loading animation ticks');
+  for(let n=1;n<26;n++)present(60000+n*1000/60);
   await owner.ready;assert.ok(draws>=24);assert.equal(frames.size,1);
   owner.close();assert.equal(frames.size,0);assert.equal(listeners.size,0);
 });

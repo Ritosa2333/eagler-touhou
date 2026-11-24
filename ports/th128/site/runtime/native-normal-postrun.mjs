@@ -283,7 +283,7 @@ export class NormalPostrunController{
     }
     async resume(){
         await this.pausePromise;this.current();if(this.phase!=='active')return false;
-        if(this.music.context.state==='suspended')await this.music.context.resume();this.current();this.paused=false;return true;
+        if(['suspended','interrupted'].includes(this.music.context.state))await this.music.context.resume();this.current();this.paused=false;return true;
     }
     async stepSerial(){
         if(this.busy||this.phase!=='active')throw new Error('Ordinary postrun serial step is unavailable');

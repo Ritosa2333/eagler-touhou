@@ -25,20 +25,22 @@ export function bootPlay({worldMode=true,capability=true,practiceMenu=null}={}){
  const find=s=>s==='#game'||s==='#gameViewport'?env.canvas:{hidden:true,style:{}};
  const openPauseMenu=()=>{pause.push('pause');menu.pauseOpen=true;state.paused=true;state.nativePause={held:0,pressed:0,keyUp:code=>pause.push(['up',code]),releaseKeys(){this.held=this.pressed=0;},suspend:async()=>{},canStepPresentation:()=>false};};
  const context={...env,state,menu,practiceMenu,thpracToolsPanel:null,suppressedKeys,movementKeys,perfectFreezeXBit:2,mountWebInput,find,HTMLSelectElement:class {},HTMLInputElement:class {},
-  getPageLaunchContext:()=>null,launcherContext:null,localConfig:null,titleDemoClock:{reset(){}},flowCapabilities:()=>({perfectFreezeNormalEmptyLasers:capability}),status(){},clock:{reset(){}},resetHighFrameratePresentation(){},openPauseMenu,
+  getPageLaunchContext:()=>null,launcherContext:null,localConfig:null,titleDemoClock:{reset(){}},flowCapabilities:()=>({perfectFreezeNormalEmptyLasers:capability}),status(){},clock:{reset(){}},
+  thpracLogicClock:{reset(){}},originalMenuClock:{reset(){}},originalPresentationFPS:{reset(){}},resetHighFrameratePresentation(){},openPauseMenu,
   error(){},handleFaultKey:code=>menus.push(['fault',code]),handlePauseKey:code=>menus.push(['pause',code]),handleMenuKey:code=>menus.push(['menu',code]),
   unlockMenuAudio(){},nativePageNames:['main','difficulty','route','replay','options'],handleNativeTitleKey:code=>menus.push(['native',code]),
-  resumeTitlePause(){state.paused=false;},resumeNormalPostrun(){},pauseNormalPostrun(){},pauseOriginalEnding(){},cancelLaunch(){},
+  resumeTitlePause(){state.paused=false;},resumeNormalPostrun(){},pauseNormalPostrun(){},pauseOriginalEnding(){},
+  cancelLaunch(){++menu.launchId;menu.launching=false;},
   stopOwnedReplayToList(){},cancelOriginalEnding(){},stopAudio(){},document:env.document,window:env.window};
  const start=source.indexOf("window.addEventListener('keydown',event=>{"),end=source.indexOf('\nasync function present(',start);
  assert(start>=0&&end>start);
  const functions=['worldMovementInput','supportsPerfectFreezeX','gameplayXHeld','gameplayXPress','gameplayXRelease','gameplayInputMask','installWebInput','handleThpracToolKey'];
  const code=functions.map(functionSource).join('\n')+'\n'+source.slice(start,end);
- const names=Object.keys(context),make=new Function(...names,code+'\nreturn {installWebInput,loseFocus};');
+ const names=Object.keys(context),make=new Function(...names,code+'\nreturn {installWebInput,loseFocus,waitForBackgroundAudio};');
  const api=make(...names.map(n=>context[n]));api.installWebInput();
  const input=state.webInput;assert(input,'production install must own the touch layer');
  input.configureTouch({touchEnabled:true,touchFocusMode:'hold-button'});input.touchControls({fireEnabled:false});
  const ids={shot:'touchFunction',freeze:'touchBomb',focus:'touchFocus',pause:'touchEscape',back:'touchBomb'};
  const button=action=>env.find(input.layer,'id',ids[action]),pad=env.find(input.layer,'id','touchDirectSurface');
- return {...env,state,menu,receipts,menus,postrun,pause,input,button,pad,loseFocus:api.loseFocus,suppressedKeys};
+ return {...env,state,menu,receipts,menus,postrun,pause,input,button,pad,loseFocus:api.loseFocus,waitForBackgroundAudio:api.waitForBackgroundAudio,suppressedKeys};
 }

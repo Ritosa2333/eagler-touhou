@@ -68,7 +68,7 @@ function showOriginalLoading({module,renderer,document,window,signal,onPresent},
     settle();
   }
   function abort(){fail(signal.reason);close();}
-  function visibility(){clock.reset();if(document.hidden)settle();}
+  function visibility(){clock.reset();}
   function present(timestamp){
     if(closed)return;
     try{

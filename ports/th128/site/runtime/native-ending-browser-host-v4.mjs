@@ -81,7 +81,7 @@ export function ordinaryWorldAudioIdentity(world){
         recordFrames:record.frames,score:terminal.score,continues:terminal.continues};
 }
 export class OrdinaryWorldAudioConsumer{
-    constructor({module,audio,soundQueue,legacyMusic,receipts,isCurrent,presentAudio=true}){
+    constructor({module,audio,soundQueue,legacyMusic,receipts,isCurrent,presentAudio=true,waitForAudio}){
         if(!module||!audio||audio.state==='closed'||presentAudio!==true||typeof isCurrent!=='function'
             ||typeof receipts?.commit!=='function'||typeof receipts?.close!=='function'
             ||typeof soundQueue?.assertIdentityHost!=='function'||typeof soundQueue?.consumeNativeRequest!=='function'
@@ -92,7 +92,7 @@ export class OrdinaryWorldAudioConsumer{
             '_th128_world_sound_window_state','_th128_world_sound_id','_th128_world_sound_x','_th128_world_sound_operation',
             '_th128_world_sound_ack_window','_th128_world_music_control_state','_th128_world_acknowledge_music_control'])
             if(typeof module[name]!=='function')throw new Error('Ordinary World audio native API unavailable: '+name);
-        Object.assign(this,{module,audio,soundQueue,legacyMusic,receipts,isCurrent});
+        Object.assign(this,{module,audio,soundQueue,legacyMusic,receipts,isCurrent,waitForAudio});
         this.closed=false;this.busy=false;this.failure=null;
         soundQueue.assertIdentityHost();this.boundOwner=this.current();
     }
@@ -125,6 +125,7 @@ export class OrdinaryWorldAudioConsumer{
         if(this.busy)throw new Error('Ordinary World audio consumer is not serial');
         this.busy=true;
         try{
+            if(this.audio.state!=='running'&&this.waitForAudio)await this.waitForAudio();
             const owner=this.current(),track=this.track(),module=this.module,queue=this.soundQueue;
             queue.assertIdentityHost();
             if(queue.context?.state!=='running')throw new Error('Actual ordinary sound context is not running');
@@ -150,6 +151,7 @@ export class OrdinaryWorldAudioConsumer{
             const metadata={domain:'ordinary-world-sound',...owner,epoch,serial,count:opened.count,baseLow:opened.baseLow,baseHigh:opened.baseHigh,
                 track,requests,flushed,actualQueueConsumedAndFlushed:true,actualAudibleDeviceOutputProved:false};
             const receipt=await this.commit('ordinary/sound/'+epoch+'/'+serial,metadata);
+            if(this.audio.state!=='running'&&this.waitForAudio)await this.waitForAudio();
             this.current(owner);this.sameTrack(track);queue.assertIdentityHost();
             if(queue.context?.state!=='running'||module._th128_world_sound_epoch()!==epoch
                 ||JSON.stringify(JSON.parse(module.UTF8ToString(module._th128_world_sound_window_state())))!==JSON.stringify(opened))
@@ -167,6 +169,7 @@ export class OrdinaryWorldAudioConsumer{
         if(this.busy)throw new Error('Ordinary World audio consumer is not serial');
         this.busy=true;
         try{
+            if(this.audio.state!=='running'&&this.waitForAudio)await this.waitForAudio();
             const owner=this.current(),module=this.module,control=JSON.parse(module.UTF8ToString(module._th128_world_music_control_state()));
             if(!control||control.serial===0||control.acknowledged===true)return null;
             const before=JSON.parse(module.UTF8ToString(module._th128_world_state()));
@@ -179,6 +182,7 @@ export class OrdinaryWorldAudioConsumer{
             if(!effect||typeof effect!=='object')throw new Error('Original music fade result is unavailable');
             const metadata={domain:'ordinary-world-music',...owner,...control,track,effect,actualMusicFadeIssued:true,actualAudibleDeviceOutputProved:false};
             const receipt=await this.commit('ordinary/music/'+owner.generation+'/'+control.serial,metadata);
+            if(this.audio.state!=='running'&&this.waitForAudio)await this.waitForAudio();
             this.current(owner);this.sameTrack(track);
             if(this.audio.state!=='running'||JSON.stringify(JSON.parse(module.UTF8ToString(module._th128_world_music_control_state())))!==JSON.stringify(control))
                 throw new Error('Ordinary World music request changed during full durable readback');
@@ -314,7 +318,7 @@ async function endingMusicPCM(input,metadata,decode){
     if(input.length>=12&&String.fromCharCode(...input.subarray(0,4))==='RIFF')return endingWavPCM(input,metadata);
     return endingOggPCM(input,metadata,decode);
 }
-export async function createEndingBrowserHost({module,renderer,resources,readAsset,audio,gain,soundQueue,legacyMusic,isCurrent,presentAudio=true,prepareOrdinary=null,decodeMusic=null}){
+export async function createEndingBrowserHost({module,renderer,resources,readAsset,audio,gain,soundQueue,legacyMusic,isCurrent,presentAudio=true,prepareOrdinary=null,decodeMusic=null,waitForAudio}){
     if(typeof renderer?.renderEndingPixels!=='function'||typeof renderer?.releaseEndingPixels!=='function'||typeof renderer?.renderOriginalTerminalFade!=='function'||typeof readAsset!=='function'
         ||!audio||!gain||typeof soundQueue?.consumeNativeRequest!=='function'||typeof soundQueue?.flush!=='function'
         ||typeof soundQueue?.assertIdentityHost!=='function'||typeof legacyMusic?.stopSource!=='function')
@@ -353,6 +357,7 @@ export async function createEndingBrowserHost({module,renderer,resources,readAss
     const media={
         async stopAndCommit(packet){return stoppedPCM.consume(packet);},
         async consumeAndCommit(packet){
+            if(presentAudio&&audio.state!=='running'&&waitForAudio)await waitForAudio();
             if(closed||!isCurrent()||presentAudio&&audio.state!=='running')throw new Error('Original ending actual audio owner is not running');
             if(packet.operation===8){
                 if(source||ticks)throw new Error('Original ending BGM was already started');

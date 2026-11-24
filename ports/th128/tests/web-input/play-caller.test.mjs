@@ -53,7 +53,8 @@ test('actual X caller capability still gates touch Perfect freeze',()=>{
 test('blur releases native input once and late touch completion does not change the paused owner',()=>{
  const e=bootPlay();e.emit(e.button('shot'),'pointerdown',1);e.window.dispatchEvent({type:'blur'});
  assert.equal(e.state.pressed.size,0);const before=e.receipts.length;e.emit(e.button('shot'),'pointerup',1);
- assert.equal(e.receipts.length,before);assert.equal(e.state.paused,true);assert.equal(e.menu.pauseOpen,false);e.input.dispose();
+ assert.equal(e.receipts.length,before);assert.equal(e.state.backgroundPaused,true);
+ assert.equal(e.state.paused,false);assert.equal(e.menu.pauseOpen,false);e.input.dispose();
 });
 test('changed game action cancels touches while physical keyboard input is preserved',()=>{
  const e=bootPlay();e.key('keydown','ArrowLeft');e.emit(e.button('shot'),'pointerdown',1);e.state.action++;e.input.syncContext();

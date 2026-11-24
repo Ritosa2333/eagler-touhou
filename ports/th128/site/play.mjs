@@ -888,11 +888,34 @@ function installCheckpointAdapter({
 }
 return {installCheckpointAdapter,checkpointFetch};
 })();
+function foregroundTimeout(callback, milliseconds){
+  let remaining=milliseconds,started=0,timer=null;
+  function stop(){
+    if(timer===null)return;
+    clearTimeout(timer);timer=null;
+    remaining-=performance.now()-started;
+  }
+  function update(){
+    stop();
+    if(document.hidden)return;
+    started=performance.now();
+    timer=setTimeout(()=>{
+      timer=null;
+      if(document.hidden)return;
+      cancel();
+      callback();
+    },Math.max(0,remaining));
+  }
+  function cancel(){stop();document.removeEventListener('visibilitychange',update);}
+  document.addEventListener('visibilitychange',update);
+  update();
+  return cancel;
+}
 async function loadingDeadline(operation, resource, cancel){
-  let timer;
+  let stop;
   try{return await Promise.race([operation,new Promise((resolve,reject)=>{
-    timer=setTimeout(()=>{reject(new Error(`本地资源读取超时：${resource}`));cancel?.();},15000);
-  })]);}finally{clearTimeout(timer);}
+    stop=foregroundTimeout(()=>{reject(new Error(`本地资源读取超时：${resource}`));cancel?.();},15000);
+  })]);}finally{stop();}
 }
 
 function startupFailure(problem){
@@ -1973,10 +1996,12 @@ async function ordinaryWorldAudioLane(){
   if(state.ordinaryWorldAudioLoading)return state.ordinaryWorldAudioLoading;
   const module=state.module,action=state.action,selection=state.stageSelection,audio=state.audio,soundQueue=state.gameSounds,legacyMusic=state.stageMusic;
   const ticket=state.ordinaryWorldAudioTicket??0,prepared=state.endingResources;
+  const signal=state.controller?.signal;
   const current=()=>ticket===(state.ordinaryWorldAudioTicket??0)&&module===state.module&&action===state.action
     &&selection===state.stageSelection&&state.worldMode&&audio===state.audio&&soundQueue===state.gameSounds&&legacyMusic===state.stageMusic;
   const loading=(async()=>{
-    const owner=await prepared.createAudio({module,audio,soundQueue,legacyMusic,isCurrent:current,presentAudio:!window.__TH128_FAST_REPLAY__});
+    const owner=await prepared.createAudio({module,audio,soundQueue,legacyMusic,isCurrent:current,presentAudio:!window.__TH128_FAST_REPLAY__,
+      waitForAudio:()=>waitForBackgroundAudio(audio,signal)});
     if(!current()){owner.close();throw new DOMException('Ordinary audio load owner changed','AbortError');}
     state.ordinaryWorldAudio={owner,module,action,selection};return owner;
   })().catch(problem=>{if(!current())throw new DOMException('Ordinary audio initialization owner was cancelled','AbortError');throw problem;});
@@ -2097,7 +2122,8 @@ async function prepareGameSounds(base,signal,tracks,selection=null){
   if(!retained){gain.gain.value=Number(find('#volume').value)/100;gain.connect(audio.destination);if(localVolumes)bindGameAudioMix(audio,gain,localVolumes);}
   const queue=new GameSoundQueue(audio,gain),music=retained?state.stageMusic:new StageMusic(audio,gain);
   try{
-    await audio.resume();
+    state.loadingAudio=audio;
+    try{await audio.resume();}finally{if(state.loadingAudio===audio)state.loadingAudio=null;}
     const bindings=await readJson('/assets/runtime/sound-bindings.json',signal);
     await Promise.all([queue.load(bindings,base,safeAssetUrl,{signal}),retained?Promise.resolve():music.load(state.manifest.music,base,safeAssetUrl,{signal,tracks})]);
     return {audio,gain,queue,music,retained};
@@ -2374,7 +2400,7 @@ async function loadVariant(variant){
   find('#runtime-overlay').hidden=true;
   state.background=null;
   for(const name of ['start','pause','reset','ecl','world','emission','segment','shots','play-stage','emit-shot','debug-stage-select','debug-stage-start'])find('#'+name).disabled=true;
-  const deadline=setTimeout(()=>{
+  const stopDeadline=foregroundTimeout(()=>{
     if(ticket!==state.loading)return;
     ++state.loading;state.controller.abort();
     error(new Error(`原版资源加载超时：${find('#loading-text').textContent}`));
@@ -2442,7 +2468,7 @@ async function loadVariant(variant){
     enterTitleMenu();
     syncDebugStageJumpControls();
   }catch(problem){if(ticket===state.loading&&problem.name!=='AbortError')error(problem);}
-  finally{startup?.close();clearTimeout(deadline);}
+  finally{startup?.close();stopDeadline();}
 }
 
 function cancelOriginalEnding(){
@@ -2453,7 +2479,7 @@ function cancelOriginalEnding(){
   state.normalPostrunPauseBinding=state.normalPostrunResumeBinding=null;normalOwner?.close();
   const host=state.endingHost;
   state.endingHost=null;state.endingResources=null;state.endingLoading=false;state.endingBusy=false;
-  state.endingPromise=null;state.endingStepPromise=null;state.focusPausedAnimation=null;
+  state.endingPromise=null;state.endingStepPromise=null;
   if(host)host.close();
 }
 function thcrapLocalization(){
@@ -2506,12 +2532,14 @@ function maybeStartOriginalEnding(){
   state.endingPromise=(async()=>{
     let host=null;
     try{
+      const audio=state.audio;
       host=await prepared.createHost({module,renderer:state.renderer,resources:prepared.resources,
         readAsset:async record=>{
           const response=await checkpointFetch(safeAssetUrl(prepared.base,record.file),{signal:prepared.signal});
           if(!response.ok)throw new Error('Original ending asset unavailable: '+record.file);
           return new Uint8Array(await response.arrayBuffer());
-        },audio:state.audio,gain:state.gain,soundQueue:state.gameSounds,legacyMusic:state.stageMusic,
+        },audio,gain:state.gain,soundQueue:state.gameSounds,legacyMusic:state.stageMusic,
+        waitForAudio:()=>waitForBackgroundAudio(audio,prepared.signal),
         isCurrent:current,presentAudio:!window.__TH128_FAST_REPLAY__,
         prepareOrdinary:request.kind==='ordinary'?async()=>{
           if(!current())throw new Error('Ordinary ending profile owner changed before capture');
@@ -2669,7 +2697,7 @@ function resumeOriginalEnding(){
     if(state.normalPostrun){await resumeNormalPostrun();return;}
     if(!state.endingHost)return;
     state.endingHost.owner.setPaused(false);
-    if(state.audio?.state==='suspended')await state.audio.resume();
+    if(['suspended','interrupted'].includes(state.audio?.state))await state.audio.resume();
     if(ticket!==state.endingTicket||module!==state.module)return;
     state.paused=false;clock.reset();resetHighFrameratePresentation();find('#runtime-overlay').hidden=true;status('动画继续。');
   })();state.endingResumePromise=pending;
@@ -3397,7 +3425,6 @@ function select(delta){
 }
 
 function resumeTitlePause(){
-  state.focusPausedTitle=null;state.focusPausedAnimation=null;
   if(state.normalPostrun){resumeNormalPostrun();return;}
   if(state.endingHost||state.endingLoading){resumeOriginalEnding();return;}
   state.paused=false;clock.reset();resetHighFrameratePresentation();find('#runtime-overlay').hidden=true;
@@ -3407,7 +3434,6 @@ function resumeTitlePause(){
 }
 function pause(){
   if(state.titleDemoRun){requestTitleDemoExit('Escape');return;}
-  state.focusPausedTitle=null;state.focusPausedWorld=null;state.focusPausedAnimation=null;
   if(state.normalPostrun){if(state.paused)resumeNormalPostrun();else pauseNormalPostrun();return;}
   if(state.endingHost||state.endingLoading){if(state.paused)resumeTitlePause();else pauseOriginalEnding();return;}
   if(state.worldMode){if(state.paused)resumeGame();else openPauseMenu();return;}
@@ -4647,7 +4673,7 @@ window.addEventListener('keydown',event=>{
     return;
   }
   if(!state.worldMode)titleDemoClock.reset();
-  if(!document.hidden&&(state.focusPausedWorld||state.focusPausedTitle)&&event.isTrusted)regainRuntimeFocus();
+  if(event.isTrusted)regainRuntimeFocus(true);
   if(state.restartSealing){event.preventDefault();return;}
   if(practiceMenu?.isOpen&&practiceMenu.keyDown(event))return;
   if(thpracToolsPanel?.isOpen){if(['Escape','F12','Backspace'].includes(event.code)){event.preventDefault();thpracToolsPanel.close();}return;}
@@ -4743,59 +4769,86 @@ function releaseGameInput(){
   if(hadGameplayX)released|=perfectFreezeXBit;
   worldMovementInput(0,released);
 }
-function loseFocus(){
-  titleDemoClock.reset();
-  if(menu.pauseOpen&&state.nativePause){state.pressed.clear();state.nativePause.suspend().catch(error);return;}
-  if(state.normalPostrun||state.endingHost||state.endingLoading){
-    state.pressed.clear();
-    if(!state.paused){
-      state.focusPausedAnimation={module:state.module,action:state.action,ticket:state.endingTicket};
-      if(state.normalPostrun)pauseNormalPostrun();else pauseOriginalEnding();
-    }
-    return;
-  }
-  releaseGameInput();
-  if(menu.launching){cancelLaunch();return;}
-  if(state.worldMode&&state.active&&!state.paused&&!menu.fault&&!state.handoff&&!state.nativePausePending){
-    const audio=state.audio,owner={module:state.module,action:state.action,selection:state.stageSelection,audio,audioSuspend:null};
-    state.focusPausedWorld=owner;
-    state.paused=true;clock.reset();resetHighFrameratePresentation();
-    if(audio?.state==='running')owner.audioSuspend=audio.suspend().catch(()=>{});
-  }else if(state.active&&!state.worldMode&&!state.paused){
-    const controller=state.mainController;
-    state.focusPausedTitle=controller?.prepared?{controller,module:state.module,action:state.action,page:menu.page}:null;
-    state.paused=true;clock.reset();resetHighFrameratePresentation();state.audio?.suspend().catch(()=>{});
-  }
+function resetForegroundTiming(){
+  clock.reset();thpracLogicClock.reset();originalMenuClock.reset();
+  titleDemoClock.reset();originalPresentationFPS.reset();resetHighFrameratePresentation();
 }
-function regainRuntimeFocus(){
-  if(document.hidden)return;
-  const animation=state.focusPausedAnimation;state.focusPausedAnimation=null;
-  if(animation&&state.paused&&state.active&&!state.launcherExited&&!menu.fault
-    &&animation.module===state.module&&animation.action===state.action&&animation.ticket===state.endingTicket){
-    if(state.normalPostrun){resumeNormalPostrun();return;}
-    if(state.endingHost||state.endingLoading){resumeOriginalEnding();return;}
-  }
-  const world=state.focusPausedWorld;state.focusPausedWorld=null;
-  if(world){
-    const current=()=>state.worldMode&&state.active&&!state.handoff&&!state.launcherExited&&!state.endingHost
-      &&!state.endingLoading&&!state.normalPostrun&&!menu.pauseOpen&&!menu.launching&&!menu.fault&&!state.nativePausePending
-      &&state.module===world.module&&state.action===world.action&&state.stageSelection===world.selection;
-    if(!state.paused||!current()||thpracToolsPanel?.isOpen||practiceMenu?.isOpen)return;
-    state.paused=false;clock.reset();resetHighFrameratePresentation();
-    if(world.audioSuspend)void world.audioSuspend.then(()=>{
-      if(current()&&!document.hidden&&!state.paused&&state.audio===world.audio&&world.audio.state!=='closed')return world.audio.resume();
-    }).catch(error);
+function loseFocus(){
+  if(state.backgroundPaused)return;
+  state.backgroundPaused=true;
+  releaseGameInput();suppressedKeys.clear();resetForegroundTiming();
+  const audio=state.audio;
+  if(!audio||audio.state==='closed'||state.paused)return;
+  const handoff=()=>menu.launching||state.sceneLoading||state.handoff||state.endingLoading;
+  const request={audio,suspending:false};
+  state.backgroundAudio=request;
+  if(handoff())return;
+  // Pending native audio receipts retain their running context until the tick finishes.
+  const pending=state.endingStepPromise??state.worldAdvancePromise??state.normalPostrun?.stepPromise;
+  Promise.resolve(pending).then(async()=>{
+    if(!state.backgroundPaused||state.backgroundAudio!==request||state.audio!==audio||
+        state.paused||handoff()||audio.state!=='running')return;
+    request.suspending=true;
+    try{await audio.suspend();}catch{/* The browser can interrupt the context itself. */}
+    finally{request.suspending=false;if(!state.backgroundPaused)regainRuntimeFocus();}
+  }).catch(()=>{});
+}
+function regainRuntimeFocus(fromGesture=false){
+  if(document.hidden||state.launcherExited)return;
+  // Returning from a visibility change can precede the iframe's focus event.
+  const wasHidden=state.backgroundPaused;
+  if(wasHidden){state.backgroundPaused=false;resetForegroundTiming();}
+  if((wasHidden||fromGesture)&&['suspended','interrupted'].includes(state.loadingAudio?.state))
+    void state.loadingAudio.resume().catch(()=>{});
+  const audio=state.audio;
+  let request=state.backgroundAudio;
+  if(wasHidden&&audio&&['suspended','interrupted'].includes(audio.state)&&!state.paused&&request?.audio!==audio)
+    request=state.backgroundAudio={audio,suspending:false};
+  if(!audio||audio.state==='closed'||request?.audio!==audio){
+    state.backgroundAudio=null;
     return;
   }
-  const owner=state.focusPausedTitle;state.focusPausedTitle=null;
-  if(!owner||!state.paused||!state.active||state.worldMode||state.handoff||state.launcherExited
-    ||state.endingHost||state.endingLoading||state.normalPostrun||state.mainQuit||menu.launching||menu.pauseOpen||menu.page!==owner.page
-    ||owner.controller!==state.mainController||owner.controller.disposed||owner.module!==state.module||owner.action!==state.action)return;
-  resumeTitlePause();
+  if(request.suspending||state.paused)return;
+  if(audio.state==='running'){
+    state.backgroundAudio=null;
+    return;
+  }
+  if(!fromGesture&&request.resuming)return;
+  const resume=audio.resume();
+  request.resuming=resume;
+  resume.catch(()=>{}).finally(()=>{
+    if(request.resuming===resume)request.resuming=null;
+    if(state.backgroundAudio===request&&state.audio===audio&&!state.backgroundPaused&&audio.state==='running'){
+      state.backgroundAudio=null;resetForegroundTiming();
+    }
+  });
+}
+function waitForBackgroundAudio(audio,signal){
+  if(!audio||['running','closed'].includes(audio.state))return;
+  if(!document.hidden&&!state.backgroundPaused&&state.backgroundAudio?.audio!==audio&&audio.state!=='interrupted')return;
+  if(audio===state.audio&&!state.backgroundPaused&&!document.hidden&&!state.paused){
+    if(state.backgroundAudio?.audio!==audio)state.backgroundAudio={audio,suspending:false};
+    regainRuntimeFocus();
+  }
+  return new Promise((resolve,reject)=>{
+    function finish(){
+      audio.removeEventListener('statechange',changed);
+      signal?.removeEventListener('abort',aborted);
+    }
+    function changed(){
+      if(audio.state!=='running'&&audio.state!=='closed')return;
+      finish();resolve();
+    }
+    function aborted(){finish();reject(signal.reason);}
+    audio.addEventListener('statechange',changed);
+    signal?.addEventListener('abort',aborted,{once:true});
+    if(signal?.aborted){aborted();return;}
+    changed();
+  });
 }
 window.addEventListener('blur',loseFocus);
-window.addEventListener('focus',regainRuntimeFocus);
-document.addEventListener('pointerdown',event=>{if(event.isTrusted&&(state.focusPausedWorld||state.focusPausedTitle||state.focusPausedAnimation))regainRuntimeFocus();},true);
+window.addEventListener('focus',()=>regainRuntimeFocus());
+document.addEventListener('pointerdown',event=>{if(event.isTrusted)regainRuntimeFocus(true);},true);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)loseFocus();else regainRuntimeFocus();});
 window.addEventListener('pagehide',()=>{state.webInput?.dispose();cancelOriginalEnding();state.controller?.abort();state.renderer?.dispose();stopAudio();});
 
@@ -4929,14 +4982,14 @@ function stageGamepadOwner(){
   return state.stageGamepad??=mountStageGamepad({window,document,input:state.webInput});
 }
 function pollStageGamepad(){
-  if(state.worldMode&&state.active&&!state.handoff&&!menu.launching&&!state.nativePausePending&&!state.focusPausedWorld&&!state.endingLoading)
+  if(state.worldMode&&state.active&&!state.handoff&&!menu.launching&&!state.nativePausePending&&!state.backgroundPaused&&!state.endingLoading)
     stageGamepadOwner()?.poll();
   else state.stageGamepad?.clear();
 }
 
 async function present(timestamp){
   if(state.launcherExited)return;
-  if(state.sceneLoading){requestAnimationFrame(present);return;}
+  if(state.sceneLoading||state.backgroundPaused||document.hidden){requestAnimationFrame(present);return;}
   try{
     state.webInput?.syncContext();pollLocalBindings?.();pollStageGamepad();
     let interpolation=1,presentationSteps=0;
@@ -4947,13 +5000,16 @@ async function present(timestamp){
       const ready=nativeMenu.active&&!nativeMenu.busy&&!state.nativePausePending&&!document.hidden&&(!nativeMenu.suspended||presentationOnly);
       const timing=originalMenuClock.advance(timestamp,ready);presentationSteps=timing.steps;
       if(timing.stalled&&ready&&!nativeMenu.suspended){await nativeMenu.suspend();status('菜单帧调度停顿，已暂停菜单输入与音频；按键后恢复。');}
-      for(let count=0;count<timing.steps&&state.nativePause===nativeMenu&&nativeMenu.active&&menu.pauseOpen;++count){
+      for(let count=0;count<timing.steps&&state.nativePause===nativeMenu&&nativeMenu.active&&menu.pauseOpen
+          &&!state.backgroundPaused&&!document.hidden;++count){
         state.webInput?.sampleTouch?.();
         if(nativeMenu.suspended)await nativeMenu.stepPresentation();else await nativeMenu.step();
       }
     }else{
       originalMenuClock.advance(timestamp,false);
-      const active=state.active&&!state.paused&&!state.endingLoading&&!document.hidden&&!state.thpracReplaySaving&&(!state.worldMode||!practiceMenu?.isOpen)&&!thpracToolsPanel?.isOpen;
+      const audioRecovery=state.backgroundAudio;
+      const awaitingAudio=audioRecovery?.audio===state.audio&&audioRecovery&&(audioRecovery.suspending||state.audio.state!=='running');
+      const active=state.active&&!state.paused&&!state.endingLoading&&!awaitingAudio&&!state.thpracReplaySaving&&(!state.worldMode||!practiceMenu?.isOpen)&&!thpracToolsPanel?.isOpen;
       // Practice rates are scoped to the playable World. The original ending
       // runs its own 60 Hz media and durable-receipt sequence.
       const practiceWorld=!!state.thpracTools&&state.worldMode&&!state.endingHost&&!state.endingLoading&&!state.normalPostrun;
@@ -4965,7 +5021,7 @@ async function present(timestamp){
       if(timing.stalled&&active&&(state.worldMode||state.titleDemoRun)&&!state.endingHost&&!state.normalPostrun){
         pause();status('浏览器帧调度停顿，已暂停而不是跳过游戏逻辑帧。');
       }
-      for(let count=0;count<timing.steps&&state.active&&!state.paused;count++){
+      for(let count=0;count<timing.steps&&state.active&&!state.paused&&!state.backgroundPaused&&!document.hidden;count++){
         const demoBefore=state.titleDemoRun;
         if(state.normalPostrun)await advanceNormalPostrun();else if(state.endingHost)await advanceOriginalEnding();else await advance();
         if(state.titleDemoRun!==demoBefore)break;
@@ -4977,6 +5033,7 @@ async function present(timestamp){
       }
       interpolation=renderInterpolationPhase(clock);
     }
+    if(state.backgroundPaused||document.hidden){requestAnimationFrame(present);return;}
     const fixedWorld=state.worldMode&&state.shotMode&&!state.normalPostrun&&!state.endingHost&&!state.endingLoading;
     const shouldPresent=highFramerateEnabled||!fixedWorld||presentationSteps>0;
     const beforePresentation=state.presentationSerial??0;
