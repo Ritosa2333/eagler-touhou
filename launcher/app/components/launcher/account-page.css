@@ -44,7 +44,6 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
 .account-terms-reading p{margin-block:0 10px}
 .account-terms-reading ol{margin-block:0 10px;padding-inline-start:2.4em;list-style:decimal outside}
 .account-terms-reading li{margin-block:3px;padding-inline-start:0}
-.account-terms-reading a{font-weight:600;text-decoration:none}
 .account-terms-reading:focus-visible{outline:2px solid var(--kit-ring);outline-offset:-2px}
 .account-terms-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:8px}
  .account-field-error{color:var(--kit-destructive);font-size:12px}
@@ -73,3 +72,4 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
 html:has(body.less-motion) .account-mode-content{animation:none}
 }
 .account-terms-reading.prose h2{margin-block:14px 5px;font-size:15px;line-height:1.4}
+.account-terms-reading.prose a{font-weight:600;text-decoration:none}
