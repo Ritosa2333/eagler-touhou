@@ -300,11 +300,14 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
   ];
   const drift = [];
   const musicDrift = [];
-  for (const [absolute, recorded] of Object.entries(inventory)) {
+  // 清单键是绝对路径；只看本端口目录下的文件（普通版与多人版目录名不同）。
+  const portPrefix = port.replaceAll('\\', '/') + '/';
+  const portRelative = absolute => {
     const normalized = absolute.replaceAll('\\', '/');
-    const suffix = normalized.includes('/ports/th13/')
-      ? normalized.slice(normalized.indexOf('/ports/th13/') + '/ports/th13/'.length)
-      : null;
+    return normalized.startsWith(portPrefix) ? normalized.slice(portPrefix.length) : null;
+  };
+  for (const [absolute, recorded] of Object.entries(inventory)) {
+    const suffix = portRelative(absolute);
     if (!suffix) continue;
     let actual;
     try { actual = await currentHash(suffix); } catch { actual = null; }
@@ -317,12 +320,8 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
   assert.deepEqual(musicDrift, [],
     'BUILD_DRIFT (build artifact predates current music-room sources; not a product failure): ' +
     JSON.stringify(musicDrift));
-  const tracked = new Set(Object.keys(inventory).map(absolute => {
-    const normalized = absolute.replaceAll('\\', '/');
-    return normalized.includes('/ports/th13/')
-      ? normalized.slice(normalized.indexOf('/ports/th13/') + '/ports/th13/'.length)
-      : null;
-  }).filter(Boolean));
+  const tracked = new Set(Object.keys(inventory).map(portRelative).filter(Boolean));
+  assert.ok(tracked.size > 0, 'build manifest lists this port\'s sources');
   assert.deepEqual(musicPath.filter(relative => !tracked.has(relative)), [],
     'music-room path source missing from build manifest (cannot certify build identity)');
 
