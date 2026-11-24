@@ -159,15 +159,18 @@ test('library deferred fonts load only on first interaction and never duplicate'
   assert.equal(env.document.querySelectorAll('link[data-deferred-ui-fonts]').length, 1);
   assert.equal(env.document.querySelector('link[data-deferred-ui-fonts]').href, 'https://launcher.invalid/mount/ui-fonts-deferred.css');
 });
-test('modern library omits hidden background decode while account/profile routes retain it', async () => {
-  env.document.documentElement.setAttribute('data-ui-app', '');
-  const home = fixture(); home.owner.attach(home.ports); await tick();
-  home.owner.attach(home.ports); await tick();
-  assert.equal(home.decoded.some(source => source.endsWith('/assets/launcher-background.webp')), false);
-  assert.equal(home.fonts.length, 4, 'the library still waits for its critical fonts');
-
-  home.owner.attach({...home.ports, url: 'https://launcher.invalid/u/performance-check'}); await tick();
-  assert.ok(home.decoded.includes('https://launcher.invalid/mount/assets/launcher-background.webp'));
+test('returning to the library or opening an account page does no startup layout or image decoding', async () => {
+  installPageCues();
+  const f = fixture();
+  const leaveLibrary = f.owner.attach(f.ports); await tick(); leaveLibrary();
+  const leaveLobby = f.owner.attach({...f.ports, context: 'lobby', url: 'https://launcher.invalid/lobby.html'});
+  await tick(); leaveLobby();
+  const leaveSecondLibrary = f.owner.attach(f.ports); await tick(); leaveSecondLibrary();
+  f.owner.attach({...f.ports, url: 'https://launcher.invalid/u/performance-check'}); await tick();
+  assert.deepEqual(f.decoded, []);
+  assert.deepEqual(f.fonts, []);
+  assert.equal(f.frames.size, 0);
+  assert.equal(f.events.filter(event => event === 'ready').length, 1);
 });
 
 test('lobby notice completion cannot consume interrupted library first-use on return', async () => {

@@ -137,8 +137,13 @@ for (const stamp of ['legacy','native','missing']) test(`TH03 legacy disk packag
 test('TH03 legacy disk package is not used when new metadata is unavailable', async () => {
  const old=generation();old.game=old.descriptor.game=old.descriptor.runtimeRequirement.target='th03';
  old.descriptor.runtimeRequirement.dataLayout='sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579';
- const f=acquisitionFixture({current:old,testBuild:true});
- await assert.rejects(()=>f.acquisition.acquire({productId:'th03mp',music:'none',language:'ja'}),/旧资源需要更新/);
+ for (const locale of ['zh-CN', 'en', 'ja']) {
+  const translate = (key, params) => api.translate(locale, key, params);
+  const f = acquisitionFixture({current: old, testBuild: true, translate});
+  await assert.rejects(() => f.acquisition.acquire({productId:'th03mp',music:'none',language:'ja'}),
+   error => error.gameDataAcquisition === true && error.message === translate('package.incompatibleUpdateUnavailable'));
+  assert.ok(f.calls.includes('metadata'));
+ }
 });
 for(const failure of ['network','still-incompatible'])test(`incompatible DATA cannot launch after a failed migration: ${failure}`,async()=>{
  const old=generation();old.descriptor.runtimeRequirement.dataLayout='sha256-'+'c'.repeat(64);
@@ -154,11 +159,11 @@ test('an older revision with the same layout still launches from cache without a
  assert.equal(result.generation,old);assert.ok(result.deferredUpdate);assert.deepEqual(f.calls,['current:th06']);
 });
 function acquisitionFixture({current = generation(), hostValue = null, catalogValue = null, dependencies = {}, fetchImpl, network,
-  initialize = async () => {}, testBuild = false} = {}) {
+  initialize = async () => {}, testBuild = false, translate = t} = {}) {
   const calls = [], metadata = {siteManifest: hostValue, releaseCatalog: catalogValue};
   const installation = () => ({generation: current, installation: current ? {game: 'th06', currentGeneration: current.id,
     pendingGeneration: null, source: 'local'} : null});
-  const acquisition = api.createPackageAcquisition({baseUrl, translate: t, indexedDBAvailable: () => true, testBuild,
+  const acquisition = api.createPackageAcquisition({baseUrl, translate, indexedDBAvailable: () => true, testBuild,
     network,
     fetchImpl: fetchImpl ?? (async () => {throw new Error('Unexpected real network path');}),
     metadata: {getSnapshot: () => metadata, initialize: async () => {calls.push('metadata'); await initialize();},

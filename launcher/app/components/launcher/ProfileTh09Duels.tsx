@@ -1,18 +1,26 @@
 import {ArrowLeft, ChevronDown, UserRound} from 'lucide-react';
 import {AnimatePresence, motion} from 'motion/react';
-import {useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode} from 'react';
-import {Link, useLocation} from 'react-router';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent} from 'react';
+import {useLocation, useNavigate} from 'react-router';
 import {z} from 'zod';
 import {formatTh09WinRate, parseTh09AccountSummary, th09CharacterLoadout, type Th09AccountSummary} from '../../../src/launcher/th09-room-stats.mjs';
 import {useLocale} from '../../i18n';
-import {th09CharacterIds, th09CharacterName, th09CharacterRating, th09RatingPoint} from '../../models/th09-character-ratings';
+import {useSurfaceLayerState} from '../../navigation/surface-layer';
+import {useCompactNavigation} from '../../navigation/navigation-motion';
+import {profileTh09Character, th09CharacterName, th09CharacterRating, th09RatingPoint} from '../../models/th09-character-ratings';
 import {th09Duel, type WatchTh09Replay} from '../../models/th09-replay-archive';
 import {accountRequest} from '../../services/account-client';
 import {Button} from '../../ui/button';
 import {ChoiceGroup, ChoiceItem} from '../../ui/choice-group';
+import {Disclosure, DisclosurePanel} from '../../ui/disclosure';
+import {useContentMotion} from '../../ui/use-surface-motion';
 import {useSiteReducedMotion} from '../../ui/use-site-reduced-motion';
-import {DuelReplayGroup, formatDuelDuration} from '../player/DuelReplayGroup';
+import {DuelReplayGroup} from '../player/DuelReplayGroup';
+import {formatPlaytime} from '../../services/cloud-saves';
 import {AccountAvatar} from './AccountAvatar';
+import {IdentityMetadata} from './AccountIdentity';
+import {AppLink} from './AppLink';
+import {MainSelect} from './MainSelect';
 import {ProfilePanelLoading} from './ProfileLoading';
 import {PlayerAvatarCard} from './PlayerProfileCard';
 import {Th09CharacterPortrait} from './Th09CharacterPortrait';
@@ -38,21 +46,29 @@ const page = z.object({summary: z.custom<Th09AccountSummary>(value => !!parseTh0
 
 export type {WatchTh09Replay} from '../../models/th09-replay-archive';
 
-export function ProfileTh09Duels({username, owner, icons, watchTh09Replay}: {
-  username: string; owner: boolean; icons: ReactNode; watchTh09Replay?: WatchTh09Replay;
+export function ProfileTh09Duels({username, owner, watchTh09Replay}: {
+  username: string; owner: boolean; watchTh09Replay?: WatchTh09Replay;
 }) {
   const {t, locale} = useLocale();
-  const location = useLocation();
-  const requestedCharacter = new URLSearchParams(location.search).get('character');
-  const requestedId = Number(requestedCharacter);
-  const initialSelection = requestedCharacter !== null && th09CharacterIds.includes(requestedId) ? requestedId : null;
+  const location = useLocation(), navigate = useNavigate();
+  const compact = useCompactNavigation();
+  const initialSelection = profileTh09Character(location.search);
   const [data, setData] = useState<z.infer<typeof page>>();
   const [request, setRequest] = useState<{cursor: string | null}>({cursor: null});
   const [pending, setPending] = useState(true);
   const [failed, setFailed] = useState(false);
   const [charactersExpanded, setCharactersExpanded] = useState(false);
   const [series, setSeries] = useState<ChartSeries>('whr');
-  const [selectedCharacter, setSelectedCharacter] = useState<number | null>();
+  const [selectedCharacter, setSelectedCharacter] = useSurfaceLayerState<string | null>('profile-character-comparison', null, compact);
+  function closeCharacter() {
+    if (selectedCharacter !== null) {setSelectedCharacter(null); return;}
+    if (initialSelection === null) return;
+    const params = new URLSearchParams(location.search);
+    params.delete('character');
+    params.delete('loadout');
+    void navigate({pathname:location.pathname,search:params.toString(),hash:location.hash},
+      {state:location.state,replace:true,preventScrollReset:true});
+  }
   const [duelsExpanded, setDuelsExpanded] = useState(false);
   const section = useRef<HTMLDivElement>(null);
   const [duelColumns, setDuelColumns] = useState(1);
@@ -88,16 +104,30 @@ export function ProfileTh09Duels({username, owner, icons, watchTh09Replay}: {
     });
     return () => controller.abort();
   }, [username, request, owner]);
+  const character = selectedCharacter === null ? initialSelection : Number(selectedCharacter);
+  const activeRating = data?.characterRatings?.find(rating => rating.character === character);
+  const selected = activeRating?.history?.length ? activeRating : undefined;
+  const comparisonPage = compact && !!selected;
+  const comparisonTitle = useRef<HTMLHeadingElement>(null);
+  const comparisonTrigger = useRef<HTMLButtonElement | 'picker' | null>(null);
+  const comparisonMotion = useContentMotion<HTMLDivElement>(comparisonPage ? 'comparison' : 'overview');
+  function selectCharacter(value: string, trigger: HTMLButtonElement | 'picker') {
+    if (compact && !comparisonPage) comparisonTrigger.current = trigger;
+    setSelectedCharacter(value);
+  }
+  useLayoutEffect(() => {
+    const target = comparisonPage ? comparisonTitle.current
+      : comparisonTrigger.current === 'picker' ? section.current?.querySelector<HTMLButtonElement>('#profileTh09Character-trigger')
+      : comparisonTrigger.current;
+    target?.focus({preventScroll:true});
+  }, [comparisonPage]);
   if (!available) return <>{pending ? <ProfilePanelLoading label={t('th09.accountRecord')}/> :
-    <p className="profile-muted">{t('th09.noDuels')}</p>}{icons}</>;
+    <p className="profile-muted">{t('th09.noDuels')}</p>}</>;
   const numbers = new Intl.NumberFormat(locale);
   const ratings = new Map(data?.characterRatings?.map(rating => [rating.character, rating]));
   const characters = [...(data?.characters ?? (preview ? data?.characterRatings : undefined) ?? [])]
     .sort((left, right) => right.games - left.games || left.character - right.character);
   const visibleCharacters = charactersExpanded ? characters : characters.slice(0, initialCharacterCount);
-  const character = selectedCharacter === undefined ? initialSelection : selectedCharacter;
-  const activeRating = character === null ? undefined : ratings.get(character);
-  const selected = activeRating?.history?.length ? activeRating : undefined;
   const showChart = !!data?.ratingHistory?.length || !!data?.rankHistory?.length || !!preview
     || !!data?.characterRatings?.some(rating => rating.history?.length);
   const duels = data?.duels ?? [];
@@ -105,34 +135,50 @@ export function ProfileTh09Duels({username, owner, icons, watchTh09Replay}: {
   const previewGroups = previewDuelGroups(duelGroups, duelColumns);
   const canExpandDuels = duels.length > previewGroups.reduce((count, [, games]) => count + games.length, 0);
 
-  const durationLabel = data?.durationFrames == null ? undefined : formatDuelDuration(data.durationFrames, locale, true);
+  const durationLabel = data?.durationFrames == null ? undefined : formatPlaytime(data.durationFrames / 60, locale);
 
-  return <div className="profile-th09" ref={section} aria-busy={pending} data-duel-columns={duelColumns}>
-    <h2 id="profile-th09-title" className="sr-only">{t('th09.accountRecord')}</h2>
+  return <div className="profile-th09" ref={section} aria-busy={pending} data-duel-columns={duelColumns}
+    data-character-page={comparisonPage || undefined}>
+    {comparisonPage ? <header className="profile-th09-comparison-page-heading">
+      <Button className="profile-th09-comparison-back" variant="ghost" size="icon-sm" aria-label={t('action.back')}
+        onClick={closeCharacter}><ArrowLeft aria-hidden="true"/></Button>
+      <h2 ref={comparisonTitle} tabIndex={-1}>{t('th09.characterRatingCompare')}</h2>
+    </header> : <h2 className="sr-only">{t('th09.accountRecord')}</h2>}
+    <div ref={comparisonMotion}>
     {data && <div className="profile-th09-overview-data">
       {showChart &&
         <RatingHistory ratingHistory={data.ratingHistory} rankHistory={data.rankHistory}
           previewRating={preview?.rating} characterRating={selected}
-          showRank={series === 'rank'} onCloseCharacter={() => setSelectedCharacter(null)}
+          showRank={series === 'rank'} onCloseCharacter={closeCharacter} backInHeader={comparisonPage}
           onSeriesChange={setSeries} />}
       {!preview && <div className="profile-th09-summary-row">
         <dl className="profile-th09-summary">
           <div><dt>{t('th09.winSummary')}</dt>
             <dd className="profile-th09-win-summary">
-              <span>{numbers.format(data.summary.wins)}</span><span className="profile-th09-win-secondary">/</span><strong>{numbers.format(data.summary.games)}</strong>{' '}
+              <span>{numbers.format(data.summary.wins)} /</span> <strong>{numbers.format(data.summary.games)}</strong>{' '}
               <span className="profile-th09-win-secondary">({formatTh09WinRate(data.summary, locale) ?? '—'})</span>
             </dd>
           </div>
           {durationLabel && <div><dt>{t('th09.recordedDuration')}</dt><dd>{durationLabel}</dd></div>}
         </dl>
-        {icons}
       </div>}
     </div>}
     {data && <div className="profile-th09-records">
       {characters.length > 0 && <div className="profile-th09-character-record">
-        <RecordHeading title={t('th09.characterRecord')} controls="profile-th09-character-list"
-          expanded={characters.length > initialCharacterCount ? charactersExpanded : undefined}
-          onToggle={() => setCharactersExpanded(expanded => !expanded)} />
+        <div className="profile-th09-record-toolbar">
+          <RecordHeading title={t('th09.characterRecord')} controls="profile-th09-character-list"
+            expanded={characters.length > initialCharacterCount ? charactersExpanded : undefined}
+            onToggle={() => setCharactersExpanded(expanded => !expanded)} />
+          {!comparisonPage && characters.some(item => ratings.get(item.character)?.history?.length) &&
+            <MainSelect id="profileTh09Character" aria-label={t('th09.characterRecord')} value={selected ? String(selected.character) : 'all'} onChange={event => {
+              if (event.target.value === 'all') closeCharacter();
+              else selectCharacter(event.target.value, 'picker');
+            }}>
+              <option value="all">{t('th09.allLoadouts')}</option>
+              {characters.filter(item => ratings.get(item.character)?.history?.length).map(item =>
+                <option key={item.character} value={item.character}>{th09CharacterName(item.character,t)}</option>)}
+            </MainSelect>}
+        </div>
         <ul id="profile-th09-character-list" className="profile-th09-characters">
           {visibleCharacters.map(item => {
             const label = th09CharacterName(item.character,t);
@@ -144,11 +190,11 @@ export function ProfileTh09Duels({username, owner, icons, watchTh09Replay}: {
                 <h4>{label}</h4>
                 <div className="profile-th09-character-meta">
                   <span>{t('th09.characterGames',{count:numbers.format(item.games)})}</span>
-                  {'wins' in item && <span>{t('th09.winRate')} <strong>{formatTh09WinRate(item, locale)}</strong></span>}
+                  {'wins' in item && <span>| {t('th09.winRate')} {formatTh09WinRate(item, locale)}</span>}
                   {rating && (rating.history?.length ? <Button variant="link" size="sm" className="profile-th09-rating-toggle"
                     aria-label={`${label} | ${t('th09.characterRatingHistory')} | ${score}`}
                     aria-pressed={isSelected} aria-controls={showChart ? 'profile-th09-rating-history' : undefined}
-                    onClick={() => setSelectedCharacter(isSelected ? null : item.character)}>
+                    onClick={event => isSelected ? closeCharacter() : selectCharacter(String(item.character), event.currentTarget)}>
                     {t('th09.characterRating')} <strong>{score}</strong></Button> :
                     <span>{t('th09.characterRating')} <strong>{score}</strong></span>)}
                 </div>
@@ -158,8 +204,9 @@ export function ProfileTh09Duels({username, owner, icons, watchTh09Replay}: {
           })}
         </ul>
       </div>}
-      {!preview && <div className="profile-th09-duels">
+      {!preview && !comparisonPage && <div className="profile-th09-duels">
         <RecordHeading title={t('th09.duelHistory')} controls="profile-th09-duel-list"
+          action={t(duelsExpanded ? 'announcements.less' : 'th09.moreDuels')}
           expanded={canExpandDuels ? duelsExpanded : undefined}
           onToggle={() => setDuelsExpanded(expanded => !expanded)} />
         {duels.length ? <DuelHistory username={username} groups={duelsExpanded ? duelGroups : previewGroups} watchTh09Replay={watchTh09Replay}/> : <p className="profile-muted">{t('th09.noDuels')}</p>}
@@ -171,11 +218,11 @@ export function ProfileTh09Duels({username, owner, icons, watchTh09Replay}: {
         </div>}
       </div>}
     </div>}
-    {(!data || preview) && icons}
     {failed && <div className="profile-th09-actions" role="status">
       <span>{t('account.requestFailed')}</span>
       <Button variant="outline" size="sm" onClick={() => setRequest({...request})}>{t('action.retry')}</Button>
     </div>}
+    </div>
   </div>;
 }
 
@@ -211,13 +258,15 @@ function DuelHistory({username, groups, watchTh09Replay}: {username: string; gro
   const {t, locale} = useLocale();
   const numbers = new Intl.NumberFormat(locale);
   const dates = new Intl.DateTimeFormat(locale, {dateStyle:'medium'});
-  const recentDates = new Intl.DateTimeFormat(locale, {month:'short', day:'numeric', weekday:'short'});
+  const recentDates = new Intl.DateTimeFormat(locale, {month:'long', day:'numeric'});
+  const weekday = new Intl.DateTimeFormat(locale, {weekday:'short'});
   const currentYear = new Date().getFullYear();
   return <div id="profile-th09-duel-list" className="profile-th09-days">
     {groups.map(([date, items]) => <div key={date}>
       <h4 className="profile-th09-day">
         <time dateTime={new Date(items[0].playedAt).toISOString()}>
-          {new Date(items[0].playedAt).getFullYear() === currentYear ? recentDates.format(items[0].playedAt) : dates.format(items[0].playedAt)}
+          {new Date(items[0].playedAt).getFullYear() === currentYear ? recentDates.format(items[0].playedAt) : dates.format(items[0].playedAt)}{' '}
+          {weekday.format(items[0].playedAt)}
         </time>
       </h4>
       <ul className="profile-th09-history">
@@ -225,29 +274,38 @@ function DuelHistory({username, groups, watchTh09Replay}: {username: string; gro
           const wins = numbers.format(item.wins);
           const losses = numbers.format(item.losses);
           const outcome = item.wins === item.losses ? 'draw' : item.wins > item.losses ? 'win' : 'loss';
-          return <li key={item.duelId}>
-            <DuelScore score={`${wins}:${losses}`} outcome={outcome}
-              label={t('th09.score') + ' ' + wins + ' : ' + losses} />
+          return <li key={item.duelId} className="profile-match" data-result={outcome}>
+            <Disclosure>{({open, trigger, panel}) => <>
+            <div className="profile-match-row">
+            <span className="profile-match-result">{t(outcome === 'win' ? 'profile.matchWin' : outcome === 'loss' ? 'profile.matchLoss' : 'profile.matchDraw')}</span>
+            <strong className="profile-match-score" role="img" aria-label={`${t('th09.score')} ${wins} : ${losses}`}>{wins}<span>:</span>{losses}</strong>
             {item.opponent ? <span className="profile-th09-opponent">
               <PlayerAvatarCard username={item.opponent.username} name={item.opponent.displayName}
                 avatar={item.opponent.avatar ? `/api/v1/profiles/${encodeURIComponent(item.opponent.username)}/avatar/${item.opponent.avatar}` : undefined}>
                 <button type="button" className="player-card-avatar-button" aria-label={item.opponent.displayName}><AccountAvatar src={item.opponent.avatar
                   ? `/api/v1/profiles/${encodeURIComponent(item.opponent.username)}/avatar/${item.opponent.avatar}`
-                  : undefined} loading="lazy"/></button>
+                  : undefined} loading="lazy" fallback={<UserRound aria-hidden="true"/>}/></button>
               </PlayerAvatarCard>
-              <Link className="profile-th09-opponent-name" to={'/u/' + encodeURIComponent(item.opponent.username)}>
+              <AppLink className="profile-th09-opponent-name" href={'/u/' + encodeURIComponent(item.opponent.username)} rememberEntry>
                 <span>{item.opponent.displayName}</span>
-                {item.opponent.displayName.toLowerCase() !== item.opponent.username.toLowerCase() && <small>@{item.opponent.username}</small>}
-              </Link>
+                <IdentityMetadata username={item.opponent.username} country={item.opponent.countryCode}/>
+              </AppLink>
             </span> : <span className="profile-th09-opponent">
               <span className="account-avatar profile-th09-guest-avatar" aria-hidden="true"><UserRound /></span>
               <span className="profile-th09-opponent-name">{t('th09.guestOpponent')}</span>
             </span>}
-            {item.durationFrames != null && <span className="profile-th09-match-duration">
-              <small>{t('cloudSave.duration')}</small>
-              <span>{formatDuelDuration(item.durationFrames, locale)}</span>
-            </span>}
-            {!!item.replayCount && <DuelReplayGroup className="profile-th09-replays" username={username} duelId={item.duelId} count={item.replayCount} watch={watchTh09Replay}/>}
+            <div className="profile-th09-history-meta">
+              {!!item.replayCount && <Button type="button" size="sm" variant="ghost" {...trigger}>
+                <span>{t('profile.matchReplays',{count:item.replayCount})}</span><ChevronDown aria-hidden="true"/>
+              </Button>}
+              {item.durationFrames != null && <small>{formatPlaytime(item.durationFrames / 60, locale)}</small>}
+            </div>
+            </div>
+            {!!item.replayCount && <DisclosurePanel {...panel} className="profile-th09-replays">
+              <DuelReplayGroup className="profile-match-replays" username={username} duelId={item.duelId}
+                count={item.replayCount} watch={watchTh09Replay} open={open}/>
+            </DisclosurePanel>}
+            </>}</Disclosure>
           </li>;
         })}
       </ul>
@@ -255,24 +313,10 @@ function DuelHistory({username, groups, watchTh09Replay}: {username: string; gro
   </div>;
 }
 
-function DuelScore({score, outcome, label}: {score:string; outcome:string; label:string}) {
-  const mask = useId();
-  return <strong className="profile-th09-score" data-outcome={outcome} role="img" aria-label={label}>
-    <svg viewBox="0 0 56 30" aria-hidden="true">
-      <mask id={mask} maskUnits="userSpaceOnUse" x="0" y="0" width="56" height="30">
-        <rect width="56" height="30" fill="white" />
-        <text x="28" y="15" textAnchor="middle" dominantBaseline="central" fill="black"
-          textLength={score.length > 5 ? 46 : undefined} lengthAdjust="spacingAndGlyphs">{score}</text>
-      </mask>
-      <rect width="56" height="30" rx="5" fill="currentColor" mask={`url(#${mask})`} />
-    </svg>
-  </strong>;
-}
-
-function RatingHistory({ratingHistory, rankHistory, previewRating, characterRating, showRank, onCloseCharacter, onSeriesChange}: {
+function RatingHistory({ratingHistory, rankHistory, previewRating, characterRating, showRank, onCloseCharacter, onSeriesChange, backInHeader}: {
   ratingHistory?: RatingPoint[]; rankHistory?: z.infer<typeof rankPoint>[];
   previewRating?: number; characterRating?: CharacterRating;
-  showRank: boolean; onCloseCharacter(): void; onSeriesChange(series: ChartSeries): void;
+  showRank: boolean; onCloseCharacter(): void; onSeriesChange(series: ChartSeries): void; backInHeader: boolean;
 }) {
   const {t, locale} = useLocale();
   const reduced = useSiteReducedMotion();
@@ -295,8 +339,8 @@ function RatingHistory({ratingHistory, rankHistory, previewRating, characterRati
   const selectedHeader = characterRating && <motion.div key={characterRating.character} className="profile-th09-comparison"
     initial={reduced ? false : {opacity:0, x:-8}} animate={{opacity:1, x:0}}
     exit={{opacity:0, x:-8, pointerEvents:'none'}} transition={transition}>
-    <Button className="profile-th09-comparison-back" variant="ghost" size="icon-sm" aria-label={t('action.back')}
-      title={t('action.back')} onClick={onCloseCharacter}><ArrowLeft aria-hidden="true" /></Button>
+    {!backInHeader && <Button className="profile-th09-comparison-back" variant="ghost" size="icon-sm" aria-label={t('action.back')}
+      title={t('action.back')} onClick={onCloseCharacter}><ArrowLeft aria-hidden="true" /></Button>}
     <div className="profile-th09-comparison-character">
       <Th09CharacterPortrait character={characterRating.character} />
       <span className="profile-th09-comparison-name">{characterName}</span>
@@ -368,7 +412,7 @@ function RatingPlot({points, comparison, character, startAt, endAt, rank, title,
   const formatValue = (value: number) => rank ? '#' + numbers.format(-value) : numbers.format(value);
   const lastIndex = points.length - 1;
   const axisDates = new Intl.DateTimeFormat(locale, {
-    month:'numeric', day:'numeric', timeZone:'UTC',
+    month:'short', day:'numeric', timeZone:'UTC',
     year:new Date(startAt).getUTCFullYear() === new Date(endAt).getUTCFullYear() ? undefined : '2-digit',
   });
   const span = endAt - startAt;
@@ -446,7 +490,11 @@ function RatingPlot({points, comparison, character, startAt, endAt, rank, title,
         aria-valuenow={index + 1} aria-valuetext={`${dates.format(current.at)} | ${formatValue(current.rating)}`}
         onPointerDown={selectAt} onPointerMove={selectAt}
         onPointerLeave={event => {if (event.pointerType === 'mouse') setSelected(null);}}
-        onKeyDown={stepThrough}>
+        onBlur={() => setSelected(null)}
+        onKeyDown={event => {
+          if (event.key === 'Escape') setSelected(null);
+          else stepThrough(event);
+        }}>
         <svg aria-hidden="true" viewBox="0 0 1000 100" preserveAspectRatio="none">
           {reduced ? paths : <AnimatePresence initial={false}>{paths}</AnimatePresence>}
         </svg>
@@ -454,7 +502,9 @@ function RatingPlot({points, comparison, character, startAt, endAt, rank, title,
           key={comparingRank ? characterLine : 'whr'} data-character-point={comparingRank || undefined}
           style={{left:`${plot.reference[0].x}%`, top:`${plot.reference[0].y}%`}} />}
         <span className="profile-th09-whr-guide" data-visible={selected !== null || undefined} style={{left: `${marker.x}%`}} />
-        <span className="profile-th09-whr-tooltip" data-visible={selected !== null || undefined} aria-hidden="true">
+        <span className="profile-th09-whr-tooltip" data-visible={selected !== null || undefined} aria-hidden="true"
+          data-below={marker.y < 40 || undefined}
+          style={{left:`${marker.x}%`, top:`${marker.y}%`, translate:`-${marker.x}% var(--profile-rating-tip-offset)`}}>
           <strong>{formatValue(current.rating)}</strong>
           <time dateTime={new Date(current.at).toISOString()}>{axisDates.format(current.at)}</time>
         </span>
@@ -472,11 +522,13 @@ function RatingPlot({points, comparison, character, startAt, endAt, rank, title,
   </>;
 }
 
-function RecordHeading({title, controls, expanded, onToggle}: {
-  title: string; controls: string; expanded?: boolean; onToggle(): void;
+function RecordHeading({title, controls, expanded, onToggle, action}: {
+  title: string; controls: string; expanded?: boolean; onToggle(): void; action?: string;
 }) {
-  return <h3 className="profile-th09-record-heading">
+  const separateAction = !!action && expanded !== undefined;
+  return <h3 className="profile-th09-record-heading" data-has-action={separateAction || undefined}>
+    {separateAction && <span>{title}</span>}
     {expanded === undefined ? title : <Button variant="ghost" size="sm" aria-controls={controls}
-      aria-expanded={expanded} onClick={onToggle}>{title}<ChevronDown aria-hidden="true" /></Button>}
+      aria-expanded={expanded} onClick={onToggle}>{action ?? title}<ChevronDown aria-hidden="true" /></Button>}
   </h3>;
 }

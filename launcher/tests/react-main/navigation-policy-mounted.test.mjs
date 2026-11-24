@@ -838,6 +838,20 @@ test('running direct-query game opens and closes replay dialog without syncing o
   assert.equal(controls.closeCount, 1); assert.equal(controls.navigation.surface, 'options');
 });
 
+test('Back closes Host-selected single-player details whose history is already on the shelf', async () => {
+  const controls = await mount({pathname:'/',search:'?keep=a%20b',hash:'#original',state:{unrelated:7}});
+  await settle(() => controls.navigation.applyHostSelection({productId:'th07',hasSelection:true}));
+  assert.equal(controls.navigation.surface,'options');
+  assert.equal(state().launcherPageHistory.page,'launcher');
+  await settle(() => controls.navigation.closeSurface());
+  assert.equal(controls.navigation.surface,'library');
+  const returned = new URL(href(), 'https://launcher.invalid');
+  assert.equal(returned.pathname, '/en.html');
+  assert.equal(returned.searchParams.get('keep'), 'a b');
+  assert.equal(returned.hash, '#original');
+  assert.equal(state().unrelated,7);
+});
+
 test('corrupt persisted parent metadata is rejected before attempting Back', () => {
   for (const record of [{version:1,position:0,page:'room',pagePosition:0}, {version:1,position:1,page:'constructor',pagePosition:1,ancestors:{}}, {version:1,position:1,page:'room',pagePosition:1,ancestors:{directory:'0'}}]) {
     assert.equal(owner.readPageHistory({launcherPageHistory:record}), null);
@@ -897,18 +911,20 @@ for (const layer of ['settings', 'panel']) test(`Replay return rebases retained 
   assert.equal(controls.navigation.roomCode, '4079'); assert.equal(controls.leaveCount, 0); assert.equal(controls.closeCount, 1);
 });
 
-test('persistent Replay workspace replaces its options layer and closes without traversing child history', async () => {
+for (const running of [false, true]) test(`Replay returns to its options parent with running game ${running}`, async () => {
   const controls = await mount({pathname: '/', search: '?game=th09', hash: '', state: {unrelated: 7}});
+  if (running) await settle(() => controls.setPlayer(true));
   const before = owner.readPageHistory(state()).position;
+  const parentKey = mounted.router.state.location.key;
   await settle(() => controls.navigation.openInfoDialog('replayDialog', {replace: true}));
-  assert.equal(mounted.router.state.historyAction, 'REPLACE');
-  assert.equal(owner.readPageHistory(state()).position, before);
-  assert.equal(state().launcherInformationDialogs.parentKey, undefined);
+  assert.equal(mounted.router.state.historyAction, running ? 'REPLACE' : 'PUSH');
+  assert.equal(owner.readPageHistory(state()).position, before + (running ? 0 : 1));
+  assert.equal(state().launcherInformationDialogs.parentKey, running ? undefined : parentKey);
   assert.equal(controls.navigation.infoDialogOpen('replayDialog'), true);
   await settle(() => controls.setPlayer(true));
   await settle(() => controls.setPlayer(false));
   await settle(() => controls.navigation.closeInfoDialog('replayDialog'));
-  assert.equal(mounted.router.state.historyAction, 'REPLACE');
+  assert.equal(mounted.router.state.historyAction, running ? 'REPLACE' : 'POP');
   assert.equal(controls.navigation.infoDialogOpen('replayDialog'), false);
   assert.equal(controls.navigation.surface, 'options');
   assert.equal(controls.navigation.productId, 'th09');

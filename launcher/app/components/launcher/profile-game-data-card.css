@@ -1,10 +1,16 @@
-.profile-game-data-switch{display:flex;justify-content:flex-end;gap:4px;margin-top:12px}
-.profile-game-data-switch .ui-kit-choice{width:42px;height:42px;padding:0}
-.profile-game-data-switch .ui-kit-choice svg{width:22px;height:22px}
-.profile-game-data-switch img{display:block;object-fit:cover;border-radius:4px}
-.profile-game-data-flight{display:grid;gap:9px}
-.profile-game-data-flight .profile-flight-total{justify-content:space-between}
-.profile-game-data-card>.profile-loading-panel{margin:0}
-
-.profile-th09-summary-row .profile-game-data-switch{flex:none;margin:0 0 0 auto}
-.profile-th09-summary-row .profile-th09-summary{flex-wrap:wrap}
+@layer components {
+  .profile-game-data-heading {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+  .profile-game-data-heading > h2 {margin:0;font-size:16px;font-weight:500}
+  .profile-game-data-switch {display:inline-flex;gap:3px;padding:3px;border:1px solid var(--kit-border);border-radius:8px;background:var(--kit-card)}
+  .profile-game-data-switch .ui-kit-choice {gap:7px;min-height:31px;padding:3px 9px;font-size:13px;font-weight:450;white-space:nowrap}
+  .profile-game-data-switch .ui-kit-choice svg,.profile-game-data-switch img {width:18px;height:18px}
+  .profile-game-data-switch img {display:block;object-fit:cover;border-radius:4px}
+  .profile-game-data-body > .profile-loading-panel {margin:0}
+}
+.profile-game-data-switch [data-state="on"] {
+  background:color-mix(in srgb,var(--kit-brand) 16%,var(--kit-card));
+  color:var(--kit-brand);
+}
+@media (max-width:780px) {
+  .profile-game-data-card[data-game-data-view="th09"]:has([data-character-page]) > header {display:none}
+}

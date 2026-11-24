@@ -533,10 +533,11 @@
   color: var(--ui-text);
 }
 .ui-menu.ui-field-help {
-  width: 256px;
+  width: min(256px, calc(100vw - 24px));
   padding: 8px 12px;
   font: 14px / 1.65 var(--kit-font);
 }
+.ui-field-help-action {margin-block-start:6px}
 .ui-menu-item svg {
   width: 16px;
   height: 16px;
@@ -560,10 +561,8 @@
   opacity: 1;
   visibility: visible;
 }
-@layer base {
-  html {
-    scrollbar-gutter: stable;
-  }
+html[data-ui-app] {
+  scrollbar-gutter: stable;
 }
 /* Radix keeps focus and touch scrolling inside its layers. The root gutter
    already reserves the scrollbar, so body compensation would shrink the page. */

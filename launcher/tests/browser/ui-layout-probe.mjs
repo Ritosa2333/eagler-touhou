@@ -85,7 +85,7 @@ export function inspectLayoutMotion(source=window) {
 }
 
 /** Record a real interaction in the browser; this helper never clicks controls. */
-export function captureSurfaceMotion({selector='.tools',duration=1000,waitForInput=true,source=window}={}) {
+export function captureSurfaceMotion({selector='.tools',duration=1000,waitForInput=true,publishReady=false,source=window}={}) {
   return new Promise(resolve=>{
     const doc=source.document,frames=[],inputOptions={capture:true};
     let started=false,settled=false,raf=0,timer=0,startTime=0;
@@ -107,6 +107,7 @@ export function captureSurfaceMotion({selector='.tools',duration=1000,waitForInp
     };
     const finish=error=>{
       if(settled)return;settled=true;clear();
+      if(publishReady)delete doc.documentElement.dataset.motionCaptureReady;
       resolve({selector,reduced,theme:doc.documentElement?.dataset.bookTheme,inputMode:waitForInput?'interaction':'automatic',frames,error,viewport:{width:source.innerWidth,height:source.innerHeight}});
     };
     const sample=()=>{
@@ -128,6 +129,7 @@ export function captureSurfaceMotion({selector='.tools',duration=1000,waitForInp
       doc.addEventListener('pointerdown',start,inputOptions);doc.addEventListener('click',start,inputOptions);doc.addEventListener('keydown',start,inputOptions);
       timer=source.setTimeout(()=>finish('interaction-not-observed'),8000);
     } else start();
+    if(publishReady&&!settled)doc.documentElement.dataset.motionCaptureReady='true';
   });
 }
 

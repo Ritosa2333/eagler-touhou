@@ -256,7 +256,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         const published = metadataSnapshot.siteManifest?.shared.resourceMode === 'import'
           ? undefined : metadataSnapshot.releaseCatalog?.games[game];
         if (legacyTh03 || incompatible || pc98Update || (missingDisk && published && published.revision !== generation.descriptor.revision)) {
-          if (!published) throw new GameDataAcquisitionError('游戏资源版本不兼容，无法获取更新');
+          if (!published) throw new GameDataAcquisitionError(t('package.incompatibleUpdateUnavailable'));
           request.onAcquisitionActivity?.(true);
           try {
             progress(request, 'package.installingResources');
