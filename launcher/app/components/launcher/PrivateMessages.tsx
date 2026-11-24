@@ -22,7 +22,6 @@ function Inbox({open}: {open: (username: string) => void}) {
   const [pages, setPages] = useState<InboxPage[]>([]);
   const [error, setError] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [revision, setRevision] = useState(0);
   useEffect(() => {
     let pending: AbortController | undefined;
     function refresh() {
@@ -38,7 +37,7 @@ function Inbox({open}: {open: (username: string) => void}) {
     refresh();
     const cleanup = observeMessageUpdates(inboxChanged, refresh, 30_000);
     return () => {pending?.abort(); cleanup();};
-  }, [revision]);
+  }, []);
 
   const next = pages.at(-1)?.nextBefore;
   const threads = [...new Map(pages.flatMap(page => page.threads).reverse().map(thread => [thread.username, thread])).values()]
@@ -53,7 +52,7 @@ function Inbox({open}: {open: (username: string) => void}) {
         aria-label={t('messages.username')} placeholder={t('messages.username')} maxLength={33}/>
       <Button variant="outline" type="submit" disabled={!validMessageUsername(target)}>{t('messages.openConversation')}</Button>
       <Button variant="ghost" size="icon" type="button" aria-label={t('messages.refresh')}
-        onClick={() => setRevision(value => value + 1)}><RefreshCw aria-hidden="true"/></Button>
+        onClick={() => window.dispatchEvent(new Event(inboxChanged))}><RefreshCw aria-hidden="true"/></Button>
     </form>
     {error && <p role="status" className="message-request-error">{t('messages.loadFailed')}</p>}
     {!pages.length && !error && <p role="status">{t('messages.loading')}</p>}
@@ -63,7 +62,10 @@ function Inbox({open}: {open: (username: string) => void}) {
         <Button variant="ghost" className="private-thread" onClick={() => open(name)}>
           <span><strong>{nickname}</strong> <small>@{name}</small></span>
           <span className="private-thread-preview">{lastMessage.body}</span>
-          {unread > 0 && <span className="private-thread-badge" aria-label={t('messages.unread', {count: unread})}>{unread}</span>}
+          {unread > 0 && <>
+            <span className="private-thread-badge" aria-hidden="true">{unread}</span>
+            <span className="sr-only">{t('messages.unread', {count: unread})}</span>
+          </>}
         </Button>
       </li>)}
     </ul>
@@ -76,12 +78,13 @@ function Inbox({open}: {open: (username: string) => void}) {
   </div>;
 }
 
+const conversationChanged = 'launcher-conversation-refresh';
+
 function Conversation({username, back}: {username: string; back: () => void}) {
   const {locale, t} = useLocale();
   const [pages, setPages] = useState<ConversationPage[]>([]);
   const [error, setError] = useState<'missing' | 'load'>();
   const [loadingMore, setLoadingMore] = useState(false);
-  const [revision, setRevision] = useState(0);
   const readThrough = useRef(0);
   useEffect(() => {
     let pending: AbortController | undefined;
@@ -110,9 +113,9 @@ function Conversation({username, back}: {username: string; back: () => void}) {
       });
     }
     refresh();
-    const cleanup = observeMessageUpdates('launcher-conversation-refresh', refresh, 30_000);
+    const cleanup = observeMessageUpdates(conversationChanged, refresh, 30_000);
     return () => {pending?.abort(); cleanup();};
-  }, [username, revision]);
+  }, [username]);
 
   const first = pages[0];
   const next = pages.at(-1)?.nextBefore;
@@ -124,7 +127,7 @@ function Conversation({username, back}: {username: string; back: () => void}) {
       <Button variant="ghost" size="icon" aria-label={t('messages.backToInbox')} onClick={back}><ArrowLeft aria-hidden="true"/></Button>
       <h2>{first ? first.peer.nickname : '@' + username} {first && <small>@{first.peer.username}</small>}</h2>
       <Button variant="ghost" size="icon" aria-label={t('messages.refresh')}
-        onClick={() => setRevision(value => value + 1)}><RefreshCw aria-hidden="true"/></Button>
+        onClick={() => window.dispatchEvent(new Event(conversationChanged))}><RefreshCw aria-hidden="true"/></Button>
     </header>
     {error && <p role="status" className="message-request-error">{t(error === 'missing' ? 'messages.userMissing' : 'messages.loadFailed')}</p>}
     {!first && !error && <p role="status">{t('messages.loading')}</p>}
@@ -139,6 +142,9 @@ function Conversation({username, back}: {username: string; back: () => void}) {
         <p>{body}</p><time dateTime={new Date(sentAt).toISOString()}>{format.format(sentAt)}</time>
       </li>)}</ol>}
     {first && error !== 'missing' && <MessageComposer label="messages.write" action="messages.send" limit={2000}
-      send={async (body, requestId) => {await sendDirectMessage(username, body, requestId); setRevision(value => value + 1);}}/>}
+      send={async (body, requestId) => {
+        await sendDirectMessage(username, body, requestId);
+        window.dispatchEvent(new Event(conversationChanged));
+      }}/>}
   </div>;
 }
