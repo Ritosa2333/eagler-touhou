@@ -278,10 +278,28 @@ try {
         await page.goBack();
         await wait(homePanel);
         assert.equal(new URL(page.url()).searchParams.get('section'),'home');
-        await page.goBack();
-        await wait('.book-library');
-
+        const shelf = '.launcher-bottom-navigation a:first-child';
+        const shelfScroll = '.book-compact-categories .book-categories';
         const game = '#bookGameGrid .book-game-link[data-game="th07"]';
+        const gameBack = '.mobile-game-toolbar #libraryBack';
+        await tap(shelf);
+        await wait('.book-library');
+        const shelfKey = await page.evaluate(() => history.state.key);
+        const categories = await page.$eval(shelfScroll, rail => {
+          const rows = [...rail.querySelectorAll('button')].map(node => Math.round(node.getBoundingClientRect().top));
+          return {rows: new Set(rows).size, overflows: rail.scrollWidth > rail.clientWidth,
+            scrollable: getComputedStyle(rail).overflowX === 'auto'};
+        });
+        assert.equal(categories.rows, 1, 'mobile library categories stay on one line');
+        assert.ok(!categories.overflows || categories.scrollable, 'extra categories are reachable by horizontal scrolling');
+        for (const back of [() => tap(gameBack), () => page.goBack()]) {
+          await tap(game);
+          await wait(gameBack);
+          await back();
+          await wait(game);
+          assert.equal(await page.evaluate(() => history.state.key), shelfKey,
+            'game Back returns to the exact shelf after visiting Home');
+        }
         const fullPage = '.tools[data-full-page][data-state="open"]';
         const gameSettings = '.mobile-game-settings #displayOptions';
         assert.equal(await page.$(gameSettings),null,'the library does not mount game settings');

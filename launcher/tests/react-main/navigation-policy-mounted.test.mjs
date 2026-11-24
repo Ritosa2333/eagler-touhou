@@ -21,7 +21,7 @@ before(async () => {
   work = await mkdtemp(resolve(project, '.cache/navigation-policy-'));
   const file = resolve(work, 'policy.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
-    export {readPageHistory} from './app/navigation/page-history.ts';
+    export {readPageHistory, nextPageHistory, parentDistance} from './app/navigation/page-history.ts';
     export {launcherBaseUrl, routerDestination, isLauncherHomePath} from './app/navigation/addresses.ts';
     export {SurfaceNavigationProvider, useSurfaceNavigation, preserveSameRoomDirectoryOrigin} from './app/navigation/surface-navigation.tsx';
     export {roomRouteHistoryOperation, returnToRoomHistoryOperation, resolveRoomInvite} from './src/launcher/route-state.mts';
@@ -850,6 +850,17 @@ test('Back closes Host-selected single-player details whose history is already o
   assert.equal(returned.searchParams.get('keep'), 'a b');
   assert.equal(returned.hash, '#original');
   assert.equal(state().unrelated,7);
+});
+
+test('single-game Back targets the shelf entry opened after Home', () => {
+  const home = owner.nextPageHistory(null, 'launcher', false);
+  const shelf = owner.nextPageHistory(home, 'launcher', false);
+  const game = owner.nextPageHistory(shelf, 'single-options', false);
+  assert.equal(owner.parentDistance(game), -1);
+  const olderGame = {...game, ancestors:{launcher:home.position}};
+  const restored = owner.readPageHistory({launcherPageHistory:olderGame,
+    launcherSurfaceEntry:{version:1, surface:'options', parentKey:'shelf'}});
+  assert.equal(owner.parentDistance(restored), -1);
 });
 
 test('corrupt persisted parent metadata is rejected before attempting Back', () => {
