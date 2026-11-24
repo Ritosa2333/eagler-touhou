@@ -1,0 +1,102 @@
+{
+  "schema": "th13/gate-results/v1",
+  "port": "th13",
+  "group": "all",
+  "commit": "3acc887419d07af1ec2b51237880f7205685d298",
+  "startedAt": "2026-11-24T01:34:14.364Z",
+  "finishedAt": "2026-11-24T01:38:19.311Z",
+  "suites": [
+    {
+      "name": "anm",
+      "exitCode": 1,
+      "passed": [],
+      "assertions": 0,
+      "failed": [
+        "reimu2406_real_bullet_anm_child_phase_with_follower",
+        "reimu2406_real_bullet_anm_tail_parent_phase_late_by_one",
+        "png_decode_stb"
+      ]
+    },
+    {
+      "name": "ecl",
+      "exitCode": 1,
+      "passed": [],
+      "assertions": 0,
+      "failed": [
+        "real_stage5_phantom_retains_radius_during_opening",
+        "real_stage3_card_emits_curve_lasers_through_711",
+        "extra_callback_spawns_real_enemy_and_consumes_trigger_once",
+        "real_stage2_boss_attack_registers_and_applies_moving_wall_callback",
+        "stage5_girld01_second_move_uses_sine_acceleration_not_linear"
+      ]
+    },
+    {
+      "name": "ui",
+      "exitCode": 0,
+      "passed": [],
+      "assertions": 0,
+      "failed": []
+    },
+    {
+      "name": "replay",
+      "exitCode": 0,
+      "passed": [],
+      "assertions": 0,
+      "failed": []
+    },
+    {
+      "name": "items",
+      "exitCode": 0,
+      "passed": [],
+      "assertions": 0,
+      "failed": []
+    },
+    {
+      "name": "score",
+      "exitCode": 0,
+      "passed": [],
+      "assertions": 0,
+      "failed": []
+    },
+    {
+      "name": "combat",
+      "exitCode": 0,
+      "passed": [],
+      "assertions": 0,
+      "failed": []
+    },
+    {
+      "name": "bomb",
+      "exitCode": 0,
+      "passed": [],
+      "assertions": 0,
+      "failed": []
+    },
+    {
+      "name": "audio",
+      "exitCode": 0,
+      "passed": [],
+      "assertions": 0,
+      "failed": []
+    },
+    {
+      "name": "e2e",
+      "exitCode": 1,
+      "passed": [],
+      "assertions": 0,
+      "failed": [
+        "退出码 1"
+      ]
+    },
+    {
+      "name": "js",
+      "exitCode": 1,
+      "passed": [],
+      "assertions": 0,
+      "failed": [
+        "tests/managed-shell.test.mjs",
+        "actual GraphicsDevice native submission controls (no SDL/GLES dependency)"
+      ]
+    }
+  ]
+}

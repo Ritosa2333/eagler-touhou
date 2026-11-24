@@ -36,7 +36,8 @@ done
 run=(podman run --rm --userns=keep-id -e HOME=/tmp/th13-home
      -v "$workspace:/work:Z" -v "$repo_root:/work/eagler-touhou:Z"
      -w "/work/eagler-touhou/$port")
-while IFS= read -r name; do run+=(-e "$name"); done < <(compgen -e | grep -E '^(TH13_|TH_)' || true)
+# TH13_WORKSPACE 只在宿主解析挂载路径，容器内一律以端口目录上三级为工作区。
+while IFS= read -r name; do run+=(-e "$name"); done < <(compgen -e | grep -E '^(TH13_|TH_)' | grep -vxF TH13_WORKSPACE || true)
 [[ -t 0 ]] && run+=(-it)
 
 if [[ $# -eq 0 ]]; then
