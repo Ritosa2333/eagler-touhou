@@ -1,4 +1,5 @@
 #include "practice_targets.hpp"
+#include "practice_panel.hpp"
 #include "stage3_practice_evidence.hpp"
 #include "practice_music.hpp"
 #include <iostream>
@@ -106,7 +107,6 @@ void test_model(){
     m.capabilities=caps;m.spec=defaults;m.spec.section=PracticeSection::StageStart;
     tap(m,PracticeMenu::left);check(m.spec.section==PracticeSection::Chapter&&m.spec.chapter_id==7&&m.row_count()==17&&m.row(2)==Row::Chapter);
     m.selected=2;tap(m,PracticeMenu::right);check(m.spec.chapter_id==42);tap(m,PracticeMenu::right);check(m.spec.chapter_id==7);
-    for(int i=0;i<m.row_count();++i){m.selected=i;check(m.visible_row_count()<=12&&m.first_visible_row()<=i&&i<m.first_visible_row()+m.visible_row_count());}
     m.capabilities.chapters[0].clear();m.selected=0;tap(m,PracticeMenu::left);check(m.spec.stage==0&&m.spec.section!=PracticeSection::Chapter&&m.spec.chapter_id==-1&&m.row_count()==16);
     m.spec=defaults;m.selected=row_index(m,Row::Phase);m.spec.dialogue=PracticeDialogue::Show;
     tap(m,PracticeMenu::right);check(m.spec.boss_phase==1&&m.spec.dialogue==PracticeDialogue::Skip);
@@ -161,32 +161,68 @@ void test_model(){
         }
     }
 }
-void test_font(){
+void test_panel(){
     using namespace soew;
-    th03::assets::BfntSheet font{};
-    font.header.first_code=0;font.header.last_code=255;
-    for(int i=0;i<256;++i){
-        th03::assets::MonochromeBitmap1 glyph{};glyph.bits.resize(32);glyph.bits[0]=0x80;
-        font.glyphs.push_back({static_cast<std::uint8_t>(i),std::move(glyph)});
-    }
-    PracticeMenu menu;menu.capabilities=practice_capabilities();
-    const auto title_x=[](Language lang){return 320-menu_text_width(text::practice_start(lang))/2;};
-    check(title_x(Language::English)==208&&title_x(Language::Japanese)==288);
+    using M=PracticeMenu;using P=PracticePanel::Page;using F=PracticePanel::Field;using A=M::Action;
+    M menu;menu.capabilities=practice_capabilities();menu.spec.rank=2;
+    PracticePanel panel;panel.open(menu);
+    const auto tap=[&](unsigned key){panel.update(menu,0);return panel.update(menu,key);};
+    const auto has=[&](F field){const auto fields=panel.fields(menu);return std::find(fields.begin(),fields.end(),field)!=fields.end();};
+    const auto initial=menu.spec;
+    check(panel.page==P::Shots&&panel.shot_cursor==initial.shot&&panel.stage_cursor==initial.stage);
+    check(tap(M::cancel)==A::Back);
+    tap(M::right);check(panel.shot_cursor==2&&menu.spec==initial);
+    check(panel.update(menu,M::right)==A::None&&panel.shot_cursor==2);
+    tap(M::confirm);check(panel.page==P::Stages&&menu.spec==initial);
+    tap(M::up);tap(M::up);check(panel.stage_cursor==practice_extra_stage&&menu.spec==initial);
+    tap(M::cancel);check(panel.page==P::Shots&&panel.shot_cursor==2&&menu.spec==initial);
+    tap(M::confirm);tap(M::confirm);
+    check(panel.page==P::Setup&&panel.focused(F::Start)&&menu.spec.shot==2&&menu.spec.stage==practice_extra_stage&&menu.spec.rank==4&&!has(F::Rank));
+    tap(M::cancel);tap(M::up);tap(M::confirm);
+    check(panel.page==P::Setup&&menu.spec.stage==4&&menu.spec.rank==2&&has(F::Rank)&&has(F::Phase)&&!has(F::Chapter));
+    tap(M::up);tap(M::up);tap(M::up);check(panel.focused(F::Section));
+    tap(M::right);tap(M::right);check(menu.spec.section==PracticeSection::Chapter&&has(F::Chapter)&&!has(F::Phase));
+    tap(M::down);check(panel.focused(F::Chapter));
+    const int first=menu.spec.chapter_id;
+    tap(M::right);check(menu.spec.chapter_id!=first);
+    tap(M::up);tap(M::left);tap(M::left);tap(M::down);check(panel.focused(F::Phase));
+    tap(M::right);check(menu.spec.boss_phase==1);
+    tap(M::down);tap(M::down);tap(M::right);check(panel.focused(F::Advanced));
+    tap(M::confirm);check(panel.page==P::Advanced&&panel.focused(F::Power)&&!has(F::Dialogue));
+    check(tap(M::confirm)==A::EditNumber&&menu.number_editing());
+    check(menu.number_paste("42"));tap(M::confirm);
+    check(menu.spec.power==42&&!menu.number_editing()&&panel.focused(F::Power));
+    for(int i=0;i<5;++i)tap(M::down);
+    check(panel.focused(F::SeedMode)&&has(F::Seed)&&has(F::NewSeed));
+    tap(M::confirm);check(menu.spec.seed_mode==PracticeSeedMode::Random&&!has(F::Seed)&&!has(F::NewSeed));
+    tap(M::down);check(panel.focused(F::Back));tap(M::confirm);
+    check(panel.page==P::Setup&&panel.focused(F::Advanced));
+    tap(M::left);const auto recipe=menu.spec;
+    check(tap(M::confirm)==A::Start&&menu.spec==recipe);
+}
+void test_panel_layout(){
+    using namespace soew;
+    using P=PracticePanel::Page;
+    PracticeMenu menu;menu.capabilities=practice_capabilities();PracticePanel panel;
     std::vector<std::uint32_t> pixels(640*400);
-    for(const auto lang:{Language::English,Language::Japanese}){
-        bool title_fallback=false,first_value_fallback=false;
-        draw_practice_menu(pixels,menu,lang,[&](std::wstring_view label,int x,int y,std::uint32_t color){
-            check(x>=0&&x+menu_text_width(label)<=640);
-            draw_menu_text(pixels,font,label,x,y,color,[&](std::wstring_view run,int left,int top,std::uint32_t){
-                if(top==16)title_fallback=run==L"練習開始"&&left==title_x(lang);
-                if(top==50&&left>=352)first_value_fallback=true;
+    for(const auto lang:{Language::English,Language::Japanese,Language::ChineseSimplified,Language::ChineseTraditional}){
+        for(const auto page:{P::Shots,P::Stages,P::Setup,P::Advanced}){
+            panel.open(menu,page);
+            bool title=false,footer=false,back=false;
+            int portraits=0;
+            draw_practice_panel(pixels,panel,menu,lang,false,[&](std::wstring_view label,int x,int y,int r,int h,std::uint32_t,PracticeText,bool){
+                check(!label.empty()&&x>=40&&x<r&&r<=600&&y>=21&&y+h<=379);
+                if(y==21)title=label==text::practice_start(lang);
+                if(y==338)footer=true;
+                else check(y+h<=336);
+                if(y>=104&&label==text::back(lang))back=true;
+            },[&](int shot,int x,int y,int w,int h,bool selected){
+                check(shot==portraits++&&x>=57&&x+w<=583&&y>=110&&y+h<=316&&selected==(shot==menu.spec.shot));
             });
-        });
-        check(title_fallback==(lang==Language::Japanese)&&!first_value_fallback);
-        check(pixels[50*640+352]==0xff172b43u&&pixels[50*640+353]==0xffd6eaffu);
-        if(lang==Language::English)check(pixels[16*640+title_x(lang)]==0xff18304cu);
+            check(title&&footer&&back==(page==P::Advanced)&&portraits==(page==P::Shots?3:0));
+            if(page==P::Stages)check(pixels[(86+menu.spec.stage*39)*640+57]==0xffdb91u);
+        }
     }
-    check(menu_gaiji_code(L'm')==glyph_code('M')&&menu_gaiji_code(L'日')<0);
 }
 void test_store(const std::filesystem::path &root){
     using namespace soew;
@@ -264,7 +300,7 @@ int main(int argc,char **argv){
     try{
         if(argc!=2)throw std::runtime_error("Need an explicit fresh isolated test root");
         const auto root=std::filesystem::path(argv[1]);if(!root.is_absolute())throw std::runtime_error("Isolated test root must be absolute");
-        test_editor();test_model();test_font();test_store(root);
+        test_editor();test_model();test_panel();test_panel_layout();test_store(root);
         {const auto &a=soew::stage3_practice_evidence;check(a.size()==8);check(a[0].id==0&&a[0].progress==0);check(a[1].id==3&&a[1].progress==53&&a[1].measure==17);check(a[2].id==15&&a[2].progress==103&&a[2].measure==34);check(a[7].id==55&&a[7].progress==265&&a[7].measure==88);for(std::size_t i=1;i<a.size();++i)check(a[i-1].progress<a[i].progress);check(soew::stage3_boss_entry_ids==std::array<int,6>{0x10,0x17,0x18,0x27,0x48,0x49});check(!soew::PracticeCapabilities{}.allows(2,soew::PracticeSection::Boss));}
         {soew::PracticeSpec spec;spec.stage=2;for(const auto &anchor:soew::stage3_practice_evidence){spec.section=anchor.id==0x0f?soew::PracticeSection::Midboss:soew::PracticeSection::Chapter;spec.chapter_id=anchor.id==0x0f?-1:anchor.id;check(soew::practice_music_measure(spec)==anchor.measure);}
          spec.section=soew::PracticeSection::Chapter;spec.chapter_id=48;check(soew::practice_music_measure(spec)==0);spec.stage=1;check(soew::practice_music_measure(spec)==58);}

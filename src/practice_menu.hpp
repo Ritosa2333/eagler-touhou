@@ -147,7 +147,6 @@ struct PracticeMenu {
     enum class Action { None, Start, Back, EditNumber, EditSeed=EditNumber, NewSeed };
     enum class Row { Stage, Section, Chapter, Phase, Shot, Rank, DynamicRank, Power, Lives, Bombs, RespawnBombs, Dialogue, SeedMode, Seed, NewSeed, Start, Back };
     enum : unsigned { up=1,down=2,confirm=4,cancel=8,left=16,right=32 };
-    static constexpr int visible_rows=12;
     PracticeSpec spec;
     PracticeCapabilities capabilities;
     NumericEditor number_editor;
@@ -163,8 +162,6 @@ struct PracticeMenu {
         if(index<0||index>=row_count())throw std::out_of_range("Practice row");
         return static_cast<Row>(index+(spec.section!=PracticeSection::Chapter&&index>=2?1:0));
     }
-    int first_visible_row() const {return std::clamp(selected-visible_rows+1,0,std::max(0,row_count()-visible_rows));}
-    int visible_row_count() const {return std::min(visible_rows,row_count());}
     bool begin_number_edit(Row which){
         if(number_editing())return false;
         std::int64_t value=0,minimum=0,maximum=0;
@@ -211,16 +208,24 @@ struct PracticeMenu {
     void seed_backspace(){if(seed_editing())number_backspace();}
     void seed_enter(){if(seed_editing())number_enter();}
     void seed_cancel(){if(seed_editing())number_cancel();}
+    void select_stage(int stage){
+        if(stage==spec.stage)return;
+        if(spec.stage!=practice_extra_stage)regular_rank=std::clamp(spec.rank,0,3);
+        spec.stage=stage;
+        spec.rank=stage==practice_extra_stage?4:regular_rank;
+        if(spec.rank==0&&spec.dynamic_rank>4)spec.dynamic_rank=4;
+        normalize_target();
+    }
+    int index_of(Row wanted)const{
+        for(int i=0;i<row_count();++i)if(row(i)==wanted)return i;
+        throw std::logic_error("Practice field is not available");
+    }
     void change(int delta){
         if(number_editing())return;
         const auto current=row(selected);
         switch(current){
         case Row::Stage:
-            if(spec.stage!=practice_extra_stage)regular_rank=std::clamp(spec.rank,0,3);
-            spec.stage=Menu::ring(spec.stage,delta,practice_stage_count);
-            spec.rank=spec.stage==practice_extra_stage?4:regular_rank;
-            if(spec.rank==0&&spec.dynamic_rank>4)spec.dynamic_rank=4;
-            normalize_target();break;
+            select_stage(Menu::ring(spec.stage,delta,practice_stage_count));break;
         case Row::Section:{
             std::vector<PracticeSection> available;
             for(const auto x:capabilities.allowed_sections[spec.stage])if(capabilities.allows(spec.stage,x))available.push_back(x);
@@ -355,33 +360,6 @@ inline std::wstring practice_warning(std::string_view message, Language lang) {
     return tr(L"選択した条件では練習を開始できません",L"无法按所选条件开始练习",L"無法依所選條件開始練習");
 }
 
-template<class Draw>
-void draw_practice_menu(std::vector<std::uint32_t> &pixels,const PracticeMenu &menu,Language lang,Draw&& draw){
-    std::fill(pixels.begin(),pixels.end(),0xffe4e4e4u);
-    const auto tr=[&](const wchar_t* ja,const wchar_t* en,const wchar_t* hans,const wchar_t* hant){return localized(lang,ja,en,hans,hant);};
-    const auto centered=[&](std::wstring_view label,int y,std::uint32_t color){draw(label,std::max(16,320-(lang==Language::Japanese||lang==Language::English?menu_text_width(label):jp::cell_width(label))/2),y,color);};
-    centered(text::practice_start(lang),16,0xff18304cu);
-    constexpr std::array<LocalizedText,17> labels={{{L"ステージ",L"STAGE",L"关卡",L"關卡"},{L"開始地点",L"SECTION",L"起点",L"起點"},{L"区間",L"CHAPTER",L"区段",L"區段"},
-        {L"ボスの段階",L"PHASE",L"首领阶段",L"頭目階段"},{L"ショット",L"SHOT",L"射击类型",L"射擊類型"},{L"難易度",L"DIFFICULTY",L"难度",L"難度"},{L"変動ランク",L"DYNAMIC RANK",L"动态难度",L"動態難度"},
-        {L"パワー",L"POWER",L"火力",L"火力"},{L"残機",L"SPARE LIVES",L"剩余命数",L"剩餘命數"},{L"ボム数",L"BOMBS",L"灵击次数",L"靈擊次數"},{L"復帰時ボム数",L"RESPAWN BOMB",L"复活时灵击次数",L"復活時靈擊次數"},
-        {L"会話",L"DIALOGUE",L"对话",L"對話"},{L"シード方式",L"SEED MODE",L"种子模式",L"種子模式"},{L"固定シード",L"FIXED SEED",L"固定种子",L"固定種子"},
-        {L"固定シードを更新",L"NEW FIXED SEED",L"更换固定种子",L"更換固定種子"},{L"開始",L"START",L"开始",L"開始"},{L"戻る",L"BACK",L"返回",L"返回"}}};
-    const int first=menu.first_visible_row();
-    for(int slot=0;slot<menu.visible_row_count();++slot){
-        const int i=first+slot;const auto r=menu.row(i);const int y=50+slot*22;const unsigned color=0xff172b43u;
-        if(menu.selected==i)for(int yy=y-2;yy<y+18;++yy)std::fill(pixels.begin()+yy*640+40,pixels.begin()+yy*640+600,0xffd6eaffu);
-        draw(labels[static_cast<int>(r)](lang),56,y,color);
-        draw(practice_value(menu,r,lang),352,y,color);
-    }
-    centered(std::to_wstring(first+1)+tr(L"～",L" TO ",L"～",L"～")+std::to_wstring(first+menu.visible_row_count())+tr(L" / ",L" OF ",L" / ",L" / ")+std::to_wstring(menu.row_count()),320,0xff36516du);
-    const auto hint=menu.number_editing()?tr(L"Enter：確定　Esc：取消",L"Enter: accept   Esc: cancel",L"Enter：确认  Esc：取消",L"Enter：確認  Esc：取消"):
-        menu.selected>=0&&menu.selected<menu.row_count()&&menu.row(menu.selected)==PracticeMenu::Row::SeedMode?
-            (menu.spec.seed_mode==PracticeSeedMode::Random?tr(L"開始・再挑戦ごとに新しいシード",L"New seed at start and retry",L"每次开始或重试时生成新种子",L"每次開始或重試時產生新種子"):tr(L"再挑戦でも固定シードを使用",L"Reuse fixed seed on retry",L"重试时仍使用固定种子",L"重試時仍使用固定種子")):
-            tr(L"方向キー：選択・変更　Z：決定　Esc：戻る",L"Arrows: edit  Z: confirm  Esc: back",L"方向键：选择、修改  Z：确认  Esc：返回",L"方向鍵：選擇、修改  Z：確認  Esc：返回");
-    centered(hint,342,0xff36516du);
-    if(!menu.warning.empty())draw(practice_warning(menu.warning,lang),40,373,0xffa02727u);
-    else if(!validate_practice(menu.spec,menu.capabilities).empty())draw(tr(L"この開始地点は選べません",L"Target unavailable",L"无法选择此起点",L"無法選擇此起點"),40,373,0xffa02727u);
-}
 struct PracticeStore {
     std::filesystem::path path;
     PracticeSpec saved;

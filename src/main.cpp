@@ -42,6 +42,7 @@
 #include "shot_input.hpp"
 #include "settings.hpp"
 #include "practice_menu.hpp"
+#include "practice_panel.hpp"
 #include "practice_session.hpp"
 #include "practice_targets.hpp"
 #include "practice_music.hpp"
@@ -886,6 +887,7 @@ struct App {
     bool score_review_armed=false,score_release=false,death_presented=false;
     soew::ShotInput z_input;
     soew::PracticeMenu practice_menu;
+    soew::PracticePanel practice_panel;
     std::optional<soew::PracticeStore> practice_store;
     std::optional<soew::PracticeBuilder> practice_builder;
     std::optional<std::future<soew::PracticeBuilder>> practice_load;
@@ -1542,14 +1544,61 @@ void handle_replay_menu(App &app,unsigned input){
     }
 }
 Frame practice_frame(const App &app){
-    Frame frame{640,400,std::vector<std::uint32_t>(640*400)};
+    auto frame=app.frames[0];
     const auto lang=app.menu.language;
-    const auto fallback=[&](std::wstring_view text,int x,int y,std::uint32_t color){jp_text(frame,text,x,y,color);};
-    soew::draw_practice_menu(frame.pixels,app.practice_menu,lang,[&](std::wstring_view label,int x,int y,std::uint32_t color){
-        if(chinese_display(lang))display_text(frame,label,x,y,color,lang,600-x);
-        else if(x+menu_text_width(label)<=frame.w)draw_menu_text(frame.pixels,app.font,label,x,y,color,fallback);
-        else fallback(label,x,y,color);
-    });
+    using T=soew::PracticeText;
+    struct Surface {
+        HDC dc=CreateCompatibleDC(nullptr);
+        HBITMAP bitmap=nullptr;
+        HGDIOBJ saved_bitmap=nullptr,saved_font=nullptr;
+        std::array<HFONT,3> fonts{};
+        ~Surface(){
+            if(saved_font)SelectObject(dc,saved_font);
+            if(saved_bitmap)SelectObject(dc,saved_bitmap);
+            for(auto font:fonts)if(font)DeleteObject(font);
+            if(bitmap)DeleteObject(bitmap);
+            if(dc)DeleteDC(dc);
+        }
+    } canvas;
+    BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=frame.w;
+    info.bmiHeader.biHeight=-frame.h;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;
+    void *bits=nullptr;canvas.bitmap=CreateDIBSection(canvas.dc,&info,DIB_RGB_COLORS,&bits,nullptr,0);
+    if(!canvas.dc||!canvas.bitmap)throw std::runtime_error("Practice panel surface allocation failed");
+    const auto family=soew::localized(lang,L"MS Gothic",L"MS Gothic",L"SimSun",L"PMingLiU");
+    const auto charset=lang==soew::Language::ChineseSimplified?GB2312_CHARSET:lang==soew::Language::ChineseTraditional?CHINESEBIG5_CHARSET:SHIFTJIS_CHARSET;
+    for(unsigned i=0;i<canvas.fonts.size();++i){
+        constexpr std::array<int,3> sizes={16,14,18};
+        canvas.fonts[i]=CreateFontW(-sizes[i],0,0,0,i==unsigned(T::Heading)?FW_BOLD:FW_NORMAL,FALSE,FALSE,FALSE,charset,
+            OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,NONANTIALIASED_QUALITY,DEFAULT_PITCH,family);
+        if(!canvas.fonts[i])throw std::runtime_error("Practice panel font allocation failed");
+    }
+    canvas.saved_bitmap=SelectObject(canvas.dc,canvas.bitmap);
+    canvas.saved_font=SelectObject(canvas.dc,canvas.fonts[0]);
+    SetBkMode(canvas.dc,TRANSPARENT);
+    const bool loading=!app.practice_load_cancelled&&(app.practice_load||app.practice_audio_load||app.practice_builder);
+    struct TextRun {std::wstring value;RECT bounds;std::uint32_t color;T style;bool right;};
+    std::vector<TextRun> runs;
+    soew::draw_practice_panel(frame.pixels,app.practice_panel,app.practice_menu,lang,loading,
+        [&](std::wstring_view label,int x,int y,int right,int height,std::uint32_t color,T style,bool align_right){
+            runs.push_back({std::wstring(label),{x,y,right,y+height},color,style,align_right});
+        },[&](int shot,int x,int y,int width,int height,bool selected){
+            const auto &pic=app.portraits[shot];
+            const int w=std::min(width,pic.w*height/pic.h),h=std::min(height,pic.h*width/pic.w);
+            x+=(width-w)/2;y+=(height-h)/2;
+            for(int row=0;row<h;++row)for(int col=0;col<w;++col){
+                const auto color=pic.pixels[(row*pic.h/h)*pic.w+col*pic.w/w];
+                frame.pixels[(y+row)*frame.w+x+col]=selected?color:((color&0xfefefeu)>>1);
+            }
+        });
+    auto *surface=static_cast<std::uint32_t*>(bits);
+    std::copy(frame.pixels.begin(),frame.pixels.end(),surface);
+    for(auto &run:runs){
+        SelectObject(canvas.dc,canvas.fonts[unsigned(run.style)]);
+        SetTextColor(canvas.dc,RGB((run.color>>16)&255,(run.color>>8)&255,run.color&255));
+        DrawTextW(canvas.dc,run.value.data(),int(run.value.size()),&run.bounds,
+            DT_SINGLELINE|DT_VCENTER|DT_NOPREFIX|DT_END_ELLIPSIS|(run.right?DT_RIGHT:DT_LEFT));
+    }
+    GdiFlush();std::copy_n(surface,frame.pixels.size(),frame.pixels.begin());
     return frame;
 }
 void compose_replay_menu(App &app){
@@ -1779,7 +1828,7 @@ void apply_next_stage(App &app){
     catch(const std::exception &e){app.stage_scene->transition_error=e.what();std::cerr<<"Stage transition failed: "<<e.what()<<'\n';app.notice=app.tr(L"ステージを切り替えられませんでした。直前の画面を保持しています",L"Stage transition failed; previous scene retained",L"无法切换关卡，已保留原场景",L"無法切換關卡，已保留原場景");}
 }
 bool practice_keys_released(){for(int key:{VK_UP,VK_DOWN,VK_LEFT,VK_RIGHT,VK_NUMPAD8,VK_NUMPAD2,VK_NUMPAD4,VK_NUMPAD6,VK_NUMPAD1,VK_NUMPAD3,VK_NUMPAD7,VK_NUMPAD9,int('Z'),int('X'),VK_SPACE,VK_RETURN,VK_ESCAPE,VK_PRIOR,VK_NEXT,int('R'),int('Q')})if(GetAsyncKeyState(key)&0x8000)return false;return true;}
-void reset_practice_to_menu(App &app,const std::string &warning){app.practice_retry=app.practice_retry_release=false;stop_gameplay_bgm(app);app.stage_scene.reset();app.recorder.reset();app.practice_session.reset();app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=true;app.practice_choice=0;app.practice_menu.allowed=false;app.practice_menu.warning=warning;app.z_input.clear();app.stage_clock.reset(host_ms());app.menu.shot_screen=false;app.menu_visible=true;app.notice=soew::practice_warning(warning,app.menu.language);}
+void reset_practice_to_menu(App &app,const std::string &warning){app.practice_retry=app.practice_retry_release=false;stop_gameplay_bgm(app);app.stage_scene.reset();app.recorder.reset();app.practice_session.reset();app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=true;app.practice_choice=0;app.practice_panel.open(app.practice_menu,soew::PracticePanel::Page::Setup);app.practice_menu.allowed=false;app.practice_menu.warning=warning;app.z_input.clear();app.stage_clock.reset(host_ms());app.menu.shot_screen=false;app.menu_visible=true;app.notice=soew::practice_warning(warning,app.menu.language);}
 void save_practice(App &app){if(app.practice_store&&!app.practice_store->save(app.practice_menu.spec)){app.practice_menu.warning=app.practice_store->warning;app.notice=app.tr(L"練習設定を保存できませんでした",L"Practice settings could not be saved",L"无法保存练习设置",L"無法儲存練習設定");}}
 void begin_practice(App &app,const soew::PracticeSpec &spec){
     app.practice_started=host_ms();
@@ -1866,7 +1915,7 @@ void advance_practice(App &app){
             app.tr(L" | R：同じシードで再挑戦",L" | R: retry same seed",L" | R：用相同种子重试",L" | R：用相同種子重試"))+
         app.tr(L" | Esc：メニュー",L" | Esc: menu",L" | Esc：菜单",L" | Esc：選單");
 }
-void leave_practice(App &app,bool title){app.practice_retry_release=app.last_paint_practice=false;stop_gameplay_bgm(app);app.stage_scene.reset();app.recorder.reset();app.practice_session.reset();app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=!title;app.practice_menu.allowed=false;app.menu.selected=6;app.menu.allowed=false;app.menu.shot_screen=false;app.z_input.clear();app.menu_visible=true;start_preview(app,0);}
+void leave_practice(App &app,bool title){app.practice_retry_release=app.last_paint_practice=false;stop_gameplay_bgm(app);app.stage_scene.reset();app.recorder.reset();app.practice_session.reset();app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=!title;if(!title)app.practice_panel.open(app.practice_menu,soew::PracticePanel::Page::Setup);app.practice_menu.allowed=false;app.menu.selected=6;app.menu.allowed=false;app.menu.shot_screen=false;app.z_input.clear();app.menu_visible=true;start_preview(app,0);}
 bool set_fullscreen(HWND hwnd,App &app,bool enabled){
     if(enabled==app.window_fullscreen)return true;
     const auto changed=[](HWND window,LONG_PTR style){SetLastError(0);return SetWindowLongPtrW(window,GWL_STYLE,style)!=0||GetLastError()==0;};
@@ -2022,18 +2071,26 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(app->practice_visible){
             if(repeat)return 0;
             auto &m=app->practice_menu;
-            if(!m.number_editing()&&(w==VK_PRIOR||w==VK_NEXT)&&m.row(m.selected)==soew::PracticeMenu::Row::Power&&m.allowed){m.allowed=false;const int delta=w==VK_PRIOR?1:-1;const auto level=soew::PickupCore::levels.at(unsigned(m.spec.power)>>2);int power=m.spec.power;while(power+delta>=1&&power+delta<=80){power+=delta;if(soew::PickupCore::levels.at(unsigned(power)>>2)!=level)break;}m.spec.power=power;save_practice(*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;}
+            auto &panel=app->practice_panel;
+            if(!m.number_editing()&&(w==VK_PRIOR||w==VK_NEXT)&&panel.focused(soew::PracticePanel::Field::Power)&&m.allowed){m.allowed=false;const int delta=w==VK_PRIOR?1:-1;const auto level=soew::PickupCore::levels.at(unsigned(m.spec.power)>>2);int power=m.spec.power;while(power+delta>=1&&power+delta<=80){power+=delta;if(soew::PickupCore::levels.at(unsigned(power)>>2)!=level)break;}m.spec.power=power;save_practice(*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;}
             if(m.number_editing()){
                 if((GetKeyState(VK_CONTROL)&0x8000)&&w=='A')m.number_select_all();
                 else if((GetKeyState(VK_CONTROL)&0x8000)&&w=='V'){bool valid=false;if(OpenClipboard(hwnd)){const auto data=GetClipboardData(CF_UNICODETEXT);if(data){const auto count=GlobalSize(data)/sizeof(wchar_t);const auto text=static_cast<const wchar_t*>(GlobalLock(data));if(text){for(std::size_t i=0;i<count&&i<=256;++i){if(text[i]==0){valid=m.number_paste(std::wstring_view(text,i));break;}}GlobalUnlock(data);}}CloseClipboard();}if(!valid)m.warning="Invalid pasted number";else m.warning.clear();}
                 else if(!(GetKeyState(VK_CONTROL)&0x8000)&&!(GetKeyState(VK_SHIFT)&0x8000)&&!(GetKeyState(VK_MENU)&0x8000)&&w>='0'&&w<='9')m.number_digit(unsigned(w-'0'));else if(!(GetKeyState(VK_CONTROL)&0x8000)&&!(GetKeyState(VK_MENU)&0x8000)&&w>=VK_NUMPAD0&&w<=VK_NUMPAD9)m.number_digit(unsigned(w-VK_NUMPAD0));
                 else if(w==VK_OEM_MINUS||w==VK_SUBTRACT)m.number_minus();else if(w==VK_BACK)m.number_backspace();else if(w==VK_DELETE)m.number_delete();else if(w==VK_LEFT)m.number_editor.move_left();else if(w==VK_RIGHT)m.number_editor.move_right();else if(w==VK_HOME)m.number_editor.home();else if(w==VK_END)m.number_editor.end();else if(w==VK_RETURN){if(m.number_enter())save_practice(*app);}else if(w==VK_ESCAPE)m.number_cancel();
             }
-            else{unsigned in=0;if(w==VK_UP)in=Menu::up;else if(w==VK_DOWN)in=Menu::down;else if(w==VK_LEFT)in=Menu::left;else if(w==VK_RIGHT)in=Menu::right;else if(w==VK_RETURN||w=='Z')in=Menu::confirm;else if(w==VK_ESCAPE||w=='X')in=Menu::cancel;const auto action=in?m.update(in):soew::PracticeMenu::Action::None;
+            else{
+                using M=soew::PracticeMenu;
+                const auto before=m.spec;
+                unsigned in=0;
+                if(w==VK_UP||w==VK_NUMPAD8)in=M::up;else if(w==VK_DOWN||w==VK_NUMPAD2)in=M::down;
+                else if(w==VK_LEFT||w==VK_NUMPAD4)in=M::left;else if(w==VK_RIGHT||w==VK_NUMPAD6)in=M::right;
+                else if(w==VK_RETURN||w=='Z')in=M::confirm;else if(w==VK_ESCAPE||w=='X')in=M::cancel;
+                const auto action=in?panel.update(m,in):M::Action::None;
                 if(action==soew::PracticeMenu::Action::Start)begin_practice(*app,m.spec);
                 else if(action==soew::PracticeMenu::Action::Back){save_practice(*app);app->practice_visible=false;app->menu.allowed=false;}
                 else if(action==soew::PracticeMenu::Action::NewSeed){m.spec.seed=std::random_device{}();save_practice(*app);}
-                else save_practice(*app);
+                else if(m.spec!=before)save_practice(*app);
             }caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
         }
         if(app->stage_scene&&app->practice_session){
@@ -2176,7 +2233,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 }
                 if(was_music&&app->menu.music_room&&was_allowed&&(input&Menu::confirm))start_preview(*app,app->menu.music_selected);
                 if(was_options&&was_allowed&&(previous_settings.music!=app->menu.music||reset_options))start_preview(*app,app->loaded_track);
-                if(action==6){app->practice_visible=true;app->practice_menu.allowed=false;app->notice=app->tr(L"練習：１～５面とエキストラ",L"Practice: Stages 1-5 and Extra",L"练习：第 1 至 5 关和额外关卡",L"練習：第 1 至 5 關與額外關卡");}
+                if(action==6){app->practice_visible=true;app->practice_panel.open(app->practice_menu);app->practice_menu.allowed=false;}
                 if(action==7){open_replay_browser(*app);}
                 if(action==5) { DestroyWindow(hwnd); return 0; }
                 if(action==2){
@@ -2426,7 +2483,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             auto fail=[&](const char *reason){std::cerr<<"async_practice_failure="<<reason<<" step="<<app->async_practice_step<<" elapsed_ms="<<now-app->async_practice_started<<'\n';app->failed=true;DestroyWindow(hwnd);};
             if(now-app->async_practice_started>120000){fail("timeout");return 0;}
             if(app->retry_probe.mode>=0){app->retry_probe.step(hwnd,*app);return 0;}
-            auto start=[&](int music){app->menu.music=music;app->practice_visible=true;app->practice_menu.selected=app->practice_menu.row_count()-2;app->practice_menu.allowed=true;app->async_practice_phase_started=now;SendMessageW(hwnd,WM_KEYDOWN,VK_RETURN,0);SendMessageW(hwnd,WM_KEYUP,VK_RETURN,0);};
+            auto start=[&](int music){app->menu.music=music;app->practice_visible=true;app->practice_panel.open(app->practice_menu,soew::PracticePanel::Page::Setup);app->practice_menu.allowed=true;app->async_practice_phase_started=now;SendMessageW(hwnd,WM_KEYDOWN,VK_RETURN,0);SendMessageW(hwnd,WM_KEYUP,VK_RETURN,0);};
             auto log=[&](const char *label){std::cout<<"async_practice="<<label<<" elapsed_ms="<<now-app->async_practice_phase_started<<" total_ms="<<now-app->async_practice_started<<'\n';};
             switch(app->async_practice_step){
             case 0:
@@ -3403,6 +3460,8 @@ int wmain(int argc, wchar_t **argv) {
         int stage_dump_id=-1;
         unsigned score_frame_number=0;
         std::optional<soew::Language> language_override;
+        using PracticePage=soew::PracticePanel::Page;
+        std::optional<PracticePage> practice_dump;
         RetryHostProbe retry_probe;
         auto &retry_mode=retry_probe.mode,&retry_chapter=retry_probe.chapter,&retry_stage=retry_probe.stage,&retry_samples=retry_probe.sample_count;
         using RetrySection=soew::PracticeSection;
@@ -3431,6 +3490,14 @@ int wmain(int argc, wchar_t **argv) {
             else if(arg == L"--settings-probe")settings_probe=true;
             else if(arg == L"--settings-dir" && i + 1 < argc) {explicit_settings_dir=true;settings_dir=argv[++i];if(settings_dir.empty())throw std::runtime_error("Empty settings directory");}
             else if(arg == L"--dump" && i + 1 < argc) { dump_path = argv[++i]; dump_only = true; }
+            else if(arg == L"--practice-menu" && i + 1 < argc){
+                const std::wstring_view page=argv[++i];
+                if(page==L"shots")practice_dump=PracticePage::Shots;
+                else if(page==L"stages")practice_dump=PracticePage::Stages;
+                else if(page==L"setup")practice_dump=PracticePage::Setup;
+                else if(page==L"advanced")practice_dump=PracticePage::Advanced;
+                else throw std::runtime_error("Expected --practice-menu shots, stages, setup or advanced");
+            }
             else if(arg == L"--stage-fire")stage_dump_fire=true;
             else if(arg == L"--stage-bomb")stage_dump_bomb=true;
             else if(arg == L"--stage-protected")stage_dump_protected=true;
@@ -3492,6 +3559,7 @@ int wmain(int argc, wchar_t **argv) {
             throw std::runtime_error("--force-exact-retry requires --retry-benchmark");
         if(retry_probe.disable_intro&&(retry_mode<0||retry_probe.section!=RetrySection::StageStart))
             throw std::runtime_error("--retry-intro-off requires a stage-start retry benchmark");
+        if(practice_dump&&!dump_only)throw std::runtime_error("--practice-menu requires --dump");
         const bool diagnostic=smoke||test||dump_only||timed_test||score_timed_test||async_practice_test||settings_probe||stage_dump_id>=0||rika_probe||preboss_dump||options_dump||shots_dump||scores_dump||music_dump;
         if(!replay_file.empty()&&(diagnostic||stage4_trial||stage5_trial||stage5_mainline||extra_trial||extra_candidate))throw std::runtime_error("Replay is a standalone launch mode");
         const bool interactive_title=!diagnostic&&replay_file.empty()&&!stage4_trial&&!stage5_trial&&!extra_trial;
@@ -3567,6 +3635,17 @@ int wmain(int argc, wchar_t **argv) {
         if(app.legacy_content)std::cerr<<"Locale overlay missing; using legacy content files\n";
         const auto title_root=soew::locale_asset(assets,app.menu.language,"OP2.PI").parent_path();
         app.frames={load(title_root, "OP2.PI", true), load(assets, "OP.PI", false), load(assets, "TSELECT.PI", false)};
+        const auto select=th03::assets::decode_pi(read(assets / "TSELECT.PI"));
+        if(!select || !select->palette)throw std::runtime_error("Selection palette unavailable");
+        const auto rgb=[](const th03::assets::Rgb4 &c){return (std::uint32_t(c.r)*17<<16)|(std::uint32_t(c.g)*17<<8)|(std::uint32_t(c.b)*17);};
+        app.selected_color=rgb(select->palette->colors[12]);
+        app.unselected_color=rgb(select->palette->colors[7]);
+        app.portraits={load(assets,"TS1.PI",false,&*select->palette),load(assets,"TS2.PI",false,&*select->palette),load(assets,"TS3.PI",false,&*select->palette)};
+        if(practice_dump){
+            app.practice_panel.open(app.practice_menu,*practice_dump);
+            dump(practice_frame(app),dump_path);
+            return 0;
+        }
         try{app.stage_intro_art=load(assets,"EYE.PI",false);}
         catch(const std::exception &error){std::cerr<<"Stage intro unavailable: "<<error.what()<<'\n';}
         const auto font_bytes=read(assets / "MIKOFT.BFT");
@@ -3580,12 +3659,6 @@ int wmain(int argc, wchar_t **argv) {
         app.font=std::move(*font);
         app.menu.options=options_dump;
         app.menu.shot_screen=shots_dump;
-        const auto select=th03::assets::decode_pi(read(assets / "TSELECT.PI"));
-        if(!select || !select->palette)throw std::runtime_error("Selection palette unavailable");
-        const auto rgb=[](const th03::assets::Rgb4 &c){return (std::uint32_t(c.r)*17<<16)|(std::uint32_t(c.g)*17<<8)|(std::uint32_t(c.b)*17);};
-        app.selected_color=rgb(select->palette->colors[12]);
-        app.unselected_color=rgb(select->palette->colors[7]);
-        app.portraits={load(assets,"TS1.PI",false,&*select->palette),load(assets,"TS2.PI",false,&*select->palette),load(assets,"TS3.PI",false,&*select->palette)};
         std::cout << "gaiji_glyphs=" << app.font.glyphs.size() << '\n';
         try{app.scores=soew::decode_scores(read(assets/"HUUHI.DAT"));std::cout<<"score_records=50 checksums=valid\n";}catch(const std::exception &e){app.score_error=e.what();std::cout<<"score_unavailable="<<app.score_error<<'\n';}
         if(app.scores){const auto status=soew::clear_status(*app.scores);app.menu.unlocked=status.unlocked;app.menu.cleared_main=status.main;app.menu.cleared_extra=status.extra;std::cout<<"extra_unlocked="<<status.unlocked<<" main_clears="<<status.main[0]<<status.main[1]<<status.main[2]<<" extra_clears="<<status.extra[0]<<status.extra[1]<<status.extra[2]<<'\n';}

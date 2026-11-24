@@ -72,6 +72,10 @@ need the English patch, a PC-98 emulator, or a SoundFont for the basic FM build.
   left/right value editing.
 * MIDI (TinySoundFont) or FM (98fmplayer through libth03) audio.
 
+In Practice, choose Reimu's shot type with Left/Right, then choose a stage with
+Up/Down. Use Z or Enter to confirm and X or Esc to go back. The next screen
+sets the starting point and difficulty, with stocks and seed under Advanced.
+
 This is a reimplementation, not a binary patch. The gameplay is based on the
 PC-98 code, but the port has not been verified frame for frame. The Windows
 scheduler, RNG initialization, and some rendering and gameplay edge cases
