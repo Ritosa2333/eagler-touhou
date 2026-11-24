@@ -169,6 +169,11 @@ private:
             (!transitions_enabled||!transition.active())&&extra_settlement.phase==ExtraSettlement::Phase::Inactive&&
             !runtime.blocked&&!weapon_blocked&&!sigma.blocked&&!mima.blocked_reason()&&transition_error.empty();
     }
+    const CollisionFrame *sampled_collision_frame()const{
+        if(collision_frame_.scene!=this||collision_frame_.completed_tick!=ticks||
+           collision_frame_.page!=rendered_page||!hitbox_battle_visible())return nullptr;
+        return &collision_frame_;
+    }
     bool sigma_view_shift()const{return sigma_enabled&&sigma.shake&&!reduced_effects;}
     struct DeathPresentation {unsigned slowdown=1,tone=100,shift=0;};
     template<class Effects>
@@ -214,9 +219,7 @@ public:
         hitbox_mode_=mode;invalidate_hitboxes();
     }
     const CollisionFrame *collision_snapshot()const{
-        if(hitbox_mode_==HitboxMode::Off||collision_frame_.scene!=this||collision_frame_.completed_tick!=ticks||
-           collision_frame_.page!=rendered_page||!hitbox_battle_visible())return nullptr;
-        return &collision_frame_;
+        return hitbox_mode_==HitboxMode::Off?nullptr:sampled_collision_frame();
     }
     void render_hitboxes(std::span<std::uint32_t> pixels)const{
         if(const auto *display=collision_snapshot())draw_collision_frame(pixels,*display,reduced_effects,-int(boss_death_presentation().shift));
@@ -408,7 +411,7 @@ public:
         if(paused)return;
         if(!(input&Focus))player.clear_focus();
         const auto action_input=std::uint16_t(input&~Focus);
-        if(hitbox_mode_!=HitboxMode::Off)invalidate_hitboxes();
+        invalidate_hitboxes();
         if(practice_completed)return;
         if(extra_settlement.terminal())return;
         if(extra_settlement.showing_bonus()||extra_settlement.phase==ExtraSettlement::Phase::GameOver){extra_settlement.tick(dialogue_group_key);return;}
@@ -769,6 +772,11 @@ public:
             numbers.update(page);
         }
         if((rika_enabled||stones_enabled||stage==3||sigma_enabled)&&lasers.update(logic_frame,player.x,player.y,life.hit,[&](unsigned id){request_sound(id);},display)){++hit_checks;if(survival_enabled)life.register_hit();}
+        if(!display&&player.focused&&hitbox_battle_visible()){
+            // Shift needs the shot check's player sample even with the debug overlay off.
+            display=&collision_frame_;
+            display->begin(HitboxMode::Self,logic_frame,page);
+        }
         if(bullet_core.update(page,player.x,player.y,logic_frame,display)){++hit_checks;if(survival_enabled)life.register_hit();}
         if(effects_enabled){sparks.update(page);unsigned stock=life.lives,bomb_stock=life.bombs;score_core.update(stock,bomb_stock);life.lives=static_cast<std::uint8_t>(stock);life.bombs=static_cast<std::uint8_t>(bomb_stock);lives=int(stock);bombs=int(bomb_stock);if(life.game_over)score_core.commit();}
         while(consumed_pickup_sounds<pickups.sounds.size())request_sound(pickups.sounds[consumed_pickup_sounds++]);
@@ -1264,7 +1272,11 @@ private:
             else put(rika.draw_pattern,p,flash(rika.hit_flash));
         }
         if(combat_enabled)for(unsigned i=0;i<shots.slots.size();++i){const auto &s=shots.slots[i];if(s.flag==1)put(shots.pattern_for(s),motion.at(T::Shot,i,motion_q4(s.position[rendered_page]),s.pattern));}
-        if(survival_enabled){if(life.pattern)put(*life.pattern,motion.at(T::Player,0,life.draw.x,life.draw.y,life.total_misses));}
+        // Focus is a collision reference. Show the player and hostile bullets
+        // from the checked frame, not the older interpolated pose of live slots.
+        const auto *focus_frame=player.focused&&!paused?sampled_collision_frame():nullptr;
+        const auto focus=focus_frame?focus_frame->player[static_cast<unsigned>(CollisionSample::Projectile)]:std::nullopt;
+        if(survival_enabled){if(life.pattern)put(*life.pattern,focus?RenderPoint::pixels(focus->x,focus->y):motion.at(T::Player,0,life.draw.x,life.draw.y,life.total_misses));}
         else put(player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0,motion.at(T::Player,0,player.x,player.y,life.total_misses));
         if(options_visible()){
             const unsigned pat=72+static_cast<unsigned>(player.shot);const auto p=motion.at(T::Option,0,shots.option_left,shots.option_top);
@@ -1294,9 +1306,14 @@ private:
         }
         constexpr std::array<unsigned,8> pellet={0x3c,0x7e,0xff,0xff,0xff,0xff,0x7e,0x3c}; // th02/sprites/pellet.bmp
         const auto pellet_color=stage5_rgb(background.palette[15]);
+        const bool show_contact=focus&&life.hit&&!life.invincibility&&!life.bomb_invincible;
         for(unsigned i=0;i<bullet_core.bullets.size();++i){
-            const auto &b=bullet_core.bullets[i];if(b.flag!=1)continue;
-            const auto p=motion.at(T::Bullet,i,motion_q4(b.position[rendered_page]),unsigned(b.kind));
+            // The simulation removes a colliding shot immediately. Focus shows
+            // its sampled contact for this frame only, never an extrapolated hit.
+            const auto &b=bullet_core.bullets[i];
+            if(b.flag!=1&&!(show_contact&&focus_frame->projectile_contacts[i]))continue;
+            const auto current=motion_q4(b.position[rendered_page]);
+            const auto p=focus?current.snapped():motion.at(T::Bullet,i,current,unsigned(b.kind));
             if(b.kind==EnemyBulletRequest::Bullet16)put(b.pattern,p);
             else blit_motion_sprite(pixels,p,8,8,[&](int x,int y){return pellet[y]&(128>>x)?pellet_color:render_clear;});
         }
@@ -1320,10 +1337,7 @@ private:
             std::fill_n(first+384,death_fx.shift,0u);
         }
         if(death_fx.tone!=100)apply_mima_tone(pixels,death_fx.tone);
-        if(player.focused&&!paused&&hitbox_battle_visible()){
-            const auto p=motion.at(T::Player,0,player.x,player.y,life.total_misses);
-            draw_player_focus_point(pixels,p.offset(player_projectile_offset.x-int(death_fx.shift),player_projectile_offset.y));
-        }
+        if(focus)draw_player_focus_point(pixels,*focus,-int(death_fx.shift));
         // Approximate Sigma's one-word GDC offset without moving host HUD or collisions.
         if(sigma_view_shift())for(int y=16;y<384;++y){
             auto first=pixels.begin()+y*640+32;

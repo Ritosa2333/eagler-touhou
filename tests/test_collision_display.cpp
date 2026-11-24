@@ -35,10 +35,11 @@ static void projectile_sampling(){
     CHECK(b.update(1,player.x,player.y,8,&f));
     CHECK(f.bullet_count==2&&f.bullets[0].position==CollisionPoint{207,312}&&f.bullets[0].pellet);
     CHECK(b.bullets[0].flag==2&&b.bullets[2].flag==2);
+    CHECK(f.projectile_contacts.count()==1&&f.projectile_contacts[0]);
     CHECK(f.bullets[1].position==CollisionPoint{40,362}&&!f.bullets[1].pellet&&b.bullets[1].velocity[1]==-32);
     CHECK(f.player[static_cast<unsigned>(CollisionSample::Projectile)]==player);
     f.begin(HitboxMode::Self,9,1);CHECK(!b.update(1,player.x,player.y,9,&f));
-    CHECK(f.bullet_count==0&&f.player[static_cast<unsigned>(CollisionSample::Projectile)]==player);
+    CHECK(f.bullet_count==0&&f.projectile_contacts.none()&&f.player[static_cast<unsigned>(CollisionSample::Projectile)]==player);
     b.clear(0);f.begin(HitboxMode::All,10,0);CHECK(!b.update(0,player.x,player.y,10,&f)&&f.bullet_count==0);
 
     LaserCore laser;
@@ -70,6 +71,54 @@ static void vertical_projectile_contact(){
         CHECK(!bullets.update(0,player.x,player.y)&&shot.flag==1);
         CHECK(bullets.update(0,player.x,player.y)&&shot.flag==2);
         CHECK(BulletCore::pixel(shot.position[0][1])+center_offset==marker_y+first_hit);
+    }
+}
+
+static void focus_projectile_presentation(const std::filesystem::path &assets){
+    constexpr CollisionPoint player{208,336};
+    constexpr int cx=player.x+player_projectile_offset.x,cy=player.y+player_projectile_offset.y;
+    constexpr int offset=bullet_center_offset(true);
+    constexpr std::uint32_t pellet_color=0xfffdfb;
+    std::vector<std::uint32_t> pixels(640*400),without(pixels.size());
+    const auto at=[](int x,int y){return y*640+x;};
+    for(const int speed:{2,6}){
+        auto scene=EncounterScene::load(assets,0,0,1,2,3);
+        scene.survival_enabled=true;
+        scene.script.formations.clear();scene.script.declared_formations=0;
+        scene.background.palette[15]={255,253,251};
+        auto &pellet=scene.bullet_core.bullets[0];
+        constexpr int first_hit=cy-8;
+        const int last_visible=first_hit-speed,old=last_visible-speed;
+        pellet.flag=1;pellet.velocity={0,speed*16};
+        pellet.position.fill({std::uint16_t((cx-offset)*16),std::uint16_t((old-offset)*16)});
+        MotionFrame previous;scene.capture_motion(previous);
+        scene.tick(Focus);
+        CHECK(!scene.life.hit&&pellet.flag==1&&!scene.collision_snapshot());
+        for(const unsigned phase:{0u,128u,256u}){
+            scene.render(pixels,true,true,phase,&previous);
+            CHECK(pixels[at(cx,cy)]==0xffffff&&pixels[at(cx-5,first_hit)]==0xff456b);
+            CHECK(pixels[at(cx,last_visible)]==pellet_color);
+            pellet.flag=0;scene.render(without,true,true,phase,&previous);pellet.flag=1;
+            CHECK(without[at(cx,last_visible)]!=pellet_color);
+            // The whole visible pellet, not just the center, is on the sampled frame.
+            for(int y=old-offset-1;y<last_visible+offset+1;++y)
+                for(int x=cx-offset-1;x<cx+offset+1;++x)
+                    if(y<last_visible-offset||y>=last_visible+offset||x<cx-offset||x>=cx+offset)
+                        CHECK(pixels[at(x,y)]==without[at(x,y)]);
+        }
+        scene.capture_motion(previous);
+        scene.tick(Focus);
+        CHECK(scene.life.hit&&pellet.flag==2);
+        CHECK(BulletCore::pixel(pellet.position[scene.rendered_page][1])+offset==first_hit);
+        scene.render(pixels,true,true,0,&previous);
+        CHECK(pixels[at(cx,first_hit)]==pellet_color);
+        CHECK(pixels[at(cx-5,first_hit)]==0xff456b);
+        scene.player.focused=false;scene.render(without,true,true,0,&previous);
+        CHECK(without[at(cx,first_hit)]!=pellet_color); // No contact cue outside Shift.
+        scene.tick(Focus);
+        CHECK(scene.life.stage_misses==1&&pellet.flag==0);
+        scene.render(pixels);
+        CHECK(pixels[at(cx,first_hit)]!=pellet_color); // No extra live or rendered frame.
     }
 }
 
@@ -410,7 +459,8 @@ static void v2_playback(const std::filesystem::path &assets,const std::filesyste
 
 int main(int argc,char **argv){
     CHECK(argc>=2&&argc<=4);
-    projectile_sampling();vertical_projectile_contact();boss_sampling();render_bounds();scene_lifetime(argv[1]);player_reference_lifetime(argv[1]);
+    projectile_sampling();vertical_projectile_contact();focus_projectile_presentation(argv[1]);
+    boss_sampling();render_bounds();scene_lifetime(argv[1]);player_reference_lifetime(argv[1]);
     marisa_practice_overlay(argv[1]);marisa_contact_edges(argv[1]);
     if(argc==3){CHECK(std::string_view(argv[2])=="--timing");dense_pool_timings();}
     if(argc==4){CHECK(std::string_view(argv[2])=="--replay");v2_playback(argv[1],argv[3]);}

@@ -2,6 +2,7 @@
 #include "render_motion.hpp"
 #include <algorithm>
 #include <array>
+#include <bitset>
 #include <cstdint>
 #include <limits>
 #include <optional>
@@ -15,38 +16,6 @@ struct CollisionPoint {
     constexpr bool operator==(const CollisionPoint &) const = default;
 };
 inline constexpr CollisionPoint player_projectile_offset{16,24};
-
-inline void draw_player_focus_point(std::span<std::uint32_t> pixels,RenderPoint center){
-    constexpr SpriteClip clip;
-    constexpr int scale=motion_subpixels,grid=8,step=scale/grid;
-    constexpr int core=352,ring=624,edge=792; // 1.375, 2.4375 and 3.09375 px.
-    constexpr unsigned red=0xff3658,dark=0x2c0c19;
-    const int x0=RenderPoint::floor(center.x),y0=RenderPoint::floor(center.y);
-    const int left=std::max(clip.left,x0-3),right=std::min(clip.right,x0+5);
-    const int top=std::max(clip.top,y0-3),bottom=std::min(clip.bottom,y0+5);
-    // Sample concentric rings directly around the interpolated center.
-    // Unlike moving a pre-rasterized sprite, this keeps the same contour in motion.
-    for(int y=top;y<bottom;++y)for(int x=left;x<right;++x){
-        unsigned white_weight=0,red_weight=0,dark_weight=0;
-        for(int sy=0;sy<grid;++sy){
-            const int dy=y*scale-center.y+sy*step+step/2-scale/2;
-            for(int sx=0;sx<grid;++sx){
-                const int dx=x*scale-center.x+sx*step+step/2-scale/2;
-                const int d=dx*dx+dy*dy;
-                if(d<core*core)white_weight+=4;
-                else if(d<ring*ring)red_weight+=4;
-                else if(d<edge*edge)dark_weight+=3;
-            }
-        }
-        const auto base_weight=256-white_weight-red_weight-dark_weight;
-        auto &dst=pixels[y*640+x];
-        const auto channel=[&](int shift){
-            return (255*white_weight+((red>>shift)&255)*red_weight+
-                ((dark>>shift)&255)*dark_weight+((dst>>shift)&255)*base_weight+128)>>8;
-        };
-        dst=(channel(16)<<16)|(channel(8)<<8)|channel(0);
-    }
-}
 
 struct CollisionAxis {
     static constexpr int unbounded_low=std::numeric_limits<int>::min();
@@ -78,6 +47,34 @@ constexpr CollisionBounds bullet_hit_window(CollisionPoint player,bool pellet){
             CollisionAxis::closed(player.y+(pellet?12:4),player.y+(pellet?22:24))};
 }
 
+constexpr int bullet_center_offset(bool pellet){return pellet?4:8;}
+
+inline void draw_player_focus_point(std::span<std::uint32_t> pixels,CollisionPoint player,int view_shift_x=0){
+    constexpr SpriteClip clip;
+    constexpr std::uint32_t rose=0xff456b,ink=0x230d19;
+    const auto dot=[&](int x,int y,std::uint32_t color){
+        x+=view_shift_x;
+        if(x>=clip.left&&x<clip.right&&y>=clip.top&&y<clip.bottom)pixels[y*640+x]=color;
+    };
+    const auto box=bullet_hit_window(player,true);
+    constexpr int offset=bullet_center_offset(true);
+    const int left=int(box.x.first())+offset,right=int(box.x.last())+offset;
+    const int top=int(box.y.first())+offset,bottom=int(box.y.last())+offset;
+    // Rose corners mark the exact window for white pellet centers; the core
+    // is a position reference, not a circular hitbox.
+    for(int x:{left,right})for(int y:{top,bottom}){
+        const int dx=x==left?1:-1,dy=y==top?1:-1;
+        for(int i=0;i<3;++i){dot(x+i*dx,y-dy,ink);dot(x-dx,y+i*dy,ink);}
+        dot(x-dx,y-dy,ink);
+        for(int i=0;i<3;++i){dot(x+i*dx,y,rose);dot(x,y+i*dy,rose);}
+    }
+    const int cx=player.x+player_projectile_offset.x,cy=player.y+player_projectile_offset.y;
+    for(int dy=-2;dy<=2;++dy)for(int dx=-2;dx<=2;++dx){
+        const int d=dx*dx+dy*dy;
+        if(d<=5)dot(cx+dx,cy+dy,d<=1?0xffffff:d<=4?rose:ink);
+    }
+}
+
 enum class CollisionSample { Projectile, Current, Front, FrontXCurrentY, Count };
 enum class CollisionSource { Laser, Road, MeiraBody, MeiraMarker, MarisaBody, MarisaOrb,
                              MimaBody, MimaOrb, MimaBeam, SigmaBody, SigmaBurst, SigmaBeam };
@@ -90,6 +87,7 @@ struct CollisionFrame {
     static constexpr unsigned bullet_capacity=150;
     static constexpr unsigned hazard_capacity=12+25+(1+40)+(1+4)+(1+8+1)+(1+16+1);
     std::array<BulletPoint,bullet_capacity> bullets{};
+    std::bitset<bullet_capacity> projectile_contacts;
     std::array<Hazard,hazard_capacity> hazards{};
     std::array<std::optional<CollisionPoint>,static_cast<unsigned>(CollisionSample::Count)> player{};
     unsigned bullet_count=0,hazard_count=0;
@@ -102,7 +100,7 @@ struct CollisionFrame {
 
     void begin(HitboxMode value,std::uint32_t frame,unsigned back){
         scene=nullptr;mode=value;logic_frame=frame;page=back;
-        bullet_count=hazard_count=0;player={};
+        bullet_count=hazard_count=0;player={};projectile_contacts.reset();
     }
     void publish(const void *owner,std::uint64_t tick,bool shifted){
         scene=owner;completed_tick=tick;shake=shifted;
@@ -152,10 +150,9 @@ inline void draw_collision_frame(std::span<std::uint32_t> pixels,const Collision
         if(x1>=left&&x1<right)for(auto y=clip_y1;y<=clip_y2;++y)dot(x1,y);
         if(x2!=x1&&x2>=left&&x2<right)for(auto y=clip_y1;y<=clip_y2;++y)dot(x2,y);
     };
-    const auto bullet_offset=[](bool pellet){return pellet?4:8;};
     if(frame.mode==HitboxMode::All){
         for(unsigned i=0;i<frame.bullet_count;++i){
-            const auto &bullet=frame.bullets[i];const int offset=bullet_offset(bullet.pellet);
+            const auto &bullet=frame.bullets[i];const int offset=bullet_center_offset(bullet.pellet);
             dot(std::int64_t(bullet.position.x)+offset+view_shift_x,std::int64_t(bullet.position.y)+offset+view_shift_y);
         }
         for(unsigned i=0;i<frame.hazard_count;++i){
@@ -163,7 +160,7 @@ inline void draw_collision_frame(std::span<std::uint32_t> pixels,const Collision
             outline(hazard.bounds,center_x-hazard.player.x,center_y-hazard.player.y);
         }
     }
-    for(bool pellet:{true,false})outline(bullet_hit_window(*player,pellet),bullet_offset(pellet),bullet_offset(pellet));
+    for(bool pellet:{true,false})outline(bullet_hit_window(*player,pellet),bullet_center_offset(pellet),bullet_center_offset(pellet));
     dot(center_x+view_shift_x,center_y+view_shift_y);
 }
 }

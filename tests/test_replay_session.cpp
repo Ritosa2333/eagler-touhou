@@ -793,18 +793,21 @@ bool is_focus_red(std::uint32_t rgb){
 void focus_marker_appearance(){
     constexpr int x=224,y=360;
     constexpr auto at=[](int px,int py){return (y+py)*640+x+px;};
+    constexpr CollisionPoint player{x-player_projectile_offset.x,y-player_projectile_offset.y};
+    constexpr auto box=bullet_hit_window(player,true);
+    constexpr int offset=bullet_center_offset(true);
     std::vector<std::uint32_t> pixels(640*400);
     for(const auto bg:{0x20283cu,0xf8eacbu}){
         std::fill(pixels.begin(),pixels.end(),bg);
-        draw_player_focus_point(pixels,RenderPoint::pixels(x,y));
+        draw_player_focus_point(pixels,player);
         check(pixels[at(0,0)]==0xffffff&&is_focus_red(pixels[at(2,0)]));
-        check(pixels[at(3,0)]!=bg&&pixels[at(4,0)]==bg&&pixels[at(3,3)]==bg);
-        for(int dy=-3;dy<=3;++dy)for(int dx=-3;dx<=3;++dx)
-            check(pixels[at(dx,dy)]==pixels[at(-dy,dx)]);
+        for(const int px:{int(box.x.first())+offset,int(box.x.last())+offset})
+            for(const int py:{int(box.y.first())+offset,int(box.y.last())+offset})
+                check(is_focus_red(pixels[py*640+px]));
+        check(pixels[at(0,-8)]==bg&&pixels[at(0,-12)]==bg&&pixels[at(0,3)]==bg);
         std::fill(pixels.begin(),pixels.end(),bg);
-        draw_player_focus_point(pixels,{x*256+128,y*256});
-        for(int dy=-3;dy<=3;++dy)for(int dx=-3;dx<=4;++dx)
-            check(pixels[at(dx,dy)]==pixels[at(1-dx,dy)]);
+        draw_player_focus_point(pixels,player,-16);
+        check(pixels[at(-16,0)]==0xffffff&&is_focus_red(pixels[at(-21,-8)])&&pixels[at(0,0)]==bg);
     }
 }
 void focus_mode(const fs::path &root){
@@ -827,7 +830,8 @@ void focus_mode(const fs::path &root){
     live->render(pixels);
     check(pixels[at(225,360)]==0xffffff&&is_focus_red(pixels[at(223,360)]));
     live->render(pixels,true,true,0,&previous);
-    check(pixels[at(224,360)]==0xffffff&&is_focus_red(pixels[at(222,360)]));
+    check(pixels[at(225,360)]==0xffffff&&is_focus_red(pixels[at(223,360)]));
+    check(is_focus_red(pixels[at(220,352)])&&!is_focus_red(pixels[at(219,352)]));
     check(replay_state_digest(*live)==state&&live->collision_snapshot()==nullptr);
     live->paused=true;live->render(pixels);
     live->player.focused=false;live->render(without_marker);
