@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -24,6 +25,7 @@
 #include "menu.hpp"
 #include "japanese.hpp"
 #include "opening.hpp"
+#include "frame_pacing.hpp"
 #include "host_perf.hpp"
 #include "hiscore.hpp"
 #include "score_animation.hpp"
@@ -52,6 +54,10 @@
 #include <set>
 
 namespace fs = std::filesystem;
+std::uint64_t host_us(){
+    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+std::uint64_t host_ms(){return host_us()/1000;}
 struct Viewport { int x, y, w, h; };
 Viewport fit(int w, int h, bool crt) {
     if(w <= 0 || h <= 0) return {0, 0, 0, 0};
@@ -839,6 +845,7 @@ struct TitleDemoHost {
     bool reconcile_keys=false,menu_loop=false,stage_audio_published=false;
     int stage_track=-1;
     unsigned score_frame=0;
+    unsigned scroll_phase=soew::scroll_subpixels;
     std::shared_ptr<std::atomic_bool> cancel;
     std::optional<std::future<Run>> stage_load;
     std::optional<std::future<Pcm>> pcm_load;
@@ -929,6 +936,9 @@ struct App {
     std::string settings_warning;
     fs::path evidence_dir;
     PresentationClock stage_clock; // host test cadence, NOT verified original scheduler
+    unsigned scroll_phase=soew::scroll_subpixels;
+    bool display_frames_active=false;
+    soew::FrameRateMeter frame_rate;
     AudioPreview audio;
     std::array<std::vector<std::byte>,15> songs,midi_songs;
     std::vector<std::byte> soundfont;
@@ -1154,7 +1164,7 @@ bool title_demo_keydown(HWND hwnd,App &app,WPARAM key,bool repeat){
     demo.controller.update(true,true,no_title_demo_scene);
     if(demo.controller.phase()==DemoPhase::Rearm){
         cancel_title_demo_work(demo);restore_title_demo_audio(app);
-        demo.clock.reset(GetTickCount64());app.menu.allowed=false;
+        demo.clock.reset(host_ms());app.menu.allowed=false;
         InvalidateRect(hwnd,nullptr,FALSE);
     }
     return true;
@@ -1177,7 +1187,7 @@ void begin_title_demo_pcm(App &app){
 }
 
 // No normal-game stage, input sampler, recorder or score-review state is used here.
-bool advance_title_demo(HWND hwnd,App &app,std::uint64_t now){
+bool advance_title_demo(HWND hwnd,App &app,std::uint64_t now,unsigned fractional_us){
     if(!app.title_demo)return false;
     auto &demo=*app.title_demo;
     const bool focused=title_demo_foreground(hwnd,app);
@@ -1250,13 +1260,15 @@ bool advance_title_demo(HWND hwnd,App &app,std::uint64_t now){
         }
     }else{
         const auto *scene=demo.controller.scene();
-        const auto steps=demo.clock.advance(now,true,scene?scene->presentation_slowdown():1);
+        const auto pace=scene?scene->presentation_slowdown():1;
+        const auto steps=demo.clock.advance(now,true,pace);
+        if(app.display_frames_active)demo.scroll_phase=soew::display_subframe(demo.scroll_phase,demo.clock.subframe(pace,soew::scroll_subpixels,fractional_us),steps);
         const HostPerf::Span span(steps&&scene?app.host_perf.get():nullptr,HostPerf::Metric::Simulation);
         for(unsigned i=0;i<steps&&demo.controller.phase()==phase;++i){
             demo.controller.update(true,false,no_title_demo_scene);
             if(phase==DemoPhase::Score)++demo.score_frame;
         }
-        if(steps)InvalidateRect(hwnd,nullptr,FALSE);
+        if(steps||app.display_frames_active)InvalidateRect(hwnd,nullptr,FALSE);
     }
     if(demo.controller.phase()!=phase){
         if(demo.controller.phase()==DemoPhase::Score){
@@ -1333,7 +1345,7 @@ const soew::StageDialogue *live_mima_tap_dialogue(const App &app){
 }
 void arm_stage_intro(App &app,bool authentic_entry){
     // Synthetic smoke calls step the scene directly, not via the host timer.
-    app.stage_intro.arm(GetTickCount64(),authentic_entry&&!app.smoke&&app.menu.stage_intro&&app.stage_intro_art.has_value());
+    app.stage_intro.arm(host_ms(),authentic_entry&&!app.smoke&&app.menu.stage_intro&&app.stage_intro_art.has_value());
 }
 void launch_stage(App &app,int id,bool stage4_trial=false){
     app.death_presented=false;app.score_review=App::ScoreReview::None;app.pending_score.reset();
@@ -1357,7 +1369,7 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
     app.run_entry_stage=id;app.run_entry_stage4_trial=stage4_trial;app.run_pause_menu=false;
     app.recorder.reset();app.recording_timing={};
     if(!app.replay_playback&&app.replay_recording&&(app.settings_enabled||app.smoke)&&(id<5||extra))app.recorder.emplace(config);
-    app.stage_entry_release=true;app.stage_clock.reset(GetTickCount64());app.gameplay_audio_attempted=-1;
+    app.stage_entry_release=true;app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.gameplay_audio_attempted=-1;
     if(app.gameplay_audio_enabled)sync_gameplay_bgm(app,app.smoke||(app.focused&&!app.minimized&&!app.resizing));
     else app.audio_status={L"診断ステージ：音声なし",L"Diagnostic stage: audio disabled"};
     if(app.gameplay_audio_enabled&&app.menu.music!=0&&app.audio.active())app.audio.effect(13);
@@ -1385,7 +1397,7 @@ void publish_replay(App &app,soew::NativeReplay replay,std::unique_ptr<soew::Enc
     app.run_entry_stage=app.stage_scene->stage;app.run_entry_stage4_trial=run.config.stage4_trial;app.run_pause_menu=false;
     app.recorder.reset();app.practice_session.reset();app.practice_visible=app.practice_result=app.practice_escape=false;
     app.z_input.clear();app.dialogue_hold.clear();app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
-    app.stage_entry_release=true;app.stage_clock.reset(GetTickCount64());
+    app.stage_entry_release=true;app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;
     app.stage_scene->sound.enabled=app.menu.music!=0&&(run.practice||!app.effect_bank.empty());
     app.stage_scene->sound_output=[&app](unsigned id){if(app.menu.music!=0&&!app.effect_bank.empty()&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
     app.practice_bgm_measure=run.practice?soew::practice_music_measure(run.practice->spec):0;
@@ -1405,14 +1417,14 @@ void launch_replay(App &app,const fs::path &file,int target=-1){
     else {
         // Run the same sound state machine, without an output callback.
         scene->sound.enabled=run.config.music!=0&&!app.effect_bank.empty();
-        app.replay_seek.emplace(App::ReplaySeek{target,boundary,0,GetTickCount64(),std::move(run),std::move(scene),std::move(session)});
+        app.replay_seek.emplace(App::ReplaySeek{target,boundary,0,host_ms(),std::move(run),std::move(scene),std::move(session)});
     }
 }
 void advance_replay_seek(App &app){
     auto &seek=*app.replay_seek;
     const auto started=std::chrono::steady_clock::now();
     const auto fail=[&](std::string_view error){app.replay_seek.reset();app.replay_menu.complete_play(false,error);};
-    if(GetTickCount64()-seek.started>120000){fail("SEEK BUDGET");return;}
+    if(host_ms()-seek.started>120000){fail("SEEK BUDGET");return;}
     for(unsigned i=0;i<256;++i){
         const auto step=seek.session.step_playback(*seek.scene,seek.run,seek.cursor,seek.target);
         if(step.status!=soew::ReplayStepStatus::Running||seek.cursor>seek.boundary){
@@ -1640,7 +1652,7 @@ bool score_keys_released(){
 }
 void open_score_review(App &app,App::ScoreReview review,unsigned rank){
     app.score_review=review;app.review_rank=rank;app.score_review_armed=false;
-    app.score_clock.reset(GetTickCount64());app.stage_clock.reset(GetTickCount64());
+    app.score_clock.reset(host_ms());app.stage_clock.reset(host_ms());
     app.dialogue_hold.clear();app.mima_dialogue_tap.clear();app.z_input.clear();
 }
 void open_terminal_score_review(App &app,soew::NativeScoreEntry entry){
@@ -1659,7 +1671,7 @@ void handle_live_death_result(App &app){
 }
 void release_score_controls(App &app){
     app.score_review=App::ScoreReview::None;app.score_release=true;
-    app.stage_clock.reset(GetTickCount64());app.z_input.clear();
+    app.stage_clock.reset(host_ms());app.z_input.clear();
 }
 bool intercept_live_game_over(App &app,soew::ReplayStepStatus status){
     if(app.replay_playback||app.practice_session)return false;
@@ -1755,15 +1767,15 @@ void apply_next_stage(App &app){
         auto next=app.stage_scene->next_stage();
         if(next.stage==4&&(app.replay_playback?app.replay_playback->config.stage5_mainline:app.stage5_mainline))next.enable_stage5_preview();
         if(app.recorder)app.recorder->next_stage();
-        cancel_gameplay_audio(app);app.stage_scene=std::move(next);app.stage_entry_release=true;app.z_input.clear();app.stage_clock.reset(GetTickCount64());app.gameplay_audio_attempted=-1;sync_gameplay_bgm(app,app.smoke||(app.focused&&!app.minimized&&!app.resizing));app.notice=app.tr(L"ステージ開始　Esc：メニュー　P：一時停止",L"Stage entry | Esc menu | P pause",L"关卡开始 | Esc：菜单 | P：暂停",L"關卡開始 | Esc：選單 | P：暫停");
+        cancel_gameplay_audio(app);app.stage_scene=std::move(next);app.stage_entry_release=true;app.z_input.clear();app.stage_clock.reset(host_ms());app.gameplay_audio_attempted=-1;sync_gameplay_bgm(app,app.smoke||(app.focused&&!app.minimized&&!app.resizing));app.notice=app.tr(L"ステージ開始　Esc：メニュー　P：一時停止",L"Stage entry | Esc menu | P pause",L"关卡开始 | Esc：菜单 | P：暂停",L"關卡開始 | Esc：選單 | P：暫停");
     }
     catch(const std::exception &e){app.stage_scene->transition_error=e.what();std::cerr<<"Stage transition failed: "<<e.what()<<'\n';app.notice=app.tr(L"ステージを切り替えられませんでした。直前の画面を保持しています",L"Stage transition failed; previous scene retained",L"无法切换关卡，已保留原场景",L"無法切換關卡，已保留原場景");}
 }
 bool practice_keys_released(){for(int key:{VK_UP,VK_DOWN,VK_LEFT,VK_RIGHT,VK_NUMPAD8,VK_NUMPAD2,VK_NUMPAD4,VK_NUMPAD6,VK_NUMPAD1,VK_NUMPAD3,VK_NUMPAD7,VK_NUMPAD9,int('Z'),int('X'),VK_SPACE,VK_RETURN,VK_ESCAPE,VK_PRIOR,VK_NEXT,int('R'),int('Q')})if(GetAsyncKeyState(key)&0x8000)return false;return true;}
-void reset_practice_to_menu(App &app,const std::string &warning){app.practice_retry=app.practice_retry_release=false;stop_gameplay_bgm(app);app.stage_scene.reset();app.recorder.reset();app.practice_session.reset();app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=true;app.practice_choice=0;app.practice_menu.allowed=false;app.practice_menu.warning=warning;app.z_input.clear();app.stage_clock.reset(GetTickCount64());app.menu.shot_screen=false;app.menu_visible=true;app.notice=soew::practice_warning(warning,app.menu.language);}
+void reset_practice_to_menu(App &app,const std::string &warning){app.practice_retry=app.practice_retry_release=false;stop_gameplay_bgm(app);app.stage_scene.reset();app.recorder.reset();app.practice_session.reset();app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=true;app.practice_choice=0;app.practice_menu.allowed=false;app.practice_menu.warning=warning;app.z_input.clear();app.stage_clock.reset(host_ms());app.menu.shot_screen=false;app.menu_visible=true;app.notice=soew::practice_warning(warning,app.menu.language);}
 void save_practice(App &app){if(app.practice_store&&!app.practice_store->save(app.practice_menu.spec)){app.practice_menu.warning=app.practice_store->warning;app.notice=app.tr(L"練習設定を保存できませんでした",L"Practice settings could not be saved",L"无法保存练习设置",L"無法儲存練習設定");}}
 void begin_practice(App &app,const soew::PracticeSpec &spec){
-    app.practice_started=GetTickCount64();
+    app.practice_started=host_ms();
     if(app.practice_load||app.practice_builder||app.practice_audio_load){app.practice_menu.warning="Previous request is still cancelling";return;}
     const bool retry=app.stage_scene&&app.practice_session;
     const auto root=app.assets_root;const auto recipe=spec;const bool reduced=app.menu.reduced;const auto language=soew::simulation_language(app.menu.language);app.practice_load_cancelled=false;
@@ -1814,7 +1826,7 @@ void advance_practice(App &app){
         if(!*prepared_audio){const auto error=prepared_audio->error();reset_practice_to_menu(app,error);return;}
     }
     if(app.retry_probe.waiting)app.retry_probe.device=RetryHostProbe::Clock::now();
-    std::cout<<"practice_prepare_ms="<<GetTickCount64()-app.practice_started<<" updates="<<app.practice_builder->prepared_ticks()<<'\n';
+    std::cout<<"practice_prepare_ms="<<host_ms()-app.practice_started<<" updates="<<app.practice_builder->prepared_ticks()<<'\n';
     const auto recipe=app.practice_builder->recipe();const auto seed=app.practice_builder->seed();auto next=app.practice_builder->release();
     // Practice audio always publishes to the same fixed WinMM format. Reuse
     // the title device on entry too; publish still replaces every PCM buffer.
@@ -1824,7 +1836,7 @@ void advance_practice(App &app){
     app.stage_scene.emplace(std::move(*next));app.practice_session.emplace(recipe,soew::practice_checkpoint(recipe),seed);app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=false;
     app.stage_scene->sound.enabled=app.menu.music!=0;
     app.stage_scene->sound_output=[&app](unsigned id){if(app.gameplay_audio_enabled&&app.menu.music!=0&&!app.effect_bank.empty()&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
-    app.stage_entry_release=true;app.z_input.clear();app.stage_clock.reset(GetTickCount64());app.gameplay_audio_attempted=-1;
+    app.stage_entry_release=true;app.z_input.clear();app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.gameplay_audio_attempted=-1;
     arm_stage_intro(app,recipe.section==soew::PracticeSection::StageStart);
     app.practice_bgm_measure=soew::practice_music_measure(recipe);
     const bool practice_window_enabled=(app.smoke||app.retry_probe.mode>=0||app.focused)&&!app.minimized&&!app.resizing;
@@ -1872,7 +1884,7 @@ bool set_fullscreen(HWND hwnd,App &app,bool enabled){
         }
         SetWindowPos(hwnd,nullptr,0,0,0,0,refresh|SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER);
     }
-    app.window_fullscreen=enabled;app.dialogue_hold.clear();app.stage_clock.reset(GetTickCount64());
+    app.window_fullscreen=enabled;app.dialogue_hold.clear();app.stage_clock.reset(host_ms());
     return true;
 }
 void caption(HWND hwnd, const App &app) {
@@ -1902,7 +1914,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     case WM_SYSKEYUP: case WM_KEYUP:
         if(app->title_demo&&w<256&&app->title_demo->consumed_keys.test(w)){
             app->title_demo->consumed_keys.reset(w);
-            release_title_demo_menu(*app,title_demo_foreground(hwnd,*app),GetTickCount64());
+            release_title_demo_menu(*app,title_demo_foreground(hwnd,*app),host_ms());
             if(message==WM_KEYUP)return 0;
         }
         if(message==WM_SYSKEYUP||(title_demo_active(*app)&&!title_demo_plain_key(w)))break;
@@ -1925,24 +1937,24 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(!title_demo_active(*app))save_settings(*app);
         if(app->title_demo){
             title_demo_activity(*app);
-            app->title_demo->clock.reset(GetTickCount64());
+            app->title_demo->clock.reset(host_ms());
             app->title_demo->reconcile_keys=true;
         }
         app->z_input.clear();
         if(!app->audio.pause(true))audio_error(*app);
-        app->focused=false;app->clock.reset(GetTickCount64());app->score_clock.reset(GetTickCount64());app->menu.allowed=false;app->practice_menu.allowed=false;return 0;
+        app->focused=false;app->clock.reset(host_ms());app->score_clock.reset(host_ms());app->menu.allowed=false;app->practice_menu.allowed=false;return 0;
     case WM_SETFOCUS:
         app->mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
-        if(app->title_demo)app->title_demo->clock.reset(GetTickCount64());
-        app->focused=true;app->clock.reset(GetTickCount64());app->score_clock.reset(GetTickCount64());app->menu.allowed=false;app->practice_menu.allowed=false;app->z_input.clear();return 0;
+        if(app->title_demo)app->title_demo->clock.reset(host_ms());
+        app->focused=true;app->clock.reset(host_ms());app->score_clock.reset(host_ms());app->menu.allowed=false;app->practice_menu.allowed=false;app->z_input.clear();return 0;
     case WM_ENTERSIZEMOVE:
         app->recording_timing.boundary();
-        if(app->title_demo){title_demo_activity(*app);app->title_demo->clock.reset(GetTickCount64());}
+        if(app->title_demo){title_demo_activity(*app);app->title_demo->clock.reset(host_ms());}
         app->mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
-        app->dialogue_hold.clear();app->resizing=true;app->clock.reset(GetTickCount64());app->score_clock.reset(GetTickCount64());return 0;
+        app->dialogue_hold.clear();app->resizing=true;app->clock.reset(host_ms());app->score_clock.reset(host_ms());return 0;
     case WM_EXITSIZEMOVE:
-        if(app->title_demo)app->title_demo->clock.reset(GetTickCount64());
-        app->resizing=false;app->clock.reset(GetTickCount64());app->score_clock.reset(GetTickCount64());return 0;
+        if(app->title_demo)app->title_demo->clock.reset(host_ms());
+        app->resizing=false;app->clock.reset(host_ms());app->score_clock.reset(host_ms());return 0;
     case WM_CHAR: case WM_DEADCHAR:
         if(title_demo_active(*app)||app->ending_player||app->score_review!=App::ScoreReview::None)return 0;
         break;
@@ -2027,7 +2039,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     if(w==VK_UP||w==VK_NUMPAD8)app->pause_choice=Menu::ring(app->pause_choice,-1,4);
                     else if(w==VK_DOWN||w==VK_NUMPAD2)app->pause_choice=Menu::ring(app->pause_choice,1,4);
                     const int action=(w==VK_ESCAPE||w=='P'||w=='X')?0:(w==VK_RETURN||w=='Z')?app->pause_choice:-1;
-                    if(action==0){app->practice_escape=false;app->stage_scene->paused=false;app->stage_entry_release=true;app->stage_clock.reset(GetTickCount64());app->z_input.clear();}
+                    if(action==0){app->practice_escape=false;app->stage_scene->paused=false;app->stage_entry_release=true;app->stage_clock.reset(host_ms());app->z_input.clear();}
                     if(action==1)begin_practice(*app,app->practice_session->recipe);
                     if(action==2)begin_replay_save(*app,soew::ReplaySaveOrigin::Pause);
                     if(action==3)leave_practice(*app,false);
@@ -2063,7 +2075,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 }
                 if(action==0){
                     app->run_pause_menu=false;app->stage_scene->paused=false;
-                    app->stage_entry_release=true;app->z_input.clear();app->stage_clock.reset(GetTickCount64());
+                    app->stage_entry_release=true;app->z_input.clear();app->stage_clock.reset(host_ms());
                 }else if(action==1&&!app->replay_playback){
                     try{launch_stage(*app,app->run_entry_stage,app->run_entry_stage4_trial);}
                     catch(const std::exception &error){return_to_title(*app);std::cerr<<"Restart failed: "<<error.what()<<'\n';app->notice=app->tr(L"やり直せませんでした",L"Could not restart",L"无法重新开始",L"無法重新開始");}
@@ -2083,10 +2095,10 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     if(step.status==soew::ReplayStepStatus::Finished)handle_live_death_result(*app);
                 }
             }else if(!repeat&&w==VK_ESCAPE){
-                app->run_pause_menu=true;app->pause_choice=0;app->stage_scene->paused=true;app->z_input.clear();app->stage_clock.reset(GetTickCount64());
+                app->run_pause_menu=true;app->pause_choice=0;app->stage_scene->paused=true;app->z_input.clear();app->stage_clock.reset(host_ms());
                 if(app->audio.active()&&!app->audio.pause(true))audio_error(*app);
             }else if(!repeat&&w=='P'){
-                app->stage_scene->paused=!app->stage_scene->paused;app->z_input.clear();app->stage_clock.reset(GetTickCount64());
+                app->stage_scene->paused=!app->stage_scene->paused;app->z_input.clear();app->stage_clock.reset(host_ms());
                 if(!app->stage_scene->paused)app->stage_entry_release=true;
                 if(app->gameplay_audio_enabled)sync_gameplay_bgm(*app,app->smoke||(app->focused&&GetForegroundWindow()==hwnd&&!app->minimized&&!app->resizing));
             }else if(w=='Z'&&!repeat&&app->focused&&!app->stage_scene->paused&&!app->stage_entry_release)app->z_input.event(true,shot_mode(*app));
@@ -2116,7 +2128,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             else{app->fm_enabled=true;app->audio_status={L"音楽室で曲を選ぶと試聴できます",L"Select a track in the music room to preview"};}
             caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
         }
-        if(w==VK_F3 && !repeat){if(!app->audio.stop())audio_error(*app);else app->audio_status={L"",L""};app->scores_visible=false;app->menu.music_room=false;app->menu.options=false;app->menu.shot_screen=false;app->menu.extra_mode=false;app->menu.shot_confirmed=false;app->menu.selected=0;app->menu.allowed=false;app->menu_visible=true;app->opening.restart();app->title_audio_started=false;app->title_effect_phase=0;app->clock.reset(GetTickCount64());app->score_clock.reset(GetTickCount64());InvalidateRect(hwnd,nullptr,FALSE);return 0;}
+        if(w==VK_F3 && !repeat){if(!app->audio.stop())audio_error(*app);else app->audio_status={L"",L""};app->scores_visible=false;app->menu.music_room=false;app->menu.options=false;app->menu.shot_screen=false;app->menu.extra_mode=false;app->menu.shot_confirmed=false;app->menu.selected=0;app->menu.allowed=false;app->menu_visible=true;app->opening.restart();app->title_audio_started=false;app->title_effect_phase=0;app->clock.reset(host_ms());app->score_clock.reset(host_ms());InvalidateRect(hwnd,nullptr,FALSE);return 0;}
         if(app->opening.active){if(w==VK_RETURN||w=='Z'||w==VK_SPACE||w==VK_ESCAPE){app->opening.skip();if(!app->title_audio_started){app->title_audio_started=true;start_preview(*app,0);}app->menu.allowed=false;InvalidateRect(hwnd,nullptr,FALSE);}return 0;}
         if(app->scores_visible){
             if(app->native_board_visible&&!repeat&&(w==VK_LEFT||w==VK_RIGHT)){
@@ -2162,7 +2174,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if(action==5) { DestroyWindow(hwnd); return 0; }
                 if(action==2){
                     app->scores_visible=true;app->native_board_visible=true;app->score_rank=app->menu.rank;
-                    app->score_animation.reset();app->score_clock.reset(GetTickCount64());
+                    app->score_animation.reset();app->score_clock.reset(host_ms());
                     app->notice=app->tr(L"移植版のローカルハイスコア",L"Local high scores",L"本地最高分",L"本機最高分");
                 }
                 else if(action>=0&&action!=6) app->notice=app->tr(L"この操作にはまだ対応していません",L"Selected action is not implemented yet",L"此操作暂不支持",L"此操作尚未支援");
@@ -2177,14 +2189,14 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         break;
     case WM_SIZE: ++app->sizes;if(app->minimized!=(w==SIZE_MINIMIZED)){
         app->recording_timing.boundary();
-        if(app->title_demo){title_demo_activity(*app);app->title_demo->clock.reset(GetTickCount64());}
-    }app->minimized=(w==SIZE_MINIMIZED);if(app->minimized)app->mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);app->clock.reset(GetTickCount64());app->score_clock.reset(GetTickCount64());InvalidateRect(hwnd, nullptr, FALSE);return 0;
+        if(app->title_demo){title_demo_activity(*app);app->title_demo->clock.reset(host_ms());}
+    }app->minimized=(w==SIZE_MINIMIZED);if(app->minimized)app->mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);app->clock.reset(host_ms());app->score_clock.reset(host_ms());InvalidateRect(hwnd, nullptr, FALSE);return 0;
     case WM_ACTIVATE:
-        if(app->title_demo){title_demo_activity(*app);app->title_demo->clock.reset(GetTickCount64());app->title_demo->reconcile_keys=true;}
+        if(app->title_demo){title_demo_activity(*app);app->title_demo->clock.reset(host_ms());app->title_demo->reconcile_keys=true;}
         break;
     case WM_ENTERMENULOOP: case WM_EXITMENULOOP:
         if(app->title_demo){
-            title_demo_activity(*app);app->title_demo->clock.reset(GetTickCount64());
+            title_demo_activity(*app);app->title_demo->clock.reset(host_ms());
             app->title_demo->menu_loop=message==WM_ENTERMENULOOP;app->title_demo->reconcile_keys=true;
         }
         break;
@@ -2207,14 +2219,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         const auto tr=[&](const wchar_t* ja,const wchar_t* en,const wchar_t* hans,const wchar_t* hant){return soew::localized(lang,ja,en,hans,hant);};
         const auto draw=[&](std::wstring_view text,int x,int y,std::uint32_t color,int max_width=640){display_text(app->composed,text,x,y,color,lang,max_width);};
         namespace words=soew::text;
+        const auto gameplay_frame=[&]{app->composed.w=640;app->composed.h=400;app->composed.pixels.resize(640*400);};
         {
         const HostPerf::Span composition(app->host_perf.get(),HostPerf::Metric::Composition);
         // Keep the last committed practice image (including its pause/results overlay) across resize or expose.
         if(!app->practice_retry||!app->last_paint_practice){
         // Do not clear the visible DC: composition can take several milliseconds.
         if(const auto *demo=app->title_demo?app->title_demo->controller.scene():nullptr){
-            app->composed=Frame{640,400,std::vector<std::uint32_t>(640*400)};
-            demo->render(app->composed.pixels,true,app->menu.smooth_background);
+            gameplay_frame();
+            demo->render(app->composed.pixels,true,app->menu.smooth_background,app->title_demo->scroll_phase);
             soew::mask_gameplay_tram(app->composed.pixels);
             soew::HudState hud;
             hud.score=demo->score_core.score;hud.high_score=hud.score;hud.lives=demo->life.lives;hud.bombs=demo->life.bombs;
@@ -2233,6 +2246,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 draw(tr(L"読み取り専用・キーを押すと戻ります",L"Read only. Press a key to return.",L"只读。按任意键返回。",L"唯讀。按任意鍵返回。"),160,336,0xffffff);
             }
         }else{
+        if(!app->stage_scene){
         app->composed=app->frames[app->menu_visible ? (app->menu.shot_screen?2:0) : app->scene];
         if(app->menu_visible) {
             if(app->menu.shot_screen)compose_shots(app->composed,app->portraits,app->font,app->menu,app->selected_color,app->unselected_color);
@@ -2252,15 +2266,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             }
         }
         if(app->opening.active)app->composed=opening_frame(*app);
-        if(app->stage_scene){
-            app->composed=Frame{640,400,std::vector<std::uint32_t>(640*400)};
+        }else{
+            gameplay_frame();
             using Phase=soew::StageTransition::Phase;
             const auto phase=app->stage_scene->transition.phase;
             const bool show_stage_intro=app->menu.stage_intro&&app->stage_intro_art&&
                 (app->stage_intro.showing_eye()||phase==Phase::LoadWait||phase==Phase::Ready);
             if(show_stage_intro)soew::StageIntro::paint(app->composed.pixels,app->stage_intro_art->pixels);
             else{
-                app->stage_scene->render(app->composed.pixels,!app->practice_result,app->menu.smooth_background);
+                app->stage_scene->render(app->composed.pixels,!app->practice_result,app->menu.smooth_background,app->scroll_phase);
                 if(!app->stage_intro.revealing()&&app->menu.hitboxes!=soew::HitboxMode::Off&&!app->practice_result&&!app->replay_menu.active())app->stage_scene->render_hitboxes(app->composed.pixels);
                 if(app->stage_intro.revealing())compose_curtain(app->composed,app->font,true,app->stage_intro.reveal_frame());
                 else{
@@ -2367,7 +2381,19 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             return app->presenter.prepare(dc,client.right,client.bottom,frame.pixels,640,400,view.x,view.y,view.w,view.h);
         }();
         if(prepared){
+            const auto *demo=app->title_demo?app->title_demo->controller.scene():nullptr;
+            const bool active_play=app->stage_scene&&!app->stage_scene->paused&&!app->stage_intro.active()&&
+                !app->ending_player&&!app->replay_menu.active()&&!app->replay_seek&&
+                !app->practice_retry&&app->score_review==App::ScoreReview::None;
+            const bool show_fps=app->focused&&!app->minimized&&!app->resizing&&
+                (active_play||(demo&&!demo->paused))&&view.w>16&&view.h>16;
+            if(show_fps){
+                const auto fps=app->frame_rate.fps(host_us());
+                app->presenter.corner_label(fps?L"FPS "+std::to_wstring(*fps):L"FPS --",
+                    {view.x,view.y,view.x+view.w-8,view.y+view.h-8});
+            }else app->frame_rate.reset();
             {const HostPerf::Span span(app->host_perf.get(),HostPerf::Metric::PresentCommit);app->presenter.commit(dc);}
+            if(show_fps)app->frame_rate.submitted(host_us());
             if(app->host_perf)app->host_perf->submitted();
             app->last_paint_practice=app->practice_session&&!app->practice_visible;app->retry_probe.presented(*app);
         }
@@ -2381,7 +2407,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
     }
     case WM_TIMER:
         if(w==3&&app->async_practice_test){
-            const auto now=GetTickCount64();
+            const auto now=host_ms();
             auto fail=[&](const char *reason){std::cerr<<"async_practice_failure="<<reason<<" step="<<app->async_practice_step<<" elapsed_ms="<<now-app->async_practice_started<<'\n';app->failed=true;DestroyWindow(hwnd);};
             if(now-app->async_practice_started>120000){fail("timeout");return 0;}
             if(app->retry_probe.mode>=0){app->retry_probe.step(hwnd,*app);return 0;}
@@ -2459,7 +2485,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             return 0;
         }
         if(w==2){
-            const auto now=GetTickCount64();
+            const auto sample_us=host_us(),now=sample_us/1000;
+            const auto fractional_us=static_cast<unsigned>(sample_us%1000);
             ++app->timer_callbacks;
             if(!app->stage_scene||!app->gameplay_audio_enabled||app->practice_builder||app->practice_load||app->practice_audio_load)drain_gameplay_audio(*app);
             if(app->focused&&GetForegroundWindow()==hwnd&&practice_keys_released())app->practice_menu.update(0);
@@ -2474,7 +2501,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if((!app->stage_scene&&!app->audio.pause(!enabled||app->practice_builder.has_value()||app->practice_load.has_value()||app->practice_audio_load.has_value()))||!app->audio.pump()){audio_error(*app);caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);}
             }
             app->retry_probe.audio_pumped(*app);
-            if(advance_title_demo(hwnd,*app,now))return 0;
+            if(advance_title_demo(hwnd,*app,now,fractional_us))return 0;
             if(replay_menu_active){
                 app->staff_music_poll=0;
                 app->stage_clock.advance(now,false);
@@ -2541,6 +2568,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 HostTimingSample timing;
                 const bool stage_active=enabled&&!app->stage_scene->paused;
                 const auto base_steps=app->stage_clock.advance(now,stage_active,pace,(timing_active||app->host_perf)?&timing:nullptr);
+                if(app->display_frames_active&&stage_active)
+                    app->scroll_phase=soew::display_subframe(app->scroll_phase,app->stage_clock.subframe(pace,soew::scroll_subpixels,fractional_us),base_steps);
                 app->recording_timing.observe(timing_active,timing);
                 if(app->host_perf)app->host_perf->schedule(pace,stage_active,base_steps,timing.lost_ms,timing.active_ms);
                 // Replay never reads from the live stage-entry release gate.
@@ -2631,7 +2660,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 }
                 }
                 if(app->host_perf)app->host_perf->simulation_steps(iterations);
-                if(steps){
+                if(steps||app->display_frames_active){
                     InvalidateRect(hwnd,nullptr,FALSE);
                     // The benchmark posts synthetic timer messages. Commit its
                     // first playable frame now instead of letting queued test
@@ -3216,9 +3245,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 const auto title_samples=app->audio.submitted();
                 const auto check_replay_audio=[&]{
                     const auto before=app->audio.submitted();
-                    const auto begin=GetTickCount64();
+                    const auto begin=host_ms();
                     app->timed_test=true; // Exercise the real timer without depending on window activation.
-                    while(app->audio.active()&&app->audio.submitted()==before&&GetTickCount64()-begin<1000){
+                    while(app->audio.active()&&app->audio.submitted()==before&&host_ms()-begin<1000){
                         if(WaitForSingleObject(app->audio.event(),20)==WAIT_FAILED)break;
                         SendMessageW(hwnd,WM_TIMER,2,0);
                     }
@@ -3256,6 +3285,75 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(!app->audio.stop())std::cerr<<"Audio cleanup: "<<app->audio.error()<<'\n';PostQuitMessage(0); return 0;
     }
     return DefWindowProcW(hwnd, message, w, l);
+}
+bool smooth_display_active(HWND hwnd,const App &app){
+    if(!app.menu.smooth_background||app.smoke||app.timed_test||app.score_timed_test||app.async_practice_test||
+       !app.focused||app.minimized||app.resizing||GetForegroundWindow()!=hwnd)return false;
+    const auto scrolls=[](const soew::EncounterScene &s){
+        return !s.paused&&!s.life.game_over&&!s.runtime.blocked&&!s.transition.active()&&!s.dialogue.active()&&s.scrolling_background();
+    };
+    if(app.stage_scene)return !app.stage_intro.active()&&!app.ending_player&&!app.replay_menu.active()&&
+        !app.practice_retry&&!app.score_release&&app.score_review==App::ScoreReview::None&&scrolls(*app.stage_scene);
+    if(app.title_demo&&title_demo_foreground(hwnd,app)){
+        if(const auto *scene=app.title_demo->controller.scene())return scrolls(*scene);
+    }
+    return false;
+}
+unsigned monitor_refresh_hz(HMONITOR monitor){
+    MONITORINFOEXW info{};info.cbSize=sizeof(info);
+    DEVMODEW mode{};mode.dmSize=sizeof(mode);
+    if(GetMonitorInfoW(monitor,&info)&&EnumDisplaySettingsW(info.szDevice,ENUM_CURRENT_SETTINGS,&mode)&&mode.dmDisplayFrequency>1)
+        return mode.dmDisplayFrequency;
+    return 60;
+}
+void run_window_loop(HWND hwnd,App &app){
+    struct DisplayTimer {
+        HANDLE handle=nullptr;
+        ~DisplayTimer(){if(handle)CloseHandle(handle);}
+        void wait(std::uint64_t delay_us){
+            if(!handle){
+                handle=CreateWaitableTimerExW(nullptr,nullptr,CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,TIMER_ALL_ACCESS);
+                if(!handle)handle=CreateWaitableTimerW(nullptr,FALSE,nullptr);
+            }
+            LARGE_INTEGER due{};due.QuadPart=-static_cast<LONGLONG>(delay_us*10);
+            if(!handle||!SetWaitableTimer(handle,&due,0,nullptr,nullptr,FALSE)||
+               MsgWaitForMultipleObjectsEx(1,&handle,INFINITE,QS_ALLINPUT,MWMO_INPUTAVAILABLE)==WAIT_FAILED)
+                throw std::runtime_error("Display frame timer failed");
+        }
+    } timer;
+    soew::DisplayCadence cadence;
+    HMONITOR monitor=nullptr;
+    MSG msg{};
+    for(;;){
+        const bool precise=smooth_display_active(hwnd,app);
+        if(precise!=app.display_frames_active){
+            app.display_frames_active=precise;
+            if(precise){KillTimer(hwnd,2);monitor=nullptr;}
+            else{
+                if(PeekMessageW(&msg,nullptr,WM_QUIT,WM_QUIT,PM_REMOVE))break;
+                if(!SetTimer(hwnd,2,10,nullptr))throw std::runtime_error("Opening timer failed");
+            }
+        }
+        if(precise){
+            const auto current=MonitorFromWindow(hwnd,MONITOR_DEFAULTTONEAREST);
+            const auto now=host_us();
+            if(current!=monitor){monitor=current;cadence.reset(now,monitor_refresh_hz(monitor));}
+            if(!PeekMessageW(&msg,nullptr,0,0,PM_REMOVE)){
+                if(cadence.consume(now)){
+                    SendMessageW(hwnd,WM_TIMER,2,0);
+                    UpdateWindow(hwnd);
+                }else timer.wait(cadence.deadline()-now);
+                continue;
+            }
+            if(msg.hwnd==hwnd&&msg.message==WM_TIMER&&msg.wParam==2)continue;
+        }else{
+            const auto status=GetMessageW(&msg,nullptr,0,0);
+            if(status<0)throw std::runtime_error("Windows message loop failed");
+            if(!status)break;
+        }
+        if(msg.message==WM_QUIT)break;
+        TranslateMessage(&msg);DispatchMessageW(&msg);
+    }
 }
 int wmain(int argc, wchar_t **argv) {
     try {
@@ -3540,7 +3638,7 @@ int wmain(int argc, wchar_t **argv) {
         caption(hwnd, app); ShowWindow(hwnd, app.window_fullscreen?SW_SHOW:SW_SHOWNORMAL); UpdateWindow(hwnd);
         if(smoke && !SetTimer(hwnd, 1, 200, nullptr)) throw std::runtime_error("Test timer failed");
         app.score_timed_test=score_timed_test;
-        app.timed_test=timed_test;app.test_started=GetTickCount64();app.clock.reset(app.test_started);
+        app.timed_test=timed_test;app.test_started=host_ms();app.clock.reset(app.test_started);
         if(timed_test){SetWindowPos(hwnd,HWND_TOPMOST,20,20,1000,700,SWP_SHOWWINDOW);SetForegroundWindow(hwnd);SetFocus(hwnd);}
         if(!replay_file.empty()){
             launch_replay(app,replay_file);
@@ -3559,10 +3657,8 @@ int wmain(int argc, wchar_t **argv) {
             caption(hwnd,app);InvalidateRect(hwnd,nullptr,FALSE);
         }else if(!app.opening.active&&!app.title_audio_started){app.title_audio_started=true;start_preview(app,0);}
         if(!smoke && !SetTimer(hwnd,2,10,nullptr))throw std::runtime_error("Opening timer failed");
-        if(async_practice_test){app.async_practice_started=GetTickCount64();if(!SetTimer(hwnd,3,10,nullptr))throw std::runtime_error("Async test timer failed");}
-        MSG msg{}; BOOL status;
-        while((status = GetMessageW(&msg, nullptr, 0, 0)) > 0) { TranslateMessage(&msg); DispatchMessageW(&msg); }
-        if(status < 0) throw std::runtime_error("Windows message loop failed");
+        if(async_practice_test){app.async_practice_started=host_ms();if(!SetTimer(hwnd,3,10,nullptr))throw std::runtime_error("Async test timer failed");}
+        run_window_loop(hwnd,app);
         if(app.host_perf){
             std::ofstream log(host_perf_log,std::ios::out|std::ios::noreplace);
             if(!log)throw std::runtime_error("Could not create host performance report");

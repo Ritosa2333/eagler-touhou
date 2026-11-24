@@ -24,10 +24,14 @@ namespace soew { inline constexpr unsigned replay_view_speed(bool held_z){return
 
 // Host presentation clock only, not a verified PC98 simulation scheduler.
 struct PresentationClock {
+    static constexpr unsigned period_ms(unsigned slowdown){return 17u*std::clamp(slowdown,1u,3u);}
     std::uint64_t last=0, remainder=0;
     bool initialized=false, running=false;
     void reset(std::uint64_t now) {last=now;remainder=0;initialized=true;running=false;}
     void defer_batch(std::uint64_t now){reset(now);running=true;}
+    unsigned subframe(unsigned slowdown,unsigned scale,unsigned fractional_us=0)const{
+        return static_cast<unsigned>(std::min<std::uint64_t>(scale,(remainder*1000+fractional_us)*scale/(period_ms(slowdown)*1000)));
+    }
     unsigned advance(std::uint64_t now,bool enabled,unsigned slowdown=1,HostTimingSample *sample=nullptr) {
         if(sample)*sample={};
         if(!initialized||now<last){reset(now);running=enabled;return 0;}
@@ -38,7 +42,7 @@ struct PresentationClock {
         // Discard long stalls instead of jumping through unseen animation frames.
         if(delta>250){if(sample)sample->lost_ms=delta;remainder=0;return 0;}
         remainder+=delta;
-        const auto period=17u*std::clamp(slowdown,1u,3u);
+        const auto period=period_ms(slowdown);
         const auto due=remainder/period;
         const auto steps=std::min<std::uint64_t>(8,due);
         if(sample)sample->lost_ms=std::min(delta,(due-steps)*period);

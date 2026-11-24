@@ -1,6 +1,7 @@
 #include "replay_session.hpp"
 #include "encounter_info.hpp"
 #include "opening.hpp"
+#include "frame_pacing.hpp"
 #include <iostream>
 #include <source_location>
 
@@ -596,6 +597,7 @@ void protection_display_is_read_only(const fs::path &root){
 
 void background_smoothing_is_read_only(const fs::path &root){
     std::vector<std::uint32_t> sharp(640*400),smooth(sharp.size());
+    std::vector<std::uint32_t> intermediate(sharp.size());
     for(int stage:{0,5}){
         auto scene=EncounterScene::load(root,stage,1,stage==5?4:1,2,3);
         if(stage==5)scene.enable_extra_road();
@@ -603,18 +605,82 @@ void background_smoothing_is_read_only(const fs::path &root){
         const auto digest=replay_state_digest(scene);
         scene.render(sharp);scene.render(smooth,true,true);
         check(sharp!=smooth&&replay_state_digest(scene)==digest);
+        scene.render(intermediate,true,true,scroll_subpixels/2);
+        check(intermediate!=sharp&&intermediate!=smooth&&replay_state_digest(scene)==digest);
         const auto &player=*scene.bank.sprites.at(0);
         unsigned opaque=0;
         for(unsigned y=0;y<player.height;++y)for(unsigned x=0;x<player.width;++x){
             if(player.pixels[y*player.width+x]==player.transparent)continue;
             const auto index=(scene.player.y+y)*640+scene.player.x+x;
-            check(sharp[index]==smooth[index]);++opaque;
+            check(sharp[index]==smooth[index]&&sharp[index]==intermediate[index]);++opaque;
         }
         check(opaque>0);
         for(int y=384;y<400;++y)for(int x=32;x<416;++x)check(sharp[y*640+x]==smooth[y*640+x]);
         for(unsigned i=1;i<scene.scroll.interval;++i)scene.tick(0);
         scene.render(sharp);scene.render(smooth,true,true);check(sharp==smooth);
     }
+}
+
+void paced_background_positions(){
+    constexpr std::uint64_t begin=2'000'000;
+    for(unsigned hz:{60u,120u,144u})for(int stage:{0,3,4,5}){
+        DisplayCadence cadence;cadence.reset(begin,hz);
+        PresentationClock logic;
+        StageScroll scroll(stage);
+        unsigned steps=0,previous=0;
+        for(unsigned frame=0;frame<=hz*3;++frame){
+            const auto due=cadence.deadline();
+            check(!cadence.consume(due-1)&&cadence.consume(due));
+            check(due==begin+(std::uint64_t(frame)*1'000'000+hz-1)/hz);
+            const auto tick=logic.advance(due/1000,true);
+            steps+=tick;
+            for(unsigned i=0;i<tick;++i)scroll.finish_tick(90);
+            const auto phase=logic.subframe(1,scroll_subpixels,unsigned(due%1000));
+            const auto position=scroll.display_pixels*scroll_subpixels-background_scroll_lag(scroll,phase);
+            const auto elapsed_us=due-begin;
+            const auto moving_us=elapsed_us>17'000?elapsed_us-17'000:0;
+            const auto expected=moving_us*scroll.speed*scroll_subpixels/(17'000*scroll.interval);
+            check(position>=previous&&position>=expected-std::min<std::uint64_t>(2,expected)&&position<=expected+2);
+            if(frame>3)check(position>previous);
+            previous=position;
+        }
+        check(steps==3000/17);
+        // Rendering a still scene does not change the captured subframe.
+        const auto paused=logic.subframe(1,scroll_subpixels);
+        const auto pause_ticks=logic.advance(begin/1000+3050,false);
+        check(!pause_ticks&&display_subframe(paused,logic.subframe(1,scroll_subpixels),pause_ticks)==paused);
+        const auto resumed=logic.advance(begin/1000+3100,true);
+        check(!resumed&&display_subframe(paused,logic.subframe(1,scroll_subpixels),resumed)==paused);
+        const auto next=logic.advance(begin/1000+3117,true);
+        check(next==1&&display_subframe(paused,logic.subframe(1,scroll_subpixels),next)==0);
+        check(cadence.consume(begin+5'000'000)&&cadence.deadline()>begin+5'000'000);
+    }
+
+    std::vector<std::uint32_t> pixels(640*400);
+    for(unsigned y=16;y<=385;++y)pixels[y*640+32]=y%2?0xff8040:0;
+    blend_stage_background(pixels,scroll_subpixels+scroll_subpixels/2);
+    check(pixels[16*640+32]==0x7f4020&&pixels[383*640+32]==0x7f4020);
+    check(pixels[384*640+32]==0&&pixels[385*640+32]==0);
+}
+
+void measured_frame_rate(){
+    constexpr std::uint64_t begin=2'000'000;
+    DisplayCadence cadence;cadence.reset(begin,60);
+    FrameRateMeter full,half;
+    for(unsigned frame=0;frame<=60;++frame){
+        const auto now=cadence.deadline();
+        check(cadence.consume(now));
+        full.submitted(now);
+        if(frame%2==0)half.submitted(now);
+        if(frame<60)check(!full.fps(now)&&!half.fps(now));
+    }
+    check(full.fps(begin+1'000'000)==60&&half.fps(begin+1'000'000)==30);
+    constexpr auto later=begin+2'000'001;
+    check(!full.fps(later)&&!half.fps(later));
+    full.submitted(later);
+    check(!full.fps(later));
+    half.reset();
+    check(!half.fps(begin+1'000'000));
 }
 
 void pause_and_menu_return(const fs::path &root){
@@ -643,6 +709,8 @@ int main(int argc,char **argv){
         const fs::path root=argv[1];
         if(argc==3&&std::string_view(argv[2])=="--background-smoothing"){
             background_smoothing_is_read_only(root);
+            paced_background_positions();
+            measured_frame_rate();
             std::cout<<"background_smoothing_checks="<<checks<<" failures=0\n";
             return 0;
         }

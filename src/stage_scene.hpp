@@ -11,22 +11,30 @@
 #include <memory>
 #include <mutex>
 namespace soew {
-// Spread each one-pixel scroll step across its existing ticks. The resulting
-// image trails the logical terrain by at most three quarters of a pixel.
-inline unsigned background_scroll_blend(const StageScroll &scroll){
+inline constexpr unsigned scroll_subpixels=256;
+// Interpolate towards the current scroll step without reading future tiles.
+inline unsigned background_scroll_lag(const StageScroll &scroll,unsigned subframe){
     if(scroll.done||!scroll.display_pixels)return 0;
-    const unsigned phase=scroll.cycle%scroll.interval;
-    return phase?(scroll.interval-phase)*4/scroll.interval:0;
+    const unsigned age=(unsigned(scroll.cycle)+scroll.interval-1)%scroll.interval;
+    return scroll.speed*((scroll.interval-age)*scroll_subpixels-subframe)/scroll.interval;
 }
-inline void blend_stage_background(std::span<std::uint32_t> pixels,unsigned quarter){
-    if(!quarter)return;
+inline int scroll_sample_rows(unsigned lag){return int((lag+scroll_subpixels-1)/scroll_subpixels);}
+inline void blend_stage_background(std::span<std::uint32_t> pixels,unsigned lag){
+    if(!lag)return;
+    const unsigned fraction=lag%scroll_subpixels;
+    const int rows=scroll_sample_rows(lag),whole=int(lag/scroll_subpixels);
     constexpr unsigned rb=0x00ff00ff,green=0x0000ff00;
-    for(int y=16;y<384;++y)for(int x=32;x<416;++x){
-        auto &a=pixels[y*640+x];const auto b=pixels[(y+1)*640+x];
-        a=((((a&rb)*(4-quarter)+(b&rb)*quarter)>>2)&rb)|
-          ((((a&green)*(4-quarter)+(b&green)*quarter)>>2)&green);
+    for(int y=16;y<384;++y){
+        auto out=pixels.begin()+y*640+32;
+        const auto a=out+whole*640,b=out+rows*640;
+        if(!fraction)std::copy_n(a,384,out);
+        else for(int x=0;x<384;++x){
+            const auto lo=a[x],hi=b[x];
+            out[x]=((((lo&rb)*(scroll_subpixels-fraction)+(hi&rb)*fraction)>>8)&rb)|
+                   ((((lo&green)*(scroll_subpixels-fraction)+(hi&green)*fraction)>>8)&green);
+        }
     }
-    std::fill_n(pixels.begin()+384*640+32,384,0u); // Clear the extra sample row.
+    for(int y=384;y<384+rows;++y)std::fill_n(pixels.begin()+y*640+32,384,0u);
 }
 namespace asset_cache_detail {
 struct Stats {std::uint64_t hits=0,decodes=0;std::size_t entries=0;};
@@ -100,7 +108,22 @@ public:
         // Initial map row0 is bottom/top368, row22 top16 (tile.cpp:285..294).
         // Source map continues upward while screen terrain moves down. Last
         // undisplayable tile step is excluded by scroll.display_pixels.
-        for(int y=16;y<terrain_bottom;++y)for(int x=32;x<416;++x){const unsigned row=(scroll.display_pixels+383-unsigned(y))/16,col=unsigned((x-32)/16);const auto section=background.map.at(row/8);const auto tile=background.sections.at((section*8+row%8)*24+col);const auto local_y=unsigned((y-int(scroll.display_pixels%16)+16)%16);auto index=background.tiles.at(tile)[local_y*16+unsigned((x-32)%16)];if(stage4_overlay&&x>=176&&x<272&&y>=152&&y<248)index=background.stage4_overlay_color(index,unsigned(x-176),unsigned(y-152));const auto c=background.palette[index];pixels[y*640+x]=(std::uint32_t(c[0])<<16)|(std::uint32_t(c[1])<<8)|c[2];}
+        for(int y=16;y<terrain_bottom;++y){
+            const unsigned row=(scroll.display_pixels+383-unsigned(y))/16;
+            const auto tile_start=(background.map.at(row/8)*8+row%8)*24;
+            const auto tile_y=unsigned((y-int(scroll.display_pixels%16)+16)%16);
+            const bool overlay_row=stage4_overlay&&y>=152&&y<248;
+            for(unsigned col=0;col<24;++col){
+                const auto &tile=background.tiles.at(background.sections.at(tile_start+col));
+                for(unsigned dx=0;dx<16;++dx){
+                    const unsigned x=32+col*16+dx;
+                    auto index=tile[tile_y*16+dx];
+                    if(overlay_row&&x>=176&&x<272)index=background.stage4_overlay_color(index,x-176,unsigned(y-152));
+                    const auto c=background.palette[index];
+                    pixels[y*640+x]=(std::uint32_t(c[0])<<16)|(std::uint32_t(c[1])<<8)|c[2];
+                }
+            }
+        }
         if(!draw_player)return;
         const unsigned glyph_id=player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0;
         const auto &glyph=player_art.glyphs.at(glyph_id);const auto *bitmap=std::get_if<th03::assets::PlanarBitmap4>(&glyph.pixels);if(!bitmap)throw std::runtime_error("Player glyph is not planar");

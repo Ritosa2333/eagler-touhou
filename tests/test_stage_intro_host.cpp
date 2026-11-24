@@ -12,7 +12,7 @@ void verify(bool value,std::source_location where=std::source_location::current(
 }
 void timer(HWND hwnd,App &app,bool intro=false) {
     auto &clock=intro?app.stage_intro.clock:app.stage_clock;
-    clock.defer_batch(GetTickCount64()-17);
+    clock.defer_batch(host_ms()-17);
     SendMessageW(hwnd,WM_TIMER,2,0);
 }
 void intro_run(HWND hwnd,App &app,bool enabled) {
@@ -146,7 +146,7 @@ int main(int argc,char **argv){
         verify(RegisterClassW(&wc)!=0);
         HWND hwnd=CreateWindowW(wc.lpszClassName,L"Intro host test",WS_OVERLAPPEDWINDOW,0,0,640,400,nullptr,nullptr,wc.hInstance,&app);
         verify(hwnd!=nullptr);ShowWindow(hwnd,SW_SHOW);SetForegroundWindow(hwnd);SetFocus(hwnd);
-        app.focused=true;app.timed_test=true;app.test_started=GetTickCount64();
+        app.focused=true;app.timed_test=true;app.test_started=host_ms();
         for(bool practice:{false,true}){
             std::optional<Recorded> baseline;
             for(bool intro:{false,true}){

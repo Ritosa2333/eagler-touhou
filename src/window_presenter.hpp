@@ -6,6 +6,7 @@
 #include <span>
 #include <cstdint>
 #include <stdexcept>
+#include <string_view>
 namespace soew {
 // Window DC is touched ONLY by commit(). All clears/scaling happen offscreen.
 // Reuse the client-sized bitmap; never expose a black intermediate paint.
@@ -46,6 +47,17 @@ public:
         if(!memory_||frame_w<=0||frame_h<=0||pixels.size()!=std::size_t(frame_w)*frame_h||x<0||y<0||view_w<0||view_h<0||x+view_w>width_||y+view_h>height_)throw std::runtime_error("Invalid extra panel dimensions");
         BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=frame_w;info.bmiHeader.biHeight=-frame_h;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;
         if(view_w&&view_h){const auto result=StretchDIBits(memory_,x,y,view_w,view_h,0,0,frame_w,frame_h,pixels.data(),&info,DIB_RGB_COLORS,SRCCOPY);if(result==int(GDI_ERROR)||result==0)throw std::runtime_error("Extra panel scaling failed");}
+    }
+    void corner_label(std::wstring_view label,RECT bounds){
+        const auto font=SelectObject(memory_,GetStockObject(DEFAULT_GUI_FONT));
+        const auto mode=SetBkMode(memory_,OPAQUE);
+        const auto background=SetBkColor(memory_,RGB(0,0,0));
+        const auto foreground=SetTextColor(memory_,RGB(255,255,255));
+        DrawTextW(memory_,label.data(),static_cast<int>(label.size()),&bounds,DT_SINGLELINE|DT_RIGHT|DT_BOTTOM|DT_NOPREFIX);
+        SetTextColor(memory_,foreground);
+        SetBkColor(memory_,background);
+        SetBkMode(memory_,mode);
+        SelectObject(memory_,font);
     }
     void commit(HDC target){
         if(!memory_||!BitBlt(target,0,0,width_,height_,memory_,0,0,SRCCOPY))throw std::runtime_error("Frame presentation failed");
