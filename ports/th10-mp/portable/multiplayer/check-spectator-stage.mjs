@@ -17,6 +17,7 @@ if(!existsSync(resolve(launcher,'server/netplay-relay.mjs')))
  throw Error('Missing launcher relay at '+resolve(launcher,'server/netplay-relay.mjs'));
 const fixtures=process.argv.includes('--fixtures'),stage2Only=process.argv.includes('--stage2-only'),profile=fixtures?'multiplayer-fixtures':'multiplayer';
 const lifecycleOnly=process.argv.includes('--lifecycle-only');
+const navigationOnly=process.argv.includes('--navigation-only');
 const playersIndex=process.argv.indexOf('--players');
 const playersValue=process.argv.find(value=>value.startsWith('--players='))?.slice(10)??
  (playersIndex>=0?process.argv[playersIndex+1]:2);
@@ -53,7 +54,7 @@ try{
   const result=await new Promise((done,reject)=>{
    const child=spawn(process.env.TH_PYTHON||'python',['-u',resolve(import.meta.dirname,'check-spectator-stage.py'),
     '--url','http://127.0.0.1:'+httpPort+'/','--relay','ws://127.0.0.1:'+relayPort,
-    '--output',output,'--mode',mode,'--players',String(players),...(stage2Only?['--stage2-only']:[]),...(lifecycleOnly?['--lifecycle-only']:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
+    '--output',output,'--mode',mode,'--players',String(players),...(stage2Only?['--stage2-only']:[]),...(lifecycleOnly?['--lifecycle-only']:[]),...(navigationOnly?['--navigation-only']:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
    child.stdout.on('data',bytes=>process.stdout.write(bytes));child.stderr.on('data',bytes=>process.stderr.write(bytes));
    child.once('error',reject);child.once('exit',(code,signal)=>done({code,signal}));
   });
