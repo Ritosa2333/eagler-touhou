@@ -64,9 +64,14 @@ bool shot_hits_enemy_box(float sx, float sy, float sw, float sh, float ex, float
         return ex - ew * 0.5f <= sx + sw * 0.5f && sx - sw * 0.5f <= ex + ew * 0.5f &&
                ey - eh * 0.5f <= sy + sh * 0.5f && sy - sh * 0.5f <= ey + eh * 0.5f;
     }
+    const float dx = ex - sx, dy = ey - sy;
+    const double margin = double(std::fabs(ew) + std::fabs(eh)) * 0.5;
+    const double bx = double(std::fabs(sw)) * 0.5 + margin, by = double(std::fabs(sh)) * 0.5 + margin;
+    const double reach = (bx * bx + by * by) * 1.0001;
+    const double distance = double(dx) * dx + double(dy) * dy;
+    if (distance > reach) return false;
     const float a = -theta;
     const float sf = float(std::sin(double(a))), cf = float(std::cos(double(a)));
-    const float dx = ex - sx, dy = ey - sy;
     const float ox = float(double(dx) * cf - double(dy) * sf);
     const float oy = float(double(dx) * sf + double(dy) * cf);
     const float vx = std::fabs(float(double(ew) * cf - double(eh) * sf));
