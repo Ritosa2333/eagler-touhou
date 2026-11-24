@@ -14,11 +14,6 @@ constexpr u32 kInputConfirm = 0x80001;
 
 }
 
-bool TitlePlayerDataMenu::fail(const std::string& reason) {
-    if (error.empty()) error = reason;
-    return false;
-}
-
 void TitlePlayerDataMenu::sound(i32 id) {
     if (play_sound) play_sound(id);
 }

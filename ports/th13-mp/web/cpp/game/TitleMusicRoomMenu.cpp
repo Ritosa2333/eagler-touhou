@@ -8,11 +8,6 @@ constexpr float kOriginX = 58.f, kOriginY = 80.f;
 constexpr i32 kCommentLines = 8;
 }
 
-bool TitleMusicRoomMenu::fail(const std::string& reason) {
-    if (error.empty()) error = reason;
-    return false;
-}
-
 bool TitleMusicRoomMenu::sound(i32 id) {
     if (play_sound && play_sound(id)) return true;
     return fail("Title music room sound service unavailable");

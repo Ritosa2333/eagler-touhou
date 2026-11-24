@@ -12,11 +12,6 @@ constexpr i32 kDigitSpriteBase = 50;
 constexpr u32 kRawPadButtonMask = 0x7fffffffu;
 }
 
-bool TitleKeyConfigMenu::fail(const std::string& reason) {
-    if (error.empty()) error = reason;
-    return false;
-}
-
 bool TitleKeyConfigMenu::sound(i32 id) {
     if (play_sound && play_sound(id)) return true;
     return fail("Title key config sound service unavailable");

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TitleFailure.hpp"
+
 #include "TitleAnimations.hpp"
 #include "TitleMainMenu.hpp"
 #include "TitleState.hpp"
@@ -37,7 +39,7 @@ struct TitleKeyConfigHost final : TitleKeyConfigPlatform {
     }
 };
 
-class TitleKeyConfigMenu {
+class TitleKeyConfigMenu : public TitleFailure {
     TitleState& state;
     AnmManager& animations;
     TitleKeyConfigPlatform& host;
@@ -46,7 +48,6 @@ class TitleKeyConfigMenu {
     std::array<i16, kTitleKeyConfigBindings> bindings_{};
     i32 row_ = 0;
     i32 substate_frames_ = 0;
-    bool fail(const std::string& reason);
     bool sound(i32 id);
     bool open();
     bool refresh_digits();
@@ -57,7 +58,6 @@ class TitleKeyConfigMenu {
 
 public:
     std::function<bool(i32)> play_sound;
-    std::string error;
     TitleKeyConfigMenu(TitleState& state_, AnmManager& animations_, TitleKeyConfigPlatform& host_,
                        TitleSceneResources bank)
         : state(state_), animations(animations_), host(host_), visuals(state_, animations_, bank.title),

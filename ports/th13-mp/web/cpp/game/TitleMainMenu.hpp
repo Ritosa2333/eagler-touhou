@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TitleFailure.hpp"
+
 #include "AnmManager.hpp"
 #include "SessionState.hpp"
 #include "TitleState.hpp"
@@ -52,13 +54,12 @@ struct TitleSceneResources {
     i32 replay_particle_root = 19;
 };
 
-class TitleMainMenu {
+class TitleMainMenu : public TitleFailure {
     TitleState& state;
     SessionState& progress;
     TitleSelectionSettings& settings;
     AnmManager& animations;
     TitleSceneResources resources;
-    bool fail(const std::string&);
     bool create(i32);
     bool create_at(i32, const Vec3& translation);
     bool present(u32&);
@@ -76,7 +77,6 @@ public:
     void apply_draw_layers();
     std::function<bool(i32)> play_sound;
     std::function<bool(i32)> extra_unlocked;
-    std::string error;
     TitleMainMenu(TitleState& state, SessionState& progress, TitleSelectionSettings& settings, AnmManager& animations,
                   TitleSceneResources resources)
         : state(state), progress(progress), settings(settings), animations(animations), resources(resources) {}

@@ -64,11 +64,6 @@ constexpr const char* kEmptyListRow = " -------- --/--/-- --:-- ------- ------- 
 const std::string kEmptyListSuffix = kEmptyListRow;
 }
 
-bool TitleReplayMenu::fail(const std::string& reason) {
-    if (error.empty()) error = reason;
-    return false;
-}
-
 bool TitleReplayMenu::sound(i32 id) {
     return play_sound ? play_sound(id) || fail("Replay sound request failed")
                       : fail("Replay sound service unavailable");

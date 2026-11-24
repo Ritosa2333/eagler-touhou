@@ -4,11 +4,6 @@
 
 namespace th13 {
 
-bool TitleManualMenu::fail(const std::string& reason) {
-    if (error.empty()) error = reason;
-    return false;
-}
-
 bool TitleManualMenu::update(u32 pressed, u32 repeated) {
     (void)pressed;
     (void)repeated;
