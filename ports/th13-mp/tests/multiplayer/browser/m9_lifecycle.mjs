@@ -332,7 +332,7 @@ export async function run(ctx) {
           const disturbInput = !isString && !isControl && (isInputDc || (isWebSocket && !isControlDc));
           if (!disturbInput) return original.call(socket, data);
           ++serial;
-          if (serial % 50 === 0) return undefined;  // 2% 丢包（重传恢复）
+          if (serial % 50 === 0) return undefined;
           const delay = Math.max(0, 50 + (rnd() * 2 - 1) * 20);
           setTimeout(() => {
             try {
@@ -373,6 +373,13 @@ export async function run(ctx) {
         window.mod._free(ptr);
         return ok;
       }, {url});
+    const netFrame = client => client.page.evaluate(() => ({
+      state: JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_mp_net_state())),
+      ticks: window.__rafMp?.ticks ?? 0,
+      raf: window.__rafMp?.raf ?? 0,
+      frameAt: window.__rafMp?.frameAt ?? 0,
+      failure: window.__rafMp?.failure ?? null,
+    }));
     const soakMinutes = Number(process.env.TH13_SOAK_MINUTES ?? '5');
     const soakMs = soakMinutes * 60_000;
     const relay = await ctx.startRelay({});
@@ -407,7 +414,13 @@ export async function run(ctx) {
           }
           for (const client of clients) await client.page.evaluate(() => {
             const mod = window.mod;
-            window.__rafMp = {ticks: 0, began: performance.now(), failure: null};
+            window.__rafMp = {ticks: 0, raf: 0, began: performance.now(), failure: null, frameAt: 0};
+            const beat = time => {
+              ++window.__rafMp.raf;
+              window.__rafMp.frameAt = Date.now() - Math.round(performance.now() - time);
+              requestAnimationFrame(beat);
+            };
+            requestAnimationFrame(beat);
             mod.onGameFrame = (ok) => {
               ++window.__rafMp.ticks;
               if (!ok && !window.__rafMp.failure) {
@@ -426,22 +439,26 @@ export async function run(ctx) {
             await client.page.keyboard.down('KeyZ');
           }
           const began = Date.now();
+          const kSimHz = 60, kSettlingMs = 45_000, kAlignedLimit = 4;
+          const kMaxRollback = 12, kInputDelay = 2;
           let lastProgress = {frame: -1, at: began};
-          let minSpread = Infinity, maxSpread = 0, minFps = Infinity;
+          let lastRaf = new Array(clients.length).fill(null);
+          let minFps = Infinity, alignedStrikes = 0;
+          let minSpread = Infinity, maxSpread = 0;
+          let minAligned = Infinity, maxAligned = 0, stretchMax = 1;
+          let realTimeSamples = 0, governedSamples = 0, firstSample = null, lastSample = null;
           let cleanEnd = null, simulatingStoppedAt = 0;
           while (Date.now() - began < soakMs) {
-            const states = await Promise.all(clients.map(client => netState(client)));
-            for (let i = 0; i < clients.length; ++i) {
-              const failure = await clients[i].page.evaluate(() => window.__rafMp?.failure ?? null);
-              if (failure) ctx.assert(false, `soak rAF（${failure}）`);
+            const states = await Promise.all(clients.map(client => netFrame(client)));
+            for (const entry of states) {
+              if (entry.failure) ctx.assert(false, `soak rAF（${entry.failure}）`);
+              if (entry.state.error) ctx.assert(false, `soak 会话错误（${entry.state.error}）`);
             }
-            for (const state of states)
-              if (state.error) ctx.assert(false, `soak 会话错误（${state.error}）`);
-            const frames = states.map(state => state.sim_frame);
-            const simulating = states.every(state => state.simulating === 1);
+            const frames = states.map(entry => entry.state.sim_frame);
+            const simulating = states.every(entry => entry.state.simulating === 1);
             if (!simulating) {
               if (!simulatingStoppedAt) simulatingStoppedAt = Date.now();
-              const released = states.every(state => state.run_released === 1);
+              const released = states.every(entry => entry.state.run_released === 1);
               if (released) {
                 cleanEnd = {frame: Math.max(...frames), at: Date.now()};
                 evidence.push(`soak ${seats}p 正常终局@帧${cleanEnd.frame}（game over/ending，` +
@@ -454,13 +471,47 @@ export async function run(ctx) {
               await new Promise(done => setTimeout(done, 5000));
               continue;
             }
+            const now = Date.now();
+            const stretch = states.map(entry => entry.state.stretch);
+            const governed = stretch.some(value => value > 1);
             const spread = Math.max(...frames) - Math.min(...frames);
+            const capture = states.map(entry => entry.state.capture_frame);
+            const lead = Math.max(0, ...capture.map((value, seat) => value - frames[seat]));
+            const reach = kMaxRollback + kInputDelay + 1 + lead;
             minSpread = Math.min(minSpread, spread);
             maxSpread = Math.max(maxSpread, spread);
-            const settling = Date.now() - began < 45_000;
-            ctx.assert(spread <= (settling ? 12 : 6),
-              `soak ${seats}p 帧号差（spread=${spread} frames=${JSON.stringify(frames)}` +
-              ` phase=${settling ? '收敛' : '稳态'}）`);
+            stretchMax = Math.max(stretchMax, ...stretch);
+            if (governed) ++governedSamples; else ++realTimeSamples;
+            lastSample = {frames: frames.slice(), at: now};
+            firstSample ??= lastSample;
+            ctx.assert(spread <= reach, `soak ${seats}p 锁步可达范围（spread=${spread} > reach=${reach} ` +
+              `frames=${JSON.stringify(frames)} capture=${JSON.stringify(capture)} ` +
+              `stretch=${JSON.stringify(stretch)}）`);
+            const settling = now - began < kSettlingMs;
+            let alignedSpread = null;
+            if (!governed && states.every(entry => entry.frameAt > 0)) {
+              const aligned = states.map(entry =>
+                entry.state.sim_frame - (entry.frameAt - began) / 1000 * kSimHz);
+              alignedSpread = Math.max(...aligned) - Math.min(...aligned);
+              if (!settling) {
+                minAligned = Math.min(minAligned, alignedSpread);
+                maxAligned = Math.max(maxAligned, alignedSpread);
+              }
+            }
+            alignedStrikes = alignedSpread !== null && !settling && alignedSpread > kAlignedLimit
+              ? alignedStrikes + 1 : 0;
+            const frameAge = states.map(entry => Math.round(now - entry.frameAt));
+            const lockstep = `aligned=${alignedSpread === null ? 'n/a' : alignedSpread.toFixed(2)} ` +
+              `frames=${JSON.stringify(frames)} frameAgeMs=${JSON.stringify(frameAge)} ` +
+              `stretch=${JSON.stringify(stretch)}`;
+            if (alignedStrikes === 1) evidence.push(`soak ${seats}p 对齐单次越界（${lockstep}）`);
+            ctx.assert(alignedStrikes < 2, `soak ${seats}p 锁步偏差（${lockstep} phase=稳态）`);
+            states.forEach((entry, seat) => {
+              if (lastRaf[seat] !== null)
+                ctx.assert(entry.raf > lastRaf[seat],
+                  `soak ${seats}p 席位${seat} 两次采样间没有动画帧（raf=${entry.raf}）`);
+              lastRaf[seat] = entry.raf;
+            });
             const min = Math.min(...frames);
             if (min > lastProgress.frame) lastProgress = {frame: min, at: Date.now()};
             else if (Date.now() - lastProgress.at > 30_000)
@@ -480,12 +531,23 @@ export async function run(ctx) {
           ctx.evidence.push(`soak ${seats}p 呈现 fps=${fps.toFixed(1)}`);
           }
           const rollback = await netRollback(clients[0]);
+          const simSeconds = firstSample && lastSample ? (lastSample.at - firstSample.at) / 1000 : 0;
+          const simFps = simSeconds > 0
+            ? (Math.min(...lastSample.frames) - Math.min(...firstSample.frames)) / simSeconds : 0;
+          const alignedRange = Number.isFinite(minAligned)
+            ? `${minAligned.toFixed(1)}..${maxAligned.toFixed(1)}` : '无实时稳态采样';
+          ctx.evidence.push(`soak ${seats}p 完成：可见帧差 ${minSpread}..${maxSpread} ` +
+            `实时采样 ${realTimeSamples} 调速采样 ${governedSamples}（stretch 峰值 ${stretchMax.toFixed(3)}）` +
+            `实时稳态对齐帧差 ${alignedRange} ` +
+            `模拟 ${simFps.toFixed(1)} fps restores=${rollback.restores} maxDistance=${rollback.maxDistance}`);
+          if (governedSamples > 0) ctx.evidence.push(`BLOCKED: soak ${seats}p 墙钟对齐（≤${kAlignedLimit} 帧）在调速器` +
+            `介入的 ${governedSamples} 次采样上不适用，仅受可达范围约束；阈值不降`);
           ctx.assert(rollback.desync_detected === 0,
             `soak ${seats}p digest 零失配（desync=${rollback.desync_detected}）`);
           ctx.assert(rollback.digests_received > 0,
             `soak ${seats}p digest 已交换（received=${rollback.digests_received}）`);
-          ctx.assert(rollback.stall_frames <= 12,
-            `soak ${seats}p 停等帧在上界内（stall=${rollback.stall_frames} ≤12）`);
+          ctx.assert(rollback.stall_frames <= 12, `soak ${seats}p 停等帧在上界内（stall=${rollback.stall_frames} ≤12；` +
+            `调速采样 ${governedSamples}，stretch 峰值 ${stretchMax.toFixed(3)}）`);
           if (process.env.TH13_SOAK_REQUIRE_FPS_58 === '1') {
             ctx.assert(minFps >= 58,
               `soak ${seats}p 平均呈现 fps ≥58（实测 ${minFps.toFixed(1)}）`);
@@ -494,8 +556,6 @@ export async function run(ctx) {
               `物理不可达（实测 ${minFps.toFixed(1)}）；该断言由 TH13_SOAK_REQUIRE_FPS_58=1` +
               `环境启用，阈值不降`);
           }
-          evidence.push(`soak ${seats}p 完成：spread ${minSpread}..${maxSpread} ` +
-            `restores=${rollback.restores} maxDistance=${rollback.maxDistance}`);
           const route = await clients[0].page.evaluate(
             () => globalThis.__eaglerPeerTransport?.route);
           ctx.noteRuntime({

@@ -53,6 +53,7 @@ export async function run(ctx) {
   const frameDelayInit = initialDelay => {
     let delayFrames = initialDelay;
     let count = 0;
+    let armed = false;
     const queue = [];
     const wrap = (original, socket, data) => {
       const isControl = typeof socket.url === 'string' && socket.url.includes('signal=1');
@@ -63,7 +64,7 @@ export async function run(ctx) {
       const isWebSocket = typeof WebSocket === 'function' && socket instanceof WebSocket;
       const disturbInput = !isString && !isControl &&
         (isInputDc || (isWebSocket && !isControlDc));
-      if (!disturbInput) return original.call(socket, data);
+      if (!armed || !disturbInput) return original.call(socket, data);
       try {
         const label = typeof socket.label === 'string' ? socket.label
           : typeof socket.url === 'string' ? socket.url : '?';
@@ -94,11 +95,14 @@ export async function run(ctx) {
       }
     };
     globalThis.__th13m8SetDelay = value => { delayFrames = Math.max(0, value); };
-    globalThis.__th13m8Stats = () => ({count, queued: queue.length, delivered,
+    globalThis.__th13m8Arm = () => { armed = true; };
+    globalThis.__th13m8Stats = () => ({count, queued: queue.length, delivered, armed,
                                        wrapped: typeof RTCDataChannel.prototype.send === 'function'});
   };
   const netAdvance = client => client.page.evaluate(
     () => { if (globalThis.__th13m8Advance) globalThis.__th13m8Advance(); });
+  const netArmDelay = client => client.page.evaluate(
+    () => { if (globalThis.__th13m8Arm) globalThis.__th13m8Arm(); });
   const netState = client => client.page.evaluate(
     () => JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_mp_net_state())));
   const netRollback = client => client.page.evaluate(
@@ -182,9 +186,14 @@ export async function run(ctx) {
         ctx.assert(false, `握手未闭合（${JSON.stringify(states)} ` +
           `relay=${relay.log().slice(-400)}）`);
       }
-      for (const client of clients) {
+      for (const [index, client] of clients.entries()) {
         const clientNow = clock ? await nowOf(client) : now;
-        ctx.assert(await netPump(client, clientNow) === 1, '握手泵');
+        if (await netPump(client, clientNow) !== 1) {
+          const states = [];
+          for (const other of clients) states.push(await netState(other));
+          ctx.assert(false, `握手泵@seat${index} attempt=${attempt} ` +
+            `（states=${JSON.stringify(states)} relay=${relay.log().slice(-400)}）`);
+        }
         await netReady(client);
       }
       const states = [];
@@ -241,81 +250,33 @@ export async function run(ctx) {
     }
   };
 
-  const pumpToSim = async (clients, target, inputs, maxRounds = 8000) => {
-    for (let round = 0; round < maxRounds; ++round) {
-      const states = [];
-      for (const client of clients) states.push(await netState(client));
-      if (states.every(state => state.sim_frame >= target)) return states;
-      const now = Date.now();
-      for (const client of clients) {
-        if (await netPump(client, now) !== 1) {
-          const rollbacks = [];
-          for (const c of clients) rollbacks.push(await netRollback(c));
-          ctx.assert(false, `pumpToSim pump（states=${JSON.stringify(states)} ` +
-            `rollbacks=${JSON.stringify(rollbacks)}）`);
-        }
-      }
-      for (const client of clients) await netAdvance(client);
-      const decisions = [];
-      for (const client of clients) decisions.push((await netCanSimulate(client)) === 1);
-      if (!decisions.every(Boolean)) continue;
-      const frameOf = [];
-      for (const client of clients) frameOf.push((await netState(client)).sim_frame);
-      for (let index = 0; index < clients.length; ++index) {
-        ctx.assert(await netCapture(clients[index], inputs(clients[index], frameOf[index]),
-                                    now) === 1, 'pumpToSim capture');
-      }
-      for (const client of clients) {
-        await runFrame(client);
-        await netOnSimulated(client);
-      }
-    }
-    ctx.assert(false, `pumpToSim 超时（target=${target}）`);
-  };
   const netSetFrameDelay = (client, value) => client.page.evaluate(
     value => { if (globalThis.__th13m8SetDelay) globalThis.__th13m8SetDelay(value); },
     value);
-
-  const settleSession = async (clients, neutralHeld = 0x001, maxRounds = 400) => {
-    let rounds = 0;
-    let stallGuard = 0;
-    for (;;) {
-      const states = [];
-      for (const client of clients) states.push(await netState(client));
-      const rollbacks = [];
-      for (const client of clients) rollbacks.push(await netRollback(client));
-      const settled = rollbacks.every(rollback =>
-        rollback.rollback_pending === 0 && rollback.last_error === 0);
-      if (settled) return states;
-      if (++rounds > maxRounds) {
-        ctx.assert(false, `收敛超时（states=${JSON.stringify(states)} ` +
-          `rollbacks=${JSON.stringify(rollbacks)}）`);
-      }
-      const now = Date.now();
-      for (const client of clients) {
-        if (await netPump(client, now) !== 1) {
-          ctx.assert(false, `settle pump（states=${JSON.stringify(states)}）`);
-        }
-      }
-      const decisions = [];
-      for (const client of clients) {
-        decisions.push((await netCanSimulate(client)) === 1);
-      }
-      const canSimulate = decisions.every(Boolean);
-      if (canSimulate) {
-        for (const client of clients) {
-          ctx.assert(await netCapture(client, neutralHeld, now) === 1, 'settle capture');
-        }
-      }
-      if (canSimulate) {
-        for (const client of clients) {
-          await runFrame(client);
-          await netOnSimulated(client);
-        }
-        stallGuard = 0;
-      } else if (++stallGuard > 4000) {
-        ctx.assert(false, `settle 停等超时（states=${JSON.stringify(states)} ` +
-          `rollbacks=${JSON.stringify(rollbacks)}）`);
+  const forceRelayRoute = client => client.page.evaluate(() => {
+    globalThis.RTCPeerConnection = undefined;
+    window.mod.eaglerOptions = {
+      ...(window.mod.eaglerOptions ?? {}),
+      netplayAllowWebsocketFallback: true,
+    };
+  });
+  const transportRoute = client => client.page.evaluate(
+    () => globalThis.__eaglerPeerTransport?.route ?? null);
+  const sessionClock = () => {
+    let now = Date.now();
+    return () => (now = Math.max(now + 1, Date.now()));
+  };
+  const settleInputs = async (client, now, frontier, label) => {
+    for (let attempt = 0; ; ++attempt) {
+      const pumped = await netPump(client, now);
+      const state = await netState(client);
+      if (pumped === 1 && state.confirmed !== 0xFFFFFFFF && state.confirmed >= frontier) return;
+      if (pumped !== 1 || attempt >= 4000) {
+        const shim = await client.page.evaluate(
+          () => globalThis.__th13m8Stats ? globalThis.__th13m8Stats() : null);
+        ctx.assert(false, `${label} 送达屏障（pumped=${pumped} frontier=${frontier} ` +
+          `state=${JSON.stringify(state)} rollback=${JSON.stringify(await netRollback(client))} ` +
+          `shim=${JSON.stringify(shim)}）`);
       }
     }
   };
@@ -360,33 +321,84 @@ export async function run(ctx) {
   const relay = await ctx.startRelay({});
   try {
     if (caseId.includes('rollback_one_three_twelve')) {
-      for (const [label, frameDelay, minDistance] of
-             [['1帧', 3, 1], ['3帧', 5, 3], ['12帧', 14, 10]]) {
+      const frames = 60, inputDelay = 2;
+      for (const [label, frameDelay, distance] of
+             [['1帧', 3, 1], ['3帧', 5, 3], ['12帧', 14, 12]]) {
         const clients = [
           await openMpClient({seats: 2, characters: [0, 0], local: 0, frameDelay}),
           await openMpClient({seats: 2, characters: [0, 0], local: 1, frameDelay}),
         ];
         try {
-          const roomId = label === '1帧' ? 't1' : label === '3帧' ? 't3' : 't12';
-          await handshake(clients, `th13m8rb-${roomId}`, 1000, 2);
-          await pumpSession(clients, 60, (client, frame) =>
-            client === clients[0] ? (frame % 5 === 0 ? 0x010 : 0x001) : 0x001);
-          const rollback = await netRollback(clients[0]);
-          const stats = await clients[0].page.evaluate(
-            () => globalThis.__th13m8Stats && globalThis.__th13m8Stats());
-          ctx.evidence.push(`注入自检：${JSON.stringify(stats)}`);
-          ctx.assert(rollback.restores > 0,
-            `${label} 档延迟注入触发真实回滚（${JSON.stringify(rollback)}）`);
-          ctx.evidence.push(`${label} 档距离观测：maxDistance=${rollback.maxDistance} restores=${rollback.restores} resimulated=${rollback.resimulated}`);
-        ctx.assert(rollback.maxDistance >= minDistance,
-            `${label} 档纠正距离（maxDistance=${rollback.maxDistance} >= ${minDistance}）`);
-          ctx.evidence.push(`${label} 档（frameDelay=${frameDelay}）：${JSON.stringify(rollback)}`);
-          const route = await clients[0].page.evaluate(
-            () => globalThis.__eaglerPeerTransport?.route);
+          for (const client of clients) await forceRelayRoute(client);
+          const clock = sessionClock();
+          await handshake(clients, `th13m8rb-${distance}`, 0, inputDelay, clock);
+          for (const client of clients) await netArmDelay(client);
+          const inputs = (client, frame) =>
+            (frame % 2 === 0) === (client === clients[0]) ? 0x001 : 0x000;
+          let stalls = 0;
+          const captures = clients.map(() => []);
+          for (let round = 1; round <= frames; ++round) {
+            for (const client of clients) await netAdvance(client);
+            const now = clock();
+            for (const [seat, client] of clients.entries()) {
+              const released = captures[1 - seat][round - frameDelay - 1];
+              if (released >= 1) {
+                await settleInputs(client, now, released - 1 + inputDelay, `${label} 第${round}轮`);
+              } else {
+                ctx.assert(await netPump(client, now) === 1, `${label} 第${round}轮泵`);
+              }
+            }
+            for (const client of clients) {
+              for (let step = 0; ; ++step) {
+                if (step) ctx.assert(await netPump(client, now) === 1, `${label} 第${round}轮补帧泵`);
+                const state = await netState(client);
+                if (state.sim_frame >= round) break;
+                if (state.capture_frame <= Math.max(state.sim_frame, Math.min(round, frameDelay) - 1)) {
+                  ctx.assert(await netCapture(client, inputs(client, state.capture_frame + inputDelay),
+                                              now) === 1, `${label} 第${round}轮捕获`);
+                }
+                if ((await netCanSimulate(client)) !== 1) {
+                  ++stalls;
+                  break;
+                }
+                await runFrame(client);
+                await netOnSimulated(client);
+              }
+            }
+            for (const [seat, client] of clients.entries())
+              captures[seat].push((await netState(client)).capture_frame);
+          }
+          const route = await transportRoute(clients[0]);
+          ctx.assert(route === 'relay', `${label} 档延迟注入覆盖全部输入通道（route=${route}）`);
+          let maxRestores = 0, maxDistance = 0;
+          for (const [seat, client] of clients.entries()) {
+            const state = await netState(client);
+            const rollback = await netRollback(client);
+            const stats = await client.page.evaluate(
+              () => globalThis.__th13m8Stats && globalThis.__th13m8Stats());
+            ctx.evidence.push(`${label} 档席位${seat} 注入自检：${JSON.stringify(stats)}`);
+            ctx.assert(state.sim_frame === frames && state.error === '',
+              `${label} 档席位${seat} 追平（${JSON.stringify(state)}）`);
+            ctx.assert(rollback.restores >= frames - frameDelay - 1,
+              `${label} 档席位${seat} 持续回滚（restores=${rollback.restores} ` +
+              `>= ${frames - frameDelay - 1}）`);
+            ctx.assert(rollback.maxDistance === distance,
+              `${label} 档席位${seat} 纠正距离（maxDistance=${rollback.maxDistance} === ${distance}）`);
+            ctx.assert(rollback.last_error === 0 && rollback.rollback_pending === 0 &&
+                       rollback.desync_detected === 0,
+              `${label} 档席位${seat} 纠正收敛（${JSON.stringify(rollback)}）`);
+            ctx.evidence.push(`${label} 档（frameDelay=${frameDelay}）席位${seat}：` +
+              `restores=${rollback.restores} resimulated=${rollback.resimulated} ` +
+              `checkpoints=${rollback.checkpoints} maxDistance=${rollback.maxDistance} ` +
+              `distanceSum=${rollback.rollback_distance_sum}`);
+            maxRestores = Math.max(maxRestores, rollback.restores);
+            maxDistance = Math.max(maxDistance, rollback.maxDistance);
+          }
+          ctx.evidence.push(`${label} 档停等轮次：${stalls}`);
           ctx.noteRuntime({
             transportPaths: [route],
-            rollbackCount: rollback.restores,
-            maxRollbackDistance: rollback.maxDistance,
+            rollbackCount: maxRestores,
+            maxRollbackDistance: maxDistance,
           });
         } finally {
           for (const client of clients) {
@@ -424,17 +436,94 @@ export async function run(ctx) {
         ];
         clientsRef = clients;
         try {
+          for (const client of clients) await forceRelayRoute(client);
           if (withDelay) {
             for (const client of clients) await netSetFrameDelay(client, 0);
           }
-          await handshake(clients, room);
+          const clock = sessionClock();
+          await handshake(clients, room, 0, 3, clock);
+          for (const client of clients) await netArmDelay(client);
           for (const client of clients) await netAudioAppliedClear(client);
-          await pumpToSim(clients, 20, inputs);
+          const inputDelay = 3;
+          const captures = clients.map(() => []);
+          let round = 0, delayFrames = 0;
+          const deliver = async () => {
+            for (const client of clients) await netAdvance(client);
+            const now = clock();
+            for (const [seat, client] of clients.entries()) {
+              const released = captures[1 - seat][round - delayFrames - 1];
+              if (released >= 1) {
+                await settleInputs(client, now, released - 1 + inputDelay, `${label} 第${round}轮`);
+              } else {
+                ctx.assert(await netPump(client, now) === 1, `${label} 第${round}轮泵`);
+              }
+            }
+            return now;
+          };
+          const record = async () => {
+            for (const [seat, client] of clients.entries())
+              captures[seat].push((await netState(client)).capture_frame);
+          };
+          const pumpTo = async target => {
+            for (;;) {
+              const states = [];
+              for (const client of clients) states.push(await netState(client));
+              if (states.every(state => state.sim_frame >= target)) return;
+              ctx.assert(round < target + delayFrames + 400,
+                `${label} 泵超时（states=${JSON.stringify(states)}）`);
+              ++round;
+              const now = await deliver();
+              const decisions = [];
+              for (const client of clients) decisions.push((await netCanSimulate(client)) === 1);
+              for (const client of clients) {
+                const capture = await netState(client);
+                if (capture.capture_frame > capture.sim_frame) continue;
+                ctx.assert(await netCapture(client, inputs(client, capture.capture_frame + inputDelay),
+                                            now) === 1, `${label} 捕获`);
+              }
+              if (decisions.every(Boolean)) {
+                for (const client of clients) {
+                  await runFrame(client);
+                  await netOnSimulated(client);
+                }
+              }
+              await record();
+            }
+          };
+          await pumpTo(20);
+          delayFrames = withDelay ? 17 : 0;
           if (withDelay) {
-            for (const client of clients) await netSetFrameDelay(client, 17);
+            for (const client of clients) await netSetFrameDelay(client, delayFrames);
           }
-          await pumpToSim(clients, 40, inputs);
-          await syncFrames(clients);
+          await pumpTo(40);
+          for (;;) {
+            const states = [];
+            for (const client of clients) states.push(await netState(client));
+            const rollbacks = [];
+            for (const client of clients) rollbacks.push(await netRollback(client));
+            const lagging = Math.min(...states.map(state => state.sim_frame));
+            if (states.every((state, seat) => state.sim_frame === lagging &&
+                             rollbacks[seat].rollback_pending === 0 &&
+                             rollbacks[seat].last_error === 0 && rollbacks[seat].records === 0 &&
+                             rollbacks[seat].committed === state.sim_frame &&
+                             state.confirmed >= state.sim_frame - 1)) break;
+            ctx.assert(round < 900, `${label} 追平排空超时（states=${JSON.stringify(states)} ` +
+              `rollbacks=${JSON.stringify(rollbacks)}）`);
+            ++round;
+            const now = await deliver();
+            for (const [seat, client] of clients.entries()) {
+              const capture = await netState(client);
+              if (capture.capture_frame <= capture.sim_frame) {
+                ctx.assert(await netCapture(client, inputs(client, capture.capture_frame + inputDelay),
+                                            now) === 1, `${label} 追平捕获`);
+              }
+              if (states[seat].sim_frame !== lagging || (await netCanSimulate(client)) !== 1) continue;
+              await runFrame(client);
+              await netOnSimulated(client);
+            }
+            await record();
+          }
+          ctx.assert(await transportRoute(clients[0]) === 'relay', `${label} 臂走 relay 路由`);
           const stats = await netRollback(clients[0]);
           const perClient = [];
           for (const client of clients) perClient.push(await netAudioApplied(client));
