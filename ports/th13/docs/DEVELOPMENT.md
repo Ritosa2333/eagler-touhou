@@ -8,6 +8,7 @@
   2. WASI 无头 harness：wasi-sdk（`portable/build-harness.mjs` → `web/artifacts/wasi/`），供 oracle 对照与 CI。
 - **Oracle 对照**：Unicorn 无头模拟原版 EXE（桩掉 Win32/D3D），以录像驱动逐帧导出状态池，与 harness 输出逐字段比对，首个分歧即回归定位点。原版二进制与 oracle 轨迹只在开发期使用，不进网页构建。
 - **地址锚点**：`web/cpp/rebuild/AddressMap.hpp` 登记每个子系统的原版入口，供 oracle 与回归脚本引用。
+- **呈现**：画面只在动画帧回调内提交。窗口尺寸为零时保留待提交帧，帧缓冲首次作为绘制目标绑定时检查完整性；页面带 `?glDebug=1` 时每次呈现后读取 GL 错误码。画布上下文属性集中在 `web/sdl-runtime/context-attributes.mjs`。打包入口是 `portable/build-eagler.mjs`（`build.mjs` 加 `package-eagler.mjs`）；目录型运行时的文件清单由 `package-eagler.mjs` 与产品目录的 `runtimeAssets` 共同维护，改清单时两处一起改。
 
 ## 统一容器环境
 

@@ -175,3 +175,5 @@
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
 
 残机与灵击拾取在原版结算点同步通知既有 HUD VM。覆盖整件奖励、碎片合成、录像恢复后的拾取和灵击上限；[定向回归](tests/ui/hud_item_refresh_test.cpp) 支持合成脚本与本地原版 ANM 资源。道具、HUD、录像及 ANM 共 71 项回归通过，原版资源定向验证 4 项通过。
+
+呈现链加固（提交 `cfc5c447b`）：画面只在动画帧回调内提交，`desynchronized` 画布与回调外的提帧路径已删除。DISPLAY-01 至 DISPLAY-03 在这次改动中的验证范围、打包链路的验证与未覆盖项见[呈现链加固验证记录](../../archive/th13-presentation-20261124/README.md)。
