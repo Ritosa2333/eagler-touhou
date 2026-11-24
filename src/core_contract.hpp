@@ -31,11 +31,15 @@ struct RandomRing {
     }
 };
 // Source input masks: th02/hardware/input.hpp. These are NOT frontend Menu bits.
-enum Input : std::uint16_t {Up=1,Down=2,Left=4,Right=8,Shot=16,Bomb=32,Cancel=64,OK=128,Q=256,UpLeft=0x1000,UpRight=0x2000,DownLeft=0x4000,DownRight=0x8000};
+enum Input : std::uint16_t {Up=1,Down=2,Left=4,Right=8,Shot=16,Bomb=32,Cancel=64,OK=128,Q=256,
+                            Focus=0x0400,UpLeft=0x1000,UpRight=0x2000,DownLeft=0x4000,DownRight=0x8000};
+// Focus is a native extension in a previously unused replay input bit.
+inline constexpr std::uint16_t native_input_mask=Up|Down|Left|Right|Shot|Bomb|Cancel|OK|Q|Focus|UpLeft|UpRight|DownLeft|DownRight;
 struct Keys {
     bool up=false,down=false,left=false,right=false;
     bool n8=false,n2=false,n4=false,n6=false,n7=false,n9=false,n1=false,n3=false;
     bool z=false,x=false,space=false,enter=false,escape=false,q=false;
+    bool focus=false;
 };
 inline std::uint16_t sense(const Keys &k) {
     std::uint16_t mask=0;
@@ -52,6 +56,7 @@ inline std::uint16_t sense(const Keys &k) {
     if(k.escape)mask|=Cancel;
     if(k.enter)mask|=OK;
     if(k.q)mask|=Q;
+    if(k.focus)mask|=Focus;
     return mask;
 }
 }

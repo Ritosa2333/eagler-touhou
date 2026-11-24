@@ -25,11 +25,10 @@ inline EncounterScene load_replay_scene(const std::filesystem::path &root,const 
     return s;
 }
 
-inline constexpr std::uint16_t replay_input_mask=Up|Down|Left|Right|Shot|Bomb|Cancel|OK|Q|UpLeft|UpRight|DownLeft|DownRight;
 inline constexpr NativeReplayEvent normalize_replay_tick(std::uint16_t input,bool group=false,bool fast=false){
     // Do not collapse contradictory directional keys: exact masks have
     // distinct source semantics. Group and fast-forward are independent.
-    return {NativeReplayEventKind::Tick,std::uint16_t(input&replay_input_mask),group,fast};
+    return {NativeReplayEventKind::Tick,std::uint16_t(input&native_input_mask),group,fast};
 }
 
 namespace replay_session_detail {
@@ -65,6 +64,8 @@ inline std::uint64_t replay_state_digest(const EncounterScene &s){
     for(auto b:r.random.bytes)h.byte(b);
     for(const auto &e:r.enemies.slots)for(auto b:e.raw)h.byte(b);
     h.fields(p.x,p.y,p.shot,p.back_page,p.frame,p.pose,p.last_dx,p.last_dy);
+    // Unfocused runs retain the exact digest used by existing replays.
+    if(p.focused)h.fields(p.focused,p.focus_rx,p.focus_ry);
     const auto &l=s.life;
     for(const auto &pos:l.positions)h.fields(pos.x,pos.y);
     h.fields(l.current.x,l.current.y,l.invincibility,l.miss_frame,l.lives,l.bombs,l.start_bombs,l.power,

@@ -96,7 +96,6 @@ inline constexpr std::uint16_t version=1,v2_version=2,current_version=3,practice
 inline constexpr std::uint16_t raw_payload=0,deflate_payload=1;
 inline constexpr std::uint8_t rules_revision=1;
 inline constexpr std::uint64_t max_played_at=253402300799ull; // 9999-12-31 23:59:59 UTC.
-inline constexpr std::uint16_t input_bits=Up|Down|Left|Right|Shot|Bomb|Cancel|OK|Q|UpLeft|UpRight|DownLeft|DownRight;
 inline constexpr std::uint16_t launch_bits=0x3f;
 inline bool valid_config(const NativeReplayConfig &v,bool practice=false){
     return v.stage>=0&&v.stage<=5&&v.shot>=0&&v.shot<=2&&v.rank>=0&&v.rank<=4&&
@@ -119,7 +118,7 @@ struct EventSequence {
     bool practice=false;
     bool accept(const NativeReplayEvent &e){
         if(e.kind==NativeReplayEventKind::Tick){
-            if((e.input&~input_bits)||e.context>NativeReplayContext::StageClear||
+            if((e.input&~native_input_mask)||e.context>NativeReplayContext::StageClear||
                (practice&&(e.context==NativeReplayContext::Legacy||e.context==NativeReplayContext::Continue)))return false;
             stage_has_tick=true;
             return true;

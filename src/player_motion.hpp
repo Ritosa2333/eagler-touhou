@@ -12,9 +12,12 @@ struct PlayerMotion {
     std::uint64_t frame=0;
     Pose pose=Still;
     int last_dx=0,last_dy=0; // Source si/di before player_move clamps position.
+    bool focused=false;
+    int focus_rx=0,focus_ry=0; // Signed half-pixel carry; collisions still use integer pixels.
     explicit PlayerMotion(int selected_shot=1,unsigned initial_page=0):shot(selected_shot),back_page(initial_page){
         if(shot<0||shot>2||initial_page>1)throw std::runtime_error("Invalid player motion configuration");
     }
+    void clear_focus(){focused=false;focus_rx=focus_ry=0;}
     void tick(std::uint16_t input){
         int dx=0,dy=0;
         const int aligned=shot==0?5:shot==1?4:3;
@@ -40,8 +43,19 @@ struct PlayerMotion {
         // player_invalidate2518..2531 copies front position to back first;
         // this is per-frame movement, not independent two-frame trajectories.
         if(shot==0&&back_page){if(dx)dx+=dx<0?1:-1;if(dy)dy+=dy<0?1:-1;}
+        if(input&Focus){
+            focused=true;
+            const auto half=[](int delta,int &carry){
+                const int halves=delta+carry;
+                carry=halves%2;
+                return halves/2;
+            };
+            dx=half(dx,focus_rx);dy=half(dy,focus_ry);
+        }else clear_focus();
         last_dx=dx;last_dy=dy;
         x=std::clamp(x+dx,28,390);y=std::clamp(y+dy,16,344);
+        if((x==28&&focus_rx<0)||(x==390&&focus_rx>0))focus_rx=0;
+        if((y==16&&focus_ry<0)||(y==344&&focus_ry>0))focus_ry=0;
         back_page^=1;++frame;
     }
 };

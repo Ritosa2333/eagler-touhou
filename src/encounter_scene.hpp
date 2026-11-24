@@ -272,6 +272,7 @@ public:
         transition.phase=StageTransition::Phase::Entry;transition.frame=0;
     }
     void start_postboss(){
+        player.clear_focus();
         dialogue_snapshot.clear();dialogue_snapshot.resize(640*400);render(dialogue_snapshot,false);
         if(!practice_mode){
             unsigned stock=life.lives;score_core.grant_dialogue_bonus(stock);life.lives=std::uint8_t(stock);lives=int(stock);
@@ -337,6 +338,7 @@ public:
             }
             mima_tone=100; // dialog_pre restores the normal palette tone.
         }else{mima_music=false;mima_music_stopped=true;}
+        player.clear_focus();
         dialogue_snapshot.resize(640*400);render(dialogue_snapshot);
         dialogue.start_stage5_defeat(continues_used,final);
         transition.phase=StageTransition::Phase::Postboss;
@@ -374,6 +376,7 @@ public:
     }
     void start_preboss(){
         if(!preboss_enabled||preboss_started||!runtime.scroll.done||rika_enabled||meira_enabled||runtime.blocked||weapon_blocked||(survival_enabled&&life.game_over))return;
+        player.clear_focus();
         // Capture existing sprites/bullets/terrain once; blocking source dialog
         // does not advance gameplay or re-render simulation underneath the box.
         if(!preparation_only){
@@ -403,13 +406,15 @@ public:
     }
     void tick(std::uint16_t input,bool dialogue_group_key=false,bool dialogue_fast_forward=false){
         if(paused)return;
+        if(!(input&Focus))player.clear_focus();
+        const auto action_input=std::uint16_t(input&~Focus);
         if(hitbox_mode_!=HitboxMode::Off)invalidate_hitboxes();
         if(practice_completed)return;
         if(extra_settlement.terminal())return;
         if(extra_settlement.showing_bonus()||extra_settlement.phase==ExtraSettlement::Phase::GameOver){extra_settlement.tick(dialogue_group_key);return;}
         if(sigma_art&&life.game_over&&!sigma.done){extra_settlement.lose(dialogue_group_key);return;}
         if(life.game_over&&transitions_enabled&&!sigma_art&&survival_enabled&&!practice_mode){
-            update_continue(input,dialogue_group_key);return;
+            update_continue(action_input,dialogue_group_key);return;
         }
         if(practice_mode&&!practice_show_dialogue&&!preparation_only&&((rika_enabled&&rika.done)||(meira_enabled&&meira.done))){practice_completed=true;return;}
         if(transitions_enabled&&stage==2&&!midboss3_enabled&&runtime.scroll.progress>=0x67){stage3_preview_boundary=true;return;}
@@ -452,7 +457,7 @@ public:
             }
             if(stage==4){
                 update_sound();const unsigned before=dialogue.current;
-                const bool complete=dialogue.tick(input!=0,dialogue_group_key,dialogue_fast_forward);
+                const bool complete=dialogue.tick(action_input!=0,dialogue_group_key,dialogue_fast_forward);
                 if(mima.event==MimaCore::Event::FinalDefeated&&dialogue.current!=before){
                     // dialog.cpp:551–587: five flashes, with 10/30/20/20/20/20/20 VSYNC delays.
                     constexpr std::array<unsigned,4> delays={12,52,20,118};
@@ -465,7 +470,7 @@ public:
                 }
                 return;
             }
-            if(dialogue.tick(input!=0,dialogue_group_key,dialogue_fast_forward)){
+            if(dialogue.tick(action_input!=0,dialogue_group_key,dialogue_fast_forward)){
                 if(dialogue.postboss&&practice_mode){
                     practice_completed=true;
                 }else if(stage==5){
@@ -556,6 +561,7 @@ public:
         if(survival_enabled){life.begin_frame(page);handle_assisted_hit();accepts_input=life.input_allowed();if(accepts_input){player.x=life.positions[page].x;player.y=life.positions[page].y;}}
         player.back_page=page;
         if(accepts_input){player.tick(input);if(survival_enabled)life.moved(page,player.x,player.y);}
+        else player.clear_focus();
         if(survival_enabled){player.x=life.current.x;player.y=life.current.y;}
         EnemyPathRuntime::CombatHooks combat;
         if(combat_enabled){
@@ -1024,8 +1030,8 @@ public:
             }
         };
         const auto fixed=[&](const auto &s){return motion_q4(s.position[rendered_page]);};
-        if(!survival_enabled||life.pattern){
-            const auto p=survival_enabled?life.draw:PlayerLife::Point{player.x,player.y};
+        if(!survival_enabled||life.pattern||player.focused){
+            const auto p=survival_enabled&&life.pattern?life.draw:PlayerLife::Point{player.x,player.y};
             xy(T::Player,0,p.x,p.y,life.total_misses);
         }
         if(options_visible())xy(T::Option,0,shots.option_left,shots.option_top);
@@ -1314,6 +1320,10 @@ private:
             std::fill_n(first+384,death_fx.shift,0u);
         }
         if(death_fx.tone!=100)apply_mima_tone(pixels,death_fx.tone);
+        if(player.focused&&!paused&&hitbox_battle_visible()){
+            const auto p=motion.at(T::Player,0,player.x,player.y,life.total_misses);
+            draw_player_focus_point(pixels,p.offset(player_projectile_offset.x-int(death_fx.shift),player_projectile_offset.y));
+        }
         // Approximate Sigma's one-word GDC offset without moving host HUD or collisions.
         if(sigma_view_shift())for(int y=16;y<384;++y){
             auto first=pixels.begin()+y*640+32;

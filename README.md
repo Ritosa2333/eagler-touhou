@@ -77,6 +77,9 @@ scrolling without filtering the player, bullets, or HUD. Stage 4's terrain
 motif no longer flashes between render pages, and shot-hit sparks are
 half-transparent in either rendering mode.
 
+Hold either Shift key during play to move at half speed and show Reimu's
+hit point. Shift is recorded in new replays and is not needed for playback.
+
 Practice uses the same shot selection screen as the main game. Choose Reimu's
 shot type with Left/Right, then use Up/Down in the stage popup. Z or Enter
 confirms; X or Esc closes the popup back to shot selection. The setup popup

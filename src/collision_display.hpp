@@ -1,10 +1,12 @@
 #pragma once
+#include "render_motion.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <limits>
 #include <optional>
 #include <span>
+#include <string_view>
 
 namespace soew {
 enum class HitboxMode { Off, Self, All };
@@ -13,6 +15,24 @@ struct CollisionPoint {
     int x,y;
     constexpr bool operator==(const CollisionPoint &) const = default;
 };
+inline constexpr CollisionPoint player_projectile_offset{16,24};
+
+inline void draw_player_focus_point(std::span<std::uint32_t> pixels,RenderPoint center){
+    // A tight red ring and white core stay readable over both dark and light terrain.
+    constexpr std::array<std::string_view,9> shape={
+        "   ###   "," ##+++## "," #+rrr+# ","#+r...r+#","#+r.W.r+#",
+        "#+r...r+#"," #+rrr+# "," ##+++## ","   ###   "};
+    blit_motion_sprite(pixels,center.offset(-4,-4),9,9,[&](int x,int y)->std::uint32_t{
+        switch(shape[y][x]){
+        case '#':return 0x281020;
+        case '+':return 0xb7153d;
+        case 'r':return 0xff697d;
+        case '.':return 0xffd9dc;
+        case 'W':return 0xffffff;
+        default:return render_clear;
+        }
+    });
+}
 
 struct CollisionAxis {
     static constexpr int unbounded_low=std::numeric_limits<int>::min();
@@ -94,7 +114,8 @@ inline void draw_collision_frame(std::span<std::uint32_t> pixels,const Collision
     const auto &player=frame.player[static_cast<unsigned>(CollisionSample::Projectile)];
     if(frame.mode==HitboxMode::Off||!player||pixels.size()<width*height)return;
     // This is the bullet check's sampled player position, not a sprite anchor.
-    const std::int64_t center_x=std::int64_t(player->x)+16,center_y=std::int64_t(player->y)+24;
+    const std::int64_t center_x=std::int64_t(player->x)+player_projectile_offset.x,
+                       center_y=std::int64_t(player->y)+player_projectile_offset.y;
     const auto dot=[&](std::int64_t x,std::int64_t y){
         if(x<left||x>=right||y<top||y>=bottom)return;
         // The battle renderer rotates each visible playfield row left one word.

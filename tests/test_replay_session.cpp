@@ -785,12 +785,68 @@ void pause_and_menu_return(const fs::path &root){
     auto mismatch=load_replay_scene(root,c);
     check(play(mismatch,bytes_roundtrip(altered),no_fixture).step.status==Status::Failed);
 }
+
+void focus_mode(const fs::path &root){
+    NativeReplayConfig config;config.shot=2;
+    auto live=std::make_unique<EncounterScene>(load_replay_scene(root,config));
+    ReplaySession session(config);
+    NativeReplayRecorder recorder(config);
+    const auto tick=[&](std::uint16_t input){
+        const auto step=session.tick(*live,normalize_replay_tick(input));
+        check(step.status==Status::Running&&step.event.input==input&&recorder.record(step.event));
+    };
+    std::vector<std::uint32_t> pixels(640*400),without_marker(pixels.size());
+    constexpr auto white=0xffffffu,red=0xb7153du;
+    const auto at=[](int x,int y){return y*640+x;};
+    MotionFrame previous;
+    live->capture_motion(previous);
+    tick(Focus|Right);
+    check(live->player.x==209&&live->player.focus_rx==1);
+    const auto state=replay_state_digest(*live);
+    live->render(pixels);
+    check(pixels[at(225,360)]==white&&pixels[at(222,360)]==red);
+    live->render(pixels,true,true,0,&previous);
+    check(pixels[at(224,360)]==white&&pixels[at(221,360)]==red);
+    check(replay_state_digest(*live)==state&&live->collision_snapshot()==nullptr);
+    live->paused=true;live->render(pixels);
+    live->player.focused=false;live->render(without_marker);
+    check(pixels==without_marker);
+    live->player.focused=true;live->paused=false;
+
+    tick(Focus|Right);check(live->player.x==211);
+    tick(Right);check(live->player.x==214&&!live->player.focused);
+    live->render(pixels);
+    live->paused=true;live->render(without_marker);live->paused=false;
+    check(pixels==without_marker);
+    tick(Focus|UpLeft|Shot);
+    check(live->player.x==213&&live->player.y==335&&live->player.focus_rx==-1&&live->player.focus_ry==-1);
+    check(recorder.finalize(session.stop(*live)));
+    const auto run=bytes_roundtrip(recorder.replay());
+    check(run.events==recorder.replay().events);
+    auto playback=std::make_unique<EncounterScene>(load_replay_scene(root,config));
+    finished(play(*playback,run,no_fixture),run);
+    check(replay_state_digest(*playback)==replay_state_digest(*live)&&playback->player.focused);
+
+    // Shift is a movement modifier, never a dialogue or Continue key.
+    live->runtime.scroll.done=true;live->scroll.done=true;live->start_preboss();
+    check(live->dialogue.active()&&!live->player.focused);
+    *playback=*live;
+    for(unsigned i=0;i<48;++i){live->tick(Focus);playback->tick(0);}
+    check(replay_state_digest(*playback)==replay_state_digest(*live));
+    live->life.game_over=true;live->continue_choice=EncounterScene::ContinueChoice::Release;
+    live->tick(Focus);check(live->continue_choice==EncounterScene::ContinueChoice::Choose&&!live->player.focused);
+}
 } // namespace
 
 int main(int argc,char **argv){
     try{
-        if(argc<2||argc>3)throw std::runtime_error("Usage: soew-replay-session-tests <staged assets> [frozen stage 2 v4 replay | --background-smoothing]");
+        if(argc<2||argc>3)throw std::runtime_error("Usage: soew-replay-session-tests <staged assets> [frozen stage 2 v4 replay | --background-smoothing | --focus-mode]");
         const fs::path root=argv[1];
+        if(argc==3&&std::string_view(argv[2])=="--focus-mode"){
+            focus_mode(root);
+            std::cout<<"focus_mode_checks="<<checks<<" failures=0\n";
+            return 0;
+        }
         if(argc==3&&std::string_view(argv[2])=="--background-smoothing"){
             background_smoothing_is_read_only(root);
             paced_background_positions();

@@ -2762,6 +2762,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     // PC98 key_delay polls BIOS groups5/3/0, not arrows/space.
                     for(int key:{int('Z'),int('X'),int('C'),int('V'),int('B'),int('N'),int('M'),VK_OEM_6,int('O'),int('P'),VK_OEM_3,VK_OEM_4,VK_RETURN,int('A'),int('S'),int('D'),VK_ESCAPE,int('1'),int('2'),int('3'),int('4'),int('5'),int('6'),int('7')})dialog_group|=held(key);
                     pressed.up=held(VK_UP);pressed.down=held(VK_DOWN);pressed.left=held(VK_LEFT);pressed.right=held(VK_RIGHT);
+                    pressed.focus=held(VK_SHIFT);
                     pressed.n8=held(VK_NUMPAD8);pressed.n2=held(VK_NUMPAD2);pressed.n4=held(VK_NUMPAD4);pressed.n6=held(VK_NUMPAD6);pressed.n7=held(VK_NUMPAD7);pressed.n9=held(VK_NUMPAD9);pressed.n1=held(VK_NUMPAD1);pressed.n3=held(VK_NUMPAD3);
                     if(app->stage_entry_release){if(!z_held&&!held(VK_SPACE)&&!held('X')&&!held(VK_RETURN)&&!held('R')&&!held(VK_ESCAPE))app->stage_entry_release=false;else{pressed.z=pressed.space=pressed.x=pressed.enter=false;app->z_input.clear();}}
                     if(!z_held&&app->z_input.blocked)app->z_input.event(false,shot_mode(*app));
