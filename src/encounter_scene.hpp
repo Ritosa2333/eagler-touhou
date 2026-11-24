@@ -813,74 +813,79 @@ public:
         }
     }
     template<class Effects,class Dot,class Tiny>
-    static void draw_death_effects(const Effects &effects,unsigned count,const Dot &dot,const Tiny &tiny){
+    static void draw_death_effects(const Effects &effects,unsigned count,std::span<const RenderDeathEffect> old,unsigned phase,const Dot &dot,const Tiny &tiny){
         // sub_FFF8 / sub_1C287. Each caller keeps its own ordered requests
         // and maps screen positions onto its own displayed VRAM page.
         constexpr std::array<unsigned,5> masks={0x00,0x80,0xC0,0xE0,0xF0}; // MAIN.EXE DS:08EE
         for(unsigned i=0;i<count;++i){
             const auto &e=effects[i];
+            const auto prior=i<old.size()&&old[i].frame<=e.frame&&e.frame-old[i].frame<=2?old[i]:RenderDeathEffect{e.x,e.y,e.frame,e.angle};
             if(e.frame<30){
                 const int radius=240-8*int(e.frame),size=(radius>>6)+1;
                 for(unsigned a=0;a<256;a+=2){
                     const auto v=enemy_vector(a,radius);
                     const int x=e.x+7+v[0],y=e.y+v[1];
                     if(x<=24||x>=416||y<=8||y>=384)continue;
+                    const auto w=enemy_vector(a,240-8*int(prior.frame));
+                    const auto p=motion_lerp(RenderPoint::pixels(prior.x+7+w[0],prior.y+w[1]),RenderPoint::pixels(x,y),phase);
                     for(int dy=0;dy<size;++dy)for(int dx=0;dx<8;++dx)
-                        if(masks[size]&(0x80u>>dx))dot(x+dx,y,dy,e.frame&1?15u:4u);
+                        if(masks[size]&(0x80u>>dx))dot(p.offset(dx,0),dy,e.frame&1?15u:4u);
                 }
             }else if(e.frame>=32&&e.frame<56){
-                const unsigned age=e.frame-32;
-                const int radius=16*int(age);
-                for(unsigned a=age;a<256+age;a+=4){
-                    const int x=e.x+enemy_shift8(radius*enemy_sin(a+64));
-                    const int y=e.y+enemy_shift8(radius*enemy_sin(a+e.angle));
-                    if(x>16&&x<416&&y>0&&y<384)tiny(88+age/6,x,y);
+                const unsigned age=e.frame-32,prior_age=prior.frame>=32?prior.frame-32:age;
+                const auto point=[](int x,int y,unsigned age,unsigned angle,unsigned a){
+                    const int r=16*int(age);return RenderPoint::pixels(x+enemy_shift8(r*enemy_sin(a+age+64)),y+enemy_shift8(r*enemy_sin(a+age+angle)));
+                };
+                for(unsigned a=0;a<256;a+=4){
+                    const auto p=point(e.x,e.y,age,e.angle,a);
+                    if(p.x>16*256&&p.x<416*256&&p.y>0&&p.y<384*256)
+                        tiny(88+age/6,motion_lerp(point(prior.x,prior.y,prior_age,prior.angle,a),p,phase));
                 }
             }
         }
     }
-    void draw_marisa(std::span<std::uint32_t> pixels,bool terminal=false,unsigned shift=0)const{
+    void draw_marisa(std::span<std::uint32_t> pixels,bool terminal=false,unsigned shift=0,const MotionSample &motion={})const{
         if(!stage4_boss_art||(marisa.cleared&&!terminal))return;
         const auto &art=*stage4_boss_art;
         const auto put=[&](int x,int y,std::uint32_t rgb){
             if(x>=32&&x<416+int(shift)&&y>=16&&y<384)pixels[y*640+x]=rgb;
         };
         using Paint=StageSprites::Paint;
-        const auto sprite=[&](unsigned id,int left,int top,int scale=1,bool tiny=false,Paint paint=Paint::Artwork){
-            const auto &image=*art.sprites.at(id);
-            for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x){
-                const auto index=image.pixels[y*image.width+x];
-                // super_zoom skips color 0; normal/tiny blits use the put mask.
-                if(index==(scale>1?0:image.transparent))continue;
-                const auto rgb=stage5_rgb(background.palette[StageSprites::paint_index(paint,index)]);
-                for(int dy=0;dy<scale;++dy)for(int dx=0;dx<scale;++dx){
-                    const int px=left+int(x)*scale+dx,py=top+int(y)*scale+dy;
-                    if(tiny)put(px,py%400,rgb); // Marisa resets the VRAM scroll origin to 0.
-                    else if(px<=416)put(px,py,rgb);
-                }
-            }
+        const auto sprite=[&](unsigned id,RenderPoint p,unsigned scale=1,bool tiny=false,Paint paint=Paint::Artwork){
+            const SpriteClip clip{32,16,tiny?416+int(shift):std::min(417,416+int(shift)),384};
+            art.put(pixels,background,id,p,paint,scale,scale>1,clip);
+            if(tiny)art.put(pixels,background,id,p.offset(0,-400),paint,scale,false,clip);
         };
         // Fresh frame, not EGC erasure of the previous page.
-        draw_death_effects(marisa.death_effects,marisa.death_effect_count,
-            [&](int x,int y,int dy,unsigned index){put(x,y+dy,stage5_rgb(background.palette[index]));},
-            [&](unsigned id,int x,int y){sprite(id,x,y,1,true);});
-        if(terminal||marisa.death_zoom)sprite(marisa.death_pattern,marisa.left,marisa.top,3);
+        const auto *prev=motion.previous;
+        const auto old=prev?std::span(prev->marisa_death).first(prev->marisa_death_count):std::span<const RenderDeathEffect>{};
+        draw_death_effects(marisa.death_effects,marisa.death_effect_count,old,motion.phase,
+            [&](RenderPoint p,int dy,unsigned index){
+                const auto rgb=stage5_rgb(background.palette[index]);
+                blit_motion_sprite(pixels,p.offset(0,dy),1,1,[&](int,int){return rgb;},{32,16,416+int(shift),384});
+            },
+            [&](unsigned id,RenderPoint p){sprite(id,p,1,true);});
+        const auto body=motion.at(MotionTrack::Marisa,0,marisa.left,marisa.top,marisa.death_zoom);
+        if(terminal||marisa.death_zoom)sprite(marisa.death_pattern,body,3);
         else{
             // Opening dialogue and defeat draw ordinary cels, not the live latch.
             const auto paint=marisa.body_flash&&!marisa.defeated&&!dialogue.active()?Paint::Color4Hit:Paint::Artwork;
-            sprite(marisa.pattern,marisa.left,marisa.top,1,false,paint);
-            sprite(marisa.pattern+1,marisa.left+48,marisa.top,1,false,paint);
+            sprite(marisa.pattern,body,1,false,paint);
+            sprite(marisa.pattern+1,body.offset(48,0),1,false,paint);
         }
         if(terminal)return;
-        for(const auto &o:marisa.orbs)if(o.active&&o.dying)sprite(o.death_pattern,o.x,o.y);
+        const auto orb=[&](unsigned i){const auto &o=marisa.orbs[i];return motion.at(MotionTrack::MarisaOrb,i,o.x,o.y,o.dying);};
+        for(unsigned i=0;i<marisa.orbs.size();++i){const auto &o=marisa.orbs[i];if(o.active&&o.dying)sprite(o.death_pattern,orb(i));}
         std::array<std::array<int,2>,4> live{};unsigned count=0;
-        for(const auto &o:marisa.orbs)if(o.active&&!o.dying)live[count++]={o.x+16,o.y+16};
+        for(unsigned i=0;i<marisa.orbs.size();++i)if(const auto &o=marisa.orbs[i];o.active&&!o.dying){
+            const auto p=orb(i).nearest();live[count++]={p.x/256+16,p.y/256+16};
+        }
         const auto line_rgb=stage5_rgb(background.palette[3]);
         for(unsigned i=0;i<count;++i)
             marisa_orb_line(live[i],live[(i+1)%count],[&](int x,int y){put(x,y,line_rgb);});
         for(unsigned i=0;i<marisa.orbs.size();++i){const auto &o=marisa.orbs[i];
             if(o.active&&!o.dying&&(!o.hit_flash||(o.x>0&&o.x<416&&o.y>=0&&o.y<=368)))
-                sprite(138+i,o.x,o.y,1,false,o.hit_flash?Paint::AllPlanesHit:Paint::Artwork);
+                sprite(138+i,orb(i),1,false,o.hit_flash?Paint::AllPlanesHit:Paint::Artwork);
         }
     }
     static std::uint32_t stage5_rgb(const std::array<std::uint8_t,3> &c){
@@ -922,16 +927,17 @@ public:
             rgb=toned;
         }
     }
-    void draw_mima(std::span<std::uint32_t> pixels,bool winged_hint=false)const{
+    void draw_mima(std::span<std::uint32_t> pixels,bool winged_hint=false,const MotionSample &motion={})const{
         const auto &art=*(mima.form2&&!winged_hint?stage5_final_art:stage5_winged_art);
         using Paint=StageSprites::Paint;
         // ASM 18408–18508: three battle put masks. Form 1 redraws ordinary
         // art for dialogue; the final defeat's back-page paint never flips.
         const auto paint=!winged_hint&&mima.body_flash&&mima.event==MimaCore::Event::None?Paint::Color4Hit:Paint::Artwork;
-        for(unsigned part=0;part<3;++part)
-            art.put(pixels,background,mima.pattern+part,mima.left+int(part)*48,mima.top,paint);
-        if(!winged_hint)for(const auto &o:mima.orbs)
-            if(o.active)stage5_winged_art->put(pixels,background,o.pattern,o.x,o.y);
+        const auto body=motion.at(MotionTrack::Mima,0,mima.left,mima.top,mima.form2);
+        for(unsigned part=0;part<3;++part)art.put(pixels,background,mima.pattern+part,body.offset(int(part)*48,0),paint);
+        if(!winged_hint)for(unsigned i=0;i<mima.orbs.size();++i){
+            const auto &o=mima.orbs[i];if(o.active)stage5_winged_art->put(pixels,background,o.pattern,motion.at(MotionTrack::MimaOrb,i,o.x,o.y));
+        }
     }
     void draw_mima_dialogue_player(std::span<std::uint32_t> pixels)const{
         bank.put(pixels,background,0,player.x,player.y);
@@ -982,68 +988,155 @@ public:
         if(reduced_effects&&tone>100)tone=100+(tone-100)/4;
         apply_mima_tone(pixels,tone);
     }
-    void draw_sigma(std::span<std::uint32_t> pixels)const{
+    void draw_sigma(std::span<std::uint32_t> pixels,const MotionSample &motion)const{
         using P=SigmaCore::Paint;
         const auto &art=*sigma_art;
         for(std::size_t i=0;i<=sigma.paints.size();++i){
             if(sigma.visible&&i==sigma.body_paint_index){
-                const int x=sigma.left[rendered_page],y=sigma.top[rendered_page];
-                art.put(pixels,background,sigma.draw_pattern,x,y);
-                art.put(pixels,background,sigma.draw_pattern+1,x+64,y);
+                const auto p=motion.at(MotionTrack::Sigma,0,sigma.left[rendered_page],sigma.top[rendered_page]);
+                art.put(pixels,background,sigma.draw_pattern,p);
+                art.put(pixels,background,sigma.draw_pattern+1,p.offset(64,0));
             }
             if(i==sigma.paints.size())break;
             const auto &p=sigma.paints[i];
-            if(p.kind==P::Sprite){art.put(pixels,background,unsigned(p.a),p.x,p.y);continue;}
+            const RenderEffect now{unsigned(p.kind),p.color,p.x,p.y,p.a,p.b};
+            const auto &old=motion.previous?motion.effect(motion.previous->sigma_effects,sigma.paints.size(),i,now):now;
+            const auto pos=motion_lerp(RenderPoint::pixels(old.x,old.y),RenderPoint::pixels(p.x,p.y),motion.phase);
+            if(p.kind==P::Sprite){art.put(pixels,background,unsigned(p.a),pos);continue;}
             const auto color=stage5_rgb(background.palette.at(p.color));
+            const auto q=pos.nearest();const int x=q.x/256,y=q.y/256;
+            const int a=motion_lerp(old.a*256,p.a*256,motion.phase),b=motion_lerp(old.b*256,p.b*256,motion.phase);
             if(p.kind==P::Box){
-                for(int y=std::max(16,p.y);y<=std::min(383,p.b);++y)
-                    for(int x=std::max(32,p.x);x<=std::min(415,p.a);++x)pixels[y*640+x]=color;
-            }else paint_mima(pixels,{p.kind==P::Dot?MimaPaint::Dot:p.kind==P::Circle?MimaPaint::Circle:MimaPaint::Fill,p.x,p.y,p.a,p.b,p.color},color);
+                for(int yy=std::max(16,y);yy<=std::min(383,RenderPoint::floor(b+128));++yy)
+                    for(int xx=std::max(32,x);xx<=std::min(415,RenderPoint::floor(a+128));++xx)pixels[yy*640+xx]=color;
+            }else if(p.kind==P::Dot)blit_motion_sprite(pixels,pos,p.a,p.a,[&](int,int){return color;});
+            else paint_mima(pixels,{p.kind==P::Circle?MimaPaint::Circle:MimaPaint::Fill,x,y,RenderPoint::floor(a+128),0,p.color},color);
         }
     }
     bool scrolling_background()const{return !scroll.done&&!marisa_enabled&&!sigma_enabled&&!mima_enabled;}
-    void render(std::span<std::uint32_t> pixels,bool show_boss_terminal=true,bool smooth_background=false,unsigned subframe=scroll_subpixels)const{
-        render_frame(pixels,show_boss_terminal,smooth_background,subframe);
+    bool motion_active()const{
+        return !paused&&!life.game_over&&!runtime.blocked&&!weapon_blocked&&!transition.active()&&!dialogue.active()&&
+            !practice_completed&&!extra_settlement.showing_bonus()&&!extra_settlement.terminal()&&!stage5_entry_only&&!stage5_result&&!mima_delay;
     }
-private:
-    void draw_stones(std::span<std::uint32_t> pixels,bool show_effects,unsigned shift)const{
-        using Paint=StageSprites::Paint;
-        const int line=scroll.line;
-        // Stage 3 keeps the frozen split-scroll origin. Convert each source
-        // row to VRAM, respecting super_put / sub_3E6A vs. super_roll_put.
-        const auto dot=[&](int x,int vram_y,unsigned index,bool rolls){
-            if(vram_y>=400){if(!rolls)return;vram_y-=400;}
-            const int screen_y=(vram_y-line+400)%400;
-            if(x>=32&&x<416+int(shift)&&screen_y>=16&&screen_y<384)
-                pixels[screen_y*640+x]=stage5_rgb(background.palette[index]);
-        };
-        const auto cel=[&](unsigned id,int x,int y,bool rolls,Paint paint=Paint::Artwork){
-            const auto &slot=bank.sprites.at(id);
-            if(!slot)throw std::runtime_error("Missing Stones sprite");
-            const auto &image=*slot;
-            const int vram_y=(y+line)%400;
-            for(unsigned dy=0;dy<image.height;++dy)for(unsigned dx=0;dx<image.width;++dx){
-                const auto index=image.pixels[dy*image.width+dx];
-                if(index!=image.transparent)dot(x+int(dx),vram_y+int(dy),StageSprites::paint_index(paint,index),rolls);
+    void capture_motion(MotionFrame &frame)const{
+        using T=MotionTrack;
+        frame.anchors.fill({});frame.bomb_visual=0;frame.mima_effects.clear();frame.sigma_effects.clear();
+        frame.stage=stage;frame.tick=ticks;
+        const auto xy=[&](T track,unsigned i,int x,int y,unsigned kind=0,int age=-1){frame.record(track,i,RenderPoint::pixels(x,y),kind,age);};
+        const auto pool=[&](T track,const auto &slots,auto pos,auto tag){
+            for(unsigned i=0;i<slots.size();++i)if(slots[i].flag==1){
+                const auto &s=slots[i];const auto [kind,age]=tag(s);frame.record(track,i,pos(s),kind,age);
             }
         };
+        const auto fixed=[&](const auto &s){return motion_q4(s.position[rendered_page]);};
+        if(!survival_enabled||life.pattern){
+            const auto p=survival_enabled?life.draw:PlayerLife::Point{player.x,player.y};
+            xy(T::Player,0,p.x,p.y,life.total_misses);
+        }
+        if(options_visible())xy(T::Option,0,shots.option_left,shots.option_top);
+        for(unsigned i=0;i<runtime.enemies.slots.size();++i){
+            const auto &s=runtime.enemies.slots[i];
+            if(s.raw[0xe]==1&&(!s.raw[0x10]||death_patterns[i]))
+                frame.record(T::Enemy,i,enemy_motion(s),enemy_motion_kind(s));
+        }
+        if(combat_enabled)pool(T::Shot,shots.slots,fixed,[](const auto &s){return std::pair{unsigned(s.pattern),-1};});
+        pool(T::Bullet,bullet_core.bullets,fixed,[](const auto &b){return std::pair{unsigned(b.kind),-1};});
+        if(effects_enabled){
+            pool(T::Item,items.slots,[&](const auto &s){return item_motion(s);},[](const auto &s){return std::pair{s.type,s.age};});
+            pool(T::Spark,sparks.slots,fixed,[](const auto &s){return std::pair{unsigned(s.sprite),int(s.age)};});
+            pool(T::Number,numbers.slots,[&](const auto &s){return RenderPoint::pixels(s.left,s.top[rendered_page]);},[](const auto &s){return std::pair{unsigned(s.points),int(s.age)};});
+        }
+        for(unsigned i=0;i<lasers.slots.size();++i){const auto &s=lasers.slots[i];if(s.visible)xy(T::Laser,i,s.x,s.y,s.base_pattern);}
+        const auto mid=[&](T track,unsigned i,const auto &s,unsigned kind){if(s.visible)xy(track,i,s.left[rendered_page],s.top[rendered_page],kind);};
+        if(midboss_enabled)mid(T::Midboss1,0,midboss,midboss.dying);
+        if(midboss2_enabled)mid(T::Midboss2,0,midboss2,midboss2.dying);
+        if(midboss3_enabled)for(unsigned i=0;i<midboss3.actor.size();++i)mid(T::Midboss3,i,midboss3.actor[i],unsigned(midboss3.actor[i].flag));
+        if(stage==3&&midboss4.visible)xy(T::Midboss4,0,midboss4.x,midboss4.y,midboss4.dying);
+        if(rika_enabled&&rika.visible)xy(T::Rika,0,rika.cached_x,48,rika.death_zoom);
+        if(meira_enabled){
+            if(meira.visible)xy(T::Meira,0,meira.left[rendered_page],meira_screen_y(meira.render_y),meira.death_zoom);
+            for(unsigned i=0;i<meira.clone_draw_count;++i)xy(T::MeiraClone,i,meira.clone_draws[i].left,meira_screen_y(meira.clone_draws[i].top),meira.clone_draw_count);
+        }
+        if(stones_enabled)for(unsigned i=0;i<stones.draw.size();++i){const auto &s=stones.draw[i];if(s.visible)xy(T::Stone,i,s.x,s.y,s.dying);}
+        const auto death=[&](auto &out,const auto &effects,unsigned count){
+            for(unsigned i=0;i<count;++i){const auto &e=effects[i];out[i]={e.x,e.y,e.frame,e.angle};}
+            return count;
+        };
+        frame.stones_death_count=stones_enabled?death(frame.stones_death,stones.death_effects,stones.death_effect_count):0;
+        frame.marisa_death_count=marisa_enabled?death(frame.marisa_death,marisa.death_effects,marisa.death_effect_count):0;
+        if(marisa_enabled){
+            xy(T::Marisa,0,marisa.left,marisa.top,marisa.death_zoom);
+            for(unsigned i=0;i<marisa.orbs.size();++i){const auto &o=marisa.orbs[i];if(o.active)xy(T::MarisaOrb,i,o.x,o.y,o.dying);}
+        }
+        if(mima_enabled){
+            xy(T::Mima,0,mima.left,mima.top,mima.form2);
+            for(unsigned i=0;i<mima.orbs.size();++i){const auto &o=mima.orbs[i];if(o.active)xy(T::MimaOrb,i,o.x,o.y);}
+            for(const auto &d:mima_draws)frame.mima_effects.push_back({unsigned(d.kind),d.color,d.x,d.y,d.a,d.b});
+        }
+        if(sigma_enabled){
+            mid(T::Sigma,0,sigma,0);
+            for(const auto &p:sigma.paints)frame.sigma_effects.push_back({unsigned(p.kind),p.color,p.x,p.y,p.a,p.b});
+        }
+        if(bomb_enabled&&bomb.active){
+            frame.bomb_visual=bomb.visual;frame.bomb_shot=bomb.shot_type;
+            frame.bomb_frame=bomb.frame;frame.bomb_columns=bomb.columns;
+        }
+    }
+    void render(std::span<std::uint32_t> pixels,bool show_boss_terminal=true,bool smooth_background=false,
+                unsigned subframe=scroll_subpixels,const MotionFrame *previous=nullptr,unsigned stride=1)const{
+        const MotionSample motion{smooth_background&&previous&&previous->stage==stage&&previous->tick+stride==ticks?previous:nullptr,subframe};
+        render_frame(pixels,show_boss_terminal,smooth_background,motion);
+    }
+private:
+    static RenderPoint motion_q4(const std::array<std::uint16_t,2> &position){return {enemy_s16(position[0])*16,enemy_s16(position[1])*16};}
+    RenderPoint enemy_motion(const EnemySlots::Slot &s)const{
+        return RenderPoint::pixels(enemy_s16(s.word(rendered_page*4)),enemy_s16(s.word(rendered_page*4+2)));
+    }
+    static unsigned enemy_motion_kind(const EnemySlots::Slot &s){return s.word(0xc)*256u+s.raw[0xf];}
+    RenderPoint item_motion(const ItemCore::Item &s)const{return {s.left[rendered_page]*256,enemy_s16(s.top[rendered_page])*16};}
+    bool options_visible()const{return pickup_enabled&&pickups.power>=8&&(!survival_enabled||(!life.hit&&!life.miss_active&&!life.game_over));}
+    int meira_screen_y(int y)const{const int result=y-int(scroll.line);return result<0?result+400:result;}
+    void draw_stones(std::span<std::uint32_t> pixels,bool show_effects,unsigned shift,const MotionSample &motion)const{
+        using Paint=StageSprites::Paint;
+        const int line=scroll.line;
+        // Stage 3 keeps the frozen split-scroll origin and two clipping modes.
+        const auto cel=[&](unsigned id,RenderPoint p,bool rolls,Paint paint=Paint::Artwork){
+            const int vram_y=(p.y+line*256)%(400*256);
+            p.y=vram_y-line*256;
+            const int right=416+int(shift);
+            bank.put(pixels,background,id,p,paint,1,false,{32,16,right,rolls?384:std::min(384,400-line)});
+            // The original modulo can wrap a cel into the top after a rolling blit.
+            if(rolls)bank.put(pixels,background,id,p.offset(0,-400),paint,1,false,{32,16,right,384});
+            bank.put(pixels,background,id,p.offset(0,400),paint,1,false,{32,std::max(16,400-line),right,384});
+        };
+        const auto pos=[&](unsigned i){const auto &d=stones.draw[i];return motion.at(MotionTrack::Stone,i,d.x,d.y,d.dying);};
         // stones_116EC draws living stones before the kill-animation pass.
-        for(const auto &d:stones.draw)if(d.visible&&!d.dying)
-            cel(d.pattern,d.x,d.y,true,d.flash?Paint::AllPlanesHit:Paint::Artwork);
+        for(unsigned i=0;i<stones.draw.size();++i)if(const auto &d=stones.draw[i];d.visible&&!d.dying)
+            cel(d.pattern,pos(i),true,d.flash?Paint::AllPlanesHit:Paint::Artwork);
         for(unsigned i=0;i<stones.draw.size()-1;++i){
             const auto &d=stones.draw[i];
-            if(d.visible&&d.dying)cel(d.pattern,d.x,d.y,false);
+            if(d.visible&&d.dying)cel(d.pattern,pos(i),false);
         }
         if(!show_effects)return;
         // The original invalidates the two-frame-old ring via EGC tile copies.
         // This surface already contains a freshly reconstructed terrain frame.
-        draw_death_effects(stones.death_effects,stones.death_effect_count,
-            [&](int x,int y,int dy,unsigned index){dot(x,(y+line)%400+dy,index,false);},
-            [&](unsigned id,int x,int y){cel(id,x,y,true);});
+        const auto *prev=motion.previous;
+        const auto old=prev?std::span(prev->stones_death).first(prev->stones_death_count):std::span<const RenderDeathEffect>{};
+        draw_death_effects(stones.death_effects,stones.death_effect_count,old,motion.phase,
+            [&](RenderPoint p,int dy,unsigned index){
+                const int vram=(p.y+line*256)%(400*256)+dy*256;
+                if(vram>=400*256)return;
+                p.y=(vram-line*256+400*256)%(400*256);
+                const auto rgb=stage5_rgb(background.palette[index]);
+                blit_motion_sprite(pixels,p,1,1,[&](int,int){return rgb;},{32,16,416+int(shift),384});
+            },
+            [&](unsigned id,RenderPoint p){cel(id,p,true);});
         const auto &north=stones.draw.back();
-        if(north.visible&&north.dying)cel(north.pattern,north.x,north.y,stones.death_effects.front().frame<32);
+        if(north.visible&&north.dying)cel(north.pattern,pos(unsigned(stones.draw.size()-1)),stones.death_effects.front().frame<32);
     }
-    void render_frame(std::span<std::uint32_t> pixels,bool show_boss_terminal,bool smooth_background,unsigned subframe)const{
+    void render_frame(std::span<std::uint32_t> pixels,bool show_boss_terminal,bool smooth_background,const MotionSample &motion)const{
+        using T=MotionTrack;
+        using Paint=StageSprites::Paint;
         if(extra_settlement.showing_bonus()&&!dialogue_snapshot.empty()){
             std::copy(dialogue_snapshot.begin(),dialogue_snapshot.end(),pixels.begin());return;
         }
@@ -1079,7 +1172,7 @@ private:
             sigma_art->put(pixels,background,129,224,48);
             draw_mima_dialogue_player(pixels);
         }dialogue_art->render(pixels,background,bank,dialogue);return;}
-        const unsigned lag=smooth_background&&scrolling_background()?background_scroll_lag(scroll,subframe):0;
+        const unsigned lag=smooth_background&&scrolling_background()?background_scroll_lag(scroll,motion.phase):0;
         const int terrain_bottom=384+scroll_sample_rows(lag);
         if(extra_road_enabled)extra_tiles.render(pixels,background,terrain_bottom);
         else StageScene::render(pixels,false,stage4_overlay_enabled(stage,rendered_page,runtime.scroll.done,reduced_effects),terrain_bottom);
@@ -1091,7 +1184,18 @@ private:
             const auto color=[&](unsigned c){return stage5_rgb(c?background.palette.at(c):mima_palette0);};
             std::fill(pixels.begin(),pixels.end(),color(0));
             for(int y=0;y<400;++y)std::fill_n(pixels.begin()+y*640+416,224,color(11));
-            for(const auto &d:mima_draws)paint_mima(pixels,d,color(d.color));
+            for(unsigned i=0;i<mima_draws.size();++i){
+                const auto &d=mima_draws[i];const RenderEffect now{unsigned(d.kind),d.color,d.x,d.y,d.a,d.b};
+                const auto &old=motion.previous?motion.effect(motion.previous->mima_effects,mima_draws.size(),i,now):now;
+                const auto pos=motion_lerp(RenderPoint::pixels(old.x,old.y),RenderPoint::pixels(d.x,d.y),motion.phase);
+                const auto rgb=color(d.color);
+                if(d.kind==MimaPaint::Dot)blit_motion_sprite(pixels,pos,d.a,d.a,[&](int,int){return rgb;});
+                else{
+                    const auto p=pos.nearest();
+                    const auto round=[&](int a,int b){return RenderPoint::floor(motion_lerp(a*256,b*256,motion.phase)+128);};
+                    paint_mima(pixels,{d.kind,p.x/256,p.y/256,round(old.a,d.a),round(old.b,d.b),d.color},rgb);
+                }
+            }
         }
         if(stones_enabled)for(const auto &[key,pat]:stones_stripe){
             const int x=32+int(key%24)*16, vram_y=int(key/24)*16;
@@ -1103,74 +1207,106 @@ private:
         }
         if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=terrain_bottom||top+16<=16)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<16||py>=terrain_bottom)continue;const auto c=background.palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
         blend_stage_background(pixels,lag);
-        if(bomb_enabled&&bomb_art)bomb_art->render(pixels,background,bomb);
+        if(bomb_enabled&&bomb_art)bomb_art->render(pixels,background,bomb,motion);
         // th02_main.asm:1655–1657 draws Bomb before the boss update and its paints.
-        if(sigma_enabled)draw_sigma(pixels);
-        for(const auto &s:runtime.enemies.slots){if(s.raw[0xe]!=1||s.raw[0x10])continue;const auto type=s.word(0xc);const auto &raw=script.enemies.at(type).raw;const unsigned base=unsigned(raw[8])|(unsigned(raw[9])<<8);if(!base)continue;const unsigned pattern=s.word(0x14)==2?s.word(0x12):base+s.word(0x12);bank.put(pixels,background,pattern,enemy_s16(s.word(rendered_page*4)),enemy_s16(s.word(rendered_page*4+2)));}
-        if(combat_enabled){
-            for(unsigned i=0;i<25;++i)if(death_patterns[i]){const auto &s=runtime.enemies.slots[i];bank.put(pixels,background,*death_patterns[i],enemy_s16(s.word(rendered_page*4)),enemy_s16(s.word(rendered_page*4+2)));}
+        if(sigma_enabled)draw_sigma(pixels,motion);
+        const auto put=[&](unsigned pat,RenderPoint p,Paint paint=Paint::Artwork,unsigned scale=1,bool zero_clear=false){
+            bank.put(pixels,background,pat,p,paint,scale,zero_clear);
+        };
+        const auto enemy_at=[&](unsigned i){const auto &s=runtime.enemies.slots[i];return motion.at(T::Enemy,i,enemy_motion(s),enemy_motion_kind(s));};
+        for(unsigned i=0;i<runtime.enemies.slots.size();++i){
+            const auto &s=runtime.enemies.slots[i];if(s.raw[0xe]!=1||s.raw[0x10])continue;
+            const auto &raw=script.enemies.at(s.word(0xc)).raw;const unsigned base=unsigned(raw[8])|(unsigned(raw[9])<<8);
+            if(base)put(s.word(0x14)==2?s.word(0x12):base+s.word(0x12),enemy_at(i));
         }
-        if(midboss_enabled&&midboss.visible){if(!midboss.dying){if(!midboss.hit_flash)bank.put(pixels,background,midboss.pattern,midboss.left[rendered_page],midboss.top[rendered_page]);else{const auto &image=*bank.sprites.at(148);const auto rgb=background.palette[15];for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x)if(image.pixels[y*image.width+x]!=image.transparent){const int px=midboss.left[rendered_page]+int(x),py=midboss.top[rendered_page]+int(y);if(px>=32&&px<416&&py>=16&&py<384)pixels[py*640+px]=(unsigned(rgb[0])<<16)|(unsigned(rgb[1])<<8)|rgb[2];}}}else{const auto &image=*bank.sprites.at(midboss.death_pattern);for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x){const auto c=image.pixels[y*image.width+x];if(c==0)continue;for(unsigned dy=0;dy<3;++dy)for(unsigned dx=0;dx<3;++dx){const int px=midboss.left[rendered_page]-16+int(x*3+dx),py=midboss.top[rendered_page]+int(y*3+dy);if(px<32||px>=416||py<16||py>=384)continue;const auto rgb=background.palette[c];pixels[py*640+px]=(unsigned(rgb[0])<<16)|(unsigned(rgb[1])<<8)|rgb[2];}}}}
-        if(midboss2_enabled&&midboss2.visible){if(!midboss2.dying){if(!midboss2.hit_flash)bank.put(pixels,background,midboss2.pattern,midboss2.left[rendered_page],midboss2.top[rendered_page]);else{const auto &image=*bank.sprites.at(136);const auto color=background.palette[15];for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x)if(image.pixels[y*image.width+x]!=image.transparent){const int px=midboss2.left[rendered_page]+int(x),py=midboss2.top[rendered_page]+int(y);if(px>=32&&px<416&&py>=16&&py<384)pixels[py*640+px]=(unsigned(color[0])<<16)|(unsigned(color[1])<<8)|color[2];}}}else{const auto &image=*bank.sprites.at(midboss2.death_pattern);for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x){auto c=image.pixels[y*image.width+x];if(!c)continue;const auto color=background.palette[c];for(unsigned dy=0;dy<2;++dy)for(unsigned dx=0;dx<2;++dx){int px=midboss2.left[rendered_page]+int(x*2+dx),py=midboss2.top[rendered_page]+int(y*2+dy);if(px>=32&&px<416&&py>=16&&py<384)pixels[py*640+px]=(unsigned(color[0])<<16)|(unsigned(color[1])<<8)|color[2];}}}}
-        if(midboss3_enabled){for(const auto &a:midboss3.actor){if(!a.visible)continue;const int left=a.left[rendered_page],top=a.top[rendered_page];if(a.flag==Midboss3Core::Flag::Dying){bank.put(pixels,background,a.death_pattern,left,top);bank.put(pixels,background,a.death_pattern,left+32,top);}else if(!a.hit_flash)bank.put(pixels,background,midboss3.pattern,left,top);else{if(midboss3.pattern>=bank.sprites.size()||!bank.sprites[midboss3.pattern])throw std::runtime_error("Midboss3 sprite unavailable");const auto &image=*bank.sprites[midboss3.pattern];const auto color=background.palette[15];for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x)if(image.pixels[y*image.width+x]!=image.transparent){const int px=left+int(x),py=top+int(y);if(px>=32&&px<416&&py>=16&&py<384)pixels[py*640+px]=(unsigned(color[0])<<16)|(unsigned(color[1])<<8)|color[2];}}}}
+        if(combat_enabled){
+            for(unsigned i=0;i<death_patterns.size();++i)if(death_patterns[i])put(*death_patterns[i],enemy_at(i));
+        }
+        const auto flash=[](bool hit){return hit?Paint::AllPlanesHit:Paint::Artwork;};
+        const auto mid=[&](T track,const auto &s,unsigned flash_pattern,unsigned scale,int death_x){
+            const auto p=motion.at(track,0,s.left[rendered_page],s.top[rendered_page],s.dying);
+            if(s.dying)put(s.death_pattern,p.offset(death_x,0),Paint::Artwork,scale,true);
+            else put(s.hit_flash?flash_pattern:s.pattern,p,flash(s.hit_flash));
+        };
+        if(midboss_enabled&&midboss.visible)mid(T::Midboss1,midboss,148,3,-16);
+        if(midboss2_enabled&&midboss2.visible)mid(T::Midboss2,midboss2,136,2,0);
+        if(midboss3_enabled)for(unsigned i=0;i<midboss3.actor.size();++i){
+            const auto &a=midboss3.actor[i];if(!a.visible)continue;
+            const auto p=motion.at(T::Midboss3,i,a.left[rendered_page],a.top[rendered_page],unsigned(a.flag));
+            if(a.flag==Midboss3Core::Flag::Dying){put(a.death_pattern,p);put(a.death_pattern,p.offset(32,0));}
+            else put(midboss3.pattern,p,flash(a.hit_flash));
+        }
         if(stage==3&&midboss4.visible){
-            const auto &slot=bank.sprites.at(midboss4.pattern);
-            if(!slot)throw std::runtime_error("Midboss4 sprite unavailable");
-            const auto &image=*slot;
             const int scale=midboss4.dying&&!midboss4.hit_flash?2:1;
-            for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x){
-                const auto source=image.pixels[y*image.width+x];if(source==image.transparent)continue;
-                const auto c=background.palette[midboss4.hit_flash?15:source];
-                const auto rgb=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];
-                for(int dy=0;dy<scale;++dy)for(int dx=0;dx<scale;++dx){
-                    const int px=midboss4.x+int(x)*scale+dx;
-                    const int py=(midboss4.y+int(y)*scale+dy+400)%400;
-                    if(px>=32&&px<416&&py>=16&&py<384)pixels[py*640+px]=rgb;
-                }
-            }
+            auto p=motion.at(T::Midboss4,0,midboss4.x,midboss4.y,midboss4.dying);
+            p.y=(p.y+400*256)%(400*256);
+            put(midboss4.pattern,p,flash(midboss4.hit_flash),scale);
+            put(midboss4.pattern,p.offset(0,-400),flash(midboss4.hit_flash),scale);
         }
         const bool marisa_terminal=show_boss_terminal&&marisa_terminal_frame();
         const bool stones_effects=show_boss_terminal||!stones_terminal_frame();
         const auto death_fx=(!marisa.cleared||marisa_terminal)&&stones_effects?boss_death_presentation():DeathPresentation{};
-        if(marisa_enabled)draw_marisa(pixels,marisa_terminal,death_fx.shift);
-        if(mima_enabled)draw_mima(pixels);
-        if(stones_enabled)draw_stones(pixels,stones_effects,death_fx.shift);
+        if(marisa_enabled)draw_marisa(pixels,marisa_terminal,death_fx.shift,motion);
+        if(mima_enabled)draw_mima(pixels,false,motion);
+        if(stones_enabled)draw_stones(pixels,stones_effects,death_fx.shift,motion);
         if(meira_enabled){
-            auto unroll=[&](int y){int result=y-int(scroll.line);if(result<0)result+=400;return result;};
-            auto put=[&](unsigned pat,int x,int y,unsigned scale,bool flash){const auto &image=*bank.sprites.at(pat);for(unsigned py=0;py<image.height;++py)for(unsigned px=0;px<image.width;++px){unsigned c=image.pixels[py*image.width+px];if(c==image.transparent)continue;const auto rgb=background.palette[flash?15:c];for(unsigned dy=0;dy<scale;++dy)for(unsigned dx=0;dx<scale;++dx){int xx=x+int(px*scale+dx),yy=y+int(py*scale+dy);if(xx>=32&&xx<416&&yy>=16&&yy<384)pixels[yy*640+xx]=(unsigned(rgb[0])<<16)|(unsigned(rgb[1])<<8)|rgb[2];}}};
-            for(unsigned i=0;i<meira.clone_draw_count;++i)put(147,meira.clone_draws[i].left,unroll(meira.clone_draws[i].top),1,true);
-            if(meira.visible)put(meira.death_zoom?meira.death_pattern:meira.draw_pattern,meira.left[rendered_page],unroll(meira.render_y),meira.death_zoom?2:1,meira.hit_flash);
-            for(unsigned i=0;i<meira.effect_draw_count;++i){const auto &e=meira.effect_draws[i];if(!e.tiny)put(e.pattern,e.left,unroll(e.top),1,false);else put(e.pattern,e.left,unroll(e.top),1,false);}
+            for(unsigned i=0;i<meira.clone_draw_count;++i)put(147,motion.at(T::MeiraClone,i,meira.clone_draws[i].left,meira_screen_y(meira.clone_draws[i].top),meira.clone_draw_count),Paint::AllPlanesHit);
+            if(meira.visible)put(meira.death_zoom?meira.death_pattern:meira.draw_pattern,
+                motion.at(T::Meira,0,meira.left[rendered_page],meira_screen_y(meira.render_y),meira.death_zoom),flash(meira.hit_flash),meira.death_zoom?2:1);
+            for(unsigned i=0;i<meira.effect_draw_count;++i){const auto &e=meira.effect_draws[i];put(e.pattern,RenderPoint::pixels(e.left,meira_screen_y(e.top)));}
         }
         if(rika_enabled&&rika.visible){
-            if(!rika.death_zoom){bank.put(pixels,background,rika.draw_pattern,rika.cached_x,48);if(rika.hit_flash){const auto &image=*bank.sprites.at(rika.draw_pattern);const auto c=background.palette[15];for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x)if(image.pixels[y*image.width+x]!=image.transparent){const int px=rika.cached_x+int(x),py=48+int(y);if(px>=32&&px<416&&py>=16&&py<384)pixels[py*640+px]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}}
-            else{const auto &image=*bank.sprites.at(rika.death_pattern);for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x){const auto c=image.pixels[y*image.width+x];if(!c)continue;for(unsigned dy=0;dy<2;++dy)for(unsigned dx=0;dx<2;++dx){const int px=rika.cached_x+int(x*2+dx),py=64+int(y*2+dy);if(px>=32&&px<416&&py>=16&&py<384){const auto rgb=background.palette[c];pixels[py*640+px]=(unsigned(rgb[0])<<16)|(unsigned(rgb[1])<<8)|rgb[2];}}}}
+            const auto p=motion.at(T::Rika,0,rika.cached_x,48,rika.death_zoom);
+            if(rika.death_zoom)put(rika.death_pattern,p.offset(0,16),Paint::Artwork,2,true);
+            else put(rika.draw_pattern,p,flash(rika.hit_flash));
         }
-        if(combat_enabled)for(const auto &s:shots.slots)if(s.flag==1)bank.put(pixels,background,shots.pattern_for(s),PlayerShots::pixel(s.position[rendered_page][0]),PlayerShots::pixel(s.position[rendered_page][1]));
-        if(survival_enabled){if(life.pattern)bank.put(pixels,background,*life.pattern,life.draw.x,life.draw.y);}
-        else bank.put(pixels,background,player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0,player.x,player.y);
-        if(pickup_enabled&&pickups.power>=8&&(!survival_enabled||(!life.hit&&!life.miss_active&&!life.game_over))){const unsigned pat=72+static_cast<unsigned>(player.shot);bank.put(pixels,background,pat,shots.option_left,shots.option_top);bank.put(pixels,background,pat,shots.option_left+48,shots.option_top);}
+        if(combat_enabled)for(unsigned i=0;i<shots.slots.size();++i){const auto &s=shots.slots[i];if(s.flag==1)put(shots.pattern_for(s),motion.at(T::Shot,i,motion_q4(s.position[rendered_page]),s.pattern));}
+        if(survival_enabled){if(life.pattern)put(*life.pattern,motion.at(T::Player,0,life.draw.x,life.draw.y,life.total_misses));}
+        else put(player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0,motion.at(T::Player,0,player.x,player.y,life.total_misses));
+        if(options_visible()){
+            const unsigned pat=72+static_cast<unsigned>(player.shot);const auto p=motion.at(T::Option,0,shots.option_left,shots.option_top);
+            put(pat,p);put(pat,p.offset(48,0));
+        }
         if(effects_enabled){
             constexpr std::array<unsigned,5> item_patterns={68,69,70,71,87};
-            for(const auto &item:items.slots)if(item.flag==1)bank.put(pixels,background,item_patterns.at(item.type),item.left[rendered_page],ItemCore::pixel(item.top[rendered_page]));
+            for(unsigned i=0;i<items.slots.size();++i){const auto &s=items.slots[i];if(s.flag==1)put(item_patterns.at(s.type),motion.at(T::Item,i,item_motion(s),s.type,s.age));}
         }
         if(effects_enabled){
             // Literal thirteen 8x8 cels from ReC98/th02/sprites/pointnum.bmp.
             constexpr std::array<std::array<unsigned,13>,8> rows={{{0,0,0,6,0,0,0,0,0,0,0,0,0},{56,0,12,126,126,126,24,32,4,16,0,24,0},{68,0,60,0,90,8,126,126,36,62,36,24,0},{130,6,0,6,126,16,0,32,34,36,24,0,0},{130,126,0,60,66,124,0,32,66,38,24,255,0},{130,0,6,0,66,36,36,60,65,74,36,0,0},{68,0,126,3,126,68,66,0,0,142,0,24,0},{56,0,0,255,0,255,0,0,0,0,0,24,0}}};
             const auto color=background.palette[15];const auto rgb=(unsigned(color[0])<<16)|(unsigned(color[1])<<8)|color[2];
-            for(const auto &n:numbers.slots)if(n.flag==1){const auto glyphs=numbers.glyphs(n.points);for(unsigned digit=0;digit<7;++digit){if(glyphs[digit]>=13)throw std::runtime_error("Original point-number glyph out of range");for(unsigned y=0;y<8;++y)for(unsigned x=0;x<8;++x)if(rows[y][glyphs[digit]]&(128>>x)){const int px=n.left+int(digit*8+x),py=n.top[rendered_page]+int(y);if(px>=32&&px<416&&py>=16&&py<384)pixels[py*640+px]=rgb;}}}
+            for(unsigned i=0;i<numbers.slots.size();++i){
+                const auto &n=numbers.slots[i];if(n.flag!=1)continue;
+                const auto p=motion.at(T::Number,i,n.left,n.top[rendered_page],n.points,n.age);
+                const auto glyphs=numbers.glyphs(n.points);
+                for(const auto glyph:glyphs)if(glyph>=13)throw std::runtime_error("Original point-number glyph out of range");
+                blit_motion_sprite(pixels,p,56,8,[&](int x,int y){return rows[y][glyphs[x/8]]&(128>>(x%8))?rgb:render_clear;});
+            }
         }
-        if(rika_enabled||stones_enabled||stage==3||sigma_enabled)for(const auto &l:lasers.slots)if(l.visible){if(l.charging)bank.put(pixels,background,l.draw_pattern,l.x-8,l.y-8);else{if(l.draw_state<5)bank.put(pixels,background,91+l.draw_state,l.x,l.y);for(int y=l.y+8;y<384;y+=16)bank.put(pixels,background,l.base_pattern+l.draw_state,l.x,y);}}
+        if(rika_enabled||stones_enabled||stage==3||sigma_enabled)for(unsigned i=0;i<lasers.slots.size();++i){
+            const auto &l=lasers.slots[i];if(!l.visible)continue;
+            const auto p=motion.at(T::Laser,i,l.x,l.y,l.base_pattern);
+            if(l.charging)put(l.draw_pattern,p.offset(-8,-8));
+            else{if(l.draw_state<5)put(91+l.draw_state,p);for(int dy=8;p.y+dy*256<384*256;dy+=16)put(l.base_pattern+l.draw_state,p.offset(0,dy));}
+        }
         constexpr std::array<unsigned,8> pellet={0x3c,0x7e,0xff,0xff,0xff,0xff,0x7e,0x3c}; // th02/sprites/pellet.bmp
-        for(const auto &b:bullet_core.bullets){if(b.flag!=1)continue;const int left=BulletCore::pixel(b.position[rendered_page][0]),top=BulletCore::pixel(b.position[rendered_page][1]);
-            if(b.kind==EnemyBulletRequest::Bullet16){bank.put(pixels,background,b.pattern,left,top);continue;}
-            for(unsigned y=0;y<8;++y)for(unsigned x=0;x<8;++x)if(pellet[y]&(128>>x)){int px=left+int(x),py=top+int(y);if(px>=32&&px<416&&py>=16&&py<384){auto c=background.palette[15];pixels[py*640+px]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
+        const auto pellet_color=stage5_rgb(background.palette[15]);
+        for(unsigned i=0;i<bullet_core.bullets.size();++i){
+            const auto &b=bullet_core.bullets[i];if(b.flag!=1)continue;
+            const auto p=motion.at(T::Bullet,i,motion_q4(b.position[rendered_page]),unsigned(b.kind));
+            if(b.kind==EnemyBulletRequest::Bullet16)put(b.pattern,p);
+            else blit_motion_sprite(pixels,p,8,8,[&](int x,int y){return pellet[y]&(128>>x)?pellet_color:render_clear;});
         }
         if(effects_enabled){
             // Exact eight cels from ReC98/th02/sprites/sparks.bmp (64x8,1bpp).
             constexpr std::array<std::array<unsigned,8>,8> rows={{{0x10,0x40,0,0,0x40,0,0,0x3c},{0x10,0x21,0x42,0,0x21,0x42,0,0x42},{0x10,0x12,0x24,0x24,0x12,0x24,0x24,0x81},{0x1f,0x1c,0x18,0x18,0x1c,0x18,0x18,0x99},{0xf8,0x38,0x18,0x18,0x38,0x18,0x18,0x99},{8,0x48,0x24,0x24,0x48,0x24,0x24,0x81},{8,0x84,0x42,0,0x84,0x42,0,0x42},{8,2,0,0,2,0,0,0x3c}}};
             auto color=background.palette[14];const auto rgb=(unsigned(color[0])<<16)|(unsigned(color[1])<<8)|color[2];
-            for(const auto &s:sparks.slots)if(s.flag==1){const int left=SparkCore::pixel(s.position[rendered_page][0]),top=SparkCore::pixel(s.position[rendered_page][1]);for(unsigned y=0;y<(s.sprite?8u:1u);++y)for(unsigned x=0;x<(s.sprite?8u:1u);++x)if(!s.sprite||(rows[y][s.age%8]&(128>>x))){const int px=left+int(x),py=top+int(y);if(px>=32&&px<416&&py>=16&&py<384)pixels[py*640+px]=rgb;}}
+            for(unsigned i=0;i<sparks.slots.size();++i){
+                const auto &s=sparks.slots[i];if(s.flag!=1)continue;
+                const auto p=motion.at(T::Spark,i,motion_q4(s.position[rendered_page]),s.sprite,s.age);
+                const int size=s.sprite?8:1;
+                blit_motion_sprite(pixels,p,size,size,[&](int x,int y){return !s.sprite||(rows[y][s.age%8]&(128>>x))?rgb:render_clear;});
+            }
         }
         if(mima_enabled)apply_mima_tone(pixels,mima_tone);
         if(death_fx.shift)for(int y=16;y<384;++y){

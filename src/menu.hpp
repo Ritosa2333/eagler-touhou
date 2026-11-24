@@ -225,7 +225,7 @@ inline constexpr std::array<LocalizedText,15> option_labels={{
     {L"難易度",L"Difficulty",L"难度",L"難度"}, {L"音楽",L"Music",L"音乐",L"音樂"}, {L"残機",L"Lives",L"初始命数",L"初始命數"}, {L"ボム",L"Bombs",L"初始灵击",L"初始靈擊"},
     {L"連射",L"Autofire",L"自动连射",L"自動連射"}, {L"演出",L"Effects",L"画面特效",L"畫面特效"}, {L"詳細情報",L"More Info",L"详细信息",L"詳細資訊"}, {L"全画面",L"Fullscreen",L"全屏",L"全螢幕"},
     {L"判定",L"Hitboxes",L"碰撞判定",L"碰撞判定"}, {L"言語",L"Language",L"语言",L"語言"}, {L"ステージ導入",L"Stage Intro",L"关卡开场",L"關卡開場"},
-    {L"背景スクロール補間",L"Smooth Scroll",L"背景平滑",L"背景平滑"}, {L"初期設定に戻す",L"Restore Defaults",L"恢复默认设置",L"恢復預設設定"}, back, {L"",L""}
+    {L"動きの補間",L"Smooth Motion",L"运动平滑",L"動態平滑"}, {L"初期設定に戻す",L"Restore Defaults",L"恢复默认设置",L"恢復預設設定"}, back, {L"",L""}
 }};
 inline constexpr std::array<const wchar_t*,4> language_names={L"日本語",L"English",L"简体中文",L"繁體中文"};
 inline constexpr std::array<std::array<LocalizedText,3>,3> shot_description={{

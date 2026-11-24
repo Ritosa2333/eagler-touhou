@@ -683,6 +683,48 @@ void measured_frame_rate(){
     check(!half.fps(begin+1'000'000));
 }
 
+void interpolated_gameplay(const fs::path &root){
+    auto scene=EncounterScene::load(root,0,0,1,2,3);
+    scene.effects_enabled=true;
+    for(auto &c:scene.background.palette)c={0,0,0};
+    scene.background.palette[15]={255,255,255};scene.background.palette[14]={255,255,255};
+    for(auto &t:scene.background.tiles)t.fill(0);
+    const StageSprites::Sprite pixel{1,1,0,{15}};
+    scene.bank.sprites[0]=pixel;scene.bank.sprites[68]=pixel;
+    scene.player.x=100;scene.player.y=200;
+    auto &item=scene.items.slots[0];item.flag=1;item.left[0]=160;item.top[0]=200*16;item.age=1;
+    auto &spark=scene.sparks.slots[0];spark.flag=1;spark.position[0]={220*16,200*16};spark.age=1;
+    auto &bullet=scene.bullet_core.bullets[0];bullet.flag=1;bullet.position[0]={280*16,200*16};
+    MotionFrame prev;scene.capture_motion(prev);
+    scene.player.x+=5;item.top[0]+=16;++item.age;spark.position[0][0]+=16;++spark.age;bullet.position[0][1]+=16;++scene.ticks;
+    std::vector<std::uint32_t> old(640*400),mid(old.size()),current(old.size()),sharp(old.size());
+    const auto at=[](const auto &frame,int x,int y){return frame[y*640+x];};
+    const auto digest=replay_state_digest(scene);
+    scene.render(old,true,true,0,&prev);scene.render(mid,true,true,128,&prev);scene.render(current,true,true,256,&prev);
+    scene.render(sharp,true,false,128,&prev);
+    check(at(old,100,200)==0xffffff&&at(mid,102,200)==0x7f7f7f&&at(mid,103,200)==0x7f7f7f&&at(current,105,200)==0xffffff);
+    check(at(old,160,200)==0xffffff&&at(mid,160,200)==0x7f7f7f&&at(mid,160,201)==0x7f7f7f&&at(current,160,201)==0xffffff);
+    check(at(mid,220,200)==0x7f7f7f&&at(mid,221,200)==0x7f7f7f);
+    check(at(old,282,200)==0xffffff&&at(mid,282,200)==0x7f7f7f&&at(current,282,200)==0);
+    check(current==sharp&&digest==replay_state_digest(scene));
+    // Replacing an item in the same slot must not animate it from the old item.
+    item.age=1;item.top[0]=240*16;
+    scene.render(mid,true,true,0,&prev);
+    check(at(mid,160,200)==0&&at(mid,160,240)==0xffffff);
+    // A stage change rejects unrelated coordinates even if tick counts happen to match.
+    prev.stage=4;scene.render(mid,true,true,0,&prev);
+    check(at(mid,100,200)==0&&at(mid,105,200)==0xffffff);
+
+    auto run=EncounterScene::load(root,0,1,1,2,3),reference=run;
+    for(unsigned i=0;i<180;++i){
+        run.capture_motion(prev);
+        const auto input=std::uint16_t(i%60<30?Left:Right);
+        run.tick(input);reference.tick(input);
+        for(unsigned phase:{0u,61u,199u,256u})run.render(mid,true,true,phase,&prev);
+        check(replay_state_digest(run)==replay_state_digest(reference));
+    }
+}
+
 void pause_and_menu_return(const fs::path &root){
     NativeReplayConfig c;
     auto scene=load_replay_scene(root,c);
@@ -711,6 +753,7 @@ int main(int argc,char **argv){
             background_smoothing_is_read_only(root);
             paced_background_positions();
             measured_frame_rate();
+            interpolated_gameplay(root);
             std::cout<<"background_smoothing_checks="<<checks<<" failures=0\n";
             return 0;
         }

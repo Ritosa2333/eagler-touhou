@@ -31,15 +31,29 @@ public:
         if(!pi)throw std::runtime_error("Bomb PI decode failed");
         out.image_w=pi->image.width;out.image_h=pi->image.height;out.portrait=pi->image.indices;return out;});
     }
-    void render(std::span<std::uint32_t> pixels,const StageBackground &bg,const BombCore &b)const{
+    void render(std::span<std::uint32_t> pixels,const StageBackground &bg,const BombCore &b,const MotionSample &motion={})const{
         if(!b.active||b.visual==BombCore::None||b.visual==BombCore::Recovery)return;
         auto color=[&](unsigned i){const auto &c=bg.palette.at(i);return (unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];};
         auto put=[&](int x,int y,unsigned col){if(x>=32&&x<416&&y>=16&&y<384)pixels[y*640+x]=color(col);};
         auto fill=[&](unsigned col){for(int y=16;y<384;++y)for(int x=32;x<416;++x)put(x,y,col);};
         constexpr std::array<std::array<unsigned,5>,8> dots={{{0,0,0,16,60},{0,0,16,16,126},{0,16,16,56,255},{16,56,124,254,255},{0,16,16,56,255},{0,0,16,16,255},{0,0,0,16,126},{0,0,0,0,60}}};
-        auto particle=[&](int x,int y,unsigned cel,unsigned col){for(unsigned row=0;row<8;++row)for(unsigned bit=0;bit<8;++bit)if(dots[row].at(cel)&(128>>bit))put(x+int(bit),y+int(row),col);};
-        auto circle=[&](int radius,unsigned start,unsigned col){for(unsigned i=0;i<64;++i){unsigned a=(start+i*4)&255;particle(220+BombCore::sar(radius*enemy_sin(a+64),8),196+BombCore::sar(radius*enemy_sin(a),8),4,col);}};
-        if(b.visual==BombCore::Circle){circle(256-b.frame*8,unsigned(b.frame),15);return;}
+        const auto particle_at=[&](RenderPoint p,unsigned cel,unsigned col){
+            const auto rgb=color(col);blit_motion_sprite(pixels,p,8,8,[&](int x,int y){return dots[y].at(cel)&(128>>x)?rgb:render_clear;});
+        };
+        const auto particle=[&](int x,int y,unsigned cel,unsigned col){particle_at(RenderPoint::pixels(x,y),cel,col);};
+        const auto *prev=motion.previous;
+        const bool continuing=prev&&prev->bomb_visual==b.visual&&prev->bomb_shot==b.shot_type;
+        const auto circle=[&](int radius,unsigned start,unsigned col,int old_radius,unsigned old_start){
+            const auto position=[](int r,unsigned a){return RenderPoint::pixels(220+BombCore::sar(r*enemy_sin(a+64),8),196+BombCore::sar(r*enemy_sin(a),8));};
+            for(unsigned i=0;i<64;++i){
+                const auto p=position(radius,(start+i*4)&255);
+                particle_at(continuing?motion_lerp(position(old_radius,(old_start+i*4)&255),p,motion.phase):p,4,col);
+            }
+        };
+        if(b.visual==BombCore::Circle){
+            const int prior=continuing?prev->bomb_frame:b.frame;
+            circle(256-b.frame*8,unsigned(b.frame),15,256-prior*8,unsigned(prior));return;
+        }
         const int f=b.frame;
         if(b.visual==BombCore::Mask){const unsigned cel=unsigned(f-1)/2;
             // The original frame31 reads beyond its15-frame allocation. Do not
@@ -53,8 +67,21 @@ public:
         if(b.shot_type==2&&f>=32&&f<112){fill(f>=100&&!(f&1)?15:2);if(f>=100&&(f&1)){image=true;image_x=32;image_y=16;}}
         if(image)for(unsigned y=0;y<image_h;++y)for(unsigned x=0;x<image_w;++x)put(image_x+int(x),image_y+int(y),portrait.at(y*image_w+x));
         if(b.shot_type==1&&f>32&&f<132&&b.overlay_frame){const auto &rows=overlays.at(b.overlay_frame-1);for(unsigned y=0;y<23;++y)for(unsigned x=0;x<48;++x)if(rows[y]&(std::uint64_t(1)<<x))for(unsigned py=0;py<16;++py)for(unsigned px=0;px<8;++px)put(32+int(x*8+px),16+int(y*16+py),2);}
-        if(b.shot_type==2&&f>32&&f<100)for(unsigned col=0;col<48;++col){const int bottom=b.columns[col];for(int y=16;y<bottom+4&&y<384;++y)for(int x=0;x<8;++x)if(y<bottom||(dots.at(unsigned(y-bottom+4))[4]&(128>>x)))put(32+int(col*8)+x,y,1);}
-        if(b.shot_type==1&&f>=133&&f<164){const unsigned ring=(f-132)%8?unsigned((f-132)%8):8u;circle(int(ring*32),ring,14);}
+        if(b.shot_type==2&&f>32&&f<100)for(unsigned col=0;col<48;++col){
+            const int bottom=b.columns[col],left=32+int(col*8);
+            const int edge=continuing?motion_lerp(prev->bomb_columns[col]*256,bottom*256,motion.phase):bottom*256;
+            const int whole=RenderPoint::floor(edge),frac=edge-whole*256;
+            for(int y=16;y<whole&&y<384;++y)for(int x=0;x<8;++x)put(left+x,y,1);
+            const auto rgb=color(1);
+            blit_motion_sprite(pixels,{left*256,edge},8,4,[&](int x,int y){return dots[y+4][4]&(128>>x)?rgb:render_clear;});
+            if(frac)blit_motion_sprite(pixels,{left*256,(whole-1)*256+frac},8,1,[&](int x,int){return dots[4][4]&(128>>x)?render_clear:rgb;});
+        }
+        if(b.shot_type==1&&f>=133&&f<164){
+            const unsigned ring=unsigned((f-133)%8+1);
+            const unsigned prior=continuing&&prev->bomb_frame>=133?unsigned((prev->bomb_frame-133)%8+1):ring;
+            const unsigned from=prior<=ring?prior:ring;
+            circle(int(ring*32),ring,14,int(from*32),from);
+        }
         for(const auto &p:b.particles)if(p.draw_state)particle((p.x/8)*8,p.y,p.draw_state-1,b.shot_type==0?15:b.shot_type==1?4:14);
     }
 };

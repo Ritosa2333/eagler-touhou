@@ -1,4 +1,5 @@
 #pragma once
+#include "render_motion.hpp"
 #include "stage_scene.hpp"
 #include <optional>
 namespace soew {
@@ -97,8 +98,21 @@ public:
         return paint==Paint::Color4Hit?4u:paint==Paint::AllPlanesHit?15u:index;
     }
     void put(std::span<std::uint32_t> target,const StageBackground &bg,unsigned id,int left,int top,Paint paint=Paint::Artwork)const{
+        put(target,bg,id,RenderPoint::pixels(left,top),paint);
+    }
+    void put(std::span<std::uint32_t> target,const StageBackground &bg,unsigned id,RenderPoint point,
+             Paint paint=Paint::Artwork,unsigned scale=1,bool zero_clear=false,SpriteClip clip={})const{
         if(id>=sprites.size()||!sprites[id])throw std::runtime_error("Unregistered original sprite pattern "+std::to_string(id));
-        const auto &image=*sprites[id];for(unsigned y=0;y<image.height;++y)for(unsigned x=0;x<image.width;++x){const auto c=image.pixels[y*image.width+x];if(c==image.transparent)continue;const int px=left+int(x),py=top+int(y);if(px<32||px>=416||py<16||py>=384)continue;auto rgb=bg.palette[paint_index(paint,c)];target[py*640+px]=(unsigned(rgb[0])<<16)|(unsigned(rgb[1])<<8)|rgb[2];}
+        const auto &image=*sprites[id];
+        const auto transparent=zero_clear?0:image.transparent;
+        const auto texel=[&](int x,int y){
+            const auto c=image.pixels[unsigned(y)*image.width+unsigned(x)];
+            if(c==transparent)return render_clear;
+            const auto &rgb=bg.palette[paint_index(paint,c)];
+            return (unsigned(rgb[0])<<16)|(unsigned(rgb[1])<<8)|rgb[2];
+        };
+        if(scale==1)blit_motion_sprite(target,point,image.width,image.height,texel,clip);
+        else blit_motion_sprite(target,point,image.width*scale,image.height*scale,[&](int x,int y){return texel(x/int(scale),y/int(scale));},clip);
     }
 };
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "render_motion.hpp"
 #include "stage_background.hpp"
 #include "stage_script.hpp"
 #include "player_motion.hpp"
@@ -11,7 +12,7 @@
 #include <memory>
 #include <mutex>
 namespace soew {
-inline constexpr unsigned scroll_subpixels=256;
+inline constexpr unsigned scroll_subpixels=motion_subpixels;
 // Interpolate towards the current scroll step without reading future tiles.
 inline unsigned background_scroll_lag(const StageScroll &scroll,unsigned subframe){
     if(scroll.done||!scroll.display_pixels)return 0;

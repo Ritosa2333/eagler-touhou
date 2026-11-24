@@ -846,6 +846,7 @@ struct TitleDemoHost {
     int stage_track=-1;
     unsigned score_frame=0;
     unsigned scroll_phase=soew::scroll_subpixels;
+    soew::MotionFrame motion_before;
     std::shared_ptr<std::atomic_bool> cancel;
     std::optional<std::future<Run>> stage_load;
     std::optional<std::future<Pcm>> pcm_load;
@@ -937,6 +938,8 @@ struct App {
     fs::path evidence_dir;
     PresentationClock stage_clock; // host test cadence, NOT verified original scheduler
     unsigned scroll_phase=soew::scroll_subpixels;
+    soew::MotionFrame motion_before;
+    unsigned motion_stride=1;
     bool display_frames_active=false;
     soew::FrameRateMeter frame_rate;
     AudioPreview audio;
@@ -1254,7 +1257,7 @@ bool advance_title_demo(HWND hwnd,App &app,std::uint64_t now,unsigned fractional
                 scene.sound_output=[&app](unsigned id){if(app.audio.active()&&!app.audio.effect(id))audio_error(app);};
             }
             demo.controller.update(true,false,load);
-            demo.ready_scene.reset();demo.clock.reset(now);
+            demo.ready_scene.reset();demo.clock.reset(now);demo.motion_before.stage=-1;demo.scroll_phase=soew::scroll_subpixels;
         }catch(const std::exception &e){
             demo.controller.update(true,false,[&](const soew::TitleDemoSpec &)->TitleDemoHost::Run{throw std::runtime_error(e.what());});
         }
@@ -1265,6 +1268,7 @@ bool advance_title_demo(HWND hwnd,App &app,std::uint64_t now,unsigned fractional
         if(app.display_frames_active)demo.scroll_phase=soew::display_subframe(demo.scroll_phase,demo.clock.subframe(pace,soew::scroll_subpixels,fractional_us),steps);
         const HostPerf::Span span(steps&&scene?app.host_perf.get():nullptr,HostPerf::Metric::Simulation);
         for(unsigned i=0;i<steps&&demo.controller.phase()==phase;++i){
+            if(scene&&app.display_frames_active)scene->capture_motion(demo.motion_before);
             demo.controller.update(true,false,no_title_demo_scene);
             if(phase==DemoPhase::Score)++demo.score_frame;
         }
@@ -1369,7 +1373,7 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
     app.run_entry_stage=id;app.run_entry_stage4_trial=stage4_trial;app.run_pause_menu=false;
     app.recorder.reset();app.recording_timing={};
     if(!app.replay_playback&&app.replay_recording&&(app.settings_enabled||app.smoke)&&(id<5||extra))app.recorder.emplace(config);
-    app.stage_entry_release=true;app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.gameplay_audio_attempted=-1;
+    app.stage_entry_release=true;app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.motion_before.stage=-1;app.gameplay_audio_attempted=-1;
     if(app.gameplay_audio_enabled)sync_gameplay_bgm(app,app.smoke||(app.focused&&!app.minimized&&!app.resizing));
     else app.audio_status={L"診断ステージ：音声なし",L"Diagnostic stage: audio disabled"};
     if(app.gameplay_audio_enabled&&app.menu.music!=0&&app.audio.active())app.audio.effect(13);
@@ -1397,7 +1401,7 @@ void publish_replay(App &app,soew::NativeReplay replay,std::unique_ptr<soew::Enc
     app.run_entry_stage=app.stage_scene->stage;app.run_entry_stage4_trial=run.config.stage4_trial;app.run_pause_menu=false;
     app.recorder.reset();app.practice_session.reset();app.practice_visible=app.practice_result=app.practice_escape=false;
     app.z_input.clear();app.dialogue_hold.clear();app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
-    app.stage_entry_release=true;app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;
+    app.stage_entry_release=true;app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.motion_before.stage=-1;
     app.stage_scene->sound.enabled=app.menu.music!=0&&(run.practice||!app.effect_bank.empty());
     app.stage_scene->sound_output=[&app](unsigned id){if(app.menu.music!=0&&!app.effect_bank.empty()&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
     app.practice_bgm_measure=run.practice?soew::practice_music_measure(run.practice->spec):0;
@@ -1836,7 +1840,7 @@ void advance_practice(App &app){
     app.stage_scene.emplace(std::move(*next));app.practice_session.emplace(recipe,soew::practice_checkpoint(recipe),seed);app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=false;
     app.stage_scene->sound.enabled=app.menu.music!=0;
     app.stage_scene->sound_output=[&app](unsigned id){if(app.gameplay_audio_enabled&&app.menu.music!=0&&!app.effect_bank.empty()&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
-    app.stage_entry_release=true;app.z_input.clear();app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.gameplay_audio_attempted=-1;
+    app.stage_entry_release=true;app.z_input.clear();app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.motion_before.stage=-1;app.gameplay_audio_attempted=-1;
     arm_stage_intro(app,recipe.section==soew::PracticeSection::StageStart);
     app.practice_bgm_measure=soew::practice_music_measure(recipe);
     const bool practice_window_enabled=(app.smoke||app.retry_probe.mode>=0||app.focused)&&!app.minimized&&!app.resizing;
@@ -2227,7 +2231,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         // Do not clear the visible DC: composition can take several milliseconds.
         if(const auto *demo=app->title_demo?app->title_demo->controller.scene():nullptr){
             gameplay_frame();
-            demo->render(app->composed.pixels,true,app->menu.smooth_background,app->title_demo->scroll_phase);
+            demo->render(app->composed.pixels,true,app->menu.smooth_background,app->title_demo->scroll_phase,&app->title_demo->motion_before);
             soew::mask_gameplay_tram(app->composed.pixels);
             soew::HudState hud;
             hud.score=demo->score_core.score;hud.high_score=hud.score;hud.lives=demo->life.lives;hud.bombs=demo->life.bombs;
@@ -2274,7 +2278,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 (app->stage_intro.showing_eye()||phase==Phase::LoadWait||phase==Phase::Ready);
             if(show_stage_intro)soew::StageIntro::paint(app->composed.pixels,app->stage_intro_art->pixels);
             else{
-                app->stage_scene->render(app->composed.pixels,!app->practice_result,app->menu.smooth_background,app->scroll_phase);
+                app->stage_scene->render(app->composed.pixels,!app->practice_result,app->menu.smooth_background,app->scroll_phase,
+                    &app->motion_before,app->motion_stride);
                 if(!app->stage_intro.revealing()&&app->menu.hitboxes!=soew::HitboxMode::Off&&!app->practice_result&&!app->replay_menu.active())app->stage_scene->render_hitboxes(app->composed.pixels);
                 if(app->stage_intro.revealing())compose_curtain(app->composed,app->font,true,app->stage_intro.reveal_frame());
                 else{
@@ -2573,7 +2578,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 app->recording_timing.observe(timing_active,timing);
                 if(app->host_perf)app->host_perf->schedule(pace,stage_active,base_steps,timing.lost_ms,timing.active_ms);
                 // Replay never reads from the live stage-entry release gate.
-                const auto steps=base_steps*soew::replay_view_speed(fast_replay);
+                const auto stride=soew::replay_view_speed(fast_replay);
+                const auto steps=base_steps*stride;
                 soew::Keys pressed;
                 bool dialog_group=false;
                 if(!app->replay_playback){
@@ -2591,6 +2597,10 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 const HostPerf::Span span(steps?app->host_perf.get():nullptr,HostPerf::Metric::Simulation);
                 for(unsigned i=0;i<steps&&app->stage_scene;++i){
                     ++iterations;
+                    if(app->display_frames_active&&i%stride==0){
+                        app->stage_scene->capture_motion(app->motion_before);
+                        app->motion_stride=stride;
+                    }
                     app->stage_scene->set_hitbox_mode(app->menu.hitboxes);
                     soew::ReplayStep step;
                     if(app->replay_playback){
@@ -3289,13 +3299,10 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
 bool smooth_display_active(HWND hwnd,const App &app){
     if(!app.menu.smooth_background||app.smoke||app.timed_test||app.score_timed_test||app.async_practice_test||
        !app.focused||app.minimized||app.resizing||GetForegroundWindow()!=hwnd)return false;
-    const auto scrolls=[](const soew::EncounterScene &s){
-        return !s.paused&&!s.life.game_over&&!s.runtime.blocked&&!s.transition.active()&&!s.dialogue.active()&&s.scrolling_background();
-    };
     if(app.stage_scene)return !app.stage_intro.active()&&!app.ending_player&&!app.replay_menu.active()&&
-        !app.practice_retry&&!app.score_release&&app.score_review==App::ScoreReview::None&&scrolls(*app.stage_scene);
+        !app.practice_retry&&!app.score_release&&app.score_review==App::ScoreReview::None&&app.stage_scene->motion_active();
     if(app.title_demo&&title_demo_foreground(hwnd,app)){
-        if(const auto *scene=app.title_demo->controller.scene())return scrolls(*scene);
+        if(const auto *scene=app.title_demo->controller.scene())return scene->motion_active();
     }
     return false;
 }
