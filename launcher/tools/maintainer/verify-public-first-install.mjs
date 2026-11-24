@@ -5,7 +5,7 @@ import { DEFAULT_PRODUCT_ID, isGameId } from "../../lib/contracts/product-catalo
 
 const target = process.argv[2];
 if (!target) {
-  throw new Error(`usage: node tools/maintainer/verify-public-first-install.mjs <launcher-url> [--game=${DEFAULT_PRODUCT_ID}] [--timeout-ms=180000]`);
+  throw new Error(`usage: node tools/maintainer/verify-public-first-install.mjs <launcher-url> [--game=${DEFAULT_PRODUCT_ID}] [--timeout-ms=180000] [--offline-reopen=true]`);
 }
 const targetUrl = new URL(target);
 if (!new Set(["http:", "https:"]).has(targetUrl.protocol)) throw new Error("launcher URL must use http or https");
@@ -15,8 +15,12 @@ const values = Object.fromEntries(process.argv.slice(3).map(value => {
   return [value.slice(2, split), value.slice(split + 1)];
 }));
 for (const name of Object.keys(values)) {
-  if (!new Set(["game", "timeout-ms"]).has(name)) throw new Error(`unknown argument: --${name}`);
+  if (!new Set(["game", "timeout-ms", "offline-reopen"]).has(name)) throw new Error(`unknown argument: --${name}`);
 }
+if (values["offline-reopen"] !== undefined && values["offline-reopen"] !== "true") {
+  throw new Error("--offline-reopen must be true when supplied");
+}
+const verifyOffline = values["offline-reopen"] === "true";
 const game = values.game || DEFAULT_PRODUCT_ID;
 if (!isGameId(game)) throw new Error(`unsupported game: ${game}`);
 const timeoutMs = Number.parseInt(values["timeout-ms"] || "180000", 10);
@@ -53,10 +57,12 @@ async function packageState(page, gameId) {
   }, gameId);
 }
 
+const browserProxy = process.env.EAGLER_BROWSER_PROXY;
 const browser = await puppeteer.launch({
   executablePath: await findChromiumExecutable(),
   headless: true,
-  args: ["--disable-extensions", "--no-first-run", "--no-default-browser-check"],
+  args: ["--disable-extensions", "--no-first-run", "--no-default-browser-check",
+    ...(browserProxy ? ["--proxy-server=" + browserProxy] : [])],
 });
 const page = await browser.newPage();
 const pageErrors = [];
@@ -70,6 +76,10 @@ try {
   }));
   await page.evaluateOnNewDocument(() => {
     globalThis.__eaglerPublicFirstInstallEvents = [];
+    globalThis.__eaglerPublicFirstInstallLaunchClicks = 0;
+    addEventListener("click", event => {
+      if (event.target instanceof Element && event.target.closest("#launch")) globalThis.__eaglerPublicFirstInstallLaunchClicks++;
+    }, true);
     addEventListener("message", event => {
       const message = event.data;
       if (!message || typeof message !== "object" || message.protocol !== "eagler-touhou/1") return;
@@ -82,52 +92,93 @@ try {
       }
     });
   });
-  await page.goto(targetUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
-  await page.waitForFunction(() => globalThis.__eaglerBoot?.done === true, { timeout: 30_000 });
-  await page.evaluate(() => document.querySelector("#firstUseNoticeDialog")?.close());
-  await page.waitForSelector(`.game[data-game="${game}"]:not(.game-multiplayer)`, { visible: true, timeout: 30_000 });
-  await page.evaluate(selectedGame => {
-    const card = document.querySelector(`.game[data-game="${selectedGame}"]:not(.game-multiplayer)`);
-    if (!(card instanceof HTMLElement)) throw new Error(`game card is missing: ${selectedGame}`);
-    card.click();
-  }, game);
-  await page.waitForFunction(selectedGame => {
-    const card = document.querySelector(`.game[data-game="${selectedGame}"]:not(.game-multiplayer)`);
-    return card?.getAttribute("aria-current") === "page" || card?.classList.contains("selected");
-  }, { timeout: 30_000 }, game);
-  await page.evaluate(() => {
-    const launch = document.querySelector("#launch");
-    if (!(launch instanceof HTMLButtonElement) || launch.disabled) throw new Error("launch action is unavailable");
-    launch.click();
-  });
   const readDiagnostic = () => page.evaluate(selectedGame => ({
     events: (globalThis.__eaglerPublicFirstInstallEvents || []).filter(message => message.game === selectedGame),
+    launchClicks: globalThis.__eaglerPublicFirstInstallLaunchClicks,
+    playerOpen: document.querySelector("#player")?.classList.contains("open") ?? false,
     status: document.querySelector("#status")?.textContent?.trim() || "",
     playerStatus: document.querySelector("#playerStatus")?.textContent?.trim() || "",
-    fallbackVisible: !document.querySelector("#gameDataImportWindow")?.hidden,
+    fallbackVisible: Boolean(document.querySelector("#gameDataImportWindow:not([hidden])")?.getClientRects().length),
     fallbackReason: document.querySelector("#gameDataImportReason")?.textContent?.trim() || "",
-    startupErrorVisible: !document.querySelector("#startupError")?.hidden,
+    startupErrorVisible: Boolean(document.querySelector("#startupError:not([hidden])")?.getClientRects().length),
     startupError: document.querySelector("#startupErrorText")?.textContent?.trim() || "",
     decisionOpen: document.querySelector("#decisionDialog")?.open === true,
     decisionMessage: document.querySelector("#decisionMessage")?.textContent?.trim() || "",
     transfer: document.querySelector("#transferLabel")?.textContent?.trim() || "",
   }), game);
-  const deadline = Date.now() + timeoutMs;
-  let diagnostic = await readDiagnostic();
-  while (Date.now() < deadline) {
-    const terminalEvent = diagnostic.events.some(message => ["first-frame", "error", "fatal"].includes(message.event));
-    if (terminalEvent || diagnostic.fallbackVisible || diagnostic.startupErrorVisible || diagnostic.decisionOpen) break;
-    await new Promise(resolve => setTimeout(resolve, 250));
-    diagnostic = await readDiagnostic();
+  async function launchAndVerify(offline = false) {
+    const response = await page.goto(targetUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    if (offline && (!response?.ok() || !response.fromServiceWorker())) {
+      throw new Error("offline Launcher did not load from its Service Worker");
+    }
+    await page.waitForFunction(() => globalThis.__eaglerBoot?.done === true, { timeout: 30_000 });
+    const firstUseNotice = "#firstUseNoticeDialog[open]";
+    async function dismissFirstUseNotice() {
+      if (!await page.$(firstUseNotice)) return;
+      await page.locator(firstUseNotice + " #firstUseNoticeClose").click();
+      await page.waitForSelector(firstUseNotice, { hidden: true });
+    }
+    await dismissFirstUseNotice();
+    const statusNotice = await page.$("#siteNotice:not([hidden]) #siteNoticeClose");
+    if (statusNotice && await statusNotice.isVisible()) await statusNotice.click();
+    const cardSelector = `.book-game-link[data-game="${game}"], .game[data-game="${game}"]:not(.game-multiplayer)`;
+    async function openGameCard() {
+      const card = await page.waitForSelector(cardSelector, { visible: true, timeout: 30_000 });
+      await card.evaluate(element => element.scrollIntoView({block:"center", inline:"nearest", behavior:"instant"}));
+      await card.click();
+      const result = await page.waitForFunction((selectedGame, noticeSelector) => {
+        if (new URL(location.href).searchParams.get("game") === selectedGame) return "game";
+        const legacyCard = document.querySelector(`.game[data-game="${selectedGame}"]:not(.game-multiplayer)`);
+        if (legacyCard?.getAttribute("aria-current") === "page" || legacyCard?.classList.contains("selected")) return "game";
+        return document.querySelector(noticeSelector) ? "notice" : null;
+      }, { timeout: 30_000 }, game, firstUseNotice);
+      return result.jsonValue();
+    }
+    // Loading the first-use content can finish after the boot watchdog or
+    // while the game card is being clicked.
+    if (await openGameCard() === "notice") {
+      await dismissFirstUseNotice();
+      if (await openGameCard() !== "game") throw new Error("First-use notice blocked the game card again");
+    }
+    await dismissFirstUseNotice();
+    const launch = await page.waitForSelector("#launch:not([disabled])", { visible: true, timeout: 30_000 });
+    await launch.evaluate(element => element.scrollIntoView({block:"center", inline:"nearest", behavior:"instant"}));
+    await page.waitForFunction(element => {
+      const bounds = element.getBoundingClientRect();
+      return element.contains(document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2));
+    }, {timeout:15_000}, launch).catch(async error => {
+      const obstruction = await launch.evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        const top = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+        return {
+          top: top && {tag:top.tagName, id:top.id, className:top.getAttribute("class")},
+          dialogs: [...document.querySelectorAll("dialog[open]")].map(dialog => dialog.id),
+          inert: !!element.closest("[inert]"),
+          bounds: bounds.toJSON(),
+        };
+      });
+      throw new Error(`launch button cannot be clicked: ${JSON.stringify(obstruction)}`, {cause:error});
+    });
+    await launch.click();
+    const deadline = Date.now() + timeoutMs;
+    let diagnostic = await readDiagnostic();
+    while (Date.now() < deadline) {
+      const terminal = diagnostic.events.some(message => ["first-frame", "error", "fatal"].includes(message.event));
+      if (terminal || diagnostic.fallbackVisible || diagnostic.startupErrorVisible || diagnostic.decisionOpen) break;
+      await new Promise(resolve => setTimeout(resolve, 250));
+      diagnostic = await readDiagnostic();
+    }
+    if (!diagnostic.events.some(message => message.event === "first-frame")) {
+      throw new Error(`${offline ? "offline reopen" : "public fresh install"} did not reach first-frame: ${JSON.stringify({ diagnostic, pageErrors, failedRequests })}`);
+    }
+    const installed = await packageState(page, game);
+    if (!installed.currentGeneration || !installed.revision || installed.files < 1) {
+      throw new Error(`first-frame was reached without a committed Package generation: ${JSON.stringify(installed)}`);
+    }
+    return installed;
   }
-  const firstFrame = diagnostic.events.some(message => message.event === "first-frame");
-  if (!firstFrame) {
-    throw new Error(`public fresh install did not reach first-frame: ${JSON.stringify({ diagnostic, pageErrors, failedRequests })}`);
-  }
-  const installed = await packageState(page, game);
-  if (!installed.currentGeneration || !installed.revision || installed.files < 1) {
-    throw new Error(`first-frame was reached without a committed Package generation: ${JSON.stringify(installed)}`);
-  }
+
+  const installed = await launchAndVerify();
   const releaseId = await page.evaluate(async () => {
     try {
       const response = await fetch("release-manifest.json", { cache: "no-store" });
@@ -135,6 +186,15 @@ try {
       return (await response.json())?.releaseId || null;
     } catch { return null; }
   });
+  if (verifyOffline) {
+    await page.waitForFunction(() => navigator.serviceWorker?.getRegistration().then(registration => !!registration?.active), {timeout:timeoutMs});
+    await page.goto(targetUrl.href, {waitUntil:"domcontentloaded", timeout:30_000});
+    await page.waitForFunction(() => !!navigator.serviceWorker?.controller, {timeout:30_000});
+    await page.setCacheEnabled(false);
+    await page.setOfflineMode(true);
+    const reopened = await launchAndVerify(true);
+    if (reopened.currentGeneration !== installed.currentGeneration) throw new Error("offline reopen changed the installed Package generation");
+  }
   console.log(JSON.stringify({
     pass: true,
     target: targetUrl.href,
@@ -142,6 +202,7 @@ try {
     releaseId,
     elapsedMs: Math.round(performance.now() - startedAt),
     package: installed,
+    ...(verifyOffline && {offlineReopen: true}),
     pageErrors,
     failedRequests,
   }));

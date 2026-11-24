@@ -322,6 +322,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.ui-select[data-density="compact"] {
+  inline-size: fit-content;
+  min-inline-size: 0;
+}
+.ui-select[data-density="compact"] .ui-select-trigger {
+  min-block-size: 34px;
+  padding: 4px 8px 4px 10px;
+  gap: 8px;
+}
+.ui-select[data-density="compact"] .ui-select-trigger > svg { width: 14px; height: 14px; }
+@media (max-width: 780px), (pointer: coarse) {
+  .ui-select[data-density="compact"] .ui-select-trigger { min-block-size: 44px; }
+}
 .ui-select-trigger svg,
 .ui-select-content svg {
   width: 16px;
@@ -533,10 +546,11 @@
   color: var(--ui-text);
 }
 .ui-menu.ui-field-help {
-  width: 256px;
+  width: min(256px, calc(100vw - 24px));
   padding: 8px 12px;
   font: 14px / 1.65 var(--kit-font);
 }
+.ui-field-help-action {margin-block-start:6px}
 .ui-menu-item svg {
   width: 16px;
   height: 16px;
@@ -560,10 +574,8 @@
   opacity: 1;
   visibility: visible;
 }
-@layer base {
-  html {
-    scrollbar-gutter: stable;
-  }
+html[data-ui-app] {
+  scrollbar-gutter: stable;
 }
 /* Radix keeps focus and touch scrolling inside its layers. The root gutter
    already reserves the scrollbar, so body compensation would shrink the page. */

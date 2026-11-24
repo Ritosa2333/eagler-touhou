@@ -97,6 +97,27 @@ def run(*, pages, viewer, setup, call, advance_sources, url, spectator_url,
         assert reached['position'] == target and reached['following'], reached
         result['fixedLiveTarget'] = target
         result['afterLivePacing'] = pacing('native navigation live resume', 10)
+        result['phase'] = 'seek-at-native-stage-transition'
+        # The spectator has its own native world. Reproduce the screen
+        # transition that its last historical Stage 1 tick can request.
+        assert call(viewer, 'multiplayerSmoke.fixture(6)')
+        boundary = call(viewer, 'multiplayerSmoke.lifecycle()')
+        assert boundary[1:3] == [7, 11], boundary
+        control('pause')
+        stopped = state()['position']
+        assert tick()['position'] == stopped
+        assert call(viewer, 'multiplayerSmoke.lifecycle()')[1:3] == [7, 11]
+        control('seek', origin + 45)
+        restored = wait(lambda s: not s['seeking'], 'seek out of native stage transition', timeout=8)
+        assert restored['paused'] and restored['position'] == origin + 45, restored
+        assert call(viewer, 'multiplayerSmoke.nativeStatus()')[:3] == [7, 1, 0]
+        result['seekFromStageTransition'] = {'boundary': boundary, 'position': restored['position']}
+        assert call(viewer, 'multiplayerSmoke.fixture(6)')
+        control('play')
+        assert tick()['position'] == origin + 45
+        assert call(viewer, 'multiplayerSmoke.lifecycle()')[1:3] == [7, 7]
+        assert call(viewer, 'multiplayerSmoke.nativeStatus()')[:3] == [7, 2, 0]
+        result['resumedStageTransition'] = {'stage': 2, 'position': origin + 45}
         assert not report['errors'], report['errors']
         result['phase'] = 'complete'; result['passed'] = True; report['passed'] = True
         return

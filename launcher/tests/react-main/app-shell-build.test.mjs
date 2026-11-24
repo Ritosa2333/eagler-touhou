@@ -12,7 +12,7 @@ import {parse as parseCss} from 'postcss';
 import {parse as parseJavaScript} from 'acorn';
 import {buildReactAppShell} from '../../scripts/ui-rewrite/app-shell-build.ts';
 import {APP_SHELL_RETIREMENT_WORKER} from '../../lib/app-shell-retirement.mjs';
-import {STATIC_FRONTEND_PACKAGE_FILES} from '../../lib/frontend-static-manifest.mjs';
+import {REACT_DOCUMENT_FILES, STATIC_FRONTEND_PACKAGE_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {readReactAppShellDeployment} from '../../app/services/app-shell-deployment.ts';
 let work, coldSource;
 const outputs = new Map();
@@ -27,12 +27,22 @@ before(async () => {
   // launcher cache. Keep dependency installation shared; copy no build output.
   for (const path of ['app', 'src', 'lib', 'messages', 'project.inlang/settings.json', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
     'content', 'favicon.ico', 'docs/FAQ.md', 'docs/SELF_HOSTING.md', 'docs/SELF_HOSTING_REFERENCE.md', 'docs/EXTERNAL_RESOURCE_MODE.md',
+    'docs/assets/game-covers/thumbnails/th14.jpg',
     'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'bun.lock', '.bun-version', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
     'tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json', 'vite.config.ts', 'react-router.config.ts']) {
     await mkdir(resolve(coldSource, path, '..'), {recursive: true});
     await cp(resolve(path), resolve(coldSource, path), {recursive: true});
   }
-  await cp(resolve('../common/contracts'), resolve(work, 'common/contracts'), {recursive: true});
+  for (const path of [
+    'common/contracts',
+    'common/browser/th09-replay-upload.mjs',
+    'docs/TOUHOU_PROGRESS.md',
+    'ports/th09/web/sdl-runtime/motion-replay.mjs',
+  ]) {
+    const target = resolve(work, path);
+    await mkdir(resolve(target, '..'), {recursive: true});
+    await cp(resolve('..', path), target, {recursive: true});
+  }
   // Change only authored Markdown. Pre-generated HTML deliberately remains
   // stale so the real build must use main's content compiler, not copy it.
   for (const file of ['docs/FAQ.md', 'content/FIRST_USE_NOTICE.md', 'content/MULTIPLAYER.md']) {
@@ -115,19 +125,30 @@ for (const name of ['root', 'nested']) test(`${name} output uses actual React ch
   assert.ok(files.some(path => /^assets\/manifest-.+\.js$/.test(path)));
   assert.ok(files.some(path => /^assets\/root-.+\.js$/.test(path)));
   assert.ok(files.some(path => /^assets\/root-.+\.css$/.test(path)));
-  for (const path of files) assert.doesNotMatch(path, /^(?:app\.js$|assets\/(?:launcher|contracts)\/|runtime\/|runtime-manifest\.json$|docs\/|tests\/|src\/|app\/|\.cache\/)/);
+  const publicDocs = new Set(REACT_DOCUMENT_FILES.filter(path => path.startsWith('docs/')));
+  for (const path of publicDocs) assert.ok(files.includes(path), `${path}: guide is available offline`);
+  for (const path of files) if (!publicDocs.has(path)) {
+    assert.doesNotMatch(path, /^(?:app\.js$|assets\/(?:launcher|contracts)\/|runtime\/|runtime-manifest\.json$|docs\/|tests\/|src\/|app\/|\.cache\/)/);
+  }
   for (const entry of result.manifestEntries) {
     assert.match(entry.revision, /^[a-f0-9]{64}$/);
     const bytes = await readFile(resolve(directory, entry.url === './' ? 'index.html' : entry.url));
     assert.equal(createHash('sha256').update(bytes).digest('hex'), entry.revision, entry.url);
   }
-  for (const path of ['index.html', 'en.html', 'ja.html', 'lobby.html', 'profile.html']) {
+  const titles = {
+    'index.html': '单人游戏 - TouhouOnline',
+    'en.html': 'Single-player - TouhouOnline',
+    'ja.html': 'シングルプレイ - TouhouOnline',
+    'lobby.html': '联机大厅 - TouhouOnline',
+    'profile.html': '个人主页 - TouhouOnline',
+  };
+  for (const [path, title] of Object.entries(titles)) {
     const html = await readFile(resolve(directory, path), 'utf8'), elements = nodes(html);
     assert.equal((await stat(resolve(directory, path))).isFile(), true, 'original flat document URL');
     const htmlAttributes = elements.find(node => node.tagName === 'html').attrs;
     assert.equal(htmlAttributes.find(attr => attr.name === 'lang').value, path === 'en.html' ? 'en' : path === 'ja.html' ? 'ja' : 'zh-CN');
     assert.equal(htmlAttributes.some(attr => attr.name === 'data-ui-home'), ['index.html', 'en.html', 'ja.html'].includes(path), `${path}: cold entry shares home layout`);
-    assert.match(html, path === 'en.html' ? /<title[^>]*>Touhou Project Original STGs ~ EAGLER TOUHOU<\/title>/ : path === 'ja.html' ? /<title[^>]*>東方Project 原作STG ~ EAGLER TOUHOU<\/title>/ : path === 'lobby.html' ? /<title>联机大厅 ~ EAGLER TOUHOU<\/title>/ : path === 'profile.html' ? /<title>玩家主页 ~ EAGLER TOUHOU<\/title>/ : /<title[^>]*>东方Project 原作 STG ~ EAGLER TOUHOU<\/title>/);
+    assert.equal(elements.find(node => node.tagName === 'title')?.childNodes[0]?.value, title, path);
     assert.ok(html.includes(`"basename":${JSON.stringify(mountPath)}`));
     const metadata = elements.filter(node => node.tagName === 'meta' && node.attrs.some(attr => attr.name === 'name' && attr.value === 'eagler-react-app-shell'));
     const doc = {querySelectorAll: () => metadata.map(node => ({getAttribute: name => node.attrs.find(attr => attr.name === name)?.value}))};

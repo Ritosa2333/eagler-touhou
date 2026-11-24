@@ -3,17 +3,17 @@ import {useLocation, useNavigate, type Location, type NavigateOptions, type To} 
 import {LOCAL_LAYERS_KEY, nextPageHistory, PAGE_HISTORY_KEY, pageOf, readPageHistory} from './page-history';
 
 export type LayerValue = string | boolean | null;
-export interface LayerEntry {value: Exclude<LayerValue, null>; parentPosition: number}
+export interface LayerEntry {value: Exclude<LayerValue, null>; parentPosition: number; pageScroll?: true}
 export interface SurfaceLayers {
   values: Record<string, LayerEntry>;
-  set(id: string, value: LayerValue): void;
+  set(id: string, value: LayerValue, pageScroll?: boolean): void;
 }
 export const SurfaceLayersContext = createContext<SurfaceLayers | null>(null);
 
 const layerAddress = ({pathname, search, hash}: Location) => pathname + search + hash;
 
 export function navigateSurfaceLayer(location: Location, navigate: (to: To | number, options?: NavigateOptions) => void | Promise<void>,
-  session: string, current: SurfaceLayers['values'], id: string, value: LayerValue) {
+  session: string, current: SurfaceLayers['values'], id: string, value: LayerValue, pageScroll = false) {
   const prior = current[id];
   if ((prior?.value ?? null) === value) return;
   const position = readPageHistory(location.state)?.position;
@@ -23,12 +23,15 @@ export function navigateSurfaceLayer(location: Location, navigate: (to: To | num
   }
   const values = {...current};
   if (value === null) delete values[id];
-  else values[id] = {value, parentPosition: prior?.parentPosition ?? position ?? -1};
+  else values[id] = {
+    value, parentPosition: prior?.parentPosition ?? position ?? -1,
+    ...(prior?.pageScroll || pageScroll ? {pageScroll: true as const} : {}),
+  };
   const source = location.state;
   const state = source && typeof source === 'object' && !Array.isArray(source) ? {...source} : {};
   if (Object.keys(values).length) state[LOCAL_LAYERS_KEY] = {session, href: layerAddress(location), values};
   else delete state[LOCAL_LAYERS_KEY];
-  void navigate(layerAddress(location), {replace: !!prior, preventScrollReset: true, state});
+  void navigate(layerAddress(location), {replace: !!prior, preventScrollReset: !!prior || !pageScroll, state});
 }
 
 let standaloneSession = 0;
@@ -47,28 +50,28 @@ export function StandaloneSurfaceLayers({children}: {children: ReactNode}) {
     const record = nextPageHistory(readPageHistory(location.state), pageOf(location), options?.replace === true);
     return navigate(to, {...options, state: {...options?.state, [PAGE_HISTORY_KEY]: record}});
   }
-  function set(id: string, value: LayerValue) {
+  function set(id: string, value: LayerValue, pageScroll?: boolean) {
     if ((values[id]?.value ?? null) === value) return;
     if (pending.current?.location === location && pending.current.id === id && pending.current.value === value) return;
     pending.current = {location, id, value};
-    navigateSurfaceLayer(location, navigateLayer, session, values, id, value);
+    navigateSurfaceLayer(location, navigateLayer, session, values, id, value, pageScroll);
   }
   return <SurfaceLayersContext.Provider value={{values, set}}>{children}</SurfaceLayersContext.Provider>;
 }
 
-/** Small child views use the same Router entries as their enclosing surface. */
-export function useSurfaceLayerState<T extends LayerValue>(name: string, initial: T): [T, Dispatch<SetStateAction<T>>] {
+/** Child views share their surface's scroll unless they replace the whole page. */
+export function useSurfaceLayerState<T extends LayerValue>(name: string, initial: T, pageScroll = false): [T, Dispatch<SetStateAction<T>>] {
   const layers = useContext(SurfaceLayersContext), instance = useId(), id = `${name}:${instance}`;
   const [local, setLocal] = useState(initial);
   const value = layers ? (layers.values[id]?.value ?? initial) as T : local;
   // Keep setter identity stable while reading the latest committed route.
-  const current = useRef({layers, id, value, initial});
-  useLayoutEffect(() => {current.current = {layers, id, value, initial};});
+  const current = useRef({layers, id, value, initial, pageScroll});
+  useLayoutEffect(() => {current.current = {layers, id, value, initial, pageScroll};});
   const setValue = useCallback<Dispatch<SetStateAction<T>>>(next => {
-    const {layers, id, value, initial} = current.current;
+    const {layers, id, value, initial, pageScroll} = current.current;
     if (!layers) {setLocal(next); return;}
     const resolved = typeof next === 'function' ? next(value) : next;
-    layers.set(id, resolved === initial ? null : resolved);
+    layers.set(id, resolved === initial ? null : resolved, pageScroll);
   }, []);
   return [value, setValue];
 }

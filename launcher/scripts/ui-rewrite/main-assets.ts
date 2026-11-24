@@ -6,6 +6,7 @@ import {launcherStyleSources, buildLauncherStyleOutputs, buildRuntimeProgramWork
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {STATIC_FRONTEND_PACKAGE_FILES, REACT_DOCUMENT_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {resolvePublicOrRepositorySource} from '../../lib/public-source.mjs';
+import {privateFrontendAssetSource} from '../../lib/private-frontend-assets.mjs';
 import {authoredSourcesPlugin} from '../../lib/authored-source-resolution.mjs';
 import {build} from 'esbuild';
 import {reactDeploymentConfig} from './deployment-config.ts';
@@ -25,6 +26,10 @@ export function mainAssets(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const pathname = req.url?.split('?')[0];
         const asset = pathname?.startsWith(deployment.mountPath) ? pathname.slice(deployment.mountPath.length) : '';
+        const privateImage = asset.startsWith('assets/th09-portraits/') ? privateFrontendAssetSource(asset) : null;
+        if (privateImage && existsSync(privateImage)) {
+          res.setHeader('Content-Type','image/webp');res.setHeader('Cache-Control','no-cache');res.end(readFileSync(privateImage));return;
+        }
         // publicDir is disabled: serve the same explicit static asset inventory
         // in development that closeBundle copies into the production artifact.
         if (['migrate.html', 'compatibility.html', 'compatibility.en.html', 'compatibility.ja.html'].includes(asset)) {
