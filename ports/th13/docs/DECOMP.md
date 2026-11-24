@@ -1,7 +1,9 @@
 # th13 反编译函数地图
 
 来源：Ghidra 12.1.3 headless（容器内运行），目标 th13.exe v1.00c（SHA256 `f12760ca…80d`）。
-产物在工作区 `artifacts/decomp/jp/`（开发证据，不入库）：`functions/`（2291 个函数反编译体）、`functions.json`（调用图/字节数/artifact 标记）、`blocks.json`、`imports.json`、`strings.json`。
+产物在工作区 `artifacts/decomp/jp/`（开发证据，不入库）：`functions/`（2291 个函数的反编译体 `.c` 与带字节的反汇编 `.asm`）、`functions.json`（调用图/被调/字节数/传参 artifact 标记）、`blocks.json`、`imports.json`、`strings.json`。
+
+重新导出（容器内，`th13-dev` 镜像）：`tools/decomp/export.sh`。脚本先核对 th13.exe 的 SHA256，首次运行分析二进制并保存工程，之后复用工程只重跑导出；加入口地址参数可只导出指定函数，`--reanalyze` 丢弃工程重新分析。
 
 ## 总量与分区
 
