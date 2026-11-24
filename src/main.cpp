@@ -457,7 +457,11 @@ void rounded_box(Frame &frame,int left,int top,int right,int bottom,std::uint32_
         if(x>=0&&x<640&&y>=0&&y<400&&(x-cx)*(x-cx)+(y-cy)*(y-cy)<=radius*radius)frame.pixels[y*640+x]=color;
     }
 }
-void compose_shots(Frame &frame,const std::array<Frame,3> &portraits,const th03::assets::BfntSheet &,const Menu &menu,std::uint32_t selected_color,std::uint32_t unselected_color) {
+void shot_box(Frame &frame,int left,int top,int right,int bottom,std::uint32_t color){
+    rounded_box(frame,left+8,top+8,right+8,bottom+8,color);
+    rounded_box(frame,left,top,right,bottom,0);
+}
+void compose_shots(Frame &frame,const std::array<Frame,3> &portraits,const Menu &menu,std::uint32_t selected_color,std::uint32_t unselected_color) {
     const auto lang=menu.language;
     const bool en=lang==soew::Language::English;
     const auto put=[&](std::wstring_view line,int x,int y,std::uint32_t color,int width=640){display_text(frame,line,x,y,color,lang,width);};
@@ -476,15 +480,13 @@ void compose_shots(Frame &frame,const std::array<Frame,3> &portraits,const th03:
     for(int i=0;i<3;++i) {
         const int x=i==0?16:i==1?224:432,y=i==1?136:296;
         const auto color=menu.shot==i?selected_color:unselected_color;
-        rounded_box(frame,x+8,y+8,x+200,y+72,color);
-        rounded_box(frame,x,y,x+192,y+64,0);
+        shot_box(frame,x,y,x+192,y+64,color);
         for(int row=0;row<3;++row)put(chinese_display(lang)?std::wstring_view(soew::text::shot_description[i][row](lang)):descriptions[i][row],x+8,y+8+row*16,color,176);
     }
-    rounded_box(frame,136,24,520,56,selected_color);
-    rounded_box(frame,128,16,512,48,0);
+    shot_box(frame,128,16,512,48,selected_color);
     put(chinese_display(lang)?std::wstring_view(soew::localized(lang,L"",L"",L"请选择灵梦的战斗方式",L"請選擇靈夢的戰鬥方式")):en?jp::choose_en:jp::choose,144,24,selected_color,368);
     if(menu.extra_mode){
-        rounded_box(frame,24,56,632,104,selected_color);rounded_box(frame,16,48,624,96,0);
+        shot_box(frame,16,48,624,96,selected_color);
         if(chinese_display(lang)){
             put(soew::localized(lang,L"",L"",L"额外关卡的难度与初始资源固定。",L"額外關卡的難度與初始資源固定。"),32,56,0xffffff,592);
             put(soew::localized(lang,L"",L"",L"额外难度，三条命，一次灵击。",L"額外難度，三條命，一次靈擊。"),32,72,0xffffff,592);
@@ -1544,14 +1546,29 @@ void handle_replay_menu(App &app,unsigned input){
     }
 }
 Frame practice_frame(const App &app){
-    auto frame=app.frames[0];
+    auto frame=app.frames[2];
+    auto native=app.menu;
+    native.begin_shot_select(app.practice_panel.shot);
+    compose_shots(frame,app.portraits,native,app.selected_color,app.unselected_color);
     const auto lang=app.menu.language;
     using T=soew::PracticeText;
+    const bool loading=!app.practice_load_cancelled&&(app.practice_load||app.practice_audio_load||app.practice_builder);
+    struct TextRun {std::wstring value;RECT bounds;std::uint32_t color;T style;bool right;};
+    std::vector<TextRun> runs;
+    soew::draw_practice_panel(frame.pixels,app.practice_panel,app.practice_menu,lang,loading,
+        app.selected_color,app.unselected_color,
+        [&](int l,int t,int r,int b,std::uint32_t color){shot_box(frame,l,t,r,b,color);},
+        [&](std::wstring_view label,int x,int y,int right,int height,std::uint32_t color,T style,bool align_right){
+            if(style==T::Stage){
+                for(const auto c:label){draw_glyph(frame.pixels,app.font,glyph_code(static_cast<char>(c)),x,y,color);x+=16;}
+            }else runs.push_back({std::wstring(label),{x,y,right,y+height},color,style,align_right});
+        });
+    if(runs.empty())return frame;
     struct Surface {
         HDC dc=CreateCompatibleDC(nullptr);
         HBITMAP bitmap=nullptr;
         HGDIOBJ saved_bitmap=nullptr,saved_font=nullptr;
-        std::array<HFONT,3> fonts{};
+        std::array<HFONT,2> fonts{};
         ~Surface(){
             if(saved_font)SelectObject(dc,saved_font);
             if(saved_bitmap)SelectObject(dc,saved_bitmap);
@@ -1567,29 +1584,14 @@ Frame practice_frame(const App &app){
     const auto family=soew::localized(lang,L"MS Gothic",L"MS Gothic",L"SimSun",L"PMingLiU");
     const auto charset=lang==soew::Language::ChineseSimplified?GB2312_CHARSET:lang==soew::Language::ChineseTraditional?CHINESEBIG5_CHARSET:SHIFTJIS_CHARSET;
     for(unsigned i=0;i<canvas.fonts.size();++i){
-        constexpr std::array<int,3> sizes={16,14,18};
-        canvas.fonts[i]=CreateFontW(-sizes[i],0,0,0,i==unsigned(T::Heading)?FW_BOLD:FW_NORMAL,FALSE,FALSE,FALSE,charset,
+        constexpr std::array<int,2> sizes={16,14};
+        canvas.fonts[i]=CreateFontW(-sizes[i],0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,charset,
             OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,NONANTIALIASED_QUALITY,DEFAULT_PITCH,family);
         if(!canvas.fonts[i])throw std::runtime_error("Practice panel font allocation failed");
     }
     canvas.saved_bitmap=SelectObject(canvas.dc,canvas.bitmap);
     canvas.saved_font=SelectObject(canvas.dc,canvas.fonts[0]);
     SetBkMode(canvas.dc,TRANSPARENT);
-    const bool loading=!app.practice_load_cancelled&&(app.practice_load||app.practice_audio_load||app.practice_builder);
-    struct TextRun {std::wstring value;RECT bounds;std::uint32_t color;T style;bool right;};
-    std::vector<TextRun> runs;
-    soew::draw_practice_panel(frame.pixels,app.practice_panel,app.practice_menu,lang,loading,
-        [&](std::wstring_view label,int x,int y,int right,int height,std::uint32_t color,T style,bool align_right){
-            runs.push_back({std::wstring(label),{x,y,right,y+height},color,style,align_right});
-        },[&](int shot,int x,int y,int width,int height,bool selected){
-            const auto &pic=app.portraits[shot];
-            const int w=std::min(width,pic.w*height/pic.h),h=std::min(height,pic.h*width/pic.w);
-            x+=(width-w)/2;y+=(height-h)/2;
-            for(int row=0;row<h;++row)for(int col=0;col<w;++col){
-                const auto color=pic.pixels[(row*pic.h/h)*pic.w+col*pic.w/w];
-                frame.pixels[(y+row)*frame.w+x+col]=selected?color:((color&0xfefefeu)>>1);
-            }
-        });
     auto *surface=static_cast<std::uint32_t*>(bits);
     std::copy(frame.pixels.begin(),frame.pixels.end(),surface);
     for(auto &run:runs){
@@ -2088,7 +2090,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 else if(w==VK_RETURN||w=='Z')in=M::confirm;else if(w==VK_ESCAPE||w=='X')in=M::cancel;
                 const auto action=in?panel.update(m,in):M::Action::None;
                 if(action==soew::PracticeMenu::Action::Start)begin_practice(*app,m.spec);
-                else if(action==soew::PracticeMenu::Action::Back){save_practice(*app);app->practice_visible=false;app->menu.allowed=false;}
+                else if(action==soew::PracticeMenu::Action::Back){app->practice_visible=false;app->menu.begin_practice_shot_select(panel.shot);}
                 else if(action==soew::PracticeMenu::Action::NewSeed){m.spec.seed=std::random_device{}();save_practice(*app);}
                 else if(m.spec!=before)save_practice(*app);
             }caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
@@ -2209,7 +2211,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             if(w==VK_UP || w==VK_NUMPAD8) input=Menu::up;
             if(w==VK_DOWN || w==VK_NUMPAD2) input=Menu::down;
             if(w=='Z' || w==VK_RETURN || w==VK_SPACE) input=Menu::confirm;
-            if(w==VK_ESCAPE||(w=='X'&&app->menu.options)) input=Menu::cancel;
+            if(w==VK_ESCAPE||(w=='X'&&(app->menu.options||app->menu.practice_shot_select()))) input=Menu::cancel;
             if(w==VK_LEFT || w==VK_NUMPAD4) input=Menu::left;
             if(w==VK_RIGHT || w==VK_NUMPAD6) input=Menu::right;
             if(w==VK_TAB&&app->menu.options) input=Menu::tab;
@@ -2229,11 +2231,12 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if(was_options&&soew::Settings::from(app->menu)!=previous_settings)save_settings(*app);
                 if(fullscreen_failed)app->settings_warning="Could not switch fullscreen mode";
                 if(was_shots&&was_allowed&&(input&Menu::confirm)&&app->menu.shot_confirmed){
-                    try{launch_stage(*app,app->menu.rules().stage);}catch(const std::exception &error){app->stage_scene.reset();app->menu.shot_confirmed=false;std::cerr<<"Stage load failed: "<<error.what()<<'\n';app->notice=app->tr(L"ステージを読み込めませんでした",L"Could not load stage",L"无法载入关卡",L"無法載入關卡");}
+                    if(app->practice_panel.open_from_shot(app->practice_menu,app->menu))app->practice_visible=true;
+                    else try{launch_stage(*app,app->menu.rules().stage);}catch(const std::exception &error){app->stage_scene.reset();app->menu.shot_confirmed=false;std::cerr<<"Stage load failed: "<<error.what()<<'\n';app->notice=app->tr(L"ステージを読み込めませんでした",L"Could not load stage",L"无法载入关卡",L"無法載入關卡");}
                 }
                 if(was_music&&app->menu.music_room&&was_allowed&&(input&Menu::confirm))start_preview(*app,app->menu.music_selected);
                 if(was_options&&was_allowed&&(previous_settings.music!=app->menu.music||reset_options))start_preview(*app,app->loaded_track);
-                if(action==6){app->practice_visible=true;app->practice_panel.open(app->practice_menu);app->practice_menu.allowed=false;}
+                if(action==Menu::practice_entry)app->menu.begin_practice_shot_select(app->practice_menu.spec.shot);
                 if(action==7){open_replay_browser(*app);}
                 if(action==5) { DestroyWindow(hwnd); return 0; }
                 if(action==2){
@@ -2241,8 +2244,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     app->score_animation.reset();app->score_clock.reset(host_ms());
                     app->notice=app->tr(L"移植版のローカルハイスコア",L"Local high scores",L"本地最高分",L"本機最高分");
                 }
-                else if(action>=0&&action!=6) app->notice=app->tr(L"この操作にはまだ対応していません",L"Selected action is not implemented yet",L"此操作暂不支持",L"此操作尚未支援");
+                else if(action>=0&&action!=Menu::practice_entry) app->notice=app->tr(L"この操作にはまだ対応していません",L"Selected action is not implemented yet",L"此操作暂不支持",L"此操作尚未支援");
                 else if(!app->stage_scene)app->notice=app->menu.music_room?app->tr(L"音楽室：決定で再生。戻っても再生は続きます",L"Music room: confirm plays selected track; exit keeps playing"):
+                    app->menu.practice_shot_select()?soew::text::confirm_back(app->menu.language):
                     app->menu.shot_screen?app->tr(L"左右：ショット選択　Z / Enter：開始　Esc：戻る",L"Left/Right: choose shot   Z/Enter: start   Esc: back",L"左右：选择机体  Z / Enter：开始  Esc：返回",L"左右：選擇機體  Z / Enter：開始  Esc：返回"):L"";
             }
         } else if(w==VK_ESCAPE) {DestroyWindow(hwnd);return 0;}
@@ -2320,7 +2324,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(!app->stage_scene){
         app->composed=app->frames[app->menu_visible ? (app->menu.shot_screen?2:0) : app->scene];
         if(app->menu_visible) {
-            if(app->menu.shot_screen)compose_shots(app->composed,app->portraits,app->font,app->menu,app->selected_color,app->unselected_color);
+            if(app->menu.shot_screen)compose_shots(app->composed,app->portraits,app->menu,app->selected_color,app->unselected_color);
             else if(app->menu.options)compose_options(app->composed,app->font,app->menu,app->settings_warning);
             else compose_frontend(app->composed,app->font,app->menu);
         }
@@ -3271,7 +3275,11 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             app->menu.music=1;
             app->menu.shot_screen=false;app->menu.music_room=true;app->menu.options=false;
             for(unsigned i=0;i<40;++i){app->menu.update(0);SendMessageW(hwnd,WM_KEYDOWN,i%2?VK_UP:VK_DOWN,0);UpdateWindow(hwnd);app->check(app->composed.pixels.size()==640*400);SendMessageW(hwnd,WM_KEYUP,i%2?VK_UP:VK_DOWN,0);}
-            app->menu.music_room=false;app->menu.options=false;app->menu.selected=6;app->menu.allowed=true;SendMessageW(hwnd,WM_KEYDOWN,VK_RETURN,0);app->check(app->practice_visible);InvalidateRect(hwnd,nullptr,FALSE);UpdateWindow(hwnd);
+            app->menu.music_room=false;app->menu.options=false;app->menu.selected=Menu::practice_entry;app->menu.allowed=true;
+            SendMessageW(hwnd,WM_KEYDOWN,VK_RETURN,0);app->check(app->menu.practice_shot_select()&&!app->practice_visible);
+            SendMessageW(hwnd,WM_KEYUP,VK_RETURN,0);SendMessageW(hwnd,WM_KEYDOWN,VK_RETURN,0);
+            app->check(app->practice_visible&&!app->menu.shot_screen&&!app->stage_scene);
+            InvalidateRect(hwnd,nullptr,FALSE);UpdateWindow(hwnd);
             if(!app->evidence_dir.empty())dump(practice_frame(*app),app->evidence_dir/"practice-menu.bmp");
             app->practice_menu.spec=soew::PracticeSpec{};app->practice_menu.spec.dynamic_rank=-6;begin_practice(*app,app->practice_menu.spec);for(unsigned step=0;step<250&&app->practice_builder;++step)advance_practice(*app);app->check(app->stage_scene&&app->practice_session&&app->stage_scene->meira_enabled&&app->playing_track==7);InvalidateRect(hwnd,nullptr,FALSE);UpdateWindow(hwnd);
             app->check(app->stage_scene->life.playperf==app->practice_session->recipe.dynamic_rank&&app->stage_scene->bullet_core.playperf==app->practice_session->recipe.dynamic_rank);
@@ -3462,6 +3470,7 @@ int wmain(int argc, wchar_t **argv) {
         std::optional<soew::Language> language_override;
         using PracticePage=soew::PracticePanel::Page;
         std::optional<PracticePage> practice_dump;
+        bool practice_shots_dump=false;
         RetryHostProbe retry_probe;
         auto &retry_mode=retry_probe.mode,&retry_chapter=retry_probe.chapter,&retry_stage=retry_probe.stage,&retry_samples=retry_probe.sample_count;
         using RetrySection=soew::PracticeSection;
@@ -3492,11 +3501,10 @@ int wmain(int argc, wchar_t **argv) {
             else if(arg == L"--dump" && i + 1 < argc) { dump_path = argv[++i]; dump_only = true; }
             else if(arg == L"--practice-menu" && i + 1 < argc){
                 const std::wstring_view page=argv[++i];
-                if(page==L"shots")practice_dump=PracticePage::Shots;
+                if(page==L"shots")practice_shots_dump=true;
                 else if(page==L"stages")practice_dump=PracticePage::Stages;
                 else if(page==L"setup")practice_dump=PracticePage::Setup;
-                else if(page==L"advanced")practice_dump=PracticePage::Advanced;
-                else throw std::runtime_error("Expected --practice-menu shots, stages, setup or advanced");
+                else throw std::runtime_error("Expected --practice-menu shots, stages or setup");
             }
             else if(arg == L"--stage-fire")stage_dump_fire=true;
             else if(arg == L"--stage-bomb")stage_dump_bomb=true;
@@ -3559,7 +3567,7 @@ int wmain(int argc, wchar_t **argv) {
             throw std::runtime_error("--force-exact-retry requires --retry-benchmark");
         if(retry_probe.disable_intro&&(retry_mode<0||retry_probe.section!=RetrySection::StageStart))
             throw std::runtime_error("--retry-intro-off requires a stage-start retry benchmark");
-        if(practice_dump&&!dump_only)throw std::runtime_error("--practice-menu requires --dump");
+        if((practice_dump||practice_shots_dump)&&!dump_only)throw std::runtime_error("--practice-menu requires --dump");
         const bool diagnostic=smoke||test||dump_only||timed_test||score_timed_test||async_practice_test||settings_probe||stage_dump_id>=0||rika_probe||preboss_dump||options_dump||shots_dump||scores_dump||music_dump;
         if(!replay_file.empty()&&(diagnostic||stage4_trial||stage5_trial||stage5_mainline||extra_trial||extra_candidate))throw std::runtime_error("Replay is a standalone launch mode");
         const bool interactive_title=!diagnostic&&replay_file.empty()&&!stage4_trial&&!stage5_trial&&!extra_trial;
@@ -3641,11 +3649,6 @@ int wmain(int argc, wchar_t **argv) {
         app.selected_color=rgb(select->palette->colors[12]);
         app.unselected_color=rgb(select->palette->colors[7]);
         app.portraits={load(assets,"TS1.PI",false,&*select->palette),load(assets,"TS2.PI",false,&*select->palette),load(assets,"TS3.PI",false,&*select->palette)};
-        if(practice_dump){
-            app.practice_panel.open(app.practice_menu,*practice_dump);
-            dump(practice_frame(app),dump_path);
-            return 0;
-        }
         try{app.stage_intro_art=load(assets,"EYE.PI",false);}
         catch(const std::exception &error){std::cerr<<"Stage intro unavailable: "<<error.what()<<'\n';}
         const auto font_bytes=read(assets / "MIKOFT.BFT");
@@ -3662,6 +3665,18 @@ int wmain(int argc, wchar_t **argv) {
         std::cout << "gaiji_glyphs=" << app.font.glyphs.size() << '\n';
         try{app.scores=soew::decode_scores(read(assets/"HUUHI.DAT"));std::cout<<"score_records=50 checksums=valid\n";}catch(const std::exception &e){app.score_error=e.what();std::cout<<"score_unavailable="<<app.score_error<<'\n';}
         if(app.scores){const auto status=soew::clear_status(*app.scores);app.menu.unlocked=status.unlocked;app.menu.cleared_main=status.main;app.menu.cleared_extra=status.extra;std::cout<<"extra_unlocked="<<status.unlocked<<" main_clears="<<status.main[0]<<status.main[1]<<status.main[2]<<" extra_clears="<<status.extra[0]<<status.extra[1]<<status.extra[2]<<'\n';}
+        if(practice_shots_dump){
+            auto frame=app.frames[2];
+            app.menu.begin_practice_shot_select(app.practice_menu.spec.shot);
+            compose_shots(frame,app.portraits,app.menu,app.selected_color,app.unselected_color);
+            dump(frame,dump_path);
+            return 0;
+        }
+        if(practice_dump){
+            app.practice_panel.open(app.practice_menu,*practice_dump);
+            dump(practice_frame(app),dump_path);
+            return 0;
+        }
         auto score_palette=th03::assets::decode_rgb48(read(assets/"OP_H.RGB"));
         if(!score_palette)throw std::runtime_error("Score palette invalid");
         for(unsigned i=0;i<16;++i)app.score_palette[i]=rgb(score_palette->colors[i]);
@@ -3703,7 +3718,7 @@ int wmain(int argc, wchar_t **argv) {
         if(rika_probe)throw std::runtime_error("Rika probe currently requires --stage-dump and --dump; no normal game dialogue bypass");
         if(dump_only) {
             auto frame=app.frames[shots_dump?2:0];
-            if(shots_dump)compose_shots(frame,app.portraits,app.font,app.menu,app.selected_color,app.unselected_color);
+            if(shots_dump)compose_shots(frame,app.portraits,app.menu,app.selected_color,app.unselected_color);
             else if(options_dump)compose_options(frame,app.font,app.menu,app.settings_warning);
             else compose_frontend(frame,app.font,app.menu);
             dump(frame,dump_path);std::cout<<"Menu dumped: 640x400 over OP2/OP.RGB\n";return 0;

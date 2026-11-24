@@ -13,6 +13,7 @@
 // Independent host-side model of ReC98 th02/op_01.cpp:500-617.
 // No attract demo or game launch is implemented yet.
 struct Menu {
+    static constexpr int practice_entry=6;
     int selected = 0;
     bool unlocked = false;
     bool allowed = false;
@@ -27,6 +28,13 @@ struct Menu {
     LaunchRules rules()const {return {extra_mode?4:rank,extra_mode?5:0,extra_mode?2:lives,extra_mode?1:bombs,shot};}
     int shot=1;
     bool shot_confirmed=false;
+    void begin_shot_select(int initial_shot,bool extra=false){
+        shot=initial_shot;extra_mode=extra;shot_screen=true;shot_confirmed=false;
+    }
+    void begin_practice_shot_select(int initial_shot){
+        selected=practice_entry;begin_shot_select(initial_shot);allowed=false;
+    }
+    bool practice_shot_select()const{return shot_screen&&selected==practice_entry;}
     int rank=1, music=1, lives=2, bombs=3;
     bool reduced=false;
     bool show_more_info=false,fullscreen=false,stage_intro=true,smooth_background=true;
@@ -135,7 +143,7 @@ struct Menu {
             if(input & right) {shot=ring(shot,1,3);shot_confirmed=false;}
             if(input & confirm) shot_confirmed=true;
             // Diagnostic escape hatch; original shottype_menu has no cancel branch.
-            if(input & cancel) {shot_screen=false;selected=extra_mode?1:0;shot_confirmed=false;extra_mode=false;}
+            if(input & cancel) {selected=practice_shot_select()?practice_entry:extra_mode?1:0;shot_screen=false;shot_confirmed=false;extra_mode=false;}
             allowed=false;return -1;
         }
         if(options){update_options(input);allowed=false;return -1;}
@@ -143,7 +151,7 @@ struct Menu {
         if(input & down) move(1);
         int action = -1;
         if(input & confirm) {
-            if(selected==0 || (selected==1&&unlocked)) {extra_mode=selected==1;shot_screen=true;shot=1;shot_confirmed=false;}
+            if(selected==0 || (selected==1&&unlocked)) begin_shot_select(1,selected==1);
             else if(selected==1) { /* Locked entry cannot launch even via direct selection. */ }
             else if(selected==3) {options=true;option_row=option_column=0;}
             else if(selected==4) {music_room=true;music_selected=music_comment;}

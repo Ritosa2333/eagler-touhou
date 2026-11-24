@@ -72,9 +72,10 @@ need the English patch, a PC-98 emulator, or a SoundFont for the basic FM build.
   left/right value editing.
 * MIDI (TinySoundFont) or FM (98fmplayer through libth03) audio.
 
-In Practice, choose Reimu's shot type with Left/Right, then choose a stage with
-Up/Down. Use Z or Enter to confirm and X or Esc to go back. The next screen
-sets the starting point and difficulty, with stocks and seed under Advanced.
+Practice uses the same shot selection screen as the main game. Choose Reimu's
+shot type with Left/Right, then use Up/Down in the stage popup. Z or Enter
+confirms; X or Esc closes the popup back to shot selection. The setup popup
+shows the starting point, difficulty, stocks and seed together.
 
 This is a reimplementation, not a binary patch. The gameplay is based on the
 PC-98 code, but the port has not been verified frame for frame. The Windows
@@ -89,6 +90,8 @@ Thanks to Christian Azinn for [th98port (libth03)](https://github.com/christiana
 which this port uses for asset decoding and FM playback. His TH02 Practice Patch
 was the reference for the chapter start points. [ReC98](https://github.com/nmlgc/ReC98)
 was the main reference for the original gameplay code.
+[TH05 native-practice](https://github.com/Goan114/th05/tree/native-practice)
+was the reference for the stage popup layout.
 
 ## Build and test notes
 

@@ -165,39 +165,50 @@ void test_panel(){
     using namespace soew;
     using M=PracticeMenu;using P=PracticePanel::Page;using F=PracticePanel::Field;using A=M::Action;
     M menu;menu.capabilities=practice_capabilities();menu.spec.rank=2;
-    PracticePanel panel;panel.open(menu);
+    Menu native;
+    PracticePanel panel;
     const auto tap=[&](unsigned key){panel.update(menu,0);return panel.update(menu,key);};
+    const auto native_tap=[&](unsigned key){native.update(0);return native.update(key);};
     const auto has=[&](F field){const auto fields=panel.fields(menu);return std::find(fields.begin(),fields.end(),field)!=fields.end();};
     const auto initial=menu.spec;
-    check(panel.page==P::Shots&&panel.shot_cursor==initial.shot&&panel.stage_cursor==initial.stage);
-    check(tap(M::cancel)==A::Back);
-    tap(M::right);check(panel.shot_cursor==2&&menu.spec==initial);
-    check(panel.update(menu,M::right)==A::None&&panel.shot_cursor==2);
-    tap(M::confirm);check(panel.page==P::Stages&&menu.spec==initial);
+    native_tap(Menu::confirm);native_tap(Menu::confirm);
+    check(native.shot_screen&&native.shot_confirmed&&!panel.open_from_shot(menu,native));
+    native_tap(Menu::cancel);native.selected=Menu::practice_entry;
+    check(native_tap(Menu::confirm)==Menu::practice_entry);
+    native.begin_practice_shot_select(initial.shot);
+    check(native.practice_shot_select()&&!native.extra_mode&&native.shot==initial.shot&&!panel.open_from_shot(menu,native));
+    native_tap(Menu::right);check(native.shot==2&&menu.spec==initial);
+    native_tap(Menu::confirm);
+    check(panel.open_from_shot(menu,native)&&panel.page==P::Stages&&panel.shot==2&&menu.spec==initial);
+    check(!native.shot_screen&&!native.shot_confirmed&&panel.update(menu,M::confirm)==A::None&&panel.page==P::Stages);
     tap(M::up);tap(M::up);check(panel.stage_cursor==practice_extra_stage&&menu.spec==initial);
-    tap(M::cancel);check(panel.page==P::Shots&&panel.shot_cursor==2&&menu.spec==initial);
-    tap(M::confirm);tap(M::confirm);
+    check(tap(M::cancel)==A::Back&&menu.spec==initial);
+    native.begin_practice_shot_select(panel.shot);
+    native_tap(Menu::cancel);
+    check(!native.shot_screen&&native.selected==Menu::practice_entry);
+    native.begin_practice_shot_select(panel.shot);native_tap(Menu::confirm);check(panel.open_from_shot(menu,native));
+    tap(M::up);tap(M::up);tap(M::confirm);
     check(panel.page==P::Setup&&panel.focused(F::Start)&&menu.spec.shot==2&&menu.spec.stage==practice_extra_stage&&menu.spec.rank==4&&!has(F::Rank));
+    check(has(F::Power)&&has(F::Lives)&&has(F::Bombs)&&has(F::SeedMode)&&has(F::Seed));
     tap(M::cancel);tap(M::up);tap(M::confirm);
     check(panel.page==P::Setup&&menu.spec.stage==4&&menu.spec.rank==2&&has(F::Rank)&&has(F::Phase)&&!has(F::Chapter));
-    tap(M::up);tap(M::up);tap(M::up);check(panel.focused(F::Section));
+    tap(M::down);check(panel.focused(F::Section));
     tap(M::right);tap(M::right);check(menu.spec.section==PracticeSection::Chapter&&has(F::Chapter)&&!has(F::Phase));
     tap(M::down);check(panel.focused(F::Chapter));
     const int first=menu.spec.chapter_id;
     tap(M::right);check(menu.spec.chapter_id!=first);
     tap(M::up);tap(M::left);tap(M::left);tap(M::down);check(panel.focused(F::Phase));
     tap(M::right);check(menu.spec.boss_phase==1);
-    tap(M::down);tap(M::down);tap(M::right);check(panel.focused(F::Advanced));
-    tap(M::confirm);check(panel.page==P::Advanced&&panel.focused(F::Power)&&!has(F::Dialogue));
+    tap(M::down);tap(M::down);
+    check(panel.page==P::Setup&&panel.focused(F::Power)&&!has(F::Dialogue));
     check(tap(M::confirm)==A::EditNumber&&menu.number_editing());
     check(menu.number_paste("42"));tap(M::confirm);
     check(menu.spec.power==42&&!menu.number_editing()&&panel.focused(F::Power));
     for(int i=0;i<5;++i)tap(M::down);
     check(panel.focused(F::SeedMode)&&has(F::Seed)&&has(F::NewSeed));
     tap(M::confirm);check(menu.spec.seed_mode==PracticeSeedMode::Random&&!has(F::Seed)&&!has(F::NewSeed));
-    tap(M::down);check(panel.focused(F::Back));tap(M::confirm);
-    check(panel.page==P::Setup&&panel.focused(F::Advanced));
-    tap(M::left);const auto recipe=menu.spec;
+    tap(M::down);check(panel.page==P::Setup&&panel.focused(F::Start));
+    const auto recipe=menu.spec;
     check(tap(M::confirm)==A::Start&&menu.spec==recipe);
 }
 void test_panel_layout(){
@@ -206,21 +217,33 @@ void test_panel_layout(){
     PracticeMenu menu;menu.capabilities=practice_capabilities();PracticePanel panel;
     std::vector<std::uint32_t> pixels(640*400);
     for(const auto lang:{Language::English,Language::Japanese,Language::ChineseSimplified,Language::ChineseTraditional}){
-        for(const auto page:{P::Shots,P::Stages,P::Setup,P::Advanced}){
+        for(const auto page:{P::Stages,P::Setup}){
+            std::fill(pixels.begin(),pixels.end(),0xdec0a6);
             panel.open(menu,page);
-            bool title=false,footer=false,back=false;
-            int portraits=0;
-            draw_practice_panel(pixels,panel,menu,lang,false,[&](std::wstring_view label,int x,int y,int r,int h,std::uint32_t,PracticeText,bool){
-                check(!label.empty()&&x>=40&&x<r&&r<=600&&y>=21&&y+h<=379);
-                if(y==21)title=label==text::practice_start(lang);
-                if(y==338)footer=true;
-                else check(y+h<=336);
-                if(y>=104&&label==text::back(lang))back=true;
-            },[&](int shot,int x,int y,int w,int h,bool selected){
-                check(shot==portraits++&&x>=57&&x+w<=583&&y>=110&&y+h<=316&&selected==(shot==menu.spec.shot));
+            using F=PracticePanel::Field;
+            const bool stages=page==P::Stages;
+            const int left=stages?280:232,top=stages?140:44,bottom=stages?316:352;
+            constexpr std::uint32_t selected=0xff88ff,unselected=0xaaaaaa;
+            int stage_rows=0,setup_rows=0,boxes=0;
+            const auto fields=panel.fields(menu);
+            draw_practice_panel(pixels,panel,menu,lang,false,selected,unselected,
+                [&](int l,int t,int r,int b,std::uint32_t color){
+                    ++boxes;check(l==left&&t==top&&r==592&&b==bottom&&color==selected);
+                },[&](std::wstring_view label,int x,int y,int r,int h,std::uint32_t color,PracticeText style,bool){
+                check(!label.empty()&&x>=left+16&&x<r&&r<592&&y>top&&y+h<bottom);
+                if(page==P::Stages){
+                    check(style==PracticeText::Stage&&x==296&&y==160+24*stage_rows&&h==16);
+                    check(label==(stage_rows==practice_extra_stage?L"EXTRA":L"STAGE "+std::to_wstring(stage_rows+1)));
+                    check(color==(stage_rows==menu.spec.stage?selected:unselected));
+                    ++stage_rows;
+                }else if(x==248&&style==PracticeText::Body){
+                    check(y==80+19*setup_rows&&label==practice_panel_labels[unsigned(fields[setup_rows])](lang));
+                    check(color==(fields[setup_rows]==F::Start?selected:unselected));
+                    ++setup_rows;
+                }
             });
-            check(title&&footer&&back==(page==P::Advanced)&&portraits==(page==P::Shots?3:0));
-            if(page==P::Stages)check(pixels[(86+menu.spec.stage*39)*640+57]==0xffdb91u);
+            check(boxes==1&&stage_rows==(stages?practice_stage_count:0)&&setup_rows==(stages?0:int(fields.size())));
+            check(pixels[top*640+left-1]==0x6f6053u&&pixels[(bottom+9)*640+500]==0x6f6053u);
         }
     }
 }
