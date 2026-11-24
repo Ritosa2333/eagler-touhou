@@ -33,7 +33,7 @@ import {
 } from './runtime-assets.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {bindTouchControls} from './touch-controls.mjs';
-import {installLowLatencyCanvas} from './low-latency-canvas.mjs';
+import {installContextAttributes} from './context-attributes.mjs';
 const status = text => document.getElementById('loading').textContent = text;
 const fail = text => { document.getElementById('loading').textContent = ''; document.getElementById('error').textContent = text; };
 window.__th13_log = [];
@@ -42,17 +42,25 @@ const note = (kind, text) => { window.__th13_log.push(kind + ' ' + text); if (wi
 try {
   const Module = await import('../artifacts/sdl3/th13-sdl.mjs');
   const canvas = document.getElementById('canvas');
-  // 低延迟画布：必须在模块创建 WebGL2 上下文之前装好（与 shell.mjs 同源共享模块）。
-  // 独立页不经 shell，缺失时本页拿不到 desynchronized/high-performance。
-  const lowLatency = installLowLatencyCanvas(canvas);
-  // 独立页无 runtime-info 通道：暴露实际授予属性供运维/探针读取。
-  window.__th13_canvas_presentation = () => lowLatency?.presentation() ?? null;
+  // WebGL 上下文属性：必须在模块创建上下文之前装好（与 shell.mjs 同源共享模块）。
+  installContextAttributes(canvas);
   const mod = await Module.default({
     canvas,
     print: t => { console.log('[th13]', t); note('out', t); },
     printErr: t => { console.warn('[th13]', t); note('err', t); },
   });
   window.mod = mod;  // 调试面：控制台可直查运行时状态
+  // ?glDebug=1：每帧提交后检查 GL 错误，变化写入下方日志环。
+  if (new URLSearchParams(location.search).get('glDebug') === '1') mod._th13_debug_gl_checks?.(1);
+  // 上下文丢失后浏览器会自动恢复上下文，但运行时持有的 GPU 资源不会随之
+  // 重建：立即停循环并提示，不在失效资源上继续绘制。
+  canvas.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    note('gl', 'context lost');
+    mod._th13_loop_pause(1);
+    fail('图形环境失效，请刷新页面。');
+  });
+  canvas.addEventListener('webglcontextrestored', () => note('gl', 'context restored after loss'));
   // ---- 资源进 MEMFS /assets（缺件即启动失败，不静默降级）----
   const assets = runtimeAssets;
   mod.FS.mkdirTree('/assets');
@@ -114,19 +122,13 @@ try {
   // 绑 window 而非 canvas：焦点在 body/document 时 keydown 目标不是 canvas，
   // canvas-only 监听会吞掉全部按键（用户实测菜单无响应的根因）。
   canvas.addEventListener('click', () => canvas.focus());
-  // E2 input kick：keydown 锁存后立即请求一次微拍（?inputKick=0 关闭，默认开；
-  // 导出缺席的旧构建静默跳过，向后兼容）。
-  const inputKick = new URLSearchParams(location.search).get('inputKick') !== '0';
   for (const type of ['keydown', 'keyup'])
     window.addEventListener(type, e => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code))
         e.preventDefault();
       const scan = scanCodes[e.code];
-      if (scan !== undefined) {
-        mod._th13_key(scan, type === 'keydown' ? 1 : 0);
-        if (inputKick && type === 'keydown') mod._th13_input_kick?.(performance.now());
-      }
+      if (scan !== undefined) mod._th13_key(scan, type === 'keydown' ? 1 : 0);
     });
 
   // 启动序：装载挡板（sig+ascii）→ 启动品牌动画 → 初始化七 bank + 标题 → RAF 循环。
@@ -329,25 +331,6 @@ try {
   await replayRestore();
   window.__th13_replay_restore_done = true;
   window.__th13_builtin_replays_done = true;
-
-  // 帧泵看门狗：requestAnimationFrame 停摆的宿主（后台/嵌入式 webview）经
-  // setTimeout 以 60fps 节奏持续驱动 th13_frame_tick；rAF 心跳恢复即让位。
-  let lastFrame = -1, rafAlive = false, pumping = false;
-  const rafHeartbeat = () => { rafAlive = true; requestAnimationFrame(rafHeartbeat); };
-  requestAnimationFrame(rafHeartbeat);
-  setInterval(() => {
-    if (rafAlive) { rafAlive = false; pumping = false; lastFrame = mod._th13_frame(); return; }
-    const frame = mod._th13_frame();
-    if (frame !== lastFrame) { lastFrame = frame; return; }  // rAF 在跑
-    if (pumping) return;
-    pumping = true;
-    const pump = () => {
-      if (!pumping) return;
-      if (mod._th13_frame_tick(16.6667) === 0) { pumping = false; return; }
-      setTimeout(pump, 16);
-    };
-    pump();
-  }, 300);
 } catch (e) {
   if (e === 'unwind') {
     status('');

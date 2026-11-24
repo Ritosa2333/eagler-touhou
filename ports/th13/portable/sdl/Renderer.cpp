@@ -19,6 +19,9 @@ EM_JS(int, touhou_clip_control, (), {
 namespace touhou::sdl {
 namespace {
 Renderer* active=nullptr;
+// Diagnostic switch: when on, commit() reads the GL error code after each
+// presentation and reports every code change.
+bool gl_checks=false;GLenum last_gl_error=0;
 // One SDL GL context is active per Wasm module. Cache only states owned here;
 // clear() also updates the write masks so a later draw restores them correctly.
 struct DrawStateCache {
@@ -163,7 +166,11 @@ Renderer::GPU& Renderer::surface(u32 h){
   if(g.version==~0u)glTexImage2D(GL_TEXTURE_2D,0,internal,s.width*scale,s.height*scale,0,format,type,pixels.data());else glTexSubImage2D(GL_TEXTURE_2D,0,0,0,s.width*scale,s.height*scale,format,type,pixels.data());g.version=s.version;g.rendered=false;
  }g.dirty={};g.dirtyBase=~0u;return g;
 }
-Renderer::GPU& Renderer::target(u32 id,u32 depthId){auto& g=surface(id);GLuint buffer=0;bool stencil=false;if(depthId){auto& d=depths[depthId];if(!d.buffer){auto s=resolve(owner,depthId);d.stencil=s.format==PixelFormat::Depth24Stencil8;glGenRenderbuffers(1,&d.buffer);glBindRenderbuffer(GL_RENDERBUFFER,d.buffer);glRenderbufferStorage(GL_RENDERBUFFER,d.stencil?GL_DEPTH24_STENCIL8:s.format==PixelFormat::Depth16?GL_DEPTH_COMPONENT16:GL_DEPTH_COMPONENT24,s.width*s.renderScale,s.height*s.renderScale);}buffer=d.buffer;stencil=d.stencil;}bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);if(g.attached!=buffer){glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,buffer);glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_STENCIL_ATTACHMENT,GL_RENDERBUFFER,stencil?buffer:0);g.attached=buffer;}return g;}
+Renderer::GPU& Renderer::target(u32 id,u32 depthId){auto& g=surface(id);GLuint buffer=0;bool stencil=false;if(depthId){auto& d=depths[depthId];if(!d.buffer){auto s=resolve(owner,depthId);d.stencil=s.format==PixelFormat::Depth24Stencil8;glGenRenderbuffers(1,&d.buffer);glBindRenderbuffer(GL_RENDERBUFFER,d.buffer);glRenderbufferStorage(GL_RENDERBUFFER,d.stencil?GL_DEPTH24_STENCIL8:s.format==PixelFormat::Depth16?GL_DEPTH_COMPONENT16:GL_DEPTH_COMPONENT24,s.width*s.renderScale,s.height*s.renderScale);}buffer=d.buffer;stencil=d.stencil;}bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);if(g.attached!=buffer){glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,buffer);glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_STENCIL_ATTACHMENT,GL_RENDERBUFFER,stencil?buffer:0);g.attached=buffer;g.verified=false;}
+ // 不完整的帧缓冲会让指向它的绘制与位块传输静默丢弃。创建时颜色存储尚未上传，
+ // 所以在首次作为绘制目标绑定后检查，每种附着组合只查一次。
+ if(!g.verified){verify_framebuffer(id);g.verified=true;}
+ return g;}
 void Renderer::prepare(u32 h){surface(h);}
 void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,const void* index,IndexType indexFormat){
  stats.calls++;state.stride=stride;
@@ -284,10 +291,26 @@ void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.en
   if(s.format==PixelFormat::Argb8332){const uint16_t value=uint16_t((a<<8)|(((r*7+127)/255)<<5)|(((gc*7+127)/255)<<2)|((b*3+127)/255));std::memcpy(out+x*2,&value,2);}else if(s.format==PixelFormat::Bgra8||s.format==PixelFormat::Bgrx8){out+=x*4;out[0]=b;out[1]=gc;out[2]=r;out[3]=s.format==PixelFormat::Bgra8?a:255;}else if((s.format==PixelFormat::Rgb565||s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555||s.format==PixelFormat::Argb4444)){uint16_t n=s.format==PixelFormat::Argb4444?(a>>4)<<12|(r>>4)<<8|(gc>>4)<<4|(b>>4):s.format==PixelFormat::Rgb565?(r>>3)<<11|(gc>>2)<<5|(b>>3):(s.format==PixelFormat::Argb1555&&a>=128?0x8000:0)|(r>>3)<<10|(gc>>3)<<5|(b>>3);std::memcpy(out+x*2,&n,2);}else if(s.format==PixelFormat::Alpha8)out[x]=a;else if(s.format==PixelFormat::Luminance8)out[x]=r;else std::abort();
  }g.rendered=false;
 }
-void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}if(presented==id)presented=0;if(pending==id)pending=0;auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
+void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);
+ // 仍引用这块渲染缓冲的绘制目标记为附着未知，下次 target() 重新附着。
+ for(auto& [handle,g]:surfaces)if(g.attached==d->second.buffer){g.attached=~0u;g.verified=false;}
+ depths.erase(d);}if(presented==id)presented=0;if(pending==id)pending=0;auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
 #include "ImguiRenderer.inc"
+void Renderer::verify_framebuffer(u32 id){
+ if(!failure.empty())return;
+ const GLenum status=glCheckFramebufferStatus(GL_FRAMEBUFFER);
+ if(status==GL_FRAMEBUFFER_COMPLETE)return;
+ char text[80];std::snprintf(text,sizeof text,"Framebuffer incomplete: 0x%x (target %u)",status,id);failure=text;
+}
 void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
-bool Renderer::commit(bool repeat){u32 id=pending;if(!id){if(!repeat||!presented||!surfaces.count(presented))return false;id=presented;}auto s=resolve(owner,id);auto& g=surface(id);pending=0;presented=id;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);int width=640,height=480;SDL_GetWindowSizeInPixels(window,&width,&height);glBlitFramebuffer(0,0,s.width*s.renderScale,s.height*s.renderScale,0,flip_present_y?0:height,width,flip_present_y?height:0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
+bool Renderer::commit(bool repeat){u32 id=pending;if(!id){if(!repeat||!presented||!surfaces.count(presented))return false;id=presented;}
+ int width=640,height=480;SDL_GetWindowSizeInPixels(window,&width,&height);
+ // A zero-sized window (minimized, or a canvas that has not been laid out yet)
+ // has nothing to present to: keep the frame pending until the size returns.
+ if(width<=0||height<=0)return false;
+ auto s=resolve(owner,id);auto& g=surface(id);pending=0;presented=id;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);glBlitFramebuffer(0,0,s.width*s.renderScale,s.height*s.renderScale,0,flip_present_y?0:height,width,flip_present_y?height:0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;
+ if(gl_checks){const GLenum error=glGetError();if(error&&error!=last_gl_error)std::fprintf(stderr,"SDL GL error after present: 0x%x\n",error);last_gl_error=error;}
+ return true;}
 #if TH_ENABLE_THPRAC
 u32 Renderer::create_imgui_texture(u32 width,u32 height,const u8* rgba){flush();GLuint texture=0;glGenTextures(1,&texture);glActiveTexture(GL_TEXTURE0);bind_texture(texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,rgba);return texture;}
 void Renderer::release_imgui_texture(u32 value){flush();GLuint texture=value;if(texture)glDeleteTextures(1,&texture);boundTexture=~0u;}
@@ -296,6 +319,7 @@ void Renderer::release_imgui_texture(u32 value){flush();GLuint texture=value;if(
 extern "C" {
 const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
 void sdl_defer(int enabled){if(auto* r=touhou::sdl::current())r->defer=enabled;}
+void sdl_gl_checks(int enabled){touhou::sdl::gl_checks=enabled!=0;touhou::sdl::last_gl_error=0;}
 int sdl_commit(){return touhou::sdl::current()&&touhou::sdl::current()->commit();}
 const char* sdl_error(){return touhou::sdl::current()?touhou::sdl::current()->error():SDL_GetError();}
 int sdl_version(){return SDL_GetVersion();}
