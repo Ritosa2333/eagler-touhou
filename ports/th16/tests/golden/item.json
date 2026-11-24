@@ -1,5 +1,5 @@
 {
-  "note": "tools/oracle/game-oracle.py --enemies --bullets --items（Unicorn 直跑 th16.exe 全游戏）道具池 + 资源全局快照 item_digest 与同场景 enemy / bullet / player digest 的 FNV-1a 64；harness game-digest 同口径。st1-normal-bossspell-400：Boss 符卡练习（replay_slot 0 走 MainBossSpell），第 116 帧 BossItemCard 掉落（普通池 599→598、得点池 4695→4694 头插分配次序），第 303 帧首个季节道具被拾取（季节量表 1）；st1-normal-front-shoot-700：Normal 关卡 1 持续射击（held 0x1），敌机击破掉落、op 1001 季节道具、收点圈吸引（状态 5）与得点 / 火力拾取结算（第 685 帧得分 2692、火力 110、量表 44、得点道具 8）。 st1-normal-poc-1000：上半屏收点线（y<128）往返（0x11 上+Z / Z 交替），覆盖吸引态 4（0x42fbc1：基准速度 5 起每帧 +0.2 至 12）、季节子机激活帧（0x4440e0 季节子机循环沿用主子机游标的原版口径）与 ECL -9989（0x443840 自机方向角）/ 507 掉落表登记；第 901 帧决死猶予结束（0x443cd0：残机 2→1、无敌 0xb4）、第 904 帧 0x442560 散出 7 枚火力道具（火力 112→100）、第 931 帧复活（0x4449b0 圆伤害源 + 回到 (0,480) 入场）。 st1-lunatic-front-600：Lunatic 静止不射击，第 203 帧被弹 → 212 死亡结算 → 242 复活 → 302 回到正常态，死亡散出道具与复活圆伤害源全程对照。",
+  "note": "tools/oracle/game-oracle.py --enemies --bullets --items（Unicorn 直跑 th16.exe v1.00a，场地屏幕矩形 (128,16,384,448)）道具池 + 资源全局快照 item_digest 与同场景 enemy / bullet / player digest 的 FNV-1a 64；harness game-digest 同口径。st1-normal-bossspell-400：Boss 符卡练习（replay_slot 0 走 MainBossSpell），第 116 帧 BossItemCard 掉落（普通池 599→598、得点池 4695→4694 头插分配次序），第 303 帧首个季节道具被拾取（季节量表 1）；st1-normal-front-shoot-700：Normal 关卡 1 持续射击（held 0x1），敌机击破掉落、op 1001 季节道具、收点圈吸引（状态 5）与得点 / 火力拾取结算（第 695 帧得分 2110、火力 110、量表 41、得点道具 6）。 st1-normal-poc-1000：上半屏收点线（y<128）往返（0x11 上+Z / Z 交替），覆盖吸引态 4（0x42fbc1：基准速度 5 起每帧 +0.2 至 12）、季节子机激活帧（0x4440e0 季节子机循环沿用主子机游标的原版口径）与 ECL -9989（0x443840 自机方向角）/ 507 掉落表登记；第 901 帧决死猶予结束（0x443cd0：残机 2→1、无敌 0xb4）、第 904 帧 0x442560 散出 7 枚火力道具（火力 112→100）、第 931 帧复活（0x4449b0 圆伤害源 + 回到 (0,480) 入场）。 st1-lunatic-front-600：Lunatic 静止不射击，第 203 帧被弹 → 212 死亡结算 → 242 复活 → 302 回到正常态，死亡散出道具与复活圆伤害源全程对照。",
   "cases": [
     {
       "name": "st1-normal-bossspell-400",
@@ -34,19 +34,19 @@
       "replay_slot": -1,
       "frames": 700,
       "input": "0:1",
-      "player_digest": "f719d236ef54db86",
-      "enemy_digest": "3274159824d43773",
+      "player_digest": "42e1577437b7bbbb",
+      "enemy_digest": "613deb1f9b69f5f9",
       "bullet_digest": "43c7dfd058b45e73",
-      "enemy_vm_digest": "e24dd8547030e435",
-      "item_digest": "1bc142f6672c4699",
-      "last_active": 40,
-      "last_spawned": 135,
+      "enemy_vm_digest": "70e2f108b5b6be8b",
+      "item_digest": "4fbd9489e78b7a0a",
+      "last_active": 45,
+      "last_spawned": 142,
       "last_resources": {
-        "score": 2692,
+        "score": 2110,
         "point_value": 1000000,
-        "point_items": 8
+        "point_items": 6
       },
-      "last_season_gauge": 44,
+      "last_season_gauge": 41,
       "last_power": 110
     },
     {
@@ -58,22 +58,22 @@
       "replay_slot": -1,
       "frames": 1000,
       "input": "0:0x11,120:0x1,400:0x11,520:0x1",
-      "player_digest": "ed7b2cf7f3af39af",
-      "enemy_digest": "aed1c5610f5a43c0",
+      "player_digest": "6783c1781ab967eb",
+      "enemy_digest": "b9bf307cc6771760",
       "bullet_digest": "966ed8edba77f053",
-      "enemy_vm_digest": "d5cd3438da9e5c46",
-      "item_digest": "f43fb16f56795f56",
-      "last_active": 50,
-      "last_spawned": 191,
+      "enemy_vm_digest": "28a197e34ae3fa98",
+      "item_digest": "9c3dcfd5c549e2d7",
+      "last_active": 51,
+      "last_spawned": 185,
       "last_resources": {
-        "score": 9567,
+        "score": 9784,
         "point_value": 1000000,
-        "point_items": 9,
+        "point_items": 10,
         "graze": 6,
         "lives": 1,
         "bombs": 3
       },
-      "last_season_gauge": 115,
+      "last_season_gauge": 111,
       "last_power": 100
     },
     {

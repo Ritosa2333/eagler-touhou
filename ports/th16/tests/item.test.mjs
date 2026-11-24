@@ -95,14 +95,14 @@ test('item: 持续射击场景——首发掉落第 96 帧（op 1001 季节道�
   assert.deepEqual(f96.items.map(i => [i.index, i.state, i.type, i.counter]),
                    [[599, 1, 1, 0], [4692, 6, 16, 0], [4693, 3, 16, -1], [4694, 6, 16, 2], [4695, 6, 16, 1]]);
   assert.ok(near(f96.items[1].speed, 1.6834, 1e-4));
-  // 第 685 帧最后一次得分变化；得点道具 8 枚、火力 110、量表 44
+  // 第 695 帧最后一次得分变化；得点道具 6 枚、火力 110、量表 41
   const last = frames.at(-1);
-  assert.equal(last.resources.score, 2692);
-  assert.equal(last.resources.point_items, 8);
+  assert.equal(last.resources.score, 2110);
+  assert.equal(last.resources.point_items, 6);
   assert.equal(last.power, 110);
-  assert.equal(last.season_gauge, 44);
-  assert.equal(frames[684].resources.score, 2692);
-  assert.equal(frames[683].resources.score, 2691);
+  assert.equal(last.season_gauge, 41);
+  assert.equal(frames[694].resources.score, 2110);
+  assert.equal(frames[693].resources.score, 2109);
   // 道具状态覆盖：1 下落 / 3 季节减速 / 5 收点圈 / 6 延迟出现
   const states = new Set(frames.flatMap(f => f.items.items.map(i => i.state)));
   assert.deepEqual([...states].sort(), [1, 3, 5, 6]);
@@ -123,10 +123,11 @@ test('item: 收点线吸引态 4（0x42fbc1）——首个吸引帧 89、吸引�
   assert.ok(frames.every(f => f.items.items.every(i => f32(i.attract_speed) <= 12)));
   // 第 712 帧 GirlB01 ×2 生成（ins_507(1,2)/ins_507(2,2) 只写掉落表）：道具数不变
   assert.equal(frames[710].items.spawned, frames[711].items.spawned);
-  // 第 835 帧季节量表过 100 → 季节子机 0 激活；激活当帧 x/y 取主子机 0 偏移（0, -4096）→ (0, 0)，次帧吸附到 (0, 8192)
-  assert.equal(frames[834].player.sub_count, 1);
-  assert.deepEqual(frames[834].player.options[4].pos, [0, 0]);
-  assert.deepEqual(frames[835].player.options[4].pos, [0, 8192]);
+  // 第 853 帧季节量表达到 100 → 季节子机 0 激活；激活当帧 x/y 取主子机 0 偏移（0, -4096）→ (0, 0)，次帧吸附到 (0, 8192)
+  assert.equal(frames[851].player.sub_count, 0);
+  assert.equal(frames[852].player.sub_count, 1);
+  assert.deepEqual(frames[852].player.options[4].pos, [0, 0]);
+  assert.deepEqual(frames[853].player.options[4].pos, [0, 8192]);
   const states = new Set(frames.flatMap(f => f.items.items.map(i => i.state)));
   assert.deepEqual([...states].sort(), [1, 3, 4, 6]);
 });
@@ -146,7 +147,8 @@ test('player: 被弹 → 决死猶予 8 帧 → 0x443cd0 死亡结算 → 第 3 
   assert.equal(frames[902].power, 112);
   assert.equal(frames[903].power, 100);
   assert.equal(frames[903].items.spawned - frames[902].items.spawned, 7);
-  const scattered = frames[903].items.items.filter(i => i.index >= 592 && i.index <= 598);
+  // 原版此场景的普通道具池空闲头为 599，七枚依次分配至 593。
+  const scattered = frames[903].items.items.filter(i => i.index >= 593 && i.index <= 599);
   assert.equal(scattered.length, 7);
   assert.ok(scattered.every(i => i.type === 1 && i.state === 1));
   // 第 931 帧复活：状态 0、y = 480 起入场、无敌 0x118-1；复活圆伤害源使得分连续增长
