@@ -29,6 +29,8 @@ const OP = {  VIEWMODE: 1, VIEWPORT: 2, SCISSOR: 3, ORTHO: 4, PERSPECTIVE: 5, FO
   SECTOR: 21,
   DRAW_4V_BATCH: 22,
   DRAW_BATCH: 23,
+  ZENABLE: 24,
+  ZCLEAR: 25,
 };
 
 const HEAD_SIZE = 32;          // 与 RopHead 一致，启动时用 rgl_rop_layout 校验
@@ -89,12 +91,21 @@ layout(location = 3) in float a_iw;
 layout(location = 4) in vec3 a_cpos;
 uniform vec2 u_scale;
 uniform vec2 u_offset;
+/* 深度：a_cpos.z 是相机空间 z（2D 顶点为 0）。映射到 [-1,1] 交给 GPU 比较，
+   这样背景里「柱子 vs 地面」的遮挡与原版 z 测试一致（bugs #17/#21）。 */
+uniform float u_zNear;
+uniform float u_zFar;
 out vec2 v_uv;
 out vec4 v_col;
 out float v_iw;
 out vec3 v_cpos;
 void main() {
-  gl_Position = vec4(a_pos * u_scale + u_offset, 0.0, 1.0);
+  float zNdc = 0.5;
+  if (a_cpos.z != 0.0) {
+    zNdc = clamp((a_cpos.z - u_zNear) / max(u_zFar - u_zNear, 1e-6), 0.0, 1.0)
+           * 2.0 - 1.0;
+  }
+  gl_Position = vec4(a_pos * u_scale + u_offset, zNdc, 1.0);
   v_uv = a_uv * a_iw;
   v_col = a_col * a_iw;
   v_cpos = a_cpos * a_iw;
@@ -173,7 +184,7 @@ export function createRenderer(Module, canvas, opts = {}) {
      但无头验证必须开——暂停后只画一帧，关掉的话合成器拿到的是已清空的缓冲，
      截图永远全黑（这个坑踩过一次，记在这里）。 */
   const gl = canvas.getContext('webgl2', {
-    alpha: false, antialias: false, depth: false, stencil: false,
+    alpha: false, antialias: false, depth: true, stencil: false,
     premultipliedAlpha: false, preserveDrawingBuffer: !!opts.preserveDraw,
   });
   if (!gl) throw new Error('WebGL2 不可用');
@@ -210,6 +221,8 @@ export function createRenderer(Module, canvas, opts = {}) {
   const uFogNear = gl.getUniformLocation(prog, 'u_fogNear');
   const uFogFar = gl.getUniformLocation(prog, 'u_fogFar');
   const uFogColor = gl.getUniformLocation(prog, 'u_fogColor');
+  const uZNear = gl.getUniformLocation(prog, 'u_zNear');
+  const uZFar = gl.getUniformLocation(prog, 'u_zFar');
   gl.uniform1i(uTex, 0);
 
   /* ---- 顶点缓冲 -------------------------------------------------------- */
@@ -575,7 +588,7 @@ export function createRenderer(Module, canvas, opts = {}) {
   /* 首帧之前预热。有导入包时全部素材都在本地 Blob，可以全量预热；
      没包时走 HTTP，393MB 全量拉取不现实 —— 只预热启动界面素材，
      其余由 bindTex() 在实际绘制到时才懒加载（会晚一两帧补上）。 */
-  async function requestAll({ filter = null } = {}) {
+  async function requestAll({ filter = null, budgetMs = 0 } = {}) {
     const jobs = [];
     for (const [name, info] of texInfo) {
       if (filter && !filter(info.path || '', name)) continue;
@@ -593,7 +606,15 @@ export function createRenderer(Module, canvas, opts = {}) {
     }
     // 字体与纹理并行：.otf/.ttf 各有 10~16MB，串起来首屏要多等一拍
     const fontJob = text.prepare().catch((e) => ({ error: String(e) }));
-    const [, fontDiag] = await Promise.all([Promise.all(jobs), fontJob]);
+    const texJob = Promise.all(jobs);
+    // #35 加载优化：给了预算就只等这么久。没等到的那部分仍在 pending 队列里继续
+    // 下载/解码，bindTex() 真正绘制到时补上（晚一两帧）——线上 536 张贴图全等齐
+    // 要几十秒，正是启动器超时的主因。字体始终等齐：首屏几乎全是文字。
+    if (budgetMs > 0) {
+      await Promise.race([texJob, sleepMs(budgetMs)]);
+      return await fontJob;
+    }
+    const [, fontDiag] = await Promise.all([texJob, fontJob]);
     return fontDiag;
   }
 
@@ -717,6 +738,27 @@ export function createRenderer(Module, canvas, opts = {}) {
 
   /* ---- 渲染目标 -------------------------------------------------------- */
   const targets = new Map();     // name → { fbo, tex, w, h }
+  /* RenderTexture 的 uv 按原版 D3D9 语义是 **WRAP 寻址**（uv 可越界平铺）。
+     上传纹理默认 CLAMP，只有 sampler 名带 'wrap' 的（3D 背景地面/水面）
+     才是 REPEAT —— 但 mod/GAME/th09.lua 的毒雾（class.Poison）直接
+     RenderTexture("Poison", ...)，uv = imgx±100、imgx ∈ [-256,256]，
+     大半落在 [0,1] 之外：CLAMP 会把边缘一行像素拉成整条色带，随机
+     imgx 让它「有概率」出现（bugs.txt #6 毒雾异常拉伸）。
+     这里在 DRAW_TEX 时检测 uv 越界，按需给该纹理补 REPEAT（一次性，
+     WebGL2 对 NPOT 同样支持 repeat）。渲染目标保持 CLAMP 不动。 */
+  const wrapApplied = new Set();
+  function ensureWrap(name) {
+    if (wrapApplied.has(name)) return;
+    const t = textures.get(name);
+    if (!t) return;
+    wrapApplied.add(name);
+    const prevTex = gl.getParameter(gl.TEXTURE_BINDING_2D);
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.bindTexture(gl.TEXTURE_2D, prevTex);
+    if (curTex === name) curTex = null;   // 绑定被动过，缓存作废下帧重绑
+  }
   const targetStack = [];
 
   function getTarget(name) {
@@ -741,10 +783,23 @@ export function createRenderer(Module, canvas, opts = {}) {
     const fbo = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    /* 渲染目标也挂一个深度附件：背景把 3D 画进 RT 时（WorldTex1 之类），
+       没有深度就没法做 z 测试，遮挡关系会退化。 */
+    const depthRb = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthRb);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT,
+      gl.RENDERBUFFER, depthRb);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+    /* 新 RT 的初始内容不该被赌成「全 0」：着色器在建立的同一帧就可能开始
+       采样，脏值会被当成不透明颜色画到屏幕上 —— 表现为「特效刚出现的
+       一瞬间战场矩形闪一块黑」（bugs #16 遗留）。建好即清成透明黑。 */
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     gl.bindFramebuffer(gl.FRAMEBUFFER, prevFbo);
     gl.bindTexture(gl.TEXTURE_2D, prevTex);
     curTex = null;                 // 单元 0 被动过，缓存一律作废
-    rt = { fbo, tex, w, h };
+    rt = { fbo, tex, w, h, depthRb };
     targets.set(name, rt);
     textures.set(name, tex);      // 渲染目标可以当纹理采样
     /* 关键：渲染目标也要登记进资源表。background.Capture 用
@@ -765,6 +820,9 @@ export function createRenderer(Module, canvas, opts = {}) {
   let curBlend = -1;
   let vcApplied = false;      // u_vc 是否已在当前 program 上设好
   let curTex = null;             // 当前绑定的纹理：sprite 名（字符串）或 WebGLTexture
+  /* 深度测试开关：由 game 的 SetZBufferEnable 控制（只有 3D 背景会打开），
+     每帧复位，避免一关的背景把后续 2D 绘制挡掉。 */
+  let depthOn = false;
   let texEpochSeen = 0;          // 上次见到的 text.atlasEpoch，用来发现「建过新纹理」
   let vcount = 0;
   /* 引擎 RenderTTF 的 scale 还要再乘 globalImageScaleFactor（见 LW_Render.cpp），
@@ -820,6 +878,7 @@ export function createRenderer(Module, canvas, opts = {}) {
     const eye = [f(0), f(1), f(2)], at = [f(3), f(4), f(5)];
     const up = [f(6), f(7), f(8)];
     const fovy = f(9) || 1, aspect = f(10) || 1, zn = f(11) || 0.1;
+    const zf = f(12) || 100;
     /* DirectX::XMMatrixLookAtLH 的 zaxis = normalize(At - Eye)（不是 Eye-At）。
        写反的话所有背景顶点都落在相机背后，被近平面判成 null 整块丢弃。 */
     const z = v3norm(v3sub(at, eye));
@@ -829,7 +888,9 @@ export function createRenderer(Module, canvas, opts = {}) {
     const y = v3cross(z, x);
     const t = Math.tan(fovy * 0.5) || 1;
     cam = { ex: eye[0], ey: eye[1], ez: eye[2], x, y, z,
-            xs: 1 / (aspect * t), ys: 1 / t, zn };
+            xs: 1 / (aspect * t), ys: 1 / t, zn, zf };
+    gl.uniform1f(uZNear, zn);
+    gl.uniform1f(uZFar, zf);
     proj3d = true;
   }
 
@@ -1110,7 +1171,15 @@ export function createRenderer(Module, canvas, opts = {}) {
                            glDraws: 0,
                            /* 拖影裁剪掉的 quad 数，用于量化「半径变大不再变卡」 */
                            smearTrimmed: 0,
+                           /* 动画贴图的绘制条数（bugs #13：DefaultRenderFunc 以前
+                              只画第 1 帧，这个计数为 0 就说明帧传递又断了） */
+                           anims: 0,
                            postDrawn: 0, postSkipped: 0, postError: '',
+                           /* 渲染目标/后期特效的视口取证（#16/#16.1/#30/#31.1 都栽在
+                              这两处视口上）：最近一帧里所有 PushRenderTarget /
+                              PostEffect 的视口与 RT 尺寸，读 __broRenderer.stats
+                              即可看到（每条 {name, vp, rt}，最多 8 条）。 */
+                           rtPushes: [], postFx: null,
                            /* textSkipped 的明细（字体名 + 文本前 40 字符），最多 8 条 */
                            skippedText: [] });
   const noteSkippedText = (fontName, body) => {
@@ -1126,7 +1195,7 @@ export function createRenderer(Module, canvas, opts = {}) {
          b=-240 / t=240），所以图顶边在**较大**的 y 上，v0 给那个顶点；
        · 默认正交（本文件 drawFrame 开头那个 y 向下的兜底）则相反。
      这个方向搞错的表现就是整幅画面上下镜像——uv 与顶点配错，几何位置却是对的。 */
-  function quadSprite(sp, x, y, rot, hs, vs, cols, u0, v0, u1, v1) {
+  function quadSprite(sp, x, y, rot, hs, vs, cols, u0, v0, u1, v1, z3d) {
     const rad = rot * Math.PI / 180;
     const c = Math.cos(rad), s = Math.sin(rad);
     /* unitsPerPixel 参与的是「切图像素 → 世界单位」这一步，所以整块矩形
@@ -1152,6 +1221,17 @@ export function createRenderer(Module, canvas, opts = {}) {
     const tx1 = x + lx1 * c - lyTop * s, ty1 = y + lx1 * s + lyTop * c;   // 右上（v0）
     const tx2 = x + lx1 * c - lyBot * s, ty2 = y + lx1 * s + lyBot * c;   // 右下（v1）
     const tx3 = x + lx0 * c - lyBot * s, ty3 = y + lx0 * s + lyBot * c;   // 左下（v1）
+
+    /* 3D viewmode 下的 Render(img,x,y,rot,hs,vs,z)：第 7 参是深度 z
+       （LuaSTG 标准语义，THlib 背景混用 Render 与 Render4V 画同一场景）。
+       以前这里永远走 2D pushVertC、把 z 丢了 ⇒ 花映冢 scene1 的向日葵
+       （Render("hyz_bg2", x,y,rot,scale,scale,f.z)）被当 2D 画到错误位置，
+       整片太阳花田只剩泥土地面。3D 时用 quad4 逐点做透视投影。 */
+    if (z3d !== undefined && proj3d) {
+      quad4([[tx0, ty0, z3d], [tx1, ty1, z3d], [tx2, ty2, z3d], [tx3, ty3, z3d]],
+            [u0, v0, u1, v0, u1, v1, u0, v1], cols);
+      return;
+    }
 
     pushVertC(tx0, ty0, u0, v0, cols[0]);
     pushVertC(tx1, ty1, u1, v0, cols[1]);
@@ -1540,9 +1620,12 @@ export function createRenderer(Module, canvas, opts = {}) {
        自动清，多帧叠加——UI 界面背景透明，上一屏的字体图集残留会糊满整屏，
        看着像渲染 bug；② 真实运行也把一个正确性前提交给浏览器实现。
        游戏自己的 Clear(color) 仍走 OP.CLEAR，会覆盖这次清屏。 */
+    /* 深度每帧无条件清（D3D9 的 ClearZBuffer 只是显式再清一次）。
+       注意深度测试默认关闭：只有 3D 背景会 SetZBufferEnable(1)。 */
+    if (depthOn) { gl.disable(gl.DEPTH_TEST); depthOn = false; }
     if (!keepBuffer) {
       gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     }
     ortho = { l: 0, r: canvas.width, b: canvas.height, t: 0 };
     yUp = false;                  // 兜底正交是 y 向下（0 在顶）
@@ -1626,6 +1709,24 @@ export function createRenderer(Module, canvas, opts = {}) {
           gl.clear(gl.COLOR_BUFFER_BIT);
           break;
         }
+        case OP.ZENABLE: {
+          flush();
+          const on = f(0) !== 0;
+          if (on !== depthOn) {
+            depthOn = on;
+            if (on) { gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); }
+            else    { gl.disable(gl.DEPTH_TEST); }
+          }
+          break;
+        }
+        case OP.ZCLEAR: {
+          flush();
+          const sc = gl.isEnabled(gl.SCISSOR_TEST);
+          if (sc) gl.disable(gl.SCISSOR_TEST);
+          gl.clear(gl.DEPTH_BUFFER_BIT);
+          if (sc) gl.enable(gl.SCISSOR_TEST);
+          break;
+        }
         case OP.PUSH_TARGET: {
           /* aux===1 是 CreateRenderTarget：C 侧只要登记 RT，但它同样会
              新建纹理并弄脏单元 0。以前这里既不 flush 也不作废 curTex，
@@ -1638,15 +1739,62 @@ export function createRenderer(Module, canvas, opts = {}) {
              POP_TARGET 会恢复到错误的帧缓冲。 */
           const prevFbo = gl.getParameter(gl.FRAMEBUFFER_BINDING);
           getTarget(name);
-          targetStack.push({ fbo: prevFbo, ortho: { ...ortho } });
-          gl.bindFramebuffer(gl.FRAMEBUFFER, targets.get(name).fbo);
+          const rtPush = targets.get(name);
+          /* 视口/裁剪盒必须入栈并在 POP 时还原（下面那把 switch 会改这两样东西）。
+             但切 FBO 本身**不动视口**：#16 曾经在这里把视口撑成 RT 全尺寸，理由
+             是「RT 只有按全尺寸画，后期效果才铺得满」。那个前提本身是错的 ——
+             RT 与画布同尺寸，视口保持原样时，RT 里存的就是当前屏幕内容的 1:1
+             像素拷贝；后期效果再把整张 RT 按全画布 1:1 贴回去，两头正好抵消。
+             反过来（入栈撑满全 RT + POP 后在战场矩形里贴）虽然也能让「世界层」
+             自洽，却只对「世界正交」这一种情形成立；一旦后期效果按全画布贴回
+             （#16.1 为 legacy「想起所长之技」改的，那张卡必须 1:1），撑满视口的
+             RT 就会把战场矩形的内容放大成 1280/384 宽、720/448 高 ——bugs #31.1
+             秘术「岐道里的四季」着色器一出现的「比例偏大且拉伸」就是这个。
+             现在统一成 1:1：入栈不碰视口，POP 还原视口，POSTEFFECT 满画布贴回。
+             __effect1 是全仓唯一的 `__` postfx RT（只被岐道用），因此没有需要
+             「撑满 RT 才好用」的遗留调用者。 */
+          const pushed = {
+            fbo: prevFbo,
+            ortho: { ...ortho },
+            vp: Array.from(gl.getParameter(gl.VIEWPORT)),
+            sc: gl.isEnabled(gl.SCISSOR_TEST),
+            box: Array.from(gl.getParameter(gl.SCISSOR_BOX)),
+          };
+          targetStack.push(pushed);
+          if (stat.rtPushes.length < 8) {
+            stat.rtPushes.push({ name, vp: pushed.vp.slice(), rt: [rtPush.w, rtPush.h] });
+          }
+          /* 只切 FBO、不动视口（见 pushed 上方的说明）：
+             · `__effect1`（岐道 color_set）：按战场矩形视口画进去，RT 里就是
+               屏幕那片区域的 1:1 拷贝，POSTEFFECT 满画布贴回 → 位置/比例不变；
+               以前撑满全 RT，贴回全画布就变成 1.33×1.07 的放大拉伸（#31.1）。
+             · misc.RotateWorld / WorldTex1 / Capturer1 这类抓屏 RT 用
+               WorldToScreen() 的战场矩形像素坐标当 uv 采样（misc.lua:472-475），
+               撑满视口会让内容重投影到全画布而 uv 仍按战场矩形取 → 错位/缩小
+               一圈（bugs #30：天邪鬼「逆转 天地有用的遮蔽布」比例错误）。
+             视觉上「1:1 拷贝 + 1:1 贴回」不依赖当前是 world 还是 ui 正交，
+             是唯一对所有调用者都成立的语义。 */
+          gl.bindFramebuffer(gl.FRAMEBUFFER, rtPush.fbo);
+          gl.disable(gl.SCISSOR_TEST);
           curTex = null;
           break;
         }
         case OP.POP_TARGET: {
           flush();
           const prev = targetStack.pop();
-          gl.bindFramebuffer(gl.FRAMEBUFFER, prev ? prev.fbo : null);
+          if (prev) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, prev.fbo);
+            /* 恢复 push 之前的视口与裁剪盒（见 PUSH_TARGET 处的说明） */
+            if (prev.vp) gl.viewport(prev.vp[0], prev.vp[1], prev.vp[2], prev.vp[3]);
+            if (prev.sc) {
+              if (prev.box) gl.scissor(prev.box[0], prev.box[1], prev.box[2], prev.box[3]);
+              gl.enable(gl.SCISSOR_TEST);
+            } else {
+              gl.disable(gl.SCISSOR_TEST);
+            }
+          } else {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          }
           curTex = null;
           break;
         }
@@ -1687,6 +1835,10 @@ export function createRenderer(Module, canvas, opts = {}) {
           applyBlend(blend);
           {
             const dx = f(0), dy = f(1), rot = f(2), hs = f(3), vs = f(4);
+            /* 第 6 个 float 是 Render 的第 7 参：2D 下是 layer(默认 0.5)，
+               3D viewmode 下是深度 z。只有显式给了非默认值才当 3D 深度用。 */
+            const z3d = f(5);
+            const useZ = proj3d && z3d !== 0.5 && Number.isFinite(z3d);
             if (glowed) {
               /* 1d-15：UI.lua 给 menu_pure_circle 的 alpha 固定是 `_a*50`
                  （≈0.2）。0.2 的加法混合在深色背景上只剩几十级亮度，
@@ -1697,11 +1849,11 @@ export function createRenderer(Module, canvas, opts = {}) {
               for (let k = 0; k < 3; k++) {
                 const s = 1 + k * 0.30;
                 quadSprite(sp, dx, dy, rot, hs * s, vs * s, vcCols,
-                  sp.u0, sp.v0, sp.u1, sp.v1);
+                  sp.u0, sp.v0, sp.u1, sp.v1, useZ ? z3d : undefined);
               }
             } else {
               quadSprite(sp, dx, dy, rot, hs, vs, vcCols,
-                sp.u0, sp.v0, sp.u1, sp.v1);
+                sp.u0, sp.v0, sp.u1, sp.v1, useZ ? z3d : undefined);
             }
           }
           stat.draws++;
@@ -1746,16 +1898,21 @@ export function createRenderer(Module, canvas, opts = {}) {
             batchCol[2] = f(b + 9) / 255;
             const ba = (f(b + 6) / 255) * step;
             batchCol[3] = ba > 1 ? 1 : ba;
+            /* 3D viewmode 下 Render(img,...,z) 的第 6 个 float 是深度 z：
+               花映冢 scene1 的向日葵被 rop_coalesce_draw 并进这条批，
+               以前当 layer 丢掉 ⇒ 整片太阳花田只剩泥土地面。 */
+            const bz = f(b + 5);
+            const z3d = proj3d && bz !== 0.5 && Number.isFinite(bz) ? bz : undefined;
             if (glowed) {
               /* 与 OP.DRAW 的 glow 分支一致：叠三层、每层 +30%，仍是同一批。 */
               for (let k = 0; k < 3; k++) {
                 const s = 1 + k * 0.30;
                 quadSprite(sp, f(b), f(b + 1), f(b + 2), f(b + 3) * s, f(b + 4) * s,
-                  batchCols, u0, v0, u1, v1);
+                  batchCols, u0, v0, u1, v1, z3d);
               }
             } else {
               quadSprite(sp, f(b), f(b + 1), f(b + 2), f(b + 3), f(b + 4),
-                batchCols, u0, v0, u1, v1);
+                batchCols, u0, v0, u1, v1, z3d);
             }
           }
           stat.draws += Math.ceil(cnt / step);
@@ -1777,6 +1934,7 @@ export function createRenderer(Module, canvas, opts = {}) {
           quadSprite(sp, f(1), f(2), f(3), f(4), f(5), vcCols,
             fr.u0, fr.v0, fr.u1, fr.v1);
           stat.draws++;
+          stat.anims++;
           break;
         }
         case OP.DRAW_RECT: {
@@ -1909,6 +2067,14 @@ export function createRenderer(Module, canvas, opts = {}) {
           ];
           const uvs = [uAt(0), vAt(0), uAt(1), vAt(1),
                        uAt(2), vAt(2), uAt(3), vAt(3)];
+          if (!isTarget) {
+            for (let k = 0; k < 8; k += 2) {
+              if ((uvs[k] < 0 || uvs[k] > 1 || uvs[k + 1] < 0 || uvs[k + 1] > 1)) {
+                ensureWrap(name);
+                break;
+              }
+            }
+          }
           const argbAt = (k) => ((f(S * k + 5) | 0) * 65536 + (f(S * k + 6) | 0)) >>> 0;
           const cols = [rgbOf(argbAt(0)), rgbOf(argbAt(1)), rgbOf(argbAt(2)), rgbOf(argbAt(3))];
           quad4(pts, uvs, cols);
@@ -2067,8 +2233,20 @@ export function createRenderer(Module, canvas, opts = {}) {
           }
 
           flush();          // 后期效果要读当前画面，先把批次画完
-          const vp = gl.getParameter(gl.VIEWPORT);
+          const vp = Array.from(gl.getParameter(gl.VIEWPORT));
+          stat.postFx = { fx, tex: sec[1] || '', vp: vp.slice(), canvas: [canvas.width, canvas.height] };
           try {
+            /* 后期特效画的是一张覆盖整屏的 quad，postfx 自身不调用 gl.viewport，
+               覆盖区域完全由此刻的 viewport 决定。这里一律铺满画布，与
+               PUSH_TARGET「RT 里存的是屏幕的 1:1 像素拷贝」配套：
+                 · legacy「想起所长之技」(SaveScreen："objectTH11_0-1") 的 RT 是
+                   在战场矩形视口下画的，按战场矩形贴回会把整幅画面压进那个方框
+                   → 小圈外被挤压缩放（#16.1）；
+                 · 岐道 color_set("__effect1") 的 RT 同样是 1:1 拷贝，按战场矩形
+                   贴回反而会缩小（#16），满画布贴回才对。
+               ctx.viewport 仍传绘制前的战场矩形，令 gray 等按 u_viewport 裁剪的
+               效果保持在原战场区域（不改变它们的行为）。 */
+            gl.viewport(0, 0, canvas.width, canvas.height);
             postfx.draw({ fx, tex: sec[1] || '', named, args, textures: bindings }, {
               viewW: canvas.width,
               viewH: canvas.height,
@@ -2090,6 +2268,8 @@ export function createRenderer(Module, canvas, opts = {}) {
           } catch (e) {
             if (!stat.postError) stat.postError = String(e.message || e);
             stat.postSkipped++;
+          } finally {
+            gl.viewport(vp[0], vp[1], vp[2], vp[3]);   // #16.1 恢复战场矩形 viewport
           }
           // 后期换过 program 与纹理绑定，恢复 sprite 管线的状态
           gl.useProgram(prog);
@@ -2149,9 +2329,39 @@ export function createRenderer(Module, canvas, opts = {}) {
     failedTextureLog: () => failLog.slice(),
     spriteOf: (n) => sprites.get(n) || null,
     hasTexture: (n) => textures.has(n),
+    /* 调试：把某个渲染目标的像素读出来（返回 dataURL），用于定位
+       「特效卡闪黑块」这类只在真实浏览器出现的问题。 */
+    readTargetURL: (n) => {
+      const rt = targets.get(n); if (!rt) return null;
+      try {
+        flush();
+        const px = new Uint8Array(rt.w * rt.h * 4);
+        const prev = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, rt.fbo);
+        gl.readPixels(0, 0, rt.w, rt.h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, prev);
+        const cv = document.createElement('canvas');
+        cv.width = rt.w; cv.height = rt.h;
+        const ctx = cv.getContext('2d');
+        const img = ctx.createImageData(rt.w, rt.h);
+        for (let y = 0; y < rt.h; y++) {
+          const src = (rt.h - 1 - y) * rt.w * 4, dst = y * rt.w * 4;
+          img.data.set(px.subarray(src, src + rt.w * 4), dst);
+        }
+        ctx.putImageData(img, 0, 0);
+        return cv.toDataURL('image/png');
+      } catch (e) { return null; }
+    },
+    /* 供 C 侧 CreateRenderTarget 立即建 target 用（见 rgl_render.c 的同名注释）：
+       该函数常在逻辑帧里被调用，排队的 ROP 会被渲染周期清掉。 */
+    createTargetNow: (n) => { try { flush(); getTarget(n); curTex = null; } catch (e) { /* 忽略：排队那条还会再试一次 */ } },
     /* 诊断：读一块矩形区域的平均色。target 传 null 读默认帧缓冲，
        传目标名读那张渲染目标。**必须先切对帧缓冲再 readPixels**——
        readPixels 读的是当前绑定的 FB，不是画布（这个坑踩过两次）。 */
+    /* 诊断：直接读某张纹理的像素（把纹理挂到临时 FBO 上 readPixels，
+       不需要画，也就不受混合/投影/着色器影响）。返回尺寸 + 平均色 +
+       gw×gh 的缩略网格，用来回答「这张贴图到底是不是我以为是的那张图」。
+       游戏里「贴图渲染成一片白/一片糊」时，先看这里：白=绑定到了占位图。 */
     readAvg: (target, x, y, w, h) => {
       const prev = gl.getParameter(gl.FRAMEBUFFER_BINDING);
       const rt = target ? targets.get(target) : null;

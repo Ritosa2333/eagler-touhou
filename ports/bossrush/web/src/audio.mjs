@@ -2,13 +2,22 @@
 //
 // C 侧产命令 CSV（op,name,a,b,c），这里每帧取一次并执行。
 // 资源是 game/ 下的音频（SE 与 BGM），按需 fetch + decodeAudioData，不预载整包。
-// 2026-11-19 起 game/ 音频原件已就地压成 96kbps ogg（扩展名 .wav/.ogg 保留，
-// 内容统一 ogg）；decodeAudioData 按内容嗅探、不看扩展名，故路径不变、逻辑不变。
+// 2026-11-19 起 game/ BGM 就地压成 96kbps mono ogg（扩展名 .ogg 不变）；
+// 2026-11-22 起 **SE 一律保持原生 PCM WAV**（清酒要求，音效果不再压缩），
+// 所以同一个资源目录里 .wav 是真 RIFF、.ogg 是 vorbis，两种都要能解。
+// decodeAudioData 按内容嗅探、不看扩展名，故路径不变、逻辑不变。
 // 旧的 audioMap 重定向层保留兼容（传了就优先），默认不再使用。
 //
 // 浏览器自动播放策略：AudioContext 必须在用户手势后才能 resume。
 // 解锁前的命令直接丢弃（不排队），否则首次点击会把启动时攒的几百个
 // 音效一次性倾泻出来。shell.mjs 在启动快进后也会 flush 一次。
+
+/* #11 二期：BGM 改流式分片解码（见 web/src/bgm_stream.mjs）。
+   decodeAudioData 必须整首解完才能 start，170 秒的曲子要 520ms，于是
+   「进关卡过一会才播」+「已经播过一段」同源。这里对 OGG 走
+   「解 8192 帧 → 排一块 → 2 秒队列」，首块即出声；非 OGG（改过的
+   .wav BGM）与 wasm 没带解码器时自动退回原来的 decodeAudioData 路径。 */
+import { OggStreamPlayer } from './bgm_stream.mjs';
 
 const OP = {
   PLAY_SE: 1, STOP_SE: 2, PAUSE_SE: 3, RESUME_SE: 4,
@@ -16,7 +25,6 @@ const OP = {
   SE_VOLUME: 9, BGM_VOLUME: 10, SE_SPEED: 11, BGM_SPEED: 12,
   BGM_LOOP: 13, LOOP_RANGE: 14, SE_VOLUME_ONE: 15, BGM_VOLUME_ONE: 16,
 };
-
 export function createAudioLayer(Module, opts = {}) {
   const { assetBase = './game/', enabled = true, force = false } = opts;
   const ccall = Module.ccall;
@@ -45,8 +53,17 @@ export function createAudioLayer(Module, opts = {}) {
 
   /** name → { path, kind, loopStart, loopEnd } */
   const res = new Map();
-  /** name → AudioBuffer */
+  /** name → AudioBuffer（只放整首解码的东西：SE，以及退回旧路径的 BGM） */
   const buffers = new Map();
+  /** name → Uint8Array：OGG 编码字节，流式 BGM 复用（循环回卷不解码第二遍） */
+  const oggBytes = new Map();
+  let oggBytesTotal = 0;
+  /* 编码字节比 PCM 小两个数量级（一首 3 分钟的曲子约 1~3 MB，解成 PCM 是
+     60 MB），所以单独给一个宽松预算：47 首全留也就 100 MB 上下，但真正的
+     保护是「只留用过的」，超出仍按 LRU 逐出。 */
+  const OGG_BYTE_BUDGET = (opts.oggBudgetMB || 96) * 1048576;
+  /** name → OggStreamPlayer：正在播 / 暂停中的流式 BGM */
+  const streams = new Map();
   /** name → 解码后字节数，用于预算统计 */
   const bufBytes = new Map();
   let totalBytes = 0;
@@ -81,6 +98,8 @@ export function createAudioLayer(Module, opts = {}) {
     cmds: 0, playSE: 0, playBGM: 0, decodeOK: 0, decodeFail: 0,
     fetchFail: 0, droppedLocked: 0, droppedRunning: 0, activeSE: 0, activeBGM: 0,
     seDropped: 0, sePreempt: 0, bufEvicted: 0, resyncs: 0, volSync: 0,
+    bgmLog: [], bgmDrops: [],
+    bgmFetch: 0, bgmStream: 0, bgmStreamFail: 0, oggEvicted: 0, activeStreams: 0,
     errors: [],
   };
 
@@ -259,6 +278,97 @@ export function createAudioLayer(Module, opts = {}) {
     return p;
   }
 
+  /* ---------------- BGM 流式分片解码（#11 二期） ---------------- */
+
+  /* 老 wasm 没带 rgl_ogg_* 时整体退回 decodeAudioData，行为与之前一致。 */
+  const oggDecoderReady = !!(Module && Module._rgl_ogg_open && Module._malloc);
+  /** name → Promise<Uint8Array|null> */
+  const pendingBytes = new Map();
+
+  function isOggBytes(bytes) {
+    return !!bytes && bytes.length > 4 &&
+      bytes[0] === 0x4f && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53;   // 'OggS'
+  }
+
+  /* 只取编码字节、不解码。流式路径靠它反复 seek 循环点，退回 decodeAudioData
+     时也要一份完整字节（注意 decodeAudioData 会 detach 传进去的 ArrayBuffer，
+     所以必须 slice 出副本，不能把缓存直接交出去）。 */
+  function loadBytes(name) {
+    if (oggBytes.has(name)) { lastUse.set(name, ++useSeq); return Promise.resolve(oggBytes.get(name)); }
+    if (pendingBytes.has(name)) return pendingBytes.get(name);
+    const rec = res.get(name);
+    if (!rec || !rec.path) { stats.fetchFail++; return Promise.resolve(null); }
+    const key = String(rec.path).replace(/\\/g, '/').replace(/^\/+/, '').toLowerCase();
+    const mapped = audioMap && audioMap[key];
+    const p = (mapped ? fetch(mapped) : assets.fetchAsset(rec.path))
+      .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then((ab) => {
+        const bytes = new Uint8Array(ab);
+        oggBytes.set(name, bytes);
+        oggBytesTotal += bytes.length;
+        lastUse.set(name, ++useSeq);
+        pendingBytes.delete(name);
+        trimOggBytes(name);
+        stats.bgmFetch++;
+        return bytes;
+      })
+      .catch((e) => {
+        pendingBytes.delete(name);
+        stats.fetchFail++;
+        if (stats.errors.length < 12) stats.errors.push('bgm ' + name + ': ' + (e && e.message ? e.message : String(e)));
+        return null;
+      });
+    pendingBytes.set(name, p);
+    return p;
+  }
+
+  /* encoded 字节的 LRU：正在播 / 暂停中 / 正在 fetch 的绝不逐出。 */
+  function trimOggBytes(keep) {
+    if (oggBytesTotal <= OGG_BYTE_BUDGET) return;
+    const victims = [];
+    for (const [name, bytes] of oggBytes) {
+      if (name === keep) continue;
+      if (streams.has(name) || pendingBytes.has(name)) continue;
+      if (paused.has(name)) continue;
+      victims.push([name, bytes.length, lastUse.get(name) || 0]);
+    }
+    victims.sort((a, b) => a[2] - b[2]);
+    for (const [name, len] of victims) {
+      if (oggBytesTotal <= OGG_BYTE_BUDGET) break;
+      oggBytes.delete(name);
+      oggBytesTotal -= len;
+      stats.oggEvicted++;
+    }
+  }
+
+  /* 退回路径：把已经取到的字节交给 decodeAudioData。必须送副本 ——
+     decodeAudioData 会 detach 传进去的 ArrayBuffer，而字节缓存还要给
+     循环回卷复用（同一首再播不该重新 fetch）。 */
+  function decodeBytes(name, bytes) {
+    if (buffers.has(name)) { lastUse.set(name, ++useSeq); return Promise.resolve(buffers.get(name)); }
+    if (pending.has(name)) return pending.get(name);
+    const c = ensureContext();
+    if (!c || !bytes) return Promise.resolve(null);
+    const copy = bytes.slice();
+    const p = c.decodeAudioData(copy.buffer).then((buf) => {
+      buffers.set(name, buf);
+      const b = buf.length * buf.numberOfChannels * 4;
+      bufBytes.set(name, b);
+      totalBytes += b;
+      lastUse.set(name, ++useSeq);
+      pending.delete(name);
+      stats.decodeOK++;
+      return buf;
+    }).catch((e) => {
+      pending.delete(name);
+      stats.decodeFail++;
+      if (stats.errors.length < 12) stats.errors.push(name + ': ' + (e && e.message ? e.message : String(e)));
+      return null;
+    });
+    pending.set(name, p);
+    return p;
+  }
+
   /* ---------------- SE ---------------- */
 
   /* 释放一个 voice：先标 dead，onended 回来时就不会重复摘链。
@@ -392,6 +502,15 @@ export function createAudioLayer(Module, opts = {}) {
 
   function stopBGM(name) {
     bgmGen.set(name, (bgmGen.get(name) || 0) + 1);   // 让还在 decode 的那次 start 作废
+    const st = streams.get(name);
+    if (st) {
+      st.stop();
+      streams.delete(name);
+      paused.delete(name);
+      bgm.delete(name);
+      stats.activeStreams = streams.size;
+      return;
+    }
     const v = bgm.get(name);
     if (!v) { paused.delete(name); return; }
     try { v.src.stop(); } catch { }
@@ -405,8 +524,78 @@ export function createAudioLayer(Module, opts = {}) {
     if (!rec || !rec.path) { stats.fetchFail++; return; }
     stopBGM(name);
     const gen = bgmGen.get(name);
+    /* 请求时刻的游戏帧。首播要 fetch（+ 旧路径的整首 decode）才出声，
+       回来时游戏可能已经走了几十帧；不补偿的话整首 BGM 相对弹幕永远慢
+       这一截，时非 / 地灵殿这种踩点卡就全错位。start 时把「已经过去的
+       游戏时间」加进 offset。流式路径只剩 fetch + 首块解码，补偿量很小。 */
+    const reqFrame = frameNo;
+    const tReq = (typeof performance !== 'undefined' ? performance.now() : 0);
+    /* 流式路径：读 8192 帧就能起播，不做整首解码。 */
+    const streamStart = (bytes) => {
+      if (!bytes || !ctx || !ready() || !running) {
+        if (stats.bgmDrops.length < 12) {
+          stats.bgmDrops.push(name + ':bytes=' + (!!bytes) + ',ctx=' + (!!ctx) +
+            ',ready=' + ready() + ',running=' + running + ',stream');
+        }
+        return;
+      }
+      if (bgmGen.get(name) !== gen) return;
+      const player = new OggStreamPlayer({
+        Module, ctx, out: bgmGain, name,
+        onEnd: (n) => {
+          const cur = streams.get(n);
+          if (cur === player) { streams.delete(n); bgm.delete(n); stats.activeStreams = streams.size; }
+        },
+        onError: (e) => {
+          stats.bgmStreamFail++;
+          if (stats.errors.length < 12) stats.errors.push('stream ' + name + ': ' + (e && e.message ? e.message : String(e)));
+          const cur = streams.get(name);
+          if (cur === player) { streams.delete(name); bgm.delete(name); stats.activeStreams = streams.size; }
+        },
+      });
+      const range = loopRange.get(name);
+      let offset = position > 0 ? position : 0;
+      const lateFrames = frameNo - reqFrame;
+      if (lateFrames > 0) offset += (lateFrames / 60);
+      streams.set(name, player);
+      /* bgm 表里放一条与旧路径同形的记录：BGM_VOLUME_ONE / SPEED / LOOP /
+         playing 探针都靠它，不必为流式路径分叉。src 为 null 时按 stream 读。 */
+      bgm.set(name, {
+        stream: player, gain: player.gain, vol: Math.max(0, Math.min(1, vol)),
+        rate, offset, loopStart: (range && range.start) || 0, loopEnd: (range && range.end) || 0,
+      });
+      player.play(bytes, {
+        volume: vol, rate, offsetSeconds: offset, loop: true,
+        loopStart: (range && range.start) || 0, loopEnd: (range && range.end) || 0,
+      }).then((ok) => {
+        if (!ok) return;
+        stats.playBGM++;
+        stats.bgmStream++;
+        /* 用 player.gain 顶替原记录里的 gain（play 内部才知道节点）。 */
+        const rec2 = bgm.get(name);
+        if (rec2 && rec2.stream === player) rec2.gain = player.gain;
+      }).catch((e) => {
+        stats.bgmStreamFail++;
+        if (stats.errors.length < 12) stats.errors.push('stream ' + name + ': ' + (e && e.message ? e.message : String(e)));
+      });
+      if (stats.bgmLog.length < 12) {
+        stats.bgmLog.push({
+          name, mode: 'stream',
+          waitMs: Math.round((typeof performance !== 'undefined' ? performance.now() : 0) - tReq),
+          lateFrames, offset: +offset.toFixed(2), queued: !!queuedBuf,
+        });
+      }
+    };
+    /* 旧路径：整首 decodeAudioData（非 OGG / 没有解码器 / 已解好的 queuedBuf）。 */
     const start = (buf) => {
-      if (!buf || !ctx || !ready() || !running) return;
+      if (!buf || !ctx || !ready() || !running) {
+        // 静默失败最难查：把丢弃原因记下来（#11 现场取证用）。
+        if (stats.bgmDrops.length < 12) {
+          stats.bgmDrops.push(name + ':buf=' + (!!buf) + ',ctx=' + (!!ctx) +
+            ',ready=' + ready() + ',running=' + running);
+        }
+        return;
+      }
       /* decode 是异步的：同名的第二次 PlayMusic 可能在第一次还没 start 时到达，
          旧的那次必须丢弃，否则同一首会叠两轨（听着像"回声"）。 */
       if (bgmGen.get(name) !== gen) return;
@@ -428,19 +617,56 @@ export function createAudioLayer(Module, opts = {}) {
       src.connect(g);
       g.connect(bgmGain);
       let offset = position > 0 ? position : 0;
-      if (offset >= buf.duration) offset = 0;
+      /* 迟到补偿：见上面 reqFrame 的注释。首播结束后游戏推进的帧数折成秒，
+         直接跳过相应长度，让 BGM 重新对齐到「本应在的位置」。 */
+      const lateFrames = frameNo - reqFrame;
+      if (lateFrames > 0) offset += (lateFrames / 60) * rate;
+      if (buf.duration > 0) offset = offset % buf.duration;
+      if (offset < 0) offset = 0;
       const v = { src, gain: g, startedAt: ctx.currentTime, offset, rate,
         loop: true, loopStart: src.loopStart, loopEnd: src.loopEnd };
       bgm.set(name, v);
       src.start(0, offset);
       stats.playBGM++;
+      // 首播延迟 = fetch + decode 的耗时；offset 就是「迟到补偿」跳过的那一截。
+      if (stats.bgmLog.length < 12) {
+        stats.bgmLog.push({
+          name, mode: 'decode',
+          waitMs: Math.round((typeof performance !== 'undefined' ? performance.now() : 0) - tReq),
+          lateFrames,
+          offset: +offset.toFixed(2),
+          dur: +buf.duration.toFixed(1),
+          queued: !!queuedBuf,
+        });
+      }
     };
-    if (queuedBuf) start(queuedBuf);
-    else loadBuffer(name).then(start);
+    if (queuedBuf) { start(queuedBuf); return; }
+    if (oggDecoderReady) {
+      /* OGG 一律先取字节，闻一下 'OggS' 再决定流式还是退回整首解码。 */
+      loadBytes(name).then((bytes) => {
+        if (bgmGen.get(name) !== gen) return;
+        if (isOggBytes(bytes)) { streamStart(bytes); return; }
+        decodeBytes(name, bytes).then((buf) => {
+          if (bgmGen.get(name) !== gen) return;
+          start(buf);
+        });
+      });
+      return;
+    }
+    loadBuffer(name).then(start);
   }
 
   /** WebAudio 的 BufferSource 不能真暂停，用「记录 offset → stop → 重开」模拟。 */
   function pauseBGM(name) {
+    const st = streams.get(name);
+    if (st) {
+      const off = st.pause();
+      paused.set(name, { off, vol: st.volume, rate: st.rate, stream: true });
+      streams.delete(name);
+      bgm.delete(name);
+      stats.activeStreams = streams.size;
+      return;
+    }
     const v = bgm.get(name);
     if (!v || !ctx) return;
     const elapsed = (ctx.currentTime - v.startedAt) * v.rate;
@@ -496,7 +722,8 @@ export function createAudioLayer(Module, opts = {}) {
         bgmVol = a; if (bgmGain) setGain(bgmGain.gain, bgmVol); break;
       case OP.BGM_VOLUME_ONE: {
         const v = bgm.get(name);
-        if (v) setGain(v.gain.gain, a);
+        if (v && v.stream) v.stream.setVolume(a);
+        else if (v && v.gain) setGain(v.gain.gain, a);
         break;
       }
       case OP.SE_VOLUME_ONE: {
@@ -506,7 +733,8 @@ export function createAudioLayer(Module, opts = {}) {
       }
       case OP.BGM_SPEED: {
         const v = bgm.get(name);
-        if (v) { v.rate = a; try { v.src.playbackRate.value = a; } catch { } }
+        if (v && v.stream) { v.stream.setRate(a); v.rate = a; }
+        else if (v) { v.rate = a; try { v.src.playbackRate.value = a; } catch { } }
         break;
       }
       case OP.SE_SPEED: {
@@ -516,13 +744,15 @@ export function createAudioLayer(Module, opts = {}) {
       }
       case OP.BGM_LOOP: {
         const v = bgm.get(name);
-        if (v) v.src.loop = !!a;
+        if (v && v.stream) v.stream.setLoop(a);
+        else if (v) v.src.loop = !!a;
         break;
       }
       case OP.LOOP_RANGE: {
         loopRange.set(name, { start: a, end: b });
         const v = bgm.get(name);
-        if (v && v.src.buffer && b > 0 && b <= v.src.buffer.duration) {
+        if (v && v.stream) v.stream.setLoopRange(a, b);
+        else if (v && v.src.buffer && b > 0 && b <= v.src.buffer.duration) {
           v.src.loopStart = a; v.src.loopEnd = b;
         }
         break;
@@ -640,10 +870,22 @@ export function createAudioLayer(Module, opts = {}) {
     get volumes() { return { se: seVol, bgm: bgmVol }; },
     get unlocked() { return unlocked; },
     get context() { return ctx; },
-    /* 探针用：正在响的 BGM 明细（含真实循环区间与解码时长） */
+    /* 探针用：正在响的 BGM 明细（含真实循环区间与解码时长）。
+       流式路径没有 AudioBuffer，dur 记 loopEnd 或不给。 */
     get playing() {
       const list = [];
       for (const [name, v] of bgm) {
+        if (v.stream) {
+          list.push({
+            name, mode: 'stream', vol: +v.stream.volume.toFixed(3), rate: v.stream.rate,
+            loopStart: +(v.stream.loopStartFrame / v.stream.sampleRate).toFixed(2),
+            loopEnd: +(v.stream.loopEndFrame / v.stream.sampleRate).toFixed(2),
+            dur: null, offset: +v.stream.positionSeconds.toFixed(2),
+            blocks: v.stream.stats.blocks, underruns: v.stream.stats.underruns,
+            firstBlockMs: v.stream.stats.firstBlockMs,
+          });
+          continue;
+        }
         const b = v.src.buffer;
         list.push({
           name, vol: +v.gain.gain.value.toFixed(3), rate: v.rate,
@@ -660,6 +902,12 @@ export function createAudioLayer(Module, opts = {}) {
       return { total, per };
     },
     get pausedList() { return [...paused.keys()]; },
+    /* 诊断：C 侧音频状态机原文（bgmPlaying / 各曲 state 都在这）。真机复现 #11
+       「卡里没音乐、esc 才有」时，把 host + bgmLog + bgmDrops + pausedList 一起贴出来：
+       - host 里 bgmPlaying=0 而游戏认为在放 → C 状态机是 stopped/paused；
+       - bgmDrops 非空 → 命令到了 JS 但被 start 的守卫丢掉；
+       - 两者都正常且 bgmLog 有记录 → 是解码太慢（看 waitMs）。 */
+    get host() { return ccall('rgl_audio_state', 'string', [], []); },
     get resources() { return res; },
     get buffers() { return buffers; },
     set onUnlockHook(fn) { onUnlock = fn; },

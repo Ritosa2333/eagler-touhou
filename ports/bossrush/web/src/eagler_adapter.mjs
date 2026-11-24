@@ -671,6 +671,11 @@ export class EaglerRuntimeAdapter {
     this.launchSerial = Number.isFinite(p.launchSerial) ? p.launchSerial | 0 : (this.launchSerial + 1);
     this.firstFrameSent = false;
     this.phase = 'prelaunch';
+    /* 新一局开始：整表清空按键（noAdopt）。宿主重开时上一局残留的 held
+       会跨场景存活（X 按一次后卡死的现象），这里是最干净的释放边界。 */
+    if (this.input && typeof this.input.clearAll === 'function') {
+      try { this.input.clearAll('launch', true); } catch { /* 忽略 */ }
+    }
     // 兜底：若 configure 时 WASM 尚未 boot，这里 setting 表应已就绪，重放网页设置与房间选项。
     this.applyWebSettings();
     this.applyRoomOptions();

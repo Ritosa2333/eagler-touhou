@@ -1,6 +1,6 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-7f7e1e41a6c2cd54ca29db7254aeea1253b759be00f6ab4bc7de07c4d919840e",
+  "version": "sha256-932fb1190956f37d275b47befeaa990afa9852cc44686c1d6ae51bd78bb8e1c0",
   "files": [
     {
       "p": "bro.html",
@@ -19,18 +19,23 @@
     },
     {
       "p": "src/audio.mjs",
-      "n": 27702,
-      "h": "53f957b70377f8a03135ea13301bfb2d58f7c22d7c1f55e9c639167b3c117382"
+      "n": 39537,
+      "h": "7168901a5d4e9238fc7c3101794b85d3aa8c5be8af6cf3e11ddbc8c7b773bf5f"
+    },
+    {
+      "p": "src/bgm_stream.mjs",
+      "n": 14105,
+      "h": "56e1e80fa974af4d43949fd265e6faca0fbe1206d4a2e9e330403e8c568fd04a"
     },
     {
       "p": "src/eagler_adapter.mjs",
-      "n": 45956,
-      "h": "079f7aca9133620006763a9310f55fb17153372b6b951fbd7d4c9df3a3702edc"
+      "n": 46304,
+      "h": "063d204ae8641908ee154374cb4d66544dc7c82f236bac25efd4fd8972f1b021"
     },
     {
       "p": "src/input.mjs",
-      "n": 62791,
-      "h": "b973dddda3f8abfec6d3430943830531e46e5ded1e5a099dbcfeb2faa23e8b16"
+      "n": 63321,
+      "h": "4d4afd41e32c9f3a0ae812204d9a5009cac02e563ad4ff74c7ac73951692574f"
     },
     {
       "p": "src/input_buffer.mjs",
@@ -64,13 +69,13 @@
     },
     {
       "p": "src/postfx.mjs",
-      "n": 16748,
-      "h": "cd0ba578ec45f44b4c64fa7d97a34571591131fa54ef8fe33aac8fae6398c7d5"
+      "n": 19801,
+      "h": "9a55ef71a3c2646692e89b9da28845b67bd13f82fa3208f167362789fe4f51b6"
     },
     {
       "p": "src/renderer.mjs",
-      "n": 112287,
-      "h": "47c9d39833d44b2ff2ea0abe44ae5c17b8e2af36ee9aaf31769952cec88fcc4b"
+      "n": 125026,
+      "h": "cb8860f911b64ef452dcf951fe54dafe256940e03e211cf28f18653b410a24d6"
     },
     {
       "p": "src/replay_archive.mjs",
@@ -79,8 +84,8 @@
     },
     {
       "p": "src/resource_cache.mjs",
-      "n": 16842,
-      "h": "6fc03ad4c45aaa656add66c11f4b65588c2ea5aaa8d825669cabc9f979b40027"
+      "n": 19241,
+      "h": "61e5b8cbc7f8a12f04a8e1055559916fc90d335a8eefeb36d03fa93fda33562f"
     },
     {
       "p": "src/rollback.mjs",
@@ -104,8 +109,8 @@
     },
     {
       "p": "src/runtime_entry.mjs",
-      "n": 9324,
-      "h": "ab9ee6bd8d580cbdff956b7790c2fd91215da16a70819b854cea68b29e18565b"
+      "n": 10338,
+      "h": "65da711d02490567429eaeb6326eb30417a2ea64339c5241f812e51f8e1fd0b7"
     },
     {
       "p": "src/save_files.mjs",
@@ -126,6 +131,11 @@
       "p": "test/browser/audio_check.mjs",
       "n": 4752,
       "h": "bbf621457927db9d1799fe0a5f54f6f3ba4a6fd7d0f375d85c8139bdbdab0765"
+    },
+    {
+      "p": "test/browser/audio_se_wav_e2e.mjs",
+      "n": 6216,
+      "h": "6d85041928ffb51f427eaa7a09d2fb40a136e5c828155a9533205c6792899cb2"
     },
     {
       "p": "test/browser/aura_real_diag.mjs",
@@ -153,6 +163,16 @@
       "h": "fab55bf917e747d270c4d3b6c8a3f89d26ef7164f715c4b8daeee631ab428ff7"
     },
     {
+      "p": "test/browser/bro_eval.mjs",
+      "n": 5153,
+      "h": "b792b7548f59310089987281186c381e88054cc2960073ff47f97c8dfa7dc248"
+    },
+    {
+      "p": "test/browser/bugs_round2_diag.mjs",
+      "n": 6800,
+      "h": "672f48611dc4ae35933836f77e3f0182de41323c7b2797127c60552354ecd9e2"
+    },
+    {
       "p": "test/browser/bullet_texture_e2e.mjs",
       "n": 7391,
       "h": "d48380b443d67d61a7a4a5dbf18f84505076f4b6b1f598feb3376e7ef9bcd7bd"
@@ -166,6 +186,11 @@
       "p": "test/browser/check.mjs",
       "n": 3869,
       "h": "a20a0d3195be968c96c553d7aa1a7f0b38b551a6a4926d00ee09fd2dff49b373"
+    },
+    {
+      "p": "test/browser/dev_test_options_e2e.mjs",
+      "n": 5877,
+      "h": "94e30963a447b1f86ea4d28a38c05c354ae9960ed756e186ef8854b0a61aeb2b"
     },
     {
       "p": "test/browser/devsep_check.mjs",
@@ -218,6 +243,11 @@
       "h": "f71b36c9bb8c301d12c91bccdf9eea97fdb0721c756470b098d32e0c9f5bb181"
     },
     {
+      "p": "test/browser/kill_default_smoke.mjs",
+      "n": 3594,
+      "h": "6172e51cbe7f3f0839148cd1a32151114683dbdba338686ee02521878c7813ce"
+    },
+    {
       "p": "test/browser/lobby.html",
       "n": 26287,
       "h": "6a5f0e46c1b64f234f8d4919b7c940045cc7b582360095ea98736711caedfdc3"
@@ -236,6 +266,16 @@
       "p": "test/browser/mesh.html",
       "n": 2746,
       "h": "4b809b56eea78ad03ffd1ba0cbda77f2ac8e7e345327290713da289253dbf3ca"
+    },
+    {
+      "p": "test/browser/mp_timestop_diag.mjs",
+      "n": 5528,
+      "h": "a2c745fd9056838555c75cb961b83f78b76f837183080d318abb1f9ae94ce124"
+    },
+    {
+      "p": "test/browser/mp_wait_diag.mjs",
+      "n": 6072,
+      "h": "05d090c0e739d6bfa138f009b90930378f21975ebfc683f808170490bd254051"
     },
     {
       "p": "test/browser/mre_e2e.mjs",
@@ -269,8 +309,8 @@
     },
     {
       "p": "test/browser/play.html",
-      "n": 20646,
-      "h": "88d092174d496a29f00809094d04f8c11496d7dd1f452c4eb951cd127a4a492b"
+      "n": 29380,
+      "h": "79b6a1666287d099b345c84cc72ddc749ab74c8bfafba10a84fbc6468f54863e"
     },
     {
       "p": "test/browser/play_check.mjs",
@@ -284,8 +324,8 @@
     },
     {
       "p": "test/browser/serve.mjs",
-      "n": 2148,
-      "h": "9819b5c38867c48a3e282ef100e50bc371dfbc4e9ff725b6e5fd1e23e034ebcf"
+      "n": 2823,
+      "h": "f87564b25ca868f43ec2d275da77e340b6ed7beeacb504973b21eacb77f729de"
     },
     {
       "p": "test/browser/spell_legacy_e2e.mjs",
@@ -311,6 +351,16 @@
       "p": "test/browser/sysicon_check.mjs",
       "n": 5727,
       "h": "b24e2125538b92cea8e529c1341d2fe7dc793a9777947571e57de13bfcc537ba"
+    },
+    {
+      "p": "test/browser/th11_card73_stall_diag.mjs",
+      "n": 1847,
+      "h": "ec25fc878292d32e8df7f6faed5cbbcd592a7e0d7b790281f72b011b6814663e"
+    },
+    {
+      "p": "test/browser/tmp_port_dist.mjs",
+      "n": 2003,
+      "h": "093ddeb267a5747efeb239778d6f52bf984298ebff573f42fd1bcfc325e9d2f4"
     }
   ]
 }

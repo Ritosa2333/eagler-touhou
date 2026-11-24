@@ -1,19 +1,19 @@
 # BRO Runtime 产物落地说明（eagler fork `bro-integration`）
 
-> 更新：2026-11-22 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（联机适配审计修复后 build_id `544898ba`）
+> 更新：2026-11-24 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（启动加载优化后 build_id `96902659`）
 > 本目录 `ports/bossrush/web/` 是 **BRO Web runtime 的实际构建产物**，由 BRO 侧 `web/build.sh` 产出后入库。
 
-## 1. 产物清单（31 文件 / 48 MB）
+## 1. 产物清单（31 文件 / 28 MB）
 
 | 文件 | 体积 | 说明 |
 |---|---|---|
-| `web/bro.wasm` | 46.3 MB | 自包含 WASM：纯 C Lua 5.1.5 + `lstg.*` C 绑定 + WebGL2/WebAudio，内嵌 167 个游戏脚本 + BadApple 逐帧数据 + Update.txt/manual（HTTP gzip 传输约 3.5 MB，初始内存 80 MB） |
+| `web/bro.wasm` | 26.9 MB | 自包含 WASM：纯 C Lua 5.1.5 + `lstg.*` C 绑定 + WebGL2/WebAudio，内嵌 167 个游戏脚本 + BadApple 逐帧数据 + Update.txt/manual（HTTP gzip 传输约 4.7 MB，初始内存 80 MB）。**2026-11-24**：此前游戏树里还残留一份 BadApple 副本被 `--embed-file` 重复内嵌（21 MB），清理后 46.3 → 26.9 MB。 |
 | `web/bro.mjs` | 111 KB | Emscripten ES6 glue（`createBROModule`） |
 | `web/src/*.mjs` | ~490 KB | 21 个模块：renderer/postfx/audio/input/storage/save_files/netcode/netmesh/input_buffer/rollback/route_*/eagler_adapter/multiplayer 等 |
 | `web/dist/*.json` | 272 KB | `package-manifest.json`（1004 文件/162.2 MiB 清单，SE 已恢复原生 PCM）/ `app-shell.json` / `runtime.json` |
 | `web/manifest.json` | 5 KB | BRO 产品契约（components / musicMounts / packageManifest） |
 
-来源与可复现性记在 `source-import.json`（30 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `544898ba`）。
+来源与可复现性记在 `source-import.json`（30 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `96902659`（BRO `8b9a585`））。
 重编：`cd <BRO repo> && bash web/build.sh`，产出后同步 `web/` 目录即可。
 
 ## 2. 游戏资源包（162.2 MiB 资源 / 约 170.7 MB ZIP）——不入库，importOnly
@@ -237,3 +237,49 @@ WASM 重编 build_id=`7bc47a91`，replay_playback_unit 7/7（新增 pause/play�
 - **验证**：BRO 单测 7/7 + 纯 Node 全量 58/58；真机 e2e 9 张旧图 HTTP 200、两态画面不同、
   判定不变、零错误；本仓 `bun run typecheck` exit=0。BRO WASM build_id=`041646ef`。
 - 边界：只切敌方弹型贴图；ball_light 新旧皆柔光球截图差异不显，硬边弹型在对应符卡显现。
+
+
+## 15. 启动加载优化（2026-11-24，#35）
+
+真机反馈：搬到 eagler 上「加载进去要很久」，联机因加载超时无法测试。headless + CDP 测得
+根因是三处**串行等待**加一处**冗余体积**：
+
+1. `shell.mjs` 的 `start()` 先 `await resourceCache.syncOnline()` —— 首次访问要**下载完整
+   资源包**（1004 文件）才继续，并发上限只有 4。
+2. `runtime_entry.mjs` 的 `startBRO()` `await renderer.requestAll({})` —— 首帧前等**全部
+   536 张贴图** + 字体。
+3. `await audio.warm()` —— 首帧前解码 179 个 SE。
+4. `bro.wasm` 46.3 MB：`--embed-file 'vfs/bro/game@/bro/game'` 里还残留一份 Nov 22 时代的
+   `BadApple`（21 MB）副本，与 `vfs/root/BadApple` 重复内嵌。
+
+改法（BRO 仓 `8b9a585`）：
+
+- `resource_cache.mjs`：`syncOnline({commitOnly:true})` 只取清单并提交、立即返回；
+  新增 `prefetchManifest({groups,concurrency,onProgress,signal})` 按组件组后台预取。
+- `shell.mjs`：`start()` 改成「提交清单 → 立刻启动」，`waitFirstFrame()` 轮询
+  `runtime.frames > 0`，**首帧之后**再后台预热 `images-ui/fonts/shader/misc/scripts/images-bg`，
+  每 10 个文件或 800 ms 报一次 `transfer` 事件。
+- `runtime_entry.mjs`：贴图预热带预算（boot 后 800 ms、进关后 600 ms，字体仍同步等完）；
+  SE 预热 setTimeout 1200 ms 后并行进行，不再阻塞首帧。
+- `web/build.sh`：`rm -rf "$VFS/bro/game/BadApple"`，wasm 46.3 → 26.9 MB（`build_id`
+  `96902659`）。
+
+实测（headless Edge + CDP，2 MB/s + 80 ms RTT + gzip）：
+
+| 指标 | 改前 | 改后 |
+|---|---|---|
+| 首帧 | 90.3 s | **12.7 s** |
+| 首帧前请求数 | 1663 | **260** |
+| 首帧前字节 | 223.8 MB | **80.1 MB** |
+| 本机不限速首帧 | 3751 ms | **2675 ms** |
+| bro.wasm | 48,646,195 B | **26,897,155 B** |
+
+标题页与 `?stage=TH11@BossRush` 关卡截图均正常出画（贴图 172/536、0 failed，剩余在后台
+继续预热），控制台零错误；`BadApple` 去重后 `io.open('BadApple\\file1')` 仍可读。
+
+单测：`resource_cache_unit` 10/10（新增 commitOnly / prefetchManifest 组过滤两条）、
+新 `boot_preload_budget_unit` 19/19、BRO 全量 61 个单测全绿。
+
+同步注意：`web/dist/runtime.json`、`web/dist/app-shell.json` 直接取 BRO 仓产物；
+`web/dist/package-manifest.json` 留端口本地版本（音乐包为 96 kbps mono，体积与 BRO 全质量包
+不同），**不要**用 BRO 的覆盖。`web/src/*.mjs` 全部按 BRO 仓同步（含新增 `bgm_stream.mjs`）。

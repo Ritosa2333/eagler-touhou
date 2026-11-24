@@ -960,8 +960,13 @@ export function attachInput({ ccall, canvas, preventDefault = true }) {
        不回收的话这张表会跟着会话无限长（虽然判据本身不会复活幽灵）。 */
     for (const [vk, t] of clearRecent) if (now - t >= CLEAR_ADOPT_TTL_MS) clearRecent.delete(vk);
     if (!noAdopt) {
+      /* 只收养方向键。收养通道本来是为「走位被误清后靠残留 repeat 恢复」设计的
+         （1d-28/1d-29），而 repeat 只有按住不放的键才有；Z/X/C 这类点按键的
+         repeat 只在长按符卡/低速时短暂出现，却会在 keyup 被输入法吞掉时把刚
+         松开的键「接回」并抢走 repOwner —— 之后没有任何通道能再释放它，
+         现象就是「按一次 X 后 X 永久卡住，连重开一局都不恢复」。 */
       for (const [vk, st] of held) {
-        if (!st.manual) { clearRecent.set(vk, now); adopt.push(vk); }
+        if (!st.manual && GHOST_SAFE.has(vk)) { clearRecent.set(vk, now); adopt.push(vk); }
       }
     }
     held.clear();

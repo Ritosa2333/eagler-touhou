@@ -293,6 +293,15 @@ export function createResourceCache(opts = {}) {
       return { status: 'offline', error: String(error && error.message || error), manifestUrl };
     }
     const { manifest, plan } = refreshed;
+    // 启动路径（#35 加载优化）：只提交清单、立刻返回，绝不等整包（首次约 191MB）下完。
+    // 提交后 fileIndex 就有 hash，之后 fetchAsset/url 按需 HTTP 取并逐文件入库，
+    // 未取到的资源由调用方在后台用 prefetchManifest 逐步预热。
+    if (options.commitOnly) {
+      commitManifest(manifest);
+      return { status: 'manifest', version: manifest.version, previousVersion: plan.previousVersion,
+        files: manifest.files.length, downloads: plan.downloads.length,
+        downloadBytes: plan.downloadBytes, deferred: true, manifestUrl };
+    }
     if (!plan.downloads.length) {
       commitManifest(manifest);
       return { status: 'current', version: manifest.version, previousVersion: plan.previousVersion,
@@ -309,6 +318,45 @@ export function createResourceCache(opts = {}) {
     return { status: 'updated', version: manifest.version, previousVersion: plan.previousVersion,
       files: manifest.files.length, downloads: plan.downloads.length,
       downloadBytes: plan.downloadBytes, ...fetched, manifestUrl };
+  }
+
+  /**
+   * 后台预热：把「当前清单里还没进缓存」的文件按组件组（清单的 m 字段）分批取下来。
+   * 启动路径上 syncOnline({commitOnly}) 已把清单提交好，这里只负责慢慢填缓存；
+   * 首屏需要的组（images-ui/fonts/shader/misc）先取，music/se 这类大块按需再说。
+   * 绝不抛出：失败只是缓存不完整，按需路径仍会 HTTP 取。
+   */
+  async function prefetchManifest(options = {}) {
+    const groups = Array.isArray(options.groups) && options.groups.length
+      ? new Set(options.groups.map((g) => String(g).toLowerCase())) : null;
+    const files = (active?.files || []).filter((file) => {
+      if (!groups) return true;
+      return groups.has(String(file.m || '').toLowerCase());
+    });
+    const limit = Math.max(1, Math.min(8, Number(options.concurrency) || 3));
+    let downloaded = 0;
+    let bytes = 0;
+    let skipped = 0;
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(limit, files.length) }, async () => {
+      while (cursor < files.length) {
+        if (options.signal?.aborted) return;
+        const file = files[cursor++];
+        const hash = String(file.h || '').toLowerCase();
+        if (HASH_RE.test(hash) && (await getBlob(hash))) { skipped++; continue; }
+        try {
+          const payload = await ensureBlob(file, (_, size) => {
+            downloaded++; bytes += size;
+            options.onProgress?.({ downloaded, bytes, skipped, total: files.length, path: file.p });
+          });
+          if (!payload) skipped++;
+        } catch (error) {
+          options.onError?.(error, file);
+        }
+      }
+    });
+    await Promise.all(workers);
+    return { downloaded, bytes, skipped, total: files.length };
   }
 
   function commitManifest(manifest) {
@@ -401,6 +449,7 @@ export function createResourceCache(opts = {}) {
     refreshManifest,
     setManifestUrl,
     syncOnline,
+    prefetchManifest,
     commitManifest,
     prefetch,
     installResources,

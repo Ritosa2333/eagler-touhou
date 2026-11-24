@@ -122,15 +122,22 @@ export async function startBRO(options = {}) {
 
   // scene 贴图注册发生在 bro_boot 之后；必须先刷资源表再请求全部纹理。
   renderer.loadResourceTable();
-  await renderer.requestAll({});
+  // #35 加载优化：首帧不再等全部贴图（线上 536 张要几十秒，启动器会超时）。
+  // 只给 800ms 预算，剩下的仍在 pending 队列里继续取，bindTex 画到时补上。
+  await renderer.requestAll({ budgetMs: 800 });
   for (const [name, path, size] of FONT_REGISTRY) {
     renderer.text.registerFont(name, { kind: 8, path, size });
   }
   await renderer.text.prepare();
   audio.flush();
   audio.syncResources();
+  // #35：SE 预解码（24MB/178 个文件）不再挡在首帧前，改成后台跑；
+  // 首帧之后才开始，点菜单第一声若还没预热完最多晚一两帧。
   if (params.get('audioNoWarm') !== '1') {
-    try { await audio.warm({ concurrency: 4 }); } catch (error) { console.warn('audio warm failed', error); }
+    setTimeout(() => {
+      Promise.resolve(audio.warm({ concurrency: 4 }))
+        .catch((error) => console.warn('audio warm failed', error));
+    }, 1200);
   }
 
   const resParam = params.get('res');
@@ -154,7 +161,8 @@ export async function startBRO(options = {}) {
   ev('lstg.tmpvar.hiscore = 0; return true');
 
   renderer.loadResourceTable();
-  await renderer.requestAll({});
+  // #35：进关后的第二轮预热同样带预算（进关后本来就有淡入，晚一两帧无所谓）。
+  await renderer.requestAll({ budgetMs: 600 });
 
   const runtime = {
     state: 'running',
@@ -226,6 +234,15 @@ export async function startBRO(options = {}) {
       }
       fpsFrames++;
       if (now - fpsSince >= 500) {
+        // 设置菜单切「4.0弹幕(legacy)」后 Lua 置位；legacy 是加载期分支，
+        // 必须整页重载才会重新按新模式加载符卡脚本。flush 存档后重载。
+        try {
+          if (ev('return tostring(__bro_reload_requested or false)') === 'true') {
+            void storage.flush();
+            location.reload();
+            return;
+          }
+        } catch { /* 老 WASM 无此字段 */ }
         try { runtime.lock60 = ev('return tostring(__bro_web_lock60)') === 'true'; } catch { /* 老 WASM 无此字段 */ }
         runtime.fps = Math.round(fpsFrames * 1000 / (now - fpsSince));
         runtime.frameMs = (now - fpsSince) / Math.max(1, fpsFrames);

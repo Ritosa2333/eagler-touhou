@@ -58,12 +58,16 @@ const EFFECTS = {
 void main() { o_col = texture(u_screen, v_uv); }`,
   },
 
-  /* screen_save.hlsl：screen_texture * alpha */
+  /* screen_save.hlsl（game/shader/screen_save.hlsl）：原样采样 + 强制 a=1。
+     注意别写成 * user_data_0.x —— 那个 hlsl 里 `#define alpha user_data_0.x`
+     虽然定义了却**没用到**。旧版 LuaSTG 4.0 的 PostEffect(贴图, "SaveScreen")
+     根本不传 user_data，乘 alpha 只会得到全黑（bugs.txt #2 的「圈外全黑」）。 */
   'screen_save': {
     frag: `${HEADER}${SAMPLE}
-uniform vec4 user_data_0;
 void main() {
-  o_col = sampleScreen(vec2(v_uv.x, 1.0 - v_uv.y)) * user_data_0.x;
+  vec4 c = sampleScreen(vec2(v_uv.x, 1.0 - v_uv.y));
+  c.a = 1.0;
+  o_col = c;
 }`,
   },
 
@@ -190,7 +194,13 @@ vec3 hsl2rgb(float H, float S, float L) {
 void main() {
   vec4 c = sampleScreen(vec2(v_uv.x, 1.0 - v_uv.y));
   float Hue = user_data_0.x, flag = user_data_0.y, open = user_data_0.z;
-  float outA = (flag > 0.99) ? c.a : 1.0;
+  /* 原 hlsl 这里是 (flag>0.99)?c.a:1.0 —— 即「未开启时强制不透明」。
+     但 4.0 的调用 PostEffect("fx:color_set","__effect1",6,"",{{Hue,1,1,0}},{})
+     一个参数挤在 user_data_0 里，open 与 flag 同时为 1；而 RT 刚被
+     RenderClear(0,0,0,0) 清空的头几帧采样到的是全 0，强制 a=1 就会在
+     战场矩形里画出一块不透明纯黑 —— users 报的「着色器出现一瞬间屏幕中心
+     黑方块」。这里保留采样到的 alpha 即可，rgb 不变。 */
+  float outA = c.a;
   if (open >= 0.99) {
     float l = 0.299*c.r + 0.587*c.g + 0.114*c.b;
     float s = 1.0 - l;
@@ -244,7 +254,7 @@ export function createPostFX(gl) {
   /* byKey 是**诊断用**的每效果调用计数：评估「全屏 pass 数」时唯一可信的口径。
      drawn 是累计值，per-frame 需要配合 resetStats() 才能读。 */
   const stats = { drawn: 0, namedSrc: 0, captureSrc: 0, unknown: [], capped: 0,
-                  byKey: Object.create(null) };
+                  skipped: 0, byKey: Object.create(null) };
 
   function ensureQuad() {
     if (quadVao) return quadVao;
@@ -346,8 +356,41 @@ export function createPostFX(gl) {
    */
   function draw(spec, ctx) {
     const key = basename(spec.fx) || 'passthrough';
-    const def = EFFECTS[key] || EFFECTS.passthrough;
-    if (!EFFECTS[key] && stats.unknown.length < 16) stats.unknown.push(spec.fx);
+    /* 后期效果画的是全屏四边形（裁剪空间 z=0），绝对不能写深度：
+       一旦深度测试被开启（ROP_ZENABLE，见 rgl_render.h 的 #17/#21 修复），
+       它的 z=0 会被写进深度缓冲，之后所有 2D 精灵（z=0.5）都会因
+       gl.LEQUAL 而整片被丢弃 —— 表现就是「按 ESC 暂停菜单不出来、画面
+       停在旧帧但逻辑继续跑」（永夜抄/妖妖梦非符期，因为有 3D 背景会开深度）。
+       这里临时关掉深度测试与深度写入，画完再恢复。 */
+    const depthWasOn = gl.isEnabled(gl.DEPTH_TEST);
+    const depthMaskWas = gl.getParameter(gl.DEPTH_WRITEMASK);
+    if (depthWasOn) gl.disable(gl.DEPTH_TEST);
+    if (depthMaskWas) gl.depthMask(false);
+    try {
+      return drawInner(spec, ctx, key);
+    } finally {
+      if (depthMaskWas) gl.depthMask(true);
+      if (depthWasOn) gl.enable(gl.DEPTH_TEST);
+    }
+  }
+
+  function drawInner(spec, ctx, key) {
+    /* 未知着色器一律跳过，绝不能用 passthrough 顶替。
+       反例（bug #2「想起 所长之技」整屏纯白）：legacy 关卡代码把
+       PostEffect 的两个参数写反了 ——
+       game/mod/GAME_L/th11.lua:624 是
+       PostEffect("objectTH11_0-1", "SaveScreen", "")，
+       按 (fx, tex) 解析就得到 fx="objectTH11_0-1"（未知效果）、
+       tex="SaveScreen"（不存在的贴图）。顶替成 passthrough 后它去采样
+       一张不存在的贴图（回落成白色 1x1），整屏被刷成纯白。
+       跳过等价于「这个效果没生效」，与 D3D9 原版在着色器加载/编译失败时
+       不做后处理的表现一致；用 passthrough 顶替反而会改变画面。 */
+    if (!Object.prototype.hasOwnProperty.call(EFFECTS, key)) {
+      if (stats.unknown.length < 16) stats.unknown.push(spec.fx);
+      stats.skipped++;
+      return false;
+    }
+    const def = EFFECTS[key];
 
     const rec = compile(key, def.frag);
 
@@ -416,6 +459,11 @@ export function createPostFX(gl) {
 
     ctx.blendApply();
     gl.bindVertexArray(quadVao);
+    /* 效果这一遍要走常规 alpha 混合：RT 里没被画到的区域 alpha=0，
+       关闭混合时它的 RGB=0 会被原样写进屏幕 —— 这正是「着色器一出现，
+       战场矩形变成一块纯黑」的来由（bugs #16 遗留）。a=1 的地方仍是覆盖。 */
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.bindVertexArray(null);
     gl.activeTexture(gl.TEXTURE0);
@@ -428,12 +476,13 @@ export function createPostFX(gl) {
     /* 诊断：清空计数，下一次读取就是「这一段」的 pass 分布 */
     resetStats() {
       stats.drawn = 0; stats.namedSrc = 0; stats.captureSrc = 0;
-      stats.capped = 0; stats.byKey = Object.create(null);
+      stats.capped = 0; stats.skipped = 0; stats.byKey = Object.create(null);
       stats.unknown.length = 0;
     },
     get stats() {
       return {
         drawn: stats.drawn, namedSrc: stats.namedSrc, captureSrc: stats.captureSrc,
+        skipped: stats.skipped,
         unknown: stats.unknown.slice(), programs: programs.size,
         byKey: { ...stats.byKey },
       };
