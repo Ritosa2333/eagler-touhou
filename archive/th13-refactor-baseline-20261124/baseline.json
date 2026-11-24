@@ -20,15 +20,15 @@
         "failed": [
           {
             "test": "reimu2406_real_bullet_anm_child_phase_with_follower",
-            "cause": "缺测试夹具：reimu2406 真实弹幕 ANM 资源不在工作区"
+            "cause": "运行时资源目录未准备：测试读 web/sdl-runtime/assets/bullet.anm（prepare-assets.mjs 生成）"
           },
           {
             "test": "reimu2406_real_bullet_anm_tail_parent_phase_late_by_one",
-            "cause": "缺测试夹具：reimu2406 真实弹幕 ANM 资源不在工作区"
+            "cause": "运行时资源目录未准备：测试读 web/sdl-runtime/assets/bullet.anm（prepare-assets.mjs 生成）"
           },
           {
             "test": "png_decode_stb",
-            "cause": "缺测试夹具：artifacts/reference/textures/effect/eff_switch.png 不在工作区"
+            "cause": "缺输入：测试读取 thtk 提取产物 artifacts/reference/textures/effect/eff_switch.png"
           }
         ]
       },
@@ -170,15 +170,15 @@
         "failed": [
           {
             "test": "reimu2406_real_bullet_anm_child_phase_with_follower",
-            "cause": "缺测试夹具：reimu2406 真实弹幕 ANM 资源不在工作区"
+            "cause": "运行时资源目录未准备：测试读 web/sdl-runtime/assets/bullet.anm（prepare-assets.mjs 生成）"
           },
           {
             "test": "reimu2406_real_bullet_anm_tail_parent_phase_late_by_one",
-            "cause": "缺测试夹具：reimu2406 真实弹幕 ANM 资源不在工作区"
+            "cause": "运行时资源目录未准备：测试读 web/sdl-runtime/assets/bullet.anm（prepare-assets.mjs 生成）"
           },
           {
             "test": "png_decode_stb",
-            "cause": "缺测试夹具：artifacts/reference/textures/effect/eff_switch.png 不在工作区"
+            "cause": "缺输入：测试读取 thtk 提取产物 artifacts/reference/textures/effect/eff_switch.png"
           }
         ]
       },
@@ -220,7 +220,7 @@
         "failed": [
           {
             "test": "independent_real_bubble_restore_and_missing_restore_negative_control",
-            "cause": "缺原版字体 msgothic.ttc"
+            "cause": "多人版独有测试：按旧的相对层级（../artifacts/reference/raw）查找原版 ANM，在容器工作目录下落空"
           }
         ]
       },

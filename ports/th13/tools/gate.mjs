@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // th13 测试套件编排：在容器内并行运行各套件，把 TAP 结果汇总为 results.json，
-// 并可与基线逐测试比对。带 --compare 时，退出码非零当且仅当出现基线之外的
-// 新失败；不带时，退出码非零当且仅当有套件失败。
+// 并可与基线逐测试比对（只比对本次分组与 --only 选中的套件）。带 --compare 时，
+// 退出码非零当且仅当出现基线之外的新失败；不带时，退出码非零当且仅当有套件失败。
 // 用法（容器内，于 ports/th13 或 ports/th13-mp 目录执行）：
 //   node tools/gate.mjs [--group native|js|all] [--jobs N] [--only a,b]
 //                       [--out <目录>] [--compare <results.json>]
@@ -142,9 +142,12 @@ async function runAll(suites, jobs, outDir) {
   return results;
 }
 
-function compareWith(baseline, results) {
+// 只比对本次分组与 --only 选中的套件；其中基线里有而本次没跑的套件算回归。
+function compareWith(baseline, results, group, skipped) {
   const regressions = [], improvements = [];
-  const before = new Map((baseline.suites ?? []).map(suite => [suite.name, suite]));
+  const inGroup = name => group === 'all' || (name === 'js') === (group === 'js');
+  const before = new Map((baseline.suites ?? [])
+    .filter(suite => inGroup(suite.name) && !skipped.has(suite.name)).map(suite => [suite.name, suite]));
   for (const suite of results) {
     const prior = before.get(suite.name);
     if (!prior) {
@@ -163,7 +166,9 @@ function compareWith(baseline, results) {
 const options = parseArguments(process.argv.slice(2));
 const outDir = options.out ?? join(outer, 'artifacts', 'gate', portName, options.group);
 mkdirSync(outDir, {recursive: true});
-const suites = collectSuites(options.group, outDir).filter(suite => !options.only || options.only.has(suite.name));
+const collected = collectSuites(options.group, outDir);
+const suites = collected.filter(suite => !options.only || options.only.has(suite.name));
+const skipped = new Set(collected.filter(suite => !suites.includes(suite)).map(suite => suite.name));
 if (!suites.length) {
   console.error('gate: 没有可运行的套件');
   process.exit(2);
@@ -179,7 +184,7 @@ for (const {name, exitCode, passed, failed, assertions} of results)
 console.log(`[gate] 结果：${reportPath}`);
 
 if (options.compare) {
-  const {regressions, improvements} = compareWith(JSON.parse(readFileSync(options.compare, 'utf8')), results);
+  const {regressions, improvements} = compareWith(JSON.parse(readFileSync(options.compare, 'utf8')), results, options.group, skipped);
   for (const line of regressions) console.log(`回归  ${line}`);
   for (const line of improvements) console.log(`修复  ${line}`);
   console.log(regressions.length ? `[gate] 相对基线新增失败 ${regressions.length} 项` : '[gate] 相对基线无新增失败');
