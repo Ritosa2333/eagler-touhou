@@ -96,11 +96,13 @@ const BRO_MULTIPLAYER_LOADOUTS = Object.freeze([
     Object.freeze({ labelKey: "multiplayer.loadout.bro.aya", glyph: "文", character: 3, shot: 0 }),
 ]);
 // BRO room "difficulty" row doubles as the entry picker. Slots 0/1 pick the
-// tier of the native 19-chapter run (Hard = current bullets, Lunatic = legacy
-// 4.0 bullets); slots 2/3 are standalone chapter entries (HSiFS AfterExtra and
-// Bad Apple!!) that are not part of the native queue. The values are plain
-// labels because the shared room UI renders config.difficulties verbatim.
-const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Hard", "Lunatic", "天空璋AEX", "Bad Apple!"]);
+// bullet style of the native 19-chapter run (Vanilla = current 3.x bullets,
+// Legacy = legacy 4.0 bullets); slots 2/3 are standalone chapter entries
+// (HSiFS AfterExtra and Bad Apple!!) that are not part of the native queue.
+// The values are plain labels because the shared room UI renders
+// config.difficulties verbatim; the numeric index is the wire value, so the
+// slot order must stay stable (0=vanilla, 1=legacy, 2=AEX, 3=BadApple).
+const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Vanilla", "Legacy", "天空璋AEX", "Bad Apple!"]);
 const TOGGLE_TOUCH_FIRE = Object.freeze({ mode: "toggle", labelKey: "touch.tapToggle" });
 const CHARGE_TOUCH_FIRE = Object.freeze({
     mode: "held-key",

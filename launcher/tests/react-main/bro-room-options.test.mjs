@@ -6,8 +6,8 @@ let api;
 beforeAll(async()=>{const result=await build({stdin:{resolveDir:fileURLToPath(new URL('../../',import.meta.url)),contents:`export * from './src/launcher/bro-room-options.mts';export * from './src/launcher/multiplayer-runtime-options.mts';export * from './src/launcher/multiplayer-room-session.mts';export * from './src/launcher/multiplayer-relay-url.mts';export * from './src/contracts/product-catalog.mts';`},bundle:true,write:false,format:'esm',platform:'node'});api=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));});
 const storage=()=>{const map=new Map();return {getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v),map};};
 
-test('BRO difficulty exposes Hard/Lunatic plus AEX/BadApple chapter entries',()=>{
-  const expected=['Hard','Lunatic','天空璋AEX','Bad Apple!'];
+test('BRO difficulty exposes Vanilla/Legacy plus AEX/BadApple chapter entries',()=>{
+  const expected=['Vanilla','Legacy','天空璋AEX','Bad Apple!'];
   assert.deepEqual(api.PRODUCT_GAMES.bro.multiplayer.difficulties,expected);
   assert.deepEqual(api.PRODUCT_GAMES.bromp?.multiplayer?.difficulties ?? api.PRODUCT_GAMES.bro.multiplayer.difficulties,expected);
   const config=api.PRODUCT_GAMES.bro.multiplayer;
@@ -59,7 +59,7 @@ test('BRO creation URLs and saved sessions carry only their own room options',()
   assert.equal(new URL(other.url).searchParams.has('broSystems'),false);
   const saved=storage(),store=api.createMultiplayerRoomSessionStore({storage:saved});
   store.save('bromp',{room:{code:'1234',playerCount:2,difficulty:1,broSystems:systems,broStageQueue:queue},seat:0});
-  const loaded=store.load({product:'bromp',roomCode:'1234',playerCounts:[2,3],difficulties:['Hard','Lunatic','天空璋AEX','Bad Apple!']}).room;
+  const loaded=store.load({product:'bromp',roomCode:'1234',playerCounts:[2,3],difficulties:['Vanilla','Legacy','天空璋AEX','Bad Apple!']}).room;
   assert.deepEqual(loaded.broSystems,systems);
   assert.deepEqual(loaded.broStageQueue,queue);
 });

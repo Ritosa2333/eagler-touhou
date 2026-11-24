@@ -231,7 +231,7 @@ export function broRoomOptionsExpression(options) {
   const parts = [];
   if (systems !== null) parts.push('systems=' + systems);
   if (queue !== null) parts.push('queue=' + queue);
-  // 3AR：房间难度 0=Hard(当前弹幕) / 1=Lunatic(legacy 4.0 弹幕)。
+  // 3AR：房间难度 0=Vanilla(当前弹幕) / 1=Legacy(legacy 4.0 弹幕)。
   // 只接受 0/1；缺省（单人/未指定）不写该字段 → Lua 侧保持默认 Hard。
   if (o.netplayDifficulty === 0 || o.netplayDifficulty === 1) {
     parts.push('legacy=' + (o.netplayDifficulty === 1 ? 'true' : 'false'));
