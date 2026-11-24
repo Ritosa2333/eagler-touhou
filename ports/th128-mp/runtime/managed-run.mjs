@@ -3,6 +3,7 @@ import {createCoopPauseMenu} from './coop-pause-menu.mjs';
 import {openCoopSound} from './coop-sound.mjs';
 import {historyRules,historyWire} from './confirmed-history.mjs';
 import {createCoopMatch} from './coop-match.mjs';
+import {TH128_COOP_FRAME_LIMIT} from './coop-rules.mjs';
 import {analogGamepadDirections,mappedGamepadCodes} from '../../th128/site/runtime/gamepad-input.mjs';
 import {createPlayerMatch} from './player-match.mjs';
 import {createMatchClock} from './match-clock.mjs';
@@ -278,10 +279,10 @@ export async function launchManagedRun({room,view,build,signal,openPeer,present,
     const decoder=createTh128SpectatorDecoder({build,matchId:room.rules.matchId,expectedRules:room.rules});
     playback=createManagedSpectatorPlayback({run:room.run,signal:live,
       openWorld:(rules,owner)=>view.openWorld(rules,owner,{confirmedOnly:true,seatCues:false}),render:(scene,frame,epoch)=>{viewerFrame={world:scene,frame,epoch};draw(scene,0,frame,epoch);},
-      onPlayedEnd:(track,end,scene)=>{
+      onPlayedEnd:(track,end,scene,frame)=>{
         const replayBytes=track.replayBytes();onReplay(replayBytes);
         if(end!=='restart'&&cooperative){
-          const result=scene.outcome?.()??end;sounds?.setBattlePhase('stopped');
+          const result=scene.outcome?.()??(end==='completed'&&frame===TH128_COOP_FRAME_LIMIT?'time-limit':end);sounds?.setBattlePhase('stopped');
           const value={active:true,epoch:track.header.rules.epoch,result,replayBytes};
           sealed(value,scene);
         }

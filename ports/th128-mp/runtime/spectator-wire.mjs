@@ -1,9 +1,11 @@
 import {openConfirmedTimeline,historyRules,historySchemas,historyWire} from './confirmed-history.mjs';
+import {TH128_COOP_FRAME_LIMIT} from './coop-rules.mjs';
 
 export const TH128_SPECTATOR_MARKER=0x48;
-const checkpointSchema=1,maxFrames=108000,headerBytes=32,stateLimit=4096;
+const checkpointSchema=1,parallelFrameLimit=108000,headerBytes=32,stateLimit=4096;
 const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true});
 const abi=r=>r.schema==='th128-coop/1'?2:1,realm=r=>abi(r)===2?'th128-coop-spectator-checkpoint/1':'th128-mp-spectator-checkpoint/1';
+const frameLimit=protocolAbi=>protocolAbi===2?TH128_COOP_FRAME_LIMIT:parallelFrameLimit;
 // This ABI has a single stage checkpoint (serial 1). Terminal serials 2–5
 // distinguish why this confirmed history ended without altering the shared
 // Relay End layout. A multi-stage ABI must assign fresh serial semantics.
@@ -29,6 +31,7 @@ function upload(packet){const envelope=new Uint8Array(1+packet.length);envelope[
 export async function createTh128SpectatorEncoder(inputHeader,build){
   const {header}=await openConfirmedTimeline(inputHeader,build);
   const rules=historyRules(header.rules),session=sessionId(header),scope={session,stage:rules.stageId,players:rules.players,abi:abi(rules)};
+  const maxFrames=frameLimit(scope.abi);
   const checkpoint=encoder.encode(JSON.stringify({schema:realm(rules),header}));
   if(checkpoint.length>stateLimit)throw new Error('TH128 spectator checkpoint exceeds Relay limit');
   let nextFrame=0,previous=Array(rules.players).fill(0),opened=false,ended=false;
@@ -85,7 +88,8 @@ export function createTh128SpectatorDecoder({build,matchId,expectedRules}){
     if(session!==announcement.session)throw new Error('Spectator session identity mismatch');
     if(bytes[2]===0x53&&bytes[3]===0x56&&bytes[4]===2){
       const frame=data.getUint32(20,true),stage=data.getUint32(24,true),sequence=data.getUint32(28,true);
-      if(![1,2].includes(data.getUint32(16,true))||frame>maxFrames)throw new Error('Spectator stage ABI or frame mismatch');
+      const stageAbi=data.getUint32(16,true);
+      if(![1,2].includes(stageAbi)||frame>frameLimit(stageAbi))throw new Error('Spectator stage ABI or frame mismatch');
       if(bytes[5]===1){
         if(rules?.epoch===announcement.generation+1||bytes.length<=40||frame!==0||sequence!==1||
           data.getUint32(32,true)!==checkpointSchema||data.getUint32(36,true)!==bytes.length-40)throw new Error('Invalid TH128 spectator checkpoint');
@@ -94,11 +98,11 @@ export function createTh128SpectatorDecoder({build,matchId,expectedRules}){
         const current=announcement,track=await openConfirmedTimeline(state.header,build),selection=historyRules(track.header.rules);
         if(expectedRules){const expected=historyWire(expectedRules),remote=historyWire(selection);
           if(JSON.stringify({...expected,epoch:remote.epoch})!==JSON.stringify(remote))throw new Error('Spectator venue rules differ');}
-        if(bytes[6]!==selection.players||data.getUint32(16,true)!==abi(selection)||current!==announcement||selection.matchId!==matchId||selection.epoch!==current.generation+1||selection.seed!==current.seed||
+        if(bytes[6]!==selection.players||stageAbi!==abi(selection)||current!==announcement||selection.matchId!==matchId||selection.epoch!==current.generation+1||selection.seed!==current.seed||
           selection.stageId!==stage||sessionId(track.header)!==session)throw new Error('Spectator checkpoint identity mismatch');
         rules=selection;timeline=track;serial=sequence;bootstrapped=false;return 'checkpoint';
       }
-      if(!timeline||bytes[6]!==rules.players||data.getUint32(16,true)!==abi(rules)||rules.epoch!==announcement.generation+1||stage!==rules.stageId||frame!==timeline.status().nextFrame||bytes.length!==headerBytes)
+      if(!timeline||bytes[6]!==rules.players||stageAbi!==abi(rules)||rules.epoch!==announcement.generation+1||stage!==rules.stageId||frame!==timeline.status().nextFrame||bytes.length!==headerBytes)
         throw new Error('Spectator stage identity or frame mismatch');
       if(bytes[5]===4&&sequence===serial){bootstrapped=true;return 'bootstrap';}
       if(bytes[5]===3&&serial===1&&within(sequence,2,5)){
@@ -110,7 +114,7 @@ export function createTh128SpectatorDecoder({build,matchId,expectedRules}){
     if(!timeline||rules.epoch!==announcement.generation+1||bytes[6]!==rules.players||bytes.length!==24+12*rules.players||bytes[2]!==0x4e||bytes[3]!==0x50||
       bytes[4]!==4||bytes[5]!==3||data.getUint32(20,true)!==abi(rules))throw new Error('Invalid TH128 spectator input identity');
     const frame=data.getUint32(16,true);
-    if(frame!==timeline.status().nextFrame||frame>=maxFrames)throw new Error('Expected a contiguous spectator input');
+    if(frame!==timeline.status().nextFrame||frame>=frameLimit(abi(rules)))throw new Error('Expected a contiguous spectator input');
         const held=Array.from({length:rules.players},(_,i)=>{const at=24+12*i;if(bytes.subarray(at+2,at+12).some(Boolean))throw new Error('Unexpected TH128 spectator movement payload');return data.getUint16(at,true);});
     timeline.accept({schema:historySchemas(rules).chunk,...scope(),fromFrame:frame,frames:[held]});
 return 'frame';

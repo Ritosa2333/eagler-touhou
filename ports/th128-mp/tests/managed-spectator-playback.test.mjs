@@ -8,8 +8,8 @@ function fixture(){
   const worlds=[],draws=[],receipts=[],errors=[];
   const life=new AbortController();
   function world(rules){const rows=[],x={rules,rows,closes:0,step(value){rows.push(value.frame);},close(){x.closes++;}};worlds.push(x);return x;}
-  function tape(epoch,nextFrame){
-    const rules={epoch,stageId:3,route:'A1-3'},state={nextFrame,end:null};
+  function tape(epoch,nextFrame,mode='parallel-stage'){
+    const rules={epoch,stageId:3,route:'A1-3',mode},state={nextFrame,end:null};
     return {rules,state,track:{status:()=>({...state}),read:frame=>frame<state.nextFrame?{frame,inputs:[0,0]}:null}};
   }
   function open(extra={}){return createManagedSpectatorPlayback({run:25,signal:life.signal,
@@ -64,3 +64,30 @@ test('retirement closes a late world and the paused queue never admits a fourth 
   await Promise.resolve();f.life.abort();release();await spectator.settled();
   assert.equal(f.worlds[0].closes,1);assert.equal(f.draws.length,0);assert.deepEqual(f.errors,[]);
 });
+
+for (const bootstrapFirst of [false, true]) {
+  test(`a late co-op spectator presents a confirmed frame ${bootstrapFirst ? 'during' : 'before'} long catch-up`, async () => {
+    const f = fixture(), spectator = f.open(), tape = f.tape(1, bootstrapFirst ? 216000 : 1, 'same-stage-coop');
+    spectator.enqueue(tape.track, tape.rules);
+    if (bootstrapFirst) spectator.bootstrap(1, 216000);
+    await step(spectator, 0);
+    await step(spectator, tick);
+    const firstFrame = f.draws[0]?.frame;
+    assert.ok(firstFrame >= 1 && firstFrame < 216000);
+    if (!bootstrapFirst) {
+      assert.equal(firstFrame, 1);
+      assert.equal(spectator.status(), null);
+      tape.state.nextFrame = 216000;
+      spectator.bootstrap(1, 216000);
+    }
+    for (let draw = 2; draw < 2048 && spectator.status().seeking; draw++) {
+      await step(spectator, draw * tick);
+    }
+    assert.equal(spectator.status().seeking, false, 'catch-up drains the long history in bounded batches');
+    assert.deepEqual(f.draws.at(-1), {epoch: 1, frame: 216000});
+    const rows = f.worlds[0].rows;
+    assert.equal(rows.length, 216000);
+    assert.ok(rows.every((row, index) => row === index));
+    f.life.abort();
+  });
+}

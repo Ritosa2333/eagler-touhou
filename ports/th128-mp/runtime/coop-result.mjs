@@ -1,5 +1,5 @@
 // One local presentation per sealed result. Nothing in this UI controls the live World.
-const labels=new Map([['team-over','全队全灭'],['left','本局已结束'],['completed','本局已结束']]);
+const labels=new Map([['team-over','全队全灭'],['left','本局已结束'],['completed','本局已结束'],['time-limit','本局已达到联机时长上限']]);
 export function bindCoopResult(ui,{makeFile,save,exportFile=()=>{},enterReplay,returnRoom,signal}){
  let shown=false,suspended=false,result=null,file=null,generation=0,focus=null;
  function paint(){ui.panel.hidden=!shown||suspended||!result;ui.caption.textContent=labels.get(result)??'';ui.save.disabled=ui.review.disabled=!file;if(ui.download)ui.download.disabled=!file;}

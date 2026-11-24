@@ -1,8 +1,8 @@
 import {createCoopPause,PAUSE_WIRE} from './coop-pause.mjs';
-import {coopWire,makeCoopRules,coopFingerprint} from './coop-rules.mjs';
+import {coopWire,makeCoopRules,coopFingerprint,TH128_COOP_FRAME_LIMIT} from './coop-rules.mjs';
 import {createConfirmedHistory} from './confirmed-history.mjs';
 import {createCoopLockstep} from './coop-lockstep.mjs';
-const barrier='th128-coop-barrier/2',limit=216000;
+const barrier='th128-coop-barrier/2';
 // R is a shared restart request; peers acknowledge the same last frame, without asking
 // each human to vote or manufacturing remote inputs for a machine which is behind.
 export async function createCoopMatch({rules,localPlayer,allowedMask,openEngine,send,signal,onConfirmed=()=>{}}){
@@ -11,7 +11,11 @@ export async function createCoopMatch({rules,localPlayer,allowedMask,openEngine,
  function check(){live.throwIfAborted();if(closed)throw Error('Closed co-op room');if(error)throw error;}
  async function open(r){const key=await coopFingerprint(r),tape=await createConfirmedHistory({rules:r,allowedMask});live.throwIfAborted();const engine=await openEngine(r,live);
   try{live.throwIfAborted();const result={reason:null};const round=await createCoopLockstep({rules:r,localSeat:localPlayer,engine,send,onConfirmed(row,effects){
-    if(tape.status().end)return;tape.append(row);onConfirmed(r,row,effects);if(effects?.teamOver||effects?.cleared){result.reason=effects.cleared?'cleared':'team-over';tape.seal('completed');previous=tape;}
+    if(tape.status().end)return;
+    tape.append(row);onConfirmed(r,row,effects);
+    if(effects?.cleared||effects?.teamOver)result.reason=effects.cleared?'cleared':'team-over';
+    else if(row.frame+1===TH128_COOP_FRAME_LIMIT)result.reason='time-limit';
+    if(result.reason){tape.seal('completed');previous=tape;}
   }});const pause=createCoopPause({players:n,seat:localPlayer,epoch:r.epoch,key,send,position:()=>round.status().next,confirmed:()=>tape.status().nextFrame});return {r,key,tape,round,pause,result};}catch(e){engine.close();throw e;}
  }
  current=await open(rules);
@@ -41,9 +45,10 @@ export async function createCoopMatch({rules,localPlayer,allowedMask,openEngine,
   if(msg.schema!==barrier){if(restart&&msg.epoch===current.r.epoch+1&&msg.kind==='ready'&&msg.schema==='th128-coop-peer/1'){
       const existing=restart.early.get(from);if(existing&&existing.key!==msg.key)throw Error('New epoch ready changed');restart.early.set(from,msg);return status();}
     current.round.receive(msg,from);return flush();}
-  if(!current.round.status().ready||msg.epoch!==current.r.epoch||msg.key!==current.key||!['fence','prepared'].includes(msg.phase)||!Number.isInteger(msg.frame)||msg.frame<0||msg.frame>limit)throw Error('Invalid co-op restart barrier');
+  if(!current.round.status().ready||msg.epoch!==current.r.epoch||msg.key!==current.key||!['fence','prepared'].includes(msg.phase)||!Number.isInteger(msg.frame)||msg.frame<0||msg.frame>TH128_COOP_FRAME_LIMIT)throw Error('Invalid co-op restart barrier');
   if(!['restart','left'].includes(msg.action))throw Error('Invalid cooperative barrier action');
-  if(current.tape.status().end&&(current.result.reason!=='team-over'||msg.action!=='restart'))return status();
+  // A seat can reach the final frame while a peer's restart/exit fence is in flight.
+  if(current.tape.status().end&&current.result.reason!=='time-limit'&&(current.result.reason!=='team-over'||msg.action!=='restart'))return status();
   if(!restart&&msg.phase!=='fence')throw Error('Unexpected cooperative ready');freeze(msg.action);const b=restart;
   const entries=msg.phase==='fence'?b.frontiers:b.prepared;if(msg.phase==='prepared'&&!b.frontiers.has(from))throw Error('Sender has not fenced its history');
   if(msg.phase==='fence'){if(entries.has(from)&&(entries.get(from)!==msg.frame||b.actions.get(from)!==msg.action))throw Error('A seat changed its cooperative frontier');b.actions.set(from,msg.action);entries.set(from,msg.frame);}

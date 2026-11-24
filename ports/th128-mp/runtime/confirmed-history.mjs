@@ -2,13 +2,13 @@ import {createMultiplayerRules,multiplayerRulesFingerprint,multiplayerRulesWire}
 
 const legacySchemas={header:'th128-mp-history/1',chunk:'th128-mp-confirmed/1',end:'th128-mp-end/1',replay:'th128-mp-replay/1'};
 const coopSchemas={header:'th128-coop-history/1',chunk:'th128-coop-confirmed/1',end:'th128-coop-end/1',replay:'th128-coop-replay/1'};
-import {makeCoopRules,coopFingerprint,coopWire} from './coop-rules.mjs';
+import {makeCoopRules,coopFingerprint,coopWire,TH128_COOP_FRAME_LIMIT} from './coop-rules.mjs';
 const isCoop=r=>r?.schema==='th128-coop/1';
 export const historySchemas=rules=>isCoop(rules)?coopSchemas:legacySchemas;
 export const historyRules=wire=>isCoop(wire)?makeCoopRules(wire):createMultiplayerRules(wire);
 const fingerprint=r=>isCoop(r)?coopFingerprint(r):multiplayerRulesFingerprint(r);
 export const historyWire=r=>isCoop(r)?coopWire(r):multiplayerRulesWire(r);
-const maxFrames=216000,maxReplayBytes=8*1024*1024,maxChunk=120,nativeMask=763;
+const parallelFrameLimit=216000,maxReplayBytes=8*1024*1024,maxChunk=120,nativeMask=763;
 const reasons=new Set(['completed','restart','left','disconnect']);
 const integer=(v,min,max)=>Number.isSafeInteger(v)&&v>=min&&v<=max;
 const elapsedInput=(held,prev,player)=>Object.freeze({player,held,pressed:held&~prev,released:prev&~held,predicted:false});
@@ -26,6 +26,7 @@ function checkMask(mask){
 function makeTrack(header,rules){
   const {fingerprint,allowedMask}=header,{matchId,epoch}=rules;
   const scope={matchId,epoch,fingerprint},schemas=historySchemas(rules),n=rules.players,seats=Array.from({length:n},(_,i)=>i);
+  const maxFrames=isCoop(rules)?TH128_COOP_FRAME_LIMIT:parallelFrameLimit;
   const data=new Uint16Array(maxFrames*n);
   let length=0,finished=null;
   const status=()=>Object.freeze({nextFrame:length,end:finished?.reason??null});

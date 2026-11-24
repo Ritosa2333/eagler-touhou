@@ -1,3 +1,5 @@
+import {TH128_COOP_FRAME_LIMIT} from './coop-rules.mjs';
+
 // Ordered control channel; rows inside the pause are never sampled, written to Replay or sent to viewers.
 // All seats stop at max(already simulated cursor), then publish only real missing inputs to reach it.
 export const PAUSE_WIRE='th128-coop-pause/1';
@@ -25,7 +27,7 @@ export function createCoopPause({players,seat,epoch,key,send,position,confirmed}
  function paused(){return !!active&&active.arrivals.size===players&&active.target!==null;}
  function toggle(){if(!active)begin();else if(paused())active.wantResume=true;progress();}
  function receive(msg,from){if(msg?.schema!==PAUSE_WIRE||msg.epoch!==epoch||msg.key!==key||msg.seat!==from||!Number.isInteger(from)||from===seat||from<0||from>=players||
-   !['stop','held','resume'].includes(msg.phase)||!Number.isInteger(msg.frame)||msg.frame<0||msg.frame>216000||!Number.isSafeInteger(msg.serial)||msg.serial<1)throw Error('Invalid cooperative pause packet');
+   !['stop','held','resume'].includes(msg.phase)||!Number.isInteger(msg.frame)||msg.frame<0||msg.frame>TH128_COOP_FRAME_LIMIT||!Number.isSafeInteger(msg.serial)||msg.serial<1)throw Error('Invalid cooperative pause packet');
   if(msg.serial<=serial)return; // reliable-channel duplicates cannot reopen an already resumed pause
   if(msg.serial!==serial+1){if(msg.serial!==serial+2||msg.phase!=='stop'||!active?.resumes.has(from))throw Error('Unexpected future pause');const prev=queued.get(from);if(prev&&prev.frame!==msg.frame)throw Error('Future pause frontier changed');queued.set(from,msg);return;}
   handle(msg,from);progress();

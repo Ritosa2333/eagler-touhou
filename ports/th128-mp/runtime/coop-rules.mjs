@@ -1,5 +1,7 @@
 import {cirnoPaletteSet} from './coop-cirno-palettes.mjs';
 
+export const TH128_COOP_FRAME_LIMIT = 216000;
+
 // Old parallel-stage sessions/recordings cannot be opened as co-op.
 const fields=['schema','mode','matchId','epoch','players','difficulty','route','challengeMode','seed','inputDelay','rollbackWindow','coreSHA256','resourceSHA256'];
 const entries=new Map([['A',[1,'st_a1_1.ecl']],['B',[6,'st_b1_1.ecl']],['C',[11,'st_c1_1.ecl']],['EX',[16,'st_ex.ecl']]]);

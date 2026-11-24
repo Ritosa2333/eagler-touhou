@@ -35,3 +35,66 @@ test('P3 can end a paused match without creating a new World; all results and sa
  peers[2].togglePause();await fan();assert.equal(peers[2].requestFinish(),true);await fan();const saved=peers[0].previousReplay();for(const p of peers){assert.equal(p.status().result,'left');assert.deepEqual(p.status().history,{nextFrame:1,end:'left'});assert.deepEqual(p.previousReplay(),saved);assert.equal(p.tick(()=>{throw Error('ended match sampled');}).advanced,false);}
  assert.equal(opens,n);const tape=await readMultiplayerReplay(saved,build);assert.equal(tape.status().end,'left');peers[0].close();assert.equal(peers[2].status().result,'left');}finally{peers.forEach(p=>p.close());}
 });
+
+for (const players of [2, 3]) {
+  test(`${players}P seals and saves a common result at the last confirmed frame`, async () => {
+    const build = {coreSHA256: 'a'.repeat(64), resourceSHA256: 'b'.repeat(64)};
+    const rules = makeCoopRules({
+      schema: 'th128-coop/1', mode: 'same-stage-coop', matchId: 'long-coop', epoch: 1,
+      players, route: 'A', difficulty: 1, challengeMode: false,
+      inputDelay: players === 2 ? 2 : 0, rollbackWindow: 2, seed: 17, ...build,
+    });
+    const peers = [];
+    const packets = [];
+    function deliver() {
+      for (const [from, packet] of packets) {
+        peers.forEach((peer, to) => { if (to !== from) peer.receive(packet, from); });
+      }
+      packets.length = 0;
+    }
+    try {
+      for (let seat = 0; seat < players; seat++) {
+        peers.push(await createCoopMatch({
+          rules, localPlayer: seat, allowedMask: 763,
+          send: packet => packets.push([seat, packet]),
+          openEngine: () => ({step() {}, checkpoint: () => ({}), restore() {}, release() {}, close() {}}),
+        }));
+      }
+      peers.forEach(peer => peer.announceStart());
+      deliver();
+      for (let frame = 0; frame < 216000; frame++) {
+        peers.forEach(peer => assert.equal(peer.tick(64).advanced, true));
+        if (frame === 215999 && rules.inputDelay === 0) {
+          peers.forEach(peer => assert.deepEqual(peer.status().history, {nextFrame: 215999, end: null}));
+          assert.equal(peers.at(-1).requestRestart(), true);
+        }
+        deliver();
+      }
+      const bytes = peers[0].previousReplay();
+      for (const peer of peers) {
+        const state = peer.status();
+        assert.equal(state.result, 'time-limit');
+        assert.equal(state.phase, 'ended');
+        assert.deepEqual(state.history, {nextFrame: 216000, end: 'completed'});
+        assert.deepEqual(peer.previousReplay(), bytes);
+        assert.equal(peer.tick(() => { throw Error('ended match sampled'); }).advanced, false);
+      }
+      const replay = await readMultiplayerReplay(bytes, build);
+      assert.equal(replay.read(215999).inputs.at(-1).held, 64);
+      assert.equal(replay.read(216000), null);
+      if (rules.inputDelay === 0) {
+        for (let turn = 0; turn < 32 && peers.some(peer => peer.status().epoch === 1); turn++) {
+          await new Promise(resolve => setImmediate(resolve));
+          peers.forEach(peer => peer.flush());
+          deliver();
+        }
+        peers.forEach(peer => {
+          assert.equal(peer.status().epoch, 2, 'in-flight restart completes after the last frame');
+          assert.deepEqual(peer.previousReplay(), bytes);
+        });
+      }
+    } finally {
+      peers.forEach(peer => peer.close());
+    }
+  });
+}

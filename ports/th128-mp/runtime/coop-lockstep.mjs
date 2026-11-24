@@ -1,5 +1,5 @@
-import {coopFingerprint} from './coop-rules.mjs';
-const MAX_FRAMES=216000,LOOKAHEAD=60,OLD_WINDOW=60;
+import {coopFingerprint,TH128_COOP_FRAME_LIMIT as MAX_FRAMES} from './coop-rules.mjs';
+const LOOKAHEAD=60,OLD_WINDOW=60;
 const bounded=(n,a,b)=>Number.isSafeInteger(n)&&n>=a&&n<=b;
 const supported=n=>bounded(n,0,0xffff)&&!(n&~763);
 // Author peer/Relay supplies the transport sender. The seat in an envelope is never trusted alone.
@@ -47,5 +47,5 @@ export async function createCoopLockstep({rules,localSeat,engine,send,onConfirme
   if(speculative&&(!allowPrediction||next-committed>=window||engine.requiresConfirmedFrame?.()))return false;
   simulate(next,next===committed?last:pending.get(next-1).keys,speculative);next++;materialize();return true;});}
  function close(){if(closed)return;if(busy)throw Error('Cannot close co-op in a frame callback');closed=true;for(const p of pending.values())if(p.token!==null)engine.release(p.token);pending.clear();received.clear();settled.clear();engine.close();}
- return Object.freeze({announce,receive,sample,advance,flush,close,needsSample:()=>received.get(next+delay)?.[localSeat]==null,status:()=>Object.freeze({ready:!closed&&!poison&&readySeats.size===n,next,committed,replayed,closed,faulted:poison})});
+ return Object.freeze({announce,receive,sample,advance,flush,close,needsSample:()=>next+delay<MAX_FRAMES&&received.get(next+delay)?.[localSeat]==null,status:()=>Object.freeze({ready:!closed&&!poison&&readySeats.size===n,next,committed,replayed,closed,faulted:poison})});
 }

@@ -1,6 +1,7 @@
 import {createMatchClock} from './match-clock.mjs';
+import {TH128_COOP_FRAME_LIMIT} from './coop-rules.mjs';
 
-const restoreBatch=4,trackLimit=3,maxFrames=216000;
+const restoreBatch=4,coopRestoreBatch=256,coopRestoreBudgetMs=8,trackLimit=3;
 const integer=(value,min,max)=>Number.isSafeInteger(value)&&value>=min&&value<=max;
 const invalid=message=>Object.assign(new Error(message),{errno:'invalid-field'});
 
@@ -13,6 +14,7 @@ export function createManagedSpectatorPlayback({run,openWorld,render,onState,onE
   const lifetime=new AbortController(),queue=[],exported=new WeakSet();
   let scene=null,opening=null,bootstrapped=false,closed=false,position=0,revision=0,reported=null;
   let paused=false,following=true,restore=null,liveGoal=null,initial=true,lastTime=null,lastReportAt=null;
+  let initialPreview=false;
   const track=()=>queue[0],runId=()=>`th128-${run}-${track().rules.epoch}`;
   const received=()=>track().track.status().nextFrame;
   function status(){
@@ -64,7 +66,7 @@ export function createManagedSpectatorPlayback({run,openWorld,render,onState,onE
   }
   function bootstrap(epoch,frame){
     if(closed||bootstrapped)return;
-    if(!track()||track().rules.epoch!==epoch||!integer(frame,0,Math.min(maxFrames,received())))
+    if(!track()||track().rules.epoch!==epoch||!integer(frame,0,Math.min(TH128_COOP_FRAME_LIMIT,received())))
       throw invalid('Invalid TH128 spectator bootstrap frontier');
     bootstrapped=true;restore={frame};report(true);
   }
@@ -77,7 +79,7 @@ export function createManagedSpectatorPlayback({run,openWorld,render,onState,onE
     if(initial)throw invalid('Initial confirmed TH128 spectator frame is still restoring');
     if(!['pause','play','seek','live'].includes(data.action))throw invalid('Invalid TH128 spectator playback action');
     if(data.action==='seek'){
-      if(!integer(data.frame,0,Math.min(maxFrames,received())))throw invalid('Target is outside confirmed spectator history');
+      if(!integer(data.frame,0,Math.min(TH128_COOP_FRAME_LIMIT,received())))throw invalid('Target is outside confirmed spectator history');
       following=false;liveGoal=null;seek(data.frame);
     }else if(data.action==='live'){
       const latest=queue.at(-1);
@@ -88,17 +90,30 @@ export function createManagedSpectatorPlayback({run,openWorld,render,onState,onE
     report(true);
   }
   function advance(time,visible=true){
-    if(closed||!bootstrapped||!track())return;
+    if(closed||!track())return;
+    const {rules}=track(),cooperative=rules.mode==='same-stage-coop';
+    if(!bootstrapped&&(!cooperative||received()===0))return;
     if(!visible){clock.reset();return;}
     lastTime=time;
     if(!scene){if(!opening)acquire();return;}
-    const {rules}=track();
+    if(!bootstrapped){
+      // Present a confirmed scene while a long prefix is still being transferred.
+      if(position===0){step();render(scene,position,rules.epoch);initialPreview=true;}
+      return;
+    }
     if(restore){
-      const through=Math.min(restore.frame,position+restoreBatch);
-      while(position<through)step();
+      const through=Math.min(restore.frame,position+(cooperative?coopRestoreBatch:restoreBatch));
+      const deadline=cooperative?performance.now()+coopRestoreBudgetMs:Infinity;
+      while(position<through){
+        step();
+        if(cooperative&&performance.now()>=deadline)break;
+      }
       if(position===restore.frame){
         render(scene,position,rules.epoch);initial=false;restore=null;clock.reset();report(true);
-      }else report();
+      }else{
+        if(cooperative&&initial&&!initialPreview){render(scene,position,rules.epoch);initialPreview=true;}
+        report();
+      }
       return;
     }
     if(!paused){

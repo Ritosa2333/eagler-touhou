@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {createMultiplayerRules} from '../../th128/site/runtime/multiplayer-rules.mjs';
-import {createConfirmedHistory} from '../runtime/confirmed-history.mjs';
+import {createConfirmedHistory,readMultiplayerReplay} from '../runtime/confirmed-history.mjs';
+import {makeCoopRules} from '../runtime/coop-rules.mjs';
 import {createTh128SpectatorEncoder,createTh128SpectatorDecoder} from '../runtime/spectator-wire.mjs';
 
 const build={coreSHA256:'a'.repeat(64),resourceSHA256:'b'.repeat(64)};
@@ -54,3 +55,36 @@ test('speculation, input gaps and frames from another epoch stay outside spectat
   assert.equal(spectator.status().epoch,2);assert.equal(spectator.status().nextFrame,0);
   assert.throws(()=>spectator.announce(owner.announce()),/generation/);
 });
+
+for (const players of [2, 3]) {
+  test(`a late ${players}P co-op spectator receives the complete 60-minute replay`, async () => {
+    const selected = makeCoopRules({
+      schema: 'th128-coop/1', mode: 'same-stage-coop', matchId: 'long-coop', epoch: 1,
+      players, route: 'A', difficulty: 1, challengeMode: false, inputDelay: 0,
+      rollbackWindow: 2, seed: 17, ...build,
+    });
+    const history = await createConfirmedHistory({rules: selected, allowedMask: 763});
+    const owner = await createTh128SpectatorEncoder(history.header, build);
+    const head = owner.open();
+    const spectator = createTh128SpectatorDecoder({build, matchId: selected.matchId, expectedRules: selected});
+    const neutral = Array(players).fill(0);
+    const shot = [...neutral];
+    shot[players - 1] = 64;
+    const still = row(0, neutral, neutral);
+    spectator.announce(owner.announce());
+    await spectator.accept(payload(head));
+    for (let frame = 0; frame < 216000; frame++) {
+      still.frame = frame;
+      const input = frame === 108000 ? row(frame, shot, neutral)
+        : frame === 108001 ? row(frame, neutral, shot) : still;
+      await spectator.accept(payload(owner.frame(input)));
+    }
+    await spectator.accept(bootstrap(head, 216000));
+    await spectator.accept(payload(owner.finish('completed')));
+    assert.deepEqual(spectator.status(), {epoch: 1, nextFrame: 216000, end: 'completed', bootstrapped: true});
+    const saved = await readMultiplayerReplay(spectator.retain().replayBytes(), build);
+    assert.deepEqual(saved.read(108000), row(108000, shot, neutral));
+    assert.deepEqual(saved.read(108001), row(108001, neutral, shot));
+    assert.deepEqual(saved.read(215999), row(215999, neutral, neutral));
+  });
+}
