@@ -1,6 +1,5 @@
-// Application 聚合根（th15 ApplicationState 裁剪：destination 驱动的场景所有权，
-// 装载挡板与 16 槽 projection 保留；practice/checkpoint/ending/replay 不做，
-// docs/plans/ui-base.md §四）。
+// Application 聚合根：destination 驱动的场景所有权、装载挡板与 16 槽 projection，
+// 以及练习与符卡练习的宿主服务。
 #pragma once
 
 #include "../game/SpellCatalog.hpp"
@@ -395,7 +394,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     HudScoreState selection_score;
     TitleSelectionSettings selection;
     // 0x4dc324 等（game RNG）：ECL gvars RAND 族（0x420380/0x420d00）、敌机
-    // 指令（0x41ce10/0x417b10）、弹幕出生/etEx（0x40e840/0x40f030）、自机弹
+    // 指令（0x41ce1f/0x417b10）、弹幕出生/etEx（0x40e840/0x40f030）、自机弹
     // 出膛（0x445c40）共用此对象；0x4dc31c（visual）是 ANM 指令/畸变侧的
     // 独立第二对象——反汇编逐调用点核验见 artifacts/verification/r3/R。
     // StageSim/StageBattle 消费此实例的构造注入属 StageBattle 所有者（I）

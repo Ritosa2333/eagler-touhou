@@ -59,7 +59,8 @@ void PostGameFlow::on_stage_clear() {
         }
         // 关 1-5 主干：dcc24=0xc 无条件；be81c++（<7）；stage 表指针推进。
         if (!practice) {
-            // score+0x7fc 起关卡通过位（0x42cd40:97-99；内存态，落档 TODO）。
+            // score+0x7fc 起关卡通过位（0x42cd40:97-99）。原版写入后没有任何读取方，
+            // 存档镜像不落这一位。
             const u32 bit = u32(progress_.stage + progress_.difficulty * 8);
             if (bit < 32) progress_.stage_cleared_bits |= 1u << bit;
         }
@@ -118,7 +119,7 @@ void PostGameFlow::on_extra_end() {
         enter(OverlayState::BShow);
     } else {
         enter(OverlayState::BClear);  // 0x1f：+0x50 后 0x441930 + 0x43d820
-                                      // small score 落档 TODO
+                                      // small score 落档未实现（原版 0x441930 → 0x43d820）
     }
     if (!host_.request_extra_results()) error = "Extra results request failed";
 }
@@ -143,8 +144,8 @@ void PostGameFlow::update() {
             if (progress_.practice_mode != 0) {
                 on_practice_end();
             } else {
-                host_.request_destination(0xf);  // 结局（0x42c550:52-57 的
-                // 非激活降级 2 属平台侧护栏 TODO，见 0x414fc0）
+                host_.request_destination(0xf);  // 结局（0x42c550:52-57）；原版 0x414fc0
+                // 的非激活降级未移植
             }
         }
         return;

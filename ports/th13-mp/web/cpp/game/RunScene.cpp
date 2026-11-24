@@ -7,8 +7,7 @@ namespace th13 {
 RunDialogObserver run_dialog_observer = nullptr;
 
 namespace {
-// 场景回调优先级（th13 原版调度位待锚定；先按 th15 同族布局取值）：
-// 更新 20（标题 6 与暂停 11 之间），HUD 文本 76（动画层 75 之后、字幕 78 之前）。
+// 场景回调优先级：更新 20；HUD 文本 0x2e=46（kRunTextPriority，见 RunScene.hpp）。
 // 战斗直绘穿插 AnmDrawSchedule 各层：自机 24（00441e5a→00443df0；原 23 与
 // AnmDrawSchedule 层11 选项/卫星回调同值，FrameScheduler 同优先级新者先跑，
 // 导致机体先于选项提交，与原生层桶 11→12 相反；24 落在 23/26 之间）/
@@ -16,8 +15,7 @@ namespace {
 // 敌机 19（层 8 同拍）/敌弹 32（层15=31 与层16=33 之间；原生敌弹 op 的
 // layer watch=16/17，旧 43 使其画在 layer16 特效/agauge 之后，z-order 与
 // TFACTOR 残值都不对）。
-// STD 舞台背景两组均在动画层 0（优先级 5）之前：背景组 3 / 前景组 4
-// （th15 StageDrawFrame 3/6 的 th13 排位：层 0 前置约束下压缩到 3/4）。
+// STD 舞台背景两组：背景组 2 / 前景组 5（kSceneryDrawPriorities）。
 constexpr i32 kRunUpdatePriority = 20;
 constexpr std::array<i32, 5> kStageDrawPriorities = {20, 24, 19, 32, 29};
 constexpr std::array<i32, 2> kSceneryDrawPriorities = {2, 5};

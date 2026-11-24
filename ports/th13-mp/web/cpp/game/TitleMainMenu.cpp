@@ -59,9 +59,9 @@ bool TitleMainMenu::show_menu() {
     return true;
 }
 
-// Extra 行解锁门（0x44c570 case0：+0x5c40 bit1 非 0 = 解锁；写点 0x416130
-// 通关落档 0x1b26b+char*2 bit0x10）。宿主未接 =
-// 禁用（原版无存档行为）。0x416150 无全角色判定——任一角色位即开。
+// Extra 行解锁门（主菜单 0x44cd10 在 0x44cf9f 起逐字节查 score+0x1b26b..0x1b272
+// 的 bit 0x10，任一置位即开，无全角色判定）。写点 0x4162d0：结局收尾在难度 > 0
+// 时置位。宿主未接 = 禁用（原版无存档行为）。
 bool TitleMainMenu::extra_gate() {
     for (i32 character = 0; character < 4; ++character)
         if (extra_unlocked && extra_unlocked(character)) return true;

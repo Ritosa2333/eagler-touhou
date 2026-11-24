@@ -143,7 +143,7 @@ bool ReplayRecorder::encode(std::vector<u8>& out, const std::string& name, i32 s
     // +0x68（0x4549d0:86 / 0x43fa90:197 保存确认流程写入）。
     put32(top, 0x68, u32(meta.stage_field));
 
-    // 平流 = 顶层 0x74 + stage 块链（0x4484d0:0x448718..0x448838，槽序 = 关号升序）。
+    // 平流 = 顶层 0x74 + stage 块链（0x4484d0:0x448718..0x44883d，槽序 = 关号升序）。
     std::vector<u8> plain = top;
     std::vector<const ReplayStage*> ordered;
     for (const auto& stage : stages_)

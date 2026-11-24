@@ -37,7 +37,7 @@ inline i32 bullet_cancel_script(i32 type, i32 color) noexcept {
         return 16;
     case 4:
         return 6;
-    // 0x40f5df–0x40f6a2 jump table 0x40ffa8（round-16 phase5 反汇编）：
+    // 0x40f5df–0x40f69a jump table 0x40ffa8（round-16 phase5 反汇编）：
     // cancel_kind 5 → script 0x0c。旧表缺此分支会落 default -1，导致该
     // 外观类的弹取消时不创建取消特效。
     case 5:

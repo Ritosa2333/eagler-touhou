@@ -283,7 +283,7 @@ u32 LzssEncoder::tree_insert(u32 p) {
 }
 
 void LzssEncoder::advance(u32 count) {
-    for (u32 step = 0; step < count; ++step) {  // 0x458dd2..0x458ee6 前进
+    for (u32 step = 0; step < count; ++step) {  // 0x458dd2..0x458ee2 前进
         const u32 r = (wp_ + kDeflateMaxMatch) & kDeflateMask;
         if (dad_[r] != 0) deflate_tree_remove(dad_, lft_, rgt_, r);
         if (fill_ < src_.size()) {  // 超前 18 预填（fill 指针 ++）

@@ -1,6 +1,6 @@
 // 标题场景状态：Main/Difficulty/Character/Practice Stage/Replay/Options 等
 // 共用光标历史。PlayerData/SpellPractice 已接路由骨架（数据仍归宿主）。
-// TitleScreen 数值暂沿 th15 世代枚举位；th13 supervisor（0x44e600 对应物）锚定后回填。
+// TitleScreen 数值逐项对应 supervisor 0x44c570 的 case 表（见枚举注释）。
 #pragma once
 
 #include "MenuCursor.hpp"
@@ -8,11 +8,11 @@
 
 namespace th13 {
 
-// th13 TitleScreen 数值（supervisor 0x44c570 case 表逐项锚定）：
+// th13 TitleScreen 数值（supervisor 0x44c570，跳转表 0x44ca60）：
 // Main=1、Quit/StartGame=2（同值冲突是有意保留的现状，TitleFrame/ApplicationState
 // 以 screen==Quit 区分）、Option=3（case 3 → 0x44dd00，MenuExtras 实证）、
-// 难度=5 对应物 450fb0（th13 沿 th15 位 6，待回填）、
-// 角色=7（同上）、PlayerData=10 = case a → 0x453170（记录浏览；数据服务归宿主）、
+// 难度=6（原版 case 5 → 0x450fb0）、角色=7（原版 case 6 → 0x451450）：这两项
+// 是移植内部的运行时标识，保留现值；PlayerData=10 = case a → 0x453170（记录浏览；数据服务归宿主）、
 // Replay=11 = case b → 0x4525b0（p58 反编译实证）、
 // MusicRoom=13 = case d → 0x4554f0（MenuExtras 实证）、
 // ResultName=14 = case 0xe → 0x454050（通关成绩名前录入/结算；Ending 结束

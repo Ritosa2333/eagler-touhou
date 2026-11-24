@@ -133,8 +133,8 @@ inline i32 life_piece_threshold(i32 index) noexcept {
 
 // ---- 灵界单一状态接口：DAT_004be808 值 + DAT_004be830 bit0x100 激活位 ----
 // 单位 1/200 魂、上限 600。不要另建 HUD/敌吸附私有计量；显示层只读本值。
-// 注意：以下 helper 只是原版写点的状态封装，尚未接入收集/输入/碰撞/死亡流程，
-// 不构成完整激活/消耗状态机（采集、主动 trance、消耗仍属未集成）。
+// 以下 helper 是原版写点的状态封装：采集在 ItemManager（0x43d530），主动激活、
+// 消耗与死亡保护在 StageBattle（0x4057f0/0x405a20/0x405b80）。
 inline constexpr i32 kTranceSegment = 200;
 inline constexpr i32 kTranceMax = 600;
 inline constexpr i32 kTranceCost = 200;          // 0x405b80:78 正常结束扣 200

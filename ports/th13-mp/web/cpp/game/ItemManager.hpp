@@ -115,7 +115,7 @@ struct ItemCollector {
     //   box_auto_focus = +0x14704..+0x14714：吸附盒（DAT_004e4c08&8 聚焦时选用）。
     //   box_auto       = +0x1471C..+0x1472C：吸附盒（非聚焦时选用）。
     // 吸附盒命中且 state 非 3/4 → state 4、追踪初速 = homing_speed/3
-    //（asm 0x42eb00-0x42ebb9）。默认 {0,0,0,0} = 吸附关闭（未接线时行为同旧版）。
+    //（asm 0x42eaff-0x42ebb9）。默认 {0,0,0,0} = 吸附关闭（未接线时行为同旧版）。
     std::array<float, 4> box{{0, 0, 0, 0}};
     std::array<float, 4> box_auto{{0, 0, 0, 0}};
     std::array<float, 4> box_auto_focus{{0, 0, 0, 0}};

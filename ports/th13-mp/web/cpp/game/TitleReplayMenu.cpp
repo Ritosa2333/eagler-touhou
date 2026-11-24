@@ -180,7 +180,7 @@ void TitleReplayMenu::consume_import_hint() {
     state.menu.select(slot % kRowsPerPage);
 }
 
-// case2（0x452810-0x4529ea）：文件列表交互。
+// case2（0x452776-0x4529ea）：文件列表交互。
 bool TitleReplayMenu::confirm_file() {
     const i32 slots = replay_host.replay_count();
     selected_index = page.cursor * kRowsPerPage + state.menu.cursor;
@@ -194,24 +194,24 @@ bool TitleReplayMenu::confirm_file() {
         return sound(7);
     }
     const ReplayFile* file = replay_host.replay_entry(selected_index);
-    if (!file) return true;  // 空槽：Z 无效（0x452914 entry!=0 门）
+    if (!file) return true;  // 空槽：Z 无效（0x452875 entry!=0 门）
     if (!sound(7)) return false;
     state.menu.push();
     state.menu.wrapping = true;
-    state.menu.count = kStageRows;  // +0x30 = 7（0x45293a）
+    state.menu.count = kStageRows;  // +0x30 = 7（0x4528b5）
     for (i32 row = 0; row < kStageRows; row++) {
-        // 缺关槽禁用（0x452916-0x452929 → 0x4417c0 disabled 追加）。
+        // 缺关槽禁用（0x4528d0-0x4528fe → 0x4417c0 disabled 追加）。
         if (!stage_block(*file, row + 1) && !state.menu.disable(row)) return fail(state.menu.error);
     }
-    state.menu.select(0);  // +0x45296x FUN_00415030(0) + 前后 ±1 步进落启用行
+    state.menu.select(0);  // 0x4528bc FUN_00415030(0)，前后 ±1 步进（0x452904/0x45290d）
     if (spell_practice(*file)) {
-        // 符卡练习录像：跳过选关直进 case3（0x4529d0 → LAB_004529ea）。
+        // 符卡练习录像：跳过选关直进 case3（0x452922 → LAB_004529ea）。
         selected_stage_row = 0;
         if (!sound(50)) return false;
         state.change_substate(3);
         return true;
     }
-    state.change_substate(4);  // 0x45290d FUN_0044bb20(4)
+    state.change_substate(4);  // 0x45288a FUN_0044bb20(4)
     return true;
 }
 
@@ -222,7 +222,7 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
         state.change_substate(1);
         break;
     case 1:
-        // >6 帧进列表（0x4525cb case1 age>6 → FUN_0044bb20(2)）。
+        // >6 帧进列表（0x45274f case1 age>6 → FUN_0044bb20(2)）。
         if (state.age.current > 6) state.change_substate(2);
         break;
     case 2: {
@@ -236,9 +236,9 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
         if ((pressed | repeated) & 0x80) page.move(1);   // →
         if (!page.error.empty()) return fail(page.error);
         if (state.menu.previous != state.menu.cursor || page_previous != page.cursor) {
-            if (!sound(10)) return false;  // 0x45285x FUN_00460bc0(…,10)
+            if (!sound(10)) return false;  // 0x452812/0x452823 FUN_00460bc0(…,10)
         }
-        if (pressed & 0x102) {  // X/Esc：→ case5 收面（0x452896 FUN_0044bb20(5)、音 9）
+        if (pressed & 0x102) {  // X/Esc：→ case5 收面（0x45283b FUN_0044bb20(5)、音 9）
             if (!sound(9)) return false;
             state.change_substate(5);
             return true;
@@ -249,7 +249,7 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
         break;
     }
     case 4:
-        // >14 帧收输入（0x452a76 case4 age>0xe）。
+        // >14 帧收输入（0x45293a case4 age>0xe）。
         if (state.age.current > 14) {
             state.menu.previous = state.menu.cursor;
             if ((pressed | repeated) & 0x10) state.menu.move(-1);
@@ -258,7 +258,7 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
             if (state.menu.previous != state.menu.cursor) {
                 if (!sound(10)) return false;
             }
-            if (pressed & 0x102) {  // X：回列表（0x452a9d：pop、+0x30=0x19、case2、音 9）
+            if (pressed & 0x102) {  // X：回列表（0x4529a5：pop、+0x30=0x19、case2、音 9）
                 if (!sound(9)) return false;
                 state.menu.pop();
                 state.menu.count = kRowsPerPage;
@@ -273,7 +273,7 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
         }
         break;
     case 3:
-        // 0x452a70 case3：age==2 拍（0x452a75）调 0x417370 建 ascii script17
+        // 0x452a2c case3：age==2 拍（0x452a31）调 0x417370（0x452a70）建 ascii script17
         // 祈祷根；随后由常规 ANM 调度（主链 0x46f170）逐帧推进，op200 每 4
         // 帧回到 t=1 出生 script16。原生迹线（agent-g segment attribution）：
         // 652 建根、等待期 8 次出生 ×24 units = 192 visual index；web 此前
@@ -281,7 +281,7 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
         if (state.age.current == 2 && !launch_prayer) {
             if (!start_launch_prayer()) return false;
         }
-        // >31 帧排队 destination 0xd（0x452a70 case3 age>0x1f && 枚举完成；
+        // >31 帧排队 destination 0xd（0x452a7a case3 age>0x1f && 枚举完成；
         // 原版此拍写 DAT_004dc674 = 选中扁平序，同拍持久化）。原版在场景
         // 激活（0x42c550 -> 0x4172e0 -> 0x46fc30）卸载 caption 树；这里在
         // 排队成功时立即 retire（retire 不抽签，故出生总数不变），确保祈祷
@@ -300,7 +300,7 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
         }
         break;
     case 5:
-        // 收面（0x452b04 case5 age>5：释放目录、label1 退场徽记/粒子根、回主菜单）。
+        // 收面（0x452b64 case5 age>5：释放目录、label1 退场徽记/粒子根、回主菜单）。
         if (state.age.current > 5) {
             if (state.handles[resources.replay_badge]) {
                 animations.retire(state.handles[resources.replay_badge]);

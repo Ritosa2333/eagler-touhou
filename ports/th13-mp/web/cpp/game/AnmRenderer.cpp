@@ -64,14 +64,10 @@ void AnmRenderer::invalidate() {
 }
 // 视口切换只冲顶点批，不丢纹理缓存：原版 SetViewport（0x45d2f0:30 每帧）
 // 不清精灵侧纹理缓存 mgr+0xb78188（oracle f1-8 tex=None 的缓存语义）。
-// ⚠ 回退 19551dd1e 的「同值视口/相机跳过 flush」优化：实机（用户浏览器）
-// 与无头双页复现该优化使画面 99% 像素静止（对局逻辑/VM/draw 流/顶点上传
-// 全部活跃，Bisect 到 1d94ea297 构建画面即正常演进）。同值跳过使层间
-// 失去强制 flush 边界，Renderer 批合并把跨层 quad 折叠进错误状态批；
-// 具体失效面待定案，但用户画面恢复优先。原生 0x467350 的批边界语义
-// 需要用不破坏显示的方式重做（对照捕获帧逐层验证后再上）。
-// r23j 按最小面重做：仅 RunScene 战斗直绘 pass 入口走
-// ScreenViews::camera_if_changed（同值不重设）；本全局路径保持无条件 flush。
+// set_viewport 必须无条件 flush：层间靠它形成批边界。按“同值视口跳过”优化
+// 会让 Renderer 把跨层 quad 并进上一状态批，实机与无头页面都复现画面静止。
+// 要省这次 flush，先对照逐层捕获帧证明 0x467350 的批边界语义不变。
+// 仅 RunScene 战斗直绘 pass 入口走 ScreenViews::camera_if_changed（同值不重设）。
 void AnmRenderer::set_viewport(const GraphicsViewport& value) {
     flush();
     viewport = value;

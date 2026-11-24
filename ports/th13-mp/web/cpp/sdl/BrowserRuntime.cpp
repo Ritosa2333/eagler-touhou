@@ -1,8 +1,7 @@
 #include <limits>
 #include <locale>
 #include <sstream>
-// 浏览器宿主（th15 BrowserRuntime 裁剪：EM 导出 + RAF 循环 + FrameCadence；
-// 触控/thprac/practice lab 全部裁掉，docs/plans/ui-base.md §三）。
+// 浏览器宿主：EM 导出 + RAF 循环 + FrameCadence、触控手势与练习入口。
 // 输入：SDL3 emscripten 端口把键盘事件汇入 SDL 键位态，再经
 // GameKeyboard::keyboard_keys 生成 32 位游戏掩码（KeyboardMap.inc 同代布局）。
 #include "../../../portable/input/TouchController.hpp"
