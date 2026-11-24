@@ -163,9 +163,12 @@ async function selectAccountEndpoint(signal?: AbortSignal) {
 }
 
 export async function accountRequest<T = unknown>(path: string, body?: Record<string, unknown> | FormData, options: RequestOptions = {}): Promise<T> {
-  const publicProfile = body === undefined && !options.query && !options.responseType && /^v1\/profiles\/[a-z0-9._-]+$/i.test(path);
+  const profileQuery = options.query?.toString();
+  const publicProfile = body === undefined && (!profileQuery || profileQuery === 'media=urls') &&
+    !options.responseType && /^v1\/profiles\/[a-z0-9._-]+(?:\?media=urls)?$/i.test(path);
   if (publicProfile && !options.fresh) {
-    return sharedRead(publicProfiles, path.toLowerCase(), signal => sendAccountRequest(path, undefined,
+    const key = path.toLowerCase() + (profileQuery ? '?' + profileQuery : '');
+    return sharedRead(publicProfiles, key, signal => sendAccountRequest(path, undefined,
       {...options, signal, anonymous:true}), options.signal) as Promise<T>;
   }
   const anonymous = body === undefined && (publicProfile || options.anonymous);
@@ -252,7 +255,7 @@ async function fetchAccount<T>(origin: string, path: string, body: Record<string
     if (transient && accountErrorCode(data) !== 'CAPTCHA_UNAVAILABLE')
       throw new AccountRequestError('ACCOUNT_API_UNAVAILABLE', response.status);
     if (!response.ok) throw new AccountRequestError(accountErrorCode(data), response.status);
-    if (origin && path.endsWith('?media=urls') && data && typeof data === 'object' && 'media' in data) {
+    if (origin && (path.endsWith('?media=urls') || options.query?.get('media') === 'urls') && data && typeof data === 'object' && 'media' in data) {
       const media = data.media;
       if (media && typeof media === 'object') {
         for (const kind of ['avatar', 'cover'] as const) {

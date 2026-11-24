@@ -124,24 +124,27 @@ try {
   await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1'));
   for (const width of [1440, 390]) {
     await page.setViewport({width, height:900});
-    await page.goto(base, {waitUntil:'domcontentloaded'});
-    await page.waitForSelector('.account-login-link', {visible:true});
-    if (width > 780) await page.addStyleTag({content:'html[data-ui-route-transition="page"] {--launcher-route-duration: 2s !important}'});
+    const mobile = width <= 780;
+    await page.goto(mobile ? new URL('?section=home', base).href : base, {waitUntil:'domcontentloaded'});
+    const loginLink = mobile ? '.launcher-account-sign-in a:first-child' : '.account-login-link';
+    await page.waitForSelector(loginLink, {visible:true});
+    if (!mobile) await page.addStyleTag({content:'html[data-ui-route-transition="page"] {--launcher-route-duration: 2s !important}'});
     await page.evaluate(() => {
       window.loginHeader = document.querySelector('.book-masthead');
       window.loginSnapshots = 0;
       const start = document.startViewTransition.bind(document);
       document.startViewTransition = (...args) => {window.loginSnapshots++; return start(...args);};
     });
-    await page.click('.account-login-link');
+    await page.click(loginLink);
     await page.waitForSelector('.account-art');
     const {sameHeader, headerHeight, artClip, snapshots} = await page.evaluate(() => {
       const header = document.querySelector('.book-masthead');
       return {sameHeader: header === window.loginHeader, headerHeight: header.getBoundingClientRect().height,
         artClip: getComputedStyle(document.querySelector('.account-art')).clipPath, snapshots:window.loginSnapshots};
     });
-    assert.ok(sameHeader && headerHeight > 0, `${width}px: the live masthead stays mounted`);
-    if (width > 780) assert.equal(parseFloat(artClip.match(/^inset\(([^\s)]+)/)?.[1]), headerHeight, 'artwork snapshot starts below the masthead');
+    assert.ok(sameHeader, `${width}px: the live masthead stays mounted`);
+    assert.equal(headerHeight > 0, !mobile, `${width}px: the account masthead is desktop-only`);
+    if (!mobile) assert.equal(parseFloat(artClip.match(/^inset\(([^\s)]+)/)?.[1]), headerHeight, 'artwork snapshot starts below the masthead');
     else assert.equal(snapshots, 0, 'mobile sign-in navigates without a page snapshot');
   }
   await page.setViewport({width:1440, height:1000});
@@ -170,8 +173,8 @@ try {
       supportsBackdropFilter: CSS.supports('backdrop-filter','blur(12px)') || CSS.supports('-webkit-backdrop-filter','blur(12px)'),
       panelBackdrop: getComputedStyle(shell).backdropFilter,
       panelBackground: getComputedStyle(shell).backgroundColor,
-      heading: box('.account-title') ?? box('#account-title'),
-      submit: box('.account-submit'),
+      heading: box('#account-title'), back: box('.account-toolbar .launcher-back') ?? box('.account-back'),
+      terms: box('.account-terms-check'), submit: box('.account-submit'),
       document: {width: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth), height: document.documentElement.scrollHeight},
       content: {overflowY: getComputedStyle(content).overflowY, clientHeight: content.clientHeight, scrollHeight: content.scrollHeight},
     };
@@ -192,7 +195,11 @@ try {
     } else {
       assert.ok(Math.abs(current.shell.left-current.page.left)<1&&Math.abs(current.shell.width-current.page.width)<1,
         `${width}x${height} ${mode}: mobile panel spans the available page width`);
+      assert.ok(current.back && current.back.bottom <= current.heading.top,
+        `${width}x${height} ${mode}: the return control sits above the form`);
     }
+    if (mode === 'register') assert.ok(current.terms.bottom <= current.submit.top,
+      `${width}x${height}: the registration terms come before submit`);
     assert.equal(current.content.overflowY, 'visible', `${width}x${height} ${mode}: form uses document scrolling`);
     assert.ok(current.content.scrollHeight <= current.content.clientHeight + 1, `${width}x${height} ${mode}: content has no nested scroller`);
     assert.equal(current.artPosition, 'fixed', `${width}x${height} ${mode}: background stays fixed to the viewport`);

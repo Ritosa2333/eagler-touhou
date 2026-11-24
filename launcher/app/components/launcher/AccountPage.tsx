@@ -27,9 +27,11 @@ export function AccountPage(props: {artworkSrc?:string}) {
   const resetFormVisible = state.status === 'guest' && search.get('mode') === 'reset';
   useEffect(() => {if (state.status === 'member') location.replace(loginDestination());}, [state.status]);
   return <main className="account-page" aria-busy={state.status === 'loading'}>
-    {!resetFormVisible && <LauncherBack href={localeHome(locale)} className="launcher-mobile-back" replace returnToEntry/>}
     <aside className="account-art" aria-hidden="true"><img src={props.artworkSrc ?? backgroundUrl} alt="" className="account-art-image"/></aside>
     <section className="account-shell">
+      {!resetFormVisible && <div className="account-toolbar">
+        <LauncherBack href={localeHome(locale)} className="launcher-mobile-back" replace returnToEntry/>
+      </div>}
       {state.status === 'guest' ? <AccountForm/> : state.status === 'error' ?
         <div className="account-content"><BookButton variant="action" className="account-submit" onClick={retry}>{t('account.requestFailed')}</BookButton></div> :
         <div className="account-content account-loading" aria-hidden="true">
@@ -211,11 +213,11 @@ function AccountForm() {
           {error && <FormCallout type="error" role="alert" ref={messageRef} tabIndex={-1}>{t(error)}</FormCallout>}
           {registering && registrationExpired && <><FormCallout type="warning" role="status">{t('account.codeExpired')}</FormCallout><BookButton variant="action" type="button" className="account-edit-details" disabled={busy} onClick={() => {setChallenge(null); setRegistrationExpired(false); setRemaining(0); setCode(''); setApiError(null); setMessage(null);}}>{t('account.editDetails')}</BookButton></>}
           {message && <FormCallout type="success" role="status">{t(message)}</FormCallout>}
+          {registering && <RegistrationTerms accepted={termsAccepted} disabled={busy} onChange={setTermsAccepted}/>}
           <BookButton variant="primary" type="submit" className="account-submit" disabled={busy || (registering && (registrationExpired || !termsAccepted))}>{t(registering ? registrationLocked ? 'account.register' : 'account.requestCode' : 'account.login')}</BookButton>
         </form>
         <div className="account-form-actions">
           <Button variant="link" className="account-switch account-text-action px-0 text-muted-foreground hover:no-underline" disabled={busy} onClick={event => changeMode(registering ? 'login' : 'register', event.detail === 0)}>{t(registering ? 'account.backToLogin' : 'account.registerTitle')}</Button>
-          {registering && <RegistrationTerms accepted={termsAccepted} disabled={busy} onChange={setTermsAccepted}/>}
         </div>
         </div>}
   </div>

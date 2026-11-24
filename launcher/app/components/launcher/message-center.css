@@ -39,7 +39,7 @@
   .masthead-inbox-panel .announcement-timeline {--announcement-avatar:32px;--announcement-indent:10px;gap:18px}
   .announcement-timeline:has(> li + li)::before {content:"";position:absolute;inset:15px auto 35px calc(var(--announcement-avatar)/2);width:1px;background:color-mix(in srgb,var(--kit-brand) 42%,var(--kit-border))}
   .announcement-entry {position:relative;display:grid;grid-template-columns:var(--announcement-avatar) minmax(0,1fr);gap:var(--announcement-indent)}
-  .announcement-entry > .account-avatar {--account-avatar-size:var(--announcement-avatar)}
+  .announcement-entry .account-avatar {--account-avatar-size:var(--announcement-avatar)}
   .announcement-entry article {min-width:0}
   .announcement-entry time,.announcement-entry footer {font-size:12px;color:var(--kit-muted-foreground)}
   .announcement-entry time {display:block;margin-block:4px 2px}

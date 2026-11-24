@@ -23,7 +23,7 @@ export function useLauncherIdentity(interactive = true) {
       const current = new AbortController();
       controller = current;
       void accountRequest<{nickname: string; details?: {avatar?: string}; media?: {avatar?: string}; countryCode?: string; regionCode?: string}>(
-        `v1/profiles/${encodeURIComponent(username!)}?media=urls`, undefined, {signal: current.signal},
+        `v1/profiles/${encodeURIComponent(username!)}`, undefined, {query: new URLSearchParams({media: 'urls'}), signal: current.signal},
       ).then(result => {
         if (!current.signal.aborted) setProfile({username: username!, nickname: result.nickname, avatar: result.media?.avatar || result.details?.avatar, country: result.regionCode || result.countryCode});
       }).catch(() => {});
@@ -70,9 +70,9 @@ export function LauncherAccountRow({identity, assetUrl, compact = false, onNavig
   if (!user) return <div className="launcher-account-row">
     <span className="launcher-account-placeholder"><UserRound aria-hidden="true"/></span>
     <span className="launcher-account-sign-in">
-      <AppLink href={loginHref} replace={compact} rememberEntry onClick={onNavigate}>{t('account.login')}</AppLink>
+      <AppLink href={loginHref} replace={compact} rememberEntry viewTransition={false} onClick={onNavigate}>{t('account.login')}</AppLink>
       <span aria-hidden="true">/</span>
-      <AppLink href={registerHref} replace={compact} rememberEntry onClick={onNavigate}>{t('account.register')}</AppLink>
+      <AppLink href={registerHref} replace={compact} rememberEntry viewTransition={false} onClick={onNavigate}>{t('account.register')}</AppLink>
     </span>
   </div>;
   return <AppLink className="launcher-account-row launcher-account-link" href={withUiLanguage('/u/' + encodeURIComponent(user.username), locale)}

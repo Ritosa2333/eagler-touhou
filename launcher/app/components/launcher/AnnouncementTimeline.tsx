@@ -2,7 +2,7 @@ import {useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalSt
 import {useLocale, type UiMessageKey} from '../../i18n';
 import {announcementKey, type PublishedAnnouncement} from '../../services/launcher-messages';
 import {Button} from '../../ui/button';
-import {AccountAvatar} from './AccountAvatar';
+import {PublicAccountAvatar} from './AccountAvatar';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, stringArray, writeBookPreference} from './book-preferences';
 import {announcements, type Announcement} from './announcements';
 
@@ -39,7 +39,7 @@ function RelativeTime({published}: {published: string}) {
     age >= 60000 ? format.format(-Math.floor(age / 60000), 'minute') : t('announcements.justNow')}</time>;
 }
 
-type TimelineEntry = Announcement | {id: string; author: string; published: string; body: string};
+type TimelineEntry = Announcement | {id: string; author: string; published: string; body: string; authorUsername?: string | null};
 
 function AnnouncementCopy({entry, lines}: {entry: TimelineEntry; lines: 6 | 10}) {
   const {t} = useLocale();
@@ -97,7 +97,7 @@ export function AnnouncementTimeline({recent = false, published = noPublished, i
   }, [entries]);
   return <ol className="announcement-timeline" data-density={recent ? 'recent' : 'full'}>
     {entries.map(entry => <li key={entry.id} className="announcement-entry">
-      <AccountAvatar assetUrl={assetUrl}/>
+      <PublicAccountAvatar username={'body' in entry ? entry.authorUsername : null} assetUrl={assetUrl} loading="lazy"/>
       <article>
         <RelativeTime published={entry.published}/>
         <AnnouncementCopy entry={entry} lines={recent ? 6 : 10}/>

@@ -6,7 +6,7 @@ import {useAccountSession} from './account-session';
 
 const id = z.number().int().positive();
 const nextBefore = id.nullable();
-const publishedAnnouncement = z.object({id, author: z.string(), body: z.string(), publishedAt: id});
+const publishedAnnouncement = z.object({id, author: z.string(), authorUsername: z.string().nullable().optional(), body: z.string(), publishedAt: id});
 const directMessage = z.object({id, body: z.string(), sentAt: id, outgoing: z.boolean()});
 const peer = z.object({username: z.string(), nickname: z.string()});
 const announcementPage = z.object({items: z.array(publishedAnnouncement), canPublish: z.boolean(), nextBefore});

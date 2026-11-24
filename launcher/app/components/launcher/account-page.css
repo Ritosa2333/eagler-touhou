@@ -1,6 +1,6 @@
 @layer components {
 .launcher-page-surface[data-page="account"]{max-width:none}
-.account-page{position:relative;z-index:1;display:flex;justify-content:flex-end;width:100%;min-height:calc(100dvh - 61px);margin:0;padding:0;color:var(--book-ink);font:14px/1.5 var(--ui-font)}
+.account-page{position:relative;z-index:1;display:flex;justify-content:flex-end;width:100%;min-height:var(--launcher-content-height,100dvh);margin:0;padding:0;color:var(--book-ink);font:14px/1.5 var(--ui-font)}
 .account-page *{box-sizing:border-box}
 .account-page :is(button,input){font:inherit}
 .account-shell{display:flex;flex-direction:column;align-items:center;width:clamp(480px,44%,720px);min-height:inherit;border-left:1px solid var(--book-border);background:var(--book-surface)}
@@ -13,6 +13,7 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
 @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
  .account-shell{background:color-mix(in srgb,var(--book-surface) 80%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 }
+.account-toolbar{display:none}
 .account-mode-content{animation:account-mode-enter var(--ui-surface-duration) var(--ui-surface-easing) both}
 @keyframes account-mode-enter{from{opacity:0}to{opacity:1}}
 .account-content h1{margin:0 0 24px;font-size:28px;line-height:1.2;font-weight:650;letter-spacing:-.025em}
@@ -55,12 +56,15 @@ html[data-ui-route-transition="page"] .account-art{clip-path:inset(var(--site-he
  .account-content input{font-size:16px}
 }
 @media(max-width:780px){
- .account-page{min-height:calc(100dvh - 105px)}
- .account-shell{width:100%;border-left:0}
- .account-content{padding:36px 32px}
+ .account-page{min-height:100dvh}
+ .account-shell{width:100%;border-left:0;padding-block:env(safe-area-inset-top) env(safe-area-inset-bottom)}
+ .account-toolbar{display:block;width:100%;max-width:536px;padding:12px 20px 0}
+ .account-content{padding:24px max(32px,env(safe-area-inset-right)) 32px max(32px,env(safe-area-inset-left))}
+ .account-toolbar + .account-content{padding-block-start:8px}
 }
 @media(max-width:540px){
- .account-content{padding:32px 24px}
+ .account-toolbar{padding-inline:max(12px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-right))}
+ .account-content{padding-inline:max(24px,env(safe-area-inset-left)) max(24px,env(safe-area-inset-right))}
  .account-content h1{font-size:24px}
  .ui-kit-dialog.account-terms-dialog{padding:16px}
 }

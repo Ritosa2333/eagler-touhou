@@ -62,8 +62,8 @@ function launcherEntry({url = '/site/?game=th03&q=a%20b#settings', manual, cooki
   if (oldRegionalChoice) store.set('eagler-touhou-region-locale-v1', oldRegionalChoice);
   const storage = {getItem: key => store.get(key), setItem: (key, value) => store.set(key, value)};
   const document = {cookie};
-  const enter = (path = url) => api.initialUiLocaleAddress({href: new URL(path, origin).href, base: '/site/',
-    storage, document});
+  const enter = (path = url, reload = false) => api.initialUiLocaleAddress({href: new URL(path, origin).href, base: '/site/',
+    storage, document, reload});
   return {enter, store, document};
 }
 
@@ -83,6 +83,15 @@ test('explicit links and saved manual languages retain their values and URL payl
   assert.equal(enter('/site/en.html?game=th03'), undefined);
   assert.equal(enter('/site/ja.html'), undefined);
   assert.equal(enter('/site/ui-review.html'), undefined);
+});
+
+test('reloading a legacy automatic English address restores the default language', () => {
+  const {enter} = launcherEntry({oldRegionalChoice: 'en'});
+  assert.equal(enter('/site/en.html?game=th03&q=a%20b#settings'), undefined);
+  assert.equal(enter('/site/en.html?lang=en', true), undefined);
+  assert.equal(enter('/site/en.html?game=th03&q=a%20b#settings', true)?.href,
+    'https://launcher.invalid/site/?game=th03&q=a%20b#settings');
+  assert.equal(launcherEntry({manual: 'en', oldRegionalChoice: 'en'}).enter('/site/en.html', true), undefined);
 });
 
 test('manual language cookie overrides the old storage value and is shared across entry pages', () => {
