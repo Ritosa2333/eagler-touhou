@@ -37,6 +37,24 @@ test('the native multiplayer cap, freeze award, death award and HUD stop at 200%
  } finally {g.close();}
 });
 
+test('a Perfect Freeze with no ice shows its zero result after the shatter phase',async()=>{
+ const {g,tick,frame,prime}=await start(2);
+ try{
+   assert.equal(prime(0,stock),1);assert.equal(prime(1,stock),1);
+   let state=tick(B);
+   while(frame()<150)state=tick();
+   assert.equal(state.seats[0].freezeCount,1);
+   assert.equal(state.seats[0].lastPixels,0);
+   assert.equal(g.stageState().freezeRewardPanel.active,false,'the skill is still in progress');
+   while(g.stageState().freezeRewardPanel.age<30&&frame()<200)tick();
+   const panel=g.stageState().freezeRewardPanel;
+   assert.equal(panel.age,30);
+   assert.equal(panel.percent,0);
+   assert.equal(panel.bonus,0);
+   assert.deepEqual(activeSeats(tick(0,B)),[1]);
+ }finally{g.close();}
+});
+
 for(const n of [2,3]){
  for(let caster=0;caster<n;caster++){
    test(`${n}P seat ${caster+1} protects the team and only a fresh press can spend the next skill`,async()=>{
@@ -60,7 +78,7 @@ for(const n of [2,3]){
        for(let i=0;i<200;i++)state=tick(...blocked);
        assert.deepEqual(activeSeats(state),[],'holding a blocked press never queues another cast');
        assert.deepEqual(charges(state),expected);
-       assert.ok(state.seats.every(seat=>seat.protection===0),'the team protection ends with the skill');
+       assert.ok(state.seats.every(seat=>seat.protection===0),'the remaining team protection expires normally');
        tick();
        state=tick(...blocked);
        expected[other]-=stock;
@@ -69,6 +87,51 @@ for(const n of [2,3]){
      }finally{g.close();}
    });
  }
+ for(const overlapping of [false,true])test(`${n}P unlocks X when the Perfect Freeze result finishes counting${overlapping?' even with an overlapping Z result':''}`,async()=>{
+   const {g,tick,frame,prime}=await start(n),caster=n===2?0:2,other=n===2?1:0;
+   const castFrame=215,ordinaryRelease=304,retry=castKeys(n,other);
+   try{
+     for(let seat=0;seat<n;seat++)assert.equal(prime(seat,cap),1);
+     while(frame()<castFrame)tick();
+     assert.deepEqual(activeSeats(tick(...castKeys(n,caster))),[caster]);
+     let result,stage=g.stageState();
+     while(frame()<castFrame+200){
+       const holdingZ=overlapping&&frame()>=ordinaryRelease-46&&frame()<ordinaryRelease;
+       const state=tick(...Array.from({length:n},(_,seat)=>seat===other&&holdingZ?1:0));
+       const before=stage;stage=g.stageState();
+       if(!state.seats[caster].freezeCount)continue;
+       if(!result){
+         result=stage.freezeRewardPanel;
+         assert.ok(result.percent>5&&result.bonus>0,'use a real nonempty Perfect Freeze');
+         assert.ok(stage.scoreRaw-before.scoreRaw>=Math.floor(result.bonus/10),'the Perfect bonus was credited');
+       }
+       assert.equal(stage.freezeRewardPanel.serial,result.serial,'ordinary Z cannot replace a counting Perfect result');
+       if(stage.freezeRewardPanel.age===28)break;
+     }
+     assert.ok(result);
+     assert.equal(stage.freezeRewardPanel.age,28);
+     assert.equal(g.state().seats[other].freezeCount,Number(overlapping));
+     const beforeCharge=g.state().seats[other].charge;
+     const blocked=tick(...retry);
+     assert.deepEqual(activeSeats(blocked),[caster],'X is blocked during the displayed tally');
+     assert.equal(blocked.seats[other].charge,beforeCharge);
+     tick();
+     assert.equal(g.stageState().freezeRewardPanel.age,30);
+     assert.ok(g.draws().some(draw=>draw.drawPass==='original-freeze-reward-panel'&&draw.sprite>=243&&draw.sprite<=252),
+       'the original score bonus is drawn at the end of the tally');
+
+     const next=tick(...retry);
+     assert.deepEqual(activeSeats(next),[other],'a fresh X works on the next frame');
+     assert.equal(next.seats[other].charge,beforeCharge-stock);
+     if(overlapping){
+       assert.equal(g.stageState().freezeRewardPanel.serial,result.serial,'the final Perfect numbers stay visible');
+       while(g.stageState().freezeRewardPanel.serial===result.serial&&frame()<next.frame+100)tick();
+       const deferred=g.stageState().freezeRewardPanel;
+       assert.equal(deferred.serial,result.serial+1,'the deferred Z reward gets its own display');
+       assert.ok(Math.abs(deferred.percent-next.seats[other].lastPixels/172032*100)<1e-5);
+     }
+   }finally{g.close();}
+ });
  test(`${n}P rolls back a predicted guest cast to one confirmed cast and one sound`,async()=>{
    const {g,prime}=await start(n),localSeat=n-1,packets=[],confirmed=[];
    let peer;

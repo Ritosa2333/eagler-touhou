@@ -24,6 +24,16 @@ struct TransferChain{int target=-1;unsigned presses=0,last=0;};
 enum class GiftKind {life, skill};
 struct LifeGift {unsigned id=0,recipient=0,age=0;th128::player::RawPosition pos{};GiftKind kind=GiftKind::life;};
 struct GhostDrift {unsigned age=0;int dx=0,dy=0;};
+struct CoopFreezeReward {
+    float percent;
+    int bonus;
+    float playerY;
+    bool show(std::string& error) const {
+        if(freezeRewardPanel.complete(percent,bonus,playerY))return true;
+        error="Co-op freeze reward panel rejected";
+        return false;
+    }
+};
 struct CoopBattle {
     std::array<TransferChain,3> chains{},skillChains{};std::array<GhostDrift,3> ghosts{};std::array<unsigned,3> transfers{},skillTransfers{},rescued{};std::vector<LifeGift> gifts;unsigned giftSerial=0;
     unsigned seats=0, generation=0, commonTarget=0, prev[3]{}, freezeMotivationMultiplierQuarters=4;
@@ -37,6 +47,8 @@ struct CoopBattle {
     std::unordered_map<unsigned,std::shared_ptr<CoopIceBatch>> drops;
     unsigned expiringSeat=0,collectingItem=0,recipient=0,contactSeat=0,wipeFrames=0;bool challenge=false;
     int perfectCaster=-1;
+    bool perfectResultPresented=false,showingPerfectReward=false;
+    std::optional<CoopFreezeReward> pendingPerfectReward,pendingOrdinaryReward;
     std::vector<th128::bullet::SoundRequest> frameSounds;
     std::uint64_t teamPixels=0;
     std::array<std::uint64_t,3> laserColumns{};
@@ -154,6 +166,7 @@ bool coopCollectStar(float x,std::string& error){
     scoreRaw=std::min(scoreRaw+1,999999999);return coopSound(38,x,error);
 }
 bool settleCoopArea(unsigned seat,th128::ice::Completion c,bool perfect,std::string& error){
+    if(perfect&&coop->perfectCaster!=int(seat)){error="Perfect Freeze reward has no matching caster";return false;}
     const auto original=th128::freeze::account(c.pixels,scoreRaw);if(!original){error="Invalid shared freeze mask";return false;}
     const auto award=perfect||coop->challenge?std::optional<int>(0):th128::freeze::areaRewardRaw(original->percent,c.power);
     if(!award){error="Invalid original freeze reward";return false;}
@@ -186,7 +199,11 @@ bool settleCoopArea(unsigned seat,th128::ice::Completion c,bool perfect,std::str
     }
     coop->freezeCount[seat]++;coop->lastPixels[seat]=c.pixels;coop->lastChargeReward[seat]=*award*coopRateUnits(coop->seats)/RewardDenominator;
     scoreRaw=original->score;freezeBonus=original->bonus;lastFrozenArea=original->percent;
-    if(!freezeRewardPanel.complete(original->percent,original->bonus,p.vertical)){error="Co-op freeze reward panel rejected";return false;}return true;
+    const CoopFreezeReward reward{original->percent,original->bonus,p.vertical};
+    if(perfect)coop->pendingPerfectReward=reward;
+    else if(coop->showingPerfectReward||coop->pendingPerfectReward)coop->pendingOrdinaryReward=reward;
+    else return reward.show(error);
+    return true;
 }
 bool coopEntryCancel(const th128::player::death::Position&,int,float,std::string&);
 bool canRequestPerfect(const th128::player::Input& input){
@@ -281,18 +298,33 @@ bool finishCoopAnimations(std::string& error){
     }
     return true;
 }
-bool protectCoopTeam(std::string& error){
+bool advanceCoopPerfect(std::string& error){
     if(!coopActive()||coop->perfectCaster<0)return true;
     const auto caster=coop->perfectCaster;
-    const auto skill=(caster?coop->extra[caster-1]->perfect:*perfectHost).status();
-    if(!skill.active){coop->perfectCaster=-1;return true;}
-    const int remaining=th128::perfect::ProtectionTicks-skill.phase;
-    // Contacts run after every seat has advanced. Refresh protection before
-    // the shared bullet, laser and enemy managers can affect any teammate.
-    for(unsigned i=0;i<coop->seats;i++){
-        auto& body=seatBody(i);
-        if(body.snapshot().gate.stateF78==1&&!body.extendCoopPerfectProtection(remaining,error))return false;
+    auto& host=caster?coop->extra[caster-1]->perfect:*perfectHost;
+    const auto skill=host.status();
+    if(skill.active){
+        const int remaining=th128::perfect::ProtectionTicks-skill.phase;
+        // Contacts run after every seat has advanced. Keep any protection
+        // still owed after settlement in the individual native hit timers.
+        for(unsigned i=0;i<coop->seats;i++){
+            auto& body=seatBody(i);
+            if(body.snapshot().gate.stateF78==1&&!body.extendCoopPerfectProtection(remaining,error))return false;
+        }
     }
+    // An empty ice batch can pay early. Wait for the last native shatter
+    // callback before starting the same visible tally as a nonempty batch.
+    if(skill.phase<th128::perfect::NativeLaserPhase)return true;
+    if(coop->pendingPerfectReward){
+        if(!coop->pendingPerfectReward->show(error))return false;
+        coop->pendingPerfectReward.reset();
+        coop->perfectResultPresented=true;
+        coop->showingPerfectReward=true;
+    }
+    if(!coop->perfectResultPresented||!freezeRewardPanel.resultVisible())return true;
+    if(!host.shutdown(error))return false;
+    coop->perfectCaster=-1;
+    coop->perfectResultPresented=false;
     return true;
 }
 void accountCoopIceDamage(unsigned seat,int playerState,const th128::EnemySnapshot& enemy,const th128::shotenemy::ShotEnemyQueryPlan& query){
@@ -415,6 +447,15 @@ extern "C" int th128_coop_bind(unsigned count,const void* shot,unsigned shotSize
 extern "C" int th128_coop_tick(unsigned frame,unsigned count,unsigned p0,unsigned p1,unsigned p2){
     operationError.clear();const std::array<unsigned,3> keys{p0,p1,p2};
     if(!coopActive()||frame!=world->frame()||count!=coop->seats||(count==2&&p2)||((p0|p1|p2)&~CoopBasicKeys)||world->faulted()||worldTickExecuting){operationError="Invalid co-op frame, seats or input mask";return 0;}
+    // A normal freeze still pays on time. Its latest result can use the
+    // shared panel when the Perfect bonus has had its normal display time.
+    if(coop->showingPerfectReward&&!freezeRewardPanel.active()){
+        coop->showingPerfectReward=false;
+        if(coop->pendingOrdinaryReward){
+            if(!coop->pendingOrdinaryReward->show(operationError))return 0;
+            coop->pendingOrdinaryReward.reset();
+        }
+    }
     // Validate all seats before binding any edges. A missed, duplicate or malformed row cannot partially control P1.
     constexpr unsigned castKey=th128::perfect::XKeyBit;
     const unsigned mask=stageTransitionConfigured&&stageTransition->state().requested?CoopBasicKeys&~515u:
@@ -509,8 +550,8 @@ std::optional<CoopCampaignCarry> coopCarry;
 extern "C" int th128_coop_next_stage(){
     if(!coopActive()||!stageTransitionConfigured||world->faulted()||!stageTransition->state().requested)return 0;
     // Let an in-flight mask/Perfect event settle in the source heap before retiring its bullets.
-    if(iceHost->statistics().busy||perfectHost->status().active)return 0;
-    for(unsigned i=1;i<coop->seats;i++)if(coop->extra[i-1]->ice.statistics().busy||coop->extra[i-1]->perfect.status().active)return 0;
+    if(iceHost->statistics().busy||coop->perfectCaster>=0)return 0;
+    for(unsigned i=1;i<coop->seats;i++)if(coop->extra[i-1]->ice.statistics().busy)return 0;
     return stageTransition->state().nextId;
 }
 extern "C" unsigned th128_coop_capture_stage(int target){

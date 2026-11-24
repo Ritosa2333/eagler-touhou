@@ -6380,7 +6380,7 @@
          world->reportRuntimeFault("original freeze reward panel tick rejected");return 0;
      }
 -    const auto iceDamageBefore=world->damageStats()[0];
-+    if(!advanceCoopSeats(operationError)||!protectCoopTeam(operationError)){world->reportRuntimeFault(operationError);return 0;}
++    if(!advanceCoopSeats(operationError)||!advanceCoopPerfect(operationError)){world->reportRuntimeFault(operationError);return 0;}
      const bool success=world->tick();
 -    // Native enemy-manager pass (0x415954..0x415973): ice-tagged damage
 -    // contributes half its value to motivation, capped per tick. StageWorld
@@ -6770,6 +6770,35 @@
  inline constexpr std::int32_t BaselineIncrementRaw = 5;
  
  bool canRelease(std::int32_t powerRaw, std::int32_t heldCount, std::int32_t perfectState) noexcept;
+--- a/src/game/FreezeRewardPanel.hpp
++++ b/src/game/FreezeRewardPanel.hpp
+@@ -8,6 +8,8 @@
+ namespace th128::hud {
+ struct RewardGlyph {int sprite=0;float x=0,y=0,scale=1;std::uint32_t color=0;};
+ class FreezeRewardPanel {
++    static constexpr int BonusAge=30;
+ public:
++    bool resultVisible() const{return active_&&age_>=BonusAge;}
+     bool complete(float percent,int bonus,float playerY){
+         if(!std::isfinite(percent)||percent<0||percent>100||bonus<0||bonus>1000000||!validY(playerY))return false;
+@@ -24,7 +26,7 @@
+     }
+     std::vector<RewardGlyph> glyphs()const{
+         std::vector<RewardGlyph> result;if(!active_)return result;
+-        const float percent=age_<30?float(double(time_)*double(percent_)/30.):percent_;
++        const float percent=age_<BonusAge?float(double(time_)*double(percent_)/BonusAge):percent_;
+         const int centis=int(double(percent)*100.);
+         const float baseY=high_?64.f:160.f;
+         const std::uint8_t areaAlpha=fade_>8?(near_?64:255):near_?std::uint8_t(255-(fade_<<4)):std::uint8_t((fade_+4)<<4);
+@@ -37,7 +39,7 @@
+         const int fraction=centis%100;const auto fractionText=(fraction<10?"0":"")+std::to_string(fraction);
+         append(result,fractionText,332,baseY+20,1,11,areaColor);
+         append(result,"%",371,baseY,2,11,areaColor);
+-        if(age_>=30){
++        if(resultVisible()){
+             const auto text=bonus_<10?"0"+std::to_string(bonus_):std::to_string(bonus_);
+             append(result,text,320-float(text.size())*7,baseY+50,1,5,bonusColor);
+         }
 --- a/src/game/PercentHud.hpp
 +++ b/src/game/PercentHud.hpp
 @@ -1,4 +1,5 @@
