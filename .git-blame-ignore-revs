@@ -2,3 +2,5 @@
 # 启用：git config blame.ignoreRevsFile .git-blame-ignore-revs
 88f88d5cf08b8ff93578a908f99551249081f3e4  # th13: 全量 clang-format
 b3223ea8713a2e78dbf6d8acde6a6afc0683229e  # th13-mp: 全量 clang-format
+9fe317d7bc17169bc3b5fe5e6edfcff51b86a59e  # th13: 源码不再写注释
+a2ada0d973d94bb322e3bba5afbf6a8aba03cc4f  # th13-mp: 同步去注释

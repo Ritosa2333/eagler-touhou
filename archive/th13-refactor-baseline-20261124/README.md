@@ -106,8 +106,35 @@ TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --shot bash -lc \
 
 `tests/multiplayer/acceptance.mjs`（th13-shot 镜像，逐例打开生产调试页）：
 
+relay 依赖在容器内临时安装（`ws@8.21.3`，运行结束即清理）。完整结果：
+
 | 里程碑 | 用例 | 结果 |
 | --- | ---: | --- |
-| M1–M6 | 12 | 全部通过，共 11,283 条断言 |
-| M9 | 10 | 9 项通过，共 515 条断言，含观战者加入与观看（`spectator_confirmed_latejoin`、`slow_spectator_isolation`） |
-| M7、M8、M9 `runtime_page_soak` | 13 | 未运行：本机 relay 服务缺 `ws` 依赖，启动即退出 |
+| M1–M8 连跑 | 25 | 25 项全部通过，传输路径覆盖 rtc 与 relay |
+| M9（含观战） | 10 | 10 项通过，共 642 条断言，含观战者加入与观看（`spectator_confirmed_latejoin`、`slow_spectator_isolation`） |
+
+对照组是分支前的树（`main` `cbf99745e` 加调试页多席接口），同一镜像、同一 relay 条件下运行：M1–M8 连跑 25 项全部通过，`runtime_page_soak` 通过（161 条断言）。
+
+`m8.rollback_one_three_twelve`（延迟注入后触发回滚）与 `m9.runtime_page_soak`（帧号差上限）按实时帧率计时。当前树在机器被并行构建占满时的一次连跑里，这两项各失败过一次（回滚未触发；帧号差 14 帧）；机器空闲时的两次复跑和对照组全部通过。复跑这两个用例时保持 CPU 空闲。
+
+## 源码去注释后的等价性
+
+提交 `9fe317d7b`（普通版，555 个文件）与 `a2ada0d97`（多人版，674 个文件）用 `tools/no-comments.mjs` 删除源码、脚本、测试、页面与配置文件里的全部注释并重新排版，对照 `089c4066c` 逐文件验证：
+
+| 文件类型 | 验证方法 | 普通版 | 多人版 | 结果 |
+| --- | --- | ---: | ---: | --- |
+| C/C++ | g++ `-fpreprocessed -dD -E -P` 预处理后分词比较 | 465 | 540 | 词法单元序列一致 |
+| JS | acorn 语法树，去掉位置信息 | 51 | 94 | 一致 |
+| HTML | 内联脚本语法树与非脚本文本 | 2 | 5 | 一致 |
+| Python | 语法树，两侧都去掉 docstring | 3 | 5 | 一致 |
+| shell | `bash -n` | 18 | 18 | 通过 |
+| CSS、`.gitignore`、Dockerfile | 去掉注释后的文本比较 | 2 | 2 | 一致 |
+
+另有 3 个编译单元的 `#include` 顺序随排版改变（夹在 include 之间的注释删除后，clang-format 把它们并成一块重新排序），编译产物证明它没有语义影响：
+
+| 产物 | sha256（去注释前后相同） |
+| --- | --- |
+| 普通版网页 wasm / JS 胶水 / WASI harness | `55a873c2…` / `9da5ebcb…` / `6bf3bdd4…` |
+| 多人版网页 wasm / JS 胶水 / WASI harness | `2de61752…` / `77f4de06…` / `b64f8459…` |
+
+去注释后两侧 `tools/gate.sh --browser` 均为“相对基线无新增失败”，浏览器套件与基线相同（13 项通过、8 项跳过、1 项基线内失败）。
