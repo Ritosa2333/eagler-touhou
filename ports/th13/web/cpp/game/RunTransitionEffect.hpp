@@ -1,17 +1,3 @@
-// START-01: 标题/回放启动的 effect.anm 开门转场生命周期。
-//
-// 原生所有权（th13.exe 反汇编）：
-//   0x415650(effect type 0) 在标题启动拍创建 effect.anm script0，随后由
-//   0x402ff0 初始化 AnmOverlay（四个 effect 面板绑定 script3..6 + astral
-//   面板），句柄存 DAT_004dc86c；紧接着 0x46fc30(handle, 7) 走 label7
-//   （0x403630：layer=26、mode=0、面板平移复位）。
-//   关卡激活 0x42c550:0x42c86a..0x42c88c 对同一句柄发 label1；0x4035fe
-//   把四个面板重绑到 script7..10 并各 tick 一次，形成 native draw0 的
-//   4-quad 开门批。根节点不随 TitleScene 析构；四面板结束后由普通 ANM
-//   调度自然回收（0x403260 返回 1）。后续关卡向旧句柄发 label1 无作用，
-//   不重新创建开局效果。
-//
-// 本 helper 只封装创建、label7、label1 与清理；不创建 script2 替代根。
 #pragma once
 
 #include "AnmManager.hpp"
@@ -24,27 +10,22 @@ namespace th13 {
 
 class RunTransitionEffect final {
 public:
-    static constexpr i32 kEffectBank = 8;  // effect.anm
+    static constexpr i32 kEffectBank = 8;
     static constexpr i32 kRootScript = 0;
-    static constexpr i32 kLayer = 26;  // 0x403630 label7 写入 root+0x24
+    static constexpr i32 kLayer = 26;
 
     explicit RunTransitionEffect(AnmManager& animations) : animations_(animations) {}
     RunTransitionEffect(const RunTransitionEffect&) = delete;
     RunTransitionEffect& operator=(const RunTransitionEffect&) = delete;
 
-    // 标题启动拍：create script0 + 0x402ff0 overlay init + label7。
     bool create();
-    // TitleScene 把 raw handle 交给 run-owned owner（begin_run 转移）。
     bool adopt(u32 handle);
-    // 放弃所有权但不退役（仅用于显式转移；正常路径用 adopt/release）。
     u32 detach() noexcept {
         const u32 handle = handle_;
         handle_ = 0;
         return handle;
     }
-    // 关卡激活：存活句柄接受 label1；自然结束后的旧句柄保持无作用。
     bool stage_start();
-    // 回标题/退出对局：整树退役。
     bool release();
 
     u32 handle() const noexcept { return handle_; }
@@ -77,8 +58,6 @@ inline bool RunTransitionEffect::create() {
         animations_.retire(handle);
         return fail(animations_.error.empty() ? "Run transition overlay initialization failed" : animations_.error);
     }
-    // 0x403630 label7 在 overlay init 之后把 root layer 写成 26。port 的
-    // AnmOverlay::interrupt 只复刻 mode/panel 平移，故 layer 在此显式落值。
     root->visual.layer = kLayer;
     if (!animations_.interrupt(handle, 7, false)) {
         animations_.retire(handle);
@@ -90,7 +69,7 @@ inline bool RunTransitionEffect::create() {
 
 inline bool RunTransitionEffect::adopt(u32 handle) {
     if (handle == handle_) return true;
-    if (!handle) return true;  // no title-owned effect: keep any replay-owned one
+    if (!handle) return true;
     if (handle_ && !release()) return false;
     handle_ = handle;
     return true;
@@ -112,4 +91,4 @@ inline bool RunTransitionEffect::release() {
     return true;
 }
 
-}  // namespace th13
+}

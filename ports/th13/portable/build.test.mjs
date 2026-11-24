@@ -34,7 +34,6 @@ test('harness removes stale proof; successful fresh output has hashed manifest',
   const f = fixture(t);
   const sdk = resolve(f.dir, 'sdk');
   const compiler = f.put('sdk/bin/clang++', '#!/usr/bin/env python3\nimport sys, pathlib\nif "--version" in sys.argv: print("synthetic compiler 1")\nelse: pathlib.Path(sys.argv[sys.argv.index("-o")+1]).write_bytes(bytes([0,97,115,109,1,0,0,0]))\n');
-  // chmod through the existing system utility; no external packages.
   assert.equal(spawnSync('chmod', ['+x', compiler]).status, 0);
   let run = f.run('build-harness.mjs', {WASI_SDK_PATH: sdk});
   assert.equal(run.status, 0, run.stderr);
@@ -62,7 +61,6 @@ test('web cache invalidates on portable headers and compiler identity', t => {
   const build = () => { const run = f.run('build.mjs', env); assert.equal(run.status, 0, run.stderr); return JSON.parse(readFileSync(resolve(f.port, 'web/artifacts/sdl3/build.json'))); };
   const a = build();
   const objectDir = resolve(f.port, 'web/artifacts/sdl3/objects');
-  // Cache keys are checked rather than relying on filesystem time resolution.
   const keys = () => readdirSync(objectDir).filter(p => p.endsWith('.key')).sort().map(p => p + readFileSync(resolve(objectDir, p), 'utf8')).join('\n');
   const k1 = keys();
   build(); assert.equal(keys(), k1);
@@ -84,7 +82,6 @@ test('web cache invalidates on portable headers and compiler identity', t => {
     for (const name of ['build.json', 'th13-sdl.wasm', 'th13-sdl.mjs']) assert.equal(existsSync(resolve(out, name)), false);
   };
   failed({env: {TH_PYTHON: resolve(f.dir, 'missing-python')}, error: /ENOENT/});
-  // Cache misses may not recycle objects left by an earlier successful compiler.
   f.put('sdk/upstream/emscripten/emcc.py', "import sys\nif '--version' in sys.argv: print('noop')\n");
   failed({env: {}, error: /Missing fresh object/});
   f.put('sdk/upstream/emscripten/emcc.py', "import os, signal\nos.kill(os.getpid(), signal.SIGTERM)\n");

@@ -12,8 +12,6 @@
 struct ImDrawData;
 #endif
 
-// Semantic GLES renderer shared by the two games. Matrices and vertices stay
-// in C++; only resource decoding knows the original file format codes.
 namespace touhou::sdl {
 using u32 = uint32_t;
 using i32 = int32_t;
@@ -49,8 +47,6 @@ public:
     Statistics stats{};
     State state{};
     bool defer = false, flip_present_y = false;
-    // Initialize-only and limited to the original opaque display target.
-    // Alpha-bearing render textures retain the previous NativeGles behavior.
     bool configure_unorm_blend_profile(UnormBlendProfile profile, u32 opaque_target) {
         if (initialized || context || vertex || generic.id || !programs.empty()) return false;
         if (profile != UnormBlendProfile::NativeGles && !opaque_target) return false;
@@ -63,12 +59,7 @@ public:
     bool initialize();
     void flush();
     void discard();
-    // commit blits the pending surface to the window. repeat=true presents the
-    // last shown surface again when nothing new is pending (vsync: one
-    // presentation per display refresh even for a repeated image).
     bool commit(bool repeat = false);
-    // True while a newly presented surface awaits commit (a fresh frame, as
-    // opposed to a repeated presentation of the last one).
     bool pending_presentation() const { return pending != 0; }
 #if TH_ENABLE_THPRAC
     void render_imgui(const struct ::ImDrawData*, u32);
@@ -95,7 +86,6 @@ public:
     void* owner;
 
 private:
-    // verified: 当前附着组合已通过完整性检查；附着变化时复位。
     struct GPU {
         GLuint texture = 0, framebuffer = 0;
         u32 version = ~0u, dirtyBase = ~0u;
@@ -130,7 +120,6 @@ private:
     GLuint vertex = 0, currentProgram = 0, boundTexture = ~0u, readFramebuffer = ~0u, drawFramebuffer = ~0u;
     std::map<std::array<u32, 6>, GLuint> layouts;
     GLuint currentLayout = 0;
-    // Lookup results only; utility draws can still change the GL bindings.
     std::array<u32, 10> lastProgramKey{};
     Program* lastProgram = nullptr;
     std::array<u32, 6> lastLayoutKey{};
@@ -166,7 +155,7 @@ private:
 };
 Renderer* current();
 void set_current(Renderer*);
-}  // namespace touhou::sdl
+}
 
 extern "C" {
 __attribute__((export_name("sdl_stats"))) const touhou::sdl::Statistics* sdl_stats();

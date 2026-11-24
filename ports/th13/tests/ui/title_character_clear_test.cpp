@@ -1,14 +1,3 @@
-// 角色 clear-tag 可见门单测（原版 0x451450 case0→1 → 00470030 递归隐藏）：
-//   score_data + 0x56dc*character + 0x7e4 + difficulty*4 == 0 → 隐藏
-//   root129 直接子脚本 131+character（含子树）；!= 0（该角色当前难度通关）
-//   → 保持可见。数据源经 TitleMenuServices::character_cleared 注入，
-//   默认 false = 零进度全隐藏（原版无存档行为）。
-// 反汇编实证（artifacts/decomp/jp/functions/00470030.c）：FUN_00470030 只清
-// vm+0x18 bit1（绘制使能），保留 bit0（visible/脚本执行）；原版绘制门
-// FUN_0046a150 / FUN_00469b10 要求 bit0 与 bit1 同时置位。故「隐藏」以
-// bit1=0 且渲染门不通过判定，不把 bit0/AnmVm::visible 当作绘制位。
-// 夹具：131-134 子脚本含 op300（sprite 置 visible），使「隐藏/未隐藏」可判别；
-// 主链→难度(Hard=2)→角色屏路径复用 title_state_test 时序锚。
 #include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 
@@ -25,13 +14,12 @@ using namespace th13::test;
 
 namespace {
 
-// 原版绘制门：bit0（visible）与 bit1（绘制使能）同时置位才提交。
 bool drawable(const AnmVm* vm) { return vm && vm->visible && (vm->visual.flags & 3u) == 3u; }
 
 struct ClearHost final : TitleScenePlatform {
     AnmManager& manager;
     i32 start_stage = -1;
-    i32 cleared_character = -1, cleared_difficulty = -1;  // 唯一通关组合
+    i32 cleared_character = -1, cleared_difficulty = -1;
     std::vector<std::pair<i32, i32>> queries;
     explicit ClearHost(AnmManager& manager) : manager(manager) {}
     bool clear_title_overlay() override { return true; }
@@ -83,7 +71,6 @@ std::vector<u8> title_anm_fixture() {
         scripts[129].push_back(spawn(child));
     scripts[129].push_back(wait());
     scripts[129].push_back(stop());
-    // clear-tag 131-134：op300 置可见后停车（未隐藏时应保持 visible=true）。
     for (i32 tag = 131; tag <= 134; tag++) {
         scripts[u32(tag)].clear();
         scripts[u32(tag)].push_back(sprite(1));
@@ -97,7 +84,7 @@ std::vector<u8> title_anm_fixture() {
     scripts[123].push_back(stop());
     return synthetic_anm(8, scripts);
 }
-}  // namespace
+}
 
 struct ClearHarness {
     GameRandom random;
@@ -138,13 +125,13 @@ struct ClearHarness {
     }
     void reach_character_screen() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
-        frame(0x01);  // Z：開始 → 难度
+        frame(0x01);
         advance(25);
         CHECK_EQ(int(scene->state.screen), int(TitleScreen::Difficulty));
         advance(10);
-        frame(0x20);  // ↓ 到 Hard(2)
+        frame(0x20);
         CHECK_EQ(scene->state.menu.cursor, 2);
-        frame(0x01);  // Z → 角色屏
+        frame(0x01);
         advance(20);
         CHECK_EQ(int(scene->state.screen), int(TitleScreen::Character));
         CHECK_EQ(progress.difficulty, 2);
@@ -155,7 +142,6 @@ struct ClearHarness {
     }
 };
 
-// 零进度（默认查询 false）：131-134 全隐藏且跨帧保持；查询携带当前难度 2。
 TEST(character_clear_tags_hidden_without_clears) {
     ClearHarness harness;
     harness.reach_character_screen();
@@ -163,10 +149,9 @@ TEST(character_clear_tags_hidden_without_clears) {
         AnmVm* tag = harness.clear_tag(c);
         CHECK(tag != nullptr);
         CHECK(!drawable(tag));
-        CHECK((tag->visual.flags & 2u) == 0u);  // 0x470030 清绘制使能
-        CHECK(tag->visible);                    // bit0 保留（原版不清）
+        CHECK((tag->visual.flags & 2u) == 0u);
+        CHECK(tag->visible);
     }
-    // 跨帧保持（wait 会以 visual.visible() 重算 bit0；bit1 才是隐藏位）。
     harness.advance(30);
     for (i32 c = 0; c < 4; c++) {
         AnmVm* tag = harness.clear_tag(c);
@@ -182,7 +167,6 @@ TEST(character_clear_tags_hidden_without_clears) {
     CHECK(harness.scene->error.empty());
 }
 
-// 角色 2（早苗）Hard 通关：133 保持可见，其余隐藏（0x451450 按角色×难度判定）。
 TEST(character_clear_tag_visible_only_for_cleared_character) {
     ClearHarness harness;
     harness.host.cleared_character = 2;
@@ -201,7 +185,7 @@ TEST(character_clear_tag_visible_only_for_cleared_character) {
         }
     }
     harness.advance(30);
-    CHECK(drawable(harness.clear_tag(2)));  // 跨帧保持
+    CHECK(drawable(harness.clear_tag(2)));
     CHECK(!drawable(harness.clear_tag(0)));
     CHECK((harness.clear_tag(0)->visual.flags & 2u) == 0u);
     CHECK(harness.scene->error.empty());

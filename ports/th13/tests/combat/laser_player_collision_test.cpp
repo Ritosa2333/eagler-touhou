@@ -127,8 +127,6 @@ TEST(curve_contact_reaches_deathbomb_and_preserves_curve_tail) {
     CHECK(r.battle.player_phase == StageBattle::PlayerPhase::Deathbomb);
     CHECK_EQ(r.battle.sim.lasers.size(), 1u);
     CHECK(r.battle.sim.lasers[0].kind == StageLaser::Kind::Curve);
-    // Native4355f0 ->444260 ->4371b0: eight leading samples removed,
-    // path time40 rewound to32 then advanced once after the hit query.
     CHECK_EQ(r.battle.sim.lasers[0].curve_samples.size(), 8u);
     CHECK_EQ(r.battle.sim.lasers[0].time, 33);
     CHECK_EQ(r.session.graze, 0);
@@ -180,5 +178,5 @@ TEST(curve_graze_query_does_not_award_line_laser_points) {
     CHECK_EQ(r.session.graze, 0);
     CHECK_EQ(r.battle.sim.lasers[0].graze_timer, 45);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("laser-player-collision"); }

@@ -121,6 +121,6 @@ TEST(anm606_rectangle_preserves_primary_to_secondary_gradient) {
     for (size_t i = 0; i < graphics.vertices.size(); ++i)
         CHECK_EQ(graphics.vertices[i].color, (i & 1) ? vm.visual.secondary_color : vm.visual.color);
 }
-}  // namespace
+}
 
 int main() { return th13test::run_all("ANM shape geometry"); }

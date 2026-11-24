@@ -1,30 +1,10 @@
-// ANM 指令解释器（0x462450 移植，对照 th15 AnmInterpreter.cpp 裁剪）。
-// th13 差异（docs/plans/anm-pipeline.md §四 + 反编译逐 case 核对）：
-//   - 入口序（00462450.c:291-309）：前置回调 vm+0x590 → IP/停机检查 →
-//     render_flags bit8(0x100) 置位时倍率强制 1（th15 为 bit9）→ 中断 → 暂停；
-//   - opcode 裁剪：dump 频次实证 th13 未用的 108-111/123/126-130/422/507/509；
-//     609-611 走原版默认空操作；202-213 case 存在，保留；
-//   - 几何形态模式号按 th13 分发器实测：600→9（00462450.c:1411，if 分支而非
-//     switch case，计划风险表第 1 条"分发器未见 case"据此更正）、601→13、
-//     602→14、603→15、604→16、605→17、606→19、607→20、608→21（均为清
-//     (m^31)<<25 置 m<<25）；600/601/602 附 malloc(count*0x38) 屏幕顶点缓冲；
-//   - 选精灵负值回落：th13 为 301 号精灵 + 全局回落资源（00462450.c:333-335，
-//     th15 为 258）；
-//   - 变量 10026：只看一层父的旋转 z（00461e80.c case 0x272a）；
-//   - 10030-10032 与 10010-10012 同式同 RNG（AnmVariables 内处理）。
 #include "AnmVm.hpp"
 #include <cmath>
 namespace th13 {
-// Optional read-only diagnostic observer. It sees the VM and the RNG state
-// around a variable read, but never changes either or the read result.
 using AnmRandomObserver = void (*)(const AnmVm&, i32, i32, i32, u32, u32, u32, u32, bool);
 AnmRandomObserver anm_random_observer = nullptr;
-// 诊断用逐 tick 观察器（默认 nullptr，仅浏览器探针臂接）：每次 AnmVm::tick
-// 入口登记 VM 身份与 timer/pc。不改变任何取值；用于与原版逐 tick 轨迹对拍。
 using AnmTickObserver = void (*)(const AnmVm&, float);
 AnmTickObserver anm_tick_observer = nullptr;
-// 诊断用：当前正在 tick 的 VM（GameRandom::draw_observer 的消费者上下文）。
-// 不在 tick 内的抽取（Trail/特效几何/表现层直读）读到 nullptr。
 const AnmVm* anm_tick_current_vm = nullptr;
 namespace {
 template <class T> T read(const u8* p) {
@@ -64,10 +44,7 @@ float float_math(float a, float b, u32 operation) {
         return float(std::fmod(double(a), double(b)));
     }
 }
-}  // namespace
-// 绑定/重置视觉态时 render_flags 回到 AnmVisualState 默认 0x4000
-// （00405010.c:65 的 VM 初始化语义：清 0x8000、置 0x4000）。副链 VM 的
-// 0xc000 清位由 AnmRegistry::submit 负责（0046f820.c:65,71）。
+}
 bool AnmVm::bind(AnmScript& data) {
     presentation_generation = ++presentation_counter;
     presentation_motion = false;
@@ -125,7 +102,6 @@ bool AnmVm::select_sprite(i32 index) noexcept {
     visual.uv[1] = {sprite->u1, sprite->v0};
     visual.uv[2] = {sprite->u0, sprite->v1};
     visual.uv[3] = {sprite->u1, sprite->v1};
-    // 缩放因子 1/256=0.00390625（0x461a60 与 th15 select_sprite 同常数）。
     visual.sprite_matrix.identity();
     visual.uv_matrix.identity();
     visual.sprite_matrix.m[0] = float(visual.sprite_size.x * .00390625f);
@@ -153,7 +129,6 @@ float AnmVm::effective_slowdown() const noexcept {
     return source->slowdown;
 }
 int AnmVm::tick(GameRandom& rng, float rate) {
-    // 诊断上下文：GameRandom::draw_observer 借此识别抽取发生的 VM。
     if (anm_tick_observer) anm_tick_observer(*this, rate);
     const AnmVm* prior_vm = anm_tick_current_vm;
     anm_tick_current_vm = this;
@@ -162,17 +137,11 @@ int AnmVm::tick(GameRandom& rng, float rate) {
     return tick_result;
 }
 int AnmVm::tick_inner(GameRandom& rng, float rate) {
-    // 前置回调（vm+0x590）：非零返回即整帧跳过，不推进时间（00462450.c:293-300）。
     if (pre_tick && pre_tick(*this)) return 0;
-    // 暂停门（00462450.c:301-309）：前置回调 → 脚本/停机检查 → bit8 倍率 →
-    // 待处理中断 → (render_flags & 0xc000) == 0x4000 且暂停位置位时直接
-    // return（0x4624db..0x4624f7 → 0x465935）。原版该分支跳过本帧全部推进，
-    // 故门必须位于几何/轨迹/age/指令之前，否则暂停时 trail 与 scene effect
-    // 仍会前进（BUG 8 的另一半）。
     if (!pending_interrupt && environment && environment->paused && (visual.render_flags & 0xc000) == 0x4000) return 0;
     if (geometry.wind && environment && !geometry.wind->update(*environment, visual.color >> 24, rate)) return 1;
     const float original_rate = rate, amount = effective_slowdown();
-    if (visual.render_flags & 0x100) rate = 1;  // bit8（00462450.c:303），th15 为 bit9
+    if (visual.render_flags & 0x100) rate = 1;
     if (amount > 0) {
         rate = float(original_rate - float(amount * original_rate));
         if (rate < 0) rate = 0;
@@ -209,8 +178,6 @@ int AnmVm::tick_inner(GameRandom& rng, float rate) {
         timer.set(time);
         return true;
     };
-    // 中断标签扫描：从脚本头线性扫 ins_5 标签，id==请求值命中，id==-1 为回落，
-    // 遇 -1 终止符停（00462450.c:363-384）。
     auto interrupt = [&]() {
         u32 fallback = UINT32_MAX, found = UINT32_MAX;
         for (u32 off = 0; span(off, 8, script->size());) {
@@ -334,7 +301,6 @@ int AnmVm::tick_inner(GameRandom& rng, float rate) {
             const float value = read<float>(arg(n));
             if (!(mask & (1u << n))) return value;
             const i32 id = truncate_int(value);
-            // 10026：一层父的旋转 z + 自身 z，归一（00461e80.c case 0x272a）。
             if (id == 10026)
                 return normalize_angle(
                     float(variables.rotation.z + (rotation_parent ? rotation_parent->variables.rotation.z : 0.f)));
@@ -377,8 +343,6 @@ int AnmVm::tick_inner(GameRandom& rng, float rate) {
         auto bits = [](u32& destination, u32 value, u32 shift, u32 field) {
             destination = (destination & ~field) | ((value << shift) & field);
         };
-        // 实参求值序 = 声明序（x→y→z）：变量实参的 RNG 抽签次序与原版一致
-        // （oracle 实证 ins_415 的 [10010]×3 首签落 x 分量——曾因 z 先声明置换）。
         auto vec3 = [&]() {
             const float x = floating(0), y = floating(1), z = floating(2);
             return Vec3{x, y, z};
@@ -471,10 +435,6 @@ int AnmVm::tick_inner(GameRandom& rng, float rate) {
                 }
                 break;
             case 6: {
-                // 0x462450:390-400 → 0x4732c0:10-21：op6 的等待帧数在写入计时器
-                // 时按当前 rate 缩放（rate≈1 时退化为 frac += -frames；否则
-                // frac = rate*(-frames) + frac）。S6 23352 的 7-vs-3 相位差即
-                // 缺此缩放（原生 -3.5 → 7 帧，port -7.5 → 14 帧）。
                 const float frames = float(integer(0));
                 timer.previous = timer.current;
                 const float scaled = (rate > 0.99f && rate < 1.01f) ? frames : float(rate * frames);
@@ -818,9 +778,6 @@ int AnmVm::tick_inner(GameRandom& rng, float rate) {
                 if (!object_host->spawn_effect(*this, script_index)) return fail("Animation effect creation failed");
                 break;
             }
-            // 几何形态（th13 模式号实测，见文件头）：600/601/602 → 9/13/14 +
-            // count*0x38 屏幕顶点缓冲；603/606/607/608 → 15/19/20/21 + 尺寸二元组；
-            // 604/605 → 16/17 + 尺寸 x 与工作变量 10000。
             case 600:
             case 601:
             case 602: {
@@ -846,7 +803,6 @@ int AnmVm::tick_inner(GameRandom& rng, float rate) {
                 variables.integers[0] = integer(1);
                 break;
             }
-            // 00462450's >600 switch ends at 608 and advances unknown opcodes.
             case 609:
             case 610:
             case 611:
@@ -860,4 +816,4 @@ int AnmVm::tick_inner(GameRandom& rng, float rate) {
     }
     return fail("Animation instruction budget exceeded");
 }
-}  // namespace th13
+}

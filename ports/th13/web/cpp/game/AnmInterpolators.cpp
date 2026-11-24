@@ -6,7 +6,7 @@ Vec2 v2(const std::array<float, 2>& v) { return {v[0], v[1]}; }
 void rgb(u32& color, const std::array<i32, 3>& c) {
     color = (color & 0xff000000) | u8(c[0]) | (u32(u8(c[1])) << 8) | (u32(u8(c[2])) << 16);
 }
-}  // namespace
+}
 void AnmInterpolators::advance_color(AnmVisualState& visual, float rate) noexcept {
     if (color.duration) rgb(visual.color, color.step(rate));
     if (alpha.duration) visual.color = (visual.color & 0xffffff) | (u32(u8(alpha.step(rate)[0])) << 24);
@@ -46,4 +46,4 @@ void AnmInterpolators::advance(AnmVariables& variables, AnmVisualState& visual, 
     if (uv_x.duration) visual.uv_velocity.x = uv_x.step(rate)[0];
     if (uv_y.duration) visual.uv_velocity.y = uv_y.step(rate)[0];
 }
-}  // namespace th13
+}

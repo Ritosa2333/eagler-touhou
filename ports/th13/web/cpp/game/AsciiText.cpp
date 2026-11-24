@@ -54,10 +54,6 @@ bool AsciiText::draw_entry(const AsciiTextEntry& entry, AsciiGlyphServices& serv
     v.flags = (v.flags & 0xfebfffff) | 0xa00009;
     p = text.position;
     v.scale = style.scale;
-    // 字距按原版 0x4042A0 的 font 分支（decomp 004042a0.c:30-33 case 1）：
-    // font 1 = scale*7.0、行高 9.0；double 7.0 位于 0x4AED10（字节 00000000 00001c40）。
-    // font 1 只有 FPS 叠加文本使用（Application.cpp，原版 0x424A90 '%2.1ffps'）；
-    // native 小字形 x 步进 7px（587.5,594.5,...622.5），此前用 6 导致 6px。
     float advance = 0, height = 0;
     bool linear = false;
     switch (style.font) {
@@ -99,9 +95,6 @@ bool AsciiText::draw_entry(const AsciiTextEntry& entry, AsciiGlyphServices& serv
         v.render_flags |= 0x400;
     else
         v.render_flags &= ~0x400u;
-    // 004043a5/004043bf and 004045a2: large digits use proportional widths
-    // for alignment too, before the glyph loop. Default spacing (9) shifts
-    // the Trance countdown right even though its draw advances are correct.
     const auto width = [&](u8 ch) {
         if (style.font == 6 || style.font == 7) {
             if (ch == '.') return float(style.scale.x * 10.f);
@@ -262,4 +255,4 @@ bool AsciiText::draw(i32 space, AnmRenderer& renderer) {
     renderer.flush();
     return true;
 }
-}  // namespace th13
+}

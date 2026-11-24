@@ -1,4 +1,3 @@
-// H-CURVE-DRAW: original ECL711 -> real bullet.anm -> production strip submission.
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "game/LaserPresentation.hpp"
 using namespace th13;
@@ -61,8 +60,6 @@ void real_card(const char* file, const char* routine, i32 samples, i32 color) {
     CHECK_EQ(graphics.strips[0].uv.y, body->visual.uv[0].y);
     CHECK_EQ(graphics.strips[1].uv.y, body->visual.uv[2].y);
     CHECK_EQ(graphics.strips[0].color, 0xffffffffu);
-    // Curvature must reach submitted geometry; a straight head-tail quad
-    // cannot satisfy this across all the adjacent strips.
     bool bent = false;
     for (int i = 2; i < samples; ++i) {
         const auto& a = graphics.strips[0].position;
@@ -74,5 +71,5 @@ void real_card(const char* file, const char* routine, i32 samples, i32 color) {
 }
 TEST(stage3_real_card_uses_64_sample_curve_strip) { real_card("st03.ecl", "BossCard3_at", 64, 4); }
 TEST(stage4_real_card_uses_curved_40_sample_strip) { real_card("st04.ecl", "BossMiyakoCard2_at", 40, 8); }
-}  // namespace
+}
 int main() { return th13test::run_all("curve-laser-presentation"); }

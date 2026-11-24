@@ -102,9 +102,6 @@ TEST(shot_birth_initializes_before_its_separate_manager_update) {
     Graphics graphics;
     AnmRenderer renderer(graphics);
     auto scripts = trivial_scripts(13);
-    // pl01 script11's time1 detached spawn is the original f2341 mechanism.
-    // Its child's time0 random read must occur in that same frame, after the
-    // parent's separate time0 initialization and time1 manager update.
     scripts[11] = {{300, -1, {0}}, {0, 1, {}}, {504, 1, {12}}, wait(), stop()};
     scripts[12] = {{100, 0, {10000, 10022}, 2}, wait(), stop()};
     CHECK(load_bank(animations, 6, synthetic_anm(1, scripts)));
@@ -116,10 +113,7 @@ TEST(shot_birth_initializes_before_its_separate_manager_update) {
     const auto before = random.index();
     CHECK(presentation.initialize_player_shot(shot, 0));
     CHECK_EQ(random.index(), before);
-    // 0x445c40: the birth path itself allocates, template-copies, primes one
-    // tick and tail-inserts (0x46f3f0), so the VM is registered immediately.
     CHECK_EQ(animations.registry.count(), 1u);
-    // Repeated observation of the already initialized shot must not tick it.
     CHECK(presentation.initialize_player_shot(shot, 0));
     CHECK_EQ(random.index(), before);
     CHECK_EQ(animations.registry.count(), 1u);
@@ -128,9 +122,6 @@ TEST(shot_birth_initializes_before_its_separate_manager_update) {
     StageBattle battle;
     battle.player_phase = StageBattle::PlayerPhase::Dying;
     battle.shots.push_back(shot);
-    // 0x4464d0 semantics: sync only writes the live pose; the chain tick that
-    // advances the script (and spawns the script-12 child) is the main-pool
-    // update, which runs after sync in the production frame order.
     CHECK(presentation.sync(battle, 0));
     CHECK_EQ(random.index(), before);
     CHECK(animations.update(false));
@@ -140,6 +131,6 @@ TEST(shot_birth_initializes_before_its_separate_manager_update) {
     CHECK(child != nullptr);
     if (child) CHECK_EQ(child->source_script, 12);
 }
-}  // namespace
+}
 
 int main() { return th13test::run_all("Marisa beam hit effect"); }

@@ -67,7 +67,6 @@ TEST(manual_trance_drains_one_point_per_frame_and_grants_exit_protection) {
     CHECK(battle.step(input));
     CHECK(!trance_active(s));
     CHECK_EQ(s.ending_points, 0);
-    //43d4f0 exits before443240 decrements player protection in this same update.
     CHECK_EQ(battle.invulnerable, 69);
     CHECK(battle.step(input));
     CHECK_EQ(battle.invulnerable, 68);
@@ -75,8 +74,6 @@ TEST(manual_trance_drains_one_point_per_frame_and_grants_exit_protection) {
     CHECK(!h.music.back());
 }
 TEST(marisa_trance_scales_movement_on_activation_frame_in_fixed_units) {
-    // 442960's character1/flag100 branch: Marisa replay f2321 y244.0859375
-    // becomes236.5859375 on the same frame that the trance key is pressed.
     Provider p;
     Host h;
     SessionState s;
@@ -87,8 +84,6 @@ TEST(marisa_trance_scales_movement_on_activation_frame_in_fixed_units) {
     s.character = 1;
     CHECK(battle.load(p, "test.ecl", 2, h, s, player, score));
     battle.sim.enemies.clear();
-    // This ECL-only fixture skips SHT loading; supply the verified pl01a.sht
-    // fixed speeds (5 and3.535533905 before conversion to1/128 units).
     battle.speed_orth = 640;
     battle.speed_diag = 452;
     GameInput input;
@@ -105,11 +100,6 @@ TEST(marisa_trance_scales_movement_on_activation_frame_in_fixed_units) {
     CHECK(battle.step(input));
     CHECK_EQ(battle.player_x, -66.3203125f);
     CHECK_EQ(battle.player_y, 231.2890625f);
-    // 0x442a19-0x442a57 focus 三重门：stage ctl 非空、ctl+0xb8（存活敌机
-    // 链计数）非 0、player+0x67c>=4 同时成立才保留 Shift 位；否则 focus=0
-    // 并写 +0x14680=0x1e。本 fixture 在 enemies.clear() 后链计数为 0，
-    // 原生同门关闭——0x98（Shift+上+右）走非聚焦对角 452×3/2=678（1/128）
-    // =5.296875 px/帧，而不是聚焦 181×3/2=271=2.1171875。
     input.update(0x98);
     CHECK(battle.step(input));
     CHECK_EQ(battle.player_x, -61.0234375f);
@@ -120,10 +110,6 @@ TEST(marisa_trance_scales_movement_on_activation_frame_in_fixed_units) {
     CHECK_EQ(battle.player_y, 220.9921875f);
 }
 TEST(deathbomb_window_trance_save_survives_as_manual_trance) {
-    // 0x4057f0 主动激活门无 player state 检查：决死窗（state4）内满计按 C
-    // 照常激活手动灵界。窗口到期 0x443240 case4 → 0x444a10 → 0x405a20(1)
-    // 走 already-active 早退（0x405b64 xor eax,eax）返回 0 → 存活（0x65c=1，
-    // 不扣命、timer 保留），bit1 不动 → 结束按手动语义 -200，不再死亡。
     Provider p;
     Host h;
     SessionState s;
@@ -142,23 +128,22 @@ TEST(deathbomb_window_trance_save_survives_as_manual_trance) {
     battle.player_phase = StageBattle::PlayerPhase::Deathbomb;
     battle.player_phase_frame = 0;
     input.update(0x800);
-    CHECK(battle.step(input));  // C 在决死窗首帧
+    CHECK(battle.step(input));
     CHECK(trance_active(s));
     CHECK_EQ(h.sounds.back(), 0x34);
     CHECK(h.music.back());
-    CHECK(battle.player_phase == StageBattle::PlayerPhase::Deathbomb);  // 窗口未过期
+    CHECK(battle.player_phase == StageBattle::PlayerPhase::Deathbomb);
     for (int i = 0; i < 8; ++i) {
         input.update(0);
         CHECK(battle.step(input));
-    }  // timer 0..8
-    // 到期帧 commit_death：already-active 早退 → 存活，不扣命，灵界不被吞。
+    }
     CHECK(battle.player_phase == StageBattle::PlayerPhase::Active);
     CHECK_EQ(player.extra_lives, lives);
     CHECK_EQ(player.deaths, 0);
     CHECK(trance_active(s));
     CHECK(s.ending_points > 0);
     for (int i = 0; i < 600; ++i)
-        CHECK(battle.step(input));  // 手动语义耗完 600 帧
+        CHECK(battle.step(input));
     CHECK(!trance_active(s));
     CHECK_EQ(s.ending_points, 0);
     CHECK(battle.player_phase == StageBattle::PlayerPhase::Active);
@@ -168,8 +153,6 @@ TEST(deathbomb_window_trance_save_survives_as_manual_trance) {
     CHECK(!h.music.back());
 }
 TEST(deathbomb_window_trance_save_keeps_gauge_if_window_outlives_activation) {
-    // 到期帧同帧按 C：0x4057f0（激活）先于 0x443240 case4（到期判定），
-    // 与原版 42c550→4057f0→443240 同序——最迟一帧的决死灵界同样保命。
     Provider p;
     Host h;
     SessionState s;
@@ -188,7 +171,7 @@ TEST(deathbomb_window_trance_save_keeps_gauge_if_window_outlives_activation) {
     battle.player_phase = StageBattle::PlayerPhase::Deathbomb;
     battle.player_phase_frame = 8;
     input.update(0x800);
-    CHECK(battle.step(input));  // 到期帧同帧按 C
+    CHECK(battle.step(input));
     CHECK(trance_active(s));
     CHECK(battle.player_phase == StageBattle::PlayerPhase::Active);
     CHECK_EQ(player.extra_lives, lives);
@@ -214,7 +197,7 @@ TEST(protective_trance_expiry_commits_death_without_a_second_deathbomb_window) {
     CHECK(trance_active(s));
     CHECK(battle.player_phase == StageBattle::PlayerPhase::Active);
     CHECK_EQ(player.extra_lives, lives);
-    CHECK_EQ(s.ending_points, 200);  //activation inside443240 follows this frame's drain
+    CHECK_EQ(s.ending_points, 200);
     for (int frame = 0; frame < 200; ++frame)
         CHECK(battle.step(input));
     CHECK(!trance_active(s));
@@ -304,8 +287,6 @@ TEST(protective_trance_entry_keeps_position_and_executes_the_shared_death_spirit
     CHECK_EQ(spirit.kind, 3);
     CHECK_EQ(spirit.flags & 1u, 1u);
     CHECK_EQ(s.ending_points, 550);
-    // 0x442a19-0x442a57：enemies.clear() 后 focus 门关闭（ctl+0xb8==0），
-    // Shift+右走非聚焦正交 576（1/128）=4.5 px/帧；灵梦无 3/2 缩放。
     input.update(0x88);
     CHECK(battle.step(input));
     CHECK_EQ(battle.player_x, -79.96875f);
@@ -344,7 +325,7 @@ TEST(respawn_damage_pulse_matches_native_growth_lifetime_and_hits) {
         CHECK_EQ(battle.respawn_damage.remaining.current, remaining);
         const float before = target.life;
         battle.sim.enemy_hit(target);
-        CHECK_EQ(before - target.life, frame >= 2 && frame < 29 ? 16.f : 0.f);  // entering damage /5 after capped80
+        CHECK_EQ(before - target.life, frame >= 2 && frame < 29 ? 16.f : 0.f);
         CHECK_EQ(score.score, expected_score);
         if (frame == 0) {
             CHECK_EQ(battle.invulnerable, 279);
@@ -416,11 +397,6 @@ TEST(respawn_entry_clears_bullets_only_after_thirty_updates_without_cancel_items
     CHECK_EQ(battle.sim.bullets[0].state, 4);
     CHECK_EQ(effects, 1);
     CHECK_EQ(battle.sim.bullets[0].x, 103.f);
-    // 契约更正（0x40db10 尾部门控，主会话裁决 2026-11-01）：碰撞的实际门是
-    // 每帧 collide_now（仅 state==1 的弹在 case1 尾按 +0x20 bit1 调
-    // 0x444140/0x443fd0）；collision_ready 是 state1/2 的簿记字段，state4
-    // 消费弹不参与任何帧的碰撞调用。废弹不碰撞的可观察证据 = 下述位移冻结
-    // （x 恒 103，state4 不再步进位移）。
     for (int i = 0; i < 3; ++i)
         CHECK(battle.step(input));
     CHECK_EQ(battle.sim.bullets[0].x, 103.f);
@@ -429,5 +405,5 @@ TEST(respawn_entry_clears_bullets_only_after_thirty_updates_without_cancel_items
     for (const auto& item : battle.item_manager.items())
         CHECK(!item.alive);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("trance duration"); }

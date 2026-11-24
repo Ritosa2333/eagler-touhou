@@ -1,4 +1,3 @@
-// fps 读数：0x424990 口径（逻辑帧 / 帧钟入账时间，含两端相位）+ 半帧相位起步。
 #include "../harness/test_framework.hpp"
 
 #include "../../portable/sdl/FrameRateMeter.hpp"
@@ -13,7 +12,6 @@ double jitter(unsigned i, double amplitude) {
     const unsigned h = (i * 2654435761u) >> 16;
     return ((h % 2001) / 1000. - 1.) * amplitude;
 }
-// Callbacks are late around vsync: the delta is the difference of two bounded offsets.
 double callback_delta(unsigned i, double period, double amplitude) {
     return period + jitter(i + 1, amplitude) - jitter(i, amplitude);
 }
@@ -40,12 +38,12 @@ Run run(double period, double amplitude, unsigned callbacks, unsigned stall_at =
     }
     return result;
 }
-}  // namespace
+}
 
 TEST(fps_readout_is_exact_on_a_jittery_60hz_display) {
     const auto steady = run(1. / 60., .003, 1200);
     CHECK(steady.low >= 59.95f && steady.high <= 60.f);
-    CHECK_EQ(steady.uneven, 0u);  // half-phase start: one logic frame per refresh
+    CHECK_EQ(steady.uneven, 0u);
     const auto rough = run(1. / 60., .007, 1200);
     CHECK(rough.low >= 59.95f && rough.high <= 60.f);
 }

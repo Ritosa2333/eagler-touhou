@@ -7,20 +7,17 @@ import {practiceSections} from './practice-catalog.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {runtimeAssets} from './runtime-assets.mjs';
 
-const runtimeBuild = /*TH13_BUILD_INFO*/{version: 'development-incomplete', completeGame: false};
+const runtimeBuild = {version: 'development-incomplete', completeGame: false};
 const game = 'th13', protocol = 'eagler-touhou/1', query = new URLSearchParams(location.search), canvas = document.querySelector('canvas'), $ = s => document.querySelector(s);
 const epoch = Number(query.get('runtimeEpoch'));
 const validEpoch = Number.isSafeInteger(epoch) && epoch > 0;
 let core, launched = false, first = false, stopping = false, options = {}, music = true, queue = Promise.resolve();
 const emit = (event, fields = {}) => parent.postMessage({protocol, game, epoch, event, ...fields}, location.origin);
-// 触摸坐标换算的 canvas 包围盒缓存：resize/视口变化时失效，避免每次
-// pointermove 消息都强制布局（getBoundingClientRect）。
 let canvasBox = null;
 const invalidateCanvasBox = () => { canvasBox = null; };
 addEventListener('resize', invalidateCanvasBox);
 visualViewport?.addEventListener?.('resize', invalidateCanvasBox);
 const canvasRect = () => canvasBox ??= canvas.getBoundingClientRect();
-// WebGL 上下文属性：必须在模块创建上下文之前装好（详见 context-attributes.mjs）。
 installContextAttributes(canvas);
 const keyboard = createBrowserKeyboard({
   hostContext: {
@@ -52,10 +49,6 @@ const fatal = e => {
   emit('error', {error: message});
 };
 
-// 存档读：优先 'th13.scoredat'（原版格式存档键，launcher 存档线写入）；
-// 新键缺席时回退读旧 'th13.save'——过渡兼容：已放出去的旧存档在壳升级后
-// 不至于「消失」。回退只读不写：写路径一律落新键（旧键并存由 remove 统一
-// 清理），一旦写过新键即恒优先。
 function readSaveBytes() {
   try {
     const text = localStorage.getItem('th13.scoredat') ?? localStorage.getItem('th13.save');
@@ -69,8 +62,6 @@ function readSaveBytes() {
   }
 }
 
-// 存档写：一律落 'th13.scoredat'。旧 'th13.save' 保留不动，供旧版本壳
-// 过渡回退读取。
 function writeSaveBytes(bytes) {
   try {
     let binary = '';
@@ -82,15 +73,6 @@ function writeSaveBytes(bytes) {
   }
 }
 
-// ---- Replay 文件通道（replay/th13_(\d{2}|ud[a-z0-9]{4})\.rpyx? 命名空间）----
-// launcher Replay 工作台经 list/read/write/remove postMessage 命令读写本
-// 存储区；游戏内保存经 Module.onReplaySaved 落同一索引（C++ 已先行 import
-// 进 catalog），launch 时 restoreReplaysToCatalog 重导入。键定死（与
-// th13.html 同款内联实现——打包名册固定，不新增模块文件）：索引
-// th13.replays = JSON 数组 [{name,size,ts}]，blob th13.replay.<name> =
-// base64；name 恒为小写（sanitizePath 已归一）。护栏：单条 >1MiB 拒收；
-// 索引总量（base64 账面）超 5MiB 先逐出最旧条目，配额溢出再逐出重试——
-// 正在写入的条目绝不逐出，全部失败返回 false 由调用方报错（不静默丢档）。
 const replayIndexKey = 'th13.replays', replayBlobPrefix = 'th13.replay.';
 const replayNamePattern = /^th13_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/;
 const replaySingleMax = 1024 * 1024, replayTotalMax = 5 * 1024 * 1024;
@@ -130,7 +112,7 @@ function writeReplayFile(name, bytes) {
     if (!replayNamePattern.test(name) || !bytes || !bytes.length || bytes.length > replaySingleMax) return false;
     const list = replayIndex().filter(entry => entry.name !== name);
     list.push({name, size: bytes.length, ts: Date.now()});
-    const weight = entry => Math.ceil((entry.size || 0) * 4 / 3);  // base64 账面
+    const weight = entry => Math.ceil((entry.size || 0) * 4 / 3);
     const dropOldest = () => {
       let oldest = 0;
       for (let i = 1; i < list.length; ++i) if ((list[i].ts ?? 0) < (list[oldest].ts ?? 0)) oldest = i;
@@ -143,8 +125,6 @@ function writeReplayFile(name, bytes) {
       replayWriteIndex(list);
     };
     try {
-      // list 已含本次条目：超总量时逐最旧，绝不逐出正写入的条目（最新 ts，
-      // 且 list.length>1 兜底——单条 ≤1MiB 恒小于总量上限，理论到不了）。
       while (list.reduce((sum, entry) => sum + weight(entry), 0) > replayTotalMax && list.length > 1)
         dropOldest();
       save();
@@ -155,7 +135,7 @@ function writeReplayFile(name, bytes) {
           dropOldest();
           save();
           return true;
-        } catch { /* 继续逐出最旧 */ }
+        } catch {}
       }
       return false;
     }
@@ -170,10 +150,6 @@ function removeReplayFile(name) {
   replayWriteIndex(replayIndex().filter(entry => entry.name !== name));
   return true;
 }
-// launch 时按索引把持久化录像重导入 catalog（与手动导入同一
-// _th13_replay_import 路径：th13_NN.rpy → 编号槽 NN-1 覆盖，其余 → 首个
-// 空闲用户槽；原文件名 → 槽位语义不变）。失败只记 console——持久档损坏
-// 不阻断启动，launcher 工作台仍可读/删原文件。
 function restoreReplaysToCatalog() {
   for (const entry of replayIndex()) {
     const bytes = readReplayFile(entry.name);
@@ -366,8 +342,6 @@ async function command(m) {
           try { scaleOption = new URLSearchParams(parent.location.search).get('renderScale'); } catch {}
         }
         const requested = Number(scaleOption);
-        // 移动端默认 renderScale=1（= 原版原生 640×480 分辨率）：粗指针/小屏
-        // 默认降档保 60fps；显式 options/URL 指定优先。桌面与无头捕获不受影响。
         const mobileDefault = matchMedia('(pointer: coarse)').matches ||
             Math.min(screen.width || 9999, screen.height || 9999) < 640 ? 1 : 2;
         core._th13_render_scale(options.renderScale === 1 ? 1 : options.renderScale === 2 ? 2
@@ -387,8 +361,6 @@ async function command(m) {
         first = false;
         $('#loading').textContent = '';
         core._th13_loop_start();
-        // 持久化录像回灌 catalog（launcher 工作台经 write 写入的、以及上次
-        // 会话游戏内保存的）：晚于 loop_start，与 th13.html 内置预装同一拍。
         restoreReplaysToCatalog();
         emit('runtime-info', {renderer: 'SDL3 / WebGL2 / C++', architecture: protocol, ...runtimeBuild});
       }
@@ -439,7 +411,6 @@ async function command(m) {
       const target = sanitizePath(m.path);
       if (target === 'scoreth13.dat') {
         localStorage.removeItem('th13.scoredat');
-        // 过渡键一并清除：readSaveBytes 的回退读会 resurrect 旧档。
         localStorage.removeItem('th13.save');
         return {};
       }
@@ -510,7 +481,6 @@ canvas.addEventListener('webglcontextlost', e => {
   e.preventDefault();
   fatal(Error('图形环境失效，请退出后重新开始。'));
 });
-// 浏览器会自动恢复上下文，但运行时持有的 GPU 资源不会随之重建；重新启动游戏才会重建。
 canvas.addEventListener('webglcontextrestored', () => console.warn('[th13] 图形上下文已恢复，请重新启动游戏。'));
 window.addEventListener('pagehide', () => {
   clearKeyboard();
@@ -562,15 +532,11 @@ const initialized = (async () => {
   });
 
   core.SDL3 = core.SDL3 || {};
-  // ?glDebug=1：每帧提交后检查 GL 错误，变化经 printErr 写入控制台。
   if (query.get('glDebug') === '1') core._th13_debug_gl_checks?.(1);
   if (parent !== window && parent.__touhouAudioContext) core.SDL3.audioContext = parent.__touhouAudioContext;
   window.Module = core;
   window.FS = core.FS;
   core.resetBrowserKeyboard = () => keyboard.clear();
-  // 游戏内保存录像（save_replay_slot → 下载 EM_JS 钩子）：catalog 已由
-  // C++ 侧 import_replay_bytes 入槽，这里只补 localStorage 持久化。自吞
-  // 异常——持久化失败不影响游戏内保存/下载流程。
   core.onReplaySaved = (name, bytes) => {
     try {
       return writeReplayFile(String(name).toLowerCase(), bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
@@ -585,11 +551,9 @@ const initialized = (async () => {
       throw Error('请从 eagler-touhou 启动此运行时');
     }
     const {buffer} = await parent.__eaglerPrepareManagedRuntimeDataV1({game, generation: query.get('gameGeneration'), epoch});
-    // The Launcher owns this buffer in the parent realm. Check the native
-    // ArrayBuffer brand instead of comparing its constructor with the iframe's.
     let byteLength = 0;
     try { byteLength = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength').get.call(buffer); }
-    catch { /* Non-ArrayBuffer values are invalid package data. */ }
+    catch {}
     if (byteLength < 16 || byteLength > 256 * 1024 * 1024)
       throw Error('游戏资源包无效');
     const view = new DataView(buffer);

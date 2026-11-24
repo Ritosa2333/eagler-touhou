@@ -1,15 +1,3 @@
-// 运行 WASI harness（wasm32-wasip1），输出捕获供 oracle 比对。
-// 用法：node --experimental-wasi-unstable-preview1 tools/run-harness.mjs [args...]
-//   无参数：RNG 冒烟；stage1：装载 st01.ecl 跑 3600 帧，
-//   事件流写 web/artifacts/wasi/stage1-events.jsonl（契约见 docs/plans/event-contract.md）；
-//   replay <rpy> [资源目录] [事件输出] [帧数] [stage 索引]：解码原版录像并逐帧注入
-//   （rpy 用工作区根相对路径，如 games/replays/th13_udSr01.rpy）；
-//   draws [资源目录] [绘制输出] [帧数] [stage.ecl] / draws-replay <rpy> [资源目录]
-//   [绘制输出] [帧数] [stage 索引]：语义绘制清单导出（draw-contract.md v1
-//   移植侧；默认输出 artifacts/port-draws/ 下，无输入窗 3600 帧、回放窗帧数显式传）；
-//   title [资源目录] [绘制输出] / title-b [资源目录] [绘制输出]：标题窗导出
-//   （oracle/title_oracle.py 同窗同规则；窗A 600 帧主菜单→难度、窗B 至开局
-//   转场请求帧，boot 装载幕 + 输入时刻表内置）。
 import {spawnSync} from 'node:child_process';
 import {WASI} from 'node:wasi';
 import {readFileSync, mkdirSync, statSync} from 'node:fs';
@@ -17,9 +5,6 @@ import {resolve, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {harnessPaths, validateHarnessOutput, guestPath} from './harness-paths.mjs';
 
-// Node 22.23 的 V8（12.4.254.21）在增量标记的栈扫描里会崩溃（证据见
-// tools/regression-digest.mjs 文件头）。调用方没带开关时，带上开关重启自身，
-// 让每个入口都走同一条稳定路径。
 if (!process.execArgv.includes('--no-incremental-marking')) {
   const rerun = spawnSync(process.execPath,
     ['--no-incremental-marking', ...process.execArgv, ...process.argv.slice(1)], {stdio: 'inherit'});
@@ -28,25 +13,11 @@ if (!process.execArgv.includes('--no-incremental-marking')) {
 
 const port = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const workspace = resolve(port, '../../..');
-// TH13_HARNESS_WASM（可选）：wasm 产物路径覆盖——lockstep 门禁
-// （artifacts/verification/r3/bin/build-native.sh）把 fresh 构建产物放在
-// 私有目录并经此注入，绝不复用/覆写 web/artifacts/wasi 旧产物。
 const wasmPath = process.env.TH13_HARNESS_WASM
   ? resolve(process.env.TH13_HARNESS_WASM)
   : resolve(port, 'web/artifacts/wasi/th13-harness.wasm');
 const bytes = readFileSync(wasmPath);
 
-// WASI 的 '/' 对应外层工作区；容器宿主路径 /work/... 需去掉 /work。
-// TH13_DUMPCHECK / TH13_SHOT_PROBE / TH13_LIFE_PROBE / TH13_STATE_LOG
-// （可选宿主环境变量）：透传给 wasm——前者 harness 侧 dump 层 2 插值通道字段，
-// 中者 StageBattle 出膛/命中探针，再次者敌机生命轨迹对拍探针，末者 replay
-// 模式对局状态流输出路径（guest 路径，oracle battle_oracle TH13_STATE_LOG
-// 对等，取证脚手架，见 tests/harness/harness.cpp 与 oracle/state_compare.py）。
-// TH13_FREEZE_AT / TH13_NO_ECL_SLOT_ANM（r4/harness）：replay 同源路径的
-// freeze 门/ANM sync 诊断自证开关（只观察，不改评分字段）。
-// TH13_DIGEST_LOG / TH13_DIGEST_STRIDE：全回放回归 digest（tools/regression-digest.mjs）；
-// TH13_REPLAY_ALL / TH13_REPLAY_FULL：整段录像全 stage 链 + 完整窗口。
-// digest 日志路径按 guest 视界归一，并声明为输出（建目录 + 非空/重生成校验）。
 const env = {};
 for (const key of ['TH13_DUMPCHECK', 'TH13_SHOT_PROBE', 'TH13_LIFE_PROBE', 'TH13_STATE_LOG',
                    'TH13_FREEZE_AT', 'TH13_NO_ECL_SLOT_ANM', 'TH13_RNG_TRACE',

@@ -4,15 +4,13 @@
 
 namespace th13 {
 namespace {
-// 423d40 returns the signed shortest difference before its caller adds
-// the reflection axis. Preserve those stores rather than using pi-angle.
 float difference(float target, float angle) {
     if (float(target - angle) > 3.1415927f) return float(double(target) - (double(angle) + 6.2831855f));
     if (float(angle - target) > 3.1415927f) return float(double(target) - (double(angle) - 6.2831855f));
     return target - angle;
 }
 float reflected(float axis, float angle) { return wrap_angle(float(double(difference(axis, angle)) + axis)); }
-}  // namespace
+}
 bool StageSim::invoke_enemy_function(StageEnemy& enemy, i32 index) {
     if (index == 0) return true;
     if (index == 4) {
@@ -21,8 +19,6 @@ bool StageSim::invoke_enemy_function(StageEnemy& enemy, i32 index) {
         return false;
     }
     if (index == 6) {
-        // 422e40 saves next before4183f0. Newly emitted bullets are not
-        // substituted for the triggering node if its vector reallocates.
         const size_t count = bullets.size();
         for (size_t i = 0; i < count; ++i) {
             const StageBullet source = bullets[i];
@@ -102,4 +98,4 @@ bool StageSim::invoke_enemy_function(StageEnemy& enemy, i32 index) {
     }
     return true;
 }
-}  // namespace th13
+}

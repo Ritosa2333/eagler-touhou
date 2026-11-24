@@ -3,7 +3,6 @@
 #include <algorithm>
 namespace th13 {
 ChainEntryObserver chain_entry_observer = nullptr;
-// 卸载资源时把绑定它的 VM 标待回收（0x46fea0 语义：render_flags |= 0x20）。
 void AnmRegistry::retire_resource(const AnmResource* resource) noexcept {
     if (!resource) return;
     for (auto& group : groups)
@@ -71,7 +70,6 @@ u32 AnmRegistry::submit(AnmVm& vm, u32 ordering) {
         error = "Animation instance cannot be registered";
         return 0;
     }
-    // 句柄 = generation<<13 | slot（0x46f3f0：低 13 位槽、高 19 位代，代跳 0）。
     generation = (generation + 1) & 0x7ffff;
     if (!generation) generation = 1;
     entry->handle = (generation << 13) | (entry->slot & 0x1fff);
@@ -82,11 +80,6 @@ u32 AnmRegistry::submit(AnmVm& vm, u32 ordering) {
     else
         entry->position = list.insert(list.end(), entry);
     entry->registered = true;
-    // 副链插入清 0xc000（0046f820.c:65,71：bit2/bit1|bit2 两路插入后均清）。
-    // port 在 submit 统一执行，同时覆盖 0x46f990 spawn_child（ins_501→ordering4，
-    // 暂停菜单子体 117/118 等）：port 模板稳态是 0x4000，若不清 0，这些子体会
-    // 被 00462450.c:308 的暂停门冻结；原版 0x46f990 未清位（其模板预热值
-    // 0x8000，子体天然不受门影响），故此处清位是 port 侧必要的等价手段。
     if (entry->alternate) vm.visual.render_flags &= ~0xc000u;
     return entry->handle;
 }
@@ -103,14 +96,12 @@ AnmVm* AnmRegistry::find(u32 handle) const noexcept {
     return nullptr;
 }
 bool AnmRegistry::attach(AnmVm& child, AnmVm& parent) {
-    // 子 VM 保留资源脚本身份供游戏回调（原版子链 vm+0x560/0x564 + 父指针）。
     auto* entry = node(child);
     auto* owner = node(parent);
     if (!entry || entry->borrowed || !entry->active || entry == owner || entry->parent) {
         error = "Animation child relationship invalid";
         return false;
     }
-    // 玩家/弹幕对象内嵌根 VM：只跟踪子链，不接管生命周期。
     if (!owner) {
         auto borrowed = std::make_unique<Node>();
         borrowed->borrowed = &parent;
@@ -132,7 +123,6 @@ bool AnmRegistry::attach(AnmVm& child, AnmVm& parent) {
     return true;
 }
 void AnmRegistry::collect(Node& entry) {
-    // Host bookkeeping must not occupy native render bit6: ins424 writes it.
     if (entry.queued_deletion) return;
     entry.queued_deletion = true;
     for (auto* child : entry.children)
@@ -142,18 +132,12 @@ void AnmRegistry::collect(Node& entry) {
     entry.vm.visual.render_flags |= 0x20u;
 }
 void AnmRegistry::requeue_to_back(AnmVm& vm) {
-    // [f389 标题批序] 把已注册 VM 挪到其链表尾（不改变任何运行态；仅
-    // 绘制提交序受影响）。oracle 侧重挂语义（0x46f3f0 尾插）的同构物。
     auto* entry = node(vm);
     if (!entry || !entry->registered || entry->alternate) return;
     groups[0].erase(entry->position);
     entry->position = groups[0].insert(groups[0].end(), entry);
 }
 void AnmRegistry::erase(Node& entry) {
-    // 幂等守卫：原版 0x46f690 对池内节点内联回收恰一次（子链只打 0x20 下帧
-    // 链扫自回收，无二次路径）；移植侧直毁（destroy_tree/discard/spawn 失败
-    // 清理）与延迟队列双路径并存，已回收节点必须静默跳过（collect 幂等的
-    // defence in depth：直毁子后 update 队列残留项不再二次释放槽位）。
     if (!entry.active && !entry.borrowed) return;
     if (entry.borrowed) {
         external.erase(entry.borrowed);
@@ -172,7 +156,6 @@ void AnmRegistry::erase(Node& entry) {
         }
     if (entry.registered) groups[entry.alternate].erase(entry.position);
     if (entry.parent) entry.parent->children.remove(&entry);
-    // 0x46f690：子链全体摘父指针并标待回收（0x20），下帧由链扫描回收。
     for (auto* child : entry.children) {
         child->parent = nullptr;
         child->vm.rotation_parent = child->vm.creation_parent = nullptr;
@@ -184,9 +167,6 @@ void AnmRegistry::erase(Node& entry) {
     entry.active = entry.registered = entry.queued_deletion = entry.alternate = false;
     entry.handle = 0;
     active_count--;
-    // A freed pool slot owns no script, sprite or allocated geometry. Keeping
-    // these bindings after the bank unloads makes a later snapshot dereference
-    // released storage. allocate callers install a complete template on reuse.
     entry.vm.script = nullptr;
     entry.vm.resource = entry.vm.sprite_resource = nullptr;
     entry.vm.sprite = nullptr;
@@ -256,8 +236,6 @@ bool AnmRegistry::retire_children(AnmVm& vm) {
         retire(*child);
     return true;
 }
-// 单条链一遍（0x46f170 主链 / 0x46f240 副链同构）：待回收(0x20)不 tick 直接
-// 回收；tick 非零回收；零则归桶。副链层 ∉{31,32} 钳到 31（0x46f240:31-33）。
 bool AnmRegistry::tick_chain(u32 alternate, GameRandom& random, float rate) {
     if (!alternate && chain_entry_observer) chain_entry_observer(*this, false);
     auto next = groups[alternate].begin();
@@ -295,7 +273,6 @@ bool AnmRegistry::update(GameRandom& random, float rate) {
     pending_deletion.clear();
     if (!tick_chain(0, random, rate)) return false;
     if (!tick_chain(1, random, rate)) return false;
-    // 原版先队列子节点再前插，释放顺序为父先；空出的槽放回空闲链头部。
     for (auto it = pending_deletion.rbegin(); it != pending_deletion.rend(); ++it)
         erase(**it);
     pending_deletion.clear();
@@ -335,7 +312,6 @@ bool AnmRegistry::pause_tree(AnmVm& vm, bool paused) {
     return true;
 }
 bool AnmRegistry::interrupt(AnmVm& vm, i32 label, GameRandom& random, float rate, bool immediate) {
-    // 0x46fca0：子中断回调(vm+0x59c) → pending=label → 立即 tick，逐子传播。
     auto* entry = node(vm);
     if (!entry || !entry->active) return true;
     if (vm.object_host && !vm.object_host->interrupt_effect(vm, label, rate)) return false;
@@ -393,4 +369,4 @@ void AnmRegistry::append_draw(AnmVm& vm) {
     if (layer < 0 || layer > 30) return;
     layers[u32(layer)].push_back(&vm);
 }
-}  // namespace th13
+}

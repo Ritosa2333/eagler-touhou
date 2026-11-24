@@ -7,27 +7,17 @@
 #include <cstring>
 #include <unordered_map>
 #if TH13_DRAW_CAPTURE
-#include "DrawCapture.hpp"  // 语义绘制清单钩子（draw-contract.md；仅 harness 构建）
+#include "DrawCapture.hpp"
 #endif
 namespace th13 {
 using namespace touhou::graphics;
 AnmDrawProbe anm_draw_probe;
 #if TH13_DRAW_CAPTURE
 namespace {
-// [§8.3/§8.9] 绘制侧层覆盖表（VM 指针 → op 层）。仅捕获构建的 sprite 钩子
-// 查询；每帧由标题场景 Draw 回调 clear + 重设，标题场景析构时清空。
 std::unordered_map<const AnmVm*, i32> draw_layer_overrides;
-}  // namespace
+}
 void set_draw_layer_override(const AnmVm& vm, i32 layer) { draw_layer_overrides[&vm] = layer; }
 void clear_draw_layer_overrides() { draw_layer_overrides.clear(); }
-// 提交语境钩子：每个精灵的顶点进入渲染批次时登记层号与九宫格锚点组（原版
-// 0x46f380 层 watch + startVertex 公式的移植侧同构物）。captures 为空（web 构建）
-// 时零开销。
-// [层号错记修正] 钩子必须在 material() 之后、顶点入批之前调用：material 内的
-// flush 会提交「上一个 VM」的遗留批次——若钩子先于它落笔，该批 op 的 layer
-// 会被当前 VM 覆盖（串扰=下一绘制调用的层，f349 title00a 右半 22→23 实证）。
-// 各绘制路径（quad 族/shape/world/mesh/trail/distortion/strip）就地挂钩；
-// overlay 掩蔽矩形在 draw() 入口挂（其掩蔽 flush 保持历史行为，见 draw()）。
 #define TH13_DRAW_SPRITE(vm)                                                                                           \
     do {                                                                                                               \
         if (draw_capture) {                                                                                            \
@@ -37,12 +27,11 @@ void clear_draw_layer_overrides() { draw_layer_overrides.clear(); }
         }                                                                                                              \
     } while (false)
 #else
-// web/普通构建：无捕获钩子，层覆盖为 no-op（零开销）。
 void set_draw_layer_override(const AnmVm&, i32) {}
 void clear_draw_layer_overrides() {}
 #define TH13_DRAW_SPRITE(vm)                                                                                           \
     do {                                                                                                               \
-    } while (false)  // web 构建：钩子编译出局
+    } while (false)
 #endif
 namespace {
 u32 multiply_color(u32 a, u32 b) {
@@ -51,7 +40,7 @@ u32 multiply_color(u32 a, u32 b) {
         out |= std::min(255u, (((a >> shift) & 255) * ((b >> shift) & 255)) >> 7) << shift;
     return out;
 }
-}  // namespace
+}
 void AnmRenderer::flush() {
     if (vertices.empty()) return;
     graphics.set_layout(VertexLayout::ScreenColorUv);
@@ -62,12 +51,6 @@ void AnmRenderer::invalidate() {
     flush();
     bound_texture = ~0u;
 }
-// 视口切换只冲顶点批，不丢纹理缓存：原版 SetViewport（0x45d2f0:30 每帧）
-// 不清精灵侧纹理缓存 mgr+0xb78188（oracle f1-8 tex=None 的缓存语义）。
-// set_viewport 必须无条件 flush：层间靠它形成批边界。按“同值视口跳过”优化
-// 会让 Renderer 把跨层 quad 并进上一状态批，实机与无头页面都复现画面静止。
-// 要省这次 flush，先对照逐层捕获帧证明 0x467350 的批边界语义不变。
-// 仅 RunScene 战斗直绘 pass 入口走 ScreenViews::camera_if_changed（同值不重设）。
 void AnmRenderer::set_viewport(const GraphicsViewport& value) {
     flush();
     viewport = value;
@@ -93,9 +76,6 @@ bool AnmRenderer::material(AnmVm& vm, bool textured) {
                     " sprites=" + std::to_string(source ? source->sprites.size() : 0);
             return false;
         }
-        // The original material lookup uses the bank and sprite index even before
-        // an ANM script has executed sprite selection (chapter root 241 does this).
-        // Keep its zero geometry/UVs; selecting a sprite here would change them.
         const u32 texture = graphics.texture(*source, sprite->texture);
         if (texture != bound_texture) {
             flush();
@@ -107,14 +87,6 @@ bool AnmRenderer::material(AnmVm& vm, bool textured) {
     auto next = graphics.pipeline();
     const u32 mode = v.blend_mode();
     next.alphaTest = true;
-    // [原版机制·黑块根因] 原版 ANM quad 全族以 ALPHABLENDENABLE=TRUE 绘制
-    // （oracle title-draws 全窗 blend 三元组实证：mode0=[5,6,1]、mode1=[5,2,1]、
-    // mode2=[5,2,3]、mode3=[2,1,1]——D3D SRCALPHA=5/INVSRCALPHA=6/ONE=2/ZERO=1，
-    // 第三元=eq ADD=1/REVSUB=3；mode3 的 (One,Zero) 也在混合启用下提交）。
-    // th15 共享基座靠 configure_game 预置 blend=true；th13 不经 configure_game
-    // （GraphicsDevice::initialize 仅写真机 TFACTOR=0），缺此位导致 alpha=0
-    // 纹素以不透明黑写入——菜单字条/LOGO/立绘全族黑块的用户可见根因。
-    // 按模式落混合因子+恒开混合位（原版 SetRenderState 语义）。
     next.blend = true;
     switch (mode) {
     case 0:
@@ -223,8 +195,6 @@ int AnmRenderer::shape(AnmVm& vm) {
     state.color.operation = state.alpha.operation = ColorOperation::First;
     state.color.first = state.alpha.first = {ArgumentSource::Diffuse};
     graphics.set_layout(VertexLayout::ScreenColor);
-    // 0046a700/0046aa2d pass primary and secondary to opposite rectangle
-    // edges; 604 is a filled fan, while 605 is an outline, not a strip.
     if (mode == 15 || mode == 19 || mode >= 20) {
         const u32 ax = v.flags >> 21 & 3, ay = v.flags >> 23 & 3;
         if (ax > 2 || ay > 2) {
@@ -290,9 +260,6 @@ int AnmRenderer::circle(AnmVm& vm) {
 }
 int AnmRenderer::draw_glyph(AnmVm& vm) {
     if (anm_draw_probe.enabled) ++anm_draw_probe.glyphs;
-    // 捕获钩子在 pack_quad 内（material 后）；此处不再入口登记（次序修正见文件头注）。
-    // Preserve original atlas glyphs. At integer high-resolution scale, sample
-    // their texels directly rather than blurring them a second time.
     const u32 flags = vm.visual.render_flags;
     if (vm.environment && vm.environment->raster_scale > 1 && vm.visual.scale.x == 1 && vm.visual.scale.y == 1)
         vm.visual.render_flags |= 0x400;
@@ -344,8 +311,6 @@ int AnmRenderer::pack_quad(AnmVm& vm, Vec3 (&p)[4], bool pixel, const u32* suppl
         top = std::min(top, p[i].y);
         bottom = std::max(bottom, p[i].y);
     }
-    // 0x467350 的裁剪矩形来自 2D 视口块（clip），不是当前 D3D viewport；
-    // 战场层用 {116,2,408,476}，HUD/全屏层沿用 viewport。
     const GraphicsViewport& cull = clip_set ? clip : viewport;
     if (right < float(cull.x) || bottom < float(cull.y) || left > float(cull.x + cull.width) ||
         top > float(cull.y + cull.height))
@@ -431,8 +396,6 @@ int AnmRenderer::projected_quad(AnmVm& vm, bool fog) {
     return pack_quad(vm, p, false, colors);
 }
 int AnmRenderer::world_quad(AnmVm& vm) {
-    // World quads use a fixed four-vertex unit sprite. Per-instance world and
-    // texture matrices carry the actual geometry and atlas selection.
     const auto& v = vm.visual;
     if (!(v.color >> 24)) return 0;
     Matrix4 world;
@@ -446,17 +409,6 @@ int AnmRenderer::world_quad(AnmVm& vm) {
         error = "World animation anchor outside range";
         return -2;
     }
-    // 0x402340/0x406d90/0x407310：world 图元（mode 8/18）与 wind 同族，在主池
-    // 绘制时继承 STD 舞台相机；web 调度在 scenery 趟末恢复 Fullscreen，故这里
-    // 显式选回 renderer.scenery_camera/scenery_viewport（同 wind 分支做法）。
-    // 相机继承只覆盖原版 STD 相机仍为当前态的层域：主池层 0..20 在 STD 趟之后、
-    // 0x46ef60（layer21 draw 回调，AnmDrawSchedule {21,54}）切 Fullscreen 之前
-    // 绘制；22+ 的副链/界面层（如 layer31 ascii/loading 世界 quad，原生
-    // view t=(-320,240,895.69) 全屏相机）必须保留调用方相机。
-    // 原生 0x46ed80（layer4 回调）用 0x43b900 切 2D 屏幕相机（eye=(320,240,
-    // 240*cot(fov/2))、up=(0,-1,0)、zn=1/zf=10000）并保持到 layer20；
-    // layer0-3 仍在 STD 舞台相机下。旧实现把 layer0-20 一律强制舞台相机，
-    // 使 layer16 特效的世界矩阵 view/proj 全错。
     const bool inherit_stage_camera = scenery_camera_ready && v.layer >= 0 && v.layer <= 3;
     const bool inherit_overlay_camera = scenery_camera_ready && v.layer >= 4 && v.layer <= 20;
     const auto saved_camera = camera;
@@ -468,7 +420,6 @@ int AnmRenderer::world_quad(AnmVm& vm) {
         const float cot = scenery_camera.projection.m[5];
         const float fov = float(2.0 * std::atan(1.0 / double(cot)));
         AnmCamera overlay;
-        // 0x43b900 同式（240/f32(tan(half))，cot 链经 aspect 因子差 1 ulp）。
         const float overlay_tan = float(std::tan(double(fov * 0.5f)));
         overlay.view = scene_look_at({320, 240, float(240.0 / overlay_tan)}, {320, 240, 0}, {0, -1, 0});
         overlay.projection = scene_perspective(fov, 1.3333334f, 1.f, 10000.f);
@@ -594,9 +545,6 @@ int AnmRenderer::draw(AnmVm& vm) {
             }
         }
     }
-    // 捕获钩子次序（见文件头注）：overlay 掩蔽矩形在 overlay() 内部最先提交，
-    // 其入口就地登记（掩蔽 flush 的遗留批次语义维持历史行为，非 overlay 路径
-    // 已在各绘制路径 material 后挂钩修正）；overlay 面板经 draw() 递归自挂。
     if (vm.geometry.overlay) {
         TH13_DRAW_SPRITE(vm);
         return overlay(vm);
@@ -604,9 +552,6 @@ int AnmRenderer::draw(AnmVm& vm) {
     if (vm.geometry.circle) return circle(vm);
     if (vm.geometry.trail) return trail(vm);
     if (vm.geometry.wind) {
-        // 402340 draws in the STD camera inherited from406d90/407310. The
-        // web scheduler restores a2D camera at the end of its STD pass, so
-        // select that same saved STD state explicitly for this world effect.
         const auto saved_camera = camera;
         const auto saved_viewport = viewport;
         if (scenery_camera_ready) {
@@ -693,12 +638,6 @@ int AnmRenderer::draw(AnmVm& vm) {
     error = "Animation drawing mode not yet implemented: " + std::to_string(mode);
     return -2;
 }
-// UP 批冲批纪律（f349/f61 双窗实证，蓝图 §8.9 诊断清单裁定）：原版 UP 批仅按
-// 材质键（纹理+管线态）冲批，层不是冲批触发——f61 敌机 UP 批跨上下文并入
-// L56 终批即铁证；f349 的三段 title_logo op 全部由键差驱动（97/98 blend=1 vs
-// 96/100 blend=0）。故此处不做层边界 flush（加了会破坏对局窗 L56 终批口径，
-// 实测首分歧 511→61）；op 的 layer 字段精度由捕获钩子次序保证（顶点入批时
-// 登记 VM 真值层，见文件头注）。
 bool AnmRenderer::draw_layer(const std::vector<AnmVm*>& layer) {
     for (auto* vm : layer)
         if (draw(*vm) == -2) return false;
@@ -726,13 +665,10 @@ int AnmRenderer::draw_screen_strip(AnmVm& vm, const AnmGeometryVertex* data, u32
         }
         return 0;
     }
-    // Curved lasers already own their complete strip. Submit it to the shared
-    // renderer, which copies/joins it safely, instead of expanding it into
-    // three vertices per triangle in the sprite arena first.
     TH13_DRAW_SPRITE(vm);
     flush();
     graphics.set_layout(VertexLayout::ScreenColorUv);
     submit(vm, Topology::Strip, count - 2, data, sizeof(AnmGeometryVertex));
     return 0;
 }
-}  // namespace th13
+}

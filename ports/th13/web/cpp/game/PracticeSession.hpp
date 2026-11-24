@@ -1,6 +1,3 @@
-// TH13 practice request. Section ids and stage mapping come from the generated
-// RUEEE/thprac catalog. Exact ECL routine jumps stay deferred; a selected
-// section changes the stage the existing run start already owns.
 #pragma once
 #include "PracticeSections.gen.hpp"
 #include "SessionState.hpp"
@@ -50,4 +47,4 @@ inline PracticeEffect begin_thprac(PracticeRequest& request, SessionState& sessi
     }
     return effect;
 }
-}  // namespace th13
+}

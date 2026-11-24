@@ -55,7 +55,6 @@ TEST(stage_fog_resolves_native_argument_order_and_reaches_camera_interpolator) {
     context.instruction = reinterpret_cast<const EclInstruction*>(code.data());
     CHECK_EQ(sim.commands.execute(context, 557), 0);
     CHECK(called);
-    // 0041f40b resolves duration,mode,color,far,near before00405f00.
     CHECK((vars.reads == std::vector<i32>{-1000, -1001, -1002, -1004, -1003}));
     for (i32 i = 0; i < 30; ++i)
         CHECK(script.step(1));
@@ -84,5 +83,5 @@ TEST(stage_fog_headless_still_resolves_operands_without_presentation_host) {
     CHECK_EQ(sim.commands.execute(context, 557), 0);
     CHECK((vars.reads == std::vector<i32>{-1000, -1001, -1002, -1004, -1003}));
 }
-}  // namespace
+}
 int main() { return th13test::run_all("ecl-stage-fog"); }

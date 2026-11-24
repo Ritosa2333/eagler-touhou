@@ -23,15 +23,10 @@ struct Fixture {
         auto effects = trivial_scripts(21);
         effects[13] = {spawn(11), spawn(12), wait(), stop()};
         CHECK(load_bank(manager, 8, synthetic_anm(1, effects)));
-        // st01 名单 [enemy.anm(139), st01enm.anm(19)] 两文件合并：文件槽3
-        //（B 行 bank）基号 139 → cardbg 139+11=150、装饰 139+18=157。
-        // synthetic_anm 的脚本表 source_id 恒 0（无文件边界沿），这里按真实
-        // ANM 格式重标为文件内本地序号，合并 bank 才能按 source_id 回落沿
-        // 切分文件基号（AnmResource::append/parse_entries 同式）。
         const auto stage_file = [](u32 scripts) {
             auto bytes = synthetic_anm(1, trivial_scripts(scripts));
             for (u32 i = 0; i < scripts; ++i) {
-                const u32 at = 64 + 4 + i * 8;  // 脚本表项 source_id（ns=1）
+                const u32 at = 64 + 4 + i * 8;
                 std::memcpy(bytes.data() + at, &i, 4);
             }
             return bytes;
@@ -64,7 +59,7 @@ std::vector<u8> read_asset(const char* name) {
     std::ifstream file(std::string("artifacts/reference/raw/") + name, std::ios::binary);
     return {std::istreambuf_iterator<char>(file), {}};
 }
-}  // namespace
+}
 
 TEST(spell_presentation_consumes_event_snapshots_and_original_script_roles) {
     Fixture fixture;
@@ -95,14 +90,13 @@ TEST(spell_presentation_consumes_event_snapshots_and_original_script_roles) {
     for (i32 i = 0; i < 301; ++i)
         CHECK(fixture.state.step(false));
     fixture.boss[0] = 100;
-    // State synchronization alone does not advance the Update26 follower.
     fixture.presentation.sync(fixture.state.state());
     CHECK_EQ(fixture.presentation.bonus_base(), 999720);
     CHECK_EQ(fixture.presentation.snapshot().current_bonus, fixture.state.state().current_bonus);
     CHECK(background->visual.translation.x == 0.0f);
     fixture.presentation.update_background(fixture.boss);
     CHECK_EQ(background->visual.translation.x, 5.0f);
-    CHECK_EQ(event.state.current_bonus, 1000000);  // value event is not live state
+    CHECK_EQ(event.state.current_bonus, 1000000);
 }
 
 TEST(spell_ring_follow_matches_original_update26_rounding_and_turns) {
@@ -113,7 +107,6 @@ TEST(spell_ring_follow_matches_original_update26_rounding_and_turns) {
     const auto* name = fixture.manager.registry.find(fixture.presentation.display_handle(1));
     CHECK(ring && card && name);
     const Vec3 card_start = card->visual.translation, name_start = name->visual.translation;
-    // Independent executions of retail 00412dfe..00412eb1, initial(0,128,0).
     const u32 expected[][3] = {
         {0x40a00000, 0x42f9999a, 0x3ecccccd}, {0x411c0000, 0x42f3851f, 0x3f47ae14},
         {0x41643334, 0x42edbe77, 0x3f920c4a}, {0x4194651f, 0x42e841be, 0x3fbdf213},
@@ -183,9 +176,6 @@ TEST(spell_presentation_numeric_text_uses_live_bonus_mode_counters_and_vm_alpha)
     CHECK_EQ(sink.texts[0].style.font, 2);
     CHECK_EQ(sink.texts[0].style.alignment, 1);
     CHECK_EQ(sink.texts[0].style.vertical_alignment, 1);
-    // 004130bc selects pass1; 00403da0 copies coordinates unchanged and
-    // 00404140 selects the full-screen camera separately. AsciiText must
-    // preserve (357,35), matching native f6486 ink (363.5,34.5), in pass1.
     CHECK_EQ(sink.texts[0].style.coordinate_space, 1);
     CHECK_EQ(sink.texts[0].style.color, 0x7fffffffu);
     CHECK(sink.texts[1].text == "03/07");
@@ -258,7 +248,6 @@ TEST(spell_presentation_real_stage1_assets_create_tick_and_complete_exit) {
     const float position[3] = {0, 128, 0};
     CHECK(presentation.consume(state.begin(0, "synthetic", 3000, 1, 0), position, {}, 6));
     CHECK_EQ(manager.registry.count(), 26u);
-    // The separate stage card-art root stays fixed while effect13 follows.
     const auto* background0 = manager.registry.find(presentation.stage_background_handle());
     CHECK(background0 != nullptr);
     const Vec3 anchor0 = background0->visual.translation;
@@ -282,12 +271,6 @@ TEST(spell_presentation_real_stage1_assets_create_tick_and_complete_exit) {
 }
 
 TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
-    // 0x42a430 case0（捕获结算）：8 个数字 VM = ascii script 4..11
-    //（0x42a54b lea eax,[edi+4]），除数 10^7 递除，sprite=270+数位
-    //（0x42a5d6），前导零 0x470030 清 bit1 隐藏；≥10^6 建 script12、
-    // ≥10^3 建 script13（sprite 0x11c=284 分隔符）；尾建 front script95。
-    // begin(0,"",3000,stage=1,diff=0) 无衰减 → current_bonus=10^6：
-    // 数位 = 0,1,0,0,0,0,0,0，仅 i=0 前导隐藏，双分隔符都在。
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager(random, environment);
@@ -312,7 +295,6 @@ TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
     for (i32 i = 0; i < 125; ++i)
         CHECK(state.step(false));
     CHECK(presentation.consume(state.end(), position, {}, 6));
-    // 句柄断言（layers 桶仅 update() 时重填，这里按创建即查）。
     const int expected_digit[8] = {0, 1, 0, 0, 0, 0, 0, 0};
     for (i32 i = 0; i < 8; ++i) {
         AnmVm* vm = manager.registry.find(presentation.bonus_digit_handle(i));
@@ -320,7 +302,7 @@ TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
         if (vm) {
             CHECK_EQ(vm->source_script, 4 + i);
             CHECK_EQ(vm->visual.sprite, 270 + expected_digit[i]);
-            CHECK_EQ((vm->visual.flags & 2u) != 0u, i != 0);  // i=0 前导隐藏
+            CHECK_EQ((vm->visual.flags & 2u) != 0u, i != 0);
         }
     }
     if (AnmVm* vm = manager.registry.find(presentation.bonus_separator_million_handle()))
@@ -349,7 +331,6 @@ TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
         CHECK_EQ(times.texts[2].style.color, 0x7f808080u);
         CHECK_EQ(times.texts[0].style.coordinate_space, 1);
     }
-    // A later spell resets +0x90, not the completed capture's +0x94.
     presentation.sync(state.begin(1, "next", 3000, 1, 0).state);
     times.texts.clear();
     CHECK(presentation.draw_capture_times(times, 0));
@@ -362,9 +343,6 @@ TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
 }
 
 TEST(spell_presentation_failed_card_still_shows_break_time_like_42a430_case1) {
-    // 0x42a430 case1（收取失败/超时，00413b9a ebx=1）：front script60 横幅，
-    // 无结算数字，但同样置 stage+0x120=1（0x42a92d）并建 front script95
-    //（0x42a95b）→ 0x4279ea 门打开，击破时间与实时间照常绘制。
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager(random, environment);
@@ -412,8 +390,6 @@ TEST(spell_presentation_failed_card_still_shows_break_time_like_42a430_case1) {
         CHECK_EQ(times.texts[2].text, std::string("  2."));
         CHECK_EQ(times.texts[3].text, std::string("50s"));
     }
-    // A following card overwrites +0x118 without retiring the previous
-    // script95; that VM finishes on its own (front script95 deletes at 170).
     CHECK(presentation.consume(state.begin(1, "next", 3000, 1, 0), position, {}, 6));
     for (i32 i = 0; i < 30; ++i)
         CHECK(state.step(false));

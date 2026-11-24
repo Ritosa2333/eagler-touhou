@@ -1,14 +1,4 @@
 <!doctype html>
-<!-- th13 回放调试宿主页：确定性取帧（与 th13.html 的交互运行时互斥使用）。
-     启动序同 th13.html（装载挡板 → 启动品牌 → 初始化），但不启动 rAF 主循环；
-     会话由 th13_debug_replay 直入对局（录像头决定难度/角色/关卡），此后每调用
-     一次 th13_debug_frame 恰推进一个游戏帧（固定 1/60 步长，不经帧钟）。
-     资源供给（除 th13.html 同款清单外）：
-       assets/<sht>   移速源 plXXa/b.sht（名字与 C++ 侧录像头推导规则一致）
-       replays/<rpy>  原版录像本体（FS 写入 /assets 后交 th13_debug_replay）
-     画面经 canvas.toDataURL 导出 PNG（同一 JS 任务内取像，WebGL 后备缓冲未合成
-     前内容完整）。驱动：tools/shot-frames.mjs（th13-shot 镜像 chromium+playwright）。
-     查询参数：?replay=th13_01.rpy&sht=pl00a.sht&stage=0 -->
 <html lang="zh">
 <head>
 <meta charset="utf-8">
@@ -43,14 +33,9 @@ const fetchBytes = async path => {
   return new Uint8Array(await response.arrayBuffer());
 };
 try {
-  // artifact 可指向捕获构建（../artifacts/sdl3-capture/th13-sdl.mjs，经
-  // ?artifact= 指定）：语义绘制清单导出（captureBegin/End + drawList）与
-  // 像素采样（pixels）需该构建的精灵层号钩子。
   const artifact = params.get('artifact') ?? '../artifacts/sdl3/th13-sdl.mjs';
   const Module = await import(artifact);
   const canvas = document.getElementById('canvas');
-  // WebGL2 可用性探针用离屏 canvas：真 canvas 的首个 getContext 属于 SDL3 运行时
-  // （先占会冻结创建属性）。
   if (!document.createElement('canvas').getContext('webgl2'))
     throw new Error('WebGL2 不可用（无头驱动需 SwiftShader）');
   const mod = await Module.default({
@@ -66,10 +51,7 @@ try {
     status('th13 资源装载中… ' + name);
   }
   mod.FS.writeFile('/assets/' + replayName, await fetchBytes('replays/' + replayName));
-  // Use the same font VFS path as the interactive page for dialogue/cards.
   mod.FS.writeFile('/msgothic.ttc', await fetchBytes('assets/msgothic.ttc'));
-  // 音频清单来自 runtime-assets.mjs：AudioDevice::initialize 需要原版 SE 表
-  // 与 thbgm.ogg 单流。
   for (const name of audioAssets) {
     mod.FS.writeFile('/assets/' + name, await fetchBytes('assets/' + name));
     status('th13 音效装载中… ' + name);
@@ -93,17 +75,11 @@ try {
   if (!mod._th13_prepare_loading()) throw new Error(runtime_error());
   mod._th13_draw_startup(90);
   if (!mod._th13_initialize()) throw new Error(runtime_error());
-  // 回放会话直入：解码录像、按录像头配置对局；rAF 主循环不启动。
   const name_ptr = mod.allocateUTF8(replayName);
   const total = mod._th13_debug_replay(name_ptr, stageIndex);
   if (!total) throw new Error('回放会话建立失败：' + runtime_error());
   status('回放会话就绪：' + replayName + ' stage ' + stageIndex + ' 共 ' + total + ' 帧');
 
-  // 确定性取帧 API：pumpTo(游戏帧号 F) —— 恰推进到「已消费 F+1 帧输入」的画面
-  // （golden 游戏帧 F = 第 F+1 次泵后的画面，见 golden README 时间轴对齐），
-  // 同一 JS 任务内返回 PNG dataURL。重复调用按需续泵。
-  // 捕获构建附加：captureBegin/End（语义清单 MEMFS 导出）、pumpFrames（无
-  // PNG 的裸泵）、pixels（GL 帧缓冲 RGBA 采样，GL 坐标系：左下原点）。
   window.__th13_debug = {
     total,
     consumed: () => mod._th13_debug_replay_frame(),
@@ -132,7 +108,6 @@ try {
       return {ok, path};
     },
     captureEnd() { return mod._th13_debug_capture_end(); },
-    // 分段捕获（长窗 OOM 修复）：读取并删除已排空段文件，释放 wasm 堆。
     fsUnlink(path = '/th13-capture.jsonl') { mod.FS.unlink(path); },
     captureDrawList(path = '/th13-capture.jsonl') {
       const bytes = mod.FS.readFile(path);

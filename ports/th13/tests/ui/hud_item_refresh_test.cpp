@@ -55,7 +55,6 @@ struct Rig : StageBattleServices {
             CHECK(animations.sprite_fallback(2));
         } else {
             auto scripts = trivial_scripts(176);
-            // front.anm 29..36 / 37..44: full=label2, empty=3, pieces=7..12.
             for (u32 i = 29; i < 45; ++i) {
                 const i32 base = i < 37 ? 12 : 18;
                 scripts[i] = {sprite(base), wait(), label(2), sprite(base + 5), wait(), label(3), sprite(base), wait()};
@@ -97,7 +96,7 @@ struct Rig : StageBattleServices {
         tick_animations();
     }
 };
-}  // namespace
+}
 
 TEST(item_pickups_refresh_icons_without_recreating_the_stage) {
     auto r = std::make_unique<Rig>();
@@ -106,7 +105,7 @@ TEST(item_pickups_refresh_icons_without_recreating_the_stage) {
     r->collect(4);
     r->collect(4);
     CHECK_EQ(r->player.life_pieces, 2);
-    CHECK_EQ(r->icon(false, 2), 13);  // 2/8 -> label8.
+    CHECK_EQ(r->icon(false, 2), 13);
     for (int i = 0; i < 6; ++i)
         r->collect(4);
     CHECK_EQ(r->player.extra_lives, 3);
@@ -117,7 +116,7 @@ TEST(item_pickups_refresh_icons_without_recreating_the_stage) {
     CHECK_EQ(r->player.extra_lives, 4);
     CHECK_EQ(r->icon(false, 3), 17);
     r->collect(5);
-    CHECK_EQ(r->icon(true, 2), 19);  // 2/8 -> label8.
+    CHECK_EQ(r->icon(true, 2), 19);
     for (int i = 0; i < 3; ++i)
         r->collect(5);
     CHECK_EQ(r->player.bombs, 3);

@@ -55,8 +55,6 @@ void check(float direction, const std::array<u32, 6>& first, const std::array<u3
         }
     }
 }
-// Original 0040f030 setup + 00410400 updates, synthetic .2-speed bullet;
-// target3 over60 ticks, keep heading / explicit heading / aimed heading.
 TEST(target_speed_keep_heading) {
     check(-999999, {1048352304, 0, 1048352304, 0, 2097152, 1}, {1077936121, 0, 1077936121, 0, 2097152, 60});
 }
@@ -68,5 +66,5 @@ TEST(target_speed_aims_once_at_queue_consumption) {
     check(999, {1048352304, 1042690712, 1047099605, 1025043158, 2097152, 1},
           {1077936121, 1063215053, 1072735190, 1074748458, 2097152, 60});
 }
-}  // namespace
+}
 int main() { return th13test::run_all("ecl-target-speed"); }

@@ -2,8 +2,6 @@
 #include "FrameCadence.hpp"
 #include <algorithm>
 namespace touhou::sdl {
-// Presentation-rate detection is deliberately separate from FrameCadence:
-// it may enable extra visual samples, but it never changes fixed game ticks.
 struct PresentationCadence {
     static constexpr unsigned enable_samples = 6, disable_samples = 12;
     unsigned fast = 0, slow = 0;
@@ -33,4 +31,4 @@ struct PresentationCadence {
         return high_refresh;
     }
 };
-}  // namespace touhou::sdl
+}

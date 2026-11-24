@@ -31,8 +31,6 @@ private:
     i32 priority = 0;
     FramePass pass = FramePass::Update;
 };
-// Stable, externally owned callbacks avoid allocations during a game frame.
-// Registration, removal and return actions preserve the original live traversal.
 class FrameScheduler {
     FrameCallback* updates = nullptr;
     FrameCallback* draws = nullptr;
@@ -55,4 +53,4 @@ public:
     i32 draw() { return execute(FramePass::Draw); }
     bool contains(const FrameCallback& c) const noexcept { return c.scheduler == this; }
 };
-}  // namespace th13
+}

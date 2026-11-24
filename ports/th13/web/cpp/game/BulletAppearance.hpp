@@ -1,5 +1,3 @@
-// th13 弹幕外观（类型 → 脚本/精灵表）。表体见 BulletAppearance.cpp 文件头：
-// 数据逐字节取自原版 .data，弹体精灵解析与 0x4120b0 回调语义一致。
 #pragma once
 
 #include "Types.hpp"
@@ -9,18 +7,16 @@
 namespace th13 {
 
 struct BulletAppearance {
-    i32 script;  // 弹体 ANM 脚本（bullet.anm 内编号）
+    i32 script;
     struct Color {
-        i32 sprite, hit, spawn, cancel;  // 逻辑参数 0..3 → 精灵
+        i32 sprite, hit, spawn, cancel;
     };
     std::array<Color, 16> colors;
-    float scale;  // 碰撞半径推导用缩放（+0x104）
+    float scale;
     i32 hit_kind, cancel_kind, spawn_script;
 };
 
 const BulletAppearance* bullet_appearance(i32 type) noexcept;
-// 40e840/40f6a4 initialize bullet+bb0 from type and color, for411df0's
-// separate cancel animation (not the bullet VM's interrupt1 sprite).
 inline i32 bullet_cancel_script(i32 type, i32 color) noexcept {
     const auto* entry = bullet_appearance(type);
     if (!entry || color < 0 || color >= 16) return -1;
@@ -37,9 +33,6 @@ inline i32 bullet_cancel_script(i32 type, i32 color) noexcept {
         return 16;
     case 4:
         return 6;
-    // 0x40f5df–0x40f69a jump table 0x40ffa8（round-16 phase5 反汇编）：
-    // cancel_kind 5 → script 0x0c。旧表缺此分支会落 default -1，导致该
-    // 外观类的弹取消时不创建取消特效。
     case 5:
         return 12;
     case 6:
@@ -57,7 +50,6 @@ inline i32 bullet_cancel_script(i32 type, i32 color) noexcept {
     }
 }
 
-// 0x4120b0：类型未映射（首色弹体精灵 <0）时原样返回参数。
 inline i32 bullet_animation_parameter(i32 type, i32 color, i32 parameter) noexcept {
     const auto* entry = bullet_appearance(type);
     if (!entry || color < 0 || color >= 16 || entry->colors[0].sprite < 0) return parameter;
@@ -76,4 +68,4 @@ inline i32 bullet_animation_parameter(i32 type, i32 color, i32 parameter) noexce
     }
 }
 
-}  // namespace th13
+}

@@ -1,5 +1,3 @@
-// ANM 句柄驱动单测：合成资源的装载/创建/中断/暂停/回收（消费 anm-pipeline
-// 工作流的 AnmManager 公共面，不测其内部实现）。
 #include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 
@@ -12,7 +10,7 @@ struct AnmHarness {
     AnmEnvironment environment;
     AnmManager manager{random, environment};
 };
-}  // namespace
+}
 
 TEST(synthetic_resource_parses) {
     AnmResource resource;
@@ -24,7 +22,7 @@ TEST(synthetic_resource_parses) {
     CHECK_EQ(resource.sprites.size(), 2u);
     CHECK_EQ(resource.scripts.size(), 3u);
     const auto broken = synthetic_anm(1, trivial_scripts(1));
-    CHECK(!resource.open(broken.data(), 3));  // 截断拒绝
+    CHECK(!resource.open(broken.data(), 3));
 }
 
 TEST(manager_create_returns_generation_handles) {
@@ -37,13 +35,12 @@ TEST(manager_create_returns_generation_handles) {
     CHECK(second != 0);
     CHECK(first != second);
     CHECK(harness.manager.registry.find(first) != nullptr);
-    CHECK(harness.manager.create(16, 99) == 0);  // 越界脚本显式失败
+    CHECK(harness.manager.create(16, 99) == 0);
     CHECK(!harness.manager.error.empty());
 }
 
 TEST(interrupt_jumps_to_label) {
     AnmHarness harness;
-    // script0：label 7 → sprite 5 → park；label 9 → sprite 6 → park。
     const auto bank = synthetic_anm(8, {{
                                            label(7),
                                            sprite(5),
@@ -57,12 +54,12 @@ TEST(interrupt_jumps_to_label) {
     const u32 handle = harness.manager.create(16, 0);
     auto* vm = harness.manager.registry.find(handle);
     CHECK(vm != nullptr);
-    CHECK(vm->visual.sprite == 5);  // 初值 tick 已执行到第一个 park 前
+    CHECK(vm->visual.sprite == 5);
     CHECK(harness.manager.interrupt(handle, 9));
     CHECK(harness.manager.update(false));
     vm = harness.manager.registry.find(handle);
     CHECK(vm != nullptr);
-    CHECK_EQ(vm->visual.sprite, 6);  // 中断跳到 label 9 分支
+    CHECK_EQ(vm->visual.sprite, 6);
 }
 
 TEST(retire_clears_handle_and_instance) {
@@ -78,10 +75,8 @@ TEST(retire_clears_handle_and_instance) {
 
 TEST(pause_freezes_and_resumes) {
     AnmHarness harness;
-    // 计数脚本：每 tick 位置 +1（op400 直写脚本位置，mask 寻址 10013）。
-    // 简化：位置插值持续 tick，暂停后插值冻结。
     const auto bank = synthetic_anm(8, {{
-                                           AnmIns{407, 0, {60, 0, 100, 0, 0}, 0},  // 60 帧移到 (100,0)
+                                           AnmIns{407, 0, {60, 0, 100, 0, 0}, 0},
                                            wait(),
                                            stop(),
                                        }});

@@ -67,14 +67,12 @@ TEST(ellipse_keeps_circle_center_but_reanchors_an_existing_ellipse) {
     CHECK_EQ(r.ellipse(420, {0, 0, 60, 0, 0, .5f}), 0);
     CHECK_EQ(mover.pos[0], 50.f);
     CHECK_EQ(mover.pos[1], 80.f);
-    // 41c990's center-copy gate is != 2, not != 3. Keep sentinels
-    // preserve the ellipse parameters but do not suppress that copy.
     CHECK_EQ(r.ellipse(420, {-999999, -999999, -999999, -999999, -999999, -999999}), 0);
     CHECK_EQ(mover.pos[0], 80.f);
     CHECK_EQ(mover.pos[1], 80.f);
     CHECK_EQ(mover.radius, 60.f);
     CHECK_EQ(mover.ellipse_ratio, .5f);
 }
-}  // namespace
+}
 
 int main() { return th13test::run_all("ellipse-movement"); }

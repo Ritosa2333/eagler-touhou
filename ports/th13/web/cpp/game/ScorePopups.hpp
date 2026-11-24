@@ -5,11 +5,6 @@
 #include <string>
 
 namespace th13 {
-// 原版道具得分弹出池（DAT_004c22d4：0x44ad60 追加 / 0x44a970 更新 /
-// 0x44aa20 绘制）。10 槽环形池，每槽最多 8 位十进制（低位在前）。
-// 绘制用 ascii.anm sprite 196+digit（age<0x34）/207+（<0x38）/217+；
-// value<0 的哨兵位 digit=10 用 sprite 206。alpha 由玩家到弹字位置的平方
-// 距离分档（0x30 / 线性 / 0xD0），RGB 来自事件颜色。
 class ScorePopups {
 public:
     ScorePopups(AnmManager& animations, AnmEnvironment& environment)
@@ -52,4 +47,4 @@ private:
     u32 cursor = 0;
     bool available_ = false;
 };
-}  // namespace th13
+}

@@ -1,5 +1,3 @@
-// H-ANM-VEC2-WEIGHT: 466812 calls473a40, whose polynomial weight is stored
-// once after its x87 intermediate chain. Values captured from native4665f0.
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "game/Interpolation.hpp"
 using namespace th13;

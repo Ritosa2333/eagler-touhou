@@ -1,17 +1,3 @@
-// Playfield RT 调度与最终屏幕域 native 测试。
-// 原版证据（全部来自本仓库可复核数据，不引用画面观察）：
-//  - 0043a440 注册序（objdump 46bf25..43a7d7）：RT 链回调优先级
-//    43c4b0@1、43c600@12、43c870@14、43c6a0@38、43c920@40、43c740@41、
-//    43c9d0@42、43c7e0@52、43ca50@53、43c840@76。
-//  - 43c7e0（优先级 52）：SetTexture(dc854) 后 Clear(count=0, rect=NULL,
-//    flags=3, 0xff000000) —— 切回最终屏幕后整屏全清；{116,2,408,476}
-//    （4dcbcc..4dcbd8）只是 43c600/43c6a0/43c740 对中间 @R 的清除区。
-//  - 层绘制链注册（objdump 46bf25..46c7f0 + 46ed40..46f090 回调体）：
-//    L20@44(46ef30)、L21@54(46ef60)、L22@55(46ef20)、L23@57(46ef10)、
-//    L24@58(46f000)。L21/L22/L23 均在屏幕切换 52 / 合成 53 之后。
-//  - oracle st01-draws-full.jsonl frame26 提交序：compose84(seq16, L20 域
-//    31.5..415.5 采 UV 0.2..0.8) 先于 front00 HUD 边条(seq17..31, 最终屏
-//    坐标 -0.5..31.5 与 415.5..639.5) 与 L23(seq32..34)。
 #include "../harness/test_framework.hpp"
 
 #include "game/AnmDrawSchedule.hpp"
@@ -107,7 +93,6 @@ void near(float a, float b) {
     CHECK(std::abs(a - b) < 0.001f);
 }
 
-// oracle seq17 右侧 HUD 边条几何：最终屏 x 415.5..639.5, y -0.5..479.5。
 struct StripOwner {
     AnmRenderer* renderer = nullptr;
     ScreenViews* views = nullptr;
@@ -125,7 +110,7 @@ i32 draw_strip(void* owner) {
     return 1;
 }
 
-}  // namespace
+}
 
 TEST(rt_ping_pong_and_clear_rects_match_original_callbacks) {
     Harness h;
@@ -138,11 +123,8 @@ TEST(rt_ping_pong_and_clear_rects_match_original_callbacks) {
         CHECK_EQ(h.graphics.draws[i].target, out[i]);
         CHECK_EQ(h.graphics.draws[i].texture, src[i]);
     }
-    // 43c4b0@1 屏幕全清白；43c600/43c6a0/43c740 对 @R 用 {116,2,408,476}
-    // 区域清屏；43c7e0@52 切屏后必须整屏全清黑（rect=NULL）。
     CHECK_EQ(h.graphics.clears.size(), 6u);
     const u32 clear_targets[] = {0, 12, 13, 12, 13, 0};
-    // full=true 表示整屏全清（无 rect）；false 表示 {116,2,408,476} 区域清。
     const bool full[] = {true, false, false, false, false, true};
     const u32 colors[] = {0xffffffff, 0xff000000, 0xff000000, 0xff000000, 0xff000000, 0xff000000};
     for (u32 i = 0; i < 6; ++i) {
@@ -160,14 +142,11 @@ TEST(rt_ping_pong_and_clear_rects_match_original_callbacks) {
 }
 
 TEST(compositor_vm_layers_match_supervisor_assignment) {
-    // battle_oracle --replay（r4/oracle-replay replay121.jsonl，真全链）全窗实测：
-    // f0 合成 op 层标 [L29, L30, L30, L20]，f1+ 恒定同值——82 第二实例与
-    // script84 的层为监督者覆写（脚本默认 82→29、84→30）。port 钉住同值。
     Harness h;
     const i32 expected[] = {29, 30, 30, 20};
     for (u32 i = 0; i < 4; ++i)
         CHECK_EQ(h.targets.compositor_layer(i), expected[i]);
-    CHECK(h.scheduler.update() >= 0);  // tick 后层保持监督者值
+    CHECK(h.scheduler.update() >= 0);
     for (u32 i = 0; i < 4; ++i)
         CHECK_EQ(h.targets.compositor_layer(i), expected[i]);
     CHECK(h.scheduler.draw() >= 0);
@@ -176,10 +155,6 @@ TEST(compositor_vm_layers_match_supervisor_assignment) {
 }
 
 TEST(stage_camera_does_not_mirror_view_y_column) {
-    // [y 镜像移除回归] 负控：stage_camera 的 view 必须逐元素等于
-    // scene_look_at(eye, eye+direction, up)——曾有的 {1,5,9,13} 列取负
-    // 为非原样本作补偿（battle_oracle replay121 f2: view[5]=+1/view[13]=-1；
-    // th15 StageCamera.cpp 同位无镜像且 Shaders 逐字节一致）。
     StageCamera s;
     s.position = {100, 50, 200};
     s.eye_offset = {-30, 10, -5};
@@ -192,9 +167,7 @@ TEST(stage_camera_does_not_mirror_view_y_column) {
         scene_look_at(eye, {eye.x + s.direction.x, eye.y + s.direction.y, eye.z + s.direction.z}, s.up);
     for (u32 i = 0; i < 16; ++i)
         CHECK_EQ(camera.view.m[i], direct.m[i]);
-    // 正控：y 基为正（up=(0,1,0)、视线近 +z 时 view[5]≈+1；oracle f2 = '1'）。
     CHECK(camera.view.m[5] > 0.99f);
-    // 视口 aspect 408/476（patch A 落地后）：proj0 = cot/aspect。
     const float cot = camera.projection.m[5];
     near(camera.projection.m[0], float(float(cot) / float(float(408.f) / float(476.f))));
 }
@@ -204,8 +177,8 @@ TEST(hud_strip_at_layer22_slot_50_lands_on_render_target_not_screen) {
     AnmVm strip;
     CHECK(h.manager.bind_template(strip, 0, 82));
     CHECK(h.manager.tick_instance(strip) >= 0);
-    strip.visual.flags = 7;              // bit0|bit1=可绘制，draw_mode 0（像素四边形）、锚点 0
-    strip.visual.render_flags = 0x8000;  // 无屏幕偏移位、无分辨率缩放位
+    strip.visual.flags = 7;
+    strip.visual.render_flags = 0x8000;
     strip.visual.layer = 22;
     strip.visual.color = 0xffffffff;
     strip.visual.scale = {1, 1};
@@ -218,20 +191,15 @@ TEST(hud_strip_at_layer22_slot_50_lands_on_render_target_not_screen) {
     callback.owner = &owner;
     callback.enabled = true;
     callback.run = draw_strip;
-    // 当前生产层表把 L22 放在 50：屏幕切换在 52，边条会画进中间 @R。
     CHECK(h.scheduler.add(callback, FramePass::Draw, 50) >= 0);
     CHECK(h.scheduler.draw() >= 0);
     h.scheduler.remove(callback);
-    // 边条画在 RT-B（句柄 13），不在最终屏幕。
     CHECK_EQ(owner.submitted_order > 0u, true);
     CHECK_EQ(h.graphics.draws.size(), 5u);
     const auto& strip_draw = h.graphics.draws[3];
     CHECK_EQ(strip_draw.target, 13u);
     near(strip_draw.vertices[0].position.x, 415.5f);
     near(strip_draw.vertices[1].position.x, 639.5f);
-    // compose84（末位绘制）把 @R [128,512] 重投到屏幕 [31.5,415.5]：
-    // 边条落入采样窗的部分 RT[415.5,512] 显示为屏幕 [319,415.5]，
-    // 即主会话观察到的"HUD 装饰挤进游戏区右侧 320..416 窄条"。
     const auto& compose = h.graphics.draws.back();
     CHECK_EQ(compose.target, 0u);
     near(compose.vertices[0].uv.x, 128.f / 640);
@@ -262,8 +230,6 @@ TEST(hud_strip_at_original_layer22_priority_55_lands_on_final_screen) {
     callback.owner = &owner;
     callback.enabled = true;
     callback.run = draw_strip;
-    // 原版 46ef20@0x37：L22 在屏幕切换 52 / compose84 53 之后 → 直接
-    // 画在最终屏幕，坐标不被合成采样窗口重投影。
     CHECK(h.scheduler.add(callback, FramePass::Draw, 55) >= 0);
     CHECK(h.scheduler.draw() >= 0);
     h.scheduler.remove(callback);
@@ -272,35 +238,25 @@ TEST(hud_strip_at_original_layer22_priority_55_lands_on_final_screen) {
     CHECK_EQ(strip_draw.target, 0u);
     near(strip_draw.vertices[0].position.x, 415.5f);
     near(strip_draw.vertices[1].position.x, 639.5f);
-    // 屏幕全清黑（52）先于边条提交，边条不会被清掉。
     const auto& screen_clear = h.graphics.clears.back();
     CHECK_EQ(screen_clear.has_rect, false);
     CHECK_EQ(screen_clear.target, 0u);
     CHECK(screen_clear.order < strip_draw.order);
-    // compose84 已在其之前提交。
     CHECK(h.graphics.draws[3].target == 0u);
     CHECK(h.graphics.draws[3].order < strip_draw.order);
 }
 
 TEST(real_schedule_draws_layer22_after_compose_on_final_screen) {
-    // 真实层表回归（r4 集成落 54/55/57）：不经手工 scheduler.add 自造优先级，
-    // 由 AnmDrawSchedule::entries 本体注册回调绘制 registry 归桶的 L22 VM。
-    // 若层表回退 44/50/52，边条重新落入 RT-B（target 13）而非最终屏幕。
     Harness h;
-    // 生产创建序（0x46f820）：create(池分配+模板+layer+立即 tick+入链) →
-    // 每帧 update 双链（tick_chain 归桶 layers[visual.layer]）。
     const u32 handle = h.manager.create(0, 82, 22, 0, Vec3{}, 0.f, false);
     CHECK(handle != 0);
     AnmVm* strip = h.manager.registry.find(handle);
     CHECK(strip != nullptr);
-    // text.anm s82 自带 ins 层 29（text84 域）：脚本冻结位 0x100000（tick 空转
-    // 仍归桶）钉住 L22，层不被指令覆写——测的是层表 22 的优先级，非脚本层。
     strip->visual.layer = 22;
     strip->visual.flags |= 0x100000;
     CHECK(h.manager.update(false));
     CHECK(h.manager.update(true));
-    CHECK_EQ(strip->visual.layer, 22);  // 脚本若改层则显式失败（不静默换层）
-    // 绘制域字段在 draw 期读取（同手工用例的 seq17 右侧边条几何）。
+    CHECK_EQ(strip->visual.layer, 22);
     strip->visual.flags = 7;
     strip->visual.render_flags = 0x8000;
     strip->visual.color = 0xffffffff;
@@ -317,8 +273,6 @@ TEST(real_schedule_draws_layer22_after_compose_on_final_screen) {
     AnmDrawSchedule schedule(h.scheduler, h.manager, h.renderer, h.graphics, services);
     CHECK(schedule.error.empty());
     CHECK(h.scheduler.draw() >= 0);
-    // compose@53 尾态 = Fullscreen 相机：L22@55 真实回调直接画最终屏幕，
-    // 坐标不被 [128,512] 采样窗重投影。
     CHECK_EQ(h.graphics.draws.size(), 5u);
     const auto& strip_draw = h.graphics.draws.back();
     CHECK_EQ(strip_draw.target, 0u);
@@ -328,7 +282,7 @@ TEST(real_schedule_draws_layer22_after_compose_on_final_screen) {
     CHECK_EQ(screen_clear.has_rect, false);
     CHECK_EQ(screen_clear.target, 0u);
     CHECK(screen_clear.order < strip_draw.order);
-    CHECK(h.graphics.draws[3].target == 0u);  // compose84 先于边条提交
+    CHECK(h.graphics.draws[3].target == 0u);
     CHECK(h.graphics.draws[3].order < strip_draw.order);
 }
 
@@ -377,8 +331,6 @@ TEST(distortion_layers_are_composed_once_into_opposite_render_targets) {
     CHECK(h.manager.update());
     CHECK(h.scheduler.draw() >= 0);
     h.renderer.flush();
-    // Compatible quads may share a submission batch. Expand that grouping,
-    // without making a flush boundary part of the game's draw contract.
     std::vector<const RecordedDraw*> quads;
     for (const auto& draw : h.graphics.draws) {
         CHECK_EQ(draw.vertices.size() % 6, 0u);
@@ -387,8 +339,6 @@ TEST(distortion_layers_are_composed_once_into_opposite_render_targets) {
     }
     CHECK_EQ(quads.size(), 6u);
     if (quads.size() != 6) return;
-    // 0043c870 draws compositor82 then layer29 into RT-B; 0043c920
-    // draws compositor83 then layer30 into RT-A, before the next RT switch.
     const u32 targets[] = {13, 13, 12, 12, 13, 0};
     const u32 sources[] = {12, 12, 13, 13, 12, 13};
     for (u32 i = 0; i < 6; ++i) {

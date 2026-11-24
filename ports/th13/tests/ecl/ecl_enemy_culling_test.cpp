@@ -65,7 +65,7 @@ TEST(enemy_cull_retention_bits_and_first_entry_gate_match_original) {
     {
         Rig r(-300, -100, 0x20004);
         CHECK(r.tick());
-    }  // X branch returns without checking Y
+    }
     {
         Rig r(-300, -100, 0x20008);
         CHECK(!r.tick());
@@ -75,5 +75,5 @@ TEST(enemy_cull_retention_bits_and_first_entry_gate_match_original) {
         CHECK(r.tick());
     }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("enemy-culling"); }

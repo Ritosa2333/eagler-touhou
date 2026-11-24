@@ -3,8 +3,6 @@
 #include <array>
 #include <string>
 namespace th13 {
-// Shared menu navigation: history and disabled entries belong to the menu,
-// while held/repeated input and animation selection belong to its controller.
 class MenuCursor {
     bool enabled(i32) const noexcept;
     bool any_enabled() const noexcept;
@@ -22,4 +20,4 @@ public:
     void push() noexcept;
     void pop() noexcept;
 };
-}  // namespace th13
+}

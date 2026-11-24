@@ -25,7 +25,7 @@ void drag(TouchController& t, const TouchState& s) {
     t.pointer(0, 1, .5f, .5f, 0, s, false);
     t.pointer(1, 1, .6f, .6f, 10, s, false);
 }
-}  // namespace
+}
 
 TEST(touch_cancel_preserves_fire_choice) {
     TouchController t;
@@ -60,8 +60,6 @@ TEST(touch_pause_context_blocks_actions_without_losing_fire) {
     CHECK(!p.keys[90]);
     auto resumed = active();
     CHECK(t.sample(resumed, 3, false, false).keys[90]);
-    // A retry can re-enter gameplay with a new stage instance; it is not a
-    // new browser session and the user's fire choice remains set.
     auto retry = resumed;
     retry.instance = 8;
     CHECK(t.sample(retry, 4, false, false).keys[90]);

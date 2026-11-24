@@ -1,10 +1,3 @@
-// scoreth13.dat 的原始块容器与字段视图。
-// 文件 = 0x18 明文头 + xor_encrypt(LZ 压缩(镜像体), key0=0xAC, step=0x35,
-// block=0x10)。镜像体 = 5 个 CR 记录列（4 名角色 + 合计，各 0x56DC）+ ST 块。
-// 每个 CR 列包含 6 组难度榜表，每组 10 条；界面使用前 5 个难度槽。
-//
-// parse/build 保留块内未解释字节。保存时只收录魔数为 'CR' 的列，并按列号
-// 重写 +0x0C 与校验和；缺席列不进入文件，uncompSize 随之缩短。
 #pragma once
 
 #include "../game/Types.hpp"
@@ -120,4 +113,4 @@ private:
     }
 };
 
-}  // namespace th13
+}

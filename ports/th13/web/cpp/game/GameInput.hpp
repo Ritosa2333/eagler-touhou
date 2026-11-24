@@ -16,4 +16,4 @@ struct GameInput {
         if (auto_focus && (held & 1) && duration[0] >= 10) held |= 8;
     }
 };
-}  // namespace th13
+}

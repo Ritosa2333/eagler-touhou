@@ -24,7 +24,7 @@ TEST(ecl_328_mutates_live_alpha_channel_with_original_byte_conversion) {
     CHECK_EQ(vm.interpolators.alpha.start[0], 127);
     CHECK_EQ(vm.interpolators.alpha.end[0], 44);
     CHECK_EQ(vm.interpolators.alpha.timer.current, 0);
-    CHECK_EQ(vm.visual.color, 0x7f112233u);  // no implicit animation tick
+    CHECK_EQ(vm.visual.color, 0x7f112233u);
 }
 TEST(ecl_328_missing_slot_does_not_read_remaining_arguments) {
     StageSim sim;

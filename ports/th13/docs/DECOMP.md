@@ -38,17 +38,6 @@ C++ 镜像：`web/cpp/game/Rng.hpp`（常量已锁），锚点登记于 `web/cpp
 
 ## 保真地图与地址核查
 
-- [fidelity-map.md](fidelity-map.md) 给出 C++ 单元与原版地址的对应关系、已知分歧与未决项。其中“逐文件映射”一节由脚本从源码和函数索引生成，不手写：
-
-  ```sh
-  ports/th13/tools/container.sh bash -lc \
-    'node tools/decomp/fidelity-map.mjs /work/artifacts/decomp/jp --pe /work/games/th13/th13.exe --write'
-  ```
-
-- `tools/decomp/address-check.py` 核对源码引用的每个原版地址恰是函数入口、指令边界、跳转表或数据地址；地址落在指令中间或映像之外即非零退出。需要镜像内的 capstone 与外层的 th13.exe：
-
-  ```sh
-  ports/th13/tools/container.sh bash -lc \
-    'python3 tools/decomp/address-check.py . /work/artifacts/decomp/jp /work/games/th13/th13.exe'
-  ```
-
+- [fidelity-map.md](fidelity-map.md) 给出 C++ 单元与原版地址的对应关系、已知分歧与未决项；“逐文件映射”一节是提交 `089c4066c` 的快照。
+- 源码引用的每个原版地址都核查过类别：导出函数的入口、函数体内的指令边界、指令操作数、跳转表、回调入口或数据地址。两个端口的分类表（1464 + 1467 个地址）保存在仓库根的 `archive/th13-address-snapshot-20261124/`。
+- 源码不写注释（见 [DEVELOPMENT.md](DEVELOPMENT.md)“源码不写注释”）。新增的原版依据写进提交说明，并登记到 `fidelity-map.md`。

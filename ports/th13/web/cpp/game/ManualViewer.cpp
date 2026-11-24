@@ -9,8 +9,6 @@ bool ManualViewer::fail(const std::string& why) {
     return false;
 }
 
-// case0：8 个菜单页 VM（script0..7，选中 label2 / 未选 label3）。原版在此
-// 同时创建 8 个注释/行 VM；页 VM 只在实际翻页时创建。
 bool ManualViewer::menu() {
     for (u32& handle : entries)
         animations.retire(handle);
@@ -32,9 +30,6 @@ bool ManualViewer::open() {
     return menu();
 }
 
-// case1 Z / case4 页切换：装载 help_%.2d.png 到 entry1 blank texture，再建
-// page VM（script9）。原版先发声音与状态切换，再异步读文件；网页宿主同步
-// 完成解码上传，随后本帧创建 VM（纹理内容在下一绘制帧生效）。
 bool ManualViewer::show_page() {
     if (!load_page || !load_page(page)) return fail("Manual page unavailable");
     for (u32& handle : entries)
@@ -51,10 +46,10 @@ bool ManualViewer::update(u32 pressed, u32 repeated) {
     if (!error.empty()) return false;
     ++age;
     if (phase == 3) {
-        if (age > 29) done = true;  // state2：age>0x1d 置 +0x128 结束位
+        if (age > 29) done = true;
         return true;
     }
-    if (age <= 19) return true;  // case1/case4：age>0x13 才消费输入
+    if (age <= 19) return true;
     if (phase == 1) {
         const i32 previous = page;
         const u32 input = pressed | repeated;
@@ -103,4 +98,4 @@ void ManualViewer::close() {
     done = false;
 }
 
-}  // namespace th13
+}

@@ -31,9 +31,6 @@ bool PauseMenu::navigate(u32 pressed, u32 repeated, i32 label) {
            (interrupt(state.menu_animation, i32(i16(menu.cursor)) + label) && host.sound(10));
 }
 
-// front132: 120/121/122/154/123；front133: 124/125/126（槽 0/1/4）；
-// front134: 127/128（槽 1/4）；
-// front142: 137/138/139/140/141。槽号同时决定 interrupt 7+slot。
 i32 PauseMenu::entry_script(i32 entry) const {
     if (state.screen == PauseScreen::GameOver) return 137 + entry;
     if (state.screen == PauseScreen::PracticeEnd) return entry == 4 ? 128 : 127;
@@ -44,9 +41,6 @@ i32 PauseMenu::entry_script(i32 entry) const {
 
 bool PauseMenu::configure_entries() {
     auto& menu = state.menu;
-    // 0x440960 态 0x17/0x18 共用三项菜单（0x19）：0 标题 / 1 录像保存 /
-    // 2 重试。态 0x18（BGameOver）在 0x15030(0) 之后追加 0x15030(2)，默认
-    // 光标落重试；没有续关项，不能 Continue。
     if (state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::BGameOver) {
         menu.count = 3;
         menu.wrapping = true;
@@ -58,8 +52,6 @@ bool PauseMenu::configure_entries() {
     menu.count = 5;
     menu.wrapping = true;
     menu.disabled_count = 0;
-    // 43e780 disables save/options in practice; 43fa90 disables save after
-    // a continue. PracticeEnd cannot resume.
     for (i32 entry : {2, 3}) {
         if ((entry == 2 && state.can_save_replay && !state.practice) ||
             (entry == 3 && state.can_open_options && !state.practice && state.screen != PauseScreen::PracticeEnd))
@@ -82,7 +74,6 @@ bool PauseMenu::configure_entries() {
 bool PauseMenu::close() { return interrupt(state.menu_animation, 1) && interrupt(state.snapshot_animation, 1); }
 
 bool PauseMenu::open_replay_slots() {
-    // 0043fd04: hide the Game Over menu tree while the replay overlay owns input.
     if (!check(animations.pause(state.menu_animation, true), "Replay menu hide failed")) return false;
     state.replay_slot = 1;
     state.replay_name.clear();
@@ -97,7 +88,7 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
     const i32 age = state.age.current;
     auto phase = [&](i32 next) { state.select_phase(next); };
     switch (state.phase) {
-    case 0:  // 入场延迟后展开菜单
+    case 0:
         if (age <= 9) break;
         if ((state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::GameOver) &&
             state.result_needs_name) {
@@ -115,7 +106,6 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
         if (pressed & 0x80001) {
             if (!host.sound(7)) return false;
             if (state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::BGameOver) {
-                // 440960 state19: title, replay, retry (shared by 0x17/0x18).
                 state.selected_action = menu.cursor == 0 ? 1 : menu.cursor == 1 ? 2 : 4;
                 if (menu.cursor == 1) return open_replay_slots();
                 if (!close()) return false;
@@ -129,13 +119,10 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
                 phase(16);
             } else {
                 if (!child(entry_script(menu.cursor), 6)) return false;
-                // 43e97e/43ea10: flash the selected child with label6 even
-                // for GameInf+74 != 0; that mode skips the Yes/No phase.
                 phase(state.practice ? 16 : 8);
             }
             return true;
         }
-        // 43e780 state 3: R selects retry and Q selects title directly.
         if (state.screen == PauseScreen::Pause && (pressed & (0x10000u | 0x200000u))) {
             state.selected_action = (pressed & 0x10000u) ? 1 : 4;
             menu.select(state.selected_action);
@@ -149,7 +136,6 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             phase(16);
         } else if ((pressed & 0x102) &&
                    (state.screen == PauseScreen::GameOver || state.screen == PauseScreen::PracticeEnd)) {
-            // GameOver 与 PracticeEnd 不能用 Esc 恢复一个已经结束的对局。
             menu.select(1);
             return interrupt(state.menu_animation, 8) && host.sound(9);
         }
@@ -159,7 +145,7 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
         if (!interrupt(state.menu_animation, 14, true)) return false;
         menu.count = 2;
         menu.disabled_count = 0;
-        menu.select(1);  // 原版默认 No，不能误触重开/回标题。
+        menu.select(1);
         if (!interrupt(state.menu_animation, 16)) return false;
         phase(9);
         break;
@@ -191,7 +177,7 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             phase(6);
         }
         break;
-    case 16:  // 动画收场后执行所选动作
+    case 16:
         if (age < 12) break;
         if (state.selected_action == 2) {
             return open_replay_slots();
@@ -212,7 +198,7 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
         }
         state.select(PauseScreen::Inactive);
         break;
-    case 17: {  // 43e780 state9: select one of 25 replay slots.
+    case 17: {
         if (age <= 9) break;
         const i32 previous_slot = state.replay_slot;
         if ((pressed | repeated) & 0x10) state.replay_slot = (state.replay_slot + 23) % 25 + 1;
@@ -226,7 +212,6 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             if (!host.sound(9)) return false;
             if (state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::BGameOver ||
                 state.screen == PauseScreen::GameOver) {
-                // 0043ff97: restore the same menu and its Save Replay selection.
                 if (!check(animations.pause(state.menu_animation, false), "Replay menu restore failed")) return false;
                 menu.select(state.screen == PauseScreen::GameOver ? 2 : 1);
                 if (!interrupt(state.menu_animation, 7 + menu.cursor)) return false;
@@ -239,7 +224,7 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
         }
         break;
     }
-    case 18: {  // Name entry, up to eight characters.
+    case 18: {
         if (age <= 9) break;
         constexpr i32 count = 91;
         const i32 previous_cursor = state.name_cursor;
@@ -249,26 +234,16 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
             state.name_cursor = (state.name_cursor + (state.name_cursor % 13 == 0 ? 12 : count - 1)) % count;
         if ((pressed | repeated) & 0x80)
             state.name_cursor = (state.name_cursor + (state.name_cursor % 13 == 12 ? count - 12 : 1)) % count;
-        // 光标有位移即 sound(10)：0x43fa90 态 0x13（0x4403e3 先存 +0x114 旧值，
-        // 位移才 0x4403f1）/态 0x12（0x44010c）/0x43e780 态 10（0x43f0fb）三路同式。
         if (state.name_cursor != previous_cursor && !host.sound(10)) return false;
         if (pressed & 0x80001) {
             if (state.name_cursor == 89) {
-                // 网格 DEL 非空名：计分命名（态 0x13）走共享尾 0x43ff55 → sound(7)；
-                // 回放保存命名（态 0x12 0x440217 / 0x43e780 态 10 0x43f205）→
-                // sound(9)。空名两路都无操作也无音效（0x4404a3/0x44020a/0x43f1f8）。
                 if (!state.replay_name.empty()) {
                     state.replay_name.pop_back();
                     if (!host.sound(state.name_is_result ? 7 : 9)) return false;
                 }
             } else if (state.name_cursor == 90) {
-                // END：计分命名（态 0x13）名字落榜后直接落入 LAB_00440520 建续关
-                // 菜单，无音效；回放保存命名（态 0x12 0x440244 / 0x43e780 态 10
-                // 0x43f231：lea edx,[eax-0x49] = 0x5a-0x49 = 17）保存前 sound(17)。
                 if (!state.name_is_result && !host.sound(17)) return false;
                 if (state.name_is_result) {
-                    // LAB_00440520（0x43fa90 态 0x13 END 路径）：录入完成才建
-                    // 菜单脚本 142（进榜路径 open() 延迟未建）→ 态 0xf 续关菜单。
                     if (!state.menu_animation) {
                         state.menu_animation = animations.create(state.front_bank, kGameOverMenuScript, -1, 4);
                         if (!state.menu_animation) return check(false, animations.error.c_str());
@@ -290,13 +265,9 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
                 else
                     state.replay_name[7] = ch;
                 if (state.replay_name.size() >= 8) state.name_cursor = 90;
-                // 字符/空格录入：三路共尾 sound(7)（0x43ff55 / 0x440174 / 0x43f162）。
                 if (!host.sound(7)) return false;
             }
         } else if (pressed & 0x102) {
-            // Esc：计分命名（态 0x13 0x4405b7）非空名退格才 sound(9)，空名原地
-            // 不动；回放保存命名（态 0x12 0x44018e / 0x43e780 态 10 0x43f17c）
-            // 先 sound(9)（空名也响），空名退回选槽。
             if (state.name_is_result) {
                 if (!state.replay_name.empty()) {
                     state.replay_name.pop_back();
@@ -329,4 +300,4 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
     return true;
 }
 
-}  // namespace th13
+}

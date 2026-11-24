@@ -8,7 +8,7 @@ std::pair<i32, i32> decode(i32 v) {
     const i32 hh = (v % 100 + 0x43) % 100;
     return v / 100000 - 22 == sec + hh ? std::pair{sec, hh} : std::pair{999, 99};
 }
-}  // namespace
+}
 TEST(wall_time_quantizes_by_original_0167_not_sixty_hz) {
     CHECK(decode(encode_spell_elapsed_time(0)) == std::pair(0, 0));
     CHECK(decode(encode_spell_elapsed_time(.008)) == std::pair(0, 0));
@@ -19,14 +19,11 @@ TEST(wall_time_quantizes_by_original_0167_not_sixty_hz) {
     CHECK(decode(encode_spell_elapsed_time(2.505)) == std::pair(2, 50));
     CHECK(decode(encode_spell_elapsed_time(1000.01)).first == 999);
 }
-// 0x412760 是回放读取后的原版校验；0x413041 对失败槽写 0x6ad1584。
 TEST(spell_time_replay_validation_matches_0x412760) {
     CHECK(spell_time_packed_valid(encode_spell_elapsed_time(0)));
     CHECK(spell_time_packed_valid(encode_spell_elapsed_time(12.345)));
     CHECK(spell_time_packed_valid(encode_spell_elapsed_time(999.99)));
-    CHECK(!spell_time_packed_valid(0));  // 旧录像未写槽
-    // 0x6ad1584 本身是合法的 999.99 编码（0x412760 通过）；0x413041 用它
-    // 覆盖失败槽，绘制端照常显示 999.99。
+    CHECK(!spell_time_packed_valid(0));
     CHECK(spell_time_packed_valid(0x6ad1584));
     CHECK(decode(0x6ad1584) == std::pair(999, 99));
     CHECK(!spell_time_packed_valid(-1));

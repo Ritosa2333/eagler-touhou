@@ -30,15 +30,12 @@ struct AnmTrail {
     std::array<u32, 64> colors{};
     float angle = 0;
     Timer age;
-    // 有效段数：0x318 家族（graze 星等）=64；4bba80[1]（401000/401190）状态仅
-    // 0x78=8 段，401190 idx>=8 返回 1 退休。显式字段，不做位/字段复用。
     i32 segment_count = 64;
     void initialize(GameRandom&);
     i32 update(GameRandom&, float rate);
     void initialize_orange(const Vec3&, GameRandom&);
     void initialize_small(const Vec3&, GameRandom&);
 };
-// 415d60/415e80 kind2: 32 triangles with separate center/rim colors.
 struct AnmCircle {
     std::array<AnmGeometryVertex, 34> vertices{};
     Vec3 center{};
@@ -48,8 +45,6 @@ struct AnmCircle {
     void initialize(const Vec3& position, float r = 128.f);
     void rebuild();
 };
-// 原 64 点族状态 0x318；kind1 原生状态 0x78（8×12 字节条目+angle+Timer 同构截断）。
-// port 合并模型携带显式 segment_count（i32），sizeof = 0x318+4；两原尺寸见上注。
 static_assert(sizeof(AnmTrail) == 0x31c);
 struct AnmGatherEffect {
     std::array<u32, 200> handles{};
@@ -59,7 +54,6 @@ struct AnmGatherEffect {
     u32 reserved = 0;
     Timer age;
 };
-// Effect table 4bba80 kind5: Stage 3's animated world-space ribbons.
 struct AnmRibbon {
     std::array<Vec3, 16> segments{};
     std::array<AnmWorldVertex, 32> vertices{};
@@ -69,7 +63,6 @@ struct AnmRibbon {
     void update(GameRandom&, float rate);
 };
 struct AnmEnvironment;
-// 415650 effect6: 401730 initialization,401c90 history,402340 world draw.
 struct AnmWindTrail {
     std::array<AnmWorldVertex, 64> vertices{};
     std::array<Vec3, 32> points{}, tangents{};
@@ -111,4 +104,4 @@ struct AnmGeometry {
 private:
     AnmGeometry& assign_slow(const AnmGeometry&);
 };
-}  // namespace th13
+}

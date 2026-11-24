@@ -1,8 +1,3 @@
-// マニュアル主接线单测（Title owner 接线；TitleManualMenu 3/3 wrapper 语义由
-// MenuExtras 覆盖，真实 help 查看器归宿主——本测试只证路由与平台聚合）：
-//   TitleScreen::Manual=16、entry 8 Z 切屏、TitleFrame case 16 → menu()、
-//   TitleScenePlatform 聚合 TitleManualPlatform（open/finished/close）、
-//   结束位 → 回 Main（光标不经栈，保持 8）；open 失败 = 真实错误不假成功。
 #include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 
@@ -41,7 +36,6 @@ struct ManualHost final : TitleScenePlatform {
     }
     bool hud_text(const HudTextDraw&) override { return true; }
     bool title_exit(i32) override { return true; }
-    // TitleManualPlatform
     bool open_manual() override {
         ++opened;
         for (i32 page = 0; page < 3; page++)
@@ -98,7 +92,7 @@ struct ManualHarness {
     ManualHost host{manager};
     std::array<FrameCallback, 2> animation_updates{};
     std::unique_ptr<TitleScene> scene;
-    bool expect_frame_error = false;  // 失败路径：update 回调真实报错
+    bool expect_frame_error = false;
 
     ManualHarness() {
         animation_updates[0].owner = animation_updates[1].owner = &manager;
@@ -121,7 +115,7 @@ struct ManualHarness {
         scene->controls({0, pressed, repeated, 0});
         const i32 result = scheduler.update();
         if (expect_frame_error)
-            CHECK(result < 0);  // 真实失败：TitleFrame update 回调报错
+            CHECK(result < 0);
         else
             CHECK(result >= 0);
         CHECK(scheduler.draw() >= 0);
@@ -133,17 +127,14 @@ struct ManualHarness {
     void enter_manual() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
         for (int i = 0; i < 7; i++)
-            frame(0x20);  // 0→2→…→8（跳禁用1）
+            frame(0x20);
         CHECK_EQ(scene->state.menu.cursor, 8);
-        frame(0x01);  // Z
-        advance(25);  // age>19 → enter(8) → Manual
+        frame(0x01);
+        advance(25);
     }
 };
-}  // namespace
+}
 
-// entry 8 → 屏 16 → open_manual 一次（含 help_%.2d.png 页名契约）→
-// 结束位 → close_manual + 回 Main（光标保持 8，无栈操作）；再次进入重走
-// open/close，且返回主菜单重建背景根（0x44cdb9，H01-1）。
 TEST(manual_entry_routes_and_finishes_via_platform) {
     ManualHarness harness;
     harness.advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
@@ -155,31 +146,23 @@ TEST(manual_entry_routes_and_finishes_via_platform) {
     harness.frame(0x01);
     harness.advance(25);
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Manual));
-    CHECK_EQ(int(harness.scene->state.screen), 16);  // 0x44c570 case 10 屏值
-    CHECK_EQ(harness.scene->state.substate, 1);      // case0 → substate1
+    CHECK_EQ(int(harness.scene->state.screen), 16);
+    CHECK_EQ(harness.scene->state.substate, 1);
     CHECK_EQ(harness.host.opened, 1);
     CHECK_EQ(harness.host.page_names.size(), 3u);
     CHECK_EQ(harness.host.page_names[0], std::string("help_01.png"));
     CHECK_EQ(harness.host.page_names[2], std::string("help_03.png"));
     CHECK_EQ(harness.host.closed, 0);
-    harness.host.finished = true;  // 查看器 +0x128 结束位
+    harness.host.finished = true;
     harness.advance(2);
     CHECK_EQ(harness.host.closed, 1);
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
-    CHECK_EQ(harness.scene->state.menu.cursor, 8);  // 不经光标栈，保持 entry 8
+    CHECK_EQ(harness.scene->state.menu.cursor, 8);
     CHECK_EQ(harness.scene->state.menu.count, kTitleMainEntries);
-    // 0x44cddb 返回分支：89 已存在则复用（0x44cdef jne 0x44ce0c），仅缺失
-    // 才新建 + label2。0x44d954-0x44d97b（反汇编）：Manual（光标 8，跳转表
-    // 与 case 0-6 同目标 0x44d947）确认时 label1 已发给两个 LOGO 根槽
-    // （+0x440=94 / +0x444=95）并清 0；返回分支 0x44ce26 两槽皆空 → 建
-    // 复位根 95（0x44ce51 lea edi,[eax+0x5f]），94 冷启动根不重建。
-    // 旧断言「94 存活 / 95=0」来自端口旧实现（只发 94 且不清槽）与未镜像
-    // ins_5(1) 的合成夹具，无原生依据。
     CHECK(harness.scene->state.handles[89] != 0);
     CHECK_EQ(harness.scene->state.handles[89], background_before);
     CHECK_EQ(harness.scene->state.handles[94], 0u);
     CHECK(harness.scene->state.handles[95] != 0);
-    // 再次进入：返回菜单就绪后同一入口重走 open/close。
     harness.advance(kTitleMenuReadyDelay + 1);
     CHECK_EQ(harness.scene->state.substate, 2);
     harness.host.finished = false;
@@ -194,11 +177,9 @@ TEST(manual_entry_routes_and_finishes_via_platform) {
     CHECK(harness.scene->error.empty());
 }
 
-// open_manual 真实失败（宿主未接 help viewer）：帧错误上浮，不假成功、不回 Main。
 TEST(manual_open_failure_reports_real_error) {
     ManualHarness harness;
     harness.host.open_ok = false;
-    // 手动走入口序列：逐帧推进，捕获 open_manual 失败那一拍的真实帧错误。
     harness.advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
     for (int i = 0; i < 7; i++)
         harness.frame(0x20);
@@ -206,14 +187,14 @@ TEST(manual_open_failure_reports_real_error) {
     bool errored = false;
     for (int i = 0; i < 30 && !errored; i++) {
         harness.scene->controls({0, 0, 0, 0});
-        errored = harness.scheduler.update() < 0;  // TitleFrame update 回调报错
+        errored = harness.scheduler.update() < 0;
     }
     CHECK(errored);
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Manual));
-    CHECK_EQ(harness.host.opened, 1);                                      // case0 只执行一次
-    CHECK(!harness.scene->error.empty());                                  // "Title manual viewer unavailable"
-    CHECK_EQ(harness.host.closed, 0);                                      // 未打开即未关闭
-    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Manual));  // 不回 Main
+    CHECK_EQ(harness.host.opened, 1);
+    CHECK(!harness.scene->error.empty());
+    CHECK_EQ(harness.host.closed, 0);
+    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Manual));
 }
 
 int main() { return th13test::run_all("マニュアル接线"); }

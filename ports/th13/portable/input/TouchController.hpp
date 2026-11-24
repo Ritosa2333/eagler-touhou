@@ -4,9 +4,6 @@
 #include <cstdint>
 #include <eagler/input/DialogueGesture.hpp>
 #include <set>
-// Shared gesture policy, adapted from eagler-th07 Touch.cpp (CC0). Only the
-// adapter supplies game state and consumes movement; no score or stage rule
-// lives here. The original 60Hz game determines the actual movement distance.
 namespace touhou::input {
 struct TouchState {
     int context = 0, instance = 0;
@@ -57,8 +54,6 @@ public:
         dragging = motion_blocked = false;
         primary = instance = 0;
     }
-    // Cancellation drops transient gesture/control ownership, but fire is a
-    // document-level toggle and must survive blur, pause, and retry.
     void clear_gestures() {
         clear_motion();
         fingers.clear();
@@ -73,8 +68,6 @@ public:
         stick_x = stick_y = 0;
         confirm_ticks = bomb_ticks = escape_ticks = 0;
     }
-    // A new session clears the toggle too. Serial values stay synchronized so
-    // replaying the last control snapshot cannot manufacture an action pulse.
     void reset() {
         cancel();
         fire = false;
@@ -185,9 +178,6 @@ public:
                 clear_motion();
                 return;
             }
-            // 临时移动封锁（死亡/重生窗口）只压制位移，不丢弃运动手指：
-            // 拖拽保持 active()，恢复或换身后同指继续接管（上游 held-touch
-            // 契约；th17 TouchController 同款 motion_blocked 语义）。
             if (!s.ready && !s.retain_motion) {
                 motion_blocked = true;
                 previous_x = x;
@@ -237,8 +227,6 @@ public:
             out.keys[27] = true;
             --escape_ticks;
         }
-        // Actions remain available while movement is blocked (deathbomb).
-        // Consume the pulse every tick so a late press cannot wait for respawn.
         const bool bomb = bomb_ticks > 0;
         if (bomb_ticks > 0) --bomb_ticks;
         if (!enabled) return out;
@@ -291,4 +279,4 @@ public:
     int current_context() const { return context; }
     bool active() const { return dragging; }
 };
-}  // namespace touhou::input
+}

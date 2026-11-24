@@ -37,7 +37,7 @@ TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --shot bash
 
 工具链版本（构建时固定）：Node 22 / Emscripten 6.0.9 / wasi-sdk 34 / Ghidra 12.1.3 / Temurin JDK 21。
 
-开发工作区另有外层 `Makefile` 包装上述命令（`make image / shell / exec-port CMD='…'`），并管理原版资源与 thtk 临时构建；工作区顶层的 `games/`（原版资源）与 `artifacts/`（大体积产物、Ghidra 导出、参考视频帧）不入库。thtk 以临时克隆方式构建、用后清理。
+工作区顶层的 `games/`（原版资源）与 `artifacts/`（大体积产物、Ghidra 导出、参考视频帧）不入库。外层参考工作区另有 `Makefile` 包装这些命令（`make image / shell / exec-port CMD='…'`）；本目录的入口不依赖它。
 
 ## 原版资源准备
 
@@ -86,6 +86,27 @@ ports/th13/tools/container.sh --mp bash -lc 'node tools/format.mjs --check'   # 
 
 排版后的产物与排版前逐字节相同：两个端口的网页 wasm、JS 胶水层与 WASI harness 的 sha256 全部不变。全量排版提交登记在仓库根的 `.git-blame-ignore-revs`，执行 `git config blame.ignoreRevsFile .git-blame-ignore-revs` 后 `git blame` 自动跳过它们。
 
+## 源码不写注释
+
+两个端口的源码、脚本、测试、页面与配置文件都不带注释：`//`、`/* */`、`#`、`<!-- -->` 和 Python docstring 一律不出现。原本写在注释里的信息各有去处：
+
+| 内容 | 去处 |
+| --- | --- |
+| 原版地址与行为依据 | 提交说明；[fidelity-map.md](fidelity-map.md) |
+| 契约与不变量 | 断言它的测试 |
+| 用法与流程 | 本目录 `docs/` |
+| 排版保护 | `// clang-format off` / `on` 是给排版器的指令，保留 |
+
+`tools/no-comments.mjs` 按语言取注释区间：C/C++/Java 与 CSS 用词法状态机，字符串、字符字面量与原始字符串字面量都识别；JS 与 HTML 内联脚本用 acorn；shell 识别引号、`$()`、`${}` 与 heredoc；Python 用 tokenize 与 ast，docstring 一并删除。范围是 git 已跟踪的文件，生成文件（`*.gen.hpp`、`MsgPlayerCp932.hpp` 等）与 `third_party/` 不在内。多人版 `shell.mjs` 的 `// BEGIN GENERATED SPECTATOR PLAYBACK` 到 `// END GENERATED SPECTATOR PLAYBACK` 是与 `common/browser/spectator-playback.mjs` 逐字节一致的副本，原样保留。
+
+```sh
+ports/th13/tools/container.sh bash -lc 'node tools/no-comments.mjs'          # 普通版：检查，发现注释即非零退出
+ports/th13/tools/container.sh bash -lc 'node tools/no-comments.mjs --strip'  # 普通版：删除
+ports/th13/tools/container.sh --mp bash -lc 'node tools/no-comments.mjs'     # 多人版
+```
+
+`tests/no-comments.test.mjs` 把规则纳入门槛。全量删除的两个提交登记在仓库根的 `.git-blame-ignore-revs`，`git blame` 自动跳过它们。
+
 ## 测试
 
 ```sh
@@ -104,7 +125,9 @@ ports/th13/tools/gate.sh --mp       # 多人版（套件另含 M1–M9 累计原
 ports/th13/tools/gate.sh --browser  # 追加浏览器套件（th13-shot 镜像）
 ```
 
-依次执行排版检查、WASI harness 构建、三项回归摘要（普通版）、网页运行时构建、全部套件与基线比对，任何一步回归即非零退出。
+依次执行排版检查、WASI harness 构建、三项回归摘要（普通版）、网页运行时构建、全部套件与基线比对，任何一步回归即非零退出。基线是动产品代码之前登记的逐套件失败清单（`archive/th13-refactor-baseline-20261124/`），带基线比对时退出码只反映基线之外的新失败。
+
+`--browser` 需要运行时资源目录，固定 4 并发：更多并发会让无头 Chromium 的音频线程饿死，报 AudioContext 错误。
 
 ### 回归摘要门禁
 

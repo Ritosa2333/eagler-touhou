@@ -41,7 +41,7 @@ namespace {
 Vec2 radial(float angle, float radius) {
     return {float(std::cos(double(angle)) * double(radius)), float(std::sin(double(angle)) * double(radius))};
 }
-}  // namespace
+}
 bool AnmGeometry::allocate(i32 count, bool world) {
     if (count < 0 || count > 0x100000) return false;
     clear();
@@ -143,4 +143,4 @@ void AnmDistortion::update(const Vec3& position, const Vec3& translation, u32 co
     }
     vertices[32] = vertices[1];
 }
-}  // namespace th13
+}

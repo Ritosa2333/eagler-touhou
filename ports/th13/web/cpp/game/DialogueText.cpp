@@ -7,8 +7,6 @@
 namespace th13 {
 
 namespace {
-// 0x45aef0 的 GDI 暂存面为 1024x129；对话每行只消费顶部 ~44 行，再缩入
-// text.anm 512x20 条带（0x45aef0 D3DXLoadSurfaceFromMemory 缩放语义的 port）。
 constexpr u32 kScratchWidth = 1024;
 constexpr u32 kScratchHeight = 48;
 constexpr u32 kScratchRows = 44;
@@ -24,7 +22,7 @@ bool read_region(const AnmResource& resource, i32 script, i32& x, i32& y, i32& w
     height = i32(sprite.height);
     return x >= 0 && y >= 0 && width > 0 && height > 0;
 }
-}  // namespace
+}
 
 DialogueText::RollbackState DialogueText::capture_rollback(AnmManager& manager, DialogueTextureSink& sink) const {
     const auto* resource = manager.resource(0);
@@ -122,11 +120,6 @@ bool DialogueText::ensure(AnmManager& manager, DialogueTextureSink& sink, std::s
             return false;
         }
         if (!handles_[u32(script)]) {
-            // 0x4282b0 四条文本 VM 创建位置为 0；正文行再按 0x428ae0:499
-            // 写 box_x / box_x-(width+30)，脚本自带 (2,22/42)/(2,16/36)。
-            // 0x4282b0：四条文本 VM 走 0x46f3f0 尾插（ordering=0），不是
-            // 头插；建完后统一 VM+0x1c |= 0x1000（0x46e8f0 据此选 plain
-            // 文本路径而非 outlined）。
             handles_[u32(script)] = manager.create(0, script, -1, 0, {}, 0, false);
             if (!handles_[u32(script)]) {
                 error = manager.error.empty() ? "text.anm dialogue VM creation failed" : manager.error;
@@ -173,8 +166,6 @@ bool DialogueText::blank_all(DialogueTextureSink& sink, std::string& error, i32 
                      {u32(region.x), u32(region.y), u32(region.x + region.width), u32(region.y + region.height)});
     }
     cached_.fill(false);
-    // 0x428ae0 块首清四槽 / opcode 6 释放：原版在 0x46fc30 前把 EBX
-    // 置为 label（块首 3、释放 1），由下一次 ANM tick 消费。
     for (u32 handle : handles_)
         if (!manager_ || !request_label(*manager_, handle, label, error)) {
             if (!manager_) error = "text.anm dialogue manager is not bound";
@@ -185,8 +176,6 @@ bool DialogueText::blank_all(DialogueTextureSink& sink, std::string& error, i32 
 
 bool DialogueText::request_label(AnmManager& manager, u32 handle, i32 label, std::string& error) {
     if (!handle) return true;
-    // 0x46fc30 只写 VM+0x4a0（deferred）；不在此 immediate tick，等本帧
-    // AnmManager::update（Application Update 优先级 34 > RunScene 20）消费。
     if (!manager.interrupt(handle, label, false)) {
         error = manager.error.empty() ? "text.anm dialogue interrupt failed" : manager.error;
         return false;
@@ -206,12 +195,6 @@ bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region, s
         error = "text.anm texture0 is not ARGB4444";
         return false;
     }
-    // 0x45aef0 的 D3DX 缩放：1024 宽暂存 → 512 宽 sprite，源高 44
-    // （0x4282b0 的 +0x51c=0x15 → 0x45aef0 param_5*2+2）→ 20 像素条带。
-    // 0045b39d / 0045b14e: both plain and outlined TextOut paths pass
-    // D3DX_FILTER_TRIANGLE (4) to D3DXLoadSurfaceFromMemory. Use the same
-    // pixel-center triangle kernel as ANM menu and ending text; point sampling
-    // drops narrow strokes between source pixels during the 2x reduction.
     const float scale_x = float(scratch_.width) / float(region.width);
     const float scale_y = float(kScratchRows) / float(region.height);
     const float radius_x = std::max(1.f, scale_x);
@@ -227,8 +210,6 @@ bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region, s
                 for (i32 sx = i32(std::ceil(center_x - radius_x)); sx <= i32(std::floor(center_x + radius_x)); ++sx) {
                     const float weight = wy * std::max(0.f, 1.f - std::fabs(float(sx) - center_x) / radius_x);
                     total += weight;
-                    // Filter 4 has no MIRROR flags: D3DX wraps samples at
-                    // the source RECT edges, including the filter footprint.
                     const u32 sample_x = u32((sx % i32(scratch_.width) + i32(scratch_.width)) % i32(scratch_.width));
                     const u32 sample_y = u32((sy % i32(kScratchRows) + i32(kScratchRows)) % i32(kScratchRows));
                     u16 sample = 0;
@@ -250,9 +231,6 @@ bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region, s
 
 bool DialogueText::rasterize_ruby(const MsgLine& line, const DialogueRasterizer& rasterizer, std::string& error) {
     std::fill(scratch_.pixels.begin(), scratch_.pixels.end(), 0);
-    // 0x45aef0：正文/ruby 都从 TextOut(2*x,2) 起始；ruby 第二参数是逐字
-    // 步进（param_9），0 = 连续排版，非 0 = 每字后 x += value*2。
-    // 颜色与正文同源：fg=EDI[0x62+side]=0（见 write_row 注），描边=0。
     const i32 base_x = line.ruby_x * 2;
     if (line.ruby_spacing == 0) {
         if (!rasterizer(scratch_, base_x, 2, true, 0x00000000u, line.ruby_cp932)) {
@@ -287,10 +265,6 @@ bool DialogueText::write_row(AnmManager& manager, DialogueTextureSink& sink, i32
     const Region& ruby_region = regions_[u32(kLineCount + row)];
     if (!blank(sink, region, error) || !blank(sink, ruby_region, error)) return false;
 
-    // 正文条带。0x428ae0 case 0x11（反汇编 429198-4291bb）：0046e8f0 调用为
-    // (fg=EDI[0x62+side], stroke=0, style=(flags>>1)&1, 0, 0, text)；MSG VM 的
-    // +0x188/+0x18c 在 004282b0 memset(0) 后无任何非零写入 → fg=黑、描边=黑。
-    // 原版 v1.00c 对话帧（original-dialogue f0030）气泡正文核心像素实测 (0,0,0)。
     std::fill(scratch_.pixels.begin(), scratch_.pixels.end(), 0);
     if (!rasterizer(scratch_, 0, 2, false, 0x00000000u, line.text_cp932)) {
         error = "dialogue body rasterization failed";
@@ -298,7 +272,6 @@ bool DialogueText::write_row(AnmManager& manager, DialogueTextureSink& sink, i32
     }
     if (!copy_strip(sink, region, error)) return false;
 
-    // ruby 条带（sprite2/3）。无注记时保持清空并提交 changed。
     if (line.has_ruby && !line.ruby_cp932.empty()) {
         if (!rasterize_ruby(line, rasterizer, error)) return false;
         if (!copy_strip(sink, ruby_region, error)) return false;
@@ -306,8 +279,6 @@ bool DialogueText::write_row(AnmManager& manager, DialogueTextureSink& sink, i32
         sink.changed(texture_, {u32(ruby_region.x), u32(ruby_region.y), u32(ruby_region.x + ruby_region.width),
                                 u32(ruby_region.y + ruby_region.height)});
     }
-    // 0x428ae0:489-493/554-558：写入后 0x46fc30(handle, 2) 让 VM 离开
-    // ins_4 隐藏等待并跳到 label 2 显示分支（延迟到 ANM tick 消费）。
     if (!request_label(manager, handles_[u32(row)], 2, error)) return false;
     if (line.has_ruby && !line.ruby_cp932.empty() && !request_label(manager, handles_[u32(kLineCount + row)], 2, error))
         return false;
@@ -329,14 +300,12 @@ bool DialogueText::submit(AnmManager& manager, DialogueTextureSink& sink, i32 ro
         return true;
     }
     if (row == 0) {
-        // 0x428ae0:426-452 块首：先清四槽（0x46fc30 label 3），再写当前行。
         if (!blank_all(sink, error, 3)) return false;
     }
     if (unchanged) {
         place_rows(manager, box_x, box_y);
         return true;
     }
-    // 0x428ae0:485-553：每条正文行先重建对话框（0042a120），再画文字。
     if (!update_bubble(manager, row, line, box_x, box_y, error)) return false;
     if (!write_row(manager, sink, row, line, rasterizer, error)) return false;
     cached_[u32(row)] = true;
@@ -349,11 +318,8 @@ bool DialogueText::submit(AnmManager& manager, DialogueTextureSink& sink, i32 ro
 }
 
 bool DialogueText::fade(i32 label, std::string& error) {
-    if (!manager_) return true;  // 尚未建立文本 VM：无 fade 目标
-    // 0x424ba0：释放对话框根 VM（opcode 6/18 均在文本 label 前/后销毁气泡）。
+    if (!manager_) return true;
     if (!retire_bubble(*manager_, error)) return false;
-    // 0x42960c/0x429250：只对四条文本 VM 发 label；不改 texture0 像素，
-    // 也不重置 cached_，否则 RunScene 的重复提交会用 label2 把淡出打断。
     for (u32 handle : handles_)
         if (!request_label(*manager_, handle, label, error)) return false;
     return true;
@@ -361,7 +327,6 @@ bool DialogueText::fade(i32 label, std::string& error) {
 
 bool DialogueText::clear(DialogueTextureSink& sink, std::string& error) {
     (void)sink;
-    // RunScene rows==0 兜底：与原版 opcode 6 相同，只淡出，不清像素。
     return fade(1, error);
 }
 
@@ -369,7 +334,7 @@ bool DialogueText::set_anchor_y(AnmManager& manager, float value, std::string& e
     anchor_y_ = value;
     anchor_y_set_ = true;
     for (u32 handle : handles_) {
-        if (!handle) continue;  // VMs are allocated lazily in the web host.
+        if (!handle) continue;
         auto* vm = manager.registry.find(handle);
         if (!vm) {
             error = "text.anm dialogue VM unavailable";
@@ -381,9 +346,6 @@ bool DialogueText::set_anchor_y(AnmManager& manager, float value, std::string& e
 }
 
 bool DialogueText::set_visible(AnmManager& manager, bool visible, std::string& error) {
-    // 0x429d00/0x429f10：对话对象 +0x4c/+0x50/+0x54/+0x58 四文本 VM 与
-    // +0x60 气泡根的 VM+0x18 bit1 清/置（含直接子链），不销毁不清像素。
-    // 懒分配的空槽与已自毁句柄空转（AnmManager::pause 对亡句柄 no-op）。
     for (u32 handle : handles_)
         if (handle && !manager.pause(handle, !visible)) {
             error = "dialogue text visibility failed";
@@ -430,9 +392,7 @@ bool DialogueText::update_bubble(AnmManager& manager, i32 row, const MsgLine& li
                                  std::string& error) {
     if (bubble_bank_ < 0) return true;
     AnmResource* front = manager.resource(bubble_bank_);
-    if (!front) return true;  // 单测无 front.anm：显式降级为无气泡
-    // 0042a120：param = side + 2*((+0x178>>2)&0xf)；根 224+param，
-    // 左右端帽 176+param / 208+param（192+param 为固定中段）。
+    if (!front) return true;
     const i32 variant = i32((line.text_attr >> 2) & 0xFu);
     const i32 param = (line.side > 0 ? 1 : 0) + variant * 2 + row * 8;
     const i32 root_script = 224 + param;
@@ -443,7 +403,6 @@ bool DialogueText::update_bubble(AnmManager& manager, i32 row, const MsgLine& li
         return false;
     }
     if (!retire_bubble(manager, error)) return false;
-    // 0x42a120 → 0x46f820(flags=0)：气泡根尾插（ordering=0），不是头插。
     box_ = manager.create(bubble_bank_, root_script, -1, 0, {box_x, box_y}, 0, false);
     if (!box_) {
         error = manager.error.empty() ? "front.anm dialogue bubble creation failed" : manager.error;
@@ -454,8 +413,6 @@ bool DialogueText::update_bubble(AnmManager& manager, i32 row, const MsgLine& li
         error = "front.anm dialogue bubble VM unavailable";
         return false;
     }
-    // 0x428ae0:464/529 后续 0042a120/0042a280：两端帽 variables.floats[0]
-    // (= VM+0x4bc = 10004) 写当前行块宽度；脚本 label2 用它算拉伸/右端位置。
     const auto set_width = [&](i32 script) -> bool {
         for (AnmVm* child : manager.registry.children(*root)) {
             if (child->source_script == script) {
@@ -485,4 +442,4 @@ void DialogueText::place_rows(AnmManager& manager, float box_x, float box_y) {
     }
 }
 
-}  // namespace th13
+}

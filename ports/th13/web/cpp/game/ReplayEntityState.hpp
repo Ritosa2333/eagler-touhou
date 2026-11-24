@@ -8,9 +8,6 @@
 
 namespace th13 {
 
-// Read-only semantic sample used by replay/oracle diagnostics. Entity order is
-// storage order; it is never sorted or reconstructed from a count. Float
-// fields are exported as raw IEEE-754 bits to avoid JSON rounding drift.
 struct ReplayEntityState {
     struct Enemy {
         u32 serial = 0, trace_id = 0;
@@ -18,13 +15,8 @@ struct ReplayEntityState {
         u32 x_bits = 0, y_bits = 0;
         u32 life_bits = 0;
         bool dead = false;
-        // 0x419a90 的 damage/spirit 侧字段：+0x4004 hit ANM 计时、
-        // +0x3f60 积分累加、+0x3ffc 下一神霊阈值。累加/阈值按原始
-        // bit 导出，原生侧是整数域，可直接对照数值语义。
         i32 hit_anim_timer = 0;
         u32 spirit_accum_bits = 0, spirit_threshold_bits = 0;
-        // 只读诊断（round-23 Track S4-1b）：0x419950 主位置 = vel 子位置
-        // + pos 子位置；mover 字段按原生 vm+0x88/0xCC 布局导出。
         u32 vel_pos_bits[3] = {}, pos_pos_bits[3] = {};
         u32 vel_aux_bits[3] = {}, pos_aux_bits[3] = {};
         u32 vel_angle_bits = 0, vel_speed_bits = 0, vel_mode = 0;
@@ -85,4 +77,4 @@ struct ReplayEntityState {
 
 ReplayEntityState sample_replay_entities(const StageBattle& battle);
 
-}  // namespace th13
+}

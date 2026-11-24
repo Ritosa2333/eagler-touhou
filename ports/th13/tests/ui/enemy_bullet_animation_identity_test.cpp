@@ -1,5 +1,3 @@
-// Enemy bullets have independent ANM roots in the original 0x40e840 path.
-// This catches presentation state transfer after StageSim compacts cull/death.
 #include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 
@@ -31,8 +29,6 @@ struct NullGraphics final : ZunGraphics {
 
 std::vector<u8> bullet_bank() {
     auto scripts = trivial_scripts(36);
-    // Type 0 resolves to bullet.anm script 35.  Keep the VM parked so its age
-    // is a direct witness of whether the root was preserved across compaction.
     scripts[35] = {sprite(0), wait(), stop()};
     return synthetic_anm(1, scripts);
 }
@@ -68,7 +64,7 @@ struct Fixture {
             !load_bank(animations, 5, bullet_bank())) {
             return false;
         }
-        battle.player_dead = true;  // isolate enemy bullets from player VMs
+        battle.player_dead = true;
         return true;
     }
 
@@ -79,7 +75,7 @@ struct Fixture {
     std::string lines() const { return bullet_lines(presentation.debug_report()); }
 };
 
-}  // namespace
+}
 
 TEST(enemy_bullet_vm_follows_birth_generation_after_compaction) {
     Fixture fixture;
@@ -93,27 +89,19 @@ TEST(enemy_bullet_vm_follows_birth_generation_after_compaction) {
     survivor.generation = 22;
     fixture.battle.sim.bullets.push_back(first);
     CHECK(fixture.sync());
-    CHECK(fixture.sync());  // first root is now older than the future survivor
+    CHECK(fixture.sync());
 
     fixture.battle.sim.bullets.push_back(survivor);
     CHECK(fixture.sync());
     CHECK(fixture.lines().find("gen=11") != std::string::npos);
     CHECK(fixture.lines().find("gen=22") != std::string::npos);
 
-    // StageSim removes dead entries by stable compaction.  The survivor must
-    // keep its own root.  原版出生帧双 tick：0x461cb0:35 初始化执行一次
-    // 0x462450（其尾部 00462979-0046298f 无条件推进时间三元组），出生序列
-    // 0x40e840:273-274 再执行一次（置 +0xbbe=2 → 40f030 → 462450）——
-    // 出生 sync 后 age=2，压缩后再 sync = 3；继承 first 的根则会是 5。
     fixture.battle.sim.bullets.erase(fixture.battle.sim.bullets.begin());
     CHECK(fixture.sync());
     const std::string survivor_line = fixture.lines();
     CHECK(survivor_line.find("gen=22") != std::string::npos);
     CHECK(survivor_line.find("age=3") != std::string::npos);
 
-    // A same-script/color birth gets a fresh root after reusing the inactive
-    // storage slot.  原版出生帧 age=2（0x461cb0 + 0x40e840:274 双执行），
-    // 而非沿用旧槽位的残留年龄。
     StageBullet newborn = survivor;
     newborn.generation = 33;
     fixture.battle.sim.bullets.clear();

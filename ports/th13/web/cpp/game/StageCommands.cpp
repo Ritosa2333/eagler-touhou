@@ -1,5 +1,3 @@
-// stage1 游戏指令执行（0x41b260 处理块的行为子集）。锚点注释对应 ecl-vm.md §4.2。
-// 未实现指令一律置 sim->error 并返回 -2（harness 非零退出）——不静默吞掉契约缺口。
 #include "StageSim.hpp"
 
 #include "AnmVm.hpp"
@@ -37,7 +35,7 @@ void shortest_arc(float& from, float& to) {
 
 u32 postname_dword(const EclInstruction* ins, u32 index) {
     const u32 name_length = u32(ins->argument<i32>(0));
-    const u32 base = ((name_length + 4) >> 2) + index;  // 0x41fcc0:29-30
+    const u32 base = ((name_length + 4) >> 2) + index;
     u32 raw = 0;
     std::memcpy(&raw, reinterpret_cast<const u8*>(ins) + 16 + base * 4, 4);
     return raw;
@@ -55,23 +53,17 @@ bool resolve_postname_int(EclContext& c, u32 index, u32 argument, i32& value) {
     return c.integer(argument, i32(raw), value);
 }
 
-// 镜像翻转表（0x41c137/0x41c21f）：非 NM 变体在敌机镜像位下翻转角度。
 bool mirrored_variant(u16 op) { return op == 404 || op == 405 || op == 406 || op == 407; }
-}  // namespace
+}
 
 int StageCommands::execute(EclContext& c, u16 op) {
     StageSim& sim = *this->sim;
     StageEnemy& e = *sim.current;
     const EclInstruction* ins = c.instruction;
 
-    // Logging receives already evaluated operands. It must never read a
-    // global/random argument or alter the ECL stack on its own.
     const auto emit_move = [&](const u32* integral, std::initializer_list<float> values) {
         sim.sink.enemy_move(e.serial, op, integral, values.begin(), u32(values.size()));
     };
-    // 303/306/313/316/318 槽位 VM 请求在 ECL 指令处同步冲刷（0x41fe80 /
-    // 0x41b7cc：原版在解释器内 0x4243e0 建 VM 并写回 +0x120 槽句柄）。
-    // 307/308 特效（kind=0）不在此列：保持入队到 sync 的 stage_script 相位。
     const auto flush_anm_slots = [&]() -> bool {
         if (!sim.flush_anm_slots) return true;
         if (sim.flush_anm_slots(&e)) return true;
@@ -80,7 +72,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
     };
 
     switch (op) {
-    // ---------- 300 族：敌人/ANM ----------
     case 300:
     case 301:
     case 304:
@@ -91,12 +82,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 312:
     case 321:
         return create_enemy(c, op);
-    case 302: {  // anmSelect（vm+0x98 文件槽）——事件无涉
+    case 302: {
         i32 file = 0;
         if (resolve_int(c, 0, file)) e.anm_file = file;
         return 0;
     }
-    case 320: {  // 41b3ae: per-slot XYZ offset, Z is always zero.
+    case 320: {
         i32 slot = 0;
         float x = 0, y = 0;
         if (!resolve_int(c, 0, slot) || !resolve_float(c, 1, x) || !resolve_float(c, 2, y)) {
@@ -110,29 +101,18 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.anm_slot_offset[slot] = {x, y, 0};
         return 0;
     }
-    case 303:    // anmScript（0x41fe80：槽位 VM 创建/清槽 + 句柄存储）
-    case 306: {  // anmRun（0x41b260 case3：同 303 + slot0 附加字段/主形身份）
+    case 303:
+    case 306: {
         i32 slot = 0, script = 0;
         const bool resolved = resolve_int(c, 0, slot) && resolve_int(c, 1, script);
-        if (resolved && slot >= 0 && slot < StageEnemy::kAnimationSlots)
-            e.anm_script[slot] = script;  // script < 0 = 清槽（0x41fe80）
+        if (resolved && slot >= 0 && slot < StageEnemy::kAnimationSlots) e.anm_script[slot] = script;
         if (resolved && op == 306 && slot == 0) {
-            e.anm_base_script = script;  // +0x26c（0x41b260 case3 param_1[0x9b]）
-            e.mirror_dir = 0;            // +0x270 = 0.0（case3 param_1[0x9c]）
-            // 306 在 0x419450 之后（ECL 体内）执行：当帧的朝向比较已经
-            // 过去，下一次真正的 0x41a8a0（integrate 后）才允许重挂。
+            e.anm_base_script = script;
+            e.mirror_dir = 0;
             e.mirror_ready = false;
-            e.mirror_prev_x = e.position[0];  // 过渡帧回退基线=306 当帧位置
+            e.mirror_prev_x = e.position[0];
         }
-        // push 门须与解析成败绑定（0x41fe80:0x41ff00 门 = script ≥ 0；
-        // resolve_int 失败时 out 参数保持初值（EclContext 失败路径不写值），
-        // 此前残值 slot=0/script=0 会通过范围检查 push 伪创建请求，且 306
-        // 残值还会误置镜像门 flags——对比同函数 307/308 分支
-        // resolve 失败即 return -2。失败时 c.error 亦不得被 return 0 吞掉。
         if (resolved && !sim.anm_effects_noop && sim.ecl_slot_anm && slot >= 0 && slot < StageEnemy::kAnimationSlots) {
-            // case3 slot0 附加（0x41b260 case3 尾，param_1=enemy 基址）：
-            //   enemy+0x100c |= 0x200000（镜像门）。朝向判定读 inner+0x78
-            //   （速度），生成首拍 mover 速度 0 → dir 0（+0x270 已在上面复位）。
             if (op == 306 && slot == 0) e.flags |= 0x200000u;
             sim.anm_effects.push_back({e.anm_file, script, 0, 0, 0, 1, u16(op), slot, e.serial});
             if (!flush_anm_slots()) return -2;
@@ -143,7 +123,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 317: {  //41b9e7 ->46fc30: deferred interrupt, label narrowed to signed16.
+    case 317: {
         i32 slot = 0, label = 0;
         if (!resolve_int(c, 0, slot) || !resolve_int(c, 1, label)) {
             sim.error_ = c.error;
@@ -160,7 +140,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 318: {  // 41b897: restore slot0 from saved26c, clear automatic turning.
+    case 318: {
         e.flags &= ~0x200000u;
         e.mirror_dir = 0;
         e.anm_script[0] = e.anm_base_script;
@@ -170,14 +150,11 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 307:                                // anmAt（case4：file=arg0、script=arg1、位置=敌机 xyz、主池头入链）
-    case 308: {                              // anmVm（case5 → 0x4243e0：同上但位置清零 0x4243e0:22-24）
-        if (sim.anm_effects_noop) return 0;  // 事件契约：stage1 oracle NOOP 同源
+    case 307:
+    case 308: {
+        if (sim.anm_effects_noop) return 0;
         i32 file = 0, script = 0;
         if (!resolve_int(c, 0, file) || !resolve_int(c, 1, script)) return -2;
-        // 0x41b510 case4/5 在指令处内联调 0x4243e0（模板拷贝→立即 tick），
-        // round-s15 实证帧序为敌机 ECL 相位内创建（见 StageSim.hpp
-        // ecl_effect_create 注释）；有宿主即同步创建，无宿主保持入队。
         if (sim.ecl_effect_create) {
             const float x = op == 308 ? 0 : e.position[0];
             const float y = op == 308 ? 0 : e.position[1];
@@ -189,18 +166,9 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.anm_effects.push_back({file, script, e.position[0], e.position[1], e.position[2]});
         return 0;
     }
-    case 313:    // anmFlip（case7 @ 0x41b903）：槽 VM 重挂 script_base+5
-    case 316: {  // anmFlipDelta（case0xa @ 0x41b98f）：script_base+arg1+5
-        // 原版不读脚本参数：arg0 = slot（316 另 arg1 = delta），脚本号 =
-        // 敌机+0x26c（case3/306 slot0 记录的挂接脚本，port 代理
-        // e.anm_base_script）+5（316 再 +delta），文件 = 302 选定的 +0x260。
-        // 两 case 汇入 0x41b93c 共享尾（与 306 同构）：0x470110 回收旧槽 VM
-        // → 0x4243e0 模板拷贝+立即 tick+0x46f4a0 主池头插 → 句柄写回敌机
-        // +0x120 槽数组 → slot0 刷新 +0x3f30/0x3f34 尺寸（(vm+0x84)×(vm+0x64)
-        // /(vm+0x80)×(vm+0x60)）；层 = [+0x278]+7。不动 0x200000 镜像门与
-        // +0x264..0x270（仅 306 写 / 318 清）。st01 MBoss2 与 st01bs Boss/
-        // Boss1/Boss2/BossCard1-4 全部经此翻转敌机槽 0 演出 VM。
-        if (sim.anm_effects_noop) return 0;  // 事件契约：headless oracle NOOP 同源
+    case 313:
+    case 316: {
+        if (sim.anm_effects_noop) return 0;
         i32 slot = 0;
         if (!resolve_int(c, 0, slot)) {
             sim.error_ = c.error.empty() ? "anmFlip slot" : c.error;
@@ -212,20 +180,18 @@ int StageCommands::execute(EclContext& c, u16 op) {
             return -2;
         }
         if (sim.ecl_slot_anm && slot >= 0 && slot < StageEnemy::kAnimationSlots) {
-            // +0x26c retains306's base even when303 replaces the live slot.
             const i32 base = e.anm_base_script;
             sim.anm_effects.push_back({e.anm_file, base + delta + 5, 0, 0, 0, 1, u16(op), slot, e.serial});
             if (!flush_anm_slots()) return -2;
         }
         return 0;
     }
-    case 334: {  // 41b7ac ->415650(null,kind), global scene-effect table.
+    case 334: {
         i32 kind = 0;
         if (!resolve_int(c, 0, kind)) {
             sim.error_ = c.error;
             return -2;
         }
-        // 41b7ac: push edi+0x44（敌机 VM+0x44 主位置）→415650 [ebp+0x10]=init 401000 位置。
         const Vec3 position{e.position[0], e.position[1], e.position[2]};
         if (!sim.scene_effect || !sim.scene_effect(kind, position)) {
             sim.error_ = "Scene effect " + std::to_string(kind) + " unavailable";
@@ -244,7 +210,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 332:
     case 333:
     case 335: {
-        // 41ffb0: resolve the live animation before any mutation arguments.
         i32 slot = 0;
         if (!resolve_int(c, 0, slot)) {
             sim.error_ = c.error;
@@ -257,7 +222,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         if (!sim.enemy_animation) return 0;
         AnmVm* vm = sim.enemy_animation(e, slot);
         if (!sim.error_.empty()) return -2;
-        if (!vm) return 0;  // retail skips all remaining argument side effects
+        if (!vm) return 0;
         const auto integer = [&](u32 n) {
             i32 v = 0;
             resolve_int(c, n, v);
@@ -292,8 +257,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
             const i32 mode = integer(2), duration = integer(1);
             vm->interpolators.scale.begin(duration, mode, {vm->visual.scale.x, vm->visual.scale.y}, {x, y});
         } else if (op == 333) {
-            // 4202a7: Y,X,slot again,mode,duration. The cached destination
-            // VM interpolates from the freshly resolved source's574 XYZ.
             const float y = real(4), x = real(3);
             const i32 source_slot = integer(0);
             if (!c.error.empty()) {
@@ -319,7 +282,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         } else if (op == 325) {
             const u32 b = u8(integer(3)), g = u8(integer(2)), r = u8(integer(1));
             vm->visual.color = (vm->visual.color & 0xff000000u) | b | g << 8 | r << 16;
-        } else {  // 326 -> 4240c0
+        } else {
             const i32 r = u8(integer(3)), g = u8(integer(4)), b = u8(integer(5));
             const i32 mode = integer(2), duration = integer(1);
             const u32 color = vm->visual.color;
@@ -335,7 +298,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 553: {  // 41b364: hit voice override at inner+3fc8
+    case 553: {
         if (!resolve_int(c, 0, e.hit_sound)) {
             sim.error_ = c.error;
             return -2;
@@ -349,11 +312,10 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
 
-    // ---------- 400 族：运动 ----------
     case 400:
     case 402: {
         const u32 integral[2] = {0, 0};
-        StageMover& m = op == 400 ? e.vel : e.pos;  // 0x41bb0d：400 → vel 子位置，402 → pos
+        StageMover& m = op == 400 ? e.vel : e.pos;
         float x = 0, y = 0;
         if (!resolve_float(c, 0, x) || !resolve_float(c, 1, y)) {
             sim.error_ = c.error;
@@ -394,13 +356,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
             m.postime.duration = 0;
             return 0;
         }
-        // 41bb..: positive duration is read a second time, before mode.
         if (!resolve_int(c, 0, dur) || !resolve_int(c, 1, mode)) {
             sim.error_ = c.error;
             return -2;
         }
         emit_move(integral, {float(dur), float(mode), x, y});
-        if (mode == 7 || mode == 17) {  // 模式 8 归 moveBezier（425）路径
+        if (mode == 7 || mode == 17) {
             sim.error_ = "movePosTime interpolation mode not implemented";
             return -2;
         }
@@ -421,14 +382,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 428:
     case 430: {
         const u32 integral[2] = {0, 0};
-        StageMover& m = (op == 404 || op == 428) ? e.vel : e.pos;  // 0x41c137
+        StageMover& m = (op == 404 || op == 428) ? e.vel : e.pos;
         float angle = 0, speed = 0;
         if (!resolve_float(c, 0, angle) || !resolve_float(c, 1, speed)) {
             sim.error_ = c.error;
             return -2;
         }
-        // Record the operands actually consumed above. Reading RANDRAD
-        // again for tracing advances game RNG and changes BossDead motion.
         const float values[2] = {angle, speed};
         sim.sink.enemy_move(e.serial, op, integral, values, 2);
         if (kKeep < angle) {
@@ -444,7 +403,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 429:
     case 431: {
         const u32 integral[4] = {1, 1, 0, 0};
-        StageMover& m = (op == 405 || op == 429) ? e.vel : e.pos;  // 0x41c21f
+        StageMover& m = (op == 405 || op == 429) ? e.vel : e.pos;
         i32 dur = 0, mode = 0;
         float angle = 0, speed = 0;
         if (!resolve_float(c, 2, angle) || !resolve_float(c, 3, speed) || !resolve_int(c, 0, dur)) {
@@ -469,18 +428,17 @@ int StageCommands::execute(EclContext& c, u16 op) {
         float to_a = kKeep < angle ? angle : m.angle;
         const float to_b = kKeep < speed ? speed : m.speed;
         shortest_arc(from_a, to_a);
-        // 41c21f rereads duration after resolving the target/mode.
         if (!resolve_int(c, 0, dur)) {
             sim.error_ = c.error;
             return -2;
         }
         emit_move(integral, {float(dur), float(mode), trace_angle, speed});
         m.polar.setup(float(dur), mode, from_a, from_b, to_a, to_b);
-        m.mode &= 0xFFFFFFF2u;  // 清插值挂接标志（保持其余位）
+        m.mode &= 0xFFFFFFF2u;
         return 0;
     }
     case 408:
-    case 410: {  // moveCircle（0x41c471）
+    case 410: {
         const u32 integral[4] = {0, 0, 0, 0};
         StageMover& m = (op == 408) ? e.vel : e.pos;
         float a0 = 0, a1 = 0, a2 = 0, a3 = 0;
@@ -500,9 +458,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
         if (kKeep < a2) m.radius = a2;
         if (kKeep < a3) m.growth = a3;
         m.mode = (m.mode & 0xFFFFFFF2u) | 2u;
-        // 0x41c56b→0x473a10：mode4 时 pos[3..5]=pos[0..2]，随即 0x473780
-        // 累加一次（mode2 子位置 = 圆心 + polar(angle, radius) + 量化）；
-        // 0x41c572→0x419950：主位置立即同步（指令内生效，不等下帧积分）。
         {
             float ox = 0, oy = 0;
             polar_xy(m.angle, m.radius, ox, oy);
@@ -522,7 +477,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 420:
-    case 422: {  // 41c80c, case 0x1e: absolute/relative ellipse movers
+    case 422: {
         const u32 integral[6] = {};
         StageMover& m = op == 420 ? e.vel : e.pos;
         float args[6] = {};
@@ -533,7 +488,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
             }
         }
         emit_move(integral, {args[0], args[1], args[2], args[3], args[4], args[5]});
-        // Retail tests mode == 2, even when replacing an existing ellipse.
         if ((m.mode & 15) != 2)
             for (u32 n = 0; n < 3; ++n)
                 m.aux[n] = m.pos[n];
@@ -544,7 +498,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         if (kKeep < args[4]) m.ellipse_angle = wrap_angle(wrap_angle(args[4]));
         if (kKeep < args[5]) m.ellipse_ratio = args[5];
         m.mode = (m.mode & 0xfffffff3u) | 3u;
-        m.accumulate();  // 473a10 does not advance angle/radius
+        m.accumulate();
         for (u32 n = 0; n < 3; ++n) {
             const float delta = (e.vel.pos[n] + e.pos.pos[n]) - e.position[n];
             e.motion_delta[n] = delta;
@@ -555,10 +509,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 409:
-    case 411: {  // 41c57c: simultaneous angular-speed and radius/growth interpolation
-        // Both channels capture their current values; keep sentinels preserve
-        // the target. Radius is overwritten by its channel before radial
-        // velocity is added each tick, rather than accumulating that velocity.
+    case 411: {
         const u32 integral[5] = {1, 1, 0, 0, 0};
         StageMover& m = (op == 409) ? e.vel : e.pos;
         i32 dur = 0, mode = 0;
@@ -572,15 +523,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
         if (dur < 1) {
             m.polar.duration = 0;
             m.radial.duration = 0;
-            return 0;  // 41c6b9 exits before changing circle mode/position
+            return 0;
         } else {
             if (mode == 7 || mode == 8 || mode == 17) {
                 sim.error_ = "moveCircleTime interpolation mode not implemented";
                 return -2;
             }
-            // 0x41c627 fldz：角维 from=to=0.0（恒零）——0x425 尾清 mover mode 后
-            // 0x419450 每帧把插值角维（0）写回 vel.angle（实测 MBoss 归零）。
-            // speed 维 from=当前值，to=参数 2。
             const float from_b = m.speed;
             const float to_b = kKeep < speed_to ? speed_to : m.speed;
             m.polar.setup(float(dur), mode, 0.0f, from_b, 0.0f, to_b);
@@ -590,7 +538,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         m.radial.begin(dur, mode, {m.radius, m.growth},
                        {kKeep < radius ? radius : m.radius, kKeep < growth ? growth : m.growth});
         m.mode = (m.mode & 0xFFFFFFF2u) | 2u;
-        m.accumulate();  // 41c780 ->473a10 ->419950, without timer advance
+        m.accumulate();
         for (u32 n = 0; n < 3; ++n) {
             const float delta = (e.vel.pos[n] + e.pos.pos[n]) - e.position[n];
             e.motion_delta[n] = delta;
@@ -601,7 +549,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 432:
-    case 433: {  // moveEnm（0x41cd0c/0x41cd1f）：子位置 = 目标敌主位置
+    case 433: {
         const u32 integral[1] = {1};
         i32 id = 0;
         if (!resolve_int(c, 0, id)) {
@@ -612,8 +560,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
         StageEnemy* target = sim.find_by_script_id(id);
         StageMover& m = (op == 432) ? e.vel : e.pos;
         if (!target) {
-            // 0x417f40 id 0/未命中链尾：id 0 返回 null 后 0x41ccb1/0x41cce3
-            // 仍解引用（[0x1230..]——oracle bump 零页读 0），子位置清零。
             m.pos[0] = 0.0f;
             m.pos[1] = 0.0f;
             m.pos[2] = 0.0f;
@@ -624,7 +570,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         m.pos[2] = target->position[2];
         return 0;
     }
-    case 424: {  // moveSetMirror（0x41b30c）：bit20 = arg&1
+    case 424: {
         i32 value = 0;
         if (!resolve_int(c, 0, value)) {
             sim.error_ = c.error;
@@ -633,7 +579,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.flags = (e.flags & ~0x100000u) | ((u32(value) << 20) & 0x100000u);
         return 0;
     }
-    case 425: {  // moveBezier（0x41bfb1 → 0x422f80 模式 8）
+    case 425: {
         const u32 integral[7] = {1, 0, 0, 0, 0, 0, 0};
         StageMover& m = e.vel;
         i32 dur = 0;
@@ -668,19 +614,10 @@ int StageCommands::execute(EclContext& c, u16 op) {
         m.postime.p2[2] = 0.0f;
         return 0;
     }
-    case 412: {  // moveRand（0x41cdc2）：按象限选随机角后走 moveVelTime 同款挂接
+    case 412: {
         const u32 integral[3] = {1, 1, 0};
         i32 dur = 0, mode = 0;
         float speed = 0;
-        // 0x41cdc2 逐块反汇编（fcompp 弹栈重序后的语义）：
-        //   左缘 x<cx−q：向右 1/3 扇 angle=f32(f32(uπ)/3)；
-        //   右缘 x>cx+q：向左 wrap(f32(π+f32(uπ)/3))；
-        //   中带含边界：uπ×1/4，x<px 时 r16%3==0 加 π，否则 r16%3!=0 加 π。
-        //   Y 翻转：y<cy−q 取 +|a|（向下），y>cy+q 取 −|a|（向上），边界不变。
-        //   近垂直：|a+π/2|<0.05 → a≥−π/2?−1.5207964:−1.6207963；
-        //           |a−π/2|<0.05 → a>π/2?1.6207963:1.5207964（严格大于）。
-        //   尾块（0x41d01c）：from=(angle, speed) → to=(angle, 0)——随机角直冲
-        //   减速到停；mover 模式低 4 位清 0（0x41d0b9 and 0xF0，非 405 的 0xF2）。
         const float pi = 3.1415927410125732f;
         const float qx = e.limit_half[0] * 0.25f;
         const float qy = e.limit_half[1] * 0.25f;
@@ -701,16 +638,15 @@ int StageCommands::execute(EclContext& c, u16 op) {
             angle = (left_of_player ? third : !third) ? float(quarter + pi) : quarter;
         }
         if (e.position[1] < cy - qy) {
-            angle = angle < 0 ? -angle : angle;  // 顶带：+|a|（向下）
+            angle = angle < 0 ? -angle : angle;
         } else if (e.position[1] > cy + qy) {
-            angle = angle < 0 ? angle : -angle;  // 底带：−|a|（向上）
+            angle = angle < 0 ? angle : -angle;
         }
         if (std::fabs(angle + 1.5707964f) < 0.05f) {
             angle = angle >= -1.5707964f ? -1.5207964f : -1.6207963f;
         } else if (std::fabs(angle - 1.5707964f) < 0.05f) {
             angle = angle > 1.5707964f ? 1.6207963f : 1.5207964f;
         }
-        // 41cdc2 draws the direction before reading mode/speed/duration.
         if (!resolve_int(c, 1, mode) || !resolve_float(c, 2, speed) || !resolve_int(c, 0, dur)) {
             sim.error_ = c.error;
             return -2;
@@ -734,7 +670,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 436:
     case 437:
     case 438:
-    case 439: {  // 41bdf4: independent X/Y position interpolation
+    case 439: {
         const bool separate = op != 436 && op != 437;
         const u32 integral[5] = {1, 1, u32(separate), 0, 0};
         StageMover& m = (op & 1) ? e.pos : e.vel;
@@ -754,7 +690,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
             x = (e.flags & 0x100000u) ? m.pos[0] - x : m.pos[0] + x;
             y = m.pos[1] + y;
         }
-        // Native resolves duration a second time after applying offsets.
         if (!resolve_int(c, 0, duration) || !resolve_int(c, 1, mx) || (separate && !resolve_int(c, 2, my))) {
             sim.error_ = c.error;
             return -2;
@@ -781,30 +716,22 @@ int StageCommands::execute(EclContext& c, u16 op) {
         m.mode &= 0xfffffff0u;
         return 0;
     }
-    case 427: {  // moveReset（0x41ba18）：折叠子位置、清速度/累积/插值挂接；角度与半径保持
-        // 0x41ba18 反汇编（op427 经 0x41f9d8[127]=34 → 0x41f760[34] 分派）：
-        //   vel.pos += pos.pos（41ba18-41ba48），pos.pos 清零（41ba56/41ba61/41ba79），
-        //   vel/pos 速度清零（41ba73/41ba6d），aux 清零（41ba7f-41bac4），
-        //   mode 仅清低 4 位（41baca/41bad0 and 0xfffffff0）。
-        // 角度（0xa4/0xe8）、半径/成长（0xa8/0xac、0xec/0xf0）、椭圆字段与
-        // 0x524/0x568（端口未建模）之外的 mover 状态不被触碰——f11261
-        // BossMiyakoCard2_move 的 moveVelTime 起始角即依赖保留的 vel.angle。
+    case 427: {
         for (int i = 0; i < 3; ++i) {
-            e.vel.pos[i] = e.vel.pos[i] + e.pos.pos[i];  // 41ba18: fadds 0x88/0xcc
+            e.vel.pos[i] = e.vel.pos[i] + e.pos.pos[i];
             e.pos.pos[i] = 0;
         }
         for (StageMover* m : {&e.vel, &e.pos}) {
-            m->speed = 0;                           // 41ba73/41ba6d
-            m->aux[0] = m->aux[1] = m->aux[2] = 0;  // 41ba7f-41bac4
-            m->mode &= 0xFFFFFFF0u;                 // 41baca/41bad0
-            m->polar.duration = 0;                  // 41bae4/41baea（0x3fc/0x44c）
-            m->postime.duration = 0;                // 41bad8/41bade（0x340/0x3a8）
-            m->radial.duration = 0;                 // 41baf0/41baf6（0x49c/0x4e0）
+            m->speed = 0;
+            m->aux[0] = m->aux[1] = m->aux[2] = 0;
+            m->mode &= 0xFFFFFFF0u;
+            m->polar.duration = 0;
+            m->postime.duration = 0;
+            m->radial.duration = 0;
         }
         return 0;
     }
 
-    // ---------- 500 族：属性/关卡事件 ----------
     case 500: {
         float w = 0, h = 0;
         if (resolve_float(c, 0, w) && resolve_float(c, 1, h)) {
@@ -815,7 +742,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.error_ = c.error;
         return -2;
     }
-    case 501: {  // setHitbox：写入本体碰撞尺寸 +0x118/+0x11c（0x41d203）
+    case 501: {
         float w = 0, h = 0;
         if (resolve_float(c, 0, w) && resolve_float(c, 1, h)) {
             e.hitbox[0] = w;
@@ -825,7 +752,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.error_ = c.error;
         return -2;
     }
-    case 502: {  // flagSet：flags |= arg（0x41d231）
+    case 502: {
         i32 mask = 0;
         if (!resolve_int(c, 0, mask)) {
             sim.error_ = c.error;
@@ -843,7 +770,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.flags &= ~u32(mask);
         return 0;
     }
-    case 504: {  // moveLimit（0x41cd32）
+    case 504: {
         float cx = 0, cy = 0, w = 0, h = 0;
         if (resolve_float(c, 0, cx) && resolve_float(c, 1, cy) && resolve_float(c, 2, w) && resolve_float(c, 3, h)) {
             e.flags |= 0x40000u;
@@ -859,13 +786,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 505:
         e.flags &= ~0x40000u;
         return 0;
-    case 506: {  // dropClear（0x41b260 case 0x2c：memset +0x3F6C, 0x3c）
+    case 506: {
         for (i32& slot2 : e.drop_extra)
             slot2 = 0;
-        // 15 dwords end at +3fa7; main is +3f68, area starts +3fa8.
         return 0;
     }
-    case 507: {  // dropExtra（case 0x2d：drop[id] = count，id 0 = 主道具槽）
+    case 507: {
         i32 id = 0, count = 0;
         if (!resolve_int(c, 0, id) || !resolve_int(c, 1, count)) {
             sim.error_ = c.error;
@@ -881,7 +807,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 508: {  // dropArea（case 0x2e：散布幅度 x/y → 0xFEA/0xFEB）
+    case 508: {
         float x = 0, y = 0;
         if (!resolve_float(c, 0, x) || !resolve_float(c, 1, y)) {
             sim.error_ = c.error;
@@ -891,10 +817,10 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.drop_area[1] = y;
         return 0;
     }
-    case 509:  // dropItems（case 0x2f：(mode & 0x30) != 0x20 → 按表掉落）
+    case 509:
         if ((sim.mode_flags & 0x30u) != 0x20u) sim.drop_table(e);
         return 0;
-    case 510: {  // dropMain（case 0x30：主道具 kind → 0xFDA）
+    case 510: {
         i32 kind = 0;
         if (!resolve_int(c, 0, kind)) {
             sim.error_ = c.error;
@@ -903,7 +829,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.drop_main = kind;
         return 0;
     }
-    case 511: {  // lifeSet（0x41d34c：整型解析，×3 槽 + 0x3f58=7×life）
+    case 511: {
         i32 life = 0;
         if (resolve_int(c, 0, life)) {
             e.life = float(life);
@@ -918,7 +844,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.error_ = c.error;
         return -2;
     }
-    case 512: {  // setBoss（0x41d395）：slot = arg0，负参撤销自身槽
+    case 512: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot)) {
             sim.error_ = c.error;
@@ -927,7 +853,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.boss_leaving = false;
         if (slot >= 0 && slot < 3) {
             sim.boss_slot[slot] = e.script_id;
-            e.flags |= 0x1000000u;  // 0x41d3d8：BOSS 位（525 清场豁免）
+            e.flags |= 0x1000000u;
         } else {
             for (i32& entry : sim.boss_slot)
                 if (entry == e.script_id) entry = -1;
@@ -939,11 +865,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 552: {  // 0x41b34f（case 0x56，eclmap 名 zIndex）：敌机内嵌 VM+0x278
-        // （=敌机结构+0x1464）= arg0——敌机族 ANM 创建层基。两消费点
-        // 0x41fe80:0x41ff24（槽位 VM）与 0x419450:0x419764（镜像重挂 VM）
-        // 均以 [+0x278]+7 建层。构造默认 1（0x419195，Unicorn 写 watch
-        // 实证），本指令为覆盖（窗口 st01 未用——st05bs 父子敌机有用例）。
+    case 552: {
         i32 value = 0;
         if (!resolve_int(c, 0, value)) {
             sim.error_ = c.error;
@@ -952,13 +874,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.mirror_script_base = value;
         return 0;
     }
-    case 558: {  // 0x41e451：bit20 = value&1（shl/xor/and/xor 序列，0 清位 1 置位）
-        // 原版序列：eax=value<<20; eax^=flags(+0x4030); eax&=0x100000;
-        // flags^=eax。展开后 bit20_new = bit20_old ^ ((v<<20)^flags)&bit
-        // —— v 奇数置位、偶数清位（不是异或翻转：v=0 必须清位，MainSub02
-        // 2925 帧的 op558(0) 依赖此语义，残留镜像位会使后续 root 相对
-        // enmCreate 的 x 全部取反——stage2 f3265 GirlC01 对调、f3515 GirlA02
-        // 镜像、f3532 得分首差的实证链）。
+    case 558: {
         i32 value = 0;
         if (!resolve_int(c, 0, value)) {
             sim.error_ = c.error;
@@ -968,10 +884,9 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 513:
-        // Boss 第一非符锚点（§7.3）：MainBoss 创建的 "Boss" 敌机首条 513。
         if (e.serial == sim.boss_main_serial && sim.boss_nonspell_frame < 0) sim.boss_nonspell_frame = i32(sim.frame);
         if (sim.replay_events) sim.sink.boss_op(e.serial, 513, nullptr, 0, "");
-        e.age = 0;  // 0041e570: reset the enemy phase timer, not invulnerability.
+        e.age = 0;
         return 0;
     case 515:
     case 541: {
@@ -993,8 +908,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     case 528:
     case 537:
     case 538:
-    case 539: {  // 0x41e4xx spell family: ids vary with the selected difficulty
-        // pfVar11[7] = byte length; encrypted bytes begin at instruction+32.
+    case 539: {
         const u32 length = ins->argument<u32>(3);
         if (ins->length < 32 || length > u32(ins->length - 32)) {
             sim.error_ = "spell name outside ECL instruction";
@@ -1010,17 +924,15 @@ int StageCommands::execute(EclContext& c, u16 op) {
             key = u8(key + increment);
             increment = u8(increment + 0x10);
         }
-        // 0041e473 resolves id, arg2, then duration; preserve RNG argument order.
         i32 id = 0, duration = 0, bonus = 0;
         if (!resolve_int(c, 0, id) || !resolve_int(c, 2, bonus) || !resolve_int(c, 1, duration)) {
             sim.error_ = c.error;
             return -2;
         }
-        // 522/528 retain their id; 537/538/539 add rank, rank-1, rank-2.
         e.spell_id = id + (op >= 537 ? sim.diff - (op - 537) : 0);
         e.spell_active = true;
         e.spell_life = i32(e.life) * 7;
-        e.age = 0;  // shared caseD_33 tail: 004016c0(0) on the phase timer
+        e.age = 0;
         if (!sim.emit_spell(sim.spell.begin(e.spell_id, e.spell_name, duration, sim.session ? sim.session->stage : 1,
                                             sim.diff, sim.bomb_active),
                             e)) {
@@ -1035,14 +947,14 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.spell_id = -1;
         e.spell_name.clear();
         return 0;
-    case 323: {  // 41b40c: death effect ANIM file then script
+    case 323: {
         if (!resolve_int(c, 0, e.death_effect_file) || !resolve_int(c, 1, e.death_effect)) {
             sim.error_ = c.error;
             return -2;
         }
         return 0;
     }
-    case 516: {  // 41e382: synchronous sound effect
+    case 516: {
         i32 id = 0;
         if (!resolve_int(c, 0, id)) {
             sim.error_ = c.error;
@@ -1054,7 +966,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 547: {  // 41f242: resolve float then fstp to global4c0a28, no clamp.
+    case 547: {
         float rate = 0;
         if (!resolve_float(c, 0, rate)) {
             sim.error_ = c.error;
@@ -1063,7 +975,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.set_time_rate(rate);
         return 0;
     }
-    case 517: {  // 41e3a3 ->45fa60(kind1, duration, start, end, 0), Update75
+    case 517: {
         i32 duration = 0, start = 0, end = 0;
         if (!resolve_int(c, 2, end) || !resolve_int(c, 1, start) || !resolve_int(c, 0, duration)) {
             sim.error_ = c.error;
@@ -1075,7 +987,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 557: {  // 0041f40b ->004099a0/00405f00; far is evaluated before near.
+    case 557: {
         i32 duration = 0, mode = 0, color = 0;
         float near_distance = 0, far_distance = 0;
         if (!resolve_int(c, 0, duration) || !resolve_int(c, 1, mode) || !resolve_int(c, 2, color) ||
@@ -1088,8 +1000,8 @@ int StageCommands::execute(EclContext& c, u16 op) {
     }
     case 559:
     case 638:
-        return 0;  // 计时/音效/符卡/掉落等：无事件
-    case 524: {    // 424310: write be824; reset be82c only when chapter changes.
+        return 0;
+    case 524: {
         i32 chapter = 0;
         if (!resolve_int(c, 0, chapter)) {
             sim.error_ = c.error;
@@ -1101,7 +1013,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 527: {  // 41d0c2: read color, HP, index; divide by initial life (+3f50).
+    case 527: {
         i32 color = 0, index = 0;
         float life = 0;
         if (!resolve_int(c, 2, color) || !resolve_float(c, 1, life) || !resolve_int(c, 0, index)) {
@@ -1123,14 +1035,14 @@ int StageCommands::execute(EclContext& c, u16 op) {
         marker.ratio = life / float(e.spell_base_life);
         return 0;
     }
-    case 540: {  // 41f1ba: stage context+15c, independent of circular HP markers.
+    case 540: {
         if (!resolve_int(c, 0, sim.boss_remaining_stars)) {
             sim.error_ = c.error;
             return -2;
         }
         return 0;
     }
-    case 526: {  // 41cdab: square in x87 and store enemy+4044.
+    case 526: {
         float radius = 0;
         if (!resolve_float(c, 0, radius)) {
             sim.error_ = c.error;
@@ -1139,7 +1051,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.bullet_protect_radius2 = float(double(radius) * double(radius));
         return 0;
     }
-    case 560: {  // 41f6ea: global bullet reflection width/height, not an effect.
+    case 560: {
         float width = 0, height = 0;
         if (!resolve_float(c, 0, width) || !resolve_float(c, 1, height)) {
             sim.error_ = c.error;
@@ -1149,10 +1061,10 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.bullet_bounce_size[1] = height;
         return 0;
     }
-    case 545:  // 0041f1d4 -> 430220: clear protection then cancel all lasers.
+    case 545:
         sim.cancel_lasers();
         return sim.error_.empty() ? 0 : -2;
-    case 556: {  // 41e360 stores the inline string, consumed by41aad0
+    case 556: {
         const u32 length = u32(ins->argument<i32>(0));
         if (ins->length < 20 || length > u32(ins->length - 20)) {
             sim.error_ = "setDeath string";
@@ -1162,22 +1074,19 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.death_routine.assign(name, strnlen(name, length));
         return 0;
     }
-    case 542:  // 0041e593: survival card, no decay/timeout failure
+    case 542:
         sim.spell.set_survival();
         return 0;
-    case 543:  // 0041e5a1 -> 00418160: background visibility flag
+    case 543:
         sim.spell.hide_background();
         return 0;
-    case 514: {  // setInterrupt（0x41e262 → 0x421880）：{id,life,time,label}
+    case 514: {
         const bool spell_route = (sim.mode_flags & 0x30u) == 0x20u && (e.flags & 0x1000000u);
         i32 id = 0, t1 = 0, t2 = 0;
-        // Original reads timeout, optional HP, then slot. Spell Practice does
-        // not evaluate the ignored HP argument (which can consume RNG).
         if (!resolve_int(c, 2, t2) || (!spell_route && !resolve_int(c, 1, t1)) || !resolve_int(c, 0, id)) {
             sim.error_ = c.error;
             return -2;
         }
-        // 名字参数（arg3 起的 {len, name} 尾串——指令名区原样）
         std::string name;
         const EclInstruction* i = c.instruction;
         if (spell_route) {
@@ -1187,12 +1096,8 @@ int StageCommands::execute(EclContext& c, u16 op) {
             const char* bytes = reinterpret_cast<const char*>(i) + 16 + 4 * 4;
             name.assign(bytes, strnlen(bytes, length ? length - 1 : 0));
         }
-        // 0x41e31c writes the HP threshold; 0x421880 installs the timeout
-        // and BOTH labels only for nonnegative thresholds.
         if (id >= 0 && id < 8) {
             auto& slot = e.interrupts[u32(id)];
-            // 0041e262: Spell Practice boss interrupts leave the selected card
-            // via BossDead/BossEscape instead of progressing to the next phase.
             if (spell_route) {
                 slot.life = 0;
                 slot.timeout = t2;
@@ -1207,10 +1112,8 @@ int StageCommands::execute(EclContext& c, u16 op) {
                 }
             }
         }
-        if (id == 0) e.interrupt_label = name;  // 525 中断跳转用（id 0）
+        if (id == 0) e.interrupt_label = name;
         if (spell_route) {
-            // 0041e2cd evaluates slot arg0 again for the timeout override.
-            // A referenced slot can consume RNG or address another slot.
             i32 timeout_slot = 0;
             if (!resolve_int(c, 0, timeout_slot)) {
                 sim.error_ = c.error;
@@ -1224,7 +1127,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 521: {  // timeout override（0x41e33f：写 vm+0x5240+id*16）
+    case 521: {
         i32 id = 0;
         if (!resolve_int(c, 0, id)) {
             sim.error_ = c.error;
@@ -1244,39 +1147,26 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 518: {  // dialogRead（0x41e3da → 0x428820(param)）：清场尾块与 525
-        // 共享（0x41ac70 门控销毁，oracle RNG 对拍实证）；param>=0 另建对话
-        // 对象（0x428820 else 分支，挂 stage ctx+0x198）——交互模式经
-        // dialog_host 注入 MsgPlayer，无头契约路径不注入（行为不变）。
+    case 518: {
         i32 entry = 0;
         if (!resolve_int(c, 0, entry)) {
             sim.error_ = c.error;
             return -2;
         }
         if (sim.dialog_host) sim.dialog_host->open_dialog(entry);
-        // 41e3ef/41e3f8: dialogue and music-only entries both cancel
-        // bullets and lasers before the shared enemy-retirement tail.
         sim.clear_bullets();
         sim.cancel_lasers(false);
         if (!sim.error_.empty()) return -2;
     }
-        // fallthrough：共享 525 的清场尾块
         [[fallthrough]];
-    case 525: {  // enmKillAll（0x41e3fd → 0x41ac70）
-        // 0x41ac70：flags 门控销毁——(bit5/7 全清 且 bit 0x400/0x800000/0x1000000
-        // 全清) 或 bit8 置位。命中者当场走 0x41aad0（0x417b10 开头抽 1 次
-        // signed_unit；合成 ANM 态槽弹数为 0，无每弹消耗）并标 0x4000000，
-        // 摘除由 0x418e00 遍历完成（无 RNG）。main/MapleEnemy/EtBreak 的
-        // ins_502(32)（bit5）豁免清场；BOSS 位（0x1000000，512 setBoss）豁免。
+    case 525: {
         return sim.clear_enemies() ? 0 : -2;
     }
     case 519:
-        // 41e407: no dialogue OR 418090(dialogue+174) != 0 passes. MSG12
-        // sets that pulse; the next stage update sees it before MSG decrements.
         return sim.dialog_host ? (sim.dialog_host->dialog_wait_released() ? 0 : 1) : sim.boss_dialog_wait();
-    case 520:  // bossWait（0x41e42e）：任一 BOSS 槽存活则让出
+    case 520:
         return sim.boss() ? 1 : 0;
-    case 535: {  // diffI（0x41d439）：dest = args[1 + DIFF]
+    case 535: {
         i32 value = 0;
         if (!resolve_int(c, 1 + sim.diff, value)) {
             sim.error_ = c.error;
@@ -1304,7 +1194,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         *dest = value;
         return 0;
     }
-    case 548: {  // diffWait（0x41f2c4）：time -= args[DIFF]（0..3 四难度，无 dest）
+    case 548: {
         i32 frames = 0;
         if (!resolve_int(c, sim.diff, frames)) {
             sim.error_ = c.error;
@@ -1313,7 +1203,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         c.time -= float(frames);
         return 0;
     }
-    case 555: {  // enmAlive（0x41f4f3）
+    case 555: {
         i32 id = 0;
         if (!resolve_int(c, 1, id)) {
             sim.error_ = c.error;
@@ -1324,9 +1214,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.error_ = c.error.empty() ? "enmAlive destination" : c.error;
             return -2;
         }
-        // 41f501 calls417f10 (exact existence), not417f40 (lookup whose
-        // missing-id result is the last visited node). Phantom01_at0 uses
-        // this to leave when its spawning enemy disappears.
         *dest = 0;
         for (const auto& enemy : sim.enemies)
             if (id && enemy->script_id == id) {
@@ -1335,17 +1222,16 @@ int StageCommands::execute(EclContext& c, u16 op) {
             }
         return 0;
     }
-    case 562: {  // jump-table dense60 ->41d325: forced drops, unlike509's mode gate
+    case 562: {
         sim.drop_table(e);
         return 0;
     }
-    case 561: {  // jump-table dense5f ->41b437: death audiovisual effects only
+    case 561: {
         if (e.death_sound >= 0 && sim.enemy_position_sound && !sim.enemy_position_sound(e.death_sound, e.position[0])) {
             sim.error_ = "Enemy death sound failed";
             return -2;
         }
         if (e.death_effect >= 0 && sim.enemy_death_effect) {
-            // 0x41aad0：参考点 = 最近一次玩家判定命中中心（enemy+0x27C/0x280）。
             const double dx = double(e.position[0]) - double(e.last_hit_position[0]);
             const double dy = double(e.position[1]) - double(e.last_hit_position[1]);
             const float distance = float(dx * dx + dy * dy);
@@ -1359,8 +1245,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
 
-    // ---------- 600 族：弹幕发射器 ----------
-    case 600: {  // etNew（0x41d573）
+    case 600: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = "etNew slot";
@@ -1369,7 +1254,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.et[slot].reset();
         return 0;
     }
-    case 601:  // etOn（0x41d6b1 → 0x40ffe0 → 0x40e840）
+    case 601:
         return fire_et(c, e);
     case 602: {
         i32 slot = 0, s1 = 0, s2 = 0;
@@ -1434,7 +1319,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.error_ = "etAim args";
         return -2;
     }
-    case 608: {  // 0041b260 case0x69: preserve sound IDs for laser descriptors.
+    case 608: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8 || !resolve_int(c, 1, e.et[slot].sound) ||
             !resolve_int(c, 2, e.et[slot].transform_sound)) {
@@ -1443,14 +1328,10 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 609:    // etExSet（0x41df90）：写入 et 槽扩展行为队列
-    case 610:    // etExSet2（0x262 变体）：多两个整型参数位
-    case 611:    // etEx（0x263）：base 位改读敌机侧待写块计数
-    case 612: {  // etEx2（0x264）：同 611 + 两整型位
-        // 0x41df90: arg0 is ALWAYS the emitter. 609/610 explicitly select
-        // one of 18 queue entries; 611/612 use its append cursor. Treating
-        // arg1 as an emitter made BossCard3's explicit entries 8/9 fail.
-        // Layout: four floats, four ints, op, flags, routine pointer (44 bytes).
+    case 609:
+    case 610:
+    case 611:
+    case 612: {
         i32 slot = 0, index = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = "etEx args";
@@ -1496,17 +1377,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 613:
-        // 0x41b260 case0x6b -> 0x411df0 + 0x430300: clear live
-        // bullets/lasers, NOT the enemy's emitter configurations.
         sim.clear_bullets();
-        sim.cancel_lasers(false);  // 430300 passes (1,0); protection is not reset.
+        sim.cancel_lasers(false);
         return sim.error_.empty() ? 0 : -2;
-    case 614: {  // etCopy（0x41d61a）
+    case 614: {
         i32 to = 0, from = 0;
         if (resolve_int(c, 0, to) && resolve_int(c, 1, from) && to >= 0 && to < 8 && from >= 0 && from < 8) {
-            // 0041d631..0041d6a9 copies the 0x380-byte emitter and its
-            // two position vectors. The append cursor at enemy+0x3d70
-            // is outside those blocks and remains local to the destination.
             const u32 append_cursor = e.et[to].ex_next;
             e.et[to] = e.et[from];
             e.et[to].ex_next = append_cursor;
@@ -1515,8 +1391,8 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.error_ = "etCopy args";
         return -2;
     }
-    case 615:    // etCancel（0x4114f0(pos, radius, 1)：场内弹转换取消道具）
-    case 616: {  // etClear（0x4114f0(pos, radius, 0) + 0x4302a0 转换点登记）
+    case 615:
+    case 616: {
         float radius = 0;
         if (!resolve_float(c, 0, radius)) {
             sim.error_ = c.error;
@@ -1526,7 +1402,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.cancel_lasers_radius({e.position[0], e.position[1], e.position[2]}, radius);
         return sim.error_.empty() ? 0 : -2;
     }
-    case 626: {  // 41d837 ->4246f0: polar angle/radius to emitter offset XY
+    case 626: {
         i32 slot = 0;
         float angle = 0, radius = 0;
         if (!resolve_int(c, 0, slot) || !resolve_float(c, 1, angle) || !resolve_float(c, 2, radius) || slot < 0 ||
@@ -1537,7 +1413,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         polar_xy(angle, radius, e.et[slot].offset[0], e.et[slot].offset[1]);
         return 0;
     }
-    case 627: {  // etDist: emitter+0x24, consumed by fire_et's radial spawn
+    case 627: {
         i32 slot = 0;
         float distance = 0;
         if (!resolve_int(c, 0, slot) || !resolve_float(c, 1, distance) || slot < 0 || slot >= 8) {
@@ -1547,7 +1423,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.et[slot].spin = distance;
         return 0;
     }
-    case 628: {  //41d8e2: absolute XY and enable flag determined by X>=-990.
+    case 628: {
         i32 slot = 0;
         float x = 0, y = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8 || !resolve_float(c, 1, x) || !resolve_float(c, 2, y)) {
@@ -1559,7 +1435,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.et[slot].absolute[2] = x >= -990.f ? 1.f : 0.f;
         return 0;
     }
-    case 624: {  // etSpeedD（0x41da32）：按 DIFF 选参
+    case 624: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = "etSpeedD slot";
@@ -1574,7 +1450,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.et[slot].speed2 = s2;
         return 0;
     }
-    case 625: {  // etCountD（0x41dad7）
+    case 625: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = "etCountD slot";
@@ -1589,7 +1465,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.et[slot].ways = i16(ways);
         return 0;
     }
-    case 640: {  // 41e135: store the inline routine name at ex-entry +0x28
+    case 640: {
         i32 slot = 0, index = 0;
         if (!resolve_int(c, 0, slot) || !resolve_int(c, 1, index) || slot < 0 || slot >= 8 || index < 0 ||
             index >= 18) {
@@ -1606,25 +1482,16 @@ int StageCommands::execute(EclContext& c, u16 op) {
             sim.error_ = "Invalid etExSub name";
             return -2;
         }
-        // No reset of the queue entry or its append cursor. 609..612 may
-        // precede or follow this instruction; they leave this pointer intact.
         e.et[slot].ex[index].subroutine = name;
         return 0;
     }
-    case 630: {  // 41f3f6: 0x421b10(arg0) → call 0x409100——STD 相机脚本
-        // ins_16 标号中断：扫描 [stage+0x1c] 脚本找 opcode==16 且 arg0==id 的
-        // 标号，命中则游标跳到标号后首指令、计时三槽设为目标 time（生产
-        // StageScript::interrupt 同构）。st04 main/MainSub09/MainBossDebug(2)
-        // 均 630(1)，对应 st04.std ins_16(1)@t=128（kind1 摇晃 → kind3）。
-        // 注意：这不是 ecl-vm.md 旧记的 "callSTD"（default.ecl 函数调用）。
+    case 630: {
         i32 id = 0;
         if (!resolve_int(c, 0, id)) {
             sim.error_ = c.error;
             return -2;
         }
         if (!sim.stage_script_interrupt) {
-            // 原版 stage ctx 恒有 STD 脚本；生产仅交互模式（RunScene 接
-            // StageScenery::script）持有——无头路径显式报错，不静默吞中断。
             sim.error_ = "STD camera script unavailable for ECL630 interrupt " + std::to_string(id);
             return -2;
         }
@@ -1634,7 +1501,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 631: {  // 41b32f: replace enemy manager+7c bit0, used by HUD gates.
+    case 631: {
         i32 value = 0;
         if (!resolve_int(c, 0, value)) {
             sim.error_ = c.error;
@@ -1643,7 +1510,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.boss_leaving = (value & 1) != 0;
         return 0;
     }
-    case 629: {  // 41f344: release old mesh, reset radius16/angles, optionally create17x17.
+    case 629: {
         float radius = 0;
         i32 color = 0;
         e.fog.reset();
@@ -1685,7 +1552,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return sim.invoke_enemy_function(e, index) ? 0 : -2;
     }
-    case 633: {  // 41d183 -> table4bba18, enemy inner+40f0.
+    case 633: {
         i32 index = 0;
         if (!resolve_int(c, 0, index)) {
             sim.error_ = c.error;
@@ -1699,15 +1566,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
 
-    // ---------- 700/800/900/1000 族 ----------
-    case 700: {  // 0041b260 case0x87 @0041e16c: writes the existing et slot.
+    case 700: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = c.error.empty() ? "laserNew slot" : c.error;
             return -2;
         }
-        // No allocation/reset. The first three fields alias etOn's xyz,
-        // while angle, speed, sprite, timing and the ex queue stay intact.
         for (u32 n = 0; n < 3; ++n) {
             if (!resolve_float(c, n + 1, e.et[slot].spawn[n])) {
                 sim.error_ = c.error;
@@ -1720,14 +1584,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 701: {  // 0041b260 case0x88 @0041e1ec: five integer stores.
+    case 701: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = c.error.empty() ? "laserTiming slot" : c.error;
             return -2;
         }
-        // 703 copies these into +0x5f0..5fc (four phase durations) and
-        // +0x618 (flags | 2). In particular arg5 is not a duration.
         for (u32 n = 0; n < 5; ++n) {
             if (!resolve_int(c, n + 1, e.et[slot].laser_timing[n])) {
                 sim.error_ = c.error;
@@ -1736,7 +1598,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 703: {  // 0041e77a: build descriptor; 42fed0 type1 -> 433260.
+    case 703: {
         i32 slot = 0, id = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8 || !resolve_int(c, 1, id)) {
             sim.error_ = c.error.empty() ? "laserStOn args" : c.error;
@@ -1745,14 +1607,13 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.emit_infinite_laser(e.et[slot], e, id);
         return sim.error_.empty() ? 0 : -2;
     }
-    case 708: {  // 0041edd7 -> 418300: first global ID match, zero never matches.
+    case 708: {
         i32 id = 0;
         if (!resolve_int(c, 0, id)) {
             sim.error_ = c.error;
             return -2;
         }
         if (StageLaser* laser = sim.find_laser(id)) {
-            // Missing ID must not resolve arg1 (RNG/stack references have effects).
             if (!resolve_float(c, 1, laser->angle)) {
                 sim.error_ = c.error;
                 return -2;
@@ -1761,7 +1622,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 704:
-    case 705: {  // 41ecd1/41ed2b: both float arguments are read even on ID miss.
+    case 705: {
         i32 id = 0;
         float x = 0, y = 0;
         if (!resolve_int(c, 0, id)) {
@@ -1783,8 +1644,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
                 laser->velocity[1] = y;
                 laser->velocity[2] = 0;
             } else {
-                // 4182b0 blindly writes +5cc/+5d0/+5d4. Those fields are
-                // angle/target length/initial length in a line descriptor.
                 laser->line_descriptor_angle = x;
                 laser->target_length = y;
                 laser->line_initial_length = 0;
@@ -1803,8 +1662,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         if (StageLaser* laser = sim.find_laser(id)) {
             if (op == 714) {
-                // Virtual+8 = 42f5d0 for both line and infinite: no-op,
-                // but its integer argument is still evaluated on an ID hit.
                 i32 value = 0;
                 if (!resolve_int(c, 1, value)) {
                     sim.error_ = c.error;
@@ -1819,18 +1676,18 @@ int StageCommands::execute(EclContext& c, u16 op) {
                     return -2;
                 }
                 if (op == 706)
-                    laser->length_speed = value;  // +74; velocity unchanged
+                    laser->length_speed = value;
                 else if (op == 707)
-                    laser->width = value;  // +70; phase target unchanged
+                    laser->width = value;
                 else if (laser->kind == StageLaser::Kind::Infinite)
                     laser->rotation = value;
                 else
-                    laser->target_width = value;  // +5dc: descriptor width on lines
+                    laser->target_width = value;
             }
         }
         return 0;
     }
-    case 710: {  // 41ec89: cancel every matching node, zero its ID, then re-read arg0.
+    case 710: {
         for (;;) {
             i32 id = 0;
             if (!resolve_int(c, 0, id)) {
@@ -1843,7 +1700,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             laser->id = 0;
         }
     }
-    case 702: {  // 41e5cd -> 42fed0 type0 -> 430370.
+    case 702: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = c.error.empty() ? "line laser emitter slot" : c.error;
@@ -1852,7 +1709,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.emit_line_laser(e.et[slot], e);
         return sim.error_.empty() ? 0 : -2;
     }
-    case 713: {  // 41eae9: 42fed0 type3, with a separately resolved ID.
+    case 713: {
         i32 slot = 0, id = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8 || !resolve_int(c, 1, id)) {
             sim.error_ = c.error.empty() ? "beam laser arguments" : c.error;
@@ -1861,11 +1718,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.emit_beam_laser(e.et[slot], e, id);
         return sim.error_.empty() ? 0 : -2;
     }
-    case 711: {  // 41eaf3 -> 42fed0 type2: laserCuOn / LaserCurveInf.
-        // The retail handler snapshots the emitter exactly like the other
-        // laser constructors, then creates a type-2 curve object.  Leaving
-        // this as a no-op silently removes every curved laser used by the
-        // Stage 3/4/6 boss cards.
+    case 711: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
             sim.error_ = c.error.empty() ? "curve laser slot" : c.error;
@@ -1874,7 +1727,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.emit_curve_laser(e.et[slot], e);
         return sim.error_.empty() ? 0 : -2;
     }
-    case 801: {  // 41b260 case97: 417f40(id), outer+1230/+1234 -> float destinations.
+    case 801: {
         i32 id = 0;
         if (!resolve_int(c, 2, id)) {
             sim.error_ = c.error;
@@ -1899,27 +1752,18 @@ int StageCommands::execute(EclContext& c, u16 op) {
         *y = source->position[1];
         return 0;
     }
-    case 800: {  // 41f5e9: 敌机 ECL 重挂（st04 Boss 相位推进）。
-        // 原版链：0x421b10(arg0=敌机 id，数据恒 gvar -9926) → 0x417f40 查敌
-        // （id 0/空表 → null 走默认尾；未命中返回最后检视者——生产
-        // find_by_script_id 同构保留）→ 0x4176c0 释放异步子线程链 →
-        // 0x417740 复位 ECL 上下文（flags bit0/routine/SP/FP/线程号/状态/
-        // 8 插值通道）→ 0x479a90 用指令 +0x18 内联例程名经 0x4797d0 二分
-        // 查到例程首指令指针写 [ctx+4]、time=0。生产同构入口 =
-        // EclThreads::restart（仅调用，不改）。
+    case 800: {
         i32 id = 0;
         if (!resolve_int(c, 0, id)) {
             sim.error_ = c.error;
             return -2;
         }
         StageEnemy* target = sim.find_by_script_id(id);
-        if (!target) return 0;  // 默认尾 = 纯 ret（id 0 / 敌链空）
+        if (!target) return 0;
         if (!target->threads) {
             sim.error_ = "ECL800 target threads unavailable";
             return -2;
         }
-        // 内联例程名：arg1 = 含 NUL 的字节长度（st04bs 11 处实测），名区在
-        // 指令 +0x18 起、4 对齐衬垫（0x41f5e9: lea ecx,[ebx+0x18]）。
         if (ins->length < 28) {
             sim.error_ = "Truncated ECL800 routine name";
             return -2;
@@ -1937,16 +1781,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
             return -2;
         }
         if (&target->threads->main == &c) {
-            // 自重挂（st04 的 800 全部在 Boss 自身 main 线程内触发）：原版
-            // 回到 0x4772a0 尾部后重读 [ctx+4]（已是新例程首指令）——扣其
-            // stack_adjust（0x478bbf）并把游标推进到新首指令之后
-            // （0x477377），即新例程首指令（各例程的 enter(40)）被跳过。
-            // 此处把解释器尾部将读的 instruction 换到新首指令，并预置
-            // instruction_offset = 首指令长 − 本指令长，使尾部的
-            // offset += 本指令长 恰停在新首指令之后。
             if (!c.code || c.routine < 0) {
-                // 0x4797d0 查名失败：[ctx+4]=0 → 0x4772b1 直接按线程结束
-                // 返回 -1（restart 已置 routine=-1/code=null）。
                 return -1;
             }
             const auto* first = reinterpret_cast<const EclInstruction*>(c.code);
@@ -1960,7 +1795,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
     case 900:
-        return 0;  // 原版落默认分支 no-op（ecl-vm.md §4.2 900）
+        return 0;
     case 1000: {
         i32 kind = 0;
         if (!resolve_int(c, 0, kind)) {
@@ -1993,13 +1828,12 @@ int StageCommands::execute(EclContext& c, u16 op) {
     }
 }
 
-// enmCreate 族（0x41fcc0 → 0x4183f0）。
 int StageCommands::create_enemy(EclContext& c, u16 op) {
     StageSim& sim = *this->sim;
     StageEnemy& e = *sim.current;
-    if (op >= 309 && op <= 312 && sim.boss()) return 0;  // BOSS 槽空时才建（0x41b2dd）
+    if (op >= 309 && op <= 312 && sim.boss()) return 0;
     const EclInstruction* ins = c.instruction;
-    const u32 length = u32(ins->argument<i32>(0));  // 含 NUL 与 4 对齐
+    const u32 length = u32(ins->argument<i32>(0));
     const char* name = reinterpret_cast<const char*>(ins) + 16 + 4;
     std::string routine(name, strnlen(name, length ? length - 1 : 0));
 
@@ -2014,9 +1848,6 @@ int StageCommands::create_enemy(EclContext& c, u16 op) {
         return -2;
     }
     const bool relative = op == 300 || op == 309 || op == 321 || op == 311 || op == 304;
-    // 0x41fcc0:60-62：311/304/312/305（0x137/0x130/0x138/0x131）产 param2[6]=1
-    // ——镜像位源；0x41fcc0:63-66 创建者已镜像时翻转该位并 x 取负；
-    // 0x4183f0:28 以 xor-and 把 param2[6]<<20 无条件写入新敌机 flags bit20。
     bool mirror = op == 311 || op == 304 || op == 312 || op == 305;
     if (relative) {
         x = x + e.position[0];
@@ -2031,16 +1862,12 @@ int StageCommands::create_enemy(EclContext& c, u16 op) {
         sim.error_ = c.error;
         return -2;
     }
-    // 41fcc0 copies the parent's constructor parameters before 4183f0's
-    // first ECL execution. In-script dropClear preserves initial main drop.
     std::copy_n(e.i_slots, 4, initial.integers.begin());
     std::copy_n(e.f_slots, initial.floats.size(), initial.floats.begin());
     sim.spawn_enemy(routine.c_str(), x, y, float(life), &e, false, mirror, &initial);
     return 0;
 }
 
-// etOn（0x41d6b1 + 0x40ffe0 + 0x40e840）：按槽状态合成出生参数后交给
-// StageSim::emit_et（ways/count 循环、单弹出生、队列消费与 RNG 次序）。
 int StageCommands::fire_et(EclContext& c, StageEnemy& e) {
     StageSim& sim = *this->sim;
     i32 slot = 0;
@@ -2049,7 +1876,6 @@ int StageCommands::fire_et(EclContext& c, StageEnemy& e) {
         return -2;
     }
     StageEt& et = e.et[slot];
-    // 出生点：absolute[2] <= 0.9 → 相对（偏移 + 敌机主位置）；否则绝对 + 偏移。
     float spawn[3];
     if (et.absolute[2] <= 0.9f) {
         spawn[0] = et.offset[0] + e.position[0];
@@ -2060,20 +1886,17 @@ int StageCommands::fire_et(EclContext& c, StageEnemy& e) {
         spawn[1] = et.absolute[1] + et.offset[1];
         spawn[2] = et.absolute[2] + et.offset[2];
     }
-    // 0041b260 case0x62 stores into the same three fields read by 702/703.
-    // The absolute branch stores z=0, independently of its scratch vector.
     et.spawn[0] = spawn[0];
     et.spawn[1] = spawn[1];
     et.spawn[2] = et.absolute[2] <= 0.9f ? spawn[2] : 0.0f;
-    // 瞄准角（0x443f60：出生点 → 玩家，重合取 π/2）；0x40ffe0 在循环外算一次。
     const float dy = sim.player_y - spawn[1];
     const float dx = sim.player_x - spawn[0];
     const float aim =
         (dy == 0.0f && dx == 0.0f) ? 1.5707964f : float(std::atan2(static_cast<double>(dy), static_cast<double>(dx)));
     sim.active_bullet_protect_radius2 = e.bullet_protect_radius2;
     sim.emit_et(et, e.serial, u32(slot), spawn, aim);
-    sim.active_bullet_protect_radius2 = 0;  // native601 always clears the manager field
+    sim.active_bullet_protect_radius2 = 0;
     return sim.error_.empty() ? 0 : -2;
 }
 
-}  // namespace th13
+}

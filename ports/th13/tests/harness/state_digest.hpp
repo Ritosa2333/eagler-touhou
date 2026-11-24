@@ -1,36 +1,4 @@
 #pragma once
-// 全回放回归 digest 的状态遍历器（仅 tests/harness 使用，不进生产构建）。
-//
-// 目的：给「行为保持」重构提供逐帧、位精确的对照面。每帧把可达的模拟状态按
-// 固定顺序喂进 FNV-1a 64；浮点一律按 binary32 位型（memcpy），绝不散列指针、
-// 地址或时间。数组/向量只按存储序遍历，绝不遍历 unordered_map/指针键容器。
-//
-// 覆盖（公开成员可达面）：
-//   StageBattle：自机位置/相位/无敌/定点坐标、炸弹计时与公开炸弹字段、自机弹、
-//     伤害登记表、妖梦斩击池（visit_state）、options、Bomb 球/射线；
-//   StageSim：frame/玩家位置/难度/rank/shared 变量/boss 槽与计时/标记/符卡/
-//     敌机（全部 StageEt、ECL 线程 PC/栈/插值通道、fog 顶点）、弹幕、激光
-//     （含曲线路径段/采样）、ANM 效果请求队列、ANM 动画名单；
-//   ItemManager：道具池/神霊池（存活槽全字段 + 槽号）与事件队列；
-//   SessionState/HudPlayerState/HudScoreState 全字段；
-//   两条 RNG（game/visual）与 AnmEnvironment 的 ANM 侧 RNG；
-//   RunScene 公开字段（age/输入/转场旗标）与 capture_rollback() 的标量面。
-//
-// 不覆盖（无公开访问器，或属于表现层/不可散列）：
-//   StageBattle 私有：phase/fire/startup/charge Timer、炸弹内角/中心/时长、
-//     trance 保护与任务计时、option_offsets_、character_（经 player_character()
-//     覆盖）、player_state_ 的 shot_geometry/movement_history/定点 option 槽；
-//   StageSim 私有：spawned_/next_serial_/next_bullet_generation_、bullet 空闲槽
-//     与遍历序 bullet_order_（向量存储序不等于模拟遍历序）、gvars 私有可写表
-//     （-9949/-9948/-9947 经公开 integer() 读取覆盖）、owned_random_；
-//   ItemManager 私有：空闲槽栈、spirit 序列/溢出/窗口计数、cancel 计数、
-//     last_player_ 快照；
-//   AnmManager/AnmRegistry/StagePresentation/StageScenery：指针键容器与表现层
-//     内部状态（banks/nodes/fog_handles_ 等不得散列），视觉结果由 draws digest
-//     覆盖；AnmEnvironment 的指针成员（shared_game_rng/chapter/fallback）不散列；
-//   EclContext::instruction、StageEt::Ex::subroutine、各 std::function 回调；
-//   StageEnemy 槽位 ANM 句柄只散列占用位（0/1），不散列句柄值——句柄分配序属
-//     表现层，视觉差异由 draws digest 负责。
 #include "game/AnmEnvironment.hpp"
 #include "game/CurveLaserPath.hpp"
 #include "game/EclContext.hpp"
@@ -53,8 +21,6 @@
 namespace th13 {
 namespace harness {
 
-// FNV-1a 64 累加器：域分隔（tag）、显式宽度整数、float 位型与原始字节。
-// 注意：成员短名 u8/u32/... 会遮蔽同名类型，类内一律用 th13:: 限定类型。
 class Digest64 final {
 public:
     static constexpr th13::u64 kOffset = 0xcbf29ce484222325ull;
@@ -69,7 +35,6 @@ public:
         for (size_t i = 0; i < size; ++i)
             byte(p[i]);
     }
-    // 域分隔：长度 + 字节。长度参与散列，避免 "ab"+"c" 与 "a"+"bc" 同流。
     void tag(const char* text) noexcept {
         const size_t size = std::strlen(text);
         u32(th13::u32(size));
@@ -95,7 +60,6 @@ public:
         std::memcpy(&bits, &value, sizeof bits);
         u32_value(bits);
     }
-    // 兼容短名（遍历代码可读性）。
     void u8(th13::u8 value) noexcept { u8_value(value); }
     void u16(th13::u16 value) noexcept { u16_value(value); }
     void u32(th13::u32 value) noexcept { u32_value(value); }
@@ -112,7 +76,6 @@ private:
     th13::u64 state_ = kOffset;
 };
 
-// ---- 基础值 ----
 inline void digest_value(Digest64& d, const Timer& v) {
     d.i32(v.previous);
     d.i32(v.current);
@@ -140,7 +103,6 @@ inline void digest_value(Digest64& d, const std::string& v) {
     d.bytes(v.data(), v.size());
 }
 
-// ---- 插值与 mover ----
 template <u32 N, bool Angle> void digest_value(Digest64& d, const FloatInterpolation<N, Angle>& v) {
     for (float value : v.start)
         d.f32(value);
@@ -226,9 +188,6 @@ inline void digest_value(Digest64& d, const EclInterpolation& v) {
     digest_value(d, v.timer);
 }
 
-// ---- ECL 线程 ----
-// 插值目标只散列 (routine, 指令字节偏移)，不散列地址：跨构建地址必变，
-// 而程序内身份是稳定的。无法映射的目标以 0/1/2 区分「空/已映射/域外」。
 inline void digest_interpolation_targets(Digest64& d, const EclContext& context) {
     d.tag("ecl.targets");
     for (const EclInstruction* target : context.interpolation_targets) {
@@ -249,7 +208,6 @@ inline void digest_interpolation_targets(Digest64& d, const EclContext& context)
                 if (address < base || address - base > sub.size - 32) continue;
                 const u32 offset = u32(address - base);
                 if (offset % 4) continue;
-                // 逐条指令走一遍，确认落在指令边界（与解释器/MP 快照同判）。
                 u32 cursor = 0;
                 while (cursor < offset) {
                     const auto* instruction = reinterpret_cast<const EclInstruction*>(code + cursor);
@@ -273,7 +231,6 @@ inline void digest_value(Digest64& d, const EclContext& context) {
     d.f32(context.time);
     d.i32(context.routine);
     d.i32(context.instruction_offset);
-    // 栈区全量（4096 字节，零初始化；已弹出字节保留原值，属确定性存储态）。
     d.u64(context.stack.size());
     d.bytes(context.stack.data(), context.stack.size());
     d.i32(context.stack_pointer);
@@ -299,7 +256,6 @@ inline void digest_value(Digest64& d, const EclThreadsSnapshot& threads) {
     }
 }
 
-// ---- 敌机 ----
 inline void digest_value(Digest64& d, const StageEt::Ex& v) {
     d.u32(v.op);
     d.u32(v.flags);
@@ -307,7 +263,6 @@ inline void digest_value(Digest64& d, const StageEt::Ex& v) {
         d.f32(value);
     for (i32 value : v.integer_arguments)
         d.i32(value);
-    // v.subroutine：指向 ECL 程序的指针，不散列（见文件头）。
 }
 inline void digest_value(Digest64& d, const StageEt& v) {
     d.u32(v.sprite);
@@ -429,7 +384,6 @@ inline void digest_value(Digest64& d, const StageEnemy& v) {
     d.i32(v.anm_slot0_script_offset);
     for (i32 value : v.anm_script)
         d.i32(value);
-    // 句柄只取占用位：分配序属表现层（见文件头）。
     for (u32 handle : v.anm_slot_handle)
         d.boolean(handle != 0);
     for (const Vec3& offset : v.anm_slot_offset)
@@ -449,7 +403,6 @@ inline void digest_value(Digest64& d, const StageEnemy& v) {
     if (v.threads) digest_value(d, v.threads->snapshot());
 }
 
-// ---- 弹幕 ----
 inline void digest_value(Digest64& d, const StageBullet& v) {
     d.tag("bullet");
     d.i32(v.pool_slot);
@@ -537,7 +490,6 @@ inline void digest_value(Digest64& d, const StageBullet& v) {
         d.f32(value);
 }
 
-// ---- 激光 ----
 inline void digest_value(Digest64& d, const CurveLaserSegment& v) {
     d.f32(v.start_time);
     d.f32(v.end_time);
@@ -626,7 +578,6 @@ inline void digest_value(Digest64& d, const AnmEffectRequest& v) {
     d.u32(v.serial);
 }
 
-// ---- 道具/神霊 ----
 inline void digest_value(Digest64& d, const Item& v) {
     d.i32(v.state);
     d.i32(v.type);
@@ -673,8 +624,6 @@ inline void digest_value(Digest64& d, const ItemEvent& v) {
 }
 inline void digest_item_manager(Digest64& d, ItemManager& manager) {
     d.tag("items");
-    // 只散列存活槽 + 槽号：全池 2648 槽每帧全字段会把成本放大两个数量级，
-    // 而死槽字段不参与后续模拟（alive=false 的唯一语义）。
     auto& items = manager.items();
     u32 live_items = 0;
     for (u32 index = 0; index < items.size(); ++index) {
@@ -701,7 +650,6 @@ inline void digest_item_manager(Digest64& d, ItemManager& manager) {
         digest_value(d, event);
 }
 
-// ---- 自机 ----
 inline void digest_value(Digest64& d, const PlayerShot& v) {
     d.tag("shot");
     d.f32(v.x);
@@ -797,12 +745,10 @@ inline void digest_value(Digest64& d, const YoumuBomb::Spawn& v) {
     d.i32(v.script);
     d.f32(v.y);
 }
-// visit_state 的标量访问器（bool/float/int 各自保持位型，不做统一转换）。
 inline void digest_scalar(Digest64& d, bool value) { d.boolean(value); }
 inline void digest_scalar(Digest64& d, float value) { d.f32(value); }
 inline void digest_scalar(Digest64& d, i32 value) { d.i32(value); }
 
-// ---- 模拟主体 ----
 inline void digest_value(Digest64& d, const SpellSnapshot& v) {
     d.i32(v.id);
     digest_value(d, v.name);
@@ -895,7 +841,6 @@ inline void digest_sim(Digest64& d, StageSim& sim) {
         d.i32(value);
     for (float value : sim.shared_floats)
         d.f32(value);
-    // gvars 私有可写表：只有 -9949/-9948/-9947 三个计数器可经公开读取面观察。
     for (i32 id : {-9949, -9948, -9947}) {
         i32 value = 0;
         sim.gvars.integer(id, value);
@@ -919,7 +864,6 @@ inline void digest_sim(Digest64& d, StageSim& sim) {
     for (const Vec3& center : sim.laser_collision_centers)
         digest_value(d, center);
     d.i32(sim.laser_collision_count);
-    // current 只散列在敌机向量中的序号（null=-1），不散列地址。
     i32 current_index = -1;
     for (u32 index = 0; index < sim.enemies.size(); ++index)
         if (sim.enemies[index].get() == sim.current) current_index = i32(index);
@@ -942,7 +886,6 @@ inline void digest_sim(Digest64& d, StageSim& sim) {
         digest_value(d, laser);
 }
 
-// ---- 会话/HUD ----
 inline void digest_value(Digest64& d, const SessionState& v) {
     d.tag("session");
     d.i32(v.stage);
@@ -1015,7 +958,6 @@ inline void digest_value(Digest64& d, const AnmEnvironment& v) {
     d.i32(v.stage_difficulty);
 }
 
-// ---- RunScene 回滚快照 ----
 inline void digest_value(Digest64& d, const GameHud::RollbackState& v) {
     d.tag("rollback.hud");
     for (u32 handle : v.life_icons)
@@ -1138,7 +1080,6 @@ inline void digest_value(Digest64& d, const MsgPresentation::RollbackState& v) {
 }
 inline void digest_value(Digest64& d, const ScorePopups::RollbackState& v) {
     d.tag("rollback.popups");
-    // glyph（AnmVm）不散列：表现层 VM 状态由 draws digest 覆盖。
     for (const ScorePopups::Entry& entry : v.pool) {
         for (i32 digit : entry.digits)
             d.i32(digit);
@@ -1162,7 +1103,6 @@ inline void digest_value(Digest64& d, const LaserPresentation::SnapshotData& v) 
         d.i32(entry.type);
         d.i32(entry.color);
         d.boolean(entry.curve);
-        // body/orb/tip（AnmVm）与 identities（指针）不散列。
     }
 }
 inline void digest_value(Digest64& d, const RunScene::RollbackState& v) {
@@ -1192,8 +1132,6 @@ inline void digest_value(Digest64& d, const RunScene::RollbackState& v) {
     d.boolean(v.scenery_started);
 }
 
-// 单帧状态摘要。调用点 = RunScene 一帧 update 完成之后（与 TH13_STATE_LOG
-// 的 write_state_row 同相位）；只读，不改变任何游戏状态。
 inline u64 digest_frame_state(RunScene& scene, const SessionState& progress, const HudPlayerState& player,
                               const HudScoreState& score, const GameRandom& visual, const AnmEnvironment& environment) {
     Digest64 d;
@@ -1222,5 +1160,5 @@ inline u64 digest_frame_state(RunScene& scene, const SessionState& progress, con
     return d.value();
 }
 
-}  // namespace harness
-}  // namespace th13
+}
+}

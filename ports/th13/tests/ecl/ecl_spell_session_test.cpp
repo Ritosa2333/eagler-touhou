@@ -1,5 +1,3 @@
-// H-SPELL-SESSION: 00420380/00420d00, 0041e262 and 0041e473.
-// Synthetic instructions exercise production argument decoding and rank gates.
 #include "ecl_test_fixtures.hpp"
 #include "game/ReplaySession.hpp"
 #include "game/SessionState.hpp"
@@ -39,7 +37,7 @@ std::vector<u8> spell(u16 opcode) {
                    u32(encrypted.size()));
     return bytes;
 }
-}  // namespace
+}
 
 TEST(spell_selection_has_one_live_integer_and_float_source) {
     Rig rig;
@@ -77,7 +75,7 @@ TEST(begin_and_end_in_one_ecl_turn_keep_both_events_and_award_once) {
     CHECK(events[1].kind == SpellEventKind::End);
     CHECK_EQ(events[0].state.id, 20);
     CHECK_EQ(events[1].state.id, 20);
-    CHECK_EQ(awarded, 400000);  // default rank3 + stage1, internal score units
+    CHECK_EQ(awarded, 400000);
     CHECK_EQ(rig.execute(end), 0);
     CHECK_EQ(events.size(), 2u);
     CHECK_EQ(awarded, 400000);
@@ -128,8 +126,6 @@ TEST(timer_reset_preserves_invulnerability) {
 }
 
 TEST(spell_damage_rounds_relative_to_live_phase_threshold) {
-    // Direct retail4179e0 probe: initial HP5000, accumulator35000, max10000.
-    // +3f5c is the live phase threshold, not +3f50's max life.
     struct Case {
         i32 threshold, damage, life;
     };
@@ -213,7 +209,6 @@ TEST(spell_practice_boss_interrupt_exits_selected_card_without_reading_hp) {
     rig.enemy.flags = 0x1000000;
     std::vector<u8> bytes;
     const char label[] = "NextCard";
-    // Referenced HP=-10000 would consume RNG if incorrectly evaluated.
     th13test::emit(bytes, 0, 514, 2, 0xff, 0, {0, u32(-10000), 1200, sizeof label}, label, sizeof label);
     GameRandom expected = rig.sim.random;
     CHECK_EQ(rig.execute(bytes), 0);

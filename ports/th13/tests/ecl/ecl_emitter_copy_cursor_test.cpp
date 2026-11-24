@@ -19,7 +19,6 @@ struct Rig {
     }
 };
 TEST(copied_emitter_retains_its_own_append_cursor) {
-    // 0041d631..0041d6a9: emitter+positions copied, enemy+3d70 untouched.
     for (u32 cursor : {0u, 3u, 17u}) {
         Rig r;
         r.enemy.et[0].ex[0].op = 2;
@@ -32,8 +31,6 @@ TEST(copied_emitter_retains_its_own_append_cursor) {
     }
 }
 TEST(stage5_copied_emitter_overwrites_delay_before_firing) {
-    // GirlD01_at: source appends delay, copies into slot1, then each slot
-    // appends angular acceleration. Slot1's independent cursor is still0.
     Rig r;
     CHECK_EQ(r.run(600, {0}), 0);
     CHECK_EQ(r.run(611, {0, 1, 2, 1, u32(-999999), 0, 0}), 0);
@@ -53,5 +50,5 @@ TEST(stage5_copied_emitter_overwrites_delay_before_firing) {
     CHECK_EQ(r.sim.bullets[1].state, 1);
     CHECK_EQ(r.sim.bullets[1].behavior_flags, 8u);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("emitter copy cursor"); }

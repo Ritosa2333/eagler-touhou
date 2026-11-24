@@ -32,5 +32,5 @@ TEST(bullet_protection_decrements_only_during_active_behavior_pass) {
     sim.advance_bullets();
     CHECK_EQ(sim.bullets[0].cancel_protection, 1);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("bullet contact protection"); }

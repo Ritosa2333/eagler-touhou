@@ -157,4 +157,4 @@ inline void stage(PipelineState& p, u32 key, u32 v) {
         break;
     }
 }
-}  // namespace touhou::graphics::legacy
+}

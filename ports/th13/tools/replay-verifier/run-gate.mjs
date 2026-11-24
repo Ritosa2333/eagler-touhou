@@ -1,4 +1,3 @@
-// Strict gate: never writes golden. BASELINE_HELD is not a fidelity pass.
 import {spawnSync} from 'node:child_process';
 import {readFileSync, existsSync, createReadStream} from 'node:fs';
 import {resolve} from 'node:path';
@@ -33,7 +32,6 @@ for (const id of ids) {
   const fixture = corpus.cases.find(c => c.id === id);
   if (!fixture) throw Error('Unknown case ' + id);
   const prior = golden.cases[id];
-  // A historical observed baseline length is not independent window qualification.
   const expected = fixture.frames;
   if (!Number.isSafeInteger(expected) || expected <= 0) throw Error('Explicit corpus frames required; legacy baseline window is unqualified: ' + id);
   const oracle = resolve('/work/artifacts/oracle-draws', fixture.oracleManifest);

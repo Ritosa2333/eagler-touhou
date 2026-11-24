@@ -9,7 +9,7 @@ void EnemyFog::update(const Vec3& center, float rate) {
     float x = float(double(float(double(float(center.x - r)) - 20)) + 320);
     const float top = float(double(float(double(float(center.y - r)) - 20)) + 16);
     const float cx = float(center.x + 320), cy = float(center.y + 16);
-    const double r2 = float(r * r);  // qword storage after the reference's f32 product
+    const double r2 = float(r * r);
     float ax = angle_x, ay = angle_y;
     for (size_t col = 0; col < side; ++col) {
         float y = top;
@@ -38,8 +38,6 @@ void EnemyFog::update(const Vec3& center, float rate) {
             ax = wrap_angle(float(double(ax) + .09817477f));
             ay = wrap_angle(float(double(ay) - .049087387f));
             float source_x = x, source_y = y;
-            // 0x41a3d0: x<=128→129, x>512→511 (x==512 stays sampled);
-            // y<=16→17, y>=464→463. Destination shares the same clamp.
             if (source_x <= 128)
                 source_x = v.position.x = 129;
             else if (source_x > 512)
@@ -56,4 +54,4 @@ void EnemyFog::update(const Vec3& center, float rate) {
     angle_x = wrap_angle(float(float(double(rate) * .19634955f) + angle_x));
     angle_y = wrap_angle(float(float(double(rate) * .09817477f) + angle_y));
 }
-}  // namespace th13
+}

@@ -1,6 +1,3 @@
-// Headless WebGL runner for this fixture directory. Run through
-// `make shot CMD='node eagler-touhou/ports/th13/tests/render/
-// color01-fixture/run-shot.mjs'`.
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
 import {readFile, writeFile} from 'node:fs/promises';

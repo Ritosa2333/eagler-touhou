@@ -60,13 +60,13 @@ TEST(restored_power_rebuilds_at_player_activation_not_stage_ecl_start) {
     provider.names = &battle.sim.anim_list;
     progress.stage = 2;
     CHECK(battle.prepare_player(provider, progress, player, "player.sht", true));
-    player.power = 293;  // 447900 stage header restore
+    player.power = 293;
     const bool loaded = battle.load(provider, "stage.ecl", 2, host, progress, player, score);
     if (!loaded) std::printf("load error: %s\n", battle.error().c_str());
     CHECK(loaded);
     CHECK_EQ(player.power, 293);
     CHECK_EQ(battle.option_count, 4);
-    battle.restore_replay_player(128, 51200, false);  // 448ec0 / 424d0
+    battle.restore_replay_player(128, 51200, false);
     CHECK_EQ(battle.option_count, 2);
     CHECK_EQ(battle.options[0].x, 1.f);
 }
@@ -131,9 +131,6 @@ TEST(power_rebuild_snaps_options_on_the_next_player_movement) {
     CHECK(battle.load(provider, "stage.ecl", 2, host, progress, player, score, nullptr, "player.sht"));
     battle.sim.enemies.clear();
     battle.set_player_pos(0, 200);
-    // 0x442a19-0x442a57 focus 三重门：ctl+0xb8（存活敌机链计数）非 0 且
-    // player+0x67c>=4。补 inert 敌机（threads 为空，位置远离）补链计数，
-    // 并置 startup_clock（=0x67c 的暴露计数值）保留聚焦对角 2.0。
     auto focus_anchor = std::make_unique<StageEnemy>();
     focus_anchor->serial = 9999;
     focus_anchor->script_id = 9999;
@@ -145,7 +142,7 @@ TEST(power_rebuild_snaps_options_on_the_next_player_movement) {
     CHECK(battle.step(GameInput{}));
     CHECK_EQ(player.power, 300);
     GameInput input;
-    input.update(0x58);  // focus + up + left
+    input.update(0x58);
     CHECK(battle.step(input));
     CHECK_EQ(battle.player_x, -2.f);
     CHECK_EQ(battle.player_y, 198.f);
@@ -170,8 +167,6 @@ TEST(sanae_shot_and_marisa_live_beam_follow_snapped_option_after_power_up) {
         CHECK(battle.load(provider, "stage.ecl", 2, host, progress, player, score, nullptr, "player.sht"));
         battle.sim.enemies.clear();
         battle.set_player_pos(0, 200);
-        // 0x442a19-0x442a57 focus 门（同上一测试）：聚焦 shot 表项
-        // sht_shots[7] 只在 focus=1 时使用，补 inert 敌机保留该路径。
         auto focus_anchor = std::make_unique<StageEnemy>();
         focus_anchor->serial = 9999;
         focus_anchor->script_id = 9999;
@@ -196,13 +191,13 @@ TEST(sanae_shot_and_marisa_live_beam_follow_snapped_option_after_power_up) {
             shot.anchor = 1;
             shot.speed = 0;
             battle.sht_shots_loaded = true;
-            battle.sht_shots[7] = {shot};  // focus, power level2
+            battle.sht_shots[7] = {shot};
         }
         battle.item_manager.spawn_item(0, 200, 0, 1, 0, 0);
         CHECK(battle.step(GameInput{}));
         CHECK_EQ(player.power, 200);
         GameInput input;
-        input.update(0x59);  // fire, focus, up, left
+        input.update(0x59);
         CHECK(battle.step(input));
         CHECK(!battle.shots.empty());
         if (!battle.shots.empty()) {
@@ -318,5 +313,5 @@ TEST(delayed_bullet_contact_uses_stationary_particle_and_protection_retains_node
         CHECK_EQ(battle.sim.bullets[0].state, protected_bullet ? 2 : 3);
     }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("player-stage-entry"); }

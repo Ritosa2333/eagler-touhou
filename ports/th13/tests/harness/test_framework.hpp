@@ -1,6 +1,3 @@
-// 极简单测框架：容器内 g++ 编译，无外部依赖。
-// 用法：TEST("名称") { CHECK(cond); CHECK_EQ(a, b); return; }
-// 输出 TAP 风格 ok/not ok 行，任一失败使进程以非零码退出。
 #pragma once
 
 #include <cstdio>
@@ -50,7 +47,7 @@ inline int run_all(const char* suite) {
     return failure_count() ? 1 : 0;
 }
 
-}  // namespace th13test
+}
 
 #define TEST(name)                                                                                                     \
     void th13test_body_##name();                                                                                       \
@@ -81,10 +78,8 @@ inline void check_eq(const char* file, int line, const char* a_text, const char*
         current_failed() = true;
     }
 }
-}  // namespace th13test
+}
 
-// 实参在同一个完整表达式里求值并传给 check_eq：形如 v()[0].x 的临时对象
-// 活到比较结束。旧写法 const auto& a_value = (actual); 会悬垂。
 #define CHECK_EQ(actual, expected)                                                                                     \
     do {                                                                                                               \
         ::th13test::check_eq(__FILE__, __LINE__, #actual, #expected, (actual), (expected));                            \

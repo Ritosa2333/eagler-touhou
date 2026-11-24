@@ -29,11 +29,9 @@ bool rasterize_anm_text(AnmVm& target, DialogueTextureSink& sink, const AnmTextR
         width > destination->width - x || y > destination->height || height > destination->height - y)
         return fail("ANM text ARGB4444 texture unavailable");
 
-    // 0046e970 / 0045aef0: style0 font32, nominal line height17, main
-    // TextOut at (0,2), with diagonal black outline at (+/-2,0/4).
     TextureImage glyph;
     glyph.width = 1024;
-    glyph.height = 40;  // nominal17*2+6, the original scratch clearing height
+    glyph.height = 40;
     glyph.pitch = glyph.width * 2;
     glyph.packed_format = 5;
     glyph.format = touhou::graphics::PixelFormat::Argb4444;
@@ -53,7 +51,7 @@ bool rasterize_anm_text(AnmVm& target, DialogueTextureSink& sink, const AnmTextR
         return fail("ANM text rasterizer changed target layout");
 
     const u32 source_width = std::min(width * 2 + 22, 1024u);
-    const u32 source_height = 36;  // nominal17*2+2, original D3DX source RECT
+    const u32 source_height = 36;
     std::vector<std::array<float, 4>> pixels(size_t(source_width) * source_height);
     const auto coverage = [&](i32 px, i32 py) -> float {
         if (px < 0 || py < 0 || px >= i32(glyph.width) || py >= i32(glyph.height)) return 0;
@@ -75,9 +73,6 @@ bool rasterize_anm_text(AnmVm& target, DialogueTextureSink& sink, const AnmTextR
                                                       amount * float((color >> 16) & 255u) / 255.0f};
         }
     }
-    // D3DXLoadSurfaceFromMemory filter4 = TRIANGLE. Apply the corresponding
-    // separable tent support in source pixel coordinates. Font rasterization,
-    // GDI edge treatment and D3DX rounding still require original pixel truth.
     const float scale_x = float(source_width) / float(width);
     const float scale_y = float(source_height) / float(height);
     const float radius_x = std::max(scale_x, 1.0f), radius_y = std::max(scale_y, 1.0f);
@@ -107,8 +102,6 @@ bool rasterize_anm_text(AnmVm& target, DialogueTextureSink& sink, const AnmTextR
             result[size_t(py) * width + px] = packed;
         }
     }
-    // Commit only after the complete glyph/outline/scaling pipeline succeeds.
-    // This region is what the same ANM VM already samples in the real renderer.
     for (u32 py = 0; py < height; ++py)
         std::memcpy(destination->pixels.data() + size_t(y + py) * destination->pitch + size_t(x) * 2,
                     result.data() + size_t(py) * width, size_t(width) * 2);
@@ -116,4 +109,4 @@ bool rasterize_anm_text(AnmVm& target, DialogueTextureSink& sink, const AnmTextR
     return true;
 }
 
-}  // namespace th13
+}

@@ -58,8 +58,6 @@ export function harnessPaths(workspace, argv, environment = {}) {
       output(3, `${draws}/title-draws${mode === 'title-b' ? '-b' : ''}.jsonl`);
       break;
   }
-  // TH13_DIGEST_LOG（guest 路径）：只有 replay/draws-replay 写回归 digest 日志。
-  // 纳入声明输出 → 目录自动创建 + 复用「必须重新生成且非空」校验。
   const digest = environment.TH13_DIGEST_LOG;
   if (digest && (mode === 'replay' || mode === 'draws-replay'))
     declare(guestPath(workspace, digest));

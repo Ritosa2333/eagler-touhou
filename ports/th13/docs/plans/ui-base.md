@@ -64,7 +64,7 @@ bank 编号沿 th15 惯例（text=0、sig=1、ascii=2、effect=8、title=16、ti
 | `FrameScheduler.hpp/.cpp` | 同名 | 原样照抄（FrameAction/FramePass/FrameCallback 一并） |
 | `MenuCursor.hpp/.cpp` | 同名 | 原样照抄 |
 | `GameInput.hpp/.cpp` | 同名 | 原样照抄（repeat 参数 8/26 帧照搬，见 §六） |
-| `GameKeyboard.hpp/.cpp` | 同名 | bindings 表保留基础位，功能位注释标注 th13 归属 |
+| `GameKeyboard.hpp/.cpp` | 同名 | bindings 表保留基础位，功能位按 th13 键位接入（§六） |
 | `TitleState.hpp` | 同名 | TitleScreen 枚举仅留 Main/Difficulty/Character/StartGame/Quit |
 | `TitleScene.hpp/.cpp` | `TitleScene.hpp` + `TitleFrame.hpp/.cpp` | 不做 Replay/MusicRoom/Manual/Records/PlayerData/Practice/Demo |
 | `HudFrameData.hpp` / `HudDrawData.hpp` | 同名 | 去掉 th15 专属字段（pointdevice 指示、chapter 计数） |

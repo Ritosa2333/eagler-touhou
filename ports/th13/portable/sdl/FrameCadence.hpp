@@ -2,8 +2,6 @@
 #include <algorithm>
 #include <cmath>
 namespace touhou::sdl {
-// Keep every 60 Hz update through short display stalls. Bound both work per
-// callback and retained debt so a slow device cannot enter an endless spiral.
 struct FrameCadence {
     static constexpr double interval = 1. / 60.;
     double debt = 0;
@@ -15,4 +13,4 @@ struct FrameCadence {
         return ticks;
     }
 };
-}  // namespace touhou::sdl
+}

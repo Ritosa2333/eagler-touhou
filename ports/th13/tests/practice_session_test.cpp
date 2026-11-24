@@ -14,7 +14,7 @@ struct Results : th13::PostGamePlatform {
     bool request_stage6_fade() override { return true; }
     void bgm(th13::i32) override {}
 };
-}  // namespace
+}
 
 int main() {
     using th13::PracticeRequest;

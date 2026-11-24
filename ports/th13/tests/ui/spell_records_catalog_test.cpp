@@ -1,4 +1,3 @@
-// Synthetic ECL validates metadata decoding and independent per-variant gates.
 #include "../harness/test_framework.hpp"
 #include "game/SpellCatalog.hpp"
 #include "game/TitlePlayerDataMenu.hpp"
@@ -74,7 +73,7 @@ std::vector<u8> stage1() {
 struct CatalogHost : TitleSpellPracticePlatform {
     SpellCatalog catalog;
     std::set<i32> encountered, captured;
-    i32 characters = 5;  // shared TitleScenePlatform exposes PlayerData's 5 columns
+    i32 characters = 5;
     CatalogHost() {
         CHECK(catalog.load_stage(1, [](const std::string& name, std::vector<u8>& bytes) {
             if (name != "st01.ecl") return false;
@@ -127,8 +126,6 @@ SpellPracticeInput right() {
 }
 struct PlayerDataHost : TitlePlayerDataPlatform {
     bool open_player_data() override { return true; }
-    // 00453170 case0: +0x108=5 difficulty cursors, +0x30=4 character columns
-    // (exclusive counts; FUN_00415030(1) starts the rank at Normal).
     i32 difficulty_count() const override { return 5; }
     i32 character_count() const override { return 4; }
     i32 record_count(i32) const override { return 23; }
@@ -140,7 +137,7 @@ struct PlayerDataHost : TitlePlayerDataPlatform {
         return true;
     }
 };
-}  // namespace
+}
 
 TEST(catalog_decodes_rank_arithmetic_names_and_hides_unencountered_cards) {
     CatalogHost host;
@@ -191,15 +188,12 @@ TEST(menu_hides_unseen_names_gates_each_rank_and_cycles_only_four_characters) {
     CHECK(!menu.difficulty_rows()[0].available);
     CHECK(menu.difficulty_rows()[0].name.empty());
     CHECK(menu.difficulty_rows()[1].available);
-    // 004576c0 case0 经 004417c0 把未遭遇行加入游标禁用表，上下移动经
-    // 00473210 跳过禁用值：进入难度层光标直接落在首个可用行 Normal(id 1)，
-    // 不会停在未遭遇的 Easy(0) 上，故无"确认被阻止"路径。
     CHECK_EQ(menu.cursor(), 1);
-    CHECK(!menu.update(down()));  // 其余行全部禁用，跳行后仍停留 id 1
+    CHECK(!menu.update(down()));
     CHECK_EQ(menu.cursor(), 1);
-    CHECK_EQ(i32(menu.command().action), i32(SpellPracticeAction::None));  // 未见变体从未发射
+    CHECK_EQ(i32(menu.command().action), i32(SpellPracticeAction::None));
     CHECK(!menu.update(right()));
-    CHECK_EQ(menu.cursor(), 1);  // character rebuild retains the rank cursor
+    CHECK_EQ(menu.cursor(), 1);
     CHECK(menu.update(confirm()));
     CHECK_EQ(menu.command().spell_id, 1);
     CHECK_EQ(menu.command().character, 1);
@@ -213,17 +207,14 @@ TEST(player_data_confirm_pages_ten_rows_and_repeat_navigates_without_name_leak) 
     CHECK(menu.update(0, 0));
     for (i32 i = 0; i < 7; ++i)
         CHECK(menu.update(0, 0));
-    // 00453170 case0：初始 Normal=1（FUN_00415030(1)），+0x108=5 独占计数。
     CHECK_EQ(menu.difficulty(), 1);
-    // 00453170 case2：page0（*local_10==0）为汇总页、不创建 10 个记录行 VM；
-    // 页数 = 1 + (23+9)/10 = 4（page1..3 才是 10 行卡页）。
     CHECK_EQ(menu.page_count(), 4);
     CHECK(menu.visible_records().empty());
     CHECK(menu.update(1, 0));
     CHECK_EQ(menu.page(), 1);
     CHECK_EQ(menu.visible_records().size(), size_t(10));
     CHECK(menu.visible_records()[0].slot == 0);
-    CHECK(menu.visible_records()[0].name.empty());  // 未遭遇记录不泄漏名字
+    CHECK(menu.visible_records()[0].name.empty());
     CHECK(menu.update(1, 0));
     CHECK_EQ(menu.page(), 2);
     CHECK_EQ(menu.visible_records().size(), size_t(10));
@@ -236,7 +227,7 @@ TEST(player_data_confirm_pages_ten_rows_and_repeat_navigates_without_name_leak) 
     CHECK(menu.update(0, 0x80));
     CHECK_EQ(menu.character(), 1);
     CHECK(menu.update(0, 0x20));
-    CHECK_EQ(menu.difficulty(), 2);  // Normal=1 基准，一次 ↓ → 2
+    CHECK_EQ(menu.difficulty(), 2);
 }
 
 int main() { return th13test::run_all("spell_records_catalog_test"); }

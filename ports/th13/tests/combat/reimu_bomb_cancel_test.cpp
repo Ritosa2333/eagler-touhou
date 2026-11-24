@@ -123,7 +123,7 @@ TEST(reimu_damage_explosions_and_end_register_separate_shakes) {
     battle.bomb_age = 199;
     battle.bomb_timer = 1;
     CHECK(battle.step(input));
-    CHECK_EQ(shakes, 3);  // one for all remaining orbs
+    CHECK_EQ(shakes, 3);
     CHECK(battle.step(input));
     CHECK_EQ(shakes, 3);
 }
@@ -176,7 +176,7 @@ TEST(deathbomb_restores_active_state_without_moving_until_next_frame) {
         battle.player_phase_frame = 3;
         battle.invulnerable = deathbomb ? 4 : 0;
         GameInput input;
-        input.update(0x12);  // up+Bomb, Stage5 replay input5935
+        input.update(0x12);
         CHECK(battle.step(input));
         CHECK(battle.player_phase == StageBattle::PlayerPhase::Active);
         CHECK_EQ(battle.player_y, deathbomb ? 423.6171875f : 419.1171875f);
@@ -186,5 +186,5 @@ TEST(deathbomb_restores_active_state_without_moving_until_next_frame) {
         CHECK_EQ(battle.player_y, deathbomb ? 419.1171875f : 414.6171875f);
     }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("reimu-bomb-cancel"); }

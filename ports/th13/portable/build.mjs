@@ -1,5 +1,3 @@
-// th13 网页运行时构建：C++ / SDL3 / Emscripten（对齐 ports/th10 构建约定）。
-// 用法：EMSDK=/opt/emsdk node portable/build.mjs [--print-inputs]
 import {sourceObjectPath} from '../../../tools/build/source-object.mjs';
 import {printingRuntimeInputs, printRuntimeInputs, headerInputs} from '../../../tools/build/runtime-inputs.mjs';
 import {compilerArguments} from '../../../tools/build/compiler-arguments.mjs';
@@ -14,9 +12,6 @@ const builtAt = new Date().toISOString();
 const workspace = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const game = 'th13';
 const root = resolve(workspace, 'web');
-// 捕获构建（TH13_WEB_CAPTURE=1）：-DTH13_DRAW_CAPTURE 开 AnmRenderer 精灵
-// 钩子，产物落 artifacts/sdl3-capture/（独立对象缓存；供 th13-debug.html
-// ?artifact= 指定加载，做 web 语义清单确定性导出）。
 const captureBuild = process.env.TH13_WEB_CAPTURE === '1';
 const out = resolve(root, 'artifacts', process.env.TH13_OUTPUT || (captureBuild ? 'sdl3-capture' : 'sdl3'));
 const output = resolve(out, game + '-sdl.mjs');
@@ -25,7 +20,6 @@ const manifest = resolve(out, 'build.json');
 const invalidate = paths => { for (const path of paths) if (existsSync(path)) unlinkSync(path); };
 if (!printingRuntimeInputs) {
   mkdirSync(out, {recursive: true});
-  // Only this build's outputs: an old binary/proof cannot survive a failed build.
   invalidate([manifest, output, wasmOutput]);
 }
 
@@ -46,7 +40,6 @@ const run = (args) => new Promise((done, reject) => {
 const common = ['-O2', '-g0', '-Wall', '-Wextra', '-fno-strict-aliasing', '-ffp-contract=off',
   '-DTH_SDL3=1', '-DTH_NATIVE_PLATFORM=1', '--use-port=sdl3', '--use-port=sdl3_ttf',
   '-I' + resolve(root, 'cpp'),
-  // 公共字体栅格头（eagler/text/RuntimeFontRaster.hpp；th15 同源约定）。
   '-I' + resolve(workspace, '../../common/include')];
 const flags = [...common, '-std=c++17', '-fno-exceptions', '-fno-rtti'];
 if (captureBuild) flags.push('-DTH13_DRAW_CAPTURE=1');
@@ -55,7 +48,7 @@ const sources = [
   ...readdirSync(resolve(root, 'cpp/game')).filter(n => n.endsWith('.cpp')).map(n => 'cpp/game/' + n),
   ...readdirSync(resolve(root, 'cpp/platform')).filter(n => n.endsWith('.cpp')).map(n => 'cpp/platform/' + n),
   ...readdirSync(resolve(root, 'cpp/sdl')).filter(n => n.endsWith('.cpp')).map(n => 'cpp/sdl/' + n),
-  '../portable/sdl/Renderer.cpp',  // 语义 GLES 渲染后端（与 sdl/ 设备层同链）
+  '../portable/sdl/Renderer.cpp',
 ];
 
 const allHeaders = [
@@ -112,11 +105,7 @@ const linkFlags = [...flags, '--emit-symbol-map', '-sDEFAULT_TO_CXX=1', '--no-en
   '-sALLOW_MEMORY_GROWTH=1', '-sSTACK_SIZE=1048576', '-sINITIAL_MEMORY=67108864',
   '-sMAXIMUM_MEMORY=1073741824', '-sINVOKE_RUN=0', '-sEXIT_RUNTIME=0',
   '-sMIN_WEBGL_VERSION=2', '-sMAX_WEBGL_VERSION=2', '-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0',
-  '-sEXPORTED_RUNTIME_METHODS=FS,UTF8ToString,HEAP32,HEAPU8,allocateUTF8',  // th13.html 资源进 MEMFS /assets + 错误解码 + 投影/渲染统计读取（HEAPU8 = tests/sdl 统计契约测试）；allocateUTF8 = debug 页传录像名
-  // 页面壳 .rpy 导入序需要堆分配（th13.html importReplay：_malloc/_free +
-  // HEAPU8.set → _th13_replay_import）。实测（tmp/r4/exptest，emcc 6.0.9）
-  // 不列 EXPORTED_FUNCTIONS 时 mod._malloc 为 undefined——wasm 侧虽导出
-  // malloc，JS 模块面只按本表布线；keepalive 导出与 runtime methods 不受影响。
+  '-sEXPORTED_RUNTIME_METHODS=FS,UTF8ToString,HEAP32,HEAPU8,allocateUTF8',
   '-sEXPORTED_FUNCTIONS=_malloc,_free',
   ...outputs, '-o', output];
 await run(linkFlags);

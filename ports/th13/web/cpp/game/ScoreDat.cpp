@@ -19,7 +19,6 @@ constexpr u32 kEncryptBlock = 0x10;
 constexpr u8 kEntryNameDefault[9] = {'-', '-', '-', '-', '-', '-', '-', '-', 0x00};
 constexpr u8 kStNameDefault[9] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0x00};
 
-// 0x4bbd30：练习记录槽对应的关卡 id。
 constexpr u8 kPracticeStageTable[ScoreDat::kPracticeCount] = {
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3,
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 1,
@@ -71,7 +70,7 @@ void set_default_st_block(u8* st, u16 seed) {
     }
 }
 
-}  // namespace
+}
 
 u16 ScoreDat::lcg_next(u16& state) {
     const u32 x = u32(u16(state ^ 0x9630) - 0x6553) & 0xFFFF;
@@ -320,4 +319,4 @@ void ScoreDat::write_ending_bytes(u8* st, const u8 (&in)[kEndingBytes]) {
     std::memcpy(st + kStEndingOff, in, kEndingBytes);
 }
 
-}  // namespace th13
+}

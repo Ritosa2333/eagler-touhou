@@ -8,8 +8,6 @@ bool TitleAnimations::create(i32 script) {
     state.handles[script] = animations.create(title_bank, script, -1, 0);
     return check(state.handles[script] != 0);
 }
-// 逐实例平移覆盖（行条/大行条按行位落点；AnmManager::create translation 语义，
-// 位置 = translation + 脚本 ins_400 位置，见 AnmTransforms）。
 bool TitleAnimations::create_at(i32 script, const Vec3& translation) {
     state.handles[script] = animations.create(title_bank, script, -1, 2, translation);
     return check(state.handles[script] != 0);
@@ -43,4 +41,4 @@ bool TitleAnimations::hide_child(i32 root, i32 script) {
     auto* child = animations.registry.find_child_script(*vm, script, 0);
     return !child || check(animations.pause(animations.registry.handle(*child), true));
 }
-}  // namespace th13
+}

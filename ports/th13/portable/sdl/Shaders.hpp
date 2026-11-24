@@ -64,4 +64,4 @@ void main(){vec4 t=hasTexture?texture(tex,vUV):vec4(1.0);
  float scaled=gl_FragCoord.z*65536.0;
  gl_FragDepth=depth16?(floor(scaled)+floor(fract(scaled)-gl_FragCoord.z+0.5))/65535.0:gl_FragCoord.z;
 })GLSL";
-}  // namespace touhou::sdl
+}

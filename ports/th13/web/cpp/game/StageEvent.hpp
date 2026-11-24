@@ -1,5 +1,3 @@
-// stage1 事件落盘（JSONL）。字段与精度是 oracle 对拍合同，见 docs/plans/event-contract.md；
-// 改动键名/键序/精度前必须同步该文档与 oracle 侧。
 #pragma once
 
 #include "Types.hpp"
@@ -14,15 +12,12 @@ public:
     ~StageEventSink() { close(); }
     bool open(const char* path);
     void close();
-    bool ok() const { return !failed_; }  // close() 后仍可查询（落盘失败亦置位）
+    bool ok() const { return !failed_; }
     u64 emitted() const { return emitted_; }
     void set_frame(u32 frame) {
         frame_ = frame;
         seq_ = 0;
     }
-    // 回归 digest（tests/harness 用，默认关闭）：置位后 raw() 的每个字节按
-    // FNV-1a 64 混入，初值可由调用方续接（跨关累计）。关闭时 raw() 只多一条
-    // 可预测分支，不改变任何输出字节。
     u64 digest() const { return digest_; }
     void seed_digest(u64 value) {
         digest_ = value;
@@ -33,7 +28,6 @@ public:
     void enemy_move(u32 enemy, u16 op, const u32* integral, const float* values, u32 count);
     void bullet_spawn(u32 enemy, u32 slot, u32 way, u32 idx, float x, float y, float z, float angle, float speed,
                       u32 sprite, u32 subtype);
-    // 回放会话扩展（event-contract.md §7.3）。
     void player(float x, float y, u32 state);
     void kill(u32 enemy, float x, float y);
     void boss_op(u32 enemy, u16 op, const i32* args, u32 count, const char* name);
@@ -47,9 +41,9 @@ private:
             }
         if (std::fputs(text, out_) < 0) failed_ = true;
     }
-    void key(const char* name);  // ,"name":
-    void num(float value);       // %.9g（非有限值置失败标记）
-    void unum(u32 value);        // %u
+    void key(const char* name);
+    void num(float value);
+    void unum(u32 value);
     static constexpr u64 kDigestPrime = 0x100000001b3ull;
     std::FILE* out_ = nullptr;
     u32 frame_ = 0, seq_ = 0;
@@ -59,4 +53,4 @@ private:
     bool digest_enabled_ = false;
 };
 
-}  // namespace th13
+}

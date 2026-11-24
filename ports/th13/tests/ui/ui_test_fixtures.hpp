@@ -1,6 +1,3 @@
-// UI 基座单测夹具：合成 ANM 资源（外置纹理 + 指定脚本体）与平台服务桩。
-// 合成资源只覆盖 AnmResource::open 接受的布局，不模拟真实美术；
-// 状态机断言不依赖脚本视觉效果。
 #pragma once
 
 #include "game/AnmEnvironment.hpp"
@@ -13,7 +10,6 @@
 
 namespace th13::test {
 
-// 一条 ANM 指令：opcode/length/time/mask + i32 参数序列。
 struct AnmIns {
     i16 opcode;
     i16 time = 0;
@@ -29,17 +25,16 @@ inline AnmIns spawn(i32 script) { return AnmIns{500, 0, {script}}; }
 
 inline u32 instruction_length(const AnmIns& ins) { return u32(8 + ins.args.size() * 4); }
 
-// 合成单 entry ANM：外置纹理 "s.png"（64×64）、ns 个 sprite、给定脚本体。
 inline std::vector<u8> synthetic_anm(u32 sprites, const std::vector<std::vector<AnmIns>>& scripts) {
     const u32 ns = sprites, nc = u32(scripts.size());
     const u32 table_end = 64 + ns * 4 + nc * 8;
     u32 sprite_area = ns * 20;
-    std::vector<u8> body;  // sprite 记录 + 脚本体，拼接在表后
+    std::vector<u8> body;
     std::vector<u32> sprite_offsets(ns), script_offsets(nc);
     u32 cursor = table_end;
     for (u32 i = 0; i < ns; i++) {
         sprite_offsets[i] = cursor;
-        const u8 record[20]{};  // source_id=0, x=y=w=h=0
+        const u8 record[20]{};
         body.insert(body.end(), record, record + 20);
         cursor += 20;
     }
@@ -66,27 +61,26 @@ inline std::vector<u8> synthetic_anm(u32 sprites, const std::vector<std::vector<
     std::vector<u8> chunk(table_end + body.size() + sizeof name, 0);
     auto put16 = [&](u32 at, u16 value) { std::memcpy(chunk.data() + at, &value, 2); };
     auto put32 = [&](u32 at, u32 value) { std::memcpy(chunk.data() + at, &value, 4); };
-    put32(0, 8);  // version
+    put32(0, 8);
     put16(4, u16(ns));
     put16(6, u16(nc));
-    put16(10, 64);  // width
-    put16(12, 64);  // height
-    put16(14, 5);   // format（外置时不用）
+    put16(10, 64);
+    put16(12, 64);
+    put16(14, 5);
     put32(16, name_at);
-    chunk[32] = 0;  // hasData=0 → External
-    put32(36, 0);   // stride=0（单 chunk）
+    chunk[32] = 0;
+    put32(36, 0);
     for (u32 i = 0; i < ns; i++)
         put32(64 + i * 4, sprite_offsets[i]);
     for (u32 i = 0; i < nc; i++) {
-        put32(64 + ns * 4 + i * 8 + 0, 0);                  // source_id
-        put32(64 + ns * 4 + i * 8 + 4, script_offsets[i]);  // offset
+        put32(64 + ns * 4 + i * 8 + 0, 0);
+        put32(64 + ns * 4 + i * 8 + 4, script_offsets[i]);
     }
     std::memcpy(chunk.data() + table_end, body.data(), body.size());
     std::memcpy(chunk.data() + name_at, name, sizeof name);
     return chunk;
 }
 
-// n 个平凡脚本（park 即停）：供状态机全链路使用。
 inline std::vector<std::vector<AnmIns>> trivial_scripts(u32 n, u32 sprite_count = 8) {
     std::vector<std::vector<AnmIns>> scripts(n);
     for (u32 i = 0; i < n; i++)
@@ -95,9 +89,8 @@ inline std::vector<std::vector<AnmIns>> trivial_scripts(u32 n, u32 sprite_count 
     return scripts;
 }
 
-// 装一个合成 bank；失败返回 false。
 inline bool load_bank(AnmManager& manager, i32 id, const std::vector<u8>& bytes) {
     return manager.load(id, bytes.data(), u32(bytes.size()));
 }
 
-}  // namespace th13::test
+}

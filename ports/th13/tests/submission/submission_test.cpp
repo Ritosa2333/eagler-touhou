@@ -24,8 +24,6 @@ static std::string hex(const void* data, size_t n) {
     }
     return out;
 }
-// This is deliberately an operation recorder, NOT an oracle for GLES pixels.
-// It implements the real Renderer interface to compile/test GraphicsDevice.cpp.
 namespace touhou::sdl {
 State::State() {
     for (auto& m : matrix)
@@ -52,7 +50,7 @@ void Renderer::read(u32 id) { rendered += "read:" + std::to_string(id) + ";"; }
 void Renderer::prepare(u32 id) { rendered += "prepare:" + std::to_string(id) + ";"; }
 void Renderer::release(u32 id) { rendered += "release:" + std::to_string(id) + ";"; }
 void Renderer::present(u32 id) { rendered += "present:" + std::to_string(id) + ";"; }
-}  // namespace touhou::sdl
+}
 struct Vertex {
     float x, y, z, w;
     uint32_t color;
@@ -122,7 +120,6 @@ int main(int argc, char** argv) {
         assert(load(path) != base);
     }
     std::cout << "ok capture toggle and complete geometry/state/layout/viewport/target/update mutations\n";
-    // Snapshot is owned even if the live state is overwritten before dispatch.
     touhou::sdl::State state;
     state.pipeline.textureFactor = 77;
     Submission snapshot{Submission::Kind::Flush, state};
@@ -141,7 +138,7 @@ int main(int argc, char** argv) {
     assert(d.initialize());
     rendered.clear();
     assert(!unknown.dispatch(d.backend, trace, missing, nullptr));
-    assert(rendered.find("draw:") != std::string::npos);  // error cannot suppress production
+    assert(rendered.find("draw:") != std::string::npos);
     assert(trace.error().find("unknown resource") != std::string::npos);
     assert(!trace.close());
     assert(load(dir + "/unknown.jsonl").find("\"complete\":false") != std::string::npos);

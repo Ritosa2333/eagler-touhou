@@ -1,5 +1,3 @@
-// H-LASER-TEMPLATE: 0041b260 cases 0x87/0x88 configure an existing
-// enemy et slot, rather than allocate a global laser or reset its state.
 #include "ecl_test_fixtures.hpp"
 #include "game/StageSim.hpp"
 
@@ -50,7 +48,6 @@ TEST(laser_template_retains_emitter_and_other_enemy_state) {
     CHECK_EQ(rig.enemy.et[2].laser_width, 0.0f);
     StageEnemy other;
     CHECK_EQ(other.et[3].laser_timing[2], 0);
-    // No clipping or replacement of zero/negative durations or signed flags.
     CHECK_EQ(rig.run(701, {3, 0, u32(-2), 0, u32(-4), 0x80000009u}), 0);
     CHECK_EQ(et.laser_timing[0], 0);
     CHECK_EQ(et.laser_timing[1], -2);
@@ -116,5 +113,5 @@ TEST(absolute_emitter_instruction_preserves_offset_and_supports_disable_sentinel
     }
 }
 
-}  // namespace
+}
 int main() { return th13test::run_all("laser-template"); }

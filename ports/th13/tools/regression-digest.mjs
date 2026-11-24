@@ -1,41 +1,3 @@
-// 全回放回归 digest 门禁：生成 / 校验 golden（replay 与 draws 两种模式）。
-//
-// 背景：移植侧没有原版真值可逐帧对拍，重构的「行为不变」只能以位精确的
-// 状态/事件/绘制摘要证明。harness（tests/harness/harness.cpp）在
-// TH13_DIGEST_LOG 下逐采样帧写：
-//   stage <s> frame <f> state <16hex> events <16hex> [draws <16hex>] stepped <0|1>
-// 末尾一行 total。本工具跑完整录像（TH13_REPLAY_ALL=1 + TH13_REPLAY_FULL=1），
-// 解析日志并把每关/每采样行冻结成 golden。
-//
-// 用法（容器内，工作目录 ports/th13）：
-//   node tools/regression-digest.mjs                 重建 golden/digests.json
-//   node tools/regression-digest.mjs --check         与 golden 比对（首差退出 1）
-//   node tools/regression-digest.mjs --draws         重建 golden/digests-draws.json
-//   node tools/regression-digest.mjs --draws --draws-stages all [--check]
-//                                                    每关窗口，golden/digests-draws-all.json
-//   node tools/regression-digest.mjs --draws --check 校验绘制子集
-//   node tools/regression-digest.mjs --replay <path> [--replay ...] [--stride N]
-//                                    [--draws-frames N] [--keep]
-//
-// 构建身份（wasm sha256/build.json）只作 provenance 记录；--check 绝不要求
-// 构建哈希一致——门禁的全部意义就是比较不同构建。
-//
-// 稳定性：harness 进程固定带 --no-incremental-marking。Node 22.23 的 V8
-// （12.4.254.21）在增量标记的栈扫描里会遍历到返回地址无效的帧，于
-// CommonFrame::IterateTurbofanOptimizedFrame 内解引用崩溃（Node 的信号处理器
-// 把它重发成 SIGSEGV）。这与移植代码无关：崩溃与 --stack-size（200KB–15MB）
-// 和 JIT 模式无关；关掉增量标记后，叠加 --gc-interval=500 --stress-compaction
-// --verify-heap 的整卷回放全部跑完、堆校验通过；原生 ASan/UBSan 构建同样全绿。
-//
-// 没跑完的条目在 golden 里记为 stable:false，只保留停止点证据，不参与摘要
-// 比较；稳定条目一旦变为不稳定即判失败。--check 遇到差异会整卷复核
-// --confirmations 次，排除真正的非确定性。
-//
-// 默认语料 = games/replays/*.rpy（6 个玩家录像）+ artifacts/reference/raw/
-// demo0..3.rpy。draws 模式默认跑每条录像第 0 关的前 --draws-frames 帧（默认
-// 600）；--draws-stages all 改为每关各取一个同样的窗口，金标另存
-// digests-draws-all.json。整卷链每帧都要序列化绘制清单（一条六关录像约
-// 7 分钟、8GB 清单），门禁不跑整卷。
 import {createHash} from 'node:crypto';
 import {existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync} from 'node:fs';
 import {basename, dirname, resolve} from 'node:path';
@@ -61,7 +23,6 @@ function number(token, where) {
   return Number(token);
 }
 
-// 解析 digest 日志。行序保留（stage 内 frame 必须非降），供首差定位。
 export function parseDigestLog(text) {
   const rows = [];
   let header = null;
@@ -143,8 +104,6 @@ function describeRow(row) {
   return `${row.state}/${row.events}/${row.draws ?? '-'}/${row.stepped === null ? '-' : row.stepped ? 1 : 0}`;
 }
 
-// 首个差异（golden vs current）。返回 null 或
-// {replay, stage, frame, stream, expected, actual}。
 export function firstDivergence(golden, current) {
   const at = (replay, stage, frame, stream, expected, actual) =>
     ({replay, stage, frame, stream, expected, actual});
@@ -171,8 +130,6 @@ export function firstDivergence(golden, current) {
       return at(left.file, '-', '-', 'replay', left.file, right.file);
     if (left.sha256 !== right.sha256)
       return at(left.file, '-', '-', 'replay-sha256', left.sha256, right.sha256);
-    // 没跑完的条目：金标只记录停止点证据，不参与摘要比较（仍逐条跑、
-    // 逐条报告）。跑完过的条目一旦跑不完 = 门禁失败。
     const leftStable = left.stable !== false;
     const rightStable = right.stable !== false;
     if (!leftStable) continue;
@@ -200,7 +157,6 @@ export function firstDivergence(golden, current) {
   return null;
 }
 
-// golden 文档（键序固定，便于逐字节 diff；build 只作 provenance）。
 export function makeDocument({mode = 'replay', stride = 60, drawsFrames = null,
                               drawsStages = 'first', replays = [], build = null} = {}) {
   const corpus = replays.map(entry => ({
@@ -270,7 +226,6 @@ function walkFiles(directory, out = []) {
   return out;
 }
 
-// harness 产物必须存在且不旧于源码；不静默重建（构建耗时且属于显式动作）。
 export function staleHarnessInputs() {
   if (!existsSync(wasmPath)) return {missing: true, wasm: wasmPath, newer: []};
   const built = statSync(wasmPath).mtimeMs;
@@ -330,7 +285,6 @@ function sanitize(value) {
   return value.replace(/[^A-Za-z0-9_.-]+/g, '_');
 }
 
-// 跑一条录像的一次尝试并解析日志。失败也返回已落盘的采样行（不静默丢弃）。
 function runReplayOnce(entry, options, mode, index, attempt, stage = 0) {
   const slug = `${String(index).padStart(2, '0')}-${sanitize(entry.file.replace(/\.rpy$/i, ''))}-${mode}` +
     (stage ? `-s${stage}` : '');
@@ -346,8 +300,6 @@ function runReplayOnce(entry, options, mode, index, attempt, stage = 0) {
     TH13_DIGEST_LOG: logGuest,
     TH13_DIGEST_STRIDE: String(options.stride),
   };
-  // 诊断开关会改变模拟/输出（freeze 门、ANM 负控、探针、状态流），门禁
-  // 环境必须干净；TH13_HARNESS_WASM 也清掉，保证测的是标准产物。
   for (const key of ['TH13_FREEZE_AT', 'TH13_NO_ECL_SLOT_ANM', 'TH13_DAMAGE_PROBE',
                      'TH13_RNG_TRACE', 'TH13_SPIRIT_PROBE', 'TH13_STATE_LOG',
                      'TH13_LIFE_PROBE', 'TH13_SHOT_PROBE', 'TH13_HARNESS_WASM'])
@@ -361,7 +313,6 @@ function runReplayOnce(entry, options, mode, index, attempt, stage = 0) {
   }
   const started = Date.now();
   const run = spawnSync(process.execPath,
-    // 见文件头“稳定性”：Node 22.23 的 V8 在增量标记的栈扫描里会崩溃。
     ['--no-incremental-marking', '--experimental-wasi-unstable-preview1',
      resolve(port, 'tools/run-harness.mjs'), ...harnessArgs],
     {cwd: workspace, env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: 900000});
@@ -388,7 +339,6 @@ function runReplayOnce(entry, options, mode, index, attempt, stage = 0) {
   let frames = parsed?.total?.frames ?? 0;
   let stop = null;
   if (!completed) {
-    // 没有 total 行：把每关最后一个采样行当作停止点（金标只承诺已记录到的帧）。
     const perStage = new Map();
     for (const row of rows) perStage.set(row.stage, row);
     for (const row of perStage.values()) frames += row.frame + 1;
@@ -421,14 +371,11 @@ function runReplayOnce(entry, options, mode, index, attempt, stage = 0) {
     entryResult.diagnostic = reason;
     entryResult.detail = (run.stderr || run.stdout || '').trim().split('\n').slice(-3);
   }
-  // 成功即清临时文件；失败时保留 digest 日志便于定位（--keep 时一律保留）。
   if (completed && !options.keep)
     for (const path of [logHost, auxHost]) if (existsSync(path)) rmSync(path, {force: true});
   return entryResult;
 }
 
-// 每条录像跑 --attempts 次（默认 1，harness 进程不再崩溃，重试只会掩盖问题）；
-// 仍失败的条目记为 incomplete，金标如实记录停止点。
 function runReplay(entry, options, mode, index, stage = 0) {
   let result = null;
   for (let attempt = 1; attempt <= options.attempts; attempt++) {
@@ -439,8 +386,6 @@ function runReplay(entry, options, mode, index, stage = 0) {
   return result;
 }
 
-// --draws-stages all：每关各取一个窗口。关数取自 replay 金标里同一条录像的
-// 稳定条目；没有的话无从得知关数，直接报错。
 function stageWindows(entry, options) {
   if (options.drawsStages !== 'all') return [0];
   const replayGolden = resolve(goldenDir, 'digests.json');

@@ -4,12 +4,6 @@
 namespace th13 {
 Vec3 project_vertex(const Vec3& p, const Matrix4& world, const AnmCamera& camera,
                     const GraphicsViewport& viewport) noexcept {
-    // 0x4681b0 两次 D3DXVec3Project（IAT 桩）：oracle 桩语义 = 矩阵链
-    //（world·view·proj）与点积全程 double（full 不回存 f32）、视口段 double、
-    // 每分量仅在写出时一次 f32 舍入（oracle/render_oracle.py
-    // d3dx_project_point）。旧实现是 f32 中间量 + Newton 倒数精化的 SSE 风格
-    // 模型：同一输入与桩差 1 ulp，经投影 quad 的长度消去放大（~90:1）成
-    // width 64 ulp / 角点 32 ulp（2026-11-05 C2 取证，laser 窗 draw 首差根因）。
     double a[16], b[16];
     for (u32 i = 0; i < 16; i++)
         a[i] = double(world.m[i]);
@@ -49,15 +43,10 @@ int anm_projected_quad(AnmVm& vm, const AnmCamera& camera, const GraphicsViewpor
     const Vec3 center = project_vertex({}, world, camera, viewport);
     if (center.z < 0 || center.z > 1) return -1;
     const Vec3 reference = project_vertex(camera.reference, world, camera, viewport);
-    // 0x4682f3-0x468345：dx/dy/dz 各一次 f32 舍入（fsub+fstp）；dist² 以更宽
-    // 精度按 (dy²+dx²)+dz² 精确累加（f32 平方在 double 内无舍入）后单次
-    // f32 舍入；0x4977c0 double sqrt。
     const float dx = float(reference.x - center.x), dy = float(reference.y - center.y),
                 dz = float(reference.z - center.z);
     const float dist2 = float(double(dy) * double(dy) + double(dx) * double(dx) + double(dz) * double(dz));
     const float length = float(std::sqrt(double(dist2))), factor = float(length * .5f);
-    // 0x468364-0x46838e：width/height 三乘链在更宽精度下精确求积、单次
-    // f32 舍入。
     const float width =
         float((double(double(v.sprite_size.x) * double(factor)) * double(v.scale.x)) * double(v.secondary_scale.x));
     const float height =
@@ -67,8 +56,6 @@ int anm_projected_quad(AnmVm& vm, const AnmCamera& camera, const GraphicsViewpor
     if (ax > 2 || ay > 2) return -2;
     constexpr float xs[3][4] = {{-.5f, .5f, -.5f, .5f}, {0, 1, 0, 1}, {-1, 0, -1, 0}},
                     ys[3][4] = {{-.5f, -.5f, .5f, .5f}, {0, 0, 1, 1}, {-1, -1, 0, 0}};
-    // 0x4683be-0x4685f5：角点 (x·cos−y·sin)+center 在更宽精度下精确求积、
-    // 单次 f32 舍入。
     for (u32 i = 0; i < 4; i++) {
         const double x = double(xs[ax][i]) * double(width), y = double(ys[ay][i]) * double(height);
         out[i] = {float(double(x) * double(cosine) - double(y) * double(sine) + double(center.x)),
@@ -76,4 +63,4 @@ int anm_projected_quad(AnmVm& vm, const AnmCamera& camera, const GraphicsViewpor
     }
     return 0;
 }
-}  // namespace th13
+}

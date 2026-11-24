@@ -1,6 +1,3 @@
-// HUD Stage 1 "Item Get Border Line!" lifecycle:
-// 0x425170:509-512 creates front.anm script67 only when stage==1,
-// GameInf+0x74==0 and DAT_004be7c8==0. The ANM tree owns the animation.
 #include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 
@@ -17,7 +14,6 @@ using namespace th13::test;
 
 namespace {
 std::vector<u8> read_reference_anm(const char* name) {
-    // run.sh 的工作目录是外层工作区，原版资源在其 artifacts/ 下（与各套件其余测试一致）。
     const std::string candidates[] = {
         std::string("artifacts/reference/raw/") + name,
         std::string("../artifacts/reference/raw/") + name,
@@ -85,7 +81,7 @@ void check_gate(i32 stage, i32 practice_mode, i32 continues, bool expected) {
     if (!harness.initialize(stage, practice_mode, continues)) return;
     CHECK_EQ(harness.item_border() != nullptr, expected);
 }
-}  // namespace
+}
 
 TEST(item_border_line_uses_original_stage_one_ordinary_gate) {
     check_gate(1, 0, 0, true);

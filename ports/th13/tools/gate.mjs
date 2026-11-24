@@ -1,11 +1,4 @@
 #!/usr/bin/env node
-// th13 测试套件编排：在容器内并行运行各套件，把 TAP 结果汇总为 results.json，
-// 并可与基线逐测试比对（只比对本次分组与 --only 选中的套件）。带 --compare 时，
-// 退出码非零当且仅当出现基线之外的新失败；不带时，退出码非零当且仅当有套件失败。
-// 用法（容器内，于 ports/th13 或 ports/th13-mp 目录执行）：
-//   node tools/gate.mjs [--group native|js|all] [--jobs N] [--only a,b]
-//                       [--out <目录>] [--compare <results.json>]
-// 日志与结果默认写 <外层工作区>/artifacts/gate/<端口>/<分组>/。
 import {spawn, spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync} from 'node:fs';
@@ -16,7 +9,6 @@ const portName = basename(portDir);
 const outer = resolve(portDir, '..', '..', '..');
 const suiteTimeoutMs = 3 * 60 * 60 * 1000;
 const nativeSuites = ['anm', 'ecl', 'ui', 'replay', 'items', 'score', 'combat', 'bomb', 'audio', 'e2e', 'contracts'];
-// 这些 .test.mjs 只是 native 分组对应套件的包装，不重复运行。
 const nativeWrappers = new Set(['anm', 'ecl', 'replay', 'ui']);
 const browserless = ['shell-replay-channel.test.mjs'];
 
@@ -53,8 +45,6 @@ function collectSuites(group, outDir) {
       if (existsSync(join(portDir, 'tests', name, 'run.sh')))
         suites.push({name, command: `bash tests/${name}/run.sh`});
     }
-    // 多人版 M1–M9 累计原生工作流；逐 case 结果写在报告 JSON 里。来源摘要取
-    // 当前 HEAD 的 sha256（运行器要求 64 位十六进制）。
     if (existsSync(join(portDir, 'tests/multiplayer/run-native.sh'))) {
       const cases = join(outDir, 'multiplayer-report.json');
       const digest = createHash('sha256').update(headCommit() ?? '').digest('hex');
@@ -70,8 +60,6 @@ function collectSuites(group, outDir) {
     const contracts = join(tests, 'contracts');
     if (existsSync(contracts))
       scripts.push(...readdirSync(contracts).filter(file => file.endsWith('.test.mjs')).map(file => `tests/contracts/${file}`));
-    // web/tests/sdl 里不需要浏览器的测试同样归 js 套件：浏览器套件所在的 th13-shot 镜像没有 acorn。
-    // 清单按普通版 shell 的录像库书写；多人版那套是独立实现，文件自行跳过，不排期。
     for (const file of portName === 'th13-mp' ? [] : browserless)
       if (existsSync(join(portDir, 'web/tests/sdl', file))) scripts.push(`web/tests/sdl/${file}`);
     if (scripts.length) suites.push({name: 'js', command: `node --test ${scripts.join(' ')}`});
@@ -79,7 +67,6 @@ function collectSuites(group, outDir) {
   return suites;
 }
 
-// 不输出 TAP 的套件只看退出码，记为一条占位失败以便与基线比对。
 function parseTap(text, exitCode) {
   const passed = [], failed = [];
   let assertions = 0;
@@ -96,7 +83,6 @@ function parseTap(text, exitCode) {
 function runSuite(suite, logPath) {
   return new Promise(done => {
     const startedAt = Date.now();
-    // 独立进程组：超时时连同编译器与测试进程一并结束。
     const child = spawn('bash', ['-c', suite.command], {cwd: portDir, env: process.env, detached: true});
     const chunks = [];
     const collect = chunk => chunks.push(chunk);
@@ -119,7 +105,6 @@ function runSuite(suite, logPath) {
       writeFileSync(logPath, output);
       const result = {...suite, exitCode: code, signal, timedOut, seconds: (Date.now() - startedAt) / 1000, log: logPath,
         ...parseTap(output.toString('utf8'), timedOut ? -9 : code)};
-      // 逐 case 报告（th13/mp-workflow-test/v1）补充 TAP 之外的测试名。
       if (suite.cases && existsSync(suite.cases)) {
         delete result.cases;
         for (const item of JSON.parse(readFileSync(suite.cases, 'utf8')).cases ?? []) {
@@ -147,7 +132,6 @@ async function runAll(suites, jobs, outDir) {
   return results;
 }
 
-// 只比对本次分组与 --only 选中的套件；其中基线里有而本次没跑的套件算回归。
 function compareWith(baseline, results, group, skipped) {
   const regressions = [], improvements = [];
   const inGroup = name => group === 'all' || (name === 'js') === (group === 'js');

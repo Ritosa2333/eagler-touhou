@@ -52,8 +52,6 @@ TEST(second_right_row_repositions_both_rows_with_shared_block_width) {
     auto* b = row(manager, 1);
     CHECK(b);
     if (!b) return;
-    // 00428ae0 second-line branch writes the shared+0x1a0 width,
-    // then00470160 updates both text-line translations before label2.
     CHECK_EQ(a->visual.translation.x, 158.f);
     CHECK_EQ(b->visual.translation.x, 158.f);
     CHECK_EQ(a->visual.translation.y, 272.f);
@@ -66,5 +64,5 @@ TEST(second_right_row_repositions_both_rows_with_shared_block_width) {
     CHECK_EQ(a->visual.color >> 24, 31u);
     CHECK_EQ(b->visual.color >> 24, 31u);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("dialogue-shared-width"); }

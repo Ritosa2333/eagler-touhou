@@ -77,7 +77,6 @@ TEST(clear_bullets_spawns_independent_particle_with_original_motion_channel) {
     CHECK_EQ(vm->interpolators.position.timer.current, 0);
     sim.clear_bullets();
     CHECK_EQ(callbacks, 1);
-    //Script139 is a controller: its child138 owns the visible fragment.
     renderer.set_viewport({0, 0, 640, 480});
     for (int i = 0; i < 20; ++i) {
         CHECK(animations.update());
@@ -200,5 +199,5 @@ TEST(respawn_cancel_matches_native_state_protection_and_inclusive_radius_cases) 
         CHECK_EQ(v.animation_interrupt, c.out == 4 ? 1 : 0);
     }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("bullet cancellation particles"); }

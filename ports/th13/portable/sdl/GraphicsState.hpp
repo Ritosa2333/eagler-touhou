@@ -97,8 +97,6 @@ struct PipelineState {
     bool textureTransform = false;
     Filter minFilter = Filter::Linear, magFilter = Filter::Linear;
     Address addressU = Address::Repeat, addressV = Address::Repeat;
-    // Texture factor and world matrix can vary per instance; all other state
-    // must match before preserving draw order in an instanced batch.
     auto key() const {
         return std::tie(depthTest, depthWrite, blend, alphaTest, fog, rangeFog, dither, depthCompare, alphaCompare,
                         sourceBlend, destinationBlend, blendEquation, separateAlphaBlend, sourceAlphaBlend,
@@ -111,8 +109,6 @@ struct PipelineState {
     }
 };
 
-// Game and platform owners share semantic operations. No numeric device-state
-// dispatch or Windows graphics API is involved in this contract.
 struct StateCommands {
     virtual ~StateCommands() = default;
     virtual PipelineState& pipeline() = 0;
@@ -199,8 +195,6 @@ constexpr u32 vertex_count(Topology p, u32 n) {
                                       : n + 2;
 }
 
-// These aliases preserve the original harness signatures in comparison-only
-// builds. Production owners use the enums above all the way to GLES.
 #ifdef TH_NATIVE_PLATFORM
 using BlendParameter = BlendFactor;
 using MatrixParameter = MatrixKind;
@@ -218,7 +212,7 @@ constexpr auto One = BlendFactor::One, InverseSourceAlpha = BlendFactor::Inverse
 #else
 constexpr u32 One = 2, InverseSourceAlpha = 6;
 #endif
-}  // namespace Blends
+}
 namespace Matrices {
 #ifdef TH_NATIVE_PLATFORM
 constexpr auto World = MatrixKind::World, View = MatrixKind::View, Projection = MatrixKind::Projection,
@@ -226,7 +220,7 @@ constexpr auto World = MatrixKind::World, View = MatrixKind::View, Projection = 
 #else
 constexpr u32 World = 256, View = 2, Projection = 3, Texture = 16;
 #endif
-}  // namespace Matrices
+}
 namespace Primitives {
 #ifdef TH_NATIVE_PLATFORM
 constexpr auto Points = Topology::Points, Lines = Topology::Lines, LineStrip = Topology::LineStrip,
@@ -234,7 +228,7 @@ constexpr auto Points = Topology::Points, Lines = Topology::Lines, LineStrip = T
 #else
 constexpr u32 Points = 1, Lines = 2, LineStrip = 3, Triangles = 4, Strip = 5, Fan = 6;
 #endif
-}  // namespace Primitives
+}
 namespace Layouts {
 #ifdef TH_NATIVE_PLATFORM
 constexpr auto World = VertexLayout::WorldUv, ColoredWorld = VertexLayout::WorldColorUv,
@@ -242,5 +236,5 @@ constexpr auto World = VertexLayout::WorldUv, ColoredWorld = VertexLayout::World
 #else
 constexpr u32 World = 0x102, ColoredWorld = 0x142, Screen = 0x144, Untextured = 0x44;
 #endif
-}  // namespace Layouts
-}  // namespace touhou::graphics
+}
+}

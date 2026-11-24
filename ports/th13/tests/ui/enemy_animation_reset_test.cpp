@@ -69,7 +69,7 @@ TEST(animation_reset_rebuilds_saved_base_and_disables_turning) {
     command(313, {0});
     vm = animations.registry.find(e->anm_slot_handle[0]);
     CHECK(vm);
-    if (vm) CHECK_EQ(vm->source_script, 6);  //saved base1+5, not last303 script4+5
+    if (vm) CHECK_EQ(vm->source_script, 6);
 }
 TEST(real_st01enm_body_rebinds_keep_one_live_root_and_retire_cleanly) {
     GameRandom random;
@@ -111,8 +111,6 @@ TEST(real_st01enm_body_rebinds_keep_one_live_root_and_retire_cleanly) {
         CHECK(presentation.flush_ecl_animations(battle));
         CHECK(animations.update());
     };
-    // Real st01enm local scripts: 0 = 306 body, 5 = 313 flipped body,
-    // 1..4 = mirror-walk variants. Every rebind must retire the previous root.
     command(306, {0, 0});
     CHECK_EQ(live_bodies(), 1u);
     command(303, {0, 0});
@@ -123,8 +121,7 @@ TEST(real_st01enm_body_rebinds_keep_one_live_root_and_retire_cleanly) {
     CHECK_EQ(live_bodies(), 1u);
     auto* slot = animations.registry.find(e->anm_slot_handle[0]);
     CHECK(slot);
-    if (slot) CHECK_EQ(slot->source_script, 5);  // 0x419450 saved base0 + 5
-    // Mirror-walk rebind (0x419450: old dir 0, new dir -1 -> script base+1).
+    if (slot) CHECK_EQ(slot->source_script, 5);
     e->flags |= 0x200000u;
     e->mirror_dir = 0;
     e->mirror_prev_x = e->position[0] + 1.0f;
@@ -134,7 +131,6 @@ TEST(real_st01enm_body_rebinds_keep_one_live_root_and_retire_cleanly) {
     slot = animations.registry.find(e->anm_slot_handle[0]);
     CHECK(slot);
     if (slot) CHECK_EQ(slot->source_script, 1);
-    // Enemy death path (RunScene retire_sink): all slot roots retire, none leak.
     for (u32& handle : e->anm_slot_handle)
         if (handle) {
             CHECK(animations.retire(handle));
@@ -143,5 +139,5 @@ TEST(real_st01enm_body_rebinds_keep_one_live_root_and_retire_cleanly) {
     CHECK(animations.update());
     CHECK_EQ(live_bodies(), 0u);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("enemy animation reset"); }

@@ -1,8 +1,3 @@
-// TH13 原版（th13.exe v1.00c）反编译导出。逐函数输出反编译体与带字节的反汇编，
-// 另写出调用图、基本块、导入表、字符串四份索引，供保真对照与地址锚点登记使用。
-// 反编译文本是对照用的候选证据，不是已核实的实现。
-// 用法：postScript ExportTh13.java <输出目录> [入口地址 ...]；给出入口地址时只导出这些函数。
-// @category TH13
 import ghidra.app.script.GhidraScript;
 import ghidra.app.decompiler.*;
 import ghidra.program.model.address.Address;
@@ -76,7 +71,6 @@ public class ExportTh13 extends GhidraScript {
                 entry.addProperty("message", result.getErrorMessage());
                 if (result.decompileCompleted()) {
                     String code = result.getDecompiledFunction().getC();
-                    // 寄存器传参未被识别时，反编译体会出现 unaff_*/in_E* 伪变量。
                     JsonObject artifacts = new JsonObject();
                     artifacts.addProperty("unassigned", code.contains("unaff_"));
                     artifacts.addProperty("registerArgument", code.contains("in_E"));

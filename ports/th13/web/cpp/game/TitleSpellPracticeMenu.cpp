@@ -5,7 +5,7 @@
 namespace th13 {
 namespace {
 i32 clamp_i32(i32 value, i32 low, i32 high) { return value < low ? low : (value > high ? high : value); }
-}  // namespace
+}
 
 TitleSpellPracticeMenu::TitleSpellPracticeMenu(TitleSpellPracticePlatform& platform, i32 initial_character)
     : platform_(platform) {
@@ -121,7 +121,6 @@ bool TitleSpellPracticeMenu::update(const SpellPracticeInput& input) {
     blocked.clear();
     if (input.up) move_cursor(-1);
     if (input.down) move_cursor(1);
-    // 004560a0 also calls 004564c0 on Stage Select.
     if (input.left) cycle_character(-1);
     if (input.right) cycle_character(1);
     if (input.confirm) return confirm();
@@ -161,7 +160,7 @@ bool TitleSpellPracticeMenu::confirm() {
             return false;
         }
         const SpellPracticeSpellRow& row = spell_rows_[size_t(cursor_)];
-        if (!row.unlocked) {  // 0x456af0：锁定卡仍可浏览，不可确认。
+        if (!row.unlocked) {
             blocked = "spell card locked";
             return false;
         }
@@ -208,7 +207,6 @@ bool TitleSpellPracticeMenu::restore_selection(i32 stage, i32 slot, i32 difficul
     cursor_ = slot;
     rebuild_spells();
     rebuild_difficulties();
-    // rebuild_difficulties 会把不可用行上的光标挪走；返回 insists 启动变体。
     cursor_ = difficulty;
     level_ = SpellPracticeLevel::Difficulty;
     return difficulty_rows_[size_t(difficulty)].spell_id >= 0;
@@ -234,9 +232,8 @@ void TitleSpellPracticeMenu::emit(SpellPracticeAction action) {
     command_.action = action;
     command_.character = character_;
     if (action == SpellPracticeAction::Launch) {
-        // 0x4576c0：DAT_004be81c = stage_index + 1；stage 已是 1 基。
         command_.stage = selected_stage_;
     }
 }
 
-}  // namespace th13
+}

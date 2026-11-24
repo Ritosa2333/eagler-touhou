@@ -4,8 +4,6 @@
 using namespace th13;
 
 namespace {
-// H-RNG-SPAWN-330: 00419f3c reads TIME before 0041aab9 advances it.
-// At age 60 the original emits one death spirit; at age 61 it emits none.
 class TimeProvider final : public EclResourceProvider {
 public:
     TimeProvider() {
@@ -74,7 +72,7 @@ struct TimeFixture {
         return count;
     }
 };
-}  // namespace
+}
 
 TEST(constructor_ecl_observes_zero_time_and_returns_after_timer_tick) {
     TimeFixture fixture;
@@ -106,12 +104,12 @@ TEST(lethal_collision_at_age_sixty_spawns_before_time_advances) {
         fixture.battle.sim.random.reseed_restore(60189);
         GameRandom expected(60189);
         if (age == 60) {
-            expected.signed_unit();  // 00439170: death spirit angle
-            expected.unit();         // 004391a4: death spirit speed
+            expected.signed_unit();
+            expected.unit();
         }
-        expected.signed_unit();  // 00417b2a: scatter-table initial angle
+        expected.signed_unit();
         CHECK(fixture.battle.step(fixture.idle));
-        CHECK_EQ(retired_age, float(age));  // dead update returns before 0041aab9
+        CHECK_EQ(retired_age, float(age));
         for (const auto& alive : fixture.battle.sim.enemies)
             CHECK(alive->serial != serial);
         CHECK_EQ(fixture.spirits(), age == 60 ? 1 : 0);
@@ -141,16 +139,9 @@ TEST(constructor_resolves_lethal_shot_before_return_and_time_tick) {
     auto* enemy = fixture.target();
     CHECK(enemy != nullptr);
     if (!enemy) return;
-    // 契约更正（0x418581 call 41a8a0 → 0x418586 直接覆盖 EAX，返回被忽略；
-    // 4183f0 构造趟不摘链）：构造期致死已执行 41aad0（下方 spirits/弹结算与
-    // age==0 均保持），敌机保持挂链非 dead，摘链由后续 0x418e00 完成
-    // （EX udmh04 e2141/e2183 全窗对拍实证）。
     CHECK(!enemy->dead);
     CHECK_EQ(enemy->age, 0.0f);
-    CHECK_EQ(fixture.spirits(), 2);  // 00419f3c age0: (60-0)/60+1
-    // 契约更正（0x446c5a/0x446c8d/0x446531，同 player_shot_geometry 裁决）：
-    // 命中只写 shot+0x70=2 并清注册指针；弹体命中当帧不失活，等 ANM 终止
-    // 后由 0x446531 退休。
+    CHECK_EQ(fixture.spirits(), 2);
     CHECK(fixture.battle.shots.front().alive);
     CHECK_EQ(fixture.battle.shots.front().state, 2);
     CHECK_EQ(fixture.battle.shots.front().registration_slot, -1);
@@ -169,9 +160,9 @@ TEST(earlier_enemy_death_rng_is_visible_to_later_enemy_ecl) {
     fixture.lethal_shot();
     fixture.battle.sim.random.reseed_restore(60189);
     GameRandom expected(60189);
-    expected.signed_unit();  // target's death spirit angle
-    expected.unit();         // target's death spirit speed
-    expected.signed_unit();  // target's scatter table
+    expected.signed_unit();
+    expected.unit();
+    expected.signed_unit();
     const i32 observed = i32(expected.next() & 0x7fffffffu);
     CHECK(fixture.battle.step(fixture.idle));
     CHECK_EQ(watcher->i_slots[0], observed);

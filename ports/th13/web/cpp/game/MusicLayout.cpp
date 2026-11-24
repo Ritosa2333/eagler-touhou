@@ -11,7 +11,7 @@ u16 half(const u8* p) {
     std::memcpy(&v, p, 2);
     return v;
 }
-}  // namespace
+}
 bool MusicLayout::open(const u8* bytes, u32 size) {
     error.clear();
     std::vector<MusicTrack> result;
@@ -63,6 +63,6 @@ i32 MusicLayout::index(const std::string& value) const {
     if (name.size() < 4 || name.substr(name.size() - 4) != ".wav") name += ".wav";
     for (u32 n = 0; n < tracks.size(); ++n)
         if (tracks[n].filename == name) return i32(n);
-    return -1;  // Missing assets are errors, never silently substituted by title music.
+    return -1;
 }
-}  // namespace th13
+}

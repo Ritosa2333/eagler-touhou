@@ -1,4 +1,3 @@
-// 4 角色 × 5 难度的原版格式坐标回归；本套件不依赖黄金资产。
 #include "../harness/test_framework.hpp"
 
 #include "game/ScoreDat.hpp"
@@ -189,6 +188,6 @@ TEST(character_columns_and_difficulty_tables_round_trip) {
     check_mirror(reloaded.score_dat);
 }
 
-}  // namespace
+}
 
 int main() { return th13test::run_all("ScoreDat 角色/难度坐标"); }

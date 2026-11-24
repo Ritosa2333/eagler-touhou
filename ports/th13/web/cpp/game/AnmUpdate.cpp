@@ -28,4 +28,4 @@ bool AnmVm::advance(float rate) {
     }
     return true;
 }
-}  // namespace th13
+}

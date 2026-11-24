@@ -18,7 +18,7 @@ struct Args final : EclVariables {
     i32* integer_destination(i32) override { return nullptr; }
     float* float_destination(i32) override { return nullptr; }
 };
-}  // namespace
+}
 TEST(ecl333_uses_fresh_source_translation_and_original_argument_order) {
     StageSim sim;
     StageEnemy enemy;

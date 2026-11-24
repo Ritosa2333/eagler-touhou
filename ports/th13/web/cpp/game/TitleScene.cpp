@@ -23,7 +23,6 @@ TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManag
     stage_text_draw.enabled = true;
     stage_text_draw.run = [](void* owner) {
         auto& scene = *static_cast<TitleScene*>(owner);
-        // [§8.9] LOGO 绘制侧层落码（Draw 优先级 2，先于 ANM 层任务）。
         scene.main.apply_draw_layers();
         if (scene.player_data && scene.player_data_view && scene.state.screen == TitleScreen::PlayerData &&
             !scene.player_data_view->draw(*scene.player_data, scene.host))
@@ -32,7 +31,6 @@ TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManag
             scene.spell_launch_age_ < 0 &&
             !scene.spell_practice_view->draw(*scene.spell_practice, scene.host, scene.host))
             return scene.check(false, scene.spell_practice_view->error) ? 1 : 5;
-        // 通关结算屏文本（0x454050/0x4549d0）走同一 Draw 优先级 2 队列。
         if ((scene.state.screen == TitleScreen::ResultName || scene.state.screen == TitleScreen::ResultReplaySlot) &&
             !scene.result.draw_texts(scene.host))
             return scene.check(false, scene.result.error) ? 1 : 5;
@@ -43,19 +41,15 @@ TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManag
 
 TitleScene::~TitleScene() {
     scheduler.remove(stage_text_draw);
-    clear_draw_layer_overrides();  // 防 VM 指针复用后偏移泄漏到对局绘制
-    // PlayerData 宿主表按 0x453170 case3 收面释放；场景提前析构也要闭合。
+    clear_draw_layer_overrides();
     if (player_data && player_data->opened()) host.close_player_data();
     if (music_room_view) music_room_view->release();
-    // Manual 查看器在屏内正常结束会自行 close；场景提前析构（退出/异常）时
-    // 在此闭合，避免 help.anm VM 先于 bank 回收残留。
     if (state.screen == TitleScreen::Manual) host.close_manual();
     for (auto& handle : state.handles)
         animations.retire(handle);
     animations.retire(state.version_bar);
     animations.retire(state.start_effect);
-    animations.retire(state.replay_ascii_root);  // [R3-M] ascii s19 粒子根
-    // 析构 bank 清单（蓝图 §五-12）：title=16 / title_v=17 / help=19（help 补漏）。
+    animations.retire(state.replay_ascii_root);
     for (const i32 bank : {resources.title, resources.version, resources.help})
         animations.retire_resource(bank);
 }
@@ -75,44 +69,23 @@ bool TitleScene::fade_out_title_music() { return host.fade_out_title_music(); }
 
 bool TitleScene::sound(i32 id) { return host.sound(id); }
 
-bool TitleScene::begin_transition(u32& animation) {
-    // 00451450/00451cb0/004576c0 case3 age10: 0x415650(type 0) creates
-    // effect.anm script0, 0x402ff0 initializes its AnmOverlay, and
-    // 0x46fc30(handle, 7) applies label7. 0x417370 at the same sites creates
-    // the ascii.anm script17 loading prayer (separate from this effect).
-    // Delegating to the host keeps the overlay run-owned across title
-    // teardown; 0x42c550's label1 is issued later at stage activation.
-    return host.begin_transition(animation);
-}
+bool TitleScene::begin_transition(u32& animation) { return host.begin_transition(animation); }
 
-bool TitleScene::start_game(i32 stage) {
-    // destination=13：进入对局（原版 supervisor 语义，数值经 ApplicationState 隔离）。
-    return host.start_game(stage);
-}
+bool TitleScene::start_game(i32 stage) { return host.start_game(stage); }
 
 bool TitleScene::character_cleared(i32 character, i32 difficulty) {
-    // [r4-M] clear-tag 可见门数据源转发（TitleMenuServices → 宿主持久进度）。
     return host.character_cleared(character, difficulty);
 }
 
-bool TitleScene::extra_unlocked(i32 character) {
-    // Extra 行解锁门转发（0x44c570 case0 +0x5c40 bit1 → 宿主 FileStore 持久位）。
-    return host.extra_unlocked(character);
-}
+bool TitleScene::extra_unlocked(i32 character) { return host.extra_unlocked(character); }
 
 bool TitleScene::practice_stage_played(i32 character, i32 difficulty, i32 stage) {
     return host.practice_stage_played(character, difficulty, stage);
 }
 
-bool TitleScene::draw_title_replay_texts() {
-    // Replay 屏动态文字：TitleFrame Draw 回调（优先级 2，先于全部 ANM 层）逐帧
-    // 入队，AsciiFrame（Draw 78）同帧消费——原版 supervisor 0x452c30 的 ASCII
-    // 队列通道等价路径。
-    return check(replay.draw_texts(host), replay.error);
-}
+bool TitleScene::draw_title_replay_texts() { return check(replay.draw_texts(host), replay.error); }
 
 bool TitleScene::draw_title_music_room_texts() {
-    // [r4-M2] 音楽室列表/注释：同 Replay 文本队列通道（0x4554f0 值域）。
     if (host.record_menu_views()) return true;
     return check(music_room.draw_texts(host), music_room.error);
 }
@@ -139,9 +112,6 @@ bool TitleScene::restore_practice_selection() {
 }
 
 bool TitleScene::restore_spell_practice_selection() {
-    // 0x4561bf DAT_004bb4c4>=0：启动拍（0x45792b/c8/cc）保存的 stage/slot/
-    // difficulty 光标与角色（DAT_004be7b8）在标题重入时经 0x11→0x12→0x13
-    // 级联直入难度层。槽位/难度行按 spell_id 反查；目录已不含该卡则如实失败。
     if (!returns_to_spell_practice_selection(progress, 1, false))
         return check(false, "Invalid Spell Practice return session");
     const i32 stage = progress.starting_stage;
@@ -155,8 +125,6 @@ bool TitleScene::restore_spell_practice_selection() {
                 spell_restore_.spell_id = progress.selected_spell_id;
                 spell_restore_pending_ = true;
                 settings.preferred_character = progress.character;
-                // 0x44c8d4-0x44c8e9（0x44c570 case0 dc670==5）：对局返回标题新建实例
-                // 无残留背景，先建 background_root(89) 并立即触发 label3（0x46fca0）。
                 if (!animations.registry.find(state.handles[resources.background_root])) {
                     state.handles[resources.background_root] =
                         animations.create(resources.title, resources.background_root, -1, 0);
@@ -167,7 +135,6 @@ bool TitleScene::restore_spell_practice_selection() {
                 if (!animations.interrupt(state.handles[resources.background_root], 3, true))
                     return check(false, animations.error.empty() ? "Spell Practice return background interrupt failed"
                                                                  : animations.error);
-                // 主菜单进符卡练习同构光标栈（TitleMainMenu SpellPractice 分支）。
                 state.flags |= 2u;
                 state.menu.depth = state.menu.disabled_count = 0;
                 state.menu.count = kTitleMainEntries;
@@ -181,9 +148,6 @@ bool TitleScene::restore_spell_practice_selection() {
     return check(false, "Spell Practice selection no longer in catalog");
 }
 
-// 屏值 10（0x453170）：每次进屏新建对合状态机。宿主未接 = open 如实失败
-// （TitlePlayerDataMenu 默认平台），不以空表/零值冒充记录；成功后 X/Esc 走
-// menu 自身 case2→case3，收面时 close/pop/change_screen(1) 全在菜单内完成。
 bool TitleScene::update_player_data(const TitleFrameInput& value) {
     if (!player_data) {
         player_data = std::make_unique<TitlePlayerDataMenu>(state, host);
@@ -198,22 +162,15 @@ bool TitleScene::update_player_data(const TitleFrameInput& value) {
                                   }))
         return check(false, player_data_view->error);
     if (i32(state.screen) != i32(TitleScreen::PlayerData)) {
-        // case3 已 close_player_data + pop + change_screen(Main)：丢弃旧实例，
-        // 下次进屏从 case0 重新开表。
         if (player_data_view) player_data_view->release();
         player_data.reset();
     }
     return true;
 }
 
-// 屏值 17（0x4560a0/0x456650/0x4576c0）：三级菜单。
-// `TitleSpellPracticeMenu::update` 的 false = 普通导航/禁用项（blocked），不是
-// 帧错误；true = Cancel/Launch 终局事件。Cancel：光标栈 pop 回主菜单；Launch：
-// 原版启动拍将角色、关卡、rank 与 DAT_004be7d4 一起交给宿主。
 bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
     if (spell_launch_age_ >= 0) {
         ++spell_launch_age_;
-        // 004576c0 case3: transition at age10, launch after age39.
         if (spell_launch_age_ == 10 && !host.begin_transition(state.start_effect))
             return check(false, "Spell Practice transition failed");
         if (spell_launch_age_ > 39) {
@@ -228,7 +185,6 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
     if (!spell_practice) {
         spell_practice = std::make_unique<TitleSpellPracticeMenu>(host, settings.preferred_character);
         if (spell_restore_pending_) {
-            // [H-SP2] DAT_004bb4c4/c8 级联：菜单直入难度层恢复上次所选卡。
             if (!spell_practice->restore_selection(spell_restore_.stage, spell_restore_.spell_slot,
                                                    spell_restore_.difficulty))
                 return check(false, "Spell Practice restore rejected by catalog");
@@ -242,7 +198,7 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
                                                  return host.rasterize_title_text(vm, color, text);
                                              }))
                 return check(false, spell_practice_view->error);
-            spell_menu_delay_ = 11;  // 004560a0 case1: age >10 before input.
+            spell_menu_delay_ = 11;
         }
     }
     SpellPracticeInput input;
@@ -251,8 +207,8 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
     input.down = (navigation & 0x20) != 0;
     input.left = (navigation & 0x40) != 0;
     input.right = (navigation & 0x80) != 0;
-    input.confirm = (value.pressed & 0x80001) != 0;  // Z/Enter：单帧，不随重复
-    input.cancel = (value.pressed & 0x102) != 0;     // X/Esc
+    input.confirm = (value.pressed & 0x80001) != 0;
+    input.cancel = (value.pressed & 0x102) != 0;
     bool leaving_delay = false;
     if (spell_practice_view) {
         if (spell_menu_delay_ > 0) {
@@ -261,7 +217,6 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
             delayed_spell_input_ = {};
             leaving_delay = true;
         } else if ((input.confirm && spell_practice->level() != SpellPracticeLevel::Difficulty) || input.cancel) {
-            // Original consumes direction/character changes before confirm.
             SpellPracticeInput navigation = input;
             navigation.confirm = navigation.cancel = false;
             spell_practice->update(navigation);
@@ -302,7 +257,7 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
         }))
         return check(false, spell_practice_view->error);
     if (spell_practice_view && leaving_delay && !terminal && spell_practice->level() != previous_level)
-        spell_menu_delay_ = 11;  // each new selector enters through case1 age>10
+        spell_menu_delay_ = 11;
     if (!terminal) return true;
     switch (spell_practice->command().action) {
     case SpellPracticeAction::Cancel:
@@ -337,13 +292,10 @@ bool TitleScene::update_title_menu(TitleScreen screen, const TitleFrameInput& va
     case TitleScreen::Main:
         return check(main.update(value.pressed, value.repeated), main.error);
     case TitleScreen::PlayerData:
-        // 屏值 10（0x44c570 case a → 0x453170）：记录浏览对合。
         return update_player_data(value);
     case TitleScreen::Option:
-        // 屏值 3（0x44c570 case 3 → 0x44dd00）：Option 屏驱动。
         return check(option.update(value.pressed, value.repeated), option.error);
     case TitleScreen::KeyConfig:
-        // 屏值 4（0x44c570 case 4 → 0x44fcc0）：手柄五键配置屏。
         return check(key_config.update(value.pressed, value.repeated), key_config.error);
     case TitleScreen::Difficulty:
         return check(difficulty.update(value.pressed, value.repeated), difficulty.error);
@@ -353,8 +305,8 @@ bool TitleScene::update_title_menu(TitleScreen screen, const TitleFrameInput& va
         return check(stage.update(value.pressed, value.repeated), stage.error);
     case TitleScreen::Replay:
         return check(replay.update(value.pressed, value.repeated), replay.error);
-    case TitleScreen::ResultName:        // 0x44c570 case 0xe → 0x454050
-    case TitleScreen::ResultReplaySlot:  // 0x44c570 case 0xf → 0x4549d0
+    case TitleScreen::ResultName:
+    case TitleScreen::ResultReplaySlot:
         return check(result.update(value.pressed, value.repeated), result.error);
     case TitleScreen::MusicRoom:
         if (host.record_menu_views() && !music_room_view)
@@ -372,14 +324,12 @@ bool TitleScene::update_title_menu(TitleScreen screen, const TitleFrameInput& va
         }
         return true;
     case TitleScreen::Manual:
-        // 屏值 16（0x44c570 case 10 → 0x455330）：マニュアル supervisor wrapper。
         return check(manual.update(value.pressed, value.repeated), manual.error);
     case TitleScreen::SpellPractice:
-        // 屏值 17（0x44c570 case 0x11/0x12/0x13）：三级符卡练习菜单。
         return update_spell_practice(value);
     default:
         return check(false, "Unsupported title scene menu");
     }
 }
 
-}  // namespace th13
+}

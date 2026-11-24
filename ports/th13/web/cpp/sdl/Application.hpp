@@ -1,4 +1,3 @@
-// SDL 宿主层 PIMPL 外壳（th15 同构：initialize/step/error/projection）。
 #pragma once
 
 #include "../game/GameInput.hpp"
@@ -18,8 +17,6 @@ public:
     Application();
     ~Application();
     bool initialize(bool audio_device = true);
-    // 唯一 GameInput 实例（0x4e49f0 等价）：宿主每游戏帧 update 后传入，
-    // 同一实例的 held/pressed/released/repeated 经 RunScene 直达 StageBattle。
     bool step(const GameInput& input, float fps = 60, bool lost_focus = false);
     void set_practice(bool enabled, i32 section, i32 life, i32 bomb, i32 power, i32 trance);
     i32 practice_stage() const;
@@ -27,4 +24,4 @@ public:
     const i32* projection() const;
 };
 
-}  // namespace th13::sdl
+}

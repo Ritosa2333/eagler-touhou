@@ -22,7 +22,6 @@ void curve_laser_strip(const std::vector<CurveLaserSample>& samples, float width
             }
             float x, y;
             polar_xy(wrap_angle(angle), float(double(width) * .5), x, y);
-            // The two additions have separate f32 stores in436370.
             auto& vertex = out[i * 2 + side];
             vertex.position = {float(double(float(samples[i].position.x + x)) + 320.0),
                                float(double(float(samples[i].position.y + y)) + 16.0), 0};
@@ -33,4 +32,4 @@ void curve_laser_strip(const std::vector<CurveLaserSample>& samples, float width
         if (samples.size() > 1) u = float(1.0 / double(samples.size() - 1) + double(u));
     }
 }
-}  // namespace th13
+}

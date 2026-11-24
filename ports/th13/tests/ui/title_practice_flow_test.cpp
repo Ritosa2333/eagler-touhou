@@ -1,5 +1,3 @@
-// Practice state-machine regression: original 0x44cd10 -> 0x450fb0 ->
-// 0x451450 -> 0x451cb0. Synthetic ANM tests behavior, not visual fidelity.
 #include "../harness/test_framework.hpp"
 #include "game/PostGameFlow.hpp"
 #include "game/TitleScene.hpp"
@@ -53,9 +51,6 @@ struct PracticeHost final : TitleScenePlatform {
         sounds.push_back(id);
         return true;
     }
-    // Native launch sites (0x451cb0/0x452a43/0x45786f → 0x415650 type0) create
-    // the run-owned transition root on the application side; the scene only
-    // delegates. Mirror that contract: the host creates the bank-8 root.
     bool begin_transition(u32& animation) override {
         animation = animations.create(8, 0, -1, 0, {});
         return animation != 0;
@@ -121,7 +116,7 @@ struct PracticeHarness {
         settings.configured_difficulty = rank;
         settings.preferred_character = character;
         ready_main();
-        frame(0x20);  // default save skips Extra: 0 -> 2
+        frame(0x20);
         CHECK_EQ(scene->state.menu.cursor, 2);
         frame(1);
         advance(32);
@@ -140,11 +135,11 @@ struct PracticeHarness {
         CHECK_EQ(progress.character, character);
         CHECK_EQ(progress.difficulty, rank);
         CHECK_EQ(progress.run_mode_flags & 0x30u, 0x10u);
-        CHECK_EQ(progress.practice_mode, 0);  // launch, not menu entry, configures GameInf
+        CHECK_EQ(progress.practice_mode, 0);
         CHECK_EQ(host.launches, 0);
     }
 };
-}  // namespace
+}
 
 TEST(practice_default_save_has_six_locked_navigable_stages) {
     PracticeHarness h;
@@ -192,8 +187,8 @@ TEST(practice_stage6_gate_is_independent_per_character_and_rank) {
     h.enter_practice(3, 1);
     for (i32 row = 0; row < 5; ++row)
         h.frame(0x20);
-    h.host.played[0 * 4 + 3] = 0x20;  // wrong character
-    h.host.played[1 * 4 + 2] = 0x20;  // wrong difficulty
+    h.host.played[0 * 4 + 3] = 0x20;
+    h.host.played[1 * 4 + 2] = 0x20;
     h.frame(1);
     CHECK_EQ(h.scene->state.substate, 2);
     h.host.played[1 * 4 + 3] = 0x20;
@@ -211,18 +206,18 @@ TEST(practice_stage6_gate_is_independent_per_character_and_rank) {
 TEST(practice_cancel_chain_then_ordinary_start_has_no_mode_or_cursor_leak) {
     PracticeHarness h;
     h.enter_practice(2, 1);
-    h.frame(0x20);  // remember Stage 2 row
+    h.frame(0x20);
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Character));
-    CHECK_EQ(h.scene->state.menu.cursor, 1);  // 0x451450 uses the character index.
+    CHECK_EQ(h.scene->state.menu.cursor, 1);
     CHECK_EQ(h.scene->state.menu.depth, 2);
     CHECK_EQ(h.settings.practice_stage, 1);
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Difficulty));
     CHECK_EQ(h.scene->state.menu.cursor, 2);
-    CHECK_EQ(h.scene->state.handles[129], 0u);  // 0x451450 case4 retires the active root.
+    CHECK_EQ(h.scene->state.handles[129], 0u);
     CHECK_EQ(h.scene->state.menu.depth, 1);
     h.frame(0x100);
     h.advance(25);
@@ -233,7 +228,7 @@ TEST(practice_cancel_chain_then_ordinary_start_has_no_mode_or_cursor_leak) {
     CHECK_EQ(h.progress.run_mode_flags & 0x30u, 0u);
     CHECK_EQ(h.progress.practice_mode, 0);
     CHECK(h.scene->state.version_bar != 0);
-    h.frame(0x10);  // Practice -> Start, skipping Extra again
+    h.frame(0x10);
     CHECK_EQ(h.scene->state.menu.cursor, 0);
     h.frame(1);
     h.advance(32);
@@ -322,10 +317,6 @@ TEST(practice_game_return_restores_stage_and_entire_cancel_history_without_scori
     h.settings.preferred_character = h.settings.configured_difficulty = 0;
     h.settings.practice_stage = 0;
     h.scene = std::make_unique<TitleScene>(h.progress, h.settings, h.manager, h.host, h.scheduler);
-    // Application begin_title translates a real Practice quit (pause Exit
-    // reason1 / GameOver-exit reason3, both original scene request 4) to
-    // reason4. Retry is the separate original destination0xb path; it never
-    // reaches begin_title (0x43c1c0 case0xb restarts the stage in place).
     CHECK(returns_to_practice_selection(h.progress, 1, false));
     CHECK(returns_to_practice_selection(h.progress, 3, false));
     h.scene->state.return_reason = 4;
@@ -344,7 +335,7 @@ TEST(practice_game_return_restores_stage_and_entire_cancel_history_without_scori
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Character));
-    CHECK_EQ(h.scene->state.menu.cursor, 3);  // 0x451450 cursor is the character index.
+    CHECK_EQ(h.scene->state.menu.cursor, 3);
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Difficulty));
@@ -364,9 +355,6 @@ TEST(practice_return_classifier_preserves_ordinary_replay_and_gameover_paths) {
     progress.practice_mode = 1;
     progress.difficulty = 2;
     progress.starting_stage = 3;
-    // Pause Exit (reason1) and GameOver Continue-menu exit (reason3) both issue
-    // original scene request 4 (0x43e780:209 / 0x43fa90:549); both re-enter
-    // Stage Select while dc670==4 survives.
     CHECK(returns_to_practice_selection(progress, 1, false));
     CHECK(returns_to_practice_selection(progress, 3, false));
     CHECK(!returns_to_practice_selection(progress, 0, false));
@@ -384,9 +372,6 @@ TEST(practice_return_classifier_preserves_ordinary_replay_and_gameover_paths) {
 }
 
 TEST(ordinary_and_replay_style_returns_still_enter_main) {
-    // reason 3 语义更新（0x43c1c0 case0x10 → dc670=3 → 0x454050 战后名前
-    // 录入）：不再直入主菜单，战后流程由 title_result_flow_test 覆盖；
-    // 这里只保留 reason 1（自对局/回放返回）的直入主菜单语义。
     for (i32 reason : {1}) {
         PracticeHarness h;
         h.scene->state.return_reason = reason;

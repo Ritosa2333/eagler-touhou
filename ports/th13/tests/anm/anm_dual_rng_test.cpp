@@ -5,7 +5,7 @@ using namespace th13;
 namespace th13 {
 using AnmRandomObserver = void (*)(const AnmVm&, i32, i32, i32, u32, u32, u32, u32, bool);
 extern AnmRandomObserver anm_random_observer;
-}  // namespace th13
+}
 namespace {
 struct Event {
     i32 id;
@@ -21,12 +21,9 @@ i32 bits(float value) {
     std::memcpy(&result, &value, 4);
     return result;
 }
-}  // namespace
+}
 
 TEST(masked_random_variables_select_independent_original_streams) {
-    // Direct Machine calls to 461e80 with visual seed12345, game seed9529,
-    // vm+4d4=1 and vm+4d8=3.141592741: see ignored
-    // artifacts/th13-longrun-20261029/anm-dual-rng-probe/probe.py.
     std::vector<u8> bytes;
     th13test::push_insn(bytes, 400, 0, 7, {bits(10030.f), bits(10010.f), bits(10031.f)});
     th13test::push_insn(bytes, 400, 1, 7, {bits(10011.f), bits(10032.f), bits(10012.f)});

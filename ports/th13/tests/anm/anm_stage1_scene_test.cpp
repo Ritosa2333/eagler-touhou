@@ -1,6 +1,3 @@
-// Stage 1 asset-to-submission integration check. This exercises the real
-// st01.std -> st01wl.anm -> StageScenery -> AnmRenderer path with repository
-// reference assets. It verifies source coverage, not GPU output equivalence.
 #include "anm_test_fixtures.hpp"
 
 #include "game/AnmDrawSchedule.hpp"
@@ -78,7 +75,7 @@ bool load_reference(const char* name, std::vector<u8>& bytes) {
     return th13test::TestFileReader{}.read(std::string("artifacts/reference/raw/") + name, bytes);
 }
 
-}  // namespace
+}
 
 TEST(real_stage1_std_anm_reaches_renderer_submissions) {
     std::vector<u8> std_bytes, animation_bytes;
@@ -103,8 +100,6 @@ TEST(real_stage1_std_anm_reaches_renderer_submissions) {
 
     CHECK(scenery.initialize(animations, 7));
     if (!scenery.ready()) return;
-    // Stage scenery advances from the STD camera stream and its 24 bound ANM
-    // primitive VMs together, as RunScene does before its draw passes.
     for (u32 frame = 0; frame < 4; ++frame)
         CHECK(scenery.update(animations, environment));
 
@@ -125,8 +120,6 @@ TEST(real_stage1_std_anm_reaches_renderer_submissions) {
         CHECK(submission.vertex_total > 0);
     }
 
-    // Stage 1's parsed object layers are 0, 1 and 2, so the production second
-    // scenery pass (layers 8-11) has no Stage 1 object to submit.
     const size_t prior_submissions = graphics.submissions.size();
     const u32 prior_batches = graphics.triangle_batches + graphics.primitive_batches;
     CHECK(scenery.draw(animations, renderer, graphics, 8, 11, viewport, {408, 476}));
@@ -135,8 +128,6 @@ TEST(real_stage1_std_anm_reaches_renderer_submissions) {
 }
 
 TEST(stage3_ribbon_matches_original_update_sample) {
-    // Original 00402b20 executed for 120 updates, initialized by 00402a20's
-    // sixteen segment values and timer=1, seed0 plus its initialization draw.
     GameRandom random{0};
     AnmRibbon ribbon;
     ribbon.initialize(random);
@@ -179,9 +170,6 @@ TEST(real_stage3_std_and_ribbon_effect_reach_renderer) {
 }
 
 TEST(stage_shake_moves_submitted_projected_vertices_without_changing_camera_or_culling) {
-    // A centered synthetic projected primitive isolates manager+d0/d4.
-    // Real Stage1 first-frame primitives use world quads; a full projected
-    // scene can also enter/leave the final viewport when shaken.
     std::vector<u8> script;
     th13test::push_insn(script, 300, 0, 0, {0});
     th13test::push_insn(script, 302, 0, 0, {4});
@@ -233,9 +221,6 @@ TEST(stage_shake_moves_submitted_projected_vertices_without_changing_camera_or_c
 }
 
 TEST(screen_views_keep_shake_until_layer20_clears_it) {
-    // 406d90/43ba20/43b900 copy the shared 4dcbe8/ec offset into the camera and
-    // ANM manager; every camera switch before 46ef30 must retain it. 46ef30
-    // (layer20/priority44) then clears both the shared value and manager offset.
     GameRandom random{0};
     AnmEnvironment environment;
     RecordingGraphics graphics;
@@ -245,8 +230,6 @@ TEST(screen_views_keep_shake_until_layer20_clears_it) {
     CHECK(views.camera(DrawCamera::Playfield, false));
     CHECK_EQ(renderer.offset.x, 4.0f);
     CHECK_EQ(renderer.offset.y, -3.0f);
-    // layer3's restore / layer4's refresh are ordinary camera switches; neither
-    // may drop the shared offset before priority44.
     CHECK(views.camera(DrawCamera::Fullscreen, false));
     CHECK_EQ(renderer.offset.x, 4.0f);
     CHECK_EQ(renderer.offset.y, -3.0f);
@@ -259,7 +242,6 @@ TEST(screen_views_keep_shake_until_layer20_clears_it) {
     CHECK_EQ(environment.screen_shake_offset.y, 0.0f);
     CHECK_EQ(renderer.offset.x, 0.0f);
     CHECK_EQ(renderer.offset.y, 0.0f);
-    // Later camera selections cannot resurrect the cleared shared offset.
     CHECK(views.camera(DrawCamera::Playfield, false));
     CHECK_EQ(renderer.offset.x, 0.0f);
     CHECK_EQ(renderer.offset.y, 0.0f);

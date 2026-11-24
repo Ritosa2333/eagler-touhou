@@ -1,8 +1,3 @@
-// Boss HUD 单测：0x4265a0/0x425170/0x413270/0x413a60 移植断言（证据行号见
-// BossPresentation.hpp/SpellPresentation.hpp 头注释）。分两层：
-//   合成资源层 —— 状态机（门控/警告/比值平滑/星位/邻近/位标/符卡结算）；
-//   真实资源层 —— artifacts/reference/raw 的 ascii/effect.anm：计时数字
-//   脚本 2/3、数字字模 sprite 270-279、血环色族脚本 81..93 的池装载与选取。
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
@@ -40,9 +35,7 @@ struct BossHarness {
     AnmManager manager{random, environment};
     BossPresentation boss{manager, {3, 2, 8}};
     BossHarness() {
-        // ascii bank：数字 VM 脚本 2/3 + 字模 270-279。
         CHECK(load_bank(manager, 2, synthetic_anm(302, trivial_scripts(46))));
-        // front bank：环/星脚本 240/241/242/243（front/lifebar，UC 取证）。
         CHECK(load_bank(manager, 3, synthetic_anm(16, trivial_scripts(244))));
     }
     AnmVm* vm(u32 handle) { return manager.registry.find(handle); }
@@ -51,7 +44,7 @@ struct BossHarness {
 i32 flags_of(AnmVm* vm) { return vm ? i32(vm->visual.flags) : -1; }
 bool shown(AnmVm* vm) { return vm && (vm->visual.flags & 3u) == 3u; }
 
-}  // namespace
+}
 
 TEST(timer_fraction_follows_live_digit_animation_position) {
     BossHarness h;
@@ -91,9 +84,6 @@ TEST(boss_name_uses_stage_table_script_and_retires_with_boss) {
 }
 
 TEST(boss_timer_stays_visible_while_slot_occupied_after_capture) {
-    // 0x4265a0:98-107 门条件 = boss 槽占用（mgr+0x5c != 0），不是实体存活：
-    // 终符捕获（514→BossDead 抑制立即销毁）后槽由 512(-1) 约 60 帧才清，
-    // 期间计时器保持显示。回归：3 面终符收了计时器直接消失（用户实测）。
     BossHarness h;
     CHECK(h.boss.initialize());
     StageEnemy enemy;
@@ -104,10 +94,10 @@ TEST(boss_timer_stays_visible_while_slot_occupied_after_capture) {
     input.life_initial = 0;
     CHECK(h.boss.update(input, {}));
     CHECK(h.boss.timer_visible());
-    input.boss = nullptr;  // 捕获帧：实体让出/标 dead，槽未清
+    input.boss = nullptr;
     CHECK(h.boss.update(input, {}));
     CHECK(h.boss.timer_visible());
-    input.boss_slot_present = false;  // 512(-1) 清槽后（对话门前）
+    input.boss_slot_present = false;
     CHECK(h.boss.update(input, {}));
     CHECK(!h.boss.timer_visible());
 }
@@ -118,7 +108,7 @@ TEST(boss_timer_retires_when_ecl_returns_without_explicit_unregister) {
     StageSim sim;
     std::vector<u8> routine;
     th13test::emit(routine, 0, 512, 0, 255, 0, {0});
-    th13test::emit(routine, 4, 10, 0, 255, 0, {});  // return, no setBoss(-1)
+    th13test::emit(routine, 4, 10, 0, 255, 0, {});
     const auto data = th13test::build_scpt({{"Boss", routine}});
     CHECK_EQ(sim.program.attach(data.data(), u32(data.size())), 0);
     sim.commands.sim = &sim;
@@ -150,7 +140,7 @@ TEST(boss_out_of_bounds_cleanup_clears_only_its_own_slot) {
     StageSim sim;
     auto departing = std::make_unique<StageEnemy>();
     departing->script_id = 11;
-    departing->flags = 0x1020000u;  // boss, previously inside playfield
+    departing->flags = 0x1020000u;
     departing->vel.pos[0] = -256.f;
     departing->vel.pos[1] = 64.f;
     auto survivor = std::make_unique<StageEnemy>();
@@ -210,7 +200,7 @@ TEST(boss_timer_digits_hidden_until_gate_opens) {
     CHECK(h.boss.initialize());
     CHECK(h.boss.digit_tens_handle() != 0);
     CHECK(h.boss.digit_ones_handle() != 0);
-    CHECK(h.boss.ring_arc_handle() == 0);  // 未开门前不创建
+    CHECK(h.boss.ring_arc_handle() == 0);
     CHECK(!h.boss.timer_visible());
 }
 
@@ -232,12 +222,10 @@ TEST(boss_gate_opens_digits_and_swaps_digit_sprites) {
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.timer_visible());
     CHECK(h.boss.timer_seconds() == 35);
-    CHECK(h.boss.timer_centiseconds() == 50);  // 30 帧 * 100/60
-    // 数字精灵 = 270 + 35/10(=3) / 270 + 35%10(=5)（0x461a60 同式）。
+    CHECK(h.boss.timer_centiseconds() == 50);
     CHECK_EQ(h.vm(h.boss.digit_tens_handle())->visual.sprite, 273);
     CHECK_EQ(h.vm(h.boss.digit_ones_handle())->visual.sprite, 275);
     CHECK(shown(h.vm(h.boss.digit_tens_handle())));
-    // 警告声只跨 <10/<5 档各一次：35 不触发。
     CHECK(sound.ids.empty());
 }
 
@@ -248,16 +236,16 @@ TEST(boss_timer_warnings_fire_each_decremented_second) {
     BossFrameInput input;
     input.boss = &enemy;
     input.boss_slot_present = true;
-    input.life_initial = 0;  // 环待命（分母缺口语义），只测计时。
+    input.life_initial = 0;
     SoundLog sound;
     input.timer_seconds = 12;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(sound.ids.empty());
-    input.timer_seconds = 9;  // <10：声 0xb（0x4265a0:154-158）
+    input.timer_seconds = 9;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK_EQ(sound.ids.size(), 1u);
     CHECK_EQ(sound.ids[0], 0xb);
-    input.timer_seconds = 8;  // 426808 executes again at each decremented second.
+    input.timer_seconds = 8;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK_EQ(sound.ids.size(), 2u);
     CHECK_EQ(sound.ids.back(), 11);
@@ -268,7 +256,7 @@ TEST(boss_timer_warnings_fire_each_decremented_second) {
     CHECK_EQ(sound.ids.back(), 12);
     CHECK_EQ(h.vm(h.boss.digit_tens_handle())->pending_interrupt, 9);
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
-    CHECK_EQ(sound.ids.size(), 3u);  // same second, no extra sound
+    CHECK_EQ(sound.ids.size(), 3u);
     input.timer_seconds = 20;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK_EQ(sound.ids.size(), 3u);
@@ -337,24 +325,20 @@ TEST(boss_ring_ratio_smooths_up_drops_instantly) {
     input.boss_life = 1000;
     SoundLog sound;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
-    // 环组：front 240/241/242 三条带（UC 取证身份，0x426b06/0x426bad/0x426c66）。
     CHECK(h.boss.ring_arc_handle() != 0);
     CHECK(h.boss.ring_overlay_handle(0) != 0);
     CHECK(h.boss.ring_overlay_handle(1) != 0);
-    CHECK(h.boss.displayed_ratio() == 0.025f);  // 首帧 +0.025（0x4265a0:230-239）
-    // 逼近：32 帧到 0.8。
+    CHECK(h.boss.displayed_ratio() == 0.025f);
     for (int i = 0; i < 31; i++)
         CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK_NEAR(h.boss.displayed_ratio(), 0.8, 1e-4);
-    input.boss_life = 500;  // 目标 0.5 < displayed 0.8 → 直落
+    input.boss_life = 500;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.displayed_ratio() == 0.5f);
-    input.boss_life = 1000;  // 回升仅按 0.025/帧逼近
+    input.boss_life = 1000;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.displayed_ratio() > 0.5f);
     CHECK(h.boss.displayed_ratio() <= 0.525f);
-    // 驱动写入（0x426fcc-0x426fd8）：rotation.x = -displayed*2π、
-    // offset(+0x574..) = boss 世界位（0x426fdb-）。
     auto* arc = h.vm(h.boss.ring_arc_handle());
     CHECK(arc != nullptr);
     CHECK(arc->variables.rotation.x < 0.f);
@@ -378,18 +362,18 @@ TEST(boss_ratio_crosses_phase_markers) {
     SoundLog sound;
     input.markers[0].ratio = 0.5f;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
-    CHECK(!shown(h.vm(h.boss.star_handles()[0])));  // native: below threshold hides
-    input.boss_life = 400;                          // displayed 追向 0.4，仍 < 0.5
+    CHECK(!shown(h.vm(h.boss.star_handles()[0])));
+    input.boss_life = 400;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(!shown(h.vm(h.boss.star_handles()[0])));
-    input.boss_life = 1000;  // 追回 0.5+ 后越过星 0（0x4265a0:458-477 判据）。
+    input.boss_life = 1000;
     for (int i = 0; i < 40; i++)
         CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.displayed_ratio() >= 0.5f);
     CHECK(shown(h.vm(h.boss.star_handles()[0])));
     input.boss_life = 500;
     CHECK(h.boss.update(input, {}));
-    CHECK(!shown(h.vm(h.boss.star_handles()[0])));  // equality hides
+    CHECK(!shown(h.vm(h.boss.star_handles()[0])));
 }
 
 TEST(boss_stars_created_and_hidden_when_passed) {
@@ -408,22 +392,20 @@ TEST(boss_stars_created_and_hidden_when_passed) {
     input.markers[1].ratio = 0.5f;
     SoundLog sound;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
-    CHECK(h.boss.displayed_ratio() == 0.025f);  // all thresholds hidden during ring growth
+    CHECK(h.boss.displayed_ratio() == 0.025f);
     CHECK(!shown(h.vm(h.boss.star_handles()[0])));
     CHECK(!shown(h.vm(h.boss.star_handles()[1])));
-    input.boss_life = 500;  // 追至 0.5 → 越过星 0(0.25) 与星 1(0.5)
+    input.boss_life = 500;
     for (int i = 0; i < 20; i++)
         CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.displayed_ratio() >= 0.5f);
     CHECK(shown(h.vm(h.boss.star_handles()[0])));
     CHECK(!shown(h.vm(h.boss.star_handles()[1])));
-    // 星可见态复核 + 轨道半径 56（0x42713c-0x427193：boss + R(t)·(0,56)）。
-    input.boss_life = 900;  // 目标 0.9 > 0.5 → displayed 0.525 起，星 0 仍越过。
+    input.boss_life = 900;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     auto* star = h.vm(h.boss.star_handles()[0]);
     CHECK(star != nullptr);
-    CHECK(shown(star));  // remaining HP exceeds this threshold
-    // 新会话重置后星 0 显示位：displayed 从 0 起时 t = -π-0.25*2π。
+    CHECK(shown(star));
     BossHarness fresh;
     CHECK(fresh.boss.initialize());
     BossFrameInput fi;
@@ -441,10 +423,8 @@ TEST(boss_stars_created_and_hidden_when_passed) {
     auto* star0 = fresh.vm(fresh.boss.star_handles()[0]);
     CHECK(star0 != nullptr);
     CHECK(shown(star0));
-    const float t = star0->variables.rotation.z;  // normalize(-π-0.25*2π) = +π/2
+    const float t = star0->variables.rotation.z;
     CHECK_NEAR(double(t), 1.5707963, 1e-4);
-    // Adjudicated against 00427135 push / 0042713c lea: input is (0,56),
-    // not (56,0). Original 00472fc0 direct-call at pi/2 returns (-56,0).
     CHECK_NEAR(double(star0->visual.translation.y), double(128.f + 56.f * std::cos(t)), 1e-3);
     CHECK_NEAR(double(star0->visual.translation.x), double(-56.f * std::sin(t)), 1e-3);
 }
@@ -462,7 +442,7 @@ TEST(boss_proximity_hides_ring_with_hysteresis) {
     input.life_initial = 1000;
     input.boss_life = 1000;
     input.player_x = 200;
-    input.player_y = 300;  // 远离（>96）
+    input.player_y = 300;
     SoundLog sound;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.ring_arc_handle() != 0);
@@ -470,17 +450,17 @@ TEST(boss_proximity_hides_ring_with_hysteresis) {
     const u32 arc = h.boss.ring_arc_handle();
     const auto stars = h.boss.star_handles();
     input.player_x = 40;
-    input.player_y = 0;  // 距离 40 < 80 → 隐藏
+    input.player_y = 0;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.proximity_hidden());
     CHECK_EQ(h.boss.ring_arc_handle(), arc);
     CHECK_EQ(h.vm(arc)->pending_interrupt, 3);
     for (u32 star : stars)
         CHECK_EQ(h.vm(star)->pending_interrupt, 3);
-    input.player_x = 90;  // 90 ∈ [80,96) → 迟滞保持隐藏
+    input.player_x = 90;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.proximity_hidden());
-    input.player_x = 100;  // ≥96 → 复原
+    input.player_x = 100;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(!h.boss.proximity_hidden());
     CHECK_EQ(h.boss.ring_arc_handle(), arc);
@@ -501,15 +481,13 @@ TEST(boss_marker_glyph_tracks_horizontal_distance) {
     input.player_x = 0;
     SoundLog sound;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
-    // '@' + round(30*191/64) = 0x40 + 90（0x4265a0:720-727；30*2.984375=89.53）。
     CHECK_EQ(h.boss.marker_glyph(), 0x40 + 90);
-    enemy.position[0] = 100;  // |dx| >= 64 → 0xff
+    enemy.position[0] = 100;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK_EQ(h.boss.marker_glyph(), 0xff);
-    enemy.position[0] = -200;  // 横向出界 → 0
+    enemy.position[0] = -200;
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK_EQ(h.boss.marker_glyph(), 0);
-    // 位标位置 = (boss_x + 224, 480)。
     auto* marker = h.vm(h.boss.marker_handle());
     CHECK(marker != nullptr);
     CHECK(marker->visual.translation.x == 24.f);
@@ -546,7 +524,7 @@ TEST(boss_marker_flashes_by_remaining_phase_hp_and_resets_after_phase_change) {
     enemy.phase_life_remaining = 1500;
     update();
     CHECK_EQ(marker->pending_interrupt, 10);
-    CHECK(sound.ids.empty());  // native marker does not play a capture sound
+    CHECK(sound.ids.empty());
     input.boss = nullptr;
     update();
     CHECK(!shown(marker));
@@ -556,33 +534,31 @@ TEST(spell_card_lifecycle_bonus_and_sounds) {
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager{random, environment};
-    CHECK(load_bank(manager, 4, synthetic_anm(8, trivial_scripts(151))));  // cardbg 根 150
+    CHECK(load_bank(manager, 4, synthetic_anm(8, trivial_scripts(151))));
     SpellPresentation spell{manager, {4}};
     SoundLog sound;
     i32 awarded = 0;
     const float pos[3] = {0, 128, 0};
     CHECK(spell.begin(3, "符卡", 60, 1, 1, pos, [&](i32 id) { return sound.play(id); }));
     CHECK(spell.active());
-    CHECK(spell.captured());  // 0x413270:42 bit1 开场即置
-    // bonus = (stage+diff)*1000000、显示封顶 99999999。
+    CHECK(spell.captured());
     CHECK_EQ(spell.bonus_base(), 2000000);
     CHECK_EQ(spell.bonus_display(), 2000000);
     CHECK_EQ(spell.duration_seconds(), 60);
     CHECK_EQ(sound.ids.size(), 1u);
-    CHECK_EQ(sound.ids[0], 0x21);  // 开场声
+    CHECK_EQ(sound.ids[0], 0x21);
     CHECK(spell.background_handle() != 0);
     CHECK(spell.end(true, false, [&](i32 id) { return sound.play(id); }, [&](i32 amount) { awarded += amount; }));
-    CHECK_EQ(awarded, 200000);  // 取得：bonus/10（0x413a60:34-36）
+    CHECK_EQ(awarded, 200000);
     CHECK_EQ(sound.ids.size(), 2u);
     CHECK_EQ(sound.ids[1], 0x2e);
     CHECK(!spell.active());
-    // 最终符：0x45 追加。
     CHECK(spell.begin(4, "终符", 99, 6, 4, pos, [&](i32 id) { return sound.play(id); }));
     CHECK_EQ(spell.bonus_base(), 10000000);
     CHECK(spell.end(true, true, [&](i32 id) { return sound.play(id); }, [&](i32 amount) { awarded += amount; }));
     CHECK_EQ(awarded, 1200000);
     CHECK_EQ(sound.ids.size(), 5u);
-    CHECK_EQ(sound.ids[2], 0x21);  // 终符开场声（每次 begin 均响）
+    CHECK_EQ(sound.ids[2], 0x21);
     CHECK_EQ(sound.ids[3], 0x2e);
     CHECK_EQ(sound.ids[4], 0x45);
 }
@@ -597,28 +573,23 @@ TEST(spell_break_capture_blocks_award) {
     i32 awarded = 0;
     const float pos[3] = {0, 0, 0};
     CHECK(spell.begin(0, "卡", 30, 1, 0, pos, [&](i32 id) { return sound.play(id); }));
-    spell.break_capture();  // 死亡/炸弹路径（宿主通知）
+    spell.break_capture();
     CHECK(!spell.captured());
     CHECK(spell.end(true, false, [&](i32 id) { return sound.play(id); }, [&](i32 amount) { awarded += amount; }));
     CHECK_EQ(awarded, 0);
-    CHECK(sound.ids.size() <= 1u);  // 无取得声
-    // 未结束再开新卡 = 显式失败。
+    CHECK(sound.ids.size() <= 1u);
     const float again[3] = {0, 0, 0};
     CHECK(spell.begin(1, "乙", 30, 1, 0, again, [&](i32 id) { return sound.play(id); }));
     CHECK(!spell.begin(2, "丙", 30, 1, 0, again, [&](i32 id) { return sound.play(id); }));
 }
 
 TEST(real_resources_match_ring_and_digit_script_map) {
-    // 真实资源层：ascii.anm（数字字模 sprite 270-279 + 脚本 2/3）与
-    // effect.anm（血环色族 81..93，ins_604(256,36)）。
     auto ascii = read_raw("artifacts/reference/raw/ascii.anm");
     CHECK(!ascii.empty());
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager{random, environment};
     CHECK(manager.load(2, ascii.data(), u32(ascii.size())));
-    // 生产同构：ascii bank 兼任负值精灵回落（Application.cpp:266 语义；
-    // effect 脚本族 ins_300(-1) 消费回落字模 301）。
     CHECK(manager.sprite_fallback(2));
     auto front = read_raw("artifacts/reference/raw/front.anm");
     CHECK(!front.empty());
@@ -638,14 +609,12 @@ TEST(real_resources_match_ring_and_digit_script_map) {
     auto* tens = manager.registry.find(boss.digit_tens_handle());
     auto* ones = manager.registry.find(boss.digit_ones_handle());
     CHECK(tens != nullptr && ones != nullptr);
-    CHECK_EQ(tens->visual.sprite, 274);  // 270 + 42/10
-    CHECK_EQ(ones->visual.sprite, 272);  // 270 + 42%10
-    // 数字 VM 由 ascii script2/3 出生：脚本位 (208,39)/(220,39)。
+    CHECK_EQ(tens->visual.sprite, 274);
+    CHECK_EQ(ones->visual.sprite, 272);
     CHECK(tens->variables.position.x == 208.f);
     CHECK(tens->variables.position.y == 39.f);
     CHECK(ones->variables.position.x == 220.f);
 
-    // 环/星真实资源断言（UC 取证：front.anm 240-243 = lifebar entry）。
     input.life_initial = 1000;
     input.boss_life = 1000;
     input.markers[0].ratio = 0.5f;
@@ -653,19 +622,19 @@ TEST(real_resources_match_ring_and_digit_script_map) {
     auto* arc = manager.registry.find(boss.ring_arc_handle());
     CHECK(arc != nullptr);
     CHECK_EQ(arc->source_script, 240);
-    CHECK_EQ(arc->visual.sprite, 150);         // ins_300(sprite150)（4×16 条带）
-    CHECK_EQ(arc->visual.layer, 17);           // ins_304(17)
-    CHECK_EQ(arc->variables.integers[0], 38);  // ins_100(10000,38) 段数
+    CHECK_EQ(arc->visual.sprite, 150);
+    CHECK_EQ(arc->visual.layer, 17);
+    CHECK_EQ(arc->variables.integers[0], 38);
     auto* overlay = manager.registry.find(boss.ring_overlay_handle(0));
     CHECK(overlay != nullptr);
     CHECK_EQ(overlay->source_script, 241);
     CHECK_EQ(overlay->visual.sprite, 151);
-    CHECK_EQ(overlay->variables.integers[0], 38);             // 10000=38（段数同弧）
-    CHECK_NEAR(double(overlay->visual.scale.y), 58.0, 1e-4);  // ins_402(1,58)
+    CHECK_EQ(overlay->variables.integers[0], 38);
+    CHECK_NEAR(double(overlay->visual.scale.y), 58.0, 1e-4);
     auto* star = manager.registry.find(boss.star_handles()[0]);
     CHECK(star != nullptr);
     CHECK_EQ(star->source_script, 243);
-    CHECK_EQ(star->visual.sprite, 152);  // 3×6 星点
+    CHECK_EQ(star->visual.sprite, 152);
     for (int frame = 0; frame < 30; ++frame)
         CHECK(manager.update());
     const u32 visible_alpha = arc->visual.color >> 24;
@@ -683,11 +652,6 @@ TEST(real_resources_match_ring_and_digit_script_map) {
 }
 
 TEST(real_resources_spell_end_restores_digit_row) {
-    // round-21 BUG2 残余回归：0x413a60 → 0x412900 在符卡结束（捕获/失败/
-    // 超时同路径）对 ascii script2/3 发 label3 = ins_407(60帧, mode9,
-    // →(x,23))，把符卡期 label2 下移到 y=51 的数字组拉回 y=23。缺失该
-    // 接线时首卡后数字组恒停 51（数字锚 51-7=44、16×16 quad 顶 43，
-    // 即"整组低约 16px"）。开始侧 label2 = 0x413270 → 0x412890（下移 51）。
     auto ascii = read_raw("artifacts/reference/raw/ascii.anm");
     CHECK(!ascii.empty());
     GameRandom random;
@@ -713,21 +677,20 @@ TEST(real_resources_spell_end_restores_digit_row) {
     auto* tens = manager.registry.find(boss.digit_tens_handle());
     auto* ones = manager.registry.find(boss.digit_ones_handle());
     CHECK(tens != nullptr && ones != nullptr);
-    CHECK(tens->variables.position.y == 39.f);  // script2/3 出生位
+    CHECK(tens->variables.position.y == 39.f);
 
-    boss.spell_started();  // label2：39 → 51（60 帧 mode9 ease）
+    boss.spell_started();
     for (int frame = 0; frame < 70; ++frame)
         CHECK(manager.update());
     CHECK_NEAR(double(tens->variables.position.y), 51.0, 1e-3);
     CHECK_NEAR(double(ones->variables.position.y), 51.0, 1e-3);
-    CHECK_NEAR(double(boss.timer_text_y()), 44.0, 1e-3);  // 51 - 7
+    CHECK_NEAR(double(boss.timer_text_y()), 44.0, 1e-3);
 
-    boss.spell_ended();  // label3：51 → 23（0x412900）
+    boss.spell_ended();
     for (int frame = 0; frame < 70; ++frame)
         CHECK(manager.update());
     CHECK_NEAR(double(tens->variables.position.y), 23.0, 1e-3);
     CHECK_NEAR(double(ones->variables.position.y), 23.0, 1e-3);
-    // 符卡后静止段文本锚 = 23 - 7 = 16（原版非符卡静止 y16..32 的下段）。
     CHECK_NEAR(double(boss.timer_text_y()), 16.0, 1e-3);
 }
 

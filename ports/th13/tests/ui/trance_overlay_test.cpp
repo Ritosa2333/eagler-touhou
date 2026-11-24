@@ -101,5 +101,5 @@ TEST(trance_uses_original_embedded_panels_and_exit_scripts) {
     }
     CHECK(!remains);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("trance overlay"); }

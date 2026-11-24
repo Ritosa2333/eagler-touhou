@@ -11,8 +11,6 @@ bool TitleMusicRoomView::update(const TitleState& state, const TitleMusicRoomMen
                                 const Rasterizer& rasterize) {
     if (!error.empty()) return false;
     if (!opened) {
-        // 00455574/004555e8/00455712/00455856: ascii19, title106,
-        // text41..48 and title160+track own the original dynamic text regions.
         particles = animations.create(ascii_bank, 19);
         badge = animations.create(title_bank, 106);
         if (!particles || !badge) return fail(animations.error);
@@ -27,7 +25,6 @@ bool TitleMusicRoomView::update(const TitleState& state, const TitleMusicRoomMen
             rows.push_back(handle);
             auto* vm = animations.registry.find(handle);
             if (!vm) return fail(animations.error);
-            // 曲名色恒白；未听曲名 = 0x4ac930 占位 "No.%2d " + 11 全角？。
             if (!rasterize ||
                 !rasterize(*vm, 0xffffff, host.track_heard(i) ? host.track_title(i) : host.locked_title(i),
                            AnmTextAlignment::Left))
@@ -63,7 +60,6 @@ bool TitleMusicRoomView::update(const TitleState& state, const TitleMusicRoomMen
         }
     }
     previous_row = menu.row();
-    // 注释块 = +0x750（Z 时更新），不是光标行；Z 重置 +0x74c 时整体重挂。
     if (previous_comment != menu.comment_track() || menu.revealed_lines() < revealed) {
         for (u32 handle : comments)
             if (!animations.interrupt(handle, 3, true)) return fail(animations.error);
@@ -97,4 +93,4 @@ void TitleMusicRoomView::release() {
     revealed = top = 0;
 }
 
-}  // namespace th13
+}

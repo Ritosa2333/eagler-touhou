@@ -28,8 +28,6 @@ AsciiFrame::~AsciiFrame() {
         scheduler.remove(c);
 }
 bool AsciiFrame::draw(i32 space) {
-    // 00404140 filters by space, independently of the camera selector.
-    // TH13's selector stays zero: every text pass uses the full-screen view.
     if (!views.camera(DrawCamera::Fullscreen, false)) {
         error = "Caption screen camera failed";
         return false;
@@ -44,11 +42,10 @@ bool AsciiFrame::draw(i32 space) {
         return false;
     }
     if (space == 1) renderer.flush();
-    // The playfield callbacks also restore the viewport after drawing the queue.
     if (space != 0 && !views.camera(DrawCamera::Fullscreen, false)) {
         error = "Caption viewport restore failed";
         return false;
     }
     return true;
 }
-}  // namespace th13
+}

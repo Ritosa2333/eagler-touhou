@@ -21,15 +21,9 @@ EM_JS(int, touhou_clip_control, (), {
 namespace touhou::sdl {
 namespace {
 Renderer* active = nullptr;
-// Diagnostic switch: when on, commit() reads the GL error code after each
-// presentation and reports every code change.
 bool gl_checks = false;
 GLenum last_gl_error = 0;
-// One SDL GL context is active per Wasm module. Cache only states owned here;
-// clear() also updates the write masks so a later draw restores them correctly.
 struct DrawStateCache {
-    // rounded records the actual RGB source factor (ONE vs pipeline source)
-    // selected for the last batch; target format participates in that decision.
     PipelineState pipeline{};
     Viewport viewport{};
     bool valid = false, has_viewport = false, rounded = false;
@@ -74,7 +68,7 @@ bool equal(const State& a, const State& b, bool world = false) {
         return false;
     return true;
 }
-}  // namespace
+}
 Renderer* current() { return active; }
 void set_current(Renderer* r) { active = r; }
 State::State() {
@@ -143,8 +137,6 @@ bool Renderer::initialize() {
         p.color.second = p.alpha.second = {i == 3 ? ArgumentSource::Factor : ArgumentSource::Diffuse};
         warm_program(warm);
     }
-    // Compile the game combiner families before the first frame. Rare asset
-    // combinations use a prelinked uniform program instead of compiling in draw.
     for (bool texture : {false, true})
         for (bool alpha : {false, true})
             for (bool fog : {false, true})
@@ -226,8 +218,6 @@ void Renderer::bind_framebuffer(GLenum target, GLuint id) {
     }
 }
 void Renderer::draw_batch(u32 count, const void* data, u32 stride) {
-    // The game already coalesced these triangles. Consume while its arena is
-    // valid, without retaining a pointer to a buffer the next sprite can reuse.
     flush();
     ++stats.calls;
     state.stride = stride;
@@ -254,7 +244,6 @@ void Renderer::select(const State& s) {
         arg(p.alpha.second),
         u32(p.alphaCompare) |
             (u32(version == 10 && p.depthTest && (p.depthWrite || p.depthCompare != Compare::Always)) << 8)};
-    // Warming clears the generic construction entry; cache only stable results.
     if (!warming && lastProgram && lastProgramKey == key) {
         program = lastProgram;
         if (program == &generic) ++stats.genericBatches;
@@ -367,10 +356,6 @@ u32 Renderer::upload(Stream& s, GLenum target, const void* bytes, u32 count, u32
     glBindBuffer(target, s.id);
     stats.vertexUploadBytes += count;
 #ifdef __EMSCRIPTEN__
-    // Replace the backing store for each submitted batch. Updating successive
-    // subranges while previous draws still reference the store stalls some mobile
-    // WebGL drivers. Draw order, vertex bytes and simulation are unchanged.
-    // WebGL 路径每批整体替换存储，不保留最小容量；minimum 只用于原生路径。
     (void)minimum;
     glBufferData(target, count, bytes, GL_STREAM_DRAW);
     stats.bufferReplacements++;
@@ -430,8 +415,6 @@ Renderer::GPU& Renderer::surface(u32 h) {
         bind_framebuffer(GL_FRAMEBUFFER, g.framebuffer);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g.texture, 0);
     }
-    // Merge every known CPU edit since the last upload. Unknown edits retain
-    // the full-image path so overlapping writes cannot be lost.
     const auto& r = g.dirty;
     if (g.version != ~0u && g.version == g.dirtyBase && g.version != s.version && s.format == PixelFormat::Argb4444 &&
         r[0] < r[2] && r[1] < r[3] && r[2] <= s.width && r[3] <= s.height) {
@@ -574,8 +557,6 @@ Renderer::GPU& Renderer::target(u32 id, u32 depthId) {
         g.attached = buffer;
         g.verified = false;
     }
-    // 不完整的帧缓冲会让指向它的绘制与位块传输静默丢弃。创建时颜色存储尚未上传，
-    // 所以在首次作为绘制目标绑定后检查，每种附着组合只查一次。
     if (!g.verified) {
         verify_framebuffer(id);
         g.verified = true;
@@ -618,9 +599,6 @@ void Renderer::draw(Topology primitive, u32 count, const void* data, u32 stride,
         instancing = false;
         batchTopology = Topology::Triangles;
     }
-    // Keep an isolated long strip/fan in its original topology. If a following
-    // draw joins the batch, normalize it backwards before appending, preserving
-    // triangle order and winding without retaining caller-owned vertex memory.
     if (version == 10 && !batchCount && count >= 16 && (primitive == Topology::Strip || primitive == Topology::Fan)) {
         const auto* src = static_cast<const u8*>(data);
         const size_t size = (count + 2) * stride;
@@ -768,8 +746,6 @@ void Renderer::issue(const State& d, Topology primitive, u32 count, const void* 
     if (all || cached.depthWrite != p.depthWrite) glDepthMask(p.depthWrite);
     if (all || cached.depthCompare != p.depthCompare) glDepthFunc(compare[u32(p.depthCompare)]);
     if (all || cached.blend != p.blend) p.blend ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
-    // Set blend parameters even while blending is disabled, so the cache always
-    // describes actual GL state when a subsequent batch enables it.
     constexpr GLenum blend[]{GL_ZERO,
                              GL_ONE,
                              GL_SRC_COLOR,
@@ -991,8 +967,6 @@ bool Renderer::resample(u32 src, const i32* from, u32 dst, const i32* to, const 
     glUniform4iv(glGetUniformLocation(resampleProgram, "destinationMask"), 1, om.data());
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glActiveTexture(GL_TEXTURE0);
-    // Utility rendering changes masks, viewport and program. Vertex layouts remain
-    // valid VAOs, while the regular draw cache must restore all pipeline state.
     drawState = DrawStateCache{};
     output.rendered = true;
     output.version = b.version + 1;
@@ -1049,7 +1023,6 @@ void Renderer::release(u32 id) {
     auto d = depths.find(id);
     if (d != depths.end()) {
         glDeleteRenderbuffers(1, &d->second.buffer);
-        // 仍引用这块渲染缓冲的绘制目标记为附着未知，下次 target() 重新附着。
         for (auto& [handle, g] : surfaces)
             if (g.attached == d->second.buffer) {
                 g.attached = ~0u;
@@ -1089,8 +1062,6 @@ bool Renderer::commit(bool repeat) {
     }
     int width = 640, height = 480;
     SDL_GetWindowSizeInPixels(window, &width, &height);
-    // A zero-sized window (minimized, or a canvas that has not been laid out yet)
-    // has nothing to present to: keep the frame pending until the size returns.
     if (width <= 0 || height <= 0) return false;
     auto s = resolve(owner, id);
     auto& g = surface(id);
@@ -1132,7 +1103,7 @@ void Renderer::release_imgui_texture(u32 value) {
     boundTexture = ~0u;
 }
 #endif
-}  // namespace touhou::sdl
+}
 extern "C" {
 const touhou::sdl::Statistics* sdl_stats() {
     static touhou::sdl::Statistics zero{};

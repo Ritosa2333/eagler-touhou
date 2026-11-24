@@ -8,8 +8,6 @@
 
 namespace th13 {
 namespace {
-// VA 004bbd30, used by 00412970/00456b50. This is the existing score-slot
-// rank contract, shared by storage and the runtime metadata parser.
 constexpr std::array<u8, 127> kDifficulties = {
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3,
     0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 1,
@@ -41,7 +39,7 @@ i32 first_id(const std::array<SpellCatalogVariant, 5>& family) {
         if (variant.id >= 0) result = std::min(result, variant.id);
     return result;
 }
-}  // namespace
+}
 
 i32 SpellCatalog::difficulty(i32 id) {
     return id >= 0 && id < i32(kDifficulties.size()) ? kDifficulties[size_t(id)] : -1;
@@ -103,9 +101,6 @@ bool SpellCatalog::load_stage(i32 stage, const Reader& reader) {
                         if (rank >= 4) continue;
                         id += rank - (instruction.opcode - 537);
                     }
-                    // A subroutine may be invoked for only some ranks even if its
-                    // instructions use mask 0xff. The intrinsic table excludes
-                    // those unreachable combinations (e.g. stage3 midboss E/N).
                     if (difficulty(id) != rank) continue;
                     const i32 row = stage == 7 ? (rank == 4 ? 0 : 1) : (rank == 5 ? 4 : rank);
                     if (row < 0 || row >= 5 || (stage != 7 && rank == 4)) continue;
@@ -175,8 +170,6 @@ bool SpellCatalog::variant_available(i32 stage, i32 slot, i32 rank, const Check&
     if (!entry || !encountered) return false;
     if (encountered(entry->id)) return true;
     if (entry->rank != 5 || !captured) return false;
-    // 00456b50: Overdrive also opens after every preceding ordinary/Extra
-    // variant has a capture in either game mode or spell practice.
     bool preceding = false;
     for (const auto& other : *family(stage, slot)) {
         if (other.id < 0 || other.rank >= 5) continue;
@@ -194,4 +187,4 @@ std::string SpellCatalog::spell_name(i32 stage, i32 slot, const Check& encounter
     return {};
 }
 
-}  // namespace th13
+}

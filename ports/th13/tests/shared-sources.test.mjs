@@ -1,6 +1,3 @@
-// 普通版与多人版共用的源码必须两侧一致：portable/sdl 是同一份语义 GLES 渲染
-// 后端，列出的运行时模块在两个目录各有一份拷贝。任何一侧单独改动都会让两种
-// 模式的画面语义分叉。
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -45,9 +42,6 @@ test('.clang-format is byte-identical between th13 and th13-mp', t => {
   assert.equal(digest(join(multiplayer, '.clang-format')), digest(join(single, '.clang-format')));
 });
 
-// 排版会把内联 JS 改坏（见 tools/source-layout.mjs），所以每个 EM_JS / EM_ASM
-// 都必须在 clang-format off/on 区间里。规则本身由 tests/source-layout.test.mjs 覆盖，
-// 这里检查两个真实目录。
 test('inline JS blocks sit inside clang-format off/on', t => {
   for (const [name, port] of ports) {
     if (name === 'th13-mp' && !existsSync(port)) return t.skip('未检出 ports/th13-mp');

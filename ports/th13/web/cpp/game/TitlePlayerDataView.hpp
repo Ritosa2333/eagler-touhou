@@ -6,8 +6,6 @@
 
 namespace th13 {
 
-// Original 00453170 ANM roots and 00453db0 summary/00453b30 card row output.
-// The menu is the sole selection/page/data state; the view owns VM handles.
 class TitlePlayerDataView {
 public:
     struct Banks {
@@ -36,4 +34,4 @@ private:
     bool create(u32& handle, i32 bank, i32 script);
     bool leave();
 };
-}  // namespace th13
+}

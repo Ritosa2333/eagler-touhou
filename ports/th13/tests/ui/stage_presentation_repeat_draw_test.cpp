@@ -32,7 +32,7 @@ bool quad_equal(const AnmVisualState& a, const AnmVisualState& b) {
         if (a.quad[i].x != b.quad[i].x || a.quad[i].y != b.quad[i].y || a.quad[i].z != b.quad[i].z) return false;
     return a.inherited_color == b.inherited_color;
 }
-}  // namespace
+}
 TEST(player_presentation_draw_restores_renderer_scratch_and_repeats_geometry) {
     GameRandom random;
     AnmEnvironment environment;
@@ -58,15 +58,11 @@ TEST(player_presentation_draw_restores_renderer_scratch_and_repeats_geometry) {
     CHECK_EQ(graphics.vertices.size(), size_t(6));
     if (!graphics.player || graphics.vertices.size() != 6) return;
     auto* vm = const_cast<AnmVm*>(graphics.player);
-    // Distinct stored values make the assertion independent of whether the
-    // first draw happened to leave identical renderer scratch behind.
     vm->visual.quad[0].x = 12345.f;
     vm->visual.inherited_color = 0x12345678u;
     const auto baseline = vm->visual;
     const auto rotation = vm->variables.rotation;
     const auto first = graphics.vertices;
-    // Negative control: the underlying renderer changes its scratch quad/color
-    // when called directly on this same real, visible presentation VM.
     CHECK_EQ(renderer.draw(*vm), 0);
     renderer.flush();
     CHECK(!quad_equal(baseline, vm->visual));

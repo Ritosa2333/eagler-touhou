@@ -1,4 +1,3 @@
-// H-SINE-MOVEMENT:473d4c..473ecb, actual Stage5 GirlD01 motion.
 #include "ecl_test_fixtures.hpp"
 #include "game/StageMath.hpp"
 #include "game/StageSim.hpp"
@@ -33,5 +32,5 @@ TEST(stage5_girld01_second_move_uses_sine_acceleration_not_linear) {
     }
     CHECK(saw);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("sine-movement"); }

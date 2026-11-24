@@ -46,7 +46,7 @@ std::vector<u8> asset(const char* name) {
     std::ifstream file(std::string("artifacts/reference/raw/") + name, std::ios::binary);
     return {std::istreambuf_iterator<char>(file), {}};
 }
-}  // namespace
+}
 
 TEST(summary_menu_uses_original_four_characters_five_ranks_and_summary_then_cards) {
     TitleState state;
@@ -114,8 +114,6 @@ TEST(summary_view_creates_original_assets_draws_ranking_stats_and_card_texture_r
     CHECK(view.draw(menu, sink));
     CHECK_EQ(sink.texts.size(), size_t(13));
     CHECK(sink.texts[0].position.x == 48 && sink.texts[0].position.y == 160);
-    // 00453db0 只写 shadow(+0x19174=1) 与 color(+0x19160)，从不写 font(+0x19178)；
-    // font 随 004038a0 的全局 memset 保持默认 0，值 1 在原版任何路径不可达。
     CHECK_EQ(sink.texts[0].style.font, 0);
     CHECK(sink.texts[9].position.y == 322);
     CHECK(sink.texts[10].text == "       23");

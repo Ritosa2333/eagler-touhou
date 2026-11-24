@@ -5,7 +5,6 @@ import {createRequire} from 'node:module';
 import {runInNewContext} from 'node:vm';
 
 const require = createRequire(new URL('../../../launcher/package.json', import.meta.url));
-// acorn：先取 launcher 的依赖，没有时用镜像内 emsdk 自带的一份。
 let acorn;
 try { acorn = require('acorn'); }
 catch { acorn = createRequire(import.meta.url)(`${process.env.EMSDK ?? '/opt/emsdk'}/upstream/emscripten/node_modules/acorn`); }

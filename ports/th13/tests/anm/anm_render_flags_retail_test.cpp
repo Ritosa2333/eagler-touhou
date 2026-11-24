@@ -1,5 +1,3 @@
-// Independent 00462450 executions are retained in
-// artifacts/th13-longrun-20261029/anm-render-flags-native.json.
 #include "anm_test_fixtures.hpp"
 
 using namespace th13;

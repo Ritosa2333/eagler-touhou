@@ -1,6 +1,3 @@
-// ECL 虚拟机单测共享夹具（资源级）：仓库文件读取、SCPT/指令构造器、
-// 真实 st01.ecl 的 GirlA01/GirlA01_at 指令序列（逐字节取自
-// artifacts/reference/raw/st01.ecl，走查记录见 docs/plans/ecl-vm.md §1.3）。
 #pragma once
 
 #include "../harness/test_framework.hpp"
@@ -18,9 +15,6 @@
 namespace th13test {
 using namespace th13;
 
-// "real_*" 用例把事件流交给 StageSim 的事件出口。落点统一在外层工作区的
-// artifacts/verification/th13-ecl/（目录不存在时创建），TH13_TEST_EVIDENCE_DIR
-// 可改到别处。
 inline std::string evidence_sink(const char* name) {
     static const std::string directory = [] {
         const char* root = std::getenv("TH13_TEST_EVIDENCE_DIR");
@@ -31,7 +25,6 @@ inline std::string evidence_sink(const char* name) {
     return directory + "/" + name;
 }
 
-// ---------- 仓库文件读取：从当前目录或本文件上溯定位仓库根 ----------
 class TestFileReader {
 public:
     bool read(const std::string& relative, std::vector<th13::u8>& out) {
@@ -59,14 +52,11 @@ public:
 
 private:
     static const std::vector<std::string>& bases() {
-        // 运行目录（run.sh 保证在仓库根）与源码上溯路径（tests/ecl → 仓库根）双保险。
         static const std::vector<std::string> list = {".", "../../../..", "../../../../.."};
         return list;
     }
     std::map<std::string, std::vector<th13::u8>> cache_;
 };
-
-// ---------- SCPT 容器构造（对齐 §1.1 布局，供合成脚本用） ----------
 
 inline std::vector<u8> build_scpt(const std::vector<std::pair<std::string, std::vector<u8>>>& scripts,
                                   const std::vector<std::string>& animations = {}) {
@@ -76,7 +66,6 @@ inline std::vector<u8> build_scpt(const std::vector<std::pair<std::string, std::
         names += '\0';
     }
     const u32 count = u32(scripts.size());
-    // ANIM/ECLI 名单区（§1.1：36 起 "ANIM"+count+名字，4 对齐，"ECLI"+0）。
     std::vector<u8> includes;
     if (!animations.empty()) {
         const char tag[4] = {'A', 'N', 'I', 'M'};
@@ -117,7 +106,6 @@ inline std::vector<u8> build_scpt(const std::vector<std::pair<std::string, std::
     return out;
 }
 
-// 指令构造器：16 字节头 + 参数区。
 inline void emit(std::vector<u8>& out, u32 time, u16 opcode, u16 mask, u8 rank, u32 stack_adjust,
                  const std::vector<u32>& args, const void* tail = nullptr, u32 tail_size = 0) {
     const u16 length = u16(16 + args.size() * 4 + tail_size);
@@ -147,10 +135,6 @@ inline u32 bits_of(float value) {
     return bits;
 }
 
-// ---------- 真实 st01 字节（artifacts/reference/raw/st01.ecl 0x3e0 起） ----------
-
-// GirlA01 指令流（文件偏移 0x3e0..0x597，§1.3 走查表逐指令对应；字节由
-// scripts 侧从 raw/st01.ecl 直接导出，embedded_fixture_matches_st01_bytes 自证一致）。
 inline std::vector<u8> girl_a01_stream() {
     const u8 bytes[] = {
         0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x14, 0x00, 0x00, 0x00, 0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -182,7 +166,6 @@ inline std::vector<u8> girl_a01_stream() {
     return std::vector<u8>(bytes, bytes + sizeof bytes);
 }
 
-// GirlA01_at 指令流（文件偏移 0x5a8..0x77b）：$A 局部变量 + et 指令族 + postDec 循环。
 inline std::vector<u8> girl_a01_at_stream() {
     const u8 bytes[] = {
         0x00, 0x00, 0x00, 0x00, 0x28, 0x00, 0x14, 0x00, 0x00, 0x00, 0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00,
@@ -215,4 +198,4 @@ inline std::vector<u8> girl_a01_at_stream() {
     return std::vector<u8>(bytes, bytes + sizeof bytes);
 }
 
-}  // namespace th13test
+}

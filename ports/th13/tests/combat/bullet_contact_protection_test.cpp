@@ -50,10 +50,8 @@ TEST(contact_protection_does_not_prevent_player_hit_but_preserves_bullet) {
         CHECK(battle.player_phase == StageBattle::PlayerPhase::Deathbomb);
         CHECK_EQ(battle.sim.bullets.size(), size_t(1));
         CHECK(battle.sim.bullets[0].alive);
-        // 0040dd02/0040dd17 checks cancel protection, then enters state3;
-        // protected bullets keep their live state instead of being unlinked.
         CHECK_EQ(battle.sim.bullets[0].state, protected_bullet ? 1 : 3);
     }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("bullet contact protection"); }

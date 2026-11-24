@@ -1,10 +1,3 @@
-// TH13 ANM 归档（version==8，无全局魔数的 entry 链）。
-// 布局依据 docs/plans/anm-pipeline.md §二（raw/front.anm 逐字节复核）：
-//   entry 头 0x28 + sprite 偏移表 + {id,offset} 脚本表 + name1 + THTX；
-//   sprite 记录 20 字节 {u32 id; f32 x,y,w,h}；指令头 8 字节
-//   {i16 opcode; u16 size; i16 time; u16 mask}，opcode==-1 为终止符。
-// entry 内 id 仅是元数据：装载器把 sprite/script 按表序追加到归档全局表
-// （0x46e0b0/0x46e230），ins_300 用的编号即全局序号——解析顺序不可换。
 #pragma once
 #include "Types.hpp"
 #include <string>
@@ -42,8 +35,6 @@ struct AnmScript {
     i32 source_id = 0;
     u32 file_offset = 0;
     std::vector<u8> bytes;
-    // 00461a60 / 0046f990 index the owning file, not other ANM files
-    // packed into the same web bank. Every entry in one file shares these.
     u32 sprite_base = 0, script_base = 0;
 };
 class AnmResource {
@@ -53,17 +44,12 @@ public:
     std::vector<AnmTexture> textures;
     std::vector<AnmSprite> sprites;
     std::vector<AnmScript> scripts;
-    // Loaded content is immutable while VMs reference it. These identities
-    // describe content and table positions, independently of bank/address.
     u64 content_identity() const noexcept;
     void refresh_identity() const noexcept;
     i32 script_index(const std::vector<u8>* script) const noexcept;
     i32 sprite_index(const AnmSprite* sprite) const noexcept;
     bool open(const u8* bytes, u32 size);
-    // Pack another file while retaining its local sprite/child-script domain.
-    // ECL file+script pairs are translated by StagePresentation; instructions
-    // inside each ANM continue to use that file's original local indices.
     bool append(const u8* bytes, u32 size);
 };
 u64 anm_script_identity(const std::vector<u8>& bytes) noexcept;
-}  // namespace th13
+}

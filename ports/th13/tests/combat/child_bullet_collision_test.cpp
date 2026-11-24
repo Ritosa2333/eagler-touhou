@@ -41,7 +41,6 @@ TEST(child_projectile_cannot_graze_before_its_first_manager_update) {
         battle.sim.enemies.clear();
         battle.set_player_pos(0, 400);
         s.max_point_cap = 10000000;
-        //Actual child birth during advance_bullets; parent itself has collision off.
         StageBullet parent;
         parent.x = 30;
         parent.y = 400;
@@ -93,7 +92,6 @@ TEST(child_emissions_consume_random_in_original_newest_parent_order) {
     }
     sim.advance_bullets();
     CHECK_EQ(sim.bullets.size(), size_t(4));
-    //Original active list B->A: new child from B is emitted before child from A.
     CHECK_EQ(sim.bullets[2].x, 100.f);
     CHECK_EQ(sim.bullets[3].x, -100.f);
     CHECK(!sim.bullets[2].collision_ready);
@@ -134,5 +132,5 @@ TEST(deathbomb_suppresses_hit_and_cancellation_but_still_allows_graze) {
         CHECK(battle.player_phase == StageBattle::PlayerPhase::Deathbomb);
     }
 }
-}  // namespace
+}
 int main() { return th13test::run_all("child projectile collision phase"); }

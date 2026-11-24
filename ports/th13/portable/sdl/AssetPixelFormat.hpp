@@ -2,8 +2,6 @@
 #include "GraphicsState.hpp"
 #include <cstdlib>
 namespace touhou::graphics {
-// Original resource files and the comparison harness encode pixel storage as
-// integers. Decode at the resource boundary; the renderer stores PixelFormat.
 inline PixelFormat asset_pixel_format(u32 code) {
     switch (code) {
     case 20:
@@ -48,4 +46,4 @@ constexpr u32 pixel_bytes(PixelFormat f) {
            : f == PixelFormat::Alpha8 || f == PixelFormat::Luminance8 ? 1
                                                                       : 4;
 }
-}  // namespace touhou::graphics
+}

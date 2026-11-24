@@ -1,0 +1,1465 @@
+address	class	detail	files
+0x400000	data	headers	game/StageBattle.cpp game/StagePresentation.cpp rebuild/AddressMap.hpp
+0x401000	entry		game/ReplaySession.hpp
+0x401190	entry		game/StageSim.cpp
+0x40120b	listed		game/StageGvars.cpp game/StageSim.cpp game/StageSim.hpp
+0x4012c0	callback		game/StageSim.cpp
+0x401310	entry		game/StageSim.cpp
+0x401342	listed		game/StageGvars.cpp game/StageSim.cpp game/StageSim.hpp
+0x401400	entry		game/StageSim.cpp
+0x4016c0	entry		game/EndingScene.cpp game/EndingScene.hpp game/MsgPlayer.cpp game/MsgPlayer.hpp game/StageBattle.cpp game/StageSim.cpp game/YoumuBomb.cpp game/YoumuBomb.hpp
+0x401835	listed		game/StageGvars.cpp game/StageSim.cpp game/StageSim.hpp
+0x4019d0	listed		game/AnmEnvironment.hpp game/AnmWindTrail.cpp game/RunScene.cpp
+0x402340	sweep	cmp dword ptr [0x4dcf30], 1	game/AnmRenderer.cpp
+0x402ff0	entry		game/AnmManager.cpp game/AnmOverlay.hpp game/RunTransitionEffect.hpp game/StageSim.cpp game/TitleScene.cpp sdl/Application.cpp
+0x403260	entry		game/RunTransitionEffect.hpp
+0x4035fe	listed		game/RunTransitionEffect.hpp
+0x403630	listed		game/RunTransitionEffect.hpp sdl/Application.cpp
+0x403800	entry		game/AnmManager.hpp game/BossPresentation.cpp game/LaserPresentation.cpp game/SpellPresentation.cpp game/SpellPresentation.hpp game/StagePresentation.cpp game/StagePresentation.hpp
+0x4038a0	entry		game/GameHudDraw.cpp game/RunPause.cpp
+0x4038f2	listed		game/GameHudDraw.cpp
+0x403a00	listed		game/AsciiFrame.hpp
+0x403a54	listed		game/AsciiFrame.hpp
+0x403d80	sweep	push 0	game/AsciiFrame.hpp
+0x403d90	sweep	push ecx	game/AsciiFrame.hpp
+0x403df4	listed		game/GameHudDraw.cpp
+0x403dfa	listed		game/GameHudDraw.cpp
+0x403e70	entry		game/SpellPresentation.cpp
+0x403ec0	entry		sdl/Application.cpp
+0x403fd0	entry		game/SessionState.hpp
+0x404140	entry		game/SceneMatrices.cpp game/SpellPresentation.cpp
+0x4042a0	entry		game/AsciiText.cpp game/AsciiText.hpp
+0x404a55	listed		game/GameHudDraw.cpp
+0x404b50	entry		game/SpellPresentation.cpp
+0x405010	entry		game/AnmManager.cpp game/ScorePopups.cpp game/StagePresentation.cpp
+0x405607	listed		game/RunScene.cpp
+0x4057f0	entry		game/SessionState.hpp game/StageBattle.cpp game/StageBattle.hpp
+0x40587f	listed		game/StageBattle.cpp
+0x405a20	entry		game/SessionState.hpp game/StageBattle.cpp game/StageBattle.hpp rebuild/AddressMap.hpp
+0x405a36	listed		game/StageBattle.cpp
+0x405b64	listed		game/StageBattle.cpp
+0x405b80	entry		game/SessionState.hpp game/StageBattle.cpp game/StageBattle.hpp
+0x405bd8	listed		game/StageBattle.cpp
+0x405c0a	listed		game/StageBattle.cpp
+0x405c29	listed		game/StageBattle.cpp
+0x405c2e	listed		game/StageBattle.cpp
+0x405d60	sweep	test dword ptr [0x4be830], 0x100	game/RunScene.cpp
+0x406120	entry		game/StageScenery.cpp
+0x406165	listed		game/StageScenery.cpp
+0x40622f	listed		game/StageScenery.cpp
+0x406255	listed		game/StageScenery.cpp
+0x406680	entry		game/AnmEnvironment.hpp game/RunScene.cpp
+0x406d90	entry		game/AnmRenderer.cpp game/StageScenery.cpp game/StageScenery.hpp
+0x407310	entry		game/AnmRenderer.cpp game/StageScenery.cpp game/StageScenery.hpp
+0x4076c0	entry		game/StageScenery.cpp game/StageScenery.hpp
+0x40779f	listed		game/StageScenery.cpp
+0x4077af	listed		game/StageScenery.cpp
+0x407a69	listed		game/StageScenery.cpp
+0x407a75	listed		game/StageScenery.cpp
+0x407c83	listed		game/StageScenery.cpp
+0x407c96	listed		game/StageScenery.cpp
+0x407ca9	listed		game/StageScenery.cpp
+0x407cbc	listed		game/StageScenery.cpp
+0x4080b0	entry		game/StageScenery.cpp
+0x40815b	listed		game/StageScenery.cpp
+0x408164	listed		game/StageScenery.cpp
+0x408a43	listed		game/StageScript.cpp
+0x408c8a	listed		game/StageScript.cpp
+0x409100	entry		game/RunScene.cpp game/StageCommands.cpp game/StageSim.hpp
+0x409270	entry		sdl/Application.cpp sdl/StageTransitionClock.hpp
+0x409380	entry		sdl/StageTransitionClock.hpp
+0x40a540	entry		game/StageBattle.cpp
+0x40a860	entry		game/StageBattle.hpp
+0x40b2c2	listed		game/StageBattle.cpp
+0x40b812	listed		game/StageBattle.cpp
+0x40bb70	entry		game/ItemManager.cpp
+0x40c910	entry		game/StageBattle.cpp game/YoumuBomb.cpp game/YoumuBomb.hpp
+0x40c948	listed		game/StageBattle.cpp
+0x40cb3c	listed		game/YoumuBomb.cpp
+0x40cb50	entry		game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp game/YoumuBomb.cpp game/YoumuBomb.hpp
+0x40cc0c	listed		game/StageSim.hpp
+0x40cc40	listed		game/YoumuBomb.cpp
+0x40cd03	listed		game/YoumuBomb.cpp
+0x40cd2a	listed		game/YoumuBomb.cpp
+0x40cd2f	listed		game/StageBattle.cpp
+0x40cd39	listed		game/StageBattle.cpp
+0x40cd45	listed		game/YoumuBomb.cpp game/YoumuBomb.hpp
+0x40cdcb	listed		game/YoumuBomb.cpp
+0x40cdf1	listed		game/YoumuBomb.cpp
+0x40ce0b	listed		game/YoumuBomb.cpp
+0x40ce3b	listed		game/YoumuBomb.cpp
+0x40cf70	entry		game/YoumuBomb.cpp
+0x40d1ff	listed		game/RunScene.cpp game/StageSim.hpp
+0x40da30	entry		game/StageSim.cpp
+0x40db10	entry		game/SessionState.hpp game/StageBattle.cpp game/StagePresentation.cpp game/StageSim.cpp game/StageSim.hpp rebuild/AddressMap.hpp
+0x40ddb5	listed		game/StageSim.cpp game/StageSim.hpp
+0x40de74	listed		game/StageSim.cpp
+0x40dea7	listed		game/StageSim.cpp game/StageSim.hpp
+0x40e360	entry		rebuild/AddressMap.hpp
+0x40e4d0	entry		game/StagePresentation.cpp
+0x40e544	listed		game/StagePresentation.cpp
+0x40e565	listed		game/StagePresentation.cpp
+0x40e630	entry		game/StagePresentation.cpp
+0x40e780	sweep	mov eax, dword ptr [0x4c2194]	game/RunScene.cpp game/RunScene.hpp game/StageBattle.hpp game/StageSim.hpp
+0x40e840	entry		game/ReplaySession.hpp game/StageBattle.cpp game/StageCommands.cpp game/StagePresentation.cpp game/StageSim.cpp game/StageSim.hpp sdl/ApplicationState.hpp
+0x40e950	listed		game/StageSim.cpp
+0x40e988	listed		game/StageSim.cpp
+0x40ea52	listed		game/StageSim.cpp
+0x40ea76	listed		game/StageSim.cpp
+0x40ea79	listed		game/StageSim.cpp
+0x40ea93	listed		game/StageSim.cpp
+0x40ecf3	listed		sdl/BrowserRuntime.cpp
+0x40ed43	listed		game/StageBattle.cpp
+0x40ee8c	listed		game/StageSim.cpp
+0x40f030	entry		game/ReplaySession.hpp game/StagePresentation.cpp game/StageSim.cpp game/StageSim.hpp sdl/ApplicationState.hpp sdl/BrowserRuntime.cpp
+0x40f087	listed		game/StageSim.cpp
+0x40f0ad	listed		game/StageSim.cpp
+0x40f0f3	listed		game/StageSim.cpp
+0x40f11a	listed		game/StageSim.cpp
+0x40f1b5	listed		game/StageSim.cpp
+0x40f1da	listed		game/StageSim.cpp
+0x40f1dc	listed		game/StageSim.cpp
+0x40f210	listed		game/StageSim.cpp
+0x40f3b8	listed		game/StageSim.cpp
+0x40f3f4	listed		game/StageSim.cpp
+0x40f41b	listed		game/StageSim.cpp
+0x40f483	listed		game/StageSim.cpp
+0x40f489	listed		game/StageSim.cpp
+0x40f5df	listed		game/BulletAppearance.hpp game/StageSim.cpp
+0x40f69a	listed		game/BulletAppearance.hpp
+0x40f6a4	listed		game/StageSim.cpp
+0x40f735	listed		game/StageSim.cpp
+0x40f79a	listed		game/StageSim.cpp game/StageSim.hpp
+0x40f865	listed		game/StageSim.cpp
+0x40f8ad	listed		game/StageSim.cpp
+0x40ffa8	table		game/BulletAppearance.hpp
+0x40ffe0	entry		game/StageCommands.cpp game/StageSim.cpp game/StageSim.hpp
+0x41004c	listed		game/StageSim.cpp game/StageSim.hpp
+0x410055	listed		game/StageSim.cpp
+0x410067	listed		game/StageSim.cpp
+0x410230	entry		game/StageSim.cpp game/StageSim.hpp
+0x4102b0	entry		game/StageSim.cpp game/StageSim.hpp
+0x410520	entry		game/StageSim.cpp game/StageSim.hpp
+0x4105d0	entry		game/StageSim.cpp game/StageSim.hpp
+0x4105eb	listed		game/StageSim.cpp
+0x4105f5	listed		game/StageSim.cpp
+0x410681	listed		game/StageSim.cpp
+0x4107f0	entry		game/StageSim.cpp game/StageSim.hpp
+0x4108b0	entry		game/StageSim.cpp game/StageSim.hpp
+0x410960	entry		game/StageSim.cpp game/StageSim.hpp
+0x4109f0	entry		game/StageSim.cpp game/StageSim.hpp
+0x410a80	entry		game/StageSim.cpp game/StageSim.hpp
+0x410ba1	listed		game/StageSim.cpp
+0x410bb1	listed		game/StageSim.cpp
+0x410be0	entry		game/StageSim.cpp
+0x411380	entry		game/StageSim.cpp game/StageSim.hpp
+0x4114f0	entry		game/StageCommands.cpp game/StageSim.cpp game/StageSim.hpp
+0x411770	entry		game/StageSim.cpp
+0x4118cf	listed		game/StageSim.cpp
+0x4118da	listed		game/StageSim.cpp
+0x41193c	listed		game/StageSim.cpp
+0x4119c0	entry		game/StageBattle.cpp game/StageSim.cpp game/StageSim.hpp game/YoumuBomb.hpp
+0x411df0	entry		game/StageCommands.cpp
+0x4120b0	sweep	push esi	game/BulletAppearance.cpp game/BulletAppearance.hpp game/StagePresentation.cpp game/StagePresentation.hpp
+0x412320	entry		game/StageSim.cpp
+0x412400	entry		game/StageSim.cpp
+0x412510	entry		game/StageSim.cpp game/StageSim.hpp
+0x4126b0	entry		game/BossPresentation.hpp
+0x412760	entry		game/SpellElapsedTime.hpp sdl/ApplicationGame.cpp
+0x412890	entry		game/BossPresentation.cpp game/BossPresentation.hpp
+0x412900	entry		game/BossPresentation.hpp game/RunScene.cpp
+0x412b00	entry		sdl/Application.cpp
+0x412ee0	entry		game/SpellElapsedTime.hpp game/SpellPresentation.cpp game/SpellPresentation.hpp sdl/Application.cpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x412ef6	listed		game/SpellElapsedTime.hpp
+0x41302c	listed		game/SpellElapsedTime.hpp sdl/ApplicationGame.cpp
+0x413041	listed		sdl/ApplicationGame.cpp
+0x413080	entry		game/SpellPresentation.cpp
+0x4130bc	listed		game/SpellPresentation.cpp
+0x4130c2	listed		game/SpellPresentation.cpp
+0x4130c8	listed		game/SpellPresentation.cpp
+0x4131e2	listed		game/RunScene.cpp
+0x413231	listed		game/SpellPresentation.cpp
+0x413270	entry		game/GameHud.hpp game/SpellPresentation.cpp
+0x41381e	listed		game/RunScene.cpp game/SpellPresentation.cpp game/SpellPresentation.hpp
+0x4138df	listed		game/SpellPresentation.cpp
+0x4139a7	listed		game/SpellPresentation.cpp
+0x4139b6	listed		game/SpellPresentation.cpp game/SpellPresentation.hpp
+0x413a60	entry		game/BossPresentation.cpp game/BossPresentation.hpp game/RunScene.cpp game/SpellPresentation.cpp game/SpellPresentation.hpp
+0x413b05	listed		game/SpellPresentation.hpp
+0x413ba4	listed		game/SpellPresentation.hpp
+0x413bc0	entry		game/ItemManager.cpp
+0x413bf0	entry		game/ItemManager.cpp
+0x413e50	entry		game/ItemManager.hpp
+0x414180	entry		sdl/Application.cpp
+0x414f30	entry		game/ReplayFile.hpp
+0x414fc0	entry		game/PostGameFlow.cpp game/SessionState.hpp sdl/Application.cpp
+0x415030	entry		game/RunPause.hpp game/TitleMainMenu.cpp sdl/ApplicationGame.cpp
+0x415650	entry		game/AnmManager.cpp game/RunScene.hpp game/RunTransitionEffect.hpp game/TitleScene.cpp sdl/Application.cpp sdl/ApplicationState.hpp sdl/ApplicationTitle.cpp
+0x4156a1	listed		game/RunScene.cpp game/RunScene.hpp
+0x4157ba	listed		game/RunScene.hpp
+0x415f60	entry		game/EndingScene.cpp
+0x416000	entry		game/EndingScene.cpp
+0x416130	entry		game/EndingScene.cpp game/EndingScene.hpp game/TitleMainMenu.hpp game/TitleSelectionMenu.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/FileStore.hpp
+0x41623a	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x41624e	listed		rebuild/AddressMap.hpp
+0x416297	listed		rebuild/AddressMap.hpp
+0x41629a	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x4162d0	listed		game/TitleMainMenu.cpp
+0x4163b0	entry		game/EndingScene.cpp game/EndingScene.hpp sdl/Application.cpp
+0x416570	entry		game/EndingScene.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x4165f0	entry		game/EndingScene.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x416610	entry		game/EndingScene.cpp game/EndingScene.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationState.hpp sdl/ApplicationTitle.cpp
+0x4166d0	entry		game/EndingScene.cpp rebuild/AddressMap.hpp
+0x416a10	entry		game/EndingScene.cpp game/EndingScene.hpp rebuild/AddressMap.hpp sdl/Application.cpp
+0x416a40	listed		game/EndingScene.cpp
+0x416a4a	listed		game/EndingScene.cpp
+0x416a57	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x416b73	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x416b9b	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x416bc8	listed		game/EndingScene.cpp
+0x416be7	listed		game/EndingScene.cpp
+0x416c2b	listed		game/EndingScene.cpp
+0x416c4d	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x416cd1	listed		game/EndingScene.cpp
+0x416ce8	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x416da9	listed		game/EndingScene.cpp
+0x416e43	listed		game/EndingScene.cpp
+0x416edd	listed		game/EndingScene.cpp
+0x416f77	listed		game/EndingScene.cpp
+0x416f82	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x416fdc	listed		game/EndingScene.cpp
+0x416ff4	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x417018	listed		game/EndingScene.cpp
+0x4170b9	listed		game/EndingScene.cpp
+0x4170c7	listed		game/EndingScene.cpp
+0x4170dd	listed		game/EndingScene.cpp
+0x4170e0	listed		game/EndingScene.hpp
+0x4170eb	listed		game/EndingScene.cpp
+0x4170fa	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x417141	listed		game/EndingScene.cpp
+0x417144	listed		game/EndingScene.cpp game/EndingScene.hpp
+0x4171dc	listed		game/EndingScene.hpp
+0x4171e8	table		game/EndingScene.hpp rebuild/AddressMap.hpp
+0x417230	callback		game/EndingScene.cpp game/EndingScene.hpp sdl/Application.cpp
+0x4172e0	entry		game/TitleReplayMenu.cpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x417370	entry		game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp game/TitleScene.cpp sdl/ApplicationTitle.cpp
+0x417376	listed		sdl/Application.cpp
+0x41738a	listed		sdl/Application.cpp
+0x417450	entry		game/Interpolation.hpp
+0x4176c0	entry		game/StageCommands.cpp game/StageSim.cpp
+0x417740	entry		game/StageCommands.cpp game/StageSim.cpp
+0x4179e0	entry		game/StageSim.cpp
+0x417ad0	entry		game/StageSim.cpp game/StageSim.hpp
+0x417aff	listed		game/StageSim.cpp
+0x417b10	entry		game/ItemManager.hpp game/ReplaySession.hpp game/StageBattle.cpp game/StageCommands.cpp game/StageSim.cpp game/StageSim.hpp sdl/ApplicationState.hpp
+0x417f40	entry		game/StageCommands.cpp game/StageSim.cpp game/StageSim.hpp
+0x418330	entry		game/StagePresentation.hpp
+0x4183f0	entry		game/StageCommands.cpp game/StageGvars.cpp game/StagePresentation.cpp game/StageSim.cpp game/StageSim.hpp
+0x41863a	listed		game/StageBattle.cpp
+0x418688	listed		game/StageBattle.cpp
+0x418778	sweep	dec dword ptr [ecx + 0xb8]	game/StageBattle.cpp
+0x418b50	entry		sdl/Application.cpp
+0x418d30	entry		game/StageBattle.cpp game/StageSim.hpp
+0x418e00	entry		game/RunScene.cpp game/StageBattle.cpp game/StageBattle.hpp game/StageCommands.cpp game/StageSim.cpp game/StageSim.hpp rebuild/AddressMap.hpp
+0x418e31	listed		game/StageSim.hpp
+0x418f40	entry		game/StageSim.hpp
+0x419089	listed		game/StageSim.hpp
+0x419195	listed		game/StageCommands.cpp game/StageSim.hpp
+0x419320	entry		game/StageSim.cpp
+0x419385	listed		game/StageBattle.cpp
+0x41938b	listed		game/StageSim.cpp
+0x41939a	listed		game/StageSim.cpp
+0x419450	entry		game/StageBattle.hpp game/StageCommands.cpp game/StagePresentation.cpp game/StageSim.cpp game/StageSim.hpp
+0x419694	listed		game/StagePresentation.cpp
+0x4196d3	listed		game/StagePresentation.cpp game/StageSim.hpp
+0x4196db	listed		game/StagePresentation.cpp
+0x4196e1	listed		game/StagePresentation.cpp
+0x4196ef	listed		game/StagePresentation.cpp
+0x4196fd	listed		game/StagePresentation.cpp
+0x419708	listed		game/StagePresentation.cpp
+0x41970e	listed		game/StagePresentation.cpp
+0x419711	listed		game/StagePresentation.cpp game/StageSim.hpp
+0x419731	listed		game/StagePresentation.cpp game/StageSim.hpp
+0x41974a	listed		game/StagePresentation.cpp
+0x41975b	listed		game/StagePresentation.cpp
+0x419764	listed		game/StageCommands.cpp game/StagePresentation.cpp game/StageSim.hpp
+0x4197db	listed		game/StagePresentation.cpp
+0x4197e9	listed		game/StagePresentation.cpp
+0x419827	listed		game/StagePresentation.cpp game/StageSim.hpp
+0x41982f	listed		game/StagePresentation.cpp
+0x419950	entry		game/ReplayEntityState.hpp game/StageCommands.cpp game/StagePresentation.cpp game/StageSim.cpp game/StageSim.hpp
+0x419a90	entry		game/ReplayEntityState.hpp game/SessionState.hpp game/StageBattle.cpp game/StageBattle.hpp game/StageSim.cpp game/StageSim.hpp sdl/BrowserRuntime.cpp
+0x419cce	listed		game/StageBattle.cpp
+0x419d2a	listed		game/StageBattle.cpp
+0x419d2f	listed		game/StageBattle.cpp
+0x419d37	listed		game/StageBattle.cpp
+0x419d53	listed		game/StageBattle.cpp
+0x419d55	listed		game/StageBattle.cpp
+0x419f3c	listed		game/StageSim.cpp
+0x419f96	listed		game/StageBattle.cpp
+0x419fa3	listed		game/StageBattle.cpp
+0x419fa9	listed		game/StageBattle.cpp
+0x419fb3	listed		game/StageBattle.cpp
+0x41a1d6	listed		game/StageSim.cpp
+0x41a227	listed		game/StageBattle.cpp game/StageSim.cpp
+0x41a3d0	entry		game/EnemyFog.cpp
+0x41a8a0	entry		game/StageCommands.cpp game/StagePresentation.cpp game/StageSim.cpp game/StageSim.hpp rebuild/AddressMap.hpp
+0x41aad0	entry		game/ItemManager.hpp game/StageBattle.cpp game/StageCommands.cpp game/StageSim.cpp game/StageSim.hpp
+0x41ac70	entry		game/StageCommands.cpp
+0x41b250	entry		game/EclContext.hpp rebuild/AddressMap.hpp
+0x41b260	entry		game/EclContext.hpp game/StageCommands.cpp game/StagePresentation.cpp game/StageSim.cpp game/StageSim.hpp rebuild/AddressMap.hpp
+0x41b2dd	listed		game/StageCommands.cpp
+0x41b30c	listed		game/StageCommands.cpp
+0x41b34f	listed		game/StageCommands.cpp
+0x41b359	listed		game/StageSim.hpp
+0x41b510	listed		game/RunScene.cpp game/StageCommands.cpp game/StagePresentation.hpp game/StageSim.hpp
+0x41b675	listed		game/StageSim.hpp
+0x41b7cc	listed		game/RunScene.cpp game/StageCommands.cpp game/StageSim.hpp
+0x41b903	listed		game/StageCommands.cpp
+0x41b93c	listed		game/StageCommands.cpp
+0x41b98f	listed		game/StageCommands.cpp
+0x41ba18	listed		game/StageCommands.cpp
+0x41bb0d	listed		game/StageCommands.cpp
+0x41bfb1	listed		game/StageCommands.cpp
+0x41c137	listed		game/StageCommands.cpp game/StageMath.hpp
+0x41c21f	listed		game/StageCommands.cpp game/StageMath.hpp
+0x41c471	listed		game/StageCommands.cpp
+0x41c56b	listed		game/StageCommands.cpp
+0x41c572	listed		game/StageCommands.cpp
+0x41c627	listed		game/StageCommands.cpp
+0x41ccb1	listed		game/StageCommands.cpp
+0x41cce3	listed		game/StageCommands.cpp
+0x41cd0c	listed		game/StageCommands.cpp
+0x41cd1f	listed		game/StageCommands.cpp
+0x41cd32	listed		game/StageCommands.cpp
+0x41cdc2	listed		game/StageCommands.cpp
+0x41ce1f	listed		game/ReplaySession.hpp sdl/ApplicationState.hpp
+0x41d01c	listed		game/StageCommands.cpp
+0x41d0b9	listed		game/StageCommands.cpp
+0x41d203	listed		game/StageCommands.cpp
+0x41d231	listed		game/StageCommands.cpp
+0x41d34c	listed		game/StageCommands.cpp
+0x41d395	listed		game/StageCommands.cpp
+0x41d3d8	listed		game/StageCommands.cpp
+0x41d439	listed		game/StageCommands.cpp
+0x41d573	listed		game/StageCommands.cpp game/StageSim.cpp game/StageSim.hpp
+0x41d5d1	listed		game/StageSim.cpp game/StageSim.hpp
+0x41d61a	listed		game/StageCommands.cpp
+0x41d6b1	listed		game/StageCommands.cpp
+0x41d7ad	listed		sdl/BrowserRuntime.cpp
+0x41da32	listed		game/StageCommands.cpp
+0x41dad7	listed		game/StageCommands.cpp
+0x41df90	listed		game/StageCommands.cpp game/StageSim.cpp
+0x41e262	listed		game/StageCommands.cpp
+0x41e31c	listed		game/StageCommands.cpp
+0x41e33f	listed		game/StageCommands.cpp
+0x41e3da	listed		game/StageCommands.cpp
+0x41e3fd	listed		game/StageCommands.cpp
+0x41e407	listed		game/StageSim.hpp
+0x41e42e	listed		game/StageCommands.cpp
+0x41e451	listed		game/StageCommands.cpp
+0x41f2c4	listed		game/StageCommands.cpp
+0x41f3f6	listed		game/StageSim.hpp
+0x41f4f3	listed		game/StageCommands.cpp
+0x41f5e9	listed		game/StageCommands.cpp
+0x41f760	table		game/StageCommands.cpp
+0x41f9d8	data	ECL 指令二级分派的字节表，索引 0x41f760 的处理函数指针表	game/StageCommands.cpp
+0x41fcc0	entry		game/StageCommands.cpp game/StageSim.cpp game/StageSim.hpp
+0x41fe80	entry		game/RunScene.cpp game/StageCommands.cpp game/StagePresentation.cpp game/StagePresentation.hpp game/StageSim.hpp
+0x41ff00	listed		game/StageCommands.cpp
+0x41ff24	listed		game/StageCommands.cpp game/StagePresentation.cpp game/StageSim.hpp
+0x420380	entry		game/EclContext.cpp game/EclContext.hpp game/ReplaySession.hpp game/StageGvars.cpp game/StageSim.hpp sdl/ApplicationState.hpp
+0x4203cc	listed		game/RunScene.cpp game/StageGvars.cpp game/StageSim.cpp game/StageSim.hpp
+0x420638	listed		game/StageGvars.cpp
+0x420b80	entry		game/EclContext.hpp
+0x420d00	entry		game/EclContext.cpp game/EclContext.hpp game/ReplaySession.hpp game/StageGvars.cpp game/StageSim.hpp sdl/ApplicationState.hpp
+0x420d5b	listed		game/RunScene.cpp game/StageGvars.cpp game/StageSim.cpp game/StageSim.hpp
+0x421670	entry		game/EclContext.hpp
+0x421880	entry		game/StageCommands.cpp
+0x4218f0	entry		game/StageSim.cpp game/StageSim.hpp
+0x421b10	entry		game/StageCommands.cpp
+0x422b20	entry		game/StagePresentation.hpp
+0x422cd0	entry		game/StageBattle.cpp
+0x422f80	entry		game/StageCommands.cpp game/StageSim.cpp game/StageSim.hpp
+0x4230d4	listed		game/StageSim.cpp
+0x423200	listed		game/StageSim.cpp
+0x423218	listed		game/StageSim.cpp
+0x423230	listed		game/StageSim.cpp
+0x423233	listed		game/StageSim.cpp
+0x42324d	listed		game/StageSim.cpp
+0x423250	listed		game/StageSim.cpp
+0x423273	listed		game/StageSim.cpp
+0x423345	listed		game/StageSim.cpp
+0x423367	listed		game/StageSim.cpp
+0x4234b0	entry		game/StageSim.cpp game/StageSim.hpp
+0x4236af	listed		game/StageSim.cpp
+0x4236c7	listed		game/StageSim.cpp
+0x4236d6	listed		game/StageSim.cpp
+0x4236d9	listed		game/StageSim.cpp
+0x4236eb	listed		game/StageSim.cpp
+0x4236ee	listed		game/StageSim.cpp
+0x423702	listed		game/StageSim.cpp
+0x4237d7	listed		game/StageSim.cpp
+0x4237f9	listed		game/StageSim.cpp
+0x423900	entry		game/StageSim.hpp
+0x424310	entry		game/MsgPresentation.hpp
+0x4243e0	entry		game/AnmEnvironment.hpp game/RunScene.cpp game/StageCommands.cpp game/StagePresentation.cpp game/StagePresentation.hpp game/StageSim.hpp
+0x424770	entry		game/StageSim.cpp
+0x424990	entry		game/ReplayRecorder.cpp game/ReplayRecorder.hpp portable/sdl/FrameRateMeter.hpp sdl/Application.cpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp sdl/BrowserRuntime.cpp
+0x424a90	entry		game/AsciiFrame.hpp game/AsciiText.cpp sdl/Application.cpp
+0x424ba0	entry		game/DialogueText.cpp game/MsgPlayer.cpp
+0x424f45	listed		game/RunScene.hpp
+0x424f46	listed		game/GameHud.hpp game/GameHudFrame.cpp game/RunScene.cpp game/RunScene.hpp
+0x424f4b	listed		game/GameHud.hpp game/GameHudFrame.cpp game/RunScene.cpp game/RunScene.hpp
+0x424fb1	listed		game/RunScene.cpp
+0x424fc8	listed		game/RunScene.hpp
+0x424fd0	entry		game/MsgPlayer.hpp game/RunScene.cpp rebuild/AddressMap.hpp
+0x425170	entry		game/BossPresentation.cpp game/BossPresentation.hpp game/GameHud.cpp game/GameHud.hpp
+0x425829	listed		game/GameHud.cpp
+0x42583c	listed		game/GameHud.cpp
+0x425841	listed		game/GameHud.cpp
+0x4264f0	entry		game/GameHud.cpp
+0x4265a0	entry		game/BossPresentation.cpp game/BossPresentation.hpp game/GameHud.cpp game/GameHud.hpp game/GameHudFrame.cpp game/MsgPlayer.cpp game/MsgPlayer.hpp game/RunScene.cpp game/RunScene.hpp
+0x426b06	listed		game/BossPresentation.cpp game/BossPresentation.hpp
+0x426bad	listed		game/BossPresentation.cpp game/BossPresentation.hpp
+0x426c66	listed		game/BossPresentation.cpp game/BossPresentation.hpp
+0x426d13	listed		game/BossPresentation.cpp game/BossPresentation.hpp
+0x426dba	listed		game/BossPresentation.cpp
+0x426e61	listed		game/BossPresentation.cpp
+0x426f1a	listed		game/BossPresentation.cpp game/BossPresentation.hpp
+0x426f9e	listed		game/BossPresentation.cpp game/BossPresentation.hpp
+0x426fcc	listed		game/BossPresentation.cpp
+0x426fd8	listed		game/BossPresentation.cpp
+0x426fdb	listed		game/BossPresentation.cpp
+0x42704f	listed		game/BossPresentation.cpp
+0x42706b	listed		game/BossPresentation.cpp
+0x427071	listed		game/BossPresentation.cpp
+0x42708a	listed		game/BossPresentation.cpp
+0x427091	listed		game/BossPresentation.cpp
+0x4270da	listed		game/BossPresentation.cpp game/BossPresentation.hpp
+0x4270dc	listed		game/BossPresentation.cpp
+0x4270e5	listed		game/BossPresentation.hpp
+0x4270eb	listed		game/BossPresentation.cpp
+0x427100	listed		game/BossPresentation.cpp
+0x427135	listed		game/BossPresentation.cpp
+0x427139	listed		game/BossPresentation.cpp
+0x42713c	listed		game/BossPresentation.cpp
+0x42714f	listed		game/BossPresentation.cpp
+0x427171	listed		game/BossPresentation.cpp
+0x427193	listed		game/BossPresentation.cpp
+0x42719d	listed		game/BossPresentation.cpp
+0x4274bc	listed		game/RunScene.cpp
+0x4274cc	listed		game/RunScene.cpp
+0x427910	entry		game/BossPresentation.hpp game/GameHudDraw.cpp game/RunScene.hpp game/SessionState.hpp game/SpellPresentation.hpp sdl/Application.cpp sdl/ApplicationGame.cpp
+0x42797c	listed		game/GameHudDraw.cpp
+0x427993	listed		game/GameHudDraw.cpp
+0x4279a3	listed		game/SpellPresentation.cpp
+0x4279d5	listed		game/GameHudDraw.cpp
+0x4279dc	listed		game/SpellPresentation.cpp
+0x4279e2	listed		game/SpellPresentation.cpp
+0x4279ea	listed		game/SpellPresentation.cpp game/SpellPresentation.hpp
+0x427a2c	listed		game/SpellPresentation.cpp
+0x427a56	listed		game/SpellPresentation.cpp
+0x427a6d	listed		game/SpellPresentation.cpp
+0x427a77	listed		game/SpellPresentation.cpp
+0x427a87	listed		game/SpellPresentation.cpp
+0x427ab7	listed		game/SpellPresentation.cpp
+0x427b2a	listed		game/SpellPresentation.cpp
+0x427b4c	listed		game/SpellPresentation.cpp
+0x427b60	listed		game/SpellPresentation.cpp
+0x427b92	listed		game/SpellPresentation.cpp
+0x427c03	listed		game/SpellPresentation.hpp
+0x427d35	listed		game/GameHudDraw.cpp
+0x427d87	listed		game/GameHudDraw.cpp
+0x427f02	listed		game/GameHudDraw.cpp
+0x427f2e	listed		game/GameHudDraw.cpp
+0x42808d	listed		game/GameHudDraw.cpp
+0x428111	listed		game/GameHudDraw.cpp
+0x42814f	listed		game/GameHudDraw.cpp
+0x428155	listed		game/GameHudDraw.cpp
+0x4281a3	listed		game/GameHudDraw.cpp
+0x4281c8	listed		game/GameHudDraw.cpp
+0x4281d4	listed		game/GameHudDraw.cpp
+0x428236	listed		game/GameHudDraw.cpp
+0x428280	sweep	push ecx	game/GameHud.hpp game/RunScene.cpp
+0x4282a0	sweep	push ecx	game/RunScene.cpp game/RunScene.hpp
+0x4282b0	entry		game/DialogueText.cpp game/DialogueText.hpp game/MsgPlayer.hpp game/RunScene.cpp game/RunScene.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp sdl/FontDevice.cpp sdl/FontDevice.hpp
+0x428820	entry		game/MsgPlayer.hpp game/PostGameFlow.hpp game/RunScene.cpp game/StageCommands.cpp game/StageSim.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/BrowserRuntime.cpp
+0x428ae0	entry		game/DialogueText.cpp game/DialogueText.hpp game/MsgPlayer.cpp game/MsgPlayer.hpp game/MsgPresentation.hpp game/RunScene.cpp game/RunScene.hpp rebuild/AddressMap.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp sdl/FontDevice.cpp sdl/FontDevice.hpp
+0x428c1d	listed		game/DialogueText.hpp
+0x428c7f	listed		game/DialogueText.hpp
+0x428dd3	listed		game/DialogueText.hpp
+0x428e96	listed		game/DialogueText.hpp
+0x428eb7	listed		game/MsgPlayer.hpp
+0x42901b	listed		game/DialogueText.hpp
+0x4290be	listed		game/DialogueText.hpp
+0x429233	listed		game/DialogueText.hpp
+0x429250	listed		game/DialogueText.cpp game/DialogueText.hpp game/MsgPlayer.cpp game/MsgPresentation.hpp game/RunScene.cpp game/RunScene.hpp
+0x429285	listed		game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x42930c	listed		game/MsgPresentation.cpp
+0x429335	listed		game/MsgPlayer.cpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x42948c	listed		game/MsgPlayer.cpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x4295a9	listed		game/MsgPlayer.cpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x4295bc	listed		game/MsgPlayer.cpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x4295cf	listed		game/MsgPlayer.cpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x4295e9	listed		game/MsgPlayer.cpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x42960c	listed		game/DialogueText.cpp game/DialogueText.hpp game/MsgPlayer.cpp game/MsgPresentation.hpp game/RunScene.cpp game/RunScene.hpp
+0x429610	listed		game/DialogueText.hpp
+0x429641	listed		game/MsgPlayer.cpp game/MsgPlayer.hpp game/MsgPresentation.hpp game/RunScene.cpp
+0x4296ee	listed		game/MsgPlayer.cpp game/MsgPlayer.hpp game/MsgPresentation.hpp game/RunScene.cpp
+0x4298d4	listed		game/MsgPlayer.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x4298e8	listed		game/MsgPlayer.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x4298fc	listed		game/MsgPlayer.cpp game/MsgPlayer.hpp
+0x42991f	listed		game/MsgPlayer.cpp
+0x42992b	listed		game/MsgPlayer.cpp
+0x429930	listed		game/MsgPlayer.cpp
+0x429946	listed		game/MsgPlayer.cpp
+0x429969	listed		game/MsgPlayer.cpp
+0x429988	listed		game/MsgPlayer.cpp game/MsgPlayer.hpp
+0x4299df	listed		game/MsgPlayer.cpp game/RunScene.cpp
+0x429a94	listed		game/MsgPlayer.cpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp
+0x429c7c	table		game/MsgPlayer.hpp game/MsgPresentation.hpp game/RunScene.cpp game/RunScene.hpp
+0x429d00	entry		game/DialogueText.cpp game/DialogueText.hpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunPause.cpp game/RunPause.hpp game/RunScene.hpp sdl/ApplicationGame.cpp
+0x429f10	entry		game/DialogueText.cpp game/DialogueText.hpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunPause.cpp game/RunPause.hpp game/RunScene.hpp sdl/ApplicationGame.cpp
+0x42a120	entry		game/DialogueText.cpp
+0x42a340	entry		game/EndingScene.cpp game/MsgPlayer.hpp rebuild/AddressMap.hpp
+0x42a370	entry		game/RunScene.cpp
+0x42a3f6	listed		game/GameHudDraw.cpp
+0x42a404	listed		game/GameHudDraw.cpp
+0x42a41c	listed		game/SpellPresentation.cpp game/StageBattle.hpp
+0x42a41e	listed		game/SpellPresentation.cpp
+0x42a430	entry		game/BossPresentation.cpp game/ItemManager.cpp game/ItemManager.hpp game/RunScene.cpp game/RunScene.hpp game/SpellPresentation.cpp game/SpellPresentation.hpp game/StageBattle.cpp game/StageBattle.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x42a439	listed		game/SpellPresentation.cpp game/SpellPresentation.hpp game/StageBattle.hpp
+0x42a440	sweep	mov edi, dword ptr [ebp + 8]	game/SpellPresentation.cpp game/SpellPresentation.hpp
+0x42a4e2	sweep	fldz	game/SpellPresentation.cpp game/SpellPresentation.hpp
+0x42a4ff	sweep	mov dword ptr [ebp - 8], 0x989680	game/SpellPresentation.cpp
+0x42a54b	sweep	lea eax, [edi + 4]	game/SpellPresentation.cpp
+0x42a5b0	sweep	idiv dword ptr [ebp - 8]	game/SpellPresentation.cpp
+0x42a5bc	sweep	mov dword ptr [ebp - 0xc], 1	game/SpellPresentation.cpp
+0x42a5d6	sweep	lea ecx, [ebx + 0x10e]	game/SpellPresentation.cpp
+0x42a5ea	sweep	call 0x470030	game/SpellPresentation.cpp
+0x42a5fd	sweep	mov eax, 0x66666667	game/SpellPresentation.cpp
+0x42a66e	sweep	mov eax, 0xc	game/SpellPresentation.cpp
+0x42a742	sweep	mov eax, 0xd	game/SpellPresentation.cpp
+0x42a7d6	sweep	mov dword ptr [edi + 0x120], ebx	game/SpellPresentation.cpp
+0x42a804	sweep	mov eax, 0x5f	game/SpellPresentation.cpp
+0x42a876	sweep	ret 8	game/SpellPresentation.cpp game/SpellPresentation.hpp
+0x42a879	sweep	mov ebx, dword ptr [ebp + 8]	game/SpellPresentation.hpp
+0x42a92d	sweep	mov dword ptr [edi + 0x120], ebx	game/SpellPresentation.cpp
+0x42a95b	sweep	mov eax, 0x5f	game/SpellPresentation.cpp
+0x42a9d4	sweep	mov edi, dword ptr [ebp + 8]	game/SpellPresentation.cpp game/SpellPresentation.hpp
+0x42aa9f	sweep	mov edi, dword ptr [ebp + 8]	game/SpellPresentation.cpp game/SpellPresentation.hpp
+0x42ab25	sweep	mov edi, dword ptr [ebp + 8]	game/SpellPresentation.cpp
+0x42abc9	sweep	pop edi	game/SpellPresentation.cpp
+0x42abd4	table		game/SpellPresentation.cpp game/SpellPresentation.hpp game/StageBattle.cpp game/StageBattle.hpp sdl/ApplicationGame.cpp
+0x42abf0	entry		game/PostGameFlow.cpp game/PostGameFlow.hpp game/ScoreBoard.hpp game/SessionState.hpp rebuild/AddressMap.hpp
+0x42adc0	entry		game/GameHud.cpp game/GameHud.hpp
+0x42ae90	entry		game/GameHud.cpp game/SessionState.hpp
+0x42af60	entry		game/GameHud.cpp game/SessionState.hpp
+0x42b030	entry		game/GameHud.cpp game/GameHud.hpp game/GameHudDraw.cpp game/ItemManager.cpp game/ItemManager.hpp game/SessionState.hpp game/StageBattle.cpp game/StageBattle.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x42b1f0	entry		game/MsgPresentation.hpp
+0x42b3f0	entry		game/MsgPlayer.cpp game/MsgPlayer.hpp
+0x42b510	entry		game/BossPresentation.cpp game/BossPresentation.hpp
+0x42b530	entry		game/BossPresentation.cpp game/BossPresentation.hpp
+0x42b6d0	entry		game/RunScene.cpp game/StagePresentation.cpp game/StagePresentation.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x42b6e0	listed		game/StagePresentation.cpp
+0x42b72f	listed		game/StagePresentation.cpp
+0x42b753	listed		game/StagePresentation.cpp
+0x42b78e	listed		game/StagePresentation.cpp
+0x42b7b2	listed		game/StagePresentation.cpp
+0x42b7d4	listed		game/StagePresentation.cpp
+0x42b990	entry		game/GameHud.cpp game/RunScene.cpp game/SessionState.hpp game/StageSim.hpp sdl/Application.cpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp sdl/ApplicationTitle.cpp sdl/StageAssetStager.hpp sdl/StageTransitionClock.hpp
+0x42ba6f	listed		game/GameHud.cpp game/SessionState.hpp
+0x42ba75	listed		game/GameHud.cpp game/SessionState.hpp
+0x42bb5a	listed		game/SessionState.hpp sdl/ApplicationGame.cpp sdl/ApplicationTitle.cpp
+0x42bb6b	listed		game/SessionState.hpp
+0x42bb8c	listed		game/SessionState.hpp sdl/Application.cpp
+0x42bbfd	listed		game/SessionState.hpp sdl/ApplicationTitle.cpp
+0x42bcfc	listed		sdl/Application.cpp
+0x42bd09	listed		sdl/Application.cpp
+0x42be1d	listed		game/AnmOverlay.hpp
+0x42bfa0	entry		game/BossPresentation.cpp game/BossPresentation.hpp game/EndingScene.hpp game/RunScene.cpp game/StagePresentation.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationState.hpp sdl/FileStore.cpp
+0x42bffd	listed		sdl/Application.cpp sdl/ApplicationState.hpp
+0x42c02e	listed		sdl/Application.cpp sdl/ApplicationState.hpp
+0x42c061	listed		sdl/Application.cpp sdl/ApplicationState.hpp
+0x42c09b	listed		sdl/Application.cpp
+0x42c500	entry		game/EndingScene.hpp rebuild/AddressMap.hpp
+0x42c550	entry		game/EndingScene.hpp game/GameHudFrame.cpp game/PostGameFlow.cpp game/PostGameFlow.hpp game/RunScene.cpp game/RunTransitionEffect.hpp game/StageSim.cpp game/StageSim.hpp game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp game/TitleScene.cpp sdl/Application.cpp sdl/ApplicationState.hpp sdl/BrowserRuntime.cpp sdl/StageTransitionClock.hpp
+0x42c678	listed		game/RunScene.cpp
+0x42c6d3	listed		game/RunScene.cpp
+0x42c86a	listed		game/RunTransitionEffect.hpp sdl/Application.cpp
+0x42c881	listed		sdl/Application.cpp sdl/ApplicationState.hpp
+0x42c886	listed		sdl/Application.cpp
+0x42c88c	listed		game/RunTransitionEffect.hpp sdl/Application.cpp
+0x42c9fb	listed		sdl/Application.cpp sdl/ApplicationState.hpp
+0x42cd40	entry		game/MsgPlayer.cpp game/MsgPlayer.hpp game/PostGameFlow.cpp game/PostGameFlow.hpp game/RunScene.cpp game/RunScene.hpp game/ScoreBoard.hpp game/SessionState.hpp game/StagePresentation.cpp game/StagePresentation.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationState.hpp sdl/BrowserRuntime.cpp
+0x42cd59	listed		game/RunScene.cpp
+0x42ce96	listed		game/ScoreBoard.hpp rebuild/AddressMap.hpp
+0x42ced0	listed		game/ScoreBoard.hpp rebuild/AddressMap.hpp
+0x42cefe	listed		game/ScoreBoard.hpp
+0x42cfb3	listed		game/ScoreBoard.hpp rebuild/AddressMap.hpp
+0x42cfe7	listed		game/ScoreBoard.hpp
+0x42d0c1	listed		sdl/Application.cpp
+0x42d3c0	entry		game/GameHud.cpp game/SessionState.hpp sdl/ApplicationGame.cpp sdl/ApplicationTitle.cpp
+0x42d404	listed		game/SessionState.hpp sdl/ApplicationGame.cpp sdl/ApplicationTitle.cpp
+0x42d40f	listed		game/SessionState.hpp
+0x42d6f0	sweep	mov eax, dword ptr [0x4c2298]	sdl/ApplicationTitle.cpp
+0x42d740	entry		game/ManualViewer.hpp game/TitleManualMenu.hpp sdl/ApplicationTitle.cpp
+0x42d860	entry		game/TitleManualMenu.cpp game/TitleManualMenu.hpp
+0x42d940	entry		game/ManualViewer.hpp game/TitleManualMenu.hpp sdl/ApplicationTitle.cpp
+0x42da10	entry		game/ManualViewer.hpp game/TitleManualMenu.hpp sdl/ApplicationTitle.cpp
+0x42e0e0	entry		game/RunScene.cpp game/StageBattle.hpp
+0x42e380	entry		game/AnmRegistry.hpp game/ItemManager.cpp game/ItemManager.hpp game/RunScene.cpp game/SessionState.hpp game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp rebuild/AddressMap.hpp sdl/Application.cpp
+0x42e8ad	listed		game/ItemManager.cpp
+0x42e8bd	listed		game/ItemManager.cpp
+0x42e959	listed		game/ItemManager.cpp
+0x42e9e5	listed		game/ItemManager.cpp game/ItemManager.hpp
+0x42ea94	listed		game/ItemManager.cpp game/ItemManager.hpp
+0x42eaff	listed		game/ItemManager.hpp
+0x42eb46	listed		game/ItemManager.cpp
+0x42ebb9	listed		game/ItemManager.cpp game/ItemManager.hpp
+0x42edc0	entry		game/ItemManager.cpp game/ItemManager.hpp
+0x42ee28	listed		game/SpellPresentation.hpp game/StageBattle.cpp game/StageBattle.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x42efb0	sweep	mov edx, dword ptr [0x4c2194]	game/RunScene.cpp game/RunScene.hpp game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp
+0x42f020	entry		game/ItemManager.cpp game/ItemManager.hpp game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp game/StageSim.hpp
+0x42f4d0	entry		game/ItemManager.cpp
+0x42f510	entry		game/ItemManager.cpp
+0x42f540	entry		game/ItemManager.cpp game/ItemManager.hpp
+0x42fa30	entry		game/StageBattle.hpp
+0x4302a0	entry		game/ItemManager.cpp game/ItemManager.hpp game/StageCommands.cpp game/StageSim.hpp
+0x430300	entry		game/StageCommands.cpp
+0x4315d0	entry		game/RunScene.cpp game/SessionState.hpp
+0x431942	listed		game/StageBattle.cpp
+0x431a1a	listed		game/StageBattle.cpp
+0x431a1f	listed		game/StageBattle.hpp
+0x433260	entry		game/LaserPresentation.cpp
+0x437d70	entry		game/StageSim.cpp
+0x438400	entry		game/RunScene.cpp game/StageBattle.hpp
+0x438520	entry		sdl/Application.cpp
+0x438660	entry		game/ItemManager.hpp game/RunScene.cpp game/StageBattle.cpp rebuild/AddressMap.hpp
+0x438730	entry		game/AnmManager.hpp game/ItemManager.cpp game/ItemManager.hpp game/RunScene.cpp game/SessionState.hpp game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp rebuild/AddressMap.hpp
+0x438b3d	listed		game/SessionState.hpp
+0x438b7a	listed		game/ItemManager.hpp
+0x438b8e	listed		game/RunScene.cpp
+0x438bdd	listed		game/ItemManager.hpp
+0x438be5	listed		game/RunScene.cpp
+0x438c36	listed		game/ItemManager.hpp
+0x438c38	listed		game/RunScene.cpp
+0x438c74	listed		game/ItemManager.cpp
+0x438d26	listed		game/ItemManager.hpp
+0x438d39	listed		game/RunScene.cpp
+0x438d80	listed		game/ItemManager.hpp
+0x438d82	listed		game/RunScene.cpp
+0x438d93	listed		game/RunScene.cpp
+0x438da1	listed		game/ItemManager.hpp
+0x438e3c	table		game/ItemManager.cpp
+0x438e4c	table		game/ItemManager.cpp
+0x438e70	sweep	mov edx, dword ptr [0x4c2194]	game/RunScene.cpp game/RunScene.hpp game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp
+0x438ec0	entry		game/ItemManager.cpp game/ItemManager.hpp game/RunScene.cpp game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp game/StageSim.cpp game/StageSim.hpp
+0x438ff1	listed		game/StagePresentation.cpp
+0x438ff9	listed		game/ItemManager.cpp game/ItemManager.hpp game/StagePresentation.cpp game/StagePresentation.hpp
+0x439088	listed		game/StagePresentation.cpp
+0x43909d	listed		game/ItemManager.cpp game/ItemManager.hpp game/StagePresentation.cpp game/StagePresentation.hpp
+0x4390a5	listed		game/StagePresentation.cpp
+0x4390aa	listed		game/StagePresentation.cpp
+0x4390b9	listed		game/StagePresentation.cpp
+0x4390be	listed		game/ItemManager.cpp game/ItemManager.hpp game/StagePresentation.cpp game/StagePresentation.hpp
+0x4390c6	listed		game/StagePresentation.cpp
+0x439280	entry		game/ItemManager.cpp
+0x4393a0	entry		game/ItemManager.cpp
+0x439730	entry		game/GameHud.cpp game/GameHud.hpp
+0x4398e0	entry		game/GameHud.cpp game/GameHud.hpp
+0x4399e0	entry		sdl/FileStore.cpp
+0x439ce0	entry		game/GameHud.cpp game/GameHud.hpp sdl/BrowserRuntime.cpp
+0x439ded	listed		sdl/Application.cpp sdl/BrowserRuntime.cpp
+0x439ee0	entry		rebuild/AddressMap.hpp
+0x43a040	entry		sdl/FileStore.cpp sdl/FileStore.hpp
+0x43adc0	entry		game/EndingScene.cpp game/EndingScene.hpp game/TitleMusicRoomMenu.hpp sdl/ApplicationState.hpp sdl/ApplicationTitle.cpp
+0x43ae40	entry		game/EndingScene.cpp game/EndingScene.hpp game/MsgPlayer.cpp game/MsgPlayer.hpp game/RunScene.cpp game/RunScene.hpp game/TitleMusicRoomMenu.hpp sdl/Application.cpp
+0x43af40	entry		sdl/Application.cpp
+0x43af70	entry		game/EndingScene.cpp game/EndingScene.hpp game/MsgPlayer.cpp game/MsgPlayer.hpp game/RunScene.hpp sdl/Application.cpp
+0x43b900	entry		game/AnmDrawSchedule.hpp game/AnmRenderer.cpp game/AnmRenderer.hpp game/RunScene.cpp game/ScreenViews.cpp game/StageScenery.cpp
+0x43ba20	entry		game/SceneMatrices.cpp
+0x43ba98	listed		game/SceneMatrices.cpp
+0x43bb2c	listed		game/SceneMatrices.cpp
+0x43bb7c	listed		game/SceneMatrices.cpp
+0x43bbc0	entry		game/SceneMatrices.cpp
+0x43be9b	listed		game/AnmDrawSchedule.cpp game/AnmRenderer.hpp game/RunScene.cpp
+0x43c1c0	entry		game/EndingScene.hpp game/TitleFrame.cpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp sdl/ApplicationTitle.cpp sdl/BrowserRuntime.cpp
+0x43c4b0	entry		sdl/SceneDisplay.cpp
+0x43c548	listed		sdl/SceneDisplay.cpp
+0x43c5d8	listed		sdl/SceneDisplay.cpp
+0x43cac0	entry		game/StagePresentation.cpp
+0x43cf51	listed		game/ScreenViews.cpp game/StageScenery.cpp
+0x43d210	entry		game/ItemManager.hpp
+0x43d23e	listed		game/SpellPresentation.hpp game/StageBattle.cpp game/StageBattle.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x43d2f0	entry		game/ItemManager.cpp game/ItemManager.hpp game/StageBattle.hpp sdl/ApplicationGame.cpp
+0x43d330	entry		game/GameHudDraw.cpp game/ItemManager.cpp game/ItemManager.hpp game/SessionState.hpp game/StageBattle.cpp
+0x43d3a6	listed		game/SpellPresentation.hpp game/StageBattle.cpp game/StageBattle.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x43d428	sweep	call 0x42a430	game/SpellPresentation.hpp
+0x43d440	entry		game/ItemManager.cpp game/ItemManager.hpp
+0x43d480	entry		game/ItemManager.cpp game/ItemManager.hpp
+0x43d4f0	entry		game/StageBattle.cpp
+0x43d530	entry		game/ItemManager.cpp game/ItemManager.hpp game/RunScene.hpp game/SessionState.hpp game/SpellPresentation.cpp game/SpellPresentation.hpp game/StageBattle.cpp game/StageBattle.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x43d583	listed		game/SpellPresentation.hpp
+0x43d589	listed		game/SpellPresentation.hpp
+0x43d5a4	listed		game/SpellPresentation.hpp
+0x43d650	entry		game/PostGameFlow.cpp game/PostGameFlow.hpp
+0x43d6b0	entry		game/RunPause.cpp game/RunPause.hpp game/TitleResultView.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x43d820	entry		game/PostGameFlow.cpp
+0x43dbc0	entry		game/PostGameFlow.hpp game/RunScene.cpp rebuild/AddressMap.hpp
+0x43dd10	entry		game/RunPause.cpp
+0x43ddd5	listed		game/RunPause.cpp
+0x43de80	entry		game/RunPause.cpp
+0x43e1bd	listed		game/RunPause.cpp
+0x43e235	listed		game/RunPause.cpp
+0x43e3f0	entry		game/AnmManager.hpp game/RunPause.cpp game/RunPause.hpp game/RunScene.hpp sdl/Application.cpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp sdl/GraphicsDevice.cpp
+0x43e492	listed		game/RunPause.cpp
+0x43e4d0	listed		game/RunPause.cpp
+0x43e588	listed		game/RunPause.hpp sdl/ApplicationGame.cpp
+0x43e592	listed		game/RunPause.hpp
+0x43e5a0	entry		game/PostGameFlow.cpp game/PostGameFlow.hpp game/RunPause.cpp game/TextureImage.cpp sdl/BrowserRuntime.cpp
+0x43e700	entry		game/RunPause.cpp game/RunPause.hpp game/RunScene.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x43e749	listed		game/RunPause.cpp game/RunPause.hpp sdl/ApplicationGame.cpp
+0x43e753	listed		game/RunPause.cpp
+0x43e780	entry		game/PauseMenu.cpp game/PostGameFlow.cpp game/PostGameFlow.hpp game/ReplayRecorder.hpp game/SessionState.hpp rebuild/AddressMap.hpp
+0x43ee56	listed		game/PauseState.hpp
+0x43f0fb	listed		game/PauseMenu.cpp
+0x43f162	listed		game/PauseMenu.cpp
+0x43f17c	listed		game/PauseMenu.cpp
+0x43f1f8	listed		game/PauseMenu.cpp
+0x43f205	listed		game/PauseMenu.cpp
+0x43f231	listed		game/PauseMenu.cpp
+0x43f29a	listed		sdl/ApplicationGame.cpp
+0x43f570	entry		game/PauseMenu.hpp game/PauseState.hpp game/PostGameFlow.cpp game/PostGameFlow.hpp game/RunPause.hpp game/RunScene.cpp sdl/BrowserRuntime.cpp
+0x43f720	entry		game/PostGameFlow.cpp game/PostGameFlow.hpp sdl/ApplicationState.hpp
+0x43f8f0	entry		game/PostGameFlow.cpp game/RunPause.hpp game/TitleScene.hpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x43f9cc	listed		game/PauseState.hpp
+0x43fa90	entry		game/PauseMenu.cpp game/PostGameFlow.cpp game/PostGameFlow.hpp game/ReplayRecorder.cpp game/ReplayRecorder.hpp game/RunPause.cpp game/RunPause.hpp game/SessionState.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationGame.cpp
+0x43ff55	listed		game/PauseMenu.cpp
+0x44010c	listed		game/PauseMenu.cpp
+0x440174	listed		game/PauseMenu.cpp
+0x44018e	listed		game/PauseMenu.cpp
+0x44020a	listed		game/PauseMenu.cpp
+0x440217	listed		game/PauseMenu.cpp
+0x440244	listed		game/PauseMenu.cpp
+0x4402b0	listed		sdl/ApplicationGame.cpp
+0x4403e3	listed		game/PauseMenu.cpp
+0x4403f1	listed		game/PauseMenu.cpp
+0x4404a3	listed		game/PauseMenu.cpp
+0x4405b7	listed		game/PauseMenu.cpp
+0x4406b6	listed		game/SessionState.hpp
+0x440772	listed		sdl/ApplicationState.hpp
+0x440960	entry		game/PauseMenu.cpp game/PauseMenu.hpp game/PauseState.hpp game/PostGameFlow.cpp game/PostGameFlow.hpp game/ReplayRecorder.hpp game/RunPause.cpp game/RunPause.hpp game/RunScene.cpp game/SessionState.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationGame.cpp
+0x440a21	listed		game/PauseMenu.hpp
+0x440b53	listed		game/PauseMenu.hpp
+0x440c18	listed		game/PauseMenu.hpp
+0x44130f	listed		sdl/ApplicationGame.cpp
+0x4416f0	entry		sdl/ApplicationGame.cpp
+0x4417c0	entry		game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4418b0	entry		game/AnmManager.cpp game/AnmManager.hpp game/RunPause.cpp game/TextureImage.cpp sdl/Application.cpp sdl/GraphicsDevice.cpp sdl/GraphicsDevice.hpp
+0x441930	entry		game/PostGameFlow.cpp
+0x441b00	entry		game/StagePresentation.cpp game/StagePresentation.hpp
+0x441dd0	entry		game/ItemManager.hpp game/StageBattle.cpp game/StageBattle.hpp
+0x441e92	listed		sdl/Application.cpp
+0x441eae	listed		game/StageBattle.cpp
+0x4424d0	entry		game/StageBattle.cpp
+0x442960	entry		game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x442a19	listed		game/StageBattle.cpp
+0x442a45	listed		game/StageBattle.cpp
+0x442f2b	listed		game/StagePresentation.cpp
+0x442f34	listed		game/StagePresentation.cpp
+0x442f5d	listed		game/StagePresentation.cpp
+0x443005	listed		game/StagePresentation.cpp
+0x44300b	listed		game/StagePresentation.cpp
+0x44300e	listed		game/StagePresentation.cpp
+0x443014	listed		game/StagePresentation.cpp
+0x443017	listed		game/StagePresentation.cpp
+0x44301e	listed		game/StagePresentation.cpp
+0x44302e	listed		game/StagePresentation.cpp
+0x443059	listed		game/StagePresentation.cpp
+0x443089	listed		game/StagePresentation.cpp
+0x4430c9	listed		game/StagePresentation.cpp
+0x4430f9	listed		game/StagePresentation.cpp
+0x443114	listed		game/StagePresentation.cpp
+0x443240	entry		game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp rebuild/AddressMap.hpp sdl/ApplicationState.hpp
+0x4433dc	listed		game/StageBattle.cpp
+0x443525	listed		game/StageBattle.cpp
+0x443aff	listed		game/StageBattle.cpp
+0x443b63	listed		game/StageBattle.cpp
+0x443e40	entry		game/StageBattle.cpp game/StageBattle.hpp
+0x443f60	entry		game/ItemManager.cpp game/StageCommands.cpp game/StageGvars.cpp game/StageSim.cpp
+0x443f6e	listed		game/ItemManager.cpp
+0x443f76	listed		game/ItemManager.cpp
+0x443f7a	listed		game/ItemManager.cpp
+0x443f83	listed		game/ItemManager.cpp
+0x443fbb	listed		game/ItemManager.cpp
+0x443fc0	listed		game/ItemManager.cpp
+0x443fd0	entry		game/StageBattle.cpp game/StageBattle.hpp game/StageSim.cpp game/StageSim.hpp
+0x4440d8	listed		game/StageBattle.cpp
+0x4440ea	listed		game/StageBattle.cpp
+0x4440fc	listed		game/StageBattle.cpp
+0x44410e	listed		game/StageBattle.cpp
+0x444140	entry		game/StageBattle.cpp game/StageBattle.hpp game/StageSim.cpp game/StageSim.hpp
+0x444181	listed		game/StageBattle.cpp
+0x4441a1	listed		game/StageBattle.cpp
+0x4441a5	listed		game/StageBattle.cpp
+0x4441ac	listed		game/StageBattle.cpp
+0x4441b2	listed		game/StageBattle.cpp
+0x4441b5	listed		game/StageBattle.cpp
+0x444a10	entry		game/SessionState.hpp game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp
+0x444a3a	listed		game/StageBattle.cpp
+0x444ca0	entry		game/StageBattle.cpp
+0x444df0	entry		game/ItemManager.cpp game/ItemManager.hpp game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp
+0x444e52	listed		game/StagePresentation.cpp
+0x444f74	listed		game/StagePresentation.cpp
+0x4456e0	entry		game/StageBattle.cpp
+0x4457e0	entry		game/StageBattle.cpp game/YoumuBomb.hpp
+0x445900	entry		game/RunScene.cpp game/SessionState.hpp game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp game/StageSim.hpp
+0x445958	listed		game/RunScene.cpp game/StagePresentation.cpp
+0x44596b	listed		game/StageBattle.cpp
+0x445a20	entry		game/StageBattle.hpp
+0x445c40	entry		game/ReplaySession.hpp game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp game/StagePresentation.hpp sdl/ApplicationState.hpp
+0x445e39	listed		game/StagePresentation.cpp
+0x445e47	listed		game/StagePresentation.cpp
+0x445e4e	listed		game/StagePresentation.cpp
+0x445e6a	listed		game/StagePresentation.cpp
+0x445e7e	listed		game/StagePresentation.cpp
+0x445e87	listed		game/StagePresentation.cpp
+0x445eb2	listed		game/StagePresentation.cpp
+0x445ec0	listed		game/StagePresentation.cpp
+0x445ed0	listed		game/StagePresentation.cpp
+0x446000	entry		game/StageBattle.cpp game/StageBattle.hpp
+0x446174	listed		sdl/AudioDevice.hpp
+0x44619a	listed		sdl/AudioDevice.hpp
+0x4464d0	entry		game/AnmManager.hpp game/StagePresentation.cpp game/StagePresentation.hpp
+0x446531	listed		game/StagePresentation.cpp game/StagePresentation.hpp
+0x446542	listed		game/StageBattle.cpp
+0x446670	listed		game/StagePresentation.cpp
+0x446870	entry		game/StageBattle.cpp game/StageBattle.hpp game/StagePresentation.cpp game/StageSim.hpp sdl/BrowserRuntime.cpp
+0x4469c8	listed		game/StageBattle.cpp
+0x4469ff	listed		game/StageBattle.cpp
+0x446bf0	entry		game/StagePresentation.cpp game/StagePresentation.hpp
+0x4471b7	listed		game/StageBattle.cpp
+0x4471c5	listed		game/StagePresentation.cpp
+0x447213	listed		game/StagePresentation.cpp
+0x447900	entry		game/ReplayFile.hpp game/ReplayRecorder.cpp game/ReplaySession.cpp game/ReplaySession.hpp game/TitleReplayMenu.cpp sdl/Application.cpp
+0x4480a0	entry		game/ReplayFile.cpp game/ReplayFile.hpp game/ReplayRecorder.cpp game/ReplayRecorder.hpp
+0x448200	entry		game/ReplayFile.cpp game/ReplayFile.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x4484d0	entry		game/ReplayFile.cpp game/ReplayFile.hpp game/ReplayRecorder.cpp game/ReplayRecorder.hpp game/TitleResultEntry.cpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x44854c	listed		game/ReplayFile.hpp game/ReplayRecorder.cpp game/ReplayRecorder.hpp
+0x448598	listed		game/ReplayRecorder.cpp game/ReplayRecorder.hpp
+0x4486d9	listed		game/ReplayRecorder.cpp
+0x4486e5	listed		game/ReplayRecorder.cpp game/ReplayRecorder.hpp
+0x4486ea	listed		game/ReplayRecorder.cpp
+0x448715	listed		game/ReplayRecorder.cpp game/ReplayRecorder.hpp
+0x448718	listed		game/ReplayRecorder.cpp
+0x44883d	listed		game/ReplayRecorder.cpp
+0x448863	listed		game/ReplayRecorder.cpp
+0x448879	listed		game/ReplayRecorder.cpp
+0x44899a	listed		game/ReplayRecorder.hpp
+0x4489ee	listed		game/ReplayRecorder.cpp
+0x4489fa	listed		game/ReplayRecorder.cpp
+0x448a10	listed		game/ReplayRecorder.cpp
+0x448a15	listed		game/ReplayRecorder.cpp
+0x448a2b	listed		game/ReplayRecorder.cpp
+0x448a35	listed		game/ReplayRecorder.hpp
+0x448a9e	listed		game/ReplayRecorder.cpp
+0x448ab8	listed		game/ReplayRecorder.cpp
+0x448ac3	listed		game/ReplayRecorder.cpp
+0x448ace	listed		game/ReplayRecorder.cpp
+0x448ad9	listed		game/ReplayRecorder.cpp
+0x448b49	listed		game/ReplayRecorder.cpp
+0x448b5c	listed		game/ReplayRecorder.cpp
+0x448b61	listed		game/ReplayRecorder.cpp
+0x448b6c	listed		game/ReplayRecorder.cpp
+0x448c40	entry		game/ReplayFile.cpp game/ReplayFile.hpp game/TitleReplayMenu.cpp rebuild/AddressMap.hpp sdl/ApplicationState.hpp
+0x448d43	listed		game/ReplayFile.cpp
+0x448d5d	listed		game/ReplayFile.cpp
+0x448ec0	entry		game/StageBattle.cpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x449070	entry		game/ReplayFile.hpp game/ReplaySession.cpp game/ReplaySession.hpp game/Rng.hpp game/SessionState.hpp game/TitleReplayMenu.cpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x449360	entry		game/TitleMainMenu.cpp
+0x449760	entry		game/SessionState.hpp
+0x449a55	listed		sdl/FileStore.cpp sdl/FileStore.hpp
+0x449b00	entry		sdl/FileStore.cpp sdl/FileStore.hpp
+0x449cd0	entry		game/ScoreDat.cpp sdl/FileStore.cpp sdl/FileStore.hpp
+0x449e50	entry		game/EndingScene.hpp rebuild/AddressMap.hpp sdl/Application.cpp sdl/FileStore.cpp
+0x44a373	listed		sdl/Application.cpp
+0x44a8b0	entry		game/RunScene.cpp
+0x44a970	entry		game/RunScene.cpp game/ScorePopups.cpp game/ScorePopups.hpp game/StageBattle.cpp
+0x44aa20	entry		game/RunScene.cpp game/ScorePopups.cpp game/ScorePopups.hpp game/StageBattle.cpp
+0x44ad60	entry		game/ItemManager.cpp game/ItemManager.hpp game/RunScene.hpp game/ScorePopups.cpp game/ScorePopups.hpp game/StageBattle.cpp game/StageBattle.hpp sdl/ApplicationState.hpp
+0x44bac0	entry		game/TitleSelectionMenu.cpp
+0x44bb20	entry		game/TitleSelectionMenu.cpp
+0x44bb80	entry		game/TitleMainMenu.cpp game/TitleReplayMenu.cpp game/TitleResultEntry.cpp game/TitleResultEntry.hpp
+0x44bec0	entry		game/TitleSelectionMenu.cpp sdl/ApplicationTitle.cpp sdl/FileStore.hpp
+0x44c0d0	sweep	call 0x44c180	game/GameHud.cpp game/GameHud.hpp game/GameHudFrame.cpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x44c0fc	sweep	mov edi, 0xb4	game/GameHud.cpp
+0x44c152	sweep	mov dword ptr [esi + 0xb77b38], 0	game/GameHud.cpp
+0x44c570	entry		game/TitleFrame.cpp game/TitleKeyConfigMenu.hpp game/TitleMainMenu.cpp game/TitleMainMenu.hpp game/TitleManualMenu.hpp game/TitleMusicRoomMenu.hpp game/TitleOptionsMenu.hpp game/TitlePlayerDataMenu.hpp game/TitleReplayMenu.hpp game/TitleResultEntry.hpp game/TitleScene.cpp game/TitleScene.hpp game/TitleSelectionMenu.hpp game/TitleSpellPracticeMenu.hpp game/TitleState.hpp sdl/ApplicationTitle.cpp sdl/FileStore.hpp
+0x44c8d4	listed		game/TitleMainMenu.cpp game/TitleScene.cpp
+0x44c8e9	listed		game/TitleScene.cpp
+0x44ca60	table		game/TitleState.hpp
+0x44cd10	entry		game/TitleMainMenu.cpp game/TitleSelectionMenu.cpp sdl/FileStore.hpp
+0x44cdb9	listed		game/TitleMainMenu.cpp game/TitleMainMenu.hpp
+0x44cddb	listed		game/TitleMainMenu.cpp game/TitleMainMenu.hpp
+0x44cdf2	listed		game/TitleMainMenu.cpp
+0x44ce01	listed		game/TitleMainMenu.cpp
+0x44ce0c	listed		game/TitleMainMenu.cpp
+0x44ce19	listed		game/TitleMainMenu.cpp
+0x44ce26	listed		game/TitleMainMenu.cpp
+0x44ce51	listed		game/TitleMainMenu.cpp game/TitleMainMenu.hpp
+0x44ce59	listed		game/TitleMainMenu.cpp
+0x44cf9f	listed		game/TitleMainMenu.cpp
+0x44d9a6	listed		game/TitleMainMenu.cpp
+0x44da63	listed		game/TitleMainMenu.cpp
+0x44dac8	listed		game/TitleMainMenu.cpp
+0x44dd00	entry		game/TitleFrame.cpp game/TitleMainMenu.cpp game/TitleOptionsMenu.cpp game/TitleScene.cpp game/TitleState.hpp sdl/AudioDevice.hpp
+0x44ed70	entry		sdl/AudioDevice.hpp
+0x44f3e0	listed		game/TitleOptionsMenu.cpp game/TitleOptionsMenu.hpp
+0x44f430	listed		game/TitleOptionsMenu.cpp
+0x44f480	listed		game/TitleOptionsMenu.cpp
+0x44f640	listed		game/TitleOptionsMenu.cpp game/TitleOptionsMenu.hpp
+0x44f8a0	listed		game/TitleOptionsMenu.cpp
+0x44fcc0	entry		game/TitleFrame.cpp game/TitleKeyConfigMenu.hpp game/TitleScene.cpp game/TitleScene.hpp game/TitleState.hpp sdl/ApplicationState.hpp sdl/ApplicationTitle.cpp
+0x450fb0	entry		game/SessionState.hpp game/TitleFrame.cpp game/TitleMainMenu.cpp game/TitleMainMenu.hpp game/TitleSelectionMenu.cpp game/TitleState.hpp
+0x451092	listed		game/TitleSelectionMenu.cpp
+0x4510a6	listed		game/TitleSelectionMenu.cpp
+0x4510c3	listed		game/TitleSelectionMenu.cpp
+0x4510f6	listed		game/TitleSelectionMenu.cpp
+0x4511fb	listed		game/TitleSelectionMenu.cpp
+0x451223	listed		game/TitleSelectionMenu.cpp
+0x451237	listed		game/TitleSelectionMenu.cpp
+0x451255	listed		game/TitleSelectionMenu.cpp
+0x451263	listed		game/TitleSelectionMenu.cpp
+0x451283	listed		game/TitleSelectionMenu.cpp
+0x4512ae	listed		game/TitleSelectionMenu.cpp
+0x4512c2	listed		game/TitleSelectionMenu.cpp
+0x451403	listed		game/TitleSelectionMenu.cpp
+0x45141c	listed		game/TitleSelectionMenu.cpp
+0x451450	entry		game/SessionState.hpp game/TitleFrame.cpp game/TitleMainMenu.hpp game/TitleSelectionMenu.cpp game/TitleSelectionMenu.hpp game/TitleState.hpp sdl/ApplicationState.hpp sdl/ApplicationTitle.cpp sdl/FileStore.hpp
+0x45145d	listed		game/TitleSelectionMenu.cpp
+0x4514f4	listed		game/TitleSelectionMenu.cpp
+0x4514fa	listed		game/TitleSelectionMenu.cpp
+0x45151a	listed		game/TitleSelectionMenu.cpp
+0x45151f	listed		game/TitleSelectionMenu.cpp
+0x451521	listed		game/TitleSelectionMenu.cpp
+0x451523	listed		game/TitleSelectionMenu.cpp
+0x451530	listed		game/TitleSelectionMenu.cpp
+0x45153a	listed		game/TitleSelectionMenu.cpp
+0x45154a	listed		game/TitleSelectionMenu.cpp
+0x45155d	listed		game/TitleSelectionMenu.cpp
+0x451564	listed		game/TitleSelectionMenu.cpp
+0x451731	listed		game/TitleSelectionMenu.cpp
+0x45185e	listed		game/TitleSelectionMenu.cpp
+0x451875	listed		game/TitleSelectionMenu.cpp
+0x4519b7	listed		game/TitleSelectionMenu.cpp
+0x4519c1	listed		game/TitleSelectionMenu.cpp
+0x451a57	listed		game/TitleSelectionMenu.cpp
+0x451a92	listed		game/TitleSelectionMenu.cpp
+0x451ab2	listed		game/TitleSelectionMenu.cpp
+0x451ab7	listed		game/TitleSelectionMenu.cpp
+0x451b34	listed		game/TitleSelectionMenu.cpp
+0x451bc8	listed		sdl/ApplicationTitle.cpp
+0x451bd7	listed		sdl/ApplicationTitle.cpp
+0x451cb0	entry		game/SessionState.hpp game/TitleFrame.cpp game/TitleSelectionMenu.cpp game/TitleSelectionMenu.hpp game/TitleState.hpp
+0x452043	listed		sdl/ApplicationTitle.cpp
+0x452170	entry		game/TitleSelectionMenu.cpp
+0x452300	entry		game/TitleReplayMenu.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x4525b0	entry		game/GameKeyboard.hpp game/TitleFrame.cpp game/TitleMainMenu.hpp game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp game/TitleState.hpp sdl/Application.cpp sdl/ApplicationGame.cpp
+0x4525cf	listed		game/TitleReplayMenu.cpp
+0x4525f0	listed		game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x452647	listed		game/TitleReplayMenu.cpp
+0x4526ce	listed		game/TitleReplayMenu.cpp
+0x4526d5	listed		game/TitleReplayMenu.cpp
+0x452737	listed		game/TitleReplayMenu.cpp
+0x45274a	listed		game/TitleReplayMenu.cpp
+0x45274f	listed		game/TitleReplayMenu.cpp
+0x452776	listed		game/TitleReplayMenu.cpp
+0x452812	listed		game/TitleReplayMenu.cpp
+0x452823	listed		game/TitleReplayMenu.cpp
+0x45283b	listed		game/TitleReplayMenu.cpp
+0x452875	listed		game/TitleReplayMenu.cpp
+0x45288a	listed		game/TitleReplayMenu.cpp
+0x4528b5	listed		game/TitleReplayMenu.cpp
+0x4528bc	listed		game/TitleReplayMenu.cpp
+0x4528d0	listed		game/TitleReplayMenu.cpp
+0x4528fe	listed		game/TitleReplayMenu.cpp
+0x452904	listed		game/TitleReplayMenu.cpp
+0x45290d	listed		game/TitleReplayMenu.cpp
+0x452922	listed		game/TitleReplayMenu.cpp
+0x45293a	listed		game/TitleReplayMenu.cpp
+0x4529a5	listed		game/TitleReplayMenu.cpp
+0x4529ea	listed		game/TitleReplayMenu.cpp
+0x452a2c	listed		game/TitleReplayMenu.cpp
+0x452a31	listed		game/TitleReplayMenu.cpp
+0x452a43	listed		sdl/Application.cpp sdl/ApplicationTitle.cpp
+0x452a55	listed		sdl/Application.cpp
+0x452a70	listed		game/TitleReplayMenu.cpp
+0x452a75	listed		game/TitleReplayMenu.hpp
+0x452a7a	listed		game/TitleReplayMenu.cpp
+0x452b64	listed		game/TitleReplayMenu.cpp
+0x452c30	entry		game/TitleFrame.cpp game/TitleFrame.hpp game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp game/TitleScene.cpp
+0x452c7e	listed		game/TitleReplayMenu.cpp
+0x452c81	listed		game/TitleReplayMenu.cpp
+0x452caf	listed		game/TitleReplayMenu.cpp
+0x452cde	listed		game/TitleReplayMenu.cpp
+0x452e19	listed		game/TitleReplayMenu.cpp
+0x452e26	listed		game/TitleReplayMenu.cpp
+0x452e87	listed		game/TitleReplayMenu.cpp
+0x452eab	listed		game/TitleReplayMenu.cpp
+0x452ec1	listed		game/TitleReplayMenu.cpp
+0x452ec3	listed		game/TitleReplayMenu.cpp
+0x452ec9	listed		game/TitleReplayMenu.cpp
+0x452eec	listed		game/TitleReplayMenu.cpp
+0x452f06	listed		game/TitleReplayMenu.cpp
+0x452f30	listed		game/TitleReplayMenu.cpp
+0x452f49	listed		game/TitleReplayMenu.cpp
+0x452f95	listed		game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x452fbc	listed		game/TitleReplayMenu.cpp
+0x452fd4	listed		game/TitleReplayMenu.cpp
+0x453016	listed		game/TitleReplayMenu.cpp
+0x45301e	listed		game/TitleReplayMenu.cpp
+0x453020	listed		game/TitleReplayMenu.cpp
+0x453038	listed		game/TitleReplayMenu.cpp
+0x4530fe	listed		game/TitleReplayMenu.cpp
+0x45312e	listed		game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x453170	entry		game/TitleFrame.cpp game/TitleMainMenu.cpp game/TitlePlayerDataMenu.cpp game/TitleScene.cpp game/TitleState.hpp sdl/ApplicationState.hpp
+0x453db0	entry		game/TitleResultEntry.cpp game/TitleResultView.hpp
+0x454050	entry		game/TitleFrame.cpp game/TitleResultEntry.cpp game/TitleResultEntry.hpp game/TitleResultView.hpp game/TitleScene.cpp game/TitleScene.hpp game/TitleState.hpp sdl/Application.cpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x45406f	listed		sdl/Application.cpp
+0x454209	listed		game/PauseState.hpp game/TitleResultEntry.cpp
+0x4542a0	listed		game/TitleResultEntry.cpp
+0x454483	listed		game/TitleResultEntry.cpp
+0x45451c	listed		game/TitleResultEntry.cpp
+0x454658	listed		game/TitleResultEntry.cpp game/TitleResultEntry.hpp
+0x454690	entry		game/TitleResultEntry.cpp game/TitleResultEntry.hpp
+0x4549d0	entry		game/ReplayRecorder.cpp game/ReplayRecorder.hpp game/TitleFrame.cpp game/TitleResultEntry.cpp game/TitleResultEntry.hpp game/TitleResultView.hpp game/TitleScene.cpp game/TitleScene.hpp game/TitleState.hpp sdl/Application.cpp sdl/ApplicationGame.cpp sdl/ApplicationState.hpp
+0x454b48	listed		game/PauseState.hpp
+0x454da8	listed		game/TitleResultEntry.cpp
+0x454e2c	listed		sdl/ApplicationGame.cpp
+0x454e58	listed		game/TitleResultEntry.cpp
+0x454f90	entry		game/TitleResultEntry.hpp
+0x455330	entry		game/TitleFrame.cpp game/TitleMainMenu.cpp game/TitleManualMenu.cpp game/TitleScene.cpp game/TitleState.hpp sdl/ApplicationTitle.cpp
+0x4554f0	entry		game/TitleFrame.cpp game/TitleFrame.hpp game/TitleMainMenu.cpp game/TitleMusicRoomMenu.cpp game/TitleMusicRoomMenu.hpp game/TitleScene.cpp game/TitleState.hpp sdl/ApplicationState.hpp sdl/ApplicationTitle.cpp sdl/FileStore.hpp
+0x4558fc	listed		game/TitleMusicRoomMenu.cpp game/TitleMusicRoomMenu.hpp
+0x45591c	listed		game/TitleMusicRoomMenu.cpp game/TitleMusicRoomMenu.hpp
+0x455a82	listed		game/TitleMusicRoomMenu.hpp
+0x455b1b	listed		game/TitleMusicRoomMenu.cpp
+0x455b5a	listed		game/TitleMusicRoomMenu.hpp
+0x455bc7	listed		game/TitleMusicRoomMenu.cpp
+0x455d76	listed		game/TitleMusicRoomMenu.cpp game/TitleMusicRoomMenu.hpp
+0x455d7f	listed		game/TitleMusicRoomMenu.cpp game/TitleMusicRoomMenu.hpp
+0x4560a0	entry		game/TitleMainMenu.cpp game/TitleScene.cpp game/TitleSpellPracticeMenu.hpp game/TitleSpellPracticeView.cpp game/TitleState.hpp sdl/ApplicationState.hpp
+0x4561bf	listed		game/SessionState.hpp game/TitleFrame.cpp game/TitleFrame.hpp game/TitleScene.cpp game/TitleSpellPracticeMenu.hpp game/TitleSpellPracticeView.cpp sdl/Application.cpp
+0x456204	listed		game/TitleSpellPracticeView.cpp
+0x456238	listed		game/TitleSpellPracticeView.cpp
+0x4563f3	listed		game/TitleSpellPracticeView.cpp
+0x456409	listed		game/TitleSpellPracticeView.cpp
+0x4564c0	entry		game/TitleSpellPracticeMenu.hpp sdl/ApplicationState.hpp
+0x456650	entry		game/TitleMainMenu.cpp game/TitleScene.cpp game/TitleSpellPracticeMenu.hpp game/TitleSpellPracticeView.cpp game/TitleState.hpp sdl/ApplicationState.hpp
+0x4566ab	listed		game/TitleSpellPracticeView.cpp
+0x4566ca	listed		game/TitleSpellPracticeView.cpp
+0x4566e6	listed		game/TitleSpellPracticeView.cpp
+0x456738	listed		game/TitleSpellPracticeView.cpp
+0x45673a	listed		game/SessionState.hpp game/TitleSpellPracticeMenu.hpp game/TitleSpellPracticeView.cpp sdl/Application.cpp
+0x456774	listed		game/TitleSpellPracticeView.cpp
+0x4567a2	listed		game/TitleSpellPracticeView.cpp
+0x45697e	listed		game/TitleSpellPracticeView.cpp
+0x4569b6	listed		game/TitleSpellPracticeView.cpp
+0x4569f6	listed		game/TitleSpellPracticeView.cpp
+0x456a04	listed		game/TitleSpellPracticeView.cpp
+0x456a16	listed		game/TitleSpellPracticeView.cpp
+0x456a28	listed		game/TitleSpellPracticeView.cpp
+0x456a3b	listed		game/TitleSpellPracticeView.cpp
+0x456af0	entry		game/TitleSpellPracticeMenu.cpp game/TitleSpellPracticeMenu.hpp
+0x4576c0	entry		game/TitleMainMenu.cpp game/TitleScene.cpp game/TitleScene.hpp game/TitleSpellPracticeMenu.cpp game/TitleSpellPracticeMenu.hpp game/TitleSpellPracticeView.cpp game/TitleState.hpp
+0x45786f	listed		sdl/ApplicationTitle.cpp
+0x4578ee	listed		game/SessionState.hpp
+0x45792b	listed		game/TitleScene.cpp game/TitleSpellPracticeMenu.hpp
+0x457931	listed		game/SessionState.hpp
+0x457941	listed		game/TitleSpellPracticeView.cpp
+0x457960	listed		game/TitleSpellPracticeView.cpp
+0x457977	listed		game/TitleSpellPracticeView.cpp
+0x458c30	entry		game/ReplayFile.cpp game/ReplayFile.hpp game/ReplayRecorder.cpp
+0x458c96	listed		game/ReplayFile.cpp
+0x458cbf	listed		game/ReplayFile.cpp
+0x458cc5	listed		game/ReplayFile.cpp
+0x458cdf	listed		game/ReplayFile.cpp
+0x458ceb	listed		game/ReplayFile.cpp
+0x458d0c	listed		game/ReplayFile.cpp
+0x458dd2	listed		game/ReplayFile.cpp
+0x458ee2	listed		game/ReplayFile.cpp
+0x458eec	listed		game/ReplayFile.cpp
+0x458ef2	listed		game/ReplayFile.cpp
+0x458f15	listed		game/ReplayFile.cpp
+0x458f30	entry		game/ReplayFile.cpp game/ReplayFile.hpp
+0x459160	entry		game/ReplayFile.cpp
+0x4592df	listed		game/ReplayFile.cpp
+0x459355	listed		game/ReplayFile.cpp
+0x459369	listed		game/ReplayFile.cpp
+0x459394	sweep	ret 4	game/ReplayFile.cpp
+0x4593a0	entry		game/ReplayFile.cpp
+0x4593f0	entry		game/ReplayFile.cpp
+0x459440	entry		game/ReplayFile.cpp
+0x4594d0	entry		game/ReplayFile.cpp
+0x45ac90	entry		game/TitleSelectionMenu.cpp sdl/ApplicationGame.cpp sdl/BrowserRuntime.cpp sdl/FontDevice.hpp
+0x45aef0	entry		game/DialogueText.cpp game/DialogueText.hpp game/MsgPlayer.cpp game/MsgPlayer.hpp sdl/ApplicationGame.cpp sdl/FontDevice.cpp sdl/FontDevice.hpp
+0x45bf10	entry		game/AnmManager.hpp game/RunPause.cpp sdl/Application.cpp sdl/ApplicationState.hpp sdl/GraphicsDevice.cpp sdl/GraphicsDevice.hpp sdl/SceneDisplay.cpp sdl/SceneDisplay.hpp
+0x45cef0	entry		game/ScreenViews.cpp
+0x45d2f0	entry		game/AnmRenderer.cpp game/DrawCapture.hpp game/ScreenViews.cpp
+0x45d570	entry		game/ScreenViews.cpp
+0x45d7d0	entry		sdl/Application.cpp sdl/ApplicationState.hpp sdl/GraphicsDevice.cpp sdl/GraphicsDevice.hpp sdl/SceneDisplay.cpp
+0x45dc80	entry		game/ScreenViews.cpp
+0x45f430	entry		sdl/Application.cpp sdl/StageTransitionClock.hpp
+0x45f7c0	entry		game/ReplaySession.hpp
+0x45fa60	entry		game/EndingScene.cpp game/EndingScene.hpp
+0x460bc0	entry		game/BossPresentation.hpp game/EndingScene.cpp game/EndingScene.hpp game/MsgPlayer.cpp game/MsgPlayer.hpp game/RunPause.cpp game/RunScene.cpp game/RunScene.hpp game/StageBattle.cpp game/StageSim.cpp sdl/Application.cpp sdl/AudioDevice.cpp sdl/BrowserRuntime.cpp
+0x460c19	listed		sdl/AudioDevice.cpp
+0x460c42	listed		sdl/AudioDevice.cpp
+0x460c50	entry		game/ItemManager.cpp game/StageBattle.cpp game/StagePresentation.cpp game/StageSim.cpp game/StageSim.hpp sdl/AudioDevice.cpp sdl/AudioDevice.hpp sdl/BrowserRuntime.cpp
+0x460cc0	listed		sdl/AudioDevice.cpp
+0x460ce3	listed		sdl/AudioDevice.cpp
+0x460d40	entry		sdl/Application.cpp sdl/AudioDevice.cpp sdl/AudioDevice.hpp
+0x460dd0	entry		rebuild/AddressMap.hpp sdl/ApplicationGame.cpp sdl/ApplicationTitle.cpp sdl/AudioDevice.cpp sdl/AudioDevice.hpp
+0x461325	listed		sdl/AudioDevice.cpp
+0x461350	listed		sdl/AudioDevice.cpp
+0x4613c0	entry		sdl/AudioDevice.cpp sdl/AudioDevice.hpp
+0x4613f3	listed		game/TitleOptionsMenu.hpp sdl/ApplicationTitle.cpp sdl/AudioDevice.cpp
+0x461830	entry		game/TitleMusicRoomMenu.hpp sdl/ApplicationState.hpp sdl/ApplicationTitle.cpp
+0x461a60	entry		game/AnmInterpreter.cpp game/BossPresentation.cpp game/SpellPresentation.cpp
+0x461bf0	entry		game/AnmManager.cpp
+0x461cb0	entry		game/AnmManager.cpp game/AnmManager.hpp game/LaserPresentation.cpp game/StagePresentation.cpp
+0x461e80	entry		game/AnmVariables.hpp
+0x461f3c	listed		sdl/BrowserRuntime.cpp
+0x461f5f	listed		sdl/BrowserRuntime.cpp
+0x461f82	listed		sdl/BrowserRuntime.cpp
+0x4621b0	entry		game/AnmVariables.hpp
+0x4622c0	entry		game/AnmVariables.hpp
+0x462380	entry		game/AnmVariables.hpp
+0x462450	entry		game/AnmInterpreter.cpp game/AnmManager.cpp game/AnmManager.hpp game/AnmRegistry.hpp game/BossPresentation.cpp game/GameHud.cpp game/StagePresentation.cpp game/StagePresentation.hpp game/TitleSelectionMenu.cpp rebuild/AddressMap.hpp
+0x4624db	listed		game/AnmInterpreter.cpp
+0x4624f7	listed		game/AnmInterpreter.cpp
+0x46265d	listed		game/TitleOptionsMenu.cpp
+0x46356a	listed		game/TitleOptionsMenu.cpp
+0x465935	listed		game/AnmInterpreter.cpp
+0x4662ca	listed		game/Interpolation.hpp
+0x4662cd	listed		game/Interpolation.hpp
+0x4662d0	listed		game/Interpolation.hpp
+0x466a80	entry		game/SpellPresentation.cpp game/StagePresentation.cpp
+0x467350	entry		game/AnmDrawSchedule.cpp game/AnmRenderer.cpp game/AnmRenderer.hpp game/RunScene.cpp game/ScorePopups.cpp game/StagePresentation.cpp
+0x467960	entry		game/AnmRenderer.hpp
+0x4679a0	entry		game/AnmDrawSchedule.hpp game/AnmRenderer.hpp game/DrawCapture.cpp game/GameHud.cpp game/RunScene.cpp game/ScreenViews.cpp
+0x467a80	entry		game/AnmRenderer.hpp game/GameHudDraw.cpp
+0x467b50	entry		game/StagePresentation.cpp
+0x467e80	entry		game/AnmCoordinates.cpp
+0x468077	listed		game/AnmCoordinates.cpp
+0x46808e	listed		game/AnmCoordinates.cpp
+0x4681b0	entry		game/AnmCamera.cpp
+0x4682f3	listed		game/AnmCamera.cpp
+0x468345	listed		game/AnmCamera.cpp
+0x468364	listed		game/AnmCamera.cpp
+0x46838e	listed		game/AnmCamera.cpp
+0x4683be	listed		game/AnmCamera.cpp
+0x4685f5	listed		game/AnmCamera.cpp
+0x468670	entry		game/StagePresentation.cpp
+0x4692d0	entry		sdl/GraphicsDevice.cpp
+0x46cf10	entry		game/TextureImage.cpp
+0x46d600	entry		game/TextureImage.cpp
+0x46d8f0	entry		game/TextureImage.cpp
+0x46dc10	entry		game/TextureImage.cpp
+0x46df40	entry		game/EndingScene.cpp sdl/Application.cpp
+0x46e0b0	entry		game/AnmManager.cpp game/AnmManager.hpp game/AnmResource.hpp sdl/Application.cpp
+0x46e230	entry		game/AnmResource.hpp sdl/Application.cpp
+0x46e510	entry		rebuild/AddressMap.hpp
+0x46e620	entry		game/EndingScene.cpp game/EndingScene.hpp game/GameHud.cpp game/GameHud.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x46e8f0	entry		game/DialogueText.cpp game/DialogueText.hpp game/EndingScene.cpp game/EndingScene.hpp game/MsgPlayer.cpp game/MsgPlayer.hpp sdl/FontDevice.cpp sdl/FontDevice.hpp
+0x46ed80	sweep	push ebx	game/AnmRenderer.cpp
+0x46ef60	entry		game/AnmRenderer.cpp game/ScreenViews.cpp
+0x46f0e0	sweep	push esi	game/ScreenViews.cpp
+0x46f170	entry		game/AnmManager.cpp game/AnmManager.hpp game/AnmRegistry.cpp game/AnmRegistry.hpp game/ItemManager.cpp game/ItemManager.hpp game/RunScene.cpp game/StagePresentation.cpp game/StagePresentation.hpp game/TitleReplayMenu.cpp sdl/Application.cpp sdl/ApplicationState.hpp sdl/BrowserRuntime.cpp
+0x46f240	entry		game/AnmManager.cpp game/AnmManager.hpp game/AnmRegistry.cpp game/AnmRegistry.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x46f380	entry		game/AnmRenderer.cpp game/DrawCapture.hpp
+0x46f3f0	entry		game/AnmRegistry.cpp game/AnmRegistry.hpp game/DialogueText.cpp game/GameHud.cpp game/ItemManager.cpp game/ItemManager.hpp game/MsgPresentation.cpp game/RunScene.cpp game/SpellPresentation.cpp game/StagePresentation.cpp game/StagePresentation.hpp game/StageSim.hpp game/TitleSelectionMenu.cpp
+0x46f4a0	entry		game/MsgPresentation.cpp game/StageCommands.cpp game/StagePresentation.cpp game/StageSim.hpp game/TitleSelectionMenu.cpp game/TitleState.hpp
+0x46f690	entry		game/AnmRegistry.cpp game/AnmRegistry.hpp game/GameHud.cpp
+0x46f820	entry		game/AnmManager.cpp game/AnmManager.hpp game/DialogueText.cpp game/DialogueText.hpp game/ItemManager.cpp game/ItemManager.hpp game/RunScene.cpp game/SpellPresentation.cpp game/StageBattle.cpp game/StagePresentation.cpp game/StagePresentation.hpp game/StageSim.hpp
+0x46f990	entry		game/AnmManager.cpp game/AnmRegistry.cpp game/GameHud.cpp
+0x46fab0	entry		game/AnmManager.cpp
+0x46fb90	entry		game/StagePresentation.cpp game/StagePresentation.hpp game/YoumuBomb.cpp
+0x46fc30	entry		game/BossPresentation.hpp game/DialogueText.cpp game/DialogueText.hpp game/EndingScene.cpp game/EndingScene.hpp game/ItemManager.cpp game/MsgPlayer.cpp game/MsgPlayer.hpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp game/RunTransitionEffect.hpp game/StagePresentation.cpp game/TitleReplayMenu.cpp game/TitleScene.cpp game/TitleSelectionMenu.cpp game/TitleSelectionMenu.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x46fca0	entry		game/AnmRegistry.cpp game/AnmRegistry.hpp game/MsgPlayer.hpp game/MsgPresentation.cpp game/MsgPresentation.hpp game/RunScene.cpp game/StagePresentation.cpp game/TitleMainMenu.cpp game/TitleOptionsMenu.cpp game/TitleScene.cpp game/TitleSelectionMenu.cpp game/TitleSelectionMenu.hpp game/TitleSpellPracticeView.cpp
+0x46fea0	entry		game/AnmRegistry.cpp game/GameHud.cpp
+0x470030	entry		game/SpellPresentation.cpp game/TitleSelectionMenu.cpp
+0x470110	entry		game/RunScene.cpp game/StageBattle.cpp game/StageCommands.cpp game/StagePresentation.cpp game/StagePresentation.hpp game/StageSim.hpp
+0x470530	entry		game/TitleSelectionMenu.cpp
+0x4706c0	entry		game/AnmRegistry.hpp game/StagePresentation.cpp
+0x470990	entry		game/StageBattle.hpp
+0x471050	entry		game/RunScene.hpp
+0x472280	entry		game/ReplayFile.cpp game/ReplayFile.hpp
+0x4723a0	entry		game/ReplayFile.cpp game/ReplayFile.hpp rebuild/AddressMap.hpp
+0x4724c0	entry		game/EndingScene.cpp game/EndingScene.hpp game/TitleMusicRoomMenu.hpp sdl/ApplicationTitle.cpp
+0x472c20	entry		game/Rng.hpp
+0x472c90	entry		game/AnmManager.hpp game/AnmVariables.hpp game/EclContext.hpp game/GameRandom.hpp game/Rng.hpp game/StageGvars.cpp game/StagePresentation.hpp
+0x472de0	entry		game/ItemManager.hpp game/StageGvars.cpp game/StageSim.cpp
+0x472e06	listed		game/StageSim.cpp
+0x472e09	listed		game/StageSim.cpp
+0x472e10	entry		game/EclContext.hpp game/EclInterpreter.cpp game/ItemManager.hpp game/Rng.hpp game/StageGvars.cpp game/StageSim.cpp game/YoumuBomb.hpp
+0x472e90	entry		game/StageMath.hpp game/StagePresentation.cpp game/StageSim.cpp
+0x472f30	entry		game/AnmVisualState.cpp game/BossPresentation.cpp game/ItemManager.cpp game/StageMath.hpp game/StageSim.cpp
+0x472fc0	entry		game/BossPresentation.cpp game/BossPresentation.hpp
+0x473190	entry		game/TitleMainMenu.cpp
+0x473210	entry		game/TitleSelectionMenu.cpp
+0x4732c0	entry		game/AnmInterpreter.cpp game/EndingScene.cpp game/EndingScene.hpp game/StageBattle.cpp
+0x473600	entry		game/EndingScene.hpp
+0x4736a0	entry		game/ItemManager.cpp game/StageSim.cpp game/StageSim.hpp
+0x473780	entry		game/ItemManager.cpp game/StageCommands.cpp game/StageMath.hpp game/StagePresentation.cpp game/StagePresentation.hpp game/StageSim.cpp game/StageSim.hpp
+0x4739c0	operand		game/StageMath.hpp
+0x4739f0	listed		game/StageMath.hpp
+0x473a10	entry		game/StageCommands.cpp
+0x473a40	entry		game/Interpolation.cpp game/StageMath.hpp
+0x473a49	listed		game/StageMath.hpp
+0x473a4c	listed		game/StageMath.hpp
+0x473a50	listed		game/StageMath.hpp
+0x473b18	listed		game/StageMath.hpp
+0x473b5f	listed		game/StageMath.hpp
+0x473b65	listed		game/Interpolation.cpp game/StageMath.hpp
+0x473bb8	listed		game/StageMath.hpp
+0x473bc6	listed		game/StageMath.hpp
+0x473c1b	listed		game/StageMath.hpp
+0x473c84	listed		game/StageMath.hpp
+0x473cdd	listed		game/StageMath.hpp
+0x473ece	listed		game/StageMath.hpp
+0x473fb6	listed		game/Interpolation.cpp game/StageMath.hpp
+0x473ff4	listed		game/Interpolation.cpp game/StageMath.hpp
+0x474030	listed		game/Interpolation.cpp game/StageMath.hpp
+0x47406e	listed		game/Interpolation.cpp game/StageMath.hpp
+0x4740ae	listed		game/Interpolation.cpp game/StageMath.hpp
+0x4740dd	listed		game/StageMath.hpp
+0x4740ec	table		game/StageMath.hpp
+0x474340	entry		game/StageSim.cpp game/YoumuBomb.hpp
+0x474f00	entry		game/StageMath.hpp
+0x476234	listed		game/TitleOptionsMenu.hpp
+0x476e00	entry		sdl/ApplicationGame.cpp
+0x477030	entry		game/EclContext.cpp game/Types.hpp
+0x4772a0	entry		game/EclContext.cpp game/EclInterpreter.cpp game/Interpolation.hpp game/StageCommands.cpp rebuild/AddressMap.hpp
+0x4772b1	listed		game/StageCommands.cpp
+0x477377	listed		game/StageCommands.cpp
+0x478b22	listed		game/RunScene.cpp game/StageSim.cpp game/StageSim.hpp
+0x478b32	listed		game/StageSim.cpp game/StageSim.hpp
+0x478bbf	listed		game/StageCommands.cpp
+0x478db0	entry		game/EclThreads.cpp game/EclThreads.hpp
+0x478e60	entry		game/EclContext.cpp game/EclContext.hpp game/Types.hpp rebuild/AddressMap.hpp
+0x478e80	listed		game/EclContext.cpp
+0x478e9b	listed		game/EclContext.cpp
+0x478ecb	listed		game/EclContext.cpp
+0x478ee0	entry		game/EclContext.cpp game/EclContext.hpp rebuild/AddressMap.hpp
+0x478efe	listed		game/EclContext.cpp
+0x478f24	listed		game/EclContext.cpp
+0x478f7f	listed		game/EclContext.cpp
+0x4793e0	entry		game/EclContext.hpp game/EclFile.hpp game/EclThreads.cpp game/EclThreads.hpp
+0x479480	entry		game/EclInterpreter.cpp game/EclThreads.cpp
+0x4794b0	entry		game/EclThreads.cpp
+0x4794d0	entry		game/EclInterpreter.cpp
+0x479540	entry		game/EclInterpreter.cpp
+0x4795b0	entry		game/EclResource.cpp game/EclResource.hpp game/RunScene.hpp game/StageSim.cpp
+0x4797d0	entry		game/EclResource.hpp game/EclThreads.cpp game/EclThreads.hpp game/StageCommands.cpp game/StageSim.cpp
+0x479a20	entry		game/EclContext.cpp game/EclContext.hpp
+0x479a60	entry		game/EclContext.cpp game/EclContext.hpp
+0x479a90	entry		game/StageCommands.cpp
+0x47bba2	entry		rebuild/AddressMap.hpp
+0x47bbae	operand		game/Rng.hpp
+0x47bbb3	operand		game/Rng.hpp
+0x47bda0	entry		rebuild/AddressMap.hpp
+0x4971f0	entry		game/EclContext.cpp game/EndingScene.cpp game/ItemManager.cpp game/SessionState.hpp game/Types.hpp sdl/Application.cpp sdl/AudioDevice.cpp sdl/AudioDevice.hpp
+0x497670	entry		game/StageMath.hpp
+0x49768f	operand		game/StageMath.hpp
+0x4977aa	entry		game/EclInterpreter.cpp game/ItemManager.cpp game/StageSim.cpp
+0x4977c0	entry		game/AnmCamera.cpp
+0x4a22a0	data	.rdata	game/SceneMatrices.cpp
+0x4a22d4	data	.rdata	game/SceneMatrices.cpp
+0x4a7261	data	.rdata	game/TitleManualMenu.cpp game/TitleManualMenu.hpp
+0x4aa610	data	.rdata	game/StageBattle.cpp game/YoumuBomb.hpp
+0x4aaaf0	data	.rdata	game/EndingScene.cpp
+0x4aaaf4	data	.rdata	game/EndingScene.cpp
+0x4aade0	data	.rdata	game/StageSim.hpp
+0x4ab91c	data	.rdata	game/ReplayRecorder.cpp
+0x4ab984	data	.rdata	game/TitleResultEntry.cpp
+0x4abad0	data	.rdata	game/RunPause.cpp
+0x4abaf0	data	.rdata	game/RunPause.cpp
+0x4abb2c	data	.rdata	sdl/Application.cpp
+0x4abb48	data	.rdata	sdl/Application.cpp
+0x4abc30	data	.rdata	game/ReplayFile.hpp game/StageBattle.cpp game/StageBattle.hpp
+0x4abdc0	data	.rdata	game/ReplayRecorder.cpp
+0x4abdcc	data	.rdata	game/ReplayRecorder.cpp
+0x4abde8	data	.rdata	game/ReplayRecorder.hpp
+0x4abdf0	data	.rdata	game/ReplayRecorder.cpp
+0x4abe00	data	.rdata	game/ReplayRecorder.cpp
+0x4abe0c	data	.rdata	game/ReplayRecorder.cpp
+0x4abe2c	data	.rdata	game/ReplayRecorder.cpp
+0x4abe38	data	.rdata	game/ReplayRecorder.cpp
+0x4abe44	data	.rdata	game/ReplayRecorder.cpp
+0x4abe58	data	.rdata	game/ReplayRecorder.cpp
+0x4abe6c	data	.rdata	game/ReplayRecorder.cpp
+0x4abe7c	data	.rdata	game/ReplayRecorder.cpp
+0x4abe88	data	.rdata	game/ReplayRecorder.cpp
+0x4abe9c	data	.rdata	game/ReplayRecorder.cpp
+0x4abea8	data	.rdata	game/ReplayRecorder.cpp
+0x4ac28c	data	.rdata	sdl/Application.cpp
+0x4ac508	data	.rdata	sdl/Application.cpp
+0x4ac62c	data	.rdata	game/TitleReplayMenu.cpp
+0x4ac668	data	.rdata	game/TitleReplayMenu.cpp
+0x4ac6a0	data	.rdata	game/TitleReplayMenu.cpp
+0x4ac6d4	data	.rdata	game/TitleReplayMenu.cpp game/TitleResultEntry.cpp
+0x4ac710	data	.rdata	game/TitleReplayMenu.cpp
+0x4ac7e4	data	.rdata	game/TitleReplayMenu.hpp
+0x4ac818	data	.rdata	game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4ac930	data	.rdata	game/TitleMusicRoomMenu.cpp game/TitleMusicRoomMenu.hpp game/TitleMusicRoomView.cpp
+0x4ae850	data	.rdata	game/BossPresentation.cpp game/BossPresentation.hpp
+0x4ae868	data	.rdata	sdl/Application.cpp
+0x4ae880	data	.rdata	game/BossPresentation.cpp game/BossPresentation.hpp
+0x4ae8b8	data	.rdata	game/StageSim.cpp
+0x4ae8c8	data	.rdata	game/YoumuBomb.cpp
+0x4ae8e0	data	.rdata	game/StagePresentation.cpp
+0x4ae900	data	.rdata	game/EclContext.cpp
+0x4ae908	data	.rdata	game/EclContext.cpp
+0x4ae910	data	.rdata	game/EclContext.cpp
+0x4ae920	data	.rdata	game/StageMath.hpp
+0x4ae970	data	.rdata	game/StageMath.hpp
+0x4ae990	data	.rdata	game/StageMath.hpp
+0x4ae9b8	data	.rdata	game/StageMath.hpp
+0x4ae9c0	data	.rdata	game/YoumuBomb.cpp
+0x4ae9e8	data	.rdata	game/StageScenery.cpp game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4ae9f0	data	.rdata	game/StagePresentation.cpp
+0x4aea58	data	.rdata	game/YoumuBomb.hpp
+0x4aea70	data	.rdata	game/YoumuBomb.hpp
+0x4aea74	data	.rdata	game/StageScenery.cpp
+0x4aea88	data	.rdata	game/StageScenery.cpp
+0x4aead8	data	.rdata	game/StageScenery.cpp
+0x4aeb10	data	.rdata	game/TitleReplayMenu.cpp
+0x4aeb20	data	.rdata	game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4aeb28	data	.rdata	game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4aeb30	data	.rdata	game/RunPause.cpp game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4aeb54	data	.rdata	game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4aeb84	data	.rdata	game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4aeb88	data	.rdata	game/TitleReplayMenu.cpp
+0x4aeba8	data	.rdata	sdl/Application.cpp
+0x4aebb0	data	.rdata	sdl/Application.cpp
+0x4aebe8	data	.rdata	game/YoumuBomb.hpp
+0x4aec18	data	.rdata	sdl/Application.cpp
+0x4aec48	data	.rdata	game/StageScenery.cpp
+0x4aec68	data	.rdata	game/SpellPresentation.cpp
+0x4aec90	data	.rdata	game/StageScenery.cpp
+0x4aec94	data	.rdata	game/StageScenery.cpp
+0x4aec98	data	.rdata	game/StageScenery.cpp
+0x4aeca8	data	.rdata	game/SessionState.hpp game/StageBattle.hpp
+0x4aecc0	data	.rdata	game/RunPause.cpp
+0x4aece8	data	.rdata	game/SessionState.hpp
+0x4aed10	data	.rdata	game/AsciiText.cpp
+0x4aed84	data	.rdata	game/SpellPresentation.cpp
+0x4aed94	data	.rdata	game/SpellPresentation.cpp
+0x4aed98	data	.rdata	game/SpellPresentation.cpp
+0x4aed9c	data	.rdata	game/SpellPresentation.cpp
+0x4aeda0	data	.rdata	game/SpellPresentation.cpp
+0x4aedb8	data	.rdata	game/GameHudFrame.cpp
+0x4aee10	data	.rdata	game/GameHudFrame.cpp
+0x4aee18	data	.rdata	game/StagePresentation.cpp
+0x4aee20	data	.rdata	game/StagePresentation.cpp
+0x4aef14	data	.rdata	sdl/Application.cpp
+0x4aef18	data	.rdata	game/BossPresentation.cpp game/BossPresentation.hpp
+0x4aef70	data	.rdata	game/StageScript.cpp
+0x4aef78	data	.rdata	game/StageScript.cpp
+0x4af018	data	.rdata	game/StageScenery.cpp
+0x4af01c	data	.rdata	game/StageScenery.cpp
+0x4af020	data	.rdata	game/StageScenery.cpp
+0x4af024	data	.rdata	game/StageScenery.cpp
+0x4af068	data	.rdata	game/GameHudFrame.cpp
+0x4af084	data	.rdata	sdl/Application.cpp
+0x4b8000	data	.data	game/StageScenery.cpp
+0x4bb4f0	data	.data	game/MsgPresentation.cpp game/MsgPresentation.hpp game/PostGameFlow.cpp game/RunScene.cpp game/SpellPresentation.cpp game/SpellPresentation.hpp sdl/Application.cpp
+0x4bb854	data	.data	game/TitleSelectionMenu.cpp
+0x4bb904	data	.data	game/ReplayRecorder.cpp game/TitleReplayMenu.cpp game/TitleResultEntry.cpp sdl/ApplicationState.hpp
+0x4bb914	data	.data	game/ReplayRecorder.cpp game/TitleReplayMenu.cpp game/TitleResultEntry.cpp
+0x4bb944	data	.data	game/RunPause.cpp game/TitleReplayMenu.cpp sdl/ApplicationState.hpp
+0x4bb96c	data	.data	game/TitleReplayMenu.cpp game/TitleResultEntry.cpp
+0x4bb994	data	.data	game/GameHud.cpp game/GameHudDraw.cpp game/ItemManager.cpp game/ItemManager.hpp game/SessionState.hpp
+0x4bba20	data	.data	game/EndingScene.cpp game/EndingScene.hpp rebuild/AddressMap.hpp sdl/Application.cpp
+0x4bba54	data	.data	game/YoumuBomb.hpp
+0x4bba80	data	.data	game/AnmManager.cpp game/RunScene.hpp
+0x4bbd30	data	.data	game/ScoreDat.cpp
+0x4bbe30	data	.data	game/BulletAppearance.cpp game/StagePresentation.cpp
+0x4bd7d8	data	.data	game/RunScene.hpp
+0x4be7b8	data	.data	game/ItemManager.cpp game/ItemManager.hpp game/ReplaySession.cpp game/ReplaySession.hpp game/SessionState.hpp sdl/ApplicationTitle.cpp
+0x4be7bc	data	.data	game/ReplaySession.cpp
+0x4be7c0	data	.data	game/ItemManager.hpp game/ReplaySession.cpp
+0x4be7c4	data	.data	game/ReplaySession.cpp
+0x4be7c8	data	.data	game/ReplaySession.cpp
+0x4be7cc	data	.data	game/ReplaySession.cpp
+0x4be7d0	data	.data	game/ReplaySession.cpp sdl/Application.cpp
+0x4be7d4	data	.data	game/ReplaySession.cpp
+0x4be7d8	data	.data	game/ItemManager.cpp game/ItemManager.hpp game/ReplaySession.cpp sdl/Application.cpp sdl/ApplicationTitle.cpp
+0x4be7dc	data	.data	game/GameHudDraw.cpp game/ItemManager.hpp game/ReplaySession.cpp sdl/Application.cpp
+0x4be7e0	data	.data	game/ReplaySession.cpp sdl/Application.cpp
+0x4be7e4	data	.data	game/ReplaySession.cpp sdl/Application.cpp
+0x4be7e8	data	.data	game/ReplaySession.cpp
+0x4be7ec	data	.data	game/ReplaySession.cpp
+0x4be7f0	data	.data	game/ReplaySession.cpp
+0x4be7f4	data	.data	game/ReplaySession.cpp
+0x4be7f8	data	.data	game/ReplaySession.cpp
+0x4be7fc	data	.data	game/ReplaySession.cpp
+0x4be800	data	.data	game/ReplaySession.cpp
+0x4be804	data	.data	game/ReplaySession.cpp
+0x4be808	data	.data	game/ReplaySession.cpp game/SessionState.hpp
+0x4be80c	data	.data	game/ReplaySession.cpp
+0x4be810	data	.data	game/SessionState.hpp
+0x4be824	data	.data	game/AnmEnvironment.hpp game/AnmWindTrail.cpp game/RunScene.cpp
+0x4c0a28	data	.data	game/EndingScene.cpp game/EndingScene.hpp game/StageBattle.cpp game/StageSim.cpp
+0x4c0aa0	data	.data	game/MsgPlayer.cpp game/MsgPlayer.hpp game/MsgPresentation.hpp game/RunScene.cpp
+0x4c0ab0	data	.data	game/SessionState.hpp sdl/Application.cpp sdl/StageTransitionClock.hpp
+0x4c0ac8	data	.data	game/SessionState.hpp sdl/Application.cpp sdl/StageTransitionClock.hpp
+0x4c0ae0	data	.data	game/SessionState.hpp
+0x4c0ba8	data	.data	game/ItemManager.hpp game/StageBattle.cpp game/StageBattle.hpp
+0x4c0bb8	data	.data	game/StageBattle.cpp
+0x4c0bc0	data	.data	game/StageBattle.cpp
+0x4c0bc8	data	.data	game/StageBattle.cpp
+0x4c0bd8	data	.data	game/StageBattle.cpp
+0x4c0d8c	data	.data	game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4c0d9c	data	.data	game/TitleReplayMenu.cpp game/TitleReplayMenu.hpp
+0x4c0da0	data	.data	game/TitleMusicRoomMenu.cpp game/TitleMusicRoomMenu.hpp
+0x4c1400	data	.data	game/AnmEnvironment.hpp game/StageScenery.cpp
+0x4c2164	data	.data	game/AnmManager.cpp game/AnmOverlay.hpp game/StagePresentation.cpp
+0x4c2170	data	.data	game/StageBattle.cpp
+0x4c2184	data	.data	game/EndingScene.hpp
+0x4c2188	data	.data	game/ItemManager.cpp game/MsgPresentation.hpp game/SpellPresentation.cpp game/SpellPresentation.hpp game/StageBattle.cpp
+0x4c218c	data	.data	game/ReplayRecorder.cpp game/ReplayRecorder.hpp sdl/ApplicationState.hpp
+0x4c2190	data	.data	game/MsgPresentation.hpp game/StagePresentation.hpp
+0x4c2194	data	.data	game/AnmManager.cpp sdl/Application.cpp
+0x4c22c4	data	.data	game/MsgPresentation.hpp
+0x4c22e8	data	.data	game/ReplayFile.cpp
+0x4cb568	data	.data	game/AnmResource.cpp
+0x4da2f0	data	.data	game/ReplayFile.cpp
+0x4da2f8	data	.data	game/ReplayFile.cpp
+0x4db2e0	data	.data	game/RunScene.hpp
+0x4dc31c	data	.data	game/AnmManager.hpp game/ReplaySession.hpp game/Rng.hpp game/RunScene.cpp game/StagePresentation.hpp game/StageSim.cpp game/StageSim.hpp game/TitleSelectionMenu.cpp sdl/ApplicationState.hpp
+0x4dc324	data	.data	game/AnmVariables.hpp game/ItemManager.cpp game/ItemManager.hpp game/ReplaySession.hpp game/Rng.hpp game/RunScene.cpp game/RunScene.hpp game/StageBattle.hpp game/StageGvars.cpp game/StageSim.cpp game/StageSim.hpp game/TitleSelectionMenu.cpp sdl/ApplicationState.hpp
+0x4dc8a8	data	.data	sdl/Application.cpp
+0x4dcaf4	data	.data	game/AnmEnvironment.hpp game/RunScene.cpp game/StageScenery.cpp
+0x4dcafc	data	.data	game/AnmEnvironment.hpp
+0x4dcb10	data	.data	game/AnmEnvironment.hpp
+0x4dcb18	data	.data	game/AnmEnvironment.hpp
+0x4dcb30	data	.data	game/AnmEnvironment.hpp
+0x4dcc18	data	.data	game/AnmRenderer.hpp
+0x4dcc24	data	.data	rebuild/AddressMap.hpp sdl/Application.cpp sdl/ApplicationState.hpp
+0x4dcc5c	data	.data	game/EndingScene.cpp game/GameHud.cpp
+0x4df1c0	data	.data	sdl/AudioDevice.cpp
+0x4df1f0	data	.data	sdl/AudioDevice.cpp
+0x4df220	data	.data	sdl/AudioDevice.cpp
+0x4e13c0	data	.data	sdl/ApplicationGame.cpp sdl/AudioDevice.hpp
+0x4e49f0	data	.data	game/MsgPlayer.cpp game/ReplayFile.hpp game/RunScene.hpp sdl/Application.hpp
+0x4e49fc	data	.data	game/EndingScene.cpp game/GameKeyboard.hpp game/TitleReplayMenu.cpp
+0x4e4b04	data	.data	game/EndingScene.cpp
+0x4e4c08	data	.data	game/MsgPlayer.hpp game/StageBattle.cpp sdl/ApplicationState.hpp
+0x4e4c0c	data	.data	sdl/ApplicationState.hpp
+0x4e4c14	data	.data	game/MsgPlayer.cpp game/MsgPlayer.hpp game/StageBattle.cpp sdl/ApplicationState.hpp
+0x4e4c18	data	.data	sdl/ApplicationState.hpp
+0x4e5368	data	.data	game/TitleReplayMenu.cpp

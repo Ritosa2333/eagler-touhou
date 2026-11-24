@@ -1,4 +1,3 @@
-// H-LASER-SPLIT: native433870/4342e0/431bf0/4327c0/4315d0.
 #include "ecl_test_fixtures.hpp"
 #include "game/StageSim.hpp"
 using namespace th13;
@@ -40,7 +39,7 @@ TEST(laser_split_preserves_parent_and_moves_tail_to_original_limit) {
     CHECK_EQ(r.sim.anm_effects[0].x, 40.0f);
     CHECK_EQ(r.sim.anm_effects[1].x, 56.0f);
     r.sim.advance_lasers();
-    CHECK_EQ(r.sim.lasers[0].length, 34.0f);  // parent's growth continues
+    CHECK_EQ(r.sim.lasers[0].length, 34.0f);
     CHECK_EQ(r.sim.lasers[1].origin[0], 72.0f);
     CHECK_EQ(r.sim.lasers[1].length, 24.0f);
     CHECK_EQ(r.sim.lasers[1].start_offset, 8.0f);
@@ -74,7 +73,7 @@ TEST(laser_split_protection_and_newborn_rectangle_gate) {
     CHECK_EQ(r.sim.lasers[0].length, 96.0f);
     r.sim.lasers[0].cancel_protection = 0;
     r.sim.cancel_lasers_box({48, 0, 0}, {32, 32, 0}, 0);
-    CHECK_EQ(r.sim.lasers.size(), 1u);  // 4300f0 requires +7d
+    CHECK_EQ(r.sim.lasers.size(), 1u);
     r.sim.advance_lasers();
     r.sim.cancel_lasers_box({48, 0, 0}, {32, 32, 0}, 0);
     CHECK_EQ(r.sim.lasers.size(), 2u);
@@ -124,5 +123,5 @@ TEST(laser_collision_uses_origin_interval_and_line_tip_margins) {
     CHECK_EQ(l.player_contact(48, 0, 1, 1), 1);
     CHECK_EQ(l.player_contact(96, 0, 1, 1), 2);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("laser-split"); }

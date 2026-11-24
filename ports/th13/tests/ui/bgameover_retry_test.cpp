@@ -1,10 +1,3 @@
-// 结算/Retry 专用窄测（新增；不改既有 tests/ui）：
-// 1) 0x43f570 mode≠0 → 0x440960 态 0x18 的 BGameOver 三项菜单：标题/录像/
-//    重试，默认光标 2（0x15030(2)），没有 Continue（不能 Esc/继续复活）；
-// 2) mode0 普通 GameOver 的 continue_stock 门保持（be844<1 才禁用继续）；
-// 3) 重试/回标题经 RunPausePlatform::restart_run/return_to_title；
-// 4) RunScene 符卡超时（00428820 -2）只调用 host.request_game_over，不再预写
-//    PostGameFlow 内部 BGameOver（宿主按 run_mode_flags 路由）。
 #include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 
@@ -17,7 +10,6 @@ using namespace th13::test;
 
 namespace {
 
-// ZunGraphics 纯虚桩：只构造场景对象，不落 GPU。
 struct NullGraphics final : ZunGraphics {
     touhou::graphics::PipelineState& pipeline() override { return pipeline_state; }
     u32 texture(const AnmResource&, u32) override { return 0; }
@@ -70,8 +62,6 @@ struct SettlementHarness {
     std::unique_ptr<RunPause> pause;
 
     SettlementHarness() {
-        // front.anm 根 132/133/142/147 与行条/子项（155 脚本覆盖 137-141、
-        // 120-128）；text.anm 底板 75。与生产 RunPause 数据面同源。
         CHECK(load_bank(manager, 0, synthetic_anm(8, trivial_scripts(76))));
         CHECK(load_bank(manager, 3, synthetic_anm(8, trivial_scripts(155))));
         progress.rate = 1;
@@ -90,7 +80,6 @@ struct SettlementHarness {
     }
 };
 
-// 仅驱动 00428820 -2 的宿主路由；不装载资产，只构造场景对象。
 struct TimeoutHost final : RunSceneServices {
     NullGraphics* graphics = nullptr;
     int game_overs = 0, practice_ends = 0, extra_results = 0, destinations = 0;
@@ -121,23 +110,21 @@ struct TimeoutHost final : RunSceneServices {
     bool preload_scenery_animation(i32, const std::string&) override { return true; }
 };
 
-}  // namespace
+}
 
 TEST(bgameover_is_three_items_defaulting_to_retry_without_continue) {
     SettlementHarness harness;
-    harness.progress.run_mode_flags = 0x20;  // 符卡练习（0x43f570 mode≠0）
+    harness.progress.run_mode_flags = 0x20;
     harness.progress.selected_spell_id = 7;
     CHECK(harness.pause->open(PauseEntrance::BGameOver));
     CHECK_EQ(int(harness.pause->state.screen), int(PauseScreen::BGameOver));
-    harness.advance(12);  // 入场 10 帧后展开
+    harness.advance(12);
     CHECK_EQ(harness.pause->state.phase, 6);
     CHECK_EQ(harness.pause->state.menu.count, 3);
-    // 0x440960 态 0x18：0x15030(0) 后追加 0x15030(2)，默认重试。
     CHECK_EQ(harness.pause->state.menu.cursor, 2);
-    // 续关点数存在也不给 Continue：BGameOver 菜单没有该项。
     CHECK(harness.pause->state.can_continue);
-    harness.frame(1);     // 确认默认项 = 重试
-    harness.advance(13);  // 收场 12 帧后执行
+    harness.frame(1);
+    harness.advance(13);
     CHECK(!harness.pause->active());
     CHECK_EQ(harness.host.restarts, 1);
     CHECK_EQ(harness.host.continues, 0);
@@ -150,28 +137,21 @@ TEST(bgameover_retry_survives_escape_and_cursor_zero_returns_to_title) {
     harness.progress.run_mode_flags = 0x20;
     CHECK(harness.pause->open(PauseEntrance::BGameOver));
     harness.advance(12);
-    // Esc 不能像普通暂停一样恢复对局（结束局无 Continue）。
     harness.frame(0x100);
     CHECK(harness.pause->active());
     CHECK_EQ(harness.pause->state.menu.cursor, 2);
     CHECK_EQ(harness.host.continues, 0);
-    // ↑ 到录像保存项，确认后进入选槽（不是直接重试）。
     harness.frame(0x10);
     CHECK_EQ(harness.pause->state.menu.cursor, 1);
     harness.frame(1);
     harness.advance(13);
     CHECK_EQ(harness.pause->state.phase, 17);
     CHECK_EQ(harness.host.restarts, 0);
-    // 选槽界面 X 返回菜单：0x440fe0 取消支路经 0x44100f（0x4731d0 光标出栈，
-    // 与进入选槽时 0x440df6 的 0x473190 压栈成对）恢复“保存录像”项，再以
-    // 光标+7 发菜单中断（0x441014/0x441033），项数回 3（0x44101e）；
-    // 不重置为默认重试。
     harness.advance(10);
     harness.frame(0x102);
     CHECK_EQ(harness.pause->state.phase, 6);
     CHECK_EQ(harness.pause->state.menu.count, 3);
     CHECK_EQ(harness.pause->state.menu.cursor, 1);
-    // ↑ 到标题项并确认。
     harness.frame(0x10);
     CHECK_EQ(harness.pause->state.menu.cursor, 0);
     harness.frame(1);
@@ -184,12 +164,11 @@ TEST(bgameover_retry_survives_escape_and_cursor_zero_returns_to_title) {
 TEST(ordinary_gameover_keeps_continue_stock_gate) {
     {
         SettlementHarness harness;
-        harness.progress.continue_stock = 0;  // be844 < 1：隐藏继续项
+        harness.progress.continue_stock = 0;
         CHECK(harness.pause->open(PauseEntrance::GameOver));
         harness.advance(12);
         CHECK_EQ(harness.pause->state.menu.count, 5);
         CHECK_EQ(harness.pause->state.menu.cursor, 1);
-        // 43fa90 态 0xf 无 Yes/No 确认：Z 直接进态 0x15 收场，光标 1 → 回标题。
         harness.frame(1);
         harness.advance(13);
         CHECK_EQ(harness.host.titles, 1);
@@ -197,7 +176,7 @@ TEST(ordinary_gameover_keeps_continue_stock_gate) {
     }
     {
         SettlementHarness harness;
-        harness.progress.continue_stock = 3;  // be844 >= 1：继续可选
+        harness.progress.continue_stock = 3;
         CHECK(harness.pause->open(PauseEntrance::GameOver));
         harness.advance(12);
         CHECK_EQ(harness.pause->state.menu.cursor, 0);
@@ -227,7 +206,6 @@ TEST(spell_timeout_requests_game_over_only) {
     RunScene scene(progress, player, score, manager, renderer, environment, host, scheduler,
                    StagePresentation::Banks{4, 5, 6}, 3, 2, 7, "st01.std");
     CHECK(scene.error.empty());
-    // 00428820 -2 的 timeout 分支 = 0x43f570；场景只向宿主发请求。
     scene.battle.sim.spell.phase_timeout(false);
     scene.open_dialog(-2);
     CHECK_EQ(host.game_overs, 1);

@@ -59,5 +59,5 @@ TEST(default_extra_drops_scatter_and_emission_preserves_the_configured_area) {
     CHECK_EQ(e.drop_area[0], 32.f);
     CHECK_EQ(e.drop_area[1], 32.f);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("drop-area"); }

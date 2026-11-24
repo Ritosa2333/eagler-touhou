@@ -1,17 +1,3 @@
-// th13 WASI harness 增量构建候选（r5/architecture 审查件；repo 源码零修改）。
-// 相对 repo 版 portable/build-harness.mjs 的唯一改动：单命令全量编译改为
-// “逐 TU 对象缓存 + 链接”两段式，复用 tools/build/source-object.mjs 的对象
-// 路径与 .key 机制及 headerInputs（与 portable/build.mjs 同一缓存框架，
-// 不新增框架、不改 AGENTS/verification）。
-//
-// cache key 覆盖：clang 路径+版本+二进制 sha、全部编译 flags（含 target、
-// -D、-I）、逐 TU 源码字节、全部传递头（headerInputs 全量保守超集）、
-// 构建脚本自身（含引用的 tools/build 脚本）、链接 flags 与全部输入对象。
-// 构建开始即失效旧 wasm/manifest（与现行语义一致）；任何失败都删除
-// [wasm, manifest] 后抛错 → 失败不可消费旧产物。
-//
-// TH13_HARNESS_WORKSPACE / TH13_HARNESS_OUT 仅供隔离验证覆盖路径，默认与
-// 现行生产路径完全一致。
 import {mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, unlinkSync, statSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {spawn} from 'node:child_process';
@@ -36,7 +22,6 @@ mkdirSync(out, {recursive: true});
 
 const output = resolve(out, 'th13-harness.wasm');
 const manifest = resolve(out, 'build.json');
-// Invalidate proof even when SDK validation fails before compilation.
 for (const path of [output, manifest]) if (existsSync(path)) unlinkSync(path);
 const wasi = process.env.WASI_SDK_PATH;
 if (!wasi) throw Error('Set WASI_SDK_PATH to a wasi-sdk installation.');
@@ -54,7 +39,6 @@ const compileFlags = [
 ];
 const linkFlags = [
   '--target=wasm32-wasip1', '-O2',
-  // wasm 线性内存栈扩至 1MB（沿用现行单命令版语义，见原文件注释）。
   '-Wl,-z,stack-size=1048576',
 ];
 await printRuntimeInputs({workspace, root, sources,
@@ -68,8 +52,6 @@ const headers = headerInputs(resolve(root, 'cpp'), resolve(workspace, 'tests/har
 const selfFiles = [fileURLToPath(import.meta.url)];
 const sourceFiles = [...new Set([...sources, ...headers, ...selfFiles])].sort();
 const inventory = Object.fromEntries(sourceFiles.map(path => [path, sha(readFileSync(path))]));
-// 全局 prefix：任一头/脚本/flags/工具链变化即全部 TU 缓存失效（与 build.mjs
-// 同款保守超集语义；源码单文件变化只重编该 TU + 重链接）。
 const prefix = JSON.stringify([compileFlags, toolchain,
   Object.fromEntries(headers.map(p => [p, inventory[p]])),
   Object.fromEntries(selfFiles.map(p => [p, inventory[p]]))]);
@@ -110,13 +92,10 @@ await Promise.all(Array.from({length: buildJobs}, async () => {
 }));
 console.log('objects reused ' + reused + '/' + sources.length);
 
-// 链接段（与 build.mjs 同款：对象命中即复用，链接常跑）。任一失败经 catch
-// 删 [wasm, manifest] → 失败不可消费旧产物。
 try {
   await runOne([...linkFlags, ...results.map(r => r.object), '-o', output]);
   const bytes = readFileSync(output);
   checkWasm(bytes);
-  // Reject source changes during compilation; the manifest describes exactly this build.
   for (const path of sourceFiles) if (sha(readFileSync(path)) !== inventory[path]) throw Error('Build input changed: ' + path);
   writeFileSync(manifest, JSON.stringify({schema: 'th13/harness-build/v1', builtAt: new Date().toISOString(),
     output, sources: inventory, compileFlags, linkFlags, toolchain,

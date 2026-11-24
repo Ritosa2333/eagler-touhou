@@ -1,11 +1,7 @@
-// The existing repository's stb_vorbis decoder is used only for the installed
-// OGG soundtrack. All voice IDs/gains and loop boundaries are TH13's own data.
-// 第三方单头库的告警不属于本移植的代码质量口径。
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtautological-compare"
 #endif
-// 第三方单头库的告警不属于本移植的代码质量口径。
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtautological-compare"
@@ -37,7 +33,6 @@
 EM_JS(void, th13_publish_audio, (double mixed, double nonzero, double requests,
       double started, double submitted, double loops, int queued, int track,
       int cursor, int paused, int suspended, int device, int failed, double dropped), {
-    // 每帧发布：复用同一对象（消费方只读字段/快照拷贝），避免逐帧分配。
     let a = Module.th13Audio;
     if (!a) a = Module.th13Audio = {};
     a.mixedFrames = mixed; a.nonzeroSamples = nonzero; a.requests = requests;
@@ -79,36 +74,28 @@ bool read_file(const std::string& path, std::vector<u8>& out) {
     return ok;
 }
 float amplitude(i32 hundredths_db) { return std::pow(10.f, float(hundredths_db) / 2000.f); }
-// 0x4613c0 (SE voice start). The x87 chain stores x, 1-x, (1-x)^3 and
-// 1-(1-x)^3 back to f32 before 0x4971f0 truncates the final product toward
-// zero. The disassembly performs the two cube multiplies in extended
-// precision and rounds the cube once on the f32 store, so model that single
-// rounding rather than two sequential f32 roundings.
 i32 effect_attenuation(i32 volume, i32 definition_volume) {
-    if (volume <= 0) return -10000;         // 0x4613f3: DAT_004e4770 == 0 -> mute
-    const float x = float(volume) / 100.f;  // fild/fdiv/fstp f32
-    const float inverse = 1.f - x;          // fsub/fstp f32
+    if (volume <= 0) return -10000;
+    const float x = float(volume) / 100.f;
+    const float inverse = 1.f - x;
     const float cube = float(double(inverse) * double(inverse) * double(inverse));
-    const float curve = 1.f - cube;  // fsub/fstp f32
+    const float curve = 1.f - cube;
     return i32(std::trunc(double(curve) * double(definition_volume + 5000))) - 5000;
 }
-// 0x460c50: fld pan(f32); fmul 1000.0; fdiv 192.0; 0x4971f0 truncation.
 i32 pan_entry(float pan) {
     const double scaled = double(pan) * 1000.0 / 192.0;
-    if (!std::isfinite(scaled)) return 0;  // no defined original input
+    if (!std::isfinite(scaled)) return 0;
     const double truncated = std::trunc(scaled);
     if (truncated <= double(std::numeric_limits<i32>::min())) return std::numeric_limits<i32>::min();
     if (truncated >= double(std::numeric_limits<i32>::max())) return std::numeric_limits<i32>::max();
     return i32(truncated);
 }
-}  // namespace
+}
 struct AudioDevice::Impl {
     struct Sample {
         std::vector<float> pcm;
         u32 frames = 0;
     };
-    // One voice object per original voice ID (004e0c28 + id*0x18, 71 slots).
-    // pan/attenuation mirror voice+0x10 and the 0x4613c0 start-time volume.
     struct Voice {
         u32 cursor = 0;
         bool playing = false;
@@ -120,22 +107,14 @@ struct AudioDevice::Impl {
         std::string text;
     };
     std::array<Sample, 60> samples;
-    // 00460bc0/00460c50 build a per-frame channel table: 12 distinct voice IDs
-    // (0x4df1c0), each with up to 60 queued pan/attenuation entries
-    // (0x4df1f0 count, 0x4df220 array). 00460dd0 drains that table every game
-    // update: one voice per ID is (re)started with the averaged entry, then
-    // the channel is freed. Duplicate requests therefore coalesce into one
-    // playback per ID per update; they are not 60 simultaneous voices.
     std::array<Voice, 71> voices;
     std::array<i32, 12> channels{};
     std::array<i32, 12> channel_requests{};
-    // 0x4df220: 12 channels * 60 entries (0x460bc0 writes 0, 0x460c50 writes
-    // trunc(pan*1000/192)); 0x460dd0 averages them at drain time.
     std::array<std::array<i32, 60>, 12> channel_pans{};
     std::array<const SoundDefinition*, 71> definitions{};
     std::deque<Request> commands;
     std::array<std::string, 16> prepared;
-    std::string base_music;  //004e13c0 changes on play2, not variant9.
+    std::string base_music;
     MusicLayout layout;
     stb_vorbis* music = nullptr;
 #ifndef TH13_AUDIO_MIXER_ONLY
@@ -149,8 +128,6 @@ struct AudioDevice::Impl {
     std::array<float, 4096> music_buffer{};
     u32 music_buffer_size = 0, music_buffer_at = 0;
     std::array<float, 2> held_music{};
-    // The frame-channel table still owns all TH13 sequencing. Only browser
-    // device voices bypass the prequeued music stream (AUDIO-07).
     bool immediate_output() const {
 #if defined(__EMSCRIPTEN__) || defined(TH13_AUDIO_IMMEDIATE_TEST)
         return stats.device;
@@ -252,8 +229,6 @@ struct AudioDevice::Impl {
     bool seek(u32 frame) {
         const auto* t = layout.track(track);
         if (!music || !t || frame >= t->frames()) return false;
-        // The installed thbgm.dat is one OGG stream over the original virtual
-        // PCM archive (including its 16-byte header). Offsets remain byte units.
         if (!stb_vorbis_seek(music, t->offset / 4 + frame)) return false;
         music_cursor = frame;
         music_buffer_size = music_buffer_at = 0;
@@ -315,7 +290,6 @@ void AudioDevice::close() {
 }
 bool AudioDevice::initialize(bool device) {
     if (impl->stats.ready) return true;
-    // A failed attempt is never retained as a partially working silent device.
     close();
     auto& a = *impl;
     a.channels.fill(-1);
@@ -418,11 +392,6 @@ bool AudioDevice::queue_voice(i32 id, i32 entry) {
         if (error.empty()) error = "Invalid or uninitialized TH13 sound request: " + std::to_string(id);
         return false;
     }
-    // 00460bc0:0x460c19-0x460c42 / 00460c50:0x460cc0-0x460ce3：负数 id 没有
-    // 门（et 发射声 +0x370 可为 -1，S5 f10098-10372 825 次实证）。原版把
-    // 它写入第一个负数（空）通道：通道 id 仍为负（仍是空槽）、该槽计数
-    // 重置为 1、按 id 的 pan 校准表越界写（无音效语义）。空槽在下一次
-    // 请求时仍被视作空，故除本次请求本身外无可观测的持久副作用。
     if (id < 0) {
         ++a.stats.requests;
         return true;
@@ -437,7 +406,6 @@ bool AudioDevice::queue_voice(i32 id, i32 entry) {
     if (channel == a.channels.end()) {
         channel = std::find(a.channels.begin(), a.channels.end(), -1);
         if (channel == a.channels.end()) {
-            // 00460bc0/00460c50: all 12 frame channels occupied -> discard.
             ++a.stats.dropped_requests;
             return true;
         }
@@ -448,13 +416,10 @@ bool AudioDevice::queue_voice(i32 id, i32 entry) {
         index = size_t(channel - a.channels.begin());
     }
     i32& count = a.channel_requests[index];
-    // A stop marker queued earlier this frame wins over later starts (0x460bc0
-    // rejects the id when the per-channel count is negative).
     if (count < 0) {
         ++a.stats.dropped_requests;
         return true;
     }
-    // 00460bc0/00460c50: count >= 0x3c (60) -> discard the extra entry.
     if (count >= 60) {
         ++a.stats.dropped_requests;
         return true;
@@ -470,7 +435,6 @@ bool AudioDevice::stop(i32 id) {
         if (error.empty()) error = "TH13 sound stop before audio initialization";
         return false;
     }
-    // 00460d40 negative id: stop every per-ID voice object.
     if (id < 0) {
         for (auto& voice : a.voices) {
             voice.playing = false;
@@ -488,7 +452,6 @@ bool AudioDevice::stop(i32 id) {
     if (channel == a.channels.end()) {
         channel = std::find(a.channels.begin(), a.channels.end(), -1);
         if (channel == a.channels.end()) {
-            // 00460d40: no free channel slot -> no effect.
             ++a.stats.dropped_requests;
             return true;
         }
@@ -498,7 +461,6 @@ bool AudioDevice::stop(i32 id) {
     } else {
         index = size_t(channel - a.channels.begin());
     }
-    // Negative per-channel count is the stop marker consumed by the drain.
     a.channel_requests[index] = -1;
     return true;
 }
@@ -541,8 +503,6 @@ void AudioDevice::update() {
             a.prepared[u32(c.value)] = c.text;
             break;
         case 2:
-            // 00460dd0: stop/load/select/fill/start at steps 0/1/2/3/4,
-            // retire at step 7. There is no fake successful missing-song fallback.
             remove = false;
             if (c.step == 0)
                 a.music_playing = false;
@@ -590,7 +550,7 @@ void AudioDevice::update() {
             pause_music(false);
             break;
         case 8:
-            break;  // Gain reads music_volume at every mixed block.
+            break;
         case 9: {
             auto* old = a.layout.track(a.track);
             const double seconds = old ? double(a.music_cursor) / old->rate : 0.;
@@ -612,9 +572,6 @@ void AudioDevice::update() {
         }
         if (remove) a.commands.pop_front();
     }
-    // 00460dd0 tail: drain the 12-channel frame table after the music
-    // command pass. Each occupied ID starts (or restarts) exactly one voice;
-    // a negative count is the 0x460d40 stop marker.
     for (size_t i = 0; i < a.channels.size(); ++i) {
         const i32 id = a.channels[i];
         if (id < 0) continue;
@@ -627,9 +584,6 @@ void AudioDevice::update() {
             voice.playing = false;
             if (voice.immediate) web_sfx::stop(&voice);
         } else {
-            // 0x461325-0x461350: sum the channel entries and divide by the
-            // count (signed idiv, truncation toward zero). The average is the
-            // pan passed to 0x4613c0 and stored in voice+0x10.
             i64 sum = 0;
             for (i32 n = 0; n < count; ++n)
                 sum += a.channel_pans[i][u32(n)];
@@ -638,11 +592,8 @@ void AudioDevice::update() {
             voice.playing = true;
             voice.pan = count ? i32(sum / count) : 0;
             voice.buffer_pan = voice.pan;
-            // 0x4613c0 reads the current global volume once, at start.
             voice.attenuation = effect_attenuation(effect_volume, a.definitions[u32(id)]->volume);
             if (voice.immediate) {
-                // Recreate buffers if SDL replaced its AudioContext. Never mix
-                // the same voice into the queued music stream as well.
                 if (!a.start_immediate(u32(id), 0, error)) return;
             }
             ++a.stats.started;
@@ -683,8 +634,6 @@ bool AudioDevice::mix(float* pcm, u32 frames) {
         auto& v = a.voices[i];
         if (!v.playing) continue;
         if (v.immediate) {
-            // SDL may replace its AudioContext on device recovery. Restore
-            // live voices at their last observed cursor instead of losing loops.
             if (!web_sfx::contains(&v) && !a.start_immediate(u32(i), v.cursor, error)) return false;
             v.playing = web_sfx::playing(&v);
             v.cursor = web_sfx::cursor(&v);
@@ -692,14 +641,7 @@ bool AudioDevice::mix(float* pcm, u32 frames) {
         }
         const auto& d = *a.definitions[i];
         const auto& sample = a.samples[u32(d.sample)];
-        // The attenuation was fixed by 0x4613c0 at voice start; a later
-        // effect_volume change affects only newly started voices. -10000 is
-        // the original buffer volume setter's minimum (silence), not merely
-        // -100 dB.
         const float gain = v.attenuation <= -10000 ? 0.f : amplitude(v.attenuation);
-        // 0x460dd0 passes the averaged milli-pan to the buffer's vtable+0x40.
-        // The buffer pan law is outside the decompiled path; the web mixer
-        // maps milli-pan to a linear balance (0 = both channels full).
         const float pan = std::clamp(float(v.buffer_pan) / 1000.f, -1.f, 1.f);
         const float left = pan > 0.f ? 1.f - pan : 1.f;
         const float right = pan < 0.f ? 1.f + pan : 1.f;
@@ -714,8 +656,6 @@ bool AudioDevice::mix(float* pcm, u32 frames) {
             pcm[size_t(frame) * 2 + 1] += sample.pcm[size_t(v.cursor) * 2 + 1] * gain * right;
             ++v.cursor;
         }
-        // Non-looping voices retire at their end; 0x4613c0 restarts the same
-        // per-ID voice object when a later frame queues it again.
         if (!(d.flags & 1) && v.cursor == sample.frames) v.playing = false;
     }
     const auto* t = a.layout.track(a.track);
@@ -726,8 +666,6 @@ bool AudioDevice::mix(float* pcm, u32 frames) {
         const float gain =
             !music_enabled || volume == 0.f ? 0.f : amplitude(i32((1.f - inverse * inverse) * (base + 5000)) - 5000);
         for (u32 frame = 0; frame < frames; ++frame) {
-            // Normal tracks are 44100 Hz. Original alternate/spirit tracks
-            // carry 22050 Hz PCM in the same archive and consume half as fast.
             if (a.music_fraction <= 0.f) {
                 if (!a.music_sample(a.held_music[0], a.held_music[1])) {
                     error = "Original TH13 music decoder ended before loop boundary";
@@ -786,8 +724,6 @@ void AudioDevice::pump() {
             error = SDL_GetError();
             return;
         }
-        // Top up according to actual SDL consumption, never a 735-frame/game
-        // tick cap. 8192 frames/pump exceeds 44100 Hz even at 10 pump calls/s.
         u32 queued = u32(queued_bytes) / 8;
         constexpr u32 target = 3072, chunk = 1024, budget = 8192;
         for (u32 spent = 0; queued < target && spent < budget;) {
@@ -812,4 +748,4 @@ void AudioDevice::pump() {
                        double(s.dropped_requests));
 #endif
 }
-}  // namespace th13::sdl
+}

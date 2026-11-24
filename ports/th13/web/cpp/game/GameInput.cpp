@@ -19,4 +19,4 @@ void GameInput::calculate() noexcept {
     pressed = changed & held;
     released = changed & ~held;
 }
-}  // namespace th13
+}

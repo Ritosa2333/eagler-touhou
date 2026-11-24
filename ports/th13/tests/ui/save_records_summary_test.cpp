@@ -27,7 +27,7 @@ std::vector<u8> read(const std::string& name) {
     std::ifstream file(name, std::ios::binary);
     return {std::istreambuf_iterator<char>(file), {}};
 }
-}  // namespace
+}
 
 TEST(summary_defaults_match_original_without_inventing_play_or_clear_history) {
     fixture();
@@ -122,10 +122,10 @@ TEST(summary_v1_through_v4_migration_archives_original_full_file_and_marks_gap) 
         put32(bytes.data() + 20, 63);
         if (version == 4) {
             std::memcpy(bytes.data() + kV4BaseBytes, "REC1", 4);
-            put32(bytes.data() + 64, 5);  // v4 Extra lives independently from +36
+            put32(bytes.data() + 64, 5);
         }
         if (version > 1) bytes[36] = 0x35;
-        bytes[28] = 0xaa;  // unknown byte must remain recoverable
+        bytes[28] = 0xaa;
         write(path, bytes);
         FileStore files;
         CHECK(files.initialize());
@@ -136,8 +136,6 @@ TEST(summary_v1_through_v4_migration_archives_original_full_file_and_marks_gap) 
         CHECK(files.record_run_start(0));
         CHECK(files.save());
         const auto v6 = read(path);
-        // v7 布局（FileStore.cpp 头注）：版本 7、END1、迁移结局历史未知、v1-v4 无 v5 前置档、
-        // NAM1 上次名取原版默认 8 空格。
         CHECK_EQ(get32(v6.data() + 8), 7u);
         CHECK(v6.size() == kSaveBytes);
         CHECK(std::memcmp(v6.data() + kV5SaveBytes, "END1", 4) == 0);

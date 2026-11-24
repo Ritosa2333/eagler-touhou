@@ -53,15 +53,12 @@ test('replay/draws-replay 把 digest 日志声明为输出（建目录 + 非空�
     env);
   assert.equal(draws.outputs.length, 2);
   assert.equal(draws.outputs[1].guest, '/artifacts/digests/case.log');
-  // 相对 guest 路径同样归一。
   const relative = harnessPaths(workspace,
     ['replay', 'a.rpy', 'artifacts/reference/raw', '/artifacts/e.jsonl'],
     {TH13_DIGEST_LOG: 'artifacts/digests/x.log'});
   assert.equal(relative.outputs[1].guest, '/artifacts/digests/x.log');
-  // 非回放模式不声明 digest 日志。
   assert.equal(harnessPaths(workspace, ['stage1', 'artifacts/reference/raw', '/artifacts/s.jsonl'],
     env).outputs.length, 1);
-  // 越界/空路径拒绝。
   assert.throws(() => harnessPaths(workspace,
     ['replay', 'a.rpy', 'artifacts/reference/raw', '/artifacts/e.jsonl'],
     {TH13_DIGEST_LOG: '/../escape.log'}), /inside the workspace/);

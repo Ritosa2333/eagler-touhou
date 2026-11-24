@@ -1,4 +1,3 @@
-// H-LASER-ANM: 433260/433470/4337c0, real bullet.anm -> production renderer.
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "game/LaserPresentation.hpp"
 #include <vector>
@@ -85,8 +84,7 @@ TEST(infinite_laser_real_anm_birth_scaling_and_submission) {
     r.draw();
     CHECK(r.sim.error().empty());
     CHECK_EQ(body->visual.scale.x, 0.125f);
-    CHECK_EQ(float_to_bits(body->visual.scale.y), 0x42092492u);  // 480/14, retail store
-    // 4337c0: beam starts at origin+320/16 and extends along +X by480.
+    CHECK_EQ(float_to_bits(body->visual.scale.y), 0x42092492u);
     CHECK_EQ(r.graphics.vertices[0].position.x, 896.0f);
     CHECK_EQ(r.graphics.vertices[2].position.x, 416.0f);
     CHECK_EQ(body->timer.current, 48);
@@ -156,12 +154,12 @@ TEST(split_line_has_independent_tip_and_retires_all_three_animations) {
     CHECK(r.presentation.tip(child));
     CHECK_EQ(r.presentation.tip(child)->source_script, 88);
     CHECK_EQ(r.presentation.tip(child)->timer.current, 1);
-    r.draw();                                   // All animations use the normal production renderer.
-    CHECK_EQ(r.graphics.vertices.size(), 24u);  // tip's first frame has no sprite
+    r.draw();
+    CHECK_EQ(r.graphics.vertices.size(), 24u);
     r.sim.advance_lasers();
     r.draw();
     CHECK_EQ(r.presentation.tip(child)->timer.current, 2);
-    CHECK_EQ(r.presentation.orb(child)->timer.current, 1);  // moved origin hides orb
+    CHECK_EQ(r.presentation.orb(child)->timer.current, 1);
     CHECK_EQ(r.presentation.body(child)->variables.position.x, 72.0f);
     CHECK_EQ(r.presentation.tip(child)->variables.position.x, 128.0f);
     for (int i = 0; i < 7; ++i)
@@ -176,7 +174,6 @@ TEST(real_stage1_mboss_script_drives_two_independent_laser_animations) {
     CHECK(r.init());
     CHECK(r.sim.load("artifacts/reference/raw", "eagler-touhou/ports/th13/tests/ui/build/laser-script.jsonl"));
     if (!r.sim.error().empty()) return;
-    // Isolated real-script integration, not natural full-stage completion.
     r.sim.spawn_enemy("MBossCard1At", 96, 144, 1, nullptr, false);
     CHECK(r.sim.error().empty());
     CHECK_EQ(r.sim.lasers.size(), 2u);
@@ -193,7 +190,7 @@ TEST(real_stage1_mboss_script_drives_two_independent_laser_animations) {
             CHECK_EQ(r.sim.lasers.size(), 2u);
             CHECK_EQ(r.graphics.vertices.size(), 24u);
             CHECK(r.sim.lasers[0].angle < 0);
-            CHECK(r.sim.lasers[1].angle < 0);  // pi-A wrapped at runtime update
+            CHECK(r.sim.lasers[1].angle < 0);
             CHECK_EQ(r.presentation.body(first)->visual.sprite, 134);
             CHECK_EQ(r.presentation.body(second)->visual.sprite, 134);
         }
@@ -231,7 +228,7 @@ TEST(real_stage6_line_emitter_reaches_body_tip_and_production_draw) {
     CHECK(tip->sprite);
     CHECK_EQ(body->visual.scale.x, 14.f / body->sprite->width);
     CHECK_EQ(body->visual.scale.y, 128.f / body->sprite->height);
-    CHECK_EQ(tip->variables.position.y, 185.f);  // 320 - one7px movement -128px length
+    CHECK_EQ(tip->variables.position.y, 185.f);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("infinite-laser-presentation"); }

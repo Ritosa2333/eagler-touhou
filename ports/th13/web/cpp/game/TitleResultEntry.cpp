@@ -17,8 +17,6 @@ constexpr u32 kResultColorUnselected = 0xff808080u;
 constexpr u32 kResultColorRowSelected = 0xffffffffu;
 constexpr u32 kResultColorRowUnselected = 0xff404040u;
 constexpr i32 kResultNameCount = 91;
-// 0x454050 case2 字面量 0x4ab984（91 项；尾部三空格被 0x58/0x59/0x5a
-// 光标语义复用为 SPACE/DEL/END）。
 constexpr char kTitleResultNameCharacters[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=.,!?@:;[]()_/{}|~^#$%&*   ";
 static_assert(sizeof(kTitleResultNameCharacters) == 92, "result name table must be 91 entries + NUL");
@@ -34,14 +32,11 @@ std::string format(const char* pattern, ...) {
     return std::string(text);
 }
 
-// 0x4bb904/0x4bb914/0x4bb96c 指针表（与 TitleReplayMenu 同源实读）。
 constexpr const char* kCharacterNames[4] = {"Reimu  ", "Marisa ", "Sanae  ", "Youmu  "};
 constexpr const char* kDifficultyNames[6] = {"Easy   ", "Normal ", "Hard   ", "Lunatic", "Extra  ", "O.D.   "};
 constexpr const char* kRouteNames[10] = {"tst", "St1", "St2", "St3", "St4", "St5", "St6", "Ex ", "All", "ExA"};
-// 0x453db0 同族 stage 名表（PlayerDataView 同源）。
 constexpr const char* kStageNames[10] = {"test   ", "Stage 1", "Stage 2", "Stage 3", "Stage 4",
                                          "Stage 5", "Stage 6", "Extra  ", "Clear  ", "ExClear"};
-// 0x4ac6d4 空槽格式串（exe 原文尾 "---%%"，printf 渲染为单个 %）。
 constexpr const char* kEmptySlotRow = "No.%.2d -------- --/--/-- --:-- ------- ------- --- ---%%";
 
 bool replay_date(const ReplayFile& file, i32& year, i32& month, i32& day, i32& hour, i32& minute) {
@@ -62,7 +57,7 @@ bool replay_date(const ReplayFile& file, i32& year, i32& month, i32& day, i32& h
     return true;
 }
 
-}  // namespace
+}
 
 bool TitleResultEntry::fail(const std::string& reason) {
     if (error.empty()) error = reason.empty() ? "Title result screen operation failed" : reason;
@@ -70,13 +65,10 @@ bool TitleResultEntry::fail(const std::string& reason) {
 }
 
 bool TitleResultEntry::create_visual(i32 script, u32& handle) {
-    // 0x44bb80：按 EDI=脚本号新建并覆盖句柄；层/排序由脚本自身 ins_304 决定。
     handle = animations.create(title_bank, script, -1, 0);
     return handle != 0 || fail(animations.error.empty() ? "Title result animation unavailable" : animations.error);
 }
 
-// 0x454050 case0：背景 +0x690（root89，仅缺位）/ script107 / script143+char /
-// script147+difficulty（difficulty=4 → 151 EXTRA）。
 bool TitleResultEntry::open_name_screen() {
     if (state.handles[89] == 0) {
         if (!create_visual(89, state.handles[89])) return false;
@@ -91,7 +83,6 @@ bool TitleResultEntry::open_name_screen() {
         state.result_difficulty = data_.difficulty;
         state.result_rank = data_.rank;
     } else {
-        // 宿主未接：不伪造记录，但保留可编辑流程（测试/无存档宿主）。
         state.result_rank = 0;
     }
     state.result_character = std::clamp(state.result_character, 0, 3);
@@ -100,15 +91,11 @@ bool TitleResultEntry::open_name_screen() {
     const i32 difficulty_script = state.result_difficulty >= 4 ? 151 : 147 + state.result_difficulty;
     if (!create_visual(difficulty_script, state.handles[difficulty_script])) return false;
 
-    // 0x454209..0x4542a0: the editor starts from the last confirmed name
-    // (score +0x1b260); the inserted row itself stays blank until END.
     seed_result_name(host.last_result_name(), state.result_name, state.result_name_cursor);
     state.result_slot = 0;
     return true;
 }
 
-// 0x4549d0 case0：背景沿用 +0x690，标题条 script108；25 槽查询由
-// TitleReplayPlatform（replay_count/replay_entry）在绘制侧完成。
 bool TitleResultEntry::open_slot_screen() {
     if (state.handles[89] == 0) {
         if (!create_visual(89, state.handles[89])) return false;
@@ -121,7 +108,6 @@ bool TitleResultEntry::open_slot_screen() {
 }
 
 void TitleResultEntry::retire_name_visuals() {
-    // 0x454050 case3：只收 +0x474(107)/角色/难度，背景留给 0x4549d0 或主菜单。
     for (i32 handle : {107, 143 + state.result_character, 147 + state.result_difficulty, 151}) {
         if (handle < 0 || handle >= i32(state.handles.size())) continue;
         if (state.handles[handle]) {
@@ -132,7 +118,6 @@ void TitleResultEntry::retire_name_visuals() {
 }
 
 void TitleResultEntry::retire_slot_visuals() {
-    // 0x4549d0 case4：收 +0x478(108) + +0x690 背景。
     if (state.handles[108]) {
         animations.retire(state.handles[108]);
         state.handles[108] = 0;
@@ -144,10 +129,6 @@ void TitleResultEntry::retire_slot_visuals() {
     }
 }
 
-// 0x454050 case3（DAT_004be7c8 != 0 分支）：FUN_00448080 + FUN_0044bac0(...,1)
-// = 回主菜单，随后 0x454658 重选标题曲 th13_00（计分页的 Player's Score
-// 退场）。网页侧复用标题返回路径：flags bit1（原版 +0x5c40 bit1）令
-// TitleMainMenu 跳过 180 帧 intro、直接展开菜单；光标归主菜单首项。
 bool TitleResultEntry::return_main() {
     if (!host.queue_title_music(2, -1, "th13_00.wav")) return fail("Result return title music failed");
     state.flags |= 2u;
@@ -160,9 +141,6 @@ bool TitleResultEntry::return_main() {
     return true;
 }
 
-// 0x454050 case2 / 0x4549d0 case3 共用的 91 字符名字编辑。
-// 0x454050 END：record_result_name → 流程 0xf 或主菜单。
-// 0x4549d0 END：FUN_004484d0 落盘（slot+1）→ 回槽列表。
 bool TitleResultEntry::edit_name(u32 pressed, u32 repeated, bool save_to_replay) {
     const i32 previous = state.result_name_cursor;
     if ((pressed | repeated) & 0x10)
@@ -178,17 +156,14 @@ bool TitleResultEntry::edit_name(u32 pressed, u32 repeated, bool save_to_replay)
             kResultNameCount;
     if (previous != state.result_name_cursor && !host.sound(10)) return fail("Result name cursor sound failed");
 
-    if (pressed & 0x80001) {                   // Z/Enter
-        if (state.result_name_cursor == 89) {  // 0x59：DEL（长度 0 时不动作）
-            // 0x454483/0x454da8: both editors finish DEL on the shared
-            // confirm tail 0x45451c/0x454e58, which plays sound 7.
+    if (pressed & 0x80001) {
+        if (state.result_name_cursor == 89) {
             if (!state.result_name.empty()) {
                 state.result_name.pop_back();
                 if (!host.sound(7)) return fail("Result name delete sound failed");
             }
-        } else if (state.result_name_cursor == 90) {  // 0x5a：END
+        } else if (state.result_name_cursor == 90) {
             if (save_to_replay) {
-                // 00454d6e: END requests the award voice before writing.
                 if (!host.sound(0x11)) return fail("Replay save sound failed");
                 if (!host.save_replay_slot(state.result_slot + 1, state.result_name)) return fail("Replay save failed");
                 if (!host.sound(7)) return fail("Replay slot confirm sound failed");
@@ -197,13 +172,10 @@ bool TitleResultEntry::edit_name(u32 pressed, u32 repeated, bool save_to_replay)
                 if (state.result_rank >= 0 && !host.record_clear_result_name(state.result_name))
                     return fail("Result name record failed");
                 if (!host.sound(7)) return fail("Result name confirm sound failed");
-                // 0x454050 case2 END → FUN_0044bb20(3)；收面/转场在 case3 的
-                // age>5 之后，不在确认拍立即发生。
                 state.change_substate(3);
             }
             return true;
         } else {
-            // 0..87 = 字符表；0x58 (=88) = SPACE。满 8 字后覆盖第 8 字符。
             const char ch = state.result_name_cursor == 88 ? ' ' : kTitleResultNameCharacters[state.result_name_cursor];
             if (state.result_name.size() < 8)
                 state.result_name += ch;
@@ -214,9 +186,8 @@ bool TitleResultEntry::edit_name(u32 pressed, u32 repeated, bool save_to_replay)
         }
         return true;
     }
-    if (pressed & 0x102) {  // X/Esc
+    if (pressed & 0x102) {
         if (save_to_replay) {
-            // 0x4549d0 case3：有字删末字；空名回槽列表（不退出保存屏）。
             if (!state.result_name.empty()) {
                 state.result_name.pop_back();
                 if (!host.sound(9)) return fail("Result name cancel sound failed");
@@ -232,11 +203,9 @@ bool TitleResultEntry::edit_name(u32 pressed, u32 repeated, bool save_to_replay)
 }
 
 bool TitleResultEntry::name_editor(u32 pressed, u32 repeated) {
-    // 0x454050 case0 负榜位（+0x59ac=1）：名字不可编辑；Z/X 都直接收面。
     if (data_loaded_ && state.result_rank < 0) {
         if (pressed & (0x80001 | 0x102)) {
             if (!host.sound(7)) return fail("Result name confirm sound failed");
-            // 0x454050 case2 锁定态：Z/X 都只进 case3，收面仍在 case3 age>5。
             state.change_substate(3);
         }
         return true;
@@ -244,21 +213,18 @@ bool TitleResultEntry::name_editor(u32 pressed, u32 repeated) {
     return edit_name(pressed, repeated, false);
 }
 
-// 0x4549d0 case2：25 个编号槽（+0x28，0 基）。槽序显示/落盘 = +1（1..25）。
 bool TitleResultEntry::slot_selector(u32 pressed, u32 repeated) {
     constexpr i32 slots = 25;
     const i32 previous = state.result_slot;
     if ((pressed | repeated) & 0x10) state.result_slot = (state.result_slot + slots - 1) % slots;
     if ((pressed | repeated) & 0x20) state.result_slot = (state.result_slot + 1) % slots;
     if (previous != state.result_slot && !host.sound(10)) return fail("Replay slot cursor sound failed");
-    if (pressed & 0x102) {  // X/Esc：case4 收面回主菜单
+    if (pressed & 0x102) {
         if (!host.sound(9)) return fail("Replay slot cancel sound failed");
         state.change_substate(4);
         return true;
     }
-    if (pressed & 0x80001) {  // Z：进本屏 8 字名字编辑（case3）
-        // 0x4549d0 case2 Z：从 score+0x1b260 拷默认名进 +0x599c，并立即写
-        // 当前待存 replay 头的时刻（+0xc）；本拍缓冲即待保存名字，锁定头部行。
+    if (pressed & 0x80001) {
         seed_result_name(host.last_result_name(), state.result_name, state.result_name_cursor);
         state.result_slot_name = state.result_name;
         if (!host.sound(7)) return fail("Replay slot confirm sound failed");
@@ -292,7 +258,6 @@ bool TitleResultEntry::update(u32 pressed, u32 repeated) {
         case 2:
             return name_editor(pressed, repeated);
         case 3:
-            // 0x454050 case3：age>5 才 FUN_0046fc30 收面并走 0xf/主菜单。
             if (state.age.current > 5) {
                 retire_name_visuals();
                 if (host.result_replay_save_available())
@@ -368,16 +333,12 @@ bool TitleResultEntry::draw_score_rows(HudDrawServices& draw, const TitleResultS
     for (i32 i = 0; i < i32(data.records.size()); ++i) {
         u32 color;
         if (data.rank < 0) {
-            // 0x454690 锁定态：每行红/绿/蓝渐变（0xff??00ff，local_c -= 0x10）。
             const u32 shade = u32(0xff - i * 0x10);
             color = 0xff0000ffu | (shade << 16) | (shade << 8);
         } else {
             color = i == data.rank ? kResultColorRowSelected : kResultColorRowUnselected;
         }
         auto record = data.records[size_t(i)];
-        // 00454690 queues the current editable name separately at x=84.
-        // Reserve all eight columns here so that its date/score never shift
-        // and an empty name does not draw dashes underneath the editor.
         if (i == data.rank)
             record.name.assign(8, ' ');
         else if (record.available)
@@ -397,13 +358,10 @@ bool TitleResultEntry::draw_name_editor(HudDrawServices& draw, float name_x, flo
         return draw.hud_text({{x, y, 0}, style, text}) || fail("Result name text service failed");
     };
     if (!put(name_x, name_y, 0xffffffffu, state.result_name)) return false;
-    // 0x454690 下划线：x = 84 + 9*len（满 8 字再 -9），黄色。
     float underscore_x = name_x + float(state.result_name.size()) * 9.0f;
     if (state.result_name.size() >= 8) underscore_x -= 9.0f;
     if (!put(underscore_x, name_y, kResultColorSelected, "_")) return false;
 
-    // 91 格网格：起点 (212,360)，列 +18 / 行 +16；88/89/90 = 0x81/0x80/0x7f
-    // 原版特殊字形（ascii.anm sprite97/96/95），不是长词。
     float x = 212, y = 360;
     for (i32 i = 0; i < kResultNameCount; ++i) {
         std::string glyph;
@@ -472,12 +430,7 @@ bool TitleResultEntry::draw_slot_selected(HudDrawServices& draw) {
     style.font = 0;
     style.shadow = true;
     style.color = kResultColorSelected;
-    // 00454f90 state3 shows the recording being saved, not the overwritten
-    // slot's old metadata. Its header slides from the selected list row.
     std::string text = slot_row_text(state.result_slot);
-    // 00454f90 state3 头部行读 DAT_004c22c8+0x1c（当前待存 replay 头），名字
-    // 在 0x4549d0 case2 Z 已定（默认名拷入 +0x599c 那一拍），END 才由
-    // 0x4484d0 写盘；编辑期间头部不随逐字输入变化，故用 case2 Z 的快照。
     std::string slot_name = state.result_slot_name;
     if (slot_name.size() < 8) slot_name.resize(8, ' ');
     if (data_loaded_ && data_.current.available) {
@@ -490,7 +443,6 @@ bool TitleResultEntry::draw_slot_selected(HudDrawServices& draw) {
                       double(data_.current.progress_percent));
     }
     const float age = std::min(10.f, state.age.fractional);
-    // 00454ff2..00455005: 240 + (80 + slot*15 - 240)*(10-age)/10.
     const float y = 240.f + (80.f + float(state.result_slot) * 15.f - 240.f) * (10.f - age) / 10.f;
     return draw.hud_text({{58, y, 0}, style, text}) || fail("Replay slot text service failed");
 }
@@ -501,7 +453,6 @@ bool TitleResultEntry::draw_texts(HudDrawServices& draw) {
         if (state.substate != 2) return true;
         TitleResultScreenData data = data_;
         if (!data_loaded_) {
-            // 宿主未接：不伪造记录；仍画空行与编辑网格（原版空槽行格式）。
             data = {};
             data.rank = state.result_rank;
         }
@@ -523,4 +474,4 @@ bool TitleResultEntry::draw_texts(HudDrawServices& draw) {
     return true;
 }
 
-}  // namespace th13
+}

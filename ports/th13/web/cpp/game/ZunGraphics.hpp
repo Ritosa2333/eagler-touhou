@@ -7,9 +7,6 @@ struct GraphicsViewport {
     u32 x = 0, y = 0, width = 640, height = 480;
     float near_depth = 0, far_depth = 1;
 };
-// The shared backend receives semantic state, textures, matrices and vertices.
-// Original Windows graphics objects and numeric device-state calls never cross
-// this production boundary.
 class ZunGraphics : public touhou::graphics::StateCommands {
 public:
     virtual bool logical_frame() const noexcept { return false; }
@@ -27,4 +24,4 @@ public:
     virtual bool clear_depth(const GraphicsViewport*) = 0;
     virtual void set_viewport(const GraphicsViewport&) = 0;
 };
-}  // namespace th13
+}

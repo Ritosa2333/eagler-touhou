@@ -1,4 +1,3 @@
-// 暂停帧回调（th15 PauseFrame 裁剪：失焦自动暂停保留，恢复/节流延后）。
 #pragma once
 
 #include "FrameScheduler.hpp"
@@ -41,4 +40,4 @@ public:
     }
 };
 
-}  // namespace th13
+}

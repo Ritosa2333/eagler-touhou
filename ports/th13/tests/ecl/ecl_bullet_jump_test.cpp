@@ -14,7 +14,6 @@ TEST(bullet_queue_forward_jump_skips_entries_without_incrementing_target) {
     entry(b, 1, 0x80000000, 99);
     entry(b, 2, 0x80000000, 7);
     sim.process_bullet_queue(b, false);
-    // Direct retail0040f030: cursor3, wait timer6, behavior80000000.
     CHECK(sim.error().empty());
     CHECK_EQ(b.ex_cursor, 3);
     CHECK_EQ(b.wait_timer, 6);
@@ -33,7 +32,7 @@ TEST(bullet_queue_backward_jump_restarts_until_next_blocking_behavior) {
     CHECK_EQ(b.behavior_flags, 0x80000000u);
     b.wait_timer = 2;
     sim.process_bullet_queue(b, false);
-    CHECK_EQ(b.wait_timer, 2);  // active wait blocks the jump itself
+    CHECK_EQ(b.wait_timer, 2);
     b.behavior_flags = 0;
     sim.process_bullet_queue(b, false);
     CHECK_EQ(b.wait_timer, 6);
@@ -49,5 +48,5 @@ TEST(bullet_queue_jump_to_end_retires_only_the_queue) {
     CHECK_EQ(b.behavior_flags, 0u);
     CHECK(b.alive);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("bullet queue jump"); }

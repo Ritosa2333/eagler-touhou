@@ -87,5 +87,5 @@ TEST(health_interrupt_does_not_overwrite_timer_before_switching_phase) {
     CHECK_EQ(r.sim.boss_timer_seconds, 17);
     CHECK_EQ(r.sim.boss_timer_centiseconds, 48);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("ecl-boss-hud-state"); }

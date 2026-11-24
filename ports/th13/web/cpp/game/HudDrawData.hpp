@@ -1,5 +1,3 @@
-// HUD 文本绘制通道（Frame/Draw 分离的 Draw 侧；与 th15 同构，
-// 经 ApplicationState::hud_text 单通道入 AsciiText 队列）。
 #pragma once
 
 #include "HudFrameData.hpp"
@@ -30,8 +28,7 @@ struct HudDrawContext {
     HudFrameContext frame;
 };
 
-// 千分位分组与带尾位 score 格式（th15 GameHudDraw.cpp 同族实现）。
 std::string grouped_number(u32 value);
 std::string score_number(u32 value, i32 last_digit);
 
-}  // namespace th13
+}

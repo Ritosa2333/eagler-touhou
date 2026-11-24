@@ -65,32 +65,21 @@ struct Rig {
         battle.shots.push_back(s);
     }
 };
-// 00422cd0 returns incoming + 160x32 query (00422d40 add esi,eax / 00422d4b
-// mov eax,esi) and stores the same sum at 00422d45 to [enemy_mgr+0x5c]+0x519c.
-// That outer field is the boss object's inner +0x3fb0 (0x519c - 0x11ec), which
-// 00419a90:112-114 consumes on the boss's next damage pass and clears. Native
-// stage-5 watch at frame 10409 shows serial 237's 0x422cd0 writing 15 there;
-// e235 consumes it at frame 10410 (query 15 + pending 15 = 30).
 TEST(ship_callback_stores_519c_on_boss_and_boss_consumes_it) {
     Rig r;
     CHECK(r.init());
     r.shot(70, 200, 27);
     r.battle.sim.enemy_hit(r.ship);
-    CHECK_EQ(r.ship.life, 199973.f);  // hurtbox 0 -> base 0, callback returns 0+27
+    CHECK_EQ(r.ship.life, 199973.f);
     CHECK_EQ(r.boss->life, 1000.f);
     CHECK_EQ(r.boss->pending_damage, 27);
-    CHECK_EQ(r.ship.pending_damage, 0);  // store target is the boss object
+    CHECK_EQ(r.ship.pending_damage, 0);
     CHECK_EQ(r.score.score, 1);
-    r.battle.sim.enemy_hit(*r.boss);  // next boss pass consumes +0x3fb0
+    r.battle.sim.enemy_hit(*r.boss);
     CHECK_EQ(r.boss->life, 973.f);
     CHECK_EQ(r.boss->pending_damage, 0);
-    CHECK_EQ(r.score.score, 1);  // pending is not a 446870 query
+    CHECK_EQ(r.score.score, 1);
 }
-// Positive control for the stage-5 e235 event: one 15-damage shot plus the
-// 15 pending written by the ship's 00422cd0 must apply 30 in one pass. The
-// spell-card life formula (004179e0) turns 30 into a 4-point display loss
-// (13198 - 30 = 13168; 13168 / 7 = 1881), matching native frame 10410:
-// life 1885 -> 1881, accumulator 12510 -> 12540.
 TEST(boss_519c_pending_damage_adds_to_single_15_hit) {
     Rig r;
     CHECK(r.init());
@@ -104,13 +93,11 @@ TEST(boss_519c_pending_damage_adds_to_single_15_hit) {
     r.boss->pending_damage = 15;
     r.shot(0, 80, 15);
     r.battle.sim.enemy_hit(*r.boss);
-    CHECK_EQ(r.boss->life, 1881.f);  // 15 query + 15 pending = 30
+    CHECK_EQ(r.boss->life, 1881.f);
     CHECK_EQ(r.boss->spirit_accum, 12540.f);
     CHECK_EQ(r.boss->pending_damage, 0);
     CHECK_EQ(r.boss->spirit_threshold, 13000);
 }
-// Negative control: the pending value is consumed exactly once. A second
-// 15-damage hit must add only its own 15, not the old pending again.
 TEST(boss_519c_pending_damage_is_not_reused_on_extra_15_hit) {
     Rig r;
     CHECK(r.init());
@@ -123,10 +110,10 @@ TEST(boss_519c_pending_damage_is_not_reused_on_extra_15_hit) {
     r.boss->spirit_threshold = 13000;
     r.boss->pending_damage = 15;
     r.shot(0, 80, 15);
-    r.battle.sim.enemy_hit(*r.boss);  // 30 -> life 1881, accum 12540
+    r.battle.sim.enemy_hit(*r.boss);
     r.shot(0, 80, 15);
-    r.battle.sim.enemy_hit(*r.boss);  // only the new 15 -> life 1879
-    CHECK_EQ(r.boss->life, 1879.f);   // 13168 - 15 = 13153; /7 = 1879
+    r.battle.sim.enemy_hit(*r.boss);
+    CHECK_EQ(r.boss->life, 1879.f);
     CHECK_EQ(r.boss->spirit_accum, 12555.f);
     CHECK_EQ(r.boss->pending_damage, 0);
 }
@@ -136,24 +123,20 @@ TEST(ship_callback_doubles_consumed_base_damage) {
     r.ship.hurtbox[0] = r.ship.hurtbox[1] = 16;
     r.shot(0, 200, 13);
     r.battle.sim.enemy_hit(r.ship);
-    // base 13 is consumed by the hull query; the callback's 160x32 query then
-    // sees nothing and returns 13+0, which 00419be0 adds on top of base 13.
     CHECK_EQ(r.boss->pending_damage, 13);
     CHECK_EQ(r.ship.life, 199974.f);
-    CHECK_EQ(r.score.score, 1);  // only the base query scored (446870 scores non-zero sums)
+    CHECK_EQ(r.score.score, 1);
 }
 TEST(ship_callback_combines_base_and_extra_query_hits) {
     Rig r;
     CHECK(r.init());
     r.ship.hurtbox[0] = r.ship.hurtbox[1] = 16;
-    r.shot(0, 200, 13);   // inside the 16x16 hull box -> base query
-    r.shot(70, 200, 27);  // outside the hull box, inside 160x32 -> callback only
+    r.shot(0, 200, 13);
+    r.shot(70, 200, 27);
     r.battle.sim.enemy_hit(r.ship);
-    CHECK_EQ(r.boss->pending_damage, 40);  // 13 + 27
-    CHECK_EQ(r.ship.life, 199947.f);       // 13 + 40
-    CHECK_EQ(r.score.score, 2);            // one score per non-zero 446870 query
-    // 446bf0 leaves a hit shot in state2 until its ANM interrupt terminates;
-    // the campaign does not clear alive at the hit itself.
+    CHECK_EQ(r.boss->pending_damage, 40);
+    CHECK_EQ(r.ship.life, 199947.f);
+    CHECK_EQ(r.score.score, 2);
     CHECK_EQ(r.battle.shots[0].state, 2);
     CHECK_EQ(r.battle.shots[1].state, 2);
 }
@@ -165,11 +148,11 @@ TEST(ship_without_callback_applies_only_geometric_damage) {
     r.shot(0, 200, 13);
     r.shot(70, 200, 27);
     r.battle.sim.enemy_hit(r.ship);
-    CHECK_EQ(r.ship.life, 199987.f);  // 13 only: no +0x40f0 callback
+    CHECK_EQ(r.ship.life, 199987.f);
     CHECK_EQ(r.boss->pending_damage, 0);
     CHECK_EQ(r.score.score, 1);
     CHECK_EQ(r.battle.shots[0].state, 2);
-    CHECK_EQ(r.battle.shots[1].state, 1);  // 27 stays live outside the hull box
+    CHECK_EQ(r.battle.shots[1].state, 1);
 }
 TEST(zero_life_boss_death_animation_still_queries_hits_without_losing_health) {
     Rig r;
@@ -217,10 +200,6 @@ TEST(ecl633_can_register_and_clear_ship_damage_callback) {
         CHECK_EQ(e.damage_function, i32(index));
     }
 }
-// 0x419a90:0x419d37-0x419d53: while a spell card is active and its bomb
-// protection bit (DAT_004c2178+0x7c & 0x20) is set, integer damage is divided
-// by 30 before the life/accumulator branch. Native udN01 stage-4 frame 3533
-// shows 80 -> 2 on enemy 121; stage-6 frame 5874 shows the same 2/frame rule.
 TEST(spell_bomb_protection_divides_damage_by_30) {
     Rig r;
     CHECK(r.init());
@@ -231,12 +210,9 @@ TEST(spell_bomb_protection_divides_damage_by_30) {
     CHECK(r.battle.sim.spell.state().flags & kSpellBombProtection);
     r.shot(0, 80, 60);
     r.battle.sim.enemy_hit(*r.boss);
-    CHECK_EQ(r.boss->spirit_accum, 2.f);  // 60 / 30, not 60
+    CHECK_EQ(r.boss->spirit_accum, 2.f);
     CHECK_EQ(r.boss->life, 998.f);
 }
-// Negative control: the same spell without the bomb-protection bit leaves the
-// damage untouched (60 -> 60), proving the gate is the flag and not spell
-// activity alone.
 TEST(spell_without_bomb_protection_keeps_full_damage) {
     Rig r;
     CHECK(r.init());
@@ -250,9 +226,6 @@ TEST(spell_without_bomb_protection_keeps_full_damage) {
     CHECK_EQ(r.boss->spirit_accum, 60.f);
     CHECK_EQ(r.boss->life, 940.f);
 }
-// 0x419cce..0x419d2a（反汇编复核 tools/disas_ex_bomb_immunity.py）：猯藏 EX
-// 符卡 id 109..118 激活 + bomb 对象在场 + 敌机持有 BOSS 位（flags bit24，
-// ECL 0x32 置位）→ 伤害完全豁免：不入命、不累加灵，仅播音效 36。
 TEST(ex_spell_109_bomb_on_boss_bit_enemy_deals_no_damage) {
     Rig r;
     CHECK(r.init());
@@ -267,8 +240,6 @@ TEST(ex_spell_109_bomb_on_boss_bit_enemy_deals_no_damage) {
     CHECK_EQ(r.boss->spirit_accum, 0.f);
     CHECK_EQ(r.boss->life, 1000.f);
 }
-// Negative control: Overdrive id 126 falls outside [109,118] — the same bomb
-// + boss-bit setup takes full damage when no bomb-protection bit is set.
 TEST(overdrive_spell_126_bomb_damage_still_applies) {
     Rig r;
     CHECK(r.init());
@@ -283,5 +254,5 @@ TEST(overdrive_spell_126_bomb_damage_still_applies) {
     CHECK_EQ(r.boss->spirit_accum, 60.f);
     CHECK_EQ(r.boss->life, 940.f);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("Stage5 ship damage"); }

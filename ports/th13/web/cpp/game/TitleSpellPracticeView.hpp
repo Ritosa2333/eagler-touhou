@@ -1,4 +1,3 @@
-// Original title.anm roots: 004560a0/00456650/00456b50/00457630.
 #pragma once
 
 #include "AnmManager.hpp"
@@ -38,4 +37,4 @@ private:
     bool rebuild_names(i32 stage, i32 family, i32 character, const TitleSpellPracticePlatform&, const Rasterizer&);
 };
 
-}  // namespace th13
+}

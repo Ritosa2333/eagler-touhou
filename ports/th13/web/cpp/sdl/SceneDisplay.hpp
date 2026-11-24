@@ -1,5 +1,3 @@
-// 跨场景显示拥有者（th15 SceneDisplay 裁剪：动画层调度 + 字幕通道；
-// 离屏捕获/背景保留过渡（ScreenTargets/SceneCapture）延后，ui-base.md §三）。
 #pragma once
 
 #include "../game/AnmDrawSchedule.hpp"
@@ -33,14 +31,10 @@ public:
     ~SceneDisplay();
     bool initialize();
     void detach() noexcept;
-    // Evaluate the production draw schedule once per logical frame. Its ANM
-    // cache writes and framebuffer capture participate in rollback replay.
     bool prepare();
     bool present();
     bool draw();
-    // Present 前的宿主钩子：0x45bf10 的截取队列消费点（暂停黑幕）。
-    // 在 renderer.flush() 之后、present() 之前调用；返回 false = 帧错误。
     std::function<bool()> before_present;
 };
 
-}  // namespace th13::sdl
+}

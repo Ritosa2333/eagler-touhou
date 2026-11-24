@@ -28,8 +28,6 @@ TEST(delayed_bullet_waits_for_its_actual_anm_integer_before_acceleration) {
     StagePresentation presentation(manager, renderer, {4, 5, 6}, 0);
     StageSim sim;
     auto scripts = trivial_scripts(36);
-    // A real interpreter program, not a second delay counter. It releases the
-    // bullet on ANM time4. Before then state2 moves only half speed.
     scripts[35] = {sprite(0), {100, 0, {10000, 0}, 1}, {100, 4, {10000, 1}, 1}, wait(), stop()};
     auto bytes = synthetic_anm(1, scripts);
     CHECK(manager.load(5, bytes.data(), u32(bytes.size())));
@@ -105,7 +103,6 @@ TEST(bullet_animation_delay_consumes_global_fractional_rate) {
     bullet.animation_ready = false;
     CHECK(presentation.tick_bullet(bullet, true));
     sim.bullets.push_back(bullet);
-    //462450 samples at time0 twice during birth; both advances use .5.
     for (int frame = 0; frame < 6; ++frame) {
         sim.advance_bullets();
         CHECK(!sim.bullets[0].animation_ready);
@@ -171,12 +168,10 @@ TEST(same_type_transform_restarts_real_entrance_before_culling) {
     b.cull_grace = 0;
     CHECK(presentation.initialize_bullet(b, 2));
     CHECK(presentation.tick_bullet(b, true));
-    CHECK_EQ(b.sprite_width, 14.f);  // actual sprite228
+    CHECK_EQ(b.sprite_width, 14.f);
     b.ex[0].op = 0x200;
     b.ex[0].args[4] = 12;
     b.ex[0].args[5] = 4;
-    // 0040f030 rebinds even the identical type/color. Without bit15 it does
-    // not send label2: sprite325 (30x30) must precede this frame's cull query.
     sim.bullets.push_back(b);
     sim.advance_bullets();
     CHECK_EQ(sim.bullets.size(), size_t(1));
@@ -220,5 +215,5 @@ TEST(transform_bit15_selects_normal_sprite_in_the_real_tail_update) {
     CHECK_EQ(sim.bullets[0].sprite_width, 14.f);
     CHECK_EQ(sim.bullets[0].subtype, 4u);
 }
-}  // namespace
+}
 int main() { return th13test::run_all("enemy-bullet-delay"); }

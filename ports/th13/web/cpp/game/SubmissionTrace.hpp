@@ -6,11 +6,8 @@
 #include <tuple>
 
 namespace th13 {
-// Independent schema, NOT draw-v1. Read-only observer of production transactions.
-// Float values are bit-exact hex bytes (including NaNs); no lossy JSON numbers.
 class SubmissionTrace {
 public:
-    // Description copied from the real resolver, never an alternate GPU state.
     struct Surface {
         uint32_t width = 0, height = 0, format = 0, pitch = 0, renderScale = 1, version = 0;
         const void* data = nullptr;
@@ -19,7 +16,6 @@ public:
     struct Resource {
         Surface surface{};
         std::string identity;
-        // GPU-written pixels are not CPU pixels: do not hash stale backing data.
         bool gpu_content = false;
         uint64_t revision = 0;
         std::string content_hash;
@@ -29,8 +25,6 @@ public:
     SubmissionTrace(const SubmissionTrace&) = delete;
     SubmissionTrace& operator=(const SubmissionTrace&) = delete;
     ~SubmissionTrace() { close(); }
-    // CPU content cache is keyed by every surface descriptor plus the producer's
-    // content revision. Writers must invalidate before exposing mutable pixels.
     class ContentHash {
         std::string value_;
         std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, const void*, size_t, uint64_t> key_{};
@@ -115,8 +109,6 @@ public:
         if (out_) return fail("trace already open");
         return open_stream(path ? std::fopen(path, "wb") : nullptr);
     }
-    // Takes ownership, including on header-write failure. Allows platform I/O
-    // adapters and exercises real write/flush/close failures without mock flags.
     bool open_stream(FILE* stream) {
         if (out_) return fail("trace already open");
         error_.clear();
@@ -310,4 +302,4 @@ private:
         out += "]}";
     }
 };
-}  // namespace th13
+}

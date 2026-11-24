@@ -57,12 +57,11 @@ void check_hit(float ex, float ey, float ew, float eh, float sw, float sh, float
     target->position[0] = ex;
     target->position[1] = ey;
     target->vel.pos[0] = ex;
-    target->vel.pos[1] = ey;  // 0x419950：position := vel.pos+pos.pos，夹具坐标须写 vel 子位
+    target->vel.pos[1] = ey;
     target->hurtbox[0] = ew;
     target->hurtbox[1] = eh;
     target->life = 100;
-    target->tick_gate =
-        false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位）；本帧须干活，否则 0x419a90:275-308 的本体碰撞/伤害不执行
+    target->tick_gate = false;
     StageEnemy* enemy = target.get();
     battle.sim.enemies.push_back(std::move(target));
 
@@ -72,20 +71,18 @@ void check_hit(float ex, float ey, float ew, float eh, float sw, float sh, float
     shot.angle = angle;
     shot.damage = 15;
     shot.alive = true;
-    shot.speed = 0;  // 静态几何探针：显式停用默认 12 的每帧位移（0x4464d0）
+    shot.speed = 0;
     battle.shots.push_back(shot);
     GameInput idle;
     CHECK(battle.step(idle));
     CHECK_EQ(score.score, expected ? 1 : 0);
     CHECK_EQ(enemy->life, expected ? 85.0f : 100.0f);
     CHECK_EQ(battle.frame_damage_total, expected ? 15.0f : 0.0f);
-    // 原版 0x446c5a 在普通命中时写 shot+0x70=2，0x446c8d 清注册指针；
-    // 弹体并未在命中当帧失活，而是等 ANM 终止后由 0x446531 退休。
     CHECK_EQ(battle.shots.front().alive, true);
     CHECK_EQ(battle.shots.front().state, expected ? 2 : 1);
     if (expected) {
         CHECK_EQ(battle.shots.front().registration_slot, -1);
-        enemy->tick_gate = false;  // 已过出生空转帧；几何夹具没有 ECL 线程，仅观察伤害是否重复。
+        enemy->tick_gate = false;
         CHECK(battle.step(idle));
         CHECK_EQ(enemy->life, 85.0f);
         CHECK_EQ(battle.frame_damage_total, 0.0f);
@@ -97,7 +94,7 @@ void check_hit(float ex, float ey, float ew, float eh, float sw, float sh, float
 
 constexpr float kUp = -1.5707963705062866f;
 
-}  // namespace
+}
 
 TEST(vertical_shot_uses_local_width_along_world_y) {
     check_hit(25.5f, 3.25f, 24, 24, 48, 16, kUp, false);
@@ -133,22 +130,18 @@ TEST(enemy_invulnerability_expires_after_the_collision_pass) {
     StageBattle battle;
     provider.animations = &battle.sim.anim_list;
     CHECK(battle.load(provider, "geometry.ecl", 2, host, progress, player, score));
-    // 离开 root(0,0) 的重叠区：root 先于本敌机被遍历，会抢先消耗命中弹。
     auto* enemy = battle.sim.spawn_enemy("main", 0, 100, 100, nullptr, false);
     CHECK(enemy != nullptr);
     if (!enemy) return;
-    // 出生无敌 2（0x4183f0:44）被构造趟（:65→41a8a0，每 tick 递减）消耗 1：
-    // spawn 返回时可观察值为 1。经验依据：th13_01.rpy 全程 RNG 对齐要求
-    // 构造趟即扣（5641 GameOver 回归实证过相反安排）。
     CHECK_EQ(enemy->invulnerable, 1);
-    enemy->tick_gate = false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位），首步即干活
+    enemy->tick_gate = false;
     enemy->invulnerable = 1;
     PlayerShot shot;
     shot.alive = true;
     shot.damage = 15;
     shot.x = 0;
-    shot.y = 100;    // 静态探针：与被测敌机同位，避开 root
-    shot.speed = 0;  // 停用默认 12 的每帧位移（0x4464d0）
+    shot.y = 100;
+    shot.speed = 0;
     battle.shots.push_back(shot);
     GameInput idle;
     CHECK(battle.step(idle));

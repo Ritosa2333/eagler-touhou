@@ -1,22 +1,3 @@
-// FileStore: v7 little-endian layout; accepts v1 (36), v2 (52), v3 (64 bytes),
-// both prior v4 spell-record layouts, v5 and v6.
-// "TH13SAVE" | u32 version | u32 cleared_mask | i32 bgm | i32 effect | u32[3]
-// v2 appends 16 stage-played bytes (character*4+rank, bits0..5).
-// v3 appends 5*i16 pad bindings and 2 padding bytes.
-// v4 preserves offsets 0..63, separates Extra at +64,
-// then 127 records of name[128] + five columns of four i32 counters.
-// v5 keeps the complete v4 prefix and appends four ordinary character columns
-// (six original ranking tables, play/time/clear counters) and an immutable full
-// archive of the imported v1-v4 file. Missing old ordinary history is explicit.
-// v6 retains that prefix, appends END1, history-complete(u32), 13 ending bytes,
-// then an immutable full v5 import (u32 length and a fixed v5-sized archive).
-// Old saves have unknown ending history; no progress bits manufacture it.
-// v7 retains the v6 bytes and appends NAM1 + the 9-byte last-name buffer
-// (score ST+0x0C, 0x449a55) + 3 padding bytes. Older saves keep the retail
-// default of eight spaces.
-// 读档：magic/版本/尺寸不符 = 默认值（原版坏 scoreth13.dat 语义，不报错）。
-// 写档：任何 I/O 失败 = false + error。web 走 localStorage（EM_JS try/catch），
-// native/WASI 走真实文件；两侧同一序列化，互不伪造成功。
 #include "FileStore.hpp"
 #include "../game/SpellCatalog.hpp"
 #include "../game/TitlePlayerDataMenu.hpp"
@@ -31,9 +12,6 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-// localStorage 持久化（宿主无文件系统持久卷）：base64 文本。任何异常/限额
-// 都返回 false —— 失败可见，不吞。编码按 32 KiB 片经 String.fromCharCode
-// 批量转换：保存点落在关终门帧与关首激活帧上，编码成本直接计入这两帧。
 // clang-format off
 EM_JS(bool, th13_storage_write_js, (const char* key, const char* data, int length), {
     try {
@@ -59,8 +37,6 @@ EM_JS(int, th13_storage_read_js, (const char* key, char* out, int capacity), {
         for (let i = 0; i < binary.length; ++i) bytes[i] = binary.charCodeAt(i);
         return binary.length;
     } catch (e) {
-        // 读侧异常按缺档处理（原版读不到 score.dat = 默认值照常开局）；
-        // 持久化失败在写侧（save）如实暴露，不在此阻断启动。
         return 0;
     }
 });
@@ -69,7 +45,6 @@ static bool th13_save_write_js(const char* data, int length) {
     return th13_storage_write_js("th13.save", data, length);
 }
 static int th13_save_read_js(char* out, int capacity) { return th13_storage_read_js("th13.save", out, capacity); }
-// scoreth13.dat 原版格式通道（base64，同上语义）。
 static bool th13_scoredat_write_js(const char* data, int length) {
     return th13_storage_write_js("th13.scoredat", data, length);
 }
@@ -89,7 +64,6 @@ constexpr size_t kSpellNameBytes = 128;
 constexpr size_t kSpellRecordBytes = kSpellNameBytes + kSaveSpellColumns * 16;
 constexpr size_t kSpellRecordsOffset = 72;
 constexpr size_t kV4BaseBytes = kSpellRecordsOffset + kSaveSpellSlots * kSpellRecordBytes;
-// Keep the initial v4 layout readable; append provenance and best scores.
 constexpr size_t kLegacyArchiveOffset = kV4BaseBytes + 8;
 constexpr size_t kBestScoresOffset = kLegacyArchiveOffset + 64;
 constexpr size_t kV4SaveBytes = kBestScoresOffset + kSaveSpellSlots * kSaveSpellColumns * 4;
@@ -104,9 +78,6 @@ constexpr size_t kV6SaveBytes = kPreEndingArchiveOffset + kV5SaveBytes;
 constexpr size_t kLastNameOffset = kV6SaveBytes + 4;
 constexpr size_t kSaveBytes = kV6SaveBytes + 16;
 constexpr char kBlankName[] = "        ";
-
-// v1.00c data at VA 004bbd30, consumed by 00412970/00453b30/00456b50.
-// Slot rank is intrinsic to the spell; Extra=4 and Overdrive=5.
 
 void put32(u8* at, u32 value) {
     for (size_t i = 0; i < 4; ++i)
@@ -124,10 +95,9 @@ bool spell_position_valid(i32 character, i32 slot) {
 void increment_counter(i32& counter) {
     if (counter < 99999) ++counter;
 }
-}  // namespace
+}
 
 SavedOrdinaryRecords::SavedOrdinaryRecords() {
-    // 00449760: original defaults are explicit score rows, not fake play data.
     for (auto& rank : ranking)
         for (size_t i = 0; i < rank.size(); ++i) {
             rank[i].score = 100000 - i32(i) * 10000;
@@ -161,7 +131,7 @@ bool FileStore::record_run_start(i32 character) {
 bool FileStore::record_play_frame(i32 character) {
     if (character < 0 || character >= kSaveCharacters) return false;
     auto& frames = ordinary_records[size_t(character)].total_frames;
-    if (frames < 215999999) ++frames;  // 0042c550: active, unpaused, non-Replay tick
+    if (frames < 215999999) ++frames;
     return true;
 }
 
@@ -187,7 +157,7 @@ i32 FileStore::record_high_score(i32 character, i32 difficulty, const TitlePlaye
         for (size_t next = ranking.size() - 1; next > i; --next)
             ranking[next] = ranking[next - 1];
         ranking[i] = score;
-        ranking[i].name = score.name.substr(0, 8);  // original 8 name bytes + NUL
+        ranking[i].name = score.name.substr(0, 8);
         ranking[i].available = true;
         return i32(i);
     }
@@ -215,7 +185,6 @@ bool FileStore::record_spell_capture(i32 character, i32 slot, bool spell_practic
 
 bool FileStore::record_spell_practice_score(i32 character, i32 slot, i32 internal_score) {
     if (!spell_position_valid(character, slot) || internal_score < 0) return false;
-    // DAT_004be7c0 is stored in tens; 0042cd40 rounds it before record+0x98.
     const i32 score = internal_score / 10 * 10;
     auto& record = spell_records[size_t(slot)];
     auto& personal = record.columns[size_t(character)].practice_best_score;
@@ -260,8 +229,6 @@ bool FileStore::player_data_record(i32 difficulty, i32 character, i32 ordinal, T
         out.practice_best_score = counters.practice_best_score;
         out.recorded = all.attempts[0] != 0;
         out.character_flagged = counters.captures[0] != 0;
-        // Preserve the legacy DTO fields for existing callers. +0x16578 is
-        // ordinary attempts, never a score; production rendering uses named counters.
         out.score = all.attempts[0];
         out.number_a = all.captures[0];
         out.number_b = all.captures[1];
@@ -312,17 +279,12 @@ bool FileStore::initialize() {
     migrated_save_bytes_.clear();
     pre_ending_save_bytes_.clear();
     score_dat_loaded_ = false;
-    // ST LCG boot 种子：原版 boot 取 (u16)timeGetTime()（0x43a040），此处取
-    // steady 时钟毫秒 u16（同为无符号截断的易变源，语义对照）。表生成一次后，
-    // 文件 ST 块校验通过则整体覆盖回文件值——首存后随存档持久（0x449b00→0x449cd0）。
     const auto now_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
             .count();
     score_dat_seed = u16(u64(now_ms) & 0xFFFF);
     score_dat.set_defaults(score_dat_seed);
     if (!load_save()) return false;
-    // scoreth13.dat 通道仅 web 激活。应用档有效时导入只看时间戳是否更新；
-    // 未采纳的 dat 不进入待写镜像，装载期也不落盘。
     std::vector<u8> dat;
     ScoreDat candidate;
     if (read_score_dat(dat) && candidate.parse_file(dat.data(), dat.size()) &&
@@ -335,11 +297,10 @@ bool FileStore::initialize() {
 }
 
 bool FileStore::load_save() {
-    // One extra byte detects overlong native saves instead of accepting a prefix.
     std::vector<u8> buffer(kSaveBytes + 1);
 #ifdef __EMSCRIPTEN__
     const int length = th13_save_read_js(reinterpret_cast<char*>(buffer.data()), int(buffer.size()));
-    if (length == 0) return true;  // 缺档/读异常 = 新档默认值（原版语义）
+    if (length == 0) return true;
     if (size_t(length) != kLegacySaveBytes && size_t(length) != kV2SaveBytes && size_t(length) != kV3SaveBytes &&
         size_t(length) != kV4BaseBytes && size_t(length) != kV4SaveBytes && size_t(length) != kV5SaveBytes &&
         size_t(length) != kV6SaveBytes && size_t(length) != kSaveBytes)
@@ -348,7 +309,7 @@ bool FileStore::load_save() {
     const char* override_path = std::getenv("TH13_SAVE_PATH");
     const std::string path = override_path ? override_path : "th13-save.bin";
     std::FILE* file = std::fopen(path.c_str(), "rb");
-    if (!file) return true;  // 缺档 = 新档默认值（原版语义，非错误）
+    if (!file) return true;
     const size_t length = std::fread(buffer.data(), 1, buffer.size(), file);
     const bool failed = std::ferror(file) != 0;
     std::fclose(file);
@@ -367,7 +328,7 @@ bool FileStore::load_save() {
           (version == 4 && (size_t(length) == kV4BaseBytes || size_t(length) == kV4SaveBytes)) ||
           (version == 5 && size_t(length) == kV5SaveBytes) || (version == 6 && size_t(length) == kV6SaveBytes) ||
           (version == kSaveVersion && size_t(length) == kSaveBytes)))
-        return true;  // 坏档 = 默认值（原版语义）
+        return true;
     if (version >= 6 &&
         (std::memcmp(buffer.data() + kV5SaveBytes, "END1", 4) != 0 || get32(buffer.data() + kV5SaveBytes + 4) > 1 ||
          (get32(buffer.data() + kPreEndingSizeOffset) != 0 &&
@@ -431,7 +392,7 @@ bool FileStore::load_save() {
     cleared_mask = get32(buffer.data() + 12);
     bgm_volume = i32(get32(buffer.data() + 16));
     effect_volume = i32(get32(buffer.data() + 20));
-    heard_mask = get32(buffer.data() + 24);  // reserved[0]：31 曲位
+    heard_mask = get32(buffer.data() + 24);
     if (version >= 2) {
         for (size_t i = 0; i < practice_played.size(); ++i)
             practice_played[i] = buffer[kLegacySaveBytes + i] & 0x3fu;
@@ -493,7 +454,6 @@ bool FileStore::load_save() {
 }
 
 void FileStore::remember_name(const std::string& name) {
-    // ascii.anm font0 only covers 0x20..0x7e; imported score files may hold any byte.
     last_name = name.substr(0, 8);
     for (char& c : last_name)
         if (c < 0x20 || c > 0x7e) c = ' ';
@@ -503,8 +463,6 @@ void FileStore::remember_name(const std::string& name) {
 bool FileStore::save() { return write_save(false); }
 
 bool FileStore::save_score() {
-    // 原版保存点（0x42bfa0/0x4399e0 → 0x449e50）：应用档与原版格式镜像同一
-    // 提交点。任一激活通道写失败都如实返回 false。
     if (!write_save(true)) return false;
     sync_score_face_to_dat();
     return write_score_dat();
@@ -530,7 +488,7 @@ bool FileStore::write_save(bool commit_ending) {
     put32(buffer.data() + 12, cleared_mask);
     put32(buffer.data() + 16, u32(bgm_volume));
     put32(buffer.data() + 20, u32(effect_volume));
-    put32(buffer.data() + 24, heard_mask);  // reserved[0]（上限 31 曲）
+    put32(buffer.data() + 24, heard_mask);
     for (size_t i = 0; i < practice_played.size(); ++i)
         buffer[kLegacySaveBytes + i] = practice_played[i] & 0x3fu;
     put32(buffer.data() + kV3SaveBytes, extra_unlocked_mask & 0xfu);
@@ -595,9 +553,6 @@ bool FileStore::write_save(bool commit_ending) {
     std::memcpy(buffer.data() + kV6SaveBytes, "NAM1", 4);
     std::memcpy(buffer.data() + kLastNameOffset, last_name.data(), std::min(last_name.size(), size_t(8)));
 #ifdef __EMSCRIPTEN__
-    // 存储层写入只在序列化字节变化时发生：原版每个保存点（关终门、关首、
-    // 续关、结局）都重写整档，端口保留这些保存点，但同一份字节不重复提交给
-    // localStorage——关终/关首帧因此只承担序列化，不承担 I/O。
     if (buffer != persisted_save_bytes_) {
         if (!th13_save_write_js(reinterpret_cast<const char*>(buffer.data()), int(buffer.size()))) {
             error = "Save storage write failed";
@@ -828,4 +783,4 @@ void FileStore::overlay_score_face_from_dat() {
                               strnlen(reinterpret_cast<const char*>(name.data()), 8)));
 }
 
-}  // namespace th13::sdl
+}

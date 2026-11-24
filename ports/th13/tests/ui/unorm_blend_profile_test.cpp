@@ -16,14 +16,11 @@ int mul_unorm8(int a, int b) {
     return (product + 128 + (product >> 8)) >> 8;
 }
 
-// Exactly the arithmetic used by UnormBlendProfile.hpp's fragment snippet.
 int shader_mul_unorm8(int a, int b) {
     const float product = float(a * b);
     return int(std::floor((product + 128.0f + std::floor(product / 256.0f)) / 256.0f));
 }
 
-// The unmodified PR-head GLES path on SwiftShader: one rounding of the
-// complete normalized sum, with no source-term preweighting.
 int single_round(int source, int destination, int alpha) {
     const int total = source * alpha + destination * (255 - alpha);
     return std::min(255, (total + 127) / 255);
@@ -38,7 +35,7 @@ PipelineState source_alpha_pipeline() {
     return pipeline;
 }
 
-}  // namespace
+}
 
 TEST(unorm_mul8_shader_formula_matches_integer_reference) {
     bool matches = true;
@@ -58,9 +55,6 @@ TEST(unorm_source_and_alpha_quantization_are_exact) {
 }
 
 TEST(unorm_destination_rounding_matches_per_term_sum) {
-    // The shader preweights and rounds the source RGB term to an integer q.
-    // GL's final UNORM rounding then sees q/255 + dst*(255-a)/255, whose
-    // fractional part is k/255 and never a tie. Exhaustive integer check.
     bool matches = true;
     for (int q = 0; q < 256 && matches; ++q)
         for (int d = 0; d < 256 && matches; ++d)
@@ -90,8 +84,6 @@ TEST(unorm_blend_profile_gates_target_format) {
 TEST(unorm_blend_profile_safe_separate_alpha) {
     PipelineState pipeline = source_alpha_pipeline();
     pipeline.separateAlphaBlend = true;
-    // The default separate-alpha factors are One/Zero; no alpha factor reads
-    // the preweighted source RGB, so the RGB lowering remains safe.
     CHECK(separate_rgb_terms(UnormBlendProfile::SeparateRgbTerms, pipeline, PixelFormat::Bgra8));
     pipeline.sourceAlphaBlend = BlendFactor::SourceAlpha;
     pipeline.destinationAlphaBlend = BlendFactor::InverseSourceAlpha;
@@ -150,9 +142,6 @@ TEST(unorm_blend_profile_only_additive_source_alpha) {
 }
 
 TEST(unorm_known_color01_case_matches_per_term) {
-    // Source RGB (15,1,15), destination RGB (2,2,5), 256 source alphas.
-    // Expected values are the synthetic D3D9 specialAlphaSweep table in
-    // tests/render/color01_expected.hpp, not a self-comparison.
     CHECK_EQ(expected::kBlendRgb[187][0], 12);
     CHECK_EQ(expected::kBlendRgb[187][1], 2);
     CHECK_EQ(expected::kBlendRgb[187][2], 12);

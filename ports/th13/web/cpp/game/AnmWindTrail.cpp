@@ -6,7 +6,7 @@ namespace th13 {
 namespace {
 Vec3 add(Vec3 a, Vec3 b) { return {float(a.x + b.x), float(a.y + b.y), float(a.z + b.z)}; }
 Vec3 sub(Vec3 a, Vec3 b) { return {float(a.x - b.x), float(a.y - b.y), float(a.z - b.z)}; }
-}  // namespace
+}
 void AnmWindTrail::initialize(GameRandom& random, const AnmEnvironment& env) {
     *this = {};
     age.set(1);
@@ -21,8 +21,6 @@ void AnmWindTrail::initialize(GameRandom& random, const AnmEnvironment& env) {
     tangents.fill({0, 1, 0});
     for (auto& vertex : vertices)
         vertex.color = 0x80ffffff;
-    // Keep draw order: three tangents, endpoint x/y, endpoint y jitter,
-    // optional difficulty-dependent z, then three16-bit color draws.
     const float tx = random.signed_unit(), ty = random.unit(), tz = random.signed_unit();
     start_tangent = {float(double(tx) * 10), float(double(ty) * 10), float(double(tz) * 10)};
     float ex = float(double(random.unit()) * 800);
@@ -30,8 +28,6 @@ void AnmWindTrail::initialize(GameRandom& random, const AnmEnvironment& env) {
     end_tangent = {ex, float(double(random.unit()) * 1000), float(double(tz) * 10)};
     const float ey = random.unit();
     float z = start.z;
-    // 0x4019d0 cmp [0x4be824],1：读 chapter（ins_524），不是 rank。chapter
-    // 未绑定的单测夹具回落到 stage_difficulty。
     const bool extra_depth = env.chapter ? (*env.chapter > 0) : (env.stage_difficulty > 0);
     if (extra_depth) z = float(float(double(random.unit()) * 200) + 800.f + z);
     end = {float(double(start.x) * .25), float(float(double(ey) * 1000) + 2000.f + start.y), z};
@@ -55,11 +51,6 @@ bool AnmWindTrail::update(const AnmEnvironment& env, u32 alpha, float rate) {
         }
     }
     if (!endpoint) {
-        // Retail402420 mode8 evaluates again with duration0 after its
-        // endpoint tick. Preserve its nonfinite head until the alpha
-        // history retires the effect; do not replace it with a held tip.
-        // 402420 mode8: float weights, extended polynomial accumulation
-        // for weights, then f32 product/add stores (4025a7..40266e).
         const float t = interpolation.fractional / float(duration);
         const double a = double(t) - 1.0;
         const float h00 = float((double(t) * 2 + 1) * a * a);
@@ -97,4 +88,4 @@ bool AnmWindTrail::update(const AnmEnvironment& env, u32 alpha, float rate) {
     age.tick(&rate);
     return true;
 }
-}  // namespace th13
+}
