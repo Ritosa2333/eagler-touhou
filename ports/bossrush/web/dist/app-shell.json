@@ -1,6 +1,6 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-932fb1190956f37d275b47befeaa990afa9852cc44686c1d6ae51bd78bb8e1c0",
+  "version": "sha256-d9ef363477ec4de27e240ae28c6a0075dd579add0650a7114bc757ad201b0d7c",
   "files": [
     {
       "p": "bro.html",
@@ -116,6 +116,11 @@
       "p": "src/save_files.mjs",
       "n": 5603,
       "h": "1368c421c3887255df068de6b6aedb9f159b0b860ecbcad3a60195e956dbbcde"
+    },
+    {
+      "p": "src/spectator_wire.mjs",
+      "n": 6957,
+      "h": "684b6697c57c89a745592b6f4d5189f63d03ab98876443a05ba794750ef9d871"
     },
     {
       "p": "src/storage.mjs",
@@ -334,8 +339,8 @@
     },
     {
       "p": "test/browser/spell_player_mp_e2e.mjs",
-      "n": 7008,
-      "h": "8f3516fbf2ef51e9521c92bba6a67d1726077725ac491657922507129993719d"
+      "n": 7125,
+      "h": "716e6219c7e6bd4db07b7f1d96b184a1f2312b9c589613b284dff0e395aa3d41"
     },
     {
       "p": "test/browser/storage_bridge.html",
@@ -356,11 +361,6 @@
       "p": "test/browser/th11_card73_stall_diag.mjs",
       "n": 1847,
       "h": "ec25fc878292d32e8df7f6faed5cbbcd592a7e0d7b790281f72b011b6814663e"
-    },
-    {
-      "p": "test/browser/tmp_port_dist.mjs",
-      "n": 2003,
-      "h": "093ddeb267a5747efeb239778d6f52bf984298ebff573f42fd1bcfc325e9d2f4"
     }
   ]
 }
