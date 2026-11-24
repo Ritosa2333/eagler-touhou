@@ -23,6 +23,7 @@ struct Midboss1Core {
         std::function<void(unsigned)> score,sound;
         std::function<void(const Spark&)> spark;
         std::function<void(int,int,unsigned)> tile;
+        bool lock_timeout=false;
     };
     void begin_frame(unsigned back){
         if(back>1)throw std::runtime_error("Invalid midboss page");
@@ -53,7 +54,7 @@ struct Midboss1Core {
             if(enemy_s16(damage_taken)>300&&vram_y<304){dying=true;if(h.sound)h.sound(2);if(h.score)h.score(10000);score_awarded+=10000;return;}
             if(h.sound)h.sound(4);
             hit_flash=true;visible=true;
-        }else if(progress>=184&&top[back]<=304){dying=true;if(h.sound)h.sound(2);}
+        }else if(!h.lock_timeout&&progress>=184&&top[back]<=304){dying=true;if(h.sound)h.sound(2);}
         else visible=true;
     }
 };

@@ -66,8 +66,8 @@ struct Midboss4Core {
             case 3:if(phase_frame%(16-2*rank)==0&&h.laser)h.laser(x+28+direction*16,80,6,111,16);break;
             case 4:if(phase_frame%16==0){sound(7);for(unsigned i=0;i<4;++i)bullet(muzzle_y,(rng()&63u)+32,0x20,70);}break;
             }
-            if(cycles==12){if(x<=0||x>=384){retire();return;}}
-            else if(phase_frame>=114){phase_frame=2;pattern=148;direction=-direction;attack=rng()%5;++cycles;}
+            if(cycles==12&&!h.lock_timeout){if(x<=0||x>=384){retire();return;}}
+            else if(phase_frame>=114){phase_frame=2;pattern=148;direction=-direction;attack=rng()%5;if(cycles<12)++cycles;}
         }
         const auto d=h.damage?h.damage(x+8,y,48,48):0;
         if(d){

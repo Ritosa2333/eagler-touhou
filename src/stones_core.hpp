@@ -125,7 +125,7 @@ public:
         }
         // Remove becomes Removed at the next background step, before counting.
         if(removed==stones.size()){phase=Phase::Complete;target_x=target_y=-1;return;}
-        const auto timeout_pair=[&](unsigned first){if(elapsed>1300)for(unsigned i=first;i<first+2;++i)if(stones[i].flag==Flag::Active)stones[i].flag=Flag::Dying;};
+        const auto timeout_pair=[&](unsigned first){if(!h.lock_timeout&&elapsed>1300)for(unsigned i=first;i<first+2;++i)if(stones[i].flag==Flag::Active)stones[i].flag=Flag::Dying;};
         const auto reset_phase=[&](Phase next){phase=next;phase_frame=attack_frame=0;};
         switch(phase){
         case Phase::Opening:
@@ -283,7 +283,7 @@ public:
                 if(phase_frame>=120){phase_frame=attack_frame=0;north_attack=1;}
             }
             // ASM 9222-9234 tests timeout only after an attack resets the phase timer.
-            if(phase_frame==0&&elapsed>2000){stones[4].flag=Flag::Dying;phase=Phase::NorthDeath;}
+            if(!h.lock_timeout&&phase_frame==0&&elapsed>2000){stones[4].flag=Flag::Dying;phase=Phase::NorthDeath;}
             break;
         case Phase::NorthDeath:case Phase::Complete:break;
         }

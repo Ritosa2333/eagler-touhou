@@ -141,7 +141,7 @@ struct MarisaCore {
             shielded_selections=exposed_selections=0;pending_attack=0;
             ++rounds;
             if(rounds>=2)body_damage_enabled=true;
-            if(rounds>=7)defeated=true;
+            if(!h.lock_timeout&&rounds>=7)defeated=true;
         }else{
             ++exposed_selections;pending_attack=-1-int(random_byte(h)%3);
         }

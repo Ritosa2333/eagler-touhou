@@ -72,11 +72,62 @@ std::unique_ptr<soew::EncounterScene> build(const std::filesystem::path &root,so
     }
     return scene;
 }
+void test_assists(const std::filesystem::path &root){
+    using namespace soew;
+    using Tool=PracticeTool;
+    PracticeAssist ui;
+    check(PracticeAssist::row_at(39,24)==-1&&PracticeAssist::row_at(40,24)==0);
+    check(PracticeAssist::row_at(247,185)==8&&PracticeAssist::row_at(248,185)==-1);
+    ui.toggle_row(8);check(ui.info&&ui.tools==0);
+    for(int i=0;i<PracticeAssist::tool_rows;++i)ui.toggle_row(i);
+    check(ui.tools==255);for(int i=0;i<PracticeAssist::tool_rows;++i)check(ui.active_row(i));
+
+    PracticeSpec spec;spec.stage=0;spec.section=PracticeSection::Boss;spec.power=52;
+    spec.lives=0;spec.bombs=0;spec.dynamic_rank=3;
+    const auto scenario=[&]{return build(root,spec,256);};
+    {
+        auto s=scenario();s->practice_assist.toggle(Tool::Invincible);s->life.register_hit();
+        s->tick(0);check(!s->life.miss_active&&s->life.invincibility&&s->life.stage_misses==0);
+    }
+    {
+        auto s=scenario();s->practice_assist.toggle(Tool::Invincible);s->practice_mode=false;
+        s->life.register_hit();s->tick(0);check(s->life.miss_active&&s->life.stage_misses==1);
+    }
+    {
+        auto s=scenario();s->practice_assist.toggle(Tool::Lives);s->practice_assist.toggle(Tool::Power);s->practice_assist.toggle(Tool::Rank);
+        s->life.register_hit();for(int i=0;i<68;++i)s->tick(0);
+        check(!s->life.game_over&&!s->life.miss_active&&s->life.stage_misses==1&&s->life.lives==0);
+        check(s->life.power==52&&s->pickups.power==52&&s->life.playperf==3);
+        s->rika_stage_frame=1499;s->tick(0);check(s->life.playperf==3);
+        s->practice_assist.toggle(Tool::Rank);s->rika_stage_frame=1499;s->tick(0);check(s->life.playperf==4);
+    }
+    {
+        auto s=scenario();s->practice_assist.toggle(Tool::Bombs);s->practice_assist.toggle(Tool::EnemyInvincible);
+        s->tick(Bomb);check(s->bomb.active&&s->life.bombs==0&&s->bomb.stage_used==1&&s->rika.damage_taken==0);
+        s->practice_assist.toggle(Tool::EnemyInvincible);
+        for(int i=0;i<4;++i)s->tick(0);
+        check(s->rika.damage_taken>0);
+    }
+    {
+        auto s=scenario();s->practice_assist.toggle(Tool::AutoBomb);s->life.bombs=1;s->life.register_hit();
+        s->tick(0);check(s->bomb.active&&s->life.bombs==0&&s->bomb.stage_used==1&&!s->life.miss_active);
+        auto empty=scenario();empty->practice_assist.toggle(Tool::AutoBomb);empty->life.register_hit();
+        empty->tick(0);check(!empty->bomb.active&&empty->life.miss_active);
+    }
+    {
+        spec.stage=1;spec.section=PracticeSection::Midboss;spec.dialogue=PracticeDialogue::Show;
+        auto s=scenario();s->midboss2.active=true;s->midboss2.phase_frame=1600;
+        s->practice_assist.toggle(Tool::Timeout);s->tick(0);
+        check(!s->midboss2.dying&&s->midboss2.phase_frame==1601);
+        s->practice_assist.toggle(Tool::Timeout);s->tick(0);check(s->midboss2.dying);
+    }
+}
 }
 int main(int argc,char **argv){
     try {
         if(argc!=2)throw std::runtime_error("Usage: test_practice_session <assets>");
         const std::filesystem::path root=argv[1];
+        test_assists(root);
         {
             soew::PracticeSpec spec;spec.stage=4;spec.section=soew::PracticeSection::Boss;
             auto normal=build(root,spec,256);auto reduced=build(root,spec,256,true);

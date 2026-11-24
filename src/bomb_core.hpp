@@ -24,10 +24,10 @@ struct BombCore {
     std::vector<unsigned> sounds;
     struct Spark {int x,y,speed,count;bool sprite;};
     std::vector<Spark> spark_requests;
-    bool start(std::uint8_t &stock,unsigned type){
+    bool start(std::uint8_t &stock,unsigned type,bool infinite=false){
         if(type>2)throw std::runtime_error("Invalid bomb type");
-        if(active||!stock)return false;
-        active=true;shot_type=type;--stock;++stage_used;++total_used;
+        if(active||(!stock&&!infinite))return false;
+        active=true;shot_type=type;if(!infinite)--stock;++stage_used;++total_used;
         frame=0;circle_frame=0;circle_done=false;clear_requested=true;finished=false;
         sounds.push_back(9);return true;
     }

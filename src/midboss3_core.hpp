@@ -24,7 +24,7 @@ struct Midboss3Core {
         pattern=144+(scroll_line&3);
         const auto hit=[&](Actor &a){return h.damage?h.damage(a.left[back]+12,a.top[back],40,30):0u;};
         if(enemy_s16(phase_frame)<128){for(auto &a:actor){a.top[back]=enemy_s16(unsigned(a.top[back]+int(scroll_step)));const auto d=hit(a);if(d){a.damage=std::uint16_t(a.damage+d);a.hit_flash=true;if(h.sound)h.sound(4);}a.visible=true;}return;}
-        if(phase_frame==128)++cycles;
+        if(phase_frame==128&&(!h.lock_timeout||cycles<4))++cycles;
         for(unsigned i=0;i<2;++i){auto &a=actor[i];
             if(a.flag==Flag::Dying){if(h.spark)h.spark({a.left[back]+32,a.top[back]+16,60,1,false});a.death_pattern=10+unsigned(enemy_s16(a.death_frame)/6);++a.death_frame;if(enemy_s16(a.death_frame)>=48){if(h.spark)h.spark({a.left[back]+32,a.top[back]+16,128,32,true});a.death_frame=0;a.flag=Flag::Removed;target_x=target_y=-1;}else a.visible=true;continue;}
             if(a.flag!=Flag::Alive)continue;
@@ -37,7 +37,7 @@ struct Midboss3Core {
             else if(phase<576){a.top[back]=enemy_s16(unsigned(a.top[back]-2));if(a.top[back]<0)a.top[back]+=400;if(phase%60==0)emit(0,0x19,40);}
             else phase_frame=127;
             const auto d=hit(a);if(d){a.damage=std::uint16_t(a.damage+d);if(enemy_s16(a.damage)>280){if(h.sound)h.sound(2);a.flag=Flag::Dying;if(h.score)h.score(20000);}else{a.visible=true;a.hit_flash=true;if(h.sound)h.sound(4);}}else a.visible=true;
-            if(cycles>=4)a.flag=Flag::Dying;
+            if(!h.lock_timeout&&cycles>=4)a.flag=Flag::Dying;
         }
     }
 };

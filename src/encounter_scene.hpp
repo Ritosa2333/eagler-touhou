@@ -5,6 +5,7 @@
 #include "player_shots.hpp"
 #include "enemy_damage.hpp"
 #include "player_life.hpp"
+#include "practice_assist.hpp"
 #include "spark_core.hpp"
 #include "item_core.hpp"
 #include "score_core.hpp"
@@ -57,6 +58,7 @@ struct EncounterScene:StageScene {
     }
     bool combat_enabled=false,survival_enabled=false;
     bool preparation_only=false,practice_mode=false,practice_completed=false,practice_show_dialogue=false;
+    PracticeAssist practice_assist;
     bool preboss_ready=false;
     PlayerLife life;
     bool effects_enabled=false;
@@ -495,6 +497,25 @@ public:
         update_sound();
         const std::uint32_t logic_frame=rika_enabled?rika_stage_frame:static_cast<std::uint32_t>(ticks);
         const auto page=runtime.page;
+        const auto assist=[&](PracticeTool tool){return practice_mode&&!preparation_only&&practice_assist.enabled(tool);};
+        const bool infinite_bombs=assist(PracticeTool::Bombs),enemy_invincible=assist(PracticeTool::EnemyInvincible),lock_timeout=assist(PracticeTool::Timeout);
+        const auto start_bomb=[&]{
+            if(!bomb_enabled||!bomb.start(life.bombs,unsigned(player.shot),infinite_bombs))return false;
+            life.bomb_invincible=true;return true;
+        };
+        const auto handle_practice_hit=[&]{
+            if(!life.hit||life.miss_active||(!assist(PracticeTool::Invincible)&&!assist(PracticeTool::AutoBomb)))return;
+            life.negate();if(!life.hit)return;
+            if(assist(PracticeTool::Invincible)){request_sound(2);life.invincibility=30;life.hit=false;}
+            else if(start_bomb())life.hit=false;
+        };
+        const auto damage_query=[&](int x,int y,int w,int h,std::uint32_t frame,unsigned mask=1){
+            auto value=shots.damage(page,x,y,w,h,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page);});
+            if(enemy_invincible)return 0u;
+            if(bomb_enabled)value+=bomb.damage(frame,mask);
+            if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(value));
+            return value;
+        };
         auto *display=hitbox_mode_!=HitboxMode::Off&&hitbox_battle_visible()?&collision_frame_:nullptr;
         if(display)display->begin(hitbox_mode_,logic_frame,page);
         rendered_page=page;bullet_core.begin_frame(page);
@@ -531,7 +552,7 @@ public:
         // Original invalidation carries pages, but does NOT refresh cached
         // player_topleft while a miss blocks input. Preserve that phase lag.
         bool accepts_input=true;
-        if(survival_enabled){life.begin_frame(page);accepts_input=life.input_allowed();if(accepts_input){player.x=life.positions[page].x;player.y=life.positions[page].y;}}
+        if(survival_enabled){life.begin_frame(page);handle_practice_hit();accepts_input=life.input_allowed();if(accepts_input){player.x=life.positions[page].x;player.y=life.positions[page].y;}}
         player.back_page=page;
         if(accepts_input){player.tick(input);if(survival_enabled)life.moved(page,player.x,player.y);}
         if(survival_enabled){player.x=life.current.x;player.y=life.current.y;}
@@ -542,7 +563,7 @@ public:
             shots.target_x=-1;shots.target_y=-1;
             shots.random=nullptr;
             if(bomb_enabled){
-                if(accepts_input&&(input&Bomb)&&bomb.start(life.bombs,static_cast<unsigned>(player.shot)))life.bomb_invincible=true;
+                if(accepts_input&&(input&Bomb))start_bomb();
                 if(bomb.clear_requested){bullet_core.clear(page);bomb.clear_requested=false;}
                 bombing_for_spawn=bomb.active;
                 bomb.update(runtime.random);
@@ -558,9 +579,10 @@ public:
                     const auto bounds=CollisionBounds::open(left-16,top-16,left+16,top+16);
                     const CollisionPoint point{life.positions[page^1].x,player.y};
                     if(display)display->hazard(CollisionSource::Road,bounds,CollisionSample::FrontXCurrentY,point);
-                    if(bounds.contains(point)){enemy.word(0xa,0);enemy.raw[0x10]=1;life.register_hit();}
+                    if(bounds.contains(point)){if(!enemy_invincible){enemy.word(0xa,0);enemy.raw[0x10]=1;}life.register_hit();}
                 }
-                auto dealt=shots.damage(page,left,top,32,32,[&](const auto &s){if(effects_enabled)sparks.add(s.left,s.top,int(s.speed),int(s.count),s.as_sprite,page);});if(bomb_enabled)dealt+=bomb.damage(static_cast<std::uint32_t>(ticks));if(effects_enabled)score_core.add_hit_lowword(static_cast<std::uint16_t>(dealt));if(auto killed=damage.apply(enemy,type,dealt,page)){request_sound(3);kills_recorded.push_back(*killed);if(effects_enabled){if(killed->drop>1)items.add(left+12,top,killed->drop-2,life.lives);else items.semirandom(left+12,top,runtime.random,life.lives);score_core.add(killed->score);}if(rank==3){EnemyBulletRequest revenge;const auto &r=type.raw;revenge.left=enemy_s16(unsigned(left)+(unsigned(r[4])|(unsigned(r[5])<<8)));revenge.top=enemy_s16(unsigned(top)+(unsigned(r[6])|(unsigned(r[7])<<8)));revenge.group=0x19;revenge.speed=60;bullet_core.add(revenge,page,player.x,player.y,runtime.random,bombing_for_spawn);}}else if(dealt&&!enemy.raw[0x22])request_sound(4);return dealt>0&&hp!=65534;};
+                auto dealt=damage_query(left,top,32,32,std::uint32_t(ticks));if(enemy_invincible)return false;
+                if(auto killed=damage.apply(enemy,type,dealt,page)){request_sound(3);kills_recorded.push_back(*killed);if(effects_enabled){if(killed->drop>1)items.add(left+12,top,killed->drop-2,life.lives);else items.semirandom(left+12,top,runtime.random,life.lives);score_core.add(killed->score);}if(rank==3){EnemyBulletRequest revenge;const auto &r=type.raw;revenge.left=enemy_s16(unsigned(left)+(unsigned(r[4])|(unsigned(r[5])<<8)));revenge.top=enemy_s16(unsigned(top)+(unsigned(r[6])|(unsigned(r[7])<<8)));revenge.group=0x19;revenge.speed=60;bullet_core.add(revenge,page,player.x,player.y,runtime.random,bombing_for_spawn);}}else if(dealt&&!enemy.raw[0x22])request_sound(4);return dealt>0&&hp!=65534;};
             combat.death=[&](unsigned slot,auto &enemy,const auto &type){const auto pattern=EnemyDamage::death_pattern(enemy,type);if(effects_enabled&&enemy.word(0xa)==0)sparks.add(enemy_s16(enemy.word(page*4))+16,enemy_s16(enemy.word(page*4+2))+16,20,8,false,page);EnemyDamage::death_tick(enemy);if(enemy.raw[0xe]==1)death_patterns[slot]=pattern;};
         }
         combat.suppress_formations=suppress_midboss_formations;
@@ -572,40 +594,33 @@ public:
         if(runtime.blocked){if(tile_error)runtime.blocked->result.reason=tile_error;return;}
         if(extra_road_frame)extra_midboss.update(runtime.scroll.line,sink);
         if(midboss_enabled&&midboss.active){
-            Midboss1Core::Hooks h;
+            Midboss1Core::Hooks h;h.lock_timeout=lock_timeout;
             h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss bullet");};
-            h.damage=[&](int x,int y,int w,int height){auto value=shots.damage(page,x,y,w,height,[&](const auto &s){if(effects_enabled)sparks.add(s.left,s.top,int(s.speed),int(s.count),s.as_sprite,page);});if(bomb_enabled)value+=bomb.damage(static_cast<std::uint32_t>(ticks));if(effects_enabled)score_core.add_hit_lowword(static_cast<std::uint16_t>(value));return value;};
+            h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,static_cast<std::uint32_t>(ticks));};
             h.score=[&](unsigned value){if(effects_enabled)score_core.add(value);};h.sound=[&](unsigned id){request_sound(id);};
             h.spark=[&](const auto &s){if(effects_enabled)sparks.add(s.x,s.y,s.speed,s.count,s.sprite,page);};
             h.tile=[&](int x,int vram_y,unsigned image){if(image>=background.tiles.size())throw std::runtime_error("Midboss track tile out of range");const unsigned screen_y=unsigned((vram_y-int(scroll.line)+400)%400);const unsigned virtual_row=(383-screen_y+scroll.display_pixels)/16;track_tiles[virtual_row*24+unsigned((x-32)/16)]=image;};
             midboss.update(page,scroll.line,midboss_progress,h);shots.target_x=midboss.target_x;shots.target_y=midboss.target_y;
         }
         if(midboss2_enabled&&midboss2.active){
-            Midboss2Core::Hooks h;
+            Midboss2Core::Hooks h;h.lock_timeout=lock_timeout;
             h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss2 bullet");};
-            h.damage=[&](int x,int y,int w,int height){unsigned value=shots.damage(page,x,y,w,height,[&](const auto&s){if(effects_enabled)sparks.add(s.left,s.top,int(s.speed),int(s.count),s.as_sprite,page);});if(bomb_enabled)value+=bomb.damage(logic_frame);if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(value));return value;};
+            h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned n){request_sound(n);};h.spark=[&](const auto&s){if(effects_enabled)sparks.add(s.x,s.y,s.speed,s.count,s.sprite,page);};
             midboss2.update(page,scroll.line,h);shots.target_x=midboss2.target_x;shots.target_y=midboss2.target_y;
         }
         if(midboss3_enabled&&midboss3.active){
-            Midboss3Core::Hooks h;
+            Midboss3Core::Hooks h;h.lock_timeout=lock_timeout;
             h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss3 bullet");};
-            h.damage=[&](int x,int y,int w,int height){unsigned value=shots.damage(page,x,y,w,height,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,int(p.speed),int(p.count),p.as_sprite,page);});if(bomb_enabled)value+=bomb.damage(logic_frame);if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(value));return value;};
+            h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned n){request_sound(n);};h.spark=[&](const auto &p){if(effects_enabled)sparks.add(p.x,p.y,p.speed,p.count,p.sprite,page);};
             midboss3.update(page,scroll.line,runtime.scroll.attempted_pixels-scroll_attempt_before,unsigned(rank),h);shots.target_x=midboss3.target_x;shots.target_y=midboss3.target_y;
         }
         if(marisa_enabled){
-            MarisaCore::Hooks h;h.collision_display=display;
+            MarisaCore::Hooks h;h.collision_display=display;h.lock_timeout=lock_timeout;
             h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Marisa bullet");};
-            const auto damage_query=[&](int x,int y,int w,int height,unsigned mask){
-                if(!combat_enabled)return 0u;
-                auto n=shots.damage(page,x,y,w,height,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page);});
-                if(bomb_enabled)n+=bomb.damage(logic_frame,mask);
-                if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(n));
-                return n;
-            };
-            h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,1);};
-            h.orb_damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,3);};
+            h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
+            h.orb_damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame,3):0u;};
             h.random8=[&]{return unsigned(runtime.random.next8());};
             h.random16=[&]{return unsigned(runtime.random.next16());};
             h.drift=[&](unsigned angle,unsigned speed,unsigned frames){bullet_core.special={int(angle),int(speed),int(frames)};};
@@ -621,14 +636,9 @@ public:
         }
         if(sigma_enabled){
             SigmaCore::Hooks h;h.collision_display=display;
+            // Sigma transitions use damage thresholds, not an expiry deadline.
             h.bullet=[&](const auto &r){if(!sink.bullet(r))sigma.blocked="sigma: unsupported projectile";};
-            h.damage=[&](int x,int y,int w,int height){
-                if(!combat_enabled)return 0u;
-                auto n=shots.damage(page,x,y,w,height,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page);});
-                if(bomb_enabled)n+=bomb.damage(logic_frame);
-                if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(n));
-                return n;
-            };
+            h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
             h.score=[&](unsigned n){score_core.score+=n;};
             h.sound=[&](unsigned n){request_sound(n);};
             h.turns_max=[&](unsigned n){bullet_core.special.u3=int(n);};
@@ -644,14 +654,9 @@ public:
         }
         if(mima_enabled){
             MimaCore::Hooks h;h.collision_display=display;
+            h.lock_timeout=lock_timeout;
             h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Mima bullet");};
-            h.damage=[&](int x,int y,int w,int height){
-                if(!combat_enabled)return 0u;
-                auto n=shots.damage(page,x,y,w,height,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page);});
-                if(bomb_enabled)n+=bomb.damage(logic_frame);
-                if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(n));
-                return n;
-            };
+            h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
             h.random8=[&]{return unsigned(runtime.random.next8());};
             h.item=[&](int x,int y,unsigned type){if(effects_enabled)items.add(x,y,type,life.lives);};
             h.sound=[&](unsigned id){request_sound(id);};
@@ -674,14 +679,9 @@ public:
         }
         if(stage==3&&!marisa_enabled&&midboss4.active){
             Midboss4Core::Hooks h;
+            h.lock_timeout=lock_timeout;
             h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss4 bullet");};
-            h.damage=[&](int x,int y,int w,int height){
-                if(!combat_enabled)return 0u;
-                auto n=shots.damage(page,x,y,w,height,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page);});
-                if(bomb_enabled)n+=bomb.damage(logic_frame);
-                if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(n));
-                return n;
-            };
+            h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};
             h.sound=[&](unsigned n){request_sound(n);};
             h.spark=[&](const auto &p){if(effects_enabled)sparks.add(p.x,p.y,p.speed,p.count,p.sprite,page);};
@@ -693,14 +693,9 @@ public:
         }
         if(stones_enabled){
             StonesCore::Hooks h;
+            h.lock_timeout=lock_timeout;
             h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Stones bullet");};
-            h.damage=[&](int x,int y,int w,int height){
-                if(!combat_enabled)return 0u;
-                unsigned n=shots.damage(page,x,y,w,height,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page);});
-                if(bomb_enabled)n+=bomb.damage(logic_frame);
-                if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(n));
-                return n;
-            };
+            h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};
             h.sound=[&](unsigned id){request_sound(id);};
             h.spark=[&](const auto &p){if(effects_enabled)sparks.add(p.x,p.y,p.speed,p.count,p.sprite,page);};
@@ -720,7 +715,7 @@ public:
         if(meira_enabled){
             MeiraCore::Hooks h;h.collision_display=display;
             h.bullet=[&](const auto&r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Meira bullet");};
-            h.damage=[&](int x,int y,int w,int height){unsigned v=shots.damage(page,x,y,w,height,[&](const auto&s){if(effects_enabled)sparks.add(s.left,s.top,int(s.speed),int(s.count),s.as_sprite,page);});if(bomb_enabled)v+=bomb.damage(logic_frame);if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(v));return v;};
+            h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
             h.explosion=[&](int,int,int frame){if(frame==1)request_sound(18);};
             h.hit=[&](){if(survival_enabled)life.register_hit();};h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned n){request_sound(n);};h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
             h.spark=[&](int x,int y,int speed,int count,bool sprite){if(effects_enabled)sparks.add(x,y,speed,count,sprite,page);};
@@ -730,17 +725,17 @@ public:
         if(rika_enabled){
             RikaCore::Hooks h;
             h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Rika bullet");};
-            h.damage=[&](int x,int y,int w,int height){unsigned value=shots.damage(page,x,y,w,height,[&](const auto &s){if(effects_enabled)sparks.add(s.left,s.top,int(s.speed),int(s.count),s.as_sprite,page);});if(bomb_enabled)value+=bomb.damage(logic_frame);if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(value));return value;};
+            h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
             h.laser=[&](int x,int y,int frames,unsigned pat,unsigned delay){lasers.initial_delay=delay;lasers.add(x,y,frames,pat,[&](unsigned id){request_sound(id);});};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned id){request_sound(id);};h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
             h.spark=[&](int x,int y,int speed,int count,bool sprite){if(effects_enabled)sparks.add(x,y,speed,count,sprite,page);};
             rika.update(page,logic_frame,h);shots.target_x=rika.target_x;shots.target_y=rika.target_y;
         }
-        if(survival_enabled)life.player_phase_begin();
+        if(survival_enabled){handle_practice_hit();life.player_phase_begin();}
         if(combat_enabled)shots.update(page,logic_frame);
         if(survival_enabled){
             const unsigned normal=player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0;
-            life.player_phase_end(page,normal);player.x=life.current.x;player.y=life.current.y;
+            life.player_phase_end(page,normal,assist(PracticeTool::Lives),assist(PracticeTool::Power),assist(PracticeTool::Rank));player.x=life.current.x;player.y=life.current.y;
             lives=life.lives;bombs=life.bombs;bullet_core.playperf=life.playperf;
         }
         if(effects_enabled){
@@ -780,7 +775,7 @@ public:
             scroll=runtime.scroll;
         }
         ++resident_frame;++ticks;if(rika_enabled)++rika_stage_frame;
-        if(survival_enabled){life.advance_playperf(rika_enabled?rika_stage_frame:std::uint32_t(ticks),unsigned(rank));bullet_core.playperf=life.playperf;}
+        if(survival_enabled){if(!assist(PracticeTool::Rank))life.advance_playperf(rika_enabled?rika_stage_frame:std::uint32_t(ticks),unsigned(rank));bullet_core.playperf=life.playperf;}
         if(preboss_enabled&&runtime.scroll.done&&!rika_enabled&&!meira_enabled&&!preboss_started)start_preboss();
         if(display&&hitbox_battle_visible())display->publish(this,ticks,sigma_enabled&&sigma.shake);
     }

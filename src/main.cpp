@@ -43,6 +43,7 @@
 #include "settings.hpp"
 #include "practice_menu.hpp"
 #include "practice_panel.hpp"
+#include <tuple>
 #include "practice_session.hpp"
 #include "practice_targets.hpp"
 #include "practice_music.hpp"
@@ -352,6 +353,28 @@ void display_text(Frame &frame,std::wstring_view text,int x,int y,std::uint32_t 
         font.paint(frame,scalar,x,y,color);
         x+=display_scalar_width(scalar);
         text.remove_prefix(scalar.size());
+    }
+}
+void draw_practice_assist(Frame &frame,const soew::PracticeAssist &assist,soew::Language lang){
+    using A=soew::PracticeAssist;
+    constexpr std::array<std::wstring_view,A::rows> keys={L"F1",L"F2",L"F3",L"F4",L"F5",L"F6",L"F7",L"U",L"Tab"};
+    constexpr int height=A::rows*A::pitch;
+    static std::optional<std::tuple<soew::Language,std::uint8_t,bool>> last;
+    static Frame text{A::width,height,std::vector<std::uint32_t>(A::width*height)};
+    const auto state=std::tuple{lang,assist.tools,assist.info};
+    if(last!=state){
+        std::fill(text.pixels.begin(),text.pixels.end(),0u);
+        for(int i=0;i<A::rows;++i){
+            const bool on=assist.active_row(i);
+            std::wstring label=on?L"[":L" ";label+=keys[i];label+=L": ";label+=soew::practice_tool_labels[i](lang);if(on)label+=L"]";
+            display_text(text,label,5,i*A::pitch+1,on?0x66ff88:0xffffff,lang,A::width-10);
+        }
+        last=state;
+    }
+    for(int row=0;row<height;++row)for(int col=0;col<A::width;++col){
+        auto &dest=frame.pixels[(A::top+row)*frame.w+A::left+col];
+        const auto glyph=text.pixels[row*A::width+col];
+        dest=glyph?glyph:((dest&0xfefefeu)>>1);
     }
 }
 // Development diagnostics occupy only the original HUD's blank rows 7..14.
@@ -890,6 +913,7 @@ struct App {
     soew::ShotInput z_input;
     soew::PracticeMenu practice_menu;
     soew::PracticePanel practice_panel;
+    soew::PracticeAssist practice_assist;
     std::optional<soew::PracticeStore> practice_store;
     std::optional<soew::PracticeBuilder> practice_builder;
     std::optional<std::future<soew::PracticeBuilder>> practice_load;
@@ -1848,7 +1872,7 @@ void begin_practice(App &app,const soew::PracticeSpec &spec){
     // The request now owns its seed and worker. Only accepted attempts replace the recording.
     app.recorder.reset();app.recording_timing={};cancel_gameplay_audio(app);app.gameplay_audio_attempted=-1;
     app.practice_audio_started=false;app.practice_bgm_measure=0;app.practice_retry=retry;
-    if(!retry){app.practice_visible=true;app.practice_result=app.practice_escape=false;app.practice_choice=0;}
+    if(!retry){app.practice_visible=true;app.practice_result=app.practice_escape=false;app.practice_choice=0;app.practice_assist.info=app.menu.show_more_info;}
     app.z_input.clear();
     if(app.stage_scene)app.stage_scene->paused=true;
     if(app.audio.active())app.audio.pause(true);
@@ -2096,6 +2120,14 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             }caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
         }
         if(app->stage_scene&&app->practice_session){
+            if(!app->practice_escape&&!app->practice_result&&!app->stage_scene->paused){
+                auto &assist=app->practice_assist;
+                const int row=w>=VK_F1&&w<=VK_F7?int(w-VK_F1):w=='U'?7:w==VK_TAB?8:-1;
+                if(w==VK_BACK||row>=0){
+                    if(!repeat){if(w==VK_BACK)assist.open=!assist.open;else assist.toggle_row(row);InvalidateRect(hwnd,nullptr,FALSE);}
+                    return 0;
+                }
+            }
             if(!repeat&&w=='R'){begin_practice(*app,app->practice_session->recipe);InvalidateRect(hwnd,nullptr,FALSE);return 0;}
             if(!repeat&&w=='Q'&&(app->practice_escape||app->practice_result)){
                 leave_practice(*app,false);caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
@@ -2268,7 +2300,19 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             app->title_demo->menu_loop=message==WM_ENTERMENULOOP;app->title_demo->reconcile_keys=true;
         }
         break;
-    case WM_LBUTTONDOWN: case WM_RBUTTONDOWN: case WM_MBUTTONDOWN: case WM_XBUTTONDOWN: case WM_MOUSEWHEEL:
+    case WM_LBUTTONDOWN:
+        if(app->practice_assist.open&&app->practice_session&&app->stage_scene&&!app->stage_scene->paused&&
+           !app->practice_builder&&!app->practice_load&&!app->practice_audio_load&&!app->replay_menu.active()&&!app->stage_intro.active()){
+            RECT client{};GetClientRect(hwnd,&client);
+            const auto view=fit(client.right,client.bottom,app->crt);
+            const int x=static_cast<short>(LOWORD(l))-view.x,y=static_cast<short>(HIWORD(l))-view.y;
+            if(x>=0&&y>=0&&x<view.w&&y<view.h){
+                const int row=soew::PracticeAssist::row_at(x*640/view.w,y*400/view.h);
+                if(row>=0){app->practice_assist.toggle_row(row);InvalidateRect(hwnd,nullptr,FALSE);return 0;}
+            }
+        }
+        [[fallthrough]];
+    case WM_RBUTTONDOWN: case WM_MBUTTONDOWN: case WM_XBUTTONDOWN: case WM_MOUSEWHEEL:
         title_demo_activity(*app);
         break;
     case WM_DPICHANGED: {
@@ -2362,7 +2406,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             soew::HudState hud;hud.score=app->stage_scene->score_core.score;hud.high_score=hud.score;hud.lives=app->stage_scene->life.lives;hud.bombs=app->stage_scene->life.bombs;hud.power=int(app->stage_scene->pickups.power);hud.difficulty=app->stage_scene->rank;
             if(app->scores){const auto stored=app->scores->at(std::min(4,app->stage_scene->rank)).entries[0].score;hud.high_score=std::max(hud.high_score,stored/10);hud.high_continues=stored%10;}
             soew::draw_original_hud(app->composed.pixels,app->font,hud);
-            if(!app->stage_intro.active()&&!show_stage_intro&&(app->menu.show_more_info||app->practice_session))draw_debug_info(app->composed,*app->stage_scene,app->practice_session,app->menu.show_more_info,app->menu.language);
+            const bool show_details=app->practice_session?app->practice_assist.info:app->menu.show_more_info;
+            if(!app->stage_intro.active()&&!show_stage_intro&&(show_details||app->practice_session))draw_debug_info(app->composed,*app->stage_scene,app->practice_session,show_details,app->menu.language);
             if(app->run_pause_menu||app->practice_escape){
                 const auto center=[&](std::wstring_view text,int y,std::uint32_t color){draw(text,224-display_text_width(text,lang)/2,y,color);};
                 center(words::pause(lang),188,0xffffff);
@@ -2442,6 +2487,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 draw(items[i],80,164+i*32,disabled?0x777777:app->practice_choice==i?0xffff00:0xaaaaaa,304);
             }
         }
+        if(app->practice_assist.open&&app->practice_session&&app->stage_scene&&!app->stage_scene->paused&&
+           !app->practice_visible&&!app->stage_intro.active()&&!app->replay_menu.active())
+            draw_practice_assist(app->composed,app->practice_assist,lang);
         if(app->replay_menu.active())compose_replay_menu(*app);
         if(app->legacy_content&&app->menu_visible&&!app->opening.active&&!app->menu.options&&!app->menu.shot_screen&&!app->menu.music_room&&!app->scores_visible&&!app->stage_scene&&!app->ending_surface&&!app->practice_visible&&!app->replay_menu.active()){
             const auto warning=words::legacy_content(lang);
@@ -2694,6 +2742,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                         if(app->practice_session){
                             const auto event=soew::practice_replay_tick(*app->stage_scene,input,group,fast);
                             const auto samples=app->practice_session->samples();
+                            app->stage_scene->practice_assist.tools=app->practice_assist.tools;
+                            // RPY records input, not live simulation modifiers.
+                            if(app->practice_assist.tools)app->recorder.reset();
                             app->practice_session->tick(*app->stage_scene,event.input,event.dialogue_group,event.dialogue_fast_forward);
                             if(app->recorder&&app->practice_session->samples()!=samples&&!app->recorder->record(event))app->recorder.reset();
                             if(app->practice_session->result()!=soew::PracticeSession::Result::Running){
@@ -3462,7 +3513,7 @@ int wmain(int argc, wchar_t **argv) {
         if(portable)settings_dir=install_dir/"save"; // Keep earlier user/ files untouched.
         bool settings_probe=false,explicit_settings_dir=false,stage4_trial=false,stage5_trial=false,stage5_mainline=false,extra_trial=false,extra_candidate=false;
         int extra_shot=-1;
-        bool stage_dump_fire=false,stage_dump_bomb=false,stage_dump_protected=false,rika_probe=false,preboss_dump=false;
+        bool stage_dump_fire=false,stage_dump_bomb=false,stage_dump_protected=false,rika_probe=false,preboss_dump=false,assist_dump=false;
         unsigned rika_probe_damage=0;
         unsigned stage_dump_ticks=0;
         int stage_dump_id=-1;
@@ -3511,6 +3562,7 @@ int wmain(int argc, wchar_t **argv) {
             else if(arg == L"--stage-protected")stage_dump_protected=true;
             else if(arg == L"--rika-probe")rika_probe=true;
             else if(arg == L"--preboss-dump")preboss_dump=true;
+            else if(arg == L"--practice-assist-dump")assist_dump=true;
             else if(arg == L"--rika-damage"&&i+1<argc){rika_probe_damage=std::stoul(argv[++i]);if(rika_probe_damage>2260)throw std::runtime_error("Invalid diagnostic Rika damage");}
             else if(arg == L"--stage-ticks"&&i+1<argc){stage_dump_ticks=std::stoul(argv[++i]);if(stage_dump_ticks>100000)throw std::runtime_error("Scene tick limit exceeded");}
             else if(arg == L"--stage-dump"&&i+1<argc){stage_dump_id=std::stoi(argv[++i]);if(stage_dump_id<0||stage_dump_id>5)throw std::runtime_error("Invalid scene index");}
@@ -3568,6 +3620,7 @@ int wmain(int argc, wchar_t **argv) {
         if(retry_probe.disable_intro&&(retry_mode<0||retry_probe.section!=RetrySection::StageStart))
             throw std::runtime_error("--retry-intro-off requires a stage-start retry benchmark");
         if((practice_dump||practice_shots_dump)&&!dump_only)throw std::runtime_error("--practice-menu requires --dump");
+        if(assist_dump&&(!dump_only||stage_dump_id<0))throw std::runtime_error("--practice-assist-dump requires --stage-dump and --dump");
         const bool diagnostic=smoke||test||dump_only||timed_test||score_timed_test||async_practice_test||settings_probe||stage_dump_id>=0||rika_probe||preboss_dump||options_dump||shots_dump||scores_dump||music_dump;
         if(!replay_file.empty()&&(diagnostic||stage4_trial||stage5_trial||stage5_mainline||extra_trial||extra_candidate))throw std::runtime_error("Replay is a standalone launch mode");
         const bool interactive_title=!diagnostic&&replay_file.empty()&&!stage4_trial&&!stage5_trial&&!extra_trial;
@@ -3714,7 +3767,16 @@ int wmain(int argc, wchar_t **argv) {
         app.score_animation.frame=score_frame_number;
         if(scores_dump&&!app.scores)throw std::runtime_error(app.score_error);
         if(dump_only&&scores_dump){dump(score_frame(*app.scores,app.menu.rank,app.font,app.score_logo,app.score_palette,app.score_transparent,app.score_animation.frame,app.menu.language),dump_path);return 0;}
-        if(dump_only&&stage_dump_id>=0){launch_stage(app,stage_dump_id);if(rika_probe){app.stage_scene->bind_rika_battle({0,0,0,0,0,0});app.stage_scene->rika.damage_taken=std::uint16_t(rika_probe_damage);}for(unsigned i=0;i<stage_dump_ticks;++i){if(stage_dump_protected)app.stage_scene->life.invincibility=200;app.stage_scene->tick((stage_dump_fire?soew::Shot:0)|(stage_dump_bomb&&i==0?soew::Bomb:0));}if(preboss_dump){if(!app.stage_scene->dialogue.active())throw std::runtime_error("Map has not reached preboss dialogue");while(app.stage_scene->dialogue.phase==soew::StageDialogue::Phase::SlideIn||app.stage_scene->dialogue.phase==soew::StageDialogue::Phase::Text)app.stage_scene->tick(soew::Shot,true);}Frame frame{640,400,std::vector<std::uint32_t>(640*400)};app.stage_scene->render(frame.pixels);compose_dialogue_text(frame,*app.stage_scene,app.menu.language,app.chinese_text?&*app.chinese_text:nullptr);dump(frame,dump_path);return 0;}
+        if(dump_only&&stage_dump_id>=0){
+            launch_stage(app,stage_dump_id);
+            if(rika_probe){app.stage_scene->bind_rika_battle({0,0,0,0,0,0});app.stage_scene->rika.damage_taken=std::uint16_t(rika_probe_damage);}
+            for(unsigned i=0;i<stage_dump_ticks;++i){if(stage_dump_protected)app.stage_scene->life.invincibility=200;app.stage_scene->tick((stage_dump_fire?soew::Shot:0)|(stage_dump_bomb&&i==0?soew::Bomb:0));}
+            if(preboss_dump){if(!app.stage_scene->dialogue.active())throw std::runtime_error("Map has not reached preboss dialogue");while(app.stage_scene->dialogue.phase==soew::StageDialogue::Phase::SlideIn||app.stage_scene->dialogue.phase==soew::StageDialogue::Phase::Text)app.stage_scene->tick(soew::Shot,true);}
+            Frame frame{640,400,std::vector<std::uint32_t>(640*400)};app.stage_scene->render(frame.pixels);
+            compose_dialogue_text(frame,*app.stage_scene,app.menu.language,app.chinese_text?&*app.chinese_text:nullptr);
+            if(assist_dump){app.practice_assist.toggle(soew::PracticeTool::Invincible);app.practice_assist.toggle(soew::PracticeTool::AutoBomb);draw_practice_assist(frame,app.practice_assist,app.menu.language);}
+            dump(frame,dump_path);return 0;
+        }
         if(rika_probe)throw std::runtime_error("Rika probe currently requires --stage-dump and --dump; no normal game dialogue bypass");
         if(dump_only) {
             auto frame=app.frames[shots_dump?2:0];

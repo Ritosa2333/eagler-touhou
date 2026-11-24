@@ -221,7 +221,7 @@ private:
     void finish_round(const Hooks &h){
         if(!phase_frame){
             // Phase advancement uses the damage BEFORE this tick's body query.
-            if(enemy_s16(damage_taken)>=int(threshold)||rounds>max_rounds){
+            if(enemy_s16(damage_taken)>=int(threshold)||(!h.lock_timeout&&rounds>max_rounds)){
                 phase=Phase(unsigned(phase)+1);body_damage_enabled=false;rounds=0;
             }else{
                 if(++rounds>=vulnerable_round)body_damage_enabled=true;

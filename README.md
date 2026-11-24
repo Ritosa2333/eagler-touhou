@@ -77,6 +77,13 @@ shot type with Left/Right, then use Up/Down in the stage popup. Z or Enter
 confirms; X or Esc closes the popup back to shot selection. The setup popup
 shows the starting point, difficulty, stocks and seed together.
 
+During a practice run, Backspace opens the assist overlay. Click a row or use
+F1–F7 / U: invincibility, infinite lives, lock dynamic rank, infinite bombs,
+keep power on a miss, prevent boss timeouts, auto-bomb, and enemy invincibility.
+Tab toggles extra game info. Tools start off and stay set across retries.
+Attempts played with a simulation assist cannot be saved as replays; opening
+the overlay or toggling extra info does not affect recording.
+
 This is a reimplementation, not a binary patch. The gameplay is based on the
 PC-98 code, but the port has not been verified frame for frame. The Windows
 scheduler, RNG initialization, and some rendering and gameplay edge cases

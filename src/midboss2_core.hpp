@@ -27,7 +27,7 @@ struct Midboss2Core {
         int vram_y=top[back]+int(scroll_line);if(vram_y<0)vram_y+=400;else if(vram_y>=400)vram_y-=400;
         const auto dealt=h.damage?h.damage(left[back],top[back],64,58):0;
         if(dealt){damage_taken=std::uint16_t(damage_taken+dealt);if(enemy_s16(damage_taken)>380&&vram_y<304){if(h.sound)h.sound(2);dying=true;if(h.score)h.score(20000);score_awarded+=20000;return;}if(h.sound)h.sound(4);hit_flash=visible=true;return;}
-        if(phase_frame>1600)dying=true;
+        if(!h.lock_timeout&&phase_frame>1600)dying=true;
         visible=true;
     }
 };
