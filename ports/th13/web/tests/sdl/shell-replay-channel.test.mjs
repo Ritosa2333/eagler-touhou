@@ -19,9 +19,23 @@ import {createRequire} from 'node:module';
 import {runInNewContext} from 'node:vm';
 
 const require = createRequire(new URL('../../../../../launcher/package.json', import.meta.url));
-const {parse} = require('acorn');
+// acorn：先取 launcher 的依赖，没有时用镜像内 emsdk 自带的一份。th13-shot 镜像两者皆无，
+// 而本测试不需要浏览器，由 th13-dev 镜像的 js 套件运行；那里找不到 acorn 时整文件跳过。
+function loadAcorn() {
+  try { return require('acorn'); } catch { /* launcher 依赖未安装 */ }
+  try {
+    return createRequire(import.meta.url)(`${process.env.EMSDK ?? '/opt/emsdk'}/upstream/emscripten/node_modules/acorn`);
+  } catch { return null; }
+}
+const acorn = loadAcorn();
 const source = readFileSync(new URL('../../sdl-runtime/shell.mjs', import.meta.url), 'utf8');
-const ast = parse(source, {ecmaVersion: 'latest', sourceType: 'module'});
+// 多人版 shell 的录像库是另一套实现（th13mp 命名空间，内存 + IDB 持久化），
+// 不在本测试范围内：那里整文件跳过，不报失败。
+const multiplayerStore = /const replayStem = runtimeBuild\.multiplayer/.test(source);
+const unavailable = !acorn ? '未找到 acorn：本测试由 th13-dev 镜像的 js 套件运行'
+  : multiplayerStore ? '多人版录像库是独立实现（th13mp 命名空间 + 内存/IDB），不适用本测试' : false;
+const check = (name, body) => test(name, unavailable ? {skip: unavailable} : {}, body);
+const ast = acorn ? acorn.parse(source, {ecmaVersion: 'latest', sourceType: 'module'}) : {body: []};
 
 // 提取被测函数与常量声明（managed-shell.test.mjs 同款 VM 隔离范式；这里
 // 的被测面横跨 command 与存储助手，按名单显式提取）。
@@ -47,10 +61,12 @@ for (const node of ast.body) {
     .map(d => d.id.name);
   if (names.length) { constStatements.push(node); matchedConstNames.push(...names); }
 }
-assert.equal(parts.length, functionNames.length + constStatements.length,
-  'extraction list must match shell.mjs structure (drift guard)');
-assert.deepEqual([...matchedConstNames].sort(), [...constNames].sort(),
-  'all storage constants must be extracted');
+if (!unavailable) {
+  assert.equal(parts.length, functionNames.length + constStatements.length,
+    'extraction list must match shell.mjs structure (drift guard)');
+  assert.deepEqual([...matchedConstNames].sort(), [...constNames].sort(),
+    'all storage constants must be extracted');
+}
 
 const localStorageShim = (seed = {}) => {
   const store = new Map(Object.entries(seed));
@@ -74,7 +90,7 @@ const adapter = (seed = {}, extra = {}) => {
   return {storage, command, sanitizePath: context.adapter.sanitizePath};
 };
 
-test('sanitizePath 放行 replay 命名空间与存档路径、拒绝其余', () => {
+check('sanitizePath 放行 replay 命名空间与存档路径、拒绝其余', () => {
   const {sanitizePath} = adapter();
   assert.equal(sanitizePath('replay/th13_15.rpy'), 'replay/th13_15.rpy');
   assert.equal(sanitizePath('replay/th13_07.rpyx'), 'replay/th13_07.rpyx');
@@ -88,7 +104,7 @@ test('sanitizePath 放行 replay 命名空间与存档路径、拒绝其余', ()
     assert.throws(() => sanitizePath(bad), /存档路径无效/, bad);
 });
 
-test('list 合成 scoreth13.dat 与 replay 索引', async () => {
+check('list 合成 scoreth13.dat 与 replay 索引', async () => {
   const {command} = adapter({
     'th13.scoredat': Buffer.from('SAVE!').toString('base64'),
     'th13.replays': JSON.stringify([{name: 'th13_15.rpy', size: 1234, ts: 2},
@@ -103,7 +119,7 @@ test('list 合成 scoreth13.dat 与 replay 索引', async () => {
   assert.deepEqual(await adapter().command({command: 'list'}), {files: []});
 });
 
-test('replay write/read roundtrip、覆盖与 remove', async () => {
+check('replay write/read roundtrip、覆盖与 remove', async () => {
   const {command, storage} = adapter();
   const bytes = Array.from(Buffer.from('t13r-replay-bytes'));
   await command({command: 'write', path: 'replay/th13_15.rpy', bytes});
@@ -127,7 +143,7 @@ test('replay write/read roundtrip、覆盖与 remove', async () => {
   await assert.rejects(command({command: 'remove', path: 'replay/th13_15.rpy'}), /文件不存在/);
 });
 
-test('launched 守卫与空/超大文件拒收', async () => {
+check('launched 守卫与空/超大文件拒收', async () => {
   const launchedCommand = adapter({}, {launched: true}).command;
   await assert.rejects(launchedCommand({command: 'write', path: 'replay/th13_15.rpy', bytes: [1]}), /请先退出游戏/);
   await assert.rejects(launchedCommand({command: 'write', path: 'scoreth13.dat', bytes: [1]}), /请先退出游戏/);
@@ -144,7 +160,7 @@ test('launched 守卫与空/超大文件拒收', async () => {
   await assert.rejects(command({command: 'read', path: 'th13.cfg'}), /文件不存在/);
 });
 
-test('scoreth13.dat 键迁移：写读走 th13.scoredat，旧 th13.save 仅回退读', async () => {
+check('scoreth13.dat 键迁移：写读走 th13.scoredat，旧 th13.save 仅回退读', async () => {
   // 1) 新键写入 + 读回。
   const {command, storage} = adapter();
   const save = Array.from(Buffer.from('scoredat-new-format'));
@@ -173,7 +189,7 @@ test('scoreth13.dat 键迁移：写读走 th13.scoredat，旧 th13.save 仅回�
   await command2({command: 'remove', path: 'scoreth13.dat'});
 });
 
-test('总量护栏：超 5MiB 逐出最旧，正写入条目不逐出', async () => {
+check('总量护栏：超 5MiB 逐出最旧，正写入条目不逐出', async () => {
   const {command, storage} = adapter();
   const chunk = new Array(900 * 1024).fill(0x41);  // ~0.9MiB/条，base64 账面 ~1.2MiB
   for (const slot of ['01', '02', '03', '04', '05', '06'])
@@ -188,7 +204,7 @@ test('总量护栏：超 5MiB 逐出最旧，正写入条目不逐出', async ()
     assert.deepEqual((await command({command: 'read', path: `replay/th13_${slot}.rpy`})).bytes, chunk);
 });
 
-test('restoreReplaysToCatalog 按索引回灌 catalog、缺 blob 跳过', () => {
+check('restoreReplaysToCatalog 按索引回灌 catalog、缺 blob 跳过', () => {
   const calls = [];
   const core = {
     _malloc: size => size,  // 尺寸作指针，便于断言
@@ -213,7 +229,7 @@ test('restoreReplaysToCatalog 按索引回灌 catalog、缺 blob 跳过', () => 
   assert.deepEqual(calls, [['set', 8, 8], ['import', 'th13_21.rpy', 8]]);
 });
 
-test('跨面一致性：EM_JS 钩子与两处持久化实现同键注册', () => {
+check('跨面一致性：EM_JS 钩子与两处持久化实现同键注册', () => {
   const gameCpp = readFileSync(new URL('../../cpp/sdl/ApplicationGame.cpp', import.meta.url), 'utf8');
   const emjsStart = gameCpp.indexOf('EM_JS(bool, th13_download_recorded_replay');
   const emjs = gameCpp.slice(emjsStart, gameCpp.indexOf('});', emjsStart));

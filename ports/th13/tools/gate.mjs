@@ -18,6 +18,7 @@ const suiteTimeoutMs = 3 * 60 * 60 * 1000;
 const nativeSuites = ['anm', 'ecl', 'ui', 'replay', 'items', 'score', 'combat', 'bomb', 'audio', 'e2e', 'contracts'];
 // 这些 .test.mjs 只是 native 分组对应套件的包装，不重复运行。
 const nativeWrappers = new Set(['anm', 'ecl', 'replay', 'ui']);
+const browserless = ['shell-replay-channel.test.mjs'];
 
 function parseArguments(argv) {
   const options = {group: 'native', jobs: 6, only: null, out: null, compare: null};
@@ -69,6 +70,10 @@ function collectSuites(group, outDir) {
     const contracts = join(tests, 'contracts');
     if (existsSync(contracts))
       scripts.push(...readdirSync(contracts).filter(file => file.endsWith('.test.mjs')).map(file => `tests/contracts/${file}`));
+    // web/tests/sdl 里不需要浏览器的测试同样归 js 套件：浏览器套件所在的 th13-shot 镜像没有 acorn。
+    // 清单按普通版 shell 的录像库书写；多人版那套是独立实现，文件自行跳过，不排期。
+    for (const file of portName === 'th13-mp' ? [] : browserless)
+      if (existsSync(join(portDir, 'web/tests/sdl', file))) scripts.push(`web/tests/sdl/${file}`);
     if (scripts.length) suites.push({name: 'js', command: `node --test ${scripts.join(' ')}`});
   }
   return suites;
