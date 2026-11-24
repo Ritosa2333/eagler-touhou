@@ -1,7 +1,7 @@
 // Enemy bullets have independent ANM roots in the original 0x40e840 path.
 // This catches presentation state transfer after StageSim compacts cull/death.
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/StageBattle.hpp"
 #include "game/StagePresentation.hpp"

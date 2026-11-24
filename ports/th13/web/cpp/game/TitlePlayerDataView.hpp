@@ -1,8 +1,8 @@
 #pragma once
-#include "TitlePlayerDataMenu.hpp"
 #include "AnmManager.hpp"
 #include "AnmText.hpp"
 #include "HudDrawData.hpp"
+#include "TitlePlayerDataMenu.hpp"
 
 namespace th13 {
 
@@ -10,9 +10,10 @@ namespace th13 {
 // The menu is the sole selection/page/data state; the view owns VM handles.
 class TitlePlayerDataView {
 public:
-    struct Banks { i32 title = 16, ascii = 2, text = 0; };
-    using Rasterizer = std::function<bool(AnmVm&, u32 color, const std::string&,
-                                          AnmTextAlignment)>;
+    struct Banks {
+        i32 title = 16, ascii = 2, text = 0;
+    };
+    using Rasterizer = std::function<bool(AnmVm&, u32 color, const std::string&, AnmTextAlignment)>;
     explicit TitlePlayerDataView(AnmManager& manager) : TitlePlayerDataView(manager, Banks{}) {}
     TitlePlayerDataView(AnmManager& manager, Banks banks) : manager_(manager), banks_(banks) {}
     bool update(const TitlePlayerDataMenu&, const Rasterizer&);
@@ -35,4 +36,4 @@ private:
     bool create(u32& handle, i32 bank, i32 script);
     bool leave();
 };
-} // namespace th13
+}  // namespace th13

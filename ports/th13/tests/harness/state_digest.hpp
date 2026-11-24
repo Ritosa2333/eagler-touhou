@@ -36,8 +36,8 @@
 #include "game/EclContext.hpp"
 #include "game/EclThreads.hpp"
 #include "game/EnemyFog.hpp"
-#include "game/ItemManager.hpp"
 #include "game/Interpolation.hpp"
+#include "game/ItemManager.hpp"
 #include "game/Rng.hpp"
 #include "game/RunScene.hpp"
 #include "game/SessionState.hpp"
@@ -66,7 +66,8 @@ public:
     }
     void bytes(const void* data, size_t size) noexcept {
         const auto* p = static_cast<const th13::u8*>(data);
-        for (size_t i = 0; i < size; ++i) byte(p[i]);
+        for (size_t i = 0; i < size; ++i)
+            byte(p[i]);
     }
     // 域分隔：长度 + 字节。长度参与散列，避免 "ab"+"c" 与 "a"+"bc" 同流。
     void tag(const char* text) noexcept {
@@ -88,9 +89,7 @@ public:
     }
     void i32_value(th13::i32 value) noexcept { u32_value(static_cast<th13::u32>(value)); }
     void i64_value(th13::i64 value) noexcept { u64_value(static_cast<th13::u64>(value)); }
-    void bool_value(bool value) noexcept {
-        byte(value ? static_cast<th13::u8>(1) : static_cast<th13::u8>(0));
-    }
+    void bool_value(bool value) noexcept { byte(value ? static_cast<th13::u8>(1) : static_cast<th13::u8>(0)); }
     void f32_value(float value) noexcept {
         th13::u32 bits = 0;
         std::memcpy(&bits, &value, sizeof bits);
@@ -142,24 +141,32 @@ inline void digest_value(Digest64& d, const std::string& v) {
 }
 
 // ---- 插值与 mover ----
-template <u32 N, bool Angle>
-void digest_value(Digest64& d, const FloatInterpolation<N, Angle>& v) {
-    for (float value : v.start) d.f32(value);
-    for (float value : v.end) d.f32(value);
-    for (float value : v.control1) d.f32(value);
-    for (float value : v.control2) d.f32(value);
-    for (float value : v.current) d.f32(value);
+template <u32 N, bool Angle> void digest_value(Digest64& d, const FloatInterpolation<N, Angle>& v) {
+    for (float value : v.start)
+        d.f32(value);
+    for (float value : v.end)
+        d.f32(value);
+    for (float value : v.control1)
+        d.f32(value);
+    for (float value : v.control2)
+        d.f32(value);
+    for (float value : v.current)
+        d.f32(value);
     digest_value(d, v.timer);
     d.i32(v.duration);
     d.i32(v.mode);
 }
-template <u32 N>
-void digest_value(Digest64& d, const IntegerInterpolation<N>& v) {
-    for (i32 value : v.start) d.i32(value);
-    for (i32 value : v.end) d.i32(value);
-    for (i32 value : v.control1) d.i32(value);
-    for (i32 value : v.control2) d.i32(value);
-    for (i32 value : v.current) d.i32(value);
+template <u32 N> void digest_value(Digest64& d, const IntegerInterpolation<N>& v) {
+    for (i32 value : v.start)
+        d.i32(value);
+    for (i32 value : v.end)
+        d.i32(value);
+    for (i32 value : v.control1)
+        d.i32(value);
+    for (i32 value : v.control2)
+        d.i32(value);
+    for (i32 value : v.current)
+        d.i32(value);
     digest_value(d, v.timer);
     d.i32(v.duration);
     d.i32(v.mode);
@@ -174,27 +181,35 @@ inline void digest_value(Digest64& d, const StagePolarItp& v) {
     d.i32(v.mode);
 }
 inline void digest_value(Digest64& d, const StagePosItp& v) {
-    for (float value : v.start) d.f32(value);
-    for (float value : v.target) d.f32(value);
-    for (float value : v.p1) d.f32(value);
-    for (float value : v.p2) d.f32(value);
+    for (float value : v.start)
+        d.f32(value);
+    for (float value : v.target)
+        d.f32(value);
+    for (float value : v.p1)
+        d.f32(value);
+    for (float value : v.p2)
+        d.f32(value);
     d.f32(v.duration);
     d.f32(v.elapsed);
     d.i32(v.mode);
     d.boolean(v.per_axis);
-    for (i32 value : v.axis_mode) d.i32(value);
+    for (i32 value : v.axis_mode)
+        d.i32(value);
 }
 inline void digest_value(Digest64& d, const StageMover& v) {
-    for (float value : v.pos) d.f32(value);
+    for (float value : v.pos)
+        d.f32(value);
     d.f32(v.speed);
     d.f32(v.angle);
     d.f32(v.radius);
     d.f32(v.growth);
     d.f32(v.ellipse_angle);
     d.f32(v.ellipse_ratio);
-    for (float value : v.origin) d.f32(value);
+    for (float value : v.origin)
+        d.f32(value);
     d.f32(v.sine_phase);
-    for (float value : v.aux) d.f32(value);
+    for (float value : v.aux)
+        d.f32(value);
     d.u32(v.mode);
     digest_value(d, v.polar);
     digest_value(d, v.radial);
@@ -270,7 +285,8 @@ inline void digest_value(Digest64& d, const EclContext& context) {
     d.boolean(context.instruction != nullptr);
     d.boolean(context.code != nullptr);
     d.u32(context.code_size);
-    for (const EclInterpolation& channel : context.interpolators) digest_value(d, channel);
+    for (const EclInterpolation& channel : context.interpolators)
+        digest_value(d, channel);
     digest_interpolation_targets(d, context);
 }
 inline void digest_value(Digest64& d, const EclThreadsSnapshot& threads) {
@@ -287,18 +303,22 @@ inline void digest_value(Digest64& d, const EclThreadsSnapshot& threads) {
 inline void digest_value(Digest64& d, const StageEt::Ex& v) {
     d.u32(v.op);
     d.u32(v.flags);
-    for (float value : v.args) d.f32(value);
-    for (i32 value : v.integer_arguments) d.i32(value);
+    for (float value : v.args)
+        d.f32(value);
+    for (i32 value : v.integer_arguments)
+        d.i32(value);
     // v.subroutine：指向 ECL 程序的指针，不散列（见文件头）。
 }
 inline void digest_value(Digest64& d, const StageEt& v) {
     d.u32(v.sprite);
     d.u32(v.subtype);
-    for (float value : v.spawn) d.f32(value);
+    for (float value : v.spawn)
+        d.f32(value);
     d.f32(v.laser_width);
     d.i32(v.sound);
     d.i32(v.transform_sound);
-    for (i32 value : v.laser_timing) d.i32(value);
+    for (i32 value : v.laser_timing)
+        d.i32(value);
     d.f32(v.angle1);
     d.f32(v.angle2);
     d.f32(v.speed1);
@@ -307,9 +327,12 @@ inline void digest_value(Digest64& d, const StageEt& v) {
     d.i32(v.count);
     d.i32(v.ways);
     d.i32(v.aim);
-    for (float value : v.offset) d.f32(value);
-    for (float value : v.absolute) d.f32(value);
-    for (const StageEt::Ex& entry : v.ex) digest_value(d, entry);
+    for (float value : v.offset)
+        d.f32(value);
+    for (float value : v.absolute)
+        d.f32(value);
+    for (const StageEt::Ex& entry : v.ex)
+        digest_value(d, entry);
     d.u32(v.ex_next);
 }
 inline void digest_value(Digest64& d, const EnemyFog& v) {
@@ -318,7 +341,8 @@ inline void digest_value(Digest64& d, const EnemyFog& v) {
     d.f32(v.angle_x);
     d.f32(v.angle_y);
     d.u32(v.color);
-    for (const AnmGeometryVertex& vertex : v.vertices) digest_value(d, vertex);
+    for (const AnmGeometryVertex& vertex : v.vertices)
+        digest_value(d, vertex);
 }
 inline void digest_value(Digest64& d, const EclContext::Interrupt& v) {
     d.i32(v.life);
@@ -339,26 +363,37 @@ inline void digest_value(Digest64& d, const StageEnemy& v) {
     d.f32(v.bullet_protect_radius2);
     digest_value(d, v.vel);
     digest_value(d, v.pos);
-    for (float value : v.position) d.f32(value);
-    for (float value : v.last_hit_position) d.f32(value);
-    for (float value : v.motion_delta) d.f32(value);
+    for (float value : v.position)
+        d.f32(value);
+    for (float value : v.last_hit_position)
+        d.f32(value);
+    for (float value : v.motion_delta)
+        d.f32(value);
     d.i32(v.death_sound);
     d.i32(v.death_effect);
     d.i32(v.death_effect_file);
     d.f32(v.age);
     d.u32(v.flags);
-    for (float value : v.hurtbox) d.f32(value);
-    for (float value : v.hitbox) d.f32(value);
+    for (float value : v.hurtbox)
+        d.f32(value);
+    for (float value : v.hitbox)
+        d.f32(value);
     d.f32(v.body_angle);
-    for (float value : v.limit_center) d.f32(value);
-    for (float value : v.limit_half) d.f32(value);
-    for (const StageEt& emitter : v.et) digest_value(d, emitter);
-    for (i32 value : v.i_slots) d.i32(value);
-    for (float value : v.f_slots) d.f32(value);
+    for (float value : v.limit_center)
+        d.f32(value);
+    for (float value : v.limit_half)
+        d.f32(value);
+    for (const StageEt& emitter : v.et)
+        digest_value(d, emitter);
+    for (i32 value : v.i_slots)
+        d.i32(value);
+    for (float value : v.f_slots)
+        d.f32(value);
     d.boolean(v.dead);
     d.boolean(v.tick_gate);
     digest_value(d, v.interrupt_label);
-    for (const EclContext::Interrupt& interrupt : v.interrupts) digest_value(d, interrupt);
+    for (const EclContext::Interrupt& interrupt : v.interrupts)
+        digest_value(d, interrupt);
     d.i32(v.invulnerable);
     digest_value(d, v.invulnerable_clock);
     d.i32(v.body_invulnerable);
@@ -374,8 +409,10 @@ inline void digest_value(Digest64& d, const StageEnemy& v) {
     d.i32(v.phase_life_threshold);
     d.boolean(v.phase_timed_out);
     d.i32(v.drop_main);
-    for (i32 value : v.drop_extra) d.i32(value);
-    for (float value : v.drop_area) d.f32(value);
+    for (i32 value : v.drop_extra)
+        d.i32(value);
+    for (float value : v.drop_area)
+        d.f32(value);
     d.f32(v.spirit_accum);
     d.i32(v.spirit_threshold);
     d.i32(v.hit_anim_timer);
@@ -390,12 +427,17 @@ inline void digest_value(Digest64& d, const StageEnemy& v) {
     d.i32(v.anm_base_script);
     d.i32(v.anm_slot0_bank);
     d.i32(v.anm_slot0_script_offset);
-    for (i32 value : v.anm_script) d.i32(value);
+    for (i32 value : v.anm_script)
+        d.i32(value);
     // 句柄只取占用位：分配序属表现层（见文件头）。
-    for (u32 handle : v.anm_slot_handle) d.boolean(handle != 0);
-    for (const Vec3& offset : v.anm_slot_offset) digest_value(d, offset);
-    for (float value : v.anm_size_a) d.f32(value);
-    for (float value : v.anm_size_b) d.f32(value);
+    for (u32 handle : v.anm_slot_handle)
+        d.boolean(handle != 0);
+    for (const Vec3& offset : v.anm_slot_offset)
+        digest_value(d, offset);
+    for (float value : v.anm_size_a)
+        d.f32(value);
+    for (float value : v.anm_size_b)
+        d.f32(value);
     d.i32(v.mirror_dir);
     d.f32(v.mirror_velocity_x);
     d.boolean(v.mirror_ready);
@@ -416,15 +458,18 @@ inline void digest_value(Digest64& d, const StageBullet& v) {
     d.f32(v.z);
     d.f32(v.angle);
     d.f32(v.speed);
-    for (float value : v.vel) d.f32(value);
+    for (float value : v.vel)
+        d.f32(value);
     d.u32(v.sprite);
     d.u32(v.subtype);
-    for (float value : v.hit_size) d.f32(value);
+    for (float value : v.hit_size)
+        d.f32(value);
     d.u32(v.flags);
     d.f32(v.hit_scale);
     d.boolean(v.alive);
     d.boolean(v.grazed);
-    for (const StageEt::Ex& entry : v.ex) digest_value(d, entry);
+    for (const StageEt::Ex& entry : v.ex)
+        digest_value(d, entry);
     d.i32(v.ex_cursor);
     d.i32(v.native_trigger);
     d.i32(v.transform_sound);
@@ -445,7 +490,8 @@ inline void digest_value(Digest64& d, const StageBullet& v) {
     d.f32(v.sprite_width);
     d.f32(v.sprite_height);
     d.i32(v.cull_grace);
-    for (float value : v.steer) d.f32(value);
+    for (float value : v.steer)
+        d.f32(value);
     d.f32(v.ex4_acceleration);
     d.i32(v.ex4_duration);
     d.i32(v.ex4_timer);
@@ -481,12 +527,14 @@ inline void digest_value(Digest64& d, const StageBullet& v) {
     d.f32(v.wait_time);
     d.f32(v.saved_speed);
     d.f32(v.saved_angle);
-    for (float value : v.saved_pos) d.f32(value);
+    for (float value : v.saved_pos)
+        d.f32(value);
     d.i32(v.target_speed_time);
     d.i32(v.target_speed_duration);
     d.f32(v.target_speed_fraction);
     d.f32(v.target_speed_step);
-    for (float value : v.target_speed_velocity) d.f32(value);
+    for (float value : v.target_speed_velocity)
+        d.f32(value);
 }
 
 // ---- 激光 ----
@@ -512,8 +560,10 @@ inline void digest_value(Digest64& d, const StageLaser& v) {
     d.i32(i32(v.kind));
     d.i32(v.id);
     d.u32(v.generation);
-    for (float value : v.origin) d.f32(value);
-    for (float value : v.velocity) d.f32(value);
+    for (float value : v.origin)
+        d.f32(value);
+    for (float value : v.velocity)
+        d.f32(value);
     d.f32(v.angle);
     d.f32(v.rotation);
     d.f32(v.length);
@@ -522,7 +572,8 @@ inline void digest_value(Digest64& d, const StageLaser& v) {
     d.f32(v.width);
     d.f32(v.target_width);
     d.f32(v.start_offset);
-    for (i32 value : v.timing) d.i32(value);
+    for (i32 value : v.timing)
+        d.i32(value);
     d.i32(v.time);
     d.i32(v.previous_time);
     d.f32(v.time_fraction);
@@ -533,7 +584,8 @@ inline void digest_value(Digest64& d, const StageLaser& v) {
     d.u32(v.beam_descriptor_flags);
     d.i32(v.sound);
     d.i32(v.transform_sound);
-    for (const StageEt::Ex& entry : v.ex) digest_value(d, entry);
+    for (const StageEt::Ex& entry : v.ex)
+        digest_value(d, entry);
     d.i32(v.ex_cursor);
     d.i32(v.cancel_protection);
     d.u32(v.behavior_flags);
@@ -545,14 +597,17 @@ inline void digest_value(Digest64& d, const StageLaser& v) {
     d.f32(v.line_descriptor_angle);
     d.f32(v.line_initial_length);
     d.u64(v.curve_path.segments.size());
-    for (const CurveLaserSegment& segment : v.curve_path.segments) digest_value(d, segment);
+    for (const CurveLaserSegment& segment : v.curve_path.segments)
+        digest_value(d, segment);
     d.u64(v.curve_samples.size());
-    for (const CurveLaserSample& sample : v.curve_samples) digest_value(d, sample);
+    for (const CurveLaserSample& sample : v.curve_samples)
+        digest_value(d, sample);
     d.i32(v.acceleration_time);
     d.i32(v.acceleration_duration);
     d.f32(v.acceleration_fraction);
     d.f32(v.acceleration);
-    for (float value : v.acceleration_velocity) d.f32(value);
+    for (float value : v.acceleration_velocity)
+        d.f32(value);
     d.i32(v.wait_remaining);
     d.f32(v.wait_fraction);
     d.i32(v.cull_timer);
@@ -642,7 +697,8 @@ inline void digest_item_manager(Digest64& d, ItemManager& manager) {
     d.u32(live_spirits);
     std::vector<ItemEvent>& events = manager.events();
     d.u64(events.size());
-    for (const ItemEvent& event : events) digest_value(d, event);
+    for (const ItemEvent& event : events)
+        digest_value(d, event);
 }
 
 // ---- 自机 ----
@@ -778,9 +834,12 @@ inline void digest_battle(Digest64& d, StageBattle& battle) {
     d.i32(battle.bomb_age);
     d.f32(battle.bomb_age_accumulator_);
     d.u32(battle.bomb_generation);
-    for (const StageBattle::BombRay& ray : battle.bomb_rays) digest_value(d, ray);
-    for (const PlayerBombOrb& orb : battle.bomb_orbs) digest_value(d, orb);
-    for (const PlayerOption& option : battle.options) digest_value(d, option);
+    for (const StageBattle::BombRay& ray : battle.bomb_rays)
+        digest_value(d, ray);
+    for (const PlayerBombOrb& orb : battle.bomb_orbs)
+        digest_value(d, orb);
+    for (const PlayerOption& option : battle.options)
+        digest_value(d, option);
     d.i32(battle.option_count);
     d.f32(battle.frame_damage_total);
     d.boolean(battle.death_option_rebuild);
@@ -795,7 +854,8 @@ inline void digest_battle(Digest64& d, StageBattle& battle) {
     digest_value(d, battle.respawn_damage);
     digest_value(d, battle.respawn_origin);
     d.u64(battle.shots.size());
-    for (const PlayerShot& shot : battle.shots) digest_value(d, shot);
+    for (const PlayerShot& shot : battle.shots)
+        digest_value(d, shot);
     for (const DamageRegistration& registration : battle.damage_registrations)
         digest_value(d, registration);
     d.i32(battle.damage_registration_cursor);
@@ -804,11 +864,10 @@ inline void digest_battle(Digest64& d, StageBattle& battle) {
     d.i64(i64(battle.player_power_max()));
     d.boolean(battle.sht_shots_loaded);
     d.u64(battle.youmu_slash_spawns_.size());
-    for (const YoumuBomb::Spawn& spawn : battle.youmu_slash_spawns_) digest_value(d, spawn);
+    for (const YoumuBomb::Spawn& spawn : battle.youmu_slash_spawns_)
+        digest_value(d, spawn);
     d.tag("youmu");
-    battle.youmu_bomb_.visit_state([&d](auto... values) {
-        (digest_scalar(d, values), ...);
-    });
+    battle.youmu_bomb_.visit_state([&d](auto... values) { (digest_scalar(d, values), ...); });
 }
 
 inline void digest_sim(Digest64& d, StageSim& sim) {
@@ -832,8 +891,10 @@ inline void digest_sim(Digest64& d, StageSim& sim) {
     d.u32(sim.laser_serial);
     d.u32(sim.random.seed());
     d.u32(sim.random.index());
-    for (i32 value : sim.shared_integers) d.i32(value);
-    for (float value : sim.shared_floats) d.f32(value);
+    for (i32 value : sim.shared_integers)
+        d.i32(value);
+    for (float value : sim.shared_floats)
+        d.f32(value);
     // gvars 私有可写表：只有 -9949/-9948/-9947 三个计数器可经公开读取面观察。
     for (i32 id : {-9949, -9948, -9947}) {
         i32 value = 0;
@@ -841,18 +902,22 @@ inline void digest_sim(Digest64& d, StageSim& sim) {
         d.i32(id);
         d.i32(value);
     }
-    for (i32 slot : sim.boss_slot) d.i32(slot);
+    for (i32 slot : sim.boss_slot)
+        d.i32(slot);
     d.i32(sim.boss_timer_seconds);
     d.i32(sim.boss_timer_centiseconds);
     d.boolean(sim.boss_leaving);
     for (const auto& slot : sim.boss_markers)
-        for (const StageSim::BossMarker& marker : slot) digest_value(d, marker);
+        for (const StageSim::BossMarker& marker : slot)
+            digest_value(d, marker);
     d.i32(sim.boss_remaining_stars);
     d.i32(sim.boss_nonspell_frame);
     d.u32(sim.boss_main_serial);
-    for (float value : sim.bullet_bounce_size) d.f32(value);
+    for (float value : sim.bullet_bounce_size)
+        d.f32(value);
     d.f32(sim.active_bullet_protect_radius2);
-    for (const Vec3& center : sim.laser_collision_centers) digest_value(d, center);
+    for (const Vec3& center : sim.laser_collision_centers)
+        digest_value(d, center);
     d.i32(sim.laser_collision_count);
     // current 只散列在敌机向量中的序号（null=-1），不散列地址。
     i32 current_index = -1;
@@ -861,15 +926,20 @@ inline void digest_sim(Digest64& d, StageSim& sim) {
     d.i32(current_index);
     digest_value(d, sim.spell.state());
     d.u64(sim.anim_list.size());
-    for (const std::string& name : sim.anim_list) digest_value(d, name);
+    for (const std::string& name : sim.anim_list)
+        digest_value(d, name);
     d.u64(sim.anm_effects.size());
-    for (const AnmEffectRequest& request : sim.anm_effects) digest_value(d, request);
+    for (const AnmEffectRequest& request : sim.anm_effects)
+        digest_value(d, request);
     d.u64(sim.enemies.size());
-    for (const auto& enemy : sim.enemies) digest_value(d, *enemy);
+    for (const auto& enemy : sim.enemies)
+        digest_value(d, *enemy);
     d.u64(sim.bullets.size());
-    for (const StageBullet& bullet : sim.bullets) digest_value(d, bullet);
+    for (const StageBullet& bullet : sim.bullets)
+        digest_value(d, bullet);
     d.u64(sim.lasers.size());
-    for (const StageLaser& laser : sim.lasers) digest_value(d, laser);
+    for (const StageLaser& laser : sim.lasers)
+        digest_value(d, laser);
 }
 
 // ---- 会话/HUD ----
@@ -935,7 +1005,8 @@ inline void digest_value(Digest64& d, const AnmEnvironment& v) {
     digest_value(d, v.screen_shake_offset);
     d.f32(v.resolution_scale);
     d.f32(v.raster_scale);
-    for (i32 value : v.screen_offsets) d.i32(value);
+    for (i32 value : v.screen_offsets)
+        d.i32(value);
     digest_value(d, v.playfield_origin);
     d.boolean(v.paused);
     d.u32(v.screen_width);
@@ -947,8 +1018,10 @@ inline void digest_value(Digest64& d, const AnmEnvironment& v) {
 // ---- RunScene 回滚快照 ----
 inline void digest_value(Digest64& d, const GameHud::RollbackState& v) {
     d.tag("rollback.hud");
-    for (u32 handle : v.life_icons) d.u32(handle);
-    for (u32 handle : v.bomb_icons) d.u32(handle);
+    for (u32 handle : v.life_icons)
+        d.u32(handle);
+    for (u32 handle : v.bomb_icons)
+        d.u32(handle);
     d.u32(v.root);
     d.u32(v.difficulty_notice);
     d.u32(v.difficulty_label);
@@ -973,7 +1046,8 @@ inline void digest_value(Digest64& d, const GameHud::RollbackState& v) {
     d.i32(boss.timer_displayed_);
     d.i32(boss.timer_frames_);
     d.i32(boss.timer_centiseconds_);
-    for (u32 handle : boss.remaining_star_handles_) d.u32(handle);
+    for (u32 handle : boss.remaining_star_handles_)
+        d.u32(handle);
     d.i32(boss.warn_state_);
     d.u32(boss.move_state_);
     d.i32(boss.escalate_state_);
@@ -984,8 +1058,10 @@ inline void digest_value(Digest64& d, const GameHud::RollbackState& v) {
     d.u32(boss.digit_tens_);
     d.u32(boss.digit_ones_);
     d.u32(boss.ring_arc_);
-    for (u32 handle : boss.ring_overlays_) d.u32(handle);
-    for (u32 handle : boss.star_handles_) d.u32(handle);
+    for (u32 handle : boss.ring_overlays_)
+        d.u32(handle);
+    for (u32 handle : boss.star_handles_)
+        d.u32(handle);
     d.u32(boss.marker_handle_);
     d.u32(boss.name_handle_);
     d.tag("rollback.hud.spell");
@@ -997,24 +1073,29 @@ inline void digest_value(Digest64& d, const GameHud::RollbackState& v) {
     d.i32(spell.bonus_cap_);
     d.i32(spell.duration_);
     d.u32(spell.background_);
-    for (float value : spell.anchor_) d.f32(value);
+    for (float value : spell.anchor_)
+        d.f32(value);
     digest_value(d, spell.snapshot_);
-    for (u32 handle : spell.displays_) d.u32(handle);
+    for (u32 handle : spell.displays_)
+        d.u32(handle);
     d.u32(spell.stage_background_);
     d.u32(spell.decoration_);
     d.u32(spell.banner_);
     d.u32(spell.notice_);
     d.u32(spell.spirit_notice_);
     d.u64(spell.spirit_notices_.size());
-    for (u32 handle : spell.spirit_notices_) d.u32(handle);
-    for (u32 handle : spell.bonus_digits_) d.u32(handle);
+    for (u32 handle : spell.spirit_notices_)
+        d.u32(handle);
+    for (u32 handle : spell.bonus_digits_)
+        d.u32(handle);
     d.u32(spell.bonus_million_);
     d.u32(spell.bonus_thousand_);
     d.u32(spell.bonus_capture_effect_);
     d.i32(spell.capture_frames_);
     d.boolean(spell.production_);
     d.u64(spell.retiring_displays_.size());
-    for (u32 handle : spell.retiring_displays_) d.u32(handle);
+    for (u32 handle : spell.retiring_displays_)
+        d.u32(handle);
 }
 inline void digest_value(Digest64& d, const SpellPresentation::RollbackState& v) {
     d.tag("rollback.spell");
@@ -1025,24 +1106,29 @@ inline void digest_value(Digest64& d, const SpellPresentation::RollbackState& v)
     d.i32(v.bonus_cap_);
     d.i32(v.duration_);
     d.u32(v.background_);
-    for (float value : v.anchor_) d.f32(value);
+    for (float value : v.anchor_)
+        d.f32(value);
     digest_value(d, v.snapshot_);
-    for (u32 handle : v.displays_) d.u32(handle);
+    for (u32 handle : v.displays_)
+        d.u32(handle);
     d.u32(v.stage_background_);
     d.u32(v.decoration_);
     d.u32(v.banner_);
     d.u32(v.notice_);
     d.u32(v.spirit_notice_);
     d.u64(v.spirit_notices_.size());
-    for (u32 handle : v.spirit_notices_) d.u32(handle);
-    for (u32 handle : v.bonus_digits_) d.u32(handle);
+    for (u32 handle : v.spirit_notices_)
+        d.u32(handle);
+    for (u32 handle : v.bonus_digits_)
+        d.u32(handle);
     d.u32(v.bonus_million_);
     d.u32(v.bonus_thousand_);
     d.u32(v.bonus_capture_effect_);
     d.i32(v.capture_frames_);
     d.boolean(v.production_);
     d.u64(v.retiring_displays_.size());
-    for (u32 handle : v.retiring_displays_) d.u32(handle);
+    for (u32 handle : v.retiring_displays_)
+        d.u32(handle);
 }
 inline void digest_value(Digest64& d, const MsgPresentation::RollbackState& v) {
     d.tag("rollback.portraits");
@@ -1054,7 +1140,8 @@ inline void digest_value(Digest64& d, const ScorePopups::RollbackState& v) {
     d.tag("rollback.popups");
     // glyph（AnmVm）不散列：表现层 VM 状态由 draws digest 覆盖。
     for (const ScorePopups::Entry& entry : v.pool) {
-        for (i32 digit : entry.digits) d.i32(digit);
+        for (i32 digit : entry.digits)
+            d.i32(digit);
         d.i32(entry.count);
         d.f32(entry.x);
         d.f32(entry.y);
@@ -1107,9 +1194,8 @@ inline void digest_value(Digest64& d, const RunScene::RollbackState& v) {
 
 // 单帧状态摘要。调用点 = RunScene 一帧 update 完成之后（与 TH13_STATE_LOG
 // 的 write_state_row 同相位）；只读，不改变任何游戏状态。
-inline u64 digest_frame_state(RunScene& scene, const SessionState& progress,
-                              const HudPlayerState& player, const HudScoreState& score,
-                              const GameRandom& visual, const AnmEnvironment& environment) {
+inline u64 digest_frame_state(RunScene& scene, const SessionState& progress, const HudPlayerState& player,
+                              const HudScoreState& score, const GameRandom& visual, const AnmEnvironment& environment) {
     Digest64 d;
     d.tag("th13-frame-state/v1");
     d.tag("run");

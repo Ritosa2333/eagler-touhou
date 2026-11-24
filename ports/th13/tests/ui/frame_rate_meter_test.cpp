@@ -17,7 +17,10 @@ double jitter(unsigned i, double amplitude) {
 double callback_delta(unsigned i, double period, double amplitude) {
     return period + jitter(i + 1, amplitude) - jitter(i, amplitude);
 }
-struct Run { float low = 99, high = 0; unsigned uneven = 0; };
+struct Run {
+    float low = 99, high = 0;
+    unsigned uneven = 0;
+};
 Run run(double period, double amplitude, unsigned callbacks, unsigned stall_at = ~0u) {
     FrameCadence cadence;
     cadence.debt = FrameCadence::interval / 2;
@@ -26,7 +29,10 @@ Run run(double period, double amplitude, unsigned callbacks, unsigned stall_at =
     for (unsigned i = 0; i < callbacks; ++i) {
         const double delta = i == stall_at ? .5 : callback_delta(i, period, amplitude);
         const float fps = meter.sample(cadence.debt);
-        if (i > 120) { result.low = std::min(result.low, fps); result.high = std::max(result.high, fps); }
+        if (i > 120) {
+            result.low = std::min(result.low, fps);
+            result.high = std::max(result.high, fps);
+        }
         meter.elapse(delta);
         const unsigned ticks = cadence.advance(delta);
         if (i > 0 && i != stall_at && i != stall_at + 1) result.uneven += ticks != 1;
@@ -51,8 +57,6 @@ TEST(fps_readout_follows_wall_time_not_refresh_rate) {
     CHECK_NEAR(fifty.low, 60.f, .01f);
 }
 
-TEST(fps_readout_shows_time_the_cadence_drops) {
-    CHECK(run(1. / 60., .002, 600, 300).low < 58.f);
-}
+TEST(fps_readout_shows_time_the_cadence_drops) { CHECK(run(1. / 60., .002, 600, 300).low < 58.f); }
 
 int main() { return th13test::run_all("fps 读数"); }

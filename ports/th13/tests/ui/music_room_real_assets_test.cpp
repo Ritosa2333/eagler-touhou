@@ -15,8 +15,8 @@
 // 字形轮廓仍是 BLOCKED：本套件只认证“生产 view/menu 交给栅格回调的文本字节 +
 // 资源身份”，不认证 GDI/SDL_ttf 逐像素字形；生产栅格器的实际提交由
 // web/tests/sdl/music-room-text-identity.test.mjs 的 submission trace 覆盖。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/TitleMusicRoomView.hpp"
 
@@ -37,7 +37,10 @@ bool read_file(const std::string& path, std::vector<u8>& out) {
     std::fseek(file, 0, SEEK_END);
     const long size = std::ftell(file);
     std::fseek(file, 0, SEEK_SET);
-    if (size < 0) { std::fclose(file); return false; }
+    if (size < 0) {
+        std::fclose(file);
+        return false;
+    }
     out.resize(size_t(size));
     const bool ok = std::fread(out.data(), 1, out.size(), file) == out.size();
     std::fclose(file);
@@ -72,8 +75,10 @@ std::vector<Track> parse_musiccmt(const std::vector<u8>& bytes) {
             if (i + 1 >= lines.size()) break;
             if (!lines[i + 1].empty() && lines[i + 1][0] == '@') break;
             ++i;
-            if (k == 0) track.title = lines[i];
-            else track.comments.push_back(lines[i]);
+            if (k == 0)
+                track.title = lines[i];
+            else
+                track.comments.push_back(lines[i]);
         }
         tracks.push_back(std::move(track));
     }
@@ -84,7 +89,8 @@ std::string locked_title(i32 track) {
     char prefix[16];
     std::snprintf(prefix, sizeof prefix, "No.%2d ", int(track) + 1);
     std::string text = prefix;
-    for (i32 i = 0; i < 11; ++i) text += "\x81\x48";
+    for (i32 i = 0; i < 11; ++i)
+        text += "\x81\x48";
     return text;
 }
 
@@ -97,15 +103,20 @@ struct MusicHost final : TitleMusicRoomPlatform {
         return track >= 0 && u32(track) < tracks.size() ? tracks[u32(track)].title : std::string{};
     }
     std::string track_comment(i32 track, i32 line) override {
-        return track >= 0 && u32(track) < tracks.size() && line >= 0 &&
-                       u32(line) < tracks[u32(track)].comments.size()
+        return track >= 0 && u32(track) < tracks.size() && line >= 0 && u32(line) < tracks[u32(track)].comments.size()
                    ? tracks[u32(track)].comments[u32(line)]
                    : std::string{};
     }
     bool track_heard(i32) const override { return false; }  // 新档全未听
     void mark_heard(i32 track) override { marked = track; }
-    bool play_track(i32 track) override { played = track; return true; }
-    bool play_locked_response() override { ++locked; return true; }
+    bool play_track(i32 track) override {
+        played = track;
+        return true;
+    }
+    bool play_locked_response() override {
+        ++locked;
+        return true;
+    }
     bool resume_title_music() override { return true; }
 };
 
@@ -119,14 +130,12 @@ struct Call {
 AnmVm* find_vm(AnmManager& manager, i32 bank, i32 script) {
     for (u32 layer = 0; layer < 33; ++layer)
         for (AnmVm* vm : manager.registry.layer(layer))
-            if (vm && vm->source_script == script && manager.resource_id(vm->resource) == bank)
-                return vm;
+            if (vm && vm->source_script == script && manager.resource_id(vm->resource) == bank) return vm;
     return nullptr;
 }
 
 bool rect_is(const AnmSprite* sprite, float x, float y, float width, float height) {
-    return sprite && sprite->x == x && sprite->y == y && sprite->width == width &&
-           sprite->height == height;
+    return sprite && sprite->x == x && sprite->y == y && sprite->width == width && sprite->height == height;
 }
 
 struct Harness {
@@ -144,8 +153,7 @@ struct Harness {
         state.screen = TitleScreen(kTitleScreenMusicRoom);
         menu.play_sound = [](i32) { return true; };
     }
-    bool load(const std::vector<u8>& text, const std::vector<u8>& ascii,
-              const std::vector<u8>& title) {
+    bool load(const std::vector<u8>& text, const std::vector<u8>& ascii, const std::vector<u8>& title) {
         if (!load_bank(manager, 0, text)) return false;
         if (!load_bank(manager, 2, ascii)) return false;
         if (!manager.sprite_fallback(2)) return false;
@@ -158,16 +166,18 @@ struct Harness {
         if (!manager.update(false)) return false;
         if (!menu.update(pressed, repeated)) return false;
         if (!view.update(state, menu, host,
-            [this](AnmVm& vm, u32 color, const std::string& text, AnmTextAlignment alignment) {
-                const Call call{&vm, color, text, alignment};
-                last[vm.source_script] = call;
-                if (recording_navigation) navigation_calls.push_back(call);
-                return true;
-            })) return false;
+                         [this](AnmVm& vm, u32 color, const std::string& text, AnmTextAlignment alignment) {
+                             const Call call{&vm, color, text, alignment};
+                             last[vm.source_script] = call;
+                             if (recording_navigation) navigation_calls.push_back(call);
+                             return true;
+                         }))
+            return false;
         return manager.update(true);
     }
     void advance(i32 frames, u32 pressed = 0, u32 repeated = 0) {
-        for (i32 i = 0; i < frames; ++i) CHECK(frame(pressed, repeated));
+        for (i32 i = 0; i < frames; ++i)
+            CHECK(frame(pressed, repeated));
     }
     bool expect_text(i32 script, const std::string& text, u32 color) {
         const auto it = last.find(script);
@@ -176,13 +186,12 @@ struct Harness {
             return false;
         }
         if (it->second.text != text) {
-            std::printf("  script %d 文本不一致（实际 %zu 字节，期望 %zu 字节）\n",
-                        int(script), it->second.text.size(), text.size());
+            std::printf("  script %d 文本不一致（实际 %zu 字节，期望 %zu 字节）\n", int(script), it->second.text.size(),
+                        text.size());
             return false;
         }
         if (it->second.color != color) {
-            std::printf("  script %d 颜色 %08x != %08x\n", int(script),
-                        unsigned(it->second.color), unsigned(color));
+            std::printf("  script %d 颜色 %08x != %08x\n", int(script), unsigned(it->second.color), unsigned(color));
             return false;
         }
         return it->second.alignment == AnmTextAlignment::Left;
@@ -194,8 +203,7 @@ struct Harness {
         if (vm->source_script != 41 + line || vm->visual.sprite != 25 + line) return false;
         if (!rect_is(vm->sprite, 0, 18.f * line, 512, 17)) return false;
         return vm->sprite && vm->sprite->texture == 0 && vm->sprite_resource &&
-               vm->sprite_resource->textures.size() > 0 &&
-               vm->sprite_resource->textures[0].name == "@";
+               vm->sprite_resource->textures.size() > 0 && vm->sprite_resource->textures[0].name == "@";
     }
     bool expect_row_identity(i32 row) {
         const auto it = last.find(160 + row);
@@ -204,8 +212,7 @@ struct Harness {
         if (vm->source_script != 160 + row || vm->visual.sprite != 132 + row) return false;
         if (!rect_is(vm->sprite, 0, 18.f * row, 512, 18)) return false;
         return vm->sprite && vm->sprite->texture == 21 && vm->sprite_resource &&
-               vm->sprite_resource->textures.size() > 21 &&
-               vm->sprite_resource->textures[21].name == "@";
+               vm->sprite_resource->textures.size() > 21 && vm->sprite_resource->textures[21].name == "@";
     }
 };
 
@@ -217,11 +224,11 @@ TEST(music_room_real_assets_comment_text_and_anm_identity) {
     CHECK(read_file("artifacts/reference/raw/text.anm", text_bytes));
     CHECK(read_file("artifacts/reference/raw/title.anm", title_bytes));
     CHECK(read_file("artifacts/reference/raw/ascii.anm", ascii_bytes));
-    if (music_bytes.empty() || text_bytes.empty() || title_bytes.empty() || ascii_bytes.empty())
-        return;
+    if (music_bytes.empty() || text_bytes.empty() || title_bytes.empty() || ascii_bytes.empty()) return;
     const std::vector<Track> tracks = parse_musiccmt(music_bytes);
     CHECK_EQ(tracks.size(), 17u);
-    for (const auto& track : tracks) CHECK_EQ(track.comments.size(), 8u);
+    for (const auto& track : tracks)
+        CHECK_EQ(track.comments.size(), 8u);
     // 原版 track0 的空白注释行 = 单个 CP932 全角空格（0x81 0x40）。
     CHECK_EQ(tracks[0].comments[1], std::string("\x81\x40", 2));
     CHECK_EQ(tracks[0].comments[3], std::string("\x81\x40", 2));

@@ -5,8 +5,8 @@
 // 3) 重试/回标题经 RunPausePlatform::restart_run/return_to_title；
 // 4) RunScene 符卡超时（00428820 -2）只调用 host.request_game_over，不再预写
 //    PostGameFlow 内部 BGameOver（宿主按 run_mode_flags 路由）。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/FrameScheduler.hpp"
 #include "game/RunPause.hpp"
@@ -85,7 +85,8 @@ struct SettlementHarness {
         CHECK(scheduler.update() >= 0);
     }
     void advance(int frames, u32 pressed = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed);
+        for (int i = 0; i < frames; i++)
+            frame(pressed);
     }
 };
 

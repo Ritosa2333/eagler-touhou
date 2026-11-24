@@ -10,8 +10,8 @@
 //   2) battle.sim.enemy_animation 冲刷后 kind=0（307/308）仍在队列；
 //   3) battle.sim.enemy_animation_interrupt 同样不提前创建 kind=0；
 //   4) 全量 sync 冲刷仍会创建 kind=0（延迟而非丢弃）。
-#include "../ui/ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "../ui/ui_test_fixtures.hpp"
 
 #include "game/FrameScheduler.hpp"
 #include "game/RunScene.hpp"
@@ -58,9 +58,7 @@ struct RunHost final : RunSceneServices {
     bool bomb_hud(i32, i32) override { return true; }
     bool camera(DrawCamera, bool) override { return true; }
     bool hud_text(const HudTextDraw&) override { return true; }
-    bool read_asset(const std::string&, std::vector<u8>&, bool = true) override {
-        return false;
-    }
+    bool read_asset(const std::string&, std::vector<u8>&, bool = true) override { return false; }
     ZunGraphics& stage_graphics() override { return *graphics; }
     bool preload_scenery_animation(i32, const std::string&) override { return false; }
 };
@@ -88,9 +86,8 @@ struct WiringHarness {
         CHECK(load_bank(manager, 6, synthetic_anm(64, trivial_scripts(35))));
         host.graphics = &graphics;
         StagePresentation::Banks banks{4, 5, 6};
-        scene = std::make_unique<RunScene>(progress, player, score, manager, renderer,
-                                           environment, host, scheduler, banks, 3, 2, 7,
-                                           "st01.std");
+        scene = std::make_unique<RunScene>(progress, player, score, manager, renderer, environment, host, scheduler,
+                                           banks, 3, 2, 7, "st01.std");
     }
 };
 
@@ -107,8 +104,8 @@ TEST(run_scene_wires_slot_flush_and_slots_only_callbacks) {
 
     StageEnemy enemy;
     enemy.serial = 42;
-    enemy.anm_file = 2;  // stage 合并 bank 4
-    sim.anm_effects.push_back({0, 0, 12.5f, 34.25f, 0.75f});   // kind=0 307
+    enemy.anm_file = 2;                                         // stage 合并 bank 4
+    sim.anm_effects.push_back({0, 0, 12.5f, 34.25f, 0.75f});    // kind=0 307
     sim.anm_effects.push_back({2, 0, 0, 0, 0, 1, 303, 0, 42});  // kind=1 slot0
     const u32 before = harness.manager.registry.ordered_count(false);
 

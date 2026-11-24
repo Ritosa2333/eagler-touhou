@@ -22,8 +22,7 @@ struct CaptureVertex {
 };
 
 std::string capture(Topology topology, u32 count, const void* data, u32 stride,
-                    touhou::graphics::VertexLayout layout =
-                        touhou::graphics::VertexLayout::ScreenColorUv) {
+                    touhou::graphics::VertexLayout layout = touhou::graphics::VertexLayout::ScreenColorUv) {
     const char* path = "/tmp/th13_draw_capture_vertices_test.jsonl";
     DrawCapture capture;
     if (!capture.open_output(path)) return {};
@@ -65,14 +64,12 @@ CaptureVertex quad[4] = {
     {1, 1, 0, 1, 0xffffffffu, 1, 1},
 };
 CaptureVertex triangles[6] = {
-    {0, 0, 0, 1, 0xff0000ffu, 0, 0}, {1, 0, 0, 1, 0xff0000ffu, 1, 0},
-    {0, 1, 0, 1, 0xff0000ffu, 0, 1}, {1, 0, 0, 1, 0xff00ff00u, 1, 0},
-    {1, 1, 0, 1, 0xff00ff00u, 1, 1}, {0, 1, 0, 1, 0xff00ff00u, 0, 1},
+    {0, 0, 0, 1, 0xff0000ffu, 0, 0}, {1, 0, 0, 1, 0xff0000ffu, 1, 0}, {0, 1, 0, 1, 0xff0000ffu, 0, 1},
+    {1, 0, 0, 1, 0xff00ff00u, 1, 0}, {1, 1, 0, 1, 0xff00ff00u, 1, 1}, {0, 1, 0, 1, 0xff00ff00u, 0, 1},
 };
 CaptureVertex fan[5] = {
-    {0, 0, 0, 1, 0xff112233u, 0, 0}, {1, 0, 0, 1, 0xff112233u, 1, 0},
-    {1, 1, 0, 1, 0xff112233u, 1, 1}, {0, 1, 0, 1, 0xff112233u, 0, 1},
-    {0, 0, 0, 1, 0xff112233u, 0, 0},
+    {0, 0, 0, 1, 0xff112233u, 0, 0}, {1, 0, 0, 1, 0xff112233u, 1, 0}, {1, 1, 0, 1, 0xff112233u, 1, 1},
+    {0, 1, 0, 1, 0xff112233u, 0, 1}, {0, 0, 0, 1, 0xff112233u, 0, 0},
 };
 
 }  // namespace
@@ -117,8 +114,8 @@ WorldUvVertex world_quad[4] = {
 };
 
 TEST(draw_capture_matrix_path_serializes_all_four_vertices) {
-    const std::string line = capture(Topology::Strip, 2, world_quad, kWorldUvStride,
-                                     touhou::graphics::VertexLayout::WorldUv);
+    const std::string line =
+        capture(Topology::Strip, 2, world_quad, kWorldUvStride, touhou::graphics::VertexLayout::WorldUv);
     CHECK(!line.empty());
     CHECK_EQ(field(line, "count"), 2);
     CHECK_EQ(vertex_count_of(line), 4);
@@ -133,16 +130,16 @@ TEST(draw_capture_matrix_path_serializes_all_four_vertices) {
 // [反证 #7] strip/fan 的 0 图元特例：oracle d3d_vertex_count 返回 0，
 // port 此前返回 count+1 / count+2。0 图元绘制不产生顶点。
 TEST(draw_capture_zero_count_strip_serializes_no_vertices) {
-    const std::string line = capture(Topology::Strip, 0, world_quad, kWorldUvStride,
-                                     touhou::graphics::VertexLayout::WorldUv);
+    const std::string line =
+        capture(Topology::Strip, 0, world_quad, kWorldUvStride, touhou::graphics::VertexLayout::WorldUv);
     CHECK(!line.empty());
     CHECK_EQ(field(line, "count"), 0);
     CHECK_EQ(vertex_count_of(line), 0);
 }
 
 TEST(draw_capture_zero_count_fan_serializes_no_vertices) {
-    const std::string line = capture(Topology::Fan, 0, world_quad, kWorldUvStride,
-                                     touhou::graphics::VertexLayout::WorldUv);
+    const std::string line =
+        capture(Topology::Fan, 0, world_quad, kWorldUvStride, touhou::graphics::VertexLayout::WorldUv);
     CHECK(!line.empty());
     CHECK_EQ(field(line, "count"), 0);
     CHECK_EQ(vertex_count_of(line), 0);

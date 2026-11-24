@@ -69,8 +69,7 @@ struct Fixture {
         for (const auto& name : anim_list) {
             const auto bytes = asset(name);
             u32 scripts = 0;
-            if (!bytes.empty() && anm_script_count(bytes, scripts) &&
-                merged.append(bytes.data(), u32(bytes.size()))) {
+            if (!bytes.empty() && anm_script_count(bytes, scripts) && merged.append(bytes.data(), u32(bytes.size()))) {
                 script_base.push_back(base);
                 base += i32(scripts);
             } else {
@@ -80,11 +79,9 @@ struct Fixture {
         if (!manager.adopt(4, std::move(merged))) return false;
         // consume 需要的展示根/效果族（原版资产）；effect 族的 ins_300(-1)
         // 负值精灵需要 ascii bank 回落（Application.cpp:266 语义）。
-        for (const auto& item : {std::pair<i32, const char*>{0, "text.anm"},
-                                 {2, "ascii.anm"}, {8, "effect.anm"}}) {
+        for (const auto& item : {std::pair<i32, const char*>{0, "text.anm"}, {2, "ascii.anm"}, {8, "effect.anm"}}) {
             const auto bytes = asset(item.second);
-            if (bytes.empty() || !manager.load(item.first, bytes.data(), u32(bytes.size())))
-                return false;
+            if (bytes.empty() || !manager.load(item.first, bytes.data(), u32(bytes.size()))) return false;
             if (item.first == 2 && !manager.sprite_fallback(2)) return false;
         }
         return true;
@@ -93,14 +90,12 @@ struct Fixture {
     i32 global(i32 bank, i32 local) const { return script_base[size_t(bank - 2)] + local; }
 };
 
-std::unique_ptr<SpellPresentation> consume_card(Fixture& fixture, i32 stage_number,
-                                                i32 chapter, bool& ok) {
-    auto presentation = std::make_unique<SpellPresentation>(
-        fixture.manager, SpellPresentation::Banks{4, stage_number});
+std::unique_ptr<SpellPresentation> consume_card(Fixture& fixture, i32 stage_number, i32 chapter, bool& ok) {
+    auto presentation = std::make_unique<SpellPresentation>(fixture.manager, SpellPresentation::Banks{4, stage_number});
     SpellState state;
     const float position[3] = {0, 128, 0};
-    ok = presentation->consume(state.begin(0, "synthetic", 3000, stage_number, 0), position,
-                               [](i32) { return true; }, chapter);
+    ok = presentation->consume(
+        state.begin(0, "synthetic", 3000, stage_number, 0), position, [](i32) { return true; }, chapter);
     return presentation;
 }
 
@@ -119,13 +114,10 @@ TEST(stage3_midboss_kogasa_cardbg_uses_menm_at_chapter4) {
     auto presentation = consume_card(fixture, 3, 4, ok);
     CHECK(ok);
     // 小傘（章节4 <6）→ A 行：cardbg/装饰都来自 st03menm（cdbg02）。
-    CHECK_EQ(source_script_of(fixture.manager, presentation->stage_background_handle()),
-             fixture.global(4, 12));
-    CHECK_EQ(source_script_of(fixture.manager, presentation->decoration_handle()),
-             fixture.global(4, 19));
+    CHECK_EQ(source_script_of(fixture.manager, presentation->stage_background_handle()), fixture.global(4, 12));
+    CHECK_EQ(source_script_of(fixture.manager, presentation->decoration_handle()), fixture.global(4, 19));
     // 负控：不得是芳香 B 行（st03enm script12，cdbg03）。
-    CHECK(source_script_of(fixture.manager, presentation->stage_background_handle()) !=
-          fixture.global(3, 12));
+    CHECK(source_script_of(fixture.manager, presentation->stage_background_handle()) != fixture.global(3, 12));
 }
 
 TEST(stage3_chapter5_still_uses_a_row) {
@@ -134,8 +126,7 @@ TEST(stage3_chapter5_still_uses_a_row) {
     bool ok = false;
     auto presentation = consume_card(fixture, 3, 5, ok);
     CHECK(ok);
-    CHECK_EQ(source_script_of(fixture.manager, presentation->stage_background_handle()),
-             fixture.global(4, 12));
+    CHECK_EQ(source_script_of(fixture.manager, presentation->stage_background_handle()), fixture.global(4, 12));
 }
 
 TEST(stage3_boss_yoshika_cardbg_uses_enm_at_chapter6) {
@@ -145,10 +136,8 @@ TEST(stage3_boss_yoshika_cardbg_uses_enm_at_chapter6) {
     auto presentation = consume_card(fixture, 3, 6, ok);
     CHECK(ok);
     // 芳香（章节 6/7 ≥6）→ B 行：st03enm（cdbg03）。
-    CHECK_EQ(source_script_of(fixture.manager, presentation->stage_background_handle()),
-             fixture.global(3, 12));
-    CHECK_EQ(source_script_of(fixture.manager, presentation->decoration_handle()),
-             fixture.global(3, 19));
+    CHECK_EQ(source_script_of(fixture.manager, presentation->stage_background_handle()), fixture.global(3, 12));
+    CHECK_EQ(source_script_of(fixture.manager, presentation->decoration_handle()), fixture.global(3, 19));
 }
 
 TEST(stage1_has_no_a_row_even_below_chapter6) {
@@ -158,10 +147,8 @@ TEST(stage1_has_no_a_row_even_below_chapter6) {
     bool ok = false;
     auto presentation = consume_card(fixture, 1, 4, ok);
     CHECK(ok);
-    CHECK_EQ(source_script_of(fixture.manager, presentation->stage_background_handle()),
-             fixture.global(3, 11));
-    CHECK_EQ(source_script_of(fixture.manager, presentation->decoration_handle()),
-             fixture.global(3, 18));
+    CHECK_EQ(source_script_of(fixture.manager, presentation->stage_background_handle()), fixture.global(3, 11));
+    CHECK_EQ(source_script_of(fixture.manager, presentation->decoration_handle()), fixture.global(3, 18));
 }
 
 TEST(stage5_midboss_swaps_decoration_to_menm_script9) {
@@ -172,14 +159,11 @@ TEST(stage5_midboss_swaps_decoration_to_menm_script9) {
     auto midboss = consume_card(fixture, 5, 4, ok);
     CHECK(ok);
     // s5 A/B cardbg 同为 bank3/script13；差异在装饰：A=st05menm script9。
-    CHECK_EQ(source_script_of(fixture.manager, midboss->stage_background_handle()),
-             fixture.global(3, 13));
-    CHECK_EQ(source_script_of(fixture.manager, midboss->decoration_handle()),
-             fixture.global(4, 9));
+    CHECK_EQ(source_script_of(fixture.manager, midboss->stage_background_handle()), fixture.global(3, 13));
+    CHECK_EQ(source_script_of(fixture.manager, midboss->decoration_handle()), fixture.global(4, 9));
     auto boss = consume_card(fixture, 5, 6, ok);
     CHECK(ok);
-    CHECK_EQ(source_script_of(fixture.manager, boss->decoration_handle()),
-             fixture.global(3, 19));
+    CHECK_EQ(source_script_of(fixture.manager, boss->decoration_handle()), fixture.global(3, 19));
 }
 
 TEST(stage7_extra_midboss_cardbg_without_decoration) {
@@ -190,15 +174,12 @@ TEST(stage7_extra_midboss_cardbg_without_decoration) {
     auto midboss = consume_card(fixture, 7, 4, ok);
     CHECK(ok);
     // EX A 行：cardbg=st07menm script14；装饰槽 -1 → 不建（0x4138df）。
-    CHECK_EQ(source_script_of(fixture.manager, midboss->stage_background_handle()),
-             fixture.global(4, 14));
+    CHECK_EQ(source_script_of(fixture.manager, midboss->stage_background_handle()), fixture.global(4, 14));
     CHECK_EQ(midboss->decoration_handle(), 0u);
     auto boss = consume_card(fixture, 7, 6, ok);
     CHECK(ok);
-    CHECK_EQ(source_script_of(fixture.manager, boss->stage_background_handle()),
-             fixture.global(3, 24));
-    CHECK_EQ(source_script_of(fixture.manager, boss->decoration_handle()),
-             fixture.global(3, 30));
+    CHECK_EQ(source_script_of(fixture.manager, boss->stage_background_handle()), fixture.global(3, 24));
+    CHECK_EQ(source_script_of(fixture.manager, boss->decoration_handle()), fixture.global(3, 30));
 }
 
 int main() { return th13test::run_all("spell_cardbg_identity_test"); }

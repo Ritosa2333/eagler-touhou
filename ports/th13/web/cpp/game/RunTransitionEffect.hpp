@@ -24,9 +24,9 @@ namespace th13 {
 
 class RunTransitionEffect final {
 public:
-    static constexpr i32 kEffectBank = 8;   // effect.anm
+    static constexpr i32 kEffectBank = 8;  // effect.anm
     static constexpr i32 kRootScript = 0;
-    static constexpr i32 kLayer = 26;       // 0x403630 label7 写入 root+0x24
+    static constexpr i32 kLayer = 26;  // 0x403630 label7 写入 root+0x24
 
     explicit RunTransitionEffect(AnmManager& animations) : animations_(animations) {}
     RunTransitionEffect(const RunTransitionEffect&) = delete;
@@ -65,12 +65,9 @@ inline bool RunTransitionEffect::create() {
     error.clear();
     if (handle_ && !release()) return false;
     AnmResource* effect = animations_.resource(kEffectBank);
-    if (!effect)
-        return fail("Run transition effect bank unavailable");
+    if (!effect) return fail("Run transition effect bank unavailable");
     u32 handle = animations_.create(kEffectBank, kRootScript, -1, 0, {});
-    if (!handle)
-        return fail(animations_.error.empty() ? "Run transition effect create failed"
-                                              : animations_.error);
+    if (!handle) return fail(animations_.error.empty() ? "Run transition effect create failed" : animations_.error);
     AnmVm* root = animations_.registry.find(handle);
     if (!root) {
         animations_.retire(handle);
@@ -78,16 +75,14 @@ inline bool RunTransitionEffect::create() {
     }
     if (!animations_.spawn_effect(*root, 0)) {
         animations_.retire(handle);
-        return fail(animations_.error.empty() ? "Run transition overlay initialization failed"
-                                              : animations_.error);
+        return fail(animations_.error.empty() ? "Run transition overlay initialization failed" : animations_.error);
     }
     // 0x403630 label7 在 overlay init 之后把 root layer 写成 26。port 的
     // AnmOverlay::interrupt 只复刻 mode/panel 平移，故 layer 在此显式落值。
     root->visual.layer = kLayer;
     if (!animations_.interrupt(handle, 7, false)) {
         animations_.retire(handle);
-        return fail(animations_.error.empty() ? "Run transition label7 failed"
-                                              : animations_.error);
+        return fail(animations_.error.empty() ? "Run transition label7 failed" : animations_.error);
     }
     handle_ = handle;
     return true;
@@ -104,8 +99,7 @@ inline bool RunTransitionEffect::adopt(u32 handle) {
 inline bool RunTransitionEffect::stage_start() {
     if (!handle_) return true;
     if (!animations_.interrupt(handle_, 1, false))
-        return fail(animations_.error.empty() ? "Run transition label1 failed"
-                                              : animations_.error);
+        return fail(animations_.error.empty() ? "Run transition label1 failed" : animations_.error);
     return true;
 }
 
@@ -113,8 +107,7 @@ inline bool RunTransitionEffect::release() {
     if (!handle_) return true;
     u32 handle = handle_;
     if (!animations_.retire(handle))
-        return fail(animations_.error.empty() ? "Run transition retire failed"
-                                              : animations_.error);
+        return fail(animations_.error.empty() ? "Run transition retire failed" : animations_.error);
     handle_ = 0;
     return true;
 }

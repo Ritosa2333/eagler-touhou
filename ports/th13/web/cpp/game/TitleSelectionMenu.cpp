@@ -18,13 +18,11 @@ void requeue_particles_to_back(AnmManager& animations, i32 bank, i32 script) {
         const u32 handle = animations.registry.ordered_handle(false, index);
         if (!handle) break;
         AnmVm* vm = animations.registry.find(handle);
-        if (vm && vm->resource == resource && vm->source_script == script)
-            handles.push_back(handle);
+        if (vm && vm->resource == resource && vm->source_script == script) handles.push_back(handle);
         if (index > 8191) break;  // 防御：池上限
     }
     for (const u32 handle : handles)
-        if (AnmVm* vm = animations.registry.find(handle))
-            animations.registry.requeue_to_back(*vm);
+        if (AnmVm* vm = animations.registry.find(handle)) animations.registry.requeue_to_back(*vm);
 }
 }  // namespace
 
@@ -55,8 +53,7 @@ bool TitleDifficultyMenu::build_difficulty() {
     // 0x451092-0x4510c3：重入时旧根先 pending label1 并清槽（0x46fc30），
     // 再创建新根——Z 确认路径不清根槽（root 空壳跨自机屏存活）。
     // [0x450fb0 case0] Extra 态（be7c4>=4）根 = 0x7c=124（(be7c4>3)+0x7b）。
-    const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra
-                                              : resources.difficulty_tree;
+    const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra : resources.difficulty_tree;
     if (state.handles[tree]) {
         if (!check(visuals.interrupt(tree, 1, false))) return false;
         state.handles[tree] = 0;
@@ -143,11 +140,9 @@ void TitleDifficultyMenu::spawn_particles(i32 count) {
 // 形成 oracle 的 L22 桶序：91/93 → 粒子（新→旧）→ 90 → 83/84。
 void TitleDifficultyMenu::reorder_difficulty_draws() {
     if (auto* bg = animations.registry.find(state.handles[89])) {
-        if (auto* left = animations.registry.find_child_script(*bg, 90, 0))
-            animations.registry.requeue_to_back(*left);
+        if (auto* left = animations.registry.find_child_script(*bg, 90, 0)) animations.registry.requeue_to_back(*left);
     }
-    const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra
-                                              : resources.difficulty_tree;
+    const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra : resources.difficulty_tree;
     if (auto* root = animations.registry.find(state.handles[tree])) {
         for (const i32 script : {83, 84}) {
             if (auto* shape = animations.registry.find_child_script(*root, script, 0))
@@ -180,9 +175,7 @@ void TitleDifficultyMenu::advance_choreography() {
     // （練習=2 / Extra=1）时 item 0 的白条也是 L25 批次成员，必须同享序列。
     static constexpr u8 kExtraAlpha[8] = {63, 56, 48, 40, 31, 23, 16, 8};
     static constexpr u8 kGreyAlpha[8] = {101, 89, 76, 63, 50, 38, 25, 12};
-    static constexpr u8 kSelectedAlpha[16] = {203, 191, 178, 165, 152, 140, 127,
-                                              114, 101, 89,  76,  63,  50,  38,
-                                              25,  12};
+    static constexpr u8 kSelectedAlpha[16] = {203, 191, 178, 165, 152, 140, 127, 114, 101, 89, 76, 63, 50, 38, 25, 12};
     if (auto* menu_root = animations.registry.find(state.handles[0])) {
         for (i32 item = 0; item < kTitleMainEntries && f <= 8; item++) {
             if (item == state.confirmed_entry) continue;
@@ -200,11 +193,9 @@ void TitleDifficultyMenu::advance_choreography() {
         }
         // 选中高亮 = 灰条本体 3+k（L26，sprite0 左半）；白条 13+k 已在
         // finish_menu_hides 隐藏。
-        if (auto* selected =
-                animations.registry.find_child_script(*menu_root, state.confirmed_entry + 3, 0)) {
+        if (auto* selected = animations.registry.find_child_script(*menu_root, state.confirmed_entry + 3, 0)) {
             if (f < 16) {
-                selected->visual.color =
-                    u32(kSelectedAlpha[f]) << 24 | (selected->visual.color & 0xffffffu);
+                selected->visual.color = u32(kSelectedAlpha[f]) << 24 | (selected->visual.color & 0xffffffu);
             } else if (f == 16) {
                 selected->visible = false;
                 selected->visual.flags &= ~1u;  // oracle f506：title01 全消
@@ -216,8 +207,10 @@ void TitleDifficultyMenu::advance_choreography() {
     // update 早于 manager tick，故 f1 落 burst 16（f0 不绘）、相位 f≡1 (mod 3)。
     // 相位交给 TitleState::particle_clock 供角色屏接力（oracle 全窗不断，
     // f749 仍插）。
-    if (f == 1) spawn_particles(16);
-    else if (f > 1 && (f - 1) % 3 == 0) spawn_particles(1);
+    if (f == 1)
+        spawn_particles(16);
+    else if (f > 1 && (f - 1) % 3 == 0)
+        spawn_particles(1);
     state.particle_clock = u32(f + 1);
     // 头插粒子先落到链首；再整块挪到背景 91/93 之后（保持新→旧相对序），
     // 最后由 reorder_difficulty_draws 把 90/83/84 重挂链尾。
@@ -300,15 +293,13 @@ bool TitleDifficultyMenu::update(u32 pressed, u32 repeated) {
                 // (pending)。label3 只存在于行脚本（5f α→0），83/84 无 3 保持旋转。
                 if (!sound(10)) return false;
                 if (!check(visuals.interrupt(resources.difficulty_tree, 3, true))) return false;
-                if (!check(visuals.interrupt(resources.difficulty_tree, 7 + state.menu.cursor, false)))
-                    return false;
+                if (!check(visuals.interrupt(resources.difficulty_tree, 7 + state.menu.cursor, false))) return false;
             }
         }
         if (pressed & 0x102) {  // Esc/X：回主菜单
             // 0x451237-0x451263：当帧 root pending label1 并清根槽（不是 6 帧后
             // 才 retire）；其余退场由脚本 label1 自行播完。Extra 态根为 124。
-            const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra
-                                                      : resources.difficulty_tree;
+            const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra : resources.difficulty_tree;
             if (!check(visuals.interrupt(tree, 1, false))) return false;
             state.handles[tree] = 0;
             state.change_substate(4);
@@ -319,17 +310,15 @@ bool TitleDifficultyMenu::update(u32 pressed, u32 repeated) {
             // root123 子 113+cursor（亮行）再 pending2（确认缩放），子标签覆盖6。
             // Extra 态（be7c4>=4）原版走 else 分支：root124 子 0x75(117)
             // interrupt（EXTRA 行确认高亮）。
-            const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra
-                                                      : resources.difficulty_tree;
+            const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra : resources.difficulty_tree;
             if (!check(visuals.interrupt(tree, 6, false))) return false;
             if (progress.difficulty < 4 && state.menu.cursor < 4) {
                 auto* tree_vm = animations.registry.find(state.handles[tree]);
                 if (!tree_vm) return check(false);
-                auto* row = animations.registry.find_child_script(
-                    *tree_vm, 113 + state.menu.cursor, 0);  // 0x4512ae: edi += 0x71
+                auto* row = animations.registry.find_child_script(*tree_vm, 113 + state.menu.cursor,
+                                                                  0);  // 0x4512ae: edi += 0x71
                 if (!row) return check(false);
-                if (!check(visuals.handle_interrupt(animations.registry.handle(*row), 2, false)))
-                    return false;
+                if (!check(visuals.handle_interrupt(animations.registry.handle(*row), 2, false))) return false;
             }
             // Rank Select 101 同帧退场（oracle 窗B f603-621 滑出，102 f622 起入场）。
             if (!check(visuals.retire(resources.difficulty_badge))) return false;
@@ -405,8 +394,7 @@ void TitleCharacterMenu::return_difficulty() {
     // 滑出后自机屏建 102；本屏回退走 retire=label1 淡出，帧级时序待窗对拍）。
     // 0x451450 case4 sends label 1 to the active 129/130 root.
     visuals.retire(resources.difficulty_badge + 1);
-    visuals.retire(progress.difficulty == 4 ? resources.char_menu_root_ex
-                                            : resources.char_menu_root);
+    visuals.retire(progress.difficulty == 4 ? resources.char_menu_root_ex : resources.char_menu_root);
     visuals.retire(resources.character_root);
     state.change_screen(TitleScreen::Difficulty);
     // 0x451450 case4（Esc 取消）不写 DAT_004dc678：preferred_character 只在
@@ -424,8 +412,7 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
         if (!animations.create(resources.ascii, resources.difficulty_particle, -1, 2))
             return check(false, "Character particle spawn failed");
         // 头插后把粒子整块移到角色屏既有 VM 之后（L22 桶序：背景 → 粒子）。
-        requeue_particles_to_back(animations, resources.ascii,
-                                  resources.difficulty_particle);
+        requeue_particles_to_back(animations, resources.ascii, resources.difficulty_particle);
     }
     ++state.particle_clock;
     switch (state.substate) {
@@ -462,8 +449,7 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
         // 期间不建）。原版顺序在自机根之前，port 曾放到根之后。
         if (!visual(visuals.create(resources.difficulty_badge + 1))) return false;
         // 0x451450 case0：自机菜单根 = (be7c4==4)+0x81 → 129（普通）/130（EX）。
-        const i32 menu_root = progress.difficulty == 4 ? resources.char_menu_root_ex
-                                                       : resources.char_menu_root;
+        const i32 menu_root = progress.difficulty == 4 ? resources.char_menu_root_ex : resources.char_menu_root;
         // 0x45151a-0x451521：`FUN_0046fb90(handles[129/130])` 非 0 时整段
         // 跳过（jne 0x451564）——不重建、不重发 label3/7+cursor。自机屏
         // →Stage Select→退回时原版保留立绘/详情树（0x4518xx 练习分支只
@@ -485,12 +471,12 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
         if (AnmVm* menu = animations.registry.find(state.handles[menu_root])) {
             const std::function<void(AnmVm&)> hide_tree = [&](AnmVm& vm) {
                 vm.visual.flags &= ~2u;
-                for (AnmVm* child : animations.registry.children(vm)) hide_tree(*child);
+                for (AnmVm* child : animations.registry.children(vm))
+                    hide_tree(*child);
             };
             for (i32 c = 0; c < 4; c++) {
                 if (host.character_cleared(c, progress.difficulty)) continue;
-                if (AnmVm* tag = animations.registry.find_child_script(
-                        *menu, resources.clear_tag_base + c, 0))
+                if (AnmVm* tag = animations.registry.find_child_script(*menu, resources.clear_tag_base + c, 0))
                     hide_tree(*tag);
             }
         }
@@ -527,11 +513,10 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
             // 层复位，不淡出）。不是 root 广播 label3 的中央淡出——原版立绘/
             // 详情在转场与练习 Stage Select 期间仍在场（0x4518xx 只清 102）；
             // 旧实现提前 10f 淡出，退回自机屏时贴图像“重新加载”。
-            const i32 menu_root = progress.difficulty == 4 ? resources.char_menu_root_ex
-                                                           : resources.char_menu_root;
+            const i32 menu_root = progress.difficulty == 4 ? resources.char_menu_root_ex : resources.char_menu_root;
             if (!visual(visuals.child_interrupt(
-                    menu_root, resources.portrait_base + title_character_at(state.menu.cursor),
-                    6, false))) return false;
+                    menu_root, resources.portrait_base + title_character_at(state.menu.cursor), 6, false)))
+                return false;
             // 0x451ab7-0x451b34 还对 root 子 0x55/0x56 发 label6；129/130
             // 的 spawn 表无这两号（dump），原版查找失败即 no-op，port 同样跳过。
             if (!check(host.sound(7), "Character confirm sound failed")) return false;
@@ -544,8 +529,7 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
             // 0x451450: age10, Practice (be830 & 0x30 != 0) goes to screen8;
             // only the ordinary path starts the game transition here.
             if ((progress.run_mode_flags & 0x30u) == 0x10u) {
-                progress.character = settings.preferred_character =
-                    title_character_at(state.menu.cursor);
+                progress.character = settings.preferred_character = title_character_at(state.menu.cursor);
                 state.menu.push();
                 state.menu.count = 6;
                 state.menu.wrapping = true;
@@ -561,13 +545,10 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
             }
             // 00451450 case3 age10：FUN_00417370 只创建转场 VM（无 label 7
             // 中断；effect.anm script1 无该标签）。
-            if (!check(host.begin_transition(state.start_effect),
-                       "Game start transition unavailable"))
-                return false;
+            if (!check(host.begin_transition(state.start_effect), "Game start transition unavailable")) return false;
         }
         if (state.age.current > 39) {
-            progress.character = settings.preferred_character =
-                title_character_at(state.menu.cursor);
+            progress.character = settings.preferred_character = title_character_at(state.menu.cursor);
             state.menu.push();
             state.change_screen(TitleScreen::StartGame);
             // Player Select 条 102 退场（对局转场；oracle 窗B 开局序列同）。
@@ -605,12 +586,11 @@ bool TitleStageMenu::update(u32 pressed, u32 repeated) {
         state.menu.select(settings.practice_stage);
         // On a return from gameplay the title scene has no persistent backdrop.
         if (!animations.registry.find(state.handles[89])) {
-            if (!check(visuals.create(89) && visuals.interrupt(89, 3, true),
-                       "Practice return background unavailable")) return false;
+            if (!check(visuals.create(89) && visuals.interrupt(89, 3, true), "Practice return background unavailable"))
+                return false;
         }
         // Original handles +0x47c / +0x488 are title scripts 109 / 112.
-        if (!check(visuals.create(109) && visuals.create(112),
-                   "Practice stage animations unavailable")) return false;
+        if (!check(visuals.create(109) && visuals.create(112), "Practice stage animations unavailable")) return false;
         state.change_substate(1);
         [[fallthrough]];
     case 1:
@@ -621,8 +601,8 @@ bool TitleStageMenu::update(u32 pressed, u32 repeated) {
         if ((pressed | repeated) & 0x10) state.menu.move(-1);
         if ((pressed | repeated) & 0x20) state.menu.move(1);
         if (!check(state.menu.error.empty(), "Practice stage cursor failed")) return false;
-        if (state.menu.previous != state.menu.cursor &&
-            !check(host.sound(10), "Practice stage cursor sound failed")) return false;
+        if (state.menu.previous != state.menu.cursor && !check(host.sound(10), "Practice stage cursor sound failed"))
+            return false;
         if (pressed & 0x102) {
             settings.practice_stage = state.menu.cursor;
             state.change_substate(4);
@@ -630,8 +610,7 @@ bool TitleStageMenu::update(u32 pressed, u32 repeated) {
         }
         if (pressed & 0x80001) {
             // 0x451cb0 rejects an unplayed stage with sound16, without leaving.
-            if (!available(state.menu.cursor + 1))
-                return check(host.sound(16), "Locked practice stage sound failed");
+            if (!available(state.menu.cursor + 1)) return check(host.sound(16), "Locked practice stage sound failed");
             settings.practice_stage = state.menu.cursor;
             state.change_substate(3);
             return check(host.sound(7) && host.sound(50), "Practice stage confirm sound failed");
@@ -640,8 +619,8 @@ bool TitleStageMenu::update(u32 pressed, u32 repeated) {
     case 3:
         if (state.age.current == 10) {
             // 00451cb0 case3 age10：同 00417370，仅创建（无 label 7）。
-            if (!check(host.begin_transition(state.start_effect),
-                       "Practice start transition unavailable")) return false;
+            if (!check(host.begin_transition(state.start_effect), "Practice start transition unavailable"))
+                return false;
         }
         if (state.age.current > 39) {
             progress.stage = progress.starting_stage = state.menu.cursor + 1;
@@ -654,8 +633,8 @@ bool TitleStageMenu::update(u32 pressed, u32 repeated) {
         break;
     case 4:
         if (state.age.current > 5) {
-            if (!check(visuals.retire(109) && visuals.retire(112),
-                       "Practice stage animation exit failed")) return false;
+            if (!check(visuals.retire(109) && visuals.retire(112), "Practice stage animation exit failed"))
+                return false;
             state.menu.pop();
             state.change_screen(TitleScreen::Character);
         }
@@ -665,21 +644,19 @@ bool TitleStageMenu::update(u32 pressed, u32 repeated) {
 }
 
 bool TitleStageMenu::draw_texts(HudDrawServices& host) {
-    if (state.screen != TitleScreen::Stage ||
-        (state.substate != 2 && state.substate != 3)) return true;
+    if (state.screen != TitleScreen::Stage || (state.substate != 2 && state.substate != 3)) return true;
     // 0x452170: (296,216), row step18; locked selected=df, available=yellow.
     // Stage best scores are not stored by this port yet: omit, don't invent them.
     for (i32 row = 0; row < 6; ++row) {
         const bool played = available(row + 1);
         HudTextStyle style;
-        style.color = row != state.menu.cursor ? 0xff808080u :
-                      !played ? 0xffdfdfdfu :
-                      state.substate == 3 && state.age.current % 4 >= 2 ?
-                          0xff000000u : 0xffffff00u;
-        const std::string text = "Stage " + std::to_string(row + 1) +
-            (played ? "" : "  ---------");
-        if (!check(host.hud_text({{296, float(216 + row * 18), 0}, style, text}),
-                   "Practice stage text failed")) return false;
+        style.color = row != state.menu.cursor                            ? 0xff808080u
+                      : !played                                           ? 0xffdfdfdfu
+                      : state.substate == 3 && state.age.current % 4 >= 2 ? 0xff000000u
+                                                                          : 0xffffff00u;
+        const std::string text = "Stage " + std::to_string(row + 1) + (played ? "" : "  ---------");
+        if (!check(host.hud_text({{296, float(216 + row * 18), 0}, style, text}), "Practice stage text failed"))
+            return false;
     }
     return true;
 }

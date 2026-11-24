@@ -4,21 +4,23 @@
 // 后端：native/WASI = TH13_SAVE_PATH 或 cwd th13-save.bin；web = localStorage。
 #pragma once
 
-#include "../game/Types.hpp"
-#include "../game/ScoreDat.hpp"
 #include "../game/ReplayFile.hpp"
+#include "../game/ScoreDat.hpp"
 #include "../game/TitlePlayerDataMenu.hpp"
-#include <string>
+#include "../game/Types.hpp"
 #include <array>
+#include <string>
 
-namespace th13 { struct TitlePlayerDataRecord; }
+namespace th13 {
+struct TitlePlayerDataRecord;
+}
 
 namespace th13::sdl {
 
-inline constexpr i32 kSaveCharacters = 4;   // 霊夢/魔理沙/早苗/妖夢
-inline constexpr i32 kSaveDifficulties = 5; // Easy..Lunatic(0..3) + Extra(4)
+inline constexpr i32 kSaveCharacters = 4;    // 霊夢/魔理沙/早苗/妖夢
+inline constexpr i32 kSaveDifficulties = 5;  // Easy..Lunatic(0..3) + Extra(4)
 inline constexpr i32 kSaveSpellSlots = 0x7f;
-inline constexpr i32 kSaveSpellColumns = 5; // four characters and the aggregate column
+inline constexpr i32 kSaveSpellColumns = 5;  // four characters and the aggregate column
 
 struct SavedSpellCounters {
     // 00413270: +0x88/+0x8c attempts; 00413a60: +0x80/+0x84 captures.
@@ -31,14 +33,13 @@ struct SavedSpellCounters {
 };
 
 struct SavedSpellRecord {
-    std::string name; // original 0x80-byte name field, at most 127 bytes plus NUL
+    std::string name;  // original 0x80-byte name field, at most 127 bytes plus NUL
     std::array<SavedSpellCounters, kSaveSpellColumns> columns{};
 };
 
 struct SavedOrdinaryRecords {
     // The original file has six ranking tables; the player-data UI exposes five.
-    std::array<std::array<TitlePlayerDataScore, ScoreDat::kRankCount>,
-               ScoreDat::kDifficultySlots> ranking{};
+    std::array<std::array<TitlePlayerDataScore, ScoreDat::kRankCount>, ScoreDat::kDifficultySlots> ranking{};
     std::array<i32, ScoreDat::kDifficultySlots> clear_count{}, no_continue_clear_count{};
     i32 play_count = 0, total_frames = 0;
     bool history_complete = true;
@@ -79,7 +80,7 @@ public:
     // with spaces. Every name entry seeds from it and every END writes it.
     std::string last_name = "        ";
     void remember_name(const std::string& name);
-    bool ending_history_complete = true; // v1–v5 did not encode this history
+    bool ending_history_complete = true;  // v1–v5 did not encode this history
     bool player_data_summary(i32 difficulty, i32 character, TitlePlayerDataSummary& out) const;
     bool record_run_start(i32 character);
     bool record_play_frame(i32 character);
@@ -92,22 +93,20 @@ public:
 
     // Only real spell events call these methods; the caller excludes Replay,
     // matching score-session +0x10 != 1 in 00413270/00413a60.
-    bool record_spell_attempt(i32 character, i32 slot, const std::string& name,
-                              bool spell_practice);
+    bool record_spell_attempt(i32 character, i32 slot, const std::string& name, bool spell_practice);
     bool record_spell_capture(i32 character, i32 slot, bool spell_practice);
     bool record_spell_practice_score(i32 character, i32 slot, i32 score);
     const SavedSpellCounters* spell_counters(i32 character, i32 slot) const;
-    static i32 spell_difficulty(i32 slot); // original DAT_004bbd30 table, not run rank
+    static i32 spell_difficulty(i32 slot);  // original DAT_004bbd30 table, not run rank
     static i32 player_data_record_count(i32 difficulty);
-    bool player_data_record(i32 difficulty, i32 character, i32 ordinal,
-                            TitlePlayerDataRecord& out) const;
+    bool player_data_record(i32 difficulty, i32 character, i32 ordinal, TitlePlayerDataRecord& out) const;
     bool extra_unlocked(i32 character) const {
         return character >= 0 && character < 4 && (extra_unlocked_mask >> character) & 1u;
     }
     void set_extra_unlocked(i32 character) {
         if (character >= 0 && character < 4) extra_unlocked_mask |= 1u << character;
     }
-    bool loaded = false;   // true = 读到并采用合法档；false = 新档默认值
+    bool loaded = false;  // true = 读到并采用合法档；false = 新档默认值
     // Immutable migration provenance. Unknown bits and invalid-but-readable
     // settings remain recoverable even when the effective state is normalized.
     u32 legacy_save_size() const { return legacy_save_size_; }
@@ -144,18 +143,17 @@ public:
     static constexpr u32 kScoreDatTokensPerFrame = 400;
     bool advance_pending_writes(u32 tokens = kScoreDatTokensPerFrame);
     bool pending_writes() const { return score_dat_encoder_.active(); }
-    void sync_score_face_to_dat();   // FileStore 字段 → ScoreDat 镜像（save_score）
+    void sync_score_face_to_dat();       // FileStore 字段 → ScoreDat 镜像（save_score）
     void overlay_score_face_from_dat();  // ScoreDat 镜像 → FileStore 字段（导入）
 
     bool cleared(i32 character, i32 difficulty) const;
     void set_cleared(i32 character, i32 difficulty);  // 通关落档（bit 置位）
     // MusicRoom 听过位（musicroom-host.md §2 建议的内联读写面）。
-    bool music_heard(i32 track) const {
-        return track >= 0 && track < 32 && (heard_mask >> u32(track)) & 1u;
-    }
+    bool music_heard(i32 track) const { return track >= 0 && track < 32 && (heard_mask >> u32(track)) & 1u; }
     void set_music_heard(i32 track) {
         if (track >= 0 && track < 32) heard_mask |= 1u << u32(track);
     }
+
 private:
     u32 legacy_save_size_ = 0;
     std::array<u8, 64> legacy_save_bytes_{};

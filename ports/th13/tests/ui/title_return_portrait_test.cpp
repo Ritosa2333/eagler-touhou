@@ -2,12 +2,12 @@
 //   0x44cdb9 返回路径重建 89/94；新 89 的 90/91 仍带 ins_6(170) 初延迟，
 //   必须立即发 label2（90/91 label2 = ins_409(60,0,255)）才能在 65f 内
 //   回到 alpha255。重复进入/返回同样成立。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/TitleScene.hpp"
-#include "game/TitleMainMenu.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/TitleMainMenu.hpp"
+#include "game/TitleScene.hpp"
 
 #include <memory>
 
@@ -20,7 +20,8 @@ AnmIns fade(i32 frames, i32 target) { return AnmIns{409, 0, {frames, 0, target}}
 
 std::vector<u8> title_anm_fixture() {
     std::vector<std::vector<AnmIns>> scripts(243);
-    for (auto& script : scripts) script = {wait(), stop()};
+    for (auto& script : scripts)
+        script = {wait(), stop()};
     auto spawn_range = [&](i32 root, i32 first, i32 last) {
         scripts[u32(root)].clear();
         for (i32 child = first; child <= last; child++)
@@ -40,10 +41,20 @@ std::vector<u8> title_anm_fixture() {
     // 真实 title.anm 89-93 的时序：90/91 先 ins_6(170) 再 60f 淡入；
     // label3 淡出、label2 淡入。返回路径必须用 label2 跳过初延迟。
     scripts[89] = {spawn(92), spawn(93), spawn(91), spawn(90), wait(), label(3),
-                   wait(), label(2), wait(), label(1), stop()};
-    scripts[90] = {AnmIns{6, 0, {170}}, AnmIns{400, 0, {0, 0, 0}}, AnmIns{403, 0, {0}},
-                   fade(60, 255), wait(), label(3), fade(30, 0), wait(), label(2),
-                   fade(60, 255), wait(), label(1), stop()};
+                   wait(),    label(2),  wait(),    label(1),  stop()};
+    scripts[90] = {AnmIns{6, 0, {170}},
+                   AnmIns{400, 0, {0, 0, 0}},
+                   AnmIns{403, 0, {0}},
+                   fade(60, 255),
+                   wait(),
+                   label(3),
+                   fade(30, 0),
+                   wait(),
+                   label(2),
+                   fade(60, 255),
+                   wait(),
+                   label(1),
+                   stop()};
     scripts[91] = scripts[90];
     scripts[92] = {wait(), stop()};
     scripts[93] = {wait(), stop()};
@@ -84,12 +95,8 @@ struct Harness {
     Harness() {
         animation_updates[0].owner = animation_updates[1].owner = &manager;
         animation_updates[0].enabled = animation_updates[1].enabled = true;
-        animation_updates[0].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-        };
-        animation_updates[1].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-        };
+        animation_updates[0].run = [](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; };
+        animation_updates[1].run = [](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
         CHECK(scheduler.add(animation_updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(animation_updates[1], FramePass::Update, 34) >= 0);
         CHECK(load_bank(manager, 16, title_anm_fixture()));
@@ -97,8 +104,7 @@ struct Harness {
         CHECK(load_bank(manager, 2, synthetic_anm(8, trivial_scripts(20))));
         CHECK(load_bank(manager, 19, synthetic_anm(4, trivial_scripts(4))));
         CHECK(load_bank(manager, 8, synthetic_anm(4, trivial_scripts(4))));
-        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler,
-                                             TitleSceneResources{});
+        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler, TitleSceneResources{});
         CHECK(scene->error.empty());
         scene->state.return_reason = 0;
     }
@@ -107,11 +113,10 @@ struct Harness {
         CHECK(scheduler.update() >= 0);
     }
     void advance(int frames, u32 pressed = 0, u32 repeated = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed, repeated);
+        for (int i = 0; i < frames; i++)
+            frame(pressed, repeated);
     }
-    u32 background_alpha(i32 script) {
-        return root_alpha(scene->state.handles[89], script);
-    }
+    u32 background_alpha(i32 script) { return root_alpha(scene->state.handles[89], script); }
     u32 root_alpha(u32 handle, i32 script) {
         auto* root = manager.registry.find(handle);
         if (!root) return 0xdeadbeef;
@@ -123,14 +128,15 @@ struct Harness {
         CHECK_EQ(scene->state.substate, 2);
     }
     void enter_music_room() {
-        for (int i = 0; scene->state.menu.cursor != 6 && i < 12; ++i) frame(0x20);
+        for (int i = 0; scene->state.menu.cursor != 6 && i < 12; ++i)
+            frame(0x20);
         CHECK_EQ(scene->state.menu.cursor, 6);
         frame(0x01);
         advance(25);
         CHECK_EQ(int(scene->state.screen), int(TitleScreen::MusicRoom));
     }
     void leave_music_room() {
-        advance(20);  // case0/1 → case2
+        advance(20);   // case0/1 → case2
         frame(0x100);  // X → case3
         advance(11);   // >9 帧 → Main（返回路径重建 89/94）
         CHECK_EQ(int(scene->state.screen), int(TitleScreen::Main));

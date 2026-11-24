@@ -4,23 +4,23 @@
 // docs/plans/ui-base.md §四。
 #pragma once
 
+#include "AnmDrawSchedule.hpp"
+#include "FrameScheduler.hpp"
 #include "GameHud.hpp"
 #include "HudDrawData.hpp"
 #include "HudFrameData.hpp"
+#include "LaserPresentation.hpp"
 #include "MsgPlayer.hpp"
 #include "MsgPresentation.hpp"
 #include "PostGameFlow.hpp"
+#include "ScorePopups.hpp"
+#include "ScreenShake.hpp"
+#include "ScreenViews.hpp"
 #include "SessionState.hpp"
+#include "SpellPresentation.hpp"
 #include "StageBattle.hpp"
 #include "StagePresentation.hpp"
-#include "ScorePopups.hpp"
 #include "StageScenery.hpp"
-#include "ScreenShake.hpp"
-#include "FrameScheduler.hpp"
-#include "AnmDrawSchedule.hpp"
-#include "ScreenViews.hpp"
-#include "SpellPresentation.hpp"
-#include "LaserPresentation.hpp"
 
 namespace th13 {
 // 诊断用只读对话条目观察器（默认 nullptr，仅浏览器探针臂接）：RunScene::
@@ -36,14 +36,15 @@ extern RunDialogObserver run_dialog_observer;
 // 数字）次帧在 AsciiText::update 判死，永不绘制（2026-11-05 试玩实测回归）。
 inline constexpr i32 kRunTextPriority = 46;
 
-
-struct RunSceneServices : HudDrawServices, HudFrameServices, StageBattleServices,
-                          AnmDrawServices {
+struct RunSceneServices : HudDrawServices, HudFrameServices, StageBattleServices, AnmDrawServices {
     // HudFrameServices 与 StageBattleServices 同名同参声明 hud_sound（两侧
     // 语义同为「宿主播放 HUD 提示音」），多基类名查找二义。此处纯覆写合一：
     // 单一最终覆写（ApplicationState::hud_sound）同时覆盖两基类槽位。
     bool hud_sound(i32 id) override = 0;
-    bool hud_sound(i32 id, float x) override { (void)x; return hud_sound(id); }
+    bool hud_sound(i32 id, float x) override {
+        (void)x;
+        return hud_sound(id);
+    }
     virtual bool request_pause() = 0;
     virtual bool request_practice_end() { return false; }
     virtual bool record_spell_event(const SpellEvent&) { return true; }
@@ -56,9 +57,7 @@ struct RunSceneServices : HudDrawServices, HudFrameServices, StageBattleServices
     virtual bool open_game_fade(bool, i32, bool) { return false; }
     virtual bool dialogue_anchor_y(float) { return true; }
     virtual bool rasterize_spell_name(SpellPresentation&) { return false; }
-    virtual void spell_counts(i32, i32& captures, i32& attempts) const {
-        captures = attempts = 0;
-    }
+    virtual void spell_counts(i32, i32& captures, i32& attempts) const { captures = attempts = 0; }
     // 对局终了链路的场景请求（raw = DAT_004dcc24 真值：0xc 下一关 / 0xf 结局 /
     // 4 标题 / 0xa 重试…全表见 results-flow.md §1）→ Application 接线
     //（PostGamePlatform 经 RunScene 转发到本接口）。
@@ -109,9 +108,7 @@ public:
     RunSceneServices* host = nullptr;
     StageSim* sim = nullptr;
     std::vector<std::string>* anim_list = nullptr;
-    bool read(const std::string& name, std::vector<u8>& data) override {
-        return host && host->read_asset(name, data);
-    }
+    bool read(const std::string& name, std::vector<u8>& data) override { return host && host->read_asset(name, data); }
     bool animation(u32 slot, const std::string& name) override {
         // 装载核验（0x4795b0 注册序的行为子集）：ANM 必须可读；slot 从 10 起
         // 记名——ECL 302 引用的文件槽 = 2 + 名单序（st01：2=enemy、3=st01enm）。
@@ -149,10 +146,8 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
         RunScene& scene;
         ScreenShake effect;
         FrameCallback callback;
-        ShakeCallback(RunScene& owner, i32 duration, i32 start, i32 end)
-            : scene(owner), effect(duration,start,end) {}
-        ShakeCallback(RunScene& owner, ScreenShake value)
-            : scene(owner), effect(value) {}
+        ShakeCallback(RunScene& owner, i32 duration, i32 start, i32 end) : scene(owner), effect(duration, start, end) {}
+        ShakeCallback(RunScene& owner, ScreenShake value) : scene(owner), effect(value) {}
     };
     std::vector<std::unique_ptr<ShakeCallback>> shakes;
     bool start_shake(i32 duration, i32 start, i32 end);
@@ -192,10 +187,10 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     // S3 对局终了链路：msg 播放器（Boss 前后对话）+ 对局内覆盖层骨架。
     MsgFile dialog_file;
     MsgPlayer dialog;
-    bool dialog_ready = false;  // msg 资产缺失时降级为对话缺席（519 即过）
+    bool dialog_ready = false;       // msg 资产缺失时降级为对话缺席（519 即过）
     MsgAdvance dialogue_advance_{};  // Update 20 锁存同一有效输入，Update 28 消费。
     bool dialogue_update_pending_ = false;
-    i32 dialogue_rows_ = 0;     // 上一 update 已提交的正文行数（0 = 无文本）
+    i32 dialogue_rows_ = 0;  // 上一 update 已提交的正文行数（0 = 无文本）
     // 对话立绘/名牌 VM 面（0x428ae0 opcode 1/2/20/31 可视指令；见 MsgPresentation）。
     std::unique_ptr<MsgPresentation> msg_presentation;
     PostGameFlow post_flow;
@@ -224,12 +219,10 @@ public:
     u32 input_held = 0, input_pressed = 0, input_repeated = 0;
     Timer age{0, 0, 0, 0, 0};
     std::string error;
-    RunScene(SessionState&, HudPlayerState&, HudScoreState&, AnmManager&, AnmRenderer&,
-             AnmEnvironment&, RunSceneServices&, FrameScheduler&,
-             StagePresentation::Banks banks, i32 front_bank, i32 ascii_bank,
-             i32 scenery_bank, const std::string& std_name,
-             GameRandom* shared_random = nullptr, GameHud* shared_hud = nullptr,
-             StagePlayerState* shared_player = nullptr);
+    RunScene(SessionState&, HudPlayerState&, HudScoreState&, AnmManager&, AnmRenderer&, AnmEnvironment&,
+             RunSceneServices&, FrameScheduler&, StagePresentation::Banks banks, i32 front_bank, i32 ascii_bank,
+             i32 scenery_bank, const std::string& std_name, GameRandom* shared_random = nullptr,
+             GameHud* shared_hud = nullptr, StagePlayerState* shared_player = nullptr);
     ~RunScene();
     RunScene(const RunScene&) = delete;
     RunScene& operator=(const RunScene&) = delete;
@@ -244,23 +237,16 @@ public:
     bool update();
     // 0x43e3f0/0x43e700（Esc 暂停激活/恢复）：对话立绘/名牌槽 VM+0x18 bit1
     // 清/置（0x429d00/0x429f10 面；正文/气泡由宿主 DialogueText 侧覆盖）。
-    bool set_dialogue_visible(bool visible) {
-        return !msg_presentation || msg_presentation->set_visible(visible);
-    }
+    bool set_dialogue_visible(bool visible) { return !msg_presentation || msg_presentation->set_visible(visible); }
     // 0x44ad60：道具得分弹字入池（ScorePopup 事件宿主钩子）。
-    bool spawn_score_popup(i32 value, float x, float y, u32 color) {
-        return score_popups.spawn(value, x, y, color);
-    }
+    bool spawn_score_popup(i32 value, float x, float y, u32 color) { return score_popups.spawn(value, x, y, color); }
     // 0x42a430 case2/4（front61/63）与 0x43d530（front108/109/110）提示
     // 横幅的宿主入口：spell_presentation 是私有实现句柄，经此窄接口暴露给
     // ApplicationState::hud_notice / hud_spirit_notice。空句柄返回 true
     //（资源未就绪时不制造新失败，与 StageBattleServices 默认实现同义）。
-    bool show_notice(i32 front_script) {
-        return !spell_presentation || spell_presentation->show_notice(front_script);
-    }
+    bool show_notice(i32 front_script) { return !spell_presentation || spell_presentation->show_notice(front_script); }
     bool show_spirit_notice(i32 level, float x, float y, float z) {
-        return !spell_presentation ||
-               spell_presentation->show_spirit_notice(level, x, y, z);
+        return !spell_presentation || spell_presentation->show_spirit_notice(level, x, y, z);
     }
     struct RollbackState {
         PostGameFlow::RollbackState post;
@@ -280,19 +266,28 @@ public:
         bool transition_wait, scenery_started;
     };
     RollbackState capture_rollback() const {
-        return {post_flow.capture_rollback(), hud.capture_rollback(),
+        return {post_flow.capture_rollback(),
+                hud.capture_rollback(),
                 spell_presentation ? spell_presentation->capture_rollback() : SpellPresentation::RollbackState{},
                 msg_presentation ? msg_presentation->capture_rollback() : MsgPresentation::RollbackState{},
                 score_popups.capture_rollback(),
                 laser_presentation ? laser_presentation->capture() : LaserPresentation::SnapshotData{},
-                environment.camera_origin, environment.screen_translation, environment.reference_position,
-                environment.background_delta, environment.stage_direction, environment.screen_shake_offset,
-                environment.game_rng, animations.rate, environment.paused, dialogue_rows_,
-                age, player_effect_activation_pending,
-                transition_wait, scenery_started};
+                environment.camera_origin,
+                environment.screen_translation,
+                environment.reference_position,
+                environment.background_delta,
+                environment.stage_direction,
+                environment.screen_shake_offset,
+                environment.game_rng,
+                animations.rate,
+                environment.paused,
+                dialogue_rows_,
+                age,
+                player_effect_activation_pending,
+                transition_wait,
+                scenery_started};
     }
-    void restore_rollback(const RollbackState& state,
-            std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
+    void restore_rollback(const RollbackState& state, std::unordered_map<const AnmVm*, AnmVm*>& remapped) {
         post_flow.restore_rollback(state.post);
         hud.restore_rollback(state.hud);
         if (spell_presentation) spell_presentation->restore_rollback(state.spell);
@@ -315,7 +310,7 @@ public:
         scenery_started = state.scenery_started;
     }
     bool draw();
-    bool draw_stage(u32 pass);  // 战斗直绘（initialize 注册的 4 个 Draw 回调）
+    bool draw_stage(u32 pass);    // 战斗直绘（initialize 注册的 4 个 Draw 回调）
     bool draw_scenery(u32 pass);  // STD 背景（层 0-7 背景组 / 8-11 前景组）
     void request_pause() { host.request_pause(); }
     void request_game_over() { host.request_game_over(); }
@@ -335,29 +330,28 @@ public:
     enum class SceneEffectAction { None, Effect0, Effect136 };
     static constexpr SceneEffectAction scene_effect_action(i32 kind) noexcept {
         return kind == 6 ? SceneEffectAction::Effect136
-                         : (kind == 0 || kind == 1 || kind == 2 || kind == 3 || kind == 5)
-                               ? SceneEffectAction::Effect0
-                               : SceneEffectAction::None;  // 4（表行 -1）与表外
+               : (kind == 0 || kind == 1 || kind == 2 || kind == 3 || kind == 5)
+                   ? SceneEffectAction::Effect0
+                   : SceneEffectAction::None;  // 4（表行 -1）与表外
     }
 
 private:
     // MsgHost（msg opcode 回调；21 → 0x42cd40 关终了）
-    void msg_bgm(i32 opcode) override;         // 2/19/20/31 分派（0x429c7c 语义）
-    void msg_portrait_load() override;         // opcode 1：自机立绘根 VM
+    void msg_bgm(i32 opcode) override;  // 2/19/20/31 分派（0x429c7c 语义）
+    void msg_portrait_load() override;  // opcode 1：自机立绘根 VM
     void msg_text_anchor_y(float value) override;
-    void msg_stage_clear() override;           // → PostGameFlow::on_stage_clear
+    void msg_stage_clear() override;  // → PostGameFlow::on_stage_clear
     // 追加可视化通知钩子（MsgHost 默认空实现 → 本类按 0x428ae0 证据落 ANM 面）
     void msg_portrait_interrupt(i32 opcode, i32 label) override;  // 13/14 表情切换
     void msg_speaker_switch(i32 opcode) override;                 // 7/8 亮暗切换
     void msg_release(i32 opcode) override;                        // 4/5/6/18/23/24
-    void msg_music_fade(i32 opcode, float seconds) override;                     // 22/27 曲淡出
+    void msg_music_fade(i32 opcode, float seconds) override;      // 22/27 曲淡出
     void msg_advance_blip() override;                             // 0x460bc0(0)
     void msg_dialog_end() override;                               // 终止 → 全释放
     // PostGamePlatform
     void request_destination(i32 raw) override {
         // 0x42cd40 的 supervisor 投递：失败即入场景错误（dcc24 请求不能静默丢）。
-        if (!host.request_destination(raw))
-            fail("Post-game destination request failed: " + std::to_string(raw));
+        if (!host.request_destination(raw)) fail("Post-game destination request failed: " + std::to_string(raw));
     }
     bool request_practice_end() override {
         if (!host.request_practice_end()) {

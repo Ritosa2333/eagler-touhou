@@ -115,22 +115,25 @@ TEST(std_camera_script_runtime) {
     CHECK_EQ(script.state.camera.direction.z, -400.0f);
     CHECK_EQ(script.state.position.duration, 800);  // (-80,0,900)→(-80,400,-200)
     // 推进到 t=800：首段插值恰完成（位置到端点），t=800 块尚未执行。
-    for (int frame = 0; frame < 799; frame++) CHECK(script.step());
+    for (int frame = 0; frame < 799; frame++)
+        CHECK(script.step());
     CHECK_EQ(script.state.timer.current, 800);
     CHECK_EQ(script.state.camera.position.y, 400.0f);
     CHECK_EQ(script.state.camera.position.z, -200.0f);
     CHECK_EQ(script.state.camera.fog.color, 0xff000000u);  // 雾插值未开始
     // t=800 块：雾 60 帧插值 → (#100010, 800, 1600)；位置插值重启（768 帧）。
-    for (int frame = 0; frame < 60; frame++) CHECK(script.step());
+    for (int frame = 0; frame < 60; frame++)
+        CHECK(script.step());
     CHECK_EQ(script.state.camera.fog.color, 0xff100010u);
     CHECK_EQ(script.state.camera.fog.near_distance, 800.0f);
     CHECK_EQ(script.state.camera.fog.far_distance, 1600.0f);
     CHECK_EQ(script.state.position.duration, 768);
     // 推进到 t=1568：ins_1(176,800) 为该时刻首指令——跳转先于同组 cut 指令
     // 生效（t=1568 的换景组为不可达数据）：时钟回 800，位置插值重启。
-    for (int frame = 0; frame < 1568 - 800 - 60; frame++) CHECK(script.step());
+    for (int frame = 0; frame < 1568 - 800 - 60; frame++)
+        CHECK(script.step());
     CHECK_EQ(script.state.timer.current, 1568);
-    CHECK(script.step());  // 触发跳转
+    CHECK(script.step());                       // 触发跳转
     CHECK_EQ(script.state.timer.current, 801);  // set(800) 后 tick
     CHECK_EQ(script.state.camera.up.y, 1.0f);   // cut 未执行（上向量未变）
     CHECK_EQ(script.state.camera.fog.color, 0xff100010u);

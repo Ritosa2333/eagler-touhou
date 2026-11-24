@@ -29,8 +29,8 @@
 // power=293<max=400、2 个 active option），按生产帧序 sync（优先级 20）→
 // 主链 update(false)（Application Update 34）推进。所有断言只覆盖本层可
 // 观测的绘制/RNG 相位；生产 wasm/浏览器对拍由主会话统一执行（本轨禁止）。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/EclResource.hpp"
 #include "game/StageBattle.hpp"
@@ -90,8 +90,7 @@ u32 satellite_count(AnmManager& manager) {
     u32 count = 0;
     for (u32 i = 0; i < manager.registry.ordered_count(false); ++i) {
         AnmVm* vm = manager.registry.find(manager.registry.ordered_handle(false, i));
-        if (vm && vm->source_script == 15)
-            count += u32(manager.registry.children(*vm).size());
+        if (vm && vm->source_script == 15) count += u32(manager.registry.children(*vm).size());
     }
     return count;
 }
@@ -101,8 +100,7 @@ std::vector<Vec3> option_root_positions(AnmManager& manager) {
     std::vector<Vec3> positions;
     for (u32 i = 0; i < manager.registry.ordered_count(false); ++i) {
         AnmVm* vm = manager.registry.find(manager.registry.ordered_handle(false, i));
-        if (vm && vm->source_script == 15)
-            positions.push_back(vm->visual.translation);
+        if (vm && vm->source_script == 15) positions.push_back(vm->visual.translation);
     }
     return positions;
 }
@@ -147,8 +145,8 @@ struct OptionHarness {
             battle.options[i].x = i == 0 ? -20.f : 20.f;
             battle.options[i].y = 300.f;
         }
-        presentation = std::make_unique<StagePresentation>(
-            manager, renderer, StagePresentation::Banks{4, 5, 6, 8, 25}, 0);
+        presentation =
+            std::make_unique<StagePresentation>(manager, renderer, StagePresentation::Banks{4, 5, 6, 8, 25}, 0);
         ready = true;
     }
 
@@ -158,8 +156,7 @@ struct OptionHarness {
         const u32 before = random.index();
         CHECK(presentation->sync_player_options(battle));
         CHECK(manager.update(false));
-        if (!presentation->error().empty())
-            std::printf("option harness error: %s\n", presentation->error().c_str());
+        if (!presentation->error().empty()) std::printf("option harness error: %s\n", presentation->error().c_str());
         CHECK(presentation->error().empty());
         return random.index() - before;
     }
@@ -170,8 +167,7 @@ struct OptionHarness {
 };
 
 // 固定生命周期：门首 hide → 门内第 30 帧（计数 29）起每帧幂等 interrupt。
-u32 run_gate(bool hide, bool interrupt, std::vector<u32>* per_frame = nullptr,
-             u32 frames = 150) {
+u32 run_gate(bool hide, bool interrupt, std::vector<u32>* per_frame = nullptr, u32 frames = 150) {
     OptionHarness h;
     CHECK(h.ready);
     if (!h.ready) return 0;
@@ -321,7 +317,8 @@ TEST(stage_activation_does_not_rebroadcast_label2_to_old_option_tree) {
         CHECK_EQ(h.create_frame(), 8u);
         CHECK_EQ(h.frame(), 0u);
         CHECK_EQ(h.frame(), 0u);
-        for (u32 f = 0; f < 40; ++f) CHECK_EQ(h.frame(), (f % 4 == 0) ? 8u : 0u);
+        for (u32 f = 0; f < 40; ++f)
+            CHECK_EQ(h.frame(), (f % 4 == 0) ? 8u : 0u);
         const u32 satellites = satellite_count(h.manager);
         CHECK_EQ(satellites, 6u);
         const u32 before = h.random.index();

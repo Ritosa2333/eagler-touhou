@@ -85,9 +85,7 @@ std::vector<u8> string_payload(const std::string& text) {
 // ---- 存档视图桩（0x1b26a..0x1b276 → 13 字节）----
 struct MemorySave final : EndingSaveBytes {
     std::array<u8, 13> bytes{};
-    u8 read(i32 index) const override {
-        return index >= 0 && index < 13 ? bytes[u32(index)] : u8(0);
-    }
+    u8 read(i32 index) const override { return index >= 0 && index < 13 ? bytes[u32(index)] : u8(0); }
     void write(i32 index, u8 value) override {
         if (index >= 0 && index < 13) bytes[u32(index)] = value;
     }
@@ -108,8 +106,7 @@ struct RecordPlatform final : EndingPlatform {
     std::vector<std::pair<i32, std::string>> page_lines;
     u32 page_color = 0;
 
-    bool read_asset(const std::string& name, std::vector<u8>& bytes,
-                    bool /*required*/) override {
+    bool read_asset(const std::string& name, std::vector<u8>& bytes, bool /*required*/) override {
         const auto found = assets.find(name);
         if (found == assets.end()) return false;
         bytes = found->second;
@@ -213,13 +210,13 @@ TEST(ending_index_good_bad_and_variant_branches) {
     h.progress.difficulty = 1;
     h.progress.good_endings = 3;
     CHECK_EQ(ending_index_for(h.progress, h.save), 5);  // 未见过 e05
-    h.save.bytes[5] = 1;                                 // e05 已见
-    CHECK_EQ(ending_index_for(h.progress, h.save), 6);   // e06 变体
+    h.save.bytes[5] = 1;                                // e05 已见
+    CHECK_EQ(ending_index_for(h.progress, h.save), 6);  // e06 变体
     h.progress.good_endings = 2;
-    CHECK_EQ(ending_index_for(h.progress, h.save), 5);   // 资格不足
+    CHECK_EQ(ending_index_for(h.progress, h.save), 5);  // 资格不足
     h.progress.good_endings = 3;
     h.progress.difficulty = 0;
-    CHECK_EQ(ending_index_for(h.progress, h.save), 5);   // 难度不足
+    CHECK_EQ(ending_index_for(h.progress, h.save), 5);  // 难度不足
 }
 
 TEST(ending_initialize_writes_save_bits_and_scene_flags) {
@@ -229,8 +226,8 @@ TEST(ending_initialize_writes_save_bits_and_scene_flags) {
         h.progress.difficulty = 1;
         h.start("e05.msg", build_msg({}));
         CHECK_EQ(h.scene->ending_index(), 5);
-        CHECK_EQ(h.save.bytes[5], 0x11);  // |= 1 |（diff>0）0x10
-        CHECK_EQ(h.save.bytes[12], 1);    // idx<8 → 0x1b276 = 1
+        CHECK_EQ(h.save.bytes[5], 0x11);       // |= 1 |（diff>0）0x10
+        CHECK_EQ(h.save.bytes[12], 1);         // idx<8 → 0x1b276 = 1
         CHECK_EQ(h.scene->scene_flags(), 3u);  // 首见 + 好结局全未见过
         CHECK_EQ(h.scene->message_name(), std::string("e05.msg"));
     }
@@ -266,16 +263,16 @@ TEST(ending_interpreter_runs_full_script_to_end_request) {
     h.progress.difficulty = 1;
     // e01 段：ANM 装载/VM cue/音乐/颜色/文本页 + 对话等待 + 淡出 + 接名单。
     h.start("e01.msg", build_msg({
-        {0, 7, op7_payload(0, "e01.anm")},
-        {0, 8, op8_payload(0, 0, 0)},
-        {0, 10, string_payload("bgm/th13_18")},
-        {0, 9, u32_payload(0x00604040)},
-        {0, 3, encrypt_text("Hello ending")},
-        {1, 5, u32_payload(6000000)},
-        {1, 3, encrypt_text("Second line")},
-        {1, 11, {}},
-        {2, 12, string_payload("staff.msg")},
-    }));
+                           {0, 7, op7_payload(0, "e01.anm")},
+                           {0, 8, op8_payload(0, 0, 0)},
+                           {0, 10, string_payload("bgm/th13_18")},
+                           {0, 9, u32_payload(0x00604040)},
+                           {0, 3, encrypt_text("Hello ending")},
+                           {1, 5, u32_payload(6000000)},
+                           {1, 3, encrypt_text("Second line")},
+                           {1, 11, {}},
+                           {2, 12, string_payload("staff.msg")},
+                       }));
     h.host.assets["staff.msg"] = build_msg({
         {0, 10, string_payload("bgm/th13_19")},
         {0, 8, op8_payload(0, 0, 5)},
@@ -290,10 +287,10 @@ TEST(ending_interpreter_runs_full_script_to_end_request) {
         CHECK_EQ(h.host.anm_loads[0].first, 20);  // 槽 0x14+idx
         CHECK_EQ(h.host.anm_loads[0].second, std::string("e01.anm"));
     }
-    CHECK(h.host.anm_cues.empty());     // 0x4171b5 ret 4：op8 未执行
-    CHECK(h.host.music.empty());        // op10 未执行
-    CHECK(h.host.page_lines.empty());   // op3 未执行
-    CHECK_EQ(h.scene->line(), 0);       // 0x4170fa 行推进未发生
+    CHECK(h.host.anm_cues.empty());    // 0x4171b5 ret 4：op8 未执行
+    CHECK(h.host.music.empty());       // op10 未执行
+    CHECK(h.host.page_lines.empty());  // op3 未执行
+    CHECK_EQ(h.scene->line(), 0);      // 0x4170fa 行推进未发生
     // 帧 2：行 0 其余记录（op8 cue/op10 音乐/op9 颜色/op3 文本）执行；
     // 下一记录 op5@1 在未来 → 0x4170fa 行推进到 1。
     h.frame();
@@ -306,8 +303,7 @@ TEST(ending_interpreter_runs_full_script_to_end_request) {
         CHECK_EQ(std::get<0>(h.host.music[1]), 2);
     }
     CHECK_EQ(h.host.page_lines.size(), 1u);
-    if (h.host.page_lines.size() == 1u)
-        CHECK_EQ(h.host.page_lines[0].second, std::string("Hello ending"));
+    if (h.host.page_lines.size() == 1u) CHECK_EQ(h.host.page_lines[0].second, std::string("Hello ending"));
     CHECK_EQ(h.host.page_color, 0x00604040u);  // op9 颜色先行
     CHECK_EQ(h.scene->line(), 1);
     // 帧 3：op5 等待（无输入、首见封锁）。
@@ -319,20 +315,19 @@ TEST(ending_interpreter_runs_full_script_to_end_request) {
     h.frame(0, 0x1);
     CHECK_EQ(h.host.advance_sounds, 1);
     CHECK_EQ(h.host.page_lines.size(), 2u);
-    if (h.host.page_lines.size() == 2u)
-        CHECK_EQ(h.host.page_lines[1].second, std::string("Second line"));
+    if (h.host.page_lines.size() == 2u) CHECK_EQ(h.host.page_lines[1].second, std::string("Second line"));
     CHECK_EQ(h.host.fade_frames, 180);  // 0x43af70(3.0f)
     // op12@2 在下一帧行推进到 2 后执行：同帧接读 staff.msg 并解释新流
     //（th13_19 起 + 名单 VM cue），行重置后推进。
     h.frame();
     CHECK_EQ(h.host.music.size(), 4u);  // + th13_19 预载/播放
-    if (h.host.music.size() == 4u)
-        CHECK_EQ(std::get<2>(h.host.music[2]), std::string("th13_19.wav"));
+    if (h.host.music.size() == 4u) CHECK_EQ(std::get<2>(h.host.music[2]), std::string("th13_19.wav"));
     CHECK_EQ(h.host.anm_cues.size(), 2u);
     if (h.host.anm_cues.size() == 2u) CHECK_EQ(h.host.anm_cues[1].second, 5);
     // staff 尾段 op5 负参数：每帧重置 999（0x416bc2-0x416bcf 无 target 门），
     // 自然等待与 %6 持键节拍均不可达 → 仅 Z/Enter 按下放行 → op14 窗 → END。
-    for (int i = 0; i < 120; i++) h.frame();
+    for (int i = 0; i < 120; i++)
+        h.frame();
     CHECK(!h.scene->finished());
     h.frame(0, 0x1);  // 行 3 记录（op5 按下放行 + op14 窗）
     CHECK_EQ(h.host.windows.size(), 1u);
@@ -343,8 +338,7 @@ TEST(ending_interpreter_runs_full_script_to_end_request) {
     h.frame();  // 行 4：END
     CHECK(h.scene->finished());
     CHECK_EQ(h.host.requests.size(), 1u);
-    if (h.host.requests.size() == 1u)
-        CHECK_EQ(h.host.requests[0], 0x10);  // 0x416610 END 出口
+    if (h.host.requests.size() == 1u) CHECK_EQ(h.host.requests[0], 0x10);  // 0x416610 END 出口
     CHECK_EQ(h.scene->line(), 4);
 }
 
@@ -352,15 +346,16 @@ TEST(ending_first_viewing_blocks_hold_skip) {
     // 场景 bit0（该结局首见）封锁持键快进（0x416bed）；单键按下仍放行。
     EndingHarness h;
     h.start("e01.msg", build_msg({
-        {0, 5, u32_payload(6000000)},
-        {1, 0, {}},
-    }));
-    for (int i = 0; i < 60; i++) h.frame(0x1, 0, 30);  // Z 持续、重复 ≥0x14
+                           {0, 5, u32_payload(6000000)},
+                           {1, 0, {}},
+                       }));
+    for (int i = 0; i < 60; i++)
+        h.frame(0x1, 0, 30);  // Z 持续、重复 ≥0x14
     CHECK(!h.scene->finished());
     CHECK_EQ(h.host.advance_sounds, 0);
     h.frame(0, 0x1);  // 按下沿
     CHECK_EQ(h.host.advance_sounds, 1);
-    h.frame();        // 行推进到 1 后 END
+    h.frame();  // 行推进到 1 后 END
     CHECK(h.scene->finished());
     CHECK_EQ(h.host.requests.size(), 1u);
 }
@@ -370,10 +365,10 @@ TEST(ending_repeat_viewing_hold_skip_advances_every_six) {
     EndingHarness h;
     h.save.bytes[1] = 1;  // e01 已见
     h.start("e01.msg", build_msg({
-        {0, 5, u32_payload(6000000)},
-        {1, 5, u32_payload(6000000)},
-        {2, 0, {}},
-    }));
+                           {0, 5, u32_payload(6000000)},
+                           {1, 5, u32_payload(6000000)},
+                           {2, 0, {}},
+                       }));
     int frames = 0;
     while (!h.scene->finished() && frames < 40) {
         h.frame(0x1, 0, 30);
@@ -385,9 +380,9 @@ TEST(ending_repeat_viewing_hold_skip_advances_every_six) {
     EndingHarness ctrl;
     ctrl.save.bytes[1] = 1;
     ctrl.start("e01.msg", build_msg({
-        {0, 5, u32_payload(6000000)},
-        {1, 0, {}},
-    }));
+                              {0, 5, u32_payload(6000000)},
+                              {1, 0, {}},
+                          }));
     int ctrl_frames = 0;
     while (!ctrl.scene->finished() && ctrl_frames < 40) {
         ctrl.frame(0x200, 0, 0);
@@ -400,8 +395,8 @@ TEST(ending_reload_failure_exits_like_end) {
     // op12 目标 msg 缺席 → 0x416000 返空 → 解释器返 -1（END 同款 0x10 出口）。
     EndingHarness h;
     h.start("e01.msg", build_msg({
-        {0, 12, string_payload("staff.msg")},
-    }));
+                           {0, 12, string_payload("staff.msg")},
+                       }));
     h.frame();
     CHECK(h.scene->finished());
     CHECK_EQ(h.host.requests.size(), 1u);
@@ -413,14 +408,14 @@ TEST(ending_page_break_and_clear_state) {
     EndingHarness h;
     h.progress.continues = 1;  // 坏结局脚本不接 staff，直接排到 END
     h.start("e09.msg", build_msg({
-        {0, 3, encrypt_text("a")},
-        {0, 3, encrypt_text("b")},
-        {0, 4, {}},
-        {0, 3, encrypt_text("c")},  // op4 后页计数仍 2 → 行 2
-        {1, 6, u32_payload(6000000)},
-        {2, 3, encrypt_text("d")},  // op6 后重建页 → 行 0 + reset
-        {3, 0, {}},
-    }));
+                           {0, 3, encrypt_text("a")},
+                           {0, 3, encrypt_text("b")},
+                           {0, 4, {}},
+                           {0, 3, encrypt_text("c")},  // op4 后页计数仍 2 → 行 2
+                           {1, 6, u32_payload(6000000)},
+                           {2, 3, encrypt_text("d")},  // op6 后重建页 → 行 0 + reset
+                           {3, 0, {}},
+                       }));
     h.frame();  // 行 0 全部 op 执行（op3×3 + op4）
     CHECK_EQ(h.host.page_resets, 1);
     CHECK_EQ(h.host.page_lines.size(), 3u);
@@ -440,11 +435,11 @@ TEST(ending_difficulty_gated_cues) {
         EndingHarness h;
         h.progress.difficulty = difficulty;
         h.start("e01.msg", build_msg({
-            {0, 15, op8_payload(0, 0, 1)},
-            {0, 16, op8_payload(1, 0, 2)},
-            {0, 17, op8_payload(2, 0, 3)},
-            {1, 0, {}},
-        }));
+                               {0, 15, op8_payload(0, 0, 1)},
+                               {0, 16, op8_payload(1, 0, 2)},
+                               {0, 17, op8_payload(2, 0, 3)},
+                               {1, 0, {}},
+                           }));
         h.frame();
         h.frame();
         CHECK(h.scene->finished());
@@ -452,8 +447,7 @@ TEST(ending_difficulty_gated_cues) {
             CHECK(h.host.anm_cues.empty());
         } else {
             CHECK_EQ(h.host.anm_cues.size(), 1u);
-            if (h.host.anm_cues.size() == 1u)
-                CHECK_EQ(h.host.anm_cues[0].second, difficulty);  // 脚本号 1/2/3
+            if (h.host.anm_cues.size() == 1u) CHECK_EQ(h.host.anm_cues[0].second, difficulty);  // 脚本号 1/2/3
         }
     }
 }
@@ -467,13 +461,15 @@ TEST(ending_negative_wait_requires_press) {
     h.save.bytes[1] = 1;
     h.save.bytes[12] = 1;
     h.start("e01.msg", build_msg({
-        {0, 5, u32_payload(0xffffffff)},
-        {1, 0, {}},
-    }));
-    for (int i = 0; i < 1100; i++) h.frame();  // 长时无输入不放行
+                           {0, 5, u32_payload(0xffffffff)},
+                           {1, 0, {}},
+                       }));
+    for (int i = 0; i < 1100; i++)
+        h.frame();  // 长时无输入不放行
     CHECK(!h.scene->finished());
     CHECK_EQ(h.host.advance_sounds, 0);
-    for (int i = 0; i < 60; i++) h.frame(0x1, 0, 30);  // 持键也不放行（999%6）
+    for (int i = 0; i < 60; i++)
+        h.frame(0x1, 0, 30);  // 持键也不放行（999%6）
     CHECK(!h.scene->finished());
     h.frame(0, 0x1);  // 按下沿放行
     CHECK_EQ(h.host.advance_sounds, 1);

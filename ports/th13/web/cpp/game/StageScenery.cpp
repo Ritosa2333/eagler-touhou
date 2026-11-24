@@ -16,25 +16,32 @@ namespace {
 // （0x4aec98/0x4aec90/0x4aec94/0x4aea74）= origin+extent+8 / origin-8。
 // z 过滤为 0<=z<=1（0x407a69 比较 0.0、0x407a75 比较 1.0；NaN 剔除）。
 bool stage_visible(const StageObject& object, const Vec3& instance, const AnmCamera& camera,
-                   const GraphicsViewport& viewport, Vec2 origin, Vec2 extent,
-                   float distance_squared) noexcept {
+                   const GraphicsViewport& viewport, Vec2 origin, Vec2 extent, float distance_squared) noexcept {
     const Vec3 delta{float(float(object.position.x + instance.x) - camera.eye.x),
                      float(float(object.position.y + instance.y) - camera.eye.y),
                      float(float(object.position.z + instance.z) - camera.eye.z)};
-    const float distance =
-        float(float(float(delta.y * delta.y) + float(delta.x * delta.x)) + float(delta.z * delta.z));
+    const float distance = float(float(float(delta.y * delta.y) + float(delta.x * delta.x)) + float(delta.z * delta.z));
     if (distance > distance_squared) return false;
-    const float hx = float(object.size.x * .5f), hy = float(object.size.y * .5f),
-               hz = float(object.size.z * .5f);
+    const float hx = float(object.size.x * .5f), hy = float(object.size.y * .5f), hz = float(object.size.z * .5f);
     const float x0 = float(object.position.x - hx), x1 = float(object.position.x + hx),
-               y0 = float(object.position.y - hy), y1 = float(object.position.y + hy),
-               z0 = float(object.position.z - hz), z1 = float(object.position.z + hz),
-               x = object.position.x, z = object.position.z;
-    const Vec3 boxes[16] = {{x1, y1, z1},           {x1, y1, z0},           {x1, y0, z1},
-                            {x1, y0, z0},           {x0, y1, z1},           {x0, y1, z0},
-                            {x0, y0, z1},           {x0, y0, z0},           {x, y0, z0},
-                            {x, y1, z0},            {x, y0, z1},            {x, y1, z1},
-                            {x, y0, z},             {x, y1, z},             {x, y0, float(z - float(hz * .5f))},
+                y0 = float(object.position.y - hy), y1 = float(object.position.y + hy),
+                z0 = float(object.position.z - hz), z1 = float(object.position.z + hz), x = object.position.x,
+                z = object.position.z;
+    const Vec3 boxes[16] = {{x1, y1, z1},
+                            {x1, y1, z0},
+                            {x1, y0, z1},
+                            {x1, y0, z0},
+                            {x0, y1, z1},
+                            {x0, y1, z0},
+                            {x0, y0, z1},
+                            {x0, y0, z0},
+                            {x, y0, z0},
+                            {x, y1, z0},
+                            {x, y0, z1},
+                            {x, y1, z1},
+                            {x, y0, z},
+                            {x, y1, z},
+                            {x, y0, float(z - float(hz * .5f))},
                             {x, y1, float(z + float(hz * .5f))}};
     Matrix4 world;
     world.identity();
@@ -55,11 +62,10 @@ bool stage_visible(const StageObject& object, const Vec3& instance, const AnmCam
     for (const auto& box : boxes) {
         float q[4];
         for (u32 c = 0; c < 4; ++c)
-            q[c] = float(float(float(float(box.x * m.m[c]) + float(box.y * m.m[4 + c])) +
-                               float(box.z * m.m[8 + c])) +
+            q[c] = float(float(float(float(box.x * m.m[c]) + float(box.y * m.m[4 + c])) + float(box.z * m.m[8 + c])) +
                          m.m[12 + c]);
         const float estimate = float(1.f / q[3]),
-                   w = float(float(estimate + estimate) - float(float(estimate * q[3]) * estimate));
+                    w = float(float(estimate + estimate) - float(float(estimate * q[3]) * estimate));
         const Vec3 point{float(q[0] * w), float(q[1] * w), float(q[2] * w)};
         if (!(point.z >= 0 && point.z <= 1)) continue;
         if (point.x < min_x) min_x = point.x;
@@ -82,8 +88,7 @@ void StageScenery::begin_enter() noexcept {
 }
 bool StageScenery::draw_camera_enabled() const noexcept {
     if (retired()) return false;
-    return (lifecycle_flags & 8u) == 0 &&
-           ((lifecycle_flags & 4u) == 0 || lifecycle_timer.current < 60);
+    return (lifecycle_flags & 8u) == 0 && ((lifecycle_flags & 4u) == 0 || lifecycle_timer.current < 60);
 }
 u32 StageScenery::draw_clear_color() const noexcept {
     if ((lifecycle_flags & 4u) != 0 && frames < 34) return 0;
@@ -107,8 +112,7 @@ bool StageScenery::finish_draw_pass(i32 pass) noexcept {
         }
     }
     if (pass != 5) return true;
-    if ((lifecycle_flags & 4u) && lifecycle_timer.current >= 30)
-        transition_color &= 0x00ffffffu;
+    if ((lifecycle_flags & 4u) && lifecycle_timer.current >= 30) transition_color &= 0x00ffffffu;
     if (lifecycle_timer.current > 0) {
         lifecycle_timer.decrement(&rate);
         if (lifecycle_timer.current < 1) {
@@ -147,12 +151,11 @@ bool StageScenery::initialize(AnmManager& animations, i32 bank) {
     // 装配的相机）不覆盖，保持 initialize 对调用方相机状态的不干扰。
     auto& camera = script.state.camera;
     const bool default_camera =
-        camera.position.x == 0.f && camera.position.y == 0.f && camera.position.z == 0.f &&
-        camera.direction.x == 0.f && camera.direction.y == 0.f && camera.direction.z == 0.f &&
-        camera.up.x == 0.f && camera.up.y == 0.f && camera.up.z == 0.f &&
-        camera.eye_offset.x == 0.f && camera.eye_offset.y == 0.f && camera.eye_offset.z == 0.f &&
-        camera.target_offset.x == 0.f && camera.target_offset.y == 0.f &&
-        camera.target_offset.z == 0.f && camera.fov == 0.f && camera.fog.color == 0;
+        camera.position.x == 0.f && camera.position.y == 0.f && camera.position.z == 0.f && camera.direction.x == 0.f &&
+        camera.direction.y == 0.f && camera.direction.z == 0.f && camera.up.x == 0.f && camera.up.y == 0.f &&
+        camera.up.z == 0.f && camera.eye_offset.x == 0.f && camera.eye_offset.y == 0.f && camera.eye_offset.z == 0.f &&
+        camera.target_offset.x == 0.f && camera.target_offset.y == 0.f && camera.target_offset.z == 0.f &&
+        camera.fov == 0.f && camera.fog.color == 0;
     if (default_camera) {
         camera.position = {0.f, 0.f, -600.f};
         camera.direction = {0.f, 300.f, 600.f};
@@ -181,10 +184,8 @@ bool StageScenery::initialize(AnmManager& animations, i32 bank) {
     instance_flags.resize(file.instances.size());
     for (u32 i = 0; i < file.objects.size(); ++i) {
         for (const auto& primitive : file.objects[i].primitives) {
-            if (primitive.animation >= primitives.size())
-                return fail("Stage scenery primitive index outside pool");
-            if (!bind(primitives[primitive.animation], animations, bank, primitive.script))
-                return false;
+            if (primitive.animation >= primitives.size()) return fail("Stage scenery primitive index outside pool");
+            if (!bind(primitives[primitive.animation], animations, bank, primitive.script)) return false;
         }
     }
     initialized = true;
@@ -206,7 +207,10 @@ bool StageScenery::update(AnmManager& animations, AnmEnvironment& environment, f
     const auto& offset = script.state.camera.target_offset;
     view_direction = normalize_scene_vector(
         {float(direction.x + offset.x), float(direction.y + offset.y), float(direction.z + offset.z)});
-    if ((lifecycle_flags & 4u) && lifecycle_timer.current >= 30) { ++frames; return true; }
+    if ((lifecycle_flags & 4u) && lifecycle_timer.current >= 30) {
+        ++frames;
+        return true;
+    }
     for (u32 i = 0; i < file.objects.size(); ++i) {
         if (!(object_flags[i] & 1)) continue;
         u32 active = 0;
@@ -223,18 +227,18 @@ bool StageScenery::update(AnmManager& animations, AnmEnvironment& environment, f
     environment.camera_origin = script.state.camera.eye_offset;
     environment.screen_translation = script.state.camera.position;
     environment.reference_position = view_direction;
-    environment.stage_direction=script.state.camera.direction;
-    environment.background_delta=script.state.camera.animation_delta;
+    environment.stage_direction = script.state.camera.direction;
+    environment.background_delta = script.state.camera.animation_delta;
     frames++;
     return true;
 }
 bool StageScenery::interrupt_objects(i32 label) {
-    for (auto& vm : primitives) vm.pending_interrupt = label;
+    for (auto& vm : primitives)
+        vm.pending_interrupt = label;
     return true;
 }
-bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphics& graphics,
-                        i32 layer_first, i32 layer_last, const GraphicsViewport& viewport,
-                        Vec2 cull_extent, Vec2 screen_shake) {
+bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphics& graphics, i32 layer_first,
+                        i32 layer_last, const GraphicsViewport& viewport, Vec2 cull_extent, Vec2 screen_shake) {
     (void)animations;
     // cull_extent 仅为 RunScene 调用兼容保留：th13 裁剪窗是绝对屏幕矩形
     // [128,512]x[16,464]（0x407c83/0x407c96/0x407ca9/0x407cbc），不是
@@ -245,7 +249,8 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
     if (retired() || !draw_geometry_enabled()) return true;
     if (layer_first == 0) {
         bool has_background = false;
-        for (const auto& vm : background_slots) has_background |= vm.sprite != nullptr;
+        for (const auto& vm : background_slots)
+            has_background |= vm.sprite != nullptr;
         if (has_background) {
             renderer.set_viewport(viewport);
             AnmCamera overlay_camera;
@@ -269,7 +274,9 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
     auto camera_state = script.state.camera;
     camera_state.direction = view_direction;
     const auto camera = stage_camera(camera_state, viewport);
-    renderer.scenery_camera=camera;renderer.scenery_viewport=viewport;renderer.scenery_camera_ready=true;
+    renderer.scenery_camera = camera;
+    renderer.scenery_viewport = viewport;
+    renderer.scenery_camera_ready = true;
     renderer.set_viewport(viewport);
     renderer.set_camera(camera);
     graphics.presentation_camera(true);
@@ -287,8 +294,8 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
             const auto& object = file.objects[u32(instance.object)];
             if (i32(object.layer) != layer) continue;
             renderer.presentation_instance = i + 1;
-            if (!stage_visible(object, instance.position, camera, viewport, {128.f, 16.f},
-                               {384.f, 448.f}, script.state.culling_distance_squared)) {
+            if (!stage_visible(object, instance.position, camera, viewport, {128.f, 16.f}, {384.f, 448.f},
+                               script.state.culling_distance_squared)) {
                 object_flags[u32(instance.object)] |= 2;
                 instance_flags[i] = i16(instance.flags & ~1);
                 continue;
@@ -307,8 +314,7 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
                     // 尺寸查表，与原版 40f99c 行为一致）。
                     if (primitive.size.x != 0 || primitive.size.y != 0) {
                         const auto* selected = vm.texture_sprite();
-                        if (!selected)
-                            return fail("Stage scenery primitive sprite unavailable");
+                        if (!selected) return fail("Stage scenery primitive sprite unavailable");
                         const auto& sprite = *selected;
                         if (primitive.size.x != 0) {
                             visual.scale.x = float(primitive.size.x / sprite.width);
@@ -320,10 +326,8 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
                         }
                     }
                 }
-                const bool fog = mode == 8 || mode == 24,
-                           depth_write = (visual.flags & 0x2000) == 0;
-                if (graphics.pipeline().fog != fog || graphics.pipeline().depthWrite != depth_write)
-                    renderer.flush();
+                const bool fog = mode == 8 || mode == 24, depth_write = (visual.flags & 0x2000) == 0;
+                if (graphics.pipeline().fog != fog || graphics.pipeline().depthWrite != depth_write) renderer.flush();
                 graphics.set_depth_mask(depth_write);
                 graphics.set_fog(fog);
                 graphics.set_fog_color(camera.fog_color);

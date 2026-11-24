@@ -1,8 +1,8 @@
 #pragma once
-#include "AnmCoordinates.hpp"
-#include "ZunGraphics.hpp"
-#include "AnmTransforms.hpp"
 #include "AnmCamera.hpp"
+#include "AnmCoordinates.hpp"
+#include "AnmTransforms.hpp"
+#include "ZunGraphics.hpp"
 namespace th13 {
 // 调试探针：draw()/draw_glyph() 调用计量（按精灵聚合；单线程 wasm，无锁）。
 struct AnmDrawProbe {
@@ -30,24 +30,57 @@ class AnmRenderer {
     // 触发（web-draws 与 r23h 逐字节相同）；op183 的 10+2 拆分来自 pass
     // 入口同值相机 flush，见 ScreenViews::camera_if_changed。
     static constexpr u32 kSpriteBatchVertices = 131070;
-    ZunGraphics& graphics;std::vector<AnmGeometryVertex> vertices;u32 bound_texture=~0u;
-    struct ColorVertex {Vec3 position;float reciprocal_w;u32 color;};std::vector<ColorVertex> shapes;
-    bool material(AnmVm&,bool textured=true);int quad(AnmVm&,bool pixel);int pack_quad(AnmVm&,Vec3 (&)[4],bool pixel,const u32* colors=nullptr);int projected_quad(AnmVm&,bool fog);int world_quad(AnmVm&);int mesh(AnmVm&);int shape(AnmVm&);int trail(AnmVm&);int circle(AnmVm&);
-    u32 tint_color(u32)const noexcept;int overlay(AnmVm&);
+    ZunGraphics& graphics;
+    std::vector<AnmGeometryVertex> vertices;
+    u32 bound_texture = ~0u;
+    struct ColorVertex {
+        Vec3 position;
+        float reciprocal_w;
+        u32 color;
+    };
+    std::vector<ColorVertex> shapes;
+    bool material(AnmVm&, bool textured = true);
+    int quad(AnmVm&, bool pixel);
+    int pack_quad(AnmVm&, Vec3 (&)[4], bool pixel, const u32* colors = nullptr);
+    int projected_quad(AnmVm&, bool fog);
+    int world_quad(AnmVm&);
+    int mesh(AnmVm&);
+    int shape(AnmVm&);
+    int trail(AnmVm&);
+    int circle(AnmVm&);
+    u32 tint_color(u32) const noexcept;
+    int overlay(AnmVm&);
+
 public:
     bool always_hitbox = false;
-    u32 presentation_instance=0;
-    void submit(AnmVm&,touhou::graphics::Topology,u32,const void*,u32);
-    Vec2 offset{};GraphicsViewport viewport;AnmCamera camera;bool tint_enabled=false;u32 tint=0x80808080;
+    u32 presentation_instance = 0;
+    void submit(AnmVm&, touhou::graphics::Topology, u32, const void*, u32);
+    Vec2 offset{};
+    GraphicsViewport viewport;
+    AnmCamera camera;
+    bool tint_enabled = false;
+    u32 tint = 0x80808080;
     // 0x467350 的四角裁剪用 0x4dcc18+0xd8 的 2D 视口块（战场为 0x43be9b 的
     // {116,2,408,476}），与 D3D viewport（0x43b900 设置，可为全屏）不同。
     // 战场层 0..20 的绘制必须用该块裁剪，否则顶部/边缘的 quad 会多画。
-    GraphicsViewport clip;bool clip_set=false;
-    AnmCamera scenery_camera;GraphicsViewport scenery_viewport;bool scenery_camera_ready=false;
-    std::string error;explicit AnmRenderer(ZunGraphics& graphics):graphics(graphics){vertices.reserve(kSpriteBatchVertices);shapes.reserve(192);}
-    void flush();void invalidate();void set_viewport(const GraphicsViewport&);void set_camera(const AnmCamera&);
-    int draw(AnmVm&);int draw_glyph(AnmVm&);bool draw_layer(const std::vector<AnmVm*>&);
-    int draw_screen_strip(AnmVm&,const AnmGeometryVertex*,u32 count);
-    const std::vector<AnmGeometryVertex>& pending()const noexcept{return vertices;}
+    GraphicsViewport clip;
+    bool clip_set = false;
+    AnmCamera scenery_camera;
+    GraphicsViewport scenery_viewport;
+    bool scenery_camera_ready = false;
+    std::string error;
+    explicit AnmRenderer(ZunGraphics& graphics) : graphics(graphics) {
+        vertices.reserve(kSpriteBatchVertices);
+        shapes.reserve(192);
+    }
+    void flush();
+    void invalidate();
+    void set_viewport(const GraphicsViewport&);
+    void set_camera(const AnmCamera&);
+    int draw(AnmVm&);
+    int draw_glyph(AnmVm&);
+    bool draw_layer(const std::vector<AnmVm*>&);
+    int draw_screen_strip(AnmVm&, const AnmGeometryVertex*, u32 count);
+    const std::vector<AnmGeometryVertex>& pending() const noexcept { return vertices; }
 };
-}
+}  // namespace th13

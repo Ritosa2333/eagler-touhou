@@ -5,14 +5,8 @@
 
 namespace th13 {
 namespace {
-template <class T>
-void put(u8* p, u32 at, const T& v) {
-    std::memcpy(p + at, &v, sizeof v);
-}
-template <class T>
-void get(const u8* p, u32 at, T& v) {
-    std::memcpy(&v, p + at, sizeof v);
-}
+template <class T> void put(u8* p, u32 at, const T& v) { std::memcpy(p + at, &v, sizeof v); }
+template <class T> void get(const u8* p, u32 at, T& v) { std::memcpy(&v, p + at, sizeof v); }
 u32 word(const u8* p, u32 at) {
     u32 v;
     get(p, at, v);
@@ -155,7 +149,8 @@ bool EclFile::read(const u8* data, u32 size, EclContext& out, EclProgram& progra
     return true;
 }
 
-bool EclFile::write_threads(const EclThreadsSnapshot& threads, std::vector<u8>& out, u32 owner_offset, u32 child_offset) {
+bool EclFile::write_threads(const EclThreadsSnapshot& threads, std::vector<u8>& out, u32 owner_offset,
+                            u32 child_offset) {
     error.clear();
     constexpr u32 kStride = 0x11d4;  // 0x11C4 块 + 16 字节链表节点
     if (owner_offset > out.size() || out.size() - owner_offset < 0x11dc || child_offset > out.size() ||

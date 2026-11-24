@@ -4,9 +4,9 @@
 //   + 数字 sprite/前导零可见位（小 50+d / 大 61+d）→ 行3 Z 复位 100/80（音7）
 //   → 行4 Z >9 帧离屏（持久化 + 回 Main + root1 label1 清槽）。
 // 音量真值在宿主共享 TitleOptionVolumes；持久化失败如实记录 error。
+#include "../harness/test_framework.hpp"
 #include "ui_test_fixtures.hpp"
 #include <cstdio>
-#include "../harness/test_framework.hpp"
 
 #include "game/TitleMainMenu.hpp"
 #include "game/TitleOptionsMenu.hpp"
@@ -24,7 +24,8 @@ std::vector<u8> option_title_fixture() {
     auto scripts = trivial_scripts(130, 72);
     // root1 spawn 23-48（原版 spawn 列表，dump 实读；先清默认 wait/stop）。
     scripts[1].clear();
-    for (i32 child = 23; child <= 48; child++) scripts[1].push_back(spawn(child));
+    for (i32 child = 23; child <= 48; child++)
+        scripts[1].push_back(spawn(child));
     scripts[1].push_back(wait());
     scripts[1].push_back(stop());
     // 行条/数字子脚本按真机 label 空间建模（title.anm 实读）：首指令 op300
@@ -98,7 +99,8 @@ struct OptionHarness {
         return ok;
     }
     void advance(i32 frames, u32 pressed = 0, u32 repeated = 0) {
-        for (i32 i = 0; i < frames; i++) CHECK(frame(pressed, repeated));
+        for (i32 i = 0; i < frames; i++)
+            CHECK(frame(pressed, repeated));
     }
     AnmVm* child(i32 script) {
         auto* root = manager.registry.find(state.handles[1]);
@@ -128,11 +130,12 @@ TEST(option_digits_sprite_and_leading_zero_visibility) {
     auto* root = h.manager.registry.find(h.state.handles[1]);
     CHECK(root != nullptr);
     // bgm=42：百位隐（小33/大37）；十/个位显。se=100：全显。
-    const struct { i32 script; bool visible; } expects[] = {
-        {33, false}, {34, true}, {35, true},
-        {37, false}, {38, true}, {39, true},
-        {41, true}, {42, true}, {43, true},
-        {45, true}, {46, true}, {47, true},
+    const struct {
+        i32 script;
+        bool visible;
+    } expects[] = {
+        {33, false}, {34, true}, {35, true}, {37, false}, {38, true}, {39, true},
+        {41, true},  {42, true}, {43, true}, {45, true},  {46, true}, {47, true},
     };
     // 补一帧使 root1 spawn 完成，全量核对可见位（sprite 选择失败会进 error）。
     // 0044ed70 尾段经 +0x18 bit1（port flags bit1，0x44f3e0 and ~2 / 0x44f640
@@ -153,14 +156,16 @@ TEST(option_cursor_move_never_reveals_leading_zero_digits) {
     // 0x46fc30(7+行) 会把子体 VM+0x18 bit0 置位（0x46265d）；前导零隐藏在
     // bit1 上，bit0 置位不得复活百位 0（此前误用 bit0 隐藏曾闪「060」）。
     OptionHarness h;
-    h.volumes.bgm = 42;   // 百位隐
-    h.volumes.effect = 7; // 百位隐、十位隐
+    h.volumes.bgm = 42;    // 百位隐
+    h.volumes.effect = 7;  // 百位隐、十位隐
     CHECK(h.frame());
-    h.advance(8);          // 进交互态（>6）
+    h.advance(8);  // 进交互态（>6）
     for (i32 frame_index = 0; frame_index < 12; ++frame_index) {
-        if (frame_index == 2) h.frame(0x20);  // ↓ 行切换（BGM → SE）
-        else h.frame();
-        for (const i32 script : {33, 37, 41, 45}) {   // 四个百位
+        if (frame_index == 2)
+            h.frame(0x20);  // ↓ 行切换（BGM → SE）
+        else
+            h.frame();
+        for (const i32 script : {33, 37, 41, 45}) {  // 四个百位
             auto* vm = h.child(script);
             CHECK(vm != nullptr);
             if (!vm) continue;
@@ -175,29 +180,29 @@ TEST(option_cursor_move_never_reveals_leading_zero_digits) {
 
 TEST(option_entry_timing_and_cursor_move) {
     OptionHarness h;
-    CHECK(h.frame());              // substate0→1
+    CHECK(h.frame());  // substate0→1
     h.advance(6);
-    CHECK_EQ(h.state.substate, 1); // 原版 6 < age：第 7 帧才进 2
+    CHECK_EQ(h.state.substate, 1);  // 原版 6 < age：第 7 帧才进 2
     CHECK(h.frame());
     CHECK_EQ(h.state.substate, 2);
-    CHECK(h.frame(0x20));          // ↓：行0→1，音10
+    CHECK(h.frame(0x20));  // ↓：行0→1，音10
     CHECK_EQ(h.menu->row(), 1);
     CHECK(!h.sounds.empty() && h.sounds.back() == 10);
-    h.advance(1, 0, 0x10);         // ↑：回行0
+    h.advance(1, 0, 0x10);  // ↑：回行0
     CHECK_EQ(h.menu->row(), 0);
-    h.advance(1, 0x10);            // ↑ 环绕：行0→4
+    h.advance(1, 0x10);  // ↑ 环绕：行0→4
     CHECK_EQ(h.menu->row(), 4);
 }
 
 TEST(option_cancel_jumps_to_quit_row) {
     OptionHarness h;
     CHECK(h.frame());
-    h.advance(8);                  // 进 substate2
+    h.advance(8);  // 进 substate2
     CHECK_EQ(h.state.substate, 2);
-    CHECK(h.frame(0x102));         // X：行0 → 跳行4 + 音9
+    CHECK(h.frame(0x102));  // X：行0 → 跳行4 + 音9
     CHECK_EQ(h.menu->row(), 4);
     CHECK(!h.sounds.empty() && h.sounds.back() == 9);
-    CHECK_EQ(h.state.substate, 2); // 行≠4 时不离屏
+    CHECK_EQ(h.state.substate, 2);  // 行≠4 时不离屏
 }
 
 TEST(option_volume_adjust_and_clamp) {
@@ -205,21 +210,21 @@ TEST(option_volume_adjust_and_clamp) {
     h.volumes.bgm = 100;
     CHECK(h.frame());
     h.advance(8);
-    CHECK(h.frame(0x40));          // 行0 ←：100→95
+    CHECK(h.frame(0x40));  // 行0 ←：100→95
     CHECK_EQ(h.volumes.bgm, 95);
-    CHECK(h.sounds.empty());       // 原版音量步进无音效
+    CHECK(h.sounds.empty());  // 原版音量步进无音效
     CHECK_EQ(h.host.last_bgm, 95);
     h.volumes.bgm = 3;
-    CHECK(h.frame(0x40));          // <5 → 0（原版下溢分支）
+    CHECK(h.frame(0x40));  // <5 → 0（原版下溢分支）
     CHECK_EQ(h.volumes.bgm, 0);
-    CHECK(h.frame(0x80));          // 0→5
+    CHECK(h.frame(0x80));  // 0→5
     CHECK_EQ(h.volumes.bgm, 5);
     h.volumes.bgm = 98;
-    CHECK(h.frame(0x80));          // >95 → 100
+    CHECK(h.frame(0x80));  // >95 → 100
     CHECK_EQ(h.volumes.bgm, 100);
-    h.frame(0x20);                 // ↓ 行1
+    h.frame(0x20);  // ↓ 行1
     h.volumes.effect = 80;
-    CHECK(h.frame(0x40));          // 行1 ←：80→75
+    CHECK(h.frame(0x40));  // 行1 ←：80→75
     CHECK_EQ(h.volumes.effect, 75);
     CHECK_EQ(h.host.last_effect, 75);
 }
@@ -230,22 +235,23 @@ TEST(option_reset_defaults_and_quit_exit) {
     h.volumes.effect = 33;
     CHECK(h.frame());
     h.advance(8);
-    h.frame(0x20); h.frame(0x20);  // 行0→2
-    h.frame(0x20);                 // →3
-    CHECK(h.frame(0x80001));       // Z 行3：复位 100/80 + 音7
+    h.frame(0x20);
+    h.frame(0x20);            // 行0→2
+    h.frame(0x20);            // →3
+    CHECK(h.frame(0x80001));  // Z 行3：复位 100/80 + 音7
     CHECK_EQ(h.volumes.bgm, 100);
     CHECK_EQ(h.volumes.effect, 80);
     CHECK(!h.sounds.empty() && h.sounds.back() == 7);
-    h.frame(0x20);                 // →行4
-    CHECK(h.frame(0x80001));       // Z 行4：音9 + substate4
+    h.frame(0x20);            // →行4
+    CHECK(h.frame(0x80001));  // Z 行4：音9 + substate4
     CHECK_EQ(h.state.substate, 4);
     CHECK_EQ(int(h.state.screen), kTitleScreenOption);  // >9 帧前不切屏
     h.advance(9);
     CHECK_EQ(h.state.substate, 4);
-    CHECK(h.frame());              // 第 10 帧离屏
+    CHECK(h.frame());  // 第 10 帧离屏
     CHECK_EQ(int(h.state.screen), int(TitleScreen::Main));
     CHECK_EQ(h.state.handles[1], 0);
-    CHECK(!h.host.persist_ok);     // 默认宿主持久化失败如实记录
+    CHECK(!h.host.persist_ok);  // 默认宿主持久化失败如实记录
     CHECK(!h.menu->error.empty());
 }
 
@@ -254,8 +260,8 @@ TEST(option_persist_success_path_and_key_config_gate) {
     h.host.persist_ok = true;
     CHECK(h.frame());
     h.advance(8);
-    h.frame(0x102);                // X → 行4
-    CHECK(h.frame(0x80001));       // Z 行4 → substate4
+    h.frame(0x102);           // X → 行4
+    CHECK(h.frame(0x80001));  // Z 行4 → substate4
     h.advance(10);
     CHECK_EQ(h.host.persisted.bgm, 100);
     CHECK_EQ(h.host.persisted.effect, 80);
@@ -265,12 +271,13 @@ TEST(option_persist_success_path_and_key_config_gate) {
     h.state.substate = 0;
     CHECK(h.frame());
     h.advance(8);
-    h.frame(0x20); h.frame(0x20);  // →行2
+    h.frame(0x20);
+    h.frame(0x20);  // →行2
     CHECK_EQ(h.menu->row(), 2);
-    CHECK(h.frame(0x80001));       // 音7 → substate4
+    CHECK(h.frame(0x80001));  // 音7 → substate4
     CHECK_EQ(h.state.substate, 4);
     h.advance(9);
-    CHECK(!h.frame());             // >9 帧：open_key_config 默认 false → fail
+    CHECK(!h.frame());  // >9 帧：open_key_config 默认 false → fail
     CHECK(!h.menu->error.empty());
     h.host.key_config_ok = true;
 }

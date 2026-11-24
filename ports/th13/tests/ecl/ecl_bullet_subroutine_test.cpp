@@ -13,8 +13,7 @@ struct Rig {
     Rig() {
         std::vector<u8> child, root;
         // Constructor-time use proves that arguments arrived before ECL ran.
-        th13test::emit(child, 0, 500, 3, 255, 0,
-                      {float_to_bits(-9981.f), float_to_bits(-9980.f)});
+        th13test::emit(child, 0, 500, 3, 255, 0, {float_to_bits(-9981.f), float_to_bits(-9980.f)});
         th13test::emit(child, 0, 510, 1, 255, 0, {u32(-9985)});
         th13test::emit(child, 0, 23, 0, 255, 0, {600});
         th13test::emit(child, 0, 10, 0, 255, 0, {});
@@ -46,16 +45,13 @@ struct Rig {
         std::memcpy(padded.data(), name, std::strlen(name));
         instructions.emplace_back();
         auto& bytes = instructions.back();
-        th13test::emit(bytes, 0, 640, 0, 255, 0,
-                      {u32(emitter), u32(index), size}, padded.data(), size);
+        th13test::emit(bytes, 0, 640, 0, 255, 0, {u32(emitter), u32(index), size}, padded.data(), size);
         context.instruction = reinterpret_cast<const EclInstruction*>(bytes.data());
         return sim.commands.execute(context, 640);
     }
     int descriptor(i32 index) {
-        return op(610, {0, u32(index), 0, 0x1000000,
-                       16777217u, u32(-16777217), 0x7fffffffu, 0x80000000u,
-                       float_to_bits(31.f), float_to_bits(47.f),
-                       float_to_bits(-2.5f), float_to_bits(.25f)});
+        return op(610, {0, u32(index), 0, 0x1000000, 16777217u, u32(-16777217), 0x7fffffffu, 0x80000000u,
+                        float_to_bits(31.f), float_to_bits(47.f), float_to_bits(-2.5f), float_to_bits(.25f)});
     }
 };
 
@@ -134,6 +130,6 @@ TEST(bullet_subroutine_missing_name_is_an_explicit_runtime_error) {
     CHECK(!r.sim.error().empty());
     CHECK_EQ(r.sim.enemies.size(), size_t(0));
 }
-}
+}  // namespace
 
 int main() { return th13test::run_all("bullet-subroutine"); }

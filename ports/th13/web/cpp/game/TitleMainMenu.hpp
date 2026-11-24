@@ -9,9 +9,9 @@
 // 字条黑化 alpha160，oracle 顶点色 0xA0000000 实证）。
 #pragma once
 
-#include "TitleState.hpp"
-#include "SessionState.hpp"
 #include "AnmManager.hpp"
+#include "SessionState.hpp"
+#include "TitleState.hpp"
 
 #include <functional>
 
@@ -24,7 +24,7 @@ namespace th13 {
 // 「未实现」清单登记）。
 enum class TitleMainEntry : i32 {
     StartGame = 0,
-    ExtraStart = 1,   // 无存档禁用（oracle：↓ 一次 0→2 跳过）
+    ExtraStart = 1,  // 无存档禁用（oracle：↓ 一次 0→2 跳过）
     PracticeStart = 2,
     SpellPractice = 3,
     Replay = 4,
@@ -43,10 +43,10 @@ constexpr i32 kTitleMenuReadyDelay = 11;    // g361 建菜单 → g372 可交互
 // 标题脚本表（脚本号 = artifacts/reference/dumps/anm-list.txt title.anm 段，
 // 蓝图 §一；层/锚点/标签语义见蓝图各节。bank 表 Application.cpp kBanks）。
 struct TitleSceneResources {
-    i32 title = 16;    // title.anm（23 entry / 242 脚本）
-    i32 version = 17;  // title_v.anm：仅版本条 script0（bank17 无立绘，蓝图 §1.9）
-    i32 ascii = 2;     // ascii.anm（boot 无提示幕，本轮不建 ascii VM）
-    i32 help = 19;     // help.anm（析构 retire_resource 用，蓝图 §五-12）
+    i32 title = 16;               // title.anm（23 entry / 242 脚本）
+    i32 version = 17;             // title_v.anm：仅版本条 script0（bank17 无立绘，蓝图 §1.9）
+    i32 ascii = 2;                // ascii.anm（boot 无提示幕，本轮不建 ascii VM）
+    i32 help = 19;                // help.anm（析构 retire_resource 用，蓝图 §五-12）
     i32 main_root = 0;            // 主菜单根 (70,280)，spawn 3-22
     i32 difficulty_root = 1;      // 难度根 (70,312)，spawn 23-48（5 名行+数字行）
     i32 character_root = 2;       // 角色根 (70,312)，spawn 49-82（7 名行+数字行）
@@ -57,23 +57,23 @@ struct TitleSceneResources {
     // 独立建 script101（自带滑入→固定徽记 (192,178) L26）；神霊粒子 = ascii
     // bank2 script18 克隆（RNG 槽 10010-10012 自算位置/漂移）；难度子脚本
     // 23-48 真机不建（解剖实证，root1 方案作废——旧 rank_row_* 字段一并废除）。
-    i32 difficulty_tree = 123;    // 难度屏根（子 83,84,113-121）
+    i32 difficulty_tree = 123;        // 难度屏根（子 83,84,113-121）
     i32 difficulty_tree_extra = 124;  // [0x450fb0 case0] Extra 单行屏根（0x7c；pvVar7=(be7c4>=4)+0x7b）
-    i32 difficulty_badge = 101;   // 徽记对 101/102：dump L24277/L24293，自带 (-256,8)→(32,8) 20f 滑入，不加平移
-    i32 difficulty_cursor = 119;  // root123 子脚本119 = 暗 NORMAL 行（rank00 sprite96）；
-                                  // 原版无独立光标 VM，行标签 7/17+cursor 驱动全部行。
-    i32 difficulty_particle = 18; // 神霊粒子模板（ascii bank2 script18）
-    i32 background_root = 89;     // 背景根（spawn 92,93,91,90；内建 110f/170f 时序）
-    i32 logo_root = 94;           // LOGO 首入场根（冷启动；内建 110f 翻转时序）
+    i32 difficulty_badge = 101;       // 徽记对 101/102：dump L24277/L24293，自带 (-256,8)→(32,8) 20f 滑入，不加平移
+    i32 difficulty_cursor = 119;      // root123 子脚本119 = 暗 NORMAL 行（rank00 sprite96）；
+                                      // 原版无独立光标 VM，行标签 7/17+cursor 驱动全部行。
+    i32 difficulty_particle = 18;     // 神霊粒子模板（ascii bank2 script18）
+    i32 background_root = 89;         // 背景根（spawn 92,93,91,90；内建 110f/170f 时序）
+    i32 logo_root = 94;               // LOGO 首入场根（冷启动；内建 110f 翻转时序）
     // LOGO 复位根：0x44ce51 `lea edi,[eax+0x5f]`（eax=0）= script 95。返回
     // 路径 94/95 句柄均缺失时建 95（script95 立即 spawn 99/96/100，无 110f
     // 隐藏延迟），不是 94——0x44cdb9 的 89/94 新建是 +0x5c40 bit1 置位的
     // 冷启动分支，返回分支在 0x44cddb（bit1 清）。
     i32 logo_restore_root = 95;
-    i32 version_bar = 0;          // title_v script0 @(256,224) 层 26（30f 延迟淡入）
-    i32 portrait_base = 125;      // 立绘 125+角色号（label 7/12/17/22+角色号）
-    i32 weapon_base = 135;        // 通常武器图标 135+角色号（同上标签族）
-    i32 weapon_base_ex = 139;     // EX 武器图标 139+角色号
+    i32 version_bar = 0;       // title_v script0 @(256,224) 层 26（30f 延迟淡入）
+    i32 portrait_base = 125;   // 立绘 125+角色号（label 7/12/17/22+角色号）
+    i32 weapon_base = 135;     // 通常武器图标 135+角色号（同上标签族）
+    i32 weapon_base_ex = 139;  // EX 武器图标 139+角色号
     i32 clear_tag_base = 131;  // [r4-M 锚定] 角色 clear 标签 131+c（0x451450：
                                // score_data+0x56dc*c+0x7e4+diff*4==0 → 00470030
                                // 递归清子树可见位；旧名 weapon_selector_base）
@@ -114,10 +114,9 @@ public:
     // 未接 = 缺省禁用，与原版无存档一致）。
     std::function<bool(i32)> extra_unlocked;
     std::string error;
-    TitleMainMenu(TitleState& state, SessionState& progress, TitleSelectionSettings& settings,
-                  AnmManager& animations, TitleSceneResources resources)
-        : state(state), progress(progress), settings(settings), animations(animations),
-          resources(resources) {}
+    TitleMainMenu(TitleState& state, SessionState& progress, TitleSelectionSettings& settings, AnmManager& animations,
+                  TitleSceneResources resources)
+        : state(state), progress(progress), settings(settings), animations(animations), resources(resources) {}
     bool update(u32 pressed, u32 repeated);
 };
 

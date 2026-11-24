@@ -15,18 +15,16 @@ struct Fixture {
 
     Fixture() { manager = std::make_unique<th13::AnmManager>(rng, environment); }
 
-    bool load(const std::vector<th13::u8>& bytes) {
-        return manager->load(1, bytes.data(), th13::u32(bytes.size()));
-    }
+    bool load(const std::vector<th13::u8>& bytes) { return manager->load(1, bytes.data(), th13::u32(bytes.size())); }
 };
 
 TEST(create_first_tick_and_semantics) {
     Fixture fixture;
     std::vector<th13::u8> script;
-    th13test::push_insn(script, 300, 0, 0, {0});   // 选精灵 0 → 可见
-    th13test::push_insn(script, 304, 0, 0, {5});   // 层 5（∈[3,18] → 0x40000）
-    th13test::push_insn(script, 2, 0);             // 停止：保持可见存活
-    th13test::push_terminator(script);             // 归档解析要求终止符闭环
+    th13test::push_insn(script, 300, 0, 0, {0});  // 选精灵 0 → 可见
+    th13test::push_insn(script, 304, 0, 0, {5});  // 层 5（∈[3,18] → 0x40000）
+    th13test::push_insn(script, 2, 0);            // 停止：保持可见存活
+    th13test::push_terminator(script);            // 归档解析要求终止符闭环
     CHECK(fixture.load(th13test::build_simple_anm({script})));
 
     // create 即首 tick（0x46f820）：time<=0 指令立即生效。
@@ -34,13 +32,13 @@ TEST(create_first_tick_and_semantics) {
     CHECK(handle != 0);
     auto* vm = fixture.manager->registry.find(handle);
     CHECK(vm != nullptr);
-    if (!vm) return;  // CHECK 不中断：空指针后续断言直接崩，这里手工挡下
-    CHECK(vm->visible);                                  // op300 已执行
+    if (!vm) return;     // CHECK 不中断：空指针后续断言直接崩，这里手工挡下
+    CHECK(vm->visible);  // op300 已执行
     CHECK(vm->sprite != nullptr);
     CHECK_EQ(vm->sprite->source_id, 0u);
-    CHECK_EQ(vm->visual.layer, 5);                       // op304 覆盖 create 层
-    CHECK(vm->visual.render_flags & 0x200);              // 活动位（th13）
-    CHECK(vm->visual.render_flags & 0x40000);            // 层∈[3,18]（op304 语义）
+    CHECK_EQ(vm->visual.layer, 5);             // op304 覆盖 create 层
+    CHECK(vm->visual.render_flags & 0x200);    // 活动位（th13）
+    CHECK(vm->visual.render_flags & 0x40000);  // 层∈[3,18]（op304 语义）
 
     // create 层语义：layer<21 → 0x40000；layer>=21 → 无。
     std::vector<th13::u8> idle;
@@ -73,7 +71,7 @@ TEST(handle_generation_and_find) {
     const th13::u32 a = fixture.manager->create(1, 0);
     const th13::u32 b = fixture.manager->create(1, 0);
     CHECK(a != 0 && b != 0 && a != b);
-    CHECK((a & 0x1fff) != (b & 0x1fff));          // 并存占用不同槽位
+    CHECK((a & 0x1fff) != (b & 0x1fff));                       // 并存占用不同槽位
     CHECK_EQ(((a >> 13) + 1) & 0x7ffff, (b >> 13) & 0x7ffff);  // 代计数 +1
     CHECK(fixture.manager->registry.find(a) != nullptr);
     CHECK(fixture.manager->registry.find(0x7fffffff) == nullptr);  // 陈旧句柄不命中
@@ -84,7 +82,7 @@ TEST(update_buckets_and_alternate_clamp) {
     Fixture fixture;
     std::vector<th13::u8> main_script, alt_script;
     th13test::push_insn(main_script, 304, 0, 0, {5});
-    th13test::push_insn(main_script, 3, 0);   // 停等：常驻
+    th13test::push_insn(main_script, 3, 0);  // 停等：常驻
     th13test::push_terminator(main_script);
     th13test::push_insn(alt_script, 304, 0, 0, {3});
     th13test::push_insn(alt_script, 3, 0);
@@ -92,8 +90,8 @@ TEST(update_buckets_and_alternate_clamp) {
     std::vector<std::vector<th13::u8>> scripts{main_script, alt_script};
     CHECK(fixture.load(th13test::build_simple_anm(scripts)));
 
-    CHECK(fixture.manager->create(1, 0, 0, 0) != 0);   // 主链尾（flags=0）
-    CHECK(fixture.manager->create(1, 1, 0, 4) != 0);   // 副链尾（bit2）
+    CHECK(fixture.manager->create(1, 0, 0, 0) != 0);  // 主链尾（flags=0）
+    CHECK(fixture.manager->create(1, 1, 0, 4) != 0);  // 副链尾（bit2）
     CHECK(fixture.manager->update());
     CHECK_EQ(fixture.manager->registry.layer(5).size(), 1u);   // 主链层 5
     CHECK_EQ(fixture.manager->registry.layer(3).size(), 0u);   // 副链层 3 被钳走
@@ -119,15 +117,15 @@ TEST(recycle_on_script_end) {
     Fixture fixture;
     std::vector<th13::u8> script;
     th13test::push_insn(script, 402, 0, 0, {0x40000000, 0x40000000});
-    th13test::push_insn(script, 1, 2);   // t2 结束
+    th13test::push_insn(script, 1, 2);  // t2 结束
     th13test::push_terminator(script);
     CHECK(fixture.load(th13test::build_simple_anm({script})));
     const th13::u32 handle = fixture.manager->create(1, 0);
     CHECK(handle != 0);
     CHECK_EQ(fixture.manager->registry.count(), 1u);
-    CHECK(fixture.manager->update());   // f1
+    CHECK(fixture.manager->update());  // f1
     CHECK_EQ(fixture.manager->registry.count(), 1u);
-    CHECK(fixture.manager->update());   // f2：op1 执行 → 返回 1 → 回收
+    CHECK(fixture.manager->update());  // f2：op1 执行 → 返回 1 → 回收
     CHECK_EQ(fixture.manager->registry.count(), 0u);
     CHECK(fixture.manager->registry.find(handle) == nullptr);
     // retire 路径：标 0x20，下一帧不 tick 直接回收。
@@ -148,10 +146,10 @@ TEST(spawn_inherits_layer_and_child_interrupt) {
     th13test::push_insn(parent, 500, 0, 0, {1});  // 派生子脚本 1
     th13test::push_insn(parent, 3, 0);            // 停等
     th13test::push_terminator(parent);
-    th13test::push_insn(child, 3, 0);             // 先停等
-    th13test::push_label(child, 7, 0);            // 中断标签
+    th13test::push_insn(child, 3, 0);                                 // 先停等
+    th13test::push_label(child, 7, 0);                                // 中断标签
     th13test::push_insn(child, 402, 0, 0, {0x41100000, 0x41100000});  // scale=(9,9)
-    th13test::push_insn(child, 7, 0);             // 返回
+    th13test::push_insn(child, 7, 0);                                 // 返回
     th13test::push_terminator(child);
     CHECK(fixture.load(th13test::build_simple_anm({parent, child})));
 
@@ -167,7 +165,7 @@ TEST(spawn_inherits_layer_and_child_interrupt) {
     // 中断（立即）：父无标签（回落无），子命中标签 → scale=9。
     CHECK(fixture.manager->interrupt(handle, 7, true));
     CHECK_NEAR(children[0]->visual.scale.x, 9.0, 1e-6);
-    CHECK(children[0]->visual.flags & 0x4000);           // op7 返回后子停等
+    CHECK(children[0]->visual.flags & 0x4000);  // op7 返回后子停等
     // detach 派生（op504 路径 spawn_detached）：位置/旋转继承、锚点=父位置。
     auto* detached = fixture.manager->spawn_detached(*root, 1);
     CHECK(detached != nullptr);
@@ -218,16 +216,22 @@ TEST(after_main_update_hook_contract) {
     CHECK(fixture.load(th13test::build_simple_anm({script})));
 
     int calls = 0;
-    fixture.manager->after_main_update = [&calls] { ++calls; return true; };
-    CHECK(fixture.manager->update(true));   // 副链（Update 9）不触发
+    fixture.manager->after_main_update = [&calls] {
+        ++calls;
+        return true;
+    };
+    CHECK(fixture.manager->update(true));  // 副链（Update 9）不触发
     CHECK_EQ(calls, 0);
     CHECK(fixture.manager->update(false));  // 主链（Update 34）恰一次
     CHECK_EQ(calls, 1);
-    CHECK(fixture.manager->update());       // 双链完成后恰一次
+    CHECK(fixture.manager->update());  // 双链完成后恰一次
     CHECK_EQ(calls, 2);
 
     // 失败传播：钩子返回 false → update 返回 false 且 error 置位。
-    fixture.manager->after_main_update = [&calls] { ++calls; return false; };
+    fixture.manager->after_main_update = [&calls] {
+        ++calls;
+        return false;
+    };
     CHECK(!fixture.manager->update(false));
     CHECK_EQ(calls, 3);
     CHECK(fixture.manager->error.find("post-update") != std::string::npos);
@@ -246,7 +250,10 @@ TEST(after_main_update_hook_contract) {
 
     // 注册表更新失败（主链层 31 越界）时不触发钩子。
     int failed_calls = 0;
-    fixture.manager->after_main_update = [&failed_calls] { ++failed_calls; return true; };
+    fixture.manager->after_main_update = [&failed_calls] {
+        ++failed_calls;
+        return true;
+    };
     CHECK(fixture.manager->create(1, 0, 31, 0) != 0);
     CHECK(!fixture.manager->update(false));
     CHECK_EQ(failed_calls, 0);

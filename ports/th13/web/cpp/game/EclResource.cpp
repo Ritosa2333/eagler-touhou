@@ -6,8 +6,7 @@
 
 namespace th13 {
 namespace {
-template <class T>
-T read(const u8* p) {
+template <class T> T read(const u8* p) {
     T value;
     std::memcpy(&value, p, sizeof value);
     return value;
@@ -15,7 +14,8 @@ T read(const u8* p) {
 bool span(u32 offset, u32 count, u32 size) { return offset <= size && count <= size - offset; }
 bool name(const u8* bytes, u32& position, u32 limit, std::string& out) {
     const u32 start = position;
-    while (position < limit && bytes[position]) ++position;
+    while (position < limit && bytes[position])
+        ++position;
     if (position == limit) return false;
     out.assign(reinterpret_cast<const char*>(bytes + start), position - start);
     ++position;
@@ -122,7 +122,8 @@ i32 EclProgram::attach(const u8* data, u32 size, EclResourceProvider* provider) 
                 return result;
             }
         }
-        for (const auto& include : current->includes) load(include, *provider);
+        for (const auto& include : current->includes)
+            load(include, *provider);
     }
     return result;
 }

@@ -23,9 +23,9 @@
 // 变体）在 v1.00c 全 EXE 无读者，不移植。
 #pragma once
 
-#include "TitleState.hpp"
-#include "TitleMainMenu.hpp"
 #include "TitleAnimations.hpp"
+#include "TitleMainMenu.hpp"
+#include "TitleState.hpp"
 
 #include <functional>
 #include <string>
@@ -46,7 +46,10 @@ struct TitleOptionVolumes {
 struct TitleOptionPlatform {
     virtual ~TitleOptionPlatform() = default;
     // 0044ed70 侧 DAT_004e476c/70 写：每次音量变化与开屏时调用。
-    virtual void apply_volumes(i32 bgm, i32 effect) { (void)bgm; (void)effect; }
+    virtual void apply_volumes(i32 bgm, i32 effect) {
+        (void)bgm;
+        (void)effect;
+    }
     // 原版离开 Option 时随 scoreth13.dat 落盘；网页 = FileStore.save()。
     // 默认 false = 未接持久化（真实失败，菜单继续可用并记录 error）。
     virtual bool persist_options(const TitleOptionVolumes&) { return false; }
@@ -62,14 +65,14 @@ class TitleOptionsMenu {
     TitleOptionVolumes& volumes;  // 宿主共享真值（FileStore 装载/本屏编辑）
     TitleAnimations visuals;
     TitleSceneResources resources;
-    i32 row_ = 0;             // +0x28 光标行（0..4，环绕，无禁用行）
-    i32 substate_frames_ = 0; // 子态屏龄（原版 +0x2b8 差值；>6 / >9 门）
-    bool key_config_ = false; // substate4 出口：true=行2 键配置，false=行4 回主菜单
-    bool pushed_ = false;     // 光标栈 push（开屏 0x73190 / 离屏 0x731d0 对合）
+    i32 row_ = 0;              // +0x28 光标行（0..4，环绕，无禁用行）
+    i32 substate_frames_ = 0;  // 子态屏龄（原版 +0x2b8 差值；>6 / >9 门）
+    bool key_config_ = false;  // substate4 出口：true=行2 键配置，false=行4 回主菜单
+    bool pushed_ = false;      // 光标栈 push（开屏 0x73190 / 离屏 0x731d0 对合）
     bool fail(const std::string& reason);
     bool sound(i32 id);
-    bool open();           // case0：建面 + 音量刷新 + 光标归 0
-    bool refresh_volumes();  // 0044ed70：数字 sprite/可见位 + host.apply
+    bool open();                      // case0：建面 + 音量刷新 + 光标归 0
+    bool refresh_volumes();           // 0044ed70：数字 sprite/可见位 + host.apply
     void select_row(i32 label_base);  // immediate label3 + pending label(基+行)
     bool leave(bool to_key_config);   // case4 出口（>9 帧）：收面/持久化/切屏请求
 
@@ -82,7 +85,7 @@ public:
           visuals(state_, animations_, bank.title), resources(bank) {}
     // 每帧驱动（TitleFrame 屏值 3 分支接线；pressed/repeated 与他屏同义）。
     bool update(u32 pressed, u32 repeated);
-    i32 row() const { return row_; }             // 测试/采样点
+    i32 row() const { return row_; }  // 测试/采样点
     const TitleOptionVolumes& volumes_ref() const { return volumes; }
 };
 

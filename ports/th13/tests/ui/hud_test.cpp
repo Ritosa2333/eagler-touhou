@@ -1,16 +1,16 @@
 // HUD 单测：残机/灵击句柄的 interrupt 布局（2=满/3=空/7+n=碎片，dump
 // front.anm script30/38 已验证）、分数逼近与文本格式。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
+#include "game/AsciiText.hpp"
+#include "game/FrameScheduler.hpp"
 #include "game/GameHud.hpp"
 #include "game/HudDrawData.hpp"
-#include "game/FrameScheduler.hpp"
-#include "game/AsciiText.hpp"
 
+#include <fstream>
 #include <string>
 #include <vector>
-#include <fstream>
 
 using namespace th13;
 using namespace th13::test;
@@ -124,8 +124,8 @@ TEST(real_trance_gauge_partial_follows_completed_segments) {
 TEST(hud_stock_rows_use_original_script_ranges) {
     HudHarness harness;
     for (u32 i = 0; i < 8; ++i) {
-        CHECK_EQ(harness.manager.registry.find(harness.hud.life_icons[i])->source_script, i32(29+i));
-        CHECK_EQ(harness.manager.registry.find(harness.hud.bomb_icons[i])->source_script, i32(37+i));
+        CHECK_EQ(harness.manager.registry.find(harness.hud.life_icons[i])->source_script, i32(29 + i));
+        CHECK_EQ(harness.manager.registry.find(harness.hud.bomb_icons[i])->source_script, i32(37 + i));
     }
 }
 
@@ -141,21 +141,26 @@ TEST(life_icons_interrupt_layout) {
     // 档位 = (pieces*5)/threshold+7（0x42ae90:34-40；threshold=0x4bb994[be7fc]
     // 首项 8，SessionState.hpp 表实证）：(2*5)/8+7 = 8。
     CHECK(harness.hud.life(3, 2));
-    for (int i = 0; i < 3; i++) CHECK_EQ(pending(harness.manager, harness.hud.life_icons[i]), 2);
+    for (int i = 0; i < 3; i++)
+        CHECK_EQ(pending(harness.manager, harness.hud.life_icons[i]), 2);
     CHECK_EQ(pending(harness.manager, harness.hud.life_icons[3]), 8);
-    for (int i = 4; i < 8; i++) CHECK_EQ(pending(harness.manager, harness.hud.life_icons[i]), 3);
+    for (int i = 4; i < 8; i++)
+        CHECK_EQ(pending(harness.manager, harness.hud.life_icons[i]), 3);
     CHECK(harness.hud.life(8, 0));  // 满 8：全满，无碎片位
-    for (int i = 0; i < 8; i++) CHECK_EQ(pending(harness.manager, harness.hud.life_icons[i]), 2);
+    for (int i = 0; i < 8; i++)
+        CHECK_EQ(pending(harness.manager, harness.hud.life_icons[i]), 2);
     CHECK(!harness.hud.life(9, 0));  // 越界显式失败
 }
 
 TEST(bomb_icons_interrupt_layout) {
     HudHarness harness;
     CHECK(harness.hud.bombs(2, 4));
-    for (int i = 0; i < 2; i++) CHECK_EQ(pending(harness.manager, harness.hud.bomb_icons[i]), 2);
+    for (int i = 0; i < 2; i++)
+        CHECK_EQ(pending(harness.manager, harness.hud.bomb_icons[i]), 2);
     // 0x42af60:38：(4*6)/8+7 = 10（灵击分母固定 8）。
     CHECK_EQ(pending(harness.manager, harness.hud.bomb_icons[2]), 10);
-    for (int i = 3; i < 8; i++) CHECK_EQ(pending(harness.manager, harness.hud.bomb_icons[i]), 3);
+    for (int i = 3; i < 8; i++)
+        CHECK_EQ(pending(harness.manager, harness.hud.bomb_icons[i]), 3);
     CHECK(!harness.hud.bombs(-1, 0));
 }
 
@@ -202,23 +207,30 @@ TEST(trance_countdown_keeps_decimal_on_playfield_centre_and_preserves_warning_fl
     HudHarness harness;
     struct Sink : HudDrawServices {
         std::vector<HudTextDraw> entries;
-        bool hud_text(const HudTextDraw& text) override { entries.push_back(text); return true; }
+        bool hud_text(const HudTextDraw& text) override {
+            entries.push_back(text);
+            return true;
+        }
     } sink;
-    CHECK(harness.hud.draw_trance_countdown(sink)); CHECK(sink.entries.empty());
+    CHECK(harness.hud.draw_trance_countdown(sink));
+    CHECK(sink.entries.empty());
     harness.progress.run_mode_flags |= kTranceActiveFlag;
-    const i32 values[] = {600,599,90,89,88,30,29,28,1,0};
-    const char* strings[] = {"10.00s","9.98s","1.50s","1.48s","1.47s","0.50s","0.48s","0.47s","0.02s","0.00s"};
-    const bool red[] = {false,false,false,true,false,true,true,false,true,false};
+    const i32 values[] = {600, 599, 90, 89, 88, 30, 29, 28, 1, 0};
+    const char* strings[] = {"10.00s", "9.98s", "1.50s", "1.48s", "1.47s", "0.50s", "0.48s", "0.47s", "0.02s", "0.00s"};
+    const bool red[] = {false, false, false, true, false, true, true, false, true, false};
     for (size_t i = 0; i < 10; ++i) {
         harness.progress.ending_points = values[i];
         CHECK(harness.hud.draw_trance_countdown(sink));
         const auto& text = sink.entries.back();
         CHECK_EQ(text.text, std::string(strings[i]));
-        CHECK_EQ(text.position.x,i==0?159.f:189.f); CHECK_EQ(text.position.y,112.f);
-        CHECK_EQ(text.style.font,7); CHECK_EQ(text.style.alignment,1);
-        CHECK_EQ(text.style.vertical_alignment,1); CHECK_EQ(text.style.coordinate_space,0);
-        CHECK_EQ(text.style.color,red[i]?0xffff0000u:0xffffffffu);
-        AsciiText ascii(harness.manager,harness.environment);
+        CHECK_EQ(text.position.x, i == 0 ? 159.f : 189.f);
+        CHECK_EQ(text.position.y, 112.f);
+        CHECK_EQ(text.style.font, 7);
+        CHECK_EQ(text.style.alignment, 1);
+        CHECK_EQ(text.style.vertical_alignment, 1);
+        CHECK_EQ(text.style.coordinate_space, 0);
+        CHECK_EQ(text.style.color, red[i] ? 0xffff0000u : 0xffffffffu);
+        AsciiText ascii(harness.manager, harness.environment);
         CHECK(ascii.initialize(2));
         CHECK(ascii.hud_text(text));
         struct GlyphSink : AsciiGlyphServices {
@@ -228,8 +240,8 @@ TEST(trance_countdown_keeps_decimal_on_playfield_centre_and_preserves_warning_fl
                 return true;
             }
         } glyphs;
-        CHECK(ascii.draw(0,glyphs));
-        CHECK_EQ(glyphs.decimal_x+5.f,224.f);
+        CHECK(ascii.draw(0, glyphs));
+        CHECK_EQ(glyphs.decimal_x + 5.f, 224.f);
     }
 }
 

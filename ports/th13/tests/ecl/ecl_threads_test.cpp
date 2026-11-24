@@ -57,7 +57,7 @@ TEST(threads_pause_resume_kill) {
     th13test::emit(script, 0, 23, 0, 0xff, 0, {3});
     th13test::emit(script, 0, 10, 0, 0xff, 0, {});
     std::vector<th13::u8> child;
-    th13test::emit(child, 0, 23, 0, 0xff, 0, {2});       // wait(2)
+    th13test::emit(child, 0, 23, 0, 0xff, 0, {2});               // wait(2)
     th13test::emit(child, 0, 12, 0, 0xff, 0, {0xffffffecu, 0});  // jmp 回自身（Δ=-20）
     auto bytes = th13test::build_scpt({{"Child", child}, {"Main", script}});
     th13::EclProgram program;
@@ -103,8 +103,8 @@ TEST(threads_spawn_with_argument_descriptor) {
         th13::u32 first = 0;
         std::memcpy(&first, name, 4);  // 参数 1 槽 = 名字首 dword（param_count=2）
         std::vector<th13::u8> tail;
-        tail.insert(tail.end(), name + 4, name + sizeof name);  // 名字余部 "er\0"
-        tail.push_back(0);  // 名字补齐到 8
+        tail.insert(tail.end(), name + 4, name + sizeof name);                   // 名字余部 "er\0"
+        tail.push_back(0);                                                       // 名字补齐到 8
         const th13::u8 descriptor[] = {'i', 'i', 0, 0, 0x4b, 0xd9, 0xff, 0xff};  // {i→i, -9909}
         tail.insert(tail.end(), descriptor, descriptor + sizeof descriptor);
         th13test::emit(script, 0, 15, 2, 0xff, 0, {size, first}, tail.data(), th13::u32(tail.size()));
@@ -112,8 +112,8 @@ TEST(threads_spawn_with_argument_descriptor) {
     th13test::emit(script, 0, 23, 0, 0xff, 0, {3});
     th13test::emit(script, 0, 10, 0, 0xff, 0, {});
     std::vector<th13::u8> worker;
-    th13test::emit(worker, 0, 40, 0, 0xff, 0, {4});          // var A（= 实参槽 FP+0）
-    th13test::emit(worker, 0, 638, 1, 0xff, 0, {0});         // scoreAdd($A) —— 记录实参值
+    th13test::emit(worker, 0, 40, 0, 0xff, 0, {4});   // var A（= 实参槽 FP+0）
+    th13test::emit(worker, 0, 638, 1, 0xff, 0, {0});  // scoreAdd($A) —— 记录实参值
     th13test::emit(worker, 0, 23, 0, 0xff, 0, {2});
     th13test::emit(worker, 0, 10, 0, 0xff, 0, {});
     auto bytes = th13test::build_scpt({{"Main", script}, {"Worker", worker}});
@@ -151,7 +151,8 @@ TEST(threads_snapshot_restore_roundtrip) {
     th13::EclThreads threads(program, &variables);
     threads.main.commands = &commands_a;
     CHECK(threads.start("GirlA01", 0x08));
-    for (int i = 0; i < 10; ++i) CHECK_EQ(threads.step(1.0f), 0);
+    for (int i = 0; i < 10; ++i)
+        CHECK_EQ(threads.step(1.0f), 0);
     // 快照 → 新线程组恢复（先挂 commands 再 restore，恢复会传播到子线程）→
     // 继续跑到表达式帧，与连续运行逐步一致。
     const auto snapshot = threads.snapshot();
@@ -189,7 +190,8 @@ TEST(eclfile_block_roundtrip) {
     th13::EclThreads threads(program, &variables);
     threads.main.commands = &commands_a;
     CHECK(threads.start("GirlA01", 0x08));
-    for (int i = 0; i < 5; ++i) CHECK_EQ(threads.step(1.0f), 0);
+    for (int i = 0; i < 5; ++i)
+        CHECK_EQ(threads.step(1.0f), 0);
     // 线程组容器往返：0x11D4 步长、子链继续标志、恢复后行为一致。
     th13::EclFile file;
     const auto snapshot = threads.snapshot();
@@ -235,27 +237,27 @@ TEST(full_st01_smoke) {
     CHECK_EQ(program.attach(st01bs.data(), th13::u32(st01bs.size())), 2);
     th13test::RecordingCommands commands;
     th13test::StubVariables variables;
-    variables.integers.push_back({-10000, 7});    // RAND
-    variables.floats.push_back({-9989, 2.0f});    // ANGLE_PLAYER
-    variables.floats.push_back({-9988, 47.0f});   // TIME
-    variables.floats.push_back({-9999, 0.25f});   // RANDF
-    variables.floats.push_back({-9998, 1.5f});    // RANDRAD
-    variables.floats.push_back({-9995, 100.0f});  // FINAL_X
-    variables.floats.push_back({-9994, 200.0f});  // FINAL_Y
-    variables.floats.push_back({-9987, 5.0f});    // RANDF2
-    variables.integers.push_back({-9986, 0});     // TIMEOUT
-    variables.integers.push_back({-9985, 0});     // I0
-    variables.integers.push_back({-9984, 0});     // I1
-    variables.floats.push_back({-9981, 0.0f});    // F0
-    variables.integers.push_back({-9946, 3});     // ENM_CNT_REAL
-    variables.integers.push_back({-9908, 3});     // ENM_CNT
-    variables.integers.push_back({-9960, 3});     // RANK
-    variables.integers.push_back({-9959, 3});     // DIFF
-    variables.floats.push_back({-9954, 1000.0f}); // LIFE
-    variables.floats.push_back({-9963, 0.0f});    // BOSS_X
-    variables.floats.push_back({-9962, 0.0f});    // BOSS_Y
-    variables.floats.push_back({-9991, 100.0f});  // PLAYER_X
-    variables.floats.push_back({-9990, 200.0f});  // PLAYER_Y
+    variables.integers.push_back({-10000, 7});     // RAND
+    variables.floats.push_back({-9989, 2.0f});     // ANGLE_PLAYER
+    variables.floats.push_back({-9988, 47.0f});    // TIME
+    variables.floats.push_back({-9999, 0.25f});    // RANDF
+    variables.floats.push_back({-9998, 1.5f});     // RANDRAD
+    variables.floats.push_back({-9995, 100.0f});   // FINAL_X
+    variables.floats.push_back({-9994, 200.0f});   // FINAL_Y
+    variables.floats.push_back({-9987, 5.0f});     // RANDF2
+    variables.integers.push_back({-9986, 0});      // TIMEOUT
+    variables.integers.push_back({-9985, 0});      // I0
+    variables.integers.push_back({-9984, 0});      // I1
+    variables.floats.push_back({-9981, 0.0f});     // F0
+    variables.integers.push_back({-9946, 3});      // ENM_CNT_REAL
+    variables.integers.push_back({-9908, 3});      // ENM_CNT
+    variables.integers.push_back({-9960, 3});      // RANK
+    variables.integers.push_back({-9959, 3});      // DIFF
+    variables.floats.push_back({-9954, 1000.0f});  // LIFE
+    variables.floats.push_back({-9963, 0.0f});     // BOSS_X
+    variables.floats.push_back({-9962, 0.0f});     // BOSS_Y
+    variables.floats.push_back({-9991, 100.0f});   // PLAYER_X
+    variables.floats.push_back({-9990, 200.0f});   // PLAYER_Y
     th13::GameRandom random(1);
     int scripts_run = 0;
     for (const auto& sub : program.files[0]->subroutines) {

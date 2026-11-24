@@ -1,5 +1,5 @@
-#include "AnmRenderer.hpp"
 #include "TitleMainMenu.hpp"
+#include "AnmRenderer.hpp"
 
 namespace th13 {
 
@@ -42,8 +42,7 @@ bool TitleMainMenu::child_interrupt(i32 script, i32 label, bool immediate) {
 }
 
 bool TitleMainMenu::sound(i32 id) {
-    return play_sound ? play_sound(id) || fail("Title sound request failed")
-                      : fail("Title sound service unavailable");
+    return play_sound ? play_sound(id) || fail("Title sound request failed") : fail("Title sound service unavailable");
 }
 
 // 0044cd10 sends labels 30/31 to rows on either side of the cursor,
@@ -52,8 +51,7 @@ bool TitleMainMenu::show_menu() {
     for (i32 item = 0; item < kTitleMainEntries; ++item) {
         if (item == state.menu.cursor) continue;
         const i32 label = item < state.menu.cursor ? 30 : 31;
-        if (!child_interrupt(item + 3, label, true) ||
-            !child_interrupt(item + 13, label, true)) return false;
+        if (!child_interrupt(item + 3, label, true) || !child_interrupt(item + 13, label, true)) return false;
     }
     if (!extra_gate()) {
         if (!child_interrupt(4, 29, false) || !child_interrupt(14, 29, false)) return false;
@@ -76,8 +74,8 @@ void TitleMainMenu::enter(i32 entry) {
     case TitleMainEntry::PracticeStart:
         // 0x44da63 / 0x44dac8 -> 0x449360: Start=0, Practice=1 << 4.
         // Extra also uses mode 0 (difficulty 4); it is not Practice mode 1.
-        progress.run_mode_flags = (progress.run_mode_flags & ~0x30u) |
-            (entry == i32(TitleMainEntry::PracticeStart) ? 0x10u : 0u);
+        progress.run_mode_flags =
+            (progress.run_mode_flags & ~0x30u) | (entry == i32(TitleMainEntry::PracticeStart) ? 0x10u : 0u);
         progress.practice_mode = 0;  // GameInf is configured only on launch.
         // 0x44cd10 case4 case0/2：上次配置为 Extra（bb4d0>3）时普通开局重置
         // Normal（bb4d0=1, be7c4=1），光标不落在不存在的第 5 行。
@@ -178,8 +176,7 @@ bool TitleMainMenu::update(u32 pressed, u32 repeated) {
         state.menu.disabled_count = 0;  // Rebuild per-screen gates, not duplicate on each cancel.
         // Extra Start 门（0x44c570 case0 +0x5c40 bit1）：无解锁存档禁用
         //（真机缺省行为，oracle ↓ 0→2 跳过）。
-        if (!extra_gate() && !state.menu.disable(i32(TitleMainEntry::ExtraStart)))
-            return fail(state.menu.error);
+        if (!extra_gate() && !state.menu.disable(i32(TitleMainEntry::ExtraStart))) return fail(state.menu.error);
         // 真机 boot：无提示幕。标题任务使能帧（=g181）建背景+LOGO 根（oracle：
         // g181 起 select00 两半、g291 LOGO 翻转 = script94 内建 110f 延迟、
         // g350 森林 = script90/91 内建 170f）。
@@ -208,15 +205,12 @@ bool TitleMainMenu::update(u32 pressed, u32 repeated) {
             if (i32(state.previous_screen) != i32(TitleScreen::Option) &&
                 !interrupt(resources.background_root, 2, true))
                 return false;
-            if (!present(state.handles[resources.logo_root]) &&
-                !present(state.handles[resources.logo_restore_root])) {
+            if (!present(state.handles[resources.logo_root]) && !present(state.handles[resources.logo_restore_root])) {
                 if (!create(resources.logo_restore_root)) return false;
             }
         } else {
-            if (!present(state.handles[resources.background_root]) &&
-                !create(resources.background_root)) return false;
-            if (!present(state.handles[resources.logo_root]) &&
-                !create(resources.logo_root)) return false;
+            if (!present(state.handles[resources.background_root]) && !create(resources.background_root)) return false;
+            if (!present(state.handles[resources.logo_root]) && !create(resources.logo_root)) return false;
         }
         state.change_substate(1);
         if (returning && !open_menu()) return false;
@@ -234,16 +228,14 @@ bool TitleMainMenu::update(u32 pressed, u32 repeated) {
         // 见）→ 绘制侧压 0 复刻。可交互仍锚 age191（f372，oracle 实测）。
         const i32 menu_at = returning ? 0 : 180;
         if (!returning && state.age.current == menu_at && !open_menu()) return false;
-        const i32 ready_at = returning ? kTitleMenuReadyDelay :
-            kTitleBootIntroFrames + kTitleMenuReadyDelay;
+        const i32 ready_at = returning ? kTitleMenuReadyDelay : kTitleBootIntroFrames + kTitleMenuReadyDelay;
         if (state.age.current == ready_at) {
             // [轮7] 交叉武装提前一帧（oracle grey3 于 f371 首绘 alpha=0x5b=
             // 中断后第 1 tick——port 中断 tick 才执行标签体、alpha 写在次 tick，
             // 故武装于 190）。白条淡出同帧起（f371=0x8e=142 实测）。
             if (!select_entry()) return false;
         }
-        if (state.age.current >= ready_at)
-            state.change_substate(2);
+        if (state.age.current >= ready_at) state.change_substate(2);
         break;
     }
     case 2: {
@@ -256,8 +248,8 @@ bool TitleMainMenu::update(u32 pressed, u32 repeated) {
             // 0044d5xx: immediate label3 restores all rows; deferred label
             // 7+cursor selects the new row on the next manager update.
             if (!interrupt(resources.main_root, 3, true) ||
-                !interrupt(resources.main_root, 7 + i32(i16(state.menu.cursor)), false) ||
-                !show_menu()) return false;
+                !interrupt(resources.main_root, 7 + i32(i16(state.menu.cursor)), false) || !show_menu())
+                return false;
         }
         if (pressed & 0x102) {  // Esc/X：跳到末项或直接退出分支
             if (state.menu.cursor == kTitleMainEntries - 1) {
@@ -268,8 +260,7 @@ bool TitleMainMenu::update(u32 pressed, u32 repeated) {
             if (!sound(9)) return false;
             state.menu.select(kTitleMainEntries - 1);
             if (!interrupt(resources.main_root, 3, true) ||
-                !interrupt(resources.main_root, i32(i16(state.menu.cursor)) + 7, false) ||
-                !show_menu())
+                !interrupt(resources.main_root, i32(i16(state.menu.cursor)) + 7, false) || !show_menu())
                 return false;
         }
         if (pressed & 0x80001) {  // Z/Enter：确认
@@ -326,10 +317,9 @@ bool TitleMainMenu::update(u32 pressed, u32 repeated) {
             // 端口无新树，等价做法是不淡出当前（否则返回时灵梦已 alpha0）。
             const i32 selected = state.menu.cursor;
             const bool starts_game = selected == i32(TitleMainEntry::StartGame) ||
-                selected == i32(TitleMainEntry::PracticeStart) ||
-                selected == i32(TitleMainEntry::ExtraStart);
-            if (starts_game)
-                animations.interrupt(state.handles[resources.background_root], 3, true);
+                                     selected == i32(TitleMainEntry::PracticeStart) ||
+                                     selected == i32(TitleMainEntry::ExtraStart);
+            if (starts_game) animations.interrupt(state.handles[resources.background_root], 3, true);
         }
         if (state.age.current > 19) enter(state.menu.cursor);
         break;
@@ -351,26 +341,22 @@ void TitleMainMenu::apply_draw_layers() {
     if (auto* bg = animations.registry.find(state.handles[resources.background_root])) {
         // 难度屏自难度根建面帧起算（f489 转屏帧尚未建树 = 主菜单语义）。
         const bool selecting =
-            state.handles[resources.difficulty_tree] != 0 ||
-            state.handles[resources.difficulty_tree_extra] != 0;
+            state.handles[resources.difficulty_tree] != 0 || state.handles[resources.difficulty_tree_extra] != 0;
         if (auto* left = animations.registry.find_child_script(*bg, 90, 0))
             set_draw_layer_override(*left, selecting ? 22 : 23);
-        if (auto* right = animations.registry.find_child_script(*bg, 91, 0))
-            set_draw_layer_override(*right, 22);
+        if (auto* right = animations.registry.find_child_script(*bg, 91, 0)) set_draw_layer_override(*right, 22);
         if (auto* half = animations.registry.find_child_script(*bg, 93, 0)) {
             // 主菜单 boot：g181 起 L23，g350（script93 VM age 170→171 帧）
             // →L21（窗A f348 最后 L23、f349 首 L21，探针实证）；返回路径
             // 重建树 age 从头计，沿用同序（oracle 无返回窗，§8.3 推定）。
-            const i32 layer = selecting ? (state.particle_clock >= 28 ? 22 : 21)
-                                        : (half->age.current <= 170 ? 23 : 21);
+            const i32 layer = selecting ? (state.particle_clock >= 28 ? 22 : 21) : (half->age.current <= 170 ? 23 : 21);
             set_draw_layer_override(*half, layer);
         }
     }
     if (auto* logo = animations.registry.find(state.handles[resources.logo_root])) {
         if (auto* flip = animations.registry.find_child_script(*logo, 97, 0))
             set_draw_layer_override(*flip, flip->age.current <= 60 ? 26 : 25);
-        if (auto* burst = animations.registry.find_child_script(*logo, 98, 0))
-            set_draw_layer_override(*burst, 26);
+        if (auto* burst = animations.registry.find_child_script(*logo, 98, 0)) set_draw_layer_override(*burst, 26);
     }
 }
 
@@ -406,8 +392,7 @@ bool TitleMainMenu::open_menu() {
 // selected row's label17+cursor. The existing child VMs own interpolation.
 bool TitleMainMenu::select_entry() {
     return interrupt(resources.main_root, 3, true) &&
-           interrupt(resources.main_root, 17 + i32(i16(state.menu.cursor)), false) &&
-           show_menu();
+           interrupt(resources.main_root, 17 + i32(i16(state.menu.cursor)), false) && show_menu();
 }
 
 }  // namespace th13

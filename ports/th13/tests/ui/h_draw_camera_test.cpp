@@ -6,8 +6,8 @@
 //     10016-10018 在场景 ECL 构造（ins_308 模板拷贝+立即 tick）期间即读取；
 //  C. world_quad（draw_mode 8/18）在 scenery 趟之外沿用
 //     renderer.scenery_camera/scenery_viewport（与 wind 分支同法）。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/AnmEnvironment.hpp"
 #include "game/AnmRenderer.hpp"
@@ -37,22 +37,38 @@ std::vector<u8> synthetic_std() {
     std::memcpy(out.data() + 0x10, name, std::strlen(name));
     put32(0x90, 0x94);  // 对象目录
     put32(0x94, 0x00010000);
-    putf(0x98, 0.f); putf(0x9c, 0.f); putf(0xa0, 0.f);
-    putf(0xa4, 64.f); putf(0xa8, 64.f); putf(0xac, 64.f);
+    putf(0x98, 0.f);
+    putf(0x9c, 0.f);
+    putf(0xa0, 0.f);
+    putf(0xa4, 64.f);
+    putf(0xa8, 64.f);
+    putf(0xac, 64.f);
     put16(0xb0, 0);
     put16(0xb2, 28);
     put16(0xb4, 0);
     put16(0xb6, 0);
-    putf(0xb8, 0.f); putf(0xbc, 0.f); putf(0xc0, 0.f);
-    putf(0xc4, 64.f); putf(0xc8, 64.f);
+    putf(0xb8, 0.f);
+    putf(0xbc, 0.f);
+    putf(0xc0, 0.f);
+    putf(0xc4, 64.f);
+    putf(0xc8, 64.f);
     put32(0xcc, 0x0004ffff);
     put32(0xd0, 0);
-    putf(0xd4, 0.f); putf(0xd8, 0.f); putf(0xdc, 0.f);
+    putf(0xd4, 0.f);
+    putf(0xd8, 0.f);
+    putf(0xdc, 0.f);
     put32(0xe0, 0xffffffff);
-    put32(0xe4, 0); put16(0xe8, 2); put16(0xea, 20);
-    putf(0xec, 10.f); putf(0xf0, 20.f); putf(0xf4, 30.f);
-    put32(0xf8, 0); put16(0xfc, 0); put16(0xfe, 8);
-    for (u32 at = 0x100; at < 0x110; at += 4) put32(at, 0xffffffff);
+    put32(0xe4, 0);
+    put16(0xe8, 2);
+    put16(0xea, 20);
+    putf(0xec, 10.f);
+    putf(0xf0, 20.f);
+    putf(0xf4, 30.f);
+    put32(0xf8, 0);
+    put16(0xfc, 0);
+    put16(0xfe, 8);
+    for (u32 at = 0x100; at < 0x110; at += 4)
+        put32(at, 0xffffffff);
     return out;
 }
 
@@ -86,8 +102,7 @@ struct RecordingGraphics final : ZunGraphics {
 
 // 建一个 draw_mode 8 的主池 VM（synthetic bank 的脚本 0 = sprite0+park）。
 AnmVm* make_world_quad(AnmManager& manager, AnmEnvironment& environment) {
-    if (!load_bank(manager, 9, synthetic_anm(8, {{sprite(0), wait(), stop()}})))
-        return nullptr;
+    if (!load_bank(manager, 9, synthetic_anm(8, {{sprite(0), wait(), stop()}}))) return nullptr;
     const u32 handle = manager.create(9, 0);
     AnmVm* vm = manager.registry.find(handle);
     if (!vm) return nullptr;
@@ -174,16 +189,16 @@ TEST(world_quad_inherits_stage_camera_outside_scenery_pass) {
     if (!vm) return;
     RecordingGraphics graphics;
     AnmRenderer renderer{graphics};
-    renderer.camera.view.m[12] = 99.f;             // 当前 Fullscreen 相机
-    renderer.scenery_camera.view.m[12] = 12.f;     // 保存的 STD 舞台相机
+    renderer.camera.view.m[12] = 99.f;          // 当前 Fullscreen 相机
+    renderer.scenery_camera.view.m[12] = 12.f;  // 保存的 STD 舞台相机
     renderer.scenery_viewport = {116, 2, 408, 476, 0, 1};
     renderer.scenery_camera_ready = true;
     CHECK_EQ(renderer.draw(*vm), 0);
     CHECK_EQ(graphics.batches, 1u);
     CHECK_EQ(graphics.draw_view_x, 12.f);
     CHECK_EQ(graphics.draw_viewport_width, 408.f);
-    CHECK_EQ(renderer.camera.view.m[12], 99.f);    // 调用方相机已恢复
-    CHECK_EQ(graphics.view.m[12], 99.f);           // 设备 View 已恢复
+    CHECK_EQ(renderer.camera.view.m[12], 99.f);  // 调用方相机已恢复
+    CHECK_EQ(graphics.view.m[12], 99.f);         // 设备 View 已恢复
     CHECK_EQ(renderer.viewport.width, 640u);
 }
 

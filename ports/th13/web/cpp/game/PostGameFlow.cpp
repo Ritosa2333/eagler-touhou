@@ -35,8 +35,7 @@ void PostGameFlow::on_stage_clear() {
             clear_frame_ = 0;
             if (progress_.ending_points > 599) progress_.good_endings++;
             if (player_.bombs > 2) progress_.good_endings = 3;
-            const i32 bonus = all_clear_bonus(progress_.difficulty, player_.extra_lives,
-                                              player_.bombs);
+            const i32 bonus = all_clear_bonus(progress_.difficulty, player_.extra_lives, player_.bombs);
             score_.score = i32(add_bonus_capped(u32(score_.score), bonus));
             progress_.stage_clear_bonus += bonus;  // +0x2ac 累计
             // 通关次数 / 无续关通关计数（score 块 +0x7c8/+0x7e4，练习不记）。

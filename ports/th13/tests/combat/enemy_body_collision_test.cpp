@@ -1,7 +1,7 @@
 #include "../ecl/ecl_test_fixtures.hpp"
 
-#include "game/StageBattle.hpp"
 #include "game/ItemManager.hpp"
+#include "game/StageBattle.hpp"
 
 #include <cmath>
 #include <memory>
@@ -72,7 +72,7 @@ TEST(enemy_circle_body_collision_hit_and_miss) {
     DummyProvider provider;
     DummyHost host;
     SessionState progress;
-    progress.character = 0; // Reimu, player_hit_size = 2.0
+    progress.character = 0;  // Reimu, player_hit_size = 2.0
     HudPlayerState player;
     HudScoreState score;
     StageBattle battle;
@@ -87,16 +87,18 @@ TEST(enemy_circle_body_collision_hit_and_miss) {
     auto target = std::make_unique<StageEnemy>();
     target->serial = 1;
     target->position[0] = 0.0f;
-    target->vel.pos[0] = 0.0f; target->vel.pos[1] = 412.0f;  // 0x419950：position := vel.pos+pos.pos，夹具坐标须写 vel 子位
+    target->vel.pos[0] = 0.0f;
+    target->vel.pos[1] = 412.0f;  // 0x419950：position := vel.pos+pos.pos，夹具坐标须写 vel 子位
     // hitbox[0] = 24.0f -> 半径 sx = 12.0f
     // p = 2.0f -> p^2 + sx^2 = 4 + 144 = 148. sqrt(148) ≈ 12.1655
     target->hitbox[0] = 24.0f;
     target->hitbox[1] = 24.0f;
-    target->hurtbox[0] = 100.0f; // 很大，证明不影响本体碰撞
+    target->hurtbox[0] = 100.0f;  // 很大，证明不影响本体碰撞
     target->hurtbox[1] = 100.0f;
-    target->position[1] = 412.0f; // 12.0^2 = 144 < 148 -> 命中！
+    target->position[1] = 412.0f;  // 12.0^2 = 144 < 148 -> 命中！
     target->flags = 0;
-    target->tick_gate = false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位）；本帧须干活，否则 0x419a90:275-308 的本体碰撞/伤害不执行
+    target->tick_gate =
+        false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位）；本帧须干活，否则 0x419a90:275-308 的本体碰撞/伤害不执行
     battle.sim.enemies.push_back(std::move(target));
 
     GameInput idle;
@@ -123,13 +125,15 @@ TEST(enemy_circle_body_collision_gating) {
     auto target = std::make_unique<StageEnemy>();
     target->serial = 1;
     target->position[0] = 0.0f;
-    target->position[1] = 400.0f; // 就在自机脸上
-    target->vel.pos[0] = 0.0f; target->vel.pos[1] = 400.0f;  // 同上：0x419950 累加语义
+    target->position[1] = 400.0f;  // 就在自机脸上
+    target->vel.pos[0] = 0.0f;
+    target->vel.pos[1] = 400.0f;  // 同上：0x419950 累加语义
     target->hitbox[0] = 24.0f;
     target->hitbox[1] = 24.0f;
     // 门控 flags: 0x2 (无敌/不可伤), 0x20, 0x8000000
-    target->flags = 0x20u; // 应该被门控跳过
-    target->tick_gate = false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位）；本帧须干活，否则 0x419a90:275-308 的本体碰撞/伤害不执行
+    target->flags = 0x20u;  // 应该被门控跳过
+    target->tick_gate =
+        false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位）；本帧须干活，否则 0x419a90:275-308 的本体碰撞/伤害不执行
     battle.sim.enemies.push_back(std::move(target));
 
     GameInput idle;
@@ -158,12 +162,14 @@ TEST(enemy_rotated_obb_body_collision) {
     target->serial = 1;
     target->position[0] = 0.0f;
     target->position[1] = 400.0f;
-    target->vel.pos[0] = 0.0f; target->vel.pos[1] = 400.0f;  // 同上：0x419950 累加语义
-    target->flags = 0x8000u; // OBB 模式
-    target->hitbox[0] = 20.0f; // 宽度 20 (half = 10)
-    target->hitbox[1] = 40.0f; // 长度 40
+    target->vel.pos[0] = 0.0f;
+    target->vel.pos[1] = 400.0f;  // 同上：0x419950 累加语义
+    target->flags = 0x8000u;      // OBB 模式
+    target->hitbox[0] = 20.0f;    // 宽度 20 (half = 10)
+    target->hitbox[1] = 40.0f;    // 长度 40
     target->body_angle = 0.0f;
-    target->tick_gate = false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位）；本帧须干活，否则 0x419a90:275-308 的本体碰撞/伤害不执行
+    target->tick_gate =
+        false;  // 已过出生空转帧（0x4183f0:31 置位、0x418e00:20 清位）；本帧须干活，否则 0x419a90:275-308 的本体碰撞/伤害不执行
     battle.sim.enemies.push_back(std::move(target));
 
     GameInput idle;
@@ -186,7 +192,7 @@ TEST(item_collector_score_wiring_smoke) {
     battle.set_player_pos(0.0f, 400.0f);
     // 生成一个点道具在玩家收集盒内 (400, 400)
     const float pos[3] = {0.0f, 400.0f, 0.0f};
-    battle.item_manager.spawn_item(pos, 2, 0.0f, 0.0f); // type 2 = Point
+    battle.item_manager.spawn_item(pos, 2, 0.0f, 0.0f);  // type 2 = Point
 
     GameInput idle;
     // step 中会执行 update_item_side()，此前 collector.score 未赋值会导致空指针崩溃
@@ -195,6 +201,4 @@ TEST(item_collector_score_wiring_smoke) {
     CHECK(score.score > 0);
 }
 
-int main() {
-    return th13test::run_all("enemy body collision & item wiring");
-}
+int main() { return th13test::run_all("enemy body collision & item wiring"); }

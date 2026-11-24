@@ -2,10 +2,10 @@
 // 离屏捕获/背景保留过渡（ScreenTargets/SceneCapture）延后，ui-base.md §三）。
 #pragma once
 
-#include "GraphicsDevice.hpp"
 #include "../game/AnmDrawSchedule.hpp"
 #include "../game/AsciiFrame.hpp"
 #include "../game/ScreenViews.hpp"
+#include "GraphicsDevice.hpp"
 
 #include <functional>
 #include <memory>
@@ -28,8 +28,8 @@ class SceneDisplay {
 public:
     std::string error;
     bool playfield_active = false;
-    SceneDisplay(FrameScheduler&, AnmManager&, AnmEnvironment&, GraphicsDevice&, AnmRenderer&,
-                 ScreenViews&, AsciiText&, i32 ascii_bank);
+    SceneDisplay(FrameScheduler&, AnmManager&, AnmEnvironment&, GraphicsDevice&, AnmRenderer&, ScreenViews&, AsciiText&,
+                 i32 ascii_bank);
     ~SceneDisplay();
     bool initialize();
     void detach() noexcept;

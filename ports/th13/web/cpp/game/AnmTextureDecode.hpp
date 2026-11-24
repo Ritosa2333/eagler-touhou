@@ -9,4 +9,4 @@
 namespace th13 {
 // 解码 PNG 字节流为 RGBA8；失败返回 false。输出行主序、紧密排布 w*h*4。
 bool anm_decode_png(const u8* bytes, u32 size, u32& width, u32& height, std::vector<u8>& rgba);
-}
+}  // namespace th13

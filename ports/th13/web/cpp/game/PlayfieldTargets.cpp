@@ -2,13 +2,13 @@
 
 namespace th13 {
 
-PlayfieldTargets::PlayfieldTargets(FrameScheduler& f, AnmManager& a, AnmRenderer& r,
-                                 ZunGraphics& g, ScreenViews& v)
+PlayfieldTargets::PlayfieldTargets(FrameScheduler& f, AnmManager& a, AnmRenderer& r, ZunGraphics& g, ScreenViews& v)
     : scheduler(f), animations(a), renderer(r), graphics(g), views(v) {}
 
 PlayfieldTargets::~PlayfieldTargets() {
     scheduler.remove(updating);
-    for (auto& callback : drawing) scheduler.remove(callback.frame);
+    for (auto& callback : drawing)
+        scheduler.remove(callback.frame);
     renderer.invalidate();
     graphics.select_target(nullptr, 0);
 }
@@ -30,8 +30,7 @@ bool PlayfieldTargets::initialize(i32 bank) {
     constexpr i32 supervisor_layers[] = {29, 30, 30, 20};
     for (u32 i = 0; i < compositors.size(); ++i) {
         auto& vm = compositors[i];
-        if (!animations.bind_template(vm, bank, scripts[i]) ||
-            animations.tick_instance(vm) < 0)
+        if (!animations.bind_template(vm, bank, scripts[i]) || animations.tick_instance(vm) < 0)
             return fail(animations.error);
         vm.visual.layer = supervisor_layers[i];
         // These four original supervisor-owned VMs are not registry-layer
@@ -56,8 +55,7 @@ bool PlayfieldTargets::initialize(i32 bank) {
         callback.frame.enabled = true;
         callback.frame.run = [](void* value) -> i32 {
             auto& callback = *static_cast<Callback*>(value);
-            return callback.owner->draw(callback.index) ? i32(FrameAction::Continue)
-                                                         : i32(FrameAction::Error);
+            return callback.owner->draw(callback.index) ? i32(FrameAction::Continue) : i32(FrameAction::Error);
         };
         if (scheduler.add(callback.frame, FramePass::Draw, priorities[i]) < 0)
             return fail("Playfield target draw callback registration failed");
@@ -65,8 +63,7 @@ bool PlayfieldTargets::initialize(i32 bank) {
     updating.owner = this;
     updating.enabled = true;
     updating.run = [](void* value) -> i32 {
-        return static_cast<PlayfieldTargets*>(value)->update() ? i32(FrameAction::Continue)
-                                                              : i32(FrameAction::Error);
+        return static_cast<PlayfieldTargets*>(value)->update() ? i32(FrameAction::Continue) : i32(FrameAction::Error);
     };
     if (scheduler.add(updating, FramePass::Update, 1) < 0)
         return fail("Playfield compositor update callback registration failed");
@@ -89,8 +86,7 @@ bool PlayfieldTargets::select(u32 target, bool clear) {
     if (!graphics.select_target(target < targets.size() ? resource : nullptr,
                                 target < targets.size() ? targets[target] : 0))
         return fail("Playfield target selection failed");
-    if (!views.camera(DrawCamera::Fullscreen, false))
-        return fail("Playfield target full-screen camera unavailable");
+    if (!views.camera(DrawCamera::Fullscreen, false)) return fail("Playfield target full-screen camera unavailable");
     if (clear) {
         // 0043bbc0's third viewport bounds the intermediate game surfaces,
         // including the 12px effect margin around the central384x448 crop.
@@ -114,8 +110,7 @@ bool PlayfieldTargets::compose(u32 index) {
     if (renderer.draw(compositors[index]) == -2) return fail(renderer.error);
     // 0043c870/0043c920 draw the registered distortion strips immediately
     // after their compositor, while the opposite @R surface is still bound.
-    if (index < 2 && !renderer.draw_layer(animations.registry.layer(29 + index)))
-        return fail(renderer.error);
+    if (index < 2 && !renderer.draw_layer(animations.registry.layer(29 + index))) return fail(renderer.error);
     renderer.flush();
     return true;
 }
@@ -135,14 +130,22 @@ bool PlayfieldTargets::draw(u32 index) {
         if (!select(2, false) || !graphics.clear_target(0xff000000, nullptr))
             return fail("Playfield screen final clear failed");
         return true;
-    case 1: return select(1, true);
-    case 2: return compose(0);
-    case 3: return select(0, true);
-    case 4: return compose(1);
-    case 5: return select(1, true);
-    case 6: return compose(2);
-    case 8: return compose(3);
-    default: return fail("Playfield target pass outside schedule");
+    case 1:
+        return select(1, true);
+    case 2:
+        return compose(0);
+    case 3:
+        return select(0, true);
+    case 4:
+        return compose(1);
+    case 5:
+        return select(1, true);
+    case 6:
+        return compose(2);
+    case 8:
+        return compose(3);
+    default:
+        return fail("Playfield target pass outside schedule");
     }
 }
 

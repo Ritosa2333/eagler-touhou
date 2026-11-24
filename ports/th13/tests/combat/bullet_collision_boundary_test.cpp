@@ -29,14 +29,21 @@ struct Provider final : EclResourceProvider {
         out = data;
         return true;
     }
-    bool animation(u32, const std::string& name) override { names->push_back(name); return true; }
+    bool animation(u32, const std::string& name) override {
+        names->push_back(name);
+        return true;
+    }
 };
 struct Host final : StageBattleServices {
     int hits = 0, grazes = 0;
     bool life_hud(i32, i32) override { return true; }
     bool bomb_hud(i32, i32) override { return true; }
     bool request_game_over() override { return true; }
-    bool hud_sound(i32 id) override { hits += id == 2; grazes += id == 42; return true; }
+    bool hud_sound(i32 id) override {
+        hits += id == 2;
+        grazes += id == 42;
+        return true;
+    }
 };
 struct Rig {
     Provider provider;
@@ -74,9 +81,25 @@ struct Rig {
     bool step() { return battle.step(GameInput{}); }
 };
 
-float frombits(u32 b) { float f; std::memcpy(&f, &b, 4); return f; }
-float nextup(float f) { u32 b; std::memcpy(&b, &f, 4); ++b; std::memcpy(&f, &b, 4); return f; }
-float nextdown(float f) { u32 b; std::memcpy(&b, &f, 4); --b; std::memcpy(&f, &b, 4); return f; }
+float frombits(u32 b) {
+    float f;
+    std::memcpy(&f, &b, 4);
+    return f;
+}
+float nextup(float f) {
+    u32 b;
+    std::memcpy(&b, &f, 4);
+    ++b;
+    std::memcpy(&f, &b, 4);
+    return f;
+}
+float nextdown(float f) {
+    u32 b;
+    std::memcpy(&b, &f, 4);
+    --b;
+    std::memcpy(&f, &b, 4);
+    return f;
+}
 
 // 1. 圆形命中等号：D==p 原版返回 2（擦弹），D<p 才命中。
 TEST(circle_hit_equality_falls_through_to_graze_not_hit) {
@@ -127,12 +150,14 @@ TEST(circle_graze_span_rounds_to_f32_before_threshold) {
 
 // 3. 矩形擦弹带四边含等号：恰好压线 → 擦弹；越 1ulp → 无接触。
 TEST(rect_graze_band_all_four_edges_are_inclusive) {
-    struct Case { float x, y, ox, oy; };  // 弹位与“越界 1ulp”方向偏移
+    struct Case {
+        float x, y, ox, oy;
+    };  // 弹位与“越界 1ulp”方向偏移
     const Case edges[4] = {
-        {125.0f, 300.0f, 1.0f, 0.0f},  // 边3：bx-24 == right(101)
-        {100.0f, 325.0f, 0.0f, 1.0f},  // 边4：by-24 == bottom(301)
-        {75.0f, 300.0f, -1.0f, 0.0f},  // 边1：bx+24 == left(99)
-        {100.0f, 275.0f, 0.0f, -1.0f}, // 边2：by+24 == top(299)
+        {125.0f, 300.0f, 1.0f, 0.0f},   // 边3：bx-24 == right(101)
+        {100.0f, 325.0f, 0.0f, 1.0f},   // 边4：by-24 == bottom(301)
+        {75.0f, 300.0f, -1.0f, 0.0f},   // 边1：bx+24 == left(99)
+        {100.0f, 275.0f, 0.0f, -1.0f},  // 边2：by+24 == top(299)
     };
     for (const auto& e : edges) {
         float beyond_x = e.ox > 0 ? nextup(e.x) : e.ox < 0 ? nextdown(e.x) : e.x;

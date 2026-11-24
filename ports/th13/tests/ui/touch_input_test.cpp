@@ -26,8 +26,8 @@ TouchState play_state() {
     s.ready = true;
     s.x = 0;
     s.y = 200;
-    s.fast = 4.5f;   // speed_orth 576 / 128
-    s.slow = 2.0f;   // speed_orth_focus 256 / 128
+    s.fast = 4.5f;  // speed_orth 576 / 128
+    s.slow = 2.0f;  // speed_orth_focus 256 / 128
     s.min_x = -184;
     s.max_x = 184;
     s.min_y = 32;
@@ -213,8 +213,10 @@ TEST(stagebattle_focus_touch_caps_at_focus_speed) {
     // player+0x67c>=4 同时成立才保留 Shift 位。补 inert 敌机（threads 为空，
     // tick_enemy 跳过解释器；位置远离玩家）并置 startup 计数。
     auto focus_anchor = std::make_unique<StageEnemy>();
-    focus_anchor->serial = 9999; focus_anchor->script_id = 9999;
-    focus_anchor->position[0] = 1000.f; focus_anchor->position[1] = 1000.f;
+    focus_anchor->serial = 9999;
+    focus_anchor->script_id = 9999;
+    focus_anchor->position[0] = 1000.f;
+    focus_anchor->position[1] = 1000.f;
     h.battle.sim.enemies.push_back(std::move(focus_anchor));
     h.state.startup_clock.set(25);
     h.battle.touch = {1, 100.f, 300.f};

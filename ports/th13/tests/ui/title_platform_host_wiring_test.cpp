@@ -6,9 +6,9 @@
 #define TH13_APPLICATION_PLATFORMS_ONLY
 #include "sdl/ApplicationState.hpp"
 
+#include "../harness/test_framework.hpp"
 #include "game/TitlePlayerDataMenu.hpp"
 #include "game/TitleSpellPracticeMenu.hpp"
-#include "../harness/test_framework.hpp"
 
 #include <string>
 
@@ -69,7 +69,8 @@ TEST(player_data_menu_opens_and_returns_with_empty_table) {
     CHECK(menu.error.empty());
     CHECK(menu.opened());
     CHECK_EQ(state.substate, 1);
-    for (i32 i = 0; i < 7; ++i) CHECK(menu.update(0, 0));
+    for (i32 i = 0; i < 7; ++i)
+        CHECK(menu.update(0, 0));
     CHECK_EQ(state.substate, 2);
     CHECK_EQ(menu.record_count(), 0);
     CHECK_EQ(menu.page_count(), 1);
@@ -90,7 +91,8 @@ TEST(player_data_menu_opens_and_returns_with_empty_table) {
     }
     CHECK_EQ(menu.character(), 0);
     CHECK(menu.back());
-    for (i32 i = 0; i < 6; ++i) CHECK(menu.update(0, 0));
+    for (i32 i = 0; i < 6; ++i)
+        CHECK(menu.update(0, 0));
     CHECK_EQ(int(state.screen), int(TitleScreen::Main));
     CHECK(!menu.opened());
     CHECK(menu.error.empty());
@@ -107,8 +109,7 @@ TEST(spell_practice_host_lists_real_slot_counts_but_keeps_cards_locked) {
         for (i32 slot = 0; slot < kSpellSlots[stage - 1]; ++slot) {
             CHECK(!host.spell_unlocked(stage, slot));
             CHECK(host.spell_name(stage, slot).empty());
-            for (i32 difficulty = 0; difficulty < kSpellPracticeDifficulties;
-                 ++difficulty) {
+            for (i32 difficulty = 0; difficulty < kSpellPracticeDifficulties; ++difficulty) {
                 CHECK_EQ(host.spell_id(stage, slot, difficulty), -1);
                 CHECK_EQ(host.spell_rank(stage, slot, difficulty), -1);
             }
@@ -127,7 +128,8 @@ TEST(spell_practice_menu_never_launches_locked_cards) {
     TitleSpellPracticeMenu menu{host};
     CHECK(menu.error.empty());
     CHECK_EQ(int(menu.stage_rows().size()), kSpellPracticeStages);
-    for (const auto& row : menu.stage_rows()) CHECK(row.available);
+    for (const auto& row : menu.stage_rows())
+        CHECK(row.available);
 
     // 逐 stage 进入 spell 列表：列表非空、全部锁定、确认只给 blocked，
     // 绝不产生 Launch；取消回 stage 列表继续。

@@ -35,17 +35,17 @@ public:
     // layer_first..layer_last 的对象组绘制（背景 0-7 / 前景 8-11 两段调用），
     // 逐层分趟（0x406d90/0x407310 的层主序）。cull_extent 仅为调用方兼容
     // 保留：th13 裁剪窗是绝对屏幕矩形 [128,512]x[16,464]（0x4076c0）。
-    bool draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphics& graphics,
-              i32 layer_first, i32 layer_last, const GraphicsViewport& viewport, Vec2 cull_extent,
-              Vec2 screen_shake = {});
+    bool draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphics& graphics, i32 layer_first, i32 layer_last,
+              const GraphicsViewport& viewport, Vec2 cull_extent, Vec2 screen_shake = {});
     bool interrupt_objects(i32 label);
+
 private:
     std::vector<AnmVm> primitives;
     std::array<AnmVm, 8> background_slots{};
     std::vector<u8> object_flags;
     std::vector<i16> instance_flags;
     bool initialized = false;
-    u32 lifecycle_flags = 1; // normal scene: geometry enabled
+    u32 lifecycle_flags = 1;  // normal scene: geometry enabled
     Timer lifecycle_timer{0, 0, 0, 0, 0};
     bool fade_in_pending = false;
     u32 transition_color = 0x00808080u;

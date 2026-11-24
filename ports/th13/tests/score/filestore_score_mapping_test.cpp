@@ -14,10 +14,10 @@ namespace {
 
 using th13::i32;
 using th13::i64;
-using th13::u8;
+using th13::ScoreDat;
 using th13::u32;
 using th13::u64;
-using th13::ScoreDat;
+using th13::u8;
 using th13::sdl::FileStore;
 
 const char* kSavePath = "/tmp/th13_score_mapping_save.bin";
@@ -49,11 +49,9 @@ void populate_store(FileStore& store) {
             score.available = true;
             CHECK_EQ(store.record_high_score(character, difficulty, score), 0);
             records.clear_count[size_t(difficulty)] = 11 + character * 5 + difficulty;
-            records.no_continue_clear_count[size_t(difficulty)] =
-                7 + character * 3 + difficulty;
+            records.no_continue_clear_count[size_t(difficulty)] = 7 + character * 3 + difficulty;
             if (difficulty < 4)
-                store.mark_practice_stage_played(character, difficulty,
-                                                 (character + difficulty) % 6 + 1);
+                store.mark_practice_stage_played(character, difficulty, (character + difficulty) % 6 + 1);
         }
         store.ending_seen_bytes[size_t(character * 2 + 1)] |= u8(0x10);
         store.set_extra_unlocked(character);
@@ -74,25 +72,19 @@ void check_mirror(const ScoreDat& dat) {
         CHECK_EQ(ScoreDat::play_count(column), u32(10 + character));
         CHECK_EQ(ScoreDat::play_frames(column), u32(1000 + character * 7));
         for (i32 difficulty = 0; difficulty < 5; ++difficulty) {
-            const ScoreDat::Entry entry =
-                ScoreDat::read_entry(column, difficulty, 0);
+            const ScoreDat::Entry entry = ScoreDat::read_entry(column, difficulty, 0);
             CHECK_EQ(entry.score, u32(1000000 + character * 20000 + difficulty * 300));
             CHECK_EQ(entry.stage, u8(1 + difficulty));
             CHECK_EQ(entry.continues, u8((character + difficulty) % 4));
             CHECK(std::memcmp(entry.name.data(), character_name(character),
                               std::strlen(character_name(character)) + 1) == 0);
-            CHECK_EQ(entry.time_lo,
-                     u32(1700000000 + character * 100 + difficulty));
-            CHECK_EQ(ScoreDat::clear_count(column, difficulty),
-                     u32(11 + character * 5 + difficulty));
-            CHECK_EQ(ScoreDat::no_continue_clear_count(column, difficulty),
-                     u32(7 + character * 3 + difficulty));
+            CHECK_EQ(entry.time_lo, u32(1700000000 + character * 100 + difficulty));
+            CHECK_EQ(ScoreDat::clear_count(column, difficulty), u32(11 + character * 5 + difficulty));
+            CHECK_EQ(ScoreDat::no_continue_clear_count(column, difficulty), u32(7 + character * 3 + difficulty));
             if (difficulty < 4) {
                 const i32 stage = (character + difficulty) % 6;
                 CHECK_EQ(ScoreDat::progress_row_flag(column, difficulty, stage, 1), u8(1));
-                CHECK_EQ(ScoreDat::progress_row_flag(column, difficulty,
-                                                     (stage + 1) % 6, 1),
-                         u8(0));
+                CHECK_EQ(ScoreDat::progress_row_flag(column, difficulty, (stage + 1) % 6, 1), u8(0));
             }
             newest = std::max(newest, u64(entry.time_lo));
         }
@@ -103,36 +95,19 @@ void check_mirror(const ScoreDat& dat) {
     for (i32 character = 0; character < 4; ++character) {
         const i32 slot = kSpellSlot;
         const u8* personal = dat.columns[size_t(character)].data();
-        CHECK_EQ(ScoreDat::practice_u32(personal, slot,
-                                        ScoreDat::kPracticeAttemptsOff),
-                 u32(1));
-        CHECK_EQ(ScoreDat::practice_u32(personal, slot,
-                                        ScoreDat::kPracticeAttemptsOff + 4),
-                 u32(1));
-        CHECK_EQ(ScoreDat::practice_u32(personal, slot,
-                                        ScoreDat::kPracticeCapturesOff),
-                 u32(1));
-        CHECK_EQ(ScoreDat::practice_u32(personal, slot,
-                                        ScoreDat::kPracticeBestOff),
-                 u32(10000 + character * 10));
+        CHECK_EQ(ScoreDat::practice_u32(personal, slot, ScoreDat::kPracticeAttemptsOff), u32(1));
+        CHECK_EQ(ScoreDat::practice_u32(personal, slot, ScoreDat::kPracticeAttemptsOff + 4), u32(1));
+        CHECK_EQ(ScoreDat::practice_u32(personal, slot, ScoreDat::kPracticeCapturesOff), u32(1));
+        CHECK_EQ(ScoreDat::practice_u32(personal, slot, ScoreDat::kPracticeBestOff), u32(10000 + character * 10));
     }
     {
         const i32 slot = kSpellSlot;
         const u8* aggregate = dat.columns[4].data();
-        CHECK_EQ(ScoreDat::practice_u32(aggregate, slot,
-                                        ScoreDat::kPracticeAttemptsOff),
-                 u32(4));
-        CHECK_EQ(ScoreDat::practice_u32(aggregate, slot,
-                                        ScoreDat::kPracticeAttemptsOff + 4),
-                 u32(4));
-        CHECK_EQ(ScoreDat::practice_u32(aggregate, slot,
-                                        ScoreDat::kPracticeCapturesOff),
-                 u32(4));
-        CHECK_EQ(ScoreDat::practice_u32(aggregate, slot,
-                                        ScoreDat::kPracticeBestOff),
-                 u32(10030));
-        CHECK(std::memcmp(ScoreDat::practice_name(aggregate, slot).data(),
-                          "MAPPING\0", 8) == 0);
+        CHECK_EQ(ScoreDat::practice_u32(aggregate, slot, ScoreDat::kPracticeAttemptsOff), u32(4));
+        CHECK_EQ(ScoreDat::practice_u32(aggregate, slot, ScoreDat::kPracticeAttemptsOff + 4), u32(4));
+        CHECK_EQ(ScoreDat::practice_u32(aggregate, slot, ScoreDat::kPracticeCapturesOff), u32(4));
+        CHECK_EQ(ScoreDat::practice_u32(aggregate, slot, ScoreDat::kPracticeBestOff), u32(10030));
+        CHECK(std::memcmp(ScoreDat::practice_name(aggregate, slot).data(), "MAPPING\0", 8) == 0);
     }
 }
 
@@ -151,10 +126,8 @@ void check_imported(const FileStore& store) {
             CHECK_EQ(row.continues, (character + difficulty) % 4);
             CHECK(row.name == character_name(character));
             CHECK_EQ(row.timestamp, 1700000000 + character * 100 + difficulty);
-            CHECK_EQ(records.clear_count[size_t(difficulty)],
-                     11 + character * 5 + difficulty);
-            CHECK_EQ(records.no_continue_clear_count[size_t(difficulty)],
-                     7 + character * 3 + difficulty);
+            CHECK_EQ(records.clear_count[size_t(difficulty)], 11 + character * 5 + difficulty);
+            CHECK_EQ(records.no_continue_clear_count[size_t(difficulty)], 7 + character * 3 + difficulty);
         }
     }
     for (i32 character = 0; character < 4; ++character) {
@@ -212,13 +185,10 @@ TEST(character_columns_and_difficulty_tables_round_trip) {
     check_imported(reloaded);
     ScoreDat::set_progress_row_flag(reloaded.score_dat.columns[0].data(), 0, 5, 1, 1);
     CHECK(reloaded.save_score());
-    CHECK_EQ(ScoreDat::progress_row_flag(reloaded.score_dat.columns[0].data(), 0, 5, 1),
-             u8(0));
+    CHECK_EQ(ScoreDat::progress_row_flag(reloaded.score_dat.columns[0].data(), 0, 5, 1), u8(0));
     check_mirror(reloaded.score_dat);
 }
 
 }  // namespace
 
-int main() {
-    return th13test::run_all("ScoreDat 角色/难度坐标");
-}
+int main() { return th13test::run_all("ScoreDat 角色/难度坐标"); }

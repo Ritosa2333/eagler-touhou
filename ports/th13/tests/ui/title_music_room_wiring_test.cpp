@@ -3,12 +3,12 @@
 //   TitleScreen::MusicRoom=13 枚举、TitleMainMenu entry 6 Z 切屏（光标 push/
 //   回 Main 还原）、TitleFrame case 13 + Draw 文本队列、TitleScenePlatform
 //   聚合 TitleMusicRoomPlatform（track/play/heard/resume 经宿主回调）。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/TitleScene.hpp"
-#include "game/TitleMainMenu.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/TitleMainMenu.hpp"
+#include "game/TitleScene.hpp"
 
 #include <cstdio>
 #include <memory>
@@ -24,7 +24,8 @@ std::string locked_title(i32 track) {
     char prefix[16];
     std::snprintf(prefix, sizeof prefix, "No.%2d ", int(track) + 1);
     std::string text = prefix;
-    for (i32 i = 0; i < 11; ++i) text += "\x81\x48";
+    for (i32 i = 0; i < 11; ++i)
+        text += "\x81\x48";
     return text;
 }
 
@@ -89,7 +90,8 @@ struct MusicHost final : TitleScenePlatform {
 
 std::vector<u8> title_anm_fixture() {
     std::vector<std::vector<AnmIns>> scripts(243);
-    for (auto& script : scripts) script = {wait(), stop()};
+    for (auto& script : scripts)
+        script = {wait(), stop()};
     auto spawn_range = [&](i32 root, i32 first, i32 last) {
         scripts[u32(root)].clear();
         for (i32 child = first; child <= last; child++)
@@ -137,12 +139,8 @@ struct MusicHarness {
     MusicHarness() {
         animation_updates[0].owner = animation_updates[1].owner = &manager;
         animation_updates[0].enabled = animation_updates[1].enabled = true;
-        animation_updates[0].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-        };
-        animation_updates[1].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-        };
+        animation_updates[0].run = [](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; };
+        animation_updates[1].run = [](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
         CHECK(scheduler.add(animation_updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(animation_updates[1], FramePass::Update, 34) >= 0);
         CHECK(load_bank(manager, 16, title_anm_fixture()));
@@ -150,8 +148,7 @@ struct MusicHarness {
         CHECK(load_bank(manager, 2, synthetic_anm(8, trivial_scripts(20))));
         CHECK(load_bank(manager, 19, synthetic_anm(4, trivial_scripts(4))));
         CHECK(load_bank(manager, 8, synthetic_anm(4, trivial_scripts(4))));
-        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler,
-                                             TitleSceneResources{});
+        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler, TitleSceneResources{});
         CHECK(scene->error.empty());
         scene->state.return_reason = 0;
     }
@@ -162,7 +159,8 @@ struct MusicHarness {
         CHECK(scheduler.draw() >= 0);
     }
     void advance(int frames, u32 pressed = 0, u32 repeated = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed, repeated);
+        for (int i = 0; i < frames; i++)
+            frame(pressed, repeated);
     }
     void reach_main_menu() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
@@ -180,13 +178,14 @@ TEST(music_room_entry_platform_and_return_roundtrip) {
     harness.reach_main_menu();
     const u32 background_before = harness.scene->state.handles[89];
     CHECK(background_before != 0);
-    for (int i = 0; i < 5; i++) harness.frame(0x20);  // 0→2→3→4→5→6
+    for (int i = 0; i < 5; i++)
+        harness.frame(0x20);  // 0→2→3→4→5→6
     CHECK_EQ(harness.scene->state.menu.cursor, 6);
-    harness.frame(0x01);   // Z：主菜单确认序
-    harness.advance(25);   // age>19 → enter(6) → TitleScreen::MusicRoom
+    harness.frame(0x01);  // Z：主菜单确认序
+    harness.advance(25);  // age>19 → enter(6) → TitleScreen::MusicRoom
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::MusicRoom));
     CHECK_EQ(int(harness.scene->state.screen), 13);  // 0x44c570 case d 屏值
-    harness.advance(20);  // case0 age≥10 → case1 >4 → case2
+    harness.advance(20);                             // case0 age≥10 → case1 >4 → case2
     CHECK_EQ(harness.scene->state.substate, 2);
     CHECK_EQ(harness.scene->music_room_menu().row(), 0);
     CHECK_EQ(harness.scene->state.menu.count, 12);  // 曲数入光标计数
@@ -215,10 +214,9 @@ TEST(music_room_entry_platform_and_return_roundtrip) {
     harness.frame();
     bool saw_placeholder = false;
     for (const auto& text : harness.host.texts)
-        if (text.color == 0xff8080ffu && text.text == std::string("\x81\x40"))
-            saw_placeholder = true;
+        if (text.color == 0xff8080ffu && text.text == std::string("\x81\x40")) saw_placeholder = true;
     CHECK(saw_placeholder);
-    harness.frame(0x01);   // 二次 Z（显影未满 8 行）：播放 + 解锁 0 号曲
+    harness.frame(0x01);  // 二次 Z（显影未满 8 行）：播放 + 解锁 0 号曲
     CHECK_EQ(harness.host.played.size(), 1u);
     CHECK_EQ(harness.host.played[0], 1);
     CHECK_EQ(harness.host.marked.size(), 1u);

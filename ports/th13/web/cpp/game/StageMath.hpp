@@ -42,8 +42,8 @@ inline float wrap_angle(float value) {
 
 // 镜像翻转（0x41c137/0x41c21f 处理块）：a → wrap(π/2 − wrap(a − π/2))。
 inline float mirror_angle(float value) {
-    return wrap_angle(static_cast<float>(1.5707963705062866 -
-                                         wrap_angle(static_cast<float>(value - 1.5707963705062866))));
+    return wrap_angle(
+        static_cast<float>(1.5707963705062866 - wrap_angle(static_cast<float>(value - 1.5707963705062866))));
 }
 
 // 0x474f00：极坐标 → xy（cos/sin 以 double 计算，落点 float）。
@@ -79,12 +79,22 @@ inline float ease_interp(i32 mode, float elapsed, float duration) {
         return static_cast<float>(((v - shift) * (v - shift) / divisor - subtract) / scale);
     };
     switch (mode) {
-    case 1: return static_cast<float>(x * x);
-    case 2: return static_cast<float>(x * x * x);
-    case 3: return static_cast<float>(x * x * x * x);
-    case 4: return static_cast<float>(1.0 - (1.0 - x) * (1.0 - x));
-    case 5: { const double y = 1.0 - x; return static_cast<float>(1.0 - y * y * y); }
-    case 6: { const double y = 1.0 - x; return static_cast<float>(1.0 - y * y * y * y); }
+    case 1:
+        return static_cast<float>(x * x);
+    case 2:
+        return static_cast<float>(x * x * x);
+    case 3:
+        return static_cast<float>(x * x * x * x);
+    case 4:
+        return static_cast<float>(1.0 - (1.0 - x) * (1.0 - x));
+    case 5: {
+        const double y = 1.0 - x;
+        return static_cast<float>(1.0 - y * y * y);
+    }
+    case 6: {
+        const double y = 1.0 - x;
+        return static_cast<float>(1.0 - y * y * y * y);
+    }
     case 0xa: {
         const double y = double(t * 2.0f);  // 0x473bb8-0x473bc6：2t 落 f32
         if (y < 1.0) return static_cast<float>(y * y * y * 0.5);
@@ -104,47 +114,76 @@ inline float ease_interp(i32 mode, float elapsed, float duration) {
     }
     case 0xd: {
         const double y = double(t + t);
-        if (y < 1.0) { const double z = 1.0 - y; return static_cast<float>(0.5 - z * z * z * 0.5); }
+        if (y < 1.0) {
+            const double z = 1.0 - y;
+            return static_cast<float>(0.5 - z * z * z * 0.5);
+        }
         const double z = y - 1.0;
         return static_cast<float>(z * z * z * 0.5 + 0.5);
     }
     case 0xe: {  // 反编译首分支与 0xd 同式（三次），第二分支四次，照录
         const double y = double(t + t);
-        if (y < 1.0) { const double z = 1.0 - y; return static_cast<float>(0.5 - z * z * z * 0.5); }
+        if (y < 1.0) {
+            const double z = 1.0 - y;
+            return static_cast<float>(0.5 - z * z * z * 0.5);
+        }
         const double z = y - 1.0;
         return static_cast<float>(z * z * z * z * 0.5 + 0.5);
     }
-    case 0xf: return 0.0f;
-    case 0x10: return 1.0f;
-    case 18: // 473d4c: sine-out
-        return float(std::sin(double(float(x*double(3.1415927f)*.5))));
-    case 19: { // 473d77: sine-in
-        const float s=float(std::sin(double(float(x*double(3.1415927f)*.5+double(1.5707964f)))));
-        return float(1.0-double(s));
+    case 0xf:
+        return 0.0f;
+    case 0x10:
+        return 1.0f;
+    case 18:  // 473d4c: sine-out
+        return float(std::sin(double(float(x * double(3.1415927f) * .5))));
+    case 19: {  // 473d77: sine-in
+        const float s = float(std::sin(double(float(x * double(3.1415927f) * .5 + double(1.5707964f)))));
+        return float(1.0 - double(s));
     }
-    case 20: { // 473db4: out/in, argument continues through pi
-        const float twice=float(t*2);
-        const float s=float(std::sin(double(float(double(twice)*double(3.1415927f)*.5))));
-        return twice<1?float(double(s)*.5):float((1.0-double(s))*.5+.5);
+    case 20: {  // 473db4: out/in, argument continues through pi
+        const float twice = float(t * 2);
+        const float s = float(std::sin(double(float(double(twice) * double(3.1415927f) * .5))));
+        return twice < 1 ? float(double(s) * .5) : float((1.0 - double(s)) * .5 + .5);
     }
-    case 21: { // 473e35: in/out, second half restarts the sine at zero
-        const float twice=float(t*2);
-        const float a=twice<1?float(double(twice)*double(3.1415927f)*.5+double(1.5707964f)):
-                             float((double(twice)-1)*double(3.1415927f)*.5);
-        const float s=float(std::sin(double(a)));
-        return twice<1?float((1.0-double(s))*.5):float(double(s)*.5+.5);
+    case 21: {  // 473e35: in/out, second half restarts the sine at zero
+        const float twice = float(t * 2);
+        const float a = twice < 1 ? float(double(twice) * double(3.1415927f) * .5 + double(1.5707964f))
+                                  : float((double(twice) - 1) * double(3.1415927f) * .5);
+        const float s = float(std::sin(double(a)));
+        return twice < 1 ? float((1.0 - double(s)) * .5) : float(double(s) * .5 + .5);
     }
-    case 0x16: return quad(x, 0.25, 0.5625, 0.11111111f, 0.8888889f);
-    case 0x17: return quad(x, 0.3f, 0.48999998f, 0.18367349f, 0.8163265f);
-    case 0x18: return quad(x, 0.35f, 0.42249995f, 0.28994083f, 0.71005917f);
-    case 0x19: return quad(x, 0.38f, 0.3844f, 0.37565035f, 0.62434965f);
-    case 0x1a: return quad(x, 0.4f, 0.36f, 0.44444445f, 0.5555556f);
-    case 0x1b: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.25) * (u - 0.25)) / 0.5625 - 0.11111111f) / 0.8888889f); }
-    case 0x1c: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.3f) * (u - 0.3f)) / 0.48999998f - 0.18367349f) / 0.8163265f); }
-    case 0x1d: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.35f) * (u - 0.35f)) / 0.42249995f - 0.28994083f) / 0.71005917f); }
-    case 0x1e: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.38f) * (u - 0.38f)) / 0.3844f - 0.37565035f) / 0.62434965f); }
-    case 0x1f: { const double u = double(1.0f - t); return static_cast<float>(1.0 - (((u - 0.4f) * (u - 0.4f)) / 0.36f - 0.44444445f) / 0.5555556f); }
-    default: break;
+    case 0x16:
+        return quad(x, 0.25, 0.5625, 0.11111111f, 0.8888889f);
+    case 0x17:
+        return quad(x, 0.3f, 0.48999998f, 0.18367349f, 0.8163265f);
+    case 0x18:
+        return quad(x, 0.35f, 0.42249995f, 0.28994083f, 0.71005917f);
+    case 0x19:
+        return quad(x, 0.38f, 0.3844f, 0.37565035f, 0.62434965f);
+    case 0x1a:
+        return quad(x, 0.4f, 0.36f, 0.44444445f, 0.5555556f);
+    case 0x1b: {
+        const double u = double(1.0f - t);
+        return static_cast<float>(1.0 - (((u - 0.25) * (u - 0.25)) / 0.5625 - 0.11111111f) / 0.8888889f);
+    }
+    case 0x1c: {
+        const double u = double(1.0f - t);
+        return static_cast<float>(1.0 - (((u - 0.3f) * (u - 0.3f)) / 0.48999998f - 0.18367349f) / 0.8163265f);
+    }
+    case 0x1d: {
+        const double u = double(1.0f - t);
+        return static_cast<float>(1.0 - (((u - 0.35f) * (u - 0.35f)) / 0.42249995f - 0.28994083f) / 0.71005917f);
+    }
+    case 0x1e: {
+        const double u = double(1.0f - t);
+        return static_cast<float>(1.0 - (((u - 0.38f) * (u - 0.38f)) / 0.3844f - 0.37565035f) / 0.62434965f);
+    }
+    case 0x1f: {
+        const double u = double(1.0f - t);
+        return static_cast<float>(1.0 - (((u - 0.4f) * (u - 0.4f)) / 0.36f - 0.44444445f) / 0.5555556f);
+    }
+    default:
+        break;
     }
     // case 9 及 default（含 mode 0）：mode 9 = in-out quad，default = 线性。
     if (mode != 9) return t;

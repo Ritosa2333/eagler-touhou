@@ -5,8 +5,8 @@
 
 #include "../harness/test_framework.hpp"
 
-#include "game/AnmResource.hpp"
 #include "game/AnmManager.hpp"
+#include "game/AnmResource.hpp"
 
 #include <array>
 #include <cstdio>
@@ -54,8 +54,7 @@ private:
 };
 
 // ---------- 指令流构造：{i16 opcode; u16 size; i16 time; u16 mask; i32 args[]} ----------
-inline void push_insn(std::vector<u8>& out, i16 opcode, i16 time, u16 mask = 0,
-                      std::vector<i32> args = {}) {
+inline void push_insn(std::vector<u8>& out, i16 opcode, i16 time, u16 mask = 0, std::vector<i32> args = {}) {
     const u16 size = u16(8 + 4 * args.size());
     u8 head[8];
     std::memcpy(head, &opcode, 2);
@@ -71,9 +70,7 @@ inline void push_insn(std::vector<u8>& out, i16 opcode, i16 time, u16 mask = 0,
 }
 
 // 标签伪指令（opcode 5）：{5, 12, time, 0, i32 id}。
-inline void push_label(std::vector<u8>& out, i32 id, i16 time = 0) {
-    push_insn(out, 5, time, 0, {id});
-}
+inline void push_label(std::vector<u8>& out, i32 id, i16 time = 0) { push_insn(out, 5, time, 0, {id}); }
 
 inline void push_terminator(std::vector<u8>& out) {
     const i16 opcode = -1;
@@ -99,8 +96,7 @@ struct SyntheticTexture {
 };
 
 // sprites：{id,x,y,w,h}；scripts：指令流（自带终止符亦可，这里不追加）。
-inline std::vector<u8> build_anm(const SyntheticTexture& texture,
-                                 const std::vector<std::array<float, 5>>& sprites,
+inline std::vector<u8> build_anm(const SyntheticTexture& texture, const std::vector<std::array<float, 5>>& sprites,
                                  const std::vector<std::pair<i32, std::vector<u8>>>& scripts) {
     std::vector<u8> out;
     std::vector<u8> body;  // name + 精灵记录 + THTX + 脚本流（entry 内连续区）
@@ -117,14 +113,16 @@ inline std::vector<u8> build_anm(const SyntheticTexture& texture,
     std::string name = texture.name;
     body.insert(body.end(), name.begin(), name.end());
     body.push_back(0);
-    while (body.size() % 4) body.push_back(0);
+    while (body.size() % 4)
+        body.push_back(0);
 
     std::vector<u32> sprite_offsets(ns);
     for (u32 i = 0; i < ns; i++) {
         sprite_offsets[i] = name_offset + u32(body.size());
         u32 id = u32(sprites[i][0]);
         append(&id, 4);
-        for (int k = 1; k < 5; k++) append(&sprites[i][k], 4);
+        for (int k = 1; k < 5; k++)
+            append(&sprites[i][k], 4);
     }
     u32 thtx_offset = 0;
     if (texture.has_data) {
@@ -166,7 +164,8 @@ inline std::vector<u8> build_anm(const SyntheticTexture& texture,
     const u16 low = 0;
     std::memcpy(out.data() + 0x22, &low, 2);
     put32(0x24, 0);  // nextentry=0：链尾
-    for (u32 i = 0; i < ns; i++) put32(64 + i * 4, sprite_offsets[i]);
+    for (u32 i = 0; i < ns; i++)
+        put32(64 + i * 4, sprite_offsets[i]);
     for (u32 i = 0; i < nc; i++) {
         put32(64 + ns * 4 + i * 8, u32(scripts[i].first));
         put32(64 + ns * 4 + i * 8 + 4, script_offsets[i]);
@@ -180,7 +179,8 @@ inline std::vector<u8> build_simple_anm(const std::vector<std::vector<u8>>& scri
     SyntheticTexture texture;
     std::vector<std::array<float, 5>> sprites{{0.f, 0.f, 0.f, 2.f, 2.f}};
     std::vector<std::pair<i32, std::vector<u8>>> table;
-    for (u32 i = 0; i < scripts.size(); i++) table.emplace_back(i32(i), scripts[i]);
+    for (u32 i = 0; i < scripts.size(); i++)
+        table.emplace_back(i32(i), scripts[i]);
     return build_anm(texture, sprites, table);
 }
 

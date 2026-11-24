@@ -2,23 +2,23 @@
 // 与回调调度器；平台拥有文件/音频/GPU 工作并排队 destination）。
 #pragma once
 
+#include "AnmText.hpp"
+#include "HudDrawData.hpp"
 #include "TitleFrame.hpp"
+#include "TitleKeyConfigMenu.hpp"
 #include "TitleMainMenu.hpp"
+#include "TitleManualMenu.hpp"
+#include "TitleMusicRoomMenu.hpp"
+#include "TitleMusicRoomView.hpp"
+#include "TitleOptionsMenu.hpp"
 #include "TitlePlayerDataMenu.hpp"
 #include "TitlePlayerDataView.hpp"
 #include "TitleReplayMenu.hpp"
 #include "TitleResultEntry.hpp"
 #include "TitleResultView.hpp"
 #include "TitleSelectionMenu.hpp"
-#include "TitleOptionsMenu.hpp"
-#include "TitleKeyConfigMenu.hpp"
-#include "TitleMusicRoomMenu.hpp"
-#include "TitleMusicRoomView.hpp"
-#include "TitleManualMenu.hpp"
 #include "TitleSpellPracticeMenu.hpp"
 #include "TitleSpellPracticeView.hpp"
-#include "AnmText.hpp"
-#include "HudDrawData.hpp"
 
 #include <memory>
 #include <utility>
@@ -29,16 +29,22 @@ namespace th13 {
 // + Manual help 查看器服务随场景平台一并注入（TitleReplayPlatform/
 // TitleOptionPlatform/TitleMusicRoomPlatform/TitleManualPlatform 全默认实现，
 // 空宿主不受影响；数据源见 r4/menu-extras/integration.md）。
-struct TitleScenePlatform : TitleFramePlatform, TitleReplayPlatform, TitleOptionPlatform,
-                            TitleMusicRoomPlatform, TitleManualPlatform, TitleMenuServices,
-                            TitlePlayerDataPlatform, TitleSpellPracticePlatform,
+struct TitleScenePlatform : TitleFramePlatform,
+                            TitleReplayPlatform,
+                            TitleOptionPlatform,
+                            TitleMusicRoomPlatform,
+                            TitleManualPlatform,
+                            TitleMenuServices,
+                            TitlePlayerDataPlatform,
+                            TitleSpellPracticePlatform,
                             HudDrawServices {
     virtual bool sound(i32) = 0;
     virtual bool start_spell_practice(const SpellPracticeCommand&) { return false; }
     virtual bool can_start_spell_practice(const SpellPracticeCommand&) const { return false; }
     virtual bool record_menu_views() const { return false; }
-    virtual bool rasterize_title_text(AnmVm&, u32, const std::string&,
-                                     AnmTextAlignment = AnmTextAlignment::Left) { return false; }
+    virtual bool rasterize_title_text(AnmVm&, u32, const std::string&, AnmTextAlignment = AnmTextAlignment::Left) {
+        return false;
+    }
     // [通关结算] 0x454050/0x4549d0 宿主面（默认未接 = 不假成功）。前三个签名
     // 与 RunPausePlatform 现有 override 完全一致，ApplicationState 的同一组
     // override 同时满足两个虚槽。
@@ -151,20 +157,14 @@ public:
     const TitleManualMenu& manual_menu() const noexcept { return manual; }
     // PlayerData/SpellPractice 观测（路由接线与测试采样；空指针 = 尚未进屏）。
     const TitlePlayerDataMenu* player_data_menu() const noexcept { return player_data.get(); }
-    const TitleSpellPracticeMenu* spell_practice_menu() const noexcept {
-        return spell_practice.get();
-    }
+    const TitleSpellPracticeMenu* spell_practice_menu() const noexcept { return spell_practice.get(); }
     // SpellPractice Launch：原版 0x4576c0 启动拍保留命令，但不接真实对局路由；
     // 非空状态 = 明确「未实现/未启动」，不是错误。
-    bool spell_practice_launch_pending() const noexcept {
-        return !spell_practice_launch_status_.empty();
-    }
-    const std::string& spell_practice_launch_status() const noexcept {
-        return spell_practice_launch_status_;
-    }
+    bool spell_practice_launch_pending() const noexcept { return !spell_practice_launch_status_.empty(); }
+    const std::string& spell_practice_launch_status() const noexcept { return spell_practice_launch_status_; }
     TitleFrame frame;
-    TitleScene(SessionState&, TitleSelectionSettings&, AnmManager&, TitleScenePlatform&,
-               FrameScheduler&, TitleSceneResources = {});
+    TitleScene(SessionState&, TitleSelectionSettings&, AnmManager&, TitleScenePlatform&, FrameScheduler&,
+               TitleSceneResources = {});
     ~TitleScene();
     TitleScene(const TitleScene&) = delete;
     TitleScene& operator=(const TitleScene&) = delete;

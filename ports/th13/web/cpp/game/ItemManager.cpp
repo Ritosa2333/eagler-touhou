@@ -41,15 +41,12 @@ void set_item_trace(bool enabled) {
     if (!enabled) item_trace_rows.clear();
 }
 
-void set_item_trace_frame(i32 frame) {
-    item_trace_frame = frame;
-}
+void set_item_trace_frame(i32 frame) { item_trace_frame = frame; }
 
 void item_trace_note(const char* tag, i32 max_point, i32 score) {
     if (!item_trace_enabled) return;
     char row[192];
-    std::snprintf(row, sizeof row, "f=%d note=%s max_point=%d score=%d\n",
-                  item_trace_frame, tag, max_point, score);
+    std::snprintf(row, sizeof row, "f=%d note=%s max_point=%d score=%d\n", item_trace_frame, tag, max_point, score);
     item_trace_rows += row;
 }
 
@@ -66,15 +63,17 @@ std::string take_item_trace() {
 // 0x42f020 体不触 game RNG（勘误后口径：神霊的两次抽取在 spawn_value_item）。
 void ItemManager::reset_items() {
     items_ = {};
-    ordinary_free_.clear(); cancel_free_.clear();
-    for (i32 i = 0; i < 600; ++i) ordinary_free_.push_back(i);
-    for (i32 i = 600; i < kItemCapacity; ++i) cancel_free_.push_back(i);
+    ordinary_free_.clear();
+    cancel_free_.clear();
+    for (i32 i = 0; i < 600; ++i)
+        ordinary_free_.push_back(i);
+    for (i32 i = 600; i < kItemCapacity; ++i)
+        cancel_free_.push_back(i);
     cancel_total_ = cancel_wave_ = 0;
     events_.clear();
 }
 
-void ItemManager::spawn_item(float x, float y, float z, i32 kind, float angle,
-                             float speed) {
+void ItemManager::spawn_item(float x, float y, float z, i32 kind, float angle, float speed) {
     if (kind >= 10 && kind <= 14) {
         spawn_value_item(kind - 10, x, y, z, 0.5f);
         return;
@@ -124,8 +123,7 @@ void ItemManager::spawn_item(float x, float y, float z, i32 kind, float angle,
     }
 }
 
-void ItemManager::spawn_item(const float pos[3], i32 type, float angle,
-                             float speed) {
+void ItemManager::spawn_item(const float pos[3], i32 type, float angle, float speed) {
     spawn_item(pos[0], pos[1], pos[2], type, angle, speed);
 }
 
@@ -147,13 +145,11 @@ void ItemManager::retire_item(Item& item) {
 // ——经由 bind_session 读，未绑定按 0），bit1 = 2（界外反弹门）。
 // 尾部溢出（0x438ec0:124-139）：kind∉{3,4} 产件后 mgr+0x8838 计数 +1，
 // >9 时同位（未钳制 pos）补一件 kind3（base 0.5，再耗两次 RNG）。
-void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
-                                   float base_speed) {
+void ItemManager::spawn_value_item(i32 kind, float x, float y, float z, float base_speed) {
     spawn_value_item(kind, x, y, z, base_speed, true);
 }
 
-void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
-                                   float base_speed, bool sound) {
+void ItemManager::spawn_value_item(i32 kind, float x, float y, float z, float base_speed, bool sound) {
     if (sound && spirit_birth_sound) spirit_birth_sound((kind == 4 ? 1 : kind) + 0x3b, x);
     if (!random_) return;
     for (Spirit& s : spirits_) {
@@ -170,10 +166,22 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
         const u32 quadrant = id & 3u;
         float angle = 0.0f;
         switch (quadrant) {
-        case 0: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f - 2.3561945f; break;
-        case 1: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f + 0.7853982f; break;
-        case 2: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f + 2.3561945f; break;
-        default: GameRandom::tag(9); angle = random_->signed_unit() * kPi * 0.25f - 0.7853982f; break;
+        case 0:
+            GameRandom::tag(9);
+            angle = random_->signed_unit() * kPi * 0.25f - 2.3561945f;
+            break;
+        case 1:
+            GameRandom::tag(9);
+            angle = random_->signed_unit() * kPi * 0.25f + 0.7853982f;
+            break;
+        case 2:
+            GameRandom::tag(9);
+            angle = random_->signed_unit() * kPi * 0.25f + 2.3561945f;
+            break;
+        default:
+            GameRandom::tag(9);
+            angle = random_->signed_unit() * kPi * 0.25f - 0.7853982f;
+            break;
         }
         s.angle = wrap_angle(angle);
         // 0x438ec0：[0xb]（move_speed）= u*3.5 + base；[4]（speed 目标）= 0。
@@ -193,8 +201,7 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
         // 必须在出生当帧、本帧 0x46f170 主链 walk 之前完成：链尾序决定
         // 本帧尾插子 VM 是否被 walk 二次 tick（Pn16 s05 f11697）。
         if (spirit_spawn_animation)
-            (void)spirit_spawn_animation(u32(&s - spirits_.data()), s.serial,
-                                         kind_resolved, s.flags, s.x, s.y, s.z);
+            (void)spirit_spawn_animation(u32(&s - spirits_.data()), s.serial, kind_resolved, s.flags, s.x, s.y, s.z);
         break;
     }
     // 0x438ec0:124-139：溢出窗/计数块在 256 槽扫描循环结束之后无条件执行
@@ -218,7 +225,8 @@ void ItemManager::spawn_value_item(i32 kind, float x, float y, float z,
 
 // 0x4302a0：616 etClear 转换点登记。Stage1 无人消费，先记事件留证。
 void ItemManager::on_et_clear(float x, float y, float z) {
-    (void)x; (void)y;
+    (void)x;
+    (void)y;
     (void)z;
 }
 
@@ -240,9 +248,7 @@ void ItemManager::update(const ItemCollector& player) {
     last_player_ = player;
     const float rate = player.progress ? player.progress->rate : 1.f;
     cancel_wave_ = 0;  // 0x42e380:74（type9 出场延迟的每帧波数）
-    const bool magnet =
-        !player.dialog && (player.state == 2 || player.state == 4 ||
-                           player.y >= 128.0f);
+    const bool magnet = !player.dialog && (player.state == 2 || player.state == 4 || player.y >= 128.0f);
     for (Item& item : items_) {
         if (!item.alive) continue;
         switch (item.state) {
@@ -294,7 +300,7 @@ void ItemManager::update(const ItemCollector& player) {
             // state5 不进收集尾（0x42e380 的 if 臂直落下一槽）。
             --item.sprite;
             if (item.sprite < 0) item.state = 2;
-            continue; // original state5 arm bypasses the timer tail, even after switching to2
+            continue;  // original state5 arm bypasses the timer tail, even after switching to2
         }
         default:
             break;
@@ -314,7 +320,7 @@ void ItemManager::home_step(Item& item, const ItemCollector& player) {
     float dx = player.x - item.x;
     float dy = player.y - item.y;
     float angle = (dx == 0.0f && dy == 0.0f) ? 1.5707964f
-                    : float(std::atan2(double(dy), double(dx))); // 443f60 x87 result -> f32
+                                             : float(std::atan2(double(dy), double(dx)));  // 443f60 x87 result -> f32
     angle = wrap_angle(angle);
     // 42f540 stores only after sin/cos times speed, not between them.
     item.vx = float(std::cos(double(angle)) * double(item.homing_speed));
@@ -343,19 +349,14 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
     // 一次性静态读取：逐道具逐帧的 getenv 死调用（wasm 侧恒空）清出热路径。
     static const bool item_dbg = std::getenv("TH13_ITEM_DBG") != nullptr;
     if (item_dbg)
-        std::fprintf(stderr, "COLLECTCHK state=%d type=%d pos=(%g,%g) box=[%g,%g,%g,%g]\n",
-                     player.state, item.type, item.x, item.y, player.box[0],
-                     player.box[1], player.box[2], player.box[3]);
+        std::fprintf(stderr, "COLLECTCHK state=%d type=%d pos=(%g,%g) box=[%g,%g,%g,%g]\n", player.state, item.type,
+                     item.x, item.y, player.box[0], player.box[1], player.box[2], player.box[3]);
     if (player.state == 2) return;
-    if (item.x < player.box[0] || item.y < player.box[1] ||
-        item.x > player.box[2] || item.y > player.box[3]) {
+    if (item.x < player.box[0] || item.y < player.box[1] || item.x > player.box[2] || item.y > player.box[3]) {
         // 吸附盒（0x42e380:305-315）：state 3/4 已在追踪，不再触发。
         if (item.state == 3 || item.state == 4) return;
-        const std::array<float, 4>& auto_box =
-            player.focus ? player.box_auto_focus : player.box_auto;
-        if (item.x < auto_box[0] || item.y < auto_box[1] ||
-            item.x > auto_box[2] || item.y > auto_box[3])
-            return;
+        const std::array<float, 4>& auto_box = player.focus ? player.box_auto_focus : player.box_auto;
+        if (item.x < auto_box[0] || item.y < auto_box[1] || item.x > auto_box[2] || item.y > auto_box[3]) return;
         item.homing_speed = player.homing_speed / 3.0f;
         item.state = 4;
         return;
@@ -371,19 +372,17 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
             // 0x42edc0: 跨 be7f0 档 → 0x44ad60(-1, 道具位, 0xffffff40)
             // 哨兵弹字（digit10→sprite206）。漏掉会改变 10 槽环形池的
             // 游标，使后续弹字绘制顺序与原生相反（5507 首批次序实证）。
-            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y,
-                               0xffffff40u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y, 0xffffff40u});
         }
         break;
     case 2: {  // 点（0x42e380 case2）：得分 = 显示值/10（0x413bf0）
         const i32 value = point_value(player.y, item.state == 3);
         score_state.score += value / 10;
         if (score_state.score > 999999999) score_state.score = 999999999;
-        ++point_items_;  // 0x4be7d8
+        ++point_items_;          // 0x4be7d8
         ++progress.point_items;  // 同一计数进会话态（跨关累计；stage 头 +0x34 快照源）
         events_.push_back({ItemEvent::Kind::ScorePopup, value, item.x, item.y,
-                           (player.y > 128.0f && item.state != 3)
-                               ? 0xffffffffu : 0xffffff00u});
+                           (player.y > 128.0f && item.state != 3) ? 0xffffffffu : 0xffffff00u});
         break;
     }
     case 3: {  // 大P（0x42e959）
@@ -392,16 +391,14 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
             //（显示 +20000）；popup 0x4e20（无 0x42a430 演出）。
             score_state.score += 20000 / 10;
             if (score_state.score > 999999999) score_state.score = 999999999;
-            events_.push_back({ItemEvent::Kind::ScorePopup, 20000, item.x, item.y,
-                               0xff808080u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, 20000, item.x, item.y, 0xff808080u});
             events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
         if (collect_power_big(hud.power_step)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
             // 0x42e959: FUN_0043d210 返回跨档 → popup -1（0xffffff40）。
-            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y,
-                               0xffffff40u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y, 0xffffff40u});
         }
         break;
     }
@@ -421,16 +418,14 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
         if (hud.power >= hud.max_power) {
             // 0042e8ca loads 004aeaf0=100.0; 0042f510 converts to raw x100.
             add_max_point(100.0f);
-            events_.push_back({ItemEvent::Kind::ScorePopup, 100, item.x, item.y,
-                               0xff40ff40u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, 100, item.x, item.y, 0xff40ff40u});
             events_.push_back({ItemEvent::Kind::PowerLevelUp, 0, item.x, item.y});
         }
         if (collect_power_big(hud.power_step)) {
             if (option_power_changed) option_power_changed();
             push_level_up(item);
             // 0x42e8bd: FUN_0043d210 返回跨档 → popup -1（0xffffff40）。
-            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y,
-                               0xffffff40u});
+            events_.push_back({ItemEvent::Kind::ScorePopup, -1, item.x, item.y, 0xffffff40u});
         }
         break;
     }
@@ -443,10 +438,8 @@ void ItemManager::collect_check(Item& item, const ItemCollector& player) {
         if (score_state.score > 999999999) score_state.score = 999999999;
         if (item_trace_enabled) {
             char row[192];
-            std::snprintf(row, sizeof row,
-                          "f=%d item9 max_point=%d->%d score=%d->%d\n",
-                          item_trace_frame, trace_mp, progress.max_point,
-                          trace_sc, score_state.score);
+            std::snprintf(row, sizeof row, "f=%d item9 max_point=%d->%d score=%d->%d\n", item_trace_frame, trace_mp,
+                          progress.max_point, trace_sc, score_state.score);
             item_trace_rows += row;
         }
         break;
@@ -474,8 +467,7 @@ bool ItemManager::collect_power_small() {
     if (hud.power >= hud.max_power) {
         score_state.score += 1000;
         if (score_state.score > 999999999) score_state.score = 999999999;
-        events_.push_back({ItemEvent::Kind::ScorePopup, 10000, c.x, c.y,
-                           0xffffffffu});
+        events_.push_back({ItemEvent::Kind::ScorePopup, 10000, c.x, c.y, 0xffffffffu});
         return false;
     }
     const i32 before = hud.power;
@@ -514,8 +506,7 @@ void ItemManager::collect_life_piece(i32 amount) {
         return;
     }
     hud.life_pieces += amount;
-    while (life_piece_threshold(progress.life_piece_threshold_index) <=
-           hud.life_pieces) {
+    while (life_piece_threshold(progress.life_piece_threshold_index) <= hud.life_pieces) {
         hud.life_pieces -= life_piece_threshold(progress.life_piece_threshold_index);
         if (hud.extra_lives < 8) {
             hud.extra_lives += 1;
@@ -542,8 +533,10 @@ void ItemManager::collect_bomb_piece(i32 amount) {
     if (hud.bomb_pieces > 7) {
         hud.bomb_pieces = 0;
         hud.bombs += 1;
-        if (hud.bombs > 9) hud.bombs = 9;
-        else events_.push_back({ItemEvent::Kind::BombGained, hud.bombs, c.x, c.y});
+        if (hud.bombs > 9)
+            hud.bombs = 9;
+        else
+            events_.push_back({ItemEvent::Kind::BombGained, hud.bombs, c.x, c.y});
         if (bombs_changed) bombs_changed(hud.bombs, hud.bomb_pieces);
     }
     if (bombs_changed) bombs_changed(hud.bombs, hud.bomb_pieces);
@@ -578,14 +571,12 @@ void ItemManager::collect_trance(i32 amount) {
     const i32 before = progress.ending_points;
     trance_add(progress, amount);
     if (before / 200 != progress.ending_points / 200) {
-        events_.push_back({ItemEvent::Kind::SpiritGained,
-                           progress.ending_points / 200, last_player_.x,
-                           last_player_.y});
+        events_.push_back(
+            {ItemEvent::Kind::SpiritGained, progress.ending_points / 200, last_player_.x, last_player_.y});
     }
     // 0x43d530:33-35：每次加值后（ANM 管理器非空）都调 0x42b030，与是否
     // 跨 200 段无关；封顶 600 时也一样。
-    events_.push_back({ItemEvent::Kind::TranceGained, progress.ending_points,
-                       last_player_.x, last_player_.y});
+    events_.push_back({ItemEvent::Kind::TranceGained, progress.ending_points, last_player_.x, last_player_.y});
 }
 
 // 点值（0x42e380 case2，asm 0x42e9e5-0x42ea94 直读；A = be7dc/100）：
@@ -602,8 +593,7 @@ void ItemManager::add_max_point(float displayed_increment) {
     // then add to DAT_004be7dc and cap against DAT_004be7e4.
     SessionState& progress = *last_player_.progress;
     progress.max_point += i32(double(displayed_increment) * 100.0);
-    if (progress.max_point > progress.max_point_cap)
-        progress.max_point = progress.max_point_cap;
+    if (progress.max_point > progress.max_point_cap) progress.max_point = progress.max_point_cap;
 }
 
 i32 ItemManager::point_value(float player_y, bool homing) const {
@@ -668,20 +658,17 @@ void ItemManager::set_spirit_trance(bool active) {
 void ItemManager::update_spirits(const ItemCollector& player) {
     last_player_ = player;
     const float rate = player.progress ? player.progress->rate : 1.f;
-    const i32 character =
-        player.progress ? player.progress->character : 0;  // DAT_004be7b8
+    const i32 character = player.progress ? player.progress->character : 0;  // DAT_004be7b8
     for (Spirit& s : spirits_) {
         if (!s.alive) continue;
         s.anm_frame_prev = s.anm_frame;
         s.anm_time = float(s.anm_time + (rate > .99f && rate < 1.01f ? 1.f : rate));
         s.anm_frame = truncate_int(s.anm_time);
         // ① 反弹门。
-        if ((s.flags & 2u) != 0 &&
-            (s.x < -192.0f || s.x > 192.0f || s.y < 0.0f || s.y > 448.0f)) {
+        if ((s.flags & 2u) != 0 && (s.x < -192.0f || s.x > 192.0f || s.y < 0.0f || s.y > 448.0f)) {
             // 43878b–438798 also reflects at x==192 when another axis
             // has already put the spirit outside the 384x448 box.
-            if (s.x <= -192.0f || s.x >= 192.0f)
-                s.angle = wrap_angle(-s.angle - kPi);
+            if (s.x <= -192.0f || s.x >= 192.0f) s.angle = wrap_angle(-s.angle - kPi);
             if (s.y <= 0.0f || s.y >= 448.0f) s.angle = wrap_angle(-s.angle);
         }
         // ② 衰减。
@@ -726,13 +713,15 @@ void ItemManager::update_spirits(const ItemCollector& player) {
         case 5:
             // 438730 ->439550: homing toward boss slot0, while a nearby
             // living player may still reclaim the spirit (30px threshold).
-            if(!player.boss_present)s.state=1;
-            else s.angle=wrap_angle(float(std::atan2(double(player.boss_y-s.y),double(player.boss_x-s.x))));
-            s.move_speed=s.speed;
-            if(s.speed<4)s.speed=float(double(s.speed)+.035f);
-            if(player.state!=2) {
-                const float dx=s.x-player.x,dy=s.y-player.y;
-                if(float(double(dx)*dx+double(dy)*dy)<900)s.state=2;
+            if (!player.boss_present)
+                s.state = 1;
+            else
+                s.angle = wrap_angle(float(std::atan2(double(player.boss_y - s.y), double(player.boss_x - s.x))));
+            s.move_speed = s.speed;
+            if (s.speed < 4) s.speed = float(double(s.speed) + .035f);
+            if (player.state != 2) {
+                const float dx = s.x - player.x, dy = s.y - player.y;
+                if (float(double(dx) * dx + double(dy) * dy) < 900) s.state = 2;
             }
             break;
         default:
@@ -742,21 +731,19 @@ void ItemManager::update_spirits(const ItemCollector& player) {
         if ((s.flags & 1u) == 0) {
             // `frame` exposes the last tested lifetime value. Keep explicit
             // restored/debug state writes coherent with its fractional clock.
-            if (s.frame != s.lifetime_clock.previous)
-                s.lifetime_clock.set(wrapping_add(s.frame,1));
+            if (s.frame != s.lifetime_clock.previous) s.lifetime_clock.set(wrapping_add(s.frame, 1));
             // 438730 tests lifetime before401400 at the movement tail.
             s.frame = s.lifetime_clock.current;
             if (s.frame == 480) {
                 s.flags &= ~2u;
-                s.fade_requested = true; // 00438a77: label1, consumed by ANM tick.
+                s.fade_requested = true;  // 00438a77: label1, consumed by ANM tick.
             }
             if (s.x < -224.0f || s.x > 224.0f || s.y < -32.0f || s.y > 480.0f) {
                 s.alive = false;
                 continue;
             }
-            if (spirit_animation_alive &&
-                !spirit_animation_alive(u32(&s - spirits_.data()), s.serial)) {
-                s.alive = false; // 00438aca: missing ANM retires before scoring.
+            if (spirit_animation_alive && !spirit_animation_alive(u32(&s - spirits_.data()), s.serial)) {
+                s.alive = false;  // 00438aca: missing ANM retires before scoring.
                 continue;
             }
         }
@@ -779,7 +766,8 @@ void ItemManager::update_spirits(const ItemCollector& player) {
     if (spirit_window_ > 0) {
         spirit_window_clock_.decrement(&rate);
         spirit_window_ = spirit_window_clock_.current;
-    } else spirit_overflow_ = 0;
+    } else
+        spirit_overflow_ = 0;
 }
 
 float ItemManager::angle_to_player(const Spirit& s, const ItemCollector& player) {
@@ -804,8 +792,7 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
     SessionState& progress = *player.progress;
     const i32 character = progress.character;              // DAT_004be7b8
     const bool easy_difficulty = progress.difficulty < 5;  // DAT_004be7c4 < 5
-    events_.push_back({ItemEvent::Kind::Collected,
-                       10 + s.kind, s.x, s.y});
+    events_.push_back({ItemEvent::Kind::Collected, 10 + s.kind, s.x, s.y});
     const bool spirit_trace = item_trace_enabled;
     const i32 trace_max_point = progress.max_point;
     const i32 trace_score_before = player.score->score;
@@ -843,10 +830,8 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
     }
     if (spirit_trace) {
         char row[224];
-        std::snprintf(row, sizeof row,
-                      "f=%d spirit kind=%d flags=%u max_point=%d score=%d->%d\n",
-                      item_trace_frame, s.kind, s.flags, trace_max_point,
-                      trace_score_before, player.score->score);
+        std::snprintf(row, sizeof row, "f=%d spirit kind=%d flags=%u max_point=%d score=%d->%d\n", item_trace_frame,
+                      s.kind, s.flags, trace_max_point, trace_score_before, player.score->score);
         item_trace_rows += row;
     }
     // 0x438730 收集瞬间的 front.anm 拾取动画：普通/灵界两套脚本表
@@ -856,10 +841,8 @@ void ItemManager::collect_spirit(Spirit& s, const ItemCollector& player) {
     // 创建为 flags=0 尾插、layer=-1、位置=神霊位；句柄原版即丢弃（ESI=0）。
     static constexpr i32 kPickup[2][4] = {{96, 102, 99, -1}, {97, 103, 100, -1}};
     const i32 pickup_kind = s.kind >= 0 && s.kind < 4 ? s.kind : -1;
-    const i32 pickup_script =
-        pickup_kind >= 0 ? kPickup[(s.flags & 1u) ? 1 : 0][pickup_kind] : -1;
-    if (pickup_script >= 0 && spirit_pickup_effect)
-        (void)spirit_pickup_effect(pickup_script, s.x, s.y, s.z);
+    const i32 pickup_script = pickup_kind >= 0 ? kPickup[(s.flags & 1u) ? 1 : 0][pickup_kind] : -1;
+    if (pickup_script >= 0 && spirit_pickup_effect) (void)spirit_pickup_effect(pickup_script, s.x, s.y, s.z);
     s.alive = false;
 }
 

@@ -81,8 +81,7 @@ struct PresentationFixture {
 };
 
 // 收集器装配（StageBattle::update_item_side 同式）。
-ItemCollector collector_for(SessionState& progress, HudPlayerState& player,
-                            HudScoreState& score, float x, float y) {
+ItemCollector collector_for(SessionState& progress, HudPlayerState& player, HudScoreState& score, float x, float y) {
     ItemCollector collector;
     collector.x = x;
     collector.y = y;
@@ -108,7 +107,8 @@ TEST(spirit_vm_submit_layer8_and_follow) {
     HudScoreState score;
     battle.item_manager.spawn_value_item(0, 10.0f, 300.0f, 0.0f, 0.5f);
     Spirit& s = battle.item_manager.spirits()[0];
-    s.x = 10.0f; s.y = 300.0f;
+    s.x = 10.0f;
+    s.y = 300.0f;
     // 首帧同步：出生提交（kind0 → script 1；层由脚本 ins_304 置 8）。
     CHECK(fx.presentation.sync(battle, 0));
     CHECK(fx.presentation.error().empty());
@@ -116,7 +116,10 @@ TEST(spirit_vm_submit_layer8_and_follow) {
     AnmVm* vm = nullptr;
     for (u32 h = 1; h < 0x10000u; ++h)
         if (auto* candidate = fx.manager.registry.find(h))
-            if (candidate->source_script == 1) { vm = candidate; break; }
+            if (candidate->source_script == 1) {
+                vm = candidate;
+                break;
+            }
     CHECK(vm != nullptr);
     if (!vm) return;
     // astral.anm script1：ins_3(-1 t=200) 先挂起（visible=0），首帧后由
@@ -176,12 +179,16 @@ TEST(spirit_vm_retire_on_collect) {
     HudScoreState score;
     battle.item_manager.spawn_value_item(0, 5.0f, 205.0f, 0.0f, 0.5f);
     Spirit& s = battle.item_manager.spirits()[0];
-    s.x = 5.0f; s.y = 205.0f;  // 玩家 (0,200) 20px 内
+    s.x = 5.0f;
+    s.y = 205.0f;  // 玩家 (0,200) 20px 内
     CHECK(fx.presentation.sync(battle, 0));
     AnmVm* vm = nullptr;
     for (u32 h = 1; h < 0x10000u; ++h)
         if (auto* candidate = fx.manager.registry.find(h))
-            if (candidate->source_script == 1) { vm = candidate; break; }
+            if (candidate->source_script == 1) {
+                vm = candidate;
+                break;
+            }
     CHECK(vm != nullptr);
     // 收集帧：0x438730 收集路径（trance +2 / kind0 残机碎片）。
     auto collector = collector_for(progress, player, score, 0.0f, 200.0f);
@@ -208,7 +215,8 @@ TEST(spirit_vm_retire_on_cull) {
     HudScoreState score;
     battle.item_manager.spawn_value_item(3, 230.0f, 200.0f, 0.0f, 0.5f);
     Spirit& s = battle.item_manager.spirits()[0];
-    s.x = 230.0f; s.y = 200.0f;  // 越界盒外
+    s.x = 230.0f;
+    s.y = 200.0f;  // 越界盒外
     CHECK(fx.presentation.sync(battle, 0));
     auto collector = collector_for(progress, player, score, 0.0f, 200.0f);
     battle.item_manager.update_spirits(collector);
@@ -282,8 +290,7 @@ TEST(item_vm_two_scripts_layer15_and_collect_retire) {
     bool chained_item_vm = false;
     for (u32 h = 1; h < 0x10000u; ++h)
         if (auto* candidate = fx.manager.registry.find(h))
-            if (candidate->source_script >= 89 && candidate->source_script <= 107)
-                chained_item_vm = true;
+            if (candidate->source_script >= 89 && candidate->source_script <= 107) chained_item_vm = true;
     CHECK(!chained_item_vm);  // 旧 registry 实现 10213 帧曾 +642 主链成员
     if (body && side) {
         CHECK_EQ(body->source_script, 90);
@@ -329,7 +336,10 @@ TEST(youmu_slash_vm_script19_layer11_and_lifecycle) {
     AnmVm* vm = nullptr;
     for (u32 h = 1; h < 0x10000u; ++h)
         if (auto* candidate = fx.manager.registry.find(h))
-            if (candidate->source_script == 19) { vm = candidate; break; }
+            if (candidate->source_script == 19) {
+                vm = candidate;
+                break;
+            }
     CHECK(vm != nullptr);
     if (!vm) return;
     CHECK_EQ(vm->visual.layer, 11);  // pl03 script19 ins_304(11)
@@ -352,14 +362,21 @@ TEST(youmu_slash_vm_script19_layer11_and_lifecycle) {
 
 TEST(power_rebuild_creates_option_trees_with_deferred_translation) {
     PresentationFixture fx("artifacts/reference/raw/pl03.anm");
-    StageBattle battle; SessionState progress; HudPlayerState player; HudScoreState score;
+    StageBattle battle;
+    SessionState progress;
+    HudPlayerState player;
+    HudScoreState score;
     struct ShtProvider : EclResourceProvider {
         std::vector<u8> sht;
-        bool read(const std::string&, std::vector<u8>& bytes) override { bytes = sht; return true; }
+        bool read(const std::string&, std::vector<u8>& bytes) override {
+            bytes = sht;
+            return true;
+        }
         bool animation(u32, const std::string&) override { return true; }
     } provider;
     CHECK(read_file("artifacts/reference/raw/pl03a.sht", provider.sht));
-    progress.character = 3; progress.stage = 2;
+    progress.character = 3;
+    progress.stage = 2;
     CHECK(battle.prepare_player(provider, progress, player, "player.sht", true));
     battle.restore_replay_player(0, 51200, false);
     CHECK(fx.presentation.sync_player_options(battle));
@@ -378,18 +395,17 @@ TEST(power_rebuild_creates_option_trees_with_deferred_translation) {
         CHECK_EQ(fx.manager.registry.children(*vm).size(), size_t(1));
     }
     CHECK_EQ(found, 3);
-    CHECK(fx.presentation.sync_player_options(battle)); // same frame sync
-    CHECK(fx.presentation.sync_player_options(battle)); // next frame
+    CHECK(fx.presentation.sync_player_options(battle));  // same frame sync
+    CHECK(fx.presentation.sync_player_options(battle));  // next frame
     found = 0;
     for (u32 i = 0; i < fx.manager.registry.ordered_count(false); ++i) {
         auto* vm = fx.manager.registry.find(fx.manager.registry.ordered_handle(false, i));
         if (!vm || vm->source_script != 15 || (vm->visual.render_flags & 0x20)) continue;
-        ++found; CHECK_EQ(vm->visual.translation.x, 50.f);
+        ++found;
+        CHECK_EQ(vm->visual.translation.x, 50.f);
         CHECK_EQ(vm->visual.translation.y, 100.f);
     }
     CHECK_EQ(found, 3);
 }
 
-int main() {
-    return th13test::run_all("items-presentation") ? 1 : 0;
-}
+int main() { return th13test::run_all("items-presentation") ? 1 : 0; }

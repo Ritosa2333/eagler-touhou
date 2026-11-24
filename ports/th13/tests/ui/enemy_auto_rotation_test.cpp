@@ -15,11 +15,11 @@
 // 生产侧对应：StagePresentation.cpp 槽位同步（sync 的 enemies_from_ecl 槽
 // 循环）按同一契约写 rotation/flags。本文件只覆盖该回归；夹具沿用
 // enemy_mirror_velocity_test.cpp / enemy_animation_reset_test.cpp。
-#include "ui_test_fixtures.hpp"
 #include "../ecl/ecl_test_fixtures.hpp"
+#include "game/AnmCoordinates.hpp"
 #include "game/StageBattle.hpp"
 #include "game/StagePresentation.hpp"
-#include "game/AnmCoordinates.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <cmath>
 #include <memory>
@@ -58,7 +58,8 @@ std::vector<std::vector<AnmIns>> rotation_scripts() {
     scripts[0] = {AnmIns{424, 0, {1}}, wait(), stop()};
     scripts[1] = {AnmIns{401, 0, {0, 0, 0x3f000000}}, wait(), stop()};
     scripts[2] = {AnmIns{424, 0, {1}}, wait(), stop()};
-    for (u32 i = 3; i < 8; i++) scripts[i] = {wait(), stop()};
+    for (u32 i = 3; i < 8; i++)
+        scripts[i] = {wait(), stop()};
     return scripts;
 }
 
@@ -74,8 +75,7 @@ struct Rig {
     bool init(bool retail = false) {
         std::vector<u8> bytes;
         if (retail) {
-            if (!th13test::TestFileReader{}.read("artifacts/reference/raw/st07enm.anm", bytes))
-                return false;
+            if (!th13test::TestFileReader{}.read("artifacts/reference/raw/st07enm.anm", bytes)) return false;
         } else {
             bytes = synthetic_anm(1, rotation_scripts());
         }
@@ -131,18 +131,15 @@ TEST(op424_rotation_follows_motion_delta_quadrants_and_stop) {
     r.e->position[1] = 5.0f;
 
     const float quarter = 1.5707963705062866f;  // 原版 π/2 常量域
-    struct Case { float dx, dy, want; };
+    struct Case {
+        float dx, dy, want;
+    };
     const Case cases[] = {
-        {1, 0, 0.0f},        // 右：不加 π/2（+π/2 路径会得 π/2）
-        {0, 1, quarter},     // 下（屏幕 y 向下）：象限 II 侧
-        {-1, 0, 3.14159274f},
-        {0, -1, -quarter},
-        {1, 1, 0.785398185f},
-        {-1, 1, 2.3561945f},
-        {-1, -1, -2.3561945f},
-        {1, -1, -0.785398185f},
-        {0, 0, 0.0f},        // 停止：atan2(0,0)=0，不保留旧角
-        {0, 1, quarter},     // 停止后再动：恢复跟随
+        {1, 0, 0.0f},     // 右：不加 π/2（+π/2 路径会得 π/2）
+        {0, 1, quarter},  // 下（屏幕 y 向下）：象限 II 侧
+        {-1, 0, 3.14159274f},  {0, -1, -quarter},      {1, 1, 0.785398185f}, {-1, 1, 2.3561945f},
+        {-1, -1, -2.3561945f}, {1, -1, -0.785398185f}, {0, 0, 0.0f},  // 停止：atan2(0,0)=0，不保留旧角
+        {0, 1, quarter},                                              // 停止后再动：恢复跟随
     };
     for (const auto& c : cases) {
         r.e->motion_delta[0] = c.dx;

@@ -30,7 +30,7 @@ enum class TitleScreen : i32 {
     KeyConfig = 4,  // 0x44c570 case 4 -> 0x44fcc0 (Pad Config)
     Difficulty = 6,
     Character = 7,
-    Stage = 8,  // 0x44c570 case8 -> 0x451cb0 (Practice Stage Select)
+    Stage = 8,        // 0x44c570 case8 -> 0x451cb0 (Practice Stage Select)
     PlayerData = 10,  // 0x44c570 case a -> 0x453170
     Replay = 11,
     MusicRoom = 13,

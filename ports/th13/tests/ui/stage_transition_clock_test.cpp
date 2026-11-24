@@ -115,8 +115,7 @@ TEST(production_begin_run_passes_continuing_not_inverted) {
     CHECK(!source.empty());
     // 正确调用：continuing=true（0xc 换关）→ helper 保留四项数值；
     // continuing=false（新局/Retry/回放冷启动）→ helper 重置。
-    CHECK(source.find("run_entry_reset_points(continuing, progress.difficulty") !=
-          std::string::npos);
+    CHECK(source.find("run_entry_reset_points(continuing, progress.difficulty") != std::string::npos);
     CHECK(source.find("run_entry_reset_points(!continuing") == std::string::npos);
 }
 
@@ -125,8 +124,7 @@ TEST(production_step_wires_loader_completion_and_fade_gate) {
     CHECK(!source.empty());
     // 装载完成帧（start_transition 成功后）必须清 0x42b990 bit2。
     CHECK(source.find("if (!run->start_transition()) return false;") != std::string::npos);
-    CHECK(source.find("stage_loader_completed_scene_flags(progress.scene_flags)") !=
-          std::string::npos);
+    CHECK(source.find("stage_loader_completed_scene_flags(progress.scene_flags)") != std::string::npos);
     // 淡出 update 必须走同一 bit0|bit2 门（45f430）。
     CHECK(source.find("stage_loading_holds_game_fade(fade.kind, "
                       "fade.owner->progress.scene_flags)") != std::string::npos);

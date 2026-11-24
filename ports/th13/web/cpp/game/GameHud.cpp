@@ -21,8 +21,7 @@ constexpr u32 kOpeningSignaturePhaseTicks = 4;
 }  // namespace
 
 bool GameHud::check(bool ok) {
-    if (!ok && error.empty())
-        error = animations.error.empty() ? "HUD animation unavailable" : animations.error;
+    if (!ok && error.empty()) error = animations.error.empty() ? "HUD animation unavailable" : animations.error;
     return ok;
 }
 
@@ -161,8 +160,7 @@ bool GameHud::stage_logo_title(i32 scene_destination) {
     // and op400 (512,464): the front/logo/stXXlogo.png quad drawn from frame 0.
     // Gate 00425841/0042584e/0042585b: DAT_004dcc24 != 8,
     // !(DAT_004be830 & 0x40), (DAT_004be830 & 0x30) != 0x20 (not spell practice).
-    if (scene_destination == 8 || (progress.run_mode_flags & 0x40u) ||
-        (progress.run_mode_flags & 0x30u) == 0x20u)
+    if (scene_destination == 8 || (progress.run_mode_flags & 0x40u) || (progress.run_mode_flags & 0x30u) == 0x20u)
         return true;
     // The run scene injects the bank before initialize(); the UI test harness
     // intentionally has no logo bank, so absence here is not an error.
@@ -225,8 +223,7 @@ bool GameHud::initialize(const HudEntryContext& context) {
         error = boss_hud.error;
         return false;
     }
-    if (!life(player.extra_lives, player.life_pieces) || !bombs(player.bombs, player.bomb_pieces))
-        return false;
+    if (!life(player.extra_lives, player.life_pieces) || !bombs(player.bombs, player.bomb_pieces)) return false;
     // 0x425170:291-349 block D: stage-entry logo (stXXlogo.anm script 1).
     // Native order 0x425829/0x42583c (life/bomb interrupts) precedes the
     // 0x425841 gate; life/bombs only interrupt existing VMs, but keep the
@@ -236,8 +233,7 @@ bool GameHud::initialize(const HudEntryContext& context) {
     // 425170:509-512 creates front.anm script67 only for a fresh Stage 1
     // ordinary run with no continues. The script owns its children and the
     // full 198-tick presentation lifecycle; keep no HUD-local timer/handle.
-    if (progress.stage == 1 && progress.practice_mode == 0 && progress.continues == 0 &&
-        !create(front, 67, 0))
+    if (progress.stage == 1 && progress.practice_mode == 0 && progress.continues == 0 && !create(front, 67, 0))
         return false;
     // 00425170 starts the temporary difficulty notice through label3;
     // its script moves away from the FPS corner and terminates after164 ticks.

@@ -28,7 +28,10 @@ struct CountingGraphics final : ZunGraphics {
     void bind_texture(u32) override {}
     void set_layout(touhou::graphics::VertexLayout) override {}
     void set_matrix(touhou::graphics::MatrixKind, const Matrix4&) override {}
-    void triangles(u32 count, const void*, u32) override { ++draws; last_triangles = count; }
+    void triangles(u32 count, const void*, u32) override {
+        ++draws;
+        last_triangles = count;
+    }
     void primitives(touhou::graphics::Topology, u32, const void*, u32) override { ++primitive_calls; }
     bool select_target(const AnmResource*, u32) override { return true; }
     bool clear_target(u32, const GraphicsViewport*) override { return true; }

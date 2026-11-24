@@ -12,11 +12,11 @@
 // 本测试用真实 artifacts/reference/raw/ascii.anm，按生产帧序
 // （menu.update → age.tick → 副链 update(true) → 主链 update(false)）驱动
 // TitleReplayMenu，断言出生次数/总 units 与 retire 线上契约。不伪造抽签。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/TitleReplayMenu.hpp"
 #include "game/ReplayFile.hpp"
+#include "game/TitleReplayMenu.hpp"
 
 #include <fstream>
 #include <iterator>
@@ -44,9 +44,7 @@ struct PrayerHost final : TitleReplayPlatform {
         file.stages[0].header.assign(0xC4, 0);
     }
     i32 replay_count() const override { return 1; }
-    const ReplayFile* replay_entry(i32 index) const override {
-        return index == 0 ? &file : nullptr;
-    }
+    const ReplayFile* replay_entry(i32 index) const override { return index == 0 ? &file : nullptr; }
     std::string replay_filename(i32) const override { return "th13_01.rpy"; }
     bool start_replay(i32 file_index, i32 stage_index) override {
         if (started_file >= 0) return false;
@@ -83,7 +81,10 @@ TEST(menu_replay_launch_prayer_spawns_eight_times_then_retires) {
     state.age.set(15);
     PrayerHost host;
     TitleReplayMenu menu{state, manager, host, TitleSceneResources{}};
-    menu.play_sound = [&host](i32) { ++host.sounds; return true; };
+    menu.play_sound = [&host](i32) {
+        ++host.sounds;
+        return true;
+    };
 
     const u32 before = random.index();
     CHECK(menu.update(0x01, 0));  // Z：确认关 1 → case3
@@ -112,11 +113,12 @@ TEST(menu_replay_launch_prayer_spawns_eight_times_then_retires) {
 
     // 继续推进：出生节拍 i=2,6,10,...,30 共 8 次（每次 24 units）；i=32
     // （age=32 > 31）排队启动并在同一 update 内 retire 整树。
-    for (int i = 3; i <= 32; ++i) frame();
+    for (int i = 3; i <= 32; ++i)
+        frame();
     CHECK_EQ(host.started_file, 0);
     CHECK_EQ(host.started_stage, 0);
-    CHECK_EQ(random.index() - before, 192u);   // 8 spawns × 24 units（原生 192）
-    CHECK_EQ(prayer_vms(manager), 0);          // 启动排队后 caption 树已卸载
+    CHECK_EQ(random.index() - before, 192u);  // 8 spawns × 24 units（原生 192）
+    CHECK_EQ(prayer_vms(manager), 0);         // 启动排队后 caption 树已卸载
     CHECK(menu.error.empty());
 }
 

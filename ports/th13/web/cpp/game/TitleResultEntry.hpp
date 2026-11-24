@@ -15,9 +15,9 @@
 //   91 格 (212,360)，列 +18 / 行 +16；选中黄 0xffffff00、未选灰 0xff808080。
 #pragma once
 
-#include "TitleState.hpp"
-#include "TitleResultView.hpp"
 #include "HudDrawData.hpp"
+#include "TitleResultView.hpp"
+#include "TitleState.hpp"
 
 #include <string>
 
@@ -34,14 +34,14 @@ class TitleResultEntry {
     bool data_loaded_ = false;
     TitleResultScreenData data_;
     bool fail(const std::string& reason);
-    bool create_visual(i32 script, u32& handle);  // 0x44bb80
-    bool open_name_screen();                       // 0x454050 case0 建面
-    bool open_slot_screen();                       // 0x4549d0 case0 建面
-    void retire_name_visuals();                    // 0x454050 case3 收面
-    void retire_slot_visuals();                    // 0x4549d0 case4 收面
-    bool return_main();                            // 0x454050 case3 流程 1（0x454658 重选标题曲）
-    bool name_editor(u32 pressed, u32 repeated);   // 0x454050 case2
-    bool slot_selector(u32 pressed, u32 repeated); // 0x4549d0 case2
+    bool create_visual(i32 script, u32& handle);       // 0x44bb80
+    bool open_name_screen();                           // 0x454050 case0 建面
+    bool open_slot_screen();                           // 0x4549d0 case0 建面
+    void retire_name_visuals();                        // 0x454050 case3 收面
+    void retire_slot_visuals();                        // 0x4549d0 case4 收面
+    bool return_main();                                // 0x454050 case3 流程 1（0x454658 重选标题曲）
+    bool name_editor(u32 pressed, u32 repeated);       // 0x454050 case2
+    bool slot_selector(u32 pressed, u32 repeated);     // 0x4549d0 case2
     bool slot_name_editor(u32 pressed, u32 repeated);  // 0x4549d0 case3
     bool edit_name(u32 pressed, u32 repeated, bool save_to_replay);
     bool draw_score_rows(HudDrawServices&, const TitleResultScreenData&);
@@ -49,12 +49,11 @@ class TitleResultEntry {
     bool draw_slot_list(HudDrawServices&);
     bool draw_slot_selected(HudDrawServices&);
     std::string slot_row_text(i32 index) const;
-    static std::string score_row_text(const TitlePlayerDataScore&, i32 ordinal,
-                                      const std::string& fallback_name);
+    static std::string score_row_text(const TitlePlayerDataScore&, i32 ordinal, const std::string& fallback_name);
+
 public:
     std::string error;
-    TitleResultEntry(TitleState& state_, TitleScenePlatform& host_, AnmManager& animations_,
-                     i32 title_bank_ = 16)
+    TitleResultEntry(TitleState& state_, TitleScenePlatform& host_, AnmManager& animations_, i32 title_bank_ = 16)
         : state(state_), host(host_), animations(animations_), title_bank(title_bank_) {}
     bool update(u32 pressed, u32 repeated);
     // 屏内文本走标题现有 Draw 通道（TitleScene stage_text_draw → HudDrawServices

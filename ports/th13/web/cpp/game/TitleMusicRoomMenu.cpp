@@ -2,10 +2,10 @@
 
 namespace th13 {
 namespace {
-constexpr i32 kWindowRows = 10;   // 0x4554f0:190 页顶+10 显隐门
-constexpr float kRowStep = 20.f;  // 行距 20.0（fadd 步长实读）
+constexpr i32 kWindowRows = 10;                    // 0x4554f0:190 页顶+10 显隐门
+constexpr float kRowStep = 20.f;                   // 行距 20.0（fadd 步长实读）
 constexpr float kOriginX = 58.f, kOriginY = 80.f;  // 队列起点（待对拍，见头注）
-constexpr i32 kCommentLines = 8;  // musiccmt.txt 每块 8 行注释
+constexpr i32 kCommentLines = 8;                   // musiccmt.txt 每块 8 行注释
 }  // namespace
 
 bool TitleMusicRoomMenu::fail(const std::string& reason) {
@@ -66,8 +66,10 @@ bool TitleMusicRoomMenu::update(u32 pressed, u32 repeated) {
         // case2 同样隔帧继续显影（0x455b1b-0x455bc7）；导航不清计数。
         if ((frames_ & 1) == 0 && reveal_lines_ < kCommentLines) ++reveal_lines_;
         const i32 previous = row_;
-        if (input & 0x10) row_ = (row_ + count - 1) % count;  // ↑ FUN_00473210(-1)
-        else if (input & 0x20) row_ = (row_ + 1) % count;     // ↓
+        if (input & 0x10)
+            row_ = (row_ + count - 1) % count;  // ↑ FUN_00473210(-1)
+        else if (input & 0x20)
+            row_ = (row_ + 1) % count;  // ↓
         if (row_ != previous) {
             if (!sound(10)) return false;
             // 0x455d76-0x455d86：仅当注释已满 8 行时清 +0x754（导航分支）。
@@ -137,11 +139,10 @@ bool TitleMusicRoomMenu::draw_texts(HudDrawServices& draw) {
     // 0x4c0da0 占位串 + 0x8080ff，否则真实注释 + 0xffffff。
     const bool locked = !host.track_heard(comment_track_) && locked_armed_;
     for (i32 line = 0; line < reveal_lines_ && line < kCommentLines; ++line) {
-        const std::string text = locked ? host.locked_comment(line)
-                                        : host.track_comment(comment_track_, line);
+        const std::string text = locked ? host.locked_comment(line) : host.track_comment(comment_track_, line);
         if (text.empty()) continue;
-        if (!put(kOriginX + 20.f, kOriginY + kRowStep * kWindowRows + 14.f * line,
-                 locked ? 0xff8080ffu : 0xffffffffu, text))
+        if (!put(kOriginX + 20.f, kOriginY + kRowStep * kWindowRows + 14.f * line, locked ? 0xff8080ffu : 0xffffffffu,
+                 text))
             return false;
     }
     return true;

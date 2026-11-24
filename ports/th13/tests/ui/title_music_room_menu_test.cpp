@@ -21,29 +21,41 @@ std::string locked_title(i32 track) {
     char prefix[16];
     std::snprintf(prefix, sizeof prefix, "No.%2d ", int(track) + 1);
     std::string text = prefix;
-    for (i32 i = 0; i < 11; ++i) text += "\x81\x48";
+    for (i32 i = 0; i < 11; ++i)
+        text += "\x81\x48";
     return text;
 }
 
 struct MusicHost final : TitleMusicRoomPlatform {
     i32 tracks = 12;
-    std::vector<bool> heard;          // 0/2/11 号已听
+    std::vector<bool> heard;  // 0/2/11 号已听
     i32 played = -1, locked_plays = 0, resumes = 0, marked = -1;
     MusicHost() : heard(tracks, false) { heard[0] = heard[2] = heard[11] = true; }
     i32 track_count() const override { return tracks; }
     std::string track_title(i32 t) override { return "track" + std::to_string(t); }
-    std::string track_comment(i32 t, i32 line) override {
-        return "c" + std::to_string(t) + "-" + std::to_string(line);
-    }
+    std::string track_comment(i32 t, i32 line) override { return "c" + std::to_string(t) + "-" + std::to_string(line); }
     bool track_heard(i32 t) const override { return heard[t]; }
     void mark_heard(i32 t) override { marked = t; }
-    bool play_track(i32 t) override { played = t; return true; }
-    bool play_locked_response() override { ++locked_plays; return true; }
-    bool resume_title_music() override { ++resumes; return true; }
+    bool play_track(i32 t) override {
+        played = t;
+        return true;
+    }
+    bool play_locked_response() override {
+        ++locked_plays;
+        return true;
+    }
+    bool resume_title_music() override {
+        ++resumes;
+        return true;
+    }
 };
 
 struct TextSink final : HudDrawServices {
-    struct Entry { float x, y; u32 color; std::string text; };
+    struct Entry {
+        float x, y;
+        u32 color;
+        std::string text;
+    };
     std::vector<Entry> entries;
     bool hud_text(const HudTextDraw& draw) override {
         entries.push_back({draw.position.x, draw.position.y, draw.style.color, draw.text});
@@ -59,7 +71,10 @@ struct Harness {
     std::vector<i32> sounds;
     Harness() {
         state.screen = TitleScreen(kTitleScreenMusicRoom);
-        menu.play_sound = [this](i32 id) { sounds.push_back(id); return true; };
+        menu.play_sound = [this](i32 id) {
+            sounds.push_back(id);
+            return true;
+        };
     }
     bool frame(u32 pressed = 0, u32 repeated = 0) {
         sink.entries.clear();  // 每帧只看当前绘制队列
@@ -68,7 +83,8 @@ struct Harness {
         return ok;
     }
     void advance(i32 n, u32 pressed = 0, u32 repeated = 0) {
-        for (i32 i = 0; i < n; i++) CHECK(frame(pressed, repeated));
+        for (i32 i = 0; i < n; i++)
+            CHECK(frame(pressed, repeated));
     }
 };
 
@@ -97,7 +113,7 @@ TEST(music_room_entry_and_reveal) {
     CHECK_EQ(h.menu.revealed_lines(), 0);  // case1 第一帧（odd）不显影
     h.frame();
     CHECK_EQ(h.menu.revealed_lines(), 1);  // case1 第二帧（even）显 1 行
-    h.advance(3);  // frames 3..5：再显 1 行后 >4 进 case2（case1 共 2 行）
+    h.advance(3);                          // frames 3..5：再显 1 行后 >4 进 case2（case1 共 2 行）
     CHECK_EQ(h.state.substate, 2);
     CHECK_EQ(h.menu.revealed_lines(), 2);
     // 列表 10 行窗口（已听白字，选中 x+4；未听 = CP932 占位白字）。
@@ -122,9 +138,9 @@ TEST(music_room_navigation_wrap_and_window) {
     h.frame(0x20);  // ↓ 0→1
     CHECK_EQ(h.menu.row(), 1);
     CHECK(!h.sounds.empty() && h.sounds.back() == 10);
-    h.frame(0, 0x10);      // ↑ 回 0
+    h.frame(0, 0x10);  // ↑ 回 0
     CHECK_EQ(h.menu.row(), 0);
-    h.advance(1, 0x10);    // ↑ 环绕 0→11
+    h.advance(1, 0x10);  // ↑ 环绕 0→11
     CHECK_EQ(h.menu.row(), 11);
     // 窗口跟随：末页（top=10）显示 track11（已听）；track10 未听 → 占位白字。
     CHECK(has_text(h.sink, "track11"));
@@ -155,25 +171,24 @@ TEST(music_room_locked_two_z_play_and_unlock) {
     CHECK_EQ(h.host.played, 1);
     CHECK_EQ(h.host.marked, 0);  // 原版任意播曲解锁 0 号曲
     CHECK(!h.menu.locked_armed());
-    CHECK(!h.host.heard[1]);     // 当前曲本身不置位（只置 score[0]）
+    CHECK(!h.host.heard[1]);  // 当前曲本身不置位（只置 score[0]）
 }
 
 TEST(music_room_locked_comments_use_cp932_placeholders) {
     Harness h;
     h.advance(16);
-    h.frame(0x20);      // 曲1 未听
-    h.frame(0x80001);   // 锁定响应
-    h.advance(4);       // 显影 2 行
+    h.frame(0x20);     // 曲1 未听
+    h.frame(0x80001);  // 锁定响应
+    h.advance(4);      // 显影 2 行
     CHECK_EQ(h.menu.revealed_lines(), 2);
     // 占位串 0x4c0da0[0..7]，色 0x8080ff；不是真实曲目注释。
     const TextSink::Entry* first = find_text(h.sink, "\x81\x40");
     CHECK(first != nullptr);
     CHECK_EQ(first->color, 0xff8080ffu);
-    const std::string expected1 =
-        "\x81\x40\x81\x40\x81\x96\x81\x96\x91\x49\x91\xf0\x82\xb5\x82\xbd\x8b\xc8"
-        "\x82\xcd\x82\xdc\x82\xbe\x83\x51\x81\x5b\x83\x80\x92\x86\x82\xc5\x8d\xc4"
-        "\x90\xb6\x82\xb3\x82\xea\x82\xc4\x82\xa2\x82\xdc\x82\xb9\x82\xf1\x81\x96"
-        "\x81\x96";
+    const std::string expected1 = "\x81\x40\x81\x40\x81\x96\x81\x96\x91\x49\x91\xf0\x82\xb5\x82\xbd\x8b\xc8"
+                                  "\x82\xcd\x82\xdc\x82\xbe\x83\x51\x81\x5b\x83\x80\x92\x86\x82\xc5\x8d\xc4"
+                                  "\x90\xb6\x82\xb3\x82\xea\x82\xc4\x82\xa2\x82\xdc\x82\xb9\x82\xf1\x81\x96"
+                                  "\x81\x96";
     const TextSink::Entry* second = find_text(h.sink, expected1);
     CHECK(second != nullptr);
     CHECK_EQ(second->color, 0xff8080ffu);
@@ -189,18 +204,18 @@ TEST(music_room_locked_comments_use_cp932_placeholders) {
 TEST(music_room_navigation_clears_armed_only_after_eight_lines) {
     Harness h;
     h.advance(16);
-    h.frame(0x20);      // 曲1 未听
-    h.frame(0x80001);   // 锁定响应，armed=1，reveal=0
+    h.frame(0x20);     // 曲1 未听
+    h.frame(0x80001);  // 锁定响应，armed=1，reveal=0
     // 显影满 8 行（14 帧：偶数帧 1..8）。
     h.advance(15);
     CHECK_EQ(h.menu.revealed_lines(), 8);
     CHECK(h.menu.locked_armed());
     // 导航分支：+0x74c>=8 → 清 +0x754（0x455d76-0x455d86）。
-    h.frame(0x20);      // 曲2（已听）
+    h.frame(0x20);  // 曲2（已听）
     CHECK(!h.menu.locked_armed());
     CHECK_EQ(h.menu.revealed_lines(), 8);  // 导航不清显影计数
     // 回到未听曲：armed 已清 → 再次锁定响应，而不是播放。
-    h.frame(0x10);      // 曲1
+    h.frame(0x10);  // 曲1
     CHECK(h.frame(0x80001));
     CHECK_EQ(h.host.locked_plays, 2);
     CHECK_EQ(h.host.played, -1);
@@ -210,13 +225,13 @@ TEST(music_room_navigation_clears_armed_only_after_eight_lines) {
 TEST(music_room_navigation_before_eight_lines_keeps_armed) {
     Harness h;
     h.advance(16);
-    h.frame(0x20);      // 曲1 未听
-    h.frame(0x80001);   // 锁定响应，armed=1，reveal=0
-    h.advance(3);       // reveal=1（未满 8）
+    h.frame(0x20);     // 曲1 未听
+    h.frame(0x80001);  // 锁定响应，armed=1，reveal=0
+    h.advance(3);      // reveal=1（未满 8）
     CHECK(h.menu.locked_armed());
-    h.frame(0x20);      // 曲2（已听）：导航分支不清 +0x754
+    h.frame(0x20);  // 曲2（已听）：导航分支不清 +0x754
     CHECK(h.menu.locked_armed());
-    h.frame(0x10);      // 曲1
+    h.frame(0x10);  // 曲1
     // 二次 Z：armed 仍在 → 播放 + 解锁。
     CHECK(h.frame(0x80001));
     CHECK_EQ(h.host.played, 1);
@@ -255,8 +270,8 @@ TEST(music_room_empty_catalog_exits_cleanly) {
 TEST(music_room_repeated_z_and_x_do_not_retrigger) {
     Harness h;
     h.advance(16);
-    h.frame(0x20);      // 曲1 未听
-    h.frame(0x80001);   // 首次 Z（pressed）：锁定响应
+    h.frame(0x20);     // 曲1 未听
+    h.frame(0x80001);  // 首次 Z（pressed）：锁定响应
     CHECK_EQ(h.host.locked_plays, 1);
     // 仅 repeated 的 Z 不触发播放/二次锁定（原版 0x4554f0 只读 DAT_004e49fc）。
     CHECK(h.frame(0, 0x80001));

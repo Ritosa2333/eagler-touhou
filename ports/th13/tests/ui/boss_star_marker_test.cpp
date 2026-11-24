@@ -5,8 +5,8 @@
 //      在同一点（用户截图 145616 左侧蓝团）。
 //   2) 位置 = boss 世界位 + R(t)·(0,56,0) = boss + (−56·sin t, 56·cos t)；
 //      调用点 0x427135 push 后 0x42713c lea 0xa0(%esp) 实际读 {0.0,56.0}。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/BossPresentation.hpp"
 
@@ -83,10 +83,8 @@ TEST(boss_star_position_uses_rotated_zero_x_radius_vector) {
     CHECK(shown(star));
     const float t = star->variables.rotation.z;
     CHECK_NEAR(double(t), 1.5707963, 1e-4);
-    CHECK_NEAR(double(star->visual.translation.x),
-               double(10.f - 56.f * std::sin(t)), 1e-3);
-    CHECK_NEAR(double(star->visual.translation.y),
-               double(128.f + 56.f * std::cos(t)), 1e-3);
+    CHECK_NEAR(double(star->visual.translation.x), double(10.f - 56.f * std::sin(t)), 1e-3);
+    CHECK_NEAR(double(star->visual.translation.y), double(128.f + 56.f * std::cos(t)), 1e-3);
     CHECK_NEAR(double(star->visual.translation.x), -46.0, 1e-3);
     CHECK_NEAR(double(star->visual.translation.y), 128.0, 1e-3);
 }

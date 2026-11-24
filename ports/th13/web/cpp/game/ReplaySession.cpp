@@ -4,9 +4,7 @@
 namespace th13 {
 
 namespace {
-u32 rd32(const u8* at) {
-    return u32(at[0]) | u32(at[1]) << 8 | u32(at[2]) << 16 | u32(at[3]) << 24;
-}
+u32 rd32(const u8* at) { return u32(at[0]) | u32(at[1]) << 8 | u32(at[2]) << 16 | u32(at[3]) << 24; }
 i32 as_i32(u32 raw) { return i32(raw); }
 }  // namespace
 
@@ -16,17 +14,19 @@ i32 ReplaySession::stage_index(const ReplayFile& file, i32 stage_number) {
     return -1;
 }
 
-bool ReplaySession::restore_player_start(const ReplayStage& stage,StageBattle& battle,std::string& error) {
-    if(stage.header.size()<0x70){error="Replay player-start header truncated";return false;}
+bool ReplaySession::restore_player_start(const ReplayStage& stage, StageBattle& battle, std::string& error) {
+    if (stage.header.size() < 0x70) {
+        error = "Replay player-start header truncated";
+        return false;
+    }
     // 448ec0 uses header+0c/+10 as signed1/128 coordinates, +6c as focus.
-    battle.restore_replay_player(as_i32(rd32(stage.header.data()+0x0c)),
-        as_i32(rd32(stage.header.data()+0x10)),rd32(stage.header.data()+0x6c)!=0);
+    battle.restore_replay_player(as_i32(rd32(stage.header.data() + 0x0c)), as_i32(rd32(stage.header.data() + 0x10)),
+                                 rd32(stage.header.data() + 0x6c) != 0);
     return true;
 }
 
-bool ReplaySession::restore_stage(const ReplayFile& file, u32 stage_index,
-                                  const ReplayRestoreTarget& target, ReplayRestoreLog& log,
-                                  std::string& error, ReplayRestorePhase phase) {
+bool ReplaySession::restore_stage(const ReplayFile& file, u32 stage_index, const ReplayRestoreTarget& target,
+                                  ReplayRestoreLog& log, std::string& error, ReplayRestorePhase phase) {
     if (!target.progress || !target.player || !target.score) {
         error = "Replay restore target missing";
         return false;
@@ -48,8 +48,7 @@ bool ReplaySession::restore_stage(const ReplayFile& file, u32 stage_index,
     log.seed = stamp;
     log.stage_number = stage.number;
     if (target.game_random) target.game_random->reseed_restore(stamp);
-    if (phase == ReplayRestorePhase::Transition && target.visual_random)
-        target.visual_random->reseed(stamp);
+    if (phase == ReplayRestorePhase::Transition && target.visual_random) target.visual_random->reseed(stamp);
     // ---- 顶层头 +0x5C/+0x60/+0x64（0x447900:197-199；先写，随后被覆盖）----
     if (file.top_header.size() >= 0x68) {
         target.progress->character = as_i32(rd32(&file.top_header[0x5C]));
@@ -61,16 +60,16 @@ bool ReplaySession::restore_stage(const ReplayFile& file, u32 stage_index,
         log.block[k] = as_i32(rd32(&stage.header[0x14 + 4 * k]));
     const i32* b = log.block;
     // 头内偏移 = 0x14 + 4k；全局地址 = 0x4BE7B8 + (头内偏移 − 0x14)。
-    target.progress->character = b[0];                    // 0x4BE7B8 +0x14
+    target.progress->character = b[0];  // 0x4BE7B8 +0x14
     /* b[1] +0x18 0x4BE7BC 机体/子角色 —— port 无归属，见 kUnmappedOffsets */
-    target.score->score = b[2];                           // 0x4BE7C0 +0x1C 点值制分
-    target.progress->difficulty = b[3];                   // 0x4BE7C4 +0x20
-    target.progress->continues = b[4];                    // 0x4BE7C8 +0x24 续关计数
+    target.score->score = b[2];          // 0x4BE7C0 +0x1C 点值制分
+    target.progress->difficulty = b[3];  // 0x4BE7C4 +0x20
+    target.progress->continues = b[4];   // 0x4BE7C8 +0x24 续关计数
     /* b[5] +0x28 0x4BE7CC 未定名 —— 无归属 */
-    target.progress->graze = b[6];                        // 0x4BE7D0 +0x2C
-    target.progress->selected_spell_id = b[7];            // 0x4BE7D4 +0x30
+    target.progress->graze = b[6];              // 0x4BE7D0 +0x2C
+    target.progress->selected_spell_id = b[7];  // 0x4BE7D4 +0x30
     /* b[8] +0x34 0x4BE7D8 未定名计数 —— 无归属 */
-    target.progress->max_point = b[9];                    // 0x4BE7DC +0x38 当前最大得点
+    target.progress->max_point = b[9];  // 0x4BE7DC +0x38 当前最大得点
     /* b[10] +0x3C 0x4BE7E0 最大得点基准 —— port 无独立字段，无归属 */
     target.progress->max_point_cap = b[11];               // 0x4BE7E4 +0x40 上限
     target.player->power = b[12];                         // 0x4BE7E8 +0x44 功率
@@ -96,10 +95,8 @@ bool ReplaySession::restore_stage(const ReplayFile& file, u32 stage_index,
     // 模式位一律清 0。模式位本身来自顶层头 +0x0a bit1（447900:64-68 录制 /
     // begin_replay_stage 的 4525b0 读取），不来自 stage 头。
     const bool selected_spell = target.progress->selected_spell_id >= 0;
-    if ((target.progress->run_mode_flags & 0x30u) != 0x20u)
-        target.progress->selected_spell_id = -1;
-    target.progress->run_mode_flags = (target.progress->run_mode_flags & ~0x30u) |
-                                     (selected_spell ? 0x20u : 0u);
+    if ((target.progress->run_mode_flags & 0x30u) != 0x20u) target.progress->selected_spell_id = -1;
+    target.progress->run_mode_flags = (target.progress->run_mode_flags & ~0x30u) | (selected_spell ? 0x20u : 0u);
     return true;
 }
 

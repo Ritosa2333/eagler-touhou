@@ -10,9 +10,8 @@ namespace th13 {
 
 namespace {
 // 0x4bb944 关卡名表（TitleResultEntry kStageNames 同源，0x43de80 榜行 %s 用）。
-constexpr const char* kRankStageNames[10] = {"test   ", "Stage 1", "Stage 2", "Stage 3",
-                                             "Stage 4", "Stage 5", "Stage 6", "Extra  ",
-                                             "Clear  ", "ExClear"};
+constexpr const char* kRankStageNames[10] = {"test   ", "Stage 1", "Stage 2", "Stage 3", "Stage 4",
+                                             "Stage 5", "Stage 6", "Extra  ", "Clear  ", "ExClear"};
 
 // 0x43de80 case 0x13/0x1c 榜行短格式（0x4abaf0/0x4abad0）：timestamp 为 0 =
 // 从未玩过行。%9ld%d = 榜内 9 位分 + 个位（续关数位，0x43d6b0 写 be7c8）。
@@ -21,21 +20,17 @@ std::string rank_row_text(const TitlePlayerDataScore& row, i32 index) {
     char text[128];
     const char* name = row.name.empty() ? "        " : row.name.c_str();
     if (row.timestamp == 0 || row.stage < 0 || row.stage >= 10) {
-        std::snprintf(text, sizeof text, "%2d %s %9d%d --/--/-- Stage -",
-                      index + 1, name, row.score, row.continues);
+        std::snprintf(text, sizeof text, "%2d %s %9d%d --/--/-- Stage -", index + 1, name, row.score, row.continues);
         return text;
     }
     const std::time_t clock = std::time_t(row.timestamp);
     const std::tm* date = std::localtime(&clock);
     if (!date) {
-        std::snprintf(text, sizeof text, "%2d %s %9d%d --/--/-- Stage -",
-                      index + 1, name, row.score, row.continues);
+        std::snprintf(text, sizeof text, "%2d %s %9d%d --/--/-- Stage -", index + 1, name, row.score, row.continues);
         return text;
     }
-    std::snprintf(text, sizeof text, "%2d %s %9d%d %.2d/%.2d/%.2d %s",
-                  index + 1, name, row.score, row.continues,
-                  date->tm_year % 100, date->tm_mon + 1, date->tm_mday,
-                  kRankStageNames[row.stage]);
+    std::snprintf(text, sizeof text, "%2d %s %9d%d %.2d/%.2d/%.2d %s", index + 1, name, row.score, row.continues,
+                  date->tm_year % 100, date->tm_mon + 1, date->tm_mday, kRankStageNames[row.stage]);
     return text;
 }
 }  // namespace
@@ -51,10 +46,10 @@ struct RunPause::Services final : PauseMenuServices {
     std::string last_result_name() const override { return owner.platform.last_result_name(); }
 };
 
-RunPause::RunPause(SessionState& p, AnmManager& a, AnmEnvironment& e, RunPausePlatform& h,
-                   FrameScheduler& f, i32 bank, i32 text_bank)
-    : services(std::make_unique<Services>(*this)), progress(p), animations(a), environment(e),
-      platform(h), front(bank), text(text_bank), menu(state, a, *services), frame(state, p, menu, f) {}
+RunPause::RunPause(SessionState& p, AnmManager& a, AnmEnvironment& e, RunPausePlatform& h, FrameScheduler& f, i32 bank,
+                   i32 text_bank)
+    : services(std::make_unique<Services>(*this)), progress(p), animations(a), environment(e), platform(h), front(bank),
+      text(text_bank), menu(state, a, *services), frame(state, p, menu, f) {}
 
 RunPause::~RunPause() { frame.enable(false); }
 
@@ -65,10 +60,10 @@ bool RunPause::fail(const std::string& why) {
 
 bool RunPause::sound(i32 id) { return platform.sound(id); }
 bool RunPause::save_replay_slot(i32 slot, const std::string& name) {
-    return platform.save_replay_slot(slot,name) || fail("Replay save failed");
+    return platform.save_replay_slot(slot, name) || fail("Replay save failed");
 }
 bool RunPause::change_option(i32 row, i32 delta) {
-    return platform.change_pause_option(row,delta) || fail("Pause option update failed");
+    return platform.change_pause_option(row, delta) || fail("Pause option update failed");
 }
 bool RunPause::record_result_name(const std::string& name) {
     return platform.record_result_name(name) || fail("Result record failed");
@@ -83,8 +78,7 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
     style.shadow = true;
     const auto put = [&](float x, float y, u32 color, const std::string& text) {
         style.color = color;
-        return sink.hud_text({{x, y, 0}, style, text}) ||
-               fail("Pause overlay text failed");
+        return sink.hud_text({{x, y, 0}, style, text}) || fail("Pause overlay text failed");
     };
     if (state.phase == 18) {
         TitlePlayerDataScore rows[10];
@@ -97,9 +91,7 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
             //（0x43e1bd：y = rank*18.0(0x4aeb30) + 96.0(0x4aecc0)，与榜行同基）。
             if (!put(48, 64, 0xffffffffu, "            Score Ranking!!")) return false;
             for (i32 i = 0; i < 10; ++i)
-                if (!put(48, 96.f + 18.f * i,
-                         i == rank ? 0xffffff00u : 0xff808080u,
-                         rank_row_text(rows[i], i)))
+                if (!put(48, 96.f + 18.f * i, i == rank ? 0xffffff00u : 0xff808080u, rank_row_text(rows[i], i)))
                     return false;
             const float name_y = 96.f + 18.f * rank;
             if (!put(75, name_y, 0xffffffffu, state.replay_name)) return false;
@@ -114,8 +106,7 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
             const float y = 224.f + (slot_y - 224.f) * (10.f - age) / 10.f;
             char slot[8];
             std::snprintf(slot, sizeof slot, "No.%02d", state.replay_slot);
-            if (!put(48, y, 0xffffff00u, slot) ||
-                !put(102, y, 0xffffffffu, state.replay_name)) return false;
+            if (!put(48, y, 0xffffff00u, slot) || !put(102, y, 0xffffffffu, state.replay_name)) return false;
             float underscore_x = 102.f + 9.f * float(state.replay_name.size());
             if (state.replay_name.size() >= 8) underscore_x -= 9.f;
             if (!put(underscore_x, y, 0xffffff00u, "_")) return false;
@@ -124,13 +115,13 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
         // 专用字形（原版推字符 0x81/0x7f/0x80 → sprite 95/96/97）；
         // 光标字符黄 0xffffff00、余 0xff808080（0x43ddd5 同式回绕）。
         for (i32 i = 0; i < 91; ++i) {
-            const u8 ch = i < 0x58 ? u8(kResultNameCharacters[i])
-                        : i == 0x58 ? u8(0x81) : i == 0x59 ? u8(0x7f) : u8(0x80);
+            const u8 ch = i < 0x58    ? u8(kResultNameCharacters[i])
+                          : i == 0x58 ? u8(0x81)
+                          : i == 0x59 ? u8(0x7f)
+                                      : u8(0x80);
             const float x = 112.f + 18.f * float(i % 13);
             const float y = 320.f + 16.f * float(i / 13);
-            if (!put(x, y, i == state.name_cursor ? 0xffffff00u : 0xff808080u,
-                     std::string(1, char(ch))))
-                return false;
+            if (!put(x, y, i == state.name_cursor ? 0xffffff00u : 0xff808080u, std::string(1, char(ch)))) return false;
         }
         return true;
     }
@@ -144,15 +135,13 @@ bool RunPause::draw_overlay(HudDrawServices& sink) {
         return true;
     }
     if (state.phase == 19) {
-        const std::string text =
-            "OPTIONS  " + std::string(state.option_row ? "SE " : "BGM ") +
-            std::to_string(platform.pause_option_value(state.option_row));
+        const std::string text = "OPTIONS  " + std::string(state.option_row ? "SE " : "BGM ") +
+                                 std::to_string(platform.pause_option_value(state.option_row));
         return put(150, 180, 0xffffffffu, text);
     }
     // 0x43de80 case 0xf：GameOver 续关菜单 Credit 计数 (184,448)，白。
     if (state.screen == PauseScreen::GameOver && state.phase == 6)
-        return put(184, 448, 0xffffffffu,
-                   "Credit " + std::to_string(progress.continue_stock));
+        return put(184, 448, 0xffffffffu, "Credit " + std::to_string(progress.continue_stock));
     return true;
 }
 
@@ -162,14 +151,13 @@ bool RunPause::finish_selection(i32 entry) {
     // remaining callbacks in this update.
     if (entry == 2) return platform.save_replay() || fail("Replay save request failed");
     if (entry == 3) return platform.open_pause_options() || fail("Pause options request failed");
-    if (!animations.retire(state.menu_animation) ||
-        !animations.retire(state.snapshot_animation)) return fail(animations.error);
+    if (!animations.retire(state.menu_animation) || !animations.retire(state.snapshot_animation))
+        return fail(animations.error);
     animations.clear_captures();
     state.menu_animation = 0;
     switch (entry) {
     case 0:
-        if (state.screen == PauseScreen::GameOver && !platform.continue_run())
-            return fail("Continue request failed");
+        if (state.screen == PauseScreen::GameOver && !platform.continue_run()) return fail("Continue request failed");
         progress.rate = state.saved_rate;
         progress.scene_flags &= ~0x10u;
         environment.paused = false;
@@ -211,32 +199,27 @@ bool RunPause::open(PauseEntrance entrance) {
         progress.rate = previous_rate;
         progress.scene_flags = previous_scene_flags;
         environment.paused = previous_paused;
-        if (activated && !platform.resume_music())
-            error = "Pause activation rollback music resume failed";
+        if (activated && !platform.resume_music()) error = "Pause activation rollback music resume failed";
     };
     // 激活序列（th15 PauseActivation 裁剪）：菜单视觉 → 音频挂起 → 表现冻结。
-    state.select(entrance == PauseEntrance::GameOver ? PauseScreen::GameOver
+    state.select(entrance == PauseEntrance::GameOver      ? PauseScreen::GameOver
                  : entrance == PauseEntrance::PracticeEnd ? PauseScreen::PracticeEnd
-                 : entrance == PauseEntrance::ExtraEnd ? PauseScreen::ExtraEnd
-                 : entrance == PauseEntrance::BGameOver ? PauseScreen::BGameOver
-                 : PauseScreen::Pause);
+                 : entrance == PauseEntrance::ExtraEnd    ? PauseScreen::ExtraEnd
+                 : entrance == PauseEntrance::BGameOver   ? PauseScreen::BGameOver
+                                                          : PauseScreen::Pause);
     progress.scene_flags |= 0x10;
     state.front_bank = front;
     state.practice = progress.practice_mode != 0;
     state.can_continue = progress.continue_stock > 0;
     // 0x440960's 0x17/0x18 menus always have three items; the 43fa90/43e780
     // "hide replay save after a continue" gate belongs to the A menus only.
-    const bool results_menu = entrance == PauseEntrance::ExtraEnd ||
-                              entrance == PauseEntrance::BGameOver;
-    state.can_save_replay = platform.can_save_replay() &&
-                            (results_menu || progress.continues == 0);
+    const bool results_menu = entrance == PauseEntrance::ExtraEnd || entrance == PauseEntrance::BGameOver;
+    state.can_save_replay = platform.can_save_replay() && (results_menu || progress.continues == 0);
     state.can_open_options = platform.can_open_pause_options();
-    state.result_needs_name = (entrance == PauseEntrance::ExtraEnd || entrance == PauseEntrance::GameOver)
-                              && platform.result_needs_name();
-    if (entrance == PauseEntrance::GameOver || entrance == PauseEntrance::PracticeEnd)
-        state.select_phase(0);
-    if (!animations.retire(state.menu_animation) ||
-        !animations.retire(state.snapshot_animation)) {
+    state.result_needs_name =
+        (entrance == PauseEntrance::ExtraEnd || entrance == PauseEntrance::GameOver) && platform.result_needs_name();
+    if (entrance == PauseEntrance::GameOver || entrance == PauseEntrance::PracticeEnd) state.select_phase(0);
+    if (!animations.retire(state.menu_animation) || !animations.retire(state.snapshot_animation)) {
         rollback();
         return fail(animations.error);
     }
@@ -255,20 +238,19 @@ bool RunPause::open(PauseEntrance entrance) {
     // 截取请求是表现增强，不是暂停激活的必要条件：合成夹具/无精灵 backdrop
     // 下 0x4418b0 也只是空槽 no-op，不得因此让 open 失败（旧测试与无资源
     // 宿主必须仍能进入暂停）。
-    if (auto* backdrop = animations.registry.find(state.snapshot_animation))
-        animations.queue_capture(*backdrop);
-    const i32 script = entrance == PauseEntrance::GameOver ? kGameOverMenuScript
-                       : entrance == PauseEntrance::ExtraEnd ? kResultsMenuScript
-                       : entrance == PauseEntrance::BGameOver ? kResultsMenuScript
+    if (auto* backdrop = animations.registry.find(state.snapshot_animation)) animations.queue_capture(*backdrop);
+    const i32 script = entrance == PauseEntrance::GameOver      ? kGameOverMenuScript
+                       : entrance == PauseEntrance::ExtraEnd    ? kResultsMenuScript
+                       : entrance == PauseEntrance::BGameOver   ? kResultsMenuScript
                        : entrance == PauseEntrance::PracticeEnd ? kPracticeEndMenuScript
-                       : state.practice ? kPracticePauseMenuScript : kPauseMenuScript;
+                       : state.practice                         ? kPracticePauseMenuScript
+                                                                : kPauseMenuScript;
     // 0x43fa90 态 0xe：GameOver 进榜（+0x1f8==0 → 态 0x13 名前录入）不建
     // 菜单脚本 142；录入完成 END → LAB_00440520 才建 142 进态 0xf。未进榜
     // 走原态 0xf 分支立即建。移植侧 phase18 END（PauseMenu case 18）补建。
     if (!(entrance == PauseEntrance::GameOver && state.result_needs_name)) {
         state.menu_animation = animations.create(front, script, -1, 4);
-        if (auto* vm = animations.registry.find(state.menu_animation))
-            vm->visual.render_flags &= ~0xc000u;
+        if (auto* vm = animations.registry.find(state.menu_animation)) vm->visual.render_flags &= ~0xc000u;
         if (!state.menu_animation) {
             rollback();
             return fail(animations.error);

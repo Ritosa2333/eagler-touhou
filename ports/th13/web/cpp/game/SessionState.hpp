@@ -20,7 +20,7 @@ struct SessionState {
     i32 high_score = 100000, high_score_extra = 0;
     i32 configured_lives = 3;
     i32 starting_stage = 1;
-    i32 chapter = 0, chapter_frame = 0; // be824/be82c, 524 ->424310.
+    i32 chapter = 0, chapter_frame = 0;  // be824/be82c, 524 ->424310.
     float rate = 1;
     u32 scene_flags = 0;
     bool new_run = true;
@@ -97,10 +97,8 @@ inline u8 ecl_difficulty_mask(i32 difficulty) noexcept {
 // Original 0x42b990:70-72 records stage-played only for an ordinary run.
 // Replay/Practice/Spell/Extra must not manufacture Practice unlocks.
 inline bool records_practice_stage(const SessionState& state, bool replay) noexcept {
-    return !replay && state.practice_mode == 0 && (state.run_mode_flags & 0x70u) == 0 &&
-        state.character >= 0 && state.character < 4 &&
-        state.difficulty >= 0 && state.difficulty < 4 &&
-        state.stage >= 1 && state.stage <= 6;
+    return !replay && state.practice_mode == 0 && (state.run_mode_flags & 0x70u) == 0 && state.character >= 0 &&
+           state.character < 4 && state.difficulty >= 0 && state.difficulty < 4 && state.stage >= 1 && state.stage <= 6;
 }
 
 // Returns-to-title from a real Practice run re-enters Stage Select (original
@@ -110,13 +108,10 @@ inline bool records_practice_stage(const SessionState& state, bool replay) noexc
 // 549-552 / 0x440960 exit-to-title) — all issue the same scene request 4.
 // Ordinary-run, replay/demo and cold-boot returns keep their existing paths:
 // dc670 is 1/2/5/0 there, never 4.
-inline bool returns_to_practice_selection(const SessionState& state, i32 reason,
-                                          bool replay) noexcept {
+inline bool returns_to_practice_selection(const SessionState& state, i32 reason, bool replay) noexcept {
     return (reason == 1 || reason == 3) && !replay && state.practice_mode != 0 &&
-        (state.run_mode_flags & 0x70u) == 0x10u &&
-        state.character >= 0 && state.character < 4 &&
-        state.difficulty >= 0 && state.difficulty < 4 &&
-        state.starting_stage >= 1 && state.starting_stage <= 6;
+           (state.run_mode_flags & 0x70u) == 0x10u && state.character >= 0 && state.character < 4 &&
+           state.difficulty >= 0 && state.difficulty < 4 && state.starting_stage >= 1 && state.starting_stage <= 6;
 }
 
 // 符卡练习对局返回：0x4578ee-0x457931 启动拍把 stage/slot/difficulty 光标存进
@@ -124,13 +119,10 @@ inline bool returns_to_practice_selection(const SessionState& state, i32 reason,
 // DAT_004bb4c4>=0，0x11→0x12→0x13 级联恢复上次所选卡直入难度层（0x45673a
 // 判 DAT_004bb4c8>=0 恢复卡表光标）。与关卡练习（dc670==4）互斥：符卡练习
 // practice_mode==0 且 run_mode_flags 段为 0x20。
-inline bool returns_to_spell_practice_selection(const SessionState& state, i32 reason,
-                                                bool replay) noexcept {
+inline bool returns_to_spell_practice_selection(const SessionState& state, i32 reason, bool replay) noexcept {
     return (reason == 1 || reason == 3) && !replay && state.practice_mode == 0 &&
-        (state.run_mode_flags & 0x70u) == 0x20u &&
-        state.character >= 0 && state.character < 4 &&
-        state.starting_stage >= 1 && state.starting_stage <= 7 &&
-        state.selected_spell_id >= 0;
+           (state.run_mode_flags & 0x70u) == 0x20u && state.character >= 0 && state.character < 4 &&
+           state.starting_stage >= 1 && state.starting_stage <= 7 && state.selected_spell_id >= 0;
 }
 
 // 0x4bb994 阈值表（EXE .data @0x4bb994 原样）。
@@ -145,7 +137,7 @@ inline i32 life_piece_threshold(i32 index) noexcept {
 // 不构成完整激活/消耗状态机（采集、主动 trance、消耗仍属未集成）。
 inline constexpr i32 kTranceSegment = 200;
 inline constexpr i32 kTranceMax = 600;
-inline constexpr i32 kTranceCost = 200;      // 0x405b80:78 正常结束扣 200
+inline constexpr i32 kTranceCost = 200;          // 0x405b80:78 正常结束扣 200
 inline constexpr u32 kTranceActiveFlag = 0x100;  // DAT_004be830（SessionState.run_mode_flags）
 // 只读访问器：唯一 backing 是 run_mode_flags bit0x100 与 ending_points。
 inline bool trance_active(const SessionState& state) noexcept {
@@ -163,9 +155,7 @@ inline bool trance_ready(const SessionState& state) noexcept {
 }
 // 0x405a20：置激活位；param=1 的死亡保护另存于 StageBattle 生命周期
 //（0x444a10：返回 0=启动成功 → state 1、不扣命；-1=失败 → 走普通死亡）。
-inline void trance_begin(SessionState& state) noexcept {
-    state.run_mode_flags |= kTranceActiveFlag;
-}
+inline void trance_begin(SessionState& state) noexcept { state.run_mode_flags |= kTranceActiveFlag; }
 // 0x405b80：清激活位；正常结束扣 200，死亡保护（state bit1=1）不扣。
 inline void trance_end(SessionState& state, bool death_protection) noexcept {
     state.run_mode_flags &= ~kTranceActiveFlag;
@@ -181,8 +171,7 @@ inline void trance_end(SessionState& state, bool death_protection) noexcept {
 // （mode=(be830>>4)&3==2，本结构 bit4-5=0x20）随后在 0x42bbfd 再清 0
 //（0x42b990:121）；普通/关卡练习/Extra 保持 200（一个 200 段）。
 inline void trance_reset_fresh_entry(SessionState& state) noexcept {
-    state.ending_points =
-        (state.run_mode_flags & 0x30u) == 0x20u ? 0 : kTranceSegment;
+    state.ending_points = (state.run_mode_flags & 0x30u) == 0x20u ? 0 : kTranceSegment;
 }
 
 // HUD 侧玩家资源视图（battle 未接入前的持有者；完整 PlayerLifeSession

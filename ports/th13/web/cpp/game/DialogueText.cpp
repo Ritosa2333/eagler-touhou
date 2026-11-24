@@ -14,8 +14,7 @@ constexpr u32 kScratchHeight = 48;
 constexpr u32 kScratchRows = 44;
 constexpr u32 kArgb4444 = 5;
 
-bool read_region(const AnmResource& resource, i32 script, i32& x, i32& y, i32& width,
-                 i32& height) {
+bool read_region(const AnmResource& resource, i32 script, i32& x, i32& y, i32& width, i32& height) {
     if (script < 0 || u32(script) >= resource.sprites.size()) return false;
     const AnmSprite& sprite = resource.sprites[u32(script)];
     if (sprite.texture != 0 || !(sprite.width > 0.f) || !(sprite.height > 0.f)) return false;
@@ -27,15 +26,13 @@ bool read_region(const AnmResource& resource, i32 script, i32& x, i32& y, i32& w
 }
 }  // namespace
 
-DialogueText::RollbackState DialogueText::capture_rollback(
-    AnmManager& manager, DialogueTextureSink& sink) const {
+DialogueText::RollbackState DialogueText::capture_rollback(AnmManager& manager, DialogueTextureSink& sink) const {
     const auto* resource = manager.resource(0);
     const u32 pixel_texture = resource ? sink.texture(*resource, 0) : 0;
     auto regions = regions_;
     if (resource)
         for (i32 i = 0; i < kVmCount; ++i)
-            read_region(*resource, i, regions[i].x, regions[i].y,
-                        regions[i].width, regions[i].height);
+            read_region(*resource, i, regions[i].x, regions[i].y, regions[i].width, regions[i].height);
     if (pixel_texture != rollback_texture_) rollback_pixels_.reset();
     rollback_texture_ = pixel_texture;
     if (!rollback_pixels_ && pixel_texture) {
@@ -49,12 +46,12 @@ DialogueText::RollbackState DialogueText::capture_rollback(
             rollback_pixels_ = pixels;
         }
     }
-    return {handles_, regions, cached_text_, cached_block_, cached_, cached_line_,
-            box_, texture_, anchor_y_, anchor_y_set_, pixel_texture, rollback_pixels_};
+    return {handles_, regions,  cached_text_, cached_block_, cached_,       cached_line_,
+            box_,     texture_, anchor_y_,    anchor_y_set_, pixel_texture, rollback_pixels_};
 }
 
-bool DialogueText::restore_rollback(const RollbackState& state, AnmManager& manager,
-                                  DialogueTextureSink& sink, std::string& error) {
+bool DialogueText::restore_rollback(const RollbackState& state, AnmManager& manager, DialogueTextureSink& sink,
+                                    std::string& error) {
     if (state.pixel_texture) {
         auto* image = sink.pixels(state.pixel_texture);
         if (!image || !state.pixels) {
@@ -68,8 +65,8 @@ bool DialogueText::restore_rollback(const RollbackState& state, AnmManager& mana
                 std::memcpy(row, state.pixels->data() + offset, size_t(region.width) * 2);
                 offset += size_t(region.width) * 2;
             }
-            sink.changed(state.pixel_texture, {u32(region.x), u32(region.y),
-                u32(region.x + region.width), u32(region.y + region.height)});
+            sink.changed(state.pixel_texture,
+                         {u32(region.x), u32(region.y), u32(region.x + region.width), u32(region.y + region.height)});
         }
     }
     handles_ = state.handles;
@@ -130,11 +127,9 @@ bool DialogueText::ensure(AnmManager& manager, DialogueTextureSink& sink, std::s
             // 0x4282b0：四条文本 VM 走 0x46f3f0 尾插（ordering=0），不是
             // 头插；建完后统一 VM+0x1c |= 0x1000（0x46e8f0 据此选 plain
             // 文本路径而非 outlined）。
-            handles_[u32(script)] =
-                manager.create(0, script, -1, 0, {}, 0, false);
+            handles_[u32(script)] = manager.create(0, script, -1, 0, {}, 0, false);
             if (!handles_[u32(script)]) {
-                error = manager.error.empty() ? "text.anm dialogue VM creation failed"
-                                              : manager.error;
+                error = manager.error.empty() ? "text.anm dialogue VM creation failed" : manager.error;
                 release(manager);
                 return false;
             }
@@ -154,20 +149,17 @@ bool DialogueText::blank(DialogueTextureSink& sink, const Region& region, std::s
         error = "text.anm texture0 pixels unavailable";
         return false;
     }
-    if (image->format != touhou::graphics::PixelFormat::Argb4444 ||
-        image->pitch < image->width * 2) {
+    if (image->format != touhou::graphics::PixelFormat::Argb4444 || image->pitch < image->width * 2) {
         error = "text.anm texture0 is not ARGB4444";
         return false;
     }
     if (region.x < 0 || region.y < 0 || region.width <= 0 || region.height <= 0 ||
-        u32(region.x + region.width) > image->width ||
-        u32(region.y + region.height) > image->height) {
+        u32(region.x + region.width) > image->width || u32(region.y + region.height) > image->height) {
         error = "text.anm dialogue sprite rect outside texture0";
         return false;
     }
     for (i32 row = 0; row < region.height; row++) {
-        auto* target = image->pixels.data() + size_t(region.y + row) * image->pitch +
-                       size_t(region.x) * 2;
+        auto* target = image->pixels.data() + size_t(region.y + row) * image->pitch + size_t(region.x) * 2;
         std::memset(target, 0, size_t(region.width) * 2);
     }
     return true;
@@ -177,8 +169,8 @@ bool DialogueText::blank_all(DialogueTextureSink& sink, std::string& error, i32 
     if (!texture_) return true;
     for (const Region& region : regions_) {
         if (!blank(sink, region, error)) return false;
-        sink.changed(texture_, {u32(region.x), u32(region.y),
-                                u32(region.x + region.width), u32(region.y + region.height)});
+        sink.changed(texture_,
+                     {u32(region.x), u32(region.y), u32(region.x + region.width), u32(region.y + region.height)});
     }
     cached_.fill(false);
     // 0x428ae0 块首清四槽 / opcode 6 释放：原版在 0x46fc30 前把 EBX
@@ -191,8 +183,7 @@ bool DialogueText::blank_all(DialogueTextureSink& sink, std::string& error, i32 
     return true;
 }
 
-bool DialogueText::request_label(AnmManager& manager, u32 handle, i32 label,
-                                 std::string& error) {
+bool DialogueText::request_label(AnmManager& manager, u32 handle, i32 label, std::string& error) {
     if (!handle) return true;
     // 0x46fc30 只写 VM+0x4a0（deferred）；不在此 immediate tick，等本帧
     // AnmManager::update（Application Update 优先级 34 > RunScene 20）消费。
@@ -203,16 +194,15 @@ bool DialogueText::request_label(AnmManager& manager, u32 handle, i32 label,
     return true;
 }
 
-bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region,
-                              std::string& error) {
+bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region, std::string& error) {
     rollback_pixels_.reset();
     TextureImage* image = sink.pixels(texture_);
     if (!image) {
         error = "text.anm texture0 pixels unavailable";
         return false;
     }
-    if (image->format != touhou::graphics::PixelFormat::Argb4444 ||
-        image->pitch < image->width * 2 || !scratch_.pitch) {
+    if (image->format != touhou::graphics::PixelFormat::Argb4444 || image->pitch < image->width * 2 ||
+        !scratch_.pitch) {
         error = "text.anm texture0 is not ARGB4444";
         return false;
     }
@@ -228,16 +218,13 @@ bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region,
     const float radius_y = std::max(1.f, scale_y);
     for (i32 y = 0; y < region.height; y++) {
         const float center_y = (float(y) + .5f) * scale_y - .5f;
-        auto* target = image->pixels.data() + size_t(region.y + y) * image->pitch +
-                       size_t(region.x) * 2;
+        auto* target = image->pixels.data() + size_t(region.y + y) * image->pitch + size_t(region.x) * 2;
         for (i32 x = 0; x < region.width; x++) {
             const float center_x = (float(x) + .5f) * scale_x - .5f;
             float sum[4] = {}, total = 0;
-            for (i32 sy = i32(std::ceil(center_y - radius_y));
-                 sy <= i32(std::floor(center_y + radius_y)); ++sy) {
+            for (i32 sy = i32(std::ceil(center_y - radius_y)); sy <= i32(std::floor(center_y + radius_y)); ++sy) {
                 const float wy = std::max(0.f, 1.f - std::fabs(float(sy) - center_y) / radius_y);
-                for (i32 sx = i32(std::ceil(center_x - radius_x));
-                     sx <= i32(std::floor(center_x + radius_x)); ++sx) {
+                for (i32 sx = i32(std::ceil(center_x - radius_x)); sx <= i32(std::floor(center_x + radius_x)); ++sx) {
                     const float weight = wy * std::max(0.f, 1.f - std::fabs(float(sx) - center_x) / radius_x);
                     total += weight;
                     // Filter 4 has no MIRROR flags: D3DX wraps samples at
@@ -245,8 +232,10 @@ bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region,
                     const u32 sample_x = u32((sx % i32(scratch_.width) + i32(scratch_.width)) % i32(scratch_.width));
                     const u32 sample_y = u32((sy % i32(kScratchRows) + i32(kScratchRows)) % i32(kScratchRows));
                     u16 sample = 0;
-                    std::memcpy(&sample, scratch_.pixels.data() + size_t(sample_y) * scratch_.pitch + size_t(sample_x) * 2, 2);
-                    for (u32 c = 0; c < 4; ++c) sum[c] += float((sample >> (12 - c * 4)) & 15u) * weight;
+                    std::memcpy(&sample,
+                                scratch_.pixels.data() + size_t(sample_y) * scratch_.pitch + size_t(sample_x) * 2, 2);
+                    for (u32 c = 0; c < 4; ++c)
+                        sum[c] += float((sample >> (12 - c * 4)) & 15u) * weight;
                 }
             }
             u16 pixel = 0;
@@ -255,13 +244,11 @@ bool DialogueText::copy_strip(DialogueTextureSink& sink, const Region& region,
             std::memcpy(target + size_t(x) * 2, &pixel, 2);
         }
     }
-    sink.changed(texture_, {u32(region.x), u32(region.y),
-                            u32(region.x + region.width), u32(region.y + region.height)});
+    sink.changed(texture_, {u32(region.x), u32(region.y), u32(region.x + region.width), u32(region.y + region.height)});
     return true;
 }
 
-bool DialogueText::rasterize_ruby(const MsgLine& line, const DialogueRasterizer& rasterizer,
-                                  std::string& error) {
+bool DialogueText::rasterize_ruby(const MsgLine& line, const DialogueRasterizer& rasterizer, std::string& error) {
     std::fill(scratch_.pixels.begin(), scratch_.pixels.end(), 0);
     // 0x45aef0：正文/ruby 都从 TextOut(2*x,2) 起始；ruby 第二参数是逐字
     // 步进（param_9），0 = 连续排版，非 0 = 每字后 x += value*2。
@@ -280,11 +267,11 @@ bool DialogueText::rasterize_ruby(const MsgLine& line, const DialogueRasterizer&
     while (index < text.size() && text[index]) {
         const u8 lead = u8(text[index]);
         size_t length = 1;
-        if (((lead >= 0x81 && lead <= 0x9F) || (lead >= 0xE0 && lead <= 0xFC)) &&
-            index + 1 < text.size() && text[index + 1])
+        if (((lead >= 0x81 && lead <= 0x9F) || (lead >= 0xE0 && lead <= 0xFC)) && index + 1 < text.size() &&
+            text[index + 1])
             length = 2;
-        if (!rasterizer(scratch_, base_x + step * line.ruby_spacing * 2, 2, true,
-                        0x00000000u, text.substr(index, length))) {
+        if (!rasterizer(scratch_, base_x + step * line.ruby_spacing * 2, 2, true, 0x00000000u,
+                        text.substr(index, length))) {
             error = "dialogue ruby rasterization failed";
             return false;
         }
@@ -294,9 +281,8 @@ bool DialogueText::rasterize_ruby(const MsgLine& line, const DialogueRasterizer&
     return true;
 }
 
-bool DialogueText::write_row(AnmManager& manager, DialogueTextureSink& sink, i32 row,
-                             const MsgLine& line, const DialogueRasterizer& rasterizer,
-                             std::string& error) {
+bool DialogueText::write_row(AnmManager& manager, DialogueTextureSink& sink, i32 row, const MsgLine& line,
+                             const DialogueRasterizer& rasterizer, std::string& error) {
     const Region& region = regions_[u32(row)];
     const Region& ruby_region = regions_[u32(kLineCount + row)];
     if (!blank(sink, region, error) || !blank(sink, ruby_region, error)) return false;
@@ -317,30 +303,27 @@ bool DialogueText::write_row(AnmManager& manager, DialogueTextureSink& sink, i32
         if (!rasterize_ruby(line, rasterizer, error)) return false;
         if (!copy_strip(sink, ruby_region, error)) return false;
     } else {
-        sink.changed(texture_, {u32(ruby_region.x), u32(ruby_region.y),
-                                u32(ruby_region.x + ruby_region.width),
+        sink.changed(texture_, {u32(ruby_region.x), u32(ruby_region.y), u32(ruby_region.x + ruby_region.width),
                                 u32(ruby_region.y + ruby_region.height)});
     }
     // 0x428ae0:489-493/554-558：写入后 0x46fc30(handle, 2) 让 VM 离开
     // ins_4 隐藏等待并跳到 label 2 显示分支（延迟到 ANM tick 消费）。
     if (!request_label(manager, handles_[u32(row)], 2, error)) return false;
-    if (line.has_ruby && !line.ruby_cp932.empty() &&
-        !request_label(manager, handles_[u32(kLineCount + row)], 2, error))
+    if (line.has_ruby && !line.ruby_cp932.empty() && !request_label(manager, handles_[u32(kLineCount + row)], 2, error))
         return false;
     return true;
 }
 
-bool DialogueText::submit(AnmManager& manager, DialogueTextureSink& sink, i32 row,
-                          const MsgLine& line, float box_x, float box_y,
-                          const DialogueRasterizer& rasterizer, std::string& error) {
+bool DialogueText::submit(AnmManager& manager, DialogueTextureSink& sink, i32 row, const MsgLine& line, float box_x,
+                          float box_y, const DialogueRasterizer& rasterizer, std::string& error) {
     if (row < 0 || row >= kLineCount) {
         error = "dialogue row outside text.anm scripts 0..1";
         return false;
     }
     if (!ensure(manager, sink, error)) return false;
 
-    const bool unchanged = cached_[u32(row)] && cached_text_[u32(row)] == line.text_cp932 &&
-                           cached_block_[u32(row)] == line.block;
+    const bool unchanged =
+        cached_[u32(row)] && cached_text_[u32(row)] == line.text_cp932 && cached_block_[u32(row)] == line.block;
     if (row == 0 && unchanged) {
         place_rows(manager, box_x, box_y);
         return true;
@@ -360,8 +343,7 @@ bool DialogueText::submit(AnmManager& manager, DialogueTextureSink& sink, i32 ro
     cached_text_[u32(row)] = line.text_cp932;
     cached_block_[u32(row)] = line.block;
     cached_line_[u32(row)] = line;
-    if (row == 1 && cached_[0] && cached_block_[0] == line.block)
-        cached_line_[0].bubble_width = line.bubble_width;
+    if (row == 1 && cached_[0] && cached_block_[0] == line.block) cached_line_[0].bubble_width = line.bubble_width;
     place_rows(manager, box_x, box_y);
     return true;
 }
@@ -387,9 +369,12 @@ bool DialogueText::set_anchor_y(AnmManager& manager, float value, std::string& e
     anchor_y_ = value;
     anchor_y_set_ = true;
     for (u32 handle : handles_) {
-        if (!handle) continue; // VMs are allocated lazily in the web host.
+        if (!handle) continue;  // VMs are allocated lazily in the web host.
         auto* vm = manager.registry.find(handle);
-        if (!vm) { error = "text.anm dialogue VM unavailable"; return false; }
+        if (!vm) {
+            error = "text.anm dialogue VM unavailable";
+            return false;
+        }
         vm->visual.child_anchor.y = value;
     }
     return true;
@@ -414,14 +399,17 @@ bool DialogueText::set_visible(AnmManager& manager, bool visible, std::string& e
 void DialogueText::release(AnmManager& manager) noexcept {
     rollback_pixels_.reset();
     rollback_texture_ = 0;
-    for (u32& handle : handles_) manager.retire(handle);
+    for (u32& handle : handles_)
+        manager.retire(handle);
     handles_.fill(0);
     if (box_) manager.retire(box_);
     box_ = 0;
     regions_.fill(Region{});
     cached_.fill(false);
-    for (auto& text : cached_text_) text.clear();
-    for (auto& line : cached_line_) line = MsgLine{};
+    for (auto& text : cached_text_)
+        text.clear();
+    for (auto& line : cached_line_)
+        line = MsgLine{};
     manager_ = nullptr;
     texture_ = 0;
     anchor_y_ = 0;
@@ -438,8 +426,8 @@ bool DialogueText::retire_bubble(AnmManager& manager, std::string& error) {
     return true;
 }
 
-bool DialogueText::update_bubble(AnmManager& manager, i32 row, const MsgLine& line, float box_x,
-                                 float box_y, std::string& error) {
+bool DialogueText::update_bubble(AnmManager& manager, i32 row, const MsgLine& line, float box_x, float box_y,
+                                 std::string& error) {
     if (bubble_bank_ < 0) return true;
     AnmResource* front = manager.resource(bubble_bank_);
     if (!front) return true;  // 单测无 front.anm：显式降级为无气泡
@@ -458,8 +446,7 @@ bool DialogueText::update_bubble(AnmManager& manager, i32 row, const MsgLine& li
     // 0x42a120 → 0x46f820(flags=0)：气泡根尾插（ordering=0），不是头插。
     box_ = manager.create(bubble_bank_, root_script, -1, 0, {box_x, box_y}, 0, false);
     if (!box_) {
-        error = manager.error.empty() ? "front.anm dialogue bubble creation failed"
-                                      : manager.error;
+        error = manager.error.empty() ? "front.anm dialogue bubble creation failed" : manager.error;
         return false;
     }
     AnmVm* root = manager.registry.find(box_);
@@ -493,8 +480,7 @@ void DialogueText::place_rows(AnmManager& manager, float box_x, float box_y) {
         const MsgLine& line = cached_line_[u32(row)];
         const float x = row_x(line, box_x);
         for (i32 slot = row; slot < kVmCount; slot += kLineCount) {
-            if (AnmVm* vm = manager.registry.find(handles_[u32(slot)]))
-                vm->visual.translation = {x, box_y, 0.0f};
+            if (AnmVm* vm = manager.registry.find(handles_[u32(slot)])) vm->visual.translation = {x, box_y, 0.0f};
         }
     }
 }

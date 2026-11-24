@@ -44,7 +44,8 @@ TEST(repeat_first_at_26_then_every_8) {
 
 TEST(repeat_reset_on_release) {
     GameInput input;
-    for (int frame = 0; frame < 30; frame++) input.update(1);
+    for (int frame = 0; frame < 30; frame++)
+        input.update(1);
     input.update(0);
     CHECK_EQ(input.duration[0], 0);
     input.update(1);  // 重新按下：重复计数从零重计
@@ -69,15 +70,15 @@ TEST(keyboard_mask_basic_bits) {
     std::memset(keys, 0, sizeof keys);
     keys[38] = keys[104] = true;  // ↑ + 小键盘 8
     CHECK_EQ(mask(), 0x10u);
-    keys[40] = keys[98] = true;   // ↓ + 小键盘 2
+    keys[40] = keys[98] = true;  // ↓ + 小键盘 2
     CHECK_EQ(mask(), 0x10u | 0x20u);
     keys[37] = keys[100] = true;  // ← + 小键盘 4
     keys[39] = keys[102] = true;  // → + 小键盘 6
     CHECK_EQ(mask(), 0xf0u);
     std::memset(keys, 0, sizeof keys);
-    keys[97] = true;   // 小键盘 7：左上
+    keys[97] = true;  // 小键盘 7：左上
     CHECK_EQ(mask(), 0x60u);
-    keys[99] = true;   // 小键盘 1：左下
+    keys[99] = true;  // 小键盘 1：左下
     CHECK_EQ(mask(), 0x60u | 0xa0u);
     keys[103] = keys[105] = true;  // 小键盘 9/3：右上/右下
     CHECK_EQ(mask(), 0x60u | 0xa0u | 0x50u | 0x90u);
@@ -103,14 +104,14 @@ TEST(keyboard_original_extended_bits_match_471620) {
     //   0x51 Q→0x10000、0x53 S→0x20000、0x43 C→0xa00（0x800|0x200）、
     //   0x11 Ctrl→0x200、0x1b Esc→0x100、0x5a Z→0x1、0x58 X→0x2。
     constexpr std::pair<int, u32> expected[] = {
-        {81, 0x10000u},   // Q
-        {83, 0x20000u},   // S
-        {36, 0x40000u},   // Home
-        {80, 0x40000u},   // P
-        {67, 0xa00u},     // C：原版同时置 0x800 与 0x200
-        {68, 0x100000u},  // D
-        {82, 0x200000u},  // R
-        {121, 0x800000u}, // F10
+        {81, 0x10000u},    // Q
+        {83, 0x20000u},    // S
+        {36, 0x40000u},    // Home
+        {80, 0x40000u},    // P
+        {67, 0xa00u},      // C：原版同时置 0x800 与 0x200
+        {68, 0x100000u},   // D
+        {82, 0x200000u},   // R
+        {121, 0x800000u},  // F10
     };
     for (const auto& binding : expected) {
         bool keys[256]{};
@@ -121,9 +122,7 @@ TEST(keyboard_original_extended_bits_match_471620) {
     bool keys[256]{};
     keys[81] = keys[83] = keys[67] = keys[68] = keys[82] = true;
     keys[36] = keys[80] = keys[121] = true;
-    CHECK_EQ(keyboard_keys(keys),
-             0x10000u | 0x20000u | 0xa00u | 0x100000u | 0x200000u |
-                 0x40000u | 0x800000u);
+    CHECK_EQ(keyboard_keys(keys), 0x10000u | 0x20000u | 0xa00u | 0x100000u | 0x200000u | 0x40000u | 0x800000u);
 }
 
 TEST(keyboard_unmapped_keys_stay_zero) {

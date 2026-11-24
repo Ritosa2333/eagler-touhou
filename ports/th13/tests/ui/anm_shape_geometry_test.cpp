@@ -1,6 +1,6 @@
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/AnmRenderer.hpp"
+#include "ui_test_fixtures.hpp"
 #include <cmath>
 
 using namespace th13;
@@ -8,7 +8,11 @@ using namespace touhou::graphics;
 
 namespace {
 struct Graphics final : ZunGraphics {
-    struct Vertex { Vec3 position; float reciprocal_w; u32 color; };
+    struct Vertex {
+        Vec3 position;
+        float reciprocal_w;
+        u32 color;
+    };
     PipelineState state;
     Topology expected = Topology::Fan;
     u32 primitives_drawn = 0;
@@ -80,9 +84,12 @@ TEST(anm_mode18_uses_world_quad_with_fog) {
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager{random, environment};
-    CHECK(th13::test::load_bank(manager, 1, th13::test::synthetic_anm(1, {{
-        th13::test::sprite(0), th13::test::wait(), th13::test::stop(),
-    }})));
+    CHECK(th13::test::load_bank(manager, 1,
+                                th13::test::synthetic_anm(1, {{
+                                                                 th13::test::sprite(0),
+                                                                 th13::test::wait(),
+                                                                 th13::test::stop(),
+                                                             }})));
     const auto handle = manager.create(1, 0);
     auto* vm = manager.registry.find(handle);
     CHECK(vm);
@@ -112,9 +119,8 @@ TEST(anm606_rectangle_preserves_primary_to_secondary_gradient) {
     CHECK_EQ(renderer.draw(vm), 0);
     CHECK_EQ(graphics.vertices.size(), 4u);
     for (size_t i = 0; i < graphics.vertices.size(); ++i)
-        CHECK_EQ(graphics.vertices[i].color,
-                 (i & 1) ? vm.visual.secondary_color : vm.visual.color);
+        CHECK_EQ(graphics.vertices[i].color, (i & 1) ? vm.visual.secondary_color : vm.visual.color);
 }
-}
+}  // namespace
 
 int main() { return th13test::run_all("ANM shape geometry"); }

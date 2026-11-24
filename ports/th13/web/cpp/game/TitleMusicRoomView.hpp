@@ -19,14 +19,14 @@ class TitleMusicRoomView {
     i32 previous_row = -1, previous_comment = -1, revealed = 0, top = 0;
     bool opened = false, closing = false;
     bool fail(const std::string&);
+
 public:
     std::string error;
     using Rasterizer = std::function<bool(AnmVm&, u32, const std::string&, AnmTextAlignment)>;
     TitleMusicRoomView(AnmManager& manager, i32 title = 16, i32 text = 0, i32 ascii = 2)
         : animations(manager), title_bank(title), text_bank(text), ascii_bank(ascii) {}
-    bool update(const TitleState&, const TitleMusicRoomMenu&, TitleMusicRoomPlatform&,
-                const Rasterizer&);
+    bool update(const TitleState&, const TitleMusicRoomMenu&, TitleMusicRoomPlatform&, const Rasterizer&);
     void release();
 };
 
-} // namespace th13
+}  // namespace th13

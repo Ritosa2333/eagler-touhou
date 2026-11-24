@@ -4,11 +4,11 @@
 //   2. 0x4265a0:85-96 灵界槽左下淡化：y>400 && x<-64 下发 label5；
 //      y<384 || x>-64 恢复 label4；400/384 迟滞；只传播一层子链；
 //      仅 fresh stage ctx 清 ctx+0x180 bit0；换关延续/缺槽不清。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/GameHud.hpp"
 #include "game/AsciiText.hpp"
+#include "game/GameHud.hpp"
 #include "game/HudDrawData.hpp"
 #include "game/HudFrameData.hpp"
 
@@ -20,9 +20,7 @@ using namespace th13::test;
 
 namespace {
 
-AnmIns alpha(i32 frames, i32 type, i32 value) {
-    return AnmIns{409, 0, {frames, type, value}};
-}
+AnmIns alpha(i32 frames, i32 type, i32 value) { return AnmIns{409, 0, {frames, type, value}}; }
 
 std::vector<std::vector<AnmIns>> front_scripts() {
     auto scripts = trivial_scripts(177);
@@ -30,14 +28,11 @@ std::vector<std::vector<AnmIns>> front_scripts() {
     scripts[171] = {spawn(172), spawn(173), spawn(174), spawn(175), wait(), stop()};
     // 172-175：原版 label4=alpha 255/30f、label5=alpha 32/10f。
     // 172 额外 spawn 176，用第二层后代验证原版只打一层子链、不递归。
-    scripts[172] = {spawn(176), label(4), alpha(30, 0, 255), wait(),
-                    label(5), alpha(10, 0, 32), wait(), stop()};
+    scripts[172] = {spawn(176), label(4), alpha(30, 0, 255), wait(), label(5), alpha(10, 0, 32), wait(), stop()};
     for (i32 script = 173; script <= 175; ++script) {
-        scripts[u32(script)] = {label(4), alpha(30, 0, 255), wait(),
-                                label(5), alpha(10, 0, 32), wait(), stop()};
+        scripts[u32(script)] = {label(4), alpha(30, 0, 255), wait(), label(5), alpha(10, 0, 32), wait(), stop()};
     }
-    scripts[176] = {label(4), alpha(30, 0, 255), wait(),
-                    label(5), alpha(10, 0, 32), wait(), stop()};
+    scripts[176] = {label(4), alpha(30, 0, 255), wait(), label(5), alpha(10, 0, 32), wait(), stop()};
     return scripts;
 }
 
@@ -85,8 +80,7 @@ struct HudHarness {
     }
 };
 
-const HudTextDraw* find_text(const std::vector<HudTextDraw>& entries,
-                             const std::string& text) {
+const HudTextDraw* find_text(const std::vector<HudTextDraw>& entries, const std::string& text) {
     for (const auto& entry : entries)
         if (entry.text == text) return &entry;
     return nullptr;
@@ -151,7 +145,12 @@ TEST(hud_timer_text_is_left_top_aligned_with_digit_alpha) {
     CHECK(captions.hud_text(*dot));
     CHECK(captions.hud_text(*fraction));
     struct GlyphSink : AsciiGlyphServices {
-        struct Glyph { i32 sprite; Vec3 position; Vec2 scale; u32 color; };
+        struct Glyph {
+            i32 sprite;
+            Vec3 position;
+            Vec2 scale;
+            u32 color;
+        };
         std::vector<Glyph> glyphs;
         bool ascii_glyph(AnmVm& vm) override {
             glyphs.push_back({vm.visual.sprite, vm.variables.position, vm.visual.scale, vm.visual.color});
@@ -175,7 +174,8 @@ TEST(hud_timer_text_is_left_top_aligned_with_digit_alpha) {
     CHECK_NEAR(glyph_sink.glyphs[1].position.y, 38.f, 1e-4);
     CHECK_NEAR(glyph_sink.glyphs[2].position.x, 239.2f, 1e-4);
     CHECK_NEAR(glyph_sink.glyphs[2].position.y, 38.f, 1e-4);
-    for (const auto& glyph : glyph_sink.glyphs) CHECK_EQ(glyph.color, 0x80abcdefu);
+    for (const auto& glyph : glyph_sink.glyphs)
+        CHECK_EQ(glyph.color, 0x80abcdefu);
 }
 
 TEST(trance_gauge_bottom_left_hysteresis_and_one_level_interrupt) {

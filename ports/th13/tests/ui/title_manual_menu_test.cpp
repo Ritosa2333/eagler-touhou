@@ -14,8 +14,14 @@ namespace {
 struct ManualHost final : TitleManualPlatform {
     bool open_ok = true, update_ok = true, finished = false;
     i32 opens = 0, closes = 0, updates = 0;
-    bool open_manual() override { ++opens; return open_ok; }
-    bool update_manual(u32, u32) override { ++updates; return update_ok; }
+    bool open_manual() override {
+        ++opens;
+        return open_ok;
+    }
+    bool update_manual(u32, u32) override {
+        ++updates;
+        return update_ok;
+    }
     bool manual_finished() const override { return finished; }
     void close_manual() override { ++closes; }
 };

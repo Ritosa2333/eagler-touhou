@@ -13,7 +13,9 @@ TEST(retail_render_flag_opcodes_use_th13_bit_positions) {
         th13test::push_insn(bytes, i16(opcodes[i]), 0, 0, {1});
         th13test::push_insn(bytes, 2, 0);
         auto script = th13test::make_script(std::move(bytes));
-        AnmVm vm; CHECK(vm.bind(script)); vm.visual.render_flags = 0x4000;
+        AnmVm vm;
+        CHECK(vm.bind(script));
+        vm.visual.render_flags = 0x4000;
         CHECK_EQ(vm.tick(random), 0);
         CHECK_EQ(vm.visual.render_flags, 0x4000u | masks[i]);
     }
@@ -25,8 +27,10 @@ TEST(ins424_does_not_recycle_an_active_registry_node) {
     th13test::push_insn(bytes, 100, 0, 1, {10000, 7});
     th13test::push_insn(bytes, 3, 0);
     auto script = th13test::make_script(std::move(bytes));
-    AnmRegistry registry;GameRandom random;
-    auto* vm = registry.allocate(); CHECK(vm->bind(script));
+    AnmRegistry registry;
+    GameRandom random;
+    auto* vm = registry.allocate();
+    CHECK(vm->bind(script));
     const u32 handle = registry.submit(*vm);
     CHECK(registry.update(random, 1));
     CHECK(registry.find(handle) == vm);

@@ -5,10 +5,10 @@
 
 #include "AnmManager.hpp"
 #include "BossPresentation.hpp"
+#include "HudDrawData.hpp"
+#include "HudFrameData.hpp"
 #include "SessionState.hpp"
 #include "SpellPresentation.hpp"
-#include "HudFrameData.hpp"
-#include "HudDrawData.hpp"
 
 namespace th13 {
 
@@ -67,8 +67,7 @@ public:
     BossPresentation boss_hud;
     SpellPresentation spell_hud;
 
-    GameHud(AnmManager& a, SessionState& p, HudPlayerState& s, HudScoreState& v, i32 front_bank,
-            i32 ascii_bank)
+    GameHud(AnmManager& a, SessionState& p, HudPlayerState& s, HudScoreState& v, i32 front_bank, i32 ascii_bank)
         : animations(a), progress(p), player(s), score(v), front(front_bank), ascii(ascii_bank),
           boss_hud(a, {front_bank, ascii_bank, 8}), spell_hud(a, {4}) {
         frame_age.set(0);
@@ -94,7 +93,27 @@ public:
         BossPresentation::RollbackState boss;
         SpellPresentation::RollbackState spell;
     };
-    RollbackState capture_rollback() const { return {life_icons, bomb_icons, root, difficulty_notice, difficulty_label, flags, intro_age, frame_age, clear_age, clear_banner, displayed_score, score_increment, gauge_main, trance_skull_label, opening_signature, opening_signature_right, stage_logo_bank, boss_hud.capture_rollback(), spell_hud.capture_rollback()}; }
+    RollbackState capture_rollback() const {
+        return {life_icons,
+                bomb_icons,
+                root,
+                difficulty_notice,
+                difficulty_label,
+                flags,
+                intro_age,
+                frame_age,
+                clear_age,
+                clear_banner,
+                displayed_score,
+                score_increment,
+                gauge_main,
+                trance_skull_label,
+                opening_signature,
+                opening_signature_right,
+                stage_logo_bank,
+                boss_hud.capture_rollback(),
+                spell_hud.capture_rollback()};
+    }
     void restore_rollback(const RollbackState& state) {
         life_icons = state.life_icons;
         bomb_icons = state.bomb_icons;
@@ -160,8 +179,8 @@ public:
     // 0x42b030:35/52 无条件重写 script172 的 VM+0x4a0；收集/启停/死亡/
     // 续关/换关必须在 Update pass 调用，保证同帧主链 tick 生效。
     bool trance_label_refresh() { return update_trance(true); }
-    bool begin_stage_clear();  // 0042abf0: front115 and HUD+180 bit100
-    bool finish_stage_clear(); // 0042ad40: label1, clear flag and clock
+    bool begin_stage_clear();   // 0042abf0: front115 and HUD+180 bit100
+    bool finish_stage_clear();  // 0042ad40: label1, clear flag and clock
     void tick_stage_clear() noexcept {
         if (flags & 0x100u) clear_age.tick(&progress.rate);
     }

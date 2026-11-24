@@ -28,7 +28,7 @@ public:
     // 号纹理 → (slot, entry=文件内序号, name)。
     void register_texture(const AnmResource* file, u32 first, u32 count, i32 slot);
 
-    bool open_output(const char* path);   // false 时 error() 有值
+    bool open_output(const char* path);  // false 时 error() 有值
     bool close_output() noexcept;
     bool legacy_harness() const noexcept {
 #ifdef __EMSCRIPTEN__
@@ -37,8 +37,8 @@ public:
         return true;
 #endif
     }
-    void begin_frame(u32 frame);          // 帧界：viewport 保留（同 oracle 影子）
-    bool end_frame();                     // 落一行 JSONL（含末尾 \n）
+    void begin_frame(u32 frame);  // 帧界：viewport 保留（同 oracle 影子）
+    bool end_frame();             // 落一行 JSONL（含末尾 \n）
     // 帧尾 SetTexture(0,0)（0x45d2f0:49 的移植侧镜像）：设备侧纹理清空
     // （契约 §2.1：此后绘制 tex=null），但精灵侧缓存（原版 mgr+0xb78188）
     // 不失效——次帧同纹理精灵经缓存判定跳过 SetTexture，DrawPrimitive 落
@@ -77,8 +77,7 @@ public:
     void set_layout(touhou::graphics::VertexLayout layout) override;
     void set_matrix(touhou::graphics::MatrixKind kind, const Matrix4& matrix) override;
     void triangles(u32 count, const void* data, u32 stride) override;
-    void primitives(touhou::graphics::Topology kind, u32 count, const void* data,
-                    u32 stride) override;
+    void primitives(touhou::graphics::Topology kind, u32 count, const void* data, u32 stride) override;
     bool select_target(const AnmResource*, u32) override { return true; }
     bool clear_target(u32, const GraphicsViewport*) override { return true; }
     bool clear_depth(const GraphicsViewport*) override { return true; }
@@ -127,8 +126,7 @@ private:
     // -O2 跨函数内联成巨帧（emit_quad 内联 4×append_matrix×16 append_float
     // 曾在窗B 转场期粒子全量绘制时溢出 V8 栈并越过栈检查）。定点 noinline
     // 取代全局 -fno-inline-functions 旗语（emit_* 系互不内联，帧尺寸有界）。
-    __attribute__((noinline)) void emit_quad(u32 prim, u32 count, u32 stride,
-                                             const void* data);
+    __attribute__((noinline)) void emit_quad(u32 prim, u32 count, u32 stride, const void* data);
     __attribute__((noinline)) void emit_up(u32 prim, u32 count, u32 stride, const void* data);
     __attribute__((noinline)) void append_tex(const Identity& identity);
     __attribute__((noinline)) void append_blend();

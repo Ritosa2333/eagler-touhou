@@ -9,8 +9,8 @@
 //    用同 manager 直建、无 pre_tick 的 script22 作反证，不越权改产品。
 // 负控：错误脚本（front2/text0）不得产出暂停子 VM；错误 bank 身份（132 不在
 // text.anm）必须让 open 失败，而不是靠“句柄非零”放行。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/AnmRenderer.hpp"
 #include "game/FrameScheduler.hpp"
@@ -99,12 +99,11 @@ struct RealPause {
         CHECK(manager.update());
     }
     void advance(int frames, u32 pressed = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed);
+        for (int i = 0; i < frames; i++)
+            frame(pressed);
     }
     AnmVm* root() { return pause ? manager.registry.find(pause->state.menu_animation) : nullptr; }
-    AnmVm* backdrop() {
-        return pause ? manager.registry.find(pause->state.snapshot_animation) : nullptr;
-    }
+    AnmVm* backdrop() { return pause ? manager.registry.find(pause->state.snapshot_animation) : nullptr; }
     AnmVm* child(i32 script) {
         auto* menu = root();
         return menu ? manager.registry.find_child_script(*menu, script, 0) : nullptr;
@@ -319,7 +318,8 @@ TEST(real_overlay_trees_are_collected_after_continue_close_and_title) {
     CHECK_EQ(h.manager.registry.count(), baseline);
     CHECK(h.manager.registry.find(menu_handle) == nullptr);
     CHECK(h.manager.registry.find(backdrop_handle) == nullptr);
-    for (u32 handle : children) CHECK(h.manager.registry.find(handle) == nullptr);
+    for (u32 handle : children)
+        CHECK(h.manager.registry.find(handle) == nullptr);
 
     // Esc 关闭同样回收。
     CHECK(h.pause->open(PauseEntrance::Pause));
@@ -401,8 +401,7 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     auto* bare_root = manager.registry.find(bare);
     CHECK(bare_root != nullptr);
     if (!bare_root) return;
-    bare_root->visual.render_flags =
-        (bare_root->visual.render_flags & ~0xc000u) | 0x8000u;
+    bare_root->visual.render_flags = (bare_root->visual.render_flags & ~0xc000u) | 0x8000u;
     const u32 gated = manager.create(8, 22, 12, 0, {80, 300, 0});
     CHECK(gated != 0);
     auto* gated_root = manager.registry.find(gated);
@@ -415,7 +414,8 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     if (!bare_child) return;
     CHECK(bare_child->pre_tick == nullptr);
 
-    for (int i = 0; i < 5; i++) CHECK(manager.update());
+    for (int i = 0; i < 5; i++)
+        CHECK(manager.update());
     const i32 root_time = focus_root->timer.current;
     const i32 child_time = focus_child->timer.current;
     const i32 root_age = focus_root->age.current;

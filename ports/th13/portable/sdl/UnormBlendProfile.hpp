@@ -13,12 +13,10 @@ enum class UnormBlendProfile { NativeGles, SeparateRgbTerms };
 
 inline bool alpha_factor_reads_source_rgb(graphics::BlendFactor factor) {
     using namespace graphics;
-    return factor == BlendFactor::SourceColor ||
-           factor == BlendFactor::InverseSourceColor;
+    return factor == BlendFactor::SourceColor || factor == BlendFactor::InverseSourceColor;
 }
 
-inline bool separate_rgb_terms(UnormBlendProfile profile,
-                               const graphics::PipelineState& pipeline,
+inline bool separate_rgb_terms(UnormBlendProfile profile, const graphics::PipelineState& pipeline,
                                graphics::PixelFormat target_format) {
     using namespace graphics;
     // A destination factor that uses source RGB would see the preweighted
@@ -29,17 +27,13 @@ inline bool separate_rgb_terms(UnormBlendProfile profile,
     // data, and DestinationColor/InverseDestinationColor read destination RGB;
     // none sees the preweighted c.rgb. SourceColor/InverseSourceColor do.
     const bool alpha_factors_safe =
-        !pipeline.separateAlphaBlend ||
-        (!alpha_factor_reads_source_rgb(pipeline.sourceAlphaBlend) &&
-         !alpha_factor_reads_source_rgb(pipeline.destinationAlphaBlend));
-    return profile == UnormBlendProfile::SeparateRgbTerms &&
-           target_format == PixelFormat::Bgra8 && pipeline.blend &&
-           alpha_factors_safe &&
-           pipeline.blendEquation == BlendEquation::Add &&
+        !pipeline.separateAlphaBlend || (!alpha_factor_reads_source_rgb(pipeline.sourceAlphaBlend) &&
+                                         !alpha_factor_reads_source_rgb(pipeline.destinationAlphaBlend));
+    return profile == UnormBlendProfile::SeparateRgbTerms && target_format == PixelFormat::Bgra8 && pipeline.blend &&
+           alpha_factors_safe && pipeline.blendEquation == BlendEquation::Add &&
            pipeline.sourceBlend == BlendFactor::SourceAlpha &&
            (pipeline.destinationBlend == BlendFactor::InverseSourceAlpha ||
-            pipeline.destinationBlend == BlendFactor::One ||
-            pipeline.destinationBlend == BlendFactor::Zero);
+            pipeline.destinationBlend == BlendFactor::One || pipeline.destinationBlend == BlendFactor::Zero);
 }
 
 inline constexpr const char* separateRgbTermsShader = R"GLSL(
@@ -56,4 +50,4 @@ inline constexpr const char* separateRgbTermsShader = R"GLSL(
    c.rgb=floor((product+128.0+floor(product/256.0))/256.0)/255.0;
    c.a=alpha8/255.0;}
 )GLSL";
-}
+}  // namespace touhou::sdl

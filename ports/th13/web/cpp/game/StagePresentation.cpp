@@ -30,8 +30,7 @@ constexpr float kGameToScreenX = 0.0f, kGameToScreenY = 0.0f;
 // Direct-touch movement updates position without setting direction keys.
 i32 ship_tilt(u32 held, float player_x, bool touch_active, const AnmVm* ship) {
     const i32 keyboard_tilt = ((held & 0x80u) != 0) - ((held & 0x40u) != 0);
-    if ((held & 0xf0u) || !touch_active || !ship || !ship->resource)
-        return keyboard_tilt;
+    if ((held & 0xf0u) || !touch_active || !ship || !ship->resource) return keyboard_tilt;
     const float x = player_x + kGameToScreenX;
     const float previous_x = ship->visual.translation.x;
     return (x > previous_x) - (x < previous_x);
@@ -74,10 +73,9 @@ i32 pause_player_effect(AnmVm& vm) {
 }
 }  // namespace
 
-StagePresentation::StagePresentation(AnmManager& manager, AnmRenderer& draw, Banks banks,
-                                     i32 player_shot_sprite)
-    : animations(manager), renderer(draw), banks(banks),
-      random(manager.random_source()), player_shot_sprite_(player_shot_sprite) {
+StagePresentation::StagePresentation(AnmManager& manager, AnmRenderer& draw, Banks banks, i32 player_shot_sprite)
+    : animations(manager), renderer(draw), banks(banks), random(manager.random_source()),
+      player_shot_sprite_(player_shot_sprite) {
     // 自机弹 VM 的 tick 属主链 0x46f170 遍历（Application Update 34），晚于
     // 本层 sync（20）。四角剔除（0x446531）消费的是上一帧链遍历后的 VM 状态，
     // 故快照与自灭检出必须挂到主链 update 完成之后。钩子失败时把本层的具体
@@ -114,8 +112,7 @@ StagePresentation::~StagePresentation() {
 void StagePresentation::rebuild_bullet_lookup() {
     bullet_lookup_.clear();
     for (size_t index = 0; index < bullets_.size(); ++index)
-        if (bullets_[index].active)
-            bullet_lookup_.emplace_back(bullets_[index].generation, u32(index));
+        if (bullets_[index].active) bullet_lookup_.emplace_back(bullets_[index].generation, u32(index));
     std::sort(bullet_lookup_.begin(), bullet_lookup_.end());
 }
 
@@ -123,19 +120,28 @@ StagePresentation::BulletSlot* StagePresentation::bullet_slot(StageBullet& bulle
     BulletSlot* slot = nullptr;
     // 加速索引（纯提示）：命中必须复核槽位 active/generation；未命中或
     // 失效一律回落到下方原有的有序线性扫描，槽位分配结果不变。
-    const auto hint = std::lower_bound(bullet_lookup_.begin(), bullet_lookup_.end(),
-                                       std::pair<u32, u32>{bullet.generation, 0u});
-    if (hint != bullet_lookup_.end() && hint->first == bullet.generation &&
-        hint->second < bullets_.size()) {
+    const auto hint =
+        std::lower_bound(bullet_lookup_.begin(), bullet_lookup_.end(), std::pair<u32, u32>{bullet.generation, 0u});
+    if (hint != bullet_lookup_.end() && hint->first == bullet.generation && hint->second < bullets_.size()) {
         BulletSlot& entry = bullets_[hint->second];
         if (entry.active && entry.generation == bullet.generation) slot = &entry;
     }
     if (!slot)
         for (auto& entry : bullets_)
-            if (entry.active && entry.generation == bullet.generation) { slot = &entry; break; }
+            if (entry.active && entry.generation == bullet.generation) {
+                slot = &entry;
+                break;
+            }
     if (!slot) {
-        for (auto& entry : bullets_) if (!entry.active) { slot = &entry; break; }
-        if (!slot) { bullets_.emplace_back(); slot = &bullets_.back(); }
+        for (auto& entry : bullets_)
+            if (!entry.active) {
+                slot = &entry;
+                break;
+            }
+        if (!slot) {
+            bullets_.emplace_back();
+            slot = &bullets_.back();
+        }
         if (slot->vm && !animations.release_tree(*slot->vm)) {
             fail(animations.error);
             return nullptr;
@@ -247,25 +253,28 @@ bool StagePresentation::tick_bullet(StageBullet& bullet, bool birth) {
         vm.visual.flags |= 0x8u;
     }
     bullet_animation_geometry(bullet, vm);
-    if (result > 0) { bullet.alive = false; slot->active = false; }
+    if (result > 0) {
+        bullet.alive = false;
+        slot->active = false;
+    }
     (void)birth;
     return true;
 }
 
-bool StagePresentation::bullet_cancel(i32 script,const Vec3& position,const Vec3& displacement,bool interpolate) {
-    const u32 handle=animations.create(banks.bullet,script,-1,0,position,0,false);
-    auto* vm=animations.registry.find(handle);
-    if(!vm)return fail("Bullet cancel particle: "+animations.error);
-    if(anm_random_observer)anm_random_observer(*vm,-13,script,0,0,0,0,0,false);
-    vm->visual.render_flags|=0x40000u;
-    if(interpolate)vm->interpolators.position.begin(30,6,{0,0,0},
-        {displacement.x,displacement.y,displacement.z}); //4125b0, no extra tick
+bool StagePresentation::bullet_cancel(i32 script, const Vec3& position, const Vec3& displacement, bool interpolate) {
+    const u32 handle = animations.create(banks.bullet, script, -1, 0, position, 0, false);
+    auto* vm = animations.registry.find(handle);
+    if (!vm) return fail("Bullet cancel particle: " + animations.error);
+    if (anm_random_observer) anm_random_observer(*vm, -13, script, 0, 0, 0, 0, 0, false);
+    vm->visual.render_flags |= 0x40000u;
+    if (interpolate)
+        vm->interpolators.position.begin(30, 6, {0, 0, 0},
+                                         {displacement.x, displacement.y, displacement.z});  //4125b0, no extra tick
     bullet_cancel_handles_.push_back(handle);
     return true;
 }
 
-bool StagePresentation::beam_hit_effect(const Vec3& position, const Vec3& displacement,
-                                        float angle) {
+bool StagePresentation::beam_hit_effect(const Vec3& position, const Vec3& displacement, float angle) {
     // 447230 -> 46f820 creates player ANM script15 and primes it immediately.
     // The impact rotation and 4125b0's 20-frame mode4 local displacement are
     // installed only after the initial tick, before the manager's next update.
@@ -274,8 +283,7 @@ bool StagePresentation::beam_hit_effect(const Vec3& position, const Vec3& displa
     if (!vm) return fail("Player beam hit effect: " + animations.error);
     vm->visual.flags |= 4u;
     vm->variables.rotation.z = angle;
-    vm->interpolators.position.begin(20, 4, {0, 0, 0},
-                                     {displacement.x, displacement.y, displacement.z});
+    vm->interpolators.position.begin(20, 4, {0, 0, 0}, {displacement.x, displacement.y, displacement.z});
     player_effect_handles_.push_back(handle);
     return true;
 }
@@ -291,39 +299,49 @@ bool StagePresentation::youmu_charge_effect(i32 action, const Vec3& position) {
         if (!animations.interrupt(youmu_charge_handle_, 2, false))
             return fail("Youmu charge interrupt: " + animations.error);
     } else if (action == 2 && youmu_charge_handle_) {
-        if (!animations.retire(youmu_charge_handle_))
-            return fail("Youmu charge retirement: " + animations.error);
+        if (!animations.retire(youmu_charge_handle_)) return fail("Youmu charge retirement: " + animations.error);
     } else if (action == 3) {
         if (auto* vm = animations.registry.find(youmu_charge_handle_))
             vm->visual.translation = position;
-        else youmu_charge_handle_ = 0;
+        else
+            youmu_charge_handle_ = 0;
     }
     return true;
 }
 
 void StagePresentation::release_stage() {
-    while (!fog_handles_.empty()) retire_enemy_fog(fog_handles_.begin()->first);
+    while (!fog_handles_.empty())
+        retire_enemy_fog(fog_handles_.begin()->first);
     for (auto& enemy : enemies_)
         if (enemy.vm) animations.release_tree(*enemy.vm);
     enemies_.clear();
     for (auto& bullet : bullets_)
         if (bullet.vm) animations.release_tree(*bullet.vm);
     bullets_.clear();
-    for (auto& vm : item_vms_) vm.reset();
-    for (auto& vm : item_side_vms_) vm.reset();
-    for (u32& handle : spirit_handles_) { if (handle) animations.retire(handle); handle = 0; }
-    spirit_serials_.fill(0); spirit_scripts_.fill(0);
-    stage_file_offsets_.clear(); stage_offsets_source_ = nullptr;
+    for (auto& vm : item_vms_)
+        vm.reset();
+    for (auto& vm : item_side_vms_)
+        vm.reset();
+    for (u32& handle : spirit_handles_) {
+        if (handle) animations.retire(handle);
+        handle = 0;
+    }
+    spirit_serials_.fill(0);
+    spirit_scripts_.fill(0);
+    stage_file_offsets_.clear();
+    stage_offsets_source_ = nullptr;
 }
 
 void StagePresentation::release() {
     battle_ = nullptr;  // 主链 update 钩子不再读取已释放的弹体槽位
     frame_synced_ = false;
-    for(auto& handle:bullet_cancel_handles_)if(handle)animations.retire(handle);
+    for (auto& handle : bullet_cancel_handles_)
+        if (handle) animations.retire(handle);
     bullet_cancel_handles_.clear();
-    if(trance_handle_)animations.retire(trance_handle_);
-    trance_was_active_=false;
-    while(!fog_handles_.empty())retire_enemy_fog(fog_handles_.begin()->first);
+    if (trance_handle_) animations.retire(trance_handle_);
+    trance_was_active_ = false;
+    while (!fog_handles_.empty())
+        retire_enemy_fog(fog_handles_.begin()->first);
     for (auto& enemy : enemies_)
         if (enemy.vm) animations.release_tree(*enemy.vm);
     enemies_.clear();
@@ -354,29 +372,28 @@ void StagePresentation::release() {
     player_effect_handles_.clear();
     youmu_charge_handle_ = 0;
     for (u32& handle : spirit_handles_) {
-        if (handle && !animations.retire(handle))
-            fail("Spirit animation retire failed: " + animations.error);
+        if (handle && !animations.retire(handle)) fail("Spirit animation retire failed: " + animations.error);
         handle = 0;
     }
     spirit_serials_.fill(0);
     spirit_scripts_.fill(0);
-    for (auto& vm : item_vms_) vm.reset();
-    for (auto& vm : item_side_vms_) vm.reset();
+    for (auto& vm : item_vms_)
+        vm.reset();
+    for (auto& vm : item_side_vms_)
+        vm.reset();
     for (u32& handle : youmu_slash_handles_) {
-        if (handle && !animations.retire(handle))
-            fail("Youmu slash retire failed: " + animations.error);
+        if (handle && !animations.retire(handle)) fail("Youmu slash retire failed: " + animations.error);
         handle = 0;
     }
     for (u32 handle : youmu_slash_extra_)
-        if (handle && !animations.retire(handle))
-            fail("Youmu slash retire failed: " + animations.error);
+        if (handle && !animations.retire(handle)) fail("Youmu slash retire failed: " + animations.error);
     youmu_slash_extra_.clear();
     focus_handle_ = 0;
     option_handles_.fill(0);
     full_option_handles_.fill(0);
     bomb_orb_handles_.fill(0);
     bomb_orb_exploding_.fill(false);
-    bomb_generation_=bomb_background_=bomb_beam_=0;
+    bomb_generation_ = bomb_background_ = bomb_beam_ = 0;
     bomb_ray_handles_.fill(0);
     option_character_ = option_count_ = -1;
     full_options_ = false;
@@ -389,8 +406,7 @@ void StagePresentation::release() {
     options_hidden_ = false;
 }
 
-u32 StagePresentation::create_player_effect(i32 bank, i32 script, i32 layer,
-                                            u32 ordering, const Vec3& position) {
+u32 StagePresentation::create_player_effect(i32 bank, i32 script, i32 layer, u32 ordering, const Vec3& position) {
     // 00403800 复制已跑完负时间初始化的模板，保留模板的当前指令指针。
     // 自机模块在写 layer12 后只跑 time0；不可重放 -1 的 ins304 把它改回16。
     auto* source = animations.script_template(bank, u32(script));
@@ -404,8 +420,7 @@ u32 StagePresentation::create_player_effect(i32 bank, i32 script, i32 layer,
         fail("Player effect binding failed: " + animations.error);
         return 0;
     }
-    if (anm_random_observer)
-        anm_random_observer(*vm, -10, script, i32(ordering), u32(bank), 0, 0, 0, false);
+    if (anm_random_observer) anm_random_observer(*vm, -10, script, i32(ordering), u32(bank), 0, 0, 0, false);
     vm->instruction_offset = source->instruction_offset;
     vm->visual.render_flags |= 0x200;
     if (layer >= 0) {
@@ -440,78 +455,72 @@ u32 StagePresentation::create_player_effect(i32 bank, i32 script, i32 layer,
 bool StagePresentation::end_player_effect(u32& handle, bool retire) {
     if (!handle) return true;
     // 0046fc30 只排队中断、不立即再 tick；其子树接收同一 label。
-    const bool ok = retire ? animations.retire(handle)
-                           : animations.interrupt(handle, 1, false);
+    const bool ok = retire ? animations.retire(handle) : animations.interrupt(handle, 1, false);
     handle = 0;
     return ok || fail("Player effect release failed: " + animations.error);
 }
 
 bool StagePresentation::sync_bomb_effects(const StageBattle& battle) {
-    const i32 character=battle.player_character();
-    if(battle.bomb_generation!=bomb_generation_) {
-        bomb_generation_=battle.bomb_generation;
+    const i32 character = battle.player_character();
+    if (battle.bomb_generation != bomb_generation_) {
+        bomb_generation_ = battle.bomb_generation;
         // 40b4b0 / 40a650 / 40be80 / 40c910: original plXX background
         // scripts, not effect.anm or a synthetic fullscreen flash.
-        if(!end_player_effect(bomb_background_,false)||
-           !end_player_effect(bomb_beam_,false))return false;
-        for(auto& handle:bomb_ray_handles_)
-            if(!end_player_effect(handle,false))return false;
-        if(battle.bomb_timer>0) {
-            if(character==1) {
-                bomb_beam_=create_player_effect(banks.player,23,-1,0,battle.bomb_center());
-                if(!bomb_beam_)return false;
+        if (!end_player_effect(bomb_background_, false) || !end_player_effect(bomb_beam_, false)) return false;
+        for (auto& handle : bomb_ray_handles_)
+            if (!end_player_effect(handle, false)) return false;
+        if (battle.bomb_timer > 0) {
+            if (character == 1) {
+                bomb_beam_ = create_player_effect(banks.player, 23, -1, 0, battle.bomb_center());
+                if (!bomb_beam_) return false;
             }
-            constexpr i32 backgrounds[]={26,31,27,25};
-            bomb_background_=create_player_effect(banks.player,backgrounds[character],
-                                                   -1,0,battle.bomb_center());
-            if(!bomb_background_)return false;
-            if(character!=0) {
-                auto* vm=animations.registry.find(bomb_background_);
-                vm->visual.color=(vm->visual.color&0xffffffu)|0xe0000000u;
-                vm->interpolators.secondary_alpha.control2[0]=224; // native vm+334
+            constexpr i32 backgrounds[] = {26, 31, 27, 25};
+            bomb_background_ = create_player_effect(banks.player, backgrounds[character], -1, 0, battle.bomb_center());
+            if (!bomb_background_) return false;
+            if (character != 0) {
+                auto* vm = animations.registry.find(bomb_background_);
+                vm->visual.color = (vm->visual.color & 0xffffffu) | 0xe0000000u;
+                vm->interpolators.secondary_alpha.control2[0] = 224;  // native vm+334
             }
-            if(character==2)for(size_t i=0;i<bomb_ray_handles_.size();++i) {
-                // 40be80 copies pl02 template +81bc = script23 * 5a4.
-                bomb_ray_handles_[i]=create_player_effect(banks.player,23,-1,0,
-                                                         battle.bomb_rays[i].origin);
-                if(!bomb_ray_handles_[i])return false;
-            }
+            if (character == 2)
+                for (size_t i = 0; i < bomb_ray_handles_.size(); ++i) {
+                    // 40be80 copies pl02 template +81bc = script23 * 5a4.
+                    bomb_ray_handles_[i] = create_player_effect(banks.player, 23, -1, 0, battle.bomb_rays[i].origin);
+                    if (!bomb_ray_handles_[i]) return false;
+                }
         }
     }
-    if(battle.bomb_timer<=0) {
-        if(!end_player_effect(bomb_background_,false)||
-           !end_player_effect(bomb_beam_,false))return false;
-        for(auto& handle:bomb_ray_handles_)
-            if(!end_player_effect(handle,false))return false;
+    if (battle.bomb_timer <= 0) {
+        if (!end_player_effect(bomb_background_, false) || !end_player_effect(bomb_beam_, false)) return false;
+        for (auto& handle : bomb_ray_handles_)
+            if (!end_player_effect(handle, false)) return false;
         return true;
     }
-    if(character==1) {
-        if(auto* vm=animations.registry.find(bomb_beam_)) {
-            vm->visual.translation=battle.bomb_center();
-            vm->variables.rotation.z=battle.bomb_visual_angle();
-            vm->visual.flags|=4;
+    if (character == 1) {
+        if (auto* vm = animations.registry.find(bomb_beam_)) {
+            vm->visual.translation = battle.bomb_center();
+            vm->variables.rotation.z = battle.bomb_visual_angle();
+            vm->visual.flags |= 4;
         }
-    } else if(character==2) {
-        if(auto* vm=animations.registry.find(bomb_background_))
-            vm->visual.translation=battle.bomb_center();
-        for(size_t i=0;i<bomb_ray_handles_.size();++i)
-            if(auto* vm=animations.registry.find(bomb_ray_handles_[i])) {
-                vm->visual.translation=battle.bomb_rays[i].origin;
-                vm->variables.rotation.z=battle.bomb_rays[i].angle;
-                vm->visual.flags|=4;
+    } else if (character == 2) {
+        if (auto* vm = animations.registry.find(bomb_background_)) vm->visual.translation = battle.bomb_center();
+        for (size_t i = 0; i < bomb_ray_handles_.size(); ++i)
+            if (auto* vm = animations.registry.find(bomb_ray_handles_[i])) {
+                vm->visual.translation = battle.bomb_rays[i].origin;
+                vm->variables.rotation.z = battle.bomb_rays[i].angle;
+                vm->visual.flags |= 4;
             }
     }
     return true;
 }
 
 bool StagePresentation::sync_player_effects(StageBattle& battle) {
-    player_effect_handles_.erase(
-        std::remove_if(player_effect_handles_.begin(), player_effect_handles_.end(),
-                       [&](u32 handle) { return !animations.registry.find(handle); }),
-        player_effect_handles_.end());
+    player_effect_handles_.erase(std::remove_if(player_effect_handles_.begin(), player_effect_handles_.end(),
+                                                [&](u32 handle) { return !animations.registry.find(handle); }),
+                                 player_effect_handles_.end());
     const bool visible = battle.player_visible();
     const Vec3 position{battle.player_x, battle.player_y, 0};
-    if(!sync_bomb_effects(battle))return false;
+    if (!sync_bomb_effects(battle)) return false;
 
     // 00442a8f：DAT_004c2180 + 0x10 = effect.anm，不是自机 plXX.anm。
     // script22 自带 sprite23、12帧缩放、18帧旋转及子script21；松Shift
@@ -539,13 +548,11 @@ bool StagePresentation::sync_player_effects(StageBattle& battle) {
             continue;
         }
         if (!animations.registry.find(bomb_orb_handles_[i]) && !orb.exploding) {
-            bomb_orb_handles_[i] = create_player_effect(
-                banks.player, 18, -1, 0, {orb.x, orb.y, 0});
+            bomb_orb_handles_[i] = create_player_effect(banks.player, 18, -1, 0, {orb.x, orb.y, 0});
             if (!bomb_orb_handles_[i]) return false;
             bomb_orb_exploding_[i] = false;
         }
-        if (auto* vm = animations.registry.find(bomb_orb_handles_[i]))
-            vm->visual.translation = {orb.x, orb.y, 0};
+        if (auto* vm = animations.registry.find(bomb_orb_handles_[i])) vm->visual.translation = {orb.x, orb.y, 0};
         if (orb.exploding && !bomb_orb_exploding_[i]) {
             if (!end_player_effect(bomb_orb_handles_[i], false)) return false;
             bomb_orb_exploding_[i] = true;
@@ -643,11 +650,9 @@ bool StagePresentation::sync_player_options(StageBattle& battle, bool power_rebu
     if (options_hidden_) {
         const Vec3 anchor{battle.player_x, battle.player_y, 0};
         for (u32 handle : option_handles_)
-            if (auto* vm = animations.registry.find(handle))
-                vm->visual.translation = anchor;
+            if (auto* vm = animations.registry.find(handle)) vm->visual.translation = anchor;
         for (u32 handle : full_option_handles_)
-            if (auto* vm = animations.registry.find(handle))
-                vm->visual.translation = anchor;
+            if (auto* vm = animations.registry.find(handle)) vm->visual.translation = anchor;
         return true;
     }
     const bool visible = battle.player_visible();
@@ -681,12 +686,10 @@ bool StagePresentation::sync_player_options(StageBattle& battle, bool power_rebu
         if (!death_options_queued_) {
             for (u32 handle : option_handles_)
                 if (handle && !animations.interrupt(handle, 1, false))
-                    return fail("Player option death interrupt failed: " +
-                                animations.error);
+                    return fail("Player option death interrupt failed: " + animations.error);
             for (u32 handle : full_option_handles_)
                 if (handle && !animations.interrupt(handle, 1, false))
-                    return fail("Full power option death interrupt failed: " +
-                                animations.error);
+                    return fail("Full power option death interrupt failed: " + animations.error);
             death_options_queued_ = true;
         }
         // 0x443240:130（0x668==3，死亡演出第 3 帧）调 0x444df0：0x146c4
@@ -706,8 +709,7 @@ bool StagePresentation::sync_player_options(StageBattle& battle, bool power_rebu
                 if (i >= size_t(count)) continue;
                 const auto& option = battle.options[i];
                 const Vec3 anchor{option.x, option.y, 0};
-                option_handles_[i] = create_player_effect(
-                    banks.player, option_scripts[character], 12, 0, anchor);
+                option_handles_[i] = create_player_effect(banks.player, option_scripts[character], 12, 0, anchor);
                 if (!option_handles_[i]) return false;
             }
         }
@@ -732,36 +734,33 @@ bool StagePresentation::sync_player_options(StageBattle& battle, bool power_rebu
         full_options_ = full;
     }
     // 444df0 creates the full-power trees in a separate first loop.
-    if (full) for (size_t i = 0; i < full_option_handles_.size(); ++i) {
-        const auto& option = battle.options[i];
-        if (i >= size_t(count) || !option.active) continue;
-        const Vec3 anchor{option.x, option.y, 0};
-        if (!animations.registry.find(full_option_handles_[i])) {
-            full_option_handles_[i] = create_player_effect(
-                banks.player, full_scripts[character], 12, 2,
-                power_rebuild ? Vec3{} : anchor);
-            if (!full_option_handles_[i]) return false;
-            if (power_rebuild)
-                animations.registry.find(full_option_handles_[i])->visual.translation = {0, -32, 0};
+    if (full)
+        for (size_t i = 0; i < full_option_handles_.size(); ++i) {
+            const auto& option = battle.options[i];
+            if (i >= size_t(count) || !option.active) continue;
+            const Vec3 anchor{option.x, option.y, 0};
+            if (!animations.registry.find(full_option_handles_[i])) {
+                full_option_handles_[i] =
+                    create_player_effect(banks.player, full_scripts[character], 12, 2, power_rebuild ? Vec3{} : anchor);
+                if (!full_option_handles_[i]) return false;
+                if (power_rebuild) animations.registry.find(full_option_handles_[i])->visual.translation = {0, -32, 0};
+            }
+            if (!defer_anchor) animations.registry.find(full_option_handles_[i])->visual.translation = anchor;
         }
-        if (!defer_anchor) animations.registry.find(full_option_handles_[i])->visual.translation = anchor;
-    }
     for (size_t i = 0; i < option_handles_.size(); ++i) {
         const auto& option = battle.options[i];
         const bool active = i < size_t(count) && option.active;
         if (!active) {
-            if (!end_player_effect(option_handles_[i], true) ||
-                !end_player_effect(full_option_handles_[i], true)) return false;
+            if (!end_player_effect(option_handles_[i], true) || !end_player_effect(full_option_handles_[i], true))
+                return false;
             continue;
         }
         const Vec3 anchor{option.x, option.y, 0};
         if (!animations.registry.find(option_handles_[i])) {
-            option_handles_[i] = create_player_effect(
-                banks.player, option_scripts[character], 12, 0,
-                power_rebuild ? Vec3{} : anchor);
+            option_handles_[i] =
+                create_player_effect(banks.player, option_scripts[character], 12, 0, power_rebuild ? Vec3{} : anchor);
             if (!option_handles_[i]) return false;
-            if (power_rebuild)
-                animations.registry.find(option_handles_[i])->visual.translation = {0, -32, 0};
+            if (power_rebuild) animations.registry.find(option_handles_[i])->visual.translation = {0, -32, 0};
         }
         if (!defer_anchor) animations.registry.find(option_handles_[i])->visual.translation = anchor;
     }
@@ -770,8 +769,7 @@ bool StagePresentation::sync_player_options(StageBattle& battle, bool power_rebu
 }
 
 bool StagePresentation::reimu_bomb_orb_birth(const StageBattle& battle, i32 index) {
-    if (index < 0 || index >= i32(bomb_orb_handles_.size()))
-        return fail("Reimu bomb orb index outside pool");
+    if (index < 0 || index >= i32(bomb_orb_handles_.size())) return fail("Reimu bomb orb index outside pool");
     u32& handle = bomb_orb_handles_[size_t(index)];
     if (animations.registry.find(handle)) return fail("Reimu bomb orb slot already active");
     const auto& orb = battle.bomb_orbs[size_t(index)];
@@ -790,8 +788,7 @@ bool StagePresentation::initialize_player_shot(PlayerShot& shot, u32 index) {
     }
     if (shot_handles_[index]) {
         auto* stale = animations.registry.find(shot_handles_[index]);
-        if (stale && !animations.release_tree(*stale))
-            return fail("Player shot animation release failed");
+        if (stale && !animations.release_tree(*stale)) return fail("Player shot animation release failed");
         shot_handles_[index] = 0;
     }
     const auto* source = animations.script_template(banks.player, u32(shot.script));
@@ -804,8 +801,7 @@ bool StagePresentation::initialize_player_shot(PlayerShot& shot, u32 index) {
         animations.registry.discard(*vm);
         return fail("Player shot animation template unavailable");
     }
-    if (anm_random_observer)
-        anm_random_observer(*vm, -11, shot.script, 0, u32(banks.player), 0, 0, 0, false);
+    if (anm_random_observer) anm_random_observer(*vm, -11, shot.script, 0, u32(banks.player), 0, 0, 0, false);
     // 445e4d..445e83 copies the negative-time template and initializes at0
     // with zero translation/rotation. 4464d0 writes the live projectile pose
     // later, before the same frame's separate manager tick (46fb51).
@@ -817,8 +813,7 @@ bool StagePresentation::initialize_player_shot(PlayerShot& shot, u32 index) {
     // 给自机弹 VM 挂与自机特效相同的 pre_tick（environment.paused → 1，整帧
     // 跳过、不推进时间/RNG），保持改动前 sync 早退时的冻结行为。
     vm->pre_tick = pause_player_effect;
-    if (!animations.prime_instance(*vm))
-        return fail("Player shot animation initialization: " + animations.error);
+    if (!animations.prime_instance(*vm)) return fail("Player shot animation initialization: " + animations.error);
     vm->ordering = 0;
     const u32 handle = animations.registry.submit(*vm, 0);
     if (!handle) {
@@ -880,13 +875,13 @@ bool StagePresentation::post_chain_update() {
         }
         std::array<Vec3, 4> snapshot{};
         std::copy(std::begin(corners), std::end(corners), snapshot.begin());
-        battle_->set_player_shot_geometry(i32(i), shot.age, shot.script, shot.generation,
-                                          snapshot);
+        battle_->set_player_shot_geometry(i32(i), shot.age, shot.script, shot.generation, snapshot);
     }
     for (size_t n = 0; n < shot_fades_.size();) {
         if (!animations.registry.find(shot_fades_[n].handle))
             shot_fades_.erase(shot_fades_.begin() + i32(n));
-        else ++n;
+        else
+            ++n;
     }
     return true;
 }
@@ -939,8 +934,8 @@ void StagePresentation::create_color_step(AnmVm* vm) {
 bool StagePresentation::spirit_animation_alive(u32 slot, u32 serial) const noexcept {
     // A newly born spirit has not reached sync/create yet. Once bound, its
     // actual registry handle is the lifetime authority, including script op1.
-    return slot >= spirit_handles_.size() || spirit_serials_[slot] != serial ||
-           serial == 0 || animations.registry.find(spirit_handles_[slot]) != nullptr;
+    return slot >= spirit_handles_.size() || spirit_serials_[slot] != serial || serial == 0 ||
+           animations.registry.find(spirit_handles_[slot]) != nullptr;
 }
 
 // 0x438730 收集瞬间的 front.anm 拾取动画。原版在 0x46f820 调用点用
@@ -966,17 +961,13 @@ bool StagePresentation::spirit_pickup(i32 script, const Vec3& position) {
 // 时机 = 出生当帧（0x438ec0 体内），早于本帧 0x46f170 walk；此前 port 在
 // Update 25 sync_item_spirits 才建 astral VM，且从不建 0x38，使神霊链节点
 // 落在本帧子弹相位创建物之后（Pn16 s05 f11697 s174 子 VM 多 tick 一帧）。
-bool StagePresentation::spirit_spawn_animation(u32 slot, u32 serial, i32 kind,
-                                               u32 flags, float x, float y,
-                                               float z) {
+bool StagePresentation::spirit_spawn_animation(u32 slot, u32 serial, i32 kind, u32 flags, float x, float y, float z) {
     const Vec3 position{x, y, z};
     if (!animations.create(banks.effect, 0x38, -1, 0, position, 0, false))
         return fail("Spirit birth effect creation failed: " + animations.error);
     const i32 script = (flags & 1u) != 0 ? kind * 6 + 4 : kind * 6 + 1;
-    const u32 handle = animations.create(banks.spirit, script, -1, 0, position, 0,
-                                         false);
-    if (!handle)
-        return fail("Spirit animation creation failed: " + animations.error);
+    const u32 handle = animations.create(banks.spirit, script, -1, 0, position, 0, false);
+    if (!handle) return fail("Spirit animation creation failed: " + animations.error);
     if (slot < spirit_handles_.size()) {
         spirit_handles_[slot] = handle;
         spirit_serials_[slot] = serial;
@@ -986,21 +977,24 @@ bool StagePresentation::spirit_spawn_animation(u32 slot, u32 serial, i32 kind,
 }
 
 bool StagePresentation::sync_trance_effect(const StageBattle& battle) {
-    const bool active=battle.sim.session&&trance_active(*battle.sim.session);
-    if(active&&!trance_was_active_){
-        auto* effect=animations.resource(banks.effect);auto* astral=animations.resource(banks.spirit);
-        if(!effect||!astral)return fail("Trance animation banks unavailable");
-        trance_handle_=animations.create(banks.effect,0,26,0);
-        auto* vm=animations.registry.find(trance_handle_);
-        if(!vm)return fail("Trance effect creation failed: "+animations.error);
-        vm->geometry.overlay=std::make_unique<AnmOverlay>();
-        vm->geometry.allocation_bytes=0x1c3c;
-        if(!vm->geometry.overlay->initialize(*effect,*astral,*vm,random))return fail("Trance panels initialization failed");
-        if(!animations.interrupt(trance_handle_,9,false))return fail(animations.error);
-    }else if(!active&&trance_was_active_){
-        if(!animations.interrupt(trance_handle_,1,false))return fail(animations.error);
+    const bool active = battle.sim.session && trance_active(*battle.sim.session);
+    if (active && !trance_was_active_) {
+        auto* effect = animations.resource(banks.effect);
+        auto* astral = animations.resource(banks.spirit);
+        if (!effect || !astral) return fail("Trance animation banks unavailable");
+        trance_handle_ = animations.create(banks.effect, 0, 26, 0);
+        auto* vm = animations.registry.find(trance_handle_);
+        if (!vm) return fail("Trance effect creation failed: " + animations.error);
+        vm->geometry.overlay = std::make_unique<AnmOverlay>();
+        vm->geometry.allocation_bytes = 0x1c3c;
+        if (!vm->geometry.overlay->initialize(*effect, *astral, *vm, random))
+            return fail("Trance panels initialization failed");
+        if (!animations.interrupt(trance_handle_, 9, false)) return fail(animations.error);
+    } else if (!active && trance_was_active_) {
+        if (!animations.interrupt(trance_handle_, 1, false)) return fail(animations.error);
     }
-    trance_was_active_=active;return true;
+    trance_was_active_ = active;
+    return true;
 }
 
 bool StagePresentation::sync_item_spirits(StageBattle& battle) {
@@ -1035,10 +1029,8 @@ bool StagePresentation::sync_item_spirits(StageBattle& battle) {
             // 尾插（非 0x46f4a0 头插）。神霊高频尾插使取消弹等链尾父 VM 之后
             // 始终有后继节点，0x46f170 保存 next 的遍历才会到达本帧尾插的子
             // VM（Reimu S1 2406 首差的链形态依据）。
-            handle = animations.create(banks.spirit, script, -1, 0,
-                                       {s.x, s.y, s.z}, 0, false);
-            if (!handle)
-                return fail("Spirit animation creation failed: " + animations.error);
+            handle = animations.create(banks.spirit, script, -1, 0, {s.x, s.y, s.z}, 0, false);
+            if (!handle) return fail("Spirit animation creation failed: " + animations.error);
             vm = animations.registry.find(handle);
             spirit_serials_[i] = s.serial;
             spirit_scripts_[i] = script;
@@ -1062,11 +1054,8 @@ bool StagePresentation::sync_item_spirits(StageBattle& battle) {
 // scale 冻结）；rotation 取回填当帧 VM 值。
 bool StagePresentation::sync_youmu_slash(StageBattle& battle) {
     for (const auto& spawn : battle.youmu_slash_spawns_) {
-        const u32 handle = animations.create(
-            banks.player, spawn.script, -1, 0, {0.0f, spawn.y, 0.0f}, 0, false);
-        if (!handle)
-            return fail("Youmu slash animation creation failed: " +
-                        animations.error);
+        const u32 handle = animations.create(banks.player, spawn.script, -1, 0, {0.0f, spawn.y, 0.0f}, 0, false);
+        if (!handle) return fail("Youmu slash animation creation failed: " + animations.error);
         if (spawn.slot >= 0 && spawn.slot < YoumuBomb::kSlots) {
             youmu_slash_handles_[size_t(spawn.slot)] = handle;
         } else {
@@ -1078,11 +1067,8 @@ bool StagePresentation::sync_youmu_slash(StageBattle& battle) {
         AnmVm* vm = animations.registry.find(handle);
         // 0x46fb90 语义（r4/bomb 接线）：句柄有效即活；另加脚本终止判
         //（op1 自灭 → instruction_offset=-1/待回收 0x20 → 清槽）。
-        const bool alive = vm && vm->instruction_offset != -1 &&
-                           !(vm->visual.render_flags & 0x20u);
-        battle.youmu_bomb_.set_vm(slot, alive,
-                                  alive ? vm->variables.rotation.z : 0.0f,
-                                  battle.sim.time_rate());
+        const bool alive = vm && vm->instruction_offset != -1 && !(vm->visual.render_flags & 0x20u);
+        battle.youmu_bomb_.set_vm(slot, alive, alive ? vm->variables.rotation.z : 0.0f, battle.sim.time_rate());
         if (!alive && handle) handle = 0;  // 死槽：不再追踪（scale 冻结在战斗侧）
     }
     return true;
@@ -1123,8 +1109,7 @@ i32 StagePresentation::stage_script_global(i32 file, i32 script) {
     const auto& offsets = stage_file_offsets();
     const size_t index = size_t(file - 2);
     if (index >= offsets.size()) {
-        fail("Stage ANM file index beyond merged bank boundaries: " +
-             std::to_string(file));
+        fail("Stage ANM file index beyond merged bank boundaries: " + std::to_string(file));
         return -1;
     }
     return script + offsets[index];
@@ -1172,16 +1157,14 @@ bool StagePresentation::sync_items(StageBattle& battle) {
                 return fail("Item animation template unavailable: " + animations.error);
             vm->visual.layer = 15;
             vm->visual.render_flags |= 0x200u | 0x40000u;
-            if (vm->tick(random, animations.rate) < 0)
-                return fail("Item animation initialization: " + vm->error);
+            if (vm->tick(random, animations.rate) < 0) return fail("Item animation initialization: " + vm->error);
         }
         if (!side) {
             side = std::make_unique<AnmVm>();
             side->environment = &animations.scene_environment();
             side->object_host = &animations;
             if (!animations.bind_template_preserve_ip(*side, banks.bullet, side_script))
-                return fail("Item side animation template unavailable: " +
-                            animations.error);
+                return fail("Item side animation template unavailable: " + animations.error);
             side->visual.layer = 15;
             side->visual.render_flags |= 0x200u | 0x40000u;
             if (side->tick(random, animations.rate) < 0)
@@ -1189,10 +1172,8 @@ bool StagePresentation::sync_items(StageBattle& battle) {
         }
         vm->visual.translation = {item.x, item.y, item.z};
         side->visual.translation = {item.x, item.y, item.z};
-        if (vm->tick(random, animations.rate) < 0)
-            return fail("Item animation: " + vm->error);
-        if (side->tick(random, animations.rate) < 0)
-            return fail("Item side animation: " + side->error);
+        if (vm->tick(random, animations.rate) < 0) return fail("Item animation: " + vm->error);
+        if (side->tick(random, animations.rate) < 0) return fail("Item side animation: " + side->error);
         // 0042ee90:17-49：每件道具二选一绘制——item.y >= -8 只画本体 VM1；
         // 否则画 VM2 并把锚点钉到屏幕顶 y=8（离屏指示器）。port 旧实现无条件
         // 两枚都画，激光窗因此每帧多出 10 个 bullet3 sprite（u=0.5 列）。
@@ -1203,9 +1184,7 @@ bool StagePresentation::sync_items(StageBattle& battle) {
         vm->visual.layer = 15;
         side->visual.layer = 15;
         vm->visual.translation = {item.x, item.y, item.z};
-        side->visual.translation = on_screen
-            ? Vec3{item.x, item.y, item.z}
-            : Vec3{item.x, 8.0f, item.z};
+        side->visual.translation = on_screen ? Vec3{item.x, item.y, item.z} : Vec3{item.x, 8.0f, item.z};
     }
     return true;
 }
@@ -1223,8 +1202,7 @@ bool StagePresentation::graze_effect(const Vec3& position) {
     // 0x445900（caller 0x445958）: FUN_0046f820(out, 0x64, pos, 0.0, -1, 0)
     // → flags=0 → 0x46f3f0 主链尾插；effect.anm script 100；layer=-1（脚本
     // 自定）、anmArg=0。0x460c50 音效由 StageBattle 侧保留。
-    const u32 handle = animations.create(banks.effect, 100, -1, 0, position,
-                                         0.0f, false);
+    const u32 handle = animations.create(banks.effect, 100, -1, 0, position, 0.0f, false);
     if (!handle) return fail("Graze effect creation failed: " + animations.error);
     return true;
 }
@@ -1239,10 +1217,8 @@ bool StagePresentation::create_ecl_effect(i32 file, i32 script, const Vec3& posi
     // 弹幕贴图方向反（0x46f820 类创建才有时间重置语义）。
     const auto target = resolve_script_target(file, script);
     if (target.script < 0) return false;
-    const u32 effect_handle =
-        animations.create_preserve_ip(target.bank, target.script, -1, 2, position, 0, false);
-    if (!effect_handle)
-        return fail("Effect animation creation failed: " + animations.error);
+    const u32 effect_handle = animations.create_preserve_ip(target.bank, target.script, -1, 2, position, 0, false);
+    if (!effect_handle) return fail("Effect animation creation failed: " + animations.error);
     if (anm_random_observer)
         if (auto* vm = animations.registry.find(effect_handle))
             anm_random_observer(*vm, -12, file, script, i32(target.bank), 0, 0, 0, false);
@@ -1250,8 +1226,7 @@ bool StagePresentation::create_ecl_effect(i32 file, i32 script, const Vec3& posi
     return true;
 }
 
-bool StagePresentation::flush_ecl_animations(StageBattle& battle, StageEnemy* constructing,
-                                             bool slots_only) {
+bool StagePresentation::flush_ecl_animations(StageBattle& battle, StageEnemy* constructing, bool slots_only) {
     // ---- ECL 30x ANM 创建（0x4243e0：模板拷贝→立即 tick→主池头入链。
     // kind=0 特效路径 layer=-1（脚本自定层）、anmArg=0、位置清零（307 的
     // 敌机位仅特效路径用）；kind=1 槽位路径见下方 [+0x278]+7 注。
@@ -1264,10 +1239,11 @@ bool StagePresentation::flush_ecl_animations(StageBattle& battle, StageEnemy* co
     if (slots_only) pending.reserve(battle.sim.anm_effects.size());
     for (const auto& request : battle.sim.anm_effects) {
         if (request.kind == 0) {
-            if (slots_only) { pending.push_back(request); continue; }
-            if (!create_ecl_effect(request.file, request.script,
-                                   {request.x, request.y, request.z}))
-                return false;
+            if (slots_only) {
+                pending.push_back(request);
+                continue;
+            }
+            if (!create_ecl_effect(request.file, request.script, {request.x, request.y, request.z})) return false;
             continue;
         }
         // kind=1：303/306 槽位 VM（0x41fe80 / 0x41b260 case3）——重挂先回收
@@ -1281,8 +1257,7 @@ bool StagePresentation::flush_ecl_animations(StageBattle& battle, StageEnemy* co
         if (!enemy) continue;
         u32& handle = enemy->anm_slot_handle[request.slot];
         if (handle) {
-            if (!animations.retire(handle))
-                return fail("Slot animation retire failed: " + animations.error);
+            if (!animations.retire(handle)) return fail("Slot animation retire failed: " + animations.error);
             handle = 0;
         }
         if (request.script < 0) continue;
@@ -1295,10 +1270,9 @@ bool StagePresentation::flush_ecl_animations(StageBattle& battle, StageEnemy* co
         if (target.script < 0) return false;
         // 0x41fe80:38 / 0x41b260:161 走 0x4243e0（模板拷贝保留 IP），同
         // create_ecl_effect 注：不回卷，t=-1 立即块不重跑（op308 镜像）。
-        handle = animations.create_preserve_ip(target.bank, target.script,
-                                               enemy->mirror_script_base + 7, 2, {}, 0, false);
-        if (!handle)
-            return fail("Slot animation creation failed: " + animations.error);
+        handle =
+            animations.create_preserve_ip(target.bank, target.script, enemy->mirror_script_base + 7, 2, {}, 0, false);
+        if (!handle) return fail("Slot animation creation failed: " + animations.error);
         // 0x419731 镜像重挂基准：记录本次 slot0 创建的 bank 与本地→全局
         // 偏移（stage 合并表内脚本号按文件偏移；bullet/effect 恒 0）。
         if (request.slot == 0) {
@@ -1308,10 +1282,8 @@ bool StagePresentation::flush_ecl_animations(StageBattle& battle, StageEnemy* co
         create_color_step(animations.registry.find(handle));
         if (request.slot == 0 && request.opcode != 318) {
             if (AnmVm* vm = animations.registry.find(handle)) {
-                const float w = float(vm->visual.sprite_size.x *
-                                      vm->visual.scale.x);
-                const float h = float(vm->visual.sprite_size.y *
-                                      vm->visual.scale.y);
+                const float w = float(vm->visual.sprite_size.x * vm->visual.scale.x);
+                const float h = float(vm->visual.sprite_size.y * vm->visual.scale.y);
                 // 0x41fe80: +0x3f30=(vm+0x84)×(vm+0x64)、+0x3f34=(vm+0x80)×(vm+0x60)
                 enemy->anm_size_a[0] = h;
                 enemy->anm_size_a[1] = w;
@@ -1327,46 +1299,49 @@ bool StagePresentation::flush_ecl_animations(StageBattle& battle, StageEnemy* co
     return true;
 }
 
-bool StagePresentation::enemy_death(i32 file,i32 script,const Vec3& position,float angle) {
-    const auto target=resolve_script_target(file,script);
-    if(target.script<0)return false;
+bool StagePresentation::enemy_death(i32 file, i32 script, const Vec3& position, float angle) {
+    const auto target = resolve_script_target(file, script);
+    if (target.script < 0) return false;
     // 41ab7f ->46f820(bank,script,pos,angle,layer4,flags0).
-    return animations.create(target.bank,target.script,4,0,position,angle,false)!=0 ||
-           fail("Enemy death animation: "+animations.error);
+    return animations.create(target.bank, target.script, 4, 0, position, angle, false) != 0 ||
+           fail("Enemy death animation: " + animations.error);
 }
 
 void StagePresentation::retire_enemy_fog(u32 serial) {
-    const auto found=fog_handles_.find(serial);if(found==fog_handles_.end())return;
-    for(auto& handle:found->second)if(!animations.retire(handle))fail(animations.error);
+    const auto found = fog_handles_.find(serial);
+    if (found == fog_handles_.end()) return;
+    for (auto& handle : found->second)
+        if (!animations.retire(handle)) fail(animations.error);
     fog_handles_.erase(found);
 }
 
-bool StagePresentation::enemy_fog(StageEnemy& enemy,bool reset) {
-    if(reset||!enemy.fog)retire_enemy_fog(enemy.serial);
-    if(!enemy.fog)return error_.empty();
-    auto& handles=fog_handles_[enemy.serial];
-    for(size_t column=0;column<handles.size();++column) {
-        if(!handles[column]) {
+bool StagePresentation::enemy_fog(StageEnemy& enemy, bool reset) {
+    if (reset || !enemy.fog) retire_enemy_fog(enemy.serial);
+    if (!enemy.fog) return error_.empty();
+    auto& handles = fog_handles_[enemy.serial];
+    for (size_t column = 0; column < handles.size(); ++column) {
+        if (!handles[column]) {
             // 4159c0 ->43cac0: text82 samples @R, layer29, tail insertion,
             // mode12 strip and screen coordinates. 0x43cac0 replaces only the
             // draw-mode field (mask 0xd9ffffff | 0x18000000); 4159c0 then
             // clears VM+0x18 blend bits 0x1e0 (script82 op303 wrote 3 =
             // One/Zero) and render_flags 0x40000, leaving blend 0.
-            handles[column]=animations.create(0,82,29,0);
-            auto* vm=animations.registry.find(handles[column]);
-            if(!vm)return fail("Enemy fog render-target animation: "+animations.error);
-            vm->visual.flags=(vm->visual.flags&~0x3e000000u)|(12u<<25);
-            vm->visual.flags&=~0x1e0u;
-            vm->visual.render_flags&=~0x40000u;
-            vm->variables.integers[0]=17;
+            handles[column] = animations.create(0, 82, 29, 0);
+            auto* vm = animations.registry.find(handles[column]);
+            if (!vm) return fail("Enemy fog render-target animation: " + animations.error);
+            vm->visual.flags = (vm->visual.flags & ~0x3e000000u) | (12u << 25);
+            vm->visual.flags &= ~0x1e0u;
+            vm->visual.render_flags &= ~0x40000u;
+            vm->variables.integers[0] = 17;
             vm->geometry.screen_vertices.resize(34);
         }
-        auto* vm=animations.registry.find(handles[column]);
-        if(!vm)return fail("Enemy fog strip retired while enemy is live");
-        if(!reset)for(size_t row=0;row<17;++row) {
-            vm->geometry.screen_vertices[row*2]=enemy.fog->vertices[column*17+row];
-            vm->geometry.screen_vertices[row*2+1]=enemy.fog->vertices[(column+1)*17+row];
-        }
+        auto* vm = animations.registry.find(handles[column]);
+        if (!vm) return fail("Enemy fog strip retired while enemy is live");
+        if (!reset)
+            for (size_t row = 0; row < 17; ++row) {
+                vm->geometry.screen_vertices[row * 2] = enemy.fog->vertices[column * 17 + row];
+                vm->geometry.screen_vertices[row * 2 + 1] = enemy.fog->vertices[(column + 1) * 17 + row];
+            }
     }
     return true;
 }
@@ -1378,16 +1353,16 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     // 跳过，避免用上一帧的 battle_/shot_handles_ 做决定。
     battle_ = &battle;
     frame_synced_ = false;
-    bullet_cancel_handles_.erase(std::remove_if(bullet_cancel_handles_.begin(),bullet_cancel_handles_.end(),
-        [this](u32 handle){return !animations.registry.find(handle);}),bullet_cancel_handles_.end());
-    if(!sync_trance_effect(battle))return false;
+    bullet_cancel_handles_.erase(std::remove_if(bullet_cancel_handles_.begin(), bullet_cancel_handles_.end(),
+                                                [this](u32 handle) { return !animations.registry.find(handle); }),
+                                 bullet_cancel_handles_.end());
+    if (!sync_trance_effect(battle)) return false;
     if (!error_.empty()) return false;
     if (animations.scene_environment().paused) return true;
     auto* stage_resource = animations.resource(banks.stage);
     auto* bullet_resource = animations.resource(banks.bullet);
     auto* player_resource = animations.resource(banks.player);
-    if (!stage_resource || !bullet_resource || !player_resource)
-        return fail("Stage presentation banks unavailable");
+    if (!stage_resource || !bullet_resource || !player_resource) return fail("Stage presentation banks unavailable");
     // The next battle step consumes this snapshot before sim.step_frame().
     // It is deliberately refreshed only after the previous frame's VM tick.
     battle.begin_player_shot_geometry_snapshot();
@@ -1433,9 +1408,8 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 // 主路径：0x419694 读 inner+0x78（mirror_velocity_x）。
                 // 过渡帧（306/构造当帧、原版 0x80000 自门空转、不比较朝向）
                 // 保留旧位置差分回退，供既有单测夹具使用。
-                const float vx = enemy->mirror_ready
-                    ? enemy->mirror_velocity_x
-                    : float(enemy->position[0] - enemy->mirror_prev_x);
+                const float vx =
+                    enemy->mirror_ready ? enemy->mirror_velocity_x : float(enemy->position[0] - enemy->mirror_prev_x);
                 const i32 dir = vx > 0.03f ? 1 : (vx < -0.03f ? -1 : 0);
                 if (dir != enemy->mirror_dir) {
                     // 0x4196e1-0x41970e：
@@ -1444,9 +1418,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                     //           new 0 → 4
                     //   old  0: 0x4196fd setne/inc → new -1 → 1，new +1 → 2
                     // 相等分支已在 0x4196db je 0x41982f 跳过，故 old==dir 不可达。
-                    const i32 step = dir == 0
-                        ? (enemy->mirror_dir < 0 ? 3 : 4)
-                        : (dir < 0 ? 1 : 2);
+                    const i32 step = dir == 0 ? (enemy->mirror_dir < 0 ? 3 : 4) : (dir < 0 ? 1 : 2);
                     u32& handle = enemy->anm_slot_handle[0];
                     // 0x41974a-0x41975b：继承旧槽 VM 的脚本位置
                     // （vm+0x3c/0x40/0x44 = variables.position，不是 ECL 位），
@@ -1455,8 +1427,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                     const AnmVm* old_vm = handle ? animations.registry.find(handle) : nullptr;
                     if (old_vm) old_pos = old_vm->variables.position;
                     if (handle) {
-                        if (!animations.retire(handle))
-                            return fail("Mirror retire failed: " + animations.error);
+                        if (!animations.retire(handle)) return fail("Mirror retire failed: " + animations.error);
                         handle = 0;
                     }
                     // 槽 0 脚本号 = 306 记录（enemy->anm_base_script）；
@@ -1478,21 +1449,15 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                     //（与 0x4243e0 同构，保留 IP），同上述 preserve_ip 依据。
                     if (enemy->anm_slot0_bank >= 0) {
                         handle = animations.create_preserve_ip(
-                            enemy->anm_slot0_bank,
-                            enemy->anm_slot0_script_offset +
-                                enemy->anm_base_script + step,
+                            enemy->anm_slot0_bank, enemy->anm_slot0_script_offset + enemy->anm_base_script + step,
                             enemy->mirror_script_base + 7, 0, old_pos, 0, false);
                     } else {
-                        const auto target = resolve_script_target(
-                            enemy->anm_file, enemy->anm_base_script + step);
+                        const auto target = resolve_script_target(enemy->anm_file, enemy->anm_base_script + step);
                         if (target.script < 0) return false;
                         handle = animations.create_preserve_ip(target.bank, target.script,
-                                                   enemy->mirror_script_base + 7,
-                                                   0, old_pos, 0, false);
+                                                               enemy->mirror_script_base + 7, 0, old_pos, 0, false);
                     }
-                    if (!handle)
-                        return fail("Mirror animation creation failed: " +
-                                    animations.error);
+                    if (!handle) return fail("Mirror animation creation failed: " + animations.error);
                     create_color_step(animations.registry.find(handle));
                     enemy->mirror_dir = dir;  // 0x419827 mov +0x270 = new dir
                 }
@@ -1502,17 +1467,15 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 if (AnmVm* vm = animations.registry.find(enemy->anm_slot_handle[slot])) {
                     // 41a8a0 adds inner+160 offsets unless flag08000000
                     // selects direct enemy-position following.
-                    const Vec3 offset = enemy->flags & 0x8000000u
-                        ? Vec3{} : enemy->anm_slot_offset[slot];
-                    vm->visual.translation = {offset.x + enemy->position[0],
-                                              offset.y + enemy->position[1],
+                    const Vec3 offset = enemy->flags & 0x8000000u ? Vec3{} : enemy->anm_slot_offset[slot];
+                    vm->visual.translation = {offset.x + enemy->position[0], offset.y + enemy->position[1],
                                               enemy->position[2] + offset.z};
                     // 41a9d1..41aa0c: op424 follows inner+78/+7c motion,
                     // without the bullet draw path's pi/2 offset. The direct
                     // position branch (08000000) does not write rotation.
                     if (!(enemy->flags & 0x8000000u) && (vm->visual.render_flags & 0x40u)) {
-                        vm->variables.rotation.z = float(std::atan2(double(enemy->motion_delta[1]),
-                                                                   double(enemy->motion_delta[0])));
+                        vm->variables.rotation.z =
+                            float(std::atan2(double(enemy->motion_delta[1]), double(enemy->motion_delta[0])));
                         vm->visual.flags |= 4u;
                     }
                 }
@@ -1524,48 +1487,48 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     // 与 oracle 极小环境同构——对拍窗语义）
     std::vector<u32> alive;
     if (!enemies_from_ecl) {
-    for (auto& enemy : battle.sim.enemies) {
-        if (enemy->dead) continue;
-        alive.push_back(enemy->serial);
-        EnemyVisual* slot = nullptr;
-        for (auto& visual : enemies_)
-            if (visual.serial == enemy->serial) {
-                slot = &visual;
-                break;
+        for (auto& enemy : battle.sim.enemies) {
+            if (enemy->dead) continue;
+            alive.push_back(enemy->serial);
+            EnemyVisual* slot = nullptr;
+            for (auto& visual : enemies_)
+                if (visual.serial == enemy->serial) {
+                    slot = &visual;
+                    break;
+                }
+            const i32 script = enemy->anm_script[0];
+            if (script < 0) continue;  // 无本体脚本（纯发射器敌机）
+            if (!slot) {
+                enemies_.push_back(EnemyVisual{enemy->serial, -1, std::make_unique<AnmVm>()});
+                slot = &enemies_.back();
             }
-        const i32 script = enemy->anm_script[0];
-        if (script < 0) continue;  // 无本体脚本（纯发射器敌机）
-        if (!slot) {
-            enemies_.push_back(EnemyVisual{enemy->serial, -1, std::make_unique<AnmVm>()});
-            slot = &enemies_.back();
-        }
-        if (!slot->vm->resource || slot->script != script) {
-            slot->vm->environment = &animations.scene_environment();
-            slot->vm->object_host = &animations;
-            if (!slot->vm->bind(*stage_resource, u32(script)))
-                return fail("Enemy animation binding failed: " + slot->vm->error);
-            slot->script = script;
-        }
-        slot->vm->visual.translation = {enemy->position[0] + kGameToScreenX,
-                                        enemy->position[1] + kGameToScreenY, enemy->position[2]};
-        if (slot->vm->tick(random, animations.rate) < 0) return fail("Enemy animation: " + slot->vm->error);
-    }
-    // 消失的敌机：销毁其 ANM 子树（子体可能仍挂 registry，release_tree 归还）。
-    for (size_t i = 0; i < enemies_.size();) {
-        bool keep = false;
-        for (u32 serial : alive)
-            if (enemies_[i].serial == serial) {
-                keep = true;
-                break;
+            if (!slot->vm->resource || slot->script != script) {
+                slot->vm->environment = &animations.scene_environment();
+                slot->vm->object_host = &animations;
+                if (!slot->vm->bind(*stage_resource, u32(script)))
+                    return fail("Enemy animation binding failed: " + slot->vm->error);
+                slot->script = script;
             }
-        if (keep) {
-            ++i;
-            continue;
+            slot->vm->visual.translation = {enemy->position[0] + kGameToScreenX, enemy->position[1] + kGameToScreenY,
+                                            enemy->position[2]};
+            if (slot->vm->tick(random, animations.rate) < 0) return fail("Enemy animation: " + slot->vm->error);
         }
-        if (enemies_[i].vm && !animations.release_tree(*enemies_[i].vm))
-            return fail("Enemy animation release failed");
-        enemies_.erase(enemies_.begin() + i);
-    }
+        // 消失的敌机：销毁其 ANM 子树（子体可能仍挂 registry，release_tree 归还）。
+        for (size_t i = 0; i < enemies_.size();) {
+            bool keep = false;
+            for (u32 serial : alive)
+                if (enemies_[i].serial == serial) {
+                    keep = true;
+                    break;
+                }
+            if (keep) {
+                ++i;
+                continue;
+            }
+            if (enemies_[i].vm && !animations.release_tree(*enemies_[i].vm))
+                return fail("Enemy animation release failed");
+            enemies_.erase(enemies_.begin() + i);
+        }
     }  // !enemies_from_ecl
 
     // Production bullet ANM is advanced by StageSim at birth/update time.
@@ -1578,92 +1541,89 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             if (bullet.alive) live_bullet_generations_.push_back(bullet.generation);
         std::sort(live_bullet_generations_.begin(), live_bullet_generations_.end());
         for (auto& slot : bullets_)
-            slot.active = std::binary_search(live_bullet_generations_.begin(),
-                                             live_bullet_generations_.end(), slot.generation);
+            slot.active =
+                std::binary_search(live_bullet_generations_.begin(), live_bullet_generations_.end(), slot.generation);
         rebuild_bullet_lookup();
     } else {
-    // ---- 敌弹：bullet.anm 脚本 + 外观表精灵源（出生中断 2，0x40e840 尾）----
-    if (bullets_.size() < battle.sim.bullets.size()) {
-        const size_t wanted = battle.sim.bullets.size();
-        while (bullets_.size() < wanted) bullets_.push_back(BulletSlot{});
-    }
-    // StageSim compacts its bullet vector after every update.  Match existing
-    // VMs by birth identity rather than by the compacted index; the original
-    // bullet manager keeps a distinct ANM root per live bullet.
-    std::vector<bool> matched(bullets_.size(), false);
-    auto reset_slot = [&](BulletSlot& slot) -> bool {
-        if (slot.vm && slot.vm->resource && !animations.release_tree(*slot.vm))
-            return fail("Bullet animation release failed: " + animations.error);
-        slot.vm.reset();
-        slot.script = -1;
-        slot.color = -1;
-        slot.generation = 0;
-        slot.active = false;
-        return true;
-    };
-    for (const auto& bullet : battle.sim.bullets) {
-        const auto* appearance = bullet_appearance(i32(bullet.sprite));
-        size_t slot_index = bullets_.size();
-        for (size_t i = 0; i < bullets_.size(); ++i) {
-            if (!matched[i] && bullets_[i].active &&
-                bullets_[i].generation == bullet.generation) {
-                slot_index = i;
-                break;
-            }
+        // ---- 敌弹：bullet.anm 脚本 + 外观表精灵源（出生中断 2，0x40e840 尾）----
+        if (bullets_.size() < battle.sim.bullets.size()) {
+            const size_t wanted = battle.sim.bullets.size();
+            while (bullets_.size() < wanted)
+                bullets_.push_back(BulletSlot{});
         }
-        if (slot_index == bullets_.size()) {
-            // Reuse an inactive storage slot only after retiring its old VM;
-            // otherwise a same-script/color bullet inherits its old timer.
+        // StageSim compacts its bullet vector after every update.  Match existing
+        // VMs by birth identity rather than by the compacted index; the original
+        // bullet manager keeps a distinct ANM root per live bullet.
+        std::vector<bool> matched(bullets_.size(), false);
+        auto reset_slot = [&](BulletSlot& slot) -> bool {
+            if (slot.vm && slot.vm->resource && !animations.release_tree(*slot.vm))
+                return fail("Bullet animation release failed: " + animations.error);
+            slot.vm.reset();
+            slot.script = -1;
+            slot.color = -1;
+            slot.generation = 0;
+            slot.active = false;
+            return true;
+        };
+        for (const auto& bullet : battle.sim.bullets) {
+            const auto* appearance = bullet_appearance(i32(bullet.sprite));
+            size_t slot_index = bullets_.size();
             for (size_t i = 0; i < bullets_.size(); ++i) {
-                if (!matched[i] && !bullets_[i].active) {
+                if (!matched[i] && bullets_[i].active && bullets_[i].generation == bullet.generation) {
                     slot_index = i;
                     break;
                 }
             }
             if (slot_index == bullets_.size()) {
-                bullets_.push_back(BulletSlot{});
-                matched.push_back(false);
+                // Reuse an inactive storage slot only after retiring its old VM;
+                // otherwise a same-script/color bullet inherits its old timer.
+                for (size_t i = 0; i < bullets_.size(); ++i) {
+                    if (!matched[i] && !bullets_[i].active) {
+                        slot_index = i;
+                        break;
+                    }
+                }
+                if (slot_index == bullets_.size()) {
+                    bullets_.push_back(BulletSlot{});
+                    matched.push_back(false);
+                }
+                if (!reset_slot(bullets_[slot_index])) return false;
             }
-            if (!reset_slot(bullets_[slot_index])) return false;
+            matched[slot_index] = true;
+            BulletSlot& slot = bullets_[slot_index];
+            slot.active = true;
+            slot.generation = bullet.generation;
+            slot.source.type = i32(bullet.sprite);
+            slot.source.color = i32(bullet.subtype);
+            const i32 script = appearance ? appearance->script : -1;
+            if (script < 0) continue;  // 未入表的弹型：无视觉（碰撞仍生效）
+            if (!slot.vm) slot.vm = std::make_unique<AnmVm>();
+            // 槽位复用（池按下标分配）：弹色变化 = 不同弹体，重绑并重放出生中断。
+            if (!slot.vm->resource || slot.script != script || slot.color != i32(bullet.subtype)) {
+                slot.vm->environment = &animations.scene_environment();
+                slot.vm->object_host = &animations;
+                if (!slot.vm->bind(*bullet_resource, u32(script)))
+                    return fail("Bullet animation binding failed: " + slot.vm->error);
+                slot.vm->sprite_source = &slot.source;
+                // 461cb0 executes the script's initialization before40e840 sends
+                // the birth interrupt. Skipping it loses sprite/draw-mode setup.
+                if (slot.vm->tick(random, animations.rate) < 0) return fail("Bullet initialization: " + slot.vm->error);
+                slot.vm->visual.render_flags |= 0x40000;
+                slot.vm->pending_interrupt = bullet.state == 2 && bullet.delay ? bullet.delay : 2;
+                slot.script = script;
+                slot.color = i32(bullet.subtype);
+            }
+            slot.vm->visual.translation = {bullet.x + kGameToScreenX, bullet.y + kGameToScreenY, bullet.z};
+            // 同上：原版不写 VM rotation，脚本 op401 是唯一来源。
+            if (slot.vm->tick(random, animations.rate) < 0) return fail("Bullet animation: " + slot.vm->error);
         }
-        matched[slot_index] = true;
-        BulletSlot& slot = bullets_[slot_index];
-        slot.active = true;
-        slot.generation = bullet.generation;
-        slot.source.type = i32(bullet.sprite);
-        slot.source.color = i32(bullet.subtype);
-        const i32 script = appearance ? appearance->script : -1;
-        if (script < 0) continue;  // 未入表的弹型：无视觉（碰撞仍生效）
-        if (!slot.vm) slot.vm = std::make_unique<AnmVm>();
-        // 槽位复用（池按下标分配）：弹色变化 = 不同弹体，重绑并重放出生中断。
-        if (!slot.vm->resource || slot.script != script || slot.color != i32(bullet.subtype)) {
-            slot.vm->environment = &animations.scene_environment();
-            slot.vm->object_host = &animations;
-            if (!slot.vm->bind(*bullet_resource, u32(script)))
-                return fail("Bullet animation binding failed: " + slot.vm->error);
-            slot.vm->sprite_source = &slot.source;
-            // 461cb0 executes the script's initialization before40e840 sends
-            // the birth interrupt. Skipping it loses sprite/draw-mode setup.
-            if (slot.vm->tick(random, animations.rate) < 0) return fail("Bullet initialization: " + slot.vm->error);
-            slot.vm->visual.render_flags |= 0x40000;
-            slot.vm->pending_interrupt = bullet.state == 2 && bullet.delay ? bullet.delay : 2;
-            slot.script = script;
-            slot.color = i32(bullet.subtype);
-        }
-        slot.vm->visual.translation = {bullet.x + kGameToScreenX, bullet.y + kGameToScreenY,
-                                       bullet.z};
-        // 同上：原版不写 VM rotation，脚本 op401 是唯一来源。
-        if (slot.vm->tick(random, animations.rate) < 0) return fail("Bullet animation: " + slot.vm->error);
-    }
-    for (size_t i = 0; i < bullets_.size(); ++i)
-        if (!matched[i]) bullets_[i].active = false;
-
+        for (size_t i = 0; i < bullets_.size(); ++i)
+            if (!matched[i]) bullets_[i].active = false;
     }
 
     // ---- 自机弹：.sht 弹型脚本（plXX.anm，旋转模式 1 随弹向）；无 .sht
     // 会话回退精灵直贴（player_shot_sprite_） ----
-    if (shot_handles_.size() < battle.shots.size())
-        shot_handles_.resize(battle.shots.size(), 0);
+    if (shot_handles_.size() < battle.shots.size()) shot_handles_.resize(battle.shots.size(), 0);
     if (shots_.size() < shot_handles_.size()) shots_.resize(shot_handles_.size());
     shot_generations_.resize(shot_handles_.size());
     for (size_t i = 0; i < shot_handles_.size(); ++i) {
@@ -1674,8 +1634,8 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             bool fresh_slot = false;
             if (shot_generations_[i] != shot.generation) {
                 size_t source = i + 1;
-                while (source < shot_handles_.size() &&
-                       shot_generations_[source] != shot.generation) ++source;
+                while (source < shot_handles_.size() && shot_generations_[source] != shot.generation)
+                    ++source;
                 if (source < shot_handles_.size()) {
                     std::swap(shot_handles_[i], shot_handles_[source]);
                     std::swap(shots_[i], shots_[source]);
@@ -1683,8 +1643,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 } else {
                     if (u32 stale = shot_handles_[i]) {
                         if (auto* old = animations.registry.find(stale))
-                            if (!animations.release_tree(*old))
-                                return fail("Player shot animation release failed");
+                            if (!animations.release_tree(*old)) return fail("Player shot animation release failed");
                     }
                     shot_handles_[i] = 0;
                     if (shots_[i]) {
@@ -1723,8 +1682,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                     vm->initialize_unbound();
                     vm->resource = player_resource;
                     vm->source_script = -1;  // 回退精灵无脚本身份（重绑判定用）
-                    if (!vm->select_sprite(player_shot_sprite_))
-                        return fail("Player shot sprite unavailable");
+                    if (!vm->select_sprite(player_shot_sprite_)) return fail("Player shot sprite unavailable");
                     vm->visible = true;
                     vm->visual.flags |= 1;
                     vm->visual.render_flags |= 0x200;
@@ -1790,29 +1748,26 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             // 快照取 post-tick 状态），四角与快照逐位相等，判定与 battle 侧
             // consume 完全同数据同条件，无启发式。
             const i32 corpse_script = i < battle.shots.size() ? battle.shots[i].script : -1;
-            AnmVm* vm = corpse_script >= 0
-                            ? animations.registry.find(shot_handles_[i])
-                            : (shots_[i] ? shots_[i].get() : nullptr);
+            AnmVm* vm = corpse_script >= 0 ? animations.registry.find(shot_handles_[i])
+                                           : (shots_[i] ? shots_[i].get() : nullptr);
             bool fade = false;
             PlayerShot corpse_shot{};
             if (i < battle.shots.size() && !battle.shots[i].alive) {
                 const PlayerShot& shot = battle.shots[i];
                 corpse_shot = shot;
-                const bool snapshotted = shot_generations_[i] == shot.generation && vm &&
-                                         vm->source_script == shot.script && shot.type != 2;
+                const bool snapshotted =
+                    shot_generations_[i] == shot.generation && vm && vm->source_script == shot.script && shot.type != 2;
                 bool outside = false;
                 if (snapshotted && shot.age - 1 > 9) {  // consume 的快照龄门
                     Vec3 corners[4];
-                    if (!anm_quad_positions(*vm, corners))
-                        return fail("Player shot death geometry unavailable");
+                    if (!anm_quad_positions(*vm, corners)) return fail("Player shot death geometry unavailable");
                     outside = true;
                     for (const auto& corner : corners)
-                        outside = outside && (corner.x <= 128.0f || corner.x >= 512.0f ||
-                                              corner.y <= 16.0f || corner.y >= 464.0f);
+                        outside = outside &&
+                                  (corner.x <= 128.0f || corner.x >= 512.0f || corner.y <= 16.0f || corner.y >= 464.0f);
                 }
                 fade = !outside && vm && shot.script >= 0 &&
-                       shot_faded_generations_.find(shot.generation) ==
-                           shot_faded_generations_.end() &&
+                       shot_faded_generations_.find(shot.generation) == shot_faded_generations_.end() &&
                        shot_script_has_interrupt(*player_resource, u32(shot.script), 1);
             }
             if (fade) {
@@ -1831,8 +1786,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 corpse.sine_moving = corpse_shot.sine_moving;
                 corpse.sine_motion = corpse_shot.sine_motion;
                 vm->pending_interrupt = 1;  // 0x446bf0: VM+0x4a0 = 1
-                vm->visual.translation = {corpse.x + kGameToScreenX,
-                                          corpse.y + kGameToScreenY,
+                vm->visual.translation = {corpse.x + kGameToScreenX, corpse.y + kGameToScreenY,
                                           corpse.sine_moving ? 0.0f : 0.1f};
                 vm->variables.rotation.z = corpse.angle;
                 shot_faded_generations_.insert(corpse.generation);
@@ -1881,8 +1835,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 corpse.x = round001(float(corpse.x + vx));
                 corpse.y = round001(float(corpse.y + vy));
             }
-            vm->visual.translation = {corpse.x + kGameToScreenX,
-                                      corpse.y + kGameToScreenY,
+            vm->visual.translation = {corpse.x + kGameToScreenX, corpse.y + kGameToScreenY,
                                       corpse.sine_moving ? 0.0f : 0.1f};
             vm->variables.rotation.z = corpse.angle;
         }
@@ -1896,8 +1849,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
         if (!player_) player_ = std::make_unique<AnmVm>();
         bool rebound = false;
         if (!player_->resource || tilt != player_tilt_) {
-            const i32 script = tilt < 0 ? 1 : tilt > 0 ? 3
-                                : player_tilt_ < 0 ? 2 : player_tilt_ > 0 ? 4 : 0;
+            const i32 script = tilt < 0 ? 1 : tilt > 0 ? 3 : player_tilt_ < 0 ? 2 : player_tilt_ > 0 ? 4 : 0;
             if (player_->resource) animations.release_tree(*player_);
             player_->environment = &animations.scene_environment();
             player_->object_host = &animations;
@@ -1908,15 +1860,13 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             player_script_ = script;
             rebound = true;
         }
-        player_->visual.translation = {battle.player_x + kGameToScreenX,
-                                       battle.player_y + kGameToScreenY, 0.0f};
+        player_->visual.translation = {battle.player_x + kGameToScreenX, battle.player_y + kGameToScreenY, 0.0f};
         if (player_->tick(random, animations.rate) < 0) return fail("Player animation: " + player_->error);
         // 原生 0x442960 经 0x46f820 创建时 initial tick 一次，同帧主链
         // 0x46f170 再 tick 一次（出生/换向重绑帧双拍）；port 的 player_ 不入链，
         // 旧实现只 tick 一次，pl01 换帧边界整体晚 1 帧（f5/f10/f15 vs 原生
         // f4/f9/f14）。pl01 script0-4 无 RNG 指令，补拍不影响 core。
-        if (rebound && player_->tick(random, animations.rate) < 0)
-            return fail("Player animation: " + player_->error);
+        if (rebound && player_->tick(random, animations.rate) < 0) return fail("Player animation: " + player_->error);
         // 0044378x：无敌时每3个状态帧使用蓝色secondary通道；不是隐藏精灵。
         // 原生 00443240.c:242-243 在 phase_frame 递增前比较
         // (phase_frame != prev && phase_frame % 3 == 0)；port 的 sync 在
@@ -1924,10 +1874,8 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
         // pre-increment 快照（phase_frame_previous）判定，蓝帧恢复
         // 0,3,6,9,12,15（web 旧值 2,5,8,11,14 早一帧）。
         player_->visual.flags &= ~0x60000u;
-        const bool phase_advanced =
-            battle.player_phase_frame != battle.player_phase_frame_previous;
-        if (battle.invulnerable > 0 && phase_advanced &&
-            battle.player_phase_frame_previous % 3 == 0) {
+        const bool phase_advanced = battle.player_phase_frame != battle.player_phase_frame_previous;
+        if (battle.invulnerable > 0 && phase_advanced && battle.player_phase_frame_previous % 3 == 0) {
             player_->visual.secondary_color = 0xff0000ffu;
             player_->visual.flags |= 0x20000u;
         }
@@ -1946,35 +1894,26 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
 std::string StagePresentation::debug_report() const {
     std::string report;
     char line[256];
-    std::snprintf(line, sizeof line,
-                  "enemies=%zu bullets=%zu shots=%zu player=%d spirits=%zu items=%zu\n",
+    std::snprintf(line, sizeof line, "enemies=%zu bullets=%zu shots=%zu player=%d spirits=%zu items=%zu\n",
                   enemies_.size(),
-                  bullets_.empty() ? 0 : std::count_if(bullets_.begin(), bullets_.end(),
-                                                       [](const BulletSlot& slot) {
-                                                           return slot.active && slot.vm;
-                                                       }),
+                  bullets_.empty() ? 0
+                                   : std::count_if(bullets_.begin(), bullets_.end(),
+                                                   [](const BulletSlot& slot) { return slot.active && slot.vm; }),
                   shot_handles_.size(), player_ ? 1 : 0,
                   size_t(std::count_if(spirit_handles_.begin(), spirit_handles_.end(),
-                                       [this](u32 handle) {
-                                           return handle && animations.registry.find(handle);
-                                       })),
+                                       [this](u32 handle) { return handle && animations.registry.find(handle); })),
                   size_t(std::count_if(item_vms_.begin(), item_vms_.end(),
-                                       [](const std::unique_ptr<AnmVm>& vm) {
-                                           return vm != nullptr;
-                                       })));
+                                       [](const std::unique_ptr<AnmVm>& vm) { return vm != nullptr; })));
     report += line;
-    auto describe = [&](const char* kind, const AnmVm& vm, i32 type, i32 color,
-                        u32 generation) {
+    auto describe = [&](const char* kind, const AnmVm& vm, i32 type, i32 color, u32 generation) {
         const auto* source = vm.sprite_resource ? vm.sprite_resource : vm.resource;
         std::snprintf(line, sizeof line,
                       "  %s script=%d sprite=%d size=%.0fx%.0f scale=%.2fx%.2f "
                       "pos=(%.0f,%.0f) rot=%.2f mode=%u blend=%u type=%d color=%d age=%d gen=%u\n",
-                      kind, vm.source_script, vm.visual.sprite,
-                      double(vm.visual.sprite_size.x), double(vm.visual.sprite_size.y),
-                      double(vm.visual.scale.x), double(vm.visual.scale.y),
-                      double(vm.visual.translation.x), double(vm.visual.translation.y),
-                      double(vm.variables.rotation.z), unsigned(vm.visual.draw_mode()),
-                      unsigned(vm.visual.blend_mode()), type, color, vm.age.current,
+                      kind, vm.source_script, vm.visual.sprite, double(vm.visual.sprite_size.x),
+                      double(vm.visual.sprite_size.y), double(vm.visual.scale.x), double(vm.visual.scale.y),
+                      double(vm.visual.translation.x), double(vm.visual.translation.y), double(vm.variables.rotation.z),
+                      unsigned(vm.visual.draw_mode()), unsigned(vm.visual.blend_mode()), type, color, vm.age.current,
                       generation);
         report += line;
         (void)source;
@@ -1988,8 +1927,7 @@ std::string StagePresentation::debug_report() const {
         ++shown;
     }
     if (!shot_handles_.empty() && shot_handles_[0])
-        if (auto* vm = animations.registry.find(shot_handles_[0]))
-            describe("shot", *vm, player_shot_sprite_, -1, 0);
+        if (auto* vm = animations.registry.find(shot_handles_[0])) describe("shot", *vm, player_shot_sprite_, -1, 0);
     if (player_) describe("player", *player_, player_script_, player_tilt_, 0);
     auto describe_handle = [&](const char* kind, u32 handle, i32 index) {
         if (auto* vm = animations.registry.find(handle)) describe(kind, *vm, index, -1, 0);
@@ -2008,8 +1946,7 @@ bool StagePresentation::draw(u32 pass) {
     if (!(debug_pass_mask >> pass & 1u)) return true;  // 调试过滤
     const auto one = [&](AnmVm& vm) {
         if (!vm.visible) return true;
-        return renderer.draw(vm) != -2 || fail(renderer.error.empty() ? "Stage draw failed"
-                                                                      : renderer.error);
+        return renderer.draw(vm) != -2 || fail(renderer.error.empty() ? "Stage draw failed" : renderer.error);
     };
     switch (pass) {
     case 0:
@@ -2042,10 +1979,9 @@ bool StagePresentation::draw(u32 pass) {
         for (auto& slot : bullets_)
             if (slot.active && slot.vm) draw_bullet_order_.push_back(&slot);
         std::sort(draw_bullet_order_.begin(), draw_bullet_order_.end(),
-            [](const BulletSlot* a, const BulletSlot* b) {
-                return a->generation > b->generation;
-            });
-        for (auto* slot : draw_bullet_order_) one(*slot->vm);
+                  [](const BulletSlot* a, const BulletSlot* b) { return a->generation > b->generation; });
+        for (auto* slot : draw_bullet_order_)
+            one(*slot->vm);
         if (renderer.always_hitbox && battle_) {
             if (battle_->player_visible() && battle_->player_phase == StageBattle::PlayerPhase::Active &&
                 !battle_->focus) {
@@ -2059,8 +1995,8 @@ bool StagePresentation::draw(u32 pass) {
                 marker.visual.set_layer(12);
                 marker.visual.scale = {1.f, 1.f};
                 marker.visual.color = 0xffffffffu;
-                marker.visual.translation = {battle_->player_x + kGameToScreenX,
-                                             battle_->player_y + kGameToScreenY, 0.f};
+                marker.visual.translation = {battle_->player_x + kGameToScreenX, battle_->player_y + kGameToScreenY,
+                                             0.f};
                 if (!one(marker)) return false;
             }
         }

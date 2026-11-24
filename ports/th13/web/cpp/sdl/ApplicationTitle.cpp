@@ -1,6 +1,6 @@
 // 标题期平台服务（th15 ApplicationTitle.cpp 裁剪：音乐请求先落桩）。
-#include "ApplicationState.hpp"
 #include "../game/AnmTextureDecode.hpp"
+#include "ApplicationState.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -10,15 +10,11 @@
 namespace th13::sdl {
 
 void ApplicationState::connect_record_menus() {
-    player_data_host.count_records = [](i32 difficulty) {
-        return FileStore::player_data_record_count(difficulty);
-    };
-    player_data_host.read_record = [this](i32 difficulty, i32 character, i32 ordinal,
-                                         TitlePlayerDataRecord& out) {
+    player_data_host.count_records = [](i32 difficulty) { return FileStore::player_data_record_count(difficulty); };
+    player_data_host.read_record = [this](i32 difficulty, i32 character, i32 ordinal, TitlePlayerDataRecord& out) {
         return files.player_data_record(difficulty, character, ordinal, out);
     };
-    player_data_host.read_summary = [this](i32 difficulty, i32 character,
-                                          TitlePlayerDataSummary& out) {
+    player_data_host.read_summary = [this](i32 difficulty, i32 character, TitlePlayerDataSummary& out) {
         return files.player_data_summary(difficulty, character, out);
     };
     spell_practice_host.encountered = [this](i32 id) {
@@ -35,9 +31,8 @@ void ApplicationState::connect_record_menus() {
     };
     // The original catalog is shared with production ECL; missing assets stay
     // unavailable and retain the catalog error for diagnosis.
-    if (spell_catalog.load([this](const std::string& name, std::vector<u8>& bytes) {
-            return read(name, bytes, false);
-        }))
+    if (spell_catalog.load(
+            [this](const std::string& name, std::vector<u8>& bytes) { return read(name, bytes, false); }))
         spell_practice_host.catalog = &spell_catalog;
 }
 
@@ -118,10 +113,8 @@ bool ApplicationState::queue_run(i32 stage) {
     // cold_entry 块（那是 0x42b990 同段的 replay 冷启动副本），power 停在
     // HudPlayerState 默认 100——EX/stage2+ 练习与 Retry 应为 4.00 而未达。
     // 换关 0xc 延续（dcc30==0）不经此入口，跨关 power 保留。
-    const i32 entry_steps =
-        (selected_stage > 1 || (progress.run_mode_flags & 0x30u) == 0x20u) ? 4 : 1;
-    selection_player.power =
-        std::min(entry_steps * selection_player.power_step, selection_player.max_power);
+    const i32 entry_steps = (selected_stage > 1 || (progress.run_mode_flags & 0x30u) == 0x20u) ? 4 : 1;
+    selection_player.power = std::min(entry_steps * selection_player.power_step, selection_player.max_power);
     selection_score = HudScoreState{};
     progress.continues = 0;
     progress.life_piece_threshold_index = 0;
@@ -148,16 +141,13 @@ bool ApplicationState::queue_run(i32 stage) {
 
 bool ApplicationState::can_start_spell_practice(const SpellPracticeCommand& command) const {
     // 004576c0 writes stage, character, intrinsic rank and selected card together.
-    if (command.action != SpellPracticeAction::Launch || command.stage < 1 ||
-        command.stage > 7 || command.character < 0 || command.character >= 4 ||
-        !ecl_difficulty_mask(command.rank) || command.spell_id < 0 ||
+    if (command.action != SpellPracticeAction::Launch || command.stage < 1 || command.stage > 7 ||
+        command.character < 0 || command.character >= 4 || !ecl_difficulty_mask(command.rank) || command.spell_id < 0 ||
         command.spell_id >= kSaveSpellSlots)
         return false;
-    const auto* entry = spell_catalog.variant(command.stage, command.spell_slot,
-                                               command.difficulty);
+    const auto* entry = spell_catalog.variant(command.stage, command.spell_slot, command.difficulty);
     if (!entry || entry->id != command.spell_id || entry->rank != command.rank ||
-        !spell_practice_host.spell_variant_available(command.stage, command.spell_slot,
-                                                      command.difficulty))
+        !spell_practice_host.spell_variant_available(command.stage, command.spell_slot, command.difficulty))
         return false;
     return true;
 }
@@ -182,12 +172,10 @@ bool ApplicationState::request_destination(i32 raw) {
     // 回传，不静默丢 dcc24 请求）。
     switch (raw) {
     case 0xc:
-        if (pending_destination != i32(Destination::Run))
-            pending_destination = i32(Destination::NextStage);
+        if (pending_destination != i32(Destination::Run)) pending_destination = i32(Destination::NextStage);
         return true;
     case 0xf:
-        if (pending_destination != i32(Destination::Run))
-            pending_destination = i32(Destination::Ending);
+        if (pending_destination != i32(Destination::Run)) pending_destination = i32(Destination::Ending);
         return true;
     case 0x10:
         // Ending 脚本 END（0x416610 置 DAT_004dcc24=0x10）→ 0x43c1c0 case0x10
@@ -195,14 +183,12 @@ bool ApplicationState::request_destination(i32 raw) {
         pending_destination = i32(Destination::AfterEnding);
         return true;
     case 4:
-        if (pending_destination != i32(Destination::Run) &&
-            pending_destination != i32(Destination::NextStage))
+        if (pending_destination != i32(Destination::Run) && pending_destination != i32(Destination::NextStage))
             pending_destination = i32(Destination::Title);
         return true;
     case 0xa:
     case 0xe:
-        if (pending_destination != i32(Destination::NextStage))
-            pending_destination = i32(Destination::Run);
+        if (pending_destination != i32(Destination::NextStage)) pending_destination = i32(Destination::Run);
         return true;
     default:
         return fail("Unmapped post-game destination: " + std::to_string(raw));
@@ -252,12 +238,9 @@ bool ApplicationState::open_key_config() {
     if (!title) return false;
     ApplicationState* self = this;
     title->connect_key_config(
-        [self] { return self->raw_pad_buttons != 0; },
-        [self] { return self->raw_pad_buttons; },
+        [self] { return self->raw_pad_buttons != 0; }, [self] { return self->raw_pad_buttons; },
         [self] { return self->files.pad_bindings; },
-        [self](const std::array<i16, 5>& bindings) {
-            return self->persist_pad_bindings(bindings);
-        });
+        [self](const std::array<i16, 5>& bindings) { return self->persist_pad_bindings(bindings); });
     return true;
 }
 
@@ -286,11 +269,12 @@ void ApplicationState::load_music_room_catalog() {
         MusicRoomTrack track;
         track.name = lines[i].substr(slash + 1);
         for (u32 k = 0; k < 9; ++k) {  // 曲名行 + 8 注释行；遇下一 '@' 提前止
-            if (i + 1 >= lines.size() || (!lines[i + 1].empty() && lines[i + 1][0] == '@'))
-                break;
+            if (i + 1 >= lines.size() || (!lines[i + 1].empty() && lines[i + 1][0] == '@')) break;
             ++i;
-            if (k == 0) track.title = lines[i];
-            else track.comment[k - 1] = lines[i];
+            if (k == 0)
+                track.title = lines[i];
+            else
+                track.comment[k - 1] = lines[i];
         }
         music_room.push_back(std::move(track));
     }
@@ -349,8 +333,7 @@ bool ApplicationState::open_manual() {
         // （0x42d6f0）→ case3 D3DX 载入 entry1 的 blank 纹理。网页同步完成
         // 读取/解码/上传，再建 page VM；纹理内容在同一帧绘制前就绪。
         manual_viewer->load_page = [this](i32 page) -> bool {
-            if (page < 0 || page >= kHelpPageCount)
-                return fail("Manual page index outside help.anm");
+            if (page < 0 || page >= kHelpPageCount) return fail("Manual page index outside help.anm");
             char name[16];
             std::snprintf(name, sizeof name, "help_%02d.png", page + 1);
             std::vector<u8> bytes;
@@ -393,8 +376,7 @@ bool ApplicationState::open_manual() {
         };
     }
     if (!manual_viewer->open()) {
-        fail(manual_viewer->error.empty() ? "Title manual viewer unavailable"
-                                          : manual_viewer->error);
+        fail(manual_viewer->error.empty() ? "Title manual viewer unavailable" : manual_viewer->error);
         return false;
     }
     return true;
@@ -409,9 +391,7 @@ bool ApplicationState::update_manual(u32 pressed, u32 repeated) {
     return true;
 }
 
-bool ApplicationState::manual_finished() const {
-    return manual_viewer && manual_viewer->finished();
-}
+bool ApplicationState::manual_finished() const { return manual_viewer && manual_viewer->finished(); }
 
 void ApplicationState::close_manual() {
     if (manual_viewer) manual_viewer->close();

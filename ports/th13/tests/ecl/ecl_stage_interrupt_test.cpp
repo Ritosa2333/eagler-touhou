@@ -11,8 +11,8 @@
 //   ins_14 = 0x408a43：arg1<0 清 [stage+slot*0x5A4+0x224] bit0；arg1>=0 的
 //        0x403800+0x462450 模板重挂无生产宿主 → 显式 BLOCKED。
 #include "ecl_test_fixtures.hpp"
-#include "game/StageSim.hpp"
 #include "game/StageScript.hpp"
+#include "game/StageSim.hpp"
 
 #include <cstring>
 
@@ -39,7 +39,8 @@ std::vector<u8> build_std(const std::vector<u8>& script) {
     out[0x90] = 0xff;  // 实例区终止符（空实例表）
     out[0x91] = 0xff;
     out.insert(out.end(), script.begin(), script.end());
-    for (u32 i = 0; i < 8; ++i) out.push_back(0xff);  // 脚本终止符
+    for (u32 i = 0; i < 8; ++i)
+        out.push_back(0xff);  // 脚本终止符
     return out;
 }
 
@@ -54,7 +55,7 @@ const StageInstruction* find_label(const StageResource& resource, i32 id) {
 TEST(ecl800_self_restart_remounts_and_skips_first_instruction) {
     StageSim sim;
     std::vector<u8> trampoline, bossb;
-    th13test::emit(trampoline, 0, 40, 0, 255, 0, {0});   // enter 0
+    th13test::emit(trampoline, 0, 40, 0, 255, 0, {0});  // enter 0
     const char name[8] = {'B', 'o', 's', 's', 'B', 0, 0, 0};
     th13test::emit(trampoline, 3, 800, 0, 255, 0, {u32(-9926), 6}, name, 8);
     th13test::emit(trampoline, 100000, 1, 0, 255, 0, {});  // delete（不可达）
@@ -189,15 +190,16 @@ TEST(ecl630_routes_to_std_camera_interrupt) {
     sim.commands.sim = &sim;
     sim.current = &enemy;
     std::vector<u8> script;
-    std_emit(script, 0, 12, {1});                             // kind1 摇晃
-    std_emit(script, 10, 16, {1});                            // 中断标号 id=1
-    std_emit(script, 200, 7, {i32(float_to_bits(0.5f))});     // fov
-    std_emit(script, 200, 0, {});                             // stop
+    std_emit(script, 0, 12, {1});                          // kind1 摇晃
+    std_emit(script, 10, 16, {1});                         // 中断标号 id=1
+    std_emit(script, 200, 7, {i32(float_to_bits(0.5f))});  // fov
+    std_emit(script, 200, 0, {});                          // stop
     auto bytes = build_std(script);
     StageResource resource;
     CHECK(resource.open(bytes.data(), u32(bytes.size())));
     StageScript camera(resource);
-    for (int i = 0; i < 5; ++i) CHECK(camera.step());
+    for (int i = 0; i < 5; ++i)
+        CHECK(camera.step());
     sim.stage_script_interrupt = [&](i32 id) { return camera.interrupt(id); };
     std::vector<u8> code;
     th13test::emit(code, 0, 630, 0, 255, 0, {1});
@@ -265,8 +267,8 @@ TEST(std_camera_kind1_matches_original_amplitudes) {
 
 TEST(std_ins14_hides_slot_and_blocks_remount) {
     std::vector<u8> script;
-    std_emit(script, 0, 14, {0, -1});   // 隐藏槽 0
-    std_emit(script, 10, 14, {1, 4});   // 槽 1 模板重挂（BLOCKED）
+    std_emit(script, 0, 14, {0, -1});  // 隐藏槽 0
+    std_emit(script, 10, 14, {1, 4});  // 槽 1 模板重挂（BLOCKED）
     std_emit(script, 100000, 0, {});
     auto bytes = build_std(script);
     StageResource resource;
@@ -276,7 +278,8 @@ TEST(std_ins14_hides_slot_and_blocks_remount) {
     CHECK(camera.error.empty());
     CHECK(!camera.state.background[0].visible);
     CHECK(camera.state.background[1].visible);
-    for (int i = 0; i < 9; ++i) CHECK(camera.step());
+    for (int i = 0; i < 9; ++i)
+        CHECK(camera.step());
     CHECK(!camera.step());  // t=10：arg1>=0 模板重挂无宿主 → 显式 BLOCKED
     CHECK(!camera.error.empty());
     CHECK(camera.error.find("ins_14") != std::string::npos);
@@ -303,7 +306,8 @@ TEST(st04_real_std_kind1_then_interrupt_label) {
     StageResource resource;
     CHECK(resource.open(bytes.data(), u32(bytes.size())));
     StageScript camera(resource);
-    for (int i = 0; i < 33; ++i) CHECK(camera.step());  // t=0 ins_12(1)；相位 32
+    for (int i = 0; i < 33; ++i)
+        CHECK(camera.step());  // t=0 ins_12(1)；相位 32
     CHECK_NEAR(camera.state.camera.eye_offset.x, -45.922f, 0.01f);
     CHECK_NEAR(camera.state.camera.eye_offset.z, -35.355f, 0.01f);
     // st04.ecl main/MainSub09/MainBossDebug(2) 的 630(1) → ins_16(1)@t=128。

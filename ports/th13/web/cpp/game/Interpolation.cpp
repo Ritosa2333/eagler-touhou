@@ -16,7 +16,8 @@ float interpolation_weight(i32 mode, float elapsed, float duration) noexcept {
     // ⟹ 中间量走 double，最终单次落 float。
     auto power = [](double v, u32 exponent) {
         double r = v;
-        for (u32 i = 1; i < exponent; i++) r = r * v;
+        for (u32 i = 1; i < exponent; i++)
+            r = r * v;
         return r;
     };
     if (mode >= 1 && mode <= 3) return static_cast<float>(power(double(t), u32(mode + 1)));
@@ -37,7 +38,8 @@ float interpolation_weight(i32 mode, float elapsed, float duration) noexcept {
     constexpr float kHalfPi = 1.57079637050628662109375f;
     constexpr float kPi = 3.1415927410125732421875f;
     if (mode == 18) return sine(static_cast<float>(static_cast<float>(t * kPi) * .5f));
-    if (mode == 19) return static_cast<float>(1 - sine(static_cast<float>(static_cast<float>(t * kPi) * .5f) + kHalfPi));
+    if (mode == 19)
+        return static_cast<float>(1 - sine(static_cast<float>(static_cast<float>(t * kPi) * .5f) + kHalfPi));
     if (mode == 20) {
         t = static_cast<float>(t * 2);
         const float s = sine(static_cast<float>(static_cast<float>(t * kPi) * .5f));
@@ -46,14 +48,20 @@ float interpolation_weight(i32 mode, float elapsed, float duration) noexcept {
     if (mode == 21) {
         t = static_cast<float>(t * 2);
         if (t < 1)
-            return static_cast<float>(static_cast<float>(1 - sine(static_cast<float>(static_cast<float>(t * kPi) * .5f) + kHalfPi)) * .5f);
-        return static_cast<float>(.5f + static_cast<float>(sine(static_cast<float>(static_cast<float>(t - 1) * kPi) * .5f) * .5f));
+            return static_cast<float>(
+                static_cast<float>(1 - sine(static_cast<float>(static_cast<float>(t * kPi) * .5f) + kHalfPi)) * .5f);
+        return static_cast<float>(
+            .5f + static_cast<float>(sine(static_cast<float>(static_cast<float>(t - 1) * kPi) * .5f) * .5f));
     }
     if (mode >= 22 && mode <= 31) {
-        constexpr float shift[] = {.25f, .300000011920928955078125f, .3499999940395355224609375f, .37999999523162841796875f, .4000000059604644775390625f};
-        constexpr float divisor[] = {.5625f, .4899999797344207763671875f, .422499954700469970703125f, .38440001010894775390625f, .36000001430511474609375f};
-        constexpr float subtract[] = {.111111111938953399658203125f, .18367348611354827880859375f, .28994083404541015625f, .375650346279144287109375f, .4444444477558135986328125f};
-        constexpr float scale[] = {.888888895511627197265625f, .81632649898529052734375f, .71005916595458984375f, .624349653720855712890625f, .5555555820465087890625f};
+        constexpr float shift[] = {.25f, .300000011920928955078125f, .3499999940395355224609375f,
+                                   .37999999523162841796875f, .4000000059604644775390625f};
+        constexpr float divisor[] = {.5625f, .4899999797344207763671875f, .422499954700469970703125f,
+                                     .38440001010894775390625f, .36000001430511474609375f};
+        constexpr float subtract[] = {.111111111938953399658203125f, .18367348611354827880859375f,
+                                      .28994083404541015625f, .375650346279144287109375f, .4444444477558135986328125f};
+        constexpr float scale[] = {.888888895511627197265625f, .81632649898529052734375f, .71005916595458984375f,
+                                   .624349653720855712890625f, .5555555820465087890625f};
         const u32 i = u32((mode - 22) % 5);
         // 同 0x473a40 单次落位链：二次曲线族中间量 double。
         // 0x473fb6/0x473ff4/0x474030/0x47406e/0x4740ae：mode 0x1b..0x1f 的

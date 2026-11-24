@@ -4,12 +4,12 @@
 //   update_title_menu 屏值 3 分支 → TitleOptionsMenu 驱动、TitleScenePlatform
 //   聚合 TitleOptionPlatform（apply_volumes/persist_options 经宿主回调）、
 //   行4 退出持久化 + 回主菜单 + 光标栈还原（entry 7）。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/TitleScene.hpp"
-#include "game/TitleMainMenu.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/TitleMainMenu.hpp"
+#include "game/TitleScene.hpp"
 
 #include <memory>
 #include <utility>
@@ -23,8 +23,8 @@ namespace {
 struct OptionHost final : TitleScenePlatform {
     AnmManager& manager;
     i32 start_stage = -1;
-    std::vector<std::pair<i32, i32>> applied;      // apply_volumes 记录
-    std::vector<std::pair<i32, i32>> persisted;    // persist_options 记录
+    std::vector<std::pair<i32, i32>> applied;    // apply_volumes 记录
+    std::vector<std::pair<i32, i32>> persisted;  // persist_options 记录
     bool persist_ok = true;
     explicit OptionHost(AnmManager& manager) : manager(manager) {}
     bool clear_title_overlay() override { return true; }
@@ -53,7 +53,8 @@ struct OptionHost final : TitleScenePlatform {
 
 std::vector<u8> title_anm_fixture() {
     std::vector<std::vector<AnmIns>> scripts(243);
-    for (auto& script : scripts) script = {wait(), stop()};
+    for (auto& script : scripts)
+        script = {wait(), stop()};
     auto spawn_range = [&](i32 root, i32 first, i32 last) {
         scripts[u32(root)].clear();
         for (i32 child = first; child <= last; child++)
@@ -68,7 +69,7 @@ std::vector<u8> title_anm_fixture() {
         scripts[u32(3 + item)].push_back(wait());
         scripts[u32(3 + item)].push_back(stop());
     }
-    spawn_range(1, 23, 48);   // root1：Option 行条 23-27/28-32 + 数字 33-48
+    spawn_range(1, 23, 48);  // root1：Option 行条 23-27/28-32 + 数字 33-48
     spawn_range(2, 49, 82);
     scripts[89] = {spawn(92), spawn(93), spawn(91), spawn(90), wait(), stop()};
     scripts[94] = {spawn(97), spawn(96), spawn(100), wait(), stop()};
@@ -107,12 +108,8 @@ struct OptionHarness {
     OptionHarness() {
         animation_updates[0].owner = animation_updates[1].owner = &manager;
         animation_updates[0].enabled = animation_updates[1].enabled = true;
-        animation_updates[0].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-        };
-        animation_updates[1].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-        };
+        animation_updates[0].run = [](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; };
+        animation_updates[1].run = [](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
         CHECK(scheduler.add(animation_updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(animation_updates[1], FramePass::Update, 34) >= 0);
         CHECK(load_bank(manager, 16, title_anm_fixture()));
@@ -120,8 +117,7 @@ struct OptionHarness {
         CHECK(load_bank(manager, 2, synthetic_anm(8, trivial_scripts(20))));
         CHECK(load_bank(manager, 19, synthetic_anm(4, trivial_scripts(4))));
         CHECK(load_bank(manager, 8, synthetic_anm(4, trivial_scripts(4))));
-        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler,
-                                             TitleSceneResources{});
+        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler, TitleSceneResources{});
         CHECK(scene->error.empty());
         scene->state.return_reason = 0;
     }
@@ -132,7 +128,8 @@ struct OptionHarness {
         CHECK(scheduler.draw() >= 0);
     }
     void advance(int frames, u32 pressed = 0, u32 repeated = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed, repeated);
+        for (int i = 0; i < frames; i++)
+            frame(pressed, repeated);
     }
     void reach_main_menu() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
@@ -147,19 +144,20 @@ struct OptionHarness {
 TEST(option_entry_wires_screen_and_platform_roundtrip) {
     OptionHarness harness;
     harness.reach_main_menu();
-    for (int i = 0; i < 6; i++) harness.frame(0x20);  // 0→2→…→7（每次跳禁用1）
+    for (int i = 0; i < 6; i++)
+        harness.frame(0x20);  // 0→2→…→7（每次跳禁用1）
     CHECK_EQ(harness.scene->state.menu.cursor, 7);
-    harness.frame(0x01);   // Z：主菜单确认序（substate4）
-    harness.advance(25);   // age>19 → enter(7) → TitleScreen::Option
+    harness.frame(0x01);  // Z：主菜单确认序（substate4）
+    harness.advance(25);  // age>19 → enter(7) → TitleScreen::Option
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Option));
     CHECK_EQ(int(harness.scene->state.screen), 3);  // 0x44c570 case 3 屏值
-    harness.advance(8);  // case1 >6 → 可交互
+    harness.advance(8);                             // case1 >6 → 可交互
     CHECK_EQ(harness.scene->state.substate, 2);
-    CHECK(harness.scene->state.handles[1] != 0);  // root1 已建
-    CHECK_EQ(last_of(harness.host.applied).first, 100);   // 默认 BGM 100
-    CHECK_EQ(last_of(harness.host.applied).second, 80);   // 默认 SE 80（0x5064）
-    CHECK_EQ(harness.scene->state.menu.count, 5);       // Option 5 行
-    CHECK_EQ(harness.scene->option_menu().row(), 0);      // 开屏光标归 0
+    CHECK(harness.scene->state.handles[1] != 0);         // root1 已建
+    CHECK_EQ(last_of(harness.host.applied).first, 100);  // 默认 BGM 100
+    CHECK_EQ(last_of(harness.host.applied).second, 80);  // 默认 SE 80（0x5064）
+    CHECK_EQ(harness.scene->state.menu.count, 5);        // Option 5 行
+    CHECK_EQ(harness.scene->option_menu().row(), 0);     // 开屏光标归 0
     // ↓ 到行1（SE音量）→ → 步进 +5（钳 0..100，无音效）→ apply(100,85)。
     // 行光标 = TitleOptionsMenu::row_（内部态，非 state.menu.cursor）。
     harness.frame(0x20);
@@ -187,13 +185,14 @@ TEST(option_leave_with_failed_persistence_reports_error) {
     OptionHarness harness;
     harness.host.persist_ok = false;
     harness.reach_main_menu();
-    for (int i = 0; i < 6; i++) harness.frame(0x20);
+    for (int i = 0; i < 6; i++)
+        harness.frame(0x20);
     harness.frame(0x01);
     harness.advance(25);   // 进 Option
     harness.advance(8);    // 可交互
     harness.frame(0x100);  // X 跳行4
     harness.frame(0x01);
-    harness.advance(12);   // >9 帧离屏
+    harness.advance(12);  // >9 帧离屏
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Main));
     CHECK_EQ(harness.host.persisted.size(), 1u);
     CHECK(!harness.scene->option_menu().error.empty());  // 不假成功：记录 TitleOptionsMenu::error

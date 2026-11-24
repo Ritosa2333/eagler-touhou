@@ -4,13 +4,13 @@
 // platform-free storage implementation here rather than changing the shared runner.
 #include "../../web/cpp/sdl/FileStore.cpp"
 #include <array>
-#include <filesystem>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <string>
-#include <vector>
 #include <unistd.h>
+#include <vector>
 
 using namespace th13;
 using namespace th13::sdl;
@@ -22,14 +22,12 @@ std::string fixture_path() {
         // 测试指定的输出目录可能不存在：自建，不因 fopen 失败误报套件红。
         std::filesystem::create_directories(directory);
     }
-    const std::string path = std::string(directory ? directory : "/tmp") +
-        "/practice-save-" + std::to_string(getpid()) + "-" + std::to_string(next++) + ".bin";
+    const std::string path = std::string(directory ? directory : "/tmp") + "/practice-save-" +
+                             std::to_string(getpid()) + "-" + std::to_string(next++) + ".bin";
     CHECK_EQ(setenv("TH13_SAVE_PATH", path.c_str(), 1), 0);
     return path;
 }
-void put32(std::vector<u8>& bytes, size_t at, u32 value) {
-    std::memcpy(bytes.data() + at, &value, 4);
-}
+void put32(std::vector<u8>& bytes, size_t at, u32 value) { std::memcpy(bytes.data() + at, &value, 4); }
 void write_fixture(const std::string& path, const std::vector<u8>& bytes) {
     FILE* file = std::fopen(path.c_str(), "wb");
     CHECK(file != nullptr);
@@ -47,7 +45,7 @@ std::vector<u8> legacy_save() {
     put32(bytes, 24, 0x85);
     return bytes;
 }
-}
+}  // namespace
 
 TEST(practice_missing_save_does_not_invent_stage1_unlock) {
     fixture_path();
@@ -56,7 +54,8 @@ TEST(practice_missing_save_does_not_invent_stage1_unlock) {
     CHECK(!files.loaded);
     for (i32 c = 0; c < 4; ++c)
         for (i32 d = 0; d < 4; ++d)
-            for (i32 s = 1; s <= 6; ++s) CHECK(!files.practice_stage_played(c, d, s));
+            for (i32 s = 1; s <= 6; ++s)
+                CHECK(!files.practice_stage_played(c, d, s));
 }
 
 TEST(practice_v1_preserves_settings_and_clears_unknown_played_data) {
@@ -70,7 +69,8 @@ TEST(practice_v1_preserves_settings_and_clears_unknown_played_data) {
     CHECK_EQ(files.effect_volume, 63);
     CHECK_EQ(files.cleared_mask, 1u << 7);
     CHECK_EQ(files.heard_mask, 0x85u);
-    for (u8 played : files.practice_played) CHECK_EQ(played, u8(0));
+    for (u8 played : files.practice_played)
+        CHECK_EQ(played, u8(0));
     files.mark_practice_stage_played(3, 2, 6);
     CHECK(files.save());
     FileStore roundtrip;
@@ -97,8 +97,8 @@ TEST(practice_v2_roundtrips_all_stage_character_and_rank_dimensions) {
             for (i32 s = 1; s <= 6; ++s)
                 CHECK_EQ(read.practice_stage_played(c, d, s), s == (c + d) % 6 + 1);
     const auto before = read.practice_played;
-    for (const std::array<i32, 3>& bad : {std::array<i32, 3>{-1, 0, 1}, {4, 0, 1},
-                                         {0, -1, 1}, {0, 4, 1}, {0, 0, 0}, {0, 0, 7}}) {
+    for (const std::array<i32, 3>& bad :
+         {std::array<i32, 3>{-1, 0, 1}, {4, 0, 1}, {0, -1, 1}, {0, 4, 1}, {0, 0, 0}, {0, 0, 7}}) {
         CHECK(!read.practice_stage_played(bad[0], bad[1], bad[2]));
         read.mark_practice_stage_played(bad[0], bad[1], bad[2]);
     }
@@ -108,11 +108,21 @@ TEST(practice_v2_roundtrips_all_stage_character_and_rank_dimensions) {
 TEST(practice_corrupt_truncated_or_overlong_saves_revert_to_defaults) {
     std::vector<std::vector<u8>> invalid;
     auto bytes = legacy_save();
-    bytes[0] = 'X'; invalid.push_back(bytes);
-    bytes = legacy_save(); put32(bytes, 8, 2); invalid.push_back(bytes);  // v2 truncated to v1 size
-    bytes = legacy_save(); bytes.resize(35); invalid.push_back(bytes);
-    bytes = legacy_save(); bytes.resize(52); invalid.push_back(bytes);  // v1 wrong size
-    bytes = legacy_save(); put32(bytes, 8, 2); bytes.resize(53); invalid.push_back(bytes);
+    bytes[0] = 'X';
+    invalid.push_back(bytes);
+    bytes = legacy_save();
+    put32(bytes, 8, 2);
+    invalid.push_back(bytes);  // v2 truncated to v1 size
+    bytes = legacy_save();
+    bytes.resize(35);
+    invalid.push_back(bytes);
+    bytes = legacy_save();
+    bytes.resize(52);
+    invalid.push_back(bytes);  // v1 wrong size
+    bytes = legacy_save();
+    put32(bytes, 8, 2);
+    bytes.resize(53);
+    invalid.push_back(bytes);
     for (const auto& corrupt : invalid) {
         const std::string path = fixture_path();
         write_fixture(path, corrupt);
@@ -124,7 +134,8 @@ TEST(practice_corrupt_truncated_or_overlong_saves_revert_to_defaults) {
         CHECK(!files.loaded);
         CHECK_EQ(files.cleared_mask, 0u);
         CHECK_EQ(files.bgm_volume, 100);
-        for (u8 played : files.practice_played) CHECK_EQ(played, u8(0));
+        for (u8 played : files.practice_played)
+            CHECK_EQ(played, u8(0));
     }
 }
 

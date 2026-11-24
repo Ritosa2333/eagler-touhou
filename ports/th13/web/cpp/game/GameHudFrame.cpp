@@ -24,7 +24,8 @@ bool GameHud::update(const HudFrameContext& context, HudFrameServices& services)
         error = "HUD sound service failed";
         return false;
     };
-    (void)sound;  // 0x4265a0：帧侧无原版独立警告音调用点；Boss 段警告音已由 boss_hud.update 的 sound 回调（本文件 :55）处理。无原版独立调用点，BLOCKED——强行接线会多发声音，属行为回归。
+    (void)
+        sound;  // 0x4265a0：帧侧无原版独立警告音调用点；Boss 段警告音已由 boss_hud.update 的 sound 回调（本文件 :55）处理。无原版独立调用点，BLOCKED——强行接线会多发声音，属行为回归。
     if (context.player_position) {
         // 0x4265a0:85-96：玩家进入左下角时灵界槽淡化（label 5 -> alpha 32），
         // 离开时恢复（label 4 -> alpha 255）。y 用 400/384 迟滞，x 用 -64。
@@ -34,16 +35,14 @@ bool GameHud::update(const HudFrameContext& context, HudFrameServices& services)
         if (!dimmed && y > kTranceGaugeEnterY && x < kTranceGaugeEnterX) {
             if (!animations.interrupt(gauge_main, kTranceGaugeDimLabel, false)) {
                 if (error.empty())
-                    error = animations.error.empty() ? "Trance gauge dim interrupt failed"
-                                                     : animations.error;
+                    error = animations.error.empty() ? "Trance gauge dim interrupt failed" : animations.error;
                 return false;
             }
             flags |= kTranceGaugeDimmed;
         } else if (dimmed && (y < kTranceGaugeExitY || x > kTranceGaugeEnterX)) {
             if (!animations.interrupt(gauge_main, kTranceGaugeRestoreLabel, false)) {
                 if (error.empty())
-                    error = animations.error.empty() ? "Trance gauge restore interrupt failed"
-                                                     : animations.error;
+                    error = animations.error.empty() ? "Trance gauge restore interrupt failed" : animations.error;
                 return false;
             }
             flags &= ~kTranceGaugeDimmed;
@@ -63,11 +62,8 @@ bool GameHud::update(const HudFrameContext& context, HudFrameServices& services)
 bool GameHud::update_boss(BossFrameInput& view, HudFrameServices& services) {
     // Boss 面独立推进（0x4265a0 同序：门控/计时警告/比值平滑/星位/邻近/位标）。
     // 2026-11-05 从 update() 拆出：原版任务优先级 0x1c=28（0x424f46/0x424f4b）。
-    if (!boss_hud.update(view,
-                         [&services](i32 id) { return services.hud_sound(id); }) ||
-        !boss_hud.error.empty()) {
-        if (error.empty()) error = boss_hud.error.empty() ? "Boss HUD update failed"
-                                                          : boss_hud.error;
+    if (!boss_hud.update(view, [&services](i32 id) { return services.hud_sound(id); }) || !boss_hud.error.empty()) {
+        if (error.empty()) error = boss_hud.error.empty() ? "Boss HUD update failed" : boss_hud.error;
         return false;
     }
     return true;

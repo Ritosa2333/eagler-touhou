@@ -30,8 +30,7 @@ struct StageInstruction {
     i16 opcode = 0, length = 0;
     u32 offset = 0;  // 相对脚本区起点的字节偏移（ins_1 跳转目标）
     std::vector<u32> arguments;
-    template <class T>
-    T argument(u32 index) const noexcept {
+    template <class T> T argument(u32 index) const noexcept {
         T out{};
         if (index < arguments.size()) std::memcpy(&out, &arguments[index], 4);
         return out;

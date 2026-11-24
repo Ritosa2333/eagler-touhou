@@ -22,7 +22,8 @@ using namespace th13;
 
 TEST(loading_caption_boot_sequence_matches_original_visual_rng_window) {
     GameRandom visual{0};
-    for (int i = 0; i < 256; ++i) (void)visual.step16();  // 0x45ac90 噪声表
+    for (int i = 0; i < 256; ++i)
+        (void)visual.step16();  // 0x45ac90 噪声表
     CHECK_EQ(visual.index(), 256u);
     CHECK_EQ(visual.seed(), 57045u);
 

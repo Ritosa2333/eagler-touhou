@@ -23,9 +23,7 @@ struct AnmInstructionSpec {
     std::vector<i32> args;
 };
 
-u32 encoded_length(const AnmInstructionSpec& instruction) {
-    return u32(8 + instruction.args.size() * 4);
-}
+u32 encoded_length(const AnmInstructionSpec& instruction) { return u32(8 + instruction.args.size() * 4); }
 
 // 合成 text.anm entry0：Blank "@" 512x512 format5(ARGB4444)、四 sprite
 // (0,1/24/47/70,512,20)、四脚本（sprite i + 层 26 + 位置 + 真实 ins_4
@@ -55,9 +53,8 @@ std::vector<u8> synthetic_text_anm() {
         const i32 sprite = i32(index);
         const i32 layer = 26;
         const std::vector<AnmInstructionSpec> script = {
-            {300, 0, {sprite}}, {304, 0, {layer}}, {400, 0, {0, 0, 0}},
-            {4, 0, {}}, {5, 0, {2}}, {3, 8, {}}, {5, 8, {3}}, {7, 8, {}},
-            {5, 8, {1}}, {-1, 16, {}}};
+            {300, 0, {sprite}}, {304, 0, {layer}}, {400, 0, {0, 0, 0}}, {4, 0, {}},  {5, 0, {2}},
+            {3, 8, {}},         {5, 8, {3}},       {7, 8, {}},          {5, 8, {1}}, {-1, 16, {}}};
         for (const auto& instruction : script) {
             std::vector<u8> encoded(8, 0);
             const u16 length = u16(encoded_length(instruction));
@@ -75,12 +72,9 @@ std::vector<u8> synthetic_text_anm() {
     }
     // 位置参数改写为真实浮点（2,22 / 2,42 / 16,16 / 16,36）。
     for (u32 index = 0; index < kScripts; index++) {
-        const u32 at = script_offsets[index] + encoded_length({300, 0, {0}}) +
-                       encoded_length({304, 0, {0}}) + 8;
+        const u32 at = script_offsets[index] + encoded_length({300, 0, {0}}) + encoded_length({304, 0, {0}}) + 8;
         const float values[3] = {index < 2 ? 2.f : 16.f,
-                                 index < 2 ? 22.f + 20.f * float(index)
-                                           : 16.f + 20.f * float(index - 2),
-                                 0.f};
+                                 index < 2 ? 22.f + 20.f * float(index) : 16.f + 20.f * float(index - 2), 0.f};
         std::memcpy(body.data() + (at - table_end), values, sizeof values);
     }
     const char name[] = "@";
@@ -97,7 +91,8 @@ std::vector<u8> synthetic_text_anm() {
     put32(16, name_at);
     chunk[32] = 0;  // hasData=0；name "@" → Blank
     put32(36, 0);
-    for (u32 index = 0; index < kSprites; index++) put32(64 + index * 4, sprite_offsets[index]);
+    for (u32 index = 0; index < kSprites; index++)
+        put32(64 + index * 4, sprite_offsets[index]);
     for (u32 index = 0; index < kScripts; index++) {
         put32(64 + kSprites * 4 + index * 8 + 0, index);
         put32(64 + kSprites * 4 + index * 8 + 4, script_offsets[index]);
@@ -136,8 +131,7 @@ bool region_has_pixel(const TextureImage& image, u32 x, u32 y, u32 width, u32 he
     for (u32 row = 0; row < height; row++)
         for (u32 column = 0; column < width; column++) {
             u16 value = 0;
-            std::memcpy(&value, image.pixels.data() + size_t(y + row) * image.pitch +
-                                   size_t(x + column) * 2, 2);
+            std::memcpy(&value, image.pixels.data() + size_t(y + row) * image.pitch + size_t(x + column) * 2, 2);
             if (value) return true;
         }
     return false;
@@ -153,8 +147,7 @@ AnmVm* script_vm(AnmManager& manager, i32 script) {
 
 std::vector<u8> read_reference_anm(const char* name) {
     std::vector<std::string> candidates;
-    if (const char* dir = std::getenv("TH13_RAW_DIR"))
-        candidates.push_back(std::string(dir) + "/" + name);
+    if (const char* dir = std::getenv("TH13_RAW_DIR")) candidates.push_back(std::string(dir) + "/" + name);
     // run.sh 的工作目录是外层工作区，原版资源在其 artifacts/ 下（与各套件其余测试一致）。
     candidates.push_back(std::string("artifacts/reference/raw/") + name);
     candidates.push_back(std::string("../artifacts/reference/raw/") + name);
@@ -177,8 +170,7 @@ bool raster_block(TextureImage& image, i32 x, i32 y, bool, u32, const std::strin
     for (i32 row = 0; row < 4; row++)
         for (i32 column = 0; column < 4; column++) {
             const u16 value = 0xFFFF;
-            std::memcpy(image.pixels.data() + size_t(y + row) * image.pitch +
-                            size_t(x + column) * 2, &value, 2);
+            std::memcpy(image.pixels.data() + size_t(y + row) * image.pitch + size_t(x + column) * 2, &value, 2);
         }
     return true;
 }
@@ -210,7 +202,7 @@ TEST(dialogue_text_submits_body_strip_and_owns_four_vms) {
     CHECK(row0 != nullptr);
     CHECK(!row0->visible);  // 中断尚未被 ANM update 消费
     CHECK(manager.update());
-    CHECK(row0->visible);   // label2 显示分支
+    CHECK(row0->visible);  // label2 显示分支
     CHECK_EQ(row0->visual.flags & 1u, 1u);
 
     // 同行同块重复提交不得重传（原版 opcode 17 只在指令执行时栅格化）。
@@ -234,7 +226,7 @@ TEST(dialogue_text_submits_body_strip_and_owns_four_vms) {
     CHECK(!row1->visible);  // label2 deferred，未 tick 前仍隐藏
     CHECK(manager.update());
     CHECK(row1->visible);
-    CHECK(row0->visible);   // 已显示行不被无关行提交隐藏
+    CHECK(row0->visible);  // 已显示行不被无关行提交隐藏
 
     // opcode 6/18 的 clear/fade 只发 label，不清 texture0 像素。
     const u32 uploads_before_fade = sink.uploads;
@@ -264,16 +256,18 @@ TEST(dialogue_text_ruby_uses_second_parameter_as_spacing) {
     FakeSink sink;
     DialogueText text;
     std::string error;
-    struct Call { i32 x; bool ruby; std::string text; };
+    struct Call {
+        i32 x;
+        bool ruby;
+        std::string text;
+    };
     std::vector<Call> calls;
-    const auto record = [&calls](TextureImage& image, i32 x, i32 y, bool ruby, u32,
-                                 const std::string& value) {
+    const auto record = [&calls](TextureImage& image, i32 x, i32 y, bool ruby, u32, const std::string& value) {
         calls.push_back({x, ruby, value});
         for (i32 row = 0; row < 4; row++)
             for (i32 column = 0; column < 4; column++) {
                 const u16 pixel = 0xFFFF;
-                std::memcpy(image.pixels.data() + size_t(y + row) * image.pitch +
-                                size_t(x + column) * 2, &pixel, 2);
+                std::memcpy(image.pixels.data() + size_t(y + row) * image.pitch + size_t(x + column) * 2, &pixel, 2);
             }
         return true;
     };
@@ -286,17 +280,17 @@ TEST(dialogue_text_ruby_uses_second_parameter_as_spacing) {
     line.ruby_cp932 = "\x82\xb1\x82\xb1";  // ここ
     CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, record, error));
     CHECK_EQ(calls.size(), 3u);
-    CHECK(!calls[0].ruby);           // 正文
+    CHECK(!calls[0].ruby);  // 正文
     CHECK_EQ(calls[0].x, 0);
-    CHECK(calls[1].ruby);            // ruby 第一字
+    CHECK(calls[1].ruby);  // ruby 第一字
     CHECK_EQ(calls[1].x, 8);
     CHECK_EQ(calls[1].text, std::string("\x82\xb1", 2));
-    CHECK(calls[2].ruby);            // ruby 第二字 = 第一字 + 14*2
+    CHECK(calls[2].ruby);  // ruby 第二字 = 第一字 + 14*2
     CHECK_EQ(calls[2].x, 8 + 14 * 2);
     CHECK_EQ(calls[2].text, std::string("\x82\xb1", 2));
-    CHECK(region_has_pixel(sink.image, 4, 48, 2, 2));   // 8/2
-    CHECK(region_has_pixel(sink.image, 18, 48, 2, 2));  // 36/2
-    CHECK(!region_has_pixel(sink.image, 7, 48, 10, 2)); // 两字间无像素
+    CHECK(region_has_pixel(sink.image, 4, 48, 2, 2));    // 8/2
+    CHECK(region_has_pixel(sink.image, 18, 48, 2, 2));   // 36/2
+    CHECK(!region_has_pixel(sink.image, 7, 48, 10, 2));  // 两字间无像素
 
     // spacing=0：0x45aef0 param_9==0 走连续排版，整串只调一次。
     calls.clear();
@@ -335,7 +329,8 @@ TEST(dialogue_text_real_text_anm_label2_visibility) {
     AnmVm* row0 = script_vm(manager, 0);
     CHECK(row0 != nullptr);
     CHECK(!row0->visible);  // ins_4 隐藏等待
-    for (int frame = 0; frame < 10; frame++) CHECK(manager.update());
+    for (int frame = 0; frame < 10; frame++)
+        CHECK(manager.update());
     CHECK(row0->visible);
     CHECK(region_has_pixel(sink.image, 0, 1, 512, 20));
     text.release(manager);
@@ -431,8 +426,7 @@ TEST(dialogue_text_downsampling_preserves_subpixel_strokes_and_argb_channels) {
     MsgLine line;
     line.text_cp932 = "stroke";
     std::string error;
-    const auto stroke = [](TextureImage& image, i32, i32, bool, u32,
-                           const std::string&) {
+    const auto stroke = [](TextureImage& image, i32, i32, bool, u32, const std::string&) {
         // An odd source column disappears entirely with the former point
         // sampler. Keep all rows opaque to isolate horizontal filtering.
         for (u32 row = 0; row < 44; ++row) {
@@ -452,7 +446,7 @@ TEST(dialogue_text_downsampling_preserves_subpixel_strokes_and_argb_channels) {
     CHECK_EQ(pixel(0, 6), u16(0x6333));
     CHECK_EQ(pixel(1, 6), u16(0x2111));
     CHECK_EQ(pixel(2, 6), u16(0));
-    CHECK_EQ(pixel(0, 24), u16(0)); // the other dialogue row is untouched
+    CHECK_EQ(pixel(0, 24), u16(0));  // the other dialogue row is untouched
 }
 
 TEST(dialogue_text_triangle_wraps_original_source_rect_edges) {
@@ -466,10 +460,9 @@ TEST(dialogue_text_triangle_wraps_original_source_rect_edges) {
     MsgLine line;
     line.text_cp932 = "edge";
     std::string error;
-    const auto stroke = [](TextureImage& image, i32, i32, bool, u32,
-                           const std::string&) {
+    const auto stroke = [](TextureImage& image, i32, i32, bool, u32, const std::string&) {
         for (u32 row = 0; row < 44; ++row) {
-            const u16 pixel = 0xF000; // black dialogue ink with full coverage
+            const u16 pixel = 0xF000;  // black dialogue ink with full coverage
             std::memcpy(image.pixels.data() + size_t(row) * image.pitch + 1023 * 2, &pixel, 2);
         }
         return true;
@@ -480,8 +473,8 @@ TEST(dialogue_text_triangle_wraps_original_source_rect_edges) {
         std::memcpy(&value, sink.image.pixels.data() + 6 * sink.image.pitch + x * 2, 2);
         return value;
     };
-    CHECK_EQ(pixel(0), u16(0x2000)); // wrapped -1 sample, weight 1/8
-    CHECK_EQ(pixel(511), u16(0x6000)); // edge stroke survives at weight 3/8
+    CHECK_EQ(pixel(0), u16(0x2000));    // wrapped -1 sample, weight 1/8
+    CHECK_EQ(pixel(511), u16(0x6000));  // edge stroke survives at weight 3/8
     CHECK_EQ(pixel(1), u16(0));
 }
 
@@ -517,7 +510,6 @@ TEST(dialogue_text_negative_controls) {
     CHECK(!error.empty());
 }
 
-
 TEST(dialogue_rollback_restores_cache_handles_and_pixels) {
     GameRandom random;
     AnmEnvironment environment;
@@ -534,7 +526,7 @@ TEST(dialogue_rollback_restores_cache_handles_and_pixels) {
     CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, raster_block, error));
     const auto saved = text.capture_rollback(manager, sink);
     const auto again = text.capture_rollback(manager, sink);
-    CHECK(saved.pixels == again.pixels); // No texture copy on unchanged frames.
+    CHECK(saved.pixels == again.pixels);  // No texture copy on unchanged frames.
     const auto expected = sink.image.pixels;
     line.text_cp932 = "later";
     line.block = 2;
@@ -543,7 +535,7 @@ TEST(dialogue_rollback_restores_cache_handles_and_pixels) {
         return true;
     };
     CHECK(text.submit(manager, sink, 0, line, 120.f, 240.f, erase, error));
-    CHECK(sink.image.pixels != expected); // Negative control: speculative write.
+    CHECK(sink.image.pixels != expected);  // Negative control: speculative write.
     const size_t spell_pixel = size_t(96) * sink.image.pitch;
     sink.image.pixels[spell_pixel] = 0x5a;
     auto expected_with_spell = expected;
@@ -556,7 +548,7 @@ TEST(dialogue_rollback_restores_cache_handles_and_pixels) {
     line.text_cp932 = "first";
     line.block = 1;
     CHECK(text.submit(manager, sink, 0, line, 100.f, 200.f, erase, error));
-    CHECK_EQ(sink.uploads, uploads); // Saved cache prevents duplicate submission.
+    CHECK_EQ(sink.uploads, uploads);  // Saved cache prevents duplicate submission.
     CHECK_EQ(manager.registry.count(), count);
     CHECK(sink.image.pixels == expected_with_spell);
     auto broken = saved;

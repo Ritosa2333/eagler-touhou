@@ -15,11 +15,11 @@
 // prewarm 在 Application initialize 已发生且不属于本路径；测试单独确认
 // astral.anm 首次装载/prewarm 不抽签，并保留 effect prewarm 的独立测值，
 // 不用“script2 无 random”冒充装载期中性。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/AnmManager.hpp"
 #include "game/AnmOverlay.hpp"
 #include "game/RunTransitionEffect.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <cstdio>
 #include <fstream>
@@ -40,8 +40,7 @@ bool read_asset(const char* name, std::vector<u8>& bytes) {
     for (const char* root : roots) {
         std::ifstream file(std::string(root) + name, std::ios::binary);
         if (!file) continue;
-        bytes.assign(std::istreambuf_iterator<char>(file),
-                     std::istreambuf_iterator<char>());
+        bytes.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
         return !bytes.empty();
     }
     return false;
@@ -79,9 +78,7 @@ bool load_real_banks(AnmManager& manager, AnmEnvironment& environment) {
     return load_prefix_banks(manager, environment) && load_astral_bank(manager);
 }
 
-AnmVm* root_for(AnmManager& manager, u32 handle) {
-    return manager.registry.find(handle);
-}
+AnmVm* root_for(AnmManager& manager, u32 handle) { return manager.registry.find(handle); }
 
 AnmOverlay* overlay_for(AnmManager& manager, u32 handle) {
     auto* root = root_for(manager, handle);
@@ -198,7 +195,8 @@ TEST(run_transition_naturally_retires_and_stale_stage_interrupt_is_noop) {
     CHECK(transition.stage_start());
     // Exercise the actual registry walk: 0x403260 returns 1 after all four
     // panels complete, so the owner must be collected, not manually kept alive.
-    for (i32 frame = 0; frame < 80; ++frame) CHECK(manager.update(false));
+    for (i32 frame = 0; frame < 80; ++frame)
+        CHECK(manager.update(false));
     CHECK(root_for(manager, handle) == nullptr);
     CHECK(!transition.active());
     CHECK_EQ(random.index(), rng_index);

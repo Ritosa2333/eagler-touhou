@@ -1,7 +1,7 @@
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
-#include "game/SpellPresentation.hpp"
 #include "game/SpellElapsedTime.hpp"
+#include "game/SpellPresentation.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <cstring>
 #include <fstream>
@@ -44,20 +44,27 @@ struct Fixture {
         CHECK(manager.adopt(4, std::move(stage)));
     }
     bool consume(const SpellEvent& event) {
-        return presentation.consume(event, boss, [&](i32 sound) {
-            sounds.push_back(sound); return true;
-        }, 6);
+        return presentation.consume(
+            event, boss,
+            [&](i32 sound) {
+                sounds.push_back(sound);
+                return true;
+            },
+            6);
     }
 };
 struct TextSink : HudDrawServices {
     std::vector<HudTextDraw> texts;
-    bool hud_text(const HudTextDraw& text) override { texts.push_back(text); return true; }
+    bool hud_text(const HudTextDraw& text) override {
+        texts.push_back(text);
+        return true;
+    }
 };
 std::vector<u8> read_asset(const char* name) {
     std::ifstream file(std::string("artifacts/reference/raw/") + name, std::ios::binary);
     return {std::istreambuf_iterator<char>(file), {}};
 }
-}
+}  // namespace
 
 TEST(spell_presentation_consumes_event_snapshots_and_original_script_roles) {
     Fixture fixture;
@@ -66,7 +73,8 @@ TEST(spell_presentation_consumes_event_snapshots_and_original_script_roles) {
     CHECK(fixture.presentation.active());
     CHECK_EQ(fixture.sounds.size(), size_t(1));
     CHECK_EQ(fixture.sounds[0], 0x21);
-    for (i32 i = 0; i < 3; ++i) CHECK(fixture.presentation.display_handle(i) != 0);
+    for (i32 i = 0; i < 3; ++i)
+        CHECK(fixture.presentation.display_handle(i) != 0);
     auto* first = fixture.manager.registry.find(fixture.presentation.display_handle(0));
     auto* name = fixture.manager.registry.find(fixture.presentation.display_handle(1));
     auto* bonus = fixture.manager.registry.find(fixture.presentation.display_handle(2));
@@ -84,7 +92,8 @@ TEST(spell_presentation_consumes_event_snapshots_and_original_script_roles) {
     CHECK_EQ(fixture.manager.registry.find_child_script(*background, 12, 0)->variables.integers[2], 3000);
     CHECK_EQ(fixture.manager.registry.find(fixture.presentation.stage_background_handle())->source_script, 150);
     CHECK_EQ(fixture.manager.registry.find(fixture.presentation.decoration_handle())->source_script, 157);
-    for (i32 i = 0; i < 301; ++i) CHECK(fixture.state.step(false));
+    for (i32 i = 0; i < 301; ++i)
+        CHECK(fixture.state.step(false));
     fixture.boss[0] = 100;
     // State synchronization alone does not advance the Update26 follower.
     fixture.presentation.sync(fixture.state.state());
@@ -93,7 +102,7 @@ TEST(spell_presentation_consumes_event_snapshots_and_original_script_roles) {
     CHECK(background->visual.translation.x == 0.0f);
     fixture.presentation.update_background(fixture.boss);
     CHECK_EQ(background->visual.translation.x, 5.0f);
-    CHECK_EQ(event.state.current_bonus, 1000000); // value event is not live state
+    CHECK_EQ(event.state.current_bonus, 1000000);  // value event is not live state
 }
 
 TEST(spell_ring_follow_matches_original_update26_rounding_and_turns) {
@@ -106,41 +115,43 @@ TEST(spell_ring_follow_matches_original_update26_rounding_and_turns) {
     const Vec3 card_start = card->visual.translation, name_start = name->visual.translation;
     // Independent executions of retail 00412dfe..00412eb1, initial(0,128,0).
     const u32 expected[][3] = {
-        {0x40a00000,0x42f9999a,0x3ecccccd}, {0x411c0000,0x42f3851f,0x3f47ae14},
-        {0x41643334,0x42edbe77,0x3f920c4a}, {0x4194651f,0x42e841be,0x3fbdf213},
-        {0x41b4f9aa,0x42e30b41,0x3fe7a5f8}, {0x41d3ed2e,0x42de177e,0x4007a209},
-        {0x41f15485,0x42d9631e,0x401a7389}, {0x4206a1bf,0x42d4eaf6,0x402c5429},
-        {0x4213e675,0x42d0ac03,0x403d4ff4}, {0x42208156,0x42cca369,0x404d725b},
-        {0x42087ade,0x42d6680a,0x40365fd6}, {0x41e34fd9,0x42dfafa3,0x402074a5},
+        {0x40a00000, 0x42f9999a, 0x3ecccccd}, {0x411c0000, 0x42f3851f, 0x3f47ae14},
+        {0x41643334, 0x42edbe77, 0x3f920c4a}, {0x4194651f, 0x42e841be, 0x3fbdf213},
+        {0x41b4f9aa, 0x42e30b41, 0x3fe7a5f8}, {0x41d3ed2e, 0x42de177e, 0x4007a209},
+        {0x41f15485, 0x42d9631e, 0x401a7389}, {0x4206a1bf, 0x42d4eaf6, 0x402c5429},
+        {0x4213e675, 0x42d0ac03, 0x403d4ff4}, {0x42208156, 0x42cca369, 0x404d725b},
+        {0x42087ade, 0x42d6680a, 0x40365fd6}, {0x41e34fd9, 0x42dfafa3, 0x402074a5},
     };
     for (i32 frame = 0; frame < 12; ++frame) {
-        const float target[3] = {frame < 10 ? 100.f : -80.f,
-                                 frame < 10 ? 64.f : 200.f, frame < 10 ? 8.f : -4.f};
+        const float target[3] = {frame < 10 ? 100.f : -80.f, frame < 10 ? 64.f : 200.f, frame < 10 ? 8.f : -4.f};
         fixture.presentation.update_background(target);
-        const float position[] = {ring->visual.translation.x,ring->visual.translation.y,ring->visual.translation.z};
-        for (i32 axis = 0; axis < 3; ++axis) CHECK_EQ(float_to_bits(position[axis]),expected[frame][axis]);
+        const float position[] = {ring->visual.translation.x, ring->visual.translation.y, ring->visual.translation.z};
+        for (i32 axis = 0; axis < 3; ++axis)
+            CHECK_EQ(float_to_bits(position[axis]), expected[frame][axis]);
         fixture.presentation.sync(fixture.state.state());
-        CHECK_EQ(float_to_bits(ring->visual.translation.x),expected[frame][0]);
+        CHECK_EQ(float_to_bits(ring->visual.translation.x), expected[frame][0]);
     }
-    CHECK_EQ(card->visual.translation.x,card_start.x);
-    CHECK_EQ(card->visual.translation.y,card_start.y);
-    CHECK_EQ(name->visual.translation.x,name_start.x);
-    CHECK_EQ(name->visual.translation.y,name_start.y);
+    CHECK_EQ(card->visual.translation.x, card_start.x);
+    CHECK_EQ(card->visual.translation.y, card_start.y);
+    CHECK_EQ(name->visual.translation.x, name_start.x);
+    CHECK_EQ(name->visual.translation.y, name_start.y);
     CHECK(fixture.consume(fixture.state.end()));
     fixture.presentation.update_background(fixture.boss);
     CHECK(fixture.presentation.error.empty());
-    CHECK_EQ(fixture.presentation.background_handle(),0u);
+    CHECK_EQ(fixture.presentation.background_handle(), 0u);
 }
 
 TEST(spell_presentation_end_interrupts_displays_and_timeout_sound_is_independent) {
     Fixture fixture;
     CHECK(fixture.consume(fixture.state.begin(0, "synthetic", 3000, 1, 0)));
     u32 display[3];
-    for (i32 i = 0; i < 3; ++i) display[i] = fixture.presentation.display_handle(i);
+    for (i32 i = 0; i < 3; ++i)
+        display[i] = fixture.presentation.display_handle(i);
     const u32 stage = fixture.presentation.stage_background_handle();
     const u32 effect = fixture.presentation.background_handle();
     const u32 decoration = fixture.presentation.decoration_handle();
-    for (i32 i = 0; i < 60; ++i) CHECK(fixture.state.step(false));
+    for (i32 i = 0; i < 60; ++i)
+        CHECK(fixture.state.step(false));
     fixture.state.phase_timeout(false);
     const auto event = fixture.state.end();
     CHECK(!event.captured());
@@ -186,7 +197,8 @@ TEST(spell_presentation_numeric_text_uses_live_bonus_mode_counters_and_vm_alpha)
     sink.texts.clear();
     CHECK(fixture.presentation.draw(sink, 100, 99999));
     CHECK(sink.texts[1].text == "MASTER");
-    for (i32 i = 0; i < 60; ++i) CHECK(fixture.state.step(false));
+    for (i32 i = 0; i < 60; ++i)
+        CHECK(fixture.state.step(false));
     fixture.state.player_hit(false);
     fixture.presentation.sync(fixture.state.state());
     sink.texts.clear();
@@ -212,7 +224,8 @@ TEST(spell_presentation_missing_assets_and_unmapped_stage_fail_explicitly) {
 TEST(spell_presentation_visibility_follows_shared_flag_transitions_via_interrupts) {
     Fixture fixture;
     CHECK(fixture.consume(fixture.state.begin(0, "synthetic", 3000, 1, 0)));
-    for (i32 i = 0; i < 120; ++i) CHECK(fixture.state.step(false));
+    for (i32 i = 0; i < 120; ++i)
+        CHECK(fixture.state.step(false));
     fixture.state.update_visibility(80);
     fixture.presentation.sync(fixture.state.state());
     for (i32 i = 0; i < 3; ++i)
@@ -227,8 +240,7 @@ TEST(spell_presentation_real_stage1_assets_create_tick_and_complete_exit) {
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager(random, environment);
-    for (const auto& asset : {std::pair<i32, const char*>{0, "text.anm"},
-                              {2, "ascii.anm"}, {8, "effect.anm"}}) {
+    for (const auto& asset : {std::pair<i32, const char*>{0, "text.anm"}, {2, "ascii.anm"}, {8, "effect.anm"}}) {
         const auto bytes = read_asset(asset.second);
         CHECK(!bytes.empty());
         CHECK(manager.load(asset.first, bytes.data(), u32(bytes.size())));
@@ -254,7 +266,7 @@ TEST(spell_presentation_real_stage1_assets_create_tick_and_complete_exit) {
         CHECK(manager.update());
         CHECK(state.step(false));
         presentation.sync(state.state());
-        const float moving_boss[] = {float(n),128.f,0.f};
+        const float moving_boss[] = {float(n), 128.f, 0.f};
         presentation.update_background(moving_boss);
         const auto* background = manager.registry.find(presentation.stage_background_handle());
         if (background) {
@@ -264,7 +276,8 @@ TEST(spell_presentation_real_stage1_assets_create_tick_and_complete_exit) {
         }
     }
     CHECK(presentation.consume(state.end(), position, {}, 6));
-    for (i32 n = 0; n < 60; ++n) CHECK(manager.update());
+    for (i32 n = 0; n < 60; ++n)
+        CHECK(manager.update());
     CHECK_EQ(manager.registry.count(), 0u);
 }
 
@@ -278,8 +291,8 @@ TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager(random, environment);
-    for (const auto& asset : {std::pair<i32, const char*>{0, "text.anm"},
-                              {2, "ascii.anm"}, {3, "front.anm"}, {8, "effect.anm"}}) {
+    for (const auto& asset :
+         {std::pair<i32, const char*>{0, "text.anm"}, {2, "ascii.anm"}, {3, "front.anm"}, {8, "effect.anm"}}) {
         const auto bytes = read_asset(asset.second);
         CHECK(!bytes.empty());
         CHECK(manager.load(asset.first, bytes.data(), u32(bytes.size())));
@@ -296,7 +309,8 @@ TEST(spell_presentation_capture_bonus_digits_match_42a430_case0) {
     SpellState state;
     const float position[3] = {0, 128, 0};
     CHECK(presentation.consume(state.begin(0, "synthetic", 3000, 1, 0), position, {}, 6));
-    for (i32 i = 0; i < 125; ++i) CHECK(state.step(false));
+    for (i32 i = 0; i < 125; ++i)
+        CHECK(state.step(false));
     CHECK(presentation.consume(state.end(), position, {}, 6));
     // 句柄断言（layers 桶仅 update() 时重填，这里按创建即查）。
     const int expected_digit[8] = {0, 1, 0, 0, 0, 0, 0, 0};
@@ -354,8 +368,8 @@ TEST(spell_presentation_failed_card_still_shows_break_time_like_42a430_case1) {
     GameRandom random;
     AnmEnvironment environment;
     AnmManager manager(random, environment);
-    for (const auto& asset : {std::pair<i32, const char*>{0, "text.anm"},
-                              {2, "ascii.anm"}, {3, "front.anm"}, {8, "effect.anm"}}) {
+    for (const auto& asset :
+         {std::pair<i32, const char*>{0, "text.anm"}, {2, "ascii.anm"}, {3, "front.anm"}, {8, "effect.anm"}}) {
         const auto bytes = read_asset(asset.second);
         CHECK(!bytes.empty());
         CHECK(manager.load(asset.first, bytes.data(), u32(bytes.size())));
@@ -372,12 +386,14 @@ TEST(spell_presentation_failed_card_still_shows_break_time_like_42a430_case1) {
     SpellState state;
     const float position[3] = {0, 128, 0};
     CHECK(presentation.consume(state.begin(0, "synthetic", 3000, 1, 0), position, {}, 6));
-    for (i32 i = 0; i < 125; ++i) CHECK(state.step(false));
+    for (i32 i = 0; i < 125; ++i)
+        CHECK(state.step(false));
     state.phase_timeout(false);
     const auto failed = state.end();
     CHECK(!failed.captured());
     CHECK(presentation.consume(failed, position, {}, 6));
-    for (i32 i = 0; i < 8; ++i) CHECK_EQ(presentation.bonus_digit_handle(i), 0u);
+    for (i32 i = 0; i < 8; ++i)
+        CHECK_EQ(presentation.bonus_digit_handle(i), 0u);
     CHECK_EQ(presentation.bonus_separator_million_handle(), 0u);
     CHECK_EQ(presentation.bonus_separator_thousand_handle(), 0u);
     const u32 first_effect = presentation.bonus_capture_effect_handle();
@@ -399,12 +415,14 @@ TEST(spell_presentation_failed_card_still_shows_break_time_like_42a430_case1) {
     // A following card overwrites +0x118 without retiring the previous
     // script95; that VM finishes on its own (front script95 deletes at 170).
     CHECK(presentation.consume(state.begin(1, "next", 3000, 1, 0), position, {}, 6));
-    for (i32 i = 0; i < 30; ++i) CHECK(state.step(false));
+    for (i32 i = 0; i < 30; ++i)
+        CHECK(state.step(false));
     CHECK(presentation.consume(state.end(), position, {}, 6));
     const u32 second_effect = presentation.bonus_capture_effect_handle();
     CHECK(second_effect != 0u && second_effect != first_effect);
     CHECK(manager.registry.find(first_effect) != nullptr);
-    for (i32 i = 0; i < 200; ++i) CHECK(manager.update());
+    for (i32 i = 0; i < 200; ++i)
+        CHECK(manager.update());
     CHECK(manager.registry.find(first_effect) == nullptr);
 }
 

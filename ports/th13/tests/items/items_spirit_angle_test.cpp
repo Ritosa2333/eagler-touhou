@@ -17,8 +17,7 @@ static u32 bits_of(float value) {
     return bits;
 }
 
-static float tracking_angle(float player_x, float player_y, float spirit_x,
-                            float spirit_y) {
+static float tracking_angle(float player_x, float player_y, float spirit_x, float spirit_y) {
     SessionState session;
     session.rate = 1.f;
     ItemCollector collector;
@@ -43,8 +42,7 @@ TEST(spirit_tracking_angle_matches_native_s3_f8187_bits) {
     // dx = 13.255630493164062、dy = 33.80281066894531（均为 f32）；
     // 双精度 atan2 = 1.1970790883735427 → 最近 f32 = 1.197079062461853
     // （0x3f9939e3，原生 0x443fc0 落点，S3 f8187 原生角度）。
-    const float angle = tracking_angle(145.265625f, 260.6328125f,
-                                       132.00999450683594f, 226.8300018310547f);
+    const float angle = tracking_angle(145.265625f, 260.6328125f, 132.00999450683594f, 226.8300018310547f);
     CHECK_EQ(bits_of(angle), 0x3f9939e3u);
 }
 

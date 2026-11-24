@@ -30,8 +30,7 @@ public:
         th13test::emit(target, 0, 43, 1, 0xff, 0, {u32(-9985)});
         th13test::emit(target, 0, 23, 0, 0xff, 0, {600});
         th13test::emit(target, 0, 10, 0, 0xff, 0, {});
-        stage = th13test::build_scpt({{"Target", target}, {"main", root}},
-                                    {"enemy.anm", "st01enm.anm"});
+        stage = th13test::build_scpt({{"Target", target}, {"main", root}}, {"enemy.anm", "st01enm.anm"});
     }
     bool read(const std::string& name, std::vector<u8>& out) override {
         if (name != "fade.ecl") return false;
@@ -61,9 +60,9 @@ std::vector<u8> shot_bank(bool interrupt_label) {
     using namespace th13::test;
     auto scripts = trivial_scripts(11);
     std::vector<AnmIns> flight{AnmIns{304, 0, {11}}, sprite(0), AnmIns{3, 999, {}}};
-    const std::vector<AnmIns> fade{AnmIns{5, 2, {1}}, AnmIns{304, 0, {13}},
-                                    AnmIns{403, 0, {0xC0}}, AnmIns{409, 0, {30, 0, 0}},
-                                    sprite(0), AnmIns{300, 5, {0}}, AnmIns{1, 22, {}}};
+    const std::vector<AnmIns> fade{
+        AnmIns{5, 2, {1}}, AnmIns{304, 0, {13}}, AnmIns{403, 0, {0xC0}}, AnmIns{409, 0, {30, 0, 0}},
+        sprite(0),         AnmIns{300, 5, {0}},  AnmIns{1, 22, {}}};
     if (interrupt_label) {
         flight.insert(flight.end(), fade.begin(), fade.end());
         flight.push_back(stop());
@@ -103,8 +102,7 @@ struct ShotGraphics final : ZunGraphics {
     void set_viewport(const GraphicsViewport&) override {}
     void presentation_range(const AnmVm& vm, u32, u32, u32) override {
         if (vm.source_script == 10)
-            fades.push_back({i32(vm.visual.layer), u8(vm.visual.color >> 24),
-                             vm.visual.translation.x});
+            fades.push_back({i32(vm.visual.layer), u8(vm.visual.color >> 24), vm.visual.translation.x});
     }
 };
 
@@ -126,15 +124,12 @@ struct FadeFixture {
     bool init(bool interrupt_label = true) {
         provider.animations = &battle.sim.anim_list;
         player.power = 0;
-        if (!battle.load(provider, "fade.ecl", 2, host, progress, player, score))
-            return false;
+        if (!battle.load(provider, "fade.ecl", 2, host, progress, player, score)) return false;
         battle.player_dead = true;  // isolate shot VMs from player visuals
-        presentation = std::make_unique<StagePresentation>(
-            manager, renderer, StagePresentation::Banks{4, 5, 6}, 0);
+        presentation = std::make_unique<StagePresentation>(manager, renderer, StagePresentation::Banks{4, 5, 6}, 0);
         const auto empty = th13::test::synthetic_anm(1, th13::test::trivial_scripts(1));
         const auto player_bank = shot_bank(interrupt_label);
-        return th13::test::load_bank(manager, 4, empty) &&
-               th13::test::load_bank(manager, 5, empty) &&
+        return th13::test::load_bank(manager, 4, empty) && th13::test::load_bank(manager, 5, empty) &&
                th13::test::load_bank(manager, 6, player_bank);
     }
     // One production frame: sync (Update 20) → main chain (Update 34,
@@ -191,7 +186,7 @@ TEST(hit_death_keeps_vm_fading_on_layer_thirteen_then_releases) {
     if (fixture.graphics.fades.empty()) return;
     CHECK_EQ(fixture.graphics.fades[0].layer, 11);
 
-    CHECK(fixture.battle.step(fixture.idle));  // move to 214, then enemy_hit
+    CHECK(fixture.battle.step(fixture.idle));          // move to 214, then enemy_hit
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));  // compaction is next step
     CHECK(fixture.battle.shots[0].alive);
     CHECK_EQ(fixture.battle.shots[0].state, 2);
@@ -200,7 +195,7 @@ TEST(hit_death_keeps_vm_fading_on_layer_thirteen_then_releases) {
     if (fixture.graphics.fades.empty()) return;
     const DrawnFade first = fixture.graphics.fades[0];
     CHECK_EQ(first.layer, 13);
-    CHECK(first.alpha <= 0xC0);        // op403 0xC0, op409 already stepping
+    CHECK(first.alpha <= 0xC0);  // op403 0xC0, op409 already stepping
     CHECK(first.alpha >= 0xC0 - 8);
     CHECK_NEAR(first.x, 214.0f, 0.001f);  // death position: no drift on hit frame
 
@@ -219,7 +214,7 @@ TEST(hit_death_keeps_vm_fading_on_layer_thirteen_then_releases) {
         if (fixture.graphics.fades.size() != 1) return;
         const DrawnFade& current = fixture.graphics.fades[0];
         CHECK_EQ(current.layer, 13);
-        CHECK(current.alpha < previous_alpha);  // op409 fade monotonic
+        CHECK(current.alpha < previous_alpha);             // op409 fade monotonic
         CHECK_NEAR(current.x, previous_x + 3.0f, 0.001f);  // dying drift
         previous_alpha = current.alpha;
         previous_x = current.x;
@@ -314,7 +309,8 @@ TEST(dead_shot_visible_to_sync_enters_the_registered_corpse_pool) {
     // op1 at label-relative time 22 self-destructs the VM on the 20th frame
     // after the hit; the main chain reclaims it and the corpse pool drops the
     // now-invalid handle (0x4464d0's 0x46fb90 lookup failure).
-    for (i32 frame = 0; frame < 19; ++frame) CHECK(fixture.frame());
+    for (i32 frame = 0; frame < 19; ++frame)
+        CHECK(fixture.frame());
     CHECK(fixture.graphics.fades.empty());
     CHECK(fixture.manager.registry.find(handle) == nullptr);
 }
@@ -337,9 +333,9 @@ TEST(double_sync_between_steps_does_not_duplicate_the_corpse) {
     CHECK_EQ(fixture.battle.shots[0].state, 2);
     CHECK(fixture.frame());  // first sync consumes the death
     CHECK_EQ(fixture.graphics.fades.size(), size_t(1));
-    CHECK(fixture.frame());  // second sync without a battle step
+    CHECK(fixture.frame());                              // second sync without a battle step
     CHECK_EQ(fixture.graphics.fades.size(), size_t(1));  // same single corpse
-    CHECK(fixture.battle.step(fixture.idle));  // compaction happens now
+    CHECK(fixture.battle.step(fixture.idle));            // compaction happens now
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));
     CHECK(fixture.frame());
     CHECK_EQ(fixture.graphics.fades.size(), size_t(1));

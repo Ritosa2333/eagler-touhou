@@ -10,24 +10,24 @@ namespace {
 struct TextureGraphics final : ZunGraphics {
     touhou::graphics::PipelineState state;
     std::string selected;
-    u32 triangles_drawn=0;
-    touhou::graphics::PipelineState& pipeline()override{return state;}
-    u32 texture(const AnmResource& file,u32 index)override {
-        selected=file.textures[index].name;return index+1;
+    u32 triangles_drawn = 0;
+    touhou::graphics::PipelineState& pipeline() override { return state; }
+    u32 texture(const AnmResource& file, u32 index) override {
+        selected = file.textures[index].name;
+        return index + 1;
     }
-    void bind_texture(u32)override{}
-    void set_layout(touhou::graphics::VertexLayout)override{}
-    void set_matrix(touhou::graphics::MatrixKind,const Matrix4&)override{}
-    void triangles(u32 count,const void*,u32)override{triangles_drawn+=count;}
-    void primitives(touhou::graphics::Topology,u32,const void*,u32)override{}
-    bool select_target(const AnmResource*,u32)override{return true;}
-    bool clear_target(u32,const GraphicsViewport*)override{return true;}
-    bool clear_depth(const GraphicsViewport*)override{return true;}
-    void set_viewport(const GraphicsViewport&)override{}
+    void bind_texture(u32) override {}
+    void set_layout(touhou::graphics::VertexLayout) override {}
+    void set_matrix(touhou::graphics::MatrixKind, const Matrix4&) override {}
+    void triangles(u32 count, const void*, u32) override { triangles_drawn += count; }
+    void primitives(touhou::graphics::Topology, u32, const void*, u32) override {}
+    bool select_target(const AnmResource*, u32) override { return true; }
+    bool clear_target(u32, const GraphicsViewport*) override { return true; }
+    bool clear_depth(const GraphicsViewport*) override { return true; }
+    void set_viewport(const GraphicsViewport&) override {}
 };
 
-void compare_tree(AnmManager& packed, AnmVm& actual,
-                  AnmManager& separate, AnmVm& expected, i32 script_base) {
+void compare_tree(AnmManager& packed, AnmVm& actual, AnmManager& separate, AnmVm& expected, i32 script_base) {
     CHECK_EQ(actual.source_script, expected.source_script + script_base);
     CHECK_EQ(actual.visible, expected.visible);
     CHECK_EQ(actual.visual.color, expected.visual.color);
@@ -46,7 +46,8 @@ void compare_tree(AnmManager& packed, AnmVm& actual,
         TextureGraphics ag, eg;
         AnmRenderer ar{ag}, er{eg};
         CHECK_EQ(ar.draw(actual), er.draw(expected));
-        ar.flush(); er.flush();
+        ar.flush();
+        er.flush();
         CHECK_EQ(ag.selected, eg.selected);
         CHECK_EQ(ag.triangles_drawn, eg.triangles_drawn);
     }
@@ -71,7 +72,8 @@ void stage1_script(i32 script, i32 label) {
     AnmManager packed{rng1, env1}, separate{rng2, env2};
     CHECK(packed.adopt(1, std::move(resource)));
     CHECK(separate.load(1, boss.data(), u32(boss.size())));
-    rng1.reseed(0); rng2.reseed(0);
+    rng1.reseed(0);
+    rng2.reseed(0);
     const u32 a = packed.create(1, base + script);
     const u32 b = separate.create(1, script);
     CHECK(a && b);
@@ -100,27 +102,37 @@ TEST(merged_detached_children_and_fallback_keep_file_identity) {
     th13test::push_insn(idle, 300, 0, 0, {0});
     th13test::push_insn(idle, 2, 0);
     th13test::push_terminator(idle);
-    const auto bytes=th13test::build_simple_anm({idle});
+    const auto bytes = th13test::build_simple_anm({idle});
     AnmResource packed;
-    for(int file=0;file<3;++file) CHECK(packed.append(bytes.data(),u32(bytes.size())));
-    GameRandom rng{0};AnmEnvironment env;AnmManager manager{rng,env};
-    CHECK(manager.adopt(1,std::move(packed)));
-    const auto h=manager.create(1,2);
-    auto* root=manager.registry.find(h);CHECK(root);if(!root)return;
-    auto* child=manager.spawn_detached(*root,0);CHECK(child);if(!child)return;
-    CHECK_EQ(child->source_script,2);
-    CHECK_EQ(child->visual.sprite,0);
-    CHECK_EQ(child->sprite->texture,2u);
-    CHECK_EQ(child->texture_sprite(),child->sprite);
-    auto* attached=manager.spawn_child(*root,0,0);CHECK(attached);
-    CHECK(manager.registry.find_child_script(*root,0,0)==attached);
-    AnmResource fallback;fallback.sprites.resize(302);fallback.textures.resize(1);
-    fallback.textures[0].width=fallback.textures[0].height=32;
-    env.fallback_sprite_resource=&fallback;
+    for (int file = 0; file < 3; ++file)
+        CHECK(packed.append(bytes.data(), u32(bytes.size())));
+    GameRandom rng{0};
+    AnmEnvironment env;
+    AnmManager manager{rng, env};
+    CHECK(manager.adopt(1, std::move(packed)));
+    const auto h = manager.create(1, 2);
+    auto* root = manager.registry.find(h);
+    CHECK(root);
+    if (!root) return;
+    auto* child = manager.spawn_detached(*root, 0);
+    CHECK(child);
+    if (!child) return;
+    CHECK_EQ(child->source_script, 2);
+    CHECK_EQ(child->visual.sprite, 0);
+    CHECK_EQ(child->sprite->texture, 2u);
+    CHECK_EQ(child->texture_sprite(), child->sprite);
+    auto* attached = manager.spawn_child(*root, 0, 0);
+    CHECK(attached);
+    CHECK(manager.registry.find_child_script(*root, 0, 0) == attached);
+    AnmResource fallback;
+    fallback.sprites.resize(302);
+    fallback.textures.resize(1);
+    fallback.textures[0].width = fallback.textures[0].height = 32;
+    env.fallback_sprite_resource = &fallback;
     CHECK(child->select_sprite(-1));
-    CHECK(child->texture_sprite()==&fallback.sprites[301]);
-    CHECK_EQ(child->visual.sprite,301);
+    CHECK(child->texture_sprite() == &fallback.sprites[301]);
+    CHECK_EQ(child->visual.sprite, 301);
 }
-}
+}  // namespace
 
 int main() { return th13test::run_all("anm-merged-archive"); }

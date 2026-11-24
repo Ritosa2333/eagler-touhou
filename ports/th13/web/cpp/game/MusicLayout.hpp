@@ -13,6 +13,7 @@ struct MusicTrack {
 // thbgm.fmt is a zero-terminated array of original 52-byte records.
 class MusicLayout {
     std::vector<MusicTrack> tracks;
+
 public:
     std::string error;
     bool open(const u8*, u32);
@@ -22,4 +23,4 @@ public:
     }
     i32 index(const std::string&) const;
 };
-}
+}  // namespace th13

@@ -127,9 +127,7 @@ private:
 class ReplayInputCursor {
 public:
     explicit ReplayInputCursor(const ReplayStage& stage) : stage_(&stage) {}
-    bool valid() const {
-        return stage_ && index_ < stage_->frame_count && !eof_reached_;
-    }
+    bool valid() const { return stage_ && index_ < stage_->frame_count && !eof_reached_; }
     u32 frame_index() const { return index_; }
     const ReplayStage* stage() const { return stage_; }  // 宿主侧取总帧数等头字段
     ReplayFrame next() {

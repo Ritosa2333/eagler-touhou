@@ -30,8 +30,8 @@ bool StageResource::open(const u8* data, u32 size) {
     };
     const i32 object_count = s16(0), primitive_count = s16(2);
     const u32 instance_offset = u32at(4), script_offset = u32at(8);
-    if (object_count < 0 || primitive_count < 0 || u32(object_count) > (size - 0x90) / 4 ||
-        instance_offset > size || script_offset > size || instance_offset > script_offset)
+    if (object_count < 0 || primitive_count < 0 || u32(object_count) > (size - 0x90) / 4 || instance_offset > size ||
+        script_offset > size || instance_offset > script_offset)
         return fail("invalid STD section bounds");
     const u32 directory_end = 0x90 + u32(object_count) * 4;
     const auto* name_end = static_cast<const u8*>(std::memchr(data + 16, 0, 128));
@@ -55,8 +55,7 @@ bool StageResource::open(const u8* data, u32 size) {
                 ended = true;  // 图元表终止符 0xffff0004（size=4 伴随）
                 break;
             }
-            if (length < 28 || u32(length) > instance_offset - p)
-                return fail("invalid STD primitive length");
+            if (length < 28 || u32(length) > instance_offset - p) return fail("invalid STD primitive length");
             StagePrimitive primitive;
             primitive.type = type;
             primitive.script = s16(p + 4);
@@ -109,8 +108,7 @@ bool StageResource::open(const u8* data, u32 size) {
         return fail("missing STD script terminator");
     // st01 跳转闭合性：ins_1 目标必须命中指令边界（防错位死循环）。
     for (const auto& command : instructions)
-        if (command.opcode == 1 &&
-            (command.arguments.size() < 2 || !instruction(command.argument<u32>(0))))
+        if (command.opcode == 1 && (command.arguments.size() < 2 || !instruction(command.argument<u32>(0))))
             return fail("invalid STD jump target");
     return true;
 }

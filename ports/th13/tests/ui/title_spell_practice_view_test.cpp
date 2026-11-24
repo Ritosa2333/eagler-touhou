@@ -4,8 +4,8 @@
 //   经 0044bb80 整表重建（0x46fb90 失效判定）。移植不得对已 label6 锁定的
 //   旧 187 VM 重发 select——那正是「返回后列表只剩选中项」的成因。
 // 合成脚本只验证句柄/中断语义，不模拟真实美术。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/TitleSpellPracticeMenu.hpp"
 #include "game/TitleSpellPracticeView.hpp"
@@ -20,9 +20,7 @@ namespace {
 struct SpellHost final : TitleSpellPracticePlatform {
     i32 stage_count() const override { return kSpellPracticeStages; }
     bool stage_available(i32 stage) const override { return stage >= 1 && stage <= 6; }
-    std::string stage_name(i32 stage) const override {
-        return "stage " + std::to_string(stage);
-    }
+    std::string stage_name(i32 stage) const override { return "stage " + std::to_string(stage); }
     i32 spell_count(i32 stage) const override { return kSpellPracticeSlots[stage - 1]; }
     // View 级回归不覆盖锁定门（menu 套件已测）；全解锁让任意 stage 可走通
     // 三级往返。
@@ -30,11 +28,10 @@ struct SpellHost final : TitleSpellPracticePlatform {
     std::string spell_name(i32 stage, i32 slot) const override {
         return "spell " + std::to_string(stage) + "-" + std::to_string(slot);
     }
-    i32 spell_id(i32 stage, i32 slot, i32 difficulty) const override {
-        return stage * 100 + slot * 10 + difficulty;
-    }
+    i32 spell_id(i32 stage, i32 slot, i32 difficulty) const override { return stage * 100 + slot * 10 + difficulty; }
     i32 spell_rank(i32 stage, i32 slot, i32 difficulty) const override {
-        (void)stage; (void)slot;
+        (void)stage;
+        (void)slot;
         return difficulty;
     }
     bool spell_record(i32, i32, SpellPracticeRecord& record) const override {
@@ -44,9 +41,7 @@ struct SpellHost final : TitleSpellPracticePlatform {
     }
     std::string spell_variant_name(i32, i32, i32) const override { return "variant"; }
     i32 character_count() const override { return kSpellPracticeCharacters; }
-    std::string character_name(i32 character) const override {
-        return "char " + std::to_string(character);
-    }
+    std::string character_name(i32 character) const override { return "char " + std::to_string(character); }
 };
 
 // 带 label 的合成脚本体：label(id); wait(); … 让 0x46fca0/0x46fc30 的
@@ -124,8 +119,8 @@ TEST(spell_cancel_rebuilds_stage_list_vm) {
     AnmVm* stage_vm = harness.unique(187);
     CHECK(stage_vm != nullptr);
 
-    CHECK(harness.frame(down_key()));   // 关卡光标 0 -> 1（STAGE 2）
-    CHECK(harness.frame(down_key()));   // 1 -> 2（STAGE 3，复现截图路径）
+    CHECK(harness.frame(down_key()));  // 关卡光标 0 -> 1（STAGE 2）
+    CHECK(harness.frame(down_key()));  // 1 -> 2（STAGE 3，复现截图路径）
     CHECK(harness.frame(confirm_key()));
     CHECK_EQ(i32(harness.menu.level()), i32(SpellPracticeLevel::Spell));
     CHECK(harness.frame(confirm_key()));  // 解锁卡进难度层，188 仍在
@@ -153,14 +148,14 @@ TEST(spell_cancel_rebuilds_stage_list_vm) {
     // 187 是新建实例：对已 label6 锁定的旧 VM 重发 select 正是列表消失成因。
     const auto rebuilt = harness.by_script(187);
     bool fresh = false;
-    for (AnmVm* vm : rebuilt) fresh = fresh || vm != stage_vm;
+    for (AnmVm* vm : rebuilt)
+        fresh = fresh || vm != stage_vm;
     CHECK(fresh);
     CHECK_EQ(rebuilt.size(), 2u);  // 旧 VM 退场 + 新 VM（同帧共存，原版同构）
     // 新 VM 处于选中态：case1 的 label3 立即 + label(7+cursor) 选中。
     bool selected = false;
     for (AnmVm* vm : rebuilt)
-        selected = selected || (vm != stage_vm &&
-                                vm->pending_interrupt == 7 + harness.menu.cursor());
+        selected = selected || (vm != stage_vm && vm->pending_interrupt == 7 + harness.menu.cursor());
     CHECK(selected);
     // 关卡徽章按 0x4560a0 case0 重建：至少存在一个未退场的 109 实例
     // （旧 109 在进卡表时已 label1 退场，合成脚本 stop 不自删故仍占池）。
@@ -184,8 +179,7 @@ TEST(stage_confirm_then_immediate_cancel_restores_list) {
     CHECK_EQ(rebuilt.size(), 2u);
     bool selected = false;
     for (AnmVm* vm : rebuilt)
-        selected = selected || (vm != stage_vm &&
-                                vm->pending_interrupt == 7 + harness.menu.cursor());
+        selected = selected || (vm != stage_vm && vm->pending_interrupt == 7 + harness.menu.cursor());
     CHECK(selected);
 }
 

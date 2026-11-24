@@ -23,7 +23,7 @@ public:
         th13test::emit(watcher, 1, 23, 0, 0xff, 0, {600});
         th13test::emit(watcher, 1, 10, 0, 0xff, 0, {});
         stage = th13test::build_scpt({{"Target", target}, {"Watcher", watcher}, {"main", root}},
-                                    {"enemy.anm", "st01enm.anm"});
+                                     {"enemy.anm", "st01enm.anm"});
     }
     bool read(const std::string& name, std::vector<u8>& out) override {
         if (name != "time.ecl") return false;
@@ -57,9 +57,7 @@ struct TimeFixture {
         provider.animations = &battle.sim.anim_list;
         return battle.load(provider, "time.ecl", 2, host, progress, player, score);
     }
-    StageEnemy* target() {
-        return battle.sim.spawn_enemy("Target", 0, 200, 40, nullptr, false);
-    }
+    StageEnemy* target() { return battle.sim.spawn_enemy("Target", 0, 200, 40, nullptr, false); }
     void lethal_shot() {
         PlayerShot shot;
         shot.alive = true;
@@ -71,7 +69,8 @@ struct TimeFixture {
     }
     int spirits() {
         int count = 0;
-        for (const auto& spirit : battle.item_manager.spirits()) count += spirit.alive;
+        for (const auto& spirit : battle.item_manager.spirits())
+            count += spirit.alive;
         return count;
     }
 };
@@ -110,10 +109,11 @@ TEST(lethal_collision_at_age_sixty_spawns_before_time_advances) {
             expected.signed_unit();  // 00439170: death spirit angle
             expected.unit();         // 004391a4: death spirit speed
         }
-        expected.signed_unit();     // 00417b2a: scatter-table initial angle
+        expected.signed_unit();  // 00417b2a: scatter-table initial angle
         CHECK(fixture.battle.step(fixture.idle));
         CHECK_EQ(retired_age, float(age));  // dead update returns before 0041aab9
-        for (const auto& alive : fixture.battle.sim.enemies) CHECK(alive->serial != serial);
+        for (const auto& alive : fixture.battle.sim.enemies)
+            CHECK(alive->serial != serial);
         CHECK_EQ(fixture.spirits(), age == 60 ? 1 : 0);
         CHECK_EQ(fixture.battle.sim.random.index(), expected.index());
         CHECK_EQ(fixture.battle.sim.random.seed(), expected.seed());

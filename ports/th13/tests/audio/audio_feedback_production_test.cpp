@@ -1,6 +1,6 @@
 #include "../ecl/ecl_test_fixtures.hpp"
-#include "game/StageBattle.hpp"
 #include "game/SpellPresentation.hpp"
+#include "game/StageBattle.hpp"
 #include "sdl/AudioDevice.hpp"
 #include <algorithm>
 #include <fstream>
@@ -17,14 +17,21 @@ struct Provider : EclResourceProvider {
         th13test::emit(b, 0, 10, 0, 255, 0, {});
         bytes = th13test::build_scpt({{"main", b}}, {"enemy.anm", "st01enm.anm"});
     }
-    bool read(const std::string&, std::vector<u8>& b) override { b = bytes; return true; }
+    bool read(const std::string&, std::vector<u8>& b) override {
+        b = bytes;
+        return true;
+    }
     bool animation(u32, const std::string& n) override {
         if (names) names->push_back(n);
         return true;
     }
 };
 struct Host : StageBattleServices {
-    struct E { i32 id; float x; bool positional; };
+    struct E {
+        i32 id;
+        float x;
+        bool positional;
+    };
     std::vector<E> requests;
     std::vector<i32> notices;
     sdl::AudioDevice audio;
@@ -90,7 +97,7 @@ void check_audible(Host& host, i32 voice) {
     CHECK(host.audio.mix(pcm.data(), 4096));
     CHECK(std::any_of(pcm.begin(), pcm.end(), [](float v) { return v != 0.f; }));
 }
-}
+}  // namespace
 
 TEST(spirit_birth_flag_and_pan) {
     auto r = std::make_unique<Rig>();

@@ -1,8 +1,8 @@
 // HUD Stage 1 "Item Get Border Line!" lifecycle:
 // 0x425170:509-512 creates front.anm script67 only when stage==1,
 // GameInf+0x74==0 and DAT_004be7c8==0. The ANM tree owns the animation.
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/GameHud.hpp"
 
@@ -59,8 +59,7 @@ struct HudHarness {
         }
         environment.fallback_sprite_resource = manager.resource(2);
         if (!hud.initialize(HudEntryContext{})) {
-            std::printf("# HUD 初始化失败：%s；动画：%s\n", hud.error.c_str(),
-                        manager.error.c_str());
+            std::printf("# HUD 初始化失败：%s；动画：%s\n", hud.error.c_str(), manager.error.c_str());
             return false;
         }
         return true;

@@ -7,7 +7,7 @@ TEST(synchronous_call_wait_preserves_caller_and_has_no_child_context) {
     std::vector<u8> main, child;
     th13test::emit(main, 0, 40, 0, 255, 0, {0});
     th13test::emit(main, 0, 100, 0, 255, 0, {1});
-    const char name[8] = {'c','h','i','l','d',0,0,0};
+    const char name[8] = {'c', 'h', 'i', 'l', 'd', 0, 0, 0};
     th13test::emit(main, 0, 11, 0, 255, 0, {8}, name, sizeof name);
     th13test::emit(main, 0, 100, 0, 255, 0, {3});
     th13test::emit(main, 0, 23, 0, 255, 0, {100});
@@ -47,6 +47,6 @@ TEST(synchronous_call_wait_preserves_caller_and_has_no_child_context) {
     CHECK_EQ(threads.main.time, -99.f);
     CHECK_EQ(threads.count(), 1u);
 }
-}
+}  // namespace
 
 int main() { return th13test::run_all("ecl-call-wait-contract"); }

@@ -47,16 +47,18 @@ public:
     bool encode(std::vector<u8>& out, const std::string& name, i32 score) const;
     // 0x4484d0 保存路径逐字节同构（LZ77 = ReplayFile::deflate，USER 段为
     // 完整 Shift-JIS 摘要两块：flag=0 摘要 + flag=1 コメント占位）。
-    bool encode(std::vector<u8>& out, const std::string& name, i32 score,
-                const ReplaySaveMeta& meta) const;
+    bool encode(std::vector<u8>& out, const std::string& name, i32 score, const ReplaySaveMeta& meta) const;
     static std::vector<u8> top_snapshot(const SessionState& progress);
-    static std::vector<u8> stage_snapshot(const SessionState& progress,
-        const HudPlayerState& player, const HudScoreState& score, u16 seed,
-        i32 x128, i32 y128, bool focused);
+    static std::vector<u8> stage_snapshot(const SessionState& progress, const HudPlayerState& player,
+                                          const HudScoreState& score, u16 seed, i32 x128, i32 y128, bool focused);
     bool ready() const { return top_.size() == 0x74 && !stages_.empty(); }
-    void clear() { top_.clear(); stages_.clear(); }
+    void clear() {
+        top_.clear();
+        stages_.clear();
+    }
+
 private:
     std::vector<u8> top_;
     std::vector<ReplayStage> stages_;
 };
-}
+}  // namespace th13

@@ -97,7 +97,8 @@ TEST(spirit_notice_release_retires_every_live_handle) {
     CHECK(fixture.manager.update());
     CHECK_EQ(presentation.spirit_notice_handle(), 0u);
     CHECK(presentation.spirit_notice_handles().empty());
-    for (u32 handle : handles) CHECK(fixture.manager.registry.find(handle) == nullptr);
+    for (u32 handle : handles)
+        CHECK(fixture.manager.registry.find(handle) == nullptr);
 }
 
 TEST(spirit_notice_after_natural_end_is_pruned_without_collateral_retire) {
@@ -107,7 +108,8 @@ TEST(spirit_notice_after_natural_end_is_pruned_without_collateral_retire) {
     CHECK(presentation.show_spirit_notice(1, 0.0f, 0.0f, 0.0f));
     const u32 first = presentation.spirit_notice_handle();
     // 脚本 108 帧数结束 → 手动走完更新让 VM 自然结束（沿用引擎 tick）。
-    for (i32 i = 0; i < 200; ++i) fixture.manager.update();
+    for (i32 i = 0; i < 200; ++i)
+        fixture.manager.update();
     CHECK(fixture.manager.registry.find(first) == nullptr);
     // 下一次创建只摘除死句柄，不影响其它 live 提示。
     CHECK(presentation.show_spirit_notice(2, 0.0f, 0.0f, 0.0f));

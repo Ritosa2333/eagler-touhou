@@ -78,8 +78,7 @@ public:
 
     // 舞台行（1..7）+ ANM 名单（ECL ANIM 序）+ 读通道：算各文件的全局脚本
     // 基号。缺文件/解析失败置 error 并返回 false（显式，不静默降级）。
-    bool bind_stage_scripts(i32 stage, const std::vector<std::string>& anim_list,
-                            const ReadFn& read);
+    bool bind_stage_scripts(i32 stage, const std::vector<std::string>& anim_list, const ReadFn& read);
     bool player_portrait(i32 character);  // opcode 1
     // opcode 2：entry 号决定 Boss/中Boss 对（entry<2 或无 boss 对 = 中Boss）。
     bool side_portrait(i32 entry);
@@ -90,7 +89,7 @@ public:
     // 5/6、MainBoss 在 entry1 前写 6/7（B=st03enm 芳香）。port 的 ECL 524 已把
     // 章节写进 SessionState（StageCommands case 524）；RunScene 把该真实章节
     // 传入，而不是由 entry/立绘分支反推名牌章节。
-    bool nameplate(i32 chapter);  // opcode 20
+    bool nameplate(i32 chapter);       // opcode 20
     bool interrupt_player(i32 label);  // opcode 13 / opcode 7 的左亮
     bool interrupt_side(i32 label);    // opcode 14 / opcode 8 的右亮
     // opcode 23/24（0x4295a9/0x4295bc）：deferred label7 中断（0x46fc30），

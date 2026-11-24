@@ -1,17 +1,15 @@
-#include "AnmRenderer.hpp"
 #include "TitleScene.hpp"
+#include "AnmRenderer.hpp"
 
 namespace th13 {
 
-TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManager& a,
-                       TitleScenePlatform& h, FrameScheduler& schedule, TitleSceneResources bank)
+TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManager& a, TitleScenePlatform& h,
+                       FrameScheduler& schedule, TitleSceneResources bank)
     : progress(p), settings(choice), animations(a), host(h), scheduler(schedule), resources(bank),
       main(state, p, choice, a, bank), difficulty(state, p, choice, a, bank),
-      character(state, p, choice, a, *this, bank),
-      stage(state, p, choice, a, *this, bank), replay(state, a, h, bank),
-      option(state, a, h, option_volumes, bank),
-      key_config(state, a, key_config_host, bank), music_room(state, h), manual(state, h),
-      result(state, h, a, bank.title), frame(state, p, *this, schedule, a) {
+      character(state, p, choice, a, *this, bank), stage(state, p, choice, a, *this, bank), replay(state, a, h, bank),
+      option(state, a, h, option_volumes, bank), key_config(state, a, key_config_host, bank), music_room(state, h),
+      manual(state, h), result(state, h, a, bank.title), frame(state, p, *this, schedule, a) {
     state.screen = TitleScreen::Initialize;
     state.flags = 0;
     main.play_sound = [this](i32 id) { return host.sound(id); };
@@ -27,23 +25,20 @@ TitleScene::TitleScene(SessionState& p, TitleSelectionSettings& choice, AnmManag
         auto& scene = *static_cast<TitleScene*>(owner);
         // [§8.9] LOGO 绘制侧层落码（Draw 优先级 2，先于 ANM 层任务）。
         scene.main.apply_draw_layers();
-        if (scene.player_data && scene.player_data_view &&
-            scene.state.screen == TitleScreen::PlayerData &&
+        if (scene.player_data && scene.player_data_view && scene.state.screen == TitleScreen::PlayerData &&
             !scene.player_data_view->draw(*scene.player_data, scene.host))
             return scene.check(false, scene.player_data_view->error) ? 1 : 5;
-        if (scene.spell_practice && scene.spell_practice_view &&
-            scene.state.screen == TitleScreen::SpellPractice && scene.spell_launch_age_ < 0 &&
+        if (scene.spell_practice && scene.spell_practice_view && scene.state.screen == TitleScreen::SpellPractice &&
+            scene.spell_launch_age_ < 0 &&
             !scene.spell_practice_view->draw(*scene.spell_practice, scene.host, scene.host))
             return scene.check(false, scene.spell_practice_view->error) ? 1 : 5;
         // 通关结算屏文本（0x454050/0x4549d0）走同一 Draw 优先级 2 队列。
-        if ((scene.state.screen == TitleScreen::ResultName ||
-             scene.state.screen == TitleScreen::ResultReplaySlot) &&
+        if ((scene.state.screen == TitleScreen::ResultName || scene.state.screen == TitleScreen::ResultReplaySlot) &&
             !scene.result.draw_texts(scene.host))
             return scene.check(false, scene.result.error) ? 1 : 5;
         return scene.check(scene.stage.draw_texts(scene.host), scene.stage.error) ? 1 : 5;
     };
-    check(scheduler.add(stage_text_draw, FramePass::Draw, 2) >= 0,
-          "Practice stage text callback registration failed");
+    check(scheduler.add(stage_text_draw, FramePass::Draw, 2) >= 0, "Practice stage text callback registration failed");
 }
 
 TitleScene::~TitleScene() {
@@ -55,7 +50,8 @@ TitleScene::~TitleScene() {
     // Manual 查看器在屏内正常结束会自行 close；场景提前析构（退出/异常）时
     // 在此闭合，避免 help.anm VM 先于 bank 回收残留。
     if (state.screen == TitleScreen::Manual) host.close_manual();
-    for (auto& handle : state.handles) animations.retire(handle);
+    for (auto& handle : state.handles)
+        animations.retire(handle);
     animations.retire(state.version_bar);
     animations.retire(state.start_effect);
     animations.retire(state.replay_ascii_root);  // [R3-M] ascii s19 粒子根
@@ -108,7 +104,6 @@ bool TitleScene::practice_stage_played(i32 character, i32 difficulty, i32 stage)
     return host.practice_stage_played(character, difficulty, stage);
 }
 
-
 bool TitleScene::draw_title_replay_texts() {
     // Replay 屏动态文字：TitleFrame Draw 回调（优先级 2，先于全部 ANM 层）逐帧
     // 入队，AsciiFrame（Draw 78）同帧消费——原版 supervisor 0x452c30 的 ASCII
@@ -123,8 +118,7 @@ bool TitleScene::draw_title_music_room_texts() {
 }
 
 bool TitleScene::restore_practice_selection() {
-    if (!returns_to_practice_selection(progress, 1, false))
-        return check(false, "Invalid Practice return session");
+    if (!returns_to_practice_selection(progress, 1, false)) return check(false, "Invalid Practice return session");
     settings.configured_difficulty = progress.difficulty;
     settings.preferred_character = progress.character;
     settings.practice_stage = progress.starting_stage - 1;
@@ -167,14 +161,12 @@ bool TitleScene::restore_spell_practice_selection() {
                     state.handles[resources.background_root] =
                         animations.create(resources.title, resources.background_root, -1, 0);
                     if (!state.handles[resources.background_root])
-                        return check(false, animations.error.empty()
-                                                ? "Spell Practice return background unavailable"
-                                                : animations.error);
+                        return check(false, animations.error.empty() ? "Spell Practice return background unavailable"
+                                                                     : animations.error);
                 }
                 if (!animations.interrupt(state.handles[resources.background_root], 3, true))
-                    return check(false, animations.error.empty()
-                                            ? "Spell Practice return background interrupt failed"
-                                            : animations.error);
+                    return check(false, animations.error.empty() ? "Spell Practice return background interrupt failed"
+                                                                 : animations.error);
                 // 主菜单进符卡练习同构光标栈（TitleMainMenu SpellPractice 分支）。
                 state.flags |= 2u;
                 state.menu.depth = state.menu.disabled_count = 0;
@@ -196,15 +188,15 @@ bool TitleScene::update_player_data(const TitleFrameInput& value) {
     if (!player_data) {
         player_data = std::make_unique<TitlePlayerDataMenu>(state, host);
         player_data->play_sound = [this](i32 id) { return host.sound(id); };
-        if (host.record_menu_views())
-            player_data_view = std::make_unique<TitlePlayerDataView>(animations);
+        if (host.record_menu_views()) player_data_view = std::make_unique<TitlePlayerDataView>(animations);
     }
-    if (!player_data->update(value.pressed, value.repeated))
-        return check(false, player_data->error);
-    if (player_data_view && !player_data_view->update(*player_data,
-            [this](AnmVm& vm, u32 color, const std::string& text, AnmTextAlignment alignment) {
-                return host.rasterize_title_text(vm, color, text, alignment);
-            })) return check(false, player_data_view->error);
+    if (!player_data->update(value.pressed, value.repeated)) return check(false, player_data->error);
+    if (player_data_view &&
+        !player_data_view->update(*player_data,
+                                  [this](AnmVm& vm, u32 color, const std::string& text, AnmTextAlignment alignment) {
+                                      return host.rasterize_title_text(vm, color, text, alignment);
+                                  }))
+        return check(false, player_data_view->error);
     if (i32(state.screen) != i32(TitleScreen::PlayerData)) {
         // case3 已 close_player_data + pop + change_screen(Main)：丢弃旧实例，
         // 下次进屏从 case0 重新开表。
@@ -222,12 +214,10 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
     if (spell_launch_age_ >= 0) {
         ++spell_launch_age_;
         // 004576c0 case3: transition at age10, launch after age39.
-        if (spell_launch_age_ == 10 &&
-            !host.begin_transition(state.start_effect))
+        if (spell_launch_age_ == 10 && !host.begin_transition(state.start_effect))
             return check(false, "Spell Practice transition failed");
         if (spell_launch_age_ > 39) {
-            if (!host.start_spell_practice(pending_spell_))
-                return check(false, "Spell Practice launch failed");
+            if (!host.start_spell_practice(pending_spell_)) return check(false, "Spell Practice launch failed");
             settings.preferred_character = pending_spell_.character;
             spell_launch_age_ = -1;
             spell_practice_launch_status_.clear();
@@ -236,12 +226,10 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
         return true;
     }
     if (!spell_practice) {
-        spell_practice = std::make_unique<TitleSpellPracticeMenu>(
-            host, settings.preferred_character);
+        spell_practice = std::make_unique<TitleSpellPracticeMenu>(host, settings.preferred_character);
         if (spell_restore_pending_) {
             // [H-SP2] DAT_004bb4c4/c8 级联：菜单直入难度层恢复上次所选卡。
-            if (!spell_practice->restore_selection(spell_restore_.stage,
-                                                   spell_restore_.spell_slot,
+            if (!spell_practice->restore_selection(spell_restore_.stage, spell_restore_.spell_slot,
                                                    spell_restore_.difficulty))
                 return check(false, "Spell Practice restore rejected by catalog");
             spell_restore_pending_ = false;
@@ -250,10 +238,11 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
         if (host.record_menu_views()) {
             spell_practice_view = std::make_unique<TitleSpellPracticeView>(animations, resources.title);
             if (!spell_practice_view->update(*spell_practice, host,
-                    [this](AnmVm& vm, u32 color, const std::string& text) {
-                        return host.rasterize_title_text(vm, color, text);
-                    })) return check(false, spell_practice_view->error);
-            spell_menu_delay_ = 11; // 004560a0 case1: age >10 before input.
+                                             [this](AnmVm& vm, u32 color, const std::string& text) {
+                                                 return host.rasterize_title_text(vm, color, text);
+                                             }))
+                return check(false, spell_practice_view->error);
+            spell_menu_delay_ = 11;  // 004560a0 case1: age >10 before input.
         }
     }
     SpellPracticeInput input;
@@ -271,29 +260,27 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
             input = delayed_spell_input_;
             delayed_spell_input_ = {};
             leaving_delay = true;
-        } else if ((input.confirm && spell_practice->level() != SpellPracticeLevel::Difficulty) ||
-                   input.cancel) {
+        } else if ((input.confirm && spell_practice->level() != SpellPracticeLevel::Difficulty) || input.cancel) {
             // Original consumes direction/character changes before confirm.
             SpellPracticeInput navigation = input;
             navigation.confirm = navigation.cancel = false;
             spell_practice->update(navigation);
             input.up = input.down = input.left = input.right = false;
             const bool accepted = input.cancel || spell_practice->level() == SpellPracticeLevel::Stage ||
-                (spell_practice->cursor() >= 0 &&
-                 size_t(spell_practice->cursor()) < spell_practice->spell_rows().size() &&
-                 spell_practice->spell_rows()[size_t(spell_practice->cursor())].unlocked);
+                                  (spell_practice->cursor() >= 0 &&
+                                   size_t(spell_practice->cursor()) < spell_practice->spell_rows().size() &&
+                                   spell_practice->spell_rows()[size_t(spell_practice->cursor())].unlocked);
             if (accepted) {
                 if (!spell_practice_view->update(*spell_practice, host,
-                        [this](AnmVm& vm, u32 color, const std::string& text) {
-                            return host.rasterize_title_text(vm, color, text);
-                        })) return check(false, spell_practice_view->error);
+                                                 [this](AnmVm& vm, u32 color, const std::string& text) {
+                                                     return host.rasterize_title_text(vm, color, text);
+                                                 }))
+                    return check(false, spell_practice_view->error);
                 if (input.confirm && !spell_practice_view->confirm(*spell_practice))
                     return check(false, spell_practice_view->error);
-                if (!host.sound(input.cancel ? 9 : 7))
-                    return check(false, "Spell Practice menu sound failed");
+                if (!host.sound(input.cancel ? 9 : 7)) return check(false, "Spell Practice menu sound failed");
                 delayed_spell_input_ = input;
-                spell_menu_delay_ = input.cancel ? 6 :
-                    spell_practice->level() == SpellPracticeLevel::Stage ? 20 : 14;
+                spell_menu_delay_ = input.cancel ? 6 : spell_practice->level() == SpellPracticeLevel::Stage ? 20 : 14;
                 return true;
             }
         }
@@ -303,19 +290,19 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
     const i32 previous_character = spell_practice->character();
     const bool terminal = spell_practice->update(input);
     if (spell_practice_view &&
-        (previous_cursor != spell_practice->cursor() ||
-         previous_character != spell_practice->character()) &&
-        !host.sound(10)) return check(false, "Spell Practice navigation sound failed");
-    if (spell_practice_view && input.confirm && !terminal &&
-        spell_practice->level() == previous_level && !spell_practice->blocked.empty() &&
-        !host.sound(16)) return check(false, "Spell Practice locked sound failed");
-    if (spell_practice_view && !spell_practice_view->update(*spell_practice, host,
-            [this](AnmVm& vm, u32 color, const std::string& text) {
-                return host.rasterize_title_text(vm, color, text);
-            })) return check(false, spell_practice_view->error);
-    if (spell_practice_view && leaving_delay && !terminal &&
-        spell_practice->level() != previous_level)
-        spell_menu_delay_ = 11; // each new selector enters through case1 age>10
+        (previous_cursor != spell_practice->cursor() || previous_character != spell_practice->character()) &&
+        !host.sound(10))
+        return check(false, "Spell Practice navigation sound failed");
+    if (spell_practice_view && input.confirm && !terminal && spell_practice->level() == previous_level &&
+        !spell_practice->blocked.empty() && !host.sound(16))
+        return check(false, "Spell Practice locked sound failed");
+    if (spell_practice_view &&
+        !spell_practice_view->update(*spell_practice, host, [this](AnmVm& vm, u32 color, const std::string& text) {
+            return host.rasterize_title_text(vm, color, text);
+        }))
+        return check(false, spell_practice_view->error);
+    if (spell_practice_view && leaving_delay && !terminal && spell_practice->level() != previous_level)
+        spell_menu_delay_ = 11;  // each new selector enters through case1 age>10
     if (!terminal) return true;
     switch (spell_practice->command().action) {
     case SpellPracticeAction::Cancel:
@@ -335,8 +322,7 @@ bool TitleScene::update_spell_practice(const TitleFrameInput& value) {
             if (!host.sound(7) || !host.fade_out_title_music() || !host.sound(0x32))
                 return check(false, "Spell Practice launch sound failed");
         } else {
-            spell_practice_launch_status_ =
-                "Spell practice launch unavailable: run routing not implemented";
+            spell_practice_launch_status_ = "Spell practice launch unavailable: run routing not implemented";
         }
         break;
     default:
@@ -372,13 +358,14 @@ bool TitleScene::update_title_menu(TitleScreen screen, const TitleFrameInput& va
         return check(result.update(value.pressed, value.repeated), result.error);
     case TitleScreen::MusicRoom:
         if (host.record_menu_views() && !music_room_view)
-            music_room_view = std::make_unique<TitleMusicRoomView>(animations,
-                resources.title, 0, resources.ascii);
+            music_room_view = std::make_unique<TitleMusicRoomView>(animations, resources.title, 0, resources.ascii);
         if (!check(music_room.update(value.pressed, value.repeated), music_room.error)) return false;
-        if (music_room_view && !music_room_view->update(state, music_room, host,
-                [this](AnmVm& vm, u32 color, const std::string& text, AnmTextAlignment alignment) {
-                    return host.rasterize_title_text(vm, color, text, alignment);
-                })) return check(false, music_room_view->error);
+        if (music_room_view &&
+            !music_room_view->update(state, music_room, host,
+                                     [this](AnmVm& vm, u32 color, const std::string& text, AnmTextAlignment alignment) {
+                                         return host.rasterize_title_text(vm, color, text, alignment);
+                                     }))
+            return check(false, music_room_view->error);
         if (state.screen != TitleScreen::MusicRoom && music_room_view) {
             music_room_view->release();
             music_room_view.reset();

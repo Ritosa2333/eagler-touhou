@@ -63,9 +63,7 @@ bool read_repo_file(const std::string& relative, std::vector<u8>& out) {
     return got == out.size();
 }
 
-u32 read_u32(const u8* p) {
-    return u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24;
-}
+u32 read_u32(const u8* p) { return u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24; }
 i32 read_i32(const u8* p) { return i32(read_u32(p)); }
 
 // 原保存机器时区（与 replay_encode_roundtrip_test 同法）：USER Date 行与
@@ -81,8 +79,7 @@ bool set_replay_timezone(const std::string& date_line, std::time_t stamp) {
     tm.tm_isdst = -1;
     const std::time_t as_utc = timegm(&tm);
     if (as_utc == std::time_t(-1)) return false;
-    const long long minute = static_cast<long long>(stamp) -
-                             static_cast<long long>(stamp) % 60;
+    const long long minute = static_cast<long long>(stamp) - static_cast<long long>(stamp) % 60;
     const long long offset = static_cast<long long>(as_utc) - minute;
     if (offset % 3600 != 0) return false;
     const long long hours = offset / 3600;
@@ -120,7 +117,7 @@ bool g_last_battle = false;  // 本步镜像是否计为录制帧（诊断列）
 struct Driver {
     ApplicationState* state = nullptr;
     const ReplayFile* original = nullptr;
-    std::array<u32, 8> recorded{};   // 按关号 1..6
+    std::array<u32, 8> recorded{};  // 按关号 1..6
     bool overrun = false;
     u32 overrun_stage = 0;
     // 对齐探针（TH13_E2E_SHIFT）：喂入帧 = 镜像帧 + shift。0 = 生产对齐语义。
@@ -139,26 +136,21 @@ struct Driver {
         // 由上一帧尾 destination Run 路径置位）。ending 收尾步（pending_load
         // + destination Ending + run 仍在观察点）在本步 complete_loading 内
         // release_run，场景更新不再发生，不录制。
-        boot_ = !run_ && state->pending_load != 0 &&
-                state->pending_destination == i32(sdl::Destination::Run);
-        ending_apply_ = run_ && state->pending_load != 0 &&
-                        state->pending_destination == i32(sdl::Destination::Ending);
+        boot_ = !run_ && state->pending_load != 0 && state->pending_destination == i32(sdl::Destination::Run);
+        ending_apply_ = run_ && state->pending_load != 0 && state->pending_destination == i32(sdl::Destination::Ending);
         replay_ = state->replay_active;
         paused_ = state->environment.paused;
         const u32 flags = state->progress.scene_flags;
         overlays_ = (flags & 0x70u) != 0u || (flags & 0x4010u) == 0x4010u;
         battle_ = (run_ || boot_) && !ending_apply_ && !replay_ && !paused_ && !overlays_;
-        activate_ = run_ && battle_ &&
-                    state->stage_transition_active && !state->stage_transition_loading &&
+        activate_ = run_ && battle_ && state->stage_transition_active && !state->stage_transition_loading &&
                     state->stage_startup_age == 30;
         // 门内帧录制块 = 递增前关卡。门首步（prepare_next_stage 在本步开头
         // 跑，观察点 stage_transition_active 尚为 false）以
         // stage_transition_loading 识别；其后门内步以 stage_transition_active
         // 识别。activate 步的场景更新已属新关 frame 0，不递减。
         block_ = state->progress.stage;
-        if (!activate_ && block_ >= 2 &&
-            (state->stage_transition_active || state->stage_transition_loading))
-            --block_;
+        if (!activate_ && block_ >= 2 && (state->stage_transition_active || state->stage_transition_loading)) --block_;
     }
 
     // 步前喂入：对局录制帧 → 该关 replay 的 held 16 位；慢事件字节写
@@ -179,8 +171,7 @@ struct Driver {
             return 0;
         }
         const u32 tick = u32(probe) / 30;
-        if (tick < source.events.size())
-            state->slow_window_fps_ = float(source.events[tick]);
+        if (tick < source.events.size()) state->slow_window_fps_ = float(source.events[tick]);
         return source.frame(u32(probe)).state;
     }
 
@@ -208,13 +199,10 @@ bool pump(ApplicationState& state, u32 held, u32& steps) {
         return false;
     }
     if (g_state_log && state.run) {
-        std::fprintf(g_state_log, "%d %u %u %d %d %u %x %d %d %zu\n",
-                     state.progress.stage_frame,
-                     float_to_bits(state.run->battle.player_x),
-                     float_to_bits(state.run->battle.player_y),
-                     state.selection_score.score, state.selection_player.extra_lives,
-                     state.game_random.seed(), state.progress.scene_flags,
-                     g_last_battle ? 1 : 0, state.pending_destination,
+        std::fprintf(g_state_log, "%d %u %u %d %d %u %x %d %d %zu\n", state.progress.stage_frame,
+                     float_to_bits(state.run->battle.player_x), float_to_bits(state.run->battle.player_y),
+                     state.selection_score.score, state.selection_player.extra_lives, state.game_random.seed(),
+                     state.progress.scene_flags, g_last_battle ? 1 : 0, state.pending_destination,
                      state.ending_fades.size());
         std::fflush(g_state_log);
     }
@@ -224,13 +212,10 @@ bool pump(ApplicationState& state, u32 held, u32& steps) {
 // 标题菜单物理导航：Main→難度(Normal)→角色(Reimu)→开局（生产 start_game 链）。
 bool navigate_to_run(ApplicationState& state, u32& steps) {
     for (int i = 0; i < 600; ++i) {
-        if (state.title && state.title->state.screen == TitleScreen::Main &&
-            state.title->state.substate == 2)
-            break;
+        if (state.title && state.title->state.screen == TitleScreen::Main && state.title->state.substate == 2) break;
         if (!pump(state, 0, steps)) return false;
     }
-    if (!state.title || state.title->state.screen != TitleScreen::Main ||
-        state.title->state.substate != 2) {
+    if (!state.title || state.title->state.screen != TitleScreen::Main || state.title->state.substate != 2) {
         std::printf("# title main menu never became interactive\n");
         return false;
     }
@@ -239,17 +224,12 @@ bool navigate_to_run(ApplicationState& state, u32& steps) {
         for (int i = 0; i < 240; ++i) {
             // pending_load 置位 = 下一帧 complete_loading 建 run 并录 frame 0，
             // 必须把这一帧让给主循环的对局喂入（提前一步退出，不吃掉 frame 0）。
-            if (state.pending_load != 0 || (next == TitleScreen::StartGame && state.run))
-                return true;
-            if (state.title && state.title->state.screen == next &&
-                state.title->state.substate == 2)
-                return true;
+            if (state.pending_load != 0 || (next == TitleScreen::StartGame && state.run)) return true;
+            if (state.title && state.title->state.screen == next && state.title->state.substate == 2) return true;
             if (!pump(state, 0, steps)) return false;
         }
-        std::printf("# menu wait for screen %d timed out (screen=%d substate=%d)\n",
-                    int(next),
-                    state.title ? int(state.title->state.screen) : -1,
-                    state.title ? state.title->state.substate : -1);
+        std::printf("# menu wait for screen %d timed out (screen=%d substate=%d)\n", int(next),
+                    state.title ? int(state.title->state.screen) : -1, state.title ? state.title->state.substate : -1);
         return false;
     };
     if (!confirm_and_wait(TitleScreen::Difficulty)) return false;  // 開始 → 難度
@@ -268,8 +248,8 @@ bool pump_ending(ApplicationState& state, u32& steps) {
     for (int i = 0; i < 240000; ++i) {
         if (state.title) return true;  // AfterEnding → begin_title(3)
         if (!state.ending) {
-            std::printf("# ending vanished without title (dest=%d failure=%s)\n",
-                        state.pending_destination, state.failure.c_str());
+            std::printf("# ending vanished without title (dest=%d failure=%s)\n", state.pending_destination,
+                        state.failure.c_str());
             return false;
         }
         const u32 held = (toggle++ & 1) ? kZ : 0u;  // 隔帧按下沿，快进对话
@@ -291,12 +271,11 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
         return;
     }
     u64 stamp = 0;
-    for (int i = 0; i < 8; ++i) stamp |= u64(original.top_header[0x0C + i]) << (8 * i);
+    for (int i = 0; i < 8; ++i)
+        stamp |= u64(original.top_header[0x0C + i]) << (8 * i);
     const i32 stage_field = read_i32(original.top_header.data() + 0x68);
-    const u16 boot_seed = u16(original.stages[0].header[2] |
-                              (original.stages[0].header[3] << 8));
-    const std::string summary = original.user_blocks.empty() ? std::string()
-                                                             : original.user_blocks[0];
+    const u16 boot_seed = u16(original.stages[0].header[2] | (original.stages[0].header[3] << 8));
+    const std::string summary = original.user_blocks.empty() ? std::string() : original.user_blocks[0];
     CHECK(set_replay_timezone(user_line(summary, "Date"), std::time_t(stamp)));
 
     // +0x54 f32 反解 (num, den)（replay_encode_roundtrip_test 同法）。
@@ -339,10 +318,8 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
             state.spell_time_pin_[stage_no][k] = value;
         }
     }
-    CHECK(state.audio_device.initialize_for_test(
-        asset_root, std::string(repo_root()) + "/games/th13/thbgmogg.dat"));
-    if (!state.audio_device.error.empty())
-        std::printf("# audio init error: %s\n", state.audio_device.error.c_str());
+    CHECK(state.audio_device.initialize_for_test(asset_root, std::string(repo_root()) + "/games/th13/thbgmogg.dat"));
+    if (!state.audio_device.error.empty()) std::printf("# audio init error: %s\n", state.audio_device.error.c_str());
     // 等价 web window.__th13_boot_seed 确定性钩子：boot 双流 ← 原版 stage1 戳
     // （visual 另按 th13_debug_replay 同款补 0x45ac90 噪声表 256 步 + boot 2 抽，
     //  对局开始前菜单期不消费 game_random；具体落拍在 initialize 之后——
@@ -356,7 +333,8 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
     // initialize（prepare_platform）以 SDL_GetTicks 桩值重播双流种子，这里
     // 再落确定性 boot 种子（= web __th13_boot_seed 钩子的 native 等价拍）。
     state.visual.reseed_restore(boot_seed);
-    for (int i = 0; i < 256; ++i) (void)state.visual.step16();
+    for (int i = 0; i < 256; ++i)
+        (void)state.visual.step16();
     (void)state.visual.next32();
     (void)state.visual.next32();
     state.game_random.reseed(boot_seed);
@@ -365,21 +343,18 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
     u32 steps = 0;
     CHECK(navigate_to_run(state, steps));
     if (!state.run && state.pending_load == 0) return;
-    std::printf("# run started at step %u (stage %d seed %u want %u)\n", steps,
-                state.progress.stage, state.game_random.seed(), unsigned(boot_seed));
+    std::printf("# run started at step %u (stage %d seed %u want %u)\n", steps, state.progress.stage,
+                state.game_random.seed(), unsigned(boot_seed));
 
     // ---- 3) 全流程驱动：6 关对局 → Ending → 战后结算 ----
     Driver driver;
     driver.state = &state;
     driver.original = &original;
-    if (const char* shift_env = std::getenv("TH13_E2E_SHIFT"))
-        driver.shift = std::atoi(shift_env);
+    if (const char* shift_env = std::getenv("TH13_E2E_SHIFT")) driver.shift = std::atoi(shift_env);
     u32 max_steps = 480000u;
-    if (const char* max_env = std::getenv("TH13_E2E_MAX_STEPS"))
-        max_steps = u32(std::atoi(max_env));
+    if (const char* max_env = std::getenv("TH13_E2E_MAX_STEPS")) max_steps = u32(std::atoi(max_env));
     std::printf("# driver shift=%d max_steps=%u\n", driver.shift, max_steps);
-    if (const char* log_path = std::getenv("TH13_E2E_STATE_LOG");
-        log_path && *log_path)
+    if (const char* log_path = std::getenv("TH13_E2E_STATE_LOG"); log_path && *log_path)
         g_state_log = std::fopen(log_path, "w");
     enum class Phase { Battle, Ending, Result } phase = Phase::Battle;
     int result_waits = 0;
@@ -388,21 +363,17 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
         if (steps % 20000u == 0u)
             std::printf("# step %u stage=%d sf=%d flags=%x paused=%d run=%d end=%d "
                         "title=%d rec=[%u %u %u %u %u %u] feed_held=0x%x\n",
-                        steps, state.progress.stage, state.progress.stage_frame,
-                        state.progress.scene_flags, int(state.environment.paused),
-                        state.run != nullptr, state.ending != nullptr,
-                        state.title != nullptr, driver.recorded[1], driver.recorded[2],
-                        driver.recorded[3], driver.recorded[4], driver.recorded[5],
-                        driver.recorded[6], driver.feed_probe());
+                        steps, state.progress.stage, state.progress.stage_frame, state.progress.scene_flags,
+                        int(state.environment.paused), state.run != nullptr, state.ending != nullptr,
+                        state.title != nullptr, driver.recorded[1], driver.recorded[2], driver.recorded[3],
+                        driver.recorded[4], driver.recorded[5], driver.recorded[6], driver.feed_probe());
         driver.observe();
         g_last_battle = driver.battle_;
         if (driver.activate_ && driver.block_ >= 2 && driver.block_ <= 6) {
             // activate 帧：旧关块已定帧数 → 关边界对齐断言。
-            std::printf("# stage %d recorded %u frames (original %u)\n",
-                        driver.block_ - 1, driver.recorded[u32(driver.block_ - 1)],
-                        original_frames[u32(driver.block_ - 1)]);
-            CHECK_EQ(driver.recorded[u32(driver.block_ - 1)],
-                     original_frames[u32(driver.block_ - 1)]);
+            std::printf("# stage %d recorded %u frames (original %u)\n", driver.block_ - 1,
+                        driver.recorded[u32(driver.block_ - 1)], original_frames[u32(driver.block_ - 1)]);
+            CHECK_EQ(driver.recorded[u32(driver.block_ - 1)], original_frames[u32(driver.block_ - 1)]);
         }
         u32 held = 0;
         if (phase == Phase::Battle) held = driver.feed();
@@ -415,33 +386,26 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
         }
         if (driver.overrun && state.progress.stage == i32(driver.overrun_stage)) {
             // 超帧后每 300 步报一次（量化溢出；若关界仍未到则由步数上限兜底）。
-            if ((steps / 300u) != (u32(steps - 1) / 300u) &&
-                state.progress.stage_frame % 300u == 0)
+            if ((steps / 300u) != (u32(steps - 1) / 300u) && state.progress.stage_frame % 300u == 0)
                 std::printf("# overrun pending: stage %d stage_frame=%d score=%d "
                             "lives=%d paused=%d\n",
-                            state.progress.stage, state.progress.stage_frame,
-                            state.selection_score.score,
-                            state.selection_player.extra_lives,
-                            int(state.environment.paused));
+                            state.progress.stage, state.progress.stage_frame, state.selection_score.score,
+                            state.selection_player.extra_lives, int(state.environment.paused));
         }
-        if (phase == Phase::Battle && state.environment.paused && state.run &&
-            !state.replay_active) {
+        if (phase == Phase::Battle && state.environment.paused && state.run && !state.replay_active) {
             // 对局中覆盖层（1CC 无暂停/续关）：录制死亡/终局点并停止，
             // 不空转至步数上限。
             std::printf("# battle overlay at step %u: stage=%d recorded=%u "
                         "stage_frame=%d shift=%d (player died / game over)\n",
-                        steps, state.progress.stage,
-                        driver.recorded[size_t(std::max(1, state.progress.stage))],
+                        steps, state.progress.stage, driver.recorded[size_t(std::max(1, state.progress.stage))],
                         state.progress.stage_frame, driver.shift);
-            std::printf("# player at %.2f,%.2f score=%d lives=%d\n",
-                        state.run->battle.player_x, state.run->battle.player_y,
-                        state.selection_score.score, state.selection_player.extra_lives);
+            std::printf("# player at %.2f,%.2f score=%d lives=%d\n", state.run->battle.player_x,
+                        state.run->battle.player_y, state.selection_score.score, state.selection_player.extra_lives);
             CHECK(false);
             return;
         }
         if (phase == Phase::Battle && state.ending) {
-            std::printf("# stage 6 recorded %u frames (original %u)\n",
-                        driver.recorded[6], original_frames[6]);
+            std::printf("# stage 6 recorded %u frames (original %u)\n", driver.recorded[6], original_frames[6]);
             CHECK_EQ(driver.recorded[6], original_frames[6]);
             phase = Phase::Ending;
         }
@@ -486,7 +450,10 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
     CHECK(saved);
     if (!saved) return;
     std::printf("# total steps %u\n", steps);
-    if (g_state_log) { std::fclose(g_state_log); g_state_log = nullptr; }
+    if (g_state_log) {
+        std::fclose(g_state_log);
+        g_state_log = nullptr;
+    }
 
     // ---- 4) 得分面断言（record_clear_result_name → FileStore 榜表）----
     {
@@ -500,8 +467,7 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
                 break;
             }
         }
-        std::printf("# v6 record face: found=%d stage=%d (score %d)\n", int(found),
-                    stage_byte, original.score);
+        std::printf("# v6 record face: found=%d stage=%d (score %d)\n", int(found), stage_byte, original.score);
         CHECK(found);
         CHECK_EQ(stage_byte, 8);  // 全通条目 stage 字节 = 8（0x454050 → "Clear"）
     }
@@ -516,9 +482,7 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
             const long size = std::ftell(file);
             std::fseek(file, 0, SEEK_SET);
             exported.resize(size_t(size < 0 ? 0 : size));
-            const size_t got = exported.empty()
-                                   ? 1
-                                   : std::fread(exported.data(), 1, exported.size(), file);
+            const size_t got = exported.empty() ? 1 : std::fread(exported.data(), 1, exported.size(), file);
             std::fclose(file);
             CHECK(got == exported.size());
         }
@@ -536,9 +500,8 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
         }
     }
     const bool identical = exported.size() == bytes.size() && divergence == exported.size();
-    std::printf("# export %zu bytes vs original %zu bytes, first_diff=%zu %s\n",
-                exported.size(), bytes.size(), divergence,
-                identical ? "BYTE-IDENTICAL" : "DIVERGED");
+    std::printf("# export %zu bytes vs original %zu bytes, first_diff=%zu %s\n", exported.size(), bytes.size(),
+                divergence, identical ? "BYTE-IDENTICAL" : "DIVERGED");
     if (!identical) {
         const size_t at = divergence;
         std::printf("#   got  @%zu:", at);
@@ -549,24 +512,20 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
             std::printf(" %02X", bytes[b]);
         std::printf("\n");
         const u32 user_off = read_u32(bytes.data() + 0x0C);
-        const char* region = at < 0x24 ? "file header"
-                                       : at < size_t(user_off)
-                                             ? "cipher blob (plain replay stream)"
-                                             : "USER section";
+        const char* region = at < 0x24               ? "file header"
+                             : at < size_t(user_off) ? "cipher blob (plain replay stream)"
+                                                     : "USER section";
         std::printf("#   region: %s (user_off=0x%X)\n", region, user_off);
         ReplayFile produced;
         if (produced.decode(exported.data(), exported.size())) {
-            std::printf("#   produced name=%s score=%d slow=%.7f stages=%zu\n",
-                        produced.player_name.c_str(), produced.score,
-                        double(produced.slow_rate), produced.stages.size());
+            std::printf("#   produced name=%s score=%d slow=%.7f stages=%zu\n", produced.player_name.c_str(),
+                        produced.score, double(produced.slow_rate), produced.stages.size());
             for (size_t i = 0; i < produced.stages.size(); ++i)
-                std::printf("#   stage %u frames %u (orig %u) score %u (orig %u)\n",
-                            produced.stages[i].number, produced.stages[i].frame_count,
-                            original.stages[i].frame_count, produced.stages[i].score,
+                std::printf("#   stage %u frames %u (orig %u) score %u (orig %u)\n", produced.stages[i].number,
+                            produced.stages[i].frame_count, original.stages[i].frame_count, produced.stages[i].score,
                             original.stages[i].score);
         } else {
-            std::printf("#   produced file failed to decode: %s\n",
-                        produced.error().c_str());
+            std::printf("#   produced file failed to decode: %s\n", produced.error().c_str());
         }
     }
     CHECK(identical);
@@ -576,8 +535,7 @@ TEST(native_th13_01_input_stream_replays_and_exports_byte_identical_file) {
 // 回放路径（0x448c40 装载序 + 0x449070 恢复 + 流内输入），逐帧转储对局状态，
 // 与 live 驱动臂的转储对拍定位分歧源。非验收路径。
 TEST(replay_mode_state_probe) {
-    if (const char* mode = std::getenv("TH13_E2E_MODE"); !mode || std::string(mode) != "replay")
-        return;
+    if (const char* mode = std::getenv("TH13_E2E_MODE"); !mode || std::string(mode) != "replay") return;
     const char* log_path = std::getenv("TH13_E2E_STATE_LOG");
     if (!log_path || !*log_path) return;
     std::FILE* log = std::fopen(log_path, "w");
@@ -586,19 +544,23 @@ TEST(replay_mode_state_probe) {
 
     std::vector<u8> bytes;
     CHECK(read_repo_file("games/replays/th13_01.rpy", bytes));
-    if (bytes.empty()) { std::fclose(log); return; }
+    if (bytes.empty()) {
+        std::fclose(log);
+        return;
+    }
     ReplayFile original;
     CHECK(original.decode(bytes.data(), bytes.size()));
-    const u16 boot_seed = u16(original.stages[0].header[2] |
-                              (original.stages[0].header[3] << 8));
+    const u16 boot_seed = u16(original.stages[0].header[2] | (original.stages[0].header[3] << 8));
 
     setenv("TH13_SAVE_PATH", "e2e-th13-save.bin", 1);
     ApplicationState state;
     const char* asset_root = std::getenv("TH13_NATIVE_ASSET_ROOT");
     CHECK(asset_root && *asset_root);
-    if (!(asset_root && *asset_root)) { std::fclose(log); return; }
-    CHECK(state.audio_device.initialize_for_test(
-        asset_root, std::string(repo_root()) + "/games/th13/thbgmogg.dat"));
+    if (!(asset_root && *asset_root)) {
+        std::fclose(log);
+        return;
+    }
+    CHECK(state.audio_device.initialize_for_test(asset_root, std::string(repo_root()) + "/games/th13/thbgmogg.dat"));
     CHECK(state.initialize(false));
     if (!state.failure.empty()) {
         std::printf("# initialize failed: %s\n", state.failure.c_str());
@@ -607,13 +569,13 @@ TEST(replay_mode_state_probe) {
     }
     // th13_debug_replay 同款直入序（native boot 血统 + 装载幕 + 3 装载帧）。
     state.visual.reseed_restore(boot_seed);
-    for (int i = 0; i < 256; ++i) (void)state.visual.step16();
+    for (int i = 0; i < 256; ++i)
+        (void)state.visual.step16();
     (void)state.visual.next32();
     (void)state.visual.next32();
     state.game_random.reseed(boot_seed);
     CHECK(state.draw_loading(false));
-    for (unsigned frame = 0;
-         frame < th13::sdl::ApplicationState::kDebugLoadingFrames; ++frame)
+    for (unsigned frame = 0; frame < th13::sdl::ApplicationState::kDebugLoadingFrames; ++frame)
         CHECK(state.advance_loading_caption());
     CHECK(state.begin_replay_run(bytes.data(), bytes.size(), 0));
     if (!state.failure.empty()) {
@@ -635,19 +597,17 @@ TEST(replay_mode_state_probe) {
         if (state.progress.stage != last_stage) {
             // 关界：上一关回放游标实耗 = 该关实录制帧数（0x448200 每录制帧
             // 恰一消费；activate 已把 replay_consumed 清零，取切换前快照）。
-            std::printf("# probe: stage %d -> %d at step %u, consumed=%u\n",
-                        last_stage, state.progress.stage, f, consumed_snapshot);
+            std::printf("# probe: stage %d -> %d at step %u, consumed=%u\n", last_stage, state.progress.stage, f,
+                        consumed_snapshot);
             last_stage = state.progress.stage;
             consumed_snapshot = 0;
         }
-        if (state.progress.stage == last_stage)
-            consumed_snapshot = state.replay_consumed;
+        if (state.progress.stage == last_stage) consumed_snapshot = state.replay_consumed;
         if (state.run) {
             const u32 px_bits = float_to_bits(state.run->battle.player_x);
             const u32 py_bits = float_to_bits(state.run->battle.player_y);
-            std::fprintf(log, "%d %u %u %d %d %u\n", state.progress.stage_frame,
-                         px_bits, py_bits, state.selection_score.score,
-                         state.selection_player.extra_lives, state.game_random.seed());
+            std::fprintf(log, "%d %u %u %d %d %u\n", state.progress.stage_frame, px_bits, py_bits,
+                         state.selection_score.score, state.selection_player.extra_lives, state.game_random.seed());
         } else {
             std::fprintf(log, "norun %u\n", f);
             break;

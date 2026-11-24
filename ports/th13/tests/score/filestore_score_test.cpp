@@ -15,11 +15,11 @@ namespace {
 
 using th13::i32;
 using th13::i64;
-using th13::u8;
+using th13::ScoreDat;
 using th13::u16;
 using th13::u32;
 using th13::u64;
-using th13::ScoreDat;
+using th13::u8;
 using th13::sdl::FileStore;
 
 const char* kSavePath = "/tmp/th13_score_test_save.bin";
@@ -58,8 +58,8 @@ bool dat_file_absent() {
     return false;
 }
 
-void check_entry(const ScoreDat::Entry& entry, u32 score, u8 stage, u8 continues,
-                 const char* name, u32 time_lo, u32 rate_bits) {
+void check_entry(const ScoreDat::Entry& entry, u32 score, u8 stage, u8 continues, const char* name, u32 time_lo,
+                 u32 rate_bits) {
     CHECK_EQ(entry.score, score);
     CHECK_EQ(entry.stage, stage);
     CHECK_EQ(entry.continues, continues);
@@ -84,7 +84,8 @@ TEST(v7_authority_and_score_dat_mirror) {
     score.available = true;
     CHECK_EQ(first.record_high_score(0, 1, score), 0);
     CHECK(first.record_run_start(0));
-    for (i32 frame = 0; frame < 1234; ++frame) CHECK(first.record_play_frame(0));
+    for (i32 frame = 0; frame < 1234; ++frame)
+        CHECK(first.record_play_frame(0));
     CHECK(first.record_run_clear(0, 1, true));
     first.mark_practice_stage_played(0, 1, 3);
     CHECK(first.record_spell_practice_score(0, 5, 123450));
@@ -94,8 +95,8 @@ TEST(v7_authority_and_score_dat_mirror) {
     CHECK(dat_file_absent());
 
     const ScoreDat& dat = first.score_dat;
-    check_entry(ScoreDat::read_entry(dat.columns[0].data(), 1, 0), 500000, 3, 2,
-                "PLAYER1", u32(1600000000), th13::float_to_bits(88.5f));
+    check_entry(ScoreDat::read_entry(dat.columns[0].data(), 1, 0), 500000, 3, 2, "PLAYER1", u32(1600000000),
+                th13::float_to_bits(88.5f));
     CHECK_EQ(ScoreDat::read_entry(dat.columns[0].data(), 1, 1).score, u32(100000));
     CHECK_EQ(ScoreDat::play_count(dat.columns[0].data()), u32(1));
     CHECK_EQ(ScoreDat::play_frames(dat.columns[0].data()), u32(1234));
@@ -103,12 +104,8 @@ TEST(v7_authority_and_score_dat_mirror) {
     CHECK_EQ(ScoreDat::no_continue_clear_count(dat.columns[0].data(), 1), u32(1));
     CHECK_EQ(ScoreDat::progress_row_flag(dat.columns[0].data(), 1, 2, 1), u8(1));
     CHECK_EQ(ScoreDat::progress_row_flag(dat.columns[0].data(), 1, 0, 1), u8(0));
-    CHECK_EQ(ScoreDat::practice_u32(dat.columns[0].data(), 5,
-                                    ScoreDat::kPracticeBestOff),
-             u32(123450));
-    CHECK_EQ(ScoreDat::practice_u32(dat.columns[4].data(), 5,
-                                    ScoreDat::kPracticeBestOff),
-             u32(123450));
+    CHECK_EQ(ScoreDat::practice_u32(dat.columns[0].data(), 5, ScoreDat::kPracticeBestOff), u32(123450));
+    CHECK_EQ(ScoreDat::practice_u32(dat.columns[4].data(), 5, ScoreDat::kPracticeBestOff), u32(123450));
 
     u8 seen[ScoreDat::kEndingBytes];
     ScoreDat::read_ending_bytes(dat.st.data(), seen);
@@ -150,8 +147,8 @@ TEST(mirror_image_round_trip) {
     CHECK_EQ(length, ScoreDat::kImageSize);
     ScoreDat reparsed;
     CHECK(reparsed.parse_image(image.data(), length));
-    check_entry(ScoreDat::read_entry(reparsed.columns[2].data(), 4, 0), 12345678, 6, 0,
-                "ROUNDTRP", u32(1700000000), th13::float_to_bits(100.0f));
+    check_entry(ScoreDat::read_entry(reparsed.columns[2].data(), 4, 0), 12345678, 6, 0, "ROUNDTRP", u32(1700000000),
+                th13::float_to_bits(100.0f));
     CHECK_EQ(ScoreDat::no_continue_clear_count(reparsed.columns[2].data(), 4), u32(1));
     std::vector<u8> rebuilt(ScoreDat::kImageSize);
     CHECK_EQ(reparsed.build_image(rebuilt.data(), rebuilt.size()), length);
@@ -166,8 +163,7 @@ TEST(last_name_persists_and_mirrors_st_name) {
     first.remember_name("MYSTIA");
     CHECK(first.last_name == "MYSTIA  ");
     CHECK(first.save_score());
-    CHECK(std::memcmp(ScoreDat::st_name(first.score_dat.st.data()).data(),
-                      "MYSTIA  \0", 9) == 0);
+    CHECK(std::memcmp(ScoreDat::st_name(first.score_dat.st.data()).data(), "MYSTIA  \0", 9) == 0);
     std::vector<u8> v7;
     CHECK(read_file(kSavePath, v7));
 
@@ -244,8 +240,8 @@ TEST(score_dat_file_round_trip_smoke) {
     CHECK(first.score_dat.build_file(stored));
     ScoreDat dat;
     CHECK(dat.parse_file(stored.data(), stored.size()));
-    check_entry(ScoreDat::read_entry(dat.columns[3].data(), 2, 0), 9999990, 5, 3,
-                "SMOKE001", u32(1800000000), th13::float_to_bits(97.5f));
+    check_entry(ScoreDat::read_entry(dat.columns[3].data(), 2, 0), 9999990, 5, 3, "SMOKE001", u32(1800000000),
+                th13::float_to_bits(97.5f));
     CHECK_EQ(dat.max_entry_timestamp(), u64(1800000000));
 
     FileStore second;
@@ -273,8 +269,7 @@ TEST(original_youmu_fixture_import) {
     ScoreDat dat;
     CHECK(dat.parse_file(fixture.data(), fixture.size()));
     const u8* column = dat.columns[3].data();
-    check_entry(ScoreDat::read_entry(column, 2, 0), 24682468, 6, 2, "YOUMU001",
-                u32(1800000001), 0x42666666);
+    check_entry(ScoreDat::read_entry(column, 2, 0), 24682468, 6, 2, "YOUMU001", u32(1800000001), 0x42666666);
     CHECK_EQ(ScoreDat::play_count(column), u32(137));
     CHECK_EQ(ScoreDat::play_frames(column), u32(215999999));
     CHECK_EQ(ScoreDat::clear_count(column, 2), u32(31));
@@ -312,6 +307,4 @@ TEST(original_youmu_fixture_import) {
 
 }  // namespace
 
-int main() {
-    return th13test::run_all("FileStore scoreth13.dat 通道");
-}
+int main() { return th13test::run_all("FileStore scoreth13.dat 通道"); }

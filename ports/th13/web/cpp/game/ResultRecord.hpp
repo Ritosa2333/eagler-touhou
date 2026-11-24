@@ -9,9 +9,7 @@ inline float result_slowdown_percent(double actual, double budget) noexcept {
     return float(100.0 - double(ratio) * 100.0);
 }
 // 00454050 temporarily sets stage=8 before inserting the all-clear score.
-inline i32 result_record_stage(bool clear_result, i32 stage) noexcept {
-    return clear_result ? 8 : stage;
-}
+inline i32 result_record_stage(bool clear_result, i32 stage) noexcept { return clear_result ? 8 : stage; }
 // 0043f961..0043f96a: the Extra results overlay (+0x1f4 = 1, set only by
 // 0043f720) inserts an Extra score as stage 9, "ExClear".
 inline i32 result_record_stage(bool clear_result, bool extra_clear, i32 stage) noexcept {

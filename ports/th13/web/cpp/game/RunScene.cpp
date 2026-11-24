@@ -23,48 +23,32 @@ constexpr std::array<i32, 5> kStageDrawPriorities = {20, 24, 19, 32, 29};
 constexpr std::array<i32, 2> kSceneryDrawPriorities = {2, 5};
 }  // namespace
 
-RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score,
-                   AnmManager& manager, AnmRenderer& scene_view, AnmEnvironment& e,
-                   RunSceneServices& h, FrameScheduler& f, StagePresentation::Banks banks,
-                   i32 front, i32 ascii, i32 scenery_bank, const std::string& std_name,
-                   GameRandom* shared_random, GameHud* shared_hud,
-                   StagePlayerState* shared_player)
-    : progress(p),
-      animations(manager),
-      scene_renderer(scene_view),
-      environment(e),
-      host(h),
-      scheduler(f),
-      player_state(player),
-      score_state(score),
-      ascii_bank(ascii),
-      scenery_bank(scenery_bank),
-      scenery_std(std_name),
-      msg_presentation(std::make_unique<MsgPresentation>(
-          animations, MsgPresentation::Banks{banks.player, banks.stage})),
+RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score, AnmManager& manager,
+                   AnmRenderer& scene_view, AnmEnvironment& e, RunSceneServices& h, FrameScheduler& f,
+                   StagePresentation::Banks banks, i32 front, i32 ascii, i32 scenery_bank, const std::string& std_name,
+                   GameRandom* shared_random, GameHud* shared_hud, StagePlayerState* shared_player)
+    : progress(p), animations(manager), scene_renderer(scene_view), environment(e), host(h), scheduler(f),
+      player_state(player), score_state(score), ascii_bank(ascii), scenery_bank(scenery_bank), scenery_std(std_name),
+      msg_presentation(
+          std::make_unique<MsgPresentation>(animations, MsgPresentation::Banks{banks.player, banks.stage})),
       post_flow(p, player, score, *this),
-      owned_hud(shared_hud ? nullptr :
-          std::make_unique<GameHud>(animations, p, player, score, front, ascii)),
-      hud(shared_hud ? *shared_hud : *owned_hud),
-      battle(shared_random, shared_player),
-      presentation(std::make_unique<StagePresentation>(animations, scene_renderer, banks,
-                                                       kPlayerShotSprite)) {
+      owned_hud(shared_hud ? nullptr : std::make_unique<GameHud>(animations, p, player, score, front, ascii)),
+      hud(shared_hud ? *shared_hud : *owned_hud), battle(shared_random, shared_player),
+      presentation(std::make_unique<StagePresentation>(animations, scene_renderer, banks, kPlayerShotSprite)) {
     // ECL 表达式 rand 走 game 流（0x4dc324）：-9987 双视图
     // 0x4203cc/0x420d5b 与 RandomPolar 0x478b22 均为 `mov ecx,0x4dc324`；
     // 0x4012xx 的 0x4dc31c 调用属 ANM 轨迹处理器。round-22 的 ecl_random
     // 换流已按反汇编 + S1 f60 对拍回退（见 StageGvars -9987 注释）。
-    spell_presentation = std::make_unique<SpellPresentation>(
-        animations, SpellPresentation::Banks{banks.stage, p.stage});
+    spell_presentation =
+        std::make_unique<SpellPresentation>(animations, SpellPresentation::Banks{banks.stage, p.stage});
     age.set(0);
     callbacks[0].owner = callbacks[1].owner = this;
     callbacks[0].enabled = callbacks[1].enabled = true;
     callbacks[0].run = [](void* p) {
-        return static_cast<RunScene*>(p)->update() ? i32(FrameAction::Continue)
-                                                   : i32(FrameAction::Error);
+        return static_cast<RunScene*>(p)->update() ? i32(FrameAction::Continue) : i32(FrameAction::Error);
     };
     callbacks[1].run = [](void* p) {
-        return static_cast<RunScene*>(p)->draw() ? i32(FrameAction::Continue)
-                                                 : i32(FrameAction::Error);
+        return static_cast<RunScene*>(p)->draw() ? i32(FrameAction::Continue) : i32(FrameAction::Error);
     };
     if (scheduler.add(callbacks[0], FramePass::Update, kRunUpdatePriority) < 0)
         fail("Run scene callback registration failed");
@@ -82,12 +66,10 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         scene.fail(scene.hud.error);
         return i32(FrameAction::Error);
     };
-    if (scheduler.add(callbacks[2], FramePass::Draw, 51) < 0)
-        fail("Trance countdown callback registration failed");
+    if (scheduler.add(callbacks[2], FramePass::Draw, 51) < 0) fail("Trance countdown callback registration failed");
     // 42fa30 registers laser update22/draw29. Birth ANM must be connected
     // before battle.load runs the stage root's constructor ECL.
-    laser_presentation = std::make_unique<LaserPresentation>(manager, scene_view,
-                                                            battle.sim, banks.bullet);
+    laser_presentation = std::make_unique<LaserPresentation>(manager, scene_view, battle.sim, banks.bullet);
     battle.sim.defer_laser_update = true;
     // 0x40d1ff：弹幕 Update 23，晚于激光 22、早于道具 24。
     battle.sim.defer_bullet_update = true;
@@ -98,20 +80,16 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
     battle.sim.enemy_sound = [this](i32 id) { return host.hud_sound(id); };
     battle.sim.enemy_position_sound = [this](i32 id, float x) { return host.hud_sound(id, x); };
     battle.sim.time_rate_changed = [this](float rate) { animations.rate = rate; };
-    battle.sim.screen_shake = [this](i32 duration, i32 start, i32 end) {
-        return start_shake(duration,start,end);
-    };
+    battle.sim.screen_shake = [this](i32 duration, i32 start, i32 end) { return start_shake(duration, start, end); };
     battle.bomb_screen_shake = [this](i32 magnitude, i32 rise, i32 hold, i32 fall) {
         return start_shake(ScreenShake::bomb(magnitude, rise, hold, fall));
     };
-    battle.reimu_explosion_shake = [this]() {
-        return start_shake(8, 6, 6);
-    };
-    environment.stage_difficulty=p.difficulty;
+    battle.reimu_explosion_shake = [this]() { return start_shake(8, 6, 6); };
+    environment.stage_difficulty = p.difficulty;
     // 0x4019d0 读 0x4be824（ins_524 chapter），非 rank。S4 f240 起原生 chapter
     // 恒 0 → 风迹少 1 次 unit()（+2 index/8 帧，360 帧 720 mismatches）。
-    environment.chapter=&p.chapter;
-    battle.sim.scene_effect=[this,banks](i32 kind,const Vec3& position){
+    environment.chapter = &p.chapter;
+    battle.sim.scene_effect = [this, banks](i32 kind, const Vec3& position) {
         // 4bba80+6*18: effect bank0 -> effect.anm, script136, native401730.
         // 4bba80+1*18: kind1 script0 native401000；位置=敌机VM+0x44（op334 显式），
         // 经 translation 通道交 spawn_effect（415650 语义读后清零）。
@@ -121,44 +99,38 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         if (action == SceneEffectAction::None) {
             // 越界 kind 多为 ECL 流错位的症状：stderr 留证（浏览器控制台
             // 可见），不影响游戏继续。
-            std::fprintf(stderr, "[scene-effect] out-of-table kind %d at (%.1f,%.1f)\n",
-                         kind, position.x, position.y);
+            std::fprintf(stderr, "[scene-effect] out-of-table kind %d at (%.1f,%.1f)\n", kind, position.x, position.y);
             return true;
         }
-        const u32 handle = animations.create(
-            banks.effect, action == SceneEffectAction::Effect136 ? 136 : 0, -1, 0,
-            action == SceneEffectAction::Effect136 ? Vec3{} : position);
-        auto* vm=animations.registry.find(handle);
-        return vm&&animations.spawn_effect(*vm,kind);
+        const u32 handle = animations.create(banks.effect, action == SceneEffectAction::Effect136 ? 136 : 0, -1, 0,
+                                             action == SceneEffectAction::Effect136 ? Vec3{} : position);
+        auto* vm = animations.registry.find(handle);
+        return vm && animations.spawn_effect(*vm, kind);
     };
     battle.sim.enemy_hit_sound = [this](i32 id, float x) { return host.hud_sound(id, x); };
-    battle.sim.enemy_fog=[this](StageEnemy& enemy,bool reset){return presentation->enemy_fog(enemy,reset);};
-    battle.sim.enemy_death_effect = [this](i32 file,i32 script,const Vec3& pos,float angle) {
-        return presentation->enemy_death(file,script,pos,angle);
+    battle.sim.enemy_fog = [this](StageEnemy& enemy, bool reset) { return presentation->enemy_fog(enemy, reset); };
+    battle.sim.enemy_death_effect = [this](i32 file, i32 script, const Vec3& pos, float angle) {
+        return presentation->enemy_death(file, script, pos, angle);
     };
-    battle.sim.bullet_cancel_effect = [this](i32 script,const Vec3& pos,const Vec3& displacement) {
-        return presentation->bullet_cancel(script,pos,displacement);
+    battle.sim.bullet_cancel_effect = [this](i32 script, const Vec3& pos, const Vec3& displacement) {
+        return presentation->bullet_cancel(script, pos, displacement);
     };
-    battle.sim.stationary_cancel_effect = [this](i32 script,const Vec3& pos) {
-        return presentation->bullet_cancel(script,pos,{},false);
+    battle.sim.stationary_cancel_effect = [this](i32 script, const Vec3& pos) {
+        return presentation->bullet_cancel(script, pos, {}, false);
     };
-    battle.sim.player_effect = [this](i32 script,const Vec3& pos,i32 layer) {
-        const u32 h= presentation->player_effect(script,pos,layer);
-        return h!=0;
+    battle.sim.player_effect = [this](i32 script, const Vec3& pos, i32 layer) {
+        const u32 h = presentation->player_effect(script, pos, layer);
+        return h != 0;
     };
     // 0x445900 擦弹/得分特效：effect.anm script100 主链尾插（内联相位）。
-    battle.sim.graze_effect = [this](const Vec3& pos) {
-        return presentation->graze_effect(pos);
-    };
+    battle.sim.graze_effect = [this](const Vec3& pos) { return presentation->graze_effect(pos); };
     battle.beam_hit_effect = [this](const Vec3& position, const Vec3& displacement, float angle) {
         return presentation->beam_hit_effect(position, displacement, angle);
     };
     battle.player_shot_birth = [this](PlayerShot& shot, u32 index) {
         return presentation->initialize_player_shot(shot, index);
     };
-    battle.youmu_bomb_update = [this](StageBattle& state) {
-        return presentation->sync_youmu_slash(state);
-    };
+    battle.youmu_bomb_update = [this](StageBattle& state) { return presentation->sync_youmu_slash(state); };
     battle.youmu_charge_effect = [this](i32 action, const Vec3& position) {
         return presentation->youmu_charge_effect(action, position);
     };
@@ -195,78 +167,58 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         if (!vm) enemy.anm_slot_handle[slot] = 0;
         return vm;
     };
-    battle.sim.enemy_animation_interrupt=[this](StageEnemy& enemy,i32 slot,i32 label) {
-        if(!presentation->flush_ecl_animations(battle,&enemy,true)) {
-            battle.sim.error_=presentation->error();return false;
+    battle.sim.enemy_animation_interrupt = [this](StageEnemy& enemy, i32 slot, i32 label) {
+        if (!presentation->flush_ecl_animations(battle, &enemy, true)) {
+            battle.sim.error_ = presentation->error();
+            return false;
         }
-        if(!animations.interrupt(enemy.anm_slot_handle[slot],label,false)) {
-            battle.sim.error_=animations.error;return false;
+        if (!animations.interrupt(enemy.anm_slot_handle[slot], label, false)) {
+            battle.sim.error_ = animations.error;
+            return false;
         }
         return true;
     };
     laser_update.owner = this;
     laser_update.enabled = true;
-    laser_update.run = [](void* owner) -> i32 {
-        return static_cast<RunScene*>(owner)->update_lasers() ? 1 : 5;
-    };
-    if (scheduler.add(laser_update, FramePass::Update, 22) < 0)
-        fail("Laser update registration failed");
+    laser_update.run = [](void* owner) -> i32 { return static_cast<RunScene*>(owner)->update_lasers() ? 1 : 5; };
+    if (scheduler.add(laser_update, FramePass::Update, 22) < 0) fail("Laser update registration failed");
     bullet_update.owner = this;
     bullet_update.enabled = true;
-    bullet_update.run = [](void* owner) -> i32 {
-        return static_cast<RunScene*>(owner)->update_bullets() ? 1 : 5;
-    };
-    if (scheduler.add(bullet_update, FramePass::Update, 23) < 0)
-        fail("Bullet update registration failed");
+    bullet_update.run = [](void* owner) -> i32 { return static_cast<RunScene*>(owner)->update_bullets() ? 1 : 5; };
+    if (scheduler.add(bullet_update, FramePass::Update, 23) < 0) fail("Bullet update registration failed");
     // 0x42efb0 @ Update 0x18=24 / 0x438e70 @ Update 0x19=25：道具与神霊
     // 管理器各自独立任务。拆出 battle.step 内联路径后，激光擦弹（22）的
     // max_point+100 先于 kind3 收集（25），与原生同帧内序一致。
     item_update.owner = this;
     item_update.enabled = true;
-    item_update.run = [](void* owner) -> i32 {
-        return static_cast<RunScene*>(owner)->update_items() ? 1 : 5;
-    };
-    if (scheduler.add(item_update, FramePass::Update, 24) < 0)
-        fail("Item update registration failed");
+    item_update.run = [](void* owner) -> i32 { return static_cast<RunScene*>(owner)->update_items() ? 1 : 5; };
+    if (scheduler.add(item_update, FramePass::Update, 24) < 0) fail("Item update registration failed");
     spirit_update.owner = this;
     spirit_update.enabled = true;
-    spirit_update.run = [](void* owner) -> i32 {
-        return static_cast<RunScene*>(owner)->update_spirits() ? 1 : 5;
-    };
-    if (scheduler.add(spirit_update, FramePass::Update, 25) < 0)
-        fail("Spirit update registration failed");
+    spirit_update.run = [](void* owner) -> i32 { return static_cast<RunScene*>(owner)->update_spirits() ? 1 : 5; };
+    if (scheduler.add(spirit_update, FramePass::Update, 25) < 0) fail("Spirit update registration failed");
     // 0x424f46/0x424f4b：原版 Boss HUD（0x4265a0 经 thunk 0x428280）注册于
     // Update 0x1c=28——晚于道具(0x18=24)/神霊(0x19=25)。此前打包进
     // RunScene::update(20) 造成同帧音序反转（th13_01 s3 f11317/11437：
     // native 37(道具)→11(Boss警告)，web 相反；2026-11-05 全窗 sfx 对拍实证）。
     boss_hud_update.owner = this;
     boss_hud_update.enabled = true;
-    boss_hud_update.run = [](void* owner) -> i32 {
-        return static_cast<RunScene*>(owner)->update_boss_hud() ? 1 : 5;
-    };
-    if (scheduler.add(boss_hud_update, FramePass::Update, 28) < 0)
-        fail("Boss HUD update registration failed");
+    boss_hud_update.run = [](void* owner) -> i32 { return static_cast<RunScene*>(owner)->update_boss_hud() ? 1 : 5; };
+    if (scheduler.add(boss_hud_update, FramePass::Update, 28) < 0) fail("Boss HUD update registration failed");
     for (auto& callback : spell_callbacks) {
         callback.owner = this;
         callback.enabled = true;
     }
-    spell_callbacks[0].run = [](void* owner) {
-        return static_cast<RunScene*>(owner)->update_spell() ? 1 : 5;
-    };
-    spell_callbacks[1].run = [](void* owner) {
-        return static_cast<RunScene*>(owner)->draw_spell() ? 1 : 5;
-    };
+    spell_callbacks[0].run = [](void* owner) { return static_cast<RunScene*>(owner)->update_spell() ? 1 : 5; };
+    spell_callbacks[1].run = [](void* owner) { return static_cast<RunScene*>(owner)->draw_spell() ? 1 : 5; };
     // 004129b0 registers 00413250 at Update 26 and 00413260 at Draw 10.
     if (scheduler.add(spell_callbacks[0], FramePass::Update, 26) < 0 ||
         scheduler.add(spell_callbacks[1], FramePass::Draw, 10) < 0)
         fail("Spell callback registration failed");
     scenery_update.owner = this;
     scenery_update.enabled = true;
-    scenery_update.run = [](void* owner) -> i32 {
-        return static_cast<RunScene*>(owner)->update_scenery() ? 1 : 5;
-    };
-    if (scheduler.add(scenery_update, FramePass::Update, 13) < 0)
-        fail("Scenery update registration failed");
+    scenery_update.run = [](void* owner) -> i32 { return static_cast<RunScene*>(owner)->update_scenery() ? 1 : 5; };
+    if (scheduler.add(scenery_update, FramePass::Update, 13) < 0) fail("Scenery update registration failed");
     for (u32 index = 0; index < scenery_draws.size(); index++) {
         auto& draw = scenery_draws[index];
         draw.owner = this;
@@ -275,8 +227,7 @@ RunScene::RunScene(SessionState& p, HudPlayerState& player, HudScoreState& score
         draw.callback.enabled = true;
         draw.callback.run = [](void* p) -> i32 {
             auto* draw = static_cast<StageDraw*>(p);
-            return draw->owner->draw_scenery(draw->pass) ? i32(FrameAction::Continue)
-                                                         : i32(FrameAction::Error);
+            return draw->owner->draw_scenery(draw->pass) ? i32(FrameAction::Continue) : i32(FrameAction::Error);
         };
         if (scheduler.add(draw.callback, FramePass::Draw, kSceneryDrawPriorities[index]) < 0)
             fail("Scenery draw callback registration failed");
@@ -291,9 +242,14 @@ RunScene::~RunScene() {
     battle.sim.stage_fog = {};
     battle.sim.stage_script_interrupt = {};
     battle.sim.stage_logo = {};
-    for (auto& shake : shakes) scheduler.remove(shake->callback);
-    battle.sim.enemy_fog={};
-    battle.sim.enemy_sound = {};battle.sim.enemy_position_sound = {};battle.sim.enemy_hit_sound = {};battle.sim.enemy_death_effect = {};battle.sim.player_effect = {};
+    for (auto& shake : shakes)
+        scheduler.remove(shake->callback);
+    battle.sim.enemy_fog = {};
+    battle.sim.enemy_sound = {};
+    battle.sim.enemy_position_sound = {};
+    battle.sim.enemy_hit_sound = {};
+    battle.sim.enemy_death_effect = {};
+    battle.sim.player_effect = {};
     battle.beam_hit_effect = {};
     battle.option_power_changed = {};
     battle.player_shot_birth = {};
@@ -318,19 +274,22 @@ RunScene::~RunScene() {
     scheduler.remove(item_update);
     scheduler.remove(spirit_update);
     scheduler.remove(boss_hud_update);
-    laser_presentation.reset(); // detach callbacks while battle.sim is alive
+    laser_presentation.reset();  // detach callbacks while battle.sim is alive
     battle.sim.laser_sound = {};
-    for (auto& callback : callbacks) scheduler.remove(callback);
-    for (auto& callback : spell_callbacks) scheduler.remove(callback);
+    for (auto& callback : callbacks)
+        scheduler.remove(callback);
+    for (auto& callback : spell_callbacks)
+        scheduler.remove(callback);
     if (spell_presentation) spell_presentation->release();
-    for (auto& draw : stage_draws) scheduler.remove(draw.callback);
+    for (auto& draw : stage_draws)
+        scheduler.remove(draw.callback);
     scheduler.remove(score_popup_draw);
-    for (auto& draw : scenery_draws) scheduler.remove(draw.callback);
-    host.dialogue_end();  // 0x4282b0 四文本 VM 随对话对象销毁
+    for (auto& draw : scenery_draws)
+        scheduler.remove(draw.callback);
+    host.dialogue_end();                                    // 0x4282b0 四文本 VM 随对话对象销毁
     if (msg_presentation) msg_presentation->release_all();  // 对话立绘/名牌 VM 归还
     if (presentation) presentation->release();
 }
-
 
 bool RunScene::fail(const std::string& why) {
     if (error.empty()) error = why.empty() ? "Run scene unavailable" : why;
@@ -350,9 +309,7 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     // 由 0x406680:82 每帧覆盖前的启动值）。换关延续时该块持有上一关末态
     // （0x406680:82 语义），故只在清零态播种、不覆盖续关快照。
     seed_native_camera_block_if_cleared(environment);
-    battle.sim.stage_logo = [this] {
-        return hud.stage_logo(0) || fail(hud.error);
-    };
+    battle.sim.stage_logo = [this] { return hud.stage_logo(0) || fail(hud.error); };
     battle.sim.bullet_animation = [this](StageBullet& bullet, bool birth) {
         if (presentation->tick_bullet(bullet, birth)) return true;
         battle.sim.error_ = presentation->error();
@@ -376,11 +333,10 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     // 0x438ec0 出生体同步建 VM：effect.anm 0x38 + astral kind*6+1/4，均
     // 0x46f3f0 尾插、早于本帧 0x46f170 walk。此前延迟到 Update 25 的
     // sync_item_spirits，链尾序与本帧尾插子 VM 的二次 tick 语义偏离原生。
-    battle.item_manager.spirit_spawn_animation =
-        [this](u32 slot, u32 serial, i32 kind, u32 flags, float x, float y, float z) {
-            return presentation->spirit_spawn_animation(slot, serial, kind, flags,
-                                                        x, y, z);
-        };
+    battle.item_manager.spirit_spawn_animation = [this](u32 slot, u32 serial, i32 kind, u32 flags, float x, float y,
+                                                        float z) {
+        return presentation->spirit_spawn_animation(slot, serial, kind, flags, x, y, z);
+    };
     battle.option_power_changed = [this](StageBattle& active) {
         return presentation->sync_player_options(active, true);
     };
@@ -400,11 +356,10 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
             host.update_spell_time(false);
         if (!host.record_spell_event(event)) return fail("Spell record persistence failed");
         // 0x41381e 直读章节 DAT_004be824：与名牌 0x429a94 同一 ECL 524 变量。
-        if (!spell_presentation->consume(event, enemy.position,
-                [this](i32 id) { return host.hud_sound(id); }, progress.chapter))
+        if (!spell_presentation->consume(
+                event, enemy.position, [this](i32 id) { return host.hud_sound(id); }, progress.chapter))
             return fail(spell_presentation->error);
-        if (event.kind == SpellEventKind::Begin &&
-            !host.rasterize_spell_name(*spell_presentation))
+        if (event.kind == SpellEventKind::Begin && !host.rasterize_spell_name(*spell_presentation))
             return fail("Spell name rasterization failed");
         return true;
     };
@@ -419,16 +374,15 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     char stage_ecl[16];
     std::snprintf(stage_ecl, sizeof stage_ecl, "st%02d.ecl", int(progress.stage));
     if (restore_after_player_prepare) {
-        if (!battle.prepare_player(provider, progress, player_state,
-                                   battle_sht.empty() ? nullptr : battle_sht.c_str(), true))
+        if (!battle.prepare_player(provider, progress, player_state, battle_sht.empty() ? nullptr : battle_sht.c_str(),
+                                   true))
             return fail(battle.error());
         if (!presentation->initialize_player_effects(battle)) return fail(presentation->error());
         if (!restore_after_player_prepare()) return fail("Replay stage restore failed");
     }
     const u8 rank_mask = ecl_difficulty_mask(progress.difficulty);
     if (!rank_mask) return fail("Invalid ECL difficulty");
-    if (!battle.load(provider, stage_ecl, rank_mask, host, progress,
-                     player_state, score_state, nullptr,
+    if (!battle.load(provider, stage_ecl, rank_mask, host, progress, player_state, score_state, nullptr,
                      battle_sht.empty() ? nullptr : battle_sht.c_str()))
         return fail(battle.error().empty() ? "Stage battle load failed" : battle.error());
     if (!restore_after_player_prepare && !presentation->initialize_player_effects(battle))
@@ -450,8 +404,7 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
         for (const auto& enemy : battle.sim.enemies)
             if (enemy->serial == serial) {
                 for (u32& handle : enemy->anm_slot_handle)
-                    if (handle && !animations.retire(handle))
-                        fail("Enemy retire animation: " + animations.error);
+                    if (handle && !animations.retire(handle)) fail("Enemy retire animation: " + animations.error);
                 return;
             }
     };
@@ -461,15 +414,14 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     if (!host.read_asset(scenery_std, bytes)) return fail("Stage STD missing: " + scenery_std);
     if (!scenery) scenery = std::make_unique<StageScenery>();
     if (!scenery->ready()) {
-    if (!scenery->file.open(bytes.data(), u32(bytes.size())))
-        return fail("Stage STD invalid: " + scenery->file.error);
-    if (!host.preload_scenery_animation(scenery_bank, scenery->file.animation_name))
-        return fail("Stage scenery ANM unavailable: " + scenery->file.animation_name);
-    if (!scenery->initialize(animations, scenery_bank))
-        return fail(scenery->error.empty() ? "Stage scenery init failed" : scenery->error);
+        if (!scenery->file.open(bytes.data(), u32(bytes.size())))
+            return fail("Stage STD invalid: " + scenery->file.error);
+        if (!host.preload_scenery_animation(scenery_bank, scenery->file.animation_name))
+            return fail("Stage scenery ANM unavailable: " + scenery->file.animation_name);
+        if (!scenery->initialize(animations, scenery_bank))
+            return fail(scenery->error.empty() ? "Stage scenery init failed" : scenery->error);
     }
-    battle.sim.stage_fog = [this](i32 duration, i32 mode, u32 color,
-                                   float near_distance, float far_distance) {
+    battle.sim.stage_fog = [this](i32 duration, i32 mode, u32 color, float near_distance, float far_distance) {
         auto& state = scenery->script.state;
         state.fog.start = state.camera.fog;
         state.fog.end.set(color, near_distance, far_distance);
@@ -479,9 +431,7 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     };
     // ECL 630 → 0x409100：STD 相机脚本 ins_16 标号中断（游标跳标号后首
     // 指令、计时三槽设为目标 time——StageScript::interrupt）。
-    battle.sim.stage_script_interrupt = [this](i32 id) {
-        return scenery->script.interrupt(id);
-    };
+    battle.sim.stage_script_interrupt = [this](i32 id) { return scenery->script.interrupt(id); };
     for (u32 index = 0; index < stage_draws.size(); index++) {
         auto& draw = stage_draws[index];
         draw.owner = this;
@@ -490,8 +440,7 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
         draw.callback.enabled = true;
         draw.callback.run = [](void* p) -> i32 {
             auto* draw = static_cast<StageDraw*>(p);
-            return draw->owner->draw_stage(draw->pass) ? i32(FrameAction::Continue)
-                                                       : i32(FrameAction::Error);
+            return draw->owner->draw_stage(draw->pass) ? i32(FrameAction::Continue) : i32(FrameAction::Error);
         };
         if (scheduler.add(draw.callback, FramePass::Draw, kStageDrawPriorities[index]) < 0)
             return fail("Stage draw callback registration failed");
@@ -501,16 +450,14 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     score_popup_draw.owner = this;
     score_popup_draw.enabled = true;
     score_popup_draw.run = [](void* p) -> i32 {
-        return static_cast<RunScene*>(p)->draw_score_popups()
-                   ? i32(FrameAction::Continue) : i32(FrameAction::Error);
+        return static_cast<RunScene*>(p)->draw_score_popups() ? i32(FrameAction::Continue) : i32(FrameAction::Error);
     };
     if (scheduler.add(score_popup_draw, FramePass::Draw, 45) < 0)
         return fail("Score popup draw callback registration failed");
     // S3：对话资产（st0Na-d.msg 按角色四份——stage 表 +0x14..+0x20 以
     // be7bc+be7b8 选份，0x424fd0:27）。缺失时降级为对话缺席（事件契约行为不变）。
     char msg_name[16];
-    std::snprintf(msg_name, sizeof msg_name, "st%02d%c.msg", int(progress.stage),
-                  'a' + (progress.character & 3));
+    std::snprintf(msg_name, sizeof msg_name, "st%02d%c.msg", int(progress.stage), 'a' + (progress.character & 3));
     std::vector<u8> msg_bytes;
     if (host.read_asset(msg_name, msg_bytes, false)) {
         std::string msg_error;
@@ -523,11 +470,10 @@ bool RunScene::initialize(const HudEntryContext& hud_context) {
     }
     // 对话立绘 bank/脚本绑定（stage 表 0x4bb4f0 行 + ECL ANIM 名单全局号换算）：
     // 只在 msg 资产存在时绑定；失败即场景错误（不静默降级成无立绘对话）。
-    if (dialog_ready && !msg_presentation->bind_stage_scripts(
-                            int(progress.stage), battle.sim.anim_list,
-                            [this](const std::string& name, std::vector<u8>& bytes) {
-                                return host.read_asset(name, bytes);
-                            }))
+    if (dialog_ready && !msg_presentation->bind_stage_scripts(int(progress.stage), battle.sim.anim_list,
+                                                              [this](const std::string& name, std::vector<u8>& bytes) {
+                                                                  return host.read_asset(name, bytes);
+                                                              }))
         return fail("Dialog presentation bind: " + msg_presentation->error);
     hud.prepare_stage_assets();
     if (!hud.initialize(hud_context)) return fail(hud.error);
@@ -541,22 +487,19 @@ bool RunScene::update_spell() {
     if (!error.empty()) return false;
     const bool hold = environment.paused || (progress.scene_flags & 0x70u);
     if (!hold) {
-        if (!battle.sim.spell.step(battle.bomb_timer > 0, &progress.rate))
-            return fail(battle.sim.spell.error);
+        if (!battle.sim.spell.step(battle.bomb_timer > 0, &progress.rate)) return fail(battle.sim.spell.error);
         battle.sim.spell.update_visibility(battle.player_y);
         // Spell time starts/ends on the Begin/End events consumed above, not by
         // sampling active() here (same-tick begin+end would be lost).
         spell_presentation->sync(battle.sim.spell.state());
         // 00412dfe follows boss slot0 once in Update26, after spell state/timer
         // update and before ANM Update34. Draw-time sync must not move the ring.
-        if (const auto* boss = battle.sim.boss();
-            boss && boss->script_id == battle.sim.boss_slot[0])
+        if (const auto* boss = battle.sim.boss(); boss && boss->script_id == battle.sim.boss_slot[0])
             spell_presentation->update_background(boss->position);
     }
     // 0x4131e2 在绘制回调里：灵界激活且符卡年龄 ≥60 时清 bonus 和收取位。
     // 回放驱动只跑 Update，不走 Draw，所以这里在步进之后再做一次。
-    if (trance_active(progress))
-        battle.sim.spell.trance_active(battle.bomb_timer > 0);
+    if (trance_active(progress)) battle.sim.spell.trance_active(battle.bomb_timer > 0);
     return true;
 }
 
@@ -576,8 +519,7 @@ bool RunScene::update_lasers() {
     if (environment.paused || (progress.scene_flags & 0x70u)) return true;
     battle.sim.advance_lasers();
     if (!battle.sim.error().empty())
-        return fail(laser_presentation->error.empty() ? battle.sim.error()
-                                                     : laser_presentation->error);
+        return fail(laser_presentation->error.empty() ? battle.sim.error() : laser_presentation->error);
     // 0x4315d0 段的激光擦弹在激光管理器更新内同帧完成：0x445900:11-13 计数
     // → 0x445900 尾 0x46f820 立即建特效。port 的激光走 FramePass::Update 22，
     // 晚于场景更新 20（其 sync 内的 flush_ecl_animations 已跑过），入队的
@@ -585,8 +527,7 @@ bool RunScene::update_lasers() {
     // +1（004be7d0 2017→2018），特效 VM（effect.anm 100，native 调用点
     // 0x445958）却晚一帧（2824），使视觉 RNG 相位整帧错位。此处补同帧
     // flush，恢复原版创建时序。
-    if (!battle.sim.anm_effects.empty() &&
-        !presentation->flush_ecl_animations(battle))
+    if (!battle.sim.anm_effects.empty() && !presentation->flush_ecl_animations(battle))
         return fail(presentation->error());
     return true;
 }
@@ -598,8 +539,7 @@ bool RunScene::update_items() {
     if (environment.paused || (progress.scene_flags & 0x70u)) return true;
     battle.update_items_phase();
     if (!battle.error().empty()) return fail(battle.error());
-    if (!presentation->sync_items_phase(battle))
-        return fail(presentation->error());
+    if (!presentation->sync_items_phase(battle)) return fail(presentation->error());
     return true;
 }
 
@@ -610,21 +550,21 @@ bool RunScene::update_spirits() {
     if (environment.paused || (progress.scene_flags & 0x70u)) return true;
     battle.update_spirits_phase();
     if (!battle.error().empty()) return fail(battle.error());
-    if (!presentation->sync_item_spirits_phase(battle))
-        return fail(presentation->error());
+    if (!presentation->sync_item_spirits_phase(battle)) return fail(presentation->error());
     return true;
 }
 
 bool RunScene::draw_score_popups() {
     if (!error.empty()) return false;
     if (transition_wait) return true;
-    if (!host.camera(DrawCamera::Fullscreen, false))
-        return fail("Score popup camera unavailable");
+    if (!host.camera(DrawCamera::Fullscreen, false)) return fail("Score popup camera unavailable");
     // 弹字属 layer20 战场层：0x44aa20 经 0x467350 用战场 2D 裁剪块。
-    scene_renderer.clip = GraphicsViewport{
-        u32(truncate_int(float(float(environment.screen_width) - 408.f) * .5f)),
-        u32(truncate_int(float(float(environment.screen_height) - 476.f) * .5f)),
-        408, 476, 0, 1};
+    scene_renderer.clip = GraphicsViewport{u32(truncate_int(float(float(environment.screen_width) - 408.f) * .5f)),
+                                           u32(truncate_int(float(float(environment.screen_height) - 476.f) * .5f)),
+                                           408,
+                                           476,
+                                           0,
+                                           1};
     scene_renderer.clip_set = true;
     const bool ok = score_popups.draw(scene_renderer, battle.player_x, battle.player_y);
     scene_renderer.clip_set = false;
@@ -636,16 +576,13 @@ bool RunScene::draw_spell() {
     if (!error.empty()) return false;
     i32 captures = 0, attempts = 0;
     host.spell_counts(battle.sim.spell.state().id, captures, attempts);
-    if (!spell_presentation->draw(host, captures, attempts))
-        return fail(spell_presentation->error);
+    if (!spell_presentation->draw(host, captures, attempts)) return fail(spell_presentation->error);
     if (trance_active(progress)) battle.sim.spell.trance_active(battle.bomb_timer > 0);
     spell_presentation->sync(battle.sim.spell.state());
     return true;
 }
 
-bool RunScene::start_shake(i32 duration, i32 start, i32 end) {
-    return start_shake(ScreenShake(duration,start,end));
-}
+bool RunScene::start_shake(i32 duration, i32 start, i32 end) { return start_shake(ScreenShake(duration, start, end)); }
 
 bool RunScene::start_shake(ScreenShake effect) {
     auto shake = std::make_unique<ShakeCallback>(*this, effect);
@@ -660,8 +597,7 @@ bool RunScene::start_shake(ScreenShake effect) {
         if (scene.environment.paused || (scene.progress.scene_flags & 0x70u)) return 1;
         if (shake.effect.envelope && (scene.progress.scene_flags & 0x07u)) return 1;
         auto& random = shake.effect.envelope ? scene.battle.sim.random : scene.animations.random_source();
-        return shake.effect.advance(random,scene.progress.rate,
-                                    scene.environment.screen_shake_offset) ? 1 : 7;
+        return shake.effect.advance(random, scene.progress.rate, scene.environment.screen_shake_offset) ? 1 : 7;
     };
     callback.cleanup = [](void* owner) -> i32 {
         auto& shake = *static_cast<ShakeCallback*>(owner);
@@ -670,16 +606,16 @@ bool RunScene::start_shake(ScreenShake effect) {
     };
     // 40bfae / 45fb48 set EBX=16 for 470f30 -> 470990. Enemy update
     // registers at 21 (418885), so the shake consumes RNG before enemies.
-    if (scheduler.add(callback,FramePass::Update,16) < 0) return false;
+    if (scheduler.add(callback, FramePass::Update, 16) < 0) return false;
     shakes.push_back(std::move(shake));
     return true;
 }
 
 bool RunScene::update() {
     dialogue_update_pending_ = false;
-    shakes.erase(std::remove_if(shakes.begin(),shakes.end(),[this](const auto& shake) {
-        return !scheduler.contains(shake->callback);
-    }),shakes.end());
+    shakes.erase(std::remove_if(shakes.begin(), shakes.end(),
+                                [this](const auto& shake) { return !scheduler.contains(shake->callback); }),
+                 shakes.end());
     if (!error.empty()) return false;
     if (environment.paused) return true;  // 暂停覆盖层冻结对局（th15 environment.paused 同机制）
     // 0042c562..0042c57c: only the combined clear/result flags return before
@@ -689,8 +625,8 @@ bool RunScene::update() {
     // 没有 bit0x10 时直接返回，不调用 0x42a370。通关条出生帧的 tick 在
     // 置位之后，下一帧读到的计数仍是 0；灵梦第 6 关因此从帧 23791 停滚
     // 到 23910，23911 才按差额>>5 续滚。
-    const bool clear_roll_frozen = (hud.flags & 0x100u) != 0 && hud.clear_age.current < 120 &&
-                                   (progress.scene_flags & 0x10u) == 0;
+    const bool clear_roll_frozen =
+        (hud.flags & 0x100u) != 0 && hud.clear_age.current < 120 && (progress.scene_flags & 0x10u) == 0;
     if (!(progress.scene_flags & 4u) && !clear_roll_frozen) hud.update_score();
     if (progress.scene_flags & 0x70u) return true;
     const GameInput* effective_input = input_frame;
@@ -700,10 +636,8 @@ bool RunScene::update() {
         effective_input = playback_input();
         if (!effective_input) return true;
         if (damage_probe_enabled)
-            std::printf("PBI sf=%d flags=%u wait=%d held=%x pressed=%x\n",
-                        progress.stage_frame, progress.scene_flags,
-                        transition_wait ? 1 : 0, effective_input->held,
-                        effective_input->pressed);
+            std::printf("PBI sf=%d flags=%u wait=%d held=%x pressed=%x\n", progress.stage_frame, progress.scene_flags,
+                        transition_wait ? 1 : 0, effective_input->held, effective_input->pressed);
     }
     // 42c550's first active update calls 424d0, whose 441b00 queues
     // label2 to option trees. Replay's 448ec0 restores position before
@@ -720,11 +654,11 @@ bool RunScene::update() {
         if (!presentation->sync(battle, selected_input.held)) return fail(presentation->error());
         hud.tick_stage_clear();
         HudFrameContext frame;
-    // 0x4265a0:85-96 灵界槽淡化状态机消费 DAT_004c22c4+0x5b8/+0x5bc 世界位
-    //（4fc0f57ce 接线，重写时丢失，2026-11-02 恢复）。
-    const Vec3 player_position{battle.player_x, battle.player_y, 0};
-    frame.player_position = &player_position;
-    hud.update(frame, host);
+        // 0x4265a0:85-96 灵界槽淡化状态机消费 DAT_004c22c4+0x5b8/+0x5bc 世界位
+        //（4fc0f57ce 接线，重写时丢失，2026-11-02 恢复）。
+        const Vec3 player_position{battle.player_x, battle.player_y, 0};
+        frame.player_position = &player_position;
+        hud.update(frame, host);
         return hud.error.empty() || fail(hud.error);
     }
     progress.stage_frame++;
@@ -772,36 +706,34 @@ bool RunScene::update_boss_hud() {
     // Boss HUD 任务（原版 0x4265a0 经 0x428280 注册 Update 0x1c=28）。沿用
     // RunScene::update 的暂停/覆盖层门——此前该面随 update 聚合执行，同门。
     if (!error.empty()) return false;
-    if (environment.paused || (progress.scene_flags & 0x4010u) == 0x4010u ||
-        (progress.scene_flags & 0x70u)) return true;
+    if (environment.paused || (progress.scene_flags & 0x4010u) == 0x4010u || (progress.scene_flags & 0x70u))
+        return true;
     // Boss HUD 每帧视图装配（0x4265a0 驱动面，RunScene 装配契约）：可证字段
     // 接实值，未锚定缺口保持默认并登记，不伪造。
     BossFrameInput boss_view;
-    boss_view.boss = battle.sim.boss();           // mgr+0x5c 槽 0
-    boss_view.boss_slot_present = battle.sim.boss_slot[0] >= 0;  // 0x4265a0 门
-    boss_view.dialog_active = dialog.active();    // ctx+0x198 对话进行中
-    boss_view.player_x = battle.player_x;         // DAT_004c22c4+0x5b8 世界位
-    boss_view.player_y = battle.player_y;         // +0x5bc
-    boss_view.boss_life =
-        boss_view.boss ? i32(boss_view.boss->life) : 0;  // +0x5138 int 口径
-    boss_view.trance_mode = battle.sim.spell.state().active(); // 4275xx: spell flags bit0
-    boss_view.boss_leaving=battle.sim.boss_leaving;
-    boss_view.life_initial=boss_view.boss?boss_view.boss->spell_base_life:0;
-    boss_view.timer_seconds=battle.sim.boss_timer_seconds;
-    boss_view.timer_centiseconds=battle.sim.boss_timer_centiseconds;
-    boss_view.remaining_stars=battle.sim.boss_remaining_stars;
-    constexpr i32 name_rows[7][2]={{-1,0},{-1,1},{2,3},{-1,4},{5,6},{-1,7},{8,9}};
+    boss_view.boss = battle.sim.boss();                                    // mgr+0x5c 槽 0
+    boss_view.boss_slot_present = battle.sim.boss_slot[0] >= 0;            // 0x4265a0 门
+    boss_view.dialog_active = dialog.active();                             // ctx+0x198 对话进行中
+    boss_view.player_x = battle.player_x;                                  // DAT_004c22c4+0x5b8 世界位
+    boss_view.player_y = battle.player_y;                                  // +0x5bc
+    boss_view.boss_life = boss_view.boss ? i32(boss_view.boss->life) : 0;  // +0x5138 int 口径
+    boss_view.trance_mode = battle.sim.spell.state().active();             // 4275xx: spell flags bit0
+    boss_view.boss_leaving = battle.sim.boss_leaving;
+    boss_view.life_initial = boss_view.boss ? boss_view.boss->spell_base_life : 0;
+    boss_view.timer_seconds = battle.sim.boss_timer_seconds;
+    boss_view.timer_centiseconds = battle.sim.boss_timer_centiseconds;
+    boss_view.remaining_stars = battle.sim.boss_remaining_stars;
+    constexpr i32 name_rows[7][2] = {{-1, 0}, {-1, 1}, {2, 3}, {-1, 4}, {5, 6}, {-1, 7}, {8, 9}};
     if (progress.stage >= 1 && progress.stage <= 7) {
-        const i32 name = name_rows[progress.stage-1][progress.chapter >= 5 ? 1 : 0];
+        const i32 name = name_rows[progress.stage - 1][progress.chapter >= 5 ? 1 : 0];
         boss_view.name_script = name >= 0 ? 155 + name : -1;
     }
-    for(size_t i=0;i<4;++i) {
-        boss_view.markers[i].ratio=battle.sim.boss_markers[0][i].ratio;
-        boss_view.markers[i].frame=battle.sim.boss_markers[0][i].color;
+    for (size_t i = 0; i < 4; ++i) {
+        boss_view.markers[i].ratio = battle.sim.boss_markers[0][i].ratio;
+        boss_view.markers[i].frame = battle.sim.boss_markers[0][i].color;
     }
-    if(!boss_view.boss)battle.sim.boss_markers[0]={}; // 4265a0 clears vacant slot ratios
-    if (!hud.update_boss(boss_view, host))
-        return fail(hud.error.empty() ? "Boss HUD update failed" : hud.error);
+    if (!boss_view.boss) battle.sim.boss_markers[0] = {};  // 4265a0 clears vacant slot ratios
+    if (!hud.update_boss(boss_view, host)) return fail(hud.error.empty() ? "Boss HUD update failed" : hud.error);
     // 0x4265a0：Boss HUD 警告音之后，0x4274bc 仅检查对话指针，
     // 0x4274cc 调用 MSG 解释器；不以 Boss 存在性为门。
     if (!dialogue_update_pending_) return true;
@@ -840,8 +772,7 @@ void RunScene::open_dialog(i32 entry) {
         return;
     }
     if (entry == -1 || entry == -3) {
-        if (!host.queue_music(2, entry == -1 ? 1 : 0, ""))
-            fail("ECL music queue failed");
+        if (!host.queue_music(2, entry == -1 ? 1 : 0, "")) fail("ECL music queue failed");
         return;
     }
     // 0x428820 else 分支：已有对话先销毁（+0x198 换手），再开新 entry。
@@ -865,8 +796,10 @@ void RunScene::open_dialog(i32 entry) {
     // marked enemies remain linked and consume their death RNG twice.
     battle.sim.clear_bullets();
     battle.sim.cancel_lasers(false);
-    if (!battle.sim.clear_enemies()) fail(battle.sim.error());
-    else if (!battle.end_trance()) fail(battle.error());
+    if (!battle.sim.clear_enemies())
+        fail(battle.sim.error());
+    else if (!battle.end_trance())
+        fail(battle.error());
 }
 
 void RunScene::msg_bgm(i32 opcode) {
@@ -887,15 +820,14 @@ void RunScene::msg_bgm(i32 opcode) {
     case 19:
         if (!host.queue_music(2, 1, "")) fail("Boss music queue failed");
         // 429a24: boss music also creates stage-logo script2.
-        else if (!hud.stage_music_logo()) fail(hud.error);
+        else if (!hud.stage_music_logo())
+            fail(hud.error);
         break;
     case 20:
-        if (!msg_presentation->nameplate(progress.chapter))
-            fail("Dialog nameplate: " + msg_presentation->error);
+        if (!msg_presentation->nameplate(progress.chapter)) fail("Dialog nameplate: " + msg_presentation->error);
         break;
     case 31:
-        if (!msg_presentation->boss_side_portrait())
-            fail("Dialog boss portrait: " + msg_presentation->error);
+        if (!msg_presentation->boss_side_portrait()) fail("Dialog boss portrait: " + msg_presentation->error);
         break;
     default:
         break;
@@ -945,18 +877,16 @@ void RunScene::msg_portrait_interrupt(i32 opcode, i32 label) {
     // 13/14（0x4298d4/0x4298e8）：label = arg+0x11 的 0x46fca0 立即中断——
     // 表情切换；13 打左（自机立绘）、14 打右（Boss 立绘）。
     if (!msg_presentation) return;
-    const bool ok = opcode == 0x0d ? msg_presentation->interrupt_player(label)
-                                   : msg_presentation->interrupt_side(label);
+    const bool ok =
+        opcode == 0x0d ? msg_presentation->interrupt_player(label) : msg_presentation->interrupt_side(label);
     if (!ok) fail("Dialog portrait interrupt: " + msg_presentation->error);
 }
 
 void RunScene::msg_speaker_switch(i32 opcode) {
     // 7（0x429641）：左 label2 亮、右 label3 暗；8（0x4296ee）：左 3、右 2。
     if (!msg_presentation) return;
-    const bool ok = opcode == 0x08 ? msg_presentation->interrupt_player(3) &&
-                                         msg_presentation->interrupt_side(2)
-                                   : msg_presentation->interrupt_side(3) &&
-                                         msg_presentation->interrupt_player(2);
+    const bool ok = opcode == 0x08 ? msg_presentation->interrupt_player(3) && msg_presentation->interrupt_side(2)
+                                   : msg_presentation->interrupt_side(3) && msg_presentation->interrupt_player(2);
     if (!ok) fail("Dialog speaker switch: " + msg_presentation->error);
 }
 
@@ -993,8 +923,7 @@ void RunScene::msg_release(i32 opcode) {
     default:
         break;
     }
-    if (!msg_presentation->error.empty())
-        fail("Dialog release: " + msg_presentation->error);
+    if (!msg_presentation->error.empty()) fail("Dialog release: " + msg_presentation->error);
 }
 
 void RunScene::msg_music_fade(i32 opcode, float seconds) {
@@ -1015,8 +944,7 @@ void RunScene::msg_dialog_end() {
     dialogue_rows_ = 0;
     if (msg_presentation) {
         msg_presentation->release_all();
-        if (!msg_presentation->error.empty())
-            fail("Dialog end release: " + msg_presentation->error);
+        if (!msg_presentation->error.empty()) fail("Dialog end release: " + msg_presentation->error);
     }
 }
 
@@ -1029,14 +957,15 @@ bool RunScene::draw_stage(u32 pass) {
     // 原生 0x4679a0 的 UP 批只按材质键冲批；pass 入口重选同值 Fullscreen
     // 相机不得 flush（否则层 11 的 5 个弹 quad 与自机 pass 的机体 quad
     // 拆成 10+2，原生是 12 三角形单 DrawPrimitiveUP）。
-    if (!host.camera_if_changed(DrawCamera::Fullscreen, false))
-        return fail("Stage camera unavailable");
+    if (!host.camera_if_changed(DrawCamera::Fullscreen, false)) return fail("Stage camera unavailable");
     // 原生 0x467350 的 2D 裁剪块是战场矩形（0x43be9b {116,2,408,476}），
     // 与 0x43b900 设置的 D3D 全屏 viewport 分离；直接绘制面同块裁剪。
-    const GraphicsViewport clip{
-        u32(truncate_int(float(float(environment.screen_width) - 408.f) * .5f)),
-        u32(truncate_int(float(float(environment.screen_height) - 476.f) * .5f)),
-        408, 476, 0, 1};
+    const GraphicsViewport clip{u32(truncate_int(float(float(environment.screen_width) - 408.f) * .5f)),
+                                u32(truncate_int(float(float(environment.screen_height) - 476.f) * .5f)),
+                                408,
+                                476,
+                                0,
+                                1};
     scene_renderer.clip = clip;
     scene_renderer.clip_set = true;
     const bool ok = pass == 4 ? laser_presentation->draw() : presentation->draw(pass);
@@ -1061,7 +990,8 @@ bool RunScene::prepare_transition(i32 bank, const std::string& name) {
     battle.item_manager.reset_items();
     // 00438520 destroys DAT_004c22a4, the same manager whose +0x14 pool
     // 00438ec0 spawns spirits into; reset_items covers the item pools only.
-    for (auto& spirit : battle.item_manager.spirits()) spirit = Spirit{};
+    for (auto& spirit : battle.item_manager.spirits())
+        spirit = Spirit{};
     presentation->release_stage();
     previous_scenery = std::move(scenery);
     previous_scenery_bank = scenery_bank;
@@ -1071,8 +1001,8 @@ bool RunScene::prepare_transition(i32 bank, const std::string& name) {
     std::vector<u8> bytes;
     if (!host.read_asset(name, bytes) || !scenery->file.open(bytes.data(), u32(bytes.size())))
         return fail("Next stage STD load failed");
-    if (!host.preload_scenery_animation(bank, scenery->file.animation_name) ||
-        !scenery->initialize(animations, bank)) return fail("Next stage scenery load failed");
+    if (!host.preload_scenery_animation(bank, scenery->file.animation_name) || !scenery->initialize(animations, bank))
+        return fail("Next stage scenery load failed");
     return true;
 }
 
@@ -1091,8 +1021,7 @@ bool RunScene::start_transition() {
     // 同一收敛在 start_transition 触发帧的落地，score_state.score 即 be7c0，
     // 不是新的写入源（另两处：Application::prepare_next_stage 门首、
     // GameHud::update_score 的 displayed_score 缓动值）。
-    if (progress.high_score < score_state.score)
-        progress.high_score = score_state.score;
+    if (progress.high_score < score_state.score) progress.high_score = score_state.score;
     if (!hud.finish_stage_clear()) return fail(hud.error);
     if (previous_scenery) previous_scenery->begin_exit();
     if (scenery) scenery->begin_enter();
@@ -1141,8 +1070,7 @@ bool RunScene::draw_scenery(u32 pass) {
             graphics.set_depth_test(true);
             graphics.set_depth_compare(touhou::graphics::Compare::LessEqual);
             graphics.set_depth_mask(true);
-            if (!graphics.clear_target(scene->draw_clear_color(), &viewport))
-                return fail("Scenery clear failed");
+            if (!graphics.clear_target(scene->draw_clear_color(), &viewport)) return fail("Scenery clear failed");
         }
         if (pass == 0) scene->finish_draw_pass(2);
         const bool saved_tint_enabled = renderer.tint_enabled;
@@ -1151,8 +1079,7 @@ bool RunScene::draw_scenery(u32 pass) {
             renderer.tint = scene->take_draw_tint();
             renderer.tint_enabled = (renderer.tint >> 24) != 0;
         }
-        if (!scene->draw(animations, renderer, graphics, pass == 0 ? 0 : 8,
-                         pass == 0 ? 7 : 11, viewport,
+        if (!scene->draw(animations, renderer, graphics, pass == 0 ? 0 : 8, pass == 0 ? 7 : 11, viewport,
                          {float(viewport.width), float(viewport.height)}, environment.screen_shake_offset))
             return fail(scene->error);
         renderer.flush();

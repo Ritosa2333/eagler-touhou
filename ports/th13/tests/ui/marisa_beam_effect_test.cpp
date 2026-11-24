@@ -1,6 +1,6 @@
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/StagePresentation.hpp"
+#include "ui_test_fixtures.hpp"
 
 using namespace th13;
 using namespace th13::test;
@@ -73,8 +73,10 @@ TEST(youmu_slash_resolves_created_player_vm_before_collision) {
 }
 
 TEST(youmu_charge_effect_is_created_interrupted_and_retired_synchronously) {
-    GameRandom random; AnmEnvironment environment;
-    AnmManager animations(random, environment); Graphics graphics;
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager animations(random, environment);
+    Graphics graphics;
     AnmRenderer renderer(graphics);
     CHECK(load_bank(animations, 6, synthetic_anm(1, trivial_scripts(19))));
     StagePresentation presentation(animations, renderer, {4, 5, 6}, 0);
@@ -94,8 +96,10 @@ TEST(youmu_charge_effect_is_created_interrupted_and_retired_synchronously) {
 }
 
 TEST(shot_birth_initializes_before_its_separate_manager_update) {
-    GameRandom random; AnmEnvironment environment;
-    AnmManager animations(random, environment); Graphics graphics;
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager animations(random, environment);
+    Graphics graphics;
     AnmRenderer renderer(graphics);
     auto scripts = trivial_scripts(13);
     // pl01 script11's time1 detached spawn is the original f2341 mechanism.
@@ -105,7 +109,10 @@ TEST(shot_birth_initializes_before_its_separate_manager_update) {
     scripts[12] = {{100, 0, {10000, 10022}, 2}, wait(), stop()};
     CHECK(load_bank(animations, 6, synthetic_anm(1, scripts)));
     StagePresentation presentation(animations, renderer, {4, 5, 6}, 0);
-    PlayerShot shot; shot.alive = true; shot.script = 11; shot.generation = 19;
+    PlayerShot shot;
+    shot.alive = true;
+    shot.script = 11;
+    shot.generation = 19;
     const auto before = random.index();
     CHECK(presentation.initialize_player_shot(shot, 0));
     CHECK_EQ(random.index(), before);
@@ -133,6 +140,6 @@ TEST(shot_birth_initializes_before_its_separate_manager_update) {
     CHECK(child != nullptr);
     if (child) CHECK_EQ(child->source_script, 12);
 }
-}
+}  // namespace
 
 int main() { return th13test::run_all("Marisa beam hit effect"); }

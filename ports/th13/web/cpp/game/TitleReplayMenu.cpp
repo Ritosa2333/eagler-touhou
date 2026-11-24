@@ -13,8 +13,8 @@
 #include <algorithm>
 #include <cstdarg>
 #include <cstdio>
-#include <ctime>
 #include <cstring>
+#include <ctime>
 
 namespace th13 {
 
@@ -25,13 +25,12 @@ constexpr i32 kStageRows = 7;
 
 // 名字表（原版指针表实读；尾随空格是原版列对齐的一部分，原样保留）。
 constexpr const char* kCharacterNames[4] = {"Reimu  ", "Marisa ", "Sanae  ", "Youmu  "};  // 0x4bb904
-constexpr const char* kDifficultyNames[6] = {"Easy   ", "Normal ", "Hard   ", "Lunatic",
-                                             "Extra  ", "O.D.   "};                          // 0x4bb914
-constexpr const char* kStageNames[kStageRows + 1] = {nullptr, "Stage 1", "Stage 2", "Stage 3",
-                                                     "Stage 4", "Stage 5", "Stage 6",
-                                                     "Extra  "};                              // 0x4bb944
+constexpr const char* kDifficultyNames[6] = {"Easy   ", "Normal ", "Hard   ",
+                                             "Lunatic", "Extra  ", "O.D.   "};  // 0x4bb914
+constexpr const char* kStageNames[kStageRows + 1] = {nullptr,   "Stage 1", "Stage 2", "Stage 3",
+                                                     "Stage 4", "Stage 5", "Stage 6", "Extra  "};  // 0x4bb944
 constexpr const char* kRouteNames[10] = {"tst", "St1", "St2", "St3", "St4",
-                                         "St5", "St6", "Ex ", "All", "ExA"};                  // 0x4bb96c
+                                         "St5", "St6", "Ex ", "All", "ExA"};  // 0x4bb96c
 
 // 选中/未选色（0x452f95：-(row!=cursor)&0xff808180 - 0x100 的两分支常量）。
 constexpr u32 kColorSelected = 0xffffff00u;
@@ -40,13 +39,10 @@ constexpr u32 kColorHeader = 0xffffffffu;  // 选关头行（寄存器复位值 
 
 u32 read_u32(const u8* p) { return u32(p[0]) | u32(p[1]) << 8 | u32(p[2]) << 16 | u32(p[3]) << 24; }
 i32 read_i32(const u8* p) { return i32(read_u32(p)); }
-i64 read_i64(const u8* p) {
-    return i64(u64(read_u32(p)) | u64(read_u32(p + 4)) << 32);
-}
+i64 read_i64(const u8* p) { return i64(u64(read_u32(p)) | u64(read_u32(p + 4)) << 32); }
 
 // 顶层头 +0x0C 保存时刻 → 本地历（原版 _localtime64，0x452fbc 调用点）。
-bool save_date(const ReplayFile& file, i32& year2, i32& month, i32& day, i32& hour,
-               i32& minute) {
+bool save_date(const ReplayFile& file, i32& year2, i32& month, i32& day, i32& hour, i32& minute) {
     if (file.top_header.size() < 0x14) return false;
     const std::time_t stamp = std::time_t(read_i64(file.top_header.data() + 0x0C));
     std::tm broken{};
@@ -83,8 +79,7 @@ std::string file_identifier(const std::string& name) {
 std::string number_label(i32 index) { return format("%.2d", index + 1); }
 
 // 0x4ac6d4/0x4ac668 公共尾（原版串尾 "%%" 经 printf 渲染为 "%"，此处存渲染形）。
-constexpr const char* kEmptyListRow =
-    " -------- --/--/-- --:-- ------- ------- --- ---%";
+constexpr const char* kEmptyListRow = " -------- --/--/-- --:-- ------- ------- --- ---%";
 
 const std::string kEmptyListSuffix = kEmptyListRow;  // 字符串拼接用（渲染形）
 }  // namespace
@@ -123,9 +118,7 @@ bool TitleReplayMenu::spell_practice(const ReplayFile& file) {
     return file.top_header.size() > 0x0A && (file.top_header[0x0A] & 2) != 0;
 }
 
-const ReplayFile* TitleReplayMenu::selected_file() const {
-    return replay_host.replay_entry(selected_index);
-}
+const ReplayFile* TitleReplayMenu::selected_file() const { return replay_host.replay_entry(selected_index); }
 
 const ReplayStage* TitleReplayMenu::stage_block(const ReplayFile& file, i32 number) const {
     // 0x448c40:75 槽位 = stage 头编号索引（+0xd8 + num*0x28），不是链序。
@@ -152,30 +145,26 @@ bool TitleReplayMenu::open() {
     if (state.replay_index < 0 || state.replay_index >= slots) state.replay_index = 0;
     state.menu.wrapping = true;
     state.menu.count = kRowsPerPage;
-    state.menu.select(state.replay_index % kRowsPerPage);   // +0x30=0x19、cursor=%25
+    state.menu.select(state.replay_index % kRowsPerPage);  // +0x30=0x19、cursor=%25
     page.wrapping = true;
     page.count = pages;
-    page.select(state.replay_index / kRowsPerPage);          // +0x1e0=3、page=/25
+    page.select(state.replay_index / kRowsPerPage);  // +0x1e0=3、page=/25
     // ascii.anm s19 粒子根（0x452647-0x4526ce：仅缺位建，+0x690 持有；
     // 脚本自带 L22/持续 spawn s18，无平移）。
     if (!state.replay_ascii_root) {
-        state.replay_ascii_root =
-            animations.create(resources.ascii, resources.replay_particle_root, -1, 0);
+        state.replay_ascii_root = animations.create(resources.ascii, resources.replay_particle_root, -1, 0);
         if (!state.replay_ascii_root) return fail(animations.error);
     }
     // title.anm s104 徽记（0x4526d5 edi=0x68 → 0x44bb80 → 槽 +0x468）。
     if (!present(state.handles[resources.replay_badge])) {
-        state.handles[resources.replay_badge] =
-            animations.create(resources.title, resources.replay_badge, -1, 0);
+        state.handles[resources.replay_badge] = animations.create(resources.title, resources.replay_badge, -1, 0);
         if (!state.handles[resources.replay_badge]) return fail(animations.error);
     }
     // 背景根缺位重建 + label3（0x452737-0x45274a：script89 + interrupt 3）。
     if (!present(state.handles[resources.background_root])) {
-        state.handles[resources.background_root] =
-            animations.create(resources.title, resources.background_root, -1, 0);
+        state.handles[resources.background_root] = animations.create(resources.title, resources.background_root, -1, 0);
         if (!state.handles[resources.background_root]) return fail(animations.error);
-        if (!animations.interrupt(state.handles[resources.background_root], 3, false))
-            return fail(animations.error);
+        if (!animations.interrupt(state.handles[resources.background_root], 3, false)) return fail(animations.error);
     }
     return true;
 }
@@ -212,8 +201,7 @@ bool TitleReplayMenu::confirm_file() {
     state.menu.count = kStageRows;  // +0x30 = 7（0x45293a）
     for (i32 row = 0; row < kStageRows; row++) {
         // 缺关槽禁用（0x452916-0x452929 → 0x4417c0 disabled 追加）。
-        if (!stage_block(*file, row + 1) && !state.menu.disable(row))
-            return fail(state.menu.error);
+        if (!stage_block(*file, row + 1) && !state.menu.disable(row)) return fail(state.menu.error);
     }
     state.menu.select(0);  // +0x45296x FUN_00415030(0) + 前后 ±1 步进落启用行
     if (spell_practice(*file)) {
@@ -244,8 +232,8 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
         if ((pressed | repeated) & 0x10) state.menu.move(-1);  // ↑（0x4e49fc 位布局）
         if ((pressed | repeated) & 0x20) state.menu.move(1);   // ↓
         if (!state.menu.error.empty()) return fail(state.menu.error);
-        if ((pressed | repeated) & 0x40) page.move(-1);        // ← 换页
-        if ((pressed | repeated) & 0x80) page.move(1);         // →
+        if ((pressed | repeated) & 0x40) page.move(-1);  // ← 换页
+        if ((pressed | repeated) & 0x80) page.move(1);   // →
         if (!page.error.empty()) return fail(page.error);
         if (state.menu.previous != state.menu.cursor || page_previous != page.cursor) {
             if (!sound(10)) return false;  // 0x45285x FUN_00460bc0(…,10)
@@ -303,8 +291,7 @@ bool TitleReplayMenu::update(u32 pressed, u32 repeated) {
             if (!file) return fail("Replay launch: selected entry unavailable");
             const i32 chain = stage_chain_index(*file);
             if (chain < 0)
-                return fail("Replay launch: stage block missing for row " +
-                            std::to_string(selected_stage_row + 1));
+                return fail("Replay launch: stage block missing for row " + std::to_string(selected_stage_row + 1));
             state.replay_index = selected_index;
             if (!replay_host.start_replay(selected_index, chain))
                 return fail("Replay launch: host rejected start request");
@@ -347,8 +334,7 @@ bool TitleReplayMenu::file_row_text(i32 index, std::string& out) {
     if (!file) {
         // 空槽：页 0 = "No.%.2d -------- …"（0x4ac6d4）、页 >0 = "User  -------- …"
         //（0x4ac668；0x4530fe 表 [(page!=0)*2+1]）。
-        out = page_index == 0 ? "No." + number_label(index) + kEmptyListSuffix
-                              : "User " + kEmptyListSuffix;
+        out = page_index == 0 ? "No." + number_label(index) + kEmptyListSuffix : "User " + kEmptyListSuffix;
         return true;
     }
     i32 year2 = 0, month = 0, day = 0, hour = 0, minute = 0;
@@ -363,23 +349,21 @@ bool TitleReplayMenu::file_row_text(i32 index, std::string& out) {
         if (spell_practice(*file)) {
             // 0x4ac62c："No.%.2d %s %.2d/%.2d/%.2d %.2d:%.2d %s SpellPr %3d %2.1f%%"
             const i32 practice = read_i32(top + 0x70) + 1;  // 0x453038 inc（不截断）
-            out = format("No.%s %s %.2d/%.2d/%.2d %.2d:%.2d %s SpellPr %3d %2.1f%%",
-                         number_label(index).c_str(), file->player_name.c_str(), year2, month,
-                         day, hour, minute, kCharacterNames[character], practice, slow);
+            out = format("No.%s %s %.2d/%.2d/%.2d %.2d:%.2d %s SpellPr %3d %2.1f%%", number_label(index).c_str(),
+                         file->player_name.c_str(), year2, month, day, hour, minute, kCharacterNames[character],
+                         practice, slow);
         } else {
             // 0x4ac710："No.%.2d %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%"
-            out = format("No.%s %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%",
-                         number_label(index).c_str(), file->player_name.c_str(), year2, month,
-                         day, hour, minute, kCharacterNames[character],
+            out = format("No.%s %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%", number_label(index).c_str(),
+                         file->player_name.c_str(), year2, month, day, hour, minute, kCharacterNames[character],
                          kDifficultyNames[difficulty], kRouteNames[route], slow);
         }
     } else {
         // 0x4ac6a0："%s  %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%"（首 %s =
         // 文件名字节 7..10，0x4e5368 全局）。
         out = format("%s  %s %.2d/%.2d/%.2d %.2d:%.2d %s %s %s %2.1f%%",
-                     file_identifier(replay_host.replay_filename(index)).c_str(),
-                     file->player_name.c_str(), year2, month, day, hour, minute,
-                     kCharacterNames[character], kDifficultyNames[difficulty],
+                     file_identifier(replay_host.replay_filename(index)).c_str(), file->player_name.c_str(), year2,
+                     month, day, hour, minute, kCharacterNames[character], kDifficultyNames[difficulty],
                      kRouteNames[route], slow);
     }
     return true;
@@ -403,8 +387,8 @@ bool TitleReplayMenu::stage_row_text(const ReplayFile& file, i32 row, std::strin
         extra = next->header.size() > 0x28 ? read_i32(next->header.data() + 0x24) : 0;
     } else {
         if (file.top_header.size() < 0x74) return fail("Replay top header unavailable");
-        score = read_i32(top + 0x14);              // 最终分
-        extra = read_i32(top + 0x6C);              // 续关数
+        score = read_i32(top + 0x14);  // 最终分
+        extra = read_i32(top + 0x6C);  // 续关数
     }
     out = format("%s  %.8d%d", kStageNames[number], score, extra);  // 0x4ac818
     return true;
@@ -413,7 +397,7 @@ bool TitleReplayMenu::stage_row_text(const ReplayFile& file, i32 row, std::strin
 bool TitleReplayMenu::draw_texts(HudDrawServices& host) {
     if (i32(state.screen) != i32(TitleScreen::Replay)) return true;
     if (state.substate != 2 && state.substate != 4) return true;  // 0x452c30 值域
-    HudTextStyle style;  // 队列默认：font0、左对齐、scale 1
+    HudTextStyle style;                                           // 队列默认：font0、左对齐、scale 1
     const auto put = [&](float x, float y, u32 color, const std::string& text) {
         style.color = color;
         return host.hud_text({{x, y, 0}, style, text});
@@ -443,8 +427,7 @@ bool TitleReplayMenu::draw_texts(HudDrawServices& host) {
     if (file) {
         float header_y = 80;
         if (state.age.current < 10)
-            header_y = 80 + float(selected_index % kRowsPerPage) * 15 *
-                               (10 - state.age.fractional) / 10;
+            header_y = 80 + float(selected_index % kRowsPerPage) * 15 * (10 - state.age.fractional) / 10;
         std::string text;
         if (!file_row_text(selected_index, text)) return false;
         if (!put(58, header_y, kColorHeader, text)) return false;

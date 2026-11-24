@@ -71,14 +71,14 @@ struct BossFrameInput {
     float player_x = 0, player_y = 0;  // DAT_004c22c4+0x5b8/+0x5bc（世界位）
     i32 timer_seconds = -1;            // ctx+0x1a0；-1 = 无计时
     i32 timer_frames = 0;              // 帧内计数（百分秒 = frames*100/60）
-    i32 timer_centiseconds=-1; // native4218f0 already converts remainder to hundredths
-    i32 remaining_stars=0; // ECL540, front scripts68..77
-    i32 name_script = -1; // stage table +74/+78 plus155, 0042b1f0
+    i32 timer_centiseconds = -1;       // native4218f0 already converts remainder to hundredths
+    i32 remaining_stars = 0;           // ECL540, front scripts68..77
+    i32 name_script = -1;              // stage table +74/+78 plus155, 0042b1f0
     i32 boss_life = 0;                 // 敌机+0x5138（int 口径）
     i32 life_initial = 0;              // 敌机+0x513c；<=0 时环隐藏
     struct PhaseMarker {
-        i32 frame = 0;   // ctx+0x1c0+id*8, packed color (legacy field name)
-        float ratio = 0; // ctx+0x1bc+id*8（ECL527）
+        i32 frame = 0;    // ctx+0x1c0+id*8, packed color (legacy field name)
+        float ratio = 0;  // ctx+0x1bc+id*8（ECL527）
     } markers[4];
     bool trance_mode = false;  // legacy name; native SPELL active bit0 selects HP thresholds
 };
@@ -113,8 +113,7 @@ public:
     static constexpr i32 kTimerDigitSpriteBase = 270;  // ascii sprite 270-279
 
     explicit BossPresentation(AnmManager& animations) : BossPresentation(animations, Banks{}) {}
-    explicit BossPresentation(AnmManager& animations, Banks banks)
-        : animations_(animations), banks_(banks) {}
+    explicit BossPresentation(AnmManager& animations, Banks banks) : animations_(animations), banks_(banks) {}
 
     struct RollbackState {
         bool gate_;
@@ -140,7 +139,30 @@ public:
         u32 marker_handle_;
         u32 name_handle_;
     };
-    RollbackState capture_rollback() const { return {gate_, displayed_ratio_, target_ratio_, timer_seconds_, timer_displayed_, timer_frames_, timer_centiseconds_, remaining_star_handles_, warn_state_, move_state_, escalate_state_, proximity_hidden_, stars_created_, ring_created_, marker_glyph_, digit_tens_, digit_ones_, ring_arc_, ring_overlays_, star_handles_, marker_handle_, name_handle_}; }
+    RollbackState capture_rollback() const {
+        return {gate_,
+                displayed_ratio_,
+                target_ratio_,
+                timer_seconds_,
+                timer_displayed_,
+                timer_frames_,
+                timer_centiseconds_,
+                remaining_star_handles_,
+                warn_state_,
+                move_state_,
+                escalate_state_,
+                proximity_hidden_,
+                stars_created_,
+                ring_created_,
+                marker_glyph_,
+                digit_tens_,
+                digit_ones_,
+                ring_arc_,
+                ring_overlays_,
+                star_handles_,
+                marker_handle_,
+                name_handle_};
+    }
     void restore_rollback(const RollbackState& state) {
         gate_ = state.gate_;
         displayed_ratio_ = state.displayed_ratio_;
@@ -176,9 +198,7 @@ public:
     // 清单」的说法：那是 (be830&2)==0 的全量清理分支，全函数不含
     // 0x1dc/0x1e0/0x1e4/0x1e8/0x1f4/0x2a8/0x46fc30 任一引用；0xc 分支置
     // be830|=2 后走 :175-217 的「隐藏 + 清 bit1」，并不销毁环组 VM。
-    void prepare_stage_assets() noexcept {
-        timer_seconds_ = timer_displayed_ = -1;
-    }
+    void prepare_stage_assets() noexcept { timer_seconds_ = timer_displayed_ = -1; }
     // 场景卸载：环组/数字 VM 全量回收（0x4265a0 失活支路 0x46fc30×7 同义）。
     void release();
 
@@ -196,7 +216,7 @@ public:
     bool timer_visible() const noexcept { return gate_ && timer_seconds_ >= 0; }
     i32 timer_seconds() const noexcept { return timer_seconds_; }
     i32 timer_centiseconds() const noexcept {
-        return timer_visible() ? (timer_centiseconds_>=0?timer_centiseconds_:timer_frames_*100/60) : 0;
+        return timer_visible() ? (timer_centiseconds_ >= 0 ? timer_centiseconds_ : timer_frames_ * 100 / 60) : 0;
     }
     // 数字 VM 脚本位（208/220,39）+16/-7 锚（0x427910:255-257）。
     float timer_text_x() const noexcept;
@@ -205,14 +225,14 @@ public:
 
     // 诊断/测试面。
     float displayed_ratio() const noexcept { return displayed_ratio_; }
-    u32 ring_arc_handle() const noexcept { return ring_arc_; }        // 槽 240
-    u32 ring_overlay_handle(i32 i) const noexcept {  // 槽 241/242
+    u32 ring_arc_handle() const noexcept { return ring_arc_; }  // 槽 240
+    u32 ring_overlay_handle(i32 i) const noexcept {             // 槽 241/242
         return ring_overlays_[u32(i < 0 || i > 1 ? 0 : i)];
     }
     const std::array<u32, 4>& star_handles() const noexcept { return star_handles_; }
     u32 marker_handle() const noexcept { return marker_handle_; }
     bool proximity_hidden() const noexcept { return proximity_hidden_; }
-    i32 warn_state() const noexcept { return warn_state_; }  // 0 无/1 <10/2 <5
+    i32 warn_state() const noexcept { return warn_state_; }      // 0 无/1 <10/2 <5
     i32 marker_glyph() const noexcept { return marker_glyph_; }  // +0x52b 字节
     bool marker_visible() const noexcept;
     // 计时数字 VM 句柄（ascii script2=十位/3=个位）。
@@ -222,12 +242,12 @@ public:
     std::string error;
 
 private:
-    bool create_ring();                     // 槽 240/241/242 → front 240/241/242
-    void retire_ring();                     // 0x46fc30 家族回收
-    bool create_stars();                    // 槽 243×4 → front 243
+    bool create_ring();   // 槽 240/241/242 → front 240/241/242
+    void retire_ring();   // 0x46fc30 家族回收
+    bool create_stars();  // 槽 243×4 → front 243
     void write_star(u32 handle, const BossFrameInput& input, i32 index);
     bool ensure_marker();
-    bool update_marker(const BossFrameInput&);                   // ctx+0xa0 常备（0x425170:447-508）
+    bool update_marker(const BossFrameInput&);  // ctx+0xa0 常备（0x425170:447-508）
     void fail(const char* why) {
         if (error.empty()) error = why;
     }
@@ -236,14 +256,14 @@ private:
     Banks banks_;
 
     // ---- 状态（stage ctx 偏移对照）----
-    bool gate_ = false;              // 0x4265a0:98-107 总门
-    float displayed_ratio_ = 0;      // +0x1ac
-    float target_ratio_ = 0;         // +0x1b0
-    i32 timer_seconds_ = -1;         // +0x1a0（输入镜像）
-    i32 timer_displayed_ = -1;       // +0x1a8
+    bool gate_ = false;          // 0x4265a0:98-107 总门
+    float displayed_ratio_ = 0;  // +0x1ac
+    float target_ratio_ = 0;     // +0x1b0
+    i32 timer_seconds_ = -1;     // +0x1a0（输入镜像）
+    i32 timer_displayed_ = -1;   // +0x1a8
     i32 timer_frames_ = 0;
-    i32 timer_centiseconds_=-1;
-    std::array<u32,10> remaining_star_handles_{};
+    i32 timer_centiseconds_ = -1;
+    std::array<u32, 10> remaining_star_handles_{};
     i32 warn_state_ = 0;             // 0x4265a0:147-163 警告档
     u32 move_state_ = 0;             // +0x180 bits9-10（0/1 移开迟滞）
     i32 escalate_state_ = 0;         // +0x180 bits1-2（<700/400/200 阶段）

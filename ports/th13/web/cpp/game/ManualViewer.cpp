@@ -12,7 +12,8 @@ bool ManualViewer::fail(const std::string& why) {
 // case0：8 个菜单页 VM（script0..7，选中 label2 / 未选 label3）。原版在此
 // 同时创建 8 个注释/行 VM；页 VM 只在实际翻页时创建。
 bool ManualViewer::menu() {
-    for (u32& handle : entries) animations.retire(handle);
+    for (u32& handle : entries)
+        animations.retire(handle);
     for (i32 i = 0; i < 8; ++i) {
         entries[u32(i)] = animations.create(bank, i, -1, 4, {128, 0, 0});
         if (!entries[u32(i)] || !animations.interrupt(entries[u32(i)], i == page ? 2 : 3, true))
@@ -36,7 +37,8 @@ bool ManualViewer::open() {
 // 完成解码上传，随后本帧创建 VM（纹理内容在下一绘制帧生效）。
 bool ManualViewer::show_page() {
     if (!load_page || !load_page(page)) return fail("Manual page unavailable");
-    for (u32& handle : entries) animations.retire(handle);
+    for (u32& handle : entries)
+        animations.retire(handle);
     animations.retire(page_vm);
     page_vm = animations.create(bank, 9, -1, 4, {128, 0, 0});
     if (!page_vm) return fail(animations.error);
@@ -61,8 +63,7 @@ bool ManualViewer::update(u32 pressed, u32 repeated) {
         if (page != previous) {
             if (!sound || !sound(10)) return fail("Manual navigation sound failed");
             for (i32 i = 0; i < 8; ++i)
-                if (!animations.interrupt(entries[u32(i)], i == page ? 2 : 3, true))
-                    return fail(animations.error);
+                if (!animations.interrupt(entries[u32(i)], i == page ? 2 : 3, true)) return fail(animations.error);
         }
         if (pressed & 0x80001) {
             if (!sound || !sound(7)) return fail("Manual confirm sound failed");
@@ -77,8 +78,10 @@ bool ManualViewer::update(u32 pressed, u32 repeated) {
         }
     } else if (phase == 2) {
         const i32 previous = page;
-        if ((pressed & 0x20) && page < 7) ++page;
-        else if ((pressed & 0x10) && page > 0) --page;
+        if ((pressed & 0x20) && page < 7)
+            ++page;
+        else if ((pressed & 0x10) && page > 0)
+            --page;
         if (page != previous) {
             if (!sound || !sound(10)) return fail("Manual page sound failed");
             return show_page();
@@ -93,10 +96,11 @@ bool ManualViewer::update(u32 pressed, u32 repeated) {
 }
 
 void ManualViewer::close() {
-    for (u32& handle : entries) animations.retire(handle);
+    for (u32& handle : entries)
+        animations.retire(handle);
     animations.retire(page_vm);
     phase = age = 0;
     done = false;
 }
 
-} // namespace th13
+}  // namespace th13

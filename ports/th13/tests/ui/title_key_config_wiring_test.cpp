@@ -2,12 +2,12 @@
 //   TitleScreen::KeyConfig=4 分派、Option 行2 Z 经宿主 open_key_config 切屏、
 //   TitleScene::connect_key_config 注入手柄位图/五键/落盘、End 保存后回 Option
 //   并恢复 5 行光标（不残留 key config 的 7 行/栈）、再退出回主菜单。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
-#include "game/TitleScene.hpp"
-#include "game/TitleMainMenu.hpp"
 #include "game/FrameScheduler.hpp"
+#include "game/TitleMainMenu.hpp"
+#include "game/TitleScene.hpp"
 
 #include <array>
 #include <memory>
@@ -48,7 +48,8 @@ struct RoundTripHost final : TitleScenePlatform {
 
 std::vector<u8> title_anm_fixture() {
     std::vector<std::vector<AnmIns>> scripts(243);
-    for (auto& script : scripts) script = {wait(), stop()};
+    for (auto& script : scripts)
+        script = {wait(), stop()};
     auto spawn_range = [&](i32 root, i32 first, i32 last) {
         scripts[u32(root)].clear();
         for (i32 child = first; child <= last; child++)
@@ -102,12 +103,8 @@ struct RoundTripHarness {
     RoundTripHarness() {
         animation_updates[0].owner = animation_updates[1].owner = &manager;
         animation_updates[0].enabled = animation_updates[1].enabled = true;
-        animation_updates[0].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-        };
-        animation_updates[1].run = [](void* p) {
-            return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-        };
+        animation_updates[0].run = [](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; };
+        animation_updates[1].run = [](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
         CHECK(scheduler.add(animation_updates[0], FramePass::Update, 9) >= 0);
         CHECK(scheduler.add(animation_updates[1], FramePass::Update, 34) >= 0);
         CHECK(load_bank(manager, 16, title_anm_fixture()));
@@ -115,19 +112,16 @@ struct RoundTripHarness {
         CHECK(load_bank(manager, 2, synthetic_anm(8, trivial_scripts(20))));
         CHECK(load_bank(manager, 19, synthetic_anm(4, trivial_scripts(4))));
         CHECK(load_bank(manager, 8, synthetic_anm(4, trivial_scripts(4))));
-        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler,
-                                             TitleSceneResources{});
+        scene = std::make_unique<TitleScene>(progress, selection, manager, host, scheduler, TitleSceneResources{});
         CHECK(scene->error.empty());
         scene->state.return_reason = 0;
-        scene->connect_key_config(
-            [this] { return pad_present && raw_buttons != 0; },
-            [this] { return raw_buttons; },
-            [this] { return stored; },
-            [this](const std::array<i16, 5>& values) {
-                ++persist_calls;
-                persisted = values;
-                return persist_ok;
-            });
+        scene->connect_key_config([this] { return pad_present && raw_buttons != 0; }, [this] { return raw_buttons; },
+                                  [this] { return stored; },
+                                  [this](const std::array<i16, 5>& values) {
+                                      ++persist_calls;
+                                      persisted = values;
+                                      return persist_ok;
+                                  });
     }
 
     void frame(u32 pressed = 0, u32 repeated = 0) {
@@ -136,7 +130,8 @@ struct RoundTripHarness {
         CHECK(scheduler.draw() >= 0);
     }
     void advance(i32 frames, u32 pressed = 0, u32 repeated = 0) {
-        for (i32 i = 0; i < frames; i++) frame(pressed, repeated);
+        for (i32 i = 0; i < frames; i++)
+            frame(pressed, repeated);
     }
     void reach_main_menu() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
@@ -145,7 +140,8 @@ struct RoundTripHarness {
     }
     void reach_key_config() {
         reach_main_menu();
-        for (int i = 0; i < 6; i++) frame(0x20);  // 主菜单 0 -> 7（Option）
+        for (int i = 0; i < 6; i++)
+            frame(0x20);  // 主菜单 0 -> 7（Option）
         CHECK_EQ(scene->state.menu.cursor, 7);
         frame(0x01);
         advance(25);  // 主菜单确认序 -> Option
@@ -180,7 +176,8 @@ TEST(option_enters_key_config_and_returns_with_five_row_cursor) {
     CHECK_EQ(int(h.scene->key_config_menu().bindings()[3]), 0);
     h.raw_buttons = 0;
     // 行6 End -> 保存退出。
-    for (int i = 0; i < 6; i++) h.frame(0x20);
+    for (int i = 0; i < 6; i++)
+        h.frame(0x20);
     CHECK_EQ(h.scene->key_config_menu().row(), 6);
     h.frame(0x01);
     h.advance(10);
@@ -214,7 +211,8 @@ TEST(key_config_cancel_returns_to_option_without_persist) {
     h.frame();
     CHECK_EQ(int(h.scene->key_config_menu().bindings()[0]), 5);
     h.raw_buttons = 0;
-    for (int i = 0; i < 6; i++) h.frame(0x20);
+    for (int i = 0; i < 6; i++)
+        h.frame(0x20);
     h.frame(0x100);  // Esc 取消
     h.advance(10);
     CHECK_EQ(h.persist_calls, 0);

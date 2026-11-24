@@ -1,5 +1,5 @@
-#include "game/PracticeSession.hpp"
 #include "game/PostGameFlow.hpp"
+#include "game/PracticeSession.hpp"
 #include <cstdlib>
 #include <iostream>
 namespace {
@@ -7,11 +7,14 @@ struct Results : th13::PostGamePlatform {
     th13::i32 destination = 0;
     bool practice_ended = false;
     void request_destination(th13::i32 next) override { destination = next; }
-    bool request_practice_end() override { practice_ended = true; return true; }
+    bool request_practice_end() override {
+        practice_ended = true;
+        return true;
+    }
     bool request_stage6_fade() override { return true; }
     void bgm(th13::i32) override {}
 };
-}
+}  // namespace
 
 int main() {
     using th13::PracticeRequest;
@@ -24,7 +27,8 @@ int main() {
     int boss = 0;
     for (int id = 1; id <= th13::practice_section_count; ++id) {
         if (th13::practice_sections[id].stage == 2 && th13::practice_sections[id].group == 2 &&
-            th13::practice_sections[id].index == 1) boss = id;
+            th13::practice_sections[id].index == 1)
+            boss = id;
     }
     if (!boss) return 2;
     PracticeRequest enabled;
@@ -39,19 +43,20 @@ int main() {
     session.stage = 1;
     if (!th13::records_practice_stage(session, false)) return 4;
     const auto active = th13::begin_thprac(enabled, session, 1);
-    if (!active.applied || active.stage != 2 || active.bomb != 8 || active.power != 400 ||
-        enabled.enabled || session.practice_mode != 1 || (session.run_mode_flags & 0x30u) != 0x10u ||
-        th13::records_practice_stage(session, false)) return 5;
+    if (!active.applied || active.stage != 2 || active.bomb != 8 || active.power != 400 || enabled.enabled ||
+        session.practice_mode != 1 || (session.run_mode_flags & 0x30u) != 0x10u ||
+        th13::records_practice_stage(session, false))
+        return 5;
 
     th13::SessionState ordinary;
-    if (th13::begin_thprac(enabled, ordinary, 1).applied ||
-        !th13::records_practice_stage(ordinary, false)) return 6;
+    if (th13::begin_thprac(enabled, ordinary, 1).applied || !th13::records_practice_stage(ordinary, false)) return 6;
 
     enabled = {true, boss, 8, 8, 400, 200};
     th13::SessionState spell;
     spell.run_mode_flags = 0x20u;
-    if (th13::begin_thprac(enabled, spell, 2).applied || !enabled.enabled ||
-        spell.practice_mode != 0 || spell.run_mode_flags != 0x20u) return 7;
+    if (th13::begin_thprac(enabled, spell, 2).applied || !enabled.enabled || spell.practice_mode != 0 ||
+        spell.run_mode_flags != 0x20u)
+        return 7;
 
     th13::HudPlayerState player;
     th13::HudScoreState score;
@@ -65,7 +70,8 @@ int main() {
     Results story_results;
     th13::PostGameFlow story_flow(ordinary, player, score, story_results);
     story_flow.on_stage_clear();
-    for (int frame = 0; frame < 380; ++frame) story_flow.update();
+    for (int frame = 0; frame < 380; ++frame)
+        story_flow.update();
     if (story_results.practice_ended || story_results.destination != 0xf) return 9;
 
     std::cout << "practice-session ok\n";

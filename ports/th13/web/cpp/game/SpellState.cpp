@@ -4,11 +4,10 @@
 
 namespace th13 {
 
-SpellEvent SpellState::begin(i32 id, const std::string& name, i32 duration_frames,
-                            i32 stage, i32 difficulty, bool bomb_active) {
+SpellEvent SpellState::begin(i32 id, const std::string& name, i32 duration_frames, i32 stage, i32 difficulty,
+                             bool bomb_active) {
     error.clear();
-    if (id < 0 || id >= 127 || stage < 1 || stage > 7 || difficulty < 0 ||
-        difficulty > 5 || duration_frames < 0) {
+    if (id < 0 || id >= 127 || stage < 1 || stage > 7 || difficulty < 0 || difficulty > 5 || duration_frames < 0) {
         error = "Invalid spell start parameters";
         return {};
     }
@@ -30,8 +29,7 @@ SpellEvent SpellState::begin(i32 id, const std::string& name, i32 duration_frame
 SpellEvent SpellState::end() {
     // 00413a60: inactive end is a no-op, including a repeated ECL 523.
     if (!state_.active()) return {};
-    SpellEvent event{SpellEventKind::End, state_,
-                     state_.captured() ? state_.current_bonus / 10 : 0};
+    SpellEvent event{SpellEventKind::End, state_, state_.captured() ? state_.current_bonus / 10 : 0};
     // Keep metadata, age and all other flags exactly as the original does.
     state_.flags &= ~(kSpellActive | kSpellBombProtection);
     return event;
@@ -47,10 +45,9 @@ bool SpellState::step(bool bomb_active, const float* rate) {
         const i32 denominator = state_.duration_frames - 300;
         if (denominator <= 0) {
             error = "Spell bonus decay duration does not exceed 300 frames";
-            return false; // original idiv would fault; do not invent a divisor
+            return false;  // original idiv would fault; do not invent a divisor
         }
-        const i32 decrement = (state_.initial_bonus - state_.initial_bonus / 4) /
-                              denominator;
+        const i32 decrement = (state_.initial_bonus - state_.initial_bonus / 4) / denominator;
         const i32 bonus = wrapping_sub(state_.current_bonus, decrement);
         state_.current_bonus = bonus - bonus % 10;
     }
@@ -103,4 +100,4 @@ void SpellState::reset() {
     error.clear();
 }
 
-} // namespace th13
+}  // namespace th13

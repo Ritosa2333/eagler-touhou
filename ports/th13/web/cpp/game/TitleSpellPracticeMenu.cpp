@@ -4,16 +4,12 @@
 
 namespace th13 {
 namespace {
-i32 clamp_i32(i32 value, i32 low, i32 high) {
-    return value < low ? low : (value > high ? high : value);
-}
+i32 clamp_i32(i32 value, i32 low, i32 high) { return value < low ? low : (value > high ? high : value); }
 }  // namespace
 
-TitleSpellPracticeMenu::TitleSpellPracticeMenu(TitleSpellPracticePlatform& platform,
-                                               i32 initial_character)
+TitleSpellPracticeMenu::TitleSpellPracticeMenu(TitleSpellPracticePlatform& platform, i32 initial_character)
     : platform_(platform) {
-    const i32 characters = clamp_i32(platform_.character_count(), 0,
-                                     kSpellPracticeCharacters);
+    const i32 characters = clamp_i32(platform_.character_count(), 0, kSpellPracticeCharacters);
     character_ = characters > 0 ? clamp_i32(initial_character, 0, characters - 1) : 0;
     rebuild_stage();
     if (stage_rows_.empty()) error = "spell practice catalog unavailable";
@@ -38,8 +34,7 @@ void TitleSpellPracticeMenu::rebuild_spells() {
     spell_rows_.clear();
     i32 count = 0;
     if (selected_stage_ >= 1 && selected_stage_ <= kSpellPracticeStages) {
-        count = clamp_i32(platform_.spell_count(selected_stage_), 0,
-                          kSpellPracticeSlots[selected_stage_ - 1]);
+        count = clamp_i32(platform_.spell_count(selected_stage_), 0, kSpellPracticeSlots[selected_stage_ - 1]);
     }
     spell_rows_.reserve(static_cast<size_t>(count));
     for (i32 slot = 0; slot < count; ++slot) {
@@ -59,19 +54,19 @@ void TitleSpellPracticeMenu::rebuild_difficulties() {
         SpellPracticeDifficultyRow row;
         row.difficulty = difficulty;
         row.spell_id = platform_.spell_id(selected_stage_, selected_slot_, difficulty);
-        row.rank = row.spell_id >= 0
-                       ? platform_.spell_rank(selected_stage_, selected_slot_, difficulty)
-                       : -1;
+        row.rank = row.spell_id >= 0 ? platform_.spell_rank(selected_stage_, selected_slot_, difficulty) : -1;
         row.available = row.spell_id >= 0 && row.rank >= 0 &&
                         platform_.spell_variant_available(selected_stage_, selected_slot_, difficulty);
-        if (row.available)
-            row.name = platform_.spell_variant_name(selected_stage_, selected_slot_, difficulty);
+        if (row.available) row.name = platform_.spell_variant_name(selected_stage_, selected_slot_, difficulty);
         difficulty_rows_.push_back(std::move(row));
     }
     cursor_ = clamp_i32(cursor_, 0, kSpellPracticeDifficulties - 1);
     if (!difficulty_rows_[size_t(cursor_)].available) {
         for (i32 row = 0; row < kSpellPracticeDifficulties; ++row)
-            if (difficulty_rows_[size_t(row)].available) { cursor_ = row; break; }
+            if (difficulty_rows_[size_t(row)].available) {
+                cursor_ = row;
+                break;
+            }
     }
 }
 
@@ -93,7 +88,10 @@ void TitleSpellPracticeMenu::move_cursor(i32 delta) {
     }
     for (i32 step = 0; step < count; ++step) {
         const i32 candidate = (cursor_ + delta * (step + 1) + count * (step + 1)) % count;
-        if (difficulty_rows_[size_t(candidate)].available) { cursor_ = candidate; return; }
+        if (difficulty_rows_[size_t(candidate)].available) {
+            cursor_ = candidate;
+            return;
+        }
     }
 }
 
@@ -178,8 +176,7 @@ bool TitleSpellPracticeMenu::confirm() {
         return false;
     }
 
-    if (difficulty_rows_.empty() || cursor_ < 0 ||
-        cursor_ >= i32(difficulty_rows_.size())) {
+    if (difficulty_rows_.empty() || cursor_ < 0 || cursor_ >= i32(difficulty_rows_.size())) {
         blocked = "spell variants unavailable";
         return false;
     }
@@ -202,9 +199,8 @@ bool TitleSpellPracticeMenu::confirm() {
 
 bool TitleSpellPracticeMenu::restore_selection(i32 stage, i32 slot, i32 difficulty) {
     blocked.clear();
-    if (stage < 1 || stage > kSpellPracticeStages || slot < 0 ||
-        slot >= kSpellPracticeSlots[stage - 1] || difficulty < 0 ||
-        difficulty >= kSpellPracticeDifficulties)
+    if (stage < 1 || stage > kSpellPracticeStages || slot < 0 || slot >= kSpellPracticeSlots[stage - 1] ||
+        difficulty < 0 || difficulty >= kSpellPracticeDifficulties)
         return false;
     selected_stage_ = stage;
     selected_slot_ = slot;
@@ -221,14 +217,12 @@ bool TitleSpellPracticeMenu::restore_selection(i32 stage, i32 slot, i32 difficul
 bool TitleSpellPracticeMenu::cancel() {
     if (level_ == SpellPracticeLevel::Difficulty) {
         level_ = SpellPracticeLevel::Spell;
-        cursor_ = clamp_i32(selected_slot_, 0,
-                            spell_rows_.empty() ? 0 : i32(spell_rows_.size()) - 1);
+        cursor_ = clamp_i32(selected_slot_, 0, spell_rows_.empty() ? 0 : i32(spell_rows_.size()) - 1);
         return false;
     }
     if (level_ == SpellPracticeLevel::Spell) {
         level_ = SpellPracticeLevel::Stage;
-        cursor_ = clamp_i32(selected_stage_ - 1, 0,
-                            stage_rows_.empty() ? 0 : i32(stage_rows_.size()) - 1);
+        cursor_ = clamp_i32(selected_stage_ - 1, 0, stage_rows_.empty() ? 0 : i32(stage_rows_.size()) - 1);
         return false;
     }
     emit(SpellPracticeAction::Cancel);

@@ -1,9 +1,9 @@
 // H-SPIRIT-ANIMATION-LIFETIME: 00438a77 defers label1 at frame480;
 // 00438aca rejects an ordinary spirit whose real ANM handle has ended.
-#include "ui_test_fixtures.hpp"
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 #include "game/StagePresentation.hpp"
+#include "ui_test_fixtures.hpp"
 
 using namespace th13;
 
@@ -89,22 +89,20 @@ struct Fixture {
         progress.difficulty = 1;
         progress.max_point = 1000000;
         progress.max_point_cap = 25000000;
-        if (!battle.load(provider, "spirit_lifetime.ecl", 2, host,
-                         progress, player, score)) return false;
+        if (!battle.load(provider, "spirit_lifetime.ecl", 2, host, progress, player, score)) return false;
         battle.sim.enemies.clear();
         battle.player_dead = true;  // no collection while observing the fade
         const auto spirits = spirit_bank();
         const auto empty = th13::test::synthetic_anm(1, th13::test::trivial_scripts(1));
         if (!th13::test::load_bank(animations, 4, empty) ||
             !th13::test::load_bank(animations, 8, th13::test::synthetic_anm(1, th13::test::trivial_scripts(11))) ||
-            !th13::test::load_bank(animations, 5, empty) ||
-            !th13::test::load_bank(animations, 6, empty) ||
-            !th13::test::load_bank(animations, 25, spirits)) return false;
+            !th13::test::load_bank(animations, 5, empty) || !th13::test::load_bank(animations, 6, empty) ||
+            !th13::test::load_bank(animations, 25, spirits))
+            return false;
         // Observe the actual manager interrupt call; its normal deferred
         // execution still runs through AnmRegistry and the synthetic script.
         animations.effect_interrupt = [this](AnmVm& vm, i32 label, float) {
-            if ((vm.source_script == 7 || vm.source_script == 10) && label == 1)
-                ++fade_interrupts;
+            if ((vm.source_script == 7 || vm.source_script == 10) && label == 1) ++fade_interrupts;
             return true;
         };
         battle.item_manager.spirit_animation_alive = [this](u32 slot, u32 serial) {
@@ -299,36 +297,53 @@ TEST(trance_birth_bypasses_frame_480_fade_and_missing_animation_gate) {
 }
 
 TEST(trance_transition_replaces_existing_spirit_vm_and_resets_its_lifetime) {
-    Fixture fixture; CHECK(fixture.init());
-    Spirit& spirit = fixture.spawn(); CHECK(fixture.sync());
+    Fixture fixture;
+    CHECK(fixture.init());
+    Spirit& spirit = fixture.spawn();
+    CHECK(fixture.sync());
     const auto serial = spirit.serial;
-    const auto ordinary = fixture.spirit_handle(7); CHECK(ordinary != 0);
-    spirit.frame = 480; spirit.fade_requested = true;
+    const auto ordinary = fixture.spirit_handle(7);
+    CHECK(ordinary != 0);
+    spirit.frame = 480;
+    spirit.fade_requested = true;
     fixture.battle.item_manager.set_spirit_trance(true);
     // 0x439280/0x4393a0（灵界开/关）无条件写 Timer previous=-1（0xffffffff）、
     // current=0、fractional=0；frame 暴露的是本帧尾检查值 Timer.previous，
     // 重置后必须为 -1（004392f5 `mov [ebx+0x5c],0xffffffff`）。写 0 会让
     // update_spirits 尾部 set(frame+1) 守卫把 current 提前推到 1、随后 tick
     // 进 2——比原生快 1 帧（S4 f7708 原生 raw state frame=1 实证）。
-    CHECK_EQ(spirit.flags, 3u); CHECK_EQ(spirit.frame, -1);
-    CHECK_EQ(spirit.serial, serial); CHECK(!spirit.fade_requested);
+    CHECK_EQ(spirit.flags, 3u);
+    CHECK_EQ(spirit.frame, -1);
+    CHECK_EQ(spirit.serial, serial);
+    CHECK(!spirit.fade_requested);
     CHECK(fixture.sync());
-    const auto active = fixture.spirit_handle(10); CHECK(active != 0); CHECK(active != ordinary);
+    const auto active = fixture.spirit_handle(10);
+    CHECK(active != 0);
+    CHECK(active != ordinary);
     fixture.battle.item_manager.set_spirit_trance(false);
-    CHECK_EQ(spirit.flags, 2u); CHECK_EQ(spirit.frame, -1);
+    CHECK_EQ(spirit.flags, 2u);
+    CHECK_EQ(spirit.frame, -1);
     CHECK(fixture.sync());
-    const auto restored = fixture.spirit_handle(7); CHECK(restored != 0); CHECK(restored != active);
-    CHECK_EQ(spirit.serial, serial); CHECK_EQ(spirit.x, 0.f); CHECK_EQ(spirit.y, 200.f);
+    const auto restored = fixture.spirit_handle(7);
+    CHECK(restored != 0);
+    CHECK(restored != active);
+    CHECK_EQ(spirit.serial, serial);
+    CHECK_EQ(spirit.x, 0.f);
+    CHECK_EQ(spirit.y, 200.f);
 }
 
 TEST(existing_point_spirit_collects_trance_reward_after_conversion) {
-    Fixture fixture; CHECK(fixture.init());
-    Spirit& spirit = fixture.spawn(); CHECK(fixture.sync());
+    Fixture fixture;
+    CHECK(fixture.init());
+    Spirit& spirit = fixture.spawn();
+    CHECK(fixture.sync());
     fixture.battle.item_manager.set_spirit_trance(true);
-    CHECK(fixture.sync()); fixture.become_collecting_player(spirit);
+    CHECK(fixture.sync());
+    fixture.become_collecting_player(spirit);
     const i32 before = fixture.progress.max_point;
     CHECK(fixture.battle.step(fixture.idle));
-    CHECK(!spirit.alive); CHECK_EQ(fixture.progress.max_point, before + 10000);
+    CHECK(!spirit.alive);
+    CHECK_EQ(fixture.progress.max_point, before + 10000);
 }
 
 int main() { return th13test::run_all("spirit animation lifetime"); }

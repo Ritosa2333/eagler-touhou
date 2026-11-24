@@ -14,31 +14,53 @@
 #include "game/StageSim.hpp"
 using namespace th13;
 TEST(move_reset_folds_sub_positions_and_keeps_angles_and_radii) {
-    StageSim sim; StageEnemy e; EclContext ctx;
-    sim.current = &e; sim.commands.sim = &sim;
-    e.vel.pos[0] = 10.0f; e.vel.pos[1] = 20.0f; e.vel.pos[2] = 30.0f;
-    e.pos.pos[0] = 0.5f;  e.pos.pos[1] = 0.25f; e.pos.pos[2] = 0.125f;
-    e.vel.speed = 0.6f;  e.vel.angle = 2.5f;
-    e.vel.radius = 1.25f; e.vel.growth = 0.5f;
-    e.vel.aux[0] = 1.0f; e.vel.aux[1] = 2.0f; e.vel.aux[2] = 3.0f;
+    StageSim sim;
+    StageEnemy e;
+    EclContext ctx;
+    sim.current = &e;
+    sim.commands.sim = &sim;
+    e.vel.pos[0] = 10.0f;
+    e.vel.pos[1] = 20.0f;
+    e.vel.pos[2] = 30.0f;
+    e.pos.pos[0] = 0.5f;
+    e.pos.pos[1] = 0.25f;
+    e.pos.pos[2] = 0.125f;
+    e.vel.speed = 0.6f;
+    e.vel.angle = 2.5f;
+    e.vel.radius = 1.25f;
+    e.vel.growth = 0.5f;
+    e.vel.aux[0] = 1.0f;
+    e.vel.aux[1] = 2.0f;
+    e.vel.aux[2] = 3.0f;
     e.vel.mode = 0x1234u;
-    e.pos.speed = 0.3f;  e.pos.angle = -1.1f;
-    e.pos.radius = 2.0f; e.pos.growth = -0.25f;
-    e.pos.aux[0] = 4.0f; e.pos.aux[1] = 5.0f; e.pos.aux[2] = 6.0f;
+    e.pos.speed = 0.3f;
+    e.pos.angle = -1.1f;
+    e.pos.radius = 2.0f;
+    e.pos.growth = -0.25f;
+    e.pos.aux[0] = 4.0f;
+    e.pos.aux[1] = 5.0f;
+    e.pos.aux[2] = 6.0f;
     e.pos.mode = 0xABCDu;
-    e.vel.polar.duration = 10.0f; e.pos.polar.duration = 20.0f;
-    e.vel.postime.duration = 30.0f; e.pos.postime.duration = 40.0f;
-    e.vel.radial.duration = 50; e.pos.radial.duration = 60;
-    std::vector<u8> code; th13test::emit(code, 0, 427, 0, 255, 0, {});
+    e.vel.polar.duration = 10.0f;
+    e.pos.polar.duration = 20.0f;
+    e.vel.postime.duration = 30.0f;
+    e.pos.postime.duration = 40.0f;
+    e.vel.radial.duration = 50;
+    e.pos.radial.duration = 60;
+    std::vector<u8> code;
+    th13test::emit(code, 0, 427, 0, 255, 0, {});
     ctx.instruction = reinterpret_cast<const EclInstruction*>(code.data());
     CHECK_EQ(sim.commands.execute(ctx, 427), 0);
     // 子位置折叠：vel += pos（41ba18），pos 清零（41ba56）。
     CHECK_EQ(th13test::bits_of(e.vel.pos[0]), th13test::bits_of(10.5f));
     CHECK_EQ(th13test::bits_of(e.vel.pos[1]), th13test::bits_of(20.25f));
     CHECK_EQ(th13test::bits_of(e.vel.pos[2]), th13test::bits_of(30.125f));
-    CHECK_EQ(e.pos.pos[0], 0.0f); CHECK_EQ(e.pos.pos[1], 0.0f); CHECK_EQ(e.pos.pos[2], 0.0f);
+    CHECK_EQ(e.pos.pos[0], 0.0f);
+    CHECK_EQ(e.pos.pos[1], 0.0f);
+    CHECK_EQ(e.pos.pos[2], 0.0f);
     // 速度清零（41ba73/41ba6d），角度/半径/成长保留（无写入）。
-    CHECK_EQ(e.vel.speed, 0.0f); CHECK_EQ(e.pos.speed, 0.0f);
+    CHECK_EQ(e.vel.speed, 0.0f);
+    CHECK_EQ(e.pos.speed, 0.0f);
     CHECK_EQ(th13test::bits_of(e.vel.angle), th13test::bits_of(2.5f));
     CHECK_EQ(th13test::bits_of(e.pos.angle), th13test::bits_of(-1.1f));
     CHECK_EQ(th13test::bits_of(e.vel.radius), th13test::bits_of(1.25f));
@@ -54,20 +76,33 @@ TEST(move_reset_folds_sub_positions_and_keeps_angles_and_radii) {
     CHECK_EQ(e.vel.mode, 0x1230u);
     CHECK_EQ(e.pos.mode, 0xABC0u);
     // 插值挂接门清零（41bad8/41bade/41bae4/41baea/41baf0/41baf6）。
-    CHECK_EQ(e.vel.polar.duration, 0.0f); CHECK_EQ(e.pos.polar.duration, 0.0f);
-    CHECK_EQ(e.vel.postime.duration, 0.0f); CHECK_EQ(e.pos.postime.duration, 0.0f);
-    CHECK_EQ(e.vel.radial.duration, 0); CHECK_EQ(e.pos.radial.duration, 0);
+    CHECK_EQ(e.vel.polar.duration, 0.0f);
+    CHECK_EQ(e.pos.polar.duration, 0.0f);
+    CHECK_EQ(e.vel.postime.duration, 0.0f);
+    CHECK_EQ(e.pos.postime.duration, 0.0f);
+    CHECK_EQ(e.vel.radial.duration, 0);
+    CHECK_EQ(e.pos.radial.duration, 0);
 }
 TEST(move_reset_keeps_main_position_and_residual_rounding_delta) {
     // 0x419950 把主位置量化为 0.01；41ba18 的折叠保留 vel+pos 与主位置的
     // 量化残差，下一帧 delta 仍按 (vel+pos)-main 计算（不得把 vel 直接设为
     // 主位置而抹掉残差）。
-    StageSim sim; StageEnemy e; EclContext ctx;
-    sim.current = &e; sim.commands.sim = &sim;
-    e.position[0] = 3.0f; e.position[1] = 4.0f; e.position[2] = 0.0f;
-    e.vel.pos[0] = 3.004f; e.vel.pos[1] = 3.996f; e.vel.pos[2] = 0.0f;
-    e.pos.pos[0] = 0.0f; e.pos.pos[1] = 0.0f; e.pos.pos[2] = 0.0f;
-    std::vector<u8> code; th13test::emit(code, 0, 427, 0, 255, 0, {});
+    StageSim sim;
+    StageEnemy e;
+    EclContext ctx;
+    sim.current = &e;
+    sim.commands.sim = &sim;
+    e.position[0] = 3.0f;
+    e.position[1] = 4.0f;
+    e.position[2] = 0.0f;
+    e.vel.pos[0] = 3.004f;
+    e.vel.pos[1] = 3.996f;
+    e.vel.pos[2] = 0.0f;
+    e.pos.pos[0] = 0.0f;
+    e.pos.pos[1] = 0.0f;
+    e.pos.pos[2] = 0.0f;
+    std::vector<u8> code;
+    th13test::emit(code, 0, 427, 0, 255, 0, {});
     ctx.instruction = reinterpret_cast<const EclInstruction*>(code.data());
     CHECK_EQ(sim.commands.execute(ctx, 427), 0);
     CHECK_EQ(th13test::bits_of(e.vel.pos[0]), th13test::bits_of(3.004f));

@@ -8,8 +8,8 @@
 //    95/96/97）——旧占位 "NAME [END]" 的 font4 '['→sprite 313 曾令生产帧
 //    硬失败（2026-11-06 用户实测，ascii.anm 全文件仅 302+3=305 sprite）；
 // 4. END → 建菜单 142 → phase 6 续关菜单 + "Credit %d"(184,448)。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/AsciiText.hpp"
 #include "game/FrameScheduler.hpp"
@@ -20,7 +20,10 @@ using namespace th13::test;
 
 namespace {
 struct NameEntryHost final : RunPausePlatform {
-    bool sound(i32 id) override { sounds.push_back(id); return true; }
+    bool sound(i32 id) override {
+        sounds.push_back(id);
+        return true;
+    }
     bool suspend_music() override { return true; }
     bool restart_run() override { return true; }
     bool return_to_title() override { return true; }
@@ -55,7 +58,11 @@ struct NameEntryHost final : RunPausePlatform {
 };
 
 struct GlyphSink final : AsciiGlyphServices {
-    struct Glyph { Vec3 position; u32 color; i32 sprite; };
+    struct Glyph {
+        Vec3 position;
+        u32 color;
+        i32 sprite;
+    };
     std::vector<Glyph> glyphs;
     bool ascii_glyph(AnmVm& vm) override {
         glyphs.push_back({vm.variables.position, vm.visual.color, vm.visual.sprite});
@@ -82,8 +89,7 @@ struct OverlayHarness {
         CHECK(ascii.initialize(2));
         progress.rate = 1;
         progress.continue_stock = 3;
-        pause = std::make_unique<RunPause>(progress, manager, environment,
-                                           host, scheduler, 3);
+        pause = std::make_unique<RunPause>(progress, manager, environment, host, scheduler, 3);
         CHECK(pause->prepare());
     }
 
@@ -93,7 +99,8 @@ struct OverlayHarness {
     }
 
     void advance(int frames, u32 pressed = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed);
+        for (int i = 0; i < frames; i++)
+            frame(pressed);
     }
 
     void draw() {
@@ -202,7 +209,7 @@ TEST(game_over_name_entry_characters_follow_ranking_row_and_emit_menu_sounds) {
     harness.pause->state.name_cursor = 0;
     harness.frame(0x80);  // 重复右移：光标位移
     CHECK_EQ(harness.host.sounds.back(), 10);
-    harness.frame(1);     // Z：录入 'B'
+    harness.frame(1);  // Z：录入 'B'
     CHECK_EQ(harness.pause->state.replay_name, std::string("B"));
     CHECK_EQ(harness.host.sounds.back(), 7);
     harness.draw();
@@ -210,31 +217,29 @@ TEST(game_over_name_entry_characters_follow_ranking_row_and_emit_menu_sounds) {
     CHECK(harness.ascii.draw(0, sink));
     bool name_found = false, underscore_found = false;
     for (const auto& glyph : sink.glyphs) {
-        if (glyph.position.x == 75 && glyph.position.y == 150 && glyph.sprite == 'B' - 32)
-            name_found = true;
-        if (glyph.position.x == 84 && glyph.position.y == 150 && glyph.sprite == '_' - 32)
-            underscore_found = true;
+        if (glyph.position.x == 75 && glyph.position.y == 150 && glyph.sprite == 'B' - 32) name_found = true;
+        if (glyph.position.x == 84 && glyph.position.y == 150 && glyph.sprite == '_' - 32) underscore_found = true;
     }
     CHECK(name_found);
     CHECK(underscore_found);
-    harness.frame(2);     // Esc：退格 + sound(9)
+    harness.frame(2);  // Esc：退格 + sound(9)
     CHECK(harness.pause->state.replay_name.empty());
     CHECK_EQ(harness.host.sounds.back(), 9);
     const auto count = harness.host.sounds.size();
-    harness.frame(2);     // Esc 空名：原地不动、无声
+    harness.frame(2);  // Esc 空名：原地不动、无声
     CHECK_EQ(harness.host.sounds.size(), count);
     CHECK_EQ(harness.pause->state.phase, 18);
     harness.pause->state.replay_name = "B";
     harness.pause->state.name_cursor = 89;
-    harness.frame(1);     // 网格 DEL 非空：删字 + sound(7)（0x43ff55）
+    harness.frame(1);  // 网格 DEL 非空：删字 + sound(7)（0x43ff55）
     CHECK(harness.pause->state.replay_name.empty());
     CHECK_EQ(harness.host.sounds.back(), 7);
     const auto deleted_count = harness.host.sounds.size();
-    harness.frame(1);     // 网格 DEL 空名：无操作无声（0x4404a3）
+    harness.frame(1);  // 网格 DEL 空名：无操作无声（0x4404a3）
     CHECK_EQ(harness.host.sounds.size(), deleted_count);
     const auto end_count = harness.host.sounds.size();
     harness.pause->state.name_cursor = 90;
-    harness.frame(1);     // END：建 142 进 phase 6，无音效（0x4404bd→0x440520）
+    harness.frame(1);  // END：建 142 进 phase 6，无音效（0x4404bd→0x440520）
     CHECK_EQ(harness.host.sounds.size(), end_count);
     CHECK_EQ(harness.pause->state.phase, 6);
 }
@@ -303,7 +308,7 @@ TEST(replay_save_name_entry_uses_slot_face) {
     // + 网格；不画 Score Ranking 榜面。
     OverlayHarness harness;
     CHECK(harness.pause->open(PauseEntrance::Pause));
-    harness.advance(12);                    // case0 → phase 6（菜单已建）
+    harness.advance(12);  // case0 → phase 6（菜单已建）
     CHECK_EQ(harness.pause->state.phase, 6);
     harness.pause->state.select_phase(17);  // 选槽
     harness.advance(12);                    // case17 age > 9

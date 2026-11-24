@@ -30,27 +30,27 @@ namespace th13 {
 
 class YoumuBomb {
 public:
-    static constexpr int kSlots = 60;                 // ctx+0x610 anm id 槽数
-    static constexpr int kActiveFrames = 261;         // 0x40cb50: age < 0x105
-    static constexpr float kRectLength = 96.0f;       // 0x4457e0 param_2（全长）
-    static constexpr float kRectGrowUnit = 128.0f;    // 高度 = scale×128（全长）
-    static constexpr float kDamagePerRect = 30.0f;    // 0x4457e0 param_6
-    static constexpr float kCenterOffset = 256.0f;    // 0x4aebe8
-    static constexpr float kLaneJitter = 48.0f;       // 0x472e10 ×48（有符号）
+    static constexpr int kSlots = 60;               // ctx+0x610 anm id 槽数
+    static constexpr int kActiveFrames = 261;       // 0x40cb50: age < 0x105
+    static constexpr float kRectLength = 96.0f;     // 0x4457e0 param_2（全长）
+    static constexpr float kRectGrowUnit = 128.0f;  // 高度 = scale×128（全长）
+    static constexpr float kDamagePerRect = 30.0f;  // 0x4457e0 param_6
+    static constexpr float kCenterOffset = 256.0f;  // 0x4aebe8
+    static constexpr float kLaneJitter = 48.0f;     // 0x472e10 ×48（有符号）
     // 0x4bba54（.data dump）：11 条 Y lane，cursor%11 取用
-    static constexpr float kLanes[11] = {224.0f, 192.0f, 320.0f, 224.0f, 64.0f,
-                                         80.0f,  384.0f, 320.0f, 96.0f, 128.0f, 224.0f};
+    static constexpr float kLanes[11] = {224.0f, 192.0f, 320.0f, 224.0f, 64.0f, 80.0f,
+                                         384.0f, 320.0f, 96.0f,  128.0f, 224.0f};
 
     struct Spawn {
-        int slot;        // -1 = cursor 已过 60 槽（原版越界写，无战斗效果，仅视觉）
-        int script;      // 19（cursor 偶）/ 20（cursor 奇）
-        float y;         // lane + signed_unit×48（float32 存储）
+        int slot;    // -1 = cursor 已过 60 槽（原版越界写，无战斗效果，仅视觉）
+        int script;  // 19（cursor 偶）/ 20（cursor 奇）
+        float y;     // lane + signed_unit×48（float32 存储）
     };
 
     struct Rect {
-        float cx, cy;    // 中心
-        float w, h;      // 全长：96 × scale×128
-        float angle;     // VM rotation.z（弧度）
+        float cx, cy;  // 中心
+        float w, h;    // 全长：96 × scale×128
+        float angle;   // VM rotation.z（弧度）
     };
 
     // bomb 开始（0x40c910 的 cursor 复位 + 槽清零语义）。激活期间每帧：
@@ -69,17 +69,17 @@ public:
     // —— 只读视图（供 Combat 接线/对拍） ——
     bool active(int slot) const;
     bool has_anm(int slot) const;
-    float scale(int slot) const;            // 槽定时器 float（tick 后）
-    float rect_scale(int slot) const;       // 本帧矩形用的 tick 前值
+    float scale(int slot) const;       // 槽定时器 float（tick 后）
+    float rect_scale(int slot) const;  // 本帧矩形用的 tick 前值
     float lane_y(int slot) const;
     float angle(int slot) const;
     int script(int slot) const;
     int cursor() const;
-    template<class Visitor> void visit_state(Visitor&& visitor) const {
+    template <class Visitor> void visit_state(Visitor&& visitor) const {
         visitor(cursor_, cooldown_, slots_left_);
         for (const auto& slot : slots_)
-            visitor(slot.has_anm, slot.alive, slot.odd, slot.script, slot.counter,
-                    slot.y, slot.angle, slot.scale, slot.rect_scale);
+            visitor(slot.has_anm, slot.alive, slot.odd, slot.script, slot.counter, slot.y, slot.angle, slot.scale,
+                    slot.rect_scale);
     }
 
     // 槽矩形（0x40cb50 注册参数；中心 = lane 点沿 angle+π/2 垂线偏移 ±256，偶−/奇+）。
@@ -97,11 +97,11 @@ public:
 
 private:
     struct Slot {
-        bool has_anm = false;   // anm id != 0
-        bool alive = false;     // 本帧 VM 存活且已回填
-        bool odd = false;       // 符号位：奇 +192 / 偶 −192（0x4aea58/0x4aea70，只取符号）
+        bool has_anm = false;  // anm id != 0
+        bool alive = false;    // 本帧 VM 存活且已回填
+        bool odd = false;      // 符号位：奇 +192 / 偶 −192（0x4aea58/0x4aea70，只取符号）
         int script = 0;
-        int counter = 0;        // 槽定时器 max（int 镜像，非战斗量）
+        int counter = 0;  // 槽定时器 max（int 镜像，非战斗量）
         float y = 0.0f;
         float angle = 0.0f;
         float scale = 0.0f;       // 槽定时器 float（tick 后）

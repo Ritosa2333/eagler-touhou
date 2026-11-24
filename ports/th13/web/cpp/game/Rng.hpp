@@ -10,8 +10,7 @@ namespace th13 {
 
 class Rng {
 public:
-    explicit Rng(uint32_t seed = 1)
-        : state_(seed) {}
+    explicit Rng(uint32_t seed = 1) : state_(seed) {}
 
     void reseed(uint32_t seed) { state_ = seed; }
 
@@ -46,7 +45,9 @@ extern bool rng_probe_on;
 class GameRandom {
 public:
     inline static uint32_t probe[20] = {};
-    static void tag(int i) { if (rng_probe_on && i >= 0 && i < 20) ++probe[i]; }
+    static void tag(int i) {
+        if (rng_probe_on && i >= 0 && i < 20) ++probe[i];
+    }
     // 诊断抽取观测（默认 nullptr，仅浏览器探针臂接）：每次 next/step16 登记
     // (before_index, after_index)，配合 AnmVm::tick 入口登记的当前 VM 上下文
     // 定位与原版相位不一致的消费者。不改变任何取值。

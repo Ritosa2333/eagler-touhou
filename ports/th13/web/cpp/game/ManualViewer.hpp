@@ -20,11 +20,11 @@ class ManualViewer {
     bool fail(const std::string&);
     bool menu();
     bool show_page();
+
 public:
     std::string error;
     std::function<bool(i32)> load_page, sound;
-    explicit ManualViewer(AnmManager& manager, i32 help_bank = 19)
-        : animations(manager), bank(help_bank) {}
+    explicit ManualViewer(AnmManager& manager, i32 help_bank = 19) : animations(manager), bank(help_bank) {}
     ~ManualViewer();
     ManualViewer(const ManualViewer&) = delete;
     ManualViewer& operator=(const ManualViewer&) = delete;
@@ -36,4 +36,4 @@ public:
     bool reading_page() const { return phase == 2; }
 };
 
-} // namespace th13
+}  // namespace th13

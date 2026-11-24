@@ -11,14 +11,15 @@ struct ScreenShake {
     i32 amplitude = 0, rise = 0, hold = 0, fall = 0;
     Timer age;
 
-    ScreenShake(i32 frames, i32 first, i32 last)
-        : duration(frames), start(first), end(last) { age.set(0); }
+    ScreenShake(i32 frames, i32 first, i32 last) : duration(frames), start(first), end(last) { age.set(0); }
 
     static ScreenShake bomb(i32 magnitude, i32 attack, i32 sustain, i32 decay) {
         ScreenShake result(0, 0, 0);
         result.envelope = true;
-        result.amplitude = magnitude; result.rise = attack;
-        result.hold = sustain; result.fall = decay;
+        result.amplitude = magnitude;
+        result.rise = attack;
+        result.hold = sustain;
+        result.fall = decay;
         return result;
     }
 
@@ -29,8 +30,10 @@ struct ScreenShake {
             // 45f8c0 stores the envelope once, then multiplies it by the
             // integer amplitude and stores the product before either RNG call.
             float factor;
-            if (age.current < rise) factor = float(double(age.fractional) / double(rise));
-            else if (age.current < rise + hold) factor = 1.f;
+            if (age.current < rise)
+                factor = float(double(age.fractional) / double(rise));
+            else if (age.current < rise + hold)
+                factor = 1.f;
             else {
                 const i32 total = rise + hold + fall;
                 if (age.current >= total) return false;
@@ -48,9 +51,12 @@ struct ScreenShake {
         }
         const auto axis = [&]() {
             switch (random.next() % 3) {
-            case 1: return magnitude;
-            case 2: return -magnitude;
-            default: return 0.f;
+            case 1:
+                return magnitude;
+            case 2:
+                return -magnitude;
+            default:
+                return 0.f;
             }
         };
         offset.x = axis();
@@ -59,4 +65,4 @@ struct ScreenShake {
         return true;
     }
 };
-} // namespace th13
+}  // namespace th13

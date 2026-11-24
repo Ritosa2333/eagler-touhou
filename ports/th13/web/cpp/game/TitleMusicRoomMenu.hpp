@@ -25,9 +25,9 @@
 // 转发）。锁定响应/播曲/恢复标题曲均宿主服务，默认实现显式失败不假成功。
 #pragma once
 
-#include "TitleState.hpp"
-#include "TitleMainMenu.hpp"
 #include "HudDrawData.hpp"
+#include "TitleMainMenu.hpp"
+#include "TitleState.hpp"
 
 #include <cstdio>
 #include <functional>
@@ -42,12 +42,26 @@ inline constexpr i32 kTitleScreenMusicRoom = 13;  // 0x44c570 case d
 struct TitleMusicRoomPlatform {
     virtual ~TitleMusicRoomPlatform() = default;
     virtual i32 track_count() const { return 0; }
-    virtual std::string track_title(i32 track) { (void)track; return {}; }
-    virtual std::string track_comment(i32 track, i32 line) { (void)track; (void)line; return {}; }
-    virtual bool track_heard(i32 track) const { (void)track; return false; }  // 新档全 false
+    virtual std::string track_title(i32 track) {
+        (void)track;
+        return {};
+    }
+    virtual std::string track_comment(i32 track, i32 line) {
+        (void)track;
+        (void)line;
+        return {};
+    }
+    // 新档全 false
+    virtual bool track_heard(i32 track) const {
+        (void)track;
+        return false;
+    }
     virtual void mark_heard(i32 track) { (void)track; }  // 0x4554f0 Z 路径落档
     // 已听曲播放（0x43adc0(0,曲名)+0x461830(2,0)）；宿主负责实际曲目映射。
-    virtual bool play_track(i32 track) { (void)track; return false; }
+    virtual bool play_track(i32 track) {
+        (void)track;
+        return false;
+    }
     // 未听曲响应（0x461830(3/4,0)，DAT_004dc8a8&0x10 分支留给宿主）。
     virtual bool play_locked_response() { return false; }
     // 退出收面恢复 th13_00（0x43adc0(0,"th13_00")）。
@@ -57,7 +71,8 @@ struct TitleMusicRoomPlatform {
         char prefix[16];
         std::snprintf(prefix, sizeof prefix, "No.%2d ", int(track) + 1);
         std::string text = prefix;
-        for (i32 i = 0; i < 11; ++i) text += "\x81\x48";
+        for (i32 i = 0; i < 11; ++i)
+            text += "\x81\x48";
         return text;
     }
     // 0x4c0da0[line]（8 条 CP932 占位注释；色 0x8080ff 由菜单/View 决定）。
@@ -91,20 +106,19 @@ struct TitleMusicRoomPlatform {
 class TitleMusicRoomMenu {
     TitleState& state;
     TitleMusicRoomPlatform& host;
-    i32 row_ = 0;               // +0x28 选中曲（0..count-1 环绕）
-    i32 comment_track_ = 0;     // +0x750 当前注释块（Z 时 = row_）
-    i32 reveal_lines_ = 0;      // +0x74c 注释显影计数（隔帧 +1，封 8）
-    bool locked_armed_ = false; // +0x754 已播锁定响应、等待二次 Z
-    i32 frames_ = 0;            // 子态屏龄（case0 age≥10 / case3 >9 门）
+    i32 row_ = 0;                // +0x28 选中曲（0..count-1 环绕）
+    i32 comment_track_ = 0;      // +0x750 当前注释块（Z 时 = row_）
+    i32 reveal_lines_ = 0;       // +0x74c 注释显影计数（隔帧 +1，封 8）
+    bool locked_armed_ = false;  // +0x754 已播锁定响应、等待二次 Z
+    i32 frames_ = 0;             // 子态屏龄（case0 age≥10 / case3 >9 门）
     bool fail(const std::string& reason);
     bool sound(i32 id);
-    bool leave();               // case3：收面 + 恢复标题曲 + 回 Main
+    bool leave();  // case3：收面 + 恢复标题曲 + 回 Main
 
 public:
     std::function<bool(i32)> play_sound;
     std::string error;
-    TitleMusicRoomMenu(TitleState& state_, TitleMusicRoomPlatform& host_)
-        : state(state_), host(host_) {}
+    TitleMusicRoomMenu(TitleState& state_, TitleMusicRoomPlatform& host_) : state(state_), host(host_) {}
     bool update(u32 pressed, u32 repeated);
     // 绘制侧逐帧入队（TitleFrame Draw 回调 → TitleScene → 此处；仅 substate
     // 1/2 出列表+注释，对应 0x4554f0 case1/case2 文本队列值域）。

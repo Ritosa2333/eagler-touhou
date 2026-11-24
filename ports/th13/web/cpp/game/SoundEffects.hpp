@@ -12,4 +12,4 @@ struct SoundDefinition {
 };
 extern const std::array<SoundDefinition, 71> sound_definitions;
 extern const std::array<const char*, 60> sound_samples;
-}
+}  // namespace th13

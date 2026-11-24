@@ -8,26 +8,26 @@ class AnmResource;
 // addresses or graphics API handles are visible to animation instructions.
 struct AnmEnvironment {
     GameRandom game_rng;
-    GameRandom* shared_game_rng=nullptr;
-    GameRandom& distortion_random() noexcept {
-        return shared_game_rng ? *shared_game_rng : game_rng;
-    }
-    Vec3 camera_origin{},screen_translation{},reference_position{};
-    AnmResource* fallback_sprite_resource=nullptr;
-    float resolution_scale=1;std::array<i32,4> screen_offsets{};
+    GameRandom* shared_game_rng = nullptr;
+    GameRandom& distortion_random() noexcept { return shared_game_rng ? *shared_game_rng : game_rng; }
+    Vec3 camera_origin{}, screen_translation{}, reference_position{};
+    AnmResource* fallback_sprite_resource = nullptr;
+    float resolution_scale = 1;
+    std::array<i32, 4> screen_offsets{};
     // Physical pixel grid; logical game coordinates and Replay stay unchanged.
-    float raster_scale=1;
-    Vec3 background_delta{};bool paused=false;
-    Vec2 screen_shake_offset{}; // 4dcbe8/4dcbec, copied to the STD camera by406d90/407310
-    Vec3 stage_direction{}; // raw camera direction dcb00; reference_position is normalized dcb18
-    i32 stage_difficulty=0; // original be824, extra depth displacement above Easy
+    float raster_scale = 1;
+    Vec3 background_delta{};
+    bool paused = false;
+    Vec2 screen_shake_offset{};  // 4dcbe8/4dcbec, copied to the STD camera by406d90/407310
+    Vec3 stage_direction{};      // raw camera direction dcb00; reference_position is normalized dcb18
+    i32 stage_difficulty = 0;    // original be824, extra depth displacement above Easy
     // 0x4019d0 实际读的是 [0x4be824] = ECL ins_524 写入的 chapter（SessionState
     // .chapter），不是难度。生产路径绑定实时指针；未绑定时回落到
     // stage_difficulty 以保持既有单测夹具（只设 difficulty 的样本）不变。
-    const i32* chapter=nullptr;
-    u32 screen_width=640,screen_height=480;
+    const i32* chapter = nullptr;
+    u32 screen_width = 640, screen_height = 480;
     // Overlay masking follows the screen alpha format, not a menu mode.
-    bool render_target_has_alpha=false;
+    bool render_target_has_alpha = false;
     // Original logical shot clipping rectangle (51bc08/51bc0c), distinct
     // from the centered sprite offsets used by ANM coordinates.
     Vec2 playfield_origin{};
@@ -54,4 +54,4 @@ inline bool seed_native_camera_block_if_cleared(AnmEnvironment& environment) noe
     environment.stage_direction = {};
     return true;
 }
-}
+}  // namespace th13

@@ -38,8 +38,7 @@ inline PracticeEffect resolve_practice(const PracticeRequest& request, int curre
     return effect;
 }
 
-inline PracticeEffect begin_thprac(PracticeRequest& request, SessionState& session,
-                                               int starting_stage) noexcept {
+inline PracticeEffect begin_thprac(PracticeRequest& request, SessionState& session, int starting_stage) noexcept {
     if (session.practice_mode != 0 || (session.run_mode_flags & 0x70u) != 0)
         return resolve_practice({}, starting_stage);
 
@@ -51,4 +50,4 @@ inline PracticeEffect begin_thprac(PracticeRequest& request, SessionState& sessi
     }
     return effect;
 }
-}
+}  // namespace th13

@@ -40,8 +40,7 @@ bool count_anm_scripts(const std::vector<u8>& bytes, u32& scripts) {
 }
 }  // namespace
 
-bool MsgPresentation::bind_stage_scripts(i32 stage, const std::vector<std::string>& anim_list,
-                                         const ReadFn& read) {
+bool MsgPresentation::bind_stage_scripts(i32 stage, const std::vector<std::string>& anim_list, const ReadFn& read) {
     if (stage < 1 || stage > 7) return fail("MsgPresentation stage row out of range");
     if (!read) return fail("MsgPresentation stage read channel unavailable");
     stage_ = stage;
@@ -53,8 +52,7 @@ bool MsgPresentation::bind_stage_scripts(i32 stage, const std::vector<std::strin
         std::vector<u8> bytes;
         if (!read(name, bytes)) return fail("MsgPresentation stage ANM missing: " + name);
         u32 scripts = 0;
-        if (!count_anm_scripts(bytes, scripts))
-            return fail("MsgPresentation stage ANM invalid: " + name);
+        if (!count_anm_scripts(bytes, scripts)) return fail("MsgPresentation stage ANM invalid: " + name);
         base += scripts;
     }
     return true;
@@ -81,8 +79,7 @@ bool MsgPresentation::create(bool player_bank, i32 manager_bank, i32 script, u32
     // 把头插入链首：魔理沙 S1 f5520 立绘(pl01 s34)顶掉链尾后，s167 变成尾节点，
     // 其 tick 内新建的 s166 特效 VM 无法当帧被 walk 二次 tick → f5545 单帧
     // -2 index。layer 不传（-1）：立绘脚本经 ins_304 自带层。
-    const u32 created =
-        animations.create(player_bank ? banks.player : banks.stage, global, -1, 0, Vec3{});
+    const u32 created = animations.create(player_bank ? banks.player : banks.stage, global, -1, 0, Vec3{});
     if (!created) return fail("MsgPresentation VM create: " + animations.error);
     handle = created;
     return true;
@@ -102,8 +99,7 @@ bool MsgPresentation::side_portrait(i32 entry) {
     const bool boss = row.boss_bank != -1 && entry >= 2;
     // create 第 2 参 = stage 表 bank（ECL 文件槽）；AnmManager 槽由 player_bank
     // 分支内建（false → banks.stage），无需重复传。
-    return create(false, boss ? row.boss_bank : row.midboss_bank,
-                  boss ? row.boss_script : row.midboss_script, side_);
+    return create(false, boss ? row.boss_bank : row.midboss_bank, boss ? row.boss_script : row.midboss_script, side_);
 }
 
 bool MsgPresentation::boss_side_portrait() {
