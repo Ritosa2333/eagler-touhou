@@ -50,6 +50,21 @@ try {
     await page.goto(origin, {waitUntil: 'domcontentloaded'});
     await page.waitForFunction(() => window.__eaglerBoot?.done);
     await page.evaluate(theme => document.documentElement.dataset.bookTheme = theme, theme);
+    assert.match(await page.$eval('meta[name="viewport"]', node => node.content), /viewport-fit=contain/);
+    if (width === 390) {
+      const chromeBounds = () => page.evaluate(() => {
+        const header = document.querySelector('.book-masthead');
+        const nav = document.querySelector('.launcher-bottom-navigation');
+        const surface = document.querySelector('.launcher-page-surface');
+        return [header.offsetHeight, nav.offsetHeight, getComputedStyle(surface).paddingBottom];
+      });
+      const baseline = await chromeBounds();
+      const cdp = await page.createCDPSession();
+      await cdp.send('Emulation.setSafeAreaInsetsOverride', {insets: {top: 40, bottom: 16}});
+      assert.deepEqual(await chromeBounds(), baseline, 'Forwarded Android system bars must not enlarge the browser chrome');
+      await cdp.send('Emulation.setSafeAreaInsetsOverride', {insets: {top: 0, bottom: 0}});
+      await cdp.detach();
+    }
     const card = await page.waitForSelector(pc98Cards, {visible: true});
     await card.tap();
     const detail = '.tools[data-full-page][data-state="open"]';

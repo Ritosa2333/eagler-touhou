@@ -68,6 +68,7 @@
   }
 
   @media(max-width:780px) {
+    :root {--launcher-bottom-padding:max(4px,var(--ui-safe-bottom))}
     .masthead.book-masthead:not([data-mobile-header="true"]) {display:none}
     .masthead.book-masthead[data-mobile-header="true"] {
       position:relative;
@@ -76,7 +77,7 @@
       grid-template-rows:47px;
       min-height:48px;
       gap:4px;
-      padding-block:env(safe-area-inset-top) 0;
+      padding-block:var(--ui-safe-top) 0;
       padding-inline:max(8px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-right));
     }
     .book-masthead .book-brand {display:none}
@@ -88,7 +89,7 @@
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
       gap:0;
-      padding:3px max(8px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));
+      padding:3px max(8px,env(safe-area-inset-right)) var(--launcher-bottom-padding) max(8px,env(safe-area-inset-left));
       background:var(--kit-card);
     }
     .launcher-bottom-navigation .site-navigation-link {
@@ -111,9 +112,9 @@
     .launcher-bottom-navigation .site-navigation-link[aria-current="page"] {color:var(--kit-brand);font-weight:600}
     .launcher-bottom-navigation .site-navigation-link[aria-current="page"] > svg {background:color-mix(in srgb,var(--kit-brand) 15%,var(--kit-card))}
     body:is(.mp-room-active,.player-active,.library-tools-open,.library-tools-closing) .launcher-bottom-navigation {visibility:hidden}
-    .launcher-bottom-navigation + .launcher-page-surface {padding-bottom:calc(60px + max(4px,env(safe-area-inset-bottom)))}
+    .launcher-bottom-navigation + .launcher-page-surface {padding-bottom:calc(60px + var(--launcher-bottom-padding))}
     .launcher-home {
-      padding-block-start:calc(16px + env(safe-area-inset-top));
+      padding-block-start:calc(16px + var(--ui-safe-top));
       padding-inline:max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right));
     }
     html[data-ui-home] body:not(.mp-room-active) .main.library-layout {min-height:0}

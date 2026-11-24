@@ -85,7 +85,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <script>{`try{var theme=JSON.parse(localStorage.getItem('eagler.book.theme'));if(theme==='light'||theme==='dark'){document.documentElement.setAttribute('data-book-theme',theme);document.documentElement.className=theme;}}catch(e){}`}</script>
         {!review && <OriginalBootstrapHead />}
         <AppShellDeploymentMeta />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=contain" />
         <Meta />
         <Links />
       </head>
