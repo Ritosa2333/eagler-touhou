@@ -14,6 +14,12 @@
 #   /work/eagler-touhou   monorepo 检出
 # 外层工作区默认取 monorepo 的上级目录，可用 TH13_WORKSPACE 覆盖。
 # 容器内用户与宿主同 UID；以 TH13_ 或 TH_ 开头的环境变量原样传入。
+#
+# 容器内进程一律不可转储：宿主的 core_pattern 若是 systemd-coredump 的管道，
+# 容器里任何崩溃都会被收集进宿主的 /var/lib/systemd/coredump（内核对管道型
+# 处理不看 ulimit -c）。垫片 .cache/tools/nodump.so 首次使用时在 th13-dev 里
+# 编译，启动即 prctl(PR_SET_DUMPABLE, 0)。需要在容器里取转储时设
+# TH13_ALLOW_COREDUMP=1。
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -39,6 +45,19 @@ run=(podman run --rm --userns=keep-id -e HOME=/tmp/th13-home
 # TH13_WORKSPACE 只在宿主解析挂载路径，容器内一律以端口目录上三级为工作区。
 while IFS= read -r name; do run+=(-e "$name"); done < <(compgen -e | grep -E '^(TH13_|TH_)' | grep -vxF TH13_WORKSPACE || true)
 [[ -t 0 ]] && run+=(-it)
+
+if [[ "${TH13_ALLOW_COREDUMP:-}" != 1 ]]; then
+  shim="$workspace/.cache/tools/nodump.so"
+  if [[ ! -f "$shim" ]]; then
+    mkdir -p "$workspace/.cache/tools"
+    printf '%s\n' '#include <sys/prctl.h>' \
+      '__attribute__((constructor)) static void mark_nondumpable(void) { prctl(PR_SET_DUMPABLE, 0); }' \
+      > "$workspace/.cache/tools/nodump.c"
+    "${run[@]}" th13-dev bash -lc \
+      'gcc -shared -fPIC -O1 -o /work/.cache/tools/nodump.so /work/.cache/tools/nodump.c'
+  fi
+  run+=(-e "LD_PRELOAD=/work/.cache/tools/nodump.so")
+fi
 
 if [[ $# -eq 0 ]]; then
   exec "${run[@]}" "$image" bash -l

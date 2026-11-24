@@ -31,6 +31,8 @@ TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --mp node portabl
 TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --shot bash
 ```
 
+容器内进程不可转储：宿主用 systemd-coredump 收集转储时，容器里的崩溃会写进宿主的 `/var/lib/systemd/coredump`。需要在容器里取转储时设 `TH13_ALLOW_COREDUMP=1`。
+
 外层工作区提供 `games/th13`（原版资源）与 `artifacts/`，默认取 monorepo 的上级目录；以 `TH13_` 或 `TH_` 开头的环境变量原样传入容器。
 
 工具链版本（构建时固定）：Node 22 / Emscripten 6.0.9 / wasi-sdk 34 / Ghidra 12.1.3 / Temurin JDK 21。
@@ -77,6 +79,19 @@ node portable/build-harness.mjs && node --experimental-wasi-unstable-preview1 to
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs stage1   # stage1：st01 跑 3600 帧，事件流落 web/artifacts/wasi/stage1-events.jsonl（契约见 docs/plans/event-contract.md）
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs replay games/replays/th13_udSr01.rpy   # 录像解码 + 逐帧输入注入（格式见 docs/plans/replay.md）
 ```
+
+### 回归摘要门禁
+
+重构类改动以逐位不变的回归摘要证明行为不变：harness 在整段录像上每 60 帧采样一次状态池、事件流与绘制清单的滚动 FNV-1a 摘要，与 `tools/replay-verifier/golden/` 的金标逐行比对，报出首个分歧的录像、关卡与帧。
+
+```sh
+node portable/build-harness.mjs
+node tools/regression-digest.mjs --check                              # 状态与事件：10 份录像、35 关、58 万帧
+node tools/regression-digest.mjs --draws --check                       # 绘制清单：每份录像首关前 600 帧
+node tools/regression-digest.mjs --draws --draws-stages all --check    # 绘制清单：每关前 600 帧
+```
+
+三项合计约两分钟。工具拒绝使用旧于源码的 harness 产物；harness 运行器自带 `--no-incremental-marking`（调用方没带时重启自身），原因见 `tools/regression-digest.mjs` 文件头。输入是外层工作区的 `games/replays/*.rpy` 与 `artifacts/reference/raw/demo0..3.rpy`。只有改变模拟或绘制行为的修正才重新生成金标（去掉 `--check`），并在提交说明里写明依据。
 
 ### 网页 thprac
 
