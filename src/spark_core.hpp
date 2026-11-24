@@ -9,7 +9,7 @@ struct SparkCore {
     struct Spark {
         unsigned flag=0;
         std::uint8_t age=0,angle=0,base_speed=0;
-        bool sprite=false,default_sprite=false;
+        bool sprite=false,default_sprite=false,shot_hit=false;
         std::array<std::array<std::uint16_t,2>,2> position{};
         std::array<int,2> velocity{};
     };
@@ -24,10 +24,10 @@ struct SparkCore {
     }
     static int pixel(std::uint16_t raw){const auto v=enemy_s16(raw);return v>=0?v/16:-((-v+15)/16);}
     void begin_frame(unsigned back){if(back>1)throw std::runtime_error("Invalid spark page");for(auto &s:slots){if(s.flag==2)s.flag=0;else if(s.flag==1)s.position[back]=s.position[back^1];}}
-    void add(int left,int top,int base,int count,bool sprite,unsigned back){
+    void add(int left,int top,int base,int count,bool sprite,unsigned back,bool shot_hit=false){
         if(back>1||count<0||count>32767)throw std::runtime_error("Invalid spark request");
         unsigned wrapped_top=static_cast<std::uint16_t>(top);if(wrapped_top>=400)wrapped_top-=400;
-        for(int i=0;i<count;++i){auto &s=slots[(ring+unsigned(i))&63];s.flag=1;s.age=0;s.sprite=sprite||s.default_sprite;
+        for(int i=0;i<count;++i){auto &s=slots[(ring+unsigned(i))&63];s.flag=1;s.age=0;s.sprite=sprite||s.default_sprite;s.shot_hit=shot_hit;
             s.position[back]={static_cast<std::uint16_t>(left*16),static_cast<std::uint16_t>(wrapped_top*16)};
             // Original16-bit shifted group index before signed division.
             const unsigned angle=sprite?unsigned(enemy_s16(unsigned(i)<<8)/count)&255:s.angle;

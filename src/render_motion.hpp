@@ -91,22 +91,27 @@ struct MotionSample {
 // fractional placement. Transparent pixels contribute coverage, not black.
 inline constexpr std::uint32_t render_clear=0x1000000;
 struct SpriteClip { int left=32,top=16,right=416,bottom=384; };
-template<class Texel>
+template<unsigned Opacity=256,class Texel>
 void blit_motion_sprite(std::span<std::uint32_t> pixels,RenderPoint at,int width,int height,Texel texel,SpriteClip clip={}){
     const int left=RenderPoint::floor(at.x),top=RenderPoint::floor(at.y);
     const unsigned fx=unsigned(at.x-left*256),fy=unsigned(at.y-top*256);
     const int first_x=std::max(0,clip.left-left),last_x=std::min(width+int(fx!=0),clip.right-left);
     const int first_y=std::max(0,clip.top-top),last_y=std::min(height+int(fy!=0),clip.bottom-top);
     if(first_x>=last_x||first_y>=last_y)return;
+    constexpr unsigned rb=0x00ff00ff,g=0x0000ff00;
     if(!(fx|fy)){
         for(int y=first_y;y<last_y;++y){
             auto row=pixels.data()+(top+y)*640+left+first_x;
-            for(int x=first_x;x<last_x;++x,++row){const auto rgb=texel(x,y);if(rgb!=render_clear)*row=rgb;}
+            for(int x=first_x;x<last_x;++x,++row){
+                const auto rgb=texel(x,y);if(rgb==render_clear)continue;
+                if constexpr(Opacity==256)*row=rgb;
+                else *row=((((rgb&rb)*Opacity+(*row&rb)*(256-Opacity))>>8)&rb)|
+                          ((((rgb&g)*Opacity+(*row&g)*(256-Opacity))>>8)&g);
+            }
         }
         return;
     }
     const unsigned w11=fx*fy/256,w10=fx-w11,w01=fy-w11,w00=256-fx-fy+w11;
-    constexpr unsigned rb=0x00ff00ff,g=0x0000ff00;
     for(int y=first_y;y<last_y;++y){
         auto row=pixels.data()+(top+y)*640+left+first_x;
         for(int x=first_x;x<last_x;++x,++row){
@@ -119,8 +124,17 @@ void blit_motion_sprite(std::span<std::uint32_t> pixels,RenderPoint at,int width
             };
             add(x,y,w00);add(x-1,y,w10);add(x,y-1,w01);add(x-1,y-1,w11);
             if(coverage){
-                red_blue+=(*row&rb)*(256-coverage);green+=(*row&g)*(256-coverage);
-                *row=((red_blue>>8)&rb)|((green>>8)&g);
+                if constexpr(Opacity==256){
+                    red_blue+=(*row&rb)*(256-coverage);green+=(*row&g)*(256-coverage);
+                    *row=((red_blue>>8)&rb)|((green>>8)&g);
+                }else{
+                    const auto blend=[&](unsigned src,unsigned dst){
+                        return (src*Opacity+dst*(65536-coverage*Opacity))>>16;
+                    };
+                    *row=blend(red_blue>>16,(*row>>16)&255)<<16 |
+                         blend(green>>8,(*row>>8)&255)<<8 |
+                         blend(red_blue&65535,*row&255);
+                }
             }
         }
     }

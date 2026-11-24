@@ -53,8 +53,9 @@ struct EncounterScene:StageScene {
     void update_sound(){if(auto id=sound.update();id&&sound_output)sound_output(*id);}
     unsigned rendered_page=0;
     bool reduced_effects=false;
-    static constexpr bool stage4_overlay_enabled(int id,unsigned page,bool map_end,bool reduced){
-        return id==3&&page==0&&!map_end&&!reduced;
+    static constexpr bool stage4_overlay_enabled(int id,bool map_end,bool reduced){
+        // Both pages show the motif on Windows instead of flashing it every other frame.
+        return id==3&&!map_end&&!reduced;
     }
     bool combat_enabled=false,survival_enabled=false;
     bool preparation_only=false,practice_mode=false,practice_completed=false,practice_show_dialogue=false;
@@ -510,7 +511,7 @@ public:
             else if(start_bomb())life.hit=false;
         };
         const auto damage_query=[&](int x,int y,int w,int h,std::uint32_t frame,unsigned mask=1){
-            auto value=shots.damage(page,x,y,w,h,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page);});
+            auto value=shots.damage(page,x,y,w,h,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page,true);});
             if(enemy_invincible)return 0u;
             if(bomb_enabled)value+=bomb.damage(frame,mask);
             if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(value));
@@ -1008,7 +1009,6 @@ public:
             else paint_mima(pixels,{p.kind==P::Circle?MimaPaint::Circle:MimaPaint::Fill,x,y,RenderPoint::floor(a+128),0,p.color},color);
         }
     }
-    bool scrolling_background()const{return !scroll.done&&!marisa_enabled&&!sigma_enabled&&!mima_enabled;}
     bool motion_active()const{
         return !paused&&!life.game_over&&!runtime.blocked&&!weapon_blocked&&!transition.active()&&!dialogue.active()&&
             !practice_completed&&!extra_settlement.showing_bonus()&&!extra_settlement.terminal()&&!stage5_entry_only&&!stage5_result&&!mima_delay;
@@ -1038,7 +1038,7 @@ public:
         pool(T::Bullet,bullet_core.bullets,fixed,[](const auto &b){return std::pair{unsigned(b.kind),-1};});
         if(effects_enabled){
             pool(T::Item,items.slots,[&](const auto &s){return item_motion(s);},[](const auto &s){return std::pair{s.type,s.age};});
-            pool(T::Spark,sparks.slots,fixed,[](const auto &s){return std::pair{unsigned(s.sprite),int(s.age)};});
+            pool(T::Spark,sparks.slots,fixed,[](const auto &s){return std::pair{unsigned(s.sprite)+2u*s.shot_hit,int(s.age)};});
             pool(T::Number,numbers.slots,[&](const auto &s){return RenderPoint::pixels(s.left,s.top[rendered_page]);},[](const auto &s){return std::pair{unsigned(s.points),int(s.age)};});
         }
         for(unsigned i=0;i<lasers.slots.size();++i){const auto &s=lasers.slots[i];if(s.visible)xy(T::Laser,i,s.x,s.y,s.base_pattern);}
@@ -1167,10 +1167,12 @@ private:
             sigma_art->put(pixels,background,129,224,48);
             draw_mima_dialogue_player(pixels);
         }dialogue_art->render(pixels,background,bank,dialogue);return;}
-        const unsigned lag=smooth_background&&scrolling_background()?background_scroll_lag(scroll,motion.phase):0;
-        const int terrain_bottom=384+scroll_sample_rows(lag);
-        if(extra_road_enabled)extra_tiles.render(pixels,background,terrain_bottom);
-        else StageScene::render(pixels,false,stage4_overlay_enabled(stage,rendered_page,runtime.scroll.done,reduced_effects),terrain_bottom);
+        const bool filter_terrain=smooth_background&&!marisa_enabled&&!sigma_enabled&&!mima_enabled;
+        const unsigned lag=filter_terrain?background_scroll_lag(scroll,motion.phase):0;
+        const int terrain_top=filter_terrain?15:16;
+        const int terrain_bottom=filter_terrain?384+std::min(1+scroll_sample_rows(lag),int(scroll.display_pixels)):384;
+        if(extra_road_enabled)extra_tiles.render(pixels,background,terrain_bottom,terrain_top);
+        else StageScene::render(pixels,false,stage4_overlay_enabled(stage,runtime.scroll.done,reduced_effects),terrain_bottom,terrain_top);
         // Boss backgrounds replace the terrain before any battle sprites.
         if(marisa_enabled)clear_marisa_playfield(pixels,384);
         if(sigma_enabled)
@@ -1196,12 +1198,12 @@ private:
             const int x=32+int(key%24)*16, vram_y=int(key/24)*16;
             for(int dy=0;dy<16;++dy){
                 const int y=(vram_y+dy-int(scroll.line)+400)%400;
-                if(y<16||y>=terrain_bottom)continue;
+                if(y<terrain_top||y>=terrain_bottom)continue;
                 for(int dx=0;dx<16;++dx){const auto c=background.palette[background.tiles[pat][dy*16+dx]];pixels[y*640+x+dx]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}
             }
         }
-        if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=terrain_bottom||top+16<=16)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<16||py>=terrain_bottom)continue;const auto c=background.palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
-        blend_stage_background(pixels,lag);
+        if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=terrain_bottom||top+16<=terrain_top)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<terrain_top||py>=terrain_bottom)continue;const auto c=background.palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
+        if(filter_terrain)filter_stage_background(pixels,lag,terrain_bottom);
         if(bomb_enabled&&bomb_art)bomb_art->render(pixels,background,bomb,motion);
         // th02_main.asm:1655–1657 draws Bomb before the boss update and its paints.
         if(sigma_enabled)draw_sigma(pixels,motion);
@@ -1298,9 +1300,11 @@ private:
             auto color=background.palette[14];const auto rgb=(unsigned(color[0])<<16)|(unsigned(color[1])<<8)|color[2];
             for(unsigned i=0;i<sparks.slots.size();++i){
                 const auto &s=sparks.slots[i];if(s.flag!=1)continue;
-                const auto p=motion.at(T::Spark,i,motion_q4(s.position[rendered_page]),s.sprite,s.age);
+                const auto p=motion.at(T::Spark,i,motion_q4(s.position[rendered_page]),unsigned(s.sprite)+2u*s.shot_hit,s.age);
                 const int size=s.sprite?8:1;
-                blit_motion_sprite(pixels,p,size,size,[&](int x,int y){return !s.sprite||(rows[y][s.age%8]&(128>>x))?rgb:render_clear;});
+                const auto texel=[&](int x,int y){return !s.sprite||(rows[y][s.age%8]&(128>>x))?rgb:render_clear;};
+                if(s.shot_hit)blit_motion_sprite<128>(pixels,p,size,size,texel);
+                else blit_motion_sprite(pixels,p,size,size,texel);
             }
         }
         if(mima_enabled)apply_mima_tone(pixels,mima_tone);

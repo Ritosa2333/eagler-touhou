@@ -72,6 +72,11 @@ need the English patch, a PC-98 emulator, or a SoundFont for the basic FM build.
   left/right value editing.
 * MIDI (TinySoundFont) or FM (98fmplayer through libth03) audio.
 
+Smooth Background is on by default. Its terrain filter reduces shimmer during
+scrolling without filtering the player, bullets, or HUD. Stage 4's terrain
+motif no longer flashes between render pages, and shot-hit sparks are
+half-transparent in either rendering mode.
+
 Practice uses the same shot selection screen as the main game. Choose Reimu's
 shot type with Left/Right, then use Up/Down in the stage popup. Z or Enter
 confirms; X or Esc closes the popup back to shot selection. The setup popup

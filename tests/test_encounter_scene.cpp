@@ -1,6 +1,7 @@
 #include "encounter_scene.hpp"
 #include <iostream>
-unsigned checks=0;void check(bool b){++checks;if(!b)throw std::runtime_error("Visible encounter contract failed: check " + std::to_string(checks));}
+#include <source_location>
+unsigned checks=0;void check(bool b,std::source_location at=std::source_location::current()){++checks;if(!b)throw std::runtime_error("Visible encounter contract failed: check " + std::to_string(checks)+" at line "+std::to_string(at.line()));}
 int wmain(int argc,wchar_t**argv){try{
  if(argc!=2)throw std::runtime_error("Usage: encounter-tests <assets>");std::vector<std::uint32_t> pixels(640*400);
  for(int stage=0;stage<6;++stage){auto scene=soew::EncounterScene::load(argv[1],stage,0,1,2,3);auto repeat=scene;check(scene.bank.next>=128);scene.render(pixels);for(unsigned i=0;i<10000&&!scene.runtime.blocked&&!scene.runtime.scroll.done;++i){scene.tick(0);repeat.tick(0);check(scene.runtime.random.cursor==repeat.runtime.random.cursor&&scene.runtime.spawns==repeat.runtime.spawns&&scene.ticks==repeat.ticks);if(i%16==0){scene.render(pixels);check(pixels[0]==0&&pixels[639]==0);}}
@@ -35,9 +36,8 @@ int wmain(int argc,wchar_t**argv){try{
   s.background.tiles.at(0)[0]=8;
   check(s.background.stage4_overlay_color(5,0,0)==13);
   check(s.background.stage4_overlay_color(5,1,0)==5);
-  for(unsigned n=0;n<206;++n){
-   s.tick(0);
-   if(n!=0&&n!=125&&n!=205)continue;
+  for(unsigned scroll:{2u,252u,412u}){
+   s.scroll.display_pixels=scroll;
    s.rendered_page=0;s.reduced_effects=true;s.render(off);
    s.reduced_effects=false;s.render(normal);
    unsigned changes=0;
@@ -45,15 +45,16 @@ int wmain(int argc,wchar_t**argv){try{
     if(x<176||x>=272||y<152||y>=248)throw std::runtime_error("Stage 4 overlay outside its original rectangle");
     ++changes;
    }
-   if(!changes)throw std::runtime_error("No Stage 4 overlay pixels at tick " + std::to_string(n));
-   // Compare page 1 with page 1: moving actors may have different positions
-   // on the two pages even when the terrain effect is off.
+   if(!changes)throw std::runtime_error("No Stage 4 overlay pixels at scroll " + std::to_string(scroll));
+   // No actors were advanced: switching the render page must leave the same terrain.
+   auto page_zero=normal;
    s.rendered_page=1;s.reduced_effects=true;s.render(off);
-   s.reduced_effects=false;s.render(normal);check(normal==off);
+   s.reduced_effects=false;s.render(normal);check(normal!=off);
+   check(normal==page_zero);
    s.rendered_page=0;s.reduced_effects=true;s.render(off);
    s.reduced_effects=false;s.runtime.scroll.done=true;s.render(normal);check(normal==off);s.runtime.scroll.done=false;
   }
-  check(!soew::EncounterScene::stage4_overlay_enabled(2,0,false,false));
+  check(!soew::EncounterScene::stage4_overlay_enabled(2,false,false));
   check(soew::StageBackground::stage4_overlay_index(95,95)==85);
  }
  // Isolate the two midboss4 reward paths from ordinary enemy scoring.
@@ -88,6 +89,6 @@ int wmain(int argc,wchar_t**argv){try{
  for(unsigned type=0;type<3;++type)for(unsigned level=0;level<10;++level){auto scene=soew::EncounterScene::load(argv[1],0,int(type),1,2,3);scene.combat_enabled=scene.survival_enabled=true;scene.enable_effects();scene.pickup_enabled=true;constexpr unsigned power[]={1,4,8,16,24,32,40,52,64,80};scene.pickups.power=power[level];for(unsigned f=0;f<180;++f){scene.tick(soew::Shot);if(f%8==0)scene.render(pixels);}check(scene.shots.fired>0&&!scene.weapon_blocked);scene.render(pixels);}
  // Ordinary enemy hit feedback4 and lethal feedback3 are requested after
  // current frame's sound dispatch, then dispatched at next game boundary.
- for(unsigned hp:{1u,100u,65534u}){auto s=soew::EncounterScene::load(argv[1],0,0,1,2,3);s.combat_enabled=true;s.script.enemies[0].raw[22]=std::uint8_t(hp);s.script.enemies[0].raw[23]=std::uint8_t(hp>>8);s.script.enemies[0].raw[24]=1;s.script.paths[s.script.enemies[0].path_slot].bytes={0,255};s.runtime.dispatch.cursor=1;auto &e=s.runtime.enemies.slots[0];e.raw[0xe]=1;e.word(0xc,0);e.word(4,208);e.word(6,100);s.runtime.enemies.high_water=1;auto &p=s.shots.slots[0];p.flag=1;p.type=0;p.pattern=52;p.position[1]={std::uint16_t(208*16),std::uint16_t(100*16)};unsigned last=255;s.sound_output=[&](unsigned id){last=id;};s.tick(0);check(s.sound.current==(hp==1?3u:4u));check(last==255);s.tick(0);check(last==(hp==1?3u:4u));}
+ for(unsigned hp:{1u,100u,65534u}){auto s=soew::EncounterScene::load(argv[1],0,0,1,2,3);s.combat_enabled=true;s.enable_effects();s.script.enemies[0].raw[22]=std::uint8_t(hp);s.script.enemies[0].raw[23]=std::uint8_t(hp>>8);s.script.enemies[0].raw[24]=1;s.script.paths[s.script.enemies[0].path_slot].bytes={0,255};s.runtime.dispatch.cursor=1;auto &e=s.runtime.enemies.slots[0];e.raw[0xe]=1;e.word(0xc,0);e.word(4,208);e.word(6,100);s.runtime.enemies.high_water=1;auto &p=s.shots.slots[0];p.flag=1;p.type=0;p.pattern=52;p.position[1]={std::uint16_t(208*16),std::uint16_t(100*16)};unsigned last=255;s.sound_output=[&](unsigned id){last=id;};s.tick(0);check(s.sound.current==(hp==1?3u:4u));check(last==255);check(s.sparks.slots[0].flag==1&&s.sparks.slots[0].shot_hit);s.tick(0);check(last==(hp==1?3u:4u));}
  std::cout<<"encounter_scene_checks="<<checks<<" failures=0\n";return 0;
 }catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}

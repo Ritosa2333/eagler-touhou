@@ -617,7 +617,10 @@ void background_smoothing_is_read_only(const fs::path &root){
         check(opaque>0);
         for(int y=384;y<400;++y)for(int x=32;x<416;++x)check(sharp[y*640+x]==smooth[y*640+x]);
         for(unsigned i=1;i<scene.scroll.interval;++i)scene.tick(0);
-        scene.render(sharp);scene.render(smooth,true,true);check(sharp==smooth);
+        const auto settled_digest=replay_state_digest(scene);
+        check(background_scroll_lag(scene.scroll,scroll_subpixels)==0);
+        scene.render(sharp);scene.render(smooth,true,true);
+        check(sharp!=smooth&&replay_state_digest(scene)==settled_digest);
     }
 }
 
@@ -656,11 +659,24 @@ void paced_background_positions(){
         check(cadence.consume(begin+5'000'000)&&cadence.deadline()>begin+5'000'000);
     }
 
-    std::vector<std::uint32_t> pixels(640*400);
-    for(unsigned y=16;y<=385;++y)pixels[y*640+32]=y%2?0xff8040:0;
-    blend_stage_background(pixels,scroll_subpixels+scroll_subpixels/2);
-    check(pixels[16*640+32]==0x7f4020&&pixels[383*640+32]==0x7f4020);
-    check(pixels[384*640+32]==0&&pixels[385*640+32]==0);
+    constexpr int bottom=388;
+    std::vector<std::uint32_t> source(640*400);
+    for(unsigned y=15;y<bottom;++y){
+        source[y*640+32]=y%2?0xff8040:0;
+        source[y*640+33]=y<200?0u:0xffffffu;
+    }
+    unsigned previous_edge=0;
+    for(unsigned lag=0;lag<=2*scroll_subpixels;lag+=8){
+        auto pixels=source;
+        filter_stage_background(pixels,lag,bottom);
+        // The nyquist stripes no longer fade in and out in subpixel motion.
+        for(unsigned y=16;y<384;++y)check(pixels[y*640+32]==0x7f4020);
+        for(unsigned y:{15u,384u,385u,386u,387u})check(pixels[y*640+32]==0);
+        unsigned edge=0;
+        for(unsigned y=195;y<205;++y)edge+=pixels[y*640+33]&255;
+        check(!lag||edge>previous_edge);
+        previous_edge=edge;
+    }
 }
 
 void measured_frame_rate(){
@@ -716,7 +732,9 @@ void interpolated_gameplay(const fs::path &root){
     scene.bank.sprites[0]=pixel;scene.bank.sprites[68]=pixel;
     scene.player.x=100;scene.player.y=200;
     auto &item=scene.items.slots[0];item.flag=1;item.left[0]=160;item.top[0]=200*16;item.age=1;
-    auto &spark=scene.sparks.slots[0];spark.flag=1;spark.position[0]={220*16,200*16};spark.age=1;
+    scene.sparks.add(220,200,30,1,false,0,true);
+    auto &spark=scene.sparks.slots[0];spark.age=1;
+    scene.sparks.add(240,200,30,1,false,0);
     auto &bullet=scene.bullet_core.bullets[0];bullet.flag=1;bullet.position[0]={280*16,200*16};
     MotionFrame prev;scene.capture_motion(prev);
     scene.player.x+=5;item.top[0]+=16;++item.age;spark.position[0][0]+=16;++spark.age;bullet.position[0][1]+=16;++scene.ticks;
@@ -727,7 +745,8 @@ void interpolated_gameplay(const fs::path &root){
     scene.render(sharp,true,false,128,&prev);
     check(at(old,100,200)==0xffffff&&at(mid,102,200)==0x7f7f7f&&at(mid,103,200)==0x7f7f7f&&at(current,105,200)==0xffffff);
     check(at(old,160,200)==0xffffff&&at(mid,160,200)==0x7f7f7f&&at(mid,160,201)==0x7f7f7f&&at(current,160,201)==0xffffff);
-    check(at(mid,220,200)==0x7f7f7f&&at(mid,221,200)==0x7f7f7f);
+    check(at(old,220,200)==0x7f7f7f&&at(mid,220,200)==0x3f3f3f&&at(mid,221,200)==0x3f3f3f);
+    check(at(current,221,200)==0x7f7f7f&&at(sharp,221,200)==0x7f7f7f&&at(mid,240,200)==0xffffff);
     check(at(old,282,200)==0xffffff&&at(mid,282,200)==0x7f7f7f&&at(current,282,200)==0);
     check(current==sharp&&digest==replay_state_digest(scene));
     // Replacing an item in the same slot must not animate it from the old item.

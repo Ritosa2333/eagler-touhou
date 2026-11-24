@@ -20,22 +20,29 @@ inline unsigned background_scroll_lag(const StageScroll &scroll,unsigned subfram
     return scroll.speed*((scroll.interval-age)*scroll_subpixels-subframe)/scroll.interval;
 }
 inline int scroll_sample_rows(unsigned lag){return int((lag+scroll_subpixels-1)/scroll_subpixels);}
-inline void blend_stage_background(std::span<std::uint32_t> pixels,unsigned lag){
-    if(!lag)return;
-    const unsigned fraction=lag%scroll_subpixels;
-    const int rows=scroll_sample_rows(lag),whole=int(lag/scroll_subpixels);
+inline void filter_stage_background(std::span<std::uint32_t> pixels,unsigned lag,int terrain_bottom){
+    const int whole=int(lag/scroll_subpixels);
+    const unsigned phase=(lag%scroll_subpixels+2)/4;
+    // Combine a fixed [1 2 1]/4 vertical filter with fractional scroll.
+    // Without the prefilter, one-pixel stripes disappear at half a pixel
+    // and return at integer positions, modulating contrast as the map moves.
+    const unsigned wa=64-phase,wb=128-phase,wc=64+phase,wd=phase;
     constexpr unsigned rb=0x00ff00ff,green=0x0000ff00;
+    const auto raw=[&](int y){return pixels.data()+std::min(y,terrain_bottom-1)*640+32;};
+    std::array<std::uint32_t,384> previous;
+    if(!whole)std::copy_n(raw(15),384,previous.begin());
     for(int y=16;y<384;++y){
-        auto out=pixels.begin()+y*640+32;
-        const auto a=out+whole*640,b=out+rows*640;
-        if(!fraction)std::copy_n(a,384,out);
-        else for(int x=0;x<384;++x){
-            const auto lo=a[x],hi=b[x];
-            out[x]=((((lo&rb)*(scroll_subpixels-fraction)+(hi&rb)*fraction)>>8)&rb)|
-                   ((((lo&green)*(scroll_subpixels-fraction)+(hi&green)*fraction)>>8)&green);
+        auto *out=raw(y);
+        const auto *a=whole?raw(y+whole-1):previous.data(),*b=raw(y+whole),*c=raw(y+whole+1),*d=raw(y+whole+2);
+        for(int x=0;x<384;++x){
+            const auto ca=a[x],cb=b[x],cc=c[x],cd=d[x];
+            if(!whole)previous[x]=cb;
+            out[x]=((((ca&rb)*wa+(cb&rb)*wb+(cc&rb)*wc+(cd&rb)*wd)>>8)&rb)|
+                   ((((ca&green)*wa+(cb&green)*wb+(cc&green)*wc+(cd&green)*wd)>>8)&green);
         }
     }
-    for(int y=384;y<384+rows;++y)std::fill_n(pixels.begin()+y*640+32,384,0u);
+    std::fill_n(raw(15),384,0u);
+    for(int y=384;y<terrain_bottom;++y)std::fill_n(raw(y),384,0u);
 }
 namespace asset_cache_detail {
 struct Stats {std::uint64_t hits=0,decodes=0;std::size_t entries=0;};
@@ -103,13 +110,13 @@ public:
         if(scroll.take_progress_event())encounter_observer.dispatch(script,scroll.progress,false,[&](const auto &){++observed_requests;return false;});
         player.tick(input);scroll.finish_tick(static_cast<unsigned>(background.map.size()));++ticks;
     }
-    void render(std::span<std::uint32_t> pixels,bool draw_player=true,bool stage4_overlay=false,int terrain_bottom=384)const{
+    void render(std::span<std::uint32_t> pixels,bool draw_player=true,bool stage4_overlay=false,int terrain_bottom=384,int terrain_top=16)const{
         if(pixels.size()!=640*400)throw std::runtime_error("Scene buffer must be640x400");
         std::fill(pixels.begin(),pixels.end(),0u);
         // Initial map row0 is bottom/top368, row22 top16 (tile.cpp:285..294).
         // Source map continues upward while screen terrain moves down. Last
         // undisplayable tile step is excluded by scroll.display_pixels.
-        for(int y=16;y<terrain_bottom;++y){
+        for(int y=terrain_top;y<terrain_bottom;++y){
             const unsigned row=(scroll.display_pixels+383-unsigned(y))/16;
             const auto tile_start=(background.map.at(row/8)*8+row%8)*24;
             const auto tile_y=unsigned((y-int(scroll.display_pixels%16)+16)%16);
