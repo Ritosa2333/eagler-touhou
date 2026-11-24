@@ -269,7 +269,7 @@ public:
         transition.phase=StageTransition::Phase::Entry;transition.frame=0;
     }
     void start_postboss(){
-        dialogue_snapshot.clear();dialogue_snapshot.resize(640*400);render_frame(dialogue_snapshot,false);
+        dialogue_snapshot.clear();dialogue_snapshot.resize(640*400);render(dialogue_snapshot,false);
         if(!practice_mode){
             unsigned stock=life.lives;score_core.grant_dialogue_bonus(stock);life.lives=std::uint8_t(stock);lives=int(stock);
         }
@@ -1001,7 +1001,7 @@ public:
             }else paint_mima(pixels,{p.kind==P::Dot?MimaPaint::Dot:p.kind==P::Circle?MimaPaint::Circle:MimaPaint::Fill,p.x,p.y,p.a,p.b,p.color},color);
         }
     }
-    void render(std::span<std::uint32_t> pixels,bool show_boss_terminal=true)const{render_frame(pixels,show_boss_terminal);}
+    void render(std::span<std::uint32_t> pixels,bool show_boss_terminal=true,bool smooth_background=false)const{render_frame(pixels,show_boss_terminal,smooth_background);}
 private:
     void draw_stones(std::span<std::uint32_t> pixels,bool show_effects,unsigned shift)const{
         using Paint=StageSprites::Paint;
@@ -1040,7 +1040,7 @@ private:
         const auto &north=stones.draw.back();
         if(north.visible&&north.dying)cel(north.pattern,north.x,north.y,stones.death_effects.front().frame<32);
     }
-    void render_frame(std::span<std::uint32_t> pixels,bool show_boss_terminal)const{
+    void render_frame(std::span<std::uint32_t> pixels,bool show_boss_terminal,bool smooth_background)const{
         if(extra_settlement.showing_bonus()&&!dialogue_snapshot.empty()){
             std::copy(dialogue_snapshot.begin(),dialogue_snapshot.end(),pixels.begin());return;
         }
@@ -1076,8 +1076,10 @@ private:
             sigma_art->put(pixels,background,129,224,48);
             draw_mima_dialogue_player(pixels);
         }dialogue_art->render(pixels,background,bank,dialogue);return;}
-        if(extra_road_enabled)extra_tiles.render(pixels,background);
-        else StageScene::render(pixels,false,stage4_overlay_enabled(stage,rendered_page,runtime.scroll.done,reduced_effects));
+        const unsigned blend=smooth_background&&!marisa_enabled&&!sigma_enabled&&!mima_enabled?background_scroll_blend(scroll):0;
+        const int terrain_bottom=384+(blend!=0);
+        if(extra_road_enabled)extra_tiles.render(pixels,background,terrain_bottom);
+        else StageScene::render(pixels,false,stage4_overlay_enabled(stage,rendered_page,runtime.scroll.done,reduced_effects),terrain_bottom);
         // Boss backgrounds replace the terrain before any battle sprites.
         if(marisa_enabled)clear_marisa_playfield(pixels,384);
         if(sigma_enabled)
@@ -1092,11 +1094,12 @@ private:
             const int x=32+int(key%24)*16, vram_y=int(key/24)*16;
             for(int dy=0;dy<16;++dy){
                 const int y=(vram_y+dy-int(scroll.line)+400)%400;
-                if(y<16||y>=384)continue;
+                if(y<16||y>=terrain_bottom)continue;
                 for(int dx=0;dx<16;++dx){const auto c=background.palette[background.tiles[pat][dy*16+dx]];pixels[y*640+x+dx]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}
             }
         }
-        if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=384||top+16<=16)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<16||py>=384)continue;const auto c=background.palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
+        if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=terrain_bottom||top+16<=16)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<16||py>=terrain_bottom)continue;const auto c=background.palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
+        blend_stage_background(pixels,blend);
         if(bomb_enabled&&bomb_art)bomb_art->render(pixels,background,bomb);
         // th02_main.asm:1655–1657 draws Bomb before the boss update and its paints.
         if(sigma_enabled)draw_sigma(pixels);

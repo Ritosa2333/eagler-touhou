@@ -29,7 +29,7 @@ struct Menu {
     bool shot_confirmed=false;
     int rank=1, music=1, lives=2, bombs=3;
     bool reduced=false;
-    bool show_more_info=false,fullscreen=false,stage_intro=true;
+    bool show_more_info=false,fullscreen=false,stage_intro=true,smooth_background=true;
     soew::HitboxMode hitboxes=soew::HitboxMode::Off;
     bool autofire=false,fast_autofire=true; // Host-only assist; old ON setting used the 2+2 waveform.
     soew::Language language=soew::Language::Japanese;
@@ -44,10 +44,10 @@ struct Menu {
         set_language_preference(language_preference);
     }
 
-    enum class Option { Rank, Music, Lives, Bombs, Autofire, Effects, MoreInfo, Fullscreen, Hitboxes, Language, StageIntro, Reset, Back, Empty };
+    enum class Option { Rank, Music, Lives, Bombs, Autofire, Effects, MoreInfo, Fullscreen, Hitboxes, Language, StageIntro, SmoothBackground, Reset, Back, Empty };
     static constexpr std::array<std::array<Option,2>,7> option_rows={{
         {Option::Rank,Option::Effects}, {Option::Music,Option::MoreInfo}, {Option::Lives,Option::Fullscreen},
-        {Option::Bombs,Option::Hitboxes}, {Option::Autofire,Option::Language}, {Option::StageIntro,Option::Empty}, {Option::Reset,Option::Back}
+        {Option::Bombs,Option::Hitboxes}, {Option::Autofire,Option::Language}, {Option::StageIntro,Option::SmoothBackground}, {Option::Reset,Option::Back}
     }};
     unsigned option_row=0,option_column=0;
     Option option()const{return option_rows[option_row][option_column];}
@@ -64,6 +64,7 @@ struct Menu {
         case Option::Hitboxes: return static_cast<int>(hitboxes);
         case Option::Language: return static_cast<int>(language);
         case Option::StageIntro: return stage_intro;
+        case Option::SmoothBackground: return smooth_background;
         case Option::Reset: case Option::Back: case Option::Empty: return 0;
         }
         return 0;
@@ -74,7 +75,7 @@ struct Menu {
         case Option::Rank: case Option::Bombs: return 4;
         case Option::Music: case Option::Autofire: case Option::Hitboxes: return 3;
         case Option::Language: return chinese_available?4:2;
-        case Option::Effects: case Option::MoreInfo: case Option::Fullscreen: case Option::StageIntro: return 2;
+        case Option::Effects: case Option::MoreInfo: case Option::Fullscreen: case Option::StageIntro: case Option::SmoothBackground: return 2;
         case Option::Reset: case Option::Back: case Option::Empty: return 0;
         }
         return 0;
@@ -92,6 +93,7 @@ struct Menu {
         case Option::Hitboxes: hitboxes=static_cast<soew::HitboxMode>(value);break;
         case Option::Language: set_language_preference(static_cast<soew::Language>(value));break;
         case Option::StageIntro: stage_intro=value!=0;break;
+        case Option::SmoothBackground: smooth_background=value!=0;break;
         case Option::Reset: case Option::Back: case Option::Empty: break;
         }
     }
@@ -219,10 +221,11 @@ inline constexpr LocalizedText options_title{L"設定",L"Options",L"设置",L"�
     options_music_hint{L"音源を変えると現在の曲を新しい音源で再生します",L"Changing the source restarts the current track",L"切换音源后会从头播放当前曲目",L"切換音源後會從頭播放目前曲目"},
     options_effects_hint{L"一部軽減では一部の点滅や画面の揺れを抑えます",L"Reduced limits some flashes and screen shake",L"减弱部分闪光和画面震动",L"減弱部分閃光和畫面震動"},
     options_language_unavailable{L"保存済みの中国語は利用できません。日本語で表示します",L"Saved Chinese language unavailable. Showing Japanese.",L"已保存的中文不可用，暂用日语显示",L"已儲存的中文無法使用，暫以日文顯示"};
-inline constexpr std::array<LocalizedText,14> option_labels={{
+inline constexpr std::array<LocalizedText,15> option_labels={{
     {L"難易度",L"Difficulty",L"难度",L"難度"}, {L"音楽",L"Music",L"音乐",L"音樂"}, {L"残機",L"Lives",L"初始命数",L"初始命數"}, {L"ボム",L"Bombs",L"初始灵击",L"初始靈擊"},
     {L"連射",L"Autofire",L"自动连射",L"自動連射"}, {L"演出",L"Effects",L"画面特效",L"畫面特效"}, {L"詳細情報",L"More Info",L"详细信息",L"詳細資訊"}, {L"全画面",L"Fullscreen",L"全屏",L"全螢幕"},
-    {L"判定",L"Hitboxes",L"碰撞判定",L"碰撞判定"}, {L"言語",L"Language",L"语言",L"語言"}, {L"ステージ導入",L"Stage Intro",L"关卡开场",L"關卡開場"}, {L"初期設定に戻す",L"Restore Defaults",L"恢复默认设置",L"恢復預設設定"}, back, {L"",L""}
+    {L"判定",L"Hitboxes",L"碰撞判定",L"碰撞判定"}, {L"言語",L"Language",L"语言",L"語言"}, {L"ステージ導入",L"Stage Intro",L"关卡开场",L"關卡開場"},
+    {L"背景スクロール補間",L"Smooth Scroll",L"背景平滑",L"背景平滑"}, {L"初期設定に戻す",L"Restore Defaults",L"恢复默认设置",L"恢復預設設定"}, back, {L"",L""}
 }};
 inline constexpr std::array<const wchar_t*,4> language_names={L"日本語",L"English",L"简体中文",L"繁體中文"};
 inline constexpr std::array<std::array<LocalizedText,3>,3> shot_description={{
@@ -246,7 +249,7 @@ inline std::wstring_view option_value(Language language,Menu::Option option,int 
     case O::Bombs: return digits[value];
     case O::Autofire: return autofire[value](language);
     case O::Effects: return effects[value](language);
-    case O::MoreInfo: case O::Fullscreen: case O::StageIntro: return toggles[value](language);
+    case O::MoreInfo: case O::Fullscreen: case O::StageIntro: case O::SmoothBackground: return toggles[value](language);
     case O::Hitboxes: return hitboxes[value](language);
     case O::Language: return language_names.at(value);
     case O::Reset: case O::Back: case O::Empty: return {};

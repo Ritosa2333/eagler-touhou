@@ -15,7 +15,7 @@ int main(int argc,char**argv){try{
     auto root=std::filesystem::path(argv[1]);std::filesystem::create_directories(root);
     const auto p=root/"settings-contract.json";
     const auto missing=soew::SettingsStore(root/"missing-settings.json").load();
-    check(missing.language==L::Japanese&&missing.stage_intro);
+    check(missing.language==L::Japanese&&missing.stage_intro&&missing.smooth_background);
     put(p,"{\"version\":1}");
     soew::SettingsStore a(p);check(a.load()==soew::Settings{}&&a.needs_migration);
     Menu m;m.rank=3;m.music=2;m.lives=4;m.bombs=0;m.reduced=m.autofire=true;
@@ -34,9 +34,11 @@ int main(int argc,char**argv){try{
     key(Menu::down);check(m.option()==O::Hitboxes);key(Menu::left);check(m.hitboxes==soew::HitboxMode::All);
     key(Menu::down);key(Menu::tab);check(m.option()==O::Autofire);key(Menu::left);check(m.autofire&&!m.fast_autofire);
     key(Menu::down);check(m.option()==O::StageIntro&&m.stage_intro);key(Menu::left);check(!m.stage_intro);
+    key(Menu::tab);check(m.option()==O::SmoothBackground&&m.smooth_background);
+    key(Menu::left);check(!m.smooth_background);key(Menu::tab);
     check(a.save(soew::Settings::from(m)));
     soew::SettingsStore b(p);check(b.load()==soew::Settings::from(m)&&!b.needs_migration);
-    Menu restored;b.saved.apply(restored);check(restored.language==L::English&&restored.autofire&&!restored.fast_autofire&&!restored.stage_intro&&restored.rank==3);
+    Menu restored;b.saved.apply(restored);check(restored.language==L::English&&restored.autofire&&!restored.fast_autofire&&!restored.stage_intro&&!restored.smooth_background&&restored.rank==3);
     key(Menu::down);check(m.option()==O::Reset);key(Menu::confirm);check(soew::Settings::from(m)==soew::Settings{});
     check(b.save(soew::Settings::from(m)));check(soew::SettingsStore(p).load()==soew::Settings{});
 
@@ -51,7 +53,7 @@ int main(int argc,char**argv){try{
         soew::SettingsStore store(p);const auto value=store.load();check(value.rank==1&&value.autofire&&store.writable);
     }
     put(p,"{\"version\":2,\"autofire\":true}");
-    const auto old=soew::SettingsStore(p).load();check(old.language==L::Japanese&&old.autofire&&old.fast_autofire&&!old.fullscreen&&old.hitboxes==soew::HitboxMode::Off&&old.stage_intro);
+    const auto old=soew::SettingsStore(p).load();check(old.language==L::Japanese&&old.autofire&&old.fast_autofire&&!old.fullscreen&&old.hitboxes==soew::HitboxMode::Off&&old.stage_intro&&old.smooth_background);
     for(const auto *bad:{"1","null","\"false\""}){
         put(p,std::string("{\"version\":2,\"stage_intro\":")+bad+"}");
         soew::SettingsStore store(p);check(store.load().stage_intro&&store.writable&&!store.warning.empty());

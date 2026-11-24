@@ -6,7 +6,9 @@ int wmain(int argc,wchar_t**argv){try{
     for(int stage=0;stage<6;++stage){
         auto scene=soew::StageScene::load(argv[1],stage,0,stage==5?4:1,2,3);auto repeat=scene;std::vector<std::uint32_t> pixels(640*400);
         const unsigned expected_interval=stage==3||stage==4?1:stage==5?2:4,speed=stage==3?2:1;
-        unsigned moves=0;for(unsigned tick=0;tick<1024;++tick){const auto before=scene.scroll.display_pixels;scene.tick(0);repeat.tick(0);if(tick%expected_interval==0)++moves;check(scene.scroll.display_pixels==moves*speed);check(scene.scroll.display_pixels-before==(tick%expected_interval==0?speed:0));check(scene.scroll.progress==scene.scroll.display_pixels/8);check(scene.scroll.line==int((400-scene.scroll.display_pixels%400)%400));check(scene.observed_requests==repeat.observed_requests);}
+        unsigned moves=0;for(unsigned tick=0;tick<1024;++tick){const auto before=scene.scroll.display_pixels;scene.tick(0);repeat.tick(0);if(tick%expected_interval==0)++moves;check(scene.scroll.display_pixels==moves*speed);check(scene.scroll.display_pixels-before==(tick%expected_interval==0?speed:0));check(scene.scroll.progress==scene.scroll.display_pixels/8);check(scene.scroll.line==int((400-scene.scroll.display_pixels%400)%400));check(scene.observed_requests==repeat.observed_requests);
+            check(scene.scroll.display_pixels*4-soew::background_scroll_blend(scene.scroll)==(tick+1)*speed*4/expected_interval);
+        }
         // Pixel sampling at s=24: y16 -> map row24/localy8; y24->row23/localy0.
         auto sample=soew::StageScene::load(argv[1],stage,0,1,2,3);sample.scroll.display_pixels=24;sample.render(pixels);
         for(auto y:{16u,24u}){unsigned row=(383-y+24)/16;auto section=sample.background.map.at(row/8);auto tile=sample.background.sections[(section*8+row%8)*24];auto index=sample.background.tiles[tile][((y+16-24%16)%16)*16];auto color=sample.background.palette[index];check(pixels[y*640+32]==((unsigned(color[0])<<16)|(unsigned(color[1])<<8)|color[2]));}

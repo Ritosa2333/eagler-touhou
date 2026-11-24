@@ -594,6 +594,29 @@ void protection_display_is_read_only(const fs::path &root){
     check(without_hud.run.events==with_hud.run.events&&without_hud.run.summary==with_hud.run.summary);
 }
 
+void background_smoothing_is_read_only(const fs::path &root){
+    std::vector<std::uint32_t> sharp(640*400),smooth(sharp.size());
+    for(int stage:{0,5}){
+        auto scene=EncounterScene::load(root,stage,1,stage==5?4:1,2,3);
+        if(stage==5)scene.enable_extra_road();
+        scene.tick(0);
+        const auto digest=replay_state_digest(scene);
+        scene.render(sharp);scene.render(smooth,true,true);
+        check(sharp!=smooth&&replay_state_digest(scene)==digest);
+        const auto &player=*scene.bank.sprites.at(0);
+        unsigned opaque=0;
+        for(unsigned y=0;y<player.height;++y)for(unsigned x=0;x<player.width;++x){
+            if(player.pixels[y*player.width+x]==player.transparent)continue;
+            const auto index=(scene.player.y+y)*640+scene.player.x+x;
+            check(sharp[index]==smooth[index]);++opaque;
+        }
+        check(opaque>0);
+        for(int y=384;y<400;++y)for(int x=32;x<416;++x)check(sharp[y*640+x]==smooth[y*640+x]);
+        for(unsigned i=1;i<scene.scroll.interval;++i)scene.tick(0);
+        scene.render(sharp);scene.render(smooth,true,true);check(sharp==smooth);
+    }
+}
+
 void pause_and_menu_return(const fs::path &root){
     NativeReplayConfig c;
     auto scene=load_replay_scene(root,c);
@@ -616,8 +639,13 @@ void pause_and_menu_return(const fs::path &root){
 
 int main(int argc,char **argv){
     try{
-        if(argc<2||argc>3)throw std::runtime_error("Usage: soew-replay-session-tests <staged assets> [frozen stage 2 v4 replay]");
+        if(argc<2||argc>3)throw std::runtime_error("Usage: soew-replay-session-tests <staged assets> [frozen stage 2 v4 replay | --background-smoothing]");
         const fs::path root=argv[1];
+        if(argc==3&&std::string_view(argv[2])=="--background-smoothing"){
+            background_smoothing_is_read_only(root);
+            std::cout<<"background_smoothing_checks="<<checks<<" failures=0\n";
+            return 0;
+        }
         if(argc==3){
             std::ifstream file(argv[2],std::ios::binary);
             check(bool(file));

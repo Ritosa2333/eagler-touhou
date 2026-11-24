@@ -494,6 +494,7 @@ endif()
 add_test(NAME soew_replay_menu_contract COMMAND soew-replay-menu-tests)
 if(SOEW_ASSETS)
 add_test(NAME soew_replay_session_contract COMMAND soew-replay-session-tests "${SOEW_ASSETS}")
+add_test(NAME soew_background_smoothing_contract COMMAND soew-replay-session-tests "${SOEW_ASSETS}" --background-smoothing)
 endif()
 add_executable(soew-collision-display-tests tests/test_collision_display.cpp
     "${TH98}/src/assets/pi.cpp" "${TH98}/src/assets/rgb.cpp" "${TH98}/src/assets/bfnt.cpp")

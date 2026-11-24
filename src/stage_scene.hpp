@@ -11,6 +11,23 @@
 #include <memory>
 #include <mutex>
 namespace soew {
+// Spread each one-pixel scroll step across its existing ticks. The resulting
+// image trails the logical terrain by at most three quarters of a pixel.
+inline unsigned background_scroll_blend(const StageScroll &scroll){
+    if(scroll.done||!scroll.display_pixels)return 0;
+    const unsigned phase=scroll.cycle%scroll.interval;
+    return phase?(scroll.interval-phase)*4/scroll.interval:0;
+}
+inline void blend_stage_background(std::span<std::uint32_t> pixels,unsigned quarter){
+    if(!quarter)return;
+    constexpr unsigned rb=0x00ff00ff,green=0x0000ff00;
+    for(int y=16;y<384;++y)for(int x=32;x<416;++x){
+        auto &a=pixels[y*640+x];const auto b=pixels[(y+1)*640+x];
+        a=((((a&rb)*(4-quarter)+(b&rb)*quarter)>>2)&rb)|
+          ((((a&green)*(4-quarter)+(b&green)*quarter)>>2)&green);
+    }
+    std::fill_n(pixels.begin()+384*640+32,384,0u); // Clear the extra sample row.
+}
 namespace asset_cache_detail {
 struct Stats {std::uint64_t hits=0,decodes=0;std::size_t entries=0;};
 struct Input {std::filesystem::path path;std::vector<std::byte> bytes;};
@@ -77,13 +94,13 @@ public:
         if(scroll.take_progress_event())encounter_observer.dispatch(script,scroll.progress,false,[&](const auto &){++observed_requests;return false;});
         player.tick(input);scroll.finish_tick(static_cast<unsigned>(background.map.size()));++ticks;
     }
-    void render(std::span<std::uint32_t> pixels,bool draw_player=true,bool stage4_overlay=false)const{
+    void render(std::span<std::uint32_t> pixels,bool draw_player=true,bool stage4_overlay=false,int terrain_bottom=384)const{
         if(pixels.size()!=640*400)throw std::runtime_error("Scene buffer must be640x400");
         std::fill(pixels.begin(),pixels.end(),0u);
         // Initial map row0 is bottom/top368, row22 top16 (tile.cpp:285..294).
         // Source map continues upward while screen terrain moves down. Last
         // undisplayable tile step is excluded by scroll.display_pixels.
-        for(int y=16;y<384;++y)for(int x=32;x<416;++x){const unsigned row=(383-unsigned(y)+scroll.display_pixels)/16,col=unsigned((x-32)/16);const auto section=background.map.at(row/8);const auto tile=background.sections.at((section*8+row%8)*24+col);const auto local_y=unsigned((y-int(scroll.display_pixels%16)+16)%16);auto index=background.tiles.at(tile)[local_y*16+unsigned((x-32)%16)];if(stage4_overlay&&x>=176&&x<272&&y>=152&&y<248)index=background.stage4_overlay_color(index,unsigned(x-176),unsigned(y-152));const auto c=background.palette[index];pixels[y*640+x]=(std::uint32_t(c[0])<<16)|(std::uint32_t(c[1])<<8)|c[2];}
+        for(int y=16;y<terrain_bottom;++y)for(int x=32;x<416;++x){const unsigned row=(scroll.display_pixels+383-unsigned(y))/16,col=unsigned((x-32)/16);const auto section=background.map.at(row/8);const auto tile=background.sections.at((section*8+row%8)*24+col);const auto local_y=unsigned((y-int(scroll.display_pixels%16)+16)%16);auto index=background.tiles.at(tile)[local_y*16+unsigned((x-32)%16)];if(stage4_overlay&&x>=176&&x<272&&y>=152&&y<248)index=background.stage4_overlay_color(index,unsigned(x-176),unsigned(y-152));const auto c=background.palette[index];pixels[y*640+x]=(std::uint32_t(c[0])<<16)|(std::uint32_t(c[1])<<8)|c[2];}
         if(!draw_player)return;
         const unsigned glyph_id=player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0;
         const auto &glyph=player_art.glyphs.at(glyph_id);const auto *bitmap=std::get_if<th03::assets::PlanarBitmap4>(&glyph.pixels);if(!bitmap)throw std::runtime_error("Player glyph is not planar");

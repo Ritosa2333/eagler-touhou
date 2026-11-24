@@ -112,11 +112,11 @@ struct StageTileRing {
     }
     void flip(unsigned back_page){front_page=back_page;}
     std::uint8_t pixel(unsigned page,int x,int screen_y)const{return pages.at(page).at(roll_y(screen_y+display_line)*width+x-left);}
-    void render(std::span<std::uint32_t> pixels,const StageBackground &bg)const{
+    void render(std::span<std::uint32_t> pixels,const StageBackground &bg,int terrain_bottom=384)const{
         if(pixels.size()!=640*400)throw std::runtime_error("Scene buffer must be640x400");
         std::fill(pixels.begin(),pixels.end(),0u);
         const auto &page=pages[front_page];
-        for(int y=16;y<384;++y){
+        for(int y=16;y<terrain_bottom;++y){
             const auto *src=page.data()+roll_y(y+display_line)*width;
             for(int x=0;x<width;++x){const auto &c=bg.palette[src[x]];pixels[y*640+left+x]=(std::uint32_t(c[0])<<16)|(std::uint32_t(c[1])<<8)|c[2];}
         }

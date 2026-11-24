@@ -2214,7 +2214,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         // Do not clear the visible DC: composition can take several milliseconds.
         if(const auto *demo=app->title_demo?app->title_demo->controller.scene():nullptr){
             app->composed=Frame{640,400,std::vector<std::uint32_t>(640*400)};
-            demo->render(app->composed.pixels);
+            demo->render(app->composed.pixels,true,app->menu.smooth_background);
             soew::mask_gameplay_tram(app->composed.pixels);
             soew::HudState hud;
             hud.score=demo->score_core.score;hud.high_score=hud.score;hud.lives=demo->life.lives;hud.bombs=demo->life.bombs;
@@ -2260,7 +2260,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 (app->stage_intro.showing_eye()||phase==Phase::LoadWait||phase==Phase::Ready);
             if(show_stage_intro)soew::StageIntro::paint(app->composed.pixels,app->stage_intro_art->pixels);
             else{
-                app->stage_scene->render(app->composed.pixels,!app->practice_result);
+                app->stage_scene->render(app->composed.pixels,!app->practice_result,app->menu.smooth_background);
                 if(!app->stage_intro.revealing()&&app->menu.hitboxes!=soew::HitboxMode::Off&&!app->practice_result&&!app->replay_menu.active())app->stage_scene->render_hitboxes(app->composed.pixels);
                 if(app->stage_intro.revealing())compose_curtain(app->composed,app->font,true,app->stage_intro.reveal_frame());
                 else{
@@ -3429,6 +3429,7 @@ int wmain(int argc, wchar_t **argv) {
             const auto settings=preferences.load();
             app.menu.set_language_preference(settings.language);
             app.menu.stage_intro=settings.stage_intro;
+            app.menu.smooth_background=settings.smooth_background;
         }
         if(language_override){
             if(app.settings_enabled)throw std::runtime_error("--language requires a test, dump, or read-only replay mode");
