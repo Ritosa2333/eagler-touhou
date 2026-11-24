@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TitleFailure.hpp"
+
 #include "TitleState.hpp"
 
 #include <cstdio>
@@ -26,13 +28,11 @@ struct TitleManualPlatform {
     }
 };
 
-class TitleManualMenu {
+class TitleManualMenu : public TitleFailure {
     TitleState& state;
     TitleManualPlatform& host;
-    bool fail(const std::string& reason);
 
 public:
-    std::string error;
     TitleManualMenu(TitleState& state_, TitleManualPlatform& host_) : state(state_), host(host_) {}
     bool update(u32 pressed, u32 repeated);
 };

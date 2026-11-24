@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TitleFailure.hpp"
+
 #include "TitleAnimations.hpp"
 #include "TitleMainMenu.hpp"
 #include "TitleState.hpp"
@@ -25,7 +27,7 @@ struct TitleOptionPlatform {
     virtual bool open_key_config() { return false; }
 };
 
-class TitleOptionsMenu {
+class TitleOptionsMenu : public TitleFailure {
     TitleState& state;
     AnmManager& animations;
     TitleOptionPlatform& host;
@@ -36,7 +38,6 @@ class TitleOptionsMenu {
     i32 substate_frames_ = 0;
     bool key_config_ = false;
     bool pushed_ = false;
-    bool fail(const std::string& reason);
     bool sound(i32 id);
     bool open();
     bool refresh_volumes();
@@ -45,7 +46,6 @@ class TitleOptionsMenu {
 
 public:
     std::function<bool(i32)> play_sound;
-    std::string error;
     TitleOptionsMenu(TitleState& state_, AnmManager& animations_, TitleOptionPlatform& host_,
                      TitleOptionVolumes& volumes_, TitleSceneResources bank)
         : state(state_), animations(animations_), host(host_), volumes(volumes_),

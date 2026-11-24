@@ -12,11 +12,6 @@ constexpr i32 kDigitSeSmall = 41, kDigitSeLarge = 45;
 constexpr i32 kSpriteSmall = 50, kSpriteLarge = 61;
 }
 
-bool TitleOptionsMenu::fail(const std::string& reason) {
-    if (error.empty()) error = reason;
-    return false;
-}
-
 bool TitleOptionsMenu::sound(i32 id) {
     if (play_sound && play_sound(id)) return true;
     return fail("Title option sound service unavailable");

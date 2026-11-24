@@ -3,11 +3,6 @@
 
 namespace th13 {
 
-bool TitleMainMenu::fail(const std::string& reason) {
-    if (error.empty()) error = reason;
-    return false;
-}
-
 bool TitleMainMenu::present(u32& handle) {
     if (animations.registry.find(handle)) return true;
     handle = 0;

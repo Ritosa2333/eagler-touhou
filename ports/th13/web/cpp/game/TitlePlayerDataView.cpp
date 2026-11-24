@@ -5,10 +5,6 @@
 
 namespace th13 {
 
-bool TitlePlayerDataView::fail(const std::string& reason) {
-    if (error.empty()) error = reason;
-    return false;
-}
 bool TitlePlayerDataView::create(u32& handle, i32 bank, i32 script) {
     handle = manager_.create(bank, script, -1, 0);
     if (!handle) return fail("Player data animation unavailable: " + manager_.error);

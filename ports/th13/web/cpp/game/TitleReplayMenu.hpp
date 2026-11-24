@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TitleFailure.hpp"
+
 #include "AnmManager.hpp"
 #include "HudDrawData.hpp"
 #include "MenuCursor.hpp"
@@ -32,7 +34,7 @@ struct TitleReplayPlatform {
     }
 };
 
-class TitleReplayMenu {
+class TitleReplayMenu : public TitleFailure {
     TitleState& state;
     AnmManager& animations;
     TitleReplayPlatform& replay_host;
@@ -45,7 +47,6 @@ class TitleReplayMenu {
     u32 launch_prayer = 0;
     bool start_launch_prayer();
     void stop_launch_prayer();
-    bool fail(const std::string& reason);
     bool sound(i32 id);
     bool present(u32 handle) const;
     bool create_badge();
@@ -61,7 +62,6 @@ class TitleReplayMenu {
 
 public:
     std::function<bool(i32)> play_sound;
-    std::string error;
     TitleReplayMenu(TitleState& state_, AnmManager& animations_, TitleReplayPlatform& host, TitleSceneResources bank)
         : state(state_), animations(animations_), replay_host(host), resources(bank) {}
     ~TitleReplayMenu();

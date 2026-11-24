@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TitleFailure.hpp"
+
 #include "HudDrawData.hpp"
 #include "TitleMainMenu.hpp"
 #include "TitleState.hpp"
@@ -70,7 +72,7 @@ struct TitleMusicRoomPlatform {
     }
 };
 
-class TitleMusicRoomMenu {
+class TitleMusicRoomMenu : public TitleFailure {
     TitleState& state;
     TitleMusicRoomPlatform& host;
     i32 row_ = 0;
@@ -78,13 +80,11 @@ class TitleMusicRoomMenu {
     i32 reveal_lines_ = 0;
     bool locked_armed_ = false;
     i32 frames_ = 0;
-    bool fail(const std::string& reason);
     bool sound(i32 id);
     bool leave();
 
 public:
     std::function<bool(i32)> play_sound;
-    std::string error;
     TitleMusicRoomMenu(TitleState& state_, TitleMusicRoomPlatform& host_) : state(state_), host(host_) {}
     bool update(u32 pressed, u32 repeated);
     bool draw_texts(HudDrawServices& draw);

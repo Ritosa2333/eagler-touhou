@@ -9,11 +9,6 @@ TitleSpellPracticeView::~TitleSpellPracticeView() {
         animations_.retire(handle);
 }
 
-bool TitleSpellPracticeView::fail(const std::string& reason) {
-    if (error.empty()) error = reason;
-    return false;
-}
-
 bool TitleSpellPracticeView::create(u32& handle, i32 script) {
     handle = animations_.create(bank_, script, -1, 0);
     if (!handle) return fail("Spell Practice animation: " + animations_.error);

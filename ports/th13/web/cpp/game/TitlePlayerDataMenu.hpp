@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TitleFailure.hpp"
+
 #include "TitleState.hpp"
 
 #include <array>
@@ -68,7 +70,7 @@ struct TitlePlayerDataPlatform {
     }
 };
 
-class TitlePlayerDataMenu {
+class TitlePlayerDataMenu : public TitleFailure {
     TitleState& state;
     TitlePlayerDataPlatform& host;
     i32 difficulty_ = 1;
@@ -78,13 +80,11 @@ class TitlePlayerDataMenu {
     bool opened_ = false;
     std::vector<TitlePlayerDataRecord> records_;
     TitlePlayerDataSummary summary_;
-    bool fail(const std::string& reason);
     void sound(i32 id);
     bool reload();
 
 public:
     std::function<bool(i32)> play_sound;
-    std::string error;
     TitlePlayerDataMenu(TitleState& state_, TitlePlayerDataPlatform& host_) : state(state_), host(host_) {}
 
     bool open();
