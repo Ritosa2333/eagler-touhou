@@ -1,6 +1,7 @@
 #include "practice_targets.hpp"
 #include "practice_panel.hpp"
 #include "practice_assist.hpp"
+#include "practice_tools_panel.hpp"
 #include "stage3_practice_evidence.hpp"
 #include "practice_music.hpp"
 #include <iostream>
@@ -313,19 +314,45 @@ void test_floating_panels(){
     check(assist_row==6&&assist.row_at({50,18})<0);
     assist.toggle_row(assist_row);check(assist.enabled(PracticeTool::AutoBomb));
 
-    PracticeLanguages language;Menu native;native.set_language_preference(L::English);
-    check(!language.toggle(false,false,std::nullopt)&&!language.toggle(true,true,std::nullopt));
-    check(language.toggle(true,false,std::nullopt)&&language.open&&language.focus==0);
-    language.navigate(-1);check(language.focus==4);
-    drag.begin(language.window,language.base,{56,240},language.shadow);drag.move({256,40});drag.end();
-    const int row=language.row_at({256,language.rows_y-200+3*language.pitch});
-    check(language.in_header({256,40})&&row==3);
-    native.practice_language_preference=language.choices[row];
+    PracticeToolsPanel tools;using T=PracticeToolsPanel;using Mode=T::Mode;using K=T::Kind;
+    Menu native;native.set_language_preference(L::English);
+    check(!tools.toggle(false,false,Mode::Setup,std::nullopt)&&!tools.toggle(true,true,Mode::Setup,std::nullopt));
+    check(tools.toggle(true,false,Mode::Setup,std::nullopt)&&tools.open&&tools.focus==1&&tools.count()==6&&!tools.max_first());
+    check(!tools.scrollbar_click({T::rail_left,T::rows_y})&&tools.row_at({40,T::rows_y})<0);
+    tools.navigate(-1);check(tools.focus==5);
+    drag.begin(tools.window,T::base,{40,146});drag.move({240,46});drag.end();
+    const int index=tools.row_at({240,T::rows_y-100+4*T::pitch});
+    check(tools.in_header({240,46})&&index==4);
+    const auto row=tools.row(index);check(row.kind==K::Language&&row.index==3);
+    native.practice_language_preference=T::choices[row.index];
     check(native.practice_language()==L::ChineseSimplified&&native.language==L::English&&!native.chinese_available);
-    check(!language.toggle(true,true,native.practice_language_preference)&&language.open);
-    check(language.toggle(true,false,native.practice_language_preference)&&!language.open);
-    check(language.toggle(true,false,native.practice_language_preference)&&language.focus==3);
-    native.practice_language_preference=language.choices[0];check(native.practice_language()==native.language);
+    check(!tools.toggle(true,true,Mode::Setup,native.practice_language_preference)&&tools.open);
+    check(tools.toggle(true,false,Mode::Setup,native.practice_language_preference)&&!tools.open);
+    check(tools.toggle(true,false,Mode::Setup,native.practice_language_preference)&&tools.focus==4);
+    native.practice_language_preference=T::choices[0];check(native.practice_language()==native.language);
+
+    check(tools.toggle(true,false,Mode::Live,std::nullopt)&&tools.toggle(true,false,Mode::Live,std::nullopt));
+    check(tools.first==0&&tools.focus==0&&tools.count()==14&&tools.row(8).kind==K::LanguageHeading);
+    const auto auto_bomb=tools.row(int(PracticeTool::AutoBomb));
+    check(auto_bomb.kind==K::Tool&&auto_bomb.index==assist_row);
+    tools.select(7);tools.navigate(1);check(tools.focus==9&&tools.first==2);
+    tools.wheel(-60);check(tools.first==2);tools.wheel(-60);check(tools.first==5);
+    tools.wheel(240);check(tools.first==0&&tools.focus<T::visible);
+
+    check(tools.toggle(true,false,Mode::Practice,std::nullopt)&&tools.toggle(true,false,Mode::Practice,std::nullopt));
+    check(tools.count()==15&&tools.row(8).kind==K::Retry&&tools.row(9).kind==K::LanguageHeading);
+    const auto track=tools.window.bounds(tools.rail()),thumb=tools.window.bounds(tools.thumb());
+    check(thumb.top==track.top&&tools.row_at({thumb.left,thumb.top})<0);
+    check(tools.scrollbar_click({thumb.left,thumb.top+4})&&tools.thumb_grab==4&&tools.first==0);
+    tools.move_thumb({thumb.left,500});
+    check(tools.first==tools.max_first()&&tools.window.bounds(tools.thumb()).bottom==track.bottom);
+    const int last=tools.row_at({240,track.bottom-1});
+    check(last==14&&tools.row(last).kind==K::Language&&tools.row(last).index==4);
+    tools.move_thumb({thumb.left,-50});check(tools.first==0);
+    tools.thumb_grab.reset();
+    check(tools.scrollbar_click({track.left,track.bottom-1})&&tools.first==tools.max_first());
+    tools.thumb_grab.reset();
+    tools.select(8);tools.navigate(1);check(tools.focus==10);
 }
 void test_store(const std::filesystem::path &root){
     using namespace soew;

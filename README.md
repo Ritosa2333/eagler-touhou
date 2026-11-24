@@ -91,8 +91,10 @@ Z or Enter confirms; X or Esc returns to the previous selection. The setup
 popup shows the starting point, difficulty, stocks and seed together.
 
 Drag the top of any practice panel to move it. F12 opens or closes the
-language panel from practice selection or during live play. Practice follows
-the game language by default; you can independently choose Japanese, English,
+translucent Practice Tools panel. During live play it offers the same battle
+assists as Backspace, and in Practice it also offers Retry. Scroll with the
+mouse wheel or drag the scrollbar to reach more rows. Practice follows the
+game language by default; you can independently choose Japanese, English,
 Simplified Chinese or Traditional Chinese without changing the game's language.
 
 During live Story, Extra, or Practice play, Backspace opens the assist overlay. Click a row or use

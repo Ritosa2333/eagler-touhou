@@ -111,32 +111,6 @@ struct PracticePanel {
 
 enum class PracticeText { Body, Small, Stage };
 
-struct PracticeLanguages {
-    static constexpr std::array<std::optional<Language>,5> choices={std::nullopt,Language::Japanese,
-        Language::English,Language::ChineseSimplified,Language::ChineseTraditional};
-    static constexpr LocalizedText follow_game{L"ゲームに合わせる",L"Follow game",L"跟随游戏",L"跟隨遊戲"};
-    static constexpr int pitch=22,rows_y=265,shadow=practice_shadow_extent;
-    static constexpr PracticeBounds base{16,230,216,rows_y+int(choices.size())*pitch+8};
-    PracticeWindow window;
-    bool open=false;
-    int focus=0;
-
-    bool toggle(bool available,bool repeat,std::optional<Language> current){
-        if(repeat||(!open&&!available))return false;
-        open=!open;
-        if(open)focus=int(std::find(choices.begin(),choices.end(),current)-choices.begin());
-        return true;
-    }
-    void navigate(int delta){focus=Menu::ring(focus,delta,int(choices.size()));}
-    bool in_header(PracticePoint p)const{
-        return PracticeBounds{base.left,base.top,base.right,rows_y}.contains(window.local(p));
-    }
-    int row_at(PracticePoint p)const{
-        p=window.local(p);
-        return p.x>=base.left&&p.x<base.right&&p.y>=rows_y&&p.y<rows_y+int(choices.size())*pitch?(p.y-rows_y)/pitch:-1;
-    }
-};
-
 inline std::wstring practice_stage_name(Language lang,int stage){
     return stage==practice_extra_stage?std::wstring(lang==Language::English?L"EXTRA":text::extra(lang)):
         localized(lang,L"ステージ ",L"STAGE ",L"第",L"第")+std::to_wstring(stage+1)+
