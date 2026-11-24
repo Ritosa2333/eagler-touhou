@@ -280,6 +280,19 @@ WASM 重编 build_id=`7bc47a91`，replay_playback_unit 7/7（新增 pause/play�
 单测：`resource_cache_unit` 10/10（新增 commitOnly / prefetchManifest 组过滤两条）、
 新 `boot_preload_budget_unit` 19/19、BRO 全量 61 个单测全绿。
 
+复现上述数据：
+
+```bash
+cd ports/bossrush/web
+node tools/serve-dev.mjs --port 8801 --gz 1     # /game/ 默认指向同级的 BRO 仓库 game/
+node tools/load-probe.mjs --port 8801 --kbps 2000 --latency 80 --settle 2000
+```
+
+`tools/serve-dev.mjs` = 本地静态服（`bro.html?standalone=1` 可脱离启动器自启动，`/game/` 指向 BRO 的
+`game/`，`--gz 1` 现压并缓存）；`tools/load-probe.mjs` = headless Edge + CDP 探针，输出
+`toFirstFrameMs`/`requests`/`megabytes`/渲染器状态。用新探针复测：2 MB/s + 80 ms 下首帧 **17.5 s**
+（其中字体 12 MB、wasm gzip 后 2.3 MB 是大头），旧行为受「先下完整包 191 MB」限制 ≥95 s。
+
 同步注意：`web/dist/runtime.json`、`web/dist/app-shell.json` 直接取 BRO 仓产物；
 `web/dist/package-manifest.json` 留端口本地版本（音乐包为 96 kbps mono，体积与 BRO 全质量包
 不同），**不要**用 BRO 的覆盖。`web/src/*.mjs` 全部按 BRO 仓同步（含新增 `bgm_stream.mjs`）。
