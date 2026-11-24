@@ -1,6 +1,6 @@
 # 文档总表
 
-共 671 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 673 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -412,6 +412,8 @@
 | 历史记录 | [archive/th12mp-public-20261028/README.md](../archive/th12mp-public-20261028/README.md) | 星莲船正式发布 |
 | 历史记录 | [archive/th12mp-public-20261028/cn129.md](../archive/th12mp-public-20261028/cn129.md) | 原主站入口同步 |
 | 历史记录 | [archive/th13-address-snapshot-20261124/README.md](../archive/th13-address-snapshot-20261124/README.md) | th13 原版地址核查快照（2026-11-24） |
+| 历史记录 | [archive/th13-mp-lockstep-determinism-20261125/README.md](../archive/th13-mp-lockstep-determinism-20261125/README.md) | th13 多人版验收的锁步判定（2026-11-25） |
+| 历史记录 | [archive/th13-mp-lockstep-determinism-20261125/soak-governor-runs.md](../archive/th13-mp-lockstep-determinism-20261125/soak-governor-runs.md) | soak governor runs |
 | 历史记录 | [archive/th13-mp-sync-20261112/README.md](../archive/th13-mp-sync-20261112/README.md) | TH13 MP 同步修复与提交交接（2026-11-12） |
 | 历史记录 | [archive/th13-performance-20261124/README.md](../archive/th13-performance-20261124/README.md) | th13 热路径优化（2026-11-24） |
 | 历史记录 | [archive/th13-refactor-baseline-20261124/README.md](../archive/th13-refactor-baseline-20261124/README.md) | th13 / th13-mp 重构基线（2026-11-24） |

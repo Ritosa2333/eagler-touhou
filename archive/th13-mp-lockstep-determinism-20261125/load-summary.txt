@@ -1,0 +1,37 @@
+负载验证（th13-shot 容器内 24 个忙循环占 CPU，loadavg 31–46）。
+第一、二轮的浸泡使用中间版断言（尚未区分调速器介入的采样），第三、四轮为最终断言。
+
+== m7 / m8 / m9 用例逐个运行
+m8.rollback_one_three_twelve       m8-rollback_one_three_twelve       exit=0
+m8.audio_bgm_once                  m8-audio_bgm_once                  exit=0
+m7.rtc_two_three_clients           m7-rtc_two_three_clients           exit=0
+m7.relay_fallback_path             m7-relay_fallback_path             exit=0
+m7.confirmed_hash_lockstep         m7-confirmed_hash_lockstep         exit=0
+m7.frame_zero_load_barrier         m7-frame_zero_load_barrier         exit=0
+m7.device_seat_isolation           m7-device_seat_isolation           exit=0
+m8.trance_death_resimulation       m8-trance_death_resimulation       exit=0
+m8.production_draw_pixels          m8-production_draw_pixels          exit=0
+m8.jitter_loss_reorder_duplicate   m8-jitter_loss_reorder_duplicate   exit=0
+m8.resim_budget_new_progress       m8-resim_budget_new_progress       exit=0
+m8.rollback_full_window_raf        m8-rollback_full_window_raf        exit=0
+m8.rollback_one_three_twelve       tier-2                             exit=0
+m8.rollback_one_three_twelve       tier-3                             exit=0
+m8.rollback_one_three_twelve       tier-4                             exit=0
+m8.audio_bgm_once                  audio-2                            exit=0
+m8.audio_bgm_once                  audio-3                            exit=0
+m9 的 9 个用例（第二轮，同一负载条件）全部 exit=0。
+
+== 浸泡（m9.runtime_page_soak，5 分钟 ×（2 人 + 3 人））
+第一轮 load-2：通过
+    soak 2p 完成：spread 2..4 aligned 0.0..1.1 restores=0 maxDistance=0
+    soak 3p 完成：spread 1..8 aligned 0.0..1.1 restores=1 maxDistance=5
+第一轮 load-3：未通过
+    失败：soak 3p 停等帧在上界内（stall=885 ≤12）
+第三轮 soak-1：未通过
+    失败：soak 3p 停等帧在上界内（stall=785 ≤12）
+第三轮 soak-2：通过
+    soak 2p 完成：可见帧差 0..4 实时采样 46 调速采样 0（stretch 峰值 1.000）实时稳态对齐帧差 0.0..1.1 模拟 60.0 fps restores=0 maxDistance=0
+    soak 3p 完成：可见帧差 1..11 实时采样 55 调速采样 0（stretch 峰值 1.000）实时稳态对齐帧差 0.0..1.1 模拟 60.0 fps restores=2 maxDistance=11
+第四轮 soak-1（最终文件）：未通过
+    soak 2p 完成：可见帧差 0..14 实时采样 1 调速采样 59（stretch 峰值 2.996）实时稳态对齐帧差 Infinity..0.0 模拟 35.4 fps restores=1 maxDistance=9
+    失败：soak 2p 停等帧在上界内（stall=1044 ≤12；调速采样 59，stretch 峰值 2.996）

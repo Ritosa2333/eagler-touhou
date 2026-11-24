@@ -1,0 +1,52 @@
+
+===== diag-cur-1 port=/work/eagler-touhou/ports/th13-mp seats=3 minutes=5 error=null
+simulating window: +0s .. +267.5s; per-page last advancing tick +267.5s +267.5s +267.5s
+  page 0 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [0.1,-0.9,-1.2,-1.6,-4.3,-6.2]
+  page 1 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [-0.2,-0.4,-1.6,-1.6,-3.8,-6]
+  page 2 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [-0.5,-0.8,-1,-2.1,-4.6,-6.1]
+page 0: ticks=3226 (267.1s) simFrame=16021 simFps=60 period ms med/p95/p99/max=77/112/128/213 ticks>=100/133/167/200ms=538/15/2/1 framesPerTick mean=5 max=13 depth med/p99/max=5/8/10 stretch={"1.00":3226} rollback: restores=1 maxDistance=4 stall=0 desync=0 failure=null
+page 1: ticks=3226 (267.5s) simFrame=16022 simFps=59.9 period ms med/p95/p99/max=77/113/128/405 ticks>=100/133/167/200ms=533/15/4/2 framesPerTick mean=5 max=14 depth med/p99/max=5/8/13 stretch={"1.00":3226} rollback: restores=2 maxDistance=7 stall=0 desync=0 failure=null
+page 2: ticks=3227 (267.1s) simFrame=16018 simFps=60 period ms med/p95/p99/max=77/113/128/181 ticks>=100/133/167/200ms=536/14/1/0 framesPerTick mean=5 max=10 depth med/p99/max=5/8/13 stretch={"1.00":3227} rollback: restores=2 maxDistance=2 stall=1 desync=0 failure=null
+visible spread (what an outside reader sees between ticks) over 267s: mean=3.4 p50=3 p99=6 p999=7 max=10@+0.4s secondsAbove6/8/10=0.6/0.1/0 longestAbove6Ms=102@+25.2s
+wall-clock aligned spread (frame - 60fps schedule) over 267s: mean=0.6 p50=0.5599999999999454 p99=1.1999999999989086 p999=1.4200000000000728 max=18.9@+267.5s secondsAbove6/8/10=0/0/0 longestAbove6Ms=28@+0.2s
+samples=52 steady=44 | concurrent raw: max=5 p50=3 p95=5 | steady raw>6: 0 histogram={"2":2,"3":20,"4":17,"5":5}
+  read skew ms: max=4 p50=0 p95=2 | staggered: max=8 p50=4 p95=6 | tick-boundary raw: max=5 p50=3 p95=5 | tick-boundary aligned: max=1 p50=0.6199999999989814 p95=0.9400000000005093
+
+===== diag-ctl-1 port=/work/.cache/wt-soakab/eagler-touhou/ports/th13-mp seats=3 minutes=5 error=null
+simulating window: +0s .. +275.3s; per-page last advancing tick +275.3s +275.3s +275.4s
+  page 0 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [0.2,-1.6,-2.9,-6.8,-10.1,-13.4]
+  page 1 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [-0.4,-1,-3,-6.3,-10.3,-12.7]
+  page 2 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [-0.1,-1.1,-2.5,-6.5,-10.7,-12.6]
+page 0: ticks=3105 (274.9s) simFrame=16482 simFps=60 period ms med/p95/p99/max=83/119/134/268 ticks>=100/133/167/200ms=677/37/4/1 framesPerTick mean=5.3 max=14 depth med/p99/max=6/9/13 stretch={"1.00":3105} rollback: restores=0 maxDistance=0 stall=1 desync=0 failure=null
+page 1: ticks=3106 (275.3s) simFrame=16486 simFps=59.9 period ms med/p95/p99/max=83/120/135/430 ticks>=100/133/167/200ms=672/43/5/2 framesPerTick mean=5.3 max=21 depth med/p99/max=6/9/13 stretch={"1.00":3106} rollback: restores=2 maxDistance=11 stall=0 desync=0 failure=null
+page 2: ticks=3105 (275s) simFrame=16484 simFps=60 period ms med/p95/p99/max=83/119/135/341 ticks>=100/133/167/200ms=674/40/3/2 framesPerTick mean=5.3 max=19 depth med/p99/max=6/9/11 stretch={"1.00":3105} rollback: restores=1 maxDistance=4 stall=0 desync=0 failure=null
+visible spread (what an outside reader sees between ticks) over 275s: mean=3.6 p50=3 p99=6 p999=9 max=14@+0.3s secondsAbove6/8/10=0.8/0.3/0.1 longestAbove6Ms=153@+0.4s
+wall-clock aligned spread (frame - 60fps schedule) over 275s: mean=0.6 p50=0.5799999999999272 p99=1.180000000000291 p999=1.4200000000000728 max=19.6@+275.3s secondsAbove6/8/10=0/0/0 longestAbove6Ms=0@+-1795543466.2s
+samples=54 steady=46 | concurrent raw: max=8 p50=3 p95=5 | steady raw>6: 0 histogram={"2":1,"3":22,"4":14,"5":8,"6":1}
+  read skew ms: max=4 p50=0 p95=2 | staggered: max=8 p50=4 p95=7 | tick-boundary raw: max=6 p50=4 p95=5 | tick-boundary aligned: max=1.2399999999997817 p50=0.6199999999989814 p95=1.1199999999989814
+
+===== diag-cur-2 port=/work/eagler-touhou/ports/th13-mp seats=3 minutes=5 error=null
+simulating window: +0s .. +230.1s; per-page last advancing tick +230.2s +230.1s +230.2s
+  page 0 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [-0.4,-1.4,-4,-9,-13.7,null]
+  page 1 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [-0.6,-1.9,-4.2,-9.8,-13.7,null]
+  page 2 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [-0.1,-2.2,-4.7,-9.9,-13.6,null]
+page 0: ticks=2417 (229.8s) simFrame=13771 simFps=59.9 period ms med/p95/p99/max=94/119/136/332 ticks>=100/133/167/200ms=500/35/3/2 framesPerTick mean=5.7 max=18 depth med/p99/max=6/8/13 stretch={"1.00":2417} rollback: restores=2 maxDistance=6 stall=2 desync=0 failure=null
+page 1: ticks=2418 (230.1s) simFrame=13775 simFps=59.9 period ms med/p95/p99/max=94/119/135/379 ticks>=100/133/167/200ms=493/34/6/3 framesPerTick mean=5.7 max=14 depth med/p99/max=6/8/13 stretch={"1.00":2418} rollback: restores=2 maxDistance=7 stall=1 desync=0 failure=null
+page 2: ticks=2418 (229.8s) simFrame=13773 simFps=59.9 period ms med/p95/p99/max=94/119/136/197 ticks>=100/133/167/200ms=513/36/5/0 framesPerTick mean=5.7 max=18 depth med/p99/max=6/9/13 stretch={"1.00":2418} rollback: restores=1 maxDistance=12 stall=1 desync=0 failure=null
+visible spread (what an outside reader sees between ticks) over 230s: mean=3.8 p50=4 p99=6 p999=11 max=15@+0.5s secondsAbove6/8/10=0.8/0.4/0.3 longestAbove6Ms=240@+30.4s
+wall-clock aligned spread (frame - 60fps schedule) over 230s: mean=0.5 p50=0.5200000000004366 p99=1.2199999999993452 p999=4.199999999999996 max=16.8@+230.1s secondsAbove6/8/10=0.2/0.1/0 longestAbove6Ms=173@+0.4s
+samples=45 steady=37 | concurrent raw: max=8 p50=4 p95=5 | steady raw>6: 0 histogram={"3":10,"4":23,"5":4}
+  read skew ms: max=5 p50=0 p95=2 | staggered: max=9 p50=4 p95=7 | tick-boundary raw: max=5 p50=4 p95=5 | tick-boundary aligned: max=1.1399999999998727 p50=0.5799999999999272 p95=1.0600000000004002
+
+===== diag-ctl-2 port=/work/.cache/wt-soakab/eagler-touhou/ports/th13-mp seats=3 minutes=5 error=null
+simulating window: +0s .. +275.4s; per-page last advancing tick +275.5s +275.5s +275.4s
+  page 0 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [-0.4,-2.4,-4.3,-8.8,-13.6,-16.4]
+  page 1 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [0.3,-1.8,-3.4,-9.2,-13.2,-16.4]
+  page 2 aligned offset (frame - 60fps schedule) at +5/30/60/120/180/240s: [0.1,-1.8,-4.3,-8.4,-13.5,-16]
+page 0: ticks=2798 (275s) simFrame=16485 simFps=59.9 period ms med/p95/p99/max=95/126/139/272 ticks>=100/133/167/200ms=915/74/4/3 framesPerTick mean=5.9 max=18 depth med/p99/max=6/9/13 stretch={"1.00":2798} rollback: restores=1 maxDistance=4 stall=1 desync=0 failure=null
+page 1: ticks=2799 (275s) simFrame=16482 simFps=59.9 period ms med/p95/p99/max=95/126/140/266 ticks>=100/133/167/200ms=933/70/5/2 framesPerTick mean=5.9 max=21 depth med/p99/max=6/9/13 stretch={"1.00":2799} rollback: restores=1 maxDistance=5 stall=1 desync=0 failure=null
+page 2: ticks=2798 (275.4s) simFrame=16486 simFps=59.9 period ms med/p95/p99/max=95/127/140/471 ticks>=100/133/167/200ms=913/69/4/3 framesPerTick mean=5.9 max=22 depth med/p99/max=6/9/11 stretch={"1.00":2798} rollback: restores=1 maxDistance=10 stall=0 desync=0 failure=null
+visible spread (what an outside reader sees between ticks) over 275s: mean=4 p50=4 p99=6 p999=10 max=13@+0.3s secondsAbove6/8/10=0.9/0.3/0.2 longestAbove6Ms=416@+0.2s
+wall-clock aligned spread (frame - 60fps schedule) over 275s: mean=0.6 p50=0.5600000000000023 p99=1.2000000000007276 p999=1.3999999999996362 max=22.3@+275.4s secondsAbove6/8/10=0/0/0 longestAbove6Ms=0@+-1795543998.0s
+samples=54 steady=46 | concurrent raw: max=6 p50=4 p95=6 | steady raw>6: 0 histogram={"3":10,"4":23,"5":11,"6":2}
+  read skew ms: max=6 p50=0 p95=4 | staggered: max=6 p50=4 p95=6 | tick-boundary raw: max=6 p50=4 p95=5 | tick-boundary aligned: max=1.2000000000007276 p50=0.5600000000004002 p95=1.1000000000003638
