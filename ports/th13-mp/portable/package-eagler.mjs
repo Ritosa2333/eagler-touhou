@@ -78,9 +78,9 @@ write(entry, html);
 
 for (const name of runtimeNames) {
   if (name === 'shell.mjs') {
-    const marker = "/*TH13_BUILD_INFO*/{version: 'development-incomplete', completeGame: false}";
+    const marker = "{version: 'development-incomplete', completeGame: false}";
     const shell = readFileSync(resolve(shellRoot, 'shell.mjs'), 'utf8');
-    if (!shell.includes(marker)) throw Error('Missing build-info marker');
+    if (shell.split(marker).length !== 2) throw Error('Missing build-info marker');
     const version = build.version || '0.1.0-sdl3-skeleton';
     write(name, shell.replace(marker, JSON.stringify(
       {version, completeGame: false, multiplayer})));
