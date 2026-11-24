@@ -30,9 +30,12 @@ extern const AnmVm* anm_tick_current_vm;
 extern void (*anm_tick_observer)(const AnmVm&, float);
 }
 
+// clang-format off
 EM_JS(void, th13_browser_frame, (int ok, double milliseconds, unsigned ticks), {
     Module["onGameFrame"]?.(ok, milliseconds, ticks);
 });
+// clang-format on
+// clang-format off
 EM_JS(void, th13_browser_work_frame,
       (double sequence, double begin, double end, int stage, int end_stage,
        int phase, unsigned source, unsigned simulated, unsigned rollback,
@@ -46,12 +49,15 @@ EM_JS(void, th13_browser_work_frame,
                   presentationAt: presentation_at < 0 ? null : presentation_at, ok: !!ok});
     } catch (error) { console.error("onGameWorkFrame callback failed", error); }
 });
+// clang-format on
 
 // [R3-M] 标题 Replay 菜单：文件选择触发钩子（页面壳 th13.html 注册
 // onReplayImportRequest → 隐藏 <input type=file> / 拖放承接）。
+// clang-format off
 EM_JS(void, th13_browser_replay_request, (), {
     Module["onReplayImportRequest"]?.();
 });
+// clang-format on
 
 namespace th13::sdl {
 namespace {

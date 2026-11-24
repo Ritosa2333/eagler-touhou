@@ -70,6 +70,22 @@ make extract   # 解包 th13ogg.7z → games/th13/，生成 SHA256 清单与版�
 
 参考工作流（th10）采用机械静态重编译 + 渐进类型化替换的双层形态（`rebuild/` 与 `game/` 并存）。本项目当前为 clean-room + oracle 验收路线，Stage 1 事件流已逐字节对齐证明可行；若后续关卡/Boss 重符卡段频繁卡在浮点或边界语义，启动最小转译层（页级翻译仅覆盖卡住的函数，与 `game/` 并存），向参考工作流的混合形态收敛。
 
+## 代码排版
+
+C++ 源码由 `tools/format.mjs` 按端口目录下的 `.clang-format` 统一排版，检查与修复同一条命令：
+
+```sh
+ports/th13/tools/container.sh bash -lc 'node tools/format.mjs --check'        # 普通版：只检查，未排版即非零退出
+ports/th13/tools/container.sh bash -lc 'node tools/format.mjs'                # 普通版：排版
+ports/th13/tools/container.sh --mp bash -lc 'node tools/format.mjs --check'   # 多人版
+```
+
+- **范围**（`tools/source-layout.mjs`）：`web/cpp`、`portable`、`tests` 下的 C/C++，不含 `third_party` 与生成文件。多人版只排版与普通版同路径的文件，联机目录保持自己的原样。
+- **工具链**：镜像内 wasi-sdk 自带的 clang-format，全仓库同一个版本；`.clang-format` 两侧逐字节相同，由 `tests/shared-sources.test.mjs` 守住。
+- **内联 JS**：`EM_JS` / `EM_ASM` 的函数体在预处理里是裸 token，按 C++ 规则重排会把它改坏（`??` 变成 `? ?`，`=>` 变成 `= >`）。每一处都放在 `// clang-format off` 与 `// clang-format on` 之间；`tools/format.mjs` 发现未受保护的内联 JS 会在动手前停下并指出位置，同一条规则由测试固化为门禁。
+
+排版后的产物与排版前逐字节相同：两个端口的网页 wasm、JS 胶水层与 WASI harness 的 sha256 全部不变。全量排版提交登记在仓库根的 `.git-blame-ignore-revs`，执行 `git config blame.ignoreRevsFile .git-blame-ignore-revs` 后 `git blame` 自动跳过它们。
+
 ## 测试
 
 ```sh

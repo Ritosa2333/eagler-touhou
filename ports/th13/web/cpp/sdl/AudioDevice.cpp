@@ -33,6 +33,7 @@
 #endif
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+// clang-format off
 EM_JS(void, th13_publish_audio, (double mixed, double nonzero, double requests,
       double started, double submitted, double loops, int queued, int track,
       int cursor, int paused, int suspended, int device, int failed, double dropped), {
@@ -45,6 +46,7 @@ EM_JS(void, th13_publish_audio, (double mixed, double nonzero, double requests,
     a.paused = !!paused; a.suspended = !!suspended; a.device = !!device;
     a.failed = !!failed; a.droppedRequests = dropped; a.sampleRate = 44100;
 });
+// clang-format on
 #endif
 namespace th13::sdl {
 namespace web_sfx = eagler::audio::web_sfx;

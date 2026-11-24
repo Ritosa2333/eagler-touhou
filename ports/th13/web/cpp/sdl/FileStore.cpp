@@ -34,6 +34,7 @@
 // localStorage 持久化（宿主无文件系统持久卷）：base64 文本。任何异常/限额
 // 都返回 false —— 失败可见，不吞。编码按 32 KiB 片经 String.fromCharCode
 // 批量转换：保存点落在关终门帧与关首激活帧上，编码成本直接计入这两帧。
+// clang-format off
 EM_JS(bool, th13_storage_write_js, (const char* key, const char* data, int length), {
     try {
         const bytes = new Uint8Array(HEAPU8.buffer, data, length);
@@ -46,6 +47,8 @@ EM_JS(bool, th13_storage_write_js, (const char* key, const char* data, int lengt
         return false;
     }
 });
+// clang-format on
+// clang-format off
 EM_JS(int, th13_storage_read_js, (const char* key, char* out, int capacity), {
     try {
         const text = localStorage.getItem(UTF8ToString(key));
@@ -61,6 +64,7 @@ EM_JS(int, th13_storage_read_js, (const char* key, char* out, int capacity), {
         return 0;
     }
 });
+// clang-format on
 static bool th13_save_write_js(const char* data, int length) {
     return th13_storage_write_js("th13.save", data, length);
 }

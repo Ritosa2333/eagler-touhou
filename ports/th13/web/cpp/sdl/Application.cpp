@@ -97,7 +97,9 @@ bool ApplicationState::prepare_platform() {
     // Deterministic same-seed capture support: the Web test harness may set
     // window.__th13_boot_seed before module initialization.  When absent the
     // production path still uses SDL_GetTicks().
+    // clang-format off
     const int override = EM_ASM_INT({ return window.__th13_boot_seed ?? -1; });
+    // clang-format on
     boot_seed = override >= 0 ? u16(override) : u16(SDL_GetTicks());
 #else
     boot_seed = u16(SDL_GetTicks());

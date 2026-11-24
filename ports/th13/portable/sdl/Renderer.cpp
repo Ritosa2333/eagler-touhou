@@ -12,10 +12,12 @@
 #include "imgui.h"
 #endif
 
+// clang-format off
 EM_JS(int, touhou_clip_control, (), {
   const e=GL.currentContext.GLctx.getExtension('EXT_clip_control');
   if(e)e.clipControlEXT(e.LOWER_LEFT_EXT,e.ZERO_TO_ONE_EXT);return !!e;
 });
+// clang-format on
 namespace touhou::sdl {
 namespace {
 Renderer* active=nullptr;
