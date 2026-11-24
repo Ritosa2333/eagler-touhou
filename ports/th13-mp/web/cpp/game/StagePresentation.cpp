@@ -1534,98 +1534,139 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
     if (!battle.youmu_bomb_update && !sync_youmu_slash(battle)) return false;
 
     if (!flush_ecl_animations(battle)) return false;
-    if (enemies_from_ecl) {
-        for (auto& enemy : battle.sim.enemies) {
-            const bool mirror_input_ready = enemy->mirror_ready || !enemy->threads;
-            if ((enemy->flags & 0x200000u) && mirror_input_ready) {
-                const float vx =
-                    enemy->mirror_ready ? enemy->mirror_velocity_x : float(enemy->position[0] - enemy->mirror_prev_x);
-                const i32 dir = vx > 0.03f ? 1 : (vx < -0.03f ? -1 : 0);
-                if (dir != enemy->mirror_dir) {
-                    const i32 step = dir == 0 ? (enemy->mirror_dir < 0 ? 3 : 4) : (dir < 0 ? 1 : 2);
-                    u32& handle = enemy->anm_slot_handle[0];
-                    Vec3 old_pos{};
-                    const AnmVm* old_vm = handle ? animations.registry.find(handle) : nullptr;
-                    if (old_vm) old_pos = old_vm->variables.position;
-                    if (handle) {
-                        if (!animations.retire(handle)) return fail("Mirror retire failed: " + animations.error);
-                        handle = 0;
-                    }
-                    if (enemy->anm_slot0_bank >= 0) {
-                        handle = animations.create_preserve_ip(
-                            enemy->anm_slot0_bank, enemy->anm_slot0_script_offset + enemy->anm_base_script + step,
-                            enemy->mirror_script_base + 7, 0, old_pos, 0, false);
-                    } else {
-                        const auto target = resolve_script_target(enemy->anm_file, enemy->anm_base_script + step);
-                        if (target.script < 0) return false;
-                        handle = animations.create_preserve_ip(target.bank, target.script,
-                                                               enemy->mirror_script_base + 7, 0, old_pos, 0, false);
-                    }
-                    if (!handle) return fail("Mirror animation creation failed: " + animations.error);
-                    create_color_step(animations.registry.find(handle));
-                    enemy->mirror_dir = dir;
-                }
-                enemy->mirror_prev_x = enemy->position[0];
-            }
-            for (u32 slot = 0; slot < StageEnemy::kAnimationSlots; ++slot)
-                if (AnmVm* vm = animations.registry.find(enemy->anm_slot_handle[slot])) {
-                    const Vec3 offset = enemy->flags & 0x8000000u ? Vec3{} : enemy->anm_slot_offset[slot];
-                    vm->visual.translation = {offset.x + enemy->position[0], offset.y + enemy->position[1],
-                                              enemy->position[2] + offset.z};
-                    if (!(enemy->flags & 0x8000000u) && (vm->visual.render_flags & 0x40u)) {
-                        vm->variables.rotation.z =
-                            float(std::atan2(double(enemy->motion_delta[1]), double(enemy->motion_delta[0])));
-                        vm->visual.flags |= 4u;
-                    }
-                }
+    if (enemies_from_ecl && !sync_ecl_enemies(battle)) return false;
+    if (!enemies_from_ecl && !sync_enemy_visuals(battle, stage_resource)) return false;
+    if (!sync_bullets(battle, bullet_resource)) return false;
+    if (!sync_player_shots(battle)) return false;
+    if (!sync_shot_fades(battle)) return false;
+    if (!sync_player_ship(battle, held, player_resource)) return false;
+    for (i32 seat = 1; seat < battle.seat_count && seat < 3; ++seat) {
+        auto& vm = teammate_players_[seat - 1];
+        auto& old_tilt = teammate_tilts_[seat - 1];
+        const auto& state = battle.seats[seat];
+        if (!state.ghost && (state.dead || state.phase == StagePlayerState::Phase::Dying)) {
+            if (vm) animations.release_tree(*vm);
+            vm.reset();
+            old_tilt = 0;
+            continue;
         }
+        const auto buttons = battle.seat_inputs[seat].held;
+        const i32 tilt = state.ghost ? 0 : ship_tilt(buttons, state.x, state.touch.mode != 0, vm.get());
+        if (!vm) vm = std::make_unique<AnmVm>();
+        const bool rebound = !vm->resource || tilt != old_tilt;
+        if (rebound) {
+            const i32 script = tilt < 0 ? 1 : tilt > 0 ? 3 : old_tilt < 0 ? 2 : old_tilt > 0 ? 4 : 0;
+            if (vm->resource) animations.release_tree(*vm);
+            const auto bank = banks.teammate_player[seat - 1];
+            auto* resource = animations.resource(bank ? bank : banks.player);
+            vm->environment = &animations.scene_environment();
+            vm->object_host = &animations;
+            if (!resource || !vm->bind(*resource, u32(script))) return fail("Teammate animation binding failed");
+            vm->visual.set_layer(12);
+            old_tilt = tilt;
+        }
+        vm->visual.translation = {state.x + kGameToScreenX, state.y + kGameToScreenY, 0};
+        if (vm->tick(random, animations.rate) < 0 || (rebound && vm->tick(random, animations.rate) < 0))
+            return fail("Teammate animation: " + vm->error);
     }
+    frame_synced_ = true;
+    return true;
+}
 
+bool StagePresentation::sync_ecl_enemies(StageBattle& battle) {
+    for (auto& enemy : battle.sim.enemies) {
+        const bool mirror_input_ready = enemy->mirror_ready || !enemy->threads;
+        if ((enemy->flags & 0x200000u) && mirror_input_ready) {
+            const float vx =
+                enemy->mirror_ready ? enemy->mirror_velocity_x : float(enemy->position[0] - enemy->mirror_prev_x);
+            const i32 dir = vx > 0.03f ? 1 : (vx < -0.03f ? -1 : 0);
+            if (dir != enemy->mirror_dir) {
+                const i32 step = dir == 0 ? (enemy->mirror_dir < 0 ? 3 : 4) : (dir < 0 ? 1 : 2);
+                u32& handle = enemy->anm_slot_handle[0];
+                Vec3 old_pos{};
+                const AnmVm* old_vm = handle ? animations.registry.find(handle) : nullptr;
+                if (old_vm) old_pos = old_vm->variables.position;
+                if (handle) {
+                    if (!animations.retire(handle)) return fail("Mirror retire failed: " + animations.error);
+                    handle = 0;
+                }
+                if (enemy->anm_slot0_bank >= 0) {
+                    handle = animations.create_preserve_ip(
+                        enemy->anm_slot0_bank, enemy->anm_slot0_script_offset + enemy->anm_base_script + step,
+                        enemy->mirror_script_base + 7, 0, old_pos, 0, false);
+                } else {
+                    const auto target = resolve_script_target(enemy->anm_file, enemy->anm_base_script + step);
+                    if (target.script < 0) return false;
+                    handle = animations.create_preserve_ip(target.bank, target.script, enemy->mirror_script_base + 7, 0,
+                                                           old_pos, 0, false);
+                }
+                if (!handle) return fail("Mirror animation creation failed: " + animations.error);
+                create_color_step(animations.registry.find(handle));
+                enemy->mirror_dir = dir;
+            }
+            enemy->mirror_prev_x = enemy->position[0];
+        }
+        for (u32 slot = 0; slot < StageEnemy::kAnimationSlots; ++slot)
+            if (AnmVm* vm = animations.registry.find(enemy->anm_slot_handle[slot])) {
+                const Vec3 offset = enemy->flags & 0x8000000u ? Vec3{} : enemy->anm_slot_offset[slot];
+                vm->visual.translation = {offset.x + enemy->position[0], offset.y + enemy->position[1],
+                                          enemy->position[2] + offset.z};
+                if (!(enemy->flags & 0x8000000u) && (vm->visual.render_flags & 0x40u)) {
+                    vm->variables.rotation.z =
+                        float(std::atan2(double(enemy->motion_delta[1]), double(enemy->motion_delta[0])));
+                    vm->visual.flags |= 4u;
+                }
+            }
+    }
+    return true;
+}
+
+bool StagePresentation::sync_enemy_visuals(StageBattle& battle, AnmResource* stage_resource) {
     std::vector<u32> alive;
-    if (!enemies_from_ecl) {
-        for (auto& enemy : battle.sim.enemies) {
-            if (enemy->dead) continue;
-            alive.push_back(enemy->serial);
-            EnemyVisual* slot = nullptr;
-            for (auto& visual : enemies_)
-                if (visual.serial == enemy->serial) {
-                    slot = &visual;
-                    break;
-                }
-            const i32 script = enemy->anm_script[0];
-            if (script < 0) continue;
-            if (!slot) {
-                enemies_.push_back(EnemyVisual{enemy->serial, -1, std::make_unique<AnmVm>()});
-                slot = &enemies_.back();
+    for (auto& enemy : battle.sim.enemies) {
+        if (enemy->dead) continue;
+        alive.push_back(enemy->serial);
+        EnemyVisual* slot = nullptr;
+        for (auto& visual : enemies_)
+            if (visual.serial == enemy->serial) {
+                slot = &visual;
+                break;
             }
-            if (!slot->vm->resource || slot->script != script) {
-                slot->vm->environment = &animations.scene_environment();
-                slot->vm->object_host = &animations;
-                if (!slot->vm->bind(*stage_resource, u32(script)))
-                    return fail("Enemy animation binding failed: " + slot->vm->error);
-                slot->script = script;
-            }
-            slot->vm->visual.translation = {enemy->position[0] + kGameToScreenX, enemy->position[1] + kGameToScreenY,
-                                            enemy->position[2]};
-            if (slot->vm->tick(random, animations.rate) < 0) return fail("Enemy animation: " + slot->vm->error);
+        const i32 script = enemy->anm_script[0];
+        if (script < 0) continue;
+        if (!slot) {
+            enemies_.push_back(EnemyVisual{enemy->serial, -1, std::make_unique<AnmVm>()});
+            slot = &enemies_.back();
         }
-        for (size_t i = 0; i < enemies_.size();) {
-            bool keep = false;
-            for (u32 serial : alive)
-                if (enemies_[i].serial == serial) {
-                    keep = true;
-                    break;
-                }
-            if (keep) {
-                ++i;
-                continue;
-            }
-            if (enemies_[i].vm && !animations.release_tree(*enemies_[i].vm))
-                return fail("Enemy animation release failed");
-            enemies_.erase(enemies_.begin() + i);
+        if (!slot->vm->resource || slot->script != script) {
+            slot->vm->environment = &animations.scene_environment();
+            slot->vm->object_host = &animations;
+            if (!slot->vm->bind(*stage_resource, u32(script)))
+                return fail("Enemy animation binding failed: " + slot->vm->error);
+            slot->script = script;
         }
+        slot->vm->visual.translation = {enemy->position[0] + kGameToScreenX, enemy->position[1] + kGameToScreenY,
+                                        enemy->position[2]};
+        if (slot->vm->tick(random, animations.rate) < 0) return fail("Enemy animation: " + slot->vm->error);
     }
+    for (size_t i = 0; i < enemies_.size();) {
+        bool keep = false;
+        for (u32 serial : alive)
+            if (enemies_[i].serial == serial) {
+                keep = true;
+                break;
+            }
+        if (keep) {
+            ++i;
+            continue;
+        }
+        if (enemies_[i].vm && !animations.release_tree(*enemies_[i].vm)) return fail("Enemy animation release failed");
+        enemies_.erase(enemies_.begin() + i);
+    }
+    return true;
+}
 
+bool StagePresentation::sync_bullets(StageBattle& battle, AnmResource* bullet_resource) {
     if (battle.sim.bullet_animation) {
         live_bullet_generations_.clear();
         for (const auto& bullet : battle.sim.bullets)
@@ -1701,7 +1742,10 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
         for (size_t i = 0; i < bullets_.size(); ++i)
             if (!matched[i]) bullets_[i].active = false;
     }
+    return true;
+}
 
+bool StagePresentation::sync_player_shots(StageBattle& battle) {
     const bool multi_shots = battle.seat_count >= 2;
     size_t shot_slots = battle.shots.size();
     if (multi_shots) {
@@ -1884,7 +1928,10 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             }
         }
     }
+    return true;
+}
 
+bool StagePresentation::sync_shot_fades(StageBattle& battle) {
     for (size_t n = 0; n < shot_fades_.size();) {
         ShotFade& corpse = shot_fades_[n];
         AnmVm* vm = animations.registry.find(corpse.handle);
@@ -1912,7 +1959,10 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
         ++corpse.age;
         ++n;
     }
+    return true;
+}
 
+bool StagePresentation::sync_player_ship(StageBattle& battle, u32 held, AnmResource* player_resource) {
     const bool first_ghost = battle.seat_count >= 2 && battle.seats[0].ghost;
     if (battle.player_visible() || first_ghost) {
         const i32 tilt = first_ghost ? 0 : ship_tilt(held, battle.player_x, battle.touch.mode != 0, player_.get());
@@ -1945,36 +1995,6 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
         player_tilt_ = 0;
         player_script_ = -1;
     }
-    for (i32 seat = 1; seat < battle.seat_count && seat < 3; ++seat) {
-        auto& vm = teammate_players_[seat - 1];
-        auto& old_tilt = teammate_tilts_[seat - 1];
-        const auto& state = battle.seats[seat];
-        if (!state.ghost && (state.dead || state.phase == StagePlayerState::Phase::Dying)) {
-            if (vm) animations.release_tree(*vm);
-            vm.reset();
-            old_tilt = 0;
-            continue;
-        }
-        const auto buttons = battle.seat_inputs[seat].held;
-        const i32 tilt = state.ghost ? 0 : ship_tilt(buttons, state.x, state.touch.mode != 0, vm.get());
-        if (!vm) vm = std::make_unique<AnmVm>();
-        const bool rebound = !vm->resource || tilt != old_tilt;
-        if (rebound) {
-            const i32 script = tilt < 0 ? 1 : tilt > 0 ? 3 : old_tilt < 0 ? 2 : old_tilt > 0 ? 4 : 0;
-            if (vm->resource) animations.release_tree(*vm);
-            const auto bank = banks.teammate_player[seat - 1];
-            auto* resource = animations.resource(bank ? bank : banks.player);
-            vm->environment = &animations.scene_environment();
-            vm->object_host = &animations;
-            if (!resource || !vm->bind(*resource, u32(script))) return fail("Teammate animation binding failed");
-            vm->visual.set_layer(12);
-            old_tilt = tilt;
-        }
-        vm->visual.translation = {state.x + kGameToScreenX, state.y + kGameToScreenY, 0};
-        if (vm->tick(random, animations.rate) < 0 || (rebound && vm->tick(random, animations.rate) < 0))
-            return fail("Teammate animation: " + vm->error);
-    }
-    frame_synced_ = true;
     return true;
 }
 
