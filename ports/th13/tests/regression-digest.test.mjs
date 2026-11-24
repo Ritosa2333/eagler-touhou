@@ -135,8 +135,8 @@ test('稳定性：不稳定条目不比较摘要，稳定条目变不稳定即�
 
 test('CLI 参数：默认 stride=60、draws 窗 600，非法值报错', () => {
   assert.deepEqual(parseArguments([]),
-    {check: false, draws: false, stride: 60, drawsFrames: 600, attempts: 100,
-     confirmations: 2, replays: [], keep: false, help: false});
+    {check: false, draws: false, stride: 60, drawsFrames: 600, drawsStages: 'first',
+     attempts: 1, confirmations: 2, replays: [], keep: false, help: false});
   const parsed = parseArguments(['--check', '--draws', '--stride', '1', '--replay', 'a.rpy',
                                  '--replay', 'b.rpy', '--draws-frames', '120', '--keep']);
   assert.equal(parsed.check, true);
@@ -144,6 +144,8 @@ test('CLI 参数：默认 stride=60、draws 窗 600，非法值报错', () => {
   assert.equal(parsed.stride, 1);
   assert.deepEqual(parsed.replays, ['a.rpy', 'b.rpy']);
   assert.equal(parsed.drawsFrames, 120);
+  assert.equal(parseArguments(['--draws', '--draws-stages', 'all']).drawsStages, 'all');
+  assert.throws(() => parseArguments(['--draws-stages', 'some']), /first or all/);
   assert.throws(() => parseArguments(['--stride', '0']), /positive integer/);
   assert.throws(() => parseArguments(['--bogus']), /unknown argument/);
 });

@@ -3,6 +3,7 @@
   "mode": "draws",
   "stride": 60,
   "drawsFrames": 600,
+  "drawsStages": "first",
   "corpus": [
     {
       "file": "th13_01.rpy",
@@ -1006,8 +1007,8 @@
     }
   ],
   "build": {
-    "wasmSha256": "c0476ce7e28b8a156b22f986caa4d499a763366749396414bdece672f8754f8e",
-    "builtAt": "2026-11-24T02:24:01.111Z",
+    "wasmSha256": "6bf3bdd40a8613c96ea0829677398786495d0c69c067a9ea6472931dcd2a38ac",
+    "builtAt": "2026-11-24T05:04:00.158Z",
     "toolchain": "clang version 23.1.0-wasi-sdk (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)\nTarget: wasm32-unknown-wasip1\nThread model: posix\nInstalledDir: /opt/wasi-sdk/bin\nConfiguration file: /opt/wasi-sdk/bin/clang++.cfg"
   }
 }

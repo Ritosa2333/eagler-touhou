@@ -10,11 +10,21 @@
 //   title [资源目录] [绘制输出] / title-b [资源目录] [绘制输出]：标题窗导出
 //   （oracle/title_oracle.py 同窗同规则；窗A 600 帧主菜单→难度、窗B 至开局
 //   转场请求帧，boot 装载幕 + 输入时刻表内置）。
+import {spawnSync} from 'node:child_process';
 import {WASI} from 'node:wasi';
 import {readFileSync, mkdirSync, statSync} from 'node:fs';
 import {resolve, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {harnessPaths, validateHarnessOutput, guestPath} from './harness-paths.mjs';
+
+// Node 22.23 的 V8（12.4.254.21）在增量标记的栈扫描里会崩溃（证据见
+// tools/regression-digest.mjs 文件头）。调用方没带开关时，带上开关重启自身，
+// 让每个入口都走同一条稳定路径。
+if (!process.execArgv.includes('--no-incremental-marking')) {
+  const rerun = spawnSync(process.execPath,
+    ['--no-incremental-marking', ...process.execArgv, ...process.argv.slice(1)], {stdio: 'inherit'});
+  process.exit(rerun.status ?? 1);
+}
 
 const port = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const workspace = resolve(port, '../../..');

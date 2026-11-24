@@ -11,6 +11,8 @@
 //   node tools/regression-digest.mjs                 重建 golden/digests.json
 //   node tools/regression-digest.mjs --check         与 golden 比对（首差退出 1）
 //   node tools/regression-digest.mjs --draws         重建 golden/digests-draws.json
+//   node tools/regression-digest.mjs --draws --draws-stages all [--check]
+//                                                    每关窗口，golden/digests-draws-all.json
 //   node tools/regression-digest.mjs --draws --check 校验绘制子集
 //   node tools/regression-digest.mjs --replay <path> [--replay ...] [--stride N]
 //                                    [--draws-frames N] [--keep]
@@ -18,15 +20,22 @@
 // 构建身份（wasm sha256/build.json）只作 provenance 记录；--check 绝不要求
 // 构建哈希一致——门禁的全部意义就是比较不同构建。
 //
-// 稳定性注意：wasm harness 在部分录像的深 ANM 路径上原生栈余量不足，
-// 同一二进制会随机 SIGSEGV（V8 栈帧/ASLR 相关，原生 ASan 无错）。每条
-// 录像重试 --attempts 次并轮换 V8 编译模式；仍失败的条目在 golden 里记为
-// stable:false，只保留停止点证据，不参与摘要比较（--check 遇差异还会
-// 整卷复核 --confirmations 次）。稳定条目一旦变为不稳定即判失败。
+// 稳定性：harness 进程固定带 --no-incremental-marking。Node 22.23 的 V8
+// （12.4.254.21）在增量标记的栈扫描里会遍历到返回地址无效的帧，于
+// CommonFrame::IterateTurbofanOptimizedFrame 内解引用崩溃（Node 的信号处理器
+// 把它重发成 SIGSEGV）。这与移植代码无关：崩溃与 --stack-size（200KB–15MB）
+// 和 JIT 模式无关；关掉增量标记后，叠加 --gc-interval=500 --stress-compaction
+// --verify-heap 的整卷回放全部跑完、堆校验通过；原生 ASan/UBSan 构建同样全绿。
+//
+// 没跑完的条目在 golden 里记为 stable:false，只保留停止点证据，不参与摘要
+// 比较；稳定条目一旦变为不稳定即判失败。--check 遇到差异会整卷复核
+// --confirmations 次，排除真正的非确定性。
 //
 // 默认语料 = games/replays/*.rpy（6 个玩家录像）+ artifacts/reference/raw/
-// demo0..3.rpy。draws 模式只跑第 0 关的前 --draws-frames 帧（默认 600）：
-// 生产绘制路径在重绘制关卡会超过 wasm 1MB 线性栈，整卷 draws 不是门禁范围。
+// demo0..3.rpy。draws 模式默认跑每条录像第 0 关的前 --draws-frames 帧（默认
+// 600）；--draws-stages all 改为每关各取一个同样的窗口，金标另存
+// digests-draws-all.json。整卷链每帧都要序列化绘制清单（一条六关录像约
+// 7 分钟、8GB 清单），门禁不跑整卷。
 import {createHash} from 'node:crypto';
 import {existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync} from 'node:fs';
 import {basename, dirname, resolve} from 'node:path';
@@ -148,6 +157,8 @@ export function firstDivergence(golden, current) {
     return at('*', '-', '-', 'stride', golden.stride, current.stride);
   if (golden.mode === 'draws' && golden.drawsFrames !== current.drawsFrames)
     return at('*', '-', '-', 'draws-frames', golden.drawsFrames, current.drawsFrames);
+  if (golden.mode === 'draws' && (golden.drawsStages ?? 'first') !== (current.drawsStages ?? 'first'))
+    return at('*', '-', '-', 'draws-stages', golden.drawsStages ?? 'first', current.drawsStages ?? 'first');
   const expected = Array.isArray(golden.corpus) ? golden.corpus : [];
   const actual = Array.isArray(current.corpus) ? current.corpus : [];
   const count = Math.max(expected.length, actual.length);
@@ -160,9 +171,8 @@ export function firstDivergence(golden, current) {
       return at(left.file, '-', '-', 'replay', left.file, right.file);
     if (left.sha256 !== right.sha256)
       return at(left.file, '-', '-', 'replay-sha256', left.sha256, right.sha256);
-    // 不稳定条目：harness 在该录像上会因 wasm 栈余量随机 SIGSEGV，金标只
-    // 记录失败证据，不参与摘要比较（仍逐条跑、逐条报告）。稳定条目一旦
-    // 变为不稳定 = 门禁失败。
+    // 没跑完的条目：金标只记录停止点证据，不参与摘要比较（仍逐条跑、
+    // 逐条报告）。跑完过的条目一旦跑不完 = 门禁失败。
     const leftStable = left.stable !== false;
     const rightStable = right.stable !== false;
     if (!leftStable) continue;
@@ -192,7 +202,7 @@ export function firstDivergence(golden, current) {
 
 // golden 文档（键序固定，便于逐字节 diff；build 只作 provenance）。
 export function makeDocument({mode = 'replay', stride = 60, drawsFrames = null,
-                              replays = [], build = null} = {}) {
+                              drawsStages = 'first', replays = [], build = null} = {}) {
   const corpus = replays.map(entry => ({
     file: entry.file,
     source: entry.source,
@@ -208,15 +218,15 @@ export function makeDocument({mode = 'replay', stride = 60, drawsFrames = null,
     schema: SCHEMA,
     mode,
     stride,
-    ...(mode === 'draws' ? {drawsFrames} : {}),
+    ...(mode === 'draws' ? {drawsFrames, drawsStages} : {}),
     corpus,
     build,
   };
 }
 
 export function parseArguments(argv) {
-  const options = {check: false, draws: false, stride: 60, drawsFrames: 600,
-                   attempts: 100, confirmations: 2, replays: [], keep: false, help: false};
+  const options = {check: false, draws: false, stride: 60, drawsFrames: 600, drawsStages: 'first',
+                   attempts: 1, confirmations: 2, replays: [], keep: false, help: false};
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
     const value = () => {
@@ -231,6 +241,7 @@ export function parseArguments(argv) {
       case '--help': case '-h': options.help = true; break;
       case '--stride': options.stride = Number.parseInt(value(), 10); break;
       case '--draws-frames': options.drawsFrames = Number.parseInt(value(), 10); break;
+      case '--draws-stages': options.drawsStages = value(); break;
       case '--attempts': options.attempts = Number.parseInt(value(), 10); break;
       case '--confirmations': options.confirmations = Number.parseInt(value(), 10); break;
       case '--replay': options.replays.push(value()); break;
@@ -241,6 +252,8 @@ export function parseArguments(argv) {
     throw Error('--stride must be a positive integer');
   if (!Number.isInteger(options.drawsFrames) || options.drawsFrames < 1)
     throw Error('--draws-frames must be a positive integer');
+  if (!['first', 'all'].includes(options.drawsStages))
+    throw Error('--draws-stages must be first or all');
   if (!Number.isInteger(options.attempts) || options.attempts < 1)
     throw Error('--attempts must be a positive integer');
   if (!Number.isInteger(options.confirmations) || options.confirmations < 0)
@@ -318,8 +331,9 @@ function sanitize(value) {
 }
 
 // 跑一条录像的一次尝试并解析日志。失败也返回已落盘的采样行（不静默丢弃）。
-function runReplayOnce(entry, options, mode, index, attempt) {
-  const slug = `${String(index).padStart(2, '0')}-${sanitize(entry.file.replace(/\.rpy$/i, ''))}-${mode}`;
+function runReplayOnce(entry, options, mode, index, attempt, stage = 0) {
+  const slug = `${String(index).padStart(2, '0')}-${sanitize(entry.file.replace(/\.rpy$/i, ''))}-${mode}` +
+    (stage ? `-s${stage}` : '');
   const logGuest = `${tempGuest}/${slug}.log`;
   const logHost = resolve(workspace, '.' + logGuest);
   const auxGuest = `${tempGuest}/${slug}.${mode === 'draws' ? 'draws' : 'events'}.jsonl`;
@@ -339,19 +353,16 @@ function runReplayOnce(entry, options, mode, index, attempt) {
                      'TH13_LIFE_PROBE', 'TH13_SHOT_PROBE', 'TH13_HARNESS_WASM'])
     delete env[key];
   const harnessArgs = mode === 'draws'
-    ? ['draws-replay', entry.guest, rawGuest, auxGuest, String(options.drawsFrames), '0']
+    ? ['draws-replay', entry.guest, rawGuest, auxGuest, String(options.drawsFrames), String(stage)]
     : ['replay', entry.guest, rawGuest, auxGuest, '0', '0'];
   if (mode === 'replay') {
     env.TH13_REPLAY_ALL = '1';
     env.TH13_REPLAY_FULL = '1';
   }
   const started = Date.now();
-  // V8 的分层/JIT 方式会改变原生栈帧，同一 wasm 偶发 SIGSEGV。按固定周期
-  // 轮换三种编译模式，让重试覆盖不同的栈行为（顺序固定 = 可复现）。
-  const modes = [[], ['--liftoff-only'], ['--no-liftoff']];
-  const flags = modes[(attempt - 1) % modes.length];
   const run = spawnSync(process.execPath,
-    [...flags, '--experimental-wasi-unstable-preview1',
+    // 见文件头“稳定性”：Node 22.23 的 V8 在增量标记的栈扫描里会崩溃。
+    ['--no-incremental-marking', '--experimental-wasi-unstable-preview1',
      resolve(port, 'tools/run-harness.mjs'), ...harnessArgs],
     {cwd: workspace, env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: 900000});
   const seconds = (Date.now() - started) / 1000;
@@ -416,19 +427,46 @@ function runReplayOnce(entry, options, mode, index, attempt) {
   return entryResult;
 }
 
-// V8 的原生/线性栈在本移植的深 ANM 路径上余量很小：同一 wasm 偶发
-// SIGSEGV（受 JIT 模式与栈布局影响，ASLR/环境长度也会改变余量）。
-// 门禁对每条录像重试 --attempts 次（默认 20，三种编译模式轮换）；只有
-// 始终失败才记为 incomplete。确定性崩溃（如 Extra 关首帧）重试也不会
-// 通过，金标如实记录停止点；--check 遇到差异还会整卷复核 --confirmations 次。
-function runReplay(entry, options, mode, index) {
+// 每条录像跑 --attempts 次（默认 1，harness 进程不再崩溃，重试只会掩盖问题）；
+// 仍失败的条目记为 incomplete，金标如实记录停止点。
+function runReplay(entry, options, mode, index, stage = 0) {
   let result = null;
   for (let attempt = 1; attempt <= options.attempts; attempt++) {
-    result = runReplayOnce(entry, options, mode, index, attempt);
+    result = runReplayOnce(entry, options, mode, index, attempt, stage);
     result.attempts = attempt;
     if (result.completed) return result;
   }
   return result;
+}
+
+// --draws-stages all：每关各取一个窗口。关数取自 replay 金标里同一条录像的
+// 稳定条目；没有的话无从得知关数，直接报错。
+function stageWindows(entry, options) {
+  if (options.drawsStages !== 'all') return [0];
+  const replayGolden = resolve(goldenDir, 'digests.json');
+  const recorded = existsSync(replayGolden)
+    ? JSON.parse(readFileSync(replayGolden, 'utf8')).corpus?.find(item => item.file === entry.file)
+    : null;
+  if (!recorded || !(recorded.stages >= 1))
+    throw Error(`--draws-stages all: no replay golden entry for ${entry.file}; generate it first`);
+  return Array.from({length: recorded.stages}, (_, stage) => stage);
+}
+
+function runDraws(entry, options, index) {
+  const windows = stageWindows(entry, options)
+    .map(stage => runReplay(entry, options, 'draws', index, stage));
+  const failed = windows.find(item => !item.completed);
+  return {
+    ...windows[0],
+    stages: windows.length,
+    frames: windows.reduce((sum, item) => sum + item.frames, 0),
+    rows: windows.flatMap(item => item.rows),
+    completed: !failed,
+    seconds: windows.reduce((sum, item) => sum + item.seconds, 0),
+    stop: failed?.stop ?? null,
+    diagnostic: failed?.diagnostic ?? null,
+    detail: failed?.detail ?? null,
+  };
 }
 
 function buildDocument(corpus, options, mode) {
@@ -436,7 +474,7 @@ function buildDocument(corpus, options, mode) {
   for (let index = 0; index < corpus.length; index++) {
     const entry = {...corpus[index]};
     entry.guest = guestPath(workspace, entry.host);
-    const result = runReplay(entry, options, mode, index);
+    const result = mode === 'draws' ? runDraws(entry, options, index) : runReplay(entry, options, mode, index);
     const status = result.completed ? `ok(a${result.attempts})` : `FAILED(${result.diagnostic})`;
     console.log(`[${index + 1}/${corpus.length}] ${entry.file}: stages=${result.stages} ` +
                 `frames=${result.frames} rows=${result.rows.length} ${status} ` +
@@ -454,6 +492,7 @@ function buildDocument(corpus, options, mode) {
     mode,
     stride: options.stride,
     drawsFrames: mode === 'draws' ? options.drawsFrames : null,
+    drawsStages: options.drawsStages,
     replays: entries,
     build: readBuild(),
   });
@@ -469,8 +508,8 @@ function printDivergence(diff) {
 function usage() {
   return [
     'usage: node tools/regression-digest.mjs [--check] [--draws] [--replay <path> ...]',
-    '                                      [--stride N] [--draws-frames N] [--attempts N]',
-    '                                      [--confirmations N] [--keep]',
+    '                                      [--stride N] [--draws-frames N] [--draws-stages first|all]',
+    '                                      [--attempts N] [--confirmations N] [--keep]',
   ].join('\n');
 }
 
@@ -514,8 +553,8 @@ function main(argv) {
     }
     names.add(entry.file);
   }
-  const goldenPath = resolve(goldenDir,
-    mode === 'draws' ? 'digests-draws.json' : 'digests.json');
+  const goldenPath = resolve(goldenDir, mode !== 'draws' ? 'digests.json'
+    : options.drawsStages === 'all' ? 'digests-draws-all.json' : 'digests-draws.json');
 
   if (options.check) {
     if (!existsSync(goldenPath)) {

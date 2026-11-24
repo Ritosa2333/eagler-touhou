@@ -20,8 +20,8 @@
 //     digest 日志（tools/regression-digest.mjs 生成/校验 golden）。采样行
 //     格式与跨关续接见 DigestLog；TH13_DIGEST_STRIDE 控制采样间隔（默认
 //     60）。TH13_REPLAY_ALL/FULL 同时用于整卷 stage 链与完整窗口。
-//     draws-replay 的 stage 链同样受 TH13_REPLAY_ALL 控制，但 wasm 1MB 栈
-//     对重绘制关卡的整卷绘制不保证完成，draws 金标只覆盖第 0 关显式窗口。
+//     draws-replay 的 stage 链同样受 TH13_REPLAY_ALL 控制；整卷链每帧都要
+//     序列化绘制清单（一条六关录像约 7 分钟、8GB），门禁按关取显式窗口。
 //   th13-harness draws <资源目录> <绘制输出路径> [帧数=3600] [stage.ecl]
 //   th13-harness draws-replay <rpy> <资源目录> <绘制输出路径> [帧数] [stage 索引]
 //     语义绘制清单导出（draw-contract.md v1 移植侧，TH13_DRAW_CAPTURE 构建）：
@@ -1423,7 +1423,7 @@ int run_draws_replay(const char* replay_path, const char* resource_dir, const ch
             }
             input.update(cursor.next().state);
             session->run->controls(input);
-            const u32 frame_before = session->progress.stage_frame;
+            const i32 frame_before = session->progress.stage_frame;
             if (session->scheduler.update() < 0) {
                 std::printf("draws-replay update failed at frame %u: %s\n", frame,
                             session->run->error.empty()

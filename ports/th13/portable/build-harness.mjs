@@ -47,17 +47,14 @@ const main = resolve(workspace, 'tests/harness/harness.cpp');
 const sources = [...gameSources, main];
 
 const compileFlags = [
-  '--target=wasm32-wasip1', '-O2', '-std=c++17', '-Wall', '-Wextra', '-Wall', '-Wextra',
+  '--target=wasm32-wasip1', '-O2', '-std=c++17', '-Wall', '-Wextra',
   '-fno-exceptions', '-fno-rtti',
   '-ffp-contract=off', '-DTH13_WASI_HARNESS=1', '-DTH13_DRAW_CAPTURE=1',
   '-I' + resolve(root, 'cpp'),
 ];
 const linkFlags = [
   '--target=wasm32-wasip1', '-O2',
-  // wasm 线性内存栈：保持现行 1MB。全回放 replay 在 1MB 下多数录像可跑完；
-  // 个别关卡/Extra 的深 ANM 更新与整卷 draws 链会触栈（V8 SIGSEGV，原生
-  // ASan 全绿）。2/4/8MB 会移动数据段/堆基址，使本来能跑完的 replay 在首帧
-  // 后崩溃，故不加栈；溢出录像由 digest 金标记为 unstable/incomplete。
+  // wasm 线性内存栈扩至 1MB（沿用现行单命令版语义，见原文件注释）。
   '-Wl,-z,stack-size=1048576',
 ];
 await printRuntimeInputs({workspace, root, sources,
