@@ -34,7 +34,7 @@
 
 | 播放器类别 | 当前作品 | 共享入口 | 本作职责 |
 | --- | --- | --- | --- |
-| 关卡录像 | th06、th07、th08、th10、th11、th15 的普通版与 MP | `common/browser/local-replay.mjs`、`local-replay-native.mjs` | 解析格式、选关初始化、逻辑步进、结束判定与音频输出 |
+| 关卡录像 | th06、th07、th08、th10、th11、th15 的普通版与 MP，thsss | `common/browser/local-replay.mjs`、`local-replay-native.mjs`。thsss 使用同一时钟，宿主提供 inspect、open、step、state | 解析格式、选关初始化、逻辑步进、结束判定与音频输出 |
 | 对战录像 | th09 普通版与 MP | `common/browser/versus-replay-th09.mjs`、`playback-clock.mjs` | 原生双人回放、对局信息、回合边界与本作音频接口 |
 | 游戏内菜单回放 | th075 普通版与 MP、th20 普通版 | 本作菜单与游戏循环 | 原生选片、回放操作与音频生命周期 |
 
@@ -43,6 +43,8 @@ th09 对战播放器保留完整的本作实现，普通版和 MP 打包均直�
 th06、th07 通过原生 `Render()` 推进录像，停止自动迭代时保留音频设备，声音由 `SoundPlayer` 与本作前后台入口管理。目录 Runtime 通过独立的输出适配接口交接设备和 PCM 填充；两类入口分别核对。
 
 录像工作台在同一个游戏 iframe 中切换文件和关卡。共享 `local-replay` 桥先停止普通循环，在原生录像打开完成后恢复音频设备，再由录像时钟推进固定逻辑步。浏览器音频恢复异步进行，命令立即回复；等待输出就绪期间保留当前逻辑帧。
+
+thsss 的录像文件在 IndexedDB `thsss-saves`，键为 `Replay/thSSS_*.rpy` 与 `.trpy`。启动器冷列表把它们读成 `replay/` 路径。打开关卡时宿主把同一份字节写入虚拟文件系统，再按关卡 id 进入 `OnReplay`。暂停、倍速和定位沿用共享时钟；定位回退会重新打开该关。
 
 th10 普通版和 MP 的工作台选关直接进入原生回放状态，因此显式清除标题循环通常负责清除的演示标记。就绪判断覆盖完成初始化的标题与演示场景，原生错误立即返回。Replay 预热可在音频授权等待期间完成，选片后的音频门由回放时钟接管。验收包含新来源首次选片，以及自动演示期间选片。
 
