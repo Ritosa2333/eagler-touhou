@@ -52,13 +52,28 @@ constexpr int bullet_center_offset(bool pellet){return pellet?4:8;}
 
 inline void draw_player_focus_point(std::span<std::uint32_t> pixels,CollisionPoint player,int view_shift_x=0){
     constexpr SpriteClip clip;
-    constexpr std::uint32_t rose=0xff456b,ink=0x230d19;
+    constexpr int grid=8,scale=grid*2;
+    constexpr int core=18,halo_inner=26,halo_outer=43,outline=50;
+    constexpr unsigned rose=0xff547b,ink=0x25101e;
     const int cx=player.x+player_projectile_offset.x+view_shift_x,cy=player.y+player_projectile_offset.y;
-    for(int dy=-2;dy<=2;++dy)for(int dx=-2;dx<=2;++dx){
-        const int d=dx*dx+dy*dy;
-        const int x=cx+dx,y=cy+dy;
-        if(d<=5&&x>=clip.left&&x<clip.right&&y>=clip.top&&y<clip.bottom)
-            pixels[y*640+x]=d<=1?0xffffff:d<=4?rose:ink;
+    for(int y=std::max(cy-3,clip.top);y<std::min(cy+4,clip.bottom);++y){
+        for(int x=std::max(cx-3,clip.left);x<std::min(cx+4,clip.right);++x){
+            int white=0,pink=0,dark=0;
+            // The separated halo is decorative; none of its radii affect hits.
+            for(int sy=1-grid;sy<grid;sy+=2)for(int sx=1-grid;sx<grid;sx+=2){
+                const int dx=(x-cx)*scale+sx,dy=(y-cy)*scale+sy,d=dx*dx+dy*dy;
+                if(d<core*core)++white;
+                else if(d>=halo_inner*halo_inner&&d<halo_outer*halo_outer)++pink;
+                else if(d<outline*outline)++dark;
+            }
+            auto &dst=pixels[y*640+x];
+            const int background=grid*grid-white-pink-dark;
+            const auto blend=[&](int shift){
+                return (255*white+int((rose>>shift)&255)*pink+int((ink>>shift)&255)*dark+
+                        int((dst>>shift)&255)*background+32)/64;
+            };
+            dst=unsigned((blend(16)<<16)|(blend(8)<<8)|blend(0));
+        }
     }
 }
 
