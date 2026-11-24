@@ -24,8 +24,8 @@ const score=pct(41200000,244,128,16), difficulty=front(67,53,576,24,268,320,60,1
 const oldValues=[pct(41000000,245,548,70),pct(41000004,244,548,118),pct(41000008,243,562,166)];
 const frame=Object.freeze([back,score,ice,area,...oldValues,life,areaValue,skill,difficulty]);
 const seat=(seat,motivation,icePower,charge,deaths=0) => Object.freeze({seat,motivation,icePower,charge,deaths,transferTaps:0});
-const two=[seat(0,20099,7999,0),seat(1,0,12,29999)];
-const three=[seat(0,100000,10000,9999,9),seat(1,-1,3456,10000,0),seat(2,17999,7,30000,21)];
+const two=[seat(0,20099,7999,0),seat(1,0,12,19999)];
+const three=[seat(0,100000,10000,9999,9),seat(1,-1,3456,10000,0),seat(2,17999,7,20000,21)];
 const state=(seats,challengeMode=false) => Object.freeze({seats:Object.freeze(seats),challengeMode,firepower:2765.5,rank:1});
 const labels=g=>g.filter(r=>r.bank===5 && [8,10,11].includes(r.script)).map(r=>r.sprite).sort((a,b)=>a-b);
 const stocks=g=>g.filter(r=>r.bank===5 && r.sprite===10);
@@ -33,16 +33,16 @@ const stocks=g=>g.filter(r=>r.bank===5 && r.sprite===10);
 test('two native seat bands: original percent truncation, live zero motivation, and P2 stocks with no P1 stock record',()=>{
   const groups=seatGroups(frame,cooperativeArt(frame,state(two)),2);
   assert.deepEqual(groups.map(g=>runs(g,style0)),[['P1'],['P2']]);
-  assert.deepEqual(groups.map(g=>runs(g,style4)),[['200%','79%','0%'],['0%','0%','299%']]);
+  assert.deepEqual(groups.map(g=>runs(g,style4)),[['200%','79%','0%'],['0%','0%','199%']]);
   assert.deepEqual(groups.map(labels),[[7,8,9],[7,8,9]]);
-  assert.deepEqual(groups.map(g=>stocks(g).map(r=>r.script)),[[],[12,13]]);
+  assert.deepEqual(groups.map(g=>stocks(g).map(r=>r.script)),[[],[12]]);
 });
 
 test('three seats: negative legacy motivation clamps to 0%; every Z value and X threshold belongs to its seat',()=>{
   const groups=seatGroups(frame,cooperativeArt(frame,state(three)),3);
   assert.deepEqual(groups.map(g=>runs(g,style0)),[['P1'],['P2'],['P3']]);
-  assert.deepEqual(groups.map(g=>runs(g,style4)),[['1000%','100%','99%'],['0%','34%','100%'],['179%','0%','300%']]);
-  assert.deepEqual(groups.map(g=>stocks(g).map(r=>r.script)),[[],[12],[12,13,14]]);
+  assert.deepEqual(groups.map(g=>runs(g,style4)),[['1000%','100%','99%'],['0%','34%','100%'],['179%','0%','200%']]);
+  assert.deepEqual(groups.map(g=>stocks(g).map(r=>r.script)),[[],[12],[12,13]]);
   assert.deepEqual(groups.map(labels),Array(3).fill([7,8,9]));
 });
 
@@ -88,9 +88,9 @@ test('native UV rectangles, paint/fade and callback priority survive projection,
 });
 
 function overlaps(a,b) {return a.left<b.right && b.left<a.right && a.top<b.bottom && b.top<a.bottom;}
-test('rendered native quad bounds protect the playfield and area, separate entire bands, and fit even five stocks or long death counts',()=>{
+test('rendered native quad bounds protect the playfield and area, separate entire bands, and fit full stock or long death counts',()=>{
   for(const n of [2,3]) for(const challenge of [false,true]) {
-    const seats=Array.from({length:n},(_,i)=>seat(i,100000,10000,50000,4294967295));
+    const seats=Array.from({length:n},(_,i)=>seat(i,100000,10000,20000,4294967295));
     const groups=seatGroups(frame,cooperativeArt(frame,state(seats,challenge)),n);
     let previous=32;
     for(const g of groups) {
@@ -123,15 +123,16 @@ test('no matched native HUD or no 2/3-seat world: pass through rather than strip
 
 test('fatal miss, ghost and revived at zero show the same percentage',()=>{
   const read=(motivation,ghost)=>seatGroups(frame,cooperativeArt(frame,state([two[0],{...two[1],motivation,ghost}])),2)[1];
-  assert.deepEqual(runs(read(-10000,false),style4),['0%','0%','299%']);
+  assert.deepEqual(runs(read(-10000,false),style4),['0%','0%','199%']);
   assert.deepEqual(runs(read(-10000,true),style0),['P2']);
-  assert.deepEqual(runs(read(0,false),style4),['0%','0%','299%']);
+  assert.deepEqual(runs(read(0,false),style4),['0%','0%','199%']);
 });
 
 test('project by native seat number, not viewer or array order; an incomplete frame is not a source of invented values',()=>{
   const groups=seatGroups(frame,cooperativeArt(frame,state([two[1],two[0]])),2);
-  assert.deepEqual(groups.map(g=>runs(g,style4)),[['200%','79%','0%'],['0%','0%','299%']]);
+  assert.deepEqual(groups.map(g=>runs(g,style4)),[['200%','79%','0%'],['0%','0%','199%']]);
   assert.strictEqual(cooperativeArt(frame,state([two[0],{...two[1],charge:undefined}])),frame);
+  assert.strictEqual(cooperativeArt(frame,state([two[0],{...two[1],charge:20001}])),frame);
   const missingLife=frame.filter(r=>r!==life);assert.strictEqual(cooperativeArt(missingLife,state(two)),missingLife);
 });
 
@@ -165,9 +166,9 @@ test('private cues are filtered before sidebar templates are available; a missin
 
 test('retired players use the same original percentage glyphs at zero and after shared rewards',()=>{
  for(const amount of [0,12537]){
-  const rows=[{...two[0],retired:true,ghost:true,motivation:amount,charge:26300},two[1]];
+  const rows=[{...two[0],retired:true,ghost:true,motivation:amount,charge:16300},two[1]];
   const group=seatGroups(frame,cooperativeArt(frame,state(rows)),2)[0];
   assert.deepEqual(runs(group,style0),['P1']);
-  assert.deepEqual(runs(group,style4),[`${Math.floor(amount/100)}%`,'79%','263%']);
+  assert.deepEqual(runs(group,style4),[`${Math.floor(amount/100)}%`,'79%','163%']);
  }
 });

@@ -36,6 +36,7 @@ struct CoopBattle {
     std::array<std::uint32_t,3> iceDamageThisTick{};
     std::unordered_map<unsigned,std::shared_ptr<CoopIceBatch>> drops;
     unsigned expiringSeat=0,collectingItem=0,recipient=0,contactSeat=0,wipeFrames=0;bool challenge=false;
+    int perfectCaster=-1;
     std::vector<th128::bullet::SoundRequest> frameSounds;
     std::uint64_t teamPixels=0;
     std::array<std::uint64_t,3> laserColumns{};
@@ -53,6 +54,7 @@ th128::player::Input coopMenuInput(){
     return keys;
 }
 bool tickLifeTransfers(std::string&);
+th128::player::PlayerHitHost& seatBody(unsigned);
 bool coopIsSettling();
 bool isGhost(unsigned seat);
 bool coopClearDone();
@@ -187,10 +189,15 @@ bool settleCoopArea(unsigned seat,th128::ice::Completion c,bool perfect,std::str
     if(!freezeRewardPanel.complete(original->percent,original->bonus,p.vertical)){error="Co-op freeze reward panel rejected";return false;}return true;
 }
 bool coopEntryCancel(const th128::player::death::Position&,int,float,std::string&);
-bool tryCoopPerfect(CoopSeat& seat,bool& activated,std::string& error){
+bool canRequestPerfect(const th128::player::Input& input){
+    constexpr auto key=th128::perfect::XKeyBit;
+    if(!coopActive())return (input.holding&key)!=0;
+    return coop->perfectCaster<0&&(input.pressed&key);
+}
+bool tryCoopPerfect(unsigned index,CoopSeat& seat,bool& activated,std::string& error){
     if(coop->challenge)return true;const auto status=seat.perfect.status();if(status.failed){error="Faulted co-op Perfect owner";return false;}
     if(status.active)return true;if(status.charge!=seat.charge&&!seat.perfect.setCharge(seat.charge,error))return false;
-    if(!(seat.input.holding&2u)||seat.charge<th128::perfect::CostRaw)return true;
+    if(!canRequestPerfect(seat.input)||seat.charge<th128::perfect::CostRaw)return true;
     const auto snap=seat.body.snapshot();const bool saving=snap.gate.stateF78==4&&snap.stateTimer.current<16&&snap.heldTimer.current<=0;
     if(snap.gate.stateF78!=1&&!saving)return true;const auto amount=world->laserObjectCount();const auto frozen=seat.ice.statistics();
     if(!amount||frozen.busy||frozen.objects||(*amount&&(saving||stageIdForEcl(worldStartedName)!=16||!laserLines->healthy()||laserLines->selector3Snapshots().size()!=*amount)))return true;
@@ -200,6 +207,7 @@ bool tryCoopPerfect(CoopSeat& seat,bool& activated,std::string& error){
     std::string why;activated=saving?seat.perfect.activatePracticeDeathbomb(c,why):seat.perfect.activate(c,why);
     if(!activated){if(seat.perfect.status().failed){error=why;return false;}return true;}
     if(saving&&!seat.body.commitPracticeDeathbomb(error))return false;
+    coop->perfectCaster=int(index);
     seat.charge=seat.perfect.status().charge;return coopSound(46,p.horizontal,error)&&coopSound(51,p.horizontal,error);
 }
 unsigned livingSeats(){unsigned live=0;for(unsigned i=0;i<coop->seats;i++)if(!coop->retired[i])++live;return live;}
@@ -240,11 +248,13 @@ bool advanceCoopBody(unsigned index,CoopSeat& seat,bool& focused,std::string& er
 }
 bool advanceCoopSeats(std::string& error){
     if(!coopActive())return true;
+    // P1's native action has already run. Guests try in ascending seat order.
+    if(coop->perfectCaster<0&&perfectHost->status().active)coop->perfectCaster=0;
     for(unsigned i=1;i<coop->seats;i++){
         auto& seat=*coop->extra[i-1];
         bool activated=false,focused=false;
-        if(seat.body.snapshot().gate.stateF78==4&&!tryCoopPerfect(seat,activated,error))return false;
-        if(!advanceCoopBody(i,seat,focused,error)||!seat.fields.tickUnit(error)||(!activated&&!tryCoopPerfect(seat,activated,error)))return false;
+        if(seat.body.snapshot().gate.stateF78==4&&!tryCoopPerfect(i,seat,activated,error))return false;
+        if(!advanceCoopBody(i,seat,focused,error)||!seat.fields.tickUnit(error)||(!activated&&!tryCoopPerfect(i,seat,activated,error)))return false;
         if(!activated&&!seat.perfect.tick(false,error))return false;
         const auto spell=seat.perfect.status();const int mode=spell.active&&spell.phase<th128::perfect::NativeLaserPhase?1:0;
         const auto pos=th128::player::toPixels(seat.raw);
@@ -268,6 +278,20 @@ bool finishCoopAnimations(std::string& error){
         auto& seat=*coop->extra[i-1];
         if(!seat.shots.tickAnimationsUnit(error)||!seat.ice.tickAnimations(error)||!seat.body.tickLaserEffects(error)||
            (seat.focus&&!seat.focus->tick(error)))return false;
+    }
+    return true;
+}
+bool protectCoopTeam(std::string& error){
+    if(!coopActive()||coop->perfectCaster<0)return true;
+    const auto caster=coop->perfectCaster;
+    const auto skill=(caster?coop->extra[caster-1]->perfect:*perfectHost).status();
+    if(!skill.active){coop->perfectCaster=-1;return true;}
+    const int remaining=th128::perfect::ProtectionTicks-skill.phase;
+    // Contacts run after every seat has advanced. Refresh protection before
+    // the shared bullet, laser and enemy managers can affect any teammate.
+    for(unsigned i=0;i<coop->seats;i++){
+        auto& body=seatBody(i);
+        if(body.snapshot().gate.stateF78==1&&!body.extendCoopPerfectProtection(remaining,error))return false;
     }
     return true;
 }
@@ -371,7 +395,7 @@ extern "C" int th128_coop_bind(unsigned count,const void* shot,unsigned shotSize
         if(!s.ice.configure({static_cast<const std::uint8_t*>(iceArt),iceSize},{static_cast<const std::uint8_t*>(masks),maskSize},*bulletVisuals,std::move(services),operationError)||
            !s.fire.configure(-1,start.heldTimer,operationError))return 0;
         auto perfect=coopPerfectServices;
-        perfect.protect=[&s](int ticks,std::string& e){if(ticks==th128::perfect::ProtectionTicks)return s.body.assignPerfectProtection200(e);if(ticks==th128::perfect::DeathbombProtectionTicks)return s.body.assignPerfectProtection10(e);e="Unexpected Perfect protection period";return false;};
+        perfect.protect=[&s](int ticks,std::string& e){return s.body.extendCoopPerfectProtection(ticks,e);};
         perfect.freezeBullets=[&s](const th128::perfect::BulletRequest&,th128::perfect::BulletResult& out,std::string& e){th128::ice::PerfectFreezeResult result;
             if(!s.ice.freezePerfect(world->bullets().snapshots(),result,e)||!result.completed)return false;
             out={result.frozen,0,result.skipped,true};if(!coopSound(47,th128::player::toPixels(s.raw).horizontal,e)||!coopSound(69,0,e))return false;
@@ -392,8 +416,17 @@ extern "C" int th128_coop_tick(unsigned frame,unsigned count,unsigned p0,unsigne
     operationError.clear();const std::array<unsigned,3> keys{p0,p1,p2};
     if(!coopActive()||frame!=world->frame()||count!=coop->seats||(count==2&&p2)||((p0|p1|p2)&~CoopBasicKeys)||world->faulted()||worldTickExecuting){operationError="Invalid co-op frame, seats or input mask";return 0;}
     // Validate all seats before binding any edges. A missed, duplicate or malformed row cannot partially control P1.
-    for(unsigned i=0;i<count;i++){const auto held=(stageTransitionConfigured&&stageTransition->state().requested)?(keys[i]&~515u):(coop->challenge?keys[i]&~2u:keys[i]),prev=coop->prev[i];
-        auto& dest=i?coop->extra[i-1]->input:playerInput;dest={std::uint16_t(held),std::uint16_t(held&~prev),std::uint16_t(prev&~held)};coop->prev[i]=held;}
+    constexpr unsigned castKey=th128::perfect::XKeyBit;
+    const unsigned mask=stageTransitionConfigured&&stageTransition->state().requested?CoopBasicKeys&~515u:
+        coop->challenge?CoopBasicKeys&~castKey:CoopBasicKeys;
+    for(unsigned i=0;i<count;i++){
+        const auto held=keys[i]&mask,prev=coop->prev[i];
+        auto& dest=i?coop->extra[i-1]->input:playerInput;
+        dest={std::uint16_t(held),std::uint16_t(held&~prev),std::uint16_t(prev&~held&(mask|~castKey))};
+        // Retain the physical X hold through a stage transition so a blocked
+        // press cannot turn into a new cast when the next stage accepts input.
+        coop->prev[i]=held|(keys[i]&castKey);
+    }
     if(!tickLifeTransfers(operationError))return 0;
     coop->iceDamageBatches.fill(nullptr);coop->iceDamageThisTick.fill(0);
     coop->frameSounds.clear();const int result=th128_world_tick();if(result==1)coop->frameSounds.swap(grazeSounds);if(result==1&&coop->challenge)playerWindowControl.perfectCharge4b4d70=0;

@@ -3171,7 +3171,7 @@
                  if(elapsed<30){
                      if(!std::isfinite(radius)||radius<0){error="invalid entry laser cancellation radius";return false;}
                      const auto liveLasers=world->laserObjectCount();
-@@ -4618,6 +1487,3166 @@
+@@ -4618,6 +1487,3167 @@
                      }
                      return true;
                  },error);
@@ -4393,6 +4393,7 @@
 +    }else{
 +        th128::perfect::Services perfectServices;
 +        perfectServices.protect=[](int ticks,std::string& error){
++            if(coopActive())return playerHit->extendCoopPerfectProtection(ticks,error);
 +            if(ticks==th128::perfect::ProtectionTicks)return playerHit->assignPerfectProtection200(error);
 +            if(ticks==th128::perfect::PhaseFreezeProtectionTicks)return playerHit->assignPerfectProtection10(error);
 +            error="unsupported perfect protection ticks="+std::to_string(ticks);return false;
@@ -6111,7 +6112,7 @@
 +    if((!coopActive()&&!world->thpracChapter())||(coopActive()&&coop->challenge)||!perfectConfigured||!playerConfigured)return true;
 +    const auto hit=playerHit->snapshot();
 +    if(hit.gate.stateF78!=4||hit.stateTimer.current>=(coopActive()?16:8)||hit.heldTimer.current>0
-+        ||(!practiceTool(32u)&&!(playerInput.holding&2u))||playerWindowControl.perfectCharge4b4d70<10000
++        ||(!canRequestPerfect(playerInput)&&(coopActive()||!practiceTool(32u)))||playerWindowControl.perfectCharge4b4d70<10000
 +        ||playerWindowControl.mode3c!=0||perfectHost->status().active)return true;
 +    const auto count=world->laserObjectCount();
 +    if(!count||*count||iceHost->statistics().busy||iceHost->statistics().objects)return true;
@@ -6338,7 +6339,16 @@
              },operationError);
              if(!entry){world->reportRuntimeFault(operationError);return 0;}
              playerRaw=*entry;
-@@ -4768,6 +4797,7 @@
+@@ -4669,7 +4699,7 @@
+             context.lasers=lasers;context.laserCount=laserCount;
+             return context;
+         };
+-        if(!perfectStatus.active&&(playerInput.holding&th128::perfect::XKeyBit)){
++        if(!perfectStatus.active&&canRequestPerfect(playerInput)){
+             std::string denied;
+             const auto laserCount=world->laserObjectCount();
+             const bool extraLight=laserCount&&*laserCount>0&&stageIdForEcl(worldStartedName)==16
+@@ -4768,6 +4798,7 @@
          }
      }
      if(replayTerminal.begun&&!tickReplayTerminal(operationError)){world->reportRuntimeFault(operationError);return 0;}
@@ -6346,7 +6356,7 @@
      if(normalTerminal.begun&&!tickOrdinaryTerminal(operationError)){world->reportRuntimeFault(operationError);return 0;}
      if(debugTerminal.begun){
          if(debugTerminal.generation!=worldGeneration){world->reportRuntimeFault("debug terminal generation changed");return 0;}
-@@ -4799,14 +4829,17 @@
+@@ -4799,14 +4830,17 @@
          stageTransitionError=operationError;world->reportRuntimeFault(operationError);return 0;
      }
      if(routeChoiceConfigured&&routeChoiceStarted){
@@ -6365,12 +6375,12 @@
      playerInput.pressed=0;playerInput.released=0;
      if(perfectConfigured&&!perfectActivatedThisTick&&!perfectHost->tick(false,operationError)){world->reportRuntimeFault(operationError);return 0;}
      if(perfectModeOwned&&perfectHost->status().phase>=180){
-@@ -4817,22 +4850,8 @@
+@@ -4817,22 +4851,8 @@
      if(playerFireConfigured&&!freezeRewardPanel.tick(world->playerAimPosition().y)){
          world->reportRuntimeFault("original freeze reward panel tick rejected");return 0;
      }
 -    const auto iceDamageBefore=world->damageStats()[0];
-+    if(!advanceCoopSeats(operationError)){world->reportRuntimeFault(operationError);return 0;}
++    if(!advanceCoopSeats(operationError)||!protectCoopTeam(operationError)){world->reportRuntimeFault(operationError);return 0;}
      const bool success=world->tick();
 -    // Native enemy-manager pass (0x415954..0x415973): ice-tagged damage
 -    // contributes half its value to motivation, capped per tick. StageWorld
@@ -6390,7 +6400,7 @@
 +    if(success&&!finishCoopIceMotivation(operationError)){world->reportRuntimeFault(operationError);return 0;}
      if(success&&perfectHudConfigured){
          if(!world->prepareBossHudPass(operationError)){world->reportRuntimeFault(operationError);return 0;}
-@@ -4853,6 +4888,7 @@
+@@ -4853,6 +4889,7 @@
      if(success&&world->positionIntegrated()&&!cancellationEffects->tickPrimary(operationError)){world->reportRuntimeFault(operationError);return 0;}
      if(success&&world->positionIntegrated()&&!laserLines->tickEffects(operationError)){world->reportRuntimeFault(operationError);return 0;}
      if(success&&playerConfigured&&!playerHit->tickLaserEffects(operationError)){world->reportRuntimeFault(operationError);return 0;}
@@ -6398,7 +6408,7 @@
      if(success&&playerShotsConfigured&&!playerShots->tickAnimationsUnit(operationError)){world->reportRuntimeFault(operationError);return 0;}
      if(success&&perfectHudConfigured){
          perfectHud->score(scoreRaw);
-@@ -5323,22 +5359,26 @@
+@@ -5323,22 +5360,26 @@
              bulletDraws="[]";return bulletDraws.c_str();
          }
      }
@@ -6437,7 +6447,7 @@
      }
      if(playerConfigured){
          const auto effects=playerHit->laserEffectSnapshots(presentationError);
-@@ -5350,6 +5390,7 @@
+@@ -5350,6 +5391,7 @@
              }
          }
      }
@@ -6445,7 +6455,7 @@
      for(const auto& shot:playerShots->snapshots()){
          const auto& state=shot.state;
          if(!state.visible||!(state.flags&2u)||state.deleteRequested)continue;
-@@ -5395,12 +5436,7 @@
+@@ -5395,12 +5437,7 @@
              }
          }
      }
@@ -6459,7 +6469,7 @@
      if(playerFireConfigured)for(const auto& ice:iceHost->draws()){
          if(!ice.state.visible||!(ice.state.flags&2u)||ice.state.deleteRequested)continue;
          if(!writeVisualRecord(text,comma,13000000u+ice.id,ice.bank,ice.state,ice.sprite,ice.x,ice.y,ice.z,true)){
-@@ -5422,6 +5458,10 @@
+@@ -5422,6 +5459,10 @@
              bulletDraws="[]";return bulletDraws.c_str();
          }
      }
@@ -6470,7 +6480,7 @@
      if(debugTerminal.configured)for(const auto& item:debugTerminalSettlement->snapshots()){
          const auto& state=item.state;
          if(!item.sprite||!state.visible||state.deleteRequested)continue;
-@@ -5467,12 +5507,14 @@
+@@ -5467,12 +5508,14 @@
              }
          }
      }
@@ -6658,10 +6668,22 @@
          executing_=false;
 --- a/src/game/PlayerHitHost.cpp
 +++ b/src/game/PlayerHitHost.cpp
-@@ -81,9 +81,15 @@
+@@ -81,9 +81,27 @@
      } catch(...){fail("player hit host callback threw",error);return std::nullopt;}
      return 1;
  }
++bool PlayerHitHost::extendCoopPerfectProtection(int ticks,std::string& error){
++    error.clear();
++    if(!configured_||executing_||!error_.empty()||ticks<=0||(state_.gate.stateF78!=1&&state_.gate.stateF78!=4))
++        return fail(error_.empty()?"Co-op Perfect protection requires a live player or hit window":error_,error);
++    if(state_.protection.current>=ticks)return true;
++    auto& timer=state_.protection;
++    timer.previous=ticks-1;timer.current=ticks;timer.fractional=float(ticks);
++    timer.clockSource=0x4b6f58;timer.flags|=1U;
++    state_.gate.counter438dc=ticks;
++    return true;
++}
++
 +bool PlayerHitHost::reviveCoopGhost(std::string& error){
 +    error.clear();if(!configured_||executing_||!error_.empty()||state_.gate.stateF78!=2||state_.stateTimer.current<30){error="Rescue requires a retired native player";return false;}
 +    auto context=runtime();if(!animation_.bind(registry_,7,0,context)||animation_.faulted())return fail("Co-op rescue idle ANM bind failed",error);
@@ -6728,10 +6750,11 @@
                  if(!hadNext)break;++current;continue;
 --- a/src/game/PlayerHitHost.hpp
 +++ b/src/game/PlayerHitHost.hpp
-@@ -50,6 +50,7 @@
+@@ -50,6 +50,8 @@
      bool advanceEntryTimersUnit(std::string& error);
      std::optional<Movement> moveUnit(RawPosition position,Input input,FocusContext focus,std::string& error,TouchMotion touch={});
      void setPracticeInvulnerable(bool value) noexcept {practiceInvulnerable_=value;}
++    bool extendCoopPerfectProtection(int ticks,std::string& error);
 +    bool reviveCoopGhost(std::string& error);
      bool commitPracticeDeathbomb(std::string& error);
      HitHostSnapshot snapshot() const;
@@ -6743,7 +6766,7 @@
  inline constexpr std::int32_t PowerCapRaw = 10000;
  inline constexpr std::int32_t PerfectFreezeCostRaw = 10000;
 -inline constexpr std::int32_t PerfectFreezeCapRaw = 30000;
-+inline constexpr std::int32_t PerfectFreezeCapRaw = 50000;
++inline constexpr std::int32_t PerfectFreezeCapRaw = 20000;
  inline constexpr std::int32_t BaselineIncrementRaw = 5;
  
  bool canRelease(std::int32_t powerRaw, std::int32_t heldCount, std::int32_t perfectState) noexcept;
