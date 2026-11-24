@@ -6,6 +6,7 @@
 #include <limits>
 #include <optional>
 #include <span>
+#include <string_view>
 
 namespace soew {
 enum class HitboxMode { Off, Self, All };
@@ -51,30 +52,22 @@ constexpr CollisionBounds bullet_hit_window(CollisionPoint player,bool pellet){
 constexpr int bullet_center_offset(bool pellet){return pellet?4:8;}
 
 inline void draw_player_focus_point(std::span<std::uint32_t> pixels,CollisionPoint player,int view_shift_x=0){
-    constexpr SpriteClip clip;
-    constexpr int grid=8,scale=grid*2;
-    constexpr int core=18,halo_inner=26,halo_outer=43,outline=50;
-    constexpr unsigned rose=0xff547b,ink=0x25101e;
-    const int cx=player.x+player_projectile_offset.x+view_shift_x,cy=player.y+player_projectile_offset.y;
-    for(int y=std::max(cy-3,clip.top);y<std::min(cy+4,clip.bottom);++y){
-        for(int x=std::max(cx-3,clip.left);x<std::min(cx+4,clip.right);++x){
-            int white=0,pink=0,dark=0;
-            // The separated halo is decorative; none of its radii affect hits.
-            for(int sy=1-grid;sy<grid;sy+=2)for(int sx=1-grid;sx<grid;sx+=2){
-                const int dx=(x-cx)*scale+sx,dy=(y-cy)*scale+sy,d=dx*dx+dy*dy;
-                if(d<core*core)++white;
-                else if(d>=halo_inner*halo_inner&&d<halo_outer*halo_outer)++pink;
-                else if(d<outline*outline)++dark;
-            }
-            auto &dst=pixels[y*640+x];
-            const int background=grid*grid-white-pink-dark;
-            const auto blend=[&](int shift){
-                return (255*white+int((rose>>shift)&255)*pink+int((ink>>shift)&255)*dark+
-                        int((dst>>shift)&255)*background+32)/64;
-            };
-            dst=unsigned((blend(16)<<16)|(blend(8)<<8)|blend(0));
+    // The first native focus sprite, anchored to the checked coordinates.
+    constexpr std::array<std::string_view,9> shape={
+        "   ###   "," ##+++## "," #+rrr+# ","#+r...r+#","#+r.W.r+#",
+        "#+r...r+#"," #+rrr+# "," ##+++## ","   ###   "};
+    const auto center=RenderPoint::pixels(player.x+player_projectile_offset.x+view_shift_x,
+                                         player.y+player_projectile_offset.y);
+    blit_motion_sprite(pixels,center.offset(-4,-4),9,9,[&](int x,int y)->std::uint32_t{
+        switch(shape[y][x]){
+        case '#':return 0x281020;
+        case '+':return 0xb7153d;
+        case 'r':return 0xff697d;
+        case '.':return 0xffd9dc;
+        case 'W':return 0xffffff;
+        default:return render_clear;
         }
-    }
+    });
 }
 
 enum class CollisionSample { Projectile, Current, Front, FrontXCurrentY, Count };

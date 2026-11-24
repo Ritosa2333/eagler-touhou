@@ -798,12 +798,12 @@ void focus_marker_appearance(){
     for(const auto bg:{0x20283cu,0xf8eacbu}){
         std::fill(pixels.begin(),pixels.end(),bg);
         draw_player_focus_point(pixels,player);
-        check(pixels[at(0,0)]==0xffffff&&is_focus_red(pixels[at(2,0)]));
-        check(pixels[at(3,0)]!=bg&&pixels[at(3,3)]==bg);
-        for(int dy=-3;dy<=3;++dy)for(int dx=-3;dx<=3;++dx)
+        check(pixels[at(0,0)]==0xffffff&&pixels[at(1,0)]==0xffd9dc&&pixels[at(2,0)]==0xff697d);
+        check(pixels[at(3,0)]==0xb7153d&&pixels[at(4,0)]==0x281020&&pixels[at(4,4)]==bg);
+        for(int dy=-4;dy<=4;++dy)for(int dx=-4;dx<=4;++dx)
             check(pixels[at(dx,dy)]==pixels[at(-dy,dx)]);
         for(int dy=-12;dy<=8;++dy)for(int dx=-11;dx<=10;++dx)
-            if(dx<-3||dx>3||dy<-3||dy>3)check(pixels[at(dx,dy)]==bg);
+            if(dx<-4||dx>4||dy<-4||dy>4)check(pixels[at(dx,dy)]==bg);
         std::fill(pixels.begin(),pixels.end(),bg);
         draw_player_focus_point(pixels,player,-16);
         check(pixels[at(-16,0)]==0xffffff&&pixels[at(-21,-8)]==bg&&pixels[at(0,0)]==bg);
