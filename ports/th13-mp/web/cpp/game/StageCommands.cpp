@@ -57,13 +57,25 @@ bool mirrored_variant(u16 op) { return op == 404 || op == 405 || op == 406 || op
 }
 
 int StageCommands::execute(EclContext& c, u16 op) {
+    if (op < 400) return execute_300(c, op);
+    if (op < 500) return execute_400(c, op);
+    if (op < 600) return execute_500(c, op);
+    if (op < 700) return execute_600(c, op);
+    if (op < 800) return execute_700(c, op);
+    if (op < 900) return execute_800(c, op);
+    if (op < 1000) return execute_900(c, op);
+    return execute_1000(c, op);
+}
+
+int StageCommands::unimplemented(u16 opcode) {
+    sim->error_ = "unimplemented game opcode " + std::to_string(opcode);
+    return -2;
+}
+
+int StageCommands::execute_300(EclContext& c, u16 op) {
     StageSim& sim = *this->sim;
     StageEnemy& e = *sim.current;
-    const EclInstruction* ins = c.instruction;
 
-    const auto emit_move = [&](const u32* integral, std::initializer_list<float> values) {
-        sim.sink.enemy_move(e.serial, op, integral, values.begin(), u32(values.size()));
-    };
     const auto flush_anm_slots = [&]() -> bool {
         if (!sim.flush_anm_slots) return true;
         if (sim.flush_anm_slots(&e)) return true;
@@ -298,20 +310,27 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
-    case 553: {
-        if (!resolve_int(c, 0, e.hit_sound)) {
+    case 323: {
+        if (!resolve_int(c, 0, e.death_effect_file) || !resolve_int(c, 1, e.death_effect)) {
             sim.error_ = c.error;
             return -2;
         }
         return 0;
     }
-    case 554:
-        if (sim.stage_logo && !sim.stage_logo()) {
-            sim.error_ = "Stage logo creation failed";
-            return -2;
-        }
-        return 0;
+    default:
+        return unimplemented(op);
+    }
+}
 
+int StageCommands::execute_400(EclContext& c, u16 op) {
+    StageSim& sim = *this->sim;
+    StageEnemy& e = *sim.current;
+
+    const auto emit_move = [&](const u32* integral, std::initializer_list<float> values) {
+        sim.sink.enemy_move(e.serial, op, integral, values.begin(), u32(values.size()));
+    };
+
+    switch (op) {
     case 400:
     case 402: {
         const u32 integral[2] = {0, 0};
@@ -734,6 +753,31 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
 
+    default:
+        return unimplemented(op);
+    }
+}
+
+int StageCommands::execute_500(EclContext& c, u16 op) {
+    StageSim& sim = *this->sim;
+    StageEnemy& e = *sim.current;
+    const EclInstruction* ins = c.instruction;
+
+    switch (op) {
+    case 553: {
+        if (!resolve_int(c, 0, e.hit_sound)) {
+            sim.error_ = c.error;
+            return -2;
+        }
+        return 0;
+    }
+    case 554:
+        if (sim.stage_logo && !sim.stage_logo()) {
+            sim.error_ = "Stage logo creation failed";
+            return -2;
+        }
+        return 0;
+
     case 500: {
         float w = 0, h = 0;
         if (resolve_float(c, 0, w) && resolve_float(c, 1, h)) {
@@ -949,13 +993,6 @@ int StageCommands::execute(EclContext& c, u16 op) {
         e.spell_id = -1;
         e.spell_name.clear();
         return 0;
-    case 323: {
-        if (!resolve_int(c, 0, e.death_effect_file) || !resolve_int(c, 1, e.death_effect)) {
-            sim.error_ = c.error;
-            return -2;
-        }
-        return 0;
-    }
     case 516: {
         i32 id = 0;
         if (!resolve_int(c, 0, id)) {
@@ -1247,6 +1284,17 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
 
+    default:
+        return unimplemented(op);
+    }
+}
+
+int StageCommands::execute_600(EclContext& c, u16 op) {
+    StageSim& sim = *this->sim;
+    StageEnemy& e = *sim.current;
+    const EclInstruction* ins = c.instruction;
+
+    switch (op) {
     case 600: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
@@ -1568,6 +1616,18 @@ int StageCommands::execute(EclContext& c, u16 op) {
         return 0;
     }
 
+    case 638:
+        return execute_500(c, op);
+    default:
+        return unimplemented(op);
+    }
+}
+
+int StageCommands::execute_700(EclContext& c, u16 op) {
+    StageSim& sim = *this->sim;
+    StageEnemy& e = *sim.current;
+
+    switch (op) {
     case 700: {
         i32 slot = 0;
         if (!resolve_int(c, 0, slot) || slot < 0 || slot >= 8) {
@@ -1729,6 +1789,16 @@ int StageCommands::execute(EclContext& c, u16 op) {
         sim.emit_curve_laser(e.et[slot], e);
         return sim.error_.empty() ? 0 : -2;
     }
+    default:
+        return unimplemented(op);
+    }
+}
+
+int StageCommands::execute_800(EclContext& c, u16 op) {
+    StageSim& sim = *this->sim;
+    const EclInstruction* ins = c.instruction;
+
+    switch (op) {
     case 801: {
         i32 id = 0;
         if (!resolve_int(c, 2, id)) {
@@ -1796,8 +1866,25 @@ int StageCommands::execute(EclContext& c, u16 op) {
         }
         return 0;
     }
+    default:
+        return unimplemented(op);
+    }
+}
+
+int StageCommands::execute_900(EclContext&, u16 op) {
+    switch (op) {
     case 900:
         return 0;
+    default:
+        return unimplemented(op);
+    }
+}
+
+int StageCommands::execute_1000(EclContext& c, u16 op) {
+    StageSim& sim = *this->sim;
+    StageEnemy& e = *sim.current;
+
+    switch (op) {
     case 1000: {
         i32 kind = 0;
         if (!resolve_int(c, 0, kind)) {
@@ -1825,8 +1912,7 @@ int StageCommands::execute(EclContext& c, u16 op) {
     }
 
     default:
-        sim.error_ = "unimplemented game opcode " + std::to_string(op);
-        return -2;
+        return unimplemented(op);
     }
 }
 

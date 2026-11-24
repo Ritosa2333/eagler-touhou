@@ -340,6 +340,15 @@ class StageCommands final : public EclCommands {
 public:
     StageSim* sim = nullptr;
     int execute(EclContext& context, u16 opcode) override;
+    int unimplemented(u16 opcode);
+    int execute_300(EclContext& context, u16 opcode);
+    int execute_400(EclContext& context, u16 opcode);
+    int execute_500(EclContext& context, u16 opcode);
+    int execute_600(EclContext& context, u16 opcode);
+    int execute_700(EclContext& context, u16 opcode);
+    int execute_800(EclContext& context, u16 opcode);
+    int execute_900(EclContext& context, u16 opcode);
+    int execute_1000(EclContext& context, u16 opcode);
 
 private:
     int create_enemy(EclContext& context, u16 opcode);
