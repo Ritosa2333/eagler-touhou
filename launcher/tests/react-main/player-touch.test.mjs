@@ -48,6 +48,19 @@ function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-
   }; active.push(f); return f;
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+test('TH128 Z owns charge while author auto-fire remains on', async () => {
+  const f=fixture({game:'th128'}), keys=()=>f.sent.filter(message=>message.command==='keyboard').map(message=>[message.code,message.down]);
+  f.touch.syncControls(); assert.equal(f.sent.at(-1).fireEnabled,true);
+  f.pointer('functionKey','pointerdown');
+  await wait(75);
+  assert.deepEqual(keys(),[['KeyZ',true]]);
+  f.pointer('functionKey','pointerup'); await wait(75);
+  assert.deepEqual(keys(),[['KeyZ',true],['KeyZ',false]]);
+  f.pointer('functionKey','pointerdown',{pointerId:2});
+  f.pointer('functionKey','pointercancel',{pointerId:2});
+  assert.deepEqual(keys().slice(2),[['KeyZ',true],['KeyZ',false]]);
+  assert.equal(f.touch.getSnapshot().fireEnabled,true);
+});
 test('TH01 slide holds and releases even with an old focus preference', () => {
   for (const focus of ['two-finger', 'toggle-button']) {
     const f = fixture({game: 'th01', focus});

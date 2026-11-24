@@ -1,0 +1,65 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-16",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "case": 718,
+  "passed": true,
+  "core": 109,
+  "coreRebuilt": false,
+  "Factories": 1,
+  "WorldStarts": 1,
+  "ticks": 600,
+  "difficulty": 1,
+  "originalAssets": {
+    "boss": "boss02.anm",
+    "enemy": "enemy_bf.anm",
+    "messages": "st_a1_2.msg",
+    "ECL": [
+      "st_a1_2b.ecl",
+      "default.ecl"
+    ],
+    "originalBossPrefixCommands": 17,
+    "originalBossPrefixBytes": 384,
+    "originalBossPrefixSHA256": "1287ddb4c12454e94877be8816ce6f0a52622ad5122754d1e6b08c60d2dcdb30",
+    "attackChain": "Boss2 -> Boss2At -> Boss2At1"
+  },
+  "measured": {
+    "type25PresentFrames": 167,
+    "firstTracedType25Frame": 249,
+    "nearBoundaryMovingFireballSamples": 53,
+    "velocitySignTurnBoundaryEventsAllTypes": 317,
+    "velocitySignTurnBoundaryEventsType25": 35,
+    "stationaryBoundarySamples": 0,
+    "traceRowsWithFrames": 123
+  },
+  "literalChecks": [
+    "actualType25PresentFrames >50",
+    "observedBoundaryReflections >0",
+    "stationaryBoundarySamples ==0",
+    "all600nativeTicksReturned1",
+    "debugTainted false and normalRecord not started"
+  ],
+  "classification": "New CPU parent/movement/appearance/MSG/context follow-up; adds coverage beyond713 direct attack-root. No new source fix or runtime package.",
+  "bootstrap": "Synthetic main spawns localownedBoss2 at frame1, runs byte-exact original17-command Boss setup prefix, then explicitly calls Boss2 instead of replaying Boss1 and PetitComet. Earlier phase variables/carry/history and true fullstage entry not reproduced.",
+  "firstFailures": {
+    "715": "Factory1/World0/ticks0; bootstrap names table incorrectly4B padded instead of packedNUL.",
+    "716": "Factory1/World1/ticks0; bootstrap spawned Boss at time0 during configure before spellhost/hitfeedback phase owner ready.",
+    "717": "Factory1/World1/ticks63; wrapper did not declare ECLI graph even though originalfiles already loaded. All first raw/source/result immutable; none establishes a product RED."
+  },
+  "inputPins": 28,
+  "sourcecheck": 0,
+  "grant": true,
+  "once": true,
+  "runtime": 0,
+  "stderrEmpty": true,
+  "ROOTReleased": true,
+  "normalRecord": false,
+  "debugTainted": false,
+  "browser": 0,
+  "GPU": false,
+  "physicalAudio": false,
+  "deviceGap": "Canvas265/GPU execution restrictions remain. No device helper/tab/server created and no bypass attempted. This CPU follow-up does not close actual FPS, pixel seam or full original video parity.",
+  "resourceZIPAndRuntimeV5Unchanged": true,
+  "GitImplementation": "a600d9158ad2cf4dc75bbe334c4dec4c24eb1311",
+  "oldSuccessfulRunsRerun": false
+}

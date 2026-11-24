@@ -1,0 +1,93 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-17",
+  "scope": "Current entry managed parent DATA and identical mounted resources; partial adapter",
+  "cases": {
+    "810": {
+      "pass": 2,
+      "fail": 15,
+      "currentEntryMissingManaged": true
+    },
+    "811": {
+      "pass": 17,
+      "fail": 0
+    },
+    "812": {
+      "pass": 0,
+      "fail": 1,
+      "missingSourceModule": true
+    },
+    "813": {
+      "pass": 13,
+      "fail": 0,
+      "sourceBuilderOnlySynthetic": true
+    },
+    "814": {
+      "pass": 1,
+      "fail": 0,
+      "originalDATBytes": 32336111,
+      "rawTargets": 113,
+      "realHTTPMusicReceipts": 10,
+      "parentWindowSeam": true,
+      "crossRealmArrayBuffer": true
+    },
+    "815": {
+      "pass": 97,
+      "fail": 0,
+      "skip": 0
+    },
+    "816": {
+      "pass": 17,
+      "fail": 0,
+      "realBrowser": true,
+      "realSameOriginParent": true,
+      "realBlobResource": true,
+      "authoredTinyDAT": true,
+      "windowMs": 29008,
+      "ownTabClosed": true,
+      "ownServerClosed": true,
+      "actualRetailAssets": false,
+      "IDB": false,
+      "playInputRenderSeams": true,
+      "GPU": false
+    }
+  },
+  "managedQuery": "managedData=1 + gameGeneration + runtimeEpoch",
+  "rawDATA": "parent.__eaglerPrepareManagedRuntimeDataV1({game:'th128',generation,epoch})",
+  "trustedDescriptor": "existing authenticated complete DAT+OGG package",
+  "acceptedResourceScope": "exact same-byte receipt for a file target already declared and mounted by that package",
+  "originalDAT": {
+    "bytes": 32336111,
+    "sha256": "38be25a5f1b0bf5e88dd7f66e34e295338d6bb968794a1ff587337f46b3db045"
+  },
+  "browserEvidence": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case816-browser-same-origin-managed-DATA\\evidence.json",
+    "bytes": 16134,
+    "sha256": "1346472f21a6d268d96b09c22892b63a4728365bdc0989b4dc690a69c5c0a43b"
+  },
+  "browserScreenshot": {
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case816-browser-same-origin-managed-DATA/result.jpg",
+    "bytes": 58339,
+    "sha256": "35098f595fb8a06932b585c0ed6a34e31012523ee9223ea4634b0127cfa2f352"
+  },
+  "sourceReview": {
+    "worker": "th128-c1-verification",
+    "seq": 7915,
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/dsh-web-completion-20261115/localization/managed-caller811-review-20261117/REVIEW.md",
+    "bytes": 10050,
+    "sha256": "520fa618bd4c89c4646b03588addaf5339bb9d780a2701e7eba1afc4c5cfe37a",
+    "sourceOnly": true,
+    "noScopedBlocker": true
+  },
+  "realGameFrame": false,
+  "Worlds": 0,
+  "Factories": 0,
+  "nativeCompiles": 0,
+  "GPU": false,
+  "mutableFileBridge": false,
+  "completeAdapter": false,
+  "stage3Complete": false,
+  "localV7Unchanged": true,
+  "resourceV2Unchanged": true,
+  "publicURL": null
+}

@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "date": "2026-11-16",
+  "coreOrdinal": 102,
+  "sourceCandidate": "case624-replay-graze-producer-restore-green/candidate",
+  "frontend": "case619 unchanged",
+  "productionSourceChanged": false,
+  "fixtureFailure": {
+    "case": 628,
+    "classification": "test reused already-started StageMusic on second World",
+    "Factories": 1,
+    "WorldStarts": 2,
+    "gameTicks": 3,
+    "menuTicks": 65,
+    "rawBytes": 36144,
+    "rawSHA256": "933f3873d78f39aabb64682ba338ffe9e6ef61d9b2184cf2d5580f5e7ffb8221",
+    "inputPins": 142,
+    "firstRawPreserved": true
+  },
+  "actual": {
+    "case": 629,
+    "passed": true,
+    "Factories": 1,
+    "WorldStarts": 2,
+    "gameTicks": 6,
+    "recordedFrames": [
+      3,
+      3
+    ],
+    "menuTicks": 130,
+    "worldGenerations": [
+      2,
+      5
+    ],
+    "realNativeSaveOpens": 2,
+    "lateNativeCalls": 0,
+    "menuFrameAndGameRNGFrozen": true,
+    "checks": 18,
+    "rows": [
+      {
+        "name": "dispose does not claim native close",
+        "passed": true
+      },
+      {
+        "name": "between-worlds reset removes native pause",
+        "passed": true
+      },
+      {
+        "name": "between-worlds reset removes recording",
+        "passed": true
+      },
+      {
+        "name": "between-worlds no-owner calls rejected",
+        "passed": true
+      },
+      {
+        "name": "new World generation",
+        "passed": true
+      },
+      {
+        "name": "both real native save entries",
+        "passed": true
+      },
+      {
+        "name": "old await remains held after successor open",
+        "passed": true
+      },
+      {
+        "name": "retired callback settles cleanly",
+        "passed": true
+      },
+      {
+        "name": "retired callback issues no native call",
+        "passed": true
+      },
+      {
+        "name": "retired callback preserves successor refs",
+        "passed": true
+      },
+      {
+        "name": "retired callback preserves actual native state",
+        "passed": true
+      },
+      {
+        "name": "final reset removes native pause",
+        "passed": true
+      },
+      {
+        "name": "final reset removes recording",
+        "passed": true
+      },
+      {
+        "name": "final no-owner calls rejected",
+        "passed": true
+      },
+      {
+        "name": "second disposed callback makes no native call",
+        "passed": true
+      },
+      {
+        "name": "no save ACK or name commit",
+        "passed": true
+      },
+      {
+        "name": "one Factory two Worlds six ticks",
+        "passed": true
+      },
+      {
+        "name": "no stderr from native",
+        "passed": true
+      }
+    ],
+    "fullOriginalConsumer": true,
+    "actualCore": 102,
+    "actualWorldReset": true,
+    "nativeRetiredByDispose": false,
+    "nativeResetAndReopenProven": true,
+    "storageAndAudioSynthetic": true,
+    "browser": 0,
+    "GPU": 0,
+    "nativeCompiles": 0,
+    "realDurableACK": 0,
+    "fullTitleMainPrepared": false,
+    "normalClearClaimed": false,
+    "fullReplayClaimed": false,
+    "sameWorldReopenWithoutResetProven": false,
+    "fullSaveTransactionProven": false,
+    "elapsedMs": 560,
+    "inputPins": 144
+  },
+  "scope": "actual reset/reopen and stale name-observe callback; no same-World reset-free reopening or full save transaction",
+  "publicRuntimeChanged": false,
+  "previousSuccessReruns": 0
+}

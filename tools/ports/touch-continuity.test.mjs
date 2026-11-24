@@ -31,6 +31,13 @@ function deltaFunctions(source) {
   .map(name=>functionSource(source,new RegExp('(?:bool|void) Touch::'+name+'\\('))).join('\n');
 }
 for(const directory of directories.filter(directory => !["ports/th01","ports/th02","ports/th03","ports/th04"].includes(directory))){
+ if(directory==='ports/th128'){
+  test(directory+' held pointer resumes after native player relocation',()=>{
+   execFileSync(process.execPath,['--test','tests/thprac128/upstream-touch.test.mjs','tests/thprac128/full-touch-page.test.mjs'],
+     {cwd:resolve(root,directory),windowsHide:true});
+  });
+  continue;
+ }
  const header=resolve(root,directory,'portable/input/TouchController.hpp');
  const module=resolve(root,directory,'src/touch-input.mjs');
  const legacy=resolve(root,directory,'src/Touch.cpp');

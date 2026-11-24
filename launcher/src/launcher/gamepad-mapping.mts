@@ -10,11 +10,12 @@ export interface GamepadProfile {bindings:GamepadBindings; threshold:number}
 export interface GamepadChoice {key:string; name:string; index:number; standard:boolean}
 export interface GamepadMappingSnapshot {enabled:boolean; seats:readonly string[]; profiles:Readonly<Record<string,GamepadProfile>>; devices:readonly GamepadChoice[]; supported:boolean; learning:GamepadAction|null; active:number;deviceActive:Readonly<Record<string,number>>}
 const emptyBindings=():GamepadBindings=>({shoot:[],bomb:[],focus:[],pause:[],up:[],down:[],left:[],right:[],skip:[],confirm:[],action:[],restart:[]});
+const standardDirections=[['up',12,1,-1],['down',13,1,1],['left',14,0,-1],['right',15,0,1]] as const;
 export function defaultGamepadProfile(standard:boolean):GamepadProfile {
   const bindings=emptyBindings();
   if(standard){
     for(const [action,index] of Object.entries({shoot:0,bomb:1,focus:4,pause:9,skip:5,action:2})) bindings[action as GamepadAction]=[{kind:'button',index}];
-    for(const [action,index,axis,value] of [['up',12,1,-1],['down',13,1,1],['left',14,0,-1],['right',15,0,1]] as const)
+    for(const [action,index,axis,value] of standardDirections)
       bindings[action]=[{kind:'button',index},{kind:'axis',index:axis,rest:0,value}];
   }
   return {bindings,threshold:.5};
@@ -23,11 +24,27 @@ function controlsValid(value:unknown):value is GamepadControl[] {
   return Array.isArray(value)&&value.length<=4&&value.every(c=>c&&Number.isInteger(c.index)&&c.index>=0&&c.index<256&&
     (c.kind==='button'||c.kind==='axis'&&Number.isFinite(c.rest)&&Math.abs(c.rest)<=1&&Number.isFinite(c.value)&&Math.abs(c.value)<=1&&Math.abs(c.value-c.rest)>=.25));
 }
-export function gamepadActionBits(pad:GamepadDevice,profile:GamepadProfile):number {
-  let bits=0;
+function usesStandardDirections(bindings:GamepadBindings){
+  for(const [action,button,axis,value] of standardDirections){
+    const controls=bindings[action];
+    if(controls.length!==2||!controls.some(c=>c.kind==='button'&&c.index===button)
+      ||!controls.some(c=>c.kind==='axis'&&c.index===axis&&c.rest===0&&c.value===value))return false;
+  }
+  return true;
+}
+function eightWayStick(axes:readonly number[],radius:number){
+  const [x=0,y=0]=axes;
+  if(!Number.isFinite(x)||!Number.isFinite(y)||x*x+y*y<radius*radius)return 0;
+  const ax=Math.abs(x),ay=Math.abs(y),boundary=Math.SQRT2-1;
+  return (ay>=ax*boundary?(y<0?16:32):0)|(ax>=ay*boundary?(x<0?64:128):0);
+}
+export function gamepadActionBits(pad:GamepadDevice,profile:GamepadProfile,eightWay=false):number {
+  // Keep remapped directions and nonstandard devices under their saved controls.
+  const radial=eightWay&&pad.mapping==='standard'&&usesStandardDirections(profile.bindings);
+  let bits=radial?eightWayStick(pad.axes,profile.threshold):0;
   gamepadActions.forEach((action,n)=>{if(profile.bindings[action].some(c=>c.kind==='button'?
     !!pad.buttons[c.index]&&(Number.isFinite(pad.buttons[c.index]!.value)?pad.buttons[c.index]!.value>=profile.threshold:pad.buttons[c.index]!.pressed):
-    Number.isFinite(pad.axes[c.index])&&(pad.axes[c.index]!-c.rest)/(c.value-c.rest)>=profile.threshold))bits|=1<<n;});
+    !(radial&&n>=4&&n<8)&&Number.isFinite(pad.axes[c.index])&&(pad.axes[c.index]!-c.rest)/(c.value-c.rest)>=profile.threshold))bits|=1<<n;});
   return bits;
 }
 export interface GamepadMappingModel {
@@ -35,7 +52,7 @@ export interface GamepadMappingModel {
   refresh():void; setEnabled(value:boolean):void; select(seat:number,key:string):void;
   bind(key:string,action:GamepadAction,controls:GamepadControl[]):void; reset(key:string):void; setThreshold(key:string,value:number):void;
   learn(key:string,action:GamepadAction):void; cancelLearning():void; suspend():void;
-  sample(seat:number,allowed:boolean):number;
+  sample(seat:number,allowed:boolean,eightWay?:boolean):number;
   sampleDevice(seat:number,key:string,allowed:boolean):number;
 }
 /** No rendering timer feeds gameplay. sample() reads a fresh device snapshot
@@ -96,13 +113,13 @@ export function createGamepadMappingModel({storage,getGamepads,scope}: {
     if(JSON.stringify(nextActive)!==JSON.stringify(deviceActive)){deviceActive=nextActive;changed=true;}
     if(preview!==active){active=preview;changed=true;}if(changed)publish();
   }
-  function sampleDevice(seat:number,key:string,allowed:boolean){
+  function sampleDevice(seat:number,key:string,allowed:boolean,eightWay=false){
     if(seat!==0&&seat!==1)return 0;
     if(!allowed||learning){blocked.add(seat);return 0;}
     const pads=read(),choices=enumerate(pads),choice=choices.find(d=>d.key===key),pad=pads.find(p=>p.index===choice?.index);
     if(!pad||!choice){blocked.add(seat);identities.delete(seat);return 0;}
     const identity=choice.key+'@'+choice.index;if(identities.get(seat)!==identity){identities.set(seat,identity);blocked.add(seat);}
-    const bits=gamepadActionBits(pad,profile(choice.key,choice.standard));
+    const bits=gamepadActionBits(pad,profile(choice.key,choice.standard),eightWay);
     if(blocked.has(seat)){if(!bits)blocked.delete(seat);return 0;}return bits;
   }
   publish();
@@ -117,6 +134,6 @@ export function createGamepadMappingModel({storage,getGamepads,scope}: {
     learn(key,action){refresh();const choice=devices.find(d=>d.key===key),pad=read().find(p=>p.index===choice?.index);if(!pad)return;
       learning={key,action,buttons:pad.buttons.map(b=>b.pressed||b.value>.5),axes:[...pad.axes],released:false};suspend();publish();},
     cancelLearning(){learning=null;suspend();publish();},suspend,
-    sample(seat,allowed){return enabled?sampleDevice(seat,seats[seat]??'',allowed):-1;},sampleDevice,
+    sample(seat,allowed,eightWay){return enabled?sampleDevice(seat,seats[seat]??'',allowed,eightWay):-1;},sampleDevice,
   };
 }

@@ -1,0 +1,608 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-17",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "baseCommit": "3a281e391eaf4d16e774c65fb501abaebe567808",
+  "fullThpracComplete": false,
+  "phase3Complete": false,
+  "progressEstimate": {
+    "percent": 90,
+    "kind": "roughfunctional/notmeasured/notwholeproject"
+  },
+  "browser978": {
+    "authority": "MAIN",
+    "ordinal": 978,
+    "passed": true,
+    "checks": [
+      {
+        "name": "real route automatically opens official menu with actual116 ready",
+        "passed": true
+      },
+      {
+        "name": "real Enter whole currentcaller adopts native practice",
+        "passed": true
+      },
+      {
+        "name": "actual F1F7 native owner and seven row Backspace",
+        "passed": true
+      },
+      {
+        "name": "real F12 speed writes120fps on native frame0",
+        "passed": true
+      },
+      {
+        "name": "actual F12 close button restores eligible game pause state",
+        "passed": true
+      },
+      {
+        "name": "actual WASM successful three native ticks",
+        "passed": true
+      },
+      {
+        "name": "actual page saves native RPY with PRAC to real IDB",
+        "passed": true
+      },
+      {
+        "name": "real IDB reopened and exactRPY/hash accepted",
+        "passed": true
+      },
+      {
+        "name": "whole loseFocus and native pause stop logic clock",
+        "passed": true
+      },
+      {
+        "name": "actual native pause Escape resumes unchanged world",
+        "passed": true
+      },
+      {
+        "name": "actual same practice restart preserves F7source and120fps",
+        "passed": true
+      },
+      {
+        "name": "browser whole caller natural nativeMSG strictF7 ACK",
+        "passed": true
+      },
+      {
+        "name": "close stops retained exact source",
+        "passed": true
+      },
+      {
+        "name": "actual saved replay enters native playLock",
+        "passed": true
+      },
+      {
+        "name": "Replay disables live native assists and speed",
+        "passed": true
+      },
+      {
+        "name": "actual saved native Replay consumes exact3frames",
+        "passed": true
+      },
+      {
+        "name": "Replay native player and RNG equal recorded projection",
+        "passed": true
+      },
+      {
+        "name": "actual configured native failure leaves stopped owner without ordinary fallback",
+        "passed": true
+      },
+      {
+        "name": "real same UI retry succeeds with fresh native owner",
+        "passed": true
+      },
+      {
+        "name": "actual resource hold cancel rejects late native adoption",
+        "passed": true
+      },
+      {
+        "name": "no unexpected browser console errors",
+        "passed": true
+      }
+    ],
+    "inputs": 46,
+    "browser": 1,
+    "realHTMLCSS": true,
+    "actualPracticeCaller": true,
+    "nativeResourcePauseSeams": false,
+    "realLocalStorage": true,
+    "realIndexedDB": true,
+    "Worlds": 5,
+    "Factories": 10,
+    "actualNativeCPU": true,
+    "nativeCompiles": 0,
+    "GPU": false,
+    "physicalAudio": false,
+    "evidence": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case978-browser-native-currentcaller-final-cancel-closure\\evidence.json",
+      "bytes": 93296,
+      "sha256": "364424406d5c33e74c193485548dd6c79a43a2815e47f3b2b7cd28b61777c082"
+    },
+    "windowMs": 34635,
+    "firstFailure": null,
+    "actualTicks": 778,
+    "naturalACK": {
+      "serial": 1,
+      "operation": 5,
+      "durationFrames": 480,
+      "durationSeconds": 8,
+      "immediate": false,
+      "acknowledged": true
+    },
+    "nativeFrameNaturalACK": 772,
+    "actualNativeReplayFrames": 3,
+    "matchingNativeProjections": 12,
+    "console": [],
+    "crop": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case978-browser-native-currentcaller-final-cancel-closure\\f12-panel-only.png",
+      "bytes": 92324,
+      "sha256": "d95187a15febee79d7c53b1d6f187d09a1a3d1e3b2149d39ee48e41ce499f557"
+    },
+    "fixtureChecks": 865
+  },
+  "affected980": {
+    "authority": "MAIN",
+    "ordinal": 980,
+    "passed": true,
+    "summary": {
+      "pass": 265,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "tests": 265
+    },
+    "runtime": 0,
+    "productWorlds": 0,
+    "nativeCompiles": 0,
+    "browser": 0,
+    "inputs": 119,
+    "at": "2026-11-17T13:02:06.696Z"
+  },
+  "productFixes": [
+    "ActualReplaydisclosuretoggle observes currentrecorder/25slots",
+    "ActualconfiguredWorldfailurediagnostic precedes nonadoptedstage identity;truecancel still AbortError"
+  ],
+  "unchangedCore116": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case961-private-core116-routechoice-practice-recorder\\run\\runtime\\core.wasm",
+    "bytes": 2432947,
+    "sha256": "c7fd33030c67bc3357e28f66b7e340f74130d9a3e1cf146dc672923d7e53d537"
+  },
+  "productionTestStrip": {
+    "excluded": true,
+    "validatedBy": "browser-closure.test.mjs fourthtest",
+    "fixtureOnly": true
+  },
+  "seams": [
+    "rendererupload/render",
+    "fonttext_raster",
+    "endingpreparation",
+    "physicalWebAudioGraphDecode",
+    "route_snapshotentryfixture"
+  ],
+  "cases": [
+    {
+      "ordinal": 968,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case968-browser-native-currentcaller-cancel-error",
+      "result": null,
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case968-browser-native-currentcaller-cancel-error\\request.json",
+        "bytes": 25596,
+        "sha256": "4f8480a08d9c49ba9eec12d497099b3600472d6c6466cecbe7671bea139400b0"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case968-browser-native-currentcaller-cancel-error\\actual-manifest.json",
+        "bytes": 27472,
+        "sha256": "87ddc62ca851be5142d5820ff60fdf2eabc04cb79ae85fbf3936c12fc607c9a6"
+      },
+      "grant": null,
+      "passed": false,
+      "sourcecheckOnly": true,
+      "browser": 0,
+      "checks": 0,
+      "Factories": 0,
+      "WorldStarts": 0,
+      "ticks": 0,
+      "failure": null
+    },
+    {
+      "ordinal": 969,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case969-browser-native-currentcaller-cancel-error",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case969-browser-native-currentcaller-cancel-error\\result.json",
+        "bytes": 2585,
+        "sha256": "d57f17625d6986dbe1d4e035ae85d6ef6e9861ab338fe9d693b7ff90db6e1c22"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case969-browser-native-currentcaller-cancel-error\\request.json",
+        "bytes": 25590,
+        "sha256": "557cb30bb8f461c599d8e637e8af46fe3b90fb8a228230382f0640ccc21315fe"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case969-browser-native-currentcaller-cancel-error\\actual-manifest.json",
+        "bytes": 27466,
+        "sha256": "f8252498f462b8b7aa65b30c2c5f414f5d5c92bacfdf4264924df3ceb9cdb852"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case969-browser-native-currentcaller-cancel-error\\MAIN-APPROVAL.json",
+        "bytes": 594,
+        "sha256": "59f868b8d8384a98651f61de7ca9cec9ed67bffa4360d1d17c6950e10ad9b5d1"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 0,
+      "Factories": 0,
+      "WorldStarts": 0,
+      "ticks": 0,
+      "failure": "Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"ready\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"ready\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}"
+    },
+    {
+      "ordinal": 970,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case970-browser-native-currentcaller-resource-route-alias",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case970-browser-native-currentcaller-resource-route-alias\\result.json",
+        "bytes": 2994,
+        "sha256": "e9f0aa7f0f7e535b523723a8e4a162915dcac16c8e21a335ee61b6134a1c7dcd"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case970-browser-native-currentcaller-resource-route-alias\\request.json",
+        "bytes": 27084,
+        "sha256": "55c8331323273d3b73c4c1fd6b55dcbd7fa5612692c30c99e2922bad0b80c111"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case970-browser-native-currentcaller-resource-route-alias\\actual-manifest.json",
+        "bytes": 29056,
+        "sha256": "87070b710629a4aba940a6adfaf0a68ca0946042a3128faf6c0544a1e83dd6d1"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case970-browser-native-currentcaller-resource-route-alias\\MAIN-APPROVAL.json",
+        "bytes": 579,
+        "sha256": "6021c62f1cc327e7592e518fbd06068a0ffde7f2b1229741a457de15f119748e"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 1,
+      "Factories": 1,
+      "WorldStarts": 0,
+      "ticks": 0,
+      "failure": "Error: Playwright selector deadline exceeded\nlocator.press failed for selector #practice-menu\nLocator diagnostics: {\"kind\":\"action_failed\",\"action\":\"press\",\"locator\":\"#practice-menu\",\"matchCount\":1,\"matches\":[{\"ariaLabel\":null,\"disabled\":false,\"role\":\"dialog\",\"tag\":\"section\",\"text\":\"练习选项\\n        \\n        起点 A (魔法之森)B (雾之湖)C (春之小径)Extra (夜樱怪道)\\n        模式 正常游玩练习模式\\n        路径 A1 (露娜 - 斯塔 - 桑尼)A2 (露娜 - 桑尼\",\"type\":null,\"visible\":true}],\"visibleCount\":1,\"truncated\":false}"
+    },
+    {
+      "ordinal": 971,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case971-browser-native-currentcaller-focused-input",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case971-browser-native-currentcaller-focused-input\\result.json",
+        "bytes": 1355,
+        "sha256": "80845abe480b2cfbe9dfe8c241d11a043292ca9d6db628d100e919b056d91359"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case971-browser-native-currentcaller-focused-input\\request.json",
+        "bytes": 26958,
+        "sha256": "f90fceac62757496d75d1e72609723f9ff7d415db989e5db1f6f6a1bccb58d90"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case971-browser-native-currentcaller-focused-input\\actual-manifest.json",
+        "bytes": 28902,
+        "sha256": "c7f87432c883504be314aa25e65d3c29ad4b65d3464c59b60074eeafdfcf3d10"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case971-browser-native-currentcaller-focused-input\\MAIN-APPROVAL.json",
+        "bytes": 516,
+        "sha256": "2ad7979e68801026a647f3c097ffe6e61b883c51e8c5992fc51b4118328885a2"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 4,
+      "Factories": 2,
+      "WorldStarts": 1,
+      "ticks": 0,
+      "failure": "real F12 speed writes120fps on native frame0"
+    },
+    {
+      "ordinal": 972,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case972-browser-native-currentcaller-event-visible-state",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case972-browser-native-currentcaller-event-visible-state\\result.json",
+        "bytes": 2720,
+        "sha256": "8178688837feab2210e2997a1b67f09ad9f52293497d512c5dfbcc5bb82499e2"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case972-browser-native-currentcaller-event-visible-state\\request.json",
+        "bytes": 27066,
+        "sha256": "f26a3fd855d51d4b9688929ce01e6c7a9534085d4bcd8d5439ba6aaf3b10c782"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case972-browser-native-currentcaller-event-visible-state\\actual-manifest.json",
+        "bytes": 29034,
+        "sha256": "1432ec92e0d3a865799d394c6de5d1b0517020433df49f84b20c84ea5ae27261"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case972-browser-native-currentcaller-event-visible-state\\MAIN-APPROVAL.json",
+        "bytes": 592,
+        "sha256": "629737924a98e8fee1303f3a2d27db3ee0e3a827388571e9675745d5bd91951f"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 5,
+      "Factories": 2,
+      "WorldStarts": 1,
+      "ticks": 0,
+      "failure": "Error: No node found at given location\nwaiting on click for selector #fixture-three\nLocator diagnostics: {\"kind\":\"action_failed\",\"action\":\"click\",\"locator\":\"#fixture-three\",\"matchCount\":1,\"matches\":[{\"ariaLabel\":null,\"disabled\":false,\"role\":null,\"tag\":\"button\",\"text\":\"运行三帧\",\"type\":null,\"visible\":true}],\"visibleCount\":1,\"truncated\":false}"
+    },
+    {
+      "ordinal": 973,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case973-browser-native-currentcaller-visible-control-bar",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case973-browser-native-currentcaller-visible-control-bar\\result.json",
+        "bytes": 2789,
+        "sha256": "c4c6f9cf5b7544cebf00d3855dd73a38ab93f1b1fc013791fc269a8f77234774"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case973-browser-native-currentcaller-visible-control-bar\\request.json",
+        "bytes": 27066,
+        "sha256": "813d6ea258d0be65f9066e18abbe67ecace78d3e1fd5a13d78c8c9b10299f462"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case973-browser-native-currentcaller-visible-control-bar\\actual-manifest.json",
+        "bytes": 29034,
+        "sha256": "2e9da843c89b0bbf6c0cfd457edb7e46511a0f4f3d683582cdfb50eaad420807"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case973-browser-native-currentcaller-visible-control-bar\\MAIN-APPROVAL.json",
+        "bytes": 543,
+        "sha256": "d37420015244ebf5076f6f9e05d877f93a80492a11b7bf40a71358711ee6feb1"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 6,
+      "Factories": 2,
+      "WorldStarts": 1,
+      "ticks": 3,
+      "failure": "Error: Playwright selector deadline exceeded\nwaiting on click for selector #thprac-replay-save\nLocator diagnostics: {\"kind\":\"action_failed\",\"action\":\"click\",\"locator\":\"#thprac-replay-save\",\"matchCount\":1,\"matches\":[{\"ariaLabel\":null,\"disabled\":true,\"role\":null,\"tag\":\"button\",\"text\":\"保存当前练习录像\",\"type\":\"button\",\"visible\":true}],\"visibleCount\":1,\"truncated\":false}"
+    },
+    {
+      "ordinal": 974,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case974-browser-native-currentcaller-Replay-controls-refresh",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case974-browser-native-currentcaller-Replay-controls-refresh\\result.json",
+        "bytes": 2632,
+        "sha256": "73292d35cbf5d47126ecc1399072c4bea707a7e632374f9404aa08e17b8c2236"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case974-browser-native-currentcaller-Replay-controls-refresh\\request.json",
+        "bytes": 27138,
+        "sha256": "0c2ab1bf7a18da0ac245a9b13c2d62ecc489f609702adaea7989480fe4b5e2a9"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case974-browser-native-currentcaller-Replay-controls-refresh\\actual-manifest.json",
+        "bytes": 29122,
+        "sha256": "ea355631946468c2bf691cff7fcd1d61f527a8233325125b1321a9e444de347a"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case974-browser-native-currentcaller-Replay-controls-refresh\\MAIN-APPROVAL.json",
+        "bytes": 603,
+        "sha256": "89aaf52e9f396ff4a8138caa581feffb91447280134462cee0b5d8536d002d15"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 7,
+      "Factories": 2,
+      "WorldStarts": 1,
+      "ticks": 3,
+      "failure": "Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"observed\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"observed\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}"
+    },
+    {
+      "ordinal": 975,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case975-browser-native-currentcaller-exact-Replay-reopen",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case975-browser-native-currentcaller-exact-Replay-reopen\\result.json",
+        "bytes": 2640,
+        "sha256": "223ff1e79fe38612796de9f42cc151a8afdf06fe5235564fc4925f26dab122b8"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case975-browser-native-currentcaller-exact-Replay-reopen\\request.json",
+        "bytes": 27066,
+        "sha256": "be89712b6e4ae7155c1f644822348e4900df6732207accb84f170ae7af07cf4e"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case975-browser-native-currentcaller-exact-Replay-reopen\\actual-manifest.json",
+        "bytes": 29034,
+        "sha256": "e8a62d29f887398b5cbec553cee46dfb39fc5e84d43250af98df1ad915522381"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case975-browser-native-currentcaller-exact-Replay-reopen\\MAIN-APPROVAL.json",
+        "bytes": 548,
+        "sha256": "6248bb0a4cfc1614ebec89124a8e5d89dbadccbff1e36af6e11b8fc8142697e9"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 8,
+      "Factories": 2,
+      "WorldStarts": 1,
+      "ticks": 3,
+      "failure": "Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"blur-boundary\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"blur-boundary\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}"
+    },
+    {
+      "ordinal": 976,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case976-browser-native-currentcaller-owned-audio-pause",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case976-browser-native-currentcaller-owned-audio-pause\\result.json",
+        "bytes": 2636,
+        "sha256": "33a2482e2781cc5ee2e944d321ba4b708ace323bbcaea37273dbe2dcf5ed49b8"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case976-browser-native-currentcaller-owned-audio-pause\\request.json",
+        "bytes": 27030,
+        "sha256": "83acc35206e47a502ffcbba7ea748fb778ef5c7dcbd1d3ec83fa0c4a4b7a904f"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case976-browser-native-currentcaller-owned-audio-pause\\actual-manifest.json",
+        "bytes": 28990,
+        "sha256": "4ab1593a2e4b971cbd147313a9fdc6e078f39ba233ea9c5221e99665a1c15628"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case976-browser-native-currentcaller-owned-audio-pause\\MAIN-APPROVAL.json",
+        "bytes": 583,
+        "sha256": "3a2612f11cfa47de45cc2140d0e373a0eff8e1836c9b53c2a0982d2ac8eba7c1"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 17,
+      "Factories": 8,
+      "WorldStarts": 4,
+      "ticks": 778,
+      "failure": "Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"launch-failed\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"launch-failed\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}"
+    },
+    {
+      "ordinal": 977,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case977-browser-native-currentcaller-error-diagnostic",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case977-browser-native-currentcaller-error-diagnostic\\result.json",
+        "bytes": 2653,
+        "sha256": "8d328fc3414de60891bcf433750486d5ece7190f55aa626fb4dd5da66ef5bf59"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case977-browser-native-currentcaller-error-diagnostic\\request.json",
+        "bytes": 27012,
+        "sha256": "b32bcca36ac820f3fdea754019ead814a33bc993aaaddcbebb597b6830148e23"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case977-browser-native-currentcaller-error-diagnostic\\actual-manifest.json",
+        "bytes": 28968,
+        "sha256": "513e513bc143d9b3ba1f7c13be96aeb22ab884fcd906177301e4ce86dd217c35"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case977-browser-native-currentcaller-error-diagnostic\\MAIN-APPROVAL.json",
+        "bytes": 573,
+        "sha256": "ac9c91df236b4a9bc383c1a56fa7fcb323bc136e5e405a7b57b2a0389198e49c"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 19,
+      "Factories": 12,
+      "WorldStarts": 6,
+      "ticks": 778,
+      "failure": "Error: Playwright selector deadline exceeded\nlocator.waitFor(attached) timed out for selector #fixture-ready[data-phase=\"held-before-commit\"]\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#fixture-ready[data-phase=\\\"held-before-commit\\\"]\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}"
+    },
+    {
+      "ordinal": 978,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case978-browser-native-currentcaller-final-cancel-closure",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case978-browser-native-currentcaller-final-cancel-closure\\result.json",
+        "bytes": 699,
+        "sha256": "4f308d496acfa9dc504d6fe560365e34d9bedab409bc2e05110211ab3b7b0ce6"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case978-browser-native-currentcaller-final-cancel-closure\\request.json",
+        "bytes": 27084,
+        "sha256": "79dfe74fe132ddd6da79bdcc5bdfbb2f35c72f16ad3de9085496ed953b0910ef"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case978-browser-native-currentcaller-final-cancel-closure\\actual-manifest.json",
+        "bytes": 29056,
+        "sha256": "3e8d5cd9f9bbcb30a5620572c285898e2aecd987af7b9982556e39546d725d36"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case978-browser-native-currentcaller-final-cancel-closure\\MAIN-APPROVAL.json",
+        "bytes": 554,
+        "sha256": "b73ac362fe32e5f04db990e18a8142d0ee31eafdcb58d1c1571b67ebfc77386a"
+      },
+      "passed": true,
+      "sourcecheckOnly": false,
+      "browser": 1,
+      "checks": 21,
+      "Factories": 10,
+      "WorldStarts": 5,
+      "ticks": 778,
+      "failure": null
+    },
+    {
+      "ordinal": 979,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case979-thprac-browser-closure-affected",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case979-thprac-browser-closure-affected\\result.json",
+        "bytes": 297,
+        "sha256": "78ab7b06e367a0408e2e2ce436b10f240a46665e8288dec8b626ce73111890b5"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case979-thprac-browser-closure-affected\\request.json",
+        "bytes": 33000,
+        "sha256": "bfe4d23bfc1b6540f0cec8e9bacba0d9f8c00fc720ba36de35b8011e53266790"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case979-thprac-browser-closure-affected\\actual-manifest.json",
+        "bytes": 38794,
+        "sha256": "1322d3ad87677364dc1929e6aa436a66ced9bc551e396b9dddd2b6868f0bf72c"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case979-thprac-browser-closure-affected\\MAIN-APPROVAL.json",
+        "bytes": 573,
+        "sha256": "641d9494a260c8e6e47481bed6fb106140621dc9e0837ccb7616404813691704"
+      },
+      "passed": false,
+      "sourcecheckOnly": false,
+      "browser": 0,
+      "checks": 262,
+      "Factories": 0,
+      "WorldStarts": 0,
+      "ticks": 0,
+      "failure": 1
+    },
+    {
+      "ordinal": 980,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case980-thprac-browser-closure-affected-escaped-source",
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case980-thprac-browser-closure-affected-escaped-source\\result.json",
+        "bytes": 296,
+        "sha256": "ccf582f4333a7112937494bcd8ec3969a48e3763ca713305abc5fa61b753876b"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case980-thprac-browser-closure-affected-escaped-source\\request.json",
+        "bytes": 33030,
+        "sha256": "e7e5c4b8d7c2fd95b0223f499f6486ef9163b5c64e7db064b7f9e8ab79448b29"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case980-thprac-browser-closure-affected-escaped-source\\actual-manifest.json",
+        "bytes": 38854,
+        "sha256": "f214bcb092cfd17711b76f1ef3b9545f2826683dc937e03239856e6dc4c4a456"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case980-thprac-browser-closure-affected-escaped-source\\MAIN-APPROVAL.json",
+        "bytes": 604,
+        "sha256": "1826fb0d2f4517b974f3e33a97354ac53b50d773b225a01327bb03c62c885f09"
+      },
+      "passed": true,
+      "sourcecheckOnly": false,
+      "browser": 0,
+      "checks": 265,
+      "Factories": 0,
+      "WorldStarts": 0,
+      "ticks": 0,
+      "failure": 0
+    }
+  ],
+  "review": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\MAIN-thprac-browser968-980-self-review-20261117.md",
+    "bytes": 3709,
+    "sha256": "a834235ac9e1c5f22549bb1d3bfc648d59bc5dfc547c9765afb11f59618334b4"
+  },
+  "incrementalPins": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac128-browser968-980-incremental-pin-readback-20261117.json",
+    "bytes": 7362,
+    "sha256": "bdf022b15843802bcc0a0199d33d29518a21cf51f5c4343267fb1f7e24010f05"
+  },
+  "priorUnresolvedExternalPython": 1,
+  "protectedPins": 8,
+  "nativeCompiles": 0,
+  "fullCoreCompiles": 0,
+  "ROOTFree": true,
+  "ownedTabsClosed": true,
+  "publication": false
+}

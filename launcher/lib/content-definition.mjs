@@ -310,6 +310,12 @@ export const PRODUCT_CONTENT = Object.freeze({
       ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
     }),
   }),
+  th128: Object.freeze({
+    // Import uses the original byte-identified DAT + OGG Package ZIP.
+    dataLayout: "sha256-58cd45fe7cac9af281d9de993a527ccfbbe6f27b89bcd0ca98a7031333fce200",
+    music: Object.freeze({ogg: Object.freeze({mount: PRODUCT_GAMES.th128.package.musicMounts.ogg,
+      files: numbered("th128", ["00", "01", "02", "05", "06", "07", "08", "09", "10", "11"], "ogg")})}),
+  }),
   th13: Object.freeze({
     original: Object.freeze({
       files: Object.freeze(["th13.dat"]),

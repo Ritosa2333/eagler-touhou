@@ -1,0 +1,1843 @@
+{
+  "authority": "MAIN",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "date": "2026-11-17",
+  "baseGit": "823b9e36ebad7aabf175598ca0eba1dbe19ac077",
+  "fullThpracComplete": false,
+  "stage3Complete": false,
+  "practiceReplayFunctionalBatchImplemented": true,
+  "sourcePins": [
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.mjs",
+      "bytes": 327054,
+      "sha256": "4c6f7985e907c30f2bbde39614ba2027ddb3838c14a56ba8e22a0bdaf996c46b"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.html",
+      "bytes": 23495,
+      "sha256": "4f868353c07f6e1710ab95e0f60c6d7dfb3138bb1e66cbffd8cc918c0b9127a8"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\replay.mjs",
+      "bytes": 17771,
+      "sha256": "1400d56457bfffad9f301696bc82545a74aab065b52496b8d6dd4d36af137366"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\sound.mjs",
+      "bytes": 90835,
+      "sha256": "5cde264ff1765029542151aeae545b3a8fd5bc23bcbae9a69b6f8fe23410414c"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\thprac128-recording.mjs",
+      "bytes": 2719,
+      "sha256": "2b2c4313780512c0cc537db94515b644aee052db4f1d8a8ecd9bc0af9ec93e34"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\thprac128-replay.mjs",
+      "bytes": 7972,
+      "sha256": "79965290a0a909a9c255773eaf7794dca9082500ba6d804bc54f4c4e22318354"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\game\\NativeRunReplay.hpp",
+      "bytes": 8834,
+      "sha256": "6d2e3d263dc86fb2e22c4a4952917ebbaa8ae34611df7713ed8880eeca1f0303"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\practice\\Thprac128Web.hpp",
+      "bytes": 832,
+      "sha256": "02d5e33e1b2c7ab3fa3ef597211cf0b5fc47d3f3e33b590398168c5d28a835e0"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\runtime\\WorldExports.cpp",
+      "bytes": 375823,
+      "sha256": "fe748691a2b54ef94b6db6988a1f9a0b75412036927a85c7fa6f81ca26d5dc56"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tools\\build-runtime.mjs",
+      "bytes": 10665,
+      "sha256": "4479120217e722903d7566f3e97b2ac0cdcdd15f9ddbf4abe964e398ab7802a6"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\replay-native.cpp",
+      "bytes": 6803,
+      "sha256": "5238af05d3a9c431f78eb6e6d3b0b991c331f8275674259e0ad92aeeb37f0be8"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\replay-web.test.mjs",
+      "bytes": 5586,
+      "sha256": "7f129bd008810878cd116cac49e2946f7f7e3ea51439e91630cbe0852e1c2779"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\recording-page.test.mjs",
+      "bytes": 5871,
+      "sha256": "f830a7f5677d199e3a5a1d2762be1cfdcfcccdefa7ad71c8d324985a63a883cd"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\actual-native-RPY.test.mjs",
+      "bytes": 2482,
+      "sha256": "5255338587f549eeeed3b56c9f289a4b4ba57b5446b15be9b711ace01661f7ff"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\actual-Replay-runtime.mjs",
+      "bytes": 8247,
+      "sha256": "11471a741c87ace46fac8e2e6023965569f8ee24d5c088a0872d2842e1002d14"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\export-replay-resources.mjs",
+      "bytes": 1672,
+      "sha256": "2d249b441e39bac25aa6d8fb650658cfd4ebe6d2956f903022d244dc37365a5e"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\replay-USER-pair.test.mjs",
+      "bytes": 1632,
+      "sha256": "6227fd711cdea8f36481a631385f058168f289f32e77e3f0eb962595c9abd6f3"
+    }
+  ],
+  "upstream": {
+    "commit": "b5beb37a91e322d985c8f89bb6377d55bcf07734",
+    "saveLoadReference": {
+      "commit": "b5beb37a91e322d985c8f89bb6377d55bcf07734",
+      "source": {
+        "upstreamBytes": 40892,
+        "upstreamSHA256": "a1d5532a4727a9a415d300a1d4516b12c21f605559a150c480fff994263a59b7",
+        "local": {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac-reference-20261117\\upstream-thprac_games-fixed.cpp",
+          "bytes": 40893,
+          "sha256": "8598b25b5cfc252ee447dafd87e06eafd39815b6428831f402a7b7db7cfff299"
+        },
+        "localAppendedFinalLF": true
+      },
+      "header": {
+        "upstreamBytes": 25359,
+        "upstreamSHA256": "5e3ad2bf5da194e1dd82fe3a48343a4a2730ffe2e7d621d7d6eb1df5b1bacb40",
+        "local": {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac-reference-20261117\\upstream-thprac_games-fixed.h",
+          "bytes": 25359,
+          "sha256": "5e3ad2bf5da194e1dd82fe3a48343a4a2730ffe2e7d621d7d6eb1df5b1bacb40"
+        },
+        "localExact": true
+      },
+      "blobSHA1": "a46ab5e80e8fb83a9dae2623ec496d4c2cb04755",
+      "originalRawFetch": {
+        "url": "https://raw.githubusercontent.com/touhouworldcup/thprac/b5beb37a91e322d985c8f89bb6377d55bcf07734/thprac/src/thprac_utils.cpp",
+        "failed": true,
+        "message": "fetch failed",
+        "retriedSameEndpoint": false
+      },
+      "sourceAcquiredViaExactTreeBlob": true,
+      "modernUSER": {
+        "magic": 1380275029,
+        "kind": 1128354384,
+        "headerBytes": 12,
+        "totalBytes": "align4(12+utf8length+1)",
+        "payload": "UTF8JSON then zero padding",
+        "location": "append after existing USER sections, original offset12 points to firstUSER"
+      },
+      "noWindowsAPIExecuted": true
+    },
+    "excerpt": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac-reference-20261117\\ReplaySaveLoadParam-fixed-excerpt.cpp",
+      "bytes": 7141,
+      "sha256": "1fa4f3a89a3dd0eba006717e87b1835bb2b31afbfbdad6fffceb4e6d467cc22e"
+    },
+    "version": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac-reference-20261117\\upstream-thprac_version-fixed.json",
+      "bytes": 495,
+      "sha256": "f055da2214521d45e57dc68d7ed2f9a644fb09fcbb0a1755595afcf92f5af5b8"
+    },
+    "modernUSERMagic": 1380275029,
+    "PRACKind": 1128354384,
+    "headerBytes": 12,
+    "alignment": 4,
+    "nullPadding": true
+  },
+  "features": {
+    "actualNativeRecordConsumer": true,
+    "actualSuccessfulTickInputSample": true,
+    "actualSixByteHeldPressedReleased": true,
+    "ownedClockGenerationAndReset": true,
+    "ordinaryFirstRouteGuardPreserved": true,
+    "practiceNormalRecordRefused": true,
+    "actualRPYPlusPRAC": true,
+    "sourceIdentityConsistencyOnly": true,
+    "visibleSaveWatchControls": true,
+    "explicit8ByteASCIIName": true,
+    "strict25SlotCASAndReadback": true,
+    "playLockLiveInputAndAssistDenied": true,
+    "sameSessionSeedPlayback": true
+  },
+  "acceptance": {
+    "native920": {
+      "checks": 99,
+      "WorldExportsStarts": 2,
+      "source": "wholeWorldExports+79libs80TUs"
+    },
+    "native921": {
+      "checks": 152,
+      "WorldExportsStarts": 3,
+      "recordTicks": 3,
+      "playbackTicks": 3,
+      "movementEqual": true,
+      "actualNativeRPY": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case921-thprac128-native-record-playback-lock\\run\\original\\actual-practice-native.rpyraw",
+        "bytes": 311,
+        "sha256": "fee114cb20ce0b12b39d1fba2779549f4602e3c7db213b96201f0d47933f0741"
+      }
+    },
+    "Web925": {
+      "tests": 11,
+      "pass": 11,
+      "skip": 0,
+      "wholePageSaveWatch": true,
+      "transactionIDBNativeBoundaries": "synthetic"
+    },
+    "affected927": {
+      "tests": 191,
+      "pass": 191,
+      "skip": 0,
+      "scope": "allpubliccodec/Python differential +launcher/input/storage;privatecatalog3demosexcludedexplicitly"
+    },
+    "nativeFileStore928": {
+      "pass": 1,
+      "actualNativeFile": true,
+      "strictStoreCloseReopen": true,
+      "packetEqual": true,
+      "IDB": "synthetic"
+    },
+    "USERPair934": {
+      "pass": 1,
+      "literalOriginalPairPreserved": true
+    },
+    "core114": {
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case929-private-core114-thprac-Replay\\result.json",
+        "bytes": 25177,
+        "sha256": "7e2a3d76c0c5c56b820d6b5df30753d09cf9d5fa7a14e94d80bd66f58ede5d79"
+      },
+      "generation": "08c98b0a32cc8653a042f47701d1fdafbe66a1044e8fcb0236a5f645adaea3fb",
+      "artifacts": {
+        "core.mjs": {
+          "bytes": 138391,
+          "sha256": "271e1f71d67ccf9ff03c7896e47b10b94081035b73792e67a2d50ef23aeb5f53"
+        },
+        "core.wasm": {
+          "bytes": 2427459,
+          "sha256": "5e29d95a3436bcf6d2060f9204c40fa84d5c70f7fe3f89501534fa55058bce30"
+        }
+      },
+      "sourceCount": 231,
+      "TUs": 83,
+      "declaredExports": 214,
+      "actualTh128Exports": 212,
+      "compilerCalls": 1,
+      "changedSources": [
+        "src/game/NativeRunReplay.hpp",
+        "src/practice/Thprac128Web.hpp",
+        "src/runtime/WorldExports.cpp"
+      ],
+      "Factories": 0,
+      "Worlds": 0,
+      "recompiled": false
+    },
+    "actual114930": {
+      "evidence": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case930-actual114-record-RPY-store-native-playback\\run\\actual-Replay.json",
+        "bytes": 3973,
+        "sha256": "5ac756ae3b05b41c67b943f5a66028205744d850553ba88c7f1548c3c6cc3481"
+      },
+      "checks": 294,
+      "Factories": 2,
+      "Worlds": 2,
+      "ticks": 6,
+      "recordFrames": 3,
+      "replayFrames": 3,
+      "sameProjection": true,
+      "projection": {
+        "frame": 3,
+        "spawns": 0,
+        "rngCalls": 0,
+        "playerX": 0,
+        "playerY": 391,
+        "scoreRaw": 123456789,
+        "motivationRaw": 54321,
+        "perfectCharge": 12345,
+        "powerRaw": 6804,
+        "cumulativeFrozenArea": 800,
+        "playerAnimation": 0,
+        "playerWindow": 3
+      },
+      "RPYFile": "75e80f823422a6d9443132cafd23301df276a31191114afb28970f429ab2fd02",
+      "originalDAT": {
+        "bytes": 32336111,
+        "sha256": "38be25a5f1b0bf5e88dd7f66e34e295338d6bb968794a1ff587337f46b3db045"
+      },
+      "nativeResourceHostsActual": true,
+      "storage": "strict syntheticIDB",
+      "browser": 0,
+      "GPU": 0,
+      "physicalAudio": false
+    },
+    "realBrowser933": {
+      "evidence": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case933-browser-practice-Replay-real-IDB-current-page\\evidence.json",
+        "bytes": 5436,
+        "sha256": "fe8681e397b59570576d61cdc642706a1831020056731e11b29dc5efb37457ad"
+      },
+      "screenshot": {
+        "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case933-browser-practice-Replay-real-IDB-current-page/practice-Replay-stored.jpg",
+        "bytes": 52551,
+        "sha256": "260041f6989cffaa16b73ea6eb34367c7da4477512a535032b90960160d6ff3a"
+      },
+      "checks": 10,
+      "windowMs": 32867,
+      "console": [],
+      "realIndexedDB": true,
+      "slot": 12,
+      "RPYBytes": 758,
+      "fullFileSHA": "d41f3cf6527b03ab5819bfc8da76bbaa69bd135d744b7e7569a8296625874b4c",
+      "strictCAS": true,
+      "closeReopen": true,
+      "wholeCurrentPageParts": 9,
+      "nativeCaptureStartPauseSeams": true,
+      "nativeSourceFile": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case921-thprac128-native-record-playback-lock\\run\\original\\actual-practice-native.rpyraw",
+        "bytes": 311,
+        "sha256": "fee114cb20ce0b12b39d1fba2779549f4602e3c7db213b96201f0d47933f0741"
+      },
+      "oneOwnedTabClosed": true,
+      "serverClosed": true,
+      "ROOTReleased": true,
+      "Worlds": 0,
+      "Factories": 0,
+      "nativeCompiles": 0,
+      "GPU": 0
+    }
+  },
+  "cases": [
+    {
+      "ordinal": 915,
+      "passed": false,
+      "sourcecheckOnly": false,
+      "pins": 254,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 915,
+        "passed": false,
+        "scope": "ActualwholeWorldExports practice3chapter2/realSHTANM+PlayerHitHost before missing recorderRED. Onefullcomponentcompiler80TUs/max24WorldStarts/0Factory/fullcore/browser/GPU;470sCPU.",
+        "firstFailure": {
+          "message": "runtime-recording failed: FIRST_FAILURE actual practice Replay recorder consumer is missing checks=44 starts=1\n\n\n1 !== 0\n",
+          "stack": "AssertionError [ERR_ASSERTION]: runtime-recording failed: FIRST_FAILURE actual practice Replay recorder consumer is missing checks=44 starts=1\n\n\n1 !== 0\n\n    at execute (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\completion-tools\\admitted-thprac-full-consumer-runner.cjs:36:11)\n    at Object.<anonymous> (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\completion-tools\\admitted-thprac-full-consumer-runner.cjs:50:28)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47",
+          "steps": [
+            {
+              "name": "prepare-original",
+              "status": 0,
+              "signal": null,
+              "error": null
+            },
+            {
+              "name": "compiler",
+              "status": 0,
+              "signal": null,
+              "error": null
+            },
+            {
+              "name": "runtime-recording",
+              "status": 1,
+              "signal": null,
+              "error": null
+            }
+          ]
+        },
+        "WorldStartsUpperBound": 24,
+        "Factories": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T09:17:24.383Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case915-thprac128-native-practice-Replay-red\\request.json",
+          "bytes": 70830,
+          "sha256": "af180ce2e8295fe7727a33abf581b0afa7f41b72ccbdefbd28c4f7a8d7b37d99"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case915-thprac128-native-practice-Replay-red\\actual-manifest.json",
+          "bytes": 167084,
+          "sha256": "26f111bdf775307611776b54e01817e54430a90cda477f384edb7e19dce9b2eb"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case915-thprac128-native-practice-Replay-red\\MAIN-APPROVAL.json",
+          "bytes": 733,
+          "sha256": "03ea0620767784f034075b649232119ee03b3acf56299a5a5d5189ce5fbe58a2"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case915-thprac128-native-practice-Replay-red\\sourcecheck.json",
+          "bytes": 70,
+          "sha256": "59c462545e1449e91d0067d3bbb1d7c85a960a0ffa670d654089847b63341dbe"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case915-thprac128-native-practice-Replay-red\\result.json",
+          "bytes": 1866,
+          "sha256": "be83d6ef687c436782120fbc284e25fde6e7ee67881a58989b8ec4f814862304"
+        }
+      ]
+    },
+    {
+      "ordinal": 916,
+      "passed": false,
+      "sourcecheckOnly": false,
+      "pins": 256,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 916,
+        "passed": false,
+        "scope": "ActualWorldExports practicehistory3chapter2 native6byteheldedges/clock/snapshot/normalguards/reset. Completeactualrecordergreenafter915RED;1compiler80TUs/max24Worldstarts/470sCPU/0Factory/fullcore/browser/GPU. NotfullWebReplaycompletion.",
+        "firstFailure": {
+          "message": "runtime-recording failed: FIRST_FAILURE item tick unavailable or reentered checks=49 starts=1\n\n\n1 !== 0\n",
+          "stack": "AssertionError [ERR_ASSERTION]: runtime-recording failed: FIRST_FAILURE item tick unavailable or reentered checks=49 starts=1\n\n\n1 !== 0\n\n    at execute (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\completion-tools\\admitted-thprac-full-consumer-runner.cjs:36:11)\n    at Object.<anonymous> (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\completion-tools\\admitted-thprac-full-consumer-runner.cjs:50:28)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47",
+          "steps": [
+            {
+              "name": "prepare-original",
+              "status": 0,
+              "signal": null,
+              "error": null
+            },
+            {
+              "name": "compiler",
+              "status": 0,
+              "signal": null,
+              "error": null
+            },
+            {
+              "name": "runtime-recording",
+              "status": 1,
+              "signal": null,
+              "error": null
+            }
+          ]
+        },
+        "WorldStartsUpperBound": 24,
+        "Factories": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T09:23:06.902Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case916-thprac128-native-practice-Replay-green\\request.json",
+          "bytes": 71430,
+          "sha256": "746c82015d24941d398523e06c9ace8b1a2f131a412abeff02c501d2f19e5789"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case916-thprac128-native-practice-Replay-green\\actual-manifest.json",
+          "bytes": 167718,
+          "sha256": "74cd4853ecfb3936b098509ad2c654b44cfa2928dffdc62d88adf45da5410eef"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case916-thprac128-native-practice-Replay-green\\MAIN-APPROVAL.json",
+          "bytes": 801,
+          "sha256": "a14ba1616418e2a81579b75fd9924ad28b346feefcecbf77cad3fc05028abf9b"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case916-thprac128-native-practice-Replay-green\\sourcecheck.json",
+          "bytes": 70,
+          "sha256": "2ade93bf5018b1cc1320d8ec2990cfb578682dab368cbdbe65a6d5ff823490b8"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case916-thprac128-native-practice-Replay-green\\result.json",
+          "bytes": 1889,
+          "sha256": "dcc91be770c75cd586290846526f201311e37c5d77e3ee6396995706fcbfbbf9"
+        }
+      ]
+    },
+    {
+      "ordinal": 917,
+      "passed": false,
+      "sourcecheckOnly": false,
+      "pins": 12,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 917,
+        "passed": false,
+        "summary": {
+          "pass": 0,
+          "fail": 6,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 6
+        },
+        "runtime": 1,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 12,
+        "at": "2026-11-17T09:23:22.390Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case917-thprac128-Replay-RPY-store-playLock-red\\request.json",
+          "bytes": 3756,
+          "sha256": "12ec01f9be92af145e82ccea4c1dbf5fecfcefdb24d36a589e17aecce23d1cc2"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case917-thprac128-Replay-RPY-store-playLock-red\\actual-manifest.json",
+          "bytes": 4777,
+          "sha256": "e670242cf211c4a3c2cab5d509ff4eb8fb1d64272cc20f4999bc715d10c74d7e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case917-thprac128-Replay-RPY-store-playLock-red\\MAIN-APPROVAL.json",
+          "bytes": 651,
+          "sha256": "9e8e6282ae028f101fc0e8cb0a6bf0d34e7aad9982e741d53d23eb7e71bd0f6f"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case917-thprac128-Replay-RPY-store-playLock-red\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "5d4f03143c556878d44b21cc024205e6cc319330bd7173eeb10426b27ccbb18f"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case917-thprac128-Replay-RPY-store-playLock-red\\result.json",
+          "bytes": 292,
+          "sha256": "cb381aeb3c280ddf192fcf41177032408c3172c638ef74e179b5a153fc5af5c0"
+        }
+      ]
+    },
+    {
+      "ordinal": 918,
+      "passed": false,
+      "sourcecheckOnly": false,
+      "pins": 257,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 918,
+        "passed": false,
+        "scope": "916missing actualitemresourcefixturefixed originalbulletANM;actualnativepracticehistory/clock/6bytepackets/snapshot/reset/normalguard.1compiler80TUs/max24Worldstart/470s/0Factory/fullcore/browser/GPU. Productunchanged.",
+        "firstFailure": {
+          "message": "runtime-recording failed: FIRST_FAILURE laser actual FX phase owner unavailable checks=50 starts=1\n\n\n1 !== 0\n",
+          "stack": "AssertionError [ERR_ASSERTION]: runtime-recording failed: FIRST_FAILURE laser actual FX phase owner unavailable checks=50 starts=1\n\n\n1 !== 0\n\n    at execute (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\completion-tools\\admitted-thprac-full-consumer-runner.cjs:36:11)\n    at Object.<anonymous> (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\completion-tools\\admitted-thprac-full-consumer-runner.cjs:50:28)\n    at Module._compile (node:internal/modules/cjs/loader:1929:14)\n    at Object..js (node:internal/modules/cjs/loader:2060:10)\n    at Module.load (node:internal/modules/cjs/loader:1651:32)\n    at Module._load (node:internal/modules/cjs/loader:1443:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47",
+          "steps": [
+            {
+              "name": "prepare-original",
+              "status": 0,
+              "signal": null,
+              "error": null
+            },
+            {
+              "name": "compiler",
+              "status": 0,
+              "signal": null,
+              "error": null
+            },
+            {
+              "name": "runtime-recording",
+              "status": 1,
+              "signal": null,
+              "error": null
+            }
+          ]
+        },
+        "WorldStartsUpperBound": 24,
+        "Factories": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T09:25:42.580Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case918-thprac128-native-practice-Replay-green\\request.json",
+          "bytes": 71664,
+          "sha256": "f5af6f190b2453ad9ad1c57831cf587fa1f913992282a29440d99a8af4b7e5a6"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case918-thprac128-native-practice-Replay-green\\actual-manifest.json",
+          "bytes": 167961,
+          "sha256": "1b7350445b90a63395337a5a03e62dcae2c5ac625b86d25d95e090159b69dfbe"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case918-thprac128-native-practice-Replay-green\\MAIN-APPROVAL.json",
+          "bytes": 640,
+          "sha256": "507aa0d8b059b57b60814d47fa75ba072c3ed1815e7d24a8ba39b3774068cb05"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case918-thprac128-native-practice-Replay-green\\sourcecheck.json",
+          "bytes": 70,
+          "sha256": "ba59e19599046f3daada037819f5564c63785e29bbe3aa3e8183fd43979ffb3a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case918-thprac128-native-practice-Replay-green\\result.json",
+          "bytes": 1880,
+          "sha256": "cf4d4487d36e54269eea172376a1ceebed4633a6156a3a270638f44cf1b19f49"
+        }
+      ]
+    },
+    {
+      "ordinal": 919,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 14,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 919,
+        "passed": true,
+        "summary": {
+          "pass": 6,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 6
+        },
+        "runtime": 0,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 14,
+        "at": "2026-11-17T09:28:53.040Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case919-thprac128-Replay-RPY-store-playLock-green\\request.json",
+          "bytes": 4260,
+          "sha256": "808074d8d45984e65d59c610b3a88f86eacbe5aeda25471ccc201de81308fd15"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case919-thprac128-Replay-RPY-store-playLock-green\\actual-manifest.json",
+          "bytes": 5305,
+          "sha256": "38e0b77d562c191cb4f09c972c18155c307655854f3932409680627d5b622a9d"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case919-thprac128-Replay-RPY-store-playLock-green\\MAIN-APPROVAL.json",
+          "bytes": 685,
+          "sha256": "01972b8c09830ced680ba874db8a83f594c1752a3893e31146aa74d35812780d"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case919-thprac128-Replay-RPY-store-playLock-green\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "b4e0e1006bddfc98990dd10764bc250c4c4d2d14833dd27924c1789bd8a70f0a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case919-thprac128-Replay-RPY-store-playLock-green\\result.json",
+          "bytes": 291,
+          "sha256": "efe18dca3a2f02566f9d6bdb8b8bb93272076e7476e104ed804edeaf0cc2b777"
+        }
+      ]
+    },
+    {
+      "ordinal": 920,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 256,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 920,
+        "passed": true,
+        "scope": "Completeproductionbullet/resourcehostfixtureafter918missinglaserFX;actualWorldExports record3frames/snapshot6byteinput/reset/ordinaryguard.1compiler80TUs/max24Worldstart470s/0Factory/fullcore/browser/GPU;nativeproductsame916.",
+        "steps": [
+          {
+            "name": "prepare-original",
+            "status": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "name": "compiler",
+            "status": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "name": "runtime-recording",
+            "status": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "WorldStartsUpperBound": 24,
+        "Factories": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T09:28:23.760Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case920-thprac128-native-practice-Replay-green\\request.json",
+          "bytes": 71398,
+          "sha256": "be067eadeb2bdfab10d3d1f7d42641c8b7dcae5722756903926b2d87b64de82e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case920-thprac128-native-practice-Replay-green\\actual-manifest.json",
+          "bytes": 167685,
+          "sha256": "2ea9dd24baf7b8d374cbfd259e9c8eb6706a3295b65b85893821d21929c7bc8d"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case920-thprac128-native-practice-Replay-green\\MAIN-APPROVAL.json",
+          "bytes": 692,
+          "sha256": "31bd9a0c250c66db551bb42ffeb3361dfb221b8e4330db60f1c291e1bf6874a2"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case920-thprac128-native-practice-Replay-green\\sourcecheck.json",
+          "bytes": 70,
+          "sha256": "47bb5b3c0d8132f6af5a01dbb88239b82aaadddf9edce2f796add6db485ce6d8"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case920-thprac128-native-practice-Replay-green\\result.json",
+          "bytes": 766,
+          "sha256": "4f6ce0e10aeeb494ada464e2dc159b57cf1ccaaa658989cf6aaa88e19f20b013"
+        }
+      ]
+    },
+    {
+      "ordinal": 921,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 255,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 921,
+        "passed": true,
+        "scope": "DistinctactualwholeWorldExports record3frame→nativeRPY→freshsamesectionownedplayback3ticks/movementequality/playLockcancel/ordinaryguard. Productunchanged916;1compiler80TUs/max24Worldstart470s/0Factory/fullcore/browser/GPU.",
+        "steps": [
+          {
+            "name": "prepare-original",
+            "status": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "name": "compiler",
+            "status": 0,
+            "signal": null,
+            "error": null
+          },
+          {
+            "name": "runtime-recording",
+            "status": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "WorldStartsUpperBound": 24,
+        "Factories": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T09:32:40.193Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case921-thprac128-native-record-playback-lock\\request.json",
+          "bytes": 71153,
+          "sha256": "b28287dd33be6c1a9546e2a481fdfe55eca8de4584e3bc53c5f9339cd3cef5b1"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case921-thprac128-native-record-playback-lock\\actual-manifest.json",
+          "bytes": 167423,
+          "sha256": "5bcae007863ef8178e536d9c673e5498fd0e1f774063951f20dc69471295319d"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case921-thprac128-native-record-playback-lock\\MAIN-APPROVAL.json",
+          "bytes": 699,
+          "sha256": "04556d109eae6505b2fae8026ec011d282c3a513970ad55c6113526268497c2a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case921-thprac128-native-record-playback-lock\\sourcecheck.json",
+          "bytes": 70,
+          "sha256": "460c67747f4899a99af2148294681b122f98bc612810008eafb79ff9db801116"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case921-thprac128-native-record-playback-lock\\result.json",
+          "bytes": 768,
+          "sha256": "63318c8575fa18d03caa1097b61215006d79bf79b8c47debf15c6d040571ff48"
+        }
+      ]
+    },
+    {
+      "ordinal": 922,
+      "passed": null,
+      "sourcecheckOnly": true,
+      "pins": 11,
+      "result": null,
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case922-thprac128-recording-page-consumer-red\\request.json",
+          "bytes": 3463,
+          "sha256": "71df05d8607012faa81c2d1a7151ae3857679467f0de3909dee67099544a2e20"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case922-thprac128-recording-page-consumer-red\\actual-manifest.json",
+          "bytes": 4474,
+          "sha256": "c0075d611732d22f91ed40d27b3b56aedc596a36048f137e260c32960d39c1bd"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case922-thprac128-recording-page-consumer-red\\sourcecheck-first-failure.json",
+          "bytes": 357,
+          "sha256": "ab334a8e10919bfdadc101f43844fda1cf4854b51adaf4ec4a465e507b220d6c"
+        }
+      ]
+    },
+    {
+      "ordinal": 923,
+      "passed": false,
+      "sourcecheckOnly": false,
+      "pins": 14,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 923,
+        "passed": false,
+        "summary": {
+          "pass": 1,
+          "fail": 1,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 2
+        },
+        "runtime": 1,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 14,
+        "at": "2026-11-17T09:33:24.754Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case923-thprac128-recording-page-consumer-red\\request.json",
+          "bytes": 4243,
+          "sha256": "a29116f8f6a4cc19523d2455fe2240b03a72f06b771c13ebf92df9086f61290a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case923-thprac128-recording-page-consumer-red\\actual-manifest.json",
+          "bytes": 5284,
+          "sha256": "77eabc6761bd153b6f3e5e380ff16ddb1ba613783d62c8d1f402e0c69d364e55"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case923-thprac128-recording-page-consumer-red\\MAIN-APPROVAL.json",
+          "bytes": 623,
+          "sha256": "69c21be7ed0297b406dd373f6737fe8fe8d6ec01f055fa3821889a657c7645ef"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case923-thprac128-recording-page-consumer-red\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "bdbd70749f18da8cf44696bba51cc602ee97aab3983f8e57fb740f8d97f3f9cc"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case923-thprac128-recording-page-consumer-red\\result.json",
+          "bytes": 292,
+          "sha256": "9824de6fa50d2bf3b06e68e966d5d79c687170a75e4e4d00da335986cfa86c6d"
+        }
+      ]
+    },
+    {
+      "ordinal": 924,
+      "passed": false,
+      "sourcecheckOnly": false,
+      "pins": 20,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 924,
+        "passed": false,
+        "summary": {
+          "pass": 8,
+          "fail": 3,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 11
+        },
+        "runtime": 1,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 20,
+        "at": "2026-11-17T09:37:37.342Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case924-thprac128-Replay-complete-page-green\\request.json",
+          "bytes": 5694,
+          "sha256": "9ecd90294d531edae9d6e985538efbe83f58d6d00241cc302266c5d95d549751"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case924-thprac128-Replay-complete-page-green\\actual-manifest.json",
+          "bytes": 6900,
+          "sha256": "4581655b1b1cbb0a4263fe168752d8273360996e458ebcbe224ca30fc212082e"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case924-thprac128-Replay-complete-page-green\\MAIN-APPROVAL.json",
+          "bytes": 708,
+          "sha256": "34501e08eb87da4a4f0a7558955a990defa046d4c18e1682808f16e9c28bfd20"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case924-thprac128-Replay-complete-page-green\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "47c3c81d65b4516a2304ffdec0ef1ae0ec2eae3ad60f5f6274cd5b7a1fb342f1"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case924-thprac128-Replay-complete-page-green\\result.json",
+          "bytes": 293,
+          "sha256": "39caa86c6969b9d1989b9a465c3afc550c436fed6b342b3c97cbb275cb110d1e"
+        }
+      ]
+    },
+    {
+      "ordinal": 925,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 22,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 925,
+        "passed": true,
+        "summary": {
+          "pass": 11,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 11
+        },
+        "runtime": 0,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 22,
+        "at": "2026-11-17T09:38:33.335Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case925-thprac128-Replay-complete-page-green\\request.json",
+          "bytes": 6151,
+          "sha256": "3bd1c34a200c71fa2bb945e8ca940c7366dde5512f0f618f0d27a5c779bebbf9"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case925-thprac128-Replay-complete-page-green\\actual-manifest.json",
+          "bytes": 7377,
+          "sha256": "be391377328b3c96d6b474ea5a38f9d3758011f5e91837be64b3f537fe4d7fc9"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case925-thprac128-Replay-complete-page-green\\MAIN-APPROVAL.json",
+          "bytes": 614,
+          "sha256": "f7d2499c62a6e4b4f888e243bfaf58af2a5ff1a6cdf1c2643973125403afd078"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case925-thprac128-Replay-complete-page-green\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "8fb0305a0c7939e855f1b53dfae4c0ce69b74e01866220941e824d395a999e32"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case925-thprac128-Replay-complete-page-green\\result.json",
+          "bytes": 293,
+          "sha256": "7421f273851d730863e7f5ddc5a3ad59d4caf7236b741fdbdfff2bab1ad20e22"
+        }
+      ]
+    },
+    {
+      "ordinal": 926,
+      "passed": false,
+      "sourcecheckOnly": false,
+      "pins": 85,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 926,
+        "passed": false,
+        "summary": {
+          "pass": 191,
+          "fail": 0,
+          "skip": 1,
+          "cancelled": 0,
+          "tests": 192
+        },
+        "runtime": 0,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 85,
+        "at": "2026-11-17T09:39:17.317Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case926-practice-Replay-affected-Web-input-storage\\request.json",
+          "bytes": 23269,
+          "sha256": "a83fffcd07faa99357348f527829c370af3145abd1e8d541ba3a02e9920a019d"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case926-practice-Replay-affected-Web-input-storage\\actual-manifest.json",
+          "bytes": 27400,
+          "sha256": "0db6fc0bb87cc258a132cd529543b2548ad86153b1f18b4356e04905d88d5bfb"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case926-practice-Replay-affected-Web-input-storage\\MAIN-APPROVAL.json",
+          "bytes": 660,
+          "sha256": "bb482290ff4e048bb2d988f219fb75acd02b677c547b8bfb901f577cc502bd43"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case926-practice-Replay-affected-Web-input-storage\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "0e1940adb0bfdfe1ef2aacd27200a5dcc2cfc0f8425d48fc1e7925f3830addea"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case926-practice-Replay-affected-Web-input-storage\\result.json",
+          "bytes": 296,
+          "sha256": "0ecde28a59dd7b4ed6c8bbcefeab8165c961ef55270c2c4d728d4d8e891f9345"
+        }
+      ]
+    },
+    {
+      "ordinal": 927,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 90,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 927,
+        "passed": true,
+        "summary": {
+          "pass": 191,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 191
+        },
+        "runtime": 0,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 90,
+        "at": "2026-11-17T09:41:11.301Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case927-Replay-affected-bounded-codec-input-storage\\request.json",
+          "bytes": 24604,
+          "sha256": "f35dbd7cdf541f7fd84ee0bee2a0c5ad4501658319edecfdf8f168d8553380e5"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case927-Replay-affected-bounded-codec-input-storage\\actual-manifest.json",
+          "bytes": 28834,
+          "sha256": "08d3440c978638ff72fd5855f636fc112d014f705d3ffade516948af4c12d5f1"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case927-Replay-affected-bounded-codec-input-storage\\MAIN-APPROVAL.json",
+          "bytes": 770,
+          "sha256": "48bdacabdcb80b8a3db05c51aa55d493b16a943c0cd4786c92d7479920a523ba"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case927-Replay-affected-bounded-codec-input-storage\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "0775f6e569b51a60e372ea13df2d640d54bbc4f993eff92e92ad03872e27e9e4"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case927-Replay-affected-bounded-codec-input-storage\\result.json",
+          "bytes": 295,
+          "sha256": "286006a8acae6a2762b1df5fbbf623c6b840249e2d2e3e2e36113906028b6ed5"
+        }
+      ]
+    },
+    {
+      "ordinal": 928,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 15,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 928,
+        "passed": true,
+        "summary": {
+          "pass": 1,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 1
+        },
+        "runtime": 0,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 15,
+        "at": "2026-11-17T09:41:56.511Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case928-native-RPY-PRAC-strict-store-roundtrip\\request.json",
+          "bytes": 4573,
+          "sha256": "725cd3fb0c78f65412a936aaf6836ce74e60d49fc05d0f32fd76959b63bab188"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case928-native-RPY-PRAC-strict-store-roundtrip\\actual-manifest.json",
+          "bytes": 5629,
+          "sha256": "902264d5ca30879bb2d66c1c8e1a34ae53893a3ad4a535fd8ad80a3f712d7980"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case928-native-RPY-PRAC-strict-store-roundtrip\\MAIN-APPROVAL.json",
+          "bytes": 657,
+          "sha256": "df81edc9632504a4a78b1ec534fd8b2eb2e645633564430a2d324122a745fd66"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case928-native-RPY-PRAC-strict-store-roundtrip\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "95a64bdf8ed6e6a2f5eb33de7b8690027d32bf624d6def0c0b898448323fc6e2"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case928-native-RPY-PRAC-strict-store-roundtrip\\result.json",
+          "bytes": 291,
+          "sha256": "8608e2f51b4bdd2ddbd23db5362bb65089f05c05e23a6df5d0a194596529f3a3"
+        }
+      ]
+    },
+    {
+      "ordinal": 929,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 257,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 929,
+        "coreOrdinal": 114,
+        "passed": true,
+        "compilerCalls": 1,
+        "compiler": {
+          "status": 0,
+          "error": null,
+          "signal": null
+        },
+        "sourceFiles": {
+          "src/animation/AnmLogic.cpp": "8181699a119c123274e04883ffbb072ac3b4a0a1c0b18ccb2c6fa16850995b27",
+          "src/animation/AnmLogic.hpp": "cb157319e0f57d007aae669d60a3840be7d31adfd1f384f02459146c56c8c88b",
+          "src/animation/AnmScene.cpp": "3b303522d258f2be0fe7c120c8e53adfbcce3f10b315d074734253025deb84df",
+          "src/animation/AnmScene.hpp": "5f4418162e97d9766b09b16a001e28eee2073b4aa3e54fedc8674c2054fa2775",
+          "src/animation/AnmTypes.hpp": "f68007d9ce99ef47758a76ce1c9d12390fdbfb0cae82097d87490b7beb410fa4",
+          "src/animation/UPSTREAM_LICENSE.txt": "bbb03aab0b0998c7fb644ef3992c623cdcdd3709d74f03c731bd27d3acd64a4b",
+          "src/ecl/EclProgram.cpp": "2c8fd76727fcddddf1e1436e66ae8ea0851acbd5ae7e147e6bc91d45a60ab782",
+          "src/ecl/EclProgram.hpp": "f21f1918fb415fc53098e0a8527d86bd16e5940e45a6d3a77591d53d8f603fab",
+          "src/ecl/EclVm.cpp": "be1838cc23569b2341f1571f214a0f3400881abc449a2a10b79581c590451b8e",
+          "src/ecl/EclVm.hpp": "49e8c877c95ade766f0846bfdfefbc3f1460ba942455cf75941ce08362a25f5a",
+          "src/ecl/HostResultRules.hpp": "a5d362304754bd8c0edfbd34880d9958e394de4063ed60d4490653cbd38cd62f",
+          "src/ecl/UPSTREAM_LICENSE.txt": "bbb03aab0b0998c7fb644ef3992c623cdcdd3709d74f03c731bd27d3acd64a4b",
+          "src/engine/Random.hpp": "83cf4c7d82f3446e48f4ce7d651c0f658f4f549df8c11d9538932dedfde99b1f",
+          "src/game/AppearanceBounds.cpp": "040b3930c897b8ac0bd9fdb7151862ee07eb96bed608e66eb4c9aaeba043adfb",
+          "src/game/AppearanceBounds.hpp": "4cb3aa578a347aa04cf24bcc238aa96ecf53c4f1ecb6181cc8f1b3f38d568533",
+          "src/game/BossHud.cpp": "2f03a289d4a1b5bb0d84fa3371ec3641e6af5f9b979061b691ce04e34a08aa9e",
+          "src/game/BossHud.hpp": "ec13a40d084dc101f9d8009be2e574e226623b3e2ece91bc9856a2fa097344ed",
+          "src/game/BulletCollisionRules.cpp": "06e099997380c8c121d77b2fb0aed6974a206b4d67d6174310f001cb060fbc1f",
+          "src/game/BulletCollisionRules.hpp": "0f79f1140adbd73f82f47ec38fe54ad81f43c844450466d8f7f27fb6f7d94d44",
+          "src/game/BulletExtension1.cpp": "d8ce460b4517a29a77809c710ca97eadd3edd35a78c1a63c36ca8800965e2f2b",
+          "src/game/BulletExtension1.hpp": "8ca62ada9af8cd6c47093f893c5fa3e595df9e2c69af532dcbf6877ee97da08b",
+          "src/game/BulletExtension16.cpp": "4daa52e1016b5faf3a2ee66b2d6a7077c3ff0574fab1e11626742629d86194de",
+          "src/game/BulletExtension16.hpp": "53c581236f6a07bee3eff1a8064bb70af68230231c5cd351a029b9e588e44df3",
+          "src/game/BulletExtension256.cpp": "a0036cce6cece3fc33393b86e426470c65e6a4875b3a8b387031a1f06a499267",
+          "src/game/BulletExtension256.hpp": "ab3933d9eaccfd5ba60dfe7a03b2eb6fd85f87b5b35a866951a073cedc3b88c6",
+          "src/game/BulletExtension4.cpp": "12248a594e8ac035b8fd4a3cbd12b78218e05796a9e5e16d7b91fd1d631058cd",
+          "src/game/BulletExtension4.hpp": "f393b231889bddb61f925b09c0e1dfe0588ec02d628210e0fe83c04df3f1f0a6",
+          "src/game/BulletExtension64.cpp": "7bbe37383f835ee1ba41409fc737569321a5f53909c916d8a72092fe559966b1",
+          "src/game/BulletExtension64.hpp": "60d7bdff1afc987ebcc06fe23fcfd0761adf552c5d1ed1a8a12c61c7e19add7e",
+          "src/game/BulletExtension8.hpp": "683aa65ab50d9bc26ba0556847693829ec78d1c5f63047c1c45fb7d216ad3b81",
+          "src/game/BulletExtension800000.cpp": "ee09392774eaced1d1598232cd52acc131645f4c3c4e60cfa3a9fb1b86e69f04",
+          "src/game/BulletExtension800000.hpp": "622e5a9b5c0d6c807ce17d9ecf812893e945aa9f003281d16418bad83db04164",
+          "src/game/BulletExtension8192.cpp": "79e2fbc8a3385ff0cf89471a3deef5e9fae342a113a4fb2c06edac620cc4883d",
+          "src/game/BulletExtension8192.hpp": "2f504c20a498b10a154402e34125e2bb7c4ee214ec99ccc1dceb4d93282bb346",
+          "src/game/BulletManager.cpp": "6719464367e143ebffb3813469156ed94b0d3a002c12185052fad9e1451ed94d",
+          "src/game/BulletManager.hpp": "273e71b95f3561b27d9c62450465e2aeacd658d630a95c36475b4be38b558337",
+          "src/game/BulletRules.cpp": "ce4339d163bb141528b2ccb470bd77172851f86c4d7e72daea43c1b075994d12",
+          "src/game/BulletRules.hpp": "9015bde55ad9e45fecc92d132f107cd37c92932a39f6ce2a0a04aacdb8934b33",
+          "src/game/BulletTickRules.cpp": "954b85ecc597665ef1bfea91509ed8423c4419c3c0269c57eabfe81cc93eea70",
+          "src/game/BulletTickRules.hpp": "137a4e3a9a592c9122bacf5b8293f217c004e6675f021d36f1a8f341cda06bf0",
+          "src/game/BulletUpdateHost.cpp": "319176030a7dced7bdd18df55d92a272f23e9ff555ef225abde0dda8facc32e1",
+          "src/game/BulletUpdateHost.hpp": "523ad37346775c92a9d74c6793b2066d7522a1a144753f41dd431e9f35c16f0b",
+          "src/game/BulletVisuals.cpp": "2084ec0425e14d2e2a11cbe2a672b0b98752034e2d0971d2a4bc08f4789fb458",
+          "src/game/BulletVisuals.hpp": "d87652a63a070dd2cb99adb16229c168c3eb855346ab9438f1754a5469189ee8",
+          "src/game/CancellationEffects.cpp": "f4e7f5c74f39c69e57d5c02a42ac499ed5e46826b2fd4d821ca6843964df36e2",
+          "src/game/CancellationEffects.hpp": "8246ef26c5237da1a85649cd02e4be23097306ffb11b57a4eef8f3cd26f2daf6",
+          "src/game/CircleFan.cpp": "824398e5d8017703b1092ca9416b6b1ef66e28bbab267dd84ab870867bb7e773",
+          "src/game/CircleFan.hpp": "5b3827a26bf4261552c54b85b3e3d1b41c6fe18dec0f77ea092c996878e9dfe9",
+          "src/game/DamageFieldPool.cpp": "fe41597f6c0f34cf42c567ee9ab268363daa62ca8de944335231a2e3b8a6db3b",
+          "src/game/DamageFieldPool.hpp": "6c744c9f56d84ffb6eb8e50ad5411bd6576152a2928fc95d0ed1519006f073ce",
+          "src/game/DeferredLineRetirementRules.hpp": "2dab300a1004ef32dfa4b57b78aa3451720d6ec74cd0da8de995f37cb40530c1",
+          "src/game/EnemyBulletCallbackRules.cpp": "48d4cbe1a109d42ec45406dd82e08ac1e58f4bae937fd3014c14d7fb2842a849",
+          "src/game/EnemyBulletCallbackRules.hpp": "06a9f83c64514110e40ad9b3494cf97356eb6173975a1da662ecedef02f6f06e",
+          "src/game/EnemyDropEmission.cpp": "11493d9526e14cd517b8effb8d01d6c4ca3d789ae3d191a5107b4849937b1153",
+          "src/game/EnemyDropEmission.hpp": "e3971e31e19f8810f18a6ecab2d5185cbdcb971286b52a6369b7091173e3ff24",
+          "src/game/EnemyDropRules.cpp": "14d07802d7b120f5c0808f1f5173ebf2bdd94ff39bd41ceef827dcef5e932da9",
+          "src/game/EnemyDropRules.hpp": "97643be0bdc6adb6d2eb44fe96d9b47ec29d936178fdb039e32f91516318e19c",
+          "src/game/EnemyMotion327.hpp": "741c27da35029b5a23c716994dd55af38a6523fb6a908ad384d9e274bcb08e9b",
+          "src/game/EnemyPhaseRules.cpp": "9b98240d9990b86a8c2e8e091a0a1a7ff58bb00edfb01e3b3d38e035ca737c21",
+          "src/game/EnemyPhaseRules.hpp": "9d3537502257b034a0fca941744c63b198398e47a33461135592671e6a3c6215",
+          "src/game/EnemyRandomMovement.cpp": "4736bffeba487af1a27ed39f40f0762a9c1b6db7756f573063f58b3bae2f76ec",
+          "src/game/EnemyRandomMovement.hpp": "22fd1694eb480fbbc2d13bd5d4b1bdcbab75a73bd26c77857e8c14f2c2ae9a5f",
+          "src/game/EnemyRules.cpp": "fcd5467da5c5570dd7763285564f17e6ec3ad94585fff6ebf9fc8a3aa6d955ef",
+          "src/game/EnemyRules.hpp": "79729aee2f909ccd63d82dc5ea7bf5252169a11c979fe0c37dc1738388390f3e",
+          "src/game/EnemyVisuals.cpp": "5a9af8d70f033eb24d33164fe1004b8a0260501bcc7f22d663234d21c004f3d2",
+          "src/game/EnemyVisuals.hpp": "b6fafeaa0ef2d27ffbbce9081beedf855201591ed65372df0477c45d600605ca",
+          "src/game/Extension1048576.cpp": "415283081580020915cd2f7e7e053fd55d2a57ddabf6c7c4deaa39c94d40fac6",
+          "src/game/Extension1048576.hpp": "0ae433c937434bc0b283711c2ecd1cbc51c9b588fed8512566f122a8fd6ce751",
+          "src/game/Extension16384.cpp": "c34739b8be3d53f7bbcbd8777d284def70174aac82021eac80a399e57209a157",
+          "src/game/Extension16384.hpp": "9d7da8df0f7a137a52e30ec6a471f14ca039511b6ea508c66ccdb70c313561f3",
+          "src/game/Extension4096.cpp": "6b279bb8c3b808e3e22f7fdf9be7a9a8348eff69dad2542faa79c25d3cc9463a",
+          "src/game/Extension4096.hpp": "602db8190f86087e9f9b2643d701b0f9689add8a48bcf25a8c032c25c9fd9563",
+          "src/game/Extension512.cpp": "b90425bdd3692097b7117e07f94cbe5683ae3603d5e4d0cbefd62d76d3f530b3",
+          "src/game/Extension512.hpp": "1148dac38d79ae137c03705d40613eacb48d60dcfd9b070a180130e351199af5",
+          "src/game/FocusIndicator.cpp": "657cfbeaa564165f5afb7e566c327c0d6e7ce135c4e5acb83476feae73b166a6",
+          "src/game/FocusIndicator.hpp": "fc0282ae798bca03e18d938f9be1d17e9b3b7c739ad2a2831e7a921c68c9fae9",
+          "src/game/FreezeAccounting.cpp": "eba821c0ddaf32fdaa0b9429287197830ffb58488c4c9ba2be1092f6da9f9986",
+          "src/game/FreezeAccounting.hpp": "db322ead6fd0a4a4a8892038fe9a62e092fed89934724c1d75425284b8f95afa",
+          "src/game/FreezeRewardPanel.hpp": "916072ce48c3e65481f36491727bcd96c29152564ca42fe7bbe31e9f8ab1d69f",
+          "src/game/FreezeRules.cpp": "81c7f22f34ead78ebbe7a19d534535205c4083c52ee738450f4e9c39925f49c4",
+          "src/game/FreezeRules.hpp": "4a2b77a1f5433895439c3b36b94a4541575cf37e0aa664bfcd0cf7cbb1b4b611",
+          "src/game/Geometry526.cpp": "c028294d73e5973284e499c40bc40b9ad4a2c068683fd0e7b087e7c091c11159",
+          "src/game/Geometry526.hpp": "7b1556ea23aa2d681da3d6f5b51d3b48d48eaea53be242c6a19f2b09057dc206",
+          "src/game/Geometry526Host.cpp": "bb973f0ea31e21d551b8f3a9cf9e38aca9ee38fffe1835811a8d5e7ccea88944",
+          "src/game/Geometry526Host.hpp": "03e8b59b2e40869e1dcd261b660d7a25c52b7381102dd8d6683a95a1fb540355",
+          "src/game/GrazeRules.cpp": "2bda202bcdc6ba80e05a3ecfd4a7fa9f075ba97ee754cbf840e7a0ed38e054f1",
+          "src/game/GrazeRules.hpp": "db2804c90d45b2db80b122a6357ae63a77d9b9178d6ba62c418664e39824d5d5",
+          "src/game/HeadPower.cpp": "ad143cc48f676a4978515e4d73839a7918d87324a463e0b72cb04fb9c46fa24a",
+          "src/game/HeadPower.hpp": "5a51f04ebc26e7ecef31ef2bf782994459e802d196fe0412571fdddb4c367026",
+          "src/game/IceBirthRules.cpp": "bff2fa773382fe4a543d88f72c9e1ac7015b99bdb84bff68b59ed83b54a99298",
+          "src/game/IceBirthRules.hpp": "1b7863ba80c2784fd35703f2c3a0cabe8a5d975f64467af2267b8a799648e7bd",
+          "src/game/IceContact.cpp": "03ed6f669badbc8a5dbec294b116a2351699ba0465d718b4d3bbbe944ba5e208",
+          "src/game/IceContact.hpp": "e8e38b20126487123c6ef29a37de9e3acc58a7d7b1afc90f018c3d469f07c557",
+          "src/game/IceHost.cpp": "77d4a1cd3ebec396bd148468fab3219b3b22c94f2dc9c68739decc3994e7319f",
+          "src/game/IceHost.hpp": "3a29db0b52fec2760fe6c6eb89a6cbf68baa4cf45e8b6304a2cb5a07fb4997a6",
+          "src/game/IceMaskRules.cpp": "3dfd49531f30bc2a74d1362ac10b6ae67e5c5131b71d275f555f87d7b2583292",
+          "src/game/IceMaskRules.hpp": "09b091513a0096b01d93175cacac9009a12017d93a75dbd3e86a13a90b76bd55",
+          "src/game/ItemHost.cpp": "f901c027c40a9af0fbb68e77615d9c726bde14f1fc89267f3489b2e4822a2562",
+          "src/game/ItemHost.hpp": "22de783bdbd71c7d444a20f61da43e5987d47a0c5a05c400c543591666f94b7c",
+          "src/game/ItemRules.cpp": "1ba7b581f62be77c82dfe214d6a6d45e0955c121cd48e7bf54f899e97efd1f9d",
+          "src/game/ItemRules.hpp": "e045f3fdb1d55722acd02da255e43a5941d5113ecbca9bb5e315bbb72381279d",
+          "src/game/LaserCircleCancellationRules.hpp": "8cf85af476f3a15ec5ff79e123cb56ca9d692d1bee00dd69f28ae2d8e6f5c750",
+          "src/game/LaserLineHost.cpp": "4f16d2a3351dbbb8653e4fd6f2138c8ce84cfd93fd4b6635763a3fa170de3394",
+          "src/game/LaserLineHost.hpp": "48a7173696d21f39ff2a93234ad997a3ca216ea5f1931e67558f551d086578d8",
+          "src/game/LaserSelector3Rules.hpp": "41632e2413551113f33deaf951fc3057d3c4bb0e36ba53d8022635040e7e1c7c",
+          "src/game/LaserWholeLineEffectsOwner.hpp": "507d878ffaa29ec746312ed6a82c8f6b77efac70767bd1eb418fad3103ef33af",
+          "src/game/MessageHost.cpp": "ac74b24751f2c5fe13b0a39e838091660635f3445cc2a10199ade4a62361921d",
+          "src/game/MessageHost.hpp": "b7db534fa088e4b784e46a0ef5d745ba95cb55644646b75b743457aaef9ec9b9",
+          "src/game/MessageTimeControl.cpp": "69935c5858ccd2b339daf06394973bf1b412f42a40458c94162ad3b011172b42",
+          "src/game/MessageTimeControl.hpp": "df03e5f17d20c84a30001c56625b0db6b97ae2b12a1906be5c5e2cd03e484293",
+          "src/game/MessageVisuals.cpp": "fca20a081a7eb51e8eaa0e40e35811dbd5431220ed29f382ab8c59b5fc8437e7",
+          "src/game/MessageVisuals.hpp": "86120e424f4781dfe498f467755941c3175305def38f4789eebfb8023e602e26",
+          "src/game/NativeBattleResources.hpp": "2320848d9df653128a13a92bc875e8aeb7a1bb6f4079a802f00ade0212f4ba28",
+          "src/game/NativeBstCodec.hpp": "2ced3a4d7b571e6505abcce83c104083f4d159808f40079c8d84d656875b1669",
+          "src/game/NativeExReturn.hpp": "06f48f0bcd756f9c8434bb3409bd25f2fae54c35fe7d1b95970340235483939c",
+          "src/game/NativeExtraReturnOwner.hpp": "548bcc307c11c69adab927f249c5844038b90f6ee2e6c4b8ddc25b283a7c5a09",
+          "src/game/NativeFreshReplayRecord.hpp": "3683f5289d959b2683b9ec40fded476b9d3da4fb3dced4d46af94704f2b048b7",
+          "src/game/NativeNormalMainOwner.hpp": "6740719dda39fe1c220e3f5a5e6c0f250abb075460fe1bfefd54f981c13338e2",
+          "src/game/NativeNormalMainPermit.hpp": "a97a8a2365384f465851f8bba9e757bd950fa68b76ab90817263490b7b8dc265",
+          "src/game/NativeNormalMenuReceipt.hpp": "dba448f42de912c0fa195714513c142e5acaff152e54e5ffcd8756903034a938",
+          "src/game/NativeNormalRecord.hpp": "b13d6c8dfb539f0838d5f30f0a6496489ca24c39d7eef7b766ad47a3c04ba599",
+          "src/game/NativeOrdinaryReplaySave.hpp": "b1204ba2dc3c95651855e3fe31c789c8b75d402a4924f961e121d1974baa0948",
+          "src/game/NativeOrdinaryReturn.hpp": "9c9b3db6ede2f6010d146db069deafc981d18d3f6a6cdbb2149089b1bcefabc8",
+          "src/game/NativeOrdinaryTerminalOwner.hpp": "d217805319e113b1854078ebc84c4e43b3b82600ed046efa659945aca30ace27",
+          "src/game/NativePostrunMedia.hpp": "b728ab17ab9483d5b0cda51567937d5da802f810dd9a30f326d4861159c0b465",
+          "src/game/NativePostrunMenu.hpp": "d23283cdb49cff63426e0b913618c60a68b1d0d72c123610450cb373d6e6dfd8",
+          "src/game/NativePostrunRecord.hpp": "26f9556a30b8efd3c1b3f8527105e64b05815a3ed30c320528b3e6c3c90b08ac",
+          "src/game/NativeRecordAccounting.hpp": "25afab1a63bd56ddd8ee3c3c23111cc79c30f66f212f69a82d062a5f1468257b",
+          "src/game/NativeRecordBootstrap.hpp": "42c8636dd612151a500398deefc7deeb871380db64dfbd5f41ea3badf74e33ec",
+          "src/game/NativeRecordCipher.hpp": "959fe41d2a270bd69bc1dc5f695161d7001414281e1ceebf205dfea23ac6fbe8",
+          "src/game/NativeRecordSessionPolicy.hpp": "5d5f220e56e43e2844b72e7ba42566afebab8a8e4b7c11e38db74f34128bf02f",
+          "src/game/NativeRecordTiming.hpp": "26622c4ac7bd091bbe15e4b565aceb8a125d925447df3b9f000294b82be05eda",
+          "src/game/NativeReplayInput.hpp": "c37a8f950f19bb499fec2a9d29e25a662119e872d0afe44699b829cc4a7fa6a0",
+          "src/game/NativeReplayNameProfile.hpp": "97fb351ac1372d8211de6bfd179b74860243ee80e1c5756b6a20d0aa80e54c24",
+          "src/game/NativeReplaySaveMenu.hpp": "2b809559a38ee149709b2d8d4de0d1055aadb7bb8da0d1970a1c96b0f1713870",
+          "src/game/NativeReplaySlotPreview.hpp": "00deba3e2294216caa92a0c855b113c8b25116a6fab58fcecb8733e9be65dcfe",
+          "src/game/NativeReplayStageBinding.hpp": "314976fee180cfd2529e5cb126a9ad086bb011d20f5f5c197da453bcd0febcfc",
+          "src/game/NativeRunReplay.hpp": "6d2e3d263dc86fb2e22c4a4952917ebbaa8ae34611df7713ed8880eeca1f0303",
+          "src/game/NativeScoreContainer.hpp": "861e87fb87d53cea53c984d31997685d7de2878d7c623bf73703f4a4e30395c7",
+          "src/game/NativeScoreProfile.hpp": "fa3848628d07157066539caad45c9901356addefa988a7a4265667b1dde9c32a",
+          "src/game/OrdinaryTerminalDrain.hpp": "5ec32699cefe4381659b528b614f3dec2e1864b5724e03871f89ac02fa0be691",
+          "src/game/OrdinaryTransition.hpp": "53c7f7ce3476c16aaadd430326172e406307b48f99e20d83c5f099bbe9f7f6bd",
+          "src/game/OriginalHelpHost.hpp": "c15dcfd9de71074f47033631e316ec05b4d63681c450a2198e47765ccbf303c1",
+          "src/game/OriginalMenuFont.hpp": "f92962ab0e2cbe236240843f275dee3e868b44ee2a780999c8cba0daf8966eda",
+          "src/game/OriginalMenuInputFilter.hpp": "3e9f23b43a008c88725d6b1ac535f8c291d78051cd4fb978109d498681daf5f8",
+          "src/game/OriginalOrdinaryReplayGlyphs.hpp": "ec9a755940f5573b9f014cb0657c309d39f2848361285eddddb5ae228bb6c0ee",
+          "src/game/OriginalPauseBackdrop.hpp": "4d50f7e6e7a9394cb2f1d728ccc78f20aae40d40497e5ca59f31ba7f400fbf54",
+          "src/game/OriginalReplayNameContext.hpp": "4087bcec485e6ea2979e95670ba86315f965300df3a1aaacdcaa3c284bfe15a2",
+          "src/game/OriginalReplayNameGlyphs.hpp": "5458dbed93599a5b1b2aee4b304a4fd87b66b3aa0cf2873f951d55beba876be5",
+          "src/game/OriginalScoreNameGlyphs.hpp": "b6731385691398ccedee5fd22c0e5b1a83ce2bfc73d5bc2e95ea9c3306fd9c3e",
+          "src/game/OwnedReplayPlaybackInput.hpp": "95cb441ea27f0c3174ab16ec853fa2e505355ac14d447a02baf67e8f28328097",
+          "src/game/PauseGameOverHost.hpp": "be230510da3d870ac80570387a6029de77201e96033b9412ff9779694f3b8766",
+          "src/game/PercentHud.hpp": "6c71313089bd1ef543412a4617d50ebc8b1ae78971146486c15ae31dd248ac9a",
+          "src/game/PerfectFreezeHost.cpp": "b9c3ba3e0d915e63f1d99556de6e8bcd322b30d21a547821c03a912e5b04dee8",
+          "src/game/PerfectFreezeHost.hpp": "be066c88a5d1f48e28ac4bc67c8c363973beaf8a68d7f031557095bfc210f735",
+          "src/game/PerfectHud.cpp": "5513831a1b30d14b5ca1f2fb28e860645818e9948871e87143a0ce643822c831",
+          "src/game/PerfectHud.hpp": "dac130c1027913a735a5e01525832910094b1b7da1f724dc22b0aadfd36dedce",
+          "src/game/PlayerDeathHost.cpp": "fe472882ed47bf38f0a1359feb958d665f177e95bfa2a9858fc2f48202ba30ca",
+          "src/game/PlayerDeathHost.hpp": "6f5aa775fb4de89cb4ac3b141ac71f218fe7e1770cdc1ceba3c5e6fcfb5c0e43",
+          "src/game/PlayerDeathRules.cpp": "79e334ee65399277681ac8612ad43801d3e144c399d7d2a771791aa825952ec1",
+          "src/game/PlayerDeathRules.hpp": "b9234e35dfe2a1e94a0ba732e112c13fe1d605c99e3e03feac2ce26740cbd328",
+          "src/game/PlayerFireHost.cpp": "22c2157b8e7a42b35b58109f07a85096ec27f2ce06033513cfe74021dfc4a575",
+          "src/game/PlayerFireHost.hpp": "d77936a4b76f314f6ead9c3a28559ea88147ab0cfac2a5e5ad23e4cf18424479",
+          "src/game/PlayerFireRules.cpp": "f501b12a58e5f018fd122384be5d04a2c7e0490fb0dd370a3f31dafe8b4bddec",
+          "src/game/PlayerFireRules.hpp": "5cb68131cd70dec1222e391bcaba4563b2c4be4e2bb9f60d8a989335f3fa7695",
+          "src/game/PlayerHitHost.cpp": "5043d352fbc77dc593e896ca10c4837c566cc19df816dff9475d404fe22c4f8b",
+          "src/game/PlayerHitHost.hpp": "7e897487b3e0a2a82e17814e1fde410498825b020397775e8e800c534ef38915",
+          "src/game/PlayerHitRules.cpp": "d466d1b4c820c1a1000f93777aea878f0e7dc37297ba2cbc0d366c9621e0310c",
+          "src/game/PlayerHitRules.hpp": "313943900b0287023ea55d19999a92f9815c622857e26cca6dba6e6c77df1930",
+          "src/game/PlayerRespawnRules.cpp": "8945264adb6c63a9060c5f116188d8824c05bc08725088ac01c1337d78c1e57f",
+          "src/game/PlayerRespawnRules.hpp": "d000b3e0c861bac6dcccc738b7ceaa0c6620d7cb8a5eef63f7f3b75297b1dbc4",
+          "src/game/PlayerRules.cpp": "59d5136195675ccef9be9987334fa7b30d876ebb2069e30737d2b00e65de24eb",
+          "src/game/PlayerRules.hpp": "07f6f9123ffff5bcf859f137c1eaa50b630b7a40e88bddbe051beae1426842c0",
+          "src/game/PlayerShotBirthRules.cpp": "36b6a3f8101d3bd6fbf2bafb432aa81d1c5a9ee7b77abf7f1d93a4d3f1964b72",
+          "src/game/PlayerShotBirthRules.hpp": "f80b03151143527fdfbfeb0f9d1ea3817a4ba355809ce74600f5bf4d0d32504f",
+          "src/game/PlayerShotGroups.cpp": "432bdd57858fe8178ce1cfd969a67fa848d9ebfbba92922303c80e4f9c91a8fa",
+          "src/game/PlayerShotGroups.hpp": "4abb96cb48bade94a34f7bdc5ce725ababa148573cc846e13080ce45f6d4cbe1",
+          "src/game/PlayerShotHost.cpp": "2049c9ec660e29a40dc7cafc57160841f315df2fdd1bb222dd75151ea7600e5d",
+          "src/game/PlayerShotHost.hpp": "bd898df423051a40442670920b57b658a37fe2861e9460056bb291d6c7735276",
+          "src/game/PlayerShotMotion.cpp": "cf700c6fe880bb0c3f204495e5ff24c41890ee5a819aef81b98d11fc3fb2bf1f",
+          "src/game/PlayerShotMotion.hpp": "a6a73106dffeafcaa9fdc28f7c6d4f2b747ef47e160bf3ff5c9f8530681ddf38",
+          "src/game/PlayerShotTickRules.cpp": "d88f7bcc929c95399218594677a15e256155be43735c869aaa8339c11656049f",
+          "src/game/PlayerShotTickRules.hpp": "7e50f00bfad6733d3f83df009eda01cf1b5a8f387e5570179b7769271ea37e24",
+          "src/game/PlayerStageClearSlots.cpp": "9cbb6ba4274e7dddf85e014eb95c367539673eaf0c3dc23555a2a1b9621c9d0c",
+          "src/game/PlayerStageClearSlots.hpp": "414dd8d219ac23b5dd4c74b22d1b81c0b053d9bc12f6b6ff9e33e088f0305167",
+          "src/game/PostBossEventRules.cpp": "6be1141fe1dbe72c02b2f535b20ca93d5bb3ab3583003e1f0537c021b0f8d8cd",
+          "src/game/PostBossEventRules.hpp": "e97ae0318754a4472ad2dcb9334fc7c881bb06d17765c061026dfeee6a39919d",
+          "src/game/RingGeometry.cpp": "72e77f39bf12ec310f293b35f467a07f6825db614912db4decddd04ed9b50202",
+          "src/game/RingGeometry.hpp": "ec1e4fc5485badc72d5e7486e520c97c4363ecc9e85475da694abea6fc0e2184",
+          "src/game/RouteChoiceHost.cpp": "c5c20590a0322cd4e677e8cb2f23236a00a3d4704f6a16fbca919c8328ed4f21",
+          "src/game/RouteChoiceHost.hpp": "563f28572c57582a754c45dfd9326219008b441bd220016ab1674c318fb7592f",
+          "src/game/RouteHandoffRules.cpp": "ce3259249cf796c338a52a8b86c5b65a007cc5114c26cdf830335277443c0cc7",
+          "src/game/RouteHandoffRules.hpp": "1b0863d1df8d2f0c50c86afb9dbea58f3e3de0bc18a92d39d7b1e9cd13878dbd",
+          "src/game/ShotEnemyCollisionRules.cpp": "132669606ef0444ddfe24f92a6c3d050678cd64d4a077f469c120ab2dd6364c4",
+          "src/game/ShotEnemyCollisionRules.hpp": "f43224f9c623e9d5e18ff58772cfee60bf1705432826ea47db19aaf9bda8c6da",
+          "src/game/SpellRules.hpp": "dbcb236973aa261b8cc9cd648fbb034da164a0e7c6f9f4ef000177f3ef3f50b9",
+          "src/game/SpellVisuals.cpp": "15ba9f3346d07110aed5d24e21d705624c77d9c1db2895ba8623a66b4bfc40e3",
+          "src/game/SpellVisuals.hpp": "93df29a64f9affaede8273065f8059836cd267a4fb64041d6e44a2e10ac17540",
+          "src/game/StageControl.cpp": "64908cf6b49ec4795dbe3f03bc03fab5a276f061652107f8e303b44d21883e39",
+          "src/game/StageControl.hpp": "1cc1896a326eca46d14eed0b103222f3e746768accf47cddb58deb031dcb39ca",
+          "src/game/StageIntroLogos.cpp": "e4ef8a64258f8d742f93d1fd0d694681d7a0265a5b20bafa826ef5e982743e40",
+          "src/game/StageIntroLogos.hpp": "4e98c0064535365153df15b9716d630d90abf2bf260846946d8d1d8d50f6853e",
+          "src/game/StageResourceCatalog.cpp": "5c0a8ab9c5a1cb4a34d246141eb7ade614fee55c5170ecc725b3e397f32b71e4",
+          "src/game/StageResourceCatalog.hpp": "687163e05fa8e96227592fe5fcbb01efee0e5d2797397a484e69a5b51680a9ad",
+          "src/game/StageSessionIdentity.cpp": "414951d6de10f839cba2df9db43b5a2eb823c15e5dd674bbe9ad2fc3bee55ca0",
+          "src/game/StageSessionIdentity.hpp": "d26bdabcfda74c0e257a59d6d49a38c9cd743dabc160adcb89f7a3b9d3ed2e75",
+          "src/game/StageSettlementHost.cpp": "e1c93279d531c91bd339e41638a5b15ae67965ab3168158696942bee1b897f81",
+          "src/game/StageSettlementHost.hpp": "70928b0010ad271819257fa85dcde28565a04894a6ce278f0c583ea9f1d12df2",
+          "src/game/StageTransitionHost.cpp": "9790dbdecf01683239fe0eee672dc430fe1c60ecae6175f65a6c9a35ce3013d0",
+          "src/game/StageTransitionHost.hpp": "4783bdf19a753a113633307825d4b2a9326e8444d1671bd725696f2363f83895",
+          "src/game/StageWorld.cpp": "9fe5db0221f0748bcaeddc297fa49e9fa7154f92faadc0455350318e7620d7a8",
+          "src/game/StageWorld.hpp": "a21d6acfcfe1bf89b2f2150853ffdec140fae00072de00b9f3f7d6cd12fb3db6",
+          "src/game/TransientEffects.cpp": "cc82c00c731d381bcad1cf70914af765f57e9344b012db1ffe1147ddaaf0b65f",
+          "src/game/TransientEffects.hpp": "f47f9035c6ed75338935a74cadf6df32b526ad253f5a0e2962e8c817a19be03a",
+          "src/game/ending/EndingKind5.hpp": "d7422f09bcc6665aca09d574907d0b787e04e9d7980702562b9358654bd69a75",
+          "src/game/ending/EndingRuntime.hpp": "9881a2d6266f29e231a6e7fe3849f888f650a52f66ffe5a5adcea1d5b910f803",
+          "src/game/ending/EndingSceneHost.cpp": "519e6a6dd21528b57adf88266138470f87979fd8571511bae8aeb72879119756",
+          "src/game/ending/EndingSceneHost.hpp": "b103b0564b50a1cf170cb1413ec64d9cfe3086489d3d2b7c9e40e36a5c5a4cc0",
+          "src/game/ending/host-text-vm-bridge/HostTextVmBridge.cpp": "e76691197aa75133e9c46e8df8eb1603acb077b7cd4e4aa70f5d998b67c8caf4",
+          "src/game/ending/host-text-vm-bridge/HostTextVmBridge.hpp": "e25cc1c117a287b89188c265ab7d0965012c5006dbcbfa4c2a19f25e814ef694",
+          "src/practice/Thprac128Chapter.hpp": "eba5299c0ccd03eec02036974a30d8710e8262012dc8f4fcf199fad8e224b9bf",
+          "src/practice/Thprac128Section.hpp": "bedc8c7661c69e0ff12af4be9ba8b504f17ce114a95d1d094bc39a79d464c00b",
+          "src/practice/Thprac128SectionData.hpp": "ff3197112d51269c8985eda3c72752cec8ffa1ca04dba49c1c0de34f95a0b941",
+          "src/practice/Thprac128Source.hpp": "2835ac88222c0285025ca99d3d8e68440c54cc6c8484bcf4783df7fdcfd85672",
+          "src/practice/Thprac128Web.hpp": "02d5e33e1b2c7ab3fa3ef597211cf0b5fc47d3f3e33b590398168c5d28a835e0",
+          "src/runtime/DrawJsonWriter.hpp": "aa550914bcb5a0c24b0307bdb89ba0d9e90b16803b042ff00244aedcd62bc838",
+          "src/runtime/EclExports.cpp": "8c4f7f36e1b3cd56eefc190d1ee707e99662e29ce4ca54c6855238fe4e264420",
+          "src/runtime/Exports.cpp": "a53590d490e09517d9bdad2feec85799e136f9e1e44470a2981bbaa1767b5b3f",
+          "src/runtime/Memory.hpp": "bc209020ad0f2a2bd9e649440f239f3517a97ec480e4d27d2c3395a1c5d3a1b0",
+          "src/runtime/PlayerExports.cpp": "72c6abe64a18786d2c40f78addcfb4a22335e48d3ac4ccdf855233f0fb1e3a5f",
+          "src/runtime/WorldExports.cpp": "fe748691a2b54ef94b6db6988a1f9a0b75412036927a85c7fa6f81ca26d5dc56"
+        },
+        "artifacts": {
+          "core.mjs": {
+            "bytes": 138391,
+            "sha256": "271e1f71d67ccf9ff03c7896e47b10b94081035b73792e67a2d50ef23aeb5f53"
+          },
+          "core.wasm": {
+            "bytes": 2427459,
+            "sha256": "5e29d95a3436bcf6d2060f9204c40fa84d5c70f7fe3f89501534fa55058bce30"
+          }
+        },
+        "generation": "08c98b0a32cc8653a042f47701d1fdafbe66a1044e8fcb0236a5f645adaea3fb",
+        "sourceCount": 231,
+        "translationUnits": 83,
+        "exports": 214,
+        "changedSources": [
+          "src/game/NativeRunReplay.hpp",
+          "src/practice/Thprac128Web.hpp",
+          "src/runtime/WorldExports.cpp"
+        ],
+        "Factories": 0,
+        "Worlds": 0,
+        "browser": false,
+        "publication": false,
+        "at": "2026-11-17T09:45:06.040Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case929-private-core114-thprac-Replay\\request.json",
+          "bytes": 207205,
+          "sha256": "2f594500de8fe14dc118d397d09e8bfc648d40c655224c342488317823ab998a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case929-private-core114-thprac-Replay\\actual-manifest.json",
+          "bytes": 219291,
+          "sha256": "2c5a60c2e5d1ef788e2ea695b2efb0da4a724eb75654091fff5e48d2d867c618"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case929-private-core114-thprac-Replay\\MAIN-APPROVAL.json",
+          "bytes": 738,
+          "sha256": "2fe66111542e3ddfcba69e00a074ae93fd3e97b2b0ae62ad3f5a6769482ef4ee"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case929-private-core114-thprac-Replay\\sourcecheck.json",
+          "bytes": 70,
+          "sha256": "eb9cdf2b8ac4c2f105f2b6f2bf136ad5b79671ac75d52c3a37c89583004a7527"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case929-private-core114-thprac-Replay\\result.json",
+          "bytes": 25177,
+          "sha256": "7e2a3d76c0c5c56b820d6b5df30753d09cf9d5fa7a14e94d80bd66f58ede5d79"
+        }
+      ]
+    },
+    {
+      "ordinal": 930,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 18,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 930,
+        "passed": true,
+        "scope": "Actualimmutable114Factory2/World2/6ticks record→realRPYPRAC→strictsyntheticstoreclose-reopen→actualnativeplayback/sameplayerRNGscoreprojection/playLock.0compile/browser/GPU/physicalaudio,CPU180s.",
+        "steps": [
+          {
+            "name": "actual-record-RPY-native-playback",
+            "status": 0,
+            "signal": null,
+            "error": null
+          }
+        ],
+        "WorldStartsUpperBound": 24,
+        "Factories": 2,
+        "nativeCompiles": 0,
+        "fullCoreCompilations": 0,
+        "browser": 0,
+        "at": "2026-11-17T09:46:30.476Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case930-actual114-record-RPY-store-native-playback\\request.json",
+          "bytes": 5817,
+          "sha256": "efa8bc6f140cca8884352777c4debf4cbdc17024effbb1706e3de192b04a4e31"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case930-actual114-record-RPY-store-native-playback\\actual-manifest.json",
+          "bytes": 7177,
+          "sha256": "50638753e7a8f826b4566c23ce292838cf4b39c3afd9527c1aca4b4dc2fdddb1"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case930-actual114-record-RPY-store-native-playback\\MAIN-APPROVAL.json",
+          "bytes": 707,
+          "sha256": "89747c59c155a5a1852617732e99ccad9928043c2809aaa7dd8e2647fa2adcc2"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case930-actual114-record-RPY-store-native-playback\\sourcecheck.json",
+          "bytes": 70,
+          "sha256": "6230867afa47baf0d8f7ce9515ce3a24456ed6a8f35332d85689bde74cbef955"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case930-actual114-record-RPY-store-native-playback\\result.json",
+          "bytes": 573,
+          "sha256": "081d08ebe5b70b3de07e00854826b7854e30c91b2e6c54a3014b1ba4a1c3fdaf"
+        }
+      ]
+    },
+    {
+      "ordinal": 931,
+      "passed": false,
+      "sourcecheckOnly": false,
+      "pins": 26,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 931,
+        "passed": false,
+        "checks": 1,
+        "inputs": 26,
+        "browser": 1,
+        "realHTMLCSS": true,
+        "actualPracticeCaller": true,
+        "nativeResourcePauseSeams": true,
+        "realIndexedDB": true,
+        "Worlds": 0,
+        "Factories": 0,
+        "nativeCompiles": 0,
+        "GPU": false,
+        "physicalAudio": false,
+        "evidence": {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case931-browser-practice-Replay-real-IDB-current-page\\evidence.json",
+          "bytes": 3490,
+          "sha256": "3ed2888b92a684b6e0c52f02ef8a55bfbbb433fe4892e2685b15eb5ad1bafbae"
+        },
+        "windowMs": 29947,
+        "firstFailure": {
+          "message": "real Replay entry stays closed until explicit open",
+          "stack": "Error: real Replay entry stays closed until explicit open\n    at check (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case931-browser-practice-Replay-real-IDB-current-page\\cua-workflow.mjs:4:91)\n    at Module.run931 (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case931-browser-practice-Replay-real-IDB-current-page\\cua-workflow.mjs:8:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async C:\\Users\\wang\\Documents\\Codex\\2026-11-13\\c-users-wang-documents-codex-2026-3\\.node_repl_cell_7.mjs:16:338"
+        }
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case931-browser-practice-Replay-real-IDB-current-page\\request.json",
+          "bytes": 14566,
+          "sha256": "8da042dc9c8c0c629b6ef7980095075fb8a2c1f0ef8b80ee712934e08472700d"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case931-browser-practice-Replay-real-IDB-current-page\\actual-manifest.json",
+          "bytes": 15972,
+          "sha256": "fa548ffaf3978959da8e4c24040e877f3e5e124144dee2cb4f86ee9b86ef9003"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case931-browser-practice-Replay-real-IDB-current-page\\MAIN-APPROVAL.json",
+          "bytes": 807,
+          "sha256": "7c56ac4734e66fa09f27dbb2f4d8f189faa70792d8fd3a2ad8cf629ec3ed9ae6"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case931-browser-practice-Replay-real-IDB-current-page\\sourcecheck.json",
+          "bytes": 50,
+          "sha256": "f3a869a4e2e13be9892717d5943c28ceca6231177bc604a9ddb1c38dc55c6593"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case931-browser-practice-Replay-real-IDB-current-page\\result.json",
+          "bytes": 1310,
+          "sha256": "c35ff499347ab74973044a8cf0f617a30ee93b9c16e674b1d9c6f0d5c7110afa"
+        }
+      ]
+    },
+    {
+      "ordinal": 932,
+      "passed": false,
+      "sourcecheckOnly": false,
+      "pins": 26,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 932,
+        "passed": false,
+        "checks": 6,
+        "inputs": 26,
+        "browser": 1,
+        "realHTMLCSS": true,
+        "actualPracticeCaller": true,
+        "nativeResourcePauseSeams": true,
+        "realIndexedDB": true,
+        "Worlds": 0,
+        "Factories": 0,
+        "nativeCompiles": 0,
+        "GPU": false,
+        "physicalAudio": false,
+        "evidence": {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case932-browser-practice-Replay-real-IDB-current-page\\evidence.json",
+          "bytes": 6792,
+          "sha256": "7ca883eab7cb815a04d91fe0c136b5e61e55e8c654898eabeac326952d928575"
+        },
+        "windowMs": 33009,
+        "firstFailure": {
+          "message": "Error: Playwright selector deadline exceeded\nlocator.waitFor(visible) timed out for selector #thprac-replay-status >> internal:has-text=\"为空\"i\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#thprac-replay-status >> internal:has-text=\\\"为空\\\"i\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}",
+          "stack": "Error: Error: Playwright selector deadline exceeded\nlocator.waitFor(visible) timed out for selector #thprac-replay-status >> internal:has-text=\"为空\"i\nLocator diagnostics: {\"kind\":\"no_matches\",\"action\":\"waitFor\",\"locator\":\"#thprac-replay-status >> internal:has-text=\\\"为空\\\"i\",\"matchCount\":0,\"matches\":[],\"visibleCount\":0,\"truncated\":false}\n    at Sl (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:99610)\n    at e.actionError (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:108237)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async e.waitFor (C:\\Users\\wang\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\76f5b5935a63c7ba\\bin\\node_modules\\@oai\\cua\\dist\\lib\\js\\oai_js_browser\\dist\\skill\\scripts\\browser-client.js:1:105640)\n    at async Module.run932 (D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case932-browser-practice-Replay-real-IDB-current-page\\cua-workflow.mjs:15:132)\n    at async C:\\Users\\wang\\Documents\\Codex\\2026-11-13\\c-users-wang-documents-codex-2026-3\\.node_repl_cell_8.mjs:17:338"
+        }
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case932-browser-practice-Replay-real-IDB-current-page\\request.json",
+          "bytes": 14566,
+          "sha256": "b01079ad2c66d78103518ce4118bb43503d5d7dd2c263ef5a9c6c8b678a6c899"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case932-browser-practice-Replay-real-IDB-current-page\\actual-manifest.json",
+          "bytes": 15972,
+          "sha256": "d2e4220669def2a290c7a284291b7bd2150ab2480431df019b50aaeb2c9fd028"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case932-browser-practice-Replay-real-IDB-current-page\\MAIN-APPROVAL.json",
+          "bytes": 718,
+          "sha256": "f3556c2e306b63c852bc33b1a93f922f3de21907c45a37a477df88643aa1fd03"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case932-browser-practice-Replay-real-IDB-current-page\\sourcecheck.json",
+          "bytes": 50,
+          "sha256": "9f0a12b8206bfcc76459daf063308f38d052fd19370dccd239076a5ad447aa9a"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case932-browser-practice-Replay-real-IDB-current-page\\result.json",
+          "bytes": 2443,
+          "sha256": "14bc0dd938cef0a6363c860e76e9c06585076da0eb7de13a5d17055536e768a4"
+        }
+      ]
+    },
+    {
+      "ordinal": 933,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 26,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 933,
+        "passed": true,
+        "checks": 10,
+        "inputs": 26,
+        "browser": 1,
+        "realHTMLCSS": true,
+        "actualPracticeCaller": true,
+        "nativeResourcePauseSeams": true,
+        "realIndexedDB": true,
+        "Worlds": 0,
+        "Factories": 0,
+        "nativeCompiles": 0,
+        "GPU": false,
+        "physicalAudio": false,
+        "evidence": {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case933-browser-practice-Replay-real-IDB-current-page\\evidence.json",
+          "bytes": 5436,
+          "sha256": "fe8681e397b59570576d61cdc642706a1831020056731e11b29dc5efb37457ad"
+        },
+        "windowMs": 32867,
+        "firstFailure": null
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case933-browser-practice-Replay-real-IDB-current-page\\request.json",
+          "bytes": 14566,
+          "sha256": "324be2f83231ab49434dd420b1291ce755ac217495eed4715b517776cfbd28a0"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case933-browser-practice-Replay-real-IDB-current-page\\actual-manifest.json",
+          "bytes": 15972,
+          "sha256": "da6b4745335df6def10572eca0ab529f64f0e6b63f94c819f4ee5c2d3b8bcc93"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case933-browser-practice-Replay-real-IDB-current-page\\MAIN-APPROVAL.json",
+          "bytes": 707,
+          "sha256": "f5f171c24d435601c93b92b55151d400299f3648beb4b028e377ccaa25c306d9"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case933-browser-practice-Replay-real-IDB-current-page\\sourcecheck.json",
+          "bytes": 50,
+          "sha256": "a90f286625290dcfd5dec4617f7bf51301812156fdb138b59d8a97987675bd16"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case933-browser-practice-Replay-real-IDB-current-page\\result.json",
+          "bytes": 637,
+          "sha256": "45ea72680a88384eb0f4d3761ea1196953edb73e3542087cdfa6415c44498c37"
+        }
+      ]
+    },
+    {
+      "ordinal": 934,
+      "passed": true,
+      "sourcecheckOnly": false,
+      "pins": 11,
+      "result": {
+        "authority": "MAIN",
+        "ordinal": 934,
+        "passed": true,
+        "summary": {
+          "pass": 1,
+          "fail": 0,
+          "skip": 0,
+          "cancelled": 0,
+          "tests": 1
+        },
+        "runtime": 0,
+        "productWorlds": 0,
+        "nativeCompiles": 0,
+        "browser": 0,
+        "inputs": 11,
+        "at": "2026-11-17T09:56:43.114Z"
+      },
+      "records": [
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case934-practice-Replay-original-USER-pair-preserved\\request.json",
+          "bytes": 3499,
+          "sha256": "7873e304d209638222bdfd1e76c919e1d57e713d205ac51e9b337a6a38f2b884"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case934-practice-Replay-original-USER-pair-preserved\\actual-manifest.json",
+          "bytes": 4526,
+          "sha256": "26ff609a180122da1d34883d20f91797c9e24a2726bf0bfb1150a30c77b83808"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case934-practice-Replay-original-USER-pair-preserved\\MAIN-APPROVAL.json",
+          "bytes": 628,
+          "sha256": "d0b7de3197fd340c5f478be382b5e70ca874d96fb8c1de5d3f38d6b332f55212"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case934-practice-Replay-original-USER-pair-preserved\\sourcecheck.json",
+          "bytes": 86,
+          "sha256": "d0869277f51846b460316a29166a292f5e8de99d2441fcff10ed8f7fe3d43f39"
+        },
+        {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case934-practice-Replay-original-USER-pair-preserved\\result.json",
+          "bytes": 291,
+          "sha256": "7c6b090324a2217a1482a36f682a2d91e57bbc3f4f274978f6d18ae70541895b"
+        }
+      ]
+    }
+  ],
+  "failureRulings": [
+    {
+      "n": 915,
+      "detail": "genuineactualrecorder missingRED44checks/start1"
+    },
+    {
+      "n": [
+        916,
+        918
+      ],
+      "detail": "partialframe0fixturemissingitemthenlaserFX;switchwholeproductionresourceconsumer,productunchanged"
+    },
+    {
+      "n": 917,
+      "detail": "6trueformatstoreplaybackmissingRED"
+    },
+    {
+      "n": 922,
+      "detail": "sourcecheckunderlegitimate921ROOTblocked0grant/runtime,newsynchronouscase923"
+    },
+    {
+      "n": 923,
+      "detail": "missingpageconsumer1RED,adapter1PASS"
+    },
+    {
+      "n": 924,
+      "detail": "3wholeasyncfixtureconstructionFAIL/8PASS,asyncprefixrestored925productunchanged"
+    },
+    {
+      "n": 926,
+      "detail": "191PASS0FAIL1privatecatalogdemoSKIPcorrectlynotgreen,927explicitboundedpublicsuite0skip"
+    },
+    {
+      "n": 931,
+      "detail": "fixturevariantreadinesscallbackomitted"
+    },
+    {
+      "n": 932,
+      "detail": "6realIDBchecksPASStestonlyasideoccludedwatchbuttons;933layoutfixtureonly"
+    }
+  ],
+  "review": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\MAIN-thprac-Replay915-934-self-review-20261117.md",
+    "bytes": 4971,
+    "sha256": "e66de463934e39f2f12a23b797a9fa579c16bde9922b16e6569f1197d053d2db"
+  },
+  "independentReviewClaimed": false,
+  "remainingRequired": [
+    "Backspace/F1..F7actualassists",
+    "F12advancedlogicSpeed",
+    "persistentLauncherPracticeGate"
+  ],
+  "limits": [
+    "3nativeframesrecorded/replayed,nofull617compatibilityorwholechapterclaim",
+    "nativeframe0resourcefixtureiswholeWorldExportscomponent,notgamecoreFactory",
+    "930isactualnativeFactoryCPU,933browsercapture/start/pauseauthoredseams;notcombinedfullbrowsergame/FPS",
+    "ChineseReplaycontrolsnotalllocalized",
+    "titlepracticeentrysourceintegrated,browserwatchacceptedfromvisiblepracticepanel",
+    "explicitretirement-specificnativeclearunproved;resetandJSexitcloseproved",
+    "core/resourceSHAconsistencynotpublisherauth"
+  ],
+  "history": {
+    "report": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac128-Replay915-934-historical-pin-final-v2-20261117.json",
+      "bytes": 500652,
+      "sha256": "8addefdec4a6931473f26681114dfdac2e7f56bcd0591fba67a02f964294dea9"
+    },
+    "total": 8817,
+    "liveExact": 8182,
+    "archivedExact": 634,
+    "unresolved": [
+      {
+        "ordinal": 772,
+        "expected": {
+          "path": "C:\\Users\\wang\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+          "bytes": 107312,
+          "sha256": "6978056b764c5764c079555bfed352141c49af6273bc879165040019f12c6841"
+        },
+        "live": {
+          "path": "C:\\Users\\wang\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+          "bytes": 107312,
+          "sha256": "161502b6024b8be6dee031455695534ecd3547273f75799a65443fe2bb405df3"
+        }
+      }
+    ],
+    "immutablePins": [
+      {
+        "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\page-launch-context.mjs",
+        "bytes": 2104,
+        "sha256": "e3f336b545167dbcf3ba9943a873409e34c356a13b683b73ea1fb9a29ae25cea"
+      },
+      {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\Web-delivery-20261116\\th128-runtime112-dat-ogg-v7.zip",
+        "bytes": 3288577,
+        "sha256": "7e66ecb3c996a140d1e81d61e8ff63fd5176135057a727c1520cfc68570c33cb"
+      },
+      {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\Web-delivery-20261116\\resource-package-dat-ogg-v2\\th128-dat-ogg-5e3bcbd5ebb8b171.zip",
+        "bytes": 93317333,
+        "sha256": "f8eec6698f3ecdc94f6d64ce3413800a7558201d365e468e9c27ac61fc2504a5"
+      },
+      {
+        "path": "C:\\Users\\wang\\Documents\\Codex\\2026-10-28\\e-gee\\outputs\\th128-web\\site\\play.mjs",
+        "bytes": 282191,
+        "sha256": "7ab1c9f75e26259fbb13c32bb9bba9f90e46b667ac9cb63637f1b9b08f515634"
+      },
+      {
+        "path": "C:\\Users\\wang\\Documents\\Codex\\2026-10-28\\e-gee\\outputs\\th128-web\\site\\play.html",
+        "bytes": 19538,
+        "sha256": "3e5a6941d1f63da6d3765431d76f25076721954b234f2d0cdbfc8ea44d460781"
+      },
+      {
+        "path": "C:\\Users\\wang\\Documents\\Codex\\2026-10-28\\e-gee\\outputs\\th128-web\\site\\runtime\\sound.mjs",
+        "bytes": 78161,
+        "sha256": "184b15f22bfa484e9b7815835c2e7ceef71c2b2e54dd34beb606a95866dd4966"
+      },
+      {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\Web-delivery-20261116\\runtime112-dat-ogg-v7\\site\\runtime\\builds\\b00aaebe9cb9fd9021d3bcd7769a1f106869b3a2bfb8f2e788aa8b740d5a602b\\core.mjs",
+        "bytes": 135143,
+        "sha256": "1a9a086b1c457b31fd48833c616bafea89b2dc9beb89cc013142aabf84bc430c"
+      },
+      {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\Web-delivery-20261116\\runtime112-dat-ogg-v7\\site\\runtime\\builds\\b00aaebe9cb9fd9021d3bcd7769a1f106869b3a2bfb8f2e788aa8b740d5a602b\\core.wasm",
+        "bytes": 2297486,
+        "sha256": "cff85905b02fe13df80c037a054fe43674af87ec238e58a19dca35e6d5f77825"
+      }
+    ],
+    "firstReadback": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac128-Replay915-934-historical-pin-final-20261117.json",
+      "bytes": 500652,
+      "sha256": "8addefdec4a6931473f26681114dfdac2e7f56bcd0591fba67a02f964294dea9"
+    }
+  },
+  "protected": {
+    "core93To113NotRecompiled": true,
+    "core114SuccessfulImmutable": true,
+    "DATOGGv2Localv7Public3Untouched": true,
+    "noRuntimeZIP": true,
+    "noPublicURL": true,
+    "noUserPageHotpatch": true,
+    "noPersonalDBSaveRankConfigReplayTouched": true,
+    "noVolumeChange": true,
+    "noDEFAULTUnlock": true,
+    "noWorkersRetriedOrCreated": true
+  },
+  "processRulings": "one largearchivepatchlimit deviation documented/fullSHAexact;laterchunked",
+  "docPins": [
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\docs\\THPRAC128_REPLAY.md",
+      "bytes": 2631,
+      "sha256": "c51cbe13d5a75e70aee15894350dd86670caceb555fa13730dff45cbcc8aafaf"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\README.md",
+      "bytes": 10005,
+      "sha256": "9a74e6b9ccc88aeb60ad40a6bed5160fde4430d9d190ff58f1bbc483cc81edf1"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\ADAPTATION.md",
+      "bytes": 14244,
+      "sha256": "0d4db9189c64b030148820c24b108bc021d546ff766b958c62982fadca147b40"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\docs\\WEB_FUNCTIONAL_SCOPE.md",
+      "bytes": 3676,
+      "sha256": "944f3668aac6e61c4b2c659f97d0f602d1a990f327df35f9cc8fedabb91f4995"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\docs\\THPRAC128_CONSUMER_MATRIX.md",
+      "bytes": 11055,
+      "sha256": "eeb87c46118fe715a23def8b56077619946605683aa74fdc34fd1643ba386c94"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\docs\\THPRAC128_WEB_MENU.md",
+      "bytes": 3539,
+      "sha256": "870b40e37226ed5d1049578e083ea8ece18dc73215eb60e2ac3043b8c39fb47d"
+    }
+  ]
+}

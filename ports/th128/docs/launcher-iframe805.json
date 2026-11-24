@@ -1,0 +1,111 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-17",
+  "case": 805,
+  "passed": true,
+  "checks": 25,
+  "inputs": 18,
+  "browser": 1,
+  "measuredWindowMs": 20861,
+  "sourceCommit": "86003d4a2a414091f7bd4f6ead3ecc58b3390a81",
+  "actual": {
+    "parentWindow": true,
+    "crossOriginIframe": true,
+    "iframeDocuments": 2,
+    "siblingSourceControl": true,
+    "fullCurrentEntry": true,
+    "pageContext": true,
+    "sessionTransport": true,
+    "requestStrings": true,
+    "readyConfigureLaunch": true,
+    "inputMessages": true,
+    "loadingExitCancellation": true,
+    "ownedServers": 2,
+    "ownedTabClosed": true,
+    "serversClosed": true,
+    "ROOTReleased": true
+  },
+  "seams": {
+    "provider": true,
+    "resourceStore": true,
+    "playRuntime": true,
+    "nativeInput": true,
+    "presentation": true
+  },
+  "notProven": {
+    "realDAT": false,
+    "realIDB": false,
+    "gameFirstFrame": false,
+    "physicalKeyboard": false,
+    "physicalTouch": false,
+    "World": false,
+    "Factory": false,
+    "GPU": false,
+    "FPS": false,
+    "physicalAudio": false,
+    "durableSave": false,
+    "fullUpstreamAdapter": false
+  },
+  "evidence": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case805-real-current-page-iframe-wire\\evidence.json",
+    "bytes": 29457,
+    "sha256": "c2087c7ec34b63376f8e9132e0f78b8a34df51c8010fc0d20a848c64c90f18ec"
+  },
+  "screenshot": {
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case805-real-current-page-iframe-wire/result.jpg",
+    "bytes": 59101,
+    "sha256": "8b4e752db036661b159f50a5f6db19f1ad8f12b110e1e679b198bcb88bc5704a"
+  },
+  "checksList": [
+    "actual cross-origin parent iframe is ready",
+    "limited capabilities are reported honestly",
+    "wrong identity messages produce no reply",
+    "same-origin sibling cannot impersonate parent",
+    "unsupported music fails explicitly",
+    "external DATA is not falsely acknowledged",
+    "current configure is correlated and accepted",
+    "language uses current provider catalog URL",
+    "launch ACK waits for runtime readiness",
+    "context exists before play import with exact config",
+    "launch ACK follows runtime finish",
+    "launch does not manufacture first-frame",
+    "non-presented seam emits no first-frame",
+    "explicit presentation seam emits exactly once with serial",
+    "keyboard message reaches runtime hook",
+    "duplicate request replays reply without input duplication",
+    "keyboard-clear reaches current runtime",
+    "invalid keyboard code is rejected",
+    "unimplemented mutable file command is rejected",
+    "exit acknowledges actual runtime cleanup",
+    "exited session accepts no further input or frames",
+    "new document has a fresh ready identity",
+    "cancel owner configures independently",
+    "second owner launch is still pending",
+    "exit cancels loading without late successful launch or frame"
+  ],
+  "failures": [],
+  "consoleErrors": [],
+  "positiveProductionModules": [
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\import-entry.mjs",
+      "bytes": 8860,
+      "sha256": "346a8b74287cb3c4e8896dbbca28e364ad98fe879e76616072902ae3542ab25d"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\launcher-session.mjs",
+      "bytes": 7554,
+      "sha256": "f4a5f46c1c221a6b3ac0536459903487e1a3aa8f7f227aca140cf746c48c0db9"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\runtime\\page-launch-context.mjs",
+      "bytes": 2104,
+      "sha256": "e3f336b545167dbcf3ba9943a873409e34c356a13b683b73ea1fb9a29ae25cea"
+    }
+  ],
+  "boundaries": [
+    "Cross-origin message transport is supported by this partial page; actual upstream managed DATA callback still requires the same origin.",
+    "Only the explicit play seam calls notePresented(true); the observed first-frame event proves its wire, not visible game pixels.",
+    "Installed package/provider and IDB are seams here. Existing687 acceptance is a separate immutable purpose.",
+    "No source, package, personal data, user servers or public pages changed by805."
+  ]
+}

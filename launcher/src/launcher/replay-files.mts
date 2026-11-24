@@ -133,7 +133,10 @@ export function isValidReplayName(prefix: string, name: unknown): name is string
   if (typeof name !== "string" || !prefix) return false;
   if (prefix === hsobReplayPrefix) return hsobReplayName.test(name);
   const product=Object.values(PRODUCT_GAMES).find(game=>game.replay.prefix===prefix);
-  if (product && 'slotPrefix' in product.replay) return new RegExp(`^${escapeRegExp(product.replay.slotPrefix)}[0-9]{2}\\.rpy$`, 'i').test(name);
+  if (product && 'slotPrefix' in product.replay) {
+    const slot = new RegExp(`^${escapeRegExp(product.replay.slotPrefix)}([0-9]{2})\\.rpy$`, 'i').exec(name);
+    return slot !== null && Number(slot[1]) < product.replay.slots;
+  }
   if(product && 'naming' in product.replay && product.replay.naming==='filename') {
     const extension = replayExtension(name);
     const extensions = 'extensions' in product.replay ? product.replay.extensions as readonly string[] : [];

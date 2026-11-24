@@ -1,0 +1,149 @@
+{
+  "date": "2026-11-16",
+  "privateCore": 108,
+  "generation": "b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744",
+  "artifacts": {
+    "core.mjs": {
+      "bytes": 134120,
+      "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+    },
+    "core.wasm": {
+      "bytes": 2169783,
+      "sha256": "03b4c0f0c0465a393b38a3ef2430936b55d45e56f9dc276add9c4d2f28650c21"
+    }
+  },
+  "changedSources": [
+    "src/runtime/WorldExports.cpp"
+  ],
+  "scope": "NormalPerfectsuccessfulactivation ordered46/51positionalplayrequestsonly",
+  "original": {
+    "exeBytes": 752640,
+    "exeSHA256": "ba515750ece845b56640fe440592fc39ebb7bdd1ed87c541b67a19b148e767d4",
+    "executed": false,
+    "start46": "407884/40788c ->4584a0(actualplayerX)",
+    "start51": "407b81/407b89 ->4584a0(actualplayerX),zeroeffect-helperdomain",
+    "phase120": "47positional/69fixed/51stop alreadyimplemented",
+    "phase180": "71fixed alreadyimplemented inIceHost::shatterPerfect;no new71",
+    "completePhaseBytes": 471,
+    "completePhaseSHA256": "6afa5b11f7e9316351cfc53e9342abfb37ab6378f2d3dbece876da8333b8a6f8",
+    "limits": "Boundedstaticbytes;not fullscheduler/phase/physicalaudio"
+  },
+  "red656": {
+    "Factories": 1,
+    "WorldStarts": 1,
+    "ticks": 181,
+    "checks": 7,
+    "failed": 3,
+    "inputs": 34,
+    "rawBytes": 45984,
+    "rawSHA256": "f5b42e7e3010fe6b8ad0ef9c2ce7a6999374364489553deb06f87282ddf03617",
+    "missing": [
+      "46playphase0",
+      "51playphase0"
+    ],
+    "existingFourRequestsAccepted": true
+  },
+  "green657": {
+    "checks": 13,
+    "hosts": 9,
+    "activationBlockCalls": 10,
+    "componentTUs": 5,
+    "combinedEdges": 371,
+    "inputPins": 229,
+    "compiler": 0,
+    "runtime": 0,
+    "WorldExportsSyntax": 0,
+    "runtimeStdoutBytes": 962,
+    "WorldStarts": 0,
+    "syntheticCallerAndRequestSink": true,
+    "resultSHA256": "b25fbc1c6e910092f84a7a1cec2547c1a2d2a8365d96c7fb7d67702ce4799ac2"
+  },
+  "firstLink658": {
+    "compilerCalls": 1,
+    "exit": 0,
+    "sourceFiles": 226,
+    "translationUnits": 83,
+    "exports": 205,
+    "includeEdges": 390,
+    "inputs": 238
+  },
+  "actual659": {
+    "case": 659,
+    "coreOrdinal": 108,
+    "generation": "b7f885be544802659eda1848a86bd9ee964a985f13b73d9a4705df2d9b25e744",
+    "passed": true,
+    "Factories": 1,
+    "WorldStarts": 1,
+    "ticks": 181,
+    "checks": 7,
+    "failed": 0,
+    "callableExports": 205,
+    "requests": [
+      {
+        "phase": 0,
+        "id": 46,
+        "pan": 100,
+        "operation": 0
+      },
+      {
+        "phase": 0,
+        "id": 51,
+        "pan": 100,
+        "operation": 0
+      },
+      {
+        "phase": 120,
+        "id": 47,
+        "pan": 100,
+        "operation": 0
+      },
+      {
+        "phase": 120,
+        "id": 69,
+        "pan": 0,
+        "operation": 0
+      },
+      {
+        "phase": 120,
+        "id": 51,
+        "pan": 0,
+        "operation": 1
+      },
+      {
+        "phase": 180,
+        "id": 71,
+        "pan": 0,
+        "operation": 0
+      }
+    ],
+    "gameRandom": {
+      "seed": 34772,
+      "calls": 0
+    },
+    "normalRecord": false,
+    "taint": false,
+    "infiniteRespawn": false,
+    "syntheticECL": true,
+    "syntheticAudioOutput": true,
+    "syntheticReceiptStore": true,
+    "browser": 0,
+    "scope": "Actualproduced108 normalPerfectexact6requests atphase0/120/180;realWorld/assets/hosts,synthetic180BECL/output/receipts;notfulloriginalphase/physicalaudio/replay."
+  },
+  "sourceReview": {
+    "bytes": 10433,
+    "sha256": "68ada4f07f45f4e5ca8084dc6303c567b1ca1f9e358f3e3b5ee02283a9ce6319",
+    "sealedAs658Input": true
+  },
+  "capacity": "GuardafterHostcommit,before2pushes/callerstockmodeHUD;>65534failswithoutpartialpair;no rollback/allocationexceptionatomicity/originalqueueequivalence claim",
+  "limits": {
+    "fullPhase": false,
+    "mode180Retrigger": false,
+    "deathbomb": false,
+    "originalReplay617Fixed": false,
+    "browser": false,
+    "physicalAudio": false,
+    "publicRuntimePublished": false
+  },
+  "successfulCoresImmutable": "93..108",
+  "oldSuccessReruns": 0
+}

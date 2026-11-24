@@ -1,6 +1,6 @@
 # 文档总表
 
-共 667 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 812 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -54,6 +54,7 @@
 | 作品入口 | [ports/th11/README.md](../ports/th11/README.md) | 東方地霊殿 TH11 |
 | 作品入口 | [ports/th12-mp/README.md](../ports/th12-mp/README.md) | 东方星莲船多人合作版 |
 | 作品入口 | [ports/th12/README.md](../ports/th12/README.md) | 东方星莲船网页版与行为还原 |
+| 作品入口 | [ports/th128/README.md](../ports/th128/README.md) | TH128 — 妖精大战争单机 Web 版 |
 | 作品入口 | [ports/th13-mp/README.md](../ports/th13-mp/README.md) | 东方神灵庙（th13）多人版移植（th13-mp） |
 | 作品入口 | [ports/th13/README.md](../ports/th13/README.md) | 东方神灵庙（th13）移植 |
 | 作品入口 | [ports/th14-mp/README.md](../ports/th14-mp/README.md) | TH14 多人版 |
@@ -82,6 +83,7 @@
 | 作品适配表 | [ports/th11/ADAPTATION.md](../ports/th11/ADAPTATION.md) | th11 适配检查 |
 | 作品适配表 | [ports/th12-mp/ADAPTATION.md](../ports/th12-mp/ADAPTATION.md) | th12 MP 适配检查 |
 | 作品适配表 | [ports/th12/ADAPTATION.md](../ports/th12/ADAPTATION.md) | th12 适配检查 |
+| 作品适配表 | [ports/th128/ADAPTATION.md](../ports/th128/ADAPTATION.md) | th128 适配检查 |
 | 作品适配表 | [ports/th13-mp/ADAPTATION.md](../ports/th13-mp/ADAPTATION.md) | th13 MP 适配检查 |
 | 作品适配表 | [ports/th13/ADAPTATION.md](../ports/th13/ADAPTATION.md) | th13 适配检查 |
 | 作品适配表 | [ports/th15-mp/ADAPTATION.md](../ports/th15-mp/ADAPTATION.md) | th15 MP 适配检查 |
@@ -177,6 +179,138 @@
 | 作品源码文档 | [ports/th12/third_party/stb_vorbis/README.md](../ports/th12/third_party/stb_vorbis/README.md) | stb_vorbis README |
 | 作品源码文档 | [ports/th12/tools/frame-inspector/README.md](../ports/th12/tools/frame-inspector/README.md) | TH12 原版逐帧检查 |
 | 作品源码文档 | [ports/th12/tools/replay-verifier/README.md](../ports/th12/tools/replay-verifier/README.md) | TH12 Replay verification |
+| 作品源码文档 | [ports/th128/docs/AUTOMATIC_ENTRY_CACHE.md](../ports/th128/docs/AUTOMATIC_ENTRY_CACHE.md) | 当前自动入口与缓存838–841 |
+| 作品源码文档 | [ports/th128/docs/BUILD.md](../ports/th128/docs/BUILD.md) | 源码快照与构建资料 |
+| 作品源码文档 | [ports/th128/docs/CACHED_RETURN.md](../ports/th128/docs/CACHED_RETURN.md) | 网页历史返回与新会话842–845 |
+| 作品源码文档 | [ports/th128/docs/CURRENT_LAUNCHER_PAGE.md](../ports/th128/docs/CURRENT_LAUNCHER_PAGE.md) | 当前页面的启动器接线（有限适配） |
+| 作品源码文档 | [ports/th128/docs/DEVELOPMENT.md](../ports/th128/docs/DEVELOPMENT.md) | TH128 单机开发入口 |
+| 作品源码文档 | [ports/th128/docs/IMPORT_PACKAGE.md](../ports/th128/docs/IMPORT_PACKAGE.md) | TH128 网页导入包交付要求 |
+| 作品源码文档 | [ports/th128/docs/LAUNCHER_INTEGRATION.md](../ports/th128/docs/LAUNCHER_INTEGRATION.md) | TH128 共用 Launcher 接入 |
+| 作品源码文档 | [ports/th128/docs/LAUNCHER_SESSION.md](../ports/th128/docs/LAUNCHER_SESSION.md) | 启动器协议组件（尚未接完整页面） |
+| 作品源码文档 | [ports/th128/docs/MANAGED_DAT_FILES.md](../ports/th128/docs/MANAGED_DAT_FILES.md) | 分文件原DAT资源消费者 |
+| 作品源码文档 | [ports/th128/docs/MANAGED_LAUNCHER_DATA.md](../ports/th128/docs/MANAGED_LAUNCHER_DATA.md) | 当前页面的 managed DATA 接线 |
+| 作品源码文档 | [ports/th128/docs/MULTIPLAYER_INPUT.md](../ports/th128/docs/MULTIPLAYER_INPUT.md) | 多人逐帧输入账本 |
+| 作品源码文档 | [ports/th128/docs/MULTIPLAYER_RESTART.md](../ports/th128/docs/MULTIPLAYER_RESTART.md) | 多人重开与会话 owner |
+| 作品源码文档 | [ports/th128/docs/MULTIPLAYER_RULES.md](../ports/th128/docs/MULTIPLAYER_RULES.md) | 多人阶段首个实现：规则握手 |
+| 作品源码文档 | [ports/th128/docs/MUSIC_OUTPUT.md](../ports/th128/docs/MUSIC_OUTPUT.md) | Web BGM关闭模式832–837 |
+| 作品源码文档 | [ports/th128/docs/NATIVE_SCORE_FILE.md](../ports/th128/docs/NATIVE_SCORE_FILE.md) | 原生分数文件与只读导出826–831 |
+| 作品源码文档 | [ports/th128/docs/ONLINE_LAUNCH.md](../ports/th128/docs/ONLINE_LAUNCH.md) | TH128 单网址入口 |
+| 作品源码文档 | [ports/th128/docs/REPLAY_FILE_BRIDGE.md](../ports/th128/docs/REPLAY_FILE_BRIDGE.md) | 启动器的原录像文件接口 |
+| 作品源码文档 | [ports/th128/docs/RESTORATION.md](../ports/th128/docs/RESTORATION.md) | TH128 单机行为还原基线 |
+| 作品源码文档 | [ports/th128/docs/RUNTIME116_V8.md](../ports/th128/docs/RUNTIME116_V8.md) | Runtime116 v8 本地交付（2026-11-17） |
+| 作品源码文档 | [ports/th128/docs/RUNTIME118_V10_FIXES.md](../ports/th128/docs/RUNTIME118_V10_FIXES.md) | Runtime118 v10: route menu, Three Fairies, and Marisa EX |
+| 作品源码文档 | [ports/th128/docs/STATUS.md](../ports/th128/docs/STATUS.md) | STATUS |
+| 作品源码文档 | [ports/th128/docs/TH128_EX155_BODY_CONTACT.md](../ports/th128/docs/TH128_EX155_BODY_CONTACT.md) | Marisa body contact in EX155 |
+| 作品源码文档 | [ports/th128/docs/TH128_LAUNCHER_UI_AND_CORE119.md](../ports/th128/docs/TH128_LAUNCHER_UI_AND_CORE119.md) | TH128: launcher-style touch UI and Core119 |
+| 作品源码文档 | [ports/th128/docs/TH128_PRACTICE_MEDALS_LEVEL_AND_DENSE_DRAW.md](../ports/th128/docs/TH128_PRACTICE_MEDALS_LEVEL_AND_DENSE_DRAW.md) | Practice medals, LEVEL MAX, dense presentation and Retry |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_ACCEPTANCE.md](../ports/th128/docs/THPRAC128_ACCEPTANCE.md) | TH128 网页版 thprac 功能验收 |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_BRANCH_OVERLAY.md](../ports/th128/docs/THPRAC128_BRANCH_OVERLAY.md) | TH128 thprac chapter 跳转组件 |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_BROWSER_CLOSURE.md](../ports/th128/docs/THPRAC128_BROWSER_CLOSURE.md) | TH128 browser/native thprac integration |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_CONSUMER_MATRIX.md](../ports/th128/docs/THPRAC128_CONSUMER_MATRIX.md) | TH128 thprac：源码与实际消费者矩阵 |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_CURRENT_CALLER.md](../ports/th128/docs/THPRAC128_CURRENT_CALLER.md) | TH128 current caller integration |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_F12_PARITY.md](../ports/th128/docs/THPRAC128_F12_PARITY.md) | TH128 F12 original-interface behavior |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_INCLUDE_OWNER.md](../ports/th128/docs/THPRAC128_INCLUDE_OWNER.md) | TH128 thprac：实际ECLI与中文资源拥有者 |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_INITIAL_RESOURCES.md](../ports/th128/docs/THPRAC128_INITIAL_RESOURCES.md) | TH128 thprac 初始参数：实际原生接入 |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_REAL_AUDIO.md](../ports/th128/docs/THPRAC128_REAL_AUDIO.md) | TH128 actual browser audio integration |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_REPLAY.md](../ports/th128/docs/THPRAC128_REPLAY.md) | TH128 thprac：练习录像与播放锁 |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_SECTIONS.md](../ports/th128/docs/THPRAC128_SECTIONS.md) | TH128 thprac：完整选段与原生消费者 |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_TOOLS_UI.md](../ports/th128/docs/THPRAC128_TOOLS_UI.md) | TH128 thprac tools and official-style UI |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_WEB_MENU.md](../ports/th128/docs/THPRAC128_WEB_MENU.md) | TH128 thprac：真实Web菜单与原生调用 |
+| 作品源码文档 | [ports/th128/docs/THPRAC128_WORLD_CHAPTER.md](../ports/th128/docs/THPRAC128_WORLD_CHAPTER.md) | TH128 thprac：实际World章节消费者 |
+| 作品源码文档 | [ports/th128/docs/THPRAC_CORRECTION.md](../ports/th128/docs/THPRAC_CORRECTION.md) | 纠正：TH128练习适配必须以thprac为目标 |
+| 作品源码文档 | [ports/th128/docs/USER_FEEDBACK_FLOW_PROGRESS.md](../ports/th128/docs/USER_FEEDBACK_FLOW_PROGRESS.md) | 用户反馈修复进展：练习流程与多关录像 |
+| 作品源码文档 | [ports/th128/docs/USER_FEEDBACK_FORMAL_117.md](../ports/th128/docs/USER_FEEDBACK_FORMAL_117.md) | 正式 117 页面：普通重开、父页面、练习结局与回放 |
+| 作品源码文档 | [ports/th128/docs/USER_FEEDBACK_FULL_TOUCH.md](../ports/th128/docs/USER_FEEDBACK_FULL_TOUCH.md) | 上游触控页面与布局接入进展 |
+| 作品源码文档 | [ports/th128/docs/USER_FEEDBACK_MARISA_EX.md](../ports/th128/docs/USER_FEEDBACK_MARISA_EX.md) | 魔理沙 EX「妖精尽灭光」：背景、透明光束与完整 117 验证 |
+| 作品源码文档 | [ports/th128/docs/USER_FEEDBACK_NATURAL_ENDING.md](../ports/th128/docs/USER_FEEDBACK_NATURAL_ENDING.md) | 普通触控自然三关与结局收尾 |
+| 作品源码文档 | [ports/th128/docs/USER_FEEDBACK_ORDINARY_TOUCH.md](../ports/th128/docs/USER_FEEDBACK_ORDINARY_TOUCH.md) | 普通触控资格与选路录像修复进展 |
+| 作品源码文档 | [ports/th128/docs/USER_FEEDBACK_REPLAY_MOBILE.md](../ports/th128/docs/USER_FEEDBACK_REPLAY_MOBILE.md) | 原生录像终局与移动浮窗修复 |
+| 作品源码文档 | [ports/th128/docs/USER_FEEDBACK_TERMINAL_TOUCH.md](../ports/th128/docs/USER_FEEDBACK_TERMINAL_TOUCH.md) | 终局录像与真实原生触控进展 |
+| 作品源码文档 | [ports/th128/docs/VISIBLE_PRACTICE.md](../ports/th128/docs/VISIBLE_PRACTICE.md) | 临时简易选关入口（不是 thprac） |
+| 作品源码文档 | [ports/th128/docs/WEB_DELIVERY.md](../ports/th128/docs/WEB_DELIVERY.md) | TH128 网页交付 · DAT + OGG |
+| 作品源码文档 | [ports/th128/docs/WEB_FUNCTIONAL_SCOPE.md](../ports/th128/docs/WEB_FUNCTIONAL_SCOPE.md) | Web阶段有限功能范围（2026-11-17） |
+| 作品源码文档 | [ports/th128/docs/WEB_INPUT.md](../ports/th128/docs/WEB_INPUT.md) | Web 触控与输入归属 |
+| 作品源码文档 | [ports/th128/docs/dsh-validation-20261116.md](../ports/th128/docs/dsh-validation-20261116.md) | DSH 首轮交付复核（2026-11-16） |
+| 作品源码文档 | [ports/th128/docs/native-continued-carry612.md](../ports/th128/docs/native-continued-carry612.md) | 终局关续关身份修复（611–615） |
+| 作品源码文档 | [ports/th128/docs/native-ecl428630-633.md](../ports/th128/docs/native-ecl428630-633.md) | ECL 428 分派修复与 private103（630–633） |
+| 作品源码文档 | [ports/th128/docs/native-held-sound646-651.md](../ports/th128/docs/native-held-sound646-651.md) | 受击蓄力声音停止请求（646–651） |
+| 作品源码文档 | [ports/th128/docs/native-pause-reset628-629.md](../ports/th128/docs/native-pause-reset628-629.md) | 原生暂停与录像保存的重置后重新打开（628–629） |
+| 作品源码文档 | [ports/th128/docs/native-perfect-held652-655.md](../ports/th128/docs/native-perfect-held652-655.md) | 普通Perfect Freeze的held输入门槛（652–655） |
+| 作品源码文档 | [ports/th128/docs/native-perfect-sound656-659.md](../ports/th128/docs/native-perfect-sound656-659.md) | 普通Perfect激活声音请求（656–659） |
+| 作品源码文档 | [ports/th128/docs/native-replay-graze621-627.md](../ports/th128/docs/native-replay-graze621-627.md) | 录像累计擦弹数保真修复（621–627） |
+| 作品源码文档 | [ports/th128/docs/native-spell-mode640-645.md](../ports/th128/docs/native-spell-mode640-645.md) | 符卡实时 mode 传递（640–645） |
+| 作品源码文档 | [ports/th128/docs/native-spell-stage635-639.md](../ports/th128/docs/native-spell-stage635-639.md) | 阶段相关符卡奖励修复与 private104（635–639） |
+| 作品源码文档 | [ports/th128/docs/original-replay617.md](../ports/th128/docs/original-replay617.md) | 原版录像完整片段验证（616–617） |
+| 作品源码文档 | [ports/th128/docs/package-v7.md](../ports/th128/docs/package-v7.md) | V7 原版提示与密集弹幕优化 |
+| 作品源码文档 | [ports/th128/docs/performance-v4.md](../ports/th128/docs/performance-v4.md) | v4：14 FPS 性能回退与背景拼接修复 |
+| 作品源码文档 | [ports/th128/docs/performance-v5.md](../ports/th128/docs/performance-v5.md) | v5：密集弹幕、冻结峰值与反弹修复 |
+| 作品源码文档 | [ports/th128/docs/port-menu-audio609.md](../ports/th128/docs/port-menu-audio609.md) | 暂停音频资源交接（603–610） |
+| 作品源码文档 | [ports/th128/docs/port-pause-callback619.md](../ports/th128/docs/port-pause-callback619.md) | 暂停回调的会话归属保护（618–620） |
+| 作品源码文档 | [ports/th128/docs/port-pause-owner600.md](../ports/th128/docs/port-pause-owner600.md) | 暂停控制器的异步退出保护（599–602） |
+| 作品源码文档 | [ports/th128/docs/port-terminal-owner-20261116.md](../ports/th128/docs/port-terminal-owner-20261116.md) | EX 终局存储等待后的身份复核（2026-11-16） |
+| 作品源码文档 | [ports/th128/docs/postcomet-parent718.md](../ports/th128/docs/postcomet-parent718.md) | 小彗星后非符：原始父对象与移动上下文复核 |
+| 作品源码文档 | [ports/th128/docs/research/2026-10-29-shot-integration-review.md](../ports/th128/docs/research/2026-10-29-shot-integration-review.md) | Main-Thread Shot Integration Review |
+| 作品源码文档 | [ports/th128/docs/research/2026-10-30-main-thread-geometry-movement-review.md](../ports/th128/docs/research/2026-10-30-main-thread-geometry-movement-review.md) | Main-thread review: geometry and Boss movement |
+| 作品源码文档 | [ports/th128/docs/research/2026-10-30-main-thread-review.md](../ports/th128/docs/research/2026-10-30-main-thread-review.md) | Main-thread self-review: damage fields and respawn |
+| 作品源码文档 | [ports/th128/docs/research/anm-runtime.md](../ports/th128/docs/research/anm-runtime.md) | TH128 ANM component: bounded implementation and evidence |
+| 作品源码文档 | [ports/th128/docs/research/boss-wait-clamp-and-movement.md](../ports/th128/docs/research/boss-wait-clamp-and-movement.md) | Boss wait, area clamp, base drops and random movement |
+| 作品源码文档 | [ports/th128/docs/research/bullet-collision.md](../ports/th128/docs/research/bullet-collision.md) | Bounded bullet collision decisions |
+| 作品源码文档 | [ports/th128/docs/research/bullet-lifecycle.md](../ports/th128/docs/research/bullet-lifecycle.md) | TH128 original-byte bullet lifecycle prefixes |
+| 作品源码文档 | [ports/th128/docs/research/bullet-rules.md](../ports/th128/docs/research/bullet-rules.md) | TH128 first-enemy emitter: bounded research ledger |
+| 作品源码文档 | [ports/th128/docs/research/bullet-tick.md](../ports/th128/docs/research/bullet-tick.md) | TH128 bounded pre-animation bullet update |
+| 作品源码文档 | [ports/th128/docs/research/bullet-visuals.md](../ports/th128/docs/research/bullet-visuals.md) | TH128 type8 bullet visuals |
+| 作品源码文档 | [ports/th128/docs/research/cancellation-effects.md](../ports/th128/docs/research/cancellation-effects.md) | Unified Scene-backed transient/cancellation effects |
+| 作品源码文档 | [ports/th128/docs/research/damage-fields-and-respawn.md](../ports/th128/docs/research/damage-fields-and-respawn.md) | Damage fields and bounded respawn host |
+| 作品源码文档 | [ports/th128/docs/research/ecl-linking.md](../ports/th128/docs/research/ecl-linking.md) | Bounded ECL linkage and typed game-global integration |
+| 作品源码文档 | [ports/th128/docs/research/ecl-runtime.md](../ports/th128/docs/research/ecl-runtime.md) | TH128 ECL reader and bounded control VM |
+| 作品源码文档 | [ports/th128/docs/research/enemy-children-and-gauges.md](../ports/th128/docs/research/enemy-children-and-gauges.md) | Actual MBoss189 children and427 gauge state |
+| 作品源码文档 | [ports/th128/docs/research/enemy-phases-and-position.md](../ports/th128/docs/research/enemy-phases-and-position.md) | 414 phase rules and301 actual entry motion |
+| 作品源码文档 | [ports/th128/docs/research/enemy-rules.md](../ports/th128/docs/research/enemy-rules.md) | Bounded TH128 enemy rules |
+| 作品源码文档 | [ports/th128/docs/research/enemy-scheduling.md](../ports/th128/docs/research/enemy-scheduling.md) | Bounded TH128 enemy scheduling evidence |
+| 作品源码文档 | [ports/th128/docs/research/enemy-visuals.md](../ports/th128/docs/research/enemy-visuals.md) | Caller-scheduled enemy ANM sidecar |
+| 作品源码文档 | [ports/th128/docs/research/extension16-and-perfect-hud.md](../ports/th128/docs/research/extension16-and-perfect-hud.md) | Eighteen-record extensions and partial authored front HUD |
+| 作品源码文档 | [ports/th128/docs/research/first-emission.md](../ports/th128/docs/research/first-emission.md) | First real ECL emission: production integration |
+| 作品源码文档 | [ports/th128/docs/research/first-world.md](../ports/th128/docs/research/first-world.md) | TH128 first-stage world kernel: current integration boundary |
+| 作品源码文档 | [ports/th128/docs/research/freeze-cpp.md](../ports/th128/docs/research/freeze-cpp.md) | Portable TH128 freeze scalar rules |
+| 作品源码文档 | [ports/th128/docs/research/freeze-rules.md](../ports/th128/docs/research/freeze-rules.md) | TH128 freeze-rule recovery: bounded original-byte evidence |
+| 作品源码文档 | [ports/th128/docs/research/geometry526.md](../ports/th128/docs/research/geometry526.md) | Geometry526: owning mesh and actual@R presentation |
+| 作品源码文档 | [ports/th128/docs/research/graze-rules.md](../ports/th128/docs/research/graze-rules.md) | Bounded graze scalar and call requests |
+| 作品源码文档 | [ports/th128/docs/research/ice-birth.md](../ports/th128/docs/research/ice-birth.md) | TH128 bounded ice-object birth |
+| 作品源码文档 | [ports/th128/docs/research/ice-bucket-precision.md](../ports/th128/docs/research/ice-bucket-precision.md) | Original ice bucket conversion |
+| 作品源码文档 | [ports/th128/docs/research/ice-mask-tiny-precision.md](../ports/th128/docs/research/ice-mask-tiny-precision.md) | Tiny-coordinate ice rasterization |
+| 作品源码文档 | [ports/th128/docs/research/ice-mask.md](../ports/th128/docs/research/ice-mask.md) | TH128 bounded ice-mask raster and complete bit counter |
+| 作品源码文档 | [ports/th128/docs/research/midboss-and-anm-control.md](../ports/th128/docs/research/midboss-and-anm-control.md) | Actual MBoss dependencies and ANM111 control |
+| 作品源码文档 | [ports/th128/docs/research/next-gameplay-boundary.md](../ports/th128/docs/research/next-gameplay-boundary.md) | Concrete next gameplay boundary |
+| 作品源码文档 | [ports/th128/docs/research/player-contact-host.md](../ports/th128/docs/research/player-contact-host.md) | Composed player-contact diagnostic host |
+| 作品源码文档 | [ports/th128/docs/research/player-death.md](../ports/th128/docs/research/player-death.md) | Bounded player-death rules |
+| 作品源码文档 | [ports/th128/docs/research/player-fire.md](../ports/th128/docs/research/player-fire.md) | Player firing and charge dispatcher prefixes |
+| 作品源码文档 | [ports/th128/docs/research/player-hit.md](../ports/th128/docs/research/player-hit.md) | Bounded player-hit state prefixes |
+| 作品源码文档 | [ports/th128/docs/research/player-rules.md](../ports/th128/docs/research/player-rules.md) | TH128 player rules: bounded native evidence |
+| 作品源码文档 | [ports/th128/docs/research/player-shot-birth.md](../ports/th128/docs/research/player-shot-birth.md) | TH128 bounded player-shot resource and first-birth plans |
+| 作品源码文档 | [ports/th128/docs/research/player-shot-tick.md](../ports/th128/docs/research/player-shot-tick.md) | Bounded ordinary player-shot tick |
+| 作品源码文档 | [ports/th128/docs/research/replay-browser.md](../ports/th128/docs/research/replay-browser.md) | Bounded TH128 browser-host replay codec |
+| 作品源码文档 | [ports/th128/docs/research/replay.md](../ports/th128/docs/research/replay.md) | Bounded native TH128 replay codec |
+| 作品源码文档 | [ports/th128/docs/research/runtime-compatibility.md](../ports/th128/docs/research/runtime-compatibility.md) | TH128 runtime compatibility ledger |
+| 作品源码文档 | [ports/th128/docs/research/segment-runtime.md](../ports/th128/docs/research/segment-runtime.md) | Actual first-segment runtime, beyond first emission |
+| 作品源码文档 | [ports/th128/docs/research/shot-enemy-collision.md](../ports/th128/docs/research/shot-enemy-collision.md) | Shot/enemy collision: bounded native contract |
+| 作品源码文档 | [ports/th128/docs/research/stage-mappings.md](../ports/th128/docs/research/stage-mappings.md) | TH128 native stage resources |
+| 作品源码文档 | [ports/th128/docs/restoration-gameover598.md](../ports/th128/docs/restoration-gameover598.md) | 实际失败与一次续关验收（598） |
+| 作品源码文档 | [ports/th128/docs/spell-flag-prefix634.md](../ports/th128/docs/spell-flag-prefix634.md) | 符卡初始化标志核对（634） |
+| 作品源码文档 | [ports/th128/docs/spell-hud-v6.md](../ports/th128/docs/spell-hud-v6.md) | 原版符卡 Bonus / Medal 显示修复 |
+| 作品源码文档 | [ports/th128/docs/startup-name695-697.md](../ports/th128/docs/startup-name695-697.md) | 启动回归：成绩存在、录像姓名尚未保存 |
+| 作品源码文档 | [ports/th128/docs/superpowers/plans/2026-11-16-import-package.md](../ports/th128/docs/superpowers/plans/2026-11-16-import-package.md) | TH128 Import Package Implementation Plan |
+| 作品源码文档 | [ports/th128/tests/continued-carry/README.md](../ports/th128/tests/continued-carry/README.md) | Continued carry candidate evidence |
+| 作品源码文档 | [ports/th128/tests/gameover-continue/README.md](../ports/th128/tests/gameover-continue/README.md) | Natural GameOver / Continue branch |
+| 作品源码文档 | [ports/th128/tests/held-window-sound/README.md](../ports/th128/tests/held-window-sound/README.md) | 受击蓄力停止请求测试 |
+| 作品源码文档 | [ports/th128/tests/menu-audio-gate/README.md](../ports/th128/tests/menu-audio-gate/README.md) | Menu audio owner regressions |
+| 作品源码文档 | [ports/th128/tests/original-replay-compatibility/README.md](../ports/th128/tests/original-replay-compatibility/README.md) | Original replay compatibility evidence |
+| 作品源码文档 | [ports/th128/tests/pause-callback/README.md](../ports/th128/tests/pause-callback/README.md) | Pause callback ownership tests |
+| 作品源码文档 | [ports/th128/tests/pause-owner/README.md](../ports/th128/tests/pause-owner/README.md) | Pause owner async regression |
+| 作品源码文档 | [ports/th128/tests/perfect-activation-sound/README.md](../ports/th128/tests/perfect-activation-sound/README.md) | 普通Perfect激活声音请求 |
+| 作品源码文档 | [ports/th128/tests/perfect-held-gate/README.md](../ports/th128/tests/perfect-held-gate/README.md) | 普通Perfect held门槛回归 |
+| 作品源码文档 | [ports/th128/tests/replay-graze/README.md](../ports/th128/tests/replay-graze/README.md) | Native replay graze preservation |
+| 作品源码文档 | [ports/th128/tests/spell-live-mode/README.md](../ports/th128/tests/spell-live-mode/README.md) | 符卡实时 mode 验证源码 |
+| 作品源码文档 | [ports/th128/tools/standalone/README.md](../ports/th128/tools/standalone/README.md) | 妖精大战争 · Runtime116 v8 |
 | 作品源码文档 | [ports/th13-mp/docs/ASSETS.md](../ports/th13-mp/docs/ASSETS.md) | th13 资源格式清单 |
 | 作品源码文档 | [ports/th13-mp/docs/DECOMP.md](../ports/th13-mp/docs/DECOMP.md) | th13 反编译函数地图 |
 | 作品源码文档 | [ports/th13-mp/docs/DEVELOPMENT.md](../ports/th13-mp/docs/DEVELOPMENT.md) | th13 开发指南 |
@@ -408,6 +542,7 @@
 | 历史记录 | [archive/th12-text-outline-20261028/README.md](../archive/th12-text-outline-20261028/README.md) | TH12 结局与对话文字描边 |
 | 历史记录 | [archive/th12-web-acceptance-20261022/README.md](../archive/th12-web-acceptance-20261022/README.md) | 星莲船原 Web 前端验收记录 |
 | 历史记录 | [archive/th12-web-adaptation-20261020/README.md](../archive/th12-web-adaptation-20261020/README.md) | th12 旧网页前端接入记录 |
+| 历史记录 | [archive/th128-launcher-review-20261121/README.md](../archive/th128-launcher-review-20261121/README.md) | TH128 单机 Launcher 预览验收 · 2026-11-21 |
 | 历史记录 | [archive/th12mp-public-20261028/README.md](../archive/th12mp-public-20261028/README.md) | 星莲船正式发布 |
 | 历史记录 | [archive/th12mp-public-20261028/cn129.md](../archive/th12mp-public-20261028/cn129.md) | 原主站入口同步 |
 | 历史记录 | [archive/th13-mp-sync-20261112/README.md](../archive/th13-mp-sync-20261112/README.md) | TH13 MP 同步修复与提交交接（2026-11-12） |
@@ -636,6 +771,16 @@
 | 许可证与声明 | [ports/th12/portable/sdl/third_party/stb_image.LICENSE](../ports/th12/portable/sdl/third_party/stb_image.LICENSE) | stb_image |
 | 许可证与声明 | [ports/th12/src/practice/THPRAC-LICENSE.txt](../ports/th12/src/practice/THPRAC-LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th12/third_party/stb_vorbis/LICENSE](../ports/th12/third_party/stb_vorbis/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th128/NOTICE.md](../ports/th128/NOTICE.md) | 来源、许可与分发范围 |
+| 许可证与声明 | [ports/th128/docs/research/replay-license.txt](../ports/th128/docs/research/replay-license.txt) | MIT License |
+| 许可证与声明 | [ports/th128/licenses/EAGLER-TOUCH-NOTICE.md](../ports/th128/licenses/EAGLER-TOUCH-NOTICE.md) | Eagler Touhou touch source attribution |
+| 许可证与声明 | [ports/th128/licenses/THPRAC-MIT.txt](../ports/th128/licenses/THPRAC-MIT.txt) | MIT License |
+| 许可证与声明 | [ports/th128/licenses/Tweet-META-MIT.txt](../ports/th128/licenses/Tweet-META-MIT.txt) | MIT License |
+| 许可证与声明 | [ports/th128/licenses/eagler-touhou-launcher-GPL-3.0.txt](../ports/th128/licenses/eagler-touhou-launcher-GPL-3.0.txt) | GNU GENERAL PUBLIC LICENSE |
+| 许可证与声明 | [ports/th128/licenses/eagler-touhou-th12-MIT.txt](../ports/th128/licenses/eagler-touhou-th12-MIT.txt) | MIT License |
+| 许可证与声明 | [ports/th128/licenses/kikones34-MIT.txt](../ports/th128/licenses/kikones34-MIT.txt) | MIT License |
+| 许可证与声明 | [ports/th128/src/animation/UPSTREAM_LICENSE.txt](../ports/th128/src/animation/UPSTREAM_LICENSE.txt) | MIT License |
+| 许可证与声明 | [ports/th128/src/ecl/UPSTREAM_LICENSE.txt](../ports/th128/src/ecl/UPSTREAM_LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th13-mp/LICENSE](../ports/th13-mp/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th13-mp/NOTICE.md](../ports/th13-mp/NOTICE.md) | Source and asset notices |
 | 许可证与声明 | [ports/th13-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th13-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |

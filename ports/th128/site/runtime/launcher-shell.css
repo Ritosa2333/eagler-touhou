@@ -1,0 +1,95 @@
+/* TH128 standalone shell, following Eagler Touhou's PlayerControls and OptionsPanel. */
+:root{--launcher-surface:#1f2024;--launcher-field:#18191c;--launcher-line:#37383e;--launcher-text:#e5e5e9;--launcher-muted:#a9aab2;--launcher-plain:#e2e2e8;--launcher-radius:10px}
+.screen{display:grid;place-items:center;background:#080808}
+.screen .game-viewport{width:100%;height:100%;min-width:0;min-height:0}
+.screen .thprac-layer{left:calc(50% - var(--thprac-surface-w,640px)/2);top:calc(50% - var(--thprac-surface-h,480px)/2)}
+.screen:is(:fullscreen,.player-viewport-full){display:grid;width:100%;height:100%;max-width:none;aspect-ratio:auto;border:0;outline:0;background:#000}
+.screen:is(:fullscreen,.player-viewport-full) .game-viewport{width:min(100%,calc(100dvh * 4 / 3));height:auto;aspect-ratio:4/3}
+.screen:is(:fullscreen,.player-viewport-full) #game,.screen:is(:fullscreen,.player-viewport-full) #dialogue-text{width:100%;height:100%;object-fit:contain}
+body[data-local-runtime] main{max-width:none;padding-inline:clamp(0px,2.4vw,24px)}
+body[data-local-runtime] .screen{margin-inline:auto}
+@media(min-aspect-ratio:4/3) and (min-width:760px){
+ body[data-local-runtime] .screen{max-width:none;aspect-ratio:auto;width:100%;height:min(82dvh,960px)}
+ body[data-local-runtime] .screen:not(:fullscreen) .game-viewport{width:min(100%,calc(min(82dvh,960px) * 4 / 3));height:auto;aspect-ratio:4/3}
+}
+body[data-local-runtime] .screen:is(:fullscreen,.player-viewport-full){height:100%}
+.web-input-full{opacity:1}
+.web-input-full :is(.touch-hud>button,.touch-joystick,.touch-escape,.touch-restart,.touch-thprac-menu){opacity:var(--touch-control-opacity,.8)}
+.web-input-full .touch-utility-row{right:max(8px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));flex-direction:column;gap:5px}
+body[data-local-runtime] .web-input-full .touch-utility-row{top:calc(max(8px,env(safe-area-inset-top)) + 132px)}
+.web-input-full .touch-utility-row button{min-height:36px;max-width:68px;border-color:#ffffff26;border-radius:8px;background:#1f2024;color:#e5e5e9;white-space:normal}
+.web-input-full.touch-enabled:not(.touch-layout-custom) .touch-hud :is(#touchFocus,#touchFire,#touchBomb,#touchFunction){left:max(12px,env(safe-area-inset-left));top:auto;transform:none;box-shadow:none;border:1px solid #ffffff22;color:#f1eff2}
+.web-input-full.touch-enabled:not(.touch-layout-custom) .touch-hud #touchFunction{bottom:max(12px,env(safe-area-inset-bottom));width:48px;height:48px;min-height:48px;background:#1b1c20ec}
+.web-input-full.touch-enabled:not(.touch-layout-custom) .touch-hud #touchBomb{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 55px);width:48px;height:48px;min-height:48px;background:#1b1c20ec}
+.web-input-full.touch-enabled:not(.touch-layout-custom) .touch-hud #touchFire{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 111px);width:48px;height:44px;min-height:44px;background:#1b1c20ec;border-radius:8px}
+.web-input-full.touch-enabled:not(.touch-layout-custom) .touch-hud #touchFire.is-on{background:#e7d6ef;color:#221a28}
+.web-input-full.touch-enabled:not(.touch-layout-custom) .touch-hud #touchFocus{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 163px);width:100px;height:40px;min-height:40px;background:#1b1c20ec;border-radius:8px}
+.web-input-full.touch-enabled:not(.touch-layout-custom) #touchEscape{top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));width:36px;height:36px;border:1px solid #ffffff24;border-radius:9px;background:#1b1c20ec;box-shadow:none}
+.web-input-full .touch-hud small{font-size:8px;letter-spacing:0;white-space:nowrap}
+.web-input-full.touch-layout-edit .touch-layout-resize-handle{display:grid;place-items:center;width:19px;height:19px;border:0;border-radius:50%;background:#a73149;color:white;font-size:11px}
+.touch-windows-root :is(#touchSettings,#touchLayoutEditor).touch-floating-window{width:min(326px,calc(100vw - 32px));border-color:var(--launcher-line);border-radius:var(--launcher-radius);background:var(--launcher-surface);color:var(--launcher-text);box-shadow:0 12px 30px #0005}
+.touch-windows-root .touch-workbench-header,.touch-windows-root .touch-workbench-footer{background:none;border-bottom:1px solid var(--launcher-line);padding:10px}
+.touch-windows-root .touch-workbench-footer{border-bottom:0;border-top:1px solid var(--launcher-line)}
+.touch-windows-root .touch-layout-setting-row select,.touch-windows-root :is(.touch-workbench-collapse,.touch-window-close){background:var(--launcher-field);color:var(--launcher-text);border:1px solid var(--launcher-line);border-radius:7px}
+.touch-windows-root .touch-layout-setting-row{gap:8px;color:var(--launcher-text)}
+.touch-windows-root .touch-layout-editor-actions button{width:100%;background:var(--launcher-field);border:1px solid var(--launcher-line);color:var(--launcher-text)}
+.touch-windows-root #touchLayoutSave{background:var(--launcher-plain);color:#202126}
+
+.player-tools{position:absolute;z-index:45;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));display:grid;gap:6px;pointer-events:auto}
+.player-tools button{display:grid;place-items:center;width:37px;height:37px;padding:8px;background:#17171bdc;border:1px solid #ffffff18;border-radius:9px;color:var(--launcher-text)}
+.player-tools button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.player-tools button:hover,.player-tools button[aria-expanded=true]{background:#292a30}
+.player-settings{position:absolute;z-index:46;right:max(8px,env(safe-area-inset-right));top:135px;width:min(280px,calc(100% - 16px));padding:11px 13px;background:var(--launcher-surface);color:var(--launcher-text);border:1px solid var(--launcher-line);border-radius:8px;font:13px/1.5 "Segoe UI","Microsoft YaHei",sans-serif;box-shadow:0 6px 20px #0006}
+.player-settings label{display:grid;grid-template-columns:5em 1fr 3em;gap:8px;align-items:center;margin:8px 0 16px;color:inherit;font:inherit;white-space:nowrap}
+.player-settings input,.launch-group input[type=range]{width:100%;min-width:30px;accent-color:var(--launcher-plain)}
+.player-settings output,.launch-group output{text-align:right;font-variant-numeric:tabular-nums}
+.player-settings-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px;border-top:1px solid var(--launcher-line);padding-top:7px}
+.player-settings-actions button,.player-help button:not(.player-help-background){background:transparent;border:0;color:var(--launcher-muted);text-align:left;border-radius:7px}
+.player-settings-actions button:hover,.player-help button:not(.player-help-background):hover{background:#ffffff10;color:var(--launcher-text)}
+.player-settings-actions [data-player-action=exit]{grid-column:1/-1}
+.player-help{position:absolute;inset:0;z-index:48;display:grid;place-items:center;color:var(--launcher-text);padding:12px;font:14px/1.5 "Segoe UI","Microsoft YaHei",sans-serif}
+.player-help-background{position:absolute;inset:0;background:#0007;border:0;border-radius:0}
+.player-help-background:hover{background:#0007}
+.player-help section{position:relative;display:flex;flex-direction:column;width:min(525px,100%);max-height:100%;min-height:0;border:1px solid var(--launcher-line);border-radius:var(--launcher-radius);background:var(--launcher-surface);box-shadow:0 14px 40px #0008}
+.player-help header{padding:12px 16px;flex:none;margin:0;border-bottom:1px solid var(--launcher-line);color:inherit;font:600 14px/1.4 inherit}
+.player-help-body{overflow:auto;overscroll-behavior:contain;padding:0 16px 13px;color:inherit}
+.player-help details{margin:0;padding:11px 0;border:0;border-bottom:1px solid var(--launcher-line);color:inherit;font:inherit}
+.player-help summary,.launch-group summary{list-style:none;display:flex;align-items:center;justify-content:space-between;font-weight:600;color:var(--launcher-text);cursor:pointer}
+.player-help summary::-webkit-details-marker,.launch-group summary::-webkit-details-marker{display:none}
+.player-help summary::after,.launch-group summary::after{content:'';width:6px;height:6px;border:solid var(--launcher-muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+.player-help details[open]>summary::after,.launch-group[open]>summary::after{transform:rotate(225deg)}
+.player-help h3{font-size:15px;margin:16px 0 7px}.player-help p{margin:7px 0 13px}.player-help ul{padding-left:1.1em}
+#resource-loader.local-launch{position:fixed;display:flex;flex-direction:column;z-index:60;inset:12px 12px auto auto;width:min(422px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:0;margin:0;overflow:hidden;border-color:var(--launcher-line);border-radius:var(--launcher-radius);background:var(--launcher-surface);color:var(--launcher-text);font:14px/1.5 "Segoe UI","Microsoft YaHei",sans-serif;box-shadow:0 16px 44px #0005}
+body:has(#resource-loader.local-launch){background:#141416}
+.launch-sheet-hero{height:114px;position:relative;flex:none;margin:0;background:#334a68 none center 43%/cover no-repeat;color:inherit}
+.launch-sheet-hero::after{content:'';position:absolute;inset:50% 0 0;background:linear-gradient(transparent,var(--launcher-surface));pointer-events:none}
+#resource-loader .launch-sheet-hero button{position:absolute;right:9px;top:9px;z-index:1;background:#222328c7;color:var(--launcher-text);padding:4px 12px;font-size:20px;border:1px solid var(--launcher-line);border-radius:7px}
+.launch-sheet-body{overflow:auto;overscroll-behavior:contain;min-height:0;padding:0 15px;color:inherit}
+#resource-loader .launch-sheet-title h1{font-size:22px;line-height:1.2;margin:0 0 13px}.launch-sheet-title small{color:var(--launcher-muted)}
+.launch-sheet-resource{padding:8px 11px;background:#27282d;border:1px solid var(--launcher-line);border-radius:6px}.launch-sheet-resource p{margin:3px 0;color:var(--launcher-muted);font-size:12px}
+#resource-loader .launch-sheet-resource progress{height:7px;margin:9px 0;accent-color:var(--launcher-plain)}
+.launch-group{padding:12px 0 13px;margin:0;border:0;border-bottom:1px solid var(--launcher-line);font-size:13px}
+.launch-group-content{display:grid;gap:9px;margin-top:10px;padding-left:10px;border-left:1px solid var(--launcher-line)}
+.launch-group label{display:flex;justify-content:space-between;gap:10px;min-width:0;color:inherit;font:inherit}.launch-group strong{font-size:13px;font-weight:500;display:block}.launch-group small{display:block;color:var(--launcher-muted);font-size:11px}
+.launch-group label input[type=range]{max-width:125px;margin-left:auto}.launch-group output{min-width:40px}
+.launch-group input[role=switch]{appearance:none;flex:none;width:32px;height:18px;margin:0;border-radius:999px;background:#494a51;float:right;cursor:pointer}
+.launch-group input[role=switch]::before{content:'';display:block;margin:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .12s}
+.launch-group input[role=switch]:checked{background:var(--launcher-plain)}.launch-group input[role=switch]:checked::before{transform:translateX(14px);background:#2a2a30}
+.launch-group :is(.launch-select){display:grid;gap:4px}.launch-group select,.launch-group button,.launch-import::file-selector-button{border:1px solid var(--launcher-line);border-radius:7px;background:var(--launcher-field);color:var(--launcher-text);font:inherit}
+.launch-group select{width:100%;padding:7px 8px}.launch-group .launch-replay-actions{display:flex;flex-wrap:wrap;gap:5px}.launch-group .launch-replay-actions select{flex:1 1 100%}.launch-replay-actions button{flex:1;padding:5px 7px!important;white-space:nowrap}
+#resource-loader .launch-sheet-footer{display:flex;flex:none;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center;margin:0;padding:9px 13px;border-top:1px solid var(--launcher-line);background:#23242a}
+#resource-loader .launch-play{flex:1 0 auto;min-height:37px;border:1px solid #ffffff20;border-radius:7px;background:var(--launcher-plain);color:#27282e;font:500 13px/1 inherit}
+#resource-loader .launch-import{flex:0 0 clamp(88px,28%,119px);min-width:0;font-size:11px;color:var(--launcher-muted)}.launch-import::file-selector-button{padding:7px 5px;margin-right:4px;font-size:11px;cursor:pointer}
+#resource-loader .launch-sheet-reopen{color:var(--launcher-text);background:var(--launcher-field);border:0}
+@media(max-width:460px){#resource-loader.local-launch{inset:8px 8px auto;width:auto;max-height:calc(100dvh - 16px)}.launch-sheet-hero{height:76px}.player-settings{width:min(270px,calc(100% - 16px))}}
+.launch-group label:has(input[type=range]){display:grid;grid-template-columns:5.5em minmax(0,1fr) 3em;align-items:center}
+.launch-group .launch-select{grid-template-columns:minmax(0,1fr)}
+.launch-group label input[type=range]{max-width:none;margin:0}
+body[data-local-runtime] .screen.player-viewport-full{position:fixed;inset:0;z-index:300;max-width:none;width:100%;height:100%;margin:0}
+body[data-local-runtime] .screen.player-viewport-full .game-viewport{width:min(100%,calc(100dvh * 4 / 3));height:auto;aspect-ratio:4/3}
+body:has(.screen.player-viewport-full){overflow:hidden}
+body[data-local-runtime] .screen[data-pixel-perfect] .game-viewport{width:var(--integer-game-w);height:var(--integer-game-h);max-width:100%;max-height:100%}
+.screen[data-pixel-perfect] #game{image-rendering:pixelated}
+.launch-input-map{margin:0;padding:6px 8px;border:1px solid var(--launcher-line);border-radius:6px}
+.launch-input-map[open]>summary{margin-bottom:9px}
+.launch-input-map label{margin:7px 0}

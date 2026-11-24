@@ -895,6 +895,8 @@
   "file_exportDownloadStarted": "Original {kind} download started",
   "file_exported": "Original {kind} exported",
   "file_missingSavePrompt": "There is no score.dat yet. Import a save now?",
+  "file_noScoreToExport": "There is no score file to export yet.",
+  "file_scoreReadOnly": "This score file is read-only and cannot be imported.",
   "file_missingReplayPrompt": "There are no replays yet. Import one now?",
   "file_selectImport": "Choose import file",
   "file_exportFailed": "Failed to export {kind}: {reason}",

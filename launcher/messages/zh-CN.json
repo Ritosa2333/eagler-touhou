@@ -895,6 +895,8 @@
   "file_exportDownloadStarted": "已开始下载原版{kind}",
   "file_exported": "已导出原版{kind}",
   "file_missingSavePrompt": "当前还没有 score.dat。是否现在导入存档？",
+  "file_noScoreToExport": "目前没有可导出的成绩文件。",
+  "file_scoreReadOnly": "该成绩文件只支持导出，无法导入。",
   "file_missingReplayPrompt": "当前还没有录像。是否现在导入录像？",
   "file_selectImport": "选择导入文件",
   "file_exportFailed": "导出{kind}失败：{reason}",

@@ -1,0 +1,642 @@
+{
+  "authority": "MAIN",
+  "thread": "01a1d08b-c028-7ff1-9ed3-56d0b61b4a4f",
+  "date": "2026-11-17",
+  "baseCommit": "5960f698c0ef19fbc2594194d06840e7bd5584d0",
+  "fullThprac": false,
+  "phase3": false,
+  "actualNativeFirstFailure957": {
+    "diagnostic": "practice replay MSG auxiliary ownership unknown",
+    "actualFactories": 2,
+    "actualWorldStarts": 1,
+    "failedFrame": 0,
+    "result": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case957-whole-current-caller-native-firsttick-trace\\result.json",
+      "bytes": 3054,
+      "sha256": "4ae153f9b4fc1c04612e89b588aeef6944f86b525336595e5598618c201a990b"
+    }
+  },
+  "nativeFix958": {
+    "checks": 119,
+    "WorldStarts": 2,
+    "componentCompiler": 1,
+    "translationUnits": 80,
+    "knownOwnerTick": true,
+    "unknownOwnerRefused": true,
+    "result": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case958-actual-routechoice-practice-recorder-green\\result.json",
+      "bytes": 731,
+      "sha256": "aaf3092a6b078c7911edbdc897eb7090c6c5dc8c7962117132a174f410724db6"
+    }
+  },
+  "Web959960": {
+    "RED": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case959-currentcaller-resource-identity-route-red\\result.json",
+      "bytes": 291,
+      "sha256": "0da200a3bdee390ccf632a7eaf84beb40d675953ed6be2859ecd44e0b932e459"
+    },
+    "GREEN": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case960-currentcaller-identity-readiness-affected-green\\result.json",
+      "bytes": 296,
+      "sha256": "524afbcb4172ceb29697cdfde472a83c9a14d0023a31b5a817800b2418fac180"
+    },
+    "tests": 261,
+    "skip": 0,
+    "changes": [
+      "excludeonlyruntime/title.anm andruntime/title_v.anm fromgameplayresourceidentity",
+      "delayroutepracticeopeninguntilactualreadyandnotbusy"
+    ]
+  },
+  "core116": {
+    "authority": "MAIN",
+    "ordinal": 961,
+    "coreOrdinal": 116,
+    "passed": true,
+    "compilerCalls": 1,
+    "compiler": {
+      "status": 0,
+      "error": null,
+      "signal": null
+    },
+    "artifacts": {
+      "core.mjs": {
+        "bytes": 139581,
+        "sha256": "59d84acd49810199f85b7851a77896209aeb410f89f04c4579d3b9ca6908615d"
+      },
+      "core.wasm": {
+        "bytes": 2432947,
+        "sha256": "c7fd33030c67bc3357e28f66b7e340f74130d9a3e1cf146dc672923d7e53d537"
+      }
+    },
+    "generation": "3eb2586dcfda0e1af6e69fb57d9eeb615c40e11c12fc7792c1d2cf0b5321b47c",
+    "sourceCount": 231,
+    "translationUnits": 83,
+    "exports": 217,
+    "changedSources": [
+      "src/runtime/WorldExports.cpp"
+    ],
+    "Factories": 0,
+    "Worlds": 0,
+    "browser": false,
+    "publication": false,
+    "at": "2026-11-17T11:59:55.829Z"
+  },
+  "completeCaller963": {
+    "checks": 114,
+    "Factories": 6,
+    "WorldStarts": 3,
+    "ticks": 6,
+    "proof": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case963-whole-current-caller-exact-fresh-source\\run\\actual-current-caller.json",
+      "bytes": 35499,
+      "sha256": "96b90721b90584b171a47750bdd26b256663d20a5a1da9aa3c664c3814717add"
+    }
+  },
+  "combined966": {
+    "checks": 1145,
+    "Factories": 6,
+    "WorldStarts": 3,
+    "ticks": 1034,
+    "actualFullMenuEnter": true,
+    "actualSourceRouteAutoOpen": true,
+    "actualWholeCheckWorld": true,
+    "actualF7SourcePreservedAfterRestart": true,
+    "naturalMSG22": {
+      "serial": 1,
+      "operation": 5,
+      "durationFrames": 480,
+      "durationSeconds": 8,
+      "acknowledged": true,
+      "WorldFrame": 1028
+    },
+    "actualCurrentHost120fpsFixed60Stepper": true,
+    "nativeReplayFrames": 3,
+    "proof": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case966-currentcaller-real-route-choice-native-F7-ACK\\run\\actual-current-caller.json",
+      "bytes": 111728,
+      "sha256": "ddab980bc70bbd888f1f30d2fec14893b6f416c0350f406f210900e395cea796"
+    }
+  },
+  "ordinaryIsolation967": {
+    "checks": 131,
+    "Factories": 8,
+    "WorldStarts": 4,
+    "ticks": 7,
+    "nativeOrdinaryRecordAfterPractice": true,
+    "priorScoreObservation": "explicitempty-storeseam",
+    "proof": {
+      "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case967-whole-currentcaller-practice-to-ordinary-isolation\\run\\actual-current-caller.json",
+      "bytes": 35755,
+      "sha256": "1ea391953031a5d3f7f80f4b86aacb25efd8b9133316e64811d355f0c2a271f3"
+    }
+  },
+  "summary": {
+    "nativeCompilerCalls": 2,
+    "translationUnitCalls": 163,
+    "actualWorldStartCalls": 18,
+    "actualFactoryCalls": 33,
+    "scope": "percaseexactactuals/failedandpassednotmixedasoneacceptance"
+  },
+  "cases": [
+    {
+      "ordinal": 955,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case955-whole-current-caller-native-tools-integration",
+      "passed": false,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case955-whole-current-caller-native-tools-integration\\result.json",
+        "bytes": 2438,
+        "sha256": "ab8f1a91abfc7dbdd4aae44d486c1760b0091454cd4d39858790873eb4d3b515"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case955-whole-current-caller-native-tools-integration\\request.json",
+        "bytes": 108102,
+        "sha256": "4fc846bf53ec1259a0f25c3cc0345b6542634950b74aadc40417610681ff4460"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case955-whole-current-caller-native-tools-integration\\actual-manifest.json",
+        "bytes": 112458,
+        "sha256": "18b3d5e2181ecef06012ad74878f335604f2a4e3af2ec2b9d449256c24ab429e"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case955-whole-current-caller-native-tools-integration\\MAIN-APPROVAL.json",
+        "bytes": 608,
+        "sha256": "22b2330cf6511b43c7d149ee86aaa1fe32d77e7e4729a6619366e6ebab4e4133"
+      },
+      "steps": [
+        {
+          "name": "current-caller",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ]
+    },
+    {
+      "ordinal": 956,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case956-whole-current-caller-actual-DAT-provider",
+      "passed": false,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case956-whole-current-caller-actual-DAT-provider\\result.json",
+        "bytes": 2658,
+        "sha256": "10c34f4179792fe28791688e04d4a041cb39cb8e9a4b14f4cb0738e669cc35a4"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case956-whole-current-caller-actual-DAT-provider\\request.json",
+        "bytes": 109514,
+        "sha256": "b72163d28fd511846ce989ee9ac1c60ddf001a004d35eda42d6ec024ca3b7625"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case956-whole-current-caller-actual-DAT-provider\\actual-manifest.json",
+        "bytes": 113915,
+        "sha256": "549b71e9818d9e33e9fe0e8d94b0455170f88364aaa5dd91b0d23ca9b500c653"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case956-whole-current-caller-actual-DAT-provider\\MAIN-APPROVAL.json",
+        "bytes": 554,
+        "sha256": "c692a8e132d56da2cfbca1c68814a67243520739bdc17615bbf5ada1eca2d3b6"
+      },
+      "steps": [
+        {
+          "name": "current-caller",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ]
+    },
+    {
+      "ordinal": 957,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case957-whole-current-caller-native-firsttick-trace",
+      "passed": false,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case957-whole-current-caller-native-firsttick-trace\\result.json",
+        "bytes": 3054,
+        "sha256": "4ae153f9b4fc1c04612e89b588aeef6944f86b525336595e5598618c201a990b"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case957-whole-current-caller-native-firsttick-trace\\request.json",
+        "bytes": 109523,
+        "sha256": "fdc25965163be5713e2dbc2cc5bfc9c4e5f8c6c25e573bbdead8938c6e8c9e36"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case957-whole-current-caller-native-firsttick-trace\\actual-manifest.json",
+        "bytes": 113933,
+        "sha256": "c55fa3b22a7d1f4620cb1694924dd374f99641c625582c735b5e5a02de42b15c"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case957-whole-current-caller-native-firsttick-trace\\MAIN-APPROVAL.json",
+        "bytes": 559,
+        "sha256": "d2e269d569eff05b93fcc09cf44e27111d7888893af7dd83568cf299a8c3df64"
+      },
+      "steps": [
+        {
+          "name": "current-caller",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ]
+    },
+    {
+      "ordinal": 958,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case958-actual-routechoice-practice-recorder-green",
+      "passed": true,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case958-actual-routechoice-practice-recorder-green\\result.json",
+        "bytes": 731,
+        "sha256": "aaf3092a6b078c7911edbdc897eb7090c6c5dc8c7962117132a174f410724db6"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case958-actual-routechoice-practice-recorder-green\\request.json",
+        "bytes": 70980,
+        "sha256": "c019f44c46e7431b2bdf9dbda9db099643fbbf9433a28104d736948fa58196af"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case958-actual-routechoice-practice-recorder-green\\actual-manifest.json",
+        "bytes": 167335,
+        "sha256": "5e0506491f4ce38af2ce14bea2a51885086c4c76c1c0703eaf45e7a32bd5baf1"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case958-actual-routechoice-practice-recorder-green\\MAIN-APPROVAL.json",
+        "bytes": 622,
+        "sha256": "b844a60a4e15b2d44a74e9b7c7cf8820c3412dfeb6025825acc3e82b2aa5e25f"
+      },
+      "steps": [
+        {
+          "name": "prepare-original",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "compiler",
+          "status": 0,
+          "signal": null,
+          "error": null
+        },
+        {
+          "name": "runtime-recording",
+          "status": 0,
+          "signal": null,
+          "error": null
+        }
+      ]
+    },
+    {
+      "ordinal": 959,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case959-currentcaller-resource-identity-route-red",
+      "passed": false,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case959-currentcaller-resource-identity-route-red\\result.json",
+        "bytes": 291,
+        "sha256": "0da200a3bdee390ccf632a7eaf84beb40d675953ed6be2859ecd44e0b932e459"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case959-currentcaller-resource-identity-route-red\\request.json",
+        "bytes": 2493,
+        "sha256": "8adcc0d70f43e5dcfc850dc7364543605fb8d86ab4c6536fd967a35efd624cc1"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case959-currentcaller-resource-identity-route-red\\actual-manifest.json",
+        "bytes": 3481,
+        "sha256": "48e7f63730c57c7b15d6958de215bf37341b4bfd4f6ef28feed5342955be4a8d"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case959-currentcaller-resource-identity-route-red\\MAIN-APPROVAL.json",
+        "bytes": 535,
+        "sha256": "e48e32c2160f435f89ea269750f1b98a6dcb09c3745c64ba289af29333b83972"
+      },
+      "summary": {
+        "pass": 0,
+        "fail": 2,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 2
+      }
+    },
+    {
+      "ordinal": 960,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case960-currentcaller-identity-readiness-affected-green",
+      "passed": true,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case960-currentcaller-identity-readiness-affected-green\\result.json",
+        "bytes": 296,
+        "sha256": "524afbcb4172ceb29697cdfde472a83c9a14d0023a31b5a817800b2418fac180"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case960-currentcaller-identity-readiness-affected-green\\request.json",
+        "bytes": 32656,
+        "sha256": "fdba1b5aaa7d0def248d71ba31b762cfba4b4145706185a5acdec957c0742713"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case960-currentcaller-identity-readiness-affected-green\\actual-manifest.json",
+        "bytes": 38360,
+        "sha256": "baf1c4b3125136736b407b1cd0e388f76d240641be97c7ea3f565eee7175863a"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case960-currentcaller-identity-readiness-affected-green\\MAIN-APPROVAL.json",
+        "bytes": 484,
+        "sha256": "d962aad50a6a662a56deb91200c4a1b8ff36cef63498c45602d4d9e7ada53b35"
+      },
+      "summary": {
+        "pass": 261,
+        "fail": 0,
+        "skip": 0,
+        "cancelled": 0,
+        "tests": 261
+      }
+    },
+    {
+      "ordinal": 961,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case961-private-core116-routechoice-practice-recorder",
+      "passed": true,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case961-private-core116-routechoice-practice-recorder\\result.json",
+        "bytes": 25104,
+        "sha256": "87ffabc3d586ee468569194bbeda2933226307652cb4319a9ce99d679edb5b83"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case961-private-core116-routechoice-practice-recorder\\request.json",
+        "bytes": 206128,
+        "sha256": "f84ee69d94fb9f5c51bf3340b729262faad222021f9160b89796d3e279211f56"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case961-private-core116-routechoice-practice-recorder\\actual-manifest.json",
+        "bytes": 218214,
+        "sha256": "7be1d2cd0fb448683ac04b2885ec1a2eef5feb8e8761a31d02c43c177d8dedce"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case961-private-core116-routechoice-practice-recorder\\MAIN-APPROVAL.json",
+        "bytes": 591,
+        "sha256": "c0dbf356cfd515a9db7f00163f90bd41eb10f49faa9d10e9ad5d557e95bb49a8"
+      }
+    },
+    {
+      "ordinal": 962,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case962-whole-current-caller-core116-restart-Replay",
+      "passed": false,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case962-whole-current-caller-core116-restart-Replay\\result.json",
+        "bytes": 3490,
+        "sha256": "37d17959f94dcc1adb84fe01590aae32ce4f8fd4b2056d450331d4eb23f67f4c"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case962-whole-current-caller-core116-restart-Replay\\request.json",
+        "bytes": 109585,
+        "sha256": "3837e44846bf121f2317c7526f3673f658e5acb321d046b562fdd124c74a53c4"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case962-whole-current-caller-core116-restart-Replay\\actual-manifest.json",
+        "bytes": 114012,
+        "sha256": "9c33581b1450fe44591c51049f75c4ddb8bbf994e4eaa0cb5f7d522c85cdec76"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case962-whole-current-caller-core116-restart-Replay\\MAIN-APPROVAL.json",
+        "bytes": 581,
+        "sha256": "04def1228417376cba7127ec8dce229f00ebc5c34ed2b0548bf748e826f45fb3"
+      },
+      "steps": [
+        {
+          "name": "current-caller",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ]
+    },
+    {
+      "ordinal": 963,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case963-whole-current-caller-exact-fresh-source",
+      "passed": true,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case963-whole-current-caller-exact-fresh-source\\result.json",
+        "bytes": 599,
+        "sha256": "460ed615d7892474cd356e52ac2687a634729f6fe06b868e4151a3f3a3ad54fc"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case963-whole-current-caller-exact-fresh-source\\request.json",
+        "bytes": 109579,
+        "sha256": "650dbba5bd87dfc879f991731165c5ef5e50a4870a6d4efccf37a621b1d8419d"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case963-whole-current-caller-exact-fresh-source\\actual-manifest.json",
+        "bytes": 113994,
+        "sha256": "1c2efc85e795a1e857ad138888d9eec6b45f8911cc69fd255b8bcdcdf21f6c9c"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case963-whole-current-caller-exact-fresh-source\\MAIN-APPROVAL.json",
+        "bytes": 538,
+        "sha256": "62b40892b39d397ce24988176c75531c4e0aa544106dcc2ceef1f9f0beb6ba6a"
+      },
+      "steps": [
+        {
+          "name": "current-caller",
+          "status": 0,
+          "signal": null,
+          "error": null
+        }
+      ]
+    },
+    {
+      "ordinal": 964,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case964-currentcaller-route-Enter-natural-F7-speed",
+      "passed": false,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case964-currentcaller-route-Enter-natural-F7-speed\\result.json",
+        "bytes": 2194,
+        "sha256": "4d03d011bae05de92ee842e12504293be2da160ddd72ff973719f06e83586631"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case964-currentcaller-route-Enter-natural-F7-speed\\request.json",
+        "bytes": 110069,
+        "sha256": "6c33a17211b3c0e903cbd592a46b0b175bae6fbec599f65de439917690e48dec"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case964-currentcaller-route-Enter-natural-F7-speed\\actual-manifest.json",
+        "bytes": 114522,
+        "sha256": "d915b0233f4a58092144ebb757fe8b6079ae0b7b403002907be19af652517cda"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case964-currentcaller-route-Enter-natural-F7-speed\\MAIN-APPROVAL.json",
+        "bytes": 636,
+        "sha256": "72a5d739e2602907fc8c10ea492e038e46181ae9e02a00f01f581f2661539f0d"
+      },
+      "steps": [
+        {
+          "name": "current-caller",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ]
+    },
+    {
+      "ordinal": 965,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case965-currentcaller-natural-dialogue-F7-ACK",
+      "passed": false,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case965-currentcaller-natural-dialogue-F7-ACK\\result.json",
+        "bytes": 2314,
+        "sha256": "949404a4254ceb842bd7b7c192e0176ee2bafaa56d9b8d5f250f5ab3df8a921c"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case965-currentcaller-natural-dialogue-F7-ACK\\request.json",
+        "bytes": 110054,
+        "sha256": "1cf23d0d481266da5dc49b7536a510ba4538d376798e63f90074c23bba21d42d"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case965-currentcaller-natural-dialogue-F7-ACK\\actual-manifest.json",
+        "bytes": 114492,
+        "sha256": "410038f5bcd3ecd14800f979f23e90c0f228461fcf53247d79a58289f64838d0"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case965-currentcaller-natural-dialogue-F7-ACK\\MAIN-APPROVAL.json",
+        "bytes": 571,
+        "sha256": "cf40ea48e16cbd83ce658f7b0c9c97f7bb3afd5697ad2480751604e6e887d998"
+      },
+      "steps": [
+        {
+          "name": "current-caller",
+          "status": 1,
+          "signal": null,
+          "error": null
+        }
+      ]
+    },
+    {
+      "ordinal": 966,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case966-currentcaller-real-route-choice-native-F7-ACK",
+      "passed": true,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case966-currentcaller-real-route-choice-native-F7-ACK\\result.json",
+        "bytes": 599,
+        "sha256": "144c4908bc306543afd3730021faf299cb79e1f65320b874eba6156ef14ea144"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case966-currentcaller-real-route-choice-native-F7-ACK\\request.json",
+        "bytes": 110078,
+        "sha256": "2b136f702853e472a5780f16d46648293d9ef9977e6bd13493f449668697b85a"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case966-currentcaller-real-route-choice-native-F7-ACK\\actual-manifest.json",
+        "bytes": 114540,
+        "sha256": "52f3115924ebf75ebdad430254175757d10d655b977af33c15042467c05d4284"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case966-currentcaller-real-route-choice-native-F7-ACK\\MAIN-APPROVAL.json",
+        "bytes": 575,
+        "sha256": "59e280f5160470a665ae99eb30079e5f81d253c57367c47174d22d052917d5da"
+      },
+      "steps": [
+        {
+          "name": "current-caller",
+          "status": 0,
+          "signal": null,
+          "error": null
+        }
+      ]
+    },
+    {
+      "ordinal": 967,
+      "home": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case967-whole-currentcaller-practice-to-ordinary-isolation",
+      "passed": true,
+      "result": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case967-whole-currentcaller-practice-to-ordinary-isolation\\result.json",
+        "bytes": 599,
+        "sha256": "50dd8afa225768b35bb61addfb8dcb7d1139b393ff74b271b20cae1d5758f71e"
+      },
+      "request": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case967-whole-currentcaller-practice-to-ordinary-isolation\\request.json",
+        "bytes": 109633,
+        "sha256": "b98b562a2e23a6ce48579bcc648f5db4850dcfef5275dc59b41157d6e4197f61"
+      },
+      "manifest": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case967-whole-currentcaller-practice-to-ordinary-isolation\\actual-manifest.json",
+        "bytes": 114091,
+        "sha256": "ba45a8bfef6dd17d1e4d30f768632431f572bdade04e9f1fe156ec1c7823dc1f"
+      },
+      "grant": {
+        "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case967-whole-currentcaller-practice-to-ordinary-isolation\\MAIN-APPROVAL.json",
+        "bytes": 632,
+        "sha256": "686d9d9e679d30a61611cb11f365dab41285cf2f18ebcf6720f5dccf3ef565f8"
+      },
+      "steps": [
+        {
+          "name": "current-caller",
+          "status": 0,
+          "signal": null,
+          "error": null
+        }
+      ]
+    }
+  ],
+  "deviceSeams": [
+    "GPUuploadandin-canvasrenderunexecuted",
+    "originalfont/textrasterunexecuted",
+    "physicalWebAudioauthoredgraphandWAVheaderOgggranuledecodesummary",
+    "endingpreparationauthored",
+    "DOMmenu966usespurposebuiltElementnotbrowser"
+  ],
+  "review": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\MAIN-thprac-currentcaller955-967-self-review-20261117.md",
+    "bytes": 4300,
+    "sha256": "146d24ae74947914b7947535a53cfb010d76ee617195d5591bb5a6b45fe14205"
+  },
+  "history": {
+    "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\thprac128-currentcaller955-967-historical-pin-final-20261117.json",
+    "bytes": 717733,
+    "sha256": "73bcf2fd18565696a1b2a1cf8bc678a6b185bffe371ac2d3283fd2a221f2dd81"
+  },
+  "sourcePins": [
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\site\\play.mjs",
+      "bytes": 333292,
+      "sha256": "cefdeccbf1fc7b0a79393176664a74891ae8e5d1bff30c289b7cba50c6bc6788"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\src\\runtime\\WorldExports.cpp",
+      "bytes": 381839,
+      "sha256": "2a3c1cc957e8ee674db46634ab55dde913c1eb79279e89b218792c870c7c4539"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\current-caller-runtime.mjs",
+      "bytes": 15055,
+      "sha256": "fc7adcdc66e4fc142b997daf6eb1970a050689f34ce3b8c18a021f8a86a298d2"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\current-caller-combined-runtime.mjs",
+      "bytes": 17565,
+      "sha256": "917287b4ff988b3e3d0106e8071b532ae00425732da8a0065f60ea6c363994d6"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\current-caller-isolation-runtime.mjs",
+      "bytes": 15838,
+      "sha256": "3b9b165c7d0937ae25b4aeeee3c28be2ab40afa6623bae341998cf7ebfa1cf55"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\current-caller-identity.test.mjs",
+      "bytes": 1655,
+      "sha256": "1a292669418eafbc8a16dbc0e3a3c61764b50c90e53a6df318e349a28c2bd7b7"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\route-choice-recorder-native.cpp",
+      "bytes": 5525,
+      "sha256": "5bfd1f6bfdc04a11e26df4f4af49b1266a2d88dd9ee30187e7f7b8c8945917a9"
+    },
+    {
+      "path": "D:\\Codex-th128-owned-20261108\\github-upload-20261115\\th128\\tests\\thprac128\\export-route-choice-recorder-resources.mjs",
+      "bytes": 2393,
+      "sha256": "6976a42ee06d61e057736ba3251a1258c04bf9d2aff0a029a19353727237cd70"
+    }
+  ],
+  "limitations": [
+    "NoactualoriginalresourcefullbrowsergameorFPSproof",
+    "F12clickcloseprevious953unproven;Escape954proven",
+    "fullpostrestart1028framereplaynotrecorded/replayed;actual3framehistoryverified",
+    "cancellation/erroractualwholecallernewnativepathnotexecuted;priorWebtestsretained",
+    "958maskprofileinputomittedseparatepin;exporterfixedSHAcheckpresent,requestnotbackfilled",
+    "964budget1200checkedaftercall caused1201 actualticks,rawpreserved;965966precheckfixedfixture",
+    "962staleREPLsourcefunctionpinsrejectedbeforeFactory;new963explicitcurrentfunctionpins",
+    "predecessoronly772externalPythonunresolved;8immutablepinsunchanged"
+  ]
+}

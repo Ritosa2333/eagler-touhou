@@ -125,9 +125,16 @@ export function createGameSettingsModel({storage, onChange}: {
   }
   function commitPreferences() {
     const state = required();
-    if (state.gameId !== 'th01') persistSharedTouchPreferences(storage, {...state.options});
+    if (state.gameId !== 'th01') {
+      const shared = {...state.options};
+      if (state.gameId === 'th128') {
+        shared.touchMovementMode = loadOrInitializeSharedTouchPreferences(storage, shared).touchMovementMode;
+      }
+      persistSharedTouchPreferences(storage, shared);
+    }
     persistStoredGamePreferences({storage, preferenceId: state.preferenceId,
-      preferences: {...state, options: {...state.options, thpracEnabled: state.multiplayer ? practicePreferences.get(state.gameId) ?? false : state.options.thpracEnabled}}, language: state.language});
+      preferences: {...state, music: state.gameId === 'th128' ? state.musicPreference : state.music,
+        options: {...state.options, thpracEnabled: state.multiplayer ? practicePreferences.get(state.gameId) ?? false : state.options.thpracEnabled}}, language: state.language});
     if (!state.multiplayer) practicePreferences.set(state.gameId, state.options.thpracEnabled);
   }
   function read(context: SettingsContext, reason: SettingsChange['reason']) {
@@ -141,12 +148,14 @@ export function createGameSettingsModel({storage, onChange}: {
       fallbackPreferenceId: multiplayer ? gameId : null,
       context: {uiLocale: context.uiLocale, thpracAvailable: productFeatureAvailable(gameId, 'thprac', context.hostFeatures),
         webAudioAvailable: context.musicAvailability.audio,
+        ...(gameId === 'th128' ? {defaultTouchMovementMode: 'touch'} : {}),
         externalMidiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && context.webMidiAvailable}});
     const options = gameId === 'th01' ? {...normalized.options} :
       applySharedTouchPreferences(normalized.options, loadOrInitializeSharedTouchPreferences(storage, normalized.options));
     if (gameId === 'th01') {
       try {if (!storage?.getItem(gamePreferenceStorageKey(preferenceId))) options.touchMovementMode = 'joystick';} catch {}
     }
+    if (gameId === 'th128') options.touchMovementMode = normalized.options.touchMovementMode;
     const product=PRODUCT_GAMES[gameId];
     if('touchMovementModes' in product){
       if(!(product.touchMovementModes as readonly string[]).includes(options.touchMovementMode))options.touchMovementMode=product.touchMovementModes[0];
@@ -156,11 +165,14 @@ export function createGameSettingsModel({storage, onChange}: {
     practicePreferences.set(gameId, options.thpracEnabled);
     if (multiplayer) options.thpracEnabled = false;
     const savedLanguage = loadStoredLanguagePreference({storage, preferenceId, fallbackPreferenceId: multiplayer ? gameId : null});
+    const musicPreference = gameId === 'th128'
+      ? normalized.musicPreferenceExplicit && normalized.musicPreference === 'none' ? 'none' : 'ogg-full'
+      : normalized.musicPreference;
     publish({context, gameId, preferenceId, multiplayer, shareSingleplayerSettings, disclosure: {...disclosure}, options,
       ...(['th09mp','th19mp'].includes(context.productId) ? {replayAutoSave: multiplayerPreferences.replayAutoSave(context.productId)} : {}),
-      music: resolveEffectiveMusicMode({...musicAvailabilityForContext(context), requested: normalized.musicPreference, explicit: normalized.musicPreferenceExplicit}),
-      musicPreference: normalized.musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
-      gameVersion: gameId === 'th075' ? 'original' : loadGameVersion(storage, gameId),
+      music: resolveEffectiveMusicMode({...musicAvailabilityForContext(context), requested: musicPreference, explicit: normalized.musicPreferenceExplicit}),
+      musicPreference, musicPreferenceExplicit: normalized.musicPreferenceExplicit,
+      gameVersion: gameId === 'th075' || gameId === 'th128' ? 'original' : loadGameVersion(storage, gameId),
       language: resolvePreferredGameLanguage(context.languages, savedLanguage, gameId === 'th13' && !savedLanguage ? 'zh-CN' : context.uiLocale)}, reason);
   }
   return Object.freeze({
@@ -254,9 +266,13 @@ export function createGameSettingsModel({storage, onChange}: {
     },
     setMusic(value: MusicMode) {
       const state = required(), availability = resolveMusicAvailability(state.context.musicAvailability);
+      if (state.gameId === 'th128' && value !== 'ogg-full' && value !== 'none') return;
       if (value === 'ogg-akyu' && !musicAvailabilityForContext(state.context).musicSources.includes('akyu')) return;
-      if (value === 'midi' && !availability.midi || value.startsWith('ogg-') && !availability.ogg) return;
-      publish({...state, music: value, musicPreference: value, musicPreferenceExplicit: true}, 'music'); commitPreferences();
+      // The complete TH128 package supplies OGG. Record the choice even while
+      // Launcher is still checking its installation; playback still needs it.
+      const pendingTh128Ogg = state.gameId === 'th128' && value === 'ogg-full' && availability.audio && !availability.ogg;
+      if (value === 'midi' && !availability.midi || value.startsWith('ogg-') && !availability.ogg && !pendingTh128Ogg) return;
+      publish({...state, music: pendingTh128Ogg ? 'none' : value, musicPreference: value, musicPreferenceExplicit: true}, 'music'); commitPreferences();
     },
     setLanguage(value: string) {
       const state = required();
@@ -265,7 +281,7 @@ export function createGameSettingsModel({storage, onChange}: {
     },
     setGameVersion(value: GameVersion) {
       const state = required();
-      if (value === 'beauty' && (state.gameId === 'th075' || state.context.beautyInstalled === false)) return;
+      if (value === 'beauty' && (state.gameId === 'th075' || state.gameId === 'th128' || state.context.beautyInstalled === false)) return;
       if (!GAME_VERSIONS.includes(value) || state.gameVersion === value) return;
       // Persist before publishing: metadata/import readers see the same selection.
       persistGameVersion(storage, state.gameId, value);
