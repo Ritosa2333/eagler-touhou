@@ -73,6 +73,12 @@ private:
     };
     bool sync_item_spirits(StageBattle& battle);
     bool sync_trance_effect(const StageBattle&);
+    bool sync_ecl_enemies(StageBattle& battle);
+    bool sync_enemy_visuals(StageBattle& battle, AnmResource* stage_resource);
+    bool sync_bullets(StageBattle& battle, AnmResource* bullet_resource);
+    bool sync_player_shots(StageBattle& battle, AnmResource* player_resource);
+    bool sync_shot_fades(StageBattle& battle);
+    bool sync_player_ship(StageBattle& battle, u32 held, AnmResource* player_resource);
     u32 trance_handle_ = 0;
     std::vector<u32> bullet_cancel_handles_;
     bool trance_was_active_ = false;
