@@ -69,7 +69,7 @@ TEST(curve_samples_follow_fractional_path_time_during_slowdown) {
 }
 TEST(real_stage3_card_emits_curve_lasers_through_711) {
     StageSim sim;CHECK(sim.load("artifacts/reference/raw",
-        "artifacts/verification/curve-production-20261027/real-script-events.jsonl","st03.ecl"));
+        th13test::evidence_sink("real-script-events.jsonl").c_str(),"st03.ecl"));
     if(!sim.error().empty())return;
     // BossCard3 sets I1 to16 before calling this emission routine on Normal.
     StageSpawnArguments args;args.integers[1]=16;

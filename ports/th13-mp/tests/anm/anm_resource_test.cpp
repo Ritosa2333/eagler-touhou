@@ -6,6 +6,7 @@
 // 5) 合成归档解析 + anm_decode_png（stb_image）。
 #include "anm_test_fixtures.hpp"
 #include "game/AnmTextureDecode.hpp"
+#include "rgba64_png.hpp"
 
 #include <cstdio>
 
@@ -158,15 +159,23 @@ TEST(synthetic_archive_and_invalid) {
 }
 
 TEST(png_decode_stb) {
-    // thtk 提取产物（8-bit RGBA PNG）经 stb_image 装载：尺寸与字节量闭环。
-    std::vector<th13::u8> bytes;
-    CHECK(reader().read("artifacts/reference/textures/effect/eff_switch.png", bytes));
+    // 8-bit RGBA PNG（内嵌夹具，像素公式见 rgba64_png.hpp）经 stb_image 装载：
+    // 尺寸与像素逐字节闭环。
     th13::u32 width = 0, height = 0;
     std::vector<th13::u8> rgba;
-    CHECK(th13::anm_decode_png(bytes.data(), th13::u32(bytes.size()), width, height, rgba));
+    CHECK(th13::anm_decode_png(th13test::rgba64_png, th13::u32(sizeof(th13test::rgba64_png)), width, height, rgba));
     CHECK_EQ(width, 64u);
     CHECK_EQ(height, 64u);
-    CHECK_EQ(rgba.size(), 64u * 64u * 4);
+    CHECK_EQ(rgba.size(), 64u * 64u * 4u);
+    for (int y = 0; y < 64; y++) {
+        for (int x = 0; x < 64; x++) {
+            const th13::u8* pixel = rgba.data() + (y * 64 + x) * 4;
+            CHECK_EQ(pixel[0], th13::u8(x * 4));
+            CHECK_EQ(pixel[1], th13::u8(y * 4));
+            CHECK_EQ(pixel[2], th13::u8((x * y) & 255));
+            CHECK_EQ(pixel[3], th13::u8(255 - y * 3));
+        }
+    }
     CHECK(!th13::anm_decode_png(nullptr, 0, width, height, rgba));
 }
 

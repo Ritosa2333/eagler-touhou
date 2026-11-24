@@ -34,7 +34,7 @@ TEST(zero_duration_cancels_both_channels_without_changing_circle_state) {
  CHECK_EQ(r.e->vel.radius,64.f);CHECK_EQ(r.e->vel.growth,0.f);
 }
 TEST(real_stage5_phantom_retains_radius_during_opening) {
- StageSim sim;CHECK(sim.load("artifacts/reference/raw","artifacts/verification/circle-time-20261027/phantom.jsonl","st05.ecl"));StageSpawnArguments a;a.floats={0,64,.017453f,0};
+ StageSim sim;CHECK(sim.load("artifacts/reference/raw",th13test::evidence_sink("phantom.jsonl").c_str(),"st05.ecl"));StageSpawnArguments a;a.floats={0,64,.017453f,0};
  auto*e=sim.spawn_enemy("Phantom01",0,192,80,nullptr,false,false,&a);CHECK(e);if(!e)return;
  for(int i=0;i<31;++i)CHECK(sim.step_frame());
  CHECK_EQ(e->vel.radius,63.5f);CHECK_EQ(e->vel.growth,-.5f);CHECK(e->position[0]>60);
