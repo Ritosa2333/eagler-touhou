@@ -79,6 +79,8 @@ still differ from the original.
 
 ## Credits
 
+SoEW Native is maintained by Dr. Hydrangea Z ([Hydrangea-Z](https://github.com/Hydrangea-Z)).
+
 Thanks to Christian Azinn for [th98port (libth03)](https://github.com/christianazinn/th98port),
 which this port uses for asset decoding and FM playback. His TH02 Practice Patch
 was the reference for the chapter start points. [ReC98](https://github.com/nmlgc/ReC98)
