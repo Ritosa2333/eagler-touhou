@@ -15,6 +15,8 @@ CHINESE_PACK = "chinese-v1.txt"
 CHINESE_MAGIC = "SOEW-CHINESE-V1"
 CHINESE_LOCALES = ("zh-Hans", "zh-Hant")
 CHINESE_COUNTS = {**{name: count * 2 for name, count in STAGES.items()}, **ENDINGS, "MUSIC.TXT": 300}
+CHINESE_STORY_COUNTS = {name: count for name, count in CHINESE_COUNTS.items() if name not in ("END3.TXT", "MUSIC.TXT")}
+CHINESE_STORY_MAGIC = "SOEW-CHINESE-STORY-V1"
 CHINESE_ROWS = sum(CHINESE_COUNTS.values()) * len(CHINESE_LOCALES)
 CHINESE_MAX_SIZE = 256 * 1024
 CHINESE_REVIEW_FORMAT = "soew-th02-reviewed-chinese"
@@ -317,7 +319,7 @@ def bounded_file(path, cap):
 
 def chinese_character(cp):
     return (0x20 <= cp <= 0x7E or cp in (0x00B7, 0x2014, 0x2018, 0x2019, 0x201C, 0x201D,
-                                          0x2022, 0x2026, 0x2212, 0x2605, 0x2606) or
+                                          0x2022, 0x2026, 0x2211, 0x2212, 0x2605, 0x2606, 0x30FB) or
             0x3000 <= cp <= 0x303F or 0x3041 <= cp <= 0x3096 or 0x30A1 <= cp <= 0x30FA or
             0x3400 <= cp <= 0x4DBF or 0x4E00 <= cp <= 0x9FFF or 0xFF01 <= cp <= 0xFF9F or
             0xFFE0 <= cp <= 0xFFE6)
@@ -336,16 +338,17 @@ def check_chinese_line(lang, asset, index, text):
     need(columns <= cap, f"{label}: display text exceeds {cap} columns ({columns})")
 
 
-def parse_chinese_pack(data):
+def parse_chinese_pack(data, *, story_only=False):
     need(0 < len(data) <= CHINESE_MAX_SIZE, "Chinese pack size is outside bounds")
     need(data.endswith(b"\n") and b"\r" not in data, "Chinese pack requires canonical LF endings")
     lines = iter(data[:-1].decode("utf-8", errors="strict").split("\n"))
-    need(next(lines, None) == CHINESE_MAGIC, "Unsupported Chinese pack header")
+    magic, counts = (CHINESE_STORY_MAGIC, CHINESE_STORY_COUNTS) if story_only else (CHINESE_MAGIC, CHINESE_COUNTS)
+    need(next(lines, None) == magic, "Unsupported Chinese pack header")
     variants = {}
     for lang in CHINESE_LOCALES:
         need(next(lines, None) == f"locale\t{lang}", f"Missing or out-of-order Chinese locale: {lang}")
         records = variants[lang] = {}
-        for asset, count in CHINESE_COUNTS.items():
+        for asset, count in counts.items():
             need(next(lines, None) == f"asset\t{asset}\t{count}", f"{lang}: wrong asset header or count for {asset}")
             rows = records[asset] = []
             for index in range(count):
@@ -357,14 +360,15 @@ def parse_chinese_pack(data):
     return variants
 
 
-def build_chinese_pack(variants):
+def build_chinese_pack(variants, *, story_only=False):
     need(isinstance(variants, dict) and variants.keys() == set(CHINESE_LOCALES), "Expected exactly zh-Hans and zh-Hant")
-    lines = [CHINESE_MAGIC]
+    magic, counts = (CHINESE_STORY_MAGIC, CHINESE_STORY_COUNTS) if story_only else (CHINESE_MAGIC, CHINESE_COUNTS)
+    lines = [magic]
     for lang in CHINESE_LOCALES:
         records = variants[lang]
-        need(isinstance(records, dict) and records.keys() == CHINESE_COUNTS.keys(), f"{lang}: wrong asset names")
+        need(isinstance(records, dict) and records.keys() == counts.keys(), f"{lang}: wrong asset names")
         lines.append(f"locale\t{lang}")
-        for asset, count in CHINESE_COUNTS.items():
+        for asset, count in counts.items():
             rows = records[asset]
             need(isinstance(rows, list) and len(rows) == count, f"{lang}/{asset}: wrong record count")
             lines.append(f"asset\t{asset}\t{count}")
@@ -372,7 +376,7 @@ def build_chinese_pack(variants):
                 check_chinese_line(lang, asset, index, text)
                 lines.append(f"{index}\t{text}")
     data = ("\n".join(lines) + "\n").encode("utf-8")
-    parse_chinese_pack(data)
+    parse_chinese_pack(data, story_only=story_only)
     return data
 
 

@@ -50,7 +50,7 @@ inline constexpr LocalizedText extra{L"エキストラ", L"Extra",L"额外关卡
     game_over{L"ゲームオーバー", L"Game Over",L"游戏结束",L"遊戲結束"}, clear{L"クリア", L"Clear",L"通关",L"通關"}, menu_return{L"途中終了", L"Menu Return",L"中途退出",L"中途離開"},
     confirm_back{L"Z / Enter：決定　X / Esc：戻る", L"Z / Enter: confirm   X / Esc: back",L"Z / Enter：确认  X / Esc：返回",L"Z / Enter：確認  X / Esc：返回"},
     unavailable{L"選択不可", L"Unavailable",L"不可选",L"無法選擇"},
-    legacy_content{L"旧版素材：対訳と原作タイトル画像がありません", L"Legacy content: bilingual text and clean title art unavailable",L"旧版素材：没有译文和无字标题图",L"舊版素材：沒有譯文和無字標題圖"},
+    legacy_content{L"旧版素材：英訳と原作タイトル画像がありません", L"Legacy content: English translation and clean title art unavailable",L"旧版素材：没有英文译文和无字标题图",L"舊版素材：沒有英文譯文和無字標題圖"},
     practice_start{L"練習開始", L"Practice Start",L"开始练习",L"開始練習"}, replay{L"リプレイ", L"Replay",L"录像回放",L"錄影重播"};
 inline constexpr std::array<LocalizedText, 4> difficulty = {{{L"イージー", L"Easy",L"简单",L"簡單"}, {L"ノーマル", L"Normal",L"普通",L"普通"},
     {L"ハード", L"Hard",L"困难",L"困難"}, {L"ルナティック", L"Lunatic",L"疯狂",L"瘋狂"}}};
@@ -135,18 +135,21 @@ inline std::string expand_continues(std::string_view text, unsigned count) {
 class ChineseDisplayPack {
     static constexpr std::array<std::size_t,10> counts={48,70,22,104,114,62,51,94,12,300};
     static constexpr std::size_t records_per_language=877;
+    static constexpr std::size_t story_assets=8;
+    std::size_t asset_count_=counts.size();
     std::array<std::array<std::string,records_per_language>,2> rows_;
 
     static constexpr bool allowed(std::uint32_t c) {
         return (c>=0x20&&c<=0x7e)||c==0xb7||c==0x2014||c==0x2018||c==0x2019||c==0x201c||
-            c==0x201d||c==0x2022||c==0x2026||c==0x2212||c==0x2605||c==0x2606||
+            c==0x201d||c==0x2022||c==0x2026||c==0x2211||c==0x2212||c==0x2605||c==0x2606||c==0x30fb||
             (c>=0x3000&&c<=0x303f)||(c>=0x3041&&c<=0x3096)||(c>=0x30a1&&c<=0x30fa)||
             (c>=0x3400&&c<=0x4dbf)||(c>=0x4e00&&c<=0x9fff)||(c>=0xff01&&c<=0xff9f)||
             (c>=0xffe0&&c<=0xffe6);
     }
 public:
     static constexpr std::size_t max_size=256*1024;
-    static ChineseDisplayPack parse(std::string_view data) {
+    enum class Scope { Full, Story };
+    static ChineseDisplayPack parse(std::string_view data, Scope scope=Scope::Full) {
         ChineseDisplayPack result;
         if(data.empty()||data.size()>max_size||!data.ends_with('\n'))throw std::runtime_error("Invalid Chinese display pack size or line endings");
         const auto next=[&] {
@@ -154,11 +157,14 @@ public:
             if(end==std::string_view::npos)throw std::runtime_error("Truncated Chinese display pack");
             const auto row=data.substr(0,end);data.remove_prefix(end+1);return row;
         };
-        if(next()!="SOEW-CHINESE-V1")throw std::runtime_error("Unsupported Chinese display pack header");
+        const bool story=scope==Scope::Story;
+        if(story)result.asset_count_=story_assets;
+        if(next()!=(story?"SOEW-CHINESE-STORY-V1":"SOEW-CHINESE-V1"))
+            throw std::runtime_error("Unsupported Chinese display pack header");
         for(std::size_t variant=0;variant<result.rows_.size();++variant){
             if(next()!=(variant==0?"locale\tzh-Hans":"locale\tzh-Hant"))throw std::runtime_error("Missing or out-of-order Chinese locale");
             std::size_t offset=0;
-            for(std::size_t asset=0;asset<counts.size();++asset){
+            for(std::size_t asset=0;asset<result.asset_count_;++asset){
                 const auto name=locale_text_assets[asset];
                 const auto header="asset\t"+std::string(name)+"\t"+std::to_string(counts[asset]);
                 if(next()!=header)throw std::runtime_error("Invalid Chinese asset header: "+std::string(name));
@@ -180,14 +186,13 @@ public:
                     result.rows_[variant][offset++]=text;
                 }
             }
-            if(offset!=records_per_language)throw std::logic_error("Chinese display record layout");
         }
         if(!data.empty())throw std::runtime_error("Trailing Chinese display records");
         return result;
     }
     template<class Verify>
-    static std::optional<ChineseDisplayPack> load(const std::filesystem::path& root, Verify&& verify) {
-        const auto path=root/"locale"/"chinese-v1.txt";
+    static std::optional<ChineseDisplayPack> load(const std::filesystem::path& root, Verify&& verify, Scope scope=Scope::Full) {
+        const auto path=scope==Scope::Story?root/"chinese-story-v1.pack":root/"locale"/"chinese-v1.txt";
         if(!std::filesystem::exists(path))return std::nullopt;
         if(!std::filesystem::is_regular_file(path))throw std::runtime_error("Chinese display pack is not a regular file");
         std::ifstream input(path,std::ios::binary);
@@ -197,12 +202,12 @@ public:
         if(input.bad())throw std::runtime_error("Cannot read Chinese display pack");
         bytes.resize(static_cast<std::size_t>(input.gcount()));
         verify(std::string_view(bytes));
-        return parse(bytes);
+        return parse(bytes,scope);
     }
     std::string_view line(Language language,std::string_view name,std::size_t index) const {
         if(!is_chinese(language))throw std::invalid_argument("Expected Chinese display language");
         std::size_t offset=0;
-        for(std::size_t asset=0;asset<counts.size();++asset){
+        for(std::size_t asset=0;asset<asset_count_;++asset){
             if(locale_text_assets[asset]==name){
                 if(index>=counts[asset])break;
                 return rows_[language==Language::ChineseTraditional?1:0][offset+index];

@@ -9,9 +9,10 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 from build_standalone import LOCALE_FILES, MMDC_V1_HEADER, locale_payload, validate_checkpoint_soundfont
+from import_wiki_story import fit_rows, pairs
 from pf_extract import decode
 from stage_locale import (
-    CHINESE_COUNTS, CHINESE_LOCALES, CHINESE_PACK, CHINESE_ROWS, CONTINUE_TOKEN,
+    CHINESE_COUNTS, CHINESE_LOCALES, CHINESE_PACK, CHINESE_ROWS, CHINESE_STORY_COUNTS, CONTINUE_TOKEN,
     build_chinese_pack, chinese_pack_metadata, chinese_records, parse_chinese_pack, record_cells,
     sjis_font_cell, validate_chinese_overlay,
 )
@@ -86,6 +87,25 @@ class ChinesePackTests(unittest.TestCase):
         self.assertEqual(CHINESE_COUNTS['END3.TXT'], 12)
         validate_chinese_overlay(self.manifest(self.pack), self.pack)
         validate_chinese_overlay(self.manifest(), None)
+
+    def test_story_pack_only_contains_dialogue_and_endings(self):
+        self.assertEqual(sum(CHINESE_STORY_COUNTS.values()), 565)
+        variants = {lang: {asset: rows[asset] for asset in CHINESE_STORY_COUNTS}
+                    for lang, rows in self.variants.items()}
+        variants["zh-Hans"]["END2.TXT"][48] = "・・・∑"
+        pack = build_chinese_pack(variants, story_only=True)
+        self.assertEqual(parse_chinese_pack(pack, story_only=True), variants)
+        for wrong_pack, story_only in ((pack, False), (self.pack, True)):
+            with self.assertRaisesRegex(ValueError, "header"):
+                parse_chinese_pack(wrong_pack, story_only=story_only)
+
+    def test_wiki_parser_keeps_text_but_not_comments_and_links(self):
+        source = "char\nName\nja\n台詞\nzh\n[[Link|第一句]]<br />第二句<ref>Comment</ref>\nxx\n"
+        self.assertEqual(pairs(source), [("台詞", "第一句\n第二句")])
+        rows = fit_rows("前面" + CONTINUE_TOKEN + "次", [4, 4], "fixture")
+        self.assertEqual(rows, ["前面", CONTINUE_TOKEN + "次"])
+        with self.assertRaisesRegex(ValueError, "cannot fit"):
+            fit_rows("全部放不下", [4, 4], "fixture")
 
     def test_pack_rejects_wrong_structure(self):
         for malformed in (b'{"format":"soew-th02-glyph-transcription-draft"}\n', self.pack[:-1], self.pack + b'\n',

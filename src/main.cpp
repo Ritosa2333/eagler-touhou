@@ -874,6 +874,44 @@ unsigned test_chinese_ascii(){
     check(fit_display_text(mixed,143,hant)==L"NO.10 ＜戀色 Magi");
     return checks;
 }
+unsigned test_chinese_ending(){
+    using namespace soew;
+    using K=EndingEventKind;
+    using D=EndingDrawStep::Kind;
+    unsigned checks=0;
+    for(const auto lang:{Language::Japanese,Language::English,Language::ChineseSimplified,Language::ChineseTraditional}){
+        const std::string_view zh=lang==Language::ChineseTraditional?"結局":"结局";
+        for(const bool with_story:{false,true}){
+            EndingSurfaceHooks hooks;
+            hooks.read_asset=[](std::string_view asset){
+                const int rows=asset=="END1.TXT"?51:12;
+                std::vector<std::byte> bytes(rows*46,std::byte{' '});
+                for(int i=0;i<rows;++i){bytes[i*46+44]=std::byte{'\r'};bytes[i*46+45]=std::byte{'\n'};}
+                bytes[0]=std::byte{'A'};
+                return bytes;
+            };
+            hooks.chinese_line=[=](std::string_view asset,std::size_t)->std::optional<std::string_view>{
+                if(with_story&&asset=="END1.TXT")return zh;
+                return std::nullopt;
+            };
+            bool translated=false;
+            hooks.draw_text=[&](EndingSurface&,EndingSurfaceText encoding,std::string_view line,int,int,std::uint8_t){
+                ++checks;
+                if((encoding==EndingSurfaceText::Utf8)!=translated||
+                   line!=(translated?chinese_text_prefix(zh,16):"A "))
+                    throw std::runtime_error("Ending language/fallback test failed");
+            };
+            EndingSurface surface(std::move(hooks),lang);
+            for(const std::string_view asset:{"END1.TXT","END3.TXT"}){
+                translated=asset=="END1.TXT"&&with_story&&is_chinese(lang);
+                surface.apply({D::Event,{K::LoadText,asset}},{});
+                surface.apply({D::RevealText,{K::TypeLine,asset},2},{});
+            }
+        }
+    }
+    if(checks!=16)throw std::runtime_error("Ending language reveal did not reach the renderer");
+    return checks;
+}
 #include "practice_retry_host.hpp"
 struct TitleDemoHost {
     using Run=soew::TitleDemoRun<soew::EncounterScene>;
@@ -896,6 +934,10 @@ struct App {
     RetryHostProbe retry_probe;
     std::array<Frame, 3> frames;
     std::optional<soew::ChineseDisplayPack> chinese_text;
+    std::optional<soew::ChineseDisplayPack> chinese_story;
+    const soew::ChineseDisplayPack* story_translation()const{
+        return chinese_story?&*chinese_story:chinese_text?&*chinese_text:nullptr;
+    }
     std::array<Frame, 3> portraits;
     Frame opening_title_page; // OP2 indices viewed through the OP.PI palette.
     std::array<Frame, 3> opening_strips;
@@ -2124,8 +2166,12 @@ void start_stage5_ending(App &app){
     hooks.read_asset=[&app,language](std::string_view name){
         return read(name.ends_with(".TXT") ? soew::locale_asset(app.assets_root,soew::simulation_language(language),name) : app.assets_root/fs::path(name));
     };
-    if(soew::is_chinese(language)&&app.chinese_text)
-        hooks.chinese_line=[&app,language](std::string_view asset,std::size_t record){return app.chinese_text->line(language,asset,record);};
+    if(soew::is_chinese(language))
+        hooks.chinese_line=[&app,language](std::string_view asset,std::size_t record)->std::optional<std::string_view>{
+            const auto *pack=asset=="END3.TXT"?(app.chinese_text?&*app.chinese_text:nullptr):app.story_translation();
+            if(pack)return pack->line(language,asset,record);
+            return std::nullopt;
+        };
     hooks.draw_text=[language](soew::EndingSurface &out,soew::EndingSurfaceText encoding,std::string_view text,int x,int y,std::uint8_t ink){
         std::wstring wide;
         if(encoding==soew::EndingSurfaceText::Cp932)wide=cp932(text);
@@ -2885,7 +2931,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if(!app->stage_intro.revealing()&&app->menu.hitboxes!=soew::HitboxMode::Off&&!app->practice_result&&!app->replay_menu.active())app->stage_scene->render_hitboxes(app->composed.pixels);
                 if(app->stage_intro.revealing())compose_curtain(app->composed,app->font,true,app->stage_intro.reveal_frame());
                 else{
-                    compose_dialogue_text(app->composed,*app->stage_scene,lang,app->chinese_text?&*app->chinese_text:nullptr);
+                    compose_dialogue_text(app->composed,*app->stage_scene,lang,app->story_translation());
                     compose_transition(app->composed,*app->stage_scene,app->font,lang);
                 }
                 soew::mask_gameplay_tram(app->composed.pixels);
@@ -4207,7 +4253,7 @@ int wmain(int argc, wchar_t **argv) {
             if(std::count_if(sample.pixels.begin(),sample.pixels.end(),[](auto p){return p!=0;})<10)throw std::runtime_error("Japanese glyph rendering failed");
             test_live_assist_host();
             test_opening_composition();
-            std::cout << "viewport_checks=" << checks + 2 << " menu_checks=" << test_menu() << " japanese_checks=" << jp_checks << " chinese_ascii_checks=" << test_chinese_ascii() << " opening_checks=" << test_opening() << " zunsoft_checks=" << soew::test_zunsoft_opening() << " failures=0\n"; return 0;
+            std::cout << "viewport_checks=" << checks + 2 << " menu_checks=" << test_menu() << " japanese_checks=" << jp_checks << " chinese_ascii_checks=" << test_chinese_ascii() << " chinese_ending_checks=" << test_chinese_ending() << " opening_checks=" << test_opening() << " zunsoft_checks=" << soew::test_zunsoft_opening() << " failures=0\n"; return 0;
         }
         if(async_practice_test&&(smoke||test||dump_only||timed_test||score_timed_test))throw std::runtime_error("Async practice test cannot be combined with other test modes");
         App app{};app.assets_root=assets;app.evidence_dir=evidence_dir;app.async_practice_test=async_practice_test;app.async_exit_test=async_exit_test;
@@ -4222,6 +4268,8 @@ int wmain(int argc, wchar_t **argv) {
         soew::validate_locale_assets(assets);
         try { app.chinese_text=soew::ChineseDisplayPack::load(assets,[&](std::string_view text){verify_chinese_manifest(assets,text);}); }
         catch(const std::exception& error){std::cerr<<"Chinese display pack unavailable: "<<error.what()<<'\n';}
+        try { app.chinese_story=soew::ChineseDisplayPack::load(assets,[](std::string_view){},soew::ChineseDisplayPack::Scope::Story); }
+        catch(const std::exception& error){std::cerr<<"Chinese story pack unavailable: "<<error.what()<<'\n';}
         if(app.settings_enabled){
             app.settings.emplace(settings_dir/"soew-settings.json");
             const auto settings=app.settings->load();settings.apply(app.menu);app.practice_tools.options=settings.practice_advanced;
@@ -4330,7 +4378,7 @@ int wmain(int argc, wchar_t **argv) {
             for(unsigned i=0;i<stage_dump_ticks;++i){if(stage_dump_protected)app.stage_scene->life.invincibility=200;app.stage_scene->tick((stage_dump_fire?soew::Shot:0)|(stage_dump_bomb&&i==0?soew::Bomb:0));}
             if(preboss_dump){if(!app.stage_scene->dialogue.active())throw std::runtime_error("Map has not reached preboss dialogue");while(app.stage_scene->dialogue.phase==soew::StageDialogue::Phase::SlideIn||app.stage_scene->dialogue.phase==soew::StageDialogue::Phase::Text)app.stage_scene->tick(soew::Shot,true);}
             Frame frame{640,400,std::vector<std::uint32_t>(640*400)};app.stage_scene->render(frame.pixels);
-            compose_dialogue_text(frame,*app.stage_scene,app.menu.language,app.chinese_text?&*app.chinese_text:nullptr);
+            compose_dialogue_text(frame,*app.stage_scene,app.menu.language,app.story_translation());
             if(assist_dump){
                 soew::mask_gameplay_tram(frame.pixels);
                 const auto &s=*app.stage_scene;

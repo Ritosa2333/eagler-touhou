@@ -204,13 +204,24 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
   SHA-256 is `00725296486f652ba42bdbf2098254762ca80239353d04b55a27454fc8edb8a8`.
   FM does not need this file. The private Practice audio checkpoint catalog
   is not included or required; without it Practice uses exact seeking.
-- **Other languages:** Options → Language offers Simplified and Traditional
-  Chinese without a locale pack. With the basic Japanese game data, choosing
-  either keeps the original Japanese story and endings. The locale tools still
-  support hash-checked Japanese/English inputs and a separate reviewed Chinese
-  story pack. None of those overlays is included or required for the quick start.
+- **English story:** the English fan translation is read from a locally staged
+  Japanese/English overlay (`tools/stage_locale.py`), not from the executable.
+  Without that overlay, English settings do not replace the story files.
+- **Chinese story:** run `uv run tools/import_wiki_story.py build/content` from
+  this repository, using your own extracted Japanese game data. Then choose
+  Simplified or Traditional Chinese under Options → Language. The command
+  creates a local `chinese-story-v1.pack` for Stages 1–5, Extra, and all six
+  endings. It does not change the source text or require the English overlay.
+  Without a Chinese pack the story falls back to the original text.
 - **Separate data directory:** pass `--assets "D:/path/to/content"`. Extracted
   data, personal scores, and recordings belong outside Git.
+
+The optional Chinese story uses THBWiki contributors' translations for
+[main story and endings](https://thwiki.cc/index.php?oldid=626666) and
+[Extra](https://thwiki.cc/index.php?oldid=626673) under
+[CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/).
+The importer adapts line breaks and converts Chinese variants with OpenCC.
+The generated pack is for local use and is excluded from the standalone packager.
 
 ## Running
 

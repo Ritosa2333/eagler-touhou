@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <functional>
+#include <optional>
 #include <string>
 
 namespace soew {
@@ -22,7 +23,7 @@ struct EndingSurfaceHooks {
                        int, int, std::uint8_t)> draw_text;
     std::function<void(std::string_view)> play_song;
     std::function<void(const EndingVerdict&)> register_score;
-    std::function<std::string_view(std::string_view, std::size_t)> chinese_line;
+    std::function<std::optional<std::string_view>(std::string_view, std::size_t)> chinese_line;
 };
 
 // Indexed pixels preserve the original global palette behavior, including
@@ -250,10 +251,11 @@ private:
                         int x, int y, std::uint8_t ink) {
         if (asset != loaded_text_) throw std::logic_error("Ending text asset is not active");
         if (is_chinese(language_) && hooks_.chinese_line) {
-            const auto label = hooks_.chinese_line(asset, std::size_t(record));
-            const auto prefix = chinese_text_prefix(label, count * 8);
-            if (!prefix.empty()) hooks_.draw_text(*this, EndingSurfaceText::Utf8, prefix, x, y, ink);
-            return;
+            if (const auto label = hooks_.chinese_line(asset, std::size_t(record))) {
+                const auto prefix = chinese_text_prefix(*label, count * 8);
+                if (!prefix.empty()) hooks_.draw_text(*this, EndingSurfaceText::Utf8, prefix, x, y, ink);
+                return;
+            }
         }
         const auto& line = text_.lines.at(std::size_t(record));
         count = std::min<int>(count, int(line.size()));
