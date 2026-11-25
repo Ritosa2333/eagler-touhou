@@ -696,6 +696,10 @@ export class EaglerRuntimeAdapter {
       maxPlayers: clampInt(n.playerCount, 1, 4, 2),
       iceServers: Array.isArray(n.iceServers) ? n.iceServers : [],
       preferTurn: n.preferTurn === true,
+      // 3BF：正式房间默认 arm 轻量回滚；关卡级全量重放保持 opt-in。
+      rollback: n.rollback !== false,
+      autoFullReplay: n.autoFullReplay === true,
+      ...(Number.isFinite(n.rollbackKeep) ? { rollbackKeep: n.rollbackKeep | 0 } : {}),
     };
   }
 
@@ -714,6 +718,15 @@ export class EaglerRuntimeAdapter {
   async startNetplayIfConfigured() {
     const np = this.netplay || {};
     if (this.multiStarted) return this._netplaySummary();
+    // 3BG 观战+联机同开：launcher 给纯观战端同时下发 netplayMode:'lan' 与
+    // netplaySpectator:true。观战端的状态由 SpectatorClient.pump() 按 relay 帧
+    // 确定性驱动，绝不能再建联机门面、调 BRO_net_start_match/sendReady 去重置
+    // 关卡与 RNG —— 那会直接把重演打乱。runtime_entry 的帧循环已用 !spectator
+    // 做门控，但本函数在那之前就跑，必须自己挡住。
+    if (np.spectator === true) {
+      this.netplayWiring = { attempted: true, ok: false, reason: 'spectator-client' };
+      return null;
+    }
     if (np.mode !== 'lan' || !np.url) {
       this.netplayWiring = { attempted: true, ok: false, reason: 'no-netplay' };
       return null;
@@ -901,6 +914,13 @@ export class EaglerRuntimeAdapter {
       predictionReserve: Number.isFinite(o.netplayPredictionReserve) ? o.netplayPredictionReserve : null,
       adonisMode: o.netplayAdonisMode === 1 ? 1 : 2,
       predictionLimit: Number.isFinite(o.netplayPredictionLimit) ? o.netplayPredictionLimit : null,
+      // 3BF：把回滚开关接进正式房间。此前门面从不 arm，预测纠错与 DIGEST 分叉
+      // 事件只入队不消费 —— 多人一旦出现预测推翻就永久分叉、无人修正。
+      // 轻量回滚默认开启（只回滚玩家/计分状态，边界见 PROBE_3K），可用
+      // netplayRollback:false 显式关掉；关卡级全量重放昂贵，仍为显式 opt-in。
+      rollback: o.netplayRollback !== false,
+      autoFullReplay: o.netplayAutoFullReplay === true,
+      rollbackKeep: Number.isFinite(o.netplayRollbackKeep) ? (o.netplayRollbackKeep | 0) : undefined,
     };
     // 阶段 3AZ：房间号/信令地址解析（netplay URL 形如 ws://host:port?room=xxx）。
     this.netplay.room = (typeof o.netplayRoom === 'string' && o.netplayRoom)

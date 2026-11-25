@@ -799,7 +799,9 @@ export class BROMultiplayer {
     if ((wallFrame | 0) - this._lastRollbackWall < this.rollbackMinGap) { requeue(); return null; }
 
     const replayFn = (rf) => {
-      for (let p = 0; p < 2; p++) {
+      // 3BF：回滚重放必须覆盖房间里所有席位。原写死 p<2 会在 3 人房漏掉 P2 的
+      // 真值输入 → 重放后摘要仍分叉（这是「回滚看着跑了但追不平」的隐形 bug）。
+      for (let p = 0; p < this.maxPlayers; p++) {
         const v = this.buffer.get(p, rf);
         if (v === null) continue;
         this.call('BRO_net_apply_keys_at', p, rf, v, false);
@@ -865,7 +867,8 @@ export class BROMultiplayer {
     if (bad.length === 0) return skip('no-unresolved-frame-in-window');
     if (wallFrame - this._lastAutoFullReplayWall < this._fullReplayMinGap) return skip('cooldown');
     // 输入窗口必须覆盖帧 1..replayTo；否则重放会漏帧，必然再分叉。
-    for (let p = 0; p < 2; p++) {
+    // 3BF：同样按 maxPlayers 检查全部席位（3 人房不能只看 P0/P1）。
+    for (let p = 0; p < this.maxPlayers; p++) {
       if (this.buffer.get(p, 1) === null || this.buffer.get(p, replayTo) === null) {
         return skip('input-window-incomplete');
       }
