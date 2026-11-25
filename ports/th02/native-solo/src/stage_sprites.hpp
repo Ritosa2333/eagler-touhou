@@ -6,6 +6,8 @@ namespace soew {
 // master.lib BFNT_ENTRY_PAT appends to super_patnum. Header START/END supply
 // count only, NOT global pattern IDs. Initial MIKO10+MIKO32 38+MIKO16 80=128.
 struct StageSprites {
+    static constexpr std::array<unsigned,5> item_patterns={68,69,70,71,87};
+    static constexpr unsigned option_base=72;
     struct Sprite {unsigned width=0,height=0;std::uint8_t transparent=0;std::vector<std::uint8_t> pixels;};
     std::array<std::optional<Sprite>,512> sprites;
     unsigned next=0;

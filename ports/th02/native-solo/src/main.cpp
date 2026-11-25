@@ -3383,20 +3383,27 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 for(unsigned i=0;i<scene.seat_count();++i){
                     const auto &l=scene.seat_life(i);const auto ink=soew::coop_art::seat_ink[i];
                     const int y=layout::first_player_y+int(i)*layout::player_pitch;
-                    const auto heading=L"P"+std::to_wstring(i+1)+L"  "+std::wstring(1,wchar_t(L'A'+scene.seat_motion(i).shot));
-                    display_text(app->composed,heading,layout::left,y,ink,lang);
-                    if(l.game_over)display_text(app->composed,L"GHOST",layout::bombs_x,y,ink,lang);
-                    const auto stock=[&](std::wstring_view label,unsigned value,int x){
-                        auto text=std::wstring(label)+std::to_wstring(value);
-                        display_text(app->composed,text,x,y+layout::row_height,0xffffff,lang);
-                        layout::draw_stock_limit(app->composed.pixels,x+display_text_width(text,lang),y+layout::row_height+5);
+                    auto &pixels=app->composed.pixels;
+                    const auto sprite=[&](unsigned pattern,int x,int top){
+                        scene.bank.put(pixels,scene.background.palette,pattern,soew::RenderPoint::pixels(x,top),
+                            soew::StageSprites::Paint::Artwork,1,false,{layout::left,layout::first_player_y,layout::right,layout::player_bottom});
                     };
-                    stock(L"L ",l.lives,layout::lives_x);
-                    stock(L"B ",l.bombs,layout::bombs_x);
-                    display_text(app->composed,L"P "+std::to_wstring(scene.seat_pickups(i).power)+L"/80",
-                        layout::left,y+2*layout::row_height,0xffffff,lang);
+                    display_text(app->composed,L"P"+std::to_wstring(i+1),layout::left,y,ink,lang);
+                    sprite(soew::StageSprites::option_base+unsigned(scene.seat_motion(i).shot),layout::option_x,y);
+                    if(l.game_over)display_text(app->composed,L"GHOST",layout::ghost_x,y,ink,lang);
                     if(const auto n=scene.coop->rescue[i].presses)
-                        display_text(app->composed,std::to_wstring(n)+L"/5",layout::bombs_x,y+2*layout::row_height,ink,lang);
+                        layout::draw_small_number(pixels,std::to_string(n)+"/5",layout::rescue_right,y+5,ink);
+                    const auto &item=soew::StageSprites::item_patterns;
+                    const int stock_y=y+layout::row_height,power_y=stock_y+layout::row_height;
+                    const auto stock=[&](unsigned pattern,unsigned value,int x){
+                        sprite(pattern,x,stock_y);
+                        draw_glyph(pixels,app->font,soew::original_hud::digit_zero+int(value),x+layout::stock_digit_dx,stock_y,0xffffffffu);
+                        layout::draw_small_number(pixels,"/5",x+layout::stock_limit_dx+11,stock_y+5,layout::detail_ink);
+                    };
+                    stock(item[soew::ItemCore::OneUp],l.lives,layout::lives_x);
+                    stock(item[soew::ItemCore::Bomb],l.bombs,layout::bombs_x);
+                    sprite(item[soew::ItemCore::BigPower],layout::left,power_y);
+                    layout::draw_power_gauge(pixels,scene.seat_pickups(i).power,power_y,ink);
                 }
                 if(const auto gauge=soew::coop_boss_gauge(scene);gauge.max_health){
                     const auto caption=L"ENEMY "+std::wstring(soew::encounter_info_text(gauge.label,lang));

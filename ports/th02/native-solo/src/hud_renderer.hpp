@@ -89,15 +89,37 @@ inline void draw_original_hud(std::vector<std::uint32_t> &pixels,const th03::ass
 namespace coop_hud {
 // DOS multiplayer TRAM layout: player rows 8..16, enemy rows 19..20.
 inline constexpr int left=448,right=624,first_player_y=128,player_pitch=48,row_height=16;
+inline constexpr int player_bottom=first_player_y+3*player_pitch,option_x=504,ghost_x=528,rescue_right=620;
 inline constexpr int boss_title_y=304,boss_gauge_y=320,boss_gauge_width=128;
-inline constexpr int lives_x=left,bombs_x=512;
-inline void draw_stock_limit(std::vector<std::uint32_t> &pixels,int x,int y){
-    // Small /5, centered on the numeral's baseline without filtering its pixels.
-    constexpr std::array<std::uint16_t,7> rows={
-        0b000101111,0b000101000,0b001001000,0b001001110,
-        0b010000001,0b010000001,0b100001110};
-    for(int dy=0;dy<7;++dy)for(int dx=0;dx<9;++dx)
-        if(rows[dy]&(0x100u>>dx))pixels[(y+dy)*640+x+dx]=0xffc0c0c0u;
+inline constexpr int lives_x=left,bombs_x=512,stock_digit_dx=18,stock_limit_dx=34;
+inline constexpr int power_x=468,power_width=80,power_value_right=584;
+inline constexpr std::uint32_t detail_ink=0xffc0c0c0u,power_edge=0xff505050u,power_empty=0xff202020u;
+inline void draw_small_number(std::vector<std::uint32_t> &pixels,std::string_view text,int right_x,int y,std::uint32_t ink){
+    // Integer-pixel 5x7 digits and slash for stock limits and exact Power.
+    constexpr std::array<std::array<unsigned,7>,11> glyphs={{
+        {14,17,17,17,17,17,14}, {4,12,4,4,4,4,14}, {14,17,1,2,4,8,31},
+        {30,1,1,14,1,1,30}, {2,6,10,18,31,2,2}, {31,16,16,30,1,1,30},
+        {14,16,16,30,17,17,14}, {31,1,2,4,8,8,8}, {14,17,17,14,17,17,14},
+        {14,17,17,15,1,1,14}, {1,1,2,4,8,16,16}
+    }};
+    int x=right_x-int(text.size())*6+1;
+    for(const auto ch:text){
+        const auto &glyph=glyphs[ch=='/'?10:ch-'0'];
+        for(int dy=0;dy<7;++dy)for(int dx=0;dx<5;++dx)
+            if(glyph[dy]&(16u>>dx))pixels[(y+dy)*640+x+dx]=ink;
+        x+=6;
+    }
+}
+inline void draw_power_gauge(std::vector<std::uint32_t> &pixels,unsigned power,int row_y,std::uint32_t ink){
+    for(int dy=4;dy<12;++dy){
+        auto row=pixels.begin()+(row_y+dy)*640+power_x;
+        std::fill_n(row-1,power_width+2,power_edge);
+        if(dy!=4&&dy!=11){
+            std::fill_n(row,power_width,power_empty);
+            std::fill_n(row,power,ink);
+        }
+    }
+    draw_small_number(pixels,std::to_string(power)+"/80",power_value_right,row_y+5,detail_ink);
 }
 inline void draw_boss_gauge(std::vector<std::uint32_t> &pixels,const th03::assets::BfntSheet &font,
     unsigned health,unsigned max_health,std::span<const unsigned> cuts){

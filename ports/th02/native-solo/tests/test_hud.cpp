@@ -102,6 +102,30 @@ void test_coop_gauge(){
     check(pixels[base+2*640+32]==0xff181818u&&pixels[base+2*640+96]==0xff505050u);
     check(pixels[(hud::boss_title_y+15)*640+hud::left]==black);
 }
+void test_coop_power(){
+    namespace hud=soew::coop_hud;
+    constexpr std::uint32_t black=0xff000000u,ink=0xff66bbffu;
+    constexpr int y=hud::first_player_y+2*hud::row_height;
+    for(const unsigned power:{0u,1u,37u,80u}){
+        std::vector<std::uint32_t> pixels(640*400,black);
+        hud::draw_power_gauge(pixels,power,y,ink);
+        const auto at=[&](int x,int dy){return pixels[(y+dy)*640+x];};
+        check(at(hud::power_x-1,5)==hud::power_edge&&at(hud::power_x+80,5)==hud::power_edge);
+        for(int dx=0;dx<80;++dx){
+            const int x=hud::power_x+dx;
+            check(at(x,4)==hud::power_edge&&at(x,11)==hud::power_edge);
+            check(at(x,5)==(unsigned(dx)<power?ink:hud::power_empty));
+        }
+        using namespace std::string_view_literals;
+        const auto value=power==0?"0/80"sv:power==1?"1/80"sv:power==37?"37/80"sv:"80/80"sv;
+        constexpr std::array<unsigned,10> digit_tops={14,4,14,30,2,31,14,31,14,14};
+        const int start=hud::power_value_right-int(value.size())*6+1;
+        for(int i=0;i<int(value.size());++i){
+            const auto top=value[i]=='/'?1:digit_tops[value[i]-'0'];
+            for(int dx=0;dx<5;++dx)check(at(start+6*i+dx,5)==(top&(16u>>dx)?hud::detail_ink:black));
+        }
+    }
+}
 void test_practice_keys(){
     namespace keys=soew::practice_keys;
     using namespace soew;
@@ -134,6 +158,6 @@ void test_practice_keys(){
 }
 }
 int main(){
-    try{test_layout();test_draw();test_gameplay_tram();test_coop_gauge();test_practice_keys();std::cout<<"hud_checks="<<checks<<" failures=0\n";return 0;}
+    try{test_layout();test_draw();test_gameplay_tram();test_coop_gauge();test_coop_power();test_practice_keys();std::cout<<"hud_checks="<<checks<<" failures=0\n";return 0;}
     catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}
 }

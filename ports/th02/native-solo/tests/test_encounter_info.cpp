@@ -334,9 +334,14 @@ void extra_stage(){
 void coop_gauges(){
     EncounterScene s;
     check(!coop_boss_gauge(s).max_health,"road has no boss meter");
-    s.midboss2_enabled=true;s.midboss2.active=true;s.midboss2.damage_taken=40;
+    s.midboss_enabled=true;s.midboss.trigger(116);s.midboss.damage_taken=71;
     auto gauge=coop_boss_gauge(s);
-    check(gauge.health==341&&gauge.max_health==381,"damageable midboss uses its real threshold");
+    check(gauge.health==230&&gauge.max_health==301,"stage 1 midboss uses its real threshold");
+    s.midboss.present=false;
+    check(!coop_boss_gauge(s).max_health,"stage 1 midboss gauge clears at departure");
+    s.stage=1;s.midboss2_enabled=true;s.midboss2.trigger(80);s.midboss2.damage_taken=40;
+    gauge=coop_boss_gauge(s);
+    check(gauge.health==341&&gauge.max_health==381,"stage 2 midboss uses its real threshold");
     s.midboss2.active=false;s.midboss3_enabled=true;s.midboss3.active=true;
     s.midboss3.actor[0].flag=Midboss3Core::Flag::Removed;s.midboss3.actor[1].damage=10;
     gauge=coop_boss_gauge(s);
@@ -349,7 +354,13 @@ void coop_gauges(){
     gauge=coop_boss_gauge(s);
     check(gauge.health==810&&gauge.phase_cuts[0]==930&&gauge.phase_cuts[1]==1170,"stones keep the original group boundaries");
 
-    s.stones_enabled=false;s.mima_enabled=true;
+    s.stones_enabled=false;s.stage=3;s.midboss4.active=true;s.midboss4.entries=1;s.midboss4.damage_taken=120;
+    gauge=coop_boss_gauge(s);
+    check(gauge.health==280&&gauge.max_health==400&&std::wstring_view(gauge.label)==L"MIDBOSS 4A","stage 4 first midboss appearance");
+    s.midboss4.entries=2;s.midboss4.damage_taken=0;
+    gauge=coop_boss_gauge(s);
+    check(gauge.health==400&&gauge.max_health==400&&std::wstring_view(gauge.label)==L"MIDBOSS 4B","stage 4 second appearance refills its HP");
+    s.midboss4.active=false;s.stage=4;s.mima_enabled=true;
     s.mima.phase=MimaCore::Phase::First;s.mima.damage_taken=600;
     gauge=coop_boss_gauge(s);
     check(gauge.health==4100&&gauge.max_health==4700&&gauge.phase_cut_count==4,"Mima shows all available phases");

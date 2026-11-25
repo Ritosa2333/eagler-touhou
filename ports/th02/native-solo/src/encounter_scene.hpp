@@ -1688,7 +1688,7 @@ private:
         if(survival_enabled){if(life.pattern)put(*life.pattern,focus?RenderPoint::pixels(focus->x,focus->y):motion.at(T::Player,0,life.draw.x,life.draw.y,life.total_misses));}
         else put(player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0,motion.at(T::Player,0,player.x,player.y,life.total_misses));
         if(options_visible()){
-            const unsigned pat=72+static_cast<unsigned>(player.shot);const auto p=motion.at(T::Option,0,shots.option_left,shots.option_top);
+            const unsigned pat=StageSprites::option_base+unsigned(player.shot);const auto p=motion.at(T::Option,0,shots.option_left,shots.option_top);
             put(pat,p);put(pat,p.offset(48,0));
         }
         if(coop)for(unsigned i=0;i<seat_count();++i){
@@ -1698,12 +1698,12 @@ private:
             if(l.pattern)coop_art::player(pixels,bank,sprite_palette,i,*l.pattern,RenderPoint::pixels(l.draw.x,l.draw.y));
             if(!l.hit&&!l.miss_active&&seat_pickups(i).power>=8){
                 const auto pos=RenderPoint::pixels(s.option_left,s.option_top);
-                put(72+unsigned(p.shot),pos);put(72+unsigned(p.shot),pos.offset(48,0));
+                const unsigned pat=StageSprites::option_base+unsigned(p.shot);
+                put(pat,pos);put(pat,pos.offset(48,0));
             }
         }
         if(effects_enabled){
-            constexpr std::array<unsigned,5> item_patterns={68,69,70,71,87};
-            for(unsigned i=0;i<items.slots.size();++i){const auto &s=items.slots[i];if(s.flag==1)put(item_patterns.at(s.type),motion.at(T::Item,i,item_motion(s),s.type,s.age));}
+            for(unsigned i=0;i<items.slots.size();++i){const auto &s=items.slots[i];if(s.flag==1)put(StageSprites::item_patterns.at(s.type),motion.at(T::Item,i,item_motion(s),s.type,s.age));}
         }
         if(effects_enabled){
             // Literal thirteen 8x8 cels from ReC98/th02/sprites/pointnum.bmp.

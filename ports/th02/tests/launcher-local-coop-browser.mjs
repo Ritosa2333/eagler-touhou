@@ -56,14 +56,22 @@ try {
     await frame.waitForFunction(()=>/一時停止|Esc: Pause/u.test(document.title));
     await frame.waitForFunction(count=>{
       const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
-      const hasLimit=(x,y)=>{
-        const scale=canvas.width/640,ys=canvas.height/400;
-        const pixels=ctx.getImageData(Math.floor(x*scale),Math.floor(y*ys),Math.ceil(9*scale),Math.ceil(7*ys)).data;
-        return pixels.some((r,i)=>i%4===0&&r===192&&pixels[i+1]===192&&pixels[i+2]===192);
+      const sx=canvas.width/640,sy=canvas.height/400;
+      const has=(x,y,w,h,match)=>{
+        const pixels=ctx.getImageData(Math.round(x*sx),Math.round(y*sy),Math.round(w*sx),Math.round(h*sy)).data;
+        return pixels.some((r,i)=>i%4===0&&match(r,pixels[i+1],pixels[i+2]));
       };
+      const grey=(r,g,b)=>r===192&&g===192&&b===192;
+      const seatColors=[0xff6969,0x66bbff,0x55dd99];
       for(let seat=0;seat<count;seat++){
-        const y=149+seat*48;
-        for(const x of [472,536])if(!hasLimit(x,y))return false;
+        const y=128+seat*48;
+        if(!has(504,y,16,16,(r,g,b)=>r||g||b))return false; // selected option
+        if(!has(448,y+16,16,16,(r,g,b)=>r>g&&b>g))return false; // 1UP
+        if(!has(512,y+16,16,16,(r,g,b)=>g>r&&g>b))return false; // Bomb
+        if(!has(448,y+32,16,16,(r,g,b)=>r>g&&r>b))return false; // big red P
+        for(const x of [482,546])if(!has(x,y+21,11,7,grey))return false;
+        if(!has(555,y+37,29,7,grey))return false; // X/80
+        if(!has(468,y+37,2,6,(r,g,b)=>r*65536+g*256+b===seatColors[seat]))return false;
       }
       return true;
     },{timeout:5000},count);
