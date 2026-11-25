@@ -1,6 +1,6 @@
 # BRO Runtime 产物落地说明（eagler fork `bro-integration`）
 
-> 更新：2026-11-25 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（3AY nearest-player + 3AZ 联机主循环/远端真身 + 3BA 双实例 e2e/卡外对象绑定 + 3BD 纯视觉GHOST分叉定性/3BE 3人房后 build_id `5df2b19a`；第七轮 3BF 正式房间默认 arm 轻量回滚+回滚支持 3 人 / 3BG 纯观战端跳过联机门面，仅 JS 改动，Lua 未变、build_id 沿用 `5df2b19a`）
+> 更新：2026-11-25 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（3AY nearest-player + 3AZ 联机主循环/远端真身 + 3BA 双实例 e2e/卡外对象绑定 + 3BD 纯视觉GHOST分叉定性/3BE 3人房后 build_id `5df2b19a`；第七轮 3BF 正式房间默认 arm 轻量回滚+回滚支持 3 人 / 3BG 纯观战端跳过联机门面，仅 JS 改动；第八轮 3BI 回滚单人 Unlock* 全解锁、岐道四季 card 177 补 pin_task，Lua 有改，build_id `715a2bbd`）
 > 本目录 `ports/bossrush/web/` 是 **BRO Web runtime 的实际构建产物**，由 BRO 侧 `web/build.sh` 产出后入库。
 
 ## 1. 产物清单（31 文件 / 28 MB）
@@ -13,7 +13,7 @@
 | `web/dist/*.json` | 272 KB | `package-manifest.json`（1004 文件/162.2 MiB 清单，SE 已恢复原生 PCM）/ `app-shell.json` / `runtime.json` |
 | `web/manifest.json` | 5 KB | BRO 产品契约（components / musicMounts / packageManifest） |
 
-来源与可复现性记在 `source-import.json`（31 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `5df2b19a`（BRO 3BD/3BE 提交，Lua 有改：multiplayer.lua digest 跳过 GHOST 组；3AB~3BB 的 nearest-player/自动生成/同帧诞生/本地槽修复均在；第七轮 3BF/3BG 仅 JS 改动——回滚接线/3 人修复 + 纯观战端门面守卫，Lua 未变故 build_id 沿用））。
+来源与可复现性记在 `source-import.json`（31 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `715a2bbd`（BRO 3BI 提交 9b6ad0a，Lua 有改：boot.lua/web_patches.lua 回滚单人解锁、spell_player_mp.lua 岐道四季 card 177 补 pin_task；3AB~3BB 的 nearest-player/自动生成/同帧诞生/本地槽修复、3BD digest 跳过 GHOST 组均在；第七轮 3BF/3BG 仅 JS 改动——回滚接线/3 人修复 + 纯观战端门面守卫）。
 重编：`cd <BRO repo> && bash web/build.sh`，产出后同步 `web/` 目录即可。
 
 ## 2. 游戏资源包（162.2 MiB 资源 / 约 170.7 MB ZIP）——不入库，importOnly

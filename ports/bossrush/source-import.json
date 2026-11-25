@@ -3,8 +3,8 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "master",
-  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；WASM build_id 4f12850d → 558441cb）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；3BA 双实例锁步 e2e + 卡外对象 frame 绑定（digest 顺序无关；WASM build_id 558441cb → 62f6bec6）。后续：阶段 3BB（远端真身同帧诞生 + 本地槽误绑修复；仅 Lua 改动 multiplayer.lua，WASM build_id 62f6bec6 → 36ae033c）。后续：阶段 3BC（门面层回环联机 e2e；仅 JS 改动 multiplayer.mjs 的 loadout systems 容错，WASM build_id 不变 = 36ae033c）。后续：阶段 3BD/3BE（TH06 混合角色开火分叁定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）。后续：阶段 3BD/3BE（TH06 混合角色开火分叉定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）；第七轮 3BF/3BG/3BH（正式房间默认 arm 轻量回滚 + 回滚重放支持 3 人；纯观战端跳过联机门面；Lua 未变，WASM build_id 沿用 5df2b19a）。",
-  "buildId": "5df2b19a",
+  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；WASM build_id 4f12850d → 558441cb）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；3BA 双实例锁步 e2e + 卡外对象 frame 绑定（digest 顺序无关；WASM build_id 558441cb → 62f6bec6）。后续：阶段 3BB（远端真身同帧诞生 + 本地槽误绑修复；仅 Lua 改动 multiplayer.lua，WASM build_id 62f6bec6 → 36ae033c）。后续：阶段 3BC（门面层回环联机 e2e；仅 JS 改动 multiplayer.mjs 的 loadout systems 容错，WASM build_id 不变 = 36ae033c）。后续：阶段 3BD/3BE（TH06 混合角色开火分叁定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）。后续：阶段 3BD/3BE（TH06 混合角色开火分叉定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）；第七轮 3BF/3BG/3BH（正式房间默认 arm 轻量回滚 + 回滚重放支持 3 人；纯观战端跳过联机门面；Lua 未变，WASM build_id 沿用 5df2b19a）。后续：阶段 3BD/3BE（TH06 混合角色开火分叉定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）；第七轮 3BF/3BG/3BH（正式房间默认 arm 轻量回滚 + 回滚重放支持 3 人；纯观战端跳过联机门面；Lua 未变，WASM build_id 沿用 5df2b19a）；第八轮 3BI（回滚单人 Unlock* 全解锁，保留多人豁免；岐道四季 card 177 补 pin_task 钉 P1；Lua 改动 boot.lua/spell_player_mp.lua/web_patches.lua，WASM build_id 5df2b19a → 715a2bbd）。",
+  "buildId": "715a2bbd",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
     "webMaintainer": "清酒 (Tidew)",
@@ -20,12 +20,12 @@
     {
       "path": "bro.mjs",
       "bytes": 117746,
-      "sha256": "a4fb754a609728e88aa9963ba0142a132fffceae7c9763fcd2fdc0929db0c938"
+      "sha256": "829a7752d7206c620c705a4ccdc4539e082f75647ddf9c751e524c0882d3dba1"
     },
     {
       "path": "bro.wasm",
-      "bytes": 26934155,
-      "sha256": "5df2b19a38b3816fcdd8d982a7df4b217f110b6d5d5f447d1fb4d1584a024f61"
+      "bytes": 26933147,
+      "sha256": "715a2bbdbe10354c1e1ffbbadc98c793d2f7bb955b268527a9c370c9b0d72b04"
     },
     {
       "path": "dist/app-shell.json",
@@ -40,7 +40,7 @@
     {
       "path": "dist/runtime.json",
       "bytes": 577,
-      "sha256": "b2796e0d776acafcab7127d6c6ca3409bed74de457cb2d45700e06e9c35a1646"
+      "sha256": "0e124e0b3d7fc09ba0fc9e8a86358868add8b199bfa2e8498dd38dfc58b75e75"
     },
     {
       "path": "managed-shell.mjs",

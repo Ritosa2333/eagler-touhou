@@ -12,7 +12,7 @@
 
 > 注：BRO 为第三方衍生作，以 `importOnly + testOnly + buildOptIn` 登记，未在 `runtime-builds.json` 中声明原生源码配方，故 `ports:check` 的源码/运行时契约门不适用；本表按适配清单如实记录实现与验证状态。
 >
-> **Runtime 产物已入库**：`ports/bossrush/web/`（31 文件 / 28 MB，`bro.wasm` 26.9 MB + glue + 清单，HTTP gzip 传输约 4.7 MB），当前 build_id `5df2b19a`（第七轮 3BF/3BG 仅 JS 改动，Lua 未变、build_id 沿用），详见 [RUNTIME_ARTIFACTS.md](RUNTIME_ARTIFACTS.md)。资源包（140.3 MB / 1004 文件）按 importOnly 由玩家导入，不入库。署名：游戏作者吃药图书（Cyoltose）、网页端维护清酒（Tidew）、eagler 开发者。原作者已出具网页版分发授权声明，见 [DISTRIBUTION-PERMISSION.md](DISTRIBUTION-PERMISSION.md)（源码非开放、需许可查看；ZUN/上海爱丽丝素材权利保留）。
+> **Runtime 产物已入库**：`ports/bossrush/web/`（31 文件 / 28 MB，`bro.wasm` 26.9 MB + glue + 清单，HTTP gzip 传输约 4.7 MB），当前 build_id `715a2bbd`（第八轮 3BI Lua 有改：回滚单人解锁 + 岐道四季 card 177 pin），详见 [RUNTIME_ARTIFACTS.md](RUNTIME_ARTIFACTS.md)。资源包（140.3 MB / 1004 文件）按 importOnly 由玩家导入，不入库。署名：游戏作者吃药图书（Cyoltose）、网页端维护清酒（Tidew）、eagler 开发者。原作者已出具网页版分发授权声明，见 [DISTRIBUTION-PERMISSION.md](DISTRIBUTION-PERMISSION.md)（源码非开放、需许可查看；ZUN/上海爱丽丝素材权利保留）。
 
 ## 源码与构建
 
