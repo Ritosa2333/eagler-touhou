@@ -684,8 +684,8 @@ void Enemy::update_distortion(float game_speed) {
         }
         angle_a = wrap_angle(angle_a + 0.09817477f);
         angle_b = wrap_angle(angle_b - 0.049087387f);
-        // 场地开区间截断（DAT_004d9d38 = 0 起 384 宽、DAT_004d9d54 起 448 高）
-        const float field_x = 0.0f;
+        // 0x41cfe7：节点处于渲染目标坐标，按 DAT_004d9d38 起的场地开区间截断。
+        const float field_x = geometry.field_offset_x - 192.0f;
         if (field_x < node->x) {
             if (field_x + 384.0f <= node->x) { vertex->x = field_x + 384.0f - 1.0f; node->x = field_x + 384.0f - 1.0f; }
         } else {

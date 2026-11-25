@@ -386,7 +386,7 @@ void LaserManager::draw_infinite(Laser& l, AnmRenderer& renderer) {
 void LaserManager::draw_curve(Laser& l, AnmRenderer& renderer) {
     const i32 n = l.curve.node_count;
     if (n <= 0 || i32(l.curve_nodes.size()) < n) return;
-    build_curve_strip(l, renderer.geometry().field_offset_x);
+    build_curve_strip(l, renderer.geometry().field_offset_x, renderer.geometry().field_offset_y);
     renderer.draw_host_strip(l.vm_beam, l.curve_strip.data(), u32(n) * 2);
     // 采样时刻已覆盖全部节点（frame_timer.current ≤ 节点数时尾节点仍在原点附近）→ 在末节点画根部光球
     if (l.frame_timer.current <= n) {
@@ -396,13 +396,12 @@ void LaserManager::draw_curve(Laser& l, AnmRenderer& renderer) {
 }
 
 // 0x438750 前半
-void LaserManager::build_curve_strip(Laser& l, float field_offset_x) const {
+void LaserManager::build_curve_strip(Laser& l, float field_offset_x, float field_offset_y) const {
     const i32 n = l.curve.node_count;
     const float half_width = l.curve.width * 0.5f;
-    // 场地 → 屏幕：x 加 DAT_004d9d50（场地中线，整数值）、y 加 DAT_004d9d3c（场地矩形原点，恒 0——原版此处
-    // 并未加场地上沿 DAT_004d9d54），z 清零
+    // 0x438750：x 加 DAT_004d9d50（场地中线），y 加 DAT_004d9d3c（实际场地上沿），z 清零。
     const float screen_x = field_offset_x;
-    const float screen_y = 0.0f;
+    const float screen_y = field_offset_y;
     const float v_top = l.vm_beam.uv[0].y;      // +0x3ac
     const float v_bottom = l.vm_beam.uv[2].y;   // +0x3bc
     // 0x405390 形：prev − cur 跨 ±π 时取另一侧

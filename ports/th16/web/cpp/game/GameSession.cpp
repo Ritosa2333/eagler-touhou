@@ -1486,8 +1486,10 @@ void GameSession::create_screen_fade(i32 kind, i32 duration, u32 color) {
         }
         const u32 packed = (u32(fade->alpha) << 24) | ((kind == 4 ? fade->color_aux : fade->color) & 0xffffffu);
         if (kind == 4) {
-            // 0x45ccc0：DAT_004d9d38/3c 起 DAT_004d9d44×DAT_004d9d40（场地 0,0 起 384×448）
-            renderer.draw_screen_fill(0.0f, 0.0f, 384.0f, 448.0f, packed);
+            // 0x45ccc0：DAT_004d9d38/3c 起 DAT_004d9d44×DAT_004d9d40。
+            const float left = geometry.field_offset_x - 192.0f;
+            const float top = geometry.field_offset_y;
+            renderer.draw_screen_fill(left, top, left + 384.0f, top + 448.0f, packed);
         } else if (kind == 7) {
             // 0x45cba0：固定矩形 (128,16)-(512,464)
             renderer.draw_screen_fill(128.0f, 16.0f, 512.0f, 464.0f, packed);

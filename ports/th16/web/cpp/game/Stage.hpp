@@ -127,7 +127,8 @@ private:
     void draw_layer(int layer, AnmManager& manager, AnmRenderer& renderer, Camera& global_camera, const ScreenShakeOffset& shake);
     void draw_layer_sprites(int layer, AnmManager& manager, AnmRenderer& renderer, Camera& global_camera, const ScreenShakeOffset& shake);
     // 0x40a7d0：实例中心超过绘制距离，或包围盒 16 个采样点投影后与场地矩形 [0,384]×[0,448] 不相交 → 剔除
-    bool instance_visible(const StdObject& object, const Vec3& instance_pos, const Camera& camera) const;
+    bool instance_visible(const StdObject& object, const Vec3& instance_pos, const Camera& camera,
+                          const AnmGeometry& geometry) const;
     // 0x409f90 / 0x40a410 开头共用：抖动偏移写进相机、整体抄到全局、0x43c940 建矩阵并切换
     void look_through_stage_camera(AnmRenderer& renderer, Camera& global_camera, const ScreenShakeOffset& shake);
     // 0x409f90 中段：bit2（新关淡入）下的启用位与白闪

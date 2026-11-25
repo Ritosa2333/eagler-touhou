@@ -564,7 +564,7 @@ namespace {
 
 using touhou::graphics::Compare;
 
-constexpr int kFieldWidth = 384;    // 0x40a7d0：场地矩形 DAT_004d9d38/3c（恒 0）起 384×448
+constexpr int kFieldWidth = 384;    // 0x40a7d0：场地矩形 DAT_004d9d38/3c 起 384×448
 constexpr int kFieldHeight = 448;
 
 bool draw_enabled_this_frame(u32 flags, i32 end_timer) {
@@ -709,7 +709,8 @@ void StageManager::draw_layer_sprites(int layer, AnmManager& manager, AnmRendere
     }
 }
 
-bool StageManager::instance_visible(const StdObject& object, const Vec3& instance_pos, const Camera& cam) const {
+bool StageManager::instance_visible(const StdObject& object, const Vec3& instance_pos, const Camera& cam,
+                                    const AnmGeometry& geometry) const {
     const Vec3 eye = cam.eye();
     const float dx = (object.pos.x + instance_pos.x) - eye.x;
     const float dy = (object.pos.y + instance_pos.y) - eye.y;
@@ -730,7 +731,9 @@ bool StageManager::instance_visible(const StdObject& object, const Vec3& instanc
     matrix::translation(world, instance_pos.x, instance_pos.y, instance_pos.z);
     matrix::multiply(world_view, world, cam.view);
     matrix::multiply(full, world_view, cam.projection);
-    const float field_x = 0.0f, field_y = 0.0f;
+    // 0x40ab1c / 0x40abcc：投影坐标与实际场地左上角比较，不能把场地当成从 (0,0) 开始。
+    const float field_x = geometry.field_offset_x - float(kFieldWidth) * 0.5f;
+    const float field_y = geometry.field_offset_y;
     float max_x = field_x - 8.0f, min_x = field_x + float(kFieldWidth) + 8.0f;
     float max_y = field_y - 8.0f, min_y = field_y + float(kFieldHeight) + 8.0f;
     for (const float* p : points) {
@@ -759,7 +762,7 @@ void StageManager::draw_layer(int layer, AnmManager& manager, AnmRenderer& rende
     for (StdInstance& inst : std.instances) {
         StdObject& obj = std.objects[inst.object];
         if (i32(obj.layer) != layer) continue;
-        if (!instance_visible(obj, inst.pos, global_camera)) {
+        if (!instance_visible(obj, inst.pos, global_camera, renderer.geometry())) {
             ++culled_instances;
             inst.flags &= ~1u;
             continue;
