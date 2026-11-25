@@ -3,7 +3,7 @@
 // 本测试只跑移植侧 harness game-draw（digest: 输出，harness 内直接折摘要），逐段核对：结构、顶点（1e-4 相对格）与
 // 绘制次序在整段的每一帧都与原版一致。窗口级的精确定位仍由 draw.test.mjs 负责。
 // 生成段表：tools/oracle/draw-compare.py <oracle.digest.jsonl> <port.digest.jsonl> --compare-digests --golden-segments
-import {test} from 'node:test';
+import {test, describe} from 'node:test';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {existsSync, readFileSync} from 'node:fs';
@@ -21,7 +21,8 @@ const golden = JSON.parse(readFileSync(resolve(here, 'golden/draw-long.json'), '
 // 跑移植侧整段；绘制流写进继承来的描述符 3：outSpec 为 "digest:fd:3"（每帧一行摘要）或 "fd:3"（每帧一行原始操作 JSON）。
 // from：只输出该帧起的绘制流（默认 1）。退出监听在启动时就挂上：回放很快，等读完管道再挂会错过 close 事件
 function runPort(c, outSpec) {
-  const child = spawn(harness, ['game-draw', dat, String(c.stage), String(c.shot), String(c.season), String(c.frames), c.input, '', '',
+  const input = c.input.startsWith('@') ? '@' + resolve(monorepo, c.input.slice(1)) : c.input;
+  const child = spawn(harness, ['game-draw', dat, String(c.stage), String(c.shot), String(c.season), String(c.frames), input, '', '',
     String(c.difficulty), String(c.replay_slot ?? -1), String(c.lives ?? 8), String(c.refill ?? 1), String(c.mode ?? 0), outSpec, String(c.from ?? 1)],
     {stdio: ['ignore', 'ignore', 'inherit', 'pipe']});
   return {stream: child.stdio[3], exited: new Promise(done => child.on('close', done))};
@@ -44,9 +45,6 @@ async function digests(c) {
   return rows;
 }
 
-// 各用例的移植侧整段回放一开始就全部并发启动，测试只负责等待并核对
-const runs = new Map(golden.cases.map(c => [c.name, digests(c).catch(error => error)]));
-
 // 三处实现（harness 内 C++、tools/draw-structure.mjs、tools/oracle/draw-compare.py）的口径互校：
 // 同一段跑，harness 直接折出的摘要必须与"原始 JSON → draw-structure.mjs"逐帧相同。
 // 第二段取第 1 面过关进第 2 面后的 80 帧：这里有 alphaArg2 ≠ textureTransform 的屏幕条带，结构行跳过 textureTransform 时
@@ -67,20 +65,25 @@ for (const c of selfCheckScenarios) {
   });
 }
 
-for (const c of golden.cases) {
-  test(`long draw stream matches original: ${c.name}`, needDat, async () => {
-    const rows = await runs.get(c.name);
-    const bad = [];
-    for (const [from, to, grid, want] of c.segments) {
-      const frames = [];
-      for (let frame = from; frame <= to; ++frame) frames.push(frame);
-      if (frames.some(frame => !rows.has(frame))) {
-        bad.push(`frames ${from}-${to}: port stopped before the segment ends (last frame ${Math.max(...rows.keys())})`);
-        continue;
+const drawJobs = Number(process.env.TH16_DRAW_JOBS ?? 2);
+assert.ok(Number.isSafeInteger(drawJobs) && drawJobs > 0, 'TH16_DRAW_JOBS must be a positive integer');
+describe('long draw regressions', {concurrency: drawJobs}, () => {
+  for (const c of golden.cases) {
+    test(`long draw stream matches original: ${c.name}`, needDat, async () => {
+      // 随测试启动子进程，避免模块装载时同时运行全部长程回放；skip / 名称筛选也生效。
+      const rows = await digests(c);
+      const bad = [];
+      for (const [from, to, grid, want] of c.segments) {
+        const frames = [];
+        for (let frame = from; frame <= to; ++frame) frames.push(frame);
+        if (frames.some(frame => !rows.has(frame))) {
+          bad.push(`frames ${from}-${to}: port stopped before the segment ends (last frame ${Math.max(...rows.keys())})`);
+          continue;
+        }
+        if (segmentDigest(rows, frames, grid) !== want) bad.push(`frames ${from}-${to} (grid ${grid})`);
       }
-      if (segmentDigest(rows, frames, grid) !== want) bad.push(`frames ${from}-${to} (grid ${grid})`);
-    }
-    assert.deepEqual(bad.slice(0, 8), [],
-      `${c.name}: ${bad.length} of ${c.segments.length} segments differ from the original: ${bad.slice(0, 8).join('; ')}`);
-  });
-}
+      assert.deepEqual(bad.slice(0, 8), [],
+        `${c.name}: ${bad.length} of ${c.segments.length} segments differ from the original: ${bad.slice(0, 8).join('; ')}`);
+    });
+  }
+});
