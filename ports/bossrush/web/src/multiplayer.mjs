@@ -1295,8 +1295,9 @@ export class BROMultiplayer {
       let obj;
       try { obj = JSON.parse(text); } catch { this.emit('error', 'bad loadout json'); return; }
       if (obj && obj.character) {
-        this.call('BRO_net_set_loadout', who, obj.character,
-          (obj.systems || []).map(Number), obj.index || 1);
+        // 3BC：Lua 侧空表经 Serialize 变成 {} —— 不能直接 .map，非数组按空处理。
+        const systems = Array.isArray(obj.systems) ? obj.systems.map(Number) : [];
+        this.call('BRO_net_set_loadout', who, obj.character, systems, obj.index || 1);
       }
       this.roster[who] = obj;
       if (obj && obj.seed !== undefined) this.call('BRO_net_set_seed', Number(obj.seed) | 0);
