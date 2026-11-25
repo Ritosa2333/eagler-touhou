@@ -1,7 +1,6 @@
 #include "windows.h"
 #include "bcrypt.h"
 #include "mmsystem.h"
-#include "japanese.hpp"
 #include <emscripten.h>
 #include <algorithm>
 #include <array>
@@ -22,7 +21,10 @@ EM_JS(void, host_replay,(),{Module.host.openReplay();});
 EM_JS(void, host_exit,(),{Module.host.exit();});
 EM_JS(int, host_decode,(const char *s,int n,wchar_t *out,int count),{return Module.host.decode(s,n,out,count);});
 EM_JS(int, host_digest,(const void *p,unsigned n,void *out),{return Module.host.digest(p,n,out);});
-EM_JS(int, host_glyph,(const wchar_t *s,unsigned n),{return Module.host.glyph(s,n);});
+EM_JS(int, host_has_cell,(wchar_t cp,int face),{return Module.host.hasCell(cp,face);});
+EM_JS(void, host_paint_cells,(std::uint32_t *p,int w,int h,const wchar_t *s,unsigned n,int x,int y,unsigned color,int face),{
+    Module.host.paintCells(p,w,h,s,n,x,y,color,face);
+});
 EM_JS(void, host_audio_write,(const WAVEHDR *h,const void *data,unsigned n),{Module.host.audioWrite(h,data,n);});
 EM_JS(void, host_audio_pause,(int paused),{Module.host.audioPause(paused);});
 EM_JS(void, host_audio_reset,(),{Module.host.audioReset();});
@@ -75,16 +77,9 @@ HWND browser_window(WindowProc proc,void *data){
 void browser_frame_callback(double (*callback)(HWND,void*),HWND,void *state){frame_callback=callback;frame_state=state;}
 void browser_fullscreen(bool yes){host_fullscreen(yes);}
 void browser_pick_replay(){host_replay();}
-bool browser_glyph_available(std::wstring_view text){return host_glyph(text.data(),text.size());}
-void browser_paint_cells(std::uint32_t *pixels,int w,int h,std::wstring_view text,int x,int y,unsigned color){
-    for(std::size_t i=0;i<text.size()&&x<w;){
-        const auto begin=i++;
-        if(text[begin]>=0xd800&&text[begin]<=0xdbff&&i<text.size()&&text[i]>=0xdc00&&text[i]<=0xdfff)++i;
-        const int width=jp::cell_width(text.substr(begin,1));
-        if(x+width>0)host_text(pixels,w,h,x,y,x,y,x+width,y+16,text.data()+begin,i-begin,
-                              L"MS Gothic",16,true,color,0,false,0);
-        x+=width;
-    }
+bool browser_glyph_available(std::wstring_view text,int face){return host_has_cell(text.front(),face);}
+void browser_paint_cells(std::uint32_t *pixels,int w,int h,std::wstring_view text,int x,int y,unsigned color,int face){
+    host_paint_cells(pixels,w,h,text.data(),text.size(),x,y,color,face);
 }
 BOOL InvalidateRect(HWND hwnd,const RECT*,BOOL){hwnd->dirty=true;return TRUE;}
 BOOL UpdateWindow(HWND hwnd){

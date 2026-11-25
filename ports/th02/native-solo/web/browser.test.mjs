@@ -11,6 +11,45 @@ import { Keyboard } from './input.mjs';
 import { RetraceClock } from './clock.mjs';
 import { previewServer } from './serve.mjs';
 
+async function compareToolGlyphs(page, native, out) {
+    const dir = await mkdtemp(resolve(tmpdir(),'soew-panel-'));
+    try {
+        for (const [lang,click,title] of [
+            ['ja',[365,137],'東方封魔録'],
+            ['en',[500,137],'Story of Eastern Wonderland'],
+            ['zh-Hans',[365,154],'东方封魔录'],
+            ['zh-Hant',[500,154],'東方封魔錄'],
+        ]) for (const {key,args,x,y,width} of [
+            {key:'F12',args:['--practice-menu','tools'],x:29,y:67,width:280},
+            {key:'Backspace',args:['--stage-dump','0','--practice-assist-dump'],x:45,y:43,width:196},
+        ]) {
+            const bmp = resolve(dir,lang+'-'+key+'.bmp');
+            execFileSync(resolve(native),['--assets',resolve(out,'content'),'--practice-language',lang,
+                ...args,'--dump',bmp],{stdio:'pipe'});
+            const bytes = readFileSync(bmp), start = bytes.readUInt32LE(10);
+            const expected = [];
+            for (let row = y; row < y+16; row++) for (let col = x; col < x+width; col++)
+                expected.push(Number((bytes.readUInt32LE(start+4*(row*640+col)) & 0xffffff) === 0xffffff));
+            assert(expected.some(Boolean), key+' native font was not drawn');
+            await page.keyboard.press(key);
+            if (key === 'F12') {
+                await page.mouse.click(...click);
+                await page.waitForFunction(title => document.title.startsWith(title),{timeout:5000},title);
+            }
+            await page.waitForFunction(({x,y,width,expected}) => {
+                const pixels = document.querySelector('canvas').getContext('2d').getImageData(x,y,width,16).data;
+                return expected.every((bit,i) =>
+                    bit === Number(pixels[i*4]===255 && pixels[i*4+1]===255 && pixels[i*4+2]===255));
+            },{timeout:5000},{x,y,width,expected}).catch(cause => {
+                throw Error(lang+' '+key+' glyphs must match Windows pixel-for-pixel',{cause});
+            });
+            await page.keyboard.press(key);
+        }
+    } finally {
+        await rm(dir,{recursive:true,force:true});
+    }
+}
+
 test('keyboard samples quick Z edges and retains the other Shift key', () => {
     const input = new Keyboard();
     input.event('KeyZ', true);
@@ -36,8 +75,8 @@ test('clock follows PC-98 retraces on 60 Hz and does not replay time spent suspe
     assert.equal(ticks, 566);
 });
 
-test('Full SoEW starts through the native title and draws the playfield with the FPS label', { timeout: 30_000 }, async () => {
-    const [out] = process.argv.slice(2);
+test('Full SoEW draws the playfield and preserves the Win32 practice glyphs', { timeout: 30_000 }, async () => {
+    const [out,,native] = process.argv.slice(2);
     assert(out, 'Usage: node web/browser.test.mjs <web build> <native replay probe>');
     const require = createRequire(process.env.SOEW_BROWSER_DEPS ||
         new URL('../../../../launcher/package.json', import.meta.url));
@@ -48,6 +87,7 @@ test('Full SoEW starts through the native title and draws the playfield with the
         await new Promise(done => server.listen(0,'127.0.0.1',done));
         browser = await launch({executablePath: await findChromiumExecutable(), headless: true});
         const page = await browser.newPage();
+        await page.setViewport({width:640,height:400});
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
         page.on('console', msg => {
@@ -69,6 +109,15 @@ test('Full SoEW starts through the native title and draws the playfield with the
                 i%4===0 && (red!==rgba[i+1] || red!==rgba[i+2]));
             const fps = ctx.getImageData(550,375,82,17).data.some((v,i) => i%4!==3&&v>240);
             return fps && hasColor(32,32,380,200) && hasColor(432,32,144,200);
+        });
+        if (native) await compareToolGlyphs(page,native,out);
+        await page.setViewport({width:1001,height:650,deviceScaleFactor:1.25});
+        await page.waitForFunction(() => {
+            const canvas = document.querySelector('canvas');
+            const rect = canvas.getBoundingClientRect();
+            return canvas.width === Math.round(rect.width*devicePixelRatio) &&
+                canvas.height === Math.round(rect.height*devicePixelRatio) &&
+                !canvas.getContext('2d').imageSmoothingEnabled;
         });
         assert.deepEqual(errors,[]);
     } finally {

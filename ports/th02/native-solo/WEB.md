@@ -10,12 +10,13 @@
 emcmake cmake -S . -B build-web -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build-web --target soew-full soew-web
 node web/stage-content.mjs <解包资源目录> build-web
+node web/stage-glyphs.mjs <此分支编译的 Windows SoEW.exe> build-web
 node web/serve.mjs build-web 18323
 ```
 
 打开 [本地游戏](http://127.0.0.1:18323/)，按 Z 或 Enter 操作原生菜单；首次按键或点击启用音频。标题界面的 F8 打开本机 `.rep` 文件。
 
-资源目录可用 `python tools/prepare_content.py <自己的日文 TH02 HDI> <新的资源目录>` 生成，也可以直接使用已有 Win32 版的 `content`。浏览器沿用原生版对 `locale/`、`zunsoft/` 和 MIDI SoundFont 的资源约定。当前入口独立于大厅和 DOSBox-X 版。对外分发前按 [上游构建说明](README.md#build-and-test-notes) 核对游戏素材和 th98port 的授权。
+资源目录可用 `python tools/prepare_content.py <自己的日文 TH02 HDI> <新的资源目录>` 生成，也可以直接使用已有 Win32 版的 `content`。浏览器沿用原生版对 `locale/`、`zunsoft/` 和 MIDI SoundFont 的资源约定。固定字格（包括 F12 练习工具和退格辅助面板）使用 Win32 版从本机 GDI 导出的字形位图。当前入口独立于大厅和 DOSBox-X 版。对外分发前核对字形位图、游戏素材与 [th98port](README.md#build-and-test-notes) 的授权。
 
 ## 跨平台录像校验
 
@@ -23,6 +24,6 @@ node web/serve.mjs build-web 18323
 
 ```sh
 cmake -S . -B build-probe -G Ninja -DCMAKE_BUILD_TYPE=Release -DSOEW_BUILD_DEV_TOOLS=ON
-cmake --build build-probe --target soew-replay-probe
-node web/browser.test.mjs build-web build-probe/soew-replay-probe.exe
+cmake --build build-probe --target soew-replay-probe SoEW-Native-Prototype
+node web/browser.test.mjs build-web build-probe/soew-replay-probe.exe build-probe/SoEW.exe
 ```

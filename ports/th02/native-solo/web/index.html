@@ -6,7 +6,7 @@
 <style>
   html, body { margin: 0; background: #000; }
   body { min-height: 100dvh; display: grid; place-items: center; }
-  canvas { display: block; width: min(100vw, 100dvh * var(--aspect, 1.6)); height: auto; image-rendering: pixelated; }
+  canvas { display: block; width: min(100vw, 100dvh * var(--aspect, 1.6)); height: auto; aspect-ratio: var(--aspect, 1.6); image-rendering: pixelated; }
 </style>
 <canvas width="640" height="400" tabindex="0" aria-label="東方封魔録"></canvas>
 <script type="module">

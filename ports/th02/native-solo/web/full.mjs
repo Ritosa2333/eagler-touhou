@@ -1,5 +1,6 @@
 import createModule from './soew-full.mjs';
 import {sha256HexSync} from './package-integrity.mjs';
+import {glyphCells} from './glyph-cells.mjs';
 
 const shiftJis = new TextDecoder('shift_jis', {fatal: true});
 const numericKeys = new Map([
@@ -25,12 +26,14 @@ const joined = (root, name) => new URL(name.split('/').map(encodeURIComponent).j
 
 export async function playFull(canvas, content = new URL('./content/', import.meta.url)) {
     const screen = canvas.getContext('2d', {alpha: false});
+    const framebuffer = new OffscreenCanvas(640,400);
+    const framePixels = framebuffer.getContext('2d',{alpha:false});
     const textSurface = document.createElement('canvas');
     const textContext = textSurface.getContext('2d', {willReadFrequently: true});
     const picker = document.createElement('input');
     picker.type = 'file';
     picker.accept = '.rep';
-    let wasm, lastError, image, stopped = false, timer;
+    let wasm, cells, lastError, image, stopped = false, timer;
     let audio, audioPaused = false, audioEnd = 0;
     const waiting = new Map(), scheduled = new Set();
     const masks = new Map();
@@ -45,6 +48,16 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     function sync(populate) {
         return new Promise((done, fail) => wasm.FS.syncfs(populate, err => err ? fail(err) : done()));
     }
+    function drawScreen() {
+        const scale = window.devicePixelRatio;
+        const rect = canvas.getBoundingClientRect();
+        const w = Math.round(rect.width*scale), h = Math.round(rect.height*scale);
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+        screen.imageSmoothingEnabled = false;
+        screen.drawImage(framebuffer,0,0,w,h);
+    }
+    new ResizeObserver(drawScreen).observe(canvas);
     function fontStyle(face,size,bold) {
         const family = face ? `"${face}", "Yu Gothic", "Microsoft YaHei", monospace` : 'sans-serif';
         return `${bold ? 'bold ' : ''}${size}px ${family}`;
@@ -102,10 +115,10 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     }
     const host = {
         present(pointer,w,h) {
-            if (canvas.width !== w) canvas.width = w;
-            if (canvas.height !== h) canvas.height = h;
             if (!image || image.width !== w || image.height !== h) {
-                image = screen.createImageData(w,h);
+                framebuffer.width = w;
+                framebuffer.height = h;
+                image = framePixels.createImageData(w,h);
                 canvas.style.setProperty('--aspect',w/h);
             }
             const rgba = new Uint32Array(image.data.buffer);
@@ -114,7 +127,8 @@ export async function playFull(canvas, content = new URL('./content/', import.me
                 const p = pixels[i];
                 rgba[i] = 0xff000000 | ((p & 255) << 16) | (p & 0xff00) | ((p >>> 16) & 255);
             }
-            screen.putImageData(image,0,0);
+            framePixels.putImageData(image,0,0);
+            drawScreen();
         },
         text(pointer,w,h,x,y,left,top,right,bottom,s,n,face,size,bold,color,flags,opaque,background) {
             if (n === 0) return;
@@ -139,9 +153,10 @@ export async function playFull(canvas, content = new URL('./content/', import.me
                 if (row >= 0 && row < h && col >= 0 && col < w) pixels[start+row*w+col] = color;
             }
         },
-        glyph(pointer,n) {
-            const value = wide(pointer,n);
-            return /^\s$/u.test(value) || raster(value,'MS Gothic',16,true,16,16,0,0,0).length > 0;
+        hasCell(cp,face) { return cells.has(cp,face); },
+        paintCells(pointer,w,h,text,n,x,y,color,face) {
+            cells.paint(wasm.HEAPU32.subarray(pointer>>>2),wasm.HEAPU32.subarray(text>>>2,(text>>>2)+n),
+                w,h,x,y,color,face);
         },
         title(pointer) { document.title = wide(pointer); },
         fullscreen(yes) {
@@ -181,11 +196,13 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             audioEnd = 0;
         },
     };
-    const [module, names] = await Promise.all([
+    const [module, names, atlas] = await Promise.all([
         createModule({host,printErr: message => {lastError = message; console.error(message);}}),
         fetchFile(new URL('full-files.json', content)).then(res => res.json()),
+        fetchFile(new URL('soew-glyphs.bin', import.meta.url)).then(res => res.arrayBuffer()),
     ]);
     wasm = module;
+    cells = glyphCells(atlas);
     wasm.FS.mkdirTree('/soew/content');
     for (const dir of ['save','rep']) {
         const path = '/soew/' + dir;
@@ -236,8 +253,8 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     });
     function pointer(event,message,wparam=0) {
         const rect = canvas.getBoundingClientRect();
-        const x = Math.floor((event.clientX-rect.left)*canvas.width/rect.width);
-        const y = Math.floor((event.clientY-rect.top)*canvas.height/rect.height);
+        const x = Math.floor((event.clientX-rect.left)*framebuffer.width/rect.width);
+        const y = Math.floor((event.clientY-rect.top)*framebuffer.height/rect.height);
         wasm._soew_host_pointer(message,x,y,wparam);
     }
     canvas.addEventListener('contextmenu',event => event.preventDefault());

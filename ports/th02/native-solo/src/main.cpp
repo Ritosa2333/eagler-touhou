@@ -14,6 +14,7 @@
 #include <array>
 #include <bitset>
 #include <chrono>
+#include <cstring>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -223,11 +224,12 @@ int display_text_width(std::wstring_view text,soew::Language lang){
 }
 #ifdef __EMSCRIPTEN__
 class ChineseFont {
+    bool traditional_;
 public:
-    explicit ChineseFont(bool){}
-    bool supports(std::wstring_view scalar){return browser_glyph_available(scalar);}
+    explicit ChineseFont(bool traditional):traditional_(traditional){}
+    bool supports(std::wstring_view scalar){return browser_glyph_available(scalar,traditional_?2:1);}
     void paint(Frame &f,std::wstring_view text,int x,int y,std::uint32_t color){
-        browser_paint_cells(f.pixels.data(),f.w,f.h,text,x,y,color);
+        browser_paint_cells(f.pixels.data(),f.w,f.h,text,x,y,color,traditional_?2:1);
     }
 };
 #else
@@ -367,6 +369,38 @@ ChineseFont& chinese_font(soew::Language lang){
     if(lang==soew::Language::ChineseTraditional){static ChineseFont hant(true);return hant;}
     static ChineseFont hans(false);return hans;
 }
+#ifndef __EMSCRIPTEN__
+void export_web_glyphs(const fs::path &repertoire,const fs::path &output){
+    auto bytes=read(repertoire);
+    if(bytes.size()%sizeof(std::uint32_t))throw std::runtime_error("Invalid web glyph repertoire");
+    std::ofstream atlas(output,std::ios::binary);
+    atlas.write("SOEWGDF1",8);
+    Frame cell{16,16,std::vector<std::uint32_t>(256)};
+    for(std::size_t i=0;i<bytes.size();i+=sizeof(std::uint32_t)){
+        std::uint32_t cp;
+        std::memcpy(&cp,bytes.data()+i,sizeof(cp));
+        const auto scalar=cp<0x10000?std::wstring(1,wchar_t(cp)):
+            std::wstring{wchar_t(0xd800+((cp-0x10000)>>10)),wchar_t(0xdc00+((cp-0x10000)&1023))};
+        atlas.write(reinterpret_cast<const char *>(&cp),sizeof(cp));
+        for(const auto lang:{soew::Language::Japanese,soew::Language::ChineseSimplified,soew::Language::ChineseTraditional}){
+            std::fill(cell.pixels.begin(),cell.pixels.end(),0u);
+            bool present=true;
+            if(chinese_display(lang)){
+                auto &font=chinese_font(lang);
+                present=font.supports(scalar);
+                font.paint(cell,scalar,0,0,0xffffff);
+            }else jp_text(cell,scalar,0,0,0xffffff);
+            atlas.put(char(present));
+            for(int row=0;row<16;++row){
+                std::uint16_t mask=0;
+                for(int col=0;col<16;++col)if(cell.pixels[row*16+col])mask|=1u<<col;
+                atlas.write(reinterpret_cast<const char *>(&mask),sizeof(mask));
+            }
+        }
+    }
+    if(!atlas)throw std::runtime_error("Cannot write web glyph atlas");
+}
+#endif
 void display_text(Frame &frame,std::wstring_view text,int x,int y,std::uint32_t color,soew::Language lang,int max_width=640){
     if(!chinese_display(lang)){jp_text(frame,text,x,y,color);return;}
     auto &font=chinese_font(lang);
@@ -4218,6 +4252,12 @@ int soew_full_start(){
 int wmain(int argc, wchar_t **argv) {
 #endif
     try {
+#ifndef __EMSCRIPTEN__
+        if(argc==4&&std::wstring_view(argv[1])==L"--export-web-glyphs"){
+            export_web_glyphs(argv[2],argv[3]);
+            return 0;
+        }
+#endif
 #ifdef __EMSCRIPTEN__
         const fs::path install_dir="/soew";
         fs::path assets=install_dir/"content";
