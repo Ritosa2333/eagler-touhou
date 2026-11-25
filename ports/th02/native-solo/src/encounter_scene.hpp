@@ -1618,6 +1618,10 @@ private:
         if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=terrain_bottom||top+16<=terrain_top)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<terrain_top||py>=terrain_bottom)continue;const auto c=terrain_palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
         if(filter_terrain)filter_stage_background(pixels,lag,terrain_bottom);
         if(scroll_terrain)ambient_.render(pixels,terrain_palette,anim_phase,reduced_effects);
+        if(coop)for(unsigned i=0;i<seat_count();++i)if(seat_life(i).game_over){
+            const auto pos=coop->spawn(i);
+            coop_art::ghost(pixels,i,RenderPoint::pixels(pos.x,pos.y));
+        }
         if(const auto *art=current_bomb_art();bomb_enabled&&art)art->render(pixels,sprite_palette,bomb,reduced_effects);
         // th02_main.asm:1655–1657 draws Bomb before the boss update and its paints.
         if(sigma_enabled)draw_sigma(pixels,motion);
@@ -1693,8 +1697,7 @@ private:
         }
         if(coop)for(unsigned i=0;i<seat_count();++i){
             const auto &l=seat_life(i);const auto &p=seat_motion(i);const auto &s=seat_shots(i);
-            if(l.game_over){const auto pos=coop->spawn(i);coop_art::ghost(pixels,i,RenderPoint::pixels(pos.x,pos.y));continue;}
-            if(!i)continue;
+            if(!i||l.game_over)continue;
             if(l.pattern)coop_art::player(pixels,bank,sprite_palette,i,*l.pattern,RenderPoint::pixels(l.draw.x,l.draw.y));
             if(!l.hit&&!l.miss_active&&seat_pickups(i).power>=8){
                 const auto pos=RenderPoint::pixels(s.option_left,s.option_top);

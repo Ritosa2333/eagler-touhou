@@ -90,17 +90,14 @@ void test_draw(){
     try{draw_original_hud(pixels,font,state);}catch(const std::runtime_error &){threw=true;}
     check(threw&&std::all_of(pixels.begin(),pixels.end(),[&](auto p){return p==sentinel;}));
 }
-void test_coop_gauge(){
+void test_coop_layout(){
     namespace hud=soew::coop_hud;
-    using namespace soew::original_hud;
-    auto font=fixture_font();
-    std::vector<std::uint32_t> pixels(640*400,black);
-    check(hud::first_player_y+3*hud::player_pitch==272&&hud::boss_title_y==304&&hud::boss_gauge_y==320);
-    hud::draw_boss_gauge(pixels,font,50,100,std::array{25u,75u});
-    const auto base=hud::boss_gauge_y*640+hud::left;
-    check(pixels[base]==cyan&&pixels[base+48]==cyan&&pixels[base+64]==black);
-    check(pixels[base+2*640+32]==0xff181818u&&pixels[base+2*640+96]==0xff505050u);
-    check(pixels[(hud::boss_title_y+15)*640+hud::left]==black);
+    namespace solo=soew::original_hud;
+    check(hud::first_player_y>(solo::score_row+1)*16&&hud::first_player_y<128);
+    check(hud::player_end(2)<hud::encounter_top(2)&&hud::player_end(3)<hud::encounter_top(3));
+    check(hud::bottom==solo::rank_row*16&&hud::bottom-hud::encounter_top(3)>=86);
+    check(hud::left+17<hud::option_x&&hud::option_x<504);
+    check(hud::power_width>80&&hud::power_x+hud::power_width<hud::power_value_right-29);
 }
 void test_coop_power(){
     namespace hud=soew::coop_hud;
@@ -110,11 +107,11 @@ void test_coop_power(){
         std::vector<std::uint32_t> pixels(640*400,black);
         hud::draw_power_gauge(pixels,power,y,ink);
         const auto at=[&](int x,int dy){return pixels[(y+dy)*640+x];};
-        check(at(hud::power_x-1,5)==hud::power_edge&&at(hud::power_x+80,5)==hud::power_edge);
-        for(int dx=0;dx<80;++dx){
+        check(at(hud::power_x-1,5)==hud::power_edge&&at(hud::power_x+hud::power_width,5)==hud::power_edge);
+        for(int dx=0;dx<hud::power_width;++dx){
             const int x=hud::power_x+dx;
             check(at(x,4)==hud::power_edge&&at(x,11)==hud::power_edge);
-            check(at(x,5)==(unsigned(dx)<power?ink:hud::power_empty));
+            check(at(x,5)==(unsigned(dx)<power*hud::power_width/hud::power_max?ink:hud::power_empty));
         }
         using namespace std::string_view_literals;
         const auto value=power==0?"0/80"sv:power==1?"1/80"sv:power==37?"37/80"sv:"80/80"sv;
@@ -158,6 +155,6 @@ void test_practice_keys(){
 }
 }
 int main(){
-    try{test_layout();test_draw();test_gameplay_tram();test_coop_gauge();test_coop_power();test_practice_keys();std::cout<<"hud_checks="<<checks<<" failures=0\n";return 0;}
+    try{test_layout();test_draw();test_gameplay_tram();test_coop_layout();test_coop_power();test_practice_keys();std::cout<<"hud_checks="<<checks<<" failures=0\n";return 0;}
     catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}
 }

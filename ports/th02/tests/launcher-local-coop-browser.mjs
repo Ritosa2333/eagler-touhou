@@ -64,14 +64,17 @@ try {
       const grey=(r,g,b)=>r===192&&g===192&&b===192;
       const seatColors=[0xff6969,0x66bbff,0x55dd99];
       for(let seat=0;seat<count;seat++){
-        const y=128+seat*48;
-        if(!has(504,y,16,16,(r,g,b)=>r||g||b))return false; // selected option
+        const y=116+seat*48;
+        const seatInk=(r,g,b)=>r*65536+g*256+b===seatColors[seat];
+        if(!has(448,y,17,16,seatInk))return false; // seat heading
+        if(!has(474,y,16,16,(r,g,b)=>r||g||b))return false; // selected option
         if(!has(448,y+16,16,16,(r,g,b)=>r>g&&b>g))return false; // 1UP
         if(!has(512,y+16,16,16,(r,g,b)=>g>r&&g>b))return false; // Bomb
         if(!has(448,y+32,16,16,(r,g,b)=>r>g&&r>b))return false; // big red P
         for(const x of [482,546])if(!has(x,y+21,11,7,grey))return false;
-        if(!has(555,y+37,29,7,grey))return false; // X/80
-        if(!has(468,y+37,2,6,(r,g,b)=>r*65536+g*256+b===seatColors[seat]))return false;
+        if(!has(561,y+37,29,7,grey))return false; // X/80
+        if(!has(468,y+37,2,6,seatInk))return false;
+        if(!has(554,y+37,1,6,(r,g,b)=>r===80&&g===80&&b===80))return false; // widened far edge
       }
       return true;
     },{timeout:5000},count);
@@ -107,15 +110,20 @@ try {
     assert(moved[0]>original[0]+26,JSON.stringify({original,moved}));
     if(count===3)assert(moved[1]!==null&&moved[1]<original[1]-20,JSON.stringify({original,moved}));
     if(count===3&&process.argv.includes('--boss-gauge')){
-      await frame.waitForFunction(()=>{
+      await frame.waitForFunction(count=>{
         const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
         const sx=canvas.width/640,sy=canvas.height/400;
-        const pixels=ctx.getImageData(Math.round(448*sx),Math.round(320*sy),Math.round(128*sx),Math.round(16*sy)).data;
-        let lit=0;
-        for(let i=0;i<pixels.length;i+=4)if(pixels[i]||pixels[i+1]||pixels[i+2])lit++;
-        return lit>pixels.length/8;
-      },{timeout:110000,polling:250});
-      console.log('PASS Eagler TH02 Stage 1 midboss gauge appears in the original multiplayer rows');
+        const y=116+count*48+4;
+        const has=(dy,w,h,red,green,blue)=>{
+          const pixels=ctx.getImageData(Math.round(448*sx),Math.round((y+dy)*sy),Math.round(w*sx),Math.round(h*sy)).data;
+          return pixels.some((v,i)=>i%4===0&&v===red&&pixels[i+1]===green&&pixels[i+2]===blue);
+        };
+        // The shared solo panel draws the localized heading, numeric HP,
+        // cyan health and blue timer separately.
+        return has(0,128,10,180,220,255)&&has(10,128,10,180,220,255)&&
+          has(20,120,6,0,216,255)&&has(28,128,352-y-28,180,220,255);
+      },{timeout:110000,polling:250},count);
+      console.log('PASS Eagler TH02 Stage 1 midboss uses the detailed solo encounter panel');
     }
     await page.keyboard.press('Escape',{delay:100});
     await page.keyboard.press('KeyQ',{delay:100});

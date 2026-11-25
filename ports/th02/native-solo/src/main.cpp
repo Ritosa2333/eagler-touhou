@@ -452,18 +452,22 @@ void draw_practice_assist(Frame &frame,const soew::PracticeAssist &assist,soew::
         if(const auto glyph=text.pixels[row*A::width+col])frame.pixels[(b.top+A::header+row)*frame.w+b.left+col]=glyph;
     draw_practice_grip(frame,b,0xaaaaaa);
 }
-// Development diagnostics occupy only the original HUD's blank rows 7..14.
-void draw_debug_info(Frame &frame,const soew::EncounterScene &s,const std::optional<soew::PracticeSession> &session,
-                     bool show_details,soew::Language language){
+struct InfoPanelLayout {
+    int top,bottom;
+    bool player_details,encounter_protection;
+};
+void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optional<soew::PracticeSession> &session,
+                     InfoPanelLayout layout,soew::Language language){
     const auto encounter=soew::encounter_info(s);
     const auto tr=[&](const wchar_t *ja,const wchar_t *en,const wchar_t *hans,const wchar_t *hant){
         return soew::localized(language,ja,en,hans,hant);
     };
     const auto info_label=[&](std::wstring_view key){return soew::encounter_info_text(key,language);};
-    if(!show_details&&!encounter.active)return;
+    if(!layout.player_details&&!encounter.active)return;
     constexpr int side=128,bar_width=120,line_pitch=10;
+    const int height=layout.bottom-layout.top;
     const auto dc=CreateCompatibleDC(nullptr);if(!dc)throw std::runtime_error("Info DC failed");
-    BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=side;info.bmiHeader.biHeight=-side;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;
+    BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=side;info.bmiHeader.biHeight=-height;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;
     void *bits=nullptr;auto bitmap=CreateDIBSection(dc,&info,DIB_RGB_COLORS,&bits,nullptr,0);
     const auto charset=language==soew::Language::ChineseSimplified?GB2312_CHARSET:
         language==soew::Language::ChineseTraditional?CHINESEBIG5_CHARSET:SHIFTJIS_CHARSET;
@@ -471,9 +475,9 @@ void draw_debug_info(Frame &frame,const soew::EncounterScene &s,const std::optio
         OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,NONANTIALIASED_QUALITY,FIXED_PITCH,tr(L"MS Gothic",L"MS Gothic",L"SimSun",L"PMingLiU"));
     if(!bitmap||!font){if(bitmap)DeleteObject(bitmap);if(font)DeleteObject(font);DeleteDC(dc);throw std::runtime_error("Info bitmap failed");}
     auto oldbmp=SelectObject(dc,bitmap);auto oldfont=SelectObject(dc,font);auto *pixels=static_cast<std::uint32_t*>(bits);
-    std::fill_n(pixels,side*side,0u);SetBkMode(dc,TRANSPARENT);SetTextColor(dc,RGB(180,220,255));
+    std::fill_n(pixels,side*height,0u);SetBkMode(dc,TRANSPARENT);SetTextColor(dc,RGB(180,220,255));
     const auto text=[&](std::wstring_view value,int left,int top,int width){
-        RECT r{left,top,left+width,std::min(top+line_pitch,side)};
+        RECT r{left,top,left+width,std::min(top+line_pitch,height)};
         DrawTextW(dc,value.data(),int(value.size()),&r,DT_SINGLELINE|DT_NOPREFIX|DT_END_ELLIPSIS);
     };
     int y=0;
@@ -482,7 +486,7 @@ void draw_debug_info(Frame &frame,const soew::EncounterScene &s,const std::optio
     struct Bar {int left,top,width,height;unsigned current,max;bool segmented=false;};
     std::array<Bar,5> bars{};
     unsigned bar_count=0;
-    if(show_details){
+    if(layout.player_details){
         line(tr(L"ランク ",L"RANK ",L"动态等级 ",L"動態等級 ")+std::to_wstring(s.life.playperf));
         line(tr(L"パワー ",L"PWR ",L"火力 ",L"火力 ")+std::to_wstring(s.pickups.power)+L"  Lv "+std::to_wstring(s.pickups.level()));
         line(tr(L"フレーム ",L"FRAME ",L"帧数 ",L"幀數 ")+std::to_wstring(s.ticks));
@@ -505,7 +509,7 @@ void draw_debug_info(Frame &frame,const soew::EncounterScene &s,const std::optio
             }
             bars[bar_count++]={0,y,bar_width,6,encounter.total_health,encounter.total_max_health,true};y+=8;
         }
-        const bool show_protection=show_details&&encounter.protection.kind!=soew::EncounterProtectionKind::None;
+        const bool show_protection=layout.encounter_protection&&encounter.protection.kind!=soew::EncounterProtectionKind::None;
         if(encounter.dying)line(tr(L"退場中",L"RETIRING",L"退场中",L"退場中"));
         else{
             const std::wstring_view status=encounter.status;
@@ -540,11 +544,16 @@ void draw_debug_info(Frame &frame,const soew::EncounterScene &s,const std::optio
             std::uint32_t color=x<fill?0x0000d8ffu:0x00303030u;
             if(bar.segmented)for(unsigned cut=0;cut<encounter.phase_cut_count;++cut)
                 if(x==scale(encounter.phase_cuts[cut]))color=x<fill?0x00ffffffu:0x00707070u;
-            for(int row=bar.top;row<bar.top+bar.height&&row<side;++row)pixels[row*side+bar.left+x]=color;
+            for(int row=bar.top;row<bar.top+bar.height&&row<height;++row)pixels[row*side+bar.left+x]=color;
         }
     }
-    for(int row=0;row<side;++row)std::copy_n(pixels+row*side,side,frame.pixels.begin()+(112+row)*640+448);
+    for(int row=0;row<height;++row)std::copy_n(pixels+row*side,side,frame.pixels.begin()+(layout.top+row)*640+soew::original_hud::left);
     SelectObject(dc,oldfont);SelectObject(dc,oldbmp);DeleteObject(font);DeleteObject(bitmap);DeleteDC(dc);
+}
+// Solo diagnostics occupy the original HUD's blank rows 7..14.
+void draw_debug_info(Frame &frame,const soew::EncounterScene &s,const std::optional<soew::PracticeSession> &session,
+                     bool show_details,soew::Language language){
+    draw_info_panel(frame,s,session,{112,240,show_details,show_details},language);
 }
 void rounded_box(Frame &frame,int left,int top,int right,int bottom,std::uint32_t color) {
     constexpr int radius=8;
@@ -3378,7 +3387,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             soew::draw_original_hud(app->composed.pixels,app->font,hud);
             if(const auto &scene=*app->stage_scene;scene.coop){
                 namespace layout=soew::coop_hud;
-                for(int y=layout::first_player_y;y<352;++y)
+                for(int y=layout::first_player_y;y<layout::bottom;++y)
                     std::fill_n(app->composed.pixels.begin()+y*640+layout::left,layout::right-layout::left,0xff000000u);
                 for(unsigned i=0;i<scene.seat_count();++i){
                     const auto &l=scene.seat_life(i);const auto ink=soew::coop_art::seat_ink[i];
@@ -3386,9 +3395,11 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     auto &pixels=app->composed.pixels;
                     const auto sprite=[&](unsigned pattern,int x,int top){
                         scene.bank.put(pixels,scene.background.palette,pattern,soew::RenderPoint::pixels(x,top),
-                            soew::StageSprites::Paint::Artwork,1,false,{layout::left,layout::first_player_y,layout::right,layout::player_bottom});
+                            soew::StageSprites::Paint::Artwork,1,false,{layout::left,layout::first_player_y,layout::right,layout::player_end(scene.seat_count())});
                     };
-                    display_text(app->composed,L"P"+std::to_wstring(i+1),layout::left,y,ink,lang);
+                    const auto heading=L"P"+std::to_wstring(i+1);
+                    display_text(app->composed,heading,layout::left,y,ink,lang);
+                    display_text(app->composed,heading,layout::left+1,y,ink,lang);
                     sprite(soew::StageSprites::option_base+unsigned(scene.seat_motion(i).shot),layout::option_x,y);
                     if(l.game_over)display_text(app->composed,L"GHOST",layout::ghost_x,y,ink,lang);
                     if(const auto n=scene.coop->rescue[i].presses)
@@ -3405,16 +3416,14 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     sprite(item[soew::ItemCore::BigPower],layout::left,power_y);
                     layout::draw_power_gauge(pixels,scene.seat_pickups(i).power,power_y,ink);
                 }
-                if(const auto gauge=soew::coop_boss_gauge(scene);gauge.max_health){
-                    const auto caption=L"ENEMY "+std::wstring(soew::encounter_info_text(gauge.label,lang));
-                    display_text(app->composed,caption,layout::left,layout::boss_title_y,0xffff00,lang);
-                    layout::draw_boss_gauge(app->composed.pixels,app->font,gauge.health,gauge.max_health,
-                        std::span(gauge.phase_cuts).first(gauge.phase_cut_count));
-                }
             }
             const bool show_details=!app->local_coop&&(app->replay_playback?app->menu.show_more_info:app->practice_assist.info);
             if(!app->stage_intro.active()&&!show_stage_intro){
-                if(show_details||app->practice_session)
+                if(const auto &scene=*app->stage_scene;scene.coop){
+                    namespace layout=soew::coop_hud;
+                    draw_info_panel(app->composed,scene,std::nullopt,
+                        {layout::encounter_top(scene.seat_count()),layout::bottom,false,true},lang);
+                }else if(show_details||app->practice_session)
                     draw_debug_info(app->composed,*app->stage_scene,app->practice_session,show_details,
                         app->replay_playback?soew::gameplay_display_language(lang,app->stage_scene->language):lang);
                 if(show_details&&!app->practice_tools.open)

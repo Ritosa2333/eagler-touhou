@@ -85,6 +85,39 @@ void check_midboss_damage(const std::filesystem::path &assets){
     shoot();check(boss.damage_taken.sixths()==32);
 }
 
+void check_ghost_layer(const std::filesystem::path &assets){
+    auto scene=EncounterScene::load(assets,0,0,1,2,3);
+    scene.combat_enabled=scene.survival_enabled=true;
+    scene.enable_coop({.count=2,.shots={0,0,0}});
+    const auto pos=scene.coop->spawn(1);
+    auto &player=scene.seat_life(0);player.draw={pos.x,pos.y+12};
+    auto &ghost=scene.seat_life(1);ghost.pattern.reset();
+    auto &shot=scene.seat_shots(0).slots[0];
+    shot.render_pattern=48;
+    shot.position.fill({std::uint16_t((pos.x+8)*16),std::uint16_t((pos.y+20)*16)});
+    const auto draw=[&](bool show_ghost){
+        ghost.game_over=show_ghost;
+        std::vector<std::uint32_t> pixels(640*400);
+        scene.render(pixels);
+        return pixels;
+    };
+    player.pattern.reset();
+    const auto terrain=draw(false),ghost_only=draw(true);
+    check(ghost_only!=terrain);
+    const auto verify=[&]{
+        const auto foreground=draw(false),both=draw(true);
+        unsigned overlap=0;
+        for(std::size_t i=0;i<terrain.size();++i){
+            if(foreground[i]==terrain[i]||ghost_only[i]==terrain[i])continue;
+            check(both[i]==foreground[i]);
+            ++overlap;
+        }
+        check(overlap>0);
+    };
+    player.pattern=0;verify();
+    player.pattern.reset();shot.flag=1;verify();
+}
+
 void check_run(const std::filesystem::path &assets){
     auto scene=EncounterScene::load(assets,0,0,1,2,3);
     scene.combat_enabled=scene.survival_enabled=scene.pickup_enabled=true;
@@ -186,6 +219,7 @@ int main(int argc,char **argv){
         check_boss_damage();
         if(argc>1&&argv[1][0]){
             check_midboss_damage(argv[1]);
+            check_ghost_layer(argv[1]);
             check_run(argv[1]);
         }
         return 0;

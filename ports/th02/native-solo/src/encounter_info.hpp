@@ -2,7 +2,6 @@
 #include "encounter_scene.hpp"
 #include <algorithm>
 #include <array>
-#include <span>
 
 namespace soew {
 enum class EncounterInfoKind { None, Midboss1, Midboss2, Rika, Meira, Midboss3, Stones, Midboss4, Marisa, Mima, ExtraMidboss, Sigma };
@@ -309,58 +308,4 @@ inline EncounterInfo encounter_info(const EncounterScene &s){
     return out;
 }
 
-struct CoopBossGauge {
-    const wchar_t *label=L"";
-    unsigned health=0,max_health=0;
-    std::array<unsigned,4> phase_cuts{};
-    unsigned phase_cut_count=0;
-};
-
-inline CoopBossGauge coop_boss_gauge(const EncounterScene &scene){
-    const auto info=encounter_info(scene);
-    CoopBossGauge gauge{info.label,info.total_health,info.total_max_health,info.phase_cuts,info.phase_cut_count};
-    const auto phased=[&](std::span<const unsigned> sections){
-        gauge.health=info.health;
-        gauge.max_health=gauge.phase_cut_count=0;
-        for(unsigned i=unsigned(sections.size());i>0;--i){
-            gauge.max_health+=sections[i-1];
-            if(i>1)gauge.phase_cuts[gauge.phase_cut_count++]=gauge.max_health;
-            if(i-1>info.phase)gauge.health+=sections[i-1];
-        }
-    };
-    const auto remaining=[](BossDamage damage,unsigned max){
-        return unsigned(std::clamp(int(max)-enemy_s16(damage),0,int(max)));
-    };
-    switch(info.kind){
-    case EncounterInfoKind::Midboss3:
-        gauge.health=0;gauge.max_health=562;
-        for(const auto &a:scene.midboss3.actor)
-            if(a.flag==Midboss3Core::Flag::Alive)gauge.health+=remaining(a.damage,281);
-        break;
-    case EncounterInfoKind::Stones:{
-        gauge.label=L"FIVE STONES";gauge.health=0;gauge.max_health=1450;
-        constexpr std::array<unsigned,5> limits={140,140,120,120,930};
-        for(unsigned i=0;i<limits.size();++i){
-            const auto &stone=scene.stones.stones[i];
-            if(stone.flag==StonesCore::Flag::Active||stone.flag==StonesCore::Flag::Dormant)
-                gauge.health+=remaining(stone.damage,limits[i]);
-        }
-        gauge.phase_cuts={930,1170};gauge.phase_cut_count=2;
-        break;
-    }
-    case EncounterInfoKind::Mima:{
-        gauge.label=L"MIMA";
-        constexpr std::array<unsigned,5> limits={600,700,800,1500,1100};
-        phased(std::span(limits).first(scene.continues_used&&!scene.mima.form2?4:5));
-        break;
-    }
-    case EncounterInfoKind::Sigma:{
-        constexpr std::array<unsigned,5> limits={1800,1800,1800,1800,1300};
-        phased(limits);
-        break;
-    }
-    default:break; // EX terrain is timed and has no HP.
-    }
-    return gauge;
-}
 }

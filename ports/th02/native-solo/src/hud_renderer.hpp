@@ -2,7 +2,6 @@
 #include "core_contract.hpp"
 #include "menu.hpp"
 #include <algorithm>
-#include <span>
 #include <vector>
 
 namespace soew {
@@ -87,12 +86,14 @@ inline void draw_original_hud(std::vector<std::uint32_t> &pixels,const th03::ass
 }
 
 namespace coop_hud {
-// DOS multiplayer TRAM layout: player rows 8..16, enemy rows 19..20.
-inline constexpr int left=448,right=624,first_player_y=128,player_pitch=48,row_height=16;
-inline constexpr int player_bottom=first_player_y+3*player_pitch,option_x=504,ghost_x=528,rescue_right=620;
-inline constexpr int boss_title_y=304,boss_gauge_y=320,boss_gauge_width=128;
+// Stocks follow the score; the shared encounter panel ends before the rank.
+inline constexpr int left=448,right=624,first_player_y=116,player_pitch=48,row_height=16;
+inline constexpr int bottom=original_hud::rank_row*16,option_x=474,ghost_x=528,rescue_right=620;
+constexpr int player_end(unsigned seats){return first_player_y+int(seats)*player_pitch;}
+constexpr int encounter_top(unsigned seats){return player_end(seats)+4;}
 inline constexpr int lives_x=left,bombs_x=512,stock_digit_dx=18,stock_limit_dx=34;
-inline constexpr int power_x=468,power_width=80,power_value_right=584;
+inline constexpr unsigned power_max=80;
+inline constexpr int power_x=468,power_width=86,power_value_right=590;
 inline constexpr std::uint32_t detail_ink=0xffc0c0c0u,power_edge=0xff505050u,power_empty=0xff202020u;
 inline void draw_small_number(std::vector<std::uint32_t> &pixels,std::string_view text,int right_x,int y,std::uint32_t ink){
     // Integer-pixel 5x7 digits and slash for stock limits and exact Power.
@@ -111,28 +112,16 @@ inline void draw_small_number(std::vector<std::uint32_t> &pixels,std::string_vie
     }
 }
 inline void draw_power_gauge(std::vector<std::uint32_t> &pixels,unsigned power,int row_y,std::uint32_t ink){
+    const auto fill=power*power_width/power_max;
     for(int dy=4;dy<12;++dy){
         auto row=pixels.begin()+(row_y+dy)*640+power_x;
         std::fill_n(row-1,power_width+2,power_edge);
         if(dy!=4&&dy!=11){
             std::fill_n(row,power_width,power_empty);
-            std::fill_n(row,power,ink);
+            std::fill_n(row,fill,ink);
         }
     }
     draw_small_number(pixels,std::to_string(power)+"/80",power_value_right,row_y+5,detail_ink);
-}
-inline void draw_boss_gauge(std::vector<std::uint32_t> &pixels,const th03::assets::BfntSheet &font,
-    unsigned health,unsigned max_health,std::span<const unsigned> cuts){
-    // Same eight Power gaiji and fill colors as the original multiplayer HUD.
-    constexpr std::array colors={original_hud::red,original_hud::magenta,original_hud::cyan,
-        original_hud::yellow,original_hud::white};
-    const int fill=int((health*boss_gauge_width+max_health-1)/max_health);
-    for(int x=0;x<fill;x+=16)
-        ::draw_glyph(pixels,font,0x30+std::min(16,fill-x)-1,left+x,boss_gauge_y,colors[fill>>5]);
-    for(const auto cut:cuts){
-        const int x=int(cut*boss_gauge_width/max_health);
-        for(int y=2;y<14;++y)pixels[(boss_gauge_y+y)*640+left+x]=x<fill?0xff181818u:0xff505050u;
-    }
 }
 }
 
