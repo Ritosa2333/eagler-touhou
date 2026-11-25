@@ -79,6 +79,10 @@ node --experimental-wasi-unstable-preview1 tools/run-harness.mjs stage1   # stag
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs replay games/replays/th13_udSr01.rpy   # 录像解码 + 逐帧输入注入（格式见 docs/plans/replay.md）
 ```
 
+ECL 全局变量证据使用普通版 `tools/oracle` 生成的 `stage-gvars.json`；两侧的
+`tests/ecl/ecl_stage_gvars_oracle_test.cpp` 断言同一份 setup、94 个整型读与
+94 个浮点读。
+
 ## 同帧取像（golden 对拍）
 
 ```sh

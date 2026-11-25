@@ -201,6 +201,7 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
     sim.mode_flags = progress.run_mode_flags;
     player_ = &player;
     score_ = &score;
+    sim.player_lives = std::max(player_->extra_lives, 0);
     sim.spell.reset();
     sim.bomb_active = false;
     sim.spell_award = [this](i32 bonus) { score_->score = std::min(999999999, score_->score + bonus); };
@@ -209,6 +210,7 @@ bool StageBattle::load(EclResourceProvider& provider, const char* stage_file, i3
     player_prepared_ = false;
     item_manager.bind_random(sim.random);
     item_manager.life_changed = [this](i32 seat, i32 stock, i32 pieces) {
+        sim.player_lives = std::max(player_->extra_lives, 0);
         if (!host_->life_hud_seat(seat, stock, pieces)) error_ = "Item life HUD refresh failed";
     };
     item_manager.bombs_changed = [this](i32 seat, i32 stock, i32 pieces) {
@@ -1723,6 +1725,7 @@ bool StageBattle::commit_death() {
 bool StageBattle::commit_death_normal() {
     if (player_->deaths < 0x7fffffff) ++player_->deaths;
     if (!challenge) --player_->extra_lives;
+    sim.player_lives = std::max(player_->extra_lives, 0);
     if (!challenge && seat_count >= 2 && player_->extra_lives < 0) {
         player_state_.final_death = true;
         if (!retire_final_death_combat()) return false;
