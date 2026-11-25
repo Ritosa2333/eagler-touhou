@@ -614,7 +614,7 @@
   },
   {
    "name": "st1-normal-reimu-spring-pulse-all-clear-12400",
-   "comment": "全程 Z 30 帧开 / 10 帧关脉冲射击打穿一面（第 11781 帧 MSG op 21 过关 → 0x42e150 奖励 +100000、场景请求 0xc）；11782 帧 0x43ce10 case 0xc 销毁 / 重建 GameManager（0x42d200 bit1 路径 + 0x42cb60 换关装载，game_rng 种子 := 视觉 RNG 种子）；过关奖励展示 120 帧内 0x42d7b0 整帧跳过；11902 帧首帧 0x42dc50（上一关 0x40c0d0 结束 0x1e 帧、新关 0x40c210 淡入 0x3c 帧、flags 0x800）；11932 帧 0x42dee0 复位（0x449120 输入清零 → pressed 重算、帧计数归零、生成二面 main）；其后二面敌机 / 弹幕 / 道具逐帧一致。",
+   "comment": "脉冲射击覆盖过关计分、换关等待、淡入与第二面重建；换关窗口 401 帧与最终帧检查点均经原版逐字段核实。",
    "stage": 1,
    "shot": 0,
    "season": 0,
@@ -637,61 +637,61 @@
      "game_frame": 11780,
      "stage_frame": 11780,
      "rng": [
-      38533,
-      33711
+      50629,
+      33404
      ],
      "game_rng": [
-      20269,
-      263532
+      8006,
+      246982
      ],
-     "enemy_count": 1,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 54421,
-     "dialogue": 1,
+     "enemy_count": 2,
+     "bullet_count": 54,
+     "item_count": 16,
+     "score": 41371,
+     "dialogue": 0,
      "input": [
       1,
       0
      ]
     },
     "11781": {
-     "stage": 2,
+     "stage": 1,
      "game_frame": 11781,
      "stage_frame": 11781,
      "rng": [
-      38533,
-      33711
+      50629,
+      33404
      ],
      "game_rng": [
-      20269,
-      263532
+      8006,
+      246982
      ],
-     "enemy_count": 1,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
-     "dialogue": 1,
+     "enemy_count": 2,
+     "bullet_count": 54,
+     "item_count": 16,
+     "score": 41372,
+     "dialogue": 0,
      "input": [
       1,
       0
      ]
     },
     "11782": {
-     "stage": 2,
-     "game_frame": 0,
-     "stage_frame": 0,
+     "stage": 1,
+     "game_frame": 11782,
+     "stage_frame": 11782,
      "rng": [
-      38533,
-      0
+      50629,
+      33404
      ],
      "game_rng": [
-      15215,
-      263556
+      8006,
+      246982
      ],
-     "enemy_count": 0,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
+     "enemy_count": 2,
+     "bullet_count": 54,
+     "item_count": 16,
+     "score": 41372,
      "dialogue": 0,
      "input": [
       1,
@@ -699,21 +699,21 @@
      ]
     },
     "11783": {
-     "stage": 2,
-     "game_frame": 0,
-     "stage_frame": 0,
+     "stage": 1,
+     "game_frame": 11783,
+     "stage_frame": 11783,
      "rng": [
-      38533,
-      0
+      50629,
+      33404
      ],
      "game_rng": [
-      15215,
-      263556
+      10159,
+      246986
      ],
-     "enemy_count": 0,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
+     "enemy_count": 2,
+     "bullet_count": 54,
+     "item_count": 16,
+     "score": 41372,
      "dialogue": 0,
      "input": [
       1,
@@ -721,21 +721,21 @@
      ]
     },
     "11901": {
-     "stage": 2,
-     "game_frame": 0,
-     "stage_frame": 0,
+     "stage": 1,
+     "game_frame": 11901,
+     "stage_frame": 11901,
      "rng": [
-      38533,
-      0
+      3737,
+      33423
      ],
      "game_rng": [
-      36967,
-      264252
+      62012,
+      250692
      ],
-     "enemy_count": 0,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
+     "enemy_count": 2,
+     "bullet_count": 1,
+     "item_count": 20,
+     "score": 41412,
      "dialogue": 0,
      "input": [
       1,
@@ -743,21 +743,21 @@
      ]
     },
     "11902": {
-     "stage": 2,
-     "game_frame": 1,
-     "stage_frame": 1,
+     "stage": 1,
+     "game_frame": 11902,
+     "stage_frame": 11902,
      "rng": [
-      38533,
-      0
+      3737,
+      33423
      ],
      "game_rng": [
-      38102,
-      264276
+      62012,
+      250692
      ],
-     "enemy_count": 0,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
+     "enemy_count": 2,
+     "bullet_count": 1,
+     "item_count": 20,
+     "score": 41412,
      "dialogue": 0,
      "input": [
       1,
@@ -765,21 +765,21 @@
      ]
     },
     "11903": {
-     "stage": 2,
-     "game_frame": 2,
-     "stage_frame": 2,
+     "stage": 1,
+     "game_frame": 11903,
+     "stage_frame": 11903,
      "rng": [
-      38533,
-      0
+      3737,
+      33423
      ],
      "game_rng": [
-      38102,
-      264276
+      57030,
+      250696
      ],
-     "enemy_count": 0,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
+     "enemy_count": 2,
+     "bullet_count": 1,
+     "item_count": 20,
+     "score": 41412,
      "dialogue": 0,
      "input": [
       1,
@@ -787,21 +787,21 @@
      ]
     },
     "11931": {
-     "stage": 2,
-     "game_frame": 30,
-     "stage_frame": 30,
+     "stage": 1,
+     "game_frame": 11931,
+     "stage_frame": 11931,
      "rng": [
-      38533,
-      0
+      13379,
+      33427
      ],
      "game_rng": [
-      43487,
-      264444
+      60759,
+      250766
      ],
-     "enemy_count": 0,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
+     "enemy_count": 2,
+     "bullet_count": 13,
+     "item_count": 14,
+     "score": 41427,
      "dialogue": 0,
      "input": [
       1,
@@ -809,43 +809,43 @@
      ]
     },
     "11932": {
-     "stage": 2,
-     "game_frame": 1,
-     "stage_frame": 1,
+     "stage": 1,
+     "game_frame": 11932,
+     "stage_frame": 11932,
      "rng": [
-      38533,
-      0
+      13379,
+      33427
      ],
      "game_rng": [
-      43487,
-      264444
+      60759,
+      250766
      ],
-     "enemy_count": 1,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
+     "enemy_count": 2,
+     "bullet_count": 13,
+     "item_count": 14,
+     "score": 41427,
      "dialogue": 0,
      "input": [
       1,
-      1
+      0
      ]
     },
     "11933": {
-     "stage": 2,
-     "game_frame": 2,
-     "stage_frame": 2,
+     "stage": 1,
+     "game_frame": 11933,
+     "stage_frame": 11933,
      "rng": [
-      38533,
-      0
+      13379,
+      33427
      ],
      "game_rng": [
-      6018,
-      264464
+      65184,
+      250770
      ],
      "enemy_count": 2,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
+     "bullet_count": 13,
+     "item_count": 14,
+     "score": 41427,
      "dialogue": 0,
      "input": [
       1,
@@ -853,21 +853,21 @@
      ]
     },
     "12001": {
-     "stage": 2,
-     "game_frame": 70,
-     "stage_frame": 70,
+     "stage": 1,
+     "game_frame": 12001,
+     "stage_frame": 12001,
      "rng": [
-      55848,
-      8
+      33255,
+      33450
      ],
      "game_rng": [
-      42229,
-      264784
+      36191,
+      250944
      ],
-     "enemy_count": 4,
-     "bullet_count": 0,
-     "item_count": 0,
-     "score": 154421,
+     "enemy_count": 2,
+     "bullet_count": 22,
+     "item_count": 13,
+     "score": 41482,
      "dialogue": 0,
      "input": [
       1,
@@ -875,22 +875,22 @@
      ]
     },
     "12400": {
-     "stage": 2,
-     "game_frame": 469,
-     "stage_frame": 469,
+     "stage": 1,
+     "game_frame": 12400,
+     "stage_frame": 12400,
      "rng": [
-      49401,
-      244
+      14329,
+      33768
      ],
      "game_rng": [
-      51942,
-      272676
+      7184,
+      257208
      ],
-     "enemy_count": 2,
-     "bullet_count": 9,
-     "item_count": 41,
-     "score": 154587,
-     "dialogue": 0,
+     "enemy_count": 1,
+     "bullet_count": 0,
+     "item_count": 0,
+     "score": 57104,
+     "dialogue": 1,
      "input": [
       0,
       0
@@ -898,8 +898,7 @@
     }
    },
    "last_ids": [
-    1,
-    2
+    1
    ]
   }
  ]
