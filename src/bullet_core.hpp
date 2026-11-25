@@ -15,7 +15,9 @@ struct BulletCore {
         std::array<std::array<std::uint16_t,2>,2> position{};
         std::array<int,2> velocity{};
         std::uint8_t angle=0,pattern=0,motion=0,speed=0,counter=0;
+        unsigned motion_generation=0;
     };
+    using BoundaryExit=std::function<void(const Bullet&,const std::array<std::uint16_t,2>&)>;
     std::array<Bullet,150> bullets{};
     int rank=1,playperf=0;
     unsigned stack=0;
@@ -85,11 +87,11 @@ struct BulletCore {
                 const auto tuned_speed=enemy_s16(unsigned(speed+angle.extra_speed));
                 unsigned direction=static_cast<unsigned>(int(request.angle)+angle.offset)&255;
                 if(angle.aim){const auto dx=enemy_s16(unsigned(player_x+12-request.left)),dy=enemy_s16(unsigned(player_y+20-request.top));direction=(direction+enemy_atan2(dy,dx))&255;}
-                b.flag=1;b.kind=request.kind;b.pattern=request.pattern;b.angle=request.angle;b.counter=0;
+                b.motion_generation=unsigned(++spawned);b.flag=1;b.kind=request.kind;b.pattern=request.pattern;b.angle=request.angle;b.counter=0;
                 b.motion=request.kind==EnemyBulletRequest::Bullet16?request.group:0;
                 if(request.kind==EnemyBulletRequest::Bullet16)b.speed=static_cast<std::uint8_t>(speed);
                 b.position[page]={static_cast<std::uint16_t>(request.left*16),static_cast<std::uint16_t>(request.top*16)};
-                b.velocity=enemy_vector(direction,tuned_speed);++spawned;++group_i;
+                b.velocity=enemy_vector(direction,tuned_speed);++group_i;
                 if(angle.done)break;
             }
             if(stack_i>=stack)break;
@@ -125,17 +127,20 @@ struct BulletCore {
         default:break;
         }
     }
-    bool update(unsigned page,int player_x,int player_y,std::uint32_t stage_frame=0,CollisionFrame *display=nullptr){
+    bool update(unsigned page,int player_x,int player_y,std::uint32_t stage_frame=0,CollisionFrame *display=nullptr,const BoundaryExit &on_exit={}){
         if(page>1)throw std::runtime_error("Invalid bullet page");
         const CollisionPoint player{player_x,player_y};
         if(display)display->sample_player(CollisionSample::Projectile,player);
         const auto pellet_window=bullet_hit_window(player,true),bullet_window=bullet_hit_window(player,false);
         const bool capture_bullets=display&&display->mode==HitboxMode::All;
         bool hit=false;
-        for(auto &b:bullets){if(b.flag!=1)continue;for(unsigned c=0;c<2;++c)b.position[page][c]=static_cast<std::uint16_t>(b.position[page][c]+b.velocity[c]);
+        for(auto &b:bullets){if(b.flag!=1)continue;const auto old=b.position[page];const auto step=b.velocity;
+            for(unsigned c=0;c<2;++c)b.position[page][c]=static_cast<std::uint16_t>(b.position[page][c]+step[c]);
             update_special(b,page,player_x,player_y,stage_frame);
             const int x=pixel(b.position[page][0]),y=pixel(b.position[page][1]);
-            bool erase=x<=20||x>=416||y>=384||y<=0;
+            const bool left=x<=20,right=x>=416,top=y<=0,bottom=y>=384;
+            bool erase=left||right||top||bottom;
+            if(erase&&on_exit&&((left&&step[0]<0)||(right&&step[0]>0)||(top&&step[1]<0)||(bottom&&step[1]>0)))on_exit(b,old);
             if(!erase){const bool small=b.kind==EnemyBulletRequest::Pellet;
                 if(capture_bullets)display->bullet({x,y},small);
                 if((small?pellet_window:bullet_window).contains({x,y})){erase=true;hit=true;}

@@ -303,7 +303,7 @@ public:
                 // handoff remains intact, without the original dialogue score grant.
                 MimaCore::Hooks hooks;hooks.random8=[&]{return unsigned(s.runtime.random.next8());};
                 if(!s.mima.resolve_form1(hooks,0).enter_form2)throw std::runtime_error("Mima practice form handoff failed");
-                s.shots.slots={};s.mima_tone=100;s.mima_draws.clear();s.dialogue_snapshot.clear();
+                s.clear_shots();s.mima_tone=100;s.mima_draws.clear();s.dialogue_snapshot.clear();
                 return;
             }
             s.tick(input,group_key,dialogue_fast_forward);

@@ -118,7 +118,7 @@ struct EncounterScene:StageScene {
             throw std::runtime_error("Invalid Marisa battle handoff");
         marisa=MarisaCore{};marisa_enabled=true;
         midboss4.active=midboss4.visible=false;
-        for(auto &enemy:runtime.enemies.slots)if(enemy.raw[0xe]==1)enemy.raw[0xe]=2;
+        clear_enemies();
         death_patterns.fill(std::nullopt);
     }
     bool stones_enabled=false;
@@ -128,6 +128,7 @@ struct EncounterScene:StageScene {
         if(stage!=2||!runtime.scroll.done||stones_enabled)throw std::runtime_error("Invalid Stones test binding");
         stones.init();stones_stripe.clear();lasers=LaserCore{};
         for(auto &enemy:runtime.enemies.slots)if(enemy.raw[0xe])enemy.raw[0xe]=2;
+        departures_.clear(MotionTrack::Enemy);
         stones_enabled=true;
     }
     bool meira_enabled=false,meira_appearance=false;
@@ -163,6 +164,12 @@ struct EncounterScene:StageScene {
 private:
     HitboxMode hitbox_mode_=HitboxMode::Off;
     CollisionFrame collision_frame_;
+    SpriteDepartures departures_;
+    void clear_enemies(){
+        for(auto &e:runtime.enemies.slots)if(e.raw[0xe]==1)e.raw[0xe]=2;
+        departures_.clear(MotionTrack::Enemy);
+    }
+    void clear_bullets(unsigned page){bullet_core.clear(page);departures_.clear(MotionTrack::Bullet);}
     bool hitbox_battle_visible()const{
         return survival_enabled&&!life.miss_active&&!preparation_only&&!practice_completed&&!stage2_preview_boundary&&!stage3_preview_boundary&&
             !stage5_entry_only&&!stage5_result&&!mima_delay&&!dialogue.active()&&!life.game_over&&
@@ -239,9 +246,10 @@ public:
     void bind_rika_battle(const RikaCore::Inherited &old){
         if(stage!=0||unsigned(runtime.scroll.line)!=old.scroll_line)throw std::runtime_error("Rika context must match frozen scene scroll");
         rika.init(unsigned(rank),old);rika_stage_frame=0;rika_enabled=true;midboss_enabled=false;
-        for(auto &e:runtime.enemies.slots)if(e.raw[0xe]==1)e.raw[0xe]=2;
+        clear_enemies();
     }
-    void bind_meira_battle(){if(stage!=1)throw std::runtime_error("Invalid Meira stage");meira.init(unsigned(rank),meira_handoff);meira_enabled=true;midboss2_enabled=false;bullet_core.special.u3=2;for(auto&e:runtime.enemies.slots)if(e.raw[0xe]==1)e.raw[0xe]=2;}
+    void bind_meira_battle(){if(stage!=1)throw std::runtime_error("Invalid Meira stage");meira.init(unsigned(rank),meira_handoff);meira_enabled=true;midboss2_enabled=false;bullet_core.special.u3=2;clear_enemies();}
+    void clear_shots(){shots.slots={};departures_.clear(MotionTrack::Shot);}
     bool continue_prompt()const{return continue_choice==ContinueChoice::Release||continue_choice==ContinueChoice::Choose;}
     void update_continue(std::uint16_t input,bool held){
         // th02_main.asm:800–815,1306–1328,2237–2345. Resume in the
@@ -269,7 +277,7 @@ public:
         life.miss_frame=0;life.invincibility=200;
         life.positions={PlayerLife::Point{},PlayerLife::Point{}};
         life.current=life.draw=life.positions[0];life.pattern=0;
-        player=PlayerMotion(player.shot);bullet_core.clear(runtime.page);
+        player=PlayerMotion(player.shot);clear_bullets(runtime.page);
         if(bomb.active)bomb.finish();
         continue_choice=ContinueChoice::Inactive;
         transition.phase=StageTransition::Phase::Entry;transition.frame=0;
@@ -327,15 +335,15 @@ public:
         if(stage!=4||!stage5_preview||!runtime.scroll.done||runtime.blocked||!dialogue.preboss_complete()||dialogue.active())
             throw std::runtime_error("Invalid Mima battle handoff");
         mima=MimaCore{};mima_enabled=true;
-        for(auto &enemy:runtime.enemies.slots)if(enemy.raw[0xe]==1)enemy.raw[0xe]=2;
+        clear_enemies();
         death_patterns.fill(std::nullopt);
-        if(combat_enabled)shots.slots={}; // sub_D376 clears live shot slots.
+        if(combat_enabled)clear_shots(); // sub_D376 clears live shot slots.
         transition.phase=StageTransition::Phase::Battle;
     }
     void start_mima_defeat(){
         const bool final=mima.event==MimaCore::Event::FinalDefeated;
         if(!final){
-            if(combat_enabled)shots.slots={};
+            if(combat_enabled)clear_shots();
             if(!practice_mode&&effects_enabled){
                 unsigned stock=life.lives;score_core.grant_dialogue_bonus(stock);life.lives=std::uint8_t(stock);lives=int(stock);
             }
@@ -452,7 +460,7 @@ public:
                 }else if(stage==5){
                     update_sound();
                     if(++appearance_frame==StageDialogue::extra_appearance_peak){
-                        bullet_core.clear(runtime.page);shots.slots={};sigma_music=true;
+                        clear_bullets(runtime.page);clear_shots();sigma_music=true;
                     }
                     if(appearance_frame>=StageDialogue::extra_appearance_end){dialogue.continue_after_appearance();appearance_frame=0;}
                 }else{++appearance_frame;if(appearance_frame==16)meira_appearance=true;if(appearance_frame>=32)dialogue.continue_after_appearance();}
@@ -487,7 +495,7 @@ public:
                             score_core.grant_dialogue_bonus(stock);
                             life.lives=std::uint8_t(stock);lives=int(stock);
                         }
-                    }else{sigma.init();sigma_enabled=true;for(auto &e:runtime.enemies.slots)e.raw[0xe]=0;death_patterns.fill(std::nullopt);}
+                    }else{sigma.init();sigma_enabled=true;for(auto &e:runtime.enemies.slots)e.raw[0xe]=0;departures_.clear(MotionTrack::Enemy);death_patterns.fill(std::nullopt);}
                 }else if(dialogue.postboss)finish_postboss(dialogue_group_key);
                 else if(stage==3)bind_marisa_battle();
                 else if(stage==2)bind_stones_battle();
@@ -527,6 +535,7 @@ public:
         };
         auto *display=hitbox_mode_!=HitboxMode::Off&&hitbox_battle_visible()?&collision_frame_:nullptr;
         if(display)display->begin(hitbox_mode_,logic_frame,page);
+        departures_.advance();
         rendered_page=page;bullet_core.begin_frame(page);
         if(midboss_enabled)midboss.begin_frame(page);
         if(midboss2_enabled)midboss2.begin_frame(page);
@@ -574,10 +583,10 @@ public:
             shots.random=nullptr;
             if(bomb_enabled){
                 if(accepts_input&&(input&Bomb))start_bomb();
-                if(bomb.clear_requested){bullet_core.clear(page);bomb.clear_requested=false;}
+                if(bomb.clear_requested){clear_bullets(page);bomb.clear_requested=false;}
                 bombing_for_spawn=bomb.active;
                 bomb.update(runtime.random);
-                if(bomb.clear_requested){bullet_core.clear(page);bomb.clear_requested=false;}
+                if(bomb.clear_requested){clear_bullets(page);bomb.clear_requested=false;}
                 if(bomb.finished){life.bomb_invincible=false;life.invincibility=70;bombing_for_spawn=false;}
                 if(effects_enabled)while(consumed_bomb_sparks<bomb.spark_requests.size()){const auto &r=bomb.spark_requests[consumed_bomb_sparks++];sparks.add(r.x,r.y,r.speed,r.count,r.sprite,page);}
             }
@@ -597,7 +606,11 @@ public:
         }
         combat.suppress_formations=suppress_midboss_formations;
         const auto scroll_attempt_before=runtime.scroll.attempted_pixels;
-        if(!rika_enabled&&!meira_enabled&&!stones_enabled&&!marisa_enabled&&!mima_enabled&&!sigma_enabled)runtime.tick(script,player.x,player.y,&sink,combat_enabled?&combat:nullptr,extra_road_frame);
+        if(!rika_enabled&&!meira_enabled&&!stones_enabled&&!marisa_enabled&&!mima_enabled&&!sigma_enabled){
+            runtime.tick(script,player.x,player.y,&sink,combat_enabled?&combat:nullptr,extra_road_frame,[&](const auto &s,int x,int y){
+                if(const auto pat=enemy_pattern(s))depart_pattern(MotionTrack::Enemy,*pat,RenderPoint::pixels(x,y),enemy_motion(s));
+            });
+        }
         else {runtime.page^=1;++runtime.ticks;}
         if(!extra_road_frame)scroll=runtime.scroll;
         encounter_observer=runtime.dispatch;observed_requests=runtime.spawns;
@@ -672,7 +685,7 @@ public:
             h.sound=[&](unsigned id){request_sound(id);};
             h.score=[&](unsigned n){score_core.score+=n;};
             h.player_hit=[&]{if(survival_enabled)life.register_hit();};
-            h.clear_bullets=[&]{bullet_core.clear(page);};
+            h.clear_bullets=[&]{clear_bullets(page);};
             h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
             h.stack_multiplier=[&](unsigned n){bullet_core.stack=(rank==2||rank==3?1u:0u)*n;};
             h.turns_max=[&](unsigned n){bullet_core.special.u3=int(n);};
@@ -742,7 +755,9 @@ public:
             rika.update(page,logic_frame,h);shots.target_x=rika.target_x;shots.target_y=rika.target_y;
         }
         if(survival_enabled){handle_assisted_hit();life.player_phase_begin();}
-        if(combat_enabled)shots.update(page,logic_frame);
+        if(combat_enabled)shots.update(page,logic_frame,[&](const auto &s,const auto &old){
+            depart_pattern(MotionTrack::Shot,shots.pattern_for(s),motion_q4(old),motion_q4(s.position[page]));
+        });
         if(survival_enabled){
             const unsigned normal=player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0;
             life.player_phase_end(page,normal,assist(PracticeTool::Lives),assist(PracticeTool::Power),assist(PracticeTool::Rank),practice_assist.protect_last);player.x=life.current.x;player.y=life.current.y;
@@ -777,7 +792,11 @@ public:
             display=&collision_frame_;
             display->begin(HitboxMode::Self,logic_frame,page);
         }
-        if(bullet_core.update(page,player.x,player.y,logic_frame,display)){++hit_checks;if(survival_enabled)life.register_hit();}
+        if(bullet_core.update(page,player.x,player.y,logic_frame,display,[&](const auto &b,const auto &old){
+            const auto previous=motion_q4(old),current=motion_q4(b.position[page]);
+            if(b.kind==EnemyBulletRequest::Bullet16)depart_pattern(MotionTrack::Bullet,b.pattern,previous,current);
+            else departures_.leave(MotionTrack::Bullet,pellet_pattern,previous,current,8,8);
+        })){++hit_checks;if(survival_enabled)life.register_hit();}
         if(effects_enabled){sparks.update(page);unsigned stock=life.lives,bomb_stock=life.bombs;score_core.update(stock,bomb_stock);life.lives=static_cast<std::uint8_t>(stock);life.bombs=static_cast<std::uint8_t>(bomb_stock);lives=int(stock);bombs=int(bomb_stock);if(life.game_over)score_core.commit();}
         while(consumed_pickup_sounds<pickups.sounds.size())request_sound(pickups.sounds[consumed_pickup_sounds++]);
         while(observed_extend_sounds<score_core.sound8){++observed_extend_sounds;request_sound(8);}
@@ -1045,11 +1064,11 @@ public:
         if(options_visible())xy(T::Option,0,shots.option_left,shots.option_top);
         for(unsigned i=0;i<runtime.enemies.slots.size();++i){
             const auto &s=runtime.enemies.slots[i];
-            if(s.raw[0xe]==1&&(!s.raw[0x10]||death_patterns[i]))
-                frame.record(T::Enemy,i,enemy_motion(s),enemy_motion_kind(s));
+            if(s.raw[0xe]==1)
+                frame.record(T::Enemy,i,enemy_motion(s),runtime.enemies.motion_generation[i]);
         }
-        if(combat_enabled)pool(T::Shot,shots.slots,fixed,[](const auto &s){return std::pair{unsigned(s.pattern),-1};});
-        pool(T::Bullet,bullet_core.bullets,fixed,[](const auto &b){return std::pair{unsigned(b.kind),-1};});
+        if(combat_enabled)pool(T::Shot,shots.slots,fixed,[](const auto &s){return std::pair{s.motion_generation,-1};});
+        pool(T::Bullet,bullet_core.bullets,fixed,[](const auto &b){return std::pair{b.motion_generation,-1};});
         if(effects_enabled){
             pool(T::Item,items.slots,[&](const auto &s){return item_motion(s);},[](const auto &s){return std::pair{s.type,s.age};});
             pool(T::Spark,sparks.slots,fixed,[](const auto &s){return std::pair{unsigned(s.sprite)+2u*s.shot_hit,int(s.age)};});
@@ -1097,11 +1116,21 @@ public:
         render_frame(pixels,show_boss_terminal,smooth_background,motion);
     }
 private:
+    static constexpr unsigned pellet_pattern=~0u; // Procedural 8x8 sprite, not a bank cel.
+    void depart_pattern(MotionTrack track,unsigned pattern,RenderPoint previous,RenderPoint current){
+        const auto &sprite=bank.sprites.at(pattern).value();
+        departures_.leave(track,pattern,previous,current,int(sprite.width),int(sprite.height));
+    }
     static RenderPoint motion_q4(const std::array<std::uint16_t,2> &position){return {enemy_s16(position[0])*16,enemy_s16(position[1])*16};}
     RenderPoint enemy_motion(const EnemySlots::Slot &s)const{
         return RenderPoint::pixels(enemy_s16(s.word(rendered_page*4)),enemy_s16(s.word(rendered_page*4+2)));
     }
-    static unsigned enemy_motion_kind(const EnemySlots::Slot &s){return s.word(0xc)*256u+s.raw[0xf];}
+    std::optional<unsigned> enemy_pattern(const EnemySlots::Slot &s)const{
+        const auto &raw=script.enemies.at(s.word(0xc)).raw;
+        const unsigned base=unsigned(raw[8])|(unsigned(raw[9])<<8);
+        if(!base)return {};
+        return s.word(0x14)==2?s.word(0x12):base+s.word(0x12);
+    }
     RenderPoint item_motion(const ItemCore::Item &s)const{return {s.left[rendered_page]*256,enemy_s16(s.top[rendered_page])*16};}
     bool options_visible()const{return pickup_enabled&&pickups.power>=8&&(!survival_enabled||(!life.hit&&!life.miss_active&&!life.game_over));}
     int meira_screen_y(int y)const{const int result=y-int(scroll.line);return result<0?result+400:result;}
@@ -1224,11 +1253,14 @@ private:
         const auto put=[&](unsigned pat,RenderPoint p,Paint paint=Paint::Artwork,unsigned scale=1,bool zero_clear=false){
             bank.put(pixels,background,pat,p,paint,scale,zero_clear);
         };
-        const auto enemy_at=[&](unsigned i){const auto &s=runtime.enemies.slots[i];return motion.at(T::Enemy,i,enemy_motion(s),enemy_motion_kind(s));};
+        const auto enemy_at=[&](unsigned i){return motion.at(T::Enemy,i,enemy_motion(runtime.enemies.slots[i]),runtime.enemies.motion_generation[i]);};
+        const auto draw_departure=[&](unsigned pattern,RenderPoint p){put(pattern,p);};
+        departures_.draw(T::Enemy,motion,draw_departure);
         for(unsigned i=0;i<runtime.enemies.slots.size();++i){
-            const auto &s=runtime.enemies.slots[i];if(s.raw[0xe]!=1||s.raw[0x10])continue;
-            const auto &raw=script.enemies.at(s.word(0xc)).raw;const unsigned base=unsigned(raw[8])|(unsigned(raw[9])<<8);
-            if(base)put(s.word(0x14)==2?s.word(0x12):base+s.word(0x12),enemy_at(i));
+            const auto &s=runtime.enemies.slots[i];if(s.raw[0xe]!=1||death_patterns[i])continue;
+            // A lethal hit precedes the first death cel by one tick. Keep the
+            // last live cel until that handoff instead of drawing a blank frame.
+            if(const auto pat=enemy_pattern(s))put(*pat,enemy_at(i));
         }
         if(combat_enabled){
             for(unsigned i=0;i<death_patterns.size();++i)if(death_patterns[i])put(*death_patterns[i],enemy_at(i));
@@ -1271,7 +1303,10 @@ private:
             if(rika.death_zoom)put(rika.death_pattern,p.offset(0,16),Paint::Artwork,2,true);
             else put(rika.draw_pattern,p,flash(rika.hit_flash));
         }
-        if(combat_enabled)for(unsigned i=0;i<shots.slots.size();++i){const auto &s=shots.slots[i];if(s.flag==1)put(shots.pattern_for(s),motion.at(T::Shot,i,motion_q4(s.position[rendered_page]),s.pattern));}
+        if(combat_enabled){
+            departures_.draw(T::Shot,motion,draw_departure);
+            for(unsigned i=0;i<shots.slots.size();++i){const auto &s=shots.slots[i];if(s.flag==1)put(shots.pattern_for(s),motion.at(T::Shot,i,motion_q4(s.position[rendered_page]),s.motion_generation));}
+        }
         // Focus is a collision reference. Show the player and hostile bullets
         // from the checked frame, not the older interpolated pose of live slots.
         const auto *focus_frame=player.focused&&!paused?sampled_collision_frame():nullptr;
@@ -1306,13 +1341,17 @@ private:
         }
         constexpr std::array<unsigned,8> pellet={0x3c,0x7e,0xff,0xff,0xff,0xff,0x7e,0x3c}; // th02/sprites/pellet.bmp
         const auto pellet_color=stage5_rgb(background.palette[15]);
+        const auto draw_bullet=[&](unsigned pattern,RenderPoint p){
+            if(pattern!=pellet_pattern)put(pattern,p);
+            else blit_motion_sprite(pixels,p,8,8,[&](int x,int y){return pellet[y]&(128>>x)?pellet_color:render_clear;});
+        };
+        departures_.draw(T::Bullet,focus?MotionSample{}:motion,draw_bullet);
         for(unsigned i=0;i<bullet_core.bullets.size();++i){
             // TH02 removes a colliding bullet before drawing that frame.
             const auto &b=bullet_core.bullets[i];if(b.flag!=1)continue;
             const auto current=motion_q4(b.position[rendered_page]);
-            const auto p=focus?current.snapped():motion.at(T::Bullet,i,current,unsigned(b.kind));
-            if(b.kind==EnemyBulletRequest::Bullet16)put(b.pattern,p);
-            else blit_motion_sprite(pixels,p,8,8,[&](int x,int y){return pellet[y]&(128>>x)?pellet_color:render_clear;});
+            const auto p=focus?current.snapped():motion.at(T::Bullet,i,current,b.motion_generation);
+            draw_bullet(b.kind==EnemyBulletRequest::Bullet16?b.pattern:pellet_pattern,p);
         }
         if(effects_enabled){
             // Exact eight cels from ReC98/th02/sprites/sparks.bmp (64x8,1bpp).

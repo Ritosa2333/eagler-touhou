@@ -14,6 +14,7 @@ struct EnemyPathRuntime {
     std::uint64_t ticks=0,spawns=0;
     struct Block {unsigned slot=0,type=0;EnemyPathResult result;};
     std::optional<Block> blocked;
+    using BoundaryExit=std::function<void(const EnemySlots::Slot&,int,int)>;
     struct CombatHooks {
         // true follows original positive ordinary-hit branch: skip auto-fire.
         std::function<bool(unsigned,EnemySlots::Slot&,const StageScript::EnemyTemplate&)> damage;
@@ -37,7 +38,8 @@ struct EnemyPathRuntime {
         deferred_scroll_delta.reset();
         page^=1;++ticks;
     }
-    void tick(const StageScript &script,int player_x=208,int player_y=336,EnemyEffectSink *effects=nullptr,CombatHooks *combat=nullptr,bool defer_scroll=false){
+    void tick(const StageScript &script,int player_x=208,int player_y=336,EnemyEffectSink *effects=nullptr,CombatHooks *combat=nullptr,
+              bool defer_scroll=false,const BoundaryExit &on_exit={}){
         if(blocked)return;
         if(deferred_scroll_delta)throw std::logic_error("Uncommitted enemy frame");
         prepare_frame(script,combat&&combat->suppress_formations);if(blocked)return;frame_prepared=false;
@@ -52,14 +54,22 @@ struct EnemyPathRuntime {
         }
         for(unsigned i=0;i<enemies.high_water;++i){auto &s=enemies.slots[i];if(s.raw[0xe]!=1)continue;
             const unsigned type=s.word(0xc);if(type>=script.enemies.size())throw std::runtime_error("Enemy type outside script");const auto slot=script.enemies[type].path_slot;
+            const int old_x=enemy_s16(s.word(page*4)),old_y=enemy_s16(s.word(page*4+2));
+            bool repositioned=false;
             if(!s.raw[0x10]){
                 auto result=run_enemy_path(s,script.paths.at(slot).bytes,random,{page,delta,player_x,player_y,scroll.line,&script.enemies[type],effects});
+                repositioned=result.repositioned;if(repositioned)++enemies.motion_generation[i];
                 if(result.status==EnemyPathResult::Blocked){blocked=Block{i,type,std::move(result)};return;}
                 if(result.status==EnemyPathResult::Ended)continue;
             }
             if(s.raw[0x10]&&(!combat||!combat->death)){EnemyPathResult missing;missing.reason="enemy death animation/score consumer not connected";missing.pc=s.word(8);blocked=Block{i,type,std::move(missing)};return;}
             const int x=enemy_s16(s.word(page*4)),y=enemy_s16(s.word(page*4+2));
-            if(x<0||x>418||(s.raw[0x1e]&&(y>=384||y<=-16)))s.raw[0xe]=2;
+            const bool left=x<0,right=x>418,top=s.raw[0x1e]&&y<=-16,bottom=s.raw[0x1e]&&y>=384;
+            if(left||right||top||bottom){
+                if(on_exit&&!repositioned&&!s.raw[0x10]&&((left&&x<old_x)||(right&&x>old_x)||(top&&y<old_y)||(bottom&&y>old_y)))
+                    on_exit(s,old_x,old_y);
+                s.raw[0xe]=2;
+            }
             // Original automatic fire is outside path bytecode, at template+1A.
             const auto &raw=script.enemies[type].raw;const int fire_interval=enemy_s16(unsigned(raw[26])|(unsigned(raw[27])<<8));
             if(s.raw[0xe]==1){

@@ -17,6 +17,7 @@ public:
         void word(unsigned offset,std::uint16_t value){if(offset+1>=raw.size())throw std::runtime_error("Enemy word outside slot");raw[offset]=static_cast<std::uint8_t>(value);raw[offset+1]=static_cast<std::uint8_t>(value>>8);}
     };
     std::array<Slot,25> slots{};
+    std::array<unsigned,25> motion_generation{}; // Native presentation, not original slot bytes.
     unsigned high_water=0;
     void begin_frame(unsigned back_page){
         if(back_page>1)throw std::runtime_error("Invalid enemy page");
@@ -30,6 +31,7 @@ public:
         if(template_id>=script.enemies.size()||lane<1||lane>48||page>1)throw std::runtime_error("Invalid enemy spawn request");
         unsigned index=0;while(index<slots.size()&&slots[index].raw[0x0e]!=0)++index;
         if(index==slots.size())return {};
+        ++motion_generation[index];
         auto &s=slots[index];const auto &enemy=script.enemies[template_id];
         const auto y=static_cast<std::uint16_t>(enemy.raw[2]|(unsigned(enemy.raw[3])<<8));
         const auto x=static_cast<std::uint16_t>(16+lane*8);

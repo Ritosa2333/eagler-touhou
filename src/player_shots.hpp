@@ -15,7 +15,9 @@ struct PlayerShots {
         std::uint8_t flag=0,type=0,pattern=52,special=0,age=0,render_pattern=52;
         std::array<std::array<std::uint16_t,2>,2> position{};
         int vx=0,vy=0;
+        unsigned motion_generation=0;
     };
+    using BoundaryExit=std::function<void(const Slot&,const std::array<std::uint16_t,2>&)>;
     std::array<Slot,38> slots{};
     std::uint8_t burst_a=255,burst_b=255,cool_a=0,cool_b=0;
     struct HitSpark {int left=0,top=0;unsigned speed=30,count=1;bool as_sprite=false;};
@@ -62,9 +64,9 @@ struct PlayerShots {
                 else {pattern=54;offset=index==4?-24:40;angle=index==4?unsigned(192-int(spread)):192+spread;}
                 break;
             }
-            s.flag=1;s.type=0;s.pattern=static_cast<std::uint8_t>(pattern);s.special=0;
+            s.motion_generation=unsigned(++fired);s.flag=1;s.type=0;s.pattern=static_cast<std::uint8_t>(pattern);s.special=0;
             s.position[back]={static_cast<std::uint16_t>((player_x+offset)*16),static_cast<std::uint16_t>((player_y+32)*16)};
-            const auto velocity=enemy_vector(angle,192);s.vx=velocity[0];s.vy=velocity[1];++fired;allocated=true;
+            const auto velocity=enemy_vector(angle,192);s.vx=velocity[0];s.vy=velocity[1];allocated=true;
             if(++index>=counts[level])break;
         }
         return allocated;
@@ -86,7 +88,7 @@ struct PlayerShots {
             }else if(level>=3&&level<=5)angle=190+draw_random(3);
             else if(level>=6&&level<=8)angle=188+draw_random(7);
             else if(level==9&&index){pattern=49;offset=(index==1||index==3)?-16:32;if(index>=3)y-=16;}
-            s.flag=1;s.type=0;s.special=0;s.pattern=static_cast<std::uint8_t>(pattern);s.position[back]={static_cast<std::uint16_t>((px+offset)*16),static_cast<std::uint16_t>(y*16)};auto v=enemy_vector(angle,192);s.vx=v[0];s.vy=v[1];++fired;any=true;
+            s.motion_generation=unsigned(++fired);s.flag=1;s.type=0;s.special=0;s.pattern=static_cast<std::uint8_t>(pattern);s.position[back]={static_cast<std::uint16_t>((px+offset)*16),static_cast<std::uint16_t>(y*16)};auto v=enemy_vector(angle,192);s.vx=v[0];s.vy=v[1];any=true;
             if(++index>=main_count){++slot;break;}
         }
         if(index<main_count||level<2)return any;
@@ -113,7 +115,7 @@ struct PlayerShots {
             // Level8 B's source CF83 block falls directly through CFD6 and
             // overwrites the same slot; preserve final state, not both shots.
             if(shot_type==1&&level==8){constexpr std::array<Spec,6> overwritten={Spec{0,0,-54},Spec{48,0,-54},Spec{-8,-16,-50},Spec{56,16,-50},Spec{-16,-32,-40},Spec{64,32,-40}};a=overwritten[index];}
-            s.flag=1;s.type=1;s.special=1;s.pattern=static_cast<std::uint8_t>(level==9?(shot_type==1?55:59):63);s.position[back]={static_cast<std::uint16_t>((option_left+a.x)*16),static_cast<std::uint16_t>(option_top*16)};s.vx=a.vx;s.vy=a.vy;++fired;any=true;
+            s.motion_generation=unsigned(++fired);s.flag=1;s.type=1;s.special=1;s.pattern=static_cast<std::uint8_t>(level==9?(shot_type==1?55:59):63);s.position[back]={static_cast<std::uint16_t>((option_left+a.x)*16),static_cast<std::uint16_t>(option_top*16)};s.vx=a.vx;s.vy=a.vy;any=true;
             if(++index>=count){option_lock=1;break;}
         }
         return any;
@@ -144,13 +146,18 @@ struct PlayerShots {
         hit_score_lowword_adds.push_back(static_cast<std::uint16_t>(total));
         damage_events+=total;return total;
     }
-    void update(unsigned back,std::uint32_t stage_frame){
+    void update(unsigned back,std::uint32_t stage_frame,const BoundaryExit &on_exit={}){
         if(back>1)throw std::runtime_error("Invalid shot page");
         for(auto &s:slots){if(s.flag!=1)continue;
+            const auto old=s.position[back];
             s.position[back][0]=static_cast<std::uint16_t>(s.position[back][0]+s.vx);
             s.position[back][1]=static_cast<std::uint16_t>(s.position[back][1]+s.vy);
             const int raw_x=enemy_s16(s.position[back][0]),y=pixel(s.position[back][1]);
-            if(raw_x<=256||raw_x>=6688||y>384||y<8){s.flag=2;continue;}
+            const bool left=raw_x<=256,right=raw_x>=6688,top=y<8,bottom=y>384;
+            if(left||right||top||bottom){
+                if(on_exit&&s.type==unsigned(s.special!=0)&&((left&&s.vx<0)||(right&&s.vx>0)||(top&&s.vy<0)||(bottom&&s.vy>0)))on_exit(s,old);
+                s.flag=2;continue;
+            }
             if(s.special){
                 if(s.type>1){const int interval=shot_type==2?3:4;if(stage_frame%unsigned(interval)==0){++s.type;if(s.type>4){s.flag=2;continue;}}if(stage_frame&1)s.vy=s.vy>=0?s.vy/2:-((-s.vy+1)/2);}
                 else if(s.pattern!=59)s.vy=enemy_s16(unsigned(s.vy-4));

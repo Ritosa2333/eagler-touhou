@@ -90,7 +90,48 @@ struct MotionSample {
 // Exact integer blits for the original path, coverage-aware filtering for
 // fractional placement. Transparent pixels contribute coverage, not black.
 inline constexpr std::uint32_t render_clear=0x1000000;
-struct SpriteClip { int left=32,top=16,right=416,bottom=384; };
+struct SpriteClip {
+    int left=32,top=16,right=416,bottom=384;
+    bool overlaps(RenderPoint p,int width,int height)const{
+        return p.x<right*256&&p.x+width*256>left*256&&
+               p.y<bottom*256&&p.y+height*256>top*256;
+    }
+};
+
+// Logical pools can retire a slot before its last texels leave the playfield.
+// Keep only the outgoing artwork, independent of slot reuse and collisions.
+class SpriteDepartures {
+    struct Sprite {
+        MotionTrack track;
+        unsigned pattern;
+        RenderPoint previous,current;
+        int width,height;
+        bool in_view()const{
+            const SpriteClip clip;
+            return clip.overlaps(previous,width,height)||clip.overlaps(current,width,height);
+        }
+    };
+    std::vector<Sprite> sprites;
+public:
+    void leave(MotionTrack track,unsigned pattern,RenderPoint previous,RenderPoint current,int width,int height){
+        const Sprite sprite{track,pattern,previous,current,width,height};
+        if(sprite.in_view())sprites.push_back(sprite);
+    }
+    void advance(){
+        for(auto &s:sprites){
+            const RenderPoint next{2*s.current.x-s.previous.x,2*s.current.y-s.previous.y};
+            s.previous=s.current;s.current=next;
+        }
+        std::erase_if(sprites,[](const Sprite &s){return !s.in_view();});
+    }
+    void clear(MotionTrack track){std::erase_if(sprites,[&](const Sprite &s){return s.track==track;});}
+    template<class Draw>
+    void draw(MotionTrack track,const MotionSample &motion,const Draw &draw)const{
+        for(const auto &s:sprites)if(s.track==track)
+            draw(s.pattern,motion.previous?motion_lerp(s.previous,s.current,motion.phase):s.current.snapped());
+    }
+};
+
 template<unsigned Opacity=256,class Texel>
 void blit_motion_sprite(std::span<std::uint32_t> pixels,RenderPoint at,int width,int height,Texel texel,SpriteClip clip={}){
     const int left=RenderPoint::floor(at.x),top=RenderPoint::floor(at.y);

@@ -24,6 +24,7 @@ struct EnemyPathResult {
     enum Status {Timed,Ended,Blocked} status=Blocked;
     unsigned pc=0,opcode=0,instructions=0;
     std::string reason;
+    bool repositioned=false;
 };
 // Fails closed before executing missing consumers (bullets/sound/tile changes).
 // No fake terminal/padding beyond path end. Operand-entry jumps remain legal
@@ -77,6 +78,7 @@ inline EnemyPathResult run_enemy_path(EnemySlots::Slot &s,std::span<const std::u
         if((op==9&&unsigned(full_pc)+2>=path.size())||(op==11&&unsigned(full_pc)+5>=path.size())){result.reason="full-PC vector operand unavailable";return result;}
         ++result.instructions;
         bool timed=false,branch=false;
+        if(op>=4&&op<=6)result.repositioned=true;
         switch(op){
         case 0:timed=true;break;
         case 1:move(enemy_s8(byte(2)),enemy_s8(byte(3)));timed=true;break;

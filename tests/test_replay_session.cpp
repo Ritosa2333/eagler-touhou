@@ -767,6 +767,118 @@ void interpolated_gameplay(const fs::path &root){
     }
 }
 
+void sprite_edges(const fs::path &root){
+    constexpr auto white=0xffffffu;
+    const auto at=[](int x,int y){return y*640+x;};
+    std::vector<std::uint32_t> pixels(640*400),sharp(pixels.size());
+    MotionFrame previous;
+    auto make_scene=[&]{
+        auto s=EncounterScene::load(root,0,0,3,2,3);
+        s.combat_enabled=true;
+        s.runtime.dispatch.cursor=1;
+        for(auto &c:s.background.palette)c={0,0,0};
+        s.background.palette[15]={255,255,255};
+        for(auto &tile:s.background.tiles)tile.fill(0);
+        return s;
+    };
+    const auto cel=[](unsigned height){return StageSprites::Sprite{1,height,0,std::vector<std::uint8_t>(height,15)};};
+    {
+        auto s=make_scene();
+        s.bank.sprites[52]=cel(16);
+        auto &shot=s.shots.slots[0];shot.flag=1;shot.position[1]={200*16,9*16};shot.vy=-2*16;
+        s.tick(0);check(shot.flag==2&&PlayerShots::pixel(shot.position[0][1])==7);
+        const auto hash=replay_state_digest(s);
+        s.render(pixels);check(pixels[at(200,15)]==0&&pixels[at(200,22)]==white&&pixels[at(200,23)]==0);
+        check(replay_state_digest(s)==hash);
+        // The logical slot is free again while the old sprite finishes leaving.
+        s.tick(Shot);check(shot.flag==1);s.render(pixels);
+        check(pixels[at(200,20)]==white&&pixels[at(200,21)]==0);
+        s.tick(0);s.tick(0);s.tick(0);s.tick(0);s.render(pixels);
+        check(pixels[at(200,16)]==0);
+    }
+    {
+        auto s=make_scene();
+        auto &e=s.runtime.enemies.slots[0];e.raw[0xe]=1;e.word(4,120);e.word(6,9);
+        auto &type=s.script.enemies[0];type.raw[8]=128;type.raw[9]=0;type.raw[10]=0;type.raw[11]=0;
+        type.raw[26]=type.raw[27]=0;s.bank.sprites[128]=cel(16);
+        s.script.paths[type.path_slot].bytes={1,255,4,0};
+        s.rendered_page=1;e.raw[0xf]=255;s.capture_motion(previous);
+        s.tick(0);check(e.raw[0xf]==0);
+        s.render(pixels,true,true,128,&previous);s.render(sharp);
+        check(pixels[at(122,16)]==white&&pixels[at(124,16)]==0&&sharp[at(124,16)]==white);
+        // A position assignment is not movement, even when less than 64 pixels away.
+        s.capture_motion(previous);
+        e.word(8,0);s.script.paths[type.path_slot].bytes={4,17,1,0,255};
+        s.tick(0);s.render(pixels,true,true,128,&previous);
+        check(pixels[at(136,16)]==white&&pixels[at(130,16)]==0);
+        // An outward road enemy gets its last visible rows even after pooling ends.
+        s.bank.sprites[128]=cel(36);
+        e.raw[0x1e]=1;e.word(8,0);e.word(0xa,0);e.word(s.rendered_page*4+2,std::uint16_t(-15));
+        s.script.paths[type.path_slot].bytes={1,255,0,255};
+        s.capture_motion(previous);s.tick(0);check(e.raw[0xe]==2);
+        s.render(pixels);check(pixels[at(136,19)]==white&&pixels[at(136,20)]==0);
+        // A script ending at that same coordinate is a cut, not a boundary exit.
+        auto cut=make_scene();auto &other=cut.runtime.enemies.slots[0];
+        cut.script.enemies[0]=type;cut.bank.sprites[128]=cel(36);
+        cut.script.paths[type.path_slot].bytes={0x10};
+        other.raw[0xe]=1;other.word(4,136);other.word(6,std::uint16_t(-16));
+        cut.tick(0);cut.render(pixels);check(other.raw[0xe]==2&&pixels[at(136,19)]==0);
+    }
+    {
+        auto s=make_scene();
+        auto &e=s.runtime.enemies.slots[0];e.raw[0xe]=1;e.word(4,120);e.word(6,16);
+        auto &type=s.script.enemies[0];type.raw[8]=128;type.raw[9]=0;type.raw[10]=0;type.raw[11]=0;
+        type.raw[14]=type.raw[15]=0;type.raw[22]=1;type.raw[23]=0;
+        type.raw[26]=type.raw[27]=0;s.bank.sprites[128]=cel(16);s.bank.sprites[10]=cel(1);
+        s.script.paths[type.path_slot].bytes={0,255};
+        auto &shot=s.shots.slots[0];shot.flag=1;shot.position[1]={121*16,16*16};shot.vy=-12*16;
+        s.tick(0);check(e.raw[0x10]==1&&!s.death_patterns[0]);
+        s.render(pixels);check(pixels[at(120,17)]==white);
+        s.tick(0);check(s.death_patterns[0]==10);
+        s.render(pixels);check(pixels[at(120,16)]==white&&pixels[at(120,17)]==0);
+    }
+    {
+        auto s=make_scene();
+        s.bank.sprites[88]=cel(16);
+        s.bank.sprites[0]=cel(1);
+        auto &bullet=s.bullet_core.bullets[0];bullet.flag=1;bullet.kind=EnemyBulletRequest::Bullet16;
+        bullet.pattern=88;bullet.position[1]={260*16,4*16};bullet.velocity={0,-4*16};
+        auto &hit=s.bullet_core.bullets[1];hit.flag=1;hit.position[1]={220*16,351*16};
+        s.rendered_page=1;s.capture_motion(previous);s.tick(0);
+        check(bullet.flag==2&&hit.flag==2&&s.hit_checks==1);
+        s.render(pixels,true,true,128,&previous);s.render(sharp);
+        check(pixels[at(260,17)]==white&&pixels[at(260,18)]==0&&sharp[at(260,16)]==0);
+        check(pixels[at(224,355)]==0&&sharp[at(224,355)]==0);
+    }
+    // A real Lunatic stage shot moves from y=18 to y=6. Cel 52 still has
+    // opaque rows inside the viewport, although its gameplay slot is retired.
+    auto run=EncounterScene::load(root,0,0,3,2,3);
+    run.combat_enabled=true;run.enable_effects();
+    for(unsigned tick=0;tick<83;++tick)run.tick(Shot|(tick>=50&&tick<53?Up:0));
+    run.render(pixels);
+    auto terrain=run;terrain.combat_enabled=false;terrain.render(sharp);
+    const auto shot=std::ranges::find_if(run.shots.slots,[&](const auto &s){
+        return s.flag==2&&PlayerShots::pixel(s.position[run.rendered_page][1])==6&&s.render_pattern==52;
+    });
+    check(shot!=run.shots.slots.end());
+    const auto x=PlayerShots::pixel(shot->position[run.rendered_page][0]);
+    const auto width=run.bank.sprites[52]->width;
+    for(int y=16;y<=20;++y){
+        const auto row=pixels.begin()+at(x,y),blank=sharp.begin()+at(x,y);
+        check(!std::equal(row,row+width,blank));
+    }
+    // The same inputs hit a real Stage 1 enemy while it spans the top edge.
+    for(unsigned tick=83;tick<964;++tick)run.tick(Shot);
+    auto &enemies=run.runtime.enemies.slots;
+    const auto hit=std::ranges::find_if(enemies,[&](const auto &e){
+        return e.raw[0xe]==1&&e.raw[0x10]&&enemy_s16(e.word(run.rendered_page*4+2))==14&&
+               !run.death_patterns[&e-enemies.data()];
+    });
+    check(hit!=enemies.end());
+    run.render(pixels);hit->raw[0xe]=0;run.render(sharp);hit->raw[0xe]=1;
+    check(!std::equal(pixels.begin()+at(32,16),pixels.begin()+at(32,38),sharp.begin()+at(32,16)));
+}
+
 void pause_and_menu_return(const fs::path &root){
     NativeReplayConfig c;
     auto scene=load_replay_scene(root,c);
@@ -863,11 +975,16 @@ void focus_mode(const fs::path &root){
 
 int main(int argc,char **argv){
     try{
-        if(argc<2||argc>3)throw std::runtime_error("Usage: soew-replay-session-tests <staged assets> [frozen stage 2 v4 replay | --background-smoothing | --focus-mode]");
+        if(argc<2||argc>3)throw std::runtime_error("Usage: soew-replay-session-tests <staged assets> [frozen stage 2 v4 replay | --background-smoothing | --focus-mode | --sprite-edges]");
         const fs::path root=argv[1];
         if(argc==3&&std::string_view(argv[2])=="--focus-mode"){
             focus_mode(root);
             std::cout<<"focus_mode_checks="<<checks<<" failures=0\n";
+            return 0;
+        }
+        if(argc==3&&std::string_view(argv[2])=="--sprite-edges"){
+            sprite_edges(root);
+            std::cout<<"sprite_edge_checks="<<checks<<" failures=0\n";
             return 0;
         }
         if(argc==3&&std::string_view(argv[2])=="--background-smoothing"){
