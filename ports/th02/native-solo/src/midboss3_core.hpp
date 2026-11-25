@@ -4,7 +4,7 @@ namespace soew {
 // ReC98 th02_main.asm:6498-7172. Scene integration remains opt-in.
 struct Midboss3Core {
     enum class Flag : std::uint8_t { Alive, Dying, Removed };
-    struct Actor {Flag flag=Flag::Alive;std::array<int,2> left{},top{};std::uint16_t damage=0,death_frame=0;bool visible=false,hit_flash=false;unsigned death_pattern=0;};
+    struct Actor {Flag flag=Flag::Alive;std::array<int,2> left{},top{};BossDamage damage;std::uint16_t death_frame=0;bool visible=false,hit_flash=false;unsigned death_pattern=0;};
     std::array<Actor,2> actor{};std::array<std::uint8_t,2> angle{};
     bool active=false;std::uint16_t phase_frame=0;std::uint8_t cycles=0;unsigned pattern=144;
     int target_x=-1,target_y=-1;
@@ -23,7 +23,7 @@ struct Midboss3Core {
         if(phase_frame==1){actor[0].left.fill(32);actor[1].left.fill(352);for(auto &a:actor){a.top.fill(-16);a.damage=0;}cycles=0;return;}
         pattern=144+(scroll_line&3);
         const auto hit=[&](Actor &a){return h.damage?h.damage(a.left[back]+12,a.top[back],40,30):0u;};
-        if(enemy_s16(phase_frame)<128){for(auto &a:actor){a.top[back]=enemy_s16(unsigned(a.top[back]+int(scroll_step)));const auto d=hit(a);if(d){a.damage=std::uint16_t(a.damage+d);a.hit_flash=true;if(h.sound)h.sound(4);}a.visible=true;}return;}
+        if(enemy_s16(phase_frame)<128){for(auto &a:actor){a.top[back]=enemy_s16(unsigned(a.top[back]+int(scroll_step)));const auto d=hit(a);if(d){a.damage.add(d,h.damage_divisor);a.hit_flash=true;if(h.sound)h.sound(4);}a.visible=true;}return;}
         if(phase_frame==128&&(!h.lock_timeout||cycles<4))++cycles;
         for(unsigned i=0;i<2;++i){auto &a=actor[i];
             if(a.flag==Flag::Dying){if(h.spark)h.spark({a.left[back]+32,a.top[back]+16,60,1,false});a.death_pattern=10+unsigned(enemy_s16(a.death_frame)/6);++a.death_frame;if(enemy_s16(a.death_frame)>=48){if(h.spark)h.spark({a.left[back]+32,a.top[back]+16,128,32,true});a.death_frame=0;a.flag=Flag::Removed;target_x=target_y=-1;}else a.visible=true;continue;}
@@ -36,7 +36,7 @@ struct Midboss3Core {
             else if(phase<416){if(phase>=376)a.left[back]=enemy_s16(unsigned(a.left[back]-side));if(!(phase_frame&3)){angle[i]=std::uint8_t(angle[i]-side);emit(angle[i],0x20,50);}}
             else if(phase<576){a.top[back]=enemy_s16(unsigned(a.top[back]-2));if(a.top[back]<0)a.top[back]+=400;if(phase%60==0)emit(0,0x19,40);}
             else phase_frame=127;
-            const auto d=hit(a);if(d){a.damage=std::uint16_t(a.damage+d);if(enemy_s16(a.damage)>280){if(h.sound)h.sound(2);a.flag=Flag::Dying;if(h.score)h.score(20000);}else{a.visible=true;a.hit_flash=true;if(h.sound)h.sound(4);}}else a.visible=true;
+            const auto d=hit(a);if(d){a.damage.add(d,h.damage_divisor);if(enemy_s16(a.damage)>280){if(h.sound)h.sound(2);a.flag=Flag::Dying;if(h.score)h.score(20000);}else{a.visible=true;a.hit_flash=true;if(h.sound)h.sound(4);}}else a.visible=true;
             if(!h.lock_timeout&&cycles>=4)a.flag=Flag::Dying;
         }
     }

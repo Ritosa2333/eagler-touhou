@@ -41,13 +41,21 @@ struct ItemCore {
             s.vy=region?sides[added]:center_y[added];s.vx=region?region*-2:center_x[added];++spawned;if(++added==5)break;
         }
     }
-    template<class Collect> void update(unsigned back,int player_x,int player_y,bool hit,Collect &&collect){
+    static bool touches(int left,int y,int x,int top){
+        return left>=x-8&&left<=x+24&&y>=top&&y<=top+24;
+    }
+    template<class Collect> void update_shared(unsigned back,Collect &&collect){
         if(back>1)throw std::runtime_error("Invalid item page");
         for(auto &s:slots){if(s.flag!=1)continue;if(s.vy<=0)s.left[back]=enemy_s16(unsigned(s.left[back]+s.vx));s.top[back]=static_cast<std::uint16_t>(s.top[back]+s.vy);
             const int left=s.left[back];int y=pixel(s.top[back]);if(y<0){y=0;s.top[back]=0;}else if(y>=384){s.flag=2;++drop_cycle;if(!(drop_cycle&15))item_skill=enemy_s16(unsigned(item_skill-1));continue;}
             if(left<=16||left>=416){s.flag=2;continue;}s.age=enemy_s16(unsigned(s.age+1));s.vy=enemy_s16(unsigned(s.vy+1));
-            if(!hit&&left>=player_x-8&&left<=player_x+24&&y>=player_y&&y<=player_y+24&&collect(s.type,left,y))s.flag=2;
+            if(collect(s.type,left,y))s.flag=2;
         }
+    }
+    template<class Collect> void update(unsigned back,int player_x,int player_y,bool hit,Collect &&collect){
+        update_shared(back,[&](unsigned type,int x,int y){
+            return !hit&&touches(x,y,player_x,player_y)&&collect(type,x,y);
+        });
     }
 };
 }

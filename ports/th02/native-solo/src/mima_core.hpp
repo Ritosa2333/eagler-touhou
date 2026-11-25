@@ -54,7 +54,7 @@ struct MimaCore {
     }
     int left=144,top=64,target_x=-1,target_y=-1;
     unsigned phase_frame=0,pattern=128,selection=0,rounds=0;
-    std::uint16_t damage_taken=0;
+    BossDamage damage_taken;
     bool body_damage_enabled=false,body_flash=false,form2=false,finished=false;
     std::array<Orb,8> orbs{};
     std::uint8_t bg_radius=0,bg_fill_radius=0,bg_fill_base=0,bg_fill_tick=0;
@@ -236,7 +236,7 @@ private:
             const unsigned n=h.damage?h.damage(left+48,top+32,64,64):0;
             if(n){
                 flash_pending=true;
-                if(body_damage_enabled)damage_taken=std::uint16_t(damage_taken+n);
+                if(body_damage_enabled)damage_taken.add(n,h.damage_divisor);
                 if(enemy_s16(damage_taken)>=6000){
                     sound(h,2);body_defeated=true;if(h.score)h.score(500000);if(h.invincibility)h.invincibility(200);
                 }

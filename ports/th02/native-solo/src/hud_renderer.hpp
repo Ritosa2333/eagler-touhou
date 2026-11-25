@@ -85,6 +85,17 @@ inline void draw_original_hud(std::vector<std::uint32_t> &pixels,const th03::ass
     for(const auto &cell:cells)::draw_glyph(pixels,font,cell.code,cell.column*8,cell.row*16,cell.color);
 }
 
+namespace coop_hud {
+inline void draw_stock_limit(std::vector<std::uint32_t> &pixels,int x,int y){
+    // Small /5, centered on the numeral's baseline without filtering its pixels.
+    constexpr std::array<std::uint16_t,7> rows={
+        0b000101111,0b000101000,0b001001000,0b001001110,
+        0b010000001,0b010000001,0b100001110};
+    for(int dy=0;dy<7;++dy)for(int dx=0;dx<9;++dx)
+        if(rows[dy]&(0x100u>>dx))pixels[(y+dy)*640+x+dx]=0xffc0c0c0u;
+}
+}
+
 namespace practice_keys {
 // Leave the original HiScore label at y=48 untouched. TH05 groups the
 // action keys separately from the inverted-T direction keys.

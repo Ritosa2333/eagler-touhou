@@ -43,6 +43,7 @@ struct Digest {
     }
     template<class T,std::size_t N> void add(const std::array<T,N> &items){for(const auto &x:items)add(x);}
     template<class T> void add(const std::optional<T> &v){add(v.has_value());if(v)add(*v);}
+    void add(BossDamage damage){add(std::uint16_t(damage));} // Solo replays retain their whole-HP digest.
     template<class... T> void fields(const T&... values){(add(values),...);}
     void gate(const StageDialogue::KeyDelay &k){fields(k.waiting_press,k.sample,k.elapsed);}
 };
@@ -132,8 +133,8 @@ inline std::uint64_t replay_state_digest(const EncounterScene &s){
 inline NativeReplayContext replay_tick_context(const EncounterScene &s){
     using P=ExtraSettlement::Phase;
     if(s.extra_settlement.showing_bonus()||s.extra_settlement.phase==P::GameOver||
-        (s.sigma_art&&s.life.game_over&&!s.sigma.done))return NativeReplayContext::StageClear;
-    if(s.life.game_over&&s.transitions_enabled&&!s.sigma_art&&s.survival_enabled&&!s.practice_mode)
+        (s.sigma_art&&s.run_over()&&!s.sigma.done))return NativeReplayContext::StageClear;
+    if(s.run_over()&&s.transitions_enabled&&!s.sigma_art&&s.survival_enabled&&!s.practice_mode)
         return NativeReplayContext::Continue;
     if(s.transitions_enabled&&s.transition.active()&&s.transition.phase!=StageTransition::Phase::Postboss)
         return NativeReplayContext::StageClear;

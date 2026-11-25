@@ -816,7 +816,7 @@ void compose_transition(Frame &frame,const soew::EncounterScene &s,const th03::a
         else if(extra_bonus)compose_clear_bonus(frame,font,s.extra_settlement.bonus,zh?(hans?o::extra_labels_hans:o::extra_labels_hant):en?extra_en:o::extra_labels,7,lang);
     }
     if(phase==P::Leave||phase==P::Entry)compose_curtain(frame,font,phase==P::Entry,s.transition.frame);
-    if(phase==P::Battle&&!s.dialogue.active()&&!s.life.game_over&&!s.preboss_started&&!s.transition.boss_music_frame&&s.transition.opening_caption&&s.ticks<o::opening_frames){
+    if(phase==P::Battle&&!s.dialogue.active()&&!s.run_over()&&!s.preboss_started&&!s.transition.boss_music_frame&&s.transition.opening_caption&&s.ticks<o::opening_frames){
         constexpr int title_y=o::stage_row*o::cell_h;
         if(zh){
             const auto title=soew::stage_label(lang,s.stage);
@@ -832,7 +832,7 @@ void compose_transition(Frame &frame,const soew::EncounterScene &s,const th03::a
         }
         compose_stage_subtitle(frame,lang,s.stage,!en&&!zh);
     }
-    if(phase==P::Battle&&!s.dialogue.active()&&!s.life.game_over&&!s.paused){
+    if(phase==P::Battle&&!s.dialogue.active()&&!s.run_over()&&!s.paused){
         const auto start=s.transition.boss_music_frame;
         if((start||(!s.preboss_started&&s.transition.opening_caption))&&o::show_bgm(s.ticks-start.value_or(0))){
             constexpr int bgm_y=o::bgm_row*o::cell_h;
@@ -1123,6 +1123,9 @@ struct App {
     int practice_choice=0,pause_choice=0;
     fs::path replay_dir;
     std::optional<soew::NativeReplayRecorder> recorder;
+    std::optional<soew::LocalCoopConfig> local_coop;
+    std::array<std::uint16_t,3> local_coop_input{};
+    std::array<soew::ShotInput,3> local_coop_fire;
     RecordedHostTiming recording_timing;
     std::unique_ptr<soew::HostPerf> host_perf;
     HostTimingSample pending_replay_timing{};
@@ -1676,7 +1679,7 @@ void sync_gameplay_bgm(App &app,bool foreground){
     const int wanted=scene_music_track(s);
     if(wanted>=6&&wanted!=13&&wanted!=s.stage+1&&!app.stage_scene->transition.boss_music_frame)
         app.stage_scene->transition.boss_music_frame=s.ticks;
-    const bool pause=app.stage_intro.active()||app.practice_tools.open||app.fast_retry_left||soew::gameplay_music_paused(foreground,s.paused,s.life.game_over,s.stage2_preview_boundary||s.stage3_preview_boundary||(s.rika_enabled&&s.rika.done&&!s.transitions_enabled));
+    const bool pause=app.stage_intro.active()||app.practice_tools.open||app.fast_retry_left||soew::gameplay_music_paused(foreground,s.paused,s.run_over(),s.stage2_preview_boundary||s.stage3_preview_boundary||(s.rika_enabled&&s.rika.done&&!s.transitions_enabled));
     if(app.smoke){
         if(app.gameplay_audio_attempted!=wanted){app.gameplay_audio_attempted=wanted;start_preview(app,wanted,false,app.practice_bgm_measure);app.practice_bgm_measure=0;if(app.audio.active())++app.gameplay_audio_starts;}
     }else{
@@ -1740,20 +1743,31 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
     if(!app.audio.stop())throw std::runtime_error("Audio stop before stage failed");
     app.z_input.clear();
     auto rules=app.menu.rules();
+    if(app.local_coop){
+        const auto &local=*app.local_coop;
+        rules={local.rank,id,local.lives,local.bombs,local.shots[0]};
+        stage4_trial=id==3;
+    }
     if(id==5&&app.extra_trial)rules={4,5,2,1,int(app.extra_shot)};
     if(app.replay_playback){const auto &r=app.replay_playback->config;rules={r.rank,id,r.lives,r.bombs,r.shot};}
-    const bool extra=id==5&&(app.extra_trial||app.extra_candidate||(app.replay_playback&&app.replay_playback->config.extra));
+    const bool extra=id==5&&(app.local_coop||app.extra_trial||app.extra_candidate||(app.replay_playback&&app.replay_playback->config.extra));
     if(id==5&&!extra&&!app.smoke&&app.gameplay_audio_enabled)throw std::runtime_error("Extra is not enabled in this build mode");
-    if(extra&&!app.extra_trial&&!app.replay_playback&&(!app.menu.extra_mode||!app.menu.unlocked))throw std::runtime_error("Extra is locked");
-    const soew::NativeReplayConfig config=app.replay_playback?app.replay_playback->config:soew::NativeReplayConfig{1234,id,rules.shot,rules.rank,rules.lives,rules.bombs,app.menu.replay_music(),app.menu.reduced,app.menu.autofire,stage4_trial,id==4&&app.stage5_trial,app.stage5_mainline,extra};
+    if(extra&&!app.local_coop&&!app.extra_trial&&!app.replay_playback&&(!app.menu.extra_mode||!app.menu.unlocked))throw std::runtime_error("Extra is locked");
+    const soew::NativeReplayConfig config=app.replay_playback?app.replay_playback->config:soew::NativeReplayConfig{1234,id,rules.shot,rules.rank,rules.lives,rules.bombs,app.menu.replay_music(),app.menu.reduced,app.menu.autofire,stage4_trial,id==4&&(app.local_coop||app.stage5_trial),bool(app.local_coop)||app.stage5_mainline,extra};
     app.stage_scene=soew::load_replay_scene(app.assets_root,config,soew::simulation_language(app.menu.language));
+    if(app.local_coop){
+        auto &scene=*app.stage_scene;
+        scene.enable_coop(*app.local_coop);
+        if(id==2){scene.midboss3_enabled=true;scene.enable_preboss();scene.transitions_enabled=true;}
+        app.local_coop_fire={};
+    }
     arm_stage_intro(app,(id==0||id==5)&&!stage4_trial&&!app.stage5_trial&&!app.extra_trial);
     app.replay_session.emplace(config,app.replay_playback&&!app.replay_playback->summary);
     app.stage_scene->sound.enabled=app.menu.music!=0&&!app.effect_bank.empty();
     app.stage_scene->sound_output=[&app](unsigned id){if(app.menu.music!=0&&!app.effect_bank.empty()&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
     app.run_entry_stage=id;app.run_entry_stage4_trial=stage4_trial;app.run_pause_menu=false;
     app.recorder.reset();app.recording_timing={};
-    if(!app.replay_playback&&app.replay_recording&&(app.settings_enabled||app.smoke)&&(id<5||extra))app.recorder.emplace(config);
+    if(!app.local_coop&&!app.replay_playback&&app.replay_recording&&(app.settings_enabled||app.smoke)&&(id<5||extra))app.recorder.emplace(config);
     app.stage_entry_release=true;app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.motion_before.stage=-1;app.gameplay_audio_attempted=-1;
     if(app.gameplay_audio_enabled)sync_gameplay_bgm(app,app.smoke||(app.focused&&!app.minimized&&!app.resizing));
     else app.audio_status={L"診断ステージ：音声なし",L"Diagnostic stage: audio disabled"};
@@ -1777,7 +1791,13 @@ void transition_page(App &app,std::function<void()> commit,bool confirm_delay=fa
     app.page_transition.start(confirm_delay?PageTransition::ConfirmDelay:PageTransition::FadeOut);
     app.page_transition_clock.defer_batch(host_ms());
 }
+#ifdef __EMSCRIPTEN__
+void leave_browser_coop();
+#endif
 void return_to_title(App &app){
+#ifdef __EMSCRIPTEN__
+    if(app.local_coop){leave_browser_coop();return;}
+#endif
     app.stage_intro.cancel();
     app.page_transition.start(PageTransition::Idle);
     app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
@@ -2437,7 +2457,7 @@ void release_score_controls(App &app){
     app.stage_clock.reset(host_ms());app.z_input.clear();
 }
 bool intercept_live_game_over(App &app,soew::ReplayStepStatus status){
-    if(app.replay_playback||app.practice_session)return false;
+    if(app.local_coop||app.replay_playback||app.practice_session)return false;
     const auto &s=*app.stage_scene;
     if(!s.life.game_over&&!s.extra_settlement.terminal()){app.death_presented=false;return false;}
     if(s.stage5_result||s.extra_settlement.phase==soew::ExtraSettlement::Phase::Clear)return false;
@@ -2476,7 +2496,7 @@ void start_stage5_ending(App &app){
     const bool good=!extra&&s.stage5_result&&s.stage5_result->good_ending;
     const soew::NativeScoreEntry entry{"",run.rank,run.shot_type,run.continues_used,s.score_core.score,good,
         extra&&!cleared?soew::NativeScoreEntry::extra_stage:soew::NativeScoreEntry::all_stages};
-    if(app.native_scores&&!app.replay_playback&&!app.run_assisted){
+    if(app.native_scores&&!app.local_coop&&!app.replay_playback&&!app.run_assisted){
         const auto status=cleared?app.native_scores->record_extra_clear(entry.shot_type):
             good?app.native_scores->record_good_clear(entry.shot_type):soew::NativeScoreStore::Status::Ok;
         if(status!=soew::NativeScoreStore::Status::Ok)app.settings_warning="Could not save the native clear record";
@@ -2528,7 +2548,7 @@ void start_stage5_ending(App &app){
         throw std::runtime_error("Unknown ending song");
     };
     hooks.register_score=[&app,entry](const soew::EndingVerdict &){
-        if(!app.replay_playback&&!app.practice_session&&!entry.continues_used)open_terminal_score_review(app,entry);
+        if(!app.local_coop&&!app.replay_playback&&!app.practice_session&&!entry.continues_used)open_terminal_score_review(app,entry);
     };
     app.staff_song_started=false;
     app.staff_music_poll=0;
@@ -3021,12 +3041,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 });
                 app->recording_timing.boundary();
                 if(app->stage_scene&&app->gameplay_audio_enabled)sync_gameplay_bgm(*app,app->smoke||(app->focused&&GetForegroundWindow()==hwnd&&!app->minimized&&!app->resizing));
-            }else if(!repeat&&w==VK_ESCAPE&&(app->stage_scene->continue_prompt()||(!app->replay_playback&&app->stage_scene->life.game_over&&!app->stage_scene->paused))){
+            }else if(!repeat&&w==VK_ESCAPE&&(app->stage_scene->continue_prompt()||(!app->replay_playback&&app->stage_scene->run_over()&&!app->stage_scene->paused))){
                 if(!app->replay_playback&&!app->practice_session&&app->stage_scene->continue_choice==soew::EncounterScene::ContinueChoice::Choose){
                     const auto step=app->replay_session->cancel_continue(*app->stage_scene);
                     if(app->recorder&&!app->recorder->record(step.event))app->recorder.reset();
                     finalize_replay(*app);
-                    if(step.status==soew::ReplayStepStatus::Finished)handle_live_death_result(*app);
+                    if(step.status==soew::ReplayStepStatus::Finished){
+                        if(app->local_coop)return_to_title(*app);
+                        else handle_live_death_result(*app);
+                    }
                 }
             }else if(!repeat&&w==VK_ESCAPE){
                 app->run_pause_menu=true;app->pause_choice=0;app->stage_scene->paused=true;app->z_input.clear();app->stage_clock.reset(host_ms());
@@ -3353,7 +3376,27 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             soew::HudState hud;hud.score=app->stage_scene->score_core.score;hud.high_score=hud.score;hud.lives=app->stage_scene->life.lives;hud.bombs=app->stage_scene->life.bombs;hud.power=int(app->stage_scene->pickups.power);hud.difficulty=app->stage_scene->rank;
             if(app->scores){const auto stored=app->scores->at(std::min(4,app->stage_scene->rank)).entries[0].score;hud.high_score=std::max(hud.high_score,stored/10);hud.high_continues=stored%10;}
             soew::draw_original_hud(app->composed.pixels,app->font,hud);
-            const bool show_details=app->replay_playback?app->menu.show_more_info:app->practice_assist.info;
+            if(const auto &scene=*app->stage_scene;scene.coop){
+                for(int y=121;y<352;++y)std::fill_n(app->composed.pixels.begin()+y*640+448,192,0xff000000u);
+                for(unsigned i=0;i<scene.seat_count();++i){
+                    const auto &l=scene.seat_life(i);const auto ink=soew::coop_art::seat_ink[i];
+                    const int y=123+int(i)*70;
+                    const auto heading=L"P"+std::to_wstring(i+1)+L"  "+std::wstring(1,wchar_t(L'A'+scene.seat_motion(i).shot));
+                    display_text(app->composed,heading,456,y,ink,lang);
+                    if(l.game_over)display_text(app->composed,L"GHOST",518,y,ink,lang);
+                    const auto stock=[&](std::wstring_view label,unsigned value,int x){
+                        auto text=std::wstring(label)+std::to_wstring(value);
+                        display_text(app->composed,text,x,y+19,0xffffff,lang);
+                        soew::coop_hud::draw_stock_limit(app->composed.pixels,x+display_text_width(text,lang),y+24);
+                    };
+                    stock(L"L ",l.lives,456);
+                    stock(L"B ",l.bombs,520);
+                    display_text(app->composed,L"P "+std::to_wstring(scene.seat_pickups(i).power)+L"/80",456,y+38,0xffffff,lang);
+                    if(const auto n=scene.coop->rescue[i].presses)
+                        display_text(app->composed,std::to_wstring(n)+L"/5",538,y+38,ink,lang);
+                }
+            }
+            const bool show_details=!app->local_coop&&(app->replay_playback?app->menu.show_more_info:app->practice_assist.info);
             if(!app->stage_intro.active()&&!show_stage_intro){
                 if(show_details||app->practice_session)
                     draw_debug_info(app->composed,*app->stage_scene,app->practice_session,show_details,
@@ -3402,7 +3445,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     score_gaiji_line(app->composed,app->font,g::credit,18*8,20*16,0x00ff00);
                     draw_glyph(app->composed.pixels,app->font,g::zero+3-s.continues_used,32*8,20*16,0x00ff00);
                 }
-            }else if(app->stage_scene->life.game_over&&app->score_review==App::ScoreReview::None){
+            }else if(app->stage_scene->run_over()&&app->score_review==App::ScoreReview::None){
                 compose_game_over(app->composed,app->font,soew::score_gaiji::animation_frames,lang);
             }
             const auto &scene=*app->stage_scene;
@@ -3715,6 +3758,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     pressed.up=held(VK_UP);pressed.down=held(VK_DOWN);pressed.left=held(VK_LEFT);pressed.right=held(VK_RIGHT);
                     pressed.focus=held(VK_SHIFT);
                     pressed.n8=held(VK_NUMPAD8);pressed.n2=held(VK_NUMPAD2);pressed.n4=held(VK_NUMPAD4);pressed.n6=held(VK_NUMPAD6);pressed.n7=held(VK_NUMPAD7);pressed.n9=held(VK_NUMPAD9);pressed.n1=held(VK_NUMPAD1);pressed.n3=held(VK_NUMPAD3);
+                    if(app->local_coop)pressed.n8=pressed.n2=pressed.n4=pressed.n6=pressed.n7=pressed.n9=pressed.n1=pressed.n3=false;
                     if(app->stage_entry_release){if(!z_held&&!held(VK_SPACE)&&!held('X')&&!held(VK_RETURN)&&!held('R')&&!held(VK_ESCAPE))app->stage_entry_release=false;else{pressed.z=pressed.space=pressed.x=pressed.enter=false;app->z_input.clear();}}
                     if(!z_held&&app->z_input.blocked)app->z_input.event(false,shot_mode(*app));
                     if(!enabled||app->stage_scene->paused){app->z_input.clear();app->dialogue_hold.clear();app->mima_dialogue_tap.reset(z_held);}
@@ -3755,8 +3799,23 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             fast=app->dialogue_hold.poll(now,!app->stage_entry_release&&z_held&&app->stage_scene->dialogue.active());
                         }
                         input=advanced.filter(input,gameplay);
+                        if(app->local_coop){
+                            auto &coop=*app->stage_scene->coop;
+                            const auto mode=shot_mode(*app);
+                            for(unsigned seat=0;seat<coop.config.count;++seat){
+                                auto raw=app->local_coop_input[seat];
+                                if(app->stage_entry_release)raw&=~(soew::Shot|soew::Bomb|soew::OK);
+                                auto &fire=app->local_coop_fire[seat];
+                                fire.event((raw&soew::Shot)!=0,mode);
+                                const auto masked=std::uint16_t((raw&~soew::Shot)|(fire.tick(mode)?soew::Shot:0));
+                                coop.input[seat]=seat?masked:std::uint16_t(input|masked);
+                                coop.fire_held[seat]=(raw&soew::Shot)||(!seat&&(z_held||pressed.space));
+                                if(!seat)input|=masked;
+                            }
+                            if(!app->stage_entry_release&&(app->local_coop_input[0]&(soew::Shot|soew::Bomb|soew::OK)))group=true;
+                        }
                         app->hud_input=gameplay?input:0;
-                        apply_live_assists(*app);
+                        if(!app->local_coop)apply_live_assists(*app);
                         if(app->practice_session){
                             const auto event=soew::practice_replay_tick(*app->stage_scene,input,group,fast);
                             const auto samples=app->practice_session->samples();
@@ -4578,10 +4637,26 @@ EMSCRIPTEN_KEEPALIVE int soew_full_start();
 EMSCRIPTEN_KEEPALIVE int soew_full_import_replay();
 }
 namespace { App browser_app; HWND browser_hwnd; }
+void leave_browser_coop(){DestroyWindow(browser_hwnd);}
 extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_fullscreen_changed(bool enabled){
     browser_app.window_fullscreen=enabled;
     browser_app.dialogue_hold.clear();
     browser_app.stage_clock.reset(host_ms());
+}
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_coop(int count,int stage,int rank,int spare,int stock,int p1,int p2,int p3){
+    if(count<2||count>3||stage<0||stage>5||rank<0||rank>3||spare<0||spare>5||stock<0||stock>5||
+        p1<0||p1>2||p2<0||p2>2||p3<0||p3>2)return 0;
+    auto &app=browser_app;
+    try{
+        app.local_coop=soew::LocalCoopConfig{unsigned(count),stage,stage==5?4:rank,spare,stock,{p1,p2,p3}};
+        app.zunsoft.skip();app.opening.active=false;app.menu_visible=false;
+        launch_stage(app,stage);
+        caption(browser_hwnd,app);InvalidateRect(browser_hwnd,nullptr,FALSE);
+        return 1;
+    }catch(const std::exception &error){std::cerr<<"Local co-op: "<<error.what()<<'\n';return 0;}
+}
+extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_coop_inputs(unsigned p1,unsigned p2,unsigned p3){
+    browser_app.local_coop_input={std::uint16_t(p1),std::uint16_t(p2),std::uint16_t(p3)};
 }
 int soew_full_import_replay(){
     try{

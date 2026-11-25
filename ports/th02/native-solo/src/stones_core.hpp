@@ -5,7 +5,7 @@ namespace soew {
 struct StonesCore {
     enum class Flag { Dormant, Active, Dying, Remove, Removed };
     enum class Phase { Opening, Inner, Outer, NorthOpening, NorthFirstAttacks, NorthClosing, NorthSecondAttacks, NorthReopening, NorthFinalAttacks, NorthDeath, Complete };
-    struct Stone {int x,y;unsigned pattern=148;Flag flag=Flag::Dormant;std::uint16_t damage=0;unsigned death_frame=0;bool flash=false;};
+    struct Stone {int x,y;unsigned pattern=148;Flag flag=Flag::Dormant;BossDamage damage;unsigned death_frame=0;bool flash=false;};
     struct Draw {int x=0,y=0;unsigned pattern=0;bool visible=false,flash=false,dying=false;};
     struct Hooks : Midboss1Core::Hooks {
         std::function<void(int,int,unsigned)> item;
@@ -92,7 +92,7 @@ public:
             const unsigned d=h.damage?h.damage(s.x,s.y,32,40):0;
             // Dormant stones consume the collision call but do not accrue damage.
             if(!d||s.flag!=Flag::Active)continue;
-            s.flash=true;s.damage=std::uint16_t(s.damage+d);
+            s.flash=true;s.damage.add(d,h.damage_divisor);
             if(enemy_s16(s.damage)<(i==4?930:i<2?140:120))continue;
             s.flag=Flag::Dying;if(h.score)h.score(30000);
             if(i==4){if(h.invincibility)h.invincibility(200);phase=Phase::NorthDeath;}

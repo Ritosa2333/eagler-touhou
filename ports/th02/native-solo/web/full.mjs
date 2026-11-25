@@ -24,7 +24,7 @@ async function fetchFile(url) {
 const joined = (root, name) => new URL(name.split('/').map(encodeURIComponent).join('/'), root);
 
 export async function playFull(canvas, content = new URL('./content/', import.meta.url), {
-    hosted = false, beforeFrame, onExit,
+    hosted = false, beforeFrame, onExit, localCoop,
 } = {}) {
     const screen = canvas.getContext('2d', {alpha: false});
     const framebuffer = new OffscreenCanvas(640,400);
@@ -270,6 +270,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         wasm.FS.writeFile(path,bytes);
     })]);
     if (wasm._soew_full_start() !== 0) throw Error(lastError ?? 'SoEW startup failed');
+    if (localCoop && !wasm._soew_full_start_coop(...localCoop)) throw Error(lastError ?? 'SoEW local co-op startup failed');
 
     listen(picker,'change', async () => {
         const file = picker.files[0];
@@ -335,6 +336,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     },{passive:false});
 
     const player = {key:deliverKey, unlock:unlockAudio, stop, sync:() => sync(false),
+        coopInputs:(...seats)=>wasm._soew_full_coop_inputs(...seats),
         health:() => ({frames,gameFrame:ticks,audio:{state:audio?.state ?? 'suspended'}})};
     function frame() {
         if (stopped) return;

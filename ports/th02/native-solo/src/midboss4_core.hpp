@@ -14,7 +14,7 @@ struct Midboss4Core {
     std::array<int,2> left{},top{};
     int x=0,y=0,direction=1,target_x=-1,target_y=-1;
     unsigned entries=0,phase_frame=0,death_frame=0,pattern=148,attack=0,cycles=0;
-    std::uint16_t damage_taken=0;
+    BossDamage damage_taken;
     bool active=false,dying=false,visible=false,hit_flash=false,flying_in=true;
 
     void begin_frame(unsigned page) {
@@ -71,7 +71,7 @@ struct Midboss4Core {
         }
         const auto d=h.damage?h.damage(x+8,y,48,48):0;
         if(d){
-            damage_taken=std::uint16_t(damage_taken+d);
+            damage_taken.add(d,h.damage_divisor);
             const int vram_y=y+int(scroll_line);const int wrapped=vram_y>=400?vram_y-400:vram_y;
             if(enemy_s16(damage_taken)>=400&&wrapped>96&&wrapped<336){
                 dying=true;sound(2);if(h.score)h.score(50000);if(h.item)h.item(x+24,y,entries==1?2:4);

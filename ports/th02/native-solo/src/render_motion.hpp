@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <span>
 #include <vector>
+#include "player_shots.hpp"
 
 namespace soew {
 inline constexpr unsigned motion_subpixels=256;
@@ -40,7 +41,7 @@ struct RenderEffect { unsigned kind,color; int x,y,a,b; };
 struct RenderDeathEffect { int x=0,y=0; unsigned frame=0,angle=0; };
 
 struct MotionFrame {
-    static constexpr std::array<unsigned,unsigned(MotionTrack::Count)> sizes={1,1,25,38,150,20,64,20,12,1,1,2,1,1,1,1,4,1,8,1,5,3};
+    static constexpr std::array<unsigned,unsigned(MotionTrack::Count)> sizes={1,1,25,PlayerShots::coop_capacity,150,20,64,20,12,1,1,2,1,1,1,1,4,1,8,1,5,3};
     static constexpr auto offsets=[] {
         std::array<unsigned,sizes.size()+1> out{};
         for(unsigned i=0;i<sizes.size();++i)out[i+1]=out[i]+sizes[i];

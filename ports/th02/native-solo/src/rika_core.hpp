@@ -1,4 +1,5 @@
 #pragma once
+#include "boss_damage.hpp"
 #include "enemy_effects.hpp"
 #include "enemy_math.hpp"
 #include <functional>
@@ -8,13 +9,15 @@ namespace soew {
 struct RikaCore {
     std::array<int,2> left{192,192};
     int cached_x=0,render_y=48;
-    std::uint16_t phase_frame=0,damage_taken=0,death_frame=0,attack_frame=0;
+    std::uint16_t phase_frame=0,death_frame=0,attack_frame=0;
+    BossDamage damage_taken;
     unsigned state=0,pattern=150,draw_pattern=150,rank=1;
     std::uint8_t sweep_angle=0;
     bool dying=false,done=false,visible=false,hit_flash=false,death_zoom=false;
     unsigned death_pattern=0;
     int target_x=-1,target_y=-1;
     struct Hooks {
+        unsigned damage_divisor=1;
         std::function<void(const EnemyBulletRequest&)> bullet;
         std::function<void(int,int,int,unsigned,unsigned)> laser;
         std::function<unsigned(int,int,int,int)> damage;
@@ -70,7 +73,7 @@ struct RikaCore {
         }
         move(back,h);cached_x=left[back];
         const unsigned dealt=h.damage?h.damage(cached_x,48,64,96):0;
-        if(dealt){damage_taken=std::uint16_t(damage_taken+dealt);if(enemy_s16(damage_taken)>2260){dying=true;if(h.score)h.score(20000);if(h.invincibility)h.invincibility(200);}else{hit_flash=true;visible=true;if(h.sound)h.sound(4);}}
+        if(dealt){damage_taken.add(dealt,h.damage_divisor);if(enemy_s16(damage_taken)>2260){dying=true;if(h.score)h.score(20000);if(h.invincibility)h.invincibility(200);}else{hit_flash=true;visible=true;if(h.sound)h.sound(4);}}
         else visible=true;
         // Original calls the attack helper even on the lethal transition tick.
         attack(stage_frame,h);

@@ -1,4 +1,5 @@
 #pragma once
+#include "boss_damage.hpp"
 #include "enemy_effects.hpp"
 #include "enemy_math.hpp"
 #include "collision_display.hpp"
@@ -34,6 +35,7 @@ struct SigmaCore {
         unsigned color;
     };
     struct Hooks {
+        unsigned damage_divisor=1;
         std::function<void(const EnemyBulletRequest&)> bullet;
         std::function<unsigned(int,int,int,int)> damage;
         std::function<void(unsigned)> score,sound,turns_max;
@@ -51,7 +53,8 @@ struct SigmaCore {
         int x=0,y=0,target_radius=0;
     };
     std::array<int,2> left{160,160},top{48,48};
-    std::uint16_t damage_taken=0,phase_frame=0;
+    std::uint16_t phase_frame=0;
+    BossDamage damage_taken;
     std::uint32_t sigma_frame=0;
     unsigned phase=0,subattack=0,pattern=128,draw_pattern=128;
     bool visible=true,hit_flash=false,dying=false,done=false,cycled=false;
@@ -110,7 +113,7 @@ struct SigmaCore {
             }
             if(!dying){
                 unsigned dealt=h.damage(left[back]+36,top[back]+32,56,32);
-                damage_taken=std::uint16_t(damage_taken+dealt);
+                damage_taken.add(dealt,h.damage_divisor);
                 hit_flash=dealt!=0;
                 check_contact(h,CollisionSource::SigmaBody,CollisionBounds::open(left[back]+8,top[back],left[back]+88,top[back]+64));
             }

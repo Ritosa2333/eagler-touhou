@@ -1,4 +1,5 @@
 #pragma once
+#include "boss_damage.hpp"
 #include "enemy_effects.hpp"
 #include "enemy_math.hpp"
 #include "collision_display.hpp"
@@ -26,6 +27,7 @@ struct MeiraCore {
         std::uint16_t travel_step=0;
     };
     struct Hooks {
+        unsigned damage_divisor=1;
         std::function<void(const EnemyBulletRequest&)> bullet;
         std::function<unsigned(int,int,int,int)> damage;
         std::function<void(unsigned)> score,sound,invincibility;
@@ -37,7 +39,8 @@ struct MeiraCore {
         CollisionFrame *collision_display=nullptr;
     };
     std::array<int,2> left{192,192},top{48,48};
-    std::uint16_t phase_frame=0,death_frame=0,damage_taken=0;
+    std::uint16_t phase_frame=0,death_frame=0;
+    BossDamage damage_taken;
     unsigned rank=1,state=0,attack_index=0,pattern=141,draw_pattern=141;
     unsigned special_turns_max=2,death_pattern=0;
     std::uint8_t special_angle=0,marker_pattern=0,effect_parity=0,trail_group=0,trail_speed=0,direction=0;
@@ -221,7 +224,7 @@ struct MeiraCore {
         if(bounds.contains({px,py})){if(h.hit)h.hit();}
         render_y=rolled(y,scroll);const unsigned dealt=h.damage?h.damage(word(x+8),y,48,48):0;
         visible=true;draw_pattern=pattern;
-        if(dealt){damage_taken=std::uint16_t(damage_taken+dealt);sound(h,4);hit_flash=true;
+        if(dealt){damage_taken.add(dealt,h.damage_divisor);sound(h,4);hit_flash=true;
             if(enemy_s16(damage_taken)>=2400){dying=true;if(h.score)h.score(30000);if(h.invincibility)h.invincibility(200);}}
     }
     void death(unsigned back,unsigned scroll,const Hooks& h){

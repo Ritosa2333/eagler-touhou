@@ -18,7 +18,8 @@ struct PlayerShots {
         unsigned motion_generation=0;
     };
     using BoundaryExit=std::function<void(const Slot&,const std::array<std::uint16_t,2>&)>;
-    std::array<Slot,38> slots{};
+    static constexpr unsigned original_capacity=38,coop_capacity=128;
+    std::vector<Slot> slots=std::vector<Slot>(original_capacity);
     std::uint8_t burst_a=255,burst_b=255,cool_a=0,cool_b=0;
     struct HitSpark {int left=0,top=0;unsigned speed=30,count=1;bool as_sprite=false;};
     std::vector<HitSpark> hit_sparks;
@@ -75,7 +76,7 @@ struct PlayerShots {
         unsigned slot=0,index=0;bool any=false;
         const unsigned main_count=shot_type==1?(level==2?1:level<=5?2:level<=7?3:4):(level==9&&counter_c%3==0?5:1);
         const unsigned main_pattern=shot_type==2?124:52;
-        for(;slot<38;++slot){auto &s=slots[slot];if(s.flag)continue;unsigned angle=192,pattern=main_pattern;int offset=8,y=py+32;
+        for(;slot<slots.size();++slot){auto &s=slots[slot];if(s.flag)continue;unsigned angle=192,pattern=main_pattern;int offset=8,y=py+32;
             if(shot_type==1){
                 if(level==2)angle=188+draw_random(7);
                 else if(level==3){offset=index?16:0;angle=188+draw_random(7);}
@@ -92,7 +93,7 @@ struct PlayerShots {
             if(++index>=main_count){++slot;break;}
         }
         if(index<main_count||level<2)return any;
-        bool has_option_slot=false;for(unsigned i=slot;i<38;++i)if(slots[i].flag==0){has_option_slot=true;break;}
+        bool has_option_slot=false;for(unsigned i=slot;i<slots.size();++i)if(slots[i].flag==0){has_option_slot=true;break;}
         if(!has_option_slot)return any;
         if(shot_type==1){last_target_x=level==9?target_x:-1;if(option_lock)return any;}
         else {const bool due=level==2?!option_lock:level==3?counter_c%5==0:level<=5?(counter_c&3)==0:level<=8?counter_c%3==0:(counter_c&1)==0;if(!due)return any;}
@@ -111,7 +112,7 @@ struct PlayerShots {
             else {count=(counter_c&3)==0?6:4;spec={Spec{0,-10,-160},Spec{48,10,-160},Spec{-8,20,-140},Spec{56,-20,-140},Spec{-16,-7,-120},Spec{64,7,-120}};}
         }
         index=0;
-        for(;slot<38;++slot){auto &s=slots[slot];if(s.flag)continue;auto a=spec[index];
+        for(;slot<slots.size();++slot){auto &s=slots[slot];if(s.flag)continue;auto a=spec[index];
             // Level8 B's source CF83 block falls directly through CFD6 and
             // overwrites the same slot; preserve final state, not both shots.
             if(shot_type==1&&level==8){constexpr std::array<Spec,6> overwritten={Spec{0,0,-54},Spec{48,0,-54},Spec{-8,-16,-50},Spec{56,16,-50},Spec{-16,-32,-40},Spec{64,32,-40}};a=overwritten[index];}
@@ -127,13 +128,13 @@ struct PlayerShots {
         if(burst_a!=255){if(cool_a==0){emit(back,player_x,player_y);++sound_requests;cool_a=8;++burst_a;return;}--cool_a;}
         if(burst_b<2){if(cool_b==0){if(level==9){if(directions&(Down|DownLeft|DownRight))spread=static_cast<std::uint8_t>(spread+5)>26?26:static_cast<std::uint8_t>(spread+5);else if(!(directions&(15|0xf000)))spread=spread<5?0:static_cast<std::uint8_t>(spread-5);}emit(back,player_x,player_y);cool_b=8;++burst_b;return;}++sound_requests;--cool_b;}
     }
-    // Enemy hit query runs BEFORE this frame's shot movement and only scans
-    // slots0..34, despite38 slots being updated/rendered in original.
+    // Before shot movement; solo intentionally checks slots 0–34.
     unsigned damage(unsigned back,int left,int top,int width=32,int height=32,const std::function<void(const HitSpark&)> &spark={}){
         if(level>9)throw std::runtime_error("Invalid damage level");
         constexpr std::array<unsigned,10> main_bonus={5,5,4,4,3,3,3,2,2,1},large_bonus={0,0,8,8,7,7,6,5,4,3},option_damage={2,2,2,2,2,1,1,1,1,1};
         unsigned total=0;
-        for(unsigned i=0;i<35;++i){auto &s=slots[i];if(s.flag!=1||(!s.special&&s.type!=0))continue;
+        const auto limit=slots.size()==original_capacity?35u:slots.size();
+        for(unsigned i=0;i<limit;++i){auto &s=slots[i];if(s.flag!=1||(!s.special&&s.type!=0))continue;
             const int x=pixel(s.position[back][0]),y=pixel(s.position[back][1]);
             if(x<=left-8||x>=left+width-(s.special?8:0)||y<=top-8||y>=top-8+height)continue;
             ++hit_events;

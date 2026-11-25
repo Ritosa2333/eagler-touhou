@@ -16,7 +16,8 @@ struct MarisaCore {
     struct Orb {
         int x=0,y=0,radius=0;std::uint8_t angle=0;
         bool active=false,dying=false,hit_flash=false;
-        unsigned hits=0,death_frame=0,death_pattern=10;
+        BossDamage hits;
+        unsigned death_frame=0,death_pattern=10;
         int angular_step=2;
         std::uint8_t volley_offset=0;
     };
@@ -33,7 +34,7 @@ struct MarisaCore {
         std::function<void(unsigned)> invincibility;
         CollisionFrame *collision_display=nullptr;
     };
-    std::uint16_t damage_taken=0;
+    BossDamage damage_taken;
     int target_x=-1,target_y=-1;
     bool body_damage_enabled=false,body_flash=false,defeated=false;
     struct DeathEffect {int x,y;unsigned frame;std::uint8_t angle;};
@@ -378,7 +379,7 @@ struct MarisaCore {
             if(h.sound)h.sound(exposed?4:11);
             if(exposed){
                 body_flash=true;
-                if(body_damage_enabled)damage_taken=std::uint16_t(damage_taken+dealt);
+                if(body_damage_enabled)damage_taken.add(dealt,h.damage_divisor);
             }
             if(enemy_s16(damage_taken)>=900){
                 defeated=true;
@@ -399,7 +400,8 @@ struct MarisaCore {
             if(!orb.active||orb.dying)continue;
             if(h.orb_damage&&h.orb_damage(orb.x+4,orb.y,24,32)){
                 orb.hit_flash=true;
-                if(++orb.hits==110){
+                orb.hits.add(1,h.damage_divisor);
+                if(orb.hits>=110){
                     if(!h.random8)throw std::runtime_error("Marisa orb drop RNG unavailable");
                     if((h.random8()&255u)%80>=player.power&&h.item)h.item(orb.x+8,orb.y+8,3);
                     if(h.sound)h.sound(2);

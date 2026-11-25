@@ -28,6 +28,8 @@
 #include "locale.hpp"
 #include "sound_effects.hpp"
 #include "stage_transition.hpp"
+#include "local_coop.hpp"
+#include "local_coop_art.hpp"
 #include <map>
 namespace soew {
 // Visible original-art development slice, NOT a playable original stage.
@@ -158,6 +160,138 @@ struct EncounterScene:StageScene {
     std::size_t consumed_bomb_sparks=0;
     std::size_t consumed_life_effects=0;
     PlayerShots shots;
+    std::optional<LocalCoopState> coop;
+    std::array<std::optional<BombRenderer>,3> coop_bombs;
+    unsigned seat_count()const{return coop?coop->config.count:1;}
+    PlayerLife &seat_life(unsigned i){return i?coop->extra[i-1].life:life;}
+    const PlayerLife &seat_life(unsigned i)const{return i?coop->extra[i-1].life:life;}
+    PlayerMotion &seat_motion(unsigned i){return i?coop->extra[i-1].player:player;}
+    const PlayerMotion &seat_motion(unsigned i)const{return i?coop->extra[i-1].player:player;}
+    PickupCore &seat_pickups(unsigned i){return i?coop->extra[i-1].pickups:pickups;}
+    const PickupCore &seat_pickups(unsigned i)const{return i?coop->extra[i-1].pickups:pickups;}
+    PlayerShots &seat_shots(unsigned i){return i?coop->extra[i-1].shots:shots;}
+    const PlayerShots &seat_shots(unsigned i)const{return i?coop->extra[i-1].shots:shots;}
+    unsigned alive_count()const{
+        unsigned count=0;for(unsigned i=0;i<seat_count();++i)count+=!seat_life(i).game_over;
+        return count;
+    }
+    bool run_over()const{return coop?alive_count()==0:life.game_over;}
+    void enable_coop(LocalCoopConfig config){
+        coop.emplace();coop->config=config;
+        for(unsigned i=0;i<seat_count();++i){
+            auto &p=seat_motion(i);auto &l=seat_life(i);
+            p.shot=config.shots[i];l=PlayerLife(config.lives,config.bombs);
+            seat_shots(i).slots.resize(PlayerShots::coop_capacity);
+            LocalCoopState::spawn_at(p,l,i);
+            const auto shot=unsigned(p.shot);
+            if(shot!=unsigned(config.shots[0])&&!coop_bombs[shot])coop_bombs[shot]=BombRenderer::load(assets_root,shot);
+        }
+    }
+    const BombRenderer *current_bomb_art()const{
+        if(coop&&coop_bombs[bomb.shot_type])return &*coop_bombs[bomb.shot_type];
+        return bomb_art?&*bomb_art:nullptr;
+    }
+    CollisionPoint aim_player(int x,int y)const{
+        CollisionPoint result{player.x,player.y};
+        if(!coop)return result;
+        int nearest=std::numeric_limits<int>::max();
+        for(unsigned i=0;i<seat_count();++i){
+            const auto &l=seat_life(i);const auto &p=seat_motion(i);
+            if(l.game_over||l.hit||l.miss_active)continue;
+            const int dx=p.x+16-x,dy=p.y+24-y,dist=dx*dx+dy*dy;
+            if(dist<nearest){nearest=dist;result={p.x,p.y};}
+        }
+        return result;
+    }
+    bool coop_hit(unsigned seat){
+        auto &l=seat_life(seat);
+        if(l.game_over||l.hit||l.miss_active||l.invincibility||l.bomb_invincible)return false;
+        l.register_hit();coop->hit_clear=true;return true;
+    }
+    void coop_life_award(bool overflow_to_bomb=false){
+        for(unsigned i=0;i<seat_count();++i){
+            auto &l=seat_life(i);
+            if(l.lives<5)LocalCoopState::give_life(l);
+            else if(overflow_to_bomb&&!l.game_over&&l.bombs<5)++l.bombs;
+        }
+    }
+    unsigned item_spare_stock()const{
+        if(!coop)return life.lives;
+        unsigned stock=5;
+        for(unsigned i=0;i<seat_count();++i)stock=std::min(stock,unsigned(seat_life(i).lives));
+        return stock;
+    }
+    void dialogue_bonus(){
+        unsigned stock=coop?0u:life.lives;const auto before=score_core.extends;
+        score_core.grant_dialogue_bonus(stock);
+        if(coop){if(before!=score_core.extends)coop_life_award();}
+        else life.lives=std::uint8_t(stock);
+        lives=life.lives;
+    }
+    void coop_pickup(unsigned i,unsigned type,int x,int y){
+        auto &p=seat_pickups(i);auto &l=seat_life(i);
+        const unsigned previous=p.power;
+        unsigned spare=type==ItemCore::OneUp?0u:l.lives,stock=l.bombs;
+        p.item_skill=items.item_skill;p.collect(type,x,y,spare,stock,numbers);items.item_skill=p.item_skill;
+        if(type==ItemCore::OneUp){
+            coop_life_award();
+        }else if(type==ItemCore::Bomb){
+            for(unsigned j=0;j<seat_count();++j){
+                auto &other=seat_life(j);if(!other.game_over&&other.bombs<5)++other.bombs;
+            }
+        }else if(type==ItemCore::Power||type==ItemCore::BigPower){
+            unsigned receiver=i;
+            if(previous==80){
+                unsigned power=80;int distance=std::numeric_limits<int>::max();
+                for(unsigned j=0;j<seat_count();++j){
+                    if(seat_life(j).game_over)continue;
+                    const auto v=seat_pickups(j).power;const auto &other=seat_motion(j);
+                    const int dx=other.x+16-x,dy=other.y+24-y,d=dx*dx+dy*dy;
+                    if(v<80&&(v<power||(v==power&&d<distance))){receiver=j;power=v;distance=d;}
+                }
+            }
+            auto &dest=seat_pickups(receiver);
+            if(receiver!=i||previous<80){
+                const unsigned base=receiver==i?previous:dest.power;
+                auto &half=coop->half_power[receiver];
+                const bool two=seat_count()==2;
+                const unsigned gain=type==ItemCore::BigPower?(two?15:20):two?(half?2:1):2;
+                if(two&&type==ItemCore::Power)half=!half;
+                dest.power=std::min(80u,base+gain);dest.overflow=0;
+                seat_life(receiver).power=std::uint8_t(dest.power);
+            }
+        }
+        l.power=std::uint8_t(p.power);
+    }
+    void step_rescue(){
+        auto &c=*coop;
+        for(unsigned i=0;i<seat_count();++i){
+            auto &l=seat_life(i);auto &progress=c.rescue[i];const auto input=c.input[i];
+            if(l.game_over||l.hit||!l.lives||c.fire_held[i]||(input&Bomb)){progress={};continue;}
+            if(progress.age&&!--progress.age)progress={};
+            int target=-1,best=48*48;
+            for(unsigned j=0;j<seat_count();++j){
+                const auto &other=seat_life(j);
+                if(i==j||other.hit||(!other.game_over&&other.lives>=5))continue;
+                const auto position=other.game_over?LocalCoopState::spawn(j):seat_life(j).current;
+                const int dx=seat_motion(i).x-position.x,dy=seat_motion(i).y-position.y;
+                const int distance=dx*dx+dy*dy;
+                if(distance<best){target=int(j);best=distance;}
+            }
+            if(progress.target!=target)progress={};
+            if(target<0||!(input&Focus)||(c.previous[i]&Focus))continue;
+            progress.target=target;progress.age=25;
+            if(++progress.presses<5)continue;
+            --l.lives;auto &other=seat_life(unsigned(target));
+            if(other.game_over){
+                l.bombs/=2;
+                LocalCoopState::revive(seat_motion(unsigned(target)),other,unsigned(target));
+                other.bomb_invincible=bomb.active;c.hit_clear=true;
+            }else LocalCoopState::give_life(other);
+            progress={};request_sound(8);
+        }
+        c.previous=c.input;
+    }
     EnemyDamage damage;
     std::vector<EnemyKillRequest> kills_recorded;
     std::array<std::optional<unsigned>,25> death_patterns;
@@ -177,7 +311,7 @@ private:
     void clear_bullets(unsigned page){bullet_core.clear(page);departures_.clear(MotionTrack::Bullet);}
     bool hitbox_battle_visible()const{
         return survival_enabled&&!life.miss_active&&!preparation_only&&!practice_completed&&!stage2_preview_boundary&&!stage3_preview_boundary&&
-            !stage5_entry_only&&!stage5_result&&!mima_delay&&!dialogue.active()&&!life.game_over&&
+            !stage5_entry_only&&!stage5_result&&!mima_delay&&!dialogue.active()&&!run_over()&&
             (!transitions_enabled||!transition.active())&&extra_settlement.phase==ExtraSettlement::Phase::Inactive&&
             !runtime.blocked&&!weapon_blocked&&!sigma.blocked&&!mima.blocked_reason()&&transition_error.empty();
     }
@@ -261,7 +395,10 @@ public:
         clear_enemies();
     }
     void bind_meira_battle(){if(stage!=1)throw std::runtime_error("Invalid Meira stage");meira.init(unsigned(rank),meira_handoff);meira_enabled=true;midboss2_enabled=false;bullet_core.special.u3=2;clear_enemies();}
-    void clear_shots(){shots.slots={};departures_.clear(MotionTrack::Shot);}
+    void clear_shots(){
+        for(unsigned i=0;i<seat_count();++i){auto &pool=seat_shots(i).slots;std::fill(pool.begin(),pool.end(),PlayerShots::Slot{});}
+        departures_.clear(MotionTrack::Shot);
+    }
     bool continue_prompt()const{return continue_choice==ContinueChoice::Release||continue_choice==ContinueChoice::Choose;}
     void update_continue(std::uint16_t input,bool held){
         // th02_main.asm:800–815,1306–1328,2237–2345. Resume in the
@@ -291,6 +428,15 @@ public:
         life.current=life.draw=life.positions[0];life.pattern=0;
         player=PlayerMotion(player.shot);clear_bullets(runtime.page);
         if(bomb.active)bomb.finish();
+        if(coop){
+            for(unsigned i=0;i<seat_count();++i){
+                auto &l=seat_life(i);auto &p=seat_motion(i);
+                LocalCoopState::revive(p,l,i);
+                l.lives=std::uint8_t(run_start_lives);l.bombs=std::uint8_t(run_start_bombs);l.invincibility=200;
+                l.power=1;seat_pickups(i).power=1;
+            }
+            coop->previous=coop->input;coop->rescue={};coop->half_power={};clear_shots();
+        }
         continue_choice=ContinueChoice::Inactive;
         transition.phase=StageTransition::Phase::Entry;transition.frame=0;
     }
@@ -298,14 +444,16 @@ public:
         player.clear_focus();
         dialogue_snapshot.clear();dialogue_snapshot.resize(640*400);render(dialogue_snapshot,false);
         if(!practice_mode){
-            unsigned stock=life.lives;score_core.grant_dialogue_bonus(stock);life.lives=std::uint8_t(stock);lives=int(stock);
+            dialogue_bonus();
         }
         dialogue.continues_used=continues_used;
         dialogue.start_postboss();transition.phase=StageTransition::Phase::Postboss;
     }
     void finish_postboss(bool key){
-        transition.bonus=StageBonus::regular(rank,life.playperf,bomb.stage_used,life.stage_misses,run_start_bombs,run_start_lives,pickups.points_collected);
-        score_core.add(transition.bonus.internal_bonus);unsigned stock=life.lives;score_core.grant_dialogue_bonus(stock);life.lives=std::uint8_t(stock);lives=int(stock);
+        unsigned misses=0,points=0;
+        for(unsigned i=0;i<seat_count();++i){misses+=seat_life(i).stage_misses;points+=seat_pickups(i).points_collected;}
+        transition.bonus=StageBonus::regular(rank,life.playperf,bomb.stage_used,misses,run_start_bombs,run_start_lives,points);
+        score_core.add(transition.bonus.internal_bonus);dialogue_bonus();
         sound.current=255;sound.frame=0;transition.bonus_ready(key);
     }
     EncounterScene next_stage(bool strict_stage4=false)const{
@@ -321,6 +469,16 @@ public:
         next.items.item_skill=items.item_skill;next.items.drop_cycle=items.drop_cycle;next.items.cycle=items.cycle;next.items.bigpower_override=items.bigpower_override;
         if(effects_enabled){IRand rng(resident_frame);next.sparks.initialize(rng,false);next.runtime.random.fill(rng);next.items.initialize(next.runtime.random);next.effects_enabled=true;}
         if(bomb_enabled){next.enable_bombing();next.bomb.total_used=bomb.total_used;}
+        if(coop){
+            next.enable_coop(coop->config);
+            next.coop->half_power=coop->half_power;
+            for(unsigned i=0;i<seat_count();++i){
+                const auto &old=seat_life(i);auto &l=next.seat_life(i);
+                l.lives=old.lives;l.bombs=old.bombs;l.power=old.power;l.playperf=old.playperf;l.total_misses=old.total_misses;
+                next.seat_pickups(i).power=seat_pickups(i).power;next.seat_pickups(i).overflow=seat_pickups(i).overflow;
+                if(old.game_over)LocalCoopState::revive(next.seat_motion(i),l,i);
+            }
+        }
         next.sound.enabled=sound.enabled;next.sound_output=sound_output;
         if(next.stage==1){next.midboss2_enabled=true;next.enable_preboss();}
         if(next.stage==2){next.midboss3_enabled=true;next.enable_preboss();}
@@ -357,7 +515,7 @@ public:
         if(!final){
             if(combat_enabled)clear_shots();
             if(!practice_mode&&effects_enabled){
-                unsigned stock=life.lives;score_core.grant_dialogue_bonus(stock);life.lives=std::uint8_t(stock);lives=int(stock);
+                dialogue_bonus();
             }
             mima_tone=100; // dialog_pre restores the normal palette tone.
         }else{mima_music=false;mima_music_stopped=true;}
@@ -398,7 +556,7 @@ public:
         dialogue=load_dialogue(unsigned(stage));dialogue_art=DialogueRenderer::load(assets_root);preboss_enabled=true;
     }
     void start_preboss(){
-        if(!preboss_enabled||preboss_started||!runtime.scroll.done||rika_enabled||meira_enabled||runtime.blocked||weapon_blocked||(survival_enabled&&life.game_over))return;
+        if(!preboss_enabled||preboss_started||!runtime.scroll.done||rika_enabled||meira_enabled||runtime.blocked||weapon_blocked||(survival_enabled&&run_over()))return;
         player.clear_focus();
         // Capture existing sprites/bullets/terrain once; blocking source dialog
         // does not advance gameplay or re-render simulation underneath the box.
@@ -412,7 +570,7 @@ public:
             }else render(dialogue_snapshot);
         }
         if(effects_enabled&&!(practice_mode&&practice_show_dialogue)){
-            unsigned stock=life.lives;score_core.grant_dialogue_bonus(stock);life.lives=std::uint8_t(stock);lives=int(stock);
+            dialogue_bonus();
         }
         rika_handoff_context.phase_frame=midboss.phase_frame;rika_handoff_context.scroll_line=unsigned(runtime.scroll.line);
         meira_handoff.phase_frame=midboss2.phase_frame;
@@ -429,14 +587,15 @@ public:
     }
     void tick(std::uint16_t input,bool dialogue_group_key=false,bool dialogue_fast_forward=false){
         if(paused)return;
+        if(coop)coop->input[0]=input;
         if(!(input&Focus))player.clear_focus();
         const auto action_input=std::uint16_t(input&~Focus);
         invalidate_hitboxes();
         if(practice_completed)return;
         if(extra_settlement.terminal())return;
         if(extra_settlement.showing_bonus()||extra_settlement.phase==ExtraSettlement::Phase::GameOver){extra_settlement.tick(dialogue_group_key);return;}
-        if(sigma_art&&life.game_over&&!sigma.done){extra_settlement.lose(dialogue_group_key);return;}
-        if(life.game_over&&transitions_enabled&&!sigma_art&&survival_enabled&&!practice_mode){
+        if(sigma_art&&run_over()&&!sigma.done){extra_settlement.lose(dialogue_group_key);return;}
+        if(run_over()&&transitions_enabled&&!sigma_art&&survival_enabled&&!practice_mode){
             update_continue(action_input,dialogue_group_key);return;
         }
         if(practice_mode&&!practice_show_dialogue&&!preparation_only&&((rika_enabled&&rika.done)||(meira_enabled&&meira.done))){practice_completed=true;return;}
@@ -445,7 +604,7 @@ public:
         if(transitions_enabled&&transition.active()&&transition.phase!=StageTransition::Phase::Postboss){transition.tick(dialogue_group_key);return;}
         if(stage5_entry_only||stage5_result)return;
         if(mima_delay){tick_mima_delay();return;}
-        if(stage==3&&runtime.scroll.done&&!runtime.blocked&&!preboss_enabled&&!practice_mode&&!weapon_blocked&&!life.game_over)enable_preboss();
+        if(stage==3&&runtime.scroll.done&&!runtime.blocked&&!preboss_enabled&&!practice_mode&&!weapon_blocked&&!run_over())enable_preboss();
         if(preboss_enabled&&dialogue.active()){
             if(dialogue.phase==StageDialogue::Phase::IntroAppearance){
                 if(stage==3){
@@ -503,9 +662,7 @@ public:
                             // The EX overlay uses the same bonus grant as the original:
                             // add the pending delta, process an extend, then freeze scoring.
                             score_core.add(b.internal_bonus);
-                            unsigned stock=life.lives;
-                            score_core.grant_dialogue_bonus(stock);
-                            life.lives=std::uint8_t(stock);lives=int(stock);
+                            dialogue_bonus();
                         }
                     }else{sigma.init();sigma_enabled=true;clear_enemies();for(auto &e:runtime.enemies.slots)e.raw[0xe]=0;death_patterns.fill(std::nullopt);}
                 }else if(dialogue.postboss)finish_postboss(dialogue_group_key);
@@ -515,13 +672,13 @@ public:
             }
             return;
         }
-        if(transitions_enabled&&marisa_enabled&&marisa.cleared&&!life.game_over&&transition.phase==StageTransition::Phase::Battle){start_postboss();return;}
-        if(transitions_enabled&&stones_enabled&&stones.done()&&!life.game_over&&transition.phase==StageTransition::Phase::Battle){start_postboss();return;}
-        if(transitions_enabled&&meira_enabled&&meira.done&&!life.game_over&&transition.phase==StageTransition::Phase::Battle){start_postboss();return;}
-        if(transitions_enabled&&rika_enabled&&rika.done&&!life.game_over&&transition.phase==StageTransition::Phase::Battle){start_postboss();return;}
+        if(transitions_enabled&&marisa_enabled&&marisa.cleared&&!run_over()&&transition.phase==StageTransition::Phase::Battle){start_postboss();return;}
+        if(transitions_enabled&&stones_enabled&&stones.done()&&!run_over()&&transition.phase==StageTransition::Phase::Battle){start_postboss();return;}
+        if(transitions_enabled&&meira_enabled&&meira.done&&!run_over()&&transition.phase==StageTransition::Phase::Battle){start_postboss();return;}
+        if(transitions_enabled&&rika_enabled&&rika.done&&!run_over()&&transition.phase==StageTransition::Phase::Battle){start_postboss();return;}
         if(preboss_enabled&&runtime.scroll.done&&!rika_enabled&&!meira_enabled&&!preboss_started){start_preboss();return;}
         if(sigma_enabled&&sigma.done){if(practice_mode&&!practice_show_dialogue)practice_completed=true;else start_postboss();return;}
-        if(paused||runtime.blocked||(runtime.scroll.done&&!rika_enabled&&!meira_enabled&&!stones_enabled&&!marisa_enabled&&!mima_enabled&&!sigma_enabled)|| (marisa_enabled&&marisa.cleared)||(stones_enabled&&stones.done())||(rika_enabled&&rika.done)||(meira_enabled&&meira.done)||(survival_enabled&&life.game_over)||weapon_blocked||mima.blocked_reason()||sigma.blocked)return;
+        if(paused||runtime.blocked||(runtime.scroll.done&&!rika_enabled&&!meira_enabled&&!stones_enabled&&!marisa_enabled&&!mima_enabled&&!sigma_enabled)|| (marisa_enabled&&marisa.cleared)||(stones_enabled&&stones.done())||(rika_enabled&&rika.done)||(meira_enabled&&meira.done)||(survival_enabled&&run_over())||weapon_blocked||mima.blocked_reason()||sigma.blocked)return;
         if(mima_enabled&&mima.event!=MimaCore::Event::None){start_mima_defeat();return;}
         update_sound();
         const std::uint32_t logic_frame=rika_enabled?rika_stage_frame:static_cast<std::uint32_t>(ticks);
@@ -532,6 +689,12 @@ public:
             if(!bomb_enabled||!bomb.start(life.bombs,unsigned(player.shot),infinite_bombs))return false;
             life.bomb_invincible=true;return true;
         };
+        const auto start_coop_bomb=[&](unsigned i){
+            auto &l=seat_life(i);
+            if(!bomb.start(l.bombs,unsigned(seat_motion(i).shot)))return;
+            coop->bomb_owner=i;
+            for(unsigned j=0;j<seat_count();++j)if(!seat_life(j).game_over)seat_life(j).bomb_invincible=true;
+        };
         const auto handle_assisted_hit=[&]{
             if(!life.hit||life.miss_active||(!assist(PracticeTool::Invincible)&&!assist(PracticeTool::AutoBomb)))return;
             life.negate();if(!life.hit)return;
@@ -539,13 +702,18 @@ public:
             else if(start_bomb())life.hit=false;
         };
         const auto damage_query=[&](int x,int y,int w,int h,std::uint32_t frame,unsigned mask=1){
-            auto value=shots.damage(page,x,y,w,h,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page,true);});
+            unsigned value=0;
+            for(unsigned i=0;i<seat_count();++i)
+                value+=seat_shots(i).damage(page,x,y,w,h,[&](const auto &p){if(effects_enabled)sparks.add(p.left,p.top,p.speed,p.count,p.as_sprite,page,true);});
             if(enemy_invincible)return 0u;
             if(bomb_enabled)value+=bomb.damage(frame,mask);
             if(effects_enabled)score_core.add_hit_lowword(std::uint16_t(value));
             return value;
         };
         auto *display=hitbox_mode_!=HitboxMode::Off&&hitbox_battle_visible()?&collision_frame_:nullptr;
+        CollisionFrame coop_hazards;
+        if(coop)coop_hazards.begin(HitboxMode::All,logic_frame,page);
+        auto *boss_hazards=coop?&coop_hazards:display;
         if(display)display->begin(hitbox_mode_,logic_frame,page);
         departures_.advance();
         rendered_page=page;bullet_core.begin_frame(page);
@@ -567,7 +735,7 @@ public:
         if(midboss_enabled)midboss.trigger(runtime.scroll.progress);
         if(midboss2_enabled)midboss2.trigger(runtime.scroll.progress);
         if(midboss3_enabled)midboss3.trigger(runtime.scroll.progress);
-        if(combat_enabled)shots.begin_frame(page);
+        if(combat_enabled)for(unsigned i=0;i<seat_count();++i)seat_shots(i).begin_frame(page);
         if(effects_enabled){items.begin_frame(page);numbers.begin_frame(page);sparks.begin_frame(page);}
         if(stage==2){
             ambient_.tick(false,reduced_effects);
@@ -580,7 +748,11 @@ public:
         };
         bullet_core.playperf=life.playperf;
         EnemyEffectSink sink;
-        sink.bullet=[&](auto request){return bullet_core.add(request,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active);};
+        const auto spawn_bullet=[&](const EnemyBulletRequest &request,bool suppress){
+            const auto target=aim_player(request.left,request.top);
+            return bullet_core.add(request,page,target.x,target.y,runtime.random,suppress);
+        };
+        sink.bullet=[&](auto request){return spawn_bullet(request,bomb_enabled&&bomb.active);};
         sink.sound=[&](unsigned id){request_sound(id);return true;};
         const char *tile_error=nullptr;
         if(extra_road_frame)sink.tile=[&](const EnemyTileRequest &r){
@@ -595,6 +767,25 @@ public:
         if(accepts_input){player.tick(input);if(survival_enabled)life.moved(page,player.x,player.y);}
         else player.clear_focus();
         if(survival_enabled){player.x=life.current.x;player.y=life.current.y;}
+        if(coop)for(unsigned i=1;i<seat_count();++i){
+            auto &p=seat_motion(i);auto &l=seat_life(i);
+            l.begin_frame(page);p.back_page=page;
+            if(l.input_allowed()){p.x=l.positions[page].x;p.y=l.positions[page].y;p.tick(coop->input[i]);l.moved(page,p.x,p.y);}
+            else p.clear_focus();
+            p.x=l.current.x;p.y=l.current.y;
+        }
+        unsigned boss_seat=0;
+        if(coop)for(unsigned i=0;i<seat_count();++i){
+            const auto &l=seat_life(i);
+            if(!l.game_over&&!l.miss_active&&!l.hit){boss_seat=i;break;}
+        }
+        const auto &boss_target=seat_motion(boss_seat);
+        const auto boss_target_front=seat_life(boss_seat).positions[page^1];
+        if(coop)step_rescue();
+        const auto clear_team_hit=[&]{
+            if(coop&&coop->hit_clear){clear_bullets(page);lasers.slots={};coop->hit_clear=false;}
+        };
+        clear_team_hit();
         EnemyPathRuntime::CombatHooks combat;
         if(combat_enabled){
             const auto fired_before=shots.fired;
@@ -602,13 +793,31 @@ public:
             if(accepts_input){shots.option_left=player.x-16-player.last_dx;shots.option_top=player.y+16-player.last_dy;shots.input((input&Shot)!=0,page,player.x,player.y,input);}
             shots.target_x=-1;shots.target_y=-1;
             shots.random=nullptr;
+            if(coop)for(unsigned i=1;i<seat_count();++i){
+                auto &state=coop->extra[i-1];auto &p=state.player;auto &s=state.shots;
+                const auto fired=s.fired;
+                s.random=&runtime.random;s.shot_type=unsigned(p.shot);s.level=state.pickups.level();
+                if(state.life.input_allowed()){s.option_left=p.x-16-p.last_dx;s.option_top=p.y+16-p.last_dy;s.input((coop->input[i]&Shot)!=0,page,p.x,p.y,coop->input[i]);}
+                s.random=nullptr;s.target_x=s.target_y=-1;
+                if(sound.shot_cadence.requests(s.sound_requests-state.shot_sounds,s.fired!=fired))request_sound(1);
+                state.shot_sounds=s.sound_requests;
+            }
             if(bomb_enabled){
-                if(accepts_input&&(input&Bomb))start_bomb();
+                if(coop){
+                    for(unsigned i=0;i<seat_count()&&!bomb.active;++i)
+                        if((coop->input[i]&Bomb)&&seat_life(i).input_allowed())start_coop_bomb(i);
+                }else if(accepts_input&&(input&Bomb))start_bomb();
                 if(bomb.clear_requested){clear_bullets(page);bomb.clear_requested=false;}
                 bombing_for_spawn=bomb.active;
                 bomb.update(runtime.random);
                 if(bomb.clear_requested){clear_bullets(page);bomb.clear_requested=false;}
-                if(bomb.finished){life.bomb_invincible=false;life.invincibility=70;bombing_for_spawn=false;}
+                if(bomb.finished){
+                    if(coop)for(unsigned i=0;i<seat_count();++i){
+                        auto &l=seat_life(i);l.bomb_invincible=false;
+                        if(!l.game_over)l.invincibility=std::max<std::uint8_t>(l.invincibility,70);
+                    }else{life.bomb_invincible=false;life.invincibility=70;}
+                    bombing_for_spawn=false;
+                }
                 if(effects_enabled)while(consumed_bomb_sparks<bomb.spark_requests.size()){const auto &r=bomb.spark_requests[consumed_bomb_sparks++];sparks.add(r.x,r.y,r.speed,r.count,r.sprite,page);}
             }
             const auto shot_sounds=sound.shot_cadence.requests(shots.sound_requests-consumed_shot_sounds,shots.fired!=fired_before);
@@ -621,10 +830,15 @@ public:
                     const auto bounds=CollisionBounds::open(left-16,top-16,left+16,top+16);
                     const CollisionPoint point{life.positions[page^1].x,player.y};
                     if(display)display->hazard(CollisionSource::Road,bounds,CollisionSample::FrontXCurrentY,point);
-                    if(bounds.contains(point)){if(!enemy_invincible){enemy.word(0xa,0);enemy.raw[0x10]=1;}life.register_hit();}
+                    if(coop){
+                        bool hit=false;
+                        for(unsigned i=0;i<seat_count();++i)
+                            if(bounds.contains({seat_life(i).positions[page^1].x,seat_motion(i).y}))hit|=coop_hit(i);
+                        if(hit&&!enemy_invincible){enemy.word(0xa,0);enemy.raw[0x10]=1;}
+                    }else if(bounds.contains(point)){if(!enemy_invincible){enemy.word(0xa,0);enemy.raw[0x10]=1;}life.register_hit();}
                 }
                 auto dealt=damage_query(left,top,32,32,std::uint32_t(ticks));if(enemy_invincible)return false;
-                if(auto killed=damage.apply(enemy,type,dealt,page)){request_sound(3);kills_recorded.push_back(*killed);if(effects_enabled){if(killed->drop>1)items.add(left+12,top,killed->drop-2,life.lives);else items.semirandom(left+12,top,runtime.random,life.lives);score_core.add(killed->score);}if(rank==3){EnemyBulletRequest revenge;const auto &r=type.raw;revenge.left=enemy_s16(unsigned(left)+(unsigned(r[4])|(unsigned(r[5])<<8)));revenge.top=enemy_s16(unsigned(top)+(unsigned(r[6])|(unsigned(r[7])<<8)));revenge.group=0x19;revenge.speed=60;bullet_core.add(revenge,page,player.x,player.y,runtime.random,bombing_for_spawn);}}else if(dealt&&!enemy.raw[0x22])request_sound(4);return dealt>0&&hp!=65534;};
+                if(auto killed=damage.apply(enemy,type,dealt,page)){request_sound(3);kills_recorded.push_back(*killed);if(effects_enabled){if(killed->drop>1)items.add(left+12,top,killed->drop-2,item_spare_stock());else items.semirandom(left+12,top,runtime.random,item_spare_stock());score_core.add(killed->score);}if(rank==3){EnemyBulletRequest revenge;const auto &r=type.raw;revenge.left=enemy_s16(unsigned(left)+(unsigned(r[4])|(unsigned(r[5])<<8)));revenge.top=enemy_s16(unsigned(top)+(unsigned(r[6])|(unsigned(r[7])<<8)));revenge.group=0x19;revenge.speed=60;spawn_bullet(revenge,bombing_for_spawn);}}else if(dealt&&!enemy.raw[0x22])request_sound(4);return dealt>0&&hp!=65534;};
             combat.death=[&](unsigned slot,auto &enemy,const auto &type){const auto pattern=EnemyDamage::death_pattern(enemy,type);if(effects_enabled&&enemy.word(0xa)==0)sparks.add(enemy_s16(enemy.word(page*4))+16,enemy_s16(enemy.word(page*4+2))+16,20,8,false,page);EnemyDamage::death_tick(enemy);if(enemy.raw[0xe]==1){death_patterns[slot]=pattern;paint_enemy(slot,enemy,pattern,StageSprites::Paint::Artwork);}};
         }
         combat.suppress_formations=suppress_midboss_formations;
@@ -641,9 +855,10 @@ public:
         encounter_observer=runtime.dispatch;observed_requests=runtime.spawns;
         if(runtime.blocked){if(tile_error)runtime.blocked->result.reason=tile_error;return;}
         if(extra_road_frame)extra_midboss.update(runtime.scroll.line,sink);
+        const auto damage_divisor=std::max(1u,alive_count());
         if(midboss_enabled&&midboss.active){
-            Midboss1Core::Hooks h;h.lock_timeout=lock_timeout;
-            h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss bullet");};
+            Midboss1Core::Hooks h;h.lock_timeout=lock_timeout;h.damage_divisor=damage_divisor;
+            h.bullet=[&](const auto &r){if(!spawn_bullet(r,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss bullet");};
             h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,static_cast<std::uint32_t>(ticks));};
             h.score=[&](unsigned value){if(effects_enabled)score_core.add(value);};h.sound=[&](unsigned id){request_sound(id);};
             h.spark=[&](const auto &s){if(effects_enabled)sparks.add(s.x,s.y,s.speed,s.count,s.sprite,page);};
@@ -651,40 +866,39 @@ public:
             midboss.update(page,scroll.line,midboss_progress,h);shots.target_x=midboss.target_x;shots.target_y=midboss.target_y;
         }
         if(midboss2_enabled&&midboss2.active){
-            Midboss2Core::Hooks h;h.lock_timeout=lock_timeout;
-            h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss2 bullet");};
+            Midboss2Core::Hooks h;h.lock_timeout=lock_timeout;h.damage_divisor=damage_divisor;
+            h.bullet=[&](const auto &r){if(!spawn_bullet(r,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss2 bullet");};
             h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned n){request_sound(n);};h.spark=[&](const auto&s){if(effects_enabled)sparks.add(s.x,s.y,s.speed,s.count,s.sprite,page);};
             midboss2.update(page,scroll.line,h);shots.target_x=midboss2.target_x;shots.target_y=midboss2.target_y;
         }
         if(midboss3_enabled&&midboss3.active){
-            Midboss3Core::Hooks h;h.lock_timeout=lock_timeout;
-            h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss3 bullet");};
+            Midboss3Core::Hooks h;h.lock_timeout=lock_timeout;h.damage_divisor=damage_divisor;
+            h.bullet=[&](const auto &r){if(!spawn_bullet(r,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss3 bullet");};
             h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned n){request_sound(n);};h.spark=[&](const auto &p){if(effects_enabled)sparks.add(p.x,p.y,p.speed,p.count,p.sprite,page);};
             midboss3.update(page,scroll.line,runtime.scroll.attempted_pixels-scroll_attempt_before,unsigned(rank),h);shots.target_x=midboss3.target_x;shots.target_y=midboss3.target_y;
         }
         if(marisa_enabled){
-            MarisaCore::Hooks h;h.collision_display=display;h.lock_timeout=lock_timeout;
-            h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Marisa bullet");};
+            MarisaCore::Hooks h;h.collision_display=boss_hazards;h.lock_timeout=lock_timeout;h.damage_divisor=damage_divisor;
+            h.bullet=[&](const auto &r){if(!spawn_bullet(r,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Marisa bullet");};
             h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
             h.orb_damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame,3):0u;};
             h.random8=[&]{return unsigned(runtime.random.next8());};
             h.random16=[&]{return unsigned(runtime.random.next16());};
             h.drift=[&](unsigned angle,unsigned speed,unsigned frames){bullet_core.special={int(angle),int(speed),int(frames)};};
-            h.item=[&](int x,int y,unsigned type){if(effects_enabled)items.add(x,y,type,life.lives);};
+            h.item=[&](int x,int y,unsigned type){if(effects_enabled)items.add(x,y,type,item_spare_stock());};
             h.sound=[&](unsigned n){request_sound(n);};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};
             h.spark=[&](const auto &p){if(effects_enabled)sparks.add(p.x,p.y,p.speed,p.count,p.sprite,page);};
-            h.player_hit=[&]{if(survival_enabled)life.register_hit();};
-            h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
-            const auto front=life.positions[page^1];
-            marisa.update(h,{survival_enabled?front.x:player.x,survival_enabled?front.y:player.y,pickups.power,player.x,unsigned(rank)});
+            h.player_hit=[&]{if(survival_enabled&&!coop)life.register_hit();};
+            h.invincibility=[&](unsigned n){for(unsigned i=0;i<seat_count();++i)if(!seat_life(i).game_over)seat_life(i).invincibility=std::uint8_t(n);};
+            marisa.update(h,{survival_enabled?boss_target_front.x:boss_target.x,survival_enabled?boss_target_front.y:boss_target.y,seat_pickups(boss_seat).power,boss_target.x,unsigned(rank)});
             marisa_stars_.tick(logic_frame,reduced_effects);
             shots.target_x=marisa.target_x;shots.target_y=marisa.target_y;
         }
         if(sigma_enabled){
-            SigmaCore::Hooks h;h.collision_display=display;
+            SigmaCore::Hooks h;h.collision_display=boss_hazards;h.damage_divisor=damage_divisor;
             // Sigma transitions use damage thresholds, not an expiry deadline.
             h.bullet=[&](const auto &r){if(!sink.bullet(r))sigma.blocked="sigma: unsupported projectile";};
             h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
@@ -692,27 +906,27 @@ public:
             h.sound=[&](unsigned n){request_sound(n);};
             h.turns_max=[&](unsigned n){bullet_core.special.u3=int(n);};
             h.randring2_next=[&]{return unsigned(runtime.random.next8());};
-            h.player_hit=[&]{if(survival_enabled)life.register_hit();};
+            h.player_hit=[&]{if(survival_enabled&&!coop)life.register_hit();};
             h.laser=[&](int x,int y,int frames,unsigned pat,unsigned delay){lasers.initial_delay=delay;lasers.add(x,y,frames,pat,[&](unsigned id){request_sound(id);});};
-            h.player_x=player.x;h.player_y=player.y;
-            const auto front=life.positions[page^1];h.front_player_x=survival_enabled?front.x:player.x;h.front_player_y=survival_enabled?front.y:player.y;
+            h.player_x=boss_target.x;h.player_y=boss_target.y;
+            h.front_player_x=survival_enabled?boss_target_front.x:boss_target.x;h.front_player_y=survival_enabled?boss_target_front.y:boss_target.y;
             h.reduced=reduced_effects;
             sigma.update(page,logic_frame,h);
             shots.target_x=sigma.left[page]+60;shots.target_y=sigma.top[page]+60;
             if(sigma.done){if(practice_mode&&!practice_show_dialogue)practice_completed=true;else start_postboss();return;}
         }
         if(mima_enabled){
-            MimaCore::Hooks h;h.collision_display=display;
-            h.lock_timeout=lock_timeout;
-            h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Mima bullet");};
+            MimaCore::Hooks h;h.collision_display=boss_hazards;
+            h.lock_timeout=lock_timeout;h.damage_divisor=damage_divisor;
+            h.bullet=[&](const auto &r){if(!spawn_bullet(r,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Mima bullet");};
             h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
             h.random8=[&]{return unsigned(runtime.random.next8());};
-            h.item=[&](int x,int y,unsigned type){if(effects_enabled)items.add(x,y,type,life.lives);};
+            h.item=[&](int x,int y,unsigned type){if(effects_enabled)items.add(x,y,type,item_spare_stock());};
             h.sound=[&](unsigned id){request_sound(id);};
             h.score=[&](unsigned n){score_core.score+=n;};
-            h.player_hit=[&]{if(survival_enabled)life.register_hit();};
+            h.player_hit=[&]{if(survival_enabled&&!coop)life.register_hit();};
             h.clear_bullets=[&]{clear_bullets(page);};
-            h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
+            h.invincibility=[&](unsigned n){for(unsigned i=0;i<seat_count();++i)if(!seat_life(i).game_over)seat_life(i).invincibility=std::uint8_t(n);};
             h.stack_multiplier=[&](unsigned n){bullet_core.stack=(rank==2||rank==3?1u:0u)*n;};
             h.turns_max=[&](unsigned n){bullet_core.special.u3=int(n);};
             h.dot=[&](int x,int y,unsigned size,unsigned c){mima_draws.push_back({MimaPaint::Dot,x,y,int(size),0,c});};
@@ -722,19 +936,18 @@ public:
             h.palette0=[&](unsigned r,unsigned g,unsigned b){mima_palette0={std::uint8_t(r),std::uint8_t(g),std::uint8_t(b)};};
             h.tone=[&](unsigned n){mima_tone=n;};
             mima_draws.clear();mima.render_background(h,reduced_effects);
-            const auto front=life.positions[page^1];
-            mima.update(h,{survival_enabled?front.x:player.x,survival_enabled?front.y:player.y,player.x,player.y,unsigned(rank),logic_frame,reduced_effects,page});
+            mima.update(h,{survival_enabled?boss_target_front.x:boss_target.x,survival_enabled?boss_target_front.y:boss_target.y,boss_target.x,boss_target.y,unsigned(rank),logic_frame,reduced_effects,page});
             shots.target_x=mima.target_x;shots.target_y=mima.target_y;
         }
         if(stage==3&&!marisa_enabled&&midboss4.active){
             Midboss4Core::Hooks h;
-            h.lock_timeout=lock_timeout;
-            h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss4 bullet");};
+            h.lock_timeout=lock_timeout;h.damage_divisor=damage_divisor;
+            h.bullet=[&](const auto &r){if(!spawn_bullet(r,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported midboss4 bullet");};
             h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};
             h.sound=[&](unsigned n){request_sound(n);};
             h.spark=[&](const auto &p){if(effects_enabled)sparks.add(p.x,p.y,p.speed,p.count,p.sprite,page);};
-            h.item=[&](int x,int y,unsigned type){if(effects_enabled)items.add(x,y,type,life.lives);};
+            h.item=[&](int x,int y,unsigned type){if(effects_enabled)items.add(x,y,type,item_spare_stock());};
             h.random8=[&]{return unsigned(runtime.random.next8());};
             h.laser=[&](int x,int y,unsigned frames,unsigned pat,unsigned delay){lasers.initial_delay=delay;lasers.add(x,y,int(frames),pat,[&](unsigned id){request_sound(id);});};
             midboss4.update(page,scroll.line,unsigned(rank),h);
@@ -742,14 +955,14 @@ public:
         }
         if(stones_enabled){
             StonesCore::Hooks h;
-            h.lock_timeout=lock_timeout;
-            h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Stones bullet");};
+            h.lock_timeout=lock_timeout;h.damage_divisor=damage_divisor;
+            h.bullet=[&](const auto &r){if(!spawn_bullet(r,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Stones bullet");};
             h.damage=[&](int x,int y,int w,int height){return combat_enabled?damage_query(x,y,w,height,logic_frame):0u;};
             h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};
             h.sound=[&](unsigned id){request_sound(id);};
             h.spark=[&](const auto &p){if(effects_enabled)sparks.add(p.x,p.y,p.speed,p.count,p.sprite,page);};
-            h.item=[&](int x,int y,unsigned type){if(effects_enabled)items.add(x,y,type,life.lives);};
-            h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
+            h.item=[&](int x,int y,unsigned type){if(effects_enabled)items.add(x,y,type,item_spare_stock());};
+            h.invincibility=[&](unsigned n){for(unsigned i=0;i<seat_count();++i)if(!seat_life(i).game_over)seat_life(i).invincibility=std::uint8_t(n);};
             h.random8=[&]{return unsigned(runtime.random.next8());};
             h.laser=[&](int x,int y,int frames,unsigned pat,unsigned delay){lasers.initial_delay=delay;lasers.add(x,y,frames,pat,[&](unsigned id){request_sound(id);});};
             h.bullet_stack_multiplier=[&](unsigned n){bullet_core.stack=(rank==2||rank==3?1u:0u)*n;};
@@ -758,7 +971,7 @@ public:
                 const int row=((y+int(scroll.line))%400)/16;
                 stones_stripe[unsigned(row*24+(x-32)/16)]=pat;
             };
-            stones.update(unsigned(rank),player.x,player.y,h);
+            stones.update(unsigned(rank),boss_target.x,boss_target.y,h);
             shots.target_x=stones.target_x;shots.target_y=stones.target_y;
         }
         // Rika and Meira invoke the same original two-part explosion (sub_FFF8).
@@ -767,25 +980,37 @@ public:
             else if(frame==32)request_sound(14);
         };
         if(meira_enabled){
-            MeiraCore::Hooks h;h.collision_display=display;
-            h.bullet=[&](const auto&r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Meira bullet");};
+            MeiraCore::Hooks h;h.collision_display=boss_hazards;h.damage_divisor=damage_divisor;
+            h.bullet=[&](const auto&r){if(!spawn_bullet(r,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Meira bullet");};
             h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
             h.explosion=explosion_sound;
-            h.hit=[&](){if(survival_enabled)life.register_hit();};h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned n){request_sound(n);};h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
+            h.hit=[&](){if(survival_enabled&&!coop)life.register_hit();};h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned n){request_sound(n);};h.invincibility=[&](unsigned n){for(unsigned i=0;i<seat_count();++i)if(!seat_life(i).game_over)seat_life(i).invincibility=std::uint8_t(n);};
             h.spark=[&](int x,int y,int speed,int count,bool sprite){if(effects_enabled)sparks.add(x,y,speed,count,sprite,page);};
             h.random8=[&](){return unsigned(runtime.random.next8());};h.random16=[&](){return unsigned(runtime.random.next16());};h.special_turns=[&](unsigned n){bullet_core.special.u3=int(n);};
-            meira.update(page,player.x,player.y,scroll.line,h);shots.target_x=meira.target_x;shots.target_y=meira.target_y;
+            meira.update(page,boss_target.x,boss_target.y,scroll.line,h);shots.target_x=meira.target_x;shots.target_y=meira.target_y;
         }
         if(rika_enabled){
-            RikaCore::Hooks h;
+            RikaCore::Hooks h;h.damage_divisor=damage_divisor;
             h.explosion=explosion_sound;
-            h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Rika bullet");};
+            h.bullet=[&](const auto &r){if(!spawn_bullet(r,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Rika bullet");};
             h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
             h.laser=[&](int x,int y,int frames,unsigned pat,unsigned delay){lasers.initial_delay=delay;lasers.add(x,y,frames,pat,[&](unsigned id){request_sound(id);});};
-            h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned id){request_sound(id);};h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
+            h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned id){request_sound(id);};h.invincibility=[&](unsigned n){for(unsigned i=0;i<seat_count();++i)if(!seat_life(i).game_over)seat_life(i).invincibility=std::uint8_t(n);};
             h.spark=[&](int x,int y,int speed,int count,bool sprite){if(effects_enabled)sparks.add(x,y,speed,count,sprite,page);};
             rika.update(page,logic_frame,h);shots.target_x=rika.target_x;shots.target_y=rika.target_y;
         }
+        const auto team_hazards=[&](unsigned first){
+            for(unsigned k=first;k<coop_hazards.hazard_count;++k){
+                const auto &hazard=coop_hazards.hazards[k];
+                for(unsigned i=0;i<seat_count();++i){
+                    const auto &l=seat_life(i);auto p=l.current;
+                    if(hazard.sample==CollisionSample::Front)p=l.positions[page^1];
+                    if(hazard.bounds.contains({p.x,p.y}))coop_hit(i);
+                }
+            }
+        };
+        if(coop)team_hazards(0);
+        clear_team_hit();
         if(survival_enabled){handle_assisted_hit();life.player_phase_begin();}
         if(combat_enabled)shots.update(page,logic_frame,[&](const auto &s,const auto &old){
             depart_pattern(MotionTrack::Shot,shots.pattern_for(s),motion_q4(old),motion_q4(s.position[page]));
@@ -794,6 +1019,13 @@ public:
             const unsigned normal=player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0;
             life.player_phase_end(page,normal,assist(PracticeTool::Lives),assist(PracticeTool::Power),assist(PracticeTool::Rank),practice_assist.protect_last);player.x=life.current.x;player.y=life.current.y;
             lives=life.lives;bombs=life.bombs;bullet_core.playperf=life.playperf;
+        }
+        if(coop)for(unsigned i=1;i<seat_count();++i){
+            auto &s=coop->extra[i-1];auto &p=s.player;auto &l=s.life;
+            s.shots.target_x=shots.target_x;s.shots.target_y=shots.target_y;
+            l.player_phase_begin();s.shots.update(page,logic_frame,{});
+            const unsigned normal=p.pose==PlayerMotion::LeanLeft?2:p.pose==PlayerMotion::LeanRight?3:0;
+            l.player_phase_end(page,normal);p.x=l.current.x;p.y=l.current.y;
         }
         if(effects_enabled){
             // Consume effects in original player-handler order before item step.
@@ -805,7 +1037,41 @@ public:
                 else if(effect.kind==PlayerLife::PowerChanged&&pickup_enabled){constexpr std::array<unsigned,10> reset={1,1,4,8,16,24,32,40,52,64};pickups.power=reset.at(pickups.level());life.power=static_cast<std::uint8_t>(pickups.power);}
             }
             pickups.begin_frame();pickups.item_skill=items.item_skill;numbers.rank=static_cast<unsigned>(rank);
-            items.update(page,player.x,player.y,life.hit,[&](unsigned type,int left,int top){
+            if(coop){
+                for(unsigned i=1;i<seat_count();++i){
+                    auto &s=coop->extra[i-1];
+                    s.pickups.begin_frame();
+                    while(s.life_effects<s.life.effects.size()){
+                        const auto &e=s.life.effects[s.life_effects++];
+                        if(e.kind==PlayerLife::Sound)request_sound(unsigned(e.value));
+                        else if(e.kind==PlayerLife::ScoreCommit)score_core.commit();
+                        else if(e.kind==PlayerLife::Sparks)sparks.add(e.x,e.y,e.value,e.count,e.as_sprite,page);
+                        else if(e.kind==PlayerLife::MissItems)items.miss_add(e.x,e.y,s.life.current.x,e.gameover,runtime.random);
+                        else if(e.kind==PlayerLife::PowerChanged){constexpr std::array<unsigned,10> reset={1,1,4,8,16,24,32,40,52,64};s.pickups.power=reset.at(s.pickups.level());s.life.power=std::uint8_t(s.pickups.power);}
+                    }
+                }
+                for(unsigned i=0;i<seat_count();++i){
+                    auto &l=seat_life(i);auto &p=seat_motion(i);
+                    if(l.game_over&&l.pattern){l.pattern.reset();}
+                    if(l.game_over){const auto spot=LocalCoopState::spawn(i);p.x=spot.x;p.y=spot.y;}
+                }
+                items.update_shared(page,[&](unsigned type,int x,int y){
+                    if(!pickup_enabled)return false;
+                    for(unsigned i=0;i<seat_count();++i){
+                        const auto &l=seat_life(i);const auto &p=seat_motion(i);
+                        if(!l.game_over&&!l.hit&&ItemCore::touches(x,y,p.x,p.y)){
+                            coop_pickup(i,type,x,y);return true;
+                        }
+                    }
+                    return false;
+                });
+                for(unsigned i=1;i<seat_count();++i){
+                    auto &s=coop->extra[i-1];
+                    score_core.add(s.pickups.score_for_rank(unsigned(rank)));
+                    for(const auto value:s.pickups.sounds)request_sound(value);
+                    s.pickups.sounds.clear();
+                }
+            }else items.update(page,player.x,player.y,life.hit,[&](unsigned type,int left,int top){
                 if(!pickup_enabled)return false;
                 unsigned stock=life.lives,bomb_stock=life.bombs;
                 pickups.item_skill=items.item_skill;
@@ -818,18 +1084,42 @@ public:
             if(pickup_enabled){score_core.add(pickups.score_for_rank(static_cast<unsigned>(rank)));shots.level=pickups.level();if(!shots.supports_level())weapon_blocked=true;}
             numbers.update(page);
         }
-        if((rika_enabled||stones_enabled||stage==3||sigma_enabled)&&lasers.update(logic_frame,player.x,player.y,life.hit,[&](unsigned id){request_sound(id);},display)){++hit_checks;if(survival_enabled)life.register_hit();}
+        const auto previous_hazards=coop_hazards.hazard_count;
+        if((rika_enabled||stones_enabled||stage==3||sigma_enabled)&&lasers.update(logic_frame,player.x,player.y,coop||life.hit,[&](unsigned id){request_sound(id);},boss_hazards)){++hit_checks;if(survival_enabled)life.register_hit();}
+        if(coop)team_hazards(previous_hazards);
         if(!display&&player.focused&&hitbox_battle_visible()){
             // Shift needs the shot check's player sample even with the debug overlay off.
             display=&collision_frame_;
             display->begin(HitboxMode::Self,logic_frame,page);
         }
+        BulletCore::SharedHit shared_hit;
+        BulletCore::SharedTarget shared_target;
+        if(coop){
+            shared_hit=[&](CollisionPoint point,bool pellet){
+                bool hit=false;
+                for(unsigned i=0;i<seat_count();++i){
+                    const auto &p=seat_motion(i);
+                    if(bullet_hit_window({p.x,p.y},pellet).contains(point))hit|=coop_hit(i);
+                }
+                return hit;
+            };
+            shared_target=[&](int x,int y){return aim_player(x,y);};
+        }
         if(bullet_core.update(page,player.x,player.y,logic_frame,display,[&](const auto &b,const auto &old){
             const auto previous=motion_q4(old),current=motion_q4(b.position[page]);
             if(b.kind==EnemyBulletRequest::Bullet16)depart_pattern(MotionTrack::Bullet,b.pattern,previous,current);
             else departures_.leave(MotionTrack::Bullet,pellet_pattern,previous,current,8,8);
-        })){++hit_checks;if(survival_enabled)life.register_hit();}
-        if(effects_enabled){sparks.update(page);unsigned stock=life.lives,bomb_stock=life.bombs;score_core.update(stock,bomb_stock);life.lives=static_cast<std::uint8_t>(stock);life.bombs=static_cast<std::uint8_t>(bomb_stock);lives=int(stock);bombs=int(bomb_stock);if(life.game_over)score_core.commit();}
+        },shared_hit,shared_target)){++hit_checks;if(survival_enabled&&!coop)life.register_hit();}
+        clear_team_hit();
+        if(effects_enabled){
+            sparks.update(page);
+            unsigned stock=coop?0u:life.lives,bomb_stock=life.bombs;
+            const auto before=score_core.extends;
+            score_core.update(stock,bomb_stock);
+            if(coop){if(before!=score_core.extends)coop_life_award(true);}
+            else{life.lives=std::uint8_t(stock);life.bombs=std::uint8_t(bomb_stock);}
+            lives=life.lives;bombs=life.bombs;if(run_over())score_core.commit();
+        }
         while(consumed_pickup_sounds<pickups.sounds.size())request_sound(pickups.sounds[consumed_pickup_sounds++]);
         while(observed_extend_sounds<score_core.sound8){++observed_extend_sounds;request_sound(8);}
         if(extra_road_frame){
@@ -1113,7 +1403,7 @@ public:
         }
     }
     bool motion_active()const{
-        return !paused&&!life.game_over&&!runtime.blocked&&!weapon_blocked&&!transition.active()&&!dialogue.active()&&
+        return !paused&&!run_over()&&!runtime.blocked&&!weapon_blocked&&!transition.active()&&!dialogue.active()&&
             !practice_completed&&!extra_settlement.showing_bonus()&&!extra_settlement.terminal()&&!stage5_entry_only&&!stage5_result&&!mima_delay;
     }
     void capture_motion(MotionFrame &frame)const{
@@ -1328,7 +1618,7 @@ private:
         if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=terrain_bottom||top+16<=terrain_top)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<terrain_top||py>=terrain_bottom)continue;const auto c=terrain_palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
         if(filter_terrain)filter_stage_background(pixels,lag,terrain_bottom);
         if(scroll_terrain)ambient_.render(pixels,terrain_palette,anim_phase,reduced_effects);
-        if(bomb_enabled&&bomb_art)bomb_art->render(pixels,sprite_palette,bomb,reduced_effects);
+        if(const auto *art=current_bomb_art();bomb_enabled&&art)art->render(pixels,sprite_palette,bomb,reduced_effects);
         // th02_main.asm:1655–1657 draws Bomb before the boss update and its paints.
         if(sigma_enabled)draw_sigma(pixels,motion);
         const auto put=[&](unsigned pat,RenderPoint p,Paint paint=Paint::Artwork,unsigned scale=1,bool zero_clear=false){
@@ -1384,6 +1674,12 @@ private:
         if(combat_enabled){
             departures_.draw(T::Shot,motion,draw_departure);
             for(unsigned i=0;i<shots.slots.size();++i){const auto &s=shots.slots[i];if(s.flag==1)put(shots.pattern_for(s),motion.at(T::Shot,i,motion_q4(s.position[rendered_page]),s.motion_generation));}
+            if(coop)for(unsigned seat=1;seat<seat_count();++seat){
+                const auto &s=seat_shots(seat);
+                const auto palette=coop_art::shot_palette(sprite_palette,seat);
+                for(const auto &shot:s.slots)if(shot.flag==1)
+                    bank.put(pixels,palette,s.pattern_for(shot),motion_q4(shot.position[rendered_page]));
+            }
         }
         // Focus is a collision reference. Show the player and hostile bullets
         // from the checked frame, not the older interpolated pose of live slots.
@@ -1394,6 +1690,16 @@ private:
         if(options_visible()){
             const unsigned pat=72+static_cast<unsigned>(player.shot);const auto p=motion.at(T::Option,0,shots.option_left,shots.option_top);
             put(pat,p);put(pat,p.offset(48,0));
+        }
+        if(coop)for(unsigned i=0;i<seat_count();++i){
+            const auto &l=seat_life(i);const auto &p=seat_motion(i);const auto &s=seat_shots(i);
+            if(l.game_over){const auto pos=LocalCoopState::spawn(i);coop_art::ghost(pixels,i,RenderPoint::pixels(pos.x,pos.y));continue;}
+            if(!i)continue;
+            if(l.pattern)coop_art::player(pixels,bank,sprite_palette,i,*l.pattern,RenderPoint::pixels(l.draw.x,l.draw.y));
+            if(!l.hit&&!l.miss_active&&seat_pickups(i).power>=8){
+                const auto pos=RenderPoint::pixels(s.option_left,s.option_top);
+                put(72+unsigned(p.shot),pos);put(72+unsigned(p.shot),pos.offset(48,0));
+            }
         }
         if(effects_enabled){
             constexpr std::array<unsigned,5> item_patterns={68,69,70,71,87};
@@ -1456,14 +1762,18 @@ private:
             }else apply_mima_tone(pixels,death_fx.tone);
         }
         if(focus)draw_player_focus_point(pixels,*focus,-int(death_fx.shift));
-        if(bomb_enabled&&bomb_art)bomb_art->render_tone(pixels,bomb);
+        if(coop&&!paused)for(unsigned i=1;i<seat_count();++i){
+            const auto &p=seat_motion(i);const auto &l=seat_life(i);
+            if(p.focused&&!l.hit&&!l.game_over)draw_player_focus_point(pixels,{p.x,p.y},-int(death_fx.shift));
+        }
+        if(const auto *art=current_bomb_art();bomb_enabled&&art)art->render_tone(pixels,bomb);
         // Approximate Sigma's one-word GDC offset without moving host HUD or collisions.
         if(sigma_view_shift())for(int y=16;y<384;++y){
             auto first=pixels.begin()+y*640+32;
             std::rotate(first,first+16,first+384);
         }
         // TRAM stays fixed even when Sigma shifts graphics VRAM.
-        if(bomb_enabled&&bomb_art)bomb_art->render_overlay(pixels,bomb);
+        if(const auto *art=current_bomb_art();bomb_enabled&&art)art->render_overlay(pixels,bomb);
     }
 };
 }

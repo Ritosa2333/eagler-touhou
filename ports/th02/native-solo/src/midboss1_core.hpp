@@ -1,4 +1,5 @@
 #pragma once
+#include "boss_damage.hpp"
 #include "enemy_effects.hpp"
 #include "enemy_math.hpp"
 #include <array>
@@ -10,7 +11,8 @@ namespace soew {
 struct Midboss1Core {
     bool active=false,dying=false,visible=false,hit_flash=false;
     bool initialized=false,present=true;
-    std::uint16_t phase_frame=0,damage_taken=0,death_frame=0;
+    std::uint16_t phase_frame=0,death_frame=0;
+    BossDamage damage_taken;
     std::array<int,2> left{192,192},top{-16,-16};
     unsigned pattern=148,death_pattern=10;
     constexpr static unsigned death_scale=3;
@@ -18,6 +20,7 @@ struct Midboss1Core {
     std::uint64_t shot_groups=0,score_awarded=0;
     struct Spark {int x,y,speed,count;bool sprite;};
     struct Hooks {
+        unsigned damage_divisor=1;
         std::function<void(const EnemyBulletRequest&)> bullet;
         std::function<unsigned(int,int,int,int)> damage;
         std::function<void(unsigned)> score,sound;
@@ -50,7 +53,7 @@ struct Midboss1Core {
         if(!(scroll_line&15)&&h.tile)for(unsigned i=0;i<4;++i)h.tile(left[back]+int(i*16),int((48+scroll_line)%400),60+i);
         int vram_y=top[back]+int(scroll_line);if(vram_y>=400)vram_y-=400;
         const unsigned dealt=h.damage?h.damage(left[back],top[back],64,96):0;
-        if(dealt){damage_taken=static_cast<std::uint16_t>(damage_taken+dealt);
+        if(dealt){damage_taken.add(dealt,h.damage_divisor);
             if(enemy_s16(damage_taken)>300&&vram_y<304){dying=true;if(h.sound)h.sound(2);if(h.score)h.score(10000);score_awarded+=10000;return;}
             if(h.sound)h.sound(4);
             hit_flash=true;visible=true;

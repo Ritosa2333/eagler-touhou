@@ -16,6 +16,7 @@ struct PlayerLife {
     std::uint8_t invincibility=0,miss_frame=0,lives=2,bombs=3,start_bombs=3,power=1;
     bool hit=false,miss_active=false,bomb_invincible=false,game_over=false;
     int playperf=0;
+    int respawn_x=208;
     static int playperf_max(unsigned difficulty){return difficulty==0?4:16;}
     void advance_playperf(std::uint32_t stage_frame,unsigned difficulty){if(stage_frame%1800==1500&&playperf<playperf_max(difficulty))++playperf;}
     unsigned stage_misses=0,total_misses=0;
@@ -45,7 +46,7 @@ struct PlayerLife {
         }else if(miss_frame<43)positions[back].y+=4;
         else if(miss_frame==43){
             if(!infinite_lives||(protect_last&&lives>0)){--lives;effects.push_back({LivesChanged,0,0,lives});}bombs=static_cast<std::uint8_t>(start_bombs+(lives==0?2:0));effects.push_back({BombsChanged,0,0,bombs});sparks(back,16);
-            positions[0]=positions[1]={208,366};
+            positions[0]=positions[1]={respawn_x,366};
         }else if(miss_frame<68){positions[back].y-=2;draw=positions[back];pattern=0;}
         else{miss_frame=0;miss_active=false;hit=false;}
     }
