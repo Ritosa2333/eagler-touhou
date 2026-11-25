@@ -417,31 +417,43 @@ test('Full SoEW fades between title pages, animates the music room and browses r
         },{timeout:5000},{x,y,r,g,b});
         const evidence = process.env.SOEW_UI_EVIDENCE;
         const screenshot = name => evidence && page.screenshot({path:resolve(evidence,name+'.png')});
-        const switchPage = async (key, duration=1040) => {
+        const sampleSwitch = async (key, duration) => {
             await page.evaluate(duration => {
                 const ctx = new OffscreenCanvas(32,20).getContext('2d',{willReadFrequently:true});
                 const canvas = document.querySelector('canvas');
-                const frames = window.pageFade = [];
+                const frames = [];
                 const start = performance.now();
                 function sample(now) {
                     ctx.drawImage(canvas,0,0,32,20);
                     let peak = 0;
-                    for (const [i,byte] of ctx.getImageData(0,0,32,20).data.entries())
-                        if (i%4!==3) peak = Math.max(peak,byte);
-                    frames.push(peak);
+                    let signature = 0;
+                    for (const [i,byte] of ctx.getImageData(0,0,32,20).data.entries()) {
+                        if (i%4===3) continue;
+                        peak = Math.max(peak,byte);
+                        signature = (Math.imul(signature,31)+byte)|0;
+                    }
+                    frames.push({peak,signature});
                     if (now-start<duration) requestAnimationFrame(sample);
                     else window.pageFadeDone = frames;
                 }
                 window.pageFadeDone = null;
-                requestAnimationFrame(sample);
+                sample(start);
             },duration);
             await press(key);
             await page.waitForFunction(() => window.pageFadeDone!==null);
-            const frames = await page.evaluate(() => window.pageFadeDone);
+            return page.evaluate(() => window.pageFadeDone);
+        };
+        const switchPage = async (key, duration=1040) => {
+            const frames = (await sampleSwitch(key,duration)).map(frame => frame.peak);
             const black = frames.findIndex(peak => peak<8);
             assert(black>=2 && black<frames.length-2, key+' did not transition through black');
             assert(frames.slice(0,black).some(peak => peak>48), key+' did not fade out the old page');
             assert(frames.slice(black+1).some(peak => peak>48), key+' did not fade in the new page');
+        };
+        const switchWithoutFade = async (key, label) => {
+            const frames = await sampleSwitch(key,540);
+            assert.notEqual(frames.at(-1).signature,frames[0].signature,label+' did not change the rendered menu');
+            assert(frames.every(({peak}) => peak>48),label+' faded the whole screen');
         };
         await page.goto(url);
         await page.waitForFunction(() => document.title.includes('F8'));
@@ -455,14 +467,18 @@ test('Full SoEW fades between title pages, animates the music room and browses r
         await switchPage('Escape'); // Shot select → Title.
         await press('ArrowDown'); // Story → Practice
         await switchPage('Enter'); // Practice shot select
-        await switchPage('Enter'); // Practice stage list
-        await switchPage('Enter'); // Practice setup
+        for (let shot=0;shot<3;++shot) {
+            if(shot)await press('ArrowRight');
+            await switchWithoutFade('Enter','Practice shot → stage list');
+            if(shot<2)await switchWithoutFade('Escape','Practice stage list → shot');
+        }
+        await switchWithoutFade('Enter','Practice stage list → setup');
         await switchPage('Enter',2400); // Practice starts at the selected boss.
         await page.waitForFunction(() => /練習 \| シード|Practice \| Seed/u.test(document.title));
         await press('Escape'); // Pause, then exit to practice setup.
         await switchPage('KeyQ');
-        await switchPage('Escape');
-        await switchPage('Escape');
+        await switchWithoutFade('Escape','Practice setup → stage list');
+        await switchWithoutFade('Escape','Practice stage list → shot');
         await switchPage('Escape');
         for (let i=0;i<3;++i) await press('ArrowUp'); // Practice → Story → Quit → About.
         await switchPage('Enter');
@@ -483,8 +499,11 @@ test('Full SoEW fades between title pages, animates the music room and browses r
         await screenshot('music-room');
         await switchPage('Escape');
         await press('ArrowUp'); // Music Room → Options.
-        await switchPage('Enter');
-        await switchPage('Escape');
+        await switchWithoutFade('Enter','Title → Options');
+        await switchWithoutFade('Escape','Options → Title (Escape)');
+        await switchWithoutFade('Enter','Title → Options');
+        await press('ArrowUp'); // Rank → Back.
+        await switchWithoutFade('Enter','Options → Title (Back)');
         await press('ArrowUp'); // Options → HiScore.
         await switchPage('Enter');
         await page.waitForFunction(() => /ローカルハイスコア|Local high scores/u.test(document.title));

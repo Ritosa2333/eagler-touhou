@@ -2640,17 +2640,9 @@ void update_practice_panel(App &app,unsigned input){
     auto &m=app.practice_menu;
     auto &panel=app.practice_panel;
     const auto before=m.spec;
-    const auto prior_page=panel.page;
-    const auto prior_window=panel.window;
     const auto action=panel.update(m,input);
-    if(panel.page!=prior_page){
-        const auto page=panel.page;
-        const auto window=panel.window;
-        panel.page=prior_page;panel.window=prior_window;
-        transition_page(app,[&panel,page,window]{panel.page=page;panel.window=window;});
-    }
     if(action==A::Start)begin_practice(app,m.spec);
-    else if(action==A::Back)transition_page(app,[&app]{app.practice_visible=false;app.menu.begin_practice_shot_select(app.practice_panel.shot);});
+    else if(action==A::Back){app.practice_visible=false;app.menu.begin_practice_shot_select(panel.shot);}
     else if(action==A::NewSeed){m.spec.seed=std::random_device{}();save_practice(app);}
     else if(m.spec!=before)save_practice(app);
 }
@@ -3110,17 +3102,17 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 const auto previous_settings=soew::Settings::from(app->menu);
                 const bool reset_options=was_options&&was_allowed&&(input&Menu::confirm)&&app->menu.option()==Menu::Option::Reset;
                 const int action=app->menu.update(input);
-                const bool shots=app->menu.shot_screen,music=app->menu.music_room,options=app->menu.options,extra=app->menu.extra_mode;
+                const bool shots=app->menu.shot_screen,music=app->menu.music_room,extra=app->menu.extra_mode;
                 const auto page_notice=[app]{
                     app->notice=app->menu.music_room?app->tr(L"音楽室：決定で再生。戻っても再生は続きます",L"Music room: confirm plays selected track; exit keeps playing",L"音乐室：确认播放曲目，返回后继续播放",L"音樂室：確認播放曲目，返回後繼續播放"):
                         app->menu.practice_shot_select()?soew::text::confirm_back(app->menu.language):
                         app->menu.shot_screen?shot_select_notice(*app):L"";
                 };
-                if(shots!=was_shots||music!=was_music||options!=was_options){
+                if(shots!=was_shots||music!=was_music){
                     if(shots&&app->menu.music!=0&&app->audio.active()&&!app->effect_bank.empty()&&!app->audio.effect(13,true))audio_error(*app);
-                    app->menu.shot_screen=was_shots;app->menu.music_room=was_music;app->menu.options=was_options;app->menu.extra_mode=was_extra;
-                    transition_page(*app,[app,shots,music,options,extra,page_notice]{
-                        app->menu.shot_screen=shots;app->menu.music_room=music;app->menu.options=options;
+                    app->menu.shot_screen=was_shots;app->menu.music_room=was_music;app->menu.extra_mode=was_extra;
+                    transition_page(*app,[app,shots,music,extra,page_notice]{
+                        app->menu.shot_screen=shots;app->menu.music_room=music;
                         app->menu.extra_mode=extra;if(music)app->music_comment_scroll=0;
                         page_notice();
                     },shots);
@@ -3135,10 +3127,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if(was_options&&soew::Settings::from(app->menu)!=previous_settings)save_settings(*app);
                 if(fullscreen_failed)app->settings_warning="Could not switch fullscreen mode";
                 if(was_shots&&was_allowed&&(input&Menu::confirm)&&app->menu.shot_confirmed){
-                    transition_page(*app,[app]{
-                        if(app->practice_panel.open_from_shot(app->practice_menu,app->menu))app->practice_visible=true;
-                        else launch_selected_stage(*app);
-                    });
+                    if(app->practice_panel.open_from_shot(app->practice_menu,app->menu))app->practice_visible=true;
+                    else transition_page(*app,[app]{launch_selected_stage(*app);});
                 }
                 if(was_music&&music&&was_allowed&&(input&Menu::confirm)){app->music_comment_scroll=0;start_preview(*app,app->menu.music_selected);}
                 if(was_options&&was_allowed&&(previous_settings.music!=app->menu.music||reset_options))start_preview(*app,app->loaded_track);
@@ -3151,7 +3141,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     app->score_animation.reset();app->score_clock.reset(host_ms());
                     app->notice=app->tr(L"移植版のローカルハイスコア",L"Local high scores",L"本地最高分",L"本機最高分");
                 });
-                if(action<0&&!app->stage_scene&&!app->page_transition.active())page_notice();
+                if(action<0&&!app->stage_scene&&!app->practice_visible&&!app->page_transition.active())page_notice();
             }
         } else if(w==VK_ESCAPE) {DestroyWindow(hwnd);return 0;}
         caption(hwnd, *app); InvalidateRect(hwnd, nullptr, FALSE); return 0;
