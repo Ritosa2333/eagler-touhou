@@ -1,12 +1,7 @@
-// 文件存储（真实持久化，替换旧桩：不再 return true 假成功）。
-// 数据 = 原版 scoreth13.dat 的移植侧子集（v6；兼容 v1–v5）：
-//   - BGM/SE 音量（原版存档字节 DAT_004dc892/893，默认 100/80 = 0x5064）。
-//   - 每角色×难度通关标记 cleared(char 0..3, diff 0..4)：原版 score 数据块
-//     布局 *(int*)(score + 0x56dc*char + 0x7e4 + diff*4) != 0（0x451450
-//     case0 角色 クリア済 札门实证）；新档全 0 = 全隐，与真机缺省一致。
-// 后端：native/WASI = 真实文件（TH13_SAVE_PATH 或 cwd th13-save.bin）；
-// web = localStorage("th13.save")（EM_JS）。失败如实置 error 返回 false。
-// 损坏/缺档：按原版 scoreth13.dat 语义取默认值，不报错。
+// TH13SAVE v7 应用存档与 scoreth13.dat 原版格式镜像。
+// 应用存档保留完整设置和得分历史；原版格式通道同步双方可表达的字段。
+// 原版通关标记地址：score + 0x56DC*character + 0x7E4 + difficulty*4。
+// 后端：native/WASI = TH13_SAVE_PATH 或 cwd th13-save.bin；web = localStorage。
 #pragma once
 
 #include "../game/Types.hpp"
@@ -41,9 +36,10 @@ struct SavedSpellRecord {
 };
 
 struct SavedOrdinaryRecords {
-    // 00449760 initializes six rank tables; menu 00453170 exposes the first five.
-    std::array<std::array<TitlePlayerDataScore, 10>, 6> ranking{};
-    std::array<i32, 6> clear_count{}, no_continue_clear_count{};
+    // The original file has six ranking tables; the player-data UI exposes five.
+    std::array<std::array<TitlePlayerDataScore, ScoreDat::kRankCount>,
+               ScoreDat::kDifficultySlots> ranking{};
+    std::array<i32, ScoreDat::kDifficultySlots> clear_count{}, no_continue_clear_count{};
     i32 play_count = 0, total_frames = 0;
     bool history_complete = true;
     SavedOrdinaryRecords();
@@ -123,29 +119,18 @@ public:
     // Other port saves (settings/music/spell events) retain their last commit.
     bool save_score();
 
-    // ---- scoreth13.dat 原版格式通道（web = localStorage "th13.scoredat" base64。
-    // native/WASI 构建通道完全不激活：不读、不写、无文件访问，行为与无此通道的
-    // 旧版逐字节一致——native 仅用于单测/诊断，localStorage 是唯一持久后端）----
-    // 语义（定死）：v6 "TH13SAVE" 应用档有效 ⇒ v6 是应用侧唯一权威，加载/内存/
-    // 再保存全走 v6 原语义；th13.scoredat 只是 save_score() 保存点写出的原版格式
-    // 镜像（可映射字段照映射；continues 等 v6 独有字段在镜像中缺席是原版格式
-    // 本性）。dat 导入仅两种情况：(a) v6 缺失/无效；(b) 应用档有效但 dat 明显
-    // 更新（dat 全条目最大 u64 时间戳 > 榜表最大时间戳）。否则 dat 永不覆盖。
-    // 块字节与字段视图见 game/ScoreDat.hpp，字段映射表见 docs/plans/scoredat.md。
+    // v7 "TH13SAVE" 是应用侧权威。th13.scoredat 是 save_score() 保存点写出的
+    // 原版格式镜像；dat 仅在 v7 缺失/无效，或 dat 榜表最大时间戳更新时导入。
+    // 块字节与字段视图见 game/ScoreDat.hpp，字段映射见 docs/plans/scoredat.md。
     ScoreDat score_dat;
+    static_assert(kSaveSpellColumns == ScoreDat::kColumnCount);
+    static_assert(kSaveDifficulties == ScoreDat::kDifficultySlots - 1);
     // boot 时 (u16)时钟（对照原版 (u16)timeGetTime() @0x43a040）：ST LCG 表
     // 每次开机生成一次；文件 ST 块校验通过则整体覆盖回文件值（0x449b00→0x449cd0），
     // 即首存后随存档持久、不重生成。
     u16 score_dat_seed = 0;
     bool score_dat_loaded() const { return score_dat_loaded_; }
-    // ReplayFile::deflate（bit-exact 0x458c30）已交付：true = web 通道写完整
-    // 原版文件已接通（黄金整文件逐字节验证见 tests/score/）。
-    static bool score_dat_file_ready();
-    // 端口角色 → 原版 chara 0..5；-1 = 原版无对应（妖夢为端口扩展角色）。
-    // 映射：霊夢→ReimuA(0)、魔理沙→MarisaA(2)、早苗→SanaeA(4)。B 型行保持默认。
-    static i32 score_dat_chara(i32 character);
-    // dat 导入裁决：(a) !loaded（v6 缺失/无效）或 (b) dat 最大时间戳 > 榜表
-    // 最大时间戳。public 供单测直测；initialize() 内部消费。
+    // dat 导入裁决：(a) 应用档缺失/无效，或 (b) dat 最大时间戳更新。
     bool score_dat_should_import(u64 dat_max_timestamp) const {
         return !loaded || dat_max_timestamp > u64(max_ranking_timestamp());
     }
@@ -182,14 +167,13 @@ private:
     // scoreth13.dat 镜像未变时不重复压缩。
     std::vector<u8> persisted_save_bytes_;
     std::vector<u8> persisted_score_dat_image_;
-    // scoreth13.dat 分片压缩作业（web 通道）：保存点只登记变化后的镜像，
-    // 0x458c30 压缩由 advance_pending_writes 逐帧推进，完成即写存储。
+    std::vector<u8> score_dat_image_build_;
     std::vector<u8> pending_score_dat_image_;
     LzssEncoder score_dat_encoder_;
     bool score_dat_loaded_ = false;
     bool write_save(bool commit_ending);
-    // 现有 v6 "TH13SAVE" 读档体（initialize 的原始逻辑，缺档/坏档 true+默认值）。
-    bool load_v6();
+    // TH13SAVE 读档体（缺档/坏档 true + 默认值）。
+    bool load_save();
     // th13.scoredat 通道读写：web=localStorage；native 通道不激活（读恒缺档、
     // 写恒 no-op，不触碰任何路径）。
     bool read_score_dat(std::vector<u8>& out);

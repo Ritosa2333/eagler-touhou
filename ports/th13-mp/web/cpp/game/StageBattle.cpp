@@ -877,7 +877,6 @@ void StageBattle::fire_shots(i32 frame) {
         if (level > 4) level = 4;
         const u32 block = progress_ && trance_active(*progress_) ? 10u
                           : u32(level) + (focus ? 5u : 0u);
-        // 临时探针（TH13_SHOT_PROBE=1）：P0 弹迹对拍（与 tools/shot_probe.py 同窗）。
         // 一次性静态读取：wasm 侧 getenv 恒空但每帧开火都有调用开销，缓存后
         // 热路径只剩一次 bool 判断（WASI harness 侧环境变量语义不变）。
         static const bool shot_probe = [] {
@@ -1165,8 +1164,7 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
     // 446870 returns before bomb/shot queries when443240's phase clock
     // has not advanced an integer tick (including half-speed Boss deaths).
     if (player_phase_clock_.current == player_phase_clock_.previous) return 0;
-    // 临时探针（TH13_SHOT_PROBE=1）：P0 命中检测对拍（与 stage1_oracle HITCHK 同窗）。
-    // 同上：一次性静态读取，避免逐敌机逐帧 getenv。
+    // 一次性静态读取，避免逐敌机逐帧 getenv。
     static const bool shot_probe = [] {
         const char* probe = std::getenv("TH13_SHOT_PROBE");
         return probe && probe[0] == '1';
@@ -1555,8 +1553,6 @@ void StageBattle::collide_shots(StageEnemy& state) {
     // incoming point on its own side (StageSim::absorb) after each owner's SP
     // reductions, so shots, Bombs and Trance damage share one rule.
     applied = sim.absorb(*enemy, applied);
-    // 临时只读探针（TH13_DAMAGE_PROBE=1 复用门控）：对比原生 0x419d2f 的
-    // (serial, damage, accum) 序列；只打印，不改变数值。
     if (damage_probe_enabled) {
         std::fprintf(stderr,
             "[enemy-damage] f=%u serial=%u dmg_in=%d applied=%d flags=%08x "
@@ -3466,8 +3462,6 @@ bool StageBattle::step(const GameInput& input) {
         }
         std::printf("\n");
     }
-    // 临时探针（TH13_BOMB_PROBE=1）：Bomb 全窗逐帧对照（r4/combat 权威
-    // 对拍）：age/timer/库存/无敌、8 珠态、敌 HP、存活弹数、game RNG 计数。
     static const bool bomb_probe = std::getenv("TH13_BOMB_PROBE") != nullptr;
     if (bomb_probe) {
         std::printf("BOMB f=%d age=%d timer=%d stock=%d invuln=%d rng=%u",
@@ -3486,8 +3480,6 @@ bool StageBattle::step(const GameInput& input) {
             if (bullet.alive) ++alive_bullets;
         std::printf(" bullets=%u\n", alive_bullets);
     }
-    // 临时探针（TH13_LIFE_PROBE=1）：敌机生命轨迹对拍（与 stage1_oracle
-    // TH13_LIFE_PROBE 同窗，帧/序号/生命三字段同格式）。
     if (life_probe_) {
         std::printf("SCORE f=%d score=%d power=%d\n", sim.frame,
                     score_ ? score_->score : -1, player_ ? player_->power : -1);

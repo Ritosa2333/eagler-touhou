@@ -98,7 +98,6 @@ for (const locale of ['zh-CN', 'en']) test(`Original default decision copy and b
   assert.equal(n('#decisionTitle').textContent, api.translate(locale, 'dialog.confirmTitle'));
   assert.deepEqual([...dialog.querySelectorAll('footer button')].map(button => [button.id, button.textContent, button.hidden]), [
     ['decisionCancel', api.translate(locale, 'action.cancel'), false],
-    ['decisionSecondary', api.translate(locale, 'action.backgroundDownload'), true],
     ['decisionConfirm', api.translate(locale, 'action.confirm'), false],
   ]);
   assert.equal(env.document.activeElement, n('#decisionCancel')); await nativeClose(dialog);

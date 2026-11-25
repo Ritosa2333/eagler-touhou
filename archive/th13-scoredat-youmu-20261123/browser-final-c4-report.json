@@ -1,0 +1,50 @@
+{
+  "timeline": {
+    "restored": {
+      "hint": 0,
+      "failures": [],
+      "index": [
+        {
+          "name": "th13_01.rpy",
+          "size": 92023,
+          "ts": 1793927339327
+        }
+      ],
+      "blobLen": 122700,
+      "scoreLen": 24980,
+      "blobMatches": true,
+      "scoreMatches": true
+    },
+    "mainCursor": 4,
+    "playback": {
+      "active": true,
+      "finished": false,
+      "cursor_valid": true,
+      "slot_index": 0,
+      "slot_number": 1,
+      "slot_frame": 30,
+      "slot_frames": 11675,
+      "recorded_position": 30,
+      "consumed": 30,
+      "current_stage": 1,
+      "host_frame": 4411,
+      "loading": false,
+      "transition": false,
+      "startup_age": -1,
+      "overlay": 0,
+      "phase": 1,
+      "scene_flags": 0,
+      "environment_paused": false,
+      "stage_frame": 30
+    },
+    "reload": {
+      "indexEqual": true,
+      "blobEqual": true,
+      "scoreEqual": true,
+      "hint": 0,
+      "failures": []
+    }
+  },
+  "failures": [],
+  "verdict": "PASS"
+}

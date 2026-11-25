@@ -1,4 +1,5 @@
 import {useEffect, useState, type ReactNode} from 'react';
+import {Download, Play} from 'lucide-react';
 import {z} from 'zod';
 import {useLocale} from '../../i18n';
 import {th09CharacterIds, th09CharacterName} from '../../models/th09-character-ratings';
@@ -7,7 +8,9 @@ import {accountRequest} from '../../services/account-client';
 import {useAccountSession} from '../../services/account-session';
 import {Button} from '../../ui/button';
 import {AccountAvatar} from '../launcher/AccountAvatar';
+import {Th09CharacterPortrait} from '../launcher/Th09CharacterPortrait';
 import {ParticipantAvatar} from '../room/ParticipantAvatar';
+import {replayClock} from './ReplaySeekBar';
 import './duel-replay-group.css';
 
 const character = z.number().refine(id => th09CharacterIds.includes(id));
@@ -30,30 +33,34 @@ const duelReplayFiles = z.object({
 type ReplayList = z.infer<typeof duelReplayFiles>;
 type ReplayFile = ReplayList['files'][number];
 
-export function DuelReplayGroup({username, duelId, count, watch, summary, className, currentRoundId, disabled}: {
+export function DuelReplayGroup({username, duelId, count, watch, summary, className, currentRoundId, disabled, open}: {
   username: string; duelId: string; count: number; watch?: WatchTh09Replay;
-  summary?: ReactNode; className: string; currentRoundId?: string; disabled?: boolean;
+  summary?: ReactNode; className: string; currentRoundId?: string; disabled?: boolean; open?: boolean;
 }) {
   const {t, locale} = useLocale();
   const {state: account} = useAccountSession();
   const accountLoading = account.status === 'loading';
   const viewer = account.status === 'member' ? account.user.username.toLowerCase() : undefined;
-  const [request, setRequest] = useState<{endpoint: string} | null>(null);
+  const [selfOpen, setSelfOpen] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [loaded, setLoaded] = useState<{viewer?: string; value: ReplayList}>();
   const replays = !accountLoading && loaded?.viewer === viewer ? loaded?.value : undefined;
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(false);
   const endpoint = `v1/th09/duels/${duelId}/replays`;
+  const expanded = open ?? selfOpen;
+  const inline = open !== undefined;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Retrying starts a fresh request for the same replay group.
   useEffect(() => {
-    if (!request || accountLoading || replays) return;
+    if (!expanded || accountLoading || replays) return;
     const controller = new AbortController();
     setFailed(false);
-    void accountRequest(request.endpoint, undefined, {signal: controller.signal}).then(data => {
+    void accountRequest(endpoint, undefined, {signal: controller.signal}).then(data => {
       if (!controller.signal.aborted) setLoaded({viewer, value: duelReplayFiles.parse(data)});
     }).catch(() => {if (!controller.signal.aborted) setFailed(true);});
     return () => controller.abort();
-  }, [request, replays, accountLoading, viewer]);
+  }, [endpoint, expanded, attempt, replays, accountLoading, viewer]);
   function access(file: ReplayFile, action: 'play' | 'download') {
     if (!watch || busy || disabled) return;
     setBusy(true);
@@ -75,11 +82,52 @@ export function DuelReplayGroup({username, duelId, count, watch, summary, classN
       </ParticipantAvatar>}
     </>;
   }
-  return <details className={className} onToggle={event => setRequest(event.currentTarget.open ? {endpoint} : null)}>
-    <summary>{summary ?? <>{t('replay.ui.heading')} | {t('replay.fileCount', {count})}</>}</summary>
-    {failed && <p role="alert">{t('account.requestFailed')} <Button type="button" variant="ghost" onClick={() => setRequest({endpoint})}>{t('action.retry')}</Button></p>}
+  function actions(file: ReplayFile, round?: string) {
+    const icon = round !== undefined;
+    const playLabel = t('replay.ui.play');
+    const downloadLabel = t('action.download');
+    const download = `/api/${endpoint}/${file.roundId.replace(':', '-')}`;
+    return <div className={icon ? 'profile-round-actions' : 'th09-replay-actions'}>
+      {watch && <Button type="button" variant="ghost" size={icon ? 'icon-sm' : undefined} disabled={busy || disabled}
+        aria-current={currentRoundId === file.roundId || undefined} aria-label={icon ? playLabel + ' | ' + round : undefined}
+        onClick={() => access(file, 'play')}>{icon ? <Play aria-hidden="true"/> : playLabel}</Button>}
+      {watch ? <Button type="button" variant="ghost" size={icon ? 'icon-sm' : undefined} disabled={busy || disabled}
+        aria-label={icon ? downloadLabel + ' | ' + round : undefined}
+        onClick={() => access(file, 'download')}>{icon ? <Download aria-hidden="true"/> : downloadLabel}</Button>
+        : icon ? <Button asChild variant="ghost" size="icon-sm"><a href={download} download={file.name}
+          aria-label={downloadLabel + ' | ' + round}><Download aria-hidden="true"/></a></Button>
+        : <a href={download} download={file.name}>{downloadLabel}</a>}
+    </div>;
+  }
+  const status = <>
+    {failed && <p role="alert">{t('account.requestFailed')} <Button type="button" variant="ghost" onClick={() => setAttempt(value => value + 1)}>{t('action.retry')}</Button></p>}
     {actionError && <p role="alert">{t('account.requestFailed')}</p>}
-    {request && !failed && !replays && <span role="status">{t('replay.ui.loading')}</span>}
+    {expanded && !failed && !replays && <p role="status">{t('replay.ui.loading')}</p>}
+  </>;
+  if (inline) return <div className={className} aria-busy={expanded && !failed && !replays}>
+    {status}
+    {replays && (replays.files.length ? <table>
+      <thead><tr><th scope="col">{t('th09.roundNumber')}</th><th scope="col">{t('game.matrixLoadout')}</th>
+        <th scope="col">{t('th09.roundDuration')}</th><th scope="col"><span className="sr-only">{t('replay.ui.play')} | {t('action.download')}</span></th></tr></thead>
+      <tbody>{replays.files.map((file,index) => {
+        const [left,right] = file.characters;
+        const round = t('profile.matchRound',{round:index+1});
+        return <tr key={file.roundId}>
+          <th scope="row" aria-label={round}>{String(index+1).padStart(2,'0')}</th>
+          <td><div className="profile-round-loadouts">
+            <span><Th09CharacterPortrait character={left}/>{th09CharacterName(left,t)}</span>
+            <small>vs</small>
+            <span><Th09CharacterPortrait character={right}/>{th09CharacterName(right,t)}</span>
+          </div></td>
+          <td>{file.frames != null ? replayClock(file.frames) : '—'}</td>
+          <td>{actions(file,round)}</td>
+        </tr>;
+      })}</tbody>
+    </table> : <p>{t('profile.matchNoReplays')}</p>)}
+  </div>;
+  return <details className={className} onToggle={event => setSelfOpen(event.currentTarget.open)}>
+    <summary>{summary ?? <>{t('replay.ui.heading')} | {t('replay.fileCount', {count})}</>}</summary>
+    {status}
     {replays && <ol>
       {replays.files.map(file => <li key={file.roundId}>
         <div className="th09-replay-row">
@@ -87,18 +135,14 @@ export function DuelReplayGroup({username, duelId, count, watch, summary, classN
             {renderSide(file, 0)}<span className="th09-replay-vs">vs</span>{renderSide(file, 1)}
           </div>
           {file.frames != null && <span className="th09-replay-duration">{formatDuelDuration(file.frames, locale)}</span>}
-          <div className="th09-replay-actions">
-            {watch && <Button type="button" variant="ghost" disabled={busy || disabled} aria-current={currentRoundId === file.roundId || undefined} onClick={() => access(file, 'play')}>{t('replay.ui.play')}</Button>}
-            {watch ? <Button type="button" variant="ghost" disabled={busy || disabled} onClick={() => access(file, 'download')}>{t('action.download')}</Button>
-              : <a href={`/api/${endpoint}/${file.roundId.replace(':', '-')}`} download>{t('action.download')}</a>}
-          </div>
+          {actions(file)}
         </div>
       </li>)}
     </ol>}
   </details>;
 }
 
-export function formatDuelDuration(frames: number, locale: string, emphasize = false) {
+function formatDuelDuration(frames: number, locale: string) {
   const seconds = Math.floor(frames / 60);
   const minutes = Math.floor(seconds / 60);
   const values: [number, string][] = minutes
@@ -107,10 +151,5 @@ export function formatDuelDuration(frames: number, locale: string, emphasize = f
   const numbers = new Intl.NumberFormat(locale);
   const parts = values.filter(([value]) => value > 0);
   const prefix = seconds ? '' : '<';
-  if (!emphasize) return prefix + parts.map(([value, unit]) => numbers.format(value) + unit).join(' ');
-  return <span className="profile-th09-duration-summary">{prefix}
-    {parts.map(([value, unit], index) => <span key={unit}>
-      {index > 0 && ' '}<strong>{numbers.format(value)}</strong>{unit}
-    </span>)}
-  </span>;
+  return prefix + parts.map(([value, unit]) => numbers.format(value) + unit).join(' ');
 }

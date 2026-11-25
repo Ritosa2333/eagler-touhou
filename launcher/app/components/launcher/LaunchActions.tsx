@@ -11,7 +11,7 @@ export interface LaunchAction {
 }
 export interface LaunchActionsProps {
   primary: LaunchAction;
-  secondary: LaunchAction;
+  secondary?: LaunchAction;
   /** Compact placement retains the original embedded replay row dimensions. */
   placement?: 'standard' | 'compact';
 }
@@ -29,7 +29,7 @@ export function LaunchActions({ primary, secondary, placement = 'standard' }: La
         <Play aria-hidden="true" />
         <span id={primary.textId}>{primary.label}</span>
       </UiButton>
-      <UiButton
+      {secondary && <UiButton
         variant="outline"
         className="launch launch-secondary min-h-9 px-3 pointer-coarse:min-h-11 max-[780px]:min-h-11"
         id={secondary.id}
@@ -39,7 +39,7 @@ export function LaunchActions({ primary, secondary, placement = 'standard' }: La
       >
         <FolderInput aria-hidden="true" />
         <span id={secondary.textId}>{secondary.label}</span>
-      </UiButton>
+      </UiButton>}
     </div>
   );
 }

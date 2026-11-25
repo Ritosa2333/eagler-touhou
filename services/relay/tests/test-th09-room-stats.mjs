@@ -101,6 +101,24 @@ test('two guests can confirm one unrated result for the room', () => {
   assert.deepEqual(recorded[0].players,[null,null]);
 });
 
+test('TH075 reports continue the same room duel and never create rated records', () => {
+  const room = {id:'th075mp-1234',lobby:{startSerial:1}};
+  const run = start(room, ['host','guest'], null);
+  const result = {serial:1,start:50,frames:3700,winner:1};
+  const record = () => assert.fail('TH075 cannot create a TH09 history record');
+  assert.equal(accept(room,run,'guest',result,record),false);
+  assert.equal(accept(room,run,'host',result,record),true);
+  assert.equal(accept(room,run,'host',result,record),false);
+  assert.equal(accept(room,run,'host',{...result,start:4500,winner:0},record),true);
+  assert.deepEqual(stats(room,'guest'),{wins:1,losses:1,minutes:2});
+  room.lobby.startSerial++;
+  start(room,['host','guest'],null);
+  assert.deepEqual(stats(room,'host'),{wins:1,losses:1,minutes:2});
+  room.lobby.seats[1]=null;
+  reconcileTh09Duel(room);
+  assert.deepEqual(stats(room,'host'),{wins:0,losses:0,minutes:0});
+});
+
 test('each replay keeps the room nicknames from its first final report', () => {
   const room = {id:'th09mp-1234',lobby:{startSerial:1}};
   const run = start(room, ['host','guest'], ['account-a',null]);

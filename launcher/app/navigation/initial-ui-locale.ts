@@ -1,57 +1,41 @@
-import {isUiLocale, localeHome, readUiLocalePreference, withUiLanguage, type UiLocale} from '../../src/launcher/i18n.mts';
+import {isUiLocale, localeHome, readUiLocalePreference, withUiLanguage} from '../../src/launcher/i18n.mts';
 
-const regionLocaleKey = 'eagler-touhou-region-locale-v1';
-const chineseRegions = new Set(['CN', 'HK', 'MO', 'TW']);
-
-export function localeForCountry(country: string): UiLocale {
-  return chineseRegions.has(country) ? 'zh-CN' : country === 'JP' ? 'ja' : 'en';
-}
+export const legacyRegionalLocaleKey = 'eagler-touhou-region-locale-v1';
 
 interface InitialLocaleOptions {
   href: string;
   base: string;
   storage: Storage | null;
   document?: Pick<Document, 'cookie'>;
-  fetchCountry(url: URL, init: RequestInit): Promise<Response>;
-  online: boolean;
-  timeoutMs?: number;
+  reload?: boolean;
 }
 
-/** Cold entry only. Explicit URLs and user choices never need the network. */
-export async function initialUiLocaleAddress({href, base, storage, document, fetchCountry, online, timeoutMs = 550}: InitialLocaleOptions) {
+/** A plain entry uses the Chinese document unless the user saved a language. */
+export function initialUiLocaleAddress({href, base, storage, document, reload = false}: InitialLocaleOptions) {
   const address = new URL(href), mount = new URL(base, address);
   if (address.origin !== mount.origin || !address.pathname.startsWith(mount.pathname)) return;
   const route = address.pathname.slice(mount.pathname.length).replace(/\/$/, '');
-  if (isUiLocale(address.searchParams.get('lang')) || /^(?:en|ja|ui-review)\.html$/.test(route)) return;
+  if (isUiLocale(address.searchParams.get('lang')) || route === 'ui-review.html') return;
 
-  let locale = readUiLocalePreference(document, storage);
-  if (!locale) {
-    try {const cached = storage?.getItem(regionLocaleKey); if (isUiLocale(cached)) locale = cached;} catch {}
-  }
-  if (!locale) {
-    locale = online ? await firstVisitLocale(mount, fetchCountry, timeoutMs) : 'en';
-    try {storage?.setItem(regionLocaleKey, locale);} catch {}
-    locale = readUiLocalePreference(document, storage) ?? locale;
-  }
-  if (!route || route === 'index.html') {
-    if (locale !== 'zh-CN') return new URL(localeHome(locale) + address.search + address.hash, mount);
+  const locale = readUiLocalePreference(document, storage);
+  if (route === 'en.html' || route === 'ja.html') {
+    // Old builds navigated to the regional language document even for a plain entry.
+    // A fresh localized link and a saved manual language still take precedence.
+    if (reload && !locale) {
+      try {
+        if (storage?.getItem(legacyRegionalLocaleKey) === route.slice(0, 2)) {
+          const target = new URL(mount);
+          target.search = address.search;
+          target.hash = address.hash;
+          return target;
+        }
+      } catch {}
+    }
     return;
   }
-  if (locale !== 'zh-CN') return new URL(withUiLanguage(address.href, locale));
-}
-
-async function firstVisitLocale(mount: URL, fetchCountry: InitialLocaleOptions['fetchCountry'], timeoutMs: number): Promise<UiLocale> {
-  const pending = new AbortController();
-  const timer = setTimeout(() => pending.abort(), timeoutMs);
-  try {
-    const response = await fetchCountry(new URL('_eagler/ui-country', mount), {
-      cache: 'no-store', credentials: 'omit', mode: 'same-origin', redirect: 'error', signal: pending.signal,
-    });
-    const country = response.ok ? (await response.text()).trim().toUpperCase() : '';
-    return localeForCountry(country);
-  } catch {
-    return 'en';
-  } finally {
-    clearTimeout(timer);
+  if (!locale || locale === 'zh-CN') return;
+  if (!route || route === 'index.html') {
+    return new URL(localeHome(locale) + address.search + address.hash, mount);
   }
+  return new URL(withUiLanguage(address.href, locale));
 }

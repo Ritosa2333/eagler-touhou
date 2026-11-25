@@ -72,6 +72,7 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
         <MainSelect
           className="option-select ui-language-select"
           id="uiLanguageSelect"
+          density="compact"
           aria-label={t('ui.language')}
           data-trigger-i18n="ui.language.menu"
           defaultValue={locale}

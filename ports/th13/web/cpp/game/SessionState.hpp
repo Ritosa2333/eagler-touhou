@@ -53,9 +53,9 @@ struct SessionState {
     // DAT_004be83c（好结局资格计数；灵击≥3 时置 3，结局选择门见 results-flow.md §4.2）。
     i32 good_endings = 0;
     // GameInf+0x2ac：本次关终 clear bonus 累计（0x42abf0 覆盖写、六面/Extra
-    // 再 += 同式原值；HUD 通关演出消费——显示 TODO）。
+    // 再 += 同式原值）。
     i32 stage_clear_bonus = 0;
-    // score 数据块 +0x7fc 起的关卡通过位（内存态；ScoreFile 落档属后期阶段）。
+    // score 数据块 +0x7fc 起的关卡通过位。
     // 位序 = stage + difficulty*8（0x42cd40:100 的字节写位同式）。
     u32 stage_cleared_bits = 0;
     // DAT_004be7d8（0x42e380:227 逐点道具取得 +1；跨关累计，0xc 延续不清，

@@ -12,8 +12,15 @@ export const PAGE_PARENTS: Readonly<Record<Page, Page | null>> = Object.freeze({
 export interface PageHistory {version: 1; position: number; page: Page; pagePosition: number; ancestors: Partial<Record<Page, number>>}
 export interface PageLocation {pathname: string; search: string; hash: string; state?: unknown}
 const object = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+export function localLayerOwnsPageScroll({pathname, search, hash, state}: PageLocation): boolean {
+  const layers = object(object(state)[LOCAL_LAYERS_KEY]);
+  return layers.href === pathname + search + hash &&
+    Object.values(object(layers.values)).some(entry => object(entry).pageScroll === true);
+}
+
 export function readPageHistory(state: unknown): PageHistory | null {
-  const entry = object(object(state)[PAGE_HISTORY_KEY]);
+  const source = object(state);
+  const entry = object(source[PAGE_HISTORY_KEY]);
   if (entry.version !== 1 || !Number.isSafeInteger(entry.position) || Number(entry.position) < 0 ||
       !Number.isSafeInteger(entry.pagePosition) || Number(entry.pagePosition) < 0 || Number(entry.pagePosition) > Number(entry.position) ||
       typeof entry.page !== 'string' || !Object.hasOwn(PAGE_PARENTS, entry.page) ||
@@ -21,11 +28,20 @@ export function readPageHistory(state: unknown): PageHistory | null {
   for (const [page, position] of Object.entries(entry.ancestors)) {
     if (!Object.hasOwn(PAGE_PARENTS, page) || !Number.isSafeInteger(position) || position < 0 || position > Number(entry.position)) return null;
   }
-  return entry as unknown as PageHistory;
+  const record = entry as unknown as PageHistory;
+  const options = object(source.launcherSurfaceEntry);
+  const launcher = record.ancestors.launcher;
+  const shelfPosition = record.pagePosition - 1;
+  // Existing single-game entries made by Open Options sit immediately above their shelf.
+  if (record.page === 'single-options' && options.version === 1 && options.surface === 'options' &&
+      typeof options.parentKey === 'string' && launcher !== undefined && launcher < shelfPosition) {
+    return {...record, ancestors: {...record.ancestors, launcher: shelfPosition}};
+  }
+  return record;
 }
 export function pageOf(location: PageLocation): Page {
   if (/\/login\.html\/?$/.test(location.pathname)) return 'account';
-  if (/\/profile\.html\/?$/.test(location.pathname)) return 'profile';
+  if (/\/(?:profile\.html|u\/[^/]+)\/?$/.test(location.pathname)) return 'profile';
   const state = object(location.state), options = object(state.launcherSurfaceEntry);
   if (state.launcherClosedPlayerSelection) return 'launcher';
   if (/\/(?:lobby|lobby\.html)\/?$/.test(location.pathname)) return options.surface === 'options' ? 'multi-options' : 'directory';
@@ -49,7 +65,10 @@ export function pageAddress(location: PageLocation, page: Page, product?: Produc
 export function nextPageHistory(current: PageHistory | null, page: Page, replace: boolean): PageHistory {
   const position = current ? current.position + (replace ? 0 : 1) : 0;
   const ancestors = {...current?.ancestors};
-  if (current && current.page !== page) ancestors[current.page] = current.pagePosition;
+  if (current && current.page !== page) {
+    // Home and the shelf share a page kind. Game details return to the shelf entry that opened them.
+    ancestors[current.page] = current.page === 'launcher' && page === 'single-options' ? current.position : current.pagePosition;
+  }
   return {version: 1, position, page, pagePosition: current?.page === page ? current.pagePosition : position, ancestors};
 }
 export function parentDistance(current: PageHistory | null): number | null {

@@ -16,7 +16,10 @@ class DelaySession final:private Netplay::PeerTransport {
     Netplay::SessionChannel channel{*this};
     Netplay::AdonisStartup startup;
     std::deque<std::vector<std::uint8_t>> pending;
-    std::uint32_t frame=0;
+    std::uint32_t frame=0,nextCapture=0;
+    std::uint32_t battleLoadFrame=Netplay::INVALID_FRAME,remoteBattleLoadFrame=Netplay::INVALID_FRAME;
+    std::uint64_t battleLoadStarted=0;
+    bool battleLoaded=false,battleLoadSent=false;
     bool configured=false;unsigned mode=1,predictionLimit=0;
     std::string error;
     struct Hash {std::uint32_t frame=Netplay::INVALID_FRAME,local=0,remote=0;bool haveLocal=false,haveRemote=false;};
@@ -62,6 +65,7 @@ class DelaySession final:private Netplay::PeerTransport {
         *out=std::move(pending.front());pending.pop_front();return true;
     }
 public:
+    static constexpr unsigned BattleLoadTimeoutMs=90'000;
     explicit DelaySession(Netplay::PeerTransport& transport):wire(transport){}
     bool Begin(const Netplay::SessionConfig& c,std::uint64_t nowUs,std::uint32_t delay,unsigned timingMode=1,unsigned limit=0){
         if(configured||startup.Active())return fail("TH075 session already configured");
@@ -78,6 +82,14 @@ public:
         if(!error.empty())return false;
         std::vector<std::uint8_t> bytes;
         for(unsigned n=0;n<256&&wire.Poll(&bytes);++n){
+            if(bytes.size()==16&&bytes[0]=='P'&&bytes[1]=='7'&&bytes[2]=='5'&&bytes[3]=='L'){
+                if(read(bytes.data()+4,8)!=config.sessionId)continue;
+                const auto loadedFrame=std::uint32_t(read(bytes.data()+12,4));
+                if(loadedFrame!=Netplay::INVALID_FRAME&&
+                   (remoteBattleLoadFrame==Netplay::INVALID_FRAME||loadedFrame>remoteBattleLoadFrame))
+                    remoteBattleLoadFrame=loadedFrame;
+                continue;
+            }
             if(bytes.size()==24&&bytes[0]=='P'&&bytes[1]=='7'&&bytes[2]=='5'&&bytes[3]=='H'){
                 if(read(bytes.data()+4,8)!=config.sessionId)continue;
                 if(read(bytes.data()+20,4)!=config.gameplayAbi)return fail("TH075 state contract mismatch");
@@ -110,15 +122,35 @@ public:
         }
         if(!startup.Tick(wire,nowUs))return fail(startup.Error());
         if(!configured&&startup.Ready()&&!configure(nowUs/1000))return false;
-        if(configured&&!channel.Pump(gate,core,nowUs/1000,Ready()))return fail(channel.ErrorText());
+        // Repairs, ACKs and transport liveness still run while a peer is
+        // reading its characters and stage. Only the input deadline changes.
+        if(configured&&!channel.Pump(gate,core,nowUs/1000,Ready()&&!LoadingBattle()))return fail(channel.ErrorText());
+        if(LoadingBattle()&&nowUs-battleLoadStarted>=BattleLoadTimeoutMs*1000ull)
+            return fail("TH075 battle assets did not finish loading in time");
+        if(LoadingBattle()&&battleLoaded&&!battleLoadSent&&wire.IsOpen()){
+            std::vector<std::uint8_t> bytes{'P','7','5','L'};
+            for(unsigned i=0;i<8;++i)bytes.push_back(std::uint8_t(config.sessionId>>(i*8)));
+            for(unsigned i=0;i<4;++i)bytes.push_back(std::uint8_t(battleLoadFrame>>(i*8)));
+            battleLoadSent=wire.SendControl(bytes.data(),bytes.size());
+        }
         return true;
     }
+    bool LoadingBattle()const{return battleLoadFrame!=Netplay::INVALID_FRAME;}
+    void BeginBattleLoad(std::uint64_t nowUs){
+        battleLoadFrame=frame;battleLoadStarted=nowUs;battleLoaded=battleLoadSent=false;
+    }
+    void BattleLoaded(){battleLoaded=true;}
+    bool ReleaseBattleLoad(){
+        if(!battleLoadSent||remoteBattleLoadFrame!=battleLoadFrame)return false;
+        battleLoadFrame=Netplay::INVALID_FRAME;return true;
+    }
     bool Ready()const{return configured&&gate.CanStart()&&error.empty()&&!wire.Disconnected();}
-    bool NeedsCapture()const{return Ready()&&!core.HasLocalCapture(frame);}
-    bool Capture(std::uint16_t bits,std::uint64_t nowUs){
-        if(!NeedsCapture()||!Valid(Netplay::FrameInput(bits)))return fail("Repeated/invalid TH075 capture");
-        return (core.ScheduleLocalInput(frame,bits)&&channel.LocalCaptured(core,frame,nowUs/1000))||
-            fail("TH075 input capture failed");
+    bool NeedsCapture(unsigned lead=0)const{return Ready()&&std::uint64_t(nextCapture)<=std::uint64_t(frame)+lead;}
+    bool Capture(std::uint16_t bits,std::uint64_t nowUs,unsigned lead=0){
+        if(!NeedsCapture(lead)||!Valid(Netplay::FrameInput(bits)))return fail("Repeated/invalid TH075 capture");
+        if(!core.ScheduleLocalInput(nextCapture,bits)||!channel.LocalCaptured(core,nextCapture,nowUs/1000))
+            return fail("TH075 input capture failed");
+        ++nextCapture;return true;
     }
     Netplay::FrameDecision Prepare()const{return Ready()?core.PrepareFrame(frame):Netplay::FrameDecision{};}
     bool Complete(const Netplay::FrameDecision& decision){

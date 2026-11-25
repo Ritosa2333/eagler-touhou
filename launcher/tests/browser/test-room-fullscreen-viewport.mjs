@@ -10,13 +10,14 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 import {authoredSourcesPlugin} from '../../lib/authored-source-resolution.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
-const out = resolve(project, '.cache/room-fullscreen-viewport');
+const out = resolve(process.argv[2] ?? resolve(project, '.cache/room-fullscreen-viewport'));
 await mkdir(out, {recursive: true});
 const entry = `
 import React,{useState,useLayoutEffect} from 'react';
 import{createRoot}from'react-dom/client';
 import{RoomWorkspace}from'./app/components/room/RoomWorkspace.tsx';
 import{PlayerSurface}from'./app/components/player/PlayerSurface.tsx';
+import{TouchControlPreview}from'./app/components/settings/TouchControlPreview.tsx';
 import{LocaleProvider}from'./app/i18n.tsx';
 import './app/ui/foundation.css';
 import './app/ui/system.css';
@@ -30,9 +31,12 @@ const service=new Proxy({subscribe,getSnapshot:()=>state,timingRecommendation:()
 const network={subscribe,getSnapshot:()=>0,metric:()=>({state:'connected',rtt:38,jitter:2}),loss:()=>({state:'idle'}),lossReady:()=>false,testLoss:noop,capabilities:()=>({supported:true,rtcAvailable:true,turnConfigured:true}),retry:noop};
 function App(){
  const[host,setHost]=useState(null),[fullscreen,setFullscreen]=useState(false);
+ useLayoutEffect(()=>{host?.classList.toggle('touch-enabled',params.has('playing'));},[host,fullscreen]);
  useLayoutEffect(()=>{const changed=()=>setFullscreen(!!document.fullscreenElement);document.addEventListener('fullscreenchange',changed);return()=>document.removeEventListener('fullscreenchange',changed);},[]);
  return <LocaleProvider locale="zh-CN">
-  <PlayerSurface open roomWorkspace={!fullscreen} editing={false} onElement={setHost}/>
+  <PlayerSurface open roomWorkspace={!fullscreen} editing={false} onElement={setHost}>
+   {params.has('playing') && <TouchControlPreview settings={{gameId:'th06',options:{touchEnabled:true}}}/>}
+  </PlayerSurface>
   {host&&<RoomWorkspace visible={!fullscreen} service={service} network={network} context={{launched:params.has('playing'),previewReady:true,th09NetworkOverlayOpen:false,launchStage:null,touchEnabled:false,touchMovementMode:'joystick'}} assetUrl={p=>'/'+p} workspaceHost={host} workspaceStage={host.querySelector('.player-stage')} onLeave={noop} onCopyRoomCode={noop} onGuide={noop} onFullscreen={()=>host.requestFullscreen()} onOpenSettings={noop} settingsOpen={false} panel={null} onOpenPanel={noop} onClosePanel={noop}/>}
  </LocaleProvider>;
 }
@@ -70,6 +74,8 @@ try {
     await page.goto(`${origin}/?game=${game}${playing?'&playing=1':''}`);
     await page.waitForSelector('.room-workspace-fullscreen');
     await visible();
+    const touchControlsHidden = () => page.$eval('#touchHud', hud => getComputedStyle(hud).display === 'none');
+    if (playing) assert.equal(await touchControlsHidden(), true, 'room picture hides the gameplay touch controls');
     await page.evaluate(()=>{
       window.retainedFrame=document.querySelector('#gameFrame');
       window.retainedDocument=window.retainedFrame.contentDocument;
@@ -79,8 +85,10 @@ try {
     for(let cycle=0;cycle<3;cycle++) {
       await page.click('.room-workspace-fullscreen');
       await page.waitForFunction(()=>!!document.fullscreenElement&&!document.querySelector('#player').classList.contains('room-workspace'));
+      if (playing) assert.equal(await touchControlsHidden(), false, 'fullscreen exposes the gameplay touch controls');
       await page.evaluate(()=>document.exitFullscreen());
       await page.waitForSelector('#player.room-workspace');
+      if (playing) assert.equal(await touchControlsHidden(), true, 'returning to the room hides the gameplay touch controls again');
       await visible();
       assert(await page.evaluate(()=>document.querySelector('#gameFrame')===window.retainedFrame&&window.retainedFrame.contentDocument===window.retainedDocument&&window.retainedDocument.querySelector('canvas')===window.retainedCanvas),'fullscreen exit retains the iframe, document and canvas');
     }

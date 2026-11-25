@@ -10,11 +10,11 @@ export async function openSplitContent(indexUrl, indexHash, fetchAsset = fetch) 
   if (!/^https?:$/.test(url.protocol) || url.username || url.password || url.hash ||
       !/^[a-f0-9]{64}$/.test(indexHash) || !url.pathname.endsWith('/' + indexHash + '.json'))
     throw Error('Invalid TH075 multiplayer asset index');
-  async function fetchVerified(location, hash, limit, expected) {
+  async function fetchVerified(location, hash, limit, expected, signal) {
     // Keep the authorized index at its exact URL. Public, content-addressed
     // blobs may be redirected to a download host; verify their bytes either way.
     const response = await fetchAsset(location, {
-      cache: 'force-cache', credentials: 'omit', redirect: expected === undefined ? 'error' : 'follow',
+      cache: 'force-cache', credentials: 'same-origin', redirect: expected === undefined ? 'error' : 'follow', signal,
     });
     if (!response.ok) throw Error('TH075 asset HTTP ' + response.status);
     if (Number(response.headers.get('Content-Length')) > limit) throw Error('Invalid TH075 asset size');
@@ -41,13 +41,13 @@ export async function openSplitContent(indexUrl, indexHash, fetchAsset = fetch) 
   return {
     identity: SPLIT_SCHEMA + ':' + indexHash,
     paths: [...files.keys()],
-    async read(path) {
+    async read(path, signal) {
       const file = files.get(path);
       if (!file) throw Error('TH075 DATA path is not declared: ' + path);
       const key = file.sha256 + ':' + file.bytes;
       let request = pending.get(key);
       if (!request) {
-        request = fetchVerified(new URL(file.sha256 + '.bin', url), file.sha256, file.bytes, file.bytes)
+        request = fetchVerified(new URL(file.sha256 + '.bin', url), file.sha256, file.bytes, file.bytes, signal)
           .finally(() => pending.delete(key));
         pending.set(key, request);
       }

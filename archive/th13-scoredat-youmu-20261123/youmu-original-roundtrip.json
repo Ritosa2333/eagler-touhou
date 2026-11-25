@@ -1,0 +1,43 @@
+{
+  "schema": "th13/scoredat-original-proof/1",
+  "date": "2026-11-23",
+  "source_exe": "/home/mystia/项目/th13/games/th13/th13.exe",
+  "save_entry": "0x449e50",
+  "load_entry": "0x449be0",
+  "fixture": "/home/mystia/项目/th13/artifacts/score_golden/youmu_original_roundtrip.bin",
+  "fixture_sha256": "4d6a4e040725e9503e6033c3defc538fae9b1fa1334f96187c8870d5925e8e89",
+  "column": 3,
+  "difficulty": 2,
+  "spell_slot": 5,
+  "written_and_loaded": {
+    "entry_score": 24682468,
+    "entry_stage": 6,
+    "entry_continues": 2,
+    "entry_name": "YOUMU001",
+    "play_count": 137,
+    "play_frames": 215999999,
+    "clear_count": 31,
+    "no_continue_clear_count": 29,
+    "practice_best": 123450,
+    "aggregate_best": 123450,
+    "extra_bit": 16
+  },
+  "native_regressions": {
+    "normal_score_suites": "16/16",
+    "mp_score_suites": {"cases": "16/16", "assertions": 2456},
+    "mp_native_workflow_cumulative": {"cases": "56/56", "assertions": 78781},
+    "mp_save_isolation": {"case": "m5.no_sp_save_writes", "assertions": 171},
+    "mp_spectator": [
+      {"case": "m9.spectator_confirmed_latejoin", "assertions": 184},
+      {"case": "m9.slow_spectator_isolation", "assertions": 460}
+    ]
+  },
+  "golden_generation": {
+    "engine": "Unicorn direct calls through original th13.exe",
+    "route_a_default_image_sha256": "825a4d5363f98f74e1b598b81b557e4f026510e7c4cb76b846c900d70bb80b56",
+    "route_b_alpha_image_sha256": "1353906def1dd44ba0d73683c8bf03d110317eded25e4691366b369377c52d42",
+    "route_b_beta_image_sha256": "10bdaaf9d34f42d0000374e0c6b28a12fd062c19c04cb662aadcc2c9819894d7",
+    "route_b_gamma_image_sha256": "5241d80111bb58ca4acb1ce4dc363a321acbfb9977719a0caef41adcae347358",
+    "route_c_dropped_image_sha256": "7523c27635c8b5bf338395836fa4c621f9fb802ab36547777d9ac0539a0f9ed6"
+  }
+}

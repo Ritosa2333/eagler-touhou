@@ -12,7 +12,7 @@ C.2  Unicorn 直调原版装载器 0x448c40（EBX=0x4c22e0 supervisor、ECX=文�
      DAT_004be830|=0x40 走 0x4724c0 整文件读路径、CreateFileA/ReadFile 桩）：
      断言装载成功、stage 链/帧数/种子与预期一致。
 C.3  e2e_score.dat：oracle.scorefmt 解析（TH31/版本 4/块校验），断言
-     Normal(难度1)/灵梦(角色0) 榜首含本局成绩（分数/名字 ARINATEI/时间戳）；
+     灵梦(记录列0)/Normal(难度1) 榜首含本局成绩（分数/名字 ARINATEI/时间戳）；
      Unicorn 直调 0x449be0（→0x449b00→0x449cd0 装载链）喂该文件（CreateFileA
      读桩），断言装载成功且成绩落入 DAT_004c22cc 内存结构。
 
@@ -389,12 +389,12 @@ def verify_score(score_path: str, want_name: str, want_score: int,
         failures.append("magic %r != TH31" % model.header.magic)
     if model.header.version != 4:
         failures.append("version %d != 4" % model.header.version)
-    block = model.cr_blocks[rank_index] if rank_index < len(model.cr_blocks) else None
+    block = model.cr_blocks[character] if character < len(model.cr_blocks) else None
     if block is None:
-        failures.append("Normal CR block missing (dropped)")
+        failures.append("character CR column missing (dropped)")
     else:
-        entry = block.entries[character][0]  # 榜首
-        report["normal_reimu_rank1"] = {
+        entry = block.entries[rank_index][0]  # 榜首
+        report["character_normal_rank1"] = {
             "score": entry.score, "name": entry.name.decode("ascii", "replace").rstrip("\x00 "),
             "stage": entry.stage, "clear": entry.clear,
             "time_lo": entry.time_lo, "time_hi": entry.time_hi,
@@ -406,7 +406,7 @@ def verify_score(score_path: str, want_name: str, want_score: int,
         if entry.time_lo == 0 and entry.time_hi == 0:
             failures.append("rank1 timestamp missing")
         # 榜内插入语义自查：其余行分数应 ≤ 本行（新成绩插入榜首）。
-        row = block.entries[character]
+        row = block.entries[rank_index]
         for r in range(1, 10):
             if row[r].score > row[0].score:
                 failures.append("rank%d score %d > rank1" % (r + 1, row[r].score))
@@ -432,16 +432,17 @@ def verify_score_loader(score_path: str, want_score: int, want_name: str,
         report["verdict"] = "FAIL"
         report["failures"] = failures
         return report
-    # CR 块槽 1（Normal）= 结构 +0x8 + 1*0x56DC；榜首条目 = +0x10。
-    block_addr = base + 0x8 + rank_index * 0x56DC
+    # CR 记录列 = 结构 +0x8 + character*0x56DC；Normal 榜首 = +0x10 + rank*0x118。
+    block_addr = base + 0x8 + character * 0x56DC
     magic, version = struct.unpack("<HH", bytes(m.uc.mem_read(block_addr, 4)))
-    entry_addr = block_addr + 0x10 + character * 0x118
+    entry_addr = block_addr + 0x10 + rank_index * 0x118
     entry = bytes(m.uc.mem_read(entry_addr, 0x1C))
-    e_score, e_stage, e_clear = struct.unpack_from("<IBB", entry, 0)
+    e_score, e_stage, e_continues = struct.unpack_from("<IBB", entry, 0)
     e_name = entry[6:15]
-    report["normal_block"] = {"magic": hex(magic), "version": version}
-    report["reimu_rank1"] = {"score": e_score, "stage": e_stage, "clear": e_clear,
-                             "name": e_name.decode("ascii", "replace").rstrip("\x00 ")}
+    report["character_block"] = {"magic": hex(magic), "version": version}
+    report["character_rank1"] = {"score": e_score, "stage": e_stage,
+                                 "continues": e_continues,
+                                 "name": e_name.decode("ascii", "replace").rstrip("\x00 ")}
     if magic != 0x5243:
         failures.append("CR block magic %#x != 0x5243" % magic)
     if e_score != want_score:

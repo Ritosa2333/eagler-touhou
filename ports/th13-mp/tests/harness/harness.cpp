@@ -143,9 +143,7 @@ bool read_whole_file(const std::string& path, std::vector<th13::u8>& out) {
 // SessionState/HudScoreState），不改游戏代码。004be814 = DAT_004be814
 //（hi-score 达成时的续关数，0x42a370:35-38 每帧写 be814=be7c8）由
 // SessionState.high_score_extra 真映射（GameHudDraw.cpp:56-60 生产写点）；
-// 无对应来源的字段原样输出 null（spell_id：0x4be7d4 符卡练习选择，port
-// 无符卡练习模式；raw_enemy_manager：port 无 0x4c2188 ctl 完整镜像——契约
-// 见 oracle/state_compare.py 模块 docstring，null 字段不进入裁决面）。
+// 无对应来源的字段原样输出 null。
 // player_position 与 oracle player+0x5B8/0x5BC 同基（game 坐标，非屏幕系）。
 void state_keys(th13::u16 state, std::string& out) {
     // oracle REPLAY_INPUT_VK：位→VK；输出按 VK 升序（oracle sorted()）。

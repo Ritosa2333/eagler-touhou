@@ -55,7 +55,6 @@ TEST(legacy_v1_v2_v3_raw_bytes_and_observable_state_survive_repeated_v4_saves) {
         CHECK(initial.loaded);
         CHECK_EQ(initial.bgm_volume, 43);
         CHECK_EQ(initial.effect_volume, 65);
-        // scoreth13.dat +24 为 32 位曲目掩码（FileStore.hpp:58/124），v6 完整保留。
         CHECK_EQ(initial.heard_mask, 0xfedcba85u);
         CHECK(initial.heard_mask != 0x85u);  // 低 8 位截断不等价
         CHECK_EQ(initial.cleared_mask, 0xf0010001u);
@@ -77,7 +76,6 @@ TEST(legacy_v1_v2_v3_raw_bytes_and_observable_state_survive_repeated_v4_saves) {
             CHECK(std::equal(bytes.begin(), bytes.end(), restored.legacy_save_bytes().begin()));
             CHECK(restored.practice_played == played);
             CHECK_EQ(restored.extra_unlocked_mask, (version > 1 ? 5u : 0u) | 8u);
-            // v6 写回后完整 32 位掩码一致（FileStore.cpp:464/387）。
             CHECK_EQ(restored.heard_mask, 0xfedcba85u);
             CHECK(restored.save());
             FileStore mask_roundtrip;
@@ -153,7 +151,7 @@ TEST(spell_modes_characters_aggregate_saturation_best_and_names_roundtrip) {
     CHECK_EQ(all->attempts[1], 2);
     CHECK_EQ(all->captures[0], 1);
     CHECK_EQ(all->captures[1], 1);
-    CHECK_EQ(all->practice_best_score, 0); // 0042cd40 writes only the chosen character
+    CHECK_EQ(all->practice_best_score, 12340); // 合计列与个人列同点维护
     CHECK_EQ(restored.spell_counters(0, 12)->attempts[0], 0);
     TitlePlayerDataRecord row;
     CHECK(restored.player_data_record(2, 1, 3, row)); // fourth Hard slot is id12

@@ -32,6 +32,5 @@
   .ui-kit-button,.ui-kit-choice,.ui-kit-select-trigger {cursor:pointer;line-height:1.4;touch-action:manipulation}
   .ui-kit-input-group:has(:disabled) {opacity:.5}
   .ui-kit-input-group .ui-kit-input:focus {border:0;outline:none;box-shadow:none}
-  .ui-kit-select-content {max-height:var(--radix-select-content-available-height);animation:kit-popover-in var(--ui-surface-duration) var(--ui-surface-easing)}
-  @keyframes kit-popover-in {from{opacity:0;translate:0 -3px}to{opacity:1;translate:0 0}}
+  .ui-kit-select-content {max-height:var(--radix-select-content-available-height)}
 }

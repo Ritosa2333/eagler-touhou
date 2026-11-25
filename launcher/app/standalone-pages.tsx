@@ -75,7 +75,7 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
       diagnosticsEnabled={diagnostics}
       onToggleDiagnostics={() => {const next = !diagnostics; try {localStorageOrNull()?.setItem(RUNTIME_DIAGNOSTICS_STORAGE_KEY, next ? '1' : '0');} catch {} setDiagnostics(next);}}
       onDonation={() => setDonation(true)} donationAvailable={donationAvailable} onFirstUse={() => {void firstUse.current?.showManual();}}
-      languageControl={<MainSelect id="uiLanguageSelect" aria-label={t('ui.language')} value={locale} onChange={event => {
+      languageControl={<MainSelect id="uiLanguageSelect" density="compact" aria-label={t('ui.language')} value={locale} onChange={event => {
         const value = event.target.value;
         if (!isUiLocale(value)) return;
         saveUiLocalePreference(document, localStorageOrNull(), new URL(base, window.location.href), value);

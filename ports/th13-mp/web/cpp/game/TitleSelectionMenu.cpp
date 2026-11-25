@@ -318,8 +318,7 @@ bool TitleDifficultyMenu::update(u32 pressed, u32 repeated) {
             // 0x451283-0x4512c2：root pending6（行/黑片退场）；难度<4 时取
             // root123 子 113+cursor（亮行）再 pending2（确认缩放），子标签覆盖6。
             // Extra 态（be7c4>=4）原版走 else 分支：root124 子 0x75(117)
-            // interrupt（EXTRA 行确认高亮）；root124 子构成未 dump，高亮暂缺，
-            // 不影响路由/难度语义（登记蓝图 TODO）。
+            // interrupt（EXTRA 行确认高亮）。
             const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra
                                                       : resources.difficulty_tree;
             if (!check(visuals.interrupt(tree, 6, false))) return false;

@@ -12,7 +12,7 @@ export interface LibraryOptionsPresenceInput {
   product: LibraryProduct | undefined;
   /** The document-lived site preference, supplied by its existing owner. */
   lessMotion: boolean;
-  bookSheet?: boolean;
+  fullPage?: boolean;
   /** Running game conceals its retained settings without a home-close motion. */
   concealed?: boolean;
   /** Focus the options only while they are the foreground surface. */
@@ -29,23 +29,23 @@ export interface LibraryOptionsPresence {
   restoreFocus(onlyIfLost?: boolean): void;
 }
 
-type Presence = Omit<LibraryOptionsPresence, 'openedProduct' | 'targets' | 'restoreFocus'> & {bookSheet: boolean};
+type Presence = Omit<LibraryOptionsPresence, 'openedProduct' | 'targets' | 'restoreFocus'> & {fullPage: boolean};
 /** Router state commits immediately; the visual surface retires on completion. */
 export function useLibraryOptionsPresence({
   open,
   context,
   product,
   lessMotion,
-  bookSheet = false,
+  fullPage = false,
   concealed = false,
   focusActive = true,
 }: LibraryOptionsPresenceInput): LibraryOptionsPresence {
   const compact = useCompactNavigation();
-  const [retained, setPresence] = useState<Presence>(() => ({ open, closing: false, product, bookSheet }));
-  const switchingPresentation = retained.bookSheet !== bookSheet;
+  const [retained, setPresence] = useState<Presence>(() => ({ open, closing: false, product, fullPage }));
+  const switchingPresentation = retained.fullPage !== fullPage;
   // A viewport change moves the selection to a different surface. Do not
   // carry an open/closing modal across the breakpoint or replay its slide.
-  const presence = switchingPresentation ? {open, closing: false, product, bookSheet} : retained;
+  const presence = switchingPresentation ? {open, closing: false, product, fullPage} : retained;
   const targets = useRef<OptionsTargets>({ selectedCard: null, panel: null, backdrop: null });
   const panel = useRef<HTMLElement>(null),
     backdrop = useRef<HTMLElement>(null);
@@ -79,9 +79,9 @@ export function useLibraryOptionsPresence({
       pendingFocus.current = null;
       setPresence((current) => {
         const nextProduct = product ?? current.product;
-        return current.bookSheet === bookSheet && current.open === open && !current.closing && current.product === nextProduct
+        return current.fullPage === fullPage && current.open === open && !current.closing && current.product === nextProduct
           ? current
-          : { open, closing: false, product: nextProduct, bookSheet };
+          : { open, closing: false, product: nextProduct, fullPage };
       });
     } else if (before.open) {
       closeMainSelectMenus();
@@ -95,7 +95,7 @@ export function useLibraryOptionsPresence({
     } else if (product && !presence.closing) {
       setPresence((current) => (current.product === product ? current : { ...current, product }));
     }
-  }, [open, context, product, concealed, presence.closing, bookSheet, switchingPresentation]);
+  }, [open, context, product, concealed, presence.closing, fullPage, switchingPresentation]);
 
   useLayoutEffect(() => {
     document.body.classList.toggle('library-tools-open', presence.open && !concealed);
@@ -109,10 +109,11 @@ export function useLibraryOptionsPresence({
     }
   });
   const phase = presence.open && !concealed ? (presence.closing ? 'exit' : 'enter') : null;
-  const slide = bookSheet && !presence.product?.multiplayer;
+  const page = fullPage && !presence.product?.multiplayer;
   const noMotion = lessMotion || switchingPresentation;
   useSurfaceMotion(panel, phase, {
-    kind: slide ? 'sheet' : compact ? 'panel' : 'dialog',
+    kind: page ? 'inline' : compact ? 'panel' : 'dialog',
+    direction: page ? 'forward' : undefined,
     reduced: noMotion,
     onComplete() {
       if (!presence.closing) return;
@@ -121,7 +122,7 @@ export function useLibraryOptionsPresence({
       setPresence((current) => ({ ...current, open: false, closing: false }));
     },
   });
-  useSurfaceMotion(backdrop, phase, { kind: compact && !slide ? 'panel' : 'backdrop', reduced: noMotion });
+  useSurfaceMotion(backdrop, phase, { kind: compact ? 'panel' : 'backdrop', reduced: noMotion });
   useLayoutEffect(() => {
     if (!presence.open || !presence.product?.id || concealed || !focusActive) return;
     restoreFocus();

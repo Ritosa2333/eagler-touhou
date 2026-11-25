@@ -26,6 +26,7 @@ export interface ExternalMidiPort {
 export interface SettingsActions {
   confirm(decision: SettingsDecision): Promise<boolean>;
   file(action: SettingsFileAction, productId: ProductId): Promise<void>;
+  openGameDataImport?(): void;
   showAppleNotice(): void;
   feedback(message: string, status?: string): void;
   reportError(error: unknown): void;

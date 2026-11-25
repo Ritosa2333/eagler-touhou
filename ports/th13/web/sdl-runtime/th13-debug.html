@@ -3,7 +3,7 @@
      启动序同 th13.html（装载挡板 → 启动品牌 → 初始化），但不启动 rAF 主循环；
      会话由 th13_debug_replay 直入对局（录像头决定难度/角色/关卡），此后每调用
      一次 th13_debug_frame 恰推进一个游戏帧（固定 1/60 步长，不经帧钟）。
-     资源供给（除 th13.html 同款 18 件外）：
+     资源供给（除 th13.html 同款清单外）：
        assets/<sht>   移速源 plXXa/b.sht（名字与 C++ 侧录像头推导规则一致）
        replays/<rpy>  原版录像本体（FS 写入 /assets 后交 th13_debug_replay）
      画面经 canvas.toDataURL 导出 PNG（同一 JS 任务内取像，WebGL 后备缓冲未合成
@@ -23,7 +23,13 @@
 <div id="status">加载 th13 回放取帧…</div>
 <canvas id="canvas" tabindex="0"></canvas>
 <script type="module">
-import {runtimeAssets} from './runtime-assets.mjs';
+import {
+  audioAssets,
+  musicFinalShardSize,
+  musicShardAssets,
+  musicShardSize,
+  runtimeAssets,
+} from './runtime-assets.mjs';
 const status = text => document.getElementById('status').textContent = text;
 window.__th13_log = [];
 const note = (kind, text) => { window.__th13_log.push(kind + ' ' + text); };
@@ -62,25 +68,8 @@ try {
   mod.FS.writeFile('/assets/' + replayName, await fetchBytes('replays/' + replayName));
   // Use the same font VFS path as the interactive page for dialogue/cards.
   mod.FS.writeFile('/msgothic.ttc', await fetchBytes('assets/msgothic.ttc'));
-  // 音频面（与生产 th13.html 同块镜像）：AudioDevice::initialize 强制装载
-  // 原版 SE 表 + thbgm.ogg 单流——debug 页先前 0 项音频装载，_th13_initialize
-  // 即败（Missing or invalid original TH13 sound）。仅测试接口补齐，不含
-  // 任何生产逻辑。
-  const audioAssets = [
-    'thbgm.fmt',
-    'se_plst00.wav', 'se_enep00.wav', 'se_pldead00.wav', 'se_power0.wav', 'se_power1.wav',
-    'se_tan00.wav', 'se_tan01.wav', 'se_tan02.wav', 'se_ok00.wav', 'se_cancel00.wav',
-    'se_select00.wav', 'se_gun00.wav', 'se_cat00.wav', 'se_lazer00.wav', 'se_lazer01.wav',
-    'se_enep01.wav', 'se_damage00.wav', 'se_item00.wav', 'se_kira00.wav', 'se_kira01.wav',
-    'se_kira02.wav', 'se_timeout.wav', 'se_graze.wav', 'se_powerup.wav', 'se_pause.wav',
-    'se_cardget.wav', 'se_damage01.wav', 'se_timeout2.wav', 'se_invalid.wav', 'se_slash.wav',
-    'se_ch00.wav', 'se_ch01.wav', 'se_extend.wav', 'se_nep00.wav', 'se_bonus.wav',
-    'se_bonus2.wav', 'se_enep02.wav', 'se_lazer02.wav', 'se_nodamage.wav', 'se_boon00.wav',
-    'se_don00.wav', 'se_boon01.wav', 'se_ch02.wav', 'se_ch03.wav', 'se_extend2.wav',
-    'se_pin00.wav', 'se_pin01.wav', 'se_lgods1.wav', 'se_lgods2.wav', 'se_lgods3.wav',
-    'se_lgods4.wav', 'se_lgodsget.wav', 'se_msl.wav', 'se_msl2.wav', 'se_pldead01.wav',
-    'se_heal.wav', 'se_astralup.wav', 'se_fault.wav', 'se_noise.wav',
-  ];
+  // 音频清单来自 runtime-assets.mjs：AudioDevice::initialize 需要原版 SE 表
+  // 与 thbgm.ogg 单流。
   for (const name of audioAssets) {
     mod.FS.writeFile('/assets/' + name, await fetchBytes('assets/' + name));
     status('th13 音效装载中… ' + name);
@@ -88,10 +77,9 @@ try {
   const musicStream = mod.FS.open('/assets/thbgm.ogg', 'w');
   let musicBytes = 0;
   try {
-    for (let n = 0; n < 30; ++n) {
-      const name = 'thbgm-' + String(n).padStart(2, '0') + '.part';
+    for (const [index, name] of musicShardAssets.entries()) {
       const bytes = await fetchBytes('assets/' + name);
-      const expected = n < 29 ? 1048576 : 150104;
+      const expected = index === musicShardAssets.length - 1 ? musicFinalShardSize : musicShardSize;
       if (bytes.length !== expected) throw new Error('原版音乐分片长度错误：' + name);
       mod.FS.write(musicStream, bytes, 0, bytes.length);
       musicBytes += bytes.length;
