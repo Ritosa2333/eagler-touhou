@@ -1,0 +1,1313 @@
+diff --git a/include/th03/app/classic/classic_cli.hpp b/include/th03/app/classic/classic_cli.hpp
+index be0946e..768d92e 100644
+--- a/include/th03/app/classic/classic_cli.hpp
++++ b/include/th03/app/classic/classic_cli.hpp
+@@ -40,6 +40,8 @@ enum class ClassicCliOption : std::uint8_t {
+ 	smoke_ticks,
+ 	capture_replay,
+ 	capture_checkpoint,
++	debug_hitboxes,
++	debug_unlock_characters,
+ };
+ 
+ enum class ClassicLaunchMode : std::uint8_t {
+diff --git a/include/th03/app/classic/classic_runner.hpp b/include/th03/app/classic/classic_runner.hpp
+index e12d12c..821f2ee 100644
+--- a/include/th03/app/classic/classic_runner.hpp
++++ b/include/th03/app/classic/classic_runner.hpp
+@@ -1,6 +1,7 @@
+ #ifndef TH03_APP_CLASSIC_RUNNER_HPP
+ #define TH03_APP_CLASSIC_RUNNER_HPP
+ 
++#include <array>
+ #include <cstdint>
+ #include <cstddef>
+ #include <expected>
+@@ -11,6 +12,7 @@
+ #include <vector>
+ 
+ #include "th03/app/classic/classic_audio.hpp"
++#include "th03/app/classic/persistence/classic_score_store.hpp"
+ #include "th03/app/runtime/experience_profile.hpp"
+ #include "th03/app/content/main_compiled_content.hpp"
+ #include "th03/app/main/main_process.hpp"
+@@ -22,6 +24,7 @@
+ #include "th03/app/new_classic/content/new_classic_messages.hpp"
+ #include "th03/app/new_classic/replay/new_classic_replay.hpp"
+ #include "th03/app/new_classic/persistence/new_classic_settings.hpp"
++#include "th03/app/new_classic/persistence/new_classic_score_store.hpp"
+ #include "th03/app/oracle/pixel_oracle_identity.hpp"
+ #include "th03/formats/replay.hpp"
+ #include "th03/app/content/resources.hpp"
+@@ -111,6 +114,11 @@ struct ClassicRunnerRequest final {
+ 	NewClassicReplayIdentity new_classic_replay_identity{};
+ 	// Replay Patch's MAIN-only warning-flash reduction (tone 150 -> 100).
+ 	bool reduced_flash = false;
++	bool enhanced_flash_reduction = false;
++	// Host-only collision diagnostics; never persisted or recorded.
++	bool debug_hitboxes = false;
++	// Test-only selection override; never persisted or used as a score unlock.
++	bool debug_unlock_characters = false;
+ 	std::optional<NewClassicKeyConfig> new_classic_key_config{};
+ 	NewClassicKeyConfig new_classic_key_defaults{};
+ 	std::optional<NewClassicJoyConfig> new_classic_joy_config{};
+@@ -184,8 +192,10 @@ enum class ClassicRunnerErrorCode : std::uint8_t {
+ 
+ // The private scene/session error hierarchy never crosses this public runner
+ // boundary. [detail_code] retains its stable top-level numeric code for a
+-// diagnostic, while public nested resource/content/process/surface failures
+-// remain typed and contain no original path or bytes.
++// diagnostic. [story_code] and [story_detail_code] retain nested Story session
++// and child codes; driver codes/status are numeric as well. Public nested
++// resource/content/process/score/surface failures remain typed and contain no
++// original path or bytes.
+ struct ClassicRunnerError final {
+ 	ClassicRunnerErrorCode code = ClassicRunnerErrorCode::invalid_request;
+ 	ClassicContentFile file = ClassicContentFile::none;
+@@ -199,6 +209,12 @@ struct ClassicRunnerError final {
+ 	std::optional<NewClassicCutsceneTextPackError> cutscene_text_pack_error{};
+ 	std::optional<NewClassicPicturePatchError> picture_patch_pack_error{};
+ 	std::optional<present::SourceSurfaceError> surface_error{};
++	std::optional<std::uint8_t> story_code{};
++	std::optional<std::uint8_t> story_detail_code{};
++	std::optional<ClassicScoreStoreError> score_store_error{};
++	std::optional<NewClassicScoreStoreError> new_score_store_error{};
++	std::optional<std::uint8_t> driver_code{};
++	std::optional<std::uint8_t> driver_step_status{};
+ };
+ 
+ enum class ClassicRunnerStatus : std::uint8_t {
+@@ -225,6 +241,26 @@ struct ClassicRunnerConsumeResult final {
+ 	ClassicRunnerStatus status = ClassicRunnerStatus::failed;
+ };
+ 
++struct ClassicNetplaySelectionResult final {
++	bool canceled = false;
++	std::array<std::uint8_t, 2U> paletted_character{};
++};
++
++enum class ClassicNetplaySelectionBoundary : std::uint8_t {
++	immediate,
++	vsync,
++	input_poll,
++};
++
++struct ClassicNetplaySelectionTick final {
++	ClassicNetplaySelectionBoundary boundary =
++		ClassicNetplaySelectionBoundary::immediate;
++	bool surface_changed = false;
++	bool input_sampled = false;
++	bool input_due = false;
++	std::optional<ClassicNetplaySelectionResult> result{};
++};
++
+ // Platform-neutral owner of the complete Classic application lifecycle. It
+ // authenticates caller-supplied process/content bytes once, keeps every source
+ // scene private, and consumes one scheduler sample per call. Audio commands
+@@ -262,6 +298,19 @@ public:
+ 	// root returns. This emits no title-song restart command.
+ 	[[nodiscard]] std::expected<void, ClassicRunnerError>
+ 	resume_from_netplay();
++	// Retains the authenticated title return capability. Each advance consumes
++	// one source boundary with paired logical input; completion stays host-owned.
++	// Tick boundary describes the consumed boundary; input_due describes the
++	// next advance. After begin, the first advance consumes a vsync. Both peers
++	// must use the same visible count (7 or 9), independent of local unlocks.
++	[[nodiscard]] std::expected<void, ClassicRunnerError>
++	begin_netplay_selection(std::uint8_t visible_character_count = 9U);
++	[[nodiscard]] std::expected<ClassicNetplaySelectionTick, ClassicRunnerError>
++	advance_netplay_selection(CoreInput input);
++	// Discard the selection child and its queued audio without advancing source
++	// time or leaving Online Match. The retained title can start another child.
++	[[nodiscard]] std::expected<void, ClassicRunnerError>
++	abort_netplay_selection();
+ 	[[nodiscard]] PixelOracleIdentity pixel_oracle_bootstrap_identity();
+ 	// Present only for New Classic after a complete recorded route. Taking the
+ 	// document transfers it to the save/browser owner and enables a later run.
+diff --git a/include/th03/app/classic/persistence/classic_config.hpp b/include/th03/app/classic/persistence/classic_config.hpp
+index 65c0456..e534520 100644
+--- a/include/th03/app/classic/persistence/classic_config.hpp
++++ b/include/th03/app/classic/persistence/classic_config.hpp
+@@ -51,6 +51,7 @@ struct ClassicConfigOptions final {
+ 	bool legacy_autofire = false;
+ 	ClassicLanguage language = ClassicLanguage::japanese;
+ 	bool reduced_flash = false;
++	bool enhanced_flash_reduction = false;
+ 
+ 	friend constexpr bool operator==(
+ 		const ClassicConfigOptions &,
+diff --git a/include/th03/app/direct_vs/direct_vs_cli.hpp b/include/th03/app/direct_vs/direct_vs_cli.hpp
+index 9774c30..9fb9cb8 100644
+--- a/include/th03/app/direct_vs/direct_vs_cli.hpp
++++ b/include/th03/app/direct_vs/direct_vs_cli.hpp
+@@ -72,7 +72,12 @@ struct DirectVsCliRequest {
+ 	DirectVsNetplayMode netplay_mode = DirectVsNetplayMode::none;
+ 	std::uint16_t netplay_host_port = 0U;
+ 	std::string netplay_join_endpoint{};
++	bool netplay_manual_p2p = false;
+ 	std::filesystem::path replay_root{};
++	std::filesystem::path netplay_user_root{};
++	bool netplay_edit_profile = false;
++	// Process-harness completion bound; never populated by product CLI parsing.
++	std::optional<std::uint32_t> netplay_test_match_limit{};
+ 	std::optional<std::filesystem::path> netplay_replay_output{};
+ 	std::uint8_t netplay_input_delay_frames = 0U;
+ 	// Each netplay peer contributes its ordinary local Story Autofire choice;
+@@ -84,6 +89,10 @@ struct DirectVsCliRequest {
+ 	std::uint8_t effect_volume_percent = 100U;
+ 	ClassicBgmMode bgm_mode = ClassicBgmMode::fm;
+ 	bool mute_when_unfocused = false;
++	// Local presentation only; never part of the negotiated simulation contract.
++	bool reduced_flash = false;
++	bool enhanced_flash_reduction = false;
++	bool round_timer = false;
+ 	NewClassicLanguageAssetProfile presentation_language =
+ 		NewClassicLanguageAssetProfile::english;
+ };
+diff --git a/include/th03/app/main/main_process.hpp b/include/th03/app/main/main_process.hpp
+index 84f5754..c201d6c 100644
+--- a/include/th03/app/main/main_process.hpp
++++ b/include/th03/app/main/main_process.hpp
+@@ -263,6 +263,20 @@ public:
+ 		> output
+ 	) const;
+ 
++	void set_debug_hitboxes(bool enabled) noexcept;
++	void set_round_frame_counter(bool enabled) noexcept;
++	void set_round_timer(bool enabled) noexcept;
++	[[nodiscard]] bool round_frame_counter_enabled() const noexcept;
++	[[nodiscard]] bool has_host_overlay() const noexcept;
++	void compose_host_overlay(
++		std::span<present::ComposedPixel, present::graphics_page_pixels> output,
++		present::SourceSurface &surface
++	) const noexcept;
++	void compose_collision_debug_overlay(
++		std::span<present::ComposedPixel, present::graphics_page_pixels> output,
++		present::SourceSurface &surface
++	) const noexcept;
++
+ 	[[nodiscard]] const present::Raster &raster() const noexcept;
+ 	[[nodiscard]] const present::Tram &tram() const noexcept;
+ 	[[nodiscard]] present::MainRoundStatus presentation_status() const noexcept;
+@@ -275,6 +289,7 @@ public:
+ 	// pre-restore state and guarantees all-or-nothing recovery without a frame-
+ 	// time allocation. Neither snapshot is accepted from a peer or user file.
+ 	[[nodiscard]] bool rollback_boundary_available() const noexcept;
++	[[nodiscard]] std::array<GaugeBossAttackKind, 2U> warning_attack_kinds() const noexcept;
+ 	// Simulation-only capture is valid at every completed source-input
+ 	// boundary, including reliable phase/terminal ownership where presentation
+ 	// rollback is intentionally unavailable.
+@@ -287,7 +302,8 @@ public:
+ 	[[nodiscard]] std::expected<void, MainProcessRollbackError>
+ 	restore_rollback(
+ 		const MainProcessRollbackSnapshot &snapshot,
+-		MainProcessRollbackSnapshot &recovery_scratch
++		MainProcessRollbackSnapshot &recovery_scratch,
++		bool discard_incomplete_source = false
+ 	) noexcept;
+ 
+ private:
+diff --git a/include/th03/app/new_classic/content/new_classic_message_ids.inc b/include/th03/app/new_classic/content/new_classic_message_ids.inc
+index 07683ac..2959a5f 100644
+--- a/include/th03/app/new_classic/content/new_classic_message_ids.inc
++++ b/include/th03/app/new_classic/content/new_classic_message_ids.inc
+@@ -147,6 +147,7 @@ TH03_NEW_CLASSIC_MESSAGE(value_joy_key, "value.joy-key", 144U, "", "")
+ TH03_NEW_CLASSIC_MESSAGE(value_key_joy, "value.key-joy", 144U, "", "")
+ TH03_NEW_CLASSIC_MESSAGE(value_reduced, "value.reduced", 144U, "", "")
+ TH03_NEW_CLASSIC_MESSAGE(value_full, "value.full", 144U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(value_enhanced, "value.enhanced", 144U, "", "")
+ TH03_NEW_CLASSIC_MESSAGE(value_protected, "value.protected", 144U, "", "")
+ TH03_NEW_CLASSIC_MESSAGE(value_environment, "value.environment", 144U, "", "")
+ TH03_NEW_CLASSIC_MESSAGE(value_percent, "value.percent", 144U, "percent", "100")
+@@ -408,3 +409,31 @@ TH03_NEW_CLASSIC_MESSAGE(netplay_report_label_max_prediction, "netplay.report.la
+ TH03_NEW_CLASSIC_MESSAGE(netplay_report_label_missed_deadlines, "netplay.report.label.missed-deadlines", 180U, "", "")
+ TH03_NEW_CLASSIC_MESSAGE(netplay_report_label_round_trip, "netplay.report.label.round-trip", 180U, "", "")
+ TH03_NEW_CLASSIC_MESSAGE(netplay_report_footer, "netplay.report.footer", 500U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(option_features, "option.features", 132U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(option_feature_collision, "option.feature.collision", 132U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(option_feature_frames, "option.feature.frames", 132U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(option_feature_seed, "option.feature.seed", 132U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_title, "seed.title", 320U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_manual, "seed.manual", 240U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_search_route, "seed.search-route", 240U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_cancel, "seed.cancel", 240U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_start, "seed.start", 240U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_back, "seed.back", 240U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_clear, "seed.clear", 240U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_more, "seed.more", 240U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_any, "seed.any", 160U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_invalid_seed, "seed.invalid-seed", 560U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_manual_hint, "seed.manual-hint", 560U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_constraints_hint, "seed.constraints-hint", 560U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_results_hint, "seed.results-hint", 560U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_stage, "seed.stage", 160U, "stage", "9")
++TH03_NEW_CLASSIC_MESSAGE(seed_results, "seed.results", 320U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_preview, "seed.preview", 320U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_duplicate, "seed.duplicate", 500U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_fixed, "seed.fixed", 500U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_invalid_character, "seed.invalid-character", 500U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_working, "seed.working", 560U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_exhausted, "seed.exhausted", 560U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_no_results, "seed.no-results", 560U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_range_complete, "seed.range-complete", 560U, "", "")
++TH03_NEW_CLASSIC_MESSAGE(seed_search, "seed.search", 240U, "", "")
+diff --git a/include/th03/app/new_classic/netplay/new_classic_netplay_datagram.hpp b/include/th03/app/new_classic/netplay/new_classic_netplay_datagram.hpp
+index 5503b66..4274489 100644
+--- a/include/th03/app/new_classic/netplay/new_classic_netplay_datagram.hpp
++++ b/include/th03/app/new_classic/netplay/new_classic_netplay_datagram.hpp
+@@ -11,7 +11,8 @@
+ 
+ namespace th03::app {
+ 
+-inline constexpr std::uint8_t new_classic_netplay_datagram_version = 7U;
++// Reject pre-friend-PVP peers before accepting a runtime hello.
++inline constexpr std::uint8_t new_classic_netplay_datagram_version = 8U;
+ inline constexpr std::size_t new_classic_netplay_history_values = 16U;
+ inline constexpr std::size_t new_classic_netplay_datagram_bytes = 104U;
+ inline constexpr std::size_t new_classic_netplay_simulation_digest_bytes = 32U;
+diff --git a/include/th03/app/new_classic/netplay/new_classic_netplay_input_delay.hpp b/include/th03/app/new_classic/netplay/new_classic_netplay_input_delay.hpp
+index 164585d..8a12935 100644
+--- a/include/th03/app/new_classic/netplay/new_classic_netplay_input_delay.hpp
++++ b/include/th03/app/new_classic/netplay/new_classic_netplay_input_delay.hpp
+@@ -17,6 +17,8 @@ enum class NewClassicNetplayInputDelayError : std::uint8_t {
+ 	frame_regressed,
+ 	conflicting_retry,
+ 	frame_overflow,
++	pending_inputs,
++	invalid_drain_retry,
+ };
+ 
+ // Fixed-capacity symmetric gameplay delay. A source input sampled for frame F
+@@ -38,6 +40,24 @@ public:
+ 		NewClassicNetplayOwnedInput sampled
+ 	) noexcept;
+ 
++	// Read-only transport view: expose the just-sampled input before its
++	// delayed execution time. Never submit it into a different gameplay epoch.
++	[[nodiscard]] std::optional<std::uint64_t> latest_staged_frame() const noexcept;
++	[[nodiscard]] std::optional<NewClassicNetplayOwnedInput> staged_input(
++		std::uint64_t target_frame) const noexcept;
++	// Transition primitive: consume an assigned frame without sampling a new
++	// input. The caller must explicitly manage host sampling during this drain.
++	[[nodiscard]] std::expected<NewClassicNetplayOwnedInput, NewClassicNetplayInputDelayError>
++	drain(std::uint64_t frame) noexcept;
++	// Explicit owner-authored tail input for a negotiated transition only.
++	// Does not sample a device or synthesize a neutral value.
++	[[nodiscard]] std::expected<void, NewClassicNetplayInputDelayError>
++	append_transition_input(std::uint64_t target, NewClassicNetplayOwnedInput input) noexcept;
++	[[nodiscard]] std::size_t pending_count() const noexcept;
++	// Does not clear queued input or change any previously advertised target.
++	// Caller must coordinate both peers before using a different delay.
++	[[nodiscard]] std::expected<void, NewClassicNetplayInputDelayError>
++	reconfigure_drained(std::uint8_t frames) noexcept;
+ 	void reset() noexcept;
+ 	[[nodiscard]] std::uint8_t frames() const noexcept;
+ 
+@@ -56,6 +76,7 @@ private:
+ 	NewClassicNetplayOwnedInput retry_sampled_{};
+ 	NewClassicNetplayOwnedInput retry_effective_{};
+ 	std::uint8_t frames_ = 0U;
++	bool retry_was_drain_ = false;
+ };
+ 
+ } // namespace th03::app
+diff --git a/include/th03/app/new_classic/netplay/new_classic_netplay_lobby.hpp b/include/th03/app/new_classic/netplay/new_classic_netplay_lobby.hpp
+index 51781e2..2cbe897 100644
+--- a/include/th03/app/new_classic/netplay/new_classic_netplay_lobby.hpp
++++ b/include/th03/app/new_classic/netplay/new_classic_netplay_lobby.hpp
+@@ -12,7 +12,8 @@
+ 
+ namespace th03::app {
+ 
+-inline constexpr std::uint8_t new_classic_netplay_lobby_version = 4U;
++// Version 10 requires shared character selection after connection preflight.
++inline constexpr std::uint8_t new_classic_netplay_lobby_version = 10U;
+ inline constexpr std::size_t new_classic_netplay_lobby_bytes = 96U;
+ inline constexpr std::uint64_t new_classic_netplay_lobby_timeout_ms = 30'000U;
+ 
+diff --git a/include/th03/app/new_classic/netplay/new_classic_netplay_main_session.hpp b/include/th03/app/new_classic/netplay/new_classic_netplay_main_session.hpp
+index 1841e27..7d2e8f1 100644
+--- a/include/th03/app/new_classic/netplay/new_classic_netplay_main_session.hpp
++++ b/include/th03/app/new_classic/netplay/new_classic_netplay_main_session.hpp
+@@ -64,6 +64,7 @@ enum class NewClassicNetplayMainSessionErrorCode : std::uint8_t {
+ 	transcript_journal_failed,
+ 	pause_failed,
+ 	input_delay_failed,
++	invalid_delay_epoch,
+ };
+ 
+ struct NewClassicNetplayMainSessionError final {
+@@ -157,6 +158,12 @@ struct NewClassicNetplayConfirmedInputFrame final {
+ // recomputes the affected suffix synchronously, and publishes only the newest
+ // corrected surface. A non-gameplay boundary remains private until the input
+ // that produced it is contiguous-confirmed.
++struct NewClassicNetplayFutureInput final {
++	std::uint64_t epoch = 0U;
++	std::uint64_t frame = 0U;
++	NewClassicNetplayOwnedInput input{};
++};
++
+ class NewClassicNetplayMainSession final {
+ public:
+ 	[[nodiscard]] static std::expected<
+@@ -184,6 +191,36 @@ public:
+ 		NewClassicNetplayMainSessionTick,
+ 		NewClassicNetplayMainSessionError
+ 	> advance_local(NewClassicNetplayOwnedInput input) noexcept;
++	// Retry the assigned current frame without sampling or paying a source tick.
++	[[nodiscard]] std::expected<NewClassicNetplayMainSessionTick, NewClassicNetplayMainSessionError>
++	retry_assigned_local() noexcept;
++	[[nodiscard]] std::uint8_t source_hold_remaining() const noexcept;
++	// Call only for an elapsed source tick, never on a network retry.
++	void consume_source_hold() noexcept;
++	// Assign real host samples ahead of execution during the fixed warning hold.
++	// This pipelines transport without predicting or changing any source sample.
++	[[nodiscard]] std::expected<void, NewClassicNetplayMainSessionError>
++	stage_interstitial_local(std::uint64_t frame, NewClassicNetplayOwnedInput input) noexcept;
++	[[nodiscard]] std::uint64_t interstitial_end_frame() const noexcept;
++
++	// Consumes already assigned input, never samples or predicts. A returned
++	// lifecycle boundary interrupts the transition and must be handled first.
++	[[nodiscard]] std::expected<
++		NewClassicNetplayMainSessionTick,
++		NewClassicNetplayMainSessionError
++	> advance_delay_drain() noexcept;
++	// Append one explicitly sampled owned value at the contiguous assignment
++	// tail. The negotiated barrier is exclusive and limited to retained history.
++	[[nodiscard]] std::expected<void, NewClassicNetplayMainSessionError>
++	append_delay_alignment_input(std::uint64_t target, std::uint64_t barrier,
++		NewClassicNetplayOwnedInput input) noexcept;
++	[[nodiscard]] std::uint64_t delay_transition_highwater() const noexcept;
++	[[nodiscard]] std::size_t pending_delay_inputs() const noexcept;
++	[[nodiscard]] std::uint8_t current_input_delay() const noexcept;
++	// Call only after both peers agree on the drained barrier and a newer
++	// shared future-input epoch. Failure preserves the queue and cache.
++	[[nodiscard]] std::expected<void, NewClassicNetplayMainSessionError>
++	reconfigure_input_delay(std::uint8_t frames, std::uint64_t epoch) noexcept;
+ 
+ 	[[nodiscard]] std::expected<
+ 		NewClassicNetplayMainRemoteResult,
+@@ -247,8 +284,23 @@ public:
+ 	simulation_digest(std::uint64_t frame) noexcept;
+ 	[[nodiscard]] std::optional<NewClassicNetplayOwnedInput>
+ 	local_input(std::uint64_t frame) const noexcept;
++	[[nodiscard]] std::optional<NewClassicNetplayFutureInput>
++	future_local_input() const noexcept;
++	[[nodiscard]] std::uint64_t future_input_epoch() const noexcept;
++	// Query any assigned, unconsumed local value for transport retransmission.
++	// Consumed values remain available through local_input().
++	[[nodiscard]] std::optional<NewClassicNetplayFutureInput>
++	assigned_future_local_input(std::uint64_t frame) const noexcept;
++	[[nodiscard]] std::expected<void, NewClassicNetplayMainSessionError>
++	receive_future_input(NewClassicNetplayFutureInput value) noexcept;
+ 
+ private:
++	friend struct NewClassicNetplayMainSessionTestAccess;
++	void set_source_hold_for_test(std::uint8_t ticks) noexcept;
++	[[nodiscard]] std::expected<
++		NewClassicNetplayMainSessionTick,
++		NewClassicNetplayMainSessionError
++	> advance_internal(std::optional<NewClassicNetplayOwnedInput> input, bool drain) noexcept;
+ 	struct Impl;
+ 	explicit NewClassicNetplayMainSession(
+ 		std::unique_ptr<Impl> impl
+diff --git a/include/th03/app/new_classic/netplay/new_classic_netplay_match_contract.hpp b/include/th03/app/new_classic/netplay/new_classic_netplay_match_contract.hpp
+index 144b1fe..542e5af 100644
+--- a/include/th03/app/new_classic/netplay/new_classic_netplay_match_contract.hpp
++++ b/include/th03/app/new_classic/netplay/new_classic_netplay_match_contract.hpp
+@@ -12,7 +12,12 @@
+ namespace th03::app {
+ 
+ inline constexpr std::uint8_t new_classic_netplay_match_contract_version = 4U;
+-inline constexpr std::uint32_t new_classic_netplay_ruleset_version = 2U;
++// The v3 friend-PVP mod is incompatible with the original ruleset 2 build.
++// Bump this gate for incompatible mod changes; account identity is separate.
++inline constexpr std::uint32_t
++	new_classic_netplay_friend_pvp_mod_compatibility_version = 3U;
++inline constexpr std::uint32_t new_classic_netplay_ruleset_version =
++	new_classic_netplay_friend_pvp_mod_compatibility_version;
+ inline constexpr std::size_t new_classic_netplay_match_contract_bytes = 64U;
+ 
+ struct NewClassicNetplayCharacterLock final {
+diff --git a/include/th03/app/new_classic/netplay/new_classic_netplay_post_match.hpp b/include/th03/app/new_classic/netplay/new_classic_netplay_post_match.hpp
+index 893420c..92f70c6 100644
+--- a/include/th03/app/new_classic/netplay/new_classic_netplay_post_match.hpp
++++ b/include/th03/app/new_classic/netplay/new_classic_netplay_post_match.hpp
+@@ -110,7 +110,8 @@ public:
+ 	> advance(
+ 		ClassicAudioStatus audio,
+ 		bool dismiss_pressed,
+-		bool app_quit_requested = false
++		bool app_quit_requested = false,
++		bool automatic_dismiss = false
+ 	) noexcept;
+ 	[[nodiscard]] std::optional<ClassicAudioCommand>
+ 	take_audio_command() noexcept;
+diff --git a/include/th03/app/new_classic/netplay/new_classic_netplay_room.hpp b/include/th03/app/new_classic/netplay/new_classic_netplay_room.hpp
+index 96cefd9..3002fdc 100644
+--- a/include/th03/app/new_classic/netplay/new_classic_netplay_room.hpp
++++ b/include/th03/app/new_classic/netplay/new_classic_netplay_room.hpp
+@@ -85,11 +85,14 @@ struct NewClassicNetplayRoomLaunch final {
+ 		NewClassicNetplayRoomTransport::online_service;
+ 	std::uint16_t host_port = 31'415U;
+ 	std::string join_endpoint{};
++	// Provisional lobby seed; both peers choose characters after connection.
+ 	std::uint8_t character = 1U;
+ 	std::uint8_t palette = 1U;
+ 	std::uint8_t rank = 1U;
+ 	bool relay_only = false;
+ 	std::uint8_t input_delay_frames = 0U;
++	bool manual_p2p = false;
++	bool local_autofire = false;
+ };
+ 
+ struct NewClassicNetplayRoomInput final {
+@@ -115,8 +118,8 @@ struct NewClassicNetplayRoomResult final {
+ 		NewClassicNetplayRoomStatus::running;
+ };
+ 
+-// Source-styled product owner for the direct UDP preview. Browsing and editing
+-// are pure: the platform may create a socket only after take_launch() returns.
++// Source-styled product owner for transport, role, and local player setup.
++// Browsing is pure: sockets are created only after take_launch() returns.
+ class NewClassicNetplayRoom final {
+ public:
+ 	explicit NewClassicNetplayRoom(
+@@ -124,7 +127,9 @@ public:
+ 		NewClassicLanguageAssetProfile language =
+ 			NewClassicLanguageAssetProfile::english,
+ 		std::uint8_t initial_rank = 1U,
+-		NewClassicNetplayPreferences preferences = {}
++		NewClassicNetplayPreferences preferences = {},
++		bool direct_only = false,
++		std::optional<bool> initial_local_autofire = std::nullopt
+ 	);
+ 
+ 	[[nodiscard]] bool valid() const noexcept;
+@@ -158,6 +163,7 @@ private:
+ 	};
+ 
+ 	enum class Screen : std::uint8_t {
++		transport_menu,
+ 		menu,
+ 		player_setup,
+ 		host_confirmation,
+@@ -193,12 +199,14 @@ private:
+ 	std::size_t join_endpoint_cursor_ = 0U;
+ 	NewClassicNetplayRoomTransport transport_ =
+ 		NewClassicNetplayRoomTransport::online_service;
++	bool direct_only_ = false;
++	bool manual_p2p_ = false;
++	bool local_autofire_ = true;
++	bool preferred_local_autofire_ = true;
+ 	bool relay_only_ = false;
+ 	std::uint8_t input_delay_frames_ = 0U;
+ 	NewClassicNetplayRoomLaunchMode pending_mode_ =
+ 		NewClassicNetplayRoomLaunchMode::host;
+-	std::uint8_t character_ = 1U;
+-	std::uint8_t palette_ = 1U;
+ 	std::uint8_t rank_ = 1U;
+ 	std::optional<NewClassicNetplayRoomLaunch> launch_{};
+ 	bool release_required_ = true;
+diff --git a/include/th03/app/new_classic/new_classic_pause.hpp b/include/th03/app/new_classic/new_classic_pause.hpp
+index cbc32dd..08caa75 100644
+--- a/include/th03/app/new_classic/new_classic_pause.hpp
++++ b/include/th03/app/new_classic/new_classic_pause.hpp
+@@ -25,6 +25,9 @@ struct NewClassicPauseNetplayText final {
+ 	Mask forfeit{};
+ 	Mask waiting_for_opponent{};
+ 	std::array<Mask, 3U> resume_countdown{};
++	// Each readiness row uses index 0 for waiting and index 1 for ready.
++	std::array<Mask, 2U> local_readiness{};
++	std::array<Mask, 2U> remote_readiness{};
+ };
+ 
+ inline constexpr std::uint64_t new_classic_netplay_resume_countdown_second_ns =
+@@ -142,6 +145,7 @@ public:
+ 	resume_countdown() const noexcept;
+ 	void set_waiting_for_opponent(bool waiting) noexcept;
+ 	[[nodiscard]] bool waiting_for_opponent() const noexcept;
++	void set_netplay_readiness(bool local_ready, bool remote_ready) noexcept;
+ 
+ private:
+ 	friend struct NewClassicPauseTestAccess;
+@@ -184,6 +188,8 @@ private:
+ 	std::shared_ptr<const NewClassicPauseNetplayText> netplay_text_{};
+ 	std::optional<std::uint8_t> resume_countdown_{};
+ 	bool waiting_for_opponent_ = false;
++	bool local_ready_ = false;
++	bool remote_ready_ = false;
+ 	std::vector<present::ComposedPixel> pixels_{};
+ };
+ 
+diff --git a/include/th03/app/new_classic/persistence/new_classic_score.hpp b/include/th03/app/new_classic/persistence/new_classic_score.hpp
+index dca1460..6a4ba05 100644
+--- a/include/th03/app/new_classic/persistence/new_classic_score.hpp
++++ b/include/th03/app/new_classic/persistence/new_classic_score.hpp
+@@ -186,6 +186,10 @@ new_classic_score_apply_run(
+ 	NewClassicScoreRun run
+ ) noexcept;
+ 
++// Saved records remain inspectable independently of gameplay unlock state.
++[[nodiscard]] std::size_t new_classic_score_visible_character_count(
++	const NewClassicScoreDocument &document) noexcept;
++
+ [[nodiscard]] std::expected<NewClassicScoreView, NewClassicScoreError>
+ new_classic_score_view(
+ 	const NewClassicScoreDocument &document,
+diff --git a/include/th03/app/new_classic/persistence/new_classic_settings.hpp b/include/th03/app/new_classic/persistence/new_classic_settings.hpp
+index dc8189f..88d4a93 100644
+--- a/include/th03/app/new_classic/persistence/new_classic_settings.hpp
++++ b/include/th03/app/new_classic/persistence/new_classic_settings.hpp
+@@ -15,7 +15,7 @@ namespace th03::app {
+ inline constexpr std::size_t new_classic_settings_file_bytes = 32U;
+ inline constexpr std::size_t new_classic_settings_v2_v3_file_bytes = 28U;
+ inline constexpr std::size_t new_classic_settings_v1_file_bytes = 24U;
+-inline constexpr std::uint16_t new_classic_settings_format_version = 8U;
++inline constexpr std::uint16_t new_classic_settings_format_version = 12U;
+ 
+ enum class NewClassicWindowMode : std::uint8_t {
+ 	windowed,
+@@ -44,6 +44,7 @@ struct NewClassicWindowPresentation final {
+ 	NewClassicWindowScale scale = NewClassicWindowScale::x1;
+ 	NewClassicAspectRatio aspect = NewClassicAspectRatio::pixels_8_5;
+ 	NewClassicFiltering filtering = NewClassicFiltering::nearest;
++	bool round_timer = false;
+ 
+ 	friend constexpr bool operator==(
+ 		const NewClassicWindowPresentation &,
+@@ -62,6 +63,7 @@ struct NewClassicNetplayPreferences final {
+ 	bool relay_only = false;
+ 	std::uint16_t direct_udp_port = 31'415U;
+ 	std::uint8_t input_delay_frames = 0U;
++	bool local_autofire = true;
+ 
+ 	friend constexpr bool operator==(
+ 		const NewClassicNetplayPreferences &,
+@@ -69,6 +71,17 @@ struct NewClassicNetplayPreferences final {
+ 	) = default;
+ };
+ 
++struct NewClassicFeatures final {
++	bool collision_display = false;
++	bool round_frame_counter = false;
++	bool story_seed_selection = false;
++
++	friend constexpr bool operator==(
++		const NewClassicFeatures &,
++		const NewClassicFeatures &
++	) = default;
++};
++
+ struct NewClassicSettings final {
+ 	ClassicConfigOptions options{};
+ 	GameplayRuleset gameplay_ruleset = stock_gameplay_ruleset;
+@@ -79,6 +92,7 @@ struct NewClassicSettings final {
+ 	bool automatic_updates = true;
+ 	NewClassicWindowPresentation window{};
+ 	NewClassicNetplayPreferences netplay{};
++	NewClassicFeatures features{};
+ 
+ 	friend constexpr bool operator==(
+ 		const NewClassicSettings &,
+diff --git a/include/th03/app/new_classic/persistence/new_classic_settings_store.hpp b/include/th03/app/new_classic/persistence/new_classic_settings_store.hpp
+index 87b2fbe..a8fd71b 100644
+--- a/include/th03/app/new_classic/persistence/new_classic_settings_store.hpp
++++ b/include/th03/app/new_classic/persistence/new_classic_settings_store.hpp
+@@ -21,6 +21,10 @@ enum class NewClassicSettingsStoreDisposition : std::uint8_t {
+ 	upgraded_v5,
+ 	upgraded_v6,
+ 	upgraded_v7,
++	upgraded_v8,
++	upgraded_v9,
++	upgraded_v10,
++	upgraded_v11,
+ 	migrated_classic,
+ 	created_defaults,
+ 	recovered_defaults,
+diff --git a/include/th03/app/new_classic/replay/new_classic_playback.hpp b/include/th03/app/new_classic/replay/new_classic_playback.hpp
+index 13cf756..1c98ea7 100644
+--- a/include/th03/app/new_classic/replay/new_classic_playback.hpp
++++ b/include/th03/app/new_classic/replay/new_classic_playback.hpp
+@@ -25,6 +25,9 @@ struct NewClassicPlaybackRequest final {
+ 	std::size_t checkpoint_index = 0U;
+ 	present::KotohimeBombFadeCompatibility kotohime_compatibility{};
+ 	bool reduced_flash = false;
++	bool enhanced_flash_reduction = false;
++	bool debug_hitboxes = false;
++	bool round_frame_counter = false;
+ 	// Presentation-only viewer choice. It is deliberately not read from V14.
+ 	ClassicLanguage language = ClassicLanguage::japanese;
+ };
+@@ -117,6 +120,9 @@ public:
+ 			present::graphics_page_pixels
+ 		> output
+ 	) const;
++	void set_debug_hitboxes(bool enabled) noexcept;
++	void set_round_frame_counter(bool enabled) noexcept;
++	void set_round_timer(bool enabled) noexcept;
+ 	void set_fast_forward(bool enabled) noexcept;
+ 	[[nodiscard]] bool fast_forward() const noexcept;
+ 	[[nodiscard]] std::size_t fast_forward_step_count() const noexcept;
+diff --git a/include/th03/app/new_classic/replay/replay_slot_store.hpp b/include/th03/app/new_classic/replay/replay_slot_store.hpp
+index b52cc06..f4cd2f2 100644
+--- a/include/th03/app/new_classic/replay/replay_slot_store.hpp
++++ b/include/th03/app/new_classic/replay/replay_slot_store.hpp
+@@ -1,6 +1,7 @@
+ #ifndef TH03_APP_REPLAY_SLOT_STORE_HPP
+ #define TH03_APP_REPLAY_SLOT_STORE_HPP
+ 
++#include <array>
+ #include <cstddef>
+ #include <cstdint>
+ #include <expected>
+@@ -76,6 +77,12 @@ struct ReplaySlotLoadResult final {
+ 	const std::filesystem::path &replay_root
+ );
+ 
++// Empty paths are free slots. Existing canonical names take priority over
++// descriptive archives; both files are left intact when they share a number.
++using ReplaySlotPaths = std::array<std::filesystem::path, replay_slot_count>;
++[[nodiscard]] std::expected<ReplaySlotPaths, ReplaySlotStoreError>
++discover_replay_slots(const std::filesystem::path &replay_root);
++
+ // Developer tools may name an exact V14 artifact without projecting it into a
+ // player-facing slot. A missing path is reported as an empty result.
+ [[nodiscard]] std::expected<ReplaySlotLoadResult, ReplaySlotStoreError>
+diff --git a/include/th03/app/runtime/tick_input.hpp b/include/th03/app/runtime/tick_input.hpp
+index 97c4219..c45e066 100644
+--- a/include/th03/app/runtime/tick_input.hpp
++++ b/include/th03/app/runtime/tick_input.hpp
+@@ -120,6 +120,8 @@ struct LogicalTickInput {
+ 	// than the configurable Shot action. It is presentation pacing only and is
+ 	// therefore kept out of CoreInput and replay serialization.
+ 	bool fast_forward_requested = false;
++	// One host key edge, outside deterministic input and replay serialization.
++	bool debug_hitboxes_toggle_requested = false;
+ 	// Raw keyboard capture is consumed only by Replay Patch KeyConfig. It is
+ 	// outside deterministic gameplay and replay serialization.
+ 	std::optional<std::uint16_t> scancode_pressed{};
+@@ -198,6 +200,16 @@ public:
+ 	[[nodiscard]] std::optional<TickTimestampNs> next_deadline_ns() const noexcept;
+ 	[[nodiscard]] std::size_t pending_event_count() const noexcept;
+ 	[[nodiscard]] bool app_quit_requested() const noexcept;
++	// Drop elapsed wall-clock deadlines only if no queued event would change
++	// its logical sample. Keep held state and every queued future event.
++	[[nodiscard]] bool skip_idle_backlog(TickTimestampNs now_ns) noexcept;
++	// Compact only the unissued, unchanged prefix of overdue host deadlines.
++	// Stop at the first sample that owns a queued edge, keeping the original
++	// deadline grid so even short press/release sequences remain distinguishable.
++	// The clock observation and the compaction cutoff are separate: callers
++	// may deliberately leave a small buffer behind the actual current time.
++	[[nodiscard]] std::size_t compact_overdue_idle_prefix(
++		TickTimestampNs now_ns, TickTimestampNs keep_ns = 0U) noexcept;
+ 	// A modal host UI owns a separate scheduler. Rebase the live source clock
+ 	// after it returns so the gameplay scheduler neither repays the modal's wall
+ 	// time nor leaks held input across the ownership boundary.
+@@ -241,6 +253,29 @@ private:
+ 	std::optional<TickTimestampNs> last_emitted_deadline_{};
+ };
+ 
++// For presentation-only retained menu audio, use a preserve_all scheduler.
++// Ordinary host jitter must not stretch the PCM clock. After a long host stall,
++// resume at the current time instead of flooding the device with stale audio.
++// Never use this helper for deterministic gameplay or confirmed netplay audio.
++[[nodiscard]] inline std::expected<std::size_t, TickInputError>
++retained_menu_audio_ticks_due(TickInputScheduler &scheduler, TickTimestampNs now_ns)
++{
++	constexpr TickTimestampNs maximum_lag_ns = 100'000'000U;
++	if(const auto next = scheduler.next_deadline_ns(); next &&
++		now_ns > *next && now_ns - *next > maximum_lag_ns) {
++		if(auto rebased = scheduler.rebase_after_modal(now_ns); !rebased) {
++			return std::unexpected(rebased.error());
++		}
++	}
++	std::size_t count = 0U;
++	for(;;) {
++		auto due = scheduler.pop_due(now_ns);
++		if(!due) { return std::unexpected(due.error()); }
++		if(!*due) { return count; }
++		++count;
++	}
++}
++
+ } // namespace th03::app
+ 
+ #endif
+diff --git a/include/th03/audio/pmd_opna.hpp b/include/th03/audio/pmd_opna.hpp
+index cf96cac..a34cc23 100644
+--- a/include/th03/audio/pmd_opna.hpp
++++ b/include/th03/audio/pmd_opna.hpp
+@@ -57,6 +57,8 @@ enum class PmdOpnaErrorCode : std::uint8_t {
+ 	no_song_loaded,
+ 	no_effect_bank_loaded,
+ 	allocation_failed,
++	position_unreachable,
++	seek_budget_exceeded,
+ };
+ 
+ struct PmdOpnaError {
+@@ -159,6 +161,11 @@ public:
+ 		std::uint8_t part,
+ 		bool masked
+ 	) noexcept;
++	// Forward only; render/discard preserves live synth state and dynamic bars.
++	std::expected<void, PmdOpnaError> advance_to_measure(
++		std::uint16_t target,
++		std::uint64_t maximum_native_samples
++	) noexcept;
+ 	void render_native(std::span<PmdOpnaStereoSample> output) noexcept;
+ 
+ 	void set_register_trace_sink(PmdOpnaRegisterTraceSink *sink) noexcept;
+diff --git a/include/th03/core/observer.hpp b/include/th03/core/observer.hpp
+index be19be2..70d6d93 100644
+--- a/include/th03/core/observer.hpp
++++ b/include/th03/core/observer.hpp
+@@ -228,6 +228,92 @@ struct RawPoint {
+ 	friend bool operator==(const RawPoint &, const RawPoint &) = default;
+ };
+ 
++// Source-packed collision cells: [player][byte column][row], MSB first.
++// One cell covers 2x2 playfield pixels. Storage belongs to the observer.
++struct CollisionDebugMap {
++	static constexpr std::size_t width = 144U;
++	static constexpr std::size_t height = 184U;
++	static constexpr std::size_t bytes_per_column = height;
++	static constexpr std::size_t byte_columns = width / 8U;
++	static constexpr std::size_t player_bytes = byte_columns * height;
++	std::array<std::uint8_t, 2U * player_bytes> cells{};
++
++	friend bool operator==(const CollisionDebugMap &, const CollisionDebugMap &) = default;
++};
++
++// Borrowed only for collision_map_ready(). copy_to() writes directly into the
++// observer's retained map without constructing another map on the core stack.
++class CollisionMapView {
++public:
++	explicit CollisionMapView(const detail::DeterministicState *state) noexcept
++		: state_(state)
++	{}
++	[[nodiscard]] MainPhaseContext context() const noexcept;
++	[[nodiscard]] std::optional<std::uint8_t> packed_byte(
++		PlayerId player, std::size_t byte_x, std::size_t y
++	) const noexcept;
++	void copy_to(CollisionDebugMap &destination) const noexcept;
++
++private:
++	const detail::DeterministicState *state_;
++};
++
++enum class CollisionDecisionStatus : std::uint8_t {
++	clear,
++	hit,
++	skipped_invulnerability,
++	skipped_hyper,
++	skipped_acted,
++	skipped_defeat,
++	skipped_update_begin,
++};
++
++struct CollisionDebugRead {
++	std::uint16_t memory_offset = 0;
++	std::int8_t byte_x = 0;
++	std::uint8_t y = 0;
++	std::uint8_t mask = 0;
++	std::uint8_t value = 0;
++	bool aliases_map_coordinates = false;
++
++	friend bool operator==(const CollisionDebugRead &, const CollisionDebugRead &) = default;
++};
++
++struct PlayerCollisionDecision {
++	PlayerId player = PlayerId::p1;
++	MainPhaseContext context{};
++	RawPoint raw_center{};
++	std::uint8_t hitbox_size = 4U;
++	CollisionDecisionStatus status = CollisionDecisionStatus::clear;
++	std::uint8_t invincibility_time = 0;
++	std::uint8_t hyper_active = 0;
++	std::uint8_t defeat_flag_raw = 0;
++	std::uint8_t lose_anim_time = 0;
++	bool query_executed = false;
++	// Source map-cell bounds after its asymmetric vertical clipping. The
++	// source do/while always reads at least one row per nonnegative column.
++	std::int16_t scan_left = 0;
++	std::int16_t scan_top = 0;
++	std::int16_t scan_bottom = 0;
++	std::int8_t first_byte_x = 0;
++	std::uint8_t first_mask = 0;
++	// Complete size-4 footprint, including columns not reached after a hit.
++	std::array<std::uint8_t, 2> scan_column_masks{};
++	std::uint8_t scan_column_count = 0;
++	// Executed reads in order, including compatibility-memory aliases. At
++	// most two columns of 256 rows can execute for a size-4 source scan.
++	std::array<CollisionDebugRead, 512> reads{};
++	std::uint16_t visited_count = 0;
++	// At least one executed read addressed a different source-packed byte
++	// from the nominal player/column/row, including source pointer landmines.
++	bool aliases_map_coordinates = false;
++	std::optional<std::uint16_t> first_hit_read{};
++	bool result = false;
++	RawPoint collision_raw{};
++
++	friend bool operator==(const PlayerCollisionDecision &, const PlayerCollisionDecision &) = default;
++};
++
+ struct MainExtraAttackFact {
+ 	ExtraAttackSlot slot{};
+ 	std::uint8_t state = 0;
+@@ -1149,6 +1235,15 @@ class GameplayObserver {
+ public:
+ 	virtual ~GameplayObserver() = default;
+ 
++	// Passive diagnostics are opt-in. CPU avoidance probes do not emit damage
++	// decisions; only the player's actual damage branch is traced.
++	[[nodiscard]] virtual bool wants_collision_debug() const noexcept
++	{ return false; }
++	virtual void collision_map_ready(const CollisionMapView &) noexcept
++	{}
++	virtual void player_collision_decision(const PlayerCollisionDecision &) noexcept
++	{}
++
+ 	// Callbacks are synchronous. They must not reenter or mutate the Game that
+ 	// issued them; borrowed phase views expire when their callback returns.
+ 	virtual void shot_pair_spawned(const ShotPairSpawned &) noexcept
+diff --git a/include/th03/platform/sdl_input.hpp b/include/th03/platform/sdl_input.hpp
+index 3bf4332..4f448c0 100644
+--- a/include/th03/platform/sdl_input.hpp
++++ b/include/th03/platform/sdl_input.hpp
+@@ -219,6 +219,9 @@ public:
+ 	[[nodiscard]] bool any_keyboard_scancode_held() const noexcept;
+ 	[[nodiscard]] std::optional<SDL_Scancode>
+ 	take_keyboard_scancode_press() noexcept;
++	void set_netplay_delay_shortcuts(bool enabled) noexcept;
++	[[nodiscard]] std::optional<std::uint8_t>
++	take_netplay_delay_request() noexcept;
+ 	[[nodiscard]] std::optional<char> take_keyboard_text_character() noexcept;
+ 	// Atomically returns queued SDL text input as validated printable UTF-8.
+ 	// ASCII-only numeric/code editors continue to use the character accessor.
+@@ -284,13 +287,17 @@ private:
+ 	KeyboardState keyboard_{};
+ 	std::array<bool, static_cast<std::size_t>(SDL_SCANCODE_COUNT)>
+ 		raw_keyboard_held_{};
++	std::array<bool, static_cast<std::size_t>(SDL_SCANCODE_COUNT)>
++		suppressed_keyboard_held_{};
+ 	std::optional<SDL_Scancode> last_scancode_press_{};
++	std::optional<std::uint8_t> netplay_delay_request_{};
+ 	std::array<char, 64U> keyboard_text_{};
+ 	std::size_t keyboard_text_count_ = 0U;
+ 	std::array<GamepadState, sdl_gamepad_capacity> gamepads_{};
+ 	std::size_t connected_gamepad_count_ = 0U;
+ 	bool native_runtime_lease_ = false;
+ 	bool main_window_focused_ = true;
++	bool netplay_delay_shortcuts_enabled_ = false;
+ 	SDL_Event pending_event_{};
+ 	bool has_pending_event_ = false;
+ };
+diff --git a/include/th03/platform/sdl_platform.hpp b/include/th03/platform/sdl_platform.hpp
+index b17bf76..a21fea9 100644
+--- a/include/th03/platform/sdl_platform.hpp
++++ b/include/th03/platform/sdl_platform.hpp
+@@ -7,6 +7,7 @@
+ #include <filesystem>
+ #include <memory>
+ #include <optional>
++#include <span>
+ #include <string>
+ #include <string_view>
+ 
+@@ -97,12 +98,22 @@ struct SdlPlatformConfig {
+ 	std::string oracle_rgb_directory{};
+ };
+ 
++struct SdlPresentationRect {
++	float x = 0.0F;
++	float y = 0.0F;
++	float width = 0.0F;
++	float height = 0.0F;
++
++	friend constexpr bool operator==(
++		const SdlPresentationRect &, const SdlPresentationRect &
++	) = default;
++};
++
+ struct SdlPresentResult {
+-	// Destination in physical output pixels for a submitted texture. A
+-	// presentable drawable smaller than 640x400 is a successful black-only
+-	// submission rather than a stretched frame; an unpresentable retained
+-	// source also has no destination, distinguished by [submitted_to_host].
+-	std::optional<app::IntegerLetterboxRect> destination{};
++	// SDL's actual aspect-preserving destination in physical output pixels.
++	// Fractional scaling fills the available extent, including on high-DPI
++	// displays. Unpresentable retained sources have no destination.
++	std::optional<SdlPresentationRect> destination{};
+ 	// False means the complete source image was retained in the persistent
+ 	// texture while the window was minimized, hidden, occluded, or had no
+ 	// drawable output. Source simulation and capture still completed.
+@@ -116,10 +127,12 @@ struct SdlPresentResult {
+ 
+ struct SdlPresentabilityRefreshResult {
+ 	bool presentable = false;
+-	// True only for the one restore call that submitted a retained newest
+-	// surface. Repeated presentable observations perform no additional work.
++	// True for a pending source submission on restore. Resize/expose repaints
++	// of an already-submitted source are reported separately below.
+ 	bool submitted_retained_surface = false;
+-	std::optional<app::IntegerLetterboxRect> destination{};
++	std::optional<SdlPresentationRect> destination{};
++	// Host-only repaint after resize/expose, without a new source publication.
++	bool redrew_retained_surface = false;
+ };
+ 
+ struct SdlPresentationOracleIdentity {
+@@ -155,12 +168,19 @@ public:
+ 	// Polls SDL's current window/output state after event handling. This emits
+ 	// no source publication and records no oracle row. If source images arrived
+ 	// while unpresentable, the first restored call submits exactly the newest
+-	// retained texture once.
++	// retained texture once. Size/expose changes redraw that retained texture
++	// even when no new source image was published.
+ 	[[nodiscard]] std::expected<
+ 		SdlPresentabilityRefreshResult,
+ 		SdlPlatformError
+ 	> refresh_presentability() noexcept;
+ 	[[nodiscard]] bool oracle_enabled() const noexcept;
++	// Separate host chrome below the complete source image. Supply exactly
++	// 640x16 monochrome pixels (nonzero is white), or empty to hide the strip.
++	// Source textures, hashes, and RGB captures are never modified.
++	[[nodiscard]] std::expected<void, SdlPlatformError> set_host_status_strip(
++		std::span<const std::uint8_t> pixels
++	) noexcept;
+ 	// Applies a complete host-window policy. A failed transition restores the
+ 	// previous SDL mode and dimensions before returning an error. The renderer,
+ 	// canonical 640x400 texture, and source publication state are untouched.
+diff --git a/include/th03/platform/udp_socket.hpp b/include/th03/platform/udp_socket.hpp
+index a373b03..5f071bb 100644
+--- a/include/th03/platform/udp_socket.hpp
++++ b/include/th03/platform/udp_socket.hpp
+@@ -10,6 +10,7 @@
+ #include <span>
+ #include <string>
+ #include <string_view>
++#include <vector>
+ 
+ namespace th03::platform {
+ 
+@@ -23,6 +24,38 @@ struct UdpIpv4Endpoint final {
+ 	) = default;
+ };
+ 
++enum class UdpAddressFamily : std::uint8_t { ipv4 = 4U, ipv6 = 6U };
++
++struct UdpEndpoint final {
++	std::array<std::uint8_t, 16U> address{};
++	std::uint16_t port = 0U;
++	UdpAddressFamily family = UdpAddressFamily::ipv4;
++
++	constexpr UdpEndpoint() noexcept = default;
++	constexpr UdpEndpoint(UdpIpv4Endpoint endpoint) noexcept :
++		address{endpoint.address[0U], endpoint.address[1U],
++			endpoint.address[2U], endpoint.address[3U]}, port(endpoint.port)
++	{}
++	constexpr UdpEndpoint(std::array<std::uint8_t, 16U> bytes,
++		std::uint16_t endpoint_port, UdpAddressFamily endpoint_family) noexcept :
++		address(bytes), port(endpoint_port), family(endpoint_family)
++	{}
++	[[nodiscard]] constexpr std::optional<UdpIpv4Endpoint> ipv4() const noexcept
++	{
++		if(family != UdpAddressFamily::ipv4) {
++			return std::nullopt;
++		}
++		return UdpIpv4Endpoint{{address[0U], address[1U], address[2U], address[3U]}, port};
++	}
++	[[nodiscard]] friend constexpr bool operator==(
++		const UdpEndpoint &, const UdpEndpoint &) = default;
++	[[nodiscard]] friend constexpr bool operator==(
++		const UdpEndpoint &left, UdpIpv4Endpoint right) noexcept
++	{
++		return left == UdpEndpoint{right};
++	}
++};
++
+ enum class UdpSocketErrorCode : std::uint8_t {
+ 	invalid_endpoint,
+ 	resolution_failed,
+@@ -42,7 +75,7 @@ struct UdpSocketError final {
+ };
+ 
+ struct UdpReceivedDatagram final {
+-	UdpIpv4Endpoint sender{};
++	UdpEndpoint sender{};
+ 	std::size_t size = 0U;
+ };
+ 
+@@ -54,6 +87,16 @@ resolve_udp_ipv4_endpoint(std::string_view text) noexcept;
+ 	UdpIpv4Endpoint endpoint
+ );
+ 
++[[nodiscard]] std::expected<UdpEndpoint, UdpSocketError>
++parse_udp_endpoint(std::string_view text) noexcept;
++[[nodiscard]] std::expected<UdpEndpoint, UdpSocketError>
++resolve_udp_endpoint(std::string_view text) noexcept;
++[[nodiscard]] std::string format_udp_endpoint(UdpEndpoint endpoint);
++
++[[nodiscard]] std::vector<UdpEndpoint> enumerate_udp_local_candidates(
++	std::uint16_t port, bool supports_ipv6
++);
++
+ class UdpSocket final {
+ public:
+ 	[[nodiscard]] static std::expected<
+@@ -67,15 +110,23 @@ public:
+ 	UdpSocket(UdpSocket &&) = delete;
+ 	UdpSocket &operator=(UdpSocket &&) = delete;
+ 
++	[[nodiscard]] std::expected<void, UdpSocketError> send(
++		UdpEndpoint recipient,
++		std::span<const std::byte> payload
++	) noexcept;
+ 	[[nodiscard]] std::expected<void, UdpSocketError> send(
+ 		UdpIpv4Endpoint recipient,
+ 		std::span<const std::byte> payload
+ 	) noexcept;
++	// Oversized datagrams are consumed and discarded, returning an empty optional.
+ 	[[nodiscard]] std::expected<
+ 		std::optional<UdpReceivedDatagram>,
+ 		UdpSocketError
+ 	> receive(std::span<std::byte> output) noexcept;
+ 	[[nodiscard]] UdpIpv4Endpoint local_endpoint() const noexcept;
++	[[nodiscard]] UdpEndpoint bound_endpoint() const noexcept;
++	[[nodiscard]] bool supports_ipv6() const noexcept;
++	[[nodiscard]] std::vector<UdpEndpoint> local_candidates() const;
+ 
+ private:
+ 	struct Impl;
+diff --git a/include/th03/present/main_rollback.hpp b/include/th03/present/main_rollback.hpp
+index 61d186b..31e52cc 100644
+--- a/include/th03/present/main_rollback.hpp
++++ b/include/th03/present/main_rollback.hpp
+@@ -319,6 +319,9 @@ struct MainPresenterRollbackState final {
+ 
+ class MainPresenterRollbackAccess final {
+ public:
++	static void discard_incomplete_round(MainRoundPresenter &round) noexcept;
++	[[nodiscard]] static bool speculative_warning_active(
++		const MainWarningGaugePresenter &warning, const MainRoundPresenter &round) noexcept;
+ 	[[nodiscard]] static bool valid(
+ 		const MainPresenterRollbackState &state
+ 	) noexcept;
+diff --git a/include/th03/present/main_round.hpp b/include/th03/present/main_round.hpp
+index 762b95d..9833129 100644
+--- a/include/th03/present/main_round.hpp
++++ b/include/th03/present/main_round.hpp
+@@ -1,6 +1,7 @@
+ #ifndef TH03_PRESENT_MAIN_ROUND_HPP
+ #define TH03_PRESENT_MAIN_ROUND_HPP
+ 
++#include <array>
+ #include <cstdint>
+ #include <expected>
+ #include <optional>
+@@ -84,6 +85,31 @@ public:
+ 	MainRoundPresenter(MainRoundPresenter &&) = delete;
+ 	MainRoundPresenter &operator=(MainRoundPresenter &&) = delete;
+ 
++	void set_round_frame_counter(bool enabled) noexcept;
++	void set_round_timer(bool enabled) noexcept;
++	void set_pending_round_frame(std::uint32_t frame) noexcept;
++	void reset_round_frame(std::uint32_t frame = 0U) noexcept;
++	[[nodiscard]] std::array<GaugeBossAttackKind, 2U> warning_attack_kinds() const noexcept {
++		return warning_attack_kinds_;
++	}
++	void compose_host_overlay(
++		std::span<ComposedPixel, graphics_page_pixels> output,
++		SourceSurface &surface
++	) const noexcept;
++	void set_collision_debug_enabled(bool enabled) noexcept;
++	void invalidate_collision_debug() noexcept;
++	[[nodiscard]] bool wants_collision_debug() const noexcept override;
++	void collision_map_ready(const CollisionMapView &view) noexcept override;
++	void player_collision_decision(
++		const PlayerCollisionDecision &decision
++	) noexcept override;
++	// Applies the last successfully published diagnostic frame to a surface
++	// already composed into this caller-owned output buffer.
++	void compose_collision_debug_overlay(
++		std::span<ComposedPixel, graphics_page_pixels> output,
++		SourceSurface &surface
++	) const noexcept;
++
+ 	void shot_pair_spawned(const ShotPairSpawned &spawn) noexcept override;
+ 	void main_feedback_cue_requested(
+ 		const MainFeedbackCueRequested &request
+@@ -188,6 +214,7 @@ public:
+ 
+ private:
+ 	friend class MainPresenterRollbackAccess;
++	std::array<GaugeBossAttackKind, 2U> warning_attack_kinds_{};
+ 	enum class Phase : std::uint8_t {
+ 		boss,
+ 		shots_enemies,
+@@ -230,6 +257,20 @@ private:
+ 	MainWarningGaugePresenter *warning_gauge_;
+ 	MainHudResultPresenter *hud_result_;
+ 	MainFeedbackSink feedback_{};
++	struct CollisionDebugFrame {
++		CollisionDebugMap map{};
++		MainPhaseContext context{};
++		std::array<PlayerCollisionDecision, 2U> players{};
++		std::uint8_t player_mask = 0U;
++		bool map_ready = false;
++	};
++	CollisionDebugFrame collision_pending_{};
++	CollisionDebugFrame collision_published_{};
++	bool collision_debug_enabled_ = false;
++	bool round_frame_counter_enabled_ = false;
++	bool round_timer_enabled_ = false;
++	std::uint32_t round_frame_pending_ = 0U;
++	std::uint32_t round_frame_published_ = 0U;
+ 	MainPlayerFacts player_facts_{};
+ 	MainBulletFacts bullet_facts_{};
+ 	MainBulletTrails bullet_trails_{};
+diff --git a/include/th03/present/raster.hpp b/include/th03/present/raster.hpp
+index 71761b9..b233aa3 100644
+--- a/include/th03/present/raster.hpp
++++ b/include/th03/present/raster.hpp
+@@ -179,6 +179,16 @@ public:
+ 	) const noexcept;
+ 	void apply_pending_palette() noexcept;
+ 
++	// Host-only substitutions follow the corresponding canonical palette write.
++	// Ordinary setters replace the same mirrored entry/tone, preserving source
++	// write order and allowing normal fades to resume without a global clamp.
++	void override_enhanced_flash_entry(std::uint8_t index, Rgb8 color) noexcept;
++	void override_enhanced_flash_tone(
++		std::int16_t tone,
++		bool apply_now = false
++	) noexcept;
++	[[nodiscard]] const assets::Palette16Rgb4 &enhanced_flash_palette() const noexcept;
++
+ 	void set_scroll_y(std::uint16_t scroll_y) noexcept;
+ 	[[nodiscard]] std::uint16_t scroll_y() const noexcept;
+ 
+@@ -218,6 +228,10 @@ private:
+ 	Palette16Rgb8 pending_palette_{};
+ 	assets::Palette16Rgb4 applied_palette_{};
+ 	std::int16_t palette_tone_ = 100;
++	Palette16Rgb8 enhanced_pending_palette_{};
++	assets::Palette16Rgb4 enhanced_applied_palette_{};
++	std::int16_t enhanced_palette_tone_ = 100;
++	void apply_enhanced_pending_palette() noexcept;
+ 	std::uint16_t scroll_y_ = 0U;
+ };
+ 
+diff --git a/include/th03/present/rollback_snapshot.hpp b/include/th03/present/rollback_snapshot.hpp
+index 8db1deb..402536a 100644
+--- a/include/th03/present/rollback_snapshot.hpp
++++ b/include/th03/present/rollback_snapshot.hpp
+@@ -18,6 +18,12 @@ inline constexpr std::size_t rollback_visual_snapshot_capacity = 520U * 1024U;
+ struct RollbackVisualSnapshot final {
+ 	std::uint32_t used_size = 0U;
+ 	std::array<std::byte, rollback_visual_snapshot_capacity> bytes{};
++	// Local presentation sidecar; deliberately excluded from T3RBV001 bytes,
++	// its checksum, and every canonical source-state fingerprint.
++	std::array<std::uint8_t, 48U> enhanced_pending_palette{};
++	std::array<std::uint8_t, 48U> enhanced_applied_palette{};
++	std::int16_t enhanced_palette_tone = 100;
++	bool enhanced_flash_available = false;
+ 
+ 	friend bool operator==(
+ 		const RollbackVisualSnapshot &,
+@@ -25,11 +31,6 @@ struct RollbackVisualSnapshot final {
+ 	) = default;
+ };
+ 
+-static_assert(
+-	sizeof(RollbackVisualSnapshot) ==
+-		sizeof(std::uint32_t) + rollback_visual_snapshot_capacity
+-);
+-
+ enum class RollbackVisualErrorCode : std::uint8_t {
+ 	bad_magic,
+ 	unsupported_version,
+diff --git a/include/th03/present/source_surface.hpp b/include/th03/present/source_surface.hpp
+index 3c4f084..8f2a33b 100644
+--- a/include/th03/present/source_surface.hpp
++++ b/include/th03/present/source_surface.hpp
+@@ -40,8 +40,18 @@ struct SourceSurface {
+ 	std::optional<SourceSurfaceOracleHashes> oracle_hashes{};
+ 	bool host_overlay = false;
+ 	bool reduced_flash_applied = false;
++	assets::Palette16Rgb4 enhanced_flash_palette{};
++	bool enhanced_flash_available = false;
+ };
+ 
++// Substitutes only the uploaded graphics palette, never pixels, text, or
++// source oracle hashes. Enhanced mirrors take precedence over legacy reduction.
++void apply_flash_reduction(
++	SourceSurface &surface,
++	bool reduced,
++	bool enhanced
++) noexcept;
++
+ // Process-global developer instrumentation switch. The SDL platform owns the
+ // single lifetime lease; ordinary shipping composition pays no full-page hash
+ // cost while the oracle is disabled.
+diff --git a/src/audio/pmd_opna.cpp b/src/audio/pmd_opna.cpp
+--- a/src/audio/pmd_opna.cpp
++++ b/src/audio/pmd_opna.cpp
+@@ -560,8 +560,21 @@
+ 	void render_one(PmdOpnaStereoSample &sample) noexcept
+ 	{
+-		for(std::uint32_t elapsed = 0U; elapsed < clocks_per_sample; ++elapsed) {
+-			++chip_clocks;
++		const auto sample_end = chip_clocks + clocks_per_sample;
++		while(chip_clocks < sample_end) {
++			auto next = sample_end + 1U;
++			for(const auto deadline : timer_deadlines) {
++				if(deadline >= 0) {
++					next = std::min(next, static_cast<std::uint64_t>(deadline));
++				}
++			}
++			if(next > sample_end) {
++				chip_clocks = sample_end;
++				break;
++			}
++			// Keep the original timer order and reread deadlines after a callback.
++			// A rearmed timer that already ran this clock waits one more clock.
++			chip_clocks = std::max(chip_clocks + 1U, next);
+ 			for(std::uint32_t timer = 0U; timer < timer_deadlines.size(); ++timer) {
+ 				const auto deadline = timer_deadlines[timer];
+ 				if(deadline >= 0 &&
+ 					static_cast<std::uint64_t>(deadline) <= chip_clocks) {
+@@ -942,6 +955,30 @@ std::expected<void, PmdOpnaError> PmdOpnaEngine::set_part_mask(
+ 	return {};
+ }
+ 
++std::expected<void, PmdOpnaError> PmdOpnaEngine::advance_to_measure(
++	std::uint16_t target,
++	std::uint64_t maximum_native_samples
++) noexcept
++{
++	auto *pmd = impl_->active_pmd.get();
++	if(!pmd || th03_pmd_measure(pmd) > target) {
++		return std::unexpected(PmdOpnaError{.code = PmdOpnaErrorCode::position_unreachable});
++	}
++	std::uint64_t consumed = 0U;
++	PmdOpnaStereoSample discarded{};
++	while(th03_pmd_measure(pmd) < target) {
++		if(!th03_pmd_is_playing(pmd) || th03_pmd_is_paused(pmd)) {
++			return std::unexpected(PmdOpnaError{.code = PmdOpnaErrorCode::position_unreachable});
++		}
++		if(consumed == maximum_native_samples) {
++			return std::unexpected(PmdOpnaError{.code = PmdOpnaErrorCode::seek_budget_exceeded});
++		}
++		impl_->render_one(discarded);
++		++consumed;
++	}
++	return {};
++}
++
+ void PmdOpnaEngine::render_native(
+ 	std::span<PmdOpnaStereoSample> output
+ ) noexcept
