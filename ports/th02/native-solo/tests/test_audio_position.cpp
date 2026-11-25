@@ -60,6 +60,10 @@ int wmain(int argc,wchar_t** argv){try{
         check(bool(fm.play()),"FM fresh replay");check(bool(fm.advance_to_measure(1,1000000)),"FM repeated seek");check(fm.status().register_hash==state.register_hash&&fm.status().samples_rendered==state.samples_rendered,"FM repeat reconstructs identical state");
     }
     {
+        const auto audible=AudioPreview::prepare(midi_song(180),false,sf,{}, {},false,0,nullptr,true,false,{25,0});
+        const auto muted=AudioPreview::prepare(midi_song(180),false,sf,{}, {},false,0,nullptr,true,false,{0,25});
+        const auto still_muted=AudioPreview::prepare(midi_song(180),false,sf,{}, {},false,0,nullptr,true,false,{0,100});
+        check(audible&&muted&&still_muted&&!audible.same_prefill(muted)&&muted.same_prefill(still_muted),"MIDI level is independent of effect level");
         auto prepared=AudioPreview::prepare(midi_song(180),true,sf,{}, {},false,1);
         check(bool(prepared),"Prepared MIDI rejected");check(prepared.positioned_measure()==1&&prepared.positioned_ticks()==192,"Prepared MIDI exact measure");
         auto moved=std::move(prepared);check(!prepared&&bool(moved),"Prepared ownership transfer");
@@ -76,6 +80,12 @@ int wmain(int argc,wchar_t** argv){try{
     if(argc>=3){
         const auto root=std::filesystem::path(argv[2]);
         const auto bank=read(root/"HUUMA.EFC"),carrier=read(root/"OP.M");
+        const auto audible=AudioPreview::prepare(carrier,false,{},bank,{},false,4,nullptr,false,false,{25,0});
+        const auto muted=AudioPreview::prepare(carrier,false,{},bank,{},false,4,nullptr,false,false,{0,25});
+        const auto still_muted=AudioPreview::prepare(carrier,false,{},bank,{},false,4,nullptr,false,false,{0,100});
+        check(audible&&muted&&still_muted,"FM level preparation failed");
+        check(!audible.same_prefill(muted),"FM level did not change output");
+        check(muted.same_prefill(still_muted),"FM level is independent of effect level");
         std::set<std::pair<unsigned,unsigned>> checkpoint_targets={{0,83},{1,90},{2,88},{3,89},{5,93},{5,98},{5,104}};
         if(catalog){
             for(const auto &entry:soew::practice_chapters)

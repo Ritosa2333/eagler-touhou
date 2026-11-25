@@ -1,5 +1,6 @@
 #pragma once
 #include "th03/assets/decode.hpp"
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <stdexcept>
@@ -9,6 +10,7 @@
 #include "music_room.hpp"
 #include "collision_display.hpp"
 #include "locale.hpp"
+#include "audio_levels.hpp"
 
 // Independent host-side model of ReC98 th02/op_01.cpp:500-617.
 // No attract demo or game launch is implemented yet.
@@ -40,6 +42,7 @@ struct Menu {
     bool practice_shot_select()const{return shot_screen&&selected==practice_entry;}
     static constexpr int music_off=0,music_fm=1,music_midi=2,music_akyu=3;
     int rank=1, music=music_fm, lives=2, bombs=3;
+    soew::AudioLevels audio_levels;
     bool akyu_available=false;
     bool plays_akyu() const{return music==music_akyu;}
     int replay_music() const{return plays_akyu()?music_fm:music;}
@@ -53,10 +56,11 @@ struct Menu {
     bool autofire=false,fast_autofire=true; // Host-only assist; old ON setting used the 2+2 waveform.
     soew::Language language=soew::Language::Japanese;
 
-    enum class Option { Rank, Music, Lives, Bombs, Autofire, Effects, MoreInfo, Fullscreen, Hitboxes, Language, StageIntro, SmoothBackground, Reset, Back, Empty };
-    static constexpr std::array<std::array<Option,2>,7> option_rows={{
+    enum class Option { Rank, Music, Lives, Bombs, Autofire, Effects, MoreInfo, Fullscreen, Hitboxes, Language, StageIntro, SmoothBackground, MusicVolume, EffectVolume, Reset, Back, Empty };
+    static constexpr std::array<std::array<Option,2>,8> option_rows={{
         {Option::Rank,Option::Effects}, {Option::Music,Option::MoreInfo}, {Option::Lives,Option::Fullscreen},
-        {Option::Bombs,Option::Hitboxes}, {Option::Autofire,Option::Language}, {Option::StageIntro,Option::SmoothBackground}, {Option::Reset,Option::Back}
+        {Option::Bombs,Option::Hitboxes}, {Option::Autofire,Option::Language}, {Option::StageIntro,Option::SmoothBackground},
+        {Option::MusicVolume,Option::EffectVolume}, {Option::Reset,Option::Back}
     }};
     unsigned option_row=0,option_column=0;
     Option option()const{return option_rows[option_row][option_column];}
@@ -74,6 +78,8 @@ struct Menu {
         case Option::Language: return static_cast<int>(language);
         case Option::StageIntro: return stage_intro;
         case Option::SmoothBackground: return smooth_background;
+        case Option::MusicVolume: return audio_levels.music/soew::AudioLevels::step;
+        case Option::EffectVolume: return audio_levels.effects/soew::AudioLevels::step;
         case Option::Reset: case Option::Back: case Option::Empty: return 0;
         }
         return 0;
@@ -85,6 +91,7 @@ struct Menu {
         case Option::Music: return akyu_available?4:3;
         case Option::Autofire: case Option::Hitboxes: return 3;
         case Option::Effects: case Option::MoreInfo: case Option::Fullscreen: case Option::StageIntro: case Option::SmoothBackground: return 2;
+        case Option::MusicVolume: case Option::EffectVolume: return soew::AudioLevels::maximum/soew::AudioLevels::step+1;
         case Option::Reset: case Option::Back: case Option::Empty: return 0;
         }
         return 0;
@@ -103,12 +110,17 @@ struct Menu {
         case Option::Language: language=static_cast<soew::Language>(value);break;
         case Option::StageIntro: stage_intro=value!=0;break;
         case Option::SmoothBackground: smooth_background=value!=0;break;
+        case Option::MusicVolume: audio_levels.music=value*soew::AudioLevels::step;break;
+        case Option::EffectVolume: audio_levels.effects=value*soew::AudioLevels::step;break;
         case Option::Reset: case Option::Back: case Option::Empty: break;
         }
     }
     enum : unsigned { up=1, down=2, confirm=4, cancel=8, left=16, right=32, tab=64 };
     static int ring(int value,int delta,int count) {return (value+delta+count)%count;}
     void adjust_option(Option item,int delta){
+        if(item==Option::MusicVolume||item==Option::EffectVolume){
+            set_option(item,std::clamp(option_value(item)+delta,0,option_count(item)-1));return;
+        }
         if(const int count=option_count(item,akyu_available))set_option(item,ring(option_value(item),delta,count));
     }
     void update_options(unsigned input){
@@ -232,11 +244,13 @@ inline constexpr LocalizedText options_title{L"設定",L"Options",L"设置",L"�
     options_controls{L"上下：移動　左右：変更　Tab：列切替　Z：実行　Esc：戻る",L"Up/Down: move  Left/Right: change  Tab: column  Z: act  Esc: back",L"上下：选择  左右：修改  Tab：换列  Z：确认  Esc：返回",L"上下：選擇  左右：修改  Tab：換欄  Z：確認  Esc：返回"},
     options_music_hint{L"音源を変えると現在の曲を新しい音源で再生します",L"Changing the source restarts the current track",L"切换音源后会从头播放当前曲目",L"切換音源後會從頭播放目前曲目"},
     options_effects_hint{L"一部軽減では一部の点滅や画面の揺れを抑えます",L"Reduced limits some flashes and screen shake",L"减弱部分闪光和画面震动",L"減弱部分閃光和畫面震動"};
-inline constexpr std::array<LocalizedText,15> option_labels={{
+inline constexpr std::array<LocalizedText,17> option_labels={{
     {L"難易度",L"Difficulty",L"难度",L"難度"}, {L"音楽",L"Music",L"音乐",L"音樂"}, {L"残機",L"Lives",L"初始命数",L"初始命數"}, {L"ボム",L"Bombs",L"初始灵击",L"初始靈擊"},
     {L"連射",L"Autofire",L"自动连射",L"自動連射"}, {L"演出",L"Effects",L"画面特效",L"畫面特效"}, {L"詳細情報",L"More Info",L"详细信息",L"詳細資訊"}, {L"全画面",L"Fullscreen",L"全屏",L"全螢幕"},
     {L"判定",L"Hitboxes",L"碰撞判定",L"碰撞判定"}, {L"言語",L"Language",L"语言",L"語言"}, {L"ステージ導入",L"Stage Intro",L"关卡开场",L"關卡開場"},
-    {L"動きの補間",L"Smooth Motion",L"运动平滑",L"動態平滑"}, {L"初期設定に戻す",L"Restore Defaults",L"恢复默认设置",L"恢復預設設定"}, back, {L"",L""}
+    {L"動きの補間",L"Smooth Motion",L"运动平滑",L"動態平滑"},
+    {L"音楽音量",L"Music Volume",L"音乐音量",L"音樂音量"}, {L"効果音音量",L"SFX Volume",L"音效音量",L"音效音量"},
+    {L"初期設定に戻す",L"Restore Defaults",L"恢复默认设置",L"恢復預設設定"}, back, {L"",L""}
 }};
 inline constexpr std::array<const wchar_t*,4> language_names={L"日本語",L"English",L"简体中文",L"繁體中文"};
 inline constexpr std::array<std::array<LocalizedText,3>,3> shot_description={{
@@ -254,6 +268,7 @@ inline std::wstring_view option_value(Language language,Menu::Option option,int 
     constexpr std::array<LocalizedText,2> effects={{{L"通常",L"Normal",L"正常",L"正常"},{L"一部軽減",L"Reduced",L"减弱",L"減弱"}}};
     constexpr std::array<LocalizedText,3> hitboxes={{toggles[0],{L"自機のみ",L"Player",L"仅自机",L"僅自機"},{L"すべて",L"All",L"全部",L"全部"}}};
     constexpr std::array<std::wstring_view,6> digits={L"0",L"1",L"2",L"3",L"4",L"5"};
+    constexpr std::array<std::wstring_view,21> volumes={L"0%",L"5%",L"10%",L"15%",L"20%",L"25%",L"30%",L"35%",L"40%",L"45%",L"50%",L"55%",L"60%",L"65%",L"70%",L"75%",L"80%",L"85%",L"90%",L"95%",L"100%"};
     switch(option){
     case O::Rank: return difficulty[value](language);
     case O::Music: return music[value](language);
@@ -264,6 +279,7 @@ inline std::wstring_view option_value(Language language,Menu::Option option,int 
     case O::MoreInfo: case O::Fullscreen: case O::StageIntro: case O::SmoothBackground: return toggles[value](language);
     case O::Hitboxes: return hitboxes[value](language);
     case O::Language: return language_names.at(value);
+    case O::MusicVolume: case O::EffectVolume: return volumes[value];
     case O::Reset: case O::Back: case O::Empty: return {};
     }
     return {};
@@ -358,8 +374,9 @@ inline unsigned test_menu() {
             const int value=m.option_value(item),count=Menu::option_count(item);
             if(count){
                 key(Menu::confirm);check(m.option()==item&&m.option_value(item)==value);
-                for(int step=1;step<=count;++step){key(Menu::right);check(m.option()==item&&m.option_value(item)==Menu::ring(value,step,count));}
-                key(Menu::left);check(m.option_value(item)==Menu::ring(value,-1,count));
+                const bool volume=item==O::MusicVolume||item==O::EffectVolume;
+                for(int step=1;step<=count;++step){key(Menu::right);check(m.option()==item&&m.option_value(item)==(volume?std::min(value+step,count-1):Menu::ring(value,step,count)));}
+                key(Menu::left);check(m.option_value(item)==(volume?count-2:Menu::ring(value,-1,count)));
             }else{
                 key(Menu::left);key(Menu::right);check(m.options&&m.option()==item);
             }

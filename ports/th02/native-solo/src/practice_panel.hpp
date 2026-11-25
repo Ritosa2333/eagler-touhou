@@ -100,9 +100,9 @@ struct PracticePanel {
         if(slot>=visible.size())return 0;
         focus=visible[slot];
         if(!is_value(focus))return PracticeMenu::confirm;
+        if(focus==Field::Seed)return PracticeMenu::confirm;
         if(p.x<425)return 0;
         if(menu.slider_value(recipe_row(focus)))return p.x>=value_left(focus)?unsigned(PracticeMenu::confirm):0u;
-        if(focus==Field::Seed)return PracticeMenu::confirm;
         return p.x<500?PracticeMenu::left:PracticeMenu::right;
     }
     PracticeMenu::Action update(PracticeMenu &menu,unsigned input){
@@ -151,7 +151,7 @@ constexpr std::array<LocalizedText,14> practice_panel_labels={{{L"開始地点",
     {L"変動ランク",L"Dynamic rank",L"动态难度",L"動態難度"},{L"パワー",L"Power",L"火力",L"火力"},{L"残機",L"Spare lives",L"剩余命数",L"剩餘命數"},
     {L"ボム数",L"Bombs",L"灵击次数",L"靈擊次數"},{L"復帰時ボム数",L"Respawn bombs",L"复活时灵击次数",L"復活時靈擊次數"},
     {L"会話",L"Dialogue",L"对话",L"對話"},{L"シード方式",L"Seed mode",L"种子模式",L"種子模式"},
-    {L"固定シード",L"Fixed seed",L"固定种子",L"固定種子"},{L"固定シード更新",L"New fixed seed",L"更换固定种子",L"更換固定種子"},
+    {L"シード入力",L"Enter Seed",L"输入种子",L"輸入種子"},{L"固定シード更新",L"New fixed seed",L"更换固定种子",L"更換固定種子"},
     {L"開始",L"Start",L"开始",L"開始"}}};
 
 // TH05 native-practice: overlay the selection screen, with six gaiji rows

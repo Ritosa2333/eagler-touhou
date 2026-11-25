@@ -155,11 +155,14 @@ AudioPreview::~AudioPreview(){
         if(device_){(void)data_.release();}
     }
 }
-AudioPreview::Prepared AudioPreview::prepare(std::span<const std::byte> song,bool silent_device_test,std::span<const std::byte> soundfont,std::span<const std::byte> effects,std::span<const std::byte> fm_carrier,bool music_off,unsigned start_measure,const std::atomic_bool* cancelled,[[maybe_unused]] bool allow_checkpoint,bool mute_fm_bgm){
+AudioPreview::Prepared AudioPreview::prepare(std::span<const std::byte> song,bool silent_device_test,std::span<const std::byte> soundfont,std::span<const std::byte> effects,std::span<const std::byte> fm_carrier,bool music_off,unsigned start_measure,const std::atomic_bool* cancelled,[[maybe_unused]] bool allow_checkpoint,bool mute_fm_bgm,soew::AudioLevels levels){
     Prepared prepared;prepared.data_=std::make_unique<Data>();auto &data=*prepared.data_;
     auto &error=prepared.error_;
     for(auto byte:song){data.song_hash^=std::to_integer<std::uint8_t>(byte);data.song_hash*=16777619u;}
     data.silent=silent_device_test;data.resampler.reset();data.requested_measure=start_measure;
+    data.fm_music=soundfont.empty()&&!music_off&&!mute_fm_bgm;
+    data.midi_music=!soundfont.empty()&&!music_off;
+    data.effects=!effects.empty();
     if(!music_off&&start_measure>UINT16_MAX){error="Audio measure out of range";return prepared;}
     if(!soundfont.empty()){
         auto created=MmdSoundfontEngine::create({.soundfont=soundfont});if(!created){error="MIDI SoundFont rejected";return prepared;}
@@ -281,15 +284,27 @@ AudioPreview::Prepared AudioPreview::prepare(std::span<const std::byte> song,boo
             const auto state=data.engine->status();data.positioned_measure=state.measure;data.positioned_ticks=state.timer_b_count;
         }
     }
+    // Private checkpoints store the reference levels; apply the player's
+    // levels after positioning and before the first submitted PCM buffer.
+    if(!apply_levels(data,levels,error))return prepared;
     for(auto &slot:data.slots){
         if(cancelled&&cancelled->load(std::memory_order_relaxed)){error="Audio preparation cancelled";return prepared;}
         if(!fill(data,slot,error))return prepared;
     }
     return prepared;
 }
-bool AudioPreview::start(std::span<const std::byte> song,bool silent_device_test,UINT device,std::span<const std::byte> soundfont,std::span<const std::byte> effects,std::span<const std::byte> fm_carrier,bool music_off,unsigned start_measure,bool mute_fm_bgm){
+bool AudioPreview::start(std::span<const std::byte> song,bool silent_device_test,UINT device,std::span<const std::byte> soundfont,std::span<const std::byte> effects,std::span<const std::byte> fm_carrier,bool music_off,unsigned start_measure,bool mute_fm_bgm,soew::AudioLevels levels){
     if(!stop())return false;
-    return publish(prepare(song,silent_device_test,soundfont,effects,fm_carrier,music_off,start_measure,nullptr,true,mute_fm_bgm),device);
+    return publish(prepare(song,silent_device_test,soundfont,effects,fm_carrier,music_off,start_measure,nullptr,true,mute_fm_bgm,levels),device);
+}
+bool AudioPreview::apply_levels(Data& data,soew::AudioLevels levels,std::string& error){
+    if(data.engine&&!data.engine->set_user_volumes(data.fm_music?levels.music:0,data.effects?levels.effects:0)){
+        error="PMD volume rejected";return false;
+    }
+    if(data.midi&&!data.midi->set_user_volume(data.midi_music?levels.music:0)){
+        error="MIDI volume rejected";return false;
+    }
+    return true;
 }
 bool AudioPreview::publish(Prepared&& prepared,UINT device,bool initially_paused,bool reuse_output){
     // Only the fixed-format output handle survives a retry, never synth/PCM state.
@@ -320,14 +335,20 @@ bool AudioPreview::fill(Data &data,Slot &slot,std::string &error){
     slot.measure_before_fill=data.midi?static_cast<unsigned>(data.midi->status().elapsed_ticks/mmd_ticks_per_measure):
         data.engine?data.engine->status().measure:0;
     std::array<PmdCanonicalStereoSample,frames> output{};std::size_t done=0;
-    if(data.midi_stream&&!data.engine){const auto rendered=data.midi_stream->render(output);if(!rendered){error="MIDI sequencing/render failed";return false;}done=frames;}
-    while(done<frames){
+    while(data.engine&&done<frames){
         if(data.native_at==data.native_size){data.engine->render_native(data.native);data.native_at=0;data.native_size=data.native.size();}
         const auto progress=data.resampler.process(std::span(data.native).subspan(data.native_at,data.native_size-data.native_at),std::span(output).subspan(done));
         if(!progress||(!progress->input_consumed&&!progress->output_written)){error="Audio resampler stalled";return false;}
         data.native_at+=progress->input_consumed;done+=progress->output_written;
     }
-    if(data.midi_stream&&data.engine){std::array<PmdCanonicalStereoSample,frames> music{};if(!data.midi_stream->render(music)){error="MIDI mix failed";return false;}for(std::size_t i=0;i<frames;++i){output[i].left=std::int32_t(std::clamp<std::int64_t>(std::int64_t(output[i].left)+music[i].left,INT32_MIN,INT32_MAX));output[i].right=std::int32_t(std::clamp<std::int64_t>(std::int64_t(output[i].right)+music[i].right,INT32_MIN,INT32_MAX));}}
+    if(data.midi_stream){
+        std::array<PmdCanonicalStereoSample,frames> music{};
+        if(!data.midi_stream->render(music)){error="MIDI mix failed";return false;}
+        const auto mix=[](std::int32_t fm,std::int32_t midi){
+            return static_cast<std::int32_t>(std::clamp<std::int64_t>(std::int64_t(fm)+std::int64_t(double(midi)*soew::midi_output_trim),INT32_MIN,INT32_MAX));
+        };
+        for(std::size_t i=0;i<frames;++i)output[i]={mix(output[i].left,music[i].left),mix(output[i].right,music[i].right)};
+    }
     // Diagnostic hash before test-only silence, so routing tests inspect real synthesis.
     for(const auto &frame:output)for(auto sample:{frame.left,frame.right})for(unsigned shift=0;shift<32;shift+=8){data.pcm_hash^=(static_cast<std::uint32_t>(sample)>>shift)&255;data.pcm_hash*=16777619u;}
     for(std::size_t i=0;i<frames;++i){slot.pcm[2*i]=data.silent?0:static_cast<std::int16_t>(std::clamp<std::int64_t>(std::int64_t(output[i].left)/65536,-32768,32767));slot.pcm[2*i+1]=data.silent?0:static_cast<std::int16_t>(std::clamp<std::int64_t>(std::int64_t(output[i].right)/65536,-32768,32767));}

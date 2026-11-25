@@ -96,8 +96,8 @@ test('About has the original bitmap glyphs in Simplified and Traditional Chinese
     const [out] = process.argv.slice(2);
     const atlas = glyphCells(Uint8Array.from(readFileSync(resolve(out,'soew-glyphs.bin'))).buffer);
     for (const [face, credits] of [
-        [1,'基于 ReC98 实现移植 完成优化 感谢游玩！ 也谢谢你看到这里。 Esc：返回'],
-        [2,'基於 ReC98 實作移植 完成最佳化 感謝遊玩！ 也謝謝你看到這裡。 Esc：返回'],
+        [1,'基于 ReC98 实现移植 查错及优化 感谢游玩！ 也谢谢你看到这里。 Esc：返回'],
+        [2,'基於 ReC98 實作移植 查錯及最佳化 感謝遊玩！ 也謝謝你看到這裡。 Esc：返回'],
     ]) {
         const missing = [...new Set(credits)].filter(c => !atlas.has(c.codePointAt(0),face));
         assert.deepEqual(missing,[], 'Refresh the Win32 glyph atlas with web/stage-glyphs.mjs');
@@ -144,11 +144,11 @@ test('Full SoEW plays all MIDI songs and persists the album selected in Options'
         page.on('request',request => { if (request.url().endsWith('.opus')) sources.push(new URL(request.url()).pathname); });
         page.on('pageerror',error => errors.push(error.message));
         page.on('console',message => {
-            if (message.type()==='error') errors.push(message.text());
+            if (message.type()==='error') errors.push(message.location().url+': '+message.text());
             if (message.text().startsWith('preview_track=')) previews.push(message.text());
         });
         await page.evaluateOnNewDocument(() => {
-            window.audioProbe = {track:null, pcm:new Set(), albums:[], active:null};
+            window.audioProbe = {track:null, pcm:new Set(), albums:[], active:null, gain:null};
             const log = console.log;
             console.log = function(...args) {
                 const match = /^preview_track=(\d+) file=(\S+)/.exec(args[0]);
@@ -165,6 +165,11 @@ test('Full SoEW plays all MIDI songs and persists the album selected in Options'
                     probe.pcm.add(probe.track);
                 }
                 return start.apply(this,args);
+            };
+            const connect = AudioBufferSourceNode.prototype.connect;
+            AudioBufferSourceNode.prototype.connect = function(target,...args) {
+                if(this.loop&&target instanceof GainNode)window.audioProbe.gain=target.gain;
+                return connect.call(this,target,...args);
             };
             const stop = AudioBufferSourceNode.prototype.stop;
             AudioBufferSourceNode.prototype.stop = function(...args) {
@@ -221,6 +226,18 @@ test('Full SoEW plays all MIDI songs and persists the album selected in Options'
         await press('ArrowRight'); // MIDI → Akyu.
         await wait(() => window.audioProbe.albums.length===3);
         assert.equal(sources.at(-1),'/content/akyu/13.opus');
+        const albumLevel = () => page.evaluate(() => window.audioProbe.gain.value);
+        const initialLevel = await albumLevel();
+        assert(initialLevel>0 && initialLevel<0.25,'The album must use its balanced output gain');
+        for(let i=0;i<5;++i)await press('ArrowDown'); // Music → Music Volume.
+        for(let i=0;i<5;++i)await press('ArrowLeft');
+        assert.equal(await albumLevel(),0);
+        await press('ArrowRight');
+        assert(Math.abs(await albumLevel()-initialLevel/5)<0.0001);
+        await press('Tab'); // SFX Volume must not affect the album.
+        await press('ArrowLeft');
+        assert(Math.abs(await albumLevel()-initialLevel/5)<0.0001);
+        assert.equal(sources.length,3,'Changing volume must not restart the album');
         await press('Escape');
         await pause(1100);
         await page.reload();
@@ -233,6 +250,7 @@ test('Full SoEW plays all MIDI songs and persists the album selected in Options'
         await wait(() => /ショット選択/u.test(document.title));
         await wait(() => window.audioProbe.albums.length>=1);
         assert.equal(sources.at(-1),'/content/akyu/01.opus');
+        assert(Math.abs(await albumLevel()-initialLevel/5)<0.0001,'Music volume survives reload');
         await pause(650);
         await press('Enter');
         await wait(() => /Esc.*一時停止/u.test(document.title));
@@ -473,8 +491,15 @@ test('Full SoEW fades between title pages, animates the music room and browses r
             if(shot<2)await switchWithoutFade('Escape','Practice stage list → shot');
         }
         await switchWithoutFade('Enter','Practice stage list → setup');
+        await press('ArrowUp'); // Start → New Seed.
+        await press('ArrowUp'); // New Seed → Enter Seed.
+        await press('4'); // Typing opens the field and replaces the current seed.
+        await page.keyboard.type('294967295',{delay:30});
+        await press('Enter');
+        await press('ArrowDown');
+        await press('ArrowDown');
         await switchPage('Enter',2400); // Practice starts at the selected boss.
-        await page.waitForFunction(() => /練習 \| シード|Practice \| Seed/u.test(document.title));
+        await page.waitForFunction(() => /(?:練習 \| シード|Practice \| Seed) 4294967295/u.test(document.title));
         await press('Escape'); // Pause, then exit to practice setup.
         await switchPage('KeyQ');
         await switchWithoutFade('Escape','Practice setup → stage list');

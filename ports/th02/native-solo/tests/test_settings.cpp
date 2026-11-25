@@ -58,9 +58,14 @@ int main(int argc,char**argv){try{
     key(Menu::down);check(m.option()==O::StageIntro&&m.stage_intro);key(Menu::left);check(!m.stage_intro);
     key(Menu::tab);check(m.option()==O::SmoothBackground&&m.smooth_background);
     key(Menu::left);check(!m.smooth_background);key(Menu::tab);
+    key(Menu::down);check(m.option()==O::MusicVolume);key(Menu::right);
+    key(Menu::tab);check(m.option()==O::EffectVolume);
+    for(int i=0;i<6;++i)key(Menu::left);
+    check(m.audio_levels.music==30&&m.audio_levels.effects==0);key(Menu::tab);
     check(a.save(soew::Settings::from(m)));
     soew::SettingsStore b(p);check(b.load()==soew::Settings::from(m)&&!b.needs_migration);
     Menu restored;b.saved.apply(restored);check(restored.language==L::English&&restored.autofire&&!restored.fast_autofire&&!restored.stage_intro&&!restored.smooth_background&&restored.rank==3);
+    check(restored.audio_levels==m.audio_levels);
     key(Menu::down);check(m.option()==O::Reset);key(Menu::confirm);check(soew::Settings::from(m)==soew::Settings{});
     check(b.save(soew::Settings::from(m)));check(soew::SettingsStore(p).load()==soew::Settings{});
 

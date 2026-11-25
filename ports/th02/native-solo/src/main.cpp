@@ -614,7 +614,7 @@ void compose_options(Frame &frame,const th03::assets::BfntSheet &font,const Menu
         const auto item=Menu::option_rows[row][column];
         if(item==Menu::Option::Empty)continue;
         const auto color=menu.option()==item?white:yellow;
-        const int x=24+int(column)*312,y=204+int(row)*22;
+        const int x=24+int(column)*312,y=204+int(row)*19;
         const auto label=t::option_labels[static_cast<unsigned>(item)](language);
         if(!Menu::option_count(item)){draw(label,x+(280-width(label))/2,y,color);continue;}
         const auto value=t::option_value(language,item,menu.option_value(item));
@@ -1359,11 +1359,17 @@ template<class F> auto prepare_on_host(F work){
 }
 constexpr soew::LocalizedText preview_stopped{L"試聴を停止しました",L"Preview stopped",L"已停止试听",L"已停止試聽"};
 void audio_error(App &app){std::cerr<<"Audio preview error: "<<app.audio.error()<<'\n';app.audio_status={L"音声の出力を停止しました",L"Audio error; output stopped",L"音频出错，已停止播放",L"音訊出錯，已停止播放"};app.audio.stop();app.fm_enabled=false;}
+void update_audio_levels(App &app){
+    if(!app.audio.set_levels(app.menu.audio_levels))audio_error(app);
+#ifdef __EMSCRIPTEN__
+    soew_web_akyu_gain(soew::akyu_output_trim*app.menu.audio_levels.music/100.0f);
+#endif
+}
 void start_zunsoft(App &app){
     if(!app.zunsoft_assets)return;
     app.zunsoft.restart();
     const auto &assets=*app.zunsoft_assets;
-    if(app.menu.music!=0&&!app.audio.start(assets.song,app.audio_test_silent,WAVE_MAPPER,{},assets.effects))audio_error(app);
+    if(app.menu.music!=0&&!app.audio.start(assets.song,app.audio_test_silent,WAVE_MAPPER,{},assets.effects,{},false,0,false,app.menu.audio_levels))audio_error(app);
 }
 void cancel_gameplay_audio(App &app){
     ++app.gameplay_audio_generation;
@@ -1377,7 +1383,10 @@ void drain_gameplay_audio(App &app){
 }
 void publish_akyu(const App &app, int track){
 #ifdef __EMSCRIPTEN__
-    if(app.menu.plays_akyu()&&track>=0)soew_web_akyu_track(track);
+    if(app.menu.plays_akyu()&&track>=0){
+        soew_web_akyu_gain(soew::akyu_output_trim*app.menu.audio_levels.music/100.0f);
+        soew_web_akyu_track(track);
+    }
 #else
     (void)app;(void)track;
 #endif
@@ -1392,7 +1401,7 @@ void start_preview(App &app,int track,bool effect_only=false,unsigned start_meas
     const HostPerf::Span span(app.host_perf.get(),HostPerf::Metric::AudioPublish);
     try{const auto &song=app.midi_mode?app.midi_songs.at(track):app.songs.at(track);
         if(song.empty()||(app.midi_mode&&app.soundfont.empty())){app.audio_status={L"音源が見つからないため試聴できません",L"Preview unavailable: audio source missing",L"缺少音源，无法试听",L"缺少音源，無法試聽"};app.audio.stop();return;}
-        if(!app.audio.start(song,app.audio_test_silent,WAVE_MAPPER,app.midi_mode?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},app.effect_bank,app.songs.at(track),music==0||effect_only,app.menu.plays_akyu()?0:start_measure,app.menu.plays_akyu())){audio_error(app);return;}
+        if(!app.audio.start(song,app.audio_test_silent,WAVE_MAPPER,app.midi_mode?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},app.effect_bank,app.songs.at(track),music==0||effect_only,app.menu.plays_akyu()?0:start_measure,app.menu.plays_akyu(),app.menu.audio_levels)){audio_error(app);return;}
         app.playing_track=music==0||effect_only?-1:track;
         publish_akyu(app,app.playing_track);
         app.fm_enabled=music!=0&&!effect_only;
@@ -1546,11 +1555,12 @@ void begin_title_demo_pcm(App &app){
         title=midi?app.midi_songs[0]:app.songs[0],font=midi?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},
         effects=app.effect_bank,stage_carrier=app.songs.at(track),title_carrier=app.songs[0];
     const auto cancel=demo.cancel;
+    const auto levels=app.menu.audio_levels;
     demo.pcm_load.emplace(prepare_on_host([=]{
         TitleDemoHost::Pcm pcm;
         if(midi&&font.empty())throw std::runtime_error("Title demo MIDI SoundFont unavailable");
-        pcm.stage=AudioPreview::prepare(stage,silent,font,effects,stage_carrier,false,0,cancel.get(),true,akyu);
-        if(pcm.stage)pcm.title=AudioPreview::prepare(title,silent,font,effects,title_carrier,false,0,cancel.get(),true,akyu);
+        pcm.stage=AudioPreview::prepare(stage,silent,font,effects,stage_carrier,false,0,cancel.get(),true,akyu,levels);
+        if(pcm.stage)pcm.title=AudioPreview::prepare(title,silent,font,effects,title_carrier,false,0,cancel.get(),true,akyu,levels);
         return pcm;
     }));
 }
@@ -1690,8 +1700,9 @@ void sync_gameplay_bgm(App &app,bool foreground){
             const bool midi=app.menu.music==2,off=app.menu.music==0,silent=app.audio_test_silent,akyu=app.menu.plays_akyu();
             const auto *song=midi?&app.midi_songs.at(wanted):&app.songs.at(wanted);const auto *font=midi?&app.soundfont:nullptr;const auto *effects=&app.effect_bank,*carrier=&app.songs.at(wanted);const auto measure=akyu?0:app.practice_bgm_measure;app.practice_bgm_measure=0;
             app.gameplay_audio_cancel=std::make_shared<std::atomic_bool>(false);const auto cancel=app.gameplay_audio_cancel;
+            const auto levels=app.menu.audio_levels;
             app.gameplay_audio_load_track=wanted;app.gameplay_audio_load_generation=app.gameplay_audio_generation;
-            try{app.gameplay_audio_load.emplace(prepare_on_host([song,font,effects,carrier,off,silent,measure,cancel,akyu](){const auto song_copy=*song,font_copy=font?*font:std::vector<std::byte>{},effects_copy=*effects,carrier_copy=*carrier;return AudioPreview::prepare(song_copy,silent,font_copy,effects_copy,carrier_copy,off,measure,cancel.get(),true,akyu);}));}
+            try{app.gameplay_audio_load.emplace(prepare_on_host([song,font,effects,carrier,off,silent,measure,cancel,akyu,levels](){const auto song_copy=*song,font_copy=font?*font:std::vector<std::byte>{},effects_copy=*effects,carrier_copy=*carrier;return AudioPreview::prepare(song_copy,silent,font_copy,effects_copy,carrier_copy,off,measure,cancel.get(),true,akyu,levels);}));}
             catch(const std::exception&){app.audio_status={L"ステージ曲を準備できませんでした",L"Could not prepare stage music"};app.gameplay_audio_cancel.reset();}
         }
     }
@@ -2587,7 +2598,8 @@ void advance_practice(App &app,bool at_page_cut=false){
             app.practice_audio_track=track;const std::span<const std::byte> song=app.menu.music==2?app.midi_songs.at(track):app.songs.at(track),font=app.menu.music==2?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},effects=app.effect_bank,carrier=app.songs.at(track);const bool off=app.menu.music==0,silent=app.audio_test_silent,akyu=app.menu.plays_akyu();const auto measure=akyu?0:soew::practice_music_measure(r);
             app.practice_audio_cancel=std::make_shared<std::atomic_bool>(false);const auto cancel=app.practice_audio_cancel;
             const bool allow_checkpoint=!app.retry_probe.force_exact;
-            try{app.practice_audio_load.emplace(prepare_on_host([song,font,effects,carrier,off,silent,measure,cancel,allow_checkpoint,akyu](){return AudioPreview::prepare(song,silent,font,effects,carrier,off,measure,cancel.get(),allow_checkpoint,akyu);}));app.practice_audio_started=true;}catch(const std::exception&e){reset_practice_to_menu(app,e.what());}return;
+            const auto levels=app.menu.audio_levels;
+            try{app.practice_audio_load.emplace(prepare_on_host([song,font,effects,carrier,off,silent,measure,cancel,allow_checkpoint,akyu,levels](){return AudioPreview::prepare(song,silent,font,effects,carrier,off,measure,cancel.get(),allow_checkpoint,akyu,levels);}));app.practice_audio_started=true;}catch(const std::exception&e){reset_practice_to_menu(app,e.what());}return;
         }
         if(!app.practice_audio_load)return;
         if(app.practice_audio_load->wait_for(std::chrono::seconds(0))!=std::future_status::ready)return;
@@ -2907,11 +2919,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             if(repeat)return 0;
             auto &m=app->practice_menu;
             auto &panel=app->practice_panel;
+            const bool plain_digit=!(GetKeyState(VK_CONTROL)&0x8000)&&!(GetKeyState(VK_MENU)&0x8000);
+            const int digit=!plain_digit?-1:w>=VK_NUMPAD0&&w<=VK_NUMPAD9?int(w-VK_NUMPAD0):
+                !(GetKeyState(VK_SHIFT)&0x8000)&&w>='0'&&w<='9'?int(w-'0'):-1;
+            if(digit>=0&&panel.focused(soew::PracticePanel::Field::Seed)&&!m.number_editing())m.begin_seed_edit();
             if(!m.number_editing()&&(w==VK_PRIOR||w==VK_NEXT)&&panel.focused(soew::PracticePanel::Field::Power)&&m.allowed){m.allowed=false;const int delta=w==VK_PRIOR?1:-1;const auto level=soew::PickupCore::levels.at(unsigned(m.spec.power)>>2);int power=m.spec.power;while(power+delta>=1&&power+delta<=80){power+=delta;if(soew::PickupCore::levels.at(unsigned(power)>>2)!=level)break;}m.spec.power=power;save_practice(*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;}
             if(m.number_editing()){
                 if((GetKeyState(VK_CONTROL)&0x8000)&&w=='A')m.number_select_all();
                 else if((GetKeyState(VK_CONTROL)&0x8000)&&w=='V'){bool valid=false;if(OpenClipboard(hwnd)){const auto data=GetClipboardData(CF_UNICODETEXT);if(data){const auto count=GlobalSize(data)/sizeof(wchar_t);const auto text=static_cast<const wchar_t*>(GlobalLock(data));if(text){for(std::size_t i=0;i<count&&i<=256;++i){if(text[i]==0){valid=m.number_paste(std::wstring_view(text,i));break;}}GlobalUnlock(data);}}CloseClipboard();}if(!valid)m.warning="Invalid pasted number";else m.warning.clear();}
-                else if(!(GetKeyState(VK_CONTROL)&0x8000)&&!(GetKeyState(VK_SHIFT)&0x8000)&&!(GetKeyState(VK_MENU)&0x8000)&&w>='0'&&w<='9')m.number_digit(unsigned(w-'0'));else if(!(GetKeyState(VK_CONTROL)&0x8000)&&!(GetKeyState(VK_MENU)&0x8000)&&w>=VK_NUMPAD0&&w<=VK_NUMPAD9)m.number_digit(unsigned(w-VK_NUMPAD0));
+                else if(digit>=0)m.number_digit(unsigned(digit));
                 else if(w==VK_OEM_MINUS||w==VK_SUBTRACT)m.number_minus();else if(w==VK_BACK)m.number_backspace();else if(w==VK_DELETE)m.number_delete();else if(w==VK_LEFT)m.number_editor.move_left();else if(w==VK_RIGHT)m.number_editor.move_right();else if(w==VK_HOME)m.number_editor.home();else if(w==VK_END)m.number_editor.end();else if(w==VK_RETURN){if(m.number_enter())save_practice(*app);}else if(w==VK_ESCAPE)m.number_cancel();
             }
             else{
@@ -3132,6 +3148,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 }
                 if(was_music&&music&&was_allowed&&(input&Menu::confirm)){app->music_comment_scroll=0;start_preview(*app,app->menu.music_selected);}
                 if(was_options&&was_allowed&&(previous_settings.music!=app->menu.music||reset_options))start_preview(*app,app->loaded_track);
+                else if(was_options&&previous_settings.audio_levels!=app->menu.audio_levels)update_audio_levels(*app);
                 if(action==Menu::practice_entry)transition_page(*app,[app,page_notice]{app->menu.begin_practice_shot_select(app->practice_menu.spec.shot);page_notice();});
                 if(action==7)transition_page(*app,[app]{open_replay_browser(*app);});
                 if(action==Menu::about_entry)transition_page(*app,[app]{app->about_visible=true;app->notice.clear();});
@@ -3308,7 +3325,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             draw(L"Hydrangea-Z",32,126,0xffffff);
             draw(tr(L"ReC98をもとに移植",L"Ported from ReC98",L"基于 ReC98 实现移植",L"基於 ReC98 實作移植"),32,146,0xdfc9e9);
             draw(L"IxinorTyan",32,188,0xffffff);
-            draw(tr(L"最適化",L"Optimization",L"完成优化",L"完成最佳化"),32,208,0xdfc9e9);
+            draw(tr(L"不具合調査・最適化",L"Debugging and Optimization",L"查错及优化",L"查錯及最佳化"),32,208,0xdfc9e9);
             draw(tr(L"プレイありがとう！",L"Thank you for playing!",L"感谢游玩！",L"感謝遊玩！"),32,266,0xffffff);
             draw(tr(L"ここまで見てくれてありがとう。",L"Thanks for stopping by.",L"也谢谢你看到这里。",L"也謝謝你看到這裡。"),32,288,0xdfc9e9);
             draw(tr(L"Esc：戻る",L"Esc: Back",L"Esc：返回",L"Esc：返回"),32,350,0xdfc9e9);
@@ -4003,7 +4020,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             option_key(VK_TAB);option_key(VK_DOWN);app->check(app->menu.option()==Option::StageIntro&&app->menu.stage_intro);
             option_key(VK_LEFT);app->check(!app->menu.stage_intro);
             option_key(VK_RIGHT);app->check(app->menu.stage_intro);
-            option_key(VK_DOWN);option_key(VK_TAB);app->check(app->menu.option()==Option::Back);
+            option_key(VK_DOWN);option_key(VK_DOWN);option_key(VK_TAB);app->check(app->menu.option()==Option::Back);
             option_key(VK_RETURN);app->check(!app->menu.options&&app->menu.selected==3);
             app->menu.selected=2;app->menu.update(0);
             SendMessageW(hwnd,WM_KEYDOWN,VK_RETURN,0);app->check(app->scores_visible&&app->scores.has_value());

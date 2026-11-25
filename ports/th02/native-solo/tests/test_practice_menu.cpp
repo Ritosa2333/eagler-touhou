@@ -208,6 +208,12 @@ void test_panel(){
     check(menu.spec.power==42&&!menu.number_editing()&&panel.focused(F::Power));
     for(int i=0;i<5;++i)tap(M::down);
     check(panel.focused(F::SeedMode)&&has(F::Seed)&&has(F::NewSeed));
+    const auto visible=panel.fields(menu);
+    const int seed_y=PracticePanel::setup_y+int(std::find(visible.begin(),visible.end(),F::Seed)-visible.begin())*PracticePanel::setup_pitch+5;
+    check(panel.point(menu,{250,seed_y})==M::confirm&&panel.focused(F::Seed));
+    check(tap(M::confirm)==A::EditNumber&&menu.number_paste(L"４２９４９６７２９５"));
+    tap(M::confirm);check(menu.spec.seed==4294967295u);
+    tap(M::up);
     tap(M::confirm);check(menu.spec.seed_mode==PracticeSeedMode::Random&&!has(F::Seed)&&!has(F::NewSeed));
     tap(M::down);check(panel.page==P::Setup&&panel.focused(F::Start));
     const auto recipe=menu.spec;

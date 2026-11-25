@@ -7,6 +7,7 @@
 #include "th03/audio/pmd_opna.hpp"
 #include "th03/audio/fixed_resampler.hpp"
 #include "mmd_stream.hpp"
+#include "audio_levels.hpp"
 #include <array>
 #include <memory>
 #include <span>
@@ -37,6 +38,7 @@ class AudioPreview {
         unsigned requested_measure=0,positioned_measure=0;
         std::uint64_t positioned_ticks=0;
         bool silent=false, checkpoint_restored=false;
+        bool fm_music=false, midi_music=false, effects=false;
     };
 public:
     class Prepared {
@@ -68,9 +70,10 @@ public:
     AudioPreview(const AudioPreview&)=delete;
     AudioPreview& operator=(const AudioPreview&)=delete;
     // Input spans must remain valid until prepare returns. No device is opened.
-    static Prepared prepare(std::span<const std::byte> song,bool silent_device_test=false,std::span<const std::byte> soundfont={},std::span<const std::byte> effects={},std::span<const std::byte> fm_carrier={},bool music_off=false,unsigned start_measure=0,const std::atomic_bool* cancelled=nullptr,bool allow_checkpoint=true,bool mute_fm_bgm=false);
+    static Prepared prepare(std::span<const std::byte> song,bool silent_device_test=false,std::span<const std::byte> soundfont={},std::span<const std::byte> effects={},std::span<const std::byte> fm_carrier={},bool music_off=false,unsigned start_measure=0,const std::atomic_bool* cancelled=nullptr,bool allow_checkpoint=true,bool mute_fm_bgm=false,soew::AudioLevels levels={});
     bool publish(Prepared&& prepared,UINT device=WAVE_MAPPER,bool initially_paused=false,bool reuse_output=false);
-    bool start(std::span<const std::byte> song,bool silent_device_test=false,UINT device=WAVE_MAPPER,std::span<const std::byte> soundfont={},std::span<const std::byte> effects={},std::span<const std::byte> fm_carrier={},bool music_off=false,unsigned start_measure=0,bool mute_fm_bgm=false);
+    bool start(std::span<const std::byte> song,bool silent_device_test=false,UINT device=WAVE_MAPPER,std::span<const std::byte> soundfont={},std::span<const std::byte> effects={},std::span<const std::byte> fm_carrier={},bool music_off=false,unsigned start_measure=0,bool mute_fm_bgm=false,soew::AudioLevels levels={});
+    bool set_levels(soew::AudioLevels levels){return apply_levels(*data_,levels,error_);}
     bool effect(unsigned id,bool force=false);
     bool mute_music();
     unsigned effect_calls()const{return effect_calls_;}
@@ -106,4 +109,5 @@ private:
     bool release_buffers();
     bool fail(const char *operation,MMRESULT code);
     static bool fill(Data& data,Slot& slot,std::string& error);
+    static bool apply_levels(Data& data,soew::AudioLevels levels,std::string& error);
 };

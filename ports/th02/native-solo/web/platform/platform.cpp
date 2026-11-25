@@ -29,7 +29,9 @@ EM_JS(void, host_audio_write,(const WAVEHDR *h,const void *data,unsigned n),{Mod
 EM_JS(void, host_audio_pause,(int paused),{Module.host.audioPause(paused);});
 EM_JS(void, host_audio_reset,(),{Module.host.audioReset();});
 EM_JS(void, host_akyu_track,(int track),{Module.host.akyuTrack(track);});
+EM_JS(void, host_akyu_gain,(float gain),{Module.host.akyuGain(gain);});
 void soew_web_akyu_track(int track){host_akyu_track(track);}
+void soew_web_akyu_gain(float gain){host_akyu_gain(gain);}
 
 struct WebGdi {
     enum Kind {Bitmap, Font, Brush} kind;
