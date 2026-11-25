@@ -56,7 +56,7 @@ static int th13_scoredat_read_js(char* out, int capacity) {
 namespace th13::sdl {
 namespace {
 constexpr char kSaveMagic[8] = {'T', 'H', '1', '3', 'S', 'A', 'V', 'E'};
-constexpr u32 kSaveVersion = 7;
+constexpr u32 kSaveVersion = 8;
 constexpr size_t kLegacySaveBytes = 36;
 constexpr size_t kV2SaveBytes = 52;
 constexpr size_t kV3SaveBytes = 64;
@@ -76,7 +76,9 @@ constexpr size_t kPreEndingSizeOffset = kEndingBytesOffset + 13;
 constexpr size_t kPreEndingArchiveOffset = kPreEndingSizeOffset + 4;
 constexpr size_t kV6SaveBytes = kPreEndingArchiveOffset + kV5SaveBytes;
 constexpr size_t kLastNameOffset = kV6SaveBytes + 4;
-constexpr size_t kSaveBytes = kV6SaveBytes + 16;
+constexpr size_t kV7SaveBytes = kV6SaveBytes + 16;
+constexpr size_t kClearFlagsOffset = kV7SaveBytes;
+constexpr size_t kSaveBytes = kV7SaveBytes + 24;
 constexpr char kBlankName[] = "        ";
 
 void put32(u8* at, u32 value) {
@@ -258,6 +260,16 @@ void FileStore::mark_practice_stage_played(i32 character, i32 difficulty, i32 st
     practice_played[u32(character * 4 + difficulty)] |= u8(1u << (stage - 1));
 }
 
+bool FileStore::practice_stage_cleared(i32 character, i32 difficulty, i32 stage) const {
+    if (character < 0 || character >= 4 || difficulty < 0 || difficulty >= 4 || stage < 1 || stage > 6) return false;
+    return (practice_cleared[u32(character * 4 + difficulty)] & (1u << (stage - 1))) != 0;
+}
+
+void FileStore::mark_practice_stage_cleared(i32 character, i32 difficulty, i32 stage) {
+    if (character < 0 || character >= 4 || difficulty < 0 || difficulty >= 4 || stage < 1 || stage > 6) return;
+    practice_cleared[u32(character * 4 + difficulty)] |= u8(1u << (stage - 1));
+}
+
 bool FileStore::initialize() {
     error.clear();
     loaded = false;
@@ -265,6 +277,7 @@ bool FileStore::initialize() {
     effect_volume = 80;
     cleared_mask = heard_mask = 0;
     practice_played.fill(0);
+    practice_cleared.fill(0);
     extra_unlocked_mask = 0;
     legacy_practice_extra_overlap = 0;
     legacy_save_size_ = 0;
@@ -303,7 +316,7 @@ bool FileStore::load_save() {
     if (length == 0) return true;
     if (size_t(length) != kLegacySaveBytes && size_t(length) != kV2SaveBytes && size_t(length) != kV3SaveBytes &&
         size_t(length) != kV4BaseBytes && size_t(length) != kV4SaveBytes && size_t(length) != kV5SaveBytes &&
-        size_t(length) != kV6SaveBytes && size_t(length) != kSaveBytes)
+        size_t(length) != kV6SaveBytes && size_t(length) != kV7SaveBytes && size_t(length) != kSaveBytes)
         return true;
 #else
     const char* override_path = std::getenv("TH13_SAVE_PATH");
@@ -318,7 +331,8 @@ bool FileStore::load_save() {
         return false;
     }
     if (length != kLegacySaveBytes && length != kV2SaveBytes && length != kV3SaveBytes && length != kV4BaseBytes &&
-        length != kV4SaveBytes && length != kV5SaveBytes && length != kV6SaveBytes && length != kSaveBytes)
+        length != kV4SaveBytes && length != kV5SaveBytes && length != kV6SaveBytes && length != kV7SaveBytes &&
+        length != kSaveBytes)
         return true;
 #endif
     const u32 version = get32(buffer.data() + 8);
@@ -327,6 +341,7 @@ bool FileStore::load_save() {
           (version == 3 && size_t(length) == kV3SaveBytes) ||
           (version == 4 && (size_t(length) == kV4BaseBytes || size_t(length) == kV4SaveBytes)) ||
           (version == 5 && size_t(length) == kV5SaveBytes) || (version == 6 && size_t(length) == kV6SaveBytes) ||
+          (version == 7 && size_t(length) == kV7SaveBytes) ||
           (version == kSaveVersion && size_t(length) == kSaveBytes)))
         return true;
     if (version >= 6 &&
@@ -335,6 +350,9 @@ bool FileStore::load_save() {
           get32(buffer.data() + kPreEndingSizeOffset) != kV5SaveBytes)))
         return true;
     if (version >= 7 && std::memcmp(buffer.data() + kV6SaveBytes, "NAM1", 4) != 0) return true;
+    if (version >= 8 && (std::memcmp(buffer.data() + kClearFlagsOffset, "CLR1", 4) != 0 ||
+                         get32(buffer.data() + kClearFlagsOffset + 4) != 16))
+        return true;
     if (version >= 4 && size_t(length) != kV4BaseBytes) {
         const u32 legacy_size = get32(buffer.data() + kV4BaseBytes + 4);
         if (std::memcmp(buffer.data() + kV4BaseBytes, "REC1", 4) != 0 ||
@@ -448,6 +466,10 @@ bool FileStore::load_save() {
     if (version >= 7)
         remember_name(std::string(reinterpret_cast<const char*>(buffer.data() + kLastNameOffset),
                                   strnlen(reinterpret_cast<const char*>(buffer.data() + kLastNameOffset), 8)));
+    if (version >= 8) {
+        for (size_t i = 0; i < practice_cleared.size(); ++i)
+            practice_cleared[i] = buffer[kClearFlagsOffset + 8 + i];
+    }
     loaded = true;
     committed_ending_bytes_ = ending_seen_bytes;
     return true;
@@ -552,6 +574,10 @@ bool FileStore::write_save(bool commit_ending) {
     std::copy(pre_ending_save_bytes_.begin(), pre_ending_save_bytes_.end(), buffer.data() + kPreEndingArchiveOffset);
     std::memcpy(buffer.data() + kV6SaveBytes, "NAM1", 4);
     std::memcpy(buffer.data() + kLastNameOffset, last_name.data(), std::min(last_name.size(), size_t(8)));
+    std::memcpy(buffer.data() + kClearFlagsOffset, "CLR1", 4);
+    put32(buffer.data() + kClearFlagsOffset + 4, 16);
+    for (size_t i = 0; i < practice_cleared.size(); ++i)
+        buffer[kClearFlagsOffset + 8 + i] = practice_cleared[i] & 0x3fu;
 #ifdef __EMSCRIPTEN__
     if (buffer != persisted_save_bytes_) {
         if (!th13_save_write_js(reinterpret_cast<const char*>(buffer.data()), int(buffer.size()))) {
@@ -668,6 +694,8 @@ void FileStore::sync_score_face_to_dat() {
                 column, difficulty, u32(std::clamp(records.no_continue_clear_count[size_t(difficulty)], 0, 99999)));
             if (difficulty < 4) {
                 for (i32 stage = 1; stage <= 6; ++stage) {
+                    ScoreDat::set_progress_row_flag(column, difficulty, stage - 1, 0,
+                                                    practice_stage_cleared(character, difficulty, stage) ? 1 : 0);
                     ScoreDat::set_progress_row_flag(column, difficulty, stage - 1, 1,
                                                     practice_stage_played(character, difficulty, stage) ? 1 : 0);
                 }
@@ -738,6 +766,12 @@ void FileStore::overlay_score_face_from_dat() {
                         played |= u8(1u << (stage - 1));
                 }
                 practice_played[size_t(character * 4 + difficulty)] = played;
+                u8 cleared = 0;
+                for (i32 stage = 1; stage <= 6; ++stage) {
+                    if (ScoreDat::progress_row_flag(column, difficulty, stage - 1, 0) != 0)
+                        cleared |= u8(1u << (stage - 1));
+                }
+                practice_cleared[size_t(character * 4 + difficulty)] = cleared;
             }
         }
     }

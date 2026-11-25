@@ -389,6 +389,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     i32 spell_elapsed_time() const override { return spell_time_packed; }
     bool record_spell_practice_score(i32 score) override;
     bool record_stage_clear() override;
+    bool record_stage_passed(i32 character, i32 difficulty, i32 stage) override;
     bool ordinary_records_dirty = false;
     bool rasterize_spell_name(SpellPresentation&) override;
     void spell_counts(i32, i32& captures, i32& attempts) const override;

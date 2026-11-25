@@ -124,6 +124,8 @@ struct RunHost final : RunSceneServices {
     AnmManager& manager;
     ZunGraphics* graphics = nullptr;
     int pauses = 0, game_overs = 0;
+    bool stage_clear_result = true, stage_pass_result = true;
+    int stage_clear_calls = 0, stage_pass_calls = 0;
     std::vector<std::string> lines;
     std::vector<MsgLine> dialogue_lines;
     std::vector<i32> sounds;
@@ -145,6 +147,14 @@ struct RunHost final : RunSceneServices {
         return true;
     }
     bool request_practice_end() override { return true; }
+    bool record_stage_clear() override {
+        ++stage_clear_calls;
+        return stage_clear_result;
+    }
+    bool record_stage_passed(i32, i32, i32) override {
+        ++stage_pass_calls;
+        return stage_pass_result;
+    }
     SpellTimeClock spell_time_clock;
     std::vector<i32> spell_time_indexes;
     void update_spell_time(bool active) override {
@@ -611,6 +621,27 @@ TEST(run_scene_requests_pause_and_game_over) {
     harness.scene->request_game_over();
     CHECK_EQ(harness.host.pauses, 1);
     CHECK_EQ(harness.host.game_overs, 1);
+}
+
+TEST(run_scene_stage_pass_persistence_failure_stops_clear_flow) {
+    SessionState replay_progress;
+    CHECK(!records_practice_stage(replay_progress, true));
+    replay_progress.run_mode_flags |= 0x40;
+    CHECK(!records_practice_stage(replay_progress, false));
+
+    InstructionBuilder entry;
+    entry.add(0, 12);
+    entry.add(0, 0x15);
+    entry.end(1);
+    RunHarness harness{0, build_msg({entry.bytes})};
+    harness.host.stage_pass_result = false;
+    harness.scene->open_dialog(0);
+    GameInput input;
+    harness.scene->controls(input);
+    (void)harness.scheduler.update();
+    CHECK_EQ(harness.host.stage_clear_calls, 1);
+    CHECK_EQ(harness.host.stage_pass_calls, 1);
+    CHECK(harness.scene->error == "Stage pass record persistence failed");
 }
 
 TEST(ecl_shake_uses_scheduled_anm_random_and_preserves_overlap_order) {

@@ -27,3 +27,23 @@
 ## 插值终值的 x87 单次舍入（未决 2 的插值部分）
 
 `0x4120f0` 的默认路径把 `(end-start)*weight+start` 整条算在 x87 扩展精度里，再一次性舍入到 float；游戏内 `0x472de0/0x472e10` 的 FINIT 把 FPCW 置 0x37F（PC=64），与探针容器的默认控制字相同。直调五组用例（线性 30 帧、平方 20 帧、线性 45 帧、正弦 10 帧、1 帧）共 111 个终值，见 [interpolation.json](interpolation.json)。移植侧 `Interpolation.hpp`/`.cpp` 的非角路径改为 `(float)((long double)(end-start)*weight+start)` 后与直调值逐位相同；WASI 构建 `long double` 为 113 位，x86 宿主为 80 位，两者在这五组用例上结果一致。`tests/anm/interpolation_oracle_test.cpp`（两侧各一份、内容相同）把这些终值同时锁定在 `FloatInterpolation<1>` 与 `EclInterpolation` 上。
+
+## 结局 BGM 第二参数与文本 VM（原分歧 2）
+
+结局脚本 op 表 `0x4171e8` 的 op 10（`0x416a10:210-237`）先调 `0x43adc0(0, name)` 播放音乐文件，再把脚本里的音乐名与 `0x4aaaf4` 的 `bgm/th13_18` 比较：相同则 `0x43ae40(0, 0xf)`，否则 `0x43ae40(0, 0x10)`。`0x43ae40(bgm, idx)` 做两件事：`0x461830(2, bgm)` 向 BGM 通道请求播放，`save[0x1b27a + idx] = 1` 置音乐室已听标记。第二个参数就是音乐室曲目序号。移植侧 `EndingScene::op_music` 以同一比较取 0xf/0x10，经 `record_music_unlocked` 写入 `FileStore::heard_mask`。
+
+文本页是 5 个 ANM VM：op 3（`0x416a10:51-92`）在行号 `+0x78` 为 0 时先给 5 个 VM（`+0x40…+0x4c`）各写一次白色的 `" "` 并逐个 `0x46fc30` 复位，再把本行文本经 `0x46e8f0` 写进第 `+0x78` 个 VM 的贴图并 `0x46fc30`，行号加到 5 回绕；op 4 对 5 个 VM 逐个 `0x46fc30`。`0x46e8f0` 经 `0x46e810` 进入 `0x45aef0`：`SelectObject` 选字体后 `TextOutA` 以描边色（结局传入 0）在 (±2, 0)、(±2, 4) 各画一遍，再以正文字色 `+0x7c` 在 (0, 2) 画一遍，随后 `0x45a3c0` 反相、`0x45a080` 把背景像素取邻域均值，结果作为该 VM 的贴图上传。移植侧 `ApplicationState::initialize_ending_text` 建 5 个文本 VM（脚本 68–72），`ending_page_line` 用同一字体家族（MS Gothic）以 2 倍分辨率栅格化后按 0.5 倍重采样进 VM 的 512×20 精灵区并 `interrupt(2)`，`ending_page_reset` 写白色空白行并 `interrupt(3)`，`EndingScene::op_page_line` 实现同一套行号复位与回绕。VM 结构、脚本路径与贴图更新方式与原版同构；字形由平台字体引擎栅格化（原版为 GDI `TextOutA`，移植为运行时字体栅格）。
+
+## 结算B 的 BClear 落档与 0x414fc0 降级（原分歧 3）
+
+`0x43d820` 只有一个调用点：结算B 态 `0x1f`（`0x440960:549-560`）。该态由 `0x43f720` 在 `DAT_004be830 >> 4 & 3 == 1` 且 `GameInf+0x74 == 0` 时进入。v1.00c 里 `DAT_004be830` 的 `0x10` 位没有任何写入方：整个 `.text` 对 `0x4be830` 的 90 处引用中，写 `0x30` 位的只有回放装载（`0x447cd2` 置 `0x20`、`0x447ce5` 清 `0x30`）与标题回放入口（`0x44cd80` 清 `0x30`），`0x10` 位从不置位。`GameInf+0x74` 由场景机 `0x43c1c0` 写入：对局（场景 7、10、0xe）为 0，练习、回放与关内重试（场景 0xd、0xb）为 1，下一关（场景 0xc）继承。因此模式位非零的运行恒有 `+0x74 == 1`，`0x42cd40` 把它们全部送往结算A（`0x43e5a0`）；`0x1f` 与 `0x1e` 两态不可达，`0x43d820` 的分数落档没有执行路径。
+
+`0x414fc0(请求值)`：`[this+0x5bc] & 0x2000` 置位时把请求改写为 2。`+0x5bc` 是 supervisor 的场景旗标；对 `0x4dcc5c`（模式旗标）与 `+0x5bc` 的全部写入中都没有置 `0x2000` 的指令（`0x439e10` 只清位）。降级分支在 v1.00c 同样不可达，移植侧按请求值直通即对齐。
+
+## Boss 血环只处理槽 0（原未决 1）
+
+血环段的槽循环从 `0x426910` 把槽号置 0 开始，到 `0x42733f` 处 `INC EAX; CMP EAX, 1; JL 0x426918` 结束——上界是 1，循环体只执行一次。HUD 里虽然按 `0x54` 字节给两个槽各留了一块（比例、当前生命、7 个 VM 句柄与创建标志，`+0x1a8` 起），原版每帧只对 `mgr+0x5c`（槽 0）走显示与隐藏两条路径，槽 1 的块从不读写。移植侧 `BossPresentation` 的单环与原版同构：五个门（计时 ≥ 0、槽内有 Boss、`mgr+0x7c & 1 == 0`、`HUD+0x198 == 0`、管理器非空）加槽内的存活、`flags & 0x31 == 0`、无敌计时 < 1，比例 `life / life_max`、每帧最多加 0.025、超出即回落，7 个 VM（环弧、两个覆盖、四颗星）跟随 Boss 位置，自机距离 80 内隐藏、96 外恢复。
+
+## 存档镜像的练习行（原分歧 4）
+
+`0x42b990` 在关卡开始把游玩旗写进 `score + 0x7fd + 8*stage + 64*difficulty`，`0x42cd40` 在过关时把通过旗写进 `score + 0x7fc + 8*stage + 64*difficulty`，`stage` 取 1 起的关号（[practice-rows.json](practice-rows.json)）。直调 `0x449e50` 生成镜像后，这两个字节落在列内 `0x7fd/0x7fc`，关卡分数在 `0x7f8`（[save-image.json](save-image.json)）；旧镜像把行基放在 `0x7f4`，整体早 4 字节。通过旗在原版里没有读取方（`0x451cb0`、`0x452170`、`0x452299` 一带读的都是游玩旗），移植侧照样写入：`ScoreDat::kProgressRowsOff` 取 `0x7F8`，`FileStore::practice_cleared[16]` 按角色×难度各存 6 位，`RunScene::msg_stage_clear` 经 `record_stage_passed` 在普通版直接落盘、在多人版走 `PendingFileEvent::StagePass`。应用档 `TH13SAVE` 升到 v8：新增 `CLR1` 段（16 字节），v7 及更早的档读入时按零补齐、下次保存升级。`tests/score/filestore_score_mapping_test.cpp`、`tests/score/filestore_score_test.cpp` 与 `tests/ui/run_scene_test.cpp` 锁定坐标、v8 往返、v7 升级与写入失败回传。

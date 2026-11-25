@@ -135,13 +135,17 @@ TEST(summary_v1_through_v4_migration_archives_original_full_file_and_marks_gap) 
         CHECK(!files.ordinary_records[0].ranking[0][0].available);
         CHECK(files.record_run_start(0));
         CHECK(files.save());
-        const auto v6 = read(path);
-        CHECK_EQ(get32(v6.data() + 8), 7u);
-        CHECK(v6.size() == kSaveBytes);
-        CHECK(std::memcmp(v6.data() + kV5SaveBytes, "END1", 4) == 0);
-        CHECK_EQ(get32(v6.data() + kV5SaveBytes + 4), 0u);
-        CHECK_EQ(get32(v6.data() + kPreEndingSizeOffset), 0u);
-        CHECK(std::memcmp(v6.data() + kV6SaveBytes, "NAM1        ", 12) == 0);
+        const auto v8 = read(path);
+        CHECK_EQ(get32(v8.data() + 8), 8u);
+        CHECK(v8.size() == kSaveBytes);
+        CHECK(std::memcmp(v8.data() + kV5SaveBytes, "END1", 4) == 0);
+        CHECK_EQ(get32(v8.data() + kV5SaveBytes + 4), 0u);
+        CHECK_EQ(get32(v8.data() + kPreEndingSizeOffset), 0u);
+        CHECK(std::memcmp(v8.data() + kV6SaveBytes, "NAM1        ", 12) == 0);
+        CHECK(std::memcmp(v8.data() + kV7SaveBytes, "CLR1", 4) == 0);
+        CHECK_EQ(get32(v8.data() + kV7SaveBytes + 4), 16u);
+        for (size_t i = 0; i < 16; ++i)
+            CHECK_EQ(v8[kV7SaveBytes + 8 + i], u8(0));
         FileStore restored;
         CHECK(restored.initialize());
         CHECK(restored.loaded);
