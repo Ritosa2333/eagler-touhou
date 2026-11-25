@@ -109,7 +109,7 @@ template <u32 N, bool Angle = false> struct FloatInterpolation {
                     current[i] = normalize_angle(
                         static_cast<float>(start[i] + normalize_angle(static_cast<float>(difference * weight))));
                 } else {
-                    current[i] = static_cast<float>(start[i] + static_cast<float>(difference * weight));
+                    current[i] = static_cast<float>(static_cast<long double>(end[i] - start[i]) * weight + start[i]);
                 }
             }
         }

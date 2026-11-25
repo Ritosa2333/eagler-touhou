@@ -17,3 +17,13 @@
 `score + 0x7fd / 0x7fc + (stage + difficulty*8)*8 + character*0x56dc`，`stage` 取 1 起始的关号
 （[practice-rows.json](practice-rows.json)）。直调 `0x449e50` 生成镜像后，游戏侧偏移比列内偏移大 8：
 通过旗 `0x7f4+8*stage`、游玩旗 `0x7f5+8*stage`、关卡分数 `0x7f0+8*stage`（难度每加一移 0x40）。
+
+## etEx 0x400000 缩放补间（原分歧 1）
+
+`0x40e4d0:24-29` 在 etEx 的参数 `0x400000` 分支里完成四件事：置弹的 behavior 位 `0x400000`、把起止缩放写进 `+0x12f4/+0x12f8`、把原始帧数与缓动写进 `+0x131c/+0x1320`、复位计时并把 `flags(+0x20)` 加上 `0x40`。弹更新每帧按缓动推进缩放，`duration==0` 时清 behavior 位，终值回到 1.0 再清 `0x40`。
+
+移植侧 `StageSim::step_bullet_behaviors` 走同一条路径：`StageBullet::scale_tween` 是 `FloatInterpolation<1>`，`case 0x400000` 置位并记录起止与原始帧数，推进 `hit_scale`，`duration==0` 清位，终值 1.0 再清 `0x40`。`tests/ecl/ecl_bullet_scale_test.cpp`（两侧各一份、内容相同）锁定置位、帧数、逐帧缩放与清位。
+
+## 插值终值的 x87 单次舍入（未决 2 的插值部分）
+
+`0x4120f0` 的默认路径把 `(end-start)*weight+start` 整条算在 x87 扩展精度里，再一次性舍入到 float；游戏内 `0x472de0/0x472e10` 的 FINIT 把 FPCW 置 0x37F（PC=64），与探针容器的默认控制字相同。直调五组用例（线性 30 帧、平方 20 帧、线性 45 帧、正弦 10 帧、1 帧）共 111 个终值，见 [interpolation.json](interpolation.json)。移植侧 `Interpolation.hpp`/`.cpp` 的非角路径改为 `(float)((long double)(end-start)*weight+start)` 后与直调值逐位相同；WASI 构建 `long double` 为 113 位，x86 宿主为 80 位，两者在这五组用例上结果一致。`tests/anm/interpolation_oracle_test.cpp`（两侧各一份、内容相同）把这些终值同时锁定在 `FloatInterpolation<1>` 与 `EclInterpolation` 上。

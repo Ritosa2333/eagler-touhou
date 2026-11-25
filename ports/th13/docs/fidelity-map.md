@@ -197,6 +197,7 @@ supervisor 与敌机、道具、自机、神霊四个管理器的入口没有直
 |---|---|---|---|---|
 | A | 自机受击碰撞门、圆判定数值语义与判定尺寸（原分歧 1–3） | 四条碰撞包装 `0x444140`（圆弹）、`0x444260`（盒弹）、`0x443fd0`（激光）、`0x44750`（敌机本体）；状态写入 `0x444a10`、`0x444ca0`；`0x441dd0:70-84`；`DAT_004c0ba8…bd8` | 接触后的结算门与原版同构：死亡、入场、受击待决（`+0x65c` 的 2、3、4）与对话中返回 0——不调受击处理、不消弹；其余接触在 `+0x14688<1` 时结算受击，并无条件消弹。灵界位对圆弹与盒弹统一前置，擦弹分支不带阶段门。距离平方与两条阈值经 `rebuild/X87.hpp` 按 80 位（64 位有效数字）各舍入一次后比较。判定尺寸 `kPlayerHitSize` 与 `DAT_004c0ba8` 逐值一致（2、3、3、3） | Unicorn 直调 `0x444140` 的 18 格状态×无敌矩阵与三组距离扫描（[collision.json](../../../archive/th13-fidelity-20261125/collision.json)）；`tests/combat/player_collision_oracle_test.cpp` 锁定边界值（接触 2.23/2.24、擦弹 42.011/42.012）、64 位舍入点，并在 x86 宿主上以 20 万组固定种子与 x87 `long double` 逐位对照 |
 | B | ANM 变量表：读值、随机流与写目的地（原分歧 5） | 浮点读 `0x461e80`（跳转表 `0x462120`，id−10000 索引）、整型读 `0x4621b0`（字节表 `0x4622a0`）、浮点写目的地 `0x4622c0`（字节表 `0x462358`，id−10004 索引）、整型写目的地 `0x462380`（字节表 `0x4623ec`）；随机函数 `0x472de0`（[0,1)）与 `0x472e10`（[−1,1)）各取一次 `0x472c90`；摄像机块 `0x4dcaf4`–`0x4dcb44`；角度归一 `0x472f30` | `game/AnmVariables.cpp` 的读表与原版逐项相同：10000–10009 本地变量、10010–10012 视觉流、10013–10015 位置、10022 取模随机、10023–10025 旋转、10027–10029 随机参数、10030–10032 游戏流；`AnmInterpreter.cpp` 处理 10016–10021（摄像机块）与 10026（父旋转求和后归一）。浮点写目的地：10004–10007→`floats`、10013–10015→`position`、10023–10025→`rotation`、10027→`random_scale`、10028→`random_angle`，其余落指令参数槽；整型写目的地：10000–10003、10008/10009、10029 | Unicorn 直调四个函数的 37 个 id 全表与每条随机流消费后的种子、计数（[anm-variables.json](../../../archive/th13-fidelity-20261126/anm-variables.json)）；`tests/anm/anm_variables_oracle_test.cpp` 逐位锁定读值、随机流与写目的地 |
+| C | etEx `0x400000` 缩放补间与插值终值的 x87 单次舍入（原分歧 1、未决 2 的插值部分） | `0x40e4d0:24-29`：置 behavior 位 `0x400000`，`+0x12f4/+0x12f8` 存起止值，`+0x131c/+0x1320` 存原始帧数与缓动，`flags(+0x20) \|= 0x40`；弹更新在 `duration==0` 清位；插值 `0x4120f0` 默认路径 `(end-start)*weight+start` 在 x87 扩展精度里只舍入一次（游戏内 `0x472de0/0x472e10` 的 FINIT 把 FPCW 置 0x37F，PC=64） | `game/StageSim.cpp`：`StageBullet::scale_tween`（`FloatInterpolation<1>`）在 `case 0x400000` 置位、起止与原始帧数，`step_bullet_behaviors` 以 `step(rate)` 推进 `hit_scale`，`duration==0` 清位、终值 1.0 再清 `0x40`。`Interpolation.hpp`/`.cpp` 的非角路径改为 `(float)((long double)(end-start)*weight+start)`，终值与 `0x4120f0` 逐位相同 | `tests/ecl/ecl_bullet_scale_test.cpp` 锁定置位、帧数、逐帧缩放与清位；`tests/anm/interpolation_oracle_test.cpp` 以 `0x4120f0` 直调数值（线性 30 帧、平方 20 帧、正弦 10 帧、1 帧）同时锁定 `FloatInterpolation<1>` 与 `EclInterpolation`（[interpolation.json](../../../archive/th13-fidelity-20261126/interpolation.json)） |
 
 ## 已知分歧
 
@@ -204,7 +205,6 @@ supervisor 与敌机、道具、自机、神霊四个管理器的入口没有直
 
 | # | 位置 | 分歧 | 原版依据 |
 |---|---|---|---|
-| 1 | `game/StageSim.cpp` etEx | 弹的 etEx `0x400000` 未实现；绘制侧契约已就位，位一旦置位即生效 | `0x40e4d0:24-29` |
 | 2 | `game/EndingScene.cpp` | 文本页用一份近似渲染缓冲代替原版 5 个文本 VM；结局 BGM 的第二参数 `0xf`/`0x10` 语义未定位 | `0x46e8f0`、`0x43ae40` |
 | 3 | `game/PostGameFlow.cpp` | Extra 通关的结算B 覆盖层之后的存档写入未实现；六面通关转结局处 `0x414fc0` 的非激活降级未移植 | `0x441930`、`0x43d820`、`0x414fc0` |
 | 4 | `sdl/FileStore.cpp` 存档镜像 | 过关时原版往练习行写入通过旗；该字节在原版里没有任何读取方，移植侧的镜像不写它。练习解锁用的游玩旗按原版语义落盘 | `0x42cd40:100-103`、读取方仅 `0x451cb0`、`0x452170` |
@@ -219,5 +219,5 @@ supervisor 与敌机、道具、自机、神霊四个管理器的入口没有直
 | # | 事项 | 已知事实 | 需要的证据 |
 |---|---|---|---|
 | 1 | Boss 血环改为逐槽实现 | 血环段入口的五个门已逐条读出（`0x426694`–`0x4266cc`）：计时 ≥ 0、槽内有 Boss、`mgr+0x7c & 1 == 0`、`HUD+0x198 == 0`、管理器非空——其中没有符卡状态，道中非符卡阶段同样显示。槽循环（`0x426918`–`0x4269c7`）对两个槽各判一次：存活、`flags & 0x31 == 0`、无敌计时 < 1，双槽各出一条 | 移植侧把单环改成逐槽血环（现位 `game/BossPresentation.cpp`），并用直调 `0x4265a0` 的「单/双槽 × 符卡/非符卡 × 无敌」显示矩阵验收 |
-| 2 | x87 80 位中间量与 SSE2 的尾差 | 涉及双精度链与超越函数的路径只在少数边界帧可见 | Unicorn oracle 或实机状态采样 |
+| 2 | x87 80 位中间量与 SSE2 的尾差 | 插值路径的终值舍入已按 `0x4120f0` 直调数值锁定（见已对齐项 C）；角路径与 Bezier 的中间量仍按 float 逐步舍入 | Unicorn oracle 或实机状态采样 |
 | 3 | 绘制清单与原版的首次分歧帧 511 / 124 | 登记在 `tools/replay-verifier/golden/baseline.json` | 原版 draw log（本机缺席） |
