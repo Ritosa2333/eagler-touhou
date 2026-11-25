@@ -132,5 +132,5 @@
   "329": "eb0266dae737749fb2ab112877154a1c9ee0cc22",
   "330": "6e0b7c7c1215d93b8e9ea43e8a0441a992013de4"
  },
- "note": "\u6bcf\u5e27 = sha1(draw-compare.py structure_lines\uff0c\u6574\u5e27\u5168\u90e8 Clear / \u7ed8\u5236\u64cd\u4f5c)\u3002Extra Normal \u7b26\u5361\u7ec3\u4e60\u69fd 115\uff080x42cb60 \u628a\u7b2c 7 \u5173\u96be\u5ea6\u62ac\u5230 4\uff1aHUD \u96be\u5ea6\u724c\u4e3a Extra\uff09\uff1a207 \u5e27\u8d77\u7167\u5c04\u6fc0\u5149\uff08ECL 703\uff09+ \u5207\u5206\u51fa\u7684\u76f4\u7ebf\u6fc0\u5149\uff0c\u6309 0x4357a0 / 0x433720 \u753b\u6fc0\u5149\u67f1\u4e0e\u6839\u90e8\u5149\u7403\u3002\u6765\u6e90\uff1agame-oracle.py --draw --replay-slot 115 --refill-lives 330 \u5e27\uff0c\u5f55 210 \u8d77"
+ "note": "每帧 = sha1(draw-compare.py structure_lines，整帧全部 Clear / 绘制操作)。Extra Normal 符卡练习槽 115（0x42cb60 把第 7 关难度抬到 4：HUD 难度牌为 Extra）：207 帧起照射激光（ECL 703）+ 切分出的直线激光，按 0x4357a0 / 0x433720 画激光柱与根部光球。来源：game-oracle.py --draw --replay-slot 115 --refill-lives 330 帧，录 210 起"
 }
