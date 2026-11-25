@@ -79,7 +79,7 @@ void check_midboss_damage(const std::filesystem::path &assets){
     shoot();check(boss.damage_taken.sixths()==5);
     scene.seat_life(1).game_over=true;
     shoot();check(boss.damage_taken.sixths()==11);
-    LocalCoopState::revive(scene.seat_motion(2),scene.seat_life(2),2);
+    scene.coop->revive(scene.seat_motion(2),scene.seat_life(2),2);
     shoot();check(boss.damage_taken.sixths()==14);
     boss.phase_frame=319; // After the entrance, accept the full hit before scaling.
     shoot();check(boss.damage_taken.sixths()==32);
@@ -92,12 +92,15 @@ void check_run(const std::filesystem::path &assets){
     scene.enable_coop(LocalCoopConfig{3,0,1,2,3,{0,1,2}});
     auto &c=*scene.coop;
     check(scene.alive_count()==3);
+    check(scene.seat_motion(0).x==128&&scene.seat_motion(1).x==288&&scene.seat_motion(2).x==208);
+    LocalCoopState duo;duo.config.count=2;
+    check(duo.spawn(0).x==176&&duo.spawn(1).x==240);
     check(scene.seat_shots(0).slots.size()==128&&scene.seat_shots(2).slots.size()==128);
 
     const auto tick=[&]{scene.tick(c.input[0]);};
     c.input={Right|Shot,Down|Shot,Left|Shot};
     tick();
-    check(scene.seat_motion(0).x>176&&scene.seat_motion(1).y>336&&scene.seat_motion(2).x<208);
+    check(scene.seat_motion(0).x>128&&scene.seat_motion(1).y>336&&scene.seat_motion(2).x<208);
     check(scene.seat_shots(0).fired&&scene.seat_shots(1).fired&&scene.seat_shots(2).fired);
 
     c.input={0,Bomb,Bomb};
@@ -148,7 +151,7 @@ void check_run(const std::filesystem::path &assets){
           donor.lives==before+3&&third.lives==5&&third.bombs==5);
     receiver.lives=2; // Keep the rescue test's original reserve count.
     const auto spare=donor.lives,stock=donor.bombs;
-    LocalCoopState::spawn_at(scene.seat_motion(1),donor,0);
+    c.spawn_at(scene.seat_motion(1),donor,0);
     // A physical held Shot disqualifies rescue even on an autofire off tick.
     c.fire_held[1]=true;
     c.input[1]=Focus;scene.step_rescue();

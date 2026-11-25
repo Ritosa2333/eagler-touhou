@@ -2,6 +2,7 @@
 #include "core_contract.hpp"
 #include "menu.hpp"
 #include <algorithm>
+#include <span>
 #include <vector>
 
 namespace soew {
@@ -86,6 +87,10 @@ inline void draw_original_hud(std::vector<std::uint32_t> &pixels,const th03::ass
 }
 
 namespace coop_hud {
+// DOS multiplayer TRAM layout: player rows 8..16, enemy rows 19..20.
+inline constexpr int left=448,right=624,first_player_y=128,player_pitch=48,row_height=16;
+inline constexpr int boss_title_y=304,boss_gauge_y=320,boss_gauge_width=128;
+inline constexpr int lives_x=left,bombs_x=512;
 inline void draw_stock_limit(std::vector<std::uint32_t> &pixels,int x,int y){
     // Small /5, centered on the numeral's baseline without filtering its pixels.
     constexpr std::array<std::uint16_t,7> rows={
@@ -93,6 +98,19 @@ inline void draw_stock_limit(std::vector<std::uint32_t> &pixels,int x,int y){
         0b010000001,0b010000001,0b100001110};
     for(int dy=0;dy<7;++dy)for(int dx=0;dx<9;++dx)
         if(rows[dy]&(0x100u>>dx))pixels[(y+dy)*640+x+dx]=0xffc0c0c0u;
+}
+inline void draw_boss_gauge(std::vector<std::uint32_t> &pixels,const th03::assets::BfntSheet &font,
+    unsigned health,unsigned max_health,std::span<const unsigned> cuts){
+    // Same eight Power gaiji and fill colors as the original multiplayer HUD.
+    constexpr std::array colors={original_hud::red,original_hud::magenta,original_hud::cyan,
+        original_hud::yellow,original_hud::white};
+    const int fill=int((health*boss_gauge_width+max_health-1)/max_health);
+    for(int x=0;x<fill;x+=16)
+        ::draw_glyph(pixels,font,0x30+std::min(16,fill-x)-1,left+x,boss_gauge_y,colors[fill>>5]);
+    for(const auto cut:cuts){
+        const int x=int(cut*boss_gauge_width/max_health);
+        for(int y=2;y<14;++y)pixels[(boss_gauge_y+y)*640+left+x]=x<fill?0xff181818u:0xff505050u;
+    }
 }
 }
 

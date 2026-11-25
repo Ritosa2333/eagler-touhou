@@ -182,7 +182,7 @@ struct EncounterScene:StageScene {
             auto &p=seat_motion(i);auto &l=seat_life(i);
             p.shot=config.shots[i];l=PlayerLife(config.lives,config.bombs);
             seat_shots(i).slots.resize(PlayerShots::coop_capacity);
-            LocalCoopState::spawn_at(p,l,i);
+            coop->spawn_at(p,l,i);
             const auto shot=unsigned(p.shot);
             if(shot!=unsigned(config.shots[0])&&!coop_bombs[shot])coop_bombs[shot]=BombRenderer::load(assets_root,shot);
         }
@@ -273,7 +273,7 @@ struct EncounterScene:StageScene {
             for(unsigned j=0;j<seat_count();++j){
                 const auto &other=seat_life(j);
                 if(i==j||other.hit||(!other.game_over&&other.lives>=5))continue;
-                const auto position=other.game_over?LocalCoopState::spawn(j):seat_life(j).current;
+                const auto position=other.game_over?c.spawn(j):seat_life(j).current;
                 const int dx=seat_motion(i).x-position.x,dy=seat_motion(i).y-position.y;
                 const int distance=dx*dx+dy*dy;
                 if(distance<best){target=int(j);best=distance;}
@@ -285,7 +285,7 @@ struct EncounterScene:StageScene {
             --l.lives;auto &other=seat_life(unsigned(target));
             if(other.game_over){
                 l.bombs/=2;
-                LocalCoopState::revive(seat_motion(unsigned(target)),other,unsigned(target));
+                c.revive(seat_motion(unsigned(target)),other,unsigned(target));
                 other.bomb_invincible=bomb.active;c.hit_clear=true;
             }else LocalCoopState::give_life(other);
             progress={};request_sound(8);
@@ -431,7 +431,7 @@ public:
         if(coop){
             for(unsigned i=0;i<seat_count();++i){
                 auto &l=seat_life(i);auto &p=seat_motion(i);
-                LocalCoopState::revive(p,l,i);
+                coop->revive(p,l,i);
                 l.lives=std::uint8_t(run_start_lives);l.bombs=std::uint8_t(run_start_bombs);l.invincibility=200;
                 l.power=1;seat_pickups(i).power=1;
             }
@@ -476,7 +476,7 @@ public:
                 const auto &old=seat_life(i);auto &l=next.seat_life(i);
                 l.lives=old.lives;l.bombs=old.bombs;l.power=old.power;l.playperf=old.playperf;l.total_misses=old.total_misses;
                 next.seat_pickups(i).power=seat_pickups(i).power;next.seat_pickups(i).overflow=seat_pickups(i).overflow;
-                if(old.game_over)LocalCoopState::revive(next.seat_motion(i),l,i);
+                if(old.game_over)next.coop->revive(next.seat_motion(i),l,i);
             }
         }
         next.sound.enabled=sound.enabled;next.sound_output=sound_output;
@@ -1053,7 +1053,7 @@ public:
                 for(unsigned i=0;i<seat_count();++i){
                     auto &l=seat_life(i);auto &p=seat_motion(i);
                     if(l.game_over&&l.pattern){l.pattern.reset();}
-                    if(l.game_over){const auto spot=LocalCoopState::spawn(i);p.x=spot.x;p.y=spot.y;}
+                    if(l.game_over){const auto spot=coop->spawn(i);p.x=spot.x;p.y=spot.y;}
                 }
                 items.update_shared(page,[&](unsigned type,int x,int y){
                     if(!pickup_enabled)return false;
@@ -1693,7 +1693,7 @@ private:
         }
         if(coop)for(unsigned i=0;i<seat_count();++i){
             const auto &l=seat_life(i);const auto &p=seat_motion(i);const auto &s=seat_shots(i);
-            if(l.game_over){const auto pos=LocalCoopState::spawn(i);coop_art::ghost(pixels,i,RenderPoint::pixels(pos.x,pos.y));continue;}
+            if(l.game_over){const auto pos=coop->spawn(i);coop_art::ghost(pixels,i,RenderPoint::pixels(pos.x,pos.y));continue;}
             if(!i)continue;
             if(l.pattern)coop_art::player(pixels,bank,sprite_palette,i,*l.pattern,RenderPoint::pixels(l.draw.x,l.draw.y));
             if(!l.hit&&!l.miss_active&&seat_pickups(i).power>=8){

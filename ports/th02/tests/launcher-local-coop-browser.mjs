@@ -1,4 +1,4 @@
-// Run against Eagler with native TH02 DATA. PC98_LAUNCHER_URL can also be a TH02 deep link.
+// Run against Eagler with native TH02 DATA. Pass --boss-gauge to reach the Stage 1 midboss.
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
@@ -62,8 +62,8 @@ try {
         return pixels.some((r,i)=>i%4===0&&r===192&&pixels[i+1]===192&&pixels[i+2]===192);
       };
       for(let seat=0;seat<count;seat++){
-        const y=147+seat*70;
-        for(const x of [480,544])if(!hasLimit(x,y))return false;
+        const y=149+seat*48;
+        for(const x of [472,536])if(!hasLimit(x,y))return false;
       }
       return true;
     },{timeout:5000},count);
@@ -88,7 +88,7 @@ try {
       await new Promise(done=>setTimeout(done,100));
     }
     assert(original[0]>240,JSON.stringify(original));
-    if(count===3)assert(original[1]>208,JSON.stringify(original));
+    if(count===3)assert(original[1]>208&&original[0]-original[1]>70,JSON.stringify(original));
     else assert.equal(original[1],null);
     await page.keyboard.down('KeyD');
     if(count===3)await page.keyboard.down('Numpad4');
@@ -98,6 +98,17 @@ try {
     const moved=await positions();
     assert(moved[0]>original[0]+26,JSON.stringify({original,moved}));
     if(count===3)assert(moved[1]!==null&&moved[1]<original[1]-20,JSON.stringify({original,moved}));
+    if(count===3&&process.argv.includes('--boss-gauge')){
+      await frame.waitForFunction(()=>{
+        const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
+        const sx=canvas.width/640,sy=canvas.height/400;
+        const pixels=ctx.getImageData(Math.round(448*sx),Math.round(320*sy),Math.round(128*sx),Math.round(16*sy)).data;
+        let lit=0;
+        for(let i=0;i<pixels.length;i+=4)if(pixels[i]||pixels[i+1]||pixels[i+2])lit++;
+        return lit>pixels.length/8;
+      },{timeout:110000,polling:250});
+      console.log('PASS Eagler TH02 Stage 1 midboss gauge appears in the original multiplayer rows');
+    }
     await page.keyboard.press('Escape',{delay:100});
     await page.keyboard.press('KeyQ',{delay:100});
     await page.waitForFunction(()=>runtimeEvents.some(e=>e.event==='exit'&&e.code===0),{timeout:12000});

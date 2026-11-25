@@ -330,12 +330,49 @@ void extra_stage(){
     check(x.active&&!x.has_health&&!x.has_timeout,"sigma state 10 has no fabricated damage or timer gate");
     s.sigma.done=true;check(!encounter_info(s).active,"sigma completion removes encounter");
 }
+
+void coop_gauges(){
+    EncounterScene s;
+    check(!coop_boss_gauge(s).max_health,"road has no boss meter");
+    s.midboss2_enabled=true;s.midboss2.active=true;s.midboss2.damage_taken=40;
+    auto gauge=coop_boss_gauge(s);
+    check(gauge.health==341&&gauge.max_health==381,"damageable midboss uses its real threshold");
+    s.midboss2.active=false;s.midboss3_enabled=true;s.midboss3.active=true;
+    s.midboss3.actor[0].flag=Midboss3Core::Flag::Removed;s.midboss3.actor[1].damage=10;
+    gauge=coop_boss_gauge(s);
+    check(gauge.health==271&&gauge.max_health==562,"one defeated midboss actor stays depleted");
+    s.midboss3.active=false;s.stones_enabled=true;
+    gauge=coop_boss_gauge(s);
+    check(gauge.health==1450&&gauge.max_health==1450,"sealed stones still count in the full-fight meter");
+    s.stones.stones[0].flag=StonesCore::Flag::Removed;
+    s.stones.stones[4].damage=500;
+    gauge=coop_boss_gauge(s);
+    check(gauge.health==810&&gauge.phase_cuts[0]==930&&gauge.phase_cuts[1]==1170,"stones keep the original group boundaries");
+
+    s.stones_enabled=false;s.mima_enabled=true;
+    s.mima.phase=MimaCore::Phase::First;s.mima.damage_taken=600;
+    gauge=coop_boss_gauge(s);
+    check(gauge.health==4100&&gauge.max_health==4700&&gauge.phase_cut_count==4,"Mima shows all available phases");
+    s.mima.phase=MimaCore::Phase::Shift1;
+    check(coop_boss_gauge(s).health==4100,"Mima gauge holds through the transition");
+    s.mima.phase=MimaCore::Phase::Second;s.mima.damage_taken=100;
+    check(coop_boss_gauge(s).health==4000,"next phase does not refill the whole-fight meter");
+    s.continues_used=1;
+    check(coop_boss_gauge(s).max_health==3600&&coop_boss_gauge(s).phase_cut_count==3,"unavailable Mima final is not counted");
+
+    s.mima_enabled=false;s.sigma_enabled=true;s.sigma.phase=4;s.sigma.damage_taken=100;
+    gauge=coop_boss_gauge(s);
+    check(gauge.health==4800&&gauge.max_health==8500&&gauge.phase_cut_count==4,"Sigma includes the current and upcoming gates");
+    s.sigma.done=true;s.extra_road_enabled=true;s.extra_midboss.active=true;
+    check(!coop_boss_gauge(s).max_health,"timed Extra terrain has no invented HP meter");
+}
 }
 
 int main(){
     try{
         early_encounters();midboss_damage_protection();third_stage();north_stone_damage_protection();
         fourth_and_fifth_stage();marisa_damage_protection();mima_damage_protection();protection_copy();extra_stage();
+        coop_gauges();
         std::cout<<"encounter_info_checks="<<checks<<" failures=0\n";
         return 0;
     }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}

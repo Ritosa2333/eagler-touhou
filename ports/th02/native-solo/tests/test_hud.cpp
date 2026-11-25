@@ -90,6 +90,18 @@ void test_draw(){
     try{draw_original_hud(pixels,font,state);}catch(const std::runtime_error &){threw=true;}
     check(threw&&std::all_of(pixels.begin(),pixels.end(),[&](auto p){return p==sentinel;}));
 }
+void test_coop_gauge(){
+    namespace hud=soew::coop_hud;
+    using namespace soew::original_hud;
+    auto font=fixture_font();
+    std::vector<std::uint32_t> pixels(640*400,black);
+    check(hud::first_player_y+3*hud::player_pitch==272&&hud::boss_title_y==304&&hud::boss_gauge_y==320);
+    hud::draw_boss_gauge(pixels,font,50,100,std::array{25u,75u});
+    const auto base=hud::boss_gauge_y*640+hud::left;
+    check(pixels[base]==cyan&&pixels[base+48]==cyan&&pixels[base+64]==black);
+    check(pixels[base+2*640+32]==0xff181818u&&pixels[base+2*640+96]==0xff505050u);
+    check(pixels[(hud::boss_title_y+15)*640+hud::left]==black);
+}
 void test_practice_keys(){
     namespace keys=soew::practice_keys;
     using namespace soew;
@@ -122,6 +134,6 @@ void test_practice_keys(){
 }
 }
 int main(){
-    try{test_layout();test_draw();test_gameplay_tram();test_practice_keys();std::cout<<"hud_checks="<<checks<<" failures=0\n";return 0;}
+    try{test_layout();test_draw();test_gameplay_tram();test_coop_gauge();test_practice_keys();std::cout<<"hud_checks="<<checks<<" failures=0\n";return 0;}
     catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}
 }

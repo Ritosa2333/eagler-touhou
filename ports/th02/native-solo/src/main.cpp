@@ -3377,23 +3377,32 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             if(app->scores){const auto stored=app->scores->at(std::min(4,app->stage_scene->rank)).entries[0].score;hud.high_score=std::max(hud.high_score,stored/10);hud.high_continues=stored%10;}
             soew::draw_original_hud(app->composed.pixels,app->font,hud);
             if(const auto &scene=*app->stage_scene;scene.coop){
-                for(int y=121;y<352;++y)std::fill_n(app->composed.pixels.begin()+y*640+448,192,0xff000000u);
+                namespace layout=soew::coop_hud;
+                for(int y=layout::first_player_y;y<352;++y)
+                    std::fill_n(app->composed.pixels.begin()+y*640+layout::left,layout::right-layout::left,0xff000000u);
                 for(unsigned i=0;i<scene.seat_count();++i){
                     const auto &l=scene.seat_life(i);const auto ink=soew::coop_art::seat_ink[i];
-                    const int y=123+int(i)*70;
+                    const int y=layout::first_player_y+int(i)*layout::player_pitch;
                     const auto heading=L"P"+std::to_wstring(i+1)+L"  "+std::wstring(1,wchar_t(L'A'+scene.seat_motion(i).shot));
-                    display_text(app->composed,heading,456,y,ink,lang);
-                    if(l.game_over)display_text(app->composed,L"GHOST",518,y,ink,lang);
+                    display_text(app->composed,heading,layout::left,y,ink,lang);
+                    if(l.game_over)display_text(app->composed,L"GHOST",layout::bombs_x,y,ink,lang);
                     const auto stock=[&](std::wstring_view label,unsigned value,int x){
                         auto text=std::wstring(label)+std::to_wstring(value);
-                        display_text(app->composed,text,x,y+19,0xffffff,lang);
-                        soew::coop_hud::draw_stock_limit(app->composed.pixels,x+display_text_width(text,lang),y+24);
+                        display_text(app->composed,text,x,y+layout::row_height,0xffffff,lang);
+                        layout::draw_stock_limit(app->composed.pixels,x+display_text_width(text,lang),y+layout::row_height+5);
                     };
-                    stock(L"L ",l.lives,456);
-                    stock(L"B ",l.bombs,520);
-                    display_text(app->composed,L"P "+std::to_wstring(scene.seat_pickups(i).power)+L"/80",456,y+38,0xffffff,lang);
+                    stock(L"L ",l.lives,layout::lives_x);
+                    stock(L"B ",l.bombs,layout::bombs_x);
+                    display_text(app->composed,L"P "+std::to_wstring(scene.seat_pickups(i).power)+L"/80",
+                        layout::left,y+2*layout::row_height,0xffffff,lang);
                     if(const auto n=scene.coop->rescue[i].presses)
-                        display_text(app->composed,std::to_wstring(n)+L"/5",538,y+38,ink,lang);
+                        display_text(app->composed,std::to_wstring(n)+L"/5",layout::bombs_x,y+2*layout::row_height,ink,lang);
+                }
+                if(const auto gauge=soew::coop_boss_gauge(scene);gauge.max_health){
+                    const auto caption=L"ENEMY "+std::wstring(soew::encounter_info_text(gauge.label,lang));
+                    display_text(app->composed,caption,layout::left,layout::boss_title_y,0xffff00,lang);
+                    layout::draw_boss_gauge(app->composed.pixels,app->font,gauge.health,gauge.max_health,
+                        std::span(gauge.phase_cuts).first(gauge.phase_cut_count));
                 }
             }
             const bool show_details=!app->local_coop&&(app->replay_playback?app->menu.show_more_info:app->practice_assist.info);
