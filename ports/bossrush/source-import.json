@@ -3,8 +3,8 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "master",
-  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；WASM build_id 4f12850d → 558441cb）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；3BA 双实例锁步 e2e + 卡外对象 frame 绑定（digest 顺序无关；WASM build_id 558441cb → 62f6bec6）。",
-  "buildId": "62f6bec6",
+  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；WASM build_id 4f12850d → 558441cb）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；3BA 双实例锁步 e2e + 卡外对象 frame 绑定（digest 顺序无关；WASM build_id 558441cb → 62f6bec6）。后续：阶段 3BB（远端真身同帧诞生 + 本地槽误绑修复；仅 Lua 改动 multiplayer.lua，WASM build_id 62f6bec6 → 36ae033c）。",
+  "buildId": "36ae033c",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
     "webMaintainer": "清酒 (Tidew)",
@@ -20,12 +20,12 @@
     {
       "path": "bro.mjs",
       "bytes": 117746,
-      "sha256": "7b7def6a7dd3628073164ffd926da769ad32429983b81dca508f21f860e4cbf4"
+      "sha256": "442f228ed2b7f2caf02a31b1979cbde1551cf356b14fdfec0516fc208abd5490"
     },
     {
       "path": "bro.wasm",
-      "bytes": 26931223,
-      "sha256": "62f6bec6da46442525b03be782d0e396b4adc85bbc8e8278de1bf08275a061e7"
+      "bytes": 26933299,
+      "sha256": "36ae033c2df398af36f207027d639930c9730d2dc961696b0f2350b7d00a25bc"
     },
     {
       "path": "dist/app-shell.json",
@@ -40,7 +40,7 @@
     {
       "path": "dist/runtime.json",
       "bytes": 577,
-      "sha256": "335161d190c922c7fde2fcfe565e26721ffc32928e6675d8ff02eb24684419c4"
+      "sha256": "4edad4feecb23c39f989b13c57362cf3b3e4bad55e21ed756a977bd6cf086296"
     },
     {
       "path": "managed-shell.mjs",
