@@ -1,5 +1,6 @@
 #pragma once
 #include "encounter_scene.hpp"
+#include "frame_pacing.hpp"
 #include <algorithm>
 #include <array>
 
@@ -205,7 +206,7 @@ inline EncounterInfo encounter_info(const EncounterScene &s){
         const auto &b=s.mima;
         // Each form-1 attack group resets damage. Round completion, not a
         // shot landing, consumes the gate; Final is conditional on no Continue.
-        const unsigned phases=s.continues_used?4:5;
+        const unsigned phases=s.continues_used&&!b.form2?4:5;
         unsigned phase=0,limit=600,rounds_limit=10;
         bool transition=false;
         switch(b.phase){
@@ -306,6 +307,94 @@ inline EncounterInfo encounter_info(const EncounterScene &s){
         timer(s.extra_midboss.frame,ExtraMidbossCore::last_active_frame+1,"logic");return out;
     }
     return out;
+}
+
+struct EncounterHealthBar {
+    unsigned health=0,max_health=0;
+    std::array<unsigned,4> cuts{};
+    unsigned cut_count=0;
+};
+
+inline EncounterHealthBar encounter_health_bar(const EncounterScene &scene,const EncounterInfo &info){
+    const auto phased=[&](auto sections,unsigned count){
+        EncounterHealthBar bar{info.health};
+        for(unsigned i=count;i>0;--i){
+            bar.max_health+=sections[i-1];
+            if(i>1)bar.cuts[bar.cut_count++]=bar.max_health;
+            if(i-1>info.phase)bar.health+=sections[i-1];
+        }
+        return bar;
+    };
+    switch(info.kind){
+    case EncounterInfoKind::Mima:
+        return phased(std::array{600u,700u,800u,1500u,1100u},info.phases);
+    case EncounterInfoKind::Sigma:
+        if(info.has_health)return phased(std::array{1800u,1800u,1800u,1800u,1300u},info.phases);
+        return {};
+    case EncounterInfoKind::Stones:{
+        // Both pairs share their phase with their partner. The north stone
+        // retains its damage across the seal and reopening, so it has one pool.
+        EncounterHealthBar bar{0,1450,{930,1170},2};
+        constexpr std::array limits={140u,140u,120u,120u,930u};
+        using Flag=StonesCore::Flag;
+        for(unsigned i=0;i<limits.size();++i){
+            const auto &stone=scene.stones.stones[i];
+            if(stone.flag==Flag::Active||stone.flag==Flag::Dormant)
+                bar.health+=limits[i]-unsigned(std::clamp(enemy_s16(stone.damage),0,int(limits[i])));
+        }
+        return bar;
+    }
+    default:return {info.total_health,info.total_max_health,info.phase_cuts,info.phase_cut_count};
+    }
+}
+
+inline std::wstring encounter_countdown(const EncounterScene &scene,const EncounterInfo &info){
+    if(!info.has_timeout)return L"--";
+    unsigned frames=info.timeout;
+    bool estimated=true;
+    switch(info.kind){
+    case EncounterInfoKind::Midboss1:{
+        const auto &scroll=scene.runtime.scroll;
+        frames=info.timeout*8*scroll.interval/scroll.speed;
+        break;
+    }
+    case EncounterInfoKind::Midboss3:{
+        // Cycles advance at frame 128; 576 rolls the attack back to 127.
+        const unsigned elapsed=scene.midboss3.phase_frame;
+        if(info.timeout)frames=(info.timeout-1)*449+(elapsed<128?128-elapsed:577-elapsed);
+        estimated=false;
+        break;
+    }
+    case EncounterInfoKind::Midboss4:
+        // A lap runs from frame 2 to 114, then retirement waits for the edge.
+        frames=info.timeout*112;
+        break;
+    case EncounterInfoKind::Marisa:
+        // A nominal round includes orb deployment, two shielded attacks and
+        // two exposed attacks. The time spent shielded depends on orb damage.
+        frames=info.timeout*1100;
+        break;
+    case EncounterInfoKind::Mima:{
+        const auto &b=scene.mima;
+        // Follow the original attack rotation with nominal lengths for attacks
+        // that can finish early based on movement or screen position.
+        constexpr std::array lengths={234u,264u,350u,241u,227u,214u,301u,161u,309u,150u,200u,190u};
+        const auto &attacks=b.phase==MimaCore::Phase::First?MimaCore::first:b.phase==MimaCore::Phase::Second?MimaCore::second:
+            b.phase==MimaCore::Phase::Third?MimaCore::third:MimaCore::final;
+        frames=0;
+        const bool mixed=b.phase==MimaCore::Phase::Mixed;
+        // The round counter reaches its gate before the final attack finishes.
+        for(unsigned i=0;i<=info.timeout;++i){
+            const auto attack=mixed?MimaCore::mixed[(b.selection+i)%8]:attacks[(b.selection+i)%attacks.size()];
+            const unsigned length=attack==MimaCore::Attack::Spiral&&mixed?401:lengths[unsigned(attack)];
+            frames+=i?length:length-std::min(length,b.phase_frame);
+        }
+        break;
+    }
+    default:estimated=false;break; // Remaining unit is logic frames.
+    }
+    const auto seconds=(std::uint64_t(frames)*pc98_refresh_den+pc98_refresh_num-1)/pc98_refresh_num;
+    return (estimated?L"~":L"")+std::to_wstring(seconds);
 }
 
 }

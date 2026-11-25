@@ -88,7 +88,7 @@ inline void draw_original_hud(std::vector<std::uint32_t> &pixels,const th03::ass
 namespace coop_hud {
 // Stocks follow the score; the shared encounter panel ends before the rank.
 inline constexpr int left=448,right=624,first_player_y=116,player_pitch=48,row_height=16;
-inline constexpr int bottom=original_hud::rank_row*16,option_x=474,ghost_x=528,rescue_right=620;
+inline constexpr int bottom=original_hud::rank_row*16,option_x=474,ghost_x=528,rescue_right=518;
 constexpr int player_end(unsigned seats){return first_player_y+int(seats)*player_pitch;}
 constexpr int encounter_top(unsigned seats){return player_end(seats)+4;}
 inline constexpr int lives_x=left,bombs_x=512,stock_digit_dx=18,stock_limit_dx=34;

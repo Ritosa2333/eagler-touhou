@@ -359,13 +359,53 @@ void shared_midboss_panel(){
     info=encounter_info(s);
     check(info.health==400&&info.max_health==400&&std::wstring_view(info.label)==L"MIDBOSS 4B","co-op stage 4 second appearance refills its HP");
 }
+void combined_boss_panel(){
+    EncounterScene s;
+    const auto bar=[&]{return encounter_health_bar(s,encounter_info(s));};
+    const auto clock=[&]{return encounter_countdown(s,encounter_info(s));};
+    s.mima_enabled=true;s.mima.phase=MimaCore::Phase::First;
+    check(bar().health==4700&&bar().max_health==4700&&bar().cut_count==4&&
+        bar().cuts==std::array{1100u,2600u,3400u,4100u},"Mima starts with all five phases in one bar");
+    const auto start_clock=clock();
+    s.mima.phase_frame=130;
+    check(start_clock.starts_with(L"~")&&clock()!=start_clock,"Mima estimates seconds using current attack progress");
+    s.mima.damage_taken=595;
+    check(bar().health==4105,"damage drains the current segment first");
+    s.mima.phase=MimaCore::Phase::Shift1;
+    check(bar().health==4100,"Mima reaches its first cut during the transition");
+    s.mima.phase=MimaCore::Phase::Second;s.mima.damage_taken=0;
+    check(bar().health==4100,"Mima's stage change does not refill the total bar");
+    s.continues_used=1;
+    check(bar().health==3000&&bar().max_health==3600&&bar().cut_count==3,"Mima omits unavailable final phase");
+    s.mima.phase=MimaCore::Phase::Final;s.mima.form2=true;
+    check(bar().health==1100&&bar().max_health==4700,"an already unlocked final remains in the total after continue");
+
+    s.mima_enabled=false;s.sigma_enabled=true;s.sigma.phase=4;s.sigma.damage_taken=100;
+    check(bar().health==4800&&bar().max_health==8500&&bar().cut_count==4&&clock()==L"--",
+        "Sigma shows the combined gates without a fabricated time limit");
+    s.sigma.done=true;s.stones_enabled=true;
+    check(bar().health==1450&&bar().cuts[0]==930&&bar().cuts[1]==1170,"five stones share one bar grouped by HP pools");
+    s.stones.stones[0].flag=StonesCore::Flag::Dying;
+    s.stones.stones[4].damage=500;
+    check(bar().health==810,"retiring stones contribute no HP and a sealed stone retains damage");
+
+    s.stones_enabled=false;s.midboss_enabled=true;s.midboss.trigger(116);s.runtime.scroll.progress=116;
+    check(clock()==L"~39","stage 1 scroll steps give estimated seconds");
+    s.midboss.present=false;s.midboss2_enabled=true;s.midboss2.trigger(80);s.midboss2.phase_frame=1489;
+    check(clock()==L"2","stage 2 countdown converts exact remaining logic frames");
+    s.midboss2.phase_frame=1601;
+    check(clock()==L"0","elapsed frame timer stays at zero during its pending gate");
+    s.midboss2.active=false;s.midboss3_enabled=true;s.midboss3.trigger(103);
+    s.midboss3.cycles=3;s.midboss3.phase_frame=576-1;
+    check(clock()==L"1","stage 3 fixed cycle boundary has exact remaining time");
+}
 }
 
 int main(){
     try{
         early_encounters();midboss_damage_protection();third_stage();north_stone_damage_protection();
         fourth_and_fifth_stage();marisa_damage_protection();mima_damage_protection();protection_copy();extra_stage();
-        shared_midboss_panel();
+        shared_midboss_panel();combined_boss_panel();
         std::cout<<"encounter_info_checks="<<checks<<" failures=0\n";
         return 0;
     }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}

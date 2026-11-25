@@ -96,8 +96,9 @@ test('About has the original bitmap glyphs in Simplified and Traditional Chinese
     const [out] = process.argv.slice(2);
     const atlas = glyphCells(Uint8Array.from(readFileSync(resolve(out,'soew-glyphs.bin'))).buffer);
     for (const [face, credits] of [
-        [1,'基于 ReC98 实现移植 查错及优化 感谢游玩！ 也谢谢你看到这里。 Esc：返回'],
-        [2,'基於 ReC98 實作移植 查錯及最佳化 感謝遊玩！ 也謝謝你看到這裡。 Esc：返回'],
+        [0,'これは非公式作品です。 This is an unofficial project.'],
+        [1,'这是非官方作品。 基于 ReC98 实现移植 查错及优化 感谢游玩！ 也谢谢你看到这里。 Esc：返回'],
+        [2,'這是非官方作品。 基於 ReC98 實作移植 查錯及最佳化 感謝遊玩！ 也謝謝你看到這裡。 Esc：返回'],
     ]) {
         const missing = [...new Set(credits)].filter(c => !atlas.has(c.codePointAt(0),face));
         assert.deepEqual(missing,[], 'Refresh the Win32 glyph atlas with web/stage-glyphs.mjs');

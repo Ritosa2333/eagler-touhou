@@ -454,7 +454,7 @@ void draw_practice_assist(Frame &frame,const soew::PracticeAssist &assist,soew::
 }
 struct InfoPanelLayout {
     int top,bottom;
-    bool player_details,encounter_protection;
+    bool player_details;
 };
 void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optional<soew::PracticeSession> &session,
                      InfoPanelLayout layout,soew::Language language){
@@ -464,7 +464,7 @@ void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optio
     };
     const auto info_label=[&](std::wstring_view key){return soew::encounter_info_text(key,language);};
     if(!layout.player_details&&!encounter.active)return;
-    constexpr int side=128,bar_width=120,line_pitch=10;
+    constexpr int side=128,bar_width=128,main_bar_height=10,line_pitch=10;
     const int height=layout.bottom-layout.top;
     const auto dc=CreateCompatibleDC(nullptr);if(!dc)throw std::runtime_error("Info DC failed");
     BITMAPINFO info{};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);info.bmiHeader.biWidth=side;info.bmiHeader.biHeight=-height;info.bmiHeader.biPlanes=1;info.bmiHeader.biBitCount=32;
@@ -476,9 +476,9 @@ void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optio
     if(!bitmap||!font){if(bitmap)DeleteObject(bitmap);if(font)DeleteObject(font);DeleteDC(dc);throw std::runtime_error("Info bitmap failed");}
     auto oldbmp=SelectObject(dc,bitmap);auto oldfont=SelectObject(dc,font);auto *pixels=static_cast<std::uint32_t*>(bits);
     std::fill_n(pixels,side*height,0u);SetBkMode(dc,TRANSPARENT);SetTextColor(dc,RGB(180,220,255));
-    const auto text=[&](std::wstring_view value,int left,int top,int width){
+    const auto text=[&](std::wstring_view value,int left,int top,int width,UINT align=DT_LEFT){
         RECT r{left,top,left+width,std::min(top+line_pitch,height)};
-        DrawTextW(dc,value.data(),int(value.size()),&r,DT_SINGLELINE|DT_NOPREFIX|DT_END_ELLIPSIS);
+        DrawTextW(dc,value.data(),int(value.size()),&r,DT_SINGLELINE|DT_NOPREFIX|DT_END_ELLIPSIS|align);
     };
     int y=0;
     const auto line=[&](std::wstring_view value){text(value,1,y,126);y+=line_pitch;};
@@ -486,6 +486,7 @@ void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optio
     struct Bar {int left,top,width,height;unsigned current,max;bool segmented=false;};
     std::array<Bar,5> bars{};
     unsigned bar_count=0;
+    const auto health_bar=soew::encounter_health_bar(s,encounter);
     if(layout.player_details){
         line(tr(L"ランク ",L"RANK ",L"动态等级 ",L"動態等級 ")+std::to_wstring(s.life.playperf));
         line(tr(L"パワー ",L"PWR ",L"火力 ",L"火力 ")+std::to_wstring(s.pickups.power)+L"  Lv "+std::to_wstring(s.pickups.level()));
@@ -495,21 +496,17 @@ void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optio
     if(encounter.active){
         std::wstring title(info_label(encounter.label));
         if(encounter.phases>1)title+=L" P"+ratio(encounter.phase+1,encounter.phases);
-        line(title);
-        if(encounter.has_health){
-            line(L"HP "+ratio(encounter.health,encounter.max_health));
-            if(encounter.phase_cut_count){
-                int left=0;
-                for(unsigned i=0;i<=encounter.phase_cut_count;++i){
-                    const int right=i==encounter.phase_cut_count?bar_width:int(bar_width*encounter.phase_cuts[i]/encounter.total_max_health);
-                    text(L"P"+std::to_wstring(encounter.phases-i),1+(left+right-12)/2,y,14);
-                    left=right;
-                }
-                y+=line_pitch;
-            }
-            bars[bar_count++]={0,y,bar_width,6,encounter.total_health,encounter.total_max_health,true};y+=8;
+        const auto clock=soew::encounter_countdown(s,encounter);
+        const int clock_left=bar_width-int(clock.size())*6-3;
+        text(title,1,y,clock_left-3);
+        text(clock,clock_left,y,bar_width-clock_left,DT_RIGHT);
+        y+=line_pitch;
+        if(health_bar.max_health){
+            bars[bar_count++]={0,y,bar_width,main_bar_height,health_bar.health,health_bar.max_health,true};
+            y+=main_bar_height+1;
+            line(L"HP "+ratio(health_bar.health,health_bar.max_health));
         }
-        const bool show_protection=layout.encounter_protection&&encounter.protection.kind!=soew::EncounterProtectionKind::None;
+        const bool show_protection=encounter.protection.kind!=soew::EncounterProtectionKind::None;
         if(encounter.dying)line(tr(L"退場中",L"RETIRING",L"退场中",L"退場中"));
         else{
             const std::wstring_view status=encounter.status;
@@ -542,8 +539,8 @@ void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optio
         const int fill=bar.current?std::max(1,scale(bar.current)):0;
         for(int x=0;x<bar.width;++x){
             std::uint32_t color=x<fill?0x0000d8ffu:0x00303030u;
-            if(bar.segmented)for(unsigned cut=0;cut<encounter.phase_cut_count;++cut)
-                if(x==scale(encounter.phase_cuts[cut]))color=x<fill?0x00ffffffu:0x00707070u;
+            if(bar.segmented)for(unsigned cut=0;cut<health_bar.cut_count;++cut)
+                if(x==scale(health_bar.cuts[cut]))color=x<fill?0x00ffffffu:0x00707070u;
             for(int row=bar.top;row<bar.top+bar.height&&row<height;++row)pixels[row*side+bar.left+x]=color;
         }
     }
@@ -553,7 +550,7 @@ void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optio
 // Solo diagnostics occupy the original HUD's blank rows 7..14.
 void draw_debug_info(Frame &frame,const soew::EncounterScene &s,const std::optional<soew::PracticeSession> &session,
                      bool show_details,soew::Language language){
-    draw_info_panel(frame,s,session,{112,240,show_details,show_details},language);
+    draw_info_panel(frame,s,session,{112,240,show_details},language);
 }
 void rounded_box(Frame &frame,int left,int top,int right,int bottom,std::uint32_t color) {
     constexpr int radius=8;
@@ -3354,6 +3351,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 pixel=opening_tone(pixel,100-alpha,false)+opening_tone(0x160f20,alpha,false);
             }
             draw_label(app->composed.pixels,app->font,"ABOUT",32,64,0xffff00);
+            draw(tr(L"これは非公式作品です。",L"This is an unofficial project.",L"这是非官方作品。",L"這是非官方作品。"),32,96,0xffffff);
             draw(L"Hydrangea-Z",32,126,0xffffff);
             draw(tr(L"ReC98をもとに移植",L"Ported from ReC98",L"基于 ReC98 实现移植",L"基於 ReC98 實作移植"),32,146,0xdfc9e9);
             draw(L"IxinorTyan",32,188,0xffffff);
@@ -3422,8 +3420,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if(const auto &scene=*app->stage_scene;scene.coop){
                     namespace layout=soew::coop_hud;
                     draw_info_panel(app->composed,scene,std::nullopt,
-                        {layout::encounter_top(scene.seat_count()),layout::bottom,false,true},lang);
-                }else if(show_details||app->practice_session)
+                        {layout::encounter_top(scene.seat_count()),layout::bottom,false},lang);
+                }else
                     draw_debug_info(app->composed,*app->stage_scene,app->practice_session,show_details,
                         app->replay_playback?soew::gameplay_display_language(lang,app->stage_scene->language):lang);
                 if(show_details&&!app->practice_tools.open)

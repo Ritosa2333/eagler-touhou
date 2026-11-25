@@ -97,6 +97,7 @@ void test_coop_layout(){
     check(hud::player_end(2)<hud::encounter_top(2)&&hud::player_end(3)<hud::encounter_top(3));
     check(hud::bottom==solo::rank_row*16&&hud::bottom-hud::encounter_top(3)>=86);
     check(hud::left+17<hud::option_x&&hud::option_x<504);
+    check(hud::option_x+16<hud::rescue_right-17&&hud::rescue_right<hud::ghost_x);
     check(hud::power_width>80&&hud::power_x+hud::power_width<hud::power_value_right-29);
 }
 void test_coop_power(){

@@ -114,16 +114,16 @@ try {
         const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
         const sx=canvas.width/640,sy=canvas.height/400;
         const y=116+count*48+4;
-        const has=(dy,w,h,red,green,blue)=>{
-          const pixels=ctx.getImageData(Math.round(448*sx),Math.round((y+dy)*sy),Math.round(w*sx),Math.round(h*sy)).data;
+        const has=(dx,dy,w,h,red,green,blue)=>{
+          const pixels=ctx.getImageData(Math.round((448+dx)*sx),Math.round((y+dy)*sy),Math.round(w*sx),Math.round(h*sy)).data;
           return pixels.some((v,i)=>i%4===0&&v===red&&pixels[i+1]===green&&pixels[i+2]===blue);
         };
-        // The shared solo panel draws the localized heading, numeric HP,
-        // cyan health and blue timer separately.
-        return has(0,128,10,180,220,255)&&has(10,128,10,180,220,255)&&
-          has(20,120,6,0,216,255)&&has(28,128,352-y-28,180,220,255);
+        // Name and clock share the top row, ahead of the combined cyan meter.
+        return has(0,0,90,10,180,220,255)&&has(98,0,22,10,180,220,255)&&
+          has(120,18,8,2,0,216,255)&&has(0,21,128,10,180,220,255)&&
+          has(0,31,128,352-y-31,180,220,255);
       },{timeout:110000,polling:250},count);
-      console.log('PASS Eagler TH02 Stage 1 midboss uses the detailed solo encounter panel');
+      console.log('PASS Eagler TH02 Stage 1 midboss has a combined cyan bar and upper-right clock');
     }
     await page.keyboard.press('Escape',{delay:100});
     await page.keyboard.press('KeyQ',{delay:100});

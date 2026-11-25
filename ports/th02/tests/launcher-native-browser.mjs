@@ -1,5 +1,7 @@
 // Run against the Eagler dev server with --native-build DATA and Runtime.
 // Pass --practice-seed for the fixed-seed input flow.
+// Pass --boss-gauge to check the shared encounter HUD in a normal Story run.
+// Pass --about to check the disclaimer on the About page.
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
@@ -61,7 +63,20 @@ try {
   assert((await events()).some(e=>e.event==='runtime-info'&&e.renderer==='SoEW Native'));
   await openStoryShots(frame);
   const practiceSeed=process.argv.includes('--practice-seed');
-  if(practiceSeed) {
+  const about=process.argv.includes('--about');
+  if(about){
+    await press('Escape');
+    await wait(1050);
+    await press('ArrowUp'); // Story → Quit → About.
+    await press('ArrowUp');
+    await press('Enter');
+    await frame.waitForFunction(()=>{
+      const c=document.querySelector('canvas'),ctx=c.getContext('2d');
+      const sx=c.width/640,sy=c.height/400;
+      const line=ctx.getImageData(Math.round(32*sx),Math.round(96*sy),Math.round(190*sx),Math.round(20*sy)).data;
+      return line.some((v,i)=>i%4===0&&v===255&&line[i+1]===255&&line[i+2]===255);
+    },{timeout:5000});
+  } else if(practiceSeed) {
     await press('Escape'); // Story shot select → title.
     await wait(1050);
     await press('ArrowDown'); // Practice.
@@ -91,6 +106,19 @@ try {
     });
     await press('ArrowLeft',200);
     await page.waitForFunction(()=>runtimeEvents.some(e=>e.event==='audio-health'&&e.state==='running'));
+    if(process.argv.includes('--boss-gauge')){
+      await frame.waitForFunction(()=>{
+        const c=document.querySelector('canvas'),ctx=c.getContext('2d');
+        const sx=c.width/640,sy=c.height/400;
+        const has=(x,y,w,h,red,green,blue)=>{
+          const pixels=ctx.getImageData(Math.round(x*sx),Math.round(y*sy),Math.round(w*sx),Math.round(h*sy)).data;
+          return pixels.some((v,i)=>i%4===0&&v===red&&pixels[i+1]===green&&pixels[i+2]===blue);
+        };
+        return has(448,112,90,10,180,220,255)&&has(546,112,22,10,180,220,255)&&
+          has(568,130,8,2,0,216,255)&&has(448,133,128,10,180,220,255);
+      },{timeout:110000,polling:250});
+      console.log('PASS Eagler TH02 Story shows the same cyan bar and clock without practice tools');
+    }
     await press('Escape');
     await wait(120);
     await press('KeyQ');
@@ -103,7 +131,8 @@ try {
   }
   assert.deepEqual((await events()).filter(e=>e.event==='error'),[]);
   assert.deepEqual(errors,[]);
-  console.log(practiceSeed?'PASS Eagler TH02 fixed-seed practice launch':'PASS Eagler TH02 install, SoEW Native title, Stage 1, audio and return');
+  console.log(about?'PASS Eagler TH02 renders the unofficial-project line on About':
+    practiceSeed?'PASS Eagler TH02 fixed-seed practice launch':'PASS Eagler TH02 install, SoEW Native title, Stage 1, audio and return');
 } finally {
   await browser.close();
 }

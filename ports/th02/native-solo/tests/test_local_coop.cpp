@@ -118,6 +118,29 @@ void check_ghost_layer(const std::filesystem::path &assets){
     player.pattern.reset();shot.flag=1;verify();
 }
 
+void check_marisa_orb_damage(const std::filesystem::path &assets){
+    auto scene=EncounterScene::load(assets,3,0,1,2,3);
+    scene.marisa_enabled=scene.combat_enabled=true;
+    scene.enable_coop({.count=3,.stage=3,.shots={0,0,0}});
+    auto &boss=scene.marisa;
+    boss.phase=MarisaCore::Phase::DeployOrbs;
+    boss.phase_frame=140;
+    auto &orb=boss.orbs[0];
+    orb.active=true;
+    const auto hit=[&]{
+        orb.x=80;orb.y=64;
+        auto &shot=scene.seat_shots(0).slots[0];
+        shot={};shot.flag=1;shot.position.fill({92*16,80*16});
+        scene.tick(0);
+        check(orb.hit_flash);
+    };
+    hit();check(orb.hits.sixths()==2);
+    scene.seat_life(1).game_over=true;
+    hit();check(orb.hits.sixths()==5);
+    scene.seat_life(2).game_over=true;
+    hit();check(orb.hits.sixths()==11);
+}
+
 void check_run(const std::filesystem::path &assets){
     auto scene=EncounterScene::load(assets,0,0,1,2,3);
     scene.combat_enabled=scene.survival_enabled=scene.pickup_enabled=true;
@@ -219,6 +242,7 @@ int main(int argc,char **argv){
         check_boss_damage();
         if(argc>1&&argv[1][0]){
             check_midboss_damage(argv[1]);
+            check_marisa_orb_damage(argv[1]);
             check_ghost_layer(argv[1]);
             check_run(argv[1]);
         }
