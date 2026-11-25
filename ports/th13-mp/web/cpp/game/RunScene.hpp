@@ -37,6 +37,7 @@ struct RunSceneServices : HudDrawServices, HudFrameServices, StageBattleServices
     virtual i32 spell_elapsed_time() const { return 0; }
     virtual bool record_spell_practice_score(i32) { return true; }
     virtual bool record_stage_clear() { return true; }
+    virtual bool record_stage_passed(i32, i32, i32) { return true; }
     virtual bool request_stage6_fade() { return false; }
     virtual bool request_extra_results() { return false; }
     virtual bool open_game_fade(bool, i32, bool) { return false; }

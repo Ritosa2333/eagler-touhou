@@ -46,6 +46,9 @@ public:
     std::array<u8, 16> practice_played{};
     bool practice_stage_played(i32 character, i32 difficulty, i32 stage) const;
     void mark_practice_stage_played(i32 character, i32 difficulty, i32 stage);
+    std::array<u8, 16> practice_cleared{};
+    bool practice_stage_cleared(i32 character, i32 difficulty, i32 stage) const;
+    void mark_practice_stage_cleared(i32 character, i32 difficulty, i32 stage);
     u32 extra_unlocked_mask = 0;
     u32 legacy_practice_extra_overlap = 0;
     std::array<i16, 5> pad_bindings = {0, 1, 2, 3, 4};

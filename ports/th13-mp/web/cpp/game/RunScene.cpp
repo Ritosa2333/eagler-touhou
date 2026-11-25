@@ -724,6 +724,10 @@ void RunScene::msg_stage_clear() {
         fail("Stage clear record persistence failed");
         return;
     }
+    if (!host.record_stage_passed(progress.character, progress.difficulty, progress.stage)) {
+        fail("Stage pass record persistence failed");
+        return;
+    }
     if ((progress.run_mode_flags & 0x30u) == 0x20u && progress.practice_mode == 0 &&
         !host.record_spell_practice_score(score_state.score)) {
         fail("Spell Practice score persistence failed");

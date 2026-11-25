@@ -25,7 +25,7 @@ public:
     static constexpr size_t kPlayFramesOff = 0x7BC;
     static constexpr size_t kClearCountOff = 0x7C0;
     static constexpr size_t kNoContinueClearCountOff = 0x7DC;
-    static constexpr size_t kProgressRowsOff = 0x7F4;
+    static constexpr size_t kProgressRowsOff = 0x7F8;
     static constexpr size_t kPracticeOff = 0x978;
     static constexpr size_t kPracticeSize = 0x9C;
     static constexpr size_t kPracticeNameSize = 0x80;
@@ -44,7 +44,7 @@ public:
     static constexpr size_t kEndingBytes = 13;
 
     static_assert(kEntriesOff + kDifficultySlots * kRankTableStride == kMidOff);
-    static_assert(kNoContinueClearCountOff + kDifficultySlots * 4 == kProgressRowsOff);
+    static_assert(kNoContinueClearCountOff + kDifficultySlots * 4 + 4 == kProgressRowsOff);
     static_assert(kPracticeOff + kPracticeCount * kPracticeSize == kCRSize);
 
     struct Entry {

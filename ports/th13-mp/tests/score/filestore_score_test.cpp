@@ -56,6 +56,13 @@ bool dat_file_absent() {
     return false;
 }
 
+u32 get32(const u8* at) {
+    u32 value = 0;
+    for (size_t i = 0; i < 4; ++i)
+        value |= u32(at[i]) << (i * 8);
+    return value;
+}
+
 void check_entry(const ScoreDat::Entry& entry, u32 score, u8 stage, u8 continues, const char* name, u32 time_lo,
                  u32 rate_bits) {
     CHECK_EQ(entry.score, score);
@@ -162,8 +169,8 @@ TEST(last_name_persists_and_mirrors_st_name) {
     CHECK(first.last_name == "MYSTIA  ");
     CHECK(first.save_score());
     CHECK(std::memcmp(ScoreDat::st_name(first.score_dat.st.data()).data(), "MYSTIA  \0", 9) == 0);
-    std::vector<u8> v7;
-    CHECK(read_file(kSavePath, v7));
+    std::vector<u8> v8;
+    CHECK(read_file(kSavePath, v8));
 
     FileStore second;
     CHECK(second.initialize());
@@ -174,7 +181,7 @@ TEST(last_name_persists_and_mirrors_st_name) {
     second.remember_name(std::string("A\x01Z\xff", 4));
     CHECK(second.last_name == "A Z     ");
 
-    std::vector<u8> v6(v7.begin(), v7.end() - 16);
+    std::vector<u8> v6(v8.begin(), v8.end() - 40);
     v6[8] = 6;
     v6[9] = v6[10] = v6[11] = 0;
     CHECK(write_file(kSavePath, v6));
@@ -183,15 +190,15 @@ TEST(last_name_persists_and_mirrors_st_name) {
     CHECK(third.loaded);
     CHECK(third.last_name == "        ");
 
-    std::vector<u8> damaged = v7;
-    damaged[damaged.size() - 16] = 'X';
+    std::vector<u8> damaged = v8;
+    damaged[damaged.size() - 40] = 'X';
     CHECK(write_file(kSavePath, damaged));
     FileStore fourth;
     CHECK(fourth.initialize());
     CHECK(!fourth.loaded);
 }
 
-TEST(corrupt_scoredat_falls_back_to_v7) {
+TEST(corrupt_scoredat_falls_back_to_save) {
     clear_env_files();
     FileStore first;
     CHECK(first.initialize());
@@ -272,7 +279,8 @@ TEST(original_youmu_fixture_import) {
     CHECK_EQ(ScoreDat::play_frames(column), u32(215999999));
     CHECK_EQ(ScoreDat::clear_count(column, 2), u32(31));
     CHECK_EQ(ScoreDat::no_continue_clear_count(column, 2), u32(29));
-    CHECK_EQ(ScoreDat::progress_row_score(column, 2, 3), u32(777777));
+    CHECK_EQ(get32(column + 0x88c), u32(777777));
+    CHECK_EQ(column[0x891], u8(1));
     CHECK_EQ(ScoreDat::practice_u32(column, 5, ScoreDat::kPracticeCapturesOff), u32(31));
     CHECK_EQ(ScoreDat::practice_u32(column, 5, ScoreDat::kPracticeAttemptsOff), u32(37));
     CHECK_EQ(ScoreDat::practice_u32(column, 5, ScoreDat::kPracticeBestOff), u32(123450));
@@ -291,7 +299,7 @@ TEST(original_youmu_fixture_import) {
     CHECK_EQ(records.total_frames, 215999999);
     CHECK_EQ(records.clear_count[2], 31);
     CHECK_EQ(records.no_continue_clear_count[2], 29);
-    CHECK(store.practice_stage_played(3, 2, 4));
+    CHECK(!store.practice_stage_played(3, 2, 4));
     CHECK(store.extra_unlocked(3));
     const auto& spell = *store.spell_counters(3, 5);
     CHECK_EQ(spell.captures[0], 31);

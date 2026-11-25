@@ -1214,6 +1214,10 @@ bool ApplicationState::commit_pending_file_events() {
                 return fail(files.error.empty() ? "Invalid clear record" : files.error);
             ordinary_records_dirty = false;
             break;
+        case PendingFileEvent::Kind::StagePass:
+            files.mark_practice_stage_cleared(entry.character, entry.difficulty, entry.stage);
+            if (!files.save()) return fail(files.error);
+            break;
         case PendingFileEvent::Kind::PauseOption: {
             i32& value = entry.row == 0 ? files.bgm_volume : files.effect_volume;
             value = std::max(0, std::min(100, value + entry.delta));

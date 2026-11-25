@@ -105,6 +105,17 @@ bool ApplicationState::record_stage_clear() {
     return true;
 }
 
+bool ApplicationState::record_stage_passed(i32 character, i32 difficulty, i32 stage) {
+    if (replay_active || progress.practice_mode != 0 || (progress.run_mode_flags & 0x70u) != 0) return true;
+    PendingFileEvent entry;
+    entry.kind = PendingFileEvent::Kind::StagePass;
+    entry.character = character;
+    entry.difficulty = difficulty;
+    entry.stage = stage;
+    pending_file_events_.push_back(entry);
+    return true;
+}
+
 void ApplicationState::spell_counts(i32 id, i32& captures, i32& attempts) const {
     const auto* counts = files.spell_counters(progress.character, id);
     const size_t mode = (progress.run_mode_flags & 0x30u) == 0x20u ? 1 : 0;
