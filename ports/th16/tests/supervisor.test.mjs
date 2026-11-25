@@ -19,6 +19,10 @@ function run(args) {
   return execFileSync(harness, args, {encoding: 'utf8'});
 }
 
+test('chain: self-removal keeps captures alive until return and preserves mutable callback state', () => {
+  assert.equal(run(['chain-self-remove']).trim(), 'trace=1F2F alive=1 released=1 count=1');
+});
+
 function parse(out) {
   const lines = out.trim().split('\n');
   const header = Object.fromEntries(lines[0].split(' ').map(kv => kv.split('=')).map(([k, v]) => [k, Number(v)]));

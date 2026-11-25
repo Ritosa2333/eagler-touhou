@@ -112,7 +112,7 @@ constexpr AddressAnchor kAnchors[] = {
     {"draw-chain-insert", 0x4013B0, "game/Chain.cpp ChainManager::insert_sorted"},
     {"update-chain-walk", 0x401460, "game/Chain.cpp ChainManager::run_update（回调前记后继 +0x50；0=Remove 3/4/5=Break 6=Restart 7=Destroy 调 +0x10 删除回调）"},
     {"draw-chain-walk", 0x4015A0, "game/Chain.cpp ChainManager::run_draw"},
-    {"chain-remove", 0x4017A0, "game/Chain.cpp ChainManager::remove"},
+    {"chain-remove", 0x4017A0, "game/Chain.cpp ChainManager::remove（立即摘链；执行中闭包保持到回调返回）"},
     {"frame-clock", 0x45A8A0, "game/FrameClock.hpp FrameClock::begin_frame（1/60 累加；浏览器按 rAF 折算步数）"},
     {"frame-timer", 0x4262F0, "game/FrameTimer.cpp FrameTimer::tick（QPC 测速；wall_clock_seconds≥0 时启用）"},
     {"spell-realtime", 0x417BC0, "game/Spellcard.cpp Spellcard::tick_realtime / encode_spell_time"},

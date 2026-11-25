@@ -38,7 +38,7 @@
 | 0x40c4a0 / STD ins 17 | 关卡畸变（+0x3314..）：ins 17 建 DistortionGrid 并记种类 / 计时；每帧 0x40c4a0：种类 1 在符卡外于场地底部 (−192, 320) 铺 384 × 128（7 行）网格，内部节点按 sin(列相位) × 行振幅 / sin(行相位) 位移（振幅 60 帧内 0 → 6），alpha 0x80，相位每帧 +π/64 / +π/80；种类 2（本作未用）透镜半径每帧 −2 | `game/Stage.cpp` update_distortion |
 | 0x406c40 / 0x406a70 | 世界位置（pos+offset+pos2）与窗口缩放 / root 链 | `game/AnmRenderer.cpp` |
 | 0x43adc0 / 0x43b300 / 0x43b290 | 启动幕：装载 `sig.anm`；绘制链 0x44 首帧生成 sig 脚本 0 与 ascii.anm 0x11 @ (960,784)（0x40e5c0），帧计数 +0x638；装载完成后请求 Title=4 | `game/GameSession.cpp` / `game/Supervisor.hpp` |
-| 0x401730 / 0x401300 / 0x4013b0 / 0x401460 / 0x4015a0 / 0x4017a0 | Chain 条目 0x28 字节（prio/flags/cb/init/ctx）；更新链与绘制链按优先级插入、遍历返回码 | `game/Chain.cpp` |
+| 0x401730 / 0x401300 / 0x4013b0 / 0x401460 / 0x4015a0 / 0x4017a0 | Chain 条目 0x28 字节（prio/flags/cb/init/ctx）；更新链与绘制链按优先级插入、遍历返回码；自删立即摘链，C++ 闭包保持到回调返回 | `game/Chain.cpp` |
 | 0x45a8a0 | 帧计时：逻辑时间按 1/60 追到墙钟，再跑更新链、按跳帧计数跑绘制链 | `game/FrameClock.hpp` |
 | 0x401d50 / 0x4018e0 / 0x401c30 / 0x405580 | 键盘位布局（Z=1 X=2 Shift=8 方向 0x10..0x80 Esc=0x100 Ctrl=0x200 Q=0x10000 S=0x20000 P=0x40000 Enter=0x80000；键盘固定不可配）、手柄按钮表 DAT_004a52e4 合成（[0]→1 [1]→2 [2]→8 [3]→0x100 [9]→0x800）、手柄按钮快照、边沿/连发 | `game/Input.hpp` / `game/ScancodeMap.hpp keyboard_input_bits` / `game/GameGlobals.hpp pad_input_bits` / `sdl/Application.cpp` |
 | 0x43c050 / 0x459830 | th16.cfg：100 字节块 DAT_004c12a4（magic 0x160002、手柄表 +4、六字节上限校验、失败整块回默认并总是回写；退出主循环后再写） | `game/GameConfig.cpp` / `GameSession::load_config / save_config` |

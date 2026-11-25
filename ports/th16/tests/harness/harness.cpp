@@ -605,6 +605,35 @@ int main(int argc, char** argv) {
         }
         return 0;
     }
+    if (command == "chain-self-remove") {
+        ChainManager chains;
+        ChainEntry* self = nullptr;
+        auto lifetime = std::make_shared<int>(0);
+        const std::weak_ptr<int> observer = lifetime;
+        std::string trace;
+        bool alive_after_remove = false;
+        self = chains.create([&, lifetime, calls = 0]() mutable {
+            trace += char('0' + ++calls);
+            if (calls == 2) {
+                chains.remove(self);
+                alive_after_remove = !observer.expired();
+                ++*lifetime;
+            }
+            return ChainResult::Continue;
+        }, 1, true);
+        lifetime.reset();
+        ChainEntry* next = chains.create([&]() {
+            trace += 'F';
+            return ChainResult::Continue;
+        }, 2, true);
+        chains.enable(self);
+        chains.enable(next);
+        chains.run_update();
+        chains.run_update();
+        std::printf("trace=%s alive=%d released=%d count=%u\n", trace.c_str(),
+                    alive_after_remove, observer.expired(), chains.update_count());
+        return 0;
+    }
     if (command == "chain-demo") {
         // ChainManager 语义自检：优先级排序、启用位、Remove/Restart 返回码（0x401460 走法）
         ChainManager chains;

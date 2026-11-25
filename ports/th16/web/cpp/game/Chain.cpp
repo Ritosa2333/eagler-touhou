@@ -5,7 +5,7 @@
 namespace th16 {
 
 ChainEntry* ChainManager::create(ChainCallback cb, i32 priority, bool update_list, void* context) {
-    auto entry = std::make_unique<ChainEntry>();
+    auto entry = std::make_shared<ChainEntry>();
     entry->priority = priority;
     entry->flags = kFlagOwned;  // 创建时未启用（与 0x43af60 `& ~2` 一致）
     entry->callback = std::move(cb);
@@ -27,16 +27,16 @@ void ChainManager::disable(ChainEntry* entry) {
 
 void ChainManager::remove(ChainEntry* entry) {
     if (entry == nullptr) return;
-    auto erase_from = [entry](std::vector<std::unique_ptr<ChainEntry>>& list) {
+    auto erase_from = [entry](EntryList& list) {
         list.erase(std::remove_if(list.begin(), list.end(),
-                                  [entry](const std::unique_ptr<ChainEntry>& p) { return p.get() == entry; }),
+                                  [entry](const std::shared_ptr<ChainEntry>& p) { return p.get() == entry; }),
                    list.end());
     };
     erase_from(update_);
     erase_from(draw_);
 }
 
-void ChainManager::insert_sorted(std::vector<std::unique_ptr<ChainEntry>>& list, std::unique_ptr<ChainEntry> entry) {
+void ChainManager::insert_sorted(EntryList& list, std::shared_ptr<ChainEntry> entry) {
     // 0x401300：插入时若有 init 回调则立即调用
     if (entry->init) {
         entry->init();
@@ -48,7 +48,7 @@ void ChainManager::insert_sorted(std::vector<std::unique_ptr<ChainEntry>>& list,
     list.insert(it, std::move(entry));
 }
 
-i32 ChainManager::run_list(std::vector<std::unique_ptr<ChainEntry>>& list) {
+i32 ChainManager::run_list(EntryList& list) {
     auto index_of = [&list](const ChainEntry* target) -> i32 {
         for (size_t k = 0; k < list.size(); ++k)
             if (list[k].get() == target) return i32(k);
@@ -57,7 +57,10 @@ i32 ChainManager::run_list(std::vector<std::unique_ptr<ChainEntry>>& list) {
     i32 ran = 0;
     size_t i = 0;
     while (i < list.size()) {
-        ChainEntry* e = list[i].get();
+        // 0x401460 / 0x4017a0：回调可以立即摘除自身。保留节点到本次调用
+        // 返回，避免结局析构释放正在执行的 C++ 闭包；可变闭包状态仍留在原对象。
+        const std::shared_ptr<ChainEntry> executing = list[i];
+        ChainEntry* e = executing.get();
         if (e == nullptr || !e->callback || (e->flags & kFlagEnabled) == 0) {
             ++i;
             continue;
