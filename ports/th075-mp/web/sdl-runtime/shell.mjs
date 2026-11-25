@@ -186,10 +186,17 @@ async function command(m){if(dispatchInput(m))return {};switch(m.command){
   case 'launch':
     if(launched)return {};
     if(build.multiplayer&&options.netplayMode!=='lan'&&!options.replayViewer)throw Error('Launch TH075 multiplayer from its shared room');
-    if(roomPreview){++loopId;core._th075_loop_pause(1);while(busy)await new Promise(requestAnimationFrame);if(!await call('room_preview',['number'],[0]))throw Error(error());roomPreview=false;}
+    if(roomPreview){++loopId;await idle();core._th075_loop_pause(1);if(!await call('room_preview',['number'],[0]))throw Error(error());roomPreview=false;}
     core._th075_music_enabled(+(music==='ogg'));
     if(!await call('initialize',['number'],[options.renderScale===1?1:2]))throw Error(error());
-    if(build.multiplayer&&options.netplayMode==='lan'){const multiplayer=await import('./multiplayer.mjs');showReplaySavePrompt=multiplayer.showReplaySavePrompt;replayBaseline=new Set(core.FS.readdir('/save/replay'));net=new multiplayer.Multiplayer({core,options,build,emit,onError:fatal,onFinished:()=>void completeMultiplayer().catch(fatal),isBusy:()=>busy});await net.connect();}
+    if(build.multiplayer&&options.netplayMode==='lan'){
+      const multiplayer=await import('./multiplayer.mjs');
+      showReplaySavePrompt=multiplayer.showReplaySavePrompt;
+      replayBaseline=new Set(core.FS.readdir('/save/replay'));
+      net=new multiplayer.Multiplayer({core,options,build,emit,onError:fatal,
+        onFinished:()=>void completeMultiplayer().catch(fatal),onReplaySaved:()=>void save().catch(fatal),isBusy:()=>busy});
+      await net.connect();
+    }
     else if(build.multiplayer&&options.replayViewer){if(!await call('mp_replay_viewer'))throw Error(error());}
     launched=true;$('#loading').textContent='';updateDisplay();core._th075_loop_pause(0);
     emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',...build});loop();return {};
@@ -240,7 +247,18 @@ const initialized=(async()=>{
     bundle=parseContentBundle(buffer);
   }
   core=await createModule({canvas,th075OnDemandAssets:!!splitIndex,resourceFiles:new Set(bundle.paths.map(path=>path.slice(1))),
-    async readAsset(path){if(!splitIndex&&path.startsWith('/music/')&&path.endsWith('.ogg')){try{return core.FS.readFile(path).buffer;}catch{throw Error('Music must be installed through Package Store');}}return (await bundle.read(path)).buffer;},
+    async readAsset(path){
+      if(!splitIndex&&path.startsWith('/music/')&&path.endsWith('.ogg')){
+        try{return core.FS.readFile(path).buffer;}catch{throw Error('Music must be installed through Package Store');}
+      }
+      if(!splitIndex||!core.th075BattleLoadDeadline)return (await bundle.read(path)).buffer;
+      const controller=new AbortController();
+      const remaining=core.th075BattleLoadDeadline-performance.now();
+      if(remaining<=0)throw Error('TH075 battle assets did not finish loading in time');
+      const timer=setTimeout(()=>controller.abort(),remaining);
+      try{return (await bundle.read(path,controller.signal)).buffer;}
+      finally{clearTimeout(timer);}
+    },
     printErr:console.error,onAssetLoading(path,on){$('#loading').textContent=on?'正在准备场景…':'';},
     onAssetError(path,message){if(splitIndex)console.error('TH075 asset read failed',path,message);}});
   core.th075ContentIdentity=bundle.identity;

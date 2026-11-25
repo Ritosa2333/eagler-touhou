@@ -734,6 +734,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         state.startSerial = Math.max(state.startSerial, Number(record(message.room)?.startSerial) || 0);
         applySnapshot(message.room);
         reportRoomReturn();
+        if (reconnecting && product === 'th075mp' && state.seat == null && state.spectatorRequested &&
+            !room?.spectators?.some(spectator => spectator.clientId === clientId)) {
+          send({type:'spectate',name:state.displayName});
+        }
         // Reconnecting players may have missed the one-shot start message.
         // A spectator still needs explicit admission before loading its stream.
         if (room?.phase === 'starting' && state.seat != null) void launch(state.startSerial);
@@ -751,7 +755,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         if (Number.isInteger(serial) && serial > 0 && serial >= state.startSerial) {
           state.startSerial = serial;
           publish();
-          if (state.seat != null || state.spectatorRequested) void launch(serial);
+          // TH075 starts its confirmed input stream after calibration. Observers
+          // enter when the Relay publishes the stream and explicitly admits them.
+          if (state.seat != null || (state.spectatorRequested && product !== 'th075mp')) void launch(serial);
         }
       } else if (message.type === 'spectator-start') {
         cancelSpectatorRetry();
@@ -1800,7 +1806,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     acceptMeasuredTiming,
     acceptTh09Match(value: unknown) {
       if (
-        !['th03mp', 'th09mp', 'th19mp'].includes(product!) ||
+        !['th03mp', 'th075mp', 'th09mp', 'th19mp'].includes(product!) ||
         (state.seat !== 0 && state.seat !== 1) ||
         state.spectatorRequested ||
         !state.connected ||
@@ -1810,7 +1816,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       )
         return;
       const match = value as Record<string, unknown>;
-      if (product === 'th03mp' && state.seat !== 0) return;
+      if ((product === 'th03mp' || product === 'th075mp') && state.seat !== 0) return;
       if (product === 'th09mp' && state.seat === 1 && match.winner !== 0 && match.winner !== 1) return;
       const characters = product === 'th09mp' && Array.isArray(match.characters) && match.characters.length === 2 &&
         match.characters.every(id => !!th09CharacterLoadout(id)) ? match.characters : undefined;

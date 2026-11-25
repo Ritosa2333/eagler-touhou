@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {validateMultiplayerOptions} from '../../web/sdl-runtime/multiplayer.mjs';
+import {Multiplayer,validateMultiplayerOptions} from '../../web/sdl-runtime/multiplayer.mjs';
 globalThis.location={href:'https://example.test/runtime/th075.html'};
 const base={netplayUrl:'wss://example.test/netplay?room=th075mp-1234&run=1&player=0',
   netplayMode:'lan',netplayPlayerCount:2,netplayPlayer:0,netplaySeed:1947,netplayDifficulty:1,
@@ -17,3 +17,36 @@ const viewer={...base,netplayPlayer:null,netplaySpectator:true,netplaySpectatorI
 assert.equal(validateMultiplayerOptions(viewer).spectator,true);
 assert.throws(()=>validateMultiplayerOptions({...viewer,netplayUrl:viewer.netplayUrl+'&player=0'}));
 assert.throws(()=>validateMultiplayerOptions({...viewer,netplaySpectatorId:'another_1234'}));
+
+const transport={relay:{readyState:1},peers:new Map()};
+const playback=new Uint32Array(13);
+const events=[],calls=[];
+const core={
+  th075ContentIdentity:'split-data',
+  HEAPU32:playback,
+  ccall(name,_type,_types,args){
+    calls.push([name,args]);
+    if(name==='th075_mp_begin')globalThis.__eaglerPeerTransport=transport;
+    return 1;
+  },
+  _th075_mp_playback_state:()=>4,
+  _th075_mp_playback_marks:()=>40,
+  _th075_mp_end(){delete globalThis.__eaglerPeerTransport;},
+};
+const session=new Multiplayer({core,options:{...viewer,netplayInGameSelection:true},build:{version:'test'},
+  emit:(event,fields)=>events.push({event,...fields}),onError:error=>{throw error;},isBusy:()=>true});
+try{
+  await session.connect();
+  assert.deepEqual(calls[0],['th075_mp_prepare_selection',[base.netplaySeed,base.netplayDifficulty]]);
+  assert.equal(globalThis.__th075PeerTransport,transport);
+  session.reportPlayback();
+  assert.deepEqual(events,[]);
+  playback.set([0,1,4,4,0,0,1,1,1],1);
+  playback.set([1,0,1],10);
+  session.reportPlayback();
+  assert.equal(events[0].spectatorPlayback.position,1);
+  assert.deepEqual(events[0].spectatorPlayback.nodes,[{id:1,kind:'match',frame:1,stage:1,bossSlots:0}]);
+}finally{
+  session.close();
+}
+assert.equal(globalThis.__th075PeerTransport,undefined);

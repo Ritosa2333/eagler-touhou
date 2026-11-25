@@ -85,7 +85,7 @@ export function PlayerControls({
   const mode = session.getPlayerMode(),
     spectating = mode === 'spectator';
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
-  const th09Information = state.runtime?.launched === true && (room.product === 'th09mp' || room.product === 'th19mp') && !state.replayViewer;
+  const th09Information = state.runtime?.launched === true && (room.product === 'th075mp' || room.product === 'th09mp' || room.product === 'th19mp') && !state.replayViewer;
   const cooperativeSpectator =
     state.runtime?.launched === true &&
     state.runtime.spectator === true &&
@@ -124,6 +124,8 @@ export function PlayerControls({
   }, [state.playerOpen, state.runtime?.game, state.replayViewer, roomWorkspace, replayWorkspace,
       navigation.surface, session, settings?.options.touchEnabled]);
   const wins = [room.room?.seats?.[0]?.stats?.wins ?? 0, room.room?.seats?.[1]?.stats?.wins ?? 0] as const;
+  const names = [room.room?.seats?.[0]?.name ?? '', room.room?.seats?.[1]?.name ?? ''] as const;
+  const minutes = Math.max(...(room.room?.seats ?? []).map((seat) => seat?.stats?.minutes ?? 0), 0);
   return (
     <>
       <TitleNetworkOverlay model={session.titleNetwork} />
@@ -150,19 +152,20 @@ export function PlayerControls({
         enabled={informationColumn}
         className={th09Information ? 'th09-player-information' : undefined}
       >
-        {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} />}
+        {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} score={room.product === 'th075mp' ? wins : undefined}
+          minutes={room.product === 'th075mp' ? minutes : undefined} names={names}/>}
         {th09Information &&
           !roomWorkspace &&
-          (spectatorTimeline ? (
+          (spectatorTimeline && room.product !== 'th075mp' ? (
             <SpectatorMatchScore
               wins={wins}
-              minutes={Math.max(...(room.room?.seats ?? []).map((seat) => seat?.stats?.minutes ?? 0), 0)}
-              names={[room.room?.seats?.[0]?.name ?? '', room.room?.seats?.[1]?.name ?? '']}
+              minutes={minutes}
+              names={names}
             />
           ) : !room.spectatorRequested && room.seat != null ? (
             <Th09MatchStats
               wins={wins}
-              minutes={Math.max(...(room.room?.seats ?? []).map((seat) => seat?.stats?.minutes ?? 0), 0)}
+              minutes={minutes}
               spectators={Math.max(room.room?.spectatorCount ?? 0, room.room?.spectators?.length ?? 0)}
             />
           ) : null)}

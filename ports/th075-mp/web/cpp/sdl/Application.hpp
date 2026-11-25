@@ -27,6 +27,8 @@ private:
  TextureBank sceneImages,selectionCharacters,selectionBackgrounds,stageImages,hudImages,effectImages,windowImages;
  std::map<std::pair<ResourceEdition,std::string>,std::shared_ptr<TextureBank>> menuImages;
  bool warm_menu_images();
+ bool prepare_battle_assets();
+ bool battleAssetsReady=false;
  std::array<std::unique_ptr<TextureBank>,2> characterImages,portraitImages,captionImages;
  std::array<CharacterAssets,2> characterAssets;EffectPattern effects;
  TextSurface textSurface;u32 dialogueTexture=0,captureTexture=0,menuText=0;
@@ -35,6 +37,7 @@ private:
  ReplayFile recording,playback;ReplayStreams loadingReplay;StoryDialogueCache dialogueCache;BattleSession pendingSession;RoundRules pendingRules;
  std::unique_ptr<BattleArtwork> battleArt;std::unique_ptr<BattleRenderer> battleRenderer;
  u16 sceneCode=0x2004;u8 scene=4;u32 logoFrames=0,sceneStart=0;bool loaderReady=false,recordingFinished=false;std::string saveReplayPath;u8 saveReplayOpponent=0;u32 playbackCursor=0;
+ bool roomMatchSelection=false;
  bool load_images(TextureBank&,ResourceEdition,const std::string&,u8 palette=1);
  bool enter(u8);bool load_battle();void draw_scene();void change(u16);bool prepare_text(u32&,const std::string&,TextRasterOptions);void clear_transient();void release_battle(bool characters);
  void scan_replays();void choose_replay_name();void update_music_catalog();
@@ -45,6 +48,7 @@ public:
  std::unique_ptr<BattleScene> battle;std::string error;u32 frame=0,now=0;bool initialized=false,exiting=false;
  Application();~Application();bool initialize(u32 scale);bool tick(const BattleSystemInput&,u32 milliseconds);bool save_scores();bool save_replay(u32 slot,const char*);bool return_title();
  u8 current_scene()const{return scene;}
+ bool battle_load_pending()const{return (sceneCode&0xff)==1&&!loaderReady;}
  bool room_preview=false;
  bool preview_room(bool on){if(on&&(!initialized||!return_title()))return false;room_preview=on;return true;}
  void preview_title_tick(BattleSystemInput& input){
@@ -55,12 +59,16 @@ public:
   }
  }
  bool restart();bool probe_scene(u8);bool probe_battle(u8,u8,u8,u8);
- bool prepare_multiplayer(u32,u8,u8,u8,u8,u8);bool save_multiplayer_replay();bool show_replays();
+ bool prepare_multiplayer(u32,u8,u8,u8,u8,u8);
+ bool prepare_multiplayer_selection(u32 seed,u8 difficulty);
+ bool start_multiplayer_battle(u32 seed);
+ bool save_multiplayer_replay();bool show_replays();
  struct RollbackSound {i16 id;u8 side;bool character;bool operator==(const RollbackSound& other)const{return id==other.id&&side==other.side&&character==other.character;}};
  bool rollbackResimulating=false;bool collectRollbackSound=false;std::vector<RollbackSound> rollbackSounds;
  std::unique_ptr<RollbackState> capture_rollback()const;bool restore_rollback(const RollbackState&);
  bool rollback_predictable()const;
  bool multiplayer_complete()const{return (sceneCode&0xff)!=0&&(sceneCode&0xff)!=1;}
+ bool has_multiplayer_recording()const{return !recording.rounds.empty();}
  u8 phase()const{return exiting?4:battle&&scene==0?(battle->progress.paused?2:1):0;}
  void sound(i16)override;void sound(u16 v)override{sound(i16(v));}void character_sound(u8,i16)override;void fade_music(i32,i32,u32,u32)override;void select_music(i16)override;void start_music()override;void stop_music()override;void stop_music(i32)override;
  bool load_character(u8,const CharacterDefinition&,u8,CharacterController&)override;void load_story_artwork(CharacterController&,u8)override;FighterCoreEvents& reset_events(u8)override;void save_profile(const std::vector<u8>&)override;void prepare_round_recording(const GameSelection&,const BattleSession&,const RoundRules&,const FighterActor&)override;

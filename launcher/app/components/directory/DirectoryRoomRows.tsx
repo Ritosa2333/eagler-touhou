@@ -96,7 +96,7 @@ function RoomRow({
   const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
   const title = meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
-  const duel = room.product === 'th03mp' || room.product === 'th09mp' || room.product === 'th19mp';
+  const duel = room.product === 'th03mp' || room.product === 'th075mp' || room.product === 'th09mp' || room.product === 'th19mp';
   const firstWins = room.seats[0]?.stats?.wins ?? 0;
   const secondWins = room.seats[1]?.stats?.wins ?? 0;
   const hasDuelPair = duel && !!room.seats[0] && !!room.seats[1];

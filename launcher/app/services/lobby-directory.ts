@@ -305,7 +305,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         ...(profile ? {profile} : {}),
         ...(Number.isInteger(seat?.loadout) && Number(seat?.loadout) >= 0 && Number(seat?.loadout) < policy.loadouts.length ? {loadout: Number(seat?.loadout)} : {}),
         ...(row.publicNames === true ? {name:normalizePublicNickname(seat?.name)} : {}),
-        ...((row.product === 'th03mp' || row.product === 'th09mp' || row.product === 'th19mp')
+        ...((row.product === 'th03mp' || row.product === 'th075mp' || row.product === 'th09mp' || row.product === 'th19mp')
           ? {
               machineSign:
                 typeof seat?.machineSign === 'string'
