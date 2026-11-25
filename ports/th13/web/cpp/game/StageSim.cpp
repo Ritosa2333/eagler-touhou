@@ -722,7 +722,8 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
         if (entry.flags == 0 && (bullet.behavior_flags & 0xfffffeffu) != 0) return;
         if ((entry.op & bullet.behavior_flags) != 0) return;
         const float* args = entry.args;
-        const bool exact_integers = entry.op == 0x1000000 || entry.op == 0x2000 || entry.op == 0x80;
+        const bool exact_integers =
+            entry.op == 0x1000000 || entry.op == 0x2000 || entry.op == 0x400000 || entry.op == 0x80;
         const i32 i4 = exact_integers ? entry.integer_arguments[0] : i32(entry.args[4]);
         const i32 i5 = exact_integers ? entry.integer_arguments[1] : i32(entry.args[5]);
         switch (entry.op) {
@@ -914,6 +915,13 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             bullet.animation_blend = i4 != 0 ? 1 : 0;
             break;
         }
+        case 0x400000:
+            bullet.behavior_flags |= 0x400000u;
+            bullet.scale_tween.begin(i4, i5, {args[0]}, {args[1]});
+            bullet.scale_tween.control1[0] = args[1];
+            bullet.scale_tween.control2[0] = args[1];
+            bullet.flags |= 0x40u;
+            break;
         case 0x200000: {
             bullet.behavior_flags |= 0x200000u;
             bullet.target_speed_time = 0;
@@ -1186,6 +1194,39 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
             bullet.wait_time -= timer_step;
         }
         bullet.wait_timer = i32(bullet.wait_time);
+    }
+    if (bullet.behavior_flags & 0x400000u) {
+        const std::array<float, 1> scaled = bullet.scale_tween.step(rate);
+        if (bullet.scale_tween.duration == 0 || bullet.scale_tween.mode == 7 || bullet.scale_tween.mode == 17) {
+            bullet.hit_scale = scaled[0];
+        } else if (bullet.scale_tween.mode == 8) {
+            const float fraction = static_cast<float>(bullet.scale_tween.timer.fractional /
+                                                      static_cast<float>(bullet.scale_tween.duration));
+            const float twice = static_cast<float>(fraction * 2);
+            const float before = static_cast<float>(fraction - 1);
+            const float after = static_cast<float>(1 - fraction);
+            const long double h00 =
+                static_cast<long double>(static_cast<float>(before * before) * static_cast<float>(twice + 1));
+            const long double h11 = static_cast<long double>(static_cast<float>(before * fraction) * fraction);
+            const long double h01 =
+                static_cast<long double>(static_cast<float>(3 - twice) * static_cast<float>(fraction * fraction));
+            const long double h10 = static_cast<long double>(static_cast<float>(after * after) * fraction);
+            bullet.hit_scale = static_cast<float>(static_cast<long double>(bullet.scale_tween.start[0]) * h00 +
+                                                  static_cast<long double>(bullet.scale_tween.end[0]) * h01 +
+                                                  static_cast<long double>(bullet.scale_tween.control1[0]) * h10 +
+                                                  static_cast<long double>(bullet.scale_tween.control2[0]) * h11);
+        } else {
+            bullet.hit_scale = static_cast<float>(static_cast<long double>(bullet.scale_tween.start[0]) +
+                                                  (static_cast<long double>(bullet.scale_tween.end[0]) -
+                                                   static_cast<long double>(bullet.scale_tween.start[0])) *
+                                                      static_cast<long double>(interpolation_weight(
+                                                          bullet.scale_tween.mode, bullet.scale_tween.timer.fractional,
+                                                          static_cast<float>(bullet.scale_tween.duration))));
+        }
+        if (bullet.scale_tween.duration == 0) {
+            bullet.behavior_flags &= ~0x400000u;
+            if (bullet.hit_scale == 1.0f) bullet.flags &= ~0x40u;
+        }
     }
 }
 
