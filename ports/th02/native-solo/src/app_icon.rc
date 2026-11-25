@@ -1,0 +1,4 @@
+#include "app_icon_resource.h"
+
+// CMake and the standalone packer stage the selected local or neutral ICO here.
+IDI_SOEW_APP_ICON ICON "app_icon.ico"

@@ -1,6 +1,6 @@
 # 文档总表
 
-共 670 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 674 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -96,6 +96,8 @@
 | 作品源码文档 | [ports/th02/LAN-公网联机说明.md](../ports/th02/LAN-公网联机说明.md) | TH02 局域网与公网联机 |
 | 作品源码文档 | [ports/th02/README-UPSTREAM.md](../ports/th02/README-UPSTREAM.md) | TH02《东方封魔录》· 单人游戏与两／三人合作 |
 | 作品源码文档 | [ports/th02/TH02-PRACTICE-WEB.md](../ports/th02/TH02-PRACTICE-WEB.md) | TH02 网页练习工具 |
+| 作品源码文档 | [ports/th02/native-solo/README.md](../ports/th02/native-solo/README.md) | SoEW Native — 東方封魔録 for Windows and the Web |
+| 作品源码文档 | [ports/th02/native-solo/WEB.md](../ports/th02/native-solo/WEB.md) | SoEW Native Web：完整单人版 |
 | 作品源码文档 | [ports/th02/联机同时操作卡顿优化记录.md](../ports/th02/联机同时操作卡顿优化记录.md) | TH02 联机同时操作卡顿优化记录 |
 | 作品源码文档 | [ports/th03/README-UPSTREAM.md](../ports/th03/README-UPSTREAM.md) | TH03《东方梦时空》· DOSBox-X 性能版 |
 | 作品源码文档 | [ports/th03/ROLLBACK.md](../ports/th03/ROLLBACK.md) | TH03 原生联机回滚 |
@@ -546,6 +548,8 @@
 | 许可证与声明 | [launcher/public/vendor/webaudio-tinysynth.LICENSE](../launcher/public/vendor/webaudio-tinysynth.LICENSE) | webaudio tinysynth |
 | 许可证与声明 | [ports/th01/web/room-ui-assets/LICENSE.txt](../ports/th01/web/room-ui-assets/LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th02/NOTICE-runtime.md](../ports/th02/NOTICE-runtime.md) | DOSBox-X / js-dos runtime for TH02 |
+| 许可证与声明 | [ports/th02/native-solo/LICENSE](../ports/th02/native-solo/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th02/native-solo/NOTICE](../ports/th02/native-solo/NOTICE) | NOTICE |
 | 许可证与声明 | [ports/th02/web/room-ui-assets/LICENSE.txt](../ports/th02/web/room-ui-assets/LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th02/web/vendor/dosbox-x/LICENSE](../ports/th02/web/vendor/dosbox-x/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th02/web/vendor/dosbox-x/NOTICE.md](../ports/th02/web/vendor/dosbox-x/NOTICE.md) | DOSBox-X / js-dos runtime for TH02 |

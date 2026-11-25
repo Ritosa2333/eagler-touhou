@@ -1,0 +1,162 @@
+diff --git a/include/th03/audio/pmd_opna.hpp b/include/th03/audio/pmd_opna.hpp
+--- a/include/th03/audio/pmd_opna.hpp
++++ b/include/th03/audio/pmd_opna.hpp
+@@ -8,6 +8,7 @@
+ #include <memory>
+ #include <optional>
+ #include <span>
++#include <vector>
+ 
+ namespace th03::audio {
+ 
+@@ -108,6 +109,18 @@
+ 	std::uint8_t effect_volume_percent = 100U;
+ };
+ 
++struct FmCheckpoint {
++	struct Interrupt { std::uint64_t clock; std::uint32_t status_end; };
++	std::vector<std::uint8_t> statuses;
++	std::vector<Interrupt> interrupts;
++	std::vector<std::uint8_t> chip;
++	std::array<std::int64_t, 2> deadlines;
++	std::uint64_t native_samples, writes;
++	std::uint32_t write_hash, ticks;
++	std::uint16_t measure;
++	bool irq;
++};
++
+ // Platform-neutral, byte-fed PMD/YM2608 engine. It owns both the immutable
+ // prepared song and the fresh mutable image used by one playback. Filesystem,
+ // SDL, device clocks, resampling, and TH03 scene/service policy stay outside.
+@@ -166,6 +179,8 @@
+ 		std::uint16_t target,
+ 		std::uint64_t maximum_native_samples
+ 	) noexcept;
++	[[nodiscard]] std::optional<FmCheckpoint> capture_checkpoint(std::uint16_t measure);
++	bool restore_checkpoint(FmCheckpoint& checkpoint);
+ 	void render_native(std::span<PmdOpnaStereoSample> output) noexcept;
+ 
+ 	void set_register_trace_sink(PmdOpnaRegisterTraceSink *sink) noexcept;
+diff --git a/src/audio/pmd_opna.cpp b/src/audio/pmd_opna.cpp
+--- a/src/audio/pmd_opna.cpp
++++ b/src/audio/pmd_opna.cpp
+@@ -541,10 +541,20 @@
+ 
+ 	std::uint8_t read_status(bool upper_port) noexcept
+ 	{
+-		if(upper_port) {
+-			return chip->read_status_hi();
+-		}
+-		return static_cast<std::uint8_t>(chip->read_status() & 0x83U);
++		if(replay_statuses.data()) {
++			if(replay_at == replay_statuses.size()) {
++				replay_status_overrun = true;
++				return 0;
++			}
++			return replay_statuses[replay_at++];
++		}
++		const auto status = upper_port ? chip->read_status_hi() :
++			static_cast<std::uint8_t>(chip->read_status() & 0x83U);
++		if(capture && in_interrupt) {
++			if(capture->statuses.size() == capture->statuses.capacity()) capture_overflow = true;
++			else capture->statuses.push_back(status);
++		}
++		return status;
+ 	}
+ 
+ 	void expire_timer(std::uint32_t timer) noexcept
+@@ -554,7 +564,13 @@
+ 			m_engine->engine_timer_expired(timer);
+ 		}
+ 		if(irq_asserted && active_pmd) {
++			in_interrupt = true;
+ 			th03_pmd_interrupt(active_pmd.get());
++			in_interrupt = false;
++			if(capture) {
++				if(capture->interrupts.size() == capture->interrupts.capacity()) capture_overflow = true;
++				else capture->interrupts.push_back({chip_clocks, static_cast<std::uint32_t>(capture->statuses.size())});
++			}
+ 		}
+ 	}
+ 
+@@ -638,6 +654,12 @@
+ 	std::uint64_t register_writes = 0U;
+ 	std::uint32_t register_hash = fnv_offset;
+ 	PmdOpnaRegisterTraceSink *trace_sink = nullptr;
++	FmCheckpoint* capture = nullptr;
++	bool in_interrupt = false;
++	bool capture_overflow = false;
++	std::span<const std::uint8_t> replay_statuses{};
++	std::size_t replay_at = 0;
++	bool replay_status_overrun = false;
+ };
+ 
+ std::expected<PmdOpnaEngine, PmdOpnaError> PmdOpnaEngine::create(
+@@ -977,6 +999,67 @@
+ 		++consumed;
+ 	}
+ 	return {};
++}
++
++std::optional<FmCheckpoint> PmdOpnaEngine::capture_checkpoint(std::uint16_t measure)
++{
++	if(!impl_->active_pmd || impl_->samples_rendered || !impl_->rhythm_rom.empty() ||
++		impl_->decoded_rhythm.present()) return {};
++	FmCheckpoint ck{};
++	ck.interrupts.reserve(100000);
++	ck.statuses.reserve(300000);
++	impl_->capture_overflow = false;
++	impl_->capture = &ck;
++	const auto seek = advance_to_measure(measure, 166400ULL * 600);
++	impl_->capture = nullptr;
++	if(!seek || impl_->capture_overflow) return {};
++	const auto s = status();
++	ck.measure = s.measure;
++	ck.ticks = s.timer_b_count;
++	ck.native_samples = s.samples_rendered;
++	ck.writes = s.register_writes;
++	ck.write_hash = s.register_hash;
++	ck.deadlines = impl_->timer_deadlines;
++	ck.irq = impl_->irq_asserted;
++	ymfm::ymfm_saved_state state(ck.chip, true);
++	impl_->chip->save_restore(state);
++	return ck;
++}
++
++bool PmdOpnaEngine::restore_checkpoint(FmCheckpoint& ck)
++{
++	if(!impl_->active_pmd || impl_->samples_rendered || !impl_->rhythm_rom.empty() ||
++		impl_->decoded_rhythm.present() || ck.chip.empty() || ck.interrupts.empty() ||
++		ck.native_samples > 166400ULL * 600) return false;
++	const auto end = ck.native_samples * impl_->clocks_per_sample;
++	std::uint32_t at = 0;
++	for(const auto& evt : ck.interrupts) {
++		if(evt.clock < impl_->chip_clocks || evt.clock > end ||
++			evt.status_end <= at || evt.status_end > ck.statuses.size()) return false;
++		impl_->chip_clocks = evt.clock;
++		impl_->replay_statuses = std::span(ck.statuses).subspan(at, evt.status_end - at);
++		impl_->replay_at = 0;
++		impl_->replay_status_overrun = false;
++		th03_pmd_interrupt(impl_->active_pmd.get());
++		const auto consumed = impl_->replay_at == impl_->replay_statuses.size();
++		impl_->replay_statuses = {};
++		if(!consumed || impl_->replay_status_overrun) return false;
++		at = evt.status_end;
++	}
++	const auto s = status();
++	if(at != ck.statuses.size() || s.measure != ck.measure || s.timer_b_count != ck.ticks ||
++		s.register_hash != ck.write_hash || s.register_writes != ck.writes) return false;
++	std::vector<std::uint8_t> expected_chip;
++	ymfm::ymfm_saved_state expected(expected_chip, true);
++	impl_->chip->save_restore(expected);
++	if(ck.chip.size() != expected_chip.size()) return false;
++	ymfm::ymfm_saved_state restored(ck.chip, false);
++	impl_->chip->save_restore(restored);
++	impl_->samples_rendered = ck.native_samples;
++	impl_->chip_clocks = end;
++	impl_->timer_deadlines = ck.deadlines;
++	impl_->irq_asserted = ck.irq;
++	return true;
+ }
+ 
+ void PmdOpnaEngine::render_native(

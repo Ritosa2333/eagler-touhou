@@ -1,0 +1,65 @@
+Third-party notices
+===================
+
+SoEW Native is maintained by Dr. Hydrangea Z (https://github.com/Hydrangea-Z).
+This repository contains only original source code written for this port, plus
+small tools. It distributes no game data and no third-party binaries.
+
+1. Touhou Project / 東方Project
+   The game being ported, its artwork, music, text and characters are the
+   property of ZUN / Team Shanghai Alice (上海アリス幻樂団).
+   This is an unofficial fan project (二次創作). You must own the original game
+   to build a runnable copy.
+
+2. libth03 / th98port  —  https://github.com/christianazinn/th98port
+   Fetched at a pinned commit by bootstrap.ps1. It provides the PI, RGB and
+   BFT asset decoders and the vendored TinySoundFont build used by this port.
+   It is NOT redistributed here; bootstrap.ps1 fetches it from its own
+   repository, and its own terms apply. The repository has no
+   top-level license file, so treat it as all rights reserved and ask its
+   author before redistributing its sources.
+
+3. TinySoundFont (reached through libth03's third_party directory)
+   Copyright (C) 2017-2023 Bernhard Schelling, based on SFZero,
+   Copyright (C) 2012 Steve Folta.  MIT license.
+
+4. GeneralUser GS v1.44 SoundFont — http://www.schristiancollins.com
+   Runtime data only, NOT included. Its "License v2.0" allows use in software
+   projects and modification of the bank or its packaging; keep the license
+   text next to any copy you redistribute. `tools/slim_soundfont.py` can
+   derive a TH02-only subset locally.
+
+5. ReC98 — https://github.com/nmlgc/ReC98
+   Research reference for the original PC-98 code. No ReC98 source is copied
+   into or redistributed by this repository.
+
+6. app_icon.ico
+   Generated procedurally by `tools/gen_icon.py`; it contains no
+   third-party artwork.
+
+7. zlib 1.4 — https://zlib.net/
+   Downloaded from upstream at configure time and linked statically for native
+   replay compression. The license notice from the release follows:
+
+   Copyright notice:
+
+    (C) 1995-2026 Jean-loup Gailly and Mark Adler
+
+     This software is provided 'as-is', without any express or implied
+     warranty.  In no event will the authors be held liable for any damages
+     arising from the use of this software.
+
+     Permission is granted to anyone to use this software for any purpose,
+     including commercial applications, and to alter it and redistribute it
+     freely, subject to the following restrictions:
+
+     1. The origin of this software must not be misrepresented; you must not
+        claim that you wrote the original software. If you use this software
+        in a product, an acknowledgment in the product documentation would be
+        appreciated but is not required.
+     2. Altered source versions must be plainly marked as such, and must not be
+        misrepresented as being the original software.
+     3. This notice may not be removed or altered from any source distribution.
+
+     Jean-loup Gailly        Mark Adler
+     jloup@gzip.org          madler@alumni.caltech.edu

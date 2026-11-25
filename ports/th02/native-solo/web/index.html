@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>東方封魔録</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  body { min-height: 100dvh; display: grid; place-items: center; }
+  canvas { display: block; width: min(100vw, 100dvh * var(--aspect, 1.6)); height: auto; aspect-ratio: var(--aspect, 1.6); image-rendering: pixelated; }
+</style>
+<canvas width="640" height="400" tabindex="0" aria-label="東方封魔録"></canvas>
+<script type="module">
+  const canvas = document.querySelector('canvas');
+  try {
+    if (new URLSearchParams(location.search).has('stage1')) {
+      const {play} = await import('./shell.mjs');
+      await play(canvas);
+    } else {
+      const {playFull} = await import('./full.mjs');
+      await playFull(canvas);
+    }
+  } catch (error) {
+    console.error(error);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.font = '14px monospace';
+    ctx.fillText(error.message, 16, 32, canvas.width - 32);
+  }
+</script>
+</html>
