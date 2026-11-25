@@ -40,6 +40,10 @@ export function BroRoomSettings({systems, queue, disabled, onSystems, onQueue}: 
 
   const stageName = (level: number) => BRO_STAGES.find(s => s.level === level)?.name ?? `CH.${level}`;
   const available = BRO_STAGES.filter(stage => !queue.includes(stage.level));
+  const queueRows = queue.reduce<{level: number; key: string}[]>((rows, level) => {
+    rows.push({level, key: `${level}-${rows.filter(row => row.level === level).length}`});
+    return rows;
+  }, []);
 
   return <div className="bro-room-settings" data-bro-room-settings>
     <div className="bro-room-systems">
@@ -76,9 +80,9 @@ export function BroRoomSettings({systems, queue, disabled, onSystems, onQueue}: 
       {queue.length === 0
         ? <p className="bro-queue-empty room-setting-description">{t('room.broQueueEmpty')}</p>
         : <ol className="bro-queue-list">
-          {queue.map((level, index) => <li key={`${index}-${level}`} className="bro-queue-item">
+          {queueRows.map((row, index) => <li key={row.key} className="bro-queue-item">
             <span className="bro-queue-index">{index + 1}</span>
-            <span className="bro-queue-name">{stageName(level)}</span>
+            <span className="bro-queue-name">{stageName(row.level)}</span>
             <span className="bro-queue-actions">
               <UiButton size="icon-sm" type="button" disabled={disabled || index === 0}
                 aria-label={t('room.broQueueUp')} onClick={() => move(index, -1)}>↑</UiButton>

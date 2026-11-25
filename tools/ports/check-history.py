@@ -15,6 +15,9 @@ from time import perf_counter
 
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 DIRECTORY = re.compile(r"ports/[a-z0-9]+(?:-mp)?\Z")
+# Port directories are not limited to numbered Touhou titles: third-party
+# derivatives such as ports/bossrush register through the same records.
+SOURCE_RECORD = re.compile(r"[a-z][a-z0-9]*(?:-?mp)?-eagler-[0-9]+\.json")
 
 
 class Repository:
@@ -132,7 +135,7 @@ def subtree_records(repo, head):
     records = []
     migration = repo.git("ls-tree", "--name-only", f"{head}:docs/migration").splitlines()
     for name in migration:
-        if not re.fullmatch(r"th[0-9]+(?:mp|-mp)?-eagler-[0-9]+\.json", name):
+        if not SOURCE_RECORD.fullmatch(name):
             continue
         record = repo.document(head, f"docs/migration/{name}")
         if record.get("currentMode") == "git-subtree":
@@ -152,7 +155,7 @@ def delivery_snapshots(repo, head, workspace):
     """A non-Git delivery is pinned to its original checksum manifest."""
     records = []
     for name in repo.git("ls-tree", "--name-only", f"{head}:docs/migration").splitlines():
-        if not re.fullmatch(r"th[0-9]+-eagler-[0-9]+\.json", name):
+        if not SOURCE_RECORD.fullmatch(name):
             continue
         record = repo.document(head, f"docs/migration/{name}")
         if record.get("schema") != "eagler-touhou/source-snapshot/1":
