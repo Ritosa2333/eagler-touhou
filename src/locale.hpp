@@ -18,9 +18,6 @@ constexpr bool is_chinese(Language language) {
 constexpr Language simulation_language(Language display) {
     return is_chinese(display) ? Language::Japanese : display;
 }
-constexpr Language effective_language(Language preference, bool chinese_available) {
-    return !chinese_available && is_chinese(preference) ? Language::Japanese : preference;
-}
 constexpr Language gameplay_display_language(Language viewer, Language simulation) {
     return is_chinese(viewer) ? viewer : simulation;
 }

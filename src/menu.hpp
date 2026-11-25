@@ -42,18 +42,8 @@ struct Menu {
     soew::HitboxMode hitboxes=soew::HitboxMode::Off;
     bool autofire=false,fast_autofire=true; // Host-only assist; old ON setting used the 2+2 waveform.
     soew::Language language=soew::Language::Japanese;
-    soew::Language language_preference=soew::Language::Japanese;
     std::optional<soew::Language> practice_language_preference;
     soew::Language practice_language()const{return practice_language_preference.value_or(language);}
-    bool chinese_available=false;
-    void set_language_preference(soew::Language value){
-        language_preference=value;
-        language=!chinese_available&&static_cast<int>(value)>=2?soew::Language::Japanese:value;
-    }
-    void set_chinese_available(bool available){
-        chinese_available=available;
-        set_language_preference(language_preference);
-    }
 
     enum class Option { Rank, Music, Lives, Bombs, Autofire, Effects, MoreInfo, Fullscreen, Hitboxes, Language, StageIntro, SmoothBackground, Reset, Back, Empty };
     static constexpr std::array<std::array<Option,2>,7> option_rows={{
@@ -80,12 +70,11 @@ struct Menu {
         }
         return 0;
     }
-    static constexpr int option_count(Option item,bool chinese_available=false){
+    static constexpr int option_count(Option item){
         switch(item){
         case Option::Lives: return 5;
-        case Option::Rank: case Option::Bombs: return 4;
+        case Option::Rank: case Option::Bombs: case Option::Language: return 4;
         case Option::Music: case Option::Autofire: case Option::Hitboxes: return 3;
-        case Option::Language: return chinese_available?4:2;
         case Option::Effects: case Option::MoreInfo: case Option::Fullscreen: case Option::StageIntro: case Option::SmoothBackground: return 2;
         case Option::Reset: case Option::Back: case Option::Empty: return 0;
         }
@@ -102,7 +91,7 @@ struct Menu {
         case Option::MoreInfo: show_more_info=value!=0;break;
         case Option::Fullscreen: fullscreen=value!=0;break;
         case Option::Hitboxes: hitboxes=static_cast<soew::HitboxMode>(value);break;
-        case Option::Language: set_language_preference(static_cast<soew::Language>(value));break;
+        case Option::Language: language=static_cast<soew::Language>(value);break;
         case Option::StageIntro: stage_intro=value!=0;break;
         case Option::SmoothBackground: smooth_background=value!=0;break;
         case Option::Reset: case Option::Back: case Option::Empty: break;
@@ -127,7 +116,7 @@ struct Menu {
             option_column=1-option_column;
             if(option()==Option::Empty)--option_row;
         }else if(const int delta=int(bool(input&right))-int(bool(input&left));delta){
-            if(const int count=option_count(item,chinese_available))set_option(item,ring(option_value(item),delta,count));
+            if(const int count=option_count(item))set_option(item,ring(option_value(item),delta,count));
         }
     }
     int update(unsigned input) {
@@ -230,8 +219,7 @@ namespace soew::text {
 inline constexpr LocalizedText options_title{L"設定",L"Options",L"设置",L"設定"},
     options_controls{L"上下：移動　左右：変更　Tab：列切替　Z：実行　Esc：戻る",L"Up/Down: move  Left/Right: change  Tab: column  Z: act  Esc: back",L"上下：选择  左右：修改  Tab：换列  Z：确认  Esc：返回",L"上下：選擇  左右：修改  Tab：換欄  Z：確認  Esc：返回"},
     options_music_hint{L"音源を変えると現在の曲を新しい音源で再生します",L"Changing the source restarts the current track",L"切换音源后会从头播放当前曲目",L"切換音源後會從頭播放目前曲目"},
-    options_effects_hint{L"一部軽減では一部の点滅や画面の揺れを抑えます",L"Reduced limits some flashes and screen shake",L"减弱部分闪光和画面震动",L"減弱部分閃光和畫面震動"},
-    options_language_unavailable{L"保存済みの中国語は利用できません。日本語で表示します",L"Saved Chinese language unavailable. Showing Japanese.",L"已保存的中文不可用，暂用日语显示",L"已儲存的中文無法使用，暫以日文顯示"};
+    options_effects_hint{L"一部軽減では一部の点滅や画面の揺れを抑えます",L"Reduced limits some flashes and screen shake",L"减弱部分闪光和画面震动",L"減弱部分閃光和畫面震動"};
 inline constexpr std::array<LocalizedText,15> option_labels={{
     {L"難易度",L"Difficulty",L"难度",L"難度"}, {L"音楽",L"Music",L"音乐",L"音樂"}, {L"残機",L"Lives",L"初始命数",L"初始命數"}, {L"ボム",L"Bombs",L"初始灵击",L"初始靈擊"},
     {L"連射",L"Autofire",L"自动连射",L"自動連射"}, {L"演出",L"Effects",L"画面特效",L"畫面特效"}, {L"詳細情報",L"More Info",L"详细信息",L"詳細資訊"}, {L"全画面",L"Fullscreen",L"全屏",L"全螢幕"},

@@ -51,8 +51,8 @@ struct Settings {
     bool stage_intro=true,smooth_background=true;
     std::optional<Language> practice_language;
     PracticeAdvanced practice_advanced;
-    static Settings from(const Menu &m,PracticeAdvanced advanced={}){return {m.rank,m.music,m.lives,m.bombs,m.reduced,m.autofire,m.show_more_info,m.fullscreen,m.fast_autofire,m.hitboxes,m.language_preference,m.stage_intro,m.smooth_background,m.practice_language_preference,advanced};}
-    void apply(Menu &m)const{m.rank=rank;m.music=music;m.lives=lives;m.bombs=bombs;m.reduced=reduced;m.autofire=autofire;m.show_more_info=show_more_info;m.fullscreen=fullscreen;m.fast_autofire=fast_autofire;m.hitboxes=hitboxes;m.set_language_preference(language);m.stage_intro=stage_intro;m.smooth_background=smooth_background;m.practice_language_preference=practice_language;}
+    static Settings from(const Menu &m,PracticeAdvanced advanced={}){return {m.rank,m.music,m.lives,m.bombs,m.reduced,m.autofire,m.show_more_info,m.fullscreen,m.fast_autofire,m.hitboxes,m.language,m.stage_intro,m.smooth_background,m.practice_language_preference,advanced};}
+    void apply(Menu &m)const{m.rank=rank;m.music=music;m.lives=lives;m.bombs=bombs;m.reduced=reduced;m.autofire=autofire;m.show_more_info=show_more_info;m.fullscreen=fullscreen;m.fast_autofire=fast_autofire;m.hitboxes=hitboxes;m.language=language;m.stage_intro=stage_intro;m.smooth_background=smooth_background;m.practice_language_preference=practice_language;}
     static constexpr const char* language_id(Language language){return localized(language,"ja","en","zh-Hans","zh-Hant");}
     static constexpr const wchar_t* wide_language_id(Language language){return localized(language,L"ja",L"en",L"zh-Hans",L"zh-Hant");}
     bool operator==(const Settings&)const=default;

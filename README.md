@@ -65,9 +65,9 @@ need the English patch, a PC-98 emulator, or a SoundFont for the basic FM build.
   defeat effect), Marisa, Mima (both forms), and Sigma.
 * Practice (per-section and per-chapter), Replay recording/browsing/playback,
   Options, music room, high scores, endings.
-* Japanese and English presentation. The Japanese text and the English
-  translation are read from assets *you* extract from your own copy; no text is
-  bundled here.
+* Japanese, English, Simplified Chinese and Traditional Chinese settings.
+  Original story text and the English translation are read from assets *you*
+  extract from your own copy.
 * Original-style menus: two-column Options with the original fonts and colours,
   left/right value editing.
 * MIDI (TinySoundFont) or FM (98fmplayer through libth03) audio.
@@ -204,10 +204,11 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
   SHA-256 is `00725296486f652ba42bdbf2098254762ca80239353d04b55a27454fc8edb8a8`.
   FM does not need this file. The private Practice audio checkpoint catalog
   is not included or required; without it Practice uses exact seeking.
-- **Other languages:** the basic setup uses Japanese game data. The locale
-  tools support specific locally supplied Japanese/English inputs checked by
-  hash. Chinese story text requires a separate reviewed locale pack. None of
-  those overlays is needed for the quick start or included in this repository.
+- **Other languages:** Options → Language offers Simplified and Traditional
+  Chinese without a locale pack. With the basic Japanese game data, choosing
+  either keeps the original Japanese story and endings. The locale tools still
+  support hash-checked Japanese/English inputs and a separate reviewed Chinese
+  story pack. None of those overlays is included or required for the quick start.
 - **Separate data directory:** pass `--assets "D:/path/to/content"`. Extracted
   data, personal scores, and recordings belong outside Git.
 

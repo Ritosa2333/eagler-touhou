@@ -25,6 +25,10 @@ int main(int argc,char**argv){try{
     check(m.option()==O::Language&&m.language==L::Japanese);
     key(Menu::confirm);check(m.language==L::Japanese);
     key(Menu::right);check(m.option()==O::Language&&soew::Settings::from(m).language==L::English);
+    key(Menu::right);check(m.language==L::ChineseSimplified);
+    key(Menu::right);check(m.language==L::ChineseTraditional);
+    key(Menu::right);check(m.language==L::Japanese);
+    key(Menu::right);
     key(Menu::cancel);check(!m.options&&m.language==L::English);
     key(Menu::confirm);key(Menu::down);check(m.option()==O::Music);
     key(Menu::right);check(m.music==0&&soew::Settings::from(m).music==0);
@@ -65,12 +69,14 @@ int main(int argc,char**argv){try{
         check(store.save(value)&&soew::SettingsStore(p).load()==value);
     }
     for(const auto lang:{L::Japanese,L::English,L::ChineseSimplified,L::ChineseTraditional}){
-        soew::SettingsStore store(p);auto value=store.load();value.language=L::English;value.practice_language=lang;
+        soew::SettingsStore store(p);auto value=store.load();value.language=lang;
+        value.practice_language=lang==L::English?L::ChineseSimplified:L::English;
         check(store.save(value));
         const auto loaded=soew::SettingsStore(p).load();check(loaded==value);
-        Menu menu;loaded.apply(menu);check(!menu.chinese_available&&menu.language==L::English&&menu.practice_language()==lang);
-        menu.practice_language_preference.reset();check(menu.practice_language()==L::English&&store.save(soew::Settings::from(menu)));
-        check(!soew::SettingsStore(p).load().practice_language);
+        Menu menu;loaded.apply(menu);check(menu.language==lang&&menu.practice_language()==*value.practice_language);
+        check(soew::simulation_language(menu.language)==(lang==L::English?L::English:L::Japanese));
+        menu.practice_language_preference.reset();check(menu.practice_language()==lang&&store.save(soew::Settings::from(menu)));
+        const auto follow_game=soew::SettingsStore(p).load();check(!follow_game.practice_language&&follow_game.language==lang);
     }
     put(p,"{\"version\":2,\"language\":\"en\",\"practice_language\":\"fr\"}");
     soew::SettingsStore invalid_practice(p);const auto fallback=invalid_practice.load();
@@ -95,12 +101,13 @@ int main(int argc,char**argv){try{
         std::ifstream file(p,std::ios::binary);std::string contents(std::istreambuf_iterator<char>{file},{});check(contents==input);
     }
     namespace t=soew::text;
-    for(const auto lang:{L::Japanese,L::English}){
+    for(const auto lang:{L::Japanese,L::English,L::ChineseSimplified,L::ChineseTraditional}){
+        const auto width=soew::is_chinese(lang)?jp::cell_width:menu_text_width;
         for(const auto &row:Menu::option_rows)for(const auto option:row){
             const int count=Menu::option_count(option);
-            const int label_width=menu_text_width(t::option_labels[static_cast<unsigned>(option)](lang));
+            const int label_width=width(t::option_labels[static_cast<unsigned>(option)](lang));
             if(!count)check(label_width<=280);
-            for(int i=0;i<count;++i)check(label_width+menu_text_width(t::option_value(lang,option,i))<=272);
+            for(int i=0;i<count;++i)check(label_width+width(t::option_value(lang,option,i))<=272);
         }
         for(const auto hint:{t::options_controls,t::options_music_hint,t::options_effects_hint})
             check(jp::cell_width(hint(lang))<=536);

@@ -336,7 +336,7 @@ void test_floating_panels(){
     assist.toggle_row(assist_row);check(assist.enabled(PracticeTool::AutoBomb));
 
     PracticeToolsPanel tools;using T=PracticeToolsPanel;using Mode=T::Mode;using K=T::Kind;
-    Menu native;native.set_language_preference(L::English);
+    Menu native;native.language=L::English;
     check(!tools.toggle(false,false,Mode::Setup)&&!tools.toggle(true,true,Mode::Setup));
     check(tools.toggle(true,false,Mode::Setup)&&tools.open&&tools.focus==T::speed_row);
     tools.navigate(-1);check(tools.focus==T::retry_row-1);
@@ -346,10 +346,11 @@ void test_floating_panels(){
     check(tools.in_header({46,20})&&index==T::first_language+3);
     const auto row=tools.row(index);check(row.kind==K::Language&&row.index==3);
     native.practice_language_preference=T::choices[row.index];
-    check(native.practice_language()==L::ChineseSimplified&&native.language==L::English&&!native.chinese_available);
+    check(native.practice_language()==L::ChineseSimplified&&native.language==L::English);
     check(!tools.toggle(true,true,Mode::Setup)&&tools.open);
     check(tools.toggle(true,false,Mode::Setup)&&!tools.open);
-    native.practice_language_preference=T::choices[0];check(native.practice_language()==native.language);
+    native.language=L::ChineseTraditional;
+    native.practice_language_preference=T::choices[0];check(native.practice_language()==L::ChineseTraditional);
 
     check(tools.toggle(true,false,Mode::Live)&&tools.focus==0&&!tools.available_row(T::retry_row));
     const auto auto_bomb=tools.row(int(PracticeTool::AutoBomb));

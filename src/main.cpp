@@ -565,7 +565,7 @@ void compose_options(Frame &frame,const th03::assets::BfntSheet &font,const Menu
         const auto color=menu.option()==item?white:yellow;
         const int x=24+int(column)*312,y=204+int(row)*22;
         const auto label=t::option_labels[static_cast<unsigned>(item)](language);
-        if(!Menu::option_count(item,menu.chinese_available)){draw(label,x+(280-width(label))/2,y,color);continue;}
+        if(!Menu::option_count(item)){draw(label,x+(280-width(label))/2,y,color);continue;}
         const auto value=t::option_value(language,item,menu.option_value(item));
         draw(label,x,y,color);
         draw(value,x+280-width(value),y,color);
@@ -574,7 +574,6 @@ void compose_options(Frame &frame,const th03::assets::BfntSheet &font,const Menu
     if(!warning.empty())hint(soew::settings_warning_text(language,warning),380,white);
     else if(menu.option()==Menu::Option::Music)hint(t::options_music_hint(language),380,yellow);
     else if(menu.option()==Menu::Option::Effects)hint(t::options_effects_hint(language),380,yellow);
-    else if(menu.option()==Menu::Option::Language&&language!=menu.language_preference)hint(t::options_language_unavailable(language),380,yellow);
 }
 void compose_frontend(Frame &frame,const th03::assets::BfntSheet &font,const Menu &menu) {
     draw_menu(frame.pixels,font,menu);
@@ -1169,7 +1168,8 @@ Frame zunsoft_frame(const ZunSoftAssets &assets,const soew::ZunSoftOpening &anim
     return output;
 }
 void save_settings(App &app){if(!app.settings_enabled||!app.settings||app.replay_playback)return;if(!app.settings->save(soew::Settings::from(app.menu,app.practice_tools.options))){app.settings_warning=app.settings->warning;std::cerr<<"Settings not saved: "<<app.settings_warning<<'\n';}else app.settings_warning=app.settings->warning;}
-void audio_error(App &app){std::cerr<<"Audio preview error: "<<app.audio.error()<<'\n';app.audio_status={L"音声の出力を停止しました",L"Audio error; output stopped"};app.audio.stop();app.fm_enabled=false;}
+constexpr soew::LocalizedText preview_stopped{L"試聴を停止しました",L"Preview stopped",L"已停止试听",L"已停止試聽"};
+void audio_error(App &app){std::cerr<<"Audio preview error: "<<app.audio.error()<<'\n';app.audio_status={L"音声の出力を停止しました",L"Audio error; output stopped",L"音频出错，已停止播放",L"音訊出錯，已停止播放"};app.audio.stop();app.fm_enabled=false;}
 void start_zunsoft(App &app){
     if(!app.zunsoft_assets)return;
     app.zunsoft.restart();
@@ -1189,19 +1189,19 @@ void drain_gameplay_audio(App &app){
 void start_preview(App &app,int track,bool effect_only=false,unsigned start_measure=0){
     cancel_gameplay_audio(app);if(!app.smoke&&app.stage_scene)app.gameplay_audio_attempted=-1;
     app.playing_track=-1;if(track>=0&&track<15)app.loaded_track=track;
-    if(track<0||track>=static_cast<int>(app.songs.size())){app.audio.stop();app.audio_status={L"試聴を停止しました",L"Preview stopped"};return;}
+    if(track<0||track>=static_cast<int>(app.songs.size())){app.audio.stop();app.audio_status=preview_stopped;return;}
     const auto music=app.menu.music;
     app.midi_mode=music==2;
     const HostPerf::Span span(app.host_perf.get(),HostPerf::Metric::AudioPublish);
     try{const auto &song=app.midi_mode?app.midi_songs.at(track):app.songs.at(track);
-        if(song.empty()||(app.midi_mode&&app.soundfont.empty())){app.audio_status={L"音源が見つからないため試聴できません",L"Preview unavailable: audio source missing"};app.audio.stop();return;}
+        if(song.empty()||(app.midi_mode&&app.soundfont.empty())){app.audio_status={L"音源が見つからないため試聴できません",L"Preview unavailable: audio source missing",L"缺少音源，无法试听",L"缺少音源，無法試聽"};app.audio.stop();return;}
         if(!app.audio.start(song,app.audio_test_silent,WAVE_MAPPER,app.midi_mode?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},app.effect_bank,app.songs.at(track),music==0||effect_only,start_measure)){audio_error(app);return;}
         app.playing_track=music==0||effect_only?-1:track;
         app.fm_enabled=music!=0&&!effect_only;
         const auto file=std::string(soew::music_files.at(track))+(app.midi_mode?"MD":"");
-        app.audio_status=music==0?soew::LocalizedText{L"音楽・効果音なし",L"Music and sound effects off"}:soew::LocalizedText{L"",L""};
+        app.audio_status=music==0?soew::LocalizedText{L"音楽・効果音なし",L"Music and sound effects off",L"音乐和音效已关闭",L"音樂和音效已關閉"}:soew::LocalizedText{L"",L""};
         std::cout<<"preview_track="<<track<<" file="<<file<<" song_fnv="<<app.audio.song_hash()<<" prefill_pcm_fnv="<<app.audio.pcm_hash()<<'\n';
-    }catch(const std::exception&){app.audio.stop();app.fm_enabled=false;app.audio_status={L"試聴できませんでした",L"Could not play preview"};}
+    }catch(const std::exception&){app.audio.stop();app.fm_enabled=false;app.audio_status={L"試聴できませんでした",L"Could not play preview",L"无法试听",L"無法試聽"};}
 }
 int scene_music_track(const soew::EncounterScene &s){
     return s.sigma_music?14:s.mima_music?10:s.stones_enabled?8:s.stage==1&&(s.meira_appearance||s.meira_enabled)?7:soew::gameplay_music_track(s.stage,s.preboss_started,s.rika_enabled,s.marisa_music);
@@ -2122,7 +2122,7 @@ void start_stage5_ending(App &app){
     soew::EndingSurfaceHooks hooks;
     const auto language=app.menu.language;
     hooks.read_asset=[&app,language](std::string_view name){
-        return read(name.ends_with(".TXT") ? soew::locale_asset(app.assets_root,language,name) : app.assets_root/fs::path(name));
+        return read(name.ends_with(".TXT") ? soew::locale_asset(app.assets_root,soew::simulation_language(language),name) : app.assets_root/fs::path(name));
     };
     if(soew::is_chinese(language)&&app.chinese_text)
         hooks.chinese_line=[&app,language](std::string_view asset,std::size_t record){return app.chinese_text->line(language,asset,record);};
@@ -2131,8 +2131,11 @@ void start_stage5_ending(App &app){
         if(encoding==soew::EndingSurfaceText::Cp932)wide=cp932(text);
         else wide=soew::wide_utf8(text);
         Frame mask{640,400,std::vector<std::uint32_t>(640*400)};
-        display_text(mask,wide,x,y,0xffffff,language);
-        const int width=soew::is_chinese(language)?display_text_width(wide,language):int(wide.size())*16;
+        // With no separate story pack, draw the original CP932 text using
+        // the same font and spacing as the Japanese/English narrative.
+        const auto text_language=encoding==soew::EndingSurfaceText::Cp932?soew::simulation_language(language):language;
+        display_text(mask,wide,x,y,0xffffff,text_language);
+        const int width=soew::is_chinese(text_language)?display_text_width(wide,text_language):int(wide.size())*16;
         for(int py=std::max(0,y);py<std::min(400,y+16);++py)
             for(int px=std::max(0,x);px<std::min(640,x+width);++px)
                 if(mask.pixels[py*640+px])out.put_pixel(px,py,ink);
@@ -2653,10 +2656,10 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(w==VK_F4&&!repeat&&!app->opening.active){
             if(app->menu.music_room){
                 const int track=soew::preview_f4_target(app->menu.music_selected,app->playing_track,app->audio.active());
-                if(track<0){if(!app->audio.stop())audio_error(*app);app->fm_enabled=false;app->playing_track=-1;app->audio_status={L"試聴を停止しました",L"Preview stopped"};}
+                if(track<0){if(!app->audio.stop())audio_error(*app);app->fm_enabled=false;app->playing_track=-1;app->audio_status=preview_stopped;}
                 else{app->fm_enabled=true;app->menu.music_comment=track;start_preview(*app,track);}
-            }else if(app->audio.active()){if(!app->audio.stop())audio_error(*app);app->fm_enabled=false;app->playing_track=-1;app->audio_status={L"試聴を停止しました",L"Preview stopped"};}
-            else{app->fm_enabled=true;app->audio_status={L"音楽室で曲を選ぶと試聴できます",L"Select a track in the music room to preview"};}
+            }else if(app->audio.active()){if(!app->audio.stop())audio_error(*app);app->fm_enabled=false;app->playing_track=-1;app->audio_status=preview_stopped;}
+            else{app->fm_enabled=true;app->audio_status={L"音楽室で曲を選ぶと試聴できます",L"Select a track in the music room to preview",L"在音乐室选择曲目即可试听",L"在音樂室選擇曲目即可試聽"};}
             caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
         }
         if(w==VK_F3 && !repeat){if(!app->audio.stop())audio_error(*app);else app->audio_status={L"",L""};app->scores_visible=false;app->menu.music_room=false;app->menu.options=false;app->menu.shot_screen=false;app->menu.extra_mode=false;app->menu.shot_confirmed=false;app->menu.selected=0;app->menu.allowed=false;app->menu_visible=true;app->opening.restart();app->title_audio_started=false;app->title_effect_phase=0;start_zunsoft(*app);app->clock.reset(host_ms());app->score_clock.reset(host_ms());InvalidateRect(hwnd,nullptr,FALSE);return 0;}
@@ -2714,7 +2717,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     app->notice=app->tr(L"移植版のローカルハイスコア",L"Local high scores",L"本地最高分",L"本機最高分");
                 }
                 else if(action>=0&&action!=Menu::practice_entry) app->notice=app->tr(L"この操作にはまだ対応していません",L"Selected action is not implemented yet",L"此操作暂不支持",L"此操作尚未支援");
-                else if(!app->stage_scene)app->notice=app->menu.music_room?app->tr(L"音楽室：決定で再生。戻っても再生は続きます",L"Music room: confirm plays selected track; exit keeps playing"):
+                else if(!app->stage_scene)app->notice=app->menu.music_room?app->tr(L"音楽室：決定で再生。戻っても再生は続きます",L"Music room: confirm plays selected track; exit keeps playing",L"音乐室：确认播放曲目，返回后继续播放",L"音樂室：確認播放曲目，返回後繼續播放"):
                     app->menu.practice_shot_select()?soew::text::confirm_back(app->menu.practice_language()):
                     app->menu.shot_screen?app->tr(L"左右：ショット選択　Z / Enter：開始　Esc：戻る",L"Left/Right: choose shot   Z/Enter: start   Esc: back",L"左右：选择机体  Z / Enter：开始  Esc：返回",L"左右：選擇機體  Z / Enter：開始  Esc：返回"):L"";
             }
@@ -3507,9 +3510,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             auto translated_options=app->frames[0];compose_options(translated_options,app->font,app->menu,app->settings_warning);
             app->check(app->menu.language!=initial_language&&translated_options.pixels!=initial_options.pixels);
             if(!app->evidence_dir.empty()){
-                const bool jp=initial_language==soew::Language::Japanese;
-                dump(initial_options,app->evidence_dir/(jp?"options-ja.bmp":"options-en.bmp"));
-                dump(translated_options,app->evidence_dir/(jp?"options-en.bmp":"options-ja.bmp"));
+                const auto options_path=[&](soew::Language lang){return app->evidence_dir/(std::string("options-")+soew::Settings::language_id(lang)+".bmp");};
+                dump(initial_options,options_path(initial_language));
+                dump(translated_options,options_path(app->menu.language));
             }
             option_key(VK_LEFT);
             app->check(app->menu.language==initial_language);
@@ -4219,7 +4222,6 @@ int wmain(int argc, wchar_t **argv) {
         soew::validate_locale_assets(assets);
         try { app.chinese_text=soew::ChineseDisplayPack::load(assets,[&](std::string_view text){verify_chinese_manifest(assets,text);}); }
         catch(const std::exception& error){std::cerr<<"Chinese display pack unavailable: "<<error.what()<<'\n';}
-        app.menu.set_chinese_available(app.chinese_text.has_value());
         if(app.settings_enabled){
             app.settings.emplace(settings_dir/"soew-settings.json");
             const auto settings=app.settings->load();settings.apply(app.menu);app.practice_tools.options=settings.practice_advanced;
@@ -4233,14 +4235,13 @@ int wmain(int argc, wchar_t **argv) {
         if(!replay_file.empty()){
             soew::SettingsStore preferences(settings_dir/"soew-settings.json");
             const auto settings=preferences.load();
-            app.menu.set_language_preference(settings.language);
+            app.menu.language=settings.language;
             app.menu.stage_intro=settings.stage_intro;
             app.menu.smooth_background=settings.smooth_background;
         }
         if(language_override){
             if(app.settings_enabled)throw std::runtime_error("--language requires a test, dump, or read-only replay mode");
-            if(soew::is_chinese(*language_override)&&!app.chinese_text)throw std::runtime_error("Requested Chinese display pack is unavailable");
-            app.menu.set_language_preference(*language_override);
+            app.menu.language=*language_override;
         }
         if(practice_language_override)app.menu.practice_language_preference=practice_language_override;
         app.legacy_content=!soew::has_locale_assets(assets);
