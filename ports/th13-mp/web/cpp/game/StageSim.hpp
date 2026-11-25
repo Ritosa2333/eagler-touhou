@@ -238,6 +238,7 @@ struct StageBullet {
     float hit_size[2] = {4.0f, 4.0f};
     u32 flags = 0x12;
     float hit_scale = 1.0f;
+    FloatInterpolation<1> scale_tween;
     bool alive = true;
     bool grazed = false;
     u8 grazed_seats = 0;
