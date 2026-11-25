@@ -33,6 +33,17 @@ test('cooperative spectator loading cover waits for a valid completed native res
  f.state.runtimeInfo={spectatorPlayback:{...playback,revision:3,position:900,seeking:false}};f.poll();await wait;assert.equal(done,true,'historical playback need not follow live');f.model.dispose();
 });
 test('TH09 readiness retains its own native timeline path',async()=>{const f=fixture();f.state.game='th09';f.context.product='th09mp';f.context.spectator=true;f.target.__th09PeerTransport=f.transport;f.target.__eaglerNetplayTransport='relay';f.transport.relay.readyState=1;await f.model.waitForGameplayPath({isCurrent:()=>true});f.model.dispose();});
+for (const game of ['th14','th075']) test(`${game} exposes spectator frames during live catch-up`,async()=>{
+ const f=fixture();f.state.game=game;f.context.product=game+'mp';f.context.spectator=true;
+ f.target['__'+game+'PeerTransport']=f.transport;
+ f.target.__eaglerNetplayTransport='spectator';f.transport.relay.readyState=1;
+ f.state.runtimeInfo={spectatorPlayback:{...playback,following:game==='th075',position:0}};
+ let done=false;const waiting=f.model.waitForGameplayPath({isCurrent:()=>true}).then(()=>done=true);
+ await Promise.resolve();assert.equal(done,false);
+ f.state.firstFrame=true;f.poll();await Promise.resolve();assert.equal(done,false,'an idle callback without a simulated frame is not presentation');
+ f.state.runtimeInfo={spectatorPlayback:{...playback,following:game==='th075'}};f.poll();await waiting;
+ assert.equal(done,true);f.model.dispose();
+});
 test('ordinary runtime module does not expose MP diagnostics even selected MP metadata exists',()=>{const f=fixture();f.target.Module.eaglerOptions.netplayMode='';f.model.refresh();assert.equal(f.model.readNativeSnapshot(),null);assert.deepEqual(f.model.getSnapshot().diagnostics,{});assert.equal(f.model.getSnapshot().playerStatusVisible,false);f.model.dispose();});
 test('failed path rejects original failure, timeout is120s and room/document replacement cancels',async()=>{
  const a=fixture();a.transport.failed=true;a.transport.error='channel failed';await assert.rejects(a.model.waitForGameplayPath({isCurrent:()=>true}),/channel failed/);a.model.dispose();

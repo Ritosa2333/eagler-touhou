@@ -96,9 +96,17 @@ export class Multiplayer {
       }
       this.nodes=nodes;this.markerFrame=lastMarker;this.markerMinimum=min;
     }
+    // A manual rewind rebuilds from room history. Keep the current match's
+    // bounds and clock anchored to the requested frame during that rebuild.
+    const cursor=seeking&&!(flags&1)?target:position;
+    const match=this.nodes.findLast(node=>node.kind==='match'&&node.frame<=cursor);
+    const nextMatch=this.nodes.find(node=>node.kind==='match'&&node.frame>cursor);
+    const matchMin=match?.frame??min;
+    const edge=nextMatch?nextMatch.frame-1:received;
     this.emit('runtime-info',{spectatorPlayback:{version:1,run:this.playbackRun,
-      revision:++this.playbackRevision,min,position,received,edge:received,target,
-      paused:!!paused,seeking:!!seeking,following:!!(flags&1),ended:!!(flags&2),nodes:this.nodes}});
+      revision:++this.playbackRevision,min:matchMin,position:Math.max(matchMin,position),
+      received,edge,target:Math.max(matchMin,target),paused:!!paused,seeking:!!seeking,
+      following:!!(flags&1),ended:!!(flags&2),nodes:this.nodes.filter(node=>node.frame>=matchMin&&node.frame<=edge)}});
   }
   reportMatch(){
     const offset=this.core._th075_mp_match_report()/4;

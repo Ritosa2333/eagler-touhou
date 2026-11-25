@@ -19,7 +19,7 @@ assert.throws(()=>validateMultiplayerOptions({...viewer,netplayUrl:viewer.netpla
 assert.throws(()=>validateMultiplayerOptions({...viewer,netplaySpectatorId:'another_1234'}));
 
 const transport={relay:{readyState:1},peers:new Map()};
-const playback=new Uint32Array(13);
+const playback=new Uint32Array(22);
 const events=[],calls=[];
 const core={
   th075ContentIdentity:'split-data',
@@ -46,6 +46,24 @@ try{
   session.reportPlayback();
   assert.equal(events[0].spectatorPlayback.position,1);
   assert.deepEqual(events[0].spectatorPlayback.nodes,[{id:1,kind:'match',frame:1,stage:1,bossSlots:0}]);
+
+  playback.set([1,0,1, 3,1,1, 10,0,2, 15,1,2],10);
+  playback.set([0,6,20,6,1,0,0,4,15],1);
+  session.reportPlayback();
+  let report=events.at(-1).spectatorPlayback;
+  assert.deepEqual([report.min,report.edge,report.received],[1,9,20]);
+  assert.deepEqual(report.nodes.map(node=>node.frame),[1,3],'the first match cannot seek into the next match');
+
+  playback.set([0,16,20,20,0,0,1,4,15],1);
+  session.reportPlayback();
+  report=events.at(-1).spectatorPlayback;
+  assert.deepEqual([report.min,report.position,report.edge],[10,16,20]);
+  assert.deepEqual(report.nodes.map(node=>node.frame),[10,15]);
+
+  playback.set([0,2,20,10,1,1,0,4,15],1);
+  session.reportPlayback();
+  report=events.at(-1).spectatorPlayback;
+  assert.deepEqual([report.min,report.position,report.target],[10,10,10],'reconstructing the second match keeps its time origin');
 }finally{
   session.close();
 }

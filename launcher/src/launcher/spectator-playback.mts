@@ -59,6 +59,19 @@ export function parseSpectatorPlayback(value: unknown): Readonly<SpectatorPlayba
     position: state.position, received: state.received, edge: state.edge, target: state.target,
     paused: state.paused, seeking: state.seeking, following: state.following, ended: state.ended, nodes: Object.freeze(nodes)});
 }
+/** TH14 reconstructs seeks from the run checkpoint. The timeline stays in
+ * the requested stage while the native cursor works its way back to it. */
+export function spectatorStageBounds(state: SpectatorPlaybackState) {
+  const cursor = state.seeking ? state.target : state.position;
+  let min = state.min;
+  let edge = state.edge;
+  for (const node of state.nodes) {
+    if (node.kind !== 'stage' || node.frame > state.edge) continue;
+    if (node.frame > cursor) {edge = node.frame - 1; break;}
+    min = node.frame;
+  }
+  return {min, edge};
+}
 export function spectatorPlaybackCommand(state: SpectatorPlaybackState | null, action: SpectatorPlaybackAction, frame?: number): SpectatorPlaybackCommand | null {
   if (!state || !['pause', 'play', 'seek', 'live'].includes(action)) return null;
   if (action === 'seek' && (!uint(frame) || frame < state.min || frame > state.edge)) return null;

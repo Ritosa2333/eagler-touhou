@@ -2,7 +2,7 @@ import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 const result = await build({entryPoints:[new URL('../src/launcher/spectator-playback.mts',import.meta.url).pathname.replace(/^\/([A-Za-z]:)/,'$1')], bundle:true, platform:'node',format:'esm',write:false});
-const {parseSpectatorPlayback, spectatorPlaybackCommand, createSpectatorPlayback} = await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
+const {parseSpectatorPlayback, spectatorPlaybackCommand, createSpectatorPlayback, spectatorStageBounds} = await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
 const report = (extra={}) => ({version:1,run:'abc123',revision:1,min:600,position:600,received:1600,edge:1510,target:1200,
   paused:false,seeking:true,following:false,ended:false,nodes:[{id:1,kind:'stage',frame:600,stage:4,bossSlots:0},{id:2,kind:'boss',frame:1200,stage:4,bossSlots:3}],...extra});
 test('reports require complete native bounds and stable restorable node identities',()=>{
@@ -37,4 +37,14 @@ test('versus match and round markers use the same verifiable seek bounds',()=>{
   assert.deepEqual(state.nodes,nodes);
   assert.equal(spectatorPlaybackCommand(state,'seek',state.nodes[1].frame).frame,1200);
   assert.equal(parseSpectatorPlayback(report({nodes:[{...nodes[1],stage:0}]})),null);
+});
+test('TH14 bounds track the current stage and hold during run reconstruction',()=>{
+  const stages=[{id:1,kind:'stage',frame:600,stage:1,bossSlots:0},{id:2,kind:'boss',frame:680,stage:1,bossSlots:1},
+    {id:3,kind:'stage',frame:900,stage:2,bossSlots:0},{id:4,kind:'boss',frame:1000,stage:2,bossSlots:1},
+    {id:5,kind:'stage',frame:1550,stage:3,bossSlots:0}];
+  const onStage=(extra)=>spectatorStageBounds(parseSpectatorPlayback(report({nodes:stages,...extra})));
+  assert.deepEqual(onStage({position:840,seeking:false}),{min:600,edge:899});
+  assert.deepEqual(onStage({position:900,seeking:false}),{min:900,edge:1510});
+  assert.deepEqual(onStage({position:680,target:900,seeking:true}),{min:900,edge:1510});
+  assert.deepEqual(onStage({position:1550,edge:1550,seeking:false}),{min:1550,edge:1550});
 });
