@@ -151,11 +151,10 @@
    "input": "25:0x80,40:0x1",
    "enemy_digest": "f487f0b3d213857b",
    "player_digest": "d1d542119d37f456",
-   "last_count": 14,
+   "last_count": 13,
    "last_ids": [
     1,
     3,
-    4,
     6,
     7,
     10,
