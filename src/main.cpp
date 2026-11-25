@@ -759,14 +759,6 @@ void compose_transition(Frame &frame,const soew::EncounterScene &s,const th03::a
         else if(extra_bonus)compose_clear_bonus(frame,font,s.extra_settlement.bonus,zh?(hans?o::extra_labels_hans:o::extra_labels_hant):en?extra_en:o::extra_labels,7,lang);
     }
     if(phase==P::Leave||phase==P::Entry)compose_curtain(frame,font,phase==P::Entry,s.transition.frame);
-    if(s.dialogue.phase==soew::StageDialogue::Phase::IntroAppearance){
-        const auto amount=soew::StageDialogue::appearance_white_mix(unsigned(s.stage),s.dialogue.current,s.appearance_frame,s.reduced_effects);
-        if(amount)for(int y=16;y<384;++y)for(int x=32;x<416;++x){
-            auto &v=frame.pixels[y*640+x];std::uint32_t c=0;
-            for(unsigned shift:{0u,8u,16u})c|=((((v>>shift)&255)*(255-amount)+255*amount)/255)<<shift;
-            v=c;
-        }
-    }
     if(phase==P::Battle&&!s.dialogue.active()&&!s.life.game_over&&!s.preboss_started&&!s.transition.boss_music_frame&&s.transition.opening_caption&&s.ticks<o::opening_frames){
         constexpr int title_y=o::stage_row*o::cell_h;
         if(zh){

@@ -41,13 +41,16 @@ void test_art(const std::filesystem::path &root){
     };
     s.marisa.defeated=true;s.marisa.left=245;s.marisa.top=114;
     s.marisa.orbs[3]={56,300,0,0,true};
+    soew::MarisaStarfield stars;
     for(unsigned t=0;t<100;++t){
+        stars.tick(t,true);
         s.tick(0);
         const auto period=t<32?1u:(t>=53&&t<=55)||(t>=77&&t<=79)?2u:3u;
         if(s.presentation_slowdown()!=period)
             throw std::runtime_error("Unexpected Marisa slowdown at t="+std::to_string(t));
         if(t!=0&&t!=24&&t!=30&&t!=31&&t!=32&&t!=33&&t!=48&&t!=53&&t!=56&&t!=57&&t!=64&&t!=77&&t!=80&&t!=85&&t!=99)continue;
         std::fill(expected.begin(),expected.end(),0);
+        stars.render(expected,s.background.palette,soew::motion_subpixels);
         for(unsigned lag:{0u,24u,48u})if(t>=lag){
             const auto f=t-lag;
             if(f<30){
@@ -70,7 +73,7 @@ void test_art(const std::filesystem::path &root){
         if(t<31){cel(128,245,114);cel(129,293,114);}
         else cel(t==31?9:10+(t-32)/16,245,114,3);
         if(t<99){plot(72,316,col(3));cel(141,56,300);}
-        // Transparent player disabled, so only the source's Marisa passes remain.
+        // Transparent player disabled; combat effects must overdraw the starfield.
         const auto old_pattern=s.life.pattern;
         s.life.pattern.reset();s.render(actual);
         check(actual==expected,"Marisa effect or layer mismatch against original artwork");
@@ -86,7 +89,6 @@ void test_art(const std::filesystem::path &root){
             };
             const bool shifted=t!=53&&t!=77;
             const bool flashed=t!=53&&t!=77&&t!=99;
-            check(actual[pixel(40,40)]==(flashed?bright(0):0),"Marisa palette tone 170 and reset");
             for(int y=16;y<384;++y)for(int x=32;x<400;++x){
                 const auto source=expected[pixel(x+(shifted?16:0),y)];
                 check(actual[pixel(x,y)]==(flashed?bright(source):source),"Marisa one-word shift and tone composition");

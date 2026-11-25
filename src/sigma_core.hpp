@@ -60,6 +60,8 @@ struct SigmaCore {
     std::vector<Paint> paints;
     std::size_t body_paint_index=0;
     std::array<Burst,16> bursts{};
+    unsigned decor_radius=0;
+    bool decor_visible=false,decor_advanced=false;
 
     void init(){*this=SigmaCore{};}
     // 14173–14209: copy page positions and promote pending explosions exactly once per tick,
@@ -79,10 +81,10 @@ struct SigmaCore {
         paints.clear(); body_paint_index=0; visible=false;hit_flash=false;shake=0;
         ++phase_frame;
         const int x=left[back],y=top[back],mx=x+60,my=y+60; // Cached before the attack moves Sigma.
-        if(!(stage_frame&1)){
-            orbit_decor_angle=std::uint8_t(orbit_decor_angle+8);
-            orbit_decor(200,224,orbit_decor_angle,h.reduced);
-            orbit_decor(200,224,orbit_decor_angle+128,h.reduced);
+        decor_advanced=(stage_frame&1)==0;
+        if(decor_advanced){
+            decor_radius=(decor_radius+8)&255;
+            decor_visible=true;
         }
         if(dying){
             if(retire(back,x,y,h)){done=true;return;}
@@ -120,7 +122,7 @@ struct SigmaCore {
 
 private:
     int rain_direction=1,diagonal_direction=1,final_direction=2;
-    std::uint8_t rain_width=0,orbit_decor_angle=0,orbit_angle=0,final_angle=0;
+    std::uint8_t rain_width=0,orbit_angle=0,final_angle=0;
     unsigned burst_mask=7,billiard_color=0,diagonal_laser_index=0;
     int burst_margin=0,orbit_x=0,orbit_y=0,sweep_x=0;
     int chase_x=0,chase_mirror_x=0,chase_y=0,chase_dx=0,chase_dy=0;
@@ -147,13 +149,6 @@ private:
     void circle(int x,int y,int r,unsigned color=white){paint(Paint::Circle,x,y,r,0,color);}
     void disc(int x,int y,int r,unsigned color=white){paint(Paint::Disc,x,y,r,0,color);}
     void beam(int byte_l,int byte_r,unsigned color=white){paint(Paint::Box,byte_l*8,field_top,byte_r*8+7,field_bottom-1,color);}
-    void orbit_decor(int x,int y,unsigned radius,bool reduced){
-        const int size=int(radius/64)+1;
-        for(unsigned angle=0;angle<256;angle+=reduced?16:2){
-            const auto p=enemy_vector(angle,int(radius));const int px=x+p[0],py=y+p[1];
-            if(within(px,24,416)&&within(py,8,384))paint(Paint::Dot,px,py,size,0,4);
-        }
-    }
     // 13744–13806: overflow or clipped burst is a normal allocation failure.
     bool spawn_burst(int x,int y,int radius,const Hooks &h){
         if(!within(x,0,444)||!within(y,0,400))return false;

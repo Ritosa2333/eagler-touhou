@@ -1,5 +1,6 @@
 #pragma once
 #include "stage_sprites.hpp"
+#include "stage_ambient.hpp"
 #include "enemy_path_runtime.hpp"
 #include "bullet_core.hpp"
 #include "player_shots.hpp"
@@ -53,9 +54,10 @@ struct EncounterScene:StageScene {
     void update_sound(){if(auto id=sound.update();id&&sound_output)sound_output(*id);}
     unsigned rendered_page=0;
     bool reduced_effects=false;
-    static constexpr bool stage4_overlay_enabled(int id,bool map_end,bool reduced){
-        // Both pages show the motif on Windows instead of flashing it every other frame.
-        return id==3&&!map_end&&!reduced;
+    // ReC98 sub_19E2F draws the sun only on back page 0. Use the
+    // simulated page, not the host refresh counter or the scroll filter.
+    static constexpr bool stage4_overlay_enabled(int id,unsigned page,bool map_end,bool reduced){
+        return id==3&&page==0&&!map_end&&!reduced;
     }
     bool combat_enabled=false,survival_enabled=false;
     bool preparation_only=false,practice_mode=false,practice_completed=false,practice_show_dialogue=false;
@@ -117,6 +119,7 @@ struct EncounterScene:StageScene {
         if(stage!=3||!runtime.scroll.done||runtime.blocked||!stage4_boss_art)
             throw std::runtime_error("Invalid Marisa battle handoff");
         marisa=MarisaCore{};marisa_enabled=true;
+        marisa_stars_=MarisaStarfield{};
         midboss4.active=midboss4.visible=false;
         clear_enemies();
         death_patterns.fill(std::nullopt);
@@ -165,6 +168,8 @@ private:
     HitboxMode hitbox_mode_=HitboxMode::Off;
     CollisionFrame collision_frame_;
     SpriteDepartures departures_;
+    StageAmbient ambient_;
+    MarisaStarfield marisa_stars_;
     void clear_enemies(){
         for(auto &e:runtime.enemies.slots)if(e.raw[0xe]==1)e.raw[0xe]=2;
         departures_.clear(MotionTrack::Enemy);
@@ -209,6 +214,10 @@ private:
         return {};
     }
 public:
+    void seek_practice_ambient(unsigned progress){
+        const StageScroll road(stage);
+        ambient_.seek_practice(progress,8u*road.interval/road.speed,reduced_effects);
+    }
     unsigned presentation_slowdown()const{
         if(sigma_enabled&&!sigma.done)return sigma.slowdown;
         return boss_death_presentation().slowdown;
@@ -235,6 +244,7 @@ public:
         EncounterScene out;out.language=language;static_cast<StageScene&>(out)=StageScene::load(root,id,shot,selected_rank,spare,stock);
         out.run_start_lives=unsigned(spare);out.run_start_bombs=unsigned(stock);
         out.assets_root=root;out.bank=StageSprites::load(root,id);out.runtime=EnemyPathRuntime(id,1234);out.bullet_core=BulletCore(selected_rank);
+        out.ambient_=StageAmbient(id);
         out.life=PlayerLife(static_cast<unsigned>(spare),static_cast<unsigned>(stock));out.life.draw=out.life.current;out.life.pattern=0;out.bomb.stage_used=0;out.bombing_for_spawn=false;
         if(out.bank.next<=128)throw std::runtime_error("No original encounter sprites");
         // Original template auto-fire cadence scales at loader time. Preserve
@@ -392,9 +402,9 @@ public:
         // does not advance gameplay or re-render simulation underneath the box.
         if(!preparation_only){
             dialogue_snapshot.resize(640*400);
-            if(stage5_preview||sigma_art){
+            if(stage==3||stage5_preview||sigma_art){
                 // th02_main.asm:22396–22475 clears both pages and redraws the player.
-                scroll.line=runtime.scroll.line=0;
+                if(stage!=3)scroll.line=runtime.scroll.line=0;
                 std::fill(dialogue_snapshot.begin(),dialogue_snapshot.end(),stage5_rgb(background.palette[0]));
                 draw_mima_dialogue_player(dialogue_snapshot);
             }else render(dialogue_snapshot);
@@ -655,6 +665,7 @@ public:
             h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
             const auto front=life.positions[page^1];
             marisa.update(h,{survival_enabled?front.x:player.x,survival_enabled?front.y:player.y,pickups.power,player.x,unsigned(rank)});
+            marisa_stars_.tick(logic_frame,reduced_effects);
             shots.target_x=marisa.target_x;shots.target_y=marisa.target_y;
         }
         if(sigma_enabled){
@@ -808,6 +819,7 @@ public:
             extra_tiles.flip(page);
             scroll=runtime.scroll;
         }
+        ambient_.tick((midboss_enabled&&midboss.phase_frame==1)||(midboss2_enabled&&midboss2.phase_frame==1),reduced_effects);
         ++resident_frame;++ticks;if(rika_enabled)++rika_stage_frame;
         if(survival_enabled){if(!assist(PracticeTool::Rank))life.advance_playperf(rika_enabled?rika_stage_frame:std::uint32_t(ticks),unsigned(rank));bullet_core.playperf=life.playperf;}
         if(preboss_enabled&&runtime.scroll.done&&!rika_enabled&&!meira_enabled&&!preboss_started)start_preboss();
@@ -975,36 +987,37 @@ public:
             bank.put(pixels,background,72,player.x+32,player.y+16);
         }
     }
+    // Both Stage 4 and Stage 5 call the same original circular entrance
+    // (sub_1A529). Rebuild it on a clean layer instead of erasing old VRAM.
+    unsigned draw_mima_entrance(std::span<std::uint32_t> pixels,const StageSprites &art,bool revealing)const{
+        if(revealing&&appearance_frame<160){
+            if(appearance_frame<11)return 100;
+            const int r=161-int(appearance_frame);
+            paint_mima(pixels,{MimaPaint::Fill,224,144,r,0,10},stage5_rgb(background.palette[10]),320);
+            paint_mima(pixels,{MimaPaint::Circle,224,144,(r%50)*4,0,13},stage5_rgb(background.palette[13]),320);
+            paint_mima(pixels,{MimaPaint::Circle,224,144,(r%30)*7,0,15},stage5_rgb(background.palette[15]),320);
+            return 100+unsigned((150-r)/3)*2;
+        }
+        for(int y=16;y<320;++y)std::fill_n(pixels.begin()+y*640+32,384,stage5_rgb(background.palette[0]));
+        for(unsigned row=0;row<8;++row)for(unsigned col=0;col<8;++col)
+            art.put(pixels,background,128+row*8+col,96+int(col)*32,int(row)*32);
+        draw_mima_dialogue_player(pixels);
+        return revealing?200-10*((appearance_frame-160)/3):100;
+    }
     void draw_mima_dialogue(std::span<std::uint32_t> pixels)const{
         unsigned tone=100;
         if(!dialogue.postboss&&dialogue.current>=StageDialogue::stage5_intro_end){
             const bool winged=dialogue.current>=StageDialogue::stage5_winged;
             const bool revealing=dialogue.phase==StageDialogue::Phase::IntroAppearance;
             const bool show_winged=winged&&(!revealing||appearance_frame>=18);
-            if(!winged&&revealing&&appearance_frame<160){
-                if(appearance_frame>=11){
-                    const unsigned r=161-appearance_frame;
-                    if(r<150){
-                        paint_mima(pixels,{MimaPaint::Fill,224,144,150,0,0},stage5_rgb(background.palette[0]),320);
-                        for(unsigned prev=150;prev>r;--prev){
-                            paint_mima(pixels,{MimaPaint::Circle,224,144,int(prev%50)*4,0,0},stage5_rgb(background.palette[0]),320);
-                            paint_mima(pixels,{MimaPaint::Circle,224,144,int(prev%30)*7,0,0},stage5_rgb(background.palette[0]),320);
-                        }
-                    }
-                    paint_mima(pixels,{MimaPaint::Fill,224,144,int(r),0,10},stage5_rgb(background.palette[10]),320);
-                    paint_mima(pixels,{MimaPaint::Circle,224,144,int(r%50)*4,0,13},stage5_rgb(background.palette[13]),320);
-                    paint_mima(pixels,{MimaPaint::Circle,224,144,int(r%30)*7,0,15},stage5_rgb(background.palette[15]),320);
-                    tone=100+(150-r)/3*2;
-                }
+            if(!show_winged){
+                tone=draw_mima_entrance(pixels,*stage5_intro_art,!winged&&revealing);
             }else{
                 for(int y=16;y<320;++y)std::fill_n(pixels.begin()+y*640+32,384,stage5_rgb(background.palette[0]));
-                if(show_winged)draw_mima(pixels,true);
-                else for(unsigned row=0;row<8;++row)for(unsigned col=0;col<8;++col)
-                    stage5_intro_art->put(pixels,background,128+row*8+col,96+int(col)*32,int(row)*32);
+                draw_mima(pixels,true);
                 draw_mima_dialogue_player(pixels);
-                if(revealing)tone=winged?(appearance_frame<18?100+6*(appearance_frame?appearance_frame-1:0):200-6*((appearance_frame-18)/3))
-                    :200-10*((appearance_frame-160)/3);
             }
+            if(winged&&revealing)tone=appearance_frame<18?100+6*(appearance_frame?appearance_frame-1:0):200-6*((appearance_frame-18)/3);
         }
         if(dialogue_art)dialogue_art->render(pixels,background,bank,dialogue);
         if(mima_delay){
@@ -1016,6 +1029,39 @@ public:
         // Keep the dialogue cue, but reduce its white-out intensity only.
         if(reduced_effects&&tone>100)tone=100+(tone-100)/4;
         apply_mima_tone(pixels,tone);
+    }
+    void draw_preboss_dialogue(std::span<std::uint32_t> pixels)const{
+        const bool appearing=dialogue.phase==StageDialogue::Phase::IntroAppearance;
+        unsigned tone=100;
+        if(!dialogue.postboss){
+            if(stage==1&&meira_appearance)bank.put(pixels,background,141,192,48);
+            else if(stage==3){
+                const bool switching=appearing&&dialogue.current==StageDialogue::stage4_generic_end;
+                if(marisa_music||(switching&&appearance_frame>=5)){
+                    clear_marisa_playfield(pixels,320);
+                    draw_mima_dialogue_player(pixels);
+                    draw_marisa(pixels);
+                }else if(dialogue.current>=StageDialogue::stage4_intro_end&&stage4_intro_art){
+                    tone=draw_mima_entrance(pixels,*stage4_intro_art,appearing&&!switching);
+                }
+            }else if(stage==5&&sigma_music&&sigma_art){
+                for(int y=16;y<384;++y)std::fill_n(pixels.begin()+y*640+32,384,stage5_rgb(background.palette[0]));
+                sigma_art->put(pixels,background,128,160,48);
+                sigma_art->put(pixels,background,129,224,48);
+                draw_mima_dialogue_player(pixels);
+            }
+        }
+        dialogue_art->render(pixels,background,bank,dialogue);
+        if(reduced_effects&&tone>100)tone=100+(tone-100)/4;
+        apply_mima_tone(pixels,tone);
+        if(appearing){
+            const auto amount=StageDialogue::appearance_white_mix(unsigned(stage),dialogue.current,appearance_frame,reduced_effects);
+            if(amount)for(int y=16;y<384;++y)for(int x=32;x<416;++x){
+                auto &v=pixels[y*640+x];std::uint32_t rgb=0;
+                for(unsigned shift:{0u,8u,16u})rgb|=((((v>>shift)&255)*(255-amount)+255*amount)/255)<<shift;
+                v=rgb;
+            }
+        }
     }
     void draw_sigma(std::span<std::uint32_t> pixels,const MotionSample &motion)const{
         using P=SigmaCore::Paint;
@@ -1050,6 +1096,7 @@ public:
         using T=MotionTrack;
         frame.anchors.fill({});frame.bomb_visual=0;frame.mima_effects.clear();frame.sigma_effects.clear();
         frame.stage=stage;frame.tick=ticks;
+        frame.mima_background=mima_enabled;frame.mima_palette0=mima_palette0;
         const auto xy=[&](T track,unsigned i,int x,int y,unsigned kind=0,int age=-1){frame.record(track,i,RenderPoint::pixels(x,y),kind,age);};
         const auto pool=[&](T track,const auto &slots,auto pos,auto tag){
             for(unsigned i=0;i<slots.size();++i)if(slots[i].flag==1){
@@ -1185,43 +1232,54 @@ private:
             return;
         }
         if(transitions_enabled&&transition.phase!=StageTransition::Phase::Battle&&transition.phase!=StageTransition::Phase::Postboss&&transition.phase!=StageTransition::Phase::Entry&&!dialogue_snapshot.empty()){std::copy(dialogue_snapshot.begin(),dialogue_snapshot.end(),pixels.begin());return;}
-        if(dialogue.active()&&dialogue_art){if(pixels.size()!=dialogue_snapshot.size())throw std::runtime_error("Invalid dialogue surface");std::copy(dialogue_snapshot.begin(),dialogue_snapshot.end(),pixels.begin());if(stage==1&&meira_appearance&&!dialogue.postboss)bank.put(pixels,background,141,192,48);if(stage==3&&!dialogue.postboss){
-            if(marisa_music){
-                clear_marisa_playfield(pixels,320);
-                bank.put(pixels,background,0,player.x,player.y);
-                draw_marisa(pixels);
-            }
-            else if(dialogue.current>=StageDialogue::stage4_intro_end&&stage4_intro_art){
-                const bool revealing=dialogue.phase==StageDialogue::Phase::IntroAppearance&&appearance_frame<160;
-                if(!revealing){
-                    for(int y=16;y<320;++y)std::fill_n(pixels.begin()+y*640+32,384,0u);
-                    for(unsigned row=0;row<8;++row)for(unsigned col=0;col<8;++col)
-                        stage4_intro_art->put(pixels,background,128+row*8+col,96+int(col)*32,int(row)*32);
-                }else if(appearance_frame>=10){
-                    const int radius=160-int(appearance_frame);
-                    const auto c=background.palette[10];const auto rgb=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];
-                    for(int y=16;y<320;++y)for(int x=32;x<416;++x)
-                        if((x-224)*(x-224)+(y-144)*(y-144)<=radius*radius)pixels[y*640+x]=rgb;
-                }
-            }
-        }else if(stage==5&&!dialogue.postboss&&sigma_music&&sigma_art){
-            for(int y=16;y<384;++y)std::fill_n(pixels.begin()+y*640+32,384,stage5_rgb(background.palette[0]));
-            sigma_art->put(pixels,background,128,160,48);
-            sigma_art->put(pixels,background,129,224,48);
-            draw_mima_dialogue_player(pixels);
-        }dialogue_art->render(pixels,background,bank,dialogue);return;}
-        const bool filter_terrain=smooth_background&&!marisa_enabled&&!sigma_enabled&&!mima_enabled;
+        if(dialogue.active()&&dialogue_art){
+            if(pixels.size()!=dialogue_snapshot.size())throw std::runtime_error("Invalid dialogue surface");
+            std::copy(dialogue_snapshot.begin(),dialogue_snapshot.end(),pixels.begin());
+            draw_preboss_dialogue(pixels);
+            return;
+        }
+        const bool scroll_terrain=!marisa_enabled&&!sigma_enabled&&!mima_enabled;
+        const bool filter_terrain=smooth_background&&scroll_terrain;
         const unsigned lag=filter_terrain?background_scroll_lag(scroll,motion.phase):0;
         const int terrain_top=filter_terrain?15:16;
         const int terrain_bottom=filter_terrain?384+std::min(1+scroll_sample_rows(lag),int(scroll.display_pixels)):384;
+        const unsigned anim_phase=motion.previous?motion.phase:motion_subpixels;
+        const auto terrain_palette=ambient_.palette(background.palette,reduced_effects);
+        const bool motif=stage4_overlay_enabled(stage,rendered_page,runtime.scroll.done,reduced_effects);
         if(extra_road_enabled)extra_tiles.render(pixels,background,terrain_bottom,terrain_top);
-        else StageScene::render(pixels,false,stage4_overlay_enabled(stage,runtime.scroll.done,reduced_effects),terrain_bottom,terrain_top);
+        else render_terrain(pixels,terrain_palette,motif,terrain_bottom,terrain_top);
         // Boss backgrounds replace the terrain before any battle sprites.
-        if(marisa_enabled)clear_marisa_playfield(pixels,384);
-        if(sigma_enabled)
+        if(marisa_enabled){
+            clear_marisa_playfield(pixels,384);
+            if(!marisa.cleared||show_boss_terminal)marisa_stars_.render(pixels,background.palette,anim_phase);
+        }
+        if(sigma_enabled){
             for(int y=16;y<384;++y)std::fill_n(pixels.begin()+y*640+32,384,stage5_rgb(background.palette[0]));
+            if(sigma.decor_visible){
+                // Original rings advanced every other tick. Retain them between
+                // updates and distribute each radius step across both ticks.
+                int radius=int(sigma.decor_radius)*256;
+                if(motion.previous)radius+=4*int(motion.phase)-(sigma.decor_advanced?8:4)*256;
+                const auto color=stage5_rgb(background.palette[4]);
+                for(int offset:{0,128}){
+                    const int r=(radius+offset*256+65536)%65536;
+                    const int size=r/(64*256)+1;
+                    for(unsigned angle=0;angle<256;angle+=reduced_effects?16:2){
+                        const auto d=enemy_vector(angle,r);
+                        auto at=RenderPoint::pixels(200,224);
+                        at.x+=d[0];at.y+=d[1];
+                        if(!motion.previous)at=at.snapped();
+                        blit_motion_sprite(pixels,at,size,size,[&](int,int){return color;});
+                    }
+                }
+            }
+        }
         if(mima_enabled){
-            const auto color=[&](unsigned c){return stage5_rgb(c?background.palette.at(c):mima_palette0);};
+            auto tint=mima_palette0;
+            if(motion.previous&&motion.previous->mima_background)
+                for(unsigned i=0;i<tint.size();++i)
+                    tint[i]=std::uint8_t(motion_lerp(motion.previous->mima_palette0[i],tint[i],motion.phase));
+            const auto color=[&](unsigned c){return stage5_rgb(c?background.palette.at(c):tint);};
             std::fill(pixels.begin(),pixels.end(),color(0));
             for(int y=0;y<400;++y)std::fill_n(pixels.begin()+y*640+416,224,color(11));
             for(unsigned i=0;i<mima_draws.size();++i){
@@ -1242,11 +1300,12 @@ private:
             for(int dy=0;dy<16;++dy){
                 const int y=(vram_y+dy-int(scroll.line)+400)%400;
                 if(y<terrain_top||y>=terrain_bottom)continue;
-                for(int dx=0;dx<16;++dx){const auto c=background.palette[background.tiles[pat][dy*16+dx]];pixels[y*640+x+dx]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}
+                for(int dx=0;dx<16;++dx){const auto c=terrain_palette[background.tiles[pat][dy*16+dx]];pixels[y*640+x+dx]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}
             }
         }
-        if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=terrain_bottom||top+16<=terrain_top)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<terrain_top||py>=terrain_bottom)continue;const auto c=background.palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
+        if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=terrain_bottom||top+16<=terrain_top)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<terrain_top||py>=terrain_bottom)continue;const auto c=terrain_palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
         if(filter_terrain)filter_stage_background(pixels,lag,terrain_bottom);
+        if(scroll_terrain)ambient_.render(pixels,terrain_palette,anim_phase,reduced_effects);
         if(bomb_enabled&&bomb_art)bomb_art->render(pixels,background,bomb,motion);
         // th02_main.asm:1655–1657 draws Bomb before the boss update and its paints.
         if(sigma_enabled)draw_sigma(pixels,motion);

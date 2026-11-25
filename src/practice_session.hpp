@@ -92,6 +92,7 @@ private:
         const auto count=s.background.map.size();
         if(count<3||count>320||progress>2*(8*count-24))throw std::runtime_error("Practice scroll progress outside map");
         if(!progress)return; // Chapter 1 uses the ordinary fresh-stage initializer.
+        s.seek_practice_ambient(progress);
         auto &scroll=s.runtime.scroll;
         scroll=StageScroll(recipe_.stage);
         scroll.progress=progress;scroll.top_row=23+(progress+1)/2;

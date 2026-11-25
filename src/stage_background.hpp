@@ -9,7 +9,8 @@ namespace soew {
 // ReC98 th02/formats/mpn.hpp/map.hpp and th02_main.asm:25610..25667.
 // Only background prefix is decoded; DT1 enemy/script payload remains untouched.
 struct StageBackground {
-    std::array<std::array<std::uint8_t,3>,16> palette{};
+    using Palette=std::array<std::array<std::uint8_t,3>,16>;
+    Palette palette{};
     std::vector<std::array<std::uint8_t,256>> tiles;
     std::array<std::uint8_t,16*8*24> sections{};
     std::vector<std::uint8_t> map;

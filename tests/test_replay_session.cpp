@@ -624,6 +624,160 @@ void background_smoothing_is_read_only(const fs::path &root){
     }
 }
 
+void animated_backgrounds(const fs::path &root){
+    std::vector<std::uint32_t> sharp(640*400),smooth(sharp.size()),next(sharp.size());
+    const auto at=[](int x,int y){return y*640+x;};
+    const auto scene_for=[&](int stage,unsigned index){
+        auto scene=EncounterScene::load(root,stage,0,1,2,3);
+        scene.script.formations.clear();scene.script.declared_formations=0;
+        for(auto &c:scene.background.palette)c={0,0,0};
+        for(auto &t:scene.background.tiles)t.fill(std::uint8_t(index));
+        return scene;
+    };
+    const auto check_both=[&](const EncounterScene &scene){
+        const auto before=replay_state_digest(scene);
+        scene.render(sharp);scene.render(smooth,true,true);
+        check(replay_state_digest(scene)==before);
+        check(std::equal(sharp.begin()+at(0,16),sharp.begin()+at(0,300),smooth.begin()+at(0,16)));
+    };
+    {
+        auto s=scene_for(0,8);
+        s.enable_midboss();s.runtime.scroll.progress=116;
+        s.tick(0);check_both(s);check(sharp[at(96,200)]==0);
+        s.tick(0);check_both(s);check(sharp[at(96,200)]==0xb09090);
+        for(unsigned i=2;i<550;++i)s.tick(0);
+        check_both(s);check(sharp[at(96,200)]==0xb0b0d0);
+    }
+    {
+        auto s=scene_for(1,0);
+        s.background.palette[3]={17,85,153};
+        for(unsigned i=0;i<52;++i)s.tick(0);
+        check_both(s);
+        const auto last=sharp.begin()+at(0,300);
+        check(std::find(sharp.begin()+at(0,16),last,0x115599)!=last);
+        MotionFrame previous;s.capture_motion(previous);
+        s.tick(0);s.render(next);check(next!=sharp);
+        s.render(smooth,true,true,128,&previous);check(smooth!=next&&smooth!=sharp);
+        s.paused=true;s.tick(0);s.render(sharp);check(sharp==next);
+    }
+    {
+        auto s=scene_for(2,0);
+        s.background.palette[7]={255,255,255};
+        for(unsigned i=0;i<248;++i)s.tick(0);
+        check_both(s);
+        check(sharp[at(64,64)]==0x4c0000);
+        check(sharp[at(272,200)]==0xffffff);
+        for(unsigned i=248;i<400;++i)s.tick(0);
+        check_both(s);check(sharp[at(64,64)]==0x006400);
+    }
+    {
+        auto s=scene_for(3,0);
+        s.background.palette[8]={128,128,128};
+        s.background.tiles[0].fill(8);
+        // Use a dark map tile independently of the intensity-plane motif.
+        s.background.sections.fill(1);
+        s.render(sharp);s.render(smooth,true,true);
+        check(sharp[at(176,160)]==0x808080&&smooth[at(176,160)]==0x808080);
+        // Original animation follows the rendered PC-98 page, independent
+        // of the display refresh or the interpolation phase.
+        s.rendered_page=1;
+        for(unsigned phase:{0u,128u,256u}){
+            s.render(sharp);s.render(smooth,true,true,phase);
+            check(sharp[at(176,160)]==0&&smooth[at(176,160)]==0);
+        }
+        s.rendered_page=0;s.render(sharp);check(sharp[at(176,160)]==0x808080);
+        s.reduced_effects=true;s.render(sharp);check(sharp[at(176,160)]==0);
+    }
+}
+
+void boss_backgrounds(const fs::path &root){
+    std::vector<std::uint32_t> sharp(640*400),smooth(sharp.size());
+    const auto at=[](int x,int y){return y*640+x;};
+    for(int stage=0;stage<6;++stage){
+        PracticeSpec spec;spec.stage=stage;spec.rank=stage==5?4:1;
+        PracticeBuilder practice(root,spec);
+        if(practice.status()!=PracticeBuilder::Status::Ready)throw std::runtime_error(practice.error());
+        auto s=practice.release();
+        for(auto &c:s->background.palette)c={};
+        if(stage<3){
+            for(auto &tile:s->background.tiles)tile.fill(stage==0?8:0);
+            s->background.palette[stage==1?3:7]={255,0,255};
+            const auto before=replay_state_digest(*s);
+            s->render(sharp);s->render(smooth,true,true);
+            check(replay_state_digest(*s)==before);
+            if(stage==0)check(sharp[at(64,160)]!=0&&smooth[at(64,160)]!=0);
+            else{
+                const auto first=sharp.begin()+at(0,150),last=sharp.begin()+at(0,300);
+                check(std::any_of(first,last,[](auto pixel){return (pixel&0xff00ff)==0xff00ff;}));
+            }
+        }else if(stage==3){
+            for(unsigned c:{9u,10u,12u,13u})s->background.palette[c]={255,0,255};
+            for(unsigned i=0;i<24;++i)s->tick(0);
+            const auto before=replay_state_digest(*s);
+            s->render(sharp);s->render(smooth,true,true);
+            check(replay_state_digest(*s)==before);
+            for(auto *image:{&sharp,&smooth}){
+                const auto first=image->begin()+at(0,17),last=image->begin()+at(0,64);
+                check(std::count(first,last,0xff00ffu)>=8);
+            }
+        }else if(stage==4){
+            for(unsigned i=0;i<16;++i)s->tick(0);
+            MotionFrame previous;s->capture_motion(previous);
+            s->tick(0);s->mima_palette0={52,32,68};
+            const auto before=replay_state_digest(*s);
+            s->render(sharp);s->render(smooth,true,true,128,&previous);
+            check(sharp[at(64,64)]==0x342044&&smooth[at(64,64)]==0x1e1026);
+            check(replay_state_digest(*s)==before);
+        }else{
+            s->background.palette[4]={255,0,255};
+            s->tick(0);
+            check(s->sigma.decor_visible&&s->sigma.decor_advanced);
+            s->render(sharp);check(sharp[at(208,224)]==0xff00ff);
+            MotionFrame previous;s->capture_motion(previous);
+            s->tick(0);
+            const auto before=replay_state_digest(*s);
+            check(!s->sigma.decor_advanced);
+            s->render(sharp);s->render(smooth,true,true,128,&previous);
+            check(sharp[at(208,224)]==0xff00ff&&smooth[at(206,224)]==0xff00ff);
+            check(replay_state_digest(*s)==before);
+        }
+    }
+}
+
+void boss_entrances(const fs::path &root){
+    using D=StageDialogue;
+    std::vector<std::uint32_t> image(640*400),next(image.size());
+    const auto at=[](int x,int y){return y*640+x;};
+    for(const auto [stage,box,peak]:std::array<std::array<unsigned,3>,4>{{
+        {1,2,16},{3,D::stage4_intro_end,161},{3,D::stage4_generic_end,5},{5,D::extra_intro_end,18}}}){
+        PracticeSpec spec;spec.stage=int(stage);spec.rank=stage==5?4:1;spec.dialogue=PracticeDialogue::Show;
+        PracticeBuilder practice(root,spec);
+        if(practice.status()!=PracticeBuilder::Status::Ready)throw std::runtime_error(practice.error());
+        auto s=practice.release();
+        s->tick(0);
+        s->dialogue.current=box;s->dialogue.phase=D::Phase::IntroAppearance;
+        s->appearance_frame=peak-1;
+        s->background.palette[0]={};s->dialogue_snapshot.assign(640*400,0);
+        s->tick(0);
+        const auto before=replay_state_digest(*s);
+        s->render(image);
+        check(image[at(48,16)]==(stage==3&&box==D::stage4_generic_end?0xc0c0c0:0xffffff));
+        s->reduced_effects=true;s->render(next);
+        check(next[at(48,16)]<image[at(48,16)]);
+        check(replay_state_digest(*s)==before);
+        if(stage==3&&box==D::stage4_intro_end){
+            s->reduced_effects=false;s->appearance_frame=12;
+            s->background.palette[10]={17,17,17};
+            s->background.palette[13]={221,0,0};
+            s->background.palette[15]={0,255,0};
+            s->render(image);
+            check(image[at(224,144)]==0x111111);
+            check(std::find(image.begin(),image.begin()+at(0,320),0xdd0000u)!=image.begin()+at(0,320));
+            check(std::find(image.begin(),image.begin()+at(0,320),0x00ff00u)!=image.begin()+at(0,320));
+        }
+    }
+}
+
 void paced_background_positions(){
     constexpr std::uint64_t begin=2'000'000;
     for(unsigned hz:{60u,120u,144u})for(int stage:{0,3,4,5}){
@@ -989,6 +1143,9 @@ int main(int argc,char **argv){
         }
         if(argc==3&&std::string_view(argv[2])=="--background-smoothing"){
             background_smoothing_is_read_only(root);
+            animated_backgrounds(root);
+            boss_backgrounds(root);
+            boss_entrances(root);
             paced_background_positions();
             measured_frame_rate();
             original_gameplay_lock();

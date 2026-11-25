@@ -110,7 +110,8 @@ public:
         if(scroll.take_progress_event())encounter_observer.dispatch(script,scroll.progress,false,[&](const auto &){++observed_requests;return false;});
         player.tick(input);scroll.finish_tick(static_cast<unsigned>(background.map.size()));++ticks;
     }
-    void render(std::span<std::uint32_t> pixels,bool draw_player=true,bool stage4_overlay=false,int terrain_bottom=384,int terrain_top=16)const{
+    void render_terrain(std::span<std::uint32_t> pixels,const StageBackground::Palette &colors,
+                        bool stage4_overlay,int terrain_bottom,int terrain_top)const{
         if(pixels.size()!=640*400)throw std::runtime_error("Scene buffer must be640x400");
         std::fill(pixels.begin(),pixels.end(),0u);
         // Initial map row0 is bottom/top368, row22 top16 (tile.cpp:285..294).
@@ -126,12 +127,16 @@ public:
                 for(unsigned dx=0;dx<16;++dx){
                     const unsigned x=32+col*16+dx;
                     auto index=tile[tile_y*16+dx];
-                    if(overlay_row&&x>=176&&x<272)index=background.stage4_overlay_color(index,x-176,unsigned(y-152));
-                    const auto c=background.palette[index];
+                    if(overlay_row&&x>=176&&x<272)
+                        index=background.stage4_overlay_color(index,x-176,unsigned(y-152));
+                    const auto &c=colors[index];
                     pixels[y*640+x]=(std::uint32_t(c[0])<<16)|(std::uint32_t(c[1])<<8)|c[2];
                 }
             }
         }
+    }
+    void render(std::span<std::uint32_t> pixels,bool draw_player=true,bool stage4_overlay=false,int terrain_bottom=384,int terrain_top=16)const{
+        render_terrain(pixels,background.palette,stage4_overlay,terrain_bottom,terrain_top);
         if(!draw_player)return;
         const unsigned glyph_id=player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0;
         const auto &glyph=player_art.glyphs.at(glyph_id);const auto *bitmap=std::get_if<th03::assets::PlanarBitmap4>(&glyph.pixels);if(!bitmap)throw std::runtime_error("Player glyph is not planar");

@@ -46,15 +46,13 @@ int wmain(int argc,wchar_t**argv){try{
     ++changes;
    }
    if(!changes)throw std::runtime_error("No Stage 4 overlay pixels at scroll " + std::to_string(scroll));
-   // No actors were advanced: switching the render page must leave the same terrain.
-   auto page_zero=normal;
+   // Only the sun is page-dependent, as in sub_19E2F.
    s.rendered_page=1;s.reduced_effects=true;s.render(off);
-   s.reduced_effects=false;s.render(normal);check(normal!=off);
-   check(normal==page_zero);
+   s.reduced_effects=false;s.render(normal);check(normal==off);
    s.rendered_page=0;s.reduced_effects=true;s.render(off);
    s.reduced_effects=false;s.runtime.scroll.done=true;s.render(normal);check(normal==off);s.runtime.scroll.done=false;
   }
-  check(!soew::EncounterScene::stage4_overlay_enabled(2,false,false));
+  check(!soew::EncounterScene::stage4_overlay_enabled(2,0,false,false));
   check(soew::StageBackground::stage4_overlay_index(95,95)==85);
  }
  // Isolate the two midboss4 reward paths from ordinary enemy scoring.

@@ -73,9 +73,16 @@ need the English patch, a PC-98 emulator, or a SoundFont for the basic FM build.
 * MIDI (TinySoundFont) or FM (98fmplayer through libth03) audio.
 
 Smooth Background is on by default. Its terrain filter reduces shimmer during
-scrolling without filtering the player, bullets, or HUD. Stage 4's terrain
-motif no longer flashes between render pages, and shot-hit sparks are
-half-transparent in either rendering mode.
+scrolling without filtering the player, bullets, or HUD. The stage palette
+cycles, weather particles, and expanding rings remain animated with either
+setting. Stage 4's sun alternates visible and hidden on the original game
+pages, independently of display refresh. The first three bosses retain their
+stage effects, Marisa has her color-cycling starfield, and the Extra boss's
+rings remain visible between updates. Mima's palette transitions also
+interpolate in smooth mode.
+Her Stage 4 and Stage 5 entrances share the original contracting disc,
+two rings, and fade; Meira, Marisa, and the Extra boss keep their flash cues.
+Shot-hit sparks are half-transparent in either mode.
 
 Hold either Shift key during play to move at half speed and show a small dot
 centered vertically on Reimu's small-pellet hit window. It marks the center,

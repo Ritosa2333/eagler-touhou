@@ -53,6 +53,8 @@ struct MotionFrame {
     int bomb_frame=0;
     std::array<int,48> bomb_columns{};
     std::vector<RenderEffect> mima_effects,sigma_effects;
+    std::array<std::uint8_t,3> mima_palette0{};
+    bool mima_background=false;
     std::array<RenderDeathEffect,3> marisa_death{},stones_death{};
     unsigned marisa_death_count=0,stones_death_count=0;
     MotionAnchor &at(MotionTrack track,unsigned slot){return anchors[offsets[unsigned(track)]+slot];}
