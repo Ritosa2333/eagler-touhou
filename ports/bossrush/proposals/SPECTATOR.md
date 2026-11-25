@@ -124,8 +124,9 @@ multiplayer: Object.freeze({
 > 上报的 `min` 前移；回退 seek 先 `BRO_net_reset` 再重跑 `start()` 的配置序列
 > （set_slot/loadout/systems/seed 双通道/start_match），然后连续重演；
 > `pause` 会中止进行中的定位并把世界停在当前帧（暂停态下的背景定位也支持）。
-> 前端一次 pump 最多重演 `seekStepCap`(30) 帧、`seekBudgetMs`(5ms)，60fps 下约
-> 0.5s 跨 3600 帧。`nodes[]` 仍为空（见上，需要 Lua 侧 stage/boss 遥测）。
+> 前端一次 pump 最多重演 `seekStepCap`(30) 帧、`seekBudgetMs`(5ms)；60fps 下每秒约 60 次
+> pump，重演吞吐约 1800 帧/秒（约 30× 实时），跨 3600 帧（1 分钟对局）约 2 秒。
+> `nodes[]` 仍为空（见上，需要 Lua 侧 stage/boss 遥测）。
 
 ### 阶段 C：观战后结算（对应 `spectator-menu` / `complete` 分支）
 
