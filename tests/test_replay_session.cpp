@@ -678,25 +678,34 @@ void animated_backgrounds(const fs::path &root){
         // Use a dark map tile independently of the intensity-plane motif.
         s.background.sections.fill(1);
         s.render(sharp);s.render(smooth,true,true);
-        check(sharp[at(176,160)]==0x404040&&smooth[at(176,160)]==0x404040);
-        // Native blending of the two source pages must not strobe.
-        s.rendered_page=1;
-        for(unsigned phase:{0u,128u,256u}){
-            s.render(sharp);s.render(smooth,true,true,phase);
-            check(sharp[at(176,160)]==0x404040&&smooth[at(176,160)]==0x404040);
+        check(sharp[at(176,160)]==0x808080&&smooth[at(176,160)]==0x808080);
+        // Full palette, fade out, hold invisible, fade in, full palette.
+        for(auto [position,value]:std::array<std::pair<unsigned,unsigned>,7>{{
+            {160,0x808080},{204,0x404040},{216,0},{256,0},{352,0},{372,0x404040},{400,0x808080}
+        }}){
+            s.scroll.display_pixels=position;
+            s.rendered_page=0;s.render(sharp);
+            s.rendered_page=1;s.render(next);
+            s.render(smooth,true,true);
+            check(sharp==next&&sharp[at(176,160)]==value&&smooth[at(176,160)]==value);
         }
-        s.rendered_page=0;s.render(sharp);check(sharp[at(176,160)]==0x404040);
         s.reduced_effects=true;s.render(sharp);check(sharp[at(176,160)]==0);
     }
     {
         auto s=EncounterScene::load(root,3,0,1,2,3);
         // In STAGE3.MPN the black center already has the intensity bit.
         // The mask becomes visible later, when the lower palette bank scrolls in.
-        for(unsigned position:{160u,4600u}){
+        for(auto [position,visible]:std::array<std::pair<unsigned,bool>,4>{{
+            {160,false},{4700,true},{4858,false},{5072,true}
+        }}){
             s.scroll.display_pixels=position;
             s.reduced_effects=false;s.render(sharp);
             s.reduced_effects=true;s.render(next);
-            check((sharp==next)==(position==160));
+            check((sharp!=next)==visible);
+            if(visible){
+                const auto orange=0xff9900u;
+                check(std::ranges::count(sharp,orange)>std::ranges::count(next,orange));
+            }
         }
     }
     {
@@ -708,12 +717,20 @@ void animated_backgrounds(const fs::path &root){
             check(s.scroll.display_pixels==scroll);
             s.render(sharp);s.render(smooth,true,true);
         };
-        // Japanese Stage 5 road: purple enters before the black upper section
-        // replaces it progressively from top to bottom, before Mima starts.
+        // The tapered road is now a moving ramp, not just a purple/black cut.
         advance_to(512);
         for(const auto *frame:{&sharp,&smooth})check((*frame)[at(224,32)]==purple&&(*frame)[at(224,320)]==purple);
+        advance_to(880);
+        for(const auto *frame:{&sharp,&smooth}){
+            const auto a=(*frame)[at(224,180)],b=(*frame)[at(224,230)],c=(*frame)[at(224,280)];
+            check(0<a&&a<b&&b<c&&c<purple);
+            check((*frame)[at(224,32)]==0&&(*frame)[at(200,370)]==purple);
+        }
+        const auto carried=sharp[at(224,230)];
+        advance_to(944);
+        check(sharp[at(224,294)]==carried&&sharp[at(224,230)]<carried);
         advance_to(1000);
-        for(const auto *frame:{&sharp,&smooth})check((*frame)[at(224,32)]==0&&(*frame)[at(224,320)]==purple);
+        for(const auto *frame:{&sharp,&smooth})check((*frame)[at(224,32)]==0&&0<(*frame)[at(224,320)]&&(*frame)[at(224,320)]<purple);
         advance_to(1200);
         for(const auto *frame:{&sharp,&smooth})check((*frame)[at(224,32)]==0&&(*frame)[at(224,320)]==0);
         check(!s.mima_enabled);

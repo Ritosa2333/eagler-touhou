@@ -20,6 +20,42 @@ inline unsigned background_scroll_lag(const StageScroll &scroll,unsigned subfram
     return scroll.speed*((scroll.interval-age)*scroll_subpixels-subframe)/scroll.interval;
 }
 inline int scroll_sample_rows(unsigned lag){return int((lag+scroll_subpixels-1)/scroll_subpixels);}
+inline unsigned stage4_sun_opacity(unsigned scroll_position){
+    // ReC98's intensity-plane art is unchanged. Native presentation groups
+    // the old page alternation into distinct visible/hidden intervals.
+    constexpr unsigned period=384*scroll_subpixels,hold=192*scroll_subpixels,ramp=24*scroll_subpixels;
+    const unsigned phase=scroll_position%period;
+    if(phase<=hold)return 256;
+    if(phase<hold+ramp)return (hold+ramp-phase)/24;
+    if(phase>period-ramp)return (phase-(period-ramp))/24;
+    return 0;
+}
+
+struct Stage5RoadFade {
+    using Color=StageBackground::Palette::value_type;
+    static constexpr unsigned purple=10,black=11;
+    unsigned begin=0,end=0;
+
+    static Stage5RoadFade from(std::span<const std::uint8_t> map){
+        // STAGE4.DT1: 3 and 5 taper the purple road, 8 begins the black road.
+        // Key the native fade to those source sections, not elapsed host time.
+        constexpr std::array<std::uint8_t,3> transition{3,5,8};
+        constexpr unsigned section_height=8*16;
+        const auto at=std::search(map.begin(),map.end(),transition.begin(),transition.end());
+        if(at==map.end())return {};
+        const unsigned start=unsigned(at-map.begin())*section_height;
+        return {start,start+2*section_height};
+    }
+    Color color(const StageBackground::Palette &palette,unsigned y)const{
+        if(begin==end||y<=begin)return palette[purple];
+        if(y>=end)return palette[black];
+        Color out;
+        for(unsigned ch=0;ch<out.size();++ch)
+            out[ch]=std::uint8_t((unsigned(palette[purple][ch])*(end-y)+unsigned(palette[black][ch])*(y-begin))/(end-begin));
+        return out;
+    }
+};
+
 inline void filter_stage_background(std::span<std::uint32_t> pixels,unsigned lag,int terrain_bottom){
     const int whole=int(lag/scroll_subpixels);
     const unsigned phase=(lag%scroll_subpixels+2)/4;
@@ -111,29 +147,30 @@ public:
         player.tick(input);scroll.finish_tick(static_cast<unsigned>(background.map.size()));++ticks;
     }
     void render_terrain(std::span<std::uint32_t> pixels,const StageBackground::Palette &colors,
-                        bool stage4_overlay,int terrain_bottom,int terrain_top,int sun_top=152)const{
+                        bool stage4_overlay,int terrain_bottom,int terrain_top,int sun_top=152,unsigned scroll_lag=0)const{
         if(pixels.size()!=640*400)throw std::runtime_error("Scene buffer must be640x400");
         std::fill(pixels.begin(),pixels.end(),0u);
+        const auto sun=stage4_overlay?stage4_sun_opacity(scroll.display_pixels*scroll_subpixels-scroll_lag):0;
+        const auto road_fade=stage==4?Stage5RoadFade::from(background.map):Stage5RoadFade{};
         // Initial map row0 is bottom/top368, row22 top16 (tile.cpp:285..294).
         // Source map continues upward while screen terrain moves down. Last
         // undisplayable tile step is excluded by scroll.display_pixels.
         for(int y=terrain_top;y<terrain_bottom;++y){
-            const unsigned row=(scroll.display_pixels+383-unsigned(y))/16;
+            const unsigned map_y=scroll.display_pixels+383-unsigned(y);
+            const unsigned row=map_y/16;
             const auto tile_start=(background.map.at(row/8)*8+row%8)*24;
             const auto tile_y=unsigned((y-int(scroll.display_pixels%16)+16)%16);
-            const bool overlay_row=stage4_overlay&&y>=sun_top&&y<sun_top+96;
+            const bool overlay_row=sun&&y>=sun_top&&y<sun_top+96;
+            const auto road_purple=road_fade.color(colors,map_y);
             for(unsigned col=0;col<24;++col){
                 const auto &tile=background.tiles.at(background.sections.at(tile_start+col));
                 for(unsigned dx=0;dx<16;++dx){
                     const unsigned x=32+col*16+dx;
                     const auto index=tile[tile_y*16+dx];
-                    auto c=colors[index];
+                    auto c=index==Stage5RoadFade::purple?road_purple:colors[index];
                     if(overlay_row&&x>=176&&x<272){
-                        // The source applies the intensity mask on one page only.
-                        // Combine the two page colors on the native surface so
-                        // the motif follows the terrain without a half-rate strobe.
                         const auto &lit=colors[background.stage4_overlay_color(index,x-176,unsigned(y-sun_top))];
-                        for(unsigned ch=0;ch<3;++ch)c[ch]=std::uint8_t((unsigned(c[ch])+lit[ch]+1)/2);
+                        for(unsigned ch=0;ch<3;++ch)c[ch]=std::uint8_t(motion_lerp(c[ch],lit[ch],sun));
                     }
                     pixels[y*640+x]=(std::uint32_t(c[0])<<16)|(std::uint32_t(c[1])<<8)|c[2];
                 }

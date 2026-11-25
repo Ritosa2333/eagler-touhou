@@ -1264,7 +1264,7 @@ private:
         // sub_19E2F paints at y=152 before the GDC scrolls the current frame.
         const int sun_top=152+(scroll.display_pixels?scroll.speed:0);
         if(extra_road_enabled)extra_tiles.render(pixels,background,terrain_bottom,terrain_top);
-        else render_terrain(pixels,terrain_palette,motif,terrain_bottom,terrain_top,sun_top);
+        else render_terrain(pixels,terrain_palette,motif,terrain_bottom,terrain_top,sun_top,lag);
         // Boss backgrounds replace the terrain before any battle sprites.
         if(marisa_enabled){
             clear_marisa_playfield(pixels,384);

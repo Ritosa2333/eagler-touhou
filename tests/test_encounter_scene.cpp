@@ -62,7 +62,7 @@ int wmain(int argc,wchar_t**argv){try{
   s.background.tiles.at(0)[0]=8;
   check(s.background.stage4_overlay_color(5,0,0)==13);
   check(s.background.stage4_overlay_color(5,1,0)==5);
-  for(unsigned scroll:{2u,252u,412u}){
+  for(unsigned scroll:{2u,144u,412u}){
    s.scroll.display_pixels=scroll;
    s.rendered_page=0;s.reduced_effects=true;s.render(off);
    s.reduced_effects=false;s.render(normal);
@@ -72,8 +72,8 @@ int wmain(int argc,wchar_t**argv){try{
     ++changes;
    }
    if(!changes)throw std::runtime_error("No Stage 4 overlay pixels at scroll " + std::to_string(scroll));
-   // Both native pages present the same sun, at half the source intensity.
-   check(normal[154*640+176]==0x040000);
+   // The visible interval uses the unmodified palette color on both pages.
+   check(normal[154*640+176]==0x080000);
    s.rendered_page=1;s.render(off);check(normal==off);
    s.rendered_page=0;s.reduced_effects=true;s.render(off);
    s.reduced_effects=false;s.runtime.scroll.done=true;s.render(normal);check(normal==off);s.runtime.scroll.done=false;
