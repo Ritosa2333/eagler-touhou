@@ -236,6 +236,67 @@ export function broWebSettingsExpression(options) {
   return '{' + parts.join(',') + '}';
 }
 
+/** 从 netplay URL 里取房间号（?room= / ?run=），取不到返回空串。 */
+function netplayRoomFromUrl(url) {
+  if (typeof url !== 'string' || !url) return '';
+  try {
+    const u = new URL(url, 'http://localhost');
+    return u.searchParams.get('room') || u.searchParams.get('run') || '';
+  } catch { return ''; }
+}
+
+/**
+ * netplay URL → 信令 WebSocket 地址。
+ * 房间流程下发的 URL 可能带 launcher 自己的查询参数（run/runtimeGeneration），
+ * BRO 信令只认 ws(s)://host:port，所以只保留协议+主机+端口。
+ */
+function netplaySignalUrl(url) {
+  if (typeof url !== 'string' || !url) return '';
+  if (!/^wss?:\/\//i.test(url)) return '';
+  try {
+    const u = new URL(url);
+    return `${u.protocol}//${u.host}`;
+  } catch { return ''; }
+}
+
+/** Lua 字符串字面量（只用于自机类名/系统 csv，内容受限）。 */
+function luaStr(v) {
+  if (v === null || v === undefined) return 'nil';
+  return '"' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]/g, ' ') + '"';
+}
+
+/**
+ * 规整 launcher 下发的 netplayLoadouts。
+ * 支持 ['reimu_player', ...] 与 [{char|character, systems|broSystems, index}]，
+ * 也容忍按槽位索引的对象。缺项留空（Lua 侧保持默认自机）。
+ */
+function normalizeNetplayLoadouts(loadouts, count) {
+  const out = [];
+  const push = (slot, raw) => {
+    const p = Number(slot);
+    if (!Number.isInteger(p) || p < 0 || p >= count) return;
+    if (out.some((x) => x.slot === p)) return;
+    let char = null, systems = '', index = 1;
+    if (typeof raw === 'string') char = raw;
+    else if (raw && typeof raw === 'object') {
+      char = typeof raw.char === 'string' ? raw.char : (typeof raw.character === 'string' ? raw.character : null);
+      const sys = raw.systems || raw.broSystems;
+      if (Array.isArray(sys)) systems = sys.filter((n) => Number.isInteger(n) && n >= 1 && n <= 255).join(',');
+      else if (typeof sys === 'string') systems = sys;
+      const idx = Number(raw.index);
+      if (Number.isInteger(idx) && idx >= 1 && idx <= 4) index = idx;
+    }
+    if (!char && !systems) return;
+    out.push({ slot: p, char: char || 'reimu_player', systems, index });
+  };
+  if (Array.isArray(loadouts)) {
+    loadouts.forEach((raw, i) => push(i, raw));
+  } else if (loadouts && typeof loadouts === 'object') {
+    for (const [k, raw] of Object.entries(loadouts)) push(k, raw);
+  }
+  return out.sort((a, b) => a.slot - b.slot);
+}
+
 /**
  * 把房间选项（房主选定的全队系统 + 章节游玩队列）映射成 Lua 表构造表达式。
  * 纯函数便于单测；只输出合法整数组，缺省交给 Lua 侧回落。
@@ -401,6 +462,13 @@ export class EaglerRuntimeAdapter {
     this.ccall = typeof opts.ccall === 'function' ? opts.ccall
       : (this.multi && this.multi.ccall) || null;
     this.multiFactory = typeof opts.multiFactory === 'function' ? opts.multiFactory : null;
+    // 阶段 3AZ：联机主循环接线状态（诊断用，随 runtime-info 上报）。
+    this.multiStarted = false;
+    this.multiModule = null;
+    this.netplayWiring = null;
+    this.netplayConnectError = null;
+    this.netplayFrameError = null;
+    this.netplayLoadoutsApplied = 0;
     // fs 后端（可选注入）：{list(), read(path), write(path,bytes), remove(path)}。
     // 未注入时退回 storage.inspect + ccall BRO_fs_*（接入 eagler 时按其 FS 桥接）。
     this.fs = opts.fs || null;
@@ -617,6 +685,188 @@ export class EaglerRuntimeAdapter {
     }
   }
 
+  /** 阶段 3AZ：房间参数 → BROMultiplayer 构造参数（纯函数式，便于单测断言）。 */
+  _multiOptions(np) {
+    const n = np || {};
+    return {
+      ccall: this.ccall,
+      input: this.input,
+      room: n.room || 'bro-default',
+      player: Number.isInteger(n.player) ? n.player : 0,
+      maxPlayers: clampInt(n.playerCount, 1, 4, 2),
+      iceServers: Array.isArray(n.iceServers) ? n.iceServers : [],
+      preferTurn: n.preferTurn === true,
+    };
+  }
+
+  /**
+   * 阶段 3AZ：把正式房间流程接进联机主循环。
+   *
+   * 为什么以前是断的：`_cmdConfigure` 只在宿主注入 multiFactory 时才有门面，
+   * 而 launcher 从来只发 netplay* 选项、不注入工厂 → this.multi 恒为 null，
+   * runtime 主循环也只有单机分支（syncHeld + bro_frame）。结果是房间里既没有
+   * 输入交换、也没有远端真身，远端只剩 POS 代理。
+   *
+   * 现在：netplayMode === 'lan' 且带信令地址时，本函数在进关之后（Lua 表就绪）
+   * 动态加载 multiplayer.mjs、建链、下发房间人数/各槽自机、发起 match。
+   * 返回 null 表示「本局不是联机」，调用方按单机路径推进。
+   */
+  async startNetplayIfConfigured() {
+    const np = this.netplay || {};
+    if (this.multiStarted) return this._netplaySummary();
+    if (np.mode !== 'lan' || !np.url) {
+      this.netplayWiring = { attempted: true, ok: false, reason: 'no-netplay' };
+      return null;
+    }
+    if (typeof this.ccall !== 'function') {
+      this.netplayWiring = { attempted: true, ok: false, reason: 'no-ccall' };
+      return null;
+    }
+    try {
+      if (!this.multi) {
+        const mod = await this._loadMultiplayerModule();
+        if (!mod) throw new Error('multiplayer module unavailable');
+        this.multi = this._createMulti(mod, np);
+      }
+      const multi = this.multi;
+      // 1) 先把「我是哪个槽 / 房间几个人 / 每人用谁」下发到 Lua，
+      //    远端真身生成时要用到 loadouts（BRO_net_autospawn_remotes）。
+      this.applyNetplaySlots();
+      // 2) 建链（信令 + WebRTC）。失败不阻塞开局：单人也能先跑，链路起来后补齐。
+      if (typeof multi.connect === 'function') {
+        try { await multi.connect(); } catch (error) {
+          // 单机也能先跑：链路失败只记录，链路起来后 startNet 会补齐。
+          this.netplayConnectError = String(error && error.message || error);
+        }
+      }
+      if (typeof multi.startNet === 'function') {
+        const net = multi.startNet();
+        if (net && typeof net.catch === 'function') void net.catch(() => {});
+      }
+      // 3) 发起 match：BRO_net_start_match 会设种子/关卡并 BRO_enter_stage。
+      if (typeof multi.startMatch === 'function') multi.startMatch(undefined, np.seed ?? undefined);
+      if (typeof multi.sendReady === 'function') multi.sendReady(true);
+      this.multiStarted = true;
+      this.netplayWiring = { attempted: true, ok: true, reason: 'started', connectError: this.netplayConnectError || null };
+      this._emit('runtime-info', { netplay: this._netplaySummary() });
+      return this._netplaySummary();
+    } catch (error) {
+      this.netplayWiring = { attempted: true, ok: false, reason: 'error', error: String(error && error.message || error) };
+      this._emit('runtime-info', { netplay: this._netplaySummary() });
+      throw error;
+    }
+  }
+
+  /** 动态加载门面模块（源码树 ../src 与产物目录同层都兼容）。 */
+  async _loadMultiplayerModule() {
+    if (this.multiModule) return this.multiModule;
+    const candidates = ['./multiplayer.mjs', '../src/multiplayer.mjs'];
+    for (const spec of candidates) {
+      try {
+        const mod = await import(/* @vite-ignore */ spec);
+        if (mod && (mod.BROMultiplayer || mod.default)) { this.multiModule = mod; return mod; }
+      } catch { /* 试下一个候选路径 */ }
+    }
+    return null;
+  }
+
+  /** 用真实门面建链（宿主注入工厂时优先工厂，便于测试/自定义传输）。 */
+  _createMulti(mod, np) {
+    if (this.multiFactory) return this.multiFactory(this._multiOptions(np));
+    const opts = this._multiOptions(np);
+    const Ctor = mod && (mod.BROMultiplayer || mod.default);
+    if (typeof Ctor !== 'function') throw new Error('BROMultiplayer class missing');
+    let signal = null;
+    const url = np.signalUrl || netplaySignalUrl(np.url);
+    if (url && typeof mod.createWebSocketSignal === 'function') {
+      // 信令语义与 web/test/browser/lobby.html 相同：client 收到 joined、
+      // host 看到房间里第二个人时，才真正开始 WebRTC 协商。
+      signal = mod.createWebSocketSignal({
+        url,
+        room: opts.room,
+        player: opts.player,
+        onMessage: (m) => this._onSignalMessage(m),
+      });
+    }
+    const multi = new Ctor({
+      ...opts,
+      signal,
+      role: opts.player === 0 ? 'host' : 'client',
+      delay: Number.isFinite(np.inputDelay) ? np.inputDelay : undefined,
+    });
+    return multi;
+  }
+
+  _onSignalMessage(message) {
+    const multi = this.multi;
+    if (!multi || !message || typeof multi.startNet !== 'function') return;
+    const kind = message.kind;
+    if (kind === 'joined' && Number(multi.player) !== 0) void multi.startNet().catch(() => {});
+    if (kind === 'peer' && Number(message.count) >= 2 && Number(multi.player) === 0) {
+      void multi.startNet().catch(() => {});
+    }
+  }
+
+  /** 把房间人数 / 本地槽 / 各槽自机下发给 Lua（远端真身生成依赖它）。 */
+  applyNetplaySlots() {
+    const np = this.netplay || {};
+    if (typeof this.ccall !== 'function') return false;
+    const count = clampInt(np.playerCount, 1, 4, 1);
+    const slot = Number.isInteger(np.player) ? np.player : 0;
+    try {
+      this.ccall('bro_eval', 'string', ['string'],
+        [`return tostring(BRO_net_set_player_count(${count}))`]);
+      this.ccall('bro_eval', 'string', ['string'],
+        [`return tostring(BRO_net_set_slot(${slot}))`]);
+      const list = normalizeNetplayLoadouts(np.loadouts, count);
+      for (const item of list) {
+        const expr = `return tostring(BRO_net_set_loadout(${item.slot}, ${luaStr(item.char)}, ${luaStr(item.systems)}, ${item.index}))`;
+        this.ccall('bro_eval', 'string', ['string'], [expr]);
+      }
+      this.netplayLoadoutsApplied = list.length;
+      return true;
+    } catch (error) {
+      this.netplayWiring = { attempted: true, ok: false, reason: 'slots', error: String(error && error.message || error) };
+      return false;
+    }
+  }
+
+  /** 单帧联机推进：由 runtime 主循环调用（锁步语义全在门面里）。 */
+  stepNetplayFrame(frame) {
+    const multi = this.multi;
+    if (!multi || typeof multi.stepGame !== 'function') return { advanced: false, reason: 'no-multi' };
+    let advanced = false;
+    const advance = () => {
+      advanced = true;
+      this.ccall('bro_frame', 'number', [], []);
+    };
+    try {
+      const out = multi.stepGame(frame, advance);
+      // out === null 表示开局栅栏未开（只喂输入不推进），此时不能扣时间步长。
+      return { advanced, gated: out === null, frame };
+    } catch (error) {
+      this.netplayFrameError = String(error && error.message || error);
+      return { advanced, frame, error: this.netplayFrameError };
+    }
+  }
+
+  _netplaySummary() {
+    const multi = this.multi;
+    const np = this.netplay || {};
+    return {
+      wired: !!this.multiStarted,
+      room: np.room || null,
+      player: Number.isInteger(np.player) ? np.player : 0,
+      playerCount: clampInt(np.playerCount, 1, 4, 1),
+      slots: this.netplayLoadoutsApplied || 0,
+      frames: multi && multi.stats ? multi.stats.frames : 0,
+      netReady: !!(multi && multi.net && multi.net.ready),
+      wiring: this.netplayWiring || null,
+      connectError: this.netplayConnectError || null,
+      error: this.netplayFrameError || null,
+    };
+  }
+
   _cmdConfigure(p) {
     this.config = {
       music: String(p.music || 'ogg'),
@@ -652,16 +902,13 @@ export class EaglerRuntimeAdapter {
       adonisMode: o.netplayAdonisMode === 1 ? 1 : 2,
       predictionLimit: Number.isFinite(o.netplayPredictionLimit) ? o.netplayPredictionLimit : null,
     };
+    // 阶段 3AZ：房间号/信令地址解析（netplay URL 形如 ws://host:port?room=xxx）。
+    this.netplay.room = (typeof o.netplayRoom === 'string' && o.netplayRoom)
+      || netplayRoomFromUrl(this.netplay.url) || 'bro-default';
+    this.netplay.signalUrl = netplaySignalUrl(this.netplay.url);
     // 若宿主提供工厂，按 eagler netplay 参数构造门面（对齐 URL/player/人数）。
     if (this.multiFactory && typeof this.ccall === 'function') {
-      this.multi = this.multiFactory({
-        ccall: this.ccall, input: this.input,
-        room: this.netplay.url || 'bro-default',
-        player: this.netplay.player ?? 0,
-        maxPlayers: this.netplay.playerCount,
-        iceServers: this.netplay.iceServers,
-        preferTurn: this.netplay.preferTurn,
-      });
+      this.multi = this.multiFactory(this._multiOptions(this.netplay));
     }
     // 网站设置对齐：把网页设置为权威下发到游戏本体（音量/分辨率/3D背景/锁帧等）。
     const webSettingsApplied = this.applyWebSettings();
@@ -848,10 +1095,9 @@ export class EaglerRuntimeAdapter {
     // 兜底：若 configure 时 WASM 尚未 boot，这里 setting 表应已就绪，重放网页设置与房间选项。
     this.applyWebSettings();
     this.applyRoomOptions();
-    if (this.multi && typeof this.multi.startMatch === 'function') {
-      // 由宿主先 setSlot/setCharacter/setSystems/setSeed；这里只发起 match。
-      this.multi.startMatch();
-    }
+    // 阶段 3AZ：联机 match 不再在这里发起——此时 WASM 还没 boot，
+    // BRO_net_start_match 无处可落。真正的建链+开局在 runtime_entry 进关之后
+    // 调 startNetplayIfConfigured()（Lua 表与 init_player_data 都已就绪）。
     const serial = this.launchSerial;
     if (this.launchHook) {
       // runtime 入口在这里才真正 boot/接主循环；必须等启动完再回 launch 响应。

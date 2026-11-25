@@ -1,6 +1,6 @@
 # BRO Runtime 产物落地说明（eagler fork `bro-integration`）
 
-> 更新：2026-11-25 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（观战阶段 B 后 build_id `4f12850d`）
+> 更新：2026-11-25 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（3AY nearest-player + 3AZ 联机主循环/远端真身后 build_id `558441cb`）
 > 本目录 `ports/bossrush/web/` 是 **BRO Web runtime 的实际构建产物**，由 BRO 侧 `web/build.sh` 产出后入库。
 
 ## 1. 产物清单（31 文件 / 28 MB）
@@ -13,7 +13,7 @@
 | `web/dist/*.json` | 272 KB | `package-manifest.json`（1004 文件/162.2 MiB 清单，SE 已恢复原生 PCM）/ `app-shell.json` / `runtime.json` |
 | `web/manifest.json` | 5 KB | BRO 产品契约（components / musicMounts / packageManifest） |
 
-来源与可复现性记在 `source-import.json`（30 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `96902659`（BRO `8b9a585`））。
+来源与可复现性记在 `source-import.json`（31 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `558441cb`（BRO `92bf217`，Lua 有改：player_nearest.lua + multiplayer.lua 自动生成））。
 重编：`cd <BRO repo> && bash web/build.sh`，产出后同步 `web/` 目录即可。
 
 ## 2. 游戏资源包（162.2 MiB 资源 / 约 170.7 MB ZIP）——不入库，importOnly

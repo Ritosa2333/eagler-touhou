@@ -168,6 +168,23 @@ export async function startBRO(options = {}) {
   ev('lstg.var.ran_seed = 12345; return true');
   ev('lstg.tmpvar.hiscore = 0; return true');
 
+  // 阶段 3AZ：正式房间流程 → 联机主循环。
+  // 以前这里只走单机推进（syncHeld + bro_frame），门面从未建链、也从没人给
+  // 远端生成真身；房间里的对手只是个 POS 代理。现在若 configure 带
+  // netplayMode/netplayUrl，就在进关之后（Lua 表与 init_player_data 即将就绪）
+  // 建链、下发房间人数与各槽自机、发起 match，主循环改走门面 stepGame。
+  if (adapter && typeof adapter.startNetplayIfConfigured === 'function') {
+    try {
+      const net = await adapter.startNetplayIfConfigured();
+      if (net && net.wired) {
+        note(`netplay wired: room=${net.room} slot=${net.player}/${net.playerCount} slots=${net.slots}`);
+      }
+    } catch (error) {
+      console.warn('netplay wiring failed', error);
+      note('netplay wiring failed: ' + String(error && error.message || error));
+    }
+  }
+
   renderer.loadResourceTable();
   // #35：进关后的第二轮预热同样带预算（进关后本来就有淡入，晚一两帧无所谓）。
   await renderer.requestAll({ budgetMs: 600 });
@@ -222,10 +239,30 @@ export async function startBRO(options = {}) {
       // 无帧 / 暂停 / 定位缺帧时停表（accumulator 归零），避免暂停攒出一大堆
       // 待补的时间步长在恢复后一次性灌进逻辑。
       const spectator = adapter && adapter.spectatorClient ? adapter.spectatorClient : null;
+      // 联机主循环（阶段 3AZ）：输入交换 / 预测修正 / POS / DIGEST 全在门面
+      // stepGame 里，这里只负责「本帧要不要推进」和计数。栅栏未开帧时不扣时间步长。
+      const netplay = (!spectator && adapter && adapter.multi && adapter.multiStarted)
+        ? adapter.multi : null;
       if (spectator) {
         while (accumulator >= stepMs && stepped < 4) {
           const r = adapter.pumpSpectatorFrame();
           if (!r || !r.advanced) { accumulator = 0; break; }
+          storage.tick(++runtime.frames);
+          accumulator -= stepMs;
+          stepped++;
+        }
+      } else if (netplay) {
+        while (accumulator >= stepMs && stepped < 4) {
+          input.syncHeld();
+          const r = adapter.stepNetplayFrame(runtime.frames + 1);
+          if (!r || !r.advanced) { accumulator = 0; break; }
+          if (adapter.publishSpectatorFrame && adapter.spectatorUploader) {
+            try {
+              const rows = adapter._luaJsonCall('BRO_spectator_rows') || [];
+              const seed = adapter.netplay?.seed || 0;
+              adapter.publishSpectatorFrame(runtime.frames, seed, rows);
+            } catch { /* 观战尽力而为 */ }
+          }
           storage.tick(++runtime.frames);
           accumulator -= stepMs;
           stepped++;
