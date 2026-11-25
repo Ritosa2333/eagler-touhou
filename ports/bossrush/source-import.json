@@ -3,8 +3,8 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "master",
-  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；WASM build_id 4f12850d → 558441cb）。",
-  "buildId": "558441cb",
+  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；WASM build_id 4f12850d → 558441cb）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；3BA 双实例锁步 e2e + 卡外对象 frame 绑定（digest 顺序无关；WASM build_id 558441cb → 62f6bec6）。",
+  "buildId": "62f6bec6",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
     "webMaintainer": "清酒 (Tidew)",
@@ -20,12 +20,12 @@
     {
       "path": "bro.mjs",
       "bytes": 117746,
-      "sha256": "3f34c7d9c983538db7db595a904e87e6b214fe76be7fe3924a729380ff53bea0"
+      "sha256": "7b7def6a7dd3628073164ffd926da769ad32429983b81dca508f21f860e4cbf4"
     },
     {
       "path": "bro.wasm",
-      "bytes": 26924951,
-      "sha256": "558441cb61f856b47614f6354ac37c33c4013ac945cdf38b60d6ccd6bb3d0048"
+      "bytes": 26931223,
+      "sha256": "62f6bec6da46442525b03be782d0e396b4adc85bbc8e8278de1bf08275a061e7"
     },
     {
       "path": "dist/app-shell.json",
@@ -40,7 +40,7 @@
     {
       "path": "dist/runtime.json",
       "bytes": 577,
-      "sha256": "ab312333acb863e97e59036b82379303ffe4027266f3f6312c7f72aec3bf10c3"
+      "sha256": "335161d190c922c7fde2fcfe565e26721ffc32928e6675d8ff02eb24684419c4"
     },
     {
       "path": "managed-shell.mjs",
