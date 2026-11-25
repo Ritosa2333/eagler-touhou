@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { createReadStream, readFileSync, statSync } from 'node:fs';
-import { createServer } from 'node:http';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import { test } from 'node:test';
 import { tmpdir } from 'node:os';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { findChromiumExecutable } from '../../../../launcher/lib/chromium-executable.mjs';
 import { Keyboard } from './input.mjs';
 import { RetraceClock } from './clock.mjs';
+import { previewServer } from './serve.mjs';
 
 test('keyboard samples quick Z edges and retains the other Shift key', () => {
     const input = new Keyboard();
@@ -36,6 +36,47 @@ test('clock follows PC-98 retraces on 60 Hz and does not replay time spent suspe
     assert.equal(ticks, 566);
 });
 
+test('Full SoEW starts through the native title and draws the playfield with the FPS label', { timeout: 30_000 }, async () => {
+    const [out] = process.argv.slice(2);
+    assert(out, 'Usage: node web/browser.test.mjs <web build> <native replay probe>');
+    const require = createRequire(process.env.SOEW_BROWSER_DEPS ||
+        new URL('../../../../launcher/package.json', import.meta.url));
+    const {launch} = require('puppeteer-core');
+    const server = previewServer(out);
+    let browser;
+    try {
+        await new Promise(done => server.listen(0,'127.0.0.1',done));
+        browser = await launch({executablePath: await findChromiumExecutable(), headless: true});
+        const page = await browser.newPage();
+        const errors = [];
+        page.on('pageerror', error => errors.push(error.message));
+        page.on('console', msg => {
+            if (msg.type() === 'error' && !msg.text().startsWith('Locale overlay missing;')) errors.push(msg.text());
+        });
+        await page.goto(`http://127.0.0.1:${server.address().port}/`);
+        await page.waitForFunction(() => document.title.includes('F8'));
+        await page.click('canvas');
+        for (let i = 0; i < 5 && !/ショット選択|choose shot/u.test(await page.title()); i++) {
+            await page.keyboard.press('Enter',{delay: 100});
+            await new Promise(done => setTimeout(done,200));
+        }
+        assert.match(await page.title(), /ショット選択|choose shot/u);
+        await page.keyboard.press('Enter',{delay: 100});
+        await page.waitForFunction(() => /一時停止|Esc: pause/u.test(document.title));
+        await page.waitForFunction(() => {
+            const ctx = document.querySelector('canvas').getContext('2d');
+            const hasColor = (x,y,w,h) => ctx.getImageData(x,y,w,h).data.some((red,i,rgba) =>
+                i%4===0 && (red!==rgba[i+1] || red!==rgba[i+2]));
+            const fps = ctx.getImageData(550,375,82,17).data.some((v,i) => i%4!==3&&v>240);
+            return fps && hasColor(32,32,380,200) && hasColor(432,32,144,200);
+        });
+        assert.deepEqual(errors,[]);
+    } finally {
+        if (browser) await browser.close();
+        if (server.listening) await new Promise(done => server.close(done));
+    }
+});
+
 test('Stage 1 browser, keyboard and 900 native replay samples', { timeout: 60_000 }, async () => {
     const [out, probe] = process.argv.slice(2);
     assert(out && probe, 'Usage: node web/browser.test.mjs <web build> <native replay probe>');
@@ -45,19 +86,7 @@ test('Stage 1 browser, keyboard and 900 native replay samples', { timeout: 60_00
     const {launch} = require('puppeteer-core');
     const dir = await mkdtemp(resolve(tmpdir(), 'soew-replay-'));
     const rep = resolve(dir, 'stage1.rep');
-    const server = createServer((request, response) => {
-        const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
-        const path = resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
-        if (!path.startsWith(root + sep) || !statSync(path, {throwIfNoEntry: false})?.isFile()) {
-            response.writeHead(404).end();
-            return;
-        }
-        const ext = path.split('.').at(-1);
-        response.setHeader('Content-Type', {
-            html: 'text/html', mjs: 'text/javascript', wasm: 'application/wasm', json: 'application/json',
-        }[ext] ?? 'application/octet-stream');
-        createReadStream(path).pipe(response);
-    });
+    const server = previewServer(root);
     let browser;
     try {
         const expected = JSON.parse(execFileSync(resolve(probe), [resolve(root, 'content'), rep], {encoding: 'utf8'}));
@@ -67,7 +96,7 @@ test('Stage 1 browser, keyboard and 900 native replay samples', { timeout: 60_00
         const page = await browser.newPage();
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
-        await page.goto(`http://127.0.0.1:${server.address().port}/`);
+        await page.goto(`http://127.0.0.1:${server.address().port}/?stage1`);
         await page.waitForFunction(() => {
             const c = document.querySelector('canvas');
             return c.getContext('2d').getImageData(32, 16, 384, 368).data.some((byte, i) => i % 4 !== 3 && byte !== 0);

@@ -1,10 +1,10 @@
 #pragma once
 #include "native_replay.hpp"
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__EMSCRIPTEN__)
 #include <bcrypt.h>
 #endif
 #include <memory>
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
 #include <cerrno>
 #include <fcntl.h>
 #include <sys/file.h>
@@ -62,7 +62,7 @@ inline bool is_v1(const native_replay_detail::Bytes &bytes){
 class WriteLock {
 #ifdef _WIN32
     HANDLE handle_=INVALID_HANDLE_VALUE;
-#else
+#elif !defined(__EMSCRIPTEN__)
     int handle_=-1;
 #endif
 public:
@@ -73,7 +73,7 @@ public:
             FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE|FILE_FLAG_OPEN_REPARSE_POINT,nullptr);
         if(handle_==INVALID_HANDLE_VALUE)throw fs::filesystem_error("Cannot lock SoEW replay directory",path,
             std::error_code(static_cast<int>(GetLastError()),std::system_category()));
-#else
+#elif !defined(__EMSCRIPTEN__)
         handle_=open(dir.c_str(),O_RDONLY|O_DIRECTORY|O_CLOEXEC);
         if(handle_<0)throw fs::filesystem_error("Cannot open SoEW replay directory lock",dir,
             std::error_code(errno,std::generic_category()));
@@ -86,7 +86,7 @@ public:
     ~WriteLock(){
 #ifdef _WIN32
         CloseHandle(handle_);
-#else
+#elif !defined(__EMSCRIPTEN__)
         close(handle_);
 #endif
     }
@@ -133,7 +133,12 @@ private:
 
 using ReplayDigest=std::array<std::uint8_t,32>;
 inline std::optional<ReplayDigest> replay_digest(std::span<const std::uint8_t> bytes){
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+    if(bytes.size()>native_replay_detail::max_file_size)return {};
+    ReplayDigest digest{};
+    if(BCryptHash(nullptr,nullptr,0,const_cast<PUCHAR>(bytes.data()),bytes.size(),digest.data(),digest.size())<0)return {};
+    return digest;
+#elif defined(_WIN32)
     if(bytes.size()>native_replay_detail::max_file_size)return {};
     struct Provider {
         BCRYPT_ALG_HANDLE value=nullptr;

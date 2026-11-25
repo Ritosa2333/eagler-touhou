@@ -90,6 +90,33 @@ if(EMSCRIPTEN)
     foreach(file index.html shell.mjs input.mjs clock.mjs)
         configure_file("web/${file}" "${file}" COPYONLY)
     endforeach()
+    set(th98 "${TH98PORT_DIR}")
+    add_executable(soew-full
+        src/main.cpp src/audio_preview.cpp src/mmd_preview_engine.cpp web/platform/platform.cpp
+        "${th98}/src/assets/pi.cpp" "${th98}/src/assets/rgb.cpp" "${th98}/src/assets/bfnt.cpp"
+        "${th98}/src/audio/pmd_opna.cpp" "${th98}/src/audio/pmd_shim.c" "${th98}/src/audio/fixed_resampler.cpp"
+        "${th98}/third_party/98fmplayer/fmdriver/fmdriver_common.c"
+        "${th98}/third_party/98fmplayer/fmdriver/fmdriver_pmd.c"
+        "${th98}/third_party/ymfm/src/ymfm_adpcm.cpp" "${th98}/third_party/ymfm/src/ymfm_opn.cpp"
+        "${th98}/third_party/ymfm/src/ymfm_pcm.cpp" "${th98}/third_party/ymfm/src/ymfm_ssg.cpp"
+        "${th98}/third_party/TinySoundFont/tsf.c")
+    target_include_directories(soew-full PRIVATE web/platform
+        "${th98}/include" "${th98}/src/audio" "${th98}/third_party/98fmplayer"
+        "${th98}/third_party/ymfm/src" "${th98}/third_party/TinySoundFont")
+    target_compile_features(soew-full PRIVATE cxx_std_23 c_std_11)
+    target_compile_options(soew-full PRIVATE -fwasm-exceptions -ffp-contract=off)
+    target_link_libraries(soew-full PRIVATE ${SOEW_ZLIB_TARGET})
+    target_link_options(soew-full PRIVATE --no-entry -fwasm-exceptions
+        -sMODULARIZE=1 -sEXPORT_ES6=1 -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH=1
+        -sSTACK_SIZE=8388608 -sFILESYSTEM=1 -lidbfs.js
+        "-sEXPORTED_FUNCTIONS=_malloc,_free"
+        "-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAPU32,HEAP16")
+    set_target_properties(soew-full PROPERTIES SUFFIX ".mjs")
+    configure_file("web/full.mjs" "full.mjs" COPYONLY)
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../../launcher/package/package-integrity.mjs")
+        message(FATAL_ERROR "The full SoEW Web host builds from the Eagler checkout")
+    endif()
+    configure_file("../../../launcher/package/package-integrity.mjs" "package-integrity.mjs" COPYONLY)
     return()
 endif()
 

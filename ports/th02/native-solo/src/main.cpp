@@ -175,6 +175,9 @@ void dump(const Frame &frame, const fs::path &path) {
     if(!stream) throw std::runtime_error("Dump write failed");
 }
 void jp_text(Frame &frame,std::wstring_view text,int x,int y,std::uint32_t color) {
+#ifdef __EMSCRIPTEN__
+    browser_paint_cells(frame.pixels.data(),frame.w,frame.h,text,x,y,color);
+#else
     // Fixed 8/16px cells, monochrome GDI glyphs. NOT a PC98 ROM font.
     const auto dc=CreateCompatibleDC(nullptr);
     if(!dc)throw std::runtime_error("Japanese text DC failed");
@@ -190,6 +193,7 @@ void jp_text(Frame &frame,std::wstring_view text,int x,int y,std::uint32_t color
     for(wchar_t c:text){const int width=jp::cell_width(std::wstring_view(&c,1));RECT clip{x,y,x+width,y+16};ExtTextOutW(dc,x,y,ETO_CLIPPED,&clip,&c,1,nullptr);x+=width;}
     GdiFlush();std::copy_n(static_cast<std::uint32_t*>(bits),frame.pixels.size(),frame.pixels.begin());
     SelectObject(dc,old_font);SelectObject(dc,old_bitmap);DeleteObject(font);DeleteObject(bitmap);DeleteDC(dc);
+#endif
 }
 bool chinese_display(soew::Language lang){
     return lang==soew::Language::ChineseSimplified||lang==soew::Language::ChineseTraditional;
@@ -217,6 +221,16 @@ int display_text_width(std::wstring_view text,soew::Language lang){
     }
     return width;
 }
+#ifdef __EMSCRIPTEN__
+class ChineseFont {
+public:
+    explicit ChineseFont(bool){}
+    bool supports(std::wstring_view scalar){return browser_glyph_available(scalar);}
+    void paint(Frame &f,std::wstring_view text,int x,int y,std::uint32_t color){
+        browser_paint_cells(f.pixels.data(),f.w,f.h,text,x,y,color);
+    }
+};
+#else
 // Probe actual installed faces, then cache each glyph as a 16-pixel cell mask.
 class ChineseFont {
     struct Face {HFONT font;std::vector<unsigned char> cmap;};
@@ -348,6 +362,7 @@ public:
                 if(glyph.rows[row]&(1u<<col))frame.pixels[(y+row)*frame.w+x+col]=color;
     }
 };
+#endif
 ChineseFont& chinese_font(soew::Language lang){
     if(lang==soew::Language::ChineseTraditional){static ChineseFont hant(true);return hant;}
     static ChineseFont hans(false);return hans;
@@ -1208,6 +1223,15 @@ Frame zunsoft_frame(const ZunSoftAssets &assets,const soew::ZunSoftOpening &anim
     return output;
 }
 void save_settings(App &app){if(!app.settings_enabled||!app.settings||app.replay_playback)return;if(!app.settings->save(soew::Settings::from(app.menu,app.practice_tools.options))){app.settings_warning=app.settings->warning;std::cerr<<"Settings not saved: "<<app.settings_warning<<'\n';}else app.settings_warning=app.settings->warning;}
+template<class F> auto prepare_on_host(F work){
+#ifdef __EMSCRIPTEN__
+    std::promise<decltype(work())> ready;
+    try{ready.set_value(work());}catch(...){ready.set_exception(std::current_exception());}
+    return ready.get_future();
+#else
+    return std::async(std::launch::async,std::move(work));
+#endif
+}
 constexpr soew::LocalizedText preview_stopped{L"試聴を停止しました",L"Preview stopped",L"已停止试听",L"已停止試聽"};
 void audio_error(App &app){std::cerr<<"Audio preview error: "<<app.audio.error()<<'\n';app.audio_status={L"音声の出力を停止しました",L"Audio error; output stopped",L"音频出错，已停止播放",L"音訊出錯，已停止播放"};app.audio.stop();app.fm_enabled=false;}
 void start_zunsoft(App &app){
@@ -1385,7 +1409,7 @@ void begin_title_demo_pcm(App &app){
         title=midi?app.midi_songs[0]:app.songs[0],font=midi?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},
         effects=app.effect_bank,stage_carrier=app.songs.at(track),title_carrier=app.songs[0];
     const auto cancel=demo.cancel;
-    demo.pcm_load.emplace(std::async(std::launch::async,[=]{
+    demo.pcm_load.emplace(prepare_on_host([=]{
         TitleDemoHost::Pcm pcm;
         if(midi&&font.empty())throw std::runtime_error("Title demo MIDI SoundFont unavailable");
         pcm.stage=AudioPreview::prepare(stage,silent,font,effects,stage_carrier,false,0,cancel.get());
@@ -1438,7 +1462,7 @@ bool advance_title_demo(HWND hwnd,App &app,std::uint64_t now){
                 const auto language=soew::simulation_language(app.menu.language);
                 demo.cancel=std::make_shared<std::atomic_bool>(false);
                 const auto cancel=demo.cancel;
-                demo.stage_load.emplace(std::async(std::launch::async,[root,spec,language,cancel]{
+                demo.stage_load.emplace(prepare_on_host([root,spec,language,cancel]{
                     if(cancel->load(std::memory_order_relaxed))return TitleDemoHost::Run{};
                     return soew::load_title_demo(root,spec,language,verify_title_demo_recording);
                 }));
@@ -1530,7 +1554,7 @@ void sync_gameplay_bgm(App &app,bool foreground){
             const auto *song=midi?&app.midi_songs.at(wanted):&app.songs.at(wanted);const auto *font=midi?&app.soundfont:nullptr;const auto *effects=&app.effect_bank,*carrier=&app.songs.at(wanted);const auto measure=app.practice_bgm_measure;app.practice_bgm_measure=0;
             app.gameplay_audio_cancel=std::make_shared<std::atomic_bool>(false);const auto cancel=app.gameplay_audio_cancel;
             app.gameplay_audio_load_track=wanted;app.gameplay_audio_load_generation=app.gameplay_audio_generation;
-            try{app.gameplay_audio_load.emplace(std::async(std::launch::async,[song,font,effects,carrier,off,silent,measure,cancel](){const auto song_copy=*song,font_copy=font?*font:std::vector<std::byte>{},effects_copy=*effects,carrier_copy=*carrier;return AudioPreview::prepare(song_copy,silent,font_copy,effects_copy,carrier_copy,off,measure,cancel.get());}));}
+            try{app.gameplay_audio_load.emplace(prepare_on_host([song,font,effects,carrier,off,silent,measure,cancel](){const auto song_copy=*song,font_copy=font?*font:std::vector<std::byte>{},effects_copy=*effects,carrier_copy=*carrier;return AudioPreview::prepare(song_copy,silent,font_copy,effects_copy,carrier_copy,off,measure,cancel.get());}));}
             catch(const std::exception&){app.audio_status={L"ステージ曲を準備できませんでした",L"Could not prepare stage music"};app.gameplay_audio_cancel.reset();}
         }
     }
@@ -1978,8 +2002,10 @@ void compose_replay_menu(App &app){
                 draw(tr(L"シード：",L"Seed: ",L"种子：",L"種子：")+std::to_wstring(l.practice->spec.seed),64,172);
             }
             draw(tr(L"開始地点：",L"Start Point: ",L"起点：",L"起點：")+start+tr(L"　タイプ ",L"   Shot ",L"  机体 ",L"  機體 ")+std::wstring(1,wchar_t(L'A'+l.config.shot)),64,92);
-            if(l.played_at){SYSTEMTIME date{};ULARGE_INTEGER raw{};raw.QuadPart=(l.played_at+11644473600ull)*10000000ull;FILETIME ft{raw.LowPart,raw.HighPart};
-                if(FileTimeToSystemTime(&ft,&date))draw(tr(L"日付 (UTC)：",L"Date (UTC): ",L"日期 (UTC)：",L"日期 (UTC)：")+std::to_wstring(date.wYear)+L"-"+std::to_wstring(date.wMonth)+L"-"+std::to_wstring(date.wDay),64,116);}
+            if(l.played_at){
+                using namespace std::chrono;
+                const year_month_day date{floor<days>(sys_seconds{seconds{l.played_at}})};
+                if(date.ok())draw(tr(L"日付 (UTC)：",L"Date (UTC): ",L"日期 (UTC)：",L"日期 (UTC)：")+std::to_wstring(int(date.year()))+L"-"+std::to_wstring(unsigned(date.month()))+L"-"+std::to_wstring(unsigned(date.day())),64,116);}
             if(l.summary){const auto &sum=*l.summary;
                 draw(std::wstring(status(sum.outcome))+tr(L"　最終得点：",L"   Final Score: ",L"  最终得分：",L"  最終得分：")+std::to_wstring(std::uint64_t(sum.final_score)*10),64,140);
                 if(!l.practice){
@@ -2245,7 +2271,7 @@ void begin_practice(App &app,const soew::PracticeSpec &spec,bool fast_retry=fals
     app.dialogue_hold.clear();app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
     try{
         if(app.smoke)app.practice_builder.emplace(root,recipe,soew::practice_checkpoint(recipe),seed,reduced,language);
-        else app.practice_load.emplace(std::async(std::launch::async,[root,recipe,seed,reduced,language](){return soew::PracticeBuilder(root,recipe,soew::practice_checkpoint(recipe),seed,reduced,language);}));
+        else app.practice_load.emplace(prepare_on_host([root,recipe,seed,reduced,language](){return soew::PracticeBuilder(root,recipe,soew::practice_checkpoint(recipe),seed,reduced,language);}));
     }catch(const std::exception&e){app.practice_menu.warning=e.what();app.notice=soew::practice_warning(e.what(),app.menu.language);return;}
     // The request now owns its seed and worker. Only accepted attempts replace the recording.
     app.recorder.reset();app.recording_timing={};cancel_gameplay_audio(app);app.gameplay_audio_attempted=-1;
@@ -2277,7 +2303,7 @@ void advance_practice(App &app){
             app.practice_audio_track=track;const std::span<const std::byte> song=app.menu.music==2?app.midi_songs.at(track):app.songs.at(track),font=app.menu.music==2?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},effects=app.effect_bank,carrier=app.songs.at(track);const bool off=app.menu.music==0,silent=app.audio_test_silent;const auto measure=soew::practice_music_measure(r);
             app.practice_audio_cancel=std::make_shared<std::atomic_bool>(false);const auto cancel=app.practice_audio_cancel;
             const bool allow_checkpoint=!app.retry_probe.force_exact;
-            try{app.practice_audio_load.emplace(std::async(std::launch::async,[song,font,effects,carrier,off,silent,measure,cancel,allow_checkpoint](){return AudioPreview::prepare(song,silent,font,effects,carrier,off,measure,cancel.get(),allow_checkpoint);}));app.practice_audio_started=true;}catch(const std::exception&e){reset_practice_to_menu(app,e.what());}return;
+            try{app.practice_audio_load.emplace(prepare_on_host([song,font,effects,carrier,off,silent,measure,cancel,allow_checkpoint](){return AudioPreview::prepare(song,silent,font,effects,carrier,off,measure,cancel.get(),allow_checkpoint);}));app.practice_audio_started=true;}catch(const std::exception&e){reset_practice_to_menu(app,e.what());}return;
         }
         if(!app.practice_audio_load)return;
         if(app.practice_audio_load->wait_for(std::chrono::seconds(0))!=std::future_status::ready)return;
@@ -2400,6 +2426,10 @@ void activate_practice_tool_row(HWND hwnd,App &app,int index,int delta=1){
 }
 bool set_fullscreen(HWND hwnd,App &app,bool enabled){
     if(enabled==app.window_fullscreen)return true;
+#ifdef __EMSCRIPTEN__
+    browser_fullscreen(enabled);
+    return true;
+#else
     const auto changed=[](HWND window,LONG_PTR style){SetLastError(0);return SetWindowLongPtrW(window,GWL_STYLE,style)!=0||GetLastError()==0;};
     constexpr UINT refresh=SWP_FRAMECHANGED|SWP_NOOWNERZORDER|SWP_NOACTIVATE;
     if(enabled){
@@ -2424,6 +2454,7 @@ bool set_fullscreen(HWND hwnd,App &app,bool enabled){
     }
     app.window_fullscreen=enabled;app.dialogue_hold.clear();app.stage_clock.reset(host_ms());
     return true;
+#endif
 }
 void caption(HWND hwnd, const App &app) {
     const auto lang=app.menu.language;
@@ -2706,6 +2737,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
         }
         if(w==VK_F8&&!repeat&&!app->opening.active&&!app->scores_visible&&!app->menu.options&&!app->menu.music_room&&!app->menu.shot_screen){
+#ifdef __EMSCRIPTEN__
+            browser_pick_replay();
+#else
             wchar_t path[32768]{};
             const auto folder=app->replay_dir.wstring();
             OPENFILENAMEW picker{};picker.lStructSize=sizeof(picker);picker.hwndOwner=hwnd;
@@ -2717,6 +2751,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 catch(const std::exception &error){std::cerr<<"Cannot play replay: "<<error.what()<<'\n';app->notice=app->tr(L"リプレイを再生できませんでした",L"Cannot play replay",L"无法回放录像",L"無法重播錄影");}
                 caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);
             }
+#endif
             return 0;
         }
         if(w==VK_F5&&!repeat&&!app->opening.active&&!app->menu.options){app->menu.music=app->menu.music==2?1:2;save_settings(*app);start_preview(*app,app->loaded_track);caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;}
@@ -3066,6 +3101,10 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         }
         }
         }
+#ifdef __EMSCRIPTEN__
+        soew_host_aspect(app->crt);
+        GetClientRect(hwnd,&client);
+#endif
         const auto &frame=app->composed;
         const auto view=fit(client.right,client.bottom,app->crt);
         const auto prepared=[&]{
@@ -3481,6 +3520,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             }
             return 0;
         }
+#ifndef __EMSCRIPTEN__
         if(app->smoke) {
             KillTimer(hwnd, 1);
             for(unsigned f:{0u,20u,49u,67u,68u,73u,78u,85u,Opening::flash_end,Opening::flash_end+6,Opening::end-1}) {
@@ -4033,6 +4073,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             }
             DestroyWindow(hwnd);
         }
+#endif
         return 0;
     case WM_DESTROY: cancel_gameplay_audio(*app);if(app->practice_audio_cancel)app->practice_audio_cancel->store(true,std::memory_order_relaxed);
         if(app->title_demo)cancel_title_demo_work(*app->title_demo);
@@ -4051,7 +4092,52 @@ bool locked_display_active(HWND hwnd,const App &app){
     }
     return false;
 }
+struct HostDisplay {
+    soew::DisplayCadence cadence;
+    std::uint64_t last_frame_us=0;
+    bool update(HWND hwnd,App &app){
+        const bool precise=locked_display_active(hwnd,app);
+        if(precise==app.display_frames_active)return false;
+        app.display_frames_active=precise;
+        app.frame_rate.reset();
+        if(precise){
+            cadence.reset(host_us());last_frame_us=0;app.locked_clock={};
+        }else{
+            const auto now=host_ms();
+            app.stage_clock.reset(now);
+            if(app.title_demo)app.title_demo->clock.reset(now);
+        }
+        return true;
+    }
+    bool present_if_due(HWND hwnd,App &app,std::uint64_t now){
+        if(!cadence.consume(now))return false;
+        const auto elapsed_ms=last_frame_us?now/1000-last_frame_us/1000:0;
+        const auto lost_ms=cadence.late_us>=cadence.period_numerator()/cadence.rate/2?cadence.late_us/1000:0;
+        app.locked_timing={elapsed_ms,std::min(elapsed_ms,lost_ms)};
+        last_frame_us=now;
+        app.paced_paint_due=true;
+        InvalidateRect(hwnd,nullptr,FALSE);
+        SendMessageW(hwnd,WM_TIMER,2,0);
+        if(app.paced_paint_due)UpdateWindow(hwnd);
+        app.paced_paint_due=false;
+        return true;
+    }
+};
 void run_window_loop(HWND hwnd,App &app){
+#ifdef __EMSCRIPTEN__
+    browser_frame_callback([](HWND window,void *state)->double{
+        static HostDisplay display;
+        auto &app=*static_cast<App *>(state);
+        display.update(window,app);
+        if(!app.display_frames_active){
+            SendMessageW(window,WM_TIMER,2,0);
+            return 10;
+        }
+        display.present_if_due(window,app,host_us());
+        const auto now=host_us(), due=display.cadence.deadline();
+        return now<due?(due-now)/1000.0:0;
+    },hwnd,&app);
+#else
     struct DisplayTimer {
         HANDLE handle=nullptr;
         ~DisplayTimer(){if(handle)CloseHandle(handle);}
@@ -4066,45 +4152,27 @@ void run_window_loop(HWND hwnd,App &app){
                 throw std::runtime_error("Display frame timer failed");
         }
     } timer;
-    soew::DisplayCadence cadence;
-    std::uint64_t last_frame_us=0;
+    HostDisplay display;
     MSG msg{};
     for(;;){
-        const bool precise=locked_display_active(hwnd,app);
-        if(precise!=app.display_frames_active){
-            app.display_frames_active=precise;
-            app.frame_rate.reset();
-            if(precise){
+        if(display.update(hwnd,app)){
+            if(app.display_frames_active){
                 KillTimer(hwnd,2);
-                cadence.reset(host_us());last_frame_us=0;app.locked_clock={};
             }
             else{
                 if(PeekMessageW(&msg,nullptr,WM_QUIT,WM_QUIT,PM_REMOVE))break;
-                const auto now=host_ms();
-                app.stage_clock.reset(now);
-                if(app.title_demo)app.title_demo->clock.reset(now);
                 if(!SetTimer(hwnd,2,10,nullptr))throw std::runtime_error("Opening timer failed");
             }
         }
-        if(precise){
-            const auto now=host_us();
+        if(app.display_frames_active){
             // Service a due frame before ordinary messages so a busy queue
             // cannot hold up simulation/presentation until it becomes empty.
-            if(cadence.consume(now)){
-                const auto elapsed_ms=last_frame_us?now/1000-last_frame_us/1000:0;
-                const auto lost_ms=cadence.late_us>=cadence.period_numerator()/cadence.rate/2?cadence.late_us/1000:0;
-                app.locked_timing={elapsed_ms,std::min(elapsed_ms,lost_ms)};
-                last_frame_us=now;
-                app.paced_paint_due=true;
-                InvalidateRect(hwnd,nullptr,FALSE);
-                SendMessageW(hwnd,WM_TIMER,2,0);
-                if(app.paced_paint_due)UpdateWindow(hwnd);
-                app.paced_paint_due=false;
+            if(display.present_if_due(hwnd,app,host_us())){
                 // Even when rendering runs over budget, let input/close through.
                 if(!PeekMessageW(&msg,nullptr,0,0,PM_REMOVE))continue;
             }else if(!PeekMessageW(&msg,nullptr,0,0,PM_REMOVE)){
                 const auto before_wait=host_us();
-                if(before_wait<cadence.deadline())timer.wait(cadence.deadline()-before_wait);
+                if(before_wait<display.cadence.deadline())timer.wait(display.cadence.deadline()-before_wait);
                 continue;
             }
             if(msg.hwnd==hwnd&&msg.message==WM_TIMER&&msg.wParam==2)continue;
@@ -4116,15 +4184,51 @@ void run_window_loop(HWND hwnd,App &app){
         if(msg.message==WM_QUIT)break;
         TranslateMessage(&msg);DispatchMessageW(&msg);
     }
+#endif
 }
+#ifdef __EMSCRIPTEN__
+extern "C" {
+EMSCRIPTEN_KEEPALIVE int soew_full_start();
+EMSCRIPTEN_KEEPALIVE int soew_full_import_replay();
+}
+namespace { App browser_app; HWND browser_hwnd; }
+extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_fullscreen_changed(bool enabled){
+    browser_app.window_fullscreen=enabled;
+    browser_app.dialogue_hold.clear();
+    browser_app.stage_clock.reset(host_ms());
+}
+int soew_full_import_replay(){
+    try{
+        launch_replay(browser_app,"/soew/import.rep");
+        caption(browser_hwnd,browser_app);InvalidateRect(browser_hwnd,nullptr,FALSE);
+        return 1;
+    }catch(const std::exception &error){
+        std::cerr<<"Cannot play replay: "<<error.what()<<'\n';
+        auto &app=browser_app;
+        app.notice=app.tr(L"リプレイを再生できませんでした",L"Cannot play replay",L"无法回放录像",L"無法重播錄影");
+        caption(browser_hwnd,app);InvalidateRect(browser_hwnd,nullptr,FALSE);
+        return 0;
+    }
+}
+int soew_full_start(){
+    constexpr int argc=1;
+    wchar_t program[]=L"soew";
+    wchar_t *argv[]={program};
+#else
 int wmain(int argc, wchar_t **argv) {
+#endif
     try {
+#ifdef __EMSCRIPTEN__
+        const fs::path install_dir="/soew";
+        fs::path assets=install_dir/"content";
+#else
         wchar_t executable[32768];
         const auto len = GetModuleFileNameW(nullptr, executable, 32768);
         if(len == 0 || len >= 32768) throw std::runtime_error("Executable path unavailable");
         fs::path assets = fs::path(executable).parent_path() / "content";
-        fs::path evidence_dir,host_perf_log;
         const fs::path install_dir=fs::path(executable).parent_path();
+#endif
+        fs::path evidence_dir,host_perf_log;
         fs::path settings_dir=install_dir/"user", replay_file;
         const bool portable=fs::is_regular_file(install_dir/"portable.ini");
         if(portable)settings_dir=install_dir/"save"; // Keep earlier user/ files untouched.
@@ -4285,7 +4389,12 @@ int wmain(int argc, wchar_t **argv) {
             std::cout << "viewport_checks=" << checks + 2 << " menu_checks=" << test_menu() << " japanese_checks=" << jp_checks << " chinese_ascii_checks=" << test_chinese_ascii() << " chinese_ending_checks=" << test_chinese_ending() << " opening_checks=" << test_opening() << " zunsoft_checks=" << soew::test_zunsoft_opening() << " failures=0\n"; return 0;
         }
         if(async_practice_test&&(smoke||test||dump_only||timed_test||score_timed_test))throw std::runtime_error("Async practice test cannot be combined with other test modes");
-        App app{};app.assets_root=assets;app.evidence_dir=evidence_dir;app.async_practice_test=async_practice_test;app.async_exit_test=async_exit_test;
+#ifdef __EMSCRIPTEN__
+        App &app=browser_app;
+#else
+        App app{};
+#endif
+        app.assets_root=assets;app.evidence_dir=evidence_dir;app.async_practice_test=async_practice_test;app.async_exit_test=async_exit_test;
         if(title_demo)app.title_demo.emplace();
         if(!host_perf_log.empty())app.host_perf=std::make_unique<HostPerf>();
         if(!evidence_dir.empty()&&(!smoke||!fs::is_directory(evidence_dir)))throw std::runtime_error("Smoke evidence requires existing isolated directory");
@@ -4477,6 +4586,9 @@ int wmain(int argc, wchar_t **argv) {
         }
         refresh_extra_unlock(app);
         app.smoke = smoke;app.audio_test_silent=smoke||async_practice_test;app.gameplay_audio_enabled=true;
+#ifdef __EMSCRIPTEN__
+        const auto hwnd=browser_hwnd=browser_window(window_proc,&app);
+#else
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.lpfnWndProc=window_proc;
         wc.hInstance=GetModuleHandleW(nullptr);wc.lpszClassName=L"SoEWNativePrototype";wc.hCursor=LoadCursorW(nullptr,IDC_ARROW);
@@ -4487,15 +4599,22 @@ int wmain(int argc, wchar_t **argv) {
         if(!RegisterClassExW(&wc)) throw std::runtime_error("Window class registration failed");
         const auto hwnd = CreateWindowW(wc.lpszClassName, app.tr(L"東方封魔録",L"Story of Eastern Wonderland"), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1000, 700, nullptr, nullptr, wc.hInstance, &app);
         if(!hwnd) throw std::runtime_error("Window creation failed");
+#endif
         if(app.menu.fullscreen&&!set_fullscreen(hwnd,app,true)){
             app.menu.fullscreen=false;app.settings_warning="Could not start in fullscreen mode";
         }
         if(app.opening.active)start_zunsoft(app);
-        caption(hwnd, app); ShowWindow(hwnd, app.window_fullscreen?SW_SHOW:SW_SHOWNORMAL); UpdateWindow(hwnd);
+        caption(hwnd, app);
+#ifndef __EMSCRIPTEN__
+        ShowWindow(hwnd, app.window_fullscreen?SW_SHOW:SW_SHOWNORMAL);
+#endif
+        UpdateWindow(hwnd);
         if(smoke && !SetTimer(hwnd, 1, 200, nullptr)) throw std::runtime_error("Test timer failed");
         app.score_timed_test=score_timed_test;
         app.timed_test=timed_test;app.test_started=host_ms();app.clock.reset(app.test_started);
+#ifndef __EMSCRIPTEN__
         if(timed_test){SetWindowPos(hwnd,HWND_TOPMOST,20,20,1000,700,SWP_SHOWWINDOW);SetForegroundWindow(hwnd);SetFocus(hwnd);}
+#endif
         if(!replay_file.empty()){
             launch_replay(app,replay_file);
             caption(hwnd,app);InvalidateRect(hwnd,nullptr,FALSE);

@@ -97,7 +97,7 @@
 | 作品源码文档 | [ports/th02/README-UPSTREAM.md](../ports/th02/README-UPSTREAM.md) | TH02《东方封魔录》· 单人游戏与两／三人合作 |
 | 作品源码文档 | [ports/th02/TH02-PRACTICE-WEB.md](../ports/th02/TH02-PRACTICE-WEB.md) | TH02 网页练习工具 |
 | 作品源码文档 | [ports/th02/native-solo/README.md](../ports/th02/native-solo/README.md) | SoEW Native — a Windows port of 東方封魔録 |
-| 作品源码文档 | [ports/th02/native-solo/WEB.md](../ports/th02/native-solo/WEB.md) | SoEW Native Web：单人战斗 |
+| 作品源码文档 | [ports/th02/native-solo/WEB.md](../ports/th02/native-solo/WEB.md) | SoEW Native Web：完整单人版 |
 | 作品源码文档 | [ports/th02/联机同时操作卡顿优化记录.md](../ports/th02/联机同时操作卡顿优化记录.md) | TH02 联机同时操作卡顿优化记录 |
 | 作品源码文档 | [ports/th03/README-UPSTREAM.md](../ports/th03/README-UPSTREAM.md) | TH03《东方梦时空》· DOSBox-X 性能版 |
 | 作品源码文档 | [ports/th03/ROLLBACK.md](../ports/th03/ROLLBACK.md) | TH03 原生联机回滚 |

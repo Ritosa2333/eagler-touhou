@@ -12,7 +12,7 @@ const INITIAL_HASH = new Uint32Array([
   0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19,
 ]);
 
-function fallback(input) {
+export function sha256HexSync(input) {
   const total = Math.ceil((input.length + 9) / 64) * 64;
   const padded = new Uint8Array(total); padded.set(input); padded[input.length] = 0x80;
   const dv = new DataView(padded.buffer); const bitLength = input.length * 8;
@@ -36,5 +36,5 @@ export async function sha256Hex(value, digestProvider = globalThis.crypto?.subtl
     const digest = await digestProvider.digest("SHA-256", bytes);
     return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2,"0")).join("");
   }
-  return fallback(bytes);
+  return sha256HexSync(bytes);
 }

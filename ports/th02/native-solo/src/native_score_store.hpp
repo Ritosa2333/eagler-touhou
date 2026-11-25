@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -167,6 +168,11 @@ private:
     }
 
     // Serialize cooperating writers before reading and publishing a new snapshot.
+#ifdef __EMSCRIPTEN__
+    // Each browser game owns its own in-memory filesystem and dispatches writes on one thread.
+    struct File { bool ok() const { return true; } };
+    File open_writer_lock() const { return {}; }
+#else
     HANDLE open_writer_lock() const {
         auto lock_path = path_;
         lock_path += L".lock";
@@ -185,6 +191,7 @@ private:
             return !ok() || CloseHandle(std::exchange(handle, INVALID_HANDLE_VALUE)) != 0;
         }
     };
+#endif
 
     // ReC98 th02/hiscore/regist.cpp:257–274 compares the signed result of
     // score_t * 10 + continues_used. XOR biases its modulo-32 bits for unsigned ordering.
@@ -244,6 +251,16 @@ private:
     }
 
     Status read_file(Data& out) const {
+#ifdef __EMSCRIPTEN__
+        std::error_code error;
+        const auto size=std::filesystem::file_size(path_,error);
+        if(error)return error==std::errc::no_such_file_or_directory?Status::Missing:Status::IoError;
+        Bytes bytes{};
+        if(size>bytes.size()||size<magic.size()+1)return Status::Invalid;
+        std::ifstream input(path_,std::ios::binary);
+        if(!input.read(reinterpret_cast<char*>(bytes.data()),size))return Status::IoError;
+        if(!std::equal(magic.begin(),magic.end(),bytes.begin()))return Status::Invalid;
+#else
         const File file(CreateFileW(path_.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE,
             nullptr, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
         if (!file.ok()) return GetLastError() == ERROR_FILE_NOT_FOUND ? Status::Missing : Status::IoError;
@@ -260,6 +277,7 @@ private:
         DWORD got = 0;
         if (!ReadFile(file.handle, bytes.data(), size, &got, nullptr)) return Status::IoError;
         if (got != size || !std::equal(magic.begin(), magic.end(), bytes.begin())) return Status::Invalid;
+#endif
         const bool legacy = bytes[8] == legacy_version;
         const bool gaiji = bytes[8] == gaiji_version;
         if (!legacy && !gaiji && bytes[8] != ascii_version) return Status::UnsupportedVersion;
@@ -316,6 +334,17 @@ private:
             }
         }
         set_u32(bytes.data() + offset, crc32(bytes, offset));
+#ifdef __EMSCRIPTEN__
+        auto temp=path_;
+        temp+=".tmp";
+        std::ofstream file(temp,std::ios::binary|std::ios::trunc);
+        file.write(reinterpret_cast<const char*>(bytes.data()),offset+4);
+        file.close();
+        if(!file)return false;
+        std::error_code error;
+        std::filesystem::rename(temp,path_,error);
+        return !error;
+#else
         const auto size = static_cast<DWORD>(offset + 4);
 
         // Write beside the destination on the same volume; MoveFileExW never copies.
@@ -338,6 +367,7 @@ private:
             return false;
         }
         return false;
+#endif
     }
 };
 

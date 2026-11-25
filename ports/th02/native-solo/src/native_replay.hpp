@@ -356,6 +356,12 @@ inline void publish(const std::filesystem::path &temp,const std::filesystem::pat
     if(!MoveFileExW(temp.c_str(),final.c_str(),MOVEFILE_WRITE_THROUGH))
         throw std::filesystem::filesystem_error("Cannot publish native replay",temp,final,
             std::error_code(static_cast<int>(GetLastError()),std::system_category()));
+#elif defined(__EMSCRIPTEN__)
+    // IDBFS uses a private, single-threaded MEMFS tree without hard links.
+    if(std::filesystem::exists(std::filesystem::symlink_status(final)))
+        throw std::filesystem::filesystem_error("Cannot publish native replay",temp,final,
+            std::make_error_code(std::errc::file_exists));
+    std::filesystem::rename(temp,final);
 #else
     std::filesystem::create_hard_link(temp,final);
 #endif
