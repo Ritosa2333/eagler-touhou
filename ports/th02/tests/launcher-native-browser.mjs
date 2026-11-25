@@ -1,6 +1,6 @@
 // Run against the Eagler dev server with --native-build DATA and Runtime.
 // Pass --practice-seed for the fixed-seed input flow.
-// Pass --boss-gauge to check the shared encounter HUD in a normal Story run.
+// Pass --boss-gauge to reach the Stage 1 boss directly in solo Practice.
 // Pass --about to check the disclaimer on the About page.
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -64,6 +64,7 @@ try {
   await openStoryShots(frame);
   const practiceSeed=process.argv.includes('--practice-seed');
   const about=process.argv.includes('--about');
+  const bossGauge=process.argv.includes('--boss-gauge');
   if(about){
     await press('Escape');
     await wait(1050);
@@ -76,7 +77,7 @@ try {
       const line=ctx.getImageData(Math.round(32*sx),Math.round(96*sy),Math.round(190*sx),Math.round(20*sy)).data;
       return line.some((v,i)=>i%4===0&&v===255&&line[i+1]===255&&line[i+2]===255);
     },{timeout:5000});
-  } else if(practiceSeed) {
+  } else if(practiceSeed||bossGauge) {
     await press('Escape'); // Story shot select → title.
     await wait(1050);
     await press('ArrowDown'); // Practice.
@@ -84,16 +85,33 @@ try {
     await wait(1050);
     await press('Enter'); // Shot → stage list.
     await press('Enter'); // Stage → practice setup.
-    await press('ArrowUp');
-    await press('ArrowUp'); // Start → New Seed → Enter Seed.
-    for(const digit of '8675309')await press(digit);
-    await press('Enter');
-    await press('ArrowDown');
-    await press('ArrowDown');
-    await press('Enter');
-    await frame.waitForFunction(()=>/シード 8675309|Seed 8675309/u.test(document.title),{timeout:10000}).catch(async cause=>{
-      throw Error(`Practice did not launch with 8675309: ${await frame.title()}`,{cause});
-    });
+    if(bossGauge){
+      await press('Enter'); // Start at the selected stage's boss.
+      await frame.waitForFunction(()=>{
+        const c=document.querySelector('canvas'),ctx=c.getContext('2d');
+        const sx=c.width/640,sy=c.height/400;
+        const has=(x,y,w,h,red,green,blue)=>{
+          const pixels=ctx.getImageData(Math.round(x*sx),Math.round(y*sy),Math.round(w*sx),Math.round(h*sy)).data;
+          return pixels.some((v,i)=>i%4===0&&v===red&&pixels[i+1]===green&&pixels[i+2]===blue);
+        };
+        return has(448,112,90,10,180,220,255)&&has(546,112,30,10,180,220,255)&&
+          has(448,122,8,1,0,216,255)&&has(568,131,8,1,0,216,255)&&
+          has(448,133,128,10,180,220,255);
+      },{timeout:15000,polling:150}).catch(async cause=>{
+        throw Error(`Solo practice boss HUD not detected: ${await frame.title()}`,{cause});
+      });
+    }else{
+      await press('ArrowUp');
+      await press('ArrowUp'); // Start → New Seed → Enter Seed.
+      for(const digit of '8675309')await press(digit);
+      await press('Enter');
+      await press('ArrowDown');
+      await press('ArrowDown');
+      await press('Enter');
+      await frame.waitForFunction(()=>/シード 8675309|Seed 8675309/u.test(document.title),{timeout:10000}).catch(async cause=>{
+        throw Error(`Practice did not launch with 8675309: ${await frame.title()}`,{cause});
+      });
+    }
   } else {
     await press('Enter');
     await frame.waitForFunction(()=>/一時停止|Esc: Pause/u.test(document.title));
@@ -106,19 +124,6 @@ try {
     });
     await press('ArrowLeft',200);
     await page.waitForFunction(()=>runtimeEvents.some(e=>e.event==='audio-health'&&e.state==='running'));
-    if(process.argv.includes('--boss-gauge')){
-      await frame.waitForFunction(()=>{
-        const c=document.querySelector('canvas'),ctx=c.getContext('2d');
-        const sx=c.width/640,sy=c.height/400;
-        const has=(x,y,w,h,red,green,blue)=>{
-          const pixels=ctx.getImageData(Math.round(x*sx),Math.round(y*sy),Math.round(w*sx),Math.round(h*sy)).data;
-          return pixels.some((v,i)=>i%4===0&&v===red&&pixels[i+1]===green&&pixels[i+2]===blue);
-        };
-        return has(448,112,90,10,180,220,255)&&has(546,112,22,10,180,220,255)&&
-          has(568,130,8,2,0,216,255)&&has(448,133,128,10,180,220,255);
-      },{timeout:110000,polling:250});
-      console.log('PASS Eagler TH02 Story shows the same cyan bar and clock without practice tools');
-    }
     await press('Escape');
     await wait(120);
     await press('KeyQ');
@@ -132,6 +137,7 @@ try {
   assert.deepEqual((await events()).filter(e=>e.event==='error'),[]);
   assert.deepEqual(errors,[]);
   console.log(about?'PASS Eagler TH02 renders the unofficial-project line on About':
+    bossGauge?'PASS Eagler TH02 solo Practice shows the full-width cyan bar and clock':
     practiceSeed?'PASS Eagler TH02 fixed-seed practice launch':'PASS Eagler TH02 install, SoEW Native title, Stage 1, audio and return');
 } finally {
   await browser.close();
