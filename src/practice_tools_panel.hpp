@@ -53,7 +53,7 @@ struct PracticeToolsPanel {
         else{open=true;mode=context;focus=mode==Mode::Setup?speed_row:0;speed_draft=int(options.draft());}
         return true;
     }
-    void close(){open=false;reaction={};slider_drag.reset();}
+    bool close(){const bool commit=speed_dirty();if(commit)apply_speed();open=false;reaction={};slider_drag.reset();return commit;}
     void navigate(int delta){do{focus=(focus+delta+count)%count;}while(!available_row(focus));}
     bool in_header(PracticePoint p)const{return PracticeBounds{base.left,base.top,base.right,rows_y-6}.contains(window.local(p));}
     int row_at(PracticePoint p)const{

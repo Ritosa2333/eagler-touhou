@@ -359,11 +359,23 @@ void test_floating_panels(){
     const auto speed=tools.row(T::speed_row).bounds;
     check(tools.begin_slider(T::speed_row,{T::speed_track.left+6,speed.top+4})&&tools.speed_draft==1);
     tools.move_slider({1000,500});check(tools.speed_draft==12&&tools.options.speed==4&&tools.speed_dirty());
+    check(tools.toggle(true,false,Mode::Practice)&&!tools.open&&!tools.slider_drag);
+    check(tools.options.speed==12&&tools.toggle(true,false,Mode::Practice)&&tools.speed_draft==12);
+    check(tools.begin_slider(T::speed_row,{T::speed_track.right,speed.top+4}));
     tools.move_slider({-1000,-50});check(tools.speed_draft==1);
     tools.slider_drag.reset();tools.apply_speed();check(!tools.speed_dirty()&&tools.options.speed==1);
     tools.toggle_free_speed();check(tools.speed_draft==14&&tools.speed_dirty());
-    tools.apply_speed();check(tools.options.speed_in_fps&&tools.options.speed==14);
-    tools.close();check(!tools.open&&!tools.slider_drag);
+    check(tools.close()&&tools.options.speed_in_fps&&tools.options.speed==14&&!tools.open&&!tools.slider_drag);
+    DisplayCadence display;
+    LockedGameClock standard, changed;
+    unsigned normal_steps=0, custom_steps=0;
+    display.reset(0);
+    for(unsigned i=0;i<56;++i){
+        check(display.consume(display.deadline()));
+        normal_steps+=standard.advance(1);
+        custom_steps+=changed.advance(1,tools.options.rate_num(),tools.options.rate_den());
+    }
+    check(display.frame==56&&normal_steps==56&&custom_steps==13);
 }
 void test_advanced(){
     using namespace soew;

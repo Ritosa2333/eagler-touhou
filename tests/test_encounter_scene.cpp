@@ -4,6 +4,19 @@
 unsigned checks=0;void check(bool b,std::source_location at=std::source_location::current()){++checks;if(!b)throw std::runtime_error("Visible encounter contract failed: check " + std::to_string(checks)+" at line "+std::to_string(at.line()));}
 int wmain(int argc,wchar_t**argv){try{
  if(argc!=2)throw std::runtime_error("Usage: encounter-tests <assets>");std::vector<std::uint32_t> pixels(640*400);
+ {
+  soew::StageAmbient ambient(2);
+  unsigned previous=100;
+  for(unsigned age=1;age<=200;++age){
+   ambient.tick(false,false);
+   const auto tone=ambient.opening_tone(false);
+   check(ambient.opening_tone(true)==100&&tone>=100&&tone<=126);
+   if(age<=168||age>=180)check(tone==100);
+   if(age==171)check(tone==126);
+   check(age<=171?tone>=previous:tone<=previous);
+   previous=tone;
+  }
+ }
  for(bool reduced:{false,true}){
   auto s=soew::EncounterScene::load(argv[1],2,0,1,2,3);
   s.reduced_effects=reduced;

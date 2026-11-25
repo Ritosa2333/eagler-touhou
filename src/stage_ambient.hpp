@@ -42,9 +42,11 @@ public:
     bool opening_shake()const{return stage==2&&age>stage3_explosion&&age<stage3_ring;}
     unsigned opening_tone(bool reduced)const{
         if(reduced||!opening_shake()||age>180)return 100;
-        // ReC98 alternates 100/170 through age 180. Preserve the bright
-        // full-scene flash without alternating bright and dark host frames.
-        return 100+70*(180-age)/11;
+        // Keep the explosion and shake, but replace ReC98's 100/170 strobe
+        // with a softer build-up and release over the same event window.
+        constexpr unsigned peak_age=171, peak=26;
+        if(age<peak_age)return 100+peak*(age-stage3_explosion)/(peak_age-stage3_explosion);
+        return 100+peak*(180-age)/(180-peak_age);
     }
     unsigned opening_shift(bool reduced)const{return !reduced&&opening_shake()&&(age&1)?16:0;}
     void seek_practice(unsigned progress,unsigned frames_per_crossing,bool reduced){

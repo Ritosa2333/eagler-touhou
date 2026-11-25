@@ -51,24 +51,47 @@ struct PresentationClock {
         return static_cast<unsigned>(steps);
     }
 };
-// Reduced-flash presentation of the source's 50 door +18 hold +18 flash
-// stages, followed by a host fade. No original page-flashing/tearing reproduced.
+// ReC98 th02/op_01.cpp and op_03.cpp: the effect strips precede a cut
+// to the menu with a light pulse. Fade the menu itself, never crossfade the pages.
 struct Opening {
     unsigned frame=0;
     bool active=true;
-    static constexpr unsigned door_end=50,hold_end=68,flash_end=86,end=122;
+    static constexpr unsigned door_end=50,hold_end=68,flash_end=86,end=flash_end+36;
+    static constexpr unsigned flash_peak=42;
     void tick(){if(active && ++frame>=end){frame=end;active=false;}}
     void skip(){frame=end;active=false;}
     void restart(){frame=0;active=true;}
     int exposed_columns()const{return std::min(40u,frame+1)*8;}
-    unsigned title_alpha()const{return frame<flash_end?0:std::min(255u,(frame-flash_end)*255/(end-flash_end));}
+    unsigned white()const{
+        if(frame<door_end)return 55*(door_end-frame)/door_end;
+        if(frame<flash_end)return 0;
+        const auto t=frame-flash_end;
+        if(t<3)return flash_peak*(t+2)/4;
+        // Quick peak with a gentler tail; keep the menu visible throughout.
+        constexpr auto tail=end-flash_end-3;
+        const auto left=end-frame;
+        return flash_peak*left*left/(tail*tail);
+    }
 };
+constexpr std::uint32_t opening_tone(std::uint32_t rgb,unsigned amount,bool white){
+    std::uint32_t result=0;
+    for(unsigned shift:{0u,8u,16u}){
+        const auto channel=(rgb>>shift)&255;
+        result|=((channel*(100-amount)+(white?255u:0u)*amount)/100)<<shift;
+    }
+    return result;
+}
 inline unsigned test_opening(){
     unsigned checks=0;
     const auto check=[&](bool ok){++checks;if(!ok)throw std::runtime_error("Opening state failed");};
     Opening o;check(o.active&&o.frame==0);
-    for(unsigned i=0;i<Opening::end;++i){check(o.frame==i);check(o.exposed_columns()>=8&&o.exposed_columns()<=320);check(o.title_alpha()<=255);o.tick();}
-    check(!o.active&&o.frame==122);o.tick();check(o.frame==122);
+    for(unsigned i=0;i<Opening::end;++i){check(o.frame==i);check(o.exposed_columns()>=8&&o.exposed_columns()<=320);check(o.white()<=100);o.tick();}
+    check(!o.active&&o.frame==Opening::end&&o.white()==0);o.tick();check(o.frame==Opening::end);
+    o.frame=Opening::flash_end-1;check(o.white()==0);
+    o.frame=Opening::flash_end;check(o.white()==21&&opening_tone(0x123456,o.white(),true)!=0xffffff);
+    o.frame+=2;check(o.white()==Opening::flash_peak);
+    for(unsigned previous=o.white();o.frame<Opening::end;){++o.frame;check(o.white()<=previous);previous=o.white();}
+    o.frame=Opening::end;check(opening_tone(0x123456,o.white(),true)==0x123456);
     o.restart();check(o.active&&o.frame==0);o.skip();check(!o.active);
     PresentationClock clock;check(clock.advance(0,true)==0);check(clock.advance(16,true)==0);check(clock.advance(17,true)==1);
     check(clock.advance(500,false)==0);check(clock.advance(10000,true)==0);check(clock.advance(10017,true)==1);

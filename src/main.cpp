@@ -25,6 +25,7 @@
 #include "menu.hpp"
 #include "japanese.hpp"
 #include "opening.hpp"
+#include "zunsoft_opening.hpp"
 #include "frame_pacing.hpp"
 #include "host_perf.hpp"
 #include "hiscore.hpp"
@@ -131,6 +132,12 @@ void verify_chinese_manifest(const fs::path &root,std::string_view payload){
     }
 }
 struct Frame { int w, h; std::vector<std::uint32_t> pixels; };
+struct ZunSoftAssets {
+    std::vector<std::uint8_t> logo;
+    std::array<std::uint32_t,16> palette;
+    soew::StageSprites cels;
+    std::vector<std::byte> song,effects;
+};
 Frame load(const fs::path &root, const char *name, bool external, const th03::assets::Palette16Rgb4 *override_palette=nullptr) {
     auto image = th03::assets::decode_pi(read(root / name));
     if(!image) throw std::runtime_error("PI decode failed: " + std::string(name));
@@ -892,6 +899,8 @@ struct App {
     std::optional<soew::ChineseDisplayPack> chinese_text;
     std::array<Frame, 3> portraits;
     std::array<Frame, 3> opening_strips;
+    std::optional<ZunSoftAssets> zunsoft_assets;
+    soew::ZunSoftOpening zunsoft;
     Opening opening;
     PresentationClock clock;
     bool focused=false,minimized=false,resizing=false;
@@ -1082,21 +1091,49 @@ void host_perf_resources(App &app){
 }
 Frame opening_frame(const App &app) {
     const HostPerf::Span span(app.host_perf.get(),HostPerf::Metric::OpeningFrame);
-    Frame output=app.frames[1];const auto f=app.opening.frame;
-    if(f<Opening::door_end){const int width=app.opening.exposed_columns();for(int y=0;y<400;++y)for(int x=0;x<640;++x)if(x<320-width||x>=320+width)output.pixels[y*640+x]=0;}
-    if(f>=Opening::hold_end){
-        const auto strip=std::min(2u,(f-Opening::hold_end)/5);
-        std::copy(app.opening_strips[strip].pixels.begin(),app.opening_strips[strip].pixels.end(),output.pixels.begin());
-    }
+    const auto f=app.opening.frame;
     if(f>=Opening::flash_end){
         Frame title=app.frames[0];compose_frontend(title,app.font,app.menu);
-        const unsigned alpha=app.opening.title_alpha();
-        for(std::size_t i=0;i<output.pixels.size();++i){std::uint32_t color=0;for(unsigned shift:{0u,8u,16u}){const auto a=(output.pixels[i]>>shift)&255,b=(title.pixels[i]>>shift)&255;color|=((a*(255-alpha)+b*alpha)/255)<<shift;}output.pixels[i]=color;}
+        const auto white=app.opening.white();
+        for(auto &pixel:title.pixels)pixel=opening_tone(pixel,white,true);
+        return title;
+    }
+    if(f>=Opening::hold_end)return app.opening_strips[std::min(2u,(f-Opening::hold_end)/5)];
+    Frame output=app.frames[1];
+    if(f<Opening::door_end){
+        const auto white=app.opening.white();const int width=app.opening.exposed_columns();
+        for(int y=0;y<400;++y)for(int x=0;x<640;++x){
+            auto &pixel=output.pixels[y*640+x];
+            pixel=x<320-width||x>=320+width?0:opening_tone(pixel,white,true);
+        }
+    }
+    return output;
+}
+Frame zunsoft_frame(const ZunSoftAssets &assets,const soew::ZunSoftOpening &animation){
+    Frame output{640,400,std::vector<std::uint32_t>(640*400)};
+    auto palette=assets.palette;
+    for(unsigned i=0;i<palette.size();++i)if(i!=15||animation.retrace>=animation.fade_start)
+        palette[i]=opening_tone(palette[i],100-animation.light(),false);
+    std::ranges::transform(assets.logo,output.pixels.begin(),[&](auto index){return palette[index];});
+    for(const auto &p:animation.particles)if(p.alive){
+        const auto &cel=*assets.cels.sprites[p.cel()];
+        const auto offset=p.offset();
+        const auto at=soew::RenderPoint::pixels((p.x*16+offset[0])/16-int(cel.width)/2,(p.y*16+offset[1])/16-int(cel.height)/2);
+        soew::blit_motion_sprite(output.pixels,at,cel.width,cel.height,[&](int x,int y){
+            const auto index=cel.pixels[y*cel.width+x];
+            return index==cel.transparent?soew::render_clear:palette[index];
+        },{0,0,640,400});
     }
     return output;
 }
 void save_settings(App &app){if(!app.settings_enabled||!app.settings||app.replay_playback)return;if(!app.settings->save(soew::Settings::from(app.menu,app.practice_tools.options))){app.settings_warning=app.settings->warning;std::cerr<<"Settings not saved: "<<app.settings_warning<<'\n';}else app.settings_warning=app.settings->warning;}
 void audio_error(App &app){std::cerr<<"Audio preview error: "<<app.audio.error()<<'\n';app.audio_status={L"音声の出力を停止しました",L"Audio error; output stopped"};app.audio.stop();app.fm_enabled=false;}
+void start_zunsoft(App &app){
+    if(!app.zunsoft_assets)return;
+    app.zunsoft.restart();
+    const auto &assets=*app.zunsoft_assets;
+    if(app.menu.music!=0&&!app.audio.start(assets.song,app.audio_test_silent,WAVE_MAPPER,{},assets.effects))audio_error(app);
+}
 void cancel_gameplay_audio(App &app){
     ++app.gameplay_audio_generation;
     if(app.gameplay_audio_cancel)app.gameplay_audio_cancel->store(true,std::memory_order_relaxed);
@@ -1949,6 +1986,8 @@ void test_live_assist_host(){
     check(pixel(speed_knob,P::rows_y+8)==0x797180);
     check(pixel(P::speed_track.position(5,1,12),P::rows_y+8)==app.selected_color);
     check(app.practice_tools.toggle(true,false,P::Mode::Practice));
+    check(!app.practice_tools.open&&app.practice_tools.options.speed==5);
+    app.practice_tools.options={};
     app.stage_scene->paused=true;
     check(!live_assist_controls(app)&&!practice_tools_available(app));
     app.stage_scene->paused=false;
@@ -2233,10 +2272,11 @@ void activate_practice_tool_row(HWND hwnd,App &app,int index){
     case K::Tool:app.practice_assist.toggle_row(row.index);break;
     case K::Option:panel.options.toggle(soew::PracticeAdvanced::Option(row.index));save_settings(app);break;
     case K::Retry:
-        panel.close();practice_tools_boundary(hwnd,app);
+        if(panel.close())save_settings(app);
+        practice_tools_boundary(hwnd,app);
         begin_practice(app,app.practice_session->recipe);break;
-    case K::Speed:break;
     case K::FreeSpeed:panel.toggle_free_speed();save_settings(app);break;
+    case K::Speed:
     case K::Apply:panel.apply_speed();save_settings(app);break;
     case K::Language:
         app.menu.practice_language_preference=P::choices[row.index];save_settings(app);break;
@@ -2358,8 +2398,11 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(title_demo_keydown(hwnd,*app,w,repeat))return 0;
         if(title_demo_active(*app))break;
         if(w==VK_F12){
-            if(app->practice_tools.toggle(practice_tools_available(*app),repeat,practice_tools_mode(*app)))
+            const bool commit=app->practice_tools.open&&app->practice_tools.speed_dirty();
+            if(app->practice_tools.toggle(practice_tools_available(*app),repeat,practice_tools_mode(*app))){
+                if(commit)save_settings(*app);
                 practice_tools_boundary(hwnd,*app);
+            }
             return 0;
         }
         if(!repeat&&practice_pointer_captured(*app))end_practice_drag(hwnd,*app);
@@ -2367,7 +2410,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             using P=soew::PracticeToolsPanel;
             auto &panel=app->practice_tools;
             if(w==VK_ESCAPE||w=='X'){
-                if(!repeat){panel.close();practice_tools_boundary(hwnd,*app);}
+                if(!repeat){if(panel.close())save_settings(*app);practice_tools_boundary(hwnd,*app);}
             }else if(panel.reaction.active())return 0;
             else if(w==VK_UP||w==VK_NUMPAD8)panel.navigate(-1);
             else if(w==VK_DOWN||w==VK_NUMPAD2)panel.navigate(1);
@@ -2574,8 +2617,12 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             else{app->fm_enabled=true;app->audio_status={L"音楽室で曲を選ぶと試聴できます",L"Select a track in the music room to preview"};}
             caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
         }
-        if(w==VK_F3 && !repeat){if(!app->audio.stop())audio_error(*app);else app->audio_status={L"",L""};app->scores_visible=false;app->menu.music_room=false;app->menu.options=false;app->menu.shot_screen=false;app->menu.extra_mode=false;app->menu.shot_confirmed=false;app->menu.selected=0;app->menu.allowed=false;app->menu_visible=true;app->opening.restart();app->title_audio_started=false;app->title_effect_phase=0;app->clock.reset(host_ms());app->score_clock.reset(host_ms());InvalidateRect(hwnd,nullptr,FALSE);return 0;}
-        if(app->opening.active){if(w==VK_RETURN||w=='Z'||w==VK_SPACE||w==VK_ESCAPE){app->opening.skip();if(!app->title_audio_started){app->title_audio_started=true;start_preview(*app,0);}app->menu.allowed=false;InvalidateRect(hwnd,nullptr,FALSE);}return 0;}
+        if(w==VK_F3 && !repeat){if(!app->audio.stop())audio_error(*app);else app->audio_status={L"",L""};app->scores_visible=false;app->menu.music_room=false;app->menu.options=false;app->menu.shot_screen=false;app->menu.extra_mode=false;app->menu.shot_confirmed=false;app->menu.selected=0;app->menu.allowed=false;app->menu_visible=true;app->opening.restart();app->title_audio_started=false;app->title_effect_phase=0;start_zunsoft(*app);app->clock.reset(host_ms());app->score_clock.reset(host_ms());InvalidateRect(hwnd,nullptr,FALSE);return 0;}
+        if(app->opening.active){if(!repeat&&(w==VK_RETURN||w=='Z'||w==VK_SPACE||w==VK_ESCAPE)){
+            if(app->zunsoft.active()){app->zunsoft.skip();if(!app->audio.stop())audio_error(*app);app->clock.reset(host_ms());}
+            else{app->opening.skip();if(!app->title_audio_started){app->title_audio_started=true;if(app->menu.music!=0)start_preview(*app,0);}app->menu.allowed=false;}
+            InvalidateRect(hwnd,nullptr,FALSE);
+        }return 0;}
         if(app->scores_visible){
             if(app->native_board_visible&&!repeat&&(w==VK_LEFT||w==VK_RIGHT)){
                 app->score_rank=Menu::ring(app->score_rank,w==VK_LEFT?-1:1,5);
@@ -2778,7 +2825,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if(app->native_scores)draw(app->extra_candidate?tr(L"左右：難易度切替　Tab：移植版記録",L"Left/Right: rank   Tab: native scores",L"左右：切换难度  Tab：移植版记录",L"左右：切換難度  Tab：移植版紀錄"):tr(L"Tab：移植版記録",L"Tab: native scores",L"Tab：移植版记录",L"Tab：移植版紀錄"),80,352,0xffff00);
             }
         }
-        if(app->opening.active)app->composed=opening_frame(*app);
+        if(app->zunsoft.active())app->composed=zunsoft_frame(*app->zunsoft_assets,app->zunsoft);
+        else if(app->opening.active)app->composed=opening_frame(*app);
         }else{
             gameplay_frame();
             using Phase=soew::StageTransition::Phase;
@@ -3283,8 +3331,14 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             const auto score_steps=app->score_clock.advance(now,enabled&&app->scores_visible);
             for(unsigned i=0;i<score_steps;++i)if(app->score_animation.tick()){app->scores_visible=false;app->menu.selected=2;app->menu.allowed=false;app->notice.clear();caption(hwnd,*app);break;}
             if(score_steps)InvalidateRect(hwnd,nullptr,FALSE);
-            const auto steps=app->clock.advance(now,enabled&&app->opening.active);
+            const auto steps=app->clock.advance(now,enabled&&app->opening.active,1,nullptr,
+                PresentationClock::period_ms(1)*soew::pc98_refresh_num,1000*soew::pc98_refresh_den);
             for(unsigned i=0;i<steps;++i){
+                if(app->zunsoft.active()){
+                    if(app->zunsoft.tick()&&app->audio.active()&&!app->zunsoft_assets->effects.empty()&&!app->audio.effect(15))audio_error(*app);
+                    if(!app->zunsoft.active()&&!app->audio.stop())audio_error(*app);
+                    continue;
+                }
                 app->opening.tick();
                 if(app->title_effect_phase==0&&app->opening.frame>=Opening::hold_end){
                     app->title_effect_phase=1;
@@ -3319,7 +3373,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         }
         if(app->smoke) {
             KillTimer(hwnd, 1);
-            for(unsigned f:{0u,20u,49u,67u,68u,73u,78u,85u,100u,121u}) {
+            for(unsigned f:{0u,20u,49u,67u,68u,73u,78u,85u,Opening::flash_end,Opening::flash_end+6,Opening::end-1}) {
                 app->opening.active=true;app->opening.frame=f;
                 const auto frame=opening_frame(*app);app->check(frame.pixels.size()==640*400);
                 InvalidateRect(hwnd,nullptr,FALSE);UpdateWindow(hwnd);
@@ -3961,6 +4015,7 @@ int wmain(int argc, wchar_t **argv) {
         unsigned stage_dump_ticks=0;
         int stage_dump_id=-1;
         unsigned score_frame_number=0;
+        std::optional<unsigned> opening_dump,zunsoft_dump;
         std::optional<soew::Language> language_override,practice_language_override;
         const auto language_id=[](std::wstring_view value){
             for(const auto lang:soew::PracticeToolsPanel::choices)
@@ -3993,6 +4048,8 @@ int wmain(int argc, wchar_t **argv) {
             else if(arg == L"--settings-probe")settings_probe=true;
             else if(arg == L"--settings-dir" && i + 1 < argc) {explicit_settings_dir=true;settings_dir=argv[++i];if(settings_dir.empty())throw std::runtime_error("Empty settings directory");}
             else if(arg == L"--dump" && i + 1 < argc) { dump_path = argv[++i]; dump_only = true; }
+            else if(arg == L"--opening-frame" && i + 1 < argc)opening_dump=std::stoul(argv[++i]);
+            else if(arg == L"--zunsoft-frame" && i + 1 < argc)zunsoft_dump=std::stoul(argv[++i]);
             else if(arg == L"--practice-menu" && i + 1 < argc){
                 const std::wstring_view page=argv[++i];
                 if(page==L"shots")practice_shots_dump=true;
@@ -4066,6 +4123,7 @@ int wmain(int argc, wchar_t **argv) {
         if(retry_probe.disable_intro&&(retry_mode<0||retry_probe.section!=RetrySection::StageStart))
             throw std::runtime_error("--retry-intro-off requires a stage-start retry benchmark");
         if((practice_dump||practice_shots_dump)&&!dump_only)throw std::runtime_error("--practice-menu requires --dump");
+        if((opening_dump||zunsoft_dump)&&!dump_only)throw std::runtime_error("Startup frame requires --dump");
         if(practice_language_override&&!(practice_dump||practice_shots_dump||assist_dump))
             throw std::runtime_error("--practice-language requires a practice menu or assist dump");
         if(assist_dump&&(!dump_only||stage_dump_id<0))throw std::runtime_error("--practice-assist-dump requires --stage-dump and --dump");
@@ -4103,7 +4161,7 @@ int wmain(int argc, wchar_t **argv) {
             jp_text(sample,L"演出",10,10,0xffffff);++jp_checks;
             if(std::count_if(sample.pixels.begin(),sample.pixels.end(),[](auto p){return p!=0;})<10)throw std::runtime_error("Japanese glyph rendering failed");
             test_live_assist_host();
-            std::cout << "viewport_checks=" << checks + 2 << " menu_checks=" << test_menu() << " japanese_checks=" << jp_checks << " chinese_ascii_checks=" << test_chinese_ascii() << " opening_checks=" << test_opening() << " failures=0\n"; return 0;
+            std::cout << "viewport_checks=" << checks + 2 << " menu_checks=" << test_menu() << " japanese_checks=" << jp_checks << " chinese_ascii_checks=" << test_chinese_ascii() << " opening_checks=" << test_opening() << " zunsoft_checks=" << soew::test_zunsoft_opening() << " failures=0\n"; return 0;
         }
         if(async_practice_test&&(smoke||test||dump_only||timed_test||score_timed_test))throw std::runtime_error("Async practice test cannot be combined with other test modes");
         App app{};app.assets_root=assets;app.evidence_dir=evidence_dir;app.async_practice_test=async_practice_test;app.async_exit_test=async_exit_test;
@@ -4243,7 +4301,7 @@ int wmain(int argc, wchar_t **argv) {
             dump(frame,dump_path);return 0;
         }
         if(rika_probe)throw std::runtime_error("Rika probe currently requires --stage-dump and --dump; no normal game dialogue bypass");
-        if(dump_only) {
+        if(dump_only&&!opening_dump&&!zunsoft_dump) {
             auto frame=app.frames[shots_dump?2:0];
             if(shots_dump)compose_shots(frame,app.portraits,app.menu,app.selected_color,app.unselected_color);
             else if(options_dump)compose_options(frame,app.font,app.menu,app.settings_warning);
@@ -4253,7 +4311,38 @@ int wmain(int argc, wchar_t **argv) {
         const auto opening_pi=th03::assets::decode_pi(read(assets/"OP.PI"));
         if(!opening_pi||!opening_pi->palette)throw std::runtime_error("Opening palette unavailable");
         app.opening_strips={load(assets,"OPA.PI",false,&*opening_pi->palette),load(assets,"OPB.PI",false,&*opening_pi->palette),load(assets,"OPC.PI",false,&*opening_pi->palette)};
+        if(opening_dump){
+            if(*opening_dump>Opening::end)throw std::runtime_error("TH02 opening frame out of range");
+            app.opening.frame=*opening_dump;
+            dump(opening_frame(app),dump_path);return 0;
+        }
         if(!replay_file.empty()||extra_trial||stage4_trial||stage5_trial||async_practice_test||smoke||skip_opening||options_dump||shots_dump||scores_dump||music_dump)app.opening.skip();
+        const auto zunsoft_root=assets/"zunsoft";
+        if((zunsoft_dump||(!timed_test&&(app.opening.active||skip_opening)))&&
+           fs::is_regular_file(zunsoft_root/"ZUN00.PI")){
+            ZunSoftAssets logo;
+            auto pi=th03::assets::decode_pi(read(zunsoft_root/"ZUN00.PI"));
+            if(!pi||!pi->palette||pi->image.width!=640||pi->image.height!=400)throw std::runtime_error("Invalid ZUN Soft logo image");
+            logo.logo=std::move(pi->image.indices);
+            std::ranges::transform(pi->palette->colors,logo.palette.begin(),rgb);
+            const std::array sheets{"ZUN02.BFT","ZUN04.BFT","ZUN01.BFT","ZUN03.BFT"};
+            constexpr std::array sheet_ends{8u,10u,18u,20u};
+            for(unsigned i=0;i<sheets.size();++i){
+                logo.cels.append(zunsoft_root/sheets[i]);
+                if(logo.cels.next!=sheet_ends[i])throw std::runtime_error("Unexpected ZUN Soft fireworks cel count");
+            }
+            logo.song=read(zunsoft_root/"LOGO.M");
+            if(fs::is_regular_file(zunsoft_root/"MIKO.EFC"))logo.effects=read(zunsoft_root/"MIKO.EFC");
+            app.zunsoft_assets=std::move(logo);
+        }
+        if(zunsoft_dump){
+            if(!app.zunsoft_assets||*zunsoft_dump>=soew::ZunSoftOpening::end)throw std::runtime_error("Missing ZUN Soft assets or frame out of range");
+            const auto &logo=*app.zunsoft_assets;
+            if(const auto audio=AudioPreview::prepare(logo.song,false,{},logo.effects);!audio)throw std::runtime_error(audio.error());
+            app.zunsoft.restart();
+            for(unsigned i=0;i<*zunsoft_dump;++i)app.zunsoft.tick();
+            dump(zunsoft_frame(logo,app.zunsoft),dump_path);return 0;
+        }
         app.stage4_trial=stage4_trial;app.stage5_trial=stage5_trial;app.stage5_mainline=stage5_mainline||extra_candidate;
         app.extra_trial=extra_trial;app.extra_candidate=extra_candidate;
         if(extra_shot>=0)app.extra_shot=unsigned(extra_shot);
@@ -4279,6 +4368,7 @@ int wmain(int argc, wchar_t **argv) {
         if(app.menu.fullscreen&&!set_fullscreen(hwnd,app,true)){
             app.menu.fullscreen=false;app.settings_warning="Could not start in fullscreen mode";
         }
+        if(app.opening.active)start_zunsoft(app);
         caption(hwnd, app); ShowWindow(hwnd, app.window_fullscreen?SW_SHOW:SW_SHOWNORMAL); UpdateWindow(hwnd);
         if(smoke && !SetTimer(hwnd, 1, 200, nullptr)) throw std::runtime_error("Test timer failed");
         app.score_timed_test=score_timed_test;

@@ -72,6 +72,19 @@ need the English patch, a PC-98 emulator, or a SoundFont for the basic FM build.
   left/right value editing.
 * MIDI (TinySoundFont) or FM (98fmplayer through libth03) audio.
 
+The TH02 opening cuts to the title menu with a softened flash. The Stage 3
+opening explosion keeps its shake and sound with a gentler light pulse. To play the
+TH05 ZUN Soft fireworks first, import the opening from your own TH05 archive:
+
+```powershell
+py -3 tools/extract_zunsoft.py "D:/Games/TH05/kaiki1.dat" build/content
+```
+
+The extractor also accepts an original Japanese TH04 HDI or HDI.GZ; TH04
+shares this opening animation with TH05. No logo assets are bundled. Without
+them, startup plays the TH02 opening alone. Z, Enter, Space or Esc skips the
+current opening; `--skip-opening` skips both.
+
 Smooth Background is on by default. Its terrain filter reduces shimmer during
 scrolling without filtering the player, bullets, or HUD. The stage palette
 cycles, weather particles, and expanding rings remain animated with either
@@ -102,8 +115,9 @@ on the row to type an exact value.
 
 Drag the top of any practice panel to move it. F12 opens or closes the
 translucent Practice Tools panel and pauses live play while open. It includes
-the Backspace assists, a game-speed slider (Apply commits the change without
-changing music speed), last-life protection for F2, X/Shift/Z restrictions,
+the Backspace assists, a game-speed slider (Apply, confirming the slider, or
+closing F12 commits the change without changing display refresh or music speed),
+last-life protection for F2, X/Shift/Z restrictions,
 forced focus, F6 phase timing, and a reaction test. During live play Shift+D/A/S
 toggles X/Shift/Z restrictions respectively. In Practice, Retry on Miss also
 enables Shift+F; both restart after 15 frames and skip the stage intro.
