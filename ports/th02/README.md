@@ -3,7 +3,19 @@
 [适配检查](ADAPTATION.md) · [来源迁移](../../docs/migration/th02-eagler-20261025.md)
 [原仓库说明](README-UPSTREAM.md) · [来源与子树维护](../../docs/migration/th02-eagler-20261025.md)
 
-`ports/th02` 将《东方封魔录》的 PC-98 DOSBox-X 运行时接入 Eagler Touhou。主项目负责 Package Store 安装、`/savesth02` 与 `/savesth02mp` 文件空间、房间成员、准备状态和开局；运行时继续使用封魔录的原生盘片与游戏逻辑。
+`ports/th02` 将《东方封魔录》接入 Eagler Touhou。SoEW Native 提供原生单人版；合作房间沿用 DOSBox-X 运行时、原盘与主项目的房间流程。
+
+## 原生单人版
+
+按 [SoEW Native Web](native-solo/WEB.md) 构建 `soew-full` 并准备本地资源、字形和可选音源。然后将现有 DOS 资源与该构建目录交给 TH02 打包器：
+
+```sh
+node ports/th02/scripts/build-eagler.mjs --assets=<DOS资源目录> --native-build=ports/th02/native-solo/build-web
+```
+
+也可设置 `TH02_NATIVE_BUILD` 后运行 `ports/th02/scripts/dev.mjs`。在 [Eagler 测试书库](http://127.0.0.1:18320/?test=th02) 打开 TH02 单人卡片即可进入 SoEW。设置、成绩和 `.rep` 使用 SoEW 自己的浏览器存档与游戏内管理界面；旧 DOS 存档及 `.th02r` 继续在 Eagler 原有的文件与录像入口管理。联机的房间选项、同步和观战由现有运行时接管。
+
+浏览器验收：`node ports/th02/tests/launcher-native-browser.mjs`。
 
 在 monorepo 根目录运行：
 

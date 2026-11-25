@@ -8,6 +8,7 @@ import {execFileSync} from 'node:child_process';
 import {gunzipSync} from 'node:zlib';
 import {assertPortableRuntimeSources} from '../../../launcher/lib/runtime-generations.mjs';
 import {DATA_SCHEMA,DATA_MAGIC,DATA_LAYOUT_SPEC} from '../web/managed-data.mjs';
+import {stageNativeSolo} from './native-solo-package.mjs';
 const port = resolve(fileURLToPath(new URL('..', import.meta.url))), repo=resolve(port,'../..');
 const args = Object.fromEntries(process.argv.slice(2).map(arg => { const at=arg.indexOf('='); return [arg.slice(2,at<0?undefined:at),at<0?true:arg.slice(at+1)]; }));
 if(args['print-inputs']) await printPC98Inputs({port,game:'th02'});
@@ -15,6 +16,7 @@ const source = resolve(args.source||port), web=resolve(source,'web');
 const sourceIdentity=args.source?null:JSON.parse(await readFile(resolve(port,'source-import.json'),'utf8'));
 const privateInputs=new Set(sourceIdentity?.resources||[]);
 const assets=resolve(args.assets||web);
+const nativeBuild=args['native-build']||process.env.TH02_NATIVE_BUILD;
 const nativePractice=new Set(['practice-cn.exe.gz','practice-jp.exe.gz','practice-start.com']);
 async function readInput(name){
   try{return await readFile(resolve(nativePractice.has(name)?web:privateInputs.has(name)&&!name.endsWith('.wasm')?assets:web,name));}
@@ -47,6 +49,10 @@ const staging=await mkdtemp(resolve(cache,'build-')),output=resolve(staging,'bui
 try {
 await mkdir(output,{recursive:true});await mkdir(content,{recursive:true});
 const runtime=[], payload=[], entries=[];let offset=0;
+function addData(path,bytes){
+  if(!bytes.length)throw Error('Empty TH02 DATA asset: '+path);
+  entries.push({path,bytes:bytes.length,sha256:sha(bytes),offset});payload.push(bytes);offset+=bytes.length;
+}
 for(const item of input) {
   const bytes=await readInput(item.path);
   if(/^bgm\/akyu\/\d{2}\.opus$/.test(item.path)) {
@@ -58,10 +64,16 @@ for(const item of input) {
     entries.push({...item,offset});payload.push(bytes);offset+=bytes.length;
   }
 }
+if(nativeBuild)await stageNativeSolo({build:resolve(nativeBuild),output,port,runtime,addData});
 function replaceOnce(text,from,to,label) { if(text.split(from).length!==2) throw Error('Upstream changed at '+label); return text.replace(from,to); }
 const patch=async(name,edit)=>{const path=resolve(output,name);await writeFile(path,edit((await readFile(path,'utf8')).replaceAll('\r\n','\n')));};
 const {adaptRuntime}=await import('./adapt-runtime.mjs');
 await adaptRuntime({patch,replaceOnce,output,port,web,runtime,repo,files,readInput});
+if(nativeBuild){
+  const entry='managed-native-solo.mjs';
+  await copyFile(resolve(port,'web',entry),resolve(output,entry));runtime.push(entry);
+  await patch('managed-shell.mjs',text=>replaceOnce(text,'const loadNativeSolo=null;',`const loadNativeSolo=()=>import('./${entry}');`,'SoEW Native entry'));
+}
 await copyFile(resolve(repo,'launcher/lib/pc98-disk-blocks.mjs'),resolve(output,'pc98-disk-blocks.mjs'));runtime.push('pc98-disk-blocks.mjs');
 await patch('bgm/akyu/manifest.json',text=>text.replace(/\.opus/g,'.ogg'));
 // Adapted sources have their own verified identity; keep upstream asset checks active.

@@ -23,7 +23,9 @@ async function fetchFile(url) {
 }
 const joined = (root, name) => new URL(name.split('/').map(encodeURIComponent).join('/'), root);
 
-export async function playFull(canvas, content = new URL('./content/', import.meta.url)) {
+export async function playFull(canvas, content = new URL('./content/', import.meta.url), {
+    hosted = false, beforeFrame, onExit,
+} = {}) {
     const screen = canvas.getContext('2d', {alpha: false});
     const framebuffer = new OffscreenCanvas(640,400);
     const framePixels = framebuffer.getContext('2d',{alpha:false});
@@ -32,7 +34,9 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     const picker = document.createElement('input');
     picker.type = 'file';
     picker.accept = '.rep';
-    let wasm, cells, lastError, image, stopped = false, timer;
+    let wasm, cells, lastError, image, stopped = false, timer, frames = 0, ticks = 0;
+    const listeners = new AbortController();
+    const listen = (target,type,fn,options) => target.addEventListener(type,fn,{...options,signal:listeners.signal});
     let audio, audioPaused = false, audioEnd = 0;
     let album, albumTrack = null, albumLoad, albumNode;
     const waiting = new Map(), scheduled = new Set();
@@ -57,7 +61,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         screen.imageSmoothingEnabled = false;
         screen.drawImage(framebuffer,0,0,w,h);
     }
-    new ResizeObserver(drawScreen).observe(canvas);
+    const resize = new ResizeObserver(drawScreen);
     function fontStyle(face,size,bold) {
         const family = face ? `"${face}", "Yu Gothic", "Microsoft YaHei", monospace` : 'sans-serif';
         return `${bold ? 'bold ' : ''}${size}px ${family}`;
@@ -158,6 +162,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             }
             framePixels.putImageData(image,0,0);
             drawScreen();
+            ++frames;
         },
         text(pointer,w,h,x,y,left,top,right,bottom,s,n,face,size,bold,color,flags,opaque,background) {
             if (n === 0) return;
@@ -193,7 +198,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             if (!yes && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
         },
         openReplay() { picker.click(); },
-        exit() { stopped = true; clearTimeout(timer); stopAlbumTrack(); },
+        exit() { stop(); onExit?.(); },
         decode(pointer,n,out,count) {
             let value;
             try { value = [...shiftJis.decode(wasm.HEAPU8.subarray(pointer,pointer+n))]; }
@@ -226,10 +231,19 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             if (audio) void playAlbumTrack();
         },
     };
+    function stop() {
+        if (stopped) return;
+        stopped = true;
+        clearTimeout(timer);
+        resize.disconnect();
+        listeners.abort();
+        host.audioReset();
+        if (audio) void audio.close();
+    }
     const [module, names, atlas] = await Promise.all([
         createModule({host,printErr: message => {lastError = message; console.error(message);}}),
-        fetchFile(new URL('full-files.json', content)).then(res => res.json()),
-        fetchFile(new URL('soew-glyphs.bin', import.meta.url)).then(res => res.arrayBuffer()),
+        fetchFile(joined(content,'full-files.json')).then(res => res.json()),
+        fetchFile(joined(new URL('.', import.meta.url),'soew-glyphs.bin')).then(res => res.arrayBuffer()),
     ]);
     wasm = module;
     cells = glyphCells(atlas);
@@ -249,7 +263,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     })]);
     if (wasm._soew_full_start() !== 0) throw Error(lastError ?? 'SoEW startup failed');
 
-    picker.addEventListener('change', async () => {
+    listen(picker,'change', async () => {
         const file = picker.files[0];
         if (!file) return;
         wasm.FS.writeFile('/soew/import.rep',new Uint8Array(await file.arrayBuffer()));
@@ -258,23 +272,30 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         canvas.focus();
     });
     const focus = () => wasm._soew_host_focus(!document.hidden && document.hasFocus());
-    window.addEventListener('focus',focus);
-    window.addEventListener('blur',focus);
-    document.addEventListener('visibilitychange',focus);
-    document.addEventListener('fullscreenchange',() =>
+    listen(window,'focus',focus);
+    listen(window,'blur',focus);
+    listen(document,'visibilitychange',focus);
+    listen(document,'fullscreenchange',() =>
         wasm._soew_full_fullscreen_changed(document.fullscreenElement === canvas));
+    function deliverKey(code,down,event = {}) {
+        const vk = keyCode(code);
+        if (stopped || vk === undefined) return;
+        const glyph = event.key ?? '';
+        const scalar = !event.ctrlKey && !event.altKey && [...glyph].length === 1 ? glyph.codePointAt(0) : 0;
+        wasm._soew_host_key(vk,down,Boolean(event.repeat),scalar);
+    }
     function key(event,down) {
         if (stopped || event.metaKey || (event.ctrlKey && event.code === 'KeyV')) return;
-        const code = keyCode(event.code);
-        if (code === undefined) return;
+        if (keyCode(event.code) === undefined) return;
         event.preventDefault();
         if (down) unlockAudio();
-        const scalar = !event.ctrlKey && !event.altKey && [...event.key].length === 1 ? event.key.codePointAt(0) : 0;
-        wasm._soew_host_key(code,down,event.repeat,scalar);
+        deliverKey(event.code,down,event);
     }
-    window.addEventListener('keydown',event => key(event,true));
-    window.addEventListener('keyup',event => key(event,false));
-    window.addEventListener('paste',event => {
+    if (!hosted) {
+        listen(window,'keydown',event => key(event,true));
+        listen(window,'keyup',event => key(event,false));
+    }
+    listen(window,'paste',event => {
         const chars = [...event.clipboardData.getData('text')].map(c => c.codePointAt(0));
         const pointer = wasm._malloc((chars.length+1)*4);
         wasm.HEAPU32.set([...chars,0],pointer >>> 2);
@@ -288,28 +309,34 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         const y = Math.floor((event.clientY-rect.top)*framebuffer.height/rect.height);
         wasm._soew_host_pointer(message,x,y,wparam);
     }
-    canvas.addEventListener('contextmenu',event => event.preventDefault());
-    canvas.addEventListener('pointerdown',event => {
+    listen(canvas,'contextmenu',event => event.preventDefault());
+    listen(canvas,'pointerdown',event => {
         canvas.focus();
         canvas.setPointerCapture(event.pointerId);
         unlockAudio();
         pointer(event,[513,519,516,523,523][event.button],event.button >= 3 ? event.button-2 : 0);
     });
-    canvas.addEventListener('pointermove',event => pointer(event,512));
-    canvas.addEventListener('pointerup',event => {
+    listen(canvas,'pointermove',event => pointer(event,512));
+    listen(canvas,'pointerup',event => {
         if (event.button === 0) pointer(event,514);
     });
-    canvas.addEventListener('lostpointercapture',event => pointer(event,533));
-    canvas.addEventListener('wheel',event => {
+    listen(canvas,'lostpointercapture',event => pointer(event,533));
+    listen(canvas,'wheel',event => {
         event.preventDefault();
         pointer(event,522,-120*Math.sign(event.deltaY));
     },{passive:false});
 
+    const player = {key:deliverKey, unlock:unlockAudio, stop, sync:() => sync(false),
+        health:() => ({frames,gameFrame:ticks,audio:{state:audio?.state ?? 'suspended'}})};
     function frame() {
         if (stopped) return;
+        beforeFrame?.(player);
         const wait = wasm._soew_host_frame();
+        ++ticks;
         if (!stopped) timer = setTimeout(frame,Math.ceil(wait));
     }
+    resize.observe(canvas);
     focus();
     frame();
+    return player;
 }

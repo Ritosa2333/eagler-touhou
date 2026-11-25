@@ -8,13 +8,17 @@ import {createDirectInputBridge} from './direct-input-bridge.mjs';
 import {titlePreview} from './managed-preview.mjs';
 const protocol='eagler-touhou/1',game='th02';
 const query=new URL(location.href).searchParams,epoch=Number(query.get('runtimeEpoch'));
+const loadNativeSolo=null;
 if(parent===window||!Number.isSafeInteger(epoch)||epoch<=0)throw Error('请从 Eagler Touhou 启动游戏');
 const emit=payload=>parent.postMessage({protocol,game,epoch,...payload,
   ...(payload.event==='error'?{error:payload.message}:{}),
   ...(payload.event==='exit'?{status:payload.code===0?'success':'error'}:{})},location.origin);
 const multiplayer=query.get('runtimeVariant')==='multiplayer';
-let ready=false,configured=false,launched=false,options={},music='ogg',language='ja',api,preview,store,launchSerial=0,firstFrame=false;
-const input=managedInput({game,epoch,active:()=>launched,options:()=>options});
+let ready=false,configured=false,launched=false,options={},music='ogg',language='ja',api,preview,store,launchSerial=0,firstFrame=false,nativeSolo;
+const nativeActive=()=>launched&&nativeSolo&&api===nativeSolo;
+const input=managedInput({game,epoch,active:()=>launched,options:()=>options,
+  onKey:(code,down,event)=>{if(nativeActive())nativeSolo.key(code,down,event);},
+  allowNativeKey:event=>!(nativeActive()&&(event.metaKey||event.ctrlKey&&event.code==='KeyV'))});
 globalThis.__eaglerPC98SpectatorPublisher=createPc98SpectatorPublisher;
 globalThis.__eaglerPC98Input=input;globalThis.__eaglerPC98Emit=emit;globalThis.__eaglerPC98Options=()=>options;
 function live(message){
@@ -76,15 +80,20 @@ async function command(message){
         emit({event:'first-frame',launchSerial});return {};
       }
       preview?.stop();launchSerial=message.launchSerial??0;firstFrame=false;launched=true;
-      api=multiplayer&&options.netplaySpectator?(await import('./pc98-managed-spectator.mjs')).createManagedSpectator('02',emit):playerApi;
+      api=multiplayer&&options.netplaySpectator?(await import('./pc98-managed-spectator.mjs')).createManagedSpectator('02',emit)
+        :nativeSolo&&!options.replayViewer&&!options.replayPath?nativeSolo:await loadPlayer();
       try{await api.start({options,music,language});}catch(error){launched=false;await api.stop();throw error;}
-      emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});return {};
+      emit({event:'runtime-info',renderer:api===nativeSolo?'SoEW Native':'DOSBox-X / PC-98',architecture:'wasm',version:api===nativeSolo?'soew-native/1':'pc98-managed-preview/1'});return {};
     case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();await api.stop();launched=false;emit({event:'exit',code:0});return {};
-    case 'list':case 'read':case 'write':case 'remove':case 'sync':return api.files(message);
-    case 'playback':return api.playback(message);
+    case 'list':case 'read':case 'write':case 'remove':case 'sync':return (api??nativeSolo??await loadPlayer()).files(message);
+    case 'playback':return (api??await loadPlayer()).playback(message);
     case 'spectator-playback':if(!options.netplaySpectator)throw Error('当前不是观战模式');return api.playback(message);
     default:throw Error('未支持的运行命令：'+message.command);
   }
+}
+async function loadPlayer(){
+  playerApi??=(await import('./managed-solo.mjs')).managedAPI;
+  return playerApi;
 }
 addEventListener('message',event=>{
   const message=event.data;
@@ -103,14 +112,18 @@ try{
   store=globalThis.__eaglerPC98Files=await openUserFiles({multiplayer});
   if(multiplayer){
     const {mountManagedRoom}=await import('./managed-room-layout.mjs');mountManagedRoom();
-    api=(await import('./netplay/room.js')).managedAPI;preview=titlePreview(document.querySelector('#game .player-stage'));
-  }else api=(await import('./managed-solo.mjs')).managedAPI;
-  playerApi=api;
+    api=playerApi=(await import('./netplay/room.js')).managedAPI;preview=titlePreview(document.querySelector('#game .player-stage'));
+  }else if(loadNativeSolo&&content.files.has('native/content/full-files.json')){
+    const {createNativeSolo}=await loadNativeSolo();
+    nativeSolo=createNativeSolo({canvas:document.getElementById('canvas'),input,files:globalThis.__eaglerPC98FileCommands,
+      async exit(pending){launched=false;await pending;input.clear();emit({event:'exit',code:0});},
+      fail:error=>emit({event:'error',message:error.message})});
+  }else api=await loadPlayer();
   const fps=mountGameFps();
   ready=true;emit({event:'ready',saveRoot:'/savesth02'+(multiplayer?'mp':''),roomPreview:multiplayer});
   let lastFrames=0,lastAt=performance.now(),lastHealth=0;
   setInterval(()=>{
-    if(!launched||options.multiplayerPreflight&&!options.netplaySpectator)return;
+    if(!launched||!api||options.multiplayerPreflight&&!options.netplaySpectator)return;
     const health=api.health(),now=performance.now();fps.update(health.gameFrame,now);
     if(!firstFrame&&health.frames>0){firstFrame=true;emit({event:'first-frame',launchSerial});}
     if(now-lastHealth<1000)return;lastHealth=now;

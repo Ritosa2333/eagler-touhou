@@ -4,8 +4,9 @@ const buttons = {ArrowUp:1,ArrowDown:2,ArrowLeft:4,ArrowRight:8,KeyX:16,KeyZ:32,
 // A complete swipe may arrive between samples. Keep its target active for a
 // few samples so the native frame can consume it, but apply the delta once.
 const RELEASE_GRACE_SAMPLES = 4;
-export function managedInput({game, epoch, active, options}) {
+export function managedInput({game, epoch, active, options, onKey, allowNativeKey}) {
   let practice, menuPulse = 0;
+  let rawKey;
   const held = new Set(), secondary = new Set(); let touch = {}, pulse = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
   let notificationPending = false;
   function changed() {if (notificationPending) return; notificationPending = true; queueMicrotask(() => {notificationPending = false; input.onChange?.();});}
@@ -17,13 +18,17 @@ export function managedInput({game, epoch, active, options}) {
       if (axis) keyPulse &= ~axis;
       keyPulse |= bit;
     } else held.delete(code);
+    if (!consumed) onKey?.(code, down, rawKey);
     changed();
   },
     hostContext:{target:globalThis,protocol:'eagler-touhou/1',game,epoch,origin:location.origin,ready:active}});
   const input = {
     setPractice(value) { practice = value; },
     releaseGameplay() { secondary.clear(); held.clear(); pulse = keyPulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
-    key(message) { keyboard.event(message, message.down, 'hosted'); },
+    key(message) {
+      rawKey=message;
+      try { keyboard.event(message, message.down, 'hosted'); } finally { rawKey=undefined; }
+    },
     clearKeyboard() { keyboard.clear(); held.clear(); keyPulse = 0; changed(); },
     clear() { secondary.clear(); keyboard.clear(); practice?.clear(); touch = {}; pulse = keyPulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
     cancelTouch() { secondary.clear(); touch = {}; pulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
@@ -49,10 +54,10 @@ export function managedInput({game, epoch, active, options}) {
       } else if (point?.id === message.id) { if (!point.menuMoved) menuPulse |= 256; point = null; motion = motion.moved ? {...motion,releaseSamples:RELEASE_GRACE_SAMPLES} : {x:0,y:0,active:false}; }
       } finally {changed();}
     },
-    sample({play = true} = {}) {
+    sample({play = true, keyboard:includeKeyboard = true} = {}) {
       if (!active() || practice?.blocked()) return 0;
-      let bits = pulse | keyPulse | (play ? 0 : menuPulse); pulse = keyPulse = menuPulse = 0;
-      for (const code of held) bits |= buttons[code] ?? 0;
+      let bits = pulse | (includeKeyboard ? keyPulse : 0) | (play ? 0 : menuPulse); pulse = keyPulse = menuPulse = 0;
+      if (includeKeyboard) for (const code of held) bits |= buttons[code] ?? 0;
       if (options().touchEnabled && play && touch.fireEnabled) bits |= 32;
       if (options().touchEnabled && play && (touch.focusEnabled || options().touchFocusMode === 'two-finger' && secondary.size)) bits |= 64;
       if (options().touchEnabled && touch.joystickX < 0) bits |= 4; if (options().touchEnabled && touch.joystickX > 0) bits |= 8;
@@ -65,6 +70,7 @@ export function managedInput({game, epoch, active, options}) {
   };
   for (const type of ['keydown','keyup']) addEventListener(type, event => {
     if (event.__eaglerPC98Synthetic) return;
+    if (allowNativeKey?.(event) === false) return;
     if (practice?.ownsFocus()) {
       practice.nativeKey(event);
       if (type === 'keyup') keyboard.mapNative(event, false) || keyboard.event(event, false);
@@ -72,9 +78,12 @@ export function managedInput({game, epoch, active, options}) {
       return;
     }
     if (event.type === 'keydown' && event.target?.closest?.('input,select,textarea,[contenteditable="true"]')) return;
-    if (keyboard.mapNative(event, type === 'keydown') || !globalThis.__eaglerKeyboardInputBridge?.active() && keyboard.event(event, type === 'keydown')) {
-      event.preventDefault(); event.stopImmediatePropagation();
-    }
+    rawKey=event;
+    try {
+      if (keyboard.mapNative(event, type === 'keydown') || !globalThis.__eaglerKeyboardInputBridge?.active() && keyboard.event(event, type === 'keydown')) {
+        event.preventDefault(); event.stopImmediatePropagation();
+      }
+    } finally { rawKey=undefined; }
   }, true);
   // The Launcher touch surface lives outside this iframe. Moving focus to it
   // must release keys without destroying an in-progress hosted touch.

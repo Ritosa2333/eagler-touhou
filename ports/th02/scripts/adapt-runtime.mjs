@@ -90,7 +90,7 @@ await patch('netplay/room.js',text=>{
 });
 await writeFile(resolve(output,'netplay/room.js'),await readFile(resolve(output,'netplay/room.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-room-api.js'),'utf8'));
 await patch('netplay/runtime.html',text=>replaceOnce(text,'<script>','<script type="module">\nimport "../managed-child.mjs";','managed child resources'));
-for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
+for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')&&name!=='managed-native-solo.mjs') { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
 {
   const path=resolve(output,'netplay/runtime.json'), manifest=JSON.parse(await readFile(path,'utf8'));
   for(const name of ['managed-rescue-sound.mjs','managed-rapid-fire.mjs','managed-bomb-background.mjs','managed-gameover.mjs','netplay/ending-music.js','netplay/bonus-confirm.js','pmd-archives.mjs'])manifest.assets[name]=createHash('sha256').update(await readFile(resolve(output,name))).digest('hex');
