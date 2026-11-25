@@ -249,7 +249,7 @@ inline std::wstring_view option_value(Language language,Menu::Option option,int 
     using O=Menu::Option;
     constexpr std::array<LocalizedText,2> toggles={{{L"無効",L"Off",L"关闭",L"關閉"},{L"有効",L"On",L"开启",L"開啟"}}};
     constexpr std::array<LocalizedText,4> music={{toggles[0],{L"FM",L"FM",L"FM",L"FM"},{L"MIDI",L"MIDI",L"MIDI",L"MIDI"},
-        {L"幺樂団の歴史",L"Akyu's Untouched Score",L"幺乐团的历史",L"幺樂團的歷史"}}};
+        {L"幺樂団の歴史",L"Akyu",L"幺乐团的历史",L"幺樂團的歷史"}}};
     constexpr std::array<LocalizedText,3> autofire={{toggles[0],{L"12 Hz",L"12 Hz",L"12 Hz",L"12 Hz"},{L"高速",L"Fast",L"高速",L"高速"}}};
     constexpr std::array<LocalizedText,2> effects={{{L"通常",L"Normal",L"正常",L"正常"},{L"一部軽減",L"Reduced",L"减弱",L"減弱"}}};
     constexpr std::array<LocalizedText,3> hitboxes={{toggles[0],{L"自機のみ",L"Player",L"仅自机",L"僅自機"},{L"すべて",L"All",L"全部",L"全部"}}};
