@@ -1764,7 +1764,7 @@
     "th13": {
       "normal": "ports/th13",
       "multiplayer": "ports/th13-mp",
-      "base": "04c17d6a7b30e8831c75036ce2715d87ea8baa55",
+      "base": "58ad0f7ee85db6754586957030e9c042f746b4f2",
       "history": [
         {
           "kind": "manual",
@@ -3100,6 +3100,92 @@
             "ports/th13-mp/web/cpp/rebuild/X87.hpp"
           ],
           "note": "同步自机受击结算门与圆判定对齐：classify_player_bullet 灵界早退，接触结算门与 X87.hpp 两侧一致"
+        },
+        {
+          "kind": "manual",
+          "base": "04c17d6a7b30e8831c75036ce2715d87ea8baa55",
+          "source": "a6e98e00c92b14f08668dca2377936fce3ded822",
+          "targetHead": "87eec219aa567d3456ca51cf252fb14e058d467e",
+          "paths": [
+            "ports/th13-mp/docs/fidelity-map.md",
+            "ports/th13-mp/tests/anm/anm_variables_oracle_test.cpp"
+          ],
+          "note": "ANM 变量表：Unicorn 直调 0x461e80/0x4621b0/0x4622c0/0x462380 取证，普通版与多人版各新增 tests/anm/anm_variables_oracle_test.cpp 逐位锁定读值、随机流与写目的地；两侧 AnmVariables 与 AnmInterpreter 分支相同，无代码差异。保真地图原分歧 5 移入已对齐项。"
+        },
+        {
+          "kind": "manual",
+          "base": "a6e98e00c92b14f08668dca2377936fce3ded822",
+          "source": "3c63cdee64d28c9055cada68006da67e0d93ff6b",
+          "targetHead": "7a73ccbd4f6842e8809c365d3bdcb1dd7c0737ea",
+          "paths": [
+            "ports/th13-mp/tests/ecl/ecl_bullet_scale_test.cpp",
+            "ports/th13-mp/web/cpp/game/StageSim.cpp",
+            "ports/th13-mp/web/cpp/game/StageSim.hpp"
+          ],
+          "note": "etEx 0x400000（弹缩放补间）：两侧 StageSim 成对加入 scale_tween、exact_integers 与缩放推进；新增 tests/ecl/ecl_bullet_scale_test.cpp（两侧同文件）。多人版无联机目录改动。"
+        },
+        {
+          "kind": "manual",
+          "base": "3c63cdee64d28c9055cada68006da67e0d93ff6b",
+          "source": "3a2edeb90a4c00e684c4b89ec9434b668782f0b7",
+          "targetHead": "a86a0dd630c9b5238db33527ec23a8c8954a5b7b",
+          "paths": [
+            "ports/th13-mp/docs/fidelity-map.md",
+            "ports/th13-mp/tests/anm/interpolation_oracle_test.cpp",
+            "ports/th13-mp/tools/replay-verifier/golden/digests-draws-all.json",
+            "ports/th13-mp/tools/replay-verifier/golden/digests-draws.json",
+            "ports/th13-mp/tools/replay-verifier/golden/digests.json",
+            "ports/th13-mp/web/cpp/game/Interpolation.cpp",
+            "ports/th13-mp/web/cpp/game/Interpolation.hpp",
+            "ports/th13-mp/web/cpp/game/StageSim.cpp"
+          ],
+          "note": "插值终值按 x87 单次舍入：两侧 Interpolation.hpp/.cpp 非角路径改为 (float)((long double)(end-start)*weight+start)，StageSim etEx 缩放走 scale_tween.step；新增 tests/anm/interpolation_oracle_test.cpp（两侧同文件）锁定 0x4120f0 直调终值。普通版另含回归摘要金标重生成、保真地图与归档记录，多人版无金标。"
+        },
+        {
+          "kind": "manual",
+          "base": "3a2edeb90a4c00e684c4b89ec9434b668782f0b7",
+          "source": "a0d8e6eaa25f93aeefd2f7e4356188bfd7364fec",
+          "targetHead": "e3af8acd3d53004b2e979e93a22c1a4b01db63a1",
+          "paths": [
+            "ports/th13-mp/docs/DEVELOPMENT.md",
+            "ports/th13-mp/docs/fidelity-map.md",
+            "ports/th13-mp/docs/plans/scoredat.md",
+            "ports/th13-mp/tests/score/filestore_score_mapping_test.cpp",
+            "ports/th13-mp/tests/score/filestore_score_test.cpp",
+            "ports/th13-mp/tests/ui/run_scene_test.cpp",
+            "ports/th13-mp/tests/ui/save_records_summary_test.cpp",
+            "ports/th13-mp/tools/oracle/machine.py",
+            "ports/th13-mp/tools/oracle/probes.py",
+            "ports/th13-mp/web/cpp/game/RunScene.cpp",
+            "ports/th13-mp/web/cpp/game/RunScene.hpp",
+            "ports/th13-mp/web/cpp/game/ScoreDat.hpp",
+            "ports/th13-mp/web/cpp/sdl/ApplicationGame.cpp",
+            "ports/th13-mp/web/cpp/sdl/ApplicationState.hpp",
+            "ports/th13-mp/web/cpp/sdl/FileStore.cpp",
+            "ports/th13-mp/web/cpp/sdl/FileStore.hpp"
+          ],
+          "note": "存档镜像练习行：两侧 ScoreDat::kProgressRowsOff 0x7F8、FileStore practice_cleared[16] 与 TH13SAVE v8 CLR1 段、RunScene::record_stage_passed（普通版直接落盘，多人版 PendingFileEvent::StagePass）；tests/score 与 tests/ui 同步。普通版另含 scoredat.md 与保真地图记录，多人版无文档改动。"
+        },
+        {
+          "kind": "manual",
+          "base": "a0d8e6eaa25f93aeefd2f7e4356188bfd7364fec",
+          "source": "58ad0f7ee85db6754586957030e9c042f746b4f2",
+          "targetHead": "a819c6f75c7c66f3d07e5668b91e8512ac5fdafd",
+          "paths": [
+            "ports/th13-mp/docs/DEVELOPMENT.md",
+            "ports/th13-mp/docs/fidelity-map.md",
+            "ports/th13-mp/docs/plans/event-contract.md",
+            "ports/th13-mp/tests/anm/anm_interpolation_oracle_test.cpp",
+            "ports/th13-mp/tests/anm/interpolation_oracle_test.cpp",
+            "ports/th13-mp/tests/ecl/ecl_stage_gvars_oracle_test.cpp",
+            "ports/th13-mp/tools/oracle/probes.py",
+            "ports/th13-mp/web/cpp/game/Interpolation.cpp",
+            "ports/th13-mp/web/cpp/game/Interpolation.hpp",
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp",
+            "ports/th13-mp/web/cpp/game/StageGvars.cpp",
+            "ports/th13-mp/web/cpp/game/StageSim.hpp"
+          ],
+          "note": "ECL 全局变量：0x420380/0x420d00 的 94 个 id 按跳转表逐 id 对齐（−9988 相位时钟、−9954 life、−9986 超时旗、−9958/−9911 motion_delta、−9961 主 ANM 脚本号、−9949..−9947 读写同槽、−9914 只读、−9995..−9992 与 −9939..−9936 可写），StageSim::player_lives 供 −9930；插值角路径 0x4662e0 的 mode 7/17/8 与默认缓动按 asm 序列复刻，0x4120f0 mode 8 四项在 x87 累加后一次舍入。两侧 StageGvars.cpp、Interpolation.hpp/.cpp 同内容；tests/ecl/ecl_stage_gvars_oracle_test.cpp 与 tests/anm/anm_interpolation_oracle_test.cpp（原 interpolation_oracle_test.cpp 改名）两侧同文件。多人版无联机目录改动。"
         }
       ]
     },
