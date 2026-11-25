@@ -7,7 +7,6 @@ import {BOOK_PREFERENCES_EVENT, readBookPreference, stringArray, writeBookPrefer
 import {announcements, type Announcement} from './announcements';
 
 const seenKey = 'announcements-read';
-const latestAnnouncement = announcements.slice(0, 1);
 const noPublished: readonly PublishedAnnouncement[] = [];
 const unread = (published: readonly PublishedAnnouncement[]) => {
   const seen = new Set(readBookPreference(seenKey, [], stringArray));
@@ -39,9 +38,7 @@ function RelativeTime({published}: {published: string}) {
     age >= 60000 ? format.format(-Math.floor(age / 60000), 'minute') : t('announcements.justNow')}</time>;
 }
 
-type TimelineEntry = Announcement | {id: string; author: string; published: string; body: string; authorUsername?: string | null};
-
-function AnnouncementCopy({entry, lines}: {entry: TimelineEntry; lines: 6 | 10}) {
+function AnnouncementCopy({entry, lines}: {entry: Announcement; lines: 6 | 10}) {
   const {t} = useLocale();
   const content = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -83,11 +80,15 @@ export function AnnouncementTimeline({recent = false, published = noPublished, i
   recent?: boolean; published?: readonly PublishedAnnouncement[]; includeLegacy?: boolean; assetUrl: (path: string) => string;
 }) {
   const {t} = useLocale();
-  const entries = useMemo((): readonly TimelineEntry[] => {
+  const entries = useMemo((): readonly Announcement[] => {
     const live = published.map(item => ({
       ...item, id: announcementKey(item.id), published: new Date(item.publishedAt).toISOString(),
     }));
-    return recent ? live.length ? live.slice(0, 1) : latestAnnouncement : [...live, ...(includeLegacy ? announcements : [])];
+    const oldestLive = live.at(-1)?.published;
+    const bundled = includeLegacy || !oldestLive ? announcements :
+      announcements.filter(item => item.published >= oldestLive);
+    const sorted = [...live, ...bundled].sort((a, b) => b.published.localeCompare(a.published));
+    return recent ? sorted.slice(0, 1) : sorted;
   }, [published, recent, includeLegacy]);
   useEffect(() => {
     const seen = new Set(readBookPreference(seenKey, [], stringArray));
@@ -97,7 +98,7 @@ export function AnnouncementTimeline({recent = false, published = noPublished, i
   }, [entries]);
   return <ol className="announcement-timeline" data-density={recent ? 'recent' : 'full'}>
     {entries.map(entry => <li key={entry.id} className="announcement-entry">
-      <PublicAccountAvatar username={'body' in entry ? entry.authorUsername : null} assetUrl={assetUrl} loading="lazy"/>
+      <PublicAccountAvatar username={entry.authorUsername} assetUrl={assetUrl} loading="lazy"/>
       <article>
         <RelativeTime published={entry.published}/>
         <AnnouncementCopy entry={entry} lines={recent ? 6 : 10}/>
