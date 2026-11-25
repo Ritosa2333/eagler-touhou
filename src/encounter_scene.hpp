@@ -1345,7 +1345,7 @@ private:
             if(pattern!=pellet_pattern)put(pattern,p);
             else blit_motion_sprite(pixels,p,8,8,[&](int x,int y){return pellet[y]&(128>>x)?pellet_color:render_clear;});
         };
-        departures_.draw(T::Bullet,focus?MotionSample{}:motion,draw_bullet);
+        if(!focus)departures_.draw(T::Bullet,motion,draw_bullet);
         for(unsigned i=0;i<bullet_core.bullets.size();++i){
             // TH02 removes a colliding bullet before drawing that frame.
             const auto &b=bullet_core.bullets[i];if(b.flag!=1)continue;
