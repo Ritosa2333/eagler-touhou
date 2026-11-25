@@ -147,6 +147,16 @@ node tools/regression-digest.mjs --draws --draws-stages all --check    # 绘制�
 
 harness 进程固定带 `--no-incremental-marking`（调用方没带时运行器重启自身）。Node 22.23 的 V8（12.4.254.21）在增量标记的栈扫描里会遍历到返回地址无效的帧，在 `CommonFrame::IterateTurbofanOptimizedFrame` 内解引用崩溃，Node 的信号处理器把它重发为 SIGSEGV。这与移植代码无关：崩溃与 `--stack-size`（200KB–15MB）和 JIT 模式无关；关掉增量标记后，叠加 `--gc-interval=500 --stress-compaction --verify-heap` 的整卷回放全部跑完、堆校验通过，原生 ASan/UBSan 构建同样全绿。
 
+### 原版直调探针
+
+`tools/oracle/` 在容器里用 Unicorn 直接调用原版函数，给数值语义与状态门取证：
+
+```sh
+ports/th13/tools/container.sh python3 -m tools.oracle.probes --out /work/artifacts/th13-fidelity/collision.json
+```
+
+`machine.py` 负责装载 th13.exe、堆与栈和直调约定（`[ESP]` 为返回地址、`[ESP+4+4i]` 为第 i 个参数，`thiscall` 的 this 放 ECX）；`probes.py` 输出判定尺寸表、`0x444140` 的状态矩阵与距离扫描。探针只读原版文件，产物落外层工作区 `artifacts/`，同一探针两次运行的输出逐字节相同。探针锁定的值由原生测试断言，登记在 [fidelity-map.md](fidelity-map.md)「已对齐项」。
+
 ### 性能测量
 
 热点以带函数名的 harness 剖析为准：`portable/build-harness.mjs` 的链接参数加 `-g`，再用 `node --cpu-prof` 采样。计时一律用交替 A/B（基线与改动版交替构建运行三轮取中位数），因为同一台机器在不同时刻的绝对耗时相差可达一倍。保留一项改动的条件：三项回归摘要不变、门槛无新增失败、交替 A/B 有实测收益。首轮结果与剖面分布见 `archive/th13-performance-20261124/README.md`（WASI harness 回放计时，不含浏览器端帧时间）。

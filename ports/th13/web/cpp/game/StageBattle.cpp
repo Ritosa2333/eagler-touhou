@@ -1,5 +1,6 @@
 #include "StageBattle.hpp"
 #include "StageMath.hpp"
+#include "rebuild/X87.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -1341,23 +1342,21 @@ void StageBattle::collide_player_bullet(StageBullet& bullet) {
     const float top = player_y - half, bottom = player_y + half;
     const bool dialog_gate = !(sim.dialog_host && sim.dialog_host->dialog_active());
     const bool in_trance = progress_ && trance_active(*progress_);
+    if (in_trance) return;
     if (!bullet.alive || !bullet.collision_ready || (bullet.flags & 0x2u) == 0) return;
     const bool scaled = (bullet.flags & 0x40u) != 0;
     const float sx = scaled ? bullet.hit_scale * bullet.hit_size[0] : bullet.hit_size[0];
     const float sy = scaled ? bullet.hit_scale * bullet.hit_size[1] : bullet.hit_size[1];
     int result = 0;
     if ((bullet.flags & 0x10u) != 0) {
-        if (in_trance) return;
         const double dx = double(player_x) - double(bullet.x);
         const double dy = double(player_y) - double(bullet.y);
-        const float distance2 = float(dx * dx + dy * dy);
-        const double p2 = double(p) * p;
-        if (double(distance2) < p2 + double(sx) * sx) {
+        const float distance2 = rebuild::to_float(rebuild::square_sum_80(dx, dy));
+        if (rebuild::below_square_sum(distance2, p, sx)) {
             result = 1;
         } else {
             const float span = std::max(float(double(sx) / 2.5), 40.0f);
-            const double graze2 = double(sx) * sx + (double(span) + double(p)) * (double(span) + double(p));
-            if (double(distance2) < graze2) result = 2;
+            if (rebuild::below_square_sum(distance2, double(sx), double(span) + double(p))) result = 2;
         }
     } else {
         const float hx = sx * 0.5f, hy = sy * 0.5f;
@@ -1372,8 +1371,8 @@ void StageBattle::collide_player_bullet(StageBullet& bullet) {
         }
     }
     if (result == 1) {
-        if (!dialog_gate || player_phase == PlayerPhase::Dying || player_phase == PlayerPhase::Deathbomb) return;
-        if (invulnerable <= 0 && !in_trance) kill_player();
+        if (!dialog_gate || player_phase != PlayerPhase::Active) return;
+        if (invulnerable <= 0) kill_player();
         if (bullet.cancel_protection == 0 && !sim.cancel_bullet(bullet, bullet.state != 2, false)) error_ = sim.error();
         return;
     }
@@ -1396,8 +1395,8 @@ i32 StageBattle::collide_laser(const StageLaser& laser) {
     if (progress_ && trance_active(*progress_)) return 0;
     const i32 contact = laser.player_contact(player_x, player_y, player_hit_size_ * .5f, player_hit_size_ * .5f);
     if (contact == 1) {
-        if (player_dead || player_phase == PlayerPhase::Dying || player_phase == PlayerPhase::Deathbomb ||
-            invulnerable > 0 || (sim.dialog_host && sim.dialog_host->dialog_active()))
+        if (player_dead || player_phase != PlayerPhase::Active || invulnerable > 0 ||
+            (sim.dialog_host && sim.dialog_host->dialog_active()))
             return 0;
         kill_player();
     } else if (contact == 2 && laser.kind == StageLaser::Kind::Line && laser.graze_timer % 3 == 0) {
@@ -1455,8 +1454,8 @@ void StageBattle::collide_enemy_body(StageEnemy& enemy) {
         }
     }
     if (contact == 1) {
-        if (!player_dead && player_phase != PlayerPhase::Dying && player_phase != PlayerPhase::Deathbomb &&
-            invulnerable <= 0 && !(sim.dialog_host && sim.dialog_host->dialog_active()))
+        if (!player_dead && player_phase == PlayerPhase::Active && invulnerable <= 0 &&
+            !(sim.dialog_host && sim.dialog_host->dialog_active()))
             kill_player();
     } else if (contact == 2 && (enemy.flags & 0x200u) && i32(enemy.age) % 6 == 0) {
         if (progress_) {

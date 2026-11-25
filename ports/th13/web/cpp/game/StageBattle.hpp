@@ -269,10 +269,6 @@ public:
     static constexpr float kShotOffsetX = 8.0f;
     static constexpr float kShotOffsetY = 12.0f;
     static constexpr float kPlayerHitSize[4] = {2.0f, 3.0f, 3.0f, 3.0f};
-    static constexpr float kPlayerHitRadius = 3.0f;
-    static constexpr float kBulletHitRadius = 4.0f;
-    static constexpr float kEnemyBodyRadius = 20.0f;
-    static constexpr i32 kInvulnFrames = 240;
     static constexpr i32 kBombFrames = 180;
     static constexpr float kBombDamagePerFrame = 3.0f;
     static constexpr i32 kKillScore = 5000;
