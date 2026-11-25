@@ -1,0 +1,132 @@
+{
+ "image_size": 112248,
+ "markers": [
+  {
+   "bytes": "44332211",
+   "char": 0,
+   "file_offsets": [
+    "0x7c0",
+    "0x10c54"
+   ],
+   "game_offset": 1992
+  },
+  {
+   "bytes": "ab",
+   "char": 0,
+   "file_offsets": [
+    "0x7fc",
+    "0x10c90"
+   ],
+   "game_offset": 2052
+  },
+  {
+   "bytes": "cd",
+   "char": 0,
+   "file_offsets": [
+    "0x7fd",
+    "0x10c91"
+   ],
+   "game_offset": 2053
+  },
+  {
+   "bytes": "88776655",
+   "char": 0,
+   "file_offsets": [
+    "0x7f8",
+    "0x10c8c"
+   ],
+   "game_offset": 2048
+  },
+  {
+   "bytes": "ef",
+   "char": 0,
+   "file_offsets": [
+    "0x8c4",
+    "0x10d58"
+   ],
+   "game_offset": 2252
+  },
+  {
+   "bytes": "9a",
+   "char": 0,
+   "file_offsets": [
+    "0x8c5",
+    "0x10d59"
+   ],
+   "game_offset": 2253
+  },
+  {
+   "bytes": "21436587",
+   "char": 0,
+   "file_offsets": [
+    "0x8c0",
+    "0x10d54"
+   ],
+   "game_offset": 2248
+  },
+  {
+   "bytes": "44332211",
+   "char": 3,
+   "file_offsets": [
+    "0x7c0",
+    "0x10c54"
+   ],
+   "game_offset": 1992
+  },
+  {
+   "bytes": "ab",
+   "char": 3,
+   "file_offsets": [
+    "0x7fc",
+    "0x10c90"
+   ],
+   "game_offset": 2052
+  },
+  {
+   "bytes": "cd",
+   "char": 3,
+   "file_offsets": [
+    "0x7fd",
+    "0x10c91"
+   ],
+   "game_offset": 2053
+  },
+  {
+   "bytes": "88776655",
+   "char": 3,
+   "file_offsets": [
+    "0x7f8",
+    "0x10c8c"
+   ],
+   "game_offset": 2048
+  },
+  {
+   "bytes": "ef",
+   "char": 3,
+   "file_offsets": [
+    "0x8c4",
+    "0x10d58"
+   ],
+   "game_offset": 2252
+  },
+  {
+   "bytes": "9a",
+   "char": 3,
+   "file_offsets": [
+    "0x8c5",
+    "0x10d59"
+   ],
+   "game_offset": 2253
+  },
+  {
+   "bytes": "21436587",
+   "char": 3,
+   "file_offsets": [
+    "0x8c0",
+    "0x10d54"
+   ],
+   "game_offset": 2248
+  }
+ ],
+ "schema": "th13/oracle-probes/v1"
+}

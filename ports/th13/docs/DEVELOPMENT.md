@@ -153,9 +153,20 @@ harness 进程固定带 `--no-incremental-marking`（调用方没带时运行器
 
 ```sh
 ports/th13/tools/container.sh python3 -m tools.oracle.probes --out /work/artifacts/th13-fidelity/collision.json
+ports/th13/tools/container.sh python3 -m tools.oracle.probes --out-dir /work/artifacts/th13-fidelity/oracle-out
 ```
 
-`machine.py` 负责装载 th13.exe、堆与栈和直调约定（`[ESP]` 为返回地址、`[ESP+4+4i]` 为第 i 个参数，`thiscall` 的 this 放 ECX）；`probes.py` 输出判定尺寸表、`0x444140` 的状态矩阵与距离扫描。探针只读原版文件，产物落外层工作区 `artifacts/`，同一探针两次运行的输出逐字节相同。探针锁定的值由原生测试断言，登记在 [fidelity-map.md](fidelity-map.md)「已对齐项」。
+`machine.py` 负责装载 th13.exe、堆与栈、额外映射、代码 hook、寄存器访问和直调约定（`[ESP]` 为返回地址、`[ESP+4+4i]` 为第 i 个参数，`thiscall` 的 this 放 ECX）。`--out` 写碰撞探针；`--out-dir` 写全部五份证据：
+
+| 输出 | 用途 | 原版直调 |
+| --- | --- | --- |
+| `collision.json` | 判定尺寸表、自机碰撞状态矩阵与距离扫描 | `0x444140` |
+| `anm-variables.json` | ANM VM 整数与浮点变量的读写目的地、随机流消费后的种子和计数 | `0x461e80`、`0x4621b0`、`0x4622c0`、`0x462380` |
+| `interpolation.json` | 六组插值用例的逐帧值与剩余帧数 | `0x4120f0` |
+| `practice-rows.json` | 练习解锁在存档镜像中写入的字节行 | `0x42ba42`–`0x42ba6f`、`0x42d087`–`0x42d0bc` |
+| `save-image.json` | 压缩前存档镜像、标记字节与压缩文件偏移 | `0x449e50`，hook `0x47a0ed` 与 `0x449fc6` |
+
+探针只读原版文件，产物落外层工作区 `artifacts/`，同一探针两次运行的输出逐字节相同。新探针证据登记在 `archive/th13-fidelity-20261126/`，碰撞证据在 `archive/th13-fidelity-20261125/`。探针锁定的值由原生测试断言，登记在 [fidelity-map.md](fidelity-map.md)「已对齐项」。
 
 ### 性能测量
 

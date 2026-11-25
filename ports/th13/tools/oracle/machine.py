@@ -1,11 +1,23 @@
 import struct
 
-from unicorn import UC_ARCH_X86, UC_MODE_32, Uc
+from unicorn import UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE, Uc
 from unicorn.x86_const import (UC_X86_REG_EAX, UC_X86_REG_EBP, UC_X86_REG_EBX, UC_X86_REG_ECX,
-                               UC_X86_REG_EDI, UC_X86_REG_EDX, UC_X86_REG_ESI, UC_X86_REG_ESP)
+                               UC_X86_REG_EDI, UC_X86_REG_EDX, UC_X86_REG_EIP, UC_X86_REG_ESI,
+                               UC_X86_REG_ESP)
 
 RETURN = 0x100000
 STACK = 0x20080000
+REGISTERS = {
+    'eax': UC_X86_REG_EAX,
+    'ecx': UC_X86_REG_ECX,
+    'edx': UC_X86_REG_EDX,
+    'ebx': UC_X86_REG_EBX,
+    'esi': UC_X86_REG_ESI,
+    'edi': UC_X86_REG_EDI,
+    'ebp': UC_X86_REG_EBP,
+    'esp': UC_X86_REG_ESP,
+    'eip': UC_X86_REG_EIP,
+}
 
 
 class Machine:
@@ -39,6 +51,33 @@ class Machine:
         if self.cursor > self.heap + 0x100000:
             raise MemoryError('probe heap exhausted')
         return address
+
+    def map(self, address, size):
+        self.uc.mem_map(address, size)
+        return address
+
+    def hook_code(self, address, callback):
+        def hook(uc, instruction, size, user_data):
+            callback(uc)
+        return self.uc.hook_add(UC_HOOK_CODE, hook, begin=address, end=address)
+
+    def reg_read(self, name):
+        return self.uc.reg_read(REGISTERS[name])
+
+    def reg_write(self, name, value):
+        self.uc.reg_write(REGISTERS[name], value & 0xffffffff)
+
+    def start(self, address, until, **registers):
+        self.write(STACK, struct.pack('<I', RETURN))
+        for name, value in registers.items():
+            self.reg_write(name, value)
+        if 'esp' not in registers:
+            self.reg_write('esp', STACK)
+        self.uc.emu_start(address, until)
+        return self.uc.reg_read(UC_X86_REG_EAX)
+
+    def stop(self):
+        self.uc.emu_stop()
 
     def read(self, address, size):
         return bytes(self.uc.mem_read(address, size))
