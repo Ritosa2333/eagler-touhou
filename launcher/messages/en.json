@@ -300,7 +300,7 @@
   "spectator_stageNodeUnknown": "Stage",
   "spectator_bossNodeUnknown": "Boss",
   "spectator_paused": "Paused",
-  "spectator_seeking": "Skipping to position…",
+  "spectator_seeking": "Seeking to position…",
   "spectator_playing": "Playing",
   "spectator_live": "Live",
   "spectator_ended": "Playback ended",

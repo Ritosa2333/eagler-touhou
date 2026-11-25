@@ -1,12 +1,18 @@
 # BRO 联机观战（spectator）适配评估与分阶段方案
 
-> 更新（阶段 A 已落地，2026-11-25）：phase A 实时观战已实现并通过单测 + 本机
-> relay 双客户端 e2e。三处接线均已完成：①产品目录 `spectator: true`；
-> ②relay 认 BRO 的 `0xe8` 观战帧车道并开闸；③runtime 用 `spectator_runtime.mjs`
-> 收帧 → `SpectatorFrameBuffer` → 按帧喂 `BRO_net_apply_keys_at/feed_player_key`
-> 确定性重演 → 上报 `spectatorPlayback`。阶段 B（拖时间轴）与阶段 C（观战后结算）
-> 仍未做；下面的「现状取证」保留为设计依据，其中 `spectator:false` 等描述是
-> 阶段 A 之前的历史状态。
+> 更新（阶段 B 已落地，2026-11-25）：phase A 实时观战（三处接线：产品目录
+> `spectator: true`、relay 认 BRO 的 `0xe8` 观战帧车道、runtime 收帧确定性重演）
+> 之后，phase B 的时间轴语义也已在 BRO runtime 侧实现：
+> ①`SpectatorClient` 用环形缓冲保存最近 `historyFrames`（默认 108000）帧输入；
+> ②`pause|play|seek|live` 命令经 `spectator-playback` 命令通道进
+> `SpectatorClient.control()`；③回退定位走「从 run 起点重演」慢路径
+> （`BRO_net_reset` + 重跑 `start()` 配置序列），前进定位原地连续重演，
+> 一次 pump 内按 `seekBudgetMs/seekStepCap` 预算跑多帧；④上报的 `spectatorPlayback`
+> 严格满足 `min<=position<=received`、`min<=edge/target<=received`。
+> launcher 侧 `messages/en.json` 的 `spectator_seeking` 文案同步为 "Seeking to position…"。
+> 仍未做：`nodes[]`（stage/boss 轴标记，BRO 缺逐帧 stage/boss 遥测，需要 Lua 钩子）、
+> 世界快照（当前定位全靠重演，长时间回退偏慢）、阶段 C（观战后结算存录像）。
+> 下面的「现状取证」保留为设计依据，其中 `spectator:false` 等描述是阶段 A 之前的历史状态。
 
 > 结论先行（历史）：**当前不适配，但可做**。缺的不是「渲染」，而是三处接线：
 > ①产品目录没开 `spectator`；②relay 的观战子系统不认识 BRO 的帧；③runtime 没有
@@ -112,6 +118,14 @@ multiplayer: Object.freeze({
 - 定期（如每 600 帧）打一份「快照」（BRO 需要新增 `BRO_net_snapshot/restore`，
   或者退化成「从 run 起点 replay 到目标帧」——慢但不需要新序列化）；
 - 实现桥要的 `position/min/edge/target/paused/seeking` 语义与 `pause|play|seek|live` 命令。
+
+> 落地状态（2026-11-25）：采用「从 run 起点 replay 到目标帧」分支（未做快照）。
+> 环形缓冲只存每帧每玩家的 keys/flags（108000 帧约 6.5MB），超出后丢最旧帧并把
+> 上报的 `min` 前移；回退 seek 先 `BRO_net_reset` 再重跑 `start()` 的配置序列
+> （set_slot/loadout/systems/seed 双通道/start_match），然后连续重演；
+> `pause` 会中止进行中的定位并把世界停在当前帧（暂停态下的背景定位也支持）。
+> 前端一次 pump 最多重演 `seekStepCap`(30) 帧、`seekBudgetMs`(5ms)，60fps 下约
+> 0.5s 跨 3600 帧。`nodes[]` 仍为空（见上，需要 Lua 侧 stage/boss 遥测）。
 
 ### 阶段 C：观战后结算（对应 `spectator-menu` / `complete` 分支）
 
