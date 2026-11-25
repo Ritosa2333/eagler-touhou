@@ -72,8 +72,10 @@ need the English patch, a PC-98 emulator, or a SoundFont for the basic FM build.
   left/right value editing.
 * MIDI (TinySoundFont) or FM (98fmplayer through libth03) audio.
 
-The TH02 opening cuts to the title menu with a softened flash. The Stage 3
-opening explosion keeps its shake and sound with a gentler light pulse. To play the
+The TH02 opening uses the original title transition artwork and timing, with
+a softer flash instead of the rapid page flicker. The title finishes fading
+in before the menu labels appear. The Stage 3 opening explosion keeps its
+shake and sound with a gentler light pulse. To play the
 TH05 ZUN Soft fireworks first, import the opening from your own TH05 archive:
 
 ```powershell

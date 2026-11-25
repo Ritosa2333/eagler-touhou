@@ -268,6 +268,12 @@ inline std::wstring_view option_value(Language language,Menu::Option option,int 
     return {};
 }
 }
+inline void draw_title_credit(std::vector<std::uint32_t> &pixels,const th03::assets::BfntSheet &font){
+    draw_glyph(pixels,font,0xdf,548,384,0);
+    draw_label(pixels,font,"ZUN",564,384,0);
+    draw_glyph(pixels,font,0xdf,544,380,0xffff00);
+    draw_label(pixels,font,"ZUN",560,380,0xffff00);
+}
 inline void draw_menu(std::vector<std::uint32_t> &pixels, const th03::assets::BfntSheet &font, const Menu &menu) {
     constexpr std::array<std::string_view,8> labels={"START","EXTRA START","PRACTICE START","REPLAY","HISCORE","OPTION","MUSIC MODE","QUIT"};
     constexpr std::array<int,8> actions={0,1,6,7,2,3,4,5};
@@ -278,10 +284,7 @@ inline void draw_menu(std::vector<std::uint32_t> &pixels, const th03::assets::Bf
     }
     draw_label(pixels,font,"RANK",212,372,0);
     draw_label(pixels,font,rank_names[menu.rank],308,372,0);
-    draw_glyph(pixels,font,0xdf,548,384,0);
-    draw_label(pixels,font,"ZUN",564,384,0);
-    draw_glyph(pixels,font,0xdf,544,380,0xffff00);
-    draw_label(pixels,font,"ZUN",560,380,0xffff00);
+    draw_title_credit(pixels,font);
     for(int i=0;i<8;++i) {
         const int x=320-static_cast<int>(labels[i].size())*8,y=224+i*16;
         const auto color= i==1 && !menu.unlocked ? 0x0000ffu : (menu.selected==actions[i] ? 0xffffffu : 0xffff00u);

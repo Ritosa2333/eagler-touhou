@@ -898,6 +898,7 @@ struct App {
     std::array<Frame, 3> frames;
     std::optional<soew::ChineseDisplayPack> chinese_text;
     std::array<Frame, 3> portraits;
+    Frame opening_title_page; // OP2 indices viewed through the OP.PI palette.
     std::array<Frame, 3> opening_strips;
     std::optional<ZunSoftAssets> zunsoft_assets;
     soew::ZunSoftOpening zunsoft;
@@ -1092,20 +1093,25 @@ void host_perf_resources(App &app){
 Frame opening_frame(const App &app) {
     const HostPerf::Span span(app.host_perf.get(),HostPerf::Metric::OpeningFrame);
     const auto f=app.opening.frame;
+    const auto white=app.opening.white();
     if(f>=Opening::flash_end){
-        Frame title=app.frames[0];compose_frontend(title,app.font,app.menu);
-        const auto white=app.opening.white();
+        Frame title=app.frames[0];
+        if(f<Opening::end)draw_title_credit(title.pixels,app.font);
+        else compose_frontend(title,app.font,app.menu);
         for(auto &pixel:title.pixels)pixel=opening_tone(pixel,white,true);
         return title;
     }
     Frame output=app.frames[1];
     if(f>=Opening::hold_end){
-        // OPA/B/C.PI replace the top 171 lines of the full opening page.
-        const auto &strip=app.opening_strips[std::min(2u,(f-Opening::hold_end)/5)];
+        // The strips replace only the top 171 lines on page 0. Page 1
+        // already contains the title, but still uses page 0's shared palette.
+        const auto &strip=app.opening_strips[app.opening.strip()];
         std::ranges::copy(strip.pixels,output.pixels.begin());
-    }
-    if(f<Opening::door_end){
-        const auto white=app.opening.white();const int width=app.opening.exposed_columns();
+        std::ranges::transform(output.pixels,app.opening_title_page.pixels,output.pixels.begin(),[white](auto effect,auto title){
+            return opening_tone(opening_page_pair(effect,title),white,true);
+        });
+    }else if(f<Opening::door_end){
+        const int width=app.opening.exposed_columns();
         for(int y=0;y<400;++y)for(int x=0;x<640;++x){
             auto &pixel=output.pixels[y*640+x];
             pixel=x<320-width||x>=320+width?0:opening_tone(pixel,white,true);
@@ -1115,16 +1121,34 @@ Frame opening_frame(const App &app) {
 }
 void test_opening_composition(){
     auto app=std::make_unique<App>();
+    app->frames[0]={640,400,std::vector<std::uint32_t>(640*400,0x102040)};
     app->frames[1]={640,400,std::vector<std::uint32_t>(640*400,0x123456)};
+    app->opening_title_page={640,400,std::vector<std::uint32_t>(640*400,0x224466)};
     for(unsigned i=0;i<app->opening_strips.size();++i)
         app->opening_strips[i]={640,171,std::vector<std::uint32_t>(640*171,0x102030+i)};
     for(unsigned f=Opening::hold_end-1;f<Opening::flash_end;++f){
         app->opening.frame=f;
         const auto page=opening_frame(*app);
-        const auto strip=f<Opening::hold_end?0x123456:0x102030+std::min(2u,(f-Opening::hold_end)/5);
+        const auto blend=[&](std::uint32_t effect){
+            return f<Opening::hold_end?effect:opening_tone(opening_page_pair(effect,0x224466),app->opening.white(),true);
+        };
+        const auto strip=f<Opening::hold_end?0x123456:0x102030+app->opening.strip();
         if(page.w!=640||page.h!=400||page.pixels.size()!=640*400||
-           page.pixels[0]!=strip||page.pixels[640*171-1]!=strip||page.pixels[640*171]!=0x123456||page.pixels.back()!=0x123456)
+           page.pixels[0]!=blend(strip)||page.pixels[640*171-1]!=blend(strip)||
+           page.pixels[640*171]!=blend(0x123456)||page.pixels.back()!=blend(0x123456))
             throw std::runtime_error("Opening strip must stay on the full-size opening page");
+    }
+    app->font.header.last_code=255;
+    th03::assets::MonochromeBitmap1 mono{};mono.bits.resize(32);mono.bits[0]=0x80;
+    app->font.glyphs.resize(256,{0,mono});
+    constexpr auto start=224*640+280,credit=380*640+544;
+    for(unsigned f=Opening::flash_end;f<=Opening::end;++f){
+        app->opening.frame=f;
+        const auto page=opening_frame(*app);
+        const auto white=app->opening.white();
+        const auto start_color=f<Opening::end?opening_tone(0x102040,white,true):0xffffff;
+        if(page.pixels[start]!=start_color||page.pixels[credit]!=opening_tone(0xffff00,white,true))
+            throw std::runtime_error("Opening fade must show the title before the menu labels");
     }
 }
 Frame zunsoft_frame(const ZunSoftAssets &assets,const soew::ZunSoftOpening &animation){
@@ -4329,6 +4353,7 @@ int wmain(int argc, wchar_t **argv) {
         }
         const auto opening_pi=th03::assets::decode_pi(read(assets/"OP.PI"));
         if(!opening_pi||!opening_pi->palette)throw std::runtime_error("Opening palette unavailable");
+        app.opening_title_page=load(title_root,"OP2.PI",false,&*opening_pi->palette);
         app.opening_strips={load(assets,"OPA.PI",false,&*opening_pi->palette),load(assets,"OPB.PI",false,&*opening_pi->palette),load(assets,"OPC.PI",false,&*opening_pi->palette)};
         if(opening_dump){
             if(*opening_dump>Opening::end)throw std::runtime_error("TH02 opening frame out of range");
