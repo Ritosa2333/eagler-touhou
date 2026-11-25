@@ -156,7 +156,7 @@ ports/th13/tools/container.sh python3 -m tools.oracle.probes --out /work/artifac
 ports/th13/tools/container.sh python3 -m tools.oracle.probes --out-dir /work/artifacts/th13-fidelity/oracle-out
 ```
 
-`machine.py` 负责装载 th13.exe、堆与栈、额外映射、代码 hook、寄存器访问和直调约定（`[ESP]` 为返回地址、`[ESP+4+4i]` 为第 i 个参数，`thiscall` 的 this 放 ECX）。`--out` 写碰撞探针；`--out-dir` 写全部五份证据：
+`machine.py` 负责装载 th13.exe、堆与栈、额外映射、代码 hook、寄存器访问和直调约定（`[ESP]` 为返回地址、`[ESP+4+4i]` 为第 i 个参数，`thiscall` 的 this 放 ECX）。`--out` 写碰撞探针；`--out-dir` 写全部七份证据：
 
 | 输出 | 用途 | 原版直调 |
 | --- | --- | --- |
@@ -165,6 +165,8 @@ ports/th13/tools/container.sh python3 -m tools.oracle.probes --out-dir /work/art
 | `interpolation.json` | 六组插值用例的逐帧值与剩余帧数 | `0x4120f0` |
 | `practice-rows.json` | 练习解锁在存档镜像中写入的字节行 | `0x42ba42`–`0x42ba6f`、`0x42d087`–`0x42d0bc` |
 | `save-image.json` | 压缩前存档镜像、标记字节与压缩文件偏移 | `0x449e50`，hook `0x47a0ed` 与 `0x449fc6` |
+| `stage-gvars.json` | ECL 全局变量 94 个整型读与 94 个浮点读、读后随机流的种子与计数 | `0x420380`、`0x420d00` |
+| `interpolation-angle.json` | 角度插值七组用例的逐帧值与剩余帧数 | `0x4662e0` |
 
 探针只读原版文件，产物落外层工作区 `artifacts/`，同一探针两次运行的输出逐字节相同。新探针证据登记在 `archive/th13-fidelity-20261126/`，碰撞证据在 `archive/th13-fidelity-20261125/`。探针锁定的值由原生测试断言，登记在 [fidelity-map.md](fidelity-map.md)「已对齐项」。
 

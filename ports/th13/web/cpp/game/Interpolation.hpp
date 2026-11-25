@@ -7,6 +7,31 @@
 
 namespace th13 {
 
+inline float retail_wrap(float angle) noexcept {
+    constexpr float kPi = 3.1415927410125732421875f;
+    constexpr float kTwoPi = 6.283185482025146484375f;
+    float current = angle;
+    if (current > kPi) {
+        float result = current;
+        i32 count = 0;
+        do {
+            result = static_cast<float>(static_cast<long double>(current) - static_cast<long double>(kTwoPi));
+            if (count++ > 32) return result;
+            current = result;
+        } while (current > kPi);
+        return result;
+    }
+    if (current >= -kPi) return current;
+    float result = current;
+    i32 count = 0;
+    do {
+        result = static_cast<float>(static_cast<long double>(current) + static_cast<long double>(kTwoPi));
+        if (count++ > 32) return result;
+        current = result;
+    } while (current < -kPi);
+    return result;
+}
+
 struct EclInterpolation {
     i32 duration = 0;
     i32 mode = 0;
@@ -53,61 +78,65 @@ template <u32 N, bool Angle = false> struct FloatInterpolation {
     }
 
     std::array<float, N> evaluate() noexcept {
-        if (duration == 0) return mode == 7 || mode == 17 ? start : end;
+        if (duration == 0) return end;
         if (mode == 7 || mode == 17) {
             for (u32 i = 0; i < N; i++) {
                 start[i] = static_cast<float>(start[i] + (mode == 7 ? end[i] : control2[i]));
-                if constexpr (Angle) start[i] = normalize_angle(start[i]);
+                if constexpr (Angle) start[i] = retail_wrap(start[i]);
                 current[i] = start[i];
                 if (mode == 17) {
                     control2[i] = static_cast<float>((Angle ? end[i] : control2[i]) + (Angle ? control2[i] : end[i]));
-                    if constexpr (Angle) control2[i] = normalize_angle(control2[i]);
+                    if constexpr (Angle) control2[i] = retail_wrap(control2[i]);
                 }
             }
             return current;
         }
         if (mode == 8) {
-            const float t = static_cast<float>(timer.fractional / static_cast<float>(duration));
-            const float twice = static_cast<float>(t * 2);
-            const float a = static_cast<float>(t - 1);
-            const float b = static_cast<float>(1 - t);
-            const float h00 = static_cast<float>(static_cast<float>(a * a) * static_cast<float>(twice + 1));
-            const float h11 = static_cast<float>(static_cast<float>(a * t) * t);
-            const float h01 = static_cast<float>(static_cast<float>(3 - twice) * static_cast<float>(t * t));
-            const float h10 = static_cast<float>(b * b * t);
+            const long double t = static_cast<long double>(timer.fractional / static_cast<float>(duration));
+            const long double reverse = static_cast<long double>(1) - t;
+            const long double forward = t - static_cast<long double>(1);
+            const long double square = t * t;
+            const float h00 = static_cast<float>(forward * forward * (t + t + static_cast<long double>(1)));
+            const float h11 = static_cast<float>(t * (forward * t));
+            const float h01 = static_cast<float>((static_cast<long double>(3) - t - t) * square);
+            const float h10 = static_cast<float>(reverse * reverse * t);
             for (u32 i = 0; i < N; i++) {
-                const float p = static_cast<float>(start[i] * h00);
-                const float q = static_cast<float>(end[i] * h01);
-                const float r = static_cast<float>(control1[i] * h10);
-                const float s = static_cast<float>(control2[i] * h11);
-                if constexpr (Angle)
-                    current[i] = normalize_angle(static_cast<float>(
-                        normalize_angle(static_cast<float>(
-                            normalize_angle(static_cast<float>(normalize_angle(p) + normalize_angle(q))) +
-                            normalize_angle(r))) +
-                        normalize_angle(s)));
-                else if constexpr (N == 3)
-                    current[i] = i ? static_cast<float>(s + static_cast<float>(r + static_cast<float>(p + q)))
-                                   : static_cast<float>(static_cast<float>(r + static_cast<float>(p + q)) + s);
+                const long double p = static_cast<long double>(start[i]) * h00;
+                const long double q = static_cast<long double>(end[i]) * h01;
+                const long double r = static_cast<long double>(control1[i]) * h10;
+                const long double s = static_cast<long double>(control2[i]) * h11;
+                if constexpr (Angle) {
+                    float acc = retail_wrap(q);
+                    acc = retail_wrap(static_cast<float>(static_cast<long double>(acc) + retail_wrap(p)));
+                    acc = retail_wrap(static_cast<float>(static_cast<long double>(acc) + retail_wrap(r)));
+                    current[i] = retail_wrap(static_cast<float>(static_cast<long double>(acc) + retail_wrap(s)));
+                } else if constexpr (N == 3)
+                    current[i] = i ? static_cast<float>(static_cast<long double>(s) + r + q + p)
+                                   : static_cast<float>(static_cast<long double>(r) + q + p + s);
                 else if constexpr (N == 1)
-                    current[i] = static_cast<float>(static_cast<float>(static_cast<float>(q + p) + r) + s);
+                    current[i] = static_cast<float>(static_cast<long double>(q) + p + r + s);
                 else
-                    current[i] = static_cast<float>(static_cast<float>(static_cast<float>(p + q) + r) + s);
+                    current[i] = static_cast<float>(static_cast<long double>(p) + q + r + s);
             }
         } else {
             const float weight = interpolation_weight(mode, timer.fractional, static_cast<float>(duration));
             for (u32 i = 0; i < N; i++) {
                 float difference = static_cast<float>(end[i] - start[i]);
                 if constexpr (Angle) {
-                    if (difference > 3.1415927410125732421875f)
+                    constexpr float kPi = 3.1415927410125732421875f;
+                    constexpr float kTwoPi = 6.283185482025146484375f;
+                    if (difference > kPi)
                         difference =
-                            static_cast<float>(end[i] - static_cast<float>(start[i] + 6.283185482025146484375f));
-                    else if (static_cast<float>(start[i] - end[i]) > 3.1415927410125732421875f)
+                            static_cast<float>(static_cast<long double>(end[i]) -
+                                               static_cast<float>(static_cast<long double>(start[i]) + kTwoPi));
+                    else if (static_cast<float>(static_cast<long double>(start[i]) - end[i]) > kPi)
                         difference =
-                            static_cast<float>(end[i] - static_cast<float>(start[i] - 6.283185482025146484375f));
-                    difference = normalize_angle(difference);
-                    current[i] = normalize_angle(
-                        static_cast<float>(start[i] + normalize_angle(static_cast<float>(difference * weight))));
+                            static_cast<float>(static_cast<long double>(end[i]) -
+                                               static_cast<float>(static_cast<long double>(start[i]) - kTwoPi));
+                    difference = retail_wrap(difference);
+                    current[i] = retail_wrap(static_cast<float>(
+                        static_cast<long double>(start[i]) +
+                        retail_wrap(static_cast<float>(static_cast<long double>(difference) * weight))));
                 } else {
                     current[i] = static_cast<float>(static_cast<long double>(end[i] - start[i]) * weight + start[i]);
                 }

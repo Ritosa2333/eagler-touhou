@@ -435,6 +435,7 @@ public:
     bool emit_spell(const SpellEvent& event, const StageEnemy& enemy);
     i32 diff = 3;
     i32 rank = 0;
+    i32 player_lives = 0;
     std::array<i32, 4> shared_integers{};
     std::array<float, 8> shared_floats{};
 

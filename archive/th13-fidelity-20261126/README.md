@@ -47,3 +47,17 @@
 ## 存档镜像的练习行（原分歧 4）
 
 `0x42b990` 在关卡开始把游玩旗写进 `score + 0x7fd + 8*stage + 64*difficulty`，`0x42cd40` 在过关时把通过旗写进 `score + 0x7fc + 8*stage + 64*difficulty`，`stage` 取 1 起的关号（[practice-rows.json](practice-rows.json)）。直调 `0x449e50` 生成镜像后，这两个字节落在列内 `0x7fd/0x7fc`，关卡分数在 `0x7f8`（[save-image.json](save-image.json)）；旧镜像把行基放在 `0x7f4`，整体早 4 字节。通过旗在原版里没有读取方（`0x451cb0`、`0x452170`、`0x452299` 一带读的都是游玩旗），移植侧照样写入：`ScoreDat::kProgressRowsOff` 取 `0x7F8`，`FileStore::practice_cleared[16]` 按角色×难度各存 6 位，`RunScene::msg_stage_clear` 经 `record_stage_passed` 在普通版直接落盘、在多人版走 `PendingFileEvent::StagePass`。应用档 `TH13SAVE` 升到 v8：新增 `CLR1` 段（16 字节），v7 及更早的档读入时按零补齐、下次保存升级。`tests/score/filestore_score_mapping_test.cpp`、`tests/score/filestore_score_test.cpp` 与 `tests/ui/run_scene_test.cpp` 锁定坐标、v8 往返、v7 升级与写入失败回传。
+
+## ECL 全局变量供给（原分歧 5）
+
+ECL 全局读是两个 94 项跳转表：整型读 `0x420380`，浮点读 `0x420d00`；写槽是 `0x420b80` 与 `0x421670`。读槽与写槽一一对应：管理器可写整数落在 `mgr+0x10/0x14/0x18`，Boss 槽 0 存在时 Boss 自变量写 Boss、否则写当前敌机；共享整数、共享浮点和敌机本地槽也按原地址表映射。敌机 id（−9914）只有读路径，没有写目的地。
+
+−9988 是敌机相位时钟 `Timer.current`（`+0x14a8` 整型视图 / `+0x14ac` 浮点视图），513/522 与相位切换复位；−9954 是敌机当前 life（`+0x5138` 整型视图）；−9986 是 `+0x521c` 的 bit25，相位由超时结束时置 1、由 life 触发切换时保持 0。探针输入把 ENEMY、Boss 槽 0、第三台敌机、玩家、ANM VM、管理器与系统全局分别设成可区分值，每次读前重置游戏流种子 `0x5678`，因此当前敌机、Boss 槽 0 与自机三个供给源不会互相混叠。
+
+`tools/oracle/probes.py --out-dir` 生成的 [stage-gvars.json](stage-gvars.json) 记录 94 个整型读、94 个浮点读和完整 setup；两次运行逐字节相同，随机流 id 附带抽取后的种子与计数。`tests/ecl/ecl_stage_gvars_oracle_test.cpp`（普通版与多人版同文件同内容）用同一 setup 重建输入，用 constexpr 数组逐位断言全部读值、浮点 bits 与随机流状态，并先通过写槽验证 −9949..−9947 的读写同槽。
+
+## 插值角路径与 Bezier 的 x87 中间量（未决 2 的剩余部分）
+
+角度插值是 `0x4662e0`，与 `0x4120f0` 共用同一插值块布局。mode 7 把 `wrap(start + ctrl2)` 写回 start；mode 17 先 `wrap(start + ctrl2)` 再 `wrap(end + ctrl2)`；mode 8 的四个基函数各在 x87 里算好后转 float，再乘控制点、再转 float、再 `wrap`，按 end、start、ctrl1、ctrl2 的顺序依次累加，每次累加转 float 再 `wrap`；默认缓动先把 `0x438220` 的角差 wrap 一次，乘权重后 wrap，加 start 再 wrap。`0x472f30` 的归一是带 33 次上限的 2π 循环，每圈结果转 float。非角 mode 8 的四个基函数各转 float，四项在 x87 累加后一次舍入。
+
+[interpolation-angle.json](interpolation-angle.json) 记录 mode 7、17、8、0、1、18、22 七组用例的逐帧值（起止角跨 ±π 多圈）。`tests/anm/anm_interpolation_oracle_test.cpp`（普通版与多人版同文件同内容）把它们锁定到 `AngleInterpolation`，并以 `scalar_bezier_matches_retail_oracle` 锁定 `0x4120f0` 的 mode 8。

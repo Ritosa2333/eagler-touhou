@@ -27,9 +27,13 @@ ANM_VISUAL_RNG = 0x4dc31c
 ANM_GAME_RNG = 0x4dc324
 ANM_CAMERA = {'translation': 0x4dcaf4, 'reference': 0x4dcb18, 'origin': 0x4dcb30, 'extra': 0x4dcb3c}
 INTERP_FUNCTION = 0x4120f0
+ANGLE_INTERP_FUNCTION = 0x4662e0
 INTERP_RATE = 0x4c0a28
+GVARS_INT_READ = 0x420380
+GVARS_FLOAT_READ = 0x420d00
 PRACTICE_SCORE_POINTER = 0x4c22cc
 PRACTICE_DIALOG_POINTER = 0x4c2194
+ANM_LOOKUP = 0x46ff10
 SAVE_IMAGE_FUNCTION = 0x449e50
 SAVE_MALLOC_SITE = 0x47a0ed
 SAVE_COMPRESS_SITE = 0x449fc6
@@ -119,6 +123,127 @@ def anm_call_float(machine, function, vm, argument, out, stub):
     return machine.f32(out)
 
 
+def stage_gvars_probe(exe):
+    identifiers = list(range(-10000, -9906))
+    stack = 0x20080000
+    document = {'schema': 'th13/oracle-probes/v1', 'setup': {
+        'enemy': {'position': [11.0, -22.0, 33.0], 'motion_delta': [0.25, -0.5],
+                  'vel_pos': [1.5, -2.25, 0.0], 'vel_speed': 1234.0, 'vel_angle': -7.25,
+                  'vel_radius': 9.5, 'pos_pos': [7.5, 8.5, 0.0], 'pos_speed': -10.125,
+                  'pos_angle': 11.75, 'pos_radius': 13.25, 'integers': [-5, 6, -7, 8],
+                  'floats': [1.25, -2.75, 3.5, -4.125, 5.25, -6.375, 7.125, -8.25],
+                  'timer': 76, 'clock': 77, 'clock_float': 77.0, 'life': 1234,
+                  'flags': 0xabcd, 'invulnerable': 0, 'script_id': 0x11223344,
+                  'trace_id': 7},
+        'boss': {'position': [211.0, -222.0, 0.0], 'motion_delta': [200.25, -250.5],
+                 'integers': [-55, 66, -77, 88], 'floats': [-11.25, 12.25, -13.5, 14.5],
+                 'script_id': 17, 'trace_id': 23},
+        'third': {'flags': 0x31, 'invulnerable': 5},
+        'player': {'x': 192.5, 'y': 288.25},
+        'anm': {'script': -1234}, 'manager': {'count': 3, 'last_created': 77,
+        'writable_integers': [3, -4, 5], 'shared_integers': [9, -10, 11, 12],
+        'shared_floats': [13.0, -14.0, 15.5, -16.25, 17.75, -18.5, 2.25, -3.5]},
+        'globals': {'stage': 5, 'difficulty': 3, 'rank': 20, 'spell_id': 20,
+                    'selected_spell_id': 21, 'lives': 2, 'replay_key': 0,
+                    'sse_integer': 1}, 'random': {'seed': 0x5678, 'count': 0}}}
+    for kind, function in (('int', GVARS_INT_READ), ('float', GVARS_FLOAT_READ)):
+        machine = Machine(exe)
+        enemy = machine.alloc(0x6000)
+        boss = machine.alloc(0x6000)
+        third = machine.alloc(0x6000)
+        manager = machine.alloc(0x400)
+        player = machine.alloc(0x2000)
+        anm = machine.alloc(0x600)
+        game_info = machine.alloc(0x100)
+        enemies = machine.alloc(16)
+        out = machine.alloc(4)
+        int_stub = machine.alloc(32)
+        float_stub = machine.alloc(32)
+        machine.write(0x4c2188, struct.pack('<I', manager))
+        machine.write(0x4c22c4, struct.pack('<I', player))
+        machine.write(manager + 0x5c, struct.pack('<I', boss))
+        machine.write(manager + 0xb0, struct.pack('<I', enemies))
+        nodes = [machine.alloc(8) for _ in range(3)]
+        for index, target in enumerate((enemy, boss, third)):
+            machine.write(nodes[index], struct.pack('<2I', target, nodes[index + 1] if index < 2 else 0))
+        machine.write(enemies, struct.pack('<I', nodes[0]))
+        machine.write(manager + 0xb8, struct.pack('<I', 3))
+        machine.write(manager + 0xc0, struct.pack('<I', 77))
+        machine.write(manager + 0x10, struct.pack('<3i', 3, -4, 5))
+        machine.write(manager + 0x2c, struct.pack('<4i', 9, -10, 11, 12))
+        machine.write(manager + 0x3c,
+                      struct.pack('<8f', 13.0, -14.0, 15.5, -16.25, 17.75, -18.5, 2.25, -3.5))
+        machine.write(enemy + 0x1230, struct.pack('<3f', 11.0, -22.0, 33.0))
+        machine.write(enemy + 0x1264, struct.pack('<2f', 0.25, -0.5))
+        machine.write(enemy + 0x1274, struct.pack('<3f', 1.5, -2.25, 0.0))
+        machine.write(enemy + 0x128c, struct.pack('<3f', 1234.0, -7.25, 9.5))
+        machine.write(enemy + 0x12b8, struct.pack('<3f', 7.5, 8.5, 0.0))
+        machine.write(enemy + 0x12d0, struct.pack('<3f', -10.125, 11.75, 13.25))
+        machine.write(enemy + 0x1474, struct.pack('<4i', -5, 6, -7, 8))
+        machine.write(enemy + 0x1484,
+                      struct.pack('<8f', 1.25, -2.75, 3.5, -4.125, 5.25, -6.375, 7.125, -8.25))
+        machine.write(enemy + 0x14a4, struct.pack('<3i', 76, 77, bits(77.0)))
+        machine.write(enemy + 0x5138, struct.pack('<2i', 1234, 1234))
+        machine.write(enemy + 0x521c, struct.pack('<I', 0xabcd))
+        machine.write(enemy + 0x51bc, struct.pack('<i', 0))
+        machine.write(enemy + 0x11e4, struct.pack('<2i', 0x11223344, 7))
+        machine.write(enemy + 0x130c, struct.pack('<I', 0))
+        machine.write(boss + 0x1230, struct.pack('<3f', 211.0, -222.0, 0.0))
+        machine.write(boss + 0x1264, struct.pack('<2f', 200.25, -250.5))
+        machine.write(boss + 0x1474, struct.pack('<4i', -55, 66, -77, 88))
+        machine.write(boss + 0x1484, struct.pack('<4f', -11.25, 12.25, -13.5, 14.5))
+        machine.write(boss + 0x11e4, struct.pack('<2i', 17, 23))
+        machine.write(third + 0x521c, struct.pack('<I', 0x31))
+        machine.write(third + 0x51bc, struct.pack('<i', 5))
+        machine.write(player + 0x5b8, struct.pack('<2f', 192.5, 288.25))
+        machine.write(anm + 0x4aa, struct.pack('<hxx', -1234))
+        machine.write(0x4be7b8, struct.pack('<2i', 5, 3))
+        machine.write(0x4be7c4, struct.pack('<I', 3))
+        machine.write(0x4be7cc, struct.pack('<I', 20))
+        machine.write(0x4be7d4, struct.pack('<I', 21))
+        machine.write(0x4be7e8, struct.pack('<I', 2))
+        machine.write(0x4c2194, struct.pack('<I', game_info))
+        machine.write(game_info + 0x74, struct.pack('<I', 1))
+        machine.write(0x4dcc30, struct.pack('<I', 0))
+        machine.write(0x4e6848, struct.pack('<I', 1))
+
+        def redirect_anm(uc):
+            uc.mem_write(ANM_LOOKUP, b'\xb8' + struct.pack('<I', anm) + b'\xc3')
+
+        machine.hook_code(ANM_LOOKUP, redirect_anm)
+        machine.write(ANM_LOOKUP, b'\xb8' + struct.pack('<I', anm) + b'\xc3')
+        machine.write(int_stub, b'\xa3' + struct.pack('<I', out) + b'\x68' +
+                      struct.pack('<I', RETURN) + b'\xc3')
+        machine.write(float_stub, b'\xd9\x1d' + struct.pack('<I', out) + b'\x68' +
+                      struct.pack('<I', RETURN) + b'\xc3')
+
+        def reset_random():
+            machine.write(ANM_GAME_RNG, struct.pack('<HxxI', 0x5678, 0))
+
+        def rng_state():
+            return dict(zip(('seed', 'count'), struct.unpack('<HxxI', machine.read(ANM_GAME_RNG, 8))))
+
+        rows = []
+        for identifier in identifiers:
+            reset_random()
+            return_stub = int_stub if kind == 'int' else float_stub
+            machine.write(stack, struct.pack('<2I', return_stub, identifier & 0xffffffff))
+            machine.reg_write('esp', stack)
+            machine.reg_write('ecx', enemy)
+            machine.uc.emu_start(function, RETURN)
+            if kind == 'int':
+                raw = struct.unpack('<i', machine.read(out, 4))[0]
+                row = {'id': identifier, 'value': raw}
+            else:
+                row = {'id': identifier, 'bits': f32_bits(machine, out)}
+            state = rng_state()
+            if state != {'seed': 0x5678, 'count': 0}:
+                row['rng'] = state
+            rows.append(row)
+        document[kind] = rows
+    return document
+
+
 def anm_variables_probe(exe):
     identifiers = [float(value) for value in range(10000, 10033)] + [10004.5, 10012.5, 9999.0, 10033.0, 5.0, -3.25]
     document = {'schema': 'th13/oracle-probes/v1', 'float_read': [], 'int_read': [], 'float_dest': [],
@@ -199,6 +324,50 @@ def interpolation_probe(exe):
                                      (1.0, 0.5, 10, 18), (2.0, 1.0, 1, 0), (1.0, 2.0, 0, 0)):
         cases.append({'start': start, 'end': end, 'frames': frames, 'mode': mode,
                       'values': run(start, end, frames, mode)})
+    return {'schema': 'th13/oracle-probes/v1', 'cases': cases}
+
+
+def interpolation_angle_probe(exe):
+    machine = Machine(exe)
+    machine.write(INTERP_RATE, struct.pack('<f', 1.0))
+    block = machine.alloc(0x100)
+    out = machine.alloc(4)
+    stub = machine.alloc(32)
+    code = b'\xdb\xe3' + b'\xd9\x05' + struct.pack('<I', INTERP_RATE)
+    call_at = len(code)
+    code += b'\xe8' + b'\0\0\0\0'
+    code += b'\x68' + struct.pack('<I', RETURN) + b'\xc3'
+    relative = ANGLE_INTERP_FUNCTION - (stub + call_at + 5)
+    code = code[:call_at + 1] + struct.pack('<i', relative) + code[call_at + 5:]
+    machine.write(stub, code)
+
+    def run(start, end, frames, mode, control1=0.0, control2=0.0):
+        machine.write(block, struct.pack('<12I', bits(start), bits(end), bits(control1), bits(control2), 0,
+                                         0xfff0bdc1, 0xffffffff, 0, INTERP_RATE, 1, frames & 0xffffffff,
+                                         mode & 0xffffffff))
+        values = []
+        for frame in range(frames + 1):
+            try:
+                machine.start(stub, RETURN, edi=block, ebx=out)
+            except Exception as error:
+                values.append({'frame': frame, 'error': str(error)})
+                break
+            duration = struct.unpack('<i', machine.read(block + 0x28, 4))[0]
+            values.append({'frame': frame, 'value': machine.f32(out), 'duration': duration})
+        return values
+
+    cases = []
+    for start, end, frames, mode, control1, control2 in (
+        (3.5, 8.25, 6, 7, 0.0, 0.0),
+        (4.25, 0.75, 6, 17, 0.0, 2.5),
+        (5.25, -6.5, 12, 8, 8.75, -9.25),
+        (5.75, -8.25, 12, 0, 0.0, 0.0),
+        (-7.25, 9.5, 12, 1, 0.0, 0.0),
+        (9.75, -12.25, 15, 18, 0.0, 0.0),
+        (-10.5, 13.75, 15, 22, 0.0, 0.0),
+    ):
+        cases.append({'start': start, 'end': end, 'control1': control1, 'control2': control2,
+                      'frames': frames, 'mode': mode, 'values': run(start, end, frames, mode, control1, control2)})
     return {'schema': 'th13/oracle-probes/v1', 'cases': cases}
 
 
@@ -307,8 +476,10 @@ def main(argv=None):
             'collision.json': document,
             'anm-variables.json': anm_variables_probe(options.exe),
             'interpolation.json': interpolation_probe(options.exe),
+            'interpolation-angle.json': interpolation_angle_probe(options.exe),
             'practice-rows.json': practice_rows_probe(options.exe),
             'save-image.json': save_image_probe(options.exe),
+            'stage-gvars.json': stage_gvars_probe(options.exe),
         }
         for name, output in documents.items():
             with open(Path(options.out_dir) / name, 'w') as handle:

@@ -78,7 +78,7 @@ float EclInterpolation::step(float rate) noexcept {
 }
 
 float EclInterpolation::evaluate() noexcept {
-    if (duration == 0) return mode == 7 || mode == 17 ? start : end;
+    if (duration == 0) return end;
     if (mode == 7 || mode == 17) {
         start = static_cast<float>(start + (mode == 7 ? end : control2));
         current = start;
@@ -86,19 +86,19 @@ float EclInterpolation::evaluate() noexcept {
         return current;
     }
     if (mode == 8) {
-        const float t = static_cast<float>(timer.fractional / static_cast<float>(duration));
-        const float twice = static_cast<float>(t * 2);
-        const float a = static_cast<float>(t - 1);
-        const float b = static_cast<float>(1 - t);
-        const float h00 = static_cast<float>(static_cast<float>(a * a) * static_cast<float>(twice + 1));
-        const float h11 = static_cast<float>(static_cast<float>(a * t) * t);
-        const float h01 = static_cast<float>(static_cast<float>(3 - twice) * static_cast<float>(t * t));
-        const float h10 = static_cast<float>(b * b * t);
-        const float p = static_cast<float>(start * h00);
-        const float q = static_cast<float>(end * h01);
-        const float r = static_cast<float>(control1 * h10);
-        const float s = static_cast<float>(control2 * h11);
-        current = static_cast<float>(static_cast<float>(q + p) + static_cast<float>(r + s));
+        const long double t = static_cast<long double>(timer.fractional / static_cast<float>(duration));
+        const long double reverse = static_cast<long double>(1) - t;
+        const long double forward = t - static_cast<long double>(1);
+        const long double square = t * t;
+        const float h00 = static_cast<float>(forward * forward * (t + t + static_cast<long double>(1)));
+        const float h11 = static_cast<float>(t * (forward * t));
+        const float h01 = static_cast<float>((static_cast<long double>(3) - t - t) * square);
+        const float h10 = static_cast<float>(reverse * reverse * t);
+        const long double p = static_cast<long double>(start) * h00;
+        const long double q = static_cast<long double>(end) * h01;
+        const long double r = static_cast<long double>(control1) * h10;
+        const long double s = static_cast<long double>(control2) * h11;
+        current = static_cast<float>(q + p + r + s);
         return current;
     }
     const float weight = interpolation_weight(mode, timer.fractional, static_cast<float>(duration));

@@ -1,0 +1,500 @@
+{
+ "cases": [
+  {
+   "control1": 0.0,
+   "control2": 0.0,
+   "end": 8.25,
+   "frames": 6,
+   "mode": 7,
+   "start": 3.5,
+   "values": [
+    {
+     "duration": 6,
+     "frame": 0,
+     "value": -0.816370964050293
+    },
+    {
+     "duration": 6,
+     "frame": 1,
+     "value": 1.1504435539245605
+    },
+    {
+     "duration": 6,
+     "frame": 2,
+     "value": 3.1172585487365723
+    },
+    {
+     "duration": 6,
+     "frame": 3,
+     "value": -1.199112892150879
+    },
+    {
+     "duration": 6,
+     "frame": 4,
+     "value": 0.7677016258239746
+    },
+    {
+     "duration": 6,
+     "frame": 5,
+     "value": 2.7345166206359863
+    },
+    {
+     "duration": 0,
+     "frame": 6,
+     "value": 8.25
+    }
+   ]
+  },
+  {
+   "control1": 0.0,
+   "control2": 2.5,
+   "end": 0.75,
+   "frames": 6,
+   "mode": 17,
+   "start": 4.25,
+   "values": [
+    {
+     "duration": 6,
+     "frame": 0,
+     "value": 0.4668145179748535
+    },
+    {
+     "duration": 6,
+     "frame": 1,
+     "value": -2.566370964050293
+    },
+    {
+     "duration": 6,
+     "frame": 2,
+     "value": 1.433629035949707
+    },
+    {
+     "duration": 6,
+     "frame": 3,
+     "value": -0.09955644607543945
+    },
+    {
+     "duration": 6,
+     "frame": 4,
+     "value": -0.8827419281005859
+    },
+    {
+     "duration": 6,
+     "frame": 5,
+     "value": -0.9159274101257324
+    },
+    {
+     "duration": 0,
+     "frame": 6,
+     "value": 0.75
+    }
+   ]
+  },
+  {
+   "control1": 8.75,
+   "control2": -9.25,
+   "end": -6.5,
+   "frames": 12,
+   "mode": 8,
+   "start": 5.25,
+   "values": [
+    {
+     "duration": 12,
+     "frame": 0,
+     "value": -0.5927920341491699
+    },
+    {
+     "duration": 12,
+     "frame": 1,
+     "value": -0.676703929901123
+    },
+    {
+     "duration": 12,
+     "frame": 2,
+     "value": -1.2050604820251465
+    },
+    {
+     "duration": 12,
+     "frame": 3,
+     "value": -2.0980005264282227
+    },
+    {
+     "duration": 12,
+     "frame": 4,
+     "value": 3.00752329826355
+    },
+    {
+     "duration": 12,
+     "frame": 5,
+     "value": 1.625
+    },
+    {
+     "duration": 12,
+     "frame": 6,
+     "value": 0.1174771785736084
+    },
+    {
+     "duration": 12,
+     "frame": 7,
+     "value": -1.4351856708526611
+    },
+    {
+     "duration": 12,
+     "frame": 8,
+     "value": -2.953125
+    },
+    {
+     "duration": 12,
+     "frame": 9,
+     "value": 1.9267042875289917
+    },
+    {
+     "duration": 12,
+     "frame": 10,
+     "value": 0.717791736125946
+    },
+    {
+     "duration": 12,
+     "frame": 11,
+     "value": -0.21681451797485352
+    },
+    {
+     "duration": 0,
+     "frame": 12,
+     "value": -6.5
+    }
+   ]
+  },
+  {
+   "control1": 0.0,
+   "control2": 0.0,
+   "end": -8.25,
+   "frames": 12,
+   "mode": 0,
+   "start": 5.75,
+   "values": [
+    {
+     "duration": 12,
+     "frame": 0,
+     "value": -0.6526546478271484
+    },
+    {
+     "duration": 12,
+     "frame": 1,
+     "value": -0.7721238136291504
+    },
+    {
+     "duration": 12,
+     "frame": 2,
+     "value": -0.8915925025939941
+    },
+    {
+     "duration": 12,
+     "frame": 3,
+     "value": -1.011061668395996
+    },
+    {
+     "duration": 12,
+     "frame": 4,
+     "value": -1.130530834197998
+    },
+    {
+     "duration": 12,
+     "frame": 5,
+     "value": -1.25
+    },
+    {
+     "duration": 12,
+     "frame": 6,
+     "value": -1.369469165802002
+    },
+    {
+     "duration": 12,
+     "frame": 7,
+     "value": -1.488938331604004
+    },
+    {
+     "duration": 12,
+     "frame": 8,
+     "value": -1.6084074974060059
+    },
+    {
+     "duration": 12,
+     "frame": 9,
+     "value": -1.7278761863708496
+    },
+    {
+     "duration": 12,
+     "frame": 10,
+     "value": -1.8473453521728516
+    },
+    {
+     "duration": 12,
+     "frame": 11,
+     "value": -1.9668145179748535
+    },
+    {
+     "duration": 0,
+     "frame": 12,
+     "value": -8.25
+    }
+   ]
+  },
+  {
+   "control1": 0.0,
+   "control2": 0.0,
+   "end": 9.5,
+   "frames": 12,
+   "mode": 1,
+   "start": -7.25,
+   "values": [
+    {
+     "duration": 12,
+     "frame": 0,
+     "value": -0.9813947677612305
+    },
+    {
+     "duration": 12,
+     "frame": 1,
+     "value": -1.0251355171203613
+    },
+    {
+     "duration": 12,
+     "frame": 2,
+     "value": -1.098036766052246
+    },
+    {
+     "duration": 12,
+     "frame": 3,
+     "value": -1.2000985145568848
+    },
+    {
+     "duration": 12,
+     "frame": 4,
+     "value": -1.3313207626342773
+    },
+    {
+     "duration": 12,
+     "frame": 5,
+     "value": -1.4917035102844238
+    },
+    {
+     "duration": 12,
+     "frame": 6,
+     "value": -1.6812472343444824
+    },
+    {
+     "duration": 12,
+     "frame": 7,
+     "value": -1.8999505043029785
+    },
+    {
+     "duration": 12,
+     "frame": 8,
+     "value": -2.147815227508545
+    },
+    {
+     "duration": 12,
+     "frame": 9,
+     "value": -2.4248404502868652
+    },
+    {
+     "duration": 12,
+     "frame": 10,
+     "value": -2.731025218963623
+    },
+    {
+     "duration": 12,
+     "frame": 11,
+     "value": -3.066371440887451
+    },
+    {
+     "duration": 0,
+     "frame": 12,
+     "value": 9.5
+    }
+   ]
+  },
+  {
+   "control1": 0.0,
+   "control2": 0.0,
+   "end": -12.25,
+   "frames": 15,
+   "mode": 18,
+   "start": 9.75,
+   "values": [
+    {
+     "duration": 15,
+     "frame": 0,
+     "value": -2.4889097213745117
+    },
+    {
+     "duration": 15,
+     "frame": 1,
+     "value": -2.165037155151367
+    },
+    {
+     "duration": 15,
+     "frame": 2,
+     "value": -1.8482999801635742
+    },
+    {
+     "duration": 15,
+     "frame": 3,
+     "value": -1.5421695709228516
+    },
+    {
+     "duration": 15,
+     "frame": 4,
+     "value": -1.2499990463256836
+    },
+    {
+     "duration": 15,
+     "frame": 5,
+     "value": -0.9749908447265625
+    },
+    {
+     "duration": 15,
+     "frame": 6,
+     "value": -0.7201566696166992
+    },
+    {
+     "duration": 15,
+     "frame": 7,
+     "value": -0.48828887939453125
+    },
+    {
+     "duration": 15,
+     "frame": 8,
+     "value": -0.28192806243896484
+    },
+    {
+     "duration": 15,
+     "frame": 9,
+     "value": -0.10333538055419922
+    },
+    {
+     "duration": 15,
+     "frame": 10,
+     "value": 0.0455322265625
+    },
+    {
+     "duration": 15,
+     "frame": 11,
+     "value": 0.16304492950439453
+    },
+    {
+     "duration": 15,
+     "frame": 12,
+     "value": 0.24791431427001953
+    },
+    {
+     "duration": 15,
+     "frame": 13,
+     "value": 0.2992105484008789
+    },
+    {
+     "duration": 15,
+     "frame": 14,
+     "value": 0.3163719177246094
+    },
+    {
+     "duration": 0,
+     "frame": 15,
+     "value": -12.25
+    }
+   ]
+  },
+  {
+   "control1": 0.0,
+   "control2": 0.0,
+   "end": 13.75,
+   "frames": 15,
+   "mode": 22,
+   "start": -10.5,
+   "values": [
+    {
+     "duration": 15,
+     "frame": 0,
+     "value": 2.117373466491699
+    },
+    {
+     "duration": 15,
+     "frame": 1,
+     "value": 2.1526832580566406
+    },
+    {
+     "duration": 15,
+     "frame": 2,
+     "value": 2.172300338745117
+    },
+    {
+     "duration": 15,
+     "frame": 3,
+     "value": 2.1762237548828125
+    },
+    {
+     "duration": 15,
+     "frame": 4,
+     "value": 2.1644535064697266
+    },
+    {
+     "duration": 15,
+     "frame": 5,
+     "value": 2.136990547180176
+    },
+    {
+     "duration": 15,
+     "frame": 6,
+     "value": 2.0938339233398438
+    },
+    {
+     "duration": 15,
+     "frame": 7,
+     "value": 2.034984588623047
+    },
+    {
+     "duration": 15,
+     "frame": 8,
+     "value": 1.9604415893554688
+    },
+    {
+     "duration": 15,
+     "frame": 9,
+     "value": 1.8702058792114258
+    },
+    {
+     "duration": 15,
+     "frame": 10,
+     "value": 1.7642765045166016
+    },
+    {
+     "duration": 15,
+     "frame": 11,
+     "value": 1.6426544189453125
+    },
+    {
+     "duration": 15,
+     "frame": 12,
+     "value": 1.5053386688232422
+    },
+    {
+     "duration": 15,
+     "frame": 13,
+     "value": 1.352330207824707
+    },
+    {
+     "duration": 15,
+     "frame": 14,
+     "value": 1.1836280822753906
+    },
+    {
+     "duration": 0,
+     "frame": 15,
+     "value": 13.75
+    }
+   ]
+  }
+ ],
+ "schema": "th13/oracle-probes/v1"
+}
