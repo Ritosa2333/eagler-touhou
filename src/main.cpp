@@ -1098,8 +1098,12 @@ Frame opening_frame(const App &app) {
         for(auto &pixel:title.pixels)pixel=opening_tone(pixel,white,true);
         return title;
     }
-    if(f>=Opening::hold_end)return app.opening_strips[std::min(2u,(f-Opening::hold_end)/5)];
     Frame output=app.frames[1];
+    if(f>=Opening::hold_end){
+        // OPA/B/C.PI replace the top 171 lines of the full opening page.
+        const auto &strip=app.opening_strips[std::min(2u,(f-Opening::hold_end)/5)];
+        std::ranges::copy(strip.pixels,output.pixels.begin());
+    }
     if(f<Opening::door_end){
         const auto white=app.opening.white();const int width=app.opening.exposed_columns();
         for(int y=0;y<400;++y)for(int x=0;x<640;++x){
@@ -1108,6 +1112,20 @@ Frame opening_frame(const App &app) {
         }
     }
     return output;
+}
+void test_opening_composition(){
+    auto app=std::make_unique<App>();
+    app->frames[1]={640,400,std::vector<std::uint32_t>(640*400,0x123456)};
+    for(unsigned i=0;i<app->opening_strips.size();++i)
+        app->opening_strips[i]={640,171,std::vector<std::uint32_t>(640*171,0x102030+i)};
+    for(unsigned f=Opening::hold_end-1;f<Opening::flash_end;++f){
+        app->opening.frame=f;
+        const auto page=opening_frame(*app);
+        const auto strip=f<Opening::hold_end?0x123456:0x102030+std::min(2u,(f-Opening::hold_end)/5);
+        if(page.w!=640||page.h!=400||page.pixels.size()!=640*400||
+           page.pixels[0]!=strip||page.pixels[640*171-1]!=strip||page.pixels[640*171]!=0x123456||page.pixels.back()!=0x123456)
+            throw std::runtime_error("Opening strip must stay on the full-size opening page");
+    }
 }
 Frame zunsoft_frame(const ZunSoftAssets &assets,const soew::ZunSoftOpening &animation){
     Frame output{640,400,std::vector<std::uint32_t>(640*400)};
@@ -4161,6 +4179,7 @@ int wmain(int argc, wchar_t **argv) {
             jp_text(sample,L"演出",10,10,0xffffff);++jp_checks;
             if(std::count_if(sample.pixels.begin(),sample.pixels.end(),[](auto p){return p!=0;})<10)throw std::runtime_error("Japanese glyph rendering failed");
             test_live_assist_host();
+            test_opening_composition();
             std::cout << "viewport_checks=" << checks + 2 << " menu_checks=" << test_menu() << " japanese_checks=" << jp_checks << " chinese_ascii_checks=" << test_chinese_ascii() << " opening_checks=" << test_opening() << " zunsoft_checks=" << soew::test_zunsoft_opening() << " failures=0\n"; return 0;
         }
         if(async_practice_test&&(smoke||test||dump_only||timed_test||score_timed_test))throw std::runtime_error("Async practice test cannot be combined with other test modes");
