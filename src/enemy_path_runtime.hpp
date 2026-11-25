@@ -15,6 +15,7 @@ struct EnemyPathRuntime {
     struct Block {unsigned slot=0,type=0;EnemyPathResult result;};
     std::optional<Block> blocked;
     using BoundaryExit=std::function<void(const EnemySlots::Slot&,int,int)>;
+    using Draw=std::function<void(unsigned,const EnemySlots::Slot&,bool)>;
     struct CombatHooks {
         // true follows original positive ordinary-hit branch: skip auto-fire.
         std::function<bool(unsigned,EnemySlots::Slot&,const StageScript::EnemyTemplate&)> damage;
@@ -39,7 +40,7 @@ struct EnemyPathRuntime {
         page^=1;++ticks;
     }
     void tick(const StageScript &script,int player_x=208,int player_y=336,EnemyEffectSink *effects=nullptr,CombatHooks *combat=nullptr,
-              bool defer_scroll=false,const BoundaryExit &on_exit={}){
+              bool defer_scroll=false,const BoundaryExit &on_exit={},const Draw &draw={}){
         if(blocked)return;
         if(deferred_scroll_delta)throw std::logic_error("Uncommitted enemy frame");
         prepare_frame(script,combat&&combat->suppress_formations);if(blocked)return;frame_prepared=false;
@@ -85,7 +86,10 @@ struct EnemyPathRuntime {
                 const unsigned hp=unsigned(raw[22])|(unsigned(raw[23])<<8);
                 if(hp!=65535&&!s.raw[0x22]){
                     if(s.raw[0x10]){combat->death(i,s,script.enemies[type]);continue;}
-                    if(combat->damage&&combat->damage(i,s,script.enemies[type]))continue;
+                    if(combat->damage&&combat->damage(i,s,script.enemies[type])){
+                        if(draw&&!s.raw[0x10])draw(i,s,true);
+                        continue;
+                    }
                 }
             }
             if(s.raw[0xe]==1&&fire_interval>1&&unsigned(s.raw[0xf])%unsigned(fire_interval)==0){
@@ -93,6 +97,7 @@ struct EnemyPathRuntime {
                 EnemyBulletRequest request;request.left=enemy_s16(s.word(page*4)+emit_x);request.top=enemy_s16(s.word(page*4+2)+emit_y);request.group=s.raw[0x24];request.speed=s.raw[0x25];
                 if(!effects||!effects->bullet||!effects->bullet(request)){EnemyPathResult missing;missing.reason="automatic fire consumer not connected";missing.pc=s.word(8);blocked=Block{i,type,std::move(missing)};return;}
             }
+            if(draw&&s.raw[0xe]==1)draw(i,s,false);
         }
         if(!defer_scroll){page^=1;++ticks;}
     }

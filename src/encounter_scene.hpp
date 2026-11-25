@@ -54,10 +54,8 @@ struct EncounterScene:StageScene {
     void update_sound(){if(auto id=sound.update();id&&sound_output)sound_output(*id);}
     unsigned rendered_page=0;
     bool reduced_effects=false;
-    // ReC98 sub_19E2F draws the sun only on back page 0. Use the
-    // simulated page, not the host refresh counter or the scroll filter.
-    static constexpr bool stage4_overlay_enabled(int id,unsigned page,bool map_end,bool reduced){
-        return id==3&&page==0&&!map_end&&!reduced;
+    static constexpr bool stage4_overlay_enabled(int id,bool map_end,bool reduced){
+        return id==3&&!map_end&&!reduced;
     }
     bool combat_enabled=false,survival_enabled=false;
     bool preparation_only=false,practice_mode=false,practice_completed=false,practice_show_dialogue=false;
@@ -130,8 +128,7 @@ struct EncounterScene:StageScene {
     void bind_stones_battle(){
         if(stage!=2||!runtime.scroll.done||stones_enabled)throw std::runtime_error("Invalid Stones test binding");
         stones.init();stones_stripe.clear();lasers=LaserCore{};
-        for(auto &enemy:runtime.enemies.slots)if(enemy.raw[0xe])enemy.raw[0xe]=2;
-        departures_.clear(MotionTrack::Enemy);
+        clear_enemies();
         stones_enabled=true;
     }
     bool meira_enabled=false,meira_appearance=false;
@@ -170,8 +167,11 @@ private:
     SpriteDepartures departures_;
     StageAmbient ambient_;
     MarisaStarfield marisa_stars_;
+    struct EnemyDraw {unsigned pattern,generation;RenderPoint position;StageSprites::Paint paint;};
+    std::array<std::optional<EnemyDraw>,25> enemy_draws_{};
     void clear_enemies(){
         for(auto &e:runtime.enemies.slots)if(e.raw[0xe]==1)e.raw[0xe]=2;
+        enemy_draws_={};
         departures_.clear(MotionTrack::Enemy);
     }
     void clear_bullets(unsigned page){bullet_core.clear(page);departures_.clear(MotionTrack::Bullet);}
@@ -187,6 +187,7 @@ private:
         return &collision_frame_;
     }
     bool sigma_view_shift()const{return sigma_enabled&&sigma.shake&&!reduced_effects;}
+    unsigned stage3_opening_shift()const{return !stones_enabled&&battle_presentation()?ambient_.opening_shift(reduced_effects):0;}
     struct DeathPresentation {unsigned slowdown=1,tone=100,shift=0;};
     template<class Effects>
     DeathPresentation death_presentation(const Effects &effects,unsigned count)const{
@@ -220,6 +221,7 @@ public:
     }
     unsigned presentation_slowdown()const{
         if(sigma_enabled&&!sigma.done)return sigma.slowdown;
+        if(!stones_enabled&&battle_presentation()&&ambient_.opening_shake())return 3;
         return boss_death_presentation().slowdown;
     }
     bool marisa_terminal_frame()const{
@@ -238,7 +240,7 @@ public:
         return hitbox_mode_==HitboxMode::Off?nullptr:sampled_collision_frame();
     }
     void render_hitboxes(std::span<std::uint32_t> pixels)const{
-        if(const auto *display=collision_snapshot())draw_collision_frame(pixels,*display,reduced_effects,-int(boss_death_presentation().shift));
+        if(const auto *display=collision_snapshot())draw_collision_frame(pixels,*display,reduced_effects,-int(boss_death_presentation().shift+stage3_opening_shift()));
     }
     static EncounterScene load(const std::filesystem::path &root,int id,int shot,int selected_rank,int spare,int stock,Language language=Language::Japanese){
         EncounterScene out;out.language=language;static_cast<StageScene&>(out)=StageScene::load(root,id,shot,selected_rank,spare,stock);
@@ -505,7 +507,7 @@ public:
                             score_core.grant_dialogue_bonus(stock);
                             life.lives=std::uint8_t(stock);lives=int(stock);
                         }
-                    }else{sigma.init();sigma_enabled=true;for(auto &e:runtime.enemies.slots)e.raw[0xe]=0;departures_.clear(MotionTrack::Enemy);death_patterns.fill(std::nullopt);}
+                    }else{sigma.init();sigma_enabled=true;clear_enemies();for(auto &e:runtime.enemies.slots)e.raw[0xe]=0;death_patterns.fill(std::nullopt);}
                 }else if(dialogue.postboss)finish_postboss(dialogue_group_key);
                 else if(stage==3)bind_marisa_battle();
                 else if(stage==2)bind_stones_battle();
@@ -567,7 +569,15 @@ public:
         if(midboss3_enabled)midboss3.trigger(runtime.scroll.progress);
         if(combat_enabled)shots.begin_frame(page);
         if(effects_enabled){items.begin_frame(page);numbers.begin_frame(page);sparks.begin_frame(page);}
+        if(stage==2){
+            ambient_.tick(false,reduced_effects);
+            if(ambient_.opening_explosion())request_sound(14);
+        }
         for(auto &pattern:death_patterns)pattern.reset();
+        enemy_draws_={};
+        const auto paint_enemy=[&](unsigned slot,const EnemySlots::Slot &enemy,unsigned pattern,StageSprites::Paint paint){
+            enemy_draws_[slot]=EnemyDraw{pattern,runtime.enemies.motion_generation[slot],enemy_motion(enemy),paint};
+        };
         bullet_core.playperf=life.playperf;
         EnemyEffectSink sink;
         sink.bullet=[&](auto request){return bullet_core.add(request,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active);};
@@ -612,13 +622,15 @@ public:
                 }
                 auto dealt=damage_query(left,top,32,32,std::uint32_t(ticks));if(enemy_invincible)return false;
                 if(auto killed=damage.apply(enemy,type,dealt,page)){request_sound(3);kills_recorded.push_back(*killed);if(effects_enabled){if(killed->drop>1)items.add(left+12,top,killed->drop-2,life.lives);else items.semirandom(left+12,top,runtime.random,life.lives);score_core.add(killed->score);}if(rank==3){EnemyBulletRequest revenge;const auto &r=type.raw;revenge.left=enemy_s16(unsigned(left)+(unsigned(r[4])|(unsigned(r[5])<<8)));revenge.top=enemy_s16(unsigned(top)+(unsigned(r[6])|(unsigned(r[7])<<8)));revenge.group=0x19;revenge.speed=60;bullet_core.add(revenge,page,player.x,player.y,runtime.random,bombing_for_spawn);}}else if(dealt&&!enemy.raw[0x22])request_sound(4);return dealt>0&&hp!=65534;};
-            combat.death=[&](unsigned slot,auto &enemy,const auto &type){const auto pattern=EnemyDamage::death_pattern(enemy,type);if(effects_enabled&&enemy.word(0xa)==0)sparks.add(enemy_s16(enemy.word(page*4))+16,enemy_s16(enemy.word(page*4+2))+16,20,8,false,page);EnemyDamage::death_tick(enemy);if(enemy.raw[0xe]==1)death_patterns[slot]=pattern;};
+            combat.death=[&](unsigned slot,auto &enemy,const auto &type){const auto pattern=EnemyDamage::death_pattern(enemy,type);if(effects_enabled&&enemy.word(0xa)==0)sparks.add(enemy_s16(enemy.word(page*4))+16,enemy_s16(enemy.word(page*4+2))+16,20,8,false,page);EnemyDamage::death_tick(enemy);if(enemy.raw[0xe]==1){death_patterns[slot]=pattern;paint_enemy(slot,enemy,pattern,StageSprites::Paint::Artwork);}};
         }
         combat.suppress_formations=suppress_midboss_formations;
         const auto scroll_attempt_before=runtime.scroll.attempted_pixels;
         if(!rika_enabled&&!meira_enabled&&!stones_enabled&&!marisa_enabled&&!mima_enabled&&!sigma_enabled){
             runtime.tick(script,player.x,player.y,&sink,combat_enabled?&combat:nullptr,extra_road_frame,[&](const auto &s,int x,int y){
                 if(const auto pat=enemy_pattern(s))depart_pattern(MotionTrack::Enemy,*pat,RenderPoint::pixels(x,y),enemy_motion(s));
+            },[&](unsigned slot,const auto &s,bool hit){
+                if(const auto pat=enemy_pattern(s,hit))paint_enemy(slot,s,*pat,hit?StageSprites::Paint::AllPlanesHit:StageSprites::Paint::Artwork);
             });
         }
         else {runtime.page^=1;++runtime.ticks;}
@@ -746,11 +758,16 @@ public:
             stones.update(unsigned(rank),player.x,player.y,h);
             shots.target_x=stones.target_x;shots.target_y=stones.target_y;
         }
+        // Rika and Meira invoke the same original two-part explosion (sub_FFF8).
+        const auto explosion_sound=[&](int,int,int frame){
+            if(frame==1)request_sound(18);
+            else if(frame==32)request_sound(14);
+        };
         if(meira_enabled){
             MeiraCore::Hooks h;h.collision_display=display;
             h.bullet=[&](const auto&r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Meira bullet");};
             h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
-            h.explosion=[&](int,int,int frame){if(frame==1)request_sound(18);};
+            h.explosion=explosion_sound;
             h.hit=[&](){if(survival_enabled)life.register_hit();};h.score=[&](unsigned n){if(effects_enabled)score_core.add(n);};h.sound=[&](unsigned n){request_sound(n);};h.invincibility=[&](unsigned n){life.invincibility=std::uint8_t(n);};
             h.spark=[&](int x,int y,int speed,int count,bool sprite){if(effects_enabled)sparks.add(x,y,speed,count,sprite,page);};
             h.random8=[&](){return unsigned(runtime.random.next8());};h.random16=[&](){return unsigned(runtime.random.next16());};h.special_turns=[&](unsigned n){bullet_core.special.u3=int(n);};
@@ -758,6 +775,7 @@ public:
         }
         if(rika_enabled){
             RikaCore::Hooks h;
+            h.explosion=explosion_sound;
             h.bullet=[&](const auto &r){if(!bullet_core.add(r,page,player.x,player.y,runtime.random,bomb_enabled&&bomb.active))throw std::runtime_error("Unsupported Rika bullet");};
             h.damage=[&](int x,int y,int w,int height){return damage_query(x,y,w,height,logic_frame);};
             h.laser=[&](int x,int y,int frames,unsigned pat,unsigned delay){lasers.initial_delay=delay;lasers.add(x,y,frames,pat,[&](unsigned id){request_sound(id);});};
@@ -819,7 +837,7 @@ public:
             extra_tiles.flip(page);
             scroll=runtime.scroll;
         }
-        ambient_.tick((midboss_enabled&&midboss.phase_frame==1)||(midboss2_enabled&&midboss2.phase_frame==1),reduced_effects);
+        if(stage!=2)ambient_.tick((midboss_enabled&&midboss.phase_frame==1)||(midboss2_enabled&&midboss2.phase_frame==1),reduced_effects);
         ++resident_frame;++ticks;if(rika_enabled)++rika_stage_frame;
         if(survival_enabled){if(!assist(PracticeTool::Rank))life.advance_playperf(rika_enabled?rika_stage_frame:std::uint32_t(ticks),unsigned(rank));bullet_core.playperf=life.playperf;}
         if(preboss_enabled&&runtime.scroll.done&&!rika_enabled&&!meira_enabled&&!preboss_started)start_preboss();
@@ -1109,11 +1127,8 @@ public:
             xy(T::Player,0,p.x,p.y,life.total_misses);
         }
         if(options_visible())xy(T::Option,0,shots.option_left,shots.option_top);
-        for(unsigned i=0;i<runtime.enemies.slots.size();++i){
-            const auto &s=runtime.enemies.slots[i];
-            if(s.raw[0xe]==1)
-                frame.record(T::Enemy,i,enemy_motion(s),runtime.enemies.motion_generation[i]);
-        }
+        for(unsigned i=0;i<enemy_draws_.size();++i)if(const auto &d=enemy_draws_[i])
+            frame.record(T::Enemy,i,d->position,d->generation);
         if(combat_enabled)pool(T::Shot,shots.slots,fixed,[](const auto &s){return std::pair{s.motion_generation,-1};});
         pool(T::Bullet,bullet_core.bullets,fixed,[](const auto &b){return std::pair{b.motion_generation,-1};});
         if(effects_enabled){
@@ -1172,11 +1187,11 @@ private:
     RenderPoint enemy_motion(const EnemySlots::Slot &s)const{
         return RenderPoint::pixels(enemy_s16(s.word(rendered_page*4)),enemy_s16(s.word(rendered_page*4+2)));
     }
-    std::optional<unsigned> enemy_pattern(const EnemySlots::Slot &s)const{
+    std::optional<unsigned> enemy_pattern(const EnemySlots::Slot &s,bool hit=false)const{
         const auto &raw=script.enemies.at(s.word(0xc)).raw;
         const unsigned base=unsigned(raw[8])|(unsigned(raw[9])<<8);
-        if(!base)return {};
-        return s.word(0x14)==2?s.word(0x12):base+s.word(0x12);
+        if(!base&&!hit)return {};
+        return !hit&&s.word(0x14)==2?s.word(0x12):base+s.word(0x12);
     }
     RenderPoint item_motion(const ItemCore::Item &s)const{return {s.left[rendered_page]*256,enemy_s16(s.top[rendered_page])*16};}
     bool options_visible()const{return pickup_enabled&&pickups.power>=8&&(!survival_enabled||(!life.hit&&!life.miss_active&&!life.game_over));}
@@ -1245,9 +1260,11 @@ private:
         const int terrain_bottom=filter_terrain?384+std::min(1+scroll_sample_rows(lag),int(scroll.display_pixels)):384;
         const unsigned anim_phase=motion.previous?motion.phase:motion_subpixels;
         const auto terrain_palette=ambient_.palette(background.palette,reduced_effects);
-        const bool motif=stage4_overlay_enabled(stage,rendered_page,runtime.scroll.done,reduced_effects);
+        const bool motif=stage4_overlay_enabled(stage,runtime.scroll.done,reduced_effects);
+        // sub_19E2F paints at y=152 before the GDC scrolls the current frame.
+        const int sun_top=152+(scroll.display_pixels?scroll.speed:0);
         if(extra_road_enabled)extra_tiles.render(pixels,background,terrain_bottom,terrain_top);
-        else render_terrain(pixels,terrain_palette,motif,terrain_bottom,terrain_top);
+        else render_terrain(pixels,terrain_palette,motif,terrain_bottom,terrain_top,sun_top);
         // Boss backgrounds replace the terrain before any battle sprites.
         if(marisa_enabled){
             clear_marisa_playfield(pixels,384);
@@ -1266,7 +1283,8 @@ private:
                     const int size=r/(64*256)+1;
                     for(unsigned angle=0;angle<256;angle+=reduced_effects?16:2){
                         const auto d=enemy_vector(angle,r);
-                        auto at=RenderPoint::pixels(200,224);
+                        // sigma_update passes 00E000C8h as Pascal arguments: x=224, y=200.
+                        auto at=RenderPoint::pixels(224,200);
                         at.x+=d[0];at.y+=d[1];
                         if(!motion.previous)at=at.snapped();
                         blit_motion_sprite(pixels,at,size,size,[&](int,int){return color;});
@@ -1312,18 +1330,11 @@ private:
         const auto put=[&](unsigned pat,RenderPoint p,Paint paint=Paint::Artwork,unsigned scale=1,bool zero_clear=false){
             bank.put(pixels,background,pat,p,paint,scale,zero_clear);
         };
-        const auto enemy_at=[&](unsigned i){return motion.at(T::Enemy,i,enemy_motion(runtime.enemies.slots[i]),runtime.enemies.motion_generation[i]);};
         const auto draw_departure=[&](unsigned pattern,RenderPoint p){put(pattern,p);};
         departures_.draw(T::Enemy,motion,draw_departure);
-        for(unsigned i=0;i<runtime.enemies.slots.size();++i){
-            const auto &s=runtime.enemies.slots[i];if(s.raw[0xe]!=1||death_patterns[i])continue;
-            // A lethal hit precedes the first death cel by one tick. Keep the
-            // last live cel until that handoff instead of drawing a blank frame.
-            if(const auto pat=enemy_pattern(s))put(*pat,enemy_at(i));
-        }
-        if(combat_enabled){
-            for(unsigned i=0;i<death_patterns.size();++i)if(death_patterns[i])put(*death_patterns[i],enemy_at(i));
-        }
+        // sub_1766E paints in slot order, and does not paint every active slot.
+        for(unsigned i=0;i<enemy_draws_.size();++i)if(const auto &d=enemy_draws_[i])
+            put(d->pattern,motion.at(T::Enemy,i,d->position,d->generation),d->paint);
         const auto flash=[](bool hit){return hit?Paint::AllPlanesHit:Paint::Artwork;};
         const auto mid=[&](T track,const auto &s,unsigned flash_pattern,unsigned scale,int death_x){
             const auto p=motion.at(track,0,s.left[rendered_page],s.top[rendered_page],s.dying);
@@ -1347,7 +1358,11 @@ private:
         }
         const bool marisa_terminal=show_boss_terminal&&marisa_terminal_frame();
         const bool stones_effects=show_boss_terminal||!stones_terminal_frame();
-        const auto death_fx=(!marisa.cleared||marisa_terminal)&&stones_effects?boss_death_presentation():DeathPresentation{};
+        auto death_fx=(!marisa.cleared||marisa_terminal)&&stones_effects?boss_death_presentation():DeathPresentation{};
+        if(scroll_terrain&&battle_presentation()&&ambient_.opening_shake()&&!stones_enabled){
+            death_fx.shift=stage3_opening_shift();
+            death_fx.tone=ambient_.opening_tone(reduced_effects);
+        }
         if(marisa_enabled)draw_marisa(pixels,marisa_terminal,death_fx.shift,motion);
         if(mima_enabled)draw_mima(pixels,false,motion);
         if(stones_enabled)draw_stones(pixels,stones_effects,death_fx.shift,motion);
@@ -1431,7 +1446,11 @@ private:
             std::copy(first+death_fx.shift,first+384+death_fx.shift,first);
             std::fill_n(first+384,death_fx.shift,0u);
         }
-        if(death_fx.tone!=100)apply_mima_tone(pixels,death_fx.tone);
+        if(death_fx.tone!=100){
+            if(stage==2&&!stones_enabled){
+                for(int y=16;y<384;++y)apply_mima_tone(pixels.subspan(y*640+32,384),death_fx.tone);
+            }else apply_mima_tone(pixels,death_fx.tone);
+        }
         if(focus)draw_player_focus_point(pixels,*focus,-int(death_fx.shift));
         // Approximate Sigma's one-word GDC offset without moving host HUD or collisions.
         if(sigma_view_shift())for(int y=16;y<384;++y){

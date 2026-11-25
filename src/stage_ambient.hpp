@@ -28,8 +28,6 @@ class StageAmbient {
         unsigned phase=0,peak=0,frame=0;
         if(stage<=1&&lightning_age>=next_flash&&lightning_age<next_flash+8){
             phase=lightning_age-next_flash;peak=32;frame=8;
-        }else if(stage==2&&age>=168&&age<=180){
-            phase=age-168;peak=48;frame=14;
         }
         return frame?peak*std::min(phase+1,frame-phase)/(frame/2):0;
     }
@@ -38,6 +36,17 @@ class StageAmbient {
     }
 public:
     explicit StageAmbient(int id=0):stage(id),random(1234u+unsigned(id)){}
+    static constexpr unsigned stage3_explosion=168;
+    static constexpr unsigned stage3_ring=200;
+    bool opening_explosion()const{return stage==2&&age==stage3_explosion;}
+    bool opening_shake()const{return stage==2&&age>stage3_explosion&&age<stage3_ring;}
+    unsigned opening_tone(bool reduced)const{
+        if(reduced||!opening_shake()||age>180)return 100;
+        // ReC98 alternates 100/170 through age 180. Preserve the bright
+        // full-scene flash without alternating bright and dark host frames.
+        return 100+70*(180-age)/11;
+    }
+    unsigned opening_shift(bool reduced)const{return !reduced&&opening_shake()&&(age&1)?16:0;}
     void seek_practice(unsigned progress,unsigned frames_per_crossing,bool reduced){
         if(stage>2)return;
         const unsigned trigger=stage==0?116:80;
@@ -69,8 +78,8 @@ public:
             colors[8]={176,shift(144+t/16),shift(144+t/8)};
             colors[13]={shift(160-t/16),shift(160-t/16),shift(255-t/4)};
             if(age>=512)colors[14]={224,192,176};
-        }else if(stage==2&&age>=200){
-            const unsigned t=(age-200)%800,fall=100-t%200/2;
+        }else if(stage==2&&age>=stage3_ring){
+            const unsigned t=(age-stage3_ring)%800,fall=100-t%200/2;
             const auto channel=std::uint8_t(fall);
             switch(t/200){
             case 0:colors[0]={channel,0,0};break;
@@ -95,12 +104,12 @@ public:
                 blit_motion_sprite(pixels,at,2,2,[&](int,int){return color;});
             }
         }else if(stage==2&&age>=169){
-            const unsigned t=(std::max(age,200u)-200)%800;
+            const unsigned t=(std::max(age,stage3_ring)-stage3_ring)%800;
             const unsigned angle_step=reduced?8:4;
             const auto color=rgb(colors,7);
             const auto point=[](unsigned i,unsigned t){
                 const unsigned a=t%200;
-                const auto d=enemy_vector(i+((t/200)&1?200-a:a),int(a));
+                const auto d=enemy_vector(i+1+((t/200)&1?-int(a):int(a)),int(a));
                 return RenderPoint::pixels(224+d[0],200+d[1]);
             };
             const unsigned prev=t-(t%200!=0); // A new ring starts at the center.

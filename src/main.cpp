@@ -3231,7 +3231,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                         InvalidateRect(hwnd,nullptr,FALSE);UpdateWindow(hwnd);
                         app->stage_clock.defer_batch(now);break;
                     }
-                    if((app->stage_scene->marisa_enabled||app->stage_scene->stones_enabled)&&app->stage_scene->presentation_slowdown()!=pace){
+                    if(app->stage_scene->presentation_slowdown()!=pace){
                         app->stage_clock.defer_batch(now);break;
                     }
                 }

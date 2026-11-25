@@ -666,7 +666,8 @@ void animated_backgrounds(const fs::path &root){
         for(unsigned i=0;i<248;++i)s.tick(0);
         check_both(s);
         check(sharp[at(64,64)]==0x4c0000);
-        check(sharp[at(272,200)]==0xffffff);
+        const auto ring=enemy_vector(49,48);
+        check(sharp[at(224+ring[0],200+ring[1])]==0xffffff);
         for(unsigned i=248;i<400;++i)s.tick(0);
         check_both(s);check(sharp[at(64,64)]==0x006400);
     }
@@ -677,16 +678,45 @@ void animated_backgrounds(const fs::path &root){
         // Use a dark map tile independently of the intensity-plane motif.
         s.background.sections.fill(1);
         s.render(sharp);s.render(smooth,true,true);
-        check(sharp[at(176,160)]==0x808080&&smooth[at(176,160)]==0x808080);
-        // Original animation follows the rendered PC-98 page, independent
-        // of the display refresh or the interpolation phase.
+        check(sharp[at(176,160)]==0x404040&&smooth[at(176,160)]==0x404040);
+        // Native blending of the two source pages must not strobe.
         s.rendered_page=1;
         for(unsigned phase:{0u,128u,256u}){
             s.render(sharp);s.render(smooth,true,true,phase);
-            check(sharp[at(176,160)]==0&&smooth[at(176,160)]==0);
+            check(sharp[at(176,160)]==0x404040&&smooth[at(176,160)]==0x404040);
         }
-        s.rendered_page=0;s.render(sharp);check(sharp[at(176,160)]==0x808080);
+        s.rendered_page=0;s.render(sharp);check(sharp[at(176,160)]==0x404040);
         s.reduced_effects=true;s.render(sharp);check(sharp[at(176,160)]==0);
+    }
+    {
+        auto s=EncounterScene::load(root,3,0,1,2,3);
+        // In STAGE3.MPN the black center already has the intensity bit.
+        // The mask becomes visible later, when the lower palette bank scrolls in.
+        for(unsigned position:{160u,4600u}){
+            s.scroll.display_pixels=position;
+            s.reduced_effects=false;s.render(sharp);
+            s.reduced_effects=true;s.render(next);
+            check((sharp==next)==(position==160));
+        }
+    }
+    {
+        auto s=EncounterScene::load(root,4,0,1,2,3);
+        s.script.formations.clear();s.script.declared_formations=0;
+        const auto purple=0x660055u;
+        const auto advance_to=[&](unsigned scroll){
+            while(s.scroll.display_pixels<scroll&&!s.runtime.blocked&&!s.runtime.scroll.done)s.tick(0);
+            check(s.scroll.display_pixels==scroll);
+            s.render(sharp);s.render(smooth,true,true);
+        };
+        // Japanese Stage 5 road: purple enters before the black upper section
+        // replaces it progressively from top to bottom, before Mima starts.
+        advance_to(512);
+        for(const auto *frame:{&sharp,&smooth})check((*frame)[at(224,32)]==purple&&(*frame)[at(224,320)]==purple);
+        advance_to(1000);
+        for(const auto *frame:{&sharp,&smooth})check((*frame)[at(224,32)]==0&&(*frame)[at(224,320)]==purple);
+        advance_to(1200);
+        for(const auto *frame:{&sharp,&smooth})check((*frame)[at(224,32)]==0&&(*frame)[at(224,320)]==0);
+        check(!s.mima_enabled);
     }
 }
 
@@ -732,13 +762,16 @@ void boss_backgrounds(const fs::path &root){
             s->background.palette[4]={255,0,255};
             s->tick(0);
             check(s->sigma.decor_visible&&s->sigma.decor_advanced);
-            s->render(sharp);check(sharp[at(208,224)]==0xff00ff);
+            s->render(sharp);
+            for(const auto p:{at(216,200),at(232,200),at(224,192),at(224,208)})
+                check(sharp[p]==0xff00ff);
+            check(sharp[at(208,224)]!=0xff00ff);
             MotionFrame previous;s->capture_motion(previous);
             s->tick(0);
             const auto before=replay_state_digest(*s);
             check(!s->sigma.decor_advanced);
             s->render(sharp);s->render(smooth,true,true,128,&previous);
-            check(sharp[at(208,224)]==0xff00ff&&smooth[at(206,224)]==0xff00ff);
+            check(sharp[at(232,200)]==0xff00ff&&smooth[at(230,200)]==0xff00ff);
             check(replay_state_digest(*s)==before);
         }
     }
@@ -938,6 +971,21 @@ void sprite_edges(const fs::path &root){
     const auto cel=[](unsigned height){return StageSprites::Sprite{1,height,0,std::vector<std::uint8_t>(height,15)};};
     {
         auto s=make_scene();
+        auto &type=s.script.enemies[0];type.raw[2]=9;type.raw[3]=0;type.raw[8]=128;type.raw[9]=0;
+        type.raw[10]=type.raw[11]=type.raw[26]=type.raw[27]=0;
+        s.bank.sprites[128]=cel(16);
+        s.script.paths[type.path_slot].bytes={0,255};
+        StageScript::Formation row;row.trigger=0;row.selectors.fill(0xff);row.selectors[12]=0;
+        s.script.formations={row};s.script.declared_formations=1;
+        s.runtime.dispatch.cursor=0;s.runtime.scroll.pending_progress=true;
+        s.tick(0);s.capture_motion(previous);s.render(pixels);
+        check(s.runtime.enemies.slots[0].raw[0xe]==1&&s.runtime.enemies.high_water==0);
+        check(!previous.at(MotionTrack::Enemy,0).visible&&pixels[at(120,16)]==0);
+        s.tick(0);s.render(pixels,true,true,128,&previous);
+        check(s.runtime.enemies.high_water==1&&pixels[at(120,16)]==white);
+    }
+    {
+        auto s=make_scene();
         s.bank.sprites[52]=cel(16);
         auto &shot=s.shots.slots[0];shot.flag=1;shot.position[1]={200*16,9*16};shot.vy=-2*16;
         s.tick(0);check(shot.flag==2&&PlayerShots::pixel(shot.position[0][1])==7);
@@ -956,7 +1004,9 @@ void sprite_edges(const fs::path &root){
         auto &type=s.script.enemies[0];type.raw[8]=128;type.raw[9]=0;type.raw[10]=0;type.raw[11]=0;
         type.raw[26]=type.raw[27]=0;s.bank.sprites[128]=cel(16);
         s.script.paths[type.path_slot].bytes={1,255,4,0};
-        s.rendered_page=1;e.raw[0xf]=255;s.capture_motion(previous);
+        s.script.paths[type.path_slot].bytes={0,255};
+        s.tick(0);e.raw[0xf]=255;s.capture_motion(previous);
+        e.word(8,0);e.word(0xa,0);s.script.paths[type.path_slot].bytes={1,255,4,0};
         s.tick(0);check(e.raw[0xf]==0);
         s.render(pixels,true,true,128,&previous);s.render(sharp);
         check(pixels[at(122,16)]==white&&pixels[at(124,16)]==0&&sharp[at(124,16)]==white);
@@ -987,7 +1037,7 @@ void sprite_edges(const fs::path &root){
         s.script.paths[type.path_slot].bytes={0,255};
         auto &shot=s.shots.slots[0];shot.flag=1;shot.position[1]={121*16,16*16};shot.vy=-12*16;
         s.tick(0);check(e.raw[0x10]==1&&!s.death_patterns[0]);
-        s.render(pixels);check(pixels[at(120,17)]==white);
+        s.render(pixels);check(pixels[at(120,17)]==0);
         s.tick(0);check(s.death_patterns[0]==10);
         s.render(pixels);check(pixels[at(120,16)]==white&&pixels[at(120,17)]==0);
     }
@@ -1029,8 +1079,8 @@ void sprite_edges(const fs::path &root){
                !run.death_patterns[&e-enemies.data()];
     });
     check(hit!=enemies.end());
-    run.render(pixels);hit->raw[0xe]=0;run.render(sharp);hit->raw[0xe]=1;
-    check(!std::equal(pixels.begin()+at(32,16),pixels.begin()+at(32,38),sharp.begin()+at(32,16)));
+    const auto slot=unsigned(hit-enemies.begin());
+    run.tick(Shot);check(run.death_patterns[slot].has_value());
 }
 
 void pause_and_menu_return(const fs::path &root){

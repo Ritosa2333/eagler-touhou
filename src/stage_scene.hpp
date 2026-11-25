@@ -111,7 +111,7 @@ public:
         player.tick(input);scroll.finish_tick(static_cast<unsigned>(background.map.size()));++ticks;
     }
     void render_terrain(std::span<std::uint32_t> pixels,const StageBackground::Palette &colors,
-                        bool stage4_overlay,int terrain_bottom,int terrain_top)const{
+                        bool stage4_overlay,int terrain_bottom,int terrain_top,int sun_top=152)const{
         if(pixels.size()!=640*400)throw std::runtime_error("Scene buffer must be640x400");
         std::fill(pixels.begin(),pixels.end(),0u);
         // Initial map row0 is bottom/top368, row22 top16 (tile.cpp:285..294).
@@ -121,15 +121,20 @@ public:
             const unsigned row=(scroll.display_pixels+383-unsigned(y))/16;
             const auto tile_start=(background.map.at(row/8)*8+row%8)*24;
             const auto tile_y=unsigned((y-int(scroll.display_pixels%16)+16)%16);
-            const bool overlay_row=stage4_overlay&&y>=152&&y<248;
+            const bool overlay_row=stage4_overlay&&y>=sun_top&&y<sun_top+96;
             for(unsigned col=0;col<24;++col){
                 const auto &tile=background.tiles.at(background.sections.at(tile_start+col));
                 for(unsigned dx=0;dx<16;++dx){
                     const unsigned x=32+col*16+dx;
-                    auto index=tile[tile_y*16+dx];
-                    if(overlay_row&&x>=176&&x<272)
-                        index=background.stage4_overlay_color(index,x-176,unsigned(y-152));
-                    const auto &c=colors[index];
+                    const auto index=tile[tile_y*16+dx];
+                    auto c=colors[index];
+                    if(overlay_row&&x>=176&&x<272){
+                        // The source applies the intensity mask on one page only.
+                        // Combine the two page colors on the native surface so
+                        // the motif follows the terrain without a half-rate strobe.
+                        const auto &lit=colors[background.stage4_overlay_color(index,x-176,unsigned(y-sun_top))];
+                        for(unsigned ch=0;ch<3;++ch)c[ch]=std::uint8_t((unsigned(c[ch])+lit[ch]+1)/2);
+                    }
                     pixels[y*640+x]=(std::uint32_t(c[0])<<16)|(std::uint32_t(c[1])<<8)|c[2];
                 }
             }

@@ -4,6 +4,32 @@
 unsigned checks=0;void check(bool b,std::source_location at=std::source_location::current()){++checks;if(!b)throw std::runtime_error("Visible encounter contract failed: check " + std::to_string(checks)+" at line "+std::to_string(at.line()));}
 int wmain(int argc,wchar_t**argv){try{
  if(argc!=2)throw std::runtime_error("Usage: encounter-tests <assets>");std::vector<std::uint32_t> pixels(640*400);
+ for(bool reduced:{false,true}){
+  auto s=soew::EncounterScene::load(argv[1],2,0,1,2,3);
+  s.reduced_effects=reduced;
+  std::vector<unsigned> sounds;s.sound_output=[&](unsigned id){sounds.push_back(id);};
+  for(unsigned i=0;i<167;++i)s.tick(0);
+  check(s.presentation_slowdown()==1&&std::ranges::count(sounds,14)==0);
+  s.tick(0);check(s.presentation_slowdown()==1);
+  s.tick(0);check(s.presentation_slowdown()==3&&std::ranges::count(sounds,14)==1);
+  s.render(pixels);
+  if(!reduced){
+   auto sharp=pixels; s.reduced_effects=true;s.render(sharp);s.reduced_effects=false;
+   check(pixels[16*640+32]!=sharp[16*640+32]);
+  }
+  while(s.ticks<200)s.tick(0);
+  check(s.presentation_slowdown()==1&&std::ranges::count(sounds,14)==1);
+ }
+ for(int stage:{0,1}){
+  auto s=soew::EncounterScene::load(argv[1],stage,0,1,2,3);
+  if(stage==0){s.bind_rika_battle({0,0,0,0,0,0});s.rika.dying=true;}
+  else{s.bind_meira_battle();s.meira.dying=true;}
+  std::vector<std::pair<std::uint64_t,unsigned>> cues;
+  s.sound_output=[&](unsigned id){if(id==18||id==14)cues.emplace_back(s.ticks,id);};
+  for(unsigned i=0;i<70;++i)s.tick(0);
+  using Cues=decltype(cues);
+  check(cues==(stage==0?Cues{{1,18},{32,14}}:Cues{{2,18},{26,18},{33,14},{57,14}}));
+ }
  for(int stage=0;stage<6;++stage){auto scene=soew::EncounterScene::load(argv[1],stage,0,1,2,3);auto repeat=scene;check(scene.bank.next>=128);scene.render(pixels);for(unsigned i=0;i<10000&&!scene.runtime.blocked&&!scene.runtime.scroll.done;++i){scene.tick(0);repeat.tick(0);check(scene.runtime.random.cursor==repeat.runtime.random.cursor&&scene.runtime.spawns==repeat.runtime.spawns&&scene.ticks==repeat.ticks);if(i%16==0){scene.render(pixels);check(pixels[0]==0&&pixels[639]==0);}}
   scene.render(pixels);check(scene.runtime.spawns>0);if(stage==3){
       check(scene.runtime.blocked&&scene.runtime.blocked->result.reason=="declared formation row unavailable");
@@ -42,17 +68,17 @@ int wmain(int argc,wchar_t**argv){try{
    s.reduced_effects=false;s.render(normal);
    unsigned changes=0;
    for(unsigned y=0;y<400;++y)for(unsigned x=0;x<640;++x)if(normal[y*640+x]!=off[y*640+x]){
-    if(x<176||x>=272||y<152||y>=248)throw std::runtime_error("Stage 4 overlay outside its original rectangle");
+    if(x<176||x>=272||y<154||y>=250)throw std::runtime_error("Stage 4 overlay outside its original rectangle");
     ++changes;
    }
    if(!changes)throw std::runtime_error("No Stage 4 overlay pixels at scroll " + std::to_string(scroll));
-   // Only the sun is page-dependent, as in sub_19E2F.
-   s.rendered_page=1;s.reduced_effects=true;s.render(off);
-   s.reduced_effects=false;s.render(normal);check(normal==off);
+   // Both native pages present the same sun, at half the source intensity.
+   check(normal[154*640+176]==0x040000);
+   s.rendered_page=1;s.render(off);check(normal==off);
    s.rendered_page=0;s.reduced_effects=true;s.render(off);
    s.reduced_effects=false;s.runtime.scroll.done=true;s.render(normal);check(normal==off);s.runtime.scroll.done=false;
   }
-  check(!soew::EncounterScene::stage4_overlay_enabled(2,0,false,false));
+  check(!soew::EncounterScene::stage4_overlay_enabled(2,false,false));
   check(soew::StageBackground::stage4_overlay_index(95,95)==85);
  }
  // Isolate the two midboss4 reward paths from ordinary enemy scoring.
