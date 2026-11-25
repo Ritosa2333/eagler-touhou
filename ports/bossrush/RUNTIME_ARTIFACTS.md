@@ -1,6 +1,6 @@
 # BRO Runtime 产物落地说明（eagler fork `bro-integration`）
 
-> 更新：2026-11-24 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（启动加载优化后 build_id `96902659`）
+> 更新：2026-11-25 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（观战阶段 B 后 build_id `4f12850d`）
 > 本目录 `ports/bossrush/web/` 是 **BRO Web runtime 的实际构建产物**，由 BRO 侧 `web/build.sh` 产出后入库。
 
 ## 1. 产物清单（31 文件 / 28 MB）

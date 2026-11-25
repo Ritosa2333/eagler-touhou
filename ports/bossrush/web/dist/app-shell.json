@@ -1,6 +1,6 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-2a76a4d93ebb81942ebd7c197145230801aa38ea2f12090990480d659d58b5bc",
+  "version": "sha256-cb879032684550a68a41ef9a430c16316e37ef7d57fa229a1a28561f40bcb8df",
   "files": [
     {
       "p": "bro.html",
@@ -29,8 +29,8 @@
     },
     {
       "p": "src/eagler_adapter.mjs",
-      "n": 52627,
-      "h": "3e0f3e9823d98a92516f5125171d179917f0ca5be034b57302035d8ac22ad315"
+      "n": 54087,
+      "h": "ac07ec50a6e61a7e728bd4855d414e3d861de166e3a51e204298465a72a1b5b0"
     },
     {
       "p": "src/input.mjs",
@@ -109,8 +109,8 @@
     },
     {
       "p": "src/runtime_entry.mjs",
-      "n": 12091,
-      "h": "9c4632de3b762f0feff05cafd8c27590d92244a4c2217554b2ed82760766ca98"
+      "n": 12202,
+      "h": "ef1b4bc053e33bc2ad0d29e7c8d6c52ded7ab4c9871f5a0d88c9592073cb7ed2"
     },
     {
       "p": "src/save_files.mjs",
@@ -119,8 +119,8 @@
     },
     {
       "p": "src/spectator_runtime.mjs",
-      "n": 15084,
-      "h": "a4e40acf71a920c71166dbb523684e32fb7fe1b2821f9d6a4dce04ece6864687"
+      "n": 25150,
+      "h": "e9a55a2daed9bd22c1cc144970eb9c31489151b0a73f34cec1e5d9129123b8bc"
     },
     {
       "p": "src/spectator_wire.mjs",

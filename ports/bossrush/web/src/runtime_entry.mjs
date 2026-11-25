@@ -217,14 +217,15 @@ export async function startBRO(options = {}) {
       if (dt > 100) dt = 100;
       accumulator += dt;
       let stepped = 0;
-      // 观战阶段 A：观战端不采本地键盘、不自走 bro_frame——
+      // 观战（阶段 A/B）：观战端不采本地键盘、不自走 bro_frame——
       // 一切由 SpectatorClient.pump() 按 relay 送来的确认输入逐帧驱动；
-      // 无帧则停在这一帧（渲染照常），保证与主播确定性一致。
+      // 无帧 / 暂停 / 定位缺帧时停表（accumulator 归零），避免暂停攒出一大堆
+      // 待补的时间步长在恢复后一次性灌进逻辑。
       const spectator = adapter && adapter.spectatorClient ? adapter.spectatorClient : null;
       if (spectator) {
         while (accumulator >= stepMs && stepped < 4) {
           const r = adapter.pumpSpectatorFrame();
-          if (!r || !r.advanced) break;
+          if (!r || !r.advanced) { accumulator = 0; break; }
           storage.tick(++runtime.frames);
           accumulator -= stepMs;
           stepped++;

@@ -612,6 +612,7 @@ export class EaglerRuntimeAdapter {
       case 'remove':       return this._cmdRemove(p);
       case 'sync':         return this._cmdSync();
       case 'playback':     return this._cmdPlayback(p);
+      case 'spectator-playback': return this._cmdSpectatorPlayback(p);
       default:             return { ok: true, ignored: true };  // 可选命令未实现：ok，不破坏宿主流程
     }
   }
@@ -767,6 +768,22 @@ export class EaglerRuntimeAdapter {
     if (!this.spectatorClient) return null;
     if (!this.spectatorClient.started) this.spectatorClient.start();
     return this.spectatorClient.pump();
+  }
+
+  /**
+   * 阶段 B：launcher 时间轴命令（pause | play | seek | live）。
+   * 契约见 launcher/src/contracts/runtime-protocol.mts：
+   *   {command:'spectator-playback', run, action, frame?}
+   * run 必须与当前观战对局一致，避免旧面板的命令打到新一局。
+   */
+  _cmdSpectatorPlayback(p) {
+    const client = this.spectatorClient;
+    if (!client) return { response: { ok: false, reason: 'no-spectator' } };
+    const payload = (p && typeof p === 'object') ? p : {};
+    const run = String(payload.run || '');
+    if (run && run !== client.run) return { response: { ok: false, reason: 'run-mismatch' } };
+    const result = client.control(payload.action, payload.frame);
+    return { response: { ...result, run: client.run, playback: client.playback.snapshot() } };
   }
 
   /** 每帧由 runtime_entry 调；发布端把本机/全玩家输入打包上传。

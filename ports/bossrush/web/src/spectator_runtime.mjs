@@ -135,6 +135,15 @@ export class SpectatorUploader {
  * 约束（launcher/src/launcher/spectator-playback.mts parseSpectatorPlayback）：
  *   version=1、run 合法、revision/min/position/received/edge/target 均 uint、
  *   min<=position<=received、min<=edge<=received、min<=target<=received。
+ *
+ * 阶段 B 语义（SPECTATOR.md）：
+ *   min      最早还能定位到的帧（环形缓冲丢帧后前移）
+ *   position 已经重演到第几帧（=已应用帧数）
+ *   edge     收到的最新连续帧（live 前沿）
+ *   target   本次定位目标帧；不在定位时等于 position
+ *   paused   用户按了暂停
+ *   seeking  正在向 target 重演（可能同时 paused：暂停态下的背景定位）
+ *   following position 追上 edge、且没暂停没定位
  */
 export class SpectatorPlayback {
   constructor(opts = {}) {
@@ -150,15 +159,15 @@ export class SpectatorPlayback {
     this.seeking = false;
     this.following = opts.following !== false; // 阶段 A 只有「实时跟随」
     this.ended = false;
-    this.nodes = [];
+    this.nodes = Array.isArray(opts.nodes) ? opts.nodes.slice(0, 512) : [];
   }
 
-  /** 收到一帧（已解包）后更新计数。 */
+  /** 收到一帧（已解包）后更新计数；跟随态下 target 跟着 edge 走。 */
   onFrame(frame) {
     const f = clampInt(frame && frame.frame, 0, 0xffffffff, 0);
     this.received = Math.max(this.received, f + 1);
-    this.edge = this.received;
-    this.target = this.received;
+    this.edge = Math.max(this.edge, this.received);
+    if (!this.seeking && !this.paused) this.target = this.edge;
     this._clamp();
     return this.snapshot();
   }
@@ -167,11 +176,34 @@ export class SpectatorPlayback {
   onConsume(frame) {
     const f = clampInt(frame, 0, 0xffffffff, 0);
     this.position = Math.max(this.position, f + 1);
-    this.min = Math.min(this.min, this.position);
+    if (!this.seeking) {
+      this.target = this.position;
+      if (!this.paused && this.position >= this.edge) this.following = true;
+    }
     this._clamp();
     this.revision++;
     return this.snapshot();
   }
+
+  /** 环形缓冲丢帧后，定位下界跟着前移（min<=position 恒成立）。 */
+  setMin(v) {
+    this.min = clampInt(v, 0, this.position, this.min);
+    this._clamp();
+    this.revision++;
+    return this.snapshot();
+  }
+
+  markPaused(v) {
+    this.paused = !!v;
+    if (this.paused) this.following = false;
+    this.revision++;
+    return this.snapshot();
+  }
+
+  markFollowing(v) { this.following = !!v; this.revision++; return this.snapshot(); }
+
+  /** 直接改完字段后统一发一次新快照。 */
+  bump() { this.revision++; this._clamp(); return this.snapshot(); }
 
   markEnded() { this.ended = true; this.revision++; return this.snapshot(); }
 
@@ -235,9 +267,34 @@ export class SpectatorClient {
     this.errors = [];
     this.lastFrame = -1;
     this._begin = null;
+    // ---- 阶段 B：定位用的历史帧环形缓冲 ----
+    // 只存每帧每玩家的 keys/flags（x/y 仅供展示，定位不需要），108000 帧 × 60B 量级，
+    // 对齐 relay 的 16MB 观战历史上限（SPECTATOR.md）。
+    this.history = new Map();          // frame -> {keys:Uint8Array, flags:Uint8Array}
+    this.historyOrder = [];            // 插入顺序，用来做环形淘汰
+    this.historyTrim = 0;              // historyOrder 里已被淘汰到的下标
+    this.historyFrames = clampInt(opts.historyFrames ?? this.config.historyFrames, 256, 108000, 108000);
+    this.maxFrame = -1;                // 收到过的最大帧号
+    this.historyMin = 0;               // 环形缓冲里还留得住的最早帧
+    this.seekBudgetMs = clampInt(opts.seekBudgetMs, 1, 50, 5);   // 每次 pump 的重演时间预算
+    this.seekStepCap = clampInt(opts.seekStepCap, 1, 600, 30);   // 每次 pump 最多重演帧数
+    this._lastEmitAt = -1e9;           // 第一次变化必须立刻上报
+    this._replayed = 0;                // 本次 seek 已重演的帧数（诊断）
   }
 
-  _emit() {
+  _now() {
+    return (typeof performance !== 'undefined' && typeof performance.now === 'function')
+      ? performance.now() : Date.now();
+  }
+
+  /**
+   * 上报播放状态。观战端一帧可能推进多次（定位时一次 pump 重演几十帧），
+   * 所以默认按 120ms 节流，命令回执/结束等关键变化用 _emit(true) 强制发。
+   */
+  _emit(force = false) {
+    const now = this._now();
+    if (!force && now - this._lastEmitAt < 120) return;
+    this._lastEmitAt = now;
     if (this.onPlayback) { try { this.onPlayback(this.playback.snapshot()); } catch { /* 忽略 */ } }
   }
 
@@ -271,7 +328,52 @@ export class SpectatorClient {
       return;
     }
     this.playback.onFrame(msg);
+    this._recordHistory(msg);
     this._emit();
+  }
+
+  /** 记一帧输入到历史缓冲（定位时从这里重演，relay 的 live 缓冲不再是唯一来源）。 */
+  _recordHistory(msg) {
+    const frame = clampInt(msg && msg.frame, 0, 0xffffffff, 0);
+    if (frame < this.historyMin || this.history.has(frame)) return;
+    const keys = new Uint8Array(this.playerCount);
+    const flags = new Uint8Array(this.playerCount);
+    const rows = Array.isArray(msg.rows) ? msg.rows : [];
+    for (let p = 0; p < this.playerCount; p++) {
+      const row = rows[p] || null;
+      keys[p] = row ? row.keys & 0xff : 0;
+      flags[p] = row ? row.flags & 0xff : 0;
+    }
+    this.history.set(frame, { keys, flags });
+    this.historyOrder.push(frame);
+    if (frame > this.maxFrame) this.maxFrame = frame;
+    this._trimHistory();
+  }
+
+  /** 环形淘汰：超出 historyFrames 就丢最旧的帧，并把 playback.min 前移。 */
+  _trimHistory() {
+    const cap = this.historyFrames;
+    let over = this.history.size - cap;
+    if (over <= 0) return;
+    let i = this.historyTrim;
+    while (over > 0 && i < this.historyOrder.length) {
+      const f = this.historyOrder[i];
+      if (this.history.delete(f)) {
+        over--;
+        if (f + 1 > this.historyMin) {
+          this.historyMin = f + 1;
+          // 还没重演到这一帧时不能把 min 报过 position（launcher 要求 min<=position）
+          this.playback.setMin(Math.min(this.historyMin, this.playback.position));
+        }
+      }
+      i++;
+    }
+    this.historyTrim = i;
+    // 顺序表本身也要回收，避免历史帧数不变而数组无限长
+    if (this.historyTrim > 4096) {
+      this.historyOrder = this.historyOrder.slice(this.historyTrim);
+      this.historyTrim = 0;
+    }
   }
 
   /** 起同一场确定性对局。调用顺序见 agent-2 报告第 5 节 A。 */
@@ -306,21 +408,97 @@ export class SpectatorClient {
   }
 
   /**
-   * 每逻辑帧调一次：消费下一帧观战输入、喂引擎、推进 bro_frame。
-   * 返回 {advanced:boolean, frame:number}。缺帧时不推进（等待）。
+   * 每逻辑帧调一次：按当前播放状态推进。
+   *
+   * 三种模式（阶段 B）：
+   *   paused   —— 不推进，返回 reason:'paused'
+   *   seeking  —— 向 playback.target 重演，一次 pump 内跑多帧（seekBudgetMs/StepCap）
+   *   live     —— 追下一帧；缺帧则等待
+   *
+   * 返回 {advanced:boolean, frame:number, reason?:string}。advanced=false 时调用方
+   * 不要扣时间步长（runtime_entry 据此停表并复用上一帧画面）。
    */
   pump() {
     if (!this.started) return { advanced: false, frame: -1, reason: 'not-started' };
-    const msg = this.buffer.next();
-    if (!msg) return { advanced: false, frame: this.lastFrame, reason: 'waiting' };
+    if (this.playback.seeking) return this._pumpSeek();
+    if (this.playback.paused) return { advanced: false, frame: this.lastFrame, reason: 'paused' };
+    return this._pumpLive();
+  }
 
-    // init_player_data 之后补 spawn 远端真实实体（只需一次）。
+  /** 实况：逐帧消费；历史缺口时等待 relay 补齐。 */
+  _pumpLive() {
+    const frame = this.lastFrame + 1;
+    const entry = this.history.get(frame);
+    if (!entry) {
+      // 中途加入（历史已被环形缓冲裁掉）时直接跳到最早可用帧，别永远卡在 0。
+      if (frame < this.historyMin) {
+        this.playback.setMin(this.historyMin);
+        this.lastFrame = this.historyMin - 1;
+        this.playback.position = this.historyMin;
+      }
+      this.playback.markFollowing(this.playback.position >= this.playback.edge);
+      return { advanced: false, frame: this.lastFrame, reason: 'waiting' };
+    }
+    this._applyFrame(frame, entry);
+    this.playback.onConsume(frame);
+    this._syncMin();
+    this._emit();
+    return { advanced: true, frame };
+  }
+
+  /** 历史被裁掉后，min 只能在位置追上时前移（保持 min<=position）。 */
+  _syncMin() {
+    const next = Math.min(this.historyMin, this.playback.position);
+    if (next > this.playback.min) this.playback.setMin(next);
+  }
+
+  /**
+   * 定位：向 target 连续重演，直到到达、缺帧或超预算。
+   * 慢路径来自 SPECTATOR.md 阶段 B：没有世界快照，就只能从起点重演。
+   */
+  _pumpSeek() {
+    const pb = this.playback;
+    const target = Math.max(this.historyMin, pb.min,
+      Math.min(pb.target, Math.max(this.maxFrame + 1, pb.edge)));
+    const deadline = this._now() + this.seekBudgetMs;
+    let steps = 0;
+    while (steps < this.seekStepCap && this.lastFrame + 1 < target) {
+      const frame = this.lastFrame + 1;
+      const entry = this.history.get(frame);
+      if (!entry) break; // 缺口：等 relay 补齐这批帧，暂停定位进度但不改变状态
+      this._applyFrame(frame, entry);
+      steps++;
+      this._replayed++;
+      if (this._now() >= deadline) break;
+    }
+    if (steps > 0) {
+      this.playback.position = this.lastFrame + 1;
+      this._syncMin();
+      this._emit();
+    }
+    const reached = this.lastFrame + 1 >= target;
+    if (reached) {
+      pb.seeking = false;
+      pb.position = this.lastFrame + 1;
+      pb.target = pb.position;
+      pb.following = !pb.paused && pb.position >= pb.edge;
+      pb.bump();
+      this._emit(true);
+      return { advanced: steps > 0, frame: this.lastFrame, reason: pb.paused ? 'seeked-paused' : 'seeked' };
+    }
+    if (steps === 0) {
+      // 没有可重演的帧（缺帧/边界）：不是错误，回到等待
+      return { advanced: false, frame: this.lastFrame, reason: 'seek-waiting' };
+    }
+    return { advanced: true, frame: this.lastFrame, reason: 'seeking' };
+  }
+
+  /** 把一帧历史输入喂给引擎并推进一个逻辑帧。 */
+  _applyFrame(frame, entry) {
+    // init_player_data 之后补 spawn 远端真实实体（只需一次；重演重置后要重来）。
     if (!this.ready && this._checkReady()) this._spawnEntities();
-
-    const frame = msg.frame;
     for (let p = 0; p < this.playerCount; p++) {
-      const row = msg.rows[p] || { keys: 0, flags: 0, x: 0, y: 0 };
-      const keys = row.keys & 0xff;
+      const keys = entry.keys[p] & 0xff;
       try {
         this.call('BRO_net_apply_keys_at', p, frame, keys, false);
         this.call('BRO_net_feed_player_key', p, keys);
@@ -328,14 +506,73 @@ export class SpectatorClient {
     }
     try { this.call('BRO_net_tick', frame); } catch { /* 忽略 */ }
     try { this.call('BRO_net_set_active_input', this.localSlot); } catch { /* 忽略 */ }
-
     const rc = this.ccall('bro_frame', 'number', [], []);
     if (rc !== 0) this.errors.push(`bro_frame=${rc}`);
     this.lastFrame = frame;
     this.pumped++;
-    this.playback.onConsume(frame);
-    this._emit();
-    return { advanced: true, frame };
+  }
+
+  /**
+   * 回到 run 起点重演（BRO 没有世界快照序列化，这是 SPECTATOR.md 阶段 B 允许的慢路径）。
+   * BRO_net_reset 会把 localSlot 重置成 0，所以必须再走一遍 start() 的配置下发。
+   */
+  _beginReplay() {
+    try { this.call('BRO_net_reset'); } catch (e) { this.errors.push(String(e)); }
+    this.started = false;
+    this.ready = false;
+    this.lastFrame = this.playback.min - 1;
+    this.playback.position = this.playback.min;
+    this.started = this.start() !== false;
+    this._log(`spectator replay from frame ${this.playback.min}`);
+  }
+
+  /**
+   * 阶段 B 命令入口：pause | play | seek | live。
+   * 返回 {ok, action, ...}；adapter 把它塞进命令回执。
+   */
+  control(action, frame) {
+    const pb = this.playback;
+    const act = String(action || '');
+    const maxFrame = this.maxFrame < 0 ? 0 : this.maxFrame;
+    if (act === 'pause') {
+      pb.seeking = false;          // 暂停同时中止正在进行的定位，世界停在当前位置
+      pb.target = pb.position;
+      pb.markPaused(true);
+      this._emit(true);
+      return { ok: true, action: act, paused: true, position: pb.position };
+    }
+    if (act === 'play') {
+      pb.markPaused(false);
+      pb.target = Math.max(pb.edge, pb.position);
+      pb.seeking = pb.position < pb.edge;
+      pb.following = !pb.seeking;
+      pb.bump();
+      this._emit(true);
+      return { ok: true, action: act, paused: false, position: pb.position, seeking: pb.seeking };
+    }
+    if (act === 'seek') {
+      const lo = Math.max(pb.min, this.historyMin);
+      const t = clampInt(frame, lo, Math.max(lo, maxFrame), pb.position);
+      if (t < pb.position) this._beginReplay(); // 只能从起点重演回到过去
+      pb.target = t;
+      pb.seeking = this.lastFrame + 1 < t;
+      pb.following = false;
+      if (!pb.seeking) { pb.position = t; pb.bump(); }
+      else pb.bump();
+      this._emit(true);
+      return { ok: true, action: act, target: t, seeking: pb.seeking, position: pb.position };
+    }
+    if (act === 'live') {
+      pb.markPaused(false);
+      const edge = Math.max(pb.edge, maxFrame);
+      pb.target = edge;
+      pb.seeking = pb.position < edge;
+      pb.following = !pb.seeking;
+      pb.bump();
+      this._emit(true);
+      return { ok: true, action: act, target: edge, seeking: pb.seeking, position: pb.position };
+    }
+    return { ok: false, reason: 'unknown-action', action: act };
   }
 
   /**

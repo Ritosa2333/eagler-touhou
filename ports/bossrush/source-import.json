@@ -3,8 +3,8 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "master",
-  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）",
-  "buildId": "96902659",
+  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。",
+  "buildId": "4f12850d",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
     "webMaintainer": "清酒 (Tidew)",
@@ -20,17 +20,17 @@
     {
       "path": "bro.mjs",
       "bytes": 117746,
-      "sha256": "d53ee884a7182a28411221d2bb6679e15b730547e9963ef59a53d0b43f55d097"
+      "sha256": "6a3274b0bdff91fe95a1c785cd77051fda192fdb02f92f6b6c4a18b890cf2eca"
     },
     {
       "path": "bro.wasm",
-      "bytes": 26897155,
-      "sha256": "9690265994ad910c604bae01b409144d198b943c9238f865c0def5cc8399fbeb"
+      "bytes": 26909163,
+      "sha256": "4f12850d75dc27aaebdc24488ec0545fb057cd0865120bc8df70bf903620d650"
     },
     {
       "path": "dist/app-shell.json",
-      "bytes": 11186,
-      "sha256": "590e384423427c7a58ba23660badc7d08111531f139e0271eeaad012b619d2e4"
+      "bytes": 11332,
+      "sha256": "a17d5ba28421a09981cef02844c66b67f6839f0d40292152ed8dbb45729a0d85"
     },
     {
       "path": "dist/package-manifest.json",
@@ -40,7 +40,7 @@
     {
       "path": "dist/runtime.json",
       "bytes": 577,
-      "sha256": "dcd01c61a4fc2699794a15569dedbd40a7763d95dbf29165b52d4797fa5830e4"
+      "sha256": "310c457da266f2c76a127ac37572e60b37712337ff320e3de4d64c558d826d57"
     },
     {
       "path": "managed-shell.mjs",
@@ -64,8 +64,8 @@
     },
     {
       "path": "src/eagler_adapter.mjs",
-      "bytes": 46304,
-      "sha256": "063d204ae8641908ee154374cb4d66544dc7c82f236bac25efd4fd8972f1b021"
+      "bytes": 54087,
+      "sha256": "ac07ec50a6e61a7e728bd4855d414e3d861de166e3a51e204298465a72a1b5b0"
     },
     {
       "path": "src/input_buffer.mjs",
@@ -149,8 +149,8 @@
     },
     {
       "path": "src/runtime_entry.mjs",
-      "bytes": 10338,
-      "sha256": "65da711d02490567429eaeb6326eb30417a2ea64339c5241f812e51f8e1fd0b7"
+      "bytes": 12202,
+      "sha256": "ef1b4bc053e33bc2ad0d29e7c8d6c52ded7ab4c9871f5a0d88c9592073cb7ed2"
     },
     {
       "path": "src/storage.mjs",
