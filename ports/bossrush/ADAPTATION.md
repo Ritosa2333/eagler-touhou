@@ -189,4 +189,4 @@
 ## 分发与封面（2026-11-22）
 
 - BRO 为 `importOnly`：Runtime（WASM/glue/JS）随本站部署，1004 个游戏资源由玩家在 GAME DATA 导入窗口选择 ZIP 提供。`launcher/scripts/package-bro-import.mjs <broRepoRoot> <out.zip>` 读 BRO 源库 `web/dist/package-manifest.json` + `game/` 生成可导入包（`eagler-touhou/package/1`：descriptor + 1 字节 bro.data + `game/...` 资源，target `/game/<p>` 经 `resource_cache` 归一化匹配）。已用 `parsePackageZip` 验证 1005 文件、哈希全匹配。
-- 启动器卡片封面 `assets/bro-card.webp`：源图 `ports/bossrush/artwork/bro-card.webp`（被 git 跟踪），`prepare-host-artwork.py` 已登记 `bro` 适配器，构建时生成并随站点发布；`audit-publication.mjs` 白名单已放行 `assets/bro-card.webp`。
+- 启动器卡片封面：源图 `ports/bossrush/artwork/bro-card.webp`（随端口登记），`prepare-host-artwork.py` 已登记 `bro` 适配器，构建时生成 `assets/bro-card.webp` 并随站点发布；该产物按「原作衍生素材不入源码发布」的规则由 `launcher/.gitignore` 忽略，不跟踪。
