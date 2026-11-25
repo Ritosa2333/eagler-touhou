@@ -102,7 +102,7 @@ float EclInterpolation::evaluate() noexcept {
         return current;
     }
     const float weight = interpolation_weight(mode, timer.fractional, static_cast<float>(duration));
-    current = static_cast<float>(start + static_cast<float>(static_cast<float>(end - start) * weight));
+    current = static_cast<float>(static_cast<long double>(end - start) * weight + start);
     return current;
 }
 

@@ -1210,33 +1210,7 @@ void StageSim::step_bullet_behaviors(StageBullet& bullet) {
         bullet.wait_timer = i32(bullet.wait_time);
     }
     if (bullet.behavior_flags & 0x400000u) {
-        const std::array<float, 1> scaled = bullet.scale_tween.step(rate);
-        if (bullet.scale_tween.duration == 0 || bullet.scale_tween.mode == 7 || bullet.scale_tween.mode == 17) {
-            bullet.hit_scale = scaled[0];
-        } else if (bullet.scale_tween.mode == 8) {
-            const float fraction = static_cast<float>(bullet.scale_tween.timer.fractional /
-                                                      static_cast<float>(bullet.scale_tween.duration));
-            const float twice = static_cast<float>(fraction * 2);
-            const float before = static_cast<float>(fraction - 1);
-            const float after = static_cast<float>(1 - fraction);
-            const long double h00 =
-                static_cast<long double>(static_cast<float>(before * before) * static_cast<float>(twice + 1));
-            const long double h11 = static_cast<long double>(static_cast<float>(before * fraction) * fraction);
-            const long double h01 =
-                static_cast<long double>(static_cast<float>(3 - twice) * static_cast<float>(fraction * fraction));
-            const long double h10 = static_cast<long double>(static_cast<float>(after * after) * fraction);
-            bullet.hit_scale = static_cast<float>(static_cast<long double>(bullet.scale_tween.start[0]) * h00 +
-                                                  static_cast<long double>(bullet.scale_tween.end[0]) * h01 +
-                                                  static_cast<long double>(bullet.scale_tween.control1[0]) * h10 +
-                                                  static_cast<long double>(bullet.scale_tween.control2[0]) * h11);
-        } else {
-            bullet.hit_scale = static_cast<float>(static_cast<long double>(bullet.scale_tween.start[0]) +
-                                                  (static_cast<long double>(bullet.scale_tween.end[0]) -
-                                                   static_cast<long double>(bullet.scale_tween.start[0])) *
-                                                      static_cast<long double>(interpolation_weight(
-                                                          bullet.scale_tween.mode, bullet.scale_tween.timer.fractional,
-                                                          static_cast<float>(bullet.scale_tween.duration))));
-        }
+        bullet.hit_scale = bullet.scale_tween.step(rate)[0];
         if (bullet.scale_tween.duration == 0) {
             bullet.behavior_flags &= ~0x400000u;
             if (bullet.hit_scale == 1.0f) bullet.flags &= ~0x40u;
