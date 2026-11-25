@@ -1,4 +1,5 @@
 #include "encounter_scene.hpp"
+#include "shot_input.hpp"
 #include <iostream>
 #include <source_location>
 unsigned checks=0;void check(bool b,std::source_location at=std::source_location::current()){++checks;if(!b)throw std::runtime_error("Visible encounter contract failed: check " + std::to_string(checks)+" at line "+std::to_string(at.line()));}
@@ -16,6 +17,27 @@ int wmain(int argc,wchar_t**argv){try{
    check(age<=171?tone>=previous:tone<=previous);
    previous=tone;
   }
+ }
+ for(auto mode:{soew::ShotInputMode::Autofire12Hz,soew::ShotInputMode::Fast}){
+  auto manual=soew::EncounterScene::load(argv[1],0,0,1,2,3);
+  manual.combat_enabled=true;
+  auto autofire=manual;
+  autofire.sound.shot_cadence.set_autofire(true);
+  std::vector<unsigned> manual_cues,autofire_cues,expected_manual,expected_autofire;
+  unsigned frame=0,volleys=0;
+  manual.sound_output=[&](unsigned id){if(id==1)manual_cues.push_back(frame);};
+  autofire.sound_output=[&](unsigned id){if(id==1)autofire_cues.push_back(frame);};
+  soew::ShotInput input;input.event(true,mode);
+  for(;frame<50;++frame){
+   const auto fired=manual.shots.fired,requests=manual.shots.sound_requests;
+   const auto keys=input.tick(mode)?soew::Shot:0;
+   manual.tick(keys);autofire.tick(keys);
+   check(autofire.shots.fired==manual.shots.fired&&autofire.shots.sound_requests==manual.shots.sound_requests);
+   if(manual.shots.sound_requests!=requests)expected_manual.push_back(frame+1);
+   if(manual.shots.fired!=fired&&volleys++%3==0)expected_autofire.push_back(frame+1);
+  }
+  manual.tick(0);autofire.tick(0); // Dispatch the last tick's queued sound.
+  check(volleys>=7&&autofire_cues==expected_autofire&&manual_cues==expected_manual&&autofire_cues.size()<manual_cues.size());
  }
  for(bool reduced:{false,true}){
   auto s=soew::EncounterScene::load(argv[1],2,0,1,2,3);

@@ -1,5 +1,6 @@
 #include "shot_input.hpp"
 #include "player_shots.hpp"
+#include "sound_effects.hpp"
 #include <algorithm>
 #include <iostream>
 #include <unordered_map>
@@ -25,6 +26,19 @@ struct SourceGate {
 
 int main(){try{
  using enum soew::ShotInputMode;
+ {
+    soew::ShotSoundCadence cadence;
+    check(cadence.requests(2,false)==2&&cadence.requests(0,true)==0);
+    cadence.set_autofire(true);
+    for(unsigned volley=0;volley<7;++volley){
+        check(cadence.requests(1,false)==0);
+        cadence.set_autofire(true); // The host sets the mode every tick.
+        check(cadence.requests(volley%2,true)==(volley%3==0));
+    }
+    cadence.reset();check(cadence.requests(0,true)==1);
+    cadence.set_autofire(false);check(cadence.requests(1,false)==1);
+    cadence.set_autofire(true);check(cadence.requests(0,true)==1);
+ }
  {soew::ShotInput s;s.event(true,false);s.event(false,false);check(s.tick(false));check(!s.tick(false));check(!s.tick(false));}
  for(auto mode:{Autofire12Hz,Fast}){soew::ShotInput s;s.event(true,mode);unsigned rises=0,falls=0;bool prior=false;for(unsigned i=0;i<500;++i){bool v=s.tick(mode);if(v&&!prior)++rises;if(!v&&prior)++falls;prior=v;}const unsigned expected=mode==Fast?125u:102u;check(rises==expected&&falls==expected);s.event(false,mode);for(unsigned i=0;i<30;++i)check(!s.tick(mode));s.event(true,mode);check(s.tick(mode));s.clear();for(unsigned i=0;i<30;++i)check(!s.tick(mode));s.event(true,mode);check(s.tick(mode));s.event(false,mode);s.event(true,mode);check(s.tick(mode));}
  // At Lv0 each invocation allocates one projectile; count volleys over 30.6 s

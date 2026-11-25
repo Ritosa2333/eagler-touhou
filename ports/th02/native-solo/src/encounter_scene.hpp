@@ -597,6 +597,7 @@ public:
         if(survival_enabled){player.x=life.current.x;player.y=life.current.y;}
         EnemyPathRuntime::CombatHooks combat;
         if(combat_enabled){
+            const auto fired_before=shots.fired;
             shots.random=&runtime.random;shots.shot_type=static_cast<unsigned>(player.shot);shots.level=pickup_enabled?pickups.level():0;
             if(accepts_input){shots.option_left=player.x-16-player.last_dx;shots.option_top=player.y+16-player.last_dy;shots.input((input&Shot)!=0,page,player.x,player.y,input);}
             shots.target_x=-1;shots.target_y=-1;
@@ -610,7 +611,9 @@ public:
                 if(bomb.finished){life.bomb_invincible=false;life.invincibility=70;bombing_for_spawn=false;}
                 if(effects_enabled)while(consumed_bomb_sparks<bomb.spark_requests.size()){const auto &r=bomb.spark_requests[consumed_bomb_sparks++];sparks.add(r.x,r.y,r.speed,r.count,r.sprite,page);}
             }
-            while(consumed_shot_sounds<shots.sound_requests){++consumed_shot_sounds;request_sound(1);}
+            const auto shot_sounds=sound.shot_cadence.requests(shots.sound_requests-consumed_shot_sounds,shots.fired!=fired_before);
+            consumed_shot_sounds=shots.sound_requests;
+            for(std::uint64_t i=0;i<shot_sounds;++i)request_sound(1);
             while(consumed_bomb_sounds<bomb.sounds.size())request_sound(bomb.sounds[consumed_bomb_sounds++]);
             combat.damage=[&](unsigned,auto &enemy,const auto &type){const int left=enemy_s16(enemy.word(page*4)),top=enemy_s16(enemy.word(page*4+2));const auto hp=unsigned(type.raw[22])|(unsigned(type.raw[23])<<8);if(hp==65535)return false;
                 if(top<360&&top>shots.target_y-8&&top>0){shots.target_x=left+8;shots.target_y=top+8;}

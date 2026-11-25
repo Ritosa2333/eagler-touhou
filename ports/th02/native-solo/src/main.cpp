@@ -3027,7 +3027,10 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 app->stage_scene->paused=!app->stage_scene->paused;app->z_input.clear();app->stage_clock.reset(host_ms());
                 if(!app->stage_scene->paused)app->stage_entry_release=true;
                 if(app->gameplay_audio_enabled)sync_gameplay_bgm(*app,app->smoke||(app->focused&&GetForegroundWindow()==hwnd&&!app->minimized&&!app->resizing));
-            }else if(w=='Z'&&!repeat&&app->focused&&!app->stage_scene->paused&&!app->stage_entry_release)app->z_input.event(true,shot_mode(*app));
+            }else if(w=='Z'&&!repeat&&app->focused&&!app->stage_scene->paused&&!app->stage_entry_release){
+                app->stage_scene->sound.shot_cadence.reset();
+                app->z_input.event(true,shot_mode(*app));
+            }
             caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);return 0;
         }
         if(w==VK_F8&&!repeat&&!app->opening.active&&!app->scores_visible&&!app->about_visible&&!app->menu.options&&!app->menu.music_room&&!app->menu.shot_screen){
@@ -3719,6 +3722,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                         app->motion_stride=stride;
                     }
                     app->stage_scene->set_hitbox_mode(app->menu.hitboxes);
+                    app->stage_scene->sound.shot_cadence.set_autofire(app->menu.autofire);
                     soew::ReplayStep step;
                     const bool gameplay=soew::replay_tick_context(*app->stage_scene)==soew::NativeReplayContext::Gameplay;
                     if(app->replay_playback){
