@@ -1764,7 +1764,7 @@
     "th13": {
       "normal": "ports/th13",
       "multiplayer": "ports/th13-mp",
-      "base": "6788776fcd2addd84570201a492c79ecc245cd16",
+      "base": "04c17d6a7b30e8831c75036ce2715d87ea8baa55",
       "history": [
         {
           "kind": "manual",
@@ -3079,6 +3079,27 @@
             "ports/th13-mp/web/cpp/game/StagePresentation.hpp"
           ],
           "note": "呈现同步拆分（StagePresentation.cpp、StagePresentation.hpp）：两侧用同一脚本拆为六个 pass 函数，多人版多座位的 sync_player_shots 自取资源、队友机体循环留在 sync 内未动。regression-digest.mjs 默认比对、重生成需显式 --write：该工具仅普通版有，无需同步。"
+        },
+        {
+          "kind": "manual",
+          "base": "6788776fcd2addd84570201a492c79ecc245cd16",
+          "source": "04c17d6a7b30e8831c75036ce2715d87ea8baa55",
+          "targetHead": "d58eb5bd831203a7ab889205e46023748889b8f4",
+          "paths": [
+            "ports/th13-mp/ADAPTATION.md",
+            "ports/th13-mp/docs/DEVELOPMENT.md",
+            "ports/th13-mp/docs/fidelity-map.md",
+            "ports/th13-mp/tests/combat/player_collision_oracle_test.cpp",
+            "ports/th13-mp/tools/oracle/machine.py",
+            "ports/th13-mp/tools/oracle/probes.py",
+            "ports/th13-mp/tools/replay-verifier/golden/digests-draws-all.json",
+            "ports/th13-mp/tools/replay-verifier/golden/digests-draws.json",
+            "ports/th13-mp/tools/replay-verifier/golden/digests.json",
+            "ports/th13-mp/web/cpp/game/StageBattle.cpp",
+            "ports/th13-mp/web/cpp/game/StageBattle.hpp",
+            "ports/th13-mp/web/cpp/rebuild/X87.hpp"
+          ],
+          "note": "同步自机受击结算门与圆判定对齐：classify_player_bullet 灵界早退，接触结算门与 X87.hpp 两侧一致"
         }
       ]
     },
