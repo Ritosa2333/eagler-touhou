@@ -325,7 +325,7 @@ export const PRODUCT_GAMES = Object.freeze({
             loadouts: BRO_MULTIPLAYER_LOADOUTS,
             peerTransportGlobal: "__broPeerTransport",
             relaySourceEnvelope: true,
-            spectator: false,
+            spectator: true, // 观战阶段 A：BRO 实时观战（configure 下发完整确定性配置 + 0xe8 观战帧车道）
             titleRoomEntry: false,
             inputTiming: Object.freeze({
                 rollbackLimit: 12,

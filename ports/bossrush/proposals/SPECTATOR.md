@@ -1,6 +1,14 @@
 # BRO 联机观战（spectator）适配评估与分阶段方案
 
-> 结论先行：**当前不适配，但可做**。缺的不是「渲染」，而是三处接线：
+> 更新（阶段 A 已落地，2026-11-25）：phase A 实时观战已实现并通过单测 + 本机
+> relay 双客户端 e2e。三处接线均已完成：①产品目录 `spectator: true`；
+> ②relay 认 BRO 的 `0xe8` 观战帧车道并开闸；③runtime 用 `spectator_runtime.mjs`
+> 收帧 → `SpectatorFrameBuffer` → 按帧喂 `BRO_net_apply_keys_at/feed_player_key`
+> 确定性重演 → 上报 `spectatorPlayback`。阶段 B（拖时间轴）与阶段 C（观战后结算）
+> 仍未做；下面的「现状取证」保留为设计依据，其中 `spectator:false` 等描述是
+> 阶段 A 之前的历史状态。
+
+> 结论先行（历史）：**当前不适配，但可做**。缺的不是「渲染」，而是三处接线：
 > ①产品目录没开 `spectator`；②relay 的观战子系统不认识 BRO 的帧；③runtime 没有
 > 「收历史帧 → 本地重演 → 报播放状态」的播放引擎。
 > BRO 侧唯一的重资产（确定性重演）**已经有了**（`BRO_net_replay_*` + `BRO_net_frame_digest`），
@@ -20,7 +28,7 @@ multiplayer: Object.freeze({
     gameplay: "cooperative",
     playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
     relaySourceEnvelope: true,
-    spectator: false,            // ← 这里
+    spectator: false,            // ← 这里（阶段 A 前；现已改为 true）
     ...
 ```
 

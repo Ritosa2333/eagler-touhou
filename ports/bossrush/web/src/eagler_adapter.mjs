@@ -29,11 +29,39 @@
 export const HOST_PROTOCOL = 'eagler-touhou/1';
 export const RUNTIME_EPOCH_QUERY_PARAMETER = 'runtimeEpoch';
 
+/** 观战 Lua 值序列化（与 multiplayer.mjs 的 luaValue 同构，独立定义避免循环依赖）。 */
+function spectatorLuaValue(v) {
+  if (v === null || v === undefined) return 'nil';
+  if (typeof v === 'number') return Number.isFinite(v) ? String(v) : 'nil';
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  if (typeof v === 'string') {
+    return '"' + v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
+  }
+  if (Array.isArray(v)) return '{' + v.map(spectatorLuaValue).join(',') + '}';
+  return '"' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+}
+
+/** 关卡号 → 关卡名（对齐 game/stage_queue.lua 的 STAGE_SUFFIX）。 */
+function stageQueueName(level) {
+  const SUFFIX = { 1: '06', 2: '07', 3: '08', 4: '09', 5: '095', 6: '10', 7: '11', 8: '12',
+    9: '125', 10: '128', 11: '13', 12: '14', 13: '143', 14: '15', 15: '16', 16: '165',
+    17: '17', 18: '18', 19: '185' };
+  const s = SUFFIX[Number(level) | 0];
+  return s ? 'TH' + s + '@BossRush' : 'TH06@BossRush';
+}
+
 /** 13 个必需命令（response=required 的都在此；顺序与官方 Object.freeze 数组一致）。 */
 export const RUNTIME_PROTOCOL_COMMANDS = Object.freeze([
   'configure', 'resources', 'keyboard', 'keyboard-clear', 'touch-controls',
   'touch-cancel', 'direct-touch', 'launch', 'list', 'read', 'write', 'remove', 'sync',
 ]);
+
+import {
+  SpectatorUploader, SpectatorClient,
+  spectatorRelayUrl, publisherRelayUrl,
+} from './spectator_runtime.mjs';
+import { packSpecInput } from './spectator_wire.mjs';
 
 export const RUNTIME_PROTOCOL_OPTIONAL_COMMANDS = Object.freeze([
   'prepare-room', 'return-room', 'playback', 'retry-music', 'thprac-mouse',
@@ -392,6 +420,15 @@ export class EaglerRuntimeAdapter {
      *  的最小适配面。接入网站时按实际端口核对方法名即可，改这里一处。 */
     this.transportName = opts.transportName || `__${this.game}PeerTransport`;
     this.transport = opts.transport || null;
+
+    /** 观战阶段 A：发布端（player-0 上传 0xe8 帧）/ 观战端（收帧确定性重演）。
+     *  两者都只在 netplay* 配置带 spectator 标志时按需构造，普通对局零影响。 */
+    this.spectatorClient = null;
+    this.spectatorUploader = null;
+    this.spectatorPlayback = null;
+    this.spectatorFrame = 0; // 发布端对局内帧号（0 起，观战端从 0 连续取）
+    this.WebSocketCtor = opts.WebSocketCtor || (typeof WebSocket !== 'undefined' ? WebSocket : null);
+    this.netFactory = opts.netFactory || null; // 注入 Lua 门面：{call,jsonCall,ccall}
   }
 
   // ---- 生命周期 -----------------------------------------------------------
@@ -607,6 +644,7 @@ export class EaglerRuntimeAdapter {
       iceServers: Array.isArray(o.netplayIceServers) ? o.netplayIceServers : [],
       preferTurn: o.netplayPreferTurn === true,
       spectator: o.netplaySpectator === true,
+      spectatorId: typeof o.netplaySpectatorId === 'string' ? o.netplaySpectatorId : '',
       inputDelay: Number.isFinite(o.netplayInputDelay) ? o.netplayInputDelay : null,
       inputDelayAuto: o.netplayInputDelayAuto === true,
       predictionReserve: Number.isFinite(o.netplayPredictionReserve) ? o.netplayPredictionReserve : null,
@@ -667,9 +705,123 @@ export class EaglerRuntimeAdapter {
     return { response: { ok: true } };
   }
 
+  /**
+   * 观战阶段 A：根据 netplay 配置装配发布端 / 观战端。
+   *  - 发布端（host，player=0，非 spectator）：开一条 player-0 data socket，
+   *    每帧由 runtime_entry 调 publishSpectatorFrame() 推 0xe8+packSpecInput。
+   *  - 观战端（spectator=true）：开 ?spectator=<id> socket，收帧后由
+   *    runtime_entry 调 pumpSpectatorFrame() 驱动确定性对局。
+   * 两者互斥；普通单机 / 普通联机（无 spectator 标志）完全不触发。
+   */
+  setupSpectator() {
+    const np = this.netplay || {};
+    // 关闭上一局残留
+    this.closeSpectator();
+    if (!np.url || !np.spectator) return null; // 阶段 A 只给观战端开；发布端由 hostNet 标志触发
+    if (!this.WebSocketCtor) return null;
+    const cfg = {
+      playerCount: np.playerCount || 2,
+      localSlot: np.player ?? 0,
+      seed: np.seed,
+      stage: this._spectatorStage(),
+      systems: np.systems || [],
+      loadouts: np.loadouts || [],
+    };
+    const client = new SpectatorClient({
+      ccall: this.ccall,
+      call: (name, ...args) => this._luaCall(name, ...args),
+      jsonCall: (name, ...args) => this._luaJsonCall(name, ...args),
+      WebSocketCtor: this.WebSocketCtor,
+      config: cfg,
+      run: String(np.spectatorId || 'bro-spect'),
+      onPlayback: (snap) => { this.spectatorPlayback = snap; this._emitSpectatorPlayback(snap); },
+      log: (m) => this._emit('error', { message: 'spectator', error: String(m) }),
+    });
+    let url;
+    try { url = spectatorRelayUrl(np.url, np.spectatorId || 'bro-spectator', cfg.playerCount); }
+    catch { return null; }
+    this.spectatorClient = client;
+    client.connect(url);
+    return client;
+  }
+
+  /** 发布端：用 player-0 的 data socket 把每帧输入推给 relay。 */
+  setupSpectatorPublisher() {
+    const np = this.netplay || {};
+    // 不在此处 closeSpectator()：runtime_entry 先调 setupSpectator() 再调本方法，
+    // 观战端已建好 client，若在这里关会把它误关掉。两者靠 np.spectator 互斥。
+    if (!np.url || np.spectator || (np.player ?? 0) !== 0 || !this.WebSocketCtor) return null;
+    let url;
+    try { url = publisherRelayUrl(np.url); } catch { return null; }
+    const up = new SpectatorUploader({
+      url, WebSocketCtor: this.WebSocketCtor,
+      onState: (s) => this._emit('error', { message: 'spectator-upload', error: String(s) }),
+    });
+    up.connect();
+    this.spectatorUploader = up;
+    return up;
+  }
+
+  /** 每帧由 runtime_entry 调；观战端消费下一帧并推进 bro_frame。 */
+  pumpSpectatorFrame() {
+    if (!this.spectatorClient) return null;
+    if (!this.spectatorClient.started) this.spectatorClient.start();
+    return this.spectatorClient.pump();
+  }
+
+  /** 每帧由 runtime_entry 调；发布端把本机/全玩家输入打包上传。
+   *  frameNo 必须是对局内从 0 开始的逻辑帧号（观战端 SpectatorFrameBuffer
+   *  从 0 连续取帧），不能用 runtime.frames（页面帧计数，开局已很大）。
+   *  这里在 launch 时归零，每次成功上传后自增；调用方传的 frame 仅用于诊断。
+   */
+  publishSpectatorFrame(frame, epoch, rows) {
+    if (!this.spectatorUploader) return false;
+    const frameNo = this.spectatorFrame || 0;
+    const ok = this.spectatorUploader.sendBytes(packSpecInput(frameNo, epoch, this.netplay?.playerCount || 2, rows));
+    if (ok) this.spectatorFrame = frameNo + 1;
+    return ok;
+  }
+
+  closeSpectator() {
+    if (this.spectatorClient) { try { this.spectatorClient.close(); } catch { /* 忽略 */ } this.spectatorClient = null; }
+    if (this.spectatorUploader) { try { this.spectatorUploader.close(); } catch { /* 忽略 */ } this.spectatorUploader = null; }
+  }
+
+  /** Lua 门面调用（与 multiplayer.mjs 的 call/jsonCall 同构）。 */
+  _luaCall(name, ...args) {
+    const f = this.netFactory;
+    if (f && typeof f.call === 'function') return f.call(name, ...args);
+    if (!this.ccall) return '';
+    const code = 'return tostring(' + name + '(' + args.map(spectatorLuaValue).join(',') + '))';
+    return this.ccall('bro_eval', 'string', ['string'], [code]);
+  }
+
+  _luaJsonCall(name, ...args) {
+    const f = this.netFactory;
+    if (f && typeof f.jsonCall === 'function') return f.jsonCall(name, ...args);
+    const s = this._luaCall(name, ...args);
+    try { return JSON.parse(s); } catch { return {}; }
+  }
+
+  _spectatorStage() {
+    const q = this.netplay?.stageQueue;
+    if (Array.isArray(q) && q.length) return stageQueueName(q[0]);
+    return 'TH06@BossRush';
+  }
+
+  /** 上报 runtime-info.spectatorPlayback（launcher 据此驱动实时观战条）。 */
+  _emitSpectatorPlayback(snap) {
+    this._emit('runtime-info', {
+      renderer: 'webgl2', architecture: 'wasm32-lua515',
+      version: 'bro-5.1.2+3v', epoch: this.epoch,
+      spectatorPlayback: snap,
+    });
+  }
+
   _cmdLaunch(p) {
     this.launchSerial = Number.isFinite(p.launchSerial) ? p.launchSerial | 0 : (this.launchSerial + 1);
     this.firstFrameSent = false;
+    this.spectatorFrame = 0; // 观战帧号从本局起点 0 重新计
     this.phase = 'prelaunch';
     /* 新一局开始：整表清空按键（noAdopt）。宿主重开时上一局残留的 held
        会跨场景存活（X 按一次后卡死的现象），这里是最干净的释放边界。 */

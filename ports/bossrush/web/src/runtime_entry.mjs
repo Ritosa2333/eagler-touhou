@@ -103,6 +103,14 @@ export async function startBRO(options = {}) {
   // 之前完成，legacy 模式与 chapter 首关才能生效。
   if (adapter && typeof adapter.applyAfterBoot === 'function') adapter.applyAfterBoot();
 
+  // 观战阶段 A：configure 时若带 netplaySpectator / player=0+观战发布标志，
+  // 这里（Lua VM 就绪后）才真正开 socket：观战端连 ?spectator=，发布端连 data socket。
+  // 普通单机 / 普通联机两个 setup 都会因缺标志直接 no-op。
+  if (adapter && typeof adapter.setupSpectator === 'function') {
+    try { adapter.setupSpectator(); } catch (e) { console.warn('setupSpectator failed', e); }
+    try { adapter.setupSpectatorPublisher(); } catch (e) { console.warn('setupSpectatorPublisher failed', e); }
+  }
+
   const renderer = createRenderer(Module, canvas, {
     assetBase,
     assets,
@@ -209,12 +217,35 @@ export async function startBRO(options = {}) {
       if (dt > 100) dt = 100;
       accumulator += dt;
       let stepped = 0;
-      while (accumulator >= stepMs && stepped < 4) {
-        input.syncHeld();
-        ccall('bro_frame', 'number', [], []);
-        storage.tick(++runtime.frames);
-        accumulator -= stepMs;
-        stepped++;
+      // 观战阶段 A：观战端不采本地键盘、不自走 bro_frame——
+      // 一切由 SpectatorClient.pump() 按 relay 送来的确认输入逐帧驱动；
+      // 无帧则停在这一帧（渲染照常），保证与主播确定性一致。
+      const spectator = adapter && adapter.spectatorClient ? adapter.spectatorClient : null;
+      if (spectator) {
+        while (accumulator >= stepMs && stepped < 4) {
+          const r = adapter.pumpSpectatorFrame();
+          if (!r || !r.advanced) break;
+          storage.tick(++runtime.frames);
+          accumulator -= stepMs;
+          stepped++;
+        }
+      } else {
+        while (accumulator >= stepMs && stepped < 4) {
+          input.syncHeld();
+          ccall('bro_frame', 'number', [], []);
+          // 发布端：用本机/全玩家当前输入组装 0xe8 观战帧上传（失败仅丢帧，不影响对局）。
+          if (adapter && typeof adapter.publishSpectatorFrame === 'function'
+              && adapter.spectatorUploader) {
+            try {
+              const rows = adapter._luaJsonCall('BRO_spectator_rows') || [];
+              const seed = adapter.netplay?.seed || 0;
+              adapter.publishSpectatorFrame(runtime.frames, seed, rows);
+            } catch { /* 观战尽力而为 */ }
+          }
+          storage.tick(++runtime.frames);
+          accumulator -= stepMs;
+          stepped++;
+        }
       }
       if (!runtime.lock60 || stepped > 0) {
         ccall('bro_render', 'number', [], []);

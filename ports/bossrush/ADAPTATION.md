@@ -153,10 +153,10 @@
 | MP-03 | [所有席位准备并同步开局](../../docs/adaptation/multiplayer.md#mp-03) | 不适用 | 已实现 | normal：单人模式；GATE 开局栅栏（PROBE_3J）。 |
 | MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | 已实现 | normal：单人模式；同种子同输入 360 帧逐帧指纹一致（PROBE_1F）；DIGEST 摘要（3I）。 |
 | MP-05 | [各席位输入归属](../../docs/adaptation/multiplayer.md#mp-05) | 不适用 | 已实现 | normal：单人模式；per-instance `p.key` + Byte2KeyState（3R/3AC）。 |
-| MP-06 | [旁观加入与输入隔离](../../docs/adaptation/multiplayer.md#mp-06) | 不适用 | 待核对 | normal：单人模式；旁观未启用（`spectator:false`）。 |
-| MP-07 | [旁观只读取连续已确认历史](../../docs/adaptation/multiplayer.md#mp-07) | 不适用 | 待核对 | normal：单人模式 |
-| MP-08 | [慢旁观者与玩家隔离](../../docs/adaptation/multiplayer.md#mp-08) | 不适用 | 待核对 | normal：单人模式 |
-| MP-09 | [旁观尾帧与结束时机](../../docs/adaptation/multiplayer.md#mp-09) | 不适用 | 待核对 | normal：单人模式 |
+| MP-06 | [旁观加入与输入隔离](../../docs/adaptation/multiplayer.md#mp-06) | 不适用 | 已实现 | normal：单人模式；bromp 多人已开 `spectator:true`（阶段 A 实时观战）。relay 认 `0xe8` 观战帧车道（player-0 data socket），观众 lobby `spectate` 首帧后开闸；观战端 `spectator_runtime.mjs` 收帧经 `SpectatorFrameBuffer` 按帧喂 `BRO_net_apply_keys_at/feed_player_key` 确定性重演，不接本地输入、不发包，`BRO_NetState.started` 不污染。上报 `spectatorPlayback` v1。单测 `spectator_wire` 35 + `spectator_runtime` 43 + `eagler_spectator_adapter` 8 + relay `test-bro-spectator-e2e` PASS。阶段 B 时间轴/C 观战后结算未做。 |
+| MP-07 | [旁观只读取连续已确认历史](../../docs/adaptation/multiplayer.md#mp-07) | 不适用 | 已实现 | normal：单人模式；`SpectatorFrameBuffer.next()` 只吐 lastFrame+1，缺帧等待、重复去重、epoch 变清 pending；relay 先回放 history 再转 live。 |
+| MP-08 | [慢旁观者与玩家隔离](../../docs/adaptation/multiplayer.md#mp-08) | 不适用 | 已实现 | normal：单人模式；观众 socket 只读（发消息 close 1008）；上传端 `bufferedAmount>64K` 背压丢帧，观众回放 `bufferedAmount>64K` 暂停 + 15s 超时，不影响玩家 WebRTC 对局。 |
+| MP-09 | [旁观尾帧与结束时机](../../docs/adaptation/multiplayer.md#mp-09) | 不适用 | 部分实现 | normal：单人模式；`0xe8+STOP` 停流 + `spectatorPlayback.ended` 字段已上报；完整尾帧/录像保存（阶段 C）未做。 |
 | MP-10 | [联机暂停与重开](../../docs/adaptation/multiplayer.md#mp-10) | 不适用 | 已实现 | normal：单人模式；任意玩家暂停 + R 重开。 |
 | MP-11 | [多人 Replay](../../docs/adaptation/multiplayer.md#mp-11) | 不适用 | 已实现 | normal：单人模式；旁路多流 + eagler replayMatch（PROBE_3AC/3AD）。 |
 | MP-12 | [WebRTC 与 Relay 路径](../../docs/adaptation/multiplayer.md#mp-12) | 不适用 | 已实现 | normal：单人模式；直连/TURN 回退 + 滚动质量选路（PROBE_3O/3P/3Q）。 |
