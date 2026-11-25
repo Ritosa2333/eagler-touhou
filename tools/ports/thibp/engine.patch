@@ -1,0 +1,821 @@
+--- a/portable/BrowserMain.cpp
++++ b/portable/BrowserMain.cpp
+@@ -3,6 +3,7 @@
+ #include "DirectInput.hpp"
+ #include "DirectSound.hpp"
+ #include "input/TouchController.hpp"
++#include "portable/BrowserPresentation.hpp"
+ #include <emscripten.h>
+ #include <emscripten/html5.h>
+ #include <clocale>
+@@ -12,6 +13,8 @@
+ 
+ namespace {
+ double previous=-1, accumulated=0;
++ph3::presentation::RefreshDetector displayRefresh;
++bool followDisplayRefresh=false;
+ unsigned frames=0;
+ bool failed=false;
+ double nextStateReport=0;
+@@ -247,14 +250,26 @@
+ #endif
+ bool runGameFrame(bool render){
+     applyTouchInput();
++    auto* app=EApplication::GetInstance();
+ #ifdef WOO_REPLAY_VERIFY
+     const bool capture=captureNextFrame();
+-    const bool result=EApplication::GetInstance()->RunFrame(render||capture);
+-    if(result&&capture&&EApplication::GetInstance()->DidBrowserFrameWork())captureRenderedFrame();
++    const bool result=app->RunFrame(render||capture);
++#else
++    const bool result=app->RunFrame(render);
++#endif
++    if(!app->IsRun()){
++        // Match the native main loop's stop condition and report script errors
++        // before handing a normal ClosePackage back to the launcher.
++        if(reportState())EM_ASM({
++            if(globalThis.ph3Diagnostics)globalThis.ph3Diagnostics.phase='exited';
++            Module['ph3OnExit']?.();
++        });
++        return false;
++    }
++#ifdef WOO_REPLAY_VERIFY
++    if(result&&capture&&app->DidBrowserFrameWork())captureRenderedFrame();
++#endif
+     return result;
+-#else
+-    return EApplication::GetInstance()->RunFrame(render);
+-#endif
+ }
+ #if defined(WOO_REPLAY_VERIFY) || defined(PH3_REPLAY_BOUNDARY)
+ bool replayActive(){
+@@ -271,14 +286,17 @@
+ EM_BOOL frame(double now,void*){
+     if(failed)return EM_FALSE;
+     if(EM_ASM_INT({return globalThis.ph3Diagnostics?.phase==='error'?1:0;}))return EM_FALSE;
+-    if(EM_ASM_INT({return document.hidden?1:0;})){previous=-1;accumulated=0;nextStateReport=0;runtimeFpsStart=-1;runtimeFpsSteps=runtimeFpsPresents=0;measureStart=-1;measuredSteps=measuredPresents=0;frameCosts.clear();callbackCosts.clear();measuredQueuedLoadMax=0;previousMeasuredPresent=-1;measuredPresentIntervals=measuredMissedRefreshes=0;return EM_TRUE;}
++    if(EM_ASM_INT({return document.hidden?1:0;})){previous=-1;accumulated=0;displayRefresh.Reset();nextStateReport=0;runtimeFpsStart=-1;runtimeFpsSteps=runtimeFpsPresents=0;measureStart=-1;measuredSteps=measuredPresents=0;frameCosts.clear();callbackCosts.clear();measuredQueuedLoadMax=0;previousMeasuredPresent=-1;measuredPresentIntervals=measuredMissedRefreshes=0;return EM_TRUE;}
+     try {
+         const bool observePerformance=EM_ASM_INT({return globalThis.ph3Diagnostics?.observePerformance?1:0;})!=0;
+         const double begin=observePerformance?emscripten_get_now():0;
+         auto fpsController=EFpsController::GetInstance();
+         const int targetBefore=fpsController->GetBrowserTargetFps();
+         const double deltaLimit=targetBefore>STANDARD_FPS?1000.0/STANDARD_FPS:100.0;
+-        accumulated+=previous<0?0:std::min(deltaLimit,now-previous);previous=now;
++        const double interval=previous<0?0:now-previous;
++        accumulated+=std::min(deltaLimit,interval);previous=now;
++        const bool drawAtDisplayRate=followDisplayRefresh&&displayRefresh.Observe(interval)&&
++            targetBefore==STANDARD_FPS&&fpsController->AllowsHighRefreshPresentation();
+         // Native has a real loader thread. On Web process at most one queued
+         // load per browser callback so unrelated async loads no longer become
+         // one giant synchronous hitch.
+@@ -328,12 +346,39 @@
+                 if(accumulated+0.001<stepMs)break;
+                 accumulated-=stepMs;
+                 const bool renderPermit=fpsController->AdvanceBrowserRenderPermit();
+-                const bool render=accumulated+0.001<stepMs&&renderPermit;
++                const bool render=accumulated+0.001<stepMs&&renderPermit&&!drawAtDisplayRate;
+                 if(!runGameFrame(render))return EM_FALSE;
+                 if(!EApplication::GetInstance()->DidBrowserFrameWork())continue;
+                 ++frames;
+                 ++steps;
+                 rendered=render;
++            }
++            auto* app=EApplication::GetInstance();
++            // The script VM (including its offscreen draws), input and audio
++            // have already finished this tick. Only the visible scene is sampled.
++            if(drawAtDisplayRate&&frames&&app->DidBrowserFrameWork()){
++                if(fpsController->GetBrowserTargetFps()==STANDARD_FPS){
++                    auto* graphics=EDirectGraphics::GetInstance();
++                    auto camera2D=graphics->GetCamera2D();
++                    const auto cameraBefore=*camera2D.GetPointer();
++                    D3DMATRIX viewBefore;
++                    device->GetTransform(D3DTS_VIEW,&viewBefore);
++                    {
++                        const double fraction=std::clamp(accumulated*STANDARD_FPS/1000.0,0.0,1.0);
++                        ph3::presentation::FrameScope sample(frames,fraction);
++                        app->DrawBrowserFrame();
++                    }
++                    if(steps){
++                        graphics->GetCamera()->UpdateDeviceWorldViewMatrix();
++                    }else{
++                        *camera2D.GetPointer()=cameraBefore;
++                        device->SetTransform(D3DTS_VIEW,&viewBefore);
++                    }
++                    rendered=true;
++                }else if(steps){
++                    app->DrawBrowserFrame();
++                    rendered=true;
++                }
+             }
+         }
+         // Diagnostics are an observer, not part of the 60 Hz simulation.
+@@ -432,6 +477,9 @@
+         EPathProperty::CreateInstance();
+         auto app=EApplication::CreateInstance();
+         if(!app->StartBrowser())throw std::runtime_error("Woo application initialization failed");
++        followDisplayRefresh=EM_ASM_INT({return Module['ph3FollowDisplayRefresh']===true;})!=0;
++        EFpsController::GetInstance()->SetBrowserScriptFpsUsesPresentation(
++            EM_ASM_INT({return Module['ph3ScriptFpsUsesPresentation']===true;})!=0);
+         emscripten_request_animation_frame_loop(frame,nullptr);
+     }catch(gstd::wexception& error){fail(gstd::StringUtility::ConvertWideToMulti(error.what(),CP_UTF8));}
+     catch(const std::exception& error){fail(error.what());}
+--- a/source/GcLib/directx/DirectGraphics.cpp
++++ b/source/GcLib/directx/DirectGraphics.cpp
+@@ -1057,6 +1057,9 @@
+ 
+ 	clipNear_ = 10;
+ 	clipFar_ = 2000;
++#ifdef __EMSCRIPTEN__
++	viewPoseHistory_.Reset();
++#endif
+ }
+ 
+ D3DXVECTOR3 DxCamera::GetCameraPosition()
+@@ -1071,29 +1074,47 @@
+ {
+ 	D3DXMATRIX res;
+ 	D3DXVECTOR3 posCamera = GetCameraPosition();
++	D3DXVECTOR3 posTo = pos_;
++	float yaw = yaw_, pitch = pitch_, roll = roll_;
++#ifdef __EMSCRIPTEN__
++	using namespace ph3::presentation;
++	const ViewPose view{posCamera, posTo, yaw, pitch, roll};
++	if (const auto* previous = viewPoseHistory_.Observe(view)) {
++		const auto near = [](D3DXVECTOR3 a, D3DXVECTOR3 b) {
++			return std::abs(a.x-b.x) <= 128 && std::abs(a.y-b.y) <= 128 && std::abs(a.z-b.z) <= 128;
++		};
++		if (near(previous->eye, posCamera) && near(previous->focus, posTo)) {
++			const auto mix = [](D3DXVECTOR3 a, D3DXVECTOR3 b) {
++				return D3DXVECTOR3(Mix(a.x, b.x), Mix(a.y, b.y), Mix(a.z, b.z));
++			};
++			posCamera = mix(previous->eye, posCamera);
++			posTo = mix(previous->focus, posTo);
++			yaw = MixAngle(previous->yaw, yaw);
++			pitch = MixAngle(previous->pitch, pitch);
++			roll = MixAngle(previous->roll, roll);
++		}
++	}
++#endif
+ 
+ 	D3DXVECTOR3 vCameraUp(0, 1, 0);
+ 	{
+ 		D3DXQUATERNION qRot(0, 0, 0, 1.0f);
+ 		D3DXQuaternionRotationYawPitchRoll(&qRot,
+-			Math::DegreeToRadian(yaw_), Math::DegreeToRadian(pitch_), Math::DegreeToRadian(roll_));
++			Math::DegreeToRadian(yaw), Math::DegreeToRadian(pitch), Math::DegreeToRadian(roll));
+ 		D3DXMATRIX matRot;
+ 		D3DXMatrixRotationQuaternion(&matRot, &qRot);
+ 		D3DXVec3TransformCoord((D3DXVECTOR3*)&vCameraUp, (D3DXVECTOR3*)&vCameraUp, &matRot);
+ 	}
+ 
+-	D3DXVECTOR3 posTo = pos_;
+ 	{
+ 		D3DXMATRIX matTrans1;
+ 		D3DXMatrixTranslation(&matTrans1, -posCamera.x, -posCamera.y, -posCamera.z);
+ 		D3DXMATRIX matTrans2;
+ 		D3DXMatrixTranslation(&matTrans2, posCamera.x, posCamera.y, posCamera.z);
+ 
+-		float pitch = pitch_;
+-
+ 		D3DXQUATERNION qRot(0, 0, 0, 1.0f);
+ 		D3DXQuaternionRotationYawPitchRoll(&qRot,
+-			Math::DegreeToRadian(yaw_), Math::DegreeToRadian(pitch_), Math::DegreeToRadian(0));
++			Math::DegreeToRadian(yaw), Math::DegreeToRadian(pitch), Math::DegreeToRadian(0));
+ 		D3DXMATRIX matRot;
+ 		D3DXMatrixRotationQuaternion(&matRot, &qRot);
+ 
+--- a/source/GcLib/directx/DirectGraphics.hpp
++++ b/source/GcLib/directx/DirectGraphics.hpp
+@@ -2,6 +2,9 @@
+ #define __DIRECTX_DIRECTGRAPHICS__
+ 
+ #include"DxConstant.hpp"
++#ifdef __EMSCRIPTEN__
++#include "portable/BrowserPresentation.hpp"
++#endif
+ 
+ namespace directx
+ {
+@@ -204,6 +207,14 @@
+ 			double clipNear_;
+ 			double clipFar_;
+ 
++#ifdef __EMSCRIPTEN__
++			struct ViewPose {
++				D3DXVECTOR3 eye, focus;
++				float yaw, pitch, roll;
++			};
++			ph3::presentation::History<ViewPose> viewPoseHistory_;
++#endif
++
+ 		public:
+ 			DxCamera();
+ 			virtual ~DxCamera();
+--- a/source/GcLib/directx/DirectInput.cpp
++++ b/source/GcLib/directx/DirectInput.cpp
+@@ -369,7 +369,10 @@
+ 	float deltaWheel = 0.0f;
+ 	SDL_Event event;
+ 	while (SDL_PollEvent(&event)) {
+-		if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) ResetInputState();
++		if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
++			ClearInjectedKeyState();
++			ResetInputState();
++		}
+ 		else if (event.type == SDL_EVENT_MOUSE_MOTION) {
+ 			deltaX += event.motion.xrel;
+ 			deltaY += event.motion.yrel;
+@@ -416,7 +419,10 @@
+ 		bufKey_[iKey] = KEY_FREE;
+ 	ZeroMemory(bKeyState_, sizeof(bKeyState_));
+ 	ZeroMemory(bNonTouchKeyState_, sizeof(bNonTouchKeyState_));
+-	ClearInjectedKeyState();
++	// A scene reset discards pending taps. Held keys stay owned by the
++	// browser keyboard bridge until keyup or focus loss, just like SDL keys.
++	ZeroMemory(bPulseKeyState_, sizeof(bPulseKeyState_));
++	ZeroMemory(injectedPulseFrames_, sizeof(injectedPulseFrames_));
+ 	ClearDirectTouchKeyState();
+ }
+ void DirectInput::ResetPadState()
+--- a/source/GcLib/directx/DxScript.cpp
++++ b/source/GcLib/directx/DxScript.cpp
+@@ -103,6 +103,30 @@
+ 	bZWrite_ = false;
+ 	bZTest_ = false;
+ }
++DxScriptRenderObject::RenderPose DxScriptRenderObject::GetRenderPose()
++{
++	RenderPose pose{position_, angle_, scale_};
++#ifdef __EMSCRIPTEN__
++	using namespace ph3::presentation;
++	if (const auto* previous = renderPoseHistory_.Observe(pose)) {
++		// Keep script teleports and recycled/reappearing objects discrete.
++		const auto& p = previous->position;
++		if (std::abs(pose.position.x - p.x) <= 64 &&
++			std::abs(pose.position.y - p.y) <= 64 &&
++			std::abs(pose.position.z - p.z) <= 64) {
++			const auto mix = [](D3DXVECTOR3 before, D3DXVECTOR3 after) {
++				return D3DXVECTOR3(Mix(before.x, after.x), Mix(before.y, after.y), Mix(before.z, after.z));
++			};
++			pose.position = mix(p, pose.position);
++			pose.scale = mix(previous->scale, pose.scale);
++			pose.angle = D3DXVECTOR3(MixAngle(previous->angle.x, pose.angle.x),
++				MixAngle(previous->angle.y, pose.angle.y), MixAngle(previous->angle.z, pose.angle.z));
++		}
++	}
++#endif
++	return pose;
++}
++
+ void DxScriptPrimitiveObject2D::Render()
+ {
+ 	RenderObjectTLX* obj = GetObjectPointer();
+@@ -124,9 +148,10 @@
+ {
+ 	DirectGraphics* graphics = DirectGraphics::GetBase();
+ 	RenderObjectTLX* obj = GetObjectPointer();
+-	obj->SetPosition(position_);
+-	obj->SetAngle(angle_);
+-	obj->SetScale(scale_);
++	auto pose = GetRenderPose();
++	obj->SetPosition(pose.position);
++	obj->SetAngle(pose.angle);
++	obj->SetScale(pose.scale);
+ 	graphics->SetLightingEnable(false);
+ 	graphics->SetZWriteEnalbe(false);
+ 	graphics->SetZBufferEnable(false);
+@@ -328,9 +353,10 @@
+ 	bool bEnvFogEnable = graphics->IsFogEnable();
+ 
+ 	RenderObjectLX* obj = GetObjectPointer();
+-	obj->SetPosition(position_);
+-	obj->SetAngle(angle_);
+-	obj->SetScale(scale_);
++	auto pose = GetRenderPose();
++	obj->SetPosition(pose.position);
++	obj->SetAngle(pose.angle);
++	obj->SetScale(pose.scale);
+ 	graphics->SetLightingEnable(false);
+ 	graphics->SetZWriteEnalbe(bZWrite_);
+ 	graphics->SetZBufferEnable(bZTest_);
+@@ -514,9 +540,10 @@
+ 	DirectGraphics* graphics = DirectGraphics::GetBase();
+ 	bool bEnvFogEnable = graphics->IsFogEnable();
+ 
+-	mesh_->SetPosition(position_);
+-	mesh_->SetAngle(angle_);
+-	mesh_->SetScale(scale_);
++	auto pose = GetRenderPose();
++	mesh_->SetPosition(pose.position);
++	mesh_->SetAngle(pose.angle);
++	mesh_->SetScale(pose.scale);
+ 	mesh_->SetColor(color_);
+ 	mesh_->SetCoordinate2D(bCoordinate2D_);
+ 
+@@ -576,9 +603,10 @@
+ 	SetRenderState();
+ 	text_.SetPosition(position_.x, position_.y);
+ 	_UpdateRenderer();
+-	objRender_->SetPosition(position_.x, position_.y);
+-	objRender_->SetAngle(angle_);
+-	objRender_->SetScale(scale_);
++	auto pose = GetRenderPose();
++	objRender_->SetPosition(pose.position.x, pose.position.y);
++	objRender_->SetAngle(pose.angle);
++	objRender_->SetScale(pose.scale);
+ 	objRender_->SetVertexColor(text_.GetVertexColor());
+ 	objRender_->SetTransCenter(center_);
+ 	objRender_->SetAutoCenter(bAutoCenter_);
+--- a/source/GcLib/directx/DxScript.hpp
++++ b/source/GcLib/directx/DxScript.hpp
+@@ -6,6 +6,9 @@
+ #include"DxText.hpp"
+ #include"RenderObject.hpp"
+ #include"DirectSound.hpp"
++#ifdef __EMSCRIPTEN__
++#include "portable/BrowserPresentation.hpp"
++#endif
+ #if defined(__EMSCRIPTEN__) && !defined(PH3_LEGACY_RENDER_NODE_POOL)
+ #include "../gstd/ListNodePool.hpp"
+ #endif
+@@ -92,6 +95,14 @@
+ 
+ 			int idRelative_;
+ 			std::wstring nameRelativeBone_;
++
++			struct RenderPose {
++				D3DXVECTOR3 position, angle, scale;
++			};
++			RenderPose GetRenderPose();
++#ifdef __EMSCRIPTEN__
++			ph3::presentation::History<RenderPose> renderPoseHistory_;
++#endif
+ 		public:
+ 			DxScriptRenderObject();
+ #ifdef __EMSCRIPTEN__
+--- a/source/GcLib/portable/DxDevice.cpp
++++ b/source/GcLib/portable/DxDevice.cpp
+@@ -195,6 +195,7 @@
+     SDL_Window* window=nullptr;
+     SDL_GLContext context=nullptr;
+     bool ownWindow=false,inScene=false;
++    bool nearestPresentation=false;
+     GLuint program=0,vao=0,vbo=0,white=0,feedbackTexture=0;
+     std::array<GLuint,5> modulatePrograms{};
+     UINT modulateSubmissions=0;
+@@ -432,6 +433,7 @@
+ 
+ IDirect3DDevice9::IDirect3DDevice9(UINT width,UINT height,SDL_Window* existing):state(std::make_unique<DeviceState>()){
+     Check(width&&height,"Invalid Woo canvas dimensions");auto& s=*state;
++    s.nearestPresentation=EM_ASM_INT({return Module['ph3NearestPresentation']===true?1:0;})!=0;
+     Check(SDL_InitSubSystem(SDL_INIT_VIDEO),SDL_GetError());
+     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_ES);
+     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,0);
+@@ -500,7 +502,9 @@
+     glBindFramebuffer(GL_READ_FRAMEBUFFER,back.framebuffer);
+     glBindFramebuffer(GL_DRAW_FRAMEBUFFER,0);
+     state->targetBindingValid=false;
+-    glBlitFramebuffer(0,0,back.width,back.height,0,0,width,height,GL_COLOR_BUFFER_BIT,GL_LINEAR);
++    const bool magnified=UINT(width)>=back.width&&UINT(height)>=back.height;
++    const GLenum filter=state->nearestPresentation&&magnified?GL_NEAREST:GL_LINEAR;
++    glBlitFramebuffer(0,0,back.width,back.height,0,0,width,height,GL_COLOR_BUFFER_BIT,filter);
+ #ifdef PH3_WEB_GL_ERROR_CHECK
+     const GLenum error=glGetError();
+     if(error!=GL_NO_ERROR)throw std::runtime_error("WebGL rendering error: "+std::to_string(error));
+--- a/source/TouhouDanmakufu/Common/DnhGcLibImpl.hpp
++++ b/source/TouhouDanmakufu/Common/DnhGcLibImpl.hpp
+@@ -61,9 +61,12 @@
+ 	float GetCurrentFps() { return browserAutoSkip_ ? browserWorkFps_ : browserWorkFps_ / browserRenderDivisor_; }
+ 	float GetCurrentWorkFps() { return browserWorkFps_; }
+ 	float GetCurrentRenderFps() { return browserRenderFps_; }
++	float GetBrowserScriptFps() const { return browserScriptFpsUsesPresentation_ ? browserRenderFps_ : browserWorkFps_; }
++	void SetBrowserScriptFpsUsesPresentation(bool enabled) { browserScriptFpsUsesPresentation_ = enabled; }
+ 	void SetBrowserRuntimeFps(float work, float render) { browserWorkFps_ = work; browserRenderFps_ = render; }
+ 	int GetBrowserTargetFps();
+ 	bool AdvanceBrowserRenderPermit();
++	bool AllowsHighRefreshPresentation() const { return browserRenderDivisor_ == 1; }
+ #else
+ 	float GetCurrentFps() { return controller_->GetCurrentFps(); }
+ 	float GetCurrentWorkFps() { return controller_->GetCurrentWorkFps(); }
+@@ -86,6 +89,7 @@
+ 	int browserRenderDivisor_ = 1;
+ 	int browserRenderCounter_ = 0;
+ 	bool browserAutoSkip_ = false;
++	bool browserScriptFpsUsesPresentation_ = false;
+ #endif
+ };
+ 
+--- a/source/TouhouDanmakufu/Common/StgControlScript.cpp
++++ b/source/TouhouDanmakufu/Common/StgControlScript.cpp
+@@ -385,7 +385,11 @@
+ gstd::value StgControlScript::Func_GetCurrentFps(gstd::script_machine* machine, int argc, gstd::value const * argv)
+ {
+ 	EFpsController* fpsController = EFpsController::GetInstance();
++#ifdef __EMSCRIPTEN__
++	gstd::script_real res = fpsController->GetBrowserScriptFps();
++#else
+ 	gstd::script_real res = fpsController->GetCurrentWorkFps();
++#endif
+ 	return value(machine->get_engine()->get_real_type(), res);
+ }
+ gstd::value StgControlScript::Func_GetStageTime(gstd::script_machine* machine, int argc, gstd::value const * argv)
+--- a/source/TouhouDanmakufu/Common/StgItem.cpp
++++ b/source/TouhouDanmakufu/Common/StgItem.cpp
+@@ -655,6 +655,14 @@
+ }
+ void StgItemObject::RenderOnItemManager(D3DXMATRIX mat)
+ {
++	double renderX = posX_, renderY = posY_;
++#ifdef __EMSCRIPTEN__
++	if (ph3::presentation::currentFrame.tick) {
++		const auto position = GetRenderPose().position;
++		renderX = position.x;
++		renderY = position.y;
++	}
++#endif
+ 	StgItemManager* itemManager = stageController_->GetItemManager();
+ 	SpriteList2D* renderer = typeItem_ == ITEM_SCORE ?
+ 		itemManager->GetDigitRenderer() : itemManager->GetItemRenderer();
+@@ -705,7 +713,7 @@
+ 		}
+ 
+ 		//上にはみ出している
+-		double posY = posY_;
++		double posY = renderY;
+ 		D3DCOLOR color = D3DCOLOR_ARGB(255, 255, 255, 255);
+ 		if(posY_ <= 0)
+ 		{
+@@ -739,7 +747,7 @@
+ 
+ 		RECT_D rcSrcD = GetRectD(rcSrc);
+ 		renderer->SetColor(color);
+-		renderer->SetPosition(posX_, posY, 0);
++		renderer->SetPosition(renderX, posY, 0);
+ 		renderer->SetScaleXYZ(scale, scale, scale);
+ 		renderer->SetSourceRect(rcSrcD);
+ 		renderer->SetDestinationCenter();
+@@ -765,8 +773,8 @@
+ 		{
+ 			RECT_D rcSrc = {(double)(listNum[iNum]*36), 0.,
+ 				(double)((listNum[iNum]+1)*36-1), 31.};
+-			RECT_D rcDest = { (double)(posX_+(listNum.size()-1-iNum)*fontSize/2), (double)posY_,
+-				(double)(posX_+(listNum.size()-iNum)*fontSize/2), (double)(posY_+fontSize)};
++			RECT_D rcDest = { (double)(renderX+(listNum.size()-1-iNum)*fontSize/2), (double)renderY,
++				(double)(renderX+(listNum.size()-iNum)*fontSize/2), (double)(renderY+fontSize)};
+ 			renderer->SetSourceRect(rcSrc);
+ 			renderer->SetDestinationRect(rcDest);
+ 			renderer->AddVertex();
+@@ -1080,6 +1088,7 @@
+ 	StgItemRenderer* renderer = itemData->GetRenderer();
+ 	if(renderer == NULL)return;
+ 
++	const auto pose = GetRenderPose();
+ 	D3DXMATRIX matScale;
+ 	D3DXMATRIX matRot;
+ 	D3DXMATRIX matTrans;
+@@ -1095,18 +1104,18 @@
+ 			rcSrc = itemData->GetOut();
+ 		}
+ 
+-		double angleZ = angle_.z;
++		double angleZ = pose.angle.z;
+ 		if(!bOutY)
+ 		{
+-			D3DXMatrixScaling(&matScale, scale_.x, scale_.y, scale_.z);
+-			D3DXMatrixRotationYawPitchRoll(&matRot, D3DXToRadian(angle_.y), D3DXToRadian(angle_.x), D3DXToRadian(angleZ));
+-			D3DXMatrixTranslation(&matTrans, position_.x, position_.y, position_.z);
++			D3DXMatrixScaling(&matScale, pose.scale.x, pose.scale.y, pose.scale.z);
++			D3DXMatrixRotationYawPitchRoll(&matRot, D3DXToRadian(pose.angle.y), D3DXToRadian(pose.angle.x), D3DXToRadian(angleZ));
++			D3DXMatrixTranslation(&matTrans, pose.position.x, pose.position.y, pose.position.z);
+ 		}
+ 		else
+ 		{
+ 			D3DXMatrixIdentity(&matScale);
+ 			D3DXMatrixIdentity(&matRot);
+-			D3DXMatrixTranslation(&matTrans, position_.x, (rcSrc.bottom - rcSrc.top) / 2, position_.z);
++			D3DXMatrixTranslation(&matTrans, pose.position.x, (rcSrc.bottom - rcSrc.top) / 2, pose.position.z);
+ 		}
+ 
+ 		mat = matScale * matRot * matTrans * mat;
+--- a/source/TouhouDanmakufu/Common/StgShot.cpp
++++ b/source/TouhouDanmakufu/Common/StgShot.cpp
+@@ -1259,6 +1259,16 @@
+ 	return res;
+ }
+ 
++double StgShotObject::GetRenderDirection(double angle)
++{
++#ifdef __EMSCRIPTEN__
++	using namespace ph3::presentation;
++	if (const auto* previous = renderDirectionHistory_.Observe(angle))
++		return MixAngle(*previous, angle);
++#endif
++	return angle;
++}
++
+ void StgNormalShotObject::RenderOnShotManager(D3DXMATRIX mat)
+ {
+ 	if(!IsVisible())return;
+@@ -1298,6 +1308,10 @@
+ 	}
+ 
+ 	if(renderer == NULL)return;
++
++	const auto pose = GetRenderPose();
++	const double angleZ = GetRenderDirection(shotData->IsFixedAngle() ? double(angle_.z) :
++		GetDirectionAngle() + 90 + angle_.z);
+ 
+ 	D3DXMATRIX matScale;
+ 	D3DXMATRIX matRot;
+@@ -1310,13 +1324,9 @@
+ 		double expa = 0.5f + (double)delay_ / 30.0f * 2;
+ 		if(expa > 2)expa = 2;
+ 
+-		double angleZ = 0;
+-		if(!shotData->IsFixedAngle())angleZ = GetDirectionAngle() + 90 + angle_.z;
+-		else angleZ = angle_.z;
+-
+ 		D3DXMatrixScaling(&matScale, expa, expa, 1.0f);
+-		D3DXMatrixRotationYawPitchRoll(&matRot, D3DXToRadian(angle_.y), D3DXToRadian(angle_.x), D3DXToRadian(angleZ));
+-		D3DXMatrixTranslation(&matTrans, position_.x, position_.y, position_.z);
++		D3DXMatrixRotationYawPitchRoll(&matRot, D3DXToRadian(pose.angle.y), D3DXToRadian(pose.angle.x), D3DXToRadian(angleZ));
++		D3DXMatrixTranslation(&matTrans, pose.position.x, pose.position.y, pose.position.z);
+ 		mat = matScale * matRot * matTrans * mat;
+ 
+ 		rcSrc = shotData->GetDelayRect();
+@@ -1324,13 +1334,9 @@
+ 	}
+ 	else
+ 	{
+-		double angleZ = 0;
+-		if(!shotData->IsFixedAngle())angleZ = GetDirectionAngle() + 90 + angle_.z;
+-		else angleZ = angle_.z;
+-
+-		D3DXMatrixScaling(&matScale, scale_.x, scale_.y, scale_.z);
+-		D3DXMatrixRotationYawPitchRoll(&matRot, D3DXToRadian(angle_.y), D3DXToRadian(angle_.x), D3DXToRadian(angleZ));
+-		D3DXMatrixTranslation(&matTrans, position_.x, position_.y, position_.z);
++		D3DXMatrixScaling(&matScale, pose.scale.x, pose.scale.y, pose.scale.z);
++		D3DXMatrixRotationYawPitchRoll(&matRot, D3DXToRadian(pose.angle.y), D3DXToRadian(pose.angle.x), D3DXToRadian(angleZ));
++		D3DXMatrixTranslation(&matTrans, pose.position.x, pose.position.y, pose.position.z);
+ 		mat = matScale * matRot * matTrans * mat;
+ 
+ 		rcSrc = shotData->GetRect(frameWork_);
+@@ -1746,6 +1752,9 @@
+ 
+ 	if(renderer == NULL)return;
+ 
++	const auto pose = GetRenderPose();
++	const double renderAngle = GetRenderDirection(GetDirectionAngle() + 90);
++
+ 	D3DXMATRIX matScale;
+ 	D3DXMATRIX matRot;
+ 	D3DXMATRIX matTrans;
+@@ -1759,8 +1768,8 @@
+ 		if(expa > 3.5)expa = 3.5;
+ 
+ 		D3DXMatrixScaling(&matScale, expa, expa, 1.0f);
+-		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(GetDirectionAngle() + 90));
+-		D3DXMatrixTranslation(&matTrans, position_.x, position_.y, position_.z);
++		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(renderAngle));
++		D3DXMatrixTranslation(&matTrans, pose.position.x, pose.position.y, pose.position.z);
+ 		mat = matScale * matRot * matTrans * mat;
+ 
+ 		rcSrc = shotData->GetDelayRect();
+@@ -1775,8 +1784,8 @@
+ 	else
+ 	{
+ 		D3DXMatrixScaling(&matScale, 1.0f, 1.0f, 1.0f);
+-		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(GetDirectionAngle() + 90));
+-		D3DXMatrixTranslation(&matTrans, position_.x, position_.y, position_.z);
++		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(renderAngle));
++		D3DXMatrixTranslation(&matTrans, pose.position.x, pose.position.y, pose.position.z);
+ 		mat = matScale * matRot * matTrans * mat;
+ 
+ 		double radius = pow(pow(posXE_ - posX_,2)+pow(posYE_-posY_,2), 0.5);
+@@ -2010,6 +2019,8 @@
+ 	StgShotData* shotData = _GetShotData();
+ 	if(shotData == NULL)return;
+ 
++	const auto pose = GetRenderPose();
++	const double renderAngle = GetRenderDirection(angLaser_ + 270);
+ 	int objBlendType = GetBlendType();
+ 	int shotBlendType = objBlendType;
+ 	{
+@@ -2033,8 +2044,8 @@
+ 		RECT rcDest;
+ 		D3DCOLOR color;
+ 		D3DXMatrixScaling(&matScale, scaleX_, 1.0f, 1.0f);
+-		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(angLaser_ + 270));
+-		D3DXMatrixTranslation(&matTrans, position_.x, position_.y, position_.z);
++		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(renderAngle));
++		D3DXMatrixTranslation(&matTrans, pose.position.x, pose.position.y, pose.position.z);
+ 		D3DXMATRIX matLaser = matScale * matRot * matTrans * mat;
+ 
+ 		rcSrc = shotData->GetRect(frameWork_);
+@@ -2107,8 +2118,8 @@
+ 		RECT rcDest;
+ 		D3DCOLOR color;
+ 		D3DXMatrixScaling(&matScale, 1.0f, 1.0f, 1.0f);
+-		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(angLaser_ + 270));
+-		D3DXMatrixTranslation(&matTrans, position_.x, position_.y, position_.z);
++		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(renderAngle));
++		D3DXMatrixTranslation(&matTrans, pose.position.x, pose.position.y, pose.position.z);
+ 		D3DXMATRIX matSource = matScale * matRot * matTrans * mat;
+ 
+ 		rcSrc = shotData->GetDelayRect();
+@@ -2378,12 +2389,13 @@
+ 		RECT rcDest;
+ 
+ 		//遅延時間
++		const auto pose = GetRenderPose();
+ 		double expa = 0.5f + (double)delay_ / 30.0f * 2;
+ 		if(expa > 3.5)expa = 3.5;
+ 
+ 		D3DXMatrixScaling(&matScale, expa, expa, 1.0f);
+-		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(GetDirectionAngle() + 90));
+-		D3DXMatrixTranslation(&matTrans, position_.x, position_.y, position_.z);
++		D3DXMatrixRotationYawPitchRoll(&matRot, 0, 0, D3DXToRadian(GetRenderDirection(GetDirectionAngle() + 90)));
++		D3DXMatrixTranslation(&matTrans, pose.position.x, pose.position.y, pose.position.z);
+ 		D3DXMATRIX tMat = matScale * matRot * matTrans * mat;
+ 		color = shotData->GetDelayColor();
+ 
+@@ -2408,6 +2420,18 @@
+ 			listPos.push_back(*itr);
+ 		}
+ 
++#ifdef __EMSCRIPTEN__
++		using namespace ph3::presentation;
++		if (const auto* previous = renderPathHistory_.Observe(listPos);
++			previous && previous->size() == listPos.size() && !listPos.empty() &&
++			std::abs(previous->front().x - listPos.front().x) <= 64 &&
++			std::abs(previous->front().y - listPos.front().y) <= 64) {
++			for (std::size_t i = 0; i < listPos.size(); ++i) {
++				listPos[i].x = Mix((*previous)[i].x, listPos[i].x);
++				listPos[i].y = Mix((*previous)[i].y, listPos[i].y);
++			}
++		}
++#endif
+ 		int countPos = listPos.size();
+ 		RECT rcSrcOrg = shotData->GetRect(frameWork_);
+ 		double rate = (double)(rcSrcOrg.bottom-rcSrcOrg.top) / (double)max(countPos, 1);
+--- a/source/TouhouDanmakufu/Common/StgShot.hpp
++++ b/source/TouhouDanmakufu/Common/StgShot.hpp
+@@ -221,6 +221,10 @@
+ 		bool bChangeItemEnable_;
+ 
+ 		StgShotData* _GetShotData();
++		double GetRenderDirection(double angle);
++#ifdef __EMSCRIPTEN__
++		ph3::presentation::History<double> renderDirectionHistory_;
++#endif
+ 		void _SetVertexPosition(VERTEX_TLX& vertex, float x, float y, float z = 1.0f, float w = 1.0f);
+ 		void _SetVertexUV(VERTEX_TLX& vertex, float u, float v);
+ 		void _SetVertexColorARGB(VERTEX_TLX& vertex, D3DCOLOR color);
+@@ -437,6 +441,9 @@
+ 		};
+ 
+ 		std::list<Position> listPosition_;
++#ifdef __EMSCRIPTEN__
++		ph3::presentation::History<std::vector<Position>> renderPathHistory_;
++#endif
+ 		double tipDecrement_;
+ 
+ 		virtual void _DeleteInAutoClip();
+--- a/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.cpp
++++ b/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.cpp
+@@ -227,9 +227,13 @@
+ #ifdef PH3_PERF_SCAN
+ 		perfBegin=emscripten_get_now();
+ #endif
++#ifdef __EMSCRIPTEN__
++		DrawBrowserFrame();
++#else
+ 		graphics->BeginScene();
+ 		taskManager->CallRenderFunction();
+ 		graphics->EndScene();
++#endif
+ #ifdef PH3_PERF_SCAN
+ 		ReportPerfPhase("render",emscripten_get_now()-perfBegin);
+ #endif
+@@ -290,6 +294,13 @@
+ {
+ 	browserRenderEnabled_ = render;
+ 	return _Loop();
++}
++void EApplication::DrawBrowserFrame()
++{
++	auto* graphics = EDirectGraphics::GetInstance();
++	graphics->BeginScene();
++	ETaskManager::GetInstance()->CallRenderFunction();
++	graphics->EndScene();
+ }
+ #endif
+ bool EApplication::_Finalize()
+--- a/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.hpp
++++ b/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.hpp
+@@ -23,6 +23,7 @@
+ 	bool RunFrame();
+ #ifdef __EMSCRIPTEN__
+ 	bool RunFrame(bool render);
++	void DrawBrowserFrame();
+ 	bool DidBrowserFrameWork() const { return browserFrameWorked_; }
+ 	bool StartBrowser() { return Initialize() && _Initialize(); }
+ private:
+--- a/tools/build-web.mjs
++++ b/tools/build-web.mjs
+@@ -162,7 +162,7 @@
+         sha256: sha(readFileSync(resolve(out, 'ph3-open.wasm'))),
+         loaderSha256: sha(readFileSync(resolve(out, 'ph3-open.mjs'))),
+         architecture: {
+-          loop: 'original-60hz-logic-display-cadence',
++          loop: 'native-logic-with-optional-interpolated-display',
+           audio: 'sdl3-webaudio-vorbis',
+           renderer: 'd3d9-semantic-webgl2',
+           files: 'managed-data-memfs-idbfs',
+--- /dev/null
++++ b/source/GcLib/portable/BrowserPresentation.hpp
+@@ -0,0 +1,83 @@
++#pragma once
++
++#include <algorithm>
++#include <cmath>
++#include <utility>
++
++namespace ph3::presentation {
++
++struct Frame {
++    unsigned tick = 0;
++    double fraction = 1;
++};
++
++inline Frame currentFrame;
++
++class FrameScope {
++public:
++    FrameScope(unsigned tick, double fraction)
++        : previous_(std::exchange(currentFrame, Frame{tick, fraction})) {}
++    ~FrameScope() { currentFrame = previous_; }
++    FrameScope(const FrameScope&) = delete;
++    FrameScope& operator=(const FrameScope&) = delete;
++private:
++    Frame previous_;
++};
++
++// Presented objects only keep samples from adjacent game ticks. A newly
++// visible object and an object skipped by a scene transition use their pose.
++template<class T>
++class History {
++public:
++    const T* Observe(const T& value) {
++        const auto tick = currentFrame.tick;
++        if (!tick) return nullptr;
++        if (tick != tick_) {
++            consecutive_ = tick_ && tick - tick_ == 1;
++            std::swap(previous_, current_);
++            current_ = value;
++            tick_ = tick;
++        }
++        return consecutive_ ? &previous_ : nullptr;
++    }
++
++    void Reset() {
++        tick_ = 0;
++        consecutive_ = false;
++    }
++
++private:
++    unsigned tick_ = 0;
++    bool consecutive_ = false;
++    T previous_{};
++    T current_{};
++};
++
++inline double Mix(double from, double to) {
++    return from + (to - from) * currentFrame.fraction;
++}
++
++inline double MixAngle(double from, double to) {
++    double delta = to - from;
++    if (std::abs(delta) > 180) delta = std::remainder(delta, 360.0);
++    return from + delta * currentFrame.fraction;
++}
++
++class RefreshDetector {
++public:
++    bool Observe(double interval) {
++        // Debounce ordinary 60 Hz jitter and occasional missed high-Hz callbacks.
++        if (interval > 0 && interval <= 1000.0 / 70)
++            fastIntervals_ = std::min(6, fastIntervals_ + 1);
++        else
++            fastIntervals_ = std::max(0, fastIntervals_ - 2);
++        return fastIntervals_ >= 4;
++    }
++
++    void Reset() { fastIntervals_ = 0; }
++
++private:
++    int fastIntervals_ = 0;
++};
++
++} // namespace ph3::presentation
