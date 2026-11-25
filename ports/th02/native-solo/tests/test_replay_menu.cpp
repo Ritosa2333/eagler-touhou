@@ -1,7 +1,6 @@
 #include "replay_menu.hpp"
 #include "replay_slots.hpp"
 #include <iostream>
-#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -33,26 +32,25 @@ struct Harness {
 
 void browser(){
     Harness h;auto &m=h.menu;auto &c=h.catalog;
-    c.slots[1]=Slot::Unavailable;
-    c.slots[99]=Slot::Ready;
-    m.begin_browse();check(m.active()&&m.screen()==S::Browse&&m.page_count(c)==10&&m.selected_entry()==E{false,0});
+    c.add_browse({false,1},false,false,false);
+    c.add_browse({false,99},false,false,true);
+    c.add_browse({false,12},false,true,true);
+    c.add_browse({false,24},true,true,true); // Extra practice stays in Practice.
+    m.begin_browse();check(m.active()&&m.screen()==S::Browse&&m.browse_column()==0&&m.browse_entry(c)==E{false,1});
     check(m.update(M::confirm,c).action==A::None&&m.screen()==S::Browse); // Held on modal entry.
-    h.key(M::confirm);check(m.screen()==S::Browse&&m.error().empty());
-    check(m.update(M::down,c).action==A::None&&m.row()==0); // Full neutral before the next key.
-    h.key(M::down);h.key(M::confirm);
-    check(m.screen()==S::Browse&&!m.error().empty());
-    h.key(M::up|M::confirm);check(m.screen()==S::Browse&&m.page()==0&&m.row()==0&&m.error().empty());
-    h.key(M::up);check(m.selected_entry()==E{false,99});
-    h.key(M::left);check(m.selected_entry()==E{false,89});
-    h.key(M::down);check(m.selected_entry()==E{false,90});
-    h.key(M::right);check(m.selected_entry()==E{false,0});
+    h.key(M::confirm);check(m.screen()==S::Browse&&m.error()=="INVALID REPLAY");
+    check(m.update(M::down,c).action==A::None&&m.browse_index(0)==0);
+    h.key(M::down|M::confirm);check(m.screen()==S::Browse&&m.browse_entry(c)==E{false,99}&&m.error().empty());
+    h.key(M::right);check(m.browse_column()==1&&m.browse_entry(c)==E{false,12});
+    h.key(M::right);check(m.browse_column()==2&&m.browse_entry(c)==E{false,24});
+    h.key(M::right);check(m.browse_column()==0&&m.browse_entry(c)==E{false,99});
     check(h.press(M::toggle_recording|M::confirm).action==A::ToggleRecording&&m.screen()==S::Browse);
     check(m.update(M::toggle_recording,c).action==A::None);
-    check(h.press(M::toggle_recording).action==A::ToggleRecording&&m.selected_entry()==E{false,0});
-    h.key(M::up);h.key(M::confirm);check(m.screen()==S::Details);
+    check(h.press(M::toggle_recording).action==A::ToggleRecording&&m.browse_entry(c)==E{false,99});
+    h.key(M::confirm);check(m.screen()==S::Details&&m.selected_entry()==E{false,99});
     h.key(M::toggle_recording);check(m.screen()==S::Details);
     check(m.update(M::confirm,c).action==A::None&&m.screen()==S::Details);
-    h.key(M::cancel|M::confirm);check(m.screen()==S::Browse&&m.selected_entry()==E{false,99});
+    h.key(M::cancel|M::confirm);check(m.screen()==S::Browse&&m.browse_entry(c)==E{false,99});
     h.key(M::confirm);
     const auto play=h.press(M::confirm);check(play.action==A::Play&&play.entry==E{false,99}&&play.stage==-1&&m.screen()==S::Starting);
     check(h.press(M::cancel).action==A::CancelPlay&&m.screen()==S::Details);
@@ -71,30 +69,32 @@ void browser(){
 
 void legacy_browser(){
     Harness h;auto &m=h.menu;auto &c=h.catalog;
-    c.legacy_count=13;m.begin_browse();check(m.page_count(c)==12);
-    h.key(M::up);
-    check(m.page()==11&&m.row()==2&&m.selected_entry()==E{true,12});
-    h.key(M::down);check(m.selected_entry()==E{false,0});
-    h.key(M::left);check(m.selected_entry()==E{true,10});
-    h.key(M::left);check(m.selected_entry()==E{true,0});
+    for(std::size_t i=0;i<13;++i)c.add_browse({true,i},false,true,true);
+    m.begin_browse();check(!m.browse_entry(c));
+    h.key(M::confirm);check(m.screen()==S::Browse&&m.error().empty());
+    h.key(M::right);check(m.browse_entry(c)==E{true,0});
+    h.key(M::up);check(m.browse_index(1)==12&&m.browse_entry(c)==E{true,12});
+    h.key(M::right);check(m.browse_column()==2&&!m.browse_entry(c));
+    h.key(M::left);check(m.browse_index(1)==12&&m.browse_entry(c)==E{true,12});
+    h.key(M::down);check(m.browse_entry(c)==E{true,0});
     h.key(M::confirm);check(m.screen()==S::Details);
     const auto play=h.press(M::confirm);check(play.action==A::Play&&play.entry==E{true,0});
     check(m.complete_play(true).action==A::Started);
-    m.begin_browse();c.legacy_count=std::numeric_limits<std::size_t>::max();
-    h.key(M::up);check(m.selected_entry()==E{true,c.legacy_count-1});
-    c.legacy_count=0;h.key(M::down);check(m.page()<10&&m.row()<10);
+    m.begin_browse();check(m.browse_column()==0&&m.browse_index(1)==0);
 }
 
 void protected_slots(){
     Harness h;auto &m=h.menu;auto &c=h.catalog;
     c.slots[0]=Slot::ReadyProtected;c.slots[1]=Slot::UnavailableProtected;
-    const std::array<std::uint8_t,2> legacy={1,0};
-    c.legacy_count=legacy.size();c.legacy_ready=legacy;
+    c.add_browse({false,0},false,false,true);
+    c.add_browse({false,1},false,false,false);
+    c.add_browse({true,0},true,false,true);
+    c.add_browse({true,1},true,false,false);
     m.begin_browse();h.key(M::confirm);check(m.screen()==S::Details);
     h.key(M::cancel);h.key(M::down);h.key(M::confirm);
     check(m.screen()==S::Browse&&m.error()=="INVALID REPLAY");
-    h.key(M::left);h.key(M::confirm);
-    check(m.selected_entry()==E{true,1}&&m.screen()==S::Browse&&m.error()=="INVALID REPLAY");
+    h.key(M::left);h.key(M::down);h.key(M::confirm);
+    check(m.browse_entry(c)==E{true,1}&&m.screen()==S::Browse&&m.error()=="INVALID REPLAY");
     h.key(M::up);h.key(M::confirm);
     check(m.selected_entry()==E{true,0}&&m.screen()==S::Details);
     m.begin_save(O::Pause);h.naming_end();h.key(M::confirm);
@@ -139,7 +139,7 @@ void name_grid(){
 
 void save_flows(){
     Harness h;auto &m=h.menu;auto &c=h.catalog;
-    c.legacy_count=13;c.slots[99]=Slot::Unavailable;
+    c.add_browse({true,13},false,false,true);c.slots[99]=Slot::Unavailable;
     m.begin_save(O::Clear);check(m.screen()==S::SaveChoice&&m.choice_yes());
     h.key(M::down);check(!m.choice_yes());
     check(h.press(M::confirm).action==A::Discard&&!m.active());
@@ -147,7 +147,7 @@ void save_flows(){
     check(m.screen()==S::SaveChoice&&m.choice_yes());
     check(h.press(M::cancel).action==A::Back&&!m.active());
     m.begin_save(O::Clear,"reimu");h.key(M::confirm);h.naming_end();check(m.name()=="REIMU");
-    check(m.page_count(c)==10);
+    check(soew::replay_menu_slot_pages==10);
     h.key(M::up);check(m.selected_entry()==E{false,99});
     h.key(M::confirm);check(m.screen()==S::Overwrite&&!m.choice_yes());
     h.key(M::confirm);check(m.screen()==S::SaveSlots&&m.selected_entry()==E{false,99});

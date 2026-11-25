@@ -2,8 +2,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <span>
+#include <optional>
 #include <string_view>
+#include <vector>
 #include "locale.hpp"
 
 namespace soew {
@@ -18,13 +19,9 @@ inline const wchar_t* replay_menu_error(std::string_view message, Language langu
 inline constexpr std::size_t replay_menu_slot_count=100;
 inline constexpr std::size_t replay_menu_rows=10;
 inline constexpr std::size_t replay_menu_slot_pages=replay_menu_slot_count/replay_menu_rows;
+inline constexpr std::size_t replay_browse_columns=3,replay_browse_rows=6;
 
 enum class ReplaySlotState {Empty,Ready,Unavailable,ReadyProtected,UnavailableProtected};
-struct ReplayMenuCatalog {
-    std::array<ReplaySlotState,replay_menu_slot_count> slots{};
-    std::size_t legacy_count=0; // Read-only loose v1 recordings, in adapter-defined stable order.
-    std::span<const std::uint8_t> legacy_ready{}; // Empty when the adapter supplies only playable rows.
-};
 
 enum class ReplaySaveOrigin {Clear,GameOver,Pause,PracticeResult};
 enum class ReplayMenuScreen {Closed,Browse,Details,SaveChoice,Name,SaveSlots,Overwrite,Writing,Starting};
@@ -33,6 +30,17 @@ struct ReplayMenuEntry {
     bool legacy=false;
     std::size_t index=0; // Zero-based in its own collection.
     bool operator==(const ReplayMenuEntry&) const=default;
+};
+struct ReplayBrowseEntry {
+    ReplayMenuEntry entry;
+    bool playable;
+};
+struct ReplayMenuCatalog {
+    std::array<ReplaySlotState,replay_menu_slot_count> slots{};
+    std::array<std::vector<ReplayBrowseEntry>,replay_browse_columns> columns;
+    void add_browse(ReplayMenuEntry entry,bool practice,bool extra,bool playable){
+        columns[practice?2:extra?1:0].push_back({entry,playable});
+    }
 };
 struct ReplayMenuCommand {
     ReplayMenuAction action=ReplayMenuAction::None;
@@ -139,8 +147,16 @@ public:
     ReplayMenuScreen screen()const{return screen_;}
     ReplaySaveOrigin origin()const{return origin_;}
     bool active()const{return screen_!=ReplayMenuScreen::Closed;}
+    bool input_released()const{return released_;}
     std::size_t page()const{return page_;}
     std::size_t row()const{return row_;}
+    std::size_t browse_column()const{return column_;}
+    std::size_t browse_index(std::size_t column)const{return browse_cursor_[column];}
+    std::optional<ReplayMenuEntry> browse_entry(const ReplayMenuCatalog &catalog)const{
+        const auto &items=catalog.columns[column_];
+        if(items.empty())return std::nullopt;
+        return items[browse_cursor_[column_]].entry;
+    }
     bool choice_yes()const{return yes_;}
     int playback_stage()const{return playback_stage_;}
     std::uint8_t playback_stages()const{return playback_stages_;}
@@ -152,13 +168,9 @@ public:
         const auto last=text.find_last_not_of(' ');
         return last==std::string_view::npos?std::string_view("PLAYER"):text.substr(0,last+1);
     }
-    std::size_t page_count(const ReplayMenuCatalog &catalog)const{
-        const bool browse=screen_==ReplayMenuScreen::Browse||screen_==ReplayMenuScreen::Details||screen_==ReplayMenuScreen::Starting;
-        return replay_menu_slot_pages+(browse?(catalog.legacy_count/replay_menu_rows+(catalog.legacy_count%replay_menu_rows!=0)):0);
-    }
     ReplayMenuEntry selected_entry()const{
-        if(page_<replay_menu_slot_pages)return {false,page_*replay_menu_rows+row_};
-        return {true,(page_-replay_menu_slot_pages)*replay_menu_rows+row_};
+        if(screen_==ReplayMenuScreen::Details||screen_==ReplayMenuScreen::Starting)return pending_;
+        return {false,page_*replay_menu_rows+row_};
     }
 
     ReplayMenuCommand update(unsigned input,const ReplayMenuCatalog &catalog){
@@ -171,22 +183,27 @@ public:
         const auto dy=int(bool(input&down))-int(bool(input&up));
         if(input&cancel)return go_back();
         switch(screen_){
-        case ReplayMenuScreen::Browse:
+        case ReplayMenuScreen::Browse: {
+            if(input&toggle_recording)return {ReplayMenuAction::ToggleRecording};
+            if(dx)column_=ReplayNameEditor::wrap(column_,dx,replay_browse_columns);
+            const auto &items=catalog.columns[column_];
+            if(dx||dy){
+                if(dy&&!items.empty())browse_cursor_[column_]=ReplayNameEditor::wrap(browse_cursor_[column_],dy,items.size());
+                error_={};return {};
+            }
+            if(!(input&confirm)||items.empty())return {};
+            const auto &item=items[browse_cursor_[column_]];
+            if(item.playable){
+                pending_=item.entry;screen_=ReplayMenuScreen::Details;set_playback_stages(0);error_={};
+            }else error_="INVALID REPLAY";
+            return {};
+        }
         case ReplayMenuScreen::SaveSlots: {
-            const bool browse=screen_==ReplayMenuScreen::Browse;
-            if(browse&&(input&toggle_recording))return {ReplayMenuAction::ToggleRecording};
-            const auto pages=page_count(catalog);
-            const auto last_page_rows=catalog.legacy_count%replay_menu_rows;
-            const auto rows_at=[&](std::size_t page){
-                return page>=replay_menu_slot_pages&&page==pages-1&&last_page_rows?last_page_rows:replay_menu_rows;
-            };
-            if(page_>=pages){page_=pages-1;row_=0;}
+            constexpr auto pages=replay_menu_slot_pages,rows=replay_menu_rows;
             if(dx)page_=ReplayNameEditor::wrap(page_,dx,pages);
-            const auto rows=rows_at(page_);
-            if(row_>=rows)row_=rows-1;
             if(dy<0){
                 if(row_)--row_;
-                else{page_=ReplayNameEditor::wrap(page_,-1,pages);row_=rows_at(page_)-1;}
+                else{page_=ReplayNameEditor::wrap(page_,-1,pages);row_=rows-1;}
             }else if(dy>0){
                 if(row_+1<rows)++row_;
                 else{page_=ReplayNameEditor::wrap(page_,1,pages);row_=0;}
@@ -194,24 +211,12 @@ public:
             if(dx||dy){error_={};return {};}
             if(!(input&confirm))return {};
             const auto entry=selected_entry();
-            if(browse){
-                const auto state=entry.legacy
-                    ?(catalog.legacy_ready.empty()||(entry.index<catalog.legacy_ready.size()&&catalog.legacy_ready[entry.index])
-                        ?ReplaySlotState::ReadyProtected:ReplaySlotState::UnavailableProtected)
-                    :catalog.slots[entry.index];
-                if(state==ReplaySlotState::Ready||state==ReplaySlotState::ReadyProtected){
-                    pending_=entry;screen_=ReplayMenuScreen::Details;set_playback_stages(0);error_={};
-                }else if(state!=ReplaySlotState::Empty){
-                    error_="INVALID REPLAY";
-                }
+            const auto state=catalog.slots[entry.index];
+            if(state==ReplaySlotState::Empty){pending_=entry;return write(false);}
+            if(state==ReplaySlotState::ReadyProtected||state==ReplaySlotState::UnavailableProtected){
+                error_="REPLAY SLOT PROTECTED";
             }else{
-                const auto state=catalog.slots[entry.index];
-                if(state==ReplaySlotState::Empty){pending_=entry;return write(false);}
-                if(state==ReplaySlotState::ReadyProtected||state==ReplaySlotState::UnavailableProtected){
-                    error_="REPLAY SLOT PROTECTED";
-                }else{
-                    pending_=entry;yes_=false;error_={};screen_=ReplayMenuScreen::Overwrite;
-                }
+                pending_=entry;yes_=false;error_={};screen_=ReplayMenuScreen::Overwrite;
             }
             return {};
         }
@@ -263,6 +268,8 @@ private:
     ReplaySaveOrigin origin_=ReplaySaveOrigin::Clear;
     bool yes_=false,released_=false;
     std::size_t page_=0,row_=0;
+    std::size_t column_=0;
+    std::array<std::size_t,replay_browse_columns> browse_cursor_{};
     int playback_stage_=-1;
     std::uint8_t playback_stages_=0;
     std::string_view error_{};
@@ -270,7 +277,7 @@ private:
     ReplayMenuEntry pending_{};
 
     void reset(ReplayMenuScreen screen){
-        screen_=screen;page_=0;row_=0;error_={};pending_={};yes_=false;released_=false;
+        screen_=screen;page_=row_=column_=0;browse_cursor_={};error_={};pending_={};yes_=false;released_=false;
     }
     ReplayMenuCommand write(bool replace){
         error_={};screen_=ReplayMenuScreen::Writing;return {ReplayMenuAction::Write,pending_,replace};

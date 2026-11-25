@@ -1,5 +1,4 @@
 import createModule from './soew-full.mjs';
-import {sha256HexSync} from './package-integrity.mjs';
 import {glyphCells} from './glyph-cells.mjs';
 
 const shiftJis = new TextDecoder('shift_jis', {fatal: true});
@@ -35,6 +34,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     picker.accept = '.rep';
     let wasm, cells, lastError, image, stopped = false, timer;
     let audio, audioPaused = false, audioEnd = 0;
+    let album, albumTrack = null, albumLoad, albumNode;
     const waiting = new Map(), scheduled = new Set();
     const masks = new Map();
 
@@ -110,8 +110,37 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             audio = new AudioContext({latencyHint:'interactive'});
             for (const [header, samples] of waiting) scheduleAudio(header, samples);
             waiting.clear();
+            if (albumTrack) playAlbumTrack();
         }
         if (!audioPaused && audio.state !== 'running') void audio.resume();
+    }
+    function stopAlbumTrack() {
+        albumTrack = null;
+        albumLoad?.abort();
+        albumNode?.stop();
+        albumNode?.disconnect();
+        albumNode = null;
+    }
+    async function playAlbumTrack() {
+        const track = albumTrack;
+        const load = new AbortController();
+        albumLoad = load;
+        try {
+            const response = await fetch(joined(content, track.url), {signal:load.signal});
+            if (!response.ok) throw Error(`HTTP ${response.status}: ${track.url}`);
+            const buffer = await audio.decodeAudioData(await response.arrayBuffer());
+            if (load.signal.aborted) return;
+            const node = audio.createBufferSource();
+            node.buffer = buffer;
+            node.loop = true;
+            node.loopStart = track.loopStart;
+            node.loopEnd = Math.min(track.loopEnd, buffer.duration);
+            node.connect(audio.destination);
+            node.start();
+            albumNode = node;
+        } catch (error) {
+            if (!load.signal.aborted) console.error(error);
+        }
     }
     const host = {
         present(pointer,w,h) {
@@ -164,7 +193,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             if (!yes && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
         },
         openReplay() { picker.click(); },
-        exit() { stopped = true; clearTimeout(timer); },
+        exit() { stopped = true; clearTimeout(timer); stopAlbumTrack(); },
         decode(pointer,n,out,count) {
             let value;
             try { value = [...shiftJis.decode(wasm.HEAPU8.subarray(pointer,pointer+n))]; }
@@ -174,11 +203,6 @@ export async function playFull(canvas, content = new URL('./content/', import.me
                 wasm.HEAPU32.set(value.map(c => c.codePointAt(0)),out >>> 2);
             }
             return value.length;
-        },
-        digest(pointer,n,out) {
-            const hex = sha256HexSync(wasm.HEAPU8.subarray(pointer,pointer+n));
-            for (let i = 0; i < 32; i++) wasm.HEAPU8[out+i] = Number.parseInt(hex.slice(i*2,i*2+2),16);
-            return 0;
         },
         audioWrite(header,pointer,n) {
             const pcm = wasm.HEAP16.slice(pointer >>> 1,(pointer+n) >>> 1);
@@ -190,10 +214,16 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             if (audio) void (audioPaused ? audio.suspend() : audio.resume());
         },
         audioReset() {
+            stopAlbumTrack();
             waiting.clear();
             for (const node of scheduled) {node.onended = null; node.stop(); node.disconnect();}
             scheduled.clear();
             audioEnd = 0;
+        },
+        akyuTrack(track) {
+            stopAlbumTrack();
+            albumTrack = album[track];
+            if (audio) void playAlbumTrack();
         },
     };
     const [module, names, atlas] = await Promise.all([
@@ -213,6 +243,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     await Promise.all([sync(true), ...names.map(async name => {
         const path = '/soew/content/' + name;
         const bytes = new Uint8Array(await (await fetchFile(joined(content,name))).arrayBuffer());
+        if (name === 'akyu.pack') album = JSON.parse(new TextDecoder().decode(bytes));
         wasm.FS.mkdirTree(path.slice(0,path.lastIndexOf('/')));
         wasm.FS.writeFile(path,bytes);
     })]);

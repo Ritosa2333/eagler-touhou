@@ -138,3 +138,4 @@ BOOL BitBlt(HDC,int,int,int,int,HDC,int,int,DWORD);
 BOOL ExtTextOutW(HDC,int,int,UINT,const RECT*,const wchar_t*,UINT,const int*);
 int DrawTextW(HDC,const wchar_t*,int,RECT*,UINT);
 inline BOOL GdiFlush(){return TRUE;}
+void soew_web_akyu_track(int track);

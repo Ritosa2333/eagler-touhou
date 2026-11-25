@@ -50,7 +50,6 @@ inline constexpr LocalizedText extra{L"エキストラ", L"Extra",L"额外关卡
     game_over{L"ゲームオーバー", L"Game Over",L"游戏结束",L"遊戲結束"}, clear{L"クリア", L"Clear",L"通关",L"通關"}, menu_return{L"途中終了", L"Menu Return",L"中途退出",L"中途離開"},
     confirm_back{L"Z / Enter：決定　X / Esc：戻る", L"Z / Enter: confirm   X / Esc: back",L"Z / Enter：确认  X / Esc：返回",L"Z / Enter：確認  X / Esc：返回"},
     unavailable{L"選択不可", L"Unavailable",L"不可选",L"無法選擇"},
-    legacy_content{L"旧版素材：英訳と原作タイトル画像がありません", L"Legacy content: English translation and clean title art unavailable",L"旧版素材：没有英文译文和无字标题图",L"舊版素材：沒有英文譯文和無字標題圖"},
     practice_start{L"練習開始", L"Practice Start",L"开始练习",L"開始練習"}, replay{L"リプレイ", L"Replay",L"录像回放",L"錄影重播"};
 inline constexpr std::array<LocalizedText, 4> difficulty = {{{L"イージー", L"Easy",L"简单",L"簡單"}, {L"ノーマル", L"Normal",L"普通",L"普通"},
     {L"ハード", L"Hard",L"困难",L"困難"}, {L"ルナティック", L"Lunatic",L"疯狂",L"瘋狂"}}};

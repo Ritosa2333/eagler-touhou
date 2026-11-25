@@ -1,5 +1,6 @@
 #include "windows.h"
 #include "bcrypt.h"
+#include "sha256.hpp"
 #include "mmsystem.h"
 #include <emscripten.h>
 #include <algorithm>
@@ -20,7 +21,6 @@ EM_JS(void, host_fullscreen,(int value),{Module.host.fullscreen(value);});
 EM_JS(void, host_replay,(),{Module.host.openReplay();});
 EM_JS(void, host_exit,(),{Module.host.exit();});
 EM_JS(int, host_decode,(const char *s,int n,wchar_t *out,int count),{return Module.host.decode(s,n,out,count);});
-EM_JS(int, host_digest,(const void *p,unsigned n,void *out),{return Module.host.digest(p,n,out);});
 EM_JS(int, host_has_cell,(wchar_t cp,int face),{return Module.host.hasCell(cp,face);});
 EM_JS(void, host_paint_cells,(std::uint32_t *p,int w,int h,const wchar_t *s,unsigned n,int x,int y,unsigned color,int face),{
     Module.host.paintCells(p,w,h,s,n,x,y,color,face);
@@ -28,6 +28,8 @@ EM_JS(void, host_paint_cells,(std::uint32_t *p,int w,int h,const wchar_t *s,unsi
 EM_JS(void, host_audio_write,(const WAVEHDR *h,const void *data,unsigned n),{Module.host.audioWrite(h,data,n);});
 EM_JS(void, host_audio_pause,(int paused),{Module.host.audioPause(paused);});
 EM_JS(void, host_audio_reset,(),{Module.host.audioReset();});
+EM_JS(void, host_akyu_track,(int track),{Module.host.akyuTrack(track);});
+void soew_web_akyu_track(int track){host_akyu_track(track);}
 
 struct WebGdi {
     enum Kind {Bitmap, Font, Brush} kind;
@@ -127,7 +129,11 @@ std::size_t GlobalSize(HANDLE){return (clipboard.size()+1)*sizeof(wchar_t);}
 void *GlobalLock(HANDLE){return clipboard.data();}
 BOOL GlobalUnlock(HANDLE){return TRUE;}
 int MultiByteToWideChar(UINT,DWORD,const char *s,int n,wchar_t *out,int count){return host_decode(s,n,out,count);}
-int BCryptHash(BCRYPT_ALG_HANDLE,PUCHAR,ULONG,PUCHAR p,ULONG n,PUCHAR out,ULONG){return host_digest(p,n,out);}
+int BCryptHash(BCRYPT_ALG_HANDLE,PUCHAR,ULONG,PUCHAR p,ULONG n,PUCHAR out,ULONG){
+    const auto digest=soew::web::sha256({p,n});
+    std::copy(digest.begin(),digest.end(),out);
+    return 0;
+}
 
 HDC CreateCompatibleDC(HDC){return new WebDC{&stock_bitmap,&stock_font};}
 HBITMAP CreateCompatibleBitmap(HDC,int w,int h){

@@ -155,7 +155,7 @@ AudioPreview::~AudioPreview(){
         if(device_){(void)data_.release();}
     }
 }
-AudioPreview::Prepared AudioPreview::prepare(std::span<const std::byte> song,bool silent_device_test,std::span<const std::byte> soundfont,std::span<const std::byte> effects,std::span<const std::byte> fm_carrier,bool music_off,unsigned start_measure,const std::atomic_bool* cancelled,[[maybe_unused]] bool allow_checkpoint){
+AudioPreview::Prepared AudioPreview::prepare(std::span<const std::byte> song,bool silent_device_test,std::span<const std::byte> soundfont,std::span<const std::byte> effects,std::span<const std::byte> fm_carrier,bool music_off,unsigned start_measure,const std::atomic_bool* cancelled,[[maybe_unused]] bool allow_checkpoint,bool mute_fm_bgm){
     Prepared prepared;prepared.data_=std::make_unique<Data>();auto &data=*prepared.data_;
     auto &error=prepared.error_;
     for(auto byte:song){data.song_hash^=std::to_integer<std::uint8_t>(byte);data.song_hash*=16777619u;}
@@ -172,7 +172,7 @@ AudioPreview::Prepared AudioPreview::prepare(std::span<const std::byte> song,boo
         auto created=PmdOpnaEngine::create({.input_clock_hz=7987200,.fidelity=PmdOpnaFidelity::minimum});
         if(!created){error="PMD create failed";return prepared;}
         data.engine=std::move(*created);
-        if(!data.engine->set_user_volumes(data.midi||music_off?0:25,effects.empty()?0:25)||!data.engine->load_song(data.midi?fm_carrier:song)||(!effects.empty()&&!data.engine->load_effect_bank(effects))||!data.engine->play()){error="PMD song/effect bank rejected";return prepared;}
+        if(!data.engine->set_user_volumes(data.midi||music_off||mute_fm_bgm?0:25,effects.empty()?0:25)||!data.engine->load_song(data.midi?fm_carrier:song)||(!effects.empty()&&!data.engine->load_effect_bank(effects))||!data.engine->play()){error="PMD song/effect bank rejected";return prepared;}
         if(data.midi||music_off)data.engine->stop();
     }
     if(music_off&&data.midi)data.midi->stop();
@@ -255,7 +255,7 @@ AudioPreview::Prepared AudioPreview::prepare(std::span<const std::byte> song,boo
 #ifdef SOEW_PRIVATE_CHECKPOINT_CATALOG
             has_checkpoint|=has_catalog_checkpoint(start_measure);
 #endif
-            if(allow_checkpoint&&has_checkpoint&&!effects.empty()&&!(cancelled&&cancelled->load(std::memory_order_relaxed))){
+            if(allow_checkpoint&&!mute_fm_bgm&&has_checkpoint&&!effects.empty()&&!(cancelled&&cancelled->load(std::memory_order_relaxed))){
                 const auto s=checkpoint_digest(song),e=checkpoint_digest(effects);
                 if(s&&e){
                     const auto restore=[&](auto bytes){
@@ -287,9 +287,9 @@ AudioPreview::Prepared AudioPreview::prepare(std::span<const std::byte> song,boo
     }
     return prepared;
 }
-bool AudioPreview::start(std::span<const std::byte> song,bool silent_device_test,UINT device,std::span<const std::byte> soundfont,std::span<const std::byte> effects,std::span<const std::byte> fm_carrier,bool music_off,unsigned start_measure){
+bool AudioPreview::start(std::span<const std::byte> song,bool silent_device_test,UINT device,std::span<const std::byte> soundfont,std::span<const std::byte> effects,std::span<const std::byte> fm_carrier,bool music_off,unsigned start_measure,bool mute_fm_bgm){
     if(!stop())return false;
-    return publish(prepare(song,silent_device_test,soundfont,effects,fm_carrier,music_off,start_measure),device);
+    return publish(prepare(song,silent_device_test,soundfont,effects,fm_carrier,music_off,start_measure,nullptr,true,mute_fm_bgm),device);
 }
 bool AudioPreview::publish(Prepared&& prepared,UINT device,bool initially_paused,bool reuse_output){
     // Only the fixed-format output handle survives a retry, never synth/PCM state.
@@ -333,7 +333,12 @@ bool AudioPreview::fill(Data &data,Slot &slot,std::string &error){
     for(std::size_t i=0;i<frames;++i){slot.pcm[2*i]=data.silent?0:static_cast<std::int16_t>(std::clamp<std::int64_t>(std::int64_t(output[i].left)/65536,-32768,32767));slot.pcm[2*i+1]=data.silent?0:static_cast<std::int16_t>(std::clamp<std::int64_t>(std::int64_t(output[i].right)/65536,-32768,32767));}
     return true;
 }
-bool AudioPreview::effect(unsigned id){if(!active()||!data_->engine||id>=127)return false;if(!data_->engine->play_effect(std::uint8_t(id))){error_="EFC effect rejected";return false;}++effect_calls_;return true;}
+bool AudioPreview::effect(unsigned id,bool force){
+    if(!active()||!data_->engine||id>=127)return false;
+    if(force)data_->engine->stop_effect();
+    if(!data_->engine->play_effect(std::uint8_t(id))){error_="EFC effect rejected";return false;}
+    ++effect_calls_;return true;
+}
 bool AudioPreview::mute_music(){if(data_->engine){if(!data_->engine->set_user_volumes(0,25))return false;data_->engine->stop();data_->engine->stop_effect();}if(data_->midi)data_->midi->stop();return true;}
 unsigned AudioPreview::queued()const{unsigned count=0;for(const auto &slot:data_->slots)count+=(slot.header.dwFlags&WHDR_INQUEUE)!=0;return count;}
 bool AudioPreview::pump(){

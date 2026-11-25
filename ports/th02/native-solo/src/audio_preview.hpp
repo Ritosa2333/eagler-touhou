@@ -68,10 +68,10 @@ public:
     AudioPreview(const AudioPreview&)=delete;
     AudioPreview& operator=(const AudioPreview&)=delete;
     // Input spans must remain valid until prepare returns. No device is opened.
-    static Prepared prepare(std::span<const std::byte> song,bool silent_device_test=false,std::span<const std::byte> soundfont={},std::span<const std::byte> effects={},std::span<const std::byte> fm_carrier={},bool music_off=false,unsigned start_measure=0,const std::atomic_bool* cancelled=nullptr,bool allow_checkpoint=true);
+    static Prepared prepare(std::span<const std::byte> song,bool silent_device_test=false,std::span<const std::byte> soundfont={},std::span<const std::byte> effects={},std::span<const std::byte> fm_carrier={},bool music_off=false,unsigned start_measure=0,const std::atomic_bool* cancelled=nullptr,bool allow_checkpoint=true,bool mute_fm_bgm=false);
     bool publish(Prepared&& prepared,UINT device=WAVE_MAPPER,bool initially_paused=false,bool reuse_output=false);
-    bool start(std::span<const std::byte> song,bool silent_device_test=false,UINT device=WAVE_MAPPER,std::span<const std::byte> soundfont={},std::span<const std::byte> effects={},std::span<const std::byte> fm_carrier={},bool music_off=false,unsigned start_measure=0);
-    bool effect(unsigned id);
+    bool start(std::span<const std::byte> song,bool silent_device_test=false,UINT device=WAVE_MAPPER,std::span<const std::byte> soundfont={},std::span<const std::byte> effects={},std::span<const std::byte> fm_carrier={},bool music_off=false,unsigned start_measure=0,bool mute_fm_bgm=false);
+    bool effect(unsigned id,bool force=false);
     bool mute_music();
     unsigned effect_calls()const{return effect_calls_;}
     unsigned requested_measure()const{return data_->requested_measure;}

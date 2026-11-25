@@ -51,7 +51,7 @@ struct Settings {
     bool stage_intro=true,smooth_background=true;
     PracticeAdvanced practice_advanced;
     static Settings from(const Menu &m,PracticeAdvanced advanced={}){return {m.rank,m.music,m.lives,m.bombs,m.reduced,m.autofire,m.show_more_info,m.fullscreen,m.fast_autofire,m.hitboxes,m.language,m.stage_intro,m.smooth_background,advanced};}
-    void apply(Menu &m)const{m.rank=rank;m.music=music;m.lives=lives;m.bombs=bombs;m.reduced=reduced;m.autofire=autofire;m.show_more_info=show_more_info;m.fullscreen=fullscreen;m.fast_autofire=fast_autofire;m.hitboxes=hitboxes;m.language=language;m.stage_intro=stage_intro;m.smooth_background=smooth_background;}
+    void apply(Menu &m)const{m.rank=rank;m.music=music==Menu::music_akyu&&!m.akyu_available?Menu::music_fm:music;m.lives=lives;m.bombs=bombs;m.reduced=reduced;m.autofire=autofire;m.show_more_info=show_more_info;m.fullscreen=fullscreen;m.fast_autofire=fast_autofire;m.hitboxes=hitboxes;m.language=language;m.stage_intro=stage_intro;m.smooth_background=smooth_background;}
     static constexpr const char* language_id(Language language){return localized(language,"ja","en","zh-Hans","zh-Hant");}
     static constexpr const wchar_t* wide_language_id(Language language){return localized(language,L"ja",L"en",L"zh-Hans",L"zh-Hant");}
     bool operator==(const Settings&)const=default;
@@ -125,7 +125,7 @@ struct SettingsStore {
             const auto invalid=[&]{if(writable)warning="Some settings fields invalid; defaults used";};
             auto integer=[&](const char*key,int &v,int max){const auto it=fields.find(key);if(it==fields.end())return;int n=0;const auto &x=it->second;if(!x.integer){invalid();return;}std::from_chars(x.text.data(),x.text.data()+x.text.size(),n);if(n<0||n>max){invalid();return;}v=n;};
             auto boolean=[&](const char*key,bool &v){const auto it=fields.find(key);if(it==fields.end())return;if(!it->second.boolean){invalid();return;}v=it->second.text=="true";};
-            integer("rank",out.rank,3);integer("music",out.music,2);integer("lives",out.lives,4);integer("bombs",out.bombs,3);boolean("reduced",out.reduced);boolean("autofire",out.autofire);boolean("show_more_info",out.show_more_info);boolean("fullscreen",out.fullscreen);boolean("fast_autofire",out.fast_autofire);boolean("stage_intro",out.stage_intro);if(!out.autofire)out.fast_autofire=true;
+            integer("rank",out.rank,3);integer("music",out.music,Menu::music_akyu);integer("lives",out.lives,4);integer("bombs",out.bombs,3);boolean("reduced",out.reduced);boolean("autofire",out.autofire);boolean("show_more_info",out.show_more_info);boolean("fullscreen",out.fullscreen);boolean("fast_autofire",out.fast_autofire);boolean("stage_intro",out.stage_intro);if(!out.autofire)out.fast_autofire=true;
             boolean("smooth_background",out.smooth_background);
             int hitboxes=0;integer("hitboxes",hitboxes,2);out.hitboxes=static_cast<HitboxMode>(hitboxes);
             const auto language=[&](const char *key)->std::optional<Language>{

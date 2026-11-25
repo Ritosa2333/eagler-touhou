@@ -73,6 +73,30 @@ struct Opening {
         return flash_peak*(100-std::min(100u,6*((frame-flash_end)/fade_step)))/100;
     }
 };
+// OP.EXE start_init, shottype_menu_init and shottype_menu. Counts are PC-98
+// retraces, independent of stage ticks and the selected audio backend.
+struct PageTransition {
+    enum Phase {Idle,ConfirmDelay,FadeIn,FadeOut,Black};
+    Phase phase=Idle;
+    unsigned elapsed=0;
+    bool active()const{return phase!=Idle;}
+    void start(Phase next){phase=next;elapsed=0;}
+    void tick(){
+        ++elapsed;
+        if(phase==ConfirmDelay&&elapsed==20)start(FadeOut);
+        else if(phase==FadeIn&&elapsed==34)start(Idle);
+        else if(phase==FadeOut&&elapsed==17)start(Black);
+        else if(phase==Black)start(Idle);
+    }
+    unsigned darkness()const{
+        switch(phase){
+        case FadeIn: return 100-6*(elapsed/2);
+        case FadeOut: return 6*elapsed;
+        case Black: return 100;
+        default: return 0;
+        }
+    }
+};
 constexpr std::uint32_t opening_page_pair(std::uint32_t effect,std::uint32_t title){
     // Equal exposure from the two original pages, without presenting a strobe.
     return (effect&title)+(((effect^title)&0xfefefe)>>1);
@@ -101,6 +125,14 @@ inline unsigned test_opening(){
     o.frame=Opening::end;check(opening_tone(0x123456,o.white(),true)==0x123456);
     check(opening_page_pair(0xff0001,0x01ff03)==0x807f02);
     o.restart();check(o.active&&o.frame==0);o.skip();check(!o.active);
+    PageTransition entry;entry.start(PageTransition::ConfirmDelay);
+    for(unsigned i=0;i<20;++i){check(entry.phase==PageTransition::ConfirmDelay&&entry.darkness()==0);entry.tick();}
+    for(unsigned i=0;i<17;++i){check(entry.phase==PageTransition::FadeOut&&entry.darkness()==6*i);entry.tick();}
+    check(entry.phase==PageTransition::Black&&entry.darkness()==100);
+    entry.tick();check(!entry.active());
+    entry.start(PageTransition::FadeIn);
+    for(unsigned i=0;i<34;++i){check(entry.phase==PageTransition::FadeIn&&entry.darkness()==100-6*(i/2));entry.tick();}
+    check(!entry.active()&&entry.darkness()==0);
     PresentationClock clock;check(clock.advance(0,true)==0);check(clock.advance(16,true)==0);check(clock.advance(17,true)==1);
     check(clock.advance(500,false)==0);check(clock.advance(10000,true)==0);check(clock.advance(10017,true)==1);
     check(clock.advance(12000,true)==0);check(clock.advance(12017,true)==1);

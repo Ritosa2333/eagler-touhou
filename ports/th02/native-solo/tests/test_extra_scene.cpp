@@ -18,12 +18,14 @@ void check_sigma_bomb_layers(const std::filesystem::path &root,int shot){
     check(s.bomb.start(s.life.bombs,unsigned(shot)));
     IRand rng(1234);RandomRing random;random.fill(rng);
     // Each selected body frame includes a full playfield fill and the shot's portrait.
-    constexpr std::array portrait_frame={65,133,101};
+    constexpr std::array portrait_frame={71,137,101};
     for(unsigned tick=0;tick<256&&!(s.bomb.circle_done&&s.bomb.frame==portrait_frame[shot]);++tick)
         s.bomb.update(random);
     check(s.bomb.active&&s.bomb.visual==BombCore::Body&&s.bomb.frame==portrait_frame[shot]);
     s.render(bomb_only);
     check(bomb_only!=idle);
+    const auto tone=unsigned(s.bomb.palette_tone);
+    const auto palette=BombRenderer::palette(s.background.palette,s.bomb);
     const int left=s.sigma.left[1],top=s.sigma.top[1];
     for(const unsigned cel:{134u,136u,138u,140u,132u,130u,128u}){
         s.sigma.visible=true;s.sigma.draw_pattern=cel;s.sigma.hit_flash=cel==130;
@@ -35,7 +37,7 @@ void check_sigma_bomb_layers(const std::filesystem::path &root,int shot){
                 auto &pixel=expected[(top+int(y))*640+left+int(64*half+x)];
                 const auto color=sprite.pixels[y*sprite.width+x];
                 if(color==sprite.transparent){++transparent;continue;}
-                const auto rgb=EncounterScene::stage5_rgb(s.background.palette[color]);
+                const auto rgb=BombRenderer::toned(EncounterScene::stage5_rgb(palette[color]),tone);
                 changed+=pixel!=rgb;pixel=rgb;
             }
             check(changed&&transparent);
@@ -53,7 +55,7 @@ void check_sigma_bomb_layers(const std::filesystem::path &root,int shot){
     s.sigma.body_paint_index=1;
     s.render(pixels);check(pixels==expected);
     s.sigma.body_paint_index=0;
-    expected[y*640+x]=EncounterScene::stage5_rgb(s.background.palette[15]);
+    expected[y*640+x]=BombRenderer::toned(EncounterScene::stage5_rgb(palette[15]),tone);
     s.render(pixels);check(pixels==expected);
 }
 

@@ -49,9 +49,6 @@ struct MotionFrame {
     std::array<MotionAnchor,offsets.back()> anchors{};
     std::uint64_t tick=0;
     int stage=-1;
-    unsigned bomb_visual=0,bomb_shot=0;
-    int bomb_frame=0;
-    std::array<int,48> bomb_columns{};
     std::vector<RenderEffect> mima_effects,sigma_effects;
     std::array<std::uint8_t,3> mima_palette0{};
     bool mima_background=false;

@@ -1,8 +1,12 @@
-# SoEW Native — a Windows port of 東方封魔録
+# SoEW Native — 東方封魔録 for Windows and the Web
 
 Native Win32 reimplementation of *Touhou Project 2: the Story of Eastern
 Wonderland* (TH02, 1997, PC-98), written from scratch in C++23 against the
 reverse-engineering research of [ReC98](https://github.com/nmlgc/ReC98).
+
+This is IxinorTyan's fork of [Hydrangea-Z/SoEW-native](https://github.com/Hydrangea-Z/SoEW-native).
+It brings the same single-player program to the browser via WebAssembly.
+See the [Web build guide](WEB.md) for setup and music sources.
 
 > **二次創作について / Unofficial fan project**
 > 本プロジェクトは東方Projectの二次創作です。原作およびその素材の権利は
@@ -14,8 +18,7 @@ reverse-engineering research of [ReC98](https://github.com/nmlgc/ReC98).
 
 ## Quick start (Windows x64)
 
-**Download the source, not a game installer.** Once you have access to this
-repository, use **Code → Download ZIP** or clone it. The source does not include
+Clone this repository or use **Code → Download ZIP**. The source does not include
 original game data. You need your **own Japanese TH02 `.HDI` image**. You do not
 need the English patch, a PC-98 emulator, or a SoundFont for the basic FM build.
 
@@ -66,8 +69,8 @@ need the English patch, a PC-98 emulator, or a SoundFont for the basic FM build.
 * Practice (per-section and per-chapter), Replay recording/browsing/playback,
   Options, music room, high scores, endings.
 * Japanese, English, Simplified Chinese and Traditional Chinese settings.
-  Original story text and the English translation are read from assets *you*
-  extract from your own copy.
+  The English Touhou Wiki translation covers Stages 1–5, Extra, and all
+  six regular endings.
 * Original-style menus: two-column Options with the original fonts and colours,
   left/right value editing.
 * MIDI (TinySoundFont) or FM (98fmplayer through libth03) audio.
@@ -144,7 +147,9 @@ still differ from the original.
 
 ## Credits
 
-SoEW Native is maintained by Dr. Hydrangea Z ([Hydrangea-Z](https://github.com/Hydrangea-Z)).
+Dr. Hydrangea Z ([Hydrangea-Z](https://github.com/Hydrangea-Z)) authored the original
+SoEW Native port. [IxinorTyan](https://github.com/IxinorTyan) maintains this fork and
+the Web port.
 
 Thanks to Christian Azinn for [th98port (libth03)](https://github.com/christianazinn/th98port),
 which this port uses for asset decoding and FM playback. His TH02 Practice Patch
@@ -205,9 +210,9 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
   SHA-256 is `00725296486f652ba42bdbf2098254762ca80239353d04b55a27454fc8edb8a8`.
   FM does not need this file. The private Practice audio checkpoint catalog
   is not included or required; without it Practice uses exact seeking.
-- **English story:** the English fan translation is read from a locally staged
-  Japanese/English overlay (`tools/stage_locale.py`), not from the executable.
-  Without that overlay, English settings do not replace the story files.
+- **English story:** choose English under Options → Language. The PC-98 text
+  records still drive dialogue events and timing. A locally staged English
+  overlay (`tools/stage_locale.py`) takes precedence.
 - **Chinese story:** run `uv run tools/import_wiki_story.py build/content` from
   this repository, using your own extracted Japanese game data. Then choose
   Simplified or Traditional Chinese under Options → Language. The command
@@ -223,6 +228,17 @@ The optional Chinese story uses THBWiki contributors' translations for
 [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/).
 The importer adapts line breaks and converts Chinese variants with OpenCC.
 The generated pack is for local use and is excluded from the standalone packager.
+
+The bundled English transcript adapts English Touhou Wiki contributors'
+[regular stages](https://touhou.fandom.com/wiki/Story_of_Eastern_Wonderland:_Regular_Stages?oldid=191034),
+[Extra stage](https://touhou.fandom.com/wiki/Story_of_Eastern_Wonderland:_Extra_Stage?oldid=190875),
+[bad endings](https://touhou.fandom.com/wiki/Story_of_Eastern_Wonderland:_Bad_Ending?oldid=191636)
+and [good endings](https://touhou.fandom.com/wiki/Story_of_Eastern_Wonderland:_Good_Ending?oldid=202499)
+under [CC BY-SA](https://www.fandom.com/licensing). The transcript in
+`src/english_dialogue.inc` and `src/english_endings.inc` retains that license.
+It omits translator notes and fits the English text to the original typewriter
+rows. `tools/import_english_story.py` aligns the stage transcript to extracted
+Japanese game records.
 
 ## Running
 

@@ -1,6 +1,7 @@
 #include "settings.hpp"
 #include "japanese.hpp"
 #include "practice_tools_panel.hpp"
+#include "../web/platform/sha256.hpp"
 #include <iostream>
 
 unsigned checks=0;
@@ -13,6 +14,15 @@ int main(int argc,char**argv){try{
     using O=Menu::Option;
     using L=soew::Language;
     if(argc!=2)throw std::runtime_error("Need isolated test directory");
+    const auto hash_hex=[](std::string_view input){
+        const auto digest=soew::web::sha256({reinterpret_cast<const std::uint8_t*>(input.data()),input.size()});
+        std::string result;
+        for(auto byte:digest){constexpr char hex[]="0123456789abcdef";result+=hex[byte>>4];result+=hex[byte&15];}
+        return result;
+    };
+    check(hash_hex("")=="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+    check(hash_hex("abc")=="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    check(hash_hex("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq")=="248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
     auto root=std::filesystem::path(argv[1]);std::filesystem::create_directories(root);
     const auto p=root/"settings-contract.json";
     const auto missing=soew::SettingsStore(root/"missing-settings.json").load();
@@ -53,6 +63,22 @@ int main(int argc,char**argv){try{
     Menu restored;b.saved.apply(restored);check(restored.language==L::English&&restored.autofire&&!restored.fast_autofire&&!restored.stage_intro&&!restored.smooth_background&&restored.rank==3);
     key(Menu::down);check(m.option()==O::Reset);key(Menu::confirm);check(soew::Settings::from(m)==soew::Settings{});
     check(b.save(soew::Settings::from(m)));check(soew::SettingsStore(p).load()==soew::Settings{});
+
+    {
+        Menu web;
+        web.akyu_available=true;
+        web.adjust_option(O::Music,1);check(web.music==Menu::music_midi);
+        web.adjust_option(O::Music,1);check(web.plays_akyu()&&web.replay_music()==Menu::music_fm);
+        check(b.save(soew::Settings::from(web)));
+        const auto saved=soew::SettingsStore(p).load();check(saved.music==Menu::music_akyu);
+        Menu restored_web;restored_web.akyu_available=true;saved.apply(restored_web);check(restored_web.plays_akyu());
+        Menu native;saved.apply(native);check(native.music==Menu::music_fm);
+        web.adjust_option(O::Music,1);check(web.music==Menu::music_off);
+        web.adjust_option(O::Music,-1);check(web.plays_akyu());
+        web.cycle_preview_music();check(web.music==Menu::music_fm);
+        web.cycle_preview_music();check(web.music==Menu::music_midi);
+        web.cycle_preview_music();check(web.plays_akyu());
+    }
 
     put(p,"{\"version\":1,\"rank\":99,\"music\":true,\"lives\":4,\"autofire\":true}");
     soew::SettingsStore c(p);const auto invalid=c.load();check(invalid.rank==1&&invalid.music==1&&invalid.lives==4&&invalid.autofire);
@@ -110,7 +136,7 @@ int main(int argc,char**argv){try{
     for(const auto lang:{L::Japanese,L::English,L::ChineseSimplified,L::ChineseTraditional}){
         const auto width=soew::is_chinese(lang)?jp::cell_width:menu_text_width;
         for(const auto &row:Menu::option_rows)for(const auto option:row){
-            const int count=Menu::option_count(option);
+            const int count=Menu::option_count(option,true);
             const int label_width=width(t::option_labels[static_cast<unsigned>(option)](lang));
             if(!count)check(label_width<=280);
             for(int i=0;i<count;++i)check(label_width+width(t::option_value(lang,option,i))<=272);

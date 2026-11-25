@@ -14,6 +14,9 @@
 // No attract demo or game launch is implemented yet.
 struct Menu {
     static constexpr int practice_entry=6;
+    static constexpr int about_entry=8;
+    static constexpr int title_top=208,title_pitch=16;
+    static constexpr std::array<int,9> order={0,1,practice_entry,7,2,3,4,about_entry,5};
     int selected = 0;
     bool unlocked = false;
     bool allowed = false;
@@ -35,7 +38,15 @@ struct Menu {
         selected=practice_entry;begin_shot_select(initial_shot);allowed=false;
     }
     bool practice_shot_select()const{return shot_screen&&selected==practice_entry;}
-    int rank=1, music=1, lives=2, bombs=3;
+    static constexpr int music_off=0,music_fm=1,music_midi=2,music_akyu=3;
+    int rank=1, music=music_fm, lives=2, bombs=3;
+    bool akyu_available=false;
+    bool plays_akyu() const{return music==music_akyu;}
+    int replay_music() const{return plays_akyu()?music_fm:music;}
+    void cycle_preview_music(){
+        music=music==music_midi?(akyu_available?music_akyu:music_fm):
+            plays_akyu()?music_fm:music_midi;
+    }
     bool reduced=false;
     bool show_more_info=false,fullscreen=false,stage_intro=true,smooth_background=true;
     soew::HitboxMode hitboxes=soew::HitboxMode::Off;
@@ -67,11 +78,12 @@ struct Menu {
         }
         return 0;
     }
-    static constexpr int option_count(Option item){
+    static constexpr int option_count(Option item,bool akyu_available=false){
         switch(item){
         case Option::Lives: return 5;
         case Option::Rank: case Option::Bombs: case Option::Language: return 4;
-        case Option::Music: case Option::Autofire: case Option::Hitboxes: return 3;
+        case Option::Music: return akyu_available?4:3;
+        case Option::Autofire: case Option::Hitboxes: return 3;
         case Option::Effects: case Option::MoreInfo: case Option::Fullscreen: case Option::StageIntro: case Option::SmoothBackground: return 2;
         case Option::Reset: case Option::Back: case Option::Empty: return 0;
         }
@@ -97,7 +109,7 @@ struct Menu {
     enum : unsigned { up=1, down=2, confirm=4, cancel=8, left=16, right=32, tab=64 };
     static int ring(int value,int delta,int count) {return (value+delta+count)%count;}
     void adjust_option(Option item,int delta){
-        if(const int count=option_count(item))set_option(item,ring(option_value(item),delta,count));
+        if(const int count=option_count(item,akyu_available))set_option(item,ring(option_value(item),delta,count));
     }
     void update_options(unsigned input){
         const auto item=option();
@@ -154,9 +166,9 @@ struct Menu {
         return action;
     }
     void move(int delta) {
-        constexpr std::array<int,8> order={0,1,6,7,2,3,4,5};
-        int at=0;while(at<8&&order[at]!=selected)++at;if(at==8)at=0;
-        do{at=ring(at,delta,8);selected=order[at];}while(!unlocked&&selected==1);
+        constexpr int count=static_cast<int>(order.size());
+        int at=0;while(at<count&&order[at]!=selected)++at;if(at==count)at=0;
+        do{at=ring(at,delta,count);selected=order[at];}while(!unlocked&&selected==1);
     }
 };
 inline int glyph_code(char c) {
@@ -236,7 +248,8 @@ inline constexpr std::array<std::array<LocalizedText,3>,3> shot_description={{
 inline std::wstring_view option_value(Language language,Menu::Option option,int value){
     using O=Menu::Option;
     constexpr std::array<LocalizedText,2> toggles={{{L"無効",L"Off",L"关闭",L"關閉"},{L"有効",L"On",L"开启",L"開啟"}}};
-    constexpr std::array<LocalizedText,3> music={{toggles[0],{L"FM",L"FM",L"FM",L"FM"},{L"MIDI",L"MIDI",L"MIDI",L"MIDI"}}};
+    constexpr std::array<LocalizedText,4> music={{toggles[0],{L"FM",L"FM",L"FM",L"FM"},{L"MIDI",L"MIDI",L"MIDI",L"MIDI"},
+        {L"幺樂団の歴史",L"Akyu's Untouched Score",L"幺乐团的历史",L"幺樂團的歷史"}}};
     constexpr std::array<LocalizedText,3> autofire={{toggles[0],{L"12 Hz",L"12 Hz",L"12 Hz",L"12 Hz"},{L"高速",L"Fast",L"高速",L"高速"}}};
     constexpr std::array<LocalizedText,2> effects={{{L"通常",L"Normal",L"正常",L"正常"},{L"一部軽減",L"Reduced",L"减弱",L"減弱"}}};
     constexpr std::array<LocalizedText,3> hitboxes={{toggles[0],{L"自機のみ",L"Player",L"仅自机",L"僅自機"},{L"すべて",L"All",L"全部",L"全部"}}};
@@ -263,19 +276,18 @@ inline void draw_title_credit(std::vector<std::uint32_t> &pixels,const th03::ass
     draw_label(pixels,font,"ZUN",560,380,0xffff00);
 }
 inline void draw_menu(std::vector<std::uint32_t> &pixels, const th03::assets::BfntSheet &font, const Menu &menu) {
-    constexpr std::array<std::string_view,8> labels={"START","EXTRA START","PRACTICE START","REPLAY","HISCORE","OPTION","MUSIC MODE","QUIT"};
-    constexpr std::array<int,8> actions={0,1,6,7,2,3,4,5};
+    constexpr std::array<std::string_view,Menu::order.size()> labels={"START","EXTRA START","PRACTICE START","REPLAY","HISCORE","OPTION","MUSIC MODE","ABOUT","QUIT"};
     // All languages share the original gaiji style and the English port labels.
-    for(int i=0;i<8;++i) {
-        const int x=320-static_cast<int>(labels[i].size())*8,y=224+i*16;
+    for(int i=0;i<static_cast<int>(labels.size());++i) {
+        const int x=320-static_cast<int>(labels[i].size())*8,y=Menu::title_top+i*Menu::title_pitch;
         draw_label(pixels,font,labels[i],x+4,y+4,0);
     }
     draw_label(pixels,font,"RANK",212,372,0);
     draw_label(pixels,font,rank_names[menu.rank],308,372,0);
     draw_title_credit(pixels,font);
-    for(int i=0;i<8;++i) {
-        const int x=320-static_cast<int>(labels[i].size())*8,y=224+i*16;
-        const auto color= i==1 && !menu.unlocked ? 0x0000ffu : (menu.selected==actions[i] ? 0xffffffu : 0xffff00u);
+    for(int i=0;i<static_cast<int>(labels.size());++i) {
+        const int x=320-static_cast<int>(labels[i].size())*8,y=Menu::title_top+i*Menu::title_pitch;
+        const auto color= i==1 && !menu.unlocked ? 0x0000ffu : (menu.selected==Menu::order[i] ? 0xffffffu : 0xffff00u);
         draw_label(pixels,font,labels[i],x,y,color);
     }
     draw_label(pixels,font,"RANK",208,368,0x00ff00);
@@ -293,7 +305,7 @@ inline unsigned test_menu() {
     m.update(0);m.update(Menu::down);check(m.selected==0);
     for(bool unlocked:{false,true}) {
         m=Menu{};m.unlocked=unlocked;
-        for(int i=0;i<30;++i) {m.update(0);m.update(Menu::down);check(m.selected>=0 && m.selected<=7 && (unlocked||m.selected!=1));}
+        for(int i=0;i<30;++i) {m.update(0);m.update(Menu::down);check(m.selected>=0 && m.selected<=Menu::about_entry && (unlocked||m.selected!=1));}
     }
     m=Menu{};m.update(0);check(m.update(Menu::confirm)==-1 && m.shot_screen && m.shot==1);
     check(m.update(Menu::confirm)==-1);
@@ -316,12 +328,13 @@ inline unsigned test_menu() {
         draw_menu(pixels,font,m);
         return pixels;
     };
-    for(bool unlocked:{false,true})for(int selected:{0,1,6,7,2,3,4,5}){
+    for(bool unlocked:{false,true})for(int selected:Menu::order){
         m.unlocked=unlocked;m.selected=selected;m.language=soew::Language::English;
         const auto reference=render_title();
-        check(reference[256*640+208]==(selected==6?0xffffffu:0xffff00u)); // Practice Start
-        check(reference[272*640+272]==(selected==7?0xffffffu:0xffff00u)); // Replay
-        check(reference[240*640+232]==(!unlocked?0x0000ffu:selected==1?0xffffffu:0xffff00u));
+        check(reference[240*640+208]==(selected==6?0xffffffu:0xffff00u)); // Practice Start
+        check(reference[256*640+272]==(selected==7?0xffffffu:0xffff00u)); // Replay
+        check(reference[320*640+280]==(selected==Menu::about_entry?0xffffffu:0xffff00u));
+        check(reference[224*640+232]==(!unlocked?0x0000ffu:selected==1?0xffffffu:0xffff00u));
         check(reference[368*640+208]==0x00ff00u); // Rank
         check(reference[380*640+544]==0xffff00u); // Copyright
         for(const auto language:{soew::Language::Japanese,soew::Language::ChineseSimplified,soew::Language::ChineseTraditional}){

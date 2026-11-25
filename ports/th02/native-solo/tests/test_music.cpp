@@ -1,9 +1,36 @@
 #include "music_room.hpp"
+#include "music_room_polygons.hpp"
 #include <vector>
 #include <fstream>
 #include <iostream>
 unsigned checks=0;void check(bool value){++checks;if(!value)throw std::runtime_error("Music contract failed");}
+void check_music_polygons(){
+    using Animation=soew::MusicRoomPolygons;
+    const auto size=Animation::width*Animation::height;
+    std::vector<std::uint32_t> base(size),blue(size);
+    for(int i=0;i<size;++i){
+        const unsigned index=i%16;
+        base[i]=index;
+        blue[i]=index|1;
+    }
+    Animation animation;
+    auto first=base;
+    animation.paint(first,blue);
+    check(first!=base);
+    auto overlap=first;
+    animation.paint(overlap,blue);
+    check(overlap==first);
+    for(unsigned step=1;step<=600;++step){
+        animation.tick();
+        if(step!=1&&step%150)continue;
+        auto frame=base;
+        animation.paint(frame,blue);
+        check(frame!=base&&frame!=first);
+        for(int i=0;i<size;++i)check(frame[i]==base[i]||frame[i]==blue[i]);
+    }
+}
 int main(int argc,char**argv){try{
+    check_music_polygons();
     std::vector<std::byte> fixture(12602,std::byte{32});
     for(unsigned line=0;line<300;++line){fixture[line*42+40]=std::byte{13};fixture[line*42+41]=std::byte{10};}
     const auto result=soew::decode_music_comments(fixture);check(result.size()==15&&result[14][19].size()==40);
