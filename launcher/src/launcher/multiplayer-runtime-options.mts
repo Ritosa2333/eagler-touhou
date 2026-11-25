@@ -232,7 +232,7 @@ export function buildMultiplayerRuntimeOptions(
     ...(roomProduct==='th19mp'?{netplayTh19Rules:[...(input.th19Rules??TH19_VERSUS_RULES)]}:{}),
     ...(roomProduct==='bromp'?{netplayBroSystems:[...(input.broSystems??[])],netplayBroStageQueue:[...(input.broStageQueue??[])]}:{}),
     ...((roomProduct==='th05mp'||isPc98StockProduct(roomProduct))?{netplayInitialSpares:input.initialSpares??(isPc98StockProduct(roomProduct)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).spares,netplayInitialBombs:input.initialBombs??(isPc98StockProduct(roomProduct)?PC98_INITIAL_STOCK:TH05_INITIAL_STOCK).bombs}:{}),
-    ...(product.inGameSelection ? { netplayInGameSelection: true } : {}),
+    ...(product.inGameSelection || roomProduct === 'th075mp' ? { netplayInGameSelection: true } : {}),
     ...(roomProduct === "th15mp"
       ? {
           netplayChapterThreshold:

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, closeSel
 
 export type MainSelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   'data-trigger-i18n'?: string;
+  density?: 'compact';
   renderOption?(option: { value: string; label: string }): ReactNode;
   renderPicker?(change: (value: string) => void, ref: Ref<HTMLButtonElement>): ReactNode;
 };
@@ -18,7 +19,7 @@ export function MainSelectPrefix({ children, prefix }: { children: ReactNode; pr
 export const closeMainSelectMenus = closeSelectMenus;
 
 /** The native element owns forms, refs and change events; shared Select owns the popup. */
-export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(function MainSelect({renderOption, renderPicker, ...props}, ref) {
+export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(function MainSelect({density, renderOption, renderPicker, ...props}, ref) {
   const { t } = useLocale();
   const native = useRef<HTMLSelectElement | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -51,7 +52,7 @@ export const MainSelect = forwardRef<HTMLSelectElement, MainSelectProps>(functio
   };
 
   return (
-    <div className="ui-select mizuki-select">
+    <div className="ui-select mizuki-select" data-density={density}>
       <select
         {...props}
         ref={attach}

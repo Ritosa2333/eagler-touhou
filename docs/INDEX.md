@@ -1,6 +1,6 @@
 # 文档总表
 
-共 667 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 670 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -540,6 +540,9 @@
 | 许可证与声明 | [launcher/public/assets/LICENSE-Phosphor.txt](../launcher/public/assets/LICENSE-Phosphor.txt) | MIT License |
 | 许可证与声明 | [launcher/public/assets/brand/LICENSE.txt](../launcher/public/assets/brand/LICENSE.txt) | Creative Commons Legal Code |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-ChillRoundGothic.txt](../launcher/public/assets/fonts/OFL-ChillRoundGothic.txt) | OFL ChillRoundGothic |
+| 许可证与声明 | [launcher/public/assets/fonts/OFL-IBMPlexMono.txt](../launcher/public/assets/fonts/OFL-IBMPlexMono.txt) | OFL IBMPlexMono |
+| 许可证与声明 | [launcher/public/assets/fonts/OFL-NotoSansJP.txt](../launcher/public/assets/fonts/OFL-NotoSansJP.txt) | Google Inc. |
+| 许可证与声明 | [launcher/public/assets/fonts/OFL-NotoSansSC.txt](../launcher/public/assets/fonts/OFL-NotoSansSC.txt) | Google Inc. |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-Unifont.txt](../launcher/public/assets/fonts/OFL-Unifont.txt) | OFL Unifont |
 | 许可证与声明 | [launcher/public/assets/fonts/OFL-YatraOne.txt](../launcher/public/assets/fonts/OFL-YatraOne.txt) | OFL YatraOne |
 | 许可证与声明 | [launcher/public/assets/room-icons-LICENSE.txt](../launcher/public/assets/room-icons-LICENSE.txt) | MIT License |

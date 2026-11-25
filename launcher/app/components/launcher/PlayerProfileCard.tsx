@@ -73,6 +73,7 @@ export function PlayerProfileCard({username,name,avatar,highResolutionAvatar,cov
     if (!highResolutionAvatar || highResolutionAvatar === avatar) return;
     let active = true;
     const image = new Image();
+    image.crossOrigin = 'anonymous';
     image.src = highResolutionAvatar;
     void image.decode().then(() => {
       if (active) setDecodedAvatar(highResolutionAvatar);
@@ -85,7 +86,7 @@ export function PlayerProfileCard({username,name,avatar,highResolutionAvatar,cov
       <div className="player-profile-card-avatar">
         <AccountAvatar src={avatar}/>
         {decodedAvatar && decodedAvatar === highResolutionAvatar &&
-          <img className="player-profile-card-avatar-detail" src={decodedAvatar} alt=""/>}
+          <img crossOrigin="anonymous" className="player-profile-card-avatar-detail" src={decodedAvatar} alt=""/>}
       </div>
       <div className="player-profile-card-name"><h3>{name}</h3>{username && <span>@{username}</span>}</div>
       {username && <Button variant="ghost" size="sm" className="player-profile-card-home" asChild>

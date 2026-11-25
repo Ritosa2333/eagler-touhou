@@ -60,6 +60,11 @@ for (const [product, limit] of [['th075mp', 8], ['th12mp', 12], ['th14mp', 12], 
   const input = {...base, difficulty: 1, inputDelay: 0, url: base.url.replace('th06mp', product)};
   const config = PRODUCT_GAMES[product.slice(0, -2)].multiplayer;
   const enabled = buildMultiplayerRuntimeOptions({...input, loadouts: config.loadouts.slice(0, 2)}, config);
+  if(product==='th075mp'){
+    assert.equal(config.inGameCharacterSelection,true);
+    assert.equal(enabled.netplayInGameSelection,true);
+    assert.equal(enabled.netplayDifficulty,input.difficulty);
+  }
   assert.equal(enabled.netplayAdonisMode, 0, `${product}: default rollback`);
   assert.equal(enabled.netplayPredictionLimit, limit);
   const disabled = buildMultiplayerRuntimeOptions({...input, loadouts: config.loadouts.slice(0, 2), adonisMode: 1}, config);

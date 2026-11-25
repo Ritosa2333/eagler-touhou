@@ -12,6 +12,7 @@ import {
 import { AppShellDeploymentMeta } from './components/startup/AppShellDeploymentMeta';
 import { InitialLauncher, InitialDocumentBody, OriginalNoscript } from './components/startup/InitialLauncher';
 import './ui/foundation.css';
+import '@fontsource-variable/noto-sans-sc';
 import './components/launcher/lobby-options.css';
 import './components/launcher/shared-options.css';
 import './components/launcher/book-ui.css';
@@ -21,6 +22,7 @@ import './ui/system.css';
 import './ui/tailwind.css';
 import './components/launcher/book-library.css';
 import './components/launcher/masthead.css';
+import './components/launcher/launcher-chrome.css';
 import './components/launcher/options-sheet.css';
 import './components/settings/settings-ui.css';
 import './ui/scrollbars.css';
@@ -32,12 +34,22 @@ import UptimeRoute from './routes/uptime';
 import { helpDocumentAtPath, isStandalonePage, isTh09RatingPage } from './components/documents/catalog';
 import { isPreviewOnlyPage } from './release-features';
 import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
+import {launcherSection, profileSettingsPanel} from './components/launcher/launcher-sections';
+import {localLayerOwnsPageScroll, type PageLocation} from './navigation/page-history';
 const HelpRoute = lazy(() => import('./routes/help'));
 const Th09RatingsRoute = lazy(() => import('./routes/th09-ratings'));
 
-// Overlay history shares page scroll. Profile anchors have separate history entries.
-const pageScrollKey = (location: { pathname: string; key: string }) =>
-  /\/profile\.html\/?$/.test(location.pathname) ? location.key : location.pathname;
+// Inline layers share the page position. A full page restores its own history entry.
+const pageScrollKey = (location: PageLocation & {key: string}) => {
+  if (localLayerOwnsPageScroll(location) || /\/profile\.html\/?$/.test(location.pathname)) return location.key;
+  if (/^\/u\/[^/]+\/?$/.test(location.pathname)) {
+    if (profileSettingsPanel(location.hash)) return location.pathname + ':settings';
+    if (new URLSearchParams(location.search).has('social') || location.hash === '#profile-friends')
+      return location.pathname + ':social';
+  }
+  const section = launcherSection(location);
+  return section ? `${location.pathname}?section=${section}` : location.pathname;
+};
 
 export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
@@ -73,7 +85,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <script>{`try{var theme=JSON.parse(localStorage.getItem('eagler.book.theme'));if(theme==='light'||theme==='dark'){document.documentElement.setAttribute('data-book-theme',theme);document.documentElement.className=theme;}}catch(e){}`}</script>
         {!review && <OriginalBootstrapHead />}
         <AppShellDeploymentMeta />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=contain" />
         <Meta />
         <Links />
       </head>

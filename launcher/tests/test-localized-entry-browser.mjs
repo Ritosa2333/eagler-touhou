@@ -21,10 +21,6 @@ try {
   const page = await browser.newPage();
   await page.setViewport({width: 1440, height: 900});
   await page.evaluateOnNewDocument(() => localStorage.setItem("eagler-touhou-first-use-notice-seen-v1", "1"));
-  await page.setRequestInterception(true);
-  page.on("request", request => request.url() === new URL("_eagler/ui-country", baseUrl).href
-    ? request.respond({status: 200, contentType: "text/plain", body: "CN"})
-    : request.continue());
   const failures = [];
   const fontRequests = new Set();
   if (!devServer) page.on("console", message => { if (message.type() === "error") failures.push(message.text()); });
@@ -78,43 +74,42 @@ try {
     return link instanceof HTMLLinkElement && !!link.sheet;
   });
   assert.deepEqual(failures, []);
-  for (const [country, locale, entry] of [["JP", "ja", "ja.html"], ["US", "en", "en.html"], ["ZZ", "en", "en.html"]]) {
+  for (const oldAutomaticLocale of [null, 'en', 'ja']) {
     const context = await browser.createBrowserContext();
     try {
       const region = await context.newPage();
       await region.setViewport({width: 1440, height: 900});
-      await region.evaluateOnNewDocument(() => localStorage.setItem("eagler-touhou-first-use-notice-seen-v1", "1"));
+      await region.evaluateOnNewDocument(locale => {
+        localStorage.setItem("eagler-touhou-first-use-notice-seen-v1", "1");
+        if (locale) localStorage.setItem('eagler-touhou-region-locale-v1', locale);
+      }, oldAutomaticLocale);
       const errors = [];
       region.on("pageerror", error => errors.push(error.message));
-      await region.setRequestInterception(true);
-      let lookups = 0, currentCountry = country;
+      let lookups = 0;
       region.on("request", request => {
-        if (request.url() !== new URL("_eagler/ui-country", baseUrl).href) return request.continue();
-        lookups++;
-        return request.respond({status: 200, contentType: "text/plain", body: currentCountry});
+        if (request.url() === new URL("_eagler/ui-country", baseUrl).href) lookups++;
       });
       await region.goto(new URL("lobby.html?keep=a%20b#rooms", baseUrl), {waitUntil: "domcontentloaded"});
-      await region.waitForFunction(value => document.documentElement.lang === value && !!document.querySelector("#uiLanguageSelect"), {}, locale);
-      assert.equal(region.url(), new URL(`lobby.html?keep=a%20b&lang=${locale}#rooms`, baseUrl).href);
-      assert.equal(await region.$eval("#uiLanguageSelect", select => select.value), locale);
+      await region.waitForFunction(() => document.documentElement.lang === 'zh-CN' && !!document.querySelector("#uiLanguageSelect"));
+      assert.equal(region.url(), new URL("lobby.html?keep=a%20b#rooms", baseUrl).href);
+      assert.equal(await region.$eval("#uiLanguageSelect", select => select.value), 'zh-CN');
       await region.goto(new URL("?keep=a%20b#library", baseUrl), {waitUntil: "domcontentloaded"});
-      await region.waitForFunction(value => document.documentElement.lang === value && window.__eaglerBoot?.done, {}, locale);
-      assert.equal(region.url(), new URL(`${entry}?keep=a%20b#library`, baseUrl).href);
-      assert.equal(lookups, 1, "the first language is retained even if the IP has no known region");
+      await region.waitForFunction(() => document.documentElement.lang === 'zh-CN' && window.__eaglerBoot?.done);
+      assert.equal(region.url(), new URL("?keep=a%20b#library", baseUrl).href);
+      await region.goto(new URL("en.html", baseUrl), {waitUntil: "domcontentloaded"});
       await selectChinese(region);
       assert.equal((await context.cookies()).find(cookie => cookie.name === preferenceKey)?.value, 'zh-CN');
       await region.evaluate(key => {
         localStorage.setItem(key, 'ja');
         localStorage.removeItem('eagler-touhou-region-locale-v1');
       }, preferenceKey);
-      currentCountry = 'JP';
       await region.goto(new URL("en.html", baseUrl), {waitUntil: "domcontentloaded"});
       await region.waitForFunction(() => document.documentElement.lang === "en" && window.__eaglerBoot?.done);
       assert.equal((await context.cookies()).find(cookie => cookie.name === preferenceKey)?.value, 'zh-CN', 'explicit links do not overwrite the cookie');
       await region.goto(new URL("lobby.html", baseUrl), {waitUntil: "domcontentloaded"});
       await region.waitForFunction(() => document.documentElement.lang === "zh-CN" && !!document.querySelector("#uiLanguageSelect"));
       assert.equal(await region.$eval("#uiLanguageSelect", select => select.value), "zh-CN");
-      assert.equal(lookups, 1, "the cookie overrides both a stale storage value and a changed IP region");
+      assert.equal(lookups, 0, "entry language does not request location");
       assert.deepEqual(errors, []);
     } finally {
       await context.close();

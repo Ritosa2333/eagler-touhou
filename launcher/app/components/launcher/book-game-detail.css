@@ -1,151 +1,66 @@
 @layer components {
   .book-game-detail {
+    --game-detail-inset: clamp(20px, 3.9vw, 56px);
     min-width: 0;
-    display: grid;
-    gap: 18px;
-    scroll-margin-top: var(--book-top-clearance);
+    scroll-margin-top: var(--site-header-height, 44px);
   }
   .book-game-detail-hero {
-    position: relative;
-    isolation: isolate;
-    overflow: clip;
+    --game-cover-size: clamp(102px, 12.1vw, 174px);
+    --game-identity-gap: clamp(18px, 2.4vw, 34px);
+    --game-title-size: clamp(30px, 3.4vw, 48px);
+    --game-subtitle-size: 16px;
+    --game-number-size: 13px;
+    --game-cover-radius: 7px;
+    --game-hero-blur: 80px;
+    padding: 40px var(--game-detail-inset) 18px;
+  }
+  .book-game-detail-hero h2:focus { outline: none; }
+  .book-game-detail-back { position: absolute; inset-block-start: 5px; inset-inline-start: 9px; color: inherit; }
+  .book-game-detail-actions {
+    --game-action-size: 40px;
     display: grid;
-    grid-template-columns: clamp(120px, 18vw, 218px) minmax(0, 1fr);
+    grid-template-columns: max-content minmax(0, 1fr) repeat(3, max-content);
     align-items: center;
-    gap: clamp(16px, 3vw, 32px);
-    padding: clamp(16px, 3vw, 28px);
-    background: var(--kit-card);
-    border: 1px solid var(--kit-border);
-    border-radius: 12px;
+    gap: 7px;
+    margin-block-start: clamp(28px, 4.15vw, 60px);
   }
-  .book-game-detail-art {
-    position: absolute;
-    inset: 0 0 0 24%;
-    z-index: -1;
-    opacity: .54;
-    mask-image: linear-gradient(to right, transparent, black 95%);
-    pointer-events: none;
-  }
-  .book-game-detail-art img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: var(--detail-art-position, 50%) center;
-    filter: brightness(var(--detail-art-brightness, .68)) saturate(var(--detail-art-saturation, .85));
-  }
-  .book-game-detail-cover {
-    display: grid;
-    place-items: center;
-    overflow: hidden;
-    aspect-ratio: 1;
-    background: var(--kit-muted);
-    color: var(--kit-muted-foreground);
-    border-radius: 8px;
-  }
-  .book-game-detail-cover img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  .book-game-detail-cover svg { width: 32px; height: 32px; }
-  .book-game-detail-intro {
-    display: grid;
-    gap: 6px;
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-  .book-game-detail-code {
-    color: var(--kit-brand);
-    font-size: 12px;
-    font-weight: 650;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-  }
-  .book-game-detail-intro h2 {
-    margin: 0;
-    font: 650 clamp(23px, 3vw, 38px) / 1.2 var(--kit-font);
-    outline: none;
-  }
-  .book-game-detail-intro p { margin: 0; color: var(--kit-muted-foreground); }
-  .book-game-detail .launch-actions {
-    justify-self: start;
-    width: min(100%, 204px);
-    padding: 0;
-    margin-block-start: 12px;
-    border: 0;
-    background: transparent;
-  }
-  .book-game-detail .launch-actions > .launch { min-height: 40px; }
-  :is(.book-game-detail, .tools[data-book-sheet]) .launch-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
-  :is(.book-game-detail, .tools[data-book-sheet]) .launch-actions > .launch {
-    width: 100%;
-    min-width: 0;
-    height: auto;
-    white-space: normal;
-    line-height: 1.3;
-  }
+  .book-game-detail-actions .game-detail-metrics { grid-area: 1 / 2; margin-inline: 14px 8px; }
+  .book-game-detail-actions .launch-secondary { grid-column: 3; }
+  .book-game-detail-actions #gameSettingsOpen { grid-column: 4; }
+  .book-game-detail-actions .game-detail-favorite { grid-column: 5; }
   .book-game-detail-content {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(248px, 37%, 350px);
-    align-items: start;
-    gap: 18px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(14px, 1.7cqi, 20px);
+    padding: 26px clamp(16px, 3cqi, var(--game-detail-inset)) 42px;
   }
-  .book-game-detail-content > section {
-    min-width: 0;
-    padding: 16px clamp(16px, 3vw, 28px) 20px;
-    background: var(--kit-card);
-    border: 1px solid var(--kit-border);
-    border-radius: 12px;
+  .book-game-detail-content[data-has-friends] { grid-template-columns: minmax(0, 1fr) 184px; }
+  .book-game-detail-content > .game-detail-friends { border-inline-start: 1px solid var(--kit-border); padding-inline-start: 16px; }
+  .book-game-detail-settings {
+    width: min(calc(100% - 2 * var(--game-detail-inset)), 632px);
+    margin-inline: auto;
+    padding-block: 20px 48px;
   }
-  .book-game-detail-content > section > h3 {
-    margin: 0 0 8px;
-    font: 650 16px / 1.45 var(--kit-font);
+  .book-game-detail-settings > header { margin-block-end: 24px; }
+  .book-game-settings-back { margin: 0 0 8px -8px; padding-inline: 8px; color: var(--kit-muted-foreground); }
+  @container (max-width: 740px) {
+    .book-game-detail-content[data-has-friends] { grid-template-columns: minmax(0, 1fr); }
+    .book-game-detail-content > .game-detail-friends { border-inline-start: 0; padding-inline-start: 0; }
   }
-  .book-game-detail-content > .book-game-detail-settings { padding-inline: clamp(12px, 2vw, 20px); }
-  .book-game-detail-statistics { min-height: 144px; }
-  .book-game-stats { padding-block: 4px 0; container-type: inline-size; }
-  .book-game-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin: 0;
+  @container (max-width: 605px) {
+    .book-game-detail-actions {
+      grid-template-columns: max-content max-content max-content 1fr;
+      justify-items: start;
+    }
+    .book-game-detail-actions .game-detail-metrics { grid-area: 1 / 2 / 2 / -1; margin-inline: 7px 0; }
+    .book-game-detail-actions .launch-secondary { grid-area: 2 / 1; }
+    .book-game-detail-actions #gameSettingsOpen { grid-area: 2 / 2; }
+    .book-game-detail-actions .game-detail-favorite { grid-area: 2 / 3; }
   }
-  .book-game-stats-grid > div {
-    min-width: 0;
-    padding: 10px 12px;
-    border: 1px solid var(--kit-border);
-    border-radius: 8px;
-    background: var(--kit-background);
-  }
-  .book-game-stats-grid dt,
-  .book-game-stats-source,
-  .book-game-stats-message {
-    color: var(--kit-muted-foreground);
-    font-size: 12px;
-  }
-  .book-game-stats-grid dd {
-    margin: 4px 0 0;
-    font: 650 clamp(13px, 1.6vw, 20px) / 1.3 var(--kit-font);
-    font-variant-numeric: tabular-nums;
-    overflow-wrap: anywhere;
-  }
-  .book-game-stats-grid dd[data-stat="clears"] { font-size: 13px; }
-  .book-game-stats .profile-clear-frame { margin-block-start: 14px; }
-  .book-game-stats-source { margin: 10px 0 0; }
-  .book-game-stats-source time { margin-inline-start: 4px; }
-  .book-game-stats-message { margin: 0; padding-block: 10px; }
-  .book-game-stats-message p { margin: 0 0 6px; }
-  .book-sheet-section-content > .book-game-stats { padding-block: 10px; }
-  @container (max-width: 620px) {
-    .book-game-detail-content { grid-template-columns: minmax(0, 1fr); }
-  }
-  @container (max-width: 410px) {
-    .book-game-detail-hero { grid-template-columns: minmax(0, 1fr); }
-    .book-game-detail-cover { width: min(44%, 160px); }
-    .book-game-detail-art { inset-inline-start: 12%; }
+  @media (pointer: coarse) {
+    .book-game-detail-actions { --game-action-size: 44px; }
   }
 }
+
+.book-game-detail-actions .ui-kit-button { height: var(--game-action-size); min-inline-size: 0; }
+.book-game-detail-actions .game-detail-favorite { width: var(--game-action-size); }

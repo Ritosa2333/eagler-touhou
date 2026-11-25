@@ -20,6 +20,7 @@ import {RoomPanel} from './RoomPanel';
 import {RoomPersonal} from './RoomPersonal';
 import {RoomNetwork} from './RoomNetwork';
 import {FullscreenIcons} from '../player/utility-icons';
+import {readTh075RoomScore} from '../../../src/launcher/th09-room-stats.mts';
 import './room-workspace.css';
 
 const noMusicSubscription = () => () => {};
@@ -62,6 +63,7 @@ export function RoomWorkspace(props: RoomViewProps) {
   const view = roomPresentation(state,t);
   if (!view || !props.workspaceHost || !props.workspaceStage || props.visible === false) return null;
   const {room,game,config,ready,owner} = view;
+  const th075Score = state.product === 'th075mp' ? readTh075RoomScore(room.seats) : undefined;
   const viewport = props.workspaceStage.querySelector<HTMLElement>('.game-viewport');
   const activePanel = props.panel?.kind === 'personal' || props.panel?.kind === 'network' || props.panel?.kind === 'spectators' ||
     (props.panel?.kind === 'music' && !!props.music);
@@ -95,7 +97,11 @@ export function RoomWorkspace(props: RoomViewProps) {
           </div>
           <div className="room-workspace-meta"><span id="mpRoomMode">{t(config.gameplay === 'versus' ? 'room.versus' : 'room.coop',{count:room.playerCount})}</span><span id="mpRoomDifficultyBadge">{config.difficulties[room.difficulty] || 'Normal'}</span>{room.challengeMode && <span className="room-challenge-on">{t(state.product==='th02mp'||state.product==='th04mp'?'room.pc98ChallengeEnabled':'room.challengeEnabled')}</span>}{state.product==='th01mp'&&(room.ballCount??2)!==2&&<span className="room-challenge-on">{t('room.th01SpecialBalls',{count:room.ballCount??2})}</span>}{state.product==='th02mp'&&room.disableFocus===true&&<span className="room-challenge-on">{t('room.th02SpecialFocus')}</span>}{state.product==='th03mp'&&room.disableFocus===false&&<span className="room-challenge-on">{t('room.th03SpecialFocus')}</span>}</div>
         </div>
-        <div className="room-workspace-top-actions"><UiButton size="lg" className="mp-room-code mp-room-top-action" id="mpCopyRoomCode" type="button" aria-label={t('multiplayer.copyRoomCode')} onClick={()=>{void props.onCopyRoomCode(room.code);}}><span className="mp-room-code-label">{t('multiplayer.roomCode')}</span><strong id="mpRoomCode">{room.code}</strong>{icon('room-copy')}</UiButton>
+        <div className="room-workspace-top-actions">
+          {th075Score && <strong className="room-workspace-score" role="img" aria-label={`${t('th09.score')} ${th075Score.wins.join(' : ')}`}>
+            {th075Score.wins.join(' : ')}
+          </strong>}
+          <UiButton size="lg" className="mp-room-code mp-room-top-action" id="mpCopyRoomCode" type="button" aria-label={t('multiplayer.copyRoomCode')} onClick={()=>{void props.onCopyRoomCode(room.code);}}><span className="mp-room-code-label">{t('multiplayer.roomCode')}</span><strong id="mpRoomCode">{room.code}</strong>{icon('room-copy')}</UiButton>
           <UiButton size="lg" className="mp-room-top-action" id="mpSettingsRoomDrawerToggle" type="button" aria-label={t('settings.title')} aria-expanded={props.settingsOpen} aria-controls="mpSettingsRoomDrawer" disabled={locked} onClick={props.onOpenSettings}>{icon('room-gear-six')}<span>{t('room.gameSettingsGroup')}</span></UiButton></div>
       </header>
       <div className="room-workspace-column"><Tabs value={tab} onValueChange={value=>setTab(value as 'chat'|'game')} asChild><aside className="room-workspace-sidebar"><div className="room-workspace-tab-bar"><TabsList asChild><div className="room-workspace-tabs" role="tablist" aria-label={t('multiplayer.gameSettings')}>

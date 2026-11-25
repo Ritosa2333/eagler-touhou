@@ -1,5 +1,20 @@
+:root {
+  --ui-safe-top:env(safe-area-inset-top,0px);
+  --ui-safe-right:env(safe-area-inset-right,0px);
+  --ui-safe-bottom:env(safe-area-inset-bottom,0px);
+  --ui-safe-left:env(safe-area-inset-left,0px);
+}
+
+/* The browser window owns the vertical edges of the contained viewport.
+   Some WebView hosts also forward the system bars as safe-area insets. */
+@media (display-mode: browser) {
+  :root {
+    --ui-safe-top:0px;
+    --ui-safe-bottom:0px;
+  }
+}
+
 :root,html[data-book-theme='dark'] {
-  --ui-safe-top:env(safe-area-inset-top,0px);--ui-safe-right:env(safe-area-inset-right,0px);--ui-safe-bottom:env(safe-area-inset-bottom,0px);--ui-safe-left:env(safe-area-inset-left,0px);
   color-scheme:dark;
   --kit-background:#17181b;--kit-foreground:#ececef;--kit-card:#1f2024;--kit-popover:#25262b;
   --kit-primary:#e5e5e9;--kit-primary-foreground:#232428;--kit-secondary:#303137;
@@ -8,7 +23,11 @@
   --rating-green:#9be7ae;
   --kit-success:#8ed3aa;--kit-warning:#e5bd7f;
   --kit-control-border:#555660;
-  --kit-brand:#e4868e;--kit-font:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;
+  --kit-brand:#ecaab2; /* Pencil selection and progress accent. */
+  --kit-progress-neutral:#282a30;
+  --kit-font:'Noto Sans SC Variable','Noto Sans SC','Microsoft YaHei',system-ui,sans-serif;
+  --kit-font-work:'Microsoft YaHei',var(--kit-font);
+  --kit-font-latin:'Segoe UI',var(--kit-font);
 }
 @media (prefers-reduced-motion: no-preference) {
   :is(.book-art,.book-lobby-cover,.lobby-cover) img {transition:filter 300ms ease}
@@ -25,6 +44,7 @@ html[data-book-theme='light'] {
   --kit-success:#247044;--kit-warning:#855914;
   --kit-control-border:#b7b7c1;
   --kit-brand:#a93648;
+  --kit-progress-neutral:var(--kit-muted);
 }
 :root,html[data-book-theme='light'],html[data-book-theme='dark'] {
   --kit-seat-loading:#ad6024;--kit-seat-unready:#bd4438;--kit-seat-ready:#00836f;

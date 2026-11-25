@@ -1,0 +1,111 @@
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+
+.spell-archive {margin-block-start:20px;max-inline-size:784px}
+.spell-archive > header {display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-block-end:11px}
+.spell-archive > header h2 {margin:0;font-size:16px;font-weight:700}
+.spell-archive > header small {font-size:11px;font-weight:550;color:var(--kit-muted-foreground)}
+.spell-view-switch {display:inline-flex;gap:2px;margin-inline-start:auto;padding:2px;border:1px solid var(--kit-border);border-radius:7px;background:var(--kit-card)}
+.spell-view-switch [data-slot="choice-item"] {min-height:24px;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:550}
+.spell-view-switch [data-state="on"] {background:color-mix(in srgb,var(--kit-brand) 16%,var(--kit-card));color:var(--kit-brand);font-weight:650}
+.spell-map-scroll,.spell-list {border:1px solid var(--kit-border);border-radius:9px;overflow:auto;scrollbar-width:thin}
+.spell-map-scroll {container-type:inline-size}
+.spell-map {
+  --stage-width:88px;
+  --midboss-width:78px;
+  --progress-width:128px;
+  --table-inset:9px;
+  --tile-gap:clamp(4px,1cqi,8px);
+  --tile-height:25px;
+  --tile-limit:66px;
+  /* Reserve six equal Boss columns. Larger groups can use a second line. */
+  --boss-width:calc(100cqi - var(--stage-width) - var(--midboss-width) - var(--progress-width) - 2 * var(--table-inset) - 6px);
+  --tile-width:clamp(20px,calc((var(--boss-width) - 5 * var(--tile-gap)) / 6),var(--tile-limit));
+  table-layout:fixed;border-spacing:0 5px;width:100%;padding:3px var(--table-inset) 5px;font-size:12px;text-align:start
+}
+.spell-map :is(th,td) {padding:2px 3px;vertical-align:middle}
+.spell-map th:first-child {width:var(--stage-width);text-align:start;overflow-wrap:anywhere;font-size:11px;font-weight:450}
+.spell-map th:nth-child(2) {width:var(--midboss-width)}
+.spell-map thead th {font-size:11px;color:var(--kit-muted-foreground);text-align:start;font-weight:450}
+.spell-map thead th:nth-child(2) {text-align:center;white-space:nowrap}
+.spell-map td:nth-child(2) .spell-tiles {justify-content:center}
+.spell-map thead th:last-child {width:var(--progress-width);text-align:end}
+.spell-map .spell-stage-progress {grid-template-columns:minmax(0,1fr) 28px;align-items:center;gap:6px}
+.spell-map .spell-stage-progress meter {min-width:0}
+.spell-stage-progress {display:grid;gap:3px;text-align:end;color:var(--kit-muted-foreground);font-variant-numeric:tabular-nums}
+.spell-stage-progress meter {display:block;appearance:none;min-width:48px;width:100%;height:5px;background:var(--kit-muted);border-radius:4px;overflow:hidden}
+.spell-stage-progress meter::-webkit-meter-bar {background:var(--kit-muted);border:0;height:5px}
+.spell-stage-progress meter::-webkit-meter-optimum-value {background:var(--kit-brand)}
+.spell-stage-progress meter::-moz-meter-bar {background:var(--kit-brand)}
+.spell-stage-progress small {font-size:10px;font-weight:550}
+.spell-map .spell-stage-progress small {font-size:9px}
+.spell-map-legend {display:flex;justify-content:center;flex-wrap:wrap;gap:5px 12px;padding:3px 6px 10px;color:var(--kit-muted-foreground);font-size:10px;font-weight:500}
+.spell-map-legend > span {display:flex;align-items:center;gap:5px}
+.spell-map-legend .spell-tile {min-width:0;width:10px;height:10px;padding:0;--capture-intensity:65%}
+.spell-legend-scale {display:flex;gap:2px}
+.spell-tiles {display:grid;grid-template-columns:repeat(auto-fill,var(--tile-width));gap:var(--tile-gap)}
+.spell-map td:nth-child(2) .spell-tiles {grid-template-columns:var(--tile-width);text-align:center}
+.spell-empty-group {font-size:12px;font-weight:550;color:var(--kit-muted-foreground)}
+.spell-tile {display:grid;place-items:center;border:1px solid var(--kit-border);border-radius:4px;background:var(--kit-progress-neutral);font-size:11px;font-variant-numeric:tabular-nums;outline-offset:2px;white-space:nowrap}
+.spell-map .spell-tile {width:var(--tile-width);height:var(--tile-height);min-width:0;padding:0 3px}
+.spell-map .spell-tile > span {max-inline-size:100%;overflow:hidden;text-overflow:ellipsis}
+.spell-tile[data-capture="captured"] {background:color-mix(in srgb,var(--kit-brand) var(--capture-intensity),var(--kit-progress-neutral));border-color:transparent;color:var(--kit-foreground);font-weight:550}
+.spell-tile[data-capture-bright] {color:var(--kit-primary-foreground)}
+.spell-tile[data-capture="unknown"] {background:transparent;border-style:dashed}
+.spell-tile:focus-visible {outline:2px solid var(--kit-ring)}
+@container (max-width:460px) {
+  .spell-map {
+    --stage-width:clamp(39px,12cqi,88px);
+    --midboss-width:clamp(46px,10cqi,78px);
+    --progress-width:clamp(52px,16.4cqi,128px);
+    --tile-limit:25px;--tile-gap:5px;--table-inset:8px;border-spacing:0 6px;padding-block:1px 2px
+  }
+  .spell-map:has([data-stage="8"]) {--stage-width:clamp(59px,12cqi,88px)}
+  .spell-map .spell-stage-progress {grid-template-columns:minmax(0,1fr);gap:3px}
+  .spell-map .spell-tile > span {display:none}
+}
+.spell-number {font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;font-weight:500;white-space:nowrap}
+.spell-tooltip[data-state] {
+  z-index:var(--ui-layer-popup);display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:baseline;gap:10px;
+  width:max-content;min-width:0;max-width:min(calc(100vw - 24px),var(--radix-popover-content-available-width,var(--radix-tooltip-content-available-width,100vw)));
+  margin:0;padding:8px 11px;border:1px solid var(--kit-border);border-radius:7px;
+  background:var(--kit-popover);color:var(--kit-popover-foreground);font:450 13px/1.44 var(--kit-font);
+}
+.spell-tooltip > [lang="ja"] {font-family:'Noto Sans JP Variable',var(--kit-font);overflow-wrap:anywhere}
+.spell-tooltip > strong {font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.spell-tooltip[data-state][data-capture="captured"] {color:color-mix(in srgb,var(--kit-brand) var(--capture-intensity),var(--kit-popover-foreground))}
+.spell-list li > span:nth-child(2) {min-inline-size:0}
+.spell-list {display:grid;gap:6px;border:0;border-radius:0}
+.spell-list-column-head {
+  display:grid;grid-template-columns:72px 51px minmax(0,1fr) 6ch 7ch;gap:6px;padding-inline:13px;
+  color:var(--kit-muted-foreground);font-size:11px;text-align:end
+}
+.spell-list-column-head > span:first-child {grid-column:3;text-align:start}
+.spell-list > section {display:grid;grid-template-columns:72px minmax(0,1fr);gap:6px;padding:8px 12px;border:1px solid var(--kit-border);border-radius:8px;background:var(--kit-background)}
+.spell-list > section > header {display:grid;align-content:start;gap:4px}
+.spell-list > section > header .spell-stage-progress {grid-template-columns:42px auto;align-items:center;gap:4px;width:max-content}
+.spell-list > section > header meter {min-width:0}
+.spell-list h3 {margin:0;font-size:14px;font-weight:650}
+.spell-list h4 {margin:0;color:var(--kit-muted-foreground);font-size:11px;line-height:20px;font-weight:550}
+.spell-list-groups {display:grid;gap:4px;min-width:0}
+.spell-list-group {display:grid;grid-template-columns:51px minmax(0,1fr);gap:5px}
+.spell-list ol {display:grid;gap:2px;margin:0;padding:0;list-style:none}
+.spell-list li {display:grid;grid-template-columns:41px minmax(0,1fr) 6ch 7ch;align-items:baseline;gap:5px;color:var(--kit-muted-foreground);font-size:11px;font-weight:550;line-height:19px}
+.spell-list li span:nth-child(2) {font:500 13px/1.26 'Noto Sans JP Variable',var(--kit-font);overflow-wrap:anywhere}
+.spell-list li :is(span:first-child,span:last-child) {font-variant-numeric:tabular-nums;white-space:nowrap}
+.spell-list li :is(.spell-list-rate,span:last-child) {text-align:end;font-variant-numeric:tabular-nums}
+.spell-list li[data-capture="captured"] {color:color-mix(in srgb,var(--kit-brand) var(--capture-intensity),var(--kit-foreground))}
+@media(max-width:780px) {
+  .spell-archive > header small {font-size:10px}
+  .spell-map-legend {padding-block-end:8px}
+  .spell-list > section {display:block}
+  .spell-list-column-head {display:none}
+  .spell-list > section > header {display:flex;justify-content:space-between;align-items:center;min-height:26px;margin-block-end:2px}
+  .spell-list > section > header .spell-stage-progress {grid-template-columns:52px 28px;gap:13px}
+  .spell-list-group {display:block}
+  .spell-list h3,.spell-list h4 {font-weight:450}
+  .spell-list h4 {font-size:11px;line-height:18px}
+  .spell-list ol {padding-inline-start:7px}
+  .spell-list li {grid-template-columns:38px minmax(0,1fr) 5ch;line-height:22px;font-weight:400}
+  .spell-list li span:nth-child(2) {font-size:14px;font-weight:475}
+  .spell-list-rate {display:none}
+}

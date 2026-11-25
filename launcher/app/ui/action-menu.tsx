@@ -1,4 +1,4 @@
-import {createContext, forwardRef, useContext, useEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactElement, type ReactNode} from 'react';
+import {createContext, forwardRef, useContext, useEffect, useLayoutEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactElement, type ReactNode} from 'react';
 import {DropdownMenu} from 'radix-ui';
 import {Check} from 'lucide-react';
 import {uiPortalHost} from './portal';
@@ -37,7 +37,7 @@ export function ActionMenu({label, trigger, children, className, minimumWidth = 
       onPointerDownCapture={openOnClick ? event => event.stopPropagation() : undefined}
       onClick={openOnClick ? () => changeOpen(!open) : undefined}>{trigger}</DropdownMenu.Trigger>
     <DropdownMenu.Portal container={host}><DropdownMenu.Content className={cn(variant==='selection'?`${listPopupPanelClass} overflow-y-auto`:'ui-menu', 'ui-dropdown-motion', className)} aria-label={label} data-ui-surface={surface}
-      side={side} align={align} sideOffset={sideOffset} collisionPadding={padding} style={{minWidth:`min(${minimumWidth}px, var(--radix-dropdown-menu-content-available-width, calc(100vw - 24px)))`,...(variant==='selection'?{maxHeight:'min(440px,var(--radix-dropdown-menu-content-available-height))'}:{})}} onCloseAutoFocus={event=>{
+      side={side} align={align} sideOffset={sideOffset} collisionPadding={padding} style={{minWidth:`min(${minimumWidth}px, var(--radix-dropdown-menu-content-available-width, calc(100vw - 24px)))`,...(variant==='selection'?{maxHeight:'min(var(--ui-selection-max-height, 440px), var(--radix-dropdown-menu-content-available-height))'}:{})}} onCloseAutoFocus={event=>{
         const action=afterClose.current;afterClose.current=null;
         if(action){event.preventDefault();anchor.current?.focus({preventScroll:true});action();}
       }}>{children}</DropdownMenu.Content></DropdownMenu.Portal>

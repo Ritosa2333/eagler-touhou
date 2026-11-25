@@ -26,6 +26,12 @@ std::array<i32,2> cancel{};
 std::array<u32,64> status{};
 std::array<u32,32> calibration{};
 u32 seed=0,frame=0,restarts=0,first=0,other=0,firstCards=0,otherCards=0,difficulty=0;
+u32 completedMatches=0;
+constexpr u32 unsetFrame=Netplay::INVALID_FRAME;
+std::array<u32,3> matchReport{unsetFrame,0,0}; // Start, confirmed frame count, winner + 1.
+u32 savedReplays=0,matchRound=0,spectatorMatch=0;
+std::vector<std::array<u32,3>> spectatorMarks;
+bool inGameSelection=false;
 bool enabled=false,spectator=false,restartPending=false,finishing=false,finished=false,saved=false;
 bool timingSent=false,timingReceived=false,spectatorStopped=false;
 bool connectionEnded=false;
@@ -33,7 +39,7 @@ u32 receivedFrame=0;
 std::string failure;
 std::vector<u8> timingBytes,output;
 std::deque<std::vector<u8>> spectatorOutput;
-u64 finishAt=0;
+u64 finishAt=0,lastCaptureAt=0;
 std::array<u32,8> confirmedActors{};u32 confirmedReplayFrame=0;
 u32 confirmedCheckpoint=Netplay::INVALID_FRAME,confirmedDigest=0;
 u32 digest=0,rollbackCount=0,resimulated=0,resimTarget=0;
@@ -41,6 +47,7 @@ struct History {
  u32 frame,digestBefore,digestAfter;std::array<ControlCounts,2> counts;std::array<i32,2> cancel;
  std::unique_ptr<RollbackState> state;std::vector<Application::RollbackSound> sounds;
  u32 replayFrame=0;std::array<u32,8> actors{};
+ bool startsMatch=false,startsRound=false;
 };
 std::deque<History> history;
 th075::multiplayer::RollbackAudio<Application::RollbackSound> rollbackAudio;
@@ -50,11 +57,25 @@ void stop_sound(const Application::RollbackSound& sound){app->audio.stop_sound(s
 u64 integer(const u8* p,unsigned n){u64 v=0;for(unsigned i=0;i<n;++i)v|=u64(p[i])<<(8*i);return v;}
 void put(std::vector<u8>& b,u64 v,unsigned n){for(unsigned i=0;i<n;++i)b.push_back(u8(v>>(i*8)));}
 bool fail(const char* text){failure=text;if(app)app->error=failure;return false;}
+bool save_match_replay(){
+    if(spectator||saved||!app->battle||!app->has_multiplayer_recording())return true;
+    if(!app->save_multiplayer_replay())return false;
+    saved=true;++savedReplays;
+    return true;
+}
 u32 world_digest(){
     u32 hash=2166136261u;
     const auto word=[&](u32 v){for(unsigned i=0;i<4;++i){hash^=u8(v>>(i*8));hash*=16777619u;}};
     const auto number=[&](float v){u32 b;std::memcpy(&b,&v,4);word(b);};
     word(frame);word(restarts);
+    if(inGameSelection){
+        const auto& selected=app->selection;
+        word(completedMatches);word(app->current_scene());word(selected.background);
+        for(unsigned side=0;side<2;++side){
+            word(selected.character[side]);word(selected.firstSpell[side]);word(selected.secondSpell[side]);
+            word(selected.alternatePalette[side]);word(app->playerSettings.handicap[side]);word(app->playerSettings.easyCommands[side]);
+        }
+    }
     if(!app->battle)return hash;
     auto& b=app->battle->simulation;
     number(b.story.camera.x);number(b.story.camera.y);number(b.story.camera.span);
@@ -123,6 +144,16 @@ void upload(){
 bool receive_spectator(){
     std::vector<u8> bytes;
     for(unsigned n=0;n<256&&transport.Poll(&bytes);++n){
+        if(bytes.size()==12&&std::memcmp(bytes.data(),"EPTS\1\3",6)==0){
+            const u32 at=u32(integer(bytes.data()+6,4)),round=u32(integer(bytes.data()+10,2));
+            if(!timingReceived||!at||at!=receivedFrame||round>255||
+                (!spectatorMarks.empty()&&at<=spectatorMarks.back()[0])||(round&&!spectatorMatch))
+                return fail("Invalid TH075 spectator timeline marker");
+            if(!round)++spectatorMatch;
+            if(spectatorMarks.size()==512)spectatorMarks.erase(spectatorMarks.begin());
+            spectatorMarks.push_back({at,round,spectatorMatch});
+            continue;
+        }
         if(bytes.size()==6&&bytes[0]=='E'&&bytes[1]=='P'&&bytes[2]=='T'&&bytes[3]=='S'&&bytes[4]==1&&bytes[5]==2){
             spectatorEnded=true;continue;
         }
@@ -158,15 +189,25 @@ bool play(const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){
     for(unsigned side=0;side<2;++side){const auto bits=inputs[side].buttons;counts[side].from_held(u8(bits));input.players[side]=counts[side];
         if(bits&256)input.keys[1]=128;cancel[side]=(bits&512)?increment_wrapped(cancel[side],1):0;input.cancel[side]=cancel[side];
     }
-    if((inputs[0].buttons|inputs[1].buttons)&1024){
-        if(!spectator)app->save_multiplayer_replay();++restarts;counts={};cancel={};
-        if(!app->prepare_multiplayer(seed+restarts*0x9e3779b9u,u8(first),u8(other),u8(firstCards),u8(otherCards),u8(difficulty)))return false;
+    if(((inputs[0].buttons|inputs[1].buttons)&1024)&&app->battle){
+        if(!save_match_replay())return false;
+        ++restarts;counts={};cancel={};
+        const u32 restartSeed=seed+restarts*0x9e3779b9u+completedMatches;
+        if(!app->start_multiplayer_battle(restartSeed))return false;
     }else if(!app->tick(input,u32(u64(frame)*1000/60)))return false;
     // Hash only at the actual comparison cadence, including on mobile CPUs.
     if(frame%60==0)digest=world_digest();return true;
 }
 }
 bool active(){return enabled;}
+void set_battle_load_deadline(unsigned timeoutMs){
+    EM_ASM({
+        const deadline=$0 ? performance.now()+$0 : 0;
+        Module.th075BattleLoadDeadline=deadline;
+        // An async Wasm asset read pauses input traffic, even with healthy ICE.
+        if(globalThis.__eaglerPeerTransport)globalThis.__eaglerPeerTransport.inputStallResumeAt=deadline;
+    },timeoutMs);
+}
 bool pump(double us){
     if(!enabled)return true;
     // A peer can close just before our post-fence grace expires. A locally
@@ -174,12 +215,13 @@ bool pump(double us){
     if(finishing&&session&&session->CanFinish()&&transport.Disconnected()){
         finished=true;remember_state();return true;
     }
-    if(connectionEnded||transport.Disconnected()){remember_state();return true;}
+    if(connectionEnded||(!spectator&&transport.Disconnected())){remember_state();return true;}
     if(spectator){
         if(!receive_spectator())return false;
         // Drain an already received terminal backlog; an exhausted broken
         // spectator stream must fail explicitly instead of freezing forever.
-        if(transport.Failed()&&frame>=receivedFrame&&!finished&&!spectatorEnded)return fail(transport.LastError().c_str());
+        if((transport.Failed()||transport.Disconnected())&&frame>=receivedFrame&&!finished&&!spectatorEnded)
+            return fail(transport.LastError().empty()?"TH075 spectator stream disconnected":transport.LastError().c_str());
     }
     else{
         if(!session->Pump(u64(us))){
@@ -206,6 +248,15 @@ bool retire(){
         rollbackAudio.Confirm(h.frame);
         if(!contract.localPlayer&&!spectatorStopped){Netplay::SpectatorFramePacket p;p.sessionId=contract.sessionId;p.gameplayAbi=contract.gameplayAbi;p.frame=h.frame;p.playerCount=2;p.inputs=inputs;
             if(Netplay::EncodeSpectatorFramePacket(p,&output))spectatorOutput.push_back(output);}
+        if(h.startsMatch){
+            matchReport={h.frame+1,0,0};matchRound=0;saved=false;
+        }
+        if(h.startsRound)++matchRound;
+        if(!contract.localPlayer&&!spectatorStopped&&(h.startsMatch||(h.startsRound&&matchRound<=255))){
+            std::vector<u8> mark{'E','P','T','S',1,3};
+            put(mark,h.frame+1,4);put(mark,matchRound,2);spectatorOutput.push_back(std::move(mark));
+        }
+        if(matchReport[0]!=unsetFrame&&!matchReport[2])matchReport[1]=h.frame+1-matchReport[0];
         history.pop_front();
     }
     return true;
@@ -236,6 +287,9 @@ bool advance_one(double us,bool resimulation,bool drawForward,bool& advanced){
     const bool skipDraw=!drawForward&&(spectator||session->Rollback())&&
         app->rollback_predictable()&&!((inputs[0].buttons|inputs[1].buttons)&0x700);
     app->rollbackResimulating=resimulation;app->graphics.suppress((resimulation&&!spectator)||skipDraw);
+    const bool wasBattle=app->current_scene()==0&&app->battle;
+    const auto beforePhase=wasBattle?app->battle->simulation.rules.phase:BattlePhase::Intro;
+    const bool restarted=wasBattle&&((inputs[0].buttons|inputs[1].buttons)&1024);
     const bool played=play(inputs);
     app->graphics.suppress(false);app->rollbackResimulating=false;app->collectRollbackSound=false;
     if(!played)return false;
@@ -247,30 +301,71 @@ bool advance_one(double us,bool resimulation,bool drawForward,bool& advanced){
     }
     if(spectator){if(frame%60==0){confirmedCheckpoint=frame;confirmedDigest=digest;}}
     else{
-        h.digestAfter=digest;h.replayFrame=app->battle->timing.replayFrame;
-        for(unsigned side=0;side<2;++side){const auto& a=app->battle->simulation.characters[side]->actor;std::memcpy(&h.actors[side*4],&a.motion.x,4);std::memcpy(&h.actors[side*4+1],&a.motion.y,4);h.actors[side*4+2]=u32(a.combat.health);h.actors[side*4+3]=u32(a.animation.cursor.action);}
+        h.digestAfter=digest;
+        if(app->battle){
+            const auto phase=app->battle->simulation.rules.phase;
+            h.startsMatch=inGameSelection&&app->current_scene()==0&&(!wasBattle||restarted);
+            h.startsRound=inGameSelection&&wasBattle&&!restarted&&phase==BattlePhase::Active&&
+                (beforePhase==BattlePhase::Intro||beforePhase==BattlePhase::RoundRecovery);
+            h.replayFrame=app->battle->timing.replayFrame;
+            for(unsigned side=0;side<2;++side){const auto& a=app->battle->simulation.characters[side]->actor;std::memcpy(&h.actors[side*4],&a.motion.x,4);std::memcpy(&h.actors[side*4+1],&a.motion.y,4);h.actors[side*4+2]=u32(a.combat.health);h.actors[side*4+3]=u32(a.animation.cursor.action);}
+        }
         h.sounds=std::move(app->rollbackSounds);history.push_back(std::move(h));
         if(session->Rollback())rollbackAudio.Submit(frame,history.back().sounds,play_sound);
         if(!session->Complete(decision))return fail(session->Error());
+        if(inGameSelection){
+            if(app->battle_load_pending()&&!session->LoadingBattle()){
+                session->BeginBattleLoad(u64(emscripten_get_now()*1000));
+                set_battle_load_deadline(th075::multiplayer::DelaySession::BattleLoadTimeoutMs);
+            }else if(session->LoadingBattle()&&!app->battle_load_pending()){
+                session->BattleLoaded();
+            }
+        }
     }
     ++frame;advanced=true;if(resimulation&&!spectator)++resimulated;
     if(!spectator&&!retire())return false;
-    if(app->multiplayer_complete()){
+    if(inGameSelection&&!spectator&&matchReport[0]!=unsetFrame&&!matchReport[2]&&app->battle&&
+        app->battle->simulation.rules.phase==BattlePhase::VictoryText&&history.empty()){
+        if(!save_match_replay())return false;
+        matchReport[2]=app->battle->simulation.rules.winner+1;
+    }
+    if(app->battle&&app->multiplayer_complete()){
         if(!history.empty())return fail("TH075 terminal frame is not confirmed");
+        if(inGameSelection){
+            if(!save_match_replay())return false;
+            matchReport[0]=unsetFrame;
+            ++completedMatches;
+            return app->prepare_multiplayer_selection(seed+completedMatches,u8(difficulty));
+        }
         finishing=true;if(spectator){finished=true;spectatorEnded=true;}
-        if(!spectator&&!saved){saved=true;if(!app->save_multiplayer_replay())return false;}
+        if(!save_match_replay())return false;
     }
     return true;
 }
 bool step(double us,bool drawForward,bool& forwardAdvanced){
     forwardAdvanced=false;
     if(spectator&&spectatorPaused)return true;
-    if(!enabled||finished||finishing||connectionEnded||transport.Disconnected())return true;
+    if(!enabled||finished||finishing||connectionEnded||(!spectator&&transport.Disconnected()))return true;
+    // Hold the first post-load frame until the same confirmed transition
+    // has loaded on both peers. Spectators follow the published input stream.
+    if(!spectator&&session->LoadingBattle()&&!app->battle_load_pending()){
+        if(!session->ReleaseBattleLoad())return true;
+        set_battle_load_deadline(0);
+    }
     // Send the current physical sample before historical work. Reconciliation
     // must never postpone the peer's fresh input behind our snapshot/replay cost.
-    if(!spectator&&session->NeedsCapture()){
-        const auto raw=th075::sdl::sample();u16 bits=raw.players[0].held();if(raw.keys[1])bits|=256;if(raw.cancel[0])bits|=512;if(restartPending){bits|=1024;restartPending=false;}
-        if(!session->Capture(bits,u64(us)))return fail(session->Error());
+    if(!spectator){
+        // Selection and dialogue require confirmed input. Keep capturing on the
+        // input clock while the simulation waits on the remote frame, otherwise
+        // both sides take a network round trip for every menu/dialogue tick.
+        const bool confirmationOnly=session->Rollback()&&!app->rollback_predictable();
+        const unsigned lead=confirmationOnly&&u64(us)>=lastCaptureAt+15'500
+            ? std::min(24u,session->Startup().Selected().fullDelay*2u+2u) : 0;
+        if(session->NeedsCapture(lead)){
+            const auto raw=th075::sdl::sample();u16 bits=raw.players[0].held();if(raw.keys[1])bits|=256;if(raw.cancel[0])bits|=512;if(restartPending){bits|=1024;restartPending=false;}
+            if(!session->Capture(bits,u64(us),lead))return fail(session->Error());
+            lastCaptureAt=u64(us);
+        }
     }
     if(!spectator&&session->HasRollbackRequest()){
         const auto first=session->RollbackFrame();auto at=std::find_if(history.begin(),history.end(),[&](const auto& h){return h.frame==first;});
@@ -300,16 +395,17 @@ bool spectator_fast_forward(){
 
 bool advance_spectator(double started){
     if(spectatorTarget!=noSeek&&spectatorTarget<frame){
-        if(!app->prepare_multiplayer(seed,u8(first),u8(other),u8(firstCards),u8(otherCards),u8(difficulty)))return false;
-        frame=restarts=digest=0;counts={};cancel={};finished=finishing=false;
+        const bool prepared=inGameSelection?app->prepare_multiplayer_selection(seed,u8(difficulty)):
+            app->prepare_multiplayer(seed,u8(first),u8(other),u8(firstCards),u8(otherCards),u8(difficulty));
+        if(!prepared)return false;
+        frame=restarts=digest=completedMatches=0;counts={};cancel={};finished=finishing=false;
         confirmedCheckpoint=Netplay::INVALID_FRAME;confirmedDigest=0;
         if(spectatorTarget==0){
             // A seek to the opening frame has no simulation tick to draw it.
             // Preserve render-side state so viewing it cannot change later ticks.
             const auto opening=app->capture_rollback();
-            if(!opening)return fail("TH075 spectator opening state unavailable");
             app->render_scene();app->present_scene();
-            if(!app->restore_rollback(*opening))return fail("TH075 spectator opening restore failed");
+            if(!inGameSelection&&(!opening||!app->restore_rollback(*opening)))return fail("TH075 spectator opening restore failed");
         }
     }
     const u32 target=spectatorTarget==noSeek?receivedFrame:spectatorTarget;
@@ -337,6 +433,12 @@ EMSCRIPTEN_KEEPALIVE int th075_mp_prepare(unsigned seed,unsigned first,unsigned 
     auto& app=*th075::sdl::app;if(!app.prepare_multiplayer(seed,th075::u8(first),th075::u8(other),th075::u8(a),th075::u8(b),th075::u8(difficulty)))return 0;
     app.render_battle(*app.battle,true);app.present_battle();app.graphics.renderer.commit();return 1;
 }
+EMSCRIPTEN_KEEPALIVE int th075_mp_prepare_selection(unsigned seed,unsigned difficulty){
+    if(difficulty>3||!th075::sdl::app)return 0;
+    auto& app=*th075::sdl::app;
+    if(!app.prepare_multiplayer_selection(seed,th075::u8(difficulty)))return 0;
+    app.render_scene();app.present_scene();app.graphics.renderer.commit();return 1;
+}
 EMSCRIPTEN_KEEPALIVE int th075_mp_begin(const char* url,const char* spectatorId,unsigned side,unsigned low,unsigned high,unsigned abi,unsigned seed,unsigned first,unsigned other,unsigned a,unsigned b,unsigned difficulty,unsigned delay,unsigned automatic){
     using namespace th075::sdl::multiplayer;
     const auto mode=unsigned(EM_ASM_INT({return Module.eaglerOptions?.netplayAdonisMode??1;}));
@@ -349,8 +451,10 @@ EMSCRIPTEN_KEEPALIVE int th075_mp_begin(const char* url,const char* spectatorId,
     if(!(spectator?transport.ConnectSpectator(url,spectatorId,2,true):transport.Connect(url,th075::u8(side),2,true)))return 0;
     th075::sdl::multiplayer::seed=seed;th075::sdl::multiplayer::first=first;th075::sdl::multiplayer::other=other;
     firstCards=a;otherCards=b;th075::sdl::multiplayer::difficulty=difficulty;
-    frame=restarts=receivedFrame=digest=rollbackCount=resimulated=resimTarget=0;history.clear();rollbackAudio.Reset();confirmedCheckpoint=Netplay::INVALID_FRAME;confirmedDigest=confirmedReplayFrame=0;confirmedActors={};finishAt=0;enabled=true;restartPending=finishing=finished=saved=timingSent=timingReceived=spectatorStopped=connectionEnded=false;
+    inGameSelection=EM_ASM_INT({return Module.eaglerOptions?.netplayInGameSelection===true;});
+    frame=restarts=receivedFrame=digest=completedMatches=rollbackCount=resimulated=resimTarget=0;history.clear();rollbackAudio.Reset();confirmedCheckpoint=Netplay::INVALID_FRAME;confirmedDigest=confirmedReplayFrame=0;confirmedActors={};finishAt=lastCaptureAt=0;enabled=true;restartPending=finishing=finished=saved=timingSent=timingReceived=spectatorStopped=connectionEnded=false;
     failure.clear();counts={};cancel={};spectatorFrames.clear();spectatorOutput.clear();timingBytes.clear();
+    matchReport={unsetFrame,0,0};savedReplays=matchRound=spectatorMatch=0;spectatorMarks.clear();
     spectatorFirst=0;spectatorTarget=noSeek;spectatorPaused=spectatorEnded=spectatorEndSent=false;spectatorFollowing=spectatorCatching=true;
     if(!spectator){session=std::make_unique<th075::multiplayer::DelaySession>(transport);if(!session->Begin(contract,std::uint64_t(emscripten_get_now()*1000),automatic?Netplay::AdonisStartup::Automatic:delay,mode,limit))return 0;}
     remember_state();return 1;
@@ -386,15 +490,20 @@ EMSCRIPTEN_KEEPALIVE int th075_probe_rollback(unsigned span){
 
 EMSCRIPTEN_KEEPALIVE int th075_mp_poll(double nowUs){return th075::sdl::multiplayer::pump(nowUs);}
 EMSCRIPTEN_KEEPALIVE const unsigned* th075_mp_status(){th075::sdl::multiplayer::remember_state();return th075::sdl::multiplayer::status.data();}
+EMSCRIPTEN_KEEPALIVE unsigned th075_mp_completed_matches(){return th075::sdl::multiplayer::completedMatches;}
+EMSCRIPTEN_KEEPALIVE unsigned th075_mp_saved_replays(){return th075::sdl::multiplayer::savedReplays;}
+EMSCRIPTEN_KEEPALIVE const unsigned* th075_mp_match_report(){return th075::sdl::multiplayer::matchReport.data();}
+EMSCRIPTEN_KEEPALIVE const void* th075_mp_playback_marks(){return th075::sdl::multiplayer::spectatorMarks.data();}
 EMSCRIPTEN_KEEPALIVE const unsigned char* th075_mp_timing(){using namespace th075::sdl::multiplayer;return timingReceived?timingBytes.data():nullptr;}
 EMSCRIPTEN_KEEPALIVE const unsigned* th075_mp_playback_state(){
     using namespace th075::sdl::multiplayer;
-    static unsigned report[7];
+    static unsigned report[9];
     if(!enabled||!spectator||!timingReceived)return nullptr;
     report[0]=spectatorFirst?frame:0;report[1]=frame;report[2]=receivedFrame;
     report[3]=spectatorTarget==noSeek?(spectatorFollowing?receivedFrame:frame):spectatorTarget;
     report[4]=spectatorPaused;report[5]=spectator_fast_forward();
     report[6]=unsigned(spectatorFollowing)|(unsigned(spectatorEnded)<<1);
+    report[7]=unsigned(spectatorMarks.size());report[8]=spectatorMarks.empty()?0:spectatorMarks.back()[0];
     return report;
 }
 EMSCRIPTEN_KEEPALIVE int th075_mp_playback(unsigned action,unsigned target){
@@ -423,8 +532,8 @@ EMSCRIPTEN_KEEPALIVE void th075_mp_restart(){using namespace th075::sdl::multipl
 EMSCRIPTEN_KEEPALIVE int th075_mp_save_replay(){using namespace th075::sdl::multiplayer;if(!enabled||spectator||saved||frame==0)return 1;
     if(!retire())return 0;
     if(!history.empty()){const auto& h=history.front();if(!h.state||!th075::sdl::app->restore_rollback(*h.state)||!session->Rewind(h.frame))return 0;frame=h.frame;counts=h.counts;cancel=h.cancel;digest=h.digestBefore;history.clear();}
-    saved=true;return th075::sdl::app->save_multiplayer_replay();}
+    return save_match_replay();}
 EMSCRIPTEN_KEEPALIVE int th075_mp_replay_viewer(){return th075::sdl::app&&th075::sdl::app->show_replays();}
-EMSCRIPTEN_KEEPALIVE void th075_mp_end(){using namespace th075::sdl::multiplayer;enabled=false;history.clear();session.reset();transport.Close();spectatorFrames.clear();spectatorOutput.clear();}
+EMSCRIPTEN_KEEPALIVE void th075_mp_end(){using namespace th075::sdl::multiplayer;enabled=false;set_battle_load_deadline(0);history.clear();session.reset();transport.Close();spectatorFrames.clear();spectatorOutput.clear();}
 }
 #endif
