@@ -5,6 +5,12 @@ export function th09CharacterLoadout(character: unknown) {
 }
 
 export interface Th09PlayerStats { wins: number; losses: number; minutes: number; }
+export function readTh075RoomScore(seats?: readonly ({stats?: Th09PlayerStats} | null)[] | null) {
+  const first = seats?.[0]?.stats, second = seats?.[1]?.stats;
+  if (!first || !second) return undefined;
+  return {wins: [first.wins, second.wins] as const, minutes: Math.max(first.minutes, second.minutes)};
+}
+
 export function parseTh09PlayerStats(value: unknown): Th09PlayerStats | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return;
   const item = value as Record<string, unknown>;

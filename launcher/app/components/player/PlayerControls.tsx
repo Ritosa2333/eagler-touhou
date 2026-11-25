@@ -2,6 +2,7 @@ import { Button as UiButton } from '../../ui/controls';
 import { useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
+import { readTh075RoomScore } from '../../../src/launcher/th09-room-stats.mts';
 import { PRODUCT_GAMES } from '../../../src/contracts/product-catalog.mts';
 import type { BrowserSession } from '../../session/browser-session';
 import {
@@ -124,6 +125,7 @@ export function PlayerControls({
   }, [state.playerOpen, state.runtime?.game, state.replayViewer, roomWorkspace, replayWorkspace,
       navigation.surface, session, settings?.options.touchEnabled]);
   const wins = [room.room?.seats?.[0]?.stats?.wins ?? 0, room.room?.seats?.[1]?.stats?.wins ?? 0] as const;
+  const th075Score = room.product === 'th075mp' ? readTh075RoomScore(room.room?.seats) : undefined;
   const names = [room.room?.seats?.[0]?.name ?? '', room.room?.seats?.[1]?.name ?? ''] as const;
   const minutes = Math.max(...(room.room?.seats ?? []).map((seat) => seat?.stats?.minutes ?? 0), 0);
   return (
@@ -152,8 +154,8 @@ export function PlayerControls({
         enabled={informationColumn}
         className={th09Information ? 'th09-player-information' : undefined}
       >
-        {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} score={room.product === 'th075mp' ? wins : undefined}
-          minutes={room.product === 'th075mp' ? minutes : undefined} names={names}/>}
+        {cooperativeSpectator && !roomWorkspace && <SpectatorPlayback session={session} score={th075Score?.wins}
+          minutes={th075Score?.minutes} names={names}/>}
         {th09Information &&
           !roomWorkspace &&
           (spectatorTimeline && room.product !== 'th075mp' ? (
@@ -162,10 +164,10 @@ export function PlayerControls({
               minutes={minutes}
               names={names}
             />
-          ) : !room.spectatorRequested && room.seat != null ? (
+          ) : !room.spectatorRequested && room.seat != null && (room.product !== 'th075mp' || th075Score) ? (
             <Th09MatchStats
-              wins={wins}
-              minutes={minutes}
+              wins={th075Score?.wins ?? wins}
+              minutes={th075Score?.minutes ?? minutes}
               spectators={Math.max(room.room?.spectatorCount ?? 0, room.room?.spectators?.length ?? 0)}
             />
           ) : null)}

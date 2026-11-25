@@ -3279,7 +3279,7 @@ for (const mobileDevice of [false,true]) for (const game of spectatorGames) {
   const timing=multiplayerInputTimingPolicy(PRODUCT_GAMES[game].multiplayer);
   const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,inputDelayAuto:false,
    predictionLimit:timing.predictionLimit,adonisMode:timing.rollback?0:1,
-   startSerial:4,spectatorTimeline:true,seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:[]};
+   startSerial:4,spectatorTimeline:true,seats:[{clientId:'host_1234',name:'A',loadout:0,ready:true},{clientId:'peer_1234',name:'B',loadout:1,ready:true}],spectators:[]};
   await React.act(async()=>{socket.open();socket.message({type:'state',room});socket.message({type:'spectator-start',serial:4,room});});
   let previousEpoch=null,previousDocument=null,initialNavigations,initialReads;
   for(let attempt=0;attempt<3;++attempt){
@@ -3305,13 +3305,44 @@ for (const mobileDevice of [false,true]) for (const game of spectatorGames) {
    }
    await React.act(async()=>f.native.emit('first-frame'));
    if(game!=='th09'){
-    const playback={version:1,run:'run_4',revision:1,min:0,position:30,received:1200,edge:1190,target:900,paused:false,seeking:true,following:false,ended:false,nodes:[]};
+    const presentsDuringCatchUp=game==='th14'||game==='th075';
+    const playback={version:1,run:'run_4',revision:1,min:0,position:presentsDuringCatchUp?0:30,received:1200,edge:1190,target:900,paused:false,seeking:true,following:false,ended:false,nodes:[]};
     await React.act(async()=>f.native.emit('runtime-info',{spectatorPlayback:playback}));
     assert.notEqual(session.getSnapshot().roomLaunchStage,null,'initial accelerated reconstruction remains covered');
-    await React.act(async()=>f.native.emit('runtime-info',{spectatorPlayback:{...playback,revision:2,position:900,seeking:false}}));
+    await React.act(async()=>f.native.emit('runtime-info',{spectatorPlayback:{...playback,revision:2,position:900,
+     seeking:presentsDuringCatchUp,following:game==='th075'}}));
    }
    await until(()=>session.getSnapshot().roomLaunchStage===null,'current first frame and receiver settle the loading cover');
    assert.equal(node('.room-workspace-preparation').hidden,true,'the cover exposes the running spectator picture');
+   assert.equal(f.fullscreen,null,'the spectator picture is exposed before fullscreen');
+   if(game==='th14'&&attempt===0){
+    const playback={version:1,run:'run_4',revision:3,min:0,position:900,received:1800,edge:1710,target:900,
+     paused:false,seeking:false,following:true,ended:false,nodes:[{id:1,kind:'stage',frame:0,stage:1,bossSlots:0},
+      {id:2,kind:'stage',frame:1000,stage:2,bossSlots:0},{id:3,kind:'boss',frame:1300,stage:2,bossSlots:1}]};
+    const report=async(fields)=>React.act(async()=>f.native.emit('runtime-info',{spectatorPlayback:{...playback,...fields}}));
+    await report({});
+    const seek=node('#cooperativeSpectatorSeek');
+    assert.equal(seek.min,'0');assert.equal(seek.max,'999');
+    await report({revision:4,position:1000});
+    assert.equal(seek.min,'1000');assert.equal(seek.max,'1710');
+    assert.equal(node('#cooperativeSpectatorCurrentTime').textContent,'0:00');
+    await React.act(async()=>{
+     seek.value='1000';seek.dispatchEvent(new env.window.Event('change',{bubbles:true}));
+    });
+    const action=f.outbound.findLast(message=>message.command==='spectator-playback');
+    assert.equal(action?.frame,1000);assert.equal(action?.action,'seek');
+    await report({revision:5,position:250,target:1000,seeking:true,following:false});
+    assert.equal(seek.min,'1000');assert.equal(seek.value,'1000');
+    await report({revision:6,position:1420,target:1420});
+    assert.equal(node('#cooperativeSpectatorCurrentTime').textContent,'0:07');
+   }
+   if(game==='th075'&&attempt===0){
+    assert.equal(env.document.querySelector('.room-workspace-score'),null,'old Relay snapshots do not manufacture a score');
+    const stats=[{wins:2,losses:1,minutes:3},{wins:1,losses:2,minutes:3}];
+    await React.act(async()=>socket.message({type:'state',room:{...room,seats:room.seats.map((seat,index)=>({...seat,stats:stats[index]}))}}));
+    assert.equal(node('.room-workspace-score').textContent.trim(),'2 : 1');
+    assert.equal(node('.spectator-score-value').textContent,'<2 : 1>');
+   }
    if(game!=='th09'){
     const playback=node('.room-workspace-playback'),lounge=node('.room-workspace-spectators');
     assert.ok(playback.contains(node('#cooperativeSpectatorTimeline')),'embedded controls retain the shared spectator timeline');
@@ -3333,6 +3364,7 @@ for (const mobileDevice of [false,true]) for (const game of spectatorGames) {
    if(game!=='th09'){
     assert.ok(node('#cooperativeSpectatorTimeline'),'normal spectator timeline remains available in fullscreen');
     assert.equal(node('#cooperativeSpectatorDetails').hidden,false,'seek, pause and live controls start expanded');
+    if(game==='th075'&&attempt===0)assert.equal(node('.spectator-score-value').textContent,'<2 : 1>');
    }
    if(mobileDevice){
     assert.equal(node('#orientationToggle').hidden,false);

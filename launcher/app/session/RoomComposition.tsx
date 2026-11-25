@@ -3,6 +3,7 @@ import { gameIdForProduct, isMultiplayerProductId } from '../../src/contracts/pr
 import { multiplayerGuidePath } from '../../lib/multiplayer-guide.mjs';
 import { withUiLanguage } from '../../src/launcher/i18n.mts';
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
+import {readTh075RoomScore} from '../../src/launcher/th09-room-stats.mts';
 import { RoomView } from '../components/room';
 import { RoomMusicInvite } from '../components/room/RoomMusic';
 import type { BrowserSession } from './browser-session';
@@ -44,10 +45,10 @@ export function RoomComposition({
   const [workspace, setWorkspace] = useState<{host:HTMLElement;stage:HTMLElement} | null>(null);
   const workspaceVisible = roomWorkspace && navigation.surface !== 'touch';
   const canReturnToRoom = state.runtime?.runtimeVariant === 'multiplayer' && state.runtime.roomReturnSupported;
-  const th075Score = room.product === 'th075mp' ? [room.room?.seats?.[0]?.stats?.wins ?? 0,room.room?.seats?.[1]?.stats?.wins ?? 0] as const : undefined;
+  const th075Score = room.product === 'th075mp' ? readTh075RoomScore(room.room?.seats) : undefined;
   const playback = state.runtime?.launched && state.runtime.spectator
-    ? state.runtime.game !== 'th09' ? <SpectatorPlayback session={session} score={th075Score}
-      minutes={th075Score ? Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0) : undefined}
+    ? state.runtime.game !== 'th09' ? <SpectatorPlayback session={session} score={th075Score?.wins}
+      minutes={th075Score?.minutes}
       names={[room.room?.seats?.[0]?.name ?? '',room.room?.seats?.[1]?.name ?? '']}/>
       : room.room?.spectatorTimeline ? <SpectatorMatchScore
         wins={[room.room.seats?.[0]?.stats?.wins ?? 0,room.room.seats?.[1]?.stats?.wins ?? 0]}
