@@ -103,6 +103,7 @@ th02-*-fault.json
 !/ADAPTATION.md
 !/source-import.json
 !/docs/
+!/native-solo/
 /build-eagler/
 /content/
 /.cache/

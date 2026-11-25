@@ -62,6 +62,37 @@ if(NOT SOEW_ZLIB_TARGET)
     set(SOEW_ZLIB_TARGET ZLIB::ZLIBSTATIC)
 endif()
 
+if(EMSCRIPTEN OR SOEW_BUILD_DEV_TOOLS)
+    if(EMSCRIPTEN)
+        set(soew_portable_target soew-web)
+        set(soew_portable_host web/runtime.cpp)
+    else()
+        set(soew_portable_target soew-replay-probe)
+        set(soew_portable_host web/replay_probe.cpp)
+    endif()
+    add_executable(${soew_portable_target} ${soew_portable_host}
+        "${TH98PORT_DIR}/src/assets/pi.cpp"
+        "${TH98PORT_DIR}/src/assets/rgb.cpp"
+        "${TH98PORT_DIR}/src/assets/bfnt.cpp")
+    target_compile_features(${soew_portable_target} PRIVATE cxx_std_23)
+    target_include_directories(${soew_portable_target} PRIVATE "${TH98PORT_DIR}/include")
+    target_link_libraries(${soew_portable_target} PRIVATE ${SOEW_ZLIB_TARGET})
+    target_compile_options(${soew_portable_target} PRIVATE -ffp-contract=off)
+endif()
+
+if(EMSCRIPTEN)
+    target_compile_options(soew-web PRIVATE -fwasm-exceptions)
+    target_link_options(soew-web PRIVATE --no-entry -fwasm-exceptions
+        -sMODULARIZE=1 -sEXPORT_ES6=1 -sENVIRONMENT=web -sALLOW_MEMORY_GROWTH=1
+        -sSTACK_SIZE=8388608 -sFILESYSTEM=1
+        "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8,HEAPU32,UTF8ToString")
+    set_target_properties(soew-web PROPERTIES SUFFIX ".mjs")
+    foreach(file index.html shell.mjs input.mjs clock.mjs)
+        configure_file("web/${file}" "${file}" COPYONLY)
+    endforeach()
+    return()
+endif()
+
 add_executable(SoEW-Native-Prototype src/main.cpp
     "${TH98PORT_DIR}/src/assets/pi.cpp"
     "${TH98PORT_DIR}/src/assets/rgb.cpp"
