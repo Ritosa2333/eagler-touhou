@@ -44,8 +44,11 @@ export function RoomComposition({
   const [workspace, setWorkspace] = useState<{host:HTMLElement;stage:HTMLElement} | null>(null);
   const workspaceVisible = roomWorkspace && navigation.surface !== 'touch';
   const canReturnToRoom = state.runtime?.runtimeVariant === 'multiplayer' && state.runtime.roomReturnSupported;
+  const th075Score = room.product === 'th075mp' ? [room.room?.seats?.[0]?.stats?.wins ?? 0,room.room?.seats?.[1]?.stats?.wins ?? 0] as const : undefined;
   const playback = state.runtime?.launched && state.runtime.spectator
-    ? state.runtime.game !== 'th09' ? <SpectatorPlayback session={session}/>
+    ? state.runtime.game !== 'th09' ? <SpectatorPlayback session={session} score={th075Score}
+      minutes={th075Score ? Math.max(...(room.room?.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0) : undefined}
+      names={[room.room?.seats?.[0]?.name ?? '',room.room?.seats?.[1]?.name ?? '']}/>
       : room.room?.spectatorTimeline ? <SpectatorMatchScore
         wins={[room.room.seats?.[0]?.stats?.wins ?? 0,room.room.seats?.[1]?.stats?.wins ?? 0]}
         minutes={Math.max(...(room.room.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}

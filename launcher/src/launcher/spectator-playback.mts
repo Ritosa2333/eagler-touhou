@@ -1,6 +1,6 @@
 export interface SpectatorNode {
   id: number;
-  kind: 'stage' | 'boss';
+  kind: 'stage' | 'boss' | 'match' | 'round';
   frame: number;
   stage: number;
   bossSlots: number;
@@ -47,7 +47,8 @@ export function parseSpectatorPlayback(value: unknown): Readonly<SpectatorPlayba
   for (const raw of value.nodes) {
     if (!object(raw) || !uint(raw.id) || !raw.id || ids.has(raw.id) || !uint(raw.frame) ||
         raw.frame < lastFrame || raw.frame > state.received || !uint(raw.stage, 65535) ||
-        !uint(raw.bossSlots, 255) || !(raw.kind === 'stage' && raw.bossSlots === 0 || raw.kind === 'boss' && raw.bossSlots > 0) ||
+        !uint(raw.bossSlots, 255) || !(raw.kind === 'stage' && raw.bossSlots === 0 || raw.kind === 'boss' && raw.bossSlots > 0 ||
+          (raw.kind === 'match' || raw.kind === 'round') && raw.stage > 0 && raw.bossSlots === 0) ||
         // biome-ignore lint/suspicious/noControlCharactersInRegex: Protocol node labels explicitly reject C0 and DEL controls.
         raw.label !== undefined && (typeof raw.label !== 'string' || !raw.label.length || raw.label.length > 48 || /[\x00-\x1f\x7f]/.test(raw.label))) return null;
     ids.add(raw.id); lastFrame = raw.frame;

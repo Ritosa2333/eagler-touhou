@@ -1069,6 +1069,18 @@
     "id": "spectator_nodes",
     "params": []
   },
+  "spectator.versusNodes": {
+    "id": "spectator_versusNodes",
+    "params": []
+  },
+  "spectator.matchNode": {
+    "id": "spectator_matchNode",
+    "params": ["number"]
+  },
+  "spectator.roundNode": {
+    "id": "spectator_roundNode",
+    "params": ["number"]
+  },
   "spectator.progress": {
     "id": "spectator_progress",
     "params": []

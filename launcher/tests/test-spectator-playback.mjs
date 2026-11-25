@@ -31,3 +31,10 @@ test('commands bind to the current run and cannot seek outside retained confirme
   assert.deepEqual(spectatorPlaybackCommand(state,'live'),{run:'abc123',action:'live'});
   assert.equal(spectatorPlaybackCommand(null,'play'),null);
 });
+test('versus match and round markers use the same verifiable seek bounds',()=>{
+  const nodes=[{id:600,kind:'match',frame:600,stage:1,bossSlots:0},{id:1200,kind:'round',frame:1200,stage:2,bossSlots:0}];
+  const state=parseSpectatorPlayback(report({nodes}));
+  assert.deepEqual(state.nodes,nodes);
+  assert.equal(spectatorPlaybackCommand(state,'seek',state.nodes[1].frame).frame,1200);
+  assert.equal(parseSpectatorPlayback(report({nodes:[{...nodes[1],stage:0}]})),null);
+});

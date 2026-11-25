@@ -10,7 +10,7 @@ export function reconcileTh09Duel(room) {
 }
 
 export function bindTh09Duel(room, run, players = null) {
-  if (!room.id.startsWith('th09mp-') || !currentSeats(room, run.lobbyClientIds)) return;
+  if (!/^th(?:075|09)mp-/.test(room.id) || !currentSeats(room, run.lobbyClientIds)) return;
   reconcileTh09Duel(room);
   const duel = room.th09Duel;
   if (!duel || players?.some((player, side) => player !== duel.players?.[side])) {
@@ -22,7 +22,7 @@ export function bindTh09Duel(room, run, players = null) {
 export function th09PlayerStats(room, clientId) {
   if (room.id.startsWith('th19mp-')) return th19PlayerStats(room, clientId);
   if (room.id.startsWith('th03mp-')) {const value=room.th09Stats?.get(clientId);return {wins:value?.wins||0,losses:value?.losses||0,minutes:Math.floor((value?.frames||0)/3600)};}
-  if (!room.id.startsWith('th09mp-')) return undefined;
+  if (!/^th(?:075|09)mp-/.test(room.id)) return undefined;
   const duel = room.th09Duel;
   const side = duel && currentSeats(room, duel.clientIds) ? duel.clientIds.indexOf(clientId) : -1;
   return side < 0 ? {wins:0, losses:0, minutes:0} :
@@ -52,7 +52,8 @@ function confirmTh09Result(room, run, side, message, recordRound, active) {
 // Legacy clients still supply the room's live scoreboard. Account history
 // requires identical confirmed results from both admitted seats.
 export function acceptTh09MatchStats(room, run, clientId, message, recordRound) {
-  if (!room.id.startsWith('th09mp-') || !run?.th09Duel || message.serial !== room.lobby.startSerial) return false;
+  const ratedProduct = room.id.startsWith('th09mp-');
+  if (!(ratedProduct || room.id.startsWith('th075mp-')) || !run?.th09Duel || message.serial !== room.lobby.startSerial) return false;
   const active = !run.ended && run.th09Duel === room.th09Duel && currentSeats(room, run.lobbyClientIds);
   const side = run.lobbyClientIds.indexOf(clientId);
   const {start, frames, winner, characters} = message;
@@ -63,7 +64,7 @@ export function acceptTh09MatchStats(room, run, clientId, message, recordRound) 
       characters.some(character => !Number.isInteger(character) || character < 0 || character >= 16))) return false;
   // A seat can disconnect after its report reaches the Relay. While this run
   // exists, the other bound seat may still complete that pending result.
-  if (winner !== undefined) confirmTh09Result(room, run, side, message, recordRound, active);
+  if (ratedProduct && winner !== undefined) confirmTh09Result(room, run, side, message, recordRound, active);
   if (side !== 0 || !active) return false;
   let cursor = run.th09StatsCursor;
   if (cursor && (start < cursor.start || (start > cursor.start && start < cursor.start + cursor.frames))) return false;

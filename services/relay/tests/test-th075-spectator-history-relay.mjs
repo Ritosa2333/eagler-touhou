@@ -63,6 +63,13 @@ function frame(index) {
   packet.writeUInt32LE(123, 20);
   return packet;
 }
+function marker(index, round) {
+  const packet = Buffer.alloc(12);
+  packet.set(control(3));
+  packet.writeUInt32LE(index, 6);
+  packet.writeUInt16LE(round, 10);
+  return packet;
+}
 
 try {
   await waitFor(() => log.includes('listening'), 'relay startup');
@@ -72,13 +79,14 @@ try {
   await waitFor(() => snapshot(host)?.seats.slice(0, 2).every(Boolean), 'player seats');
   for (const client of [host, guest]) send(client, {type: 'set-ready', ready: true, movementMode: 'joystick'});
   await waitFor(() => snapshot(host)?.seats.slice(0, 2).every(seat => seat?.ready), 'player ready');
-  const opening = await lobby('opening'), early = await lobby('early');
+  const opening = await lobby('opening'), early = await lobby('early'), explicit = await lobby('explicit');
   send(opening, {type: 'spectate'});
   send(early, {type: 'spectate'});
-  await waitFor(() => snapshot(host)?.spectatorCount === 2, 'opening viewers registered');
+  send(explicit, {type: 'spectate'});
+  await waitFor(() => snapshot(host)?.spectatorCount === 3, 'opening viewers registered');
   send(host, {type: 'start', adonisMode: 1, inputDelay: 2, inputDelayAuto: false});
   await waitFor(() => host.messages.some(message => message.type === 'start'), 'room start');
-  assert.equal(snapshot(host).spectatorCount, 2);
+  assert.equal(snapshot(host).spectatorCount, 3);
   const hostRuntime = await runtime('player=0', 'host');
   await runtime('player=1', 'guest');
 
@@ -91,12 +99,22 @@ try {
   await waitFor(() => openingViewer.packets[0]?.equals(timing), 'live opening timing');
   const earlyViewer = await runtime('spectator=th075_early', 'early');
   await waitFor(() => earlyViewer.packets[0]?.equals(timing), 'buffered opening timing');
-  for (let i = 0; i < 160; ++i) upload(hostRuntime, frame(i));
+  for (let i = 0; i < 160; ++i) {
+    upload(hostRuntime, frame(i));
+    if (i === 40) upload(hostRuntime, marker(41, 0));
+    if (i === 80) {
+      upload(hostRuntime, marker(82, 1)); // A future frame cannot mark current history.
+      upload(hostRuntime, marker(81, 1));
+      upload(hostRuntime, marker(81, 1));
+    }
+  }
   await waitFor(() => waiting.messages.some(message => message.type === 'spectator-start'), 'admission after the first input');
+  await waitFor(() => explicit.messages.some(message => message.type === 'spectator-start'), 'explicit opening admission after the first input');
+  const explicitViewer = await runtime('spectator=th075_explicit', 'explicit');
   const firstViewer = await runtime('spectator=th075_waiting', 'waiting');
   await waitFor(() => firstViewer.packets.length >= 160, 'queued viewer history');
   assert.ok(firstViewer.packets[0]?.equals(timing), 'late history starts with timing');
-  await waitFor(() => firstViewer.packets.length === 161, 'complete queued viewer history');
+  await waitFor(() => firstViewer.packets.length === 163, 'complete queued viewer history');
 
   const late = await lobby('late');
   send(late, {type: 'spectate'});
@@ -104,9 +122,11 @@ try {
   const lateViewer = await runtime('spectator=th075_late', 'late');
   for (let i = 160; i < 200; ++i) upload(hostRuntime, frame(i));
   upload(hostRuntime, control(2));
-  const viewers = [openingViewer, earlyViewer, firstViewer, lateViewer];
-  await waitFor(() => viewers.every(viewer => viewer.packets.length === 202), 'history to live handoff');
+  const viewers = [openingViewer, earlyViewer, explicitViewer, firstViewer, lateViewer];
+  await waitFor(() => viewers.every(viewer => viewer.packets.length === 204), 'history to live handoff');
   const expected = [timing, ...Array.from({length: 200}, (_, i) => frame(i)), control(2)];
+  expected.splice(82, 0, marker(81, 1));
+  expected.splice(42, 0, marker(41, 0));
   for (const viewer of viewers) assert.deepEqual(viewer.packets, expected);
   const afterEnd = await lobby('after_end');
   send(afterEnd, {type: 'spectate'});
