@@ -1,4 +1,5 @@
 #pragma once
+#include "core_contract.hpp"
 #include "menu.hpp"
 #include <algorithm>
 #include <vector>
@@ -82,5 +83,62 @@ inline void draw_original_hud(std::vector<std::uint32_t> &pixels,const th03::ass
     for(int y=original_hud::top;y<original_hud::bottom;++y)
         std::fill(pixels.begin()+y*640+original_hud::left,pixels.begin()+y*640+original_hud::right,original_hud::black);
     for(const auto &cell:cells)::draw_glyph(pixels,font,cell.code,cell.column*8,cell.row*16,cell.color);
+}
+
+namespace practice_keys {
+// Leave the original HiScore label at y=48 untouched. TH05 groups the
+// action keys separately from the inverted-T direction keys.
+struct Key {int x,y,w;Input input;};
+inline constexpr int height=16;
+inline constexpr std::uint32_t white=0xffffffffu,purple=0xff9c48dau,ink=0xff422058u;
+inline constexpr std::array<Key,7> keys={{{437,16,28,Focus},{468,16,17,Shot},{488,16,17,Bomb},
+    {531,7,17,Up},{511,26,17,Left},{531,26,17,Down},{551,26,17,Right}}};
+
+constexpr std::uint16_t displayed(std::uint16_t input){
+    auto mask=input&(Up|Down|Left|Right|Shot|Bomb|Focus);
+    switch(input&(UpLeft|UpRight|DownLeft|DownRight)){
+    case UpLeft:mask|=Up|Left;break;
+    case UpRight:mask|=Up|Right;break;
+    case DownLeft:mask|=Down|Left;break;
+    case DownRight:mask|=Down|Right;break;
+    }
+    return static_cast<std::uint16_t>(mask);
+}
+
+inline void draw(std::vector<std::uint32_t> &pixels,std::uint16_t input){
+    // 3x5 action labels and a 7x7 arrow, drawn in framebuffer pixels.
+    constexpr std::array<std::uint8_t,5> s={7,4,7,1,7},h={5,5,7,5,5},i={7,2,2,2,7},
+        f={7,4,6,4,4},t={7,2,2,2,2},z={7,1,2,4,7},x={5,5,2,5,5};
+    constexpr std::array shift={s,h,i,f,t};
+    constexpr std::array<std::uint8_t,7> up={0b0001000,0b0011100,0b0111110,0b1111111,0b0011100,0b0011100,0b0011100};
+    const auto mask=displayed(input);
+    for(const auto &key:keys){
+        const bool pressed=mask&key.input;
+        const auto pixel=[&](int dx,int dy,std::uint32_t color){pixels[(key.y+dy)*640+key.x+dx]=color;};
+        for(int dy=0;dy<height;++dy){
+            const int cut=dy==0||dy==height-1?2:dy==1||dy==height-2?1:0;
+            for(int dx=cut;dx<key.w-cut;++dx){
+                const bool edge=dx==cut||dx==key.w-1-cut||dy==0||dy==height-1;
+                pixel(dx,dy,pressed&&!edge?purple:white);
+            }
+        }
+        const auto color=pressed?white:ink;
+        const auto glyph=[&](const auto &bits,int left,int top){
+            for(int dy=0;dy<5;++dy)for(int dx=0;dx<3;++dx)
+                if(bits[dy]&(4>>dx))pixel(left+dx,top+dy,color);
+        };
+        if(key.input==Focus){
+            for(int n=0;n<int(shift.size());++n)glyph(shift[n],(key.w-19)/2+n*4,5);
+        }else if(key.input==Shot||key.input==Bomb){
+            glyph(key.input==Shot?z:x,(key.w-3)/2,5);
+        }else{
+            for(int dy=0;dy<7;++dy)for(int dx=0;dx<7;++dx)if(up[dy]&(64>>dx)){
+                const int gx=key.input==Left?dy:key.input==Right?6-dy:dx;
+                const int gy=key.input==Down?6-dy:key.input==Left||key.input==Right?dx:dy;
+                pixel((key.w-7)/2+gx,(height-7)/2+gy,color);
+            }
+        }
+    }
+}
 }
 }

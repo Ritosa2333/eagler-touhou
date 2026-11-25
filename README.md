@@ -106,7 +106,9 @@ Simplified Chinese and Traditional Chinese options are independent of the game.
 During live Story, Extra, or Practice play, Backspace opens the assist overlay. Click a row or use
 F1–F7 / U: invincibility, infinite lives, lock dynamic rank, infinite bombs,
 keep power on a miss, prevent boss timeouts, auto-bomb, and enemy invincibility.
-Tab toggles extra game info. Tools start off and stay set across retries.
+Tab toggles extra game info, including a key display above HiScore during live
+play and replay playback. The direction, Shift, Z and X indicators turn purple
+for active inputs and white otherwise. Tools start off and stay set across retries.
 A run that uses a battle assist cannot save a replay, submit a score, or record
 a clear unlock, even if the assist is turned off later. Opening the overlay or
 toggling extra info does not affect any of these. Replay playback is unchanged.

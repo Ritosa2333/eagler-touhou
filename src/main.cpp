@@ -931,6 +931,7 @@ struct App {
     soew::PracticeAssist practice_assist;
     soew::PracticeToolsPanel practice_tools;
     soew::PracticeDrag practice_drag;
+    std::uint16_t hud_input=0;
     unsigned fast_retry_left=0;
     bool skip_retry_intro=false;
     soew::EncounterInfoKind lock_timer_kind=soew::EncounterInfoKind::None;
@@ -1445,6 +1446,7 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
     app.death_presented=false;app.score_review=App::ScoreReview::None;app.pending_score.reset();
     if(!app.stage_scene)app.practice_assist.info=app.menu.show_more_info;
     app.run_assisted=false;
+    app.hud_input=0;
     app.fast_retry_left=app.lock_timer_frames=0;
     app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
     app.dialogue_hold.clear();
@@ -1488,6 +1490,7 @@ void publish_replay(App &app,soew::NativeReplay replay,std::unique_ptr<soew::Enc
                     soew::ReplaySession session,std::size_t cursor,bool from_start=true){
     stop_gameplay_bgm(app);
     app.replay_menu_restore=app.menu;app.replay_cursor=cursor;app.replay_playback=std::move(replay);
+    app.hud_input=0;
     const auto &run=*app.replay_playback;
     app.menu.music=run.config.music;app.menu.autofire=run.config.autofire;app.menu.reduced=run.config.reduced;
     app.stage_scene.emplace(std::move(*scene));app.replay_session.emplace(std::move(session));
@@ -2158,6 +2161,7 @@ void advance_practice(App &app){
     if(!replace_output)stop_gameplay_bgm(app);
     app.practice_retry_release=app.practice_retry&&!app.smoke;app.practice_retry=false;app.last_paint_practice=false;
     app.stage_scene.emplace(std::move(*next));app.practice_session.emplace(recipe,soew::practice_checkpoint(recipe),seed);app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=false;
+    app.hud_input=0;
     app.run_assisted=false;
     app.stage_scene->sound.enabled=app.menu.music!=0;
     app.stage_scene->sound_output=[&app](unsigned id){if(app.gameplay_audio_enabled&&app.menu.music!=0&&!app.effect_bank.empty()&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
@@ -2218,6 +2222,7 @@ std::optional<soew::PracticePoint> practice_mouse(HWND hwnd,const App &app,soew:
 void practice_tools_boundary(HWND hwnd,App &app){
     if(practice_pointer_captured(app)||GetCapture()==hwnd)end_practice_drag(hwnd,app);
     if(app.stage_scene){
+        app.hud_input=0;
         app.stage_clock.reset(host_ms());app.locked_clock={};app.recording_timing.boundary();
         app.z_input.clear();app.dialogue_hold.clear();
         app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
@@ -2325,6 +2330,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         return 0;
     case WM_KILLFOCUS:
         if(practice_pointer_captured(*app))end_practice_drag(hwnd,*app);
+        if(!app->replay_playback)app->hud_input=0;
+        InvalidateRect(hwnd,nullptr,FALSE);
         app->recording_timing.boundary();
         app->staff_music_poll=0;
         app->mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
@@ -2466,11 +2473,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     return 0;
                 }
             }
-            const int row=w>=VK_F1&&w<=VK_F7?int(w-VK_F1):w=='U'?7:w==VK_TAB?8:-1;
+            const int row=w>=VK_F1&&w<=VK_F7?int(w-VK_F1):w=='U'?7:w==VK_TAB?soew::PracticeAssist::tool_rows:-1;
             if(w==VK_BACK||row>=0){
                 if(!repeat){if(w==VK_BACK)assist.open=!assist.open;else assist.toggle_row(row);InvalidateRect(hwnd,nullptr,FALSE);}
                 return 0;
             }
+        }
+        if(w==VK_TAB&&app->replay_playback&&app->stage_scene&&!app->ending_player){
+            if(!repeat){app->menu.show_more_info=!app->menu.show_more_info;InvalidateRect(hwnd,nullptr,FALSE);}
+            return 0;
         }
         if(app->stage_scene&&app->practice_session){
             if(!repeat&&w=='R'){begin_practice(*app,app->practice_session->recipe);InvalidateRect(hwnd,nullptr,FALSE);return 0;}
@@ -2797,10 +2808,14 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             soew::HudState hud;hud.score=app->stage_scene->score_core.score;hud.high_score=hud.score;hud.lives=app->stage_scene->life.lives;hud.bombs=app->stage_scene->life.bombs;hud.power=int(app->stage_scene->pickups.power);hud.difficulty=app->stage_scene->rank;
             if(app->scores){const auto stored=app->scores->at(std::min(4,app->stage_scene->rank)).entries[0].score;hud.high_score=std::max(hud.high_score,stored/10);hud.high_continues=stored%10;}
             soew::draw_original_hud(app->composed.pixels,app->font,hud);
-            const bool show_details=app->replay_playback&&!app->practice_session?app->menu.show_more_info:app->practice_assist.info;
-            if(!app->stage_intro.active()&&!show_stage_intro&&(show_details||app->practice_session))
-                draw_debug_info(app->composed,*app->stage_scene,app->practice_session,show_details,lang,
-                    app->replay_playback?std::nullopt:app->menu.practice_language_preference);
+            const bool show_details=app->replay_playback?app->menu.show_more_info:app->practice_assist.info;
+            if(!app->stage_intro.active()&&!show_stage_intro){
+                if(show_details||app->practice_session)
+                    draw_debug_info(app->composed,*app->stage_scene,app->practice_session,show_details,lang,
+                        app->replay_playback?std::nullopt:app->menu.practice_language_preference);
+                if(show_details&&!app->practice_tools.open)
+                    soew::practice_keys::draw(app->composed.pixels,app->hud_input);
+            }
             if(!app->replay_playback&&!app->practice_tools.open&&!app->stage_scene->paused&&app->lock_timer_frames){
                 const auto centis=app->lock_timer_frames*100ull*soew::pc98_refresh_den/soew::pc98_refresh_num;
                 const auto text=std::to_wstring(centis/100)+L"."+(centis%100<10?L"0":L"")+std::to_wstring(centis%100)+L" s";
@@ -3146,12 +3161,17 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     }
                     app->stage_scene->set_hitbox_mode(app->menu.hitboxes);
                     soew::ReplayStep step;
+                    const bool gameplay=soew::replay_tick_context(*app->stage_scene)==soew::NativeReplayContext::Gameplay;
                     if(app->replay_playback){
                         step=app->replay_session->step_playback(*app->stage_scene,*app->replay_playback,app->replay_cursor);
+                        using Context=soew::NativeReplayContext;
+                        if(step.consumed_tick){
+                            const auto context=step.event.context;
+                            app->hud_input=context==Context::Gameplay||(context==Context::Legacy&&gameplay)?step.event.input:0;
+                        }
                     }else{
                         const auto prior_tick=app->stage_scene->ticks;
                         const auto prior_misses=app->stage_scene->life.total_misses;
-                        const bool gameplay=soew::replay_tick_context(*app->stage_scene)==soew::NativeReplayContext::Gameplay;
                         pressed.z=!app->stage_entry_release&&app->z_input.tick(shot_mode(*app));
                         auto input=soew::sense(pressed);
                         bool group=dialog_group&&!app->stage_entry_release;
@@ -3165,6 +3185,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             fast=app->dialogue_hold.poll(now,!app->stage_entry_release&&z_held&&app->stage_scene->dialogue.active());
                         }
                         input=advanced.filter(input,gameplay);
+                        app->hud_input=gameplay?input:0;
                         apply_live_assists(*app);
                         if(app->practice_session){
                             const auto event=soew::practice_replay_tick(*app->stage_scene,input,group,fast);
@@ -3199,7 +3220,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                         else {app->recorder.reset();app->notice=app->tr(L"プレイを停止しました",L"Run stopped",L"游戏已停止",L"遊戲已停止");app->stage_scene->paused=true;}
                         caption(hwnd,*app);break;
                     }
-                    if(step.stage_advanced){app->stage_entry_release=true;app->z_input.clear();app->dialogue_hold.clear();app->mima_dialogue_tap.reset(held('Z'));}
+                    if(step.stage_advanced){app->hud_input=0;app->stage_entry_release=true;app->z_input.clear();app->dialogue_hold.clear();app->mima_dialogue_tap.reset(held('Z'));}
                     if(intercept_live_game_over(*app,step.status)){caption(hwnd,*app);break;}
                     if(step.status==soew::ReplayStepStatus::Finished){
                         const bool ending=(!app->replay_playback||!app->replay_playback->practice)&&
@@ -4216,7 +4237,17 @@ int wmain(int argc, wchar_t **argv) {
             if(preboss_dump){if(!app.stage_scene->dialogue.active())throw std::runtime_error("Map has not reached preboss dialogue");while(app.stage_scene->dialogue.phase==soew::StageDialogue::Phase::SlideIn||app.stage_scene->dialogue.phase==soew::StageDialogue::Phase::Text)app.stage_scene->tick(soew::Shot,true);}
             Frame frame{640,400,std::vector<std::uint32_t>(640*400)};app.stage_scene->render(frame.pixels);
             compose_dialogue_text(frame,*app.stage_scene,app.menu.language,app.chinese_text?&*app.chinese_text:nullptr);
-            if(assist_dump){app.practice_assist.toggle(soew::PracticeTool::Invincible);app.practice_assist.toggle(soew::PracticeTool::AutoBomb);draw_practice_assist(frame,app.practice_assist,app.menu.practice_language());}
+            if(assist_dump){
+                soew::mask_gameplay_tram(frame.pixels);
+                const auto &s=*app.stage_scene;
+                soew::HudState hud;hud.score=hud.high_score=s.score_core.score;hud.lives=s.life.lives;hud.bombs=s.life.bombs;hud.power=int(s.pickups.power);hud.difficulty=s.rank;
+                soew::draw_original_hud(frame.pixels,app.font,hud);
+                app.practice_assist.toggle(soew::PracticeTool::Invincible);app.practice_assist.toggle(soew::PracticeTool::AutoBomb);app.practice_assist.info=true;
+                draw_practice_assist(frame,app.practice_assist,app.menu.practice_language());
+                draw_debug_info(frame,s,app.practice_session,true,app.menu.language,app.menu.practice_language_preference);
+                const auto input=(stage_dump_fire?soew::Shot:0)|(stage_dump_bomb&&stage_dump_ticks==1?soew::Bomb:0);
+                soew::practice_keys::draw(frame.pixels,static_cast<std::uint16_t>(input));
+            }
             dump(frame,dump_path);return 0;
         }
         if(rika_probe)throw std::runtime_error("Rika probe currently requires --stage-dump and --dump; no normal game dialogue bypass");

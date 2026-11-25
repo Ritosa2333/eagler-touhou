@@ -90,8 +90,38 @@ void test_draw(){
     try{draw_original_hud(pixels,font,state);}catch(const std::runtime_error &){threw=true;}
     check(threw&&std::all_of(pixels.begin(),pixels.end(),[&](auto p){return p==sentinel;}));
 }
+void test_practice_keys(){
+    namespace keys=soew::practice_keys;
+    using namespace soew;
+    check(keys::displayed(UpLeft)==(Up|Left)&&keys::displayed(UpRight)==(Up|Right));
+    check(keys::displayed(DownLeft)==(Down|Left)&&keys::displayed(DownRight)==(Down|Right));
+    check(keys::displayed(Up|Right|Focus|Shot|Bomb)==(Up|Right|Focus|Shot|Bomb));
+    check(keys::displayed(UpLeft|DownRight|Down)==Down);
+    check(keys::displayed(Cancel|OK|Q)==0);
+    std::vector<std::uint32_t> original(640*400,0xff305070u);
+    mask_gameplay_tram(original);
+    draw_original_hud(original,fixture_font(),HudState{});
+    auto idle=original,active=original;
+    keys::draw(idle,0);keys::draw(active,DownRight|Focus|Shot);
+    check(idle!=original&&active!=idle);
+    for(int y=0;y<400;++y)for(int x=0;x<640;++x){
+        const auto p=y*640+x;
+        if(x<433||x>=573||y<6||y>=46)check(idle[p]==original[p]&&active[p]==original[p]);
+    }
+    for(const auto &key:keys::keys){
+        const auto p=key.y*640+key.x;
+        const bool pressed=key.input&(Down|Right|Focus|Shot);
+        check(idle[p]==original[p]&&active[p]==original[p]); // clipped corner
+        check(idle[p+2]==keys::white&&active[p+2]==keys::white); // outline stays white
+        check(idle[p+3*640+3]==keys::white&&active[p+3*640+3]==(pressed?keys::purple:keys::white));
+    }
+    auto arrows=original;
+    keys::draw(arrows,Up|Down|Left|Right);
+    check(arrows[11*640+539]==keys::white&&arrows[36*640+539]==keys::white); // up and down tips
+    check(arrows[33*640+516]==keys::white&&arrows[33*640+562]==keys::white); // left and right tips
+}
 }
 int main(){
-    try{test_layout();test_draw();test_gameplay_tram();std::cout<<"hud_checks="<<checks<<" failures=0\n";return 0;}
+    try{test_layout();test_draw();test_gameplay_tram();test_practice_keys();std::cout<<"hud_checks="<<checks<<" failures=0\n";return 0;}
     catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}
 }
