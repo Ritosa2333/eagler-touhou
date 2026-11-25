@@ -123,8 +123,9 @@ last-life protection for F2, X/Shift/Z restrictions,
 forced focus, F6 phase timing, and a reaction test. During live play Shift+D/A/S
 toggles X/Shift/Z restrictions respectively. In Practice, Retry on Miss also
 enables Shift+F; both restart after 15 frames and skip the stage intro.
-Practice follows the game language by default. Its Japanese, English,
-Simplified Chinese and Traditional Chinese options are independent of the game.
+Practice uses the same language as the game. Choose one of the four languages
+in F12 to update both immediately. F12 also works from the title menu and
+offers shortcuts to the same hitbox and autofire settings as Options.
 
 During live Story, Extra, or Practice play, Backspace opens the assist overlay. Click a row or use
 F1–F7 / U: invincibility, infinite lives, lock dynamic rank, infinite bombs,

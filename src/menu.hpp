@@ -2,7 +2,6 @@
 #include "th03/assets/decode.hpp"
 #include <array>
 #include <cstdint>
-#include <optional>
 #include <stdexcept>
 #include <string_view>
 #include <string>
@@ -42,8 +41,6 @@ struct Menu {
     soew::HitboxMode hitboxes=soew::HitboxMode::Off;
     bool autofire=false,fast_autofire=true; // Host-only assist; old ON setting used the 2+2 waveform.
     soew::Language language=soew::Language::Japanese;
-    std::optional<soew::Language> practice_language_preference;
-    soew::Language practice_language()const{return practice_language_preference.value_or(language);}
 
     enum class Option { Rank, Music, Lives, Bombs, Autofire, Effects, MoreInfo, Fullscreen, Hitboxes, Language, StageIntro, SmoothBackground, Reset, Back, Empty };
     static constexpr std::array<std::array<Option,2>,7> option_rows={{
@@ -99,6 +96,9 @@ struct Menu {
     }
     enum : unsigned { up=1, down=2, confirm=4, cancel=8, left=16, right=32, tab=64 };
     static int ring(int value,int delta,int count) {return (value+delta+count)%count;}
+    void adjust_option(Option item,int delta){
+        if(const int count=option_count(item))set_option(item,ring(option_value(item),delta,count));
+    }
     void update_options(unsigned input){
         const auto item=option();
         if((input&cancel)||((input&confirm)&&item==Option::Back)){options=false;selected=3;return;}
@@ -116,7 +116,7 @@ struct Menu {
             option_column=1-option_column;
             if(option()==Option::Empty)--option_row;
         }else if(const int delta=int(bool(input&right))-int(bool(input&left));delta){
-            if(const int count=option_count(item))set_option(item,ring(option_value(item),delta,count));
+            adjust_option(item,delta);
         }
     }
     int update(unsigned input) {

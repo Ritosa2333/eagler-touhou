@@ -1,5 +1,6 @@
 #include "settings.hpp"
 #include "japanese.hpp"
+#include "practice_tools_panel.hpp"
 #include <iostream>
 
 unsigned checks=0;
@@ -36,7 +37,14 @@ int main(int argc,char**argv){try{
     key(Menu::tab);check(m.option()==O::MoreInfo);key(Menu::right);check(m.show_more_info);
     key(Menu::down);check(m.option()==O::Fullscreen);key(Menu::right);check(m.fullscreen);
     key(Menu::down);check(m.option()==O::Hitboxes);key(Menu::left);check(m.hitboxes==soew::HitboxMode::All);
-    key(Menu::down);key(Menu::tab);check(m.option()==O::Autofire);key(Menu::left);check(m.autofire&&!m.fast_autofire);
+    using T=soew::PracticeToolsPanel;
+    const T tools;
+    check(tools.apply_menu_row(m,tools.row(T::first_setting))&&m.option_value(m.option())==0);
+    key(Menu::left);check(m.hitboxes==soew::HitboxMode::All);
+    key(Menu::down);key(Menu::tab);check(m.option()==O::Autofire);
+    check(tools.apply_menu_row(m,tools.row(T::first_setting+1),-1)&&m.option_value(m.option())==1);
+    key(Menu::right);check(m.autofire&&m.fast_autofire);
+    key(Menu::left);check(m.autofire&&!m.fast_autofire);
     key(Menu::down);check(m.option()==O::StageIntro&&m.stage_intro);key(Menu::left);check(!m.stage_intro);
     key(Menu::tab);check(m.option()==O::SmoothBackground&&m.smooth_background);
     key(Menu::left);check(!m.smooth_background);key(Menu::tab);
@@ -58,7 +66,6 @@ int main(int argc,char**argv){try{
     }
     put(p,"{\"version\":2,\"autofire\":true}");
     const auto old=soew::SettingsStore(p).load();check(old.language==L::Japanese&&old.autofire&&old.fast_autofire&&!old.fullscreen&&old.hitboxes==soew::HitboxMode::Off&&old.stage_intro&&old.smooth_background);
-    check(!old.practice_language);
     {
         using A=soew::PracticeAdvanced;
         soew::SettingsStore store(p);auto value=store.load();
@@ -70,17 +77,16 @@ int main(int argc,char**argv){try{
     }
     for(const auto lang:{L::Japanese,L::English,L::ChineseSimplified,L::ChineseTraditional}){
         soew::SettingsStore store(p);auto value=store.load();value.language=lang;
-        value.practice_language=lang==L::English?L::ChineseSimplified:L::English;
         check(store.save(value));
         const auto loaded=soew::SettingsStore(p).load();check(loaded==value);
-        Menu menu;loaded.apply(menu);check(menu.language==lang&&menu.practice_language()==*value.practice_language);
+        Menu menu;loaded.apply(menu);check(menu.language==lang);
         check(soew::simulation_language(menu.language)==(lang==L::English?L::English:L::Japanese));
-        menu.practice_language_preference.reset();check(menu.practice_language()==lang&&store.save(soew::Settings::from(menu)));
-        const auto follow_game=soew::SettingsStore(p).load();check(!follow_game.practice_language&&follow_game.language==lang);
     }
-    put(p,"{\"version\":2,\"language\":\"en\",\"practice_language\":\"fr\"}");
-    soew::SettingsStore invalid_practice(p);const auto fallback=invalid_practice.load();
-    check(!fallback.practice_language&&fallback.language==L::English&&invalid_practice.writable&&!invalid_practice.warning.empty());
+    put(p,"{\"version\":2,\"language\":\"en\",\"practice_language\":\"zh-Hant\"}");
+    soew::SettingsStore legacy_practice(p);const auto unified=legacy_practice.load();
+    check(unified.language==L::English&&legacy_practice.writable&&legacy_practice.needs_migration&&legacy_practice.warning.empty());
+    check(legacy_practice.save(unified));
+    soew::SettingsStore migrated(p);check(migrated.load()==unified&&!migrated.needs_migration);
     for(const auto *bad:{"1","null","\"false\""}){
         put(p,std::string("{\"version\":2,\"stage_intro\":")+bad+"}");
         soew::SettingsStore store(p);check(store.load().stage_intro&&store.writable&&!store.warning.empty());

@@ -1,22 +1,22 @@
 #pragma once
+#include "menu.hpp"
 #include "practice_advanced.hpp"
 #include "practice_assist.hpp"
 
 namespace soew {
 struct PracticeToolsPanel {
     enum class Mode { Setup, Live, Practice };
-    enum class Kind { Tool, Option, Retry, Speed, FreeSpeed, Apply, Language, ReactionMode, ReactionProgress, Trials, ReactionStart };
+    enum class Kind { Tool, Option, Retry, Speed, FreeSpeed, Apply, Language, Setting, ReactionMode, ReactionProgress, Trials, ReactionStart };
     struct Row {Kind kind;int index;PracticeBounds bounds;};
 
-    static constexpr std::array<std::optional<Language>,5> choices={std::nullopt,Language::Japanese,
-        Language::English,Language::ChineseSimplified,Language::ChineseTraditional};
+    static constexpr std::array choices={Language::Japanese,Language::English,Language::ChineseSimplified,Language::ChineseTraditional};
+    static constexpr std::array settings={Menu::Option::Hitboxes,Menu::Option::Autofire};
     static constexpr LocalizedText title{L"練習ツール",L"Practice Tools",L"练习工具",L"練習工具"};
-    static constexpr LocalizedText follow_game{L"ゲームに合わせる",L"Follow game",L"跟随游戏",L"跟隨遊戲"};
     static constexpr int pitch=18,rows_y=48,left_count=16;
     static constexpr PracticeBounds base{8,8,632,392};
     static constexpr PracticeSlider speed_track{348,497},trials_track{462,559};
     static constexpr int speed_row=left_count,retry_row=left_count-1,first_language=speed_row+3;
-    static constexpr int reaction_row=first_language+int(choices.size()),count=reaction_row+4;
+    static constexpr int first_setting=first_language+int(choices.size()),reaction_row=first_setting+int(settings.size()),count=reaction_row+4;
 
     PracticeWindow window;
     Mode mode=Mode::Setup;
@@ -36,13 +36,28 @@ struct PracticeToolsPanel {
             if(i==retry_row)return {Kind::Retry,0,b};
             return {Kind::Option,i-PracticeAssist::tool_rows,b};
         }
-        const int y=i<first_language?rows_y+(i-speed_row)*pitch:
-            i<reaction_row?130+(i-first_language)*pitch:246+(i-reaction_row)*pitch;
-        const PracticeBounds b{340,y,611,y+pitch};
-        if(i<first_language){constexpr std::array kinds={Kind::Speed,Kind::FreeSpeed,Kind::Apply};return {kinds[i-speed_row],0,b};}
-        if(i<reaction_row)return {Kind::Language,i-first_language,b};
+        if(i<first_language){
+            const int y=rows_y+(i-speed_row)*pitch;
+            constexpr std::array kinds={Kind::Speed,Kind::FreeSpeed,Kind::Apply};
+            return {kinds[i-speed_row],0,{340,y,611,y+pitch}};
+        }
+        if(i<first_setting){
+            const int index=i-first_language,x=340+(index%2)*137,y=130+(index/2)*pitch;
+            return {Kind::Language,index,{x,y,x+134,y+pitch}};
+        }
+        if(i<reaction_row){
+            const int index=i-first_setting,y=174+index*pitch;
+            return {Kind::Setting,index,{340,y,611,y+pitch}};
+        }
+        const int y=246+(i-reaction_row)*pitch;
         constexpr std::array kinds={Kind::ReactionMode,Kind::ReactionProgress,Kind::Trials,Kind::ReactionStart};
-        return {kinds[i-reaction_row],0,b};
+        return {kinds[i-reaction_row],0,{340,y,611,y+pitch}};
+    }
+    bool apply_menu_row(Menu &menu,Row item,int delta=1)const{
+        if(item.kind==Kind::Language)menu.set_option(Menu::Option::Language,static_cast<int>(choices[item.index]));
+        else if(item.kind==Kind::Setting)menu.adjust_option(settings[item.index],delta);
+        else return false;
+        return true;
     }
     bool available_row(int i)const{
         return (i!=retry_row||mode==Mode::Practice)&&(!reaction.active()||i<reaction_row);
