@@ -411,7 +411,7 @@ for (const {game, touchDevice, rail} of [
 
 for (const exitScenario of ['success', 'error', 'error-on-exit', 'error-without-reason', 'success-with-error-code']) test(`actual BrowserLauncher: original warning, fullscreen, ready/configure/ACK launch and native ${exitScenario} Exit preserve one frame`, async () => {
   const exitStatus=exitScenario.startsWith('success')?'success':'error';
-  const f = await mountBrowser(), frame = node('#gameFrame'), before = currentUrl();
+  const f = await mountBrowser({initial: '/?game=th06&keep=a%20b&lang=en'}), frame = node('#gameFrame'), before = currentUrl();
   await openGameSettingsGroup('mobileOptions');
   await start(); await until(() => commands().includes('launch'), 'actual Runtime issues launch');
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame); assert.equal(env.document.querySelectorAll('iframe').length, 1);
