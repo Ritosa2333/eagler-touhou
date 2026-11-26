@@ -38,6 +38,72 @@ function httpAssets(assetBase) {
   };
 }
 
+// BadApple 逐帧光点数据（file1..7 + lyrics）不再 embed 进 bro.wasm，改为和
+// 其他游戏素材一样走 HTTP/资源站分发。web 端只分发 BA1 编码的 fileN.ba1
+// （21.7MB → 5.18MB，4.2x），boot 前在此解码回明文写入 MEMFS /BadApple/，
+// Lua 侧 io.lines("BadApple\\fileN") 经 prelude 转正斜杠后读到的是原文本，
+// 因此 game/mod/BadApple.lua 与原生读取路径都无需改动。
+// 缺少某个文件时静默跳过：prelude 的 io.lines 空壳迭代器会让该章节无画面，
+// 但不会阻断 boot / 其他章节（与内嵌版缺失时的降级行为一致）。
+const BAD_APPLE_FILES = [
+  'file1', 'file2', 'file3', 'file4', 'file5', 'file6', 'file7', 'lyrics',
+];
+
+// BA1（小端）："BA1\n"(4B) + u32 帧数；每帧 u16 变化点数，随后
+// [u8 gap][u8 value] 重复；gap = 与上一变化点的下标间距-1（首点相对 -1），
+// gap>=255 时写 0xFF + u16 gap。原行只列相对上一帧变化的格子，按 idx 升序。
+// 还原规则：`S` + 每个变化点 `[A x y]`(value=255) / `[v x y]`，行尾补 \n。
+function decodeBA1(bytes) {
+  if (bytes.length < 8 || bytes[0] !== 0x42 || bytes[1] !== 0x41 ||
+      bytes[2] !== 0x31 || bytes[3] !== 0x0a) {
+    throw new Error('not BA1 data');
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const frames = view.getUint32(4, true);
+  let p = 8;
+  const lines = new Array(frames);
+  for (let f = 0; f < frames; f++) {
+    const count = view.getUint16(p, true);
+    p += 2;
+    let line = 'S';
+    let pos = -1;
+    for (let i = 0; i < count; i++) {
+      let gap = bytes[p++];
+      if (gap === 255) {
+        gap = view.getUint16(p, true);
+        p += 2;
+      }
+      const value = bytes[p++];
+      pos += gap + 1;
+      const x = pos % 32;
+      const y = (pos / 32) | 0;
+      line += value === 255 ? `[A ${x} ${y}]` : `[${value} ${x} ${y}]`;
+    }
+    lines[f] = line;
+  }
+  if (p !== bytes.length) throw new Error(`BA1 trailing bytes: ${p} != ${bytes.length}`);
+  return new TextEncoder().encode(lines.join('\n') + '\n');
+}
+
+async function loadBadAppleIntoMEMFS(Module, assets, note) {
+  const FS = Module.FS;
+  if (!FS) return;
+  try { FS.mkdir('/BadApple'); } catch (e) { /* 已存在 */ }
+  // 8 个文件并行拉取，避免串行下载拖慢首启；fileN.ba1 在写入前本地解码。
+  await Promise.all(BAD_APPLE_FILES.map(async (name) => {
+    try {
+      const remote = name === 'lyrics' ? name : `${name}.ba1`;
+      const res = await assets.fetchAsset(`BadApple/${remote}`);
+      if (!res || !res.ok) throw new Error(`HTTP ${res && res.status}`);
+      let bytes = new Uint8Array(await res.arrayBuffer());
+      if (name !== 'lyrics') bytes = decodeBA1(bytes);
+      FS.writeFile(`/BadApple/${name}`, bytes);
+    } catch (e) {
+      note(`BadApple/${name} load failed (chapter may be empty): ${e.message}`);
+    }
+  }));
+}
+
 /** 创建 Module 与 storage 但不 boot。eagler 的 file session 在 launch 之前
  *  就要读写存档，因此这段必须与 startBRO 解耦；loadAll 仍在 boot 之前。 */
 export async function createBROEnvironment(options = {}) {
@@ -94,6 +160,11 @@ export async function startBRO(options = {}) {
     adapter.Module = Module;
     adapter.storage = storage;
   }
+
+  // BadApple 数据从资源站/HTTP 拉取并写入 MEMFS，必须在 bro_boot（Lua 加载
+  // BadApple.lua 时会 io.lines("BadApple\\lyrics")）之前完成。
+  note('loading badapple data...');
+  await loadBadAppleIntoMEMFS(Module, assets, note);
 
   note('booting lua...');
   const boot = ccall('bro_boot', 'number', [], []);

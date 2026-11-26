@@ -1,94 +1,158 @@
 {
   "schema": "bro/package-manifest/1",
-  "version": "sha256-340ee6dc708a4c60e3ca0a8cac3a58228248b828f2be61f5176088512be16ca1",
+  "version": "sha256-dbded368ef7e0b5a9c5cd94c9b6c1e56d1f21cfc3a25b2d96d09c55bd25bf062",
   "generated": "2026-11-22T21:26:18+0800",
   "base": "./game/",
   "counts": {
-    "total": 1004,
+    "total": 1012,
     "components": 9,
     "incomplete": 0
   },
   "bytes": {
-    "total": 170117092
+    "total": 175297594
   },
   "components": {
-    "fonts": {
-      "revision": "sha256-060bde7488836bdd47889c7e",
-      "files": 2,
-      "bytes": 12574868,
-      "tags": [
-        "font"
-      ]
-    },
-    "images-bg": {
-      "revision": "sha256-c95842410e8f24d228f9fcc6",
-      "files": 108,
-      "bytes": 8394197,
-      "tags": [
-        "background",
-        "image"
-      ]
+    "misc": {
+      "files": 9,
+      "bytes": 5183732,
+      "tags": [],
+      "revision": "sha256-03c596eaf174d0b23dddd8d9"
     },
     "images-boss": {
-      "revision": "sha256-339fb498e3c415072c28c6dd",
       "files": 355,
       "bytes": 27246301,
       "tags": [
         "boss",
         "image"
-      ]
+      ],
+      "revision": "sha256-69d4770352b27db9c2ae2027"
+    },
+    "scripts": {
+      "files": 167,
+      "bytes": 4295817,
+      "tags": [
+        "script"
+      ],
+      "revision": "sha256-f3bbf40f31b73138cfa778e9"
     },
     "images-ui": {
-      "revision": "sha256-62e7d93567c400a503e42dcb",
       "files": 138,
       "bytes": 6934353,
       "tags": [
         "image",
         "ui"
-      ]
-    },
-    "misc": {
-      "revision": "sha256-eb489d3126962f14199be081",
-      "files": 1,
-      "bytes": 3230,
-      "tags": []
-    },
-    "music": {
-      "revision": "sha256-07c3ae0d8ec3a520e2d80d9c",
-      "files": 47,
-      "bytes": 85033683,
-      "tags": [
-        "audio",
-        "bgm"
-      ]
-    },
-    "scripts": {
-      "revision": "sha256-40073f90ee4b189339efdf60",
-      "files": 167,
-      "bytes": 4295817,
-      "tags": [
-        "script"
-      ]
+      ],
+      "revision": "sha256-9ca10a5673e19eda292617f4"
     },
     "se": {
-      "revision": "sha256-b090ab1063abad0ec62ebc93",
       "files": 178,
       "bytes": 25615256,
       "tags": [
         "audio",
         "se"
-      ]
+      ],
+      "revision": "sha256-773e41583b8912136e0418eb"
+    },
+    "fonts": {
+      "files": 2,
+      "bytes": 12574868,
+      "tags": [
+        "font"
+      ],
+      "revision": "sha256-01e519adb81cb08f4e08bf16"
+    },
+    "images-bg": {
+      "files": 108,
+      "bytes": 8394197,
+      "tags": [
+        "background",
+        "image"
+      ],
+      "revision": "sha256-ce98d918953e40e5df1def9c"
+    },
+    "music": {
+      "files": 47,
+      "bytes": 85033683,
+      "tags": [
+        "audio",
+        "bgm"
+      ],
+      "revision": "sha256-2c8176b0b7a10dc6bac182a3"
     },
     "shader": {
-      "revision": "sha256-04022b39adbb76f17c2403f4",
       "files": 8,
       "bytes": 19387,
       "tags": [
         "shader"
-      ]
+      ],
+      "revision": "sha256-07e8a35f2ca649c2c7d06d21"
     }
   },
   "files": [
+    {
+      "p": "BadApple/file1.ba1",
+      "n": 801256,
+      "h": "8c307afca9e5c8804585532ed5c13d29cbbb1aff97f62bac179a9de9c9330b42",
+      "d": "package",
+      "m": "misc",
+      "t": []
+    },
+    {
+      "p": "BadApple/file2.ba1",
+      "n": 626974,
+      "h": "aba001f7277f4d1c9198ccae3fae6aab6c7830a769aa649b40cdd2ef56b91b9b",
+      "d": "package",
+      "m": "misc",
+      "t": []
+    },
+    {
+      "p": "BadApple/file3.ba1",
+      "n": 691184,
+      "h": "7eeb85ea3710233ee581e06dbf49231f89cfcd9824db13c8515a151b83243a7e",
+      "d": "package",
+      "m": "misc",
+      "t": []
+    },
+    {
+      "p": "BadApple/file4.ba1",
+      "n": 1080718,
+      "h": "fda85a1a10ba8018cf090cd0251a84ac882f8d5688fb691397894960cda77f92",
+      "d": "package",
+      "m": "misc",
+      "t": []
+    },
+    {
+      "p": "BadApple/file5.ba1",
+      "n": 879802,
+      "h": "62aceed1218f508ed6908561607847a7351b1b00e155578d435e48bf34dd33ea",
+      "d": "package",
+      "m": "misc",
+      "t": []
+    },
+    {
+      "p": "BadApple/file6.ba1",
+      "n": 717212,
+      "h": "2080ebf53de0955684ed4f80d28fd2b6fee00f1728703287a3403d96dbe893c6",
+      "d": "package",
+      "m": "misc",
+      "t": []
+    },
+    {
+      "p": "BadApple/file7.ba1",
+      "n": 379316,
+      "h": "9bc9683093742879847c12236809477850795a37ad516c75f24a97b808465e20",
+      "d": "package",
+      "m": "misc",
+      "t": []
+    },
+    {
+      "p": "BadApple/lyrics",
+      "n": 4040,
+      "h": "28a766462b710980aac4b6a3d7a7a8bfbcaf77663ced6f17f837df50827eee2e",
+      "d": "package",
+      "m": "misc",
+      "t": []
+    },
     {
       "p": "Resources/BossBackGround/th06_0.png",
       "n": 100422,
@@ -10863,47 +10927,6 @@
       "why": "碰撞盒调试贴图（仅 Creative.lua 使用）"
     }
   ],
-  "distExcluded": [
-    {
-      "p": "BadApple/file1",
-      "n": 3312119,
-      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
-    },
-    {
-      "p": "BadApple/file2",
-      "n": 2647421,
-      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
-    },
-    {
-      "p": "BadApple/file3",
-      "n": 2973788,
-      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
-    },
-    {
-      "p": "BadApple/file4",
-      "n": 4586540,
-      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
-    },
-    {
-      "p": "BadApple/file5",
-      "n": 3658970,
-      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
-    },
-    {
-      "p": "BadApple/file6",
-      "n": 2984349,
-      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
-    },
-    {
-      "p": "BadApple/file7",
-      "n": 1582147,
-      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
-    },
-    {
-      "p": "BadApple/lyrics",
-      "n": 4040,
-      "why": "BadApple!! 逐帧光点数据：已 embed 进 bro.wasm，随 wasm 分发，无需逐文件下载"
-    }
-  ],
+  "distExcluded": [],
   "note": "内容是真实分发字节的哈希（音频已就地压缩为 ogg）；运行时仍从 base 逐文件 fetch，本清单供 eagler launcher 差量更新使用，不改游戏加载逻辑。devExcluded 为隔离的开发人员内容，game/ 保留但不分发。distExcluded 为 Web 端不可玩/不需要的分发资源，game/ 保留但不列入下载清单。"
 }

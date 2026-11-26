@@ -12,7 +12,7 @@
 
 > 注：BRO 为第三方衍生作，以 `importOnly + testOnly + buildOptIn` 登记，未在 `runtime-builds.json` 中声明原生源码配方，故 `ports:check` 的源码/运行时契约门不适用；本表按适配清单如实记录实现与验证状态。
 >
-> **Runtime 产物已入库**：`ports/bossrush/web/`（31 文件 / 28 MB，`bro.wasm` 26.9 MB + glue + 清单，HTTP gzip 传输约 4.7 MB），当前 build_id `715a2bbd`（第八轮 3BI Lua 有改：回滚单人解锁 + 岐道四季 card 177 pin），详见 [RUNTIME_ARTIFACTS.md](RUNTIME_ARTIFACTS.md)。资源包（140.3 MB / 1004 文件）按 importOnly 由玩家导入，不入库。署名：游戏作者吃药图书（Cyoltose）、网页端维护清酒（Tidew）、eagler 开发者。原作者已出具网页版分发授权声明，见 [DISTRIBUTION-PERMISSION.md](DISTRIBUTION-PERMISSION.md)（源码非开放、需许可查看；ZUN/上海爱丽丝素材权利保留）。
+> **Runtime 产物已入库**：`ports/bossrush/web/`（31 文件 / 约 6 MB，`bro.wasm` 4.9 MB + glue + 清单，HTTP gzip 传输约 1 MB），当前 build_id `421c8c64`（BadApple 逐帧数据不再 embed 进 wasm，改走资源清单；详见 RUNTIME_ARTIFACTS.md），详见 [RUNTIME_ARTIFACTS.md](RUNTIME_ARTIFACTS.md)。资源包（约 160 MB / 1012 文件，含 BadApple 21.7MB）按 importOnly 由玩家导入，不入库。署名：游戏作者吃药图书（Cyoltose）、网页端维护清酒（Tidew）、eagler 开发者。原作者已出具网页版分发授权声明，见 [DISTRIBUTION-PERMISSION.md](DISTRIBUTION-PERMISSION.md)（源码非开放、需许可查看；ZUN/上海爱丽丝素材权利保留）。
 
 ## 源码与构建
 
@@ -190,3 +190,20 @@
 
 - BRO 为 `importOnly`：Runtime（WASM/glue/JS）随本站部署，1004 个游戏资源由玩家在 GAME DATA 导入窗口选择 ZIP 提供。`launcher/scripts/package-bro-import.mjs <broRepoRoot> <out.zip>` 读 BRO 源库 `web/dist/package-manifest.json` + `game/` 生成可导入包（`eagler-touhou/package/1`：descriptor + 1 字节 bro.data + `game/...` 资源，target `/game/<p>` 经 `resource_cache` 归一化匹配）。已用 `parsePackageZip` 验证 1005 文件、哈希全匹配。
 - 启动器卡片封面：源图 `ports/bossrush/artwork/bro-card.webp`（随端口登记），`prepare-host-artwork.py` 已登记 `bro` 适配器，构建时生成 `assets/bro-card.webp` 并随站点发布；该产物按「原作衍生素材不入源码发布」的规则由 `launcher/.gitignore` 忽略，不跟踪。
+
+
+## 2026-11-26（续）：BadApple 改 BA1 稀疏增量编码，资源再降 4.2x
+
+在 WASM 脱离 BadApple 内嵌之后，进一步压缩 Web 端分发的那 21.7MB 明文逐帧数据：
+
+- 编码：新增 `web/tools/encode_badapple.py`，把 `game/BadApple/file1..7` 的逐帧增量文本编码成 BA1（小端）：`BA1\n` + u32 帧数；每帧 u16 变化点数，随后 `[u8 gap][u8 value]`；gap = 与上一变化点的下标间距 - 1（首点相对 -1），gap >= 255 时 `0xFF` + u16 gap。原行只列相对上一帧变化的格子，按 idx 升序，还原成 `S` + `[A x y]` / `[v x y]`。7 个文件 21,745,334 -> 5,176,462 字节（4.2x），逐字节往返校验通过。
+- 读取侧无需改游戏 Lua：解码发生在 JS 加载器 `web/src/runtime_entry.mjs` 的 `decodeBA1()` 中，boot 前 fetch `BadApple/fileN.ba1`、解码回明文后 `FS.writeFile('/BadApple/fileN', bytes)`；`game/mod/BadApple.lua` 的 `io.lines("BadApple\\fileN")` 与原生读取路径照旧。`lyrics` 仍是明文。
+- 清单：`gen_package_manifest.py` 把明文 `badapple/file1..7` 放进 distExcluded（原生仍读），`fileN.ba1` 进 files/misc。BRO `dist/package-manifest.json` version `sha256-d8c57878...`；eagler 端口保留 96kbps 音乐包，只把 7 个明文条目替换为 .ba1 条目并重算 version/components，version `sha256-dbded368...`，总 1012 文件 / 175,297,594 字节。
+- 同步：eagler port 的 `web/src/runtime_entry.mjs`、`dist/package-manifest.json`、`source-import.json`（输入哈希 + note）已更新；wasm 未变（build_id `421c8c64`，4.94 MiB）。
+- 验证：BRO 全部 `web/test/*_unit.mjs` 通过，新增 `badapple_ba1_unit.mjs` 7/7 逐字节往返通过。
+
+## 2026-11-26（续 2）：修复直接进入 AEX / BadApple 章节黑屏
+- 根因：`web/src/chapter_content_p1.lua` 的章节 init 包装器调用了 Lua 5.2+ 的 `table.pack`/`table.unpack`，而 wasm 运行时是 Lua 5.1 —— 包装器在调用原 init 之前就抛错，导致 `ToBigScreen()`/`New(Bad_Apple)` 等从未执行（仅 3 次 draw call + 默认 world），表现为直接进入章节后黑屏。
+- 修复：加入 `tbl_pack`/`tbl_unpack` 兼容 shim（Lua 5.1 回退到 `select('#',...)` + `unpack`），替换全部 6 处调用点；`web/test/chapter_entry_unit.mjs` 加入回归断言。
+- 验证：headless Edge + CDP 直接进关，两章均由 3 draw calls 恢复到约 1460 draw calls，截图非黑像素 41.5% / 47.2%；重编 wasm 后无 `luasrc` 复测通过。
+- 同步：重编 `bro.wasm` build_id `bc87e97f`（5,183,857 B / 4.94 MiB，仍远低于 15 MiB 上限），`bro.mjs`、`dist/runtime.json`、`source-import.json` 输入哈希与 note 已更新；BRO 全量 72 个单测通过。

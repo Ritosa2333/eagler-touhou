@@ -1,6 +1,6 @@
 # BRO Runtime 产物落地说明（eagler fork `bro-integration`）
 
-> 更新：2026-11-25 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（3AY nearest-player + 3AZ 联机主循环/远端真身 + 3BA 双实例 e2e/卡外对象绑定 + 3BD 纯视觉GHOST分叉定性/3BE 3人房后 build_id `5df2b19a`；第七轮 3BF 正式房间默认 arm 轻量回滚+回滚支持 3 人 / 3BG 纯观战端跳过联机门面，仅 JS 改动；第八轮 3BI 回滚单人 Unlock* 全解锁、岐道四季 card 177 补 pin_task，Lua 有改，build_id `715a2bbd`）
+> 更新：2026-11-25 · 对应 BRO 仓库 `TSake/TouHou-BossRushOnline`（3AY nearest-player + 3AZ 联机主循环/远端真身 + 3BA 双实例 e2e/卡外对象绑定 + 3BD 纯视觉GHOST分叉定性/3BE 3人房后 build_id `5df2b19a`；第七轮 3BF 正式房间默认 arm 轻量回滚+回滚支持 3 人 / 3BG 纯观战端跳过联机门面，仅 JS 改动；第八轮 3BI 回滚单人 Unlock* 全解锁、岐道四季 card 177 补 pin_task，Lua 有改，build_id `421c8c64`）
 > 本目录 `ports/bossrush/web/` 是 **BRO Web runtime 的实际构建产物**，由 BRO 侧 `web/build.sh` 产出后入库。
 
 ## 1. 产物清单（31 文件 / 28 MB）
@@ -13,7 +13,7 @@
 | `web/dist/*.json` | 272 KB | `package-manifest.json`（1004 文件/162.2 MiB 清单，SE 已恢复原生 PCM）/ `app-shell.json` / `runtime.json` |
 | `web/manifest.json` | 5 KB | BRO 产品契约（components / musicMounts / packageManifest） |
 
-来源与可复现性记在 `source-import.json`（31 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `715a2bbd`（BRO 3BI 提交 9b6ad0a，Lua 有改：boot.lua/web_patches.lua 回滚单人解锁、spell_player_mp.lua 岐道四季 card 177 补 pin_task；3AB~3BB 的 nearest-player/自动生成/同帧诞生/本地槽修复、3BD digest 跳过 GHOST 组均在；第七轮 3BF/3BG 仅 JS 改动——回滚接线/3 人修复 + 纯观战端门面守卫）。
+来源与可复现性记在 `source-import.json`（31 项逐文件 sha256；首次落地 commit `848f8f7`，当前 build_id `421c8c64`（BRO 3BI 提交 9b6ad0a，Lua 有改：boot.lua/web_patches.lua 回滚单人解锁、spell_player_mp.lua 岐道四季 card 177 补 pin_task；3AB~3BB 的 nearest-player/自动生成/同帧诞生/本地槽修复、3BD digest 跳过 GHOST 组均在；第七轮 3BF/3BG 仅 JS 改动——回滚接线/3 人修复 + 纯观战端门面守卫）。
 重编：`cd <BRO repo> && bash web/build.sh`，产出后同步 `web/` 目录即可。
 
 ## 2. 游戏资源包（162.2 MiB 资源 / 约 170.7 MB ZIP）——不入库，importOnly
@@ -296,3 +296,34 @@ node tools/load-probe.mjs --port 8801 --kbps 2000 --latency 80 --settle 2000
 同步注意：`web/dist/runtime.json`、`web/dist/app-shell.json` 直接取 BRO 仓产物；
 `web/dist/package-manifest.json` 留端口本地版本（音乐包为 96 kbps mono，体积与 BRO 全质量包
 不同），**不要**用 BRO 的覆盖。`web/src/*.mjs` 全部按 BRO 仓同步（含新增 `bgm_stream.mjs`）。
+
+
+## 2026-11-26：WASM 脱离 BadApple 内嵌，降到 15MiB 同步上限以下
+
+背景：开发者反馈 PR #293 的 `bro.wasm` 超过 eagler 站点 15 MiB 同步上限（25.7 MiB），且 wasm 频繁更新不能上资源站。资源站是给稳定大文件（如游戏素材包）用的 CDN/静态源站，只路由 `/games/**`、`/shared/**`；wasm 每次 Lua 改动都会重编，属于随代码站分发的运行时产物，不适合资源站缓存。
+
+改法（BRO 仓 + 本仓同步）：
+
+- `web/build.sh`：删掉 `vfs/root/BadApple` 的复制与 `--embed-file 'vfs/root/BadApple@/BadApple'`，WASM_FP 不再计入 BadApple；wasm 26,933,147 B → 5,183,545 B（4.94 MiB，build_id `715a2bbd` → `421c8c64`）。
+- `web/src/runtime_entry.mjs`：`startBRO` 在 `bro_boot` 之前调用新增的 `loadBadAppleIntoMEMFS`，用 `assets.fetchAsset('BadApple/fileN')` 并行拉 8 个文件并 `FS.writeFile('/BadApple/fileN', bytes)`；Lua 侧 `io.lines("BadApple\\fileN")` 经 prelude 转正斜杠后照常读到，无需改 Lua。单文件失败只 note 不抛，降级为该章节无画面。
+- `web/tools/gen_package_manifest.py`：`DIST_EXCLUDE_PREFIX` 清空，BadApple 8 文件从 `distExcluded` 移入 `files`（misc 组件），供 eagler launcher 差量更新 / CDN 清单分发；数据极少变动，和频繁更新的 wasm 解耦。两仓的 `dist/package-manifest.json` 均已重生成（eagler 侧保留其 96kbps 音乐包差异，只把 BadApple 条目移入 files 并重算 version/components）。
+- 同步更新：`web/dist/runtime.json`、`web/build/bro.mjs`、eagler port 的 `bro.wasm`/`bro.mjs`/`src/runtime_entry.mjs`、`source-import.json`（buildId + 变更项哈希）、`ADAPTATION.md`、`RUNTIME_ARTIFACTS.md` 顶部的 build_id。
+
+验证：`node --check web/src/runtime_entry.mjs` 通过；`bash -n web/build.sh` 通过；`python ast.parse` 通过；wasm sha256 `421c8c64af6273c1f025ee576d6111e44afb5a42953f9ca631e0b75b0d7fb656` 与 runtime.json/source-import 一致；BadApple 8 文件 sha256 与 manifest 一致。
+
+
+## 2026-11-26（续）：BadApple 改 BA1 稀疏增量编码，资源再降 4.2x
+
+在 WASM 脱离 BadApple 内嵌之后，进一步压缩 Web 端分发的那 21.7MB 明文逐帧数据：
+
+- 编码：新增 `web/tools/encode_badapple.py`，把 `game/BadApple/file1..7` 的逐帧增量文本编码成 BA1（小端）：`BA1\n` + u32 帧数；每帧 u16 变化点数，随后 `[u8 gap][u8 value]`；gap = 与上一变化点的下标间距 - 1（首点相对 -1），gap >= 255 时 `0xFF` + u16 gap。原行只列相对上一帧变化的格子，按 idx 升序，还原成 `S` + `[A x y]` / `[v x y]`。7 个文件 21,745,334 -> 5,176,462 字节（4.2x），逐字节往返校验通过。
+- 读取侧无需改游戏 Lua：解码发生在 JS 加载器 `web/src/runtime_entry.mjs` 的 `decodeBA1()` 中，boot 前 fetch `BadApple/fileN.ba1`、解码回明文后 `FS.writeFile('/BadApple/fileN', bytes)`；`game/mod/BadApple.lua` 的 `io.lines("BadApple\\fileN")` 与原生读取路径照旧。`lyrics` 仍是明文。
+- 清单：`gen_package_manifest.py` 把明文 `badapple/file1..7` 放进 distExcluded（原生仍读），`fileN.ba1` 进 files/misc。BRO `dist/package-manifest.json` version `sha256-d8c57878...`；eagler 端口保留 96kbps 音乐包，只把 7 个明文条目替换为 .ba1 条目并重算 version/components，version `sha256-dbded368...`，总 1012 文件 / 175,297,594 字节。
+- 同步：eagler port 的 `web/src/runtime_entry.mjs`、`dist/package-manifest.json`、`source-import.json`（输入哈希 + note）已更新；wasm 未变（build_id `421c8c64`，4.94 MiB）。
+- 验证：BRO 全部 `web/test/*_unit.mjs` 通过，新增 `badapple_ba1_unit.mjs` 7/7 逐字节往返通过。
+
+## 2026-11-26（续 2）：修复直接进入 AEX / BadApple 章节黑屏
+- 根因：`web/src/chapter_content_p1.lua` 的章节 init 包装器调用了 Lua 5.2+ 的 `table.pack`/`table.unpack`，而 wasm 运行时是 Lua 5.1 —— 包装器在调用原 init 之前就抛错，导致 `ToBigScreen()`/`New(Bad_Apple)` 等从未执行（仅 3 次 draw call + 默认 world），表现为直接进入章节后黑屏。
+- 修复：加入 `tbl_pack`/`tbl_unpack` 兼容 shim（Lua 5.1 回退到 `select('#',...)` + `unpack`），替换全部 6 处调用点；`web/test/chapter_entry_unit.mjs` 加入回归断言。
+- 验证：headless Edge + CDP 直接进关，两章均由 3 draw calls 恢复到约 1460 draw calls，截图非黑像素 41.5% / 47.2%；重编 wasm 后无 `luasrc` 复测通过。
+- 同步：重编 `bro.wasm` build_id `bc87e97f`（5,183,857 B / 4.94 MiB，仍远低于 15 MiB 上限），`bro.mjs`、`dist/runtime.json`、`source-import.json` 输入哈希与 note 已更新；BRO 全量 72 个单测通过。
