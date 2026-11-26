@@ -1259,6 +1259,9 @@ bool GameSession::next_stage() {
     // 0x42d200 末：场地清屏色回到黑（换关路径 bit0 必为 0，不会走全透明分支）
     compositor.background_color = (globals.flags & 1u) != 0 ? 0u : 0xff000000u;
     globals.post_load_frames = 1;
+    // 0x45cd30 / 0x45cf10：原版换关装载期间结束仍在运行的震屏。
+    // 这里同步完成装载，更新链看不到装载标记，因此在切换关卡时清除。
+    clear_screen_shake();
 
     // ---- 0x42d700 + 0x42cb60（DAT_004c17d0 == 0）----
     mark_stage_reached();
@@ -1377,10 +1380,6 @@ void GameSession::sync_bomb_state() {
     const bool release_active = release != nullptr && release->active == 1;
     game.enemies.bomb_active = main_active;
     game.enemies.release_active = release_active;
-    if (game.bullets_live) {
-        game.bullets->season_release_active = release_active;
-        game.bullets->season_release_item = release != nullptr ? release->release_level : 0;
-    }
     if (game.items_live) {
         game.items->bomb_attract = main_active && main->timer.current < 0x3c;
         game.items->release_attract = release_active && release->timer.current < 10000;
@@ -1442,6 +1441,12 @@ void GameSession::create_screen_shake(const EnemyManager::ShakeRequest& request)
     chains.enable(entry);
 }
 
+void GameSession::clear_screen_shake() {
+    for (ChainEntry* shake : shake_chains_) chains.remove(shake);
+    shake_chains_.clear();
+    screen_shake = ScreenShakeOffset{};
+}
+
 // 0x45d150 / 0x45d1a0 及其内联副本（0x40c0d0 / 0x409f90 / 0x4199f0）：更新链 0x13 + 绘制链
 //   kind 2 / 3（换关淡出 / 新关淡入）：绘制 0x45c990，优先级 0xa —— 紧跟关卡背景链 3 之后、层 3 绘制链之前，
 //     画进场地渲染目标，不改视口
@@ -1481,8 +1486,10 @@ void GameSession::create_screen_fade(i32 kind, i32 duration, u32 color) {
         }
         const u32 packed = (u32(fade->alpha) << 24) | ((kind == 4 ? fade->color_aux : fade->color) & 0xffffffu);
         if (kind == 4) {
-            // 0x45ccc0：DAT_004d9d38/3c 起 DAT_004d9d44×DAT_004d9d40（场地 0,0 起 384×448）
-            renderer.draw_screen_fill(0.0f, 0.0f, 384.0f, 448.0f, packed);
+            // 0x45ccc0：DAT_004d9d38/3c 起 DAT_004d9d44×DAT_004d9d40。
+            const float left = geometry.field_offset_x - 192.0f;
+            const float top = geometry.field_offset_y;
+            renderer.draw_screen_fill(left, top, left + 384.0f, top + 448.0f, packed);
         } else if (kind == 7) {
             // 0x45cba0：固定矩形 (128,16)-(512,464)
             renderer.draw_screen_fill(128.0f, 16.0f, 512.0f, 464.0f, packed);
@@ -1594,9 +1601,7 @@ void GameSession::leave_game() {
         animations.kill_file(Gui::kLogoSlot);
         animations.unload(Gui::kLogoSlot);
     }
-    for (ChainEntry* shake : shake_chains_) chains.remove(shake);
-    shake_chains_.clear();
-    screen_shake = ScreenShakeOffset{};
+    clear_screen_shake();
     for (ChainEntry* fade : fade_chains_) chains.remove(fade);
     fade_chains_.clear();
     screen_fades.clear();

@@ -1,5 +1,5 @@
 {
- "_source": "tools/oracle/game-oracle.py --demo artifacts/th16/dat/demoN.rpy --stage S --shot P --season Q --difficulty 2 4100 帧（--enemies --bullets --items --lasers --bombs）；0x43ce10 case 0xd 进演示，第 3902 帧 0x42d7b0 计时 0xf3c 请求标题",
+ "_source": "tools/oracle/game-oracle.py --demo artifacts/th16/dat/demoN.rpy --stage S --shot P --season Q --difficulty 2 4100 帧（--enemies --bullets --items --lasers --bombs）；0x43ce10 case 0xd 进演示，第 3902 帧 0x42d7b0 计时 0xf3c 请求标题；场地屏幕矩形补齐为 (128,16,384,448) 后重新运行原版核实。",
  "demos": {
   "demo1": {
    "stage": 3,
@@ -8,16 +8,16 @@
    "frames": 4100,
    "scene_exit": 4,
    "exit_frame": 3902,
-   "digest": "0dca3d6f332b08c2",
-   "enemies": "55611bcfce11cd10",
-   "enemy_vms": "88a1930be07140b2",
-   "bullets": "0b592b00fe5ce877",
-   "items": "11eeee77268b626b",
-   "spell": "3dd2f6c5d2f0b282",
+   "digest": "4e697d1017b47f86",
+   "enemies": "3fc83d0cd4f0eab7",
+   "enemy_vms": "168a167d9f08f389",
+   "bullets": "a98b5b64fe9dd314",
+   "items": "fbba3f77b9e37418",
+   "spell": "2ce3ebfda20ba10d",
    "lasers": "6bea4a14897a71a8",
    "bombs": "195519e2f42e3a3c",
-   "menu": "8f6f987d9164b5c2",
-   "sound": "b340074988a47488"
+   "menu": "5667b62a7ec4a28a",
+   "sound": "d0646aa24812acca"
   },
   "demo2": {
    "stage": 1,
@@ -26,16 +26,16 @@
    "frames": 4100,
    "scene_exit": 4,
    "exit_frame": 3902,
-   "digest": "fbd517feab2b3040",
-   "enemies": "4cdcc0373f577a95",
-   "enemy_vms": "058e2370a2141969",
-   "bullets": "bb181d90db592adc",
-   "items": "a875edc4c21f29d9",
-   "spell": "db12b4fd734ca287",
+   "digest": "2b53d1056183552a",
+   "enemies": "615ad5a332ae8abd",
+   "enemy_vms": "7d04794bbe44a6cb",
+   "bullets": "9ac950814d26d219",
+   "items": "279c0c658a370c6b",
+   "spell": "9e635035d749c3df",
    "lasers": "6bea4a14897a71a8",
-   "bombs": "8f6caf3526dfd035",
-   "menu": "dcee888089e5aee8",
-   "sound": "a06b28538d2f1c65"
+   "bombs": "a133c0885bee42bc",
+   "menu": "6097faaff6c7feac",
+   "sound": "f9baf7fa363d4d2d"
   },
   "demo3": {
    "stage": 2,
@@ -44,16 +44,16 @@
    "frames": 4100,
    "scene_exit": 4,
    "exit_frame": 3902,
-   "digest": "f10ffa519ed5262a",
-   "enemies": "f5d7c7af7ed0acfd",
-   "enemy_vms": "c55230eed248aeea",
-   "bullets": "cace4727d272b81e",
-   "items": "f3f96c16c8225970",
-   "spell": "cffd54ce6e1c3d97",
+   "digest": "96a5103a5507ccb4",
+   "enemies": "b5fde81d58728f32",
+   "enemy_vms": "b943f18105accf4f",
+   "bullets": "63b8fbe028062012",
+   "items": "f3c565f9f176a601",
+   "spell": "6b7671d5ae336f5f",
    "lasers": "6bea4a14897a71a8",
    "bombs": "33d7c894e5c71383",
-   "menu": "d94b652129e123f2",
-   "sound": "cec83692a12a1b0d"
+   "menu": "3ddb9b3f69277342",
+   "sound": "2c73610393292b55"
   },
   "demo4": {
    "stage": 4,
@@ -62,16 +62,16 @@
    "frames": 4100,
    "scene_exit": 4,
    "exit_frame": 3902,
-   "digest": "d82cc1d7f2234fa0",
-   "enemies": "c3b50b54597917e2",
-   "enemy_vms": "198b961926b23b6d",
-   "bullets": "61915729c95a24c8",
-   "items": "34a370a66bd0f3f5",
-   "spell": "ddb0671f4ad67799",
+   "digest": "acced1e5f0f77a2a",
+   "enemies": "cde608251f474fea",
+   "enemy_vms": "b2b93d0193c0044a",
+   "bullets": "f31e9c18aaae8a34",
+   "items": "a641dc0b23107d15",
+   "spell": "5f383499f071f067",
    "lasers": "6bea4a14897a71a8",
-   "bombs": "0ad9766d632163e5",
-   "menu": "0e4ea3a790748feb",
-   "sound": "19618510bcae7fdf"
+   "bombs": "f02a1165bbddb614",
+   "menu": "6c7b16bbc2f63998",
+   "sound": "dd9438999f0fb6b4"
   }
  },
  "recorded": {
@@ -81,16 +81,16 @@
   "season": 0,
   "frames": 1300,
   "input": "0:0,60:0x1,200:0x11,260:0x41,400:0x21,500:0x81,700:0x9,900:0x1",
-  "digest": "e3a7c3ffe558c55c",
-  "enemies": "018898fc0e99b53d",
-  "enemy_vms": "f0e798886a25109a",
-  "bullets": "b76a74cad1de8d7d",
-  "items": "04a5b3365190ef96",
-  "spell": "b7bed1319cae59e1",
+  "digest": "869b80c6bae25b8e",
+  "enemies": "a662be029d0e72bb",
+  "enemy_vms": "1fb661699d7bc81e",
+  "bullets": "113998b2ad9a54f2",
+  "items": "f747c726430889fc",
+  "spell": "79676bb18f73b28d",
   "lasers": "46916e5313814d06",
   "bombs": "42cc17fdd0ef4112",
-  "menu": "dbc5a4b33058e07d",
-  "sound": "af50b3ffa97901d6"
+  "menu": "96defc7aae480dbd",
+  "sound": "d2524771ff66cd5e"
  },
  "recorded_multi": {
   "_source": "stage-clear.json 第 1 例输入（残机 8、每帧补满）以 TH16_RECORD_DIR 录制两段（第 1 / 2 面），再以 game-oracle.py --replay --lives 8 --refill-lives 在原版回放 13000 帧",
@@ -100,22 +100,22 @@
   "segments": [
    {
     "stage": 1,
-    "frames": 12208
+    "frames": 11872
    },
    {
     "stage": 2,
-    "frames": 793
+    "frames": 1129
    }
   ],
-  "digest": "132b2f53cb65a1ad",
-  "enemies": "c0f3ee7727fadd10",
-  "enemy_vms": "0cea1103d8d5ed4d",
-  "bullets": "abbef1598b97a70d",
-  "items": "8f0b34a6f76776e4",
-  "spell": "6d5d1cd1691847e9",
+  "digest": "8c6a0810c5aa62c8",
+  "enemies": "17bba7368b24a21a",
+  "enemy_vms": "61d87841a0c229fc",
+  "bullets": "1d03a057c1178133",
+  "items": "b974cbb547ea2353",
+  "spell": "7d6b5eabbfe79618",
   "lasers": "c5bcb01ee7d85c0f",
-  "bombs": "28bf1f31ff0129aa",
-  "menu": "342d14222d6af186",
-  "sound": "293ffe00068d17f2"
+  "bombs": "18f4b4e6392b283b",
+  "menu": "9a5cd351b2fe45e0",
+  "sound": "7873301b02c416b8"
  }
 }

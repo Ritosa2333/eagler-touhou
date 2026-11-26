@@ -316,6 +316,56 @@ int main(int argc, char** argv) {
         std::printf(" flags=%x\n", g.flags);
         return 0;
     }
+    if (command == "replay-check" && argc >= 4) {
+        bool fast = false, draw = false;
+        for (int i = 4; i < argc; ++i) {
+            if (std::strcmp(argv[i], "fast") == 0) fast = true;
+            else if (std::strcmp(argv[i], "draw") == 0) draw = true;
+            else return fail("replay-check accepts fast and draw flags");
+        }
+        std::vector<u8> archive;
+        ReplayFile replay;
+        RecordingDevice device;
+        auto session = std::make_unique<GameSession>();
+        if (!read_file(argv[2], archive)) return fail("cannot read archive");
+        if (!replay.open_file(argv[3]) || replay.stages.empty()) return fail(replay.error.c_str());
+        if (!session->open(archive.data(), u32(archive.size())) || !session->load_replay_file(argv[3]))
+            return fail(session->failure.c_str());
+        session->run_draw_chains = draw;
+        if (draw) session->attach_device(&device);
+        session->apply_replay_start(-1);
+        if (!session->start_game_direct(1)) return fail(session->failure.c_str());
+        long long budget = 6000;
+        for (const auto& segment : replay.stages) budget += segment.frames;
+        long long host_frames = 0;
+        std::vector<i32> stages;
+        const char* reason = "budget";
+        for (; host_frames < budget; ) {
+            device.ops.clear();
+            session->injected_input = fast ? InputState::kSkip : 0;
+            if (!session->logic_step()) return fail(session->failure.c_str());
+            ++host_frames;
+            if (session->game_live && (stages.empty() || stages.back() != session->globals.stage))
+                stages.push_back(session->globals.stage);
+            if (!session->game_live) { reason = "scene-exit"; break; }
+            if (session->menu_live && session->menu.mode != GameMenu::Closed) { reason = "menu"; break; }
+        }
+        const auto& g = session->globals;
+        const auto& player = session->game.player;
+        const auto& visual = session->animations.visual_rng;
+        const auto& logic = session->animations.game_rng;
+        std::printf("{\"stop\":\"%s\",\"scene\":%d,\"stage\":%d,\"stage_frame\":%d,"
+                    "\"score\":%d,\"lives\":%d,\"power\":%d,\"gauge\":%d,\"position\":[%d,%d],"
+                    "\"visual_seed\":%u,\"visual_calls\":%u,\"game_seed\":%u,\"game_calls\":%u,"
+                    "\"host_frames\":%lld,\"fast\":%s,\"draw\":%s,\"draw_calls\":%u,\"stages\":[",
+                    reason, int(session->supervisor.current), g.stage, g.stage_frame, g.score, g.lives,
+                    g.power, g.season_gauge, player.fixed_x, player.fixed_y,
+                    u32(visual.seed), visual.calls, u32(logic.seed), logic.calls, host_frames,
+                    fast ? "true" : "false", draw ? "true" : "false", device.draws_total);
+        for (size_t i = 0; i < stages.size(); ++i) std::printf("%s%d", i ? "," : "", stages[i]);
+        std::printf("]}\n");
+        return std::strcmp(reason, "budget") == 0 ? 1 : 0;
+    }
     if (command == "replay-info" && argc >= 3) {
         // 0x448c10：打印 name / stages / 每段 stage,seed,frames,input_nz,fps_len,first_held_frame
         ReplayFile file;
@@ -420,6 +470,21 @@ int main(int argc, char** argv) {
         const bool loading = argc >= 7 && std::atoi(argv[6]) != 0;
         const ChainResult r = replay_fast_forward_result(gm, loading, mode, held, counter);
         std::printf("%d\n", i32(r));
+        return 0;
+    }
+    if (command == "replay-fps-timing") {
+        ReplayFile replay;
+        ReplayStageSegment& segment = replay.stages.emplace_back();
+        segment.frames = 62;
+        segment.inputs.resize(size_t(segment.frames) * 6);
+        segment.fps = {60, 59, 58};
+        ReplayPlaybackCursor cursor;
+        for (i32 frame = 0; frame < segment.frames; ++frame) {
+            u32 held = 0, pressed = 0, released = 0;
+            u8 fps = 0;
+            if (!replay_playback_step(replay, cursor, held, pressed, released, fps)) return fail("unexpected replay end");
+            std::printf("%u\n", u32(fps));
+        }
         return 0;
     }
     if (command == "replay-fps-color" && argc >= 3) {
@@ -588,6 +653,35 @@ int main(int argc, char** argv) {
             std::printf("%d %d %d\n", f, fade.alpha, alive ? 1 : 0);
             if (!alive) break;
         }
+        return 0;
+    }
+    if (command == "chain-self-remove") {
+        ChainManager chains;
+        ChainEntry* self = nullptr;
+        auto lifetime = std::make_shared<int>(0);
+        const std::weak_ptr<int> observer = lifetime;
+        std::string trace;
+        bool alive_after_remove = false;
+        self = chains.create([&, lifetime, calls = 0]() mutable {
+            trace += char('0' + ++calls);
+            if (calls == 2) {
+                chains.remove(self);
+                alive_after_remove = !observer.expired();
+                ++*lifetime;
+            }
+            return ChainResult::Continue;
+        }, 1, true);
+        lifetime.reset();
+        ChainEntry* next = chains.create([&]() {
+            trace += 'F';
+            return ChainResult::Continue;
+        }, 2, true);
+        chains.enable(self);
+        chains.enable(next);
+        chains.run_update();
+        chains.run_update();
+        std::printf("trace=%s alive=%d released=%d count=%u\n", trace.c_str(),
+                    alive_after_remove, observer.expired(), chains.update_count());
         return 0;
     }
     if (command == "chain-demo") {

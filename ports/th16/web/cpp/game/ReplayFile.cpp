@@ -240,11 +240,9 @@ bool replay_playback_step(const ReplayFile& file, ReplayPlaybackCursor& cursor,
             return false;
         }
     }
-    // 0x448130：每 30 帧从 FPS 流取一字节（计数为段内帧；第 0/30/… 帧）
-    if ((cursor.frame_index % 30) == 0) {
-        const u32 fps_i = u32(cursor.frame_index / 30);
-        if (fps_i < seg.fps.size()) cursor.fps_byte = seg.fps[fps_i];
-    }
+    // 0x448246–0x44827b：先读帧率字节，再于第 0、30、60 帧推进指针。
+    const u32 fps_index = (u32(cursor.frame_index) + 29u) / 30u;
+    if (fps_index < seg.fps.size()) cursor.fps_byte = seg.fps[fps_index];
     fps_byte = cursor.fps_byte;
     ++cursor.frame_index;
     return true;

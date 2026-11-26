@@ -379,7 +379,7 @@ private:
     void draw_curve(Laser& l, AnmRenderer& renderer);
     // 0x438750 前半：把采样点展开成屏幕空间三角条带（每点沿相邻方向角平分线左右各半宽，U 沿条带 0 → 1，
     // V 取激光柱 VM 精灵的上 / 下沿），写入 l.curve_strip
-    void build_curve_strip(Laser& l, float field_offset_x) const;
+    void build_curve_strip(Laser& l, float field_offset_x, float field_offset_y) const;
 
     void push_sfx(i32 sfx, float x = 0.0f);
 };

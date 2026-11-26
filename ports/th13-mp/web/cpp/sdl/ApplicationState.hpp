@@ -20,11 +20,6 @@ namespace th13::sdl {
 // character_count()（取 5 以满足 0x453170 开屏）；两套数据服务在这里
 // 分开实现，Spell 侧角色上限由 TitleSpellPracticeMenu 构造器钳制。
 //
-// 数据口径（缺档与旧档兼容）：
-//   - scoreth13.dat 的 0x7f 条记录表（姓名/分数/★）尚未进 FileStore，
-//     故 PlayerData 为真实空表；不生成记录、不补零值冒充。
-//   - 符卡 catalog（DAT_004bbb28 / DAT_004be7d4）与 score 解锁位未落库，
-//     故符卡全部锁定、无 id/rank/名称；菜单可浏览但不可启动。
 // 两服务只读、无状态，不写档、不改 FileStore 版本。
 struct TitlePlayerDataHost : TitlePlayerDataPlatform {
     std::function<i32(i32)> count_records;
@@ -35,7 +30,6 @@ struct TitlePlayerDataHost : TitlePlayerDataPlatform {
     i32 difficulty_count() const override { return kPlayerDataDifficulties; }
     i32 character_count() const override { return kPlayerDataCharacters; }
     i32 record_count(i32 difficulty) const override {
-        // 记录表未持久化：所有难度都是真实的 0 条，而不是 127 个空槽。
         if (difficulty < 0 || difficulty >= kPlayerDataDifficulties) return 0;
         return count_records ? count_records(difficulty) : 0;
     }

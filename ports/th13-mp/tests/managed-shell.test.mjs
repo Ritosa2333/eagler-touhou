@@ -48,6 +48,7 @@ test('managed DATA accepts a parent-realm ArrayBuffer and rejects invalid buffer
 function adapter(options = {}) {
   const calls = [];
   const context = {options, music: true, launched: true, stopping: false,
+    syncPracticePanel: () => {},
     document: {hidden: false}, innerWidth: 1000, innerHeight: 800,
     canvas: {getBoundingClientRect: () => ({left: 100, top: 40, width: 640, height: 480})},
     core: new Proxy({}, {set: () => true, get: (_, name) => (...args) => calls.push([name, ...args])})};
@@ -123,7 +124,8 @@ test('managed frame callback reports the actual SDL audio queue', () => {
   const emitted = [];
   const context = {core: {th13Audio: {device: true, failed: false, mixedFrames: 44100,
     queuedFrames: 4410, sampleRate: 44100, track: 2, musicCursor: 100, suspended: false},
-    _th13_phase: () => 1}, music: true, ticks: 0, presents: 0, maxFrameMs: 0,
+    _th13_phase: () => 1}, launched: true, roomOwned: false, options: {},
+    music: true, ticks: 0, presents: 0, maxFrameMs: 0,
     first: true, last: 0, performance: {now: () => 1000},
     // P5 后 onGameFrame 泵多人桥帧（生产 shell 的模块级 let multiplayerBridge
     // = null——沙箱同型提供绑定，可选链对 null 无操作）。

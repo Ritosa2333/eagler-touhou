@@ -60,11 +60,12 @@ public:
     u32 draw_count() const { return u32(draw_.size()); }
 
 private:
-    i32 run_list(std::vector<std::unique_ptr<ChainEntry>>& list);
-    void insert_sorted(std::vector<std::unique_ptr<ChainEntry>>& list, std::unique_ptr<ChainEntry> entry);
+    using EntryList = std::vector<std::shared_ptr<ChainEntry>>;
+    i32 run_list(EntryList& list);
+    void insert_sorted(EntryList& list, std::shared_ptr<ChainEntry> entry);
 
-    std::vector<std::unique_ptr<ChainEntry>> update_;
-    std::vector<std::unique_ptr<ChainEntry>> draw_;
+    EntryList update_;
+    EntryList draw_;
 };
 
 }  // namespace th16

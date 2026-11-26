@@ -48,6 +48,7 @@ test('managed DATA accepts a parent-realm ArrayBuffer and rejects invalid buffer
 function adapter(options = {}) {
   const calls = [];
   const context = {options, music: true, launched: true, stopping: false,
+    syncPracticePanel: () => {},
     document: {hidden: false}, innerWidth: 1000, innerHeight: 800,
     canvas: {getBoundingClientRect: () => ({left: 100, top: 40, width: 640, height: 480})},
     core: new Proxy({}, {set: () => true, get: (_, name) => (...args) => calls.push([name, ...args])})};

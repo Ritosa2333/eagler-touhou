@@ -3,7 +3,7 @@
     display: grid;
     grid-template-columns: 176px minmax(0, 1fr);
     align-items: start;
-    gap: 48px;
+    gap: 12px 48px;
     width: min(1080px, calc(100% - 64px));
     margin: 36px auto 72px;
     color: var(--kit-foreground);
@@ -46,10 +46,16 @@
     width: 16px;
     height: 16px;
   }
-  .account-settings-nav a > svg:last-child,
-  .account-settings-back {
+  .account-settings-nav a > svg:last-child {
     display: none;
   }
+  .account-settings-back {
+    grid-column:1/-1;justify-self:start;display:inline-flex;align-items:center;gap:4px;
+    min-height:36px;padding-inline:4px 8px;border-radius:6px;
+    color:var(--kit-muted-foreground);font-size:13px;text-decoration:none
+  }
+  .account-settings-back:hover {background:var(--kit-accent);color:var(--kit-foreground)}
+  .account-settings-back svg {width:16px;height:16px}
   .account-settings-nav small {
     margin-left: auto;
     font-size: 11px;
@@ -238,14 +244,21 @@
     }
     .account-settings-nav nav {
       gap: 0;
+      border: 1px solid var(--kit-border);
+      border-radius: 10px;
+      overflow: clip;
     }
     .account-settings-nav nav > :is(a, span) {
-      min-height: 52px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--kit-border);
+      min-height: 53px;
+      padding: 12px 16px;
+      gap: 16px;
       border-radius: 0;
-      font-size: 14px;
+      color: var(--kit-foreground);
+      font-size: 15px;
+      font-weight: 475;
     }
+    .account-settings-nav nav > * + * {border-block-start: 1px solid var(--kit-border)}
+    .account-settings-nav nav > a > svg {color: var(--kit-muted-foreground)}
     .account-settings-nav a[aria-current="page"] {
       background: transparent;
     }
@@ -254,18 +267,7 @@
       margin-left: auto;
     }
     .account-settings-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      min-height: 32px;
       margin: 0 0 12px -4px;
-      color: var(--kit-muted-foreground);
-      font-size: 13px;
-      text-decoration: none;
-    }
-    .account-settings-back svg {
-      width: 16px;
-      height: 16px;
     }
     .account-settings[data-detail="false"] .account-settings-content,
     .account-settings[data-detail="true"] .account-settings-nav {

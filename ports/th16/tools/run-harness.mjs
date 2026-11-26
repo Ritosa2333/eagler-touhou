@@ -13,6 +13,10 @@ const module = await WebAssembly.compile(readFileSync(wasmPath));
 const imports = wasi.getImportObject();
 // Node 22 的 uvwasi fd_write 在 stdout/stderr 为文件或 /dev/null 时会让进程段错误（anm-run 这类大输出必现；
 // wasmtime 下同一 wasm 正常）。stdout/stderr 改由 JS 侧同步写出，其余 fd 仍走 uvwasi。
+// Node 22 can crash in a direct wasm-to-uvwasi path_open call after reading the DAT.
+// Forward through JS to avoid that host-specific call path without changing WASI rights.
+const uvwasiPathOpen = imports.wasi_snapshot_preview1.path_open;
+imports.wasi_snapshot_preview1.path_open = (...args) => uvwasiPathOpen(...args);
 let memory = null;
 const uvwasiWrite = imports.wasi_snapshot_preview1.fd_write;
 imports.wasi_snapshot_preview1.fd_write = (fd, iovs, iovsLen, nwritten) => {

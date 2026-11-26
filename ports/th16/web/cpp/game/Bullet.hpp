@@ -277,8 +277,6 @@ public:
     void play_sfx(i32 id, float x = 0.0f) { if (sfx_sink != nullptr) sfx_sink->push(id, x); else sfx_queue.push_back(id); }
     std::function<void(const BulletLaserRequest&)> on_laser_request;  // Ex 0x8000000 → LaserManager::spawn_from_bullet
     bool spellcard_active = false;      // DAT_004a6db0->0x78 bit0（Spellcard 管理器接入前由宿主同步）
-    bool season_release_active = false; // DAT_004a6da4->0x30 == 1（季节解放中；消弹模式 4 附加掉落）
-    i32 season_release_item = 0;        // DAT_004a6da4->0xd8（解放附加道具 = 该值 + 8）
 
     AnmManager* animations = nullptr;   // DAT_004c0f48
     AnmFile* anm = nullptr;             // +0x1403b24 bullet.anm（槽 7）

@@ -41,28 +41,33 @@ const click = selector => React.act(async () => {
   await new Promise(resolve=>setTimeout(resolve,0));
 });
 const ids = () => [...env.document.querySelectorAll('.book-grid [data-book-product]')].map(node => node.dataset.bookProduct);
-test('multiplayer icon and desktop checkboxes share selection while favorites persist and sort first', async () => {
+test('multiplayer game picker and covers share selection while favorites persist and sort first', async () => {
   const products=api.createLibraryProducts(['th06mp','th07mp','th08mp'],p=>p,id=>'?game='+id);
   function Fixture(){const[filters,setFilters]=React.useState([]);return React.createElement(api.BookDirectoryGames,{products,productFilters:filters,viewingProduct:'',onProductFiltersChange:setFilters,onSelect(){assert.fail('Filtering does not open game options');}});}
   const container=env.document.createElement('div');env.document.body.append(container);root=createRoot(container);
   const render=()=>React.act(async()=>root.render(React.createElement(api.LocaleProvider,{locale:'en'},React.createElement(Fixture))));
-  const checked=()=>[...env.document.querySelectorAll('.book-lobby-desktop [data-lobby-product] [role="checkbox"][aria-checked="true"]')].map(n=>n.closest('[data-lobby-product]').dataset.lobbyProduct).sort();
+  const checked=()=>[...env.document.querySelectorAll('[data-lobby-toggle][aria-checked="true"]')].map(n=>n.dataset.lobbyToggle).sort();
+  const favorite='.book-lobby-picker [data-lobby-product="th08mp"] .book-lobby-favorite';
   await render();
-  await click('.book-lobby-desktop [data-lobby-product="th06mp"] [role="checkbox"]');
+  await click('[data-lobby-toggle="th06mp"]');
   await click('[data-lobby-toggle="th08mp"]');assert.deepEqual(checked(),['th06mp','th08mp']);
   assert.equal(node('[data-lobby-toggle="th06mp"]').getAttribute('aria-checked'),'true');
-  await click('.book-lobby-desktop [data-lobby-product="th08mp"] .book-lobby-favorite');
-  assert.equal(node('.book-lobby-desktop [data-lobby-product]').dataset.lobbyProduct,'th08mp');
+  await click('.book-lobby-picker-trigger');
+  await click(favorite);
+  assert.equal(node('#lobbyGameRail [data-lobby-icon]').dataset.lobbyIcon,'th08mp');
   assert.deepEqual(checked(),['th06mp','th08mp']);
+  await click('.book-lobby-picker .book-lobby-menu-all');
+  await click('[data-lobby-toggle="th08mp"]');
   await click('[data-lobby-icon="th07mp"]');assert.deepEqual(checked(),['th07mp'],'Main cover selects only one work');
   await click('[data-lobby-toggle="th08mp"]');assert.deepEqual(checked(),['th07mp','th08mp'],'Only the checkbox adds a work');
-  await click('.book-lobby-desktop [data-lobby-product="th08mp"] .book-lobby-game');assert.deepEqual(checked(),['th08mp']);
-  await click('.book-lobby-desktop [data-lobby-product="th08mp"] .book-lobby-game');assert.deepEqual(checked(),['th08mp'],'Repeating the main action stays on that work');
-  await click('.book-lobby-desktop .book-lobby-all');assert.deepEqual(checked(),[]);
+  await click('[data-lobby-icon="th08mp"]');assert.deepEqual(checked(),['th08mp']);
+  await click('[data-lobby-icon="th08mp"]');assert.deepEqual(checked(),['th08mp'],'Repeating the main action stays on that work');
+  await click('#lobbyGameRail .book-lobby-all');assert.deepEqual(checked(),[]);
   assert.equal(env.document.querySelectorAll('#lobbyGameRail [aria-checked="true"]').length,0);
   await React.act(async()=>root.unmount());root=createRoot(container);await render();
-  assert.equal(node('.book-lobby-desktop [data-lobby-product]').dataset.lobbyProduct,'th08mp');
-  assert.equal(node('.book-lobby-desktop [data-lobby-product="th08mp"] .book-lobby-favorite').getAttribute('aria-pressed'),'true');
+  assert.equal(node('#lobbyGameRail [data-lobby-icon]').dataset.lobbyIcon,'th08mp');
+  await click('.book-lobby-picker-trigger');
+  assert.equal(node(favorite).getAttribute('aria-checked'),'true');
 });
 async function mount(products, locale = 'en') {
   const activated = [], container = env.document.createElement('div'); env.document.body.append(container); root = createRoot(container);
@@ -110,6 +115,7 @@ test('announcement icon marks the three latest localized announcements as read',
   assert.equal(items[1].querySelector('header + p').textContent, '回退正文');
   await click('.library-announcements-dialog button');
   assert.equal(env.document.querySelector('.library-announcements-dialog'), null);
+  await React.act(async () => new Promise(resolve => env.window.requestAnimationFrame(resolve)));
   assert.equal(env.document.activeElement, node(announcementTrigger));
   await render(entries, 'next-visit');
   assert.equal(env.document.querySelector(announcementDot), null);
@@ -144,17 +150,16 @@ test('anchored multiplayer menu preserves deep-link selection and shares multi-s
   assert.equal(node('.book-lobby-picker').getAttribute('role'),'menu');assert.equal(env.document.querySelector('[role="dialog"]'),null);
   const grouping=scope=>[...env.document.querySelectorAll(`${scope} [data-lobby-category]`)].map(group=>[group.dataset.lobbyCategory,[...group.querySelectorAll('[data-lobby-product]')].map(row=>row.dataset.lobbyProduct)]);
   const expectedGroups=[['versus',['th03mp','th09mp','th19mp']],['original',['th06mp','th10mp','th15mp']],['fighting',['th075mp']],['pc98',['th01mp','th02mp','th04mp','th05mp']]];
-  assert.deepEqual(grouping('.book-lobby-desktop'),expectedGroups);
-  assert.deepEqual(grouping('.book-lobby-picker'),expectedGroups,'Both presentations consume the same catalog classification');
-  assert.equal(node('.book-lobby-picker [data-lobby-product="th10mp"] strong').textContent,'東方風神録');
-  assert.equal(node('.book-lobby-picker [data-lobby-product="th10mp"] .book-lobby-subtitle').textContent,'Mountain of Faith');
+  assert.deepEqual(grouping('.book-lobby-picker'),expectedGroups);
+  assert.equal(node('.book-lobby-picker [data-lobby-product="th10mp"] .book-category-game-title').textContent,'東方風神録');
+  assert.equal(node('.book-lobby-picker [data-lobby-product="th10mp"] .book-category-game-subtitle').textContent,'Mountain of Faith');
   for(const id of ['th06mp','th09mp'])assert.equal(node(`.book-lobby-picker [data-lobby-product="${id}"] .book-lobby-menu-check`).getAttribute('aria-checked'),'true');
   await click('.book-lobby-picker [data-lobby-product="th10mp"] .book-lobby-menu-check');
   assert.equal(node('[data-lobby-toggle="th10mp"]').getAttribute('aria-checked'),'true');
   assert.equal(node('.book-lobby-picker-trigger').getAttribute('aria-expanded'),'true');
   await click('.book-lobby-picker [data-lobby-product="th09mp"] .book-lobby-menu-check');
   assert.equal(node('[data-lobby-toggle="th09mp"]').getAttribute('aria-checked'),'false');
-  assert.equal(env.document.querySelectorAll('.book-lobby-desktop [data-lobby-product] [role="checkbox"][aria-checked="true"]').length,2);
+  assert.equal(env.document.querySelectorAll('[data-lobby-toggle][aria-checked="true"]').length,2);
   await click('.book-lobby-picker [data-lobby-product="th15mp"] .book-lobby-menu-choice');
   assert.equal(node('.book-lobby-picker-trigger').getAttribute('aria-expanded'),'false');
   assert.deepEqual([...env.document.querySelectorAll('#lobbyGameRail [aria-checked="true"]')].map(n=>n.dataset.lobbyToggle),['th15mp']);
@@ -179,10 +184,10 @@ test('only supplied published products become cards; hidden/MP/demo titles never
   await click('[data-book-category="doujin"]'); assert.deepEqual(ids(), []);
   assert.ok(node('.book-empty').textContent.includes('No matching games'));
   assert.equal(env.document.querySelector('[data-book-product="dj01"]'), null);
-  await click('[data-book-category="spin-off"]'); assert.deepEqual(ids(), ['th075']);
+  await click('[data-book-category="fighting"]'); assert.deepEqual(ids(), ['th075']);
 });
-test('HSoB is listed with doujin games and not with official spin-offs', async () => {
-  const products = api.createLibraryProducts(['th075', 'hsob'], p => p, id => '?game=' + id);
+test('the library separates versus games, fighting games and doujin games', async () => {
+  const products = api.createLibraryProducts(['th06', 'th075', 'th09', 'hsob'], p => p, id => '?game=' + id);
   await mount(products);
   await click('[data-book-category="doujin"]');
   assert.deepEqual(ids(), ['hsob']);
@@ -191,7 +196,11 @@ test('HSoB is listed with doujin games and not with official spin-offs', async (
   const sidebar = node('#bookCategory-doujin [data-book-sidebar-product="hsob"]');
   assert.equal(sidebar.querySelector('.book-work-number').textContent, 'thHSOB');
   assert.equal(sidebar.querySelector('img').src, node('[data-book-product="hsob"] .book-art img').src);
-  await click('[data-book-category="spin-off"]');
+  await click('[data-book-category="windows"]');
+  assert.deepEqual(ids(), ['th06']);
+  await click('[data-book-category="versus"]');
+  assert.deepEqual(ids(), ['th09']);
+  await click('[data-book-category="fighting"]');
   assert.deepEqual(ids(), ['th075']);
 });
 test('TH05 is discoverable through the PC98 category in the current library', async () => {
@@ -211,20 +220,18 @@ test('sidebar disclosures list playable single-player entries without changing t
   const members = id => [...node(`#bookCategory-${id}`).querySelectorAll('[data-book-sidebar-product]')]
     .map(link => link.dataset.bookSidebarProduct);
   assert.equal(env.document.querySelector(disclosure('favorites')), null);
-  assert.equal(node(disclosure('windows')).getAttribute('aria-expanded'), 'false');
-  assert.ok(node(`${disclosure('windows')} .lucide-plus`));
   const windows = () => node('#bookCategory-windows');
   assert.equal(node(disclosure('windows')).getAttribute('aria-controls'), windows().id);
   assert.ok(windows().classList.contains('ui-disclosure-panel'));
-  assert.equal(windows().hasAttribute('inert'), true);
-  assert.deepEqual(members('windows'), []);
-
-  await click(disclosure('windows'));
   assert.equal(node(disclosure('windows')).getAttribute('aria-expanded'), 'true');
   assert.equal(windows().hasAttribute('inert'), false);
-  assert.ok(node(`${disclosure('windows')} .lucide-minus`));
+  assert.ok(node(`${disclosure('windows')} svg[data-expanded="true"]`));
   assert.deepEqual(members('windows'), ['th06', 'th13']);
   assert.deepEqual(ids(), ['th01', 'th06', 'th13']);
+  await click('[data-book-sidebar-favorite="th13"]');
+  assert.equal(node('[data-book-favorite="th13"]').getAttribute('aria-pressed'), 'true');
+  await click('[data-book-sidebar-favorite="th13"]');
+  assert.equal(node('[data-book-favorite="th13"]').getAttribute('aria-pressed'), 'false');
   await click(disclosure('pc98'));
   assert.deepEqual(members('pc98'), ['th01']);
   assert.equal(node('#bookCategory-pc98 .book-work-number').textContent, 'th01');
@@ -238,6 +245,10 @@ test('sidebar disclosures list playable single-player entries without changing t
   assert.equal(windows().hasAttribute('inert'), true);
   assert.deepEqual(members('windows'), ['th06', 'th13'], 'entries stay mounted for the closing animation');
   assert.deepEqual(ids(), ['th01']);
+  await React.act(async () => root.unmount());
+  await mount(products);
+  assert.equal(node(disclosure('windows')).getAttribute('aria-expanded'), 'false');
+  assert.equal(node(disclosure('pc98')).getAttribute('aria-expanded'), 'true');
 });
 test('favorites and view persist through remount, retain empty state, and recent list records actual launches only', async () => {
   const products = api.createLibraryProducts(['th06', 'th07'], p => p, id => '?game=' + id);

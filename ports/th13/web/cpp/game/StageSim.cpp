@@ -738,8 +738,7 @@ bool StageSim::start() {
 
 bool StageSim::step_frame() {
     if (!error_.empty()) return false;
-    // 敌链清空（root 结束且无存活者）：无头窗口内不会到达（root 常驻），
-    // 交互模式可能到达（合成脚本/全灭）——空转保步进可用。
+    // 敌链清空（root 结束且无存活者）：无头窗口内不会到达（root 常驻）。
     if (enemies.empty()) {
         if (!defer_laser_update) advance_lasers();
         if (interactive && !defer_bullet_update) advance_bullets();

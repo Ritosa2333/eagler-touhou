@@ -19,8 +19,14 @@ const harness = process.env.TH16_HARNESS ?? resolve(here, 'build/harness');
 const dat = process.env.TH16_DAT ?? resolve(monorepo, 'games/th16/original/th16.dat');
 const needDat = {skip: !existsSync(dat) && 'original th16.dat not present'};
 
-// 独立场景各自使用临时目录；异步子进程默认每进程 8 路，大矩阵显式提高上限，外层可按测试名分片。
+// 独立场景各自使用临时目录。按容器内存限制并发，外层可按测试名分片。
+const oracleJobs = Number(process.env.TH16_ORACLE_JOBS ?? 2);
+assert.ok(Number.isSafeInteger(oracleJobs) && oracleJobs > 0, 'TH16_ORACLE_JOBS must be a positive integer');
 function runAsync(file, args, options = {}) {
+  // 这些场景只比较 D3D 流，不读取状态快照；保留逐帧绘制，省去整局状态 JSON。
+  if (args[0]?.endsWith('/game-oracle.py') && args.includes('--draw') && !args.includes('--every')) {
+    args = [...args, '--every', String(0x7fffffff)];
+  }
   const rest = {...options};
   delete rest.encoding;
   delete rest.maxBuffer;
@@ -46,7 +52,7 @@ async function mapConcurrent(items, worker, limit = 8) {
       await worker(items[index], index);
     }
   }
-  await Promise.all(Array.from({length: Math.min(limit, items.length)}, run));
+  await Promise.all(Array.from({length: Math.min(limit, oracleJobs, items.length)}, run));
 }
 
 // 跑 harness game-draw，返回 {frame: ops[]}（只保留 golden 里有的帧）

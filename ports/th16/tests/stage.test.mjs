@@ -158,17 +158,17 @@ test('stage script timeline: frame 61 eased camera, frame 801 past ins 9/10 (t=7
   assert.equal(f801.pass.fog_clear, '0040d0b0', '0x409f90 clears the field again with the fog colour');
 });
 
-test('stage draw (0x409f90/0x40af70): 3 of 8 tiles pass the 0x40a7d0 frustum test, fogged mode-8 faces with Z test/write, 2×4 tiling', needDat, () => {
+test('stage draw (0x409f90/0x40af70): 4 of 8 tiles pass the actual-field 0x40a7d0 frustum test, fogged mode-8 faces with Z test/write, 2×4 tiling', needDat, () => {
   const r = parse(run(['scene-boot', dat, String(GAME_FRAME_1 + 800), script]));
   assert.equal(r.pass.active, '1');
-  // 与 oracle --draw 第 800 帧一致：8 个实例里 3 个在视锥内（0x40a7d0 的 16 点投影测试），5 个剔除
-  assert.equal(r.pass.quads, '3');
-  assert.equal(r.pass.drawn_instances, '3');
-  assert.equal(r.pass.culled, '5');
-  assert.equal(r.pass.drawn_quads, '3');
-  assert.equal(r.sq.length, 3);
+  // 原版第 799–802 帧均画 4 个实例；0x40a7d0 的投影包围盒对实际场地 (128,16) 判定。
+  assert.equal(r.pass.quads, '4');
+  assert.equal(r.pass.drawn_instances, '4');
+  assert.equal(r.pass.culled, '4');
+  assert.equal(r.pass.drawn_quads, '4');
+  assert.equal(r.sq.length, 4);
   const distinct = new Set(r.sq.map(q => q.slice(4, 12).join(' ')));
-  assert.equal(distinct.size, 3, 'each instance gets its own entity_offset (face VM shared)');
+  assert.equal(distinct.size, 4, 'each instance gets its own entity_offset (face VM shared)');
   for (const q of r.sq) {
     assert.equal(q[3], 'entry=0', 'st01wl.anm entry 0');
     assert.ok(q.includes('zt=1') && q.includes('zw=1'), 'mode 8: ZENABLE on, Z write on');

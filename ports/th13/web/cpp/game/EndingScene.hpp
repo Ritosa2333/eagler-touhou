@@ -33,7 +33,7 @@ namespace th13 {
 
 // 原版 score 存档缓冲（DAT_004c22cc）相对偏移 0x1b26a..0x1b276 的 13 字节
 // 结局区视图。idx 与结局 msg 表 0x4bba20 同序（0=staff.msg，1..12=e01..e12）。
-// 生产侧由 ApplicationState 提供内存镜像；FileStore 序列化属后续登记缺口
+// 生产侧由 ApplicationState 提供内存镜像
 // （原版也在内存置位、最晚下一次 0x449e50 才落盘）。
 class EndingSaveBytes {
 public:

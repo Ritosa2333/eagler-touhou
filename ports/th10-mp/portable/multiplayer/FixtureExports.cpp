@@ -344,9 +344,11 @@ u32 mp_fixture_prepare(browser::Application* app,u32 kind){
        app->state.netplay_runtime.HasRollbackRequest()||
        app->value.screen!=app->value.pending_screen)return 0;
     auto& runtime=app->state.netplay_runtime;
-    if(runtime.LastSimulatedFrame()==Netplay::INVALID_FRAME||
+    const bool spectatorStageClear=kind==6&&runtime.Spectator()&&
+        runtime.StagePlaybackController().Initialized();
+    if(!spectatorStageClear&&(runtime.LastSimulatedFrame()==Netplay::INVALID_FRAME||
        runtime.ConfirmedThroughAllRemotes()<runtime.LastSimulatedFrame()||
-       runtime.ConfirmedThroughAllRemotes()==Netplay::INVALID_FRAME)return 0;
+       runtime.ConfirmedThroughAllRemotes()==Netplay::INVALID_FRAME))return 0;
     if(kind<1||kind>13)return 0;
     auto& world=*app->world;
     if(world.player_count<2||world.player_count>Netplay::MAX_PLAYERS)return 0;

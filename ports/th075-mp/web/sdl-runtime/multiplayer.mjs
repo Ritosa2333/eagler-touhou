@@ -34,19 +34,24 @@ export function validateMultiplayerOptions(options){
 }
 
 export class Multiplayer {
-  constructor({core,options,build,emit,onError,onFinished,isBusy}){
-    Object.assign(this,{core,options,build,emit,onError,onFinished,isBusy});
+  constructor({core,options,build,emit,onError,onFinished,onReplaySaved,isBusy}){
+    Object.assign(this,{core,options,build,emit,onError,onFinished,onReplaySaved,isBusy});
     this.reportError=e=>{if(this.failed)return;this.failed=true;clearInterval(this.timer);this.calibration?.stop();globalThis.__eaglerNetplayFailed=true;globalThis.__eaglerNetplayError=e?.message||String(e);onError(e);};
     this.spectator=options.netplaySpectator===true;this.closed=false;this.finished=false;
+    this.savedReplays=0;
+    this.lastMatch=null;
   }
   async connect(){
     const {core,options:o}=this,{url,spectator}=validateMultiplayerOptions(o);
     core.eaglerOptions=o;
     const [a,b]=o.netplayLoadouts;
-    const prepared=await core.ccall('th075_mp_prepare','number',Array(6).fill('number'),[o.netplaySeed,a.character,b.character,a.shot,b.shot,o.netplayDifficulty],{async:true});
+    const inGameSelection=o.netplayInGameSelection===true;
+    const prepareArgs=inGameSelection?[o.netplaySeed,o.netplayDifficulty]:[o.netplaySeed,a.character,b.character,a.shot,b.shot,o.netplayDifficulty];
+    const prepared=await core.ccall(inGameSelection?'th075_mp_prepare_selection':'th075_mp_prepare','number',prepareArgs.map(()=>'number'),prepareArgs,{async:true});
     if(!prepared)throw Error(core.UTF8ToString(core._th075_error())||'TH075 multiplayer preparation failed');
     if(typeof core.th075ContentIdentity!=='string'||!core.th075ContentIdentity)throw Error('Missing TH075 content identity');
-    const identity=JSON.stringify({content:core.th075ContentIdentity,build:this.build.version,seed:o.netplaySeed,difficulty:o.netplayDifficulty,loadouts:o.netplayLoadouts,background:0,timingMode:o.netplayAdonisMode,predictionLimit:o.netplayPredictionLimit??0});
+    const identity=JSON.stringify({content:core.th075ContentIdentity,build:this.build.version,seed:o.netplaySeed,difficulty:o.netplayDifficulty,
+      selection:inGameSelection?'in-game-synchronized-load':o.netplayLoadouts,timingMode:o.netplayAdonisMode,predictionLimit:o.netplayPredictionLimit??0});
     const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(identity)),abi=new DataView(hash).getUint32(0,true)||1;
     const run=(BigInt(url.searchParams.get('run'))<<16n|BigInt(o.netplaySeed))+1n;
     if(run>0xffffffffffffffffn)throw Error('TH075 run identity overflow');
@@ -55,6 +60,7 @@ export class Multiplayer {
     const args=[url.href,spectator?o.netplaySpectatorId:'',spectator?2:o.netplayPlayer,Number(run&0xffffffffn),Number(run>>32n),abi,
       o.netplaySeed,a.character,b.character,a.shot,b.shot,o.netplayDifficulty,o.netplayInputDelay??0,+o.netplayInputDelayAuto];
     if(!core.ccall('th075_mp_begin','number',['string','string',...Array(12).fill('number')],args))throw Error('TH075 peer transport initialization failed');
+    this.transport=globalThis.__th075PeerTransport=globalThis.__eaglerPeerTransport;
     globalThis.__eaglerNetplayLanActive=false;globalThis.__eaglerNetplaySpectator=spectator;
     globalThis.__eaglerNetplayLanRollback=globalThis.__eaglerNetplayLanResimulated=0;
     globalThis.__eaglerNetplayLanFrame=globalThis.__eaglerNetplayLanConfirmed=0;
@@ -75,14 +81,41 @@ export class Multiplayer {
   reportPlayback(){
     const at=this.core._th075_mp_playback_state();
     if(!at)return;
-    const values=this.core.HEAPU32.subarray(at/4,at/4+7);
+    const values=this.core.HEAPU32.subarray(at/4,at/4+9);
+    // An open relay and an empty timeline precede the first confirmed frame.
+    if(!this.playbackRevision&&values[1]===0&&!(values[6]&2))return;
     const signature=values.join(',');
     if(signature===this.lastPlayback)return;
     this.lastPlayback=signature;
-    const [min,position,received,target,paused,seeking,flags]=values;
+    const [min,position,received,target,paused,seeking,flags,count,lastMarker]=values;
+    if (this.markerFrame!==lastMarker||this.markerMinimum!==min) {
+      const start=this.core._th075_mp_playback_marks()/4,nodes=[];
+      for(let i=0;i<count;i++){
+        const offset=start+i*3,[frame,round,match]=this.core.HEAPU32.subarray(offset,offset+3);
+        if(frame>=min)nodes.push({id:frame,kind:round?'round':'match',frame,stage:round||match,bossSlots:0});
+      }
+      this.nodes=nodes;this.markerFrame=lastMarker;this.markerMinimum=min;
+    }
+    // A manual rewind rebuilds from room history. Keep the current match's
+    // bounds and clock anchored to the requested frame during that rebuild.
+    const cursor=seeking&&!(flags&1)?target:position;
+    const match=this.nodes.findLast(node=>node.kind==='match'&&node.frame<=cursor);
+    const nextMatch=this.nodes.find(node=>node.kind==='match'&&node.frame>cursor);
+    const matchMin=match?.frame??min;
+    const edge=nextMatch?nextMatch.frame-1:received;
     this.emit('runtime-info',{spectatorPlayback:{version:1,run:this.playbackRun,
-      revision:++this.playbackRevision,min,position,received,edge:received,target,
-      paused:!!paused,seeking:!!seeking,following:!!(flags&1),ended:!!(flags&2),nodes:[]}});
+      revision:++this.playbackRevision,min:matchMin,position:Math.max(matchMin,position),
+      received,edge,target:Math.max(matchMin,target),paused:!!paused,seeking:!!seeking,
+      following:!!(flags&1),ended:!!(flags&2),nodes:this.nodes.filter(node=>node.frame>=matchMin&&node.frame<=edge)}});
+  }
+  reportMatch(){
+    const offset=this.core._th075_mp_match_report()/4;
+    const [start,frames,winner]=this.core.HEAPU32.subarray(offset,offset+3);
+    if(start===0xffffffff)return;
+    const last=this.lastMatch;
+    if(last?.start===start&&(last.winner||!winner&&frames<last.frames+3600))return;
+    this.lastMatch={start,frames,winner};
+    this.emit('runtime-info',{th075Match:{start,frames,...(winner?{winner:winner-1}:{})}});
   }
   playback({run,action,frame}){
     const operation=['pause','play','seek','live'].indexOf(action);
@@ -106,6 +139,10 @@ export class Multiplayer {
     if(this.spectator){
       const now=performance.now();
       if(now>=(this.nextPlaybackReport??0)){this.nextPlaybackReport=now+200;this.reportPlayback();}
+    }else if(this.options.netplayInGameSelection===true){
+      if(this.options.netplayPlayer===0)this.reportMatch();
+      const saved=this.core._th075_mp_saved_replays();
+      if(saved>this.savedReplays){this.savedReplays=saved;this.onReplaySaved();}
     }else if(s[1]===5&&!this.finished){this.finished=true;globalThis.__eaglerNetplayLanActive=false;this.onFinished();}
   }
   markLocalPlayer(){
@@ -118,6 +155,7 @@ export class Multiplayer {
   close(){
     if(this.closed)return;this.closed=true;clearInterval(this.timer);this.calibration?.stop();
     this.core._th075_mp_end();this.marker?.remove();if(this.placeMarker)window.removeEventListener('resize',this.placeMarker);
+    if(globalThis.__th075PeerTransport===this.transport)delete globalThis.__th075PeerTransport;
     globalThis.__eaglerNetplayLanActive=false;globalThis.__eaglerNetplaySpectator=false;
   }
 }

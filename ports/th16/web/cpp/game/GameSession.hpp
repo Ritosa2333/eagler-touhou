@@ -220,7 +220,7 @@ private:
     void create_bombs();
     // 0x40da90（0x42d200 无条件调用）
     void destroy_bombs();
-    // 原版各管理器直接读 DAT_004a6da8 / DAT_004a6da4 的发动状态与解放等级；这里在每条消费链前镜像一次
+    // 敌机伤害修正和道具吸引在各自的更新链前读取炸弹 / 解放状态。
     void sync_bomb_state();
     // 炸弹代码段登记的音效 / Gui 通知 / 画面震动（0x45d150 kind 1 与 kind 8）
     void harvest_bomb_events();
@@ -240,6 +240,7 @@ private:
     void harvest_player_sfx();
     // 0x45d150(1, …)：登记一条链 0x13 的画面震动（ECL 517 在敌机链内请求，下一帧起消耗 game_rng）
     void create_screen_shake(const EnemyManager::ShakeRequest& request);
+    void clear_screen_shake();
     // 0x45d150(kind, duration, color, …)：登记一条链 0x13 的淡入淡出（0x45c900），DAT_004c0f40 非零时自删
     void create_screen_fade(i32 kind, i32 duration, u32 color);
     void sample_input();

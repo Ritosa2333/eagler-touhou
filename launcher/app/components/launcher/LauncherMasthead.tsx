@@ -15,17 +15,18 @@ import {
   FlaskConical,
   FileText,
   ShieldCheck,
+  Gamepad2,
+  House,
+  UsersRound,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { uiPortalHost } from '../../ui/portal';
 import { usePopupPadding } from '../../ui/use-popup-padding';
 import { useLocale } from '../../i18n';
-import libraryAnnouncements from '../../../content/LIBRARY_ANNOUNCEMENTS.json';
 import { useCompactNavigation } from '../../navigation/navigation-motion';
 import { useSurfaceLayerState } from '../../navigation/surface-layer';
 import { AppLink } from './AppLink';
 import { BookThemeToggle } from './BookThemeToggle';
-import { LibraryAnnouncements } from './LibraryAnnouncements';
 import type { BackgroundSurface } from './CustomBackground';
 import { isTh09RatingPage } from '../documents/catalog';
 import { MastheadOverview, type MastheadSiteLink } from './MastheadOverview';
@@ -33,7 +34,10 @@ import { useLocation } from 'react-router';
 import { AccountMenu } from './AccountMenu';
 import { MastheadTooltip } from './MastheadTooltip';
 import { NavigationIcon } from './NavigationIcon';
-import { SiteBrand } from './SiteBrand';
+import {SiteBottomNavigation} from './SiteNavigation';
+import {LauncherWordmark} from './LauncherWordmark';
+import {MastheadInbox} from './MastheadInbox';
+import {launcherSectionHref, useLauncherSection} from './launcher-sections';
 import { UI_LOCALES, UI_LOCALE_LABELS, withUiLanguage } from '../../../src/launcher/i18n.mts';
 import { MULTIPLAYER_GUIDE_PATH } from '../../../lib/multiplayer-guide.mjs';
 import { accountsEnabled, uiReviewEnabled } from '../../release-features';
@@ -44,6 +48,7 @@ export interface LauncherMastheadProps {
   /** Published pre-session markup has native links and no menu owner. */
   interactive?: boolean;
   variant: 'library' | 'lobby' | 'help';
+  librarySearchRef?: React.Ref<HTMLDivElement>;
   nativeLinks?: boolean;
   assetUrl: (path: string) => string;
   launcherHref: string;
@@ -75,7 +80,9 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
   const themeSurfaces: readonly BackgroundSurface[] | undefined = variant === 'help'
     ? isTh09RatingPage(pathname) ? ['navigation', 'panel'] : ['navigation']
     : undefined;
-  const currentPage = profileOpen || props.replayActive || variant === 'help' ? undefined : variant;
+  const selectedSection = useLauncherSection();
+  const section = interactive ? selectedSection : null;
+  const currentPage = profileOpen || section || props.replayActive || variant === 'help' ? undefined : variant;
   const compact = useCompactNavigation();
   const [overviewOpen, setOverviewOpen] = useSurfaceLayerState<boolean>('masthead-overview', false);
   useLayoutEffect(() => {
@@ -95,6 +102,8 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
   const [testFeatures,setTestFeatures]=useState(false);
   useLayoutEffect(() => {if (interactive) setTestFeatures(testFeaturesEnabled(window));}, [interactive]);
   const masthead = useRef<HTMLElement>(null);
+  const mobileNavigation = !profileOpen && !props.replayActive && variant !== 'help' && (!section || section === 'home');
+  const mobileHeader = mobileNavigation && variant === 'library' && section !== 'home';
   useLayoutEffect(() => {
     if (!interactive) return;
     const header = masthead.current,
@@ -103,15 +112,12 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     const property = '--site-header-height',
       previous = container.style.getPropertyValue(property);
     let applied = '';
-    const sync = () => {
-      const height = header.getBoundingClientRect().height;
-      if (height > 0) {
-        applied = `${height}px`;
-        if (container.style.getPropertyValue(property) !== applied) container.style.setProperty(property, applied);
-      }
-    };
-    sync();
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(sync);
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(([entry]) => {
+      const height = entry?.borderBoxSize[0]?.blockSize;
+      if (height == null) return;
+      applied = `${height}px`;
+      if (container.style.getPropertyValue(property) !== applied) container.style.setProperty(property, applied);
+    });
     observer?.observe(header);
     return () => {
       observer?.disconnect();
@@ -146,8 +152,8 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
   const helpLinks: MastheadSiteLink[] = [
     faqLink,
     {href: withUiLanguage(props.assetUrl(MULTIPLAYER_GUIDE_PATH.slice(1)), locale), icon: <NavigationIcon name="multiplayerGuide"/>, label: t('multiplayerGuide.title')},
-    ...(uiReviewEnabled ? [{href: withUiLanguage(props.assetUrl('ui-review.html'), locale), icon: <NavigationIcon name="handbook"/>, label: t('nav.uiHandbook'), external: true}] : []),
   ];
+  const handbookLink = uiReviewEnabled ? [{href: withUiLanguage(props.assetUrl('ui-review.html'), locale), icon: <NavigationIcon name="handbook"/>, label: t('nav.uiHandbook'), external: true}] : [];
   const statusLink: MastheadSiteLink = {href: withUiLanguage(props.assetUrl('uptime/'), locale), icon: <ActivityLogIcon aria-hidden="true"/>, label: t('nav.serviceStatus')};
   const aboutLinks: MastheadSiteLink[] = [
     {href: props.aboutHref, icon: <InfoCircledIcon/>, label: t('nav.siteInfo')},
@@ -163,15 +169,16 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
   </DropdownMenu.Item>);
   const menuTrigger = <Button ref={trigger} variant="ghost" size="icon" className="masthead-action masthead-menu-toggle"
     id="mastheadMenuToggle" aria-label={t('nav.more')} disabled={!interactive}>
-    <NavigationIcon name={compact ? 'drawer' : 'menu'}/>
+    <NavigationIcon name="menu"/>
   </Button>;
-  return (
+  return <>
     <header
       ref={masthead}
       className={`masthead book-masthead${variant === 'lobby' ? ' lobby-masthead' : ''}`}
+      data-mobile-header={mobileHeader}
     >
-      <Link className="brand book-brand" id="launcherLink" href={props.launcherHref} aria-label="EAGLER TOUHOU">
-        <SiteBrand assetUrl={props.assetUrl} />
+      <Link className="brand book-brand" id="launcherLink" href={props.launcherHref} aria-label="東方 Online">
+        <LauncherWordmark/>
         <time
           className="brand-version"
           id="brandUpdateAge"
@@ -184,25 +191,26 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
       <nav className="book-main-nav" aria-label={t('nav.main')}>
         <Link
           href={props.launcherHref}
+          title={t('nav.single')}
+          aria-label={t('nav.single')}
           aria-current={currentPage === 'library' ? 'page' : undefined}
         >
           <NavigationIcon name="single" />
-          {t('nav.single')}
+          <span>{t('nav.single')}</span>
         </Link>
         <Link
           className="book-lobby-link"
           href={lobbyHref}
+          title={t('nav.lobby')}
+          aria-label={t('nav.lobby')}
           aria-current={currentPage === 'lobby' ? 'page' : undefined}
         >
           <NavigationIcon name="multiplayer" />
-          {t('nav.lobby')}
+          <span>{t('nav.lobby')}</span>
         </Link>
       </nav>
       <Tooltip.Provider delayDuration={0} disableHoverableContent>
       <nav className="masthead-links" aria-label={t('nav.siteInfo')}>
-        {accountsEnabled && (
-          <AccountMenu interactive={interactive} assetUrl={props.assetUrl}/>
-        )}
         <a
           className="masthead-link"
           id="originMigrationOpen"
@@ -234,12 +242,11 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             </Button>
           </MastheadTooltip>
         )}
-        <LibraryAnnouncements entries={libraryAnnouncements} disabled={!interactive} />
         <BookThemeToggle interactive={interactive} surfaces={themeSurfaces} tooltip />
         {!compact && <div hidden ref={language}>
           {props.languageControl}
         </div>}
-        {compact ? <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} lobbyHref={lobbyHref} currentPage={currentPage} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={aboutLinks} testFeatures={testFeatures} themeSurfaces={themeSurfaces}/> : <DropdownMenu.Root
+        {compact ? <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/> : <DropdownMenu.Root
           modal={false}
           open={interactive && menuOpen}
           onOpenChange={(open) => {
@@ -340,7 +347,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                     <DropdownMenu.Item className="ui-menu-item" id="firstUseNoticeOpen" onSelect={props.onFirstUse}>
                       <NavigationIcon name="firstUse"/>{t('nav.firstUseNotice')}
                     </DropdownMenu.Item>
-                    {menuLinks(helpLinks)}
+                    {menuLinks([...helpLinks, ...handbookLink])}
                   </DropdownMenu.Group>
                   <DropdownMenu.Separator className="ui-menu-separator" />
                   <DropdownMenu.Group aria-label={t('nav.site')}>
@@ -403,7 +410,20 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           </DropdownMenu.Portal>
         </DropdownMenu.Root>}
       </nav>
+      {props.librarySearchRef && <div className="masthead-library-search" ref={props.librarySearchRef}/>}
+      <div className="masthead-trailing">
+        <MastheadInbox compact={compact} interactive={interactive} homeHref={props.launcherHref} assetUrl={props.assetUrl} nativeLinks={props.nativeLinks}/>
+        {accountsEnabled && !compact && <AccountMenu interactive={interactive} assetUrl={props.assetUrl}/>}
+      </div>
       </Tooltip.Provider>
     </header>
-  );
+    {mobileNavigation && <SiteBottomNavigation className="launcher-bottom-navigation" activeId={section ?? currentPage ?? ''}
+      items={[
+        {id:'library', href:props.launcherHref, label:t('nav.single'), icon:Gamepad2},
+        {id:'lobby', href:lobbyHref, label:t('nav.lobby'), icon:UsersRound},
+        {id:'home', href:launcherSectionHref(props.launcherHref, 'home'), label:t('launcher.home'), icon:House},
+      ]}
+      renderLink={(item, link) => <Link href={item.href} {...link}/>}
+    />}
+  </>;
 }

@@ -31,6 +31,7 @@ import {useSurfaceNavigation} from './navigation/surface-navigation';
 import {isLauncherHomePath, launcherBaseUrl, routerDestination} from './navigation/addresses';
 import {useLocale} from './i18n';
 import {recordBookLaunch} from './components/launcher/book-preferences';
+import {testFeaturesEnabled, reloadTestFeatures} from '../src/launcher/test-features.mts';
 import type {LobbySurfaceProps} from './components/launcher/LobbySurface';
 
 const ReplayWorkspace = lazy(() => import('./components/player/ReplayWorkspace').then(module => ({default:module.ReplayWorkspace})));
@@ -66,22 +67,34 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const roomWorkspace = hasRoom && !replayWorkspace && (state.th09NetworkOverlayOpen || !state.roomPlayerExpanded && !state.fullscreen);
   const metadataProducts = useStoreSelector(session.metadata, value => value.products);
   const lessMotion = useStoreSelector(session.preferences, value => value.lessMotion);
+  const diagnostics = session.getDiagnostics();
+  const diagnosticState = useSyncExternalStore(diagnostics?.subscribe ?? emptySubscribe, diagnostics?.getSnapshot ?? noDiagnostics, noDiagnostics);
+  const beta = testFeaturesEnabled(window);
   const firstUse = useRef<FirstUseNoticeHandle>(null), network = useRef<NetworkDiagnosticsHandle>(null);
   const [networkRunning, setNetworkRunning] = useState(false);
   const [donationAvailable, setDonationAvailable] = useState(true);
   const [settingsClosing, setSettingsClosing] = useState(false);
+  const [librarySearchTarget, setLibrarySearchTarget] = useState<HTMLDivElement | null>(null);
   const assetUrl = useMemo(() => (path: string) => new URL(path, session.baseUrl).href, [session]);
   const products = useMemo(() => createLibraryProducts(metadataProducts, assetUrl, id => `?game=${id}`), [metadataProducts, assetUrl]);
   const catalogProducts = useMemo(() => createLibraryProducts(PRODUCT_IDS, assetUrl, id => `?game=${id}`), [assetUrl]);
-  const masthead = <Header session={session} firstUse={firstUse} donationAvailable={donationAvailable}/>;
+  const masthead = <Header session={session} firstUse={firstUse} donationAvailable={donationAvailable}
+    librarySearchRef={setLibrarySearchTarget}/>;
   const host: LauncherHost = {
     desktopLibraryDetails: true,
+    librarySearchTarget,
     locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, preferences: session.preferences, touchLayout: session.touchLayout,
     settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions, readLocalSaves:session.readLocalSaves, cloudSync:session.cloudSync,
     watchTh09Replay: session.accessTh09MatchReplay,
     bootTouchPreview: state.bootTouchPreview !== null, bootTouchPreviewImage: state.bootTouchPreviewImage,
     nativeTouch: session.nativeTouch, touchFireEnabled: state.touchFireEnabled, assetUrl, lobbyHref: assetUrl('lobby.html'), masthead,
-    serverStatusNote: <ServerStatusNote session={session}/>, metadataRevision: state.metadataRevision,
+    launcherPreferences: {
+      languageControl: <LanguageControl session={session}/>,
+      lessMotion, onToggleMotion: session.preferences.toggleMotion,
+      diagnosticsEnabled: diagnosticState?.enabled ?? false, onToggleDiagnostics: () => diagnostics?.toggle(),
+      testFeatures: beta, onToggleTestFeatures: () => reloadTestFeatures(window, !beta),
+    },
+    metadataRevision: state.metadataRevision,
     replayWorkspace,
     roomWorkspace,
     roomGameplayKeyboard: state.roomGameplayKeyboard,
@@ -162,10 +175,11 @@ function RoomDrawer({session, onClosingChange}: {session: BrowserSession; onClos
   return createPortal(<RoomSettingsDrawer roomOpen={navigation.roomCode !== null && navigation.productId !== null && isMultiplayerProductId(navigation.productId)} open={navigation.roomSettingsOpen} onCloseRequest={navigation.closeRoomSettings}
     foregroundActive={navigation.surface === 'touch' || playerOpen} onClosingChange={onClosingChange}/>, document.body);
 }
-function Header({session, firstUse, donationAvailable}: {
+function Header({session, firstUse, donationAvailable, librarySearchRef}: {
   session: BrowserSession; firstUse: React.RefObject<FirstUseNoticeHandle | null>; donationAvailable: boolean;
+  librarySearchRef: React.Ref<HTMLDivElement>;
 }) {
-  const navigation = useSurfaceNavigation(), {locale, t} = useLocale();
+  const navigation = useSurfaceNavigation(), {locale} = useLocale();
   const prefs = useSyncExternalStore(session.preferences.subscribe, session.preferences.getSnapshot, session.preferences.getSnapshot);
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
   const diagnostics = session.getDiagnostics();
@@ -173,17 +187,31 @@ function Header({session, firstUse, donationAvailable}: {
   const updatedAge = useSyncExternalStore(session.appShell.brandAge.subscribe, session.appShell.brandAge.getSnapshot, session.appShell.brandAge.getSnapshot);
   const [menuOpen, setMenuOpen] = useState(false), url = (path: string) => new URL(path, session.baseUrl).href;
   return <LauncherMasthead updatedAge={updatedAge} variant={navigation.context} assetUrl={url} launcherHref={url(localeHome(locale))}
+    librarySearchRef={librarySearchRef}
     replayActive={navigation.infoDialogOpen('replayDialog')}
     onReplay={() => {const product = navigation.context === 'lobby' ? session.directory.getSnapshot().selectedProduct || session.directory.getSnapshot().products[0] || 'th06mp' : navigation.productId ?? session.settings.getSnapshot()?.context.productId ?? session.metadata.getSnapshot().products[0]; if (product) void session.openReplayViewer(product).catch(session.reportError);}}
     faqHref={withUiLanguage(url('faq.html'),locale)} aboutHref={withUiLanguage(url('about.html'),locale)} migrationPolicyKnown={metadata.siteManifest !== null} migrationHref={metadata.siteManifest && siteOriginMigrationAvailable(metadata.siteManifest, window.location.protocol) ? url('migrate.html') : undefined}
     menuOpen={menuOpen} onMenuOpenChange={setMenuOpen} lessMotion={prefs.lessMotion} onToggleMotion={session.preferences.toggleMotion}
     diagnosticsEnabled={diagnosticState?.enabled ?? false} onToggleDiagnostics={() => diagnostics?.toggle()}
     donationAvailable={donationAvailable} onDonation={() => navigation.openInfoDialog('donationDialog')} onFirstUse={() => {void firstUse.current?.showManual();}}
-    languageControl={<MainSelect id="uiLanguageSelect" className="option-select ui-language-select" data-trigger-i18n="ui.language.menu" aria-label={t('ui.language')} value={locale} onChange={event => {if (isUiLocale(event.target.value)) session.setLocale(event.target.value);}}>{UI_LOCALES.map(value => <option key={value} value={value}>{t(UI_LOCALE_LABELS[value])}</option>)}</MainSelect>}/>;
+    languageControl={<LanguageControl session={session} id="uiLanguageSelect"/>}/>;
+}
+function LanguageControl({session, id}: {session: BrowserSession; id?: string}) {
+  const {locale, t} = useLocale();
+  return <MainSelect id={id} density="compact" className="option-select ui-language-select" data-trigger-i18n="ui.language.menu"
+    aria-label={t('ui.language')} value={locale} onChange={event => {if (isUiLocale(event.target.value)) session.setLocale(event.target.value);}}>
+    {UI_LOCALES.map(value => <option key={value} value={value}>{t(UI_LOCALE_LABELS[value])}</option>)}
+  </MainSelect>;
 }
 function ServerStatusNote({session}: {session: BrowserSession}) {
   const {status} = useSyncExternalStore(session.appShell.subscribe, session.appShell.getSnapshot, session.appShell.getSnapshot);
-  return <div className="server-status-note" id="serverStatusNote" role="status" aria-live="polite" hidden={!status.text} data-kind={status.text ? status.kind : undefined}>{status.text}</div>;
+  const lastFailure = useRef('');
+  useEffect(() => {
+    const failure = status.kind === 'offline' ? status.text : '';
+    if (failure && failure !== lastFailure.current) session.feedback.toast(failure, 6000);
+    lastFailure.current = failure;
+  }, [session, status.kind, status.text]);
+  return <div className="visually-hidden" id="serverStatusNote" role={status.kind === 'offline' ? undefined : 'status'} data-kind={status.kind || undefined}>{status.text}</div>;
 }
 function Directory({session, network, ...props}: LobbySurfaceProps & {session: BrowserSession; network: React.RefObject<NetworkDiagnosticsHandle | null>}) {
   const navigation = useSurfaceNavigation();
@@ -194,6 +222,11 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
     return isMultiplayerProductId(product) ? product : '';
   }, [location.search]);
   const directory = useSyncExternalStore(session.directory.subscribe, session.directory.getSnapshot, session.directory.getSnapshot);
+  const hostManifest = useStoreSelector(session.metadata, value => value.siteManifest);
+  // The Launcher already knows the published products before the lobby connects.
+  const products = directory.siteManifest
+    ? createLibraryProducts(directory.products, path => new URL(path, session.baseUrl).href, id => `?game=${id}`)
+    : hostManifest ? props.products : [];
   const productFilters = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return [...new Set((params.get('games') || '').split(','))]
@@ -213,7 +246,7 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
       window.removeEventListener('online', session.directory.online); window.removeEventListener('offline', session.directory.offline); document.removeEventListener('visibilitychange', visible); connection?.removeEventListener('change', session.directory.networkChanged);};
   }, [session]);
   useEffect(() => {session.directory.selectProduct(productFilters.length === 1 ? productFilters[0] : viewingProduct);}, [session, productFilters, viewingProduct]);
-  return <LobbyDirectoryView {...props} initialRows={document.documentElement.hasAttribute('data-lobby-boot')} service={session.directory} products={createLibraryProducts(directory.products, path => new URL(path, session.baseUrl).href, id => `?game=${id}`)}
+  return <LobbyDirectoryView {...props} initialRows={document.documentElement.hasAttribute('data-lobby-boot')} service={session.directory} products={products}
     viewingProduct={viewingProduct} onSelect={id => {
       const next = new URL(window.location.href); next.searchParams.delete('games');
       next.searchParams.delete('game'); if (id) next.searchParams.set('game', id);
@@ -225,16 +258,20 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
     }}
     assetUrl={path => new URL(path, session.baseUrl).href} guideHref={withUiLanguage(new URL(multiplayerGuidePath().slice(1), session.baseUrl).href, locale)}
     onNetwork={() => {navigation.openInfoDialog('lobbyNetworkDialog'); void network.current?.run();}}
+    onReplay={() => {void session.openReplayViewer(directory.selectedProduct || directory.products[0] || 'th06mp').catch(session.reportError);}}
     onOpenForm={mode => {if (session.directory.prepareForm(mode)) navigation.openDirectoryForm(mode);}}/>;
 }
 function SessionLaunchActions({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation(), {t} = useLocale();
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
+  const metadata = session.metadata.getSnapshot();
+  const importRequired = (productRequiresImport(settings.gameId) || metadata.siteManifest?.shared.resourceMode === 'import') &&
+    !metadata.installed.has(settings.gameId);
   return <LaunchActions primary={{id: 'launch', textId: 'launchText',
-    label: t((productRequiresImport(settings.gameId) || session.metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import') && !session.metadata.getSnapshot().installed.has(settings.gameId) ? 'action.importGameData' : settings.multiplayer ? 'action.startMultiplayer' : 'action.start'),
+    label: t(importRequired ? 'action.importGameData' : 'action.start'),
     onClick: () => {if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);}}}
-    secondary={{id: 'gamePackageImport', label: t('action.import'), onClick: session.gameData.openManual}}/>;
+    secondary={{id: 'gamePackageImport', label: t('action.import'), onClick: () => navigation.openInfoDialog('gameDataImportDialog')}}/>;
 }
 function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, network, onNetworkRunning}: {
   session: BrowserSession; firstUse: React.RefObject<FirstUseNoticeHandle | null>;
@@ -273,7 +310,9 @@ function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, ne
   useEffect(() => {void session.restoreRoomFromUrl(new URL(location.pathname+location.search+location.hash,session.baseUrl).href).catch(session.reportError);}, [session, location.pathname, location.search, location.hash]);
   useLayoutEffect(() => session.settleRoomReturnPresentation(navigation.surface, navigation.productId), [session, navigation.surface, navigation.productId]);
   useLayoutEffect(() => {if (navigation.directoryFormMode) session.directory.restoreFormMode(navigation.directoryFormMode);}, [session, navigation.directoryFormMode]);
-  return <><input id="fileInput" type="file" hidden/><FullscreenTransient><Feedback model={session.feedback}/><StartupError model={session.startupError}/><GameDataImportWindows model={session.gameData} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}/></FullscreenTransient>
+  return <><input id="fileInput" type="file" hidden/><FullscreenTransient><ServerStatusNote session={session}/><Feedback model={session.feedback}/><StartupError model={session.startupError}/>
+    <GameDataImportWindows model={session.gameData} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}
+      manualOpen={navigation.infoDialogOpen('gameDataImportDialog')} onManualClose={() => navigation.closeInfoDialog('gameDataImportDialog')}/></FullscreenTransient>
     {navigation.context === 'lobby' && <NetworkDiagnosticsDialog model={session.networkDiagnostics} ref={network} open={navigation.infoDialogOpen('lobbyNetworkDialog')} onCloseRequest={() => navigation.closeInfoDialog('lobbyNetworkDialog')}
       getRelayUrl={() => {const relay = session.directory.getSnapshot().siteManifest?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';}} onRunningChange={onNetworkRunning}/>}
     {navigation.context === 'lobby' && <DirectoryRoomDialog service={session.directory} assetUrl={assetUrl} open={navigation.directoryFormMode !== null} onCloseRequest={navigation.closeDirectoryForm}

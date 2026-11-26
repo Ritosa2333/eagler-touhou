@@ -193,8 +193,13 @@ export function createRoomSession(options: RoomSessionOptions) {
     if (document.visibilityState === 'visible') service.reconnect();
   };
   const unlockRoomAudio = (event: Event) => {
-    if (event.isTrusted && (service.getSnapshot().room || document.body.classList.contains('lobby-page')))
-      roomAudio.unlock();
+    if (!event.isTrusted) return;
+    const target = event.target instanceof Element ? event.target : null;
+    // Audio unlock requires a gesture. Keep it on the directory's room controls,
+    // so clicks in the persistent site navigation never initialize audio.
+    const roomControl = document.body.classList.contains('lobby-page') &&
+      target?.closest('.lobby-room-tools, .lobby-list-surface, .lobby-dialog');
+    if (service.getSnapshot().room || roomControl) roomAudio.unlock();
   };
   const activity = (event: Event) => {
     service.noteActivity(event.isTrusted);
