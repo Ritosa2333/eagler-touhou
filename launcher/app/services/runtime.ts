@@ -616,6 +616,9 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         else delete next.renderer;
       }
       update({ runtimeInfo: Object.freeze(next), ...(info.netplayTiming !== undefined ? { netplayTiming: info.netplayTiming } : {}) });
+      // A stopped network session can still answer save RPCs. Let the Launcher
+      // show its return control even if the battle never reached a first frame.
+      if (info.netplayStopped === true && launchRequested) settle('first-frame');
     } else if (message.event === 'transfer') {
       for (const item of pending.values()) item.progress?.(String(message.mode ?? ''), Number(message.loaded));
       update({ progress: Object.freeze({ ...message }) });

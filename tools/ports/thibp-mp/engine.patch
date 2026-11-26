@@ -1,0 +1,2355 @@
+diff --git a/portable/BrowserMain.cpp b/portable/BrowserMain.cpp
+--- a/portable/BrowserMain.cpp
++++ b/portable/BrowserMain.cpp
+@@ -1,5 +1,6 @@
+ #include "GcLibImpl.hpp"
+ #include "StgSystem.hpp"
++#include "System.hpp"
+ #include "DirectInput.hpp"
+ #include "DirectSound.hpp"
+ #include "input/TouchController.hpp"
+@@ -116,6 +117,31 @@
+     failed=true;std::fprintf(stderr,"Woo fatal: %s\n",message.c_str());
+     EM_ASM({const message=UTF8ToString($0);const d=globalThis.ph3Diagnostics;if(d){d.errors.push(message);d.phase='error';}const e=document.getElementById('status');if(e)e.textContent=message;},message.c_str());
+ }
++void reportCooperativeStage(StgStageController& stage)
++{
++    auto info = stage.GetStageInformation();
++    EM_ASM({
++        const d = globalThis.ph3Diagnostics;
++        if (d) d.coop = ({ frame: $0, tick: $1 >>> 0, seed: $2 >>> 0, players: [],
++            specialSeat: $3, specialStarts: $4, specialProtected: !!$5 });
++    }, info->GetCurrentFrame(), info->IsReplay() ? info->GetCurrentFrame() : thibp::cooperativeRun().NextTick(),
++       info->GetMersenneTwister()->GetSeed(), stage.GetSpecialSeat(), stage.GetSpecialStarts(),
++       stage.IsSpecialProtectionActive());
++    for (int seat = 0; seat < stage.GetPlayerCount(); ++seat) {
++        auto player = stage.GetPlayerObject(seat);
++        if (player == NULL) continue;
++        EM_ASM({
++            globalThis.ph3Diagnostics?.coop.players.push({
++                id: $0, x: $1, y: $2, life: $3, bombs: $4, state: $5,
++                type: $6, deaths: $7, invincibility: $8,
++            });
++        }, player->GetObjectID(), player->GetX(), player->GetY(),
++           player->GetLife(), player->GetSpell(), player->GetState(),
++           thibp::cooperativeRun().PlayerType(seat), player->GetChallengeDeaths(),
++           player->GetInvincibilityFrame());
++    }
++}
++
+ bool reportState(){
+     auto manager=ETaskManager::GetInstance();
+     if(!manager)return true;
+@@ -125,7 +151,8 @@
+         auto info=system->GetSystemInformation();
+         if(info->IsError()){fail(gstd::StringUtility::ConvertWideToMulti(info->GetErrorMessage(),CP_UTF8));return false;}
+         auto stage=system->GetStageController();
+-        if(!stage){EM_ASM({if(globalThis.ph3Diagnostics)globalThis.ph3Diagnostics.stage=null;});continue;}
++        if(!stage){EM_ASM({const d=globalThis.ph3Diagnostics;if(d){d.stage=null;d.coop=null;}});continue;}
++        if (stage->GetPlayerCount() > 1) reportCooperativeStage(*stage);
+         auto state=stage->GetStageInformation();
+         auto player=stage->GetPlayerObject();
+         auto main=state->GetMainScriptInformation();
+@@ -146,7 +173,7 @@
+     touhou::input::TouchState state;
+     StgPlayerObject* player=nullptr;
+ };
+-HsobTouchContext getTouchContext(){
++HsobTouchContext getTouchContext(int seat = -1){
+     HsobTouchContext result;
+     auto manager=ETaskManager::GetInstance();
+     if(!manager)return result;
+@@ -157,7 +184,8 @@
+         if(!stage)return result;
+         auto info=stage->GetStageInformation();
+         auto systemInfo=system->GetSystemInformation();
+-        auto playerRef=stage->GetPlayerObject();
++        if(seat<0&&stage->GetPlayerCount()>1)return result;
++        auto playerRef=seat<0?stage->GetPlayerObject():stage->GetPlayerObject(seat);
+         auto player=playerRef.GetPointer();
+         if(systemInfo->GetScene()!=StgSystemInformation::SCENE_STG||info->IsPause()||player==nullptr)return result;
+         result.player=player;
+@@ -174,6 +202,13 @@
+     return result;
+ }
+ bool nonTouchHeld(EDirectInput* input,int key){return input->IsNonTouchKeyDown(key);}
++void aimTouchDirections(touhou::input::TouchSample& sample,const touhou::input::TouchState& state,bool keySlow){
++    if(sample.motion!=1||state.context!=1||!state.ready)return;
++    const double dead=std::max(0.5,((sample.keys[16]||keySlow)?state.slow:state.fast)*0.45);
++    const double dx=double(sample.x)-state.x,dy=double(sample.y)-state.y;
++    sample.keys[37]|=dx<-dead;sample.keys[39]|=dx>dead;
++    sample.keys[38]|=dy<-dead;sample.keys[40]|=dy>dead;
++}
+ void applyTouchInput(){
+     auto input=EDirectInput::GetInstance();
+     if(!input)return;
+@@ -182,23 +217,16 @@
+     const bool arrows=nonTouchHeld(input,DIK_LEFT)||nonTouchHeld(input,DIK_RIGHT)||
+         nonTouchHeld(input,DIK_UP)||nonTouchHeld(input,DIK_DOWN);
+     auto sample=touchController.sample(context.state,std::uint64_t(emscripten_get_now()),keySlow,arrows);
+-    bool left=sample.keys[37],right=sample.keys[39],up=sample.keys[38],down=sample.keys[40];
+-    if(context.player&&context.state.context==1&&context.state.ready&&sample.motion){
+-        if(sample.motion==2){
+-            context.player->SetX(std::clamp(double(sample.x),double(context.state.min_x),double(context.state.max_x)));
+-            context.player->SetY(std::clamp(double(sample.y),double(context.state.min_y),double(context.state.max_y)));
+-            EM_ASM({const d=globalThis.ph3Diagnostics;if(d)d.unlimitedTouchUsed=true;});
+-        }else{
+-            const double speed=(sample.keys[16]||keySlow)?context.state.slow:context.state.fast;
+-            const double dead=std::max(0.5,speed*0.45);
+-            const double dx=double(sample.x)-context.player->GetX(),dy=double(sample.y)-context.player->GetY();
+-            left=left||dx<-dead;right=right||dx>dead;up=up||dy<-dead;down=down||dy>dead;
+-        }
+-    }
+-    input->SetDirectTouchKeyState(DIK_LEFT,left);
+-    input->SetDirectTouchKeyState(DIK_RIGHT,right);
+-    input->SetDirectTouchKeyState(DIK_UP,up);
+-    input->SetDirectTouchKeyState(DIK_DOWN,down);
++    aimTouchDirections(sample,context.state,keySlow);
++    if(context.player&&context.state.context==1&&context.state.ready&&sample.motion==2){
++        context.player->SetX(std::clamp(double(sample.x),double(context.state.min_x),double(context.state.max_x)));
++        context.player->SetY(std::clamp(double(sample.y),double(context.state.min_y),double(context.state.max_y)));
++        EM_ASM({const d=globalThis.ph3Diagnostics;if(d)d.unlimitedTouchUsed=true;});
++    }
++    input->SetDirectTouchKeyState(DIK_LEFT,sample.keys[37]);
++    input->SetDirectTouchKeyState(DIK_RIGHT,sample.keys[39]);
++    input->SetDirectTouchKeyState(DIK_UP,sample.keys[38]);
++    input->SetDirectTouchKeyState(DIK_DOWN,sample.keys[40]);
+     input->SetDirectTouchKeyState(DIK_Z,sample.keys[90]);
+     input->SetDirectTouchKeyState(DIK_X,sample.keys[88]);
+     input->SetDirectTouchKeyState(DIK_LSHIFT,sample.keys[16]);
+@@ -249,7 +277,7 @@
+ }
+ #endif
+ bool runGameFrame(bool render){
+-    applyTouchInput();
++    if (!thibp::cooperativeRun().Started()) applyTouchInput();
+     auto* app=EApplication::GetInstance();
+ #ifdef WOO_REPLAY_VERIFY
+     const bool capture=captureNextFrame();
+@@ -283,15 +311,51 @@
+     return false;
+ }
+ #endif
++StgStageController* browserCooperativeStage()
++{
++    if (!thibp::cooperativeRun().Started()) return nullptr;
++    for (auto task : ETaskManager::GetInstance()->GetTaskList()) {
++        auto* system = dynamic_cast<StgSystemController*>(task.GetPointer());
++        if (system && system->GetSystemInformation()->GetScene() == StgSystemInformation::SCENE_STG)
++            return system->GetStageController();
++    }
++    return nullptr;
++}
++
++bool canPreview()
++{
++    auto* stage = browserCooperativeStage();
++    if (!stage || !thibp::cooperativeRun().CanPreview()) return false;
++    auto info = stage->GetStageInformation();
++    return !info->IsPause() && !info->IsEnd() && info->GetCurrentFrame() >= 1;
++}
++
++using BrowserFrameCallback = EM_BOOL (*)(double, void*);
++EM_JS(void, scheduleThibpFrames, (BrowserFrameCallback tick), {
++    const update = getWasmTableEntry(tick);
++    function draw(now) {
++        if (!update(now, 0)) return;
++        Module['thibpPreviewFrame']?.(now);
++        requestAnimationFrame(draw);
++    }
++    requestAnimationFrame(draw);
++});
++
+ EM_BOOL frame(double now,void*){
+     if(failed)return EM_FALSE;
+-    if(EM_ASM_INT({return globalThis.ph3Diagnostics?.phase==='error'?1:0;}))return EM_FALSE;
++    if(EM_ASM_INT({
++        const phase=globalThis.ph3Diagnostics?.phase;
++        return phase==='error'||phase==='disconnected'?1:0;
++    }))return EM_FALSE;
+     if(EM_ASM_INT({return document.hidden?1:0;})){previous=-1;accumulated=0;displayRefresh.Reset();nextStateReport=0;runtimeFpsStart=-1;runtimeFpsSteps=runtimeFpsPresents=0;measureStart=-1;measuredSteps=measuredPresents=0;frameCosts.clear();callbackCosts.clear();measuredQueuedLoadMax=0;previousMeasuredPresent=-1;measuredPresentIntervals=measuredMissedRefreshes=0;return EM_TRUE;}
+     try {
+         const bool observePerformance=EM_ASM_INT({return globalThis.ph3Diagnostics?.observePerformance?1:0;})!=0;
+         const double begin=observePerformance?emscripten_get_now():0;
+         auto fpsController=EFpsController::GetInstance();
+-        const int targetBefore=fpsController->GetBrowserTargetFps();
++        const auto targetFps = [fpsController] {
++            return thibp::cooperativeRun().Started() ? STANDARD_FPS : fpsController->GetBrowserTargetFps();
++        };
++        const int targetBefore=targetFps();
+         const double deltaLimit=targetBefore>STANDARD_FPS?1000.0/STANDARD_FPS:100.0;
+         const double interval=previous<0?0:now-previous;
+         accumulated+=std::min(deltaLimit,interval);previous=now;
+@@ -324,6 +388,10 @@
+         });
+         if(fastSteps==0&&requestedPerfFastSteps>1){fastSteps=requestedPerfFastSteps;perfFastMode=true;}
+ #endif
++        if (thibp::cooperativeRun().Viewing()) {
++            const int requested = EM_ASM_INT({ return Module['thibpViewFastSteps']|0; });
++            fastSteps = std::clamp(requested, 0, 12);
++        }
+         if(fastSteps>0){
+             diagnosticFast=true;
+             accumulated=0;
+@@ -341,8 +409,7 @@
+             }
+         }else{
+             for(;;){
+-                const int targetFps=fpsController->GetBrowserTargetFps();
+-                const double stepMs=1000.0/targetFps;
++                const double stepMs=1000.0/targetFps();
+                 if(accumulated+0.001<stepMs)break;
+                 accumulated-=stepMs;
+                 const bool renderPermit=fpsController->AdvanceBrowserRenderPermit();
+@@ -357,7 +424,7 @@
+             // The script VM (including its offscreen draws), input and audio
+             // have already finished this tick. Only the visible scene is sampled.
+             if(drawAtDisplayRate&&frames&&app->DidBrowserFrameWork()){
+-                if(fpsController->GetBrowserTargetFps()==STANDARD_FPS){
++                if(targetFps()==STANDARD_FPS){
+                     auto* graphics=EDirectGraphics::GetInstance();
+                     auto camera2D=graphics->GetCamera2D();
+                     const auto cameraBefore=*camera2D.GetPointer();
+@@ -419,6 +486,104 @@
+ }
+ 
+ extern "C" {
++EMSCRIPTEN_KEEPALIVE int thibp_coop_configure(int players, std::uint32_t seed)
++{
++    if (players < 2 || players > thibp::maxPlayers) return 0;
++    auto* manager = ETaskManager::GetInstance();
++    if (!manager) return 0;
++    for (auto task : manager->GetTaskList()) {
++        auto* system = dynamic_cast<StgSystemController*>(task.GetPointer());
++        if (system && system->GetStageController() != NULL) return 0;
++    }
++    thibp::cooperativeRun().Configure(players, seed);
++    return 1;
++}
++EMSCRIPTEN_KEEPALIVE void thibp_coop_set_room_title_preview(int enabled)
++{
++    thibp::cooperativeRun().SetRoomTitleLocked(enabled != 0);
++}
++EMSCRIPTEN_KEEPALIVE int thibp_coop_configure_room(int players, std::uint32_t seed, int difficulty,
++                                                  unsigned types, int challenge)
++{
++    if (players < 2 || players > thibp::maxPlayers || difficulty < 0 || difficulty > 4 ||
++        (types >> (players * 3)) != 0 || challenge < 0 || challenge > 1 ||
++        thibp::cooperativeRun().Started()) return 0;
++    for (int seat = 0; seat < players; ++seat)
++        if (((types >> (seat * 3)) & 7) >= 6) return 0;
++    thibp::cooperativeRun().Configure(players, seed, difficulty, challenge != 0, types);
++    return 1;
++}
++EMSCRIPTEN_KEEPALIVE int thibp_coop_confirm_frame(unsigned tick, unsigned one, unsigned two, unsigned three)
++{
++    return thibp::cooperativeRun().QueueFrame(tick, one, two, three) ? 1 : 0;
++}
++EMSCRIPTEN_KEEPALIVE int thibp_coop_frame()
++{
++    const auto& run = thibp::cooperativeRun();
++    return run.Started() ? static_cast<int>(run.NextTick()) : -1;
++}
++EMSCRIPTEN_KEEPALIVE std::uintptr_t thibp_coop_stage_stream()
++{
++    const auto& run = thibp::cooperativeRun();
++    if (!run.Started() || run.Viewing()) return 0;
++    static std::array<std::uint32_t, 6> status;
++    const auto& previous = run.StagePrevious();
++    status = {run.RunGeneration(), run.StageStartTick(), static_cast<unsigned>(run.StageIndex()),
++              previous[0], previous[1], previous[2]};
++    return reinterpret_cast<std::uintptr_t>(status.data());
++}
++
++EMSCRIPTEN_KEEPALIVE int thibp_coop_configure_viewer(int players, std::uint32_t seed, int difficulty,
++    unsigned types, int challenge, unsigned one, unsigned two, unsigned three, int reopen)
++{
++    auto& run = thibp::cooperativeRun();
++    if (((one | two | three) & ~thibp::validButtons) != 0 || (players == 2 && three)) return 0;
++    if (reopen && !run.Viewing()) return 0;
++    if (reopen) run.FinishRoom();
++    if (!thibp_coop_configure_room(players, seed, difficulty, types, challenge)) return 0;
++    run.SetViewer({static_cast<std::uint16_t>(one), static_cast<std::uint16_t>(two), static_cast<std::uint16_t>(three)});
++    if (reopen) SystemController::CreateInstance()->Reset();
++    return 1;
++}
++
++EMSCRIPTEN_KEEPALIVE int thibp_coop_can_preview()
++{
++    return canPreview() ? 1 : 0;
++}
++
++EMSCRIPTEN_KEEPALIVE int thibp_coop_preview(unsigned tick, unsigned one, unsigned two, unsigned three)
++{
++    auto& run = thibp::cooperativeRun();
++    if (!canPreview() || tick != run.NextTick() || !thibp::validInput(one) ||
++        !thibp::validInput(two) || !thibp::validInput(three) ||
++        (run.PlayerCount() == 2 && three)) return 0;
++    const auto stage = browserCooperativeStage();
++    const auto index = stage->GetStageInformation()->GetStageIndex();
++    run.ConsumePreview({one, two, three});
++    EApplication::GetInstance()->WorkBrowserCooperativeTick();
++    const auto next = browserCooperativeStage();
++    return next == stage && next->GetStageInformation()->GetStageIndex() == index &&
++        !next->GetStageInformation()->IsEnd() && !next->GetStageInformation()->IsPause();
++}
++
++EMSCRIPTEN_KEEPALIVE int thibp_coop_preview_draw()
++{
++    if (!browserCooperativeStage()) return 0;
++    auto device = EDirectGraphics::GetInstance()->GetDevice();
++    if (!device->BeginBrowserPreview()) return 0;
++    EApplication::GetInstance()->DrawBrowserFrame();
++    return SUCCEEDED(device->Present(nullptr, nullptr, nullptr, nullptr, false)) ? 1 : 0;
++}
++
++EMSCRIPTEN_KEEPALIVE unsigned thibp_coop_final_tick() { return thibp::cooperativeRun().NextTick(); }
++EMSCRIPTEN_KEEPALIVE int thibp_coop_finished()
++{
++    return thibp::cooperativeRun().RoomFinished() ? 1 : 0;
++}
++EMSCRIPTEN_KEEPALIVE int thibp_coop_probe()
++{
++    return (thibp::cooperativeRun().Started() || thibp::cooperativeRun().Replaying()) && reportState() ? 1 : 0;
++}
+ EMSCRIPTEN_KEEPALIVE void hsob_input_key(int key,int down){
+     auto input=EDirectInput::GetInstance();
+     if(input)input->SetInjectedKeyState(key,down!=0);
+@@ -446,10 +611,35 @@
+ EMSCRIPTEN_KEEPALIVE void hsob_touch_controls_baseline(int fire,int focus,std::uint32_t bomb,std::uint32_t escape,double x,double y){
+     touchController.controls_baseline(fire!=0,focus!=0,bomb,escape,float(x),float(y));
+ }
+-EMSCRIPTEN_KEEPALIVE void hsob_touch_pointer(int type,int id,double x,double y,double now){
++EMSCRIPTEN_KEEPALIVE std::uint32_t thibp_coop_touch_sample(int seat,unsigned buttons){
++    if(!touchController.enabled)return buttons;
++    const auto context=getTouchContext(seat);
++    const bool slow=buttons&(1u<<EDirectInput::KEY_SLOWMOVE);
++    auto sample=touchController.sample(context.state,std::uint64_t(emscripten_get_now()),slow,buttons&0xf);
++    aimTouchDirections(sample,context.state,slow);
++    const auto set=[&](bool down,unsigned key){if(down)buttons|=1u<<key;};
++    set(sample.keys[37],EDirectInput::KEY_LEFT);
++    set(sample.keys[39],EDirectInput::KEY_RIGHT);
++    set(sample.keys[38],EDirectInput::KEY_UP);
++    set(sample.keys[40],EDirectInput::KEY_DOWN);
++    set(sample.keys[90],EDirectInput::KEY_OK);
++    set(sample.keys[90],EDirectInput::KEY_SHOT);
++    set(sample.keys[88],EDirectInput::KEY_CANCEL);
++    set(sample.keys[88],EDirectInput::KEY_BOMB);
++    set(sample.keys[16],EDirectInput::KEY_SLOWMOVE);
++    set(sample.keys[27],EDirectInput::KEY_PAUSE);
++    if(sample.motion==2){
++        const auto x=std::clamp(std::lround(sample.x),0l,long(thibp::maxTouchX));
++        const auto y=std::clamp(std::lround(sample.y),0l,long(thibp::maxTouchY));
++        return thibp::withTouchPosition(buttons,x,y);
++    }
++    return buttons;
++}
++EMSCRIPTEN_KEEPALIVE void hsob_touch_pointer(int type,int id,double x,double y,double now,int seat,int roomSlow){
+     auto input=EDirectInput::GetInstance();
+-    auto context=getTouchContext();
+-    const bool keySlow=input&&(input->IsNonTouchKeyDown(DIK_LSHIFT)||input->IsNonTouchKeyDown(DIK_RSHIFT));
++    auto context=getTouchContext(seat);
++    const bool keySlow=seat>=0?roomSlow!=0:input&&
++        (input->IsNonTouchKeyDown(DIK_LSHIFT)||input->IsNonTouchKeyDown(DIK_RSHIFT));
+     touchController.pointer(std::clamp(type,0,2),id,float(x),float(y),
+         std::uint64_t(std::max(0.0,now)),context.state,keySlow);
+ }
+@@ -480,7 +670,7 @@
+         followDisplayRefresh=EM_ASM_INT({return Module['ph3FollowDisplayRefresh']===true;})!=0;
+         EFpsController::GetInstance()->SetBrowserScriptFpsUsesPresentation(
+             EM_ASM_INT({return Module['ph3ScriptFpsUsesPresentation']===true;})!=0);
+-        emscripten_request_animation_frame_loop(frame,nullptr);
++        scheduleThibpFrames(frame);
+     }catch(gstd::wexception& error){fail(gstd::StringUtility::ConvertWideToMulti(error.what(),CP_UTF8));}
+     catch(const std::exception& error){fail(error.what());}
+     return failed?1:0;
+diff --git a/portable/multiplayer/ThibpCoop.hpp b/portable/multiplayer/ThibpCoop.hpp
+new file mode 100644
+--- /dev/null
++++ b/portable/multiplayer/ThibpCoop.hpp
+@@ -0,0 +1,189 @@
++#pragma once
++
++#include "CooperativeMenuInput.hpp"
++#include "ThibpStageReplay.hpp"
++#include "../../source/GcLib/directx/DirectInput.hpp"
++
++#include <array>
++#include <cstdint>
++
++namespace thibp {
++class CooperativeRun {
++    static constexpr unsigned queueCapacity = 64;
++    using Keys = std::array<int, virtualKeyCount>;
++
++    int playerCount_ = 1;
++    std::uint32_t seed_ = 0;
++    int roomDifficulty_ = -1;
++    bool stageStarted_ = false;
++    bool waitingForStage_ = false;
++    bool roomTitleLocked_ = false;
++    bool roomFinished_ = false;
++    bool replaying_ = false;
++    bool viewing_ = false;
++    unsigned stageStartTick_ = 0;
++    unsigned runGeneration_ = 0;
++    int stageIndex_ = 0;
++    Buttons stagePrevious_{};
++    InputFrame currentInput_{};
++    Buttons previousInput_{};
++    bool challenge_ = false;
++    unsigned playerTypes_ = 0;
++    unsigned nextInput_ = 0;
++    unsigned nextTick_ = 0;
++    std::array<InputFrame, queueCapacity> queue_{};
++    Netplay::CooperativeMenuInput<std::uint16_t, maxPlayers> menu_;
++    std::uint16_t menuHeld_ = 0;
++    bool retryPressed_ = false;
++    Keys menuKeys_{};
++    std::array<Keys, maxPlayers> playerKeys_{};
++
++    static void WriteKeys(Keys& states, unsigned held, unsigned pressed, unsigned previous)
++    {
++        for (int key = 0; key < virtualKeyCount; ++key) {
++            const unsigned flag = 1u << key;
++            states[key] = pressed & flag ? KEY_PUSH :
++                held & flag ? KEY_HOLD : previous & flag ? KEY_PULL : KEY_FREE;
++        }
++    }
++
++public:
++    void Configure(int playerCount, std::uint32_t seed, int difficulty = -1,
++                   bool challenge = false, unsigned playerTypes = 0)
++    {
++        *this = CooperativeRun{};
++        playerCount_ = playerCount;
++        seed_ = seed;
++        roomDifficulty_ = difficulty;
++        waitingForStage_ = true;
++        roomTitleLocked_ = difficulty >= 0;
++        challenge_ = challenge;
++        playerTypes_ = playerTypes;
++    }
++    int TakeRoomDifficulty()
++    {
++        const int current = roomDifficulty_;
++        roomDifficulty_ = -1;
++        return current;
++    }
++    int PlayerCount() const { return playerCount_; }
++    bool Challenge() const { return challenge_; }
++    bool RetryPressed() const { return retryPressed_; }
++    unsigned PlayerType(int seat) const { return (playerTypes_ >> (seat * 3)) & 7; }
++    unsigned ShotGroup(int seat) const { return PlayerType(seat) / 2; }
++    unsigned PlayerTypes() const { return playerTypes_; }
++    bool WaitingForStage() const { return waitingForStage_; }
++    bool RoomFinished() const { return roomFinished_; }
++    bool RoomTitleLocked() const { return roomTitleLocked_; }
++    void SetRoomTitleLocked(bool locked) { roomTitleLocked_ = locked; }
++    bool Replaying() const { return replaying_; }
++    const InputFrame& CurrentInput() const { return currentInput_; }
++    const Buttons& PreviousInput() const { return previousInput_; }
++
++    void FinishRoom()
++    {
++        if (!Started()) return;
++        stageStarted_ = false;
++        waitingForStage_ = false;
++        roomFinished_ = true;
++    }
++    void PrepareReplay(const StageReplay& replay)
++    {
++        replaying_ = replay.playerCount > 1;
++        if (!replaying_) return;
++        playerCount_ = replay.playerCount;
++        playerTypes_ = replay.playerTypes;
++        challenge_ = replay.challenge;
++        menu_.previous = replay.previous;
++        menuHeld_ = 0;
++        for (auto held : replay.previous) menuHeld_ |= held;
++    }
++    std::uint32_t StageSeed(unsigned stage) const { return seed_ ^ (0x9e3779b9u * stage); }
++    void BeginStage(int index)
++    {
++        if (stageStarted_ && (index == 1 || index == 7)) ++runGeneration_;
++        stageStarted_ = true;
++        roomTitleLocked_ = false;
++        stageStartTick_ = nextTick_;
++        stageIndex_ = index;
++        stagePrevious_ = menu_.previous;
++    }
++    unsigned StageStartTick() const { return stageStartTick_; }
++    unsigned RunGeneration() const { return runGeneration_; }
++    int StageIndex() const { return stageIndex_; }
++    const Buttons& StagePrevious() const { return stagePrevious_; }
++    bool Viewing() const { return viewing_; }
++    void SetViewer(const Buttons& previous)
++    {
++        viewing_ = true;
++        menu_.previous = previous;
++        menuHeld_ = 0;
++        for (auto bits : previous) menuHeld_ |= bits;
++    }
++    bool Started() const { return stageStarted_; }
++    unsigned NextTick() const { return nextTick_; }
++    bool CanPreview() const { return Started() && !Viewing() && nextTick_ == nextInput_; }
++
++    void ConsumePreview(const InputFrame& inputs)
++    {
++        ++nextTick_;
++        ++nextInput_;
++        ApplyInputs(inputs);
++    }
++
++    bool QueueFrame(unsigned frame, unsigned one, unsigned two, unsigned three)
++    {
++        if (playerCount_ < 2 || frame != nextInput_ || nextInput_ - nextTick_ == queueCapacity ||
++            !validInput(one) || !validInput(two) || !validInput(three) || (playerCount_ == 2 && three != 0))
++            return false;
++        queue_[nextInput_ % queueCapacity] = {one, two, three};
++        ++nextInput_;
++        return true;
++    }
++
++    bool ConsumeFrame()
++    {
++        if (nextTick_ == nextInput_) return false;
++        const InputFrame& frame = queue_[nextTick_ % queueCapacity];
++        ++nextTick_;
++        ApplyInputs(frame);
++        return true;
++    }
++
++    void ApplyInputs(const InputFrame& frame)
++    {
++        previousInput_ = menu_.previous;
++        currentInput_ = frame;
++        Buttons buttons{};
++        for (int seat = 0; seat < playerCount_; ++seat) {
++            buttons[seat] = static_cast<std::uint16_t>(frame[seat] & validButtons);
++            const auto previous = menu_.previous[seat];
++            WriteKeys(playerKeys_[seat], buttons[seat], buttons[seat] & ~previous, previous);
++        }
++        const auto menu = menu_.Update(buttons, playerCount_);
++        WriteKeys(menuKeys_, menu.held, menu.pressed, menuHeld_);
++        menuHeld_ = menu.held;
++        retryPressed_ = (menu.pressed & retryButton) != 0;
++    }
++
++    VirtualKeyManager::KeyStates PlayerKeys(int seat) const
++    {
++        return {playerKeys_[seat].data(), virtualKeyCount};
++    }
++    VirtualKeyManager::KeyStates RecordedMenuKeys() const
++    {
++        return {menuKeys_.data(), virtualKeyCount};
++    }
++    VirtualKeyManager::KeyStates MenuKeys() const
++    {
++        if (Started() || RoomTitleLocked()) return RecordedMenuKeys();
++        return {};
++    }
++};
++
++inline CooperativeRun& cooperativeRun()
++{
++    static CooperativeRun run;
++    return run;
++}
++}
+diff --git a/portable/multiplayer/ThibpStageReplay.hpp b/portable/multiplayer/ThibpStageReplay.hpp
+new file mode 100644
+--- /dev/null
++++ b/portable/multiplayer/ThibpStageReplay.hpp
+@@ -0,0 +1,28 @@
++#pragma once
++
++#include "ThibpInput.hpp"
++
++#include <array>
++#include <vector>
++
++namespace thibp {
++struct SeatStock {
++    double life = 0;
++    double bombs = 0;
++    double power = 0;
++    int rebirth = 0;
++    int invincibility = 0;
++    int lifeFragments = 0;
++    int bombFragments = 0;
++    int deaths = 0;
++};
++
++struct StageReplay {
++    int playerCount = 1;
++    unsigned playerTypes = 0;
++    bool challenge = false;
++    Buttons previous{};
++    std::array<SeatStock, maxPlayers> stocks{};
++    std::vector<InputFrame> frames;
++};
++}
+diff --git a/source/GcLib/directx/DirectInput.cpp b/source/GcLib/directx/DirectInput.cpp
+--- a/source/GcLib/directx/DirectInput.cpp
++++ b/source/GcLib/directx/DirectInput.cpp
+@@ -980,6 +980,10 @@
+ 
+ int VirtualKeyManager::GetVirtualKeyState(int id)
+ {
++#ifdef __EMSCRIPTEN__
++	if (id >= 0 && id < keyStates_.count)
++		return keyStates_.data[id];
++#endif
+ 	if (mapKey_.find(id) == mapKey_.end())
+ 		return KEY_FREE;
+ 	gstd::ref_count_ptr<VirtualKey> key = mapKey_[id];
+diff --git a/source/GcLib/portable/DirectInput.hpp b/source/GcLib/portable/DirectInput.hpp
+--- a/source/GcLib/portable/DirectInput.hpp
++++ b/source/GcLib/portable/DirectInput.hpp
+@@ -133,11 +133,28 @@
+   void DeleteKeyMap(int id) { mapKey_.erase(id); }
+   void ClearKeyMap() { mapKey_.clear(); }
+   int GetVirtualKeyState(int id);
++  struct KeyStates {
++    const int* data = nullptr;
++    int count = 0;
++  };
++  class KeyStateScope {
++    VirtualKeyManager& input_;
++    KeyStates previous_;
++  public:
++    KeyStateScope(VirtualKeyManager& input, KeyStates keys)
++      : input_(input), previous_(input.keyStates_) {
++      if (keys.data) input.keyStates_ = keys;
++    }
++    ~KeyStateScope() { input_.keyStates_ = previous_; }
++    KeyStateScope(const KeyStateScope&) = delete;
++    KeyStateScope& operator=(const KeyStateScope&) = delete;
++  };
+   gstd::ref_count_ptr<VirtualKey> GetVirtualKey(int id);
+   bool IsTargetKeyCode(int key);
+ protected:
+   std::map<int, gstd::ref_count_ptr<VirtualKey>> mapKey_;
+   int _GetVirtualKeyState(int id);
++  KeyStates keyStates_;
+ };
+ 
+ class KeyReplayManager {
+diff --git a/source/GcLib/portable/DxCompat.hpp b/source/GcLib/portable/DxCompat.hpp
+--- a/source/GcLib/portable/DxCompat.hpp
++++ b/source/GcLib/portable/DxCompat.hpp
+@@ -155,8 +155,9 @@
+     HRESULT Reset(D3DPRESENT_PARAMETERS* parameters);
+     HRESULT BeginScene();
+     void BeginBrowserFrame();
++    bool BeginBrowserPreview();
+     HRESULT EndScene();
+-    HRESULT Present(const RECT*,const RECT*,HWND,const RGNDATA*);
++    HRESULT Present(const RECT*,const RECT*,HWND,const RGNDATA*,bool reportDiagnostics=true);
+     HRESULT Clear(DWORD count,const D3DRECT* rects,DWORD flags,D3DCOLOR color,float depth,DWORD stencil);
+     HRESULT SetTransform(D3DTRANSFORMSTATETYPE type,const D3DMATRIX* matrix);
+     HRESULT GetTransform(D3DTRANSFORMSTATETYPE type,D3DMATRIX* matrix);
+diff --git a/source/GcLib/portable/DxDevice.cpp b/source/GcLib/portable/DxDevice.cpp
+--- a/source/GcLib/portable/DxDevice.cpp
++++ b/source/GcLib/portable/DxDevice.cpp
+@@ -19,6 +19,9 @@
+ 
+ namespace directx::portable {
+ namespace {
++
++// The preview import guard stops rendering before a confirmed target is touched.
++EM_JS(void, thibp_preview_offscreen_boundary, (), {});
+ constexpr HRESULT InvalidCall=static_cast<HRESULT>(0x8876086cu);
+ constexpr unsigned MaxSlots=16;
+ constexpr unsigned MaxElements=32;
+@@ -196,6 +199,8 @@
+     SDL_GLContext context=nullptr;
+     bool ownWindow=false,inScene=false;
+     bool nearestPresentation=false;
++    bool drawingPreview=false;
++    GLuint previewFramebuffer=0,previewColor=0,previewDepth=0;
+     GLuint program=0,vao=0,vbo=0,white=0,feedbackTexture=0;
+     std::array<GLuint,5> modulatePrograms{};
+     UINT modulateSubmissions=0;
+@@ -263,6 +268,9 @@
+         AssignReference(stream,static_cast<IDirect3DVertexBuffer9*>(nullptr));AssignReference(indices,static_cast<IDirect3DIndexBuffer9*>(nullptr));AssignReference(declaration,static_cast<IDirect3DVertexDeclaration9*>(nullptr));
+         AssignReference(target,static_cast<IDirect3DSurface9*>(nullptr));AssignReference(depth,static_cast<IDirect3DSurface9*>(nullptr));
+         if(back)back->Release();if(backDepth)backDepth->Release();
++        if(previewFramebuffer)glDeleteFramebuffers(1,&previewFramebuffer);
++        if(previewColor)glDeleteTextures(1,&previewColor);
++        if(previewDepth)glDeleteRenderbuffers(1,&previewDepth);
+         glDeleteSamplers(MaxSlots,glSamplers.data());if(white)glDeleteTextures(1,&white);if(feedbackTexture)glDeleteTextures(1,&feedbackTexture);if(vbo)glDeleteBuffers(1,&vbo);if(vao)glDeleteVertexArrays(1,&vao);if(program)glDeleteProgram(program);
+         for(GLuint specialized:modulatePrograms)if(specialized)glDeleteProgram(specialized);
+         if(context)SDL_GL_DestroyContext(context);if(ownWindow&&window)SDL_DestroyWindow(window);
+@@ -358,6 +366,7 @@
+     }
+     void BindTarget(){
+         Check(target!=nullptr,"No Woo render target");auto& surface=*target->storage;
++        if(drawingPreview&&(target!=back||depth!=backDepth))thibp_preview_offscreen_boundary();
+         {
+             if(!surface.framebuffer)glGenFramebuffers(1,&surface.framebuffer);
+             if(!targetBindingValid||boundFramebuffer!=surface.framebuffer){
+@@ -482,6 +491,16 @@
+     s.material.Diffuse={1,1,1,1};s.material.Ambient={1,1,1,1};
+     for(unsigned i=0;i<MaxSlots;++i){s.samplers[i]={{D3DSAMP_MINFILTER,D3DTEXF_POINT},{D3DSAMP_MAGFILTER,D3DTEXF_POINT},{D3DSAMP_MIPFILTER,D3DTEXF_NONE},{D3DSAMP_ADDRESSU,D3DTADDRESS_WRAP},{D3DSAMP_ADDRESSV,D3DTADDRESS_WRAP}};
+         s.stages[i]={{D3DTSS_COLOROP,i?D3DTOP_DISABLE:D3DTOP_MODULATE},{D3DTSS_COLORARG1,D3DTA_TEXTURE},{D3DTSS_COLORARG2,D3DTA_CURRENT},{D3DTSS_ALPHAOP,i?D3DTOP_DISABLE:D3DTOP_SELECTARG1},{D3DTSS_ALPHAARG1,D3DTA_TEXTURE},{D3DTSS_ALPHAARG2,D3DTA_CURRENT}};}
++    if(EM_ASM_INT({return Module['thibpPrediction']?1:0;})){
++        glGenTextures(1,&s.previewColor);glBindTexture(GL_TEXTURE_2D,s.previewColor);
++        glTexStorage2D(GL_TEXTURE_2D,1,GL_RGBA8,width,height);
++        glGenRenderbuffers(1,&s.previewDepth);glBindRenderbuffer(GL_RENDERBUFFER,s.previewDepth);
++        glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH_COMPONENT16,width,height);
++        glGenFramebuffers(1,&s.previewFramebuffer);glBindFramebuffer(GL_FRAMEBUFFER,s.previewFramebuffer);
++        glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,s.previewColor,0);
++        glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,s.previewDepth);
++        Check(glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE,"Incomplete THIBP preview target");
++    }
+     s.BindTarget();glDisable(GL_DITHER);
+     std::printf("[Woo GLES] %s; canvas %ux%u\n",glGetString(GL_VERSION),width,height);
+ }
+@@ -490,10 +509,30 @@
+ HRESULT IDirect3DDevice9::GetDeviceCaps(D3DCAPS9* caps){if(!caps)return InvalidCall;*caps={};GLint size=0;glGetIntegerv(GL_MAX_TEXTURE_SIZE,&size);caps->MaxTextureWidth=caps->MaxTextureHeight=size;caps->VertexShaderVersion=D3DVS_VERSION(3,0);caps->PixelShaderVersion=D3DPS_VERSION(3,0);return S_OK;}
+ HRESULT IDirect3DDevice9::TestCooperativeLevel(){return SDL_GL_GetCurrentContext()==state->context?S_OK:static_cast<HRESULT>(D3DERR_DEVICELOST);}
+ HRESULT IDirect3DDevice9::Reset(D3DPRESENT_PARAMETERS* params){if(!params||params->BackBufferWidth!=state->back->storage->width||params->BackBufferHeight!=state->back->storage->height)return InvalidCall;return TestCooperativeLevel();}
+-void IDirect3DDevice9::BeginBrowserFrame(){state->draws=state->actualDraws=state->verticesDrawn=state->modulateSubmissions=0;state->targetBindingValid=state->viewportBindingValid=state->vertexBindingValid=false;state->boundProgram=0;}
++void IDirect3DDevice9::BeginBrowserFrame(){
++    auto& s=*state;
++    s.draws=s.actualDraws=s.verticesDrawn=s.modulateSubmissions=0;
++    s.targetBindingValid=s.viewportBindingValid=s.vertexBindingValid=false;
++    s.boundProgram=0;
++    // The Wasm journal restores CPU caches. GL keeps its last submitted state.
++    if(s.previewFramebuffer){
++        s.rasterValid=s.fixedUniformsValid=false;
++        for(auto& sampler:s.samplerCache)sampler.valid=false;
++    }
++}
++bool IDirect3DDevice9::BeginBrowserPreview(){
++    auto& s=*state;
++    if(!s.previewFramebuffer||s.target!=s.back||s.depth!=s.backDepth)return false;
++    s.drawingPreview=true;
++    s.back->storage->framebuffer=s.previewFramebuffer;
++    s.back->storage->framebufferConfigured=true;
++    s.back->storage->framebufferDepth=s.backDepth->storage;
++    BeginBrowserFrame();
++    return true;
++}
+ HRESULT IDirect3DDevice9::BeginScene(){if(state->inScene)return InvalidCall;state->inScene=true;return S_OK;}
+ HRESULT IDirect3DDevice9::EndScene(){if(!state->inScene)return InvalidCall;state->FlushBatch();state->inScene=false;return S_OK;}
+-HRESULT IDirect3DDevice9::Present(const RECT*,const RECT*,HWND,const RGNDATA*){
++HRESULT IDirect3DDevice9::Present(const RECT*,const RECT*,HWND,const RGNDATA*,bool reportDiagnostics){
+     state->FlushBatch();
+     auto& back=*state->back->storage;
+     int width=0,height=0;emscripten_get_canvas_element_size("#canvas",&width,&height);
+@@ -510,6 +549,7 @@
+     if(error!=GL_NO_ERROR)throw std::runtime_error("WebGL rendering error: "+std::to_string(error));
+ #endif
+     glFlush();if(!SDL_GL_SwapWindow(state->window))return E_FAIL;
++    if(!reportDiagnostics)return S_OK;
+     ++state->presented;
+     EM_ASM({const d=globalThis.ph3Diagnostics;if(d){d.presentedFrames=$0;d.drawCalls=$1;d.actualDrawCalls=$2;d.drawVertices=$3;d.rejectedFeedbackDraws=0;d.resolvedFeedbackDraws=$4;
+         d.feedbackFixed=$5;d.feedbackEffect=$6;d.feedbackBack=$7;d.feedbackOffscreen=$8;d.modulateSubmissions=$9;}},
+@@ -584,6 +624,7 @@
+     DWORD values[5];for(unsigned i=0;i<5;++i)values[i]=overrides&&overrides[i]!=0xffffffffu?overrides[i]:state->samplers[sourceSlot][keys[i]];
+     glActiveTexture(GL_TEXTURE0+unit);GLuint id=texture?texture->GetGLTexture():state->white;
+     if(texture&&id==state->target->storage->texture){
++        if(state->drawingPreview)thibp_preview_offscreen_boundary();
+         id=state->feedbackSnapshotReady?state->feedbackTexture:state->SnapshotTarget();
+         ++state->feedbackResolved;
+         if(ID3DXEffect::Active())++state->feedbackEffect;else ++state->feedbackFixed;
+@@ -720,6 +761,7 @@
+     auto& s=*device.state;const std::size_t count=VertexCount(type,primitives);
+     if(!count)return S_OK;if(!bytes||!stride||count>10000000)return InvalidCall;
+     ID3DXEffect* effect=ID3DXEffect::Active();
++    if(s.drawingPreview&&effect)thibp_preview_offscreen_boundary();
+     DWORD fill=s.Render(D3DRS_FILLMODE);GLenum primitive=Primitive(type);
+     const bool wireframe=fill==D3DFILL_WIREFRAME&&type>=D3DPT_TRIANGLELIST;
+     if(fill==D3DFILL_POINT)primitive=GL_POINTS;else if(wireframe)primitive=GL_LINES;
+diff --git a/source/TouhouDanmakufu/Common/DnhReplay.cpp b/source/TouhouDanmakufu/Common/DnhReplay.cpp
+--- a/source/TouhouDanmakufu/Common/DnhReplay.cpp
++++ b/source/TouhouDanmakufu/Common/DnhReplay.cpp
+@@ -231,6 +231,71 @@
+ 	playerBombCount_ = record.GetRecordAsDouble("playerBombCount");
+ 	playerPower_ = record.GetRecordAsDouble("playerPower");
+ 	playerRebirthFrame_ = record.GetRecordAsInteger("playerRebirthFrame");
++	if (!record.IsExists("thibpCoop")) return;
++
++	gstd::RecordBuffer coop;
++	record.GetRecordAsRecordBuffer("thibpCoop", coop);
++	auto& run = coopReplay_;
++	run.playerCount = coop.GetRecordAsInteger("seats");
++	run.playerTypes = static_cast<unsigned>(coop.GetRecordAsInteger("loadouts"));
++	run.challenge = coop.GetRecordAsBoolean("challenge");
++	const int length = coop.GetEntrySize("frames");
++	const int version = coop.GetRecordAsInteger("version");
++	const int stride = version == 1 ? sizeof(thibp::Buttons) : sizeof(thibp::InputFrame);
++	if ((version != 1 && version != 2) || run.playerCount < 2 ||
++		run.playerCount > thibp::maxPlayers || (run.playerTypes >> (3 * run.playerCount)) != 0 ||
++		length <= 0 || length % stride || length / stride > (1 << 20) ||
++		(length / stride != frameEnd_ && length / stride != frameEnd_ + 1) ||
++		coop.GetEntrySize("previous") != sizeof(run.previous))
++		throw gstd::wexception(L"Invalid THIBP multiplayer Replay");
++
++	coop.GetRecord("previous", run.previous.data(), sizeof(run.previous));
++	run.frames.resize(length / stride);
++	if (version == 1)
++	{
++		std::vector<thibp::Buttons> legacy(run.frames.size());
++		coop.GetRecord("frames", legacy.data(), length);
++		for (size_t frame = 0; frame < legacy.size(); ++frame)
++		{
++			for (const auto buttons : legacy[frame])
++				if (buttons & ~thibp::validButtons)
++					throw gstd::wexception(L"Invalid THIBP multiplayer Replay input");
++			std::copy(legacy[frame].begin(), legacy[frame].end(), run.frames[frame].begin());
++		}
++	}
++	else coop.GetRecord("frames", run.frames.data(), length);
++	for (int seat = 0; seat < thibp::maxPlayers; ++seat)
++		if ((run.previous[seat] & ~thibp::validButtons) || (seat >= run.playerCount && run.previous[seat]))
++			throw gstd::wexception(L"Invalid THIBP multiplayer Replay input");
++	const auto validInput = [&](const thibp::InputFrame& inputs) {
++		for (int seat = 0; seat < thibp::maxPlayers; ++seat)
++			if (!thibp::validInput(inputs[seat]) || (seat >= run.playerCount && inputs[seat])) return false;
++		return true;
++	};
++	if (!std::all_of(run.frames.begin(), run.frames.end(), validInput))
++		throw gstd::wexception(L"Invalid THIBP multiplayer Replay input");
++	for (int seat = 0; seat < run.playerCount; ++seat)
++	{
++		gstd::RecordBuffer data;
++		if (((run.playerTypes >> (seat * 3)) & 7) >= 6 ||
++			!coop.GetRecordAsRecordBuffer(std::to_string(seat), data))
++			throw gstd::wexception(L"Invalid THIBP multiplayer Replay seats");
++		auto& stock = run.stocks[seat];
++		stock.life = data.GetRecordAsDouble("life");
++		stock.bombs = data.GetRecordAsDouble("bombs");
++		stock.power = data.GetRecordAsDouble("power");
++		stock.rebirth = data.GetRecordAsInteger("rebirth");
++		stock.invincibility = data.GetRecordAsInteger("invincibility");
++		stock.lifeFragments = data.GetRecordAsInteger("lifeFragments");
++		stock.bombFragments = data.GetRecordAsInteger("bombFragments");
++		stock.deaths = data.GetRecordAsInteger("deaths");
++		if (!(stock.life >= 0 && stock.life <= 8 && stock.bombs >= 0 && stock.bombs <= 8 &&
++			stock.power >= 0 && stock.power <= 128 && stock.rebirth >= 0 && stock.rebirth <= 600 &&
++			stock.invincibility >= 0 && stock.invincibility <= 600 &&
++			stock.lifeFragments >= 0 && stock.lifeFragments <= 100 &&
++			stock.bombFragments >= 0 && stock.bombFragments <= 100 && stock.deaths >= 0))
++			throw gstd::wexception(L"Invalid THIBP multiplayer Replay stock");
++	}
+ }
+ void ReplayInformation::StageData::WriteRecord(gstd::RecordBuffer& record)
+ {
+@@ -268,6 +333,31 @@
+ 	record.SetRecordAsDouble("playerBombCount", playerBombCount_);
+ 	record.SetRecordAsDouble("playerPower", playerPower_);
+ 	record.SetRecordAsInteger("playerRebirthFrame", playerRebirthFrame_);
++	auto& run = coopReplay_;
++	if (run.playerCount <= 1 || run.frames.empty()) return;
++
++	gstd::RecordBuffer coop;
++	coop.SetRecordAsInteger("version", 2);
++	coop.SetRecordAsInteger("seats", run.playerCount);
++	coop.SetRecordAsInteger("loadouts", run.playerTypes);
++	coop.SetRecordAsBoolean("challenge", run.challenge);
++	coop.SetRecord("previous", run.previous.data(), sizeof(run.previous));
++	coop.SetRecord("frames", run.frames.data(), run.frames.size() * sizeof(thibp::InputFrame));
++	for (int seat = 0; seat < run.playerCount; ++seat)
++	{
++		const auto& stock = run.stocks[seat];
++		gstd::RecordBuffer data;
++		data.SetRecordAsDouble("life", stock.life);
++		data.SetRecordAsDouble("bombs", stock.bombs);
++		data.SetRecordAsDouble("power", stock.power);
++		data.SetRecordAsInteger("rebirth", stock.rebirth);
++		data.SetRecordAsInteger("invincibility", stock.invincibility);
++		data.SetRecordAsInteger("lifeFragments", stock.lifeFragments);
++		data.SetRecordAsInteger("bombFragments", stock.bombFragments);
++		data.SetRecordAsInteger("deaths", stock.deaths);
++		coop.SetRecordAsRecordBuffer(std::to_string(seat), data);
++	}
++	record.SetRecordAsRecordBuffer("thibpCoop", coop);
+ }
+ 
+ /**********************************************************
+diff --git a/source/TouhouDanmakufu/Common/DnhReplay.hpp b/source/TouhouDanmakufu/Common/DnhReplay.hpp
+--- a/source/TouhouDanmakufu/Common/DnhReplay.hpp
++++ b/source/TouhouDanmakufu/Common/DnhReplay.hpp
+@@ -2,6 +2,7 @@
+ #define __TOUHOUDANMAKUFU_DNHREPLAY__
+ 
+ #include"DnhCommon.hpp"
++#include "../../../portable/multiplayer/ThibpStageReplay.hpp"
+ 
+ /**********************************************************
+ //ReplayInformation
+@@ -85,6 +86,7 @@
+ 		int randSeed_;
+ 		std::vector<float> listFramePerSecond_;
+ 		ref_count_ptr<gstd::RecordBuffer> recordKey_;
++		thibp::StageReplay coopReplay_;
+ 		std::map<std::string, ref_count_ptr<gstd::RecordBuffer> > mapCommonData_;
+ 
+ 		//自機情報
+@@ -123,6 +125,7 @@
+ 		void AddFramePerSecond(float frame){listFramePerSecond_.push_back(frame);}
+ 		double GetFramePerSecondAvarage();
+ 		ref_count_ptr<gstd::RecordBuffer> GetReplayKeyRecord(){return recordKey_;}
++		thibp::StageReplay& Cooperative() { return coopReplay_; }
+ 		void SetReplayKeyRecord(ref_count_ptr<gstd::RecordBuffer> rec){recordKey_ = rec;}
+ 		std::set<std::string> GetCommonDataAreaList();
+ 		ref_count_ptr<ScriptCommonData> GetCommonData(std::string area);
+diff --git a/source/TouhouDanmakufu/Common/StgEnemy.cpp b/source/TouhouDanmakufu/Common/StgEnemy.cpp
+--- a/source/TouhouDanmakufu/Common/StgEnemy.cpp
++++ b/source/TouhouDanmakufu/Common/StgEnemy.cpp
+@@ -128,6 +128,12 @@
+ 			damage = spell->GetDamage();
+ 			damage = damage * rateDamageSpell_ / 100;
+ 		}
++	}
++	if (damage > 0 && stageController_->GetPlayerCount() > 1 && dynamic_cast<StgEnemyBossObject*>(this))
++	{
++		const int living = stageController_->GetLivingPlayerCount();
++		if (living == 2) damage *= 0.75;
++		if (living == 3) damage *= 2.0 / 3.0;
+ 	}
+ 	life_ = std::max(life_ - damage, 0.0);
+ }
+diff --git a/source/TouhouDanmakufu/Common/StgItem.cpp b/source/TouhouDanmakufu/Common/StgItem.cpp
+--- a/source/TouhouDanmakufu/Common/StgItem.cpp
++++ b/source/TouhouDanmakufu/Common/StgItem.cpp
+@@ -27,6 +27,7 @@
+ 
+ 	bDefaultBonusItemEnable_ = true;
+ 	bAllItemToPlayer_ = false;
++	bCancelToPlayer_ = false;
+ 
+ }
+ StgItemManager::~StgItemManager()
+@@ -34,6 +35,11 @@
+ }
+ void StgItemManager::Work()
+ {
++	if (stageController_->GetPlayerCount() > 1)
++	{
++		_WorkCooperative();
++		return;
++	}
+ 	ref_count_ptr<StgPlayerObject>::unsync objPlayer = stageController_->GetPlayerObject();
+ 	double px = objPlayer->GetX();
+ 	double py = objPlayer->GetY();
+@@ -123,6 +129,88 @@
+ 	bCancelToPlayer_ = false;
+ 
+ }
++void StgItemManager::_WorkCooperative()
++{
++	std::array<StgPlayerObject*, thibp::maxPlayers> collectors{};
++	bool topCollect = false;
++	const int count = stageController_->GetPlayerCount();
++	for (int seat = 0; seat < count; ++seat)
++	{
++		auto player = stageController_->GetPlayerObject(seat);
++		if (player == NULL || player->GetState() != StgPlayerObject::STATE_NORMAL) continue;
++		collectors[seat] = player.GetPointer();
++		topCollect |= player->GetAutoItemCollectY() >= 0 && player->GetY() <= player->GetAutoItemCollectY();
++	}
++	for (auto it = listObj_.begin(); it != listObj_.end();)
++	{
++		auto item = *it;
++		if (item->IsDeleted())
++		{
++			it = listObj_.erase(it);
++			continue;
++		}
++		++it;
++
++		const double x = item->GetPositionX(), y = item->GetPositionY();
++		int contact = -1, nearest = -1;
++		double nearestDistance = 0, contactDistance = 0;
++		for (int seat = 0; seat < count; ++seat)
++		{
++			auto* player = collectors[seat];
++			if (!player) continue;
++			const double dx = x - player->GetX(), dy = y - player->GetY();
++			const double squared = dx * dx + dy * dy;
++			if (nearest < 0 || squared < nearestDistance)
++			{
++				nearest = seat;
++				nearestDistance = squared;
++			}
++			const double radius = player->GetItemIntersectionRadius();
++			if (squared <= radius * radius && (contact < 0 || squared < contactDistance))
++			{
++				contact = seat;
++				contactDistance = squared;
++			}
++		}
++		if (contact >= 0)
++		{
++			StgStageController::PlayerScope collector(*stageController_, contact);
++			item->Intersect(NULL, NULL);
++			continue;
++		}
++		if (bCancelToPlayer_ || nearest < 0)
++		{
++			item->SetCollectorSeat(-1);
++			item->SetMoveToPlayer(false);
++			continue;
++		}
++		const int previous = item->GetCollectorSeat();
++		if (previous >= 0 && !collectors[previous]) item->SetCollectorSeat(-1);
++		if (!item->IsPermitMoveToPlayer()) continue;
++		bool attract = topCollect || bAllItemToPlayer_ ||
++			listItemTypeToPlayer_.count(item->GetItemType()) != 0;
++		if (!attract)
++		{
++			for (auto& circle : listCircleToPlayer_)
++			{
++				const double dx = x - circle.GetX(), dy = y - circle.GetY();
++				if (dx * dx + dy * dy > circle.GetR() * circle.GetR()) continue;
++				attract = true;
++				break;
++			}
++		}
++		if (attract && !item->IsMoveToPlayer())
++		{
++			item->SetCollectorSeat(nearest);
++			item->SetMoveToPlayer(true);
++		}
++	}
++	listItemTypeToPlayer_.clear();
++	listCircleToPlayer_.clear();
++	bAllItemToPlayer_ = false;
++	bCancelToPlayer_ = false;
++}
++
+ void StgItemManager::Render(int targetPriority)
+ {
+ 	DirectGraphics* graphics = DirectGraphics::GetBase();
+@@ -1195,14 +1283,34 @@
+ 
+ 	double px = target_->GetPositionX();
+ 	double py = target_->GetPositionY();
+-	if(typeMove_ == MOVE_TOPLAYER || itemObject->IsMoveToPlayer())
+-	{
+-		speed_ = 8;
+-		ref_count_ptr<StgPlayerObject>::unsync objPlayer = stageController->GetPlayerObject();
+-		double angle = atan2(objPlayer->GetY() - py, objPlayer->GetX() - px);
+-		angDirection_ = Math::RadianToDegree(angle);
+-	}
+-	else if(typeMove_ == MOVE_TOPOSITION_A)
++	bool following = typeMove_ == MOVE_TOPLAYER || itemObject->IsMoveToPlayer();
++	if (following)
++	{
++		auto player = stageController->GetPlayerObject();
++		if (stageController->GetPlayerCount() > 1)
++		{
++			auto seat = itemObject->GetCollectorSeat();
++			player = stageController->GetPlayerObject(seat);
++			if (player == NULL || player->GetState() != StgPlayerObject::STATE_NORMAL)
++			{
++				seat = stageController->FindNearestActivePlayer(px, py);
++				itemObject->SetCollectorSeat(seat);
++				player = stageController->GetPlayerObject(seat);
++			}
++		}
++		if (player != NULL)
++		{
++			speed_ = 8;
++			angDirection_ = Math::RadianToDegree(atan2(player->GetY() - py, player->GetX() - px));
++		}
++		else
++		{
++			typeMove_ = MOVE_DOWN;
++			itemObject->SetMoveToPlayer(false);
++			following = false;
++		}
++	}
++	if (!following && typeMove_ == MOVE_TOPOSITION_A)
+ 	{
+ 		double tarX = px;
+ 		double tarY = py;
+@@ -1220,13 +1328,13 @@
+ 			typeMove_ = MOVE_DOWN;
+ 		}
+ 	}
+-	else if(typeMove_ == MOVE_DOWN)
++	else if(!following && typeMove_ == MOVE_DOWN)
+ 	{
+ 		speed_ += 3.0f/60.0f;
+ 		if(speed_ > 2.5f)speed_ = 2.5f;
+ 		angDirection_ = 90;
+ 	}
+-	else if(typeMove_ == MOVE_SCORE)
++	else if(!following && typeMove_ == MOVE_SCORE)
+ 	{
+ 		speed_ = 1;
+ 		angDirection_ = 270;
+diff --git a/source/TouhouDanmakufu/Common/StgItem.hpp b/source/TouhouDanmakufu/Common/StgItem.hpp
+--- a/source/TouhouDanmakufu/Common/StgItem.hpp
++++ b/source/TouhouDanmakufu/Common/StgItem.hpp
+@@ -27,6 +27,7 @@
+ 		bool bAllItemToPlayer_;
+ 		bool bCancelToPlayer_;
+ 		bool bDefaultBonusItemEnable_;
++		void _WorkCooperative();
+ 
+ 
+ 	public:
+@@ -175,6 +176,7 @@
+ 
+ 		_int64 score_;
+ 		bool bMoveToPlayer_; //自機移動フラグ
++		int collectorSeat_ = -1;
+ 		bool bPermitMoveToPlayer_; //自機自動回収許可
+ 		bool bChangeItemScore_;
+ 
+@@ -202,6 +204,8 @@
+ 		void SetScore(_int64 score){score_ = score;}
+ 		bool IsMoveToPlayer(){return bMoveToPlayer_;}
+ 		void SetMoveToPlayer(bool b){bMoveToPlayer_ = b;}
++		int GetCollectorSeat() const { return collectorSeat_; }
++		void SetCollectorSeat(int seat) { collectorSeat_ = seat; }
+ 		bool IsPermitMoveToPlayer(){return bPermitMoveToPlayer_;}
+ 		void SetPermitMoveToPlayer(bool bPermit){bPermitMoveToPlayer_ = bPermit;}
+ 		void SetChangeItemScore(bool b){bChangeItemScore_ = b;}
+diff --git a/source/TouhouDanmakufu/Common/StgPackageScript.cpp b/source/TouhouDanmakufu/Common/StgPackageScript.cpp
+--- a/source/TouhouDanmakufu/Common/StgPackageScript.cpp
++++ b/source/TouhouDanmakufu/Common/StgPackageScript.cpp
+@@ -1,6 +1,9 @@
+ #include"StgPackageScript.hpp"
+ #include"StgSystem.hpp"
+ #include"StgPackageController.hpp"
++#ifdef __EMSCRIPTEN__
++#include <emscripten.h>
++#endif
+ 
+ /**********************************************************
+ //StgPackageScriptManager
+@@ -53,6 +56,39 @@
+ /**********************************************************
+ //StgPackageScript
+ **********************************************************/
++static gstd::value FinishThibpRoom(gstd::script_machine*, int, const gstd::value*)
++{
++	thibp::cooperativeRun().FinishRoom();
++	return gstd::value();
++}
++static gstd::value IsThibpCooperative(gstd::script_machine* machine, int, const gstd::value*)
++{
++	return gstd::value(machine->get_engine()->get_boolean_type(), thibp::cooperativeRun().WaitingForStage());
++}
++static gstd::value IsThibpRetryPressed(gstd::script_machine* machine, int, const gstd::value*)
++{
++	const auto& run = thibp::cooperativeRun();
++	return gstd::value(machine->get_engine()->get_boolean_type(), run.Started() && run.RetryPressed());
++}
++static gstd::value GetThibpRoomPlayerType(gstd::script_machine* machine, int, const gstd::value*)
++{
++	return gstd::value(machine->get_engine()->get_real_type(),
++		static_cast<gstd::script_real>(thibp::cooperativeRun().PlayerType(0)));
++}
++static gstd::value MarkThibpRoomTitle(gstd::script_machine*, int, const gstd::value*)
++{
++#ifdef __EMSCRIPTEN__
++	if (thibp::cooperativeRun().RoomTitleLocked())
++		EM_ASM({ Module['thibpTitleReadyAfter'] = globalThis.ph3Diagnostics?.presentedFrames ?? 0; });
++#endif
++	return gstd::value();
++}
++static gstd::value TakeThibpRoomDifficulty(gstd::script_machine* machine, int, const gstd::value*)
++{
++	return gstd::value(machine->get_engine()->get_real_type(),
++		static_cast<gstd::script_real>(thibp::cooperativeRun().TakeRoomDifficulty()));
++}
++
+ const function stgPackageFunction[] =  
+ {
+ 	//パッケージ共通関数：パッケージ操作
+@@ -82,6 +118,12 @@
+ StgPackageScript::StgPackageScript(StgPackageController* packageController) : StgControlScript(packageController->GetSystemController())
+ {
+ 	_AddFunction(stgPackageFunction, sizeof(stgPackageFunction) / sizeof(function));
++	_AddFunction("TakeThibpRoomDifficulty", TakeThibpRoomDifficulty, 0);
++	_AddFunction("MarkThibpRoomTitle", MarkThibpRoomTitle, 0);
++	_AddFunction("GetThibpRoomPlayerType", GetThibpRoomPlayerType, 0);
++	_AddFunction("IsThibpCooperative", IsThibpCooperative, 0);
++	_AddFunction("FinishThibpRoom", FinishThibpRoom, 0);
++	_AddFunction("IsThibpRetryPressed", IsThibpRetryPressed, 0);
+ 
+ 	typeScript_ = TYPE_PACKAGE_MAIN;
+ 	packageController_ = packageController;
+diff --git a/source/TouhouDanmakufu/Common/StgPlayer.cpp b/source/TouhouDanmakufu/Common/StgPlayer.cpp
+--- a/source/TouhouDanmakufu/Common/StgPlayer.cpp
++++ b/source/TouhouDanmakufu/Common/StgPlayer.cpp
+@@ -8,6 +8,7 @@
+ StgPlayerObject::StgPlayerObject(StgStageController* stageController) : StgMoveObject(stageController)
+ {
+ 	stageController_ = stageController;
++	seat_ = stageController->GetPlayerSeat();
+ 	typeObject_ = StgStageScript::OBJ_PLAYER;
+ 
+ 	infoPlayer_ = new StgPlayerInformation();
+@@ -49,11 +50,12 @@
+ 	int stgWidth = rcStgFrame.right - rcStgFrame.left;
+ 	int stgHeight = rcStgFrame.bottom - rcStgFrame.top;
+ 	
+-	SetX(stgWidth / 2);
++	SetX(stgWidth / 2 + stageController_->GetPlayerSpawnOffset(seat_));
+ 	SetY(rcStgFrame.bottom - 48);
+ }
+ void StgPlayerObject::Work()
+ {
++	StgStageController::PlayerScope player(*stageController_, seat_);
+ #ifdef PH3_PERF_INVINCIBLE
+ 	// Performance-only diagnostic build: keep the recorded hit/death/rebirth
+ 	// cadence intact, but never let the last life become a game-over. This is
+@@ -70,11 +72,13 @@
+ 
+ 	if(state_ == STATE_NORMAL)
+ 	{
++		if (stageController_->IsSpecialProtectionActive()) hitObjectID_ = DxScript::ID_INVALID;
+ 		//通常時
+ 		if(hitObjectID_ != DxScript::ID_INVALID)
+ 		{
+ 			state_ = STATE_HIT;
+ 			frameState_ = infoPlayer_->frameRebirth_;
++			if (stageController_->GetPlayerCount() > 1) frameState_ *= 2;
+ 
+ 			gstd::value valueHitObjectID = script_->CreateRealValue(hitObjectID_);
+ 			std::vector<gstd::value> listScriptValue;
+@@ -142,10 +146,12 @@
+ 				if(objBossScene != NULL)
+ 				{
+ 					objBossScene->AddPlayerShootDownCount();
+-					if(objBossScene->GetActiveData()->IsLastSpell())
++					if(objBossScene->GetActiveData() != NULL && objBossScene->GetActiveData()->IsLastSpell())
+ 						bEnemyLastSpell = true;
+ 				}
+-				if(!bEnemyLastSpell)
++				if (stageController_->GetPlayerCount() > 1 && thibp::cooperativeRun().Challenge())
++					++infoPlayer_->challengeDeaths_;
++				else if(!bEnemyLastSpell)
+ 					infoPlayer_->life_--;
+ 				scriptManager->RequestEventAll(StgStagePlayerScript::EV_PLAYER_SHOOTDOWN);
+ 
+@@ -158,6 +164,10 @@
+ 				else
+ 				{
+ 					state_ = STATE_END;
++					ghostX_ = GetX();
++					ghostY_ = GetY();
++					ghostFrame_ = 0;
++					if (stageController_->GetPlayerCount() > 1) SetSpell(0);
+ 				}
+ 			}
+ 		}
+@@ -172,17 +182,78 @@
+ 			_InitializeRebirth();
+ 			state_ = STATE_NORMAL;
+ 			scriptManager->RequestEventAll(StgStageScript::EV_PLAYER_REBIRTH);
++			if (stageController_->GetPlayerCount() > 1)
++				SetSpell(thibp::cooperativeRun().Challenge() ? 0 : std::max(GetSpell() - 1, 1.0));
+ 		}
+ 	}
+ 	if(state_ == STATE_END)
+ 	{
+ 		bVisible_ = false;
++		if (IsGhost())
++		{
++			const double phase = ++ghostFrame_ * 0.035 + seat_ * 1.2;
++			SetX(std::clamp(ghostX_ + 6 * std::sin(phase), double(rcClip_.left), double(rcClip_.right)));
++			SetY(std::clamp(ghostY_ + 4 * std::cos(phase * 0.81), double(rcClip_.top), double(rcClip_.bottom)));
++		}
+ 	}
+ 
+ 	frameInvincibility_ = max(frameInvincibility_ - 1, 0);
+ 	listGrazedShot_.clear();
+ 	hitObjectID_ = DxScript::ID_INVALID;
+ }
++void StgPlayerObject::SetSpell(double spell)
++{
++	infoPlayer_->SetSpell(stageController_->GetPlayerCount() > 1 &&
++		thibp::cooperativeRun().Challenge() ? 0 : spell);
++}
++
++void StgPlayerObject::RestoreCooperativeStock(const thibp::SeatStock& stock)
++{
++	SetLife(stock.life);
++	SetSpell(stock.bombs);
++	SetPower(stock.power);
++	SetRebirthFrame(stock.rebirth);
++	SetInvincibilityFrame(stock.invincibility);
++	infoPlayer_->lifeFragments_ = stock.lifeFragments;
++	infoPlayer_->bombFragments_ = stock.bombFragments;
++	infoPlayer_->challengeDeaths_ = stock.deaths;
++}
++
++void StgPlayerObject::AddResourceItem(int type, int lifeLimit, int bombLimit)
++{
++	if (type == 3)
++	{
++		if (thibp::cooperativeRun().Challenge()) return;
++		if (++infoPlayer_->bombFragments_ < bombLimit) return;
++		infoPlayer_->bombFragments_ -= bombLimit;
++		SetSpell(std::min(GetSpell() + 1, 8.0));
++		return;
++	}
++	if (thibp::cooperativeRun().Challenge()) return;
++	infoPlayer_->lifeFragments_ += type == 4 ? lifeLimit : 1;
++	if (infoPlayer_->lifeFragments_ < lifeLimit) return;
++	infoPlayer_->lifeFragments_ -= lifeLimit;
++	SetLife(std::min(GetLife() + 1, 8.0));
++}
++
++bool StgPlayerObject::IsGhost() const
++{
++	return state_ == STATE_END && stageController_->GetPlayerCount() > 1;
++}
++
++void StgPlayerObject::ReviveCooperative()
++{
++	if (!IsGhost()) return;
++	StgStageController::PlayerScope player(*stageController_, seat_);
++	state_ = STATE_NORMAL;
++	bVisible_ = true;
++	SetLife(std::max(GetLife(), 0.0));
++	SetPower(0.5);
++	stageController_->GetScriptManagerP()->RequestEventAll(StgStageScript::EV_PLAYER_REBIRTH);
++	SetSpell(std::max(GetSpell() - 1, 1.0));
++	SetInvincibilityFrame(240);
++}
++
+ void StgPlayerObject::Move()
+ {
+ 	if(state_ == STATE_NORMAL)
+@@ -196,6 +267,7 @@
+ }
+ void StgPlayerObject::_Move()
+ {
++	StgStageController::PlayerScope player(*stageController_, seat_);
+ 	double sx = 0;
+ 	double sy = 0;
+ 	EDirectInput* input = EDirectInput::GetInstance();
+@@ -226,6 +298,15 @@
+ 
+ 	double px = posX_ + sx;
+ 	double py = posY_ + sy;
++	if (stageController_->GetPlayerCount() > 1 && IsPermitShot())
++	{
++		const auto sample = thibp::cooperativeRun().CurrentInput()[seat_];
++		if (thibp::hasTouchPosition(sample))
++		{
++			px = thibp::touchX(sample);
++			py = thibp::touchY(sample);
++		}
++	}
+ 
+ 	//はみ出たときの処理
+ 	px = std::max(px, static_cast<double>(rcClip_.left));
+@@ -238,7 +319,8 @@
+ }
+ void StgPlayerObject::_AddIntersection()
+ {
+-	if(frameInvincibility_ > 0)return;
++	if (frameInvincibility_ > 0 || stageController_->IsSpecialProtectionActive() ||
++		(stageController_->GetPlayerCount() > 1 && stageController_->IsCooperativeSpellActive(seat_))) return;
+ 	StgIntersectionManager* intersectionManager = stageController_->GetIntersectionManager();
+ 
+ 	UpdateIntersectionRelativeTarget(posX_, posY_, 0);
+diff --git a/source/TouhouDanmakufu/Common/StgPlayer.hpp b/source/TouhouDanmakufu/Common/StgPlayer.hpp
+--- a/source/TouhouDanmakufu/Common/StgPlayer.hpp
++++ b/source/TouhouDanmakufu/Common/StgPlayer.hpp
+@@ -19,6 +19,9 @@
+ 		double life_;
+ 		double countBomb_;
+ 		double power_;
++		int challengeDeaths_ = 0;
++		int lifeFragments_ = 0;
++		int bombFragments_ = 0;
+ 		int frameRebirth_;//くらいボム有効フレーム
+ 	public:
+ 		StgPlayerInformation(){}
+@@ -48,6 +51,10 @@
+ 	protected:
+ 		StgStageController* stageController_;
+ 		StgStagePlayerScript* script_;
++		int seat_;
++		unsigned ghostFrame_ = 0;
++		double ghostX_ = 0;
++		double ghostY_ = 0;
+ 		ref_count_ptr<StgPlayerInformation> infoPlayer_;
+ 		ref_count_ptr<StgPlayerSpellManageObject>::unsync objSpell_;
+ 
+@@ -84,6 +91,7 @@
+ 		void Move();
+ 		virtual void Intersect(ref_count_ptr<StgIntersectionTarget>::unsync ownTarget, ref_count_ptr<StgIntersectionTarget>::unsync otherTarget);
+ 		void CallSpell();
++		void ReviveCooperative();
+ 
+ 		virtual void SetX(double x){posX_ = x; DxScriptRenderObject::SetX(x);}
+ 		virtual void SetY(double y){posY_ = y; DxScriptRenderObject::SetY(y);}
+@@ -105,9 +113,15 @@
+ 		void SetClip(RECT rect){rcClip_ = rect;}
+ 
+ 		int GetState(){return state_;}
++		bool IsGhost() const;
+ 		int GetDownStateFrame(){return frameStateDown_;}
+ 		void SetDownStateFrame(int frame){frameStateDown_ = frame;}
+ 		int GetRebirthFrame(){return infoPlayer_->GetRebirthFrame();}
++		int GetChallengeDeaths() { return infoPlayer_->challengeDeaths_; }
++		int GetLifeFragments() { return infoPlayer_->lifeFragments_; }
++		int GetBombFragments() { return infoPlayer_->bombFragments_; }
++		void AddResourceItem(int type, int lifeLimit, int bombLimit);
++		void RestoreCooperativeStock(const thibp::SeatStock& stock);
+ 		void SetRebirthFrameMax(int frame){frameRebirthMax_ = frame;}
+ 		void SetRebirthFrame(int frame){infoPlayer_->SetRebirthFrame(frame);}
+ 		void SetRebirthLossFrame(int frame){frameRebirthDiff_ = frame;}
+@@ -116,7 +130,7 @@
+ 		double GetLife(){return infoPlayer_->GetLife();}
+ 		void SetLife(double life){infoPlayer_->SetLife(life);}
+ 		double GetSpell(){return infoPlayer_->GetSpell();}
+-		void SetSpell(double spell){infoPlayer_->SetSpell(spell);}
++		void SetSpell(double spell);
+ 		double GetPower(){return infoPlayer_->GetPower();}
+ 		void SetPower(double power){infoPlayer_->SetPower(power);}
+ 		int GetInvincibilityFrame(){return frameInvincibility_;}
+diff --git a/source/TouhouDanmakufu/Common/StgShot.cpp b/source/TouhouDanmakufu/Common/StgShot.cpp
+--- a/source/TouhouDanmakufu/Common/StgShot.cpp
++++ b/source/TouhouDanmakufu/Common/StgShot.cpp
+@@ -10,7 +10,15 @@
+ {
+ 	stageController_ = stageController;
+ 
+-	listPlayerShotData_ = new StgShotDataList();
++	listPlayerShotData_[0] = new StgShotDataList();
++	if (stageController->GetPlayerCount() > 1)
++	{
++		for (int seat = 0; seat < stageController->GetPlayerCount(); ++seat)
++		{
++			auto& data = listPlayerShotData_[thibp::cooperativeRun().ShotGroup(seat)];
++			if (data == NULL) data = new StgShotDataList();
++		}
++	}
+ 	listEnemyShotData_ = new StgShotDataList();
+ }
+ StgShotManager::~StgShotManager()
+@@ -96,11 +104,12 @@
+ 	for(int iBlend = 0 ; iBlend < countBlendType ; iBlend++)
+ 	{
+ 		graphics->SetBlendMode(blendMode[iBlend]);
+-		std::vector<ref_count_ptr<StgShotRenderer>::unsync >* listPlayer = 
+-			listPlayerShotData_->GetRendererList(typeRender[iBlend]);
++		for (auto& data : listPlayerShotData_)
++		{
++			if (data == NULL) continue;
++			for (auto& renderer : *data->GetRendererList(typeRender[iBlend])) renderer->Render();
++		}
+ 		int iRender = 0;
+-		for(iRender = 0 ; iRender < listPlayer->size() ; iRender++)
+-			(listPlayer->at(iRender))->Render();
+ 
+ 		std::vector<ref_count_ptr<StgShotRenderer>::unsync >* listEnemy = 
+ 			listEnemyShotData_->GetRendererList(typeRender[iBlend]);
+@@ -127,7 +136,9 @@
+ 
+ bool StgShotManager::LoadPlayerShotData(std::wstring path, bool bReload)
+ {
+-	return listPlayerShotData_->AddShotDataList(path, bReload);
++	const auto group = stageController_->GetPlayerCount() > 1
++		? thibp::cooperativeRun().ShotGroup(stageController_->GetPlayerSeat()) : 0;
++	return listPlayerShotData_[group]->AddShotDataList(path, bReload);
+ }
+ bool StgShotManager::LoadEnemyShotData(std::wstring path, bool bReload)
+ {
+@@ -757,6 +768,8 @@
+ **********************************************************/
+ StgShotObject::StgShotObject(StgStageController* stageController) : StgMoveObject(stageController)
+ {
++	if (stageController->GetPlayerCount() > 1)
++		playerShotGroup_ = thibp::cooperativeRun().ShotGroup(stageController->GetPlayerSeat());
+ 	stageController_ = stageController;
+ 
+ 	frameWork_ = 0;
+@@ -956,7 +969,7 @@
+ 	StgShotData* res = NULL;
+ 	StgShotManager* shotManager = stageController_->GetShotManager();
+ 	StgShotDataList* dataList = (typeOwner_ == OWNER_PLAYER) ?
+-		shotManager->GetPlayerShotDataList() : shotManager->GetEnemyShotDataList();
++		shotManager->GetPlayerShotDataList(playerShotGroup_) : shotManager->GetEnemyShotDataList();
+ 
+ 	if(dataList != NULL)
+ 	{
+diff --git a/source/TouhouDanmakufu/Common/StgShot.hpp b/source/TouhouDanmakufu/Common/StgShot.hpp
+--- a/source/TouhouDanmakufu/Common/StgShot.hpp
++++ b/source/TouhouDanmakufu/Common/StgShot.hpp
+@@ -3,6 +3,7 @@
+ 
+ #include"StgCommon.hpp"
+ #include"StgIntersection.hpp"
++#include <array>
+ 
+ class StgShotDataList;
+ class StgShotData;
+@@ -37,7 +38,7 @@
+ 
+ 	protected:
+ 		StgStageController* stageController_;
+-		ref_count_ptr<StgShotDataList>::unsync listPlayerShotData_;
++		std::array<ref_count_ptr<StgShotDataList>::unsync, 3> listPlayerShotData_;
+ 		ref_count_ptr<StgShotDataList>::unsync listEnemyShotData_;
+ 		std::list<ref_count_ptr<StgShotObject>::unsync > listObj_;
+ 
+@@ -52,7 +53,7 @@
+ 
+ 		void AddShot(ref_count_ptr<StgShotObject>::unsync obj){listObj_.push_back(obj);}
+ 
+-		StgShotDataList* GetPlayerShotDataList(){return listPlayerShotData_.GetPointer();}
++		StgShotDataList* GetPlayerShotDataList(unsigned group = 0){return listPlayerShotData_[group].GetPointer();}
+ 		StgShotDataList* GetEnemyShotDataList(){return listEnemyShotData_.GetPointer();}
+ 
+ 		bool LoadPlayerShotData(std::wstring path, bool bReload = false);
+@@ -202,6 +203,7 @@
+ 		int frameWork_;
+ 		int idShotData_;
+ 		int typeOwner_;
++		unsigned playerShotGroup_ = 0;
+ 
+ 		D3DCOLOR color_;
+ 		int delay_;//遅延時間
+diff --git a/source/TouhouDanmakufu/Common/StgStageController.cpp b/source/TouhouDanmakufu/Common/StgStageController.cpp
+--- a/source/TouhouDanmakufu/Common/StgStageController.cpp
++++ b/source/TouhouDanmakufu/Common/StgStageController.cpp
+@@ -114,6 +114,18 @@
+ 
+ 	infoStage_ = infoStage;
+ 	infoStage_->SetReplay(replayStageData != NULL);
++	auto& run = thibp::cooperativeRun();
++	if (infoStage_->IsReplay())
++	{
++		const auto& recording = replayStageData->Cooperative();
++		run.PrepareReplay(recording);
++		playerCount_ = recording.playerCount;
++	}
++	else if (run.WaitingForStage())
++	{
++		playerCount_ = run.PlayerCount();
++		infoStage_->SetMersenneTwisterSeed(static_cast<int>(run.StageSeed(infoStage_->GetStageIndex())));
++	}
+ 
+ 	//リプレイキー設定
+ 	int replayState = infoStage_->IsReplay() ? KeyReplayManager::STATE_REPLAY : KeyReplayManager::STATE_RECORD;
+@@ -185,7 +197,7 @@
+ 		infoStage_->GetMersenneTwister()->Initialize(randSeed);
+ 
+ 		//リプレイキー
+-		keyReplayManager_->ReadRecord(*replayStageData->GetReplayKeyRecord());
++		if (playerCount_ == 1) keyReplayManager_->ReadRecord(*replayStageData->GetReplayKeyRecord());
+ 
+ 		//ステージ情報
+ 		infoStage_->SetScore(replayStageData->GetStartScore());
+@@ -246,17 +258,26 @@
+ 	}
+ 
+ 	//自機スクリプト
+-	ref_count_ptr<StgPlayerObject>::unsync objPlayer = NULL;
+ 	ref_count_ptr<ScriptInformation> infoPlayer = infoStage_->GetPlayerScriptInformation();
+ 	std::wstring pathPlayerScript = infoPlayer->GetScriptPath();
+ 
+-	if(pathPlayerScript.size() > 0)
+-	{
++	for (int seat = 0; seat < playerCount_ && !pathPlayerScript.empty(); ++seat)
++	{
++		PlayerScope player(*this, seat);
+ 		ELogger::WriteTop(StringUtility::Format(L"自機スクリプト[%s]", pathPlayerScript.c_str()));
+ 		int idPlayer = objectManager->CreatePlayerObject();
+-		objPlayer = ref_count_ptr<StgPlayerObject>::unsync::DownCast(GetMainRenderObject(idPlayer));
+-
+-		_int64 idScript = scriptManager_->LoadScript(pathPlayerScript, StgStageScript::TYPE_PLAYER);
++		auto objPlayer = ref_count_ptr<StgPlayerObject>::unsync::DownCast(GetMainRenderObject(idPlayer));
++
++		std::wstring seatPath = pathPlayerScript;
++		if (seat > 0)
++		{
++			static constexpr const wchar_t* files[] = {
++				L"Player_ReimuA.dnh", L"Player_ReimuB.dnh", L"Player_MarisaA.dnh",
++				L"Player_MarisaB.dnh", L"Player_YoumuA.dnh", L"Player_YoumuB.dnh",
++			};
++			seatPath = pathPlayerScript.substr(0, pathPlayerScript.find_last_of(L"/\\") + 1) + files[run.PlayerType(seat)];
++		}
++		_int64 idScript = scriptManager_->LoadScript(seatPath, StgStageScript::TYPE_PLAYER);
+ 		_SetupReplayTargetCommonDataArea(idScript);
+ 
+ 		ref_count_ptr<StgStagePlayerScript> script = 
+@@ -266,11 +287,18 @@
+ 		scriptManager_->StartScript(idScript);
+ 
+ 		//前ステージ情報反映
+-		if(prevPlayerInfo != NULL)
++		if (playerCount_ > 1)
++		{
++			if (prevStageData != NULL && prevStageData->GetResult() == StgStageInformation::RESULT_CLEARED)
++			{
++				auto previous = prevStageData->GetPlayerObjectInformation(seat);
++				if (previous != NULL) objPlayer->SetPlayerInforamtion(previous);
++			}
++		}
++		else if (prevPlayerInfo != NULL)
+ 			objPlayer->SetPlayerInforamtion(prevPlayerInfo);
+-	}
+-	if(objPlayer != NULL)
+-		infoStage_->SetPlayerObjectInformation(objPlayer->GetPlayerInformation());
++		infoStage_->SetPlayerObjectInformation(objPlayer->GetPlayerInformation(), seat);
++	}
+ 
+ 	//メインスクリプト
+ 	if(infoMain->GetType() == ScriptInformation::TYPE_SINGLE)
+@@ -293,6 +321,35 @@
+ 			_int64 idScript = scriptManager_->LoadScript(pathMainScript, StgStageScript::TYPE_STAGE);
+ 			_SetupReplayTargetCommonDataArea(idScript);
+ 			scriptManager_->StartScript(idScript);
++		}
++	}
++
++	if (playerCount_ > 1 && infoStage_->IsReplay())
++	{
++		for (int seat = 0; seat < playerCount_; ++seat)
++			GetPlayerObject(seat)->RestoreCooperativeStock(replayStageData->Cooperative().stocks[seat]);
++	}
++	else if (playerCount_ > 1)
++	{
++		const bool continued = prevStageData != NULL && prevStageData->GetResult() == StgStageInformation::RESULT_CLEARED;
++		const double initialLife = GetPlayerObject(0)->GetLife();
++		const double initialSpell = std::max(GetPlayerObject(0)->GetSpell() - 1, 1.0);
++		for (int seat = 0; seat < playerCount_; ++seat)
++		{
++			auto player = GetPlayerObject(seat);
++			if (!continued)
++			{
++				player->SetLife(initialLife);
++				player->SetSpell(initialSpell);
++			}
++			else if (player->GetLife() < 0)
++			{
++				player->SetLife(0);
++				player->SetSpell(2);
++				player->SetPower(0.5);
++				player->SetInvincibilityFrame(240);
++			}
++			if (run.Challenge()) player->SetSpell(0);
+ 		}
+ 	}
+ 
+@@ -354,6 +411,21 @@
+ 	}
+ 
+ 	infoStage_->SetStageStartTime(timeGetTime());
++	if (playerCount_ > 1 && !infoStage_->IsReplay())
++	{
++		auto& recording = replayStageData->Cooperative();
++		recording.playerCount = playerCount_;
++		recording.playerTypes = run.PlayerTypes();
++		recording.challenge = run.Challenge();
++		for (int seat = 0; seat < playerCount_; ++seat)
++		{
++			auto player = GetPlayerObject(seat);
++			recording.stocks[seat] = {player->GetLife(), player->GetSpell(), player->GetPower(),
++				player->GetRebirthFrame(), player->GetInvincibilityFrame(), player->GetLifeFragments(),
++				player->GetBombFragments(), player->GetChallengeDeaths()};
++		}
++		run.BeginStage(infoStage_->GetStageIndex());
++	}
+ #if defined(PH3_REPLAY_BOUNDARY) || defined(WOO_REPLAY_VERIFY)
+ 	woo::replay::Boundary(this, true);
+ #endif
+@@ -431,6 +503,11 @@
+ 
+ void StgStageController::Work()
+ {
++	// The package may start the stage midway through an application tick.
++	// Frame zero waits for the first complete input frame at the next tick.
++	auto& run = thibp::cooperativeRun();
++	const bool extendedReplay = playerCount_ > 1 && infoStage_->IsReplay();
++	if (playerCount_ > 1 && !extendedReplay && run.NextTick() == run.StageStartTick()) return;
+ #ifdef WOO_REPLAY_VERIFY
+ 	woo::verify::Step traceStep(this);
+ #endif
+@@ -470,8 +547,25 @@
+ 	{
+ 		if(!bCurrentPause)
+ 		{
+-			//リプレイキー更新
+-			keyReplayManager_->Update();
++			const int stageFrame = infoStage_->GetCurrentFrame();
++			auto& frames = infoStage_->GetReplayData()->Cooperative();
++			if (extendedReplay)
++			{
++				if (static_cast<std::size_t>(stageFrame) >= frames.frames.size())
++				{
++					infoStage_->SetEnd();
++					return;
++				}
++				run.ApplyInputs(frames.frames[stageFrame]);
++			}
++			else if (playerCount_ > 1)
++			{
++				if (frames.frames.empty()) frames.previous = run.PreviousInput();
++				frames.frames.push_back(run.CurrentInput());
++			}
++			else keyReplayManager_->Update();
++			VirtualKeyManager::KeyStateScope replayKeys(*input,
++				extendedReplay ? run.RecordedMenuKeys() : VirtualKeyManager::KeyStates{});
+ 
+ 			//スクリプト処理で、自機、敵、弾の動作が行われる。
+ 			scriptManager_->Work(StgStageScript::TYPE_SYSTEM);
+@@ -479,8 +573,11 @@
+ 			scriptManager_->Work(StgStageScript::TYPE_SHOT);
+ 			scriptManager_->Work(StgStageScript::TYPE_ITEM);
+ 
+-			ref_count_ptr<StgPlayerObject>::unsync objPlayer = GetPlayerObject();
+-			if(objPlayer != NULL)objPlayer->Move(); //自機だけ先に移動
++			for (int seat = 0; seat < playerCount_; ++seat)
++			{
++				auto player = GetPlayerObject(seat);
++				if (player != NULL) player->Move();
++			}
+ 			scriptManager_->Work(StgStageScript::TYPE_PLAYER);
+ 
+ 			//オブジェクト動作処理
+@@ -490,6 +587,7 @@
+ 			enemyManager_->Work();
+ 			shotManager_->Work();
+ 			itemManager_->Work();
++			if (playerCount_ > 1) _WorkCooperativeRules();
+ 
+ 			//当たり判定処理
+ 			enemyManager_->RegistIntersectionTarget();
+@@ -568,7 +666,144 @@
+ }
+ ref_count_ptr<StgPlayerObject>::unsync StgStageController::GetPlayerObject()
+ {
+-	int idPlayer = objectManagerMain_->GetPlayerObjectID();
++	if (playerContext_ >= 0 || playerCount_ == 1) return GetPlayerObject(GetPlayerSeat());
++	auto fallback = GetPlayerObject(0);
++	for (int seat = 0; seat < playerCount_; ++seat)
++	{
++		auto player = GetPlayerObject(seat);
++		if (player == NULL || player->IsGhost()) continue;
++		if (player->GetState() == StgPlayerObject::STATE_NORMAL) return player;
++		if (fallback == NULL || fallback->IsGhost()) fallback = player;
++	}
++	return fallback;
++}
++
++int StgStageController::GetLivingPlayerCount()
++{
++	int count = 0;
++	for (int seat = 0; seat < playerCount_; ++seat)
++	{
++		auto player = GetPlayerObject(seat);
++		if (player != NULL && !player->IsGhost()) ++count;
++	}
++	return count;
++}
++
++int StgStageController::FindNearestActivePlayer(double x, double y)
++{
++	int nearest = -1;
++	double distance = 0;
++	for (int seat = 0; seat < playerCount_; ++seat)
++	{
++		auto player = GetPlayerObject(seat);
++		if (player == NULL || player->GetState() != StgPlayerObject::STATE_NORMAL) continue;
++		const double dx = player->GetX() - x, dy = player->GetY() - y;
++		const double squared = dx * dx + dy * dy;
++		if (nearest < 0 || squared < distance)
++		{
++			nearest = seat;
++			distance = squared;
++		}
++	}
++	return nearest;
++}
++
++bool StgStageController::BeginCooperativeSpecial()
++{
++	if (playerCount_ == 1) return true;
++	if (playerContext_ < 0 || IsSpecialProtectionActive()) return false;
++	auto player = GetPlayerObject(playerContext_);
++	if (player == NULL || player->GetState() != StgPlayerObject::STATE_NORMAL) return false;
++	specialSeat_ = playerContext_;
++	++specialStarts_;
++	return true;
++}
++
++void StgStageController::EndCooperativeSpecial()
++{
++	if (specialSeat_ < 0 || specialSeat_ != playerContext_) return;
++	specialSeat_ = -1;
++	specialReleasedAt_ = infoStage_->GetCurrentFrame();
++}
++
++bool StgStageController::IsSpecialProtectionActive()
++{
++	return specialSeat_ >= 0 || (playerCount_ > 1 && specialReleasedAt_ == infoStage_->GetCurrentFrame());
++}
++
++bool StgStageController::IsCooperativeSpellActive(int exceptSeat)
++{
++	for (int seat = 0; seat < playerCount_; ++seat)
++	{
++		if (seat == exceptSeat) continue;
++		auto player = GetPlayerObject(seat);
++		if (player == NULL || player->IsGhost()) continue;
++		auto spell = player->GetSpellManageObject();
++		if (spell != NULL && !spell->IsDeleted()) return true;
++	}
++	return false;
++}
++
++void StgStageController::_WorkCooperativeRules()
++{
++	if (GetLivingPlayerCount() == 0)
++	{
++		++teamDownFrames_;
++		return;
++	}
++	teamDownFrames_ = 0;
++	const auto& run = thibp::cooperativeRun();
++	if (run.Challenge()) return;
++	const unsigned frame = infoStage_->GetCurrentFrame();
++	for (int seat = 0; seat < playerCount_; ++seat)
++	{
++		auto donor = GetPlayerObject(seat);
++		auto& transfer = lifeTransfers_[seat];
++		const auto keys = run.PlayerKeys(seat);
++		if (donor->GetState() != StgPlayerObject::STATE_NORMAL || donor->GetLife() < 1 ||
++			keys.data[EDirectInput::KEY_SHOT] == KEY_PUSH || keys.data[EDirectInput::KEY_SHOT] == KEY_HOLD)
++		{
++			transfer = {};
++			continue;
++		}
++
++		int recipient = -1;
++		for (int other = 0; other < playerCount_; ++other)
++		{
++			if (other == seat) continue;
++			auto candidate = GetPlayerObject(other);
++			if (candidate->GetLife() >= 8 ||
++				(!candidate->IsGhost() && candidate->GetState() != StgPlayerObject::STATE_NORMAL)) continue;
++			const double dx = donor->GetX() - candidate->GetX();
++			const double dy = donor->GetY() - candidate->GetY();
++			if (dx * dx + dy * dy > 20 * 20) continue;
++			if (recipient < 0) recipient = other;
++			else
++			{
++				auto selected = GetPlayerObject(recipient);
++				if ((candidate->IsGhost() && !selected->IsGhost()) ||
++					(candidate->IsGhost() == selected->IsGhost() && candidate->GetLife() < selected->GetLife()))
++					recipient = other;
++			}
++		}
++		if (recipient != transfer.recipient || frame - transfer.lastTap > 24) transfer = {};
++		if (recipient < 0 || keys.data[EDirectInput::KEY_SLOWMOVE] != KEY_PUSH) continue;
++
++		transfer.recipient = recipient;
++		transfer.lastTap = frame;
++		if (++transfer.count < 5) continue;
++		auto receiver = GetPlayerObject(recipient);
++		donor->SetLife(donor->GetLife() - 1);
++		if (receiver->IsGhost()) receiver->ReviveCooperative();
++		else receiver->SetLife(receiver->GetLife() + 1);
++		transfer = {};
++	}
++}
++
++ref_count_ptr<StgPlayerObject>::unsync StgStageController::GetPlayerObject(int seat)
++{
++	if (seat < 0 || seat >= playerCount_) return NULL;
++	int idPlayer = objectManagerMain_->GetPlayerObjectID(seat);
+ 	if(idPlayer == DxScript::ID_INVALID)return NULL;
+ 	return ref_count_ptr<StgPlayerObject>::unsync::DownCast(GetMainRenderObject(idPlayer));
+ }
+diff --git a/source/TouhouDanmakufu/Common/StgStageController.hpp b/source/TouhouDanmakufu/Common/StgStageController.hpp
+--- a/source/TouhouDanmakufu/Common/StgStageController.hpp
++++ b/source/TouhouDanmakufu/Common/StgStageController.hpp
+@@ -9,6 +9,7 @@
+ #include"StgItem.hpp"
+ #include"StgIntersection.hpp"
+ #include"StgUserExtendScene.hpp"
++#include "../../../portable/multiplayer/ThibpCoop.hpp"
+ 
+ class StgStageInformation;
+ class StgStageStartData;
+@@ -33,6 +34,20 @@
+ 		ref_count_ptr<StgItemManager> itemManager_;
+ 		ref_count_ptr<StgIntersectionManager> intersectionManager_;
+ 
++		int playerCount_ = 1;
++		int playerContext_ = -1;
++		int teamDownFrames_ = 0;
++		int specialSeat_ = -1;
++		int specialReleasedAt_ = -1;
++		unsigned specialStarts_ = 0;
++		struct LifeTransfer {
++			int recipient = -1;
++			int count = 0;
++			unsigned lastTap = 0;
++		};
++		std::array<LifeTransfer, thibp::maxPlayers> lifeTransfers_{};
++		void _WorkCooperativeRules();
++
+ 		void _SetupReplayTargetCommonDataArea(_int64 idScript);
+ 
+ 	public:
+@@ -55,6 +70,38 @@
+ 
+ 		ref_count_ptr<DxScriptObjectBase>::unsync GetMainRenderObject(int idObject);
+ 		ref_count_ptr<StgPlayerObject>::unsync GetPlayerObject();
++		ref_count_ptr<StgPlayerObject>::unsync GetPlayerObject(int seat);
++		int GetPlayerCount() const { return playerCount_; }
++		int FindNearestActivePlayer(double x, double y);
++		bool IsTeamDown() const { return teamDownFrames_ >= 180; }
++		bool IsCooperativeSpellActive(int exceptSeat = -1);
++		bool BeginCooperativeSpecial();
++		void EndCooperativeSpecial();
++		bool IsSpecialProtectionActive();
++		int GetSpecialSeat() const { return specialSeat_; }
++		unsigned GetSpecialStarts() const { return specialStarts_; }
++		int GetLivingPlayerCount();
++		int GetLifeTransferCount(int seat) const { return lifeTransfers_[seat].count; }
++		int GetPlayerContext() const { return playerContext_; }
++		int GetPlayerSeat() const { return playerContext_ < 0 ? 0 : playerContext_; }
++		double GetPlayerSpawnOffset(int seat) const { return (2 * seat - (playerCount_ - 1)) * 16.0; }
++
++		class PlayerScope {
++			StgStageController& stage_;
++			int previous_;
++			VirtualKeyManager::KeyStateScope keys_;
++		public:
++			PlayerScope(StgStageController& stage, int seat)
++				: stage_(stage), previous_(stage.playerContext_),
++				  keys_(*EDirectInput::GetInstance(), stage.playerCount_ > 1
++					? thibp::cooperativeRun().PlayerKeys(seat) : VirtualKeyManager::KeyStates{})
++			{
++				if (stage_.playerCount_ > 1) stage_.playerContext_ = seat;
++			}
++			~PlayerScope() { stage_.playerContext_ = previous_; }
++			PlayerScope(const PlayerScope&) = delete;
++			PlayerScope& operator=(const PlayerScope&) = delete;
++		};
+ 
+ 		StgSystemController* GetSystemController(){return systemController_;}
+ 		ref_count_ptr<StgSystemInformation> GetSystemInformation(){return infoSystem_;}
+@@ -88,7 +135,7 @@
+ 
+ 		ref_count_ptr<ScriptInformation> infoMainScript_;
+ 		ref_count_ptr<ScriptInformation> infoPlayerScript_;
+-		ref_count_ptr<StgPlayerInformation> infoPlayerObject_;
++		std::array<ref_count_ptr<StgPlayerInformation>, thibp::maxPlayers> infoPlayerObjects_;
+ 		ref_count_ptr<ReplayInformation::StageData> replayStageData_;
+ 
+ 		//STG設定
+@@ -126,8 +173,8 @@
+ 		void SetMainScriptInformation(ref_count_ptr<ScriptInformation> info){infoMainScript_ = info;}
+ 		ref_count_ptr<ScriptInformation> GetPlayerScriptInformation(){return infoPlayerScript_;}
+ 		void SetPlayerScriptInformation(ref_count_ptr<ScriptInformation> info ){infoPlayerScript_ = info;}
+-		ref_count_ptr<StgPlayerInformation> GetPlayerObjectInformation(){return infoPlayerObject_;}
+-		void SetPlayerObjectInformation(ref_count_ptr<StgPlayerInformation> info ){infoPlayerObject_ = info;}
++		ref_count_ptr<StgPlayerInformation> GetPlayerObjectInformation(int seat = 0){return infoPlayerObjects_[seat];}
++		void SetPlayerObjectInformation(ref_count_ptr<StgPlayerInformation> info, int seat = 0){infoPlayerObjects_[seat] = info;}
+ 		ref_count_ptr<ReplayInformation::StageData> GetReplayData(){return replayStageData_;}
+ 		void SetReplayData(ref_count_ptr<ReplayInformation::StageData> data){replayStageData_ = data;}
+ 
+diff --git a/source/TouhouDanmakufu/Common/StgStageScript.cpp b/source/TouhouDanmakufu/Common/StgStageScript.cpp
+--- a/source/TouhouDanmakufu/Common/StgStageScript.cpp
++++ b/source/TouhouDanmakufu/Common/StgStageScript.cpp
+@@ -12,7 +12,7 @@
+ {
+ 	stageController_ = stageController;
+ 	objManager_ = stageController_->GetMainObjectManager();
+-	idPlayerScript_ = ID_INVALID;
++	playerScriptIds_.fill(ID_INVALID);
+ 	idItemScript_ = ID_INVALID;
+ 	idShotScript_ = ID_INVALID;
+ }
+@@ -62,6 +62,14 @@
+ 
+ 	return res;
+ }
++_int64 StgStageScriptManager::GetPlayerScriptID()
++{
++	return playerScriptIds_[stageController_->GetPlayerSeat()];
++}
++void StgStageScriptManager::SetPlayerScriptID(_int64 id)
++{
++	playerScriptIds_[stageController_->GetPlayerSeat()] = id;
++}
+ ref_count_ptr<ManagedScript> StgStageScriptManager::GetItemScript()
+ {
+ 	ref_count_ptr<ManagedScript> res = NULL;
+@@ -90,15 +98,15 @@
+ 	stageController_ = stageController;
+ 	SetMaxObject(256 * 256);
+ 
+-	idObjPleyer_ = DxScript::ID_INVALID;
++	playerObjectIds_.fill(DxScript::ID_INVALID);
+ }
+ StgStageScriptObjectManager::~StgStageScriptObjectManager()
+ {
+-	if(idObjPleyer_ != DxScript::ID_INVALID)
+-	{
+-		ref_count_ptr<StgPlayerObject>::unsync obj = ref_count_ptr<StgPlayerObject>::unsync::DownCast(GetObject(idObjPleyer_));
+-		if(obj != NULL)
+-			obj->Clear();
++	for (int id : playerObjectIds_)
++	{
++		if (id == DxScript::ID_INVALID) continue;
++		auto player = ref_count_ptr<StgPlayerObject>::unsync::DownCast(GetObject(id));
++		if (player != NULL) player->Clear();
+ 	}
+ }
+ void StgStageScriptObjectManager::RenderObject()
+@@ -231,12 +239,16 @@
+ 	camera2D->SetRatio(focusRatio);
+ */
+ }
++int StgStageScriptObjectManager::GetPlayerObjectID()
++{
++	return GetPlayerObjectID(stageController_->GetPlayerSeat());
++}
+ int StgStageScriptObjectManager::CreatePlayerObject()
+ {
+-	//自機オブジェクト生成
+-	ref_count_ptr<StgPlayerObject>::unsync objPlayer = new StgPlayerObject(stageController_);
+-	idObjPleyer_ = AddObject(objPlayer);
+-	return idObjPleyer_;
++	ref_count_ptr<StgPlayerObject>::unsync player = new StgPlayerObject(stageController_);
++	const int id = AddObject(player);
++	playerObjectIds_[stageController_->GetPlayerSeat()] = id;
++	return id;
+ }
+ 
+ 
+@@ -281,6 +293,14 @@
+ 	{"GetPlayerX", StgStageScript::Func_GetPlayerX, 0},
+ 	{"GetPlayerY", StgStageScript::Func_GetPlayerY, 0},
+ 	{"GetPlayerState", StgStageScript::Func_GetPlayerState, 0},
++	{"IsThibpGhost", StgStageScript::Func_IsThibpGhost, 0},
++	{"TryThibpSpecial", StgStageScript::Func_TryThibpSpecial, 0},
++	{"ReleaseThibpSpecial", StgStageScript::Func_ReleaseThibpSpecial, 0},
++	{"GetThibpSeatCount", StgStageScript::Func_GetThibpSeatCount, 0},
++	{"GetThibpSeatStock", StgStageScript::Func_GetThibpSeatStock, 1},
++	{"GetThibpTransferCount", StgStageScript::Func_GetThibpTransferCount, 0},
++	{"GetThibpItemDistance", StgStageScript::Func_GetThibpItemDistance, 1},
++	{"RegisterThibpResourceItem", StgStageScript::Func_RegisterThibpResourceItem, 3},
+ 	{"GetPlayerSpeed", StgStageScript::Func_GetPlayerSpeed, 0},
+ 	{"GetPlayerClip", StgStageScript::Func_GetPlayerClip, 0},
+ 	{"GetPlayerLife", StgStageScript::Func_GetPlayerLife, 0},
+@@ -957,13 +977,98 @@
+ 	double res = obj != NULL ? obj->GetY() : 0;
+ 	return value(machine->get_engine()->get_real_type(), (gstd::script_real)res);
+ }
++gstd::value StgStageScript::Func_GetThibpSeatCount(gstd::script_machine* machine, int, gstd::value const* )
++{
++	auto* script = static_cast<StgStageScript*>(machine->data);
++	auto& stage = *script->stageController_;
++	return gstd::value(machine->get_engine()->get_real_type(), static_cast<gstd::script_real>(stage.GetPlayerCount()));
++}
++gstd::value StgStageScript::Func_GetThibpSeatStock(gstd::script_machine* machine, int, gstd::value const* argv)
++{
++	auto* script = static_cast<StgStageScript*>(machine->data);
++	auto& stage = *script->stageController_;
++	const int seat = static_cast<int>(argv[0].as_real());
++	auto player = stage.GetPlayerObject(seat);
++	std::vector<gstd::script_real> values(6);
++	if (player != NULL)
++	{
++		values[0] = thibp::cooperativeRun().Challenge() ? player->GetChallengeDeaths() : std::max(0.0, player->GetLife());
++		values[1] = player->GetSpell();
++		values[2] = player->GetLifeFragments();
++		values[3] = player->GetBombFragments();
++		values[4] = player->IsGhost() ? 1 : 0;
++		values[5] = thibp::cooperativeRun().Challenge() ? 1 : 0;
++	}
++	return script->CreateRealArrayValue(values);
++}
++gstd::value StgStageScript::Func_GetThibpTransferCount(gstd::script_machine* machine, int, gstd::value const* )
++{
++	auto* script = static_cast<StgStageScript*>(machine->data);
++	auto& stage = *script->stageController_;
++	return gstd::value(machine->get_engine()->get_real_type(), static_cast<gstd::script_real>(stage.GetLifeTransferCount(stage.GetPlayerSeat())));
++}
++gstd::value StgStageScript::Func_GetThibpItemDistance(gstd::script_machine* machine, int, gstd::value const* argv)
++{
++	auto* script = static_cast<StgStageScript*>(machine->data);
++	auto& stage = *script->stageController_;
++	const auto id = static_cast<int>(argv[0].as_real());
++	auto item = ref_count_ptr<StgItemObject>::unsync::DownCast(stage.GetMainRenderObject(id));
++	double result = -1;
++	if (item != NULL)
++	{
++		const double x = item->GetPositionX(), y = item->GetPositionY();
++		const auto seat = stage.FindNearestActivePlayer(x, y);
++		auto player = stage.GetPlayerObject(seat);
++		if (player != NULL) result = std::hypot(player->GetX() - x, player->GetY() - y);
++	}
++	return gstd::value(machine->get_engine()->get_real_type(), static_cast<gstd::script_real>(result));
++}
++gstd::value StgStageScript::Func_RegisterThibpResourceItem(gstd::script_machine* machine, int, gstd::value const* argv)
++{
++	auto* script = static_cast<StgStageScript*>(machine->data);
++	auto& stage = *script->stageController_;
++	const int type = static_cast<int>(argv[0].as_real());
++	bool handled = false;
++	if (stage.GetPlayerCount() > 1 && stage.GetPlayerContext() >= 0 && type >= 2 && type <= 4)
++	{
++		auto player = stage.GetPlayerObject();
++		const int lifeLimit = static_cast<int>(argv[1].as_real());
++		const int bombLimit = static_cast<int>(argv[2].as_real());
++		if (player != NULL && lifeLimit > 0 && bombLimit > 0)
++		{
++			player->AddResourceItem(type, lifeLimit, bombLimit);
++			handled = true;
++		}
++	}
++	return gstd::value(machine->get_engine()->get_boolean_type(), handled);
++}
++gstd::value StgStageScript::Func_TryThibpSpecial(gstd::script_machine* machine, int, gstd::value const*)
++{
++	auto* script = static_cast<StgStageScript*>(machine->data);
++	return gstd::value(machine->get_engine()->get_boolean_type(), script->stageController_->BeginCooperativeSpecial());
++}
++gstd::value StgStageScript::Func_ReleaseThibpSpecial(gstd::script_machine* machine, int, gstd::value const*)
++{
++	auto* script = static_cast<StgStageScript*>(machine->data);
++	script->stageController_->EndCooperativeSpecial();
++	return gstd::value();
++}
++gstd::value StgStageScript::Func_IsThibpGhost(gstd::script_machine* machine, int, gstd::value const*)
++{
++	auto* script = static_cast<StgStageScript*>(machine->data);
++	auto player = script->stageController_->GetPlayerObject();
++	return gstd::value(machine->get_engine()->get_boolean_type(), player != NULL && player->IsGhost());
++}
+ gstd::value StgStageScript::Func_GetPlayerState(gstd::script_machine* machine, int argc, gstd::value const * argv)
+ {
+ 	StgStageScript* script = (StgStageScript*)machine->data;
+ 	StgStageController* stageController = script->stageController_;
+ 	ref_count_ptr<StgPlayerObject>::unsync obj = stageController->GetPlayerObject();
+-	double res = obj != NULL ? obj->GetState() : StgPlayerObject::STATE_END;
+-	return value(machine->get_engine()->get_real_type(), (gstd::script_real)res);
++	int state = obj != NULL ? obj->GetState() : StgPlayerObject::STATE_END;
++	if (state == StgPlayerObject::STATE_END && stageController->GetPlayerContext() < 0 &&
++		stageController->GetPlayerCount() > 1 && !stageController->IsTeamDown())
++		state = StgPlayerObject::STATE_DOWN;
++	return value(machine->get_engine()->get_real_type(), static_cast<gstd::script_real>(state));
+ }
+ gstd::value StgStageScript::Func_GetPlayerSpeed(gstd::script_machine* machine, int argc, gstd::value const * argv)
+ {
+@@ -1048,17 +1153,18 @@
+ 	StgStageController* stageController = script->stageController_;
+ 	ref_count_ptr<StgPlayerObject>::unsync objPlayer = stageController->GetPlayerObject();
+ 	if(objPlayer == NULL)return value(machine->get_engine()->get_real_type(), (gstd::script_real)-1);
+-	double px = objPlayer->GetPositionX();
+-	double py = objPlayer->GetPositionY();
+-
+ 	int id = (int)argv[0].as_real();
+ 	ref_count_ptr<DxScriptRenderObject>::unsync objMove = 
+ 		ref_count_ptr<DxScriptRenderObject>::unsync::DownCast(script->GetObject(id));
+ 	if(objMove == NULL)return value(machine->get_engine()->get_real_type(), (gstd::script_real)-1);
+ 	double tx = objMove->GetPosition().x;
+ 	double ty = objMove->GetPosition().y;
+-
+-	gstd::script_real angle = atan2(py-ty, px-tx) * 180 / PAI;
++	if (stageController->GetPlayerCount() > 1 && stageController->GetPlayerContext() < 0)
++	{
++		const int seat = stageController->FindNearestActivePlayer(tx, ty);
++		if (seat >= 0) objPlayer = stageController->GetPlayerObject(seat);
++	}
++	gstd::script_real angle = atan2(objPlayer->GetY() - ty, objPlayer->GetX() - tx) * 180 / PAI;
+ 	return value(machine->get_engine()->get_real_type(), (gstd::script_real)angle);
+ }
+ 
+@@ -1925,7 +2031,8 @@
+ 	
+ 	StgShotManager* shotManager = stageController->GetShotManager();
+ 	StgShotDataList* dataList = (target == TARGET_PLAYER) ?
+-		shotManager->GetPlayerShotDataList() : shotManager->GetEnemyShotDataList();
++		shotManager->GetPlayerShotDataList(stageController->GetPlayerCount() > 1
++		? thibp::cooperativeRun().ShotGroup(stageController->GetPlayerSeat()) : 0) : shotManager->GetEnemyShotDataList();
+ 
+ 	ref_count_ptr<StgShotData>::unsync shotData = NULL;
+ 	if(dataList != NULL)
+@@ -4100,13 +4207,23 @@
+ 
+ 	{"EV_GET_ITEM", constant<StgStageItemScript::EV_GET_ITEM>::func, 0},
+ };
+-StgStagePlayerScript::StgStagePlayerScript(StgStageController* stageController) : StgStageScript(stageController)
++StgStagePlayerScript::StgStagePlayerScript(StgStageController* stageController)
++	: StgStageScript(stageController), seat_(stageController->GetPlayerSeat())
+ {
+ 	typeScript_ = TYPE_PLAYER;
+ 	_AddFunction(stgPlayerFunction, sizeof(stgPlayerFunction) / sizeof(function));
+ }
+ StgStagePlayerScript::~StgStagePlayerScript()
+ {
++}
++bool StgStagePlayerScript::Run(std::string target)
++{
++	const int eventSeat = stageController_->GetPlayerContext();
++	if (eventSeat >= 0 && eventSeat != seat_ && target == "Event" &&
++		(typeEvent_ == EV_PLAYER_REBIRTH || typeEvent_ == EV_PLAYER_SHOOTDOWN))
++		return true;
++	StgStageController::PlayerScope player(*stageController_, seat_);
++	return StgStageScript::Run(std::move(target));
+ }
+ 
+ //自機専用関数
+diff --git a/source/TouhouDanmakufu/Common/StgStageScript.hpp b/source/TouhouDanmakufu/Common/StgStageScript.hpp
+--- a/source/TouhouDanmakufu/Common/StgStageScript.hpp
++++ b/source/TouhouDanmakufu/Common/StgStageScript.hpp
+@@ -3,6 +3,7 @@
+ 
+ #include"StgCommon.hpp"
+ #include"StgControlScript.hpp"
++#include "../../../portable/multiplayer/ThibpCoop.hpp"
+ 
+ class StgStageScriptObjectManager;
+ class StgStageScript;
+@@ -17,7 +18,7 @@
+ 		StgStageController* stageController_;
+ 		ref_count_ptr<StgStageScriptObjectManager> objManager_;
+ 
+-		_int64 idPlayerScript_;
++		std::array<_int64, thibp::maxPlayers> playerScriptIds_;
+ 		_int64 idItemScript_;
+ 		_int64 idShotScript_;
+ 
+@@ -31,8 +32,8 @@
+ 		gstd::ref_count_ptr<StgStageScriptObjectManager> GetObjectManager(){return objManager_;}
+ 		virtual ref_count_ptr<ManagedScript> Create(int type);
+ 
+-		_int64 GetPlayerScriptID(){return idPlayerScript_;}
+-		void SetPlayerScriptID(_int64 id){idPlayerScript_ = id;}
++		_int64 GetPlayerScriptID();
++		void SetPlayerScriptID(_int64 id);
+ 		_int64 GetItemScriptID(){return idItemScript_;}
+ 		void SetItemScriptID(_int64 id){idItemScript_ = id;}
+ 		ref_count_ptr<ManagedScript> GetItemScript();
+@@ -48,7 +49,7 @@
+ {
+ 		StgStageController* stageController_;
+ 
+-		int idObjPleyer_;
++		std::array<int, thibp::maxPlayers> playerObjectIds_;
+ 
+ 	public:
+ 		StgStageScriptObjectManager(StgStageController* stageController);
+@@ -56,7 +57,8 @@
+ 		virtual void RenderObject();
+ 		virtual void RenderObject(int priMin, int priMax);
+ 
+-		int GetPlayerObjectID(){return idObjPleyer_;}
++		int GetPlayerObjectID();
++		int GetPlayerObjectID(int seat) const { return playerObjectIds_[seat]; }
+ 		int CreatePlayerObject();
+ 
+ 
+@@ -202,6 +204,14 @@
+ 		static gstd::value Func_SetForbidPlayerSpell(gstd::script_machine* machine, int argc, gstd::value const * argv);
+ 		static gstd::value Func_GetPlayerX(gstd::script_machine* machine, int argc, gstd::value const * argv);
+ 		static gstd::value Func_GetPlayerY(gstd::script_machine* machine, int argc, gstd::value const * argv);
++		static gstd::value Func_IsThibpGhost(gstd::script_machine* machine, int argc, gstd::value const* argv);
++		static gstd::value Func_TryThibpSpecial(gstd::script_machine* machine, int argc, gstd::value const* argv);
++		static gstd::value Func_ReleaseThibpSpecial(gstd::script_machine* machine, int argc, gstd::value const* argv);
++		static gstd::value Func_GetThibpSeatCount(gstd::script_machine* machine, int argc, gstd::value const* argv);
++		static gstd::value Func_GetThibpSeatStock(gstd::script_machine* machine, int argc, gstd::value const* argv);
++		static gstd::value Func_GetThibpTransferCount(gstd::script_machine* machine, int argc, gstd::value const* argv);
++		static gstd::value Func_GetThibpItemDistance(gstd::script_machine* machine, int argc, gstd::value const* argv);
++		static gstd::value Func_RegisterThibpResourceItem(gstd::script_machine* machine, int argc, gstd::value const* argv);
+ 		static gstd::value Func_GetPlayerState(gstd::script_machine* machine, int argc, gstd::value const * argv);
+ 		static gstd::value Func_GetPlayerSpeed(gstd::script_machine* machine, int argc, gstd::value const * argv);
+ 		static gstd::value Func_GetPlayerClip(gstd::script_machine* machine, int argc, gstd::value const * argv);
+@@ -440,6 +450,7 @@
+ **********************************************************/
+ class StgStagePlayerScript : public StgStageScript
+ {
++	int seat_;
+ 	public:
+ 		enum
+ 		{
+@@ -450,6 +461,7 @@
+ 	public:
+ 		StgStagePlayerScript(StgStageController* stageController);
+ 		virtual ~StgStagePlayerScript();
++		bool Run(std::string target) override;
+ 
+ 		//自機専用関数
+ 		static gstd::value Func_CreatePlayerShotA1(gstd::script_machine* machine, int argc, gstd::value const * argv);
+diff --git a/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.cpp b/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.cpp
+--- a/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.cpp
++++ b/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.cpp
+@@ -4,6 +4,7 @@
+ 
+ #ifdef __EMSCRIPTEN__
+ #include <SDL3/SDL.h>
++#include "../../../portable/multiplayer/ThibpCoop.hpp"
+ #include <algorithm>
+ #include <filesystem>
+ #include <vector>
+@@ -197,12 +198,28 @@
+ #else
+ 	HWND hWndFocused = ::GetForegroundWindow();
+ #endif
++#ifdef __EMSCRIPTEN__
++	auto& run = thibp::cooperativeRun();
++	const bool coOpStage = run.Started();
++	const bool roomTitle = run.RoomTitleLocked();
++#else
++	const bool coOpStage = false;
++	const bool roomTitle = false;
++#endif
+ 	HWND hWndGraphics = graphics->GetWindowHandle();
+ 	HWND hWndLogger = ELogger::GetInstance()->GetWindowHandle();
+-	if (hWndFocused != hWndGraphics && hWndFocused != hWndLogger) {
++	if (!coOpStage && !roomTitle && hWndFocused != hWndGraphics && hWndFocused != hWndLogger) {
+ 		return true;
+ 	}
+-	if (input->GetKeyState(DIK_LCONTROL) == KEY_HOLD && input->GetKeyState(DIK_LSHIFT) == KEY_HOLD && input->GetKeyState(DIK_R) == KEY_PUSH) {
++#ifdef __EMSCRIPTEN__
++	if (coOpStage && !run.ConsumeFrame()) {
++		EDirectSoundManager::GetInstance()->Pump();
++		return true;
++	}
++	VirtualKeyManager::KeyStateScope sharedKeys(*input, run.MenuKeys());
++#endif
++	if (!coOpStage && !roomTitle && input->GetKeyState(DIK_LCONTROL) == KEY_HOLD &&
++		input->GetKeyState(DIK_LSHIFT) == KEY_HOLD && input->GetKeyState(DIK_R) == KEY_PUSH) {
+ 		//リセット
+ 		SystemController* systemController = SystemController::CreateInstance();
+ 		systemController->Reset();
+@@ -295,6 +312,12 @@
+ 	browserRenderEnabled_ = render;
+ 	return _Loop();
+ }
++void EApplication::WorkBrowserCooperativeTick()
++{
++	VirtualKeyManager::KeyStateScope keys(*EDirectInput::GetInstance(), thibp::cooperativeRun().MenuKeys());
++	ETaskManager::GetInstance()->CallWorkFunction();
++}
++
+ void EApplication::DrawBrowserFrame()
+ {
+ 	auto* graphics = EDirectGraphics::GetInstance();
+diff --git a/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.hpp b/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.hpp
+--- a/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.hpp
++++ b/source/TouhouDanmakufu/DnhExecutor/GcLibImpl.hpp
+@@ -24,6 +24,7 @@
+ #ifdef __EMSCRIPTEN__
+ 	bool RunFrame(bool render);
+ 	void DrawBrowserFrame();
++	void WorkBrowserCooperativeTick();
+ 	bool DidBrowserFrameWork() const { return browserFrameWorked_; }
+ 	bool StartBrowser() { return Initialize() && _Initialize(); }
+ private:

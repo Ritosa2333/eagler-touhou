@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { isMultiplayerProductId } from '../../../common/contracts/product-catalog.mjs';
 import { validRelayControlMessage } from './relay-flow-control.mjs';
 import { th09PlayerStats } from './th09-room-stats.mjs';
 
@@ -54,8 +55,8 @@ export function createRoomDirectory({
     if (online(socket) && socket.bufferedAmount < 128 * 1024) socket.send(JSON.stringify(value));
   };
   function summary(id, room) {
-    const match = /^(th\d+mp)-(\d{4,8})$/.exec(id);
-    if (!match || !room.multiplayer || room.lobby.visibility === 'private') return null;
+    const match = /^([a-z][a-z0-9]*)-(\d{4,8})$/.exec(id);
+    if (!match || !isMultiplayerProductId(match[1]) || !room.multiplayer || room.lobby.visibility === 'private') return null;
     const seats = room.lobby.seats.slice(0, room.lobby.playerCount);
     const occupied = seats.filter(Boolean);
     const spectators = [...room.lobby.spectators.keys()].filter((id) =>
@@ -310,7 +311,7 @@ export function createRoomDirectory({
       if (message?.type === 'refresh') {
         if (Date.now() - viewer.lastRequest < 150) return;
         viewer.lastRequest = Date.now();
-        viewer.product = /^th\d+mp$/.test(message.product) ? message.product : '';
+        viewer.product = isMultiplayerProductId(message.product) ? message.product : '';
         send(socket, snapshot(memberId, viewer.product));
       }
     });

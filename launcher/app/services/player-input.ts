@@ -353,8 +353,8 @@ export function bindPlayerInput({
       if (message.event === 'first-frame' && runtime.getSnapshot().launched) touch.syncControls();
     });
   const unsubscribeLayout = session.touchLayout.subscribe(applyLayout);
-  const applyPc98SurfaceLayout = () => applySavedPlayerTouchLayout(player, safe, profile());
-  window.addEventListener('pc98-touch-surface-change', applyPc98SurfaceLayout);
+  const applyRoomSurfaceLayout = () => applySavedPlayerTouchLayout(player, safe, profile());
+  window.addEventListener('room-touch-surface-change', applyRoomSurfaceLayout);
   const reset = (event: Event) => {
     if (!runtime.getSnapshot().launched) return;
     event.preventDefault();
@@ -380,7 +380,7 @@ export function bindPlayerInput({
       unsubscribe();
       unsubscribeEvents();
       unsubscribeLayout();
-      window.removeEventListener('pc98-touch-surface-change', applyPc98SurfaceLayout);
+      window.removeEventListener('room-touch-surface-change', applyRoomSurfaceLayout);
       gamepad.dispose();
       keyboard.dispose();
       touch.dispose();

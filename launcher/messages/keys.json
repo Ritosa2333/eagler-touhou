@@ -2518,6 +2518,10 @@
     "id": "nav_migrationPart2",
     "params": []
   },
+  "game.title.thibpmp": {
+    "id": "game_title_thibpmp",
+    "params": []
+  },
   "game.title.th06mp": {
     "id": "game_title_th06mp",
     "params": []
@@ -4523,6 +4527,14 @@
   },
   "multiplayer.loadout.marisaC": {
     "id": "multiplayer_loadout_marisaC",
+    "params": []
+  },
+  "multiplayer.loadout.youmuA": {
+    "id": "multiplayer_loadout_youmuA",
+    "params": []
+  },
+  "multiplayer.loadout.youmuB": {
+    "id": "multiplayer_loadout_youmuB",
     "params": []
   },
   "multiplayer.loadout.sakuyaA": {

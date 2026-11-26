@@ -32,7 +32,7 @@ function input(marker, count, frame) {
   b.writeBigUInt64LE(0x123456789abcdef0n, 8); b.writeUInt32LE(frame, 16); b.writeUInt32LE(0x10203040, 20);
   return b;
 }
-for (const [product, marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)) for (const count of [2, 3]) {
+for (const [product, marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS).filter(([id]) => id !== 'thibpmp')) for (const count of [2, 3]) {
   test(`${product}/${count}: published v1 clients retain their envelope and bootstrap version`, () => {
     const initial = event(marker, count), large = Buffer.alloc(40 + 60 * 1024);
     large.set(initial.subarray(0, 40)); large[4] = 1; large.writeUInt32LE(large.length - 40, 36);
@@ -49,7 +49,7 @@ for (const [product, marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)) f
     next[4] = 1; assert.throws(() => current.accept(next), /identity/); assert.equal(current.bootstrap()[4], 2);
   });
 }
-for (const [product, marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)) for (const count of [2, 3]) {
+for (const [product, marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS).filter(([id]) => id !== 'thibpmp')) for (const count of [2, 3]) {
   test(`${product}/${count}: nonzero stage bootstrap, Boss dependency and exact next-stage replacement`, () => {
     const stream = new SpectatorStageRelay(marker, count);
     const initial = event(marker, count);
@@ -148,6 +148,20 @@ for (const game of ['th14mp', 'th17mp']) test(`${game} continuous spectators kee
   assert.equal(stream.bootstrap().readUInt32LE(20), 602);
   assert.equal(stream.bootstrap().readUInt32LE(24), 2);
   assert.throws(() => stream.accept(input(marker, 3, 602)), /frame limit/);
+});
+test('THIBP retains the first confirmed frame through later stage bookmarks', () => {
+  const marker = COOPERATIVE_SPECTATOR_MARKERS.thibpmp;
+  for (const count of [2, 3]) {
+    const stream = new SpectatorStageRelay(marker, count);
+    assert.throws(() => stream.accept(event(marker, count, {frame: 1, stage: 1, schema: 1})), /root missing/);
+    assert.equal(stream.accept(event(marker, count, {frame: 0, stage: 1, schema: 1})), 'checkpoint');
+    assert(isSpectatorFrameForRoom('thibpmp-1234', input(marker, count, 0), count));
+    stream.accept(input(marker, count, 0));
+    assert.equal(stream.accept(event(marker, count, {frame: 1, stage: 2, serial: 2, schema: 1})), 'stage-bookmark');
+    stream.accept(input(marker, count, 1));
+    assert.deepEqual(stream.history.map(packet => packet[5]), [1, 3, 1, 3]);
+    assert.equal(stream.bootstrap().readUInt32LE(20), 2);
+  }
 });
 test('native Replay stage headers fit inside the bounded relay envelope',()=>{
   const header=event(70,3),large=Buffer.alloc(40+SPECTATOR_STAGE_LIMITS.stateBytes);

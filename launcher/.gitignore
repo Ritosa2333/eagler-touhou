@@ -3,6 +3,7 @@ node_modules/
 node_modules.stale-*/
 .npm-cache/
 .cache/
+/runtime/thibp/
 /.codex-tmp/
 .deploy-python/
 *.admin-staging/

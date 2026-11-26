@@ -89,9 +89,9 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
     }
     const net = measuredNetwork(read()), context = options.context();
     let connection: NetplayConnectionView | null = null;
-    if (net && !context.replayViewer && net.peerState) {
+    if (net && !context.replayViewer && (net.peerState || net.nativeFailed)) {
       if (!net.spectator && connectionTransport !== net.peerState) {connectionTransport = net.peerState; connectedOnce = false;}
-      connection = describeNetplayConnection({english: options.english(), spectator: net.spectator, failed: net.failed, nativeFailed: net.nativeFailed, error: net.error, transport: net.transport, path: net.path, peerState: net.peerState, playerCount: context.playerCount, localPlayer: context.player, connectedOnce, webSocketOpenState: 1});
+      connection = describeNetplayConnection({english: options.english(), spectator: net.spectator, failed: net.failed, nativeFailed: net.nativeFailed, error: net.error, transport: net.transport, path: net.path, peerState: net.peerState ?? {disconnected: true}, playerCount: context.playerCount, localPlayer: context.player, connectedOnce, webSocketOpenState: 1});
       connectedOnce = connection.connectedOnce;
     }
     const visible = !!net && state.launched && !context.replayViewer && !net.spectator;
@@ -147,9 +147,9 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
       const poll = () => {
         if (disposed || !context.isCurrent() || !runtime.getSnapshot().launched || !token || runtime.getSnapshot().epoch !== token.epoch || runtime.getMidiEventContext()?.document !== token.document) {finish(new RuntimeSessionSupersededError()); return;}
         if (now() >= deadline) {finish(new Error(options.translate('room.gameplayPathTimeout'))); return;}
-        const net = read(), state = options.context();
+        const net = read(), state = options.context(), current = runtime.getSnapshot();
+        if (current.runtimeInfo?.netplayStopped === true) {finish(); return;}
         if (net?.failed) {finish(new Error(net.error || options.translate('room.unavailable'))); return;}
-        const current = runtime.getSnapshot();
         // An open spectator socket alone does not mean there's a world on
         // screen. TH14 and TH075 also present while catching up to live input.
         const restoreReady = !net?.spectator || current.game === 'th09' ||
