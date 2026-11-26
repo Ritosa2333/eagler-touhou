@@ -1,94 +1,67 @@
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
-import {packTouch,unpackTouch} from './touch-input.js';
-const buttons = {ArrowUp:1,ArrowDown:2,ArrowLeft:4,ArrowRight:8,KeyX:16,KeyZ:32,ShiftLeft:64,ShiftRight:64,Escape:128,Enter:256};
-// A complete swipe may arrive between samples. Keep its target active for a
-// few samples so the native frame can consume it, but apply the delta once.
-const RELEASE_GRACE_SAMPLES = 4;
-export function managedInput({game, epoch, active, options, onKey, allowNativeKey}) {
-  let practice, menuPulse = 0;
-  let rawKey;
-  const held = new Set(), secondary = new Set(); let touch = {}, pulse = 0, keyPulse = 0, bomb = 0, escape = 0, point = null, motion = {x:0,y:0,active:false};
-  let notificationPending = false;
-  function changed() {if (notificationPending) return; notificationPending = true; queueMicrotask(() => {notificationPending = false; input.onChange?.();});}
-  const keyboard = createBrowserKeyboard({send:(code, down) => {
-    const consumed = practice?.key(code, down);
-    if (down && !consumed) {
+import {createHostedTouch} from './hosted-touch.mjs';
+const buttons={ArrowUp:1,ArrowDown:2,ArrowLeft:4,ArrowRight:8,KeyX:16,KeyZ:32,ShiftLeft:64,ShiftRight:64,Escape:128,Enter:256};
+const padBits=[[1,32],[2,16],[4,64],[8,128],[16,1],[32,2],[64,4],[128,8],[512,256]];
+export function managedInput({game,epoch,active,options,onKey,allowNativeKey,scene,panelPointer}){
+  let rawKey,keyPulse=0;
+  const held=new Set();
+  const touch=createHostedTouch({options,scene,panelPointer});
+  const keyboard=createBrowserKeyboard({send:(code,down)=>{
+    if(down){
       held.add(code);
-      const bit = buttons[code] ?? 0, axis = bit & 3 ? 3 : bit & 12 ? 12 : 0;
-      if (axis) keyPulse &= ~axis;
-      keyPulse |= bit;
-    } else held.delete(code);
-    if (!consumed) onKey?.(code, down, rawKey);
-    changed();
-  },
-    hostContext:{target:globalThis,protocol:'eagler-touhou/1',game,epoch,origin:location.origin,ready:active}});
-  const input = {
-    setPractice(value) { practice = value; },
-    releaseGameplay() { secondary.clear(); held.clear(); pulse = keyPulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
-    key(message) {
+      const bit=buttons[code]??0,axis=bit&3?3:bit&12?12:0;
+      keyPulse=(keyPulse&~axis)|bit;
+    }else held.delete(code);
+    onKey(code,down,rawKey);
+  },hostContext:{target:globalThis,protocol:'eagler-touhou/1',game,epoch,origin:location.origin,ready:active}});
+  const input={
+    key(message){
       rawKey=message;
-      try { keyboard.event(message, message.down, 'hosted'); } finally { rawKey=undefined; }
+      try{keyboard.event(message,message.down,'hosted');}finally{rawKey=undefined;}
     },
-    clearKeyboard() { keyboard.clear(); held.clear(); keyPulse = 0; changed(); },
-    clear() { secondary.clear(); keyboard.clear(); practice?.clear(); touch = {}; pulse = keyPulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
-    cancelTouch() { secondary.clear(); touch = {}; pulse = menuPulse = 0; point = null; motion = {x:0,y:0,active:false}; changed(); },
-    touch(message) {
-      if (typeof message.fireEnabled !== 'boolean' || typeof message.focusEnabled !== 'boolean' || !['bombSerial','escapeSerial'].every(k => Number.isSafeInteger(message[k]) && message[k] >= 0) || !['joystickX','joystickY'].every(k => Number.isFinite(message[k]) && Math.abs(message[k]) <= 32767)) throw Error('触控输入无效');
-      if (options().touchEnabled && message.bombSerial !== bomb) pulse |= 16;
-      if (options().touchEnabled && message.escapeSerial !== escape) pulse |= 128;
-      bomb = message.bombSerial; escape = message.escapeSerial; touch = message; practice?.touch(message); changed();
+    clearKeyboard(){keyboard.clear();held.clear();keyPulse=0;},
+    clear(){input.clearKeyboard();touch.cancel();},
+    cancelTouch:touch.cancel,
+    touch(message){
+      if(typeof message.fireEnabled!=='boolean'||typeof message.focusEnabled!=='boolean'||
+        !['bombSerial','escapeSerial'].every(k=>Number.isSafeInteger(message[k])&&message[k]>=0)||
+        !['joystickX','joystickY'].every(k=>Number.isFinite(message[k])&&Math.abs(message[k])<=32767))throw Error('触控输入无效');
+      touch.controls(message);
     },
-    pointer(message) {
-      if (!['down','move','up'].includes(message.type) || !Number.isSafeInteger(message.id) || !Number.isFinite(message.x) || !Number.isFinite(message.y)) throw Error('触控坐标无效');
-      try {
-      if (message.type === 'down' && point) { secondary.add(message.id); point.menuMoved=true; return; }
-      if (message.type === 'up' && secondary.delete(message.id)) { menuPulse |= 128; return; }
-      if (message.type === 'down') { point = {...message, startX:message.x, startY:message.y, menuMoved:false}; motion = motion.releaseSamples ? {...motion, active:true, begin:true, releaseSamples:0} : {x:0,y:0,active:true,begin:true}; }
-      else if (point?.id === message.id && message.type === 'move') {
-        const scale = 16 * (options().touchSensitivity ?? 150) / 100;
-        motion.x += (message.x - point.x) * 640 * scale; motion.y += (message.y - point.y) * 400 * scale;
-        if(message.x!==point.x||message.y!==point.y)motion.moved=true;
-        const dx=message.x-point.startX, dy=message.y-point.startY;
-        if (!point.menuMoved && Math.max(Math.abs(dx),Math.abs(dy)) >= 0.05) {menuPulse |= Math.abs(dx)>Math.abs(dy) ? (dx<0?4:8) : (dy<0?1:2);point.menuMoved=true;}
-        point = {...point, x:message.x, y:message.y};
-      } else if (point?.id === message.id) { if (!point.menuMoved) menuPulse |= 256; point = null; motion = motion.moved ? {...motion,releaseSamples:RELEASE_GRACE_SAMPLES} : {x:0,y:0,active:false}; }
-      } finally {changed();}
+    pointer(message){
+      if(!['down','move','up'].includes(message.type)||!Number.isSafeInteger(message.id)||
+        !Number.isFinite(message.x)||!Number.isFinite(message.y))throw Error('触控坐标无效');
+      const rect=document.querySelector('#game canvas')?.getBoundingClientRect();
+      if(rect?.width>0&&rect.height>0)touch.pointer({...message,
+        x:(message.x*innerWidth-rect.left)*640/rect.width,y:(message.y*innerHeight-rect.top)*400/rect.height});
     },
-    sample({play = true, keyboard:includeKeyboard = true} = {}) {
-      if (!active() || practice?.blocked()) return 0;
-      let bits = pulse | (includeKeyboard ? keyPulse : 0) | (play ? 0 : menuPulse); pulse = keyPulse = menuPulse = 0;
-      if (includeKeyboard) for (const code of held) bits |= buttons[code] ?? 0;
-      if (options().touchEnabled && play && touch.fireEnabled) bits |= 32;
-      if (options().touchEnabled && play && (touch.focusEnabled || options().touchFocusMode === 'two-finger' && secondary.size)) bits |= 64;
-      if (options().touchEnabled && touch.joystickX < 0) bits |= 4; if (options().touchEnabled && touch.joystickX > 0) bits |= 8;
-      if (options().touchEnabled && touch.joystickY < 0) bits |= 1; if (options().touchEnabled && touch.joystickY > 0) bits |= 2;
-      const pad = globalThis.__eaglerGamepadInputBridge?.sample(options().netplayPlayer ?? 0);
-      if (pad >= 0) for (const [mask, out] of [[1,32],[2,16],[4,64],[8,128],[16,1],[32,2],[64,4],[128,8],[512,256]]) if (pad & mask) bits |= out;
+    sample({keyboard:includeKeyboard=true}={}){
+      if(!active())return 0;
+      let bits=touch.sample();
+      if(includeKeyboard){
+        bits|=keyPulse;keyPulse=0;
+        for(const code of held)bits|=buttons[code]??0;
+      }
+      const pad=globalThis.__eaglerGamepadInputBridge?.sample(options().netplayPlayer??0);
+      if(pad>=0)for(const [mask,out] of padBits)if(pad&mask)bits|=out;
       return bits;
     },
-    motion() { if (practice?.blocked()) { point = null; motion = {x:0,y:0,active:false}; } const value = unpackTouch(packTouch(0,{...motion, unlimited:options().touchMovementMode === 'touch-unlimited'})); if(motion.releaseSamples===1)motion={x:0,y:0,active:false};else {if(motion.releaseSamples)motion.releaseSamples--;motion.x = motion.y = 0; motion.begin = false;} return value; },
+    motion:touch.motion,
   };
-  for (const type of ['keydown','keyup']) addEventListener(type, event => {
-    if (event.__eaglerPC98Synthetic) return;
-    if (allowNativeKey?.(event) === false) return;
-    if (practice?.ownsFocus()) {
-      practice.nativeKey(event);
-      if (type === 'keyup') keyboard.mapNative(event, false) || keyboard.event(event, false);
-      if (event.defaultPrevented) event.stopImmediatePropagation();
-      return;
-    }
-    if (event.type === 'keydown' && event.target?.closest?.('input,select,textarea,[contenteditable="true"]')) return;
+  for(const type of ['keydown','keyup'])addEventListener(type,event=>{
+    if(event.__eaglerPC98Synthetic||allowNativeKey?.(event)===false)return;
+    if(type==='keydown'&&event.target?.closest?.('input,select,textarea,[contenteditable="true"]'))return;
     rawKey=event;
-    try {
-      if (keyboard.mapNative(event, type === 'keydown') || !globalThis.__eaglerKeyboardInputBridge?.active() && keyboard.event(event, type === 'keydown')) {
-        event.preventDefault(); event.stopImmediatePropagation();
+    try{
+      if(keyboard.mapNative(event,type==='keydown')||!globalThis.__eaglerKeyboardInputBridge?.active()&&keyboard.event(event,type==='keydown')){
+        event.preventDefault();event.stopImmediatePropagation();
       }
-    } finally { rawKey=undefined; }
-  }, true);
-  // The Launcher touch surface lives outside this iframe. Moving focus to it
-  // must release keys without destroying an in-progress hosted touch.
-  addEventListener('blur', () => input.clearKeyboard());
-  addEventListener('pagehide', () => input.clear());
-  document.addEventListener('visibilitychange', () => {if (document.hidden) input.clear();});
+    }finally{rawKey=undefined;}
+  },true);
+  // The Launcher touch surface lives outside the iframe. A blur releases
+  // physical keys without cancelling gestures on that surface.
+  addEventListener('blur',input.clearKeyboard);
+  addEventListener('pagehide',input.clear);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)input.clear();});
   return input;
 }

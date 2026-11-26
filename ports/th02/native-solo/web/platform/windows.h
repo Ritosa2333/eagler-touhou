@@ -140,3 +140,4 @@ int DrawTextW(HDC,const wchar_t*,int,RECT*,UINT);
 inline BOOL GdiFlush(){return TRUE;}
 void soew_web_akyu_track(int track);
 void soew_web_akyu_gain(float gain);
+extern "C" double soew_web_touch_motion();

@@ -1,5 +1,6 @@
 #pragma once
 #include "core_contract.hpp"
+#include "player_motion.hpp"
 #include "practice_targets.hpp"
 #include <algorithm>
 #include <array>
@@ -37,6 +38,7 @@ struct NativeReplayEvent {
     std::uint16_t input=0;
     bool dialogue_group=false,dialogue_fast_forward=false;
     NativeReplayContext context=NativeReplayContext::Legacy;
+    std::uint64_t pointer=0;
     bool operator==(const NativeReplayEvent&) const=default;
 };
 enum class NativeReplayOutcome : std::uint8_t {MenuReturn=1,Aborted=MenuReturn,GameOver=2,Clear=3};
@@ -91,9 +93,11 @@ using Bytes=std::vector<std::uint8_t>;
 inline constexpr std::array<std::uint8_t,8> magic={'S','O','E','W','R','P','L','Y'};
 inline constexpr std::size_t header_size=32,v2_header_size=168,v4_header_size=192,event_size=4;
 inline constexpr std::size_t v5_header_size=v4_header_size+1;
-inline constexpr std::size_t max_file_size=v5_header_size+event_size*native_replay_max_events;
+inline constexpr std::size_t pointer_event_size=event_size+6;
+inline constexpr std::size_t max_file_size=v5_header_size+pointer_event_size*native_replay_max_events;
 inline constexpr std::uint16_t version=1,v2_version=2,current_version=3,practice_version=4,calibrated_practice_version=5;
 inline constexpr std::uint16_t raw_payload=0,deflate_payload=1;
+inline constexpr std::uint16_t pointer_payload=2;
 inline constexpr std::uint8_t rules_revision=1;
 inline constexpr std::uint64_t max_played_at=253402300799ull; // 9999-12-31 23:59:59 UTC.
 inline constexpr std::uint16_t launch_bits=0x3f;
@@ -119,12 +123,13 @@ struct EventSequence {
     bool accept(const NativeReplayEvent &e){
         if(e.kind==NativeReplayEventKind::Tick){
             if((e.input&~native_input_mask)||e.context>NativeReplayContext::StageClear||
+               (e.pointer&&(e.context!=NativeReplayContext::Gameplay||!valid_pointer_motion(e.pointer)))||
                (practice&&(e.context==NativeReplayContext::Legacy||e.context==NativeReplayContext::Continue)))return false;
             stage_has_tick=true;
             return true;
         }
         if(practice)return false;
-        if(e.input||e.dialogue_group||e.dialogue_fast_forward||e.context!=NativeReplayContext::Legacy||!stage_has_tick)return false;
+        if(e.input||e.dialogue_group||e.dialogue_fast_forward||e.pointer||e.context!=NativeReplayContext::Legacy||!stage_has_tick)return false;
         if(e.kind==NativeReplayEventKind::CancelContinue)return true;
         if(e.kind!=NativeReplayEventKind::NextStage||stage>=4)return false;
         ++stage;stage_has_tick=false;
@@ -184,6 +189,8 @@ inline Bytes encode(const NativeReplay &run,std::uint16_t file_version){
     const auto &v=run.config;
     const bool v5=file_version==calibrated_practice_version;
     const bool v2=file_version!=version,v4=file_version==practice_version||v5;
+    const bool motion=std::ranges::any_of(run.events,[](const auto &event){return event.pointer!=0;});
+    if(motion&&file_version!=current_version&&!v4)throw std::runtime_error("This replay layout cannot store touch motion");
     const auto events_start=v5?v5_header_size:v4?v4_header_size:v2?v2_header_size:header_size;
     if(run.practice && run.practice->start_rule!=(v5?PracticeStartRule::Calibrated:PracticeStartRule::LegacyV4))
         throw std::runtime_error("Practice replay start rule does not match the format");
@@ -193,14 +200,15 @@ inline Bytes encode(const NativeReplay &run,std::uint16_t file_version){
        run.played_at>max_played_at||run.events.empty()||run.events.size()>native_replay_max_events||
        (!v2&&(!run.name.empty()||run.played_at)))throw std::runtime_error("Invalid or empty native replay");
     // All layouts are little-endian. V4 appends the Practice start recipe to
-    // the existing fixed listing and terminal header; v1–3 bytes stay unchanged.
-    Bytes out;out.reserve(events_start+event_size*run.events.size());
+    // the existing fixed listing and terminal header. Digital-only streams
+    // keep their layout; the pointer payload adds a six-byte field per event.
+    Bytes out;out.reserve(events_start+(motion?pointer_event_size:event_size)*run.events.size());
     out.insert(out.end(),magic.begin(),magic.end());put(out,file_version,2);
     put(out,unsigned(v.reduced)|(unsigned(v.autofire)<<1)|(unsigned(v.stage4_trial)<<2)|
         (unsigned(v.stage5_trial)<<3)|(unsigned(v.stage5_mainline)<<4)|(unsigned(v.extra)<<5),2);
     put(out,v.seed,4);
     for(int n:{v.stage,v.shot,v.rank,v.lives,v.bombs,v.music})put(out,static_cast<unsigned>(n),1);
-    put(out,0,2);put(out,run.events.size(),4);put(out,0,4);
+    put(out,motion?pointer_payload:raw_payload,2);put(out,run.events.size(),4);put(out,0,4);
     if(v2){
         const auto &s=*run.summary;
         put(out,run.played_at,8);
@@ -236,6 +244,7 @@ inline Bytes encode(const NativeReplay &run,std::uint16_t file_version){
         put(out,static_cast<unsigned>(e.kind),1);
         put(out,unsigned(e.dialogue_group)|(unsigned(e.dialogue_fast_forward)<<1)|(unsigned(e.context)<<2),1);
         put(out,e.input,2);
+        if(motion)put(out,e.pointer,6);
     }
     if(v2&&!sequence.matches(*run.summary))throw std::runtime_error("Invalid native replay terminal or split summary");
     if(file_version==current_version||v4){
@@ -247,7 +256,7 @@ inline Bytes encode(const NativeReplay &run,std::uint16_t file_version){
         const auto result=compress2(compressed.data(),&written,out.data()+events_start,size,Z_BEST_COMPRESSION);
         if(result==Z_OK){
             out.resize(events_start);
-            out[22]=deflate_payload;
+            out[22]|=deflate_payload;
             out.insert(out.end(),compressed.begin(),compressed.begin()+written);
         }else if(result!=Z_BUF_ERROR)throw std::runtime_error("Cannot compress native replay");
     }
@@ -279,12 +288,14 @@ inline NativeReplay decode(const Bytes &bytes,bool include_events=true,std::uint
     const auto flags=get(bytes,10,2),mode=get(bytes,22,2),count=get(bytes,24,4);
     const auto events_start=v5?v5_header_size:v4?v4_header_size:v2?v2_header_size:header_size;
     if((flags&~std::uint64_t(launch_bits))||!count||count>native_replay_max_events||
-       (mode!=raw_payload&&((file_version!=current_version&&!v4)||mode!=deflate_payload))||
+       (mode&&((file_version!=current_version&&!v4)||(mode&~(deflate_payload|pointer_payload))))||
        bytes.size()<events_start)
         throw std::runtime_error("Invalid native replay header");
-    const auto expected=static_cast<std::size_t>(count)*event_size;
+    const bool compressed=mode&deflate_payload,motion=mode&pointer_payload;
+    const auto stride=motion?pointer_event_size:event_size;
+    const auto expected=static_cast<std::size_t>(count)*stride;
     const auto stored=std::span<const std::uint8_t>(bytes).subspan(events_start);
-    if((mode==raw_payload?stored.size()!=expected:stored.empty()||stored.size()>=expected)||
+    if((compressed?stored.empty()||stored.size()>=expected:stored.size()!=expected)||
        get(bytes,28,4)!=checksum(bytes))
         throw std::runtime_error("Invalid native replay size or checksum");
     NativeReplay run;
@@ -332,16 +343,16 @@ inline NativeReplay decode(const Bytes &bytes,bool include_events=true,std::uint
     }
     Bytes inflated;
     auto events=stored;
-    if(mode==deflate_payload){
+    if(compressed){
         inflated=inflate_events(stored,expected);
         events=inflated;
     }
     if(include_events)run.events.reserve(count);
     ReplaySequence sequence{{run.config.stage,false,v4},0,{},v2};
-    for(std::size_t at=0;at<events.size();at+=event_size){
+    for(std::size_t at=0;at<events.size();at+=stride){
         const NativeReplayEvent e{static_cast<NativeReplayEventKind>(events[at]),
             static_cast<std::uint16_t>(get(events,at+2,2)),bool(events[at+1]&1),bool(events[at+1]&2),
-            static_cast<NativeReplayContext>(events[at+1]>>2)};
+            static_cast<NativeReplayContext>(events[at+1]>>2),motion?get(events,at+4,6):0};
         if(!sequence.accept(e))throw std::runtime_error("Invalid native replay event sequence");
         if(include_events)run.events.push_back(e);
     }

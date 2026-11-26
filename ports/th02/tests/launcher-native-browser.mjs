@@ -4,9 +4,11 @@
 // Pass --marisa-clock to check the Stage 4 boss countdown and orb notice.
 // Pass --about to check the disclaimer on the About page.
 // Pass --focus-setting to exercise the saved Slow Movement option in Story.
+// Pass --touch to drive Story from the Launcher touch controls.
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
+import {enableTouch,hitboxPoints,startTouchFire,touchButton,touchGame} from './browser-touch.mjs';
 
 const require=createRequire(new URL('../../../launcher/package.json',import.meta.url));
 const {launch}=require('puppeteer-core');
@@ -15,16 +17,19 @@ url.searchParams.set('test','th02');
 const browser=await launch({executablePath:await findChromiumExecutable(),headless:true});
 try {
   const page=await browser.newPage();
-  await page.setViewport({width:1360,height:900});
+  const touch=process.argv.includes('--touch');
+  await page.setViewport({width:1360,height:900,hasTouch:touch});
+  if(touch)await enableTouch(page);
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
-  await page.evaluateOnNewDocument(()=>{
+  await page.evaluateOnNewDocument(touch=>{
+    if(!touch&&window===window.top)localStorage.setItem('eagler-touhou-language-v1-th02','ja');
     localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1');
     window.runtimeEvents=[];
     addEventListener('message',event=>{
       if(event.origin===location.origin&&event.data?.protocol==='eagler-touhou/1'&&event.data.game==='th02')runtimeEvents.push(event.data);
     });
-  });
+  },touch);
   async function openTh02() {
     await page.goto(url.href);
     await page.waitForFunction(()=>window.__eaglerBoot?.done===true,{timeout:45000});
@@ -46,14 +51,15 @@ try {
     });
     const frame=page.frames().find(f=>/th02\.html.*runtimeEpoch=/.test(f.url()));
     assert(frame);
-    await frame.click('#canvas');
+    if(!touch)await frame.click('#canvas');
     return frame;
   }
   const press=(key,delay=45)=>page.keyboard.press(key,{delay});
   const wait=ms=>new Promise(done=>setTimeout(done,ms));
   async function openStoryShots(frame) {
     for(let i=0;i<5&&!/ショット選択|choose shot/u.test(await frame.title());i++) {
-      await press('Enter',130);
+      if(touch)await touchGame(page);
+      else await press('Enter',130);
       await wait(400);
     }
     await frame.waitForFunction(()=>/ショット選択|choose shot/u.test(document.title));
@@ -159,7 +165,8 @@ try {
       for(let i=0;i<4;++i)await press('ArrowDown'); // Options → Story.
       await openStoryShots(frame);
     }
-    await press('Enter');
+    if(touch)await touchGame(page);
+    else await press('Enter');
     await frame.waitForFunction(()=>/一時停止|Esc: Pause/u.test(document.title));
     await frame.waitForFunction(()=>{
       const c=document.querySelector('canvas'),ctx=c.getContext('2d');
@@ -168,6 +175,51 @@ try {
       return pixels(550,375,82,17).some((v,i)=>i%4!==3&&v>240)&&
         pixels(32,32,380,200).some(colored)&&pixels(432,32,144,200).some(colored);
     });
+    if(touch){
+      const read=()=>frame.evaluate(hitboxPoints);
+      const deadline=Date.now()+10000;
+      while(!(await read()).length&&Date.now()<deadline)await wait(100);
+      const initial=await read();
+      assert.equal(initial.length,1,'Launcher always-hitbox should draw one marker before pressing focus');
+      await touchGame(page,90,0);
+      await wait(400);
+      const moved=await read();
+      assert.equal(moved.length,1);
+      assert(moved[0].x>initial[0].x+25,JSON.stringify({initial,moved}));
+      await startTouchFire(page);
+      await page.waitForFunction(()=>runtimeEvents.some(e=>e.event==='audio-health'&&e.state==='running'));
+      const pauseMenu=(shown)=>{
+        const c=document.querySelector('#canvas'),ctx=c.getContext('2d');
+        const row=ctx.getImageData(Math.floor(214*c.width/640),Math.floor(237.5*c.height/400),
+          Math.floor(20*c.width/640),1).data;
+        const underline=row.every((v,i)=>i%4===3||v===255);
+        return underline===shown;
+      };
+      await touchButton(page,'#touchEscape');
+      await frame.waitForFunction(pauseMenu,{timeout:5000},true);
+      await touchButton(page,'#touchEscape');
+      await frame.waitForFunction(pauseMenu,{timeout:5000},false);
+      await wait(300);
+      await touchGame(page,-90,0);
+      await wait(400);
+      assert((await read())[0]?.x<moved[0].x-25,'Touch should move the player again after resuming');
+      await frame.evaluate(()=>{
+        const set=Module.eaglerSetAudioLevels;
+        Module.eaglerSetAudioLevels=(music,effects)=>{window.lastMix=[music,effects];set(music,effects);};
+      });
+      await page.locator('#player .game-settings-toggle').click();
+      const [music,effects]=await page.$$('.game-settings-popover [role=slider]');
+      assert(music&&effects,'Launcher exposes separate music and effect sliders');
+      await music.focus();
+      await press('Home');
+      await frame.waitForFunction(()=>window.lastMix?.[0]===0&&window.lastMix[1]>0);
+      await effects.focus();
+      await press('Home');
+      await frame.waitForFunction(()=>window.lastMix?.every(level=>level===0));
+      assert.deepEqual((await events()).filter(e=>e.event==='error'),[]);
+      assert.deepEqual(errors,[]);
+      console.log('PASS TH02 solo touch menus, drag, fire control, pause and resume; Launcher music/SFX sliders reach the runtime');
+    }else{
     if(focusSetting){
       const hasFocusDot=()=>frame.evaluate(()=>{
         const c=document.querySelector('canvas');
@@ -197,10 +249,11 @@ try {
     await press('Enter');
     await page.waitForFunction(()=>runtimeEvents.some(e=>e.event==='exit'&&e.code===0));
     await page.waitForFunction(()=>![...document.querySelectorAll('iframe')].some(el=>el.src.includes('runtimeEpoch=')));
+    }
   }
   assert.deepEqual((await events()).filter(e=>e.event==='error'),[]);
   assert.deepEqual(errors,[]);
-  console.log(about?'PASS Eagler TH02 renders the disclaimer and credits on About':
+  if(!touch)console.log(about?'PASS Eagler TH02 renders the disclaimer and credits on About':
     bossGauge?'PASS Eagler TH02 solo Practice shows the full-width cyan bar and clock':
     practiceSeed?'PASS Eagler TH02 fixed-seed practice launch':'PASS Eagler TH02 install, SoEW Native title, Stage 1, audio and return');
 } finally {

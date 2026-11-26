@@ -26,6 +26,7 @@ const joined = (root, name) => new URL(name.split('/').map(encodeURIComponent).j
 
 export async function playFull(canvas, content = new URL('./content/', import.meta.url), {
     hosted = false, beforeFrame, onExit, confirmedCoop, manualFrames = false, titleLanguage,
+    settings={},audioLevels=()=>[1,1],touchMotion=()=>0,
 } = {}) {
     const screen = canvas.getContext('2d', {alpha: false});
     const framebuffer = new OffscreenCanvas(640,400);
@@ -216,6 +217,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             pcm.reset(bus);
             if(!confirmedCoop){wantedTrack=null;music.select(null);}
         },
+        touchMotion,
         akyuTrack(track) {
             wantedTrack=track>=0?track:null;
             syncMusic();
@@ -258,9 +260,10 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         wasm.FS.mkdirTree(path.slice(0,path.lastIndexOf('/')));
         wasm.FS.writeFile(path,bytes);
     })]);
-    if (wasm._soew_full_start(quiet) !== 0) throw Error(lastError ?? 'SoEW startup failed');
+    if (wasm._soew_full_start(quiet,settings.language??-1,settings.music??-1,!!settings.alwaysHitbox,...audioLevels()) !== 0)
+        throw Error(lastError ?? 'SoEW startup failed');
     if (titleLanguage !== undefined) wasm._soew_full_preview_title(titleLanguage);
-    if (confirmedCoop && !wasm._soew_full_start_confirmed_coop(...confirmedCoop.rules,confirmedCoop.seat,confirmedCoop.music??-1)) {
+    if (confirmedCoop && !wasm._soew_full_start_confirmed_coop(...confirmedCoop.rules,confirmedCoop.seat,confirmedCoop.music??-1,!!settings.localPlayerGuide)) {
         stop();
         throw Error(lastError ?? 'SoEW confirmed co-op startup failed');
     }
@@ -274,9 +277,10 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         picker.value = '';
         canvas.focus();
     });
-    const focus = () => wasm._soew_host_focus(!document.hidden && document.hasFocus());
+    const focus = () => wasm._soew_host_focus(!document.hidden && (hosted?parent.document.hasFocus():document.hasFocus()));
     listen(window,'focus',focus);
     listen(window,'blur',focus);
+    if(hosted&&parent!==window){listen(parent,'focus',focus);listen(parent,'blur',focus);}
     listen(document,'visibilitychange',focus);
     listen(document,'fullscreenchange',() =>
         wasm._soew_full_fullscreen_changed(document.fullscreenElement === canvas));
@@ -332,6 +336,12 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     },{passive:false});
 
     const player = {key:deliverKey, unlock:unlockAudio, stop, sync:() => sync(false),
+        setAudioLevels:(music,effects)=>wasm._soew_full_audio_levels(music,effects),
+        inputScene:()=>wasm._soew_full_input_scene(),
+        panelPointer({type,x,y}){
+            if(type==='cancel')wasm._soew_host_pointer(533,0,0,0);
+            else wasm._soew_host_pointer({down:513,move:512,up:514}[type],Math.floor(x),Math.floor(y),0);
+        },
         pausePlayback(value){if(playbackPaused!==value){playbackPaused=value;if(!value)syncMusic();updateAudioPause();}},
         present:frame,
         health:() => ({frames,gameFrame:confirmedCoop?wasm._soew_full_coop_frame():ticks,audio:{state:audio?.state ?? 'suspended',

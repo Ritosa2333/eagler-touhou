@@ -1181,10 +1181,19 @@ struct App {
     HostTimingSample locked_timing{};
     soew::FrameRateMeter frame_rate;
     AudioPreview audio;
+    double host_music_gain=1,host_effect_gain=1;
+    soew::AudioLevels output_levels() const {
+        return {int(std::lround(menu.audio_levels.music*host_music_gain)),int(std::lround(menu.audio_levels.effects*host_effect_gain))};
+    }
+    bool publish_audio(AudioPreview::Prepared &&prepared,bool paused,bool reuse=false){
+        return audio.publish(std::move(prepared),WAVE_MAPPER,paused,reuse)&&audio.set_levels(output_levels());
+    }
 #ifdef __EMSCRIPTEN__
     AudioPreview coop_music;
     bool coop_effects_gated=false;
     bool quiet_browser_boot=false;
+    bool browser_always_hitbox=false;
+    int browser_language=-1,browser_music=-1;
 #endif
     std::array<std::vector<std::byte>,15> songs,midi_songs;
     std::vector<std::byte> soundfont;
@@ -1377,16 +1386,17 @@ template<class F> auto prepare_on_host(F work){
 constexpr soew::LocalizedText preview_stopped{L"試聴を停止しました",L"Preview stopped",L"已停止试听",L"已停止試聽"};
 void audio_error(App &app){std::cerr<<"Audio preview error: "<<app.audio.error()<<'\n';app.audio_status={L"音声の出力を停止しました",L"Audio error; output stopped",L"音频出错，已停止播放",L"音訊出錯，已停止播放"};app.audio.stop();app.fm_enabled=false;}
 void update_audio_levels(App &app){
-    if(!app.audio.set_levels(app.menu.audio_levels))audio_error(app);
+    if(!app.audio.set_levels(app.output_levels()))audio_error(app);
 #ifdef __EMSCRIPTEN__
-    soew_web_akyu_gain(soew::akyu_output_trim*app.menu.audio_levels.music/100.0f);
+    if(app.coop_music.active()&&!app.coop_music.set_levels(app.output_levels()))app.coop_music.stop();
+    soew_web_akyu_gain(soew::akyu_output_trim*app.output_levels().music/100.0f);
 #endif
 }
 void start_zunsoft(App &app){
     if(!app.zunsoft_assets)return;
     app.zunsoft.restart();
     const auto &assets=*app.zunsoft_assets;
-    if(app.menu.music!=0&&!app.audio.start(assets.song,app.audio_test_silent,WAVE_MAPPER,{},assets.effects,{},false,0,false,app.menu.audio_levels))audio_error(app);
+    if(app.menu.music!=0&&!app.audio.start(assets.song,app.audio_test_silent,WAVE_MAPPER,{},assets.effects,{},false,0,false,app.output_levels()))audio_error(app);
 }
 void cancel_gameplay_audio(App &app){
     ++app.gameplay_audio_generation;
@@ -1401,7 +1411,7 @@ void drain_gameplay_audio(App &app){
 void publish_akyu(const App &app, int track){
 #ifdef __EMSCRIPTEN__
     if(app.menu.plays_akyu()&&track>=0){
-        soew_web_akyu_gain(soew::akyu_output_trim*app.menu.audio_levels.music/100.0f);
+        soew_web_akyu_gain(soew::akyu_output_trim*app.output_levels().music/100.0f);
         soew_web_akyu_track(track);
     }
 #else
@@ -1418,7 +1428,7 @@ void start_preview(App &app,int track,bool effect_only=false,unsigned start_meas
     const HostPerf::Span span(app.host_perf.get(),HostPerf::Metric::AudioPublish);
     try{const auto &song=app.midi_mode?app.midi_songs.at(track):app.songs.at(track);
         if(song.empty()||(app.midi_mode&&app.soundfont.empty())){app.audio_status={L"音源が見つからないため試聴できません",L"Preview unavailable: audio source missing",L"缺少音源，无法试听",L"缺少音源，無法試聽"};app.audio.stop();return;}
-        if(!app.audio.start(song,app.audio_test_silent,WAVE_MAPPER,app.midi_mode?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},app.effect_bank,app.songs.at(track),music==0||effect_only,app.menu.plays_akyu()?0:start_measure,app.menu.plays_akyu(),app.menu.audio_levels)){audio_error(app);return;}
+        if(!app.audio.start(song,app.audio_test_silent,WAVE_MAPPER,app.midi_mode?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},app.effect_bank,app.songs.at(track),music==0||effect_only,app.menu.plays_akyu()?0:start_measure,app.menu.plays_akyu(),app.output_levels())){audio_error(app);return;}
         app.playing_track=music==0||effect_only?-1:track;
         publish_akyu(app,app.playing_track);
         app.fm_enabled=music!=0&&!effect_only;
@@ -1511,7 +1521,7 @@ void cancel_title_demo_work(TitleDemoHost &demo){
 }
 void publish_title_demo_audio(App &app,AudioPreview::Prepared pcm,int track){
     const HostPerf::Span span(app.host_perf.get(),HostPerf::Metric::AudioPublish);
-    if(!app.audio.publish(std::move(pcm),WAVE_MAPPER,false,app.audio.active()))throw std::runtime_error(app.audio.error());
+    if(!app.publish_audio(std::move(pcm),false,app.audio.active()))throw std::runtime_error(app.audio.error());
     app.loaded_track=app.playing_track=track;
     publish_akyu(app,track);
     app.midi_mode=app.menu.music==2;app.fm_enabled=true;app.audio_status={L"",L""};
@@ -1572,7 +1582,7 @@ void begin_title_demo_pcm(App &app){
         title=midi?app.midi_songs[0]:app.songs[0],font=midi?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},
         effects=app.effect_bank,stage_carrier=app.songs.at(track),title_carrier=app.songs[0];
     const auto cancel=demo.cancel;
-    const auto levels=app.menu.audio_levels;
+    const auto levels=app.output_levels();
     demo.pcm_load.emplace(prepare_on_host([=]{
         TitleDemoHost::Pcm pcm;
         if(midi&&font.empty())throw std::runtime_error("Title demo MIDI SoundFont unavailable");
@@ -1705,7 +1715,7 @@ void sync_gameplay_bgm(App &app,bool foreground){
                     if(!prepared){app.audio_status={L"ステージ曲を準備できませんでした",L"Could not prepare stage music"};}
                     else{
                         const HostPerf::Span span(app.host_perf.get(),HostPerf::Metric::AudioPublish);
-                        if(!app.audio.publish(std::move(prepared),WAVE_MAPPER,pause))audio_error(app);
+                        if(!app.publish_audio(std::move(prepared),pause))audio_error(app);
                         else{app.loaded_track=wanted;app.playing_track=app.menu.music==0?-1:wanted;publish_akyu(app,app.playing_track);app.midi_mode=app.menu.music==2;app.fm_enabled=app.menu.music!=0;++app.gameplay_audio_starts;app.audio_status={L"",L""};}
                     }
                 }
@@ -1717,7 +1727,7 @@ void sync_gameplay_bgm(App &app,bool foreground){
             const bool midi=app.menu.music==2,off=app.menu.music==0,silent=app.audio_test_silent,akyu=app.menu.plays_akyu();
             const auto *song=midi?&app.midi_songs.at(wanted):&app.songs.at(wanted);const auto *font=midi?&app.soundfont:nullptr;const auto *effects=&app.effect_bank,*carrier=&app.songs.at(wanted);const auto measure=akyu?0:app.practice_bgm_measure;app.practice_bgm_measure=0;
             app.gameplay_audio_cancel=std::make_shared<std::atomic_bool>(false);const auto cancel=app.gameplay_audio_cancel;
-            const auto levels=app.menu.audio_levels;
+            const auto levels=app.output_levels();
             app.gameplay_audio_load_track=wanted;app.gameplay_audio_load_generation=app.gameplay_audio_generation;
             try{app.gameplay_audio_load.emplace(prepare_on_host([song,font,effects,carrier,off,silent,measure,cancel,akyu,levels](){const auto song_copy=*song,font_copy=font?*font:std::vector<std::byte>{},effects_copy=*effects,carrier_copy=*carrier;return AudioPreview::prepare(song_copy,silent,font_copy,effects_copy,carrier_copy,off,measure,cancel.get(),true,akyu,levels);}));}
             catch(const std::exception&){app.audio_status={L"ステージ曲を準備できませんでした",L"Could not prepare stage music"};app.gameplay_audio_cancel.reset();}
@@ -1771,6 +1781,9 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
     const bool reduced=!app.confirmed_coop&&app.menu.reduced;
     const soew::NativeReplayConfig config=app.replay_playback?app.replay_playback->config:soew::NativeReplayConfig{seed,id,rules.shot,rules.rank,rules.lives,rules.bombs,app.menu.replay_music(),reduced,app.menu.autofire,stage4_trial,id==4&&(app.local_coop||app.stage5_trial),bool(app.local_coop)||app.stage5_mainline,extra};
     app.stage_scene=soew::load_replay_scene(app.assets_root,config,app.confirmed_coop?soew::Language::Japanese:soew::simulation_language(app.menu.language));
+#ifdef __EMSCRIPTEN__
+    app.stage_scene->always_focus_point=app.browser_always_hitbox;
+#endif
     if(app.local_coop){
         auto &scene=*app.stage_scene;
         scene.enable_coop(*app.local_coop);
@@ -1835,6 +1848,9 @@ void publish_replay(App &app,soew::NativeReplay replay,std::unique_ptr<soew::Enc
     if(!app.menu.plays_akyu()||run.config.music==Menu::music_off)app.menu.music=run.config.music;
     app.menu.autofire=run.config.autofire;app.menu.reduced=run.config.reduced;
     app.stage_scene.emplace(std::move(*scene));app.replay_session.emplace(std::move(session));
+#ifdef __EMSCRIPTEN__
+    app.stage_scene->always_focus_point=app.browser_always_hitbox;
+#endif
     app.run_entry_stage=app.stage_scene->stage;app.run_entry_stage4_trial=run.config.stage4_trial;app.run_pause_menu=false;
     app.recorder.reset();app.practice_session.reset();app.practice_visible=app.practice_result=app.practice_escape=false;
     app.z_input.clear();app.dialogue_hold.clear();app.mima_dialogue_tap.reset((GetAsyncKeyState('Z')&0x8000)!=0);
@@ -2634,7 +2650,7 @@ void advance_practice(App &app,bool at_page_cut=false){
             app.practice_audio_track=track;const std::span<const std::byte> song=app.menu.music==2?app.midi_songs.at(track):app.songs.at(track),font=app.menu.music==2?std::span<const std::byte>(app.soundfont):std::span<const std::byte>{},effects=app.effect_bank,carrier=app.songs.at(track);const bool off=app.menu.music==0,silent=app.audio_test_silent,akyu=app.menu.plays_akyu();const auto measure=akyu?0:soew::practice_music_measure(r);
             app.practice_audio_cancel=std::make_shared<std::atomic_bool>(false);const auto cancel=app.practice_audio_cancel;
             const bool allow_checkpoint=!app.retry_probe.force_exact;
-            const auto levels=app.menu.audio_levels;
+            const auto levels=app.output_levels();
             try{app.practice_audio_load.emplace(prepare_on_host([song,font,effects,carrier,off,silent,measure,cancel,allow_checkpoint,akyu,levels](){return AudioPreview::prepare(song,silent,font,effects,carrier,off,measure,cancel.get(),allow_checkpoint,akyu,levels);}));app.practice_audio_started=true;}catch(const std::exception&e){reset_practice_to_menu(app,e.what());}return;
         }
         if(!app.practice_audio_load)return;
@@ -2654,6 +2670,9 @@ void advance_practice(App &app,bool at_page_cut=false){
     if(!replace_output)stop_gameplay_bgm(app);
     app.practice_retry_release=app.practice_retry&&!app.smoke;app.practice_retry=false;app.last_paint_practice=false;
     app.stage_scene.emplace(std::move(*next));app.practice_session.emplace(recipe,soew::practice_checkpoint(recipe),seed);app.practice_builder.reset();app.practice_result=app.practice_escape=false;app.practice_visible=false;
+#ifdef __EMSCRIPTEN__
+    app.stage_scene->always_focus_point=app.browser_always_hitbox;
+#endif
     app.hud_input=0;
     app.run_assisted=false;
     app.stage_scene->sound.enabled=app.menu.music!=0;
@@ -2663,7 +2682,7 @@ void advance_practice(App &app,bool at_page_cut=false){
     app.skip_retry_intro=false;
     app.practice_bgm_measure=soew::practice_music_measure(recipe);
     const bool practice_window_enabled=(app.smoke||app.retry_probe.mode>=0||app.focused)&&!app.minimized&&!app.resizing;
-    if(prepared_audio){const bool paused=app.stage_intro.active()||!practice_window_enabled;if(!app.audio.publish(std::move(*prepared_audio),WAVE_MAPPER,paused,replace_output)){const auto error=app.audio.error();reset_practice_to_menu(app,error);return;}app.gameplay_audio_attempted=app.practice_audio_track;app.loaded_track=app.practice_audio_track;app.playing_track=app.menu.music==0?-1:app.practice_audio_track;publish_akyu(app,app.playing_track);app.midi_mode=app.menu.music==2;app.fm_enabled=app.menu.music!=0;++app.gameplay_audio_starts;app.practice_bgm_measure=0;app.practice_audio_started=false;}
+    if(prepared_audio){const bool paused=app.stage_intro.active()||!practice_window_enabled;if(!app.publish_audio(std::move(*prepared_audio),paused,replace_output)){const auto error=app.audio.error();reset_practice_to_menu(app,error);return;}app.gameplay_audio_attempted=app.practice_audio_track;app.loaded_track=app.practice_audio_track;app.playing_track=app.menu.music==0?-1:app.practice_audio_track;publish_akyu(app,app.playing_track);app.midi_mode=app.menu.music==2;app.fm_enabled=app.menu.music!=0;++app.gameplay_audio_starts;app.practice_bgm_measure=0;app.practice_audio_started=false;}
     if(app.replay_recording&&(app.settings_enabled||app.smoke||(app.async_practice_test&&app.retry_probe.mode<0))){
         auto recorded=recipe;recorded.seed=seed;
         const auto config=soew::practice_replay_config(recorded,app.menu.replay_music(),app.menu.reduced,app.menu.autofire);
@@ -3869,12 +3888,16 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             }
                             if(!app->stage_entry_release&&(app->local_coop_input[0]&(soew::Shot|soew::Bomb|soew::OK)))group=true;
                         }
+                        std::uint64_t pointer=0;
+#ifdef __EMSCRIPTEN__
+                        if(gameplay&&!app->stage_entry_release)pointer=std::uint64_t(soew_web_touch_motion());
+#endif
                         app->hud_input=gameplay?input:0;
                         if(!app->local_coop)apply_live_assists(*app);
                         if(app->practice_session){
-                            const auto event=soew::practice_replay_tick(*app->stage_scene,input,group,fast);
+                            const auto event=soew::practice_replay_tick(*app->stage_scene,input,group,fast,pointer);
                             const auto samples=app->practice_session->samples();
-                            app->practice_session->tick(*app->stage_scene,event.input,event.dialogue_group,event.dialogue_fast_forward);
+                            app->practice_session->tick(*app->stage_scene,event.input,event.dialogue_group,event.dialogue_fast_forward,event.pointer);
                             if(app->recorder&&app->practice_session->samples()!=samples&&!app->recorder->record(event))app->recorder.reset();
                             if(advanced.enabled(soew::PracticeAdvanced::FastRetry)&&app->stage_scene->life.total_misses!=prior_misses){
                                 app->fast_retry_left=soew::PracticeAdvanced::retry_frames;
@@ -3890,7 +3913,8 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                                 app->practice_result=true;app->practice_menu.allowed=false;app->practice_choice=0;app->stage_scene->paused=true;app->audio.pause(true);break;
                             }
                         }else{
-                            step=app->replay_session->tick(*app->stage_scene,soew::normalize_replay_tick(input,group,fast));
+                            auto event=soew::normalize_replay_tick(input,group,fast);event.pointer=pointer;
+                            step=app->replay_session->tick(*app->stage_scene,event);
                             if(coop&&step.consumed_tick)++app->local_coop_ticks;
                             if(app->recorder&&step.consumed_tick&&(!app->recorder->record(step.event)||(step.stage_advanced&&!app->recorder->next_stage())))app->recorder.reset();
                             finalize_replay(*app);
@@ -4696,10 +4720,23 @@ void run_window_loop(HWND hwnd,App &app){
 }
 #ifdef __EMSCRIPTEN__
 extern "C" {
-EMSCRIPTEN_KEEPALIVE int soew_full_start(int quiet);
+EMSCRIPTEN_KEEPALIVE int soew_full_start(int quiet,int language,int music,int always_hitbox,double music_gain,double effect_gain);
 EMSCRIPTEN_KEEPALIVE int soew_full_import_replay();
 }
 namespace { App browser_app; HWND browser_hwnd; }
+extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_audio_levels(double music,double effects){
+    browser_app.host_music_gain=music;browser_app.host_effect_gain=effects;
+    update_audio_levels(browser_app);
+}
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_input_scene(){
+    const auto &a=browser_app;
+    if(a.confirmed_coop)return !a.confirmed_coop->paused&&
+        soew::replay_tick_context(*a.stage_scene)==soew::NativeReplayContext::Gameplay?1:0;
+    if(a.practice_visible||a.practice_tools.open)return 2;
+    return a.stage_scene&&!a.stage_scene->paused&&!a.run_pause_menu&&!a.replay_playback&&
+        !a.stage_entry_release&&!a.stage_intro.active()&&!a.ending_player&&
+        soew::replay_tick_context(*a.stage_scene)==soew::NativeReplayContext::Gameplay?1:0;
+}
 void leave_browser_coop(){DestroyWindow(browser_hwnd);}
 extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_fullscreen_changed(bool enabled){
     browser_app.window_fullscreen=enabled;
@@ -4726,7 +4763,7 @@ static int start_browser_coop(int count,int stage,int rank,int spare,int stock,i
     }catch(const std::exception &error){std::cerr<<"Local co-op: "<<error.what()<<'\n';return 0;}
 }
 extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_confirmed_coop(int count,int stage,int rank,int spare,int stock,
-    int p1,int p2,int p3,std::uint32_t seed,unsigned rules,int lang,int seat,int music){
+    int p1,int p2,int p3,std::uint32_t seed,unsigned rules,int lang,int seat,int music,int local_player_guide){
     if(rules>15||lang<0||lang>3||seat< -1||seat>=count||music< -1||music>3)return 0;
     auto &app=browser_app;
     app.coop_view_seat=seat<0?std::nullopt:std::optional<unsigned>(seat);
@@ -4736,7 +4773,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_confirmed_coop(int count,int
     if(music>=0)app.menu.music=music;
     app.settings_enabled=false;
     if(!start_browser_coop(count,stage,rank,run.challenge?run.challenge_spares:spare,run.challenge?0:stock,p1,p2,p3))return 0;
-    if(!app.effect_bank.empty()&&!app.audio.start(app.songs[0],false,WAVE_MAPPER,{},app.effect_bank,{},true,0,false,app.menu.audio_levels))audio_error(app);
+    app.stage_scene->local_player_guide=bool(local_player_guide);
+    if(!app.effect_bank.empty()&&!app.audio.start(app.songs[0],false,WAVE_MAPPER,{},app.effect_bank,{},true,0,false,app.output_levels()))audio_error(app);
     app.stage_scene->sound.enabled=!app.effect_bank.empty();
     app.stage_scene->sound_output=[&app](unsigned id){if(!app.coop_effects_gated&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
     return 1;
@@ -4752,12 +4790,12 @@ extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_coop_music(int track){
     if(track<0)return app.coop_music.stop();
     try{
         const auto song=read(app.assets_root/fs::path(soew::music_files.at(track)));
-        return app.coop_music.start(song,false,1,{},{},{},false,0,false,app.menu.audio_levels);
+        return app.coop_music.start(song,false,1,{},{},{},false,0,false,app.output_levels());
     }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 0;}
 }
 extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_coop_audio_gate(int gated){browser_app.coop_effects_gated=bool(gated);}
 extern "C" EMSCRIPTEN_KEEPALIVE unsigned soew_full_coop_effects(){return browser_app.audio.effect_calls();}
-extern "C" EMSCRIPTEN_KEEPALIVE float soew_full_akyu_gain(){return soew::akyu_output_trim*browser_app.menu.audio_levels.music/100.0f;}
+extern "C" EMSCRIPTEN_KEEPALIVE float soew_full_akyu_gain(){return soew::akyu_output_trim*browser_app.output_levels().music/100.0f;}
 extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_confirmed_step(unsigned frame,double p1,double p2,double p3){
     auto &app=browser_app;
     try{
@@ -4789,8 +4827,11 @@ int soew_full_import_replay(){
         return 0;
     }
 }
-int soew_full_start(int quiet){
+int soew_full_start(int quiet,int language,int music,int always_hitbox,double music_gain,double effect_gain){
     browser_app.quiet_browser_boot=bool(quiet);
+    browser_app.browser_language=language;browser_app.browser_music=music;
+    browser_app.browser_always_hitbox=bool(always_hitbox);
+    browser_app.host_music_gain=music_gain;browser_app.host_effect_gain=effect_gain;
     constexpr int argc=1;
     wchar_t program[]=L"soew";
     wchar_t *argv[]={program};
@@ -5019,6 +5060,10 @@ int wmain(int argc, wchar_t **argv) {
             app.menu.language=*language_override;
         }
         if(practice_language_override)app.menu.language=*practice_language_override;
+#ifdef __EMSCRIPTEN__
+        if(app.browser_language>=0)app.menu.language=soew::Language(app.browser_language);
+        if(app.browser_music>=0)app.menu.music=app.browser_music==Menu::music_akyu&&!app.menu.akyu_available?Menu::music_fm:app.browser_music;
+#endif
         app.wiki_english_story=!soew::has_locale_assets(assets);
         const auto title_root=soew::locale_asset(assets,app.menu.language,"OP2.PI").parent_path();
         app.frames={load(title_root, "OP2.PI", true), load(assets, "OP.PI", false), load(assets, "TSELECT.PI", false)};

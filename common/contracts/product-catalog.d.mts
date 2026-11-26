@@ -45,6 +45,7 @@ export declare const PRODUCT_GAMES: Readonly<{
     }>;
     th02: Readonly<{
         testOnly:true; practiceUI:'browser'; number:'02';title:'東方封魔録';subtitle:'the Story of Eastern Wonderland';cardArtwork:'th02-card.webp';
+        builtinLanguages:readonly Readonly<{id:string;title:string;pack:null}>[];
         storage:Readonly<{saveRoot:'/soew/save';scoreFile:'soew-native-scores.dat';configFiles:readonly string[]}>;dataLayout:string;
         runtime:'./runtime/th02/th02.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';

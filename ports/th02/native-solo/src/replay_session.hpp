@@ -169,9 +169,10 @@ inline std::unique_ptr<EncounterScene> load_practice_replay_scene(const std::fil
     if(practice_replay_start_digest(*scene)!=p.start_hash)throw std::runtime_error("Practice replay start state or assets do not match");
     return scene;
 }
-inline NativeReplayEvent practice_replay_tick(const EncounterScene &s,std::uint16_t input,bool group,bool fast){
+inline NativeReplayEvent practice_replay_tick(const EncounterScene &s,std::uint16_t input,bool group,bool fast,std::uint64_t pointer=0){
     auto event=normalize_replay_tick(input,group,fast);
     event.context=replay_tick_context(s);
+    if(event.context==NativeReplayContext::Gameplay)event.pointer=pointer;
     return event;
 }
 inline NativeReplaySummary practice_replay_summary(const EncounterScene &s,const PracticeSession &session){
@@ -264,8 +265,9 @@ public:
         if(s.paused)return step;
         step.event=normalize_replay_tick(event.input,event.dialogue_group,event.dialogue_fast_forward);
         if(!legacy_)step.event.context=replay_tick_context(s);
+        if(step.event.context==NativeReplayContext::Gameplay)step.event.pointer=event.pointer;
         try{
-            s.tick(step.event.input,step.event.dialogue_group,step.event.dialogue_fast_forward);
+            s.tick(step.event.input,step.event.dialogue_group,step.event.dialogue_fast_forward,step.event.pointer);
             ++ticks_;step.consumed_tick=true;
             observe(s);
             // v1 timer batching could include inert Ready ticks. It supplies its
@@ -309,10 +311,10 @@ public:
             if(stop_at_stage!=-1||!s.practice_mode||s.stage!=config_.stage||summary_||cursor>=run.events.size())
                 return fail(step,"Invalid Practice replay playback state");
             const auto &e=run.events[cursor];
-            step.event=practice_replay_tick(s,e.input,e.dialogue_group,e.dialogue_fast_forward);
+            step.event=practice_replay_tick(s,e.input,e.dialogue_group,e.dialogue_fast_forward,e.pointer);
             if(e!=step.event)return fail(step,"Practice replay input context does not match the simulation");
             auto &session=*practice_session_;
-            session.tick(s,e.input,e.dialogue_group,e.dialogue_fast_forward);
+            session.tick(s,e.input,e.dialogue_group,e.dialogue_fast_forward,e.pointer);
             ++cursor;++ticks_;step.consumed_tick=true;
             if(session.simulation_error())return fail(step,session.error());
             if(cursor==run.events.size()){

@@ -3,6 +3,7 @@ import {RetraceClock} from './native/clock.mjs';
 import {createManagedTransport} from './native/network/managed-transport.mjs';
 import {createConfirmedPeerRun,validCoopInput} from './native-coop-peers.mjs';
 import {packTouch} from './touch-input.js';
+import {nativeSettings,nativeLanguage,nativeMusic} from './native-settings.mjs';
 import {createPc98SpectatorPublisher} from './pc98-spectator-publisher.mjs';
 import {createLocalSpectator} from './pc98-local-spectator.mjs';
 import {createPc98SpectatorChannel} from './pc98-spectator-channel.mjs';
@@ -11,8 +12,6 @@ const tickMs=9328*1000/526315;
 const delay=3;
 const roles=['host','guest','guest2'];
 const own=(value,min,max)=>Number.isInteger(value)&&value>=min&&value<=max;
-const sound=(music,options)=>music==='none'?0:options.musicSource==='akyu'?3:1;
-const lang=language=>language==='ja'?0:2;
 function roomCanvas(host){
     const canvas=document.createElement('canvas');canvas.width=640;canvas.height=400;canvas.tabIndex=0;
     host.append(canvas);return canvas;
@@ -22,7 +21,7 @@ const roomRules=(options,language)=>[
     options.netplayInitialSpares??2,options.netplayInitialBombs??3,
     ...roles.map((_,i)=>options.netplayLoadouts[i]?.shot??0),
     options.netplaySeed>>>0,(options.netplayDisableFocus?0:1)|(options.netplayRapidFire===false?0:2)|
-        (options.netplayDisableCheatMovement?4:0)|(options.netplayChallengeMode?8:0),lang(language),
+        (options.netplayDisableCheatMovement?4:0)|(options.netplayChallengeMode?8:0),nativeLanguage(language),
 ];
 
 export function createNativeRoomPreview(host){
@@ -32,7 +31,7 @@ export function createNativeRoomPreview(host){
         if(current)return current.task;
         const run=current={canvas:roomCanvas(host)};
         return run.task=(async()=>{
-            const player=await playFull(run.canvas,undefined,{hosted:true,manualFrames:true,titleLanguage:lang(language)});
+            const player=await playFull(run.canvas,undefined,{hosted:true,manualFrames:true,titleLanguage:nativeLanguage(language)});
             if(current!==run){player.stop();throw Error('标题预览已取消');}
             run.player=player;
             return {presented:true};
@@ -40,7 +39,7 @@ export function createNativeRoomPreview(host){
     }};
 }
 
-export function createNativeRoom({input,emit}){
+export function createNativeRoom({input,emit,audioLevels}){
     let player,peer,transport,publisher,canvas,keys,closed=true;
     function stop(){
         closed=true;keys?.abort();publisher?.stop();peer?.close();player?.stop();canvas?.remove();
@@ -55,7 +54,7 @@ export function createNativeRoom({input,emit}){
             let ended=false;
             canvas=roomCanvas(document.querySelector('#game'));
             player=await playFull(canvas,undefined,{
-                hosted:true,confirmedCoop:{rules,seat,music:sound(music,options)},
+                hosted:true,audioLevels,settings:nativeSettings({options,music,language}),confirmedCoop:{rules,seat,music:nativeMusic(music,options)},
                 beforeFrame(){
                     if(!peer?.ready||ended)return;
                     clock.frame(performance.now(),()=>1,()=>peer.advance());
@@ -86,6 +85,9 @@ export function createNativeRoom({input,emit}){
             for(const target of [window,parent])target.addEventListener('keydown',player.unlock,{capture:true,signal:keys.signal});
             canvas.focus();player.unlock();peer.start();
         },
+        inputScene:()=>player?.inputScene()??0,
+        unlock:()=>player?.unlock(),
+        setAudioLevels:(music,effects)=>player?.setAudioLevels(music,effects),
         health(){
             const h=player?.health()??{frames:0,gameFrame:0,audio:{state:'loading'}};
             const running=!!peer?.ready,frame=peer?.frame??0;
@@ -97,7 +99,7 @@ export function createNativeRoom({input,emit}){
     };
 }
 
-export function createNativeRoomSpectator(emit){
+export function createNativeRoomSpectator(emit,audioLevels){
     let player,viewer,canvas,channel,timer,run,revision=0;
     const status={peers:new Map(),get relay(){return channel.relay;}};
     const muted=()=>viewer.paused||!viewer.following||viewer.catching||viewer.seeking;
@@ -127,8 +129,8 @@ export function createNativeRoomSpectator(emit){
                 validateRow(row,h){if(!Array.isArray(row)||row.length!==3||row.some((v,i)=>!validCoopInput(v)||(i>=h.players&&v)))throw Error('观战输入无效');},
                 channelFactory(){channel=createPc98SpectatorChannel(options,onError);globalThis.__th02PeerTransport=status;return channel;},
                 async createReplica(header,{onFrame}){
-                    const instance=await playFull(canvas,undefined,{hosted:true,manualFrames:true,
-                        confirmedCoop:{rules:[...header.rules.slice(0,-1),lang(language)],seat:-1,music:sound(music,options)}});
+                    const instance=await playFull(canvas,undefined,{hosted:true,manualFrames:true,audioLevels,
+                        confirmedCoop:{rules:[...header.rules.slice(0,-1),nativeLanguage(language)],seat:-1,music:nativeMusic(music,options)}});
                     player=instance;instance.pausePlayback(muted());
                     const gestures=new AbortController();
                     for(const target of [window,parent])for(const name of ['click','keydown'])target.addEventListener(name,instance.unlock,{capture:true,signal:gestures.signal});
@@ -139,6 +141,7 @@ export function createNativeRoomSpectator(emit){
             timer=setInterval(report,200);
         },
         health(){return {frames:viewer?.frames??0,gameFrame:viewer?.frame??0,audio:player?.health().audio??{state:'loading'}};},
+        setAudioLevels:(music,effects)=>player?.setAudioLevels(music,effects),
         playback(message){
             if(message.run!==run)throw Error('观战对局已改变');
             if(message.action==='pause')viewer.pause(true);

@@ -56,6 +56,9 @@ struct EncounterScene:StageScene {
     void update_sound(){if(auto id=sound.update();id&&sound_output)sound_output(*id);}
     unsigned rendered_page=0;
     bool reduced_effects=false;
+    CoopPointerMotion solo_pointer;
+    bool always_focus_point=false;
+    bool local_player_guide=false;
     static constexpr bool stage4_overlay_enabled(int id,bool map_end,bool reduced){
         return id==3&&!map_end&&!reduced;
     }
@@ -463,7 +466,8 @@ public:
         if(stage>3||(stage==3&&(!marisa_enabled||!marisa.cleared))||transition.phase!=StageTransition::Phase::Ready)throw std::runtime_error("Invalid stage transition request");
         auto next=load(assets_root,stage+1,player.shot,rank,life.lives,life.bombs,language);
         next.combat_enabled=combat_enabled;next.survival_enabled=survival_enabled;next.pickup_enabled=pickup_enabled;
-        next.reduced_effects=reduced_effects;next.set_hitbox_mode(hitbox_mode_);
+        next.reduced_effects=reduced_effects;next.set_hitbox_mode(hitbox_mode_);next.always_focus_point=always_focus_point;
+        next.local_player_guide=local_player_guide;
         next.continues_used=continues_used;next.highest_run_score=highest_run_score;
         next.run_start_lives=run_start_lives;next.run_start_bombs=run_start_bombs;next.resident_frame=resident_frame;
         next.life.start_bombs=life.start_bombs;next.life.playperf=life.playperf;next.life.power=life.power;next.life.total_misses=life.total_misses;
@@ -588,7 +592,8 @@ public:
         // initialization users/clock seed are NOT yet modeled, no parity claim.
         IRand rng(seed);sparks.initialize(rng,false);runtime.random.fill(rng);items.initialize(runtime.random);effects_enabled=true;
     }
-    void tick(std::uint16_t input,bool dialogue_group_key=false,bool dialogue_fast_forward=false){
+    void tick(std::uint16_t input,bool dialogue_group_key=false,bool dialogue_fast_forward=false,std::uint64_t pointer=0){
+        solo_pointer.sample(pointer,false);
         if(paused)return;
         if(coop)coop->input[0]=input;
         if(!(input&Focus))player.clear_focus();
@@ -767,7 +772,7 @@ public:
         bool accepts_input=true;
         if(survival_enabled){life.begin_frame(page);handle_assisted_hit();accepts_input=life.input_allowed();if(accepts_input){player.x=life.positions[page].x;player.y=life.positions[page].y;}}
         player.back_page=page;
-        if(accepts_input){player.tick(input,coop?&coop->pointer[0]:nullptr);if(survival_enabled)life.moved(page,player.x,player.y);}
+        if(accepts_input){player.tick(input,coop?&coop->pointer[0]:&solo_pointer);if(survival_enabled)life.moved(page,player.x,player.y);}
         else player.clear_focus();
         if(survival_enabled){player.x=life.current.x;player.y=life.current.y;}
         if(coop)for(unsigned i=1;i<seat_count();++i){
@@ -1090,7 +1095,7 @@ public:
         const auto previous_hazards=coop_hazards.hazard_count;
         if((rika_enabled||stones_enabled||stage==3||sigma_enabled)&&lasers.update(logic_frame,player.x,player.y,coop||life.hit,[&](unsigned id){request_sound(id);},boss_hazards)){++hit_checks;if(survival_enabled)life.register_hit();}
         if(coop)team_hazards(previous_hazards);
-        if(!display&&player.focused&&hitbox_battle_visible()){
+        if(!display&&(player.focused||always_focus_point&&(!coop||!life.game_over&&!life.hit))&&hitbox_battle_visible()){
             // Shift needs the shot check's player sample even with the debug overlay off.
             display=&collision_frame_;
             display->begin(HitboxMode::Self,logic_frame,page);
@@ -1706,7 +1711,10 @@ private:
         }
         // Focus is a collision reference. Show the player and hostile bullets
         // from the checked frame, not the older interpolated pose of live slots.
-        const auto *focus_frame=player.focused&&!paused?sampled_collision_frame():nullptr;
+        const auto &local_life=seat_life(view_seat.value_or(0));
+        const bool local_focus=always_focus_point&&!paused&&hitbox_battle_visible()&&
+            (!coop||(!local_life.hit&&!local_life.game_over));
+        const auto *focus_frame=(player.focused||local_focus&&(!view_seat||*view_seat==0))&&!paused?sampled_collision_frame():nullptr;
         const auto focus=focus_frame?focus_frame->player[static_cast<unsigned>(CollisionSample::Projectile)]:std::nullopt;
         const auto draw_player=[&](unsigned i){
             const auto &l=seat_life(i);const auto &p=seat_motion(i);const auto &s=seat_shots(i);
@@ -1785,10 +1793,19 @@ private:
                 for(int y=16;y<384;++y)apply_mima_tone(pixels.subspan(y*640+32,384),death_fx.tone);
             }else apply_mima_tone(pixels,death_fx.tone);
         }
-        if(focus)draw_player_focus_point(pixels,*focus,-int(death_fx.shift));
+        if(focus&&(!view_seat||*view_seat==0))draw_player_focus_point(pixels,*focus,-int(death_fx.shift));
         if(coop&&!paused)for(unsigned i=1;i<seat_count();++i){
+            if(view_seat&&i!=*view_seat)continue;
             const auto &p=seat_motion(i);const auto &l=seat_life(i);
-            if(p.focused&&!l.hit&&!l.game_over)draw_player_focus_point(pixels,{p.x,p.y},-int(death_fx.shift));
+            if((p.focused||(local_focus&&view_seat&&i==*view_seat))&&!l.hit&&!l.game_over)
+                draw_player_focus_point(pixels,{p.x,p.y},-int(death_fx.shift));
+        }
+        if(view_seat&&local_player_guide&&!local_life.hit&&!local_life.game_over){
+            const auto &p=seat_motion(*view_seat);
+            const auto origin=RenderPoint::pixels(p.x+9-int(death_fx.shift),p.y+14);
+            blit_motion_sprite(pixels,origin,15,15,[](int x,int y){
+                return (y==0||y==14)&&(x<4||x>10)?0xffffffu:render_clear;
+            });
         }
         if(const auto *art=current_bomb_art();bomb_enabled&&art)art->render_tone(pixels,bomb);
         // Approximate Sigma's one-word GDC offset without moving host HUD or collisions.

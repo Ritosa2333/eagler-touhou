@@ -4,18 +4,23 @@
 #include <cstdlib>
 #include <stdexcept>
 namespace soew {
+inline constexpr std::uint64_t pointer_active=1ull<<40,pointer_unlimited=1ull<<41,pointer_begin=1ull<<44;
+inline constexpr std::uint64_t pointer_mask=(((1ull<<42)-1)&~4095ull)|pointer_begin;
+inline constexpr bool valid_pointer_motion(std::uint64_t value){
+    return !(value&~pointer_mask)&&(!value||(value&pointer_active));
+}
 // TH02 th02/main/playfld.hpp + player/player.hpp and player.cpp:19..61.
 // Coordinates are sprite top-left INTEGER pixels, not TH03/TH04 Q12.4 centers.
 struct CoopPointerMotion {
     int x=0,y=0;
     bool active=false,unlimited=false;
     void sample(std::uint64_t value,bool restrict_speed){
-        if(!(value>>40&1)){*this={};return;}
-        if(value>>44&1)x=y=0;
+        if(!(value&pointer_active)){*this={};return;}
+        if(value&pointer_begin)x=y=0;
         const auto axis=[](unsigned bits){return int(bits^8192)-8192;};
         x=std::clamp(x+axis(unsigned(value>>12&16383)),-8192,8191);
         y=std::clamp(y+axis(unsigned(value>>26&16383)),-8192,8191);
-        active=true;unlimited=(value>>41&1)&&!restrict_speed;
+        active=true;unlimited=(value&pointer_unlimited)&&!restrict_speed;
     }
 };
 struct PlayerMotion {

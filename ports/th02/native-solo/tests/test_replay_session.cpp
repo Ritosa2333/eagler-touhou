@@ -1192,6 +1192,31 @@ void focus_mode(const fs::path &root){
     live->life.game_over=true;live->continue_choice=EncounterScene::ContinueChoice::Release;
     live->tick(Focus);check(live->continue_choice==EncounterScene::ContinueChoice::Choose&&!live->player.focused);
 }
+void touch_replay(const fs::path &root){
+    NativeReplayConfig config;config.shot=2;
+    auto live=std::make_unique<EncounterScene>(load_replay_scene(root,config));
+    ReplaySession session(config);
+    NativeReplayRecorder recorder(config);
+    const auto tick=[&](std::uint64_t motion){
+        auto input=normalize_replay_tick(0);input.pointer=motion;
+        const auto step=session.tick(*live,input);
+        check(step.status==Status::Running&&step.event.pointer==motion&&recorder.record(step.event));
+    };
+    const int start=live->player.x;
+    tick(pointer_active|pointer_begin|(48ull<<16));
+    check(live->player.x==start+3);
+    tick(pointer_active);check(live->player.x==start+6);
+    tick(0);check(live->player.x==start+6);
+    tick(pointer_active|pointer_begin|pointer_unlimited|(48ull<<16));
+    check(live->player.x==start+54);
+    tick(0);
+    check(recorder.finalize(session.stop(*live)));
+    const auto run=bytes_roundtrip(recorder.replay());
+    check(run.events==recorder.replay().events);
+    auto playback=std::make_unique<EncounterScene>(load_replay_scene(root,config));
+    finished(play(*playback,run,no_fixture),run);
+    check(replay_state_digest(*playback)==replay_state_digest(*live)&&playback->player.x==live->player.x);
+}
 } // namespace
 
 int main(int argc,char **argv){
@@ -1200,7 +1225,8 @@ int main(int argc,char **argv){
         const fs::path root=argv[1];
         if(argc==3&&std::string_view(argv[2])=="--focus-mode"){
             focus_mode(root);
-            std::cout<<"focus_mode_checks="<<checks<<" failures=0\n";
+            touch_replay(root);
+            std::cout<<"focus_and_touch_checks="<<checks<<" failures=0\n";
             return 0;
         }
         if(argc==3&&std::string_view(argv[2])=="--sprite-edges"){

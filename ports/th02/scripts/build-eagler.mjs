@@ -11,7 +11,7 @@ const args=Object.fromEntries(process.argv.slice(2).map(arg=>{
   const at=arg.indexOf('=');return [arg.slice(2,at<0?undefined:at),at<0?true:arg.slice(at+1)];
 }));
 const web=['th02.html','managed-shell.mjs','managed-data.mjs','managed-input.mjs','managed-native-solo.mjs',
-  'managed-native-room.mjs','native-coop-peers.mjs','touch-input.js'];
+  'managed-native-room.mjs','native-coop-peers.mjs','touch-input.js','hosted-touch.mjs','native-settings.mjs'];
 const shared=['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-owners.mjs','direct-input-bridge.mjs',
   'pc98-game-fps.mjs','pc98-spectator-publisher.mjs','pc98-spectator-channel.mjs','pc98-local-spectator.mjs','pc98-match-index.mjs'];
 const network=['managed-transport.mjs','input-transport.mjs'];

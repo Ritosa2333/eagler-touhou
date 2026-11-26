@@ -1,7 +1,9 @@
 import {playFull} from './native/full.mjs';
+import {packTouch} from './touch-input.js';
+import {nativeSettings} from './native-settings.mjs';
 
 const virtualKeys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyX','KeyZ','ShiftLeft','Escape','Enter'];
-export function createNativeSolo({canvas,input,exit,fail}) {
+export function createNativeSolo({canvas,input,exit,fail,audioLevels}) {
   let player, virtual = 0, saved;
   const physical = new Set();
   const sync = () => {
@@ -9,9 +11,9 @@ export function createNativeSolo({canvas,input,exit,fail}) {
     return saved;
   };
   return {
-    async start() {
+    async start(config) {
       player = await playFull(canvas,undefined,{
-        hosted:true,
+        hosted:true,settings:nativeSettings(config),audioLevels,touchMotion:()=>packTouch(0,input.motion()),
         beforeFrame(host) {
           const next=input.sample({keyboard:false});
           for (const [index,code] of virtualKeys.entries()) {
@@ -27,6 +29,10 @@ export function createNativeSolo({canvas,input,exit,fail}) {
       });
       canvas.focus();
     },
+    inputScene:()=>player?.inputScene()??0,
+    panelPointer:message=>player?.panelPointer(message),
+    unlock:()=>player?.unlock(),
+    setAudioLevels:(music,effects)=>player?.setAudioLevels(music,effects),
     key(code,down,event) {
       if (!player) return;
       if (down) {physical.add(code);player.unlock();}

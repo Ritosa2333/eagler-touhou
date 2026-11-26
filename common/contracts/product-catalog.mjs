@@ -116,6 +116,8 @@ export const PRODUCT_GAMES = Object.freeze({
     }),
     th02: Object.freeze({
         practiceUI: 'browser',
+        builtinLanguages:Object.freeze([Object.freeze({id:'lang_en',title:'English',pack:null}),
+            Object.freeze({id:'lang_zh-hans',title:'简体中文',pack:null}),Object.freeze({id:'lang_zh-hant',title:'繁體中文',pack:null})]),
         testOnly: true, number: '02', title: '東方封魔録', subtitle: 'the Story of Eastern Wonderland', cardArtwork: 'th02-card.webp',
         storage: Object.freeze({saveRoot:'/soew/save',scoreFile:'soew-native-scores.dat',configFiles:Object.freeze(['soew-settings.json','soew-practice.json'])}),
         runtime:'./runtime/th02/th02.html', runtimeFileLayout:'directory', runtimeFileTree:true,
@@ -945,7 +947,7 @@ export function createLocalProductManifest() {
         games: Object.fromEntries(productGameEntries.map(([game, product]) => [game, {
                 ...product,
                 music: { midi: product.musicCapabilities.midi ? { files: [] } : { files: [], supported: false } },
-                languageOptions: [{ id: "ja", title: "日本語(原版)", pack: null }],
+                languageOptions: [{ id: "ja", title: "日本語(原版)", pack: null }, ...(product.builtinLanguages ?? [])],
             }])),
     };
 }

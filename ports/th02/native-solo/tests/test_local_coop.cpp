@@ -174,6 +174,28 @@ void check_player_view(const std::filesystem::path &assets){
     check_overlap(0,p2);check_overlap(1,p1);
 }
 
+void check_focus_view(const std::filesystem::path &assets){
+    auto scene=EncounterScene::load(assets,0,0,1,2,3);
+    scene.combat_enabled=scene.survival_enabled=true;
+    scene.enable_coop({.count=3,.shots={0,1,2}});
+    scene.coop->input.fill(Focus);
+    scene.tick(Focus);
+    std::vector<std::uint32_t> pixels(640*400);
+    const auto verify=[&](std::optional<unsigned> viewer){
+        scene.render(pixels,true,false,scroll_subpixels,nullptr,1,viewer);
+        for(unsigned seat=0;seat<3;++seat){
+            const auto &p=scene.seat_motion(seat);
+            check(p.focused);
+            const auto at=(p.y+21)*640+p.x+16;
+            const bool marker=pixels[at]==0xffffff&&pixels[at+1]==0xffd9dc&&
+                pixels[at+2]==0xff697d&&pixels[at+3]==0xb7153d&&pixels[at+4]==0x281020;
+            check(marker==(!viewer||*viewer==seat));
+        }
+    };
+    for(unsigned seat=0;seat<3;++seat)verify(seat);
+    verify(std::nullopt); // Spectators retain the shared view.
+}
+
 void check_marisa_orb_damage(const std::filesystem::path &assets){
     auto scene=EncounterScene::load(assets,3,0,1,2,3);
     scene.marisa_enabled=scene.combat_enabled=true;
@@ -301,6 +323,7 @@ int main(int argc,char **argv){
             check_marisa_orb_damage(argv[1]);
             check_ghost_layer(argv[1]);
             check_player_view(argv[1]);
+            check_focus_view(argv[1]);
             check_run(argv[1]);
         }
         return 0;

@@ -12,18 +12,22 @@ const emit=payload=>parent.postMessage({protocol,game,epoch,...payload,
   ...(payload.event==='exit'?{status:payload.code===0?'success':'error'}:{})},location.origin);
 const multiplayer=query.get('runtimeVariant')==='multiplayer';
 let ready=false,configured=false,launched=false,options={},music='ogg',language='ja',api,preview,launchSerial=0,firstFrame=false,nativeSolo;
+let levels=[1,1];
+const audioLevels=()=>levels;
+globalThis.Module={eaglerSetAudioLevels(music,effects){levels=[music,effects];api?.setAudioLevels?.(music,effects);}};
 const nativeActive=()=>launched&&nativeSolo&&api===nativeSolo;
 const input=managedInput({game,epoch,active:()=>launched,options:()=>options,
   onKey:(code,down,event)=>{if(nativeActive())nativeSolo.key(code,down,event);},
-  allowNativeKey:event=>!(nativeActive()&&(event.metaKey||event.ctrlKey&&event.code==='KeyV'))});
+  allowNativeKey:event=>!(nativeActive()&&(event.metaKey||event.ctrlKey&&event.code==='KeyV')),
+  scene:()=>api?.inputScene?.()??0,panelPointer:message=>nativeSolo?.panelPointer(message)});
 globalThis.__eaglerPC98Options=()=>options;
 function live(message){
   switch(message.command){
     case 'keyboard':if(typeof message.code!=='string'||typeof message.down!=='boolean')throw Error('键盘输入无效');input.key(message);break;
     case 'keyboard-clear':input.clearKeyboard();break;
     case 'touch-cancel':input.cancelTouch();break;
-    case 'touch-controls':input.touch(message);break;
-    case 'direct-touch':input.pointer(message);break;
+    case 'touch-controls':api?.unlock?.();input.touch(message);break;
+    case 'direct-touch':api?.unlock?.();input.pointer(message);break;
     default:return false;
   }return true;
 }
@@ -36,7 +40,7 @@ async function command(message){
     case 'configure':{
       if(launched)throw Error('请先结束本局');
       if(!['ogg','none'].includes(message.music))throw Error('此版本支持独立音乐或静音');
-      if(message.language&&!['ja','lang_zh-hans'].includes(message.language))throw Error('游戏语言无效');
+      if(message.language&&!['ja','lang_en','lang_zh-hans','lang_zh-hant'].includes(message.language))throw Error('游戏语言无效');
       for(const key of ['resources','runtimeResources','sharedResources'])if(message[key]!==undefined&&(!Array.isArray(message[key])||message[key].length))throw Error('此安装包已包含运行所需的资源');
       if(message.runtimePack)throw Error('此入口使用已打包的 PC-98 语言资源');
       if(message.options!==undefined&&(!message.options||typeof message.options!=='object'||Array.isArray(message.options)))throw Error('运行配置无效');
@@ -60,7 +64,7 @@ async function command(message){
       preview?.stop();launchSerial=message.launchSerial??0;firstFrame=false;launched=true;
       {
         const roomEmit=event=>{if(event.event==='exit'){launched=false;input.clear();}emit(event);};
-        api=multiplayer?(options.netplaySpectator?createNativeRoomSpectator(roomEmit):createNativeRoom({input,emit:roomEmit})):nativeSolo;
+        api=multiplayer?(options.netplaySpectator?createNativeRoomSpectator(roomEmit,audioLevels):createNativeRoom({input,emit:roomEmit,audioLevels})):nativeSolo;
       try{await api.start({options,music,language});}catch(error){launched=false;await api.stop();throw error;}
         reportNative();return {};
       }
@@ -91,7 +95,7 @@ try{
     document.getElementById('canvas').remove();
     preview=createNativeRoomPreview(document.getElementById('game'));
   }else{
-    nativeSolo=createNativeSolo({canvas:document.getElementById('canvas'),input,
+    nativeSolo=createNativeSolo({canvas:document.getElementById('canvas'),input,audioLevels,
       async exit(pending){launched=false;await pending;input.clear();emit({event:'exit',code:0});},
       fail:error=>emit({event:'error',message:error.message})});
   }

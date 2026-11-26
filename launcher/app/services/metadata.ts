@@ -142,12 +142,14 @@ export function createMetadataService(options: MetadataServiceOptions) {
     const game = hostGame ?? local.games[gameId];
     const generation = snapshot.installed.get(gameId) ?? null;
     const music = hostGame?.music;
+    const product=PRODUCT_GAMES[gameId];
+    const builtinLanguages='builtinLanguages' in product?product.builtinLanguages:[];
     return {
       productId, uiLocale: locale, hostFeatures: hostGame?.features,
       beautyInstalled: snapshot.beautyInstalled.has(gameId),
       languages: buildLanguageCatalog({
         languageOptions: game?.languageOptions, legacyLanguages: hostGame?.languages,
-        offlineEntries: loadOfflineLanguageIndex(options.storage, gameId), generation,
+        offlineEntries: [...builtinLanguages,...loadOfflineLanguageIndex(options.storage, gameId)], generation,
         translate: key => options.translate(locale, key), priority: languagePriority,
       }),
       musicAvailability: {

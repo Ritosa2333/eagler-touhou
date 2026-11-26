@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
+import {enableTouch,hitboxPoints,startTouchFire,touchButton,touchGame} from './browser-touch.mjs';
 
 const require=createRequire(new URL('../../../launcher/package.json',import.meta.url));
 const puppeteer=require('puppeteer-core');
@@ -8,6 +9,7 @@ const base=process.env.PC98_LAUNCHER_URL||'http://127.0.0.1:18326/';
 const seats=Number(process.env.TH02_TEST_SEATS??2);
 const challenge=process.env.TH02_TEST_CHALLENGE==='1',rapidFire=process.env.TH02_TEST_RAPID_FIRE!=='0';
 const akyu=process.env.TH02_TEST_AKYU==='1';
+const touch=process.env.TH02_TEST_TOUCH==='1';
 const renderer='SoEW Native';
 assert([2,3].includes(seats));
 const browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,protocolTimeout:60000,
@@ -22,9 +24,10 @@ async function open(url){
   page.on('console',entry=>{if(entry.type()==='error')diagnostics.push(entry.text());});
   page.on('requestfailed',request=>diagnostics.push(`${request.url()}: ${request.failure()?.errorText}`));
   page.on('response',response=>{if(response.status()>=400)diagnostics.push(`${response.status()} ${response.url()}`);});
-  await page.setViewport({width:1400,height:900});
+  await page.setViewport({width:1400,height:900,hasTouch:touch});
+  if(touch)await enableTouch(page,{mode:challenge?'touch':'touch-unlimited',music:akyu?'ogg-akyu':undefined});
   await page.exposeFunction('recordRuntimeEvent',m=>events.push(m));
-  if(akyu)await page.evaluateOnNewDocument(()=>{
+  if(akyu&&!touch)await page.evaluateOnNewDocument(()=>{
     if(window===window.top)localStorage.setItem('eagler-touhou-game-options-v1-th02',JSON.stringify({music:'ogg-akyu',musicPreferenceExplicit:true}));
   });
   await page.evaluateOnNewDocument(()=>addEventListener('message',e=>{
@@ -42,7 +45,10 @@ async function wait(label,check,ms=45000){
     for(const {page,events} of pages){
       const error=events.find(m=>m.event==='error');
       if(error)throw Error(`${label}: ${JSON.stringify(error)}`);
-      await page.evaluate(()=>document.querySelector('#decisionDialog[open] #decisionConfirm')?.click());
+      await page.evaluate(()=>{
+        document.querySelector('#decisionDialog[open] #decisionConfirm')?.click();
+        document.querySelector('#touchHelpClose')?.click();
+      });
     }
     if(await check())return;
     await sleep(150);
@@ -105,23 +111,43 @@ try {
   console.log('PASS Eagler create, join, seat, ready, '+renderer+' '+seats+'P launch, rapid fire '+(rapidFire?'on':'off')+', challenge '+(challenge?'on':'off'));
 
   const guest=players.at(-1);
-  await runtime(guest).click(gameCanvas);
+  if(touch)await runtime(guest).$eval(gameCanvas,el=>el.focus());
+  else await runtime(guest).click(gameCanvas);
   assert(await runtime(guest).$eval(gameCanvas,el=>document.activeElement===el&&getComputedStyle(el).outlineStyle==='none'));
+  if(touch){
+    const read=page=>runtime(page).evaluate(hitboxPoints);
+    const hostStart=await read(host),guestStart=await read(guest);
+    assert.equal(hostStart.length,1);
+    assert.equal(guestStart.length,1);
+    assert.notEqual(hostStart[0].x,guestStart[0].x);
+    await touchGame(guest,-70,0);
+    await wait('guest drag updates player position',async()=>{
+      const p=await read(guest);
+      return p.length===1&&p[0].x<guestStart[0].x-10;
+    },10000);
+    assert.deepEqual(await read(host),hostStart,'Guest marker must not appear or displace the host marker');
+    console.log('PASS TH02 room touch moves the guest; each seat sees just its own marker');
+  }
   if(akyu){
     await wait('Akyu song plays',()=>players.every(page=>audioHealth(page)?.playing));
     assert.deepEqual(pages.map(p=>Array.from(p.tracks)),players.map(()=>['02.ogg']));
-    await guest.keyboard.press('KeyZ',{delay:160});
+    if(touch)await startTouchFire(guest);
+    else await guest.keyboard.press('KeyZ',{delay:160});
     await wait('Akyu and native SFX playing',()=>players.every(page=>audioHealth(page)?.playing&&audioHealth(page).sfx>0));
     console.log('PASS Akyu downloads one song at launch; native SFX still play');
   }
-  await guest.keyboard.press('Escape',{delay:160});
+  if(touch)await touchButton(guest,'#touchEscape');
+  else await guest.keyboard.press('Escape',{delay:160});
   await wait('guest pauses everyone',()=>players.every(page=>audioHealth(page)?.paused===true),10000);
   const pausedPixels=await runtime(host).$eval(gameCanvas,el=>el.toDataURL());
   const pausedFrame=await runtime(host).evaluate(()=>globalThis.__eaglerNetplayLanConfirmed);
   await wait('paused players still synchronize',async()=>await runtime(host).evaluate(()=>globalThis.__eaglerNetplayLanConfirmed)>pausedFrame+10);
   assert.equal(await runtime(host).$eval(gameCanvas,el=>el.toDataURL()),pausedPixels,'paused gameplay pixels must not advance');
-  await runtime(host).click(gameCanvas);
-  await host.keyboard.press('Escape',{delay:160});
+  if(touch)await touchButton(host,'#touchEscape');
+  else {
+    await runtime(host).click(gameCanvas);
+    await host.keyboard.press('Escape',{delay:160});
+  }
   await wait('a different player resumes everyone',()=>players.every(page=>audioHealth(page)?.paused===false),10000);
   console.log('PASS guest Esc pauses all seats, host Esc resumes, canvas retains focus without white outline');
 

@@ -32,6 +32,7 @@ EM_JS(void, host_akyu_track,(int track),{Module.host.akyuTrack(track);});
 EM_JS(void, host_akyu_gain,(float gain),{Module.host.akyuGain(gain);});
 void soew_web_akyu_track(int track){host_akyu_track(track);}
 void soew_web_akyu_gain(float gain){host_akyu_gain(gain);}
+EM_JS(double, soew_web_touch_motion,(),{return Module.host.touchMotion();});
 
 struct WebGdi {
     enum Kind {Bitmap, Font, Brush} kind;

@@ -291,7 +291,7 @@ public:
     Result result()const{return result_;}
     const std::string &error()const{return error_;}
     bool simulation_error()const{return result_==Result::Failure&&!normal_loss_;}
-    void tick(EncounterScene &s,std::uint16_t input,bool group_key=false,bool dialogue_fast_forward=false){
+    void tick(EncounterScene &s,std::uint16_t input,bool group_key=false,bool dialogue_fast_forward=false,std::uint64_t pointer=0){
         if(result_!=Result::Running||s.paused)return;
         ++samples_;
         s.practice_mode=true;
@@ -307,7 +307,7 @@ public:
                 s.clear_shots();s.mima_tone=100;s.mima_draws.clear();s.dialogue_snapshot.clear();
                 return;
             }
-            s.tick(input,group_key,dialogue_fast_forward);
+            s.tick(input,group_key,dialogue_fast_forward,pointer);
         }catch(const std::exception &e){error_=e.what();stop(s,Result::Failure);return;}
         if(failed(s)){stop(s,Result::Failure);return;}
         if(completed(s))stop(s,Result::Success);

@@ -16,6 +16,10 @@ node ports/th02/scripts/dev.mjs
 
 用 `TH02_NATIVE_BUILD` 可指定另一 SoEW 构建目录。脚本启动 Launcher 和 Relay，测试入口为 [书库](http://127.0.0.1:18320/?test=th02) 和 [联机大厅](http://127.0.0.1:18320/lobby.html?test=th02)。Runtime 包含 SoEW WASM，DATA 提供原生素材、字形和游戏音源，幺乐团录音由 Launcher 按曲下载。
 
+## 触控与网页设置
+
+书库和联机大厅共用触控布局及设置。单人滑动写入原生录像，联机滑动进入同步输入；房间禁止无限速时，滑动遵守机体限速。玩家只看见自己的判定点，观战保留全员视角。网页语言、音乐音源、音乐与音效音量、常显判定点和联机本机定位线由原生运行时读取。
+
 ## 联机与观战
 
 建房后选难度、机体并准备即可开局。房间默认启用高速连射，房主关闭后大厅特殊玩法显示「禁用连射」。普通房和挑战房使用同一个引擎。联机按约 56.4 Hz 消费已确认的输入帧，经 WebRTC 或 Relay 传输；各席位按本机视角半透明绘制队友。观众可在开局后入场、暂停、回拖和返回直播。
@@ -28,7 +32,9 @@ node ports/th02/scripts/dev.mjs
 $env:PC98_LAUNCHER_URL='http://127.0.0.1:18320/'
 node ports/th02/tests/launcher-native-browser.mjs
 node ports/th02/tests/launcher-native-room-browser.mjs
-node --test ports/th02/tests/native-coop-peers.test.mjs
+node ports/th02/tests/launcher-native-browser.mjs --touch
+$env:TH02_TEST_TOUCH='1'; node ports/th02/tests/launcher-native-room-browser.mjs
+node --test ports/th02/tests/hosted-touch.test.mjs ports/th02/tests/native-coop-peers.test.mjs
 $env:TH02_TEST_SEATS='3'; $env:TH02_TEST_ROUTE='relay'
 node ports/th02/tests/native-coop-network-browser.mjs
 ```
