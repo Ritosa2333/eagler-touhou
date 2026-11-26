@@ -1,6 +1,6 @@
 // Each run retains its E?SV version while published v1 and v2 clients coexist.
 export const COOPERATIVE_SPECTATOR_MARKERS = Object.freeze({
-  th05mp: 0x35, th06mp: 0x36, th07mp: 0x37, th08mp: 0x38, th10mp: 0x41, th11mp: 0x42, th12mp: 0x43, th13mp: 0x4d, th14mp: 0x45, th15mp: 0x46, th17mp: 0x47,
+  thibpmp: 0x49, th05mp: 0x35, th06mp: 0x36, th07mp: 0x37, th08mp: 0x38, th10mp: 0x41, th11mp: 0x42, th12mp: 0x43, th13mp: 0x4d, th14mp: 0x45, th15mp: 0x46, th17mp: 0x47,
 });
 const markers = new Set(Object.values(COOPERATIVE_SPECTATOR_MARKERS));
 export const SPECTATOR_STAGE_LIMITS = Object.freeze({ stateBytes: 4 * 1024, historyBytes: 16 * 1024 * 1024, historyFrames: 108000 });
@@ -58,7 +58,11 @@ export class SpectatorStageRelay {
         const th14OrTh17Run = (this.marker === COOPERATIVE_SPECTATOR_MARKERS.th14mp ||
           this.marker === COOPERATIVE_SPECTATOR_MARKERS.th17mp) &&
           event.version === 2 && event.schema === 3;
-        const retainsRun = th13Run || th14OrTh17Run;
+        const thibpRun = this.marker === COOPERATIVE_SPECTATOR_MARKERS.thibpmp;
+        const retainsRun = th13Run || th14OrTh17Run || thibpRun;
+        if (thibpRun && (event.version !== 2 || event.schema !== 1 ||
+            (!this.session && (event.frame !== 0 || ![1, 7].includes(event.stage)))))
+          throw Error('THIBP spectator run root missing');
         if (!this.session && th13Run && (event.frame !== 0 || ![1, 7].includes(event.stage)))
           throw Error('TH13 spectator run root missing');
         if (this.session && retainsRun !== this.retainsRun) throw Error('spectator stage restore mode changed');

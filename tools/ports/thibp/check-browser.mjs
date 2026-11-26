@@ -15,11 +15,18 @@ const checkTouchMenu = route === '--check-touch-menu';
 const checkRankBack = route === '--check-rank-back';
 const checkTouchMotion = route === '--check-touch-motion';
 const touchTest = checkTouchMenu || checkRankBack || checkTouchMotion;
+const checkCoopEngine = route === '--check-coop-engine';
+const checkCoopRewind = checkCoopEngine && process.env.THIBP_TEST_COOP_REWIND === '1';
+const checkCoopSkill = checkCoopEngine && process.env.THIBP_TEST_COOP_SKILL === '1';
+const checkCoopGhost = checkCoopEngine && process.env.THIBP_TEST_COOP_GHOST === '1';
+const checkCoopStockHud = checkCoopEngine && process.env.THIBP_TEST_COOP_STOCK_HUD === '1';
+const coopSeats = Number(process.env.THIBP_TEST_COOP_SEATS || 3);
 const replayPath = clearStageOne || saveReplay || checkPixelScaling || checkCampaign || checkRestartMemory ||
-  checkPauseInput || touchTest ? undefined : route;
+  checkPauseInput || touchTest || checkCoopEngine ? undefined : route;
 if (!executable || (nativeSamplesPath && !replayPath)) {
-  throw new Error('Usage: check-browser.mjs URL ZIP OUTPUT BROWSER [PLAYWRIGHT] [STAGE6_REPLAY [NATIVE_SAMPLES]|--clear-stage-one|--save-replay|--save-replay-and-quit|--check-pixel-scaling|--check-campaign|--check-restart-memory|--check-pause-input|--check-touch-menu|--check-rank-back|--check-touch-motion]');
+  throw new Error('Usage: check-browser.mjs URL ZIP OUTPUT BROWSER [PLAYWRIGHT] [STAGE6_REPLAY [NATIVE_SAMPLES]|--clear-stage-one|--save-replay|--save-replay-and-quit|--check-pixel-scaling|--check-campaign|--check-restart-memory|--check-pause-input|--check-touch-menu|--check-rank-back|--check-touch-motion|--check-coop-engine]');
 }
+if (checkCoopEngine && ![2, 3].includes(coopSeats)) throw new Error('Use two or three cooperative seats');
 const nativeSamples = nativeSamplesPath && JSON.parse(await readFile(nativeSamplesPath, 'utf8'));
 
 const { chromium } = createRequire(import.meta.url)(playwrightModule);
@@ -770,6 +777,295 @@ async function playCampaign(page, frame) {
   }
 }
 
+async function prepareCoopEngine(frame) {
+  const config = await frame.evaluate(seats =>
+    ph3Runtime._thibp_coop_configure?.(seats, 0x5a03110b) ?? 0, coopSeats);
+  assert.equal(config, 1, 'Runtime must prepare a cooperative session before opening Stage 1');
+}
+
+async function verifyCoopStockHud(frame, play) {
+  await play(135);
+  const before = await screenshot(frame, 'stock-hud-before.png');
+  await play(28);
+  const pickedUp = await frame.evaluate(() =>
+    ph3Runtime.FS.analyzePath('/savethibp/Th_IBP_common_WebStockHudProbe.dat').exists);
+  assert(pickedUp, 'The original item collision and pickup must award each fragment to the right player');
+  const after = await screenshot(frame, 'stock-hud-after.png');
+  const lanes = coopSeats === 2 ? [[461, 106], [552, 146]] : [[461, 98], [552, 131], [461, 164], [552, 164]];
+  // The fixture fills the third stock icon and changes the numerator on each of these lanes.
+  const positions = lanes.flatMap(([x, y]) => [[x + 22, y], [x + 45, y + 13]]);
+  const changed = await frame.evaluate(async ({before, after, positions}) => {
+    const read = async base64 => {
+      const bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
+      const image = await createImageBitmap(new Blob([bytes], {type: 'image/png'}));
+      const canvas = new OffscreenCanvas(640, 480);
+      const context = canvas.getContext('2d', {willReadFrequently: true});
+      context.drawImage(image, 0, 0, 640, 480);
+      image.close();
+      return context.getImageData(0, 0, 640, 480).data;
+    };
+    const [empty, filled] = await Promise.all([read(before), read(after)]);
+    return positions.map(([x, y]) => {
+      let count = 0;
+      for (let row = y - 5; row <= y + 5; row++) {
+        for (let column = x - 5; column <= x + 5; column++) {
+          const i = (row * 640 + column) * 4;
+          if ([0, 1, 2].some(c => Math.abs(filled[i + c] - empty[i + c]) > 40)) count++;
+        }
+      }
+      return count;
+    });
+  }, {before: before.toString('base64'), after: after.toString('base64'), positions});
+  report.cooperativeStockHud = {pickedUp, changed};
+  assert(changed.every(pixels => pixels >= 4),
+    `Each collected fragment must fill its seat's stock icon and update its counter: ${changed}`);
+}
+
+async function verifyCoopEngine(frame) {
+  const installed = await frame.evaluate(() => typeof ph3Runtime._thibp_coop_confirm_frame === 'function');
+  assert(installed, 'Runtime must accept complete cooperative input frames');
+  await frame.waitForFunction(() => ph3Runtime._thibp_coop_frame() === 0 ||
+    ph3Diagnostics.phase === 'error', null, { timeout: 15000 });
+
+  const readStage = () => frame.evaluate(() => {
+    ph3Runtime._thibp_coop_probe();
+    const { coop, stage, errors } = ph3Diagnostics;
+    return { ...coop, stage, errors };
+  });
+  const opened = await readStage();
+  assert.deepEqual(opened.errors, []);
+  assert.equal(opened.frame, 0, 'Stage must stop at its first unconfirmed frame');
+  assert.equal(opened.players.length, coopSeats, 'Stage 1 must contain one real player object per seat');
+  assert.equal(new Set(opened.players.map(player => player.id)).size, coopSeats);
+  assert.equal(new Set(opened.players.map(player => player.x)).size, coopSeats);
+
+  const rejected = await frame.evaluate(() => [
+    ph3Runtime._thibp_coop_confirm_frame(1, 0, 0, 0),
+    ph3Runtime._thibp_coop_confirm_frame(0, 0x2000, 0, 0),
+  ]);
+  assert.deepEqual(rejected, [0, 0], 'Reject a gap or an unknown input bit without advancing');
+  if (coopSeats === 2) {
+    assert.equal(await frame.evaluate(() => ph3Runtime._thibp_coop_confirm_frame(0, 0, 0, 1)), 0,
+      'Reject input from a third seat in a two-player run');
+  }
+
+  let next = 0;
+  const play = async (count, held = [0, 0, 0]) => {
+    for (let remaining = count; remaining > 0;) {
+      const size = Math.min(remaining, 24);
+      const sent = await frame.evaluate(({ first, size, held }) => {
+        for (let tick = first; tick < first + size; tick++) {
+          if (ph3Runtime._thibp_coop_confirm_frame(tick, ...held) !== 1) return tick - first;
+        }
+        return size;
+      }, { first: next, size, held });
+      assert.equal(sent, size, 'Accept consecutive frames in a bounded batch');
+      next += size;
+      remaining -= size;
+      await frame.waitForFunction(target => ph3Runtime._thibp_coop_frame() >= target ||
+        ph3Diagnostics.phase === 'error', next, { timeout: 10000 });
+    }
+    const snapshot = await readStage();
+    assert.deepEqual(snapshot.errors, []);
+    assert.equal(snapshot.tick, next);
+    return snapshot;
+  };
+  if (checkCoopRewind) {
+    const base = await play(178);
+    const checkpoint = await frame.evaluate(() => {
+      const heap = ph3Runtime.HEAPU8;
+      const copy = new Uint8Array(heap.length);
+      const measures = [];
+      for (let sample = 0; sample < 28; sample++) {
+        const start = performance.now();
+        copy.set(heap);
+        if (sample >= 4) measures.push(performance.now() - start);
+      }
+      globalThis.thibpTestCheckpoint = copy;
+      measures.sort((a, b) => a - b);
+      return {bytes: copy.byteLength, p95Ms: measures[Math.ceil(measures.length * 0.95) - 1]};
+    });
+    const restore = async () => {
+      await frame.evaluate(() => {
+        const heap = ph3Runtime.HEAPU8;
+        const copy = globalThis.thibpTestCheckpoint;
+        if (heap.length !== copy.length) throw new Error('Native memory grew inside the rewind window');
+        heap.set(copy);
+      });
+      next = base.tick;
+      const restored = await readStage();
+      assert.equal(restored.frame, base.frame);
+      assert.equal(restored.tick, base.tick);
+    };
+    const exact = [0, (1 << 1) | (1 << 6), 0];
+    const predicted = [0, (1 << 0) | (1 << 6), 0];
+    const preview = await frame.evaluate(({predicted, exact}) => {
+      const helper = ph3Runtime.thibpPrediction;
+      const tick = ph3Runtime._thibp_coop_frame();
+      if (!helper) throw new Error('The candidate runtime did not install the prediction guard');
+      const gl = document.querySelector('#canvas').getContext('webgl2');
+      const confirmedTarget = gl.getParameter(gl.READ_FRAMEBUFFER_BINDING);
+      const confirmedPixels = new Uint8Array(640 * 480 * 4);
+      gl.readPixels(0, 0, 640, 480, gl.RGBA, gl.UNSIGNED_BYTE, confirmedPixels);
+      if (!confirmedTarget || gl.getError() !== gl.NO_ERROR) throw new Error('Missing confirmed render target');
+      const latest = new Uint32Array(ph3Runtime.HEAPU8.buffer);
+      const before = latest.slice();
+      const samples = [];
+      let tested = true;
+      for (let trial = 0; trial < 28; trial++) {
+        const begin = performance.now();
+        if (!helper.render(ph3Runtime, tick, [predicted, predicted], begin)) {
+          tested = false;
+          break;
+        }
+        if (trial >= 8) samples.push(performance.now() - begin);
+      }
+      helper.resolve(tick, exact);
+      let firstDifference = -1;
+      for (let offset = 0; offset < latest.length; offset++) {
+        if (latest[offset] !== before[offset]) {
+          firstDifference = offset * 4;
+          break;
+        }
+      }
+      const previewTarget = gl.getParameter(gl.READ_FRAMEBUFFER_BINDING);
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, confirmedTarget);
+      const afterPixels = new Uint8Array(confirmedPixels.length);
+      gl.readPixels(0, 0, 640, 480, gl.RGBA, gl.UNSIGNED_BYTE, afterPixels);
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, previewTarget);
+      if (gl.getError() !== gl.NO_ERROR) throw new Error('Cannot compare confirmed render target');
+      const gpuRestored = afterPixels.every((byte, index) => byte === confirmedPixels[index]);
+      samples.sort((a, b) => a - b);
+      return {tested, firstDifference, gpuRestored, separateTarget: previewTarget !== confirmedTarget,
+        observation: helper.observation, before: tick,
+        after: ph3Runtime._thibp_coop_frame(), p95Ms: samples[Math.ceil(samples.length * .95) - 1]};
+    }, {predicted, exact});
+    report.preview = preview;
+    assert.equal(preview.after, preview.before, 'Presentation must leave the confirmed timeline untouched');
+    assert.equal(preview.tested, true, JSON.stringify(preview.observation));
+    assert.equal(preview.firstDifference, -1, 'The page journal must restore every changed Wasm word');
+    assert(preview.separateTarget && preview.gpuRestored, 'Prediction must preserve the confirmed framebuffer');
+    assert.equal(preview.observation.corrections, 1);
+    const reference = await play(8, exact);
+    await restore();
+    const speculative = await play(8, predicted);
+    assert(speculative.players[1].x < reference.players[1].x, 'The forecast must actually change the native world');
+    await restore();
+    const corrected = await play(8, exact);
+    assert.deepEqual(corrected, reference, 'Re-simulating the corrected lane must match the exact-input result');
+    await frame.evaluate(() => { delete globalThis.thibpTestCheckpoint; });
+    report.cooperativeRewind = {checkpoint, base, reference, speculative, corrected};
+    return;
+  }
+  if (checkCoopSkill) {
+    const before = await play(160);
+    const special = 1 << 9;
+    const heldByGuest = [0, special, 0];
+    await play(1, [special, special, coopSeats === 3 ? special : 0]);
+    const started = await play(5);
+    assert.equal(started.specialSeat, 0, 'Simultaneous C presses must start one native skill');
+    assert.equal(started.specialStarts, 1);
+    assert(started.specialProtected);
+    await play(1, [0, special, coopSeats === 3 ? special : 0]);
+    const during = await play(90, heldByGuest);
+    assert.equal(during.specialStarts, 1, 'A new C press during the active skill must be discarded');
+    assert(during.specialProtected);
+    for (let seat = 1; seat < coopSeats; seat++) {
+      assert.equal(during.players[seat].state, 0, 'Each teammate must be immune to a bullet during the native skill');
+      assert.equal(during.players[seat].life, before.players[seat].life, 'Each teammate must keep their life');
+    }
+    const released = await play(210, heldByGuest);
+    assert.equal(released.specialSeat, -1, 'The original skill must release the lock on completion');
+    assert.equal(released.specialStarts, 1, 'A blocked and held C press must not be queued');
+    await play(2);
+    await play(1, heldByGuest);
+    const accepted = await play(4);
+    assert.equal(accepted.specialSeat, 1, 'A fresh C press must work when the skill has finished');
+    assert.equal(accepted.specialStarts, 2);
+    report.cooperativeSkill = {before, started, during, released, accepted};
+    await screenshot(frame, 'cooperative-special.png');
+    return;
+  }
+  if (checkCoopGhost) {
+    const ghost = await play(190);
+    assert.equal(ghost.players[0].state, 3, 'P1 must become a ghost after its last hit');
+    assert.equal(ghost.players[1].state, 0, 'P2 must remain active after P1 runs out of lives');
+    assert.equal(ghost.players[1].life, 2);
+    const stillPlaying = await play(150);
+    assert(stillPlaying.frame > ghost.frame + 140, 'P1 reaching zero lives must not put the team into results');
+    const after = await play(30, [1 << 0, 1 << 1, 0]);
+    assert(after.frame > ghost.frame + 20, 'The stage must continue after P1 is out');
+    assert(after.players[1].x > ghost.players[1].x + 50);
+    assert(Math.abs(after.players[0].x - ghost.players[0].x) < 20, 'Ghost input must be ignored');
+    await play(36, [0, 1 << 0, 0]);
+    for (let tap = 0; tap < 5; tap++) {
+      await play(2, [0, 1 << 8, 0]);
+      await play(2);
+    }
+    const revived = await play(10);
+    assert.equal(revived.players[0].state, 0, 'Five focus taps must revive a nearby ghost');
+    assert.equal(revived.players[0].life, 0);
+    assert.equal(revived.players[0].bombs, 2);
+    assert.equal(revived.players[1].life, 1);
+    report.cooperativeGhost = {ghost, after, revived};
+    await screenshot(frame, 'cooperative-revival.png');
+    return;
+  }
+  if (checkCoopStockHud) {
+    await verifyCoopStockHud(frame, play);
+    return;
+  }
+  const before = await play(135);
+  assert.equal(before.frame, 135);
+  await frame.waitForTimeout(120);
+  assert.deepEqual(await readStage(), before, 'A missing input frame must leave the same battle state');
+
+  const left = 1 << 0, right = 1 << 1, up = 1 << 2, confirm = 1 << 4;
+  const shot = 1 << 6, bomb = 1 << 7, pause = 1 << 11;
+  const after = await play(30, [left, right | shot, coopSeats === 3 ? up : 0]);
+  assert(after.players[0].x < before.players[0].x - 24, 'P1 should move left');
+  assert(after.players[1].x > before.players[1].x + 24, 'P2 should move right');
+  assert.equal(after.players[0].y, before.players[0].y, 'P1 must not see P3 vertical input');
+  assert.equal(after.players[1].y, before.players[1].y, 'P2 must not see P3 vertical input');
+  if (coopSeats === 3) {
+    assert(after.players[2].y < before.players[2].y - 24, 'P3 should move up');
+    assert.equal(after.players[2].x, before.players[2].x, 'P3 must not see P1 and P2 horizontal input');
+  }
+  assert(after.stage.playerShots > 0, 'P2 must fire real shots from its own script');
+
+  await play(1, [0, bomb, 0]);
+  const afterBomb = await play(15);
+  assert.equal(afterBomb.players[1].bombs, after.players[1].bombs - 1);
+  for (const seat of [0, 2].filter(seat => seat < coopSeats)) {
+    assert.equal(afterBomb.players[seat].bombs, after.players[seat].bombs);
+  }
+
+  await play(1, [0, pause, 0]); // P2 opens the original pause menu.
+  const paused = await play(16);
+  assert.equal(paused.stage.paused, true);
+  await play(1, coopSeats === 3 ? [0, 0, confirm] : [confirm, 0, 0]);
+  const resumed = await play(24);
+  assert.equal(resumed.stage.paused, false);
+  assert(resumed.frame > paused.frame);
+
+  const final = await play(240);
+  assert(final.frame > 400);
+  await play(1, [0, pause, 0]);
+  await play(16);
+  await play(2, [0, up, 0]); // From Continue, Up wraps to the original Retry option.
+  await play(2);
+  await play(1, [0, confirm, 0]);
+  const restarted = await play(90);
+  assert.equal(restarted.stage.index, 1);
+  assert(restarted.frame < 90, 'The native Retry menu must open a fresh stage for the whole room');
+  assert.equal(restarted.seed, opened.seed);
+  assert.deepEqual(restarted.players.map(({x, y, life, bombs}) => ({x, y, life, bombs})),
+    opened.players.map(({x, y, life, bombs}) => ({x, y, life, bombs})));
+  report.cooperativeEngine = { opened, before, after, afterBomb, paused, resumed, final, restarted };
+  await screenshot(frame, 'cooperative-stage.png');
+  console.log('Native Stage 1 with independent players, P2 shots and shared pause:', coopSeats, final.tick);
+}
+
 async function saveNamedReplay(frame, tap, extra = false) {
   const slotFile = extra ? extraReplayFile : replayFile;
   const files = [slotFile, scoreFile];
@@ -959,8 +1255,13 @@ try {
     ...(candidateRuntime ? { serviceWorkers: 'block' } : {}),
   });
   if (candidateRuntime) {
-    await page.route(/\/runtime\/thibp\/(thibp\.html|shell\.mjs|eagler-host\.mjs|ph3-open\.(?:mjs|wasm)|(?:build|manifest)\.json)(?:\?|$)/, route => {
+    await page.route(/\/runtime\/thibp\/(thibp\.html|shell\.mjs|eagler-host\.mjs|ph3-open\.(?:mjs|wasm)|ph3-rollback\.wasm|room\.mjs|room-wire\.(?:mjs|wasm)|(?:build|manifest)\.json|rollback-preview\.mjs)(?:\?|$)/, async route => {
       const name = new URL(route.request().url()).pathname.split('/').pop();
+      if (checkCoopRewind && name === 'shell.mjs') {
+        const source = await readFile(join(candidateRuntime, name), 'utf8');
+        const body = source.replace("query.get('thibpPrediction')==='1'", 'true');
+        return route.fulfill({body, contentType: 'text/javascript'});
+      }
       return route.fulfill({
         path: join(candidateRuntime, name),
         headers: {
@@ -1064,6 +1365,59 @@ try {
       await checkPresentation(page, runtimeFrame, 600, 450, 'title-small');
     }
     if (checkCampaign || checkTouchMotion) await enableCampaignInvincibility(runtimeFrame);
+    if (checkCoopEngine) await prepareCoopEngine(runtimeFrame);
+    if (checkCoopSkill || checkCoopStockHud) {
+      await runtimeFrame.evaluate(async () => {
+        const {prepareRoomScripts} = await import(new URL('room.mjs', location.href));
+        prepareRoomScripts(ph3Runtime.FS);
+      });
+    }
+    if (checkCoopStockHud) await addStageFrameProbe(runtimeFrame, `
+      if (p_count == 140) {
+        let hx = GetPlayerX;
+        let hy = GetPlayerY;
+        CreateItemU2(2, hx, hy, hx, hy, 0);
+        CreateItemU2(3, hx + 32, hy, hx + 32, hy, 0);
+        if (GetThibpSeatCount == 3) {
+          CreateItemU2(2, hx + 64, hy, hx + 64, hy, 0);
+          CreateItemU2(3, hx + 64, hy, hx + 64, hy, 0);
+        }
+      }
+      if (p_count == 155) {
+        let one = GetThibpSeatStock(0);
+        let two = GetThibpSeatStock(1);
+        if (one[2] != 1 || one[3] != 0 || two[2] != 0 || two[3] != 1) {
+          RaiseError("Stock HUD test: fragments did not reach P1 and P2");
+        }
+        if (GetThibpSeatCount == 3) {
+          let three = GetThibpSeatStock(2);
+          if (three[2] != 1 || three[3] != 1) { RaiseError("Stock HUD test: fragments did not reach P3"); }
+        }
+        CreateCommonDataArea("WebStockHudProbe");
+        SetAreaCommonData("WebStockHudProbe", "pickedUp", true);
+        SaveCommonDataAreaA1("WebStockHudProbe");
+      }
+    `);
+    if (checkCoopSkill) {
+      await addStageFrameProbe(runtimeFrame, `
+        if (p_count == 30 || p_count == 155 || p_count == 440) {
+          SetAreaCommonData(COMMONAREA_SCENE, SC_SKILL, 4);
+        }
+        if (p_count == 210) {
+          CreateShotA1(GetPlayerX + 32, GetPlayerY, 0, 0, 1, 0);
+          if (GetThibpSeatCount == 3) {
+            CreateShotA1(GetPlayerX + 64, GetPlayerY, 0, 0, 1, 0);
+          }
+        }
+      `);
+    }
+    if (checkCoopGhost) await addStageFrameProbe(runtimeFrame, `
+      if (p_count == 153) {
+        SetPlayerLife(0);
+        SetPlayerInvincibilityFrame(0);
+        CreateShotA1(GetPlayerX, GetPlayerY, 0, 0, 1, 0);
+      }
+    `);
     if (checkPauseInput) await addStageFrameProbe(runtimeFrame, `
       if(p_count == 1){
         SetAreaCommonData(COMMONAREA_SCENE, SC_SKILL, 2);
@@ -1098,7 +1452,8 @@ try {
       await tap('z'); // Confirm difficulty
       await tap('z'); // Confirm Reimu A
     }
-    const targetFrame = replayPath ? 2100 : 130;
+    if (checkCoopEngine) await verifyCoopEngine(runtimeFrame);
+    const targetFrame = checkCoopEngine ? 0 : replayPath ? 2100 : 130;
     const expectedStage = replayPath ? 6 : 1;
     await runtimeFrame.waitForFunction(frame => globalThis.ph3Diagnostics?.stage?.frame >= frame ||
       globalThis.ph3Diagnostics?.phase === 'error', targetFrame, { timeout: replayPath ? 60000 : 35000 });

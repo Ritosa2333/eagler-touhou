@@ -25,31 +25,37 @@ test('directory shares public work but not membership, and refreshes each public
     clients: new Map(), runs: new Map(),
   });
   const rooms = new Map([
-    ['th10mp-1111', room('th10mp-1111', 'client-a')],
+    ['thibpmp-1111', room('thibpmp-1111', 'client-a')],
     ['th09mp-2222', room('th09mp-2222', 'client-b')],
   ]);
   const directory = createRoomDirectory({
     rooms, clearSeat: () => false, invalidateReady() {}, broadcast() {}, maybeDelete() {},
   });
   try {
-    directory.admit(rooms.get('th10mp-1111').lobbyClients.get('client-a'), 'th10mp-1111', 'client-a', 'member-a');
+    directory.admit(rooms.get('thibpmp-1111').lobbyClients.get('client-a'), 'thibpmp-1111', 'client-a', 'member-a');
     directory.admit(rooms.get('th09mp-2222').lobbyClients.get('client-b'), 'th09mp-2222', 'client-b', 'member-b');
     const a = new Socket(), b = new Socket(), anonymous = new Socket();
     directory.connect(a, 'member-a');
     directory.connect(b, 'member-b');
     directory.connect(anonymous, 'unbound-member');
-    const filtered = new Socket(), filteredAgain = new Socket();
+    const filtered = new Socket(), filteredAgain = new Socket(), thibp = new Socket();
     directory.connect(filtered, 'filtered-viewer');
     directory.connect(filteredAgain, 'filtered-viewer-again');
+    directory.connect(thibp, 'thibp-viewer');
     const refresh = Buffer.from(JSON.stringify({ type: 'refresh', product: 'th09mp' }));
     filtered.emit('message', refresh, false);
     filteredAgain.emit('message', refresh, false);
+    thibp.emit('message', Buffer.from(JSON.stringify({ type: 'refresh', product: 'thibpmp' })), false);
     for (let i = 0; i < 20; i++) directory.connect(new Socket(), 'viewer-' + i);
     visits = 0;
     t.mock.timers.tick(100);
     assert.equal(visits, 2, 'summarize each room once for every publication');
     assert.equal(a.messages.at(-1).mine.code, '1111');
     assert.equal(b.messages.at(-1).mine.code, '2222');
+    assert(anonymous.messages.at(-1).rooms.some(row => row.product === 'thibpmp' && row.code === '1111'),
+      'Public THIBP rooms must appear in the all-games directory');
+    assert.equal(thibp.messages.at(-1).product, 'thibpmp');
+    assert.deepEqual(thibp.messages.at(-1).rooms.map(row => row.code), ['1111']);
     assert.equal(a.messages.at(-1).rooms.find(row => row.code === '1111').seats[0].controlMode, 'touch');
     assert.notEqual(a.messages.at(-1).mine.recoveryToken, b.messages.at(-1).mine.recoveryToken);
     assert.equal(anonymous.messages.at(-1).mine, null);
@@ -60,7 +66,7 @@ test('directory shares public work but not membership, and refreshes each public
     t.mock.timers.tick(100);
     assert.equal(anonymous.messages.length, before, 'unchanged rows are not sent again');
     anonymous.bufferedAmount = 128 * 1024;
-    rooms.get('th10mp-1111').lobby.visibility = 'private';
+    rooms.get('thibpmp-1111').lobby.visibility = 'private';
     directory.changed();
     t.mock.timers.tick(100);
     assert.equal(anonymous.messages.length, before, 'congested viewers wait without advancing their snapshot');
@@ -68,6 +74,7 @@ test('directory shares public work but not membership, and refreshes each public
     directory.changed();
     t.mock.timers.tick(100);
     assert.deepEqual(anonymous.messages.at(-1).rooms.map(row => row.code), ['2222']);
+    assert.deepEqual(thibp.messages.at(-1).rooms, [], 'Hidden THIBP rooms stay out of the filtered directory');
     assert.equal(a.messages.at(-1).mine.code, '1111', 'private membership is independent of public rows');
   } finally {
     directory.close();

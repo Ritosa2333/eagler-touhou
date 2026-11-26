@@ -12,6 +12,7 @@ from zipfile import ZipFile, ZIP_STORED
 GAME = "thibp"
 PROTOCOL = "eagler-touhou/1"
 RUNTIME_URL = "./runtime/thibp/thibp.html"
+COOP_RUNTIME_URL = "./runtime/thibp/multiplayer/thibp.html"
 DATA_TARGET = "thibp.data"
 FONT_TARGET = "msgothic.ttc"
 
@@ -70,7 +71,7 @@ def replace(text, old, new):
     return text.replace(old, new)
 
 
-def adapt_shell(runtime, output):
+def adapt_shell(runtime, output, *, coop=False):
     shell = (runtime / "shell.mjs").read_text(encoding="utf-8")
     shell = replace(shell, "game='hsob'", "game='thibp'")
     shell = replace(shell, "normalizeOptions,touchSnapshot,", "normalizeOptions,touchSnapshot,prepareThibpScripts,")
@@ -125,20 +126,158 @@ function startHealth(){""")
     html = replace(html, "    #error{", "    @media (min-width:640px) and (min-height:480px){\n"
                    "      canvas{image-rendering:pixelated;image-rendering:crisp-edges}\n"
                    "    }\n    #error{")
+    if coop:
+        shell = adapt_room_shell(shell)
+        host = replace(host, "const bytes=new Uint8Array(result.buffer);",
+                       "const bytes=new Uint8Array(result.buffer);\n"
+                       " const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));")
+        host = replace(host, "total:bytes.byteLength,files});\n}",
+                       "total:bytes.byteLength,files});\n"
+                       " return Array.from(hash,b=>b.toString(16).padStart(2,'0')).join('');\n}")
     manifest = json.loads((runtime / "manifest.json").read_text(encoding="utf-8"))
     manifest.update(game=GAME, version="thibp-1.10b-ph3-modern")
     output.mkdir(parents=True)
     for name, text in (("shell.mjs", shell), ("eagler-host.mjs", host), ("thibp.html", html)):
         (output / name).write_text(text, encoding="utf-8", newline="\n")
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    for name in ("ph3-open.mjs", "ph3-open.wasm", "build.json"):
+    extra = ("room.mjs", "room-wire.mjs", "room-wire.wasm", "rollback-preview.mjs", "ph3-rollback.wasm") if coop else ()
+    for name in ("ph3-open.mjs", "ph3-open.wasm", "build.json") + extra:
         shutil.copyfile(runtime / name, output / name)
+    if coop:
+        glue_path = output / "ph3-open.mjs"
+        glue = glue_path.read_text(encoding="utf-8")
+        glue = replace(glue, "wasmExports = await createWasm();",
+                       "Module['thibpGuardImports']?.(wasmImports);\n"
+                       "Module['ph3StackSave'] = stackSave;\n"
+                       "Module['ph3StackRestore'] = stackRestore;\n"
+                       "Object.defineProperty(Module,'thibpHeapU32',{ get:()=>HEAPU32 });\n"
+                       "wasmExports = await createWasm();\n"
+                       "if(wasmExports.thibp_journal_begin)Module.thibpJournal={"
+                       "begin:wasmExports.thibp_journal_begin,restore:wasmExports.thibp_journal_restore,"
+                       "mark:wasmExports.thibp_journal_mark,failed:wasmExports.thibp_journal_failed};")
+        glue_path.write_text(glue, encoding="utf-8", newline="\n")
     files = ("thibp.html", "shell.mjs", "eagler-host.mjs", "manifest.json",
-             "ph3-open.mjs", "ph3-open.wasm", "build.json")
+             "ph3-open.mjs", "ph3-open.wasm", "build.json") + extra
     write_json(output / "runtime-files.json", {
         "schema": "eagler-touhou/runtime-directory/1",
         "files": {name: identity(output / name) for name in files},
     })
+
+
+def adapt_room_shell(shell):
+    shell = replace(shell, "import createWoo from './ph3-open.mjs';",
+                    "import createWoo from './ph3-open.mjs';\n"
+                    "import {createRoomInput,prepareRoomScripts,readRoomOptions,startRoom} from './room.mjs';\nimport {createRollbackPreview,supportsRollback} from './rollback-preview.mjs';")
+    shell = replace(shell, "const saveRoot='/savethibp';",
+                    "const multiplayer=query.get('runtimeVariant')==='multiplayer';\n"
+                    "const saveRoot=multiplayer?'/savethibpmp':'/savethibp';\n"
+                    "const roomInput=createRoomInput();\n"
+                    "const prediction=(multiplayer||query.get('thibpPrediction')==='1')&&supportsRollback()?createRollbackPreview():null;\n"
+                    "let roomConfig=null,room=null,roomFinished=false,contentHash=null;\n"
+                    "let roomTitlePreview=false;")
+    shell = replace(shell, " if (!launched || !Object.hasOwn(DIK, code)) return;",
+                    " if(roomTitlePreview||diagnostics.phase==='disconnected')return;\n"
+                    " if(roomConfig&&!roomFinished){if(!roomConfig.spectator&&(!down||!repeat))roomInput.key(code,down);return;}\n"
+                    " if (!launched || !Object.hasOwn(DIK, code)) return;")
+    shell = replace(shell, "  keyboard.clear();", "  keyboard.clear();\n  roomInput.clear();")
+    shell = replace(shell, "  const held = keyboard.has(DIK[code]);",
+                    "  if(roomTitlePreview||roomConfig&&!roomFinished){event.preventDefault();setKey(code,down,event.repeat);return;}\n"
+                    "  const held = keyboard.has(DIK[code]);")
+    shell = replace(shell, "'ShiftLeft', 'ControlLeft',", "'ShiftLeft', 'ShiftRight', 'ControlLeft', 'KeyV', 'KeyR', 'Enter',")
+    shell = replace(shell, " if(launched)throw Error('Cannot configure a running game');",
+                    " if(room||launched&&!multiplayer)throw Error('Cannot configure a running game');\n"
+                    " if(multiplayer)roomConfig=readRoomOptions(message.options);")
+    # The Launcher reads the validated LAN options through the shared Module bridge.
+    shell = replace(shell, " options=normalizeOptions(message.options);musicMode=message.music;applyTouchConfig();",
+                    " options=normalizeOptions(message.options);\n"
+                    " Module.eaglerOptions=options;\n"
+                    " musicMode=message.music;applyTouchConfig();")
+    shell = replace(shell, "createWoo({canvas,noInitialRun:true,",
+                    "createWoo({canvas,noInitialRun:true,locateFile:(file,base)=>base+(prediction&&file==='ph3-open.wasm'?'ph3-rollback.wasm':file),thibpGuardImports:prediction?.guardImports,thibpPrediction:prediction,")
+    shell = replace(shell, " window.ph3Runtime=Module;window.FS=Module.FS;return Module;",
+                    " window.Module=Module;window.ph3Runtime=Module;window.FS=Module.FS;return Module;")
+    shell = replace(shell, "function launch(){", "function launchNative(){")
+    shell = replace(shell, "reportedError=false;canvas.focus({preventScroll:true});",
+                    "reportedError=false;if(!roomTitlePreview)canvas.focus({preventScroll:true});")
+    shell = replace(shell, "performance.now()],['number','number','number','number','number']);",
+                    "performance.now(),roomFinished?-1:roomConfig?.seat??-1,Number(roomInput.focusHeld())],"
+                    "['number','number','number','number','number','number','number']);")
+    shell = replace(shell, "async function resumeAudio(){", "async function resumeAudio(){\n"
+                    " if(diagnostics.phase==='disconnected')return;")
+    shell = replace(shell, "async function command(message){", """async function prepareRoom(){
+ if(!multiplayer||!configured||roomConfig||room||launched&&!roomTitlePreview)
+  throw Error('The THIBP room title is unavailable');
+ if(!roomTitlePreview){
+  roomTitlePreview=true;
+  Module._thibp_coop_set_room_title_preview(1);
+  launchNative();
+  void resumeAudio();
+ }
+ // A loading frame is not the title menu. Wait for a present after the
+ // original title script has created its menu.
+ for(;;){
+  if(diagnostics.phase==='error')throw Error(diagnostics.errors.at(-1));
+  if(diagnostics.presentedFrames>Module.thibpTitleReadyAfter)return {presented:true};
+  await new Promise(requestAnimationFrame);
+ }
+}
+
+function startGame(){
+ const fromTitle=roomTitlePreview;
+ roomTitlePreview=false;
+ firstFrame=false;
+ launchNative();
+ if(fromTitle)canvas.focus({preventScroll:true});
+ void resumeAudio();
+}
+
+function stopRoom(reason){
+ diagnostics.phase='disconnected';
+ window.__eaglerNetplayFailed=true;
+ window.__eaglerNetplayError=reason;
+ clearKeyboard();
+ cancelTouches();
+ suspendAudio();
+ emit('runtime-info',{netplayStopped:true});
+}
+
+async function launch(){
+ if(!roomConfig){
+  if(roomTitlePreview)Module._thibp_coop_set_room_title_preview(0);
+  startGame();
+  return;
+ }
+ if(room)return;
+ if(!configured||!contentHash)throw Error('Runtime must load the local package before room launch');
+ room=await startRoom({
+  game:Module,config:roomConfig,options,contentHash,input:roomInput,prediction,
+  onStart:startGame,onFinish:()=>{roomFinished=true;},onDisconnect:stopRoom,onError:fail,
+  onStatus:state=>{diagnostics.online=state;},
+  onPlayback:value=>{diagnostics.spectator=value;emit('runtime-info',{spectatorPlayback:value});},
+ });
+}
+
+async function command(message){""")
+    shell = replace(shell, " case 'launch':launch();return {};",
+                    " case 'prepare-room':return prepareRoom();\n"
+                    " case 'launch':await launch();return {};\n"
+                    " case 'spectator-playback':if(!room?.control)throw Error('Spectator playback is unavailable');return room.control(message);")
+    shell = replace(shell, " case 'touch-controls':applyTouchControls(message);return {};",
+                    " case 'touch-controls':if(!roomTitlePreview)applyTouchControls(message);return {};")
+    shell = replace(shell, " case 'direct-touch':directTouch(message);return {};",
+                    " case 'direct-touch':if(!roomTitlePreview)directTouch(message);return {};")
+    shell = replace(shell, "function exitGame(){", "function exitGame(){\n room?.close();\n room=null;\n roomTitlePreview=false;")
+    shell = replace(shell, "window.addEventListener('pagehide',()=>{if(Module&&ready)",
+                    "window.addEventListener('pagehide',()=>{room?.close();if(Module&&ready)")
+    shell = replace(shell, "if(!firstFrame&&presented>0){",
+                    "if(!roomTitlePreview&&!firstFrame&&presented>0&&(!roomConfig||Module._thibp_coop_frame()>0)){")
+    shell = replace(shell,
+                    " await mountManagedData(Module,{game,parentWindow:parent,query,emit});Module.FS.mkdirTree(saveRoot+'/replay');",
+                    " contentHash=await mountManagedData(Module,{game,parentWindow:parent,query,emit});\n"
+                    " if(multiplayer)prepareRoomScripts(Module.FS);\n"
+                    " Module.FS.mkdirTree(saveRoot+'/replay');")
+    shell = replace(shell, "startHealth();emit('ready');", "startHealth();emit('ready',{roomPreview:multiplayer});")
+    return shell
 
 
 def identity(path):
@@ -181,7 +320,7 @@ def package(data, font, output):
         archive.write(font, FONT_TARGET)
 
 
-def site_manifest(package_path, output):
+def site_manifest(package_path, output, *, coop=False):
     with ZipFile(package_path) as archive:
         descriptor = json.loads(archive.read("package.json"))
         if descriptor["schema"] != "eagler-touhou/package/1" or descriptor["game"] != GAME:
@@ -213,6 +352,7 @@ def site_manifest(package_path, output):
         "games": {
             GAME: {
                 "runtime": RUNTIME_URL,
+                **({"multiplayerRuntime": COOP_RUNTIME_URL} if coop else {}),
                 "gameData": {**data_identity, "path": DATA_TARGET, "layout": layout,
                              "version": "sha256-" + data_identity["sha256"]},
                 "music": {"midi": {"files": [], "supported": False}},
@@ -234,11 +374,12 @@ def main():
     manifest = commands.add_parser("site-manifest", help="describe an existing offline package for local preview")
     manifest.add_argument("package", type=Path)
     manifest.add_argument("output", type=Path)
+    manifest.add_argument("--coop-engine", action="store_true")
     args = parser.parse_args()
     if args.command == "package":
         package(args.data, args.font, args.output)
     else:
-        site_manifest(args.package, args.output)
+        site_manifest(args.package, args.output, coop=args.coop_engine)
 
 
 if __name__ == "__main__":

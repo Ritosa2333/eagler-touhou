@@ -115,7 +115,16 @@ export declare const PRODUCT_GAMES: Readonly<{
     thibp: Readonly<{
         testOnly: true; importOnly: true; buildOptIn: true; number: "IBP"; title: "东方鬼葬剑"; subtitle: "Infinite Blade Pavilion"; cardArtwork: null;
         storage: Readonly<{saveRoot: "/savethibp"; scoreFile: "Th_IBP_common_Save.dat"; configFiles: readonly string[]}>;
-        runtime: "./runtime/thibp/thibp.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
+        runtime: "./runtime/thibp/thibp.html";
+        multiplayerRuntime: "./runtime/thibp/multiplayer/thibp.html";
+        multiplayer: Readonly<{
+            titleKey: "game.title.thibpmp"; gameplay: "cooperative";
+            playerCounts: readonly [2, 3]; difficulties: readonly string[]; loadouts: readonly MultiplayerLoadoutConfig[];
+            peerTransportGlobal: "__thibpPeerTransport"; relaySourceEnvelope: true;
+            spectator: false; titleRoomEntry: false; challengeMode: false;
+            inputTiming: Readonly<{rollbackLimit: 0; sendPredictionLimit: 0; rollbackDefault: false; manualDelayLimit: 8}>;
+        }>;
+        runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
         requiredShared: readonly string[]; runtimeAssets: readonly string[];
         musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"; embeddedOgg: true}>;
         touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;

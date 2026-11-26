@@ -67,17 +67,19 @@ try{
   const s0=await open(base+`&player=0&signal=1&member=${prefix}member_host`),s1=await open(base+`&player=1&signal=1&member=${prefix}member_guest`);
   send(s0,{type:'rtc-failed'});send(s1,{type:'rtc-failed'});await wait(()=>s0.json.some(m=>m.type==='route'),'route');
   const early=await open(base+`&spectator=${prefix}waiting&member=${prefix}member_waiting`);
-  const length=product==='th06mp'?3072:1,next=600+length;
-  let initial=event(marker,1,600,4,1);
+  const retainsRun=product==='thibpmp';
+  const firstFrame=retainsRun?0:600, firstStage=retainsRun?1:4, nextStage=firstStage+1;
+  const length=product==='th06mp'?3072:1,next=firstFrame+length;
+  let initial=event(marker,1,firstFrame,firstStage,1);
   if(product==='th15mp'){
     const expanded=Buffer.alloc(40+16+3*0x238);expanded.set(initial);expanded.writeUInt32LE(expanded.length-40,36);initial=expanded;
   }
-  upload(p0,initial);for(let frame=600;frame<next;++frame){
+  upload(p0,initial);for(let frame=firstFrame;frame<next;++frame){
     upload(p0,input(marker,frame));
     // This is a history fixture, not a flood test. Respect the real player
     // upload token bucket while preparing a multi-burst bootstrap backlog.
-    if(length>1&&(frame-599)%256===0)await new Promise(resolve=>setTimeout(resolve,300));
-  }upload(p0,event(marker,2,next,4,2));
+    if(length>1&&(frame-firstFrame+1)%256===0)await new Promise(resolve=>setTimeout(resolve,300));
+  }upload(p0,event(marker,2,next,firstStage,2));
   await wait(()=>early.binary.length===length+3,'pre-start observer receives native bootstrap exactly once');
   assert.equal(early.binary[0].length,initial.length,'portable initializer survives the relay packet budget');
   assert.deepEqual(early.binary.slice(0,3).map(b=>b[5]),[1,4,3]);assert.equal(early.binary.at(-1)[5],2);
@@ -85,14 +87,17 @@ try{
   const late=await open(`room=${id}&lobby=${prefix}late&member=${prefix}member_late`);send(late,{type:'spectate'});await wait(()=>room(host)?.spectatorCount===2,'late admission');
   const viewer=await open(base+`&spectator=${prefix}late&member=${prefix}member_late`);
   if(length===1){await wait(()=>viewer.binary.length===4,'stage prefix and bootstrap frontier');
-    assert.deepEqual(viewer.binary.map(b=>[b[2],b[5],b.readUInt32LE(b[2]===83?20:16)]),[[83,1,600],[78,3,600],[83,2,next],[83,4,next]]);
+    assert.deepEqual(viewer.binary.map(b=>[b[2],b[5],b.readUInt32LE(b[2]===83?20:16)]),[[83,1,firstFrame],[78,3,firstFrame],[83,2,next],[83,4,next]]);
   }else{await wait(()=>viewer.binary.length>2,'downloading a long stage');assert.equal(viewer.binary.some(b=>b[2]===83&&b[5]===4),false);}
-  upload(p0,event(marker,1,next,5,3));upload(p0,input(marker,next));await wait(()=>viewer.binary.length===length+5,'old viewer continues into next stage');
-  assert.deepEqual(viewer.binary.filter(b=>b[2]===78).map(b=>b.readUInt32LE(16)),Array.from({length:length+1},(_,i)=>600+i));
+  upload(p0,event(marker,1,next,nextStage,3));upload(p0,input(marker,next));await wait(()=>viewer.binary.length===length+5,'old viewer continues into next stage');
+  assert.deepEqual(viewer.binary.filter(b=>b[2]===78).map(b=>b.readUInt32LE(16)),Array.from({length:length+1},(_,i)=>firstFrame+i));
   assert.equal(viewer.binary.filter(b=>b[2]===83&&b[5]===4).length,1,'one fixed entry frontier even if a stage changes during bootstrap');
   const late2=await open(`room=${id}&lobby=${prefix}later&member=${prefix}member_later`);send(late2,{type:'spectate'});await wait(()=>room(host)?.spectatorCount===3,'second admission');
-  const current=await open(base+`&spectator=${prefix}later&member=${prefix}member_later`);await wait(()=>current.binary.length===3,'latest stage only');
-  assert.deepEqual(current.binary.map(b=>b[2]===83?b.readUInt32LE(20):b.readUInt32LE(16)),[next,next,next+1]);
+  const current=await open(base+`&spectator=${prefix}later&member=${prefix}member_later`);
+  const expected = retainsRun ? [firstFrame,firstFrame,next,next,next,next+1] : [next,next,next+1];
+  const frames = packets => packets.map(b=>b.readUInt32LE(b[2]===83?20:16));
+  await wait(()=>current.binary.length===expected.length,'late viewer receives the required Replay prefix');
+  assert.deepEqual(frames(current.binary),expected);
   let returning=current;
   for(let attempt=0;attempt<2;++attempt){
     const admissions=late2.json.filter(m=>m.type==='spectator-start').length;
@@ -100,8 +105,8 @@ try{
     await wait(()=>late2.json.filter(m=>m.type==='spectator-start').length>admissions,'same-run spectator readmission');
     const reopened=await open(base+`&spectator=${prefix}later&member=${prefix}member_later`);
     await wait(()=>returning.closed,'leaving the spectator seat releases its old receiver');
-    await wait(()=>reopened.binary.length===3,'returning observer receives a fresh current-stage bootstrap');
-    assert.deepEqual(reopened.binary.map(b=>b[2]===83?b.readUInt32LE(20):b.readUInt32LE(16)),[next,next,next+1]);
+    await wait(()=>reopened.binary.length===expected.length,'returning observer receives a fresh bootstrap');
+    assert.deepEqual(frames(reopened.binary),expected);
     assert.equal(reopened.closed,false);assert.equal(p0.closed,false);assert.equal(p1.closed,false);
     returning=reopened;
   }
@@ -109,7 +114,7 @@ try{
     // A gap kills only the optional stream. Both players retain their route.
     upload(p0,input(marker,900));await wait(()=>early.closed&&viewer.closed&&returning.closed,'bad stream closes viewers');
   }else{
-    upload(p0,event(marker,3,next+1,5,4));
+    upload(p0,event(marker,3,next+1,nextStage,4));
     await wait(()=>[early,viewer,returning].every(s=>s.binary.at(-1)?.[2]===83&&s.binary.at(-1)?.[5]===3),'continuous replay reaches End');
     const lengths=[early,viewer,returning].map(s=>s.binary.length);
     const stop=Buffer.from([0xe8,0x53,0x54,0x4f,0x50,1]);

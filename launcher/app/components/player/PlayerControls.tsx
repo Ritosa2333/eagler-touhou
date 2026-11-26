@@ -289,28 +289,44 @@ function GameplayControls({ session, roomWorkspace }: { session: BrowserSession;
     enabled = settings.options.touchEnabled && playerUsesGameInput(session.getPlayerMode());
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
   const product = PRODUCT_GAMES[settings.gameId];
+  const pc98Direct = ['th01', 'th02', 'th03', 'th04'].includes(settings.gameId);
+  const thibpCoop = settings.gameId === 'thibp' && settings.multiplayer;
+  const embeddedTouch = roomWorkspace && (pc98Direct || thibpCoop) &&
+    enabled && state.runtime?.launched === true;
   useLayoutEffect(() => {
     const player = document.getElementById('player'), frame = document.getElementById('gameFrame');
-    const active = !!player && roomWorkspace && ['th01','th02','th03','th04'].includes(settings.gameId) && enabled && state.runtime?.launched === true;
-    player?.classList.toggle('pc98-room-touch-active', active);
-    if (!active || !player || !frame) return () => player?.classList.remove('pc98-room-touch-active');
+    if (!embeddedTouch || !player || !frame) return;
+    player.classList.add('room-touch-active');
     const update = () => {
       const rect = frame.getBoundingClientRect();
-      for (const [name, value] of Object.entries({left:rect.left, top:rect.top, width:rect.width, height:rect.height})) player.style.setProperty(`--pc98-touch-${name}`, `${value}px`);
-      window.dispatchEvent(new Event('pc98-touch-surface-change'));
+      const viewport = window.visualViewport;
+      const left = Math.max(rect.left, viewport?.offsetLeft ?? 0);
+      const top = Math.max(rect.top, viewport?.offsetTop ?? 0);
+      const right = Math.min(rect.right, (viewport?.offsetLeft ?? 0) + (viewport?.width ?? window.innerWidth));
+      const bottom = Math.min(rect.bottom, (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight));
+      const bounds = {left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top)};
+      for (const [name, value] of Object.entries(bounds)) player.style.setProperty(`--room-touch-${name}`, `${value}px`);
+      window.dispatchEvent(new Event('room-touch-surface-change'));
     };
     const observer = new ResizeObserver(update); observer.observe(frame);
-    const classes = new MutationObserver(() => {if (!player.classList.contains('touch-enabled')) player.classList.add('touch-enabled');});
+    const classes = new MutationObserver(() => {
+      if (!player.classList.contains('touch-enabled')) player.classList.add('touch-enabled');
+      if (player.classList.contains('touch-joystick-enabled') !== wheel) player.classList.toggle('touch-joystick-enabled', wheel);
+    });
     classes.observe(player, {attributes:true,attributeFilter:['class']});
-    window.addEventListener('resize', update); window.addEventListener('scroll', update, true); update();
+    window.addEventListener('resize', update); window.addEventListener('scroll', update, true);
+    window.visualViewport?.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('scroll', update);
+    update();
     return () => {observer.disconnect(); classes.disconnect(); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true);
-      player.classList.remove('pc98-room-touch-active'); for (const name of ['left','top','width','height']) player.style.removeProperty(`--pc98-touch-${name}`);};
-  }, [roomWorkspace, settings.gameId, enabled, state.runtime?.launched]);
+      window.visualViewport?.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('scroll', update);
+      player.classList.remove('room-touch-active'); for (const name of ['left','top','width','height']) player.style.removeProperty(`--room-touch-${name}`);};
+  }, [embeddedTouch, wheel]);
   useLayoutEffect(() => {if (roomWorkspace) input?.cancelPointers(); else input?.syncControls();}, [input, roomWorkspace]);
   const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
   const hostDirect = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches ||
     /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const pc98Direct = ['th01', 'th02', 'th03', 'th04'].includes(settings.gameId);
   useLayoutEffect(() => {
     if (!browserPractice) return;
     const runtime = session.getRuntime(), player = document.getElementById('player');
@@ -366,7 +382,7 @@ function GameplayControls({ session, roomWorkspace }: { session: BrowserSession;
         className="touch-direct-surface"
         id="touchDirectSurface"
         aria-hidden="true"
-        hidden={!(state.runtime?.launched && enabled && (hostDirect || pc98Direct) && !wheel)}
+        hidden={!(state.runtime?.launched && enabled && (hostDirect || pc98Direct) && (!wheel || thibpCoop))}
       />
       <TouchControlPreview settings={settings} live={touch} spectator={spectator} />
     </>

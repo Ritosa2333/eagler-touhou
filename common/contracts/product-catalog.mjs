@@ -37,6 +37,10 @@ const SAKUYA_B = Object.freeze({ labelKey: "multiplayer.loadout.sakuyaB", glyph:
 const REIMU_C = Object.freeze({ labelKey: "multiplayer.loadout.reimuC", glyph: "霊", character: 0, shot: 2 });
 const MARISA_C = Object.freeze({ labelKey: "multiplayer.loadout.marisaC", glyph: "魔", character: 1, shot: 2 });
 const TH06_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, MARISA_A, MARISA_B]);
+const THIBP_MULTIPLAYER_LOADOUTS = Object.freeze([...TH06_MULTIPLAYER_LOADOUTS,
+    Object.freeze({ labelKey: "multiplayer.loadout.youmuA", glyph: "妖", character: 2, shot: 0 }),
+    Object.freeze({ labelKey: "multiplayer.loadout.youmuB", glyph: "妖", character: 2, shot: 1 }),
+]);
 const TH07_MULTIPLAYER_LOADOUTS = Object.freeze([...TH06_MULTIPLAYER_LOADOUTS, SAKUYA_A, SAKUYA_B]);
 const TH08_MULTIPLAYER_LOADOUTS = Object.freeze([
     Object.freeze({ labelKey: "multiplayer.loadout.th08.reimuYukari", glyph: "霊", character: 0, shot: 0 }),
@@ -253,6 +257,14 @@ export const PRODUCT_GAMES = Object.freeze({
             configFiles: Object.freeze(["config.dat"]),
         }),
         runtime: "./runtime/thibp/thibp.html",
+        multiplayerRuntime: "./runtime/thibp/multiplayer/thibp.html",
+        multiplayer: Object.freeze({
+            titleKey: "game.title.thibpmp", gameplay: "cooperative",
+            playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+            loadouts: THIBP_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__thibpPeerTransport",
+            relaySourceEnvelope: true, spectator: true, titleRoomEntry: false, challengeMode: true,
+            inputTiming: Object.freeze({rollbackLimit: 4, sendPredictionLimit: 4, rollbackDefault: true, manualDelayLimit: 8}),
+        }),
         musicCapabilities: Object.freeze({ midi: false }),
         musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection", embeddedOgg: true }),
         touchFire: TOGGLE_TOUCH_FIRE,
