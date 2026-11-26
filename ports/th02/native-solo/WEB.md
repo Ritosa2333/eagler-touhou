@@ -1,6 +1,6 @@
 # SoEW Native Web：完整单人版
 
-网页与 Win32 版运行同一个 SoEW Native 单人程序。从原版标题进入 Story 1–5 面、Extra、练习、录像、排行榜和音乐室。Canvas 显示原生画面，Web Audio 播放原生合成器输出，IndexedDB 保存该网址下的设置、成绩和录像。Extra 沿用原生版解锁条件。
+网页与 Win32 版运行同一个 SoEW Native 单人程序。从原版标题进入 Story 1–5 面、Extra、练习、录像、排行榜和音乐室。Canvas 显示原生画面，Web Audio 播放原生合成器输出，IndexedDB 保存该网址下的设置、成绩和录像。新发布包使用原版默认成绩表，不携带磁盘镜像的 `HUUHI.DAT`。按原版规则，三种机体分别不续关打出好结局后解锁 Extra。
 
 ## 本地运行
 

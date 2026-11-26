@@ -77,6 +77,19 @@ struct ScoreEntry {
 };
 struct ScorePage {std::uint16_t cleared=0;std::array<ScoreEntry,10> entries;};
 using Scores=std::array<ScorePage,5>;
+// Fresh HUUHI.DAT table from TH02's ZUN_RES.COM (scoredat_defaults_set).
+inline constexpr Scores default_scores() {
+    Scores scores{};
+    for(auto &page:scores)
+        for(unsigned i=0;i<page.entries.size();++i){
+            auto &entry=page.entries[i];
+            entry.score=1000*(10-i);
+            entry.name.fill(score_gaiji::bullet);
+            entry.stage=std::uint8_t(5-i/2);
+            entry.shot=1;entry.day=1;entry.month=1;entry.year=1900;
+        }
+    return scores;
+}
 struct ClearStatus {
     std::array<bool,3> main{},extra{};
     bool unlocked=false;

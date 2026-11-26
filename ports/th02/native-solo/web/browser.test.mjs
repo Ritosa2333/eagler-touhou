@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
 import { tmpdir } from 'node:os';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { Keyboard } from './input.mjs';
 import { RetraceClock } from './clock.mjs';
 import { previewServer } from './serve.mjs';
@@ -90,6 +90,20 @@ test('keyboard samples quick Z edges and retains the other Shift key', () => {
     assert.deepEqual(input.sample(), [1024, false]);
     input.clear();
     assert.deepEqual(input.sample(), [0, false]);
+});
+
+test('Web staging excludes the disk image scoreboard', async () => {
+    const source = await mkdtemp(resolve(tmpdir(),'soew-score-source-'));
+    const out = await mkdtemp(resolve(tmpdir(),'soew-score-web-'));
+    try {
+        await writeFile(resolve(source,'huuhi.dat'), 'player data');
+        await writeFile(resolve(source,'OP.PI'), 'title art');
+        execFileSync(process.execPath, [resolve(import.meta.dirname,'stage-content.mjs'),source,out]);
+        assert.deepEqual(JSON.parse(readFileSync(resolve(out,'content/full-files.json'),'utf8')),['OP.PI']);
+        assert(!existsSync(resolve(out,'content/huuhi.dat')));
+    } finally {
+        await Promise.all([rm(source,{recursive:true,force:true}),rm(out,{recursive:true,force:true})]);
+    }
 });
 
 test('About has the bitmap glyphs for the disclaimer and credits in all languages', () => {

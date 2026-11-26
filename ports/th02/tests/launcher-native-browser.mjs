@@ -22,7 +22,12 @@ try {
   await page.setViewport({width:1360,height:900,hasTouch:touch});
   if(touch)await enableTouch(page,{mode:limitedTouch?'touch':'touch-unlimited'});
   const errors=[];
+  const clearStates=[];
   page.on('pageerror',error=>errors.push(error.message));
+  page.on('console',message=>{
+    const line=message.text();
+    if(line.startsWith('extra_unlocked='))clearStates.push(line);
+  });
   await page.evaluateOnNewDocument(touch=>{
     if(!touch&&window===window.top)localStorage.setItem('eagler-touhou-language-v1-th02','ja');
     localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1');
@@ -69,6 +74,7 @@ try {
   await openTh02();
   assert.equal(await page.$('#th02LocalCoop'),null,'the single-player page has no local co-op entry');
   const frame=await launchSoew();
+  assert.equal(clearStates[0],'extra_unlocked=0 main_clears=000 extra_clears=000','clean browser profile starts without imported progress');
   const events=()=>page.evaluate(()=>window.runtimeEvents);
   assert((await events()).some(e=>e.event==='runtime-info'&&e.renderer==='SoEW Native'));
   await openStoryShots(frame);

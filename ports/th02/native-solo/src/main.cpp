@@ -5090,7 +5090,12 @@ int wmain(int argc, wchar_t **argv) {
         app.menu.options=options_dump;
         app.menu.shot_screen=shots_dump;
         std::cout << "gaiji_glyphs=" << app.font.glyphs.size() << '\n';
-        try{app.scores=soew::decode_scores(read(assets/"HUUHI.DAT"));std::cout<<"score_records=50 checksums=valid\n";}catch(const std::exception &e){app.score_error=e.what();std::cout<<"score_unavailable="<<app.score_error<<'\n';}
+        try{
+            const auto file=assets/"HUUHI.DAT";
+            if(fs::exists(file)){
+                app.scores=soew::decode_scores(read(file));std::cout<<"score_records=50 checksums=valid\n";
+            }else app.scores=soew::default_scores();
+        }catch(const std::exception &e){app.score_error=e.what();std::cout<<"score_unavailable="<<app.score_error<<'\n';}
         if(app.scores){const auto status=soew::clear_status(*app.scores);app.menu.unlocked=status.unlocked;app.menu.cleared_main=status.main;app.menu.cleared_extra=status.extra;std::cout<<"extra_unlocked="<<status.unlocked<<" main_clears="<<status.main[0]<<status.main[1]<<status.main[2]<<" extra_clears="<<status.extra[0]<<status.extra[1]<<status.extra[2]<<'\n';}
         if(practice_shots_dump){
             auto frame=app.frames[2];

@@ -216,6 +216,15 @@ int main(int argc,char**argv){try{
         std::fill(canvas.begin(),canvas.end(),0xabcdef);soew::score_logo_background(canvas,logo,palette,0,f);
         for(int y=0;y<400;++y)for(int x=0;x<640;++x)if(x<128||x>512||y<96||y>304)check(canvas[y*640+x]==0xabcdef);
     }
+    const auto defaults=soew::default_scores();
+    const auto fresh=soew::clear_status(defaults);
+    check(!fresh.unlocked&&fresh.main==std::array<bool,3>{}&&fresh.extra==std::array<bool,3>{});
+    for(const auto &page:defaults)for(unsigned i=0;i<page.entries.size();++i){
+        const auto &entry=page.entries[i];
+        check(entry.score==1000*(10-i)&&entry.stage==5-i/2&&entry.shot==1);
+        check(entry.year==1900&&entry.month==1&&entry.day==1);
+        for(auto glyph:entry.name)check(glyph==g::bullet);
+    }
     for(unsigned main_mask=0;main_mask<8;++main_mask)for(unsigned extra_mask=0;extra_mask<8;++extra_mask){
         soew::Scores synthetic{};constexpr unsigned magic[3]={318,118,218};
         for(unsigned i=0;i<3;++i)synthetic[i].cleared=(main_mask&(1u<<i))?magic[i]:0;

@@ -22,7 +22,7 @@ SOUNDFONT_SHA = "00725296486f652ba42bdbf2098254762ca80239353d04b55a27454fc8edb8a
 SLIM_SOUNDFONT_SHA = "3472ba3752c3d2c1f0afbbe1369b7ad1304161474b89cbb9f5bb50c5d492f0d4"
 ASSET_TYPES = {".bbt", ".bft", ".bmt", ".btt", ".dt1", ".efc", ".m", ".map", ".mmd", ".mpn", ".pi", ".rec", ".rgb", ".txt"}
 REQUIRED = {
-    "HUUHI.DAT", "HUUMA.EFC", "MIKOFT.BFT", "MUSIC.TXT", "OP.PI", "OP2.PI", "OP3.PI", "OP.RGB",
+    "HUUMA.EFC", "MIKOFT.BFT", "MUSIC.TXT", "OP.PI", "OP2.PI", "OP3.PI", "OP.RGB",
     "OPA.PI", "OPB.PI", "OPC.PI", "OP_H.BFT", "OP_H.RGB", "TSELECT.PI", "TS1.PI", "TS2.PI", "TS3.PI",
     SOUNDFONT, *(f"STAGE{index}.{suffix}" for index in range(6) for suffix in ("BBT", "BFT", "BMT", "DT1", "M", "MAP", "MMD", "MPN", "TXT")),
 }
@@ -162,7 +162,7 @@ def payload_files(content, app, th98port, slim_midi=False):
         name = path.name
         if name.casefold() == CHINESE_PACK:
             raise RuntimeError(f"Chinese sidecar belongs only in content/locale: {path}")
-        if path.suffix.casefold() not in ASSET_TYPES and name.casefold() not in {"huuhi.dat", SOUNDFONT.casefold()}:
+        if path.suffix.casefold() not in ASSET_TYPES and name.casefold() != SOUNDFONT.casefold():
             continue  # Exclude provenance JSON, saves, logs and executable sidecars.
         if not FILE_NAME.fullmatch(name) or len(name) > 100:
             raise RuntimeError(f"Unsupported asset name: {name}")

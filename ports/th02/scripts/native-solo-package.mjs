@@ -14,8 +14,9 @@ export async function stageNativeSolo({build,output,port,runtime,addData,addMusi
     runtime.push(`native/${name}`);
   }
   await addData('native/soew-glyphs.bin',await readFile(resolve(build,'soew-glyphs.bin')));
-  const content=resolve(build,'content'),manifest=await readFile(resolve(content,'full-files.json'));
-  const files=new Set(JSON.parse(manifest).map(contentPath));
+  const content=resolve(build,'content');
+  const names=JSON.parse(await readFile(resolve(content,'full-files.json'),'utf8'));
+  const files=new Set(names.map(contentPath).filter(name=>name.toUpperCase()!=='HUUHI.DAT'));
   if(files.has('akyu.pack')) {
     const tracks=JSON.parse(await readFile(resolve(content,'akyu.pack')));
     for(const track of tracks) {
@@ -24,6 +25,6 @@ export async function stageNativeSolo({build,output,port,runtime,addData,addMusi
       await addMusic(match[1]+'.ogg',await readFile(resolve(content,path)));
     }
   }
-  await addData('native/content/full-files.json',manifest);
+  await addData('native/content/full-files.json',Buffer.from(JSON.stringify([...files])+'\n'));
   for(const name of files) await addData(`native/content/${name}`,await readFile(resolve(content,name)));
 }

@@ -18,7 +18,7 @@ async function walk(dir,prefix='') {
     return (await Promise.all(entries.map(entry => {
         const name = prefix + entry.name;
         if (entry.isDirectory() && (prefix || ['locale','zunsoft'].includes(entry.name))) return walk(dir,name + '/');
-        if (entry.isFile() && (prefix || /\.(?:PI|BFT|BBT|BMT|BTT|MPN|MAP|DT1|TXT|RGB|M|MMD|EFC|REC|DAT|pack|sf2)$/i.test(name))) return [name];
+        if (entry.isFile() && name.toUpperCase() !== 'HUUHI.DAT' && (prefix || /\.(?:PI|BFT|BBT|BMT|BTT|MPN|MAP|DT1|TXT|RGB|M|MMD|EFC|REC|DAT|pack|sf2)$/i.test(name))) return [name];
         return [];
     }))).flat();
 }
