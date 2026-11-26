@@ -1764,7 +1764,7 @@
     "th13": {
       "normal": "ports/th13",
       "multiplayer": "ports/th13-mp",
-      "base": "58ad0f7ee85db6754586957030e9c042f746b4f2",
+      "base": "cbd34f7ad147c00a8d0930ebcb75e9f41c381292",
       "history": [
         {
           "kind": "manual",
@@ -3186,6 +3186,21 @@
             "ports/th13-mp/web/cpp/game/StageSim.hpp"
           ],
           "note": "ECL 全局变量：0x420380/0x420d00 的 94 个 id 按跳转表逐 id 对齐（−9988 相位时钟、−9954 life、−9986 超时旗、−9958/−9911 motion_delta、−9961 主 ANM 脚本号、−9949..−9947 读写同槽、−9914 只读、−9995..−9992 与 −9939..−9936 可写），StageSim::player_lives 供 −9930；插值角路径 0x4662e0 的 mode 7/17/8 与默认缓动按 asm 序列复刻，0x4120f0 mode 8 四项在 x87 累加后一次舍入。两侧 StageGvars.cpp、Interpolation.hpp/.cpp 同内容；tests/ecl/ecl_stage_gvars_oracle_test.cpp 与 tests/anm/anm_interpolation_oracle_test.cpp（原 interpolation_oracle_test.cpp 改名）两侧同文件。多人版无联机目录改动。"
+        },
+        {
+          "kind": "manual",
+          "base": "58ad0f7ee85db6754586957030e9c042f746b4f2",
+          "source": "cbd34f7ad147c00a8d0930ebcb75e9f41c381292",
+          "targetHead": "3eedfc0c8dbc050636979a4472c8edc75aa44eaa",
+          "paths": [
+            "ports/th13-mp/docs/DEVELOPMENT.md",
+            "ports/th13-mp/docs/fidelity-map.md",
+            "ports/th13-mp/tests/ecl/ecl_stage_gvars_oracle_test.cpp",
+            "ports/th13-mp/tools/oracle/machine.py",
+            "ports/th13-mp/tools/oracle/probes.py",
+            "ports/th13-mp/web/cpp/game/StageGvars.cpp"
+          ],
+          "note": "ECL 全局变量 −9944/−9909：两侧 StageGvars.cpp 同文件——距离先把平方和舍入到 float 再开方（0x423e20 的 fstp/fld），负的创建者 id 浮点读加 2³²；两侧 tests/ecl/ecl_stage_gvars_oracle_test.cpp 同文件，新增 distance_rounding 与 negative_ids 两组变体断言，两侧 ecl 套件各 186 项通过。多人版无联机目录改动。"
         }
       ]
     },
