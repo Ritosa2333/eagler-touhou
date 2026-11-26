@@ -207,3 +207,26 @@ console.log(JSON.stringify({
   collision: "case-insensitive",
 }));
 });
+
+
+test('海恵堂原版与扩展录像统一支持导入、存储和导出',()=>{
+ assert.equal(replayImportAcceptFor('thkkd'),'.zip,.rpy,.thkkdr');
+ assert.equal(isReplayImportFileName('run.thkkdr','thkkd'),true);
+ assert.equal(isReplayImportFileName('run.thkkdr','th06'),false);
+ assert.equal(isReplayFilePath('replay/run.thkkdr'),true);
+ assert.equal(isValidReplayName('thkkd','run.thkkdr'),true);
+ assert.equal(allocateReplayName('thkkd',[],'run.thkkdr'),'run.thkkdr');
+ assert.deepEqual(selectReplayExportPaths(['replay/run.rpy','replay/run.thkkdr']),['replay/run.rpy','replay/run.thkkdr']);
+ assert.equal(planReplayArchiveImport('thkkd',['run.thkkdr'],[]).entries[0].targetPath,'replay/run.thkkdr');
+});
+
+
+test('录像 ZIP 按目标游戏筛选支持的格式',()=>{
+ const guard=createReplayArchiveExtractionGuard({prefix:'th6',maxFileBytes:100,maxExpandedBytes:200});
+ assert.equal(guard.filter({name:'run.rpy',originalSize:20}),true);
+ assert.equal(guard.filter({name:'run.thkkdr',originalSize:20}),false);
+ assert.equal(planReplayArchiveImport('th6',guard.paths,[]).entries.length,1);
+ const thkkd=createReplayArchiveExtractionGuard({prefix:'thkkd',maxFileBytes:100,maxExpandedBytes:200});
+ assert.equal(thkkd.filter({name:'run.thkkdr',originalSize:20}),true);
+ assert.equal(thkkd.filter({name:'run.rpyx',originalSize:20}),false);
+});

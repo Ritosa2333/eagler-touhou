@@ -32,6 +32,7 @@ export async function productionBrowser({url,report,unlimited=false,touch=false,
       await page.locator('a.book-game-link[data-book-product="thkkd"]').click();
     }
     await page.waitForFunction(()=>new URL(location.href).searchParams.get('game')==='thkkd');
+    await page.waitForSelector('#gameSettingsOpen',{visible:true});
   }
   async function start(){
     const buttons=await page.$$('button');let launched=false;

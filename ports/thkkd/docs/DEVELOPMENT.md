@@ -27,7 +27,7 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 `.rpy` 保持原格式。`.thkkdr` 以 `THKKDR1\0` 开始，随后是 little-endian JSON 长度、版本 `thkkd/extended-replay/1` 的元数据和完整原生录像。元数据包含原生流 SHA-256、递增游标与坐标。播放器按原生 `cursor + 1 == count` 停止条件报告结束，播放、暂停、快进和定位共用原生状态机。
 
-原生存档、配置与录像写入关闭后同步 IndexedDB。游戏文件通过共用启动器导入导出，原版及扩展录像通过 Replay 工作台管理。原作 Practice 与 Omniverse 保留在游戏菜单内，MIDI、语言包和通用 THPrac 按产品登记范围显示。
+原生存档、配置与录像写入关闭后同步 IndexedDB。游戏文件通过共用启动器导入导出，存档与录像均支持多选。存档批次核对目标文件后统一确认覆盖并重启校验；录像批次在同一个文件会话中预留空闲名称，再写入和刷新工作台。原作 Practice 与 Omniverse 保留在游戏菜单内，MIDI、语言包和通用 THPrac 按产品登记范围显示。
 
 ## 验证
 

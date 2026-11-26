@@ -21,4 +21,3 @@ python -X utf8 -B ports/thkkd/scripts/release-web.py --site ports/thkkd/build/si
 源码包包含网页源码、公共模块和构建工具；网站包包含启动器、运行组件与字体。保留第三方署名和许可文本。
 
 ZIP 使用相对路径，保留文件修改时间。公开源码的核心调度目录 `src/core/runtime` 必须完整保留，编译产物仅排除本作根部的 `runtime/`。
-

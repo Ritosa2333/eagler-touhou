@@ -32,7 +32,7 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 ## 存档与录像
 
-原版五份 DAT 存档及 `config.txt` 由启动器导入导出，导出文件名为 `thkkd-save.zip`。原版 `.rpy` 支持导入与播放；标准操作录制继续使用原版格式。触控自由坐标等扩展操作录制为 `.thkkdr`，在网页录像工作台回放。
+原版五份 DAT 存档及 `config.txt` 可一次选择多份导入，也可导入存档 ZIP；核对文件后统一确认覆盖。导出文件名为 `thkkd-save.zip`。录像工作台支持同时导入多份 `.rpy`、`.thkkdr` 或录像 ZIP，并自动分配空闲文件名。标准操作录制继续使用原版格式，触控自由坐标等扩展操作录制为 `.thkkdr`。
 
 默认方向键移动、Z 射击或确认、X Bomb 或取消、Shift 低速、Esc 暂停；暂停时 R 重开。网页对话支持 Z、Enter、Ctrl 和触控确认。输入映射与录像规则见开发指南。
 

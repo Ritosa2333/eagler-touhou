@@ -752,7 +752,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       },
       watch: async (_product, path, stage) => {await requiredRuntime().send('playback', {action: 'open', path, ...(stage !== undefined ? {stage} : {})});}});
     files = createFileActions({runtime, prepareFiles, releasePrepared, translate: stringTranslate, confirm: decisions.askConfirmation,
-      pickFile: ports.pickFile, download: ports.download, feedback, replayMutations: replays.mutations,
+      pickFile: ports.pickFile, pickFiles: ports.pickFiles, download: ports.download, feedback, replayMutations: replays.mutations,
       replayManager: {open: async product => {requiredNavigation().openInfoDialog('replayDialog', {replace: true}); await replays!.open(product);},
         refresh: () => replays!.refresh({afterMutation: true}), isOpen: () => replays!.getSnapshot().open, close: () => requiredNavigation().closeInfoDialog('replayDialog')},
       captureImportContext: product => {
@@ -1068,6 +1068,11 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     }
     if (!files) throw new Error('File service is not attached');
     await activity(() => files!.importFile('replay', file, product));
+  }
+  async function importReplayFiles(selection: readonly File[], product: ProductId) {
+    if(selection.length===1&&product==='th09mp'&&/\.th09r$/i.test(selection[0].name))return importReplayFile(selection[0],product);
+    if(!files)throw new Error('File service is not attached');
+    await activity(()=>files!.importFiles('replay',selection,product));
   }
   async function switchReplayProduct(product: ProductId): Promise<void> {
     const model = replays, previous = model?.getSnapshot().productId;
@@ -1589,7 +1594,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       } catch (error) {feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
     },
     getRuntime: () => runtime, getReplays: () => replays, getDiagnostics: () => diagnostics, getGameplayNetwork: () => gameplayNetwork,
-    async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) await importReplayFile(file, product);},
+    async chooseReplayFile(product: ProductId) {if(product==='thkkd'){await importReplayFiles(await ports.pickFiles(replayImportAcceptFor(product)),product);return;}const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) await importReplayFile(file, product);},
     accessTh09MatchReplay,
     async warnDiscouragedBrowser(isCurrent: () => boolean = () => true): Promise<boolean> {
       let dismissed = false; try {dismissed = storage?.getItem('browser-warning-dismissed') === '1';} catch {}
@@ -1601,6 +1606,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (choice === 'secondary') {window.location.href = new URL('faq.html', baseUrl).href; return false;}
       return true;
     },
+    importFiles: (kind: ImportFileKind, selection: readonly File[], product: ProductId) => kind==='replay'?importReplayFiles(selection,product):
+      activity(async()=>{if(!files)throw new Error('File service is not attached');await files.importFiles(kind,selection,product);}),
     importFile: (kind: ImportFileKind, file: File, product: ProductId) => kind === 'replay' ? importReplayFile(file, product) :
       activity(async () => {if (!files) throw new Error('File service is not attached'); await files.importFile(kind, file, product);}),
     setLocale(locale: UiLocale) {saveUiLocalePreference(document, storage, new URL(baseUrl), locale); requiredNavigation().setLocaleAddress(locale); if (!runtime?.getSnapshot().launched) settings.restoreLocalePreferences(settingsContext(settings.getSnapshot()!.context.productId, locale)); publish({locale}); feedback.refreshLocale(); externalMidi.refreshLocale(t); document.documentElement.lang = locale; document.documentElement.dataset.uiLocale = locale; window.dispatchEvent(new CustomEvent('eagler-ui-locale-change', {detail: {locale}})); appShellOwner.refreshLocale(); diagnostics?.refresh(); gameplayNetwork?.refresh(); const canonical = document.querySelector<HTMLLinkElement>('link[rel=canonical]'); if (canonical) canonical.href = new URL(localeHome(locale), canonical.href).href;},

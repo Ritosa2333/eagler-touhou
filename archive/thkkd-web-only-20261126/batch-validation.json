@@ -1,0 +1,373 @@
+{
+  "schema": "thkkd/batch-import-and-playback/1",
+  "result": "passed",
+  "wasmSha256": "08dbae188106b4858eeec43946edf12c26dcb5d2339a2e66995ff2dddc0d1b8e",
+  "unitTests": 34,
+  "locales": {
+    "languages": [
+      "zh-CN",
+      "en",
+      "ja"
+    ],
+    "messages": 2646
+  },
+  "browserTests": {
+    "dual-import": {
+      "result": "passed",
+      "checks": [
+        "file-picker-and-format-guidance",
+        "two-original-dxa-through-production-import",
+        "original-images-mp3-and-converted-video",
+        "four-original-video-dimensions-and-duration",
+        "refresh-reuses-installed-resources",
+        "offline-refresh-reuses-installed-resources"
+      ]
+    },
+    "zip-regression": {
+      "result": "passed",
+      "checks": [
+        "file-picker-and-format-guidance",
+        "original-zip-through-production-import",
+        "original-images-mp3-and-converted-video",
+        "four-original-video-dimensions-and-duration",
+        "refresh-reuses-installed-resources",
+        "offline-refresh-reuses-installed-resources"
+      ]
+    },
+    "quality-mp/native-flow": {
+      "result": "passed",
+      "checks": [
+        "native-pause-R-restarts-current-run",
+        "Z-save-prompt-slot-name-and-native-replay-export",
+        "native-replay-import-seek-and-live-input-isolation",
+        "invalid-replay-inspection-reports-error-and-keeps-current-playback",
+        "refresh-retains-original-replay-bytes"
+      ]
+    },
+    "quality-mp/web-only-system": {
+      "result": "passed",
+      "checks": [
+        "production-video-texture-BGM-PCM-native-pause-resume",
+        "100-extra-presentations-preserve-complete-WASM-memory-commands-RNG-files-and-audio",
+        "all-nine-loadouts-native-shots-and-Bombs-in-production-runtime",
+        "six-stages-EX-and-Omniverse-resources-render-in-production-runtime"
+      ]
+    },
+    "quality-mp/audio-lifecycle": {
+      "result": "passed",
+      "checks": [
+        "actual-settings-sliders-propagate-independent-BGM-and-SFX-gains",
+        "in-game-volume-mute-and-restore-with-zero-muted-BGM-PCM",
+        "native-menu-SFX-PCM-through-selected-gain",
+        "native-unloaded-shot-SFX-slot-compatibility-and-actual-shot-objects",
+        "shared-exit-action-closes-audio-GL-media-and-object-URLs",
+        "relaunch-uses-new-epoch-saved-volumes-and-default-title-input",
+        "native-Quit-exit-event-and-third-launch"
+      ]
+    },
+    "quality-mp/files-ui-batch": {
+      "result": "passed",
+      "checks": [
+        "actual-save-file-picker-overwrite-prompt-and-native-reload",
+        "actual-save-download-ZIP-preserves-native-bytes",
+        "multi-select-save-and-mixed-replay-batches-with-unique-filenames",
+        "actual-replay-workspace-import-and-download-preserve-original-format",
+        "native-and-extended-replays-play-to-end-from-workspace-buttons",
+        "replay-workspace-confirmed-rename",
+        "replay-workspace-confirmed-delete-updates-list",
+        "save-and-replay-deletion-persist-after-refresh"
+      ],
+      "played": [
+        {
+          "path": "replay/test.rpy",
+          "frame": 359,
+          "total": 359,
+          "ended": true
+        },
+        {
+          "path": "replay/thkkd_ud0000.thkkdr",
+          "frame": 599,
+          "total": 599,
+          "ended": true
+        }
+      ]
+    },
+    "quality-mp/playback-cadence-60": {
+      "result": "passed",
+      "high": false,
+      "paused": {
+        "cursor": 70,
+        "steps": 0,
+        "presentHz": 59.60160055130378
+      },
+      "seeking": {
+        "finalCursor": 1000,
+        "presentHz": 55.752220347202325
+      }
+    },
+    "quality-mp/playback-cadence-high": {
+      "result": "passed",
+      "high": true,
+      "paused": {
+        "cursor": 70,
+        "steps": 0,
+        "presentHz": 2494.647214060719
+      },
+      "seeking": {
+        "finalCursor": 1000,
+        "presentHz": 91.6098625248872
+      }
+    },
+    "dialogue": {
+      "result": "passed",
+      "Z": true,
+      "nativeReplayAdvanceBit": true,
+      "touchTap": true,
+      "longPress": true
+    }
+  },
+  "replayCompletion": {
+    "result": "passed",
+    "checks": [
+      "normal-speed-pause-and-resume",
+      "original-and-extended-play-to-last-input",
+      "native-cursor-continuity",
+      "launcher-reports-ended",
+      "no-steps-after-end"
+    ],
+    "originalCases": 17,
+    "supplementalCases": 2,
+    "originalLogicSteps": 648807,
+    "totalLogicSteps": 649645,
+    "cases": [
+      {
+        "id": "normal-speed",
+        "inputSha256": "360ac0d28f21bf1d133d69ba3d54da098c940b5486bec9d4e69ef19bafd0b0f2",
+        "count": 360,
+        "finalCursor": 359,
+        "steps": 359,
+        "rate": 1,
+        "seconds": 7.074,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "extended-motion",
+        "inputSha256": "6ef99656c55e2e949203b601dcae874d5a6eb7bccc23c798477cee1180d0a253",
+        "count": 480,
+        "finalCursor": 479,
+        "steps": 479,
+        "rate": 0,
+        "seconds": 1.887,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-12",
+        "inputSha256": "79d78aa7818cee49812b23a1589b1b7f416e82a550ac60e312e7ff2bfad1760b",
+        "count": 1084,
+        "finalCursor": 1083,
+        "steps": 1083,
+        "rate": 0,
+        "seconds": 3.441,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-09",
+        "inputSha256": "5691c2f9c25f86c719444a3519059f3d4e757f3a4467db35528136a2931429f5",
+        "count": 1133,
+        "finalCursor": 1132,
+        "steps": 1132,
+        "rate": 0,
+        "seconds": 3.468,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-10",
+        "inputSha256": "15ab3eb38957a751f5458a5e5f4b8c69b2e56cb85384fee0c5e5d4b33f3d8c20",
+        "count": 1235,
+        "finalCursor": 1234,
+        "steps": 1234,
+        "rate": 0,
+        "seconds": 3.974,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-07",
+        "inputSha256": "18a30e7da9e6ee34dbae376acaadc2ac7df074c042f1f5e89fd3047dd4fe879c",
+        "count": 1441,
+        "finalCursor": 1440,
+        "steps": 1440,
+        "rate": 0,
+        "seconds": 4.48,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-11",
+        "inputSha256": "8ab3918a22fbb22ad3551c2deb320d3c69cac079382c2aa7190c79bd0db2eca0",
+        "count": 1509,
+        "finalCursor": 1508,
+        "steps": 1508,
+        "rate": 0,
+        "seconds": 4.491,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-06",
+        "inputSha256": "a869d820f2cd5204cad11992a2f733d8f3806de43a665c193e5f1c593ba0ed5b",
+        "count": 1593,
+        "finalCursor": 1592,
+        "steps": 1592,
+        "rate": 0,
+        "seconds": 5.052,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-08",
+        "inputSha256": "108b9db78cc1a644db5e2ce69a761be1a2124be91286d2c413bc0f2aab58b284",
+        "count": 2024,
+        "finalCursor": 2023,
+        "steps": 2023,
+        "rate": 0,
+        "seconds": 8.056,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-05",
+        "inputSha256": "22fea3bc6610c14988bf4c315630ccd5fc826c910ad6437667435d0c53950fbb",
+        "count": 4183,
+        "finalCursor": 4182,
+        "steps": 4182,
+        "rate": 0,
+        "seconds": 17.398,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-03",
+        "inputSha256": "3bd33a66e82caa57552a69488b0daea12a6b8aea111808434a18b3c3e410baf4",
+        "count": 15240,
+        "finalCursor": 15239,
+        "steps": 15239,
+        "rate": 0,
+        "seconds": 41.626,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-01",
+        "inputSha256": "acf3b31527191c9475b2f855765ae67e3c10d4bb0ebe3329a4d920421880dcba",
+        "count": 32859,
+        "finalCursor": 32858,
+        "steps": 32858,
+        "rate": 0,
+        "seconds": 113.066,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-04",
+        "inputSha256": "642a1703b816221421bcde06c1586f6af4cf946399f276c6e2b5fea2fb6912e8",
+        "count": 60322,
+        "finalCursor": 60321,
+        "steps": 60321,
+        "rate": 0,
+        "seconds": 238.065,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-15",
+        "inputSha256": "eee206c719c6d9160c23653f14da57e8544682dd2941e4f59c98b6a00947dc43",
+        "count": 72884,
+        "finalCursor": 72883,
+        "steps": 72883,
+        "rate": 0,
+        "seconds": 388.871,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-14",
+        "inputSha256": "f54ed8e517bb9f73842bfbc7984678094a49a348aebb221baf2563505a0b43c5",
+        "count": 73458,
+        "finalCursor": 73457,
+        "steps": 73457,
+        "rate": 0,
+        "seconds": 362.306,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-13",
+        "inputSha256": "e165e1118d272f8b219829ff1d40d2a127c0f211e52f177ee1874ab1ac0ef212",
+        "count": 74806,
+        "finalCursor": 74805,
+        "steps": 74805,
+        "rate": 0,
+        "seconds": 333.462,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-17",
+        "inputSha256": "7e5bb1a7cb330b205c24f005b755a9550fbebd57365c90518ca97ffb7b82e30f",
+        "count": 84397,
+        "finalCursor": 84396,
+        "steps": 84396,
+        "rate": 0,
+        "seconds": 412.504,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-16",
+        "inputSha256": "d82f94aabc9bcbc82406a7144e8c0ff3b01f184c158620698312b9c5d9bf8bcf",
+        "count": 110282,
+        "finalCursor": 110281,
+        "steps": 110281,
+        "rate": 0,
+        "seconds": 548.494,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-02",
+        "inputSha256": "406072dd472da4d00db2b8d279ce09e5eb312c651873d9a8fc2fc67a4244df7b",
+        "count": 110374,
+        "finalCursor": 110373,
+        "steps": 110373,
+        "rate": 0,
+        "seconds": 534.118,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      }
+    ]
+  }
+}

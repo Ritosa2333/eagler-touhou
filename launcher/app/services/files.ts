@@ -22,6 +22,7 @@ export interface FileActionsOptions {
   translate(key: string, params?: Record<string, string | number>): string;
   confirm(decision: SettingsDecision): Promise<boolean>;
   pickFile(accept: string): Promise<File | null>;
+  pickFiles?(accept: string): Promise<readonly File[]>;
   download(name: string, bytes: ArrayBuffer, mime: string): void;
   feedback: {toast(message: string): void; status(message: string): void; playerStatus(message: string): void};
   replayManager: {open(product: ProductId): Promise<void>; refresh(): Promise<void>; isOpen(): boolean; close(): void};
@@ -139,8 +140,10 @@ export function createFileActions(options: FileActionsOptions) {
       const missingReplay = kind === 'replay' && message(error) === t('file.noReplayToExport');
       if (missingSave || missingReplay) {
         if (await options.confirm({message: t(missingSave ? 'file.missingSavePrompt' : 'file.missingReplayPrompt'), confirmText: t('file.selectImport')})) {
-          const file = await options.pickFile(missingSave ? saveAccept(product) : replay.replayImportAcceptFor(product));
-          if (file) await importFile(missingSave ? 'save' : 'replay', file, product);
+          const accept=missingSave?saveAccept(product):replay.replayImportAcceptFor(product);
+          const selected=game==='thkkd'&&options.pickFiles?await options.pickFiles(accept)
+            :[await options.pickFile(accept)].filter((file):file is File=>file!==null);
+          await importFiles(missingSave?'save':'replay',selected,product);
         }
         return;
       }
@@ -148,28 +151,17 @@ export function createFileActions(options: FileActionsOptions) {
       throw error;
     }
   }
-  async function importExclusive(kind: ImportFileKind, file: File, product: ProductId, context: ImportContext): Promise<void> {
-    const game = gameIdForProduct(product);
-    if (!file.size) throw new Error(t('file.emptyImport'));
-    if (file.size > maxImportBytes) throw new Error(t('file.importTooLarge'));
-    if(kind==='save'&&game==='thkkd'&&!await options.confirm({message:t('file.importSaveOverwrite'),confirmText:t('file.continueImport'),tone:'danger'}))return;
-    // A queued import cannot consume a newer Player's Runtime while retaining an
-    // older presentation callback. Check before preparation can close an owner,
-    // and again after its acquisition await, immediately before the file lock.
-    context.assertRuntimeOwnership();
-    await options.prepareFiles(product, {retireRunning: kind !== 'replay', ...(context.ownsPresentation ? {ownsPresentation: context.ownsPresentation} : {})});
-    context.assertRuntimeOwnership();
-    const keepViewer = kind === 'replay' && runtime.getSnapshot().launched &&
-      runtime.getLauncherControlContext?.()?.options.replayViewer === true;
-    feedback.playerStatus(t('file.importing'));
-    let count = 0;
-    await runtime.withFileSession(gameIdForProduct(product), async initial => {
-      let access: RuntimeFileSession = initial;
+  async function planImports(kind: ImportFileKind, selection: readonly File[], product: ProductId, existing: readonly string[] = []) {
+    const game=gameIdForProduct(product),reserved=[...existing];
+    const planned: {path:string;bytes:Uint8Array;replayMatch?:Th09ReplayMatch}[]=[];let expanded=0;
+    for(const file of selection){
+      if(!file.size)throw new Error(t('file.emptyImport'));
+      if(file.size>maxImportBytes)throw new Error(t('file.importTooLarge'));
       let files: {path: string; bytes: Uint8Array; replayMatch?: Th09ReplayMatch}[];
       const lowerName = file.name.toLowerCase();
       if(kind==='save'&&game==='thkkd'&&isThkkdSavePath(lowerName)){
         files=[{path:lowerName,bytes:new Uint8Array(await file.arrayBuffer())}];
-      } else if (kind === 'save' && lowerName.endsWith(saveExtension(product))) {
+      } else if (kind === 'save' && game !== 'thkkd' && lowerName.endsWith(saveExtension(product))) {
         files = [{path: PRODUCT_GAMES[gameIdForProduct(product)].storage.scoreFile, bytes: new Uint8Array(await file.arrayBuffer())}];
       } else if (kind === 'save' && supportsSaveArchive(game) && lowerName.endsWith('.zip')) {
         const zip = await import('fflate'), seen = new Set<string>();let expanded = 0;
@@ -189,7 +181,7 @@ export function createFileActions(options: FileActionsOptions) {
         if (file.size > 16 * 1024 * 1024) throw new Error(t('file.hintTooLarge'));
         files = [{path: hints(product)[0]!, bytes: new Uint8Array(await file.arrayBuffer())}];
       } else if (kind === 'replay' && !lowerName.endsWith('.zip') && replay.isReplayImportFileName(file.name, product)) {
-        const existing = listing(await access.send('list', {})).map(item => item.path);
+        const existing = reserved;
         const name = replay.allocateReplayName(prefix(product), existing, file.name, replayFilePolicy(product).sharedExtensionSlot);
         if (!name) throw new Error(t('file.replaySlotsExhausted'));
         files = [{path: `replay/${name}`, bytes: new Uint8Array(await file.arrayBuffer())}];
@@ -203,7 +195,7 @@ export function createFileActions(options: FileActionsOptions) {
           if (error instanceof replay.ReplayArchiveScanError) throw new Error(t(error.reason === 'unsafe-path' ? 'file.zipUnsafePath' : error.reason === 'duplicate-path' ? 'file.zipDuplicatePath' : error.reason === 'file-too-large' ? 'file.importStoredTooLarge' : 'file.importArchiveExpandedTooLarge'));
           throw error;
         }
-        const existing = listing(await access.send('list', {})).map(item => item.path);
+        const existing = reserved;
         const plan = replay.planReplayArchiveImport(replayPrefix, guard.paths, existing, replayFilePolicy(product).sharedExtensionSlot, th09ReplayImportDirectory);
         if (!plan.ok) throw new Error(t(plan.reason === 'unsafe-path' ? 'file.zipUnsafePath' : plan.reason === 'duplicate-path' ? 'file.zipDuplicatePath' : 'file.replaySlotsExhausted'));
         files = plan.entries.map(entry => {
@@ -214,12 +206,38 @@ export function createFileActions(options: FileActionsOptions) {
           }
           return {path: entry.targetPath, bytes: archive[entry.sourcePath], ...(replayMatch ? {replayMatch} : {})};
         });
-      } else throw new Error(t(kind === 'save' ? 'file.chooseSave' : kind === 'hint' ? 'file.chooseHint' : game === 'hsob' ? 'replay.hsobImport' : 'file.chooseReplay'));
+      } else throw new Error(t(kind === 'save' ? 'file.chooseSave' : kind === 'hint' ? 'file.chooseHint' : game === 'thkkd' ? 'file.thkkdChooseReplay' : game === 'hsob' ? 'replay.hsobImport' : 'file.chooseReplay'));
       if (!files.length) throw new Error(t('file.importNoFiles'));
       if (game === 'hsob' && kind === 'replay' && files.some(({bytes}) =>
         bytes.length <= 10 || new TextDecoder().decode(bytes.subarray(0, 6)) !== 'REPLAY')) throw new Error(t('runtime.invalidFileContent'));
       if (new Set(files.map(item => item.path.toLowerCase())).size !== files.length) throw new Error(t('file.importDuplicatePaths'));
       if (files.some(item => item.bytes.length > (game === 'hsob' ? maxHsobFileBytes : kind === 'save' && game === 'th15' && isCheckpointPath(item.path) ? maxCheckpointBytes : maxStoredFileBytes))) throw new Error(t('file.importStoredTooLarge'));
+      expanded+=files.reduce((total,item)=>total+item.bytes.length,0);
+      if(expanded>(kind==='save'?maxSaveArchiveExpandedBytes:maxReplayArchiveExpandedBytes))throw new Error(t('file.importArchiveExpandedTooLarge'));
+      planned.push(...files);reserved.push(...files.map(item=>item.path));
+    }
+    if(new Set(planned.map(item=>item.path.toLowerCase())).size!==planned.length)throw new Error(t('file.importDuplicatePaths'));
+    return planned;
+  }
+  async function importExclusive(kind: ImportFileKind, selection: readonly File[], product: ProductId, context: ImportContext): Promise<void> {
+    const game = gameIdForProduct(product);
+    context.assertRuntimeOwnership();
+    const preparedFiles=kind==='replay'?null:await planImports(kind,selection,product);
+    context.assertRuntimeOwnership();
+    if(kind==='save'&&game==='thkkd'&&!await options.confirm({message:t('file.importSaveOverwrite'),confirmText:t('file.continueImport'),tone:'danger'}))return;
+    // A queued import cannot consume a newer Player's Runtime while retaining an
+    // older presentation callback. Check before preparation can close an owner,
+    // and again after its acquisition await, immediately before the file lock.
+    context.assertRuntimeOwnership();
+    await options.prepareFiles(product, {retireRunning: kind !== 'replay', ...(context.ownsPresentation ? {ownsPresentation: context.ownsPresentation} : {})});
+    context.assertRuntimeOwnership();
+    const keepViewer = kind === 'replay' && runtime.getSnapshot().launched &&
+      runtime.getLauncherControlContext?.()?.options.replayViewer === true;
+    feedback.playerStatus(t('file.importing'));
+    let count = 0;
+    await runtime.withFileSession(gameIdForProduct(product), async initial => {
+      let access: RuntimeFileSession = initial;
+      const files=preparedFiles??await planImports(kind,selection,product,listing(await access.send('list',{})).map(item=>item.path));
       for (const item of files) await access.send('write', {path: item.path, bytes: Array.from(item.bytes), ...(item.replayMatch ? {replayMatch: item.replayMatch} : {})});
       if (kind !== 'replay') {
         access = await access.restart({sync: false});
@@ -240,10 +258,12 @@ export function createFileActions(options: FileActionsOptions) {
     feedback.status(t(imported, {count}));
     if (keepViewer) feedback.playerStatus('');
   }
-  function importFile(kind: ImportFileKind, file: File, product: ProductId): Promise<void> {
-    const context = options.captureImportContext(product);
-    return kind === 'replay' ? options.replayMutations.run(() => importExclusive(kind, file, product, context)) : importExclusive(kind, file, product, context);
+  function importFiles(kind: ImportFileKind, selection: readonly File[], product: ProductId): Promise<void> {
+    if(!selection.length)return Promise.resolve();
+    const context=options.captureImportContext(product);
+    return kind==='replay'?options.replayMutations.run(()=>importExclusive(kind,selection,product,context)):importExclusive(kind,selection,product,context);
   }
+  function importFile(kind: ImportFileKind, file: File, product: ProductId): Promise<void> {return importFiles(kind,[file],product);}
   async function deleteHint(product: ProductId): Promise<void> {
     const paths = hints(product);
     if (!paths.length) return;
@@ -267,8 +287,10 @@ export function createFileActions(options: FileActionsOptions) {
       else {
         const kind = action === 'import-save' ? 'save' : 'hint';
         if (kind === 'save' && gameIdForProduct(product)!=='thkkd' && !await options.confirm({message: t('file.importSaveOverwrite'), confirmText: t('file.continueImport'), tone: 'danger'})) return;
-        const file = await options.pickFile(kind === 'hint' ? '.txt' : saveAccept(product));
-        if (file) await importFile(kind, file, product);
+        const selected=kind==='save'&&gameIdForProduct(product)==='thkkd'&&options.pickFiles
+          ? await options.pickFiles(saveAccept(product))
+          : [await options.pickFile(kind==='hint'?'.txt':saveAccept(product))].filter((file):file is File=>file!==null);
+        await importFiles(kind,selected,product);
       }
     } catch (error) {
       if (error instanceof RuntimeSessionSupersededError) return;
@@ -276,5 +298,5 @@ export function createFileActions(options: FileActionsOptions) {
       feedback.playerStatus(reason); feedback.status(t('status.errorReason', {reason})); feedback.toast(t('status.errorReason', {reason}));
     }
   }
-  return {run, importFile};
+  return {run, importFile, importFiles};
 }

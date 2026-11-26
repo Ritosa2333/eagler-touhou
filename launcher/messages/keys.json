@@ -11123,5 +11123,9 @@
   "package.thkkdImportHint": {
     "id": "package_thkkdImportHint",
     "params": []
+  },
+  "file.thkkdChooseReplay": {
+    "id": "file_thkkdChooseReplay",
+    "params": []
   }
 }

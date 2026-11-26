@@ -2644,5 +2644,6 @@
   "game_spellAllLoadouts": "全部机体与难度合计",
   "game_noSpellStats": "当前存档没有符卡收取统计",
   "package_originalPreparingResources": "正在准备资源 {completed}/{total} · {name}",
-  "package_thkkdImportHint": "同时选择原版 dat.dxa 和 bgm.dxa，或选择包含这两份文件的 ZIP；ZIP 内的文件可放在根目录或同一个单层游戏目录。"
+  "package_thkkdImportHint": "同时选择原版 dat.dxa 和 bgm.dxa，或选择包含这两份文件的 ZIP；ZIP 内的文件可放在根目录或同一个单层游戏目录。",
+  "file_thkkdChooseReplay": "请选择 .rpy、.thkkdr 录像或录像 ZIP，可同时选择多个文件。"
 }

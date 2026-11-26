@@ -6,7 +6,7 @@ import {replayFixture} from './replay-fixture.mjs';
 const high=process.argv.includes('--high'),url=process.env.THKKD_SITE_URL||'http://127.0.0.1:8177/',output=fileURLToPath(new URL('../build/quality-mp/playback-cadence-'+(high?'high':'60')+'/',import.meta.url));mkdirSync(output,{recursive:true});
 const report={schema:'thkkd/playback-cadence/1',high},driver=await productionBrowser({url,report,unlimited:high}),{browser,page}=driver;
 try{
- await driver.library();if(high){if(await page.$eval('#displayOptions > button',element=>element.getAttribute('aria-expanded'))!=='true')await page.click('#displayOptions > button');await page.click('#frameLimitToggle');}
+ await driver.library();if(high){await page.click('#gameSettingsOpen');if(await page.$eval('#displayOptions > button',element=>element.getAttribute('aria-expanded'))!=='true')await page.click('#displayOptions > button');await page.click('#frameLimitToggle');await page.click('#libraryBack');}
  const frame=await driver.start();await runtimeCommand(page,'write',{path:'replay/cadence.rpy',bytes:[...replayFixture({count:1200,bombFrame:-1})]});await runtimeCommand(page,'playback',{action:'open',path:'replay/cadence.rpy'});await runtimeCommand(page,'playback',{action:'pause'});await runtimeCommand(page,'playback',{action:'seek',value:70});await frame.waitForFunction(()=>__thkkdRuntime.core._thkkd_word(0xb43110)===70);await wait(1100);
  report.paused=await observeCadence(frame);assert.equal(report.paused.steps,0);assert.equal(report.paused.after.cursor,70);
  report.seeking=await observeCadence(frame,1600,()=>runtimeCommand(page,'playback',{action:'seek',value:1000}));assert.ok(report.seeking.steps>0);await frame.waitForFunction(()=>__thkkdRuntime.core._thkkd_word(0xb43110)===1000);report.seekFinal=1000;

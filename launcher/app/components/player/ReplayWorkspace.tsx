@@ -78,10 +78,13 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
   async function control(action: 'pause'|'play'|'seek'|'rate', value?: number) {
     setError(''); try {await session.getRuntime()!.send('playback', {action, ...(value !== undefined ? {value} : {})});} catch (error) {report(error);}
   }
-  const importFile = async (file: File) => {
+  const importFiles = async (selection: File[]) => {
     setError('');
-    if (!isReplayImportFileName(file.name, files.productId ?? undefined)) throw Error(t(fileOnly ? 'replay.hsobImport' : 'file.chooseReplay'));
-    await session.importFile('replay', file, files.productId!);
+    if(!selection.length)return;
+    if(game!=='thkkd'&&selection.length!==1)throw Error(t('replay.dropSingle'));
+    if(!selection.every(file=>isReplayImportFileName(file.name,files.productId??undefined)))throw Error(t(game==='thkkd'?'file.thkkdChooseReplay':fileOnly?'replay.hsobImport':'file.chooseReplay'));
+    if(game==='thkkd')await session.importFiles('replay',selection,files.productId!);
+    else await session.importFile('replay',selection[0],files.productId!);
   };
   async function close() {
     if(closing.current) return;
@@ -123,7 +126,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
     </section>
     </>, stage)}
     {archive ? <Th09ReplayArchive key={archive.username} current={archive} watch={session.accessTh09MatchReplay}/> :
-    <aside className="replay-file-browser" data-file-only={fileOnly || undefined} aria-label={t('replay.ui.files')} onDragOver={event => {if (!busy && event.dataTransfer.types.includes('Files')) event.preventDefault();}} onDrop={event => {event.preventDefault(); if (busy || files.phase !== 'ready') return; const list = [...event.dataTransfer.files]; if (list.length !== 1) {report(Error('请每次导入一个文件')); return;} void importFile(list[0]).catch(report);}}>
+    <aside className="replay-file-browser" data-file-only={fileOnly || undefined} aria-label={t('replay.ui.files')} onDragOver={event => {if (!busy && event.dataTransfer.types.includes('Files')) event.preventDefault();}} onDrop={event => {event.preventDefault(); if (busy || files.phase !== 'ready') return; const list = [...event.dataTransfer.files]; setBusy(true);void importFiles(list).catch(report).finally(()=>setBusy(false));}}>
       <header><h2>{t('replay.ui.heading')}</h2><UiButton type="button" className="replay-button" disabled={busy || files.phase !== 'ready'} onClick={() => {setBusy(true); setError(''); void session.chooseReplayFile(files.productId!).catch(report).finally(() => setBusy(false));}}>{icon('replay-upload-simple')}<span>{t('replay.ui.import')}</span></UiButton></header>
       <nav className="replay-breadcrumb" aria-label={t('replay.ui.location')}>{icon('replay-folder')}<UiButton variant="quiet" size="sm" type="button" onClick={() => {if (folder) setFolder(null); else setMoving(null);}}>{t('replay.ui.all')}</UiButton>{folder && <span title={folder.slice(7)}>/ {folder.slice(7)}</span>}</nav>
       {moving && <form className="replay-workspace-move" onSubmit={event => {event.preventDefault();setBusy(true); void model.move(moving, destination === 'new' ? `replay/${newFolder.trim()}` : destination).then(ok => {if (ok) setMoving(null);}).finally(() => setBusy(false));}}>

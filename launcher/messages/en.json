@@ -2644,5 +2644,6 @@
   "game_spellAllLoadouts": "All shot types and difficulties",
   "game_noSpellStats": "Spell card statistics are unavailable for this save",
   "package_originalPreparingResources": "Preparing resources {completed}/{total} · {name}",
-  "package_thkkdImportHint": "Select the original dat.dxa and bgm.dxa together, or a ZIP containing both files at its root or inside one top-level game folder."
+  "package_thkkdImportHint": "Select the original dat.dxa and bgm.dxa together, or a ZIP containing both files at its root or inside one top-level game folder.",
+  "file_thkkdChooseReplay": "Select .rpy or .thkkdr recordings, or replay ZIP files. You can select multiple files."
 }

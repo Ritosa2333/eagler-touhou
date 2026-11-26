@@ -68,6 +68,7 @@ function fixture({ready = true, launched = false, confirm = true, corrupt = fals
     translate: (key, params) => key + (params ? JSON.stringify(params) : ''),
     async confirm(decision) {events.push('confirm'); decisions.push(decision); return confirm;},
     async pickFile(accept) {events.push(`pick:${accept}`); return picked;},
+    async pickFiles(accept) {events.push(`pick-many:${accept}`);return Array.isArray(picked)?picked:picked?[picked]:[];},
     download(name, bytes, mime) {events.push('download'); downloads.push({name, bytes: [...new Uint8Array(bytes)], mime});},
     feedback: Object.fromEntries(['toast', 'status', 'playerStatus'].map(kind => [kind, value => feedback.push([kind, value])])),
     replayManager: {
@@ -281,4 +282,42 @@ test(`TH14 genuine file error remains visible: ${error.message}`, async () => {
   assert(f.feedback.some(([kind, value]) => kind === 'status' && value.includes(error.message)));
   assert(f.feedback.some(([kind, value]) => kind === 'toast' && value.startsWith('file.exportFailed')));
   assert.equal(f.downloads.length, 0);
+});
+
+
+test('海恵堂六份存档统一确认、重启并逐份校验',async()=>{
+ const names=['th_kaikeidou01.dat','th_kaikeidou_score00.dat','th_kaikeidou_score10.dat','th_kaikeidou_spell01.dat','th_kaikeidou_spell10.dat','config.txt'];
+ const selected=names.map((name,i)=>new File([new Uint8Array([i,4,8])],name));const f=fixture();f.pick(selected);
+ await f.actions.run('import-save','thkkd');assert.equal(f.stored.size,6);
+ names.forEach((name,i)=>assert.deepEqual(f.stored.get(name),[i,4,8]));
+ assert.equal(f.decisions.length,1);assert.equal(f.events.filter(x=>x.startsWith('restart:')).length,1);
+ assert.equal(f.events.filter(x=>x.startsWith('read:')).length,6);assert.deepEqual(f.completedContexts,['initial']);assert.ok(f.events.includes('pick-many:.dat,.txt,.zip'));
+});
+
+test('海恵堂批量存档在确认和写入前检查文件名与冲突',async()=>{
+ const {zipSync}=await import('fflate');
+ for(const second of [new File(['x'],'unknown.dat'),new File(['x'],'TH_KAIKEIDOU01.DAT'),new File([zipSync({'th_kaikeidou01.dat':new Uint8Array([7])})],'save.zip')]){
+  const f=fixture();await assert.rejects(f.actions.importFiles('save',[new File(['a'],'th_kaikeidou01.dat'),second],'thkkd'));
+  assert.equal(f.stored.size,0);assert.equal(f.decisions.length,0);assert.equal(f.events.some(x=>x.startsWith('write:')),false);
+ }
+});
+
+test('海恵堂批量录像预留空闲名称并保留已有录像',async()=>{
+ const f=fixture();f.stored.set('replay/thkkd00.rpy',[9]);f.managerOpen();
+ await f.actions.importFiles('replay',[new File([new Uint8Array([1,2])],'same.rpy'),new File([new Uint8Array([3,4])],'same.rpy')],'thkkd');
+ assert.equal(f.stored.size,3);assert.deepEqual(f.stored.get('replay/thkkd00.rpy'),[9]);
+ assert.deepEqual([...f.stored.values()].filter(x=>x.length===2),[[1,2],[3,4]]);
+ assert.equal(f.events.filter(x=>x.startsWith('lock:')).length,1);assert.equal(f.events.filter(x=>x==='manager-refresh').length,1);assert.deepEqual(f.completedContexts,['initial']);
+});
+
+test('批量录像含无效文件时不写入任何文件',async()=>{
+ const f=fixture();await assert.rejects(f.actions.importFiles('replay',[new File(['a'],'a.rpy'),new File(['b'],'b.txt')],'thkkd'),/file.thkkdChooseReplay/);
+ assert.equal(f.stored.size,0);assert.equal(f.events.some(x=>x.startsWith('write:')),false);
+});
+
+
+test('海恵堂混合录像批次保留两种扩展名与原字节',async()=>{
+ const f=fixture();await f.actions.importFiles('replay',[new File(['native'],'run.rpy'),new File(['extended'],'run.thkkdr')],'thkkd');
+ assert.deepEqual(f.stored.get('replay/run.rpy'),[...new TextEncoder().encode('native')]);
+ assert.deepEqual(f.stored.get('replay/run.thkkdr'),[...new TextEncoder().encode('extended')]);
 });
