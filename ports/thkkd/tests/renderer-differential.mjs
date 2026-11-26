@@ -5,7 +5,7 @@ import {isDeepStrictEqual} from 'node:util';
 import {Renderer as Current} from '../web/renderer.mjs';
 
 const args=Object.fromEntries(process.argv.slice(2).map(a=>{const at=a.indexOf('=');return [a.slice(2,at),a.slice(at+1)];}));
-const referenceCommit=args.commit||'a1da2e1e23a5d853d0ed06e195b9b91d6eb6656a';
+const referenceCommit=args.commit||'497969450a26f0d809d6afd8d96d41b5d0f90cea';
 const source=args.reference?readFileSync(args.reference,'utf8'):execFileSync('git',['show',referenceCommit+':ports/thkkd/web/renderer.mjs'],{encoding:'utf8'});
 const {Renderer:Before}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 let seed=918273;
@@ -20,17 +20,33 @@ for(let i=0;i<1800;i++){
  commands.push(c);previous.set(identity,prior);
 }
 function draw(Class,alpha){
- const r=Object.create(Class.prototype),events=[];
+ const r=Object.create(Class.prototype),events=[];let buffer,texture,opaque,equation,blend,clip,uploads=0;
  const constants={ARRAY_BUFFER:34962,STREAM_DRAW:35040,TRIANGLES:4,TEXTURE_2D:3553,FUNC_REVERSE_SUBTRACT:32779,FUNC_ADD:32774,ZERO:0,SRC_COLOR:768,SRC_ALPHA:770,ONE:1,ONE_MINUS_SRC_ALPHA:771,COLOR_BUFFER_BIT:16384};
- r.gl=new Proxy({...constants,bufferData(_target,data){events.push(['buffer',...data]);}},{get(o,k){if(k in o)return o[k];return(...values)=>events.push([k,...values]);}});
- Object.assign(r,{commands,previous,opaque:9,vertices:new Float32Array(60*256)});r.present(alpha);return events;
+ r.gl=new Proxy({...constants,
+  bufferData(_target,data){buffer=Float32Array.from(data);uploads++;},bindTexture(_target,value){texture=value;},uniform1i(_where,value){opaque=value;},
+  blendEquation(value){equation=value;},blendFunc(...value){blend=value;},scissor(...value){clip=value;},
+  drawArrays(kind,first,count){events.push(['draw',kind,texture,opaque,equation,blend,clip,...buffer.subarray(first*10,(first+count)*10)]);},
+ },{get(o,k){if(k in o)return o[k];return(...values)=>events.push([k,...values]);}});
+ Object.assign(r,{commands,previous,opaque:9,vertices:new Float32Array(60*256)});r.present(alpha);return {events,uploads};
 }
 const snapshot=JSON.stringify(commands),alphas=[0,.25,.5,.99,1,1.5,-1];
+let uploads;
 for(const alpha of alphas){
- const actual=draw(Current,alpha),expected=draw(Before,alpha);
+ const next=draw(Current,alpha),old=draw(Before,alpha),actual=next.events,expected=old.events;uploads={before:old.uploads,after:next.uploads};
  assert.equal(actual.length,expected.length,'批次数量');
  for(let i=0;i<actual.length;i++)if(!isDeepStrictEqual(actual[i],expected[i]))throw Error(`首个 GPU 提交差异：alpha=${alpha} event=${i} kind=${actual[i][0]}`);
 }
 assert.equal(JSON.stringify(commands),snapshot);
-const report={result:'passed',commands:1800,alphas,checks:['exact Float32 vertex streams','batch order and state','buffer growth past 256 quads','perspective and per-vertex colors','snapshot immutability','identity and teleport interpolation boundaries'],referenceCommit};
+function sprites(Class){
+ const r=Object.assign(Object.create(Class.prototype),{commands:[],current:[],identities:new Map(),previous:new Map(),brightness:[.3,.7,.9],alpha:.6,area:[4,8,632,468]});
+ for(let frame=0;frame<4;frame++){
+  r.clear();r.tick=frame;r.scene=frame<3?'game':'menu';
+  for(let i=0;i<1200;i++){r.identity='sprite:'+i;r.mode=i%5;r.sprite({texture:1,width:257,height:255,x:7,y:11,w:32,h:16},i%640,i%480,(i%9-4)/3,i/100,i%2===0,i%3===0,i%5!==0);}
+  r.commit();
+ }
+ return {commands:r.commands,previous:[...r.previous]};
+}
+assert.deepEqual(sprites(Current),sprites(Before),'精灵几何、透明度、UV 与切面后的历史映射');
+assert.equal(uploads.after,1);
+const report={result:'passed',commands:1800,alphas,uploads,spriteCommands:4800,checks:['exact Float32 vertex streams','draw order and effective GPU state','buffer growth past 256 quads','perspective and per-vertex colors','snapshot immutability','identity and teleport interpolation boundaries','sprite geometry and scene transitions'],referenceCommit};
 if(args.output)writeFileSync(args.output,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));

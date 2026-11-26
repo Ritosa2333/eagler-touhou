@@ -1,0 +1,28 @@
+{
+  "result": "passed",
+  "commands": 1800,
+  "alphas": [
+    0,
+    0.25,
+    0.5,
+    0.99,
+    1,
+    1.5,
+    -1
+  ],
+  "uploads": {
+    "before": 1201,
+    "after": 1
+  },
+  "spriteCommands": 4800,
+  "checks": [
+    "exact Float32 vertex streams",
+    "draw order and effective GPU state",
+    "buffer growth past 256 quads",
+    "perspective and per-vertex colors",
+    "snapshot immutability",
+    "identity and teleport interpolation boundaries",
+    "sprite geometry and scene transitions"
+  ],
+  "referenceCommit": "497969450a26f0d809d6afd8d96d41b5d0f90cea"
+}

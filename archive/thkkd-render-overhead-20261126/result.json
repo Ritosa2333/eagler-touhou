@@ -1,0 +1,1194 @@
+{
+  "schema": "thkkd/render-overhead/1",
+  "referenceCommit": "497969450a26f0d809d6afd8d96d41b5d0f90cea",
+  "cases": [
+    {
+      "variant": 0,
+      "cursor": 150,
+      "equal": true,
+      "unchanged": true,
+      "commands": 87,
+      "state": 2421648055,
+      "costs": {
+        "before": [
+          0.19687500006208816,
+          0.19520833312223354,
+          0.1914583332836628
+        ],
+        "after": [
+          0.08354166677842538,
+          0.0856249996771415,
+          0.0897916667163372
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 49,
+          "drawArrays": 49,
+          "bindTexture": 49,
+          "uniform1i": 49,
+          "blendEquation": 49,
+          "blendFunc": 49,
+          "scissor": 50
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 49,
+          "bindTexture": 49,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 1,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 0,
+      "cursor": 210,
+      "equal": true,
+      "unchanged": true,
+      "commands": 137,
+      "state": 1291413053,
+      "costs": {
+        "before": [
+          0.21312499946604171,
+          0.2214583329235514,
+          0.16354166654249033
+        ],
+        "after": [
+          0.11083333318432172,
+          0.12208333363135655,
+          0.11999999949087699
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 57,
+          "drawArrays": 57,
+          "bindTexture": 57,
+          "uniform1i": 57,
+          "blendEquation": 57,
+          "blendFunc": 57,
+          "scissor": 58
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 57,
+          "bindTexture": 57,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 0,
+      "cursor": 800,
+      "equal": true,
+      "unchanged": true,
+      "commands": 188,
+      "state": 3123990390,
+      "costs": {
+        "before": [
+          0.07291666697710752,
+          0.07562499990065892,
+          0.06312500033527613
+        ],
+        "after": [
+          0.031875000024835266,
+          0.03166666595886151,
+          0.029999999329447746
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 69,
+          "drawArrays": 69,
+          "bindTexture": 69,
+          "uniform1i": 69,
+          "blendEquation": 69,
+          "blendFunc": 69,
+          "scissor": 70
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 69,
+          "bindTexture": 69,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 1,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 1,
+      "cursor": 150,
+      "equal": true,
+      "unchanged": true,
+      "commands": 158,
+      "state": 1803790661,
+      "costs": {
+        "before": [
+          0.06166666808227698,
+          0.060625000235935055,
+          0.06083333368102709
+        ],
+        "after": [
+          0.029791667436559994,
+          0.029583333060145378,
+          0.02916666679084301
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 50,
+          "drawArrays": 50,
+          "bindTexture": 50,
+          "uniform1i": 50,
+          "blendEquation": 50,
+          "blendFunc": 50,
+          "scissor": 51
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 50,
+          "bindTexture": 50,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 1,
+      "cursor": 210,
+      "equal": true,
+      "unchanged": true,
+      "commands": 303,
+      "state": 1686123833,
+      "costs": {
+        "before": [
+          0.21645833334575096,
+          0.1145833336437742,
+          0.15583333310981592
+        ],
+        "after": [
+          0.15791666662941375,
+          0.09500000004967053,
+          0.09145833272486925
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 50,
+          "drawArrays": 50,
+          "bindTexture": 50,
+          "uniform1i": 50,
+          "blendEquation": 50,
+          "blendFunc": 50,
+          "scissor": 51
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 50,
+          "bindTexture": 50,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 5,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 1,
+      "cursor": 800,
+      "equal": true,
+      "unchanged": true,
+      "commands": 262,
+      "state": 1284918858,
+      "costs": {
+        "before": [
+          0.15083333291113377,
+          0.09083333394179742,
+          0.09041666643073161
+        ],
+        "after": [
+          0.08604166718820731,
+          0.05416666685293118,
+          0.05166666737447182
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 79,
+          "drawArrays": 79,
+          "bindTexture": 79,
+          "uniform1i": 79,
+          "blendEquation": 79,
+          "blendFunc": 79,
+          "scissor": 80
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 79,
+          "bindTexture": 79,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 2,
+      "cursor": 150,
+      "equal": true,
+      "unchanged": true,
+      "commands": 129,
+      "state": 4000432383,
+      "costs": {
+        "before": [
+          0.07374999982615311,
+          0.04812499973922968,
+          0.04833333256344
+        ],
+        "after": [
+          0.027500000161429245,
+          0.02583333229025205,
+          0.026249998869995277
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 38,
+          "drawArrays": 38,
+          "bindTexture": 38,
+          "uniform1i": 38,
+          "blendEquation": 38,
+          "blendFunc": 38,
+          "scissor": 39
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 38,
+          "bindTexture": 38,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 1,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 2,
+      "cursor": 210,
+      "equal": true,
+      "unchanged": true,
+      "commands": 63,
+      "state": 756656725,
+      "costs": {
+        "before": [
+          0.0441666670764486,
+          0.03687500022351742,
+          0.035208333283662796
+        ],
+        "after": [
+          0.01708333194255829,
+          0.016249999403953552,
+          0.018124999788900215
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 34,
+          "drawArrays": 34,
+          "bindTexture": 34,
+          "uniform1i": 34,
+          "blendEquation": 34,
+          "blendFunc": 34,
+          "scissor": 35
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 34,
+          "bindTexture": 34,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 2,
+      "cursor": 800,
+      "equal": true,
+      "unchanged": true,
+      "commands": 184,
+      "state": 2055063675,
+      "costs": {
+        "before": [
+          0.07895833378036816,
+          0.08166666701436043,
+          0.1254166653379798
+        ],
+        "after": [
+          0.038333334339161716,
+          0.04437499990065893,
+          0.06687499893208344
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 65,
+          "drawArrays": 65,
+          "bindTexture": 65,
+          "uniform1i": 65,
+          "blendEquation": 65,
+          "blendFunc": 65,
+          "scissor": 66
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 65,
+          "bindTexture": 65,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 1,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 3,
+      "cursor": 150,
+      "equal": true,
+      "unchanged": true,
+      "commands": 91,
+      "state": 3320112927,
+      "costs": {
+        "before": [
+          0.13312500032285848,
+          0.08354166708886623,
+          0.06916666713853677
+        ],
+        "after": [
+          0.04416666552424431,
+          0.06250000031044085,
+          0.05208333364377419
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 52,
+          "drawArrays": 52,
+          "bindTexture": 52,
+          "uniform1i": 52,
+          "blendEquation": 52,
+          "blendFunc": 52,
+          "scissor": 53
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 52,
+          "bindTexture": 52,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 1,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 3,
+      "cursor": 210,
+      "equal": true,
+      "unchanged": true,
+      "commands": 104,
+      "state": 1165722407,
+      "costs": {
+        "before": [
+          0.14333333385487398,
+          0.13750000204890966,
+          0.07791666655490796
+        ],
+        "after": [
+          0.059166666120290756,
+          0.0314583337555329,
+          0.03291666693985462
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 64,
+          "drawArrays": 64,
+          "bindTexture": 64,
+          "uniform1i": 64,
+          "blendEquation": 64,
+          "blendFunc": 64,
+          "scissor": 65
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 64,
+          "bindTexture": 64,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 3,
+      "cursor": 800,
+      "equal": true,
+      "unchanged": true,
+      "commands": 107,
+      "state": 1220883864,
+      "costs": {
+        "before": [
+          0.07291666666666667,
+          0.07020833374311526,
+          0.0664583332836628
+        ],
+        "after": [
+          0.02916666679084301,
+          0.02770833329608043,
+          0.13833333365619183
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 78,
+          "drawArrays": 78,
+          "bindTexture": 78,
+          "uniform1i": 78,
+          "blendEquation": 78,
+          "blendFunc": 78,
+          "scissor": 79
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 78,
+          "bindTexture": 78,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 1,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 4,
+      "cursor": 150,
+      "equal": true,
+      "unchanged": true,
+      "commands": 125,
+      "state": 4191356143,
+      "costs": {
+        "before": [
+          0.11562500024835269,
+          0.08666666659216087,
+          0.06020833427707354
+        ],
+        "after": [
+          0.10104166685293119,
+          0.054166666542490326,
+          0.04520833430190881
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 49,
+          "drawArrays": 49,
+          "bindTexture": 49,
+          "uniform1i": 49,
+          "blendEquation": 49,
+          "blendFunc": 49,
+          "scissor": 50
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 49,
+          "bindTexture": 49,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 4,
+      "cursor": 210,
+      "equal": true,
+      "unchanged": true,
+      "commands": 177,
+      "state": 3318366867,
+      "costs": {
+        "before": [
+          0.06395833318432172,
+          0.054999999701976776,
+          0.054166666542490326
+        ],
+        "after": [
+          0.03291666693985462,
+          0.04250000106791655,
+          0.031458333134651184
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 33,
+          "drawArrays": 33,
+          "bindTexture": 33,
+          "uniform1i": 33,
+          "blendEquation": 33,
+          "blendFunc": 33,
+          "scissor": 34
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 33,
+          "bindTexture": 33,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 5,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 4,
+      "cursor": 800,
+      "equal": true,
+      "unchanged": true,
+      "commands": 94,
+      "state": 3125205229,
+      "costs": {
+        "before": [
+          0.08437500055879354,
+          0.08187500014901161,
+          0.07083333283662796
+        ],
+        "after": [
+          0.03041666777183612,
+          0.04249999982615312,
+          0.028749999590218067
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 67,
+          "drawArrays": 67,
+          "bindTexture": 67,
+          "uniform1i": 67,
+          "blendEquation": 67,
+          "blendFunc": 67,
+          "scissor": 68
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 67,
+          "bindTexture": 67,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 1,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 5,
+      "cursor": 150,
+      "equal": true,
+      "unchanged": true,
+      "commands": 89,
+      "state": 1777432533,
+      "costs": {
+        "before": [
+          0.1149999996026357,
+          0.10145833343267441,
+          0.09333333279937506
+        ],
+        "after": [
+          0.04124999884516001,
+          0.030208333395421505,
+          0.031250000620881714
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 49,
+          "drawArrays": 49,
+          "bindTexture": 49,
+          "uniform1i": 49,
+          "blendEquation": 49,
+          "blendFunc": 49,
+          "scissor": 50
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 49,
+          "bindTexture": 49,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 1,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 5,
+      "cursor": 210,
+      "equal": true,
+      "unchanged": true,
+      "commands": 122,
+      "state": 112853837,
+      "costs": {
+        "before": [
+          0.056041667548318706,
+          0.07333333386729161,
+          0.05541666659216086
+        ],
+        "after": [
+          0.05895833267519871,
+          0.05875000140319268,
+          0.028541666145126026
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 33,
+          "drawArrays": 33,
+          "bindTexture": 33,
+          "uniform1i": 33,
+          "blendEquation": 33,
+          "blendFunc": 33,
+          "scissor": 34
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 33,
+          "bindTexture": 33,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 5,
+      "cursor": 800,
+      "equal": true,
+      "unchanged": true,
+      "commands": 94,
+      "state": 4210416403,
+      "costs": {
+        "before": [
+          0.08958333327124517,
+          0.07312500011175871,
+          0.0754166670764486
+        ],
+        "after": [
+          0.043541665809849896,
+          0.02895833303531011,
+          0.029375001477698486
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 67,
+          "drawArrays": 67,
+          "bindTexture": 67,
+          "uniform1i": 67,
+          "blendEquation": 67,
+          "blendFunc": 67,
+          "scissor": 68
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 67,
+          "bindTexture": 67,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 1,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 6,
+      "cursor": 150,
+      "equal": true,
+      "unchanged": true,
+      "commands": 263,
+      "state": 2701222125,
+      "costs": {
+        "before": [
+          0.08000000038494666,
+          0.08604166656732559,
+          0.07833333468685548
+        ],
+        "after": [
+          0.04645833373069763,
+          0.08666666690260172,
+          0.04583333401630322
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 46,
+          "drawArrays": 46,
+          "bindTexture": 46,
+          "uniform1i": 46,
+          "blendEquation": 46,
+          "blendFunc": 46,
+          "scissor": 47
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 46,
+          "bindTexture": 46,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 6,
+      "cursor": 210,
+      "equal": true,
+      "unchanged": true,
+      "commands": 293,
+      "state": 2367044096,
+      "costs": {
+        "before": [
+          0.12854166608303785,
+          0.10375000070780516,
+          0.08833333384245634
+        ],
+        "after": [
+          0.06833333366860946,
+          0.05250000084439913,
+          0.06083333368102709
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 51,
+          "drawArrays": 51,
+          "bindTexture": 51,
+          "uniform1i": 51,
+          "blendEquation": 51,
+          "blendFunc": 51,
+          "scissor": 52
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 51,
+          "bindTexture": 51,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 5,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 6,
+      "cursor": 800,
+      "equal": true,
+      "unchanged": true,
+      "commands": 299,
+      "state": 1989416964,
+      "costs": {
+        "before": [
+          0.1120833329235514,
+          0.12958333361893892,
+          0.11500000022351742
+        ],
+        "after": [
+          0.05416666685293118,
+          0.056249999130765595,
+          0.23374999966472387
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 79,
+          "drawArrays": 79,
+          "bindTexture": 79,
+          "uniform1i": 79,
+          "blendEquation": 79,
+          "blendFunc": 79,
+          "scissor": 80
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 79,
+          "bindTexture": 79,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 7,
+      "cursor": 150,
+      "equal": true,
+      "unchanged": true,
+      "commands": 2629,
+      "state": 3320112927,
+      "costs": {
+        "before": [
+          0.5014583328738809,
+          0.5464583334202567,
+          0.5043749998634061
+        ],
+        "after": [
+          0.3756250003352761,
+          0.451041666790843,
+          0.42916666716337204
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 51,
+          "drawArrays": 51,
+          "bindTexture": 51,
+          "uniform1i": 51,
+          "blendEquation": 51,
+          "blendFunc": 51,
+          "scissor": 52
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 51,
+          "bindTexture": 51,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 7,
+      "cursor": 210,
+      "equal": true,
+      "unchanged": true,
+      "commands": 4840,
+      "state": 1350366170,
+      "costs": {
+        "before": [
+          0.7685416666790843,
+          0.7962499996647239,
+          0.8304166666542491
+        ],
+        "after": [
+          1.0041666670391958,
+          0.6272916669646899,
+          0.707916667064031
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 41,
+          "drawArrays": 41,
+          "bindTexture": 41,
+          "uniform1i": 41,
+          "blendEquation": 41,
+          "blendFunc": 41,
+          "scissor": 42
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 41,
+          "bindTexture": 41,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 7,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 7,
+      "cursor": 800,
+      "equal": true,
+      "unchanged": true,
+      "commands": 2629,
+      "state": 1384174191,
+      "costs": {
+        "before": [
+          0.4195833336561918,
+          0.5762500005463759,
+          0.40333333301047486
+        ],
+        "after": [
+          0.3802083330228925,
+          0.43104166630655527,
+          0.36812499941637117
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 58,
+          "drawArrays": 58,
+          "bindTexture": 58,
+          "uniform1i": 58,
+          "blendEquation": 58,
+          "blendFunc": 58,
+          "scissor": 59
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 58,
+          "bindTexture": 58,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 8,
+      "cursor": 150,
+      "equal": true,
+      "unchanged": true,
+      "commands": 129,
+      "state": 1947217593,
+      "costs": {
+        "before": [
+          0.07250000070780516,
+          0.06729166768491268,
+          0.0664583332836628
+        ],
+        "after": [
+          0.03458333356926838,
+          0.03374999947845936,
+          0.03187499971439441
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 45,
+          "drawArrays": 45,
+          "bindTexture": 45,
+          "uniform1i": 45,
+          "blendEquation": 45,
+          "blendFunc": 45,
+          "scissor": 46
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 45,
+          "bindTexture": 45,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 3,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 8,
+      "cursor": 210,
+      "equal": true,
+      "unchanged": true,
+      "commands": 69,
+      "state": 3399429454,
+      "costs": {
+        "before": [
+          0.053125000248352684,
+          0.04937499947845936,
+          0.04770833378036817
+        ],
+        "after": [
+          0.023125000298023224,
+          0.021874999937911827,
+          0.02312499936670065
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 40,
+          "drawArrays": 40,
+          "bindTexture": 40,
+          "uniform1i": 40,
+          "blendEquation": 40,
+          "blendFunc": 40,
+          "scissor": 41
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 40,
+          "bindTexture": 40,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 5,
+          "scissor": 3
+        }
+      }
+    },
+    {
+      "variant": 8,
+      "cursor": 800,
+      "equal": true,
+      "unchanged": true,
+      "commands": 86,
+      "state": 3212600009,
+      "costs": {
+        "before": [
+          0.07083333345750968,
+          0.07895833315948646,
+          0.07583333365619183
+        ],
+        "after": [
+          0.02854166676600774,
+          0.028333333941797417,
+          0.028333333010474842
+        ]
+      },
+      "calls": {
+        "before": {
+          "bufferData": 66,
+          "drawArrays": 66,
+          "bindTexture": 66,
+          "uniform1i": 66,
+          "blendEquation": 66,
+          "blendFunc": 66,
+          "scissor": 67
+        },
+        "after": {
+          "bufferData": 1,
+          "drawArrays": 66,
+          "bindTexture": 66,
+          "uniform1i": 4,
+          "blendEquation": 1,
+          "blendFunc": 5,
+          "scissor": 3
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "browser": "Edg/158.0.4370.45",
+  "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Ti (0x00002803) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "commandPreparation": {
+    "spritesPerFrame": 1200,
+    "beforeMs": 0.9562499998137355,
+    "afterMs": 0.39874999939153594,
+    "samples": {
+      "before": [
+        0.760000005364418,
+        0.7650000005960464,
+        0.7650000005960464,
+        0.7650000005960464,
+        0.7699999958276749,
+        0.7700000032782555,
+        0.7749999985098839,
+        0.7749999985098839,
+        0.7749999985098839,
+        0.7800000011920929,
+        0.7800000011920929,
+        0.7800000011920929,
+        0.7899999991059303,
+        0.7900000065565109,
+        0.7950000017881393,
+        0.7950000017881393,
+        0.8049999997019768,
+        0.8100000023841858,
+        0.8150000050663948,
+        0.8200000002980232,
+        0.8350000008940697,
+        0.875,
+        0.8999999985098839,
+        0.989999994635582,
+        1.0599999949336052,
+        1.0600000023841858,
+        1.0850000008940697,
+        1.1699999943375587,
+        1.1749999970197678,
+        1.1999999955296516,
+        1.2150000035762787,
+        1.8499999940395355,
+        1.8499999940395355,
+        1.8599999994039536,
+        1.910000003874302,
+        1.9400000050663948,
+        2.0349999964237213,
+        2.0700000002980232,
+        3.6700000017881393,
+        4.950000002980232
+      ],
+      "after": [
+        0.3199999928474426,
+        0.3200000002980232,
+        0.3200000002980232,
+        0.32499999552965164,
+        0.32500000298023224,
+        0.32500000298023224,
+        0.32999999821186066,
+        0.32999999821186066,
+        0.32999999821186066,
+        0.32999999821186066,
+        0.3399999961256981,
+        0.3399999961256981,
+        0.3449999988079071,
+        0.3449999988079071,
+        0.3450000062584877,
+        0.3499999940395355,
+        0.3500000014901161,
+        0.35999999940395355,
+        0.375,
+        0.375,
+        0.3799999952316284,
+        0.380000002682209,
+        0.39000000059604645,
+        0.42000000178813934,
+        0.42500000447034836,
+        0.4399999976158142,
+        0.4450000002980232,
+        0.4450000002980232,
+        0.45000000298023224,
+        0.4649999961256981,
+        0.5349999964237213,
+        0.6099999994039536,
+        0.6349999979138374,
+        0.6499999985098839,
+        0.6650000065565109,
+        0.6750000044703484,
+        0.6950000002980232,
+        0.7199999988079071,
+        0.8500000014901161,
+        2.6700000017881393
+      ]
+    }
+  },
+  "result": "passed",
+  "summary": {
+    "drawBeforeMs": 0.08187500014901161,
+    "drawAfterMs": 0.04437499990065893,
+    "drawReduction": 0.4580152693753049,
+    "pixelComparisons": 81,
+    "logicAndCommandSnapshotsUnchanged": true,
+    "vertexUploadsBefore": [
+      33,
+      79
+    ],
+    "vertexUploadsAfter": 1,
+    "wasmSha256": "08dbae188106b4858eeec43946edf12c26dcb5d2339a2e66995ff2dddc0d1b8e"
+  }
+}

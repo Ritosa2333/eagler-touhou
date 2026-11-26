@@ -1,6 +1,6 @@
 # 文档总表
 
-共 695 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 696 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -528,6 +528,7 @@
 | 历史记录 | [archive/thkkd-performance-20261126/DELIVERY.md](../archive/thkkd-performance-20261126/DELIVERY.md) | 海惠堂网页单机 r6 验收 |
 | 历史记录 | [archive/thkkd-performance-20261126/README.md](../archive/thkkd-performance-20261126/README.md) | 海惠堂 Web 性能与完整录像验收 |
 | 历史记录 | [archive/thkkd-quality-mp-20261126/README.md](../archive/thkkd-quality-mp-20261126/README.md) | 海惠堂网页单机质量验收 |
+| 历史记录 | [archive/thkkd-render-overhead-20261126/README.md](../archive/thkkd-render-overhead-20261126/README.md) | 東方海恵堂绘制开销验证 |
 | 历史记录 | [archive/thkkd-rendering-20261126/DELIVERY.md](../archive/thkkd-rendering-20261126/DELIVERY.md) | 海惠堂网页单机显示验收 |
 | 历史记录 | [archive/thkkd-rendering-20261126/README.md](../archive/thkkd-rendering-20261126/README.md) | 海惠堂网页显示对照 |
 | 历史记录 | [archive/thkkd-web-20261126/README.md](../archive/thkkd-web-20261126/README.md) | 海惠堂网页单机验证 |
