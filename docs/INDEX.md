@@ -1,6 +1,6 @@
 # 文档总表
 
-共 701 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 702 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -532,6 +532,7 @@
 | 历史记录 | [archive/thkkd-render-overhead-20261126/README.md](../archive/thkkd-render-overhead-20261126/README.md) | 東方海恵堂绘制开销验证 |
 | 历史记录 | [archive/thkkd-rendering-20261126/DELIVERY.md](../archive/thkkd-rendering-20261126/DELIVERY.md) | 海惠堂网页单机显示验收 |
 | 历史记录 | [archive/thkkd-rendering-20261126/README.md](../archive/thkkd-rendering-20261126/README.md) | 海惠堂网页显示对照 |
+| 历史记录 | [archive/thkkd-replay-entry-20261127/README.md](../archive/thkkd-replay-entry-20261127/README.md) | 東方海恵堂 Omniverse 录像选关 |
 | 历史记录 | [archive/thkkd-web-20261126/README.md](../archive/thkkd-web-20261126/README.md) | 海惠堂网页单机验证 |
 | 历史记录 | [archive/thkkd-web-only-20261126/BATCH-VALIDATION.md](../archive/thkkd-web-only-20261126/BATCH-VALIDATION.md) | 東方海恵堂批量导入与运行验证 |
 | 历史记录 | [archive/thkkd-web-only-20261126/R5-FINAL.md](../archive/thkkd-web-only-20261126/R5-FINAL.md) | 東方海恵堂 r5 最终验收 |

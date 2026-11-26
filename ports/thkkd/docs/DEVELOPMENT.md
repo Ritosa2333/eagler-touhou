@@ -29,6 +29,8 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 `.rpy` 保持原格式。`.thkkdr` 以 `THKKDR1\0` 开始，随后是 little-endian JSON 长度、版本 `thkkd/extended-replay/1` 的元数据和完整原生录像。元数据包含原生流 SHA-256、递增游标与坐标。播放器按原生 `cursor + 1 == count` 停止条件报告结束，播放、暂停、快进和定位共用原生状态机。
 
+Omniverse 回放在共用原生载入流程中，用录像尾部第 5 个 DWORD 的 Boss 编号恢复菜单选关，再初始化对应挑战。恢复限定于难度 5、关卡 7、编号 0～7，覆盖游戏内 Replay 菜单、网页工作台及扩展录像。Practice 返回后沿用原残机和 Bomb 数量的行为保持原样。
+
 原生存档、配置与录像写入关闭后同步 IndexedDB。游戏文件通过共用启动器导入导出，存档与录像均支持多选。存档批次核对目标文件后统一确认覆盖并重启校验；录像批次在同一个文件会话中预留空闲名称，再写入和刷新工作台。原作 Practice 与 Omniverse 保留在游戏菜单内，MIDI、语言包和通用 THPrac 按产品登记范围显示。
 
 详情页使用启动器的 `thkkd-progress` 解析器读取 `th_kaikeidou01.dat`：前 56 字节是键位与设置，随后为五难度、三角色、三武器、七关的 DWORD 进度。Easy～Lunatic 读取第六面结果，Extra 读取第七面结果，数值 1 为续关通关，2 为不续关通关。读取使用只读事务，页面刷新与原存档写入相互独立。
@@ -49,6 +51,8 @@ node tools/ports/check.mjs --game=thkkd --variant=normal
 `original-import-browser.mjs` 用 `--dat=路径 --bgm=路径` 或 `--zip=路径` 检查真实文件选择器、安装、开局和离线复用。`files-ui-browser.mjs` 检查存档与录像导入导出，`flow-browser.mjs` 检查原生录像保存与持久化，`system-browser.mjs` 检查机体、关卡入口和媒体，`dialogue-browser.mjs` 检查对话操作，`playback-cadence-browser.mjs` 检查播放、暂停与快进。
 
 `replay-regression-browser.mjs --url=站点 --replays=本机录像目录 --output=结果目录` 对完整原版录像逐步核对游标、随机数和对象摘要。数学或核心状态调整时，使用 `build-eagler.mjs --probe`、`verify-wasm.py --archive=本机采样目录 --all` 和相关浏览器录像回归。原始采样与录像作为本机验证输入保留。
+
+录像载入或选关变更运行 `node ports/thkkd/tests/replay-entry-browser.mjs --replay=本机Omniverse录像 --output=结果目录`。该脚本使用 normal Runtime 和独立后台浏览器，检查两个入口的八挑战、三角色，Practice 残留选项、普通／练习／EX 载入、编号边界、扩展录像，以及指定原生录像的连续播放、定位重开和结束。资源默认复用 `build/web-content/thkkd.data`，可用 `--data=路径` 指定；用 `--runtime=路径` 检查交付包中的 Runtime。
 
 `verify-wasm.py` 核对 EXE、DXA、录像和原始采样哈希，逐区域重建固定基准并比较候选输出。结果默认写入新的 `build/verification` 目录，也可用 `--output=新目录` 指定；`--case=corpus-05 --inject=1:player:20` 注入候选残机字段差异，用于验证首个差异采样帧、字段与字节偏移的报告。当前基准按实际采样帧比较，原始输入保持固定。
 

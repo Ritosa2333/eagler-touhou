@@ -36,6 +36,8 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 游戏详情页直接读取本地原生存档，展示九种机体在 Easy、Normal、Hard、Lunatic、Extra 的通关进度，区分续关通关与不续关通关。导入存档或退出游戏后，可用进度表的“刷新”按钮重新读取。
 
+Omniverse 录像在游戏内 Replay 菜单和网页录像工作台中，均按文件保存的 Boss 编号恢复挑战，并按录制机体选择对应符卡。
+
 默认方向键移动、Z 射击或确认、X Bomb 或取消、Shift 低速、Esc 暂停；暂停时 R 重开。网页对话支持 Z、Enter、Ctrl 和触控确认。输入映射与录像规则见开发指南。
 
 ## 源码与依赖

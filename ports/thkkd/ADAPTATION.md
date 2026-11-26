@@ -97,7 +97,7 @@
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| REPLAY-01 | [导入原版 Replay](../../docs/adaptation/storage.md#replay-01) | 已验证 | normal：兼容 rep 系统版的原生 .rpy，17 份录像实际连续播放到最后输入；[完整录像与文件管理](../../archive/thkkd-web-only-20261126/BATCH-VALIDATION.md)。 |
+| REPLAY-01 | [导入原版 Replay](../../docs/adaptation/storage.md#replay-01) | 已验证 | normal：兼容 rep 系统版的原生 .rpy；Omniverse 按保存的 Boss 编号恢复挑战，两个入口的八挑战、三角色和实际录像通过[选关验收](../../archive/thkkd-replay-entry-20261127/README.md)。17 份录像实际连续播放到最后输入；[完整录像与文件管理](../../archive/thkkd-web-only-20261126/BATCH-VALIDATION.md)。 |
 | REPLAY-02 | [按原版格式导出可表达输入](../../docs/adaptation/storage.md#replay-02) | 已验证 | normal：原生菜单完成录像询问、槽位和署名保存，导出 .rpy 并重新读取／播放通过；[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)。 |
 | REPLAY-03 | [记录实际生效输入](../../docs/adaptation/storage.md#replay-03) | 已验证 | normal：生产手柄映射记录实际射击、方向和低速位，原生保存和回放通过；触控坐标及落率元数据往返通过。 [专项验收](../../archive/thkkd-adaptation-20261127/README.md)。 |
 | REPLAY-04 | [扩展格式与版本](../../docs/adaptation/storage.md#replay-04) | 已验证 | normal：.thkkdr 版本、原生流哈希和坐标记录检查，实际录制回放及扩展录像播至结束通过；[网页接入验收](../../archive/thkkd-web-20261126/README.md)、[完整录像与文件管理](../../archive/thkkd-web-only-20261126/BATCH-VALIDATION.md)。 |
@@ -172,7 +172,7 @@
 
 ## 运行验收记录
 
-r8 在 r7-final 基础上完善 GPU 高刷显示与插帧，结果见[高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)；此前在 `f0013c1c` 基础上补齐网页单机功能，专项结果见[适配验收](../../archive/thkkd-adaptation-20261127/README.md)。测试使用独立站点、专用浏览器数据和后台 Edge，原版资源由实际双 DXA 导入。既有完整录像与文件管理记录继续对应各行已验收范围。
+r9 补齐 Omniverse 录像选关恢复，结果见[录像选关验收](../../archive/thkkd-replay-entry-20261127/README.md)。r8 在 r7-final 基础上完善 GPU 高刷显示与插帧，结果见[高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)；此前在 `f0013c1c` 基础上补齐网页单机功能，专项结果见[适配验收](../../archive/thkkd-adaptation-20261127/README.md)。测试使用独立站点、专用浏览器数据和后台 Edge，原版资源由实际双 DXA 导入。既有完整录像与文件管理记录继续对应各行已验收范围。
 
 触控事件通过 DevTools 和正式共用控件注入，手柄使用虚拟标准设备及生产映射；高刷新使用 60／120／144／240 Hz 的可重复调度。实体触屏、手柄及高刷显示器的体验单独验收。
 

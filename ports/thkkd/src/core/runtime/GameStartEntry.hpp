@@ -60,7 +60,12 @@ inline GameStartEntryOutcome enter_game_start_scene99(GameStartEntryRefs& refs,G
      return m.outcome(GameStartEntryOutcomeKind::original_failure_transfer,0x64423d);
     }
     m.call(GameStartEntryPlatformApi::close_handle,{reg.edi},0xb4281e);m.popad();
-    if(memory.word(0xb3e2ec)==7){memory.word(0xa8cd70,0x400);memory.word(0xa8cd80,0);memory.word(0xa8cd7c,0);}
+    if(memory.word(0xb3e2ec)==7){
+     memory.word(0xa8cd70,0x400);memory.word(0xa8cd80,0);memory.word(0xa8cd7c,0);
+     // Omniverse 初始化读取菜单选关；在 Boss 字段清零前恢复录像保存的编号。
+     const auto recorded_boss=memory.word(0xa7ea50);
+     if(memory.word(0xa7e610)==5&&recorded_boss<8)memory.word(0xa87f30,recorded_boss);
+    }
     else if(memory.word(0xb3e2ec)!=6&&memory.word(0xb43255)!=2)memory.word(0xb3e2ec,0);
     memory.word(0xb41215,0);memory.word(0xa87f40,0);
    }

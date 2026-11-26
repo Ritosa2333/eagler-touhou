@@ -29,7 +29,7 @@ def source_files():
             continue
         if path.parts[0]=='ports' and path.parts[1]!='thkkd':
             continue
-        if path.parts[0]=='archive' and (len(path.parts)<3 or path.parts[1] not in {'thkkd-web-20261126','thkkd-quality-mp-20261126','thkkd-rendering-20261126','thkkd-performance-20261126','thkkd-cpu-performance-20261126','thkkd-import-20261126','thkkd-original-import-20261126','thkkd-render-overhead-20261126','thkkd-web-only-20261126','thkkd-adaptation-20261127','thkkd-high-refresh-20261127'} or path.name=='baseline.json'):
+        if path.parts[0]=='archive' and (len(path.parts)<3 or path.parts[1] not in {'thkkd-web-20261126','thkkd-quality-mp-20261126','thkkd-rendering-20261126','thkkd-performance-20261126','thkkd-cpu-performance-20261126','thkkd-import-20261126','thkkd-original-import-20261126','thkkd-render-overhead-20261126','thkkd-web-only-20261126','thkkd-adaptation-20261127','thkkd-high-refresh-20261127','thkkd-replay-entry-20261127'} or path.name=='baseline.json'):
             continue
         if path.name in {'test-th09-spectator-continuity.mjs','test-th09-spectator-directory.mjs','test-th09-spectator-panel.mjs','test-th09-spectator-timeline.mjs'}:
             continue
