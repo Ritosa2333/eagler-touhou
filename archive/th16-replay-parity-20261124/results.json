@@ -1094,7 +1094,7 @@
       "original_digest_fields_matched": 20,
       "reference": "item-assertions.json"
     },
-    "expanded_suite_notes": "Broader diagnostic run stopped after missing ANM reference dumps and outdated demo replay golden mismatches. Demo replay expectations subsequently verified against original and updated. Full suite remains unverified.",
+    "expanded_suite_notes": "Broader diagnostic run stopped after missing ANM reference dumps and outdated demo replay golden mismatches. Demo replay expectations subsequently verified against original and updated. Merged-branch verification covers 126 checks with 0 failures; 21 long-draw references are retained pending regeneration and skipped by the draw-long test.",
     "demo_replay_original_digest_fields_matched": 60,
     "demo_reference": "demo-assertions.json"
   },

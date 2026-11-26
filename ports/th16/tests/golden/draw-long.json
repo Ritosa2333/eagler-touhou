@@ -1,5 +1,5 @@
 {
- "$comment": "整段绘制对拍（tests/draw-long.test.mjs）：原版 game-oracle.py --draw --draw-digest 的逐帧摘要与移植侧比较后，通过的帧按量化网格折成段；每段 [起帧, 止帧, 网格 a / b, 段摘要]。生成：tools/oracle/draw-compare.py <oracle.digest.jsonl> <port.digest.jsonl> --compare-digests --golden-segments",
+ "$comment": "整段绘制对拍（tests/draw-long.test.mjs）：原版 game-oracle.py --draw --draw-digest 的逐帧摘要与移植侧比较后，通过的帧按量化网格折成段；每段 [起帧, 止帧, 网格 a / b, 段摘要]。生成：tools/oracle/draw-compare.py <oracle.digest.jsonl> <port.digest.jsonl> --compare-digests --golden-segments。\"verified\" 标记已按当前原版重采并通过回归的参考；未标记的参考保留上一轮摘要，待重采后纳入断言。",
  "cases": [
   {
    "name": "st1-easy-reimu-spring-idle-23000",
@@ -247,7 +247,8 @@
      "a",
      "f90b161fe040fd04fc06ad7cb8b71db19a0f5a98"
     ]
-   ]
+   ],
+   "verified": true
   },
   {
    "name": "st1-easy-reimu-spring-fire-23000",
@@ -495,7 +496,8 @@
      "a",
      "c154e43170d1ab66c03288774c82bccf9069dfdb"
     ]
-   ]
+   ],
+   "verified": true
   },
   {
    "name": "st1-lunatic-aya-autumn-idle-21500",
@@ -725,7 +727,8 @@
      "a",
      "adf80254574611ae10aab32fad0e5ad7bddfef73"
     ]
-   ]
+   ],
+   "verified": true
   },
   {
    "name": "st2-easy-reimu-spring-idle-29000",
@@ -1033,7 +1036,8 @@
      "a",
      "896ccd6036adcc61eb297877f372d2883864d6b8"
     ]
-   ]
+   ],
+   "verified": true
   },
   {
    "name": "st2-easy-reimu-spring-fire-29000",
@@ -1341,7 +1345,8 @@
      "a",
      "7497608a46a1f8e2aaf2b1e5307610ccd9a9d794"
     ]
-   ]
+   ],
+   "verified": true
   },
   {
    "name": "st2-hard-cirno-winter-idle-29500",
@@ -1655,7 +1660,8 @@
      "a",
      "4056f9b75cf08ba98d600abf8a4224fcaac454f9"
     ]
-   ]
+   ],
+   "verified": true
   },
   {
    "name": "st3-easy-reimu-spring-idle-40200",
@@ -2071,7 +2077,8 @@
      "a",
      "106f3870c583f95ca8ec837ff040cdf798d7efe0"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st3-easy-reimu-spring-fire-40200",
@@ -2487,7 +2494,8 @@
      "a",
      "44fb82fab9b01c9e3053c213a86a16de5d2a9f7c"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st3-normal-marisa-summer-idle-39000",
@@ -2891,7 +2899,8 @@
      "a",
      "62a199e9eaac8211c629ccc6ce13ea34b0bf4bd0"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st4-easy-reimu-spring-idle-42800",
@@ -3337,7 +3346,8 @@
      "a",
      "f23c47c06cc988aa9c6a8028659857aafbb9d98f"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st4-easy-reimu-spring-fire-42800",
@@ -3783,7 +3793,8 @@
      "a",
      "fb659e939ac3f0c6c2a95886717203b08e4bacfa"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st4-lunatic-marisa-doyou-idle-46400",
@@ -4265,7 +4276,8 @@
      "a",
      "d0535a65624580f88b1a1802b067fe097d41a5e7"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st5-easy-reimu-spring-idle-50600",
@@ -4789,7 +4801,8 @@
      "a",
      "172b43f299a623baf1af57c57dc90acc75a6070a"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st5-easy-reimu-spring-fire-50600",
@@ -5313,7 +5326,8 @@
      "a",
      "9a9e0184fcba6d567fc837adb72acd421c5389d2"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st5-hard-reimu-winter-idle-50600",
@@ -5837,7 +5851,8 @@
      "a",
      "3db3bab09c5970dc87c2476305db2bf17cfb566a"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st6-easy-reimu-spring-idle-58248",
@@ -6439,7 +6454,8 @@
      "a",
      "b3188e8bdc8bdd382838d79e53bd0884a489cea3"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st6-easy-reimu-spring-fire-58248",
@@ -7041,7 +7057,8 @@
      "a",
      "f7ca3e7f037f4a4ab5150324e21358df334e878e"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "st6-normal-aya-summer-idle-57641",
@@ -7637,7 +7654,8 @@
      "a",
      "f54f1bd277e27387411d99e76c9a1f02ab6aafc0"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "extra-doyou-reimu-idle-153497",
@@ -9187,7 +9205,8 @@
      "a",
      "11d1a59393d7efd4836975fa7d8cc5aa44e44ec1"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "extra-doyou-reimu-fire-107735",
@@ -10281,7 +10300,8 @@
      "a",
      "c4873ecb3a307269a1386d2a2d84548f0628b849"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "extra-doyou-cirno-spring-idle-141968",
@@ -11717,7 +11737,8 @@
      "a",
      "e118beb90959ca490acc0309f918b68d6fad608a"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "full-game-easy-reimu-spring-idle-to-ending-190600",
@@ -13639,7 +13660,8 @@
      "a",
      "b7835a145ddaf15103d1eeb4e72ed2a2a06f0854"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "clear-st1-easy-reimu-spring-to-st2-24000",
@@ -13893,7 +13915,8 @@
      "a",
      "082e0927d85dd1b0226e5ee04fc6d94a34faf1b2"
     ]
-   ]
+   ],
+   "verified": true
   },
   {
    "name": "clear-st2-normal-cirno-summer-to-st3-24000",
@@ -14147,7 +14170,8 @@
      "a",
      "02242b16f493caa062355c8316fb7230c86509df"
     ]
-   ]
+   ],
+   "verified": true
   },
   {
    "name": "clear-st3-easy-reimu-spring-to-st4-45000",
@@ -14611,7 +14635,8 @@
      "a",
      "e4a42a6fa7ad5452c475d0d72c0a42edf97b98cf"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "clear-st4-easy-reimu-spring-to-st5-45000",
@@ -15075,7 +15100,8 @@
      "a",
      "48803aab20b70f6b226f1ef861fcf77a8f9736c2"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "clear-st5-easy-reimu-spring-to-st6-50000",
@@ -15593,7 +15619,8 @@
      "a",
      "3ce4d6a0963bc8f4314e8fc532089845a394612f"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "clear-st6-easy-aya-winter-to-ending-40279",
@@ -16015,7 +16042,8 @@
      "a",
      "9fb0cecf769207e19263873decffc7e343db70a9"
     ]
-   ]
+   ],
+   "verified": false
   },
   {
    "name": "clear-st6-easy-reimu-spring-tapfire-to-ending",
@@ -16437,7 +16465,8 @@
      "a",
      "2dbde60030b0fcd3527433732651cc5196a3adfb"
     ]
-   ]
+   ],
+   "verified": false
   }
  ]
 }
