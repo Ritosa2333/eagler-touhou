@@ -669,6 +669,7 @@ function startSpectatorGrace(roomId, room, runId, run) {
 function acceptTh075SpectatorPayload(roomId, runId, room, run, payload) {
   if (!roomId.startsWith('th075mp-') || run.playerCount !== 2) return false;
   const control = payload.length === 6 && payload.subarray(0, 5).equals(TH075_SPECTATOR_CONTROL);
+  const marker = payload.length === 12 && payload.subarray(0, 5).equals(TH075_SPECTATOR_CONTROL) && payload[5] === 3;
   if (control && payload[5] === 1) {
     if (!run.th075Spectator && !run.ended && run.memberIds && String(room.lobby.startSerial) === runId) {
       clearTimeout(run.spectatorGraceTimer);
@@ -688,6 +689,12 @@ function acceptTh075SpectatorPayload(roomId, runId, room, run, payload) {
     if (!stream.nextFrame) return true;
     run.spectatorComplete = true;
     run.spectatorAdmissionOpen = false;
+  } else if (marker) {
+    const frame = payload.readUInt32LE(6), round = payload.readUInt16LE(10);
+    if (!stream.timing || !stream.nextFrame || frame !== stream.nextFrame || round > 255 || frame === stream.lastMarker ||
+        (round && (stream.lastRound === undefined || round !== stream.lastRound + 1))) return true;
+    stream.lastMarker = frame;
+    stream.lastRound = round;
   } else if (!isSpectatorFrameForRoom(roomId, payload, run.playerCount)) {
     return true;
   } else if (payload.length === 40) {
@@ -714,7 +721,7 @@ function acceptTh075SpectatorPayload(roomId, runId, room, run, payload) {
     run.spectatorTimeline = true;
     broadcastLobby(room);
     for (const [id, socket] of room.lobbyClients) {
-      if (!room.lobby.spectators.has(id) || run.admittedSpectators.has(id)) continue;
+      if (!room.lobby.spectators.has(id) || run.claimedSpectators.has(id)) continue;
       run.admittedSpectators.add(id);
       run.memberIds.set(id, roomDirectory.memberIdFor(roomId, id));
       sendLobby(socket, {type: 'spectator-start', serial: room.lobby.startSerial, room: lobbySnapshot(room)});
@@ -726,7 +733,7 @@ function acceptTh075SpectatorPayload(roomId, runId, room, run, payload) {
 }
 
 const TH075_SPECTATOR_HISTORY_LIMITS = {
-  historyFrames: 108002, // Timing, 30 minutes at 60 Hz, and the terminal marker.
+  historyFrames: 108514, // Timing, 30 minutes at 60 Hz, and timeline markers.
   historyBytes: 6 * 1024 * 1024,
 };
 
@@ -1585,7 +1592,7 @@ function lobbySnapshot(room) {
             clientId: seat.clientId,
             name: seat.name || '',
             profile: publicRoomProfile(room, seat.clientId),
-            ...(/^th(?:03|09|19)mp-/.test(room.id)
+            ...(/^th(?:03|075|09|19)mp-/.test(room.id)
               ? { stats: th09PlayerStats(room, seat.clientId) }
               : {}),
             loadout: seat.loadout,
@@ -2303,7 +2310,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       if (
         (room.lobby.phase === 'running' || run?.th09Duel) &&
         (!accountChat || run?.memberIds?.get(clientId) === memberId) &&
-        acceptTh09MatchStats(room, run, clientId, message, th09RoundRecorder(room, run))
+        acceptTh09MatchStats(room, run, clientId, message, room.id.startsWith('th09mp-') ? th09RoundRecorder(room, run) : undefined)
       )
         broadcastLobby(room);
       return;
@@ -2769,6 +2776,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         run.th09Rated = !room.lobby.unrated;
         const players = run.lobbyClientIds.map((id) => room.lobbyClients.get(id)?.accountIdentity?.userId ?? null);
         bindTh09Duel(room, run, players);
+      } else if (roomId.startsWith('th075mp-')) {
+        bindTh09Duel(room, run);
       }
       clearSpectatorHistory(run);
       startSpectatorGrace(roomId, room, String(room.lobby.startSerial), run);

@@ -1,6 +1,6 @@
 export interface SpectatorNode {
   id: number;
-  kind: 'stage' | 'boss';
+  kind: 'stage' | 'boss' | 'match' | 'round';
   frame: number;
   stage: number;
   bossSlots: number;
@@ -47,7 +47,8 @@ export function parseSpectatorPlayback(value: unknown): Readonly<SpectatorPlayba
   for (const raw of value.nodes) {
     if (!object(raw) || !uint(raw.id) || !raw.id || ids.has(raw.id) || !uint(raw.frame) ||
         raw.frame < lastFrame || raw.frame > state.received || !uint(raw.stage, 65535) ||
-        !uint(raw.bossSlots, 255) || !(raw.kind === 'stage' && raw.bossSlots === 0 || raw.kind === 'boss' && raw.bossSlots > 0) ||
+        !uint(raw.bossSlots, 255) || !(raw.kind === 'stage' && raw.bossSlots === 0 || raw.kind === 'boss' && raw.bossSlots > 0 ||
+          (raw.kind === 'match' || raw.kind === 'round') && raw.stage > 0 && raw.bossSlots === 0) ||
         // biome-ignore lint/suspicious/noControlCharactersInRegex: Protocol node labels explicitly reject C0 and DEL controls.
         raw.label !== undefined && (typeof raw.label !== 'string' || !raw.label.length || raw.label.length > 48 || /[\x00-\x1f\x7f]/.test(raw.label))) return null;
     ids.add(raw.id); lastFrame = raw.frame;
@@ -57,6 +58,19 @@ export function parseSpectatorPlayback(value: unknown): Readonly<SpectatorPlayba
   return Object.freeze({version: 1, run: state.run, revision: state.revision, min: state.min,
     position: state.position, received: state.received, edge: state.edge, target: state.target,
     paused: state.paused, seeking: state.seeking, following: state.following, ended: state.ended, nodes: Object.freeze(nodes)});
+}
+/** TH14 reconstructs seeks from the run checkpoint. The timeline stays in
+ * the requested stage while the native cursor works its way back to it. */
+export function spectatorStageBounds(state: SpectatorPlaybackState) {
+  const cursor = state.seeking ? state.target : state.position;
+  let min = state.min;
+  let edge = state.edge;
+  for (const node of state.nodes) {
+    if (node.kind !== 'stage' || node.frame > state.edge) continue;
+    if (node.frame > cursor) {edge = node.frame - 1; break;}
+    min = node.frame;
+  }
+  return {min, edge};
 }
 export function spectatorPlaybackCommand(state: SpectatorPlaybackState | null, action: SpectatorPlaybackAction, frame?: number): SpectatorPlaybackCommand | null {
   if (!state || !['pause', 'play', 'seek', 'live'].includes(action)) return null;

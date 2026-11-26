@@ -23,7 +23,7 @@ beforeAll(async()=>{
   await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`
     export {useAccountSession,notifyAccountChange} from './app/services/account-session.ts';
     export {AccountMenu} from './app/components/launcher/AccountMenu.tsx';
-    export {LocaleProvider} from './app/i18n.tsx';
+    export {LocaleProvider,translate} from './app/i18n.tsx';
     export {MemoryRouter} from 'react-router';
     export {Tooltip} from 'radix-ui';
   `},bundle:true,platform:'node',format:'esm',jsx:'automatic',packages:'external',
@@ -69,7 +69,7 @@ async function mount(){
   await React.act(async()=>root.render(React.createElement(owners.MemoryRouter,{initialEntries:['/']},
     React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(owners.Tooltip.Provider,null,React.createElement(React.Fragment,null,
       React.createElement(SessionProbe,{name:'masthead'}),React.createElement(SessionProbe,{name:'page'}),
-      React.createElement(owners.AccountMenu,{interactive:true})))))));
+      React.createElement(owners.AccountMenu,{interactive:true,assetUrl:path=>new URL(path,env.window.location.origin).pathname})))))));
   return container;
 }
 async function waitFor(predicate,message){
@@ -82,7 +82,7 @@ test('same-page and cross-tab identity changes are shared, and late account data
   const sessions=[],profiles=[];
   globalThis.__accountRequest=(path)=>{
     if(path==='auth/get-session'){const task=deferred();sessions.push(task);return task.promise;}
-    const match=path.match(/^v1\/profiles\/([^/]+)$/);
+    const match=path.match(/^v1\/profiles\/([^/?]+)\?media=urls$/);
     if(match){const task=deferred();profiles.push({username:decodeURIComponent(match[1]),task});return task.promise;}
     throw Error(`Unexpected account request: ${path}`);
   };
@@ -110,7 +110,7 @@ test('same-page and cross-tab identity changes are shared, and late account data
   const account=page.querySelector('.masthead-account-entry');
   assert.match(account?.getAttribute('aria-label')??'',/Bobby/);
   assert.doesNotMatch(account?.getAttribute('aria-label')??'',/Alice/);
-  assert.equal(account.textContent,'');
+  assert.equal(account.textContent,'Bobby');
 
   const oldUrl=env.window.location.href;
   await React.act(async()=>env.window.dispatchEvent(new env.window.StorageEvent('storage',{key:'account-session-changed',newValue:'other-tab'})));
@@ -133,7 +133,8 @@ test('an unavailable session keeps the account icon and can be retried',async()=
   };
   const page=await mount();
   await waitFor(()=>probe('masthead')==='error','initial connection failure is visible');
-  const retry=page.querySelector('button[aria-label="Log in | Retry"]');
+  const retryLabel=[owners.translate('en','nav.account'),owners.translate('en','action.retry')].join(' | ');
+  const retry=page.querySelector(`button[aria-label="${retryLabel}"]`);
   assert.equal(retry?.dataset.variant,'ghost');
   const icon=retry.querySelector('svg.book-navigation-icon').innerHTML;
   await React.act(async()=>retry.click());
@@ -144,7 +145,7 @@ test('an unavailable session keeps the account icon and can be retried',async()=
 test('a failed sign-out leaves the account menu open with its error',async()=>{
   globalThis.__accountRequest=async path=>{
     if(path==='auth/get-session')return {user:{username:'alice',name:'Alice'}};
-    if(path==='v1/profiles/alice')return {nickname:'Alice profile',details:{avatar:''}};
+    if(path==='v1/profiles/alice?media=urls')return {nickname:'Alice profile',details:{avatar:''}};
     if(path==='auth/sign-out')throw Error('sign-out unavailable');
     throw Error(`Unexpected account request: ${path}`);
   };

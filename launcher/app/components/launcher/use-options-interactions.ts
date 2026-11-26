@@ -3,8 +3,8 @@ import {cycleFocus} from '../cycle-focus';
 /** Main app.mts8585–8616: scroll ownership and cyclic keyboard focus.
  * Close remains an intent port into the single Router owner.
  */
-export function useOptionsInteractions(ref: RefObject<HTMLElement | null>, open: boolean, onBack: () => void) {
-  const current = useRef({open, onBack}); current.current = {open, onBack};
+export function useOptionsInteractions(ref: RefObject<HTMLElement | null>, open: boolean, onBack: () => void, trapFocus = true) {
+  const current = useRef({open, onBack, trapFocus}); current.current = {open, onBack, trapFocus};
   useLayoutEffect(() => {
     const panel = ref.current; if (!panel) return;
     const wheel = (event: WheelEvent) => {
@@ -16,12 +16,12 @@ export function useOptionsInteractions(ref: RefObject<HTMLElement | null>, open:
       if (nestedDialog && panel.contains(nestedDialog)) return;
       if (['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown'].includes(event.key) && event.target instanceof Element && !event.target.closest('.options-scroll,input,select,textarea')) {
         event.preventDefault();
-        const scroll = panel.querySelector<HTMLElement>('.options-scroll'); if (!scroll) return;
+        const scroll = panel.querySelector<HTMLElement>('.options-scroll:not([hidden])'); if (!scroll) return;
         if (event.key === 'Home') scroll.scrollTop = 0;
         else if (event.key === 'End') scroll.scrollTop = scroll.scrollHeight;
         else scroll.scrollTop += (event.key === 'PageUp' || event.key === 'ArrowUp' ? -1 : 1) * (event.key.startsWith('Page') ? scroll.clientHeight : 40);
       } else if (event.key === 'Escape') {event.preventDefault(); current.current.onBack();}
-      else cycleFocus(panel, event);
+      else if (current.current.trapFocus) cycleFocus(panel, event);
     };
     panel.addEventListener('wheel', wheel, {passive: false}); panel.addEventListener('keydown', keydown);
     return () => {panel.removeEventListener('wheel', wheel); panel.removeEventListener('keydown', keydown);};

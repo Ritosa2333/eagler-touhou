@@ -31,6 +31,12 @@ before(async()=>{
  ({createRoot}=await import(pathToFileURL(require.resolve('react-dom/client'))));
  // Replay format/storage evolves in its own contract tests. This carrier pins
  // original visible messages without rejecting unrelated additive catalog keys.
+ const revisedEnglish = {
+  'replay.renamePrompt': 'Enter a new name for this replay',
+  'replay.deleteFailed': 'Couldn’t delete the replay: {reason}',
+  'replay.loading': 'Loading replay…',
+  'replay.empty': 'No replays yet',
+ };
  const messages=runInNewContext('('+pinned('src/launcher/i18n.mts').match(/const entries = (\[[\s\S]*?\]) as const/)[1]+')');
  baselineHTML=pinned('public/index.html');
  // Keep the bundled import.meta.url under the project root so compiled
@@ -49,7 +55,7 @@ before(async()=>{
  owners=await import(pathToFileURL(resolve(buildDirectory,'actual-bundle.mjs')));
  for(const [key,zh,en]of messages)if(/^replay\.|^status\.(?:readingReplay|replayReadFailed|noReplay)$|^action\.(?:close|download|rename|delete)$/.test(key)){
    assert.equal(owners.translate('zh-CN',key),zh,`legacy Replay copy ${key} zh-CN stays pinned`);
-   assert.equal(owners.translate('en',key),en,`legacy Replay copy ${key} en stays pinned`);
+   assert.equal(owners.translate('en',key),revisedEnglish[key] ?? en,`Replay copy ${key} en`);
  }
 });
 afterEach(async()=>{globalThis.setTimeout=originalSetTimeout;globalThis.clearTimeout=originalClearTimeout;env.window.setTimeout=originalWindowSetTimeout;env.window.clearTimeout=originalWindowClearTimeout;for(const m of alive)await React.act(async()=>m.root.unmount());alive.clear();motions.length=0;env.document.body.replaceChildren();reduce=true;assert.deepEqual(env.errors.splice(0),[],'No unexpected React/DOM errors');});

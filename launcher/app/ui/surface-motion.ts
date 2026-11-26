@@ -12,6 +12,7 @@ export interface SurfaceMotionOptions {
   /** Continue an interrupted entrance or exit from its actual appearance. */
   fromCurrent?: boolean;
   reduced?: boolean;
+  direction?: 'forward' | 'back';
 }
 
 type Easing = [number, number, number, number];
@@ -90,9 +91,11 @@ export function animateSurface(element: HTMLElement, phase: SurfacePhase, option
   const {distance, scale} = timing;
   const opening = phase === 'enter';
   const slide = options.kind === 'sheet';
-  const offset = slide ? '0 100%' : distance ? `0 ${distance}px` : undefined;
+  const offset = slide ? '0 100%' : !distance ? undefined : options.direction
+    ? `${options.direction === 'forward' ? distance : -distance}px 0` : `0 ${distance}px`;
+  const initialOpacity = options.kind === 'inline' ? '.6' : options.kind === 'content' ? '.25' : '0';
   const keyframes = {
-    opacity: slide ? ['1', '1'] : [currentOpacity || (opening ? options.kind === 'content' ? '.25' : '0' : '1'), opening ? '1' : '0'],
+    opacity: slide ? ['1', '1'] : [currentOpacity || (opening ? initialOpacity : '1'), opening ? '1' : '0'],
     ...(offset ? {translate: [currentTranslate && currentTranslate !== 'none' ? currentTranslate : opening ? offset : '0 0', opening ? '0 0' : offset]} : {}),
     ...(scale && scale !== '1' ? {scale: [currentScale && currentScale !== 'none' ? currentScale : opening ? scale : '1', opening ? '1' : scale]} : {}),
   };

@@ -167,6 +167,18 @@ test('toggle fire ignores compatibility click; intentional detail-zero keyboard 
   const f = fixture(); f.pointer('fire', 'pointerdown'); f.click('fire', 1); assert.equal(f.touch.getSnapshot().fireEnabled, false);
   f.click('fire'); assert.equal(f.touch.getSnapshot().fireEnabled, true);
 });
+test('a hidden challenge Bomb cannot send input, while Fire still toggles in both directions', () => {
+  const f = fixture({game: 'th06'});
+  f.elements.bomb.hidden = true;
+  f.pointer('bomb', 'pointerdown');
+  f.click('bomb');
+  assert.deepEqual(f.sent, []);
+  f.pointer('fire', 'pointerdown');
+  f.pointer('fire', 'pointerdown');
+  assert.deepEqual(f.sent.map(message => [message.command, message.fireEnabled, message.bombSerial]),
+    [['touch-controls', false, 0], ['touch-controls', true, 0]]);
+});
+
 test('hold focus releases on lost capture and toggle focus persists until next explicit activation', () => {
   const f = fixture(); f.pointer('focus', 'pointerdown'); assert.equal(f.touch.getSnapshot().focusEnabled, true);
   f.pointer('focus', 'lostpointercapture'); assert.equal(f.touch.getSnapshot().focusEnabled, false);

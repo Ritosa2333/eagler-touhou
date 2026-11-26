@@ -7,7 +7,7 @@ import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {isAbortError, linkAbortSignals, waitWithAbort} from '../services/abort-signals';
-import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
+import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, productRequiresImport, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {detectUiLocale, isUiLocale, isUiMessageKey, localeHome, saveUiLocalePreference, type UiLocale} from '../../src/launcher/i18n.mts';
 import {replayImportAcceptFor} from '../../src/launcher/replay-files.mts';
@@ -41,7 +41,7 @@ import {describeBrowserEnvironment} from '../../src/launcher/runtime-diagnostics
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from '../models/site-preferences';
 import {createReplayModel, type ReplayModel} from '../models/replays';
 import {relocateReplayPlayback} from '../services/replay-relocation';
-import {createMetadataService, requiresManualImport} from '../services/metadata';
+import {createMetadataService, requiresLocalGameData} from '../services/metadata';
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
 import {th128RequestedMusic} from '../../src/launcher/th128-installed-config.mts';
@@ -555,7 +555,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
       runtimeReady: runtime?.getSnapshot().ready === true && !roomPreload, launched: runtime?.getSnapshot().launched === true,
-      playerOpen: snapshot.playerOpen, importServer: requiresManualImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID), metadata.getSnapshot()) !== false,
+      playerOpen: snapshot.playerOpen, importServer: requiresLocalGameData(metadata.getSnapshot(), gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)),
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
     ports: {
       pickFile: ({accept}) => ports.pickFile(accept), pickFiles: ({accept}) => ports.pickFiles(accept), feedback, showGameDataTransfer: transfer.revealGameData,
@@ -656,7 +656,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (ownsPresentation && message.event === 'first-frame' && runtime?.getSnapshot().firstFrame) {reportGameLoaded(); transfer.launchAcknowledged();}
       if (message.event === 'network-request') titleNetwork.open();
       if (message.event === 'runtime-info' && message.netplayTiming) {calibration.record(message.netplayTiming, runtime!.getSnapshot().epoch ?? 0); roomSession?.service.acceptMeasuredTiming(message.netplayTiming);}
-      if (message.event === 'runtime-info' && (message.th09Match || message.th03Match)) roomSession?.service.acceptTh09Match(message.th09Match || message.th03Match);
+      if (message.event === 'runtime-info' && (message.th09Match || message.th03Match || message.th075Match))
+        roomSession?.service.acceptTh09Match(message.th09Match || message.th03Match || message.th075Match);
       if (message.event === 'notice' && typeof message.message === 'string' && message.message) feedback.toast(message.message);
       if (message.event === 'room-menu' && runtime?.getSnapshot().roomPreview && !runtime.getSnapshot().launched) {
         void nativeTouch.exitPlayerFullscreen().catch(reportError);
@@ -891,7 +892,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     player.classList.add('open'); player.setAttribute('aria-hidden', 'false'); document.body.classList.add('player-active');
     if (fullscreen) {
       try {await enterRoomPlayerFullscreen(player);}
-      catch (error) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false}); feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}
+      catch (error) {
+        // The match has started even if the browser denies native fullscreen.
+        feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));
+      }
     }
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
   }
@@ -1094,18 +1098,21 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (isMultiplayerProductId(product)) {await roomSession!.service.launch(); return;}
       cloudSync?.prepareLocalLaunch();
       const game = gameIdForProduct(product);
-      let requiresImport = requiresManualImport(game, metadata.getSnapshot());
-      let installed = requiresImport !== false ? (await acquisition.readCurrent(game)).generation : null;
-      if (requiresImport === null && !installed) {
-        // An installed package can start before the host responds. Otherwise
-        // check publication before interrupting Start with manual import.
+      const resourceMetadata = metadata.getSnapshot();
+      let requiresImport = requiresLocalGameData(resourceMetadata, game);
+      // TH128's installed package can start while the host is still loading.
+      let installed = requiresImport && game === 'th128' ? (await acquisition.readCurrent(game)).generation : null;
+      if (requiresImport && !installed && productRequiresImport(game) && resourceMetadata.phase !== 'ready' &&
+          (game !== 'th128' || !resourceMetadata.siteManifest)) {
         await metadata.initialize();
-        requiresImport = requiresManualImport(game, metadata.getSnapshot());
-        if (requiresImport) installed = (await acquisition.readCurrent(game)).generation;
-        if (disposed || settings.getSnapshot()?.context.productId !== product ||
-            navigation && (!navigation.hasSelection || navigation.context === 'lobby')) return;
+        requiresImport = requiresLocalGameData(metadata.getSnapshot(), game);
+        if (game === 'th128') {
+          if (disposed || settings.getSnapshot()?.context.productId !== product ||
+              navigation && (!navigation.hasSelection || navigation.context === 'lobby')) return;
+          if (requiresImport) installed = (await acquisition.readCurrent(game)).generation;
+        }
       }
-      if (requiresImport && !installed) {
+      if (requiresImport && !(game === 'th128' ? installed : (await acquisition.readCurrent(game)).generation)) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
       if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings()) return;
@@ -1592,7 +1599,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       try {
         if (roomPlayer) await enterRoomPlayerFullscreen(target);
         else await nativeTouch.enterFullscreen(target);
-      } catch (error) {if (roomPlayer) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false});} feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
+      } catch (error) {feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
     },
     getRuntime: () => runtime, getReplays: () => replays, getDiagnostics: () => diagnostics, getGameplayNetwork: () => gameplayNetwork,
     async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) await importReplayFile(file, product);},

@@ -6,6 +6,16 @@ import './spectator-playback.css';
 
 const hostedPanels = new WeakSet<HTMLElement>();
 
+export function SpectatorScore({wins, names = ['', '']}: {
+  wins: readonly [number, number]; names?: readonly [string, string];
+}) {
+  return <>
+    <span className="spectator-score-player" title={names[0]}>{`P1${names[0] ? `(${names[0]})` : ''}`}</span>
+    <span className="spectator-score-value">{`<${wins[0]} : ${wins[1]}>`}</span>
+    <span className="spectator-score-player" title={names[1]}>{`P2${names[1] ? `(${names[1]})` : ''}`}</span>
+  </>;
+}
+
 /** The Runtime keeps its playback cursor/listeners; the Host information column
  * owns placement. Room wins render into the real controls' score slot. */
 export function SpectatorMatchScore({ wins, minutes, names = ['', ''] }: {
@@ -39,9 +49,5 @@ export function SpectatorMatchScore({ wins, minutes, names = ['', ''] }: {
     const duration = panel.querySelector('#spectatorMatchDuration');
     if (duration) duration.textContent = panel.dataset.elapsedLabel;
   }, [target, minutes, t]);
-  return <><div ref={host} className="th09-playback-host" />{target ? createPortal(<>
-    <span className="spectator-score-player" title={names[0]}>{`P1${names[0] ? `(${names[0]})` : ''}`}</span>
-    <span className="spectator-score-value">{`<${wins[0]} : ${wins[1]}>`}</span>
-    <span className="spectator-score-player" title={names[1]}>{`P2${names[1] ? `(${names[1]})` : ''}`}</span>
-  </>, target) : null}</>;
+  return <><div ref={host} className="th09-playback-host" />{target ? createPortal(<SpectatorScore wins={wins} names={names}/>, target) : null}</>;
 }

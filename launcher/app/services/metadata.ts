@@ -25,19 +25,17 @@ export interface MetadataSnapshot {
   siteManifestError: unknown | null;
   releaseCatalogError: unknown | null;
 }
-
-/** Null means TH128's initial publication check is still pending. */
-export function requiresManualImport(game: GameId, {siteManifest, releaseCatalog, phase}: Pick<MetadataSnapshot, 'siteManifest' | 'releaseCatalog' | 'phase'>): boolean | null {
+/** An import-only catalog entry can still have a package on an external host. */
+export function requiresLocalGameData({siteManifest, releaseCatalog}: Pick<MetadataSnapshot, 'siteManifest' | 'releaseCatalog'>, game: GameId): boolean {
   if (siteManifest?.shared.resourceMode === 'import') return true;
   if (!productRequiresImport(game)) return false;
-  if (game !== 'th128') return true;
-  if (!siteManifest && phase !== 'ready') return null;
-  const published = releaseCatalog?.games.th128;
+  const published = releaseCatalog?.games[game];
+  if (game !== 'th128') return !published;
+  // TH128 needs matching revisions from both halves of the host's metadata.
   const pointer = siteManifest?.games.th128?.package;
   return !published || !pointer || typeof pointer !== 'object' ||
     !('revision' in pointer) || pointer.revision !== published.revision;
 }
-
 export interface MetadataServiceOptions {
   /** Deployment document/root URL, not a selected client route. */
   baseUrl: string;
@@ -165,9 +163,8 @@ export function createMetadataService(options: MetadataServiceOptions) {
     // A product with a fixed import catalog mounts its own game language.
     const importLanguages = importServer && 'localLanguageOptions' in product ? product.localLanguageOptions : null;
     const th128Language = gameId === 'th128' ? th128MountedLanguage(generation) : undefined;
-    const hasTh128OnlinePackage = gameId === 'th128' && !!hostGame?.package && !!snapshot.releaseCatalog?.games.th128;
-    const publishedLocales = hasTh128OnlinePackage && snapshot.siteManifest?.shared.resourceMode !== 'import'
-      ? snapshot.releaseCatalog?.games.th128?.locales : undefined;
+    const hasTh128OnlinePackage = gameId === 'th128' && !requiresLocalGameData(snapshot, gameId);
+    const publishedLocales = hasTh128OnlinePackage ? snapshot.releaseCatalog?.games.th128?.locales : undefined;
     const japanese = {id: 'ja', title: '日本語', pack: null};
     const english = {id: 'lang_en', title: 'English (thcrap)', pack: null};
     const packagedLanguages = Array.isArray(publishedLocales) && publishedLocales.includes('lang_zh-hans') && publishedLocales.includes('ja')
@@ -187,7 +184,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
         audio: options.webAudioAvailable,
         embeddedOgg: 'embeddedOgg' in PRODUCT_GAMES[gameId].musicRuntime && PRODUCT_GAMES[gameId].musicRuntime.embeddedOgg === true,
         midiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && music?.midi?.supported !== false,
-        importServer: importServer || snapshot.siteManifest?.shared.resourceMode === 'import',
+        importServer: requiresLocalGameData(snapshot, gameId),
         publishedOggCapable: Boolean(music?.ogg || music?.wav),
         remoteOggAdvertised: Boolean(music?.ogg),
         remoteRevision: snapshot.releaseCatalog?.games?.[gameId]?.revision ?? null,

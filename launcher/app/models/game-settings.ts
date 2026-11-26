@@ -146,9 +146,9 @@ export function createGameSettingsModel({storage, onChange}: {
     disclosures[disclosureKey] = disclosure;
     const normalized = loadStoredGamePreferences({storage, preferenceId,
       fallbackPreferenceId: multiplayer ? gameId : null,
-      context: {uiLocale: context.uiLocale, thpracAvailable: productFeatureAvailable(gameId, 'thprac', context.hostFeatures),
+      context: {uiLocale: context.uiLocale, touchEnabledByDefault: context.mobile, thpracAvailable: productFeatureAvailable(gameId, 'thprac', context.hostFeatures),
         webAudioAvailable: context.musicAvailability.audio,
-        ...(gameId === 'th128' ? {defaultTouchEnabled: context.mobile, defaultTouchMovementMode: 'touch'} : {}),
+        ...(gameId === 'th128' ? {defaultTouchMovementMode: 'touch'} : {}),
         externalMidiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && context.webMidiAvailable}});
     const options = gameId === 'th01' ? {...normalized.options} :
       applySharedTouchPreferences(normalized.options, loadOrInitializeSharedTouchPreferences(storage, normalized.options));
@@ -160,7 +160,6 @@ export function createGameSettingsModel({storage, onChange}: {
     if('touchMovementModes' in product){
       if(!(product.touchMovementModes as readonly string[]).includes(options.touchMovementMode))options.touchMovementMode=product.touchMovementModes[0];
       options.touchFocusMode='hold-button';
-      try{if(!storage?.getItem(gamePreferenceStorageKey(preferenceId)))options.touchEnabled=context.mobile;}catch{}
     }
     practicePreferences.set(gameId, options.thpracEnabled);
     if (multiplayer) options.thpracEnabled = false;

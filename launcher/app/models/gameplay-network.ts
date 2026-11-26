@@ -150,10 +150,18 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
         const net = read(), state = options.context();
         if (net?.failed) {finish(new Error(net.error || options.translate('room.unavailable'))); return;}
         const current = runtime.getSnapshot();
-        // An open spectator socket precedes checkpoint installation. Keep the
-        // initial bounded reconstruction hidden until native reports completion.
+        // An open spectator socket alone does not mean there's a world on
+        // screen. TH14 and TH075 also present while catching up to live input.
         const restoreReady = !net?.spectator || current.game === 'th09' ||
-          (() => {const playback = parseSpectatorPlayback(current.runtimeInfo?.spectatorPlayback); return !!playback && !playback.seeking;})();
+          (() => {
+            const playback = parseSpectatorPlayback(current.runtimeInfo?.spectatorPlayback);
+            if (!playback) return false;
+            if (!playback.seeking) return true;
+            // TH14 uses a fixed catch-up target until its first reconstruction
+            // finishes, even if it is already presenting restored frames.
+            return (current.game === 'th14' || current.game === 'th075') &&
+              current.firstFrame && playback.position > 0;
+          })();
         if (restoreReady && net?.peerState && describeNetplayConnection({spectator: net.spectator, failed: net.failed, nativeFailed: net.nativeFailed, error: net.error, transport: net.transport, path: net.path, peerState: net.peerState, playerCount: state.playerCount, localPlayer: state.player, webSocketOpenState: 1}).hidden) {finish(); return;}
         wait.timer = timers.setTimeout(poll, 250);
       }; poll();

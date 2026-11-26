@@ -86,7 +86,6 @@ export function detectUiLocale(): UiLocale {
   if (isUiLocale(documentLocale)) return documentLocale;
   const saved = readUiLocalePreference(globalThis.document, safeStorage());
   if (saved) return saved;
-  for (const value of globalThis.navigator?.languages || [globalThis.navigator?.language]) if (value) return resolveUiLocale(value);
   return "zh-CN";
 }
 export function getUiLocale(): UiLocale { return currentLocale; }

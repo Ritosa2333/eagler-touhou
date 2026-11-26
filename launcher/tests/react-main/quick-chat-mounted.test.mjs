@@ -586,7 +586,7 @@ test('openComposer focuses the quick panel and typing hides slots while Enter an
   const input=query('.mp-quick-chat-picker input[aria-label="Message"]'),frame=query('#gameFrame'),
     form=input.closest('form'),send=query('.mp-quick-chat-picker button[aria-label="Send"]');
   assert.equal(env.document.activeElement,query('.mp-quick-chat-picker'));
-  assert.equal(input.placeholder,'Press Tab to switch to free chat');
+  assert.equal(input.placeholder,'Press Tab to type a message');
   assert.ok(query('.mp-quick-chat-slots [aria-keyshortcuts="9"]'));
   input.focus();
 

@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, type RefObject} from 'react';
 import {flushSync} from 'react-dom';
 
-/** Animate only deliberate view/category changes; the caller still owns selection. */
+/** Animate deliberate changes to the book library and its visible rows. */
 export function useLibraryMotion(grid: RefObject<HTMLDivElement | null>) {
   const serial = useRef(0);
   const active = useRef<Animation[]>([]);
@@ -15,13 +15,24 @@ export function useLibraryMotion(grid: RefObject<HTMLDivElement | null>) {
   }, []);
   useEffect(() => () => cancel(), [cancel]);
 
-  const run = (change: () => void, nextIds?: ReadonlySet<string>) => {
-    cancel();
-    const generation = serial.current, element = grid.current;
-    if (!element || typeof element.animate !== 'function' || element.closest('.less-motion') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {change(); return;}
+  const run = (change: () => void, {nextIds, reorder = false}: {
+    nextIds?: ReadonlySet<string>; reorder?: boolean;
+  } = {}) => {
+    const element = grid.current;
+    if (!element || typeof element.animate !== 'function' || element.closest('.less-motion') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      cancel();
+      change();
+      return;
+    }
     const cards = Array.from(element.querySelectorAll<HTMLElement>(':scope > .book-card'));
     const positions = new Map(cards.map(card => [card.dataset.bookCard!, card.getBoundingClientRect()]));
-    const leaving = nextIds ? cards.filter(card => !nextIds.has(card.dataset.bookCard!)) : [element];
+    const rows = reorder ? element.closest('.book-library')?.querySelectorAll<HTMLElement>(
+      '.book-category-fold[data-open="true"] .book-category-games > li',
+    ) : undefined;
+    const rowPositions = Array.from(rows ?? [], row => ({row, before: row.getBoundingClientRect()}));
+    cancel();
+    const generation = serial.current;
+    const leaving = reorder ? [] : nextIds ? cards.filter(card => !nextIds.has(card.dataset.bookCard!)) : [element];
     if (nextIds && !cards.length) {
       const empty = element.querySelector<HTMLElement>(':scope > .book-empty');
       if (empty) leaving.push(empty);
@@ -34,12 +45,16 @@ export function useLibraryMotion(grid: RefObject<HTMLDivElement | null>) {
       }).catch(() => {});
       return animation;
     };
+    const move = (node: HTMLElement, before: DOMRect) => {
+      const after = node.getBoundingClientRect(), x = before.left - after.left, y = before.top - after.top;
+      if (x || y) animate(node, [{translate: `${x}px ${y}px`}, {translate: '0 0'}], 440);
+    };
     const finish = () => {
       if (generation !== serial.current || !grid.current) return;
       flushSync(change);
       active.current.forEach(animation => {animation.cancel();}); active.current = [];
       inert.current.forEach(node => {node.removeAttribute('inert');}); inert.current = [];
-      if (!nextIds) {
+      if (!nextIds && !reorder) {
         animate(element, [{opacity: 0}, {opacity: 1}], 240);
         return;
       }
@@ -47,10 +62,10 @@ export function useLibraryMotion(grid: RefObject<HTMLDivElement | null>) {
       for (const card of nextCards) {
         const before = positions.get(card.dataset.bookCard!);
         if (!before) {animate(card, [{opacity: 0, translate: '0 10px'}, {opacity: 1, translate: '0 0'}], 440); continue;}
-        const after = card.getBoundingClientRect(), x = before.left - after.left, y = before.top - after.top;
-        if (x || y) animate(card, [{translate: `${x}px ${y}px`}, {translate: '0 0'}], 440);
+        move(card, before);
       }
-      const empty = element.querySelector<HTMLElement>(':scope > .book-empty');
+      for (const {row, before} of rowPositions) move(row, before);
+      const empty = !reorder && element.querySelector<HTMLElement>(':scope > .book-empty');
       if (empty) animate(empty, [{opacity: 0, translate: '0 8px'}, {opacity: 1, translate: '0 0'}], 440);
     };
     if (!leaving.length) {finish(); return;}
