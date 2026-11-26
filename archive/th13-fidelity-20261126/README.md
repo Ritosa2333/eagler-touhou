@@ -26,7 +26,7 @@
 
 ## 插值终值的 x87 单次舍入（未决 2 的插值部分）
 
-`0x4120f0` 的默认路径把 `(end-start)*weight+start` 整条算在 x87 扩展精度里，再一次性舍入到 float；游戏内随机函数 `0x472de0`/`0x472e10` 的 FINIT 把 FPCW 置 0x37F（PC=64）；`machine.py` 在构造时执行同一条 FINIT，七份证据都在这一控制字下生成。显式 `fldcw 0x0000`（PC=24）时，116 个记录值里有 7 个与 PC=64 不同，金标因此能区分单次舍入与逐级舍入。直调五组用例（线性 30 帧、平方 20 帧、线性 45 帧、正弦 10 帧、1 帧）共 111 个终值，见 [interpolation.json](interpolation.json)。移植侧 `Interpolation.hpp`/`.cpp` 的非角路径改为 `(float)((long double)(end-start)*weight+start)` 后与直调值逐位相同；WASI 构建 `long double` 为 113 位，x86 宿主为 80 位，两者在这五组用例上结果一致。`tests/anm/interpolation_oracle_test.cpp`（两侧各一份、内容相同）把这些终值同时锁定在 `FloatInterpolation<1>` 与 `EclInterpolation` 上。
+`0x4120f0` 的默认路径把 `(end-start)*weight+start` 整条算在 x87 扩展精度里，再一次性舍入到 float；游戏内随机函数 `0x472de0`/`0x472e10` 的 FINIT 把 FPCW 置 0x37F（PC=64）；`machine.py` 在构造时执行同一条 FINIT，七份证据都在这一控制字下生成。显式 `fldcw 0x0000`（PC=24）时，116 个记录值里有 7 个与 PC=64 不同，金标因此能区分单次舍入与逐级舍入。直调五组用例（线性 30 帧、平方 20 帧、线性 45 帧、正弦 10 帧、1 帧）共 111 个终值，见 [interpolation.json](interpolation.json)。移植侧 `Interpolation.hpp`/`.cpp` 的非角路径改为 `(float)((long double)(end-start)*weight+start)` 后与直调值逐位相同；WASI 构建 `long double` 为 113 位，x86 宿主为 80 位，两者在这五组用例上结果一致。`tests/anm/anm_interpolation_oracle_test.cpp`（两侧各一份、内容相同）把这些终值同时锁定在 `FloatInterpolation<1>` 与 `EclInterpolation` 上。
 
 ## 结局 BGM 第二参数与文本 VM（原分歧 2）
 
