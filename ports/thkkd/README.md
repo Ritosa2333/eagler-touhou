@@ -15,7 +15,7 @@ powershell -ExecutionPolicy Bypass -File ports/thkkd/scripts/build-site.ps1
 node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 ```
 
-打开 `http://127.0.0.1:8174/`，选择海惠堂。构建输出包含网站与运行程序，游戏资源由玩家本地导入。
+打开 `http://127.0.0.1:8174/`，选择東方海恵堂。构建输出包含网站与运行程序，游戏资源由玩家本地导入。
 
 ## 原版资源
 
@@ -33,6 +33,8 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 ## 存档与录像
 
 原版五份 DAT 存档及 `config.txt` 可一次选择多份导入，也可导入存档 ZIP；核对文件后统一确认覆盖。导出文件名为 `thkkd-save.zip`。录像工作台支持同时导入多份 `.rpy`、`.thkkdr` 或录像 ZIP，并自动分配空闲文件名。标准操作录制继续使用原版格式，触控自由坐标等扩展操作录制为 `.thkkdr`。
+
+游戏详情页直接读取本地原生存档，展示九种机体在 Easy、Normal、Hard、Lunatic、Extra 的通关进度，区分续关通关与不续关通关。导入存档或退出游戏后，可用进度表的“刷新”按钮重新读取。
 
 默认方向键移动、Z 射击或确认、X Bomb 或取消、Shift 低速、Esc 暂停；暂停时 R 重开。网页对话支持 Z、Enter、Ctrl 和触控确认。输入映射与录像规则见开发指南。
 

@@ -78,7 +78,11 @@ export class Platform {
   playMedia(media){
     if(this.silent||this.suspended||this.playbackPaused)return;
     const serial=media.playSerial=(media.playSerial||0)+1,element=media.audio||media.video;
-    element.play().catch(error=>{if(media.playSerial!==serial||!media.playing||this.silent||this.suspended||this.playbackPaused)return;if(media.audio)this.emit('audio-health',{state:'blocked',error:String(error)});else this.emit('error',{error:'视频播放失败：'+error.message});});
+    element.play().then(()=>{if(media.audio&&media.playSerial===serial&&media.failure){delete media.failure;this.emit('audio-health',this.audioHealth());}}).catch(error=>{if(media.playSerial!==serial||!media.playing||this.silent||this.suspended||this.playbackPaused)return;if(media.audio){media.failure={state:error.name==='NotAllowedError'?'blocked':'error',error:String(error)};this.emit('audio-health',this.audioHealth());}else this.emit('error',{error:'视频播放失败：'+error.message});});
+  }
+  audioHealth(){
+    const failure=this.music&&([...this.sounds.values()].find(sound=>sound.bgm&&sound.failure)?.failure||this.missingMusic?.values().next().value);
+    return failure||{state:this.context.state};
   }
   call(api,a,t,bytes){
     const r=this.renderer,g=h=>this.graph(h),n=i=>signed(a[i]);
@@ -132,7 +136,22 @@ export class Platform {
     case 0x4331b0:this.defaultSize=n(0);return 0;
     case 0x437bd0:case 0x437c20:{const font=(api===0x437c20&&a[0]!==0?this.fonts.get(a[0]):null)||this.fonts.get(0),size=api===0x437c20&&a[0]!==0?font.size:this.defaultSize;return this.textRenderer.width(t[0],font,size);}
     case 0x437c90:return this.text(n(0),n(1),t[0],a[2],a[3],a[4],a[5]);
-    case 0x4434d0:{const asset=this.asset(t[0]),h=this.next++,bgm=normalized(t[0]).startsWith('bgm/');const sound={buffer:asset.buffer,bgm,playing:false};sound.gain=this.context.createGain();sound.gain.connect(bgm?this.bgmGain:this.sfxGain);if(bgm){sound.audio=new Audio(asset.url);sound.audio.preload='auto';sound.audio.addEventListener('error',()=>{if(sound.audio.getAttribute('src'))this.emit('audio-health',{state:'error',error:'音乐资源解码失败：'+t[0]});});sound.media=this.context.createMediaElementSource(sound.audio);sound.media.connect(sound.gain);}this.sounds.set(h,sound);return h;}
+    case 0x4434d0:{
+      const name=normalized(t[0]),bgm=name.startsWith('bgm/'),asset=this.assets.get(name);
+      if(!asset){
+        if(!bgm)throw Error('缺少资源：'+t[0]);
+        if(this.music){this.missingMusic??=new Map();this.missingMusic.set(name,{state:'error',error:'缺少音乐资源：'+t[0]});this.emit('audio-health',this.audioHealth());}
+        return -1;
+      }
+      this.missingMusic?.delete(name);
+      const h=this.next++,sound={buffer:asset.buffer,bgm,playing:false};sound.gain=this.context.createGain();sound.gain.connect(bgm?this.bgmGain:this.sfxGain);
+      if(bgm&&this.music){
+        sound.audio=new Audio(asset.url);sound.audio.preload='auto';
+        sound.audio.addEventListener('error',()=>{if(sound.audio.getAttribute('src')){sound.failure={state:'error',error:'音乐资源解码失败：'+t[0]};this.emit('audio-health',this.audioHealth());}});
+        sound.media=this.context.createMediaElementSource(sound.audio);sound.media.connect(sound.gain);
+      }
+      this.sounds.set(h,sound);return h;
+    }
     case 0x43e0d0:return 0;
     case 0x43e010:{const s=this.sounds.get(a[0]);if(s){this.stopSound(s);s.media?.disconnect();s.gain.disconnect();if(s.audio){s.audio.removeAttribute('src');s.audio.load();}this.sounds.delete(a[0]);}return 0;}
     case 0x43fd40:{const s=this.sounds.get(a[1]);if(s)s.gain.gain.value=Math.min(255,a[0])/255;return 0;}
@@ -176,6 +195,6 @@ export class Platform {
     for(const graph of this.graphs.values())if(graph.video&&graph.playing){graph.seekTime=(graph.seekTime||0)+1/60;if(Number.isFinite(graph.video.duration)&&graph.seekTime>=graph.video.duration){if(graph.video.loop)graph.seekTime%=graph.video.duration;else graph.playing=false;}}
   }
   releaseGraph(graph){if(!graph?.video)return;graph.playSerial=(graph.playSerial||0)+1;graph.playing=false;graph.video.pause();graph.video.removeAttribute('src');graph.video.load();this.renderer.releaseTexture(graph);}
-  resetGame(){for(const s of this.sounds.values()){this.stopSound(s);s.media?.disconnect();s.gain.disconnect();if(s.audio){s.audio.removeAttribute('src');s.audio.load();}}this.sounds.clear();for(const graph of this.graphs.values())this.releaseGraph(graph);this.graphs.clear();this.renderer.commands=[];this.renderer.current=[];this.renderer.previous.clear();this.renderer.identities.clear();this.renderer.committedScene=undefined;this.renderer.identity=null;this.viewport=null;this.fonts=new Map([[0,defaultFont()]]);this.defaultSize=16;this.pausedAudio=[];this.showFPS=false;if(this.fpsLabel)this.fpsLabel.hidden=true;}
+  resetGame(){for(const s of this.sounds.values()){this.stopSound(s);s.media?.disconnect();s.gain.disconnect();if(s.audio){s.audio.removeAttribute('src');s.audio.load();}}this.sounds.clear();this.missingMusic?.clear();for(const graph of this.graphs.values())this.releaseGraph(graph);this.graphs.clear();this.renderer.commands=[];this.renderer.current=[];this.renderer.previous.clear();this.renderer.identities.clear();this.renderer.committedScene=undefined;this.renderer.identity=null;this.viewport=null;this.fonts=new Map([[0,defaultFont()]]);this.defaultSize=16;this.pausedAudio=[];this.showFPS=false;if(this.fpsLabel)this.fpsLabel.hidden=true;}
   async destroy(){this.resetGame();removeEventListener('resize',this.fitFPS);if(this.fpsLabel)this.fpsLabel.hidden=true;await this.context.close();this.renderer.destroy();for(const url of this.urls)URL.revokeObjectURL(url);this.urls=[];}
 }

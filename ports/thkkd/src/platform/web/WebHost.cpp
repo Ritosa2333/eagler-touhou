@@ -78,15 +78,36 @@ void WebHost::present_gameplay(){draw_scene(0x61d690);suppress_drawing_=true;}
 void WebHost::draw_identity(){
     U id=0,birth=0,variant=0,pc=0;const U frame=world_.patterns.game_frame;
     if(rendering_snapshot_&&display_){
-        auto& d=*display_;pc=d.pc;const auto bp=d.reg[5];
+        auto& d=*display_;pc=d.pc;auto bp=d.reg[5];
+        // 精灵辅助函数沿显示栈取得所属对象；只读取显示快照。
+        for(unsigned depth=0;pc>=0x611ff0&&pc<0x612480&&depth<4;++depth){
+            if(std::uint64_t(bp)+8>d.data.size())break;
+            const U parent=U(d.load<4>(bp)),caller=U(d.load<4>(bp+4));
+            if(parent<=bp||std::uint64_t(parent)+8>d.data.size())break;
+            bp=parent;pc=caller;
+        }
         const auto stack=[&](int offset){const auto address=std::int64_t(bp)+offset;return address>=0&&std::uint64_t(address)+4<=d.data.size()?U(d.load<4>(U(address))):0xffffffffu;};
         if(pc>=0x614280&&pc<0x618c30){const auto index=stack(8);if(index<world_.projectiles.bullets.size()){
             const auto& object=world_.projectiles.bullets[index];id=200000+index;birth=frame-object.word(object.word(0)==1?0xc:0x10);variant=object.word(0)*256+object.word(4);
         }}else if(pc>=0x619b80&&pc<0x61d0f0){const auto index=stack(-4);if(index<world_.enemies.enemies.size()){
             const auto& object=world_.enemies.enemies[index];id=300000+index;birth=object.word(0x24);variant=object.word(0);
-        }}else if(pc>=0x612480&&pc<0x612b80){const auto index=stack(-4);if(index<world_.effects.effects.size()){
+        }}else if((pc>=0x6127c8&&pc<0x6128f0)||(pc>=0x612ab3&&pc<0x612b80)){const auto index=stack(-8);if(index<world_.projectiles.secondary.size()){
+            const auto& object=world_.projectiles.secondary[index];id=500000+index;birth=frame-object.word(8);variant=object.word(0)*256+object.word(4);
+        }}else if((pc>=0x612480&&pc<0x6127c8)||(pc>=0x6128f0&&pc<0x612ab3)){const auto index=stack(-4);if(index<world_.effects.effects.size()){
             const auto& object=world_.effects.effects[index];id=400000+index;birth=frame-object.word(4);variant=object.word(0xc);
-        }}else if((pc>=0x612b80&&pc<0x613560)||(pc>=0x619a80&&pc<0x619b80)){
+        }}else if(pc>=0x61d0f0&&pc<0x61d180){const auto index=stack(-4);if(index<world_.items.items.size()){
+            const auto& object=world_.items.items[index];id=900000+index;birth=frame-object.word(4);variant=object.word(8);
+        }}else if(pc>=0x618c30&&pc<0x619a40){
+            const auto index=stack(-4);
+            if(pc<0x618ccf){if(index<20)id=600000+index;}
+            else if((pc>=0x618cfb&&pc<0x618d6b)||(pc>=0x618df2&&pc<0x618e7e)||
+                    (pc>=0x618ef5&&pc<0x618f6f)||(pc>=0x618fe7&&pc<0x619057)||
+                    (pc>=0x619312&&pc<0x61938b)||(pc>=0x6195d5&&pc<0x61972a)||
+                    (pc>=0x619868&&pc<0x6199a3)){if(index<80)id=700000+index;}
+            else if(pc>=0x619427&&pc<0x6195d5)id=800000; // 固定三个附属物由调用位置区分。
+            else if(index<4)id=800000+index;
+            birth=world_.player.word(0x14);variant=world_.player.word(0);
+        }else if((pc>=0x612b80&&pc<0x613250)||(pc>=0x619a80&&pc<0x619b80)){
             id=100000;birth=world_.player.word(0x14);variant=world_.player.word(0);
         }
     }

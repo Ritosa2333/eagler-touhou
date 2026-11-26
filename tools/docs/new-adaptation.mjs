@@ -35,6 +35,9 @@ export function portDefinitions() {
 export function notApplicable(check, game, variant) {
   const product = PRODUCT_GAMES[game];
   const build = builds.games[game].variants[variant];
+  if (game === 'thkkd' && check.id === 'VERIFY-01') return '本作没有内置 Demo';
+  if (game === 'thkkd' && check.id === 'PACKAGE-04') return '本作只提供本地资源导入';
+  if (game === 'thkkd' && check.id === 'LANG-05') return null;
   if ((check.profile === 'multiplayer' || check.profile === 'multiplayer-cooperative') && variant === 'normal') return '单人模式';
   if (check.profile === 'multiplayer-cooperative' && product.multiplayer?.gameplay !== 'cooperative') {
     return '本作多人模式不是合作玩法';
@@ -65,7 +68,7 @@ export function adaptationMarkdown(port, {evidence = {}} = {}) {
         return reason ? `${variant}：${reason}` : evidence[variant]?.[check.id]?.note ?? '';
       }).filter(Boolean).join('；') || '—';
       const label = port.game === 'thkkd' && check.id === 'AUDIO-01' ? '原版 MP3 音乐'
-        : port.game === 'thkkd' && check.id === 'LANG-01' ? '内置中文原文' : check.label;
+        : port.game === 'thkkd' && check.id === 'LANG-01' ? '内置中文资源' : check.label;
       lines.push(`| ${check.id} | [${label}](../../docs/adaptation/${section.file}#${check.id.toLowerCase()}) | ${states.join(' | ')} | ${notes} |`);
     }
     lines.push('');

@@ -1,6 +1,6 @@
 # 文档总表
 
-共 699 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 700 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -519,6 +519,7 @@
 | 历史记录 | [archive/th19-touch-charge-20261105/README.md](../archive/th19-touch-charge-20261105/README.md) | TH19 蓄力触屏按钮 |
 | 历史记录 | [archive/th19-tsukasa-strengthening-20261106/README.md](../archive/th19-tsukasa-strengthening-20261106/README.md) | 管牧典 EX 弹幕强化 |
 | 历史记录 | [archive/th19-versus-settings-20261105/README.md](../archive/th19-versus-settings-20261105/README.md) | TH19 专属输入与对局设置验收 |
+| 历史记录 | [archive/thkkd-adaptation-20261127/README.md](../archive/thkkd-adaptation-20261127/README.md) | 海恵堂网页单机适配收尾 |
 | 历史记录 | [archive/thkkd-cpu-performance-20261126/README.md](../archive/thkkd-cpu-performance-20261126/README.md) | 海惠堂单机性能实测 |
 | 历史记录 | [archive/thkkd-import-20261126/CHANGES.md](../archive/thkkd-import-20261126/CHANGES.md) | 本轮改动文件 |
 | 历史记录 | [archive/thkkd-import-20261126/README.md](../archive/thkkd-import-20261126/README.md) | 海惠堂单机接入验证 |

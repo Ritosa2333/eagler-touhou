@@ -11127,5 +11127,25 @@
   "file.thkkdChooseReplay": {
     "id": "file_thkkdChooseReplay",
     "params": []
+  },
+  "thkkd.progress.noSave": {
+    "id": "thkkd_progress_noSave",
+    "params": []
+  },
+  "thkkd.character.reimu": {
+    "id": "thkkd_character_reimu",
+    "params": []
+  },
+  "thkkd.character.marisa": {
+    "id": "thkkd_character_marisa",
+    "params": []
+  },
+  "thkkd.character.sanae": {
+    "id": "thkkd_character_sanae",
+    "params": []
+  },
+  "thkkd.progress.oneCredit": {
+    "id": "thkkd_progress_oneCredit",
+    "params": []
   }
 }

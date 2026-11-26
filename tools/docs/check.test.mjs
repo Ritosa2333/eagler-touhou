@@ -23,6 +23,15 @@ const capabilitySource = readFileSync(new URL('../../launcher/src/contracts/adap
 const requiredContracts = extractRequiredBehaviorContracts(capabilitySource);
 const port = portDefinitions().find(item => item.game === 'th06');
 
+test('THKKD records local resource scope, absent Demo and built-in font coverage', () => {
+  const check = id => checklist.checks.find(item => item.id === id);
+  assert.equal(notApplicable(check('VERIFY-01'), 'thkkd', 'normal'), '本作没有内置 Demo');
+  assert.equal(notApplicable(check('PACKAGE-04'), 'thkkd', 'normal'), '本作只提供本地资源导入');
+  assert.equal(notApplicable(check('LANG-05'), 'thkkd', 'normal'), null);
+  assert.equal(notApplicable(check('VERIFY-01'), 'th06', 'normal'), null);
+  assert.equal(notApplicable(check('PACKAGE-04'), 'th06', 'normal'), null);
+});
+
 test('TH05 source adaptation records cover both Runtime variants', () => {
   const ports = portDefinitions();
   assert.deepEqual(ports.filter(item => item.game === 'th05').map(({directory,variants}) => [directory,variants]),

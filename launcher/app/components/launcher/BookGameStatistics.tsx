@@ -10,6 +10,7 @@ import {Button} from '../../ui/button';
 import {AppLink} from './AppLink';
 import {ClearMatrix} from './ClearMatrix';
 import {SpellCardArchive} from './SpellCardArchive';
+import {useThkkdProgress, type ThkkdProgressView} from './use-thkkd-progress';
 
 type Result = {owner: string; data: CloudSaveList} | {owner: string; failed: true};
 type StatisticsView = {owner?: string} & (
@@ -19,15 +20,16 @@ type StatisticsView = {owner?: string} & (
   | {status: 'ready'; save?: CloudSaveSnapshot});
 
 /** One read for the open detail, shared across games and both presentations. */
-export function useBookGameStatistics(game: GameId | undefined): StatisticsView | undefined {
-  const enabled = accountsEnabled && !!game;
-  const {state: account, retry: retryAccount} = useAccountSession(enabled);
+export function useBookGameStatistics(game: GameId | undefined): StatisticsView | ThkkdProgressView | undefined {
+  const local = useThkkdProgress(game === 'thkkd');
+  const enabled = accountsEnabled && !!game && game !== 'thkkd';
+  const {state: account, retry: retryAccount} = useAccountSession(accountsEnabled && !!game);
   const owner = account.status === 'member' ? account.user.username : undefined;
   const [result, setResult] = useState<Result>();
   const refresh = useRef<(() => void) | undefined>(undefined);
   const retry = useCallback(() => refresh.current?.(), []);
   useEffect(() => {
-    if (!owner) {
+    if (!enabled || !owner) {
       setResult(undefined);
       return;
     }
@@ -51,8 +53,9 @@ export function useBookGameStatistics(game: GameId | undefined): StatisticsView 
       pending?.abort();
       window.removeEventListener('cloud-save-change', load);
     };
-  }, [owner]);
+  }, [owner, enabled]);
 
+  if (game === 'thkkd') return {...local, owner};
   if (!enabled) return;
   if (account.status === 'guest') return {status: 'guest'};
   if (account.status === 'error') return {status: 'error', retry: retryAccount};
@@ -64,12 +67,13 @@ export function useBookGameStatistics(game: GameId | undefined): StatisticsView 
   return {status: 'ready', save, owner};
 }
 
-export function BookGameStatistics({game, view}: {game: GameId; view?: StatisticsView}) {
+export function BookGameStatistics({game, view}: {game: GameId; view?: StatisticsView | ThkkdProgressView}) {
   const {locale, t} = useLocale();
   const {pathname, search, hash} = useLocation();
   const save = view?.status === 'ready' ? view.save : undefined;
   const statistics = save?.statistics;
-  const progress = statistics?.progress ?? [];
+  const local = view?.status === 'local' ? view : undefined;
+  const progress = local?.progress ?? statistics?.progress ?? [];
   let status: ReactNode;
   if (view?.status === 'loading') status = <p className="book-game-stats-message" role="status">{t('status.loading')}</p>;
   if (view?.status === 'guest') {
@@ -84,14 +88,20 @@ export function BookGameStatistics({game, view}: {game: GameId; view?: Statistic
     <Button variant="outline" size="sm" onClick={view.retry}>{t('action.retry')}</Button>
   </div>;
   if (view?.status === 'ready' && !save) status = <p className="book-game-stats-message">{t('cloudSave.noSave')}</p>;
-  return <section className="book-game-detail-statistics book-game-stats" data-statistics-game={game} data-cloud-record={!!save} aria-labelledby="bookGameStatistics">
+  if (local) status = <div className="book-game-stats-message">
+    {local.loading ? <p role="status">{t('status.loading')}</p> : local.failed ? <p role="status">{t('cloudSave.statisticsFailed')}</p>
+      : !local.progress ? <p>{t('thkkd.progress.noSave')}</p> : null}
+    <Button variant="outline" size="sm" onClick={local.retry}>{t(local.failed ? 'action.retry' : 'cloudSave.refresh')}</Button>
+  </div>;
+  return <section className="book-game-detail-statistics book-game-stats" data-statistics-game={game} data-cloud-record={!!save} data-statistics-source={local ? 'local' : 'cloud'} aria-labelledby="bookGameStatistics">
     <div className="game-detail-section-heading">
       <h2 id="bookGameStatistics">{t('game.clearProgress')}</h2>
+      {local && <span className="book-game-stats-source">{t('cloudSave.browserVersion')}</span>}
       {save && <span className="book-game-stats-source" title={new Intl.DateTimeFormat(locale, {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(save.uploadedAt))}>
         {t('cloudSave.cloudUploaded')}
       </span>}
     </div>
-    <ClearMatrix key={game} work={{game, progress}} renderDetails={game === 'th06' || game === 'th07' ? (selection, label) =>
+    <ClearMatrix key={game} work={{game, progress}} oneCreditLabel={local ? t('thkkd.progress.oneCredit') : undefined} renderDetails={game === 'th06' || game === 'th07' ? (selection, label) =>
       <SpellCardArchive game={game} cards={statistics?.spellCards} archive={statistics?.spellArchive}
         selection={selection} label={label}/> : undefined}/>
     {status}

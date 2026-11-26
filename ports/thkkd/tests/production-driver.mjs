@@ -3,7 +3,7 @@ import puppeteer from '../../../launcher/node_modules/puppeteer-core/lib/puppete
 import {createHash} from 'node:crypto';
 export const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export async function productionBrowser({url,report,unlimited=false,touch=false,headed=false,protocolTimeout=180000,launchArgs=[],nativeViewport=false,profile=process.env.THKKD_TEST_PROFILE}){
-  const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:!headed,protocolTimeout,userDataDir:profile,args:[...(unlimited?['--disable-frame-rate-limit','--disable-gpu-vsync']:[]),...launchArgs],defaultViewport:nativeViewport?null:{width:1280,height:900,hasTouch:touch}});
+  const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:!headed,protocolTimeout,userDataDir:profile,args:[...(!headed?['--mute-audio']:[]),...(unlimited?['--disable-frame-rate-limit','--disable-gpu-vsync']:[]),...launchArgs],defaultViewport:nativeViewport?null:{width:1280,height:900,hasTouch:touch}});
   report.browser=await browser.version();report.errors??=[];report.loads=[];report.consoleErrors=[];report.httpErrors=[];report.navigations=[];report.telemetry=[];
   const page=await browser.newPage(),pending=[];
   await page.exposeFunction('__qualityObserve',event=>report.telemetry.push(event));
@@ -34,12 +34,23 @@ export async function productionBrowser({url,report,unlimited=false,touch=false,
     await page.waitForFunction(()=>new URL(location.href).searchParams.get('game')==='thkkd');
     await page.waitForSelector('#gameSettingsOpen',{visible:true});
   }
-  async function start(){
+  async function start({expectedBuildId}={}){
+    await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>!node.disabled&&node.getClientRects().length&&['Start game','开始游戏','启动游戏'].includes(node.textContent.trim())));
     const buttons=await page.$$('button');let launched=false;
-    for(const button of buttons)if(await button.evaluate(node=>['Start game','开始游戏','启动游戏'].includes(node.textContent.trim()))){await button.click();launched=true;break;}
+    for(const button of buttons)if(await button.evaluate(node=>!node.disabled&&node.getClientRects().length&&['Start game','开始游戏','启动游戏'].includes(node.textContent.trim()))){await button.click();launched=true;break;}
     assert.ok(launched,'正式启动按钮存在');
     await page.waitForFunction(()=>document.querySelector('#gameFrame')?.contentWindow?.__thkkdRuntime?.status().first,{timeout:60000});
-    const frame=page.frames().find(item=>item.url().includes('thkkd.html'));assert.ok(frame);
+    let frame=page.frames().find(item=>item.url().includes('thkkd.html'));assert.ok(frame);
+    if(expectedBuildId){
+      const deadline=Date.now()+30000;let matched=false;
+      while(Date.now()<deadline){
+        frame=page.frames().find(item=>item.url().includes('thkkd.html'));
+        try{if(frame&&await frame.evaluate(async id=>!!globalThis.__thkkdRuntime?.status().first&&(await(await fetch('./manifest.json')).json()).buildId===id,expectedBuildId)){matched=true;break;}}catch{}
+        await page.evaluate(()=>{const button=[...document.querySelectorAll('button')].find(node=>node.getClientRects().length&&/^(立即重启|Restart now|今すぐ再起動)$/.test(node.textContent.trim()));button?.click();});
+        await wait(250);
+      }
+      assert.ok(matched,'正式 Runtime 已切换到指定构建');
+    }
     await Promise.all(pending);report.runtime=await frame.evaluate(async()=>({url:location.href,manifest:await(await fetch('./manifest.json')).json(),configure:__qualityProtocol.find(m=>m.command==='configure'),serviceWorker:navigator.serviceWorker.controller?.scriptURL||null}));
     return frame;
   }

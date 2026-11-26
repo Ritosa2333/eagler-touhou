@@ -258,3 +258,13 @@ test('TH14 interrupted drag retires without a final confirmation release',()=>{
  const messages=keepTh14CancelCase('drag-cancel',f);
  assert.deepEqual(messages.map(m=>[m.command,m.type]),[['direct-touch','down'],['direct-touch','move'],['touch-cancel',undefined]]);
 });
+
+for(const reason of ['pointercancel','lostpointercapture'])test('THKKD cancelled contact sends cancellation: '+reason,()=>{
+ const f=fixture({game:'thkkd'});f.pointer('directSurface','pointerdown');f.pointer('directSurface',reason);f.pointer('directSurface','pointerup');
+ assert.deepEqual(f.sent.filter(m=>m.command==='direct-touch'||m.command==='touch-cancel').map(m=>[m.command,m.type]),[['direct-touch','down'],['touch-cancel',undefined]]);
+});
+test('THKKD iOS cancellation does not become a dialogue tap',()=>{
+ const f=fixture({game:'thkkd',ios:true}),p={identifier:7,clientX:210,clientY:320};
+ f.iosEvent('directSurface','touchstart',[p]);f.iosEvent('directSurface','touchcancel',[p]);f.iosEvent('directSurface','touchend',[p]);
+ assert.deepEqual(f.sent.filter(m=>m.command==='direct-touch'||m.command==='touch-cancel').map(m=>[m.command,m.type]),[['direct-touch','down'],['touch-cancel',undefined]]);
+});

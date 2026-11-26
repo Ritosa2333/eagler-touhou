@@ -1,4 +1,4 @@
-param([switch]$SkipCompile,[string]$Output='ports/thkkd/build/site')
+﻿param([switch]$SkipCompile,[string]$Output='ports/thkkd/build/site')
 $ErrorActionPreference='Stop'
 $repository=Resolve-Path (Join-Path $PSScriptRoot '../../..')
 Push-Location $repository

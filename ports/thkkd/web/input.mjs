@@ -2,6 +2,7 @@ import {createBrowserKeyboard} from '../../../common/browser/directory-keyboard.
 const scans={Escape:1,Digit1:2,Digit2:3,Digit3:4,Digit4:5,Digit5:6,Digit6:7,Digit7:8,Digit8:9,Digit9:10,Digit0:11,Minus:12,Equal:13,Backspace:14,Tab:15,
 KeyQ:16,KeyW:17,KeyE:18,KeyR:19,KeyT:20,KeyY:21,KeyU:22,KeyI:23,KeyO:24,KeyP:25,Enter:28,ControlLeft:29,ControlRight:29,KeyA:30,KeyS:31,KeyD:32,KeyF:33,KeyG:34,KeyH:35,KeyJ:36,KeyK:37,KeyL:38,ShiftLeft:42,ShiftRight:42,KeyZ:44,KeyX:45,KeyC:46,KeyV:47,KeyB:48,KeyN:49,KeyM:50,Space:57,ArrowUp:200,ArrowLeft:203,ArrowRight:205,ArrowDown:208};
 const defaultBindings=[1,2,3,0,5,4,11,13,6];
+const tapDistance=(x,y)=>Math.hypot(x*640,y*480);
 export class Input {
   constructor(identity,ready){
     this.owners=new Map();this.pulses=new Map();this.options={};this.controls={};this.pointers=new Map();this.ready=ready;this.target=null;this.player=null;this.recordedMotion=new Map();this.extended=false;this.unlimitedUsed=false;
@@ -9,9 +10,9 @@ export class Input {
   }
   key(code,down,source){let set=this.owners.get(code);if(down){if(!set)this.owners.set(code,set=new Set());set.add(source);}else if(set){set.delete(source);if(!set.size)this.owners.delete(code);}}
   pulse(code,ticks=2){this.pulses.set(code,code==='KeyZ'&&!this.isGameplay?.()?-ticks:ticks);}
-  clearTouch(){for(const [code,set]of this.owners)for(const source of [...set])if(source==='touch'||source==='joystick'||source==='two-finger')this.key(code,false,source);this.pulses.clear();this.pointers.clear();this.controls={};this.target=null;}
+  clearTouch(){for(const [code,set]of this.owners)for(const source of [...set])if(source==='touch'||source==='joystick'||source==='two-finger')this.key(code,false,source);this.pulses.clear();this.pointers.clear();this.controls={};this.target=null;this.lastTap=null;this.motionBlocked=false;this.reanchorTouch=false;}
   clear(){this.keyboard.clear();this.owners.clear();this.clearTouch();this.padBits=0;this.confirmRelease=false;this.confirmHeld=false;this.dialogueAdvance=false;this.dialogueRouting=false;}
-  resetRecording(){this.recordedMotion.clear();this.extended=false;this.unlimitedUsed=false;this.motionCursor=undefined;this.restartDown=false;this.player=null;}
+  resetRecording(){this.recordedMotion.clear();this.extended=false;this.unlimitedUsed=false;this.motionCursor=undefined;this.restartDown=false;this.player=null;this.target=null;this.motionBlocked=false;this.reanchorTouch=false;}
   configure(options){this.options=options;this.clearTouch();}
   syncTouchOwners(){
     const enabled=this.options.touchEnabled===true,digital=enabled&&this.options.touchMovementMode!=='joystick-free';
@@ -38,19 +39,21 @@ export class Input {
       const old=this.pointers.get(m.id);
       if(m.type==='down'){
         if(!this.pointers.size)this.menuBackSent=false;
-        this.pointers.set(m.id,{x:m.x,y:m.y,startX:m.x,startY:m.y,time:performance.now(),gesture:false});
+        this.pointers.set(m.id,{x:m.x,y:m.y,startX:m.x,startY:m.y,time:performance.now(),gesture:false,gameplay:this.isGameplay?.()===true});
         if(this.pointers.size>1)for(const pointer of this.pointers.values())pointer.multi=true;
         if(this.pointers.size===1&&this.player)this.target={x:this.player.x,y:this.player.y};
-        if(this.options.doubleTapBombEnabled&&this.lastTap&&performance.now()-this.lastTap.time<280&&Math.hypot(m.x-this.lastTap.x,m.y-this.lastTap.y)<.08)this.pulse('KeyX');
+        if(this.options.doubleTapBombEnabled&&this.isGameplay?.()&&this.lastTap&&performance.now()-this.lastTap.time<280&&Math.hypot(m.x-this.lastTap.x,m.y-this.lastTap.y)<.08)this.pulse('KeyX');
+        this.lastTap=null;
       }else if(m.type==='move'&&old){
+        old.moved||=tapDistance(m.x-old.startX,m.y-old.startY)>8;
         if(this.isGameplay?.()&&this.pointers.keys().next().value===m.id&&['touch','touch-unlimited',undefined].includes(this.options.touchMovementMode)&&this.player){
-          if(!this.target)this.target={x:this.player.x,y:this.player.y};const gain=(this.controls.touchSensitivity||this.options.touchSensitivity||100)/100;
+          if(!this.target||this.reanchorTouch)this.target={x:this.player.x,y:this.player.y};this.reanchorTouch=false;const gain=(this.controls.touchSensitivity||this.options.touchSensitivity||100)/100;
           this.target.x+=(m.x-old.x)*640*gain;this.target.y+=(m.y-old.y)*480*gain;
         }else if(!old.gesture&&!old.multi){const dx=m.x-old.startX,dy=m.y-old.startY;if(Math.hypot(dx,dy)>.075){this.pulse(Math.abs(dx)>Math.abs(dy)?dx>0?'ArrowRight':'ArrowLeft':dy>0?'ArrowDown':'ArrowUp');old.gesture=true;}}
         old.x=m.x;old.y=m.y;
       }else if(m.type==='up'&&old){
-        if(!this.isGameplay?.()&&!old.gesture&&Math.hypot(m.x-old.startX,m.y-old.startY)<.075){if(old.multi){if(!this.menuBackSent){this.pulse('KeyX');this.menuBackSent=true;}}else this.pulse('KeyZ');}
-        this.lastTap={x:m.x,y:m.y,time:performance.now()};this.pointers.delete(m.id);if(!this.pointers.size)this.target=null;
+        if(!this.isGameplay?.()&&!old.moved&&!old.gesture&&tapDistance(m.x-old.startX,m.y-old.startY)<=8){if(old.multi){if(!this.menuBackSent){this.pulse('KeyX');this.menuBackSent=true;}}else this.pulse('KeyZ');}
+        this.lastTap=old.gameplay&&this.isGameplay?.()&&!old.moved&&!old.gesture&&performance.now()-old.time<280&&tapDistance(m.x-old.startX,m.y-old.startY)<=8?{x:m.x,y:m.y,time:performance.now()}:null;this.pointers.delete(m.id);if(!this.pointers.size)this.target=null;
       }
       if(this.options.touchFocusMode==='two-finger')this.key('ShiftLeft',this.pointers.size>=2,'two-finger');return true;
     }
@@ -58,12 +61,16 @@ export class Input {
     }
   }
   motion(state){
-    this.player={x:state.x,y:state.y};
+    const previousPlayer=this.player;this.player={x:state.x,y:state.y};
     if(state.replay)return this.replayMotion?.get(state.cursor)||null;
     if(this.options.touchEnabled!==true)return null;
     if(this.motionCursor!==undefined&&state.cursor<this.motionCursor){this.recordedMotion.clear();this.extended=false;this.unlimitedUsed=false;}
     this.motionCursor=state.cursor;
-    if(state.blocked){if(this.target)this.target={x:state.x,y:state.y};return null;}
+    if(state.blocked){this.motionBlocked=true;if(this.target)this.target={x:state.x,y:state.y};return null;}
+    if(this.motionBlocked){this.motionBlocked=false;if(this.target&&this.pointers.size&&(!previousPlayer||state.oldX!==previousPlayer.x||state.oldY!==previousPlayer.y))this.reanchorTouch=true;}
+    // 原生复活从场外入场；等待进入移动区域，再从当前坐标接续触控。
+    if(state.y>432||state.oldY>432){if(this.target&&this.pointers.size){this.target={x:state.x,y:state.y};this.reanchorTouch=true;}return null;}
+    if(this.reanchorTouch){this.target={x:state.x,y:state.y};return null;}
     let dx=0,dy=0,active=false;
     if(this.target&&this.pointers.size){dx=this.target.x-state.oldX;dy=this.target.y-state.oldY;active=true;}
     else if(this.options.touchMovementMode==='joystick-free'){
@@ -102,7 +109,7 @@ export class Input {
     if(!this.isGameplay?.()&&output[28])output[44]=1;
     this.confirmRelease=false;
     for(const [code,ticks]of this.pulses){if(ticks<0){output[scans[code]]=0;if(code==='KeyZ')this.confirmRelease=true;this.pulses.set(code,-ticks);}else{output[scans[code]]=1;if(ticks<=1)this.pulses.delete(code);else this.pulses.set(code,ticks-1);}}
-    if(!this.isGameplay?.()&&[...this.pointers.values()].some(pointer=>!pointer.gesture&&performance.now()-pointer.time>350))output[29]=1;
+    if(!this.isGameplay?.()&&[...this.pointers.values()].some(pointer=>!pointer.gesture&&!pointer.moved&&!pointer.multi&&performance.now()-pointer.time>350))output[29]=1;
     const confirm=!!output[44]||!this.confirmRelease&&!!(bits&((1<<0)|(1<<9)));
     this.dialogueRouting=this.isDialogue?.()===true;
     if(this.dialogueRouting){const skip=!!output[29]||!!(bits&(1<<8));output[29]=0;this.dialogueAdvance=confirm&&!this.confirmHeld||skip&&!this.dialogueAdvance;}

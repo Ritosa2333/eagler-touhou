@@ -2645,5 +2645,10 @@
   "game_noSpellStats": "このセーブのスペルカード取得記録は利用できません",
   "package_originalPreparingResources": "リソースを準備中 {completed}/{total} · {name}",
   "package_thkkdImportHint": "原作の dat.dxa と bgm.dxa を同時に選択するか、両方を含む ZIP を選択してください。ZIP 内では直下、または同じ一階層のゲームフォルダーに配置できます。",
-  "file_thkkdChooseReplay": ".rpy、.thkkdr のリプレイ、またはリプレイ ZIP を選択してください。複数ファイルを同時に選択できます。"
+  "file_thkkdChooseReplay": ".rpy、.thkkdr のリプレイ、またはリプレイ ZIP を選択してください。複数ファイルを同時に選択できます。",
+  "thkkd_progress_noSave": "ローカルセーブがありません。原作のセーブをインポートするか、プレイして保存するとクリア状況を確認できます。",
+  "thkkd_character_reimu": "博麗霊夢",
+  "thkkd_character_marisa": "霧雨魔理沙",
+  "thkkd_character_sanae": "東風谷早苗",
+  "thkkd_progress_oneCredit": "ノーコンティニュークリア"
 }

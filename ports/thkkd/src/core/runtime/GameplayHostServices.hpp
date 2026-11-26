@@ -73,7 +73,10 @@ public:
  using U=std::uint32_t;GameplayHostLateTimeline(GameplayHostServices& h,GameplayHostTitleReturn& title):h_(h),title_(title){}
  std::int32_t allocate_boss(U k)override{return h_.allocate_boss(k);}void configure_phase(U s,U t,U hp,U i)override{h_.configure_phase(s,t,hp,i);}void begin_boss_effect()override{h_.begin_boss_effect();}void retire_boss(U m)override{h_.retire_boss(m);}U color(U r,U g,U b)override{return h_.color(r,g,b);}
  void dialog(U m)override{h_.dialog(m);}void award_stage_clear()override{h_.award_stage_clear();}void pause_background()override{h_.pause_background();}void stop_music()override{h_.stop_sound(h_.game.music.audio_handle);}
- void return_to_title(bool replay)override{return_menu_title(h_.game.menu,h_.menu.title,h_.game.resources,title_,replay);h_.platform.memory.reconcile();}
+ void return_to_title(bool replay)override{
+  // 先发布关卡写入的返回场景，再由录像保存询问决定最终菜单场景。
+  h_.platform.memory.reconcile();return_menu_title(h_.game.menu,h_.menu.title,h_.game.resources,title_,replay);h_.platform.memory.reconcile();
+ }
  void initialize_title_visuals()override{initialize_menu_title(h_.menu.title,h_.game.menu,h_.game.music,h_.game.lifecycle.scene,h_.game.savedata,static_cast<unsigned>(h_.precision),title_);h_.platform.memory.reconcile();}
  void draw_line(U x1,U y1,U x2,U y2,U ink,U width)override{h_.platform.call(0x42d190,{x1,y1,x2,y2,ink,width});}
 };

@@ -28,10 +28,10 @@ function clearStatus(items: readonly SaveProgress[]): keyof typeof statusLabels 
 
 export type MatrixWork = {game: GameId; progress: readonly SaveProgress[]};
 type MatrixProps = {works: readonly MatrixWork[]; onSelectWork(game: GameId, trigger: HTMLButtonElement): void} |
-  {work: MatrixWork; readOnly?: boolean; renderDetails?(selection: SaveProgress, label: string): ReactNode};
+  {work: MatrixWork; readOnly?: boolean; oneCreditLabel?: string; renderDetails?(selection: SaveProgress, label: string): ReactNode};
 
 const withoutExtra: ReadonlySet<GameId> = new Set(['th01', 'th03', 'th075', 'th19']);
-const letterShots: ReadonlySet<GameId> = new Set(['th04', 'th06', 'th07', 'th10', 'th11', 'th12', 'th14']);
+const letterShots: ReadonlySet<GameId> = new Set(['th04', 'th06', 'th07', 'th10', 'th11', 'th12', 'th14', 'thkkd']);
 const th08Teams = ['profile.team.barrier','profile.team.magic','profile.team.scarlet','profile.team.ghost'] as const;
 
 function hasDifficulty(game: GameId, difficulty: SaveProgress['difficulty']) {
@@ -72,6 +72,10 @@ function groupProgress(game: GameId, progress: readonly SaveProgress[]) {
 }
 
 function loadoutLabel(game: GameId, character: number, shot: number | null, t: Translate) {
+  if (game === 'thkkd' && character >= 0 && character < 3) {
+    const names = ['thkkd.character.reimu', 'thkkd.character.marisa', 'thkkd.character.sanae'] as const;
+    return t(names[character]) + (shot === null ? '' : ' ' + String.fromCharCode(65 + shot));
+  }
   const option = gameLoadouts(game).find(item => item.character === character && item.shot === (shot ?? 0));
   if (option) {
     if (shot === null && (game === 'th075' || game === 'th17') && option.selection?.[0]) {
@@ -84,12 +88,12 @@ function loadoutLabel(game: GameId, character: number, shot: number | null, t: T
   return shot === null ? name : name + ' ' + String.fromCharCode(65 + shot);
 }
 
-function MatrixCell({difficulty, records, active, onSelect, showUnread}: {
+function MatrixCell({difficulty, records, active, onSelect, showUnread, oneCreditLabel}: {
   difficulty: SaveProgress['difficulty'];
-  records: readonly SaveProgress[]; active?: boolean; onSelect?: () => void; showUnread?: boolean;
+  records: readonly SaveProgress[]; active?: boolean; onSelect?: () => void; showUnread?: boolean; oneCreditLabel?: string;
 }) {
   const {t, locale} = useLocale();
-  const status = clearStatus(records), label = t(statusLabels[status]);
+  const status = clearStatus(records), label = status === 'one-credit' && oneCreditLabel ? oneCreditLabel : t(statusLabels[status]);
   const icon = status === 'one-credit' ? <Check aria-hidden="true"/> :
     status === 'cleared' || status === 'uncleared' ? <Dot aria-hidden="true"/> : null;
   if (!onSelect || !records.length) return <td data-difficulty={difficulty}>{status === 'unread' && !showUnread ? null :
@@ -111,6 +115,7 @@ export function ClearMatrix(props: MatrixProps) {
   const work = 'work' in props ? props.work : null;
   const interactive = 'work' in props && !props.readOnly;
   const renderDetails = 'renderDetails' in props ? props.renderDetails : undefined;
+  const oneCreditLabel = 'oneCreditLabel' in props ? props.oneCreditLabel : undefined;
   const [mode, setMode] = useState<'legacy' | 'pointdevice'>('legacy');
   const [selection, setSelected] = useState<SaveProgress>();
   const works = 'works' in props ? props.works : [];
@@ -178,7 +183,7 @@ export function ClearMatrix(props: MatrixProps) {
                 </div></th>
                 {options.map(difficulty => {
                   const item = records.find(record => record.difficulty === difficulty);
-                  return <MatrixCell key={difficulty} difficulty={difficulty} records={item ? [item] : []} active={!!item && selected === item} showUnread
+                  return <MatrixCell key={difficulty} difficulty={difficulty} records={item ? [item] : []} active={!!item && selected === item} showUnread oneCreditLabel={oneCreditLabel}
                     onSelect={item && interactive && (renderDetails || item.bestScore !== null) ? () => setSelected(item) : undefined}/>;
                 })}
               </tr>);
@@ -189,7 +194,7 @@ export function ClearMatrix(props: MatrixProps) {
       <div className="clear-matrix-legend">{Object.entries(statusLabels)
         .filter(([status]) => (work || status !== 'unread') && (showUnattempted || status !== 'not-attempted'))
         .map(([status, label]) =>
-        <span key={status}><i className="clear-mark" data-status={status} aria-hidden="true"/>{t(label)}</span>)}</div>
+        <span key={status}><i className="clear-mark" data-status={status} aria-hidden="true"/>{status === 'one-credit' && oneCreditLabel ? oneCreditLabel : t(label)}</span>)}</div>
     </div>
     {work && selected && renderDetails?.(selected,
       loadoutLabel(work.game, selected.character, selected.shot, t) + ' | ' + difficultyName[selected.difficulty])}

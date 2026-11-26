@@ -31,12 +31,16 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 原生存档、配置与录像写入关闭后同步 IndexedDB。游戏文件通过共用启动器导入导出，存档与录像均支持多选。存档批次核对目标文件后统一确认覆盖并重启校验；录像批次在同一个文件会话中预留空闲名称，再写入和刷新工作台。原作 Practice 与 Omniverse 保留在游戏菜单内，MIDI、语言包和通用 THPrac 按产品登记范围显示。
 
+详情页使用启动器的 `thkkd-progress` 解析器读取 `th_kaikeidou01.dat`：前 56 字节是键位与设置，随后为五难度、三角色、三武器、七关的 DWORD 进度。Easy～Lunatic 读取第六面结果，Extra 读取第七面结果，数值 1 为续关通关，2 为不续关通关。读取使用只读事务，页面刷新与原存档写入相互独立。
+
 ## 验证
 
 ```powershell
 node --test ports/thkkd/tests/extensions.test.mjs
 bun run --cwd launcher test:repository tests/test-thkkd-original.mjs tests/react-validation-paths.test.mjs
 python -X utf8 -B ports/thkkd/tests/test_release_source_inventory.py
+python -X utf8 -B ports/thkkd/tests/test_replay_reference.py
+python -X utf8 -B ports/thkkd/scripts/test-omniverse-clear.py
 node tools/ports/check.mjs --game=thkkd --variant=normal
 ```
 
@@ -45,6 +49,12 @@ node tools/ports/check.mjs --game=thkkd --variant=normal
 `original-import-browser.mjs` 用 `--dat=路径 --bgm=路径` 或 `--zip=路径` 检查真实文件选择器、安装、开局和离线复用。`files-ui-browser.mjs` 检查存档与录像导入导出，`flow-browser.mjs` 检查原生录像保存与持久化，`system-browser.mjs` 检查机体、关卡入口和媒体，`dialogue-browser.mjs` 检查对话操作，`playback-cadence-browser.mjs` 检查播放、暂停与快进。
 
 `replay-regression-browser.mjs --url=站点 --replays=本机录像目录 --output=结果目录` 对完整原版录像逐步核对游标、随机数和对象摘要。数学或核心状态调整时，使用 `build-eagler.mjs --probe`、`verify-wasm.py --archive=本机采样目录 --all` 和相关浏览器录像回归。原始采样与录像作为本机验证输入保留。
+
+`verify-wasm.py` 核对 EXE、DXA、录像和原始采样哈希，逐区域重建固定基准并比较候选输出。结果默认写入新的 `build/verification` 目录，也可用 `--output=新目录` 指定；`--case=corpus-05 --inject=1:player:20` 注入候选残机字段差异，用于验证首个差异采样帧、字段与字节偏移的报告。当前基准按实际采样帧比较，原始输入保持固定。
+
+`input-adaptation-browser.mjs` 检查原生触控位移、低速、复活、Bomb 与共用按钮；`progress-browser.mjs` 检查本地通关进度；`package-adaptation-browser.mjs` 检查更新中断、恢复和用户数据；`audio-adaptation-browser.mjs` 检查 MP3 错误与音效时延；`presentation-adaptation-browser.mjs` 检查九机体显示、只读绘制及四种刷新率调度。上述脚本接受 `--url=站点 --profile=专用浏览器目录 --output=结果目录`。`flow-browser.mjs --gamepad` 或 `--free-touch` 检查实际输入录制与原生保存流程，通过 `THKKD_SITE_URL`、`THKKD_TEST_PROFILE`、`THKKD_TEST_OUTPUT` 指定环境。
+
+字体覆盖检查先安装 `tests/font-requirements.txt`，再运行 `python -X utf8 -B ports/thkkd/tests/font-coverage.py --output=ports/thkkd/build/font-coverage.json`。该检查汇集核心文本、显示常量和网页标记，核对随包 WOFF2 的字符映射。
 
 ## 本地交付
 

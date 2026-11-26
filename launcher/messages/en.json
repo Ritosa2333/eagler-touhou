@@ -2645,5 +2645,10 @@
   "game_noSpellStats": "Spell card statistics are unavailable for this save",
   "package_originalPreparingResources": "Preparing resources {completed}/{total} · {name}",
   "package_thkkdImportHint": "Select the original dat.dxa and bgm.dxa together, or a ZIP containing both files at its root or inside one top-level game folder.",
-  "file_thkkdChooseReplay": "Select .rpy or .thkkdr recordings, or replay ZIP files. You can select multiple files."
+  "file_thkkdChooseReplay": "Select .rpy or .thkkdr recordings, or replay ZIP files. You can select multiple files.",
+  "thkkd_progress_noSave": "No local save yet. Import an original save or play and save to view clear progress here.",
+  "thkkd_character_reimu": "Reimu Hakurei",
+  "thkkd_character_marisa": "Marisa Kirisame",
+  "thkkd_character_sanae": "Sanae Kochiya",
+  "thkkd_progress_oneCredit": "1CC (no continues)"
 }

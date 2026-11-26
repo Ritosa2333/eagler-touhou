@@ -74,7 +74,7 @@ export class Renderer {
         const batch=batches[batchCount]??={};batch.command=command;batch.first=used/10;batchCount++;last=command;
       }
       const previous=alpha>0&&command.identity?this.previous.get(command.identity):null;
-      const compatible=previous&&previous.texture.texture===command.texture.texture&&previous.mode===command.mode&&previous.uv.every((value,i)=>value===command.uv[i])&&command.points.every((value,i)=>Math.abs(value-previous.points[i])<64);
+      const compatible=previous&&previous.texture.texture===command.texture.texture&&previous.mode===command.mode&&previous.opaque===command.opaque&&previous.area.every((value,i)=>value===command.area[i])&&previous.uv.every((value,i)=>value===command.uv[i])&&command.points.every((value,i)=>Math.abs(value-previous.points[i])<64);
       for(const i of triangleVertices){
         const x=command.points[i*2],y=command.points[i*2+1],px=compatible?x+(x-previous.points[i*2])*Math.min(1,alpha):x,py=compatible?y+(y-previous.points[i*2+1])*Math.min(1,alpha):y;
         this.vertices[used++]=px;this.vertices[used++]=py;

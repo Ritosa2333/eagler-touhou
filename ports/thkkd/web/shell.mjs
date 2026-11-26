@@ -5,7 +5,7 @@ import {createSaveSync} from './save-sync.mjs';
 import {createDirectInputBridge} from './direct-input-bridge.mjs';
 import {createLocalReplay} from './local-replay.mjs';
 import {decodeReplay,encodeExtended} from './replay.mjs';
-import {PresentationClock} from './presentation-clock.mjs';
+import {PresentationClock,ReplayPresentationClock} from './presentation-clock.mjs';
 import {installDisplay} from './display.mjs';
 const game='thkkd',protocol='eagler-touhou/1',query=new URLSearchParams(location.search),epoch=Number(query.get('runtimeEpoch'));
 const canvas=document.querySelector('canvas'),loading=document.querySelector('#loading'),errorBox=document.querySelector('#error');
@@ -20,6 +20,7 @@ input.bindings=()=>Array.from({length:9},(_,index)=>core._thkkd_word(0xa733dc+in
 input.onRestart=()=>{if(core?._thkkd_restart()===1)input.resetRecording();};
 const sync=createSaveSync(()=>core);
 const presentationClock=new PresentationClock();
+const replayPresentationClock=new ReplayPresentationClock();
 const nativeError=()=>core.UTF8ToString(core._thkkd_error());
 function fatal(error){launched=false;cancelAnimationFrame(raf);const message=error?.message||String(error);errorBox.textContent=message;emit('error',{error:message});void platform?.suspend();}
 function path(value){
@@ -34,9 +35,9 @@ async function stop(status='exited'){
 function presented(time){
   display.check();
   if(!presentationClock.due(time,options.limitPresentationTo60))return;
-  platform.renderer.present();displayFrames++;if(!first&&platform.presented){first=true;loading.textContent='';emit('first-frame',launchSerial===undefined?{}:{launchSerial});}
+  platform.renderer.present(replayPresentationClock.alpha(time,playbackState,options.limitPresentationTo60));displayFrames++;if(!first&&platform.presented){first=true;loading.textContent='';emit('first-frame',launchSerial===undefined?{}:{launchSerial});}
 }
-function health(time){if(time-healthTime>=2000){const elapsed=(time-healthTime)/1000;emit('frame-health',{fps:displayFrames/elapsed,logicFps:logicFrames/elapsed,frameMs:elapsed*1000/Math.max(1,displayFrames)});emit('audio-health',{backend:'Web Audio / HTML Audio',state:platform.context.state,robust:true});healthTime=time;logicFrames=0;displayFrames=0;}}
+function health(time){if(time-healthTime>=2000){const elapsed=(time-healthTime)/1000;emit('frame-health',{fps:displayFrames/elapsed,logicFps:logicFrames/elapsed,frameMs:elapsed*1000/Math.max(1,displayFrames)});emit('audio-health',{backend:'Web Audio / HTML Audio',...platform.audioHealth(),robust:true});healthTime=time;logicFrames=0;displayFrames=0;}}
 function replayFrame(time){if(!launched||stopping)return;try{if(!document.hidden&&replayHasStepped)presented(time);health(time);raf=requestAnimationFrame(replayFrame);}catch(error){fatal(error);}}
 function getReplay(){
   if(replayBridge)return replayBridge;
@@ -49,11 +50,11 @@ function getReplay(){
       const temporary='replay/.thkkd-playback.rpy';core.FS.writeFile(saveRoot+'/'+temporary,activeReplay.native);
       const nameBytes=new TextEncoder().encode(temporary+'\0');core.HEAPU8.set(nameBytes,core._thkkd_replay_path());
       try{if(core._thkkd_replay_open()<0)throw Error(nativeError());if(core._thkkd_word(0xb4310c)!==1||core._thkkd_word(0xb43a08)!==activeReplay.count)throw Error('原生录像输入缓冲加载失败');}finally{core.FS.unlink(saveRoot+'/'+temporary);}
-      first=false;launched=true;replayHasStepped=false;healthTime=performance.now();logicFrames=0;displayFrames=0;raf=requestAnimationFrame(replayFrame);
+      first=false;launched=true;replayHasStepped=false;replayPresentationClock.reset();healthTime=performance.now();logicFrames=0;displayFrames=0;raf=requestAnimationFrame(replayFrame);
     },
-    step(){const result=core._thkkd_step();if(result<0)throw Error(nativeError());logicFrames++;replayHasStepped=true;platform.seekAudioTick();return result===0;},
+    step(){const result=core._thkkd_step();if(result<0)throw Error(nativeError());logicFrames++;replayHasStepped=true;replayPresentationClock.stepped(performance.now());platform.seekAudioTick();return result===0;},
     state(){const frame=core._thkkd_word(0xb43110),total=Math.max(0,(activeReplay?.count||1)-1);return {frame:Math.min(frame,total),total,ended:frame>=total,stage:0,startStage:0};},
-    stopLoop(){cancelAnimationFrame(raf);lastTime=null;accumulator=0;presentationClock.reset();},
+    stopLoop(){cancelAnimationFrame(raf);lastTime=null;accumulator=0;presentationClock.reset();replayPresentationClock.reset();},
     async relocate(from,to){const a=core.FS.readFile(saveRoot+'/'+from),b=core.FS.readFile(saveRoot+'/'+to);if(a.length!==b.length||a.some((value,i)=>value!==b[i]))throw Error('目标录像与当前录像内容不一致');activeReplay.path=to;},
     audioState({paused,hidden,seeking,ended}){
       const stop=paused||hidden||ended;
@@ -107,7 +108,7 @@ addEventListener('message',event=>{
 });
 function emitResponse(m,result){parent.postMessage({protocol,game,epoch,request:m.request,...result},location.origin);}
 for(const [name,down]of [['keydown',true],['keyup',false]])addEventListener(name,event=>{if(input.keyboard.mapNative(event,down)||input.keyboard.event(event,down)){event.preventDefault();}if(down&&(!replayBridge?.active||!playbackState?.paused))void platform?.context.resume();});
-const clear=()=>{input.clear();lastTime=null;accumulator=0;presentationClock.reset();};
+const clear=()=>{input.clear();lastTime=null;accumulator=0;presentationClock.reset();replayPresentationClock.reset();};
 addEventListener('blur',clear);
 document.addEventListener('visibilitychange',()=>{clear();if(document.hidden)void platform?.suspend();else void platform?.resume();});
 addEventListener('pagehide',()=>{clear();launched=false;cancelAnimationFrame(raf);display.dispose();void sync(false);void platform?.destroy();});
