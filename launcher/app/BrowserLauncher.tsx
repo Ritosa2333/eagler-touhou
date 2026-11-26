@@ -3,11 +3,12 @@ import {UI_LOCALES, UI_LOCALE_LABELS, isUiLocale, localeHome, withUiLanguage} fr
 import {lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
-import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS, productRequiresImport, type ProductId} from '../src/contracts/product-catalog.mts';
+import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS, type ProductId} from '../src/contracts/product-catalog.mts';
 import {multiplayerGuidePath} from '../lib/multiplayer-guide.mjs';
 import {buildMultiplayerDiagnosticRelayUrl} from '../src/launcher/multiplayer-relay-url.mts';
 import {generateMultiplayerRoomCode} from '../src/launcher/multiplayer-identity.mts';
 import {readReactAppShellDeployment} from './services/app-shell-deployment';
+import {requiresLocalGameData} from './services/metadata';
 import {siteOriginMigrationAvailable} from '../src/contracts/site-manifest.mts';
 import {LauncherApplication, type LauncherHost} from './LauncherApplication';
 import {createBrowserSession, type BrowserSession, type BrowserSessionSnapshot} from './session/browser-session';
@@ -264,10 +265,9 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
 function SessionLaunchActions({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation(), {t} = useLocale();
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
+  const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
-  const metadata = session.metadata.getSnapshot();
-  const importRequired = (productRequiresImport(settings.gameId) || metadata.siteManifest?.shared.resourceMode === 'import') &&
-    !metadata.installed.has(settings.gameId);
+  const importRequired = requiresLocalGameData(metadata, settings.gameId) && !metadata.installed.has(settings.gameId);
   return <LaunchActions primary={{id: 'launch', textId: 'launchText',
     label: t(importRequired ? 'action.importGameData' : 'action.start'),
     onClick: () => {if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);}}}

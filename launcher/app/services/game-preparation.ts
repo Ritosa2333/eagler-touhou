@@ -1,6 +1,7 @@
+import {requiresLocalGameData} from './metadata';
 import {isReplayFilePath} from '../../src/launcher/replay-files.mts';
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, languagePriority, productFeatureAvailable,
-  productRequiresImport, type ProductId} from '../../src/contracts/product-catalog.mts';
+  type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
 import type {RuntimeConfigureOptions} from '../../src/contracts/runtime-protocol.mts';
@@ -121,12 +122,13 @@ function th075RoomAssetPlan(input: GamePreparationInput): RuntimePlan | null {
 function effectiveMusic(input: GamePreparationInput, generation: InstalledPackageGeneration | null, host: SiteManifest | null, splitAssets = false) {
   const {settings, acquisition} = input, hosted = host?.games[settings.gameId];
   const policy = PRODUCT_GAMES[settings.gameId].musicRuntime;
+  const metadata = acquisition.getMetadata();
   return resolveEffectiveMusicMode({audio: settings.context.musicAvailability.audio,
     musicSources: 'sources' in policy ? policy.sources : [],
     embeddedOgg: settings.context.musicAvailability.embeddedOgg,
     midiAvailable: PRODUCT_GAMES[settings.gameId].musicCapabilities.midi && hosted?.music.midi.supported !== false,
-    importServer: productRequiresImport(settings.gameId) || host?.shared.resourceMode === 'import', remoteOggAdvertised: !!hosted?.music.ogg || splitAssets,
-    remoteRevision: acquisition.getMetadata().releaseCatalog?.games[settings.gameId]?.revision ?? null,
+    importServer: requiresLocalGameData(metadata, settings.gameId), remoteOggAdvertised: !!hosted?.music.ogg || splitAssets,
+    remoteRevision: metadata.releaseCatalog?.games[settings.gameId]?.revision ?? null,
     installed: generation ? {revision: generation.descriptor.revision, oggFileIds: runtimeOggFileIds(generation.descriptor, input.productId), files: generation.files} : null,
     requested: settings.musicPreference, explicit: settings.musicPreferenceExplicit});
 }
