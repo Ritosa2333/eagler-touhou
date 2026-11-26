@@ -11,20 +11,15 @@
   }
   .game-detail-backdrop {
     position: absolute;
-    z-index: -2;
-    inset: -24px;
-    width: calc(100% + 48px);
-    height: calc(100% + 48px);
-    object-fit: cover;
-    filter: blur(var(--game-hero-blur, 32px)) brightness(.55);
-    pointer-events: none;
-  }
-  .game-detail-hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
     z-index: -1;
-    background: var(--game-hero-overlay, linear-gradient(145deg, #17131c38, #151520d1));
+    inset: 0 0 0 24%;
+    width: 76%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--detail-art-position, 50%) center;
+    opacity: var(--game-detail-art-opacity, .54);
+    filter: brightness(var(--detail-art-brightness, .68)) saturate(var(--detail-art-saturation, .85));
+    mask-image: linear-gradient(to right, transparent, black 95%);
     pointer-events: none;
   }
   .game-detail-identity {

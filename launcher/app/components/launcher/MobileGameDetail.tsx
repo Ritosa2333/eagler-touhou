@@ -3,7 +3,7 @@ import {useLayoutEffect, useRef, type ReactNode} from 'react';
 import {useLocale} from '../../i18n';
 import {Button} from '../../ui/button';
 import {useContentMotion} from '../../ui/use-surface-motion';
-import {GameDetailFavorite, GameDetailIdentity, GameDetailMetrics} from './GameDetailChrome';
+import {GameDetailBackdrop, GameDetailFavorite, GameDetailIdentity, GameDetailMetrics} from './GameDetailChrome';
 import type {LibraryProduct} from './products';
 import './mobile-game-detail.css';
 
@@ -25,7 +25,7 @@ export function MobileGameDetail({product, cover, actions, statistics, friends, 
     <div className="mobile-game-view" hidden={settings} inert={settings}>
       <div className="options-scroll mobile-game-scroll">
         <header className="game-detail-hero mobile-game-hero">
-          {cover && <img className="game-detail-backdrop" src={cover} alt="" aria-hidden="true" decoding="async"/>}
+          <GameDetailBackdrop cover={cover} presentation={product.presentation}/>
           <div className="mobile-game-toolbar">
             <Button variant="ghost" size="icon" className="mobile-game-back" id={settings ? undefined : 'libraryBack'}
               onClick={onBack} aria-label={t('library.back')}><ArrowLeft aria-hidden="true"/></Button>

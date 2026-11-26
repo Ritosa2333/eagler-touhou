@@ -319,8 +319,15 @@
       border-radius: 12px 12px 0 0;
     }
     .tools[data-options-panel][data-book-sheet] {
-      --options-mobile-gap: calc(var(--options-view-height, 100dvh) * .08);
+      --options-height: auto;
+      --book-sheet-clearance: max(var(--ui-safe-top), min(18dvh, 120px));
+      top: auto;
+      bottom: calc(100dvh - var(--options-view-height, 100dvh) - var(--options-view-top, 0px));
+      max-height: calc(var(--options-view-height, 100dvh) - var(--book-sheet-clearance));
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -12px 40px rgb(0 0 0 / .2);
     }
+    .library-backdrop[data-book-sheet] { --ui-window-scrim: rgb(0 0 0 / .52); }
     :is(.tools[data-options-panel], .mp-settings-room-drawer) .library-back {
       top: max(10px, env(safe-area-inset-top));
       right: max(10px, env(safe-area-inset-right));

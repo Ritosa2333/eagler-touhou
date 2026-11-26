@@ -11,17 +11,7 @@
     --game-subtitle-size: 16px;
     --game-number-size: 13px;
     --game-cover-radius: 7px;
-    --game-hero-overlay: none;
     padding: 40px var(--game-detail-inset) 18px;
-  }
-  .book-game-detail-hero .game-detail-backdrop {
-    inset: 0 0 0 24%;
-    width: 76%;
-    height: 100%;
-    opacity: .54;
-    object-position: var(--detail-art-position, 50%) center;
-    filter: brightness(var(--detail-art-brightness, .68)) saturate(var(--detail-art-saturation, .85));
-    mask-image: linear-gradient(to right, transparent, black 95%);
   }
   .book-game-detail-hero h2:focus { outline: none; }
   .book-game-detail-back { position: absolute; inset-block-start: 5px; inset-inline-start: 9px; color: inherit; }

@@ -1,10 +1,10 @@
-import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { ArrowLeft, Settings2 } from 'lucide-react';
 import { useLocale } from '../../i18n';
 import { Button } from '../../ui/button';
 import { useContentMotion } from '../../ui/use-surface-motion';
 import { bookArtwork } from './book-artwork';
-import { GameDetailFavorite, GameDetailIdentity, GameDetailMetrics } from './GameDetailChrome';
+import { GameDetailBackdrop, GameDetailFavorite, GameDetailIdentity, GameDetailMetrics } from './GameDetailChrome';
 import type { LibraryProduct } from './products';
 import './book-game-detail.css';
 
@@ -26,12 +26,6 @@ export function BookGameDetail({ product, actions, children, statistics, friends
   const settingsBack = useRef<HTMLButtonElement>(null), previousSettings = useRef(false);
   const article = useContentMotion<HTMLElement>(settings ? 'settings' : 'detail');
   const cover = bookArtwork(product);
-  const art = product.presentation;
-  const artStyle = art ? {
-    '--detail-art-position': `${art.positionPercent}%`,
-    '--detail-art-brightness': art.artBrightness,
-    '--detail-art-saturation': art.artSaturation,
-  } as CSSProperties : undefined;
   useLayoutEffect(() => {
     if (!active) return;
     const container = article.current;
@@ -54,7 +48,7 @@ export function BookGameDetail({ product, actions, children, statistics, friends
           <Button variant="ghost" size="icon" className="book-game-detail-back" onClick={onBack} aria-label={t('library.back')}>
             <ArrowLeft aria-hidden="true"/>
           </Button>
-          {cover && <img className="game-detail-backdrop" style={artStyle} src={cover} alt="" aria-hidden="true" decoding="async"/>}
+          <GameDetailBackdrop cover={cover} presentation={product.presentation}/>
           <GameDetailIdentity product={product} cover={cover} titleId="gameTitle" titleRef={title} desktop/>
           <div className="book-game-detail-actions">
             {actions}

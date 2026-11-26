@@ -1,9 +1,10 @@
 @layer components {
-  .mobile-game-pages { display: grid; grid-template-rows: minmax(0, 1fr); flex: 1; min-height: 0; }
+  .mobile-game-pages { display: grid; grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
   .mobile-game-view { display: flex; flex-direction: column; min-height: 0; }
   .mobile-game-view[hidden] { display: none; }
   .mobile-game-scroll { --options-scroll-padding: 0; }
   .mobile-game-hero {
+    --game-detail-art-opacity: .4;
     --game-cover-size: clamp(76px, 27.7vw, 116px);
     --game-title-size: clamp(18px, 5.7vw, 24px);
     --game-cover-radius: 8px;

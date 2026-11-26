@@ -1,5 +1,5 @@
 import {CloudCheck, Gamepad2, Star} from 'lucide-react';
-import {useSyncExternalStore, type ReactNode, type Ref} from 'react';
+import {useSyncExternalStore, type CSSProperties, type ReactNode, type Ref} from 'react';
 import {useLocale} from '../../i18n';
 import {Button} from '../../ui/button';
 import {BookWorkNumber} from './BookWorkNumber';
@@ -15,6 +15,16 @@ function subscribePreferences(update: () => void) {
     window.removeEventListener(BOOK_PREFERENCES_EVENT, update);
     window.removeEventListener('storage', update);
   };
+}
+
+export function GameDetailBackdrop({cover, presentation}: {cover?: string | null; presentation?: LibraryProduct['presentation']}) {
+  if (!cover) return null;
+  const style = presentation ? {
+    '--detail-art-position': `${presentation.positionPercent}%`,
+    '--detail-art-brightness': presentation.artBrightness,
+    '--detail-art-saturation': presentation.artSaturation,
+  } as CSSProperties : undefined;
+  return <img className="game-detail-backdrop" style={style} src={cover} alt="" aria-hidden="true" decoding="async"/>;
 }
 
 export function GameDetailIdentity({product, cover, titleId, titleRef, desktop, children}: {

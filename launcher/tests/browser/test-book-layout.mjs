@@ -169,10 +169,24 @@ try {
       const node = document.querySelector(selector);
       if (!node) return false;
       const rect = node.getBoundingClientRect();
-      return rect.top >= 16 && rect.top <= 65 && Math.abs(rect.bottom - innerHeight) < 1 && !node.getAnimations().length;
+      return rect.top >= Math.min(innerHeight * .18, 120) - 1 && Math.abs(rect.bottom - innerHeight) < 1 && !node.getAnimations().length;
     }, {}, detail);
-    assert.equal(await page.$eval('#libraryBackdrop[data-book-sheet]', node => getComputedStyle(node).backgroundColor), 'rgba(0, 0, 0, 0.24)');
-    assert.equal(await page.$eval(detail, node => getComputedStyle(node).borderTopLeftRadius), '12px');
+    assert.equal(await page.$eval('#libraryBackdrop[data-book-sheet]', node => getComputedStyle(node).backgroundColor), 'rgba(0, 0, 0, 0.52)');
+    assert.equal(await page.$eval(detail, node => getComputedStyle(node).borderTopLeftRadius), '20px');
+    const artwork = await page.$eval(detail + ' .game-detail-backdrop', node => {
+      const style = getComputedStyle(node);
+      return {mask: style.maskImage, filter: style.filter};
+    });
+    assert.match(artwork.mask, /linear-gradient/, 'Mobile detail uses the faded artwork');
+    assert.doesNotMatch(artwork.filter, /blur/);
+    const naturalSheet = await page.$eval(detail, panel => {
+      const scroll = panel.querySelector('.mobile-game-scroll');
+      const footer = panel.querySelector('.mobile-game-footer');
+      return {height: panel.offsetHeight, limit: parseFloat(getComputedStyle(panel).maxHeight),
+        content: scroll.scrollHeight + footer.offsetHeight + panel.offsetHeight - panel.clientHeight};
+    });
+    assert.ok(Math.abs(naturalSheet.height - Math.min(naturalSheet.content, naturalSheet.limit)) <= 2,
+      'The sheet hugs short details and caps long ones');
     const actions = await page.$eval(detail, panel => ['#launch', '#gamePackageImport', '#gameSettingsOpen'].map(selector => {
       const button = panel.querySelector(selector);
       const {left, right, top, bottom, height} = button.getBoundingClientRect();
@@ -202,6 +216,10 @@ try {
     await page.waitForSelector(settings, {hidden: true});
     await page.waitForSelector(settingsControl, {visible: true});
     await page.tap(back);
+    await page.waitForSelector(detail, {hidden: true});
+    await card.tap();
+    await page.waitForSelector(detail, {visible: true});
+    await page.touchscreen.tap(width / 2, 12);
     await page.waitForSelector(detail, {hidden: true});
     await page.close();
   }
