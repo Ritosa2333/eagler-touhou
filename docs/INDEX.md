@@ -1,6 +1,6 @@
 # 文档总表
 
-共 670 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 673 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -318,6 +318,7 @@
 | 开发工具 | [tools/browser/README.md](../tools/browser/README.md) | 浏览器测试工具 |
 | 开发工具 | [tools/ci/README.md](../tools/ci/README.md) | CI 来源资产清单 |
 | 开发工具 | [tools/ports/README.md](../tools/ports/README.md) | 各作源码检查 |
+| 开发工具 | [tools/ports/thibp/README.md](../tools/ports/thibp/README.md) | 东方鬼葬剑 1.10b Web 单机版 |
 | 架构说明 | [docs/architecture/netplay-routing.md](architecture/netplay-routing.md) | 联机自适应选路 |
 | 架构说明 | [docs/architecture/netplay.md](architecture/netplay.md) | 联机输入时序与 Adonis |
 | 架构说明 | [docs/architecture/rollback.md](architecture/rollback.md) | 回滚运行参考 |
@@ -336,6 +337,7 @@
 | 迁移记录 | [docs/migration/th13-subtree-20261028.md](migration/th13-subtree-20261028.md) | th13 独立源码与子树维护 |
 | 迁移记录 | [docs/migration/th13mp-derivation-20261108.md](migration/th13mp-derivation-20261108.md) | th13-mp 目录来源登记（仓内派生） |
 | 迁移记录 | [docs/migration/th17-subtree-20261106.md](migration/th17-subtree-20261106.md) | TH17 普通版与多人版目录历史 |
+| 迁移记录 | [docs/migration/thibp-ph3-modern.md](migration/thibp-ph3-modern.md) | 东方鬼葬剑 Web 运行时的源码来源 |
 | 历史记录 | [archive/README.md](../archive/README.md) | 历史记录 |
 | 历史记录 | [archive/hk-mirror-relay-20261028/deployment.md](../archive/hk-mirror-relay-20261028/deployment.md) | 香港镜像与统一 Relay 入口 ｜ 2026-10-28 |
 | 历史记录 | [archive/main-refresh-20261028/README.md](../archive/main-refresh-20261028/README.md) | 主线发布与镜像一致性 |
@@ -510,6 +512,7 @@
 | 历史记录 | [archive/th19-touch-charge-20261105/README.md](../archive/th19-touch-charge-20261105/README.md) | TH19 蓄力触屏按钮 |
 | 历史记录 | [archive/th19-tsukasa-strengthening-20261106/README.md](../archive/th19-tsukasa-strengthening-20261106/README.md) | 管牧典 EX 弹幕强化 |
 | 历史记录 | [archive/th19-versus-settings-20261105/README.md](../archive/th19-versus-settings-20261105/README.md) | TH19 专属输入与对局设置验收 |
+| 历史记录 | [archive/thibp-web-review-20261125/README.md](../archive/thibp-web-review-20261125/README.md) | 东方鬼葬剑 1.10b Web 单机验收 |
 | 历史记录 | [archive/thprac-information-touch-20261027/README.md](../archive/thprac-information-touch-20261027/README.md) | THPrac 信息窗触控归属 |
 | 历史记录 | [archive/turn-fallback-20261028/README.md](../archive/turn-fallback-20261028/README.md) | TURN 选择同步 |
 | 历史记录 | [docs/history/INDEX.md](history/INDEX.md) | 旧文档去向 |

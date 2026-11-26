@@ -175,5 +175,14 @@
     "source_sha256": "77f5c185ab51a6dbbf779b7deb40599f6968eb1d0889fbc5cd4aeb6404612a4f",
     "generated_sha256": "9c5c1d6507716abfdcc0e350ad5d2082932eac2a2dfcdeb154013b8b83866af8",
     "conversion": "Pillow; RGB; original 512x512; WebP quality 82, method 6"
+  },
+  {
+    "game": "thibp",
+    "file": "thibp.webp",
+    "source_file": "https://upload.thbwiki.cc/9/92/%E6%9D%B1%E6%96%B9%E9%AC%BC%E8%91%AC%E5%89%A3_%EF%BD%9E_Infinite_Blade_Pavilion.%E5%B0%81%E9%9D%A2.jpg",
+    "source_page": "https://thwiki.cc/%E6%96%87%E4%BB%B6:%E6%9D%B1%E6%96%B9%E9%AC%BC%E8%91%AC%E5%89%A3_%EF%BD%9E_Infinite_Blade_Pavilion.%E5%B0%81%E9%9D%A2.jpg",
+    "source_sha256": "fac165483ebc11c5d20b0341b4ba1a891103f4cdd6ac499c199420a022c655e5",
+    "generated_sha256": "eb1399f100476fb091c0ee6bcc1bd8507c82dbc9546aef7450583ba00ed41131",
+    "conversion": "Pillow; RGB; original 512x512; WebP quality 82, method 6; source ICC profile"
   }
 ]

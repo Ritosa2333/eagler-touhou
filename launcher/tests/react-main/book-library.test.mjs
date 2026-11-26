@@ -285,6 +285,17 @@ test('default single-player list starts at TH01 and keeps favorite priority', as
   assert.deepEqual(order([], 'reverse'), [...ascending].reverse());
 });
 
+test('the Infinite Blade Pavilion card renders its bundled cover', async () => {
+  await mount(api.createLibraryProducts(['thibp'], p => p, id => '?game=' + id));
+  const coverDir = resolve(project, 'app/components/launcher/book-covers');
+  const sources = JSON.parse(await readFile(resolve(coverDir, 'sources.json'), 'utf8'));
+  const image = node('[data-book-product="thibp"] .book-art img');
+  assert.match(image.src, /^data:image\/webp;base64,/);
+  const bytes = Buffer.from(image.src.split(',')[1], 'base64');
+  const source = sources.find(entry => entry.game === 'thibp');
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), source.generated_sha256);
+});
+
 test('TH13, TH14 and TH17 single-player cards use the bundled disc covers', async () => {
   const games = ['th13', 'th14', 'th17'];
   const coverDir = resolve(project, 'app/components/launcher/book-covers');

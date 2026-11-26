@@ -310,6 +310,13 @@ createServer(async (request, response) => {
       "Last-Modified": info.mtime.toUTCString(),
       Vary: "Accept-Encoding",
     };
+    // The App Shell serves an isolated Launcher after reload. Runtime iframes
+    // need matching isolation headers when loaded from the development server.
+    if (pathname.startsWith("/runtime/") && commonHeaders["Content-Type"].startsWith("text/html")) {
+      commonHeaders["Cross-Origin-Embedder-Policy"] = "require-corp";
+      commonHeaders["Cross-Origin-Opener-Policy"] = "same-origin";
+      commonHeaders["Cross-Origin-Resource-Policy"] = "same-origin";
+    }
     if (legacyRetirementWorker) commonHeaders["Service-Worker-Allowed"] = "/eagler-touhou/";
     if (request.headers["if-none-match"] === tag) {
       response.writeHead(304, commonHeaders); response.end(); return;
