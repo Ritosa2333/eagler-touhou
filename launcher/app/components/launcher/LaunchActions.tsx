@@ -1,11 +1,12 @@
 import { Button as UiButton } from '../../ui/button';
-import { Play, FolderInput } from 'lucide-react';
+import { Download, Play, FolderInput } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 export interface LaunchAction {
   id: string;
   textId?: string;
   label: ReactNode;
+  icon?: 'download';
   onClick(): void;
   disabled?: boolean;
 }
@@ -17,6 +18,7 @@ export interface LaunchActionsProps {
 }
 /** Shared play/import presentation; session and replay owners decide intent. */
 export function LaunchActions({ primary, secondary, placement = 'standard' }: LaunchActionsProps) {
+  const PrimaryIcon = primary.icon === 'download' ? Download : Play;
   return (
     <div className={`launch-wrap launch-actions${placement === 'compact' ? ' launch-actions-compact' : ''}`}>
       <UiButton
@@ -26,7 +28,7 @@ export function LaunchActions({ primary, secondary, placement = 'standard' }: La
         disabled={primary.disabled}
         onClick={primary.onClick}
       >
-        <Play aria-hidden="true" />
+        <PrimaryIcon aria-hidden="true" />
         <span id={primary.textId}>{primary.label}</span>
       </UiButton>
       {secondary && <UiButton

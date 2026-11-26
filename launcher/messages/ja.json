@@ -1,4 +1,10 @@
 {
+  "downloadTasks_acquire": "ゲームを取得",
+  "downloadTasks_title": "取得状況",
+  "downloadTasks_downloading": "取得中",
+  "downloadTasks_queued": "待機中",
+  "downloadTasks_failed": "取得できませんでした",
+  "downloadTasks_remaining": "残り {count} ファイル",
   "cloudSave_waitingTitle": "クラウドセーブを準備中",
   "cloudSave_waitingMessage": "そのまま待つか、このブラウザーのセーブで開始できます。",
   "cloudSave_keepWaiting": "クラウドセーブを待つ",

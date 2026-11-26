@@ -1,4 +1,10 @@
 {
+  "downloadTasks_acquire": "Get game",
+  "downloadTasks_title": "Acquisition progress",
+  "downloadTasks_downloading": "Getting game",
+  "downloadTasks_queued": "Queued",
+  "downloadTasks_failed": "Could not get game",
+  "downloadTasks_remaining": "Files left: {count}",
   "cloudSave_waitingTitle": "Preparing cloud save",
   "cloudSave_waitingMessage": "You can keep waiting or start with this browser’s save.",
   "cloudSave_keepWaiting": "Keep waiting",

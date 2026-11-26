@@ -65,6 +65,8 @@ export interface AcquisitionRequest {
   onUpdateActivity?(active: boolean): void;
   /** Ordinary foreground Package/development download, not metadata or import. */
   onAcquisitionActivity?(active: boolean): void;
+  /** An independent task can own the Package network progress instead of the player. */
+  packageFetch?: typeof fetch;
   onProgress?(progress: PreparationProgress): void;
   onWarning?(message: string): void;
   onUpdateReady?(): void;
@@ -151,7 +153,8 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     }});
   };
 
-  const getPackageFetch = (game: GameId) => network?.packageFetch(game) ?? fetchImpl;
+  const getPackageFetch = (game: GameId, request?: Pick<AcquisitionRequest, 'packageFetch'>) =>
+    request?.packageFetch ?? network?.packageFetch(game) ?? fetchImpl;
   const background = new Map<GameId, Promise<void>>();
   function progress(request: Pick<AcquisitionRequest, 'onProgress'>, key: Parameters<Translate>[0], values: Record<string, unknown> = {}) {
     request.onProgress?.({stage: 'package', message: t(key, values),
@@ -185,12 +188,12 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     try {
       request.onAcquisitionActivity?.(true);
       progress(request, 'package.installingResources');
-      const result = await deps.installAcquired({descriptor, source: 'remote',
+      const result = await deps.installAcquired({descriptor, source: 'remote', signal: request.signal,
         desiredFileIds: ['game-data', ...((['th01','th02','th03','th04'].includes(game) ? request.music === 'ogg-akyu' : isOgg(request.music)) ? runtimeOggFileIds(descriptor, request.productId) : [])],
         acquire: async (id, declaration) => {
           checkPreparationAbort(request.signal);
           const source = id === 'game-data' ? hosted.gameData.source! : `${typeof hosted.music.ogg?.base === 'string' ? hosted.music.ogg.base : ''}${declaration.source}`;
-          const response = await getPackageFetch(game)(new URL(source, baseUrl), {cache: 'no-store', signal: request.signal});
+          const response = await getPackageFetch(game, request)(new URL(source, baseUrl), {cache: 'no-store', signal: request.signal});
           if (!response.ok) throw new Error(`${source}: HTTP ${response.status}`);
           const bytes = await response.arrayBuffer(); checkPreparationAbort(request.signal); return bytes;
         }, onProgress: value => progress(request, 'package.installingResourcesProgress', {...value}),
@@ -217,7 +220,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         if (!publication.catalog?.games[game]) throw new Error(`${game} 尚未提供美化版资源`);
         progress(request, 'package.installingResources');
         const result = await installPublished(game, {...publication, gameVersion, addComponents: [],
-          fetchImpl: getPackageFetch(game), signal: request.signal,
+          fetchImpl: getPackageFetch(game, request), signal: request.signal,
           onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
         checkPreparationAbort(request.signal); await installedChanged(game);
         return {kind: 'managed', generation: result.generation, deferredUpdate: null};
@@ -262,7 +265,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
             progress(request, 'package.installingResources');
             const result = await installPublished(game, {catalog: metadataSnapshot.releaseCatalog!, catalogUrl,
               gameVersion, expectedGenerationId: generation.id, preserveLocalSource: true, signal: request.signal,
-              fetchImpl: getPackageFetch(game), onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
+              fetchImpl: getPackageFetch(game, request), onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
             checkPreparationAbort(request.signal);
             await installedChanged(game);
             return {kind: 'managed', generation: result.generation, deferredUpdate: null};
@@ -279,7 +282,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
           if (!publication.catalog?.games[game]) throw new Error('游戏资源与当前版本不兼容，请更新游戏资源');
           const result = await installPublished(game, {...publication, gameVersion,
             expectedGenerationId: installed.generation!.id, preserveLocalSource: true,
-            addComponents: [], signal: request.signal, fetchImpl: getPackageFetch(game),
+            addComponents: [], signal: request.signal, fetchImpl: getPackageFetch(game, request),
             onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
           checkPreparationAbort(request.signal);
           if (result.generation.descriptor.runtimeRequirement?.dataLayout !== requiredLayout)
@@ -303,7 +306,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       try {
         request.onAcquisitionActivity?.(true);
         progress(request, 'package.installingResources');
-        const result = await installPublished(game, {catalog, catalogUrl, gameVersion: request.gameVersion ?? "original", addComponents: [], fetchImpl: getPackageFetch(game), signal: request.signal,
+        const result = await installPublished(game, {catalog, catalogUrl, gameVersion: request.gameVersion ?? "original", addComponents: [], fetchImpl: getPackageFetch(game, request), signal: request.signal,
           onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
         checkPreparationAbort(request.signal); await installedChanged(game);
         return {kind: 'managed', generation: result.generation, deferredUpdate: null};
@@ -344,7 +347,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
           if (!metadata.getSnapshot().releaseCatalog) await metadata.initialize();
           return getPublication(request.gameVersion, request.signal);
         },
-        fetchImpl: getPackageFetch(game), signal: request.signal,
+        fetchImpl: getPackageFetch(game, request), signal: request.signal,
         onProgress: value => progress(request, 'package.installingResourcesProgress', {...value}),
       });
       checkPreparationAbort(request.signal);

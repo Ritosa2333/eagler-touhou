@@ -1,4 +1,28 @@
 {
+  "downloadTasks.acquire": {
+    "id": "downloadTasks_acquire",
+    "params": []
+  },
+  "downloadTasks.title": {
+    "id": "downloadTasks_title",
+    "params": []
+  },
+  "downloadTasks.downloading": {
+    "id": "downloadTasks_downloading",
+    "params": []
+  },
+  "downloadTasks.queued": {
+    "id": "downloadTasks_queued",
+    "params": []
+  },
+  "downloadTasks.failed": {
+    "id": "downloadTasks_failed",
+    "params": []
+  },
+  "downloadTasks.remaining": {
+    "id": "downloadTasks_remaining",
+    "params": ["count"]
+  },
   "cloudSave.waitingTitle": {
     "id": "cloudSave_waitingTitle",
     "params": []

@@ -27,6 +27,7 @@ import {createDecisionStore, type DecisionOptions} from '../models/decisions';
 import {classifyPlayerMode, playerUsesGameInput, type PlayerMode} from '../models/player-mode';
 import {createGameUpdatePrompt, type GameUpdateContext} from '../models/game-update-prompt';
 import {createTransferModel} from '../models/transfer';
+import {createGameDownloads} from '../models/game-downloads';
 import {createNetworkActivityTracker} from '../../src/launcher/network-activity.mts';
 import {createGameDataImportModel} from '../models/game-data-import';
 import {roomCodeFromUrl, resolveRoomInvite, routedProductFromUrl} from '../../src/launcher/route-state.mts';
@@ -45,7 +46,7 @@ import {createMetadataService, requiresLocalGameData} from '../services/metadata
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
 import {musicModeLabel} from '../services/game-resources';
-import {createPreparationNetwork} from '../services/preparation-network';
+import {createPreparationNetwork, packageNetworkMetadata} from '../services/preparation-network';
 import {createRoomPreparation} from '../services/room-preparation';
 import {createRoomSession, type RoomSession} from './room-session';
 import type {RoomLaunchContext, RoomOperationContext} from '../services/multiplayer-room';
@@ -347,6 +348,17 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const acquisition = createPackageAcquisition({metadata, baseUrl, getGameVersion: selectedVersion, translate: t, fetchImpl: fetchResource, network: preparationNetwork,
     testBuild,
     requestPersistence: async () => {try {await window.navigator.storage?.persist?.();} catch {}}});
+  const downloads = createGameDownloads({
+    async download({game, version}, {signal, onProgress, onNetwork}) {
+      const tracker = createNetworkActivityTracker({fetchImpl: fetchResource, onChange: onNetwork});
+      const result = await acquisition.acquire({productId: game, gameVersion: version, music: 'none', language: 'ja', signal, onProgress,
+        packageFetch: (input, init) => tracker.resourceFetch(input, init, packageNetworkMetadata(game, input, baseUrl, t))});
+      if (result.kind !== 'managed') throw new Error(t('package.unavailable'));
+    },
+    onFailure({game}) {
+      feedback.toast(`${PRODUCT_GAMES[game].title} · ${t('downloadTasks.failed')}`, 5000);
+    },
+  });
   let sessionStorage: Storage | null = null; try {sessionStorage = window.sessionStorage;} catch {}
   const identity = createMultiplayerIdentityStore({persistentStorage: storage, sessionStorage});
   const sessions = createMultiplayerRoomSessionStore({storage: sessionStorage});
@@ -1515,7 +1527,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (command) await owner.send('spectator-playback', command);
     },
     room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th19Keyboard, th075Keyboard, th19Gamepad, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
-    readLocalSaves,get cloudSync(){return cloudSync;},
+    readLocalSaves, downloads, get cloudSync(){return cloudSync;},
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     initialize, attachFrame, requestRuntimeClose, requestReplayManagerClose, launch, openReplayViewer, switchReplayProduct, exitRoomPlayerFullscreen,
     restoreRoomFromUrl,
@@ -1607,6 +1619,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     reportError,
     async dispose() {
       singleLaunch?.controller.abort(new RuntimeSessionSupersededError());
+      downloads.dispose();
       cloudSync?.dispose();
       unbindPixelPerfectDisplay?.();
       if (disposed) return; disposed = true; if (telemetryTimer !== null) window.clearInterval(telemetryTimer); launchAbort?.abort(); for (const type of playerGestureTypes) document.removeEventListener(type, preventPlayerBrowserGesture, true); primaryTouchPointer.removeEventListener('change', syncTouchSettingsOrder); activityObserver.disconnect(); unsubscribeTouchLayoutGame(); unsubscribeTouchActivity(); unsubscribeAppShell(); metadataRetry.dispose(); localPackageMaintenance.dispose(); appShellOwner.dispose(); document.body.classList.remove('app-shell-activation-pending'); unsubscribeRoom(); room.dispose(); networkDiagnostics.dispose(); metadata.dispose(); directory.dispose(); startup.dispose(); unsubscribeMetadata(); unbindPreferences();
