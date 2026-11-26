@@ -256,12 +256,14 @@ try {
     const launch = bounds('#launch'), importButton = bounds('#gamePackageImport'), settings = bounds('#gameSettingsOpen');
     return {
       flush: hero.left === content.left && hero.right === content.right,
+      backdrop: getComputedStyle(node.querySelector('.game-detail-backdrop')).maskImage,
       actionHeight: [launch.height, importButton.height, settings.height],
       actionRow: [launch.top, importButton.top, settings.top],
       actionOrder: launch.right <= importButton.left && importButton.right <= settings.left,
     };
   });
   assert.equal(desktopLayout.flush, true, 'Desktop hero reaches the sidebar and the viewport edge');
+  assert.match(desktopLayout.backdrop, /linear-gradient/, 'Desktop artwork fades in from the right');
   assert.equal(new Set(desktopLayout.actionHeight).size, 1, 'Desktop buttons have the same height');
   assert.equal(new Set(desktopLayout.actionRow).size, 1, 'Desktop actions share one row');
   assert.ok(desktopLayout.actionOrder, 'Desktop Start is left of Import and Settings');

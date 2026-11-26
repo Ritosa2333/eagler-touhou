@@ -24,7 +24,7 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(145deg, #17131c38, #151520d1);
+    background: var(--game-hero-overlay, linear-gradient(145deg, #17131c38, #151520d1));
     pointer-events: none;
   }
   .game-detail-identity {
