@@ -8,14 +8,28 @@ import type {RetailInput,RetailTrack} from '../../src/launcher/retail-package.mj
 
 export async function importThkkdOriginal(inputs: readonly RetailInput[], {signal,onTrack}: {signal?:AbortSignal;onTrack?(track:RetailTrack):void}) {
   let ffmpeg:FFmpeg|undefined;
+  let workerUrl:string|undefined;
   const abort=()=>ffmpeg?.terminate(); signal?.addEventListener('abort',abort,{once:true});
   try {
     const data=await convertThkkdArchives(inputs,{signal,onTrack,convertImage:convertThkkdImage,
       async convertVideo(bytes,name,_signal,onProgress) {
         signal?.throwIfAborted();
         if(!ffmpeg){
+          onProgress(0);
+          const response=await fetch(classWorkerURL,{signal});
+          if(!response.ok)throw Error('视频转换组件加载失败（'+response.status+'）');
+          const source=await response.blob();
+          signal?.throwIfAborted();
+          // Blob Worker 继承当前页面的隔离策略，兼容离线缓存接管后的页面。
+          workerUrl=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
           ffmpeg=new FFmpeg();
-          await ffmpeg.load({coreURL:new URL(coreURL,location.href).href,wasmURL:new URL(wasmURL,location.href).href,classWorkerURL:new URL(classWorkerURL,location.href).href},{signal});
+          let timeout:ReturnType<typeof setTimeout>|undefined;
+          try{
+            await Promise.race([
+              ffmpeg.load({coreURL:new URL(coreURL,location.href).href,wasmURL:new URL(wasmURL,location.href).href,classWorkerURL:workerUrl},{signal}),
+              new Promise<never>((_,reject)=>{timeout=setTimeout(()=>reject(Error('视频转换器启动超时，请重新打开页面后重试')),120000);}),
+            ]);
+          }finally{clearTimeout(timeout);}
         }
         const worker=ffmpeg,input='original.wmv',output='browser.webm';
         const progress=({progress}: {progress:number})=>onProgress(progress);
@@ -30,5 +44,5 @@ export async function importThkkdOriginal(inputs: readonly RetailInput[], {signa
         }finally{worker.off('progress',progress);await worker.deleteFile(input).catch(()=>{});await worker.deleteFile(output).catch(()=>{});}
       }});
     signal?.throwIfAborted();return await thkkdPackage(data);
-  }finally{signal?.removeEventListener('abort',abort);ffmpeg?.terminate();}
+  }finally{signal?.removeEventListener('abort',abort);ffmpeg?.terminate();if(workerUrl)URL.revokeObjectURL(workerUrl);}
 }

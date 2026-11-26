@@ -9,6 +9,13 @@ const report={schema:'thkkd/original-import-browser/1',checks:[],progress:[]};
 const driver=await productionBrowser({url,report,protocolTimeout:1200000,profile:args.profile}),{page,browser,key}=driver;
 try {
   await driver.library();
+  if(args.controlled==='1'){
+    await page.evaluate(()=>navigator.serviceWorker.ready);
+    await driver.library();
+    report.environment=await page.evaluate(()=>({controlled:!!navigator.serviceWorker.controller,isolated:crossOriginIsolated}));
+    assert.ok(report.environment.controlled&&report.environment.isolated,'在离线缓存接管且启用隔离的页面中导入');
+    report.checks.push('import-after-service-worker-controlled-reload');
+  }
   const buttons=await page.$$('button');
   for(const button of buttons)if(await button.evaluate(node=>['Import game resources','导入游戏资源','Start game','开始游戏','启动游戏'].includes(node.textContent.trim()))){await button.click();break;}
   await page.waitForSelector('#gameDataImportWindow',{visible:true,timeout:60000});

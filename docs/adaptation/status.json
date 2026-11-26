@@ -5897,7 +5897,7 @@
       "game": "thkkd",
       "variant": "normal",
       "directory": "ports/thkkd",
-      "sourceDigest": "31de1c43baf76f6c5948b3bdecdc4764a5a68df735b9982e8404fa6c39d79f9b",
+      "sourceDigest": "400737ecc21ff8ec01e55e757cb71d173b1fc7bb549f6ad1e9f575b4f0f7ab7e",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 11,
