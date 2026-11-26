@@ -11,14 +11,21 @@ const checkPixelScaling = route === '--check-pixel-scaling';
 const checkCampaign = route === '--check-campaign';
 const checkRestartMemory = route === '--check-restart-memory';
 const checkPauseInput = route === '--check-pause-input';
-const replayPath = clearStageOne || saveReplay || checkPixelScaling || checkCampaign || checkRestartMemory || checkPauseInput ? undefined : route;
+const checkTouchMenu = route === '--check-touch-menu';
+const checkRankBack = route === '--check-rank-back';
+const checkTouchMotion = route === '--check-touch-motion';
+const touchTest = checkTouchMenu || checkRankBack || checkTouchMotion;
+const replayPath = clearStageOne || saveReplay || checkPixelScaling || checkCampaign || checkRestartMemory ||
+  checkPauseInput || touchTest ? undefined : route;
 if (!executable || (nativeSamplesPath && !replayPath)) {
-  throw new Error('Usage: check_ph3_modern_launcher.mjs URL ZIP OUTPUT BROWSER [PLAYWRIGHT] [STAGE6_REPLAY [NATIVE_SAMPLES]|--clear-stage-one|--save-replay|--save-replay-and-quit|--check-pixel-scaling|--check-campaign|--check-restart-memory|--check-pause-input]');
+  throw new Error('Usage: check-browser.mjs URL ZIP OUTPUT BROWSER [PLAYWRIGHT] [STAGE6_REPLAY [NATIVE_SAMPLES]|--clear-stage-one|--save-replay|--save-replay-and-quit|--check-pixel-scaling|--check-campaign|--check-restart-memory|--check-pause-input|--check-touch-menu|--check-rank-back|--check-touch-motion]');
 }
 const nativeSamples = nativeSamplesPath && JSON.parse(await readFile(nativeSamplesPath, 'utf8'));
 
 const { chromium } = createRequire(import.meta.url)(playwrightModule);
-const browser = await chromium.launch({ executablePath: executable, headless: true });
+const browser = await chromium.launch({ executablePath: executable, headless: true,
+  ...(touchTest ? { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } : {}),
+});
 const report = { browser: browser.version(), messages: [], failedRequests: [], runtimeRequests: [] };
 const outputPath = join(output, 'browser-launcher.json');
 const refreshHz = Number(process.env.THIBP_TEST_REFRESH_HZ || 0);
@@ -469,6 +476,142 @@ async function openRuntime(page) {
   return frame;
 }
 
+async function waitForMenuFrames(frame, count) {
+  const before = await frame.evaluate(() => ph3Diagnostics.frames);
+  await frame.waitForFunction(target => ph3Diagnostics.frames >= target,
+    before + count, { timeout: 8000 });
+}
+
+async function verifyRankBack(page, frame, tap) {
+  async function enterCharacterAfterBack(back, description) {
+    await tap('z'); // Title to difficulty.
+    await tap('ArrowDown'); // Move the difficulty cursor.
+    await back();
+    await waitForMenuFrames(frame, 8);
+    await frame.locator('#canvas').focus();
+    await tap('z'); // Reopen difficulty.
+    await tap('z'); // Select difficulty and reach character selection.
+    await waitForMenuFrames(frame, 120);
+    assert(!await frame.evaluate(() => ph3Diagnostics.stage?.playerPresent),
+      `${description} must leave difficulty before we can reopen it with Z`);
+  }
+  await enterCharacterAfterBack(() => tap('Escape'), 'The keyboard ESC key');
+  await tap('x'); // Character to difficulty.
+  await tap('x'); // Difficulty to title.
+  await enterCharacterAfterBack(() => page.locator('#touchEscape').tap(), 'The touch ESC button');
+  await tap('z'); // Confirm character.
+  report.rankBack = { keyboardEsc: true, touchEsc: true, x: true };
+}
+
+async function verifyTouchPauseMenu(page, frame) {
+  const surface = page.locator('#touchDirectSurface');
+  await surface.waitFor({ state: 'visible', timeout: 5000 });
+  const client = await page.context().newCDPSession(page);
+  async function pauseAndPick(direction) {
+    await page.locator('#touchEscape').tap();
+    await frame.waitForFunction(() => ph3Diagnostics.stage?.paused, null, { timeout: 5000 });
+    await waitForMenuFrames(frame, 10);
+    const { x, y, width, height } = await frame.locator('#canvas').boundingBox();
+    const start = { x: Math.round(x + width * 0.43), y: Math.round(y + height * 0.56), id: 1 };
+    const target = { ...start, y: start.y + direction * Math.round(height * 0.14) };
+    const dispatch = (type, touchPoints) => client.send('Input.dispatchTouchEvent', { type, touchPoints });
+    await dispatch('touchStart', [start]);
+    await dispatch('touchMove', [target]);
+    await dispatch('touchEnd', []);
+    await waitForMenuFrames(frame, 10);
+    await page.touchscreen.tap(start.x, start.y);
+  }
+
+  try {
+    const starting = await frame.evaluate(() => ph3Diagnostics.stage.frame);
+    await pauseAndPick(-1);
+    await frame.waitForFunction(previous => {
+      const { stage } = ph3Diagnostics;
+      return stage?.index === 1 && !stage.paused && stage.playerPresent && stage.frame < previous;
+    }, starting, { timeout: 7000 }).catch(error => {
+      throw new Error('Swiping up from Continue must select Retry', { cause: error });
+    });
+    await frame.waitForFunction(() => ph3Diagnostics.stage?.frame > 140, null, { timeout: 7000 });
+    const countTitleTracks = () => frame.evaluate(() =>
+      ph3Diagnostics.messages.filter(line => line.includes('/sound/bgm/bgm01.ogg')).length);
+    const previous = await countTitleTracks();
+    await pauseAndPick(1);
+    await frame.waitForFunction(previous =>
+      ph3Diagnostics.messages.filter(line => line.includes('/sound/bgm/bgm01.ogg')).length > previous,
+    previous, { timeout: 7000 }).catch(error => {
+      throw new Error('Swiping down from Continue must select Return to Title', { cause: error });
+    });
+    report.touchPauseMenu = { swipeUp: 'retry', swipeDown: 'title' };
+  } finally {
+    await client.detach();
+  }
+}
+
+async function verifyTouchMotion(page, frame) {
+  const canvas = await frame.locator('#canvas').boundingBox();
+  const start = { x: Math.round(canvas.x + canvas.width * 0.5),
+    y: Math.round(canvas.y + canvas.height * 0.5), id: 1 };
+  const client = await page.context().newCDPSession(page);
+  const dispatch = (type, touchPoints = []) => client.send('Input.dispatchTouchEvent', {type, touchPoints});
+  const stage = () => frame.evaluate(() => ph3Diagnostics.stage);
+  await frame.evaluate(() => {
+    const game = ph3Runtime;
+    const call = game.ccall;
+    window.thibpTouchEdges = [];
+    game.ccall = function(name, type, argumentTypes, values) {
+      const result = call.call(this, name, type, argumentTypes, values);
+      if (name === 'hsob_touch_pointer') {
+        thibpTouchEdges.push({type: values[0], frame: ph3Diagnostics.frames});
+      }
+      return result;
+    };
+  });
+  const drags = [
+    {name: 'horizontal', dx: 48, dy: 0},
+    {name: 'vertical', dx: 0, dy: -48},
+    {name: 'diagonal', dx: -36, dy: -36},
+    {name: 'vertical-letterbox', dx: 0, dy: -24, origin: {...start, y: Math.round(canvas.y - 30)}},
+    {name: 'quick-horizontal', dx: -16, dy: 0, quick: true},
+    {name: 'quick-vertical', dx: 0, dy: -16, quick: true},
+  ];
+  report.touchMotion = { canvas, sensitivity: 150, drags: [] };
+  try {
+    for (const {name, dx, dy, quick, origin = start} of drags) {
+      assert.equal(await page.evaluate(({x, y}) => document.elementFromPoint(x, y)?.id, origin),
+        'touchDirectSurface', `Touch gesture must start on the game surface: ${name}`);
+      const before = await stage();
+      const expectedX = dx * 640 / canvas.width * 1.5;
+      const expectedY = dy * 480 / canvas.height * 1.5;
+      await frame.evaluate(quick => {
+        thibpTouchEdges.length = 0;
+        window.thibpHoldFrames = !!quick;
+      }, quick ?? false);
+      try {
+        await dispatch('touchStart', [origin]);
+        await dispatch('touchMove', [{ ...origin, x: origin.x + dx, y: origin.y + dy }]);
+        if (!quick) await waitForMenuFrames(frame, 8);
+        await dispatch('touchEnd');
+        await frame.waitForFunction(() => thibpTouchEdges.at(-1)?.type === 2, null, {polling: 15, timeout: 3000});
+      } finally {
+        await frame.evaluate(() => { window.thibpHoldFrames = false; });
+      }
+      const edges = await frame.evaluate(() => thibpTouchEdges);
+      assert.deepEqual(edges.map(edge => edge.type), [0, 1, 2]);
+      if (quick) assert.equal(new Set(edges.map(edge => edge.frame)).size, 1,
+        'A quick gesture must finish between logic ticks');
+      await waitForMenuFrames(frame, 8);
+      const after = await stage();
+      const measuredX = after.x - before.x, measuredY = after.y - before.y;
+      report.touchMotion.drags.push({name, dx, dy, expectedX, expectedY, measuredX, measuredY, edges});
+    }
+    const missed = report.touchMotion.drags.filter(({expectedX, expectedY, measuredX, measuredY}) =>
+      Math.abs(measuredX - expectedX) >= 0.25 || Math.abs(measuredY - expectedY) >= 0.25);
+    assert.deepEqual(missed.map(({name, measuredX, measuredY}) => ({name, measuredX, measuredY})), []);
+  } finally {
+    await client.detach();
+  }
+}
+
 async function addScriptProbe(frame, script, anchor, probe) {
   await frame.evaluate(({ script, pattern, probe }) => {
     const path = `/game/script/Th_IBP/stage/${script}`;
@@ -809,8 +952,12 @@ async function verifyCampaign(page, frame, tap) {
 }
 
 try {
-  const viewport = checkPixelScaling ? { width: 1836, height: 1377 } : { width: 1280, height: 900 };
-  const page = await browser.newPage({ viewport, ...(candidateRuntime ? { serviceWorkers: 'block' } : {}) });
+  const viewport = checkPixelScaling ? { width: 1836, height: 1377 } :
+    touchTest ? { width: 600, height: 820 } : { width: 1280, height: 900 };
+  const page = await browser.newPage({ viewport,
+    ...(touchTest ? { isMobile: true, hasTouch: true, deviceScaleFactor: 1 } : {}),
+    ...(candidateRuntime ? { serviceWorkers: 'block' } : {}),
+  });
   if (candidateRuntime) {
     await page.route(/\/runtime\/thibp\/(thibp\.html|shell\.mjs|eagler-host\.mjs|ph3-open\.(?:mjs|wasm)|(?:build|manifest)\.json)(?:\?|$)/, route => {
       const name = new URL(route.request().url()).pathname.split('/').pop();
@@ -837,10 +984,23 @@ try {
     const text = message.text();
     if (message.type() === 'error' || text.includes('[Woo audio]')) report.messages.push(text);
   });
-  await page.addInitScript(refreshHz => {
+  await page.addInitScript(({ refreshHz, touchTest, checkTouchMotion }) => {
     if (window === window.top) {
       localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1');
+      if (touchTest) {
+        localStorage.setItem('eagler-touch-help-seen-v8', '1');
+        localStorage.setItem('eagler-touhou-game-options-v1-thibp', JSON.stringify({ options: { touchEnabled: true } }));
+        localStorage.setItem('eagler-touhou-touch-options-v1', JSON.stringify({
+          touchMovementMode: 'touch-unlimited', touchSensitivity: 150,
+        }));
+      }
       return;
+    }
+    if (checkTouchMotion && location.pathname === '/runtime/thibp/thibp.html') {
+      const raf = window.requestAnimationFrame.bind(window);
+      window.requestAnimationFrame = callback => raf(function run(now) {
+        if (window.thibpHoldFrames) raf(run); else callback(now);
+      });
     }
     if (!refreshHz || location.pathname !== '/runtime/thibp/thibp.html') return;
     // Replay the monitor cadence even when headless Chromium itself runs at 60 Hz.
@@ -870,7 +1030,7 @@ try {
       return id;
     };
     window.cancelAnimationFrame = id => callbacks.delete(id);
-  }, refreshHz);
+  }, { refreshHz, touchTest, checkTouchMotion });
   await page.goto(url);
   await page.waitForFunction(() => window.__eaglerBoot?.done === true);
   await page.locator('#gamePackageImport').click({ timeout: 12000 });
@@ -903,7 +1063,7 @@ try {
       await checkPresentation(page, runtimeFrame, 1280, 960, 'title-2x');
       await checkPresentation(page, runtimeFrame, 600, 450, 'title-small');
     }
-    if (checkCampaign) await enableCampaignInvincibility(runtimeFrame);
+    if (checkCampaign || checkTouchMotion) await enableCampaignInvincibility(runtimeFrame);
     if (checkPauseInput) await addStageFrameProbe(runtimeFrame, `
       if(p_count == 1){
         SetAreaCommonData(COMMONAREA_SCENE, SC_SKILL, 2);
@@ -920,7 +1080,9 @@ try {
       await page.keyboard.press(code, { delay: 90 });
       await page.waitForTimeout(180);
     };
-    if (replayPath) {
+    if (checkRankBack) {
+      await verifyRankBack(page, runtimeFrame, tap);
+    } else if (replayPath) {
       if (nativeSamples) await prepareNativeComparison(runtimeFrame);
       const replay = Array.from(await readFile(replayPath));
       await runtimeFrame.evaluate(bytes => {
@@ -962,6 +1124,8 @@ try {
     if (checkCampaign) await verifyCampaign(page, runtimeFrame, tap);
     if (checkRestartMemory) await measureStageRestarts(runtimeFrame, tap);
     if (checkPauseInput) await verifyPauseInput(page, runtimeFrame, tap);
+    if (checkTouchMenu) await verifyTouchPauseMenu(page, runtimeFrame);
+    if (checkTouchMotion) await verifyTouchMotion(page, runtimeFrame);
     console.log(`Author launcher imported the local Package in ${report.importMs} ms and reached Stage ${expectedStage}, frame ${report.stage.stage.frame}`);
   } finally {
     report.launcher = await page.evaluate(() => ({

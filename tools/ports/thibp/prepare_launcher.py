@@ -73,6 +73,7 @@ def replace(text, old, new):
 def adapt_shell(runtime, output):
     shell = (runtime / "shell.mjs").read_text(encoding="utf-8")
     shell = replace(shell, "game='hsob'", "game='thibp'")
+    shell = replace(shell, "normalizeOptions,touchSnapshot,", "normalizeOptions,touchSnapshot,prepareThibpScripts,")
     shell = replace(shell, "/savehsob", "/savethibp")
     shell = replace(shell, "path.toLowerCase().startsWith('savehsob/')", "path.toLowerCase().startsWith(saveRoot.slice(1)+'/')")
     shell = replace(shell, "path=path.slice('savehsob/'.length)", "path=path.slice(saveRoot.length)")
@@ -109,12 +110,15 @@ def adapt_shell(runtime, output):
 }
 
 function startHealth(){""")
+    # Apply the shared menu adaptation after data is mounted and before the native scripts are loaded.
     # SDL sets the browser title to the reference game's window name during startup.
     shell = replace(shell, "Module.callMain([]);",
-                    "\n const gameTitle=document.title;\n Module.callMain([]);\n document.title=gameTitle;")
+                    "\n prepareThibpScripts(Module.FS);\n const gameTitle=document.title;\n"
+                    " Module.callMain([]);\n document.title=gameTitle;")
     host = (runtime / "eagler-host.mjs").read_text(encoding="utf-8")
     host = replace(host, "game='hsob'", "game='thibp'")
     host = replace(host, r"th_hsob\/music\/", r"Th_IBP\/sound\/bgm\/")
+    host += "\n" + Path(__file__).with_name("game-scripts.mjs").read_text(encoding="utf-8")
     html = (runtime / "hsob.html").read_text(encoding="utf-8")
     html = replace(html, "东方真珠岛 ～ Hollow Song of Birds", "东方鬼葬剑 ～ Infinite Blade Pavilion")
     html = replace(html, "东方真珠岛游戏画面", "东方鬼葬剑游戏画面")

@@ -2,7 +2,7 @@
 export const functionKeySpec = Object.freeze({ code: "KeyC", key: "c", keyCode: 67 });
 export const th03ChargeKeySpec = Object.freeze({code:"ShiftLeft",key:"Shift",keyCode:16,location:1});
 export const th19ChargeKeySpec = Object.freeze({code:"KeyX",key:"x",keyCode:88});
-export const functionKeyGames: ReadonlySet<string> = new Set(["th03", "th11", "th13", "th19", "hsob"]);
+export const functionKeyGames: ReadonlySet<string> = new Set(["th03", "th11", "th13", "th19", "hsob", "thibp"]);
 
 export function createFunctionKeyOwner(send: (down: boolean) => void,
   mode: "tap" | "hold" = "tap",
