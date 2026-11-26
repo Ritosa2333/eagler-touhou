@@ -19,9 +19,10 @@ import th17 from './book-covers/th17.webp?url';
 import th19 from './book-covers/th19.webp?url';
 import th20 from './book-covers/th20.webp?url';
 import hsob from './book-covers/hsob.webp?url';
+import thibp from './book-covers/thibp.webp?url';
 
 // Vite resolves the same public asset URLs for server and client rendering.
-const covers: Record<string, string> = {th01, th02, th03, th04, th05, th06, th07, th075, th08, th09, th10, th11, th12, th15, th19, th20};
+const covers: Record<string, string> = {th01, th02, th03, th04, th05, th06, th07, th075, th08, th09, th10, th11, th12, th15, th19, th20, thibp};
 const singlePlayerCovers: Partial<Record<LibraryProduct['gameId'], string>> = {th13, th14, th17, hsob};
 export const bookGameArtwork = (gameId: string) => covers[gameId];
 export const bookArtwork = (product: LibraryProduct) =>
