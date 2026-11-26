@@ -12,7 +12,11 @@ export class PresentationClock {
 
 export class ReplayPresentationClock {
   reset(){this.stepTime=undefined;}
-  stepped(time){this.stepTime=time;}
+  setPlayback(playback){
+    if(!this.playback||!playback||['path','paused','seeking','ended','rate'].some(key=>this.playback[key]!==playback[key]))this.reset();
+    this.playback=playback;
+  }
+  stepped(time,ended=false){this.stepTime=ended?undefined:time;}
   alpha(time,playback,limited){
     if(limited||this.stepTime===undefined||!playback||playback.paused||playback.seeking||playback.ended||!(playback.rate>0))return 0;
     return Math.max(0,Math.min(1,(time-this.stepTime)*playback.rate*60/1000));

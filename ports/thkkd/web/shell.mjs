@@ -52,7 +52,7 @@ function getReplay(){
       try{if(core._thkkd_replay_open()<0)throw Error(nativeError());if(core._thkkd_word(0xb4310c)!==1||core._thkkd_word(0xb43a08)!==activeReplay.count)throw Error('原生录像输入缓冲加载失败');}finally{core.FS.unlink(saveRoot+'/'+temporary);}
       first=false;launched=true;replayHasStepped=false;replayPresentationClock.reset();healthTime=performance.now();logicFrames=0;displayFrames=0;raf=requestAnimationFrame(replayFrame);
     },
-    step(){const result=core._thkkd_step();if(result<0)throw Error(nativeError());logicFrames++;replayHasStepped=true;replayPresentationClock.stepped(performance.now());platform.seekAudioTick();return result===0;},
+    step(){const result=core._thkkd_step();if(result<0)throw Error(nativeError());logicFrames++;replayHasStepped=true;replayPresentationClock.stepped(performance.now(),core._thkkd_word(0xb43110)>=activeReplay.count-1);platform.seekAudioTick();return result===0;},
     state(){const frame=core._thkkd_word(0xb43110),total=Math.max(0,(activeReplay?.count||1)-1);return {frame:Math.min(frame,total),total,ended:frame>=total,stage:0,startStage:0};},
     stopLoop(){cancelAnimationFrame(raf);lastTime=null;accumulator=0;presentationClock.reset();replayPresentationClock.reset();},
     async relocate(from,to){const a=core.FS.readFile(saveRoot+'/'+from),b=core.FS.readFile(saveRoot+'/'+to);if(a.length!==b.length||a.some((value,i)=>value!==b[i]))throw Error('目标录像与当前录像内容不一致');activeReplay.path=to;},
@@ -64,7 +64,7 @@ function getReplay(){
       else if(!stop&&!seeking&&platform.context.state!=='running')void platform.resume();
       return seeking||stop||platform.context.state==='running';
     },
-    onState(playback){playbackState=playback;emit('runtime-info',{playback});},onError:fatal,
+    onState(playback){playbackState=playback;replayPresentationClock.setPlayback(playback);emit('runtime-info',{playback});},onError:fatal,
   });return replayBridge;
 }
 function frame(time){
@@ -87,7 +87,7 @@ function frame(time){
 async function command(m){
   if(input.command(m))return {};
   switch(m.command){
-  case 'configure':if(launched)throw Error('游戏已启动');if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');options={limitPresentationTo60:true,touchEnabled:false,...m.options};if(options.touchSensitivity!==undefined&&(!Number.isFinite(options.touchSensitivity)||options.touchSensitivity<100||options.touchSensitivity>300))throw Error('触控灵敏度无效');input.configure(options);platform.music=m.music==='ogg';configured=true;return {};
+  case 'configure':if(launched)throw Error('游戏已启动');if(!['ogg','none'].includes(m.music))throw Error('音乐模式无效');options={limitPresentationTo60:true,touchEnabled:false,...m.options};if(options.touchSensitivity!==undefined&&(!Number.isFinite(options.touchSensitivity)||options.touchSensitivity<100||options.touchSensitivity>300))throw Error('触控灵敏度无效');input.configure(options);platform.renderer.setSmoothing(!options.limitPresentationTo60);platform.music=m.music==='ogg';configured=true;return {};
   case 'resources':if(!Array.isArray(m.resources))throw Error('资源列表无效');if(m.resources.length)throw Error('此版本资源由完整 DATA 包提供');return {};
   case 'launch':if(!configured)throw Error('请先配置游戏');if(launched)throw Error('游戏已经运行');input.clear();input.resetRecording();presentationClock.reset();if(core._thkkd_start()<0)throw Error(nativeError());await platform.resume();launchSerial=m.launchSerial;launched=true;first=false;lastTime=null;accumulator=1000/60;healthTime=performance.now();logicFrames=0;displayFrames=0;raf=requestAnimationFrame(frame);emit('runtime-info',{renderer:'WebGL2 / C++ WebAssembly',architecture:protocol,version:'thkkd-web-1'});return {};
   case 'list':return {files:listFiles()};

@@ -5,8 +5,9 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const args=new Set(process.argv.slice(2));
-for(const arg of args)if(!['--probe','--print-inputs','--release','--package-only','--symbols'].includes(arg))throw Error(`Unknown argument: ${arg}`);
-const probe=args.has('--probe');
+for(const arg of args)if(!['--probe','--presentation-probe','--print-inputs','--release','--package-only','--symbols'].includes(arg))throw Error(`Unknown argument: ${arg}`);
+const probe=args.has('--probe'),presentationProbe=args.has('--presentation-probe');
+if(probe&&presentationProbe)throw Error('Choose one diagnostic build');
 const sdk=resolve(process.env.EMSDK||resolve(root,'../../toolchains/emsdk'));
 const common=resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'../../common'));
 const build=resolve(root,'build/web');mkdirSync(build,{recursive:true});
@@ -15,10 +16,10 @@ const version=readFileSync(resolve(sdk,'upstream/emscripten/emscripten-version.t
 if(version!=='6.0.9')throw Error(`Expected Emscripten 6.0.9, got ${version}`);
 const walk=p=>readdirSync(p,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(p,e.name)):[resolve(p,e.name)]);
 const sources=probe?[resolve(root,'tests/support/opening_probe.cpp')]:[
-    resolve(root,'src/platform/web/Main.cpp'),resolve(root,'src/platform/web/WebHost.cpp'),
+    resolve(root,presentationProbe?'tests/support/presentation_probe.cpp':'src/platform/web/Main.cpp'),resolve(root,'src/platform/web/WebHost.cpp'),
     ...walk(resolve(root,'src/render')).filter(p=>p.endsWith('.cpp')),
 ];
-const loader=resolve(build,probe?'core-probe.cjs':'thkkd.mjs');
+const loader=resolve(build,probe?'core-probe.cjs':presentationProbe?'presentation-probe.mjs':'thkkd.mjs');
 const flags=['-std=c++17','-O2','-g0','-fexceptions','-fno-fast-math','-ffp-contract=off','-Wno-c++11-narrowing',
     '-include',resolve(root,'src/platform/web/WebMemory.hpp'),
     '-I'+resolve(root,'src'),'-I'+resolve(root,'tests/support'),'-I'+resolve(root,'tests/compat'),'-I'+resolve(common,'include'),
@@ -51,8 +52,8 @@ else {
     const revision=spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true});
     const sourceRecord=resolve(root,'../../SOURCE.json');
     const sourceCommit=revision.status===0?revision.stdout.trim():existsSync(sourceRecord)?JSON.parse(readFileSync(sourceRecord,'utf8')).sourceCommit:null;
-    writeFileSync(resolve(build,probe?'probe-build.json':'build.json'),JSON.stringify({schema:'thkkd/web-build/1',compiler:version,sourceCommit,sourceDigest:sha(JSON.stringify(inputs)),inputs,files},null,2)+'\n');
-    if(!probe){
+    writeFileSync(resolve(build,probe?'probe-build.json':presentationProbe?'presentation-probe-build.json':'build.json'),JSON.stringify({schema:'thkkd/web-build/1',compiler:version,sourceCommit,sourceDigest:sha(JSON.stringify(inputs)),inputs,files},null,2)+'\n');
+    if(!probe&&!presentationProbe){
         const output=resolve(root,'runtime');mkdirSync(output,{recursive:true});
         const shell=resolve(root,'web');
         for(const p of walk(shell)){

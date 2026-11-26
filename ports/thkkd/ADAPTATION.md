@@ -17,7 +17,7 @@
 | BUILD-01 | [源码目录与普通版／MP归属](../../docs/adaptation/build.md#build-01) | 已验证 | normal：普通版目录、构建配方与源码输入归属一致；[公共接口检查](../../docs/adaptation/status.json)。 |
 | BUILD-02 | [工具链与外部依赖](../../docs/adaptation/build.md#build-02) | 已验证 | normal：Emscripten 6.0.9、Node.js 24.19.0、Bun 1.4.4 及字体、转换依赖按开发指南完成构建；[构建与接入记录](../../archive/thkkd-import-20261126/README.md)。 |
 | BUILD-03 | [对应模式独立构建](../../docs/adaptation/build.md#build-03) | 已验证 | normal：normal WASM 与启动器独立构建通过；本作只有单机模式；[构建与接入记录](../../archive/thkkd-import-20261126/README.md)。 |
-| BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 已验证 | normal：当前 25 项 Runtime 文件、610 项 C++ 输入与构建记录一致；[专项验收](../../archive/thkkd-adaptation-20261127/README.md)。 |
+| BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 已验证 | normal：当前 26 项 Runtime 文件、611 项 C++ 输入与构建记录一致；正式 WASM 与 r7 相同，诊断写入接口单独构建。 [高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)。 |
 | BUILD-05 | [前端搭配单个游戏运行](../../docs/adaptation/build.md#build-05) | 已验证 | normal：单作品站点实际启动，以及四种前端隔离构建、10 项检查通过；[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)。 |
 | BUILD-06 | [源码与素材来源](../../docs/adaptation/build.md#build-06) | 待验证 | normal：源码基线、素材位置与哈希已登记；见[来源登记](../../docs/migration/thkkd-file-import-20261126.md)及[第三方来源](THIRD_PARTY.md)。 |
 
@@ -73,12 +73,12 @@
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已验证 | normal：60／120／144 Hz 模拟序列的原生状态、RNG 和游标一致；普通与解除限频的浏览器逻辑约 60 Hz；[网页接入验收](../../archive/thkkd-web-20261126/README.md)、[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)。 |
+| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已验证 | normal：正式普通帧循环在模拟 60～360 Hz、显示限频开关共 14 组合中推进相同步数，原生状态相同；录像四种刷新率到末帧一致。 [高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)。 |
 | DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 待验证 | normal：解除浏览器限频后额外呈现已验证；120／144 Hz 实体显示器的呈现间隔与画面体验待验收；[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)。 |
-| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已验证 | normal：固定状态额外绘制 100 次，完整 WASM 内存、RNG、绘图命令、文件及音频事件保持一致；[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)。 |
-| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 进行中 | normal：普通游玩和录像均接入相邻逻辑快照的位置外推；补齐自机子弹、武器、附属物、道具及辅助绘图调用的对象标识，九机体画面通过；特殊弹幕辅助池的完整场景覆盖待补。 [专项验收](../../archive/thkkd-adaptation-20261127/README.md)。 |
-| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 已验证 | normal：九机体运行中验证新对象使用当前位置、销毁对象退出命令列表；出生代次、切面、瞬移、贴图、透明状态和裁剪切换的边界检查通过。 [专项验收](../../archive/thkkd-adaptation-20261127/README.md)。 |
-| DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 已验证 | normal：原生暂停、恢复，录像暂停时逻辑不动而画面继续呈现通过；[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)、[单机运行验收](../../archive/thkkd-quality-mp-20261126/README.md)。 |
+| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已验证 | normal：GPU 复用相邻逻辑快照，额外绘制保持完整 WASM 内存；当前逻辑帧与 r7 逐像素一致。 [高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)。 |
+| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 已验证 | normal：GPU 平滑位置、最短角差与缩放，图集换帧保留连续位移；九机体及辅助池两绘制层、第 0／7／31 槽的定点显示通过。 [高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)。 |
+| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 已验证 | normal：出生、复用、瞬移、材质、裁剪及圆形分段的边界检查通过；辅助对象池定点和九机体画面通过。 [高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)。 |
+| DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 已验证 | normal：保留原生暂停表现；录像暂停恢复、切速、定位和结束时重建显示时刻，EOF 立即冻结。 [高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)。 |
 | DISPLAY-07 | [实际呈现后报告首帧](../../docs/adaptation/presentation.md#display-07) | 已验证 | normal：正式启动与首帧检查通过，首帧事件在提交实际绘制后发送；[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)、[呈现入口](web/shell.mjs)。 |
 | DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 待验证 | normal：60／120／144／240 Hz 模拟时钟限制到 60 Hz，以及浏览器约 60 Hz 呈现通过；实体高刷设备切换待验收；[本作模块检查](tests/extensions.test.mjs)、[网页接入验收](../../archive/thkkd-web-20261126/README.md)、[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)。 |
 | AUDIO-01 | [原版 MP3 音乐](../../docs/adaptation/presentation.md#audio-01) | 已验证 | normal：18 首原版 MP3 保留字节；标题、开局和原生 Music 菜单检查及实际 BGM PCM 输出通过；[r6 导入](../../archive/thkkd-web-only-20261126/R6-IMPORT.md)、[r5 验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)。 |
@@ -172,7 +172,7 @@
 
 ## 运行验收记录
 
-本轮在 `f0013c1c` 基础上补齐网页单机功能，专项结果见[适配验收](../../archive/thkkd-adaptation-20261127/README.md)。测试使用独立站点、专用浏览器数据和后台 Edge，原版资源由实际双 DXA 导入。既有完整录像与文件管理记录继续对应各行已验收范围。
+r8 在 r7-final 基础上完善 GPU 高刷显示与插帧，结果见[高刷验收](../../archive/thkkd-high-refresh-20261127/README.md)；此前在 `f0013c1c` 基础上补齐网页单机功能，专项结果见[适配验收](../../archive/thkkd-adaptation-20261127/README.md)。测试使用独立站点、专用浏览器数据和后台 Edge，原版资源由实际双 DXA 导入。既有完整录像与文件管理记录继续对应各行已验收范围。
 
 触控事件通过 DevTools 和正式共用控件注入，手柄使用虚拟标准设备及生产映射；高刷新使用 60／120／144／240 Hz 的可重复调度。实体触屏、手柄及高刷显示器的体验单独验收。
 
@@ -181,7 +181,7 @@
 | 范围 | 后续工作 |
 | --- | --- |
 | 实际设备 | 实体手柄、触屏、120／144 Hz 显示器的连续操作，以及其他浏览器引擎 |
-| 连续视觉位置 | 特殊弹幕辅助池的完整场景覆盖；九种机体的子弹、激光、附属物和道具已进入显示验证 |
+| 连续视觉位置 | 九机体及辅助池定点显示已验证；后续结合实体高刷体验观察完整关卡 |
 | 原版对照 | 在独立桌面时段重新采集原版，补足逐逻辑步的原始状态覆盖；现有固定采样逐区域对照已通过 |
 | 来源登记 | 源码与素材入口按 BUILD-06 继续核对 |
 

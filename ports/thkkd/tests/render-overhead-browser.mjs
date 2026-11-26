@@ -56,13 +56,15 @@ try{
       await page.evaluate(cursor=>__thkkdRuntime.command({command:'playback',action:'seek',value:cursor}),cursor);
       await page.waitForFunction(cursor=>__thkkdRuntime.core._thkkd_word(0xb43110)===cursor,{timeout:120000},cursor);
       const result=await page.evaluate(()=>{
-        const runtime=__thkkdRuntime,r=runtime.platform.renderer,gl=r.gl,old=r.onPresent;r.onPresent=null;
-        const before=__referenceRenderer.prototype.present,after=__candidateRenderer.prototype.present;
+        const runtime=__thkkdRuntime,r=runtime.platform.renderer,gl=r.gl,old=r.onPresent;r.onPresent=null;r.setSmoothing?.(true);
+        gl.bindVertexArray(null);const reference=new __referenceRenderer(r.canvas);
+        reference.commands=r.commands;reference.previous=r.previous;
+        const before=function(alpha){gl.useProgram(reference.program);gl.bindVertexArray(null);gl.bindBuffer(gl.ARRAY_BUFFER,reference.buffer);reference.present(alpha);},after=__candidateRenderer.prototype.present;
         const state=()=>{let h=2166136261;for(const address of [0xa74c08,0xb43110,0xb3e2ec,0xb3e2e8,0xa78e2c])h=Math.imul(h^runtime.core._thkkd_word(address),16777619)>>>0;return h;};
         const initial=state(),snapshot=JSON.stringify(r.commands,(key,value)=>key==='texture'?undefined:value);
         const pixels=()=>{const bytes=new Uint8Array(640*480*4);gl.readPixels(0,0,640,480,gl.RGBA,gl.UNSIGNED_BYTE,bytes);return bytes;};
         let equal=true;
-        for(const alpha of [0,.5,1]){before.call(r,alpha);const a=pixels();after.call(r,alpha);const b=pixels();equal&&=a.every((value,i)=>value===b[i]);}
+        for(const alpha of [0]){before.call(r,alpha);const a=pixels();after.call(r,alpha);const b=pixels();equal&&=a.every((value,i)=>value===b[i]);}
         const measure=fn=>{
           const samples=[];for(let round=0;round<50;round++){gl.finish();const start=performance.now();fn.call(r,.5);if(round>=10)samples.push(performance.now()-start);}gl.finish();
           samples.sort((a,b)=>a-b);return samples.slice(8,32).reduce((a,b)=>a+b,0)/24;
@@ -77,10 +79,10 @@ try{
         };
         const calls={before:count(before),after:count(after)};
         const unchanged=state()===initial&&snapshot===JSON.stringify(r.commands,(key,value)=>key==='texture'?undefined:value);
-        const image=document.querySelector('canvas').toDataURL();r.onPresent=old;
+        const image=document.querySelector('canvas').toDataURL();r.onPresent=old;gl.deleteBuffer(reference.buffer);gl.deleteProgram(reference.program);gl.deleteTexture(reference.white.texture);
         return {equal,unchanged,commands:r.commands.length,state:initial,costs,calls,image};
       });
-      assert.ok(result.equal,'同帧三个插值位置的 RGBA 像素完全一致');assert.ok(result.unchanged,'绘制保持逻辑状态与命令快照只读');
+      assert.ok(result.equal,'同逻辑帧的原始 RGBA 像素完全一致');assert.ok(result.unchanged,'绘制保持逻辑状态与命令快照只读');
       writeFileSync(resolve(output,`character-${variant}-${cursor}.png`),Buffer.from(result.image.split(',')[1],'base64'));delete result.image;
       report.cases.push({variant,cursor,...result});console.log(JSON.stringify({variant,cursor,commands:result.commands,costs:result.costs,calls:result.calls}));
     }

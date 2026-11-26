@@ -56,6 +56,10 @@ node tools/ports/check.mjs --game=thkkd --variant=normal
 
 字体覆盖检查先安装 `tests/font-requirements.txt`，再运行 `python -X utf8 -B ports/thkkd/tests/font-coverage.py --output=ports/thkkd/build/font-coverage.json`。该检查汇集核心文本、显示常量和网页标记，核对随包 WOFF2 的字符映射。
 
+高刷显示修改运行 `node --test ports/thkkd/tests/high-refresh.test.mjs`，并按影响范围选择 `high-refresh-browser.mjs`、`normal-cadence-browser.mjs` 和 `presentation-adaptation-browser.mjs`。前者对比 r7 像素、GPU 几何和缓冲复用；后两者覆盖正式帧循环与录像的刷新率调度。`normal-cadence-browser.mjs --data=本机测试DATA` 复用已经准备的素材，模拟 60～360 Hz 与显示限频开关。
+
+辅助对象池的定点显示检查先运行 `node ports/thkkd/scripts/build-eagler.mjs --presentation-probe`，再运行 `presentation-probe-browser.mjs --url=站点 --profile=专用测试目录`。诊断入口复用正式游戏与显示代码，测试驱动按请求提供诊断模块；状态写入接口由诊断构建提供，normal Runtime 保持正式入口。纯显示修改复用已核对的核心、原版基准和资源转换结果，测试组合与范围见[高刷验收](../../../archive/thkkd-high-refresh-20261127/README.md)。
+
 ## 本地交付
 
 `python -X utf8 -B ports/thkkd/scripts/release-web.py --site ports/thkkd/build/site --output ports/thkkd/dist/版本目录` 生成源码 ZIP 和本地网站 ZIP，并核对构建身份、文件清单、哈希。双击本地网站目录中的“启动海惠堂.cmd”启动浏览器服务器；它使用 Node 托管相同的网页程序。具体规则见 [packaging.md](packaging.md)。

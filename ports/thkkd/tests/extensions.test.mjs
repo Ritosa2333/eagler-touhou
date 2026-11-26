@@ -55,7 +55,7 @@ test('额外呈现读取身份快照，出生、切面、瞬移和池复用保�
  let submitted;const r=Object.create(Renderer.prototype),texture={texture:1};
  r.gl=new Proxy({bufferData(_target,data){submitted=Array.from(data);}},{get:(object,key)=>key in object?object[key]:/^[A-Z_]+$/.test(String(key))?1:()=>{}});r.commands=[];r.current=[];r.vertices=new Float32Array(60*256);
  const command=(id,x)=>({texture,identity:id,points:[x,0,x+1,0,x+1,1,x,1],uv:[0,0,1,0,1,1,0,1],tint:[1,1,1,1],depth:[1,.5,1,.5,1,.5,1,.5],mode:1,area:[0,0,640,480]});
- const draw=(id,x,tick,scene='100:0',fields={})=>{r.current=[{...command(id,x),...fields}];r.tick=tick;r.scene=scene;r.commit();const before=JSON.stringify(r.commands);r.present(.5);assert.equal(JSON.stringify(r.commands),before);return submitted[0];};
+ const draw=(id,x,tick,scene='100:0',fields={})=>{r.current=[{...command(id,x),...fields}];r.tick=tick;r.scene=scene;r.commit();const before=JSON.stringify(r.commands);r.present(.5);assert.equal(JSON.stringify(r.commands),before);return submitted[0]+submitted[10]*.5;};
  assert.equal(draw('slot:birth1',0,0),0);assert.equal(draw('slot:birth1',8,1),12);assert.equal(draw('slot:birth2',16,2),16);assert.equal(draw('slot:birth2',200,3),200);assert.equal(draw('slot:birth2',208,4,'100:1'),208);
  assert.equal(draw('slot:birth2',216,5,'100:1',{opaque:true}),216);
  assert.equal(draw('slot:birth2',224,6,'100:1',{opaque:true,area:[32,16,416,464]}),224);

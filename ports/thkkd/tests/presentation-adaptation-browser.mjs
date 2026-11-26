@@ -70,7 +70,7 @@ try{
           if(previous&&previous.texture.texture===command.texture.texture&&previous.points.some((value,i)=>value!==command.points[i]))continuous[family]=(continuous[family]||0)+1;
           if(!previous)born[family]=(born[family]||0)+1;
         });
-        if(tick%30===0){renderer.present(.5);renderer.commands.forEach((command,index)=>{if(command.identity&&!renderer.previous.has(command.identity)){if(Math.abs(renderer.vertices[index*60]-command.points[0])>.001||Math.abs(renderer.vertices[index*60+1]-command.points[1])>.001)throw Error('New object used stale position');birthsChecked++;}});}
+        if(tick%30===0){renderer.present(.5);renderer.commands.forEach((command,index)=>{if(command.identity&&!renderer.previous.has(command.identity)){const offset=index*6*(renderer.vertexStride||10);if(Math.abs(renderer.vertices[offset]-command.points[0])>.001||Math.abs(renderer.vertices[offset+1]-command.points[1])>.001||renderer.vertexStride>10&&renderer.vertices.slice(offset+10,offset+14).some(value=>value!==0))throw Error('New object used stale position');birthsChecked++;}});}
       }
       renderer.present(.5);rows.push({character:fixture.character,shot:fixture.shot,families,continuous,born,birthsChecked,retiredChecked,cursor:r.core._thkkd_word(0xb43110),image:document.querySelector('canvas').toDataURL()});
     }

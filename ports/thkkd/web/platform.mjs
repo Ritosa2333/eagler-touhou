@@ -179,7 +179,7 @@ export class Platform {
   setSeeking(value){
     if(this.silent===value)return;this.silent=value;
     for(const sound of this.sounds.values()){
-      if(sound.bgm){
+      if(sound.bgm&&sound.audio){
         if(value){sound.playSerial=(sound.playSerial||0)+1;sound.seekTime=sound.audio.currentTime;if(!sound.audio.paused){sound.playing=true;sound.audio.pause();}}
         else if(sound.playing){const seek=()=>{sound.audio.currentTime=sound.seekTime||0;this.playMedia(sound);};if(sound.audio.readyState)seek();else sound.audio.addEventListener('loadedmetadata',seek,{once:true});}
       }else if(sound.node&&!sound.node.loop)this.stopSound(sound);
@@ -191,7 +191,7 @@ export class Platform {
   }
   seekAudioTick(){
     if(!this.silent)return;
-    for(const sound of this.sounds.values())if(sound.bgm&&sound.playing){sound.seekTime=(sound.seekTime||0)+1/60;if(Number.isFinite(sound.audio.duration)&&sound.seekTime>=sound.audio.duration){if(sound.audio.loop)sound.seekTime%=sound.audio.duration;else sound.playing=false;}}
+    for(const sound of this.sounds.values())if(sound.bgm&&sound.playing&&sound.audio){sound.seekTime=(sound.seekTime||0)+1/60;if(Number.isFinite(sound.audio.duration)&&sound.seekTime>=sound.audio.duration){if(sound.audio.loop)sound.seekTime%=sound.audio.duration;else sound.playing=false;}}
     for(const graph of this.graphs.values())if(graph.video&&graph.playing){graph.seekTime=(graph.seekTime||0)+1/60;if(Number.isFinite(graph.video.duration)&&graph.seekTime>=graph.video.duration){if(graph.video.loop)graph.seekTime%=graph.video.duration;else graph.playing=false;}}
   }
   releaseGraph(graph){if(!graph?.video)return;graph.playSerial=(graph.playSerial||0)+1;graph.playing=false;graph.video.pause();graph.video.removeAttribute('src');graph.video.load();this.renderer.releaseTexture(graph);}
