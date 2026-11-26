@@ -165,9 +165,9 @@ and MinGW-w64 GCC with C++23 support (GCC 14 or later recommended).
 
 `bootstrap.ps1` clones [libth03](https://github.com/christianazinn/th98port) at a
 pinned commit into `external/th98port` and applies the local compatibility and
-audio patches in `patches/`. The upstream checkout is not vendored here. Its
-license is separate from this project's MIT license; confirm redistribution
-terms before sharing patched upstream code or a linked build. Pass
+audio patches in `patches/`. The upstream checkout is not vendored here, but
+its decoder and audio code is compiled into the runtime. See [NOTICE](NOTICE)
+for the pinned revision and separate distribution terms. Pass
 `-DTH98PORT_DIR=<path>` to use your own checkout.
 
 Replay compression uses a static zlib archive (1.4 or newer). If CMake
@@ -276,9 +276,11 @@ a package built that way contains original game data and must not be published.
 
 ## License
 
-The code in this repository is MIT (see `LICENSE`). Third-party components and
-their terms are listed in `NOTICE`. The original game is not covered by any
-license granted here.
+This fork distributes SoEW Native project code under [GPL-3.0-only](LICENSE).
+The [original MIT notice](LICENSE-MIT-ORIGINAL) remains with the upstream code.
+[NOTICE](NOTICE) records the separate terms and provenance of third-party
+dependencies. The project's license does not cover original game assets or
+third-party translations.
 
 ## Disclaimer
 

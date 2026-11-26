@@ -4,7 +4,7 @@ import {dirname,relative,resolve} from 'node:path';
 import {assertPortableRuntimeSources} from '../../../launcher/lib/runtime-generations.mjs';
 import {printRuntimeInputs} from '../../../tools/build/runtime-inputs.mjs';
 import {DATA_SCHEMA,DATA_MAGIC,DATA_LAYOUT_SPEC} from '../web/managed-data.mjs';
-import {stageNativeSolo} from './native-solo-package.mjs';
+import {nativeNotices,stageNativeSolo} from './native-solo-package.mjs';
 
 const port=resolve(import.meta.dirname,'..'),repo=resolve(port,'../..');
 const args=Object.fromEntries(process.argv.slice(2).map(arg=>{
@@ -21,6 +21,7 @@ const inputs=[...web.map(name=>[resolve(port,'web',name),name]),
 if(args['print-inputs'])await printRuntimeInputs({workspace:port,root:port,sources:[],headers:[
   ...inputs.map(([source])=>source),...['build-eagler.mjs','native-solo-package.mjs'].map(name=>resolve(port,'scripts',name)),
   ...['full.mjs','audio.mjs','glyph-cells.mjs','clock.mjs'].map(name=>resolve(port,'native-solo/web',name)),resolve(port,'source-import.json'),
+  ...nativeNotices.map(name=>resolve(port,'native-solo',name)),
 ],flags:['game=th02','assembly=managed-import','native-core=external-precompiled']});
 
 const build=resolve(args['native-build']||process.env.TH02_NATIVE_BUILD||resolve(port,'native-solo/build-web'));

@@ -2,12 +2,14 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {contentPath} from '../web/managed-data.mjs';
 
+export const nativeNotices=['LICENSE','LICENSE-MIT-ORIGINAL','NOTICE'];
+
 // Runtime code is pinned to the Eagler generation. Original art, the glyph
 // atlas and optional audio live in the installed TH02 DATA instead.
 export async function stageNativeSolo({build,output,port,runtime,addData,addMusic}) {
   const native=resolve(output,'native');
   await mkdir(native,{recursive:true});
-  for(const name of ['soew-full.mjs','soew-full.wasm','full.mjs','audio.mjs','glyph-cells.mjs','clock.mjs','LICENSE.txt','NOTICE.txt']) {
+  for(const name of ['soew-full.mjs','soew-full.wasm','full.mjs','audio.mjs','glyph-cells.mjs','clock.mjs',...nativeNotices.map(name=>name+'.txt')]) {
     const source=name.endsWith('.txt')?resolve(port,'native-solo',name.slice(0,-4)):
       name.startsWith('soew-')?resolve(build,name):resolve(port,'native-solo/web',name);
     await writeFile(resolve(native,name),await readFile(source));

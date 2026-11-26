@@ -22,7 +22,7 @@ Boss 面板用一根蓝色总血条标出各阶段，保留 HP、判定限制和
 
 改动界面文字或文本资源后，重新运行 `web/stage-glyphs.mjs`，让预览同步使用最新的 Win32 字形表。
 
-资源目录可用 `python tools/prepare_content.py <自己的日文 TH02 HDI> <新的资源目录>` 生成，也可以直接使用已有 Win32 版的 `content`。浏览器沿用原生版对 `locale/`、`zunsoft/` 和 MIDI SoundFont 的资源约定。固定字格（包括 F12 练习工具和退格辅助面板）使用 Win32 版从本机 GDI 导出的字形位图。当前入口独立于大厅和 DOSBox-X 版。对外分发前核对字形位图、游戏素材与 [th98port](README.md#build-and-test-notes) 的授权。
+资源目录可用 `python tools/prepare_content.py <自己的日文 TH02 HDI> <新的资源目录>` 生成，也可以直接使用已有 Win32 版的 `content`。浏览器沿用原生版对 `locale/`、`zunsoft/` 和 MIDI SoundFont 的资源约定。固定字格（包括 F12 练习工具和退格辅助面板）使用 Win32 版从本机 GDI 导出的字形位图。当前入口独立于大厅和 DOSBox-X 版。SoEW 源码许可证见 [LICENSE](LICENSE)；WASM 编入的外部代码来源见 [NOTICE](NOTICE)。字形、原作素材和录音分别适用其自身条款。
 
 ## 音乐室与音源
 

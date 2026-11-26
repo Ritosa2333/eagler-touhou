@@ -1,9 +1,14 @@
 Third-party notices
 ===================
 
-SoEW Native is maintained by Dr. Hydrangea Z (https://github.com/Hydrangea-Z).
-This repository contains only original source code written for this port, plus
-small tools. It distributes no game data and no third-party binaries.
+SoEW Native was authored by Dr. Hydrangea Z (https://github.com/Hydrangea-Z).
+IxinorTyan maintains this fork and its Web port
+(https://github.com/IxinorTyan/SoEW-native).
+
+The SoEW Native project code in this fork is distributed under GPL-3.0-only
+(see LICENSE). LICENSE-MIT-ORIGINAL preserves the original SoEW Native
+copyright and MIT notice. Third-party code, translations and game data
+retain their respective terms.
 
 1. Touhou Project / 東方Project
    The game being ported, its artwork, music, text and characters are the
@@ -11,13 +16,18 @@ small tools. It distributes no game data and no third-party binaries.
    This is an unofficial fan project (二次創作). You must own the original game
    to build a runnable copy.
 
-2. libth03 / th98port  —  https://github.com/christianazinn/th98port
-   Fetched at a pinned commit by bootstrap.ps1. It provides the PI, RGB and
-   BFT asset decoders and the vendored TinySoundFont build used by this port.
-   It is NOT redistributed here; bootstrap.ps1 fetches it from its own
-   repository, and its own terms apply. The repository has no
-   top-level license file, so treat it as all rights reserved and ask its
-   author before redistributing its sources.
+2. libth03 / th98port (Christian Azinn)
+   https://github.com/christianazinn/th98port/tree/5d7e1ba0b139c4b048478f62bdd0f027082c7d08
+   bootstrap.ps1 fetches this revision and applies the patches in patches/.
+   CMakeLists.txt compiles its PI, RGB and BFT decoders and PMD/OPNA audio
+   support into the WebAssembly runtime. Fetching the source at build time
+   does not change what the runtime contains.
+   No project-wide license is published at the pinned revision. The SoEW
+   license does not grant rights to this code. A public binary release needs
+   separate permission for the th98port code it includes, covering the
+   applicable source distribution and downstream rights as well.
+   Its bundled 98fmplayer (BSD-2-Clause) and ymfm (BSD-3-Clause) have
+   separate notices in their third_party directories.
 
 3. TinySoundFont (reached through libth03's third_party directory)
    Copyright (C) 2017-2023 Bernhard Schelling, based on SFZero,

@@ -1,8 +1,7 @@
 # Fetches the pinned libth03 (th98port) revision and applies the port's patch.
 #
-# external/th98port is deliberately NOT vendored in this repository: the
-# dependency has no published license, so we only reference it and ship the
-# small set of changes this port needs.
+# external/th98port is fetched at build time. See NOTICE for the revision and
+# distribution terms of the components compiled into the runtime.
 [CmdletBinding()]
 param(
     [string]$Destination,
