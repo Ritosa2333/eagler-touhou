@@ -1,9 +1,13 @@
 import {stable,fingerprint} from './tape.js';
 import {GAME,SOURCE_PATHS,WORKER} from './profile.js';
+const previousSources={
+  '../replay/tape.js':'74ddc4f6ae282c301a1fef60a21b616bec211696b413011918589c682fa27a0b',
+  '../replay/scenes.js':'74dd0325046b87b910ef4c193fd915f102716d013709cf4546c2e787f4e9d719',
+};
 // A fresh ordinary runtime Worker; no player instance is used for playback.
 export async function createReplica(header,{onFrame=()=>{},onEvent=()=>{},onProgress=()=>{},signal}={}){
   if(signal?.aborted)throw Error('回放启动已取消');
-  if(header.game!==GAME||header.identity!==await fingerprint(SOURCE_PATHS))throw Error('录像作品或浏览器运行版本不匹配');
+  if(header.game!==GAME||(header.identity!==await fingerprint(SOURCE_PATHS)&&header.identity!==await fingerprint(SOURCE_PATHS,previousSources)))throw Error('录像作品或浏览器运行版本不匹配');
   if(signal?.aborted)throw Error('回放启动已取消');
   const worker=new Worker(new URL(WORKER,import.meta.url),{type:'module'}),pending=new Map();let serial=0,closed=false;
   function stop(){if(closed)return;closed=true;signal?.removeEventListener('abort',stop);worker.terminate();for(const p of pending.values()){clearTimeout(p.timer);p.reject(Error('回放实例已停止'));}pending.clear();}

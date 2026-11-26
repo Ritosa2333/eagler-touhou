@@ -109,7 +109,7 @@ try{
     }
     for(const c of clients)c.send({type:'set-ready',ready:true,runtimeGeneration:generation,movementMode:'touch'});
     await waitFor(()=>clients[0].state()?.seats.slice(0,count).every(s=>s?.ready),'ready');
-    clients[0].send({type:'start',adonisMode:1,inputDelay:0,predictionLimit:6});
+    clients[0].send({type:'start',adonisMode:1,inputDelay:0,predictionLimit:0});
     await waitFor(()=>{
         const error=clients[0].messages.find(m=>m.type==='error');
         if(error)throw new Error(JSON.stringify(error));

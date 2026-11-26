@@ -1,4 +1,4 @@
-"""Execute the TH02 and TH04 cooperative hit updates in their retail guest code."""
+"""Execute the TH04 cooperative hit updates in its retail guest code."""
 import re
 import subprocess
 from pathlib import Path
@@ -33,38 +33,21 @@ def run(game, code, players, active, ghost, protected):
     def read(address):
         return cpu.mem_read(address, 1)[0]
 
-    if game == '02':
-        write(CS + 0x85e2, 1)  # Cooperative round.
-        write(CS + 0x8528, players)
-        write(DS + 0x3e44, active)
-        banks = [DS + 0x2b94]
-        for seat in (1, 2):
-            pointer = int.from_bytes(cpu.mem_read(CS + 0x853e + seat * 2, 2), 'little')
-            banks.append(CS + pointer + 0x2c)
-        out, stride = CS + 0x852a, 1
-        # Skip video/Bomb-art work; stop before the native miss animation.
-        for site in (0x2328, 0x7dee):
-            write(CS + site, 0xc3)
-        cpu.mem_write(CS + 0x3e02, b'\x5e\xc9\xc3')
-        start, end = 0x4e80, 0x4ed7
-        timers = [hit + 1 for hit in banks]
-    else:
-        write(CS + 0x95a2, players)
-        write(DS + 0x4368, active)
-        banks = [DS + 0x4669, CS + 0x938b, CS + 0xa871]
-        out, stride = CS + 0x95ab, 16
-        for site in (0xb49f, 0x9c26, 0x8b79, 0x8bb5):
-            write(CS + site, 0xc3)
-        cpu.mem_write(CS + 0x6021, b'\x5e\xc9\xc3')
-        start, end = 0x8817, 0x885a
-        timers = [DS + 0x4662, CS + 0x9386, CS + 0xa86c]
+    write(CS + 0x95a2, players)
+    write(DS + 0x4368, active)
+    banks = [DS + 0x4669, CS + 0x938b, CS + 0xa871]
+    out, stride = CS + 0x95ab, 16
+    for site in (0xb49f, 0x9c26, 0x8b79, 0x8bb5):
+        write(CS + site, 0xc3)
+    cpu.mem_write(CS + 0x6021, b'\x5e\xc9\xc3')
+    start, end = 0x8817, 0x885a
+    timers = [DS + 0x4662, CS + 0x9386, CS + 0xa86c]
 
     for seat, hit in enumerate(banks):
         write(out + seat * stride, int(seat == ghost))
         write(hit, 1)
         write(timers[seat], 10 if seat == protected else 0)
-        if game == '04':
-            write(hit + 1, 0)
+        write(hit + 1, 0)
 
     cpu.emu_start(CS + start, CS + end, count=10000)
     assert cpu.reg_read(UC_X86_REG_IP) == end
@@ -72,18 +55,15 @@ def run(game, code, players, active, ghost, protected):
         skipped = seat >= players or seat == ghost
         timer = 10 - int(not skipped) if seat == protected else 0
         assert read(out + seat * stride) == int(seat == ghost), (game, seat, 'ghost changed')
-        if game == '02':
-            assert read(hit) == int(skipped or (not active and not timer)), (game, seat, active, ghost, read(hit))
-        else:
-            miss = not skipped and not active and not timer
-            assert read(hit) == int(skipped), (game, seat, active)
-            assert read(hit + 1) == (0x28 if miss else 0), (game, seat, active, 'miss')
-            if miss:
-                timer = 0xc0
+        miss = not skipped and not active and not timer
+        assert read(hit) == int(skipped), (game, seat, active)
+        assert read(hit + 1) == (0x28 if miss else 0), (game, seat, active, 'miss')
+        if miss:
+            timer = 0xc0
         assert read(timers[seat]) == timer, (game, seat, 'personal timer', timer)
 
 
-for game, fixture in [('02', 'ghost-target.py'), ('04', 'ghost-rescue.py')]:
+for game, fixture in [('04', 'ghost-rescue.py')]:
     for code in images(game, fixture):
         for players in (2, 3):
             for active in (0, 1):

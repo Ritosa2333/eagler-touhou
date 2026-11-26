@@ -65,7 +65,20 @@ export function createSoloAttempt({canvas,practice,settings,replay=null,standby=
       let externalReplay=null;
       if(replay){
         const identity=await fingerprint(sources);
-        if(identity!==replay.header.identity&&await fingerprint(sources,{"../practice-attempt.js":"091e33204a297f396901c0b13d1da7f6686b4811dd7d59139f2d3e6bcb0616d9","./external-host.js":"a8ccea815c47f0ab5ae478f2af4e7a9365a22d12bcf9337fe5e6faa7610a4bbf","../solo-worker.js":"c606d752e295310d381628ec109960c1f9661b7b9dbdbf352fd46c176b60d48e"})!==replay.header.identity||replay.header.runtime!==runtime||replay.header.boundaryMode!=='sleep')throw Error('Replay 与当前游戏或模拟器版本不一致');
+        const previousSources={
+          '../practice-attempt.js':'26d784d106e358aa5e3437da0185bde05fc1124cd327d21ddcb908504721399c',
+          './external-host.js':'2fe7aa28a3455126f6b31237a81cf2b26ec913cf6d26bfca227dce5119d31a59',
+          './external-codec.js':'68f341b34017ed413b30900d32af0e99ae1ffdd6241b68f5594e6ae3477dca5f',
+          './external-lifecycle.js':'4d0b7aa637efd19f0f8951ae280e190f7a0ba801d96c93305d7cf8357fdfb44d',
+          '../netplay/local-bgm.js':'05a3cfd570beabae7c05a5a66720e4e781cc39175907e209fe5fb5ebed3e390c',
+        };
+        const earlierSources={...previousSources,
+          '../practice-attempt.js':'091e33204a297f396901c0b13d1da7f6686b4811dd7d59139f2d3e6bcb0616d9',
+          './external-host.js':'a8ccea815c47f0ab5ae478f2af4e7a9365a22d12bcf9337fe5e6faa7610a4bbf',
+          '../solo-worker.js':'c606d752e295310d381628ec109960c1f9661b7b9dbdbf352fd46c176b60d48e',
+        };
+        if((identity!==replay.header.identity&&await fingerprint(sources,previousSources)!==replay.header.identity&&
+          await fingerprint(sources,earlierSources)!==replay.header.identity)||replay.header.runtime!==runtime||replay.header.boundaryMode!=='sleep')throw Error('Replay 与当前游戏或模拟器版本不一致');
         externalReplay={mode:'playback',boundaryMode:'sleep',clocks:replay.clocks,events:replay.events,endBoundary:replay.header.endBoundary,endReason:replay.header.result.endReason,endPhase:replay.header.result.endPhase,timeline:replay.header.result.timeline,memoryScope:replay.header.result.memoryScope,
           onEnd:value=>{const matches=value.memoryHash===replay.header.result.memoryHash&&value.memorySha256===replay.header.result.memorySha256;emit('onPlaybackEnd',matches);},onError:fail};
       }else if(recordEnabled){

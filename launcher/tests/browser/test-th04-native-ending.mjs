@@ -11,7 +11,7 @@ const repo=resolve(import.meta.dirname,'../../..');
 const games=['th04'];
 const output=resolve(repo,'.cache/practice-load');await mkdir(output,{recursive:true});
 for(const game of games){
-  assert(['th02','th04'].includes(game));
+  assert.equal(game,'th04');
   const root=process.env.PC98_PRACTICE_RUNTIME?resolve(process.env.PC98_PRACTICE_RUNTIME):resolve(repo,'ports',game,'build-eagler');
   const data=await readFile(resolve(repo,'ports',game,'content',game+'.data'));
   const html=`<!doctype html><style>html,body,iframe{border:0;margin:0;width:100%;height:100%;background:#000}</style><iframe id="game" src="/runtime/${game}.html?hosted=1&managedData=1&runtimeEpoch=1"></iframe><script>

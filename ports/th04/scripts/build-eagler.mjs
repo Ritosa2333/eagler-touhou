@@ -85,7 +85,6 @@ await patch('netplay/runtime.js',text=>replaceOnce(text,'return {inputTransport:
 // Managed Package Store owns installation. The original browser cache is bypassed.
 await patch('preload-cache.js',text=>replaceOnce(text,"if(!globalThis.indexedDB){resolve(null);return;}","if(globalThis.__eaglerPC98Content||!globalThis.indexedDB){resolve(null);return;}",'asset cache'));
 await patch('site.css',text=>replaceOnce(text,"url('assets/launcher-background.webp')","none",'standalone page artwork'));
-await patch('bgm-version.js',text=>text.replace(/export async function loadMidiTracks\(signal\)\{[\s\S]*?\n\}/,"export async function loadMidiTracks(){return {};}"));
 await patch('netplay/local-se.js',text=>replaceOnce(text,"new URL('se-manifest.json',base)","new URL('../assets/se-manifest.json',import.meta.url)",'sound manifest URL'));
 // Shared lab helpers include optional branches for other games. Specialize
 // these imports so the published TH04 generation has a closed dependency set.

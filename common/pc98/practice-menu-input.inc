@@ -1,4 +1,4 @@
-; Guest-side menu navigation for TH02 and TH04. The caller supplies the
+; Guest-side menu navigation for TH04. The caller supplies the
 ; original game's input masks before including this file.
 ;
 ; AX = current native input, BX = previous native input, CL = selected row,

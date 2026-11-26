@@ -371,7 +371,7 @@ for(const game of games){
       }
       if(process.env.PC98_TEST_LEGACY==='1')await frame.evaluate(async({path,game})=>{
         const store=globalThis.__eaglerPC98Files,bytes=store.memory.get(path),view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),size=view.getUint32(8,true),header=JSON.parse(new TextDecoder().decode(bytes.subarray(12,12+size)));
-        const overrides={'../practice-attempt.js':'091e33204a297f396901c0b13d1da7f6686b4811dd7d59139f2d3e6bcb0616d9','./external-host.js':'a8ccea815c47f0ab5ae478f2af4e7a9365a22d12bcf9337fe5e6faa7610a4bbf',...(game==='th04'?{'../solo-worker.js':'c606d752e295310d381628ec109960c1f9661b7b9dbdbf352fd46c176b60d48e'}:{})};
+        const overrides={'../practice-attempt.js':'091e33204a297f396901c0b13d1da7f6686b4811dd7d59139f2d3e6bcb0616d9','./external-host.js':'a8ccea815c47f0ab5ae478f2af4e7a9365a22d12bcf9337fe5e6faa7610a4bbf','../solo-worker.js':'c606d752e295310d381628ec109960c1f9661b7b9dbdbf352fd46c176b60d48e','./external-codec.js':'68f341b34017ed413b30900d32af0e99ae1ffdd6241b68f5594e6ae3477dca5f','./external-lifecycle.js':'4d0b7aa637efd19f0f8951ae280e190f7a0ba801d96c93305d7cf8357fdfb44d','../netplay/local-bgm.js':'05a3cfd570beabae7c05a5a66720e4e781cc39175907e209fe5fb5ebed3e390c'};
         header.identity=await (await import('./replay/tape.js')).fingerprint((await import('./managed-solo.mjs')).testReplaySources(),overrides);
         const encoded=new TextEncoder().encode(JSON.stringify(header)),prefix=bytes.slice(0,12);new DataView(prefix.buffer).setUint32(8,encoded.length,true);
         await store.write(path,new Uint8Array(await new Blob([prefix,encoded,bytes.subarray(12+size)]).arrayBuffer()));

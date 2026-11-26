@@ -12,8 +12,8 @@ export class OriginalSfx {
       node=new AudioWorkletNode(context,'pc98-original-effects',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[1]});
       node.connect(context.destination);
       worker=new Worker(new URL('./sfx-worker.mjs',import.meta.url),{type:'module'});
-      const instance=new OriginalSfx(context,node,worker,game);
-      const folder={th02:'HUMAROKU',th03:'YUMEZIKU',th04:'GENSO'}[game];
+      const instance=new OriginalSfx(context,node,worker);
+      const folder={th03:'YUMEZIKU',th04:'GENSO'}[game];
       const driver=fat.read(fat.find(folder+'/PMD.COM'));
       const bank=extractOriginalEffectBank(game,fat).bytes;
       const {sfxDriver:fixture}=await import('./sfx-driver.mjs');
@@ -32,13 +32,10 @@ export class OriginalSfx {
       throw error;
     }
   }
-  constructor(context,node,worker,game){this.context=context;this.node=node;this.worker=worker;this.game=game;this.lastShot=-Infinity;this.played=0;this.peak=0;this.sequence=0;this.status='原版 FM 音效';
+  constructor(context,node,worker){this.context=context;this.node=node;this.worker=worker;this.played=0;this.peak=0;this.sequence=0;this.status='原版 FM 音效';
     node.port.onmessage=({data})=>{this.peak=Math.max(this.peak,data.peak);};}
   command(ax){if((ax>>>8)===12)this.play(ax&255);}
   play(id){
-    // TH02's SE 1 is the original shot sound. Full-rate fire can request it
-    // every frame; space out playback without changing the game's shots.
-    if(this.game==='th02'&&id===1){const now=this.context.currentTime;if(now-this.lastShot<0.12)return;this.lastShot=now;}
     this.worker.postMessage({type:'effect',id});this.played++;
   }
   confirm({sequence,ring}){const count=(sequence-this.sequence)&65535;for(let i=0;i<count;i++)this.play(ring[(this.sequence+i)&7]);this.sequence=sequence;}

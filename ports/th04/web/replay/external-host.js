@@ -10,7 +10,7 @@ export async function inspectExternalMemory(module,{scope,patch}={}){
   if(scope==='pc98-guest-ram/1'){
     const sig=new TextEncoder().encode(patch.signature),view=new DataView(bytes.buffer),matches=[],active=[];
     const mailbox=patch.entries?.mailbox??patch.mailbox_cs_offset,csSegment=patch.codeSegment??patch.code_segment,dsSegment=patch.dataSegment??patch.data_segment;
-    const residentName=new TextEncoder().encode(patch.signature.startsWith('TH02')?'MIKOConfig\0':'HUMAConfig\0'),residentOffset=patch.signature.startsWith('TH02')?0x27fc:0xba86;
+    const residentName=new TextEncoder().encode('HUMAConfig\0'),residentOffset=0xba86;
     for(let at=bytes.indexOf(sig[0]);at>=0;at=bytes.indexOf(sig[0],at+1)){
       if(at+36>bytes.length||!sig.every((v,i)=>bytes[at+i]===v))continue;
       const ds=view.getUint16(at+20,true),cs=ds-dsSegment+csSegment,base=at-mailbox-cs*16,data=base+ds*16;

@@ -22,12 +22,8 @@ start:
     sub di,CH_WIDTH*2
     call .number
     inc bp
-%if CH_GAME = 2
-    cmp bp,[cs:CH_COUNT]
-%else
     movzx ax,byte [cs:CH_COUNT]
     cmp bp,ax
-%endif
     jb .player
     pop es
     popad

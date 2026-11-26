@@ -19,7 +19,7 @@ export async function fingerprint(paths,overrides={}){
   return digest(new TextEncoder().encode(stable(entries)));
 }
 export function validateHeader(h){
-  if(h?.version!==VERSION||!['01','02','03','04'].includes(h.game)||!(h.adapter==='confirmed-worker/1'||h.game==='01'&&h.adapter==='native-local/1')||
+  if(h?.version!==VERSION||!['01','03','04'].includes(h.game)||!(h.adapter==='confirmed-worker/1'||h.game==='01'&&h.adapter==='native-local/1')||
     !Number.isInteger(h.players)||h.players<1||h.players>3||!Number.isInteger(h.hostSlot)||h.hostSlot<0||h.hostSlot>=h.players||
     !Number.isFinite(h.tickMs)||h.tickMs<10||h.tickMs>30||!h.settings||typeof h.settings!=='object'||
     !/^[a-f0-9]{64}$/.test(h.identity)||h.opening===undefined)throw Error('录像作品、版本或身份无效');

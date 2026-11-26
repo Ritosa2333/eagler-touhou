@@ -55,7 +55,7 @@ function validAssist(game,input){
   const integer=(value,min,max)=>Number.isSafeInteger(value)&&value>=min&&value<=max;
   if(input.address!==undefined&&!integer(input.address,-1,2**31-1)||
     input.generation!==undefined&&!integer(input.generation,0,65535))return false;
-  if(input.quit===true||input.restart===true){if(input.quit&&input.restart||!['02','04'].includes(game))return false;if(input.practiceConfig!==undefined){try{if(!input.restart||game!=='04'||normalizePractice(input.practiceConfig).mode!=='target')return false;}catch{return false;}}return true;}
+  if(input.quit===true||input.restart===true){if(input.quit&&input.restart||game!=='04')return false;if(input.practiceConfig!==undefined){try{if(!input.restart||game!=='04'||normalizePractice(input.practiceConfig).mode!=='target')return false;}catch{return false;}}return true;}
   if(game==='04'&&input.formOpen){const f=input.formOpen;return f===true||Array.isArray(f.values)&&f.values.length===10&&f.values.every(n=>integer(n,0,255))&&Array.isArray(f.settings)&&f.settings.length===11&&f.settings.every((n,i)=>integer(n,0,i===10?5:1))&&integer(f.hp,0,30000);}
   if(game==='04'&&input.formInput!==undefined)return integer(input.formInput,0,64);
   if(game==='04'&&input.pauseInput!==undefined)return integer(input.pauseInput,0,15)&&(input.openPause===undefined||typeof input.openPause==='boolean');
@@ -63,9 +63,6 @@ function validAssist(game,input){
   if(game==='04'&&input.resultInput!==undefined)return integer(input.resultInput,0,31);
   if(game==='04'&&input.resultAck!==undefined)return integer(input.resultAck,1,2);
   if(game==='04'&&input.resultRetry===true)return true;
-  if(game==='02')return integer(input.currentInput,0,256)&&!(input.currentInput&255)&&typeof input.focusEnabled==='boolean'&&
-    integer(input.points,0,15)&&['add','keep','clear'].includes(input.touchAction)&&typeof input.unlimited==='boolean'&&
-    Number.isSafeInteger(input.x)&&Number.isSafeInteger(input.y);
   if(game==='03')return integer(input.focus,0,3)&&Array.isArray(input.touch)&&input.touch.length===2&&
     input.touch.every(value=>integer(value,0,2**45-1));
   const touch=input.touch;
@@ -75,7 +72,7 @@ function validAssist(game,input){
 function validate(header,clockBytes,diskBytes,eventBytes,events){
   if(header?.practice){if(header.game!=='04')throw Error('练习作品不匹配');normalizePractice(header.practice);}
   if(header?.audioMode!==undefined&&!['original','buffered','independent'].includes(header.audioMode))throw Error('Replay 音乐模式无效');
-  if(header?.version!==HOST_VERSION||!['02','03','04'].includes(header.game)||header.mode!=='solo'||!['cn','jp'].includes(header.language)||
+  if(header?.version!==HOST_VERSION||!['03','04'].includes(header.game)||header.mode!=='solo'||!['cn','jp'].includes(header.language)||
     !['sleep','clock'].includes(header.boundaryMode)||!['main','worker','worker-np2'].includes(header.runtime)||!Number.isSafeInteger(header.endBoundary)||header.endBoundary<1||
     !Number.isSafeInteger(header.clockCount)||header.clockCount<1||header.clockCount*CLOCK_BYTES!==clockBytes||clockBytes>MAX_CLOCK_BYTES||
     !Number.isSafeInteger(header.diskBytes)||header.diskBytes!==diskBytes||diskBytes<1||diskBytes>MAX_DISK_BYTES||
@@ -188,7 +185,7 @@ export async function decodeExternalReplay(file,expectedGame){
   const eventBytes=await inflate(payload.subarray(offset,offset+=header.eventPayloadBytes),header.eventRawBytes),events=JSON.parse(new TextDecoder().decode(eventBytes));
   let savedFiles={};if(header.diskBaseKind==='installed-practice/2'){
     const raw=await inflate(payload.subarray(offset),header.saveRawBytes),files=JSON.parse(new TextDecoder().decode(raw));
-    const allowed=header.game==='02'?['HUUHI.DAT','HUUMA.CFG']:['GENSOU.SCR','MIKO.CFG'];
+    const allowed=['GENSOU.SCR','MIKO.CFG'];
     for(const [name,data] of Object.entries(files)){if(!allowed.includes(name)||!Array.isArray(data)||data.length>32768||data.some(x=>!Number.isInteger(x)||x<0||x>255))throw Error('Replay 存档数据无效');savedFiles[name]=new Uint8Array(data);}
   }
   validate(header,clocks.length,header.diskBytes,eventBytes.length,events);

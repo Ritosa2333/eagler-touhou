@@ -1,4 +1,4 @@
-import {bgmVersion,onBgmVersion,resolveBgmTrack,loadMidiTracks} from '../bgm-version.js';
+import {bgmVersion,onBgmVersion,resolveBgmTrack} from '../bgm-version.js';
 import {assetBytes} from '../preload-cache.js';
 // Local presentation only. The game emits commands; the audio device owns time.
 // Never seek to a network tick, refill PCM per frame, or write guest memory here.
@@ -26,7 +26,6 @@ export class LocalBgm {
     const alternate=await fetch(new URL('../bgm/akyu/manifest.json',import.meta.url),{signal:this.abort.signal});
     if(!alternate.ok)throw Error('新版音乐清单读取失败');
     this.newTracks=(await alternate.json()).tracks;
-    this.midiTracks=await loadMidiTracks(this.abort.signal);
     this.manifest=manifest;
     if(this.closed)return;
     this.status='本地音乐：按需加载';
@@ -37,7 +36,7 @@ export class LocalBgm {
     // two full decoded waveforms before the driver selects its music mode.
     if(!commands.length&&config.warmOpening!==false)for(const type of ['m26','m86'])this.prefetch(`${first}-${type}`);
   }
-  track(id){return resolveBgmTrack(id,this.manifest.tracks,this.newTracks,this.midiTracks);}
+  track(id){return resolveBgmTrack(id,this.manifest.tracks,this.newTracks);}
   warmOriginal(id){
     if(!this.pmd||!this.manifest.tracks[id]||this.track(id)!==this.manifest.tracks[id])return;
     const entry=Object.entries(this.manifest.headers).find(([,name])=>name===id);
@@ -47,8 +46,6 @@ export class LocalBgm {
   warmFollowing(id){
     const stage=/^st(\d\d)([bc]?)-(m26|m86)$/.exec(id);
     if(stage){if(!stage[2])this.warmOriginal(`st${stage[1]}b-${stage[3]}`);const next=Number(stage[1])+1;if(next<=6)this.warmOriginal(`st${String(next).padStart(2,'0')}-${stage[3]}`);}
-    const th02=/^stage([0-5])-m86$/.exec(id);
-    if(th02){const n=Number(th02[1]);this.warmOriginal(`${n===4?'mima':`boss${n===5?5:n+1}`}-m86`);if(n<4)this.warmOriginal(`stage${n+1}-m86`);}
   }
   download(id,track=this.track(id)){
     const cacheKey=track?.url;

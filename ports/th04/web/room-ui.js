@@ -2,7 +2,7 @@
 import {mountTitlePreview} from './room-title-preview.js';
 import {mountNetworkStatus} from './network-status.js';
 const games = {
-  '01': '东方灵异传', '02': '东方封魔录', '03': '东方梦时空',
+  '01': '东方灵异传', '03': '东方梦时空',
   '04': '东方幻想乡', '05': '东方怪绮谈',
 };
 const game = document.body.dataset.roomGame;
@@ -154,7 +154,7 @@ function mountRoom(game) {
   selectTab('game');
   let codeValue = '', copyTimer, nativeOpened = false;
   const playerNode = () => {
-    const selector = '.th02-player, .th03-player, .th04-player';
+    const selector = '.th03-player, .th04-player';
     return stageContent?.matches(selector) ? stageContent : stageContent?.querySelector(selector);
   };
   const copyFeedback = make('span', 'room-ui-copy-feedback'); copyFeedback.setAttribute('role', 'status'); headerActions.append(copyFeedback);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-for (const game of ['02','04']) test(`TH${game} keeps an established direct game running if signaling disconnects`,async(t)=>{
+for (const game of ['04']) test(`TH${game} keeps an established direct game running if signaling disconnects`,async(t)=>{
  const {createManagedTransport}=await import(`../../ports/th${game}/web/managed-transport.mjs`);
  t.mock.timers.enable({apis:['setTimeout']});
  const sockets=[];class Socket {constructor(url){this.url=url;this.readyState=1;this.sent=[];sockets.push(this);}send(value){this.sent.push(value);}close(){this.readyState=3;this.onclose?.();}}
@@ -17,7 +17,7 @@ for (const game of ['02','04']) test(`TH${game} keeps an established direct game
  sockets[2].onmessage({data:JSON.stringify({type:'peers',peers:[1],route:'rtc'})});assert.equal(peer.rtc.readyState,'open');assert.equal(channel.readyState,'open');assert.deepEqual(failures,[]);transport.close();
 });
 
-for (const game of ['02','04']) test(`TH${game} keeps relayed gameplay running while signaling reconnects`,async(t)=>{
+for (const game of ['04']) test(`TH${game} keeps relayed gameplay running while signaling reconnects`,async(t)=>{
  const {createManagedTransport}=await import(`../../ports/th${game}/web/managed-transport.mjs`);
  t.mock.timers.enable({apis:['setTimeout']});
  const sockets=[];class Socket {constructor(){this.readyState=1;this.sent=[];sockets.push(this);}send(value){this.sent.push(value);}close(){this.readyState=3;this.onclose?.();}}
