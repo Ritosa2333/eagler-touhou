@@ -15,7 +15,6 @@ const sound=(music,options)=>music==='none'?0:options.musicSource==='akyu'?3:1;
 const lang=language=>language==='ja'?0:2;
 function roomCanvas(host){
     const canvas=document.createElement('canvas');canvas.width=640;canvas.height=400;canvas.tabIndex=0;
-    canvas.style.cssText='position:absolute;inset:0;margin:auto;width:min(100%,160vh);height:min(100%,62.5vw);image-rendering:pixelated';
     host.append(canvas);return canvas;
 }
 const roomRules=(options,language)=>[
@@ -45,7 +44,7 @@ export function createNativeRoom({input,emit}){
     let player,peer,transport,publisher,canvas,keys,closed=true;
     function stop(){
         closed=true;keys?.abort();publisher?.stop();peer?.close();player?.stop();canvas?.remove();
-        if(globalThis.__th02PeerTransport===globalThis.__th05PeerTransport)delete globalThis.__th02PeerTransport;
+        if(globalThis.__th02PeerTransport===transport?.status)delete globalThis.__th02PeerTransport;
     }
     function fail(error){if(!closed){stop();emit({event:'error',message:error.message});}}
     return {
@@ -67,13 +66,13 @@ export function createNativeRoom({input,emit}){
                 },
             });
             if(closed){player.stop();return;}
-            transport=createManagedTransport(options,roles,fail);
-            const status=globalThis.__th02PeerTransport=globalThis.__th05PeerTransport;
+            transport=createManagedTransport(options,roles,fail,'TH02');
+            const status=globalThis.__th02PeerTransport=transport.status;
             const url=new URL(options.netplayUrl);
             const identity=[url.searchParams.get('room'),url.searchParams.get('run'),url.searchParams.get('runtimeGeneration'),rules.slice(0,-1)];
             if(seat===0){
                 const tape={get length(){return rows.length;},slice:(a,b)=>rows.slice(a,b),get end(){return ended;}};
-                publisher=createPc98SpectatorPublisher({game:'02',players:count,version:2,spectatorInputOnly:true,tickMs,rules},tape,()=>status.relay,fail);
+                publisher=createPc98SpectatorPublisher({game:'02',players:count,version:3,spectatorInputOnly:true,tickMs,rules},tape,()=>status.relay,fail);
             }
             peer=createConfirmedPeerRun({count,seat,delay,identity,transport,world:player.confirmed,fail,
                 sample(){
@@ -114,7 +113,7 @@ export function createNativeRoomSpectator(emit){
         emit({event:'runtime-info',spectatorPlayback:null});
     }
     function validateHeader(h){
-            if(h?.game!=='02'||h.version!==2||h.spectatorInputOnly!==true||h.tickMs!==tickMs||![2,3].includes(h.players)||
+            if(h?.game!=='02'||h.version!==3||h.spectatorInputOnly!==true||h.tickMs!==tickMs||![2,3].includes(h.players)||
                 h.rules?.length!==11||h.rules[0]!==h.players||![0,5].includes(h.rules[1])||!own(h.rules[2],0,3)||
                 h.rules.slice(3,5).some(v=>!own(v,0,5))||h.rules.slice(5,8).some(v=>!own(v,0,2))||
                 !own(h.rules[8],0,0xffffffff)||!own(h.rules[9],0,15)||!own(h.rules[10],0,3))throw Error('观战开局数据无效');
@@ -134,7 +133,7 @@ export function createNativeRoomSpectator(emit){
                     const gestures=new AbortController();
                     for(const target of [window,parent])for(const name of ['click','keydown'])target.addEventListener(name,instance.unlock,{capture:true,signal:gestures.signal});
                     let frame=0;
-                    return {get frame(){return frame;},advance(row){instance.confirmed.step(frame++,row);},
+                    return {get frame(){return frame;},advance(row){instance.pausePlayback(muted());instance.confirmed.step(frame++,row);},
                         present(){instance.present();onFrame(canvas);},stop(){gestures.abort();instance.stop();if(player===instance)player=null;}};
                 },onError});
             timer=setInterval(report,200);

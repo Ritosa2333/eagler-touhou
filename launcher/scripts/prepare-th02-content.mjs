@@ -2,6 +2,7 @@ import {mkdir,readFile,copyFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
+import {PRODUCT_CONTENT} from '../lib/content-definition.mjs';
 const arg=name=>process.argv.find(value=>value.startsWith('--'+name+'='))?.slice(name.length+3);
 if(!arg('original')||!arg('output'))throw Error('Use --original=PREPARED_CONTENT_ROOT --output=DIR');
 const original=resolve(arg('original')),output=resolve(arg('output'));
@@ -23,4 +24,8 @@ for(const file of manifest.files){
 if(base+end!==bytes.length||!seen.has('native/content/full-files.json')||!seen.has('native/soew-glyphs.bin'))throw Error('Incomplete SoEW Native DATA');
 await mkdir(output,{recursive:true});await copyFile(resolve(prepared,'th02.data'),resolve(output,'th02.data'));
 if(existsSync(resolve(prepared,'source.json')))await copyFile(resolve(prepared,'source.json'),resolve(output,'source.json'));
+if(existsSync(resolve(prepared,'music'))){
+  await mkdir(resolve(output,'music'),{recursive:true});
+  for(const name of PRODUCT_CONTENT.th02.music.ogg.files)await copyFile(resolve(prepared,'music',name),resolve(output,'music',name));
+}
 console.log('Prepared verified TH02 content: '+output);

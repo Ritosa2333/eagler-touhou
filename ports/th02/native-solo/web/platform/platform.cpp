@@ -25,9 +25,9 @@ EM_JS(int, host_has_cell,(wchar_t cp,int face),{return Module.host.hasCell(cp,fa
 EM_JS(void, host_paint_cells,(std::uint32_t *p,int w,int h,const wchar_t *s,unsigned n,int x,int y,unsigned color,int face),{
     Module.host.paintCells(p,w,h,s,n,x,y,color,face);
 });
-EM_JS(void, host_audio_write,(const WAVEHDR *h,const void *data,unsigned n),{Module.host.audioWrite(h,data,n);});
+EM_JS(void, host_audio_write,(unsigned bus,const WAVEHDR *h,const void *data,unsigned n),{Module.host.audioWrite(bus,h,data,n);});
 EM_JS(void, host_audio_pause,(int paused),{Module.host.audioPause(paused);});
-EM_JS(void, host_audio_reset,(),{Module.host.audioReset();});
+EM_JS(void, host_audio_reset,(unsigned bus),{Module.host.audioReset(bus);});
 EM_JS(void, host_akyu_track,(int track),{Module.host.akyuTrack(track);});
 EM_JS(void, host_akyu_gain,(float gain),{Module.host.akyuGain(gain);});
 void soew_web_akyu_track(int track){host_akyu_track(track);}
@@ -53,7 +53,7 @@ struct WebWindow {
     WebDC surface;
     std::deque<std::tuple<UINT,WPARAM,LPARAM>> messages;
 };
-struct WebWave {};
+struct WebWave {unsigned bus;};
 namespace {
 WebWindow window;
 HWND capture;
@@ -184,13 +184,13 @@ BOOL ExtTextOutW(HDC dc,int x,int y,UINT,const RECT *clip,const wchar_t *s,UINT 
 int DrawTextW(HDC dc,const wchar_t *s,int n,RECT *bounds,UINT flags){
     paint_text(dc,bounds->left,bounds->top,*bounds,s,n,flags);return dc->font->size;
 }
-MMRESULT waveOutOpen(HWAVEOUT *out,UINT,const WAVEFORMATEX*,DWORD_PTR,DWORD_PTR,DWORD){*out=new WebWave;return 0;}
+MMRESULT waveOutOpen(HWAVEOUT *out,UINT device,const WAVEFORMATEX*,DWORD_PTR,DWORD_PTR,DWORD){*out=new WebWave{device==WAVE_MAPPER?0u:device};return 0;}
 MMRESULT waveOutPrepareHeader(HWAVEOUT,WAVEHDR*,UINT){return 0;}
 MMRESULT waveOutUnprepareHeader(HWAVEOUT,WAVEHDR*,UINT){return 0;}
-MMRESULT waveOutWrite(HWAVEOUT,WAVEHDR *header,UINT){header->dwFlags=WHDR_INQUEUE;host_audio_write(header,header->lpData,header->dwBufferLength);return 0;}
-MMRESULT waveOutPause(HWAVEOUT){host_audio_pause(1);return 0;}
-MMRESULT waveOutRestart(HWAVEOUT){host_audio_pause(0);return 0;}
-MMRESULT waveOutReset(HWAVEOUT){host_audio_reset();return 0;}
+MMRESULT waveOutWrite(HWAVEOUT wave,WAVEHDR *header,UINT){header->dwFlags=WHDR_INQUEUE;host_audio_write(wave->bus,header,header->lpData,header->dwBufferLength);return 0;}
+MMRESULT waveOutPause(HWAVEOUT wave){if(!wave->bus)host_audio_pause(1);return 0;}
+MMRESULT waveOutRestart(HWAVEOUT wave){if(!wave->bus)host_audio_pause(0);return 0;}
+MMRESULT waveOutReset(HWAVEOUT wave){host_audio_reset(wave->bus);return 0;}
 MMRESULT waveOutClose(HWAVEOUT wave){delete wave;return 0;}
 
 extern "C" {

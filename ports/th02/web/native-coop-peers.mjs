@@ -3,7 +3,7 @@
 // No local input is sampled twice while a frame is waiting for a peer.
 import {MAX_INPUT,packTouch,unpackTouch} from './touch-input.js';
 
-export const TH02_NATIVE_COOP_PROTOCOL = 'th02-native-coop/2';
+export const TH02_NATIVE_COOP_PROTOCOL = 'th02-native-coop/3';
 export const TH02_COOP_INPUT_MASK = 0x04ff;
 export const validCoopInput = value => Number.isSafeInteger(value)&&value>=0&&value<=MAX_INPUT&&
     !(value%4096&~TH02_COOP_INPUT_MASK)&&value===packTouch(value%4096,unpackTouch(value));

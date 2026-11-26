@@ -14,11 +14,13 @@ npm --prefix launcher run build:ui-rewrite
 node ports/th02/scripts/dev.mjs
 ```
 
-用 `TH02_NATIVE_BUILD` 可指定另一 SoEW 构建目录。脚本启动 Launcher 和 Relay，测试入口为 [书库](http://127.0.0.1:18320/?test=th02) 和 [联机大厅](http://127.0.0.1:18320/lobby.html?test=th02)。Runtime 包含 SoEW WASM；DATA 提供原生素材、字形和音源。
+用 `TH02_NATIVE_BUILD` 可指定另一 SoEW 构建目录。脚本启动 Launcher 和 Relay，测试入口为 [书库](http://127.0.0.1:18320/?test=th02) 和 [联机大厅](http://127.0.0.1:18320/lobby.html?test=th02)。Runtime 包含 SoEW WASM，DATA 提供原生素材、字形和游戏音源，幺乐团录音由 Launcher 按曲下载。
 
 ## 联机与观战
 
 建房后选难度、机体并准备即可开局。房间默认启用高速连射，房主关闭后大厅特殊玩法显示「禁用连射」。普通房和挑战房使用同一个引擎。联机按约 56.4 Hz 消费已确认的输入帧，经 WebRTC 或 Relay 传输；各席位按本机视角半透明绘制队友。观众可在开局后入场、暂停、回拖和返回直播。
+
+任一席按 Esc 可暂停或继续全场。暂停期间仍交换已确认的输入，关卡时间停止。原生引擎在确认帧发布音效和曲目切换，浏览器独立驱动两个音轨。等待网络输入时 BGM 继续播放；观战赶进度和跳转时不播放历史音效。
 
 安装 Launcher 和 Relay 的依赖，设置 `EAGLER_CHROME_PATH` 后运行：
 
@@ -31,4 +33,4 @@ $env:TH02_TEST_SEATS='3'; $env:TH02_TEST_ROUTE='relay'
 node ports/th02/tests/native-coop-network-browser.mjs
 ```
 
-大厅测试走实际建房、就座、开局和中途观战流程；传输测试以独立 WASM 实例验证缺帧停表和恢复后的状态一致性。传输测试设 `TH02_TEST_SEATS=2`、`TH02_TEST_ROUTE=rtc` 可覆盖 WebRTC 直连。
+大厅测试覆盖建房、开局、任一席暂停和中途观战；设 `TH02_TEST_AKYU=1` 验证按曲下载与音效并行播放。传输测试验证缺帧时关卡停表、BGM 不中断以及恢复后的状态一致性；设 `TH02_TEST_SEATS=2`、`TH02_TEST_ROUTE=rtc` 覆盖 WebRTC 直连。

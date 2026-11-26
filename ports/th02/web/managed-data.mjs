@@ -1,6 +1,6 @@
 export const DATA_SCHEMA = 'eagler-touhou/pc98-content/1';
 export const DATA_MAGIC = 'EPC98PK1';
-export const DATA_LAYOUT_SPEC = Object.freeze({schema: DATA_SCHEMA, magic: DATA_MAGIC, header: 'magic8+manifestBytesLE32+utf8JSON', files: 'native-path+offset+bytes+sha256'});
+export const DATA_LAYOUT_SPEC = Object.freeze({schema: DATA_SCHEMA, magic: DATA_MAGIC, header: 'magic8+manifestBytesLE32+utf8JSON', files: 'native-path+offset+bytes+sha256;recordings=optional-ogg'});
 const text = new TextDecoder('utf-8', {fatal: true});
 const digest = async blob => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))].map(n => n.toString(16).padStart(2, '0')).join('');
 export function contentPath(path) {
@@ -38,7 +38,7 @@ export class ManagedContent {
     await this.verified.get(path);
     return new Response(blob, {headers: {'Content-Type': mime(path), 'Content-Length': String(blob.size)}});
   }
-  install(environment, base) {
+  install(environment, base, loadMusic) {
     const nativeFetch = environment.fetch.bind(environment), root = new URL(base), content = this;
     environment.__eaglerPC98Content = this;
     environment.fetch = async (input, init) => {
@@ -53,6 +53,8 @@ export class ManagedContent {
           const signal = init?.signal ?? input.signal; signal?.throwIfAborted();
           const response = await content.fetch(path); signal?.throwIfAborted(); return response;
         }
+        const track=/^native\/content\/akyu\/(\d{2})\.opus$/.exec(path);
+        if(track) return new Response(await loadMusic(`/bgm/akyu/${track[1]}.ogg`,init?.signal ?? input.signal),{headers:{'Content-Type':'audio/ogg'}});
         if (path.startsWith('native/content/') || path === 'native/soew-glyphs.bin') return new Response('Resource is not installed', {status: 404});
       }
       return nativeFetch(input, init);

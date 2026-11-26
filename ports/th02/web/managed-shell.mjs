@@ -83,9 +83,10 @@ addEventListener('message',event=>{
 try{
   const provider=parent.__eaglerPrepareManagedRuntimeDataV1;
   if(typeof provider!=='function')throw Error('启动器未提供游戏资源');
-  const result=await provider.call(parent,{game,generation:query.get('gameGeneration'),epoch});
+  const session={game,generation:query.get('gameGeneration'),epoch};
+  const result=await provider.call(parent,session);
   const content=await ManagedContent.open(result.buffer,game);
-  content.install(globalThis,new URL('.',location.href).href);
+  content.install(globalThis,new URL('.',location.href).href,(path,signal)=>parent.__eaglerReadRuntimeMusicV1({...session,path,signal}));
   if(multiplayer){
     document.getElementById('canvas').remove();
     preview=createNativeRoomPreview(document.getElementById('game'));

@@ -17,10 +17,10 @@ const shared=['directory-keyboard.mjs','keyboard-input-bridge.mjs','keyboard-own
 const network=['managed-transport.mjs','input-transport.mjs'];
 const inputs=[...web.map(name=>[resolve(port,'web',name),name]),
   ...shared.map(name=>[resolve(repo,'common/browser',name),name]),
-  ...network.map(name=>[resolve(repo,'ports/th05-mp/web',name),'native/network/'+name])];
+  ...network.map(name=>[resolve(repo,'common/browser',name),'native/network/'+name])];
 if(args['print-inputs'])await printRuntimeInputs({workspace:port,root:port,sources:[],headers:[
   ...inputs.map(([source])=>source),...['build-eagler.mjs','native-solo-package.mjs'].map(name=>resolve(port,'scripts',name)),
-  ...['full.mjs','glyph-cells.mjs','clock.mjs'].map(name=>resolve(port,'native-solo/web',name)),resolve(port,'source-import.json'),
+  ...['full.mjs','audio.mjs','glyph-cells.mjs','clock.mjs'].map(name=>resolve(port,'native-solo/web',name)),resolve(port,'source-import.json'),
 ],flags:['game=th02','assembly=managed-import','native-core=external-precompiled']});
 
 const build=resolve(args['native-build']||process.env.TH02_NATIVE_BUILD||resolve(port,'native-solo/build-web'));
@@ -29,15 +29,19 @@ const cache=resolve(port,'.cache');await mkdir(cache,{recursive:true});
 const staging=await mkdtemp(resolve(cache,'native-build-')),output=resolve(staging,'build-eagler'),content=resolve(staging,'content');
 try{
   await mkdir(output);await mkdir(content);
-  const runtime=[],payload=[],entries=[];let offset=0;
+  const runtime=[],payload=[],entries=[],music=[];let offset=0;
   for(const [source,target] of inputs){
     const file=resolve(output,target);await mkdir(dirname(file),{recursive:true});await copyFile(source,file);runtime.push(target);
   }
   await stageNativeSolo({build,output,port,runtime,addData(path,bytes){
     entries.push({path,offset,bytes:bytes.length,sha256:sha(bytes)});payload.push(bytes);offset+=bytes.length;
+  },async addMusic(name,bytes){
+    const path='music/'+name;
+    music.push({path,bytes:bytes.length,sha256:sha(bytes)});
+    await mkdir(resolve(content,'music'),{recursive:true});await writeFile(resolve(content,path),bytes);
   }});
   if(args['print-package-inputs']){
-    console.log(JSON.stringify({game:'th02',kind:'managed-import',inputs:entries.map(({offset,...entry})=>entry)}));
+    console.log(JSON.stringify({game:'th02',kind:'managed-import',inputs:[...entries.map(({offset,...entry})=>entry),...music]}));
   }else{
     const index=Buffer.from(JSON.stringify({schema:DATA_SCHEMA,game:'th02',files:entries}));
     const header=Buffer.alloc(12);header.write(DATA_MAGIC);header.writeUInt32LE(index.length,8);

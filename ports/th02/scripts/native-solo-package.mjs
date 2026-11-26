@@ -4,10 +4,10 @@ import {contentPath} from '../web/managed-data.mjs';
 
 // Runtime code is pinned to the Eagler generation. Original art, the glyph
 // atlas and optional audio live in the installed TH02 DATA instead.
-export async function stageNativeSolo({build,output,port,runtime,addData}) {
+export async function stageNativeSolo({build,output,port,runtime,addData,addMusic}) {
   const native=resolve(output,'native');
   await mkdir(native,{recursive:true});
-  for(const name of ['soew-full.mjs','soew-full.wasm','full.mjs','glyph-cells.mjs','clock.mjs','LICENSE.txt','NOTICE.txt']) {
+  for(const name of ['soew-full.mjs','soew-full.wasm','full.mjs','audio.mjs','glyph-cells.mjs','clock.mjs','LICENSE.txt','NOTICE.txt']) {
     const source=name.endsWith('.txt')?resolve(port,'native-solo',name.slice(0,-4)):
       name.startsWith('soew-')?resolve(build,name):resolve(port,'native-solo/web',name);
     await writeFile(resolve(native,name),await readFile(source));
@@ -18,7 +18,11 @@ export async function stageNativeSolo({build,output,port,runtime,addData}) {
   const files=new Set(JSON.parse(manifest).map(contentPath));
   if(files.has('akyu.pack')) {
     const tracks=JSON.parse(await readFile(resolve(content,'akyu.pack')));
-    for(const track of tracks) files.add(contentPath(track.url));
+    for(const track of tracks) {
+      const path=contentPath(track.url),match=/^akyu\/(\d{2})\.opus$/.exec(path);
+      if(!match)throw Error('Invalid SoEW album track: '+path);
+      await addMusic(match[1]+'.ogg',await readFile(resolve(content,path)));
+    }
   }
   await addData('native/content/full-files.json',manifest);
   for(const name of files) await addData(`native/content/${name}`,await readFile(resolve(content,name)));

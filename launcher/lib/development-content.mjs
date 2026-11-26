@@ -72,6 +72,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       runtime: `${ws('th02','build-eagler','th02.html')}?hosted=1`,
       multiplayerRuntime: `${ws('th02','build-eagler','th02.html')}?hosted=1&runtimeVariant=multiplayer`,
       data:Object.freeze({source:ws('th02','content','th02.data'),layout:PRODUCT_CONTENT.th02.dataLayout}),
+      music:availableMusic({ogg:Object.freeze({base:wsDir('th02','content','music'),...PRODUCT_CONTENT.th02.music.ogg})}),
     }),
     th03: Object.freeze({
       runtime: `${ws('th03','build-eagler','th03.html')}?hosted=1`,

@@ -1,5 +1,6 @@
 import createModule from './soew-full.mjs';
 import {glyphCells} from './glyph-cells.mjs';
+import {createPcmOutput,createTrackSelection} from './audio.mjs';
 
 const shiftJis = new TextDecoder('shift_jis', {fatal: true});
 const numericKeys = new Map([
@@ -16,8 +17,8 @@ function keyCode(code) {
     return numericKeys.get(code);
 }
 
-async function fetchFile(url) {
-    const response = await fetch(url);
+async function fetchFile(url,options) {
+    const response = await fetch(url,options);
     if (!response.ok) throw Error(`HTTP ${response.status}: ${url}`);
     return response;
 }
@@ -37,10 +38,11 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     let wasm, cells, lastError, image, stopped = false, timer, frames = 0, ticks = 0;
     const listeners = new AbortController();
     const listen = (target,type,fn,options) => target.addEventListener(type,fn,{...options,signal:listeners.signal});
-    let audio, audioPaused = false, playbackPaused = false, audioEnd = 0;
-    let album, albumTrack = null, albumLoad, albumNode;
+    let audio, audioPaused = false, playbackPaused = false, roomPaused = false;
+    let album, wantedTrack = null;
     let albumVolume = 0, albumGain;
-    const waiting = new Map(), scheduled = new Set();
+    const pcm = createPcmOutput(()=>audio,header=>{wasm.HEAPU32[(header+8) >>> 2] = 1;});
+    const music = createTrackSelection(loadTrack,error=>console.error(error));
     const masks = new Map();
 
     function wide(pointer, length) {
@@ -90,68 +92,55 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         masks.set(key, ink);
         return ink;
     }
-    function scheduleAudio(header, samples) {
-        const count = samples.length / 2;
-        const buffer = audio.createBuffer(2, count, 48000);
-        const left = buffer.getChannelData(0), right = buffer.getChannelData(1);
-        for (let i = 0; i < count; i++) {
-            left[i] = samples[i*2] / 32768;
-            right[i] = samples[i*2+1] / 32768;
-        }
-        const node = audio.createBufferSource();
-        node.buffer = buffer;
-        node.connect(audio.destination);
-        scheduled.add(node);
-        node.onended = () => {
-            scheduled.delete(node);
-            wasm.HEAPU32[(header+8) >>> 2] = 1;
-        };
-        const at = Math.max(audioEnd, audio.currentTime + 0.005);
-        node.start(at);
-        audioEnd = at + buffer.duration;
-    }
     function unlockAudio() {
+        if (stopped) return;
         if (!audio) {
             audio = new AudioContext({latencyHint:'interactive'});
             albumGain = audio.createGain();
             albumGain.gain.value = albumVolume;
             albumGain.connect(audio.destination);
-            for (const [header, samples] of waiting) scheduleAudio(header, samples);
-            waiting.clear();
-            if (albumTrack) playAlbumTrack();
+            pcm.unlock();syncMusic();
         }
-        if (!audioPaused && !playbackPaused && audio.state !== 'running') void audio.resume();
+        if (!audioPaused && !playbackPaused && !roomPaused && audio.state !== 'running') void audio.resume();
     }
     function updateAudioPause(){
-        if(audio)void (audioPaused||playbackPaused?audio.suspend():audio.resume());
+        if(audio)void (audioPaused||playbackPaused||roomPaused?audio.suspend():audio.resume());
     }
-    function stopAlbumTrack() {
-        albumTrack = null;
-        albumLoad?.abort();
-        albumNode?.stop();
-        albumNode?.disconnect();
-        albumNode = null;
+    function syncMusic(){
+        if(audio&&!playbackPaused)music.select(wantedTrack);
     }
-    async function playAlbumTrack() {
-        const track = albumTrack;
-        const load = new AbortController();
-        albumLoad = load;
-        try {
-            const response = await fetch(joined(content, track.url), {signal:load.signal});
-            if (!response.ok) throw Error(`HTTP ${response.status}: ${track.url}`);
-            const buffer = await audio.decodeAudioData(await response.arrayBuffer());
-            if (load.signal.aborted) return;
-            const node = audio.createBufferSource();
-            node.buffer = buffer;
-            node.loop = true;
-            node.loopStart = track.loopStart;
-            node.loopEnd = Math.min(track.loopEnd, buffer.duration);
-            node.connect(albumGain);
-            node.start();
-            albumNode = node;
-        } catch (error) {
-            if (!load.signal.aborted) console.error(error);
+    async function loadTrack(track,signal){
+        const entry=(!confirmedCoop||confirmedCoop.music===3)?album?.[track]:null;
+        if(entry){
+            const buffer=await audio.decodeAudioData(await (await fetchFile(joined(content,entry.url),{signal})).arrayBuffer());
+            return ()=>{
+                const node = audio.createBufferSource();
+                node.buffer = buffer;
+                node.loop = true;
+                node.loopStart = entry.loopStart;
+                node.loopEnd = Math.min(entry.loopEnd, buffer.duration);
+                node.connect(albumGain);
+                node.start();
+                return ()=>{node.stop();node.disconnect();};
+            };
         }
+        if(!confirmedCoop)throw Error('Selected SoEW recording is unavailable');
+        const at=wasm._soew_full_music_file(track),name=new TextDecoder().decode(wasm.HEAPU8.subarray(at,wasm.HEAPU8.indexOf(0,at)));
+        const path='/soew/content/'+name;
+        const data=name==='OP.M'?null:new Uint8Array(await (await fetchFile(joined(content,name),{signal})).arrayBuffer());
+        return ()=>{
+            if(data)wasm.FS.writeFile(path,data);
+            if(!wasm._soew_full_coop_music(track))throw Error('SoEW FM track could not start: '+name);
+            if(data)wasm.FS.unlink(path);
+            return ()=>wasm._soew_full_coop_music(-1);
+        };
+    }
+    function syncConfirmedAudio(){
+        const paused=Boolean(wasm._soew_full_coop_paused());
+        if(roomPaused!==paused){roomPaused=paused;updateAudioPause();}
+        const track=wasm._soew_full_coop_track();
+        wantedTrack=confirmedCoop.music===0||track<0?null:track;
+        syncMusic();
     }
     const host = {
         present(pointer,w,h) {
@@ -216,26 +205,20 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             }
             return value.length;
         },
-        audioWrite(header,pointer,n) {
-            const pcm = wasm.HEAP16.slice(pointer >>> 1,(pointer+n) >>> 1);
-            if (audio) scheduleAudio(header,pcm);
-            else waiting.set(header,pcm);
+        audioWrite(bus,header,pointer,n) {
+            pcm.write(bus,header,wasm.HEAP16.slice(pointer >>> 1,(pointer+n) >>> 1));
         },
         audioPause(yes) {
-            audioPaused = Boolean(yes);
+            audioPaused = !confirmedCoop && Boolean(yes);
             updateAudioPause();
         },
-        audioReset() {
-            stopAlbumTrack();
-            waiting.clear();
-            for (const node of scheduled) {node.onended = null; node.stop(); node.disconnect();}
-            scheduled.clear();
-            audioEnd = 0;
+        audioReset(bus) {
+            pcm.reset(bus);
+            if(!confirmedCoop){wantedTrack=null;music.select(null);}
         },
         akyuTrack(track) {
-            stopAlbumTrack();
-            albumTrack = album[track];
-            if (audio) void playAlbumTrack();
+            wantedTrack=track>=0?track:null;
+            syncMusic();
         },
         akyuGain(gain) {
             albumVolume = gain;
@@ -248,7 +231,8 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         clearTimeout(timer);
         resize.disconnect();
         listeners.abort();
-        host.audioReset();
+        music.select(null);
+        pcm.reset(0);pcm.reset(1);
         if (audio) void audio.close();
     }
     const [module, names, atlas] = await Promise.all([
@@ -265,19 +249,22 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         wasm.FS.mount(wasm.IDBFS,{autoPersist:true},path);
     }
     wasm.FS.writeFile('/soew/portable.ini','');
-    await Promise.all([sync(true), ...names.map(async name => {
+    const quiet=Boolean(confirmedCoop||titleLanguage!==undefined);
+    const startupFiles=quiet?names.filter(name=>!(/\.(?:m|mmd|sf2)$/i.test(name)&&name!=='OP.M')):names;
+    await Promise.all([sync(true), ...startupFiles.map(async name => {
         const path = '/soew/content/' + name;
         const bytes = new Uint8Array(await (await fetchFile(joined(content,name))).arrayBuffer());
         if (name === 'akyu.pack') album = JSON.parse(new TextDecoder().decode(bytes));
         wasm.FS.mkdirTree(path.slice(0,path.lastIndexOf('/')));
         wasm.FS.writeFile(path,bytes);
     })]);
-    if (wasm._soew_full_start() !== 0) throw Error(lastError ?? 'SoEW startup failed');
+    if (wasm._soew_full_start(quiet) !== 0) throw Error(lastError ?? 'SoEW startup failed');
     if (titleLanguage !== undefined) wasm._soew_full_preview_title(titleLanguage);
     if (confirmedCoop && !wasm._soew_full_start_confirmed_coop(...confirmedCoop.rules,confirmedCoop.seat,confirmedCoop.music??-1)) {
         stop();
         throw Error(lastError ?? 'SoEW confirmed co-op startup failed');
     }
+    if(confirmedCoop){host.akyuGain(wasm._soew_full_akyu_gain());syncConfirmedAudio();}
 
     listen(picker,'change', async () => {
         const file = picker.files[0];
@@ -345,13 +332,18 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     },{passive:false});
 
     const player = {key:deliverKey, unlock:unlockAudio, stop, sync:() => sync(false),
-        pausePlayback(value){if(playbackPaused!==value){playbackPaused=value;updateAudioPause();}},
+        pausePlayback(value){if(playbackPaused!==value){playbackPaused=value;if(!value)syncMusic();updateAudioPause();}},
         present:frame,
-        health:() => ({frames,gameFrame:confirmedCoop?wasm._soew_full_coop_frame():ticks,audio:{state:audio?.state ?? 'suspended'}})};
+        health:() => ({frames,gameFrame:confirmedCoop?wasm._soew_full_coop_frame():ticks,audio:{state:audio?.state ?? 'suspended',
+            musicTrack:wantedTrack,playing:music.playing&&(!confirmedCoop||confirmedCoop.music===3||pcm.playing)&&
+                !roomPaused&&!playbackPaused&&!audioPaused&&audio?.state==='running',
+            ...(confirmedCoop?{sfx:wasm._soew_full_coop_effects(),paused:roomPaused}: {})}})};
     if (confirmedCoop) player.confirmed = {
         step(frame, masks) {
+            wasm._soew_full_coop_audio_gate(playbackPaused);
             const result = wasm._soew_full_confirmed_step(frame,...masks);
             if (!result) throw Error(lastError ?? 'SoEW refused the confirmed frame');
+            syncConfirmedAudio();
             return result === 2;
         },
         hash: () => wasm._soew_full_confirmed_hash() >>> 0,

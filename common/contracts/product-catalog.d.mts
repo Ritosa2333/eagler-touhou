@@ -49,7 +49,7 @@ export declare const PRODUCT_GAMES: Readonly<{
         runtime:'./runtime/th02/th02.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
         package:Readonly<{dataFileId:'game-data';dataTarget:'/th02.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
-        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true;onDemandOgg:true;sources:readonly ['original','akyu']}>;
         touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
         support:Readonly<{highRefreshRate:false;sourceRepository:string}>;
         replay:Readonly<{prefix:'th02';extensions:readonly string[];naming:'filename'}>;

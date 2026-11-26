@@ -1181,6 +1181,11 @@ struct App {
     HostTimingSample locked_timing{};
     soew::FrameRateMeter frame_rate;
     AudioPreview audio;
+#ifdef __EMSCRIPTEN__
+    AudioPreview coop_music;
+    bool coop_effects_gated=false;
+    bool quiet_browser_boot=false;
+#endif
     std::array<std::vector<std::byte>,15> songs,midi_songs;
     std::vector<std::byte> soundfont;
     bool midi_mode=false;
@@ -1780,7 +1785,7 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
     app.recorder.reset();app.recording_timing={};
     if(!app.local_coop&&!app.replay_playback&&app.replay_recording&&(app.settings_enabled||app.smoke)&&(id<5||extra))app.recorder.emplace(config);
     app.stage_entry_release=true;app.stage_clock.reset(host_ms());app.scroll_phase=soew::scroll_subpixels;app.motion_before.stage=-1;app.gameplay_audio_attempted=-1;
-    if(app.gameplay_audio_enabled)sync_gameplay_bgm(app,app.smoke||(app.focused&&!app.minimized&&!app.resizing));
+    if(app.gameplay_audio_enabled&&!app.confirmed_coop)sync_gameplay_bgm(app,app.smoke||(app.focused&&!app.minimized&&!app.resizing));
     else app.audio_status={L"診断ステージ：音声なし",L"Diagnostic stage: audio disabled"};
     app.notice=app.tr(L"Esc：一時停止　会話中はZ長押しで早送り",L"Esc: Pause Menu | Hold Z during dialogue to fast-forward",L"Esc：暂停菜单 | 对话时按住 Z 快进",L"Esc：暫停選單 | 對話時按住 Z 快轉");
 }
@@ -2828,6 +2833,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(practice_keys_released())app->practice_menu.update(0);
         return 0;
     case WM_KILLFOCUS:
+        if(app->confirmed_coop){app->focused=false;return 0;}
         if(practice_pointer_captured(*app))end_practice_drag(hwnd,*app);
         if(!app->replay_playback)app->hud_input=0;
         InvalidateRect(hwnd,nullptr,FALSE);
@@ -3449,7 +3455,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 dim_practice_overlay(app->composed,{32,16,120,34});
                 display_text(app->composed,text,35,17,0xffffff,lang,83);
             }
-            if(app->run_pause_menu||app->practice_escape){
+            if(app->run_pause_menu||app->practice_escape||(app->confirmed_coop&&app->confirmed_coop->paused)){
                 const auto ml=lang;
                 const auto menu_text=[&](const wchar_t *ja,const wchar_t *en,const wchar_t *hans,const wchar_t *hant){return soew::localized(ml,ja,en,hans,hant);};
                 const auto center=[&](std::wstring_view text,int y,std::uint32_t color){display_text(app->composed,text,224-display_text_width(text,ml)/2,y,color,ml);};
@@ -3459,7 +3465,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 draw(soew::music_title(scene_music_track(*app->stage_scene),lang),224,368,0xffffff);
                 draw_glyph(app->composed.pixels,app->font,soew::stage_overlay::note_gaiji,208,368,0xffff00);
                 const std::array options={words::resume(ml),words::restart(ml),menu_text(L"リプレイを保存して終了",L"Save Replay and Exit",L"保存录像并退出",L"儲存錄影並離開"),menu_text(L"保存せず終了",L"Exit Without Saving",L"不保存并退出",L"不儲存並離開")};
-                for(int row=0;row<4;++row){
+                for(int row=0;row<(app->confirmed_coop?1:4);++row){
                     const auto text=std::wstring_view(options[row]);const int y=224+row*16;
                     const bool disabled=(row==2&&(!app->recorder||!app->recorder->can_save()))||(row==1&&app->replay_playback);
                     center(text,y,disabled?0x777777:app->pause_choice==row?0xffffff:0xff55ff);
@@ -3657,6 +3663,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         if(w==2){
             const auto now=host_ms();
             ++app->timer_callbacks;
+#ifdef __EMSCRIPTEN__
+            // The browser output queue uses its own clock, even while the
+            // network has not delivered the next complete input row.
+            if(app->confirmed_coop){
+                if(!app->audio.pump())audio_error(*app);
+                if(!app->coop_music.pump()){std::cerr<<app->coop_music.error()<<'\n';app->coop_music.stop();}
+                return 0;
+            }
+#endif
             if(!app->stage_scene||!app->gameplay_audio_enabled||app->practice_builder||app->practice_load||app->practice_audio_load)drain_gameplay_audio(*app);
             if(app->focused&&GetForegroundWindow()==hwnd&&practice_keys_released())app->practice_menu.update(0);
             const bool enabled=(app->timed_test || app->retry_probe.mode>=0 || app->score_timed_test || (app->focused&&GetForegroundWindow()==hwnd))&&!app->minimized&&!app->resizing; // timed test controls activity; normal runs require real foreground
@@ -3670,7 +3685,6 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if((!app->stage_scene&&!app->audio.pause(!enabled||app->practice_builder.has_value()||app->practice_load.has_value()||app->practice_audio_load.has_value()))||!app->audio.pump()){audio_error(*app);caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);}
             }
             app->retry_probe.audio_pumped(*app);
-            if(app->confirmed_coop)return 0; // Confirmed rows are the only simulation clock.
             const auto music_steps=app->music_clock.advance(now,enabled&&app->menu.music_room,1,nullptr,
                 PresentationClock::period_ms(1)*soew::pc98_refresh_num,1000*soew::pc98_refresh_den);
             for(unsigned i=0;i<music_steps;++i)app->music_polygons.tick();
@@ -4682,7 +4696,7 @@ void run_window_loop(HWND hwnd,App &app){
 }
 #ifdef __EMSCRIPTEN__
 extern "C" {
-EMSCRIPTEN_KEEPALIVE int soew_full_start();
+EMSCRIPTEN_KEEPALIVE int soew_full_start(int quiet);
 EMSCRIPTEN_KEEPALIVE int soew_full_import_replay();
 }
 namespace { App browser_app; HWND browser_hwnd; }
@@ -4721,8 +4735,29 @@ extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_confirmed_coop(int count,int
     app.menu.language=soew::Language(lang);
     if(music>=0)app.menu.music=music;
     app.settings_enabled=false;
-    return start_browser_coop(count,stage,rank,run.challenge?run.challenge_spares:spare,run.challenge?0:stock,p1,p2,p3);
+    if(!start_browser_coop(count,stage,rank,run.challenge?run.challenge_spares:spare,run.challenge?0:stock,p1,p2,p3))return 0;
+    if(!app.effect_bank.empty()&&!app.audio.start(app.songs[0],false,WAVE_MAPPER,{},app.effect_bank,{},true,0,false,app.menu.audio_levels))audio_error(app);
+    app.stage_scene->sound.enabled=!app.effect_bank.empty();
+    app.stage_scene->sound_output=[&app](unsigned id){if(!app.coop_effects_gated&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
+    return 1;
 }
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_coop_paused(){return browser_app.confirmed_coop->paused;}
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_coop_track(){
+    const auto &scene=*browser_app.stage_scene;
+    return scene.mima_music_stopped?-1:scene_music_track(scene);
+}
+extern "C" EMSCRIPTEN_KEEPALIVE const char *soew_full_music_file(unsigned track){return soew::music_files.at(track).data();}
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_coop_music(int track){
+    auto &app=browser_app;
+    if(track<0)return app.coop_music.stop();
+    try{
+        const auto song=read(app.assets_root/fs::path(soew::music_files.at(track)));
+        return app.coop_music.start(song,false,1,{},{},{},false,0,false,app.menu.audio_levels);
+    }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 0;}
+}
+extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_coop_audio_gate(int gated){browser_app.coop_effects_gated=bool(gated);}
+extern "C" EMSCRIPTEN_KEEPALIVE unsigned soew_full_coop_effects(){return browser_app.audio.effect_calls();}
+extern "C" EMSCRIPTEN_KEEPALIVE float soew_full_akyu_gain(){return soew::akyu_output_trim*browser_app.menu.audio_levels.music/100.0f;}
 extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_confirmed_step(unsigned frame,double p1,double p2,double p3){
     auto &app=browser_app;
     try{
@@ -4754,7 +4789,8 @@ int soew_full_import_replay(){
         return 0;
     }
 }
-int soew_full_start(){
+int soew_full_start(int quiet){
+    browser_app.quiet_browser_boot=bool(quiet);
     constexpr int argc=1;
     wchar_t program[]=L"soew";
     wchar_t *argv[]={program};
@@ -5117,6 +5153,9 @@ int wmain(int argc, wchar_t **argv) {
             dump(opening_frame(app),dump_path);return 0;
         }
         if(!replay_file.empty()||extra_trial||stage4_trial||stage5_trial||async_practice_test||smoke||skip_opening||options_dump||shots_dump||scores_dump||music_dump)app.opening.skip();
+#ifdef __EMSCRIPTEN__
+        if(app.quiet_browser_boot)app.opening.skip();
+#endif
         const auto zunsoft_root=assets/"zunsoft";
         if((zunsoft_dump||(!timed_test&&(app.opening.active||skip_opening)))&&
            fs::is_regular_file(zunsoft_root/"ZUN00.PI")){
@@ -5199,7 +5238,11 @@ int wmain(int argc, wchar_t **argv) {
             launch_stage(app,3,true);
             app.notice=app.tr(L"４面互換試遊　Z：ショット　X：ボム　P：一時停止　Esc：メニュー",L"Stage 4 compatibility trial | Z: shot | X: Bomb | P: pause | Esc: menu");
             caption(hwnd,app);InvalidateRect(hwnd,nullptr,FALSE);
-        }else if(!app.opening.active&&!app.title_audio_started){app.title_audio_started=true;start_preview(app,0);}
+        }else if(!app.opening.active&&!app.title_audio_started
+#ifdef __EMSCRIPTEN__
+            &&!app.quiet_browser_boot
+#endif
+        ){app.title_audio_started=true;start_preview(app,0);}
         if(!smoke && !SetTimer(hwnd,2,10,nullptr))throw std::runtime_error("Opening timer failed");
         if(async_practice_test){app.async_practice_started=host_ms();if(!SetTimer(hwnd,3,10,nullptr))throw std::runtime_error("Async test timer failed");}
         run_window_loop(hwnd,app);

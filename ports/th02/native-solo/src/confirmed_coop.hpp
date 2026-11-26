@@ -17,9 +17,10 @@ inline std::uint16_t sample_coop_seat(LocalCoopState &coop,unsigned seat,ShotInp
 
 struct ConfirmedCoop {
     std::array<ShotInput,3> fire;
+    std::array<std::uint16_t,3> menu_held{};
     unsigned frame=0;
     std::uint32_t seed=1234;
-    bool focus=true,autofire=true,restrict_speed=false,challenge=false,finished=false;
+    bool focus=true,autofire=true,restrict_speed=false,challenge=false,finished=false,paused=false;
     std::array<int,3> challenge_counts{};
     static constexpr unsigned challenge_spares=2;
 
@@ -33,18 +34,32 @@ struct ConfirmedCoop {
             if((masks[seat]&4095&~std::uint64_t(coop_play_mask))||(seat>=coop.config.count&&masks[seat]))
                 throw std::runtime_error("Invalid TH02 confirmed seat input");
         }
+        std::uint16_t pressed=0;
+        for(unsigned seat=0;seat<coop.config.count;++seat){
+            const auto next=std::uint16_t(masks[seat]&(Cancel|OK|Shot));
+            pressed|=next&~menu_held[seat];
+            menu_held[seat]=next;
+        }
+        // Keep exchanging confirmed rows while paused. All seats can resume,
+        // but no pause/menu input advances the stage or consumes a Bomb.
+        if(paused||(pressed&Cancel)){
+            paused=paused?!(pressed&(Cancel|OK|Shot)):true;
+            scene.paused=paused;
+            ++frame;
+            ReplayStep out;out.consumed_tick=true;return out;
+        }
         const auto context=replay_tick_context(scene);
         scene.coop_challenge=challenge;
         const auto mode=shot_input_mode(autofire,true,context!=NativeReplayContext::Gameplay);
         scene.sound.shot_cadence.set_autofire(autofire);
         for(unsigned seat=0;seat<coop.config.count;++seat){
-            auto raw=std::uint16_t(masks[seat]&4095);
+            auto raw=std::uint16_t(masks[seat]&4095&~Cancel);
             coop.pointer[seat].sample(context==NativeReplayContext::Gameplay&&scene.seat_life(seat).input_allowed()?masks[seat]:0,restrict_speed);
             if(!focus)raw&=~Focus;
             if(challenge)raw&=~Bomb;
             coop.input[seat]=sample_coop_seat(coop,seat,fire[seat],raw,mode);
         }
-        const auto group=(masks[0]&(Shot|Bomb|OK|Cancel))!=0;
+        const auto group=(masks[0]&(Shot|Bomb|OK))!=0;
         auto out=session.tick(scene,normalize_replay_tick(coop.input[0],group,false));
         if(challenge){
             for(unsigned seat=0;seat<scene.seat_count();++seat){
@@ -65,7 +80,7 @@ struct ConfirmedCoop {
     std::uint64_t digest(const EncounterScene &scene)const{
         replay_session_detail::Digest h;
         const auto &coop=*scene.coop;
-        h.fields(frame,seed,focus,autofire,restrict_speed,challenge,challenge_counts,replay_state_digest(scene),coop.input,coop.previous,
+        h.fields(frame,seed,focus,autofire,restrict_speed,challenge,paused,menu_held,challenge_counts,replay_state_digest(scene),coop.input,coop.previous,
                  coop.bomb_owner,coop.half_power,coop.fire_held,coop.hit_clear,
                  scene.midboss.damage_taken.sixths(),scene.midboss2.damage_taken.sixths(),
                  scene.midboss4.damage_taken.sixths(),scene.rika.damage_taken.sixths(),
