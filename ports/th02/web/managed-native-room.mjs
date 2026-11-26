@@ -1,7 +1,6 @@
 import {playFull} from './native/full.mjs';
-import {RetraceClock} from './native/clock.mjs';
 import {createManagedTransport} from './native/network/managed-transport.mjs';
-import {createConfirmedPeerRun,validCoopInput} from './native-coop-peers.mjs';
+import {ConfirmedRoomClock,createConfirmedPeerRun,validCoopInput} from './native-coop-peers.mjs';
 import {packTouch} from './touch-input.js';
 import {nativeSettings,nativeLanguage,nativeMusic} from './native-settings.mjs';
 import {createPc98SpectatorPublisher} from './pc98-spectator-publisher.mjs';
@@ -50,14 +49,14 @@ export function createNativeRoom({input,emit,audioLevels}){
         async start({options,music,language}){
             closed=false;
             const rules=roomRules(options,language),count=rules[0],seat=options.netplayPlayer;
-            const clock=new RetraceClock(tickMs),rows=[];
+            const clock=new ConfirmedRoomClock(tickMs),rows=[];
             let ended=false;
             canvas=roomCanvas(document.querySelector('#game'));
             player=await playFull(canvas,undefined,{
                 hosted:true,audioLevels,settings:nativeSettings({options,music,language}),confirmedCoop:{rules,seat,music:nativeMusic(music,options)},
                 beforeFrame(){
                     if(!peer?.ready||ended)return;
-                    clock.frame(performance.now(),()=>1,()=>peer.advance());
+                    clock.frame(performance.now(),peer);
                     if(peer.finished){
                         ended=true;publisher?.kick();
                         void (async()=>{await publisher?.seal();await transport.finish();if(!closed){stop();emit({event:'exit',code:0});}})().catch(fail);

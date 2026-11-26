@@ -52,24 +52,22 @@ const served=new Map([
     ['/full.mjs',resolve(root,'ports/th02/native-solo/web/full.mjs')],
     ['/managed-transport.mjs',resolve(root,'common/browser/managed-transport.mjs')],
     ['/input-transport.mjs',resolve(root,'common/browser/input-transport.mjs')],
-    ['/clock.mjs',resolve(root,'ports/th02/native-solo/web/clock.mjs')],
 ]);
 const fixture=`<!doctype html><canvas width="640" height="400" style="width:640px;height:400px"></canvas>
 <script type="module">
 import {playFull} from './full.mjs';
-import {createConfirmedPeerRun} from './peer.mjs';
+import {ConfirmedRoomClock,createConfirmedPeerRun} from './peer.mjs';
 import {packTouch} from './touch-input.js';
 import {createManagedTransport} from './managed-transport.mjs';
-import {RetraceClock} from './clock.mjs';
 window.launch = async (options, rules) => {
     const seat=options.netplayPlayer, count=options.netplayPlayerCount;
-    const clock=new RetraceClock(9328*1000/526315);
+    const clock=new ConfirmedRoomClock(9328*1000/526315);
     const state=window.run={hashes:{}, error:null, hold:false, samples:0};
     const fail=error=>{state.error=error.message;};
     let peer;
     const player=await playFull(document.querySelector('canvas'),undefined,{
         hosted:true,confirmedCoop:{rules,seat,music:1},
-        beforeFrame(){if(peer?.ready&&!state.hold)clock.frame(performance.now(),()=>1,()=>peer.advance());}
+        beforeFrame(){if(peer?.ready&&!state.hold)clock.frame(performance.now(),peer);}
     });
     const transport=createManagedTransport(options,['host','guest','guest2'],fail,'TH02');
     state.transport=transport.status;
@@ -79,7 +77,7 @@ window.launch = async (options, rules) => {
         sample(){const f=state.samples++;const buttons=(f%97<27?(seat%2?8:4):0)|(f%47<18?16:0)|(f===180&&seat===1?32:0)|(f%120>65?1024:0);
             return packTouch(buttons,{active:seat===1&&f>=150&&f<180,begin:f===150,x:48,y:-16,unlimited:false});}
     });
-    state.status=()=>({frame:peer.frame,samples:state.samples,simulated:player.health().gameFrame,presented:player.health().frames,
+    state.status=()=>({frame:peer.frame,samples:state.samples,waits:clock.waits,catchups:clock.catchups,simulated:player.health().gameFrame,presented:player.health().frames,
         audio:player.health().audio,hash:state.hashes[240],route:window.__eaglerNetplayTransport,error:state.error});
     state.close=()=>{peer.close();player.stop();};
     player.unlock();peer.start();
@@ -154,12 +152,15 @@ try{
     assert.deepEqual(later.map(s=>s.frame),stalled.map(s=>s.frame),'a missing seat must stall every simulation clock');
     assert(later.every((s,i)=>s.audio.playing&&s.audio.musicTrack===stalled[i].audio.musicTrack),'waiting for inputs must not stop or restart FM');
     assert(stalled.every(s=>s.frame<=stalled.at(-1).samples+delay),'the other seats may only consume previously sent rows');
+    assert(stalled.slice(0,-1).every(s=>s.samples>s.frame+1),'other seats keep capturing while the missing seat blocks simulation');
+    assert.deepEqual(later.map(s=>s.samples),stalled.map(s=>s.samples),'the input lead is bounded even during a long wait');
     assert(stalled.every(s=>s.frame===s.simulated));
     await pages.at(-1).evaluate(()=>{window.run.hold=false;});
     const finished=await waitForRun(state=>state.hash!==undefined,'frame 240 checkpoint');
     assert(finished.every(s=>s.route===route&&s.hash===finished[0].hash&&s.presented>0&&s.frame===s.simulated));
     assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({route,count,stalled:stalled.map(s=>s.frame),hash:finished[0].hash}));
+    console.log(JSON.stringify({route,count,stalled:stalled.map(s=>s.frame),hash:finished[0].hash,
+        waits:finished.map(s=>s.waits),catchups:finished.map(s=>s.catchups)}));
 }catch(error){
     console.error(log,errors,await Promise.all(pages.map(page=>page.evaluate(()=>({
         status:window.run?.status?.(), ready:window.run?.transport?.rtcReadySent,
