@@ -1,0 +1,68 @@
+{
+  "schema": "thkkd/web-only/1",
+  "originalImport": {
+    "result": "passed",
+    "input": "two-original-dxa",
+    "checks": [
+      "file-picker-and-format-guidance",
+      "two-original-dxa-through-production-import",
+      "original-images-mp3-and-converted-video",
+      "four-original-video-dimensions-and-duration",
+      "refresh-reuses-installed-resources",
+      "offline-refresh-reuses-installed-resources"
+    ],
+    "media": {
+      "assets": 301,
+      "mp3": 18,
+      "webm": 4
+    }
+  },
+  "removedFiles": [
+    "ports/thkkd/CMakeLists.txt",
+    "ports/thkkd/CMakePresets.json",
+    "ports/thkkd/docs/PLAY.txt",
+    "ports/thkkd/docs/QUALITY.md",
+    "ports/thkkd/scripts/archive-validation.py",
+    "ports/thkkd/src/platform/windows/ConfigMain.cpp",
+    "ports/thkkd/src/platform/windows/DisplaySettings.cpp",
+    "ports/thkkd/src/platform/windows/DisplaySettings.hpp",
+    "ports/thkkd/src/platform/windows/Main.cpp",
+    "ports/thkkd/src/platform/windows/WindowsHost.cpp",
+    "ports/thkkd/src/platform/windows/WindowsHost.hpp",
+    "ports/thkkd/third_party/dxlib/DxCompileConfig.h",
+    "ports/thkkd/third_party/dxlib/DxDataType.h",
+    "ports/thkkd/third_party/dxlib/DxDataTypeWin.h",
+    "ports/thkkd/third_party/dxlib/DxDrawFunc_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/DxFunctionWin.h",
+    "ports/thkkd/third_party/dxlib/DxLib.h",
+    "ports/thkkd/third_party/dxlib/DxLib.txt",
+    "ports/thkkd/third_party/dxlib/DxLibW_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/DxUseCLibW_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/VERSION.json",
+    "ports/thkkd/third_party/dxlib/celt_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/libbulletcollision_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/libbulletdynamics_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/libbulletmath_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/libjpeg_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/libpng_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/libtheora_static_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/libtiff_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/ogg_static_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/opus_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/opusfile_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/silk_common_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/vorbis_static_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/vorbisfile_static_vs2015_x64_MT.lib",
+    "ports/thkkd/third_party/dxlib/zlib_vs2015_x64_MT.lib",
+    "ports/thkkd/tools/build.ps1",
+    "ports/thkkd/tools/release.py"
+  ],
+  "sharedDisplayTable": "src/platform/web/LegacyDisplayData.hpp",
+  "wasmSha256": "08dbae188106b4858eeec43946edf12c26dcb5d2339a2e66995ff2dddc0d1b8e",
+  "checks": {
+    "launcherImport": 55,
+    "originalResources": 8,
+    "packageInventory": 2,
+    "projectInterfaces": 10
+  }
+}

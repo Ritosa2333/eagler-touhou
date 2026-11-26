@@ -37,7 +37,7 @@
 | M | [ports/thkkd/THIRD_PARTY.md](../../ports/thkkd/THIRD_PARTY.md) |
 | A | [ports/thkkd/data-reference.json](../../ports/thkkd/data-reference.json) |
 | M | [ports/thkkd/docs/DEVELOPMENT.md](../../ports/thkkd/docs/DEVELOPMENT.md) |
-| M | [ports/thkkd/docs/PLAY.txt](../../ports/thkkd/docs/PLAY.txt) |
+| M | `ports/thkkd/docs/PLAY.txt`（旧桌面说明，已移除） |
 | M | [ports/thkkd/docs/packaging.md](../../ports/thkkd/docs/packaging.md) |
 | M | [ports/thkkd/scripts/build-eagler.mjs](../../ports/thkkd/scripts/build-eagler.mjs) |
 | M | [ports/thkkd/scripts/build-site.ps1](../../ports/thkkd/scripts/build-site.ps1) |
@@ -50,7 +50,7 @@
 | A | [ports/thkkd/third_party/FFmpeg-WASM-LICENSE.txt](../../ports/thkkd/third_party/FFmpeg-WASM-LICENSE.txt) |
 | A | [ports/thkkd/third_party/GARbro-LICENSE.txt](../../ports/thkkd/third_party/GARbro-LICENSE.txt) |
 | A | [ports/thkkd/third_party/UPNG-LICENSE.txt](../../ports/thkkd/third_party/UPNG-LICENSE.txt) |
-| M | [ports/thkkd/tools/release.py](../../ports/thkkd/tools/release.py) |
+| M | [ports/thkkd/scripts/release-policy.py](../../ports/thkkd/scripts/release-policy.py)（网页发布检查） |
 | M | [ports/thkkd/web/platform.mjs](../../ports/thkkd/web/platform.mjs) |
 
 资源排除目录：`ports/thkkd/assets/`，共 327 项；原版 ZIP 存放目录 `ports/thkkd/content/` 同样由 Git 忽略。

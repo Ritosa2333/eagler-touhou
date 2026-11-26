@@ -36,7 +36,7 @@ function presented(time){
   if(!presentationClock.due(time,options.limitPresentationTo60))return;
   platform.renderer.present();displayFrames++;if(!first&&platform.presented){first=true;loading.textContent='';emit('first-frame',launchSerial===undefined?{}:{launchSerial});}
 }
-function health(time){if(time-healthTime>=2000){const elapsed=(time-healthTime)/1000;emit('frame-health',{fps:displayFrames/elapsed,logicFps:logicFrames/elapsed,frameMs:elapsed*1000/Math.max(1,displayFrames)});emit('audio-health',{backend:'Web Audio + OGG',state:platform.context.state,robust:true});healthTime=time;logicFrames=0;displayFrames=0;}}
+function health(time){if(time-healthTime>=2000){const elapsed=(time-healthTime)/1000;emit('frame-health',{fps:displayFrames/elapsed,logicFps:logicFrames/elapsed,frameMs:elapsed*1000/Math.max(1,displayFrames)});emit('audio-health',{backend:'Web Audio / HTML Audio',state:platform.context.state,robust:true});healthTime=time;logicFrames=0;displayFrames=0;}}
 function replayFrame(time){if(!launched||stopping)return;try{if(!document.hidden&&replayHasStepped)presented(time);health(time);raf=requestAnimationFrame(replayFrame);}catch(error){fatal(error);}}
 function getReplay(){
   if(replayBridge)return replayBridge;

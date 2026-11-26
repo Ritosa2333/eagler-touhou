@@ -7,12 +7,11 @@ import json
 import os
 import shutil
 import subprocess
-import time
 import zipfile
 
 PORT = Path(__file__).resolve().parents[1]
 ROOT = PORT.parents[1]
-spec = importlib.util.spec_from_file_location('thkkd_release_policy', PORT/'tools/release.py')
+spec = importlib.util.spec_from_file_location('thkkd_release_policy', PORT/'scripts/release-policy.py')
 policy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(policy)
 
@@ -30,7 +29,7 @@ def source_files():
             continue
         if path.parts[0]=='ports' and path.parts[1]!='thkkd':
             continue
-        if path.parts[0]=='archive' and (len(path.parts)<3 or path.parts[1] not in {'thkkd-web-20261126','thkkd-quality-mp-20261126','thkkd-rendering-20261126','thkkd-performance-20261126','thkkd-cpu-performance-20261126','thkkd-import-20261126','thkkd-original-import-20261126','thkkd-render-overhead-20261126'} or path.name=='baseline.json'):
+        if path.parts[0]=='archive' and (len(path.parts)<3 or path.parts[1] not in {'thkkd-web-20261126','thkkd-quality-mp-20261126','thkkd-rendering-20261126','thkkd-performance-20261126','thkkd-cpu-performance-20261126','thkkd-import-20261126','thkkd-original-import-20261126','thkkd-render-overhead-20261126','thkkd-web-only-20261126'} or path.name=='baseline.json'):
             continue
         if path.name in {'test-th09-spectator-continuity.mjs','test-th09-spectator-directory.mjs','test-th09-spectator-panel.mjs','test-th09-spectator-timeline.mjs'}:
             continue
@@ -135,7 +134,7 @@ def main():
     (game/'package.json').write_text('{"type":"module","private":true}\n','utf-8')
     (game/'启动海惠堂.cmd').write_bytes(('@echo off\r\ncd /d "%~dp0"\r\n"server\\node.exe" "launch.mjs" %*\r\npause\r\n').encode('utf-8'))
     shutil.copy2(PORT/'scripts/local-launch.mjs',game/'launch.mjs')
-    (game/'README.txt').write_text('東方海恵堂网页单机本地版\n\n双击“启动海惠堂.cmd”，等待服务器显示 Local 地址后在浏览器打开 http://127.0.0.1:8174/ 。选择海惠堂，导入包含原版 dat.dxa 和 bgm.dxa 的 ZIP 后启动；第一次安装后，同一浏览器和地址可离线使用。关闭服务器命令窗口即可停止服务。\n\n方向键移动，Z 射击/确认，X Bomb/取消，Shift 低速，Esc 暂停，暂停后 R 重开。网站设置提供 WASD、自定义键位、手柄映射、触控布局、全屏、独立音量、判定点和显示限频。\n\n存档、配置和 Replay 位于浏览器站点数据，使用网站文件管理导入导出。原版 rpy 使用游戏内菜单和网站播放器；含自由坐标的 thkkdr 使用网站录像工作台。覆盖导入请按界面确认，清除站点数据前导出备份。\n\n本版本保留六面、EX、Omniverse、九种机体与原作解锁规则。源码及验证身份见 SOURCE.json，验证范围见 VALIDATION.md。\n','utf-8')
+    (game/'README.txt').write_text('東方海恵堂网页单机本地版\n\n双击“启动海惠堂.cmd”，等待服务器显示 Local 地址后在浏览器打开 http://127.0.0.1:8174/ 。选择海惠堂，同时导入原版 dat.dxa、bgm.dxa，或包含它们的 ZIP 后启动；第一次安装后，同一浏览器和地址可离线使用。关闭服务器命令窗口即可停止服务。\n\n方向键移动，Z 射击/确认，X Bomb/取消，Shift 低速，Esc 暂停，暂停后 R 重开。网站设置提供 WASD、自定义键位、手柄映射、触控布局、全屏、独立音量、判定点和显示限频。\n\n存档、配置和 Replay 位于浏览器站点数据，使用网站文件管理导入导出。原版 rpy 使用游戏内菜单和网站播放器；含自由坐标的 thkkdr 使用网站录像工作台。覆盖导入请按界面确认，清除站点数据前导出备份。\n\n本版本保留六面、EX、Omniverse、九种机体与原作解锁规则。源码及验证身份见 SOURCE.json，验证范围见 VALIDATION.md。\n','utf-8')
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     association={'schema':'thkkd/local-delivery/1','sourceCommit':commit,'sourceTree':subprocess.check_output(['git','rev-parse','HEAD:ports/thkkd'],cwd=ROOT,text=True).strip(),'originalSourceCommit':'64d48dc366f2d57210dbdac25be82e0e71b2641d','toolchain':'Emscripten 6.0.9','node':'24.19.0','build':build,'runtime':json.loads((PORT/'runtime/runtime-files.json').read_text('utf-8')),'resourceImport':{'files':['dat.dxa','bgm.dxa'],'format':'original-zip','resourcesBundled':False,'resourceExport':False}}
     for folder in [source,game]:

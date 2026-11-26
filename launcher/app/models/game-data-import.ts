@@ -37,6 +37,7 @@ export interface GameDataImportSnapshot {
   busyText: string;
   passwordRequired: boolean;
   reason: string;
+  fileAccept: string;
   fallback: Readonly<{url: string; hint?: string}> | null;
   /** Main openGameDataImportWindow / transferDownload presentation event. */
   presentationRevision: number;
@@ -98,13 +99,16 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
   let conversion: AbortController | null = null;
   let lockedFiles: readonly ImportFile[] | null = null;
   const originalFiles = () => acquisition.originalFileNames?.(gameIdForProduct(getContext().product)) ?? [];
+  const isThkkd = () => gameIdForProduct(getContext().product) === 'thkkd';
   let importOpen = false, linkOpen = false, busy = false, busyText = '', reason = '';
   let snapshot: GameDataImportSnapshot;
   function publish() {
     if (disposed) return;
     const fallback = getContext().fallback;
     snapshot = Object.freeze({attempt: attempt ? Object.freeze({...attempt}) : null,
-      importOpen, linkOpen, busy, busyText, passwordRequired: lockedFiles !== null, reason, fallback: fallback ? Object.freeze({...fallback}) : null, presentationRevision, revision: ++revision});
+      importOpen, linkOpen, busy, busyText, passwordRequired: lockedFiles !== null, reason,
+      fileAccept:isThkkd()?'.dxa,.zip,application/zip':'.zip,.rar,.7z,.dat,.data,.wav,.ogg,.ttc,.otf',
+      fallback: fallback ? Object.freeze({...fallback}) : null, presentationRevision, revision: ++revision});
     for (const listener of listeners) listener();
     ports.onActivityChange?.();
   }
@@ -125,7 +129,7 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
     if (!available()) return;
     attempt!.dialogDismissed = false; importOpen = true; presentationRevision++; publish();
   }
-  function fallbackReason(value: string) {return t(getContext().importServer ? 'package.importServerOnly' : 'package.fallbackWaitOrImport', {reason: value});}
+  function fallbackReason(value: string) {return isThkkd()?value+'\n'+t('package.thkkdImportHint'):t(getContext().importServer ? 'package.importServerOnly' : 'package.fallbackWaitOrImport', {reason: value});}
   function beginManual(options: BeginManualGameDataImport = {}) {
     if (disposed) return;
     clear();
@@ -280,7 +284,8 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     refresh: publish, clear, finish: clear, beginManual, beginImportRequired, beginDirectDownload, noteTransfer, unlock,
     openManual() {
-      if (originalFiles().length) beginManual({reason: t(originalFiles().length === 1 ? 'package.importShort' : 'package.importShortWav'), useReasonVerbatim: true});
+      if (isThkkd()) beginManual({reason:t('package.thkkdImportHint'),useReasonVerbatim:true});
+      else if (originalFiles().length) beginManual({reason: t(originalFiles().length === 1 ? 'package.importShort' : 'package.importShortWav'), useReasonVerbatim: true});
       else beginManual({reason: t('package.manualImportIntro')});
     },
     openImport,
@@ -294,8 +299,9 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
         return;
       }
       const id = attempt!.id;
-      const files = gameIdForProduct(getContext().product) === 'thkkd'
-        ? [await ports.pickFile({accept: '.zip,application/zip'})].filter((file): file is ImportFile => file !== null)
+      const files = isThkkd()
+        ? ports.pickFiles ? await ports.pickFiles({accept:'.dxa,.zip,application/zip'})
+          : [await ports.pickFile({accept:'.dxa,.zip,application/zip'})].filter((file):file is ImportFile=>file!==null)
         : originalFiles().length && ports.pickFiles
         ? await ports.pickFiles({accept: '.dat,.data,.zip,.rar,.7z,.wav,.ogg,application/zip'})
         : [await ports.pickFile({accept: '.zip,.dat,application/zip'})].filter((file): file is ImportFile => file !== null);

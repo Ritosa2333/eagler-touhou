@@ -1,5 +1,0 @@
-{
-  "version": 6,
-  "configurePresets": [{"name":"windows-msvc","generator":"Visual Studio 17 2022","architecture":"x64","binaryDir":"${sourceDir}/build/windows","cacheVariables":{"CMAKE_CONFIGURATION_TYPES":"Release"}}],
-  "buildPresets": [{"name":"windows-release","configurePreset":"windows-msvc","configuration":"Release"}]
-}

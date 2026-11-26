@@ -53,10 +53,14 @@ export async function convertRetailPackage(options: {
   }
   try {
     if (options.game === 'thkkd') {
-      if (options.inputs.length !== 1 || !/\.zip$/i.test(options.inputs[0]!.name)) throw Error('海惠堂需要包含 dat.dxa 和 bgm.dxa 的原版资源 ZIP');
-      const head = new Uint8Array(await options.inputs[0]!.slice(0,4).arrayBuffer());
-      if (head[0] !== 0x50 || head[1] !== 0x4b || head[2] !== 3 || head[3] !== 4) throw Error('海惠堂资源包必须为 ZIP 格式');
-      const inputs = await expandRetailInputs(options.inputs, retailArchiveLimits('thkkd'), options.archivePassword ?? '', options.signal);
+      let inputs=options.inputs;
+      if(inputs.length===1&&/\.zip$/i.test(inputs[0]!.name)){
+        const head=new Uint8Array(await inputs[0]!.slice(0,4).arrayBuffer());
+        if(head[0]!==0x50||head[1]!==0x4b||head[2]!==3||head[3]!==4)throw Error('海惠堂资源包必须为 ZIP 格式');
+        inputs=await expandRetailInputs(inputs,retailArchiveLimits('thkkd'),options.archivePassword??'',options.signal);
+      }else if(inputs.length!==2||!inputs.every(file=>/^(dat|bgm)\.dxa$/i.test(file.name))){
+        throw Error('请同时选择 dat.dxa 和 bgm.dxa，或选择包含这两份文件的 ZIP');
+      }
       const {importThkkdOriginal} = await import('./thkkd-original');
       return importThkkdOriginal(inputs, {signal:options.signal,onTrack:options.onTrack});
     }

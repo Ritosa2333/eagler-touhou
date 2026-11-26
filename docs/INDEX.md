@@ -255,9 +255,8 @@
 | 作品源码文档 | [ports/thkkd/THIRD_PARTY.md](../ports/thkkd/THIRD_PARTY.md) | 第三方依赖与资源 |
 | 作品源码文档 | [ports/thkkd/docs/DEVELOPMENT.md](../ports/thkkd/docs/DEVELOPMENT.md) | 网页单机开发 |
 | 作品源码文档 | [ports/thkkd/docs/PERFORMANCE.md](../ports/thkkd/docs/PERFORMANCE.md) | 网页性能与兼容验证 |
-| 作品源码文档 | [ports/thkkd/docs/QUALITY.md](../ports/thkkd/docs/QUALITY.md) | 网页单机质量验收 |
 | 作品源码文档 | [ports/thkkd/docs/RENDERING.md](../ports/thkkd/docs/RENDERING.md) | 网页显示与原作对照 |
-| 作品源码文档 | [ports/thkkd/docs/architecture.md](../ports/thkkd/docs/architecture.md) | 开发与兼容说明 |
+| 作品源码文档 | [ports/thkkd/docs/architecture.md](../ports/thkkd/docs/architecture.md) | 网页架构 |
 | 作品源码文档 | [ports/thkkd/docs/packaging.md](../ports/thkkd/docs/packaging.md) | 资源与打包 |
 | 公共库 | [common/README.md](../common/README.md) | common/ |
 | 公共库 | [common/browser/README.md](../common/browser/README.md) | 浏览器共享模块 |
@@ -532,6 +531,7 @@
 | 历史记录 | [archive/thkkd-rendering-20261126/DELIVERY.md](../archive/thkkd-rendering-20261126/DELIVERY.md) | 海惠堂网页单机显示验收 |
 | 历史记录 | [archive/thkkd-rendering-20261126/README.md](../archive/thkkd-rendering-20261126/README.md) | 海惠堂网页显示对照 |
 | 历史记录 | [archive/thkkd-web-20261126/README.md](../archive/thkkd-web-20261126/README.md) | 海惠堂网页单机验证 |
+| 历史记录 | [archive/thkkd-web-only-20261126/README.md](../archive/thkkd-web-only-20261126/README.md) | 東方海恵堂网页工程整理 |
 | 历史记录 | [archive/thprac-information-touch-20261027/README.md](../archive/thprac-information-touch-20261027/README.md) | THPrac 信息窗触控归属 |
 | 历史记录 | [archive/turn-fallback-20261028/README.md](../archive/turn-fallback-20261028/README.md) | TURN 选择同步 |
 | 历史记录 | [docs/history/INDEX.md](history/INDEX.md) | 旧文档去向 |

@@ -1,5 +1,5 @@
 #include "WebHost.hpp"
-#include "../windows/LegacyDisplayData.hpp"
+#include "LegacyDisplayData.hpp"
 #include "core/frontend/MenuReplayFormat.hpp"
 #include <emscripten.h>
 #include <filesystem>

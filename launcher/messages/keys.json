@@ -11119,5 +11119,9 @@
       "name",
       "total"
     ]
+  },
+  "package.thkkdImportHint": {
+    "id": "package_thkkdImportHint",
+    "params": []
   }
 }

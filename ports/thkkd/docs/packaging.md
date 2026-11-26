@@ -4,7 +4,7 @@
 
 原版 `dat.dxa`、`bgm.dxa` 和解包素材存放在本地资源目录，`assets/`、`content/` 均排除于 Git 和源码包。素材保留原始字节、正常署名和现有修改时间，浏览器生成独立的运行缓存。
 
-网页只接受原版资源 ZIP，根目录或单层游戏目录中的两份 DXA 必须完整且属于受支持的资源版本。资源导入后通过现有 Package Store 管理；用户存档和 Replay 继续独立导入导出。
+网页接受同时选择的原版 `dat.dxa`、`bgm.dxa`，也接受根目录或单层游戏目录中包含这两份文件的 ZIP。两份 DXA 必须完整且属于受支持的资源版本。资源导入后通过现有 Package Store 管理；用户存档和 Replay 继续独立导入导出。
 
 ## 网页交付
 
@@ -22,6 +22,3 @@ python -X utf8 -B ports/thkkd/scripts/release-web.py --site ports/thkkd/build/si
 
 ZIP 使用相对路径，保留文件修改时间。公开源码的核心调度目录 `src/core/runtime` 必须完整保留，编译产物仅排除本作根部的 `runtime/`。
 
-## Windows 本地构建
-
-`tools/build.ps1 -Package` 仍可从本机 `assets` 和 Windows 构建产物生成自用目录。该资源目录留在本机，源码发布与网页站点采用上面的资源分离流程。

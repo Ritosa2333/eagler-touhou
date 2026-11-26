@@ -99,6 +99,16 @@ test('protected archive retries without reopening the picker and releases its se
   assert.equal(picked, 2);
 });
 
+test('thkkd selects both DXA files and shows the same supported formats as its picker', async () => {
+  const files=[new File(['dat'],'dat.dxa'),new File(['bgm'],'bgm.dxa')];let selected,received;
+  const f=fixture({context:{product:'thkkd'},portOverrides:{pickFiles:async options=>{selected=options;return files;}},
+    acquisitionOverrides:{originalFileNames:()=>['dat.dxa','bgm.dxa'],importFiles:async(game,inputs)=>{received={game,inputs};return {files:{data:{}}};}}});
+  f.model.openManual();
+  assert.equal(f.model.getSnapshot().reason,t('package.thkkdImportHint'));
+  assert.equal(f.model.getSnapshot().fileAccept,'.dxa,.zip,application/zip');
+  await f.model.chooseFile();assert.deepEqual(selected,{accept:'.dxa,.zip,application/zip'});assert.deepEqual(received,{game:'thkkd',inputs:files});
+});
+
 test('import-required installs resources without automatically launching', async () => {
   const f = fixture({context: {importServer: true, runtimeEpoch: 1}}); f.model.beginImportRequired();
   assert.equal(f.model.getSnapshot().reason, t('package.importServerOnly', {reason: t('package.noLaunchableLocal')}));

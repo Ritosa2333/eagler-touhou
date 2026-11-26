@@ -421,7 +421,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
   async function importFiles(game: GameId, files: readonly (Blob & {name?: string})[],
     options: Pick<AcquisitionRequest, 'signal' | 'onProgress'> & {archivePassword?: string} = {}) {
     if (game === 'thkkd') {
-      if (files.length !== 1 || typeof files[0]?.name !== 'string') throw Error('请选择一个海惠堂原版资源 ZIP');
+      if (!files.length || !files.every(file=>typeof file.name==='string')) throw Error('请选择 dat.dxa 和 bgm.dxa，或包含它们的 ZIP');
       return importOriginal(game, files as readonly RetailInput[], options);
     }
     if (originalFileNames(game).length) {

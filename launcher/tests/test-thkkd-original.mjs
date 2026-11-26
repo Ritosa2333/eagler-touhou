@@ -6,6 +6,10 @@ import {unpackDxLz,readDxArchive} from '../src/launcher/thkkd-dxa.mjs';
 import {decodeThkkdBmp,convertThkkdImage} from '../src/launcher/thkkd-image.mjs';
 
 const inputs = paths => paths.map(archivePath=>Object.assign(new Blob(['fixture']),{archivePath}));
+test('同时导入两份独立 DXA 文件，支持交换选择顺序',()=>{
+  const files=['bgm.dxa','dat.dxa'].map(name=>Object.assign(new Blob(['fixture']),{name}));
+  assert.deepEqual([...selectThkkdArchives(files).keys()],['bgm.dxa','dat.dxa']);
+});
 test('原版 ZIP 可以使用根目录或同一个单层游戏目录',()=>{
   for(const paths of [['dat.dxa','bgm.dxa'],['海惠堂/DAT.DXA','海惠堂/BGM.DXA']])
     assert.equal(selectThkkdArchives(inputs([...paths,'readme.txt'])).size,2);

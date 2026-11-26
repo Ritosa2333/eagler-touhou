@@ -16,7 +16,7 @@ export function selectThkkdArchives(inputs) {
     if (archives.has(name)) throw Error('海惠堂资源包包含重复的 '+name);
     archives.set(name,input);
   }
-  if (archives.size !== 2) throw Error('请选择包含原版 dat.dxa 和 bgm.dxa 的 ZIP');
+  if (archives.size !== 2) throw Error('请同时选择原版 dat.dxa 和 bgm.dxa，或包含它们的 ZIP');
   return archives;
 }
 export async function convertThkkdArchives(inputs, {convertImage,convertVideo,onTrack,signal} = {}) {

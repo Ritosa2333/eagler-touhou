@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import puppeteer from '../../../launcher/node_modules/puppeteer-core/lib/puppeteer/puppeteer-core.js';
 import {createHash} from 'node:crypto';
 export const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-export async function productionBrowser({url,report,unlimited=false,touch=false,headed=false,protocolTimeout=180000,launchArgs=[],nativeViewport=false}){
-  const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:!headed,protocolTimeout,args:[...(unlimited?['--disable-frame-rate-limit','--disable-gpu-vsync']:[]),...launchArgs],defaultViewport:nativeViewport?null:{width:1280,height:900,hasTouch:touch}});
+export async function productionBrowser({url,report,unlimited=false,touch=false,headed=false,protocolTimeout=180000,launchArgs=[],nativeViewport=false,profile=process.env.THKKD_TEST_PROFILE}){
+  const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:!headed,protocolTimeout,userDataDir:profile,args:[...(unlimited?['--disable-frame-rate-limit','--disable-gpu-vsync']:[]),...launchArgs],defaultViewport:nativeViewport?null:{width:1280,height:900,hasTouch:touch}});
   report.browser=await browser.version();report.errors??=[];report.loads=[];report.consoleErrors=[];report.httpErrors=[];report.navigations=[];report.telemetry=[];
   const page=await browser.newPage(),pending=[];
   await page.exposeFunction('__qualityObserve',event=>report.telemetry.push(event));

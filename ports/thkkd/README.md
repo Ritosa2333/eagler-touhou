@@ -19,7 +19,7 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 ## 原版资源
 
-原版资源保留在本机，`assets/` 和 `content/` 均由 Git 忽略。导入一个包含原版 `dat.dxa`、`bgm.dxa` 的 ZIP，两份文件可以位于 ZIP 根目录，也可以位于同一个单层游戏目录中：
+原版资源保留在本机，`assets/` 和 `content/` 均由 Git 忽略。在文件选择窗口同时选择原版 `dat.dxa`、`bgm.dxa`，或导入包含这两份文件的 ZIP。ZIP 中的文件可以位于根目录，也可以位于同一个单层游戏目录中：
 
 ```text
 海惠堂资源.zip             海惠堂资源.zip
@@ -38,4 +38,4 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 ## 源码与依赖
 
-游戏逻辑在 `src/core`，显示计算在 `src/render`，浏览器后台在 `src/platform/web` 与 `web`；构建入口位于 `scripts`。Windows 后台继续保存在 `src/platform/windows`，其本地构建入口为 `tools/build.ps1`。第三方库、字体、解包和媒体转换组件见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+游戏逻辑在 `src/core`，显示计算在 `src/render`，浏览器后台在 `src/platform/web` 与 `web`；构建入口位于 `scripts`。字体、解包和媒体转换组件见 [THIRD_PARTY.md](THIRD_PARTY.md)。
