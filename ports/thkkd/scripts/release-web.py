@@ -138,6 +138,8 @@ def main():
     for folder in [source,game]:
         (folder/'SOURCE.json').write_text(json.dumps(association,ensure_ascii=False,indent=2)+'\n','utf-8')
     shutil.copy2(args.validation,game/'VALIDATION.md')
+    validation_details=args.validation.with_name('validation.json')
+    if validation_details.is_file():shutil.copy2(validation_details,game/'validation.json')
     packages=[archive(source,output/'thkkd-web-source.zip','eagler-touhou'),archive(game,output/'thkkd-web-local.zip','thkkd-web-local')]
     (output/'RELEASE.json').write_text(json.dumps({'sourceCommit':commit,'packages':packages},ensure_ascii=False,indent=2)+'\n','utf-8')
     (output/'SHA256SUMS.txt').write_text(''.join(p['sha256']+'  '+p['path']+'\n' for p in packages),'utf-8')
