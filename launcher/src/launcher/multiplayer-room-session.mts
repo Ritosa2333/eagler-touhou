@@ -137,8 +137,12 @@ export function createMultiplayerRoomSessionStore({
         ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false,showHitboxes:room.showHitboxes===true} : product === 'th02mp' ? {disableFocus:room.disableFocus===true} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
         ...(product==='th19mp'&&validTh19VersusRules(room.th19Rules)?{th19Rules:[...room.th19Rules]}:{}),
-        ...(product==='bromp'&&validBroSystems(room.broSystems)?{broSystems:[...(room.broSystems as number[])]}:{}),
-        ...(product==='bromp'&&validBroStageQueue(room.broStageQueue)?{broStageQueue:[...(room.broStageQueue as number[])]}:{}),
+        // validBro* treat undefined as "use defaults" (return true), so an
+        // explicit presence check is required before spreading: older saved
+        // bromp sessions predate these fields and would otherwise throw
+        // "undefined is not iterable" during restoreInvite -> initialize.
+        ...(product==='bromp'&&room.broSystems!==undefined&&validBroSystems(room.broSystems)?{broSystems:[...(room.broSystems as number[])]}:{}),
+        ...(product==='bromp'&&room.broStageQueue!==undefined&&validBroStageQueue(room.broStageQueue)?{broStageQueue:[...(room.broStageQueue as number[])]}:{}),
         ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),
         ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialBombs(room.initialBombs)?{initialBombs:room.initialBombs as number}:{}),
         ...(room.challengeMode!==undefined?{challengeMode:room.challengeMode===true}:{}),
