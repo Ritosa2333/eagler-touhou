@@ -1,119 +1,119 @@
 {
- "schema": "th13/oracle-probes/v1",
- "play_flag": [
-  {
-   "stage": 1,
-   "difficulty": 0,
-   "offsets": [
-    2053
-   ]
-  },
-  {
-   "stage": 1,
-   "difficulty": 3,
-   "offsets": [
-    2245
-   ]
-  },
-  {
-   "stage": 2,
-   "difficulty": 0,
-   "offsets": [
-    2061
-   ]
-  },
-  {
-   "stage": 2,
-   "difficulty": 3,
-   "offsets": [
-    2253
-   ]
-  },
-  {
-   "stage": 6,
-   "difficulty": 0,
-   "offsets": [
-    2093
-   ]
-  },
-  {
-   "stage": 6,
-   "difficulty": 3,
-   "offsets": [
-    2285
-   ]
-  },
-  {
-   "stage": 7,
-   "difficulty": 0,
-   "offsets": [
-    2101
-   ]
-  },
-  {
-   "stage": 7,
-   "difficulty": 3,
-   "offsets": [
-    2293
-   ]
-  }
- ],
  "pass_flag": [
   {
-   "stage": 1,
    "difficulty": 0,
    "offsets": [
     2052
-   ]
+   ],
+   "stage": 1
   },
   {
-   "stage": 1,
    "difficulty": 3,
    "offsets": [
     2244
-   ]
+   ],
+   "stage": 1
   },
   {
-   "stage": 2,
    "difficulty": 0,
    "offsets": [
     2060
-   ]
+   ],
+   "stage": 2
   },
   {
-   "stage": 2,
    "difficulty": 3,
    "offsets": [
     2252
-   ]
+   ],
+   "stage": 2
   },
   {
-   "stage": 6,
    "difficulty": 0,
    "offsets": [
     2092
-   ]
+   ],
+   "stage": 6
   },
   {
-   "stage": 6,
    "difficulty": 3,
    "offsets": [
     2284
-   ]
+   ],
+   "stage": 6
   },
   {
-   "stage": 7,
    "difficulty": 0,
    "offsets": [
     2100
-   ]
+   ],
+   "stage": 7
   },
   {
-   "stage": 7,
    "difficulty": 3,
    "offsets": [
     2292
-   ]
+   ],
+   "stage": 7
   }
- ]
+ ],
+ "play_flag": [
+  {
+   "difficulty": 0,
+   "offsets": [
+    2053
+   ],
+   "stage": 1
+  },
+  {
+   "difficulty": 3,
+   "offsets": [
+    2245
+   ],
+   "stage": 1
+  },
+  {
+   "difficulty": 0,
+   "offsets": [
+    2061
+   ],
+   "stage": 2
+  },
+  {
+   "difficulty": 3,
+   "offsets": [
+    2253
+   ],
+   "stage": 2
+  },
+  {
+   "difficulty": 0,
+   "offsets": [
+    2093
+   ],
+   "stage": 6
+  },
+  {
+   "difficulty": 3,
+   "offsets": [
+    2285
+   ],
+   "stage": 6
+  },
+  {
+   "difficulty": 0,
+   "offsets": [
+    2101
+   ],
+   "stage": 7
+  },
+  {
+   "difficulty": 3,
+   "offsets": [
+    2293
+   ],
+   "stage": 7
+  }
+ ],
+ "schema": "th13/oracle-probes/v1"
 }

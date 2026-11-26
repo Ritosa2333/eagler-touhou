@@ -43,6 +43,8 @@ class Machine:
         self.uc.mem_map(self.heap, 0x100000)
         self.uc.mem_map(0x20000000, 0x100000)
         self.uc.mem_map(RETURN, 0x1000)
+        self.uc.mem_write(RETURN + 0x100, b'\xdb\xe3')
+        self.uc.emu_start(RETURN + 0x100, RETURN + 0x102)
         self.cursor = self.heap
 
     def alloc(self, size):

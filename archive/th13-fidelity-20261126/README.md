@@ -26,7 +26,7 @@
 
 ## 插值终值的 x87 单次舍入（未决 2 的插值部分）
 
-`0x4120f0` 的默认路径把 `(end-start)*weight+start` 整条算在 x87 扩展精度里，再一次性舍入到 float；游戏内 `0x472de0/0x472e10` 的 FINIT 把 FPCW 置 0x37F（PC=64），与探针容器的默认控制字相同。直调五组用例（线性 30 帧、平方 20 帧、线性 45 帧、正弦 10 帧、1 帧）共 111 个终值，见 [interpolation.json](interpolation.json)。移植侧 `Interpolation.hpp`/`.cpp` 的非角路径改为 `(float)((long double)(end-start)*weight+start)` 后与直调值逐位相同；WASI 构建 `long double` 为 113 位，x86 宿主为 80 位，两者在这五组用例上结果一致。`tests/anm/interpolation_oracle_test.cpp`（两侧各一份、内容相同）把这些终值同时锁定在 `FloatInterpolation<1>` 与 `EclInterpolation` 上。
+`0x4120f0` 的默认路径把 `(end-start)*weight+start` 整条算在 x87 扩展精度里，再一次性舍入到 float；游戏内随机函数 `0x472de0`/`0x472e10` 的 FINIT 把 FPCW 置 0x37F（PC=64）；`machine.py` 在构造时执行同一条 FINIT，七份证据都在这一控制字下生成。显式 `fldcw 0x0000`（PC=24）时，116 个记录值里有 7 个与 PC=64 不同，金标因此能区分单次舍入与逐级舍入。直调五组用例（线性 30 帧、平方 20 帧、线性 45 帧、正弦 10 帧、1 帧）共 111 个终值，见 [interpolation.json](interpolation.json)。移植侧 `Interpolation.hpp`/`.cpp` 的非角路径改为 `(float)((long double)(end-start)*weight+start)` 后与直调值逐位相同；WASI 构建 `long double` 为 113 位，x86 宿主为 80 位，两者在这五组用例上结果一致。`tests/anm/interpolation_oracle_test.cpp`（两侧各一份、内容相同）把这些终值同时锁定在 `FloatInterpolation<1>` 与 `EclInterpolation` 上。
 
 ## 结局 BGM 第二参数与文本 VM（原分歧 2）
 
@@ -56,8 +56,21 @@ ECL 全局读是两个 94 项跳转表：整型读 `0x420380`，浮点读 `0x420
 
 `tools/oracle/probes.py --out-dir` 生成的 [stage-gvars.json](stage-gvars.json) 记录 94 个整型读、94 个浮点读和完整 setup；两次运行逐字节相同，随机流 id 附带抽取后的种子与计数。`tests/ecl/ecl_stage_gvars_oracle_test.cpp`（普通版与多人版同文件同内容）用同一 setup 重建输入，用 constexpr 数组逐位断言全部读值、浮点 bits 与随机流状态，并先通过写槽验证 −9949..−9947 的读写同槽。
 
+两组变体各钉住一处容易被改坏的细节。`distance_rounding`（自机 (160.5547332763672, 473.39849853515625)、敌机 (289.9194641113281, 85.0018310546875)）锁定 −9944 的距离：`0x423e20` 先把平方和 `fstp` 成 float，再 `fld` 进开方包装 `0x4977c0`，整型读 409、浮点 bits 1137487844；直接对双精度平方和开方会得到 1137487845。`negative_ids`（敌机 id −5、创建者 id −9）锁定 −9914/−9909：整型读原值返回 −5 与 −9，浮点读先 `fild`、负数加 `0x4aeab0`（2³²），bits 均为 1333788672。
+
 ## 插值角路径与 Bezier 的 x87 中间量（未决 2 的剩余部分）
 
 角度插值是 `0x4662e0`，与 `0x4120f0` 共用同一插值块布局。mode 7 把 `wrap(start + ctrl2)` 写回 start；mode 17 先 `wrap(start + ctrl2)` 再 `wrap(end + ctrl2)`；mode 8 的四个基函数各在 x87 里算好后转 float，再乘控制点、再转 float、再 `wrap`，按 end、start、ctrl1、ctrl2 的顺序依次累加，每次累加转 float 再 `wrap`；默认缓动先把 `0x438220` 的角差 wrap 一次，乘权重后 wrap，加 start 再 wrap。`0x472f30` 的归一是带 33 次上限的 2π 循环，每圈结果转 float。非角 mode 8 的四个基函数各转 float，四项在 x87 累加后一次舍入。
 
 [interpolation-angle.json](interpolation-angle.json) 记录 mode 7、17、8、0、1、18、22 七组用例的逐帧值（起止角跨 ±π 多圈）。`tests/anm/anm_interpolation_oracle_test.cpp`（普通版与多人版同文件同内容）把它们锁定到 `AngleInterpolation`，并以 `scalar_bezier_matches_retail_oracle` 锁定 `0x4120f0` 的 mode 8。
+
+## 回归摘要金标的两次更新
+
+三项回归摘要的金标随行为对齐更新过两次。每次都记下对旧金标的首差，再由同一份最终代码重生成：
+
+| 轮次 | 提交 | 对旧金标的首差 | 成因 |
+|---|---|---|---|
+| 自机受击结算门 | `04c17d6a7` | th13_udMy25 第 6 面 22020 帧、th13_udN01 第 4 面 300 帧（state 流） | 入场窗口内的接触不再消弹、灵界期间盒弹不再判定，见 [th13-fidelity-20261125](../th13-fidelity-20261125/README.md) |
+| 插值终值 x87 单次舍入 | `3a2edeb90` | th13_01.rpy 第 1 面 480 帧（state 流），连续三轮完整重跑同一帧 | `(end-start)*weight+start` 只舍入一次，etEx 缩放走 `scale_tween`；[digest-rounding.log](digest-rounding.log) |
+
+自 `3a2edeb90` 起金标未再变动。ECL 全局变量、插值角路径与其后的修正都没有改变三项摘要：状态流 `digest-ok replay`、首关绘制 `digest-ok draws`、全关卡绘制 `digest-ok draws`，日志见 [digest-check-replay.log](digest-check-replay.log)、[digest-check-draws.log](digest-check-draws.log)、[digest-check-draws-all.log](digest-check-draws-all.log)。

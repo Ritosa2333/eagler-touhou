@@ -223,8 +223,7 @@ def stage_gvars_probe(exe):
         def rng_state():
             return dict(zip(('seed', 'count'), struct.unpack('<HxxI', machine.read(ANM_GAME_RNG, 8))))
 
-        rows = []
-        for identifier in identifiers:
+        def read(identifier):
             reset_random()
             return_stub = int_stub if kind == 'int' else float_stub
             machine.write(stack, struct.pack('<2I', return_stub, identifier & 0xffffffff))
@@ -232,15 +231,26 @@ def stage_gvars_probe(exe):
             machine.reg_write('ecx', enemy)
             machine.uc.emu_start(function, RETURN)
             if kind == 'int':
-                raw = struct.unpack('<i', machine.read(out, 4))[0]
-                row = {'id': identifier, 'value': raw}
-            else:
-                row = {'id': identifier, 'bits': f32_bits(machine, out)}
+                return {'id': identifier, 'value': struct.unpack('<i', machine.read(out, 4))[0]}
+            return {'id': identifier, 'bits': f32_bits(machine, out)}
+
+        rows = []
+        for identifier in identifiers:
+            row = read(identifier)
             state = rng_state()
             if state != {'seed': 0x5678, 'count': 0}:
                 row['rng'] = state
             rows.append(row)
         document[kind] = rows
+        variants = document.setdefault('variants', {})
+        distance = variants.setdefault('distance_rounding', {
+            'player': [160.5547332763672, 473.39849853515625], 'enemy_position': [289.9194641113281, 85.0018310546875]})
+        machine.write(player + 0x5b8, struct.pack('<2f', *distance['player']))
+        machine.write(enemy + 0x1230, struct.pack('<2f', *distance['enemy_position']))
+        distance[kind] = [read(-9944)]
+        negative = variants.setdefault('negative_ids', {'script_id': -5, 'trace_id': -9})
+        machine.write(enemy + 0x11e4, struct.pack('<2i', negative['script_id'], negative['trace_id']))
+        negative[kind] = [read(-9914), read(-9909)]
     return document
 
 
