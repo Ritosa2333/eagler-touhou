@@ -24,7 +24,7 @@ async function fetchFile(url) {
 const joined = (root, name) => new URL(name.split('/').map(encodeURIComponent).join('/'), root);
 
 export async function playFull(canvas, content = new URL('./content/', import.meta.url), {
-    hosted = false, beforeFrame, onExit, localCoop,
+    hosted = false, beforeFrame, onExit, localCoop, confirmedCoop,
 } = {}) {
     const screen = canvas.getContext('2d', {alpha: false});
     const framebuffer = new OffscreenCanvas(640,400);
@@ -271,6 +271,10 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     })]);
     if (wasm._soew_full_start() !== 0) throw Error(lastError ?? 'SoEW startup failed');
     if (localCoop && !wasm._soew_full_start_coop(...localCoop)) throw Error(lastError ?? 'SoEW local co-op startup failed');
+    if (confirmedCoop && !wasm._soew_full_start_confirmed_coop(...confirmedCoop)) {
+        stop();
+        throw Error(lastError ?? 'SoEW confirmed co-op startup failed');
+    }
 
     listen(picker,'change', async () => {
         const file = picker.files[0];
@@ -288,7 +292,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         wasm._soew_full_fullscreen_changed(document.fullscreenElement === canvas));
     function deliverKey(code,down,event = {}) {
         const vk = keyCode(code);
-        if (stopped || vk === undefined) return;
+        if (stopped || confirmedCoop || vk === undefined) return;
         const glyph = event.key ?? '';
         const scalar = !event.ctrlKey && !event.altKey && [...glyph].length === 1 ? glyph.codePointAt(0) : 0;
         wasm._soew_host_key(vk,down,Boolean(event.repeat),scalar);
@@ -305,6 +309,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         listen(window,'keyup',event => key(event,false));
     }
     listen(window,'paste',event => {
+        if (confirmedCoop) return;
         const chars = [...event.clipboardData.getData('text')].map(c => c.codePointAt(0));
         const pointer = wasm._malloc((chars.length+1)*4);
         wasm.HEAPU32.set([...chars,0],pointer >>> 2);
@@ -313,6 +318,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         event.preventDefault();
     });
     function pointer(event,message,wparam=0) {
+        if (confirmedCoop) return;
         const rect = canvas.getBoundingClientRect();
         const x = Math.floor((event.clientX-rect.left)*framebuffer.width/rect.width);
         const y = Math.floor((event.clientY-rect.top)*framebuffer.height/rect.height);
@@ -337,7 +343,15 @@ export async function playFull(canvas, content = new URL('./content/', import.me
 
     const player = {key:deliverKey, unlock:unlockAudio, stop, sync:() => sync(false),
         coopInputs:(...seats)=>wasm._soew_full_coop_inputs(...seats),
-        health:() => ({frames,gameFrame:localCoop?wasm._soew_full_coop_frame():ticks,audio:{state:audio?.state ?? 'suspended'}})};
+        health:() => ({frames,gameFrame:localCoop||confirmedCoop?wasm._soew_full_coop_frame():ticks,audio:{state:audio?.state ?? 'suspended'}})};
+    if (confirmedCoop) player.confirmed = {
+        step(frame, masks) {
+            const result = wasm._soew_full_confirmed_step(frame,...masks);
+            if (!result) throw Error(lastError ?? 'SoEW refused the confirmed frame');
+            return result === 2;
+        },
+        hash: () => wasm._soew_full_confirmed_hash() >>> 0,
+    };
     function frame() {
         if (stopped) return;
         beforeFrame?.(player);

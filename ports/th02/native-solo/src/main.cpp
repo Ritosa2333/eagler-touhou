@@ -45,6 +45,7 @@
 #include "replay_menu.hpp"
 #include "replay_slots.hpp"
 #include "encounter_info.hpp"
+#include "confirmed_coop.hpp"
 #include "shot_input.hpp"
 #include "settings.hpp"
 #include "practice_menu.hpp"
@@ -1129,6 +1130,7 @@ struct App {
     fs::path replay_dir;
     std::optional<soew::NativeReplayRecorder> recorder;
     std::optional<soew::LocalCoopConfig> local_coop;
+    std::optional<soew::ConfirmedCoop> confirmed_coop;
     std::array<std::uint16_t,3> local_coop_input{};
     std::array<soew::ShotInput,3> local_coop_fire;
     unsigned local_coop_ticks=0;
@@ -1759,7 +1761,9 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
     const bool extra=id==5&&(app.local_coop||app.extra_trial||app.extra_candidate||(app.replay_playback&&app.replay_playback->config.extra));
     if(id==5&&!extra&&!app.smoke&&app.gameplay_audio_enabled)throw std::runtime_error("Extra is not enabled in this build mode");
     if(extra&&!app.local_coop&&!app.extra_trial&&!app.replay_playback&&(!app.menu.extra_mode||!app.menu.unlocked))throw std::runtime_error("Extra is locked");
-    const soew::NativeReplayConfig config=app.replay_playback?app.replay_playback->config:soew::NativeReplayConfig{1234,id,rules.shot,rules.rank,rules.lives,rules.bombs,app.menu.replay_music(),app.menu.reduced,app.menu.autofire,stage4_trial,id==4&&(app.local_coop||app.stage5_trial),bool(app.local_coop)||app.stage5_mainline,extra};
+    const auto seed=app.confirmed_coop?app.confirmed_coop->seed:1234u;
+    const bool reduced=!app.confirmed_coop&&app.menu.reduced;
+    const soew::NativeReplayConfig config=app.replay_playback?app.replay_playback->config:soew::NativeReplayConfig{seed,id,rules.shot,rules.rank,rules.lives,rules.bombs,app.menu.replay_music(),reduced,app.menu.autofire,stage4_trial,id==4&&(app.local_coop||app.stage5_trial),bool(app.local_coop)||app.stage5_mainline,extra};
     app.stage_scene=soew::load_replay_scene(app.assets_root,config,soew::simulation_language(app.menu.language));
     if(app.local_coop){
         auto &scene=*app.stage_scene;
@@ -1767,7 +1771,7 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
         if(id==2){scene.midboss3_enabled=true;scene.enable_preboss();scene.transitions_enabled=true;}
         app.local_coop_fire={};
     }
-    arm_stage_intro(app,(id==0||id==5)&&!stage4_trial&&!app.stage5_trial&&!app.extra_trial);
+    arm_stage_intro(app,!app.confirmed_coop&&(id==0||id==5)&&!stage4_trial&&!app.stage5_trial&&!app.extra_trial);
     app.replay_session.emplace(config,app.replay_playback&&!app.replay_playback->summary);
     app.stage_scene->sound.enabled=app.menu.music!=0&&!app.effect_bank.empty();
     app.stage_scene->sound_output=[&app](unsigned id){if(app.menu.music!=0&&!app.effect_bank.empty()&&app.audio.active()&&!app.audio.effect(id))audio_error(app);};
@@ -3659,6 +3663,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 if((!app->stage_scene&&!app->audio.pause(!enabled||app->practice_builder.has_value()||app->practice_load.has_value()||app->practice_audio_load.has_value()))||!app->audio.pump()){audio_error(*app);caption(hwnd,*app);InvalidateRect(hwnd,nullptr,FALSE);}
             }
             app->retry_probe.audio_pumped(*app);
+            if(app->confirmed_coop)return 0; // Confirmed rows are the only simulation clock.
             const auto music_steps=app->music_clock.advance(now,enabled&&app->menu.music_room,1,nullptr,
                 PresentationClock::period_ms(1)*soew::pc98_refresh_num,1000*soew::pc98_refresh_den);
             for(unsigned i=0;i<music_steps;++i)app->music_polygons.tick();
@@ -3836,11 +3841,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             for(unsigned seat=0;seat<coop.config.count;++seat){
                                 auto raw=app->menu.live_input(app->local_coop_input[seat]);
                                 if(app->stage_entry_release)raw&=~(soew::Shot|soew::Bomb|soew::OK);
-                                auto &fire=app->local_coop_fire[seat];
-                                fire.event((raw&soew::Shot)!=0,mode);
-                                const auto masked=std::uint16_t((raw&~soew::Shot)|(fire.tick(mode)?soew::Shot:0));
+                                const auto masked=soew::sample_coop_seat(coop,seat,app->local_coop_fire[seat],raw,mode);
                                 coop.input[seat]=seat?masked:std::uint16_t(input|masked);
-                                coop.fire_held[seat]=(raw&soew::Shot)||(!seat&&(z_held||pressed.space));
+                                coop.fire_held[seat]|=!seat&&(z_held||pressed.space);
                                 if(!seat)input|=masked;
                             }
                             if(!app->stage_entry_release&&(app->local_coop_input[0]&(soew::Shot|soew::Bomb|soew::OK)))group=true;
@@ -4682,7 +4685,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_fullscreen_changed(bool enabled){
     browser_app.dialogue_hold.clear();
     browser_app.stage_clock.reset(host_ms());
 }
-extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_coop(int count,int stage,int rank,int spare,int stock,int p1,int p2,int p3){
+static int start_browser_coop(int count,int stage,int rank,int spare,int stock,int p1,int p2,int p3){
     if(count<2||count>3||stage<0||stage>5||rank<0||rank>3||spare<0||spare>5||stock<0||stock>5||
         p1<0||p1>2||p2<0||p2>2||p3<0||p3>2)return 0;
     auto &app=browser_app;
@@ -4694,11 +4697,39 @@ extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_coop(int count,int stage,int
         return 1;
     }catch(const std::exception &error){std::cerr<<"Local co-op: "<<error.what()<<'\n';return 0;}
 }
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_coop(int count,int stage,int rank,int spare,int stock,int p1,int p2,int p3){
+    return start_browser_coop(count,stage,rank,spare,stock,p1,p2,p3);
+}
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_confirmed_coop(int count,int stage,int rank,int spare,int stock,
+    int p1,int p2,int p3,std::uint32_t seed,unsigned rules,int lang){
+    if(rules>3||lang<0||lang>3)return 0;
+    auto &app=browser_app;
+    auto &run=app.confirmed_coop.emplace();
+    run.seed=seed;run.focus=(rules&1)!=0;run.autofire=(rules&2)!=0;
+    app.menu.language=soew::Language(lang);
+    app.settings_enabled=false;
+    return start_browser_coop(count,stage,rank,spare,stock,p1,p2,p3);
+}
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_confirmed_step(unsigned frame,unsigned p1,unsigned p2,unsigned p3){
+    auto &app=browser_app;
+    try{
+        auto &run=*app.confirmed_coop;
+        const auto step=run.step(*app.stage_scene,*app.replay_session,frame,{p1,p2,p3});
+        if(step.status==soew::ReplayStepStatus::Failed||!step.consumed_tick)
+            throw std::runtime_error(step.error.empty()?"TH02 confirmed update did not advance":step.error);
+        InvalidateRect(browser_hwnd,nullptr,FALSE);
+        return run.finished?2:1;
+    }catch(const std::exception &error){std::cerr<<"Confirmed co-op: "<<error.what()<<'\n';return 0;}
+}
+extern "C" EMSCRIPTEN_KEEPALIVE std::uint32_t soew_full_confirmed_hash(){
+    const auto &app=browser_app;const auto hash=app.confirmed_coop->digest(*app.stage_scene);
+    return std::uint32_t(hash^(hash>>32));
+}
 extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_coop_inputs(unsigned p1,unsigned p2,unsigned p3){
     browser_app.local_coop_input={std::uint16_t(p1),std::uint16_t(p2),std::uint16_t(p3)};
 }
 extern "C" EMSCRIPTEN_KEEPALIVE unsigned soew_full_coop_frame(){
-    return browser_app.local_coop_ticks;
+    return browser_app.confirmed_coop?browser_app.confirmed_coop->frame:browser_app.local_coop_ticks;
 }
 int soew_full_import_replay(){
     try{

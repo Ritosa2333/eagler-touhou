@@ -19,6 +19,24 @@ node ports/th02/scripts/build-eagler.mjs --assets=<DOS资源目录> --native-bui
 
 原生本机合作走 TH02 的 PC-98 固定节拍（约 56.4 Hz），每个节拍推进一个逻辑帧。单人的 F12、退格辅助和已保存的练习调速不参与多人运行。此节拍用于原生本机合作；在线房间继续使用现有同步内核。
 
+## 原生联机开发验收
+
+原生联机复用 TH05 的房间传输。玩家用同一随机种子、房间参数和逐帧确认的座位输入驱动 SoEW；缺少输入时停在待确认帧，每 120 帧比对模拟状态。当前通过开发测试运行，Launcher 的 DOS 合作房间入口保持不变。
+
+构建含资源的 `soew-full`，安装 Launcher 和 Relay 的 npm 依赖，设置 `EAGLER_CHROME_PATH` 后，在仓库根目录运行：
+
+```powershell
+node --test ports/th02/tests/native-coop-peers.test.mjs
+$env:TH02_TEST_SEATS='2'; $env:TH02_TEST_ROUTE='rtc'
+node ports/th02/tests/native-coop-network-browser.mjs
+$env:TH02_TEST_SEATS='3'; $env:TH02_TEST_ROUTE='relay'
+node ports/th02/tests/native-coop-network-browser.mjs
+```
+
+浏览器测试启动真实 Relay 和独立 WASM 实例：双人走 WebRTC 直连，三人走带延迟和抖动的 Relay 路由。两组都验证缺帧停表和恢复后的第 240 帧状态一致性。
+
+## DOS 运行时
+
 在 monorepo 根目录运行：
 
 ```powershell
