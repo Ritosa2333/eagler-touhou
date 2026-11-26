@@ -35,40 +35,6 @@ const saveFS = createLazySaveFS({
 let runtimePromise = null;
 let dataPromise = null;
 let shell = null;
-// #35 加载优化：首屏需要的组件组先预热，music/se 这类大块交给按需路径
-// （BGM 走流式分片、SE 由 audio.warm 在启动后自己补），否则首次要下 191MB。
-const PREFETCH_GROUPS = ['images-ui', 'fonts', 'shader', 'misc', 'scripts', 'images-bg'];
-let prefetchPromise = null;
-const prefetchInBackground = () => {
-  if (prefetchPromise || !resourceCache?.prefetchManifest) return prefetchPromise;
-  let last = 0;
-  prefetchPromise = resourceCache.prefetchManifest({
-    groups: PREFETCH_GROUPS,
-    concurrency: 3,
-    onProgress: (p) => {
-      // 进度事件限流：每 10 个文件或每年 800ms 报一次，别把启动器事件通道刷满。
-      const now = Date.now();
-      if (p.downloaded - last < 10 && now - (prefetchPromise.lastAt || 0) < 800) return;
-      last = p.downloaded;
-      prefetchPromise.lastAt = now;
-      shell.emit({ event: 'transfer', phase: 'prefetch', ...p });
-    },
-    onError: (error, file) => shell.emit({
-      event: 'error', message: 'prefetch', path: file?.p || '', error: String(error && error.message || error),
-    }),
-  }).catch(() => null);
-  return prefetchPromise;
-};
-const waitFirstFrame = async (runtime) => {
-  // 首帧判定：rAF 已经跑过一帧（runtime.frames 由 runtime_entry 累加）。
-  // 最多等 30 秒，超时也照样开始预热，避免异常路径下永不预热。
-  const deadline = Date.now() + 30000;
-  while (Date.now() < deadline) {
-    if (Number(runtime?.frames) > 0) return true;
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  return false;
-};
 const prepareData = () => {
   if (!dataPromise) {
     dataPromise = prepareManagedData({ game: 'bro', query, epoch: shell?.navigation?.epoch })
@@ -86,17 +52,14 @@ shell = installManagedShell({
   saveFS,
     start: async () => {
       await prepareData();
-      // 线上增量资源：启动路径只拉清单并提交（commitOnly），绝不等整包下完。
-      // 提交后按需 fetchAsset 就会走 HTTP + 逐文件入库；其余由 prefetchInBackground
-      // 在首帧之后按组件组慢慢填缓存。offline 时静默降级，不阻塞启动。
+      // 线上增量资源同步：boot 之前拉清单、只下变化文件。offline 时静默降级到
+      // 导入包缓存或本地 HTTP 资源，不阻塞启动（导入包形态下本地清单常不存在）。
       if (resourceCache?.syncOnline) {
-        try {
-          const sync = await resourceCache.syncOnline({ commitOnly: true });
-          shell.emit({ event: 'transfer', phase: 'manifest', ...sync });
-          note(`resources: ${sync.status}${sync.downloads ? ` +${sync.downloads} pending` : ''}`);
-        } catch (error) {
-          shell.emit({ event: 'error', message: 'manifest', error: String(error && error.message || error) });
-        }
+        const sync = await resourceCache.syncOnline({
+          onProgress: (p) => shell.emit({ event: 'transfer', phase: 'manifest-progress', ...p }),
+        });
+        shell.emit({ event: 'transfer', phase: 'manifest', ...sync });
+        note(`resources: ${sync.status}${sync.downloads ? ` +${sync.downloads} files` : ''}`);
       }
       if (!runtimePromise) {
         const environment = await saveFS.environment();
@@ -106,8 +69,6 @@ shell = installManagedShell({
           if (status) status.textContent = `ERROR: ${error && error.message || error}`;
           throw error;
         });
-        // 首帧之后再预热：首帧前抢带宽会拖慢 wasm/字体，反而更慢出画面。
-        void runtimePromise.then((runtime) => waitFirstFrame(runtime).then(() => prefetchInBackground()));
     }
     return runtimePromise;
   },

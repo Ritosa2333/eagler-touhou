@@ -1,6 +1,6 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-27636cfb5b2fd8990baa28f1e26e5a232a81e2e6212b13734128575bc5954946",
+  "version": "sha256-4f43fded62e3f8a9159d2088c4bfb6b9379619eec12d6738d9fe659face446c7",
   "files": [
     {
       "p": "bro.html",
@@ -9,8 +9,8 @@
     },
     {
       "p": "managed-shell.mjs",
-      "n": 5083,
-      "h": "c905fa8597e0b3892dcbdeb74ce813a341031d6faecd6ec8c6a78595a8176299"
+      "n": 5887,
+      "h": "9352c12e08c6f0a8d6a78fed911ff70626d21c0342774289716ead6cdbed8b9b"
     },
     {
       "p": "shell.mjs",
@@ -29,8 +29,8 @@
     },
     {
       "p": "src/eagler_adapter.mjs",
-      "n": 66440,
-      "h": "d16bdefc80dc04851f1bb645979a6340248f64911cc3a25959097731df6560a9"
+      "n": 77421,
+      "h": "bb52808b0ebd81e02973beca713976105754440e030a7c9949a8b96b09d743b2"
     },
     {
       "p": "src/input.mjs",
@@ -49,8 +49,8 @@
     },
     {
       "p": "src/multiplayer.mjs",
-      "n": 65241,
-      "h": "1862207e4fd25da1436284a3716c16a343268445db88fadcde50941e3a5e299c"
+      "n": 65490,
+      "h": "b145a4aadb52e8ea38904eae9e0bf6dbcaa4e40a606c2e7a37487e34274d1e07"
     },
     {
       "p": "src/netcode.mjs",
@@ -109,8 +109,8 @@
     },
     {
       "p": "src/runtime_entry.mjs",
-      "n": 14143,
-      "h": "663e86f687c7f9bb36f36525fca0a14673f078c13c181bbde69d460f647510fa"
+      "n": 21986,
+      "h": "38dcc295a5535bdcbd13c5b289c30baf93af74aab9ca7c979dacc57abc157e4b"
     },
     {
       "p": "src/save_files.mjs",
@@ -319,13 +319,23 @@
     },
     {
       "p": "test/browser/play.html",
-      "n": 29380,
-      "h": "79b6a1666287d099b345c84cc72ddc749ab74c8bfafba10a84fbc6468f54863e"
+      "n": 31757,
+      "h": "c183b7503a99b56287f303629ff1edbbbc8f83c506d2cf7cc9499ce573ec6943"
     },
     {
       "p": "test/browser/play_check.mjs",
       "n": 2953,
       "h": "756d6db393fe569e95f9ac54ef277d5ee818cd5e313ddbb1155745c59e98a066"
+    },
+    {
+      "p": "test/browser/quit_exit_e2e.mjs",
+      "n": 6733,
+      "h": "72ae354d37829612a09646def4cc9af9475afb7ed5e103e443db81d5921ecc67"
+    },
+    {
+      "p": "test/browser/quit_host.html",
+      "n": 5875,
+      "h": "c94043a640eef0670cdea9047d9307895691aa85ca8d06ecc6df1f34f5f10533"
     },
     {
       "p": "test/browser/replay_playback_e2e.mjs",

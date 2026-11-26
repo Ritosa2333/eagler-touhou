@@ -1010,7 +1010,10 @@ export class BROMultiplayer {
 
   /**
    * 阶段 3I：计算并登记某逻辑帧的本地状态摘要，发给对端。
-   * hash 由 WASM 侧 FNV-1a 生成（稳定、跨实例一致）。返回 hash 数字。
+   * hash 由 WASM 侧按对象/var 加权累加生成（稳定、跨实例一致、顺序无关）。
+   * 返回 hash 数字。
+   * #38：摘要已改成纯整数，这里也只剩一次数值 call；帧数走数字 getter，
+   * 不再每个逻辑帧做一次 Lua→JSON→JSON.parse（旧实现是「越玩越卡」的一半）。
    */
   sampleDigest(frame) {
     const f = Number(frame) | 0;
@@ -1018,8 +1021,8 @@ export class BROMultiplayer {
     const hash = Number(this.call('BRO_net_frame_digest', f)) >>> 0;
     this._lastDigest = { frame: f, hash };
     if (this.net && this.net.ready && typeof this.net.sendDigest === 'function') {
-      const info = this.jsonCall('BRO_net_digest_stats');
-      this.net.sendDigest(f, hash, info.localFrames || 0);
+      const frames = Number(this.call('BRO_net_digest_local_frames')) || 0;
+      this.net.sendDigest(f, hash, frames);
     }
     return hash;
   }

@@ -292,10 +292,57 @@ export async function startBRO(options = {}) {
   let fpsSince = last;
   let fpsFrames = 0;
   let firstFrameSent = false;
+  let firstFrameSerial = null;
   let lastCanvasW = canvas.width;
   let lastCanvasH = canvas.height;
   let stopped = false;
   const stepMs = 1000 / 60;
+
+  /* #39 线上白屏的真因（改这里之前先读完）：
+   *
+   * 原生版 `stage.QuitGame()`（game/THlib/lib/Lstage.lua:48）只置
+   * `lstg.quit_flag = true`，靠进程自己退出收场。网页运行时没有「进程」可退，
+   * 以前（web/src/web_patches.lua:442-456 置 `__bro_reload_requested`，本文件
+   * 下面的轮询）一律用 `location.reload()` 当退出实现 —— 单页 standalone 下
+   * 这没问题，但在**线上 eagler 启动器形态**下必白屏：
+   *   1) BRO 是 launcher 用 `runtime.location.replace(url)` 载进 iframe 的子文档，
+   *      `document` 的身份被登记在 launcher/app/services/runtime.ts 的
+   *      `runtimeDocument` 里（:565-575 每次 onMessage 都比对）；
+   *   2) 子页 `location.reload()` 会换掉 document → `runtimeIdentity()`
+   *      （:479-483 的 `runtime.document !== runtimeDocument`）判定
+   *      「Runtime document was replaced」→ `reset('error')`，而 reset 会把 iframe
+   *      导航到 `about:blank`（:441-449）——这就是玩家看到的纯白屏；
+   *   3) 就算绕过身份比对也没救：`ready` 事件只认一次
+   *      （:592 `if (message.event === 'ready' && !snapshot.ready)`），重载后的
+   *      新 ready 直接被丢掉，永远等不到第二次 configure/launch。
+   *
+   * 协议里本来就留了正经出口：`event === 'exit'`（launcher runtime.ts:646-651），
+   * 按 `status`/`code` 干净地 `reset('exited')` 回启动器（默认值在
+   * eagler_adapter.mjs:74 事件白名单里早就有 'exit'，只是 BRO 从来没发过）。
+   * 所以：iframe 内 → 先 flush 存档，再发 exit；只有真·单页（无 parent）才
+   * 继续整页重载。存档必须先落盘，MEMFS 会随文档一起销毁。
+   */
+  const framed = typeof window !== 'undefined' && !!window.parent && window.parent !== window;
+  let quitting = false;
+  function requestQuit() {
+    if (quitting) return;
+    quitting = true;
+    stopped = true;                 // 先停逻辑/渲染循环：QuitGame 之后不等同于「继续跑」
+    runtime.state = 'exited';
+    try { audio.stopAll?.(); } catch { /* 音频层可能已停 */ }
+    const finish = () => {
+      if (framed && adapter && typeof adapter._emit === 'function') {
+        try { adapter._emit('exit', { status: 'success', code: 0 }); } catch { /* 宿主已关 */ }
+        return;
+      }
+      try { location.reload(); } catch { /* ignore */ }
+    };
+    let done = false;
+    const once = () => { if (done) return; done = true; finish(); };
+    try { Promise.resolve(storage.flush()).then(once, once); } catch { once(); }
+    // 兜底：落盘卡住也必须退出，不能让玩家卡在停止的画面上。
+    try { setTimeout(once, 3000); } catch { /* ignore */ }
+  }
 
   function frame(now) {
     if (stopped) return;
@@ -368,14 +415,30 @@ export async function startBRO(options = {}) {
       }
       audio.consume();
 
-      if (!firstFrameSent) {
+      // #37：每个 launchSerial 都要发一次 first-frame —— 房间现在复用同一个
+      // WASM 实例连开第二局（预览 → 开始游戏 → 回主菜单 → 再开始游戏），
+      // 而 eagler 的 launch() 只认当前 serial 的 first-frame（runtime.ts:590
+      // 会丢弃 launchSerial 不符的回包）。一次性布尔会让第二局一直等到超时。
+      if (!firstFrameSent || firstFrameSerial !== adapter?.launchSerial) {
         firstFrameSent = true;
+        firstFrameSerial = adapter?.launchSerial ?? null;
         adapter?.notifyFirstFrame?.(adapter.launchSerial);
       }
       fpsFrames++;
       if (now - fpsSince >= 500) {
+        // #39：QuitGame（web_patches.lua:442-456）置 __bro_quit_restart + __bro_reload_requested，
+        // 必须走 requestQuit（iframe 内发协议 exit，单页才重载）——重载在启动器里
+        // 会被判成「document 被替换」并白屏，详见 requestQuit 上的长注释。
+        try {
+          if (ev('return tostring(__bro_quit_restart or false)') === 'true') {
+            requestQuit();
+            return;
+          }
+        } catch { /* 老 WASM 无此字段 */ }
         // 设置菜单切「4.0弹幕(legacy)」后 Lua 置位；legacy 是加载期分支，
         // 必须整页重载才会重新按新模式加载符卡脚本。flush 存档后重载。
+        // 已知遗留：这条重载在 eagler iframe 里同样会被判「document 被替换」
+        // （需要启动器提供 restart/relaunch 命令才能真正修好），不在 #39 范围。
         try {
           if (ev('return tostring(__bro_reload_requested or false)') === 'true') {
             void storage.flush();
@@ -384,6 +447,15 @@ export async function startBRO(options = {}) {
           }
         } catch { /* 老 WASM 无此字段 */ }
         try { runtime.lock60 = ev('return tostring(__bro_web_lock60)') === 'true'; } catch { /* 老 WASM 无此字段 */ }
+        // #37：对局中途回到原生主菜单（stage 'menu'，见 game/THlib/UI/title.lua:3）
+        // → 上报 exit(returnToMenu)，启动器才会释放座位、房间回待准备态，从而
+        // 允许重新开局。observeStage 内部有「本局离开过主菜单」的栅栏，避免
+        // startMatch 刚下发时的误判。
+        try {
+          if (adapter?.multiStarted) {
+            adapter.observeStage(ev('return tostring(stage.current_stage and stage.current_stage.stage_name or "")'));
+          }
+        } catch { /* 时序/老 WASM：不影响渲染 */ }
         runtime.fps = Math.round(fpsFrames * 1000 / (now - fpsSince));
         runtime.frameMs = (now - fpsSince) / Math.max(1, fpsFrames);
         runtime.maxGapMs = Math.max(runtime.maxGapMs || 0, dt);

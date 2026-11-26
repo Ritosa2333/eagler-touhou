@@ -75,10 +75,18 @@ export function installManagedShell(options = {}) {
 
   let queue = Promise.resolve();
   let announced = false;
+  /* #37：eagler 的 roomPreview/roomReturn 能力只从 ready 事件读取
+     （launcher/app/services/runtime.ts:604 把 message.roomPreview 写进
+     RuntimeSnapshot.roomPreviewSupported，RoomComposition.tsx:74 的
+     previewReady 再取自它）。以前这里不带这两个标志，所以房间永远认为 BRO
+     不支持预览：既不会下发 prepare-room（画布空白、遮罩不撤），退出对局后
+     也不会走 return-room/保留 runtime。BRO 现在实现了这两条命令，如实上报。
+     注意每个 ready（含 launch 早于 ready 时的 prelaunch 快照）都要带。 */
+  const capabilities = { roomPreview: true, roomReturn: true };
   const announceReady = (extra = {}) => {
     if (announced) return;
     announced = true;
-    emit({ event: 'ready', saveRoot: adapter.saveRoot, ...extra });
+    emit({ event: 'ready', saveRoot: adapter.saveRoot, ...capabilities, ...extra });
   };
 
   const onMessage = (event) => {
@@ -114,6 +122,7 @@ export function installManagedShell(options = {}) {
       adapter.detach();
     },
   };
+  // 能力位见 announceReady 上的注释（roomPreview/roomReturn 已由 capabilities 带上）。
   announceReady({ resourceCache: options.resourceCache?.status?.() || null });
   return shell;
 }

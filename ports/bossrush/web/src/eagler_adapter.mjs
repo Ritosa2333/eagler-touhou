@@ -477,6 +477,18 @@ export class EaglerRuntimeAdapter {
     this.config = { music: 'ogg', options: {} };
     this.launchSerial = 0;
     this.firstFrameSent = false;
+    // 共有问题 #37：房间预览 / 再开一局。
+    //  - roomPreviewed：prepare-room 已经把 WASM boot 到原生主菜单（房间阶段可见画面）。
+    //  - previewMode ：预览阶段（未 launch）拒绝键盘，避免在房间里按出单机对局。
+    //  - matchArmed  ：本局对局确实离开过主菜单后才允许判「玩家退回了主菜单」。
+    //  - launchCount ：本页第几次 launch，>0 表示需要在 boot 之后重下发 match。
+    this.roomPreviewed = false;
+    this.previewMode = false;
+    this.matchArmed = false;
+    this.launchCount = 0;
+    this.reportedMenuReturn = false;
+    this.firstFrameSerial = null;
+    this.bootPromise = null;
     this.frameTimer = null;
     this.eventBus = new Set();
     this._onMessage = null;
@@ -560,11 +572,22 @@ export class EaglerRuntimeAdapter {
     }
   }
 
-  /** 由渲染循环在首帧呈现后调用一次（launch 之后）。幂等。 */
+  /** 由渲染循环在首帧呈现后调用一次（每个 launchSerial 一次）。幂等。 */
   notifyFirstFrame(launchSerial) {
-    if (this.firstFrameSent) return false;
+    // 共有问题 #37：以前这里是「整页只发一次」的布尔量。房间现在会复用同一个
+    // WASM 实例连开第二局（预览 → 开始游戏 → 退回主菜单 → 再开始游戏），
+    // 而 eagler 的 launch() 只在 roomReturnSupported 时按 launchSerial 等
+    // 对应的 first-frame（runtime.ts:590 过滤掉旧 serial），一次性布尔会让
+    // 第二次 launch 一直等到 122s 超时才收尾。改成按 serial 判重。
+    const serial = launchSerial === undefined || launchSerial === null ? this.launchSerial : launchSerial;
+    // 房间预览 boot 出的主菜单不是「本局首帧」：此时还没有 launch，eagler 侧
+    // launchRequested=false，报上去只会被启动器当成提前呈现（browser-session
+    // 会顺手 launchAcknowledged）。等真正的 launch 到了再按 serial 上报。
+    if (this.previewMode && this.launchCount === 0) { this.phase = 'live'; return false; }
+    if (this.firstFrameSent && this.firstFrameSerial === serial) return false;
+    this.firstFrameSerial = serial;
     this.phase = 'live';
-    this._emit('first-frame', { launchSerial: launchSerial ?? this.launchSerial });
+    this._emit('first-frame', { launchSerial: serial });
     return true;
   }
 
@@ -674,6 +697,11 @@ export class EaglerRuntimeAdapter {
       case 'touch-cancel': return { ok: true };
       case 'direct-touch': return { ok: true };
       case 'launch':       return this._cmdLaunch(p);
+      // 共有问题 #37：房间预览 / 交回界面。以前这两条落到 default
+      // `{ok:true, ignored:true}`，启动器拿不到 presented=true，房间阶段
+      // （RoomWorkspace 的就绪遮罩）就一直盖在没 boot 的 iframe 上。
+      case 'prepare-room': return this._cmdPrepareRoom(p);
+      case 'return-room':  return this._cmdReturnRoom(p);
       case 'list':         return this._cmdList();
       case 'read':         return this._cmdRead(p);
       case 'write':        return this._cmdWrite(p);
@@ -682,6 +710,163 @@ export class EaglerRuntimeAdapter {
       case 'playback':     return this._cmdPlayback(p);
       case 'spectator-playback': return this._cmdSpectatorPlayback(p);
       default:             return { ok: true, ignored: true };  // 可选命令未实现：ok，不破坏宿主流程
+    }
+  }
+
+  // ---- 共有问题 #37：房间预览 / 主菜单生命周期 ---------------------------
+
+  /**
+   * prepare-room（eagler 房间契约，见 launcher/tests/browser/test-room-native-preview.mjs）：
+   * 把 runtime boot 到原生主菜单并**停在**主菜单，让房间阶段就能看到真正的游戏
+   * 画面；随后的 launch 复用同一个 WASM 实例开联机局。
+   *
+   * 为什么必须先有它：以前本命令落进 _dispatch 的 default（`ignored:true`），
+   * 启动器的 prepareRoomPreview 要求回包 presented===true（runtime.ts:1081），
+   * 于是 roomPreviewSupported/roomPreview 永远为 false，RoomWorkspace 的
+   * 「游戏已加载，等待准备」遮罩不会撤（browser-session.ts 的 presentPreview
+   * 注释就写着 "Runtime title previews are optional"）。
+   */
+  _cmdPrepareRoom() {
+    this.previewMode = true;
+    if (this.roomPreviewed) return { response: { ok: true, presented: true } };
+    const boot = this.prepareRoomHook || this.launchHook;
+    if (typeof boot !== 'function') return { response: { ok: true, presented: false, reason: 'no-boot' } };
+    const deferred = this._bootOnce(boot)
+      .then(async () => {
+        // 预览只允许停在主菜单：若 startBRO 收尾时（它 boot 完会自己调一次
+        // startNetplayIfConfigured）已经按 netplay 配置起了对局，必须收回，
+        // 否则房间还在「游戏已加载」时游戏已经进关了。
+        if (this.multiStarted) {
+          this.multi?.reset?.();
+          this.multiStarted = false;
+          this.matchArmed = false;
+          this.netplayWiring = null;
+          this._forceMenu();
+        }
+        // 最佳努力等原生主菜单：等不到也回 presented=true —— 这时玩家看到的是
+        // BRO 自己的加载/菜单画面（不是启动器的 overlay），不该算准备失败。
+        const menu = await this._waitForStage('menu', 20000);
+        this.roomPreviewed = true;
+        this.matchArmed = false;
+        return { ok: true, presented: true, menu };
+      });
+    return { deferred, response: { ok: true } };
+  }
+
+  /** return-room：对局结束后把画面交回原生主菜单（BRO 没有单独的标题界面，
+   *  主菜单就是 stage menu，见 game/THlib/UI/title.lua:3）。 */
+  _cmdReturnRoom() {
+    const hook = this.returnRoomHook;
+    const deferred = Promise.resolve()
+      .then(() => (typeof hook === 'function' ? hook() : this._forceMenu()))
+      .then(async () => {
+        const menu = await this._waitForStage('menu', 15000);
+        this.previewMode = true;
+        this.roomPreviewed = true;
+        this.matchArmed = false;
+        return { ok: true, presented: true, menu };
+      });
+    return { deferred, response: { ok: true } };
+  }
+
+  /** 只 boot 一次：prepare-room 与随后的 launch 共享同一个 boot promise。 */
+  _bootOnce(hook) {
+    if (!this.bootPromise) {
+      this.bootPromise = Promise.resolve()
+        .then(() => hook())
+        .catch((error) => { this.bootPromise = null; throw error; });
+    }
+    return this.bootPromise;
+  }
+
+  /** 让 Lua 回原生主菜单（stage.Set 见 game/THlib/ext/ext_replay.lua:113）。 */
+  _forceMenu() {
+    if (typeof this.ccall !== 'function') return false;
+    try {
+      this.ccall('bro_eval', 'string', ['string'], ["stage.Set('none','menu') return 'true'"]);
+      return true;
+    } catch { return false; }
+  }
+
+  /** 读 Lua 当前场景名（'menu' 即原生主菜单）。 */
+  _stageName() {
+    if (typeof this.ccall !== 'function') return '';
+    try {
+      const name = this.ccall('bro_eval', 'string', ['string'],
+        ['return tostring(stage.current_stage and stage.current_stage.stage_name or "")']);
+      return typeof name === 'string' ? name : '';
+    } catch { return ''; }
+  }
+
+  async _waitForStage(name, timeoutMs) {
+    const deadline = Date.now() + (Number.isFinite(timeoutMs) ? timeoutMs : 20000);
+    while (Date.now() < deadline) {
+      if (this._stageName() === name) return true;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return false;
+  }
+
+  /**
+   * 帧循环每 ~500ms 调一次。只有「本局确实离开过主菜单」之后又看到 menu，
+   * 才认定玩家中途退回了主菜单：startMatch 下发到 Lua 真正切场景之间会短暂
+   * 仍停在 menu，不能一看到 menu 就报退出。
+   */
+  observeStage(stageName) {
+    const name = stageName === undefined || stageName === null ? '' : String(stageName);
+    if (!name) return false;
+    if (!this.multiStarted) { this.matchArmed = false; return false; }
+    if (name !== 'menu') { this.matchArmed = true; return false; }
+    if (!this.matchArmed) return false;
+    return this.noteReturnedToMenu();
+  }
+
+  /**
+   * 玩家在本机回到了原生主菜单：房间必须收到信号，否则启动器一直以为
+   * runtime 还在对局里（launched=true + 座位仍占用），下一次「开始游戏」在
+   * launchRoom 的 `phase !== 'prepared'` 断言处抛 room.resourcesUnavailable
+   * （browser-session.ts:904-960）。这里复用「游戏内退出」的 exit 事件，
+   * launcher 的 leaveRoom 判定（returnToMenu && 联机产品）会释放座位、
+   * 回房间待准备态，从而允许重新开局。
+   */
+  noteReturnedToMenu() {
+    if (this.reportedMenuReturn) return false;
+    this.reportedMenuReturn = true;
+    this.multiStarted = false;
+    this.matchArmed = false;
+    this.previewMode = false;
+    this.roomPreviewed = true;
+    this.netplayWiring = null;
+    try { this.multi?.reset?.(); } catch { /* 门面已失效不影响上报 */ }
+    this._emit('exit', { status: 'success', code: 0, returnToMenu: true });
+    return true;
+  }
+
+  /**
+   * 复用已建链路再开一局：BRO_net_reset 重置对局状态（保留 playerCount），
+   * 再 BRO_net_start_match 重入关卡。**不能**重走 connect/startNet ——
+   * netcode.mjs:288 的 start() 会关掉并重建 RTCPeerConnection，等于重新协商。
+   * 返回 null 表示还没有链路，调用方应走首局路径。
+   */
+  startRematch() {
+    const multi = this.multi;
+    if (!multi || !multi.net) return null;
+    const np = this.netplay || {};
+    try {
+      if (typeof multi.reset === 'function') multi.reset();
+      this.multiStarted = false;
+      this.matchArmed = false;
+      this.applyNetplaySlots();
+      if (typeof multi.startMatch === 'function') multi.startMatch(undefined, np.seed ?? undefined);
+      if (typeof multi.sendReady === 'function') multi.sendReady(true);
+      this.multiStarted = true;
+      this.netplayWiring = { attempted: true, ok: true, reason: 'rematch', connectError: this.netplayConnectError || null };
+      this._emit('runtime-info', { netplay: this._netplaySummary() });
+      return this._netplaySummary();
+    } catch (error) {
+      this.netplayWiring = { attempted: true, ok: false, reason: 'rematch-error', error: String(error && error.message || error) };
+      this._emit('runtime-info', { netplay: this._netplaySummary() });
+      return null;
     }
   }
 
@@ -959,6 +1144,9 @@ export class EaglerRuntimeAdapter {
   }
 
   _cmdKeyboard(p) {
+    // #37：房间预览阶段（prepare-room 之后、launch 之前）不接受按键，与其它
+    // 游戏的「原生标题界面」契约一致：否则玩家在房间里点一下就可能开出单机局。
+    if (this.previewMode) return { response: { ok: true, ignored: 'preview' } };
     const down = p.down === true || p.down === 1;
     const vk = codeToVk(p.code);
     if (vk === null) return { response: { ok: false, reason: 'unknown-code' } };
@@ -1118,15 +1306,44 @@ export class EaglerRuntimeAdapter {
     // 阶段 3AZ：联机 match 不再在这里发起——此时 WASM 还没 boot，
     // BRO_net_start_match 无处可落。真正的建链+开局在 runtime_entry 进关之后
     // 调 startNetplayIfConfigured()（Lua 表与 init_player_data 都已就绪）。
+    // #37：预览过 / 本页第 2+ 次 launch 时，boot 已经在 prepare-room 或上一局
+    // 完成，launchHook 立刻返回、startBRO 也不会再跑一次 startNetplayIfConfigured
+    // （它由 runtime_entry 只在 boot 后调一次），所以必须在这里补一次开局：
+    // 有链路就 startRematch()（重置对局、复用链路），没有链路才走首局路径。
     const serial = this.launchSerial;
+    const needsMatch = this.roomPreviewed || this.launchCount > 0;
+    this.launchCount++;
+    this.reportedMenuReturn = false;
     if (this.launchHook) {
       // runtime 入口在这里才真正 boot/接主循环；必须等启动完再回 launch 响应。
       const deferred = Promise.resolve()
-        .then(() => this.launchHook())
-        .then(() => ({ ok: true, launchSerial: serial }));
+        .then(() => this._bootOnce(this.launchHook))
+        .then(async () => {
+          this.previewMode = false;
+          if (needsMatch) await this._wireMatchForLaunch();
+          return { ok: true, launchSerial: serial };
+        });
       return { deferred, response: { ok: true, launchSerial: serial } };
     }
+    if (needsMatch) void this._wireMatchForLaunch();
     return { response: { ok: true, launchSerial: serial } };
+  }
+
+  /**
+   * launch 之后的联机接线（#37）：
+   *  - 联机房间：有链路就 startRematch()（复用链路、只重置对局），没有链路走首局建链；
+   *  - 非联机（含房间的「检查游戏」预检）：必须清掉上一局的 multiStarted，
+   *    否则帧循环会继续走联机分支，而这一局其实没有 netplay 配置。
+   */
+  async _wireMatchForLaunch() {
+    const np = this.netplay || {};
+    if (np.mode !== 'lan' || !np.url) {
+      this.multiStarted = false;
+      this.matchArmed = false;
+      return this.startNetplayIfConfigured();   // 记录 no-netplay 诊断，不再误走联机分支
+    }
+    if (this.startRematch()) return this._netplaySummary();
+    return this.startNetplayIfConfigured();
   }
 
   /** eagler 的 listing()（files.ts）要求 files 为 {path,size} 对象数组；
