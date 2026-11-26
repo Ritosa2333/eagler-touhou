@@ -313,10 +313,14 @@ async function handleRequest(request, response) {
       "Last-Modified": info.mtime.toUTCString(),
       Vary: "Accept-Encoding",
     };
-    // An App Shell served by the worker enforces require-corp. Live Runtime
-    // documents bypass the worker cache and must opt in on their HTTP response.
-    if (commonHeaders["Content-Type"].startsWith("text/html")) {
+    // Live documents and module workers must match the App Shell's isolation
+    // policy. Serve the same headers for scripts and worker entry requests so
+    // preload and revalidation can share the response.
+    const documentResponse = commonHeaders["Content-Type"].startsWith("text/html");
+    if (documentResponse) {
       commonHeaders["Cross-Origin-Opener-Policy"] = "same-origin";
+    }
+    if (documentResponse || commonHeaders["Content-Type"].startsWith("text/javascript")) {
       commonHeaders["Cross-Origin-Embedder-Policy"] = "require-corp";
       commonHeaders["Cross-Origin-Resource-Policy"] = "same-origin";
     }

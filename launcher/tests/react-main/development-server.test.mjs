@@ -97,13 +97,19 @@ test('source server resolves workspace URLs consistently from a nested Launcher 
   } finally {await server.stop();}
 });
 
-test('source Runtime HTML uses the same isolation policy as the cached Launcher', async () => {
-  const fixture = resolve(work, 'workspace-runtime.html');
-  await writeFile(fixture, '<!doctype html><title>Runtime</title>');
-  const path = relative(workspaceRoot(), fixture).replaceAll('\\', '/');
+test('source Runtime documents and module workers use the same isolation policy as the cached Launcher', async () => {
+  const fixtures = await Promise.all([
+    ['workspace-runtime.html', '<!doctype html><title>Runtime</title>'],
+    ['workspace-worker.mjs', 'export {};'],
+  ].map(async ([name, body]) => {
+    const fixture = resolve(work, name);
+    await writeFile(fixture, body);
+    return '/' + relative(workspaceRoot(), fixture).replaceAll('\\', '/') + '?hosted=1';
+  }));
   const server = await start();
   try {
-    for (const url of [server.base + '/', server.base + '/' + path + '?hosted=1']) {
+    for (const path of ['/', ...fixtures]) {
+      const url = server.base + path;
       const response = await fetch(url);
       assert.equal(response.status, 200);
       const tag = response.headers.get('etag');
@@ -111,7 +117,7 @@ test('source Runtime HTML uses the same isolation policy as the cached Launcher'
       const revalidated = await fetch(url, {headers: {'If-None-Match': tag}});
       assert.equal(revalidated.status, 304);
       for (const result of [response, revalidated]) {
-        assert.equal(result.headers.get('Cross-Origin-Opener-Policy'), 'same-origin');
+        if (!path.includes('.mjs')) assert.equal(result.headers.get('Cross-Origin-Opener-Policy'), 'same-origin');
         assert.equal(result.headers.get('Cross-Origin-Embedder-Policy'), 'require-corp');
         assert.equal(result.headers.get('Cross-Origin-Resource-Policy'), 'same-origin');
       }
