@@ -105,7 +105,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
     action: state.connection === 'loading' || (state.connection === 'live' && !!state.mine) ? undefined : {label: state.connection === 'live' && filtering ? (t('directory.clearFilters')) : t(state.connection === 'live' ? 'lobby.create' : 'lobby.retry'), onClick: () => {if (state.connection !== 'live') service.retry(); else if (filtering) {beginFilterReorder(); setRoomFilter(defaultDirectoryRoomFilters); if (surface.onProductFiltersChange) surface.onProductFiltersChange([]); else surface.onSelect('');} else onOpenForm('create');}},
   };
   return <LobbySurface {...surface} selectedProduct={surface.viewingProduct || state.selectedProduct} connectionWarning={warning} membership={membership} notice={state.notice} roomTools={roomTools} roomFilters={roomFilters} onReplay={onReplay}
-    roomList={<DirectoryRoomRows snapshot={rows} service={service} assetUrl={assetUrl} ratings={players} myRating={mine} cards={cards} initialRows={initialRows} arrivals={arrivals} exiting={exitingKeys}/>}
+    roomList={<DirectoryRoomRows snapshot={rows} service={service} ratings={players} myRating={mine} cards={cards} initialRows={initialRows} arrivals={arrivals} exiting={exitingKeys}/>}
     hasRooms={!!rows.visibleRooms.length} loading={state.loading} emptyState={rows.visibleRooms.length ? null : empty} roomCount={state.loading && !state.visibleRooms.length ? '' : t('lobby.roomCount', {count: state.visibleRooms.length})}
     viewingProduct={surface.viewingProduct} roomUsersArtwork={assetUrl('assets/room-users.svg')}/>;
 }

@@ -57,7 +57,7 @@ for(const locale of ['zh-CN','en']) for(const product of ['th09mp','th06mp']) {
         h(owners.RoomPersonal,{state,service,assetUrl:x=>x,hidden:false,th09NetworkOverlayOpen:false}),
         h(owners.RoomGameSettings,{state,service,hidden:false}),
         h(owners.DirectoryRoomDialog,{service:directory,assetUrl:x=>x,open:true,onCloseRequest(){}}),
-        h(owners.DirectoryRoomRows,{snapshot,service:directory,assetUrl:x=>x}),
+        h(owners.DirectoryRoomRows,{snapshot,service:directory}),
       ))));
       const q=selector=>{const node=container.querySelector(selector);assert.ok(node,selector);return node;};
       assert.equal(container.querySelectorAll('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,native?0:4);

@@ -28,7 +28,6 @@ import './directory-room-list.css';
 export interface DirectoryRoomRowsProps {
   snapshot: DirectorySnapshot;
   service: LobbyDirectoryService;
-  assetUrl(path: string): string;
   /** Rows created during main's first visual gate permanently skip arrival motion. */
   initialRows?: boolean;
   arrivals?: ReadonlySet<string>;
@@ -41,7 +40,6 @@ export interface DirectoryRoomRowsProps {
 export function DirectoryRoomRows({
   snapshot,
   service,
-  assetUrl,
   initialRows = false,
   arrivals,
   exiting,
@@ -59,7 +57,6 @@ export function DirectoryRoomRows({
             service={service}
             ratings={ratings}
             myRating={myRating}
-            assetUrl={assetUrl}
             initial={initialRows}
             arriving={arrivals?.has(`${room.product}-${room.code}`) ?? false}
             exiting={exiting?.has(`${room.product}-${room.code}`) ?? false}
@@ -73,7 +70,6 @@ function RoomRow({
   room,
   snapshot,
   service,
-  assetUrl,
   initial,
   arriving,
   exiting,
@@ -83,7 +79,6 @@ function RoomRow({
   room: DirectoryRoom;
   snapshot: DirectorySnapshot;
   service: LobbyDirectoryService;
-  assetUrl(path: string): string;
   initial: boolean;
   arriving: boolean;
   exiting: boolean;
@@ -93,8 +88,9 @@ function RoomRow({
   const { t, locale } = useLocale(),
     initiallyHiddenMotion = useRef(initial).current;
   const [coverFailed, setCoverFailed] = useState(false);
-  const meta = PRODUCT_GAMES[gameIdForProduct(room.product)];
-  const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
+  const gameId = gameIdForProduct(room.product);
+  const meta = PRODUCT_GAMES[gameId];
+  const artwork = bookGameArtwork(gameId);
   const title = meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
   const duel = room.product === 'th03mp' || room.product === 'th075mp' || room.product === 'th09mp' || room.product === 'th19mp';
@@ -160,10 +156,10 @@ function RoomRow({
             alt=""
             loading="lazy"
             decoding="async"
-            hidden={!artwork || coverFailed}
+            hidden={coverFailed}
             onError={() => setCoverFailed(true)}
           />
-          {(!artwork || coverFailed) && <span className="lobby-cover-number">{meta.number}</span>}
+          {coverFailed && <span className="lobby-cover-number">{meta.number}</span>}
         </span>
         <div className="lobby-room-title">
           <h2><span className="lobby-work-name" title={title}>{title}</span>{difficulty && <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()}>{difficulty}</span>}</h2>

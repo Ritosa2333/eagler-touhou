@@ -42,6 +42,7 @@ before(async () => {
     export * from './app/services/lobby-directory.ts';
     export * from './app/i18n.tsx';
     export * from './app/navigation/surface-navigation.tsx';
+    export * from './app/components/launcher/BookRailGameIdentity.tsx';
     export * from './app/components/launcher/products.ts';
     export * from './src/contracts/product-catalog.mts';
     export * from './src/launcher/room-invite.mts';
@@ -190,7 +191,7 @@ function expectedDialog(f, locale) {
 
 for (const locale of ['zh-CN', 'en']) test(`Original cooperative list shows room identity, difficulty, seats and join action: ${locale}`, async () => {
   const f = await fixture({locale}).live([room({challengeMode:true,publicNames:true,spectators:3,seats:[{initial:'A',name:'Alice',loadout:1,online:true,ready:true},null]})]);
-  const snapshot=f.service.getSnapshot();await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true},{locale});
+  const snapshot=f.service.getSnapshot();await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,initialRows:true},{locale});
   assert.equal(n('.lobby-room-code').textContent,'#1234');
   assert.equal(n('.lobby-difficulty').textContent,'Normal');
   assert.equal(n('.lobby-room-rules').textContent,t(locale,'room.challengeMode'));
@@ -207,7 +208,7 @@ for (const locale of ['zh-CN', 'en']) test(`Original cooperative list shows room
 });
 
 test('List rows retain keyed identity and creation-time motion across reorder', async () => {
-  const f=await fixture().live([room()]), m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl,initialRows:true});
+  const f=await fixture().live([room()]), m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,initialRows:true});
   const original=n('.lobby-room-row');
   await f.receive([room({code:'5678'}),room({difficulty:3})]);await m.update({snapshot:f.service.getSnapshot(),initialRows:false});
   assert.equal(all('.lobby-room-row')[1],original);
@@ -250,11 +251,11 @@ test('Offline directory keeps Replay out of room tools and preserves its state',
 
 test('Rows enforce live/recruiting/joinable/membership/leaving gates and use the latest service room', async () => {
   for (const patch of [{joinable: false}]) {
-    const f = await fixture().live([room(patch)]); const m = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service, assetUrl});
+    const f = await fixture().live([room(patch)]); const m = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service});
     assert.equal(n('.lobby-join').disabled, true); await click('.lobby-join'); assert.equal(f.navigations.length, 0); await m.unmount();
   }
   const f = await fixture().live([room()], {mine: {product: 'th07mp', code: '7777', recoveryToken: 'membership-token'}});
-  const m = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service, assetUrl});
+  const m = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service});
   assert.equal(n('.lobby-join').title, t('en', 'lobby.conflict')); assert.equal(n('.lobby-join').disabled, true);
   await f.receive([room()]); await m.update({snapshot: f.service.getSnapshot()}); assert.equal(n('.lobby-join').disabled, false);
   await f.receive([room({joinable: false})]); // Deliberately do not update snapshot: service must reject stale enabled UI.
@@ -268,7 +269,7 @@ test('Rows enforce live/recruiting/joinable/membership/leaving gates and use the
 for (const product of spectatorProducts) test(`Full waiting room enters the spectator role through the directory: ${product}`, async () => {
   const f=await fixture({selectedProduct:product,host:{games:[product.slice(0,-2)]}}).live([
     room({product,capacity:2,players:2,joinable:false,seats:[{initial:'A',online:true},{initial:'B',online:true}]})]);
-  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service});
   const entry = '.lobby-join';
   assert.equal(n(entry).disabled,false);
 
@@ -283,7 +284,7 @@ for (const product of spectatorProducts) test(`Full waiting room enters the spec
 test('Running cooperative room admits an observer even when its engine must wait for the next run',async()=>{
   for(const spectatable of [false,true]){
     const f=await fixture().live([room({phase:'playing',joinable:false,spectatable})]);
-    const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+    const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service});
     assert.equal(n('.lobby-join').disabled,false);await click('.lobby-join');assert.equal(f.navigations.length,1);
     assert.equal(owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j')).s,true);
     await m.unmount();
@@ -293,7 +294,7 @@ test('Running cooperative room admits an observer even when its engine must wait
 test('versus rooms show elapsed waiting time and become long-wait at fifteen minutes', async () => {
   const f=await fixture({selectedProduct:'th09mp',host:{games:['th09']}}).live([room({product:'th09mp',capacity:2,seats:[{initial:'A',online:true},null],createdAt:Date.now()-14*60_000})]);
   assert.ok(f.service.getSnapshot().visibleRooms[0].createdAt);
-  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service});
   assert.match(n('.lobby-room-duration').textContent,/Waiting 14:/);
   assert.equal(n('.lobby-room-state').textContent,t('en','lobby.recruiting'));
   await f.receive([room({product:'th09mp',capacity:2,seats:[{initial:'A',online:true},null],createdAt:Date.now()-15*60_000})]);
@@ -672,7 +673,7 @@ test('Actual navigation owner Back closes form once without entering a room; For
 });
 for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) test(`Room cards show recruiting/full before start and time only during play: ${locale} ${product}`, async()=>{
   const f=await fixture({locale,selectedProduct:product}).live();
-  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale});
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service},{locale});
   const seats=[{initial:'A',online:true,ready:false},null];
   for(const [phase,players,key] of [['lobby',1,'lobby.recruiting'],['lobby',2,'lobby.roomFull'],['playing',2,null],['lobby',1,'lobby.recruiting']]){
     await f.receive([room({product,capacity:2,players,phase,startedAt:Date.now()-65000,seats:players===1?seats:[seats[0],{initial:'B',online:true,ready:false}]})]);
@@ -688,7 +689,7 @@ for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) 
 
 for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product uses room metadata and native game policy: ${locale}`, async () => {
   const f = await fixture({locale, host: {games: Object.keys(owners.PRODUCT_GAMES)}}).live();
-  const rowsMount = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service, assetUrl}, {locale});
+  const rowsMount = await mount(owners.DirectoryRoomRows, {snapshot: f.service.getSnapshot(), service: f.service}, {locale});
   for (const product of f.service.getSnapshot().products) {
     await React.act(async () => f.service.selectProduct(product));
     await f.receive([room({product, capacity: 2, seats: [{initial: 'A', online: false, ready: true}, null]})]);
@@ -787,6 +788,36 @@ test('Unmount discards only its submitted receipt before a later dialog can clos
   f.service.formDidClose(); assert.equal(f.navigations.length, 0);
 });
 
+test('Lobby game filters, room cards and create picker reuse the single-player covers', async () => {
+  const games = ['th13', 'th14', 'th17'], products = games.map(game => game+'mp');
+  const f = await fixture({selectedProduct: '', clientSideFiltering: true, host: {games}}).live(
+    products.map((product, index) => room({product, code: String(1200 + index), capacity: 2, seats: [{initial: 'A', online: true}, null]})),
+  );
+  const libraryProducts = ids => owners.createLibraryProducts(ids, assetUrl, id => `?game=${id}`);
+  const singlePlayerCovers = new Map();
+  for (const product of libraryProducts(games)) {
+    const {container} = await mount(owners.BookRailGameIdentity, {product});
+    singlePlayerCovers.set(product.gameId, n('.book-category-game-cover img', container).getAttribute('src'));
+  }
+  await mountLobby(f, {products: libraryProducts(products)});
+  const sources = (product, index) => [
+    `[data-lobby-rail-product="${product}"] .book-category-game-cover img`,
+    `[data-lobby-icon="${product}"] .book-lobby-cover img`,
+    `[data-key="${product}-${1200 + index}"] .lobby-cover img`,
+  ];
+  for (const [index, product] of products.entries()) {
+    for (const selector of sources(product, index)) {
+      assert.ok(n(selector).getAttribute('src') === singlePlayerCovers.get(games[index]), `${selector} uses the single-player cover`);
+    }
+  }
+  await mountDialog(f);
+  await click('#gameSelect-trigger');
+  for (const [index, product] of products.entries()) {
+    const pickerCover = n(`[data-product-choice="${product}"] .book-lobby-cover img`);
+    assert.ok(pickerCover.getAttribute('src') === singlePlayerCovers.get(games[index]), `${product} picker uses the single-player cover`);
+  }
+});
+
 test('Local game filtering returns to all rooms without a loading request', async () => {
   const f = await fixture({selectedProduct: '', clientSideFiltering: true}).live([
     room({product: 'th06mp', code: '1234'}), room({product: 'th07mp', code: '2345'}),
@@ -861,21 +892,21 @@ for (const product of ['th06mp','th09mp']) test(`Approved public names remain co
   const f=await fixture({selectedProduct:product}).live([room({product,publicNames:true,capacity:2,seats:names.map(name=>({initial:name[0],name,online:true}))})]);
   const snapshot=f.service.getSnapshot();
   assert.deepEqual(snapshot.visibleRooms[0].seats.map(seat=>seat.name),names);
-  await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true});
+  await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,initialRows:true});
   assert.deepEqual(all('.lobby-seat-name').map(node=>node.textContent),names);
 });
 
 for (const product of ['th06mp','th09mp']) test(`Approved P1/P2 names are public names, not placeholders (${product})`,async()=>{
   const names=['P1','P2'];
   const f=await fixture({selectedProduct:product}).live([room({product,publicNames:true,capacity:2,seats:names.map(name=>({initial:name[0],name,online:true,controlMode:'normal'}))})]);
-  await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service});
   assert.deepEqual(all('.lobby-seat-name').map(node=>node.textContent),names);
   assert.equal(all('.lobby-seat-control').length,2);
 });
 
 test('Legacy duel names use the machine label, then initial, and describe empty seats',async()=>{
   const f=await fixture({selectedProduct:'th09mp'}).live([room({product:'th09mp',capacity:2,seats:[{initial:'花',machineSign:'',online:true},null]})]);
-  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service});
   assert.deepEqual(all('.lobby-seat-name').map(node=>node.textContent),['花',t('en','th09.waitingPlayer')]);
   await f.receive([room({product:'th09mp',capacity:2,seats:[{initial:'花',machineSign:'Reimu',online:true},null]})]);
   await m.update({snapshot:f.service.getSnapshot()});
@@ -885,7 +916,7 @@ test('Legacy duel names use the machine label, then initial, and describe empty 
 test('TH19 directory preserves and updates whole-match scores received from relay', async () => {
   const row = wins => room({product:'th19mp',capacity:2,players:2,seats:wins.map((win,index)=>({initial:String(index),online:true,stats:{wins:win,losses:0,minutes:8}}))});
   const f = await fixture({selectedProduct:'th19mp',host:{games:['th19']}}).live([row([0,0])]);
-  const m = await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
+  const m = await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service});
   assert.equal(n('.book-room-score-value').textContent,'0 : 0');
   for (const wins of [[1,0],[1,1],[1,2]]) {
     await f.receive([row(wins)]);
@@ -915,7 +946,7 @@ test('TH03 lobby updates the same duel row from VS to live scores and retains sp
 
 test('Flower View keeps Japanese identity, score, shared facts and one contextual entry', async () => {
   const f = await fixture({selectedProduct:'th09mp',locale:'zh-CN'}).live([room({product:'th09mp',capacity:2,phase:'playing',startedAt:Date.now()-65000,players:2,joinable:false,seats:[{initial:'A',online:true,stats:{wins:3,losses:2,minutes:7}},{initial:'B',online:true,stats:{wins:5,losses:1,minutes:8}}]})]);
-  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service},{locale:'zh-CN'});
   assert.equal(n('.lobby-room-title h2').textContent,'東方花映塚');
   assert.equal(env.document.querySelector('.lobby-room-subtitle'),null);
   assert.equal(n('.book-room-score-value').textContent,'3 : 5');
@@ -931,14 +962,14 @@ test('Flower View keeps Japanese identity, score, shared facts and one contextua
 
 test('TH01 directory marks ball counts other than two as special',async()=>{
   const f=await fixture({selectedProduct:'th01mp',locale:'zh-CN',host:{games:['th01']}}).live([room({product:'th01mp',ballCount:6})]);
-  await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service},{locale:'zh-CN'});
   assert.equal(n('.lobby-room-rules').textContent,'6 球');
 });
 
 
 test('TH02 rooms mark disabled focus as a special rule',async()=>{
   const f=await fixture({selectedProduct:'th02mp',locale:'zh-CN',host:{games:['th02']}}).live([room({product:'th02mp',disableFocus:true})]);
-  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service},{locale:'zh-CN'});
   assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','room.th02SpecialFocus'));
   await f.receive([room({product:'th02mp',disableFocus:false})]);await m.update({snapshot:f.service.getSnapshot()});
   assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','directory.regularRules'));
