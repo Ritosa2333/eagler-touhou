@@ -337,7 +337,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
 
     const player = {key:deliverKey, unlock:unlockAudio, stop, sync:() => sync(false),
         coopInputs:(...seats)=>wasm._soew_full_coop_inputs(...seats),
-        health:() => ({frames,gameFrame:ticks,audio:{state:audio?.state ?? 'suspended'}})};
+        health:() => ({frames,gameFrame:localCoop?wasm._soew_full_coop_frame():ticks,audio:{state:audio?.state ?? 'suspended'}})};
     function frame() {
         if (stopped) return;
         beforeFrame?.(player);

@@ -24,6 +24,27 @@ try {
     });
   });
   await page.goto(url.href);
+  await page.evaluate(async()=>{
+    // Native saves are shared with solo. Keep one deliberately slow preset
+    // and force-focus enabled to exercise the boundary from real settings.
+    const db=await new Promise((resolve,reject)=>{
+      const request=indexedDB.open('/soew/save',21);
+      request.onupgradeneeded=()=>request.result.createObjectStore('FILE_DATA').createIndex('timestamp','timestamp');
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error);
+    });
+    try{
+      await new Promise((resolve,reject)=>{
+        const transaction=db.transaction('FILE_DATA','readwrite');
+        transaction.objectStore('FILE_DATA').put({
+          timestamp:new Date(),mode:0o100666,
+          contents:new TextEncoder().encode(JSON.stringify({version:2,practice_speed_preset:1,practice_flags:16})),
+        },'/soew/save/soew-settings.json');
+        transaction.oncomplete=resolve;
+        transaction.onerror=()=>reject(transaction.error);
+      });
+    }finally{db.close();}
+  });
   await page.waitForFunction(()=>window.__eaglerBoot?.done===true,{timeout:45000});
   if(await page.$('meta[name="eagler-react-app-shell"]')){
     // A warm App Shell enforces its embedder policy on live Runtime HTML.
@@ -78,6 +99,9 @@ try {
       }
       return true;
     },{timeout:5000},count);
+    await page.keyboard.press('F12');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('F1');
 
     const positions=()=>frame.evaluate(()=>{
       const c=document.querySelector('canvas'),ctx=c.getContext('2d'),scale=c.width/640;
@@ -109,6 +133,10 @@ try {
     const moved=await positions();
     assert(moved[0]>original[0]+26,JSON.stringify({original,moved}));
     if(count===3)assert(moved[1]!==null&&moved[1]<original[1]-20,JSON.stringify({original,moved}));
+    await frame.waitForFunction(()=>document.querySelector('#pc98-game-fps')?.textContent==='FPS: 56',{timeout:8000});
+    const rates=await page.evaluate(()=>runtimeEvents.filter(e=>e.event==='frame-health').slice(-3).map(e=>e.fps));
+    assert(rates.some(rate=>rate>=54&&rate<=58),JSON.stringify(rates));
+    console.log('PASS TH02 '+count+' seats: locked 56 Hz after practice hotkeys, present samples '+rates.map(rate=>rate.toFixed(1)).join(', '));
     if(count===3&&process.argv.includes('--boss-gauge')){
       await frame.waitForFunction(count=>{
         const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');

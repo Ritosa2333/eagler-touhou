@@ -17,6 +17,8 @@ node ports/th02/scripts/build-eagler.mjs --assets=<DOS资源目录> --native-bui
 
 浏览器验收：`node ports/th02/tests/launcher-native-browser.mjs`。
 
+原生本机合作走 TH02 的 PC-98 固定节拍（约 56.4 Hz），每个节拍推进一个逻辑帧。单人的 F12、退格辅助和已保存的练习调速不参与多人运行。此节拍用于原生本机合作；在线房间继续使用现有同步内核。
+
 在 monorepo 根目录运行：
 
 ```powershell

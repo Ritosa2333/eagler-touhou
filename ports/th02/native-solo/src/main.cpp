@@ -1132,6 +1132,7 @@ struct App {
     std::optional<soew::LocalCoopConfig> local_coop;
     std::array<std::uint16_t,3> local_coop_input{};
     std::array<soew::ShotInput,3> local_coop_fire;
+    unsigned local_coop_ticks=0;
     RecordedHostTiming recording_timing;
     std::unique_ptr<soew::HostPerf> host_perf;
     HostTimingSample pending_replay_timing{};
@@ -1427,7 +1428,7 @@ using DemoOutcome=soew::TitleDemoOutcome;
 
 bool title_demo_active(const App &app){return app.title_demo&&app.title_demo->controller.phase()!=DemoPhase::Idle;}
 bool live_assist_controls(const App &app){
-    return app.stage_scene&&!app.replay_playback&&!title_demo_active(app)&&!app.stage_scene->paused&&
+    return !app.local_coop&&app.stage_scene&&!app.replay_playback&&!title_demo_active(app)&&!app.stage_scene->paused&&
         !app.stage_scene->life.game_over&&!app.stage_scene->continue_prompt()&&!app.stage_scene->extra_settlement.terminal()&&
         !app.stage_scene->extra_settlement.showing_bonus()&&!app.stage_scene->stage5_result&&
         !app.stage_intro.active()&&!app.ending_player&&app.score_review==App::ScoreReview::None&&!app.score_release&&
@@ -1435,7 +1436,7 @@ bool live_assist_controls(const App &app){
         !app.practice_builder&&!app.practice_load&&!app.practice_audio_load&&!app.replay_menu.active();
 }
 bool practice_tools_available(const App &app){
-    if(app.practice_builder||app.practice_load||app.practice_audio_load||app.replay_menu.active()||app.replay_seek)return false;
+    if(app.local_coop||app.practice_builder||app.practice_load||app.practice_audio_load||app.replay_menu.active()||app.replay_seek)return false;
     if(app.page_transition.active()||app.about_visible)return false;
     const bool title=app.menu_visible&&!app.stage_scene&&!app.opening.active&&!app.zunsoft.active()&&
         !app.menu.music_room&&!app.scores_visible&&!app.ending_player&&!app.replay_playback&&
@@ -2789,7 +2790,7 @@ void caption(HWND hwnd, const App &app) {
     if(!app.notice.empty())title+=L" | "+app.notice;
     if(const auto status=app.audio_status(lang);*status)title+=L" | "+std::wstring(status);
     if(!app.settings_warning.empty())title+=L" | "+soew::settings_warning_text(lang,app.settings_warning);
-    title+=app.tr(L" | F2：画面比率　F8：リプレイ",L" | F2: aspect   F8: Open Replay",L" | F2：画面比例  F8：打开录像",L" | F2：畫面比例  F8：開啟錄影");
+    if(!app.local_coop)title+=app.tr(L" | F2：画面比率　F8：リプレイ",L" | F2: aspect   F8: Open Replay",L" | F2：画面比例  F8：打开录像",L" | F2：畫面比例  F8：開啟錄影");
     SetWindowTextW(hwnd,title.c_str());
 }
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
@@ -3283,7 +3284,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
         RECT client{}; GetClientRect(hwnd, &client);
         if(app->display_frames_active){
             if(!app->paced_paint_due){
-                app->presenter.repaint(dc,client.right,client.bottom);
+                if(!app->local_coop)app->presenter.repaint(dc,client.right,client.bottom);
                 EndPaint(hwnd,&ps);return 0;
             }
             app->paced_paint_due=false;
@@ -3746,10 +3747,12 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                     }
                     app->practice_retry_release=false;
                 }
-                const auto pace=app->stage_scene->presentation_slowdown();
+                const bool coop=app->local_coop.has_value();
+                const auto pace=coop?1u:app->stage_scene->presentation_slowdown();
                 const auto &advanced=app->practice_tools.options;
-                const unsigned speed_num=app->replay_playback?1:advanced.rate_num();
-                const unsigned speed_den=app->replay_playback?1:advanced.rate_den();
+                const bool custom_speed=!coop&&!app->replay_playback;
+                const unsigned speed_num=custom_speed?advanced.rate_num():1;
+                const unsigned speed_den=custom_speed?advanced.rate_den():1;
                 const bool timing_active=enabled&&app->recorder&&!app->replay_playback&&!app->stage_scene->paused&&
                     !app->stage_entry_release&&!app->ending_player&&!app->stage_scene->life.game_over&&
                     !app->stage_scene->transition.active()&&!app->stage_scene->dialogue.active()&&
@@ -3821,7 +3824,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             app->mima_dialogue_tap.reset(z_held);
                             fast=app->dialogue_hold.poll(now,!app->stage_entry_release&&z_held&&app->stage_scene->dialogue.active());
                         }
-                        input=advanced.filter(input,gameplay);
+                        if(!coop)input=advanced.filter(input,gameplay);
                         if(app->local_coop){
                             auto &coop=*app->stage_scene->coop;
                             const auto mode=shot_mode(*app);
@@ -3859,11 +3862,12 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             }
                         }else{
                             step=app->replay_session->tick(*app->stage_scene,soew::normalize_replay_tick(input,group,fast));
+                            if(coop&&step.consumed_tick)++app->local_coop_ticks;
                             if(app->recorder&&step.consumed_tick&&(!app->recorder->record(step.event)||(step.stage_advanced&&!app->recorder->next_stage())))app->recorder.reset();
                             finalize_replay(*app);
                         }
                         if(step.stage_advanced)app->lock_timer_frames=0;
-                        else if(app->stage_scene->ticks!=prior_tick&&gameplay)update_practice_lock_timer(*app);
+                        else if(!coop&&app->stage_scene->ticks!=prior_tick&&gameplay)update_practice_lock_timer(*app);
                     }
                     if(step.status==soew::ReplayStepStatus::Failed){
                         app->stage_scene->invalidate_hitboxes();
@@ -3891,7 +3895,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                         InvalidateRect(hwnd,nullptr,FALSE);UpdateWindow(hwnd);
                         app->stage_clock.defer_batch(now);break;
                     }
-                    if(app->stage_scene->presentation_slowdown()!=pace){
+                    if(!coop&&app->stage_scene->presentation_slowdown()!=pace){
                         app->stage_clock.defer_batch(now);break;
                     }
                 }
@@ -4554,7 +4558,8 @@ bool locked_display_active(HWND hwnd,const App &app){
     if(app.smoke||app.timed_test||app.score_timed_test||app.async_practice_test||app.retry_probe.mode>=0||
        !app.focused||app.minimized||app.resizing||app.practice_tools.open||GetForegroundWindow()!=hwnd)return false;
     if(app.stage_scene)return !app.stage_intro.active()&&!app.ending_player&&!app.replay_menu.active()&&
-        !app.practice_retry&&!app.score_release&&app.score_review==App::ScoreReview::None&&app.stage_scene->motion_active();
+        !app.practice_retry&&!app.score_release&&app.score_review==App::ScoreReview::None&&
+        (app.local_coop?!app.stage_scene->paused:app.stage_scene->motion_active());
     if(app.title_demo&&title_demo_foreground(hwnd,app)){
         if(const auto *scene=app.title_demo->controller.scene())return scene->motion_active();
     }
@@ -4680,6 +4685,9 @@ extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_coop(int count,int stage,int
 }
 extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_coop_inputs(unsigned p1,unsigned p2,unsigned p3){
     browser_app.local_coop_input={std::uint16_t(p1),std::uint16_t(p2),std::uint16_t(p3)};
+}
+extern "C" EMSCRIPTEN_KEEPALIVE unsigned soew_full_coop_frame(){
+    return browser_app.local_coop_ticks;
 }
 int soew_full_import_replay(){
     try{
