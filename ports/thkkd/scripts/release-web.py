@@ -61,18 +61,16 @@ def archive(folder,target,prefix):
     manifest=inventory(folder)
     for row in manifest:
         scan(folder/row['path'],row['path'])
-    report=policy.privacy_report(len(manifest))
     (folder/'PACKAGE-MANIFEST.json').write_text(json.dumps({'files':manifest},ensure_ascii=False,indent=2)+'\n','utf-8')
-    (folder/'PRIVACY-CHECK.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n','utf-8')
     with zipfile.ZipFile(target,'x',zipfile.ZIP_DEFLATED,compresslevel=1,allowZip64=True) as output:
         for path in sorted(folder.rglob('*')):
-            if not path.is_file():
+            if not path.is_file() or path.name == 'PRIVACY-CHECK.json':
                 continue
             item=zipfile.ZipInfo(prefix+'/'+path.relative_to(folder).as_posix(),policy.zip_date(path.stat().st_mtime))
             item.create_system=0;item.external_attr=0x20
             item.compress_type=zipfile.ZIP_STORED if path.suffix.lower() in {'.png','.webp','.jpg','.ogg','.webm','.wmv','.mp3','.zip','.woff2'} else zipfile.ZIP_DEFLATED
             output.writestr(item,path.read_bytes(),compresslevel=1)
-    return {'path':target.name,'bytes':target.stat().st_size,'sha256':digest(target),'files':len(manifest),'privacy':report}
+    return {'path':target.name,'bytes':target.stat().st_size,'sha256':digest(target),'files':len(manifest)}
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
@@ -138,7 +136,6 @@ def main():
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     association={'schema':'thkkd/local-delivery/1','sourceCommit':commit,'sourceTree':subprocess.check_output(['git','rev-parse','HEAD:ports/thkkd'],cwd=ROOT,text=True).strip(),'originalSourceCommit':'64d48dc366f2d57210dbdac25be82e0e71b2641d','toolchain':'Emscripten 6.0.9','node':'24.19.0','build':build,'runtime':json.loads((PORT/'runtime/runtime-files.json').read_text('utf-8')),'resourceImport':{'files':['dat.dxa','bgm.dxa'],'formats':['original-dxa-pair','original-zip'],'resourcesBundled':False,'resourceExport':False}}
     for folder in [source,game]:
-        association['packagingPolicy']={'rawAssets':'本机保留，排除于源码与网站包','sourceReadme':'说明开发入口与本机资源准备','excluded':'用户数据、私有录像、日志、Git 元数据、缓存、本地 AGENTS 和四份含个人默认浏览器路径的无关 TH09 测试','retainedProgramLiterals':['Emscripten 虚拟 /home/web_user 路径','ImGui PageDown/Home/End 导航键注释']}
         (folder/'SOURCE.json').write_text(json.dumps(association,ensure_ascii=False,indent=2)+'\n','utf-8')
     shutil.copy2(args.validation,game/'VALIDATION.md')
     packages=[archive(source,output/'thkkd-web-source.zip','eagler-touhou'),archive(game,output/'thkkd-web-local.zip','thkkd-web-local')]

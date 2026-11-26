@@ -68,13 +68,6 @@ def png_compressed_text(data):
         if kind == b'IEND':
             break
 
-def privacy_report(count):
-    return {'result': 'passed', 'files_checked': count, 'file_contents': 'preserved byte for byte',
-            'media_metadata': 'preserved', 'modification_times': 'preserved at ZIP two-second precision',
-            'archive_attributes': 'relative paths; no source owner, ACL or alternate streams',
-            'scan': 'local account/computer names, user-home paths, private-key/token signatures; UTF-8, UTF-16 and compressed PNG text',
-            'excluded': 'user data, replays, logs, credential files, build intermediates, debug symbols and Git metadata'}
-
 def zip_date(timestamp):
     date = time.localtime(timestamp)[:6]
     if date[0] < 1980:
