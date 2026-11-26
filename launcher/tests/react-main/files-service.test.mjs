@@ -86,6 +86,16 @@ function fixture({ready = true, launched = false, confirm = true, corrupt = fals
 }
 const save = () => new File([new Uint8Array([3, 7, 9])], 'any.dat');
 
+test('THKKD save archive preserves all five native DAT files and configuration, with overwrite confirmation',async()=>{
+ const names=['th_kaikeidou01.dat','th_kaikeidou_score00.dat','th_kaikeidou_score10.dat','th_kaikeidou_spell01.dat','th_kaikeidou_spell10.dat','config.txt'];
+ const f=fixture();names.forEach((name,i)=>f.stored.set(name,[i,8]));f.stored.set('replay/thkkd00.rpy',[99]);
+ await f.actions.run('export-save','thkkd');assert.equal(f.downloads[0].name,'thkkd-save.zip');
+ const {unzipSync}=await import('fflate'),data=new Uint8Array(f.downloads[0].bytes);assert.deepEqual(Object.keys(unzipSync(data)).sort(),names.sort());
+ const g=fixture();await g.actions.importFile('save',new File([data],'thkkd-save.zip'),'thkkd');assert.equal(g.decisions.length,1);for(const name of names)assert.deepEqual(g.stored.get(name),f.stored.get(name));
+ const cancelled=fixture({confirm:false});await cancelled.actions.importFile('save',new File([data],'thkkd-save.zip'),'thkkd');assert.equal(cancelled.stored.size,0);
+ const single=fixture();await single.actions.importFile('save',new File([new Uint8Array([4,5])],'th_kaikeidou01.dat'),'thkkd');assert.deepEqual(single.stored.get('th_kaikeidou01.dat'),[4,5]);assert.equal(single.stored.has('th_kaikeidou_score00.dat'),false);
+});
+
 for (const product of ['th15','th15mp']) test(`${product} save archive round-trips score and every Pointdevice slot`,async()=>{
  const f=fixture({launched:true});f.stored.set('scoreth15.dat',[1,2,3]);
  for(let character=0;character<4;character++)for(let difficulty=0;difficulty<5;difficulty++)f.stored.set(`autosave/save${character}_${difficulty}.dat`,[character,difficulty,7]);

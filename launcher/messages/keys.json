@@ -1075,11 +1075,15 @@
   },
   "spectator.matchNode": {
     "id": "spectator_matchNode",
-    "params": ["number"]
+    "params": [
+      "number"
+    ]
   },
   "spectator.roundNode": {
     "id": "spectator_roundNode",
-    "params": ["number"]
+    "params": [
+      "number"
+    ]
   },
   "spectator.progress": {
     "id": "spectator_progress",
@@ -10969,7 +10973,9 @@
   },
   "messages.unread": {
     "id": "messages_unread",
-    "params": ["count"]
+    "params": [
+      "count"
+    ]
   },
   "messages.viewInbox": {
     "id": "messages_viewInbox",
@@ -11105,5 +11111,13 @@
   "game.noSpellStats": {
     "id": "game_noSpellStats",
     "params": []
+  },
+  "package.originalPreparingResources": {
+    "id": "package_originalPreparingResources",
+    "params": [
+      "completed",
+      "name",
+      "total"
+    ]
   }
 }

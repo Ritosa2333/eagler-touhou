@@ -98,6 +98,19 @@ const TH03_TOUCH_FIRE = Object.freeze({
     key: Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 }),
 });
 export const PRODUCT_GAMES = Object.freeze({
+    thkkd: Object.freeze({
+        importOnly:true,
+        number:'KKD',title:'东方海惠堂',subtitle:'Marine Benefit',cardArtwork:'thkkd-card.webp',
+        storage:Object.freeze({saveRoot:'/savesthkkd',scoreFile:'th_kaikeidou_score00.dat',configFiles:Object.freeze(['config.txt','th_kaikeidou01.dat','th_kaikeidou_score10.dat','th_kaikeidou_spell01.dat','th_kaikeidou_spell10.dat'])}),
+        runtime:'./runtime/thkkd/thkkd.html',runtimeFileLayout:'directory',runtimeFileTree:true,
+        runtimeAssets:Object.freeze(['thkkd.html','manifest.json','shell.mjs','platform.mjs','renderer.mjs','input.mjs','replay.mjs','presentation-clock.mjs','presentation-stats.mjs','local-replay.mjs','thkkd.mjs','thkkd.wasm','fonts/unifont.woff2','OFL-Unifont.txt','directory-keyboard.mjs','keyboard-owners.mjs','keyboard-input-bridge.mjs','direct-input-bridge.mjs','save-sync.mjs']),requiredShared:Object.freeze([]),
+        dataProvider:'retail-memory',runtimeResourceTransport:'resources',
+        package:Object.freeze({dataFileId:'game-data',dataTarget:'/thkkd.data',musicSourceDirectories:Object.freeze({ogg:'music'}),musicMounts:Object.freeze({ogg:'/music'})}),
+        musicCapabilities:Object.freeze({midi:false}),musicRuntime:Object.freeze({localOggConfigureMode:'runtime-selection',embeddedOgg:true}),touchFire:TOGGLE_TOUCH_FIRE,
+        support:Object.freeze({highRefreshRate:true,sourceRepository:'https://github.com/Renko2333/thkkd'}),
+        replay:Object.freeze({prefix:'thkkd',extensions:Object.freeze(['rpy','thkkdr']),naming:'filename'}),
+        features:Object.freeze({thprac:false,languages:false,focusHitbox:false}),
+    }),
     th01: Object.freeze({
         testOnly: true, number: '01', title: '東方靈異伝', subtitle: 'Highly Responsive to Prayers', cardArtwork: 'th01-card.webp',
         storage: Object.freeze({saveRoot:'/savesth01',scoreFile:'scores.dat',configFiles:Object.freeze([])}),

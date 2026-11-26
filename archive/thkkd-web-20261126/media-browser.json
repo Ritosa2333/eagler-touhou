@@ -1,0 +1,157 @@
+{
+  "browser": "Edg/158.0.4370.33",
+  "checks": [
+    "title-and-game-OGG-with-nonzero-PCM",
+    "native-video-texture-loaded",
+    "native-pause-and-resume-preserve-video-and-BGM-cursors",
+    "platform-background-and-foreground-media-recovery",
+    "no-BGM-mode",
+    "native-Practice-Replay-Music-KeyConfig-Options-menus",
+    "corrupt-OGG-reports-production-audio-health-error"
+  ],
+  "errors": [],
+  "titleAudio": [
+    {
+      "time": 1.422222,
+      "playing": true,
+      "paused": false,
+      "loop": true
+    }
+  ],
+  "transitions": [
+    {
+      "outer": 11,
+      "phase": 0
+    },
+    {
+      "outer": 11,
+      "phase": 1
+    },
+    {
+      "outer": 12,
+      "phase": 0
+    },
+    {
+      "outer": 12,
+      "phase": 10
+    },
+    {
+      "outer": 100,
+      "phase": 11
+    }
+  ],
+  "running": {
+    "scene": 0,
+    "audio": [
+      {
+        "time": 0.688224,
+        "paused": false,
+        "playing": true
+      }
+    ],
+    "video": [
+      {
+        "time": 0.8589,
+        "paused": false,
+        "ready": 4,
+        "texture": true,
+        "playing": true
+      }
+    ]
+  },
+  "bgmPCM": {
+    "peak": 0.26457479596138,
+    "state": "running",
+    "gain": 1,
+    "nodes": [
+      {
+        "time": 1.721179,
+        "volume": 1,
+        "ready": 4
+      }
+    ]
+  },
+  "paused": {
+    "scene": 1,
+    "audio": [
+      {
+        "time": 1.729887,
+        "paused": true,
+        "playing": false
+      }
+    ],
+    "video": [
+      {
+        "time": 1.9041,
+        "paused": true,
+        "ready": 4,
+        "texture": true,
+        "playing": false
+      }
+    ]
+  },
+  "resumed": {
+    "scene": 0,
+    "audio": [
+      {
+        "time": 2.243628,
+        "paused": false,
+        "playing": true
+      }
+    ],
+    "video": [
+      {
+        "time": 2.4158,
+        "paused": false,
+        "ready": 4,
+        "texture": true,
+        "playing": true
+      }
+    ]
+  },
+  "menus": [
+    {
+      "target": 3,
+      "outer": 11,
+      "commands": 65,
+      "error": ""
+    },
+    {
+      "target": 4,
+      "outer": 16,
+      "commands": 126,
+      "error": ""
+    },
+    {
+      "target": 5,
+      "outer": 14,
+      "commands": 73,
+      "error": ""
+    },
+    {
+      "target": 6,
+      "outer": 15,
+      "commands": 80,
+      "error": ""
+    },
+    {
+      "target": 7,
+      "outer": 16,
+      "commands": 70,
+      "error": ""
+    }
+  ],
+  "corruptAudio": [
+    {
+      "name": "audio-health",
+      "state": "error",
+      "error": "音乐资源解码失败：bgm/bgm00.mp3"
+    },
+    {
+      "name": "audio-health",
+      "state": "blocked",
+      "error": "NotSupportedError: Failed to load because no supported source was found."
+    }
+  ],
+  "result": "passed"
+}

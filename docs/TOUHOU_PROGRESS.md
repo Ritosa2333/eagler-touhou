@@ -88,6 +88,12 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 | :---: | :---: | :---: | :---: | :---: |
 | ❌ | ❌ | ❌ | ❌ | ❌ |
 
+## [thkkd] 东方海惠堂
+
+网页单机接入六面、EX、Omniverse、九种机体、原版与扩展 Replay，并使用启动器的键盘、手柄、触控、存档和离线资源功能。游戏逻辑保持 60 Hz，支持额外画面呈现。
+
+[开发指南](../ports/thkkd/docs/DEVELOPMENT.md) · [适配检查](../ports/thkkd/ADAPTATION.md) · [本次接入验证](../archive/thkkd-import-20261126/README.md)
+
 ## 能力表样例
 
 ### Web 适配

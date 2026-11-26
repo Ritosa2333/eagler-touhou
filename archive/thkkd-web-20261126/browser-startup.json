@@ -1,0 +1,133 @@
+{
+  "schema": "thkkd/browser-acceptance/1",
+  "result": "passed",
+  "implementationCommit": "19a9ec9f8bfa078e73626e99a4a7d1a8f35b1523",
+  "environment": {
+    "os": "Windows x64",
+    "browser": "Microsoft Edge 158.0.4370.33",
+    "devices": "键盘；DevTools 触控；生产映射模型中的虚拟标准手柄"
+  },
+  "reports": {
+    "characters-browser": {
+      "result": "passed",
+      "sha256": "27a2ac967c8429be761b40e303d411e25a120e9f16dedf8e4c4cbfbe16ee97da",
+      "browser": "Edg/158.0.4370.33"
+    },
+    "stages-browser": {
+      "result": "passed",
+      "sha256": "cab7b9fe3c92c300cebba50bead3f75f5bf517cc7b1b264a6d5911e7d5a189bd",
+      "browser": "Edg/158.0.4370.33"
+    },
+    "features-browser": {
+      "result": "passed",
+      "sha256": "868e089959a01ef82e6283a34111e02affc2801dca1a27c7cb2e56a37e7f053e",
+      "browser": "Edg/158.0.4370.33"
+    },
+    "launcher-controls-browser": {
+      "result": "passed",
+      "sha256": "34aee4cd04b0d061f8d99295ad5efe875793512a9c44b0db33665087e54f68a3",
+      "browser": "Edg/158.0.4370.33"
+    },
+    "media-browser": {
+      "result": "passed",
+      "sha256": "c84ff95878c78212719efd59b8bf896cacb650841fb63aff27fbce4775da5aeb",
+      "browser": "Edg/158.0.4370.33"
+    },
+    "storage-browser": {
+      "result": "passed",
+      "sha256": "581bf81272fcd8d072d63eef4e0368502e5e4cef18675b3bcdf516a7a4dbb26c",
+      "browser": "Edg/158.0.4370.33"
+    },
+    "offline-browser": {
+      "result": "passed",
+      "sha256": "4a373d0e6be416796dfd24c6b4834158e43b3185c1d51f58c23fbc6e3d3bf3a9",
+      "browser": "Edg/158.0.4370.33"
+    }
+  },
+  "runtimeFiles": {
+    "OFL-Unifont.txt": {
+      "bytes": 4591,
+      "sha256": "b135fab712684e6b1b26f890f51c22bf80cb34453da26a4013407dde5a049102"
+    },
+    "direct-input-bridge.mjs": {
+      "bytes": 1318,
+      "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+    },
+    "directory-keyboard.mjs": {
+      "bytes": 5540,
+      "sha256": "c53c2026b9c42d5ca55f663612c283e80ca2ba958c854b2837dbb3b09162a68d"
+    },
+    "fonts/unifont.woff2": {
+      "bytes": 868640,
+      "sha256": "ad43885da7413712cf3fc354a72f6ea1fd65fbdc84441ba54f2373d853bcb3d5"
+    },
+    "input.mjs": {
+      "bytes": 7809,
+      "sha256": "40cf3d7be21db80690ca7fc17a07deefd378721fcc2e8ced247d63e6de0b5693"
+    },
+    "keyboard-input-bridge.mjs": {
+      "bytes": 5208,
+      "sha256": "f5f5d1015b56381b811b43bac00ecca5d6d7f03ab971b6e0fcffa79ef515bb34"
+    },
+    "keyboard-owners.mjs": {
+      "bytes": 1670,
+      "sha256": "b8d75f6aac5e493a09b69de0c5aef57aa4b2e91f5a46e91709aab29395afcfb3"
+    },
+    "local-replay.mjs": {
+      "bytes": 5926,
+      "sha256": "839f21660b3bbe680d13c107d70cf2e2d120a042b87982dbfe20456431d3bd82"
+    },
+    "platform.mjs": {
+      "bytes": 16347,
+      "sha256": "637d65f7fa0e5a340c162b9c672ead44d084830fe17ecfc172f6db9a9363e3c8"
+    },
+    "presentation-clock.mjs": {
+      "bytes": 350,
+      "sha256": "a27cfa986a9e9667c70184afb4c0cd74386f3f4b5b5acf7241435ae8ecdbc13c"
+    },
+    "renderer.mjs": {
+      "bytes": 7681,
+      "sha256": "4cc5c9deeeaf21c020bc383e5ca4a4c275fa678edb5cdbef857285060f955361"
+    },
+    "replay.mjs": {
+      "bytes": 3172,
+      "sha256": "1715029b03f122907791b83cd5af3749263488a50e333784c7cb88ebb172398c"
+    },
+    "save-sync.mjs": {
+      "bytes": 1178,
+      "sha256": "5c80722aab15d73770d27a322a565fa29228a08b3fa667766da454f56ca1e3c5"
+    },
+    "shell.mjs": {
+      "bytes": 12974,
+      "sha256": "e3ebc11d5536e4de0743ba52715ff40e467790874599a34a7abc52afb7f74ea0"
+    },
+    "thkkd.html": {
+      "bytes": 960,
+      "sha256": "caf19b0da5ddeb3947fdcee0a5bc0993e4aa67153bcd9673541f5bde0e0f39d3"
+    },
+    "thkkd.mjs": {
+      "bytes": 83305,
+      "sha256": "f9a9c411f19eda563d9340476cd545a066c4af1210bad132ba5b2aff05f3a756"
+    },
+    "thkkd.wasm": {
+      "bytes": 6267402,
+      "sha256": "f1eacdd3f90a7b8ef0dbc791b53189c776750b5c67909bf4e4c0d047cbf1942c"
+    },
+    "manifest.json": {
+      "bytes": 250,
+      "sha256": "1df6b386c1d6c10d6f5f6ae155d5577a0c0dc50531e60446f00bd4ea353cb341"
+    }
+  },
+  "scope": {
+    "physicalTouchscreen": "未执行",
+    "physicalGamepad": "未执行",
+    "physicalHighRefreshMonitor": "未执行；正式 WASM 使用 60/120/144 Hz 时间序列对照",
+    "otherBrowserEngines": "未执行"
+  },
+  "sharedChecks": {
+    "portChecks": "10/10 passed",
+    "filesService": "25 tests passed",
+    "extensions": "10 tests passed",
+    "uiTypecheck": "passed"
+  }
+}

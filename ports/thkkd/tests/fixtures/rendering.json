@@ -1,0 +1,285 @@
+{
+  "schema": "thkkd/rendering-fixtures/1",
+  "originalExeSha256": "ca568f1974946671dbba5a5be100a294d853d483dd0a05dccbea079930f00d6d",
+  "outerToReplayOffset": 30,
+  "cases": [
+    {
+      "name": "reimu-a",
+      "replay": "corpus-14.rpy",
+      "originalFrames": [
+        180,
+        2014,
+        2074
+      ]
+    },
+    {
+      "name": "reimu-b",
+      "replay": "corpus-11.rpy",
+      "originalFrames": [
+        180,
+        305,
+        365
+      ]
+    },
+    {
+      "name": "reimu-c",
+      "replay": "corpus-12.rpy",
+      "originalFrames": [
+        180,
+        386,
+        446
+      ]
+    },
+    {
+      "name": "marisa-a",
+      "replay": "corpus-09.rpy",
+      "originalFrames": [
+        180,
+        483,
+        543
+      ]
+    },
+    {
+      "name": "marisa-b",
+      "replay": "corpus-10.rpy",
+      "originalFrames": [
+        76,
+        106,
+        166
+      ]
+    },
+    {
+      "name": "marisa-c",
+      "replay": "corpus-05.rpy",
+      "originalFrames": [
+        180,
+        954,
+        1014
+      ]
+    },
+    {
+      "name": "sanae-a",
+      "replay": "corpus-06.rpy",
+      "originalFrames": [
+        180,
+        273,
+        333
+      ]
+    },
+    {
+      "name": "sanae-b",
+      "replay": "corpus-07.rpy",
+      "originalFrames": [
+        180,
+        313,
+        373
+      ]
+    },
+    {
+      "name": "sanae-c",
+      "replay": "corpus-08.rpy",
+      "originalFrames": [
+        180,
+        311,
+        371
+      ]
+    }
+  ],
+  "straightAlphaPixels": [
+    {
+      "source": "dat/img/char/atari.png",
+      "pixels": [
+        {
+          "x": 2,
+          "y": 0,
+          "rgba": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 5,
+          "y": 1,
+          "rgba": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 6,
+          "y": 2,
+          "rgba": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 6,
+          "y": 3,
+          "rgba": [
+            128,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 6,
+          "y": 4,
+          "rgba": [
+            128,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 6,
+          "y": 5,
+          "rgba": [
+            255,
+            0,
+            0,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "source": "dat/img/char/p0.png",
+      "pixels": [
+        {
+          "x": 18,
+          "y": 7,
+          "rgba": [
+            223,
+            106,
+            106,
+            48
+          ]
+        },
+        {
+          "x": 13,
+          "y": 25,
+          "rgba": [
+            203,
+            203,
+            203,
+            79
+          ]
+        },
+        {
+          "x": 18,
+          "y": 55,
+          "rgba": [
+            223,
+            106,
+            106,
+            48
+          ]
+        },
+        {
+          "x": 13,
+          "y": 73,
+          "rgba": [
+            203,
+            203,
+            203,
+            79
+          ]
+        },
+        {
+          "x": 18,
+          "y": 103,
+          "rgba": [
+            223,
+            106,
+            106,
+            48
+          ]
+        },
+        {
+          "x": 13,
+          "y": 121,
+          "rgba": [
+            203,
+            203,
+            203,
+            79
+          ]
+        }
+      ]
+    },
+    {
+      "source": "dat/img/tama/tama0_0.bmp",
+      "pixels": [
+        {
+          "x": 0,
+          "y": 0,
+          "rgba": [
+            255,
+            255,
+            255,
+            0
+          ]
+        },
+        {
+          "x": 12,
+          "y": 0,
+          "rgba": [
+            255,
+            255,
+            255,
+            0
+          ]
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "rgba": [
+            255,
+            255,
+            255,
+            0
+          ]
+        },
+        {
+          "x": 0,
+          "y": 5,
+          "rgba": [
+            255,
+            255,
+            255,
+            159
+          ]
+        },
+        {
+          "x": 14,
+          "y": 12,
+          "rgba": [
+            255,
+            255,
+            255,
+            207
+          ]
+        },
+        {
+          "x": 12,
+          "y": 14,
+          "rgba": [
+            255,
+            255,
+            255,
+            175
+          ]
+        }
+      ]
+    }
+  ]
+}

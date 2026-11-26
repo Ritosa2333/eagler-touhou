@@ -41,7 +41,8 @@ const maxCheckpointBytes = 100 * 1024 * 1024 + 96;
 const maxSaveArchiveExpandedBytes = 256 * 1024 * 1024;
 const isCheckpointPath = (path: string): boolean => /^autosave\/save[0-3]_[0-4]\.dat$/.test(path);
 const isHsobSavePath = (path: string): boolean => path === 'config.dat' || /^Package_common_[A-Za-z0-9_-]+\.dat$/.test(path);
-const supportsSaveArchive = (game: string): boolean => game === 'th15' || game === 'hsob';
+const isThkkdSavePath = (path: string): boolean => [PRODUCT_GAMES.thkkd.storage.scoreFile,...PRODUCT_GAMES.thkkd.storage.configFiles].some(name=>name===path.toLowerCase());
+const supportsSaveArchive = (game: string): boolean => game === 'th15' || game === 'hsob' || game === 'thkkd';
 function message(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (error && typeof error === 'object' && !Array.isArray(error) && 'message' in error && typeof error.message === 'string') return error.message;
@@ -77,7 +78,7 @@ export function createFileActions(options: FileActionsOptions) {
     return {runtimeVariant: isMultiplayerProductId(product) ? 'multiplayer' as const : 'normal' as const};
   }
   const saveExtension = (product: ProductId) => '.' + PRODUCT_GAMES[gameIdForProduct(product)].storage.scoreFile.split('.').at(-1)!.toLowerCase();
-  const saveAccept = (product: ProductId) => saveExtension(product) + (supportsSaveArchive(gameIdForProduct(product)) ? ',.zip' : '');
+  const saveAccept = (product: ProductId) => saveExtension(product) + (gameIdForProduct(product)==='thkkd'?',.txt':'') + (supportsSaveArchive(gameIdForProduct(product)) ? ',.zip' : '');
   async function exportFiles(kind: 'save' | 'replay', product: ProductId): Promise<void> {
     const game = gameIdForProduct(product);
     const label = t(kind === 'save' ? 'file.kind.save' : 'file.kind.replay');
@@ -95,7 +96,7 @@ export function createFileActions(options: FileActionsOptions) {
             if (game === 'th15') entries[path] = new Uint8Array(bytes(await access.send('read', {path})));
             const stored = listing(await access.send('list', {}));
             let total = entries[path]?.length ?? 0;
-            for (const file of stored.filter(file => game === 'hsob' ? isHsobSavePath(file.path) : isCheckpointPath(file.path))) {
+            for (const file of stored.filter(file => game === 'thkkd' ? isThkkdSavePath(file.path) : game === 'hsob' ? isHsobSavePath(file.path) : isCheckpointPath(file.path))) {
               const limit = game === 'hsob' ? maxHsobFileBytes : maxCheckpointBytes;
               if (file.size > limit || total + file.size > maxSaveArchiveExpandedBytes) throw new Error(t('file.importArchiveExpandedTooLarge'));
               const data = new Uint8Array(bytes(await access.send('read', {path: file.path})));
@@ -103,7 +104,7 @@ export function createFileActions(options: FileActionsOptions) {
               entries[file.path] = data;total += data.length;
             }
             if (Object.keys(entries).length === 0) throw Object.assign(new Error(t('file.missingSavePrompt')), {errno: 44});
-            options.download(game === 'hsob' ? 'hsob-save.zip' : 'scoreth15.zip', copyBuffer(zip.zipSync(entries, {level: 1})), 'application/zip');
+            options.download(game === 'thkkd' ? 'thkkd-save.zip' : game === 'hsob' ? 'hsob-save.zip' : 'scoreth15.zip', copyBuffer(zip.zipSync(entries, {level: 1})), 'application/zip');
           } else options.download(path, copyBuffer(new Uint8Array(bytes(await access.send('read', {path})))), 'application/octet-stream');
         } else {
           const zip = await import('fflate');
@@ -151,6 +152,7 @@ export function createFileActions(options: FileActionsOptions) {
     const game = gameIdForProduct(product);
     if (!file.size) throw new Error(t('file.emptyImport'));
     if (file.size > maxImportBytes) throw new Error(t('file.importTooLarge'));
+    if(kind==='save'&&game==='thkkd'&&!await options.confirm({message:t('file.importSaveOverwrite'),confirmText:t('file.continueImport'),tone:'danger'}))return;
     // A queued import cannot consume a newer Player's Runtime while retaining an
     // older presentation callback. Check before preparation can close an owner,
     // and again after its acquisition await, immediately before the file lock.
@@ -165,7 +167,9 @@ export function createFileActions(options: FileActionsOptions) {
       let access: RuntimeFileSession = initial;
       let files: {path: string; bytes: Uint8Array; replayMatch?: Th09ReplayMatch}[];
       const lowerName = file.name.toLowerCase();
-      if (kind === 'save' && lowerName.endsWith(saveExtension(product))) {
+      if(kind==='save'&&game==='thkkd'&&isThkkdSavePath(lowerName)){
+        files=[{path:lowerName,bytes:new Uint8Array(await file.arrayBuffer())}];
+      } else if (kind === 'save' && lowerName.endsWith(saveExtension(product))) {
         files = [{path: PRODUCT_GAMES[gameIdForProduct(product)].storage.scoreFile, bytes: new Uint8Array(await file.arrayBuffer())}];
       } else if (kind === 'save' && supportsSaveArchive(game) && lowerName.endsWith('.zip')) {
         const zip = await import('fflate'), seen = new Set<string>();let expanded = 0;
@@ -174,7 +178,7 @@ export function createFileActions(options: FileActionsOptions) {
           if (!replay.isSafeReplayArchivePath(path)) throw new Error(t('file.zipUnsafePath'));
           const target = path.toLowerCase();
           if (seen.has(target)) throw new Error(t('file.zipDuplicatePath'));seen.add(target);
-          if (game === 'hsob' ? !isHsobSavePath(path) : target !== 'scoreth15.dat' && !isCheckpointPath(target)) return false;
+          if (game === 'thkkd' ? !isThkkdSavePath(target) : game === 'hsob' ? !isHsobSavePath(path) : target !== 'scoreth15.dat' && !isCheckpointPath(target)) return false;
           const limit = game === 'hsob' ? maxHsobFileBytes : isCheckpointPath(target) ? maxCheckpointBytes : maxStoredFileBytes;
           if (!Number.isSafeInteger(info.originalSize) || info.originalSize < 0 || info.originalSize > limit) throw new Error(t('file.importStoredTooLarge'));
           expanded += info.originalSize;if (expanded > maxSaveArchiveExpandedBytes) throw new Error(t('file.importArchiveExpandedTooLarge'));
@@ -262,7 +266,7 @@ export function createFileActions(options: FileActionsOptions) {
       else if (action === 'export-save' || action === 'export-replay') await exportFiles(action === 'export-save' ? 'save' : 'replay', product);
       else {
         const kind = action === 'import-save' ? 'save' : 'hint';
-        if (kind === 'save' && !await options.confirm({message: t('file.importSaveOverwrite'), confirmText: t('file.continueImport'), tone: 'danger'})) return;
+        if (kind === 'save' && gameIdForProduct(product)!=='thkkd' && !await options.confirm({message: t('file.importSaveOverwrite'), confirmText: t('file.continueImport'), tone: 'danger'})) return;
         const file = await options.pickFile(kind === 'hint' ? '.txt' : saveAccept(product));
         if (file) await importFile(kind, file, product);
       }

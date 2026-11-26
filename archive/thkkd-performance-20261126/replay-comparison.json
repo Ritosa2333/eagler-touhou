@@ -1,0 +1,357 @@
+{
+  "schema": "thkkd/production-replay-comparison/1",
+  "result": "passed",
+  "beforeRuntime": "ef20ada5e4e78ced7a8412f0da93a36b5b9f07176b2f011533212bc927440b8c",
+  "afterRuntime": "d535ee72d90647205347ea94e59097471e0bfa5ee9c9f73ec8cbeebff7b81d34",
+  "browsersBefore": [
+    "Edg/158.0.4370.45"
+  ],
+  "browsersAfter": [
+    "Edg/158.0.4370.45"
+  ],
+  "replays": 17,
+  "inputFrames": 648824,
+  "checkpoints": 643,
+  "cases": [
+    {
+      "id": "corpus-01",
+      "result": "passed",
+      "inputSha256": "acf3b31527191c9475b2f855765ae67e3c10d4bb0ebe3329a4d920421880dcba",
+      "inputFrames": 32859,
+      "checkpoints": 33,
+      "checkpointsSha256": "c11b026b530e4982ca338c438f34714338446c86f3cacad25152344424d2e18e",
+      "final": {
+        "cursor": 32858,
+        "stage": 2,
+        "frame": 839,
+        "part": 2,
+        "phase": 0,
+        "scene": 0,
+        "random": 351,
+        "bullets": 29,
+        "enemies": 0,
+        "digest": "8eb19796b93a6e3c"
+      }
+    },
+    {
+      "id": "corpus-02",
+      "result": "passed",
+      "inputSha256": "406072dd472da4d00db2b8d279ce09e5eb312c651873d9a8fc2fc67a4244df7b",
+      "inputFrames": 110374,
+      "checkpoints": 108,
+      "checkpointsSha256": "59a33ce50b1990a55f03d262d7512c55f3769147274884e5316b65be7b9992de",
+      "final": {
+        "cursor": 110373,
+        "stage": 5,
+        "frame": 511,
+        "part": 3,
+        "phase": 13,
+        "scene": 0,
+        "random": 803,
+        "bullets": 0,
+        "enemies": 0,
+        "digest": "0c161284ed662f4a"
+      }
+    },
+    {
+      "id": "corpus-03",
+      "result": "passed",
+      "inputSha256": "3bd33a66e82caa57552a69488b0daea12a6b8aea111808434a18b3c3e410baf4",
+      "inputFrames": 15240,
+      "checkpoints": 15,
+      "checkpointsSha256": "1c1e794eecd2cf3b236baefe7d9cfbbbf8c73f2562737447842a66b921fd2e39",
+      "final": {
+        "cursor": 15239,
+        "stage": 6,
+        "frame": 3816,
+        "part": 2,
+        "phase": 0,
+        "scene": 0,
+        "random": 233,
+        "bullets": 25,
+        "enemies": 6,
+        "digest": "66daa26bffb39dc7"
+      }
+    },
+    {
+      "id": "corpus-04",
+      "result": "passed",
+      "inputSha256": "642a1703b816221421bcde06c1586f6af4cf946399f276c6e2b5fea2fb6912e8",
+      "inputFrames": 60322,
+      "checkpoints": 59,
+      "checkpointsSha256": "07508159bc251bc834e2cb0704c33ffceba3271327d006320be73a239772e624",
+      "final": {
+        "cursor": 60321,
+        "stage": 6,
+        "frame": 511,
+        "part": 3,
+        "phase": 25,
+        "scene": 0,
+        "random": 40,
+        "bullets": 0,
+        "enemies": 0,
+        "digest": "c8550eeab97078b2"
+      }
+    },
+    {
+      "id": "corpus-05",
+      "result": "passed",
+      "inputSha256": "22fea3bc6610c14988bf4c315630ccd5fc826c910ad6437667435d0c53950fbb",
+      "inputFrames": 4183,
+      "checkpoints": 5,
+      "checkpointsSha256": "5b6f32b80864ac3960bac23afd33ba5225ed29034e4daec5f21419b34e198c3b",
+      "final": {
+        "cursor": 4182,
+        "stage": 0,
+        "frame": 822,
+        "part": 1,
+        "phase": 1,
+        "scene": 0,
+        "random": 931,
+        "bullets": 60,
+        "enemies": 1,
+        "digest": "eb1af773bd362fcf"
+      }
+    },
+    {
+      "id": "corpus-06",
+      "result": "passed",
+      "inputSha256": "a869d820f2cd5204cad11992a2f733d8f3806de43a665c193e5f1c593ba0ed5b",
+      "inputFrames": 1593,
+      "checkpoints": 2,
+      "checkpointsSha256": "c3e6c06363e14d85595154a69fde5e181339e3b49d1d86561967c98a13ba6c19",
+      "final": {
+        "cursor": 1592,
+        "stage": 0,
+        "frame": 1592,
+        "part": 0,
+        "phase": 0,
+        "scene": 0,
+        "random": 325,
+        "bullets": 1,
+        "enemies": 3,
+        "digest": "2536361c0b6b1d0e"
+      }
+    },
+    {
+      "id": "corpus-07",
+      "result": "passed",
+      "inputSha256": "18a30e7da9e6ee34dbae376acaadc2ac7df074c042f1f5e89fd3047dd4fe879c",
+      "inputFrames": 1441,
+      "checkpoints": 2,
+      "checkpointsSha256": "23653b850b6d29be3f682a59861b04096e578b9a0be5a71f893a4a90afa0fd90",
+      "final": {
+        "cursor": 1440,
+        "stage": 0,
+        "frame": 1440,
+        "part": 0,
+        "phase": 0,
+        "scene": 0,
+        "random": 855,
+        "bullets": 19,
+        "enemies": 13,
+        "digest": "d7a787c60087dbdc"
+      }
+    },
+    {
+      "id": "corpus-08",
+      "result": "passed",
+      "inputSha256": "108b9db78cc1a644db5e2ce69a761be1a2124be91286d2c413bc0f2aab58b284",
+      "inputFrames": 2024,
+      "checkpoints": 2,
+      "checkpointsSha256": "85df2c6669b42ab855253d0eebbe9567f6235e41c15b2f2152402fc67ea7c626",
+      "final": {
+        "cursor": 2023,
+        "stage": 0,
+        "frame": 2023,
+        "part": 0,
+        "phase": 0,
+        "scene": 0,
+        "random": 749,
+        "bullets": 52,
+        "enemies": 6,
+        "digest": "ee9e758185208ab9"
+      }
+    },
+    {
+      "id": "corpus-09",
+      "result": "passed",
+      "inputSha256": "5691c2f9c25f86c719444a3519059f3d4e757f3a4467db35528136a2931429f5",
+      "inputFrames": 1133,
+      "checkpoints": 2,
+      "checkpointsSha256": "a40c6a70766d7ec72036bc89e725534e0145323dec545c24e71043c89494a847",
+      "final": {
+        "cursor": 1132,
+        "stage": 0,
+        "frame": 1132,
+        "part": 0,
+        "phase": 0,
+        "scene": 0,
+        "random": 968,
+        "bullets": 61,
+        "enemies": 12,
+        "digest": "62201557c50b3517"
+      }
+    },
+    {
+      "id": "corpus-10",
+      "result": "passed",
+      "inputSha256": "15ab3eb38957a751f5458a5e5f4b8c69b2e56cb85384fee0c5e5d4b33f3d8c20",
+      "inputFrames": 1235,
+      "checkpoints": 2,
+      "checkpointsSha256": "dc8dcd4207c39d3f28c914ca1c7939fdcadbb6094fa357419a859362714d6ea9",
+      "final": {
+        "cursor": 1234,
+        "stage": 0,
+        "frame": 1234,
+        "part": 0,
+        "phase": 0,
+        "scene": 0,
+        "random": 635,
+        "bullets": 12,
+        "enemies": 13,
+        "digest": "f8b149c97d31348d"
+      }
+    },
+    {
+      "id": "corpus-11",
+      "result": "passed",
+      "inputSha256": "8ab3918a22fbb22ad3551c2deb320d3c69cac079382c2aa7190c79bd0db2eca0",
+      "inputFrames": 1509,
+      "checkpoints": 2,
+      "checkpointsSha256": "9c96e1201220cc070e94cf14f8727ef32a8b47fd6c7679477367907ef2b56a63",
+      "final": {
+        "cursor": 1508,
+        "stage": 0,
+        "frame": 1508,
+        "part": 0,
+        "phase": 0,
+        "scene": 0,
+        "random": 830,
+        "bullets": 25,
+        "enemies": 10,
+        "digest": "f1e68cafbd7861bb"
+      }
+    },
+    {
+      "id": "corpus-12",
+      "result": "passed",
+      "inputSha256": "79d78aa7818cee49812b23a1589b1b7f416e82a550ac60e312e7ff2bfad1760b",
+      "inputFrames": 1084,
+      "checkpoints": 2,
+      "checkpointsSha256": "a0d6f47b100ebc72a48a84fd52c85b53f8d818808ab7b1ee48229855870bc37b",
+      "final": {
+        "cursor": 1083,
+        "stage": 0,
+        "frame": 1083,
+        "part": 0,
+        "phase": 0,
+        "scene": 0,
+        "random": 753,
+        "bullets": 29,
+        "enemies": 4,
+        "digest": "3fa5b56e5fe91b78"
+      }
+    },
+    {
+      "id": "corpus-13",
+      "result": "passed",
+      "inputSha256": "e165e1118d272f8b219829ff1d40d2a127c0f211e52f177ee1874ab1ac0ef212",
+      "inputFrames": 74806,
+      "checkpoints": 74,
+      "checkpointsSha256": "fe448378753d5d6ffec4ce8d5d02fd142d5be2b46eb7c80f8579e5e00fcb13f9",
+      "final": {
+        "cursor": 74805,
+        "stage": 6,
+        "frame": 511,
+        "part": 3,
+        "phase": 25,
+        "scene": 0,
+        "random": 922,
+        "bullets": 0,
+        "enemies": 0,
+        "digest": "06fa0e326cfede5a"
+      }
+    },
+    {
+      "id": "corpus-14",
+      "result": "passed",
+      "inputSha256": "f54ed8e517bb9f73842bfbc7984678094a49a348aebb221baf2563505a0b43c5",
+      "inputFrames": 73458,
+      "checkpoints": 72,
+      "checkpointsSha256": "8ed4b6208343b5ddcb4297df1ec90a1308837cddcf5e566d0b0ae090b56a82df",
+      "final": {
+        "cursor": 73457,
+        "stage": 6,
+        "frame": 511,
+        "part": 3,
+        "phase": 25,
+        "scene": 0,
+        "random": 818,
+        "bullets": 0,
+        "enemies": 0,
+        "digest": "535728be0eec53c6"
+      }
+    },
+    {
+      "id": "corpus-15",
+      "result": "passed",
+      "inputSha256": "eee206c719c6d9160c23653f14da57e8544682dd2941e4f59c98b6a00947dc43",
+      "inputFrames": 72884,
+      "checkpoints": 72,
+      "checkpointsSha256": "37ae1b4b020d9ece7ac3f7c648e695e36b746c079700a09b9349b63426854160",
+      "final": {
+        "cursor": 72883,
+        "stage": 6,
+        "frame": 511,
+        "part": 3,
+        "phase": 25,
+        "scene": 0,
+        "random": 68,
+        "bullets": 0,
+        "enemies": 0,
+        "digest": "f3a9828c95a377e6"
+      }
+    },
+    {
+      "id": "corpus-16",
+      "result": "passed",
+      "inputSha256": "d82f94aabc9bcbc82406a7144e8c0ff3b01f184c158620698312b9c5d9bf8bcf",
+      "inputFrames": 110282,
+      "checkpoints": 108,
+      "checkpointsSha256": "18f540375a18d01cfdcf5886130541580e2048f62e298cfc53931017c58c5609",
+      "final": {
+        "cursor": 110281,
+        "stage": 5,
+        "frame": 511,
+        "part": 3,
+        "phase": 13,
+        "scene": 0,
+        "random": 597,
+        "bullets": 0,
+        "enemies": 0,
+        "digest": "24eb70da8772eff8"
+      }
+    },
+    {
+      "id": "corpus-17",
+      "result": "passed",
+      "inputSha256": "7e5bb1a7cb330b205c24f005b755a9550fbebd57365c90518ca97ffb7b82e30f",
+      "inputFrames": 84397,
+      "checkpoints": 83,
+      "checkpointsSha256": "827e606b2f6d218d6430a4e662d35b49ea35eebc05f8f318abf2b0d257a6327f",
+      "final": {
+        "cursor": 84396,
+        "stage": 5,
+        "frame": 511,
+        "part": 3,
+        "phase": 13,
+        "scene": 0,
+        "random": 790,
+        "bullets": 0,
+        "enemies": 0,
+        "digest": "4d9f94784419e762"
+      }
+    }
+  ]
+}

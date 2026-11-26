@@ -62,6 +62,11 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       : ws("dependencies", "unifont-15.1.05", "unifont-15.1.05.otf"),
   }),
   games: Object.freeze({
+    thkkd: Object.freeze({
+      runtime: `${ws('thkkd','runtime','thkkd.html')}?hosted=1`,
+      data: Object.freeze({source:ws('thkkd','build','web-content','thkkd.data'),layout:PRODUCT_CONTENT.thkkd.dataLayout}),
+      music:Object.freeze({}),
+    }),
     th01: Object.freeze({
       runtime: `${ws('th01','build-eagler','th01.html')}?hosted=1`,
       multiplayerRuntime: `${ws('th01','build-eagler','th01.html')}?hosted=1&runtimeVariant=multiplayer`,

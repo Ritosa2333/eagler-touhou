@@ -1,0 +1,17 @@
+{
+  "checks": [
+    "hosted-package-install-and-first-frame",
+    "offline-reload-and-launch-with-server-stopped",
+    "offline-user-data-preserved"
+  ],
+  "errors": [],
+  "browser": "Edg/158.0.4370.33",
+  "serviceWorker": {
+    "active": "http://127.0.0.1:8175/app-shell-sw.js"
+  },
+  "audio": {
+    "state": "running",
+    "bgm": 1
+  },
+  "result": "passed"
+}

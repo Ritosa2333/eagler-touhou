@@ -1,0 +1,28 @@
+DXA 格式与压缩算法参考
+
+GARbro ArcDX.cs 与 DxKey.cs
+https://github.com/morkt/GARbro/tree/master/ArcFormats/DxLib
+本地核对的 ArcDX.cs SHA-256
+af6c31faf8e71cd42fd59571f0c1eec55cecf7c03f7070ee1be995b8fbd750dc
+本地核对的 DxKey.cs SHA-256
+cbc8d9de5150f4cfe26b959309db28933b96151d3c9ac3fb7879b4c1ea7ecbc6
+
+Copyright (C) 2015-2018 by morkt
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.

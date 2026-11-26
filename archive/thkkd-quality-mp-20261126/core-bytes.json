@@ -1,0 +1,9 @@
+{
+  "schema": "thkkd/fixed-source-comparison/1",
+  "referenceCommit": "64d48dc366f2d57210dbdac25be82e0e71b2641d",
+  "files": {
+    "core": 570,
+    "render": 13
+  },
+  "differences": []
+}

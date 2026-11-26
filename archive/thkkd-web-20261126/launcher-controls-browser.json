@@ -1,0 +1,139 @@
+{
+  "browser": "Edg/158.0.4370.33",
+  "device": "Windows x64；键盘，DevTools 触控和虚拟标准手柄",
+  "checks": [
+    "shared-layout-editor-save",
+    "formal-launcher-menu-and-normal-start",
+    "WASD-custom-bind-save-restore-and-default",
+    "mapped-gamepad-buttons-axes-disconnect-and-independent-keyboard-owner",
+    "production-touch-surface-limited-motion-and-cancel",
+    "portrait-and-landscape-shared-controls",
+    "shared-two-finger-magnifier-and-reset",
+    "blur-releases-input",
+    "separate-BGM-SFX-output-gains",
+    "fullscreen-toggle-and-return"
+  ],
+  "errors": [],
+  "layout": {
+    "version": 6,
+    "profiles": {
+      "landscape": {
+        "controls": {
+          "focus": {
+            "x": 0.09250398724082935,
+            "y": 0.5,
+            "scale": 1,
+            "priority": 0
+          },
+          "fire": {
+            "x": 0.06379585326953748,
+            "y": 0.4253393665158371,
+            "scale": 1,
+            "priority": 1
+          },
+          "bomb": {
+            "x": 0.8,
+            "y": 0.8,
+            "scale": 1.2,
+            "priority": 2
+          },
+          "joystick": {
+            "x": 0.05901116427432217,
+            "y": 0.916289592760181,
+            "scale": 1,
+            "priority": 3
+          },
+          "escape": {
+            "x": 0.02073365231259968,
+            "y": 0.029411764705882353,
+            "scale": 1,
+            "priority": 4
+          },
+          "restart": {
+            "x": 0.018341307814992026,
+            "y": 0.08257918552036199,
+            "scale": 1,
+            "priority": 5
+          },
+          "function": {
+            "x": 0.1467304625199362,
+            "y": 0.5769230769230769,
+            "scale": 1,
+            "priority": 6
+          },
+          "thpracTab": {
+            "x": 0.9760765550239234,
+            "y": 0.580316742081448,
+            "scale": 1,
+            "priority": 7
+          },
+          "thpracMenu": {
+            "x": 0.960127591706539,
+            "y": 0.46153846153846156,
+            "scale": 1,
+            "priority": 8
+          }
+        },
+        "viewport": {
+          "x": 0
+        }
+      },
+      "portrait": null
+    }
+  },
+  "touch": {
+    "before": {
+      "x": 268.5,
+      "pointers": 0,
+      "extended": false
+    },
+    "moved": {
+      "x": 313.5,
+      "pointers": 1,
+      "extended": true
+    },
+    "box": {
+      "x": 508,
+      "y": 630,
+      "w": 1270,
+      "h": 900,
+      "hit": "<div class=\"touch-direct-surface\" id=\"touchDirectSurface\" aria-hidden=\"true\"></div>",
+      "style": [
+        "block",
+        "auto",
+        "30"
+      ],
+      "classes": "player open touch-layout-custom touch-enabled",
+      "touch": true
+    },
+    "diagnostic": {
+      "options": {
+        "limitPresentationTo60": true,
+        "touchEnabled": true,
+        "touchMovementMode": "touch",
+        "touchSensitivity": 200,
+        "touchFocusMode": "hold-button",
+        "doubleTapBombEnabled": false,
+        "alwaysHitbox": true,
+        "oggDecodeMode": "stream"
+      },
+      "gameplay": true,
+      "target": {
+        "x": 359.2086614173228,
+        "y": 384
+      },
+      "player": {
+        "x": 309,
+        "y": 384
+      }
+    }
+  },
+  "zoom": "171%",
+  "audio": {
+    "bgm": 0.23000000417232513,
+    "sfx": 0.6700000166893005,
+    "state": "running",
+    "bgmNodes": 1
+  },
+  "result": "passed"
+}

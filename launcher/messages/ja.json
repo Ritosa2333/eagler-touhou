@@ -2642,5 +2642,6 @@
   "game_bestScore": "ハイスコア",
   "game_spellCards": "スペルカード取得",
   "game_spellAllLoadouts": "全機体・全難易度の合計",
-  "game_noSpellStats": "このセーブのスペルカード取得記録は利用できません"
+  "game_noSpellStats": "このセーブのスペルカード取得記録は利用できません",
+  "package_originalPreparingResources": "リソースを準備中 {completed}/{total} · {name}"
 }

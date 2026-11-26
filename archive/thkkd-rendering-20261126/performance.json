@@ -1,0 +1,7979 @@
+{
+  "schema": "thkkd/cpu-performance/1",
+  "date": "2026-11-26",
+  "display": "60 Hz presentation limit",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "input": {
+    "sha256": "f54ed8e517bb9f73842bfbc7984678094a49a348aebb221baf2563505a0b43c5",
+    "bytes": 73520,
+    "target": 50000
+  },
+  "stepsPerSample": 900,
+  "cases": [
+    {
+      "scene": "title",
+      "cpuRate": 1,
+      "seconds": 14.993,
+      "logicalSteps": 900,
+      "logicHz": 60.02801307276729,
+      "presentations": 900,
+      "presentHz": 60.02801307276729,
+      "consumedInputFrames": 0,
+      "inputHz": 0,
+      "stepMs": {
+        "count": 900,
+        "mean": 1.2383333333219504,
+        "p50": 1.2000000001862645,
+        "p95": 1.5,
+        "p99": 2.2000000001862645,
+        "max": 2.7000000001862645
+      },
+      "presentCallMs": {
+        "count": 900,
+        "mean": 0.18866666667577292,
+        "p50": 0.20000000018626451,
+        "p95": 0.2999999998137355,
+        "p99": 0.39999999944120646,
+        "max": 0.5
+      },
+      "presentIntervalMs": {
+        "count": 899,
+        "mean": 16.658620689654757,
+        "p50": 16.700000000186265,
+        "p95": 17.700000000186265,
+        "p99": 22.299999999813735,
+        "max": 28.299999999813735
+      },
+      "before": {
+        "cursor": 0,
+        "stage": 0,
+        "frame": 0,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 0,
+        "bullets": 0,
+        "commands": 73,
+        "stateDigest": "d4592565"
+      },
+      "after": {
+        "cursor": 0,
+        "stage": 0,
+        "frame": 0,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 0,
+        "bullets": 0,
+        "commands": 73,
+        "stateDigest": "d4592565"
+      },
+      "hudFPS": "60.0FPS"
+    },
+    {
+      "scene": "title",
+      "cpuRate": 4,
+      "seconds": 14.926099999999627,
+      "logicalSteps": 900,
+      "logicHz": 60.29706353300745,
+      "presentations": 885,
+      "presentHz": 59.29211247412399,
+      "consumedInputFrames": 0,
+      "inputHz": 0,
+      "stepMs": {
+        "count": 900,
+        "mean": 6.223555555567145,
+        "p50": 6,
+        "p95": 7.800000000745058,
+        "p99": 9.200000000186265,
+        "max": 17
+      },
+      "presentCallMs": {
+        "count": 885,
+        "mean": 0.8746892655226218,
+        "p50": 0.7999999998137355,
+        "p95": 1.2999999998137355,
+        "p99": 1.699999999254942,
+        "max": 3.2999999998137355
+      },
+      "presentIntervalMs": {
+        "count": 884,
+        "mean": 16.84920814479659,
+        "p50": 16.5,
+        "p95": 25.100000000558794,
+        "p99": 37.700000000186265,
+        "max": 73.40000000037253
+      },
+      "before": {
+        "cursor": 0,
+        "stage": 0,
+        "frame": 0,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 0,
+        "bullets": 0,
+        "commands": 73,
+        "stateDigest": "d4592565"
+      },
+      "after": {
+        "cursor": 0,
+        "stage": 0,
+        "frame": 0,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 0,
+        "bullets": 0,
+        "commands": 73,
+        "stateDigest": "d4592565"
+      },
+      "hudFPS": "59.9FPS"
+    },
+    {
+      "scene": "live-stage-1",
+      "cpuRate": 1,
+      "seconds": 14.999299999999813,
+      "logicalSteps": 900,
+      "logicHz": 60.00280013067351,
+      "presentations": 899,
+      "presentHz": 59.93613035275054,
+      "consumedInputFrames": 900,
+      "inputHz": 60.00280013067351,
+      "stepMs": {
+        "count": 900,
+        "mean": 3.3940000000088992,
+        "p50": 3.2000000001862645,
+        "p95": 4.2000000001862645,
+        "p99": 5.2999999998137355,
+        "max": 31.59999999962747
+      },
+      "presentCallMs": {
+        "count": 899,
+        "mean": 0.36785317019759384,
+        "p50": 0.39999999944120646,
+        "p95": 0.599999999627471,
+        "p99": 0.7999999998137355,
+        "max": 2.7000000001862645
+      },
+      "presentIntervalMs": {
+        "count": 898,
+        "mean": 16.68541202672606,
+        "p50": 16.699999999254942,
+        "p95": 17,
+        "p99": 18.5,
+        "max": 44.40000000037253
+      },
+      "before": {
+        "cursor": 120,
+        "stage": 0,
+        "frame": 120,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 692,
+        "bullets": 0,
+        "commands": 169,
+        "stateDigest": "92f42294"
+      },
+      "after": {
+        "cursor": 1020,
+        "stage": 0,
+        "frame": 1020,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 292,
+        "bullets": 0,
+        "commands": 70,
+        "stateDigest": "5b9474f4"
+      },
+      "hudFPS": "60.0FPS"
+    },
+    {
+      "scene": "live-stage-1",
+      "cpuRate": 4,
+      "seconds": 14.961,
+      "logicalSteps": 900,
+      "logicHz": 60.156406657309,
+      "presentations": 100,
+      "presentHz": 6.684045184145445,
+      "consumedInputFrames": 900,
+      "inputHz": 60.156406657309,
+      "stepMs": {
+        "count": 900,
+        "mean": 15.186666666679084,
+        "p50": 15,
+        "p95": 17.700000000186265,
+        "p99": 20.200000000186265,
+        "max": 23.699999999254942
+      },
+      "presentCallMs": {
+        "count": 100,
+        "mean": 1.893999999957159,
+        "p50": 1.7000000001862645,
+        "p95": 2.900000000372529,
+        "p99": 4.900000000372529,
+        "max": 6.2999999998137355
+      },
+      "presentIntervalMs": {
+        "count": 99,
+        "mean": 149.5464646464703,
+        "p50": 155.59999999962747,
+        "p95": 189.29999999981374,
+        "p99": 193.8999999994412,
+        "max": 205.1000000005588
+      },
+      "before": {
+        "cursor": 120,
+        "stage": 0,
+        "frame": 120,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 692,
+        "bullets": 0,
+        "commands": 169,
+        "stateDigest": "92f42294"
+      },
+      "after": {
+        "cursor": 1020,
+        "stage": 0,
+        "frame": 1020,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 292,
+        "bullets": 0,
+        "commands": 70,
+        "stateDigest": "5b9474f4"
+      },
+      "hudFPS": "10.9FPS"
+    },
+    {
+      "scene": "EX-dense-replay",
+      "cpuRate": 1,
+      "seconds": 14.999599999999628,
+      "logicalSteps": 900,
+      "logicHz": 60.001600042669295,
+      "presentations": 900,
+      "presentHz": 60.001600042669295,
+      "consumedInputFrames": 900,
+      "inputHz": 60.001600042669295,
+      "stepMs": {
+        "count": 900,
+        "mean": 4.341111111110076,
+        "p50": 4.1000000005587935,
+        "p95": 5.7000000001862645,
+        "p99": 6.900000000372529,
+        "max": 10.299999999813735
+      },
+      "presentCallMs": {
+        "count": 900,
+        "mean": 0.7512222222207735,
+        "p50": 0.7000000001862645,
+        "p95": 1.099999999627471,
+        "p99": 1.2999999998137355,
+        "max": 1.800000000745058
+      },
+      "presentIntervalMs": {
+        "count": 899,
+        "mean": 16.667296996663374,
+        "p50": 16.700000000186265,
+        "p95": 17.200000000186265,
+        "p99": 17.90000000037253,
+        "max": 22
+      },
+      "before": {
+        "cursor": 50120,
+        "stage": 6,
+        "frame": 803,
+        "part": 3,
+        "subphase": 17,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 145,
+        "bullets": 460,
+        "commands": 544,
+        "stateDigest": "73d8d9fa"
+      },
+      "after": {
+        "cursor": 51020,
+        "stage": 6,
+        "frame": 1703,
+        "part": 3,
+        "subphase": 17,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 498,
+        "bullets": 563,
+        "commands": 647,
+        "stateDigest": "bd807d29"
+      },
+      "hudFPS": "60.0FPS"
+    },
+    {
+      "scene": "EX-dense-replay",
+      "cpuRate": 4,
+      "seconds": 31.678200000000185,
+      "logicalSteps": 900,
+      "logicHz": 28.41070515370175,
+      "presentations": 900,
+      "presentHz": 28.41070515370175,
+      "consumedInputFrames": 900,
+      "inputHz": 28.41070515370175,
+      "stepMs": {
+        "count": 900,
+        "mean": 21.497111111097038,
+        "p50": 20.799999999813735,
+        "p95": 25.90000000037253,
+        "p99": 33.799999999813735,
+        "max": 67.79999999981374
+      },
+      "presentCallMs": {
+        "count": 900,
+        "mean": 3.988777777782331,
+        "p50": 3.7000000001862645,
+        "p95": 5.7999999998137355,
+        "p99": 7.1000000005587935,
+        "max": 13.099999999627471
+      },
+      "presentIntervalMs": {
+        "count": 899,
+        "mean": 35.20111234705311,
+        "p50": 30.899999999441206,
+        "p95": 52.40000000037253,
+        "p99": 72.90000000037253,
+        "max": 113.1000000005588
+      },
+      "before": {
+        "cursor": 50120,
+        "stage": 6,
+        "frame": 803,
+        "part": 3,
+        "subphase": 17,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 145,
+        "bullets": 460,
+        "commands": 544,
+        "stateDigest": "73d8d9fa"
+      },
+      "after": {
+        "cursor": 51020,
+        "stage": 6,
+        "frame": 1703,
+        "part": 3,
+        "subphase": 17,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 498,
+        "bullets": 563,
+        "commands": 647,
+        "stateDigest": "bd807d29"
+      },
+      "hudFPS": "25.5FPS"
+    }
+  ],
+  "calibration": [
+    {
+      "rate": 1,
+      "iterations": 12000000,
+      "samples": [
+        14.200000000186265,
+        14.200000000186265,
+        15.700000000186265,
+        15.900000000372529
+      ],
+      "medianMs": 14.950000000186265,
+      "check": -1533592953
+    },
+    {
+      "rate": 4,
+      "iterations": 12000000,
+      "samples": [
+        59.5,
+        61.200000000186265,
+        64.09999999962747,
+        65.29999999981374
+      ],
+      "medianMs": 62.64999999990687,
+      "check": -1533592953
+    }
+  ],
+  "browser": "Edg/158.0.4370.45",
+  "errors": [],
+  "loads": [
+    {
+      "url": "http://127.0.0.1:18180/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:18180/games/thkkd/thkkd.data",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwx53ito-f856c46686f1&runtimeVariant=normal&runtimeEpoch=1",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/shell.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/input.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/save-sync.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/presentation-clock.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/local-replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/display.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/platform.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/thkkd.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/directory-keyboard.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/renderer.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/presentation-stats.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/text.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/keyboard-owners.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6268628,
+      "sha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc"
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/fonts/unifont.woff2",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "httpErrors": [
+    {
+      "url": "http://127.0.0.1:18180/_eagler/ui-country",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:18180/api/ready",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:18180/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404
+    }
+  ],
+  "navigations": [
+    "http://127.0.0.1:18180/",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html?game=thkkd",
+    "http://127.0.0.1:18180/en.html?game=thkkd"
+  ],
+  "telemetry": [
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 54.85463521667581,
+      "logicFps": 60.83877724031317,
+      "frameMs": 18.23
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014999252,
+      "logicFps": 59.99700014999252,
+      "frameMs": 16.667499999999993
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 59.835452505609574,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.997000149992495,
+      "logicFps": 59.997000149992495,
+      "frameMs": 16.6675
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 38,
+      "logicFps": 56,
+      "frameMs": 26.31578947368421
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 60,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 60,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.49702514874261,
+      "logicFps": 59.997000149992544,
+      "frameMs": 16.807563025210072
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.4970251487425,
+      "logicFps": 59.99700014999244,
+      "frameMs": 16.8075630252101
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 60.33408127648965,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014999244,
+      "logicFps": 59.99700014999244,
+      "frameMs": 16.667500000000015
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 59.835452505609574,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 56.497175141242984,
+      "logicFps": 59.997000149992544,
+      "frameMs": 17.69999999999999
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.333865177503036,
+      "logicFps": 59.83246908655769,
+      "frameMs": 16.85378151260503
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 60.33408127648965,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.997000149992544,
+      "logicFps": 59.997000149992544,
+      "frameMs": 16.667499999999986
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 31.912241336325106,
+      "logicFps": 59.835452505609574,
+      "frameMs": 31.3359375
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 9.023127701002023,
+      "logicFps": 59.83758370138183,
+      "frameMs": 110.82631578947391
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 5.760092161474596,
+      "logicFps": 60.00096001536038,
+      "frameMs": 173.60833333333298
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 5.714013618399128,
+      "logicFps": 59.99714299319084,
+      "frameMs": 175.0083333333332
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 6.961364427427756,
+      "logicFps": 60.16607826562561,
+      "frameMs": 143.6500000000004
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 6.2400998415974565,
+      "logicFps": 60.00096001536016,
+      "frameMs": 160.25384615384638
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 5.566895527927282,
+      "logicFps": 59.844126925218276,
+      "frameMs": 179.63333333333262
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 7.5,
+      "logicFps": 60,
+      "frameMs": 133.33333333333334
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.76393246675086,
+      "logicFps": 209.67179640418428,
+      "frameMs": 16.732500000001526
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.99705014749245,
+      "logicFps": 147.49262536873113,
+      "frameMs": 16.950000000000053
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.00198353664611,
+      "logicFps": 161.65823663592258,
+      "frameMs": 16.666115702479264
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.997000149992324,
+      "logicFps": 153.9923003849803,
+      "frameMs": 16.66750000000005
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 238.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 209.4240837696335,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.832469086557474,
+      "logicFps": 257.77822098125176,
+      "frameMs": 16.71333333333338
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 236,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014999276,
+      "logicFps": 263.4868256587182,
+      "frameMs": 16.667499999999926
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 277.2375966093243,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 257.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.832469086557474,
+      "logicFps": 251.29637016354138,
+      "frameMs": 16.71333333333338
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655789,
+      "logicFps": 232.34942161946648,
+      "frameMs": 16.713333333333264
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 245.5,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.832469086557474,
+      "logicFps": 280.2153968887108,
+      "frameMs": 16.71333333333338
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 197.95562203939167,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 160.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33374881587485,
+      "logicFps": 152.5651892107496,
+      "frameMs": 17.142735042735016
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.66587112171847,
+      "logicFps": 152.1479713603821,
+      "frameMs": 16.759999999999977
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59,
+      "logicFps": 146,
+      "frameMs": 16.949152542372882
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 270.25679381700326,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.5,
+      "logicFps": 138.5,
+      "frameMs": 17.094017094017094
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.49702514874239,
+      "logicFps": 239.48802559871936,
+      "frameMs": 16.807563025210136
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 52.35341045073779,
+      "logicFps": 128.14120462704392,
+      "frameMs": 19.100952380952435
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 39.389708815317285,
+      "logicFps": 73.79337854008807,
+      "frameMs": 25.387341772151792
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 51.571952791827684,
+      "logicFps": 112.56570465139312,
+      "frameMs": 19.390384615384672
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.5,
+      "logicFps": 134.5,
+      "frameMs": 17.391304347826086
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33386517750325,
+      "logicFps": 244.81451934583274,
+      "frameMs": 16.85378151260497
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561212,
+      "logicFps": 285.20143597925727,
+      "frameMs": 16.575206611570295
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.665871121718034,
+      "logicFps": 284.4073190135226,
+      "frameMs": 16.760000000000097
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.16907011437095,
+      "logicFps": 241.17354549975136,
+      "frameMs": 16.619834710743802
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 209.41364180295417,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59,
+      "logicFps": 209.5,
+      "frameMs": 16.949152542372882
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33386517750282,
+      "logicFps": 209.41364180295116,
+      "frameMs": 16.85378151260509
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.832469086557474,
+      "logicFps": 247.80614280015885,
+      "frameMs": 16.71333333333338
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33386517750282,
+      "logicFps": 260.271240526525,
+      "frameMs": 16.85378151260509
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.671805072103425,
+      "logicFps": 268.0258577821979,
+      "frameMs": 16.758333333333336
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.829485965000266,
+      "logicFps": 320.0877499127514,
+      "frameMs": 16.71416666666652
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 309,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 306.15806532036896,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.832469086557474,
+      "logicFps": 300.15955325089664,
+      "frameMs": 16.71333333333338
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.997000149992324,
+      "logicFps": 302.4848757562113,
+      "frameMs": 16.66750000000005
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 296,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 304.66217900772875,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 297.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.32806501470773,
+      "logicFps": 301.14174602383036,
+      "frameMs": 16.576033057851337
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 300.174520069808,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 297.16792979657305,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 296.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561212,
+      "logicFps": 305.1455923414431,
+      "frameMs": 16.575206611570295
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 298.1800049862877,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.330906915291074,
+      "logicFps": 232.33783716408104,
+      "frameMs": 16.854621848739594
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.16607826562561,
+      "logicFps": 217.7912585152398,
+      "frameMs": 16.62066115702484
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 245.48772561372218,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 56.84367988032909,
+      "logicFps": 107.70381451009723,
+      "frameMs": 17.592105263157894
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58,
+      "logicFps": 123.5,
+      "frameMs": 17.24137931034483
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 56.34224172317495,
+      "logicFps": 111.18867171918596,
+      "frameMs": 17.74867256637173
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.339449541284246,
+      "logicFps": 121.16074990027887,
+      "frameMs": 17.440000000000047
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 56.99715014249271,
+      "logicFps": 111.99440027998567,
+      "frameMs": 17.544736842105316
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.68274490303331,
+      "logicFps": 115.36548980606662,
+      "frameMs": 17.336206896551726
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 55.84363781412031,
+      "logicFps": 156.06302353410408,
+      "frameMs": 17.907142857142908
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 238.48807559622298,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33386517750282,
+      "logicFps": 231.35221380135556,
+      "frameMs": 16.85378151260509
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 233.8568935427574,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 181,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 212.5,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 216.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.832469086557474,
+      "logicFps": 250.79776625448673,
+      "frameMs": 16.71333333333338
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.832469086557474,
+      "logicFps": 221.38013562026265,
+      "frameMs": 16.71333333333338
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561212,
+      "logicFps": 280.7140007977655,
+      "frameMs": 16.575206611570295
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 169,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 143,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33665735939437,
+      "logicFps": 140.10769844435742,
+      "frameMs": 17.141880341880142
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.5,
+      "logicFps": 144.5,
+      "frameMs": 17.094017094017094
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.49702514874239,
+      "logicFps": 224.9887505624712,
+      "frameMs": 16.807563025210136
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 211.4185988531538,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561212,
+      "logicFps": 215.3968887116069,
+      "frameMs": 16.575206611570295
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.832469086557474,
+      "logicFps": 248.80335061826815,
+      "frameMs": 16.71333333333338
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.83819496384941,
+      "logicFps": 161.05709299426576,
+      "frameMs": 16.99576271186441
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.3280650147086,
+      "logicFps": 162.5367702049174,
+      "frameMs": 16.5760330578511
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.339566192969336,
+      "logicFps": 159.06257791074543,
+      "frameMs": 17.141025641025642
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.832469086557474,
+      "logicFps": 229.8564020741916,
+      "frameMs": 16.71333333333338
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 171.5,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 192,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561212,
+      "logicFps": 256.28240925408784,
+      "frameMs": 16.575206611570295
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 168.5,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.16571371749649,
+      "logicFps": 147.66568885795343,
+      "frameMs": 16.90168067226881
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.841128951829376,
+      "logicFps": 117.18360426847374,
+      "frameMs": 16.994915254237487
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.83516976616692,
+      "logicFps": 117.16607668145886,
+      "frameMs": 17.290517241379163
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.339566192969336,
+      "logicFps": 117.17776115681875,
+      "frameMs": 17.141025641025642
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 123,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.339449541284246,
+      "logicFps": 188.47227762265604,
+      "frameMs": 17.440000000000047
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 225.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.997000149992324,
+      "logicFps": 208.48957552122332,
+      "frameMs": 16.66750000000005
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.668837949380766,
+      "logicFps": 279.94629804584474,
+      "frameMs": 16.75916666666671
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 186.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.99705014749331,
+      "logicFps": 146.49267536623339,
+      "frameMs": 16.949999999999804
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 149.5811727163915,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.339566192969336,
+      "logicFps": 139.11742707554225,
+      "frameMs": 17.141025641025642
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.835261268449024,
+      "logicFps": 176.50578380534708,
+      "frameMs": 16.99661016949133
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 232,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 210.90945353011813,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 266,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.00728913571642,
+      "logicFps": 244.45876927653947,
+      "frameMs": 16.94705882352951
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 212.415856394914,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.665871121718034,
+      "logicFps": 203.3611774065223,
+      "frameMs": 16.760000000000097
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 235,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 169,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.330906915291074,
+      "logicFps": 153.0637682604568,
+      "frameMs": 16.854621848739594
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 175.018698578908,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.166078265626474,
+      "logicFps": 176.52031226692063,
+      "frameMs": 16.6206611570246
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.9970501474916,
+      "logicFps": 151.99240037997836,
+      "frameMs": 16.950000000000298
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 218.89803041635503,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 198.94295971280647,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 217.39130434782862,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014999146,
+      "logicFps": 219.48902554871873,
+      "frameMs": 16.66750000000029
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.026678567887195,
+      "logicFps": 132.89695527125016,
+      "frameMs": 17.535652173912844
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 50.440114726535164,
+      "logicFps": 62.30837701513167,
+      "frameMs": 19.825490196078547
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 51.356202632629234,
+      "logicFps": 67.31152772237813,
+      "frameMs": 19.47184466019395
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 51.35620263262775,
+      "logicFps": 72.29756681292255,
+      "frameMs": 19.471844660194513
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.49707514624337,
+      "logicFps": 240.9879506024727,
+      "frameMs": 17.094871794871597
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 140.1146846173024,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014999146,
+      "logicFps": 59.99700014999146,
+      "frameMs": 16.66750000000029
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 59.9970001499932,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 59.835452505609574,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 59.9970001499932,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.27770859277192,
+      "logicFps": 210.70983810708003,
+      "frameMs": 16.869747899161133
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 148.08536098922758,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 166.5,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.49707514624337,
+      "logicFps": 156.99215039248222,
+      "frameMs": 17.094871794871597
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 245.82398404387934,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 221.4889255537249,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 259,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 240.5,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561124,
+      "logicFps": 269.2461108895047,
+      "frameMs": 16.575206611570536
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 281.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 268.2489030714032,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.16607826562473,
+      "logicFps": 242.15603401123343,
+      "frameMs": 16.620661157025083
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 243.8173115277252,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 249.81301421091996,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 278.9860506974684,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.163086714399014,
+      "logicFps": 178.00318217979213,
+      "frameMs": 16.62148760330588
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 158.56394913986537,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59,
+      "logicFps": 163.5,
+      "frameMs": 16.949152542372882
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014999146,
+      "logicFps": 158.49207539622742,
+      "frameMs": 16.66750000000029
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58,
+      "logicFps": 213,
+      "frameMs": 17.24137931034483
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.668837949381626,
+      "logicFps": 204.8630102928769,
+      "frameMs": 16.759166666666474
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.83805345033972,
+      "logicFps": 131.63143199042833,
+      "frameMs": 17.289655172413593
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 253.8020443779606,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.9970501474916,
+      "logicFps": 144.99275036247934,
+      "frameMs": 16.950000000000298
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 146,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.49707514624337,
+      "logicFps": 146.49267536623339,
+      "frameMs": 17.094871794871597
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 273.73354607099645,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 294.68960359012715,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 264.26007179896595,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 226.36617471081234,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 207.92819745699327,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014999146,
+      "logicFps": 209.48952552372018,
+      "frameMs": 16.66750000000029
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 200.44876589379206,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33386517750368,
+      "logicFps": 257.27961707220084,
+      "frameMs": 16.853781512604847
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014999146,
+      "logicFps": 250.48747562621432,
+      "frameMs": 16.66750000000029
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 278.2348541510845,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.331072995612985,
+      "logicFps": 299.16234543279165,
+      "frameMs": 16.575206611570056
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 313.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.82948596499941,
+      "logicFps": 303.13606222266367,
+      "frameMs": 16.714166666666763
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 304.16355023684866,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 303.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 297.98510074496625,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561124,
+      "logicFps": 299.162345432783,
+      "frameMs": 16.575206611570536
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 299.6758912989279,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.82948596500114,
+      "logicFps": 311.6119060677143,
+      "frameMs": 16.71416666666628
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 303.6649214659686,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 299.17726252804783,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 304.64698843238403,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 305.98470076496534,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.16607826562473,
+      "logicFps": 291.8800656357167,
+      "frameMs": 16.620661157025083
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33386517750368,
+      "logicFps": 233.84523334663214,
+      "frameMs": 16.853781512604847
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 233.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.668837949381626,
+      "logicFps": 210.82989408781506,
+      "frameMs": 16.759166666666474
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.5,
+      "logicFps": 108.5,
+      "frameMs": 17.391304347826086
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.6770087509941,
+      "logicFps": 120.32617342879803,
+      "frameMs": 17.33793103448286
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.5,
+      "logicFps": 113.5,
+      "frameMs": 17.094017094017094
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33665735939268,
+      "logicFps": 121.65935380933175,
+      "frameMs": 17.14188034188064
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 56.84367988032909,
+      "logicFps": 121.66542009473946,
+      "frameMs": 17.592105263157894
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.671439936357764,
+      "logicFps": 109.88464598250056,
+      "frameMs": 17.044067796609774
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 229,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.333865177501956,
+      "logicFps": 222.37734343836868,
+      "frameMs": 16.853781512605334
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 265.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.82948596499941,
+      "logicFps": 178.49129979558157,
+      "frameMs": 16.714166666666763
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.838436222201096,
+      "logicFps": 210.93048768325886,
+      "frameMs": 16.71166666666638
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.163086714399014,
+      "logicFps": 218.77486077963277,
+      "frameMs": 16.62148760330588
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 227.86198643797633,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 237.83406461906247,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59,
+      "logicFps": 239.5,
+      "frameMs": 16.949152542372882
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 247.81849912739963,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.49707514624337,
+      "logicFps": 143.99280035998368,
+      "frameMs": 17.094871794871597
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33665735939268,
+      "logicFps": 139.60909453529874,
+      "frameMs": 17.14188034188064
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 146.09094535301327,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59,
+      "logicFps": 176,
+      "frameMs": 16.949152542372882
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.331072995612985,
+      "logicFps": 226.86477861986702,
+      "frameMs": 16.575206611570056
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 199.44156362185532,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.668837949381626,
+      "logicFps": 266.5208095072379,
+      "frameMs": 16.759166666666474
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 175.51732734978808,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.330906915291074,
+      "logicFps": 163.03534925462338,
+      "frameMs": 16.854621848739594
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 160.0598354525056,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 209,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.835261268449024,
+      "logicFps": 183.98484244116688,
+      "frameMs": 16.99661016949133
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 183.4862385321069,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.331072995612985,
+      "logicFps": 262.764260071802,
+      "frameMs": 16.575206611570056
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 183.49538768386935,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.83526126844732,
+      "logicFps": 157.06023135221108,
+      "frameMs": 16.99661016949182
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.17159763313678,
+      "logicFps": 130.27696285614988,
+      "frameMs": 16.899999999999803
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 56.497175141243595,
+      "logicFps": 121.99390030498617,
+      "frameMs": 17.699999999999793
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.34230865120917,
+      "logicFps": 117.67638992769882,
+      "frameMs": 17.43913043478261
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.17422434367508,
+      "logicFps": 117.84009546539312,
+      "frameMs": 17.18974358974369
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.838053450338045,
+      "logicFps": 133.12724371758844,
+      "frameMs": 17.289655172414093
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.331072995612985,
+      "logicFps": 240.8256880733973,
+      "frameMs": 16.575206611570056
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 211.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.497025148743255,
+      "logicFps": 248.48757562122185,
+      "frameMs": 16.807563025209888
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.6688379493799,
+      "logicFps": 222.76366167768495,
+      "frameMs": 16.759166666666957
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561124,
+      "logicFps": 161.04906262464817,
+      "frameMs": 16.575206611570536
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33665735939437,
+      "logicFps": 141.10490626246673,
+      "frameMs": 17.141880341880142
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.00198353664653,
+      "logicFps": 146.28582763066714,
+      "frameMs": 16.66611570247915
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 142,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 230.36649214659684,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.32806501470948,
+      "logicFps": 212.89325422546239,
+      "frameMs": 16.576033057850854
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 213.5,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.333865177500236,
+      "logicFps": 284.2042281611356,
+      "frameMs": 16.853781512605824
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 216.3940965297193,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.331072995612985,
+      "logicFps": 207.41922616673554,
+      "frameMs": 16.575206611570056
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.00198353664653,
+      "logicFps": 202.81662203709448,
+      "frameMs": 16.66611570247915
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.82948596499767,
+      "logicFps": 219.37478187165812,
+      "frameMs": 16.71416666666725
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.671805072103425,
+      "logicFps": 150.67130780706117,
+      "frameMs": 16.758333333333336
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.497025148743255,
+      "logicFps": 162.49187540623157,
+      "frameMs": 16.807563025209888
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 171.02966841186736,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.66587112171976,
+      "logicFps": 162.09228321400533,
+      "frameMs": 16.75999999999961
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33386517750368,
+      "logicFps": 148.08536098923187,
+      "frameMs": 16.853781512604847
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014998971,
+      "logicFps": 243.98780060995816,
+      "frameMs": 16.667500000000775
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 199.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 222.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 203.44053851907253,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 53.5,
+      "logicFps": 87,
+      "frameMs": 18.69158878504673
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 50.2187748607808,
+      "logicFps": 65.63245823389174,
+      "frameMs": 19.91287128712825
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 51.854806541683885,
+      "logicFps": 66.81292381332347,
+      "frameMs": 19.28461538461516
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 53.5,
+      "logicFps": 84,
+      "frameMs": 18.69158878504673
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.83232786558104,
+      "logicFps": 273.22131924015605,
+      "frameMs": 16.997457627119235
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 46.871104462727494,
+      "logicFps": 80.27923211169285,
+      "frameMs": 21.335106382978722
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 29.917726252804787,
+      "logicFps": 29.917726252804787,
+      "frameMs": 33.425
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 29.337178658445964,
+      "logicFps": 29.337178658445964,
+      "frameMs": 34.086440677965705
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.743293499281712,
+      "logicFps": 30.743293499281712,
+      "frameMs": 32.52741935483796
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 31.49842507874643,
+      "logicFps": 31.49842507874643,
+      "frameMs": 31.747619047618677
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 28.83993834219945,
+      "logicFps": 28.83993834219945,
+      "frameMs": 34.674137931036086
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.828899607180507,
+      "logicFps": 30.828899607180507,
+      "frameMs": 32.43709677419317
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 29.416163932792227,
+      "logicFps": 29.416163932792227,
+      "frameMs": 33.994915254236496
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.165166650181927,
+      "logicFps": 30.165166650181927,
+      "frameMs": 33.15081967213229
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 29.834418974690813,
+      "logicFps": 29.834418974690813,
+      "frameMs": 33.51833333333295
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 27.196756168719723,
+      "logicFps": 27.196756168719723,
+      "frameMs": 36.76909090908964
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 19.94515083520319,
+      "logicFps": 19.94515083520319,
+      "frameMs": 50.1375
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 28.680215596102787,
+      "logicFps": 28.680215596102787,
+      "frameMs": 34.867241379311146
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 24.72554643457677,
+      "logicFps": 24.72554643457677,
+      "frameMs": 40.44399999999907
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.16367502348741,
+      "logicFps": 30.16367502348741,
+      "frameMs": 33.152459016394204
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 28.681633864109056,
+      "logicFps": 28.681633864109056,
+      "frameMs": 34.86551724137851
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 26.628531978894117,
+      "logicFps": 26.628531978894117,
+      "frameMs": 37.55370370370414
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.24537782330811,
+      "logicFps": 30.24537782330811,
+      "frameMs": 33.06290322580683
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    }
+  ],
+  "runtime": {
+    "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwx53ito-f856c46686f1&runtimeVariant=normal&runtimeEpoch=1",
+    "manifest": {
+      "game": "thkkd",
+      "protocol": "eagler-touhou/1",
+      "variant": "normal",
+      "buildId": "d64ea1f7245d28fcaae564d64bf4a2e8efc08eee89d355c2c2cf78b085c8065a",
+      "features": {
+        "thprac": false,
+        "languages": false,
+        "focusHitbox": false
+      }
+    },
+    "configure": {
+      "language": "ja",
+      "music": "ogg",
+      "resources": [],
+      "runtimeResources": [],
+      "runtimePack": null,
+      "sharedResources": [],
+      "options": {
+        "limitPresentationTo60": true,
+        "touchEnabled": false,
+        "touchMovementMode": "touch-unlimited",
+        "touchSensitivity": 150,
+        "touchFocusMode": "hold-button",
+        "doubleTapBombEnabled": false,
+        "alwaysHitbox": false,
+        "oggDecodeMode": "stream"
+      },
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "command": "configure",
+      "request": "runtime-1-1"
+    },
+    "serviceWorker": "http://127.0.0.1:18180/app-shell-sw.js"
+  },
+  "hardware": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+    "cores": 22,
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Ti (0x00002803) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "canvas": {
+      "width": 640,
+      "height": 480
+    },
+    "wasmHeapBytes": 134217728
+  },
+  "calibrationRatio": 4.190635451446576,
+  "sameReplaySceneDigest": true,
+  "finalDocumentEvents": [
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.82948596499941,
+      "logicFps": 303.13606222266367,
+      "frameMs": 16.714166666666763
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 304.16355023684866,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 303.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 297.98510074496625,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561124,
+      "logicFps": 299.162345432783,
+      "frameMs": 16.575206611570536
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 299.6758912989279,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.82948596500114,
+      "logicFps": 311.6119060677143,
+      "frameMs": 16.71416666666628
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 303.6649214659686,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 299.17726252804783,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 304.64698843238403,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.9970001499932,
+      "logicFps": 305.98470076496534,
+      "frameMs": 16.667499999999805
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.16607826562473,
+      "logicFps": 291.8800656357167,
+      "frameMs": 16.620661157025083
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33386517750368,
+      "logicFps": 233.84523334663214,
+      "frameMs": 16.853781512604847
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 233.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.668837949381626,
+      "logicFps": 210.82989408781506,
+      "frameMs": 16.759166666666474
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.5,
+      "logicFps": 108.5,
+      "frameMs": 17.391304347826086
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.6770087509941,
+      "logicFps": 120.32617342879803,
+      "frameMs": 17.33793103448286
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.5,
+      "logicFps": 113.5,
+      "frameMs": 17.094017094017094
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33665735939268,
+      "logicFps": 121.65935380933175,
+      "frameMs": 17.14188034188064
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 56.84367988032909,
+      "logicFps": 121.66542009473946,
+      "frameMs": 17.592105263157894
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.671439936357764,
+      "logicFps": 109.88464598250056,
+      "frameMs": 17.044067796609774
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 229,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.333865177501956,
+      "logicFps": 222.37734343836868,
+      "frameMs": 16.853781512605334
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 265.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.82948596499941,
+      "logicFps": 178.49129979558157,
+      "frameMs": 16.714166666666763
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.838436222201096,
+      "logicFps": 210.93048768325886,
+      "frameMs": 16.71166666666638
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.163086714399014,
+      "logicFps": 218.77486077963277,
+      "frameMs": 16.62148760330588
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 227.86198643797633,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 237.83406461906247,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59,
+      "logicFps": 239.5,
+      "frameMs": 16.949152542372882
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33408127648965,
+      "logicFps": 247.81849912739963,
+      "frameMs": 16.574380165289256
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.49707514624337,
+      "logicFps": 143.99280035998368,
+      "frameMs": 17.094871794871597
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33665735939268,
+      "logicFps": 139.60909453529874,
+      "frameMs": 17.14188034188064
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 146.09094535301327,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59,
+      "logicFps": 176,
+      "frameMs": 16.949152542372882
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.331072995612985,
+      "logicFps": 226.86477861986702,
+      "frameMs": 16.575206611570056
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 199.44156362185532,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.668837949381626,
+      "logicFps": 266.5208095072379,
+      "frameMs": 16.759166666666474
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 175.51732734978808,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.330906915291074,
+      "logicFps": 163.03534925462338,
+      "frameMs": 16.854621848739594
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 160.0598354525056,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 209,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.835261268449024,
+      "logicFps": 183.98484244116688,
+      "frameMs": 16.99661016949133
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.8324690865566,
+      "logicFps": 183.4862385321069,
+      "frameMs": 16.713333333333626
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.331072995612985,
+      "logicFps": 262.764260071802,
+      "frameMs": 16.575206611570056
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 183.49538768386935,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.83526126844732,
+      "logicFps": 157.06023135221108,
+      "frameMs": 16.99661016949182
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.17159763313678,
+      "logicFps": 130.27696285614988,
+      "frameMs": 16.899999999999803
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 56.497175141243595,
+      "logicFps": 121.99390030498617,
+      "frameMs": 17.699999999999793
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.34230865120917,
+      "logicFps": 117.67638992769882,
+      "frameMs": 17.43913043478261
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.17422434367508,
+      "logicFps": 117.84009546539312,
+      "frameMs": 17.18974358974369
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.838053450338045,
+      "logicFps": 133.12724371758844,
+      "frameMs": 17.289655172414093
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.331072995612985,
+      "logicFps": 240.8256880733973,
+      "frameMs": 16.575206611570056
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 211.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.497025148743255,
+      "logicFps": 248.48757562122185,
+      "frameMs": 16.807563025209888
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.6688379493799,
+      "logicFps": 222.76366167768495,
+      "frameMs": 16.759166666666957
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.33107299561124,
+      "logicFps": 161.04906262464817,
+      "frameMs": 16.575206611570536
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33665735939437,
+      "logicFps": 141.10490626246673,
+      "frameMs": 17.141880341880142
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.00198353664653,
+      "logicFps": 146.28582763066714,
+      "frameMs": 16.66611570247915
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 142,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 230.36649214659684,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.32806501470948,
+      "logicFps": 212.89325422546239,
+      "frameMs": 16.576033057850854
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.5,
+      "logicFps": 213.5,
+      "frameMs": 16.80672268907563
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.333865177500236,
+      "logicFps": 284.2042281611356,
+      "frameMs": 16.853781512605824
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.83246908655833,
+      "logicFps": 216.3940965297193,
+      "frameMs": 16.71333333333314
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.331072995612985,
+      "logicFps": 207.41922616673554,
+      "frameMs": 16.575206611570056
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60.00198353664653,
+      "logicFps": 202.81662203709448,
+      "frameMs": 16.66611570247915
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.82948596499767,
+      "logicFps": 219.37478187165812,
+      "frameMs": 16.71416666666725
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.671805072103425,
+      "logicFps": 150.67130780706117,
+      "frameMs": 16.758333333333336
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.497025148743255,
+      "logicFps": 162.49187540623157,
+      "frameMs": 16.807563025209888
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 171.02966841186736,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.66587112171976,
+      "logicFps": 162.09228321400533,
+      "frameMs": 16.75999999999961
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33386517750368,
+      "logicFps": 148.08536098923187,
+      "frameMs": 16.853781512604847
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.99700014998971,
+      "logicFps": 243.98780060995816,
+      "frameMs": 16.667500000000775
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 199.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 222.5,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.33682373472949,
+      "logicFps": 203.44053851907253,
+      "frameMs": 16.852941176470587
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 53.5,
+      "logicFps": 87,
+      "frameMs": 18.69158878504673
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 50.2187748607808,
+      "logicFps": 65.63245823389174,
+      "frameMs": 19.91287128712825
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 51.854806541683885,
+      "logicFps": 66.81292381332347,
+      "frameMs": 19.28461538461516
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 53.5,
+      "logicFps": 84,
+      "frameMs": 18.69158878504673
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.83232786558104,
+      "logicFps": 273.22131924015605,
+      "frameMs": 16.997457627119235
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 46.871104462727494,
+      "logicFps": 80.27923211169285,
+      "frameMs": 21.335106382978722
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 29.917726252804787,
+      "logicFps": 29.917726252804787,
+      "frameMs": 33.425
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 29.337178658445964,
+      "logicFps": 29.337178658445964,
+      "frameMs": 34.086440677965705
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.743293499281712,
+      "logicFps": 30.743293499281712,
+      "frameMs": 32.52741935483796
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 31.49842507874643,
+      "logicFps": 31.49842507874643,
+      "frameMs": 31.747619047618677
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 28.83993834219945,
+      "logicFps": 28.83993834219945,
+      "frameMs": 34.674137931036086
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.828899607180507,
+      "logicFps": 30.828899607180507,
+      "frameMs": 32.43709677419317
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 29.416163932792227,
+      "logicFps": 29.416163932792227,
+      "frameMs": 33.994915254236496
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.165166650181927,
+      "logicFps": 30.165166650181927,
+      "frameMs": 33.15081967213229
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 29.834418974690813,
+      "logicFps": 29.834418974690813,
+      "frameMs": 33.51833333333295
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 27.196756168719723,
+      "logicFps": 27.196756168719723,
+      "frameMs": 36.76909090908964
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 19.94515083520319,
+      "logicFps": 19.94515083520319,
+      "frameMs": 50.1375
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 28.680215596102787,
+      "logicFps": 28.680215596102787,
+      "frameMs": 34.867241379311146
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 24.72554643457677,
+      "logicFps": 24.72554643457677,
+      "frameMs": 40.44399999999907
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.16367502348741,
+      "logicFps": 30.16367502348741,
+      "frameMs": 33.152459016394204
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 28.681633864109056,
+      "logicFps": 28.681633864109056,
+      "frameMs": 34.86551724137851
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 26.628531978894117,
+      "logicFps": 26.628531978894117,
+      "frameMs": 37.55370370370414
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 30.24537782330811,
+      "logicFps": 30.24537782330811,
+      "frameMs": 33.06290322580683
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    }
+  ],
+  "events": [
+    {
+      "type": "focus",
+      "time": 111.40000000037253
+    },
+    {
+      "type": "focus",
+      "active": "H1",
+      "target": "H1",
+      "time": 799.4000000003725
+    },
+    {
+      "type": "click",
+      "active": "H1",
+      "target": "BUTTON",
+      "time": 1632.5999999996275
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "H1",
+      "time": 1790.5999999996275
+    },
+    {
+      "type": "focus",
+      "active": "A",
+      "target": "A",
+      "product": "thkkd",
+      "time": 2191.2999999998137
+    },
+    {
+      "type": "click",
+      "active": "A",
+      "target": "IMG",
+      "product": "thkkd",
+      "time": 2191.7999999998137
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "A",
+      "product": "thkkd",
+      "time": 2217.5999999996275
+    },
+    {
+      "type": "focus",
+      "active": "H2",
+      "target": "H2",
+      "time": 2231.7999999998137
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "H2",
+      "time": 2351
+    },
+    {
+      "type": "focus",
+      "active": "BUTTON",
+      "target": "BUTTON",
+      "time": 2351.0999999996275
+    },
+    {
+      "type": "click",
+      "active": "BUTTON",
+      "target": "SPAN",
+      "time": 2351.2999999998137
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "BUTTON",
+      "time": 2410.4000000003725
+    },
+    {
+      "type": "blur",
+      "active": "IFRAME",
+      "time": 2420.7999999998137
+    },
+    {
+      "type": "focus",
+      "active": "IFRAME",
+      "target": "IFRAME",
+      "time": 2421.0999999996275
+    }
+  ],
+  "runtimeErrors": [],
+  "result": "measured"
+}

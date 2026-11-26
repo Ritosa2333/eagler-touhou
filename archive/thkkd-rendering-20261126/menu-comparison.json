@@ -1,0 +1,28 @@
+{
+  "region": [
+    465,
+    200,
+    635,
+    240
+  ],
+  "beforeMAE": 31.07470588235294,
+  "afterMAE": 12.90264705882353,
+  "originalForegroundBox": [
+    2,
+    4,
+    151,
+    23
+  ],
+  "beforeForegroundBox": [
+    1,
+    6,
+    128,
+    24
+  ],
+  "afterForegroundBox": [
+    2,
+    4,
+    150,
+    24
+  ]
+}

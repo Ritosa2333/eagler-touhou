@@ -1,0 +1,1029 @@
+{
+  "schema": "thkkd/rendering-browser/1",
+  "checks": [
+    "headed-secondary-monitor-native-DPI-fullscreen",
+    "actual-PNG-GPU-straight-alpha-and-bilinear-filter",
+    "native-menu-font-weight-outline-and-Unicode-layout",
+    "seven-viewport-DPR-portrait-landscape-fits",
+    "launcher-fullscreen-with-native-buffer-and-aspect",
+    "120-extra-presentations-do-not-step-or-play-audio",
+    "updated-renderer-and-fonts-load-offline"
+  ],
+  "display": [
+    {
+      "dpr": 1.0000000298023224,
+      "view": {
+        "width": 1270,
+        "height": 900
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 35,
+        "top": 0,
+        "width": 1200,
+        "height": 900
+      },
+      "physical": {
+        "left": 35.000001043081284,
+        "top": 0,
+        "width": 1200.0000357627869,
+        "height": 900.0000268220901
+      }
+    },
+    {
+      "dpr": 1.2499999701976776,
+      "view": {
+        "width": 1270,
+        "height": 900
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 36.79166793823242,
+        "top": 0.7916666865348816,
+        "width": 1196.791748046875,
+        "height": 897.59375
+      },
+      "physical": {
+        "left": 45.98958382631338,
+        "top": 0.9895833345750962,
+        "width": 1495.9896493914202,
+        "height": 1121.9921607496217
+      }
+    },
+    {
+      "dpr": 1.5,
+      "view": {
+        "width": 1355,
+        "height": 768
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 165.33334350585938,
+        "top": 0,
+        "width": 1024,
+        "height": 768
+      },
+      "physical": {
+        "left": 248.00001525878906,
+        "top": 0,
+        "width": 1536,
+        "height": 1152
+      }
+    },
+    {
+      "dpr": 2.0000000596046448,
+      "view": {
+        "width": 1910,
+        "height": 1080
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 235,
+        "top": 0,
+        "width": 1440,
+        "height": 1080
+      },
+      "physical": {
+        "left": 470.0000140070915,
+        "top": 0,
+        "width": 2880.0000858306885,
+        "height": 2160.0000643730164
+      }
+    },
+    {
+      "dpr": 1.0000000298023224,
+      "view": {
+        "width": 790,
+        "height": 600
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 0.9895833730697632,
+        "top": 4.989583492279053,
+        "width": 788,
+        "height": 591
+      },
+      "physical": {
+        "left": 0.9895834025616459,
+        "top": 4.9895836409802286,
+        "width": 788.00002348423,
+        "height": 591.0000176131725
+      }
+    },
+    {
+      "dpr": 3,
+      "view": {
+        "width": 380,
+        "height": 844
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 0,
+        "top": 279.66668701171875,
+        "width": 380,
+        "height": 285
+      },
+      "physical": {
+        "left": 0,
+        "top": 839.0000610351562,
+        "width": 1140,
+        "height": 855
+      }
+    },
+    {
+      "dpr": 3,
+      "view": {
+        "width": 834,
+        "height": 390
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 157,
+        "top": 0,
+        "width": 520,
+        "height": 390
+      },
+      "physical": {
+        "left": 471,
+        "top": 0,
+        "width": 1560,
+        "height": 1170
+      }
+    }
+  ],
+  "browser": "Edg/158.0.4370.45",
+  "errors": [],
+  "loads": [
+    {
+      "url": "http://127.0.0.1:18181/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:18181/games/thkkd/thkkd.data",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwx5vdvl-64d15e6c35e6&runtimeVariant=normal&runtimeEpoch=1",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/shell.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/platform.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/input.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/save-sync.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/thkkd.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/local-replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/presentation-clock.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/display.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/renderer.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/presentation-stats.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/text.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/directory-keyboard.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/keyboard-owners.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6268628,
+      "sha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc"
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/fonts/unifont.woff2",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwx5vdvl-64d15e6c35e6&runtimeVariant=normal&runtimeEpoch=1",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/shell.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/input.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/display.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/presentation-clock.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/local-replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/save-sync.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/platform.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/thkkd.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/directory-keyboard.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/renderer.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/presentation-stats.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/text.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/keyboard-owners.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6268628,
+      "sha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc"
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/fonts/unifont.woff2",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED"
+  ],
+  "httpErrors": [
+    {
+      "url": "http://127.0.0.1:18181/_eagler/ui-country",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:18181/api/ready",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:18181/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:18181/api/ready",
+      "status": 404
+    }
+  ],
+  "navigations": [
+    "http://127.0.0.1:18181/",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html?game=thkkd",
+    "http://127.0.0.1:18181/en.html?game=thkkd",
+    "http://127.0.0.1:18181/",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html",
+    "http://127.0.0.1:18181/en.html?game=thkkd",
+    "http://127.0.0.1:18181/en.html?game=thkkd"
+  ],
+  "telemetry": [
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 45.33136240450817,
+      "logicFps": 58.635131805831215,
+      "frameMs": 22.059782608707803
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    }
+  ],
+  "runtime": {
+    "url": "http://127.0.0.1:18181/runtime/thkkd/70d32264e490a858454897da79d30ca7e0a4298b3ac66cb5aa90f73b9f39f65b/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwx5vdvl-64d15e6c35e6&runtimeVariant=normal&runtimeEpoch=1",
+    "manifest": {
+      "game": "thkkd",
+      "protocol": "eagler-touhou/1",
+      "variant": "normal",
+      "buildId": "ef20ada5e4e78ced7a8412f0da93a36b5b9f07176b2f011533212bc927440b8c",
+      "features": {
+        "thprac": false,
+        "languages": false,
+        "focusHitbox": false
+      }
+    },
+    "configure": {
+      "language": "ja",
+      "music": "ogg",
+      "resources": [],
+      "runtimeResources": [],
+      "runtimePack": null,
+      "sharedResources": [],
+      "options": {
+        "limitPresentationTo60": true,
+        "touchEnabled": false,
+        "touchMovementMode": "touch-unlimited",
+        "touchSensitivity": 150,
+        "touchFocusMode": "hold-button",
+        "doubleTapBombEnabled": false,
+        "alwaysHitbox": false,
+        "oggDecodeMode": "stream"
+      },
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "command": "configure",
+      "request": "runtime-1-1"
+    },
+    "serviceWorker": "http://127.0.0.1:18181/app-shell-sw.js"
+  },
+  "hardware": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+    "dpr": 1.5,
+    "screen": {
+      "left": -1707,
+      "top": 1152,
+      "width": 1707,
+      "height": 1067
+    },
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Ti (0x00002803) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  },
+  "nativeFullscreen": {
+    "dpr": 1.5,
+    "screen": {
+      "left": -1707,
+      "top": 1152,
+      "width": 1707,
+      "height": 1067
+    },
+    "canvas": {
+      "width": 640,
+      "height": 480
+    },
+    "physical": {
+      "width": 2048.0000610351562,
+      "height": 1536
+    }
+  },
+  "alpha": [
+    {
+      "source": "dat/img/char/atari.png",
+      "pixels": [
+        {
+          "x": 2,
+          "y": 0,
+          "expected": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 5,
+          "y": 1,
+          "expected": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 6,
+          "y": 2,
+          "expected": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 6,
+          "y": 3,
+          "expected": [
+            128,
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            128,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 6,
+          "y": 4,
+          "expected": [
+            128,
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            128,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 6,
+          "y": 5,
+          "expected": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            255,
+            0,
+            0,
+            255
+          ]
+        }
+      ],
+      "min": 9729,
+      "mag": 9729
+    },
+    {
+      "source": "dat/img/char/p0.png",
+      "pixels": [
+        {
+          "x": 18,
+          "y": 7,
+          "expected": [
+            223,
+            106,
+            106,
+            48
+          ],
+          "actual": [
+            223,
+            106,
+            106,
+            48
+          ]
+        },
+        {
+          "x": 13,
+          "y": 25,
+          "expected": [
+            203,
+            203,
+            203,
+            79
+          ],
+          "actual": [
+            203,
+            203,
+            203,
+            79
+          ]
+        },
+        {
+          "x": 18,
+          "y": 55,
+          "expected": [
+            223,
+            106,
+            106,
+            48
+          ],
+          "actual": [
+            223,
+            106,
+            106,
+            48
+          ]
+        },
+        {
+          "x": 13,
+          "y": 73,
+          "expected": [
+            203,
+            203,
+            203,
+            79
+          ],
+          "actual": [
+            203,
+            203,
+            203,
+            79
+          ]
+        },
+        {
+          "x": 18,
+          "y": 103,
+          "expected": [
+            223,
+            106,
+            106,
+            48
+          ],
+          "actual": [
+            223,
+            106,
+            106,
+            48
+          ]
+        },
+        {
+          "x": 13,
+          "y": 121,
+          "expected": [
+            203,
+            203,
+            203,
+            79
+          ],
+          "actual": [
+            203,
+            203,
+            203,
+            79
+          ]
+        }
+      ],
+      "min": 9729,
+      "mag": 9729
+    },
+    {
+      "source": "dat/img/tama/tama0_0.bmp",
+      "pixels": [
+        {
+          "x": 0,
+          "y": 0,
+          "expected": [
+            255,
+            255,
+            255,
+            0
+          ],
+          "actual": [
+            255,
+            255,
+            255,
+            0
+          ]
+        },
+        {
+          "x": 12,
+          "y": 0,
+          "expected": [
+            255,
+            255,
+            255,
+            0
+          ],
+          "actual": [
+            255,
+            255,
+            255,
+            0
+          ]
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "expected": [
+            255,
+            255,
+            255,
+            0
+          ],
+          "actual": [
+            255,
+            255,
+            255,
+            0
+          ]
+        },
+        {
+          "x": 0,
+          "y": 5,
+          "expected": [
+            255,
+            255,
+            255,
+            159
+          ],
+          "actual": [
+            255,
+            255,
+            255,
+            159
+          ]
+        },
+        {
+          "x": 14,
+          "y": 12,
+          "expected": [
+            255,
+            255,
+            255,
+            207
+          ],
+          "actual": [
+            255,
+            255,
+            255,
+            207
+          ]
+        },
+        {
+          "x": 12,
+          "y": 14,
+          "expected": [
+            255,
+            255,
+            255,
+            175
+          ],
+          "actual": [
+            255,
+            255,
+            255,
+            175
+          ]
+        }
+      ],
+      "min": 9729,
+      "mag": 9729
+    }
+  ],
+  "font": {
+    "style": {
+      "size": 26,
+      "weight": 300,
+      "edge": 1,
+      "antialias": true,
+      "italic": false
+    },
+    "menuWidth": 151,
+    "glyphs": 217
+  },
+  "automaticFullscreen": true,
+  "fullscreen": {
+    "buffer": {
+      "width": 640,
+      "height": 480
+    },
+    "rect": {
+      "width": 1196.791748046875,
+      "height": 897.59375
+    },
+    "dpr": 1.2499999701976776
+  },
+  "readOnly": {
+    "before": [
+      0,
+      0,
+      0,
+      98,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      1
+    ],
+    "after": [
+      0,
+      0,
+      0,
+      98,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      1
+    ]
+  },
+  "offline": {
+    "fontRenderer": true,
+    "serviceWorker": true,
+    "first": true
+  },
+  "result": "passed",
+  "finalDocumentEvents": [],
+  "events": [
+    {
+      "type": "focus",
+      "time": 42.25999999977648
+    },
+    {
+      "type": "focus",
+      "active": "A",
+      "target": "A",
+      "product": "thkkd",
+      "time": 1463.2550000008196
+    },
+    {
+      "type": "click",
+      "active": "A",
+      "target": "IMG",
+      "product": "thkkd",
+      "time": 1464.054999999702
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "A",
+      "product": "thkkd",
+      "time": 1484.535000000149
+    },
+    {
+      "type": "focus",
+      "active": "H2",
+      "target": "H2",
+      "time": 1494.1650000009686
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "H2",
+      "time": 1566.2000000011176
+    },
+    {
+      "type": "focus",
+      "active": "BUTTON",
+      "target": "BUTTON",
+      "time": 1566.4700000006706
+    },
+    {
+      "type": "click",
+      "active": "BUTTON",
+      "target": "SPAN",
+      "time": 1566.75
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "BUTTON",
+      "time": 1640.835000000894
+    },
+    {
+      "type": "blur",
+      "active": "IFRAME",
+      "time": 1656.0449999999255
+    },
+    {
+      "type": "focus",
+      "active": "IFRAME",
+      "target": "IFRAME",
+      "time": 1656.4850000012666
+    }
+  ]
+}

@@ -1,0 +1,341 @@
+[
+  {
+    "profile": "dense-cpu-4.cpuprofile",
+    "totalMs": 4478.807,
+    "self": [
+      {
+        "name": "(program)",
+        "ms": 626.46,
+        "percent": 13.99
+      },
+      {
+        "name": "present",
+        "ms": 345.382,
+        "percent": 7.71
+      },
+      {
+        "name": "thkkd_platform",
+        "ms": 228.481,
+        "percent": 5.1
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::read(unsigned int, unsigned long) const",
+        "ms": 189.591,
+        "percent": 4.23
+      },
+      {
+        "name": "l_",
+        "ms": 177.25,
+        "percent": 3.96
+      },
+      {
+        "name": "kaikeidou::gameplay_hud_tail_detail::Engine<kaikeidou::GameStartEntryMemory>::write(unsigned int, unsigned int, unsigned long long)",
+        "ms": 160.021,
+        "percent": 3.57
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::word(unsigned int, unsigned int)",
+        "ms": 131.968,
+        "percent": 2.95
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::seal()",
+        "ms": 130.391,
+        "percent": 2.91
+      },
+      {
+        "name": "sprite",
+        "ms": 125.438,
+        "percent": 2.8
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::reconcile()",
+        "ms": 119.881,
+        "percent": 2.68
+      },
+      {
+        "name": "wasm-to-js",
+        "ms": 116.957,
+        "percent": 2.61
+      },
+      {
+        "name": "(anonymous) document-body-DWNVodAa.js",
+        "ms": 71.644,
+        "percent": 1.6
+      }
+    ],
+    "inclusive": [
+      {
+        "name": "(root)",
+        "ms": 4478.807,
+        "percent": 100.0
+      },
+      {
+        "name": "draw",
+        "ms": 2441.701,
+        "percent": 54.52
+      },
+      {
+        "name": "step",
+        "ms": 2417.715,
+        "percent": 53.98
+      },
+      {
+        "name": "thkkd_step",
+        "ms": 2412.216,
+        "percent": 53.86
+      },
+      {
+        "name": "invoke_vii",
+        "ms": 2411.174,
+        "percent": 53.84
+      },
+      {
+        "name": "wasm-to-js",
+        "ms": 2411.114,
+        "percent": 53.83
+      },
+      {
+        "name": "js-to-wasm:ii:",
+        "ms": 2410.603,
+        "percent": 53.82
+      },
+      {
+        "name": "kaikeidou::CombinedGameHost::step()",
+        "ms": 2410.603,
+        "percent": 53.82
+      },
+      {
+        "name": "js-to-wasm:iiii:",
+        "ms": 2165.726,
+        "percent": 48.35
+      }
+    ]
+  },
+  {
+    "profile": "live-cpu-1.cpuprofile",
+    "totalMs": 4192.233,
+    "self": [
+      {
+        "name": "(idle)",
+        "ms": 2684.314,
+        "percent": 64.03
+      },
+      {
+        "name": "(program)",
+        "ms": 342.814,
+        "percent": 8.18
+      },
+      {
+        "name": "kaikeidou::gameplay_hud_tail_detail::Engine<kaikeidou::GameStartEntryMemory>::write(unsigned int, unsigned int, unsigned long long)",
+        "ms": 114.405,
+        "percent": 2.73
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::read(unsigned int, unsigned long) const",
+        "ms": 97.025,
+        "percent": 2.31
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::reconcile()",
+        "ms": 70.99,
+        "percent": 1.69
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::word(unsigned int, unsigned int)",
+        "ms": 63.978,
+        "percent": 1.53
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::seal()",
+        "ms": 63.869,
+        "percent": 1.52
+      },
+      {
+        "name": "texImage2D",
+        "ms": 45.511,
+        "percent": 1.09
+      },
+      {
+        "name": "unsigned int kaikeidou::execute_gameplay_frame<kaikeidou::GameplayHostContext>(kaikeidou::GameplayHostContext&)",
+        "ms": 43.624,
+        "percent": 1.04
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::range(unsigned int, unsigned long, bool) const",
+        "ms": 39.334,
+        "percent": 0.94
+      },
+      {
+        "name": "present",
+        "ms": 37.531,
+        "percent": 0.9
+      },
+      {
+        "name": "wasm-to-js",
+        "ms": 36.568,
+        "percent": 0.87
+      }
+    ],
+    "inclusive": [
+      {
+        "name": "(root)",
+        "ms": 4192.233,
+        "percent": 100.0
+      },
+      {
+        "name": "(idle)",
+        "ms": 2684.314,
+        "percent": 64.03
+      },
+      {
+        "name": "frame",
+        "ms": 1040.109,
+        "percent": 24.81
+      },
+      {
+        "name": "r.core._thkkd_step",
+        "ms": 945.565,
+        "percent": 22.56
+      },
+      {
+        "name": "js-to-wasm::i",
+        "ms": 944.466,
+        "percent": 22.53
+      },
+      {
+        "name": "wasm-to-js",
+        "ms": 943.933,
+        "percent": 22.52
+      },
+      {
+        "name": "thkkd_step",
+        "ms": 943.933,
+        "percent": 22.52
+      },
+      {
+        "name": "js-to-wasm:iiiiiiii:",
+        "ms": 942.892,
+        "percent": 22.49
+      },
+      {
+        "name": "invoke_vii",
+        "ms": 942.892,
+        "percent": 22.49
+      }
+    ]
+  },
+  {
+    "profile": "live-cpu-4.cpuprofile",
+    "totalMs": 4472.18,
+    "self": [
+      {
+        "name": "kaikeidou::GameStartEntryMemory::read(unsigned int, unsigned long) const",
+        "ms": 512.868,
+        "percent": 11.47
+      },
+      {
+        "name": "kaikeidou::gameplay_hud_tail_detail::Engine<kaikeidou::GameStartEntryMemory>::write(unsigned int, unsigned int, unsigned long long)",
+        "ms": 497.996,
+        "percent": 11.14
+      },
+      {
+        "name": "(program)",
+        "ms": 378.321,
+        "percent": 8.46
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::word(unsigned int, unsigned int)",
+        "ms": 262.494,
+        "percent": 5.87
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::seal()",
+        "ms": 256.629,
+        "percent": 5.74
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::reconcile()",
+        "ms": 253.197,
+        "percent": 5.66
+      },
+      {
+        "name": "kaikeidou::GameStartEntryMemory::range(unsigned int, unsigned long, bool) const",
+        "ms": 167.785,
+        "percent": 3.75
+      },
+      {
+        "name": "wasm-to-js",
+        "ms": 163.38,
+        "percent": 3.65
+      },
+      {
+        "name": "kaikeidou::gameplay_hud_tail_detail::Engine<kaikeidou::GameStartEntryMemory>::run()",
+        "ms": 140.276,
+        "percent": 3.14
+      },
+      {
+        "name": "thkkd_platform",
+        "ms": 95.572,
+        "percent": 2.14
+      },
+      {
+        "name": "kaikeidou::DisplayState::alu(kaikeidou::Alu, unsigned int, unsigned int, unsigned int)",
+        "ms": 90.815,
+        "percent": 2.03
+      },
+      {
+        "name": "emscripten_builtin_malloc",
+        "ms": 61.722,
+        "percent": 1.38
+      }
+    ],
+    "inclusive": [
+      {
+        "name": "(root)",
+        "ms": 4472.18,
+        "percent": 100.0
+      },
+      {
+        "name": "frame",
+        "ms": 3848.066,
+        "percent": 86.04
+      },
+      {
+        "name": "r.core._thkkd_step",
+        "ms": 3805.447,
+        "percent": 85.09
+      },
+      {
+        "name": "js-to-wasm::i",
+        "ms": 3796.844,
+        "percent": 84.9
+      },
+      {
+        "name": "thkkd_step",
+        "ms": 3795.216,
+        "percent": 84.86
+      },
+      {
+        "name": "wasm-to-js",
+        "ms": 3794.68,
+        "percent": 84.85
+      },
+      {
+        "name": "invoke_vii",
+        "ms": 3794.68,
+        "percent": 84.85
+      },
+      {
+        "name": "kaikeidou::CombinedGameHost::step()",
+        "ms": 3792.582,
+        "percent": 84.8
+      },
+      {
+        "name": "js-to-wasm:iii:",
+        "ms": 3791.409,
+        "percent": 84.78
+      }
+    ]
+  }
+]

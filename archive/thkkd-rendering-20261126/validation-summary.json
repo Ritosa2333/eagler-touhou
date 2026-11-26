@@ -1,0 +1,64 @@
+{
+  "schema": "thkkd/rendering-validation/1",
+  "contracts": [
+    {
+      "id": "source-inputs",
+      "status": "passed",
+      "level": "source-inputs"
+    },
+    {
+      "id": "runtime-protocol",
+      "status": "passed",
+      "level": "source-contract"
+    },
+    {
+      "id": "touch-sensitivity",
+      "status": "passed",
+      "level": "source-contract"
+    },
+    {
+      "id": "native-gamepad",
+      "status": "passed",
+      "level": "source-contract"
+    },
+    {
+      "id": "held-touch-continuity",
+      "status": "passed",
+      "level": "module"
+    },
+    {
+      "id": "immediate-sfx-routing",
+      "status": "passed",
+      "level": "source-contract"
+    },
+    {
+      "id": "package-store",
+      "status": "passed",
+      "level": "module"
+    },
+    {
+      "id": "launcher-input-owners",
+      "status": "passed",
+      "level": "module"
+    },
+    {
+      "id": "shared-touch-controls",
+      "status": "passed",
+      "level": "module"
+    },
+    {
+      "id": "normal-presentation",
+      "status": "passed",
+      "level": "source-contract"
+    }
+  ],
+  "extensions": {
+    "passed": 18,
+    "failed": 0
+  },
+  "documents": {
+    "passed": true,
+    "documents": 692,
+    "sourceDirectories": 28
+  }
+}

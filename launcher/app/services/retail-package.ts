@@ -52,6 +52,14 @@ export async function convertRetailPackage(options: {
     });
   }
   try {
+    if (options.game === 'thkkd') {
+      if (options.inputs.length !== 1 || !/\.zip$/i.test(options.inputs[0]!.name)) throw Error('海惠堂需要包含 dat.dxa 和 bgm.dxa 的原版资源 ZIP');
+      const head = new Uint8Array(await options.inputs[0]!.slice(0,4).arrayBuffer());
+      if (head[0] !== 0x50 || head[1] !== 0x4b || head[2] !== 3 || head[3] !== 4) throw Error('海惠堂资源包必须为 ZIP 格式');
+      const inputs = await expandRetailInputs(options.inputs, retailArchiveLimits('thkkd'), options.archivePassword ?? '', options.signal);
+      const {importThkkdOriginal} = await import('./thkkd-original');
+      return importThkkdOriginal(inputs, {signal:options.signal,onTrack:options.onTrack});
+    }
     const inputs = await expandRetailInputs(options.inputs, retailArchiveLimits(options.game), options.archivePassword ?? '', options.signal);
     return await createRetailPackage({...options, inputs, encodeOgg});
   }

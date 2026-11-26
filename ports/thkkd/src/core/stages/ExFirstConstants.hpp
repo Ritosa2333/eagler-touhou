@@ -1,0 +1,90 @@
+// EX首道中时间轴的精确binary64常量与原编码零终止符卡名称。
+#pragma once
+#include <array>
+#include <cstdint>
+#include <stdexcept>
+namespace kaikeidou::ex_first_detail {
+inline std::uint64_t constant(std::uint32_t address){switch(address){
+case 0x6a6100:return 0x0000000000000000ull;
+case 0x6a7eb8:return 0x406fe00000000000ull;
+case 0x6aca58:return 0xbff0000000000000ull;
+case 0x6b25b8:return 0x4059000000000000ull;
+case 0x6b25f8:return 0x403e000000000000ull;
+case 0x6d1848:return 0xc044000000000000ull;
+case 0x6d1860:return 0x400921fb54442d28ull;
+case 0x6d1888:return 0x4070400000000000ull;
+case 0x6d1898:return 0x4024000000000000ull;
+case 0x6d18b0:return 0x3fe3333333333333ull;
+case 0x6d18e0:return 0x3fd999999999999aull;
+case 0x6d18f8:return 0x3fed70a3d70a3d71ull;
+case 0x6d1918:return 0x3fa999999999999aull;
+case 0x6d1928:return 0x3f9999999999999aull;
+case 0x6d1940:return 0x3fef5c28f5c28f5cull;
+case 0x6d1948:return 0x4000000000000000ull;
+case 0x6d1950:return 0x3f50624dd2f1a9fcull;
+case 0x6d1970:return 0x3fed1eb851eb851full;
+case 0x6d19a0:return 0x407c000000000000ull;
+case 0x6d19c0:return 0x3fe0000000000000ull;
+case 0x6d19e8:return 0x4079400000000000ull;
+case 0x6d19f0:return 0xc034000000000000ull;
+case 0x6d1a08:return 0x3f947ae147ae147bull;
+case 0x6d1a28:return 0x4078800000000000ull;
+case 0x6d1a30:return 0xc020000000000000ull;
+case 0x6d1a40:return 0x4034000000000000ull;
+case 0x6d1a48:return 0x407c800000000000ull;
+case 0x6d1a60:return 0x4068000000000000ull;
+case 0x6d1a90:return 0x4054000000000000ull;
+case 0x6d1aa8:return 0x404e000000000000ull;
+case 0x6d1ad8:return 0x4008000000000000ull;
+case 0x6d1ae8:return 0x4044000000000000ull;
+case 0x6d1af0:return 0x406c000000000000ull;
+case 0x6d1b58:return 0xc03e000000000000ull;
+case 0x6d1b60:return 0x3ff921fb54442d28ull;
+case 0x6d1b78:return 0x407b800000000000ull;
+case 0x6d1ba0:return 0x3fc921fb54442d28ull;
+case 0x6d1bb8:return 0x4079e00000000000ull;
+case 0x6d1c18:return 0x4010000000000000ull;
+case 0x6d1c38:return 0x3fefd70a3d70a3d7ull;
+case 0x6d1c60:return 0x40b88b0000000000ull;
+case 0x6d1cb0:return 0x4078000000000000ull;
+case 0x6d1cc0:return 0x4062c00000000000ull;
+case 0x6d1ce0:return 0x4006666666666666ull;
+case 0x6d1d68:return 0x407de00000000000ull;
+case 0x6d1de0:return 0xbff921fb54442d28ull;
+case 0x6d1de8:return 0x405c000000000000ull;
+case 0x6d1e00:return 0x3faeb851eb851eb8ull;
+case 0x6d1e20:return 0x4030000000000000ull;
+case 0x6d1e78:return 0x4041800000000000ull;
+case 0x6d1ea8:return 0x4012d97c7f3321deull;
+case 0x6d1ec8:return 0x406f400000000000ull;
+case 0x6d1f08:return 0x4061800000000000ull;
+case 0x6d1fb0:return 0x406cc00000000000ull;
+case 0x6d1fb8:return 0x3fd0000000000000ull;
+case 0x6d1fe8:return 0x4067c00000000000ull;
+case 0x6d1ff8:return 0x3ffccccccccccccdull;
+case 0x6d2008:return 0x3fc3333333333333ull;
+case 0x6d20e8:return 0x4077600000000000ull;
+case 0x6d2130:return 0x4000cccccccccccdull;
+case 0x6d2168:return 0x407c200000000000ull;
+case 0x6d2180:return 0x3ffe666666666666ull;
+case 0x6d2198:return 0x3fd0c152382d7370ull;
+case 0x6d22b0:return 0x4060800000000000ull;
+case 0x6d23c0:return 0x4071000000000000ull;
+case 0x6d2510:return 0x3fa0624dd2f1a9fcull;
+case 0x6d2548:return 0x4003333333333333ull;
+case 0x6d2618:return 0x3ff41b2f769cf0edull;
+case 0x6d2668:return 0xbfb1eb851eb851ecull;
+case 0x6d26e0:return 0x400ccccccccccccdull;
+case 0x6d2750:return 0x3ff0c152382d7370ull;
+case 0x6d2828:return 0x3f889374bc6a7efaull;
+case 0x6d29a8:return 0x406f800000000000ull;
+case 0x6d29b8:return 0x3fd41b2f769cf0edull;
+case 0x6d29c0:return 0x3fa604189374bc6aull;
+case 0x6d2a48:return 0x406b800000000000ull;
+case 0x6d2fc0:return 0xbfaeb851eb851eb8ull;
+case 0x6d2fc8:return 0x4072200000000000ull;
+case 0x6d2fd0:return 0xbf8eb851eb851eb8ull;
+case 0x6d2fd8:return 0x40105616905f83c1ull;
+case 0x6d2fe0:return 0xc00199999999999aull;
+default:throw std::out_of_range("EX first constant");}}
+}

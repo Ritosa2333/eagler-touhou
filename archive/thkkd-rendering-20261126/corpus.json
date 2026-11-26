@@ -1,0 +1,835 @@
+{
+  "schema": "thkkd/rendering-corpus/1",
+  "referenceExe": "ca568f1974946671dbba5a5be100a294d853d483dd0a05dccbea079930f00d6d",
+  "cases": [
+    {
+      "name": "reimu-a",
+      "originalFrame": 180,
+      "cursor": 150,
+      "stage": 6,
+      "frame": 150,
+      "random": 851,
+      "digest": "d5e27db0"
+    },
+    {
+      "name": "reimu-a",
+      "originalFrame": 2014,
+      "cursor": 1984,
+      "stage": 6,
+      "frame": 2588,
+      "random": 926,
+      "digest": "33dcce48"
+    },
+    {
+      "name": "reimu-a",
+      "originalFrame": 2074,
+      "cursor": 2044,
+      "stage": 6,
+      "frame": 2648,
+      "random": 387,
+      "digest": "19003825"
+    },
+    {
+      "name": "reimu-b",
+      "originalFrame": 180,
+      "cursor": 150,
+      "stage": 0,
+      "frame": 150,
+      "random": 881,
+      "digest": "9b769775"
+    },
+    {
+      "name": "reimu-b",
+      "originalFrame": 305,
+      "cursor": 275,
+      "stage": 0,
+      "frame": 275,
+      "random": 854,
+      "digest": "dc5239b4"
+    },
+    {
+      "name": "reimu-b",
+      "originalFrame": 365,
+      "cursor": 335,
+      "stage": 0,
+      "frame": 335,
+      "random": 925,
+      "digest": "acde9b93"
+    },
+    {
+      "name": "reimu-c",
+      "originalFrame": 180,
+      "cursor": 150,
+      "stage": 0,
+      "frame": 150,
+      "random": 847,
+      "digest": "63fd85d"
+    },
+    {
+      "name": "reimu-c",
+      "originalFrame": 386,
+      "cursor": 356,
+      "stage": 0,
+      "frame": 356,
+      "random": 648,
+      "digest": "d38d530e"
+    },
+    {
+      "name": "reimu-c",
+      "originalFrame": 446,
+      "cursor": 416,
+      "stage": 0,
+      "frame": 416,
+      "random": 670,
+      "digest": "4f5a5e2c"
+    },
+    {
+      "name": "marisa-a",
+      "originalFrame": 180,
+      "cursor": 150,
+      "stage": 0,
+      "frame": 150,
+      "random": 857,
+      "digest": "b0bcd4e9"
+    },
+    {
+      "name": "marisa-a",
+      "originalFrame": 483,
+      "cursor": 453,
+      "stage": 0,
+      "frame": 453,
+      "random": 867,
+      "digest": "b99dfe3e"
+    },
+    {
+      "name": "marisa-a",
+      "originalFrame": 543,
+      "cursor": 513,
+      "stage": 0,
+      "frame": 513,
+      "random": 916,
+      "digest": "6b04255e"
+    },
+    {
+      "name": "marisa-b",
+      "originalFrame": 76,
+      "cursor": 46,
+      "stage": 0,
+      "frame": 46,
+      "random": 104,
+      "digest": "1a0245b"
+    },
+    {
+      "name": "marisa-b",
+      "originalFrame": 106,
+      "cursor": 76,
+      "stage": 0,
+      "frame": 76,
+      "random": 284,
+      "digest": "3d138cf0"
+    },
+    {
+      "name": "marisa-b",
+      "originalFrame": 166,
+      "cursor": 136,
+      "stage": 0,
+      "frame": 136,
+      "random": 678,
+      "digest": "31089952"
+    },
+    {
+      "name": "marisa-c",
+      "originalFrame": 180,
+      "cursor": 150,
+      "stage": 0,
+      "frame": 150,
+      "random": 891,
+      "digest": "23fcce42"
+    },
+    {
+      "name": "marisa-c",
+      "originalFrame": 954,
+      "cursor": 924,
+      "stage": 0,
+      "frame": 924,
+      "random": 649,
+      "digest": "d805ed36"
+    },
+    {
+      "name": "marisa-c",
+      "originalFrame": 1014,
+      "cursor": 984,
+      "stage": 0,
+      "frame": 984,
+      "random": 834,
+      "digest": "d565721e"
+    },
+    {
+      "name": "sanae-a",
+      "originalFrame": 180,
+      "cursor": 150,
+      "stage": 0,
+      "frame": 150,
+      "random": 904,
+      "digest": "af220b9"
+    },
+    {
+      "name": "sanae-a",
+      "originalFrame": 273,
+      "cursor": 243,
+      "stage": 0,
+      "frame": 243,
+      "random": 323,
+      "digest": "d92ab1dc"
+    },
+    {
+      "name": "sanae-a",
+      "originalFrame": 333,
+      "cursor": 303,
+      "stage": 0,
+      "frame": 303,
+      "random": 511,
+      "digest": "9d50b1a9"
+    },
+    {
+      "name": "sanae-b",
+      "originalFrame": 180,
+      "cursor": 150,
+      "stage": 0,
+      "frame": 150,
+      "random": 887,
+      "digest": "c6ddf7ea"
+    },
+    {
+      "name": "sanae-b",
+      "originalFrame": 313,
+      "cursor": 283,
+      "stage": 0,
+      "frame": 283,
+      "random": 209,
+      "digest": "70dcae7f"
+    },
+    {
+      "name": "sanae-b",
+      "originalFrame": 373,
+      "cursor": 343,
+      "stage": 0,
+      "frame": 343,
+      "random": 254,
+      "digest": "ca96f87c"
+    },
+    {
+      "name": "sanae-c",
+      "originalFrame": 180,
+      "cursor": 150,
+      "stage": 0,
+      "frame": 150,
+      "random": 860,
+      "digest": "987d3b04"
+    },
+    {
+      "name": "sanae-c",
+      "originalFrame": 311,
+      "cursor": 281,
+      "stage": 0,
+      "frame": 281,
+      "random": 812,
+      "digest": "87398e8d"
+    },
+    {
+      "name": "sanae-c",
+      "originalFrame": 371,
+      "cursor": 341,
+      "stage": 0,
+      "frame": 341,
+      "random": 165,
+      "digest": "39553846"
+    }
+  ],
+  "browser": "Edg/158.0.4370.45",
+  "errors": [],
+  "loads": [
+    {
+      "url": "http://127.0.0.1:18180/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:18180/games/thkkd/thkkd.data",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwx513iv-168e2e324121&runtimeVariant=normal&runtimeEpoch=1",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/shell.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/platform.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/thkkd.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/save-sync.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/input.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/local-replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/presentation-clock.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/display.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/renderer.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/presentation-stats.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/text.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/directory-keyboard.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/keyboard-owners.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6268628,
+      "sha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc"
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/fonts/unifont.woff2",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "httpErrors": [
+    {
+      "url": "http://127.0.0.1:18180/_eagler/ui-country",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:18180/api/ready",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:18180/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404
+    }
+  ],
+  "navigations": [
+    "http://127.0.0.1:18180/",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html",
+    "http://127.0.0.1:18180/en.html?game=thkkd",
+    "http://127.0.0.1:18180/en.html?game=thkkd"
+  ],
+  "telemetry": [
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 54.08087323243853,
+      "logicFps": 163.73108409820838,
+      "frameMs": 18.49082568807681
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33956619296932,
+      "logicFps": 151.58314634754421,
+      "frameMs": 17.141025641025646
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.662904589071765,
+      "logicFps": 163.57579674837174,
+      "frameMs": 16.76083333333333
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 157.06806282722513,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.49702514874256,
+      "logicFps": 208.98955052247385,
+      "frameMs": 16.807563025210086
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.935171311568304,
+      "logicFps": 255.21925881535086,
+      "frameMs": 16.96779661016632
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.95074186940561,
+      "logicFps": 254.78343408100744,
+      "frameMs": 17.256034482760224
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.48562859285712,
+      "logicFps": 166.45838540366452,
+      "frameMs": 17.39565217391143
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    }
+  ],
+  "runtime": {
+    "url": "http://127.0.0.1:18180/runtime/thkkd/964c1486b9164c446075df413aea3fe366a3463fe1e2ddd58b4f0104b005f56c/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwx513iv-168e2e324121&runtimeVariant=normal&runtimeEpoch=1",
+    "manifest": {
+      "game": "thkkd",
+      "protocol": "eagler-touhou/1",
+      "variant": "normal",
+      "buildId": "d64ea1f7245d28fcaae564d64bf4a2e8efc08eee89d355c2c2cf78b085c8065a",
+      "features": {
+        "thprac": false,
+        "languages": false,
+        "focusHitbox": false
+      }
+    },
+    "configure": {
+      "language": "ja",
+      "music": "ogg",
+      "resources": [],
+      "runtimeResources": [],
+      "runtimePack": null,
+      "sharedResources": [],
+      "options": {
+        "limitPresentationTo60": true,
+        "touchEnabled": false,
+        "touchMovementMode": "touch-unlimited",
+        "touchSensitivity": 150,
+        "touchFocusMode": "hold-button",
+        "doubleTapBombEnabled": false,
+        "alwaysHitbox": false,
+        "oggDecodeMode": "stream"
+      },
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "command": "configure",
+      "request": "runtime-1-1"
+    },
+    "serviceWorker": "http://127.0.0.1:18180/app-shell-sw.js"
+  },
+  "result": "passed",
+  "baselineStateMatched": true,
+  "finalDocumentEvents": [
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 54.08087323243853,
+      "logicFps": 163.73108409820838,
+      "frameMs": 18.49082568807681
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.33956619296932,
+      "logicFps": 151.58314634754421,
+      "frameMs": 17.141025641025646
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.662904589071765,
+      "logicFps": 163.57579674837174,
+      "frameMs": 16.76083333333333
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.835452505609574,
+      "logicFps": 157.06806282722513,
+      "frameMs": 16.7125
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 59.49702514874256,
+      "logicFps": 208.98955052247385,
+      "frameMs": 16.807563025210086
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.935171311568304,
+      "logicFps": 255.21925881535086,
+      "frameMs": 16.96779661016632
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.95074186940561,
+      "logicFps": 254.78343408100744,
+      "frameMs": 17.256034482760224
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 57.48562859285712,
+      "logicFps": 166.45838540366452,
+      "frameMs": 17.39565217391143
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "suspended",
+      "robust": true
+    }
+  ],
+  "events": [
+    {
+      "type": "focus",
+      "time": 101
+    },
+    {
+      "type": "focus",
+      "active": "H1",
+      "target": "H1",
+      "time": 790.9000000003725
+    },
+    {
+      "type": "click",
+      "active": "H1",
+      "target": "BUTTON",
+      "time": 1624.7000000001863
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "H1",
+      "time": 1779.4000000003725
+    },
+    {
+      "type": "focus",
+      "active": "A",
+      "target": "A",
+      "product": "thkkd",
+      "time": 2174.2999999998137
+    },
+    {
+      "type": "click",
+      "active": "A",
+      "target": "IMG",
+      "product": "thkkd",
+      "time": 2174.7000000001863
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "A",
+      "product": "thkkd",
+      "time": 2198.5
+    },
+    {
+      "type": "focus",
+      "active": "H2",
+      "target": "H2",
+      "time": 2209.7999999998137
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "H2",
+      "time": 2330.2000000001863
+    },
+    {
+      "type": "focus",
+      "active": "BUTTON",
+      "target": "BUTTON",
+      "time": 2330.5
+    },
+    {
+      "type": "click",
+      "active": "BUTTON",
+      "target": "SPAN",
+      "time": 2330.7000000001863
+    },
+    {
+      "type": "blur",
+      "active": "BODY",
+      "target": "BUTTON",
+      "time": 2389.100000000559
+    },
+    {
+      "type": "blur",
+      "active": "IFRAME",
+      "time": 2399.5
+    },
+    {
+      "type": "focus",
+      "active": "IFRAME",
+      "target": "IFRAME",
+      "time": 2399.7999999998137
+    }
+  ]
+}

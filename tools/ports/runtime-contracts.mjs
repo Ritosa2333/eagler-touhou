@@ -4,7 +4,7 @@ import {resolve, relative} from 'node:path';
 import {createRequire} from 'node:module';
 import {runInNewContext} from 'node:vm';
 import {execFileSync} from 'node:child_process';
-import {RUNTIME_PROTOCOL_COMMANDS, RUNTIME_PROTOCOL_COMMAND_BEHAVIOR, RUNTIME_PROTOCOL_EVENTS,
+import {RUNTIME_PROTOCOL_COMMANDS, RUNTIME_PROTOCOL_COMMAND_BEHAVIOR, RUNTIME_PROTOCOL_EVENTS, RUNTIME_PROTOCOL_EVENT_BEHAVIOR,
   TOUCH_SENSITIVITY_MIN, TOUCH_SENSITIVITY_MAX} from '../../launcher/lib/contracts/runtime-protocol.mjs';
 
 const require = createRequire(new URL('../../launcher/package.json', import.meta.url));
@@ -14,6 +14,7 @@ export function runtimeSourceFiles(game, product) {
   if (['th01', 'th02', 'th03', 'th04'].includes(game)) return ['web/managed-shell.mjs', 'web/managed-input.mjs'];
   if (game === 'th05') return ['web/managed.mjs','web/shell.mjs','web/input.mjs'];
   if (game === 'th12') return ['src/managed-shell.mjs', 'src/managed-input.mjs', 'site/game-sdl.mjs'];
+  if (game === 'thkkd') return ['web/shell.mjs','web/input.mjs','web/platform.mjs'];
   if (product.runtimeFileLayout !== 'directory') return ['resources/shell.html'];
   if (game === 'th09') return ['web/sdl-runtime/managed.mjs'];
   // TH13 owns its Host protocol and shared keyboard/gamepad bridge in these two
@@ -40,6 +41,19 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
   const nativeBodies = nativeFiles.map(path => ({path, text:readFileSync(path, 'utf8')}));
   const native = nativeBodies.map(item => item.text).join('\n');
   const records = [];
+  if(game==='thkkd'){
+    return [result('runtime-protocol',['RUNTIME-01','RUNTIME-02','RUNTIME-03'],files,()=>{
+      assert.match(source,/m\.epoch!==epoch/);assert.match(source,/event\.source!==parent/);assert.match(source,/event\.origin!==location\.origin/);
+      for(const command of RUNTIME_PROTOCOL_COMMANDS){const games=RUNTIME_PROTOCOL_COMMAND_BEHAVIOR[command].games;if(games&&!games.includes(game))continue;assert.match(source,new RegExp(`case\\s+['"]${command}['"]`),`Missing command: ${command}`);}
+      for(const event of RUNTIME_PROTOCOL_EVENTS){if(RUNTIME_PROTOCOL_EVENT_BEHAVIOR[event].requirement==='conditional')continue;assert.ok(new RegExp(`emit\\(['"]${event}['"]`).test(source),`Missing event: ${event}`);}
+    }),result('touch-sensitivity',['TOUCH-14'],[...files,'tests/extensions.test.mjs'],()=>{
+      execFileSync(process.execPath,['--test',resolve(root,directory,'tests/extensions.test.mjs')],{cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
+    }),result('native-gamepad',['INPUT-04'],[...files,'src/platform/web/WebHost.cpp'],()=>{
+      assert.match(native,/thkkd_keys/);assert.match(source,/this\.input\.sample\(output\)/);assert.match(source,/__eaglerGamepadInputBridge\?\.sample\(0\)/);
+      assert.match(source,/createBrowserKeyboard/);assert.match(native,/case 0x43da40:out\.eax=browser\(r\)/);assert.match(source,/case 0x43da40:return this\.input\.padState\(\)/);
+      execFileSync(process.execPath,['--test','--test-name-pattern=手柄语义输入|公共键盘 Enter',resolve(root,directory,'tests/extensions.test.mjs')],{cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
+    })];
+  }
   if (['th01','th02','th04'].includes(game)) {
     const testFile='tests/managed-adapter.test.mjs';
     return [

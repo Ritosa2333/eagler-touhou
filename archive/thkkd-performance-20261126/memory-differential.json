@@ -1,0 +1,17 @@
+{
+  "result": "passed",
+  "operations": 30082,
+  "layoutInstances": 80,
+  "compiler": "6.0.9",
+  "reference": "original GameStartEntryMemory",
+  "coverage": [
+    "overlapping bindings",
+    "insertion order",
+    "random cursor",
+    "gaps and 32-bit boundary",
+    "conflicting aliases",
+    "zero-length access",
+    "partial and repeated seal",
+    "layout-cache eviction"
+  ]
+}

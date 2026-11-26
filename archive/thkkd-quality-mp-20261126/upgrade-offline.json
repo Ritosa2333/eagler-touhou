@@ -1,0 +1,637 @@
+{
+  "schema": "thkkd/upgrade-offline/1",
+  "checks": [
+    "old-delivery-installs-and-persists-native-save-and-replay",
+    "old-to-current-runtime-upgrade-preserves-and-loads-user-data",
+    "HTTP-server-stopped-and-browser-offline-reload-launch-native-data"
+  ],
+  "browser": "Edg/158.0.4370.33",
+  "errors": [],
+  "loads": [
+    {
+      "url": "http://127.0.0.1:8175/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:8175/games/thkkd/thkkd.data",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwm3y5v-6617b0ca478b&runtimeVariant=normal&runtimeEpoch=1",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/shell.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/input.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/save-sync.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/platform.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/thkkd.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/local-replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/presentation-clock.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/directory-keyboard.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/renderer.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/keyboard-owners.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6267402,
+      "sha256": "f1eacdd3f90a7b8ef0dbc791b53189c776750b5c67909bf4e4c0d047cbf1942c"
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/fonts/unifont.woff2",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwm3y5v-6617b0ca478b&runtimeVariant=normal&runtimeEpoch=1",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/shell.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/save-sync.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/input.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/local-replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/platform.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/presentation-clock.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/thkkd.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/directory-keyboard.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/renderer.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/keyboard-owners.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6267402,
+      "sha256": "f1eacdd3f90a7b8ef0dbc791b53189c776750b5c67909bf4e4c0d047cbf1942c"
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/fonts/unifont.woff2",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwm3y5v-6617b0ca478b&runtimeVariant=normal&runtimeEpoch=3",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/shell.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/platform.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/input.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/thkkd.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/save-sync.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/local-replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/presentation-clock.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/presentation-stats.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/renderer.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/directory-keyboard.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/keyboard-owners.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6268628,
+      "sha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc"
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/fonts/unifont.woff2",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwm3y5v-6617b0ca478b&runtimeVariant=normal&runtimeEpoch=1",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/shell.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/thkkd.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/platform.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/input.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/save-sync.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/local-replay.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/replay.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/presentation-clock.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/renderer.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/presentation-stats.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/directory-keyboard.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/keyboard-owners.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/fonts/unifont.woff2",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6268628,
+      "sha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc"
+    },
+    {
+      "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+    "Failed to load resource: net::ERR_INTERNET_DISCONNECTED"
+  ],
+  "navigations": [
+    "http://127.0.0.1:8175/",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html?game=thkkd",
+    "http://127.0.0.1:8175/en.html?game=thkkd",
+    "http://127.0.0.1:8175/",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html?game=thkkd",
+    "http://127.0.0.1:8175/en.html?game=thkkd",
+    "http://127.0.0.1:8175/",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html",
+    "http://127.0.0.1:8175/en.html?game=thkkd",
+    "http://127.0.0.1:8175/en.html?game=thkkd"
+  ],
+  "telemetry": [],
+  "runtime": {
+    "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwm3y5v-6617b0ca478b&runtimeVariant=normal&runtimeEpoch=1",
+    "manifest": {
+      "game": "thkkd",
+      "protocol": "eagler-touhou/1",
+      "variant": "normal",
+      "buildId": "7a7a4d1e3644d1f0dfcc01d1f251f66c2bfab6fafee36465e555d87356a2faf0",
+      "features": {
+        "thprac": false,
+        "languages": false,
+        "focusHitbox": false
+      }
+    },
+    "configure": {
+      "language": "ja",
+      "music": "ogg",
+      "resources": [],
+      "runtimeResources": [],
+      "runtimePack": null,
+      "sharedResources": [],
+      "options": {
+        "limitPresentationTo60": true,
+        "touchEnabled": false,
+        "touchMovementMode": "touch-unlimited",
+        "touchSensitivity": 150,
+        "touchFocusMode": "hold-button",
+        "doubleTapBombEnabled": false,
+        "alwaysHitbox": false,
+        "oggDecodeMode": "stream"
+      },
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "command": "configure",
+      "request": "runtime-1-1"
+    },
+    "serviceWorker": "http://127.0.0.1:8175/app-shell-sw.js"
+  },
+  "previousRuntime": {
+    "url": "http://127.0.0.1:8175/runtime/thkkd/d660a400c8744f7cd5b5ee55ae29e27c9e9a01114195dafe14c8a07efea4630b/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwm3y5v-6617b0ca478b&runtimeVariant=normal&runtimeEpoch=1",
+    "manifest": {
+      "game": "thkkd",
+      "protocol": "eagler-touhou/1",
+      "variant": "normal",
+      "buildId": "6f7075c031475d0595719f78791cc526f293a8a90489855c2808899f33c293f5",
+      "features": {
+        "thprac": false,
+        "languages": false,
+        "focusHitbox": false
+      }
+    },
+    "configure": {
+      "language": "ja",
+      "music": "ogg",
+      "resources": [],
+      "runtimeResources": [],
+      "runtimePack": null,
+      "sharedResources": [],
+      "options": {
+        "limitPresentationTo60": true,
+        "touchEnabled": false,
+        "touchMovementMode": "touch-unlimited",
+        "touchSensitivity": 150,
+        "touchFocusMode": "hold-button",
+        "doubleTapBombEnabled": false,
+        "alwaysHitbox": false,
+        "oggDecodeMode": "stream"
+      },
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "command": "configure",
+      "request": "runtime-1-1"
+    },
+    "serviceWorker": "http://127.0.0.1:8175/app-shell-sw.js"
+  },
+  "shellBuild": "c2bf063a2e57f3696560",
+  "updatedRuntime": {
+    "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwm3y5v-6617b0ca478b&runtimeVariant=normal&runtimeEpoch=3",
+    "manifest": {
+      "game": "thkkd",
+      "protocol": "eagler-touhou/1",
+      "variant": "normal",
+      "buildId": "7a7a4d1e3644d1f0dfcc01d1f251f66c2bfab6fafee36465e555d87356a2faf0",
+      "features": {
+        "thprac": false,
+        "languages": false,
+        "focusHitbox": false
+      }
+    }
+  },
+  "programUpdatePrompt": "Single-player\nMultiplayer\nFAQ\nSingle-player - TouhouOnline\nAll games\n1\nFavorites\n0\nMain series\n0\nPC-98 games\n0\nSpin-offs\n0\nFan games\n1\n东方海惠堂\nthKKD\nTHKKD\n东方海惠堂\n\nMarine Benefit\n\nStart game\nImport\nPlay stats\nPlaytime\nUnavailable\nPlay count\nUnavailable\nBest score\nUnavailable\nCleared difficulties\nUnavailable\n1CC\nCleared\nNot cleared\nExtra\nLunatic\nHard\nNormal\nEasy\n\nStatistics are temporarily unavailable.\n\nRetry\nGame settings\nSaves & replays\nSave\nDownload\nImport\nReplay\nDownload\nManage\nDisplay settings\nHigh refresh rate\nHigh-refresh mode predicts visuals by up to one frame while gameplay runs at 60 Hz. (Apple users: please read)\nEnable pixel-perfect display\nInput settings\nKeyboard\nGamepad\nVolume settings\nAdvanced settings\nTouch settings\nPlay\nSingle player\nMultiplayer\nSite\nAbout\nService status\nDonate\nCommunity\nDiscord\nGitHub\nQQ\nFriends\nDINE, a ph3sx reimpl \n车万云\nReady\nthkkd OGG (streaming; smoother track changes) ready\nthkkd update ready\n\nThe update has been downloaded and verified. Restart now to save and end the current game, then launch the new version. You can also keep playing and use it on the next launch.\n\nUse on next launch\nRestart now",
+  "offlineRuntime": {
+    "url": "http://127.0.0.1:8175/runtime/thkkd/fe77089b81dc08b2a9abbbf26197b45c303f1c66d8ee367abc3600ec5814652e/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwm3y5v-6617b0ca478b&runtimeVariant=normal&runtimeEpoch=1",
+    "manifest": {
+      "game": "thkkd",
+      "protocol": "eagler-touhou/1",
+      "variant": "normal",
+      "buildId": "7a7a4d1e3644d1f0dfcc01d1f251f66c2bfab6fafee36465e555d87356a2faf0",
+      "features": {
+        "thprac": false,
+        "languages": false,
+        "focusHitbox": false
+      }
+    },
+    "configure": {
+      "language": "ja",
+      "music": "ogg",
+      "resources": [],
+      "runtimeResources": [],
+      "runtimePack": null,
+      "sharedResources": [],
+      "options": {
+        "limitPresentationTo60": true,
+        "touchEnabled": false,
+        "touchMovementMode": "touch-unlimited",
+        "touchSensitivity": 150,
+        "touchFocusMode": "hold-button",
+        "doubleTapBombEnabled": false,
+        "alwaysHitbox": false,
+        "oggDecodeMode": "stream"
+      },
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "command": "configure",
+      "request": "runtime-1-1"
+    },
+    "serviceWorker": "http://127.0.0.1:8175/app-shell-sw.js"
+  },
+  "result": "passed",
+  "finalDocumentEvents": []
+}

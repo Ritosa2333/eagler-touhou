@@ -1,0 +1,440 @@
+{
+  "schema": "thkkd/cpu-performance/1",
+  "date": "2026-11-26",
+  "display": "60 Hz presentation limit",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "input": {
+    "sha256": "f54ed8e517bb9f73842bfbc7984678094a49a348aebb221baf2563505a0b43c5",
+    "bytes": 73520,
+    "target": 50000
+  },
+  "stepsPerSample": 900,
+  "cases": [
+    {
+      "scene": "title",
+      "cpuRate": 1,
+      "seconds": 14.9995,
+      "logicalSteps": 900,
+      "logicHz": 60.00200006666889,
+      "presentations": 900,
+      "presentHz": 60.00200006666889,
+      "consumedInputFrames": 0,
+      "inputHz": 0,
+      "stepMs": {
+        "count": 900,
+        "mean": 0.776555555516647,
+        "p50": 0.7000000029802322,
+        "p95": 1,
+        "p99": 1.3999999985098839,
+        "max": 1.6000000014901161
+      },
+      "presentCallMs": {
+        "count": 900,
+        "mean": 0.08955555562757783,
+        "p50": 0.10000000149011612,
+        "p95": 0.19999999925494194,
+        "p99": 0.20000000298023224,
+        "max": 0.30000000074505806
+      },
+      "presentIntervalMs": {
+        "count": 899,
+        "mean": 16.666073414902137,
+        "p50": 16.699999999254942,
+        "p95": 21.899999998509884,
+        "p99": 22.399999998509884,
+        "max": 34.400000002235174
+      },
+      "before": {
+        "cursor": 0,
+        "stage": 0,
+        "frame": 0,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 0,
+        "bullets": 0,
+        "commands": 73,
+        "stateDigest": "d4592565"
+      },
+      "after": {
+        "cursor": 0,
+        "stage": 0,
+        "frame": 0,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 0,
+        "bullets": 0,
+        "commands": 73,
+        "stateDigest": "d4592565"
+      },
+      "hudFPS": "60.0FPS"
+    },
+    {
+      "scene": "title",
+      "cpuRate": 4,
+      "seconds": 14.999,
+      "logicalSteps": 900,
+      "logicHz": 60.00400026668444,
+      "presentations": 889,
+      "presentHz": 59.270618041202745,
+      "consumedInputFrames": 0,
+      "inputHz": 0,
+      "stepMs": {
+        "count": 900,
+        "mean": 3.823888888872332,
+        "p50": 3.7999999970197678,
+        "p95": 4.5,
+        "p99": 5.900000002235174,
+        "max": 25.400000002235174
+      },
+      "presentCallMs": {
+        "count": 889,
+        "mean": 0.4354330709432456,
+        "p50": 0.4000000022351742,
+        "p95": 0.6000000014901161,
+        "p99": 0.8000000007450581,
+        "max": 1.800000000745058
+      },
+      "presentIntervalMs": {
+        "count": 888,
+        "mean": 16.87331081081081,
+        "p50": 16.699999999254942,
+        "p95": 19.5,
+        "p99": 37.899999998509884,
+        "max": 85.39999999850988
+      },
+      "before": {
+        "cursor": 0,
+        "stage": 0,
+        "frame": 0,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 0,
+        "bullets": 0,
+        "commands": 73,
+        "stateDigest": "d4592565"
+      },
+      "after": {
+        "cursor": 0,
+        "stage": 0,
+        "frame": 0,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 0,
+        "bullets": 0,
+        "commands": 73,
+        "stateDigest": "d4592565"
+      },
+      "hudFPS": "58.0FPS"
+    },
+    {
+      "scene": "live-stage-1",
+      "cpuRate": 1,
+      "seconds": 14.99960000000149,
+      "logicalSteps": 900,
+      "logicHz": 60.00160004266185,
+      "presentations": 899,
+      "presentHz": 59.93493159817,
+      "consumedInputFrames": 900,
+      "inputHz": 60.00160004266185,
+      "stepMs": {
+        "count": 900,
+        "mean": 1.905555555679732,
+        "p50": 1.800000000745058,
+        "p95": 2.300000000745058,
+        "p99": 2.699999999254942,
+        "max": 25.899999998509884
+      },
+      "presentCallMs": {
+        "count": 899,
+        "mean": 0.13859844267434618,
+        "p50": 0.10000000149011612,
+        "p95": 0.29999999701976776,
+        "p99": 0.30000000074505806,
+        "max": 1.300000000745058
+      },
+      "presentIntervalMs": {
+        "count": 898,
+        "mean": 16.68541202672606,
+        "p50": 16.699999999254942,
+        "p95": 16.899999998509884,
+        "p99": 17.5,
+        "max": 38.900000002235174
+      },
+      "before": {
+        "cursor": 120,
+        "stage": 0,
+        "frame": 120,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 692,
+        "bullets": 0,
+        "commands": 169,
+        "stateDigest": "92f42294"
+      },
+      "after": {
+        "cursor": 1020,
+        "stage": 0,
+        "frame": 1020,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 292,
+        "bullets": 0,
+        "commands": 70,
+        "stateDigest": "5b9474f4"
+      },
+      "hudFPS": "60.0FPS"
+    },
+    {
+      "scene": "live-stage-1",
+      "cpuRate": 4,
+      "seconds": 14.98889999999851,
+      "logicalSteps": 900,
+      "logicHz": 60.04443288033741,
+      "presentations": 891,
+      "presentHz": 59.44398855153404,
+      "consumedInputFrames": 900,
+      "inputHz": 60.04443288033741,
+      "stepMs": {
+        "count": 900,
+        "mean": 8.456777777783573,
+        "p50": 8.5,
+        "p95": 9.600000001490116,
+        "p99": 10.399999998509884,
+        "max": 13.199999999254942
+      },
+      "presentCallMs": {
+        "count": 891,
+        "mean": 0.62031425368438,
+        "p50": 0.6000000014901161,
+        "p95": 1,
+        "p99": 1.1000000014901161,
+        "max": 1.3999999985098839
+      },
+      "presentIntervalMs": {
+        "count": 890,
+        "mean": 16.822247191012075,
+        "p50": 16.600000001490116,
+        "p95": 21.600000001490116,
+        "p99": 37.80000000074506,
+        "max": 48.5
+      },
+      "before": {
+        "cursor": 120,
+        "stage": 0,
+        "frame": 120,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 692,
+        "bullets": 0,
+        "commands": 169,
+        "stateDigest": "92f42294"
+      },
+      "after": {
+        "cursor": 1020,
+        "stage": 0,
+        "frame": 1020,
+        "part": 0,
+        "subphase": 0,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 292,
+        "bullets": 0,
+        "commands": 70,
+        "stateDigest": "5b9474f4"
+      },
+      "hudFPS": "60.8FPS"
+    },
+    {
+      "scene": "EX-dense-replay",
+      "cpuRate": 1,
+      "seconds": 14.9945,
+      "logicalSteps": 900,
+      "logicHz": 60.02200806962553,
+      "presentations": 900,
+      "presentHz": 60.02200806962553,
+      "consumedInputFrames": 900,
+      "inputHz": 60.02200806962553,
+      "stepMs": {
+        "count": 900,
+        "mean": 2.933444444384012,
+        "p50": 2.800000000745058,
+        "p95": 3.800000000745058,
+        "p99": 4.5,
+        "max": 9.200000002980232
+      },
+      "presentCallMs": {
+        "count": 900,
+        "mean": 0.27411111113511855,
+        "p50": 0.30000000074505806,
+        "p95": 0.4000000022351742,
+        "p99": 0.4000000022351742,
+        "max": 0.6000000014901161
+      },
+      "presentIntervalMs": {
+        "count": 899,
+        "mean": 16.666852057842046,
+        "p50": 16.699999999254942,
+        "p95": 16.900000002235174,
+        "p99": 18.299999997019768,
+        "max": 18.800000000745058
+      },
+      "before": {
+        "cursor": 50120,
+        "stage": 6,
+        "frame": 803,
+        "part": 3,
+        "subphase": 17,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 145,
+        "bullets": 460,
+        "commands": 544,
+        "stateDigest": "73d8d9fa"
+      },
+      "after": {
+        "cursor": 51020,
+        "stage": 6,
+        "frame": 1703,
+        "part": 3,
+        "subphase": 17,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 498,
+        "bullets": 563,
+        "commands": 647,
+        "stateDigest": "bd807d29"
+      },
+      "hudFPS": "60.0FPS"
+    },
+    {
+      "scene": "EX-dense-replay",
+      "cpuRate": 4,
+      "seconds": 20.936599999997764,
+      "logicalSteps": 900,
+      "logicHz": 42.98692242293859,
+      "presentations": 888,
+      "presentHz": 42.41376345729941,
+      "consumedInputFrames": 900,
+      "inputHz": 42.98692242293859,
+      "stepMs": {
+        "count": 900,
+        "mean": 14.81800000001159,
+        "p50": 14.5,
+        "p95": 18.300000000745058,
+        "p99": 20.200000002980232,
+        "max": 27.700000002980232
+      },
+      "presentCallMs": {
+        "count": 888,
+        "mean": 1.1542792792750842,
+        "p50": 1.1000000014901161,
+        "p95": 1.5999999977648258,
+        "p99": 1.800000000745058,
+        "max": 3.699999999254942
+      },
+      "presentIntervalMs": {
+        "count": 887,
+        "mean": 23.57948139797069,
+        "p50": 19.599999997764826,
+        "p95": 39.400000002235174,
+        "p99": 49.600000001490116,
+        "max": 61.899999998509884
+      },
+      "before": {
+        "cursor": 50120,
+        "stage": 6,
+        "frame": 803,
+        "part": 3,
+        "subphase": 17,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 145,
+        "bullets": 460,
+        "commands": 544,
+        "stateDigest": "73d8d9fa"
+      },
+      "after": {
+        "cursor": 51020,
+        "stage": 6,
+        "frame": 1703,
+        "part": 3,
+        "subphase": 17,
+        "scene": 0,
+        "dialogue": 0,
+        "random": 498,
+        "bullets": 563,
+        "commands": 647,
+        "stateDigest": "bd807d29"
+      },
+      "hudFPS": "38.9FPS"
+    }
+  ],
+  "calibration": [
+    {
+      "rate": 1,
+      "iterations": 12000000,
+      "samples": [
+        13.699999999254942,
+        13.900000002235174,
+        15,
+        15.099999997764826
+      ],
+      "medianMs": 14.450000001117587,
+      "check": -1533592953
+    },
+    {
+      "rate": 4,
+      "iterations": 12000000,
+      "samples": [
+        61.19999999925494,
+        61.19999999925494,
+        61.20000000298023,
+        62.899999998509884
+      ],
+      "medianMs": 61.20000000111759,
+      "check": -1533592953
+    }
+  ],
+  "calibrationRatio": 4.235294117396836,
+  "hardware": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+    "cores": 22,
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Ti (0x00002803) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "canvas": {
+      "width": 640,
+      "height": 480
+    },
+    "wasmHeapBytes": 134217728
+  },
+  "browser": "Edg/158.0.4370.45",
+  "sameReplaySceneDigest": true,
+  "result": "measured",
+  "runtime": {
+    "game": "thkkd",
+    "protocol": "eagler-touhou/1",
+    "variant": "normal",
+    "buildId": "d535ee72d90647205347ea94e59097471e0bfa5ee9c9f73ec8cbeebff7b81d34",
+    "features": {
+      "thprac": false,
+      "languages": false,
+      "focusHitbox": false
+    }
+  }
+}

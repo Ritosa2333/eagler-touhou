@@ -1,0 +1,16 @@
+{
+  "schema": "thkkd/rendering-identity/1",
+  "baselineCommit": "33d5e5d969a610dd3bbf74b421863364fe725bf7",
+  "nativeSourceCommit": "64d48dc366f2d57210dbdac25be82e0e71b2641d",
+  "performanceRuntime": "d64ea1f7245d28fcaae564d64bf4a2e8efc08eee89d355c2c2cf78b085c8065a",
+  "deliveryRuntime": "ef20ada5e4e78ced7a8412f0da93a36b5b9f07176b2f011533212bc927440b8c",
+  "normalizedRuntimeSha256": "79ea379915a46a8b0c12698ddae00aef6e71584c48e674dbd4093d8b80afb4cd",
+  "workingCopyDifferences": [
+    {
+      "file": "platform.mjs",
+      "onlyLineEndings": true
+    }
+  ],
+  "wasmSha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc",
+  "dataSha256": "a76c17e91014722204467ff0602ed8eedc36402c360b8374eddfb3e66cf24635"
+}

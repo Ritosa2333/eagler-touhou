@@ -1,0 +1,668 @@
+{
+  "schema": "thkkd/audio-lifecycle/1",
+  "checks": [
+    "actual-settings-sliders-propagate-independent-BGM-and-SFX-gains",
+    "in-game-volume-mute-and-restore-with-zero-muted-BGM-PCM",
+    "native-menu-SFX-PCM-through-selected-gain",
+    "native-unloaded-shot-SFX-slot-compatibility-and-actual-shot-objects",
+    "shared-exit-action-closes-audio-GL-media-and-object-URLs",
+    "relaunch-uses-new-epoch-saved-volumes-and-default-title-input",
+    "native-Quit-exit-event-and-third-launch"
+  ],
+  "browser": "Edg/158.0.4370.33",
+  "errors": [],
+  "loads": [
+    {
+      "url": "http://127.0.0.1:8177/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:8177/games/thkkd/thkkd.data",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwn6zan-95b0eefc3dca&runtimeVariant=normal&runtimeEpoch=1",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/shell.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/platform.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/local-replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/save-sync.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/input.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/presentation-clock.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/renderer.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/presentation-stats.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/directory-keyboard.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/keyboard-owners.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6268628,
+      "sha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc"
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/fonts/unifont.woff2",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwn6zan-95b0eefc3dca&runtimeVariant=normal&runtimeEpoch=3",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/shell.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/platform.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/input.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/save-sync.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/local-replay.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/replay.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/presentation-clock.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/renderer.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/presentation-stats.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/directory-keyboard.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/keyboard-owners.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/fonts/unifont.woff2",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6268628,
+      "sha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc"
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwn6zan-95b0eefc3dca&runtimeVariant=normal&runtimeEpoch=6",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/shell.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/platform.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/input.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/save-sync.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/local-replay.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/replay.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/presentation-clock.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/renderer.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/presentation-stats.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/directory-keyboard.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/keyboard-owners.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/fonts/unifont.woff2",
+      "status": 200,
+      "cache": true,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6268628,
+      "sha256": "c842659b384e9492105ac7071e082c509d6f9c814b5d479e8c54e8445f4ca4dc"
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "httpErrors": [
+    {
+      "url": "http://127.0.0.1:8177/_eagler/ui-country",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:8177/api/ready",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:8177/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:8177/api/ready",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:8177/api/ready",
+      "status": 404
+    },
+    {
+      "url": "http://127.0.0.1:8177/api/ready",
+      "status": 404
+    }
+  ],
+  "navigations": [
+    "http://127.0.0.1:8177/",
+    "http://127.0.0.1:8177/en.html",
+    "http://127.0.0.1:8177/en.html",
+    "http://127.0.0.1:8177/en.html",
+    "http://127.0.0.1:8177/en.html",
+    "http://127.0.0.1:8177/en.html",
+    "http://127.0.0.1:8177/en.html",
+    "http://127.0.0.1:8177/en.html?game=thkkd",
+    "http://127.0.0.1:8177/en.html?game=thkkd",
+    "http://127.0.0.1:8177/en.html?game=thkkd",
+    "http://127.0.0.1:8177/en.html?game=thkkd",
+    "http://127.0.0.1:8177/en.html?game=thkkd",
+    "http://127.0.0.1:8177/en.html?game=thkkd"
+  ],
+  "telemetry": [
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.459078644937655,
+      "logicFps": 60.45767962425177,
+      "frameMs": 17.10598290598609
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 3,
+      "event": "exit",
+      "code": 0,
+      "status": "exited"
+    }
+  ],
+  "runtime": {
+    "url": "http://127.0.0.1:8177/runtime/thkkd/2cf64c3646eecfe6422d826796c1a8bd5543adee30105b10da802f7c45879ce7/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwn6zan-95b0eefc3dca&runtimeVariant=normal&runtimeEpoch=6",
+    "manifest": {
+      "game": "thkkd",
+      "protocol": "eagler-touhou/1",
+      "variant": "normal",
+      "buildId": "3a222ab5062a9743e122a4d21f37e0fdc3ad640ca7e9881b280d6d1ec6414af8",
+      "features": {
+        "thprac": false,
+        "languages": false,
+        "focusHitbox": false
+      }
+    },
+    "configure": {
+      "language": "ja",
+      "music": "ogg",
+      "resources": [],
+      "runtimeResources": [],
+      "runtimePack": null,
+      "sharedResources": [],
+      "options": {
+        "limitPresentationTo60": true,
+        "touchEnabled": false,
+        "touchMovementMode": "touch-unlimited",
+        "touchSensitivity": 150,
+        "touchFocusMode": "hold-button",
+        "doubleTapBombEnabled": false,
+        "alwaysHitbox": false,
+        "oggDecodeMode": "stream"
+      },
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 6,
+      "command": "configure",
+      "request": "runtime-6-6"
+    },
+    "serviceWorker": "http://127.0.0.1:8177/app-shell-sw.js"
+  },
+  "configured": {
+    "bgm": 0.23000000417232513,
+    "sfx": 0.6700000166893005,
+    "state": "running"
+  },
+  "muted": {
+    "bgm": 0,
+    "sfx": 0.6700000166893005,
+    "state": "running"
+  },
+  "mutedPCM": 0,
+  "restored": {
+    "bgm": 0.30000001192092896,
+    "sfx": 0.6700000166893005,
+    "state": "running"
+  },
+  "menuSfxPCM": 0.38674983382225037,
+  "sfxPCM": 0,
+  "sfxState": {
+    "calls": [
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      },
+      {
+        "present": false,
+        "node": false,
+        "suspended": false,
+        "mode": 1,
+        "restart": 1
+      }
+    ],
+    "count": 53,
+    "handle": 0,
+    "sound": false,
+    "context": "running",
+    "node": false,
+    "suspended": false,
+    "key": 80,
+    "player": 0,
+    "shots": 10,
+    "bufferPeak": null
+  },
+  "firstEpoch": "1",
+  "retired": {
+    "audio": "closed",
+    "graphs": 0,
+    "sounds": 0,
+    "urls": 0,
+    "contextLost": true
+  },
+  "secondEpoch": "3",
+  "reopened": {
+    "bgm": 0.30000001192092896,
+    "sfx": 0.6700000166893005,
+    "state": "running"
+  },
+  "finalDocumentEvents": [
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 58.459078644937655,
+      "logicFps": 60.45767962425177,
+      "frameMs": 17.10598290598609
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "frame-health",
+      "fps": 60,
+      "logicFps": 60,
+      "frameMs": 16.666666666666668
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "event": "audio-health",
+      "backend": "Web Audio + OGG",
+      "state": "running",
+      "robust": true
+    },
+    {
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 3,
+      "event": "exit",
+      "code": 0,
+      "status": "exited"
+    }
+  ],
+  "result": "passed"
+}

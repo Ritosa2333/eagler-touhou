@@ -1,0 +1,224 @@
+{
+  "schema": "thkkd/performance-browser-checks/1",
+  "result": "passed",
+  "browser": "Edg/158.0.4370.45",
+  "runtime": "d535ee72d90647205347ea94e59097471e0bfa5ee9c9f73ec8cbeebff7b81d34",
+  "hardware": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0",
+    "dpr": 1,
+    "screen": {
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 600
+    },
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Ti (0x00002803) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  },
+  "renderingChecks": [
+    "actual-PNG-GPU-straight-alpha-and-bilinear-filter",
+    "native-menu-font-weight-outline-and-Unicode-layout",
+    "seven-viewport-DPR-portrait-landscape-fits",
+    "launcher-fullscreen-with-native-buffer-and-aspect",
+    "120-extra-presentations-do-not-step-or-play-audio",
+    "updated-renderer-and-fonts-load-offline"
+  ],
+  "displayCases": [
+    {
+      "dpr": 1,
+      "view": {
+        "width": 1270,
+        "height": 900
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 35,
+        "top": 0,
+        "width": 1200,
+        "height": 900
+      },
+      "physical": {
+        "left": 35,
+        "top": 0,
+        "width": 1200,
+        "height": 900
+      }
+    },
+    {
+      "dpr": 1.25,
+      "view": {
+        "width": 1270,
+        "height": 900
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 35.1875,
+        "top": 0,
+        "width": 1200,
+        "height": 900
+      },
+      "physical": {
+        "left": 43.984375,
+        "top": 0,
+        "width": 1500,
+        "height": 1125
+      }
+    },
+    {
+      "dpr": 1.5,
+      "view": {
+        "width": 1355,
+        "height": 768
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 165.328125,
+        "top": 0,
+        "width": 1024,
+        "height": 768
+      },
+      "physical": {
+        "left": 247.9921875,
+        "top": 0,
+        "width": 1536,
+        "height": 1152
+      }
+    },
+    {
+      "dpr": 2,
+      "view": {
+        "width": 1910,
+        "height": 1080
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 235,
+        "top": 0,
+        "width": 1440,
+        "height": 1080
+      },
+      "physical": {
+        "left": 470,
+        "top": 0,
+        "width": 2880,
+        "height": 2160
+      }
+    },
+    {
+      "dpr": 1,
+      "view": {
+        "width": 790,
+        "height": 600
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 1,
+        "top": 5,
+        "width": 788,
+        "height": 591
+      },
+      "physical": {
+        "left": 1,
+        "top": 5,
+        "width": 788,
+        "height": 591
+      }
+    },
+    {
+      "dpr": 3,
+      "view": {
+        "width": 380,
+        "height": 844
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 0,
+        "top": 279.65625,
+        "width": 380,
+        "height": 285
+      },
+      "physical": {
+        "left": 0,
+        "top": 838.96875,
+        "width": 1140,
+        "height": 855
+      }
+    },
+    {
+      "dpr": 3,
+      "view": {
+        "width": 834,
+        "height": 390
+      },
+      "buffer": {
+        "width": 640,
+        "height": 480
+      },
+      "rect": {
+        "left": 157,
+        "top": 0,
+        "width": 520,
+        "height": 390
+      },
+      "physical": {
+        "left": 471,
+        "top": 0,
+        "width": 1560,
+        "height": 1170
+      }
+    }
+  ],
+  "nativeMenuFont": {
+    "style": {
+      "size": 26,
+      "weight": 300,
+      "edge": 1,
+      "antialias": true,
+      "italic": false
+    },
+    "menuWidth": 151,
+    "glyphs": 217
+  },
+  "sameFrameCases": 27,
+  "identicalDecodedRGBImages": 27,
+  "sameFrameStatesMatched": true,
+  "controls": [
+    "shared-layout-editor-save",
+    "formal-launcher-menu-and-normal-start",
+    "WASD-custom-bind-save-restore-and-default",
+    "mapped-gamepad-buttons-axes-disconnect-and-independent-keyboard-owner",
+    "production-touch-surface-limited-motion-and-cancel",
+    "portrait-and-landscape-shared-controls",
+    "shared-two-finger-magnifier-and-reset",
+    "blur-releases-input",
+    "separate-BGM-SFX-output-gains",
+    "fullscreen-toggle-and-return"
+  ],
+  "upgradeOffline": {
+    "checks": [
+      "old-delivery-installs-and-persists-native-save-and-replay",
+      "old-to-current-runtime-upgrade-preserves-and-loads-user-data",
+      "HTTP-server-stopped-and-browser-offline-reload-launch-native-data"
+    ],
+    "before": "ef20ada5e4e78ced7a8412f0da93a36b5b9f07176b2f011533212bc927440b8c",
+    "after": "d535ee72d90647205347ea94e59097471e0bfa5ee9c9f73ec8cbeebff7b81d34",
+    "offline": "d535ee72d90647205347ea94e59097471e0bfa5ee9c9f73ec8cbeebff7b81d34"
+  }
+}

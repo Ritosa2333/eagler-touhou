@@ -406,7 +406,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     checkPreparationAbort(signal);
     const {convertRetailPackage} = await import('./retail-package');
     return convertRetailPackage({game, expected, inputs, archivePassword, fontTargets, loadFont, signal,
-      onTrack: ({name, completed, total}) => progress({onProgress}, 'package.originalEncoding', {name, completed: completed + 1, total})});
+      onTrack: ({name, completed, total}) => progress({onProgress}, game === 'thkkd' ? 'package.originalPreparingResources' : 'package.originalEncoding', {name, completed: Math.min(completed + 1,total), total})});
   }
   async function importOriginal(game: GameId, inputs: readonly RetailInput[], {signal, onProgress, archivePassword}: Pick<AcquisitionRequest, 'signal' | 'onProgress'> & {archivePassword?: string} = {}) {
     if (!indexedDBAvailable()) throw Error(t('package.indexedDbUnavailable'));
@@ -420,6 +420,10 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
   }
   async function importFiles(game: GameId, files: readonly (Blob & {name?: string})[],
     options: Pick<AcquisitionRequest, 'signal' | 'onProgress'> & {archivePassword?: string} = {}) {
+    if (game === 'thkkd') {
+      if (files.length !== 1 || typeof files[0]?.name !== 'string') throw Error('请选择一个海惠堂原版资源 ZIP');
+      return importOriginal(game, files as readonly RetailInput[], options);
+    }
     if (originalFileNames(game).length) {
       const {isOriginalGameSelection} = await import('./retail-input-archive');
       if (await isOriginalGameSelection(files)) {
@@ -433,6 +437,9 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
   async function importPackage({game, file, signal, onProgress, gameVersion}: {
     gameVersion?: GameVersion; game: GameId; file: Blob & {name?: string}; signal?: AbortSignal; onProgress?: AcquisitionRequest['onProgress'];
   }): Promise<InstalledPackageGeneration> {
+    if (game === 'thkkd') {
+      return importOriginal(game, [Object.assign(new Blob([file]), {name:file.name ?? 'resources.zip'})], {signal,onProgress});
+    }
     const version = gameVersion ?? getGameVersion(game);
     const request = {onProgress};
     checkPreparationAbort(signal);

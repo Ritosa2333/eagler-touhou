@@ -39,6 +39,17 @@ function pc98PreparedContent(game, tracks, script, layout = PC98_DATA_LAYOUT) {
 // Product content shape only. This file declares names and Runtime mounts, but
 // never points at a workstation build, asset directory, or generated identity.
 export const PRODUCT_CONTENT = Object.freeze({
+  thkkd:Object.freeze({
+    original:Object.freeze({files:Object.freeze(['dat.dxa','bgm.dxa'])}),
+    dataLayout:'sha256-ccd958101cf8a6f2e84fd0c60e215651eede4690f40f109044cee32973b4f273',
+    music:Object.freeze({}),
+    hostPreparation:Object.freeze({
+      artwork:Object.freeze({kind:'prepared-artwork'}),
+      dataAssets:Object.freeze({kind:'prepared-content'}),
+      preparedContent:Object.freeze({directory:'build/web-content',markerFiles:Object.freeze(['thkkd.data']),script:'scripts/prepare-thkkd-content.mjs'}),
+      ogg:Object.freeze({kind:'prepared-content'}),
+    }),
+  }),
   th01: pc98PreparedContent("th01", 14, "scripts/prepare-th01-content.mjs", "sha256-3b51bdd9400868145f321cd9e62eedf2846d5a164e023f61c987a4cfa4ea169e"),
   th02: pc98PreparedContent("th02", 15, "scripts/prepare-th02-content.mjs"),
   th03: pc98PreparedContent("th03", 21, "scripts/prepare-th03-content.mjs", "sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e"),

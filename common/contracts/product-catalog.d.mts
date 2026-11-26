@@ -29,6 +29,19 @@ export type HostRuntimeFeatures = Readonly<Partial<Record<HostRuntimeFeatureId, 
 export declare function isHostRuntimeFeatureId(value: string): value is HostRuntimeFeatureId;
 export declare function languagePriority(id: string): number;
 export declare const PRODUCT_GAMES: Readonly<{
+    thkkd: Readonly<{
+        importOnly:true;
+        number:'KKD';title:'东方海惠堂';subtitle:'Marine Benefit';cardArtwork:'thkkd-card.webp';
+        storage:Readonly<{saveRoot:'/savesthkkd';scoreFile:'th_kaikeidou_score00.dat';configFiles:readonly string[]}>;
+        runtime:'./runtime/thkkd/thkkd.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
+        dataProvider:'retail-memory';runtimeResourceTransport:'resources';
+        package:Readonly<{dataFileId:'game-data';dataTarget:'/thkkd.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/music'}>}>;
+        musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
+        touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
+        support:Readonly<{highRefreshRate:true;sourceRepository:string}>;
+        replay:Readonly<{prefix:'thkkd';extensions:readonly ['rpy','thkkdr'];naming:'filename'}>;
+        features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
+    }>;
     th01: Readonly<{
         testOnly:true; number:'01';title:'東方靈異伝';subtitle:'Highly Responsive to Prayers';cardArtwork:'th01-card.webp';
         storage:Readonly<{saveRoot:'/savesth01';scoreFile:'scores.dat';configFiles:readonly string[]}>;

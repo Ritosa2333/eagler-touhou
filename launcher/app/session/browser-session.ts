@@ -548,7 +548,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const gameData = createGameDataImportModel({acquisition: testBuild ? acquisition : {
     importPackage: acquisition.importPackage,
     importFiles: acquisition.importFiles,
-    originalFileNames: game => game === 'th13' || game === 'th14' ? acquisition.originalFileNames(game) : [],
+    originalFileNames: game => game === 'th13' || game === 'th14' || game === 'thkkd' ? acquisition.originalFileNames(game) : [],
   }, translate: t,
     getContext: () => ({product: settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID,
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,

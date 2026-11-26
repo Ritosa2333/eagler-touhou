@@ -1,0 +1,559 @@
+{
+  "schema": "thkkd/quality-browser/2",
+  "url": "http://127.0.0.1:8177/",
+  "checks": [
+    "high-refresh-setting-survives-reload",
+    "default-Z-menu-and-actual-shots",
+    "Z-pause-confirm"
+  ],
+  "cadences": [
+    {
+      "scene": "title",
+      "before": {
+        "outer": 10,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 75,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 10,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 171,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "seconds": 1.604515000000596,
+      "callbacks": 3476,
+      "presents": 3477,
+      "steps": 96,
+      "callbackHz": 2166.3867274526624,
+      "presentHz": 2167.009968743644,
+      "logicHz": 59.831163934250746,
+      "renderedFPS": "2064.1FPS"
+    },
+    {
+      "scene": "difficulty",
+      "before": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 204,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 301,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "seconds": 1.62160000000149,
+      "callbacks": 2765,
+      "presents": 2765,
+      "steps": 97,
+      "callbackHz": 1705.106068079341,
+      "presentHz": 1705.106068079341,
+      "logicHz": 59.81746423280147,
+      "renderedFPS": "1859.8FPS"
+    },
+    {
+      "scene": "gameplay",
+      "before": {
+        "outer": 100,
+        "phase": 11,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 40,
+        "cursor": 40,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 26,
+        "zLogical": 26,
+        "nativePresents": 463,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 100,
+        "phase": 11,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 137,
+        "cursor": 137,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 560,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "seconds": 1.6188549999985844,
+      "callbacks": 2132,
+      "presents": 2132,
+      "steps": 97,
+      "callbackHz": 1316.9802113233516,
+      "presentHz": 1316.9802113233516,
+      "logicHz": 59.91889329191609,
+      "renderedFPS": "1485.7FPS"
+    },
+    {
+      "scene": "pause",
+      "before": {
+        "outer": 100,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 1,
+        "gameFrame": 138,
+        "cursor": 138,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 593,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 100,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 1,
+        "gameFrame": 138,
+        "cursor": 138,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 690,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "seconds": 1.6093800000008196,
+      "callbacks": 4177,
+      "presents": 4177,
+      "steps": 97,
+      "callbackHz": 2595.4094123189507,
+      "presentHz": 2595.4094123189507,
+      "logicHz": 60.27165740841231,
+      "renderedFPS": "2641.1FPS"
+    }
+  ],
+  "browser": "Edg/158.0.4370.33",
+  "errors": [],
+  "loads": [
+    {
+      "url": "http://127.0.0.1:8177/_eagler/resource-routes?path=%2Fgames%2Fthkkd%2Fthkkd.data",
+      "status": 404,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:8177/games/thkkd/thkkd.data",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": false
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwkbfzb-8b73523f2456&runtimeVariant=normal&runtimeEpoch=1",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/shell.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/platform.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/save-sync.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/input.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/direct-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/local-replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/thkkd.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/replay.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/presentation-clock.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/presentation-stats.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/renderer.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/directory-keyboard.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/keyboard-owners.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/keyboard-input-bridge.mjs",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/thkkd.wasm",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true,
+      "bytes": 6267402,
+      "sha256": "f1eacdd3f90a7b8ef0dbc791b53189c776750b5c67909bf4e4c0d047cbf1942c"
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/fonts/unifont.woff2",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    },
+    {
+      "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/manifest.json",
+      "status": 200,
+      "cache": false,
+      "serviceWorker": true
+    }
+  ],
+  "defaultHighRefresh": "false",
+  "runtime": {
+    "url": "http://127.0.0.1:8177/runtime/thkkd/a3ed130eefd453517e1c98b628ae9c98d9333bd2888b7d209f31fd36bb148798/thkkd.html?hosted=1&managedData=1&gameGeneration=gen-mwwkbfzb-8b73523f2456&runtimeVariant=normal&runtimeEpoch=1",
+    "manifest": {
+      "game": "thkkd",
+      "protocol": "eagler-touhou/1",
+      "variant": "normal",
+      "buildId": "9e07b2ba7fcc85cb047b65a1a51e9fbf243696a0244e984f3e81d8bda4180535",
+      "features": {
+        "thprac": false,
+        "languages": false,
+        "focusHitbox": false
+      }
+    },
+    "configure": {
+      "language": "ja",
+      "music": "ogg",
+      "resources": [],
+      "runtimeResources": [],
+      "runtimePack": null,
+      "sharedResources": [],
+      "options": {
+        "limitPresentationTo60": false,
+        "touchEnabled": false,
+        "touchMovementMode": "touch-unlimited",
+        "touchSensitivity": 150,
+        "touchFocusMode": "hold-button",
+        "doubleTapBombEnabled": false,
+        "alwaysHitbox": false,
+        "oggDecodeMode": "stream"
+      },
+      "protocol": "eagler-touhou/1",
+      "game": "thkkd",
+      "epoch": 1,
+      "command": "configure",
+      "request": "runtime-1-1"
+    },
+    "serviceWorker": "http://127.0.0.1:8177/app-shell-sw.js"
+  },
+  "initial": {
+    "outer": 10,
+    "phase": 0,
+    "choice": 0,
+    "gameScene": 0,
+    "gameFrame": 0,
+    "cursor": 0,
+    "dialogue": 0,
+    "dialogueTimer": 0,
+    "zPhysical": 0,
+    "zLogical": 0,
+    "nativePresents": 74,
+    "held": [],
+    "error": "",
+    "focused": true,
+    "active": "BODY"
+  },
+  "z": [
+    {
+      "before": {
+        "outer": 10,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 171,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 204,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    },
+    {
+      "before": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 302,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 11,
+        "phase": 1,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 334,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    },
+    {
+      "before": {
+        "outer": 11,
+        "phase": 1,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 334,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 12,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 368,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    },
+    {
+      "before": {
+        "outer": 12,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 368,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 12,
+        "phase": 10,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 401,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    },
+    {
+      "before": {
+        "outer": 12,
+        "phase": 10,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 401,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 100,
+        "phase": 11,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 10,
+        "cursor": 10,
+        "dialogue": 0,
+        "dialogueTimer": 0,
+        "zPhysical": 0,
+        "zLogical": 0,
+        "nativePresents": 433,
+        "held": [],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    }
+  ],
+  "shooting": {
+    "active": 22
+  },
+  "result": "passed"
+}

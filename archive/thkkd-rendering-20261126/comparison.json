@@ -1,0 +1,1262 @@
+{
+  "schema": "thkkd/rendering-comparison/1",
+  "cases": [
+    {
+      "name": "reimu-a",
+      "originalFrame": 180,
+      "state": {
+        "cursor": 150,
+        "stage": 6,
+        "frame": 150,
+        "random": 851,
+        "digest": "d5e27db0"
+      },
+      "originalPngSha256": "92f7914ffc745e15ec23af8336de8ee573fdeaf65a74d50cde20a0c42182999c",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 3.511214,
+            "exactPercent": 74.5867
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 0.029732,
+            "exactPercent": 97.9239
+          }
+        },
+        "hitbox": {
+          "before": {
+            "pixels": 121,
+            "mae": 4.796143,
+            "exactPercent": 67.7686
+          },
+          "after": {
+            "pixels": 121,
+            "mae": 0.0,
+            "exactPercent": 100.0
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 5086,
+            "mae": 5.27402,
+            "exactPercent": 55.8396
+          },
+          "after": {
+            "pixels": 5086,
+            "mae": 0.03644,
+            "exactPercent": 95.1239
+          }
+        }
+      }
+    },
+    {
+      "name": "reimu-a",
+      "originalFrame": 2014,
+      "state": {
+        "cursor": 1984,
+        "stage": 6,
+        "frame": 2588,
+        "random": 926,
+        "digest": "33dcce48"
+      },
+      "originalPngSha256": "b4bdac94bef47f475d86e9fed4e36e9a72b1ed8b547e414fa2b7823e464d4a4b",
+      "regions": {
+        "bullets": {
+          "before": {
+            "pixels": 10887,
+            "mae": 14.848076,
+            "exactPercent": 55.332
+          },
+          "after": {
+            "pixels": 10887,
+            "mae": 0.016258,
+            "exactPercent": 97.4281
+          }
+        },
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 0.870306,
+            "exactPercent": 84.506
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 0.004357,
+            "exactPercent": 99.1542
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 24125,
+            "mae": 0.851136,
+            "exactPercent": 86.7772
+          },
+          "after": {
+            "pixels": 24125,
+            "mae": 0.013126,
+            "exactPercent": 98.0394
+          }
+        }
+      }
+    },
+    {
+      "name": "reimu-a",
+      "originalFrame": 2074,
+      "state": {
+        "cursor": 2044,
+        "stage": 6,
+        "frame": 2648,
+        "random": 387,
+        "digest": "19003825"
+      },
+      "originalPngSha256": "d829c71993a1d4cb24a64672bd5c75249b1aecc53f9efaa76be3b2694dc6d229",
+      "regions": {
+        "bullets": {
+          "before": {
+            "pixels": 9458,
+            "mae": 15.449531,
+            "exactPercent": 54.631
+          },
+          "after": {
+            "pixels": 9458,
+            "mae": 0.01875,
+            "exactPercent": 96.7329
+          }
+        },
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 0.965526,
+            "exactPercent": 78.7774
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 0.016788,
+            "exactPercent": 97.1549
+          }
+        },
+        "hitbox": {
+          "before": {
+            "pixels": 121,
+            "mae": 1.482094,
+            "exactPercent": 71.9008
+          },
+          "after": {
+            "pixels": 121,
+            "mae": 0.0,
+            "exactPercent": 100.0
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 40822,
+            "mae": 0.090997,
+            "exactPercent": 95.5539
+          },
+          "after": {
+            "pixels": 40822,
+            "mae": 0.02359,
+            "exactPercent": 96.399
+          }
+        }
+      }
+    },
+    {
+      "name": "reimu-b",
+      "originalFrame": 180,
+      "state": {
+        "cursor": 150,
+        "stage": 0,
+        "frame": 150,
+        "random": 881,
+        "digest": "9b769775"
+      },
+      "originalPngSha256": "56bd01caa86fddde75af6ca9be73a569f99cbe83f908867cb28efe217a3ae216",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 7.75958,
+            "exactPercent": 21.9531
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 3.207869,
+            "exactPercent": 24.6444
+          }
+        },
+        "hitbox": {
+          "before": {
+            "pixels": 121,
+            "mae": 5.584022,
+            "exactPercent": 66.9421
+          },
+          "after": {
+            "pixels": 121,
+            "mae": 0.809917,
+            "exactPercent": 70.2479
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 4636,
+            "mae": 10.207219,
+            "exactPercent": 14.2796
+          },
+          "after": {
+            "pixels": 4636,
+            "mae": 3.448878,
+            "exactPercent": 15.3365
+          }
+        }
+      }
+    },
+    {
+      "name": "reimu-b",
+      "originalFrame": 305,
+      "state": {
+        "cursor": 275,
+        "stage": 0,
+        "frame": 275,
+        "random": 854,
+        "digest": "dc5239b4"
+      },
+      "originalPngSha256": "fec2d28918037c4851ac7aea6fb43fbf07e0ec953c85e9a2c922caca12018cf4",
+      "regions": {
+        "bullets": {
+          "before": {
+            "pixels": 5323,
+            "mae": 13.516751,
+            "exactPercent": 28.499
+          },
+          "after": {
+            "pixels": 5323,
+            "mae": 1.07095,
+            "exactPercent": 57.3737
+          }
+        },
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 3.816353,
+            "exactPercent": 0.5767
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 2.353197,
+            "exactPercent": 1.1534
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 35512,
+            "mae": 4.108846,
+            "exactPercent": 4.8913
+          },
+          "after": {
+            "pixels": 35512,
+            "mae": 2.802433,
+            "exactPercent": 7.9945
+          }
+        }
+      }
+    },
+    {
+      "name": "reimu-b",
+      "originalFrame": 365,
+      "state": {
+        "cursor": 335,
+        "stage": 0,
+        "frame": 335,
+        "random": 925,
+        "digest": "acde9b93"
+      },
+      "originalPngSha256": "f8b62583309efc0dafad172656ee57b5d8b4dd4cd33e03a67ce090f669df97cf",
+      "regions": {
+        "bullets": {
+          "before": {
+            "pixels": 4596,
+            "mae": 8.607485,
+            "exactPercent": 16.7102
+          },
+          "after": {
+            "pixels": 4596,
+            "mae": 0.718016,
+            "exactPercent": 29.3951
+          }
+        },
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 6.519928,
+            "exactPercent": 9.1888
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 0.683455,
+            "exactPercent": 14.3022
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 31984,
+            "mae": 2.970058,
+            "exactPercent": 12.3718
+          },
+          "after": {
+            "pixels": 31984,
+            "mae": 0.855584,
+            "exactPercent": 15.2545
+          }
+        }
+      }
+    },
+    {
+      "name": "reimu-c",
+      "originalFrame": 180,
+      "state": {
+        "cursor": 150,
+        "stage": 0,
+        "frame": 150,
+        "random": 847,
+        "digest": "63fd85d"
+      },
+      "originalPngSha256": "5bc65e9182574faedbe315597950f3d388cdae0f8c4cc4373c20ce8f0ae77959",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 7.854543,
+            "exactPercent": 10.842
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 5.343842,
+            "exactPercent": 12.2261
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 15642,
+            "mae": 8.674125,
+            "exactPercent": 19.7225
+          },
+          "after": {
+            "pixels": 15642,
+            "mae": 4.023782,
+            "exactPercent": 21.6085
+          }
+        }
+      }
+    },
+    {
+      "name": "reimu-c",
+      "originalFrame": 386,
+      "state": {
+        "cursor": 356,
+        "stage": 0,
+        "frame": 356,
+        "random": 648,
+        "digest": "d38d530e"
+      },
+      "originalPngSha256": "1a658b07b50cbf4446e8d42bd373e031e39806ed9482fc229acab12cf1eb7e59",
+      "regions": {
+        "bullets": {
+          "before": {
+            "pixels": 1976,
+            "mae": 9.118084,
+            "exactPercent": 32.0344
+          },
+          "after": {
+            "pixels": 1976,
+            "mae": 2.076417,
+            "exactPercent": 45.7996
+          }
+        },
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 3.349737,
+            "exactPercent": 3.5755
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 1.016788,
+            "exactPercent": 4.5752
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 66836,
+            "mae": 3.873845,
+            "exactPercent": 9.5817
+          },
+          "after": {
+            "pixels": 66836,
+            "mae": 2.210266,
+            "exactPercent": 11.5028
+          }
+        }
+      }
+    },
+    {
+      "name": "reimu-c",
+      "originalFrame": 446,
+      "state": {
+        "cursor": 416,
+        "stage": 0,
+        "frame": 416,
+        "random": 670,
+        "digest": "4f5a5e2c"
+      },
+      "originalPngSha256": "8ee3bb7983eeddddb0c02f9c0126bf5efb4e1d6c7ab6e816f452d185e788732b",
+      "regions": {
+        "bullets": {
+          "before": {
+            "pixels": 702,
+            "mae": 11.869421,
+            "exactPercent": 28.2051
+          },
+          "after": {
+            "pixels": 702,
+            "mae": 1.152896,
+            "exactPercent": 52.1368
+          }
+        },
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 1.032295,
+            "exactPercent": 10.3037
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 0.846597,
+            "exactPercent": 11.2265
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 61649,
+            "mae": 2.591694,
+            "exactPercent": 17.4309
+          },
+          "after": {
+            "pixels": 61649,
+            "mae": 0.91032,
+            "exactPercent": 20.3312
+          }
+        }
+      }
+    },
+    {
+      "name": "marisa-a",
+      "originalFrame": 180,
+      "state": {
+        "cursor": 150,
+        "stage": 0,
+        "frame": 150,
+        "random": 857,
+        "digest": "b0bcd4e9"
+      },
+      "originalPngSha256": "36f342f7631df32ea631d1872903e965334ca9f91605a279d4524d84b58a053c",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 7.118929,
+            "exactPercent": 14.3791
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 5.911957,
+            "exactPercent": 15.2634
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 8496,
+            "mae": 9.081882,
+            "exactPercent": 24.1996
+          },
+          "after": {
+            "pixels": 8496,
+            "mae": 3.882808,
+            "exactPercent": 26.3536
+          }
+        }
+      }
+    },
+    {
+      "name": "marisa-a",
+      "originalFrame": 483,
+      "state": {
+        "cursor": 453,
+        "stage": 0,
+        "frame": 453,
+        "random": 867,
+        "digest": "b99dfe3e"
+      },
+      "originalPngSha256": "c77a16673d8377790d96f62c3e1887ac288f10c961c96d3b94118664aaa05357",
+      "regions": {
+        "bullets": {
+          "before": {
+            "pixels": 2210,
+            "mae": 8.554751,
+            "exactPercent": 24.4796
+          },
+          "after": {
+            "pixels": 2210,
+            "mae": 2.281448,
+            "exactPercent": 33.5747
+          }
+        },
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 3.663078,
+            "exactPercent": 11.4571
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 2.138793,
+            "exactPercent": 13.9562
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 98514,
+            "mae": 3.776817,
+            "exactPercent": 11.4126
+          },
+          "after": {
+            "pixels": 98514,
+            "mae": 3.247911,
+            "exactPercent": 12.1577
+          }
+        }
+      }
+    },
+    {
+      "name": "marisa-a",
+      "originalFrame": 543,
+      "state": {
+        "cursor": 513,
+        "stage": 0,
+        "frame": 513,
+        "random": 916,
+        "digest": "6b04255e"
+      },
+      "originalPngSha256": "ee49631275b6e563f20ea0c2dacb0779fac617f106f01a88e6acba2cd27b2c62",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 5.791875,
+            "exactPercent": 0.6536
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 5.551967,
+            "exactPercent": 0.8843
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 62774,
+            "mae": 5.204294,
+            "exactPercent": 1.0912
+          },
+          "after": {
+            "pixels": 62774,
+            "mae": 5.174345,
+            "exactPercent": 1.1342
+          }
+        }
+      }
+    },
+    {
+      "name": "marisa-b",
+      "originalFrame": 76,
+      "state": {
+        "cursor": 46,
+        "stage": 0,
+        "frame": 46,
+        "random": 104,
+        "digest": "1a0245b"
+      },
+      "originalPngSha256": "0ca788fd90e5a43d0c0dc11ee2410859c854590e412ffb0946298862db90cecb",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 7.177111,
+            "exactPercent": 35.371
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 4.217609,
+            "exactPercent": 36.1399
+          }
+        },
+        "hitbox": {
+          "before": {
+            "pixels": 121,
+            "mae": 0.853994,
+            "exactPercent": 97.5207
+          },
+          "after": {
+            "pixels": 121,
+            "mae": 0.049587,
+            "exactPercent": 97.5207
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 11659,
+            "mae": 7.715356,
+            "exactPercent": 36.0751
+          },
+          "after": {
+            "pixels": 11659,
+            "mae": 3.563828,
+            "exactPercent": 36.5126
+          }
+        }
+      }
+    },
+    {
+      "name": "marisa-b",
+      "originalFrame": 106,
+      "state": {
+        "cursor": 76,
+        "stage": 0,
+        "frame": 76,
+        "random": 284,
+        "digest": "3d138cf0"
+      },
+      "originalPngSha256": "38a51d713ad00b1e4151d7a5d591dfc1351b34e3301a853c68840238ece783cf",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 0.384211,
+            "exactPercent": 91.5417
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 0.0,
+            "exactPercent": 100.0
+          }
+        },
+        "hitbox": {
+          "before": {
+            "pixels": 121,
+            "mae": 0.294766,
+            "exactPercent": 94.2149
+          },
+          "after": {
+            "pixels": 121,
+            "mae": 0.0,
+            "exactPercent": 100.0
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 169057,
+            "mae": 1.527875,
+            "exactPercent": 59.0103
+          },
+          "after": {
+            "pixels": 169057,
+            "mae": 1.511143,
+            "exactPercent": 59.1658
+          }
+        }
+      }
+    },
+    {
+      "name": "marisa-b",
+      "originalFrame": 166,
+      "state": {
+        "cursor": 136,
+        "stage": 0,
+        "frame": 136,
+        "random": 678,
+        "digest": "31089952"
+      },
+      "originalPngSha256": "375c68b684bdaabb4fe5b9e6983747dc0b1c581bb1be734b2d15ed5892f97c49",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 0.387671,
+            "exactPercent": 91.311
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 0.0,
+            "exactPercent": 100.0
+          }
+        },
+        "hitbox": {
+          "before": {
+            "pixels": 121,
+            "mae": 0.261708,
+            "exactPercent": 94.2149
+          },
+          "after": {
+            "pixels": 121,
+            "mae": 0.0,
+            "exactPercent": 100.0
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 163134,
+            "mae": 0.788423,
+            "exactPercent": 58.6181
+          },
+          "after": {
+            "pixels": 163134,
+            "mae": 0.759327,
+            "exactPercent": 58.8455
+          }
+        }
+      }
+    },
+    {
+      "name": "marisa-c",
+      "originalFrame": 180,
+      "state": {
+        "cursor": 150,
+        "stage": 0,
+        "frame": 150,
+        "random": 891,
+        "digest": "23fcce42"
+      },
+      "originalPngSha256": "d0196db6412ec84cc80493736d5f33e95e526aa946c9b8cd18cdc593b7b62aea",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 7.137383,
+            "exactPercent": 14.8404
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 5.333077,
+            "exactPercent": 16.1476
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 18155,
+            "mae": 9.076067,
+            "exactPercent": 20.2534
+          },
+          "after": {
+            "pixels": 18155,
+            "mae": 4.212448,
+            "exactPercent": 21.9719
+          }
+        }
+      }
+    },
+    {
+      "name": "marisa-c",
+      "originalFrame": 954,
+      "state": {
+        "cursor": 924,
+        "stage": 0,
+        "frame": 924,
+        "random": 649,
+        "digest": "d805ed36"
+      },
+      "originalPngSha256": "20739c6195f4cff56b29c38d73b6af059fbb3305e95f657c7a6abbe45c6537f0",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 1.570806,
+            "exactPercent": 1.6532
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 1.165577,
+            "exactPercent": 2.0377
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 441,
+            "mae": 2.065004,
+            "exactPercent": 3.1746
+          },
+          "after": {
+            "pixels": 441,
+            "mae": 1.371126,
+            "exactPercent": 3.8549
+          }
+        }
+      }
+    },
+    {
+      "name": "marisa-c",
+      "originalFrame": 1014,
+      "state": {
+        "cursor": 984,
+        "stage": 0,
+        "frame": 984,
+        "random": 834,
+        "digest": "d565721e"
+      },
+      "originalPngSha256": "3ba5439fc55fc1a6db02547a894f063da99dd8a54a96f455d4b3122eba2599d8",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 3.746123,
+            "exactPercent": 0.2691
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 3.492631,
+            "exactPercent": 0.2691
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 462,
+            "mae": 2.782828,
+            "exactPercent": 0.4329
+          },
+          "after": {
+            "pixels": 462,
+            "mae": 2.816017,
+            "exactPercent": 0.2165
+          }
+        }
+      }
+    },
+    {
+      "name": "sanae-a",
+      "originalFrame": 180,
+      "state": {
+        "cursor": 150,
+        "stage": 0,
+        "frame": 150,
+        "random": 904,
+        "digest": "af220b9"
+      },
+      "originalPngSha256": "b6fa5d73dd160168c5a6398ba13897a7426c50c703dd886d3363d7870d99ccc6",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 8.919903,
+            "exactPercent": 12.5336
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 7.190696,
+            "exactPercent": 14.1484
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 6164,
+            "mae": 6.022821,
+            "exactPercent": 5.6781
+          },
+          "after": {
+            "pixels": 6164,
+            "mae": 5.00822,
+            "exactPercent": 6.3271
+          }
+        }
+      }
+    },
+    {
+      "name": "sanae-a",
+      "originalFrame": 273,
+      "state": {
+        "cursor": 243,
+        "stage": 0,
+        "frame": 243,
+        "random": 323,
+        "digest": "d92ab1dc"
+      },
+      "originalPngSha256": "37f67f2ac57fefb9c3bd6bd389aff4b82aff85abbe3a58e44c433295f10b957e",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 3.849032,
+            "exactPercent": 0.0384
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 3.159682,
+            "exactPercent": 0.0384
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 29021,
+            "mae": 4.511032,
+            "exactPercent": 1.9882
+          },
+          "after": {
+            "pixels": 29021,
+            "mae": 3.543411,
+            "exactPercent": 2.3879
+          }
+        }
+      }
+    },
+    {
+      "name": "sanae-a",
+      "originalFrame": 333,
+      "state": {
+        "cursor": 303,
+        "stage": 0,
+        "frame": 303,
+        "random": 511,
+        "digest": "9d50b1a9"
+      },
+      "originalPngSha256": "2465ad66335607c41edc744889fd964b0b81fa4884f1c3061730bcaec42fb049",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 2.760477,
+            "exactPercent": 0.0384
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 1.511598,
+            "exactPercent": 0.0384
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 38356,
+            "mae": 3.67209,
+            "exactPercent": 5.6315
+          },
+          "after": {
+            "pixels": 38356,
+            "mae": 1.730055,
+            "exactPercent": 7.3287
+          }
+        }
+      }
+    },
+    {
+      "name": "sanae-b",
+      "originalFrame": 180,
+      "state": {
+        "cursor": 150,
+        "stage": 0,
+        "frame": 150,
+        "random": 887,
+        "digest": "c6ddf7ea"
+      },
+      "originalPngSha256": "ce81707cee2418f299d1c56a9c15559c46fcd72151e2cc80e824a7fa0c857af3",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 9.430732,
+            "exactPercent": 12.4952
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 7.639882,
+            "exactPercent": 13.2641
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 5980,
+            "mae": 8.134337,
+            "exactPercent": 14.3311
+          },
+          "after": {
+            "pixels": 5980,
+            "mae": 7.113266,
+            "exactPercent": 16.4883
+          }
+        }
+      }
+    },
+    {
+      "name": "sanae-b",
+      "originalFrame": 313,
+      "state": {
+        "cursor": 283,
+        "stage": 0,
+        "frame": 283,
+        "random": 209,
+        "digest": "70dcae7f"
+      },
+      "originalPngSha256": "314d45ee240e64a05d7e7d247c5c646a6099c345ee8c812976a36d17343af935",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 4.427656,
+            "exactPercent": 0.0769
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 3.441625,
+            "exactPercent": 0.0769
+          }
+        }
+      }
+    },
+    {
+      "name": "sanae-b",
+      "originalFrame": 373,
+      "state": {
+        "cursor": 343,
+        "stage": 0,
+        "frame": 343,
+        "random": 254,
+        "digest": "ca96f87c"
+      },
+      "originalPngSha256": "42aedb99bd745ca96fc8f1bd2819afb04531984e6e2bd97fdc515e9524548039",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 2.723312,
+            "exactPercent": 8.2276
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 2.198642,
+            "exactPercent": 9.6501
+          }
+        }
+      }
+    },
+    {
+      "name": "sanae-c",
+      "originalFrame": 180,
+      "state": {
+        "cursor": 150,
+        "stage": 0,
+        "frame": 150,
+        "random": 860,
+        "digest": "987d3b04"
+      },
+      "originalPngSha256": "b2dacd09839c89601c3e9d2f57f5c7e6708dd9dbc56f3bd511cf89dbec6a5521",
+      "regions": {
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 6.95271,
+            "exactPercent": 15.4556
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 4.752531,
+            "exactPercent": 16.7628
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 33540,
+            "mae": 11.252236,
+            "exactPercent": 32.3733
+          },
+          "after": {
+            "pixels": 33540,
+            "mae": 2.460286,
+            "exactPercent": 39.8479
+          }
+        }
+      }
+    },
+    {
+      "name": "sanae-c",
+      "originalFrame": 311,
+      "state": {
+        "cursor": 281,
+        "stage": 0,
+        "frame": 281,
+        "random": 812,
+        "digest": "87398e8d"
+      },
+      "originalPngSha256": "74f807433c538fd5d05b893f1af0f954aedec2452eb7631d3e7e64a1e7c220f3",
+      "regions": {
+        "bullets": {
+          "before": {
+            "pixels": 5982,
+            "mae": 14.132341,
+            "exactPercent": 27.3821
+          },
+          "after": {
+            "pixels": 5982,
+            "mae": 1.248189,
+            "exactPercent": 60.5483
+          }
+        },
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 6.153274,
+            "exactPercent": 6.8435
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 3.962707,
+            "exactPercent": 9.9193
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 1050,
+            "mae": 4.489524,
+            "exactPercent": 44.2857
+          },
+          "after": {
+            "pixels": 1050,
+            "mae": 2.067937,
+            "exactPercent": 49.5238
+          }
+        }
+      }
+    },
+    {
+      "name": "sanae-c",
+      "originalFrame": 371,
+      "state": {
+        "cursor": 341,
+        "stage": 0,
+        "frame": 341,
+        "random": 165,
+        "digest": "39553846"
+      },
+      "originalPngSha256": "56ae9a57cfd54c18a305fff8b720052a0a2e9b3e19892925ea74552709f267cd",
+      "regions": {
+        "bullets": {
+          "before": {
+            "pixels": 1421,
+            "mae": 7.271171,
+            "exactPercent": 16.7488
+          },
+          "after": {
+            "pixels": 1421,
+            "mae": 0.714755,
+            "exactPercent": 22.5897
+          }
+        },
+        "player": {
+          "before": {
+            "pixels": 2601,
+            "mae": 5.219146,
+            "exactPercent": 15.494
+          },
+          "after": {
+            "pixels": 2601,
+            "mae": 0.571447,
+            "exactPercent": 22.9143
+          }
+        },
+        "weapons": {
+          "before": {
+            "pixels": 7230,
+            "mae": 2.137437,
+            "exactPercent": 11.4108
+          },
+          "after": {
+            "pixels": 7230,
+            "mae": 1.091056,
+            "exactPercent": 12.2268
+          }
+        }
+      }
+    }
+  ],
+  "totals": {
+    "bullets": {
+      "pixels": 42555,
+      "beforeMAE": 13.145576,
+      "afterMAE": 0.653077
+    },
+    "player": {
+      "pixels": 70227,
+      "beforeMAE": 4.558997,
+      "afterMAE": 2.805298
+    },
+    "hitbox": {
+      "pixels": 726,
+      "beforeMAE": 2.212121,
+      "afterMAE": 0.143251
+    },
+    "weapons": {
+      "pixels": 940325,
+      "beforeMAE": 3.263267,
+      "afterMAE": 2.045403
+    }
+  },
+  "bulletExamples": [
+    {
+      "name": "reimu-a-2074",
+      "crop": [
+        206,
+        340,
+        238,
+        372
+      ],
+      "selection": "largest reduction in local RGB error"
+    },
+    {
+      "name": "reimu-a-2014",
+      "crop": [
+        207,
+        40,
+        239,
+        72
+      ],
+      "selection": "largest reduction in local RGB error"
+    },
+    {
+      "name": "reimu-c-386",
+      "crop": [
+        312,
+        300,
+        344,
+        332
+      ],
+      "selection": "largest reduction in local RGB error"
+    },
+    {
+      "name": "marisa-a-483",
+      "crop": [
+        360,
+        407,
+        392,
+        439
+      ],
+      "selection": "largest reduction in local RGB error"
+    },
+    {
+      "name": "reimu-c-446",
+      "crop": [
+        314,
+        396,
+        346,
+        428
+      ],
+      "selection": "largest reduction in local RGB error"
+    }
+  ],
+  "result": "compared"
+}

@@ -1,0 +1,117 @@
+{
+  "browser": "Edg/158.0.4370.33",
+  "cases": [
+    {
+      "stage": 0,
+      "difficulty": 0,
+      "practice": true,
+      "state": {
+        "stage": 0,
+        "difficulty": 0,
+        "cursor": 150,
+        "commands": 100,
+        "mesh": false,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "stage": 1,
+      "difficulty": 1,
+      "practice": true,
+      "state": {
+        "stage": 1,
+        "difficulty": 1,
+        "cursor": 150,
+        "commands": 64,
+        "mesh": false,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "stage": 2,
+      "difficulty": 2,
+      "practice": true,
+      "state": {
+        "stage": 2,
+        "difficulty": 2,
+        "cursor": 150,
+        "commands": 270,
+        "mesh": false,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "stage": 3,
+      "difficulty": 3,
+      "practice": true,
+      "state": {
+        "stage": 3,
+        "difficulty": 3,
+        "cursor": 150,
+        "commands": 372,
+        "mesh": false,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "stage": 4,
+      "difficulty": 0,
+      "practice": true,
+      "state": {
+        "stage": 4,
+        "difficulty": 0,
+        "cursor": 150,
+        "commands": 290,
+        "mesh": true,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "stage": 5,
+      "difficulty": 1,
+      "practice": true,
+      "state": {
+        "stage": 5,
+        "difficulty": 1,
+        "cursor": 150,
+        "commands": 254,
+        "mesh": true,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "stage": 6,
+      "difficulty": 4,
+      "state": {
+        "stage": 6,
+        "difficulty": 4,
+        "cursor": 150,
+        "commands": 54,
+        "mesh": true,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "stage": 7,
+      "difficulty": 5,
+      "state": {
+        "stage": 7,
+        "difficulty": 5,
+        "cursor": 150,
+        "commands": 67,
+        "mesh": true,
+        "error": ""
+      },
+      "result": "passed"
+    }
+  ],
+  "errors": [],
+  "result": "passed"
+}

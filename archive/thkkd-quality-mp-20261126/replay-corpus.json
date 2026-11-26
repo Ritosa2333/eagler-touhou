@@ -1,0 +1,159 @@
+{
+  "schema": "thkkd/replay-parser-corpus/1",
+  "cases": [
+    {
+      "id": 1,
+      "sha256": "acf3b31527191c9475b2f855765ae67e3c10d4bb0ebe3329a4d920421880dcba",
+      "count": 32859,
+      "character": 1,
+      "shot": 1,
+      "difficulty": 3,
+      "lastStage": 2
+    },
+    {
+      "id": 2,
+      "sha256": "406072dd472da4d00db2b8d279ce09e5eb312c651873d9a8fc2fc67a4244df7b",
+      "count": 110374,
+      "character": 0,
+      "shot": 0,
+      "difficulty": 3,
+      "lastStage": 5
+    },
+    {
+      "id": 3,
+      "sha256": "3bd33a66e82caa57552a69488b0daea12a6b8aea111808434a18b3c3e410baf4",
+      "count": 15240,
+      "character": 0,
+      "shot": 0,
+      "difficulty": 4,
+      "lastStage": 6
+    },
+    {
+      "id": 4,
+      "sha256": "642a1703b816221421bcde06c1586f6af4cf946399f276c6e2b5fea2fb6912e8",
+      "count": 60322,
+      "character": 0,
+      "shot": 0,
+      "difficulty": 4,
+      "lastStage": 6
+    },
+    {
+      "id": 5,
+      "sha256": "22fea3bc6610c14988bf4c315630ccd5fc826c910ad6437667435d0c53950fbb",
+      "count": 4183,
+      "character": 1,
+      "shot": 2,
+      "difficulty": 2,
+      "lastStage": 0
+    },
+    {
+      "id": 6,
+      "sha256": "a869d820f2cd5204cad11992a2f733d8f3806de43a665c193e5f1c593ba0ed5b",
+      "count": 1593,
+      "character": 2,
+      "shot": 0,
+      "difficulty": 2,
+      "lastStage": 0
+    },
+    {
+      "id": 7,
+      "sha256": "18a30e7da9e6ee34dbae376acaadc2ac7df074c042f1f5e89fd3047dd4fe879c",
+      "count": 1441,
+      "character": 2,
+      "shot": 1,
+      "difficulty": 0,
+      "lastStage": 0
+    },
+    {
+      "id": 8,
+      "sha256": "108b9db78cc1a644db5e2ce69a761be1a2124be91286d2c413bc0f2aab58b284",
+      "count": 2024,
+      "character": 2,
+      "shot": 2,
+      "difficulty": 1,
+      "lastStage": 0
+    },
+    {
+      "id": 9,
+      "sha256": "5691c2f9c25f86c719444a3519059f3d4e757f3a4467db35528136a2931429f5",
+      "count": 1133,
+      "character": 1,
+      "shot": 0,
+      "difficulty": 3,
+      "lastStage": 0
+    },
+    {
+      "id": 10,
+      "sha256": "15ab3eb38957a751f5458a5e5f4b8c69b2e56cb85384fee0c5e5d4b33f3d8c20",
+      "count": 1235,
+      "character": 1,
+      "shot": 1,
+      "difficulty": 3,
+      "lastStage": 0
+    },
+    {
+      "id": 11,
+      "sha256": "8ab3918a22fbb22ad3551c2deb320d3c69cac079382c2aa7190c79bd0db2eca0",
+      "count": 1509,
+      "character": 0,
+      "shot": 1,
+      "difficulty": 2,
+      "lastStage": 0
+    },
+    {
+      "id": 12,
+      "sha256": "79d78aa7818cee49812b23a1589b1b7f416e82a550ac60e312e7ff2bfad1760b",
+      "count": 1084,
+      "character": 0,
+      "shot": 2,
+      "difficulty": 2,
+      "lastStage": 0
+    },
+    {
+      "id": 13,
+      "sha256": "e165e1118d272f8b219829ff1d40d2a127c0f211e52f177ee1874ab1ac0ef212",
+      "count": 74806,
+      "character": 1,
+      "shot": 1,
+      "difficulty": 4,
+      "lastStage": 6
+    },
+    {
+      "id": 14,
+      "sha256": "f54ed8e517bb9f73842bfbc7984678094a49a348aebb221baf2563505a0b43c5",
+      "count": 73458,
+      "character": 0,
+      "shot": 0,
+      "difficulty": 4,
+      "lastStage": 6
+    },
+    {
+      "id": 15,
+      "sha256": "eee206c719c6d9160c23653f14da57e8544682dd2941e4f59c98b6a00947dc43",
+      "count": 72884,
+      "character": 2,
+      "shot": 1,
+      "difficulty": 4,
+      "lastStage": 6
+    },
+    {
+      "id": 16,
+      "sha256": "d82f94aabc9bcbc82406a7144e8c0ff3b01f184c158620698312b9c5d9bf8bcf",
+      "count": 110282,
+      "character": 1,
+      "shot": 2,
+      "difficulty": 3,
+      "lastStage": 5
+    },
+    {
+      "id": 17,
+      "sha256": "7e5bb1a7cb330b205c24f005b755a9550fbebd57365c90518ca97ffb7b82e30f",
+      "count": 84397,
+      "character": 2,
+      "shot": 2,
+      "difficulty": 3,
+      "lastStage": 5
+    }
+  ],
+  "result": "passed"
+}

@@ -1,0 +1,169 @@
+{
+  "browser": "Edg/158.0.4370.33",
+  "cases": [
+    {
+      "character": 0,
+      "shot": 0,
+      "before": {
+        "character": 0,
+        "shot": 0,
+        "difficulty": 1,
+        "spells": 2,
+        "shots": 24,
+        "error": ""
+      },
+      "after": {
+        "spells": 1,
+        "bombTimer": 291,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "character": 0,
+      "shot": 1,
+      "before": {
+        "character": 0,
+        "shot": 1,
+        "difficulty": 1,
+        "spells": 2,
+        "shots": 32,
+        "error": ""
+      },
+      "after": {
+        "spells": 1,
+        "bombTimer": 251,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "character": 0,
+      "shot": 2,
+      "before": {
+        "character": 0,
+        "shot": 2,
+        "difficulty": 1,
+        "spells": 2,
+        "shots": 18,
+        "error": ""
+      },
+      "after": {
+        "spells": 1,
+        "bombTimer": 251,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "character": 1,
+      "shot": 0,
+      "before": {
+        "character": 1,
+        "shot": 0,
+        "difficulty": 1,
+        "spells": 2,
+        "shots": 26,
+        "error": ""
+      },
+      "after": {
+        "spells": 1,
+        "bombTimer": 251,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "character": 1,
+      "shot": 1,
+      "before": {
+        "character": 1,
+        "shot": 1,
+        "difficulty": 1,
+        "spells": 2,
+        "shots": 12,
+        "error": ""
+      },
+      "after": {
+        "spells": 1,
+        "bombTimer": 251,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "character": 1,
+      "shot": 2,
+      "before": {
+        "character": 1,
+        "shot": 2,
+        "difficulty": 1,
+        "spells": 2,
+        "shots": 26,
+        "error": ""
+      },
+      "after": {
+        "spells": 1,
+        "bombTimer": 271,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "character": 2,
+      "shot": 0,
+      "before": {
+        "character": 2,
+        "shot": 0,
+        "difficulty": 1,
+        "spells": 2,
+        "shots": 12,
+        "error": ""
+      },
+      "after": {
+        "spells": 1,
+        "bombTimer": 331,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "character": 2,
+      "shot": 1,
+      "before": {
+        "character": 2,
+        "shot": 1,
+        "difficulty": 1,
+        "spells": 2,
+        "shots": 12,
+        "error": ""
+      },
+      "after": {
+        "spells": 1,
+        "bombTimer": 311,
+        "error": ""
+      },
+      "result": "passed"
+    },
+    {
+      "character": 2,
+      "shot": 2,
+      "before": {
+        "character": 2,
+        "shot": 2,
+        "difficulty": 1,
+        "spells": 2,
+        "shots": 15,
+        "error": ""
+      },
+      "after": {
+        "spells": 1,
+        "bombTimer": 311,
+        "error": ""
+      },
+      "result": "passed"
+    }
+  ],
+  "errors": [],
+  "result": "passed"
+}

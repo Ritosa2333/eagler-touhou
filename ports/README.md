@@ -25,6 +25,7 @@
 | th17 | [开发](th17/README.md) | [开发](th17-mp/README.md) | [普通版](th17/ADAPTATION.md) · [MP](th17-mp/ADAPTATION.md) |
 | th19 | [开发](th19/README.md) | 同一源码目录，双人对战 | [普通版／MP](th19/ADAPTATION.md) |
 | th20 | [开发](th20/README.md) | — | [普通版实验适配](th20/ADAPTATION.md) |
+| thkkd · 东方海惠堂 | [开发](thkkd/docs/DEVELOPMENT.md) | — | [单机适配](thkkd/ADAPTATION.md) |
 
 从仓库根目录增加需要的源码：
 

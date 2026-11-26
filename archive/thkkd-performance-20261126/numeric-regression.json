@@ -1,0 +1,803 @@
+{
+  "schema": "thkkd/wasm-regression/1",
+  "result": "passed",
+  "cases": [
+    {
+      "case": "corpus-01",
+      "result": "passed",
+      "actual": {
+        "bytes": 764828408,
+        "sha256": "fa92d76a84d1eea65d1bb81f5500fed7a5ca49ca2706d735bc9aaf37b8885f73"
+      },
+      "expected": {
+        "bytes": 764828408,
+        "sha256": "fa92d76a84d1eea65d1bb81f5500fed7a5ca49ca2706d735bc9aaf37b8885f73"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-02",
+      "result": "passed",
+      "actual": {
+        "bytes": 1526429672,
+        "sha256": "098144037aeba6d9ac0c778c48ccb792d917610b69ce6b0cc29803346d878aa9"
+      },
+      "expected": {
+        "bytes": 1526429672,
+        "sha256": "098144037aeba6d9ac0c778c48ccb792d917610b69ce6b0cc29803346d878aa9"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-03",
+      "result": "passed",
+      "actual": {
+        "bytes": 215410547,
+        "sha256": "dfdf89d5d69adbf0323c69671cc64f42b0e89dae10744427073140226b7141de"
+      },
+      "expected": {
+        "bytes": 215410547,
+        "sha256": "dfdf89d5d69adbf0323c69671cc64f42b0e89dae10744427073140226b7141de"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-04",
+      "result": "passed",
+      "actual": {
+        "bytes": 733646768,
+        "sha256": "948114bc74fb24588823e8e491606ef3da805c7b33f5341d0762cc7abb8bac3d"
+      },
+      "expected": {
+        "bytes": 733646768,
+        "sha256": "948114bc74fb24588823e8e491606ef3da805c7b33f5341d0762cc7abb8bac3d"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-05",
+      "result": "passed",
+      "actual": {
+        "bytes": 124244294,
+        "sha256": "dd2c52f80c61f515fb441fe8c31a1737e9c88841c2e23d89c6832a2992aca9e3"
+      },
+      "expected": {
+        "bytes": 124244294,
+        "sha256": "dd2c52f80c61f515fb441fe8c31a1737e9c88841c2e23d89c6832a2992aca9e3"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-06",
+      "result": "passed",
+      "actual": {
+        "bytes": 91166273,
+        "sha256": "0c7e7401c9c510ce0b7dd2ea71aebae63064a80dec2009d2c9f1f267014f1ba5"
+      },
+      "expected": {
+        "bytes": 91166273,
+        "sha256": "0c7e7401c9c510ce0b7dd2ea71aebae63064a80dec2009d2c9f1f267014f1ba5"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-07",
+      "result": "passed",
+      "actual": {
+        "bytes": 80678120,
+        "sha256": "a016fb1566599e1590277e9f7ba0fd6f8f153b5e001dbdb200a5d9c22d3d21b5"
+      },
+      "expected": {
+        "bytes": 80678120,
+        "sha256": "a016fb1566599e1590277e9f7ba0fd6f8f153b5e001dbdb200a5d9c22d3d21b5"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-08",
+      "result": "passed",
+      "actual": {
+        "bytes": 92779835,
+        "sha256": "b0bdda72e116124ced5285ab371d3b8ac44d50eff2a0f681cb43b3e736ff0bfa"
+      },
+      "expected": {
+        "bytes": 92779835,
+        "sha256": "b0bdda72e116124ced5285ab371d3b8ac44d50eff2a0f681cb43b3e736ff0bfa"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-09",
+      "result": "passed",
+      "actual": {
+        "bytes": 79871339,
+        "sha256": "f4f71357356ad6578b69a94502b17e36f7d46c9cfddf08344f9318b0e9f96500"
+      },
+      "expected": {
+        "bytes": 79871339,
+        "sha256": "f4f71357356ad6578b69a94502b17e36f7d46c9cfddf08344f9318b0e9f96500"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-10",
+      "result": "passed",
+      "actual": {
+        "bytes": 80678120,
+        "sha256": "ddb72554a8cbcc43dda25b8ae1dfc6a0e0fef0d4a6eccfe4638e7ba97aab1715"
+      },
+      "expected": {
+        "bytes": 80678120,
+        "sha256": "ddb72554a8cbcc43dda25b8ae1dfc6a0e0fef0d4a6eccfe4638e7ba97aab1715"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-11",
+      "result": "passed",
+      "actual": {
+        "bytes": 91166273,
+        "sha256": "9e2713ebb6f8fdf67fe3c1b7fe41fe0396c3459b2d73ecc190f8b5c391d4b659"
+      },
+      "expected": {
+        "bytes": 91166273,
+        "sha256": "9e2713ebb6f8fdf67fe3c1b7fe41fe0396c3459b2d73ecc190f8b5c391d4b659"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-12",
+      "result": "passed",
+      "actual": {
+        "bytes": 84712025,
+        "sha256": "e37a2cae543758cf39710f8053b8d2a13660a7c5c104b41c2e75ce8f4580ecc6"
+      },
+      "expected": {
+        "bytes": 84712025,
+        "sha256": "e37a2cae543758cf39710f8053b8d2a13660a7c5c104b41c2e75ce8f4580ecc6"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-13",
+      "result": "passed",
+      "actual": {
+        "bytes": 703751471,
+        "sha256": "116408076da912e842f9f83103be4b7cde3223f16e2745f4b851b2c25a954fd1"
+      },
+      "expected": {
+        "bytes": 703751471,
+        "sha256": "116408076da912e842f9f83103be4b7cde3223f16e2745f4b851b2c25a954fd1"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-14",
+      "result": "passed",
+      "actual": {
+        "bytes": 727990901,
+        "sha256": "d828ff51719e4298213d8bbd83e53b53cbef88ae6de0777f823e0e0e1e76516d"
+      },
+      "expected": {
+        "bytes": 727990901,
+        "sha256": "d828ff51719e4298213d8bbd83e53b53cbef88ae6de0777f823e0e0e1e76516d"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-15",
+      "result": "passed",
+      "actual": {
+        "bytes": 706175414,
+        "sha256": "cb4a23ddd596d1a1cda5e21e0d90a9a1278f2d36f7859f990ee58b7760c9ff50"
+      },
+      "expected": {
+        "bytes": 706175414,
+        "sha256": "cb4a23ddd596d1a1cda5e21e0d90a9a1278f2d36f7859f990ee58b7760c9ff50"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-16",
+      "result": "passed",
+      "actual": {
+        "bytes": 1387663340,
+        "sha256": "ddecc9344902bd263499a210614e2596e0c65877c21da528d09bc9c1358a714f"
+      },
+      "expected": {
+        "bytes": 1387663340,
+        "sha256": "ddecc9344902bd263499a210614e2596e0c65877c21da528d09bc9c1358a714f"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "corpus-17",
+      "result": "passed",
+      "actual": {
+        "bytes": 1253737694,
+        "sha256": "c43b633e17218c66f70b65b02523284111a087b75654cac9721eb368f4f3b92f"
+      },
+      "expected": {
+        "bytes": 1253737694,
+        "sha256": "c43b633e17218c66f70b65b02523284111a087b75654cac9721eb368f4f3b92f"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-01",
+      "result": "passed",
+      "actual": {
+        "bytes": 227859682,
+        "sha256": "e51682c35050f1f555c297708c7d8309a08096196bffbca8b6d69a9194128267"
+      },
+      "expected": {
+        "bytes": 227859682,
+        "sha256": "e51682c35050f1f555c297708c7d8309a08096196bffbca8b6d69a9194128267"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-02",
+      "result": "passed",
+      "actual": {
+        "bytes": 243202281,
+        "sha256": "61f6ea9ef3b688c963105a0621d23412d63a0fc307db20c644828fde1d66f558"
+      },
+      "expected": {
+        "bytes": 243202281,
+        "sha256": "61f6ea9ef3b688c963105a0621d23412d63a0fc307db20c644828fde1d66f558"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-03",
+      "result": "passed",
+      "actual": {
+        "bytes": 243202281,
+        "sha256": "acfcf8306937f67a4debba56905d550f2882e31109a75719c73f3b4fcd14bc9c"
+      },
+      "expected": {
+        "bytes": 243202281,
+        "sha256": "acfcf8306937f67a4debba56905d550f2882e31109a75719c73f3b4fcd14bc9c"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-04",
+      "result": "passed",
+      "actual": {
+        "bytes": 243202281,
+        "sha256": "d94786b79e3e649abf625d91f6a1cf0f72bd1b7e93933597f0f0ef2cdb563ef8"
+      },
+      "expected": {
+        "bytes": 243202281,
+        "sha256": "d94786b79e3e649abf625d91f6a1cf0f72bd1b7e93933597f0f0ef2cdb563ef8"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-05",
+      "result": "passed",
+      "actual": {
+        "bytes": 243202281,
+        "sha256": "084687647f7cb11a53819302c0a01d769c53e3137ef886356ee2a684da8da066"
+      },
+      "expected": {
+        "bytes": 243202281,
+        "sha256": "084687647f7cb11a53819302c0a01d769c53e3137ef886356ee2a684da8da066"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-06",
+      "result": "passed",
+      "actual": {
+        "bytes": 265834789,
+        "sha256": "16c9a3825234831c3d45d054676c417dd12ca3e9d44061cfcb00bef577f7f0ee"
+      },
+      "expected": {
+        "bytes": 265834789,
+        "sha256": "16c9a3825234831c3d45d054676c417dd12ca3e9d44061cfcb00bef577f7f0ee"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-07",
+      "result": "passed",
+      "actual": {
+        "bytes": 243202281,
+        "sha256": "95d95009b796e29f7f77e092a5ef847fba67e9b9741caa66239b47fef1c92d36"
+      },
+      "expected": {
+        "bytes": 243202281,
+        "sha256": "95d95009b796e29f7f77e092a5ef847fba67e9b9741caa66239b47fef1c92d36"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-08",
+      "result": "passed",
+      "actual": {
+        "bytes": 237555454,
+        "sha256": "d31e2b5efb74a8706ffcbca22d7aa616c350ec741edd34cb1ea00246ce018cb4"
+      },
+      "expected": {
+        "bytes": 237555454,
+        "sha256": "d31e2b5efb74a8706ffcbca22d7aa616c350ec741edd34cb1ea00246ce018cb4"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-09",
+      "result": "passed",
+      "actual": {
+        "bytes": 243202281,
+        "sha256": "5f920f226f8a4715dd66375a8f70d4b15461f7cf622b1eeb6a2f8b287c9db34f"
+      },
+      "expected": {
+        "bytes": 243202281,
+        "sha256": "5f920f226f8a4715dd66375a8f70d4b15461f7cf622b1eeb6a2f8b287c9db34f"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-10",
+      "result": "passed",
+      "actual": {
+        "bytes": 270682675,
+        "sha256": "023c02f428c6e444ed52db43b6be4772bc4cdccc0144fd8a27cc7269da833771"
+      },
+      "expected": {
+        "bytes": 270682675,
+        "sha256": "023c02f428c6e444ed52db43b6be4772bc4cdccc0144fd8a27cc7269da833771"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-11",
+      "result": "passed",
+      "actual": {
+        "bytes": 280369407,
+        "sha256": "763e4c39eb0dfc26bc12074ef52add5cdac975b255d92cb96e6cd79bb910f990"
+      },
+      "expected": {
+        "bytes": 280369407,
+        "sha256": "763e4c39eb0dfc26bc12074ef52add5cdac975b255d92cb96e6cd79bb910f990"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-12",
+      "result": "passed",
+      "actual": {
+        "bytes": 281994409,
+        "sha256": "2bccebca49c2552690e8256ae84639978d6295a499f7eb463fd35bbf734024f5"
+      },
+      "expected": {
+        "bytes": 281994409,
+        "sha256": "2bccebca49c2552690e8256ae84639978d6295a499f7eb463fd35bbf734024f5"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-13",
+      "result": "passed",
+      "actual": {
+        "bytes": 280369407,
+        "sha256": "2211dbcb37083799c0cb5bc56c0ab6738c15d09a4ea7e269deecc427b83f804c"
+      },
+      "expected": {
+        "bytes": 280369407,
+        "sha256": "2211dbcb37083799c0cb5bc56c0ab6738c15d09a4ea7e269deecc427b83f804c"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-14",
+      "result": "passed",
+      "actual": {
+        "bytes": 280369407,
+        "sha256": "72748ecbcc0cb950dc3d5773985586fa6fc289d26f4e1cf929dbd9c56a40cbf7"
+      },
+      "expected": {
+        "bytes": 280369407,
+        "sha256": "72748ecbcc0cb950dc3d5773985586fa6fc289d26f4e1cf929dbd9c56a40cbf7"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-15",
+      "result": "passed",
+      "actual": {
+        "bytes": 243202281,
+        "sha256": "96ad416c49399bed9b2aa33a7ddb6b2708e45a88f3970799f4cacf2ba16f5ab2"
+      },
+      "expected": {
+        "bytes": 243202281,
+        "sha256": "96ad416c49399bed9b2aa33a7ddb6b2708e45a88f3970799f4cacf2ba16f5ab2"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-16",
+      "result": "passed",
+      "actual": {
+        "bytes": 239171416,
+        "sha256": "1770a8f1ddd2ec15c8d6d6f9544f09c07ebb021051f676e21c35d31b7c370f4f"
+      },
+      "expected": {
+        "bytes": 239171416,
+        "sha256": "1770a8f1ddd2ec15c8d6d6f9544f09c07ebb021051f676e21c35d31b7c370f4f"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-17",
+      "result": "passed",
+      "actual": {
+        "bytes": 336129136,
+        "sha256": "c190c8ec9cb5c95a39c762d71d273bc0003abb025ecf2cc90cd75d75983028c4"
+      },
+      "expected": {
+        "bytes": 336129136,
+        "sha256": "c190c8ec9cb5c95a39c762d71d273bc0003abb025ecf2cc90cd75d75983028c4"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-18",
+      "result": "passed",
+      "actual": {
+        "bytes": 336129136,
+        "sha256": "89d5ea990eae25d611335b0b2c7c69548c1e4d9e799bd30869beb95dadea6f6d"
+      },
+      "expected": {
+        "bytes": 336129136,
+        "sha256": "89d5ea990eae25d611335b0b2c7c69548c1e4d9e799bd30869beb95dadea6f6d"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-19",
+      "result": "passed",
+      "actual": {
+        "bytes": 300577972,
+        "sha256": "b9f91733b395e0c8ca3ad78ef1772079cf062c90ba267b5b8e40b1aafe4d84ce"
+      },
+      "expected": {
+        "bytes": 300577972,
+        "sha256": "b9f91733b395e0c8ca3ad78ef1772079cf062c90ba267b5b8e40b1aafe4d84ce"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-20",
+      "result": "passed",
+      "actual": {
+        "bytes": 300577972,
+        "sha256": "4b07e35ce23020460a1b4b7bc57b1a7ef25d3210fefbc7b8642fec89c67b5050"
+      },
+      "expected": {
+        "bytes": 300577972,
+        "sha256": "4b07e35ce23020460a1b4b7bc57b1a7ef25d3210fefbc7b8642fec89c67b5050"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-21",
+      "result": "passed",
+      "actual": {
+        "bytes": 299769991,
+        "sha256": "385fbc4dcb0ff6fd95750e276847cd41dc8dd07c264b10709e7bb271463b13df"
+      },
+      "expected": {
+        "bytes": 299769991,
+        "sha256": "385fbc4dcb0ff6fd95750e276847cd41dc8dd07c264b10709e7bb271463b13df"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-22",
+      "result": "passed",
+      "actual": {
+        "bytes": 299769991,
+        "sha256": "9d55a4b8165fea0331268c06f64fd900fa977ac8189c29911ae35019805e0324"
+      },
+      "expected": {
+        "bytes": 299769991,
+        "sha256": "9d55a4b8165fea0331268c06f64fd900fa977ac8189c29911ae35019805e0324"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-23",
+      "result": "passed",
+      "actual": {
+        "bytes": 336129136,
+        "sha256": "b3d636b9fb4f5b03b1718323f2ad001028361a19b9e47d2eaa0ea2a7985e2702"
+      },
+      "expected": {
+        "bytes": 336129136,
+        "sha256": "b3d636b9fb4f5b03b1718323f2ad001028361a19b9e47d2eaa0ea2a7985e2702"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-24",
+      "result": "passed",
+      "actual": {
+        "bytes": 336129136,
+        "sha256": "e4aa1131c5f69eee17a2eaeb5483609e02406533f311a33796192f361c285d77"
+      },
+      "expected": {
+        "bytes": 336129136,
+        "sha256": "e4aa1131c5f69eee17a2eaeb5483609e02406533f311a33796192f361c285d77"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-25",
+      "result": "passed",
+      "actual": {
+        "bytes": 301385953,
+        "sha256": "70fa9eb328135af4d5a023bb93bb45d280074e4f027ab384bbd5bcb2ba640a96"
+      },
+      "expected": {
+        "bytes": 301385953,
+        "sha256": "70fa9eb328135af4d5a023bb93bb45d280074e4f027ab384bbd5bcb2ba640a96"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-26",
+      "result": "passed",
+      "actual": {
+        "bytes": 301385953,
+        "sha256": "f2b74df45672a607176e4406ca46b1ba2c9615df234593287233a53b507c27bb"
+      },
+      "expected": {
+        "bytes": 301385953,
+        "sha256": "f2b74df45672a607176e4406ca46b1ba2c9615df234593287233a53b507c27bb"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-27",
+      "result": "passed",
+      "actual": {
+        "bytes": 302193934,
+        "sha256": "d82769489104f31989ced5220572d5378fe84e6abd80c121b9b5a6eede7ea697"
+      },
+      "expected": {
+        "bytes": 302193934,
+        "sha256": "d82769489104f31989ced5220572d5378fe84e6abd80c121b9b5a6eede7ea697"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-28",
+      "result": "passed",
+      "actual": {
+        "bytes": 302193934,
+        "sha256": "f1beebea4d44aa8158ae21d299cab16edd1ef130b9ce51a4406473f9a0bea6b5"
+      },
+      "expected": {
+        "bytes": 302193934,
+        "sha256": "f1beebea4d44aa8158ae21d299cab16edd1ef130b9ce51a4406473f9a0bea6b5"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-29",
+      "result": "passed",
+      "actual": {
+        "bytes": 75950214,
+        "sha256": "9e5b5cf38c7fdce29820b633816d93d6ce65bbb50b89ec2353eff941e9ddee69"
+      },
+      "expected": {
+        "bytes": 75950214,
+        "sha256": "9e5b5cf38c7fdce29820b633816d93d6ce65bbb50b89ec2353eff941e9ddee69"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-30",
+      "result": "passed",
+      "actual": {
+        "bytes": 83222043,
+        "sha256": "1a283a60d29b6e39aa9157565c3b19e435d90d57d27b05f35feaa497e81d2436"
+      },
+      "expected": {
+        "bytes": 83222043,
+        "sha256": "1a283a60d29b6e39aa9157565c3b19e435d90d57d27b05f35feaa497e81d2436"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-31",
+      "result": "passed",
+      "actual": {
+        "bytes": 75142233,
+        "sha256": "963489d3991c703d03173207ad77344f9848657e23d2fa7c44648774cdabc430"
+      },
+      "expected": {
+        "bytes": 75142233,
+        "sha256": "963489d3991c703d03173207ad77344f9848657e23d2fa7c44648774cdabc430"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-32",
+      "result": "passed",
+      "actual": {
+        "bytes": 113925321,
+        "sha256": "91837913940b1102bfd06e20877a76dbc074d66240b1358bead5238050ed9095"
+      },
+      "expected": {
+        "bytes": 113925321,
+        "sha256": "91837913940b1102bfd06e20877a76dbc074d66240b1358bead5238050ed9095"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-33",
+      "result": "passed",
+      "actual": {
+        "bytes": 118773207,
+        "sha256": "f484b3cbbe047db48f80e7de60715d2af411fa12e1561fca883d0f4c0a7bbcb6"
+      },
+      "expected": {
+        "bytes": 118773207,
+        "sha256": "f484b3cbbe047db48f80e7de60715d2af411fa12e1561fca883d0f4c0a7bbcb6"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-34",
+      "result": "passed",
+      "actual": {
+        "bytes": 109077435,
+        "sha256": "cf4886947e381f032de74e0280c65cbd46f3befc271e3b5cc73e6b84f867132b"
+      },
+      "expected": {
+        "bytes": 109077435,
+        "sha256": "cf4886947e381f032de74e0280c65cbd46f3befc271e3b5cc73e6b84f867132b"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-35",
+      "result": "passed",
+      "actual": {
+        "bytes": 164020143,
+        "sha256": "603c4f290bbe388d9cb9db1449665163b83724cf7da62e75117bd039b53a694a"
+      },
+      "expected": {
+        "bytes": 164020143,
+        "sha256": "603c4f290bbe388d9cb9db1449665163b83724cf7da62e75117bd039b53a694a"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-36",
+      "result": "passed",
+      "actual": {
+        "bytes": 93725796,
+        "sha256": "c882efa78a5826b666f78b2f19a0129170642813dabcb0ce29ab75baafa05bb3"
+      },
+      "expected": {
+        "bytes": 93725796,
+        "sha256": "c882efa78a5826b666f78b2f19a0129170642813dabcb0ce29ab75baafa05bb3"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-37",
+      "result": "passed",
+      "actual": {
+        "bytes": 126853017,
+        "sha256": "0f398cceec5fa9ffe6fd093fdea93dc9c72c089f9a2ce31507deaff4b29af16d"
+      },
+      "expected": {
+        "bytes": 126853017,
+        "sha256": "0f398cceec5fa9ffe6fd093fdea93dc9c72c089f9a2ce31507deaff4b29af16d"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-38",
+      "result": "passed",
+      "actual": {
+        "bytes": 104229549,
+        "sha256": "36c96d13583498d859e976fe392313a2e1a0387e2d6204ddbc879c4f202058d7"
+      },
+      "expected": {
+        "bytes": 104229549,
+        "sha256": "36c96d13583498d859e976fe392313a2e1a0387e2d6204ddbc879c4f202058d7"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-39",
+      "result": "passed",
+      "actual": {
+        "bytes": 24239430,
+        "sha256": "0b6d2e02d48e9d9e8a5ea3af0695cfe4692536de4d4a3e4412260653fc382e9c"
+      },
+      "expected": {
+        "bytes": 24239430,
+        "sha256": "0b6d2e02d48e9d9e8a5ea3af0695cfe4692536de4d4a3e4412260653fc382e9c"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-40",
+      "result": "passed",
+      "actual": {
+        "bytes": 80798100,
+        "sha256": "bc769403827703d3f4372b179438b82b9a5f3975d8720ec784651cd820c580c7"
+      },
+      "expected": {
+        "bytes": 80798100,
+        "sha256": "bc769403827703d3f4372b179438b82b9a5f3975d8720ec784651cd820c580c7"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-41",
+      "result": "passed",
+      "actual": {
+        "bytes": 122813112,
+        "sha256": "bed635c7d4622f99a8153d78e9caa7e84c87d0e986b376392f3683ed249addda"
+      },
+      "expected": {
+        "bytes": 122813112,
+        "sha256": "bed635c7d4622f99a8153d78e9caa7e84c87d0e986b376392f3683ed249addda"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "omniverse-42",
+      "result": "passed",
+      "actual": {
+        "bytes": 122813112,
+        "sha256": "5bc5cc13a40c6e044a37d54db3f4677f5a6f33bf7cf54c141f1943c79e4e129a"
+      },
+      "expected": {
+        "bytes": 122813112,
+        "sha256": "5bc5cc13a40c6e044a37d54db3f4677f5a6f33bf7cf54c141f1943c79e4e129a"
+      },
+      "exit_code": 0
+    },
+    {
+      "case": "ex-return",
+      "result": "passed",
+      "actual": {
+        "bytes": 727256399,
+        "sha256": "a092cf6b2af73160a6ac4c692a40b818696d1d0484caa92b1fc157b40452d796"
+      },
+      "expected": {
+        "bytes": 727256399,
+        "sha256": "a092cf6b2af73160a6ac4c692a40b818696d1d0484caa92b1fc157b40452d796"
+      },
+      "exit_code": 0
+    }
+  ],
+  "build": {
+    "compiler": "6.0.9",
+    "sourceDigest": "6268c97ec27302c7a83fbf25bae26d1e9ba4002b54303b183c8e2c3fecde7e27",
+    "files": {
+      "core-probe.cjs": {
+        "bytes": 77997,
+        "sha256": "876233764951e54370fa1d6372b8c7267102bc31745dacfe8458e0cb97ca83ff"
+      },
+      "core-probe.wasm": {
+        "bytes": 3692288,
+        "sha256": "36f6a4c5b334c59023c685cced099a794962239d892144ea3a344ac960e90142"
+      }
+    }
+  },
+  "seconds": 240.754,
+  "logicSteps": 835289,
+  "referenceCommit": "64d48dc366f2d57210dbdac25be82e0e71b2641d"
+}

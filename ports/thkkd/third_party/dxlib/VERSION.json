@@ -1,0 +1,27 @@
+{
+  "version": "3.25a",
+  "source": "https://dxlib.xsrv.jp/DxLib/DxLib_VC3_25a.zip",
+  "archive_sha256": "db9e6138c1665c9d9081dd04019219f332a1185448162fdbbc6f8182b9e4a847",
+  "platform": "Visual Studio 2015+ x64 MT",
+  "header_encoding": "Converted losslessly from CP932 to UTF-8",
+  "libraries": [
+    "celt_vs2015_x64_MT.lib",
+    "DxDrawFunc_vs2015_x64_MT.lib",
+    "DxLibW_vs2015_x64_MT.lib",
+    "DxUseCLibW_vs2015_x64_MT.lib",
+    "libbulletcollision_vs2015_x64_MT.lib",
+    "libbulletdynamics_vs2015_x64_MT.lib",
+    "libbulletmath_vs2015_x64_MT.lib",
+    "libjpeg_vs2015_x64_MT.lib",
+    "libpng_vs2015_x64_MT.lib",
+    "libtheora_static_vs2015_x64_MT.lib",
+    "libtiff_vs2015_x64_MT.lib",
+    "ogg_static_vs2015_x64_MT.lib",
+    "opus_vs2015_x64_MT.lib",
+    "opusfile_vs2015_x64_MT.lib",
+    "silk_common_vs2015_x64_MT.lib",
+    "vorbis_static_vs2015_x64_MT.lib",
+    "vorbisfile_static_vs2015_x64_MT.lib",
+    "zlib_vs2015_x64_MT.lib"
+  ]
+}

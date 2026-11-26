@@ -8,6 +8,13 @@ import {targets,inspectInputs,root} from './inputs.mjs';
 const selected=process.env.EAGLER_PORT_CHECK_GAMES?JSON.parse(process.env.EAGLER_PORT_CHECK_GAMES):null;
 for(const target of targets().filter(target=>(!selected||selected.includes(target.game))&&! ["th01","th02","th03","th04"].includes(target.game)))test(`${target.game} ${target.variant} compiles its SFX output route`,()=>{
  const inputs=inspectInputs(target),owner=resolve(root,target.directory);
+ if(target.game==='thkkd'){
+  assert(inputs.translationUnits.includes('src/platform/web/WebHost.cpp'));
+  assert.match(readFileSync(resolve(owner,'src/platform/web/WebHost.cpp'),'utf8'),/Module\.thkkdPlatform\.call/);
+  const platform=readFileSync(resolve(owner,'web/platform.mjs'),'utf8');
+  assert.match(platform,/case 0x4425f0:return this\.playSound/);assert.match(platform,/node\.start\(0,sound\.offset\)/);
+  return;
+ }
  if(target.game==='th05'){
   assert(inputs.translationUnits.includes('portable/Platform.cpp'));
   const platform=readFileSync(resolve(owner,'portable/Platform.cpp'),'utf8');

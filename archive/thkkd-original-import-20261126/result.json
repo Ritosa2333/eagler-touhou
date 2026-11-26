@@ -1,0 +1,65 @@
+{
+  "schema": "thkkd/original-import-validation/1",
+  "browser": "Edg/158.0.4370.45",
+  "result": "passed",
+  "checks": [
+    "original-zip-through-production-import",
+    "original-images-mp3-and-converted-video",
+    "four-original-video-dimensions-and-duration",
+    "refresh-reuses-installed-resources",
+    "offline-refresh-reuses-installed-resources"
+  ],
+  "media": {
+    "assets": 301,
+    "mp3": 18,
+    "webm": 4
+  },
+  "videos": [
+    {
+      "name": "dat/img/back/back100.wmv",
+      "width": 384,
+      "height": 448,
+      "duration": 154.983
+    },
+    {
+      "name": "dat/img/back/back200.wmv",
+      "width": 384,
+      "height": 448,
+      "duration": 161.028
+    },
+    {
+      "name": "dat/img/back/back201.wmv",
+      "width": 384,
+      "height": 448,
+      "duration": 37.7
+    },
+    {
+      "name": "dat/img/back/back300.wmv",
+      "width": 384,
+      "height": 448,
+      "duration": 145.833
+    }
+  ],
+  "static": {
+    "siteFiles": 640,
+    "siteBytes": 73447148,
+    "bundledOriginalResources": [],
+    "checks": {
+      "imagePixels": 242,
+      "originalImportUnits": 7,
+      "launcherAndSaveTests": 74,
+      "inputReplayTests": 18,
+      "sourceInventoryTests": 2,
+      "runtimeContracts": 10
+    },
+    "wasmSha256": "08dbae188106b4858eeec43946edf12c26dcb5d2339a2e66995ff2dddc0d1b8e"
+  },
+  "notes": [
+    "导入完成后通过游戏卡片的开始游戏按钮启动。",
+    "首帧总耗时包含首次安装和测试脚本的启动等待。"
+  ],
+  "sourceHistoryCheck": {
+    "status": "requires-file-import-review",
+    "message": "New port directories need retained source history: ports/thkkd"
+  }
+}

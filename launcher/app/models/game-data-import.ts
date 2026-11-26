@@ -294,7 +294,9 @@ export function createGameDataImportModel({acquisition, translate: t, getContext
         return;
       }
       const id = attempt!.id;
-      const files = originalFiles().length && ports.pickFiles
+      const files = gameIdForProduct(getContext().product) === 'thkkd'
+        ? [await ports.pickFile({accept: '.zip,application/zip'})].filter((file): file is ImportFile => file !== null)
+        : originalFiles().length && ports.pickFiles
         ? await ports.pickFiles({accept: '.dat,.data,.zip,.rar,.7z,.wav,.ogg,application/zip'})
         : [await ports.pickFile({accept: '.zip,.dat,application/zip'})].filter((file): file is ImportFile => file !== null);
       if (!disposed && attempt?.id === id) await importSelection(files);

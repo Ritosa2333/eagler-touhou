@@ -1,0 +1,29 @@
+{
+  "schema": "thkkd/rendering-history/1",
+  "implementationCommit": "1c0e523c0cf6becd2740bba6528ed95c881c5541",
+  "sharedSourceCommit": "30790653bc054912aef178af30edacf904aaefff",
+  "deliveryRecordCommit": "4b083777ecd8934b6df8c1269e4c90674a1c4828",
+  "displayHistoryJoin": "1e3370e3575a1912bfb35ac3a443487a8cc11538",
+  "packagingHistoryJoin": "97fe1d11440d8becd6822ddb5657e59f0e8b8ad8",
+  "normalProjection": "b594972299bd460ed1b34b772069d24af57ddc5e",
+  "multiplayerProjection": "c256f6f3745eb40c35677f64ce5509709bb037d2",
+  "normalProjectionIsAncestorOfMultiplayer": true,
+  "projectedTreeMatchesCommittedMultiplayer": true,
+  "originalSourcesByteIdentical": {
+    "core": 570,
+    "render": 13
+  },
+  "unrelatedWorkspacePreserved": true,
+  "remoteConfigurationUnchanged": true,
+  "normalOnlyScope": [
+    "normal 验收适配状态",
+    "便携启动脚本",
+    "普通版打包验证器与命令行",
+    "单机 CPU 测试脚本"
+  ],
+  "sharedScope": [
+    "显示、字体、DPI 后台",
+    "共享显示验证入口",
+    "显示对照归档打包范围"
+  ]
+}

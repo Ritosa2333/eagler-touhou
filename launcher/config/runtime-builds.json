@@ -651,6 +651,26 @@
         ],
         "commonMarker": "browser/directory-keyboard.mjs"
       }
+    },
+    "thkkd": {
+      "builder": "prebuilt",
+      "workspaceRepository": "thkkd",
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "scripts/build-eagler.mjs"
+        ],
+        "commonMarker": "include/eagler/input/BrowserGamepad.hpp"
+      },
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        }
+      }
     }
   }
 }

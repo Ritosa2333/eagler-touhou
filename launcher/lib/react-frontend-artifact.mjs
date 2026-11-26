@@ -5,6 +5,14 @@ import { STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES, UI_REVIEW_DOCUME
 import { REACT_APP_SHELL_META, normalizeReactMountPath, validateReactAppShellDeployment } from "./react-app-shell-deployment.mjs";
 
 export const REACT_ARTIFACT_METADATA_FILES = Object.freeze([".vite/manifest.json", ".vite/react-app-shell-graph.json"]);
+export function portableReactValidationMetadata(metadata, sourceRoot) {
+  const prefix=resolve(sourceRoot).replaceAll('\\','/')+'/';
+  const portable=value=>typeof value==='string'&&value.replaceAll('\\','/').startsWith(prefix)
+    ? value.replaceAll('\\','/').slice(prefix.length):value;
+  const visit=value=>Array.isArray(value)?value.map(visit):value&&typeof value==='object'
+    ? Object.fromEntries(Object.entries(value).map(([key,item])=>[portable(key),visit(item)])):portable(value);
+  return visit(metadata);
+}
 // React Router marks CSS shared by static and dynamic imports with an empty
 // fragment. Preserve the published URL; graph ownership checks the real file.
 export function reactDocumentAssetUrl(url, tag) {

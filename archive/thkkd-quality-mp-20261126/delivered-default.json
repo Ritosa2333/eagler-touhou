@@ -1,0 +1,1157 @@
+{
+  "schema": "thkkd/quality-browser/1",
+  "url": "http://127.0.0.1:8174/",
+  "errors": [],
+  "checks": [],
+  "browser": "Edg/158.0.4370.33",
+  "initial": {
+    "native": {
+      "outer": 11,
+      "phase": 0,
+      "choice": 0,
+      "gameScene": 0,
+      "gameFrame": 0,
+      "cursor": 0,
+      "zPhysical": 78,
+      "zLogical": 78,
+      "nativePresents": 79,
+      "held": [
+        [
+          "KeyZ",
+          [
+            "touch"
+          ]
+        ]
+      ],
+      "error": "",
+      "focused": true,
+      "active": "BODY"
+    },
+    "host": {
+      "active": "IFRAME",
+      "activeId": "gameFrame",
+      "playerClass": "player open"
+    }
+  },
+  "z": [
+    {
+      "before": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 78,
+        "zLogical": 78,
+        "nativePresents": 79,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "held": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 85,
+        "zLogical": 85,
+        "nativePresents": 86,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch",
+              "keyboard"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 116,
+        "zLogical": 116,
+        "nativePresents": 117,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    },
+    {
+      "before": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 116,
+        "zLogical": 116,
+        "nativePresents": 117,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "held": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 122,
+        "zLogical": 122,
+        "nativePresents": 123,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch",
+              "keyboard"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 153,
+        "zLogical": 153,
+        "nativePresents": 154,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    },
+    {
+      "before": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 154,
+        "zLogical": 154,
+        "nativePresents": 155,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "held": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 160,
+        "zLogical": 160,
+        "nativePresents": 161,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch",
+              "keyboard"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 190,
+        "zLogical": 190,
+        "nativePresents": 191,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    },
+    {
+      "before": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 190,
+        "zLogical": 190,
+        "nativePresents": 191,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "held": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 197,
+        "zLogical": 197,
+        "nativePresents": 198,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch",
+              "keyboard"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 228,
+        "zLogical": 228,
+        "nativePresents": 229,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    },
+    {
+      "before": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 228,
+        "zLogical": 228,
+        "nativePresents": 229,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "held": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 234,
+        "zLogical": 234,
+        "nativePresents": 235,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch",
+              "keyboard"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 265,
+        "zLogical": 265,
+        "nativePresents": 266,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    },
+    {
+      "before": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 266,
+        "zLogical": 266,
+        "nativePresents": 267,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "held": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 272,
+        "zLogical": 272,
+        "nativePresents": 273,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch",
+              "keyboard"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      },
+      "after": {
+        "outer": 11,
+        "phase": 0,
+        "choice": 0,
+        "gameScene": 0,
+        "gameFrame": 0,
+        "cursor": 0,
+        "zPhysical": 303,
+        "zLogical": 303,
+        "nativePresents": 304,
+        "held": [
+          [
+            "KeyZ",
+            [
+              "touch"
+            ]
+          ]
+        ],
+        "error": "",
+        "focused": true,
+        "active": "BODY"
+      }
+    }
+  ],
+  "cadence": {
+    "elapsed": 2210,
+    "start": 6260.299999998882,
+    "raf": 796,
+    "present": 133,
+    "text": [
+      {
+        "text": "120.0FPS",
+        "time": 6268.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6291.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6307.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6319
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6341
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6352.299999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6369.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6391
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6402.299999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6418.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6441.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6452.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6468.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6491
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6502.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6519.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6535.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6552.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6568.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6585.4000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6602.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6619
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6641
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6652.4000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6674.4000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6692.299999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6702.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6718.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6741
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6752.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6769.699999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6785.5999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6802.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6818.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6835.5999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6852
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6869
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6891.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6902.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6918.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6941.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6952.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6968.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 6991.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7002.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7019.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7041.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7052.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7069.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7085.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7102.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7119.299999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7135.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7152.299999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7174.4000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7191.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7202.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7219
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7235.4000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7252.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7269
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7285.5999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7302.299999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7319.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7335.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7352.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7368.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7391
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7403.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7418.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7435.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7452.4000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7468.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7491.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7502.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7519.299999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7541.299999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7552.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7568.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7591.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7602.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7619.699999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7635.4000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7653
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7668.699999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7685.5999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7702.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7718.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7735.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7752.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7769.5999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7785.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7802.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7818.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7835.5999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7852.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7868.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7891.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7902.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7918.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7941.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7952.299999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7968.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 7985.5999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8002.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8019.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8035.5999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8052.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8068.9000000003725
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8085.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8102.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8118.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8136.0999999996275
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8152.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8168.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8185.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8202.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8218.799999998882
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8235.599999999627
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8252.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8269.099999999627
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8291.099999999627
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8302.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8318.900000000373
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8335.5
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8352.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8369.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8385.599999999627
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8402.199999999255
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8418.900000000373
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8435.400000000373
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8452.400000000373
+      },
+      {
+        "text": "120.0FPS",
+        "time": 8469.099999999627
+      }
+    ],
+    "commands": [],
+    "nativePresentDelta": 133,
+    "gameFrameDelta": 0
+  },
+  "events": {
+    "host": [
+      {
+        "type": "focus",
+        "time": 227
+      },
+      {
+        "type": "focus",
+        "target": "H1",
+        "active": "H1",
+        "time": 763.5
+      },
+      {
+        "type": "blur",
+        "target": "H1",
+        "active": "BODY",
+        "time": 1758.300000000745
+      },
+      {
+        "type": "focus",
+        "target": "A",
+        "active": "A",
+        "time": 2146
+      },
+      {
+        "type": "blur",
+        "target": "A",
+        "active": "BODY",
+        "time": 2167
+      },
+      {
+        "type": "focus",
+        "target": "H2",
+        "active": "H2",
+        "time": 2178.2000000011176
+      },
+      {
+        "type": "blur",
+        "target": "H2",
+        "active": "BODY",
+        "time": 2298.7000000011176
+      },
+      {
+        "type": "focus",
+        "target": "BUTTON",
+        "active": "BUTTON",
+        "time": 2298.800000000745
+      },
+      {
+        "type": "blur",
+        "target": "BUTTON",
+        "active": "BODY",
+        "time": 2360.2000000011176
+      },
+      {
+        "type": "blur",
+        "active": "IFRAME",
+        "time": 2370.9000000003725
+      },
+      {
+        "type": "focus",
+        "target": "IFRAME",
+        "active": "IFRAME",
+        "time": 2371.300000000745
+      }
+    ],
+    "runtime": [
+      {
+        "type": "keydown",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 2525.0999999996275
+      },
+      {
+        "type": "keyup",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 2631.699999999255
+      },
+      {
+        "type": "keydown",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 3147.9000000003725
+      },
+      {
+        "type": "keyup",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 3254
+      },
+      {
+        "type": "keydown",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 3770.0999999996275
+      },
+      {
+        "type": "keyup",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 3878.0999999996275
+      },
+      {
+        "type": "keydown",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 4388.9000000003725
+      },
+      {
+        "type": "keyup",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 4496.4000000003725
+      },
+      {
+        "type": "keydown",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 5012.0999999996275
+      },
+      {
+        "type": "keyup",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 5121.299999998882
+      },
+      {
+        "type": "keydown",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 5636.699999999255
+      },
+      {
+        "type": "keyup",
+        "code": "KeyZ",
+        "target": "BODY",
+        "active": "BODY",
+        "time": 5743.9000000003725
+      }
+    ]
+  },
+  "mapping": {
+    "bridge": true,
+    "mapped": true,
+    "owners": [
+      "KeyZ"
+    ]
+  },
+  "zWorked": false,
+  "result": "observed"
+}

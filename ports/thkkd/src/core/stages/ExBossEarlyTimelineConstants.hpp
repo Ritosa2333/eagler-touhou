@@ -1,0 +1,121 @@
+// EX关底前段原binary64常量与符卡名。
+#pragma once
+#include <array>
+#include <cstdint>
+#include <stdexcept>
+namespace kaikeidou { namespace ex_boss_early_timeline_detail {
+inline constexpr std::uint64_t constant(std::uint32_t address){switch(address){
+case 0x6a6100:return 0x0000000000000000ull;
+case 0x6a7708:return 0x3f847ae147ae147bull;
+case 0x6aca58:return 0xbff0000000000000ull;
+case 0x6b25b8:return 0x4059000000000000ull;
+case 0x6b25f8:return 0x403e000000000000ull;
+case 0x6d1858:return 0x4066800000000000ull;
+case 0x6d1860:return 0x400921fb54442d28ull;
+case 0x6d1868:return 0x3ff0000000000000ull;
+case 0x6d1888:return 0x4070400000000000ull;
+case 0x6d1898:return 0x4024000000000000ull;
+case 0x6d18b0:return 0x3fe3333333333333ull;
+case 0x6d18e8:return 0x4020000000000000ull;
+case 0x6d18f0:return 0x3feccccccccccccdull;
+case 0x6d1910:return 0x4014000000000000ull;
+case 0x6d1918:return 0x3fa999999999999aull;
+case 0x6d1938:return 0xc049000000000000ull;
+case 0x6d1948:return 0x4000000000000000ull;
+case 0x6d1950:return 0x3f50624dd2f1a9fcull;
+case 0x6d1960:return 0x3fb999999999999aull;
+case 0x6d1968:return 0x3f9eb851eb851eb8ull;
+case 0x6d19a0:return 0x407c000000000000ull;
+case 0x6d19c0:return 0x3fe0000000000000ull;
+case 0x6d19d0:return 0x407a400000000000ull;
+case 0x6d19f0:return 0xc034000000000000ull;
+case 0x6d1a08:return 0x3f947ae147ae147bull;
+case 0x6d1a18:return 0x3fb47ae147ae147bull;
+case 0x6d1a40:return 0x4034000000000000ull;
+case 0x6d1a50:return 0x4079800000000000ull;
+case 0x6d1a60:return 0x4068000000000000ull;
+case 0x6d1a78:return 0x4079000000000000ull;
+case 0x6d1a88:return 0x4049000000000000ull;
+case 0x6d1a90:return 0x4054000000000000ull;
+case 0x6d1aa8:return 0x404e000000000000ull;
+case 0x6d1ab0:return 0x4069000000000000ull;
+case 0x6d1ad0:return 0x3ff8000000000000ull;
+case 0x6d1ae8:return 0x4044000000000000ull;
+case 0x6d1af0:return 0x406c000000000000ull;
+case 0x6d1af8:return 0x4072c00000000000ull;
+case 0x6d1b38:return 0x4056800000000000ull;
+case 0x6d1b58:return 0xc03e000000000000ull;
+case 0x6d1b60:return 0x3ff921fb54442d28ull;
+case 0x6d1ba0:return 0x3fc921fb54442d28ull;
+case 0x6d1bf0:return 0x4080800000000000ull;
+case 0x6d1bf8:return 0xc054000000000000ull;
+case 0x6d1c10:return 0x3fb70a3d70a3d70aull;
+case 0x6d1c18:return 0x4010000000000000ull;
+case 0x6d1c60:return 0x40b88b0000000000ull;
+case 0x6d1cb0:return 0x4078000000000000ull;
+case 0x6d1cc0:return 0x4062c00000000000ull;
+case 0x6d1d00:return 0x405e000000000000ull;
+case 0x6d1d50:return 0x4051800000000000ull;
+case 0x6d1de0:return 0xbff921fb54442d28ull;
+case 0x6d1de8:return 0x405c000000000000ull;
+case 0x6d1e00:return 0x3faeb851eb851eb8ull;
+case 0x6d1e20:return 0x4030000000000000ull;
+case 0x6d1e38:return 0x4089000000000000ull;
+case 0x6d1e48:return 0x4040000000000000ull;
+case 0x6d1f20:return 0x4092c00000000000ull;
+case 0x6d1f38:return 0x4099000000000000ull;
+case 0x6d1f60:return 0x4071800000000000ull;
+case 0x6d1f68:return 0x4013333333333333ull;
+case 0x6d1f70:return 0x4076800000000000ull;
+case 0x6d1fe8:return 0x4067c00000000000ull;
+case 0x6d1ff8:return 0x3ffccccccccccccdull;
+case 0x6d2028:return 0x407f400000000000ull;
+case 0x6d2108:return 0x4061c00000000000ull;
+case 0x6d2160:return 0x4076c00000000000ull;
+case 0x6d21f0:return 0x4060400000000000ull;
+case 0x6d2208:return 0x401921fb54442d28ull;
+case 0x6d2288:return 0x4076200000000000ull;
+case 0x6d22b0:return 0x4060800000000000ull;
+case 0x6d22d8:return 0x3fe921fb54442d28ull;
+case 0x6d2358:return 0x3f589374bc6a7efaull;
+case 0x6d23e0:return 0x4075800000000000ull;
+case 0x6d25b0:return 0x404a000000000000ull;
+case 0x6d25c0:return 0x4050400000000000ull;
+case 0x6d2658:return 0x4022000000000000ull;
+case 0x6d2710:return 0x4082c00000000000ull;
+case 0x6d2750:return 0x3ff0c152382d7370ull;
+case 0x6d2780:return 0x405b800000000000ull;
+case 0x6d2a48:return 0x406b800000000000ull;
+case 0x6d2a88:return 0xc000000000000000ull;
+case 0x6d2c80:return 0x404f000000000000ull;
+case 0x6d2d10:return 0xc000c152382d7370ull;
+case 0x6d2f30:return 0xc06cc00000000000ull;
+case 0x6d2f38:return 0x4085300000000000ull;
+case 0x6d2f40:return 0x3fd015bf92172724ull;
+case 0x6d2f48:return 0x3ff4552e8777605bull;
+case 0x6d2f50:return 0x40b0900000000000ull;
+case 0x6d2f58:return 0x3f7eb851eb851eb8ull;
+case 0x6d2f60:return 0xbfe921fb54442d28ull;
+case 0x6d2f68:return 0x4081c00000000000ull;
+case 0x6d2f70:return 0x405f400000000000ull;
+case 0x6d2f78:return 0xc052c00000000000ull;
+case 0x6d2f80:return 0x3fc0c152382d7370ull;
+case 0x6d2f88:return 0x3fa1df46a2529d44ull;
+case 0x6d2f90:return 0x4094500000000000ull;
+case 0x6d2f98:return 0xc0015dca76eee361ull;
+case 0x6d2fa0:return 0x406fc00000000000ull;
+case 0x6d2fa8:return 0xc07f400000000000ull;
+case 0x6d2fb0:return 0x3fa0e5604189374cull;
+default:throw std::out_of_range("EX boss early constant");}}
+inline const char* spell_name(std::uint32_t address){switch(address){
+case 0x6c5c54:return "\xd3\xf1\xcf\xbb\xa1\xb8\xcb\xc4\xb7\xbd\xcb\xc0\xc6\xda\xb5\xc4\xbe\xaa\xcf\xc5\xcf\xe4\xcd\xa5\xa1\xb9";
+case 0x6c5c78:return "\xd3\xf1\xcf\xbb\xa1\xb8\xc5\xcb\xb6\xe0\xc0\xad\xd6\xae\xb9\xea\xa1\xb9";
+case 0x6c5c94:return "\xd3\xf1\xcf\xbb\xa1\xb8\xbc\xc9\xbb\xe4\xb5\xc4\x50\x72\x65\x73\x65\x6e\x74\xa1\xb9";
+case 0x6c5cb4:return "\xd6\xb1\x9a\xb3\xa1\xb8\xb8\xdf\xce\xac\xd7\xd4\xce\xd2\xa1\xb9";
+case 0x6c5ccc:return "\xcd\xa8\xd1\xb6\xa1\xb8\xb8\xdf\xbd\xd7\xcd\xb6\xd3\xb0\xa1\xb9";
+case 0x6c5ce8:return "\xb8\xdf\xb4\xce\xa1\xb8\xb8\xdf\xce\xbb\xb4\xf3\xca\xa6\xa1\xb9";
+case 0x6c5d08:return "\xb2\xa5\xb7\xc5\xa1\xb8\x41\x6b\x61\x73\x68\x69\x63\x20\x52\x65\x63\x6f\x72\x64\x20\x50\x6c\x61\x79\x65\x72\xa1\xb9";
+case 0x6c5d30:return "\xbf\xec\xbd\xf8\xa1\xb8\xcc\xd8\xb1\xf0\xbf\xec\xb3\xb5\x42\x72\x6f\x6f\x6d\x20\x53\x74\x61\x72\xa1\xb9";
+case 0x6c5d50:return "\xb5\xb9\xb4\xf8\xa1\xb8\xbb\xd8\xb9\xe9\xd3\xa4\xb6\xf9\xa1\xb9";
+default:throw std::out_of_range("EX boss early name");}}
+}}

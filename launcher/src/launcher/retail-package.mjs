@@ -17,15 +17,17 @@ const supported = new Set(['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th13
 const encoder = new TextEncoder();
 
 export function supportsRetailImport(game) {
-  return supported.has(game);
+  return game === 'thkkd' || supported.has(game);
 }
 
 export function retailRequiredFiles(game) {
+  if (game === 'thkkd') return ['dat.dxa', 'bgm.dxa'];
   if (!supportsRetailImport(game)) return [];
   return game === 'th06' ? PRODUCT_CONTENT.th06.original.files : [`${game}.dat`];
 }
 
 export function retailArchiveLimits(game) {
+  if (game === 'thkkd') return {'dat.dxa':512*MiB, 'bgm.dxa':512*MiB};
   const datLimit = game === 'th19' || game === 'th20' ? 600 * MiB : 128 * MiB;
   const limits = Object.fromEntries(retailRequiredFiles(game).map(name => [name.toLowerCase(), datLimit]));
   limits['msgothic.ttc'] = limits['unifont.otf'] = 64 * MiB;

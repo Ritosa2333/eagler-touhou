@@ -1,0 +1,32 @@
+{
+  "schema": "thkkd/import-validation/1",
+  "game": "thkkd",
+  "variant": "normal",
+  "compiler": "Emscripten 6.0.9",
+  "node": "24.19.0",
+  "bun": "1.4.4",
+  "browser": "Edge 158.0.4370.45",
+  "results": {
+    "wasmBuild": "passed",
+    "launcherBuild": "passed",
+    "typecheck": "passed",
+    "lint": "passed with existing warnings",
+    "i18nMessages": 2643,
+    "extensionTests": 18,
+    "saveTests": 25,
+    "sourceInventoryTests": 2,
+    "portableMetadataTests": 1,
+    "sourceContractGates": 10,
+    "browserDefault": "passed",
+    "browserHighRefresh": "passed",
+    "documentationFiles": 690,
+    "coreRuntimePackagedFiles": 27
+  },
+  "sourceDigest": "73c362d20431badfa48d2bec664eef1592a10340e78886a364332b1a2c655cd7",
+  "preservedCoreRenderAssetFiles": 910,
+  "changedCoreRenderAssetFiles": 0,
+  "wasm": {
+    "bytes": 6252262,
+    "sha256": "08dbae188106b4858eeec43946edf12c26dcb5d2339a2e66995ff2dddc0d1b8e"
+  }
+}

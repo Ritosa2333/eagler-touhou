@@ -1,0 +1,9 @@
+{
+  "browser": "Edg/158.0.4370.33",
+  "checks": [
+    "refresh-persistence",
+    "path-boundaries",
+    "exit-restart-persistence"
+  ],
+  "result": "passed"
+}

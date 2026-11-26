@@ -1,6 +1,6 @@
 # 文档总表
 
-共 670 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 695 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -63,6 +63,7 @@
 | 作品入口 | [ports/th17/README.md](../ports/th17/README.md) | TH17 · 东方鬼形兽 |
 | 作品入口 | [ports/th19/README.md](../ports/th19/README.md) | 东方兽王园 TH19 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
+| 作品入口 | [ports/thkkd/README.md](../ports/thkkd/README.md) | thkkd（东方海惠堂） |
 | 作品适配表 | [ports/th01/ADAPTATION.md](../ports/th01/ADAPTATION.md) | th01 适配检查 |
 | 作品适配表 | [ports/th02/ADAPTATION.md](../ports/th02/ADAPTATION.md) | th02 适配检查 |
 | 作品适配表 | [ports/th03/ADAPTATION.md](../ports/th03/ADAPTATION.md) | th03 适配检查 |
@@ -90,6 +91,7 @@
 | 作品适配表 | [ports/th17/ADAPTATION.md](../ports/th17/ADAPTATION.md) | th17 适配检查 |
 | 作品适配表 | [ports/th19/ADAPTATION.md](../ports/th19/ADAPTATION.md) | th19 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
+| 作品适配表 | [ports/thkkd/ADAPTATION.md](../ports/thkkd/ADAPTATION.md) | thkkd 适配检查 |
 | 作品源码文档 | [ports/th01/README-NETPLAY.md](../ports/th01/README-NETPLAY.md) | 原生移植版 UDP 联机 |
 | 作品源码文档 | [ports/th01/README-PUBLIC.md](../ports/th01/README-PUBLIC.md) | 公网联机 |
 | 作品源码文档 | [ports/th01/README-UPSTREAM.md](../ports/th01/README-UPSTREAM.md) | TH01《东方灵异传》· 原生移植与多人合作 |
@@ -250,6 +252,13 @@
 | 作品源码文档 | [ports/th19/docs/DEVELOPMENT.md](../ports/th19/docs/DEVELOPMENT.md) | TH19 开发与构建 |
 | 作品源码文档 | [ports/th19/docs/REPLAY.md](../ports/th19/docs/REPLAY.md) | 旁观与扩展录像 |
 | 作品源码文档 | [ports/th20/docs/DEVELOPMENT.md](../ports/th20/docs/DEVELOPMENT.md) | TH20 开发指南 |
+| 作品源码文档 | [ports/thkkd/THIRD_PARTY.md](../ports/thkkd/THIRD_PARTY.md) | 第三方依赖与资源 |
+| 作品源码文档 | [ports/thkkd/docs/DEVELOPMENT.md](../ports/thkkd/docs/DEVELOPMENT.md) | 网页单机开发 |
+| 作品源码文档 | [ports/thkkd/docs/PERFORMANCE.md](../ports/thkkd/docs/PERFORMANCE.md) | 网页性能与兼容验证 |
+| 作品源码文档 | [ports/thkkd/docs/QUALITY.md](../ports/thkkd/docs/QUALITY.md) | 网页单机质量验收 |
+| 作品源码文档 | [ports/thkkd/docs/RENDERING.md](../ports/thkkd/docs/RENDERING.md) | 网页显示与原作对照 |
+| 作品源码文档 | [ports/thkkd/docs/architecture.md](../ports/thkkd/docs/architecture.md) | 开发与兼容说明 |
+| 作品源码文档 | [ports/thkkd/docs/packaging.md](../ports/thkkd/docs/packaging.md) | 资源与打包 |
 | 公共库 | [common/README.md](../common/README.md) | common/ |
 | 公共库 | [common/browser/README.md](../common/browser/README.md) | 浏览器共享模块 |
 | 公共库 | [common/contracts/README.md](../common/contracts/README.md) | 客户端与服务端契约 |
@@ -336,6 +345,7 @@
 | 迁移记录 | [docs/migration/th13-subtree-20261028.md](migration/th13-subtree-20261028.md) | th13 独立源码与子树维护 |
 | 迁移记录 | [docs/migration/th13mp-derivation-20261108.md](migration/th13mp-derivation-20261108.md) | th13-mp 目录来源登记（仓内派生） |
 | 迁移记录 | [docs/migration/th17-subtree-20261106.md](migration/th17-subtree-20261106.md) | TH17 普通版与多人版目录历史 |
+| 迁移记录 | [docs/migration/thkkd-file-import-20261126.md](migration/thkkd-file-import-20261126.md) | 海惠堂单机文件导入 |
 | 历史记录 | [archive/README.md](../archive/README.md) | 历史记录 |
 | 历史记录 | [archive/hk-mirror-relay-20261028/deployment.md](../archive/hk-mirror-relay-20261028/deployment.md) | 香港镜像与统一 Relay 入口 ｜ 2026-10-28 |
 | 历史记录 | [archive/main-refresh-20261028/README.md](../archive/main-refresh-20261028/README.md) | 主线发布与镜像一致性 |
@@ -510,6 +520,17 @@
 | 历史记录 | [archive/th19-touch-charge-20261105/README.md](../archive/th19-touch-charge-20261105/README.md) | TH19 蓄力触屏按钮 |
 | 历史记录 | [archive/th19-tsukasa-strengthening-20261106/README.md](../archive/th19-tsukasa-strengthening-20261106/README.md) | 管牧典 EX 弹幕强化 |
 | 历史记录 | [archive/th19-versus-settings-20261105/README.md](../archive/th19-versus-settings-20261105/README.md) | TH19 专属输入与对局设置验收 |
+| 历史记录 | [archive/thkkd-cpu-performance-20261126/README.md](../archive/thkkd-cpu-performance-20261126/README.md) | 海惠堂单机性能实测 |
+| 历史记录 | [archive/thkkd-import-20261126/CHANGES.md](../archive/thkkd-import-20261126/CHANGES.md) | 本轮改动文件 |
+| 历史记录 | [archive/thkkd-import-20261126/README.md](../archive/thkkd-import-20261126/README.md) | 海惠堂单机接入验证 |
+| 历史记录 | [archive/thkkd-original-import-20261126/CHANGES.md](../archive/thkkd-original-import-20261126/CHANGES.md) | 原版资源导入改动文件 |
+| 历史记录 | [archive/thkkd-original-import-20261126/README.md](../archive/thkkd-original-import-20261126/README.md) | 海惠堂原版资源导入 |
+| 历史记录 | [archive/thkkd-performance-20261126/DELIVERY.md](../archive/thkkd-performance-20261126/DELIVERY.md) | 海惠堂网页单机 r6 验收 |
+| 历史记录 | [archive/thkkd-performance-20261126/README.md](../archive/thkkd-performance-20261126/README.md) | 海惠堂 Web 性能与完整录像验收 |
+| 历史记录 | [archive/thkkd-quality-mp-20261126/README.md](../archive/thkkd-quality-mp-20261126/README.md) | 海惠堂网页单机质量验收 |
+| 历史记录 | [archive/thkkd-rendering-20261126/DELIVERY.md](../archive/thkkd-rendering-20261126/DELIVERY.md) | 海惠堂网页单机显示验收 |
+| 历史记录 | [archive/thkkd-rendering-20261126/README.md](../archive/thkkd-rendering-20261126/README.md) | 海惠堂网页显示对照 |
+| 历史记录 | [archive/thkkd-web-20261126/README.md](../archive/thkkd-web-20261126/README.md) | 海惠堂网页单机验证 |
 | 历史记录 | [archive/thprac-information-touch-20261027/README.md](../archive/thprac-information-touch-20261027/README.md) | THPrac 信息窗触控归属 |
 | 历史记录 | [archive/turn-fallback-20261028/README.md](../archive/turn-fallback-20261028/README.md) | TURN 选择同步 |
 | 历史记录 | [docs/history/INDEX.md](history/INDEX.md) | 旧文档去向 |
@@ -664,6 +685,10 @@
 | 许可证与声明 | [ports/th17/portable/sdl/third_party/miniaudio.LICENSE](../ports/th17/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th19/portable/sdl/third_party/miniaudio.LICENSE](../ports/th19/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th20/portable/sdl/third_party/miniaudio.LICENSE](../ports/th20/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
+| 许可证与声明 | [ports/thkkd/third_party/FFmpeg-WASM-LICENSE.txt](../ports/thkkd/third_party/FFmpeg-WASM-LICENSE.txt) | MIT License |
+| 许可证与声明 | [ports/thkkd/third_party/GARbro-LICENSE.txt](../ports/thkkd/third_party/GARbro-LICENSE.txt) | DXA 格式与压缩算法参考 |
+| 许可证与声明 | [ports/thkkd/third_party/OFL-Unifont.txt](../ports/thkkd/third_party/OFL-Unifont.txt) | OFL Unifont |
+| 许可证与声明 | [ports/thkkd/third_party/UPNG-LICENSE.txt](../ports/thkkd/third_party/UPNG-LICENSE.txt) | MIT License |
 | 许可证与声明 | [services/relay/LICENSE](../services/relay/LICENSE) | LICENSE |
 | 许可证与声明 | [services/telemetry/LICENSE](../services/telemetry/LICENSE) | LICENSE |
 | 许可证与声明 | [services/turn/LICENSE](../services/turn/LICENSE) | LICENSE |

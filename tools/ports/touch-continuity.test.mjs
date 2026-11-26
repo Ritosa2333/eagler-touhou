@@ -39,6 +39,19 @@ for(const directory of directories.filter(directory => !["ports/th01","ports/th0
  const families=[header,module,legacy,fighter,native05].filter(existsSync);
  assert.equal(families.length,1,`${directory}: register exactly one production input architecture`);
  const variants=targets().filter(target=>target.directory===directory).map(target=>target.variant).join('|');
+ if(directory==='ports/thkkd'){
+  test(directory+' held pointer resumes after native relocation',async()=>{
+   const {Input}=await import(pathToFileURL(native05));
+   for(const mode of ['touch','touch-unlimited']){
+    const input=new Input({protocol:'eagler-touhou/1',game:'thkkd',epoch:1,origin:'http://localhost'},()=>true);
+    input.isGameplay=()=>true;input.configure({touchEnabled:true,touchMovementMode:mode});input.player={x:200,y:300};
+    input.command({command:'direct-touch',type:'down',id:7,x:.4,y:.7});input.command({command:'direct-touch',type:'move',id:7,x:.5,y:.7});
+    const state={x:210,y:380,oldX:210,oldY:380,speed:4,cursor:1,blocked:true};assert.equal(input.motion(state),null);
+    input.command({command:'direct-touch',type:'move',id:7,x:.6,y:.7});assert(input.motion({...state,blocked:false}).x>210);
+    input.clearTouch();assert.equal(input.motion({...state,blocked:false}),null);
+   }
+  });continue;
+ }
  if(existsSync(native05))test(directory+' held pointer resumes after native player relocation',async()=>{
   const {createTouchInput}=await import(pathToFileURL(native05));
   for(const mode of ['touch','touch-unlimited']){

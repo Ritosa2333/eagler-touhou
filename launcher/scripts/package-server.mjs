@@ -39,7 +39,7 @@ import { sharesRuntime, assertSharedRuntimeShell, verifyRuntimeRelease, runtimeF
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
-import { assertReactFrontendGameCoverage } from "../lib/react-frontend-artifact.mjs";
+import { assertReactFrontendGameCoverage, portableReactValidationMetadata } from "../lib/react-frontend-artifact.mjs";
 import { resolveRuntimeGenerationWorkerSource } from "../lib/contracts-build.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
 import { PRIVATE_FRONTEND_ASSETS, privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
@@ -741,7 +741,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
         throw new Error(`${game}: unsupported shared Runtime resource ${sharedTarget}`);
       }
     }
-    if (modes.has("ogg")) {
+    if (modes.has("ogg") && !(product.musicRuntime?.embeddedOgg === true && !entry.music?.ogg?.files?.length)) {
       const pack = entry.music?.ogg;
       if (!pack?.files?.length) throw new Error(`${game}: OGG content declaration is missing`);
       const sourceBase = musicSourceBase(game, "ogg");
@@ -1007,7 +1007,7 @@ const deployment = {
     mountPath: REACT_FRONTEND_ARTIFACT.mountPath,
     // Validation inputs are covered by Release Manifest's deployment hash,
     // rather than served as public .vite build metadata.
-    validationMetadata: REACT_FRONTEND_ARTIFACT.metadata,
+    validationMetadata: portableReactValidationMetadata(REACT_FRONTEND_ARTIFACT.metadata, project),
   },
   music: serverResourceMode === RESOURCE_MODE_HOSTED ? [...modes].sort() : [],
   files: inventory,

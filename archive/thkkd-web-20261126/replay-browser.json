@@ -1,0 +1,28 @@
+{
+  "browser": "Edg/158.0.4370.33",
+  "errors": [],
+  "open": {
+    "character": 0,
+    "shot": 0,
+    "difficulty": 4,
+    "frames": 73458
+  },
+  "before": {
+    "cursor": 130,
+    "scene": 100,
+    "difficulty": 4,
+    "stage": 6,
+    "nativeCount": 73458,
+    "mode": 1,
+    "error": ""
+  },
+  "paused": 130,
+  "seek": {
+    "cursor": 240,
+    "error": ""
+  },
+  "backward": {
+    "cursor": 60,
+    "error": ""
+  }
+}
