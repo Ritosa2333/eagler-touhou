@@ -11,8 +11,23 @@ void Application::reset_fighter(u32,RoundFighterState&){}void Application::reset
 void Application::render_battle(BattleScene& b,bool display){graphics.clear(0x0f000000);if(battleRenderer)battleRenderer->render(b,display,now);}void Application::present_battle(){graphics.present();}void Application::toggle_fullscreen(){auto* window=SDL_GL_GetCurrentWindow();if(window)SDL_SetWindowFullscreen(window,!(SDL_GetWindowFlags(window)&SDL_WINDOW_FULLSCREEN));}
 void Application::ResetEvents::clear_owned_objects(FighterActor&){if(app.battle)app.battle->simulation.objects[side].clear();}void Application::ResetEvents::spell_attempt(u8 card){app.spell_attempt(side,card);}void Application::ResetEvents::reset_hud_alpha(){app.loading.story.hudAlpha={255,255};}FighterCoreEvents& Application::reset_events(u8 side){return resetEvents[side];}
 void Application::save_profile(const std::vector<u8>& b){if(!FileResources::write_file("/save/score.dat",b.data(),u32(b.size())))error="Unable to save profile";}
-bool Application::load_character(u8 side,const CharacterDefinition& d,u8 palette,CharacterController& c){audio.release_character(side);characterAssets[side]=CharacterAssets{};auto& a=characterAssets[side];if(!a.load(resources,d,palette)){error=a.error;return false;}c.actor.animation.pattern=&a.pattern;if(!characterImages[side]->load(a.sprites)||!portraitImages[side]->load(a.portraits)||!audio.character_bank(side,a.sounds)){error=graphics.error+audio.error;return false;}return true;}
-void Application::load_story_artwork(CharacterController&,u8 stage){const auto* d=character_definition(selection.character[0]);if(!d)return;if(!characterAssets[0].load_story(resources,*d,stage)||!captionImages[0]->load(characterAssets[0].story)){error=characterAssets[0].error+graphics.error;return;}if(battleArt)for(u8 i=0;i<4;i++)battleArt->captions[0][i]=captionImages[0]->image(i).texture;}
+bool Application::load_character(u8 side,const CharacterDefinition& d,u8 palette,CharacterController& c){
+ audio.release_character(side);
+ characterImages[side]->clear();
+ portraitImages[side]->clear();
+ auto& assets=characterAssets[side];
+ assets=CharacterAssets{};
+ if(!assets.load(resources,d,palette)){error=assets.error;return false;}
+ c.actor.animation.pattern=&assets.pattern;
+ if(!characterImages[side]->load(assets.sprites)){error=graphics.error;return false;}
+ assets.sprites=TexturePack{};
+ if(!portraitImages[side]->load(assets.portraits)){error=graphics.error;return false;}
+ assets.portraits=TexturePack{};
+ if(!audio.character_bank(side,assets.sounds)){error=audio.error;return false;}
+ assets.sounds=SoundPack{};
+ return true;
+}
+void Application::load_story_artwork(CharacterController&,u8 stage){const auto* d=character_definition(selection.character[0]);if(!d)return;if(!characterAssets[0].load_story(resources,*d,stage)||!captionImages[0]->load(characterAssets[0].story)){error=characterAssets[0].error+graphics.error;return;}characterAssets[0].story=TexturePack{};if(battleArt)for(u8 i=0;i<4;i++)battleArt->captions[0][i]=captionImages[0]->image(i).texture;}
 void Application::prepare_round_recording(const GameSelection& selected,const BattleSession&,const RoundRules& rules,const FighterActor& player){if(recording.rounds.size()>=8)return;recording.rounds.emplace_back();ReplayConfiguration::record(recording,recording.rounds.back(),selected,playerSettings,rules,player);recording.header[14]=u8(recording.rounds.size());const auto date=std::time(nullptr);const auto* tm=std::localtime(&date);recording.header[8]=u8(tm->tm_mon+1);recording.header[9]=u8(tm->tm_mday);saveReplayOpponent=selected.character[1-selected.activePlayer];loadingReplay.bind(ReplayMode::Recording,&recording.rounds.back(),loadingReplay.random.state);recordingFinished=false;}
 void Application::begin_round_recording(){fade_music(-6000,-200,1,1);}void Application::finish_replay_round(){if(battle)loadingReplay=battle->simulation.replay;recordingFinished=true;if(battle)pendingSession=battle->session;}
 bool Application::load_battle(){if(!prepare_battle_assets())return false;if(battle){pendingSession=battle->session;pendingRules=battle->simulation.rules;loadingReplay=battle->simulation.replay;loading.story=battle->simulation.story;}battleRenderer.reset();battleArt.reset();battle.reset();if(pendingSession.replayMode==2){const u32 index=playbackCursor++;if(!ReplayConfiguration::load(playback,index,selection,playerSettings,pendingRules,loadingReplay)){error="Replay round unavailable";return false;}if(playback.header[13]>=5){selection.storyStage=u8(index+1);pendingSession.roundIndex=i8(index+1);}}else pendingSession.replayMode=1;

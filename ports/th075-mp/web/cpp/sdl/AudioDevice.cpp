@@ -16,9 +16,27 @@
 #include <eagler/audio/WebSfx.hpp>
 namespace web_sfx = eagler::audio::web_sfx;
 namespace th075::sdl {
-namespace {float gain(i32 level,i32 volume){level+=(volume-100)*50;if(volume==0||level< -10000)level=-10000;if(level>0)level=0;return std::pow(10.f,float(level)/2000.f);}bool read_file(const std::string& path,std::vector<u8>& bytes){return FileResources::read_file(path,bytes);}}
+namespace {float gain(i32 level,i32 volume){level+=(volume-100)*50;if(volume==0||level< -10000)level=-10000;if(level>0)level=0;return std::pow(10.f,float(level)/2000.f);}}
 struct AudioDevice::Impl {
- struct Voice {std::vector<u8> bytes;ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false;~Voice(){web_sfx::erase(&sound);if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}};
+ // Only music fetched into MEMFS belongs to this lifetime. A decoder
+ // closes its stream before the last owner removes the file.
+ struct FetchedMusic {
+  explicit FetchedMusic(const std::string& value):path(value){}
+  std::string path;
+  ~FetchedMusic(){std::remove(path.c_str());}
+ };
+ struct Voice {
+  std::vector<u8> bytes;
+  std::shared_ptr<FetchedMusic> fetchedMusic;
+  ma_decoder decoder{};
+  ma_sound sound{};
+  bool decoded=false,attached=false;
+  ~Voice(){
+   web_sfx::erase(&sound);
+   if(attached)ma_sound_uninit(&sound);
+   if(decoded)ma_decoder_uninit(&decoder);
+  }
+ };
  ma_engine engine{};SDL_AudioStream* stream=nullptr;bool engineReady=false,ready=false,refill=true,suspended=false;
  std::array<std::vector<std::unique_ptr<Voice>>,3> banks;std::unique_ptr<Voice> current,pending;std::vector<u8> musicCatalog;
  i16 currentCue=-1,pendingCue=-1;i32 level=0,target=-10000,step=-160;u8 stopWhenDone=1,startWhenDone=0;bool fading=false;u32 lastFade=0;
@@ -33,12 +51,46 @@ struct AudioDevice::Impl {
  bool playing()const{return current&&ma_sound_is_playing(&current->sound);}
 };
 AudioDevice::AudioDevice():impl(std::make_unique<Impl>()){}AudioDevice::~AudioDevice()=default;void AudioDevice::close(){impl=std::make_unique<Impl>();}
-bool AudioDevice::initialize(ResourceStore& resources){auto& a=*impl;if(a.ready)return true;auto cfg=ma_engine_config_init();cfg.noDevice=MA_TRUE;cfg.channels=2;cfg.sampleRate=44100;cfg.defaultVolumeSmoothTimeInPCMFrames=0;if(ma_engine_init(&cfg,&a.engine)!=MA_SUCCESS){error="Unable to initialize audio mixer";return false;}a.engineReady=true;SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};if(SDL_InitSubSystem(SDL_INIT_AUDIO))a.stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);if(!a.stream){error=SDL_GetError();return false;}std::vector<u8> data;SoundPack system;if(!resources.read(ResourceEdition::Base,"wave/se.dat",data)||!system.load(data.data(),data.size())||!a.bank(0,system)){error="Invalid system sound pack";return false;}if(!read_file("/music/catalog.bin",a.musicCatalog)){error="Missing music catalog";return false;}web_sfx::suspend(false);SDL_ResumeAudioStreamDevice(a.stream);a.ready=true;return true;}
+bool AudioDevice::initialize(ResourceStore& resources){auto& a=*impl;if(a.ready)return true;auto cfg=ma_engine_config_init();cfg.noDevice=MA_TRUE;cfg.channels=2;cfg.sampleRate=44100;cfg.defaultVolumeSmoothTimeInPCMFrames=0;if(ma_engine_init(&cfg,&a.engine)!=MA_SUCCESS){error="Unable to initialize audio mixer";return false;}a.engineReady=true;SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};if(SDL_InitSubSystem(SDL_INIT_AUDIO))a.stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);if(!a.stream){error=SDL_GetError();return false;}std::vector<u8> data;SoundPack system;if(!resources.read(ResourceEdition::Base,"wave/se.dat",data)||!system.load(data.data(),data.size())||!a.bank(0,system)){error="Invalid system sound pack";return false;}if(!FileResources::read_file("/music/catalog.bin",a.musicCatalog)){error="Missing music catalog";return false;}web_sfx::suspend(false);SDL_ResumeAudioStreamDevice(a.stream);a.ready=true;return true;}
 bool AudioDevice::character_bank(u8 side,const SoundPack& pack){if(side>1||!impl->ready)return false;if(!impl->bank(side+1,pack)){error="Unable to decode character sounds";return false;}return true;}
 void AudioDevice::release_character(u8 side){if(side<2)impl->banks[side+1].clear();}
 void AudioDevice::sound(i16 id){impl->play(0,id,soundVolume);}void AudioDevice::character_sound(u8 side,i16 id){if(side<2)impl->play(side+1,id,soundVolume);}
 void AudioDevice::stop_sound(u8 bank,i16 id){if(bank<impl->banks.size()&&id>=0&&u32(id)<impl->banks[bank].size()&&impl->banks[bank][id])ma_sound_stop(&impl->banks[bank][id]->sound);}
-bool AudioDevice::select_music(i16 cue){if(!musicEnabled)return true;auto& a=*impl;if(!a.ready||cue<0)return false;const u8* entry=nullptr;for(u32 i=0;i+16<=a.musicCatalog.size();i+=16){i32 id;std::memcpy(&id,a.musicCatalog.data()+i,4);if(id==cue){entry=a.musicCatalog.data()+i;break;}}if(!entry){error="Unknown music cue "+std::to_string(cue);return false;}u32 start,end,loop;std::memcpy(&start,entry+4,4);std::memcpy(&end,entry+8,4);std::memcpy(&loop,entry+12,4);const auto original=music_resource_path(cue);const auto slash=original.find_last_of('/');const auto filename=original.substr(slash+1);const auto path="/music/"+filename.substr(0,filename.size()-4)+".ogg";std::vector<u8> available;if(!FileResources::read_file(path,available)){error="Missing music "+path;return false;}auto next=std::make_unique<Impl::Voice>();auto cfg=ma_decoder_config_init(ma_format_f32,2,44100);if(ma_decoder_init_file(path.c_str(),&cfg,&next->decoder)!=MA_SUCCESS){error="Unable to decode "+path;return false;}next->decoded=true;ma_uint64 frames=0;if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&frames)!=MA_SUCCESS||frames!=end||start>=end){error="Music loop or sample count mismatch";return false;}if(loop)ma_data_source_set_loop_point_in_pcm_frames(&next->decoder,start,end);if(!a.attach(*next)){error="Unable to attach music";return false;}ma_sound_set_looping(&next->sound,loop?MA_TRUE:MA_FALSE);a.pending=std::move(next);a.pendingCue=cue;return true;}
+bool AudioDevice::select_music(i16 cue){
+ if(!musicEnabled)return true;
+ auto& a=*impl;
+ if(!a.ready||cue<0)return false;
+ const u8* entry=nullptr;
+ for(u32 i=0;i+16<=a.musicCatalog.size();i+=16){
+  i32 id;std::memcpy(&id,a.musicCatalog.data()+i,4);
+  if(id==cue){entry=a.musicCatalog.data()+i;break;}
+ }
+ if(!entry){error="Unknown music cue "+std::to_string(cue);return false;}
+ u32 start,end,loop;
+ std::memcpy(&start,entry+4,4);std::memcpy(&end,entry+8,4);std::memcpy(&loop,entry+12,4);
+ const auto original=music_resource_path(cue);
+ const auto filename=original.substr(original.find_last_of('/')+1);
+ const auto path="/music/"+filename.substr(0,filename.size()-4)+".ogg";
+ bool fetched=false;
+ if(!FileResources::make_available(path,fetched)){error="Missing music "+path;return false;}
+ auto next=std::make_unique<Impl::Voice>();
+ if(fetched&&FileResources::on_demand())next->fetchedMusic=std::make_shared<Impl::FetchedMusic>(path);
+ else{
+  for(const auto* voice:{a.current.get(),a.pending.get()}){
+   if(voice&&voice->fetchedMusic&&voice->fetchedMusic->path==path){next->fetchedMusic=voice->fetchedMusic;break;}
+  }
+ }
+ auto cfg=ma_decoder_config_init(ma_format_f32,2,44100);
+ if(ma_decoder_init_file(path.c_str(),&cfg,&next->decoder)!=MA_SUCCESS){error="Unable to decode "+path;return false;}
+ next->decoded=true;
+ ma_uint64 frames=0;
+ if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&frames)!=MA_SUCCESS||frames!=end||start>=end){error="Music loop or sample count mismatch";return false;}
+ if(loop)ma_data_source_set_loop_point_in_pcm_frames(&next->decoder,start,end);
+ if(!a.attach(*next)){error="Unable to attach music";return false;}
+ ma_sound_set_looping(&next->sound,loop?MA_TRUE:MA_FALSE);
+ a.pending=std::move(next);a.pendingCue=cue;
+ return true;
+}
 void AudioDevice::stop_music(){auto& a=*impl;if(a.current)ma_sound_stop(&a.current->sound);a.fading=false;}
 void AudioDevice::start_music(){auto& a=*impl;if(a.pending){a.current=std::move(a.pending);a.currentCue=a.pendingCue;a.pendingCue=-1;}if(!a.current)return;a.level=0;a.fading=false;ma_sound_seek_to_pcm_frame(&a.current->sound,0);ma_sound_set_volume(&a.current->sound,gain(a.level,musicEnabled?musicVolume:0));ma_sound_start(&a.current->sound);}
 void AudioDevice::music_level(i32 level){impl->level=level;if(impl->current)ma_sound_set_volume(&impl->current->sound,gain(level,musicEnabled?musicVolume:0));}

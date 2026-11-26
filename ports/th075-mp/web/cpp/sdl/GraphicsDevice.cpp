@@ -22,10 +22,16 @@ u32 GraphicsDevice::upload(const BitmapData& source){
     image.pitch=image.size.width*source.pixel_bytes();
     if(!source.decode(image.bytes,image.size.width)){error="Unable to decode original texture";return 0;}
     image.bytes.resize(std::size_t(image.pitch)*image.size.height,0);
-    const u32 handle=nextHandle++;images.emplace(handle,std::move(image));renderer.prepare(handle);return handle;
+    const u32 handle=nextHandle++;
+    auto& uploaded=images.emplace(handle,std::move(image)).first->second;
+    renderer.prepare(handle);
+    // Bank textures are immutable. Their surface metadata and GPU upload
+    // remain usable without retaining a second, padded pixel buffer.
+    std::vector<u8>().swap(uploaded.bytes);
+    return handle;
 }
 u32 GraphicsDevice::create_surface(u32 width,u32 height,u32 scale){if(!width||!height||width>4096||height>4096)return 0;flush_vertices();Image image;image.size={width,height};image.scale=scale;image.pitch=width*4;image.bytes.resize(std::size_t(image.pitch)*height);const auto handle=nextHandle++;images.emplace(handle,std::move(image));renderer.prepare(handle);return handle;}
-bool GraphicsDevice::update_pixels(u32 handle,const void* data,u32 bytes){const auto it=images.find(handle);if(it==images.end()||!data||bytes!=it->second.bytes.size())return false;flush_vertices();renderer.flush();auto& image=it->second;std::memcpy(image.bytes.data(),data,bytes);++image.revision;renderer.prepare(handle);return true;}
+bool GraphicsDevice::update_pixels(u32 handle,const void* data,u32 bytes){const auto it=images.find(handle);if(it==images.end()||!data||it->second.bytes.empty()||bytes!=it->second.bytes.size())return false;flush_vertices();renderer.flush();auto& image=it->second;std::memcpy(image.bytes.data(),data,bytes);++image.revision;renderer.prepare(handle);return true;}
 u32 GraphicsDevice::snapshot(){flush_vertices();const auto handle=create_surface(640,480,images.at(screen).scale);const i32 rect[4]{0,0,640,480},point[2]{0,0};renderer.copy(screen,rect,handle,point);return handle;}
 bool GraphicsDevice::preload(const TexturePack& pack,std::vector<u32>& handles){
     std::vector<u32> added;added.reserve(pack.images.size());for(const auto& image:pack.images){const u32 handle=upload(image);if(!handle){unload(added);return false;}added.push_back(handle);}handles=std::move(added);return true;
