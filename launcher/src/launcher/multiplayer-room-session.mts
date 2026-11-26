@@ -18,6 +18,7 @@ export interface MultiplayerRoomSessionSnapshot {
     unrated?: boolean;
     disableLocalChargePriority?: boolean;
     disableFocus?: boolean;
+    rapidFire?: boolean;
     showHitboxes?: boolean;
   ballCount?: number;
     challengeMode?:boolean;
@@ -77,6 +78,7 @@ export function createMultiplayerRoomSessionStore({
           unrated: snapshot.room.unrated,
           disableLocalChargePriority: snapshot.room.disableLocalChargePriority,
           disableFocus: snapshot.room.disableFocus,
+          rapidFire: snapshot.room.rapidFire,
           showHitboxes: snapshot.room.showHitboxes,
           ballCount: snapshot.room.ballCount,
           chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,challengeKeepBullets:snapshot.room.challengeKeepBullets,prankMode:snapshot.room.prankMode,
@@ -129,7 +131,7 @@ export function createMultiplayerRoomSessionStore({
         ...(product === 'th09mp' && typeof room.unrated === 'boolean' ? {unrated: room.unrated} : {}),
         ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
         ...(product === 'th01mp' ? {ballCount:[1,2,3,4,6,8,9].includes(room.ballCount as number) ? room.ballCount as number : 2} : {}),
-        ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false,showHitboxes:room.showHitboxes===true} : product === 'th02mp' ? {disableFocus:room.disableFocus===true} : {}),
+        ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false,showHitboxes:room.showHitboxes===true} : product === 'th02mp' ? {disableFocus:room.disableFocus===true,rapidFire:room.rapidFire!==false} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
         ...(product==='th19mp'&&validTh19VersusRules(room.th19Rules)?{th19Rules:[...room.th19Rules]}:{}),
         ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),

@@ -32,7 +32,7 @@ struct ConfirmedCoop {
                 throw std::runtime_error("Invalid TH02 confirmed seat input");
         }
         const auto context=replay_tick_context(scene);
-        const auto mode=shot_input_mode(autofire,false,context!=NativeReplayContext::Gameplay);
+        const auto mode=shot_input_mode(autofire,true,context!=NativeReplayContext::Gameplay);
         scene.sound.shot_cadence.set_autofire(autofire);
         for(unsigned seat=0;seat<coop.config.count;++seat){
             auto raw=std::uint16_t(masks[seat]&4095);

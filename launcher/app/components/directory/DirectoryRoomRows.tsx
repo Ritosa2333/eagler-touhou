@@ -192,8 +192,8 @@ function RoomRow({
         </div>
       </div>
       <div className="lobby-room-rules">
-        {!room.disableCheatMovement && !room.challengeMode && !room.unrated && !(room.product === 'th01mp' && (room.ballCount ?? 2) !== 2) && !(room.product === 'th02mp' && room.disableFocus === true) ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
-          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.unrated ? t('room.unrated') : '', room.product === 'th01mp' && (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : '', room.product === 'th02mp' && room.disableFocus === true ? t('room.th02SpecialFocus') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
+        {!room.disableCheatMovement && !room.challengeMode && !room.unrated && !(room.product === 'th01mp' && (room.ballCount ?? 2) !== 2) && !(room.product === 'th02mp' && (room.disableFocus === true || room.rapidFire === false)) ? <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span> :
+          [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.unrated ? t('room.unrated') : '', room.product === 'th01mp' && (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : '', room.product === 'th02mp' && room.disableFocus === true ? t('room.th02SpecialFocus') : '', room.product === 'th02mp' && room.rapidFire === false ? t('room.th02NoRapidFire') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
       <fieldset className="lobby-party" aria-label={count}>
         <div

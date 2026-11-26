@@ -948,6 +948,14 @@ test('TH02 rooms mark disabled focus as a special rule',async()=>{
   assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','directory.regularRules'));
 });
 
+test('TH02 rooms mark disabled rapid fire as a special rule',async()=>{
+  const f=await fixture({selectedProduct:'th02mp',locale:'zh-CN',host:{games:['th02']}}).live([room({product:'th02mp',rapidFire:false})]);
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  assert.equal(n('.lobby-room-rules').textContent,'禁用连射');
+  await f.receive([room({product:'th02mp',rapidFire:true})]);await m.update({snapshot:f.service.getSnapshot()});
+  assert.equal(n('.lobby-room-rules').textContent,t('zh-CN','directory.regularRules'));
+});
+
 
 test('Directory gameplay flags use their own column and regular rooms name their rules', async () => {
   const f=await fixture({locale:'zh-CN'}).live([room({disableCheatMovement:true,challengeMode:true})]);

@@ -525,7 +525,7 @@ function newRoom(id, chatScope = 'room-' + randomUUID()) {
     lobby: {
       playerCount: defaultPlayerCount(multiplayer),
       difficulty: id.startsWith('th03mp-') ? 3 : 1,
-      ...(id.startsWith('th03mp-') ? {disableFocus:true,showHitboxes:false} : id.startsWith('th02mp-') ? {disableFocus:false} : {}),
+      ...(id.startsWith('th03mp-') ? {disableFocus:true,showHitboxes:false} : id.startsWith('th02mp-') ? {disableFocus:false,rapidFire:true} : {}),
       ...(id.startsWith('th01mp-') ? {ballCount:2} : {}),
       ...(pc98StockRoom(id)?{initialSpares:PC98_INITIAL_STOCK.spares,initialBombs:PC98_INITIAL_STOCK.bombs}:{}),
       ...(id.startsWith('th19mp-')?{th19Rules:[...TH19_VERSUS_RULES]}:{}),
@@ -1548,7 +1548,7 @@ function lobbySnapshot(room) {
     ...(room.id.startsWith('th03mp-') ? {disableFocus:room.lobby.disableFocus,showHitboxes:room.lobby.showHitboxes===true} : {}),
     ...(room.id.startsWith('th09mp-') ? {unrated: room.lobby.unrated} : {}),
     ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
-    ...(room.id.startsWith('th02mp-') ? {disableFocus:room.lobby.disableFocus} : {}),
+    ...(room.id.startsWith('th02mp-') ? {disableFocus:room.lobby.disableFocus,rapidFire:room.lobby.rapidFire} : {}),
     ...(room.id.startsWith('th01mp-') ? {ballCount:room.lobby.ballCount} : {}),
     ...(pc98StockRoom(room.id)?{initialSpares:room.lobby.initialSpares,initialBombs:room.lobby.initialBombs}:{}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
@@ -1811,7 +1811,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     room.lobby.unrated = room.id.startsWith('th09mp-') && initialPolicy?.unrated === true;
     if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
     if(room.id.startsWith('th03mp-')){room.lobby.disableFocus=initialPolicy?.disableFocus!==false;room.lobby.showHitboxes=initialPolicy?.showHitboxes===true;}
-    if(room.id.startsWith('th02mp-'))room.lobby.disableFocus=initialPolicy?.disableFocus===true;
+    if(room.id.startsWith('th02mp-')){
+      room.lobby.disableFocus=initialPolicy?.disableFocus===true;
+      room.lobby.rapidFire=initialPolicy?.rapidFire!==false;
+    }
     if(room.id.startsWith('th01mp-') && [1,2,3,4,6,8,9].includes(initialPolicy?.ballCount))room.lobby.ballCount=initialPolicy.ballCount;
     if(pc98StockRoom(room.id)&&validPc98InitialSpares(initialPolicy?.initialSpares)&&validPc98InitialBombs(initialPolicy?.initialBombs)){room.lobby.initialSpares=initialPolicy.initialSpares;room.lobby.initialBombs=initialPolicy.initialBombs;}
     const modesSupported = room.multiplayer?.gameplay === 'cooperative' && room.multiplayer.challengeMode !== false;
@@ -2532,6 +2535,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       const disableLocalChargePriority=message.disableLocalChargePriority ?? room.lobby.disableLocalChargePriority;
       if(message.disableFocus!==undefined&&(!(room.id.startsWith('th02mp-')||room.id.startsWith('th03mp-'))||typeof message.disableFocus!=='boolean')){sendLobby(socket,{type:'error',error:'invalid focus rule'});return;}
       const disableFocus=message.disableFocus??room.lobby.disableFocus;
+      if(message.rapidFire!==undefined&&(!room.id.startsWith('th02mp-')||typeof message.rapidFire!=='boolean')){sendLobby(socket,{type:'error',error:'invalid rapid fire rule'});return;}
+      const rapidFire=message.rapidFire??room.lobby.rapidFire;
       if(message.showHitboxes!==undefined&&(!room.id.startsWith('th03mp-')||typeof message.showHitboxes!=='boolean')){sendLobby(socket,{type:'error',error:'invalid hitbox rule'});return;}
       const showHitboxes=message.showHitboxes??room.lobby.showHitboxes;
       if(message.ballCount!==undefined && (!room.id.startsWith('th01mp-') || ![1,2,3,4,6,8,9].includes(message.ballCount))){sendLobby(socket,{type:'error',error:'invalid ball count'});return;}
@@ -2562,6 +2567,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.unrated !== unrated ||
         room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
         room.lobby.disableFocus !== disableFocus ||
+        room.lobby.rapidFire !== rapidFire ||
         room.lobby.showHitboxes !== showHitboxes ||
         room.lobby.ballCount !== ballCount ||
         room.lobby.challengeMode !== challengeMode ||
@@ -2576,7 +2582,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         if(room.id.startsWith('th03mp-')){room.lobby.disableFocus=disableFocus;room.lobby.showHitboxes=showHitboxes;}
         room.lobby.unrated = unrated;
         if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
-        if(room.id.startsWith('th02mp-'))room.lobby.disableFocus=disableFocus;
+        if(room.id.startsWith('th02mp-')){room.lobby.disableFocus=disableFocus;room.lobby.rapidFire=rapidFire;}
         if(room.id.startsWith('th01mp-'))room.lobby.ballCount=ballCount;
         if(pc98StockRoom(room.id)){room.lobby.initialSpares=initialSpares;room.lobby.initialBombs=initialBombs;}
         room.lobby.challengeMode = challengeMode;
@@ -3027,6 +3033,7 @@ server.on('connection', (socket, request) => {
       unrated: url.searchParams.get('unrated') === '1',
       disableLocalChargePriority: url.searchParams.get('disableLocalChargePriority') === '1',
       disableFocus: url.searchParams.has('disableFocus') ? url.searchParams.get('disableFocus') === '1' : undefined,
+      rapidFire: url.searchParams.get('rapidFire') !== '0',
       showHitboxes: url.searchParams.get('showHitboxes') === '1',
       ballCount: url.searchParams.has('ballCount') ? Number(url.searchParams.get('ballCount')) : undefined,
       initialSpares: url.searchParams.has('initialSpares') ? Number(url.searchParams.get('initialSpares')) : undefined,

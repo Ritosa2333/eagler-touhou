@@ -204,6 +204,18 @@ test('TH03 focus rule belongs to the host and reaches runtime options',async()=>
   await f.receive({disableFocus:false,phase:'running'});assert.equal(toggle.disabled,true);
   const count=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableFocus:true}));assert.equal(f.socket.sent.length,count);
 });
+test('TH02 rapid fire is on by default and the host can disable it',async()=>{
+  const f=await fixture({product:'th02mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
+  const toggle=n('#mpTh02RapidFire');
+  assert.equal(toggle.getAttribute('aria-label'),'启用连射');
+  assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(f.service.runtimeOptions().netplayRapidFire,true);
+  await click('#mpTh02RapidFire');assert.equal(f.socket.sent.findLast(m=>m.type==='settings').rapidFire,false);
+  await f.receive({rapidFire:false});assert.equal(toggle.getAttribute('aria-checked'),'false');
+  assert.equal(f.service.runtimeOptions().netplayRapidFire,false);
+  assert.equal(n('.room-workspace-meta .room-challenge-on').textContent,'禁用连射');
+  await f.receive({rapidFire:false,phase:'running'});assert.equal(toggle.disabled,true);
+});
 test('TH02 disabling focus is a host-controlled special rule',async()=>{
   const f=await fixture({product:'th02mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
   const toggle=n('#mpTh02DisableFocus');assert.equal(toggle.getAttribute('aria-checked'),'false');

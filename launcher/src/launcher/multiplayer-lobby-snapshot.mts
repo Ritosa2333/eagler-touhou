@@ -65,6 +65,7 @@ export interface NormalizedMultiplayerLobbySnapshot {
   unrated?: boolean;
   disableLocalChargePriority?: boolean;
   disableFocus?: boolean;
+  rapidFire?: boolean;
   showHitboxes?: boolean;
   ballCount?: number;
   challengeMode?: boolean;
@@ -122,6 +123,7 @@ export function normalizeMultiplayerLobbySnapshot(
   const source = record(value);
   if(source?.ballCount!==undefined && ![1,2,3,4,6,8,9].includes(source.ballCount as number))return null;
   if(source?.disableFocus!==undefined&&typeof source.disableFocus!=='boolean')return null;
+  if(source?.rapidFire!==undefined&&typeof source.rapidFire!=='boolean')return null;
   if(source?.showHitboxes!==undefined&&typeof source.showHitboxes!=='boolean')return null;
   if(source?.th19Rules!==undefined&&!validTh19VersusRules(source.th19Rules))return null;
   if(source&&(source.initialSpares!==undefined&&!validTh05InitialSpares(source.initialSpares)||source.initialBombs!==undefined&&!validTh05InitialBombs(source.initialBombs)))return null;
@@ -256,6 +258,7 @@ export function normalizeMultiplayerLobbySnapshot(
     ...(typeof source.challengeKeepBullets === "boolean" ? { challengeKeepBullets: source.challengeMode === true && source.challengeKeepBullets } : {}),
     ...(source.ballCount !== undefined ? {ballCount:source.ballCount as number} : {}),
     ...(source.disableFocus !== undefined ? {disableFocus:source.disableFocus===true} : {}),
+    ...(source.rapidFire !== undefined ? {rapidFire:source.rapidFire} : {}),
     ...(source.showHitboxes !== undefined ? {showHitboxes:source.showHitboxes===true} : {}),
     ...(source.prankMode !== undefined ? { prankMode: false } : {}),
     difficulty,

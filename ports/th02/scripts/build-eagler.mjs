@@ -73,8 +73,12 @@ if(nativeBuild){
   const entry='managed-native-solo.mjs';
   await copyFile(resolve(port,'web',entry),resolve(output,entry));runtime.push(entry);
   await patch('managed-shell.mjs',text=>replaceOnce(text,'const loadNativeSolo=null;',`const loadNativeSolo=()=>import('./${entry}');`,'SoEW Native entry'));
-  for(const [directory,names] of [[resolve(web),['managed-native-room.mjs']],[resolve(repo,'ports/th05-mp/web'),['managed-transport.mjs','input-transport.mjs']]]){
-    for(const name of names){await copyFile(resolve(directory,name),resolve(output,name));runtime.push(name);}
+  const nativeRoom='managed-native-room.mjs';
+  await copyFile(resolve(port,'web',nativeRoom),resolve(output,nativeRoom));runtime.push(nativeRoom);
+  await mkdir(resolve(output,'native/network'),{recursive:true});
+  for(const name of ['managed-transport.mjs','input-transport.mjs']){
+    const target='native/network/'+name;
+    await copyFile(resolve(repo,'ports/th05-mp/web',name),resolve(output,target));runtime.push(target);
   }
   await patch('managed-shell.mjs',text=>replaceOnce(text,'const loadNativeRoom=null;',"const loadNativeRoom=()=>import('./managed-native-room.mjs');",'SoEW Native room'));
 }

@@ -1,6 +1,6 @@
 import {playFull} from './native/full.mjs';
 import {RetraceClock} from './native/clock.mjs';
-import {createManagedTransport} from './managed-transport.mjs';
+import {createManagedTransport} from './native/network/managed-transport.mjs';
 import {createConfirmedPeerRun,validCoopInput} from './native-coop-peers.mjs';
 import {packTouch} from './touch-input.js';
 import {createPc98SpectatorPublisher} from './pc98-spectator-publisher.mjs';
@@ -21,7 +21,7 @@ const roomRules=(options,language)=>[
     options.netplayPlayerCount,options.netplayDifficulty===4?5:0,Math.min(options.netplayDifficulty,3),
     options.netplayInitialSpares??2,options.netplayInitialBombs??3,
     ...roles.map((_,i)=>options.netplayLoadouts[i]?.shot??0),
-    options.netplaySeed>>>0,(options.netplayDisableFocus?2:3)|(options.netplayDisableCheatMovement?4:0),lang(language),
+    options.netplaySeed>>>0,(options.netplayDisableFocus?0:1)|(options.netplayRapidFire===false?0:2)|(options.netplayDisableCheatMovement?4:0),lang(language),
 ];
 
 // Rollback and challenge rules retain their existing DOS engine until the

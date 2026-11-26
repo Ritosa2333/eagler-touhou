@@ -84,13 +84,13 @@ await patch('netplay/room.js',text=>{
   text=replaceOnce(text,'function captureLocalInput(frontier=queue.frame,context=null){','globalThis.__eaglerPC98Input.onChange=()=>{if(running&&!stopped){observeInput();wake();}};\nfunction captureLocalInput(frontier=queue.frame,context=null){','wake on managed input');
   text=replaceOnce(text,'normalize(player.sample(keyboardBits(keys)|childBits|gamepadBits())|pendingAction)','normalize(globalThis.__eaglerPC98Input.sample({play:runtime?.touchContext()?.play===true})|pendingAction)','host input');
   text=replaceOnce(text,'packed=player.pack(bits|pendingAction,{includePointPreference:false});','packed=packTouch(bits|pendingAction,{...globalThis.__eaglerPC98Input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox});','host direct touch');
-  text=replaceOnce(text,'packed=packTouch(bits|pendingAction,{...globalThis.__eaglerPC98Input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox});','packed=packTouch(bits|pendingAction|((bits&32)&&globalThis.__eaglerPC98Options().th02RapidFire!==false?1024:0),{...globalThis.__eaglerPC98Input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox});','rapid fire local preference');
+  text=replaceOnce(text,'packed=packTouch(bits|pendingAction,{...globalThis.__eaglerPC98Input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox});','packed=packTouch(bits|pendingAction|((bits&32)&&state.settings.rapidFire?1024:0),{...globalThis.__eaglerPC98Input.motion(),alwaysPoint:!!globalThis.__eaglerPC98Options().alwaysHitbox});','rapid fire room rule');
   text="import {packTouch} from '../touch-input.js';\n"+text;
   return text;
 });
 await writeFile(resolve(output,'netplay/room.js'),await readFile(resolve(output,'netplay/room.js'),'utf8')+'\n'+await readFile(resolve(port,'web/managed-room-api.js'),'utf8'));
 await patch('netplay/runtime.html',text=>replaceOnce(text,'<script>','<script type="module">\nimport "../managed-child.mjs";','managed child resources'));
-for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')&&name!=='managed-native-solo.mjs') { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
+for(const name of await files(resolve(port,'web'))) if(/^managed-[^/]+\.(?:mjs|js)$/.test(name)&&!name.endsWith('-api.js')&&!name.startsWith('managed-native-')) { await copyFile(resolve(port,'web',name),resolve(output,name)); runtime.push(name); }
 {
   const path=resolve(output,'netplay/runtime.json'), manifest=JSON.parse(await readFile(path,'utf8'));
   for(const name of ['managed-rescue-sound.mjs','managed-rapid-fire.mjs','managed-bomb-background.mjs','managed-gameover.mjs','netplay/ending-music.js','netplay/bonus-confirm.js','pmd-archives.mjs'])manifest.assets[name]=createHash('sha256').update(await readFile(resolve(output,name))).digest('hex');

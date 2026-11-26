@@ -2555,6 +2555,8 @@
   "account_discordPending": "Discord login will be available when the account service is connected.",
   "profile_online_simulated": "| Simulated",
   "room_th02SpecialFocus": "No focus",
+  "room_th02RapidFire": "Enable rapid fire",
+  "room_th02NoRapidFire": "No rapid fire",
   "touch_th01SlideHold": "Hold to slide",
   "room_th03SpecialFocus": "Focus movement on",
   "document_terms": "Terms of Service",

@@ -21,6 +21,8 @@ node ports/th02/scripts/build-eagler.mjs --assets=<DOS资源目录> --native-bui
 
 在 Eagler 联机大厅创建 TH02 房间。在房间设置中关闭回滚，按普通规则开局，即进入 SoEW Native。同一房间的观众从原有观战席进入，可暂停、回拖和回到直播。开启回滚或挑战规则时使用现有的 DOSBox-X 运行时。
 
+房间默认全员启用高速连射。房主可在规则选项中关闭「启用连射」；房间标题和大厅的特殊玩法随即显示「禁用连射」。
+
 原生联机复用 TH05 的房间传输，按约 56.4 Hz 的 PC-98 节拍推进；每 120 帧比对模拟状态。队友按各自本机视角半透明呈现。F12、退格辅助和练习调速不参与联机。
 
 构建含资源的 `soew-full`，安装 Launcher 和 Relay 的 npm 依赖，设置 `EAGLER_CHROME_PATH` 后，在仓库根目录运行：

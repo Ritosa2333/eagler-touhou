@@ -25,7 +25,7 @@ export const managedAPI={
     if(!Number.isInteger(lives)||lives<0||lives>5||!Number.isInteger(bombs)||bombs<0||bombs>2)throw Error('初始残机或 Bomb 无效');
     const challengeMode=options.netplayChallengeMode===true;
     const settings={players:count,difficulty,lives:challengeMode?2:lives,bombs:challengeMode?0:bombs,...(challengeMode?{challengeMode:true}:{}),stage:difficulty===4?5:0,focusEnabled:options.netplayDisableFocus!==true,focusPercent:50,teamTargeting:true,language:language==='ja'?'jp':'cn',rollback:options.netplayAdonisMode===0,
-      p1:loadouts[0].shot,p2:loadouts[1].shot,p3:loadouts[2]?loadouts[2].shot:0};
+      p1:loadouts[0].shot,p2:loadouts[1].shot,p3:loadouts[2]?loadouts[2].shot:0,rapidFire:options.netplayRapidFire!==false};
     session={role:roles[local],room:url.searchParams.get('room'),token:'launcher-owned'};
     state={phase:'loading',transport:'ws',connectionCommitted:true,generation:[session.room,runId,url.searchParams.get('runtimeGeneration')].join(':'),runId,revision:1,settings,
       slots:{host:0,guest:1,guest2:2},ready:{host:true,guest:true,guest2:true},present:{host:true,guest:true,guest2:count===3}};
