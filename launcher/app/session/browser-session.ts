@@ -4,6 +4,7 @@ import type {CloudSaveSync} from '../services/cloud-save-sync';
 import {createRelayEntryRouting} from '../../src/launcher/relay-entry-routing.mts';
 import {loadGameVersion} from "../../package/game-version.mjs";
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
+import {resolveMusicAvailability} from '../../src/launcher/music-availability.mts';
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {isAbortError, linkAbortSignals, waitWithAbort} from '../services/abort-signals';
@@ -815,6 +816,12 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   async function confirmMusicWarnings() {
     const state = settings.getSnapshot(); if (!state) return false;
     const music = state.music;
+    // Prompts only make sense when the player could act on them. A product that
+    // exposes no launcher-side music choice (BRO plays its own OGG soundtrack
+    // from the runtime) would otherwise be nagged at every launch to "choose OGG
+    // under Music" while the settings page offers no such option at all.
+    const availability = resolveMusicAvailability(state.context.musicAvailability);
+    if (!availability.ogg && !availability.midi) return true;
     if (music === 'none' || music === 'midi') return decisions.askConfirmation({message: t(music === 'none' ? 'music.noneLaunchWarning' : 'music.midiLaunchWarning'), confirmText: t('music.startAnyway')});
     return true;
   }
