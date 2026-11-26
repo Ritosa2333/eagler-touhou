@@ -496,14 +496,15 @@ void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optio
     if(encounter.active){
         std::wstring title(info_label(encounter.label));
         if(encounter.phases>1)title+=L" P"+ratio(encounter.phase+1,encounter.phases);
-        const auto clock=soew::encounter_countdown(s,encounter);
+        const auto remaining=soew::encounter_clock(s,encounter);
+        const auto clock=soew::encounter_countdown(remaining);
         const int clock_left=bar_width-int(clock.size())*6-3;
         text(title,1,y,clock_left-3);
         text(clock,clock_left,y,bar_width-clock_left,DT_RIGHT);
         y+=line_pitch;
         if(health_bar.max_health){
             bars[bar_count++]={0,y,bar_width,main_bar_height,health_bar.health,health_bar.max_health,true};
-            y+=main_bar_height+1;
+            y+=main_bar_height+(encounter.target_count<3?1:0);
             line(L"HP "+ratio(health_bar.health,health_bar.max_health));
         }
         const bool show_protection=encounter.protection.kind!=soew::EncounterProtectionKind::None;
@@ -519,11 +520,11 @@ void draw_info_panel(Frame &frame,const soew::EncounterScene &s,const std::optio
             }
         }
         if(encounter.pending)line(tr(L"撃破判定待ち",L"DAMAGE GATE WAIT",L"等待击破判定",L"等待擊破判定"));
-        if(encounter.has_timeout){
-            const auto unit=soew::encounter_timer_unit(encounter.timeout_unit,language);
-            line(tr(L"残り ",L"TIME ",L"剩余 ",L"剩餘 ")+std::to_wstring(encounter.timeout)+L" "+std::wstring(unit)+(encounter.timeout_pending?L" *":L""));
-            if(encounter.timeout_pending)line(tr(L"時間切れ判定待ち",L"TIME GATE WAIT",L"等待超时判定",L"等待超時判定"));
-        }else if(encounter.has_health&&!encounter.dying)line(tr(L"残り --",L"TIME --",L"剩余 --",L"剩餘 --"));
+        if(remaining.frames){
+            line(std::wstring(tr(L"残り ",L"TIME ",L"剩余 ",L"剩餘 "))+(remaining.estimated?L"~":L"")+
+                std::to_wstring(remaining.frames)+tr(L" フレーム",L" frames",L" 逻辑帧",L" 邏輯幀"));
+        }else if(encounter.timeout_pending)line(tr(L"時間切れ判定待ち",L"TIME GATE WAIT",L"等待超时判定",L"等待超時判定"));
+        else if(encounter.has_health&&!encounter.dying)line(tr(L"残り --",L"TIME --",L"剩余 --",L"剩餘 --"));
         // Shields and paired actors have their own meters, not segments of the boss bar.
         for(unsigned i=0;i<encounter.target_count;++i){
             const auto &target=encounter.targets[i];
@@ -3349,14 +3350,19 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                 const unsigned alpha=100*unsigned(x-256)/72;
                 pixel=opening_tone(pixel,100-alpha,false)+opening_tone(0x160f20,alpha,false);
             }
-            draw_label(app->composed.pixels,app->font,"ABOUT",32,64,0xffff00);
-            draw(tr(L"これは非公式作品です。",L"This is an unofficial project.",L"这是非官方作品。",L"這是非官方作品。"),32,96,0xffffff);
-            draw(L"Hydrangea-Z",32,126,0xffffff);
-            draw(tr(L"ReC98をもとに移植",L"Ported from ReC98",L"基于 ReC98 实现移植",L"基於 ReC98 實作移植"),32,146,0xdfc9e9);
-            draw(L"IxinorTyan",32,188,0xffffff);
-            draw(tr(L"不具合調査・最適化",L"Debugging and Optimization",L"查错及优化",L"查錯及最佳化"),32,208,0xdfc9e9);
-            draw(tr(L"プレイありがとう！",L"Thank you for playing!",L"感谢游玩！",L"感謝遊玩！"),32,266,0xffffff);
-            draw(tr(L"ここまで見てくれてありがとう。",L"Thanks for stopping by.",L"也谢谢你看到这里。",L"也謝謝你看到這裡。"),32,288,0xdfc9e9);
+            draw_label(app->composed.pixels,app->font,"ABOUT",32,40,0xffff00);
+            draw(tr(L"東方Projectの非公式二次創作です。",L"An unofficial Touhou fan project.",L"这是东方 Project 的非官方二次创作。",L"這是東方 Project 的非官方二次創作。"),32,72,0xffffff);
+            draw(tr(L"原作：ZUN",L"Original game by ZUN",L"原作：ZUN",L"原作：ZUN"),32,96,0xffffff);
+            draw(tr(L"© ZUN / 上海アリス幻樂団",L"© ZUN / Team Shanghai Alice",L"© ZUN / 上海爱丽丝幻乐团",L"© ZUN / 上海愛麗絲幻樂團"),32,114,0xdfc9e9);
+            draw(tr(L"原作は正規に入手したものを",L"Please use a legally obtained",L"请使用合法取得的原作。",L"請使用合法取得的原作。"),32,140,0xdfc9e9);
+            draw(tr(L"ご使用ください。原作素材の",L"copy. Do not redistribute game",L"未经授权，请勿转载",L"未經授權，請勿轉載"),32,158,0xdfc9e9);
+            draw(tr(L"無断転載・再配布はご遠慮ください。",L"assets without permission.",L"或再分发原作资源。",L"或再散布原作資源。"),32,176,0xdfc9e9);
+            draw(L"Hydrangea-Z",32,204,0xffffff);
+            draw(tr(L"ReC98の解析に基づく移植",L"Port based on ReC98 research",L"基于 ReC98 的研究实现移植",L"基於 ReC98 的研究實作移植"),32,222,0xdfc9e9);
+            draw(L"IxinorTyan",32,248,0xffffff);
+            draw(tr(L"不具合調査・最適化",L"Debugging and Optimization",L"查错及优化",L"查錯及最佳化"),32,266,0xdfc9e9);
+            draw(tr(L"プレイありがとう！",L"Thank you for playing!",L"感谢游玩！",L"感謝遊玩！"),32,294,0xffffff);
+            draw(tr(L"ここまで見てくれてありがとう。",L"Thanks for stopping by.",L"也谢谢你看到这里。",L"也謝謝你看到這裡。"),32,312,0xdfc9e9);
             draw(tr(L"Esc：戻る",L"Esc: Back",L"Esc：返回",L"Esc：返回"),32,350,0xdfc9e9);
         }
         if(app->zunsoft.active())app->composed=zunsoft_frame(*app->zunsoft_assets,app->zunsoft);

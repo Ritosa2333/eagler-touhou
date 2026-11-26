@@ -1,6 +1,7 @@
 // Run against the Eagler dev server with --native-build DATA and Runtime.
 // Pass --practice-seed for the fixed-seed input flow.
-// Pass --boss-gauge to reach the Stage 1 boss directly in solo Practice.
+// Pass --boss-gauge to reach the default boss directly in solo Practice.
+// Pass --marisa-clock to check the Stage 4 boss countdown and orb notice.
 // Pass --about to check the disclaimer on the About page.
 // Pass --focus-setting to exercise the saved Slow Movement option in Story.
 import assert from 'node:assert/strict';
@@ -65,7 +66,8 @@ try {
   await openStoryShots(frame);
   const practiceSeed=process.argv.includes('--practice-seed');
   const about=process.argv.includes('--about');
-  const bossGauge=process.argv.includes('--boss-gauge');
+  const marisaClock=process.argv.includes('--marisa-clock');
+  const bossGauge=marisaClock||process.argv.includes('--boss-gauge');
   const focusSetting=process.argv.includes('--focus-setting');
   if(about){
     await press('Escape');
@@ -76,8 +78,12 @@ try {
     await frame.waitForFunction(()=>{
       const c=document.querySelector('canvas'),ctx=c.getContext('2d');
       const sx=c.width/640,sy=c.height/400;
-      const line=ctx.getImageData(Math.round(32*sx),Math.round(96*sy),Math.round(190*sx),Math.round(20*sy)).data;
-      return line.some((v,i)=>i%4===0&&v===255&&line[i+1]===255&&line[i+2]===255);
+      const hasText=(y,color)=>{
+        const line=ctx.getImageData(Math.round(32*sx),Math.round(y*sy),Math.round(160*sx),Math.round(16*sy)).data;
+        return line.some((v,i)=>i%4===0&&(v<<16|line[i+1]<<8|line[i+2])===color);
+      };
+      return [72,96,204,248].every(y=>hasText(y,0xffffff))&&
+        [114,140,158,176].every(y=>hasText(y,0xdfc9e9));
     },{timeout:5000});
   } else if(practiceSeed||bossGauge) {
     await press('Escape'); // Story shot select → title.
@@ -86,7 +92,15 @@ try {
     await press('Enter');
     await wait(1050);
     await press('Enter'); // Shot → stage list.
+    if(marisaClock){
+      await wait(250);
+      await press('ArrowDown',100); // Stage 2 → Stage 3.
+      await wait(100);
+      await press('ArrowDown',100); // Stage 3 → Stage 4.
+      await wait(100);
+    }
     await press('Enter'); // Stage → practice setup.
+    if(marisaClock)await wait(200);
     if(bossGauge){
       await press('Enter'); // Start at the selected stage's boss.
       await frame.waitForFunction(()=>{
@@ -102,6 +116,23 @@ try {
       },{timeout:15000,polling:150}).catch(async cause=>{
         throw Error(`Solo practice boss HUD not detected: ${await frame.title()}`,{cause});
       });
+      if(marisaClock){
+        await frame.waitForFunction(()=>{
+          const canvas=document.querySelector('canvas');
+          const ctx=canvas.getContext('2d'),sx=canvas.width/640,sy=canvas.height/400;
+          const row=(x,y,w,h)=>ctx.getImageData(Math.round(x*sx),Math.round(y*sy),Math.round(w*sx),Math.round(h*sy)).data;
+          const orbBars=row(448,180,128,22);
+          if(!orbBars.some((v,i)=>i%4===0&&v===0&&orbBars[i+1]===216&&orbBars[i+2]===255))return false;
+          const note=row(448,143,128,20);
+          if(!note.some((v,i)=>i%4===0&&v===255&&note[i+1]===224&&note[i+2]===151))return false;
+          const timer=row(546,112,30,10);
+          const ink=timer.filter((v,i)=>i%4===0).join(',');
+          if(!timer.some((v,i)=>i%4===0&&v===180&&timer[i+1]===220&&timer[i+2]===255))return false;
+          if(window.firstMarisaClock===undefined)window.firstMarisaClock=ink;
+          return ink!==window.firstMarisaClock;
+        },{timeout:12000,polling:100});
+        console.log('PASS Eagler TH02 Stage 4 orb notice and ticking countdown');
+      }
     }else{
       await press('ArrowUp');
       await press('ArrowUp'); // Start → New Seed → Enter Seed.
@@ -168,7 +199,7 @@ try {
   }
   assert.deepEqual((await events()).filter(e=>e.event==='error'),[]);
   assert.deepEqual(errors,[]);
-  console.log(about?'PASS Eagler TH02 renders the unofficial-project line on About':
+  console.log(about?'PASS Eagler TH02 renders the disclaimer and credits on About':
     bossGauge?'PASS Eagler TH02 solo Practice shows the full-width cyan bar and clock':
     practiceSeed?'PASS Eagler TH02 fixed-seed practice launch':'PASS Eagler TH02 install, SoEW Native title, Stage 1, audio and return');
 } finally {

@@ -13,6 +13,7 @@ struct EncounterProtection {
     EncounterProtectionKind kind=EncounterProtectionKind::None;
     // Updates through the one that lifts this restriction; zero means no countdown.
     unsigned frames=0,round=0;
+    bool orbs_safe_to_break=false;
 };
 struct EncounterTargetInfo {
     const wchar_t *label=L"";
@@ -62,13 +63,6 @@ inline std::wstring_view encounter_info_text(std::wstring_view key,Language lang
     for(const auto& e:labels)if(e.key==key)return localized(language,e.ja,e.key,e.hans,e.hant);
     return key;
 }
-inline std::wstring_view encounter_timer_unit(std::string_view key,Language language){
-    if(key=="rounds")return localized(language,L"ラウンド",L"rounds",L"轮",L"輪");
-    if(key=="cycles")return localized(language,L"周期",L"cycles",L"周期",L"週期");
-    if(key=="progress")return localized(language,L"進行",L"progress",L"进度",L"進度");
-    return localized(language,L"フレーム",L"logic",L"逻辑帧",L"邏輯幀");
-}
-
 inline std::array<std::wstring,2> encounter_protection_lines(EncounterProtection p,Language language){
     using Kind=EncounterProtectionKind;
     const auto tr=[&](const wchar_t *ja,const wchar_t *en,const wchar_t *hans,const wchar_t *hant){
@@ -91,11 +85,27 @@ inline std::array<std::wstring,2> encounter_protection_lines(EncounterProtection
         tr(L"北の魔石の開放待ち",L"Wait for north to open",L"等待北魔石开启",L"等待北魔石開啟")};
     case Kind::NorthDamageCap:return {tr(L"ダメージ上限：500",L"Damage cap: 500",L"伤害上限：500",L"傷害上限：500"),
         tr(L"第１攻撃の終了待ち",L"Wait for attacks to end",L"等待首轮攻击结束",L"等待首輪攻擊結束")};
-    case Kind::MarisaOrbs:return {locked,tr(L"先に天儀を撃破",L"Defeat the orbs first",L"先击破天仪",L"先擊破天儀")};
+    case Kind::MarisaOrbs:
+        if(p.orbs_safe_to_break)return {locked,tr(L"天儀を撃破してよい",L"Safe to break the orbs",L"现在可击破天仪",L"現在可擊破天儀")};
+        return {tr(L"天儀の攻撃 ",L"Shield attacks ",L"护盾招式 ",L"護盾招式 ")+std::to_wstring(p.round)+L"/"+
+            std::to_wstring(MarisaCore::shielded_attack_count),
+            tr(L"４回目まで１つ残す",L"Keep orb until 4th ends",L"留天仪到第4招结束",L"留天儀到第4招結束")};
     case Kind::MarisaOrbRetirement:return {locked,tr(L"天儀の退場待ち",L"Wait for orbs to fade",L"等待护卫退场",L"等待護衛退場")};
     case Kind::MarisaRound:case Kind::MimaRound:return {locked,round()};
     }
     return {};
+}
+
+inline unsigned north_stone_timeout(const StonesCore &boss){
+    // NorthFinalAttacks starts with one laser sweep, then loops attacks 1–5.
+    constexpr std::array end_frames{200u,64u,102u,111u,131u,120u};
+    const unsigned minimum=2001-std::min(2000u,boss.elapsed);
+    unsigned attack=boss.north_attack,frames=end_frames[attack]-boss.phase_frame;
+    while(frames<minimum){
+        attack=attack==5?1:attack+1;
+        frames+=end_frames[attack];
+    }
+    return frames;
 }
 
 inline EncounterInfo encounter_info(const EncounterScene &s){
@@ -117,7 +127,7 @@ inline EncounterInfo encounter_info(const EncounterScene &s){
         out.phase_cuts={total-second,total-first};out.phase_cut_count=2;
     };
     const auto timer=[&](unsigned current,unsigned limit,const char *unit,bool wait_at_limit=false){
-        if(out.dying)return;
+        if(out.dying||(!s.preparation_only&&s.practice_assist.enabled(PracticeTool::Timeout)&&out.kind!=EncounterInfoKind::ExtraMidboss))return;
         out.has_timeout=true;out.timeout=remaining(current,limit);out.timeout_unit=unit;
         out.timeout_pending=wait_at_limit&&!out.timeout;
     };
@@ -170,7 +180,7 @@ inline EncounterInfo encounter_info(const EncounterScene &s){
                 out.protection={EncounterProtectionKind::NorthDamageCap};
                 if(a.damage==500)out.status=L"DAMAGE CAPPED";
             }
-            if(b.phase==Phase::NorthFinalAttacks)timer(b.elapsed,2001,"logic",true);
+            if(b.phase==Phase::NorthFinalAttacks)timer(0,north_stone_timeout(b),"logic");
             break;
         }
         }
@@ -195,10 +205,13 @@ inline EncounterInfo encounter_info(const EncounterScene &s){
         else if(!b.body_damage_enabled)out.status=L"BODY DAMAGE LOCKED";
         // The next body query samples all active orbs before any orb damage
         // or retirement that tick. Even a dying orb shields until removed.
-        if(live_shields)out.protection={EncounterProtectionKind::MarisaOrbs};
+        // ReC98 loc_1C086: after the fourth shield attack the selector can
+        // only choose OrbRelease or an exposed attack, not another shield attack.
+        if(live_shields)out.protection={EncounterProtectionKind::MarisaOrbs,0,b.shielded_selections,
+            b.phase==Phase::OrbRelease||(b.phase==Phase::AttackWait&&b.shielded_selections==MarisaCore::shielded_attack_count)};
         else if(shields)out.protection={EncounterProtectionKind::MarisaOrbRetirement};
         else if(!b.body_damage_enabled)out.protection={EncounterProtectionKind::MarisaRound,0,2};
-        timer(b.rounds,7,"rounds");
+        timer(b.rounds,MarisaCore::round_limit,"rounds");
         return out;
     }
     if(s.mima_enabled&&!s.mima.finished){
@@ -299,7 +312,7 @@ inline EncounterInfo encounter_info(const EncounterScene &s){
         // required even after the damage target has been reached.
         out.pending=!out.dying&&!out.health;
         if(b.flying_in&&!out.dying)out.status=L"APPROACH";
-        timer(b.cycles,12,"cycles",true);return out;
+        timer(b.flying_in&&b.phase_frame==0?0:b.cycles,12,"cycles");return out;
     }
     if(s.extra_road_enabled&&s.extra_midboss.active){
         start(EncounterInfoKind::ExtraMidboss,L"EX TERRAIN");
@@ -348,53 +361,118 @@ inline EncounterHealthBar encounter_health_bar(const EncounterScene &scene,const
     }
 }
 
-inline std::wstring encounter_countdown(const EncounterScene &scene,const EncounterInfo &info){
-    if(!info.has_timeout)return L"--";
-    unsigned frames=info.timeout;
-    bool estimated=true;
+struct EncounterClock {
+    unsigned frames;
+    bool estimated=false;
+};
+
+inline EncounterClock marisa_timeout(const MarisaCore &boss,unsigned rounds_left){
+    using Core=MarisaCore;
+    using Phase=Core::Phase;
+    constexpr unsigned shielded_nominal=339,exposed_nominal=151;
+    constexpr unsigned release_length=Core::release_frame-1+Core::orb_retirement_frames;
+    const unsigned f=boss.phase_frame;
+    unsigned fade=0;
+    bool live=false;
+    for(const auto &orb:boss.orbs)if(orb.active){
+        if(orb.dying)fade=std::max(fade,Core::orb_retirement_frames-orb.death_frame);
+        else live=true;
+    }
+    unsigned frames=Core::attack_wait;
+    switch(boss.phase){
+    case Phase::Opening:frames+=Core::opening_length-f+Core::deployment_end+Core::shielded_end[0];live=true;break;
+    case Phase::DeployOrbs:
+        frames+=Core::deployment_end-f+(boss.rounds==0?Core::shielded_end[0]:0);
+        live|=f<130;
+        break;
+    case Phase::ArcFlight:frames+=Core::shielded_end[0]-f;break;
+    case Phase::AttackWait:frames-=f;break;
+    case Phase::ExposedAttack:frames+=Core::exposed_end[unsigned(-boss.pending_attack-1)]-f;break;
+    case Phase::ExpandingOrbs:frames+=Core::shielded_end[1]-f;break;
+    case Phase::OrbVolley:frames+=Core::shielded_end[2]-f;break;
+    case Phase::StarRain:frames+=Core::shielded_end[3]-f;break;
+    case Phase::SplitOrbits:frames+=Core::shielded_end[4]-f;break;
+    case Phase::OrbRelease:
+        frames+=live?release_length-(f-1):fade+1;
+        live=false;fade=0;
+        break;
+    }
+    bool estimated=rounds_left>1;
+    // Forecast without further damage. A dying orb shields through its final
+    // retirement update, because the selector samples it before retirement.
+    for(unsigned n=boss.shielded_selections;n<Core::shielded_attack_count&&(live||frames<=fade);++n){
+        frames+=shielded_nominal-1+Core::attack_wait;
+        estimated=true;
+    }
+    if(live||frames<=fade)frames+=live?release_length+Core::attack_wait:fade-frames+1+Core::attack_wait;
+    const unsigned exposed_left=Core::exposed_attack_count-boss.exposed_selections;
+    frames+=exposed_left*(exposed_nominal-1+Core::attack_wait);
+    estimated|=exposed_left!=0;
+    constexpr unsigned full_round=Core::deployment_end-1+Core::attack_wait+
+        Core::shielded_attack_count*(shielded_nominal-1+Core::attack_wait)+release_length+Core::attack_wait+
+        Core::exposed_attack_count*(exposed_nominal-1+Core::attack_wait);
+    frames+=(rounds_left-1)*full_round;
+    return {frames,estimated};
+}
+
+inline EncounterClock encounter_clock(const EncounterScene &scene,const EncounterInfo &info){
+    if(!info.has_timeout)return {0};
     switch(info.kind){
     case EncounterInfoKind::Midboss1:{
         const auto &scroll=scene.runtime.scroll;
-        frames=info.timeout*8*scroll.interval/scroll.speed;
-        break;
+        const unsigned first=(scroll.interval-scroll.cycle%scroll.interval)%scroll.interval;
+        const unsigned steps=info.timeout?(info.timeout*8-(8-unsigned(scroll.line)%8)%8)/scroll.speed:0;
+        // The boss checks progress before this update's scroll commit.
+        const unsigned frames=steps?first+(steps-1)*scroll.interval+2:1;
+        return {std::max(frames,18u-std::min(18u,unsigned(scene.midboss.phase_frame))),true};
     }
     case EncounterInfoKind::Midboss3:{
         // Cycles advance at frame 128; 576 rolls the attack back to 127.
         const unsigned elapsed=scene.midboss3.phase_frame;
-        if(info.timeout)frames=(info.timeout-1)*449+(elapsed<128?128-elapsed:577-elapsed);
-        estimated=false;
-        break;
+        return {info.timeout?(info.timeout-1)*449+(elapsed<128?128-elapsed:577-elapsed):0};
     }
-    case EncounterInfoKind::Midboss4:
-        // A lap runs from frame 2 to 114, then retirement waits for the edge.
-        frames=info.timeout*112;
-        break;
-    case EncounterInfoKind::Marisa:
-        // A nominal round includes orb deployment, two shielded attacks and
-        // two exposed attacks. The time spent shielded depends on orb damage.
-        frames=info.timeout*1100;
-        break;
+    case EncounterInfoKind::Midboss4:{
+        const auto &b=scene.midboss4;
+        // Twelve passes return to the starting side. The exit takes 48
+        // stationary ticks plus another 80 ticks to fly to the far edge.
+        if(b.flying_in)return {32-b.phase_frame+12*112+128};
+        if(info.timeout)return {114-b.phase_frame+(info.timeout-1)*112+128};
+        const int pixels=b.direction<0?b.x:384-b.x;
+        return {50-std::min(50u,b.phase_frame)+unsigned(std::max(1,(pixels+3)/4))};
+    }
+    case EncounterInfoKind::Marisa:return marisa_timeout(scene.marisa,info.timeout);
     case EncounterInfoKind::Mima:{
         const auto &b=scene.mima;
-        // Follow the original attack rotation with nominal lengths for attacks
-        // that can finish early based on movement or screen position.
-        constexpr std::array lengths={234u,264u,350u,241u,227u,214u,301u,161u,309u,150u,200u,190u};
+        // Orbit can leave the screen earlier; use its cap instead of a
+        // nominal cutoff that would freeze the clock before the attack ends.
+        constexpr std::array lengths={235u,264u,501u,241u,227u,217u,301u,161u,309u,150u,200u,190u};
         const auto &attacks=b.phase==MimaCore::Phase::First?MimaCore::first:b.phase==MimaCore::Phase::Second?MimaCore::second:
             b.phase==MimaCore::Phase::Third?MimaCore::third:MimaCore::final;
-        frames=0;
+        EncounterClock clock{0};
         const bool mixed=b.phase==MimaCore::Phase::Mixed;
         // The round counter reaches its gate before the final attack finishes.
         for(unsigned i=0;i<=info.timeout;++i){
             const auto attack=mixed?MimaCore::mixed[(b.selection+i)%8]:attacks[(b.selection+i)%attacks.size()];
-            const unsigned length=attack==MimaCore::Attack::Spiral&&mixed?401:lengths[unsigned(attack)];
-            frames+=i?length:length-std::min(length,b.phase_frame);
+            using Attack=MimaCore::Attack;
+            const unsigned length=mixed&&attack==Attack::Spiral?401:mixed&&attack==Attack::Orbit?264:lengths[unsigned(attack)];
+            clock.estimated|=attack==Attack::Sweep||attack==Attack::Beam||attack==Attack::Orbit||attack==Attack::BurstOrbit;
+            clock.frames+=i?length:length-std::min(length-1,b.phase_frame);
         }
-        break;
+        return clock;
     }
-    default:estimated=false;break; // Remaining unit is logic frames.
+    default:return {info.timeout}; // Remaining unit is logic frames.
     }
-    const auto seconds=(std::uint64_t(frames)*pc98_refresh_den+pc98_refresh_num-1)/pc98_refresh_num;
-    return (estimated?L"~":L"")+std::to_wstring(seconds);
+}
+
+inline std::wstring encounter_countdown(EncounterClock clock){
+    // A hit-dependent departure can outlast its earliest possible timeout.
+    if(!clock.frames)return L"--";
+    const auto seconds=(std::uint64_t(clock.frames)*pc98_refresh_den+pc98_refresh_num-1)/pc98_refresh_num;
+    return (clock.estimated?L"~":L"")+std::to_wstring(seconds);
+}
+
+inline std::wstring encounter_countdown(const EncounterScene &scene,const EncounterInfo &info){
+    return encounter_countdown(encounter_clock(scene,info));
 }
 
 }

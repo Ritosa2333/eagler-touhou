@@ -23,6 +23,11 @@ struct MarisaCore {
     };
     std::array<Orb,4> orbs{};
     static constexpr unsigned opening_length=130;
+    static constexpr unsigned deployment_end=154,attack_wait=31,shielded_attack_count=4,
+        exposed_attack_count=2,round_limit=7,release_frame=110,orb_retirement_frames=48;
+    // End frames for dispatch IDs 1…5 and -1…-3, respectively.
+    static constexpr std::array shielded_end{266u,510u,300u,200u,420u};
+    static constexpr std::array exposed_end{130u,193u,130u};
     struct Hooks : Midboss1Core::Hooks {
         // Orb damage uses the original Bomb mask 3 (separate from body damage).
         std::function<unsigned(int,int,int,int)> orb_damage;
@@ -66,7 +71,7 @@ struct MarisaCore {
             else if(phase==Phase::SplitOrbits||phase==Phase::OrbRelease)advance_split_or_release(h,player,exposed,pose);
             else{
                 advance_approach(h,player);
-                if(phase_frame>30)select_attack(h,exposed);
+                if(phase_frame>=attack_wait)select_attack(h,exposed);
             }
             update_body(h,player,exposed);
             update_orbs(h,player);
@@ -77,7 +82,7 @@ struct MarisaCore {
             if(phase_frame==100)pose(130,9);
             if(phase_frame==130){
                 for(unsigned i=0;i<orbs.size();++i)orbs[i]={left+32,top+32,8,std::uint8_t(i*64),true};
-            }else if(phase_frame==154){
+            }else if(phase_frame==deployment_end){
                 pattern=128;phase_frame=0;phase=rounds==0?Phase::ArcFlight:Phase::AttackWait;
             }else if(phase_frame>130){
                 for(auto &orb:orbs)orb.radius+=2;
@@ -131,18 +136,18 @@ struct MarisaCore {
             if(orb.active&&!orb.dying)pellet(orb.x+12,orb.y+12,0x19);
             if(exposed&&i==0)pellet(left+64,top+16,0x0a);
         }
-        if(phase_frame==266){phase_frame=0;phase=Phase::AttackWait;}
+        if(phase_frame==shielded_end[0]){phase_frame=0;phase=Phase::AttackWait;}
     }
     // ASM 25175–25237: the waiting state resets the next attack timer to 1.
     void select_attack(const Hooks &h,bool exposed){
         if(!exposed){
-            if(shielded_selections>=4)pending_attack=6;
+            if(shielded_selections>=shielded_attack_count)pending_attack=6;
             else{pending_attack=int(random_byte(h)%5)+1;++shielded_selections;}
-        }else if(exposed_selections>=2){
+        }else if(exposed_selections>=exposed_attack_count){
             shielded_selections=exposed_selections=0;pending_attack=0;
             ++rounds;
             if(rounds>=2)body_damage_enabled=true;
-            if(!h.lock_timeout&&rounds>=7)defeated=true;
+            if(!h.lock_timeout&&rounds>=round_limit)defeated=true;
         }else{
             ++exposed_selections;pending_attack=-1-int(random_byte(h)%3);
         }
@@ -162,7 +167,7 @@ struct MarisaCore {
         // ASM 24682–24900. Preserve the eight-/sixteen-bit RNG call order.
         const auto f=phase_frame;
         if(f==50){pose(130,9);if(h.drift)h.drift(unsigned(std::uint16_t(rain_side)),0,64);rain_side=-rain_side;}
-        if(f==50||f==70||f==80||f==200){
+        if(f==50||f==70||f==80||f==shielded_end[3]){
             const int step=f==70?3:f==80?4:2;
             for(unsigned i=0;i<orbs.size();++i)orbs[i].angular_step=i%2?-step:step;
         }
@@ -171,8 +176,8 @@ struct MarisaCore {
         if(f==162)pattern=134;
         if(f==170)pattern=136;
         if(f==180)pattern=128;
-        if(f==200)phase_frame=0;
-        if(f>70&&f<200&&f%14==0){
+        if(f==shielded_end[3])phase_frame=0;
+        if(f>70&&f<shielded_end[3]&&f%14==0){
             if(h.sound)h.sound(10);
             const auto star=[&](int x,int y,unsigned angle,unsigned group,unsigned speed){
                 if(!h.bullet)return;
@@ -211,7 +216,7 @@ struct MarisaCore {
             if(f==10)for(auto &orb:orbs)orb.angular_step=-3;
             if(exposed){phase_frame=0;pattern=128;}
             else if(f==50){for(auto &orb:orbs)orb.angular_step=-4;pose(130,9);}
-            else if(f==100||f==110){
+            else if(f==100||f==release_frame){
                 if(h.sound)h.sound(3);
                 for(auto &orb:orbs)if(orb.active&&!orb.dying){
                     if(f==100)for(int a=-64;a<64;a+=16)fire(orb.x+12,orb.y+12,orb.angle+a,70);
@@ -234,7 +239,7 @@ struct MarisaCore {
                 if(f==182)pattern=134;
                 if(f==190)pattern=136;
                 if(f==200)pattern=128;
-                if(f==420){phase_frame=0;pattern=128;for(unsigned i=0;i<4;++i)orbs[i].angular_step=i%2?-2:2;}
+                if(f==shielded_end[4]){phase_frame=0;pattern=128;for(unsigned i=0;i<4;++i)orbs[i].angular_step=i%2?-2:2;}
                 if(exposed){pattern=130;angle=std::uint8_t(int(angle)-24+int(player.rank));fire(left+64,top+16,angle,60,true);}
                 else if(f>=150&&f<250&&f%4==0){
                     angle=std::uint8_t(angle+3);if(h.sound)h.sound(10);
@@ -258,7 +263,7 @@ struct MarisaCore {
         if(f==162)pattern=134;
         if(f==170)pattern=136;
         if(f==180)pattern=128;
-        if(f==300){phase_frame=0;for(auto &orb:orbs)orb.angular_step=-orb.angular_step;}
+        if(f==shielded_end[2]){phase_frame=0;for(auto &orb:orbs)orb.angular_step=-orb.angular_step;}
         if(phase_frame>70&&f%5==0){
             if(h.sound)h.sound(10);
             const auto fire=[&](int x,int y,unsigned a,unsigned group,unsigned speed){
@@ -281,7 +286,7 @@ struct MarisaCore {
         // ASM 24003–24182: expand and contract the orbit, with a short
         // shielded sweep and a sustained spiral after the shield is gone.
         const auto f=phase_frame;
-        if(f>=50&&f<510){
+        if(f>=50&&f<shielded_end[1]){
             for(auto &orb:orbs)orb.radius+=f<280?1:-1;
             if(f==220){pose(130,9);angle=0;}
             if(f==250)pattern=130;
@@ -297,7 +302,7 @@ struct MarisaCore {
                     r.angle=angle;r.group=0x20;r.speed=exposed?60:50;h.bullet(r);
                 }
             }
-        }else if(f>=510){phase_frame=0;pattern=128;}
+        }else if(f>=shielded_end[1]){phase_frame=0;pattern=128;}
         advance_approach(h,player);
         if(phase_frame==0)phase=Phase::AttackWait;
     }
@@ -318,7 +323,7 @@ struct MarisaCore {
                 fire(64,16,0,player.rank==0?0x18:0x17,54);
                 fire(64,16,0,player.rank==0?0x12:0x11,60);
             }
-            if(f>192){pattern=128;phase_frame=0;}
+            if(f>=exposed_end[1]){pattern=128;phase_frame=0;}
         }else{
             if(f==50){
                 pose(130,9);
@@ -331,7 +336,7 @@ struct MarisaCore {
             if(f==100)pose(132,10);
             if(f==108)pose(134,10);
             if(f==116)pose(136,10);
-            if(f==130){pattern=128;phase_frame=0;}
+            if(f==exposed_end[0]){pattern=128;phase_frame=0;}
             else if(pending_attack==-3&&f>=100&&f%4==0){
                 fire(44,64,angle,0x84,40,85);angle=std::uint8_t(angle+43);
             }else if(pending_attack==-1&&f>100&&f%3==0){
@@ -418,7 +423,7 @@ struct MarisaCore {
         for(auto &orb:orbs)if(orb.dying){
             if(h.spark)h.spark({orb.x+16,orb.y+16,60,2,false});
             orb.death_pattern=10+orb.death_frame/6;
-            if(++orb.death_frame==48){orb.active=orb.dying=false;orb.hits=orb.death_frame=0;}
+            if(++orb.death_frame==orb_retirement_frames){orb.active=orb.dying=false;orb.hits=orb.death_frame=0;}
         }
         // ASM 23722–23782 updates only live orbs, after collision/death.
         for(auto &orb:orbs)if(orb.active&&!orb.dying){

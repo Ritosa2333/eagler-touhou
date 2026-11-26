@@ -92,13 +92,13 @@ test('keyboard samples quick Z edges and retains the other Shift key', () => {
     assert.deepEqual(input.sample(), [0, false]);
 });
 
-test('About has the original bitmap glyphs in Simplified and Traditional Chinese', () => {
+test('About has the bitmap glyphs for the disclaimer and credits in all languages', () => {
     const [out] = process.argv.slice(2);
     const atlas = glyphCells(Uint8Array.from(readFileSync(resolve(out,'soew-glyphs.bin'))).buffer);
     for (const [face, credits] of [
-        [0,'これは非公式作品です。 This is an unofficial project.'],
-        [1,'这是非官方作品。 基于 ReC98 实现移植 查错及优化 感谢游玩！ 也谢谢你看到这里。 Esc：返回'],
-        [2,'這是非官方作品。 基於 ReC98 實作移植 查錯及最佳化 感謝遊玩！ 也謝謝你看到這裡。 Esc：返回'],
+        [0,'東方Projectの非公式二次創作です。 原作：ZUN © ZUN / 上海アリス幻樂団 原作は正規に入手したものをご使用ください。原作素材の無断転載・再配布はご遠慮ください。 ReC98の解析に基づく移植 An unofficial Touhou fan project. Original game by ZUN © ZUN / Team Shanghai Alice Please use a legally obtained copy. Do not redistribute game assets without permission. Port based on ReC98 research'],
+        [1,'这是东方 Project 的非官方二次创作。 原作：ZUN © ZUN / 上海爱丽丝幻乐团 请使用合法取得的原作。 未经授权，请勿转载或再分发原作资源。 基于 ReC98 的研究实现移植 查错及优化 感谢游玩！ 也谢谢你看到这里。 Esc：返回'],
+        [2,'這是東方 Project 的非官方二次創作。 原作：ZUN © ZUN / 上海愛麗絲幻樂團 請使用合法取得的原作。 未經授權，請勿轉載或再散布原作資源。 基於 ReC98 的研究實作移植 查錯及最佳化 感謝遊玩！ 也謝謝你看到這裡。 Esc：返回'],
     ]) {
         const missing = [...new Set(credits)].filter(c => !atlas.has(c.codePointAt(0),face));
         assert.deepEqual(missing,[], 'Refresh the Win32 glyph atlas with web/stage-glyphs.mjs');

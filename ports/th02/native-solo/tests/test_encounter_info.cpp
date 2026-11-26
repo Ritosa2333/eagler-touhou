@@ -100,7 +100,7 @@ void third_stage(){
     s.stones.phase=Phase::NorthSecondAttacks;s.stones.stones[4].flag=Flag::Dormant;x=encounter_info(s);
     check(x.phase==3&&x.health==430&&std::wstring_view(x.status)==L"SEALED"&&!x.has_timeout,"north stone retains damage while sealed");
     s.stones.phase=Phase::NorthFinalAttacks;s.stones.stones[4].flag=Flag::Active;s.stones.elapsed=2001;x=encounter_info(s);
-    check(x.phase==4&&x.has_timeout&&x.timeout==0&&x.timeout_pending&&!x.dying,"north timeout gates at a later attack boundary");
+    check(x.phase==4&&x.has_timeout&&x.timeout==200&&!x.timeout_pending&&!x.dying,"north countdown includes the wait for the attack boundary");
     s.stones.phase=Phase::NorthDeath;x=encounter_info(s);
     check(x.dying&&!x.health&&!x.has_timeout,"north timeout retirement zeros health");
 }
@@ -192,9 +192,10 @@ void marisa_damage_protection(){
 
 void fourth_and_fifth_stage(){
     EncounterScene s;
-    s.stage=3;s.midboss4.active=true;s.midboss4.entries=1;s.midboss4.damage_taken=400;s.midboss4.cycles=12;
+    s.stage=3;s.midboss4.active=true;s.midboss4.flying_in=false;s.midboss4.phase_frame=2;
+    s.midboss4.entries=1;s.midboss4.damage_taken=400;s.midboss4.cycles=12;
     auto x=encounter_info(s);
-    check(x.kind==Kind::Midboss4&&std::wstring_view(x.label)==L"MIDBOSS 4A"&&x.pending&&x.timeout_pending&&!x.dying,"midboss4 damage/departure gates are not immediate");
+    check(x.kind==Kind::Midboss4&&std::wstring_view(x.label)==L"MIDBOSS 4A"&&x.pending&&!x.timeout_pending&&!x.dying,"midboss4 countdown continues during departure");
     s.midboss4.entries=2;s.midboss4.damage_taken=9;s.midboss4.cycles=2;x=encounter_info(s);
     check(std::wstring_view(x.label)==L"MIDBOSS 4B"&&x.health==391&&x.timeout==10,"midboss4 second appearance resets HP and cycles");
     s.midboss4.active=false;s.marisa_enabled=true;x=encounter_info(s);
@@ -290,8 +291,8 @@ void protection_copy(){
         encounter_protection_lines(timed,zh)[1]==L"剩余 1 逻辑帧"&&
         encounter_protection_lines(timed,tw)[1]==L"剩餘 1 邏輯幀","one-frame count is localized in all four languages");
     const auto shield=EncounterProtection{Protection::MarisaOrbs};
-    check(encounter_protection_lines(shield,zh)[1]==L"先击破天仪"&&
-        encounter_protection_lines(shield,tw)[1]==L"先擊破天儀","both Chinese variants distinguish Marisa's shield targets from her body");
+    check(encounter_protection_lines(shield,zh)[1]==L"留天仪到第4招结束"&&
+        encounter_protection_lines(shield,tw)[1]==L"留天儀到第4招結束","both Chinese variants describe the orb release rule");
     const auto cap=EncounterProtection{Protection::NorthDamageCap};
     const auto seal=EncounterProtection{Protection::NorthSeal};
     for(auto l:{ja,en,zh,tw})
@@ -394,10 +395,93 @@ void combined_boss_panel(){
     s.midboss.present=false;s.midboss2_enabled=true;s.midboss2.trigger(80);s.midboss2.phase_frame=1489;
     check(clock()==L"2","stage 2 countdown converts exact remaining logic frames");
     s.midboss2.phase_frame=1601;
-    check(clock()==L"0","elapsed frame timer stays at zero during its pending gate");
+    check(clock()==L"--","hit-dependent departure no longer shows a frozen zero");
     s.midboss2.active=false;s.midboss3_enabled=true;s.midboss3.trigger(103);
     s.midboss3.cycles=3;s.midboss3.phase_frame=576-1;
     check(clock()==L"1","stage 3 fixed cycle boundary has exact remaining time");
+}
+
+void ticking_encounter_clocks(){
+    EncounterScene s;
+    const auto frames=[&]{return encounter_clock(s,encounter_info(s)).frames;};
+    const auto check_tick=[&](const auto &update,const auto &alive,const char *message){
+        const unsigned before=frames();
+        update();
+        check(alive()?frames()+1==before:before==1,message);
+    };
+
+    for(unsigned entry=0;entry<2;++entry){
+        s.stage=3;s.midboss4={};s.midboss4.entries=entry;
+        auto &mid=s.midboss4;
+        mid.trigger(Midboss4Core::triggers[entry]);
+        Midboss4Core::Hooks h;
+        h.random8=[](){return 0u;};
+        unsigned page=0;
+        check(frames()==1504,"stage 4 time includes arrival, twelve legs, and exit");
+        for(unsigned step=0;step<1504;++step)check_tick([&]{mid.begin_frame(page);mid.update(page,0,1,h);page^=1;},
+            [&]{return mid.active;},"stage 4 clock stays in step through every leg");
+        check(!mid.active,"both stage 4 midboss visits finish at zero");
+    }
+
+    s.stones_enabled=true;
+    auto &north=s.stones;
+    north.phase=StonesCore::Phase::NorthFinalAttacks;
+    north.stones.back().flag=StonesCore::Flag::Active;
+    StonesCore::Hooks north_hooks;
+    north_hooks.random8=[](){return 0u;};
+    north_hooks.laser=[](int,int,unsigned,unsigned,unsigned){};
+    const unsigned total=frames();
+    for(unsigned step=0;step<total;++step)check_tick([&]{north.update(1,208,336,north_hooks);},
+        [&]{return north.phase==StonesCore::Phase::NorthFinalAttacks;},"north stone clock ticks to the actual attack boundary");
+    check(north.phase==StonesCore::Phase::NorthDeath,"north stone finishes at zero");
+    s.stones_enabled=false;
+
+    s.marisa_enabled=true;
+    auto &marisa=s.marisa;
+    MarisaCore::Hooks mh;
+    mh.random8=[](){return 1u;};mh.random16=mh.random8;
+    unsigned steps=0;
+    while(marisa.shielded_selections<MarisaCore::shielded_attack_count&&++steps<4000)marisa.update(mh);
+    check(marisa.phase==MarisaCore::Phase::ExpandingOrbs&&marisa.shielded_selections==4&&
+        !encounter_info(s).protection.orbs_safe_to_break,"fourth shield selection is still unsafe");
+    check_tick([&]{marisa.update(mh);},[]{return true;},"Marisa clock ticks within a shield attack");
+    const auto shielded=marisa;
+    for(auto &orb:marisa.orbs){orb.dying=true;orb.death_frame=0;}
+    for(unsigned i=0;i<MarisaCore::orb_retirement_frames;++i)marisa.update(mh);
+    unsigned shots=0;
+    mh.bullet=[&](const auto &){++shots;};
+    check(shots==0&&marisa.phase==MarisaCore::Phase::ExpandingOrbs,"early orb retirement leaves the current shield attack running");
+    marisa.update(mh);
+    check(shots==1,"early orb retirement makes the current shield attack fire extra shots");
+    marisa=shielded;
+    while(marisa.phase!=MarisaCore::Phase::AttackWait&&++steps<4000)marisa.update(mh);
+    check(encounter_info(s).protection.orbs_safe_to_break,"orb notice changes as soon as the fourth shield attack ends");
+    while(marisa.phase!=MarisaCore::Phase::OrbRelease&&++steps<4000)marisa.update(mh);
+    auto protection=encounter_info(s).protection;
+    check(protection.orbs_safe_to_break&&protection.round==4,"orb release stays safe after four completed shield attacks");
+    while(marisa.phase_frame<MarisaCore::release_frame)marisa.update(mh);
+    check(encounter_info(s).protection.kind==Protection::MarisaOrbRetirement,"remaining orbs retire on the source's release frame");
+    marisa.rounds=6;
+    for(unsigned i=0;i<48;++i)check_tick([&]{marisa.update(mh);},[]{return true;},"Marisa clock ticks through orb retirement");
+    marisa.phase=MarisaCore::Phase::ExposedAttack;marisa.pending_attack=-2;marisa.phase_frame=100;marisa.exposed_selections=2;
+    check(frames()==124&&!encounter_clock(s,encounter_info(s)).estimated,"the final chosen exposed attack has an exact time");
+    for(unsigned i=0;i<124;++i)check_tick([&]{marisa.update(mh);},[&]{return !marisa.defeated;},"Marisa clock ticks to the final selection");
+    check(marisa.defeated,"Marisa times out at the seventh round boundary");
+    s.marisa_enabled=false;
+
+    s.mima_enabled=true;
+    MimaCore::Hooks mima_hooks;
+    mima_hooks.random8=[](){return 0u;};mima_hooks.bullet=[](const auto &){};
+    s.mima.start_practice_phase(5,mima_hooks);
+    s.mima.rounds=201;s.mima.selection=2;s.mima.phase_frame=130;
+    check(frames()==60&&!encounter_clock(s,encounter_info(s)).estimated,"final Mima uses the remaining part of the selected attack");
+    for(unsigned i=0;i<60;++i)check_tick([&]{s.mima.update(mima_hooks,{});},
+        [&]{return s.mima.phase==MimaCore::Phase::Final;},"final Mima clock ticks to the attack cutoff");
+    s.mima.start_practice_phase(1,mima_hooks);
+    s.mima.selection=2;s.mima.phase_frame=400;
+    check_tick([&]{++s.mima.phase_frame;},[]{return true;},"long Orbit does not freeze after a nominal duration");
+    s.practice_assist.toggle(PracticeTool::Timeout);
+    check(encounter_countdown(s,encounter_info(s))==L"--","practice timeout lock does not display a fictional countdown");
 }
 }
 
@@ -405,7 +489,7 @@ int main(){
     try{
         early_encounters();midboss_damage_protection();third_stage();north_stone_damage_protection();
         fourth_and_fifth_stage();marisa_damage_protection();mima_damage_protection();protection_copy();extra_stage();
-        shared_midboss_panel();combined_boss_panel();
+        shared_midboss_panel();combined_boss_panel();ticking_encounter_clocks();
         std::cout<<"encounter_info_checks="<<checks<<" failures=0\n";
         return 0;
     }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}
