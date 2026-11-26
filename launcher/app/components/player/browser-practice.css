@@ -3,3 +3,4 @@
   visibility:hidden!important;
   pointer-events:none!important;
 }
+#player.th128-frame-touch .touch-direct-surface{pointer-events:none}

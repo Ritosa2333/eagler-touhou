@@ -1366,6 +1366,7 @@
   "help_thpracReplayDesktop": "thpracの練習リプレイには追加の練習パラメーターが含まれます。再生時もthpracを有効にしてください。",
   "help_thpracReplayMobile": "タッチ設定でthpracボタンを有効にし、「チート・詳細設定」をタップしてください。ゲーム内の小さな見出しでパネルを開閉し、チェックボックスで切り替えます。練習リプレイの再生時もthpracを有効にしてください。補助機能を使ったプレイは保存できますが、再生が同期しない場合があります。",
   "help_thpracMobilePanels": "ゲーム内の折りたたみパネルを表示／非表示",
+  "help_th128ThpracTouch": "タッチ設定で thprac ボタンを有効にします。「チート・詳細設定」をタップすると Backspace パネルが開閉します。F1～F7 の項目をタップして切り替え、F12 で詳細設定を開きます。",
   "player_switchLandscape": "横向きに切り替え",
   "player_switchPortrait": "縦向きに切り替え",
   "player_switchOrientationTitle": "画面の向きを切り替え",

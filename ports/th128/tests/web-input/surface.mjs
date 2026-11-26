@@ -18,6 +18,8 @@ export class Surface {
 }
 export function environment(){
  const window=new Surface('window'),document=new Surface('document'),container=new Surface('section'),canvas=new Surface('canvas');
+ window.innerWidth=1280;window.innerHeight=960;
+ document.documentElement=new Surface('html');
  document.hidden=false;document.createElement=name=>new Surface(name);document.defaultView=window;canvas.ownerDocument=document;container.appendChild(canvas);
  window.KeyboardEvent=class {constructor(type,init){this.type=type;Object.assign(this,init);this.defaultPrevented=false;}preventDefault(){this.defaultPrevented=true;}};
  const emit=(target,type,id=1,x=80,y=850,pointerType='touch')=>{const event={type,pointerId:id,clientX:x,clientY:y,pointerType,button:0,preventDefault(){this.defaultPrevented=true;}};target.dispatchEvent(event);return event;};

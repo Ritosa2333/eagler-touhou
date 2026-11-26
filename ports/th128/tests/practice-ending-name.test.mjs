@@ -41,3 +41,10 @@ test('a practice replay from the prior preview loads only with identical resourc
   assert.equal(practiceReplayMatchesRuntime(v123,v124),true);
   assert.equal(practiceReplayMatchesRuntime(v123,{...v124,resourceSHA256:'b'.repeat(64)}),false);
 });
+
+test('the local practice replay carries over to the normal-tools update with the same resources',()=>{
+  const before={coreSHA256:'54e8c73cabdadd627ffd90d0f7566fc8682caf5be0fd7c917d0bb459430f96d9',resourceSHA256:'a'.repeat(64)};
+  const after={...before,coreSHA256:'ee582188cf319c996c17d4abc45bd1cb9efd6dea55fb151337b945e690b9dfce'};
+  assert.equal(practiceReplayMatchesRuntime(before,after),true);
+  assert.equal(practiceReplayMatchesRuntime(before,{...after,resourceSHA256:'b'.repeat(64)}),false);
+});

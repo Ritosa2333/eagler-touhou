@@ -13,8 +13,8 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
  const targets=[pad];
  for(const [action,label,code]of specs){const node=document.createElement('button');node.type='button';node.textContent=label;node.className='web-input-button';
   node.setAttribute('data-web-action',action);node.setAttribute('aria-label',label);node.setAttribute('data-web-code',code);actions.appendChild(node);targets.push(node);}
- // The Launcher owns the visible controls and pointer capture. Keep the
- // fixed-tick input consumer for its messages without mounting a second UI.
+ // The Launcher owns the visible HUD. The full touch input can still receive
+ // canvas gestures inside a managed document.
  layer.appendChild(pad);layer.appendChild(actions);if(!hostedControls)container.appendChild(layer);
  const listeners=[],pointers=new Map(),sources=new Map(),counts=new Map(),physical=new Set(),activeCodes=new Map(),synthetic=new WeakSet();let context=getContext(),disposed=false,muted=false;
  const listen=(node,type,fn)=>{node.addEventListener(type,fn,{passive:false});listeners.push([node,type,fn]);};
@@ -77,7 +77,7 @@ export function mountWebInput({canvas,container=canvas?.parentElement,document=c
  };
  if(typeof getGameContext==='function'){
   pad.remove();actions.remove();
-  fullTouch=mountFullTouch({canvas,container,layer,document,window,input,getGameContext,onTouchMotion,storage,options,onSettingsOpen,viewport,zoomEnabled});
+  fullTouch=mountFullTouch({canvas,container,layer,document,window,input,getGameContext,onTouchMotion,storage,options,onSettingsOpen,viewport,zoomEnabled,hostedControls});
   for(const[name,value]of Object.entries(fullTouch))if(name!=='dispose')input[name]=value;
  }
  return input;

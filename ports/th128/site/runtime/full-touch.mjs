@@ -6,7 +6,7 @@ import{createGameZoomController}from'./game-zoom.mjs';
 import{TOUCH_OPTIONS_KEY,TOUCH_DEFAULTS,touchOptions,touchStorage}from'./touch-options.mjs';
 import{bindFloatingTouchWindow}from'./touch-floating-window.mjs';
 
-export function mountFullTouch({canvas,container,layer,document,window,input,getGameContext,onTouchMotion,storage,options={},onSettingsOpen=()=>{},viewport=canvas,zoomEnabled=true}){
+export function mountFullTouch({canvas,container,layer,document,window,input,getGameContext,onTouchMotion,storage,options={},onSettingsOpen=()=>{},viewport=canvas,zoomEnabled=true,hostedControls=false}){
  const practiceEnabled=options.thpracEnabled!==false;
  const layoutControls=practiceEnabled?touchLayoutControlNames:touchLayoutControlNames.filter(name=>name!=='thpracMenu'&&name!=='thpracTab');
  const source=Symbol('fixed-touch-input'),hotkeys=new Map(),listeners=[],controls={fireEnabled:true,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0};
@@ -27,6 +27,7 @@ export function mountFullTouch({canvas,container,layer,document,window,input,get
  const classes=(node,name,value)=>node.classList?.toggle(name,value);
  layer.className='web-input web-input-full player';
  const direct=create('div','touchDirectSurface','touch-direct-surface'),safe=create('div','touchLayoutSafeZone','touch-layout-safe-zone'),hud=create('nav','touchHud','touch-hud');
+ const contactSurface=hostedControls?document.documentElement:direct;
  const labelButton=(id,cls,name,small,parent=hud)=>{const b=create('button',id,cls,parent);b.type='button';const strong=create('strong',null,null,b,name);if(small)create('small',null,null,b,small);return b;};
  nodes.focus=labelButton('touchFocus','touch-focus','低速','按住 / 切换');nodes.fire=labelButton('touchFire','touch-fire','自动开火','切换');
  nodes.function=labelButton('touchFunction','touch-function touch-fire','Z','蓄力冻结');nodes.bomb=labelButton('touchBomb','touch-bomb','X','完美冻结');
@@ -101,7 +102,7 @@ export function mountFullTouch({canvas,container,layer,document,window,input,get
  const can=()=>!disposed&&settings.touchEnabled&&!editing&&!overlayActive&&!settingsOpen&&!document.hidden;
  const keyState=(codes)=>input.setKeySource(source,codes);
  function clearMotion(){const s=game();if(s?.kind==='game'&&!s.paused&&lastMotion&&lastMotion.generation===s.generation)onTouchMotion?.({mode:0,x:0,y:0,generation:s.generation});lastMotion=null;}
- function cancelTouches(){controller.cancel();layoutGesture=viewportGesture=null;joystick.reset();const active=[...points.keys()];points.clear();for(const id of active){try{if(direct.hasPointerCapture?.(id))direct.releasePointerCapture(id);}catch{}}controls.focusEnabled=false;controls.joystickX=controls.joystickY=0;keyState([]);for(const owner of hotkeys.values())input.clearKeySource(owner);hotkeys.clear();clearMotion();zoom.cancelGesture();}
+ function cancelTouches(){controller.cancel();layoutGesture=viewportGesture=null;joystick.reset();const active=[...points.keys()];points.clear();for(const id of active){try{if(contactSurface.hasPointerCapture?.(id))contactSurface.releasePointerCapture(id);}catch{}}controls.focusEnabled=false;controls.joystickX=controls.joystickY=0;keyState([]);for(const owner of hotkeys.values())input.clearKeySource(owner);hotkeys.clear();clearMotion();zoom.cancelGesture();}
  function configureTouch(value,persist=false){settings=touchOptions(value,settings);controller.configure(settings);if(!settings.touchEnabled)cancelTouches();nodes.joystick.hidden=!settings.touchMovementMode.startsWith('joystick');nodes.restart.hidden=!settings.restartButtonEnabled;nodes.thpracMenu.hidden=!practiceEnabled||!settings.thpracTouchControlsEnabled;nodes.thpracTab.hidden=!practiceEnabled||game()?.trackerAvailable!==true;classes(layer,'touch-enabled',settings.touchEnabled);classes(layer,'touch-joystick-enabled',settings.touchMovementMode.startsWith('joystick'));layer.style.setProperty?.('--touch-control-opacity',String(settings.touchControlOpacity/100));for(const[key,n]of Object.entries(inputs)){if(n.type==='checkbox')n.checked=settings[key];else n.value=String(settings[key]);}if(persist&&storage){storage.setItem(TOUCH_OPTIONS_KEY,JSON.stringify(settings));if(storage.getItem(TOUCH_OPTIONS_KEY)!==JSON.stringify(settings))throw Error('Touch settings readback differs');}applyLayout();zoom.refreshUi();return settings;}
  const codeForBit=new Map([[1,'KeyZ'],[2,'KeyX'],[8,'ShiftLeft'],[16,'ArrowUp'],[32,'ArrowDown'],[64,'ArrowLeft'],[128,'ArrowRight'],[256,'Escape'],[512,'KeyC']]);
  const arrowsHeld=()=>['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].some(code=>input.physicalKeyDown(code));
@@ -116,8 +117,33 @@ export function mountFullTouch({canvas,container,layer,document,window,input,get
   if(s.kind==='game'&&s.ready&&!s.paused){const motion={...(sample.motion??{mode:0,x:0,y:0}),generation:s.generation};onTouchMotion?.(motion);lastMotion=motion;}
   classes(nodes.fire,'is-on',controls.fireEnabled);classes(nodes.focus,'is-on',controller.focused());
  }
- function pointer(event,type){if(!can()||event.pointerType==='mouse')return;const s=game();if(!s)return;const r=canvas.getBoundingClientRect();if(!(r.width>0&&r.height>0))return;event.preventDefault?.();const x=(event.clientX-r.left)*640/r.width,y=(event.clientY-r.top)*480/r.height;if(type==='down'){points.set(event.pointerId,true);try{direct.setPointerCapture(event.pointerId);}catch{}zoom.beginPointer(event);}else if(type==='move')zoom.movePointer(event);else{points.delete(event.pointerId);zoom.endPointer(event);}controller.pointer({type,id:event.pointerId,x,y},s);}
- for(const[type,next]of[['pointerdown','down'],['pointermove','move'],['pointerup','up'],['pointercancel','cancel'],['lostpointercapture','cancel']])listen(direct,type,event=>pointer(event,next));
+ function gamePoint(clientX,clientY){
+  const rect=canvas.getBoundingClientRect(),scale=Math.min(rect.width/640,rect.height/480);
+  if(!(scale>0))return null;
+  // The canvas uses object-fit: contain. Exclude the bars even when zoomed.
+  return{x:(clientX-rect.left-(rect.width-640*scale)/2)/scale,
+   y:(clientY-rect.top-(rect.height-480*scale)/2)/scale};
+ }
+ function pointer(event,type){
+  if(!can()||event.pointerType==='mouse')return;
+  const id=event.pointerId;
+  if(type==='down'){
+   // A contact that starts in a practice control belongs to the browser.
+   if(hostedControls&&(settings.touchMovementMode.startsWith('joystick')||event.target?.closest?.('.thprac-layer')))return;
+  }else if(!points.has(id))return;
+  const s=game(),point=type==='cancel'?{x:0,y:0}:gamePoint(event.clientX,event.clientY);
+  if(!s||!point)return;
+  event.preventDefault?.();
+  if(type==='down'){
+   points.set(id,true);
+   try{contactSurface.setPointerCapture(id);}catch{}
+   zoom.beginPointer(event);
+  }else if(type==='move')zoom.movePointer(event);
+  else{points.delete(id);zoom.endPointer(event);}
+  controller.pointer({type,id,...point},s);
+ }
+ for(const[type,next]of[['pointerdown','down'],['pointermove','move'],['pointerup','up'],['pointercancel','cancel'],['lostpointercapture','cancel']])listen(contactSurface,type,event=>pointer(event,next));
+ if(hostedControls)contactSurface.dataset.th128FrameTouch='true';
  const press=(node,code)=>{const owner=Symbol(code);listen(node,'pointerdown',event=>{if(!can()&&!(code==='Escape'&&overlayActive&&settings.touchEnabled&&!disposed))return;event.preventDefault();if(['Escape','KeyR','F12'].includes(code))cancelTouches();try{node.setPointerCapture(event.pointerId);}catch{}hotkeys.set(node,owner);input.setKeySource(owner,[code]);});const up=()=>{input.clearKeySource(owner);hotkeys.delete(node);};for(const event of ['pointerup','pointercancel','lostpointercapture'])listen(node,event,up);};
  press(nodes.function,'KeyZ');press(nodes.bomb,'KeyX');press(nodes.escape,'Escape');press(nodes.restart,'KeyR');if(practiceEnabled){press(nodes.thpracTab,'Tab');press(mobile,'Backspace');for(const[n,key]of functionNodes)press(n,key);}
  if(practiceEnabled)listen(mobile,'pointerdown',()=>{if(!can())return;menuVisible=!menuVisible;functionKeys.hidden=!menuVisible;mobile.setAttribute('aria-expanded',String(menuVisible));});
@@ -142,6 +168,11 @@ export function mountFullTouch({canvas,container,layer,document,window,input,get
  return{sampleTouch,previewDirectMotion,openTouchSettings(){setSettingsOpen(true);},configureTouch,setOverlayActive(value){overlayActive=value===true;windowsRoot.hidden=overlayActive;cancelTouches();direct.style.pointerEvents=editing||overlayActive?'none':'auto';for(const n of [hud,nodes.joystick,nodes.thpracMenu,utility])n.style.visibility=overlayActive?'hidden':'';},
   syncTouchContext(){const s=game();if(s&&controller.context!==s.key){controller.sync(s);keyState([]);for(const owner of hotkeys.values())input.clearKeySource(owner);hotkeys.clear();clearMotion();lastKey=s.key;}},
   touchControls(value){if(value.thpracMobilePanelsEnabled!==undefined)configureTouch({thpracTouchControlsEnabled:value.thpracMobilePanelsEnabled});if(value.thpracMobilePanelsVisible!==undefined){menuVisible=value.thpracMobilePanelsVisible;functionKeys.hidden=!menuVisible;mobile.setAttribute('aria-expanded',String(menuVisible));}for(const key of Object.keys(controls))if(value[key]!==undefined)controls[key]=value[key];if(value.touchSensitivity!==undefined)configureTouch({touchSensitivity:value.touchSensitivity});},
-  directTouch(value){controller.pointer({id:value.id,type:value.type,x:value.x*640,y:value.y*480},game());},cancelTouch:cancelTouches,beginTouchLayout,endTouchLayout,updateTouchLayout,saveTouchLayout,touchSnapshot:()=>({options:settings,controls:{...controls},layout:layout.getSnapshot(),windows:layout.windowPositions.snapshot(),zoom:zoom.snapshot()}),
-  dispose(){if(disposed)return;cancelTouches();disposed=true;settingsFloat.dispose();editorFloat.dispose();joystick.dispose();zoom.uninstallInputBridge();for(const[node,type,fn,config]of listeners)node.removeEventListener(type,fn,config);windowsRoot.remove();}};
+  directTouch({id,type,x,y}){
+   // Launcher coordinates are normalized to the iframe, including its margins.
+   const point=gamePoint(x*window.innerWidth,y*window.innerHeight),state=game();
+   if(point&&state)controller.pointer({id,type,...point},state);
+  },
+  cancelTouch:cancelTouches,beginTouchLayout,endTouchLayout,updateTouchLayout,saveTouchLayout,touchSnapshot:()=>({options:settings,controls:{...controls},layout:layout.getSnapshot(),windows:layout.windowPositions.snapshot(),zoom:zoom.snapshot()}),
+  dispose(){if(disposed)return;cancelTouches();disposed=true;if(hostedControls)delete contactSurface.dataset.th128FrameTouch;settingsFloat.dispose();editorFloat.dispose();joystick.dispose();zoom.uninstallInputBridge();for(const[node,type,fn,config]of listeners)node.removeEventListener(type,fn,config);windowsRoot.remove();}};
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {bootPlay} from './play-harness.mjs';
+import {bootPlay,functionSource} from './play-harness.mjs';
 test('C and left Ctrl share one rapid-fire press and release; right Ctrl is unbound',()=>{
  for(const code of ['KeyC','ControlLeft']){
   const e=bootPlay();e.key('keydown',code);e.key('keyup',code);
@@ -38,6 +38,19 @@ test('postrun touch confirmation is owned by the actual normal postrun input rou
  e.input.syncContext();
  e.emit(e.button('shot'),'pointerdown',1);e.emit(e.button('shot'),'pointerup',1);
  assert.deepEqual(events,[['down','KeyZ'],['up','KeyZ']]);assert.deepEqual(e.receipts,[]);assert.equal(e.state.pressed.size,0);e.input.dispose();
+});
+test('the result screen consumes a touch swipe and tap before stepping the name menu',async()=>{
+ const e=bootPlay(),pending=[],frames=[];
+ e.state.normalPostrun={phase:'active',input:{down:code=>pending.push(code),up(){}},async step(){frames.push(pending.splice(0));}};
+ const advance=new Function('state','async '+functionSource('advanceNormalPostrun')+';return advanceNormalPostrun;')(e.state);
+ try{
+  e.emit(e.pad,'pointerdown',1,100,800);e.emit(e.pad,'pointermove',1,170,800);e.emit(e.pad,'pointerup',1,170,800);
+  await advance();
+  e.emit(e.pad,'pointerdown',2,170,800);e.emit(e.pad,'pointerup',2,170,800);
+  await advance();
+  assert.deepEqual(frames,[['ArrowRight'],['KeyZ']]);
+  assert.deepEqual(e.receipts,[]);
+ }finally{e.input.dispose();}
 });
 test('pause context cancels a held touch shot through the existing pause keyup owner',()=>{
  const e=bootPlay();e.emit(e.button('shot'),'pointerdown',1);e.emit(e.button('pause'),'pointerdown',2);e.input.syncContext();

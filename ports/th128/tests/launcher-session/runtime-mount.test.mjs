@@ -21,6 +21,11 @@ test('the shipped HTML loads its CSS and bootstrap from the selected Runtime dir
  }
 });
 
+test('the shipped HTML keeps its pre-bootstrap game and placeholder hidden',()=>{
+ const html=readFileSync(new URL('play.html',root),'utf8');
+ assert.match(html.match(/<main\b[^>]*>/)?.[0]??'',/\shidden\b/);
+});
+
 test('the local manifest follows the Runtime mount while asset requests stay with the package owner',async()=>{
  const originalLocation=globalThis.location,originalFetch=globalThis.fetch;
  const network=[],owned=[];

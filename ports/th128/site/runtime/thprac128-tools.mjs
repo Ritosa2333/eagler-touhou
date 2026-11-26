@@ -41,16 +41,17 @@ export function installThprac128ToolPlayback(module,events,generation){
  const bytes=new Uint8Array(events.length*8),view=new DataView(bytes.buffer);for(const[row,[frame,mask]]of events.entries()){view.setUint32(row*8,frame,true);view.setUint32(row*8+4,mask,true);}
  const p=bytes.length?module._malloc(bytes.length):0;try{if(bytes.length)module.HEAPU8.set(bytes,p);if(module._th128_world_thprac_tools_playback(p,bytes.length,generation)!==1)throw new Error(module.UTF8ToString(module._th128_world_error())||'Native practice tool playback rejected');}finally{if(p)module._free(p);}
 }
-export function createThprac128Tools(module,session,{isCurrent=()=>true,playback=false,history,initial}={}){
- const receipt=readThprac128Native(module,session);if(['_th128_world_thprac_tools_set','_th128_world_thprac_tools_state'].some(k=>typeof module[k]!=='function'))throw new Error('Actual TH128 practice tools native ABI missing');
+export function createThprac128Tools(module,session,{isCurrent=()=>true,playback=false,history,initial,generation}={}){
+ if(session)generation=readThprac128Native(module,session).generation;
+ if(!Number.isSafeInteger(generation)||generation<1||['_th128_world_thprac_tools_set','_th128_world_thprac_tools_state'].some(k=>typeof module[k]!=='function'))throw new Error('Actual TH128 practice tools native owner missing');
  let closed=false,speed=validateThprac128Speed(),speeds=[],saved=history?validateThprac128ToolHistory(history):null;
  const current=()=>{if(closed||!isCurrent())throw new DOMException('Practice tools owner closed','AbortError');};
- const snapshot=()=>{current();const s=JSON.parse(module.UTF8ToString(module._th128_world_thprac_tools_state()));if(s.schema!=='th128-thprac-tools/1'||s.generation!==receipt.generation||!Number.isSafeInteger(s.frame)||s.frame<0||!Number.isInteger(s.mask)||s.mask<0||s.mask>127||s.playLock!==playback)throw new Error('Actual practice tool generation/frame/playLock differs');validateThprac128ToolHistory({events:s.events,speed:[]});return Object.freeze(s);};
- const setMask=mask=>{const s=snapshot();if(playback||!Number.isSafeInteger(mask)||mask<0||mask>127)throw new Error('Practice playLock or invalid mask');if(module._th128_world_thprac_tools_set(mask,receipt.generation)!==1)throw new Error(module.UTF8ToString(module._th128_world_error()));return snapshot();};
+ const snapshot=()=>{current();const s=JSON.parse(module.UTF8ToString(module._th128_world_thprac_tools_state()));if(s.schema!=='th128-thprac-tools/1'||s.generation!==generation||!Number.isSafeInteger(s.frame)||s.frame<0||!Number.isInteger(s.mask)||s.mask<0||s.mask>127||s.playLock!==playback)throw new Error('Actual practice tool generation/frame/playLock differs');validateThprac128ToolHistory({events:s.events,speed:[]});return Object.freeze(s);};
+ const setMask=mask=>{current();if(playback||!Number.isSafeInteger(mask)||mask<0||mask>127)throw new Error('Practice playLock or invalid mask');if(module._th128_world_thprac_tools_set(mask,generation)!==1)throw new Error(module.UTF8ToString(module._th128_world_error()));return snapshot();};
  const setSpeed=value=>{const s=snapshot();if(playback)throw new Error('Practice replay playLock');const v=validateThprac128Speed(value);if(speeds.length>=4096&&speeds.at(-1)?.[0]!==s.frame)throw new Error('Practice speed history budget');if(speeds.at(-1)?.[0]===s.frame)speeds.pop();speeds.push([s.frame,v]);speed=v;return speed;};
  const speedFor=frame=>{current();if(saved){let v=THPRAC128_SPEED;for(const row of saved.speed){if(row[0]>frame)break;v=row[1];}return v;}return speed;};
  snapshot();if(initial&&!playback){setMask(initial.mask);setSpeed(initial.speed);}
- return Object.freeze({snapshot,setMask,setSpeed,speedFor,generation:receipt.generation,playback,
+ return Object.freeze({snapshot,setMask,setSpeed,speedFor,generation,playback,
   history(frames){const s=snapshot();return validateThprac128ToolHistory({events:s.events.filter(row=>row[0]<frames),speed:speeds.filter(row=>row[0]<frames)},frames);},
   close(){closed=true;}
  });
@@ -66,13 +67,13 @@ export function mountThprac128ToolsPanel({root,getOwner,getLocale=()=>"zh",onOpe
  function syncDraft(owner,speed){const key=JSON.stringify(speed);if(owner!==draftOwner||key!==appliedKey){draftOwner=owner;appliedKey=key;draft={...speed};}}
  function speedText(key,value){if(key==='slow')return String(value);if(key==='fast')return value===21?'infinite':'x'+value+'.0 ('+value*60+'fps)';return 'x'+(Number.isInteger(value/60)?(value/60)+'.0':String(value/60))+' ('+value+'fps)';}
  function renderDraft(){
-  const owner=getOwner(),speed=applied(owner);syncDraft(owner,speed);const disabled=!owner||owner.playback;
+  const owner=getOwner(advancedOpen),speed=applied(owner);syncDraft(owner,speed);const disabled=!owner||owner.playback;
   for(const key of ['fps','slow','fast']){const n=check('[data-tool-speed="'+key+'"]');if(key==='fps'){n.type=draft.free?'number':'range';n.min='60';n.max=draft.free?'6000':'180';n.step=draft.free?'1':'15';}n.value=String(draft[key]);n.disabled=disabled;const text=root.querySelector('[data-tool-speed-text="'+key+'"]');if(text){text.textContent=speedText(key,draft[key]);text.hidden=key==='fps'&&draft.free;}}
   const free=check('[data-tool-speed="free"]');free.checked=draft.free;free.disabled=disabled;
   const button=check('[data-tools-apply]'),pending=['fps','slow','fast'].some(key=>draft[key]!==speed[key]);button.hidden=disabled||!pending;button.disabled=disabled||!pending;button.textContent=label('TH_ADV_OPT_APPLY');
  }
  const refresh=()=>{
-  const owner=getOwner(),s=owner?.snapshot(),lang=['zh','en','ja'].indexOf(locale());root.setAttribute?.('lang',['zh-CN','en','ja'][lang]);advanced.setAttribute?.('aria-label',label('TH_ADV_OPT'));
+  const owner=getOwner(advancedOpen),s=owner?.snapshot(),lang=['zh','en','ja'].indexOf(locale());root.setAttribute?.('lang',['zh-CN','en','ja'][lang]);advanced.setAttribute?.('aria-label',label('TH_ADV_OPT'));
   for(const n of inputs){const bit=Number(n.dataset.toolBit);n.checked=!!(s?.mask&(1<<bit));n.disabled=!owner||owner.playback;n.parentElement.querySelector('span').textContent='F'+(bit+1)+': '+labels[toolKeys[bit]][lang];}
   for(const n of root.querySelectorAll('[data-tools-label]'))n.textContent=label(n.getAttribute('data-tools-label')).replace('%s','You!');
   const version=root.querySelector('[data-tools-version]');if(version){let i=0;version.textContent=label('TH_ABOUT_VERSION').replace(/%d/g,()=>String([2,3,1,1][i++]));}
@@ -82,9 +83,13 @@ export function mountThprac128ToolsPanel({root,getOwner,getLocale=()=>"zh",onOpe
  const close=()=>{if(root.hidden)return;root.hidden=true;const wasAdvanced=advancedOpen;advancedOpen=false;onClose(wasAdvanced);};
  const open=async(value=false)=>{if(closed)return;if(!root.hidden&&advancedOpen===value){close();return;}advancedOpen=value;root.hidden=false;advanced.hidden=!value;if(overlay!==root)overlay.hidden=value;refresh();await onOpen(value);if(value&&!closed&&!root.hidden)check('[data-tools-close]').focus();};
  const action=fn=>{try{fn();refresh();onChange();}catch(e){message.hidden=false;message.textContent=e.message;}};
- const editableOwner=()=>{const owner=getOwner();if(!owner||owner.playback)throw new Error('Practice playLock or retired owner');syncDraft(owner,applied(owner));return owner;};
+ const editableOwner=()=>{const owner=getOwner(advancedOpen);if(!owner||owner.playback)throw new Error('Practice playLock or retired owner');syncDraft(owner,applied(owner));return owner;};
  const integer=key=>{const text=check('[data-tool-speed="'+key+'"]').value;if(!/^(0|[1-9][0-9]*)$/.test(text)||!Number.isSafeInteger(Number(text)))throw new Error('Speed requires an integer');return Number(text);};
- for(const n of inputs)n.addEventListener('change',()=>action(()=>{const owner=editableOwner(),mask=owner.snapshot().mask,bit=1<<Number(n.dataset.toolBit);owner.setMask(n.checked?mask|bit:mask&~bit);}));
+ for(const n of inputs)n.addEventListener('change',()=>action(()=>{
+  const owner=editableOwner(),mask=owner.snapshot().mask,bit=1<<Number(n.dataset.toolBit);
+  try{owner.setMask(n.checked?mask|bit:mask&~bit);}
+  catch(error){n.checked=!!(mask&bit);throw error;}
+ }));
  const free=check('[data-tool-speed="free"]');free.addEventListener('change',()=>{try{editableOwner();draft.free=free.checked;if(!draft.free)draft.fps=Math.max(60,Math.min(180,60+Math.floor((draft.fps-60)/15)*15));renderDraft();}catch(e){message.hidden=false;message.textContent=e.message;}});
  for(const key of ['fps','slow','fast'])check('[data-tool-speed="'+key+'"]').addEventListener('input',()=>{try{editableOwner();const next={...draft,[key]:integer(key)};validateThprac128Speed(next);draft=next;message.hidden=true;message.textContent='';renderDraft();}catch(e){message.hidden=false;message.textContent=e.message;}});
  check('[data-tools-apply]').addEventListener('click',()=>action(()=>{const owner=editableOwner(),value={free:draft.free};for(const key of ['fps','slow','fast'])value[key]=integer(key);owner.setSpeed(validateThprac128Speed(value));}));

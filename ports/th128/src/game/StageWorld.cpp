@@ -108,7 +108,7 @@ bool StageWorld::bindReplayTerminalDrain(const record::OwnedReplayPlaybackInput&
     return true;
 }
 bool StageWorld::setThpracTimeLock(bool enabled,std::string& error){
-    error.clear();if(!activeThpracChapter_||!started_||executing_||!error_.empty()||entityRetirementAttempted_){error="time lock requires an idle active practice World";return false;}
+    error.clear();if(!started_||executing_||!error_.empty()||entityRetirementAttempted_){error="time lock requires an idle active World";return false;}
     thpracTimeLock_=enabled;return true;
 }
 void StageWorld::reset() {

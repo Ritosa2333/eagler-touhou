@@ -18,12 +18,26 @@ export interface MetadataSnapshot {
   siteManifest: SiteManifest | null;
   releaseCatalog: ReleaseCatalog | null;
   installed: ReadonlyMap<GameId, InstalledPackageGeneration>;
+  installedChecked: ReadonlySet<GameId>;
   beautyInstalled: ReadonlySet<GameId>;
   products: readonly ProductId[];
   metadataErrors: readonly unknown[];
   siteManifestError: unknown | null;
   releaseCatalogError: unknown | null;
 }
+
+/** Null means TH128's initial publication check is still pending. */
+export function requiresManualImport(game: GameId, {siteManifest, releaseCatalog, phase}: Pick<MetadataSnapshot, 'siteManifest' | 'releaseCatalog' | 'phase'>): boolean | null {
+  if (siteManifest?.shared.resourceMode === 'import') return true;
+  if (!productRequiresImport(game)) return false;
+  if (game !== 'th128') return true;
+  if (!siteManifest && phase !== 'ready') return null;
+  const published = releaseCatalog?.games.th128;
+  const pointer = siteManifest?.games.th128?.package;
+  return !published || !pointer || typeof pointer !== 'object' ||
+    !('revision' in pointer) || pointer.revision !== published.revision;
+}
+
 export interface MetadataServiceOptions {
   /** Deployment document/root URL, not a selected client route. */
   baseUrl: string;
@@ -51,7 +65,8 @@ export function createMetadataService(options: MetadataServiceOptions) {
   let disposed = false;
   let initialization: Promise<void> | null = null;
   let snapshot: MetadataSnapshot = Object.freeze({phase: 'idle', siteManifest: null,
-    releaseCatalog: null, installed: new Map(), beautyInstalled: new Set<GameId>(), products: availableProducts(null), metadataErrors: [], siteManifestError: null, releaseCatalogError: null});
+    releaseCatalog: null, installed: new Map(), installedChecked: new Set<GameId>(), beautyInstalled: new Set<GameId>(),
+    products: availableProducts(null), metadataErrors: [], siteManifestError: null, releaseCatalogError: null});
 
   function availableProducts(host: SiteManifest | null): readonly ProductId[] {
     return Object.freeze(PRODUCT_IDS.filter(product => {
@@ -81,7 +96,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
         const installed = new Map(snapshot.installed);
         if (result.generation) installed.set(id, result.generation);
         else installed.delete(id);
-        publish({installed});
+        publish({installed, installedChecked: new Set(snapshot.installedChecked).add(id)});
         // Optional availability must not hold up selected-package hydration.
         const beauty = gameVersion === 'beauty' ? Promise.resolve(result) : readCurrentPackageGeneration(id, {indexedDBFactory: options.indexedDBFactory, gameVersion: 'beauty'});
         void beauty.then(value => {
@@ -94,6 +109,8 @@ export function createMetadataService(options: MetadataServiceOptions) {
       } catch {
         // A failed hint read must not erase a usable previous snapshot. Launch
         // still reads the authoritative store again before using package data.
+        if (reads.get(id) === version && !snapshot.installedChecked.has(id))
+          publish({installedChecked: new Set(snapshot.installedChecked).add(id)});
       }
     }));
   }

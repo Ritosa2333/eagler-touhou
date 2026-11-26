@@ -1276,19 +1276,57 @@ function th128MusicPackage(host) {
       language: {type: 'language', entries: [{id: 'lang_zh-hans', file: 'language-zh'}]}}}));
   return new NativeFile([zipSync(archive, {level: 0})], 'th128-test.zip', {type: 'application/zip'});
 }
+function th128ImportHost() {
+  const layout = 'sha256-58cd45fe7cac9af281d9de993a527ccfbbe6f27b89bcd0ca98a7031333fce200';
+  const sha256 = createHash('sha256').update(Uint8Array.of(1, 2, 3)).digest('hex');
+  const languageOptions = [{id: 'lang_zh-hans', title: '简体中文', pack: null}];
+  return {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-development', shared: {resourceMode: 'import', testBuild: true}, games: {th128: {
+    runtime: 'runtime/th128/th128.html', gameData: {path: 'th128.dat', bytes: 3, sha256, version: 'sha256-'+sha256, layout},
+    languageOptions, languages: [], features: {thprac: true}, music: {midi: {files: [], supported: false}, ogg: null},
+    offlineCompatibility: {schema: 'eagler-touhou/offline-game-pack/1',
+      runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: layout, versionSource: 'offline-pack'},
+      requiredShared: [], languages: {source: 'offline-pack', baseline: ['lang_zh-hans']}},
+  }}};
+}
+
+test('TH128 changes the primary action to Start when the host and release catalog agree on available resources', async () => {
+  const host = th128ImportHost(), descriptor = 'th128.package.json';
+  Object.assign(host.shared, {resourceMode: 'hosted', vanillaFont: 'shared/msgothic.ttc', unicodeFont: 'shared/unifont.otf'});
+  host.games.th128.package = {revision: 'th128-published', descriptor};
+  let revision = 'stale-revision';
+  await mountBrowser({initial: '/?game=th128&test', host, fetchBoundary(url) {
+    if (url.pathname.endsWith('/release-catalog.json')) return Response.json({
+      schema: 'eagler-touhou/release-catalog/1', games: {th128: {revision, descriptor}},
+    });
+  }});
+  await until(() => node('#launchText').textContent === 'Import game files', 'mismatched publication requires import');
+  revision = host.games.th128.package.revision;
+  await React.act(async () => {await api.getTestSession().metadata.initialize();});
+  assert.equal(node('#launchText').textContent, 'Start game');
+});
+
+test('TH128 Start waits for the pending publication before opening an import dialog', async () => {
+  const f = await mountBrowser({initial: '/?game=th128&test', host: th128ImportHost(), holdHost: 'launcher'});
+  const session = api.getTestSession();
+  let publication;
+  await React.act(async () => {publication = session.metadata.initialize();});
+  try {
+    assert.equal(session.metadata.getSnapshot().phase, 'loading');
+    assert.equal(node('#launchText').textContent, 'Start game');
+    await click('#launch');
+    assert.equal(node('#gameDataImportWindow').hidden, true);
+    await React.act(async () => {f.releaseHost(); await publication;});
+    await until(() => !node('#gameDataImportWindow').hidden, 'import opens once the import-only host is known');
+    assert.equal(node('#launchText').textContent, 'Import game files');
+  } finally {
+    await React.act(async () => {f.releaseHost(); await publication;});
+  }
+});
+
 for (const choice of ['ogg-full', 'none']) test(`TH128 startup consults installed music when the settings hint is stale (${choice})`, async () => {
   env.window.AudioContext = class {};
   try {
-    const layout = 'sha256-58cd45fe7cac9af281d9de993a527ccfbbe6f27b89bcd0ca98a7031333fce200';
-    const sha256 = createHash('sha256').update(Uint8Array.of(1, 2, 3)).digest('hex');
-    const languageOptions = [{id: 'lang_zh-hans', title: '简体中文', pack: null}];
-    const host = {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-development', shared: {resourceMode: 'import', testBuild: true}, games: {th128: {
-      runtime: 'runtime/th128/th128.html', gameData: {path: 'th128.dat', bytes: 3, sha256, version: 'sha256-'+sha256, layout},
-      languageOptions, languages: [], features: {thprac: true}, music: {midi: {files: [], supported: false}, ogg: null},
-      offlineCompatibility: {schema: 'eagler-touhou/offline-game-pack/1',
-        runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: layout, versionSource: 'offline-pack'},
-        requiredShared: [], languages: {source: 'offline-pack', baseline: ['lang_zh-hans']}},
-    }}};
+    const host = th128ImportHost();
     const f = await mountBrowser({initial: '/?game=th128&test', host, seedStorage(storage) {
       storage.values.set(api.gamePreferenceStorageKey('th128'), JSON.stringify({music: choice, musicPreferenceExplicit: true}));
     }});

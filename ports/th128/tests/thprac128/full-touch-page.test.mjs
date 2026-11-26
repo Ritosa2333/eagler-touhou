@@ -31,6 +31,45 @@ test('hosted TH128 owns no on-canvas controls but still consumes parent direct m
   e.input.cancelTouch();assert.deepEqual(e.commands.at(-1),{mode:0,x:0,y:0,generation:7});
  }finally{e.input.dispose();}
 });
+test('hosted direct touch has equal sensitivity across the visible portrait and landscape canvas',()=>{
+ const cases=[
+  {width:390,height:844,canvas:{left:0,top:275.75,width:390,height:292.5}},
+  {width:844,height:390,canvas:{left:162,top:0,width:520,height:390}},
+ ];
+ for(const {width,height,canvas} of cases){
+  const e=fixture({},false,true);
+  try{
+   Object.assign(e.window,{innerWidth:width,innerHeight:height});
+   e.canvas.rect=canvas;
+   e.input.directTouch({id:1,type:'down',x:.5,y:.5});
+   e.input.directTouch({id:1,type:'move',x:.5+26/width,y:.5-26/height});
+   e.input.sampleTouch();
+   const {mode,x,y}=e.commands.at(-1);
+   assert.equal(mode,2);
+   const expected=26*640/canvas.width*128;
+   assert.ok(Math.abs(x-expected)<=1,`horizontal: ${x}, expected ${expected}`);
+   assert.ok(Math.abs(51200-y-expected)<=1,`vertical: ${51200-y}, expected ${expected}`);
+  }finally{e.input.dispose();}
+ }
+});
+test('hosted TH128 lets practice controls receive touch and still confirms from the game canvas',()=>{
+ const e=fixture({},true,true),surface=e.document.documentElement;
+ e.setContext({key:'route',kind:'menu',ready:false});
+ const select={closest:selector=>selector==='.thprac-layer'?select:null};
+ const tap=target=>{
+  const down={type:'pointerdown',pointerType:'touch',pointerId:1,clientX:620,clientY:440,target,preventDefault(){this.defaultPrevented=true;}};
+  surface.dispatchEvent(down);
+  surface.dispatchEvent({...down,type:'pointerup'});
+  e.input.sampleTouch();
+  return down.defaultPrevented===true;
+ };
+ try{
+  assert.equal(tap(select),false);
+  assert.equal(e.keys.has('KeyZ'),false);
+  assert.equal(tap(e.canvas),true);
+  assert.equal(e.keys.has('KeyZ'),true);
+ }finally{e.input.dispose();}
+});
 test('whole page direct touch samples native command only on fixed tick with TH128 rapid fire and focus ownership',()=>{
  const e=fixture(),surface=e.node('touchDirectSurface');assert(surface);e.emit(surface,'pointerdown',1,640,480);e.emit(surface,'pointermove',1,660,480);assert.equal(e.commands.length,0);
  e.input.sampleTouch();assert.deepEqual(e.commands.at(-1),{mode:2,x:1280,y:51200,generation:7});assert(e.keys.has('KeyC'));assert(!e.keys.has('KeyZ'));

@@ -696,7 +696,7 @@ template<class Writer>
 void writeNormalRecordState(Writer& text){
     text<<"{\"bound\":"<<(normalRecord?"true":"false")<<",\"started\":"<<((normalRecord&&normalRecord->started())?"true":"false")
         <<",\"prepared\":"<<((normalRecord&&normalRecord->prepared())?"true":"false")<<",\"acknowledged\":"<<((normalRecord&&normalRecord->acknowledged())?"true":"false")
-        <<",\"assisted\":"<<((normalRecord&&normalRecord->assistedMovement())?"true":"false")
+        <<",\"assisted\":"<<((normalRecord&&normalRecord->assisted())?"true":"false")
         <<",\"scoreEligible\":"<<((normalRecord&&normalRecord->scoreEligible())?"true":"false")
         <<",\"generation\":"<<worldGeneration<<",\"route\":"<<(normalRecord?normalRecord->route():0)<<",\"rank\":"<<(normalRecord?normalRecord->rank():0)
         <<",\"frames\":"<<(normalRecord?normalRecord->frames():0)<<",\"serial\":"<<((normalRecord&&normalRecord->prepared())?1:0)
@@ -2481,18 +2481,26 @@ int th128_world_touch_playback(const void* data,unsigned size,unsigned generatio
     }
     nativeTouch=std::move(candidate);return 1;
 }
-bool practiceTool(unsigned bit){return world->thpracChapter().has_value()&&thpracTools.generation==worldGeneration&&(thpracTools.mask&bit)!=0;}
+bool practiceTool(unsigned bit){return thpracTools.generation==worldGeneration&&(thpracTools.mask&bit)!=0;}
 bool applyPracticeTools(unsigned mask,std::string& error){
     if(!world->setThpracTimeLock((mask&16u)!=0,error))return false;
     playerHit->setPracticeInvulnerable((mask&1u)!=0);thpracTools.mask=mask;return true;
 }
 int th128_world_thprac_tools_set(unsigned mask,unsigned generation){
     operationError.clear();
-    if(mask>127||generation!=worldGeneration||generation!=thpracTools.generation||!world->thpracChapter()||!debugRunTainted
+    const bool practice=world->thpracChapter().has_value();
+    const bool ordinary=!debugRunTainted&&normalRecord&&normalReplay&&normalRecord->started()&&!normalRecord->prepared()&&!normalReplaySave;
+    if(mask>127||generation!=worldGeneration||generation!=thpracTools.generation||!(practice?debugRunTainted:ordinary)
         ||world->faulted()||ownedBattle.attempted()||worldTickExecuting||debugSetterExecuting||thpracReplay.playback||replayPlayback.active()||thpracReplay.clockPending
         ||!playerConfigured||!grazeConfigured||!shotHitsConfigured||!playerShotGroupsConfigured
         ||((mask&2u)&&!playerDeathConfigured)||((mask&(4u|32u))&&!perfectConfigured)){operationError="practice tools require the actual idle unlocked owner and matching configured native hosts";return 0;}
     if(mask==thpracTools.mask)return 1;
+    if(!practice){
+        if(!applyPracticeTools(mask,operationError))return 0;
+        // Ordinary replay packets have no combat-tool history.
+        if(mask&63u){normalRecord->markAssisted();normalReplay->markPracticeToolsUsed();}
+        return 1;
+    }
     const auto frame=world->frame();const bool replace=!thpracTools.events.empty()&&thpracTools.events.back()[0]==frame;
     if(!replace&&thpracTools.events.size()>=4096){operationError="practice tools history budget";return 0;}
     if(!applyPracticeTools(mask,operationError))return 0;
@@ -3876,7 +3884,7 @@ int th128_world_pause_open(int reason){
     }
     try{
         const bool playbackFinished=reason==2||(gameOver&&playback);
-        originalPauseMenu->open(gameOver&&!playbackFinished,originalContinueCount,normalReplay&&normalReplay->frames()>0&&!debugRunTainted,
+        originalPauseMenu->open(gameOver&&!playbackFinished,originalContinueCount,normalReplay&&normalReplay->frames()>0&&!normalReplay->usedPracticeTools()&&!debugRunTainted,
             world->frame(),playback,world->thpracChapter().has_value()&&!playback,playbackFinished);
         originalMenuInput.reset();
         originalPauseSoundCursor=0;
@@ -4157,7 +4165,10 @@ int th128_world_replay_begin(unsigned seed,double seconds){
         if(!normalReplay){normalReplay=std::make_shared<th128::record::NativeRunReplay>();normalReplayOrigin=seconds;normalReplayClock=seconds;}
         if(normalReplay->configuredFor(stage))throw std::runtime_error("normal replay stage already bound");
         normalReplay->begin(stage,unsigned(worldStartDifficulty),boundSeed,*group,unsigned(originalContinueCount),scoreRaw,pointValueRaw,motivationRaw,playerWindowControl.perfectCharge4b4d70,cumulativeFrozenArea,playerRaw.horizontal,playerRaw.vertical,grazeGlobals.grazeCount);
-        if(normalRecord)normalRecord->beginStage(stage,unsigned(worldStartDifficulty),seconds);
+        if(normalRecord){
+            normalRecord->beginStage(stage,unsigned(worldStartDifficulty),seconds);
+            thpracTools.generation=worldGeneration;
+        }
         bindOrdinaryTerminalAfterReplayBegin();
         normalReplayClockPending=false;return 1;
     }catch(const std::exception& failure){operationError=failure.what();return 0;}
@@ -4205,7 +4216,7 @@ int th128_world_replay_previews(const void* bytes,unsigned size){
 }
 int th128_world_replay_save_open(){
     operationError.clear();
-    if(!normalReplay||!normalReplay->frames()||!th128_world_pause_active()||normalReplaySave||originalContinueCount||debugRunTainted
+    if(!normalReplay||!normalReplay->frames()||normalReplay->usedPracticeTools()||!th128_world_pause_active()||normalReplaySave||originalContinueCount||debugRunTainted
        ||originalPauseMenu->state().action!=th128::pause::Action::ReplaySave||soundJournalWindowSerial||!grazeSounds.empty()){
         operationError="original replay save requires completed menu choice and actual uncontinued normal recording";return 0;
     }
@@ -4923,7 +4934,7 @@ int th128_world_tick(){
     }
     if(success&&normalReplay){
         try{const bool recorded=normalReplay->append(normalReplayInput,normalReplayAuxiliary,normalReplayFPS,normalReplayClock-normalReplayOrigin,nativeTouch.command);
-            if(assistedTouchMovement){normalReplay->markAssistedMovement();if(normalRecord)normalRecord->markAssistedMovement();}
+            if(assistedTouchMovement){normalReplay->markAssistedMovement();if(normalRecord)normalRecord->markAssisted();}
             if(recorded&&normalRecord)normalRecord->activeFrame(playerHit->snapshot().soundControl.flags60,th128::record::NativeRecordSessionPolicy::stageClearHeld(stageManager.flags5a04,stageManager.field5a0c));
             normalReplayClockPending=false;}
         catch(const std::exception& failure){world->reportRuntimeFault(failure.what());return 0;}

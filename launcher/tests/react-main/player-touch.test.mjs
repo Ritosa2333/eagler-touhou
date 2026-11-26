@@ -61,6 +61,21 @@ test('TH128 Z owns charge while author auto-fire remains on', async () => {
   assert.deepEqual(keys().slice(2),[['KeyZ',true],['KeyZ',false]]);
   assert.equal(f.touch.getSnapshot().fireEnabled,true);
 });
+test('TH128 mobile practice opens the Backspace panel and follows its visibility', () => {
+  const f = fixture({game: 'th128'});
+  f.settings.options.thpracEnabled = true;
+  const keys = () => f.sent.filter(message => message.command === 'keyboard').map(({code, down}) => [code, down]);
+  const announce = detail => f.native.target.dispatchEvent(new env.window.CustomEvent('eagler-thprac-menu', {detail}));
+  f.pointer('thpracBackspace', 'pointerdown');
+  assert.deepEqual(keys(), [['Backspace', true], ['Backspace', false]]);
+  assert.equal(f.touch.getSnapshot().thpracMenuOpen, false, 'wait for the runtime to open the panel');
+  announce({open: false, mobile: true});
+  assert.equal(f.touch.getSnapshot().thpracMenuOpen, true);
+  f.click('thpracBackspace');
+  assert.deepEqual(keys(), [['Backspace', true], ['Backspace', false], ['Backspace', true], ['Backspace', false]]);
+  announce({open: false, mobile: false});
+  assert.equal(f.touch.getSnapshot().thpracMenuOpen, false);
+});
 test('TH01 slide holds and releases even with an old focus preference', () => {
   for (const focus of ['two-finger', 'toggle-button']) {
     const f = fixture({game: 'th01', focus});

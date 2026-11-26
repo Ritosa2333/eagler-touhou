@@ -1366,6 +1366,7 @@
   "help_thpracReplayDesktop": "thprac practice replays include extra practice parameters; keep thprac enabled during playback.",
   "help_thpracReplayMobile": "Enable thprac buttons in Touch settings, then tap Cheats and advanced settings. Tap the small in-game headers to expand or collapse the original panels and checkboxes to toggle cheats. Keep thprac enabled for practice replays. Assisted runs can be saved, but playback may desynchronize.",
   "help_thpracMobilePanels": "Show / hide collapsible in-game panels",
+  "help_th128ThpracTouch": "Enable thprac buttons in Touch settings. Tap Cheats and advanced settings to open or close the Backspace panel, then tap an F1–F7 option to toggle it. Tap F12 for advanced options.",
   "player_switchLandscape": "Switch to landscape",
   "player_switchPortrait": "Switch to portrait",
   "player_switchOrientationTitle": "Switch screen orientation",

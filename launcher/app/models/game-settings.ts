@@ -148,7 +148,7 @@ export function createGameSettingsModel({storage, onChange}: {
       fallbackPreferenceId: multiplayer ? gameId : null,
       context: {uiLocale: context.uiLocale, thpracAvailable: productFeatureAvailable(gameId, 'thprac', context.hostFeatures),
         webAudioAvailable: context.musicAvailability.audio,
-        ...(gameId === 'th128' ? {defaultTouchMovementMode: 'touch'} : {}),
+        ...(gameId === 'th128' ? {defaultTouchEnabled: context.mobile, defaultTouchMovementMode: 'touch'} : {}),
         externalMidiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && context.webMidiAvailable}});
     const options = gameId === 'th01' ? {...normalized.options} :
       applySharedTouchPreferences(normalized.options, loadOrInitializeSharedTouchPreferences(storage, normalized.options));

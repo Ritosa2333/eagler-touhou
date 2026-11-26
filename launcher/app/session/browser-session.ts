@@ -7,7 +7,7 @@ import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {isAbortError, linkAbortSignals, waitWithAbort} from '../services/abort-signals';
-import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, productRequiresImport, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
+import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
 import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {detectUiLocale, isUiLocale, isUiMessageKey, localeHome, saveUiLocalePreference, type UiLocale} from '../../src/launcher/i18n.mts';
 import {replayImportAcceptFor} from '../../src/launcher/replay-files.mts';
@@ -41,7 +41,7 @@ import {describeBrowserEnvironment} from '../../src/launcher/runtime-diagnostics
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from '../models/site-preferences';
 import {createReplayModel, type ReplayModel} from '../models/replays';
 import {relocateReplayPlayback} from '../services/replay-relocation';
-import {createMetadataService} from '../services/metadata';
+import {createMetadataService, requiresManualImport} from '../services/metadata';
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
 import {th128RequestedMusic} from '../../src/launcher/th128-installed-config.mts';
@@ -546,15 +546,6 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       return context.isCurrent();
     } catch(error) {reportError(error);return false;}
   }
-  function requiresManualImport(game: GameId) {
-    const {siteManifest, releaseCatalog} = metadata.getSnapshot();
-    if (siteManifest?.shared.resourceMode === 'import') return true;
-    if (!productRequiresImport(game)) return false;
-    const published = releaseCatalog?.games.th128;
-    const pointer = siteManifest?.games.th128?.package;
-    return game !== 'th128' || !published || !pointer || typeof pointer !== 'object' ||
-      !('revision' in pointer) || pointer.revision !== published.revision;
-  }
   const gameData = createGameDataImportModel({acquisition: testBuild ? acquisition : {
     importPackage: acquisition.importPackage,
     importFiles: acquisition.importFiles,
@@ -564,7 +555,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
       runtimeReady: runtime?.getSnapshot().ready === true && !roomPreload, launched: runtime?.getSnapshot().launched === true,
-      playerOpen: snapshot.playerOpen, importServer: requiresManualImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)),
+      playerOpen: snapshot.playerOpen, importServer: requiresManualImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID), metadata.getSnapshot()) !== false,
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
     ports: {
       pickFile: ({accept}) => ports.pickFile(accept), pickFiles: ({accept}) => ports.pickFiles(accept), feedback, showGameDataTransfer: transfer.revealGameData,
@@ -1103,8 +1094,17 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (isMultiplayerProductId(product)) {await roomSession!.service.launch(); return;}
       cloudSync?.prepareLocalLaunch();
       const game = gameIdForProduct(product);
-      const requiresImport = requiresManualImport(game);
-      const installed = requiresImport ? (await acquisition.readCurrent(game)).generation : null;
+      let requiresImport = requiresManualImport(game, metadata.getSnapshot());
+      let installed = requiresImport !== false ? (await acquisition.readCurrent(game)).generation : null;
+      if (requiresImport === null && !installed) {
+        // An installed package can start before the host responds. Otherwise
+        // check publication before interrupting Start with manual import.
+        await metadata.initialize();
+        requiresImport = requiresManualImport(game, metadata.getSnapshot());
+        if (requiresImport) installed = (await acquisition.readCurrent(game)).generation;
+        if (disposed || settings.getSnapshot()?.context.productId !== product ||
+            navigation && (!navigation.hasSelection || navigation.context === 'lobby')) return;
+      }
       if (requiresImport && !installed) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }

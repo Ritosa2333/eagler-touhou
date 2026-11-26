@@ -199,7 +199,17 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     pulse(thpracKeys[name]);
   }
   function toggleMobileThpracPanels() {
-    if (!allowed() || thpracPracticeOpen || !settings()?.options.thpracTouchControlsEnabled) return;
+    const current = settings();
+    if (!allowed() || thpracPracticeOpen || !current?.options.thpracTouchControlsEnabled) return;
+    if (current.gameId === 'th128' && !current.multiplayer) {
+      if (!current.options.thpracEnabled) return;
+      // TH128 toggles this panel on keydown. Release immediately so a second
+      // tap can close it even before an ordinary held-key pulse would expire.
+      key(thpracKeys.Backspace, true);
+      key(thpracKeys.Backspace, false);
+      refocus();
+      return;
+    }
     thpracMenuOpen = !thpracMenuOpen; publish(); syncControls(); refocus();
   }
   on(el.thpracBackspace, 'pointerdown', event => {if (!allowed()) return; event.preventDefault(); event.stopPropagation(); toggleMobileThpracPanels();});
@@ -242,7 +252,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
       if (next) {
         const handler: EventListener = event => {
           const now = runtime.getMidiEventContext(); if (now?.epoch !== next.epoch || now.document !== next.document || now.target !== next.target) return;
-          if (now.game !== 'th14') return;
+          if (now.game !== 'th14' && now.game !== 'th128') return;
           const detail = (event as CustomEvent<{open?: unknown; practice?: unknown; mobile?: unknown}>).detail;
           if (typeof detail?.open !== 'boolean') return;
           const {open} = detail;

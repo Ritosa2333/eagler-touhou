@@ -5701,6 +5701,10 @@
     "id": "help_thpracMobilePanels",
     "params": []
   },
+  "help.th128ThpracTouch": {
+    "id": "help_th128ThpracTouch",
+    "params": []
+  },
   "player.switchLandscape": {
     "id": "player_switchLandscape",
     "params": []

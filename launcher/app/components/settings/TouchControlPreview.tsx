@@ -18,7 +18,9 @@ export function TouchControlPreview({settings, live, spectator = false, fireEnab
   const heldFire = game.touchFire.mode === 'held-key', heldFocus = th01Slide || options.touchFocusMode === 'hold-button';
   const focusOn = live?.focusEnabled ?? false, fireOn = heldFire ? live?.heldFire ?? false : live?.fireEnabled ?? fireEnabled;
   const touchSurfaceVisible = !spectator && options.touchEnabled || editing;
-  const thpracVisible = !spectator && options.thpracTouchControlsEnabled && (options.touchEnabled || editing);
+  const th128Practice = th128Freeze && !settings.multiplayer && options.thpracEnabled;
+  const thpracVisible = !spectator && options.thpracTouchControlsEnabled && (options.touchEnabled || editing) &&
+    (!th128Freeze || th128Practice);
   const extraU = 'thpracExtraFunctionKeys' in game && game.thpracExtraFunctionKeys.includes('U');
   return <>
     <nav className={`touch-hud${actions ? " native-actions" : ""}`} id="touchHud" aria-label={t('touch.leftControls')}>
@@ -40,8 +42,8 @@ export function TouchControlPreview({settings, live, spectator = false, fireEnab
     <UiButton variant="unstyled" className="touch-thprac-tab" id="touchThpracTab" data-touch-layout-control="thpracTab" data-thprac-key="Tab" type="button" hidden><strong>Tab</strong><small>Tracker</small><Resize/></UiButton>
     <div className="touch-thprac-menu" id="touchThpracMenu" data-touch-layout-control="thpracMenu" hidden={!thpracVisible || (!editing && !!live?.thpracPracticeOpen)}>
       <UiButton variant="unstyled" className="touch-thprac-backspace" id="touchThpracBackspace" type="button" aria-expanded={live?.thpracMenuOpen ?? false}>{t('touch.cheatsAndSettings')}</UiButton>
-      <div className="touch-thprac-function-keys" id="touchThpracFunctionKeys" hidden>
-        {([['F12','touch.advancedMenu'],['F1','touch.invincible'],['F2','touch.infiniteLives'],['F3','touch.infiniteBombs'],['F4','touch.infinitePower'],['F5','touch.timeLock'],['F6','touch.autoBomb'],['F7','touch.enemyBgm'],['U','touch.enemyInvincible']] as const).map(([key, label]) => <UiButton variant="unstyled" key={key} type="button" data-thprac-key={key} hidden={key === 'U' && !extraU}><strong>{key}</strong><small>{t(label)}</small></UiButton>)}
+      <div className="touch-thprac-function-keys" id="touchThpracFunctionKeys" hidden={!(th128Practice && live?.thpracMenuOpen)}>
+        {([['F12','touch.advancedMenu'],['F1','touch.invincible'],['F2','touch.infiniteLives'],['F3','touch.infiniteBombs'],['F4','touch.infinitePower'],['F5','touch.timeLock'],['F6','touch.autoBomb'],['F7','touch.enemyBgm'],['U','touch.enemyInvincible']] as const).map(([key, label]) => <UiButton variant="unstyled" key={key} type="button" data-thprac-key={key} hidden={th128Practice ? key !== 'F12' : key === 'U' && !extraU}><strong>{key}</strong><small>{t(label)}</small></UiButton>)}
       </div><Resize/>
     </div>
   </>;

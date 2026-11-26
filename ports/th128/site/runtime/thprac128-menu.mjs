@@ -5,7 +5,7 @@ const resourceNames=['score','motivation','perfect_freeze','ice_power','ice_area
 const text={zh:{title:'练习选项',ready:'选择起点、章节或Boss与初始资源；练习局不计正常成绩与解锁。',replace:'请先确认替换当前局；尚未保存的进度不会保留。',busy:'练习入口尚未就绪或正在处理其他操作。',off:'thprac 已关闭；正常游戏菜单仍可使用。',loading:'正在准备 thprac…',started:'thprac 练习已开始，不计正常成绩与解锁。',normal:'已启动原版流程。',failed:'练习启动失败：',cancelled:'已取消练习启动。'},en:{title:'Practice Options',ready:'Choose a stage, section and resources. Practice does not qualify for normal scores or unlocks.',replace:'Confirm replacing the current run and losing its unsaved progress.',busy:'Practice runtime is unavailable or busy.',off:'thprac is off. The normal game menu remains available.',loading:'Preparing thprac…',started:'Practice started; normal scores and unlocks are excluded.',normal:'Original game flow started.',failed:'Practice start failed: ',cancelled:'Practice launch cancelled.'},ja:{title:'練習オプション',ready:'ステージ・区間・初期値を選択。練習は通常スコアや解禁の対象外です。',replace:'現在のプレイを破棄することを確認してください。',busy:'練習の準備ができていないか、処理中です。',off:'thprac は無効です。通常メニューは利用できます。',loading:'thprac を準備中…',started:'練習を開始しました。通常スコア・解禁の対象外です。',normal:'通常プレイを開始しました。',failed:'練習を開始できません：',cancelled:'練習の開始を中止しました。'}};
 const menuCopy={zh:{enabled:'启用 thprac',locale:'界面语言',replace:'替换当前局，放弃尚未保存的进度',notice:'练习局不计正常成绩与解锁。资源输入使用原始单位：干劲、完美冻结、冰冻力量每100为1%，冰冻面积每1为1%。'},en:{enabled:'Enable thprac',locale:'Language',replace:'Replace the current run and discard unsaved progress',notice:'Practice excludes normal scores and unlocks. Resource units: 100 = 1% for Motivation, Perfect Freeze and Ice Power; 1 = 1% for Ice Area.'},ja:{enabled:'thprac を有効にする',locale:'言語',replace:'現在のプレイと未保存の進行を破棄する',notice:'練習は通常スコア・解禁の対象外です。やる気・PF・こおりパワーは100で1%、面積は1で1%です。'}};
 export function thprac128ResourceText(key,value){if(!Number.isSafeInteger(value)||value<0)throw new Error('Invalid practice resource');return key==='score'?String(value):String(key==='ice_area'?value:Math.floor(value/100))+'%';}
-export function mountThprac128Menu({root,controls=root,opener=null,getAvailability,onOpen=()=>{},onFocusGame=()=>{},onCancel=()=>{},onRouteKey=()=>{},onRouteChange=()=>{},settings={enabled:true,locale:"zh"},onSettings=()=>{},launch}){
+export function mountThprac128Menu({root,controls=root,opener=null,getAvailability,onOpen=()=>{},onVisibilityChange=()=>{},onFocusGame=()=>{},onCancel=()=>{},onRouteKey=()=>{},onRouteChange=()=>{},settings={enabled:true,locale:"zh"},onSettings=()=>{},launch}){
  if(!root||typeof getAvailability!=='function'||typeof launch!=='function')throw new Error('TH128 thprac menu consumers unavailable');
  const node={},optional=new Set(['enabled','locale']);
  for(const key of [...selectNames,...resourceNames,'enabled','dlg','start','restart','cancel','status','replace','replaceRow']){node[key]=root.querySelector('[data-thprac="'+key+'"]')??controls.querySelector('[data-thprac="'+key+'"]');if(!node[key]&&!optional.has(key))throw new Error('TH128 control missing: '+key);}
@@ -49,12 +49,12 @@ export function mountThprac128Menu({root,controls=root,opener=null,getAvailabili
   node.start.textContent=label('TH_BEGIN');node.restart.textContent=label('TH_RESTART');node.cancel.textContent=label('TH_CLOSE');
  }
  function close({focus=true}={}){
-  ++ticket;pending?.controller.abort();root.hidden=true;opener?.setAttribute('aria-expanded','false');node.replace.checked=false;
+  ++ticket;pending?.controller.abort();setVisible(false);node.replace.checked=false;
   if(pending)node.status.textContent=message('cancelled');if(!disposed)refresh();if(focus)onFocusGame();
  }
  async function open({route=false}={}){
   if(disposed||opening||pending||!isEnabled())return;const a=getAvailability();if(!a.ready||a.busy){node.status.textContent=message('busy');refresh();return;}
-  routeOpen=route;opening=true;root.hidden=false;node.replace.checked=false;opener?.setAttribute('aria-expanded','true');node.status.textContent=message('ready');refresh();const mine=ticket;
+  routeOpen=route;opening=true;setVisible(true);node.replace.checked=false;node.status.textContent=message('ready');refresh();const mine=ticket;
   try{await onOpen({route});if(!route&&!disposed&&ticket===mine&&!root.hidden)node.startPoint.focus();}
   catch(e){if(!disposed&&ticket===mine)node.status.textContent=message('failed')+e.message;}
   finally{opening=false;if(!disposed)refresh();}
@@ -79,9 +79,13 @@ export function mountThprac128Menu({root,controls=root,opener=null,getAvailabili
   try{
    const receipt=await launch(selected,{signal:controller.signal,isCurrent:current});if(!current())return;
    if(receipt?.stageId!==selected.params.stage+1||receipt.difficulty!==selected.difficulty||JSON.stringify(receipt.session?.params)!==JSON.stringify(selected.params)||selected.params.mode&&(receipt.nativeTainted!==true||receipt.normalModeClear!==false))throw new Error('TH128 native practice receipt / 身份与 taint 未确认');
-   node.status.textContent=message(selected.params.mode?'started':'normal');root.hidden=true;node.replace.checked=false;opener?.setAttribute('aria-expanded','false');onFocusGame();
+   node.status.textContent=message(selected.params.mode?'started':'normal');setVisible(false);node.replace.checked=false;onFocusGame();
   }catch(e){if(current())node.status.textContent=message('failed')+e.message;}
   finally{if(pending===owner)pending=null;if(!disposed)refresh();}
+ }
+ function setVisible(visible){
+  if(root.hidden===!visible)return;
+  root.hidden=!visible;opener?.setAttribute('aria-expanded',String(visible));onVisibilityChange(visible);
  }
  node.mode.value='0';if(node.locale)options(node.locale,[{value:'zh',label:'中文'},{value:'en',label:'English'},{value:'ja',label:'日本語'}],settings.locale);node.startPoint.value=node.path.value=node.stage.value=node.warp.value='0';node.difficulty.value='1';if(node.enabled)node.enabled.checked=settings.enabled;
  for(const key of resourceNames)node[key].value=String(THPRAC128_DEFAULTS[key]);

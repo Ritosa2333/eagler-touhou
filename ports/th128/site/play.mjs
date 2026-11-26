@@ -1002,6 +1002,9 @@ function scaleThpracViewport(){
 
 function inheritThpracTools(selection){
  const prior=state.stageSelection,tools=state.thpracTools;
+ if(!selection.thprac&&!prior?.thprac&&tools&&!state.replayPlayback){
+  selection.thpracRestartTools={mask:tools.snapshot().mask};return selection;
+ }
  const origin=prior?.thpracOrigin??prior?.thprac;
  if(!selection.thprac||!origin||!tools||state.replayPlayback||selection.thprac.difficulty!==origin.difficulty||JSON.stringify(selection.thprac.params)!==JSON.stringify(origin.params))return selection;
  const s=tools.snapshot();selection.thpracRestartTools={mask:s.mask,speed:tools.speedFor(s.frame)};
@@ -1012,7 +1015,7 @@ function handleThpracToolKey(event){
  event.preventDefault();if(event.repeat)return true;
  if(event.code==='Backspace'||event.code==='F12'){state.webInput?.cancelTouch?.();void thpracToolsPanel?.open(event.code==='F12');return true;}
  if(state.replayPlayback)return true;
- const tools=state.thpracTools??state.thpracDraftOwner;if(!tools)return true;
+ const tools=state.thpracTools??(!state.worldMode?state.thpracDraftOwner:null);if(!tools||state.normalPostrun||state.endingHost)return true;
  try{const bit=1<<(Number(event.code.slice(1))-1);tools.setMask(tools.snapshot().mask^bit);syncThpracToolMusic();thpracToolsPanel?.refresh();}
  catch(e){status(e.message);}return true;
 }
@@ -1025,10 +1028,22 @@ function practiceLogicRate(){
  if(state.replayPlayback){if(state.pressed.has('ControlLeft'))return speed.fast===21?15360:speed.fast*60;if(state.pressed.has('ShiftLeft')||state.pressed.has('ShiftRight'))return speed.slow;}
  return speed.fps;
 }
+function publishThpracPanels(){
+ if(!launcherContext)return;
+ const practice=practiceMenu?.isOpen===true,advanced=thpracToolsPanel?.isOpen===true;
+ document.documentElement.dataset.browserPracticeOpen=String(advanced);
+ window.dispatchEvent(new CustomEvent('eagler-thprac-menu',{detail:{
+  open:practice||advanced,practice,mobile:thpracToolsPanel?.overlayOpen===true
+ }}));
+}
 function installThpracToolPanel(){
- if(thpracToolsPanel)return;thpracToolsPanel=mountThprac128ToolsPanel({root:find('#thprac-tool-ui'),getOwner:()=>state.thpracTools??thpracDraftOwner,getLocale:()=>thpracSettings.locale,
-  onOpen:advanced=>{state.webInput?.setOverlayActive?.(advanced);if(!advanced)return;state.thpracToolsPaused=state.paused;state.paused=true;state.pressed.clear();worldMovementInput(0,763);clock.reset();thpracLogicClock.reset();refreshOpenPracticeReplay();},
-  onClose:advanced=>{state.webInput?.setOverlayActive?.(false);if(!advanced)return;if(state.active&&!menu.pauseOpen&&!document.hidden){state.paused=state.thpracToolsPaused===true;}clock.reset();thpracLogicClock.reset();find('#game')?.focus();},
+ if(thpracToolsPanel)return;thpracToolsPanel=mountThprac128ToolsPanel({root:find('#thprac-tool-ui'),getOwner:advanced=>{
+  if(state.normalPostrun||state.endingHost)return null;
+  if(!state.worldMode||advanced&&!state.stageSelection?.thprac)return thpracDraftOwner;
+  return state.thpracTools??null;
+ },getLocale:()=>thpracSettings.locale,
+  onOpen:advanced=>{state.webInput?.setOverlayActive?.(advanced);publishThpracPanels();if(!advanced)return;state.thpracToolsPaused=state.paused;state.paused=true;state.pressed.clear();worldMovementInput(0,763);clock.reset();thpracLogicClock.reset();refreshOpenPracticeReplay();},
+  onClose:advanced=>{state.webInput?.setOverlayActive?.(false);publishThpracPanels();if(!advanced)return;if(state.active&&!menu.pauseOpen&&!document.hidden){state.paused=state.thpracToolsPaused===true;}clock.reset();thpracLogicClock.reset();find('#game')?.focus();},
   onChange:()=>{syncThpracToolMusic();clock.reset();thpracLogicClock.reset();}
  });
 }
@@ -1484,6 +1499,7 @@ function installPracticeMenu(){
   }),
   onRouteKey:code=>{handleNativeTitleKey(code);state.mainController?.keyUp(code);},
   onRouteChange:selection=>{if(selection>=0&&selection<4)state.thpracRouteTarget=selection;},
+  onVisibilityChange:publishThpracPanels,
   onCancel:()=>{if(!state.worldMode&&menu.page==='route'){thpracRouteShown=true;state.paused=false;clock.reset();resetHighFrameratePresentation();backNativePage();}},
   onFocusGame:()=>find('#game')?.focus(),launch:startThprac128Session
  });
@@ -2651,6 +2667,8 @@ async function finishNormalPostrunMain(controller,snapshot){
 }
 async function advanceNormalPostrun(){
   const controller=state.normalPostrun;if(!controller||state.paused)return;
+  state.webInput?.sampleTouch?.();
+  if(controller!==state.normalPostrun||state.paused)return;
   const snapshot=await controller.step();if(controller!==state.normalPostrun)return;
   if(snapshot?.menu?.mainHandoffReady){await finishNormalPostrunMain(controller,snapshot);return;}
   if(controller.phase==='awaiting-name-owner'||controller.phase==='awaiting-replay-owner'){
@@ -2661,6 +2679,8 @@ async function advanceNormalPostrun(){
 async function advanceOriginalEnding(){
   if(!state.endingHost||state.endingBusy||state.paused)return;
   const ticket=state.endingTicket,host=state.endingHost;
+  state.webInput?.sampleTouch?.();
+  if(host!==state.endingHost||state.paused)return;
   state.endingBusy=true;
   try{
     state.endingStepPromise=(async()=>{
@@ -4120,6 +4140,15 @@ async function checkWorld(emission=false,updates=false,shots=false,selection=sta
           const clockSeconds=performance.now()/1000;
           if(!module._th128_world_replay_begin(carryToken?65536:selection.seed,clockSeconds))throw new Error(module.UTF8ToString(module._th128_world_error()));
           state.replayClockLast=clockSeconds;state.replayNativeBound=true;
+          if(state.thpracUIEnabled&&typeof module._th128_world_thprac_tools_state==='function'){
+            const {generation}=JSON.parse(module.UTF8ToString(module._th128_world_thprac_tools_state()));
+            if(generation>0){
+              const tools=createThprac128Tools(module,null,{generation,isCurrent:()=>state.module===module&&state.stageSelection===selection&&!state.launcherExited});
+              const mask=selection.thpracRestartTools?.mask??thpracDraft.mask;
+              if(mask)tools.setMask(mask);
+              state.thpracTools=tools;
+            }
+          }
         }
         state.shotMode=shots;find('#emit-shot').disabled=!shots;
         practiceMenu?.dismissTitleRoute();stageGamepadOwner()?.suppressHeldActions();
@@ -4214,7 +4243,7 @@ function transitionSelection(transition){
   const recorded=state.replayPlayback?.prepareNaturalHandoff(transition);
   const selected=prepareStage(transition.nextId,{difficulty:state.stageSelection.difficulty,seed:recorded?.seed??state.stageSelection.seed,progress:transition.nextProgress});
   if(recorded?.thprac){selected.thprac=recorded.thprac;selected.thpracReplayIdentity=recorded.thpracReplayIdentity;selected.practiceContinuation=true;return selected;}
-  return state.stageSelection.thprac?prepareThprac128Continuation(selected,state.stageSelection):selected;
+  return state.stageSelection.thprac?prepareThprac128Continuation(selected,state.stageSelection):inheritThpracTools(selected);
 }
 function maybeAutoHandoff(){
   if(!state.autoFlow)return;
@@ -4367,7 +4396,7 @@ function originalPauseConsumer(){
       if(selected.thprac){menu.pauseOpen=false;return startLaunch(inheritThpracTools(thpracStageSelection(selected.thpracOrigin??selected.thprac).selection),'route');}
       const stageId=selected.stage.id===16?16:selected.stage.id<=5?1:selected.stage.id<=10?6:11;
       const next=prepareStage(stageId,{difficulty:selected.difficulty,seed:34772,progress:0,debugExtra:selected.debugExtra===true});
-      menu.pauseOpen=false;return startLaunch(next,'route');
+      menu.pauseOpen=false;return startLaunch(inheritThpracTools(next),'route');
     }),
     onPresentation:snapshot=>owned(async()=>{
       if(snapshot.replayPhase===2&&!snapshot.replayNameContextReady)bindOriginalReplayNameContext(snapshot);
@@ -4870,7 +4899,7 @@ async function restartTouchRun(){
   menu.pauseOpen=false;
   if(selected.thprac)return startLaunch(inheritThpracTools(thpracStageSelection(selected.thpracOrigin??selected.thprac).selection),'route');
   const stageId=selected.stage.id===16?16:selected.stage.id<=5?1:selected.stage.id<=10?6:11;
-  return startLaunch(prepareStage(stageId,{difficulty:selected.difficulty,seed:34772,progress:0,debugExtra:selected.debugExtra===true}),'route');
+  return startLaunch(inheritThpracTools(prepareStage(stageId,{difficulty:selected.difficulty,seed:34772,progress:0,debugExtra:selected.debugExtra===true})),'route');
 }
 function installWebInput(){
   if(state.webInput)return state.webInput;
@@ -5012,7 +5041,7 @@ async function present(timestamp){
       const active=state.active&&!state.paused&&!state.endingLoading&&!awaitingAudio&&!state.thpracReplaySaving&&(!state.worldMode||!practiceMenu?.isOpen)&&!thpracToolsPanel?.isOpen;
       // Practice rates are scoped to the playable World. The original ending
       // runs its own 60 Hz media and durable-receipt sequence.
-      const practiceWorld=!!state.thpracTools&&state.worldMode&&!state.endingHost&&!state.endingLoading&&!state.normalPostrun;
+      const practiceWorld=!!state.stageSelection?.thprac&&!!state.thpracTools&&state.worldMode&&!state.endingHost&&!state.endingLoading&&!state.normalPostrun;
       const timing=practiceWorld?thpracLogicClock.advance(timestamp,active,practiceLogicRate()):clock.advance(timestamp,active);presentationSteps=timing.steps;
       highFramerateCatchup=timing.steps>1;
       if(highFramerateCatchup)resetHighFrameratePresentation();
