@@ -339,7 +339,19 @@ try {
   await handbook.goto(new URL('ui-review.html#page-room-settings', origin), {waitUntil: 'domcontentloaded'});
   const sample = '#page-room-settings #mpRoomSettings';
   await handbook.waitForSelector(`${sample} #mpRoomVisibility-trigger`, {visible: true});
-  assert.equal(await handbook.$eval(sample, el => !!el.querySelector('#mpRoomName')), false);
+  const name = `${sample} #mpRoomName`;
+  const save = `${sample} div:has(> #mpRoomName) + button`;
+  const nameStatus = `${save} + [role="status"]`;
+  await handbook.waitForSelector(name, {visible: true});
+  await handbook.$eval(name, input => input.focus());
+  await handbook.keyboard.sendCharacter('初见练习');
+  await handbook.click(save);
+  await handbook.waitForFunction(selector => document.querySelector(selector)?.textContent === '房间名已通过审核', {}, nameStatus);
+  assert.equal(await handbook.$eval(name, input => input.value), '初见练习');
+  await handbook.$eval(name, input => {input.focus(); input.select();});
+  await handbook.keyboard.press('Backspace');
+  await handbook.click(save);
+  await handbook.waitForFunction(selector => document.querySelector(selector)?.textContent === '房间名已保存', {}, nameStatus);
   await handbook.close();
   console.log('PASS: masthead control sizes, room action alignment, shared disclosure, desktop/mobile detail handoff, and room settings specimen');
 } finally {
