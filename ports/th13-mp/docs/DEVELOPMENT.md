@@ -81,7 +81,7 @@ node --experimental-wasi-unstable-preview1 tools/run-harness.mjs replay games/re
 
 ECL 全局变量证据使用普通版 `tools/oracle` 生成的 `stage-gvars.json`；两侧的
 `tests/ecl/ecl_stage_gvars_oracle_test.cpp` 断言同一份 setup、94 个整型读与
-94 个浮点读。
+94 个浮点读，以及 −9944 距离与负 id 两组变体。
 
 ## 同帧取像（golden 对拍）
 

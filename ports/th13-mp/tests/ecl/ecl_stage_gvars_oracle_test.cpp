@@ -150,6 +150,26 @@ TEST(stage_gvars_supply_matches_retail_probe) {
             CHECK_EQ(sim.random.index(), u32(2));
         }
     }
+    sim.player_x = 160.5547332763672f;
+    sim.player_y = 473.39849853515625f;
+    current->position[0] = 289.9194641113281f;
+    current->position[1] = 85.0018310546875f;
+    i32 distance = 0;
+    CHECK(sim.gvars.integer(-9944, distance));
+    CHECK_EQ(distance, 409);
+    float distance_float = 0.0f;
+    CHECK(sim.gvars.floating(-9944, distance_float));
+    CHECK_EQ(th13test::bits_of(distance_float), 1137487844u);
+    current->script_id = -5;
+    current->trace_id = -9;
+    CHECK(sim.gvars.integer(-9914, distance));
+    CHECK_EQ(distance, -5);
+    CHECK(sim.gvars.integer(-9909, distance));
+    CHECK_EQ(distance, -9);
+    CHECK(sim.gvars.floating(-9914, distance_float));
+    CHECK_EQ(th13test::bits_of(distance_float), 1333788672u);
+    CHECK(sim.gvars.floating(-9909, distance_float));
+    CHECK_EQ(th13test::bits_of(distance_float), 1333788672u);
 }
 }
 

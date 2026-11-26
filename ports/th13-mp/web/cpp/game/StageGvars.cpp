@@ -32,7 +32,8 @@ float motion_angle(const StageEnemy* enemy) {
 float distance_to_enemy(const StageSim& sim, const StageEnemy* enemy) {
     const double dx = double(sim.player_x) - double(enemy ? enemy->position[0] : 0.0f);
     const double dy = double(sim.player_y) - double(enemy ? enemy->position[1] : 0.0f);
-    return float(std::sqrt(dx * dx + dy * dy));
+    const float squared = float(dx * dx + dy * dy);
+    return float(std::sqrt(double(squared)));
 }
 
 i32 active_enemy_count(const StageSim& sim) {
@@ -453,7 +454,7 @@ bool StageGvars::floating(i32 id, float& value) {
         return true;
     }
     case -9909:
-        value = e ? float(e->trace_id) : 0.0f;
+        value = e ? float_script(e->trace_id) : 0.0f;
         return true;
     case -9908:
         value = float(active_enemy_count(sim));
