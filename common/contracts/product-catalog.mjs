@@ -102,7 +102,7 @@ const BRO_MULTIPLAYER_LOADOUTS = Object.freeze([
 // The values are plain labels because the shared room UI renders
 // config.difficulties verbatim; the numeric index is the wire value, so the
 // slot order must stay stable (0=vanilla, 1=legacy, 2=AEX, 3=BadApple).
-const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Vanilla", "Legacy", "天空璋AEX", "Bad Apple!"]);
+const BRO_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Vanilla", "Legacy", "天空璋AEX", "Bad Apple!!"]);
 const TOGGLE_TOUCH_FIRE = Object.freeze({ mode: "toggle", labelKey: "touch.tapToggle" });
 const CHARGE_TOUCH_FIRE = Object.freeze({
     mode: "held-key",

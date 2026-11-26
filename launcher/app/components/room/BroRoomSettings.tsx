@@ -73,7 +73,7 @@ export function BroRoomSettings({systems, queue, disabled, onSystems, onQueue}: 
           disabled={disabled || available.length === 0}
           onChange={event => setDraftStage(event.target.value)}>
           <option value="">—</option>
-          {available.map(stage => <option key={stage.level} value={stage.level}>{stage.level}. {stage.name}</option>)}
+          {available.map(stage => <option key={stage.level} value={stage.level}>{stage.name}</option>)}
         </SettingsSelect>
         <UiButton size="sm" type="button" disabled={disabled || !draftStage} onClick={addStage}>{t('room.broQueueAddButton')}</UiButton>
       </div>
