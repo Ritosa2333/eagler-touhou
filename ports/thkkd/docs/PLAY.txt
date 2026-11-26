@@ -1,4 +1,4 @@
-东方海惠堂 thkkd Windows 单机版
+東方海恵堂 thkkd Windows 单机版
 
 将整个游戏文件夹解压到可写目录，双击 thkkd.exe 运行。assets 文件夹需要与 EXE 一起保留。
 

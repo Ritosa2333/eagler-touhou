@@ -61,7 +61,7 @@ int show_display_settings(const std::filesystem::path& userdata) {
     SettingsWindow state;state.path=userdata/"config.txt";state.settings=DisplaySettings::read(state.path);
     WNDCLASSW type{};type.lpfnWndProc=settings_proc;type.hInstance=GetModuleHandleW(nullptr);type.lpszClassName=L"ThkkdDisplaySettings";type.hCursor=LoadCursorW(nullptr,IDC_ARROW);type.hbrBackground=reinterpret_cast<HBRUSH>(COLOR_BTNFACE+1);RegisterClassW(&type);
     RECT rect{0,0,462,404};AdjustWindowRect(&rect,WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,FALSE);
-    auto window=CreateWindowExW(WS_EX_CONTROLPARENT,type.lpszClassName,L"东方海惠堂显示设置",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,CW_USEDEFAULT,CW_USEDEFAULT,rect.right-rect.left,rect.bottom-rect.top,nullptr,nullptr,type.hInstance,&state);
+    auto window=CreateWindowExW(WS_EX_CONTROLPARENT,type.lpszClassName,L"東方海恵堂显示设置",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,CW_USEDEFAULT,CW_USEDEFAULT,rect.right-rect.left,rect.bottom-rect.top,nullptr,nullptr,type.hInstance,&state);
     if(!window)return 1;ShowWindow(window,SW_SHOW);UpdateWindow(window);
     MSG message{};while(GetMessageW(&message,nullptr,0,0)>0){if(!IsDialogMessageW(window,&message)){TranslateMessage(&message);DispatchMessageW(&message);}}
     return 0;

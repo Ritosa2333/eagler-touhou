@@ -30,7 +30,7 @@ try{
   },fixtures.straightAlphaPixels);
   for(const row of report.alpha){assert.equal(row.min,9729);assert.equal(row.mag,9729);for(const pixel of row.pixels)assert.deepEqual(pixel.actual,pixel.expected,`${row.source} (${pixel.x},${pixel.y}) 原始 RGBA`);}
   report.checks.push('actual-PNG-GPU-straight-alpha-and-bilinear-filter');
-  report.font=await frame.evaluate(()=>{const p=__thkkdRuntime.platform,style=[...p.fonts.values()].find(f=>f.size===26);return {style,menuWidth:p.textRenderer.width('Game Start',style,26),glyphs:p.textRenderer.width('东方海惠堂 EX Ω',style,26)};});
+  report.font=await frame.evaluate(()=>{const p=__thkkdRuntime.platform,style=[...p.fonts.values()].find(f=>f.size===26);return {style,menuWidth:p.textRenderer.width('Game Start',style,26),glyphs:p.textRenderer.width('東方海恵堂 EX Ω',style,26)};});
   assert.equal(report.font.style.weight,300);assert.equal(report.font.style.edge,1);assert.ok(report.font.menuWidth>130&&report.font.glyphs>100);
   report.checks.push('native-menu-font-weight-outline-and-Unicode-layout');
   for(const viewport of [{width:1280,height:900,deviceScaleFactor:1},{width:1280,height:900,deviceScaleFactor:1.25},{width:1365,height:768,deviceScaleFactor:1.5},{width:1920,height:1080,deviceScaleFactor:2},{width:800,height:600,deviceScaleFactor:1},{width:390,height:844,deviceScaleFactor:3},{width:844,height:390,deviceScaleFactor:3}]){

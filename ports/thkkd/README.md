@@ -1,8 +1,8 @@
-# thkkd（东方海惠堂）
+# thkkd（東方海恵堂）
 
 [适配表](ADAPTATION.md) · [开发指南](docs/DEVELOPMENT.md) · [资源与打包](docs/packaging.md)
 
-本目录提供东方海惠堂的 C++ / WebAssembly 单机移植，保留六面、EX、Omniverse、九种机体、原生菜单、存档与 Replay。游戏逻辑保持 60 Hz，接入启动器的键盘、手柄、触控、高刷新率和浏览器持久化存储。
+本目录提供東方海恵堂的 C++ / WebAssembly 单机移植，保留六面、EX、Omniverse、九种机体、原生菜单、存档与 Replay。游戏逻辑保持 60 Hz，接入启动器的键盘、手柄、触控、高刷新率和浏览器持久化存储。
 
 ## 构建网页程序
 

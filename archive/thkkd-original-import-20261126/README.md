@@ -21,7 +21,3 @@ Windows x64、Edge Edg/158.0.4370.45 下，原版 ZIP 导入、游戏首帧、30
 [结构化结果](result.json) · [改动文件](CHANGES.md)
 
 ![从原版资源进入第一关](gameplay.png)
-
-## 来源历史接入方式
-
-本次从主项目基线建立一个文件快照提交，旧开发仓库历史保留在本机。上游 `check-history.py --base upstream/main --changed-subtrees` 要求新增作品保留来源 Git 祖先，因此报告 `New port directories need retained source history: ports/thkkd`。来源说明已登记于 `docs/migration/thkkd-file-import-20261126.md`，文件快照接入方式需要在提交贡献时由维护者接受，现有检查脚本保持原规则。

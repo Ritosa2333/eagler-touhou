@@ -111,7 +111,7 @@ std::string WindowsHost::memory_string(U address) const {
 void WindowsHost::initialize_window() {
     if (initialized_) return;
     DxLib::SetOutApplicationLogValidFlag(FALSE);
-    DxLib::SetMainWindowText(L"东方海惠堂 — thkkd");
+    DxLib::SetMainWindowText(L"東方海恵堂 — thkkd");
     if(options_.window_mode_override>=0)windowed_=options_.window_mode_override!=0;
     DxLib::ChangeWindowMode(windowed_?TRUE:FALSE);
     DxLib::SetFullScreenResolutionMode(DX_FSRESOLUTIONMODE_BORDERLESS_WINDOW);

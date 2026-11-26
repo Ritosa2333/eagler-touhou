@@ -129,8 +129,8 @@ const initialized=(async()=>{
   let buffer;
   if(parent!==window&&typeof parent.__eaglerPrepareManagedRuntimeDataV1==='function')buffer=(await parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:query.get('gameGeneration'),epoch})).buffer;
   else if(query.get('standalone')==='1'){const response=await fetch(query.get('data')||'./thkkd.data');if(!response.ok)throw Error('DATA 加载失败');buffer=await response.arrayBuffer();}
-  else throw Error('请从 eagler-touhou 启动东方海惠堂');
-  await platform.load(buffer,value=>loading.textContent=`正在准备东方海惠堂资源 ${Math.round(value*100)}%`);
+  else throw Error('请从 eagler-touhou 启动東方海恵堂');
+  await platform.load(buffer,value=>loading.textContent=`正在准备東方海恵堂资源 ${Math.round(value*100)}%`);
   await document.fonts.load('16px "Thkkd Unifont"');await document.fonts.ready;
   globalThis.__thkkdRuntime={core,platform,input,command,stop,status:()=>({launched,first,logicFrames,displayFrames})};
   emit('ready',{saveRoot});

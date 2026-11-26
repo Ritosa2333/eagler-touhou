@@ -57,9 +57,5 @@
   "notes": [
     "导入完成后通过游戏卡片的开始游戏按钮启动。",
     "首帧总耗时包含首次安装和测试脚本的启动等待。"
-  ],
-  "sourceHistoryCheck": {
-    "status": "requires-file-import-review",
-    "message": "New port directories need retained source history: ports/thkkd"
-  }
+  ]
 }

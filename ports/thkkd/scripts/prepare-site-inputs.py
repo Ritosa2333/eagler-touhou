@@ -16,10 +16,8 @@ def main():
     (artwork / 'pwa').mkdir(parents=True, exist_ok=True)
     fonts = output / 'shared'
     fonts.mkdir(parents=True, exist_ok=True)
-    source = WORKSPACE / 'launcher/public/assets/favicon.png'
-    with Image.open(source) as image:
-        image.save(artwork / 'thkkd-card.webp', lossless=True)
-    os.utime(artwork / 'thkkd-card.webp', ns=(source.stat().st_atime_ns, source.stat().st_mtime_ns))
+    source = ROOT / 'artwork/cover.jpg'
+    shutil.copy2(source, artwork / 'thkkd-card.jpg')
     site_icon = WORKSPACE / 'launcher/public/assets/favicon.png'
     with Image.open(site_icon).convert('RGBA') as image:
         for name, size in [('icon-192.png', 192), ('icon-512.png', 512), ('icon-maskable-512.png', 512), ('apple-touch-icon.png', 180)]:
@@ -35,7 +33,7 @@ def main():
         'schema': 'thkkd/site-inputs/1',
         'font': 'GNU Unifont 15.1.05; full original glyph set and naming retained',
         'compatibilityFont': 'The shared vanillaFont role uses a genuine Unifont TTC collection; the generic host writes it at its compatibility path shared/msgothic.ttc.',
-        'coverSource': 'launcher/public/assets/favicon.png',
+        'coverSource': 'ports/thkkd/artwork/cover.jpg',
         'files': {p.relative_to(output).as_posix(): {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in output.rglob('*') if p.is_file() and p.name != 'provenance.json'},
     }
     (output / 'provenance.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
