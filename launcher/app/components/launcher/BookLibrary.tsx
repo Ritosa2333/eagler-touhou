@@ -230,7 +230,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
           return {id, icon:Icon, label:labels[id], count:entries.length, selected:id === category, panelId:`bookCategory-${id}`,
             products:Object.hasOwn(disclosures, id) ? entries : undefined,
             expanded:disclosures[id] === true,
-            onExpand:entries.length ? (open:boolean) => setDisclosure(id, open, true) : undefined,
+            onExpand:id !== 'all' && entries.length ? (open:boolean) => setDisclosure(id, open, true) : undefined,
             onSelect:() => {
               if (id !== category) changeCategory(id);
               else {

@@ -22,17 +22,25 @@ export function MobileGameDetail({product, cover, actions, statistics, friends, 
     (settings ? backButton.current : settingsButton.current)?.focus({preventScroll:true});
   }, [settings]);
   return <div ref={detailMotion} className="mobile-game-pages">
-    <div className="options-scroll mobile-game-view" hidden={settings} inert={settings}>
-      <header className="game-detail-hero mobile-game-hero">
-        {cover && <img className="game-detail-backdrop" src={cover} alt="" aria-hidden="true" decoding="async"/>}
-        <div className="mobile-game-toolbar">
-          <Button variant="ghost" size="icon" className="mobile-game-back" id={settings ? undefined : 'libraryBack'}
-            onClick={onBack} aria-label={t('library.back')}><ArrowLeft aria-hidden="true"/></Button>
-          <GameDetailFavorite productId={product.id}/>
+    <div className="mobile-game-view" hidden={settings} inert={settings}>
+      <div className="options-scroll mobile-game-scroll">
+        <header className="game-detail-hero mobile-game-hero">
+          {cover && <img className="game-detail-backdrop" src={cover} alt="" aria-hidden="true" decoding="async"/>}
+          <div className="mobile-game-toolbar">
+            <Button variant="ghost" size="icon" className="mobile-game-back" id={settings ? undefined : 'libraryBack'}
+              onClick={onBack} aria-label={t('library.back')}><ArrowLeft aria-hidden="true"/></Button>
+            <GameDetailFavorite productId={product.id}/>
+          </div>
+          <GameDetailIdentity product={product} cover={cover} titleId={settings ? undefined : 'gameTitle'}>
+            <GameDetailMetrics productId={product.id} playtime={playtime} saved={saved}/>
+          </GameDetailIdentity>
+        </header>
+        <div className="mobile-game-progress">
+          {statistics}
+          {friends}
         </div>
-        <GameDetailIdentity product={product} cover={cover} titleId={settings ? undefined : 'gameTitle'}>
-          <GameDetailMetrics productId={product.id} playtime={playtime} saved={saved}/>
-        </GameDetailIdentity>
+      </div>
+      <footer className="mobile-game-footer">
         <div className="mobile-game-actions">
           {actions}
           <Button variant="outline" className="mobile-game-settings-button" id={settings ? undefined : 'gameSettingsOpen'}
@@ -40,13 +48,9 @@ export function MobileGameDetail({product, cover, actions, statistics, friends, 
             <Settings2 aria-hidden="true"/><span className="mobile-game-settings-label">{t('game.settings')}</span>
           </Button>
         </div>
-      </header>
-      <div className="mobile-game-progress">
-        {statistics}
-        {friends}
-      </div>
+      </footer>
     </div>
-    {settings && <div className="options-scroll mobile-game-view mobile-game-settings game-settings-page">
+    {settings && <div className="options-scroll mobile-game-settings game-settings-page">
       <header>
         <Button ref={backButton} className="mobile-game-back" variant="ghost" size="icon" id="libraryBack" onClick={() => setSettings(false)}
           aria-label={t('action.back')}><ArrowLeft aria-hidden="true"/></Button>

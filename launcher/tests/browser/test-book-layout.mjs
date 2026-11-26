@@ -4,6 +4,89 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 
 const origin = process.argv[2] || process.env.LAUNCHER_URL || 'http://127.0.0.1:5173/';
 const pc98Cards = '#bookGameGrid :is([data-book-product="th01"],[data-book-product="th05"])';
+
+async function assertMasthead(page, width) {
+  await page.waitForSelector('#mastheadMenuToggle:not(:disabled)', {visible:true});
+  const layout = await page.$eval('.book-masthead', header => {
+    const box = node => node.getBoundingClientRect();
+    const visible = selector => [...header.querySelectorAll(selector)].filter(node => box(node).width > 0);
+    const actions = visible('.masthead-action');
+    const icons = actions.filter(node => ![...node.children].some(child =>
+      child.tagName === 'SPAN' && child.classList.length === 0 && box(child).width > 0));
+    const navigation = visible('.book-main-nav a');
+    const groups = visible('.masthead-leading, .book-main-nav, .masthead-trailing, .masthead-library-search')
+      .map(box).sort((left, right) => left.left - right.left);
+    const active = header.querySelector('.book-main-nav a[aria-current="page"]');
+    const headerBounds = box(header);
+    const navBounds = box(header.querySelector('.book-main-nav'));
+    const menu = header.querySelector('#mastheadMenuToggle');
+    const center = node => box(node).top + box(node).height / 2;
+    return {
+      height: headerBounds.height,
+      controls: actions.map(node => [box(node).height, getComputedStyle(node).borderTopWidth]),
+      icons: icons.map(node => box(node).width),
+      centers: [...actions, ...navigation].map(center),
+      nav: navigation.map(node => box(node).width),
+      navGap: navigation.length && box(navigation[1]).left - box(navigation[0]).right,
+      underline: active && getComputedStyle(active, '::after').backgroundColor,
+      foreground: active && getComputedStyle(active).color,
+      underlineWidths: navigation.map(node=>parseFloat(getComputedStyle(node, '::after').width)),
+      menuGroup: menu.closest('.masthead-leading, .masthead-trailing').className,
+      menuLast: menu === menu.parentElement.lastElementChild,
+      gutters: [groups[0].left - headerBounds.left, headerBounds.right - groups.at(-1).right],
+      navOffset: (navBounds.left + navBounds.right - headerBounds.left - headerBounds.right) / 2,
+      activeFill: navigation.length ? getComputedStyle(active).backgroundColor : null,
+      fits: groups.every((bounds,index) => bounds.left >= headerBounds.left - 1 &&
+        bounds.right <= headerBounds.right + 1 && (index === 0 || groups[index-1].right <= bounds.left + 1)),
+    };
+  });
+  assert.ok(layout.height >= (width <= 780 ? 56 : 60), `${width}px masthead has room around controls`);
+  assert.ok(layout.controls.length >= 3);
+  assert.ok(layout.controls.every(([height,border]) => height === 44 && border === '0px'), `${width}px masthead actions share an unframed 44px height`);
+  assert.ok(layout.icons.every(size => size === 44), `${width}px icon actions are square`);
+  assert.ok(Math.max(...layout.centers) - Math.min(...layout.centers) <= 1, `${width}px masthead controls share a centerline`);
+  assert.ok(layout.fits, `${width}px masthead groups fit without overlap`);
+  assert.equal(layout.menuGroup, width <= 780 ? 'masthead-leading' : 'masthead-trailing');
+  if (layout.nav.length) {
+    assert.ok(layout.menuLast, 'More is the rightmost desktop action');
+    assert.equal(layout.navGap, 0, 'the navigation indicators can meet edge to edge');
+    assert.equal(layout.underline, layout.foreground, 'the underline uses the theme foreground instead of the accent');
+    assert.ok(layout.underlineWidths.every((width, index) => Math.abs(width - layout.nav[index]) < 1));
+    assert.ok(layout.gutters.every(gap => gap >= 12 && gap <= 32), `${width}px outer groups sit by the viewport edges`);
+    assert.equal(new Set(layout.nav).size, 1, 'Desktop mode links have the same width');
+    assert.equal(layout.activeFill, 'rgba(0, 0, 0, 0)', 'The current mode uses an underline without a filled button');
+    if (width >= 1440) {
+      assert.ok(Math.abs(layout.navOffset) < 1, 'Desktop mode links are centered independently of side groups');
+      assert.ok(layout.nav.every(width => width >= 108), 'Desktop mode links have room around icon and label');
+    }
+  }
+}
+
+async function assertInboxMotion(page) {
+  const action = section => `.masthead-inbox-action[data-inbox-section="${section}"]`;
+  const announcements = action('announcements');
+  const messages = action('messages');
+  const animation = (selector, pseudo = null) => page.$eval(selector,
+    (node, pseudo) => getComputedStyle(node, pseudo).animationName, pseudo);
+  await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);
+  await page.hover(announcements);
+  assert.equal(await animation(`${announcements} > svg`), 'masthead-megaphone-call');
+  assert.equal(await animation(announcements, '::before'), 'masthead-megaphone-wave');
+  await page.hover(messages);
+  assert.equal(await animation(`${messages} > svg`), 'masthead-mail-lift');
+  assert.equal(await animation(`${messages} > svg > path`), 'masthead-mail-flap');
+  await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
+  assert.equal(await animation(`${messages} > svg`), 'none');
+  await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);
+  const hadLessMotion = await page.evaluate(() => document.body.classList.contains('less-motion'));
+  await page.evaluate(() => document.body.classList.add('less-motion'));
+  await page.hover(announcements);
+  assert.equal(await animation(`${announcements} > svg`), 'none');
+  assert.equal(await animation(announcements, '::before'), 'none');
+  await page.evaluate(hadLessMotion => document.body.classList.toggle('less-motion', hadLessMotion), hadLessMotion);
+  await page.mouse.move(0, 0);
+}
+
 const browser = await puppeteer.launch({headless: true, executablePath: await findChromiumExecutable()});
 try {
   const lobby = await browser.newPage();
@@ -43,12 +126,21 @@ try {
   }
   await lobby.close();
 
+  const narrowDesktop = await browser.newPage();
+  await narrowDesktop.setViewport({width:781, height:760});
+  await narrowDesktop.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
+  await narrowDesktop.goto(new URL('en.html', origin), {waitUntil:'domcontentloaded'});
+  await narrowDesktop.waitForFunction(() => window.__eaglerBoot?.done);
+  await assertMasthead(narrowDesktop, 781);
+  await narrowDesktop.close();
+
   for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
     const page = await browser.newPage();
     await page.setViewport({width, height: 780, isMobile: true, hasTouch: true});
     await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
     await page.goto(origin, {waitUntil: 'domcontentloaded'});
     await page.waitForFunction(() => window.__eaglerBoot?.done);
+    await assertMasthead(page, width);
     await page.evaluate(theme => document.documentElement.dataset.bookTheme = theme, theme);
     assert.match(await page.$eval('meta[name="viewport"]', node => node.content), /viewport-fit=contain/);
     if (width === 390) {
@@ -67,7 +159,7 @@ try {
     }
     const card = await page.waitForSelector(pc98Cards, {visible: true});
     await card.tap();
-    const detail = '.tools[data-full-page][data-state="open"]';
+    const detail = '.tools[data-book-sheet][data-state="open"]';
     const settings = '.mobile-game-settings';
     const settingsControl = '#gameSettingsOpen';
     const back = detail + ' #libraryBack';
@@ -77,14 +169,25 @@ try {
       const node = document.querySelector(selector);
       if (!node) return false;
       const rect = node.getBoundingClientRect();
-      return Math.abs(rect.top) < 1 && Math.abs(rect.bottom - innerHeight) < 1;
+      return rect.top >= 16 && rect.top <= 65 && Math.abs(rect.bottom - innerHeight) < 1 && !node.getAnimations().length;
     }, {}, detail);
+    assert.equal(await page.$eval('#libraryBackdrop[data-book-sheet]', node => getComputedStyle(node).backgroundColor), 'rgba(0, 0, 0, 0.24)');
+    assert.equal(await page.$eval(detail, node => getComputedStyle(node).borderTopLeftRadius), '12px');
     const actions = await page.$eval(detail, panel => ['#launch', '#gamePackageImport', '#gameSettingsOpen'].map(selector => {
       const button = panel.querySelector(selector);
       const {left, right, top, bottom, height} = button.getBoundingClientRect();
       return left >= 0 && right <= innerWidth + 1 && top >= 0 && bottom <= innerHeight + 1 && height >= 44 && !button.closest('[inert]');
     }));
     assert.deepEqual(actions, [true, true, true], 'Detail actions fit with comfortable touch targets');
+    assert.equal(await page.$eval(detail, panel => {
+      const scroll = panel.querySelector('.mobile-game-scroll');
+      const footer = panel.querySelector('.mobile-game-footer');
+      const actionsTop = footer.getBoundingClientRect().top;
+      scroll.scrollTop = scroll.scrollHeight;
+      const fixed = footer.getBoundingClientRect().top === actionsTop && !scroll.contains(footer);
+      scroll.scrollTop = 0;
+      return fixed;
+    }), true, 'Detail actions stay docked below the scroll region');
     await page.tap(settingsControl);
     await page.waitForSelector(settings, {visible: true});
     assert.equal(await page.$eval(settings, node => node.scrollWidth <= node.clientWidth + 1), true);
@@ -111,6 +214,11 @@ try {
   });
   await resize.goto(origin, {waitUntil: 'domcontentloaded'});
   await resize.waitForFunction(() => window.__eaglerBoot?.done);
+  await assertMasthead(resize, 1440);
+  await resize.setViewport({width: 1707, height: 819});
+  await assertMasthead(resize, 1707);
+  await assertInboxMotion(resize);
+  await resize.setViewport({width: 1440, height: 540});
   await resize.waitForSelector('#bookRecentTitle', {visible:true});
   assert.equal(await resize.evaluate(() => {
     const recent = document.querySelector('#bookRecentTitle'), all = document.querySelector('.book-current h2');
@@ -121,9 +229,10 @@ try {
   const product = await publishedCard.evaluate(link => link.dataset.bookProduct);
   const card = `#bookGameGrid [data-book-product="${product}"]`;
   const detail = `[data-game-detail="${product}"]`;
-  const mobileDetail = '.tools[data-full-page][data-state="open"]';
+  const mobileDetail = '.tools[data-book-sheet][data-state="open"]';
   const categoryToggle = '[data-book-category-disclosure="pc98"]';
   const categoryPanel = '#bookCategory-pc98';
+  assert.equal(await resize.$('[data-book-category-group="all"] .book-category-disclosure, #bookCategory-all'), null);
   await resize.focus(categoryToggle);
   await resize.keyboard.press('Enter');
   await resize.waitForFunction(selector => {
@@ -212,7 +321,7 @@ try {
   await handbook.waitForSelector(`${sample} #mpRoomVisibility-trigger`, {visible: true});
   assert.equal(await handbook.$eval(sample, el => !!el.querySelector('#mpRoomName')), false);
   await handbook.close();
-  console.log('PASS: room action alignment, shared disclosure, desktop/mobile detail handoff, and room settings specimen');
+  console.log('PASS: masthead control sizes, room action alignment, shared disclosure, desktop/mobile detail handoff, and room settings specimen');
 } finally {
   await browser.close();
 }

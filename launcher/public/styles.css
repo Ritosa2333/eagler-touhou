@@ -812,7 +812,7 @@ body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-surface-in .18s c
   body.mp-room-active .sheet:has(.library-layout) .masthead{display:grid!important;visibility:hidden!important;margin-inline:-18px;padding-inline:18px}
   /* Opaque mobile drawer: a small top reveal, with transform-only motion. */
   .main.library-layout>.tools,.main.library-layout>.tools.is-open.mp-mode{--options-edge-top:max(24px,env(safe-area-inset-top));--options-edge-bottom:0px;--options-edge-left:0px;--options-edge-right:0px;--options-width:var(--options-view-width);--options-height:calc(var(--options-view-height) - var(--options-edge-top));top:calc(var(--options-view-top) + var(--options-edge-top));left:var(--options-view-left);border:0;border-radius:24px 24px 0 0;background:var(--panel);box-shadow:none}
-  .library-backdrop{background:transparent!important}
+  .library-backdrop:not([data-book-sheet]){background:transparent!important}
   .main.library-layout .game-rail .game .card-art{transition:none!important}
   .main.library-layout .game-rail .game .card-art:after{transition:none!important}
   .main.library-layout .game-rail .game.nav-preview .card-art{scale:1}

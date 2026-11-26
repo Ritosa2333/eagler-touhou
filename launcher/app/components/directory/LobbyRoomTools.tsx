@@ -1,11 +1,11 @@
 import {BookButton} from '../launcher/BookButton';
 import {useLocale} from '../../i18n';
 import {useLayoutEffect, useRef} from 'react';
-import {Clapperboard, KeyRound, Plus} from 'lucide-react';
+import {KeyRound, Plus} from 'lucide-react';
 
 /** Shared original lobby.html room actions, including its disabled boot state. */
-export function LobbyRoomTools({disabled, loading = false, onCreate, onJoin, onRefresh, onReplay}: {
-  disabled: boolean; loading?: boolean; onCreate?: () => void; onJoin?: () => void; onRefresh?: () => void; onReplay?: () => void;
+export function LobbyRoomTools({disabled, loading = false, onCreate, onJoin, onRefresh}: {
+  disabled: boolean; loading?: boolean; onCreate?: () => void; onJoin?: () => void; onRefresh?: () => void;
 }) {
   const {t} = useLocale();
   const clickAnimation = useRef<Animation | null>(null);
@@ -16,9 +16,6 @@ export function LobbyRoomTools({disabled, loading = false, onCreate, onJoin, onR
       aria-label={t('lobby.create')} title={t('lobby.create')} onClick={onCreate}><Plus aria-hidden="true"/><span>{t('lobby.create')}</span></BookButton>
     <BookButton variant="action" className={`${buttonClass} lobby-secondary`} id="codeButton" type="button" disabled={disabled}
       aria-label={t('lobby.byCode')} title={t('lobby.byCode')} onClick={onJoin}><KeyRound aria-hidden="true"/><span>{t('lobby.byCode')}</span></BookButton>
-    {onReplay && <BookButton variant="action" size="icon" className="lobby-button lobby-compact-replay" type="button" aria-label={t('lobby.watchReplay')} onClick={onReplay}>
-      <Clapperboard aria-hidden="true"/>
-    </BookButton>}
     <BookButton variant="action" size="icon" className="lobby-button lobby-refresh" id="refreshRooms" type="button" aria-label={t('lobby.refresh')} aria-busy={loading} data-loading={loading} onClick={event=>{
       const button=event.currentTarget, icon=button.querySelector('svg');
       if (icon && !loading && !button.closest('.less-motion') && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {

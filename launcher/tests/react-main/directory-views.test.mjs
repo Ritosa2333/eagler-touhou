@@ -320,17 +320,13 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
   assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 0}));
   assert.equal(n('#roomCount').hidden, true, 'An empty directory needs no zero-room footer');
   assert.equal(n('#connectionWarning').hidden, true); assert.equal(n('#membership').hidden, true);
-  const doc = baselineDoc(locale);
-  for (const selector of ['.lobby-intro']) {
-    const intro = n(selector).cloneNode(true);
-    assert.equal(intro.querySelector('h1').className,'visually-hidden');
-    intro.querySelector('h1').removeAttribute('class');
-    const guide = n('#lobbyGuideOpen', intro);
-    assert.equal(guide.localName, 'a');
-    assert.equal(guide.getAttribute('href'), '/docs/multiplayer');
-    guide.remove();
-    n('#lobbyGuideOpen', doc).remove();
-    assert.deepEqual(normalize(intro), normalize(n(selector, doc)), `Pinned DOM: ${selector}`);
+  assert.equal(n('.book-directory h1').textContent, t(locale, 'lobby.title'));
+  const guide = n('.lobby-room-tools .lobby-support-links #lobbyGuideOpen');
+  assert.equal(guide.localName, 'a');
+  assert.equal(guide.getAttribute('href'), '/docs/multiplayer');
+  for (const [control, key] of [[guide, 'multiplayerGuide.action'], [n('.lobby-support-links #lobbyNetworkCheck'), 'networkCheck.action']]) {
+    assert.equal(control.getAttribute('aria-label'), t(locale, key));
+    assert.equal(control.querySelector('svg').getAttribute('aria-hidden'), 'true');
   }
   assert.equal(env.document.querySelector('.lobby-support-links a[href*="ratings.html"]'), null);
   assert.equal(env.document.querySelector('.book-room-view-toggle'),null);
@@ -481,7 +477,7 @@ test('Lobby defaults to live ratings and shows no-rating games without a win-rat
       ['/api/v1/th09/ratings?cards=rated%2Cunrated']);
     const rankings = n('.lobby-support-links a[href*="ratings.html"]');
     assert.equal(rankings.getAttribute('href'), '/review/ratings.html?lang=zh-CN');
-    assert.equal(rankings.firstElementChild.textContent, '排行榜');
+    assert.equal(rankings.getAttribute('aria-label'), '排行榜');
     assert.equal(env.document.querySelector('.lobby-support-links .lobby-survey-link'), null);
     assert.deepEqual(all('.book-room-duel-summary[data-side="0"]').map(node=>node.textContent),['1438 (局数 26)','— (局数 26)']);
     assert.equal(env.document.querySelector('.lobby-room-list .player-profile-card-scores'),null);
@@ -980,14 +976,15 @@ test('legacy room names stay out of the directory and create dialog', async () =
 
 
 test('room quick filters distinguish playable seats, waiting rooms and spectators and update with the live directory', async () => {
-  const rooms = [room({code: '1111'}), room({code: '2222', players: 3, seats: [...room().seats.slice(0, 2), {initial: 'S', online: true, ready: false, controlMode: 'normal'}]}), room({code: '3333', phase: 'playing', players: 3}), room({code: '4444', joinable: false})];
+  const fullSeats = [...room().seats.slice(0, 2), {initial: 'S', online: true, ready: false, controlMode: 'normal'}];
+  const rooms = [room({code: '1111'}), room({code: '2222', difficulty: 3, players: 3, seats: fullSeats}), room({code: '3333', phase: 'playing', players: 3, seats: fullSeats}), room({code: '4444', joinable: false})];
   const f = await fixture({selectedProduct: ''}).live(rooms);
   await mountLobby(f);
   const keys = () => all('.lobby-room-row').map(n => n.dataset.key);
-  const filter = async id => {
+  const filter = async (id, facet = 'filter') => {
     await click('.book-room-filter-trigger');
     assert.equal(n('.book-room-filter-trigger').getAttribute('aria-expanded'),'true');
-    await click(`[data-room-filter="${id}"]`);
+    await click(`[data-room-${facet}="${id}"]`);
     assert.equal(n('.book-room-filter-trigger').getAttribute('aria-expanded'),'false','Single-choice room filter closes after selection');
     await React.act(async()=>new Promise(resolve=>env.window.requestAnimationFrame(()=>env.window.requestAnimationFrame(resolve))));
   };
@@ -998,6 +995,13 @@ test('room quick filters distinguish playable seats, waiting rooms and spectator
   assert.deepEqual(keys(), ['th06mp-1111', 'th06mp-2222', 'th06mp-4444']);
   await filter('spectate');
   assert.deepEqual(keys(), ['th06mp-2222', 'th06mp-3333']);
+  await filter('3', 'players');
+  assert.deepEqual(keys(), ['th06mp-2222', 'th06mp-3333']);
+  await filter('Lunatic', 'difficulty');
+  assert.deepEqual(keys(), ['th06mp-2222']);
+  assert.equal(n('#roomCount').textContent, t('en', 'lobby.roomCount', {count:1}));
+  await filter('', 'difficulty');
+  await filter('', 'players');
   await filter('open');
   await f.receive(rooms.slice(1));
   assert.equal(all('.lobby-room-exiting').length,1);
@@ -1005,9 +1009,12 @@ test('room quick filters distinguish playable seats, waiting rooms and spectator
   await React.act(async()=>{await new Promise(resolve=>setTimeout(resolve,550));});
   assert.equal(keys().length, 0);
   assert.equal(n('#emptyTitle').textContent, 'No matching rooms');
+  await filter('Lunatic', 'difficulty');
+  await filter('3', 'players');
   await click('#emptyAction');
   await click('.book-room-filter-trigger');
   assert.equal(n('[data-room-filter="all"]').getAttribute('aria-checked'), 'true');
+  for (const facet of ['difficulty', 'players']) assert.equal(n(`[data-room-${facet}=""]`).getAttribute('aria-checked'), 'true');
   assert.equal(keys().length, 3);
   assert.equal(f.navigations.length, 0, 'filtering never enters a room');
 });

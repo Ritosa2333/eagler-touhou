@@ -90,7 +90,7 @@ html:has(.book-masthead) .masthead-links>.book-profile-trigger{display:inline-fl
 .profile-actions {justify-self:end}
 .profile-action-buttons {display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
 .masthead.book-masthead[data-profile-cover-overlap]{background:transparent;border-color:transparent;pointer-events:none}
-.book-masthead[data-profile-cover-overlap] > :is(.book-brand,.masthead-links,.book-main-nav,.masthead-trailing){pointer-events:auto}
+.book-masthead[data-profile-cover-overlap] :is(.masthead-leading > *, .book-main-nav, .masthead-trailing){pointer-events:auto}
 .book-masthead[data-profile-cover-overlap] :is(.masthead-link,.masthead-action,.book-main-nav a){
   color:#fff;
 }

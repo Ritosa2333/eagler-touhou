@@ -26,7 +26,7 @@ type GameAction = {
   label?: string;
   selected: boolean;
   anchorRef?: Ref<HTMLAnchorElement>;
-  marker?: ReactNode;
+  selection?: ReactNode;
   onClick(event: MouseEvent<HTMLElement>): void;
 };
 
@@ -47,7 +47,8 @@ export function BookGameRail<Id extends string>({label, className, groups, searc
       {groups.map(group => <Disclosure key={group.id} id={group.panelId} open={group.expanded === true} onOpenChange={next => group.onExpand?.(next)}>
         {({open, trigger, panel}) => {
           const Icon = group.icon;
-          const separateDisclosure = !!group.onSelect && !!group.onExpand;
+          const expandable = !!group.onExpand;
+          const separateDisclosure = !!group.onSelect && expandable;
           const mark = <ChevronRight aria-hidden="true" data-expanded={open}/>;
           return <div className="book-category" data-book-category-group={group.id} data-selected={group.selected === true}>
             <div className="book-category-row" data-single-action={!separateDisclosure || undefined}>
@@ -62,14 +63,14 @@ export function BookGameRail<Id extends string>({label, className, groups, searc
                 ? <Button variant="ghost" size="icon-sm" className="book-category-disclosure" disabled={!interactive}
                     data-book-category-disclosure={group.id} aria-label={t('library.categoryContents', {category:group.label})}
                     {...trigger}>{mark}</Button>
-                : <span className="book-category-disclosure" aria-hidden="true">{mark}</span>}
+                : expandable && <span className="book-category-disclosure" aria-hidden="true">{mark}</span>}
             </div>
-            {!!group.onExpand && <DisclosurePanel {...panel} className="book-category-fold">
+            {expandable && <DisclosurePanel {...panel} className="book-category-fold">
               <ul className="book-category-games">
                 {group.products?.map(product => {
                   const action = gameAction(product, group.id);
-                  return <li key={product.id} data-lobby-rail-product={action.marker ? product.id : undefined}>
-                    {action.marker}
+                  return <li key={product.id} data-lobby-rail-product={action.selection ? product.id : undefined}>
+                    {action.selection}
                     {action.href
                       ? <Button asChild variant="ghost" className="book-rail-game"><a ref={action.anchorRef} href={action.href}
                           data-book-sidebar-product={product.id} aria-current={action.selected ? 'page' : undefined}

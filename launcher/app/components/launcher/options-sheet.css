@@ -139,7 +139,7 @@
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
-    padding: 0 20px 12px;
+    padding: var(--options-scroll-padding, 0 20px 12px);
     overscroll-behavior: contain;
     scrollbar-width: thin;
   }
@@ -310,13 +310,16 @@
   }
   @media (max-width: 780px) {
     :is(.tools[data-options-panel], .mp-settings-room-drawer.settings-ui) {
-      --options-mobile-top: max(env(safe-area-inset-top), clamp(24px, 8dvh, 64px));
+      --options-mobile-top: max(env(safe-area-inset-top), clamp(24px, var(--options-mobile-gap, 8dvh), 64px));
       --options-width: var(--options-view-width, 100vw);
       --options-height: calc(var(--options-view-height, 100dvh) - var(--options-mobile-top));
       top: calc(var(--options-view-top, 0px) + var(--options-mobile-top));
       left: var(--options-view-left, 0px);
       border-width: 1px 0 0;
       border-radius: 12px 12px 0 0;
+    }
+    .tools[data-options-panel][data-book-sheet] {
+      --options-mobile-gap: calc(var(--options-view-height, 100dvh) * .08);
     }
     :is(.tools[data-options-panel], .mp-settings-room-drawer) .library-back {
       top: max(10px, env(safe-area-inset-top));
@@ -325,7 +328,6 @@
     :is(.tools[data-options-panel], .mp-settings-room-drawer) .tools-head {
       flex-basis: min(clamp(144px, 47vw, 200px), 30dvh);
     }
-    :is(.tools[data-options-panel], .mp-settings-room-drawer) .options-scroll,
     .mp-settings-room-drawer .mp-settings-room-content {
       padding-inline: 20px;
     }

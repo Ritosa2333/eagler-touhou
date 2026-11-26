@@ -21,15 +21,15 @@ export interface OptionsPanelProps {
   /** Preserve the original MP link only when that product is actually published. */
   lobbyHref?: string;
   embeddedInLobby?: boolean;
-  fullPage?: boolean;
-  page?: ReactNode;
+  bookSheet?: boolean;
+  detail?: ReactNode;
   /** Existing room settings carrier receives the same header and MP fold. */
   roomDrawer?: boolean;
   multiplayerOnline?: ReactNode;
   multiplayerDiagnostics?: ReactNode;
 }
 /** Main index.html354–365 shell; body is the shared SettingsBody, never a copy. */
-export function OptionsPanel({product, coverArtwork, open, closing=false, onBack, children, actions, lobbyHref, embeddedInLobby = false, fullPage = false, page, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics}: OptionsPanelProps) {
+export function OptionsPanel({product, coverArtwork, open, closing=false, onBack, children, actions, lobbyHref, embeddedInLobby = false, bookSheet, detail, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics}: OptionsPanelProps) {
   const {t} = useLocale();
   const panel = useRef<HTMLElement>(null);
   useOptionsViewport(panel, open && !roomDrawer);
@@ -55,8 +55,8 @@ export function OptionsPanel({product, coverArtwork, open, closing=false, onBack
       <UiButton variant="secondary" size="icon" className="library-back" id="libraryBack" type="button" aria-label={t(roomDrawer || embeddedInLobby ? 'settings.drawerClose' : 'library.back')} onClick={onBack}><X aria-hidden="true"/></UiButton>
     </div>;
   const fold = <section className={inRoomDrawer ? 'mp-settings mp-room-drawer-mounted' : 'mp-settings'} id="mpSettingsFold">{product.multiplayer ? children : null}</section>;
-  return <aside ref={panelTarget} data-options-panel data-full-page={fullPage || undefined} data-state={open&&!closing?'open':'closed'} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role="dialog" aria-labelledby="gameTitle" aria-modal={open&&!closing || undefined} inert={!open||closing}>
-    {fullPage ? page : <>
+  return <aside ref={panelTarget} data-options-panel data-book-sheet={bookSheet || undefined} data-state={open&&!closing?'open':'closed'} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role="dialog" aria-labelledby="gameTitle" aria-modal={open&&!closing || undefined} inert={!open||closing}>
+    {bookSheet ? detail : <>
     {inRoomDrawer ? drawerTargets && createPortal(header, drawerTargets.header) : header}
     <div className="options-scroll">
       {product.multiplayer && !embeddedInLobby && productLobbyHref && <AppLink className="options-lobby-link" id="optionsLobbyLink" href={productLobbyHref} aria-label={`${product.title} | ${t('lobby.title')}`}><Users aria-hidden="true"/><span>{t('lobby.title')}</span><ChevronRight aria-hidden="true"/></AppLink>}

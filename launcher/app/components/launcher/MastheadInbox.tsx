@@ -31,14 +31,15 @@ export function MastheadInbox({compact, interactive, homeHref, assetUrl, nativeL
       const href = launcherSectionHref(homeHref, id);
       const contents = <><Icon aria-hidden="true"/>{count > 0 && <small aria-hidden="true">{count}</small>}</>;
       const accessible = count ? `${label} (${count})` : label;
+      const action = {'aria-label': accessible, 'data-unread': count > 0, 'data-inbox-section': id};
       return compact || !interactive
         ? <Button key={id} asChild className="masthead-action masthead-inbox-action" variant="ghost" size="icon">
-          <Link href={href} {...entryLink} aria-label={accessible} data-unread={count > 0}>{contents}</Link>
+          <Link href={href} {...entryLink} {...action}>{contents}</Link>
         </Button>
         : <Popover.Root key={id}>
           <MastheadTooltip label={label}><Popover.Trigger asChild>
             <Button variant="ghost" size="icon" className="masthead-action masthead-inbox-action"
-              aria-label={accessible} data-unread={count > 0}>{contents}</Button>
+              {...action}>{contents}</Button>
           </Popover.Trigger></MastheadTooltip>
           <Popover.Portal container={uiPortalHost()}>
             <Popover.Content className="masthead-inbox-panel ui-dropdown-motion" aria-label={heading} align="end" sideOffset={7} collisionPadding={12}

@@ -706,6 +706,33 @@
 .book-category-games .book-favorite:before {
   content: none;
 }
+.book-category-games:has(> [data-lobby-rail-product]) {
+  margin-inline-start: 6px;
+}
+.book-category-games > [data-lobby-rail-product] {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 38px;
+  align-items: stretch;
+  border-radius: 6px;
+}
+.book-category-games > [data-lobby-rail-product] > .book-rail-game {
+  padding-inline: 0 6px;
+  background: transparent;
+}
+.book-category-games > [data-lobby-rail-product] .book-category-game-name {
+  padding-inline-end: 0;
+}
+.book-category-games > [data-lobby-rail-product] > .book-favorite.ui-kit-button {
+  position: static;
+  width: 100%;
+  height: 100%;
+}
+.book-category-games > [data-lobby-rail-product] > .book-favorite[aria-pressed="true"] {
+  color: var(--kit-warning);
+}
+.book-category-games > [data-lobby-rail-product]:has(> [aria-pressed="true"].book-rail-game) {
+  background: var(--kit-accent);
+}
 .book-category-disclosure svg {
   transition: rotate var(--ui-surface-duration) var(--ui-surface-easing);
 }
@@ -840,22 +867,22 @@
 @media (min-width: 781px) {
   :is(.book-recent-link, .book-category-games .book-rail-game)
     > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
-  .book-category-games :is(.book-lobby-sidebar-check, .book-favorite > svg) {
+  .book-category-games li:not([data-lobby-rail-product]) .book-favorite > svg {
     transition: translate 0.48s cubic-bezier(0.22, 0.7, 0.2, 1);
   }
   :is(.book-recent-link, .book-category-games .book-rail-game):focus-visible
     > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
-  .book-category-games li:has(> :focus-visible) :is(.book-lobby-sidebar-check, .book-favorite > svg) {
+  .book-category-games li:not([data-lobby-rail-product]):has(> :focus-visible) .book-favorite > svg {
     translate: 3px 0;
   }
 }
 @media (min-width: 781px) and (hover: hover) and (pointer: fine) {
   :is(.book-recent-link:hover, .book-category-games li:hover > .book-rail-game)
     > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
-  .book-category-games li:hover :is(.book-lobby-sidebar-check, .book-favorite > svg) {
+  .book-category-games li:not([data-lobby-rail-product]):hover .book-favorite > svg {
     translate: 3px 0;
   }
-  .book-category-games li:hover > .book-rail-game {
+  .book-category-games :is(li:not([data-lobby-rail-product]):hover > .book-rail-game, [data-lobby-rail-product]:hover) {
     background: var(--kit-accent);
     color: var(--kit-foreground);
   }
@@ -867,7 +894,7 @@
   }
   :is(.book-recent-link, .book-category-games .book-rail-game)
     > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
-  .book-category-games :is(.book-lobby-sidebar-check, .book-favorite > svg) {
+  .book-category-games .book-favorite > svg {
     transition: none;
     translate: none !important;
   }
@@ -878,7 +905,7 @@
 .less-motion
   :is(.book-recent-link, .book-category-games .book-rail-game)
   > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
-.less-motion .book-category-games :is(.book-lobby-sidebar-check, .book-favorite > svg) {
+.less-motion .book-category-games .book-favorite > svg {
   transition: none;
   translate: none !important;
 }

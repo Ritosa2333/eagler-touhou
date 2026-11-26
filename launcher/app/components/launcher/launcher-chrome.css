@@ -1,36 +1,4 @@
-  .launcher-wordmark {display:inline-grid;flex:none;width:98px;aspect-ratio:108 / 31.5}
-  .launcher-wordmark > img {grid-area:1/1;display:block;width:100%;height:100%;object-fit:contain}
-  .launcher-wordmark > img:last-child {visibility:hidden}
-  :root[data-book-theme="light"] .launcher-wordmark > img:first-child {visibility:hidden}
-  :root[data-book-theme="light"] .launcher-wordmark > img:last-child {visibility:visible}
-
-  .masthead.book-masthead {
-    --masthead-icon-size:14px;
-    --masthead-optical-offset:2px;
-    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
-    grid-template-rows:43px;
-    gap:0 12px;
-    min-height:44px;
-    padding-inline:max(28px,env(safe-area-inset-left)) max(28px,env(safe-area-inset-right));
-  }
-  .book-masthead .book-brand {min-height:0;height:43px}
-  .book-masthead .masthead-links {grid-area:1 / 1;justify-self:start;align-self:stretch;align-items:center;margin-inline-start:112px}
-  .book-masthead .masthead-links::before {content:"";width:1px;height:11px;margin-inline:0 6px;background:var(--kit-control-border);translate:0 var(--masthead-optical-offset)}
-  .book-masthead .masthead-links > .masthead-action {width:32px;height:32px}
-  .book-masthead .masthead-links > .masthead-action > svg {width:var(--masthead-icon-size);height:var(--masthead-icon-size);translate:0 var(--masthead-optical-offset)}
-  .book-masthead .masthead-links > .masthead-link {display:none}
-  .book-masthead .book-main-nav {align-items:center;gap:2px}
-  .book-masthead .book-main-nav :is(a,button) {min-width:74px;min-height:32px;padding:0 10px;border:0;border-radius:5px;font-size:14px;font-weight:500}
-  .book-masthead .book-main-nav .book-navigation-icon {width:17px;height:17px}
-  .book-masthead .book-main-nav :is([aria-current="page"],[aria-pressed="true"]) {background:var(--kit-accent);font-weight:650}
-  .book-masthead .book-main-nav :is(a,button)::after {inset:auto calc(50% - 11px) 0;height:2px;border-radius:2px;background:var(--kit-brand)}
-  .masthead-trailing {grid-area:1 / 3;justify-self:end;display:flex;align-items:center;gap:6px;min-width:0}
-  .book-masthead .masthead-account-entry {gap:6px;width:auto;min-height:0;height:32px;padding:0 5px;max-width:144px;font-size:14px;font-weight:600}
-  .masthead-account-entry > span:not(.account-avatar) {min-width:0;overflow:hidden;text-overflow:ellipsis}
-  .masthead-account-entry > svg {width:13px;height:13px}
-  .book-masthead .account-login-link,.book-masthead .account-loading {height:32px;min-height:0}
-  .masthead-account-entry .account-avatar {--account-avatar-size:24px}
-  .masthead-library-search,.site-bottom-navigation.launcher-bottom-navigation,.launcher-back.launcher-mobile-back {display:none}
+  .site-bottom-navigation.launcher-bottom-navigation,.launcher-back.launcher-mobile-back {display:none}
   .launcher-home {width:min(100%,580px);margin-inline:auto;padding:16px}
   .launcher-home h1 {margin:0 0 12px;font-size:21px;font-weight:600}
   .launcher-home-account {--launcher-account-height:74px;--launcher-counts-height:55px;margin-block-end:20px}
@@ -69,19 +37,6 @@
 
   @media(max-width:780px) {
     :root {--launcher-bottom-padding:max(4px,var(--ui-safe-bottom))}
-    .masthead.book-masthead:not([data-mobile-header="true"]) {display:none}
-    .masthead.book-masthead[data-mobile-header="true"] {
-      position:relative;
-      width:auto;
-      grid-template-columns:44px minmax(0,1fr) auto;
-      grid-template-rows:47px;
-      min-height:48px;
-      gap:4px;
-      padding-block:var(--ui-safe-top) 0;
-      padding-inline:max(8px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-right));
-    }
-    .book-masthead .book-brand {display:none}
-    .book-masthead .book-main-nav {display:none}
     .site-bottom-navigation.launcher-bottom-navigation {
       position:fixed;
       z-index:20;
@@ -118,17 +73,6 @@
       padding-inline:max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right));
     }
     html[data-ui-home] body:not(.mp-room-active) .main.library-layout {min-height:0}
-    .book-masthead .masthead-links {grid-area:1 / 1;margin:0}
-    .book-masthead .masthead-links::before {display:none}
-    .book-masthead .masthead-links > .masthead-menu-toggle {width:44px;height:44px}
-    .book-masthead .masthead-links > .masthead-menu-toggle > svg {width:20px;height:20px;translate:none}
-    .masthead-library-search {display:block;grid-area:1 / 2;align-self:center;min-width:0}
-    .masthead-library-search > .book-compact-search {height:34px;padding-inline:10px 2px;border-color:transparent;border-radius:999px;background:var(--kit-secondary)}
-    .masthead-library-search > .book-compact-search:focus-within {border-color:var(--kit-ring)}
-    .book-compact-search input {min-width:0;font-size:13px;font-weight:500}
-    .book-compact-search [data-size="icon-sm"] {width:32px;height:32px}
-    .masthead-trailing > .masthead-action {display:none}
-    .masthead-trailing {grid-area:1 / 3}
     .launcher-back.launcher-mobile-back {display:inline-flex}
   }
 

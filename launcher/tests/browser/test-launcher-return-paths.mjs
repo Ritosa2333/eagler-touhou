@@ -18,6 +18,7 @@ const workStatistics = {
   spellCards:[{number:3,name:'Test Spell',attempts:[3,0,0,0,0,0],captures:[2,0,0,0,0,0]}],
 };
 const fixtures = {
+  '/release-catalog.json': {schema:'eagler-touhou/release-catalog/1', games:{}},
   '/api/ready': {ready:true},
   '/api/auth/get-session': {user},
   '/api/v1/me/cloud-saves': {
@@ -76,7 +77,7 @@ try {
       await page.setRequestInterception(true);
       page.on('request', async request => {
         const url = new URL(request.url());
-        if (url.origin !== origin.origin || !url.pathname.startsWith('/api/')) return request.continue();
+        if (url.origin !== origin.origin || (!url.pathname.startsWith('/api/') && url.pathname !== '/release-catalog.json')) return request.continue();
         const paused = pausedFixtures.get(url.pathname);
         if (paused) await paused;
         const data = url.pathname === '/api/auth/get-session' && !signedIn ? {user:null} : fixtures[url.pathname];
@@ -300,36 +301,37 @@ try {
           assert.equal(await page.evaluate(() => history.state.key), shelfKey,
             'game Back returns to the exact shelf after visiting Home');
         }
-        const fullPage = '.tools[data-full-page][data-state="open"]';
+        const bookSheet = '.tools[data-book-sheet][data-state="open"]';
         const gameSettings = '.mobile-game-settings #displayOptions';
         assert.equal(await page.$(gameSettings),null,'the library does not mount game settings');
         const resumeStatistics = width === 390 && motion === 'normal' ? pauseFixture('/api/v1/me/cloud-saves') : undefined;
         try {
           await tap(game);
-          await wait(fullPage);
+          await wait(bookSheet);
           if (resumeStatistics) {
             await wait('.mobile-game-progress .book-game-stats-message[role="status"]');
             assert.equal(await page.$('.mobile-game-progress .game-detail-friends'),null,
               'friends wait for the space above them to settle');
           }
         } finally { resumeStatistics?.(); }
-        const viewport = await page.$eval(fullPage, panel => ({
+        const viewport = await page.$eval(bookSheet, panel => ({
           panel: {width:panel.offsetWidth, height:panel.offsetHeight},
           heroWidth:panel.querySelector('.game-detail-hero').offsetWidth,
           page: {width:Math.round(visualViewport.width), height:Math.round(visualViewport.height)},
         }));
-        assert.deepEqual(viewport.panel,viewport.page,'game detail occupies the phone viewport');
+        assert.equal(viewport.panel.width, viewport.page.width, 'game detail spans the phone viewport');
+        assert.ok(viewport.page.height - viewport.panel.height >= 16, 'the sheet leaves the shelf visible above it');
         assert.equal(viewport.heroWidth,viewport.panel.width,'the detail artwork extends to both phone edges');
         assert.equal(await page.$(gameSettings),null,'the detail does not mount game settings');
         await tap('#gamePackageImport');
         await tap('#gameDataImportClose');
         await wait('#gameDataImportWindow[data-state="open"]',true);
-        await wait(fullPage);
+        await wait(bookSheet);
         await tap('#gamePackageImport');
         await wait('#gameDataImportClose');
         await page.goBack();
         await wait('#gameDataImportWindow[data-state="open"]',true);
-        await wait(fullPage);
+        await wait(bookSheet);
         await tap('.spell-map button.spell-tile[data-capture="captured"]');
         const hint = await wait('.spell-tooltip[data-state$="open"]');
         assert.equal(await hint.evaluate(node => {
@@ -381,11 +383,11 @@ try {
         await wait(gameSettings,true);
         await wait('#gameSettingsOpen');
         await tap('#libraryBack');
-        await wait(fullPage,true);
+        await wait(bookSheet,true);
         await tap(game);
         await wait('#libraryBack');
         await page.goBack();
-        await wait(fullPage,true);
+        await wait(bookSheet,true);
         await wait(game);
 
         await tap(home);
@@ -409,7 +411,8 @@ try {
         const lobby = '.launcher-bottom-navigation a[href*="lobby"]';
         await tap(lobby);
         await wait('.book-directory');
-        await tap('#lobbyNetworkCheck');
+        await tap('.lobby-tools-more');
+        await tap('.lobby-tools-menu [role="menuitem"]:has(.lucide-activity)');
         await wait('#lobbyNetworkDialog[open]');
         await page.goBack();
         await wait('#lobbyNetworkDialog[open]',true);
@@ -512,13 +515,14 @@ try {
       }
 
       await tap('.profile-th09-history-meta button');
-      await wait('.profile-th09-replays[data-open=true] tbody tr');
-      await wait('.profile-th09-replays .profile-round-actions button');
+      await wait('.profile-th09-replays[data-open=true] .th09-replay-row');
+      await wait('.profile-th09-replays .th09-replay-actions button');
       assert.equal(new URL(page.url()).pathname,profile,'rounds expand inside the current profile');
       await tap('.profile-th09-history-meta button');
       await wait('.profile-th09-replays[data-open=true]',true);
 
       const gameDataTab = name => '.profile-game-data-switch button[aria-label="' + name + '"]';
+      await page.$eval(gameDataTab('全部作品'), button => button.scrollIntoView({block:'center',behavior:'instant'}));
       await tap(gameDataTab('全部作品'));
       {
         const viewport = page.viewport();

@@ -110,13 +110,6 @@ html:has(.lobby-page){scrollbar-gutter:stable;background:#111210}
 .lobby-page:before{opacity:1}
 .lobby-page:after{display:none}
 .lobby-intro h1{font-size:clamp(30px,3vw,42px);margin:0;line-height:1.25}
-.lobby-intro:has(.lobby-support-links){display:block}
-.lobby-support-links{display:flex;align-items:center;gap:24px;margin-top:8px}
-.lobby-support-link{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:6px 0;border:0;background:transparent;color:#e5bdc7;font:600 13px/1.4 var(--ui-font);cursor:pointer;transition:color .15s ease}
-.lobby-support-link>span[aria-hidden]{font-size:17px;font-weight:400}
-.lobby-support-link:hover{color:var(--lobby-pink)}
-.lobby-support-link:active{color:#c397a2}
-.lobby-support-link.running{opacity:.6;cursor:progress}
 .lobby-masthead{--sheet-edge:28px;grid-template-columns:minmax(0,1fr) auto;margin-bottom:24px}
 .lobby-masthead .masthead-links{grid-column:2}
 .lobby-masthead .lobby-back{justify-self:start;margin:0;font-family:var(--ui-font);font-size:14px;letter-spacing:0;white-space:nowrap}

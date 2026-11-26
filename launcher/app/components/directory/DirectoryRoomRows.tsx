@@ -22,6 +22,7 @@ import {ParticipantAvatar} from '../room/ParticipantAvatar';
 import {bookGameArtwork} from '../launcher/book-artwork';
 import {Th09RatingText} from '../room/Th09RatingText';
 import {Th09RatingCardsContext, type Th09Rating, type Th09RatingCards} from '../../services/th09-ratings';
+import {directoryRoomDifficulty} from './directory-room-filter';
 import './directory-room-list.css';
 
 export interface DirectoryRoomRowsProps {
@@ -121,7 +122,7 @@ function RoomRow({
     </span>;
   }) : [];
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
-  const difficulty = policy.inGameSelection && room.product !== 'th03mp' ? '' : policy.difficulties[room.difficulty];
+  const difficulty = directoryRoomDifficulty(room);
   const state = directoryRoomState(room);
   const waitingSince = policy.gameplay === 'versus' && state === 'recruiting' ? room.createdAt : undefined;
   const [now, setNow] = useState(Date.now);

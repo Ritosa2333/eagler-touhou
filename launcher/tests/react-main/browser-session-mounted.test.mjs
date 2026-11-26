@@ -741,7 +741,7 @@ for (const compact of [false, true]) test(`actual BrowserLauncher: fullscreen ex
   };
   const f = await mountBrowser({autoReady: false}); await start();
   await until(() => f.navigations.some(url => url !== 'about:blank'), 'actual native preparation started');
-  const surface = compact ? '[data-options-panel][data-full-page]' : '[data-game-detail="th06"]';
+  const surface = compact ? '[data-options-panel][data-book-sheet]' : '[data-game-detail="th06"]';
   const frame=node('#gameFrame'),panel=node(surface),url=currentUrl();
   const assertInactive = () => {
     assert.equal(node(surface),panel);
@@ -1421,7 +1421,7 @@ test('desktop book opens one inline game detail and keeps the library controls m
   await until(() => env.document.querySelector('.book-view-covers .book-card[data-book-card="th06"]'), 'desktop can switch back to covers');
 });
 
-test('mobile book opens full-page progress and settings with the original import and launch actions', async t => {
+test('mobile book opens progress and settings in a bottom sheet with the original import and launch actions', async t => {
   const matchMedia = env.window.matchMedia;
   t.onTestFinished(() => {env.window.matchMedia = matchMedia;});
   env.window.matchMedia = query => {
@@ -1432,11 +1432,12 @@ test('mobile book opens full-page progress and settings with the original import
   await mountBrowser({initial: '/', touchDevice: true, mobileDevice: true, host: subsetHost(['th06', 'th07'])});
   const card = '.book-grid [data-book-product="th06"]';
   await click(card);
-  const detail = node('.tools[data-full-page][data-state="open"]');
+  const detail = node('.tools[data-book-sheet][data-state="open"]');
   assert.equal(detail.getAttribute('aria-modal'), 'true');
   assert.equal(node('.game-library').hasAttribute('inert'), true);
   assert.equal(env.document.querySelector('[data-game-detail]'), null);
-  const actions = '[data-full-page] .launch-actions';
+  const actions = '[data-book-sheet] .mobile-game-footer .launch-actions';
+  node('#libraryBackdrop[data-book-sheet]');
   const emptyCells = detail.querySelectorAll('.clear-matrix[data-clear-game="th06"] tbody [data-status="unread"]');
   assert.equal(emptyCells.length, 20);
   const start = node(`${actions} #launch`);
@@ -1515,15 +1516,15 @@ test('book details read only current single-player cloud statistics and keep the
   assert.equal(env.document.querySelector(th06), null);
   const url = currentUrl();
   await React.act(async () => {compact = true; media.dispatchEvent(new env.window.Event('change'));});
-  node(`[data-full-page] ${th07}`);
+  node(`[data-book-sheet] ${th07}`);
   assert.equal(currentUrl(), url);
   assert.equal(requests, 1, 'game and viewport switches reuse the same cloud-save list');
   fail = true;
   await React.act(async () => {env.window.dispatchEvent(new env.window.Event('cloud-save-change'));});
-  assert.match(node('[data-full-page] .book-game-stats-message').textContent, /temporarily unavailable/);
+  assert.match(node('[data-book-sheet] .book-game-stats-message').textContent, /temporarily unavailable/);
   fail = false;
-  await click('[data-full-page] .book-game-stats-message button');
-  node(`[data-full-page] ${th07}`);
+  await click('[data-book-sheet] .book-game-stats-message button');
+  node(`[data-book-sheet] ${th07}`);
   await React.act(async () => {compact = false; media.dispatchEvent(new env.window.Event('change'));});
   await click('[data-book-sidebar-product="th06"]');
   selectedRevision = 3;

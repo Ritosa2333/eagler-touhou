@@ -177,40 +177,20 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
       className={`masthead book-masthead${variant === 'lobby' ? ' lobby-masthead' : ''}`}
       data-mobile-header={mobileHeader}
     >
-      <Link className="brand book-brand" id="launcherLink" href={props.launcherHref} aria-label="東方 Online">
-        <LauncherWordmark/>
-        <time
-          className="brand-version"
-          id="brandUpdateAge"
-          title={props.updatedAge?.title}
-          dateTime={props.updatedAge?.dateTime}
-        >
-          {props.updatedAge?.text ?? t('brand.neverUpdated')}
-        </time>
-      </Link>
-      <nav className="book-main-nav" aria-label={t('nav.main')}>
-        <Link
-          href={props.launcherHref}
-          title={t('nav.single')}
-          aria-label={t('nav.single')}
-          aria-current={currentPage === 'library' ? 'page' : undefined}
-        >
-          <NavigationIcon name="single" />
-          <span>{t('nav.single')}</span>
-        </Link>
-        <Link
-          className="book-lobby-link"
-          href={lobbyHref}
-          title={t('nav.lobby')}
-          aria-label={t('nav.lobby')}
-          aria-current={currentPage === 'lobby' ? 'page' : undefined}
-        >
-          <NavigationIcon name="multiplayer" />
-          <span>{t('nav.lobby')}</span>
-        </Link>
-      </nav>
       <Tooltip.Provider delayDuration={0} disableHoverableContent>
-      <nav className="masthead-links" aria-label={t('nav.siteInfo')}>
+      <div className="masthead-leading">
+        <Link className="brand book-brand" id="launcherLink" href={props.launcherHref} aria-label="東方 Online">
+          <LauncherWordmark/>
+          <time
+            className="brand-version"
+            id="brandUpdateAge"
+            title={props.updatedAge?.title}
+            dateTime={props.updatedAge?.dateTime}
+          >
+            {props.updatedAge?.text ?? t('brand.neverUpdated')}
+          </time>
+        </Link>
+        <nav className="masthead-links" aria-label={t('nav.siteInfo')}>
         <a
           className="masthead-link"
           id="originMigrationOpen"
@@ -246,7 +226,26 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
         {!compact && <div hidden ref={language}>
           {props.languageControl}
         </div>}
-        {compact ? <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/> : <DropdownMenu.Root
+        {compact && <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/>}
+        </nav>
+      </div>
+      <nav className="book-main-nav" aria-label={t('nav.main')}>
+        <Link href={props.launcherHref} title={t('nav.single')} aria-label={t('nav.single')}
+          aria-current={currentPage === 'library' ? 'page' : undefined}>
+          <NavigationIcon name="single" />
+          <span>{t('nav.single')}</span>
+        </Link>
+        <Link className="book-lobby-link" href={lobbyHref} title={t('nav.lobby')} aria-label={t('nav.lobby')}
+          aria-current={currentPage === 'lobby' ? 'page' : undefined}>
+          <NavigationIcon name="multiplayer" />
+          <span>{t('nav.lobby')}</span>
+        </Link>
+      </nav>
+      {props.librarySearchRef && <div className="masthead-library-search" ref={props.librarySearchRef}/>}
+      <div className="masthead-trailing">
+        {accountsEnabled && !compact && <AccountMenu interactive={interactive} assetUrl={props.assetUrl}/>}
+        <MastheadInbox compact={compact} interactive={interactive} homeHref={props.launcherHref} assetUrl={props.assetUrl} nativeLinks={props.nativeLinks}/>
+        {!compact && <DropdownMenu.Root
           modal={false}
           open={interactive && menuOpen}
           onOpenChange={(open) => {
@@ -409,11 +408,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>}
-      </nav>
-      {props.librarySearchRef && <div className="masthead-library-search" ref={props.librarySearchRef}/>}
-      <div className="masthead-trailing">
-        <MastheadInbox compact={compact} interactive={interactive} homeHref={props.launcherHref} assetUrl={props.assetUrl} nativeLinks={props.nativeLinks}/>
-        {accountsEnabled && !compact && <AccountMenu interactive={interactive} assetUrl={props.assetUrl}/>}
       </div>
       </Tooltip.Provider>
     </header>

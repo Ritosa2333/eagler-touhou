@@ -144,9 +144,9 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
       gameAction={product => ({
         label:t('directory.viewGame',{game:product.title}), selected:selected.includes(product.id),
         onClick:() => selectOnly(product.id),
-        marker:<Checkbox.Root asChild checked={selected.includes(product.id)} disabled={!interactive}
+        selection:<Checkbox.Root asChild checked={selected.includes(product.id)} disabled={!interactive}
           onCheckedChange={checked=>toggle(product.id,checked===true)}>
-          <BookButton variant="choice" className="book-lobby-sidebar-check"
+          <BookButton variant="choice" type="button" className="book-lobby-sidebar-check"
             aria-label={t('directory.filterGame',{game:product.title})}>{checkmark(selected.includes(product.id))}</BookButton>
         </Checkbox.Root>,
       })}/>

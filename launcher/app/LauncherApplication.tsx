@@ -204,19 +204,20 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const inlineLibrary = host.desktopLibraryDetails && !compact && !section && !accountPage && !profilePage && navigation.context === 'library';
   const inlineProduct = inlineLibrary && optionsOpen && selectedProduct?.id === navigation.productId &&
     !selectedProduct.multiplayer ? selectedProduct : undefined;
-  const fullPage = !!(host.desktopLibraryDetails && compact && !section && navigation.context === 'library' && !accountPage && !profilePage);
+  const mobileDetail = !!(host.desktopLibraryDetails && compact && !section && navigation.context === 'library' && !accountPage && !profilePage);
   const presence = useLibraryOptionsPresence({
     open: optionsOpen && !inlineProduct,
     context: navigation.context,
     product: selectedProduct,
     lessMotion: host.lessMotion === true,
-    fullPage,
+    mobileDetail,
     concealed:
       !!inlineProduct || ((host.runtimeOpen === true || host.runtimeLaunched === true || host.replayWorkspace === true) &&
       navigation.surface !== 'touch'),
     focusActive: navigation.surface === 'options',
   });
-  const mobileProduct = fullPage && (optionsOpen || presence.open) && !presence.product?.multiplayer ? presence.product : undefined;
+  const bookSheet = mobileDetail && !presence.product?.multiplayer;
+  const mobileProduct = bookSheet && (optionsOpen || presence.open) ? presence.product : undefined;
   const detailProduct = inlineProduct ?? mobileProduct;
   const [detailSettingsOpen, setDetailSettingsOpen] = useSurfaceLayerState<boolean>('game-detail-settings', false);
   const gameStatistics = useBookGameStatistics(detailProduct?.gameId);
@@ -334,8 +335,8 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       multiplayerOnline={host.multiplayerOnline}
       lobbyHref={host.lobbyHref}
       embeddedInLobby={navigation.context === 'lobby'}
-      fullPage={fullPage && !presence.product.multiplayer}
-      page={mobileProduct && <MobileGameDetail key={mobileProduct.id} product={mobileProduct} cover={bookArtwork(mobileProduct)}
+      bookSheet={bookSheet}
+      detail={mobileProduct && <MobileGameDetail key={mobileProduct.id} product={mobileProduct} cover={bookArtwork(mobileProduct)}
         actions={settings?.context.productId === mobileProduct.id ? host.optionsActions : undefined}
         statistics={statistics} friends={friends} playtime={save?.statistics.playtimeSeconds} saved={!!save}
         settings={detailSettingsOpen} setSettings={setDetailSettingsOpen} onBack={navigation.closeSurface}>
@@ -447,8 +448,8 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       </div>
       {!accountPage && !profilePage && !section && navigation.context === 'library' && (
         <>
-          {!inlineProduct && !fullPage && <OptionsBackdrop onBack={navigation.closeSurface}/>}
-          {host.replayWorkspace && !roomOpen && !fullPage ? null : settingsPanel}
+          {!inlineProduct && <OptionsBackdrop bookSheet={bookSheet} onBack={navigation.closeSurface}/>}
+          {host.replayWorkspace && !roomOpen && !mobileDetail ? null : settingsPanel}
         </>
       )}
       <PlayerSurface

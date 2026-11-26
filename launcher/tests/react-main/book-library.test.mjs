@@ -49,6 +49,18 @@ test('multiplayer game picker and covers share selection while favorites persist
   const checked=()=>[...env.document.querySelectorAll('[data-lobby-toggle][aria-checked="true"]')].map(n=>n.dataset.lobbyToggle).sort();
   const favorite='.book-lobby-picker [data-lobby-product="th08mp"] .book-lobby-favorite';
   await render();
+  const sidebar = id => `[data-lobby-rail-product="${id}"]`;
+  await click(`${sidebar('th06mp')} .book-lobby-sidebar-check`);
+  await click(`${sidebar('th07mp')} .book-lobby-sidebar-check`);
+  assert.deepEqual(checked(),['th06mp','th07mp']);
+  await click(`${sidebar('th06mp')} .book-rail-game`);
+  assert.deepEqual(checked(),['th06mp']);
+  await click(`${sidebar('th08mp')} .book-favorite`);
+  assert.equal(node(`${sidebar('th08mp')} .book-favorite`).getAttribute('aria-pressed'),'true');
+  assert.deepEqual(checked(),['th06mp'],'a favorite does not change the active filter');
+  await click(`${sidebar('th08mp')} .book-favorite`);
+  await click('[data-book-category="all"]');
+  assert.deepEqual(checked(),[]);
   await click('[data-lobby-toggle="th06mp"]');
   await click('[data-lobby-toggle="th08mp"]');assert.deepEqual(checked(),['th06mp','th08mp']);
   assert.equal(node('[data-lobby-toggle="th06mp"]').getAttribute('aria-checked'),'true');
@@ -219,6 +231,7 @@ test('sidebar disclosures list playable single-player entries without changing t
   const disclosure = id => `[data-book-category-disclosure="${id}"]`;
   const members = id => [...node(`#bookCategory-${id}`).querySelectorAll('[data-book-sidebar-product]')]
     .map(link => link.dataset.bookSidebarProduct);
+  assert.equal(env.document.querySelector('[data-book-category-group="all"] .book-category-disclosure, #bookCategory-all'), null);
   assert.equal(env.document.querySelector(disclosure('favorites')), null);
   const windows = () => node('#bookCategory-windows');
   assert.equal(node(disclosure('windows')).getAttribute('aria-controls'), windows().id);
@@ -245,6 +258,9 @@ test('sidebar disclosures list playable single-player entries without changing t
   assert.equal(windows().hasAttribute('inert'), true);
   assert.deepEqual(members('windows'), ['th06', 'th13'], 'entries stay mounted for the closing animation');
   assert.deepEqual(ids(), ['th01']);
+  await click('[data-book-category="all"]');
+  assert.deepEqual(ids(), ['th01', 'th06', 'th13']);
+  assert.equal(node('[data-book-category="all"]').getAttribute('aria-pressed'), 'true');
   await React.act(async () => root.unmount());
   await mount(products);
   assert.equal(node(disclosure('windows')).getAttribute('aria-expanded'), 'false');

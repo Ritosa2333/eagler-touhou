@@ -353,27 +353,14 @@
   border-radius:0 0 8px 8px;
   font-size:12px;
 }
-.profile-match-replays table {width:100%;table-layout:fixed;border-collapse:collapse}
-.profile-match-replays :is(td,th) {padding-block:8px;text-align:start;font-weight:400}
-.profile-match-replays :is(thead,tbody tr) {border-block-end:1px solid var(--kit-border)}
-.profile-match-replays :is(th,td:nth-child(3)) {color:var(--kit-muted-foreground);font-variant-numeric:tabular-nums}
-.profile-match-replays thead th:first-child {width:35px}
-.profile-match-replays thead th:nth-child(3) {width:36px}
-.profile-match-replays thead th:last-child {width:68px}
+.profile-match-replays ol {margin:6px 0 0;padding-inline-start:1.5em;list-style:decimal}
+.profile-match-replays li {padding-block:2px}
 .profile-match-replays > p {margin:0;padding:10px 0;color:var(--kit-muted-foreground)}
-.profile-round-loadouts,.profile-round-loadouts > span {display:flex;align-items:center;gap:4px}
-.profile-round-loadouts > span {min-width:0;overflow-wrap:anywhere}
-.profile-round-loadouts > small {color:var(--kit-muted-foreground)}
-.profile-round-loadouts .th09-character-portrait {width:27px;height:32px;flex:none;object-fit:contain}
-.profile-round-actions {display:flex;gap:4px;justify-content:flex-end}
-.profile-round-actions .ui-kit-button {width:32px;height:36px;min-height:0;padding:0}
-.profile-round-actions > button[aria-label]:first-child {color:var(--kit-brand)}
 @container (max-width:350px) {
   .profile-match-row {grid-template-columns:max-content max-content minmax(0,1fr);gap:4px 8px}
   .profile-match-row > :is(.profile-match-result,.profile-match-score) {grid-row:span 2}
   .profile-th09-history-meta {grid-column:3;display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:11px}
   .profile-th09-history-meta > button + small {margin:0}
-  .profile-round-loadouts .th09-character-portrait {width:19px}
 }
 .profile-th09[data-duel-columns='2'] .profile-th09-history {grid-template-columns:repeat(2,minmax(0,1fr))}
 .profile-th09-actions {display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px;color:var(--book-muted);font-size:12px}

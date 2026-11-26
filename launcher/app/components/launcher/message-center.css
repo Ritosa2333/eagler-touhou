@@ -1,10 +1,48 @@
-  .masthead-inbox {display:flex;align-items:center;gap:4px}
-  .masthead-inbox .masthead-inbox-action {position:relative;width:36px;height:32px;min-height:0}
-  .masthead-inbox-action > svg {width:18px;height:18px}
-  .masthead-inbox-action > small {position:absolute;inset:0 1px auto auto;color:var(--kit-brand);font-size:10px;line-height:1}
+  .masthead-inbox {display:flex;align-items:center}
+  .masthead-inbox-action {position:relative}
+  .masthead-inbox-action > small {position:absolute;inset:4px 3px auto auto;color:var(--kit-brand);font-size:10px;line-height:1}
   .masthead-inbox-action > small {font-weight:700}
   .masthead-inbox-action[data-unread="true"]::after {content:"";position:absolute;inset:auto 10px 0;height:2px;border-radius:2px;background:var(--kit-brand)}
   .masthead-inbox-action[data-state="open"] {background:var(--kit-accent)}
+  @media (prefers-reduced-motion:no-preference) {
+    body:not(.less-motion) .masthead-inbox-action:is(:focus-visible,:active,[data-state="open"],:hover) {
+      &[data-inbox-section="announcements"] > svg {
+        transform-origin:45% 66%;
+        animation:masthead-megaphone-call calc(var(--ui-feedback-duration) * 3) var(--ui-feedback-easing);
+      }
+      &[data-inbox-section="announcements"]::before {
+        content:"";position:absolute;inset:12px 6px auto auto;width:6px;height:11px;
+        border-inline-end:1.5px solid currentColor;border-radius:0 65% 65% 0;pointer-events:none;
+        animation:masthead-megaphone-wave calc(var(--ui-feedback-duration) * 3) var(--ui-feedback-easing) both;
+      }
+      &[data-inbox-section="messages"] > svg {
+        animation:masthead-mail-lift calc(var(--ui-feedback-duration) * 3) var(--ui-feedback-easing);
+      }
+      &[data-inbox-section="messages"] > svg > path {
+        transform-origin:50% 7px;
+        animation:masthead-mail-flap calc(var(--ui-feedback-duration) * 3) var(--ui-feedback-easing);
+      }
+    }
+  }
+  @keyframes masthead-megaphone-call {
+    30% {rotate:-17deg}
+    56% {rotate:-7deg}
+    75% {rotate:-12deg}
+  }
+  @keyframes masthead-megaphone-wave {
+    0%,100% {opacity:0;transform:translateX(-2px) scale(.6)}
+    45% {opacity:.8;transform:translateX(1px) scale(1)}
+    82% {opacity:0;transform:translateX(4px) scale(1.2)}
+  }
+  @keyframes masthead-mail-lift {
+    38%,62% {translate:0 -2px}
+    85% {translate:0 1px}
+  }
+  @keyframes masthead-mail-flap {
+    24% {scale:1 .1}
+    42%,60% {scale:1 -.75}
+    77% {scale:1 .1}
+  }
   .masthead-inbox-panel {
     z-index:var(--ui-layer-popup);width:min(392px,calc(100vw - 24px));max-height:var(--radix-popover-content-available-height);
     overflow:auto;overscroll-behavior:contain;padding:12px 16px 16px;border:1px solid var(--kit-border);
@@ -89,8 +127,6 @@
   .private-message-list time {display:block;margin-block-start:4px;color:var(--kit-muted-foreground);font-size:11px}
 
   @media(max-width:780px) {
-    .masthead-inbox .masthead-inbox-action {width:44px;height:44px}
-    .masthead-inbox-action > svg {width:20px;height:20px}
     .message-center {display:block;width:auto;margin:0}
     .message-center-navigation {padding:0;border:0}
     .message-center-navigation header {gap:8px;min-height:52px;margin:0;padding-inline:8px 16px}

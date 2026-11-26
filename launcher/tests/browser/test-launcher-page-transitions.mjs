@@ -47,8 +47,12 @@ try {
     await page.waitForSelector(trigger, {visible:true});
     await page.click(trigger);
     const profile = compact ? '#mastheadMenuPanel .launcher-account-link' : '.account-menu-panel a[href*="/u/"]';
-    await page.waitForSelector(profile, {visible:true});
-    await page.click(profile);
+    const link = await page.waitForSelector(profile, {visible:true});
+    await page.waitForFunction(node => {
+      const {x,y,width,height} = node.getBoundingClientRect();
+      return node.contains(document.elementFromPoint(x+width/2,y+height/2));
+    }, {}, link);
+    await link.click();
   }
   async function navigate(destination) {
     const compact = page.viewport().width <= 780;
@@ -73,19 +77,20 @@ try {
         await page.waitForSelector('#lobbyGameRail', {visible:true});
         assert.equal(await page.$eval('.book-directory', lobby => {
           const bounds = selector => lobby.querySelector(selector).getBoundingClientRect();
-          const links = bounds('.lobby-support-links'), bar = bounds('.book-lobby-games'), tools = bounds('.lobby-room-tools');
+          const more = bounds('.lobby-tools-more'), bar = bounds('.book-lobby-games'), tools = bounds('.lobby-room-tools');
+          const filter = bounds('.book-room-filter-trigger');
           const list = bounds('.book-lobby-picker-trigger'), all = bounds('.book-lobby-all');
-          return links.bottom <= bar.top && bar.bottom <= tools.top &&
+          return bar.bottom <= tools.top && filter.right <= more.left && filter.top === more.top && more.width === 44 &&
             list.width === list.height && all.width === all.height && list.width === all.width && list.top === all.top;
-        }), true, 'mobile lobby links precede the game bar and its two controls share square bounds');
+        }), true, 'mobile lobby keeps its overflow trigger and filter aligned below the game bar');
       } else {
         await page.waitForSelector('.lobby-library .book-lobby-picker-trigger', {hidden:true});
         const sample = await page.waitForSelector('.lobby-game-sidebar [data-lobby-rail-product]', {visible:true});
         assert.equal(await sample.evaluate(row => {
-          const cover = row.querySelector('.book-category-game-cover').getBoundingClientRect();
-          const check = row.querySelector('.book-lobby-check').getBoundingClientRect();
-          return Math.abs(check.x + check.width/2 - cover.x) <= 6 && Math.abs(check.y + check.height/2 - cover.y) <= 8;
-        }), true, 'the multi-select mark stays on the cover corner');
+          const box = selector => row.querySelector(selector).getBoundingClientRect();
+          const game = box('.book-rail-game'), check = box('.book-lobby-sidebar-check'), favorite = box('.book-favorite');
+          return check.right <= game.left && game.right <= favorite.left && check.height === game.height && favorite.height === game.height;
+        }), true, 'multi-select, work and favorite have three independent, full-height targets');
       }
     }
     const geometry = await page.evaluate(() => {
@@ -108,17 +113,14 @@ try {
     const row = rail.querySelector(':is([data-book-sidebar-product="th07"],[data-lobby-rail-product="th07mp"] .book-rail-game)');
     const favorite = row.parentElement.querySelector('.book-favorite');
     const subtitle = row.querySelector('.book-category-game-subtitle');
-    const mark = category.querySelector('.book-category-disclosure svg');
     const box = element => element.getBoundingClientRect();
     choice.focus({preventScroll:true});
     return {
       width:box(rail).width, searchWidth:box(rail.querySelector('input')).width,
       categoryWidth:box(category).width, actionWidth:[...category.querySelectorAll('button')].reduce((width,button) => width + box(button).width,0),
-      markRight:box(mark).right,
       countRight:box(category.querySelector('.book-category-count')).right,
-      rowWidth:box(row).width, rowHeight:box(row).height, layout:getComputedStyle(row).display,
-      favoriteRight:box(row).right - box(favorite).right,
-      subtitleClearsFavorite:box(subtitle).top >= box(favorite).bottom - 1,
+      rowHeight:box(row).height, layout:getComputedStyle(row).display,
+      subtitleClearsFavorite:box(subtitle).top >= box(favorite).bottom - 1 || box(subtitle).right <= box(favorite).left,
     };
   });
   for (const width of [1440, 1024, 390]) {
@@ -129,8 +131,10 @@ try {
     if (width > 780) {
       const library = await sidebarGeometry();
       await navigate('lobby');
-      assert.deepEqual(await sidebarGeometry(),library,'desktop rail geometry matches across modes');
-      assert.equal(library.subtitleClearsFavorite,true,'favorite leaves the subtitle unobstructed');
+      const lobby = await sidebarGeometry();
+      for (const key of ['width','searchWidth','categoryWidth','actionWidth','countRight','rowHeight','layout'])
+        assert.equal(lobby[key],library[key],`desktop rails share ${key}`);
+      assert.ok(library.subtitleClearsFavorite && lobby.subtitleClearsFavorite,'favorite leaves the subtitle unobstructed');
       assert.equal(library.actionWidth,library.categoryWidth,'the category controls fill the row');
       await navigate('library');
     }
@@ -177,13 +181,13 @@ try {
       assert.equal(state.visible, true, `${route} hid the bottom navigation`);
       assert.deepEqual(state.bounds, state.expected, `${route} shifted the bottom navigation`);
       if (route === 'library') {
-        assert.equal(state.mastheadHeight,48);
+        assert.equal(state.mastheadHeight,56);
         await page.waitForSelector('.book-masthead .book-compact-search input', {visible:true});
       } else {
         assert.equal(state.mastheadHeight,0,`${route} shows a mobile masthead`);
         assert.equal(state.pageTop,0,`${route} leaves room for a hidden masthead`);
       }
-      if (route !== 'lobby') assert.equal(await page.$$eval('#main', nodes => nodes.length),1, `${route} has duplicate main targets`);
+      if (route !== 'lobby') await page.waitForFunction(() => document.querySelectorAll('#main').length === 1);
     }
     await page.evaluate(() => window.scrollTo({top:180,behavior:'instant'}));
     await page.waitForFunction(() => window.scrollY >= 140);

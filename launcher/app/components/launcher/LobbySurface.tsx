@@ -1,6 +1,8 @@
 import {BookButton} from './BookButton';
 import type {ReactNode} from 'react';
+import {Activity, BookOpen, Clapperboard, Ellipsis, Trophy} from 'lucide-react';
 import { useLocale } from '../../i18n';
+import {ActionMenu, ActionMenuItem} from '../../ui/action-menu';
 import type { LibraryCardsProps } from './LibraryCards';
 import {BookDirectoryGames} from './BookDirectoryGames';
 import {accountsEnabled} from '../../release-features';
@@ -12,13 +14,14 @@ export interface LobbySurfaceProps extends Omit<
 > {
   masthead: ReactNode;
   guideHref: string | null;
-  rankingsHref: string;
+  rankingsHref?: string;
   onNetwork: (() => void) | null;
   networkRunning?: boolean;
   connectionWarning?: ReactNode;
   membership?: ReactNode;
   notice?: string;
   roomTools: ReactNode;
+  onReplay?(): void;
   roomFilters?: ReactNode;
   roomList: ReactNode;
   hasRooms: boolean;
@@ -46,6 +49,7 @@ export function LobbySurface({
   membership,
   notice,
   roomTools,
+  onReplay,
   roomFilters,
   roomList,
   hasRooms,
@@ -57,50 +61,69 @@ export function LobbySurface({
   ...rail
 }: LobbySurfaceProps) {
   const {t, locale} = useLocale();
+  const ratings = accountsEnabled && rankingsHref ? withUiLanguage(rankingsHref, locale) : undefined;
+  const more = t('nav.more');
   return (
     <>
       <main className="lobby-main book-directory" inert={rail.interactive === false}>
         {masthead}
         <div className="lobby-directory-body">
         <BookDirectoryGames {...rail} renderContent={gameBar => <div className="lobby-rooms-column">
-        <header className="lobby-intro">
-          <h1 className="visually-hidden">{t('lobby.title')}</h1>
-          <nav className="lobby-support-links" aria-label={t('multiplayerGuide.title')}>
-            <BookButton variant="quiet" size="sm" asChild={!!guideHref}
-              className="lobby-support-link h-9 px-0 max-[780px]:h-11"
-              id="lobbyGuideOpen"
-              disabled={guideHref ? undefined : true}
-            >
-              {guideHref ? <a href={guideHref}><span>{t('multiplayerGuide.action')}</span><span aria-hidden="true">›</span></a>
-                : <span>{t('multiplayerGuide.action')}</span>}
-            </BookButton>
-            <BookButton variant="quiet" size="sm"
-              className={`lobby-support-link h-9 px-0 max-[780px]:h-11${networkRunning ? ' running' : ''}`}
-              id="lobbyNetworkCheck"
-              aria-disabled={networkRunning ? 'true' : undefined}
-              type="button"
-              disabled={!onNetwork}
-              onClick={onNetwork ?? undefined}
-            >
-              <span>{t('networkCheck.action')}</span>
-              <span aria-hidden="true">›</span>
-            </BookButton>
-            {accountsEnabled && <BookButton variant="quiet" size="sm" asChild
-              className="lobby-support-link h-9 px-0 max-[780px]:h-11">
-              <a href={withUiLanguage(rankingsHref, locale)}>
-                <span>{t('th09.ratingBoard')}</span><span aria-hidden="true">›</span>
-              </a>
-            </BookButton>}
-          </nav>
-        </header>
+        <h1 className="visually-hidden">{t('lobby.title')}</h1>
         <p className="lobby-notice" id="notice" role="status" hidden={!notice}>
           {notice}
         </p>
         {membership}
         {gameBar}
         <header className="lobby-room-tools">
-          {roomFilters}
-          <div className="lobby-actions">{roomTools}</div>
+          <div className="lobby-filter-tools">
+            {roomFilters}
+            <nav className="lobby-support-links" aria-label={t('multiplayerGuide.title')}>
+            <BookButton variant="quiet" size="icon" asChild={!!guideHref}
+              className="lobby-support-link"
+              id="lobbyGuideOpen"
+              aria-label={t('multiplayerGuide.action')}
+              title={t('multiplayerGuide.action')}
+              disabled={guideHref ? undefined : true}
+            >
+              {guideHref ? <a href={guideHref}><BookOpen aria-hidden="true"/></a> : <BookOpen aria-hidden="true"/>}
+            </BookButton>
+            <BookButton variant="quiet" size="icon"
+              className={`lobby-support-link${networkRunning ? ' running' : ''}`}
+              id="lobbyNetworkCheck"
+              aria-label={t('networkCheck.action')}
+              title={t('networkCheck.action')}
+              aria-disabled={networkRunning ? 'true' : undefined}
+              type="button"
+              disabled={!onNetwork}
+              onClick={onNetwork ?? undefined}
+            >
+              <Activity aria-hidden="true"/>
+            </BookButton>
+            {ratings && <BookButton variant="quiet" size="icon" asChild className="lobby-support-link">
+              <a href={ratings} aria-label={t('th09.ratingBoard')} title={t('th09.ratingBoard')}>
+                <Trophy aria-hidden="true"/>
+              </a>
+            </BookButton>}
+            </nav>
+          </div>
+          <div className="lobby-actions">
+            {roomTools}
+            <div className="lobby-tools-overflow">
+            <ActionMenu label={more} className="lobby-tools-menu" trigger={
+              <BookButton variant="action" size="icon" className="lobby-button lobby-tools-more"
+                type="button" aria-label={more} title={more}><Ellipsis aria-hidden="true"/></BookButton>
+            }>
+              {guideHref ? <ActionMenuItem asChild><a href={guideHref}><BookOpen aria-hidden="true"/>{t('multiplayerGuide.action')}</a></ActionMenuItem>
+                : <ActionMenuItem disabled><BookOpen aria-hidden="true"/>{t('multiplayerGuide.action')}</ActionMenuItem>}
+              <ActionMenuItem disabled={!onNetwork || networkRunning} onAction={onNetwork ?? undefined}>
+                <Activity aria-hidden="true"/>{t('networkCheck.action')}
+              </ActionMenuItem>
+              {ratings && <ActionMenuItem asChild><a href={ratings}><Trophy aria-hidden="true"/>{t('th09.ratingBoard')}</a></ActionMenuItem>}
+              {onReplay && <ActionMenuItem onAction={onReplay}><Clapperboard aria-hidden="true"/>{t('lobby.watchReplay')}</ActionMenuItem>}
+            </ActionMenu>
+            </div>
+          </div>
         </header>
         <section
           className="lobby-list-surface"
