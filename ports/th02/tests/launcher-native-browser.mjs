@@ -2,6 +2,7 @@
 // Pass --practice-seed for the fixed-seed input flow.
 // Pass --boss-gauge to reach the Stage 1 boss directly in solo Practice.
 // Pass --about to check the disclaimer on the About page.
+// Pass --focus-setting to exercise the saved Slow Movement option in Story.
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
@@ -65,6 +66,7 @@ try {
   const practiceSeed=process.argv.includes('--practice-seed');
   const about=process.argv.includes('--about');
   const bossGauge=process.argv.includes('--boss-gauge');
+  const focusSetting=process.argv.includes('--focus-setting');
   if(about){
     await press('Escape');
     await wait(1050);
@@ -113,6 +115,18 @@ try {
       });
     }
   } else {
+    if(focusSetting){
+      await press('Escape');
+      await wait(1050);
+      for(let i=0;i<4;++i)await press('ArrowUp'); // Story → Quit → About → Music → Options.
+      await press('Enter');
+      for(let i=0;i<6;++i)await press('ArrowDown'); // Autofire.
+      await press('Tab'); // Slow Movement, in the same row.
+      await press('ArrowLeft');
+      await press('Escape');
+      for(let i=0;i<4;++i)await press('ArrowDown'); // Options → Story.
+      await openStoryShots(frame);
+    }
     await press('Enter');
     await frame.waitForFunction(()=>/一時停止|Esc: Pause/u.test(document.title));
     await frame.waitForFunction(()=>{
@@ -122,6 +136,24 @@ try {
       return pixels(550,375,82,17).some((v,i)=>i%4!==3&&v>240)&&
         pixels(32,32,380,200).some(colored)&&pixels(432,32,144,200).some(colored);
     });
+    if(focusSetting){
+      const hasFocusDot=()=>frame.evaluate(()=>{
+        const c=document.querySelector('canvas');
+        const pixels=c.getContext('2d').getImageData(32*c.width/640,308*c.height/400,384*c.width/640,70*c.height/400).data;
+        return pixels.some((v,i)=>i%4===0&&v===255&&pixels[i+1]===217&&pixels[i+2]===220);
+      });
+      await page.keyboard.down('ShiftLeft');
+      await wait(250);
+      assert.equal(await hasFocusDot(),false,'Slow Movement Off should suppress the focus dot');
+      await page.keyboard.up('ShiftLeft');
+      await press('Tab'); // Details is still available during play.
+      await frame.waitForFunction(()=>{
+        const c=document.querySelector('canvas');
+        const pixels=c.getContext('2d').getImageData(448*c.width/640,112*c.height/400,128*c.width/640,30*c.height/400).data;
+        return pixels.some((v,i)=>i%4===0&&v===180&&pixels[i+1]===220&&pixels[i+2]===255);
+      });
+      console.log('PASS Eagler TH02 Slow Movement Off suppresses focus; Tab still shows details');
+    }
     await press('ArrowLeft',200);
     await page.waitForFunction(()=>runtimeEvents.some(e=>e.event==='audio-health'&&e.state==='running'));
     await press('Escape');

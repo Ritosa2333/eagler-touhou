@@ -11,6 +11,7 @@
 #include "collision_display.hpp"
 #include "locale.hpp"
 #include "audio_levels.hpp"
+#include "core_contract.hpp"
 
 // Independent host-side model of ReC98 th02/op_01.cpp:500-617.
 // No attract demo or game launch is implemented yet.
@@ -51,16 +52,21 @@ struct Menu {
             plays_akyu()?music_fm:music_midi;
     }
     bool reduced=false;
-    bool show_more_info=false,fullscreen=false,stage_intro=true,smooth_background=true;
+    bool show_more_info=false,fullscreen=false,stage_intro=true,smooth_background=true,focus_enabled=true;
     soew::HitboxMode hitboxes=soew::HitboxMode::Off;
     bool autofire=false,fast_autofire=true; // Host-only assist; old ON setting used the 2+2 waveform.
     soew::Language language=soew::Language::Japanese;
 
-    enum class Option { Rank, Music, Lives, Bombs, Autofire, Effects, MoreInfo, Fullscreen, Hitboxes, Language, StageIntro, SmoothBackground, MusicVolume, EffectVolume, Reset, Back, Empty };
+    constexpr std::uint16_t live_input(std::uint16_t input)const{
+        return focus_enabled?input:std::uint16_t(input&~soew::Focus);
+    }
+
+    enum class Option { Rank, Music, Lives, Bombs, Autofire, Effects, Focus, Fullscreen, Hitboxes, Language, StageIntro, SmoothBackground, MusicVolume, EffectVolume, Reset, Back, Empty };
     static constexpr std::array<std::array<Option,2>,8> option_rows={{
-        {Option::Rank,Option::Effects}, {Option::Music,Option::MoreInfo}, {Option::Lives,Option::Fullscreen},
-        {Option::Bombs,Option::Hitboxes}, {Option::Autofire,Option::Language}, {Option::StageIntro,Option::SmoothBackground},
-        {Option::MusicVolume,Option::EffectVolume}, {Option::Reset,Option::Back}
+        {Option::Rank,Option::Effects}, {Option::Music,Option::Fullscreen},
+        {Option::MusicVolume,Option::Hitboxes}, {Option::EffectVolume,Option::Language},
+        {Option::Lives,Option::StageIntro}, {Option::Bombs,Option::SmoothBackground},
+        {Option::Autofire,Option::Focus}, {Option::Reset,Option::Back}
     }};
     unsigned option_row=0,option_column=0;
     Option option()const{return option_rows[option_row][option_column];}
@@ -72,7 +78,7 @@ struct Menu {
         case Option::Bombs: return bombs;
         case Option::Autofire: return !autofire?0:fast_autofire?2:1;
         case Option::Effects: return reduced;
-        case Option::MoreInfo: return show_more_info;
+        case Option::Focus: return focus_enabled;
         case Option::Fullscreen: return fullscreen;
         case Option::Hitboxes: return static_cast<int>(hitboxes);
         case Option::Language: return static_cast<int>(language);
@@ -90,7 +96,7 @@ struct Menu {
         case Option::Rank: case Option::Bombs: case Option::Language: return 4;
         case Option::Music: return akyu_available?4:3;
         case Option::Autofire: case Option::Hitboxes: return 3;
-        case Option::Effects: case Option::MoreInfo: case Option::Fullscreen: case Option::StageIntro: case Option::SmoothBackground: return 2;
+        case Option::Effects: case Option::Focus: case Option::Fullscreen: case Option::StageIntro: case Option::SmoothBackground: return 2;
         case Option::MusicVolume: case Option::EffectVolume: return soew::AudioLevels::maximum/soew::AudioLevels::step+1;
         case Option::Reset: case Option::Back: case Option::Empty: return 0;
         }
@@ -104,7 +110,7 @@ struct Menu {
         case Option::Bombs: bombs=value;break;
         case Option::Autofire: autofire=value!=0;fast_autofire=value!=1;break;
         case Option::Effects: reduced=value!=0;break;
-        case Option::MoreInfo: show_more_info=value!=0;break;
+        case Option::Focus: focus_enabled=value!=0;break;
         case Option::Fullscreen: fullscreen=value!=0;break;
         case Option::Hitboxes: hitboxes=static_cast<soew::HitboxMode>(value);break;
         case Option::Language: language=static_cast<soew::Language>(value);break;
@@ -128,6 +134,7 @@ struct Menu {
         if((input&cancel)||((input&confirm)&&item==Option::Back)){options=false;selected=3;return;}
         if((input&confirm)&&item==Option::Reset){
             const Menu defaults;
+            show_more_info=defaults.show_more_info;
             for(const auto &row:option_rows)for(const auto option:row)set_option(option,defaults.option_value(option));
             return;
         }
@@ -240,13 +247,12 @@ void draw_menu_text(std::vector<std::uint32_t> &pixels,const th03::assets::BfntS
 }
 inline constexpr std::array<std::string_view,4> rank_names={"  EASY "," NORMAL","  HARD ","LUNATIC"};
 namespace soew::text {
-inline constexpr LocalizedText options_title{L"設定",L"Options",L"设置",L"設定"},
-    options_controls{L"上下：移動　左右：変更　Tab：列切替　Z：実行　Esc：戻る",L"Up/Down: move  Left/Right: change  Tab: column  Z: act  Esc: back",L"上下：选择  左右：修改  Tab：换列  Z：确认  Esc：返回",L"上下：選擇  左右：修改  Tab：換欄  Z：確認  Esc：返回"},
+inline constexpr LocalizedText options_controls{L"上下：移動　左右：変更　Tab：列切替　Z：実行　Esc：戻る",L"Up/Down: move  Left/Right: change  Tab: column  Z: act  Esc: back",L"上下：选择  左右：修改  Tab：换列  Z：确认  Esc：返回",L"上下：選擇  左右：修改  Tab：換欄  Z：確認  Esc：返回"},
     options_music_hint{L"音源を変えると現在の曲を新しい音源で再生します",L"Changing the source restarts the current track",L"切换音源后会从头播放当前曲目",L"切換音源後會從頭播放目前曲目"},
     options_effects_hint{L"一部軽減では一部の点滅や画面の揺れを抑えます",L"Reduced limits some flashes and screen shake",L"减弱部分闪光和画面震动",L"減弱部分閃光和畫面震動"};
 inline constexpr std::array<LocalizedText,17> option_labels={{
     {L"難易度",L"Difficulty",L"难度",L"難度"}, {L"音楽",L"Music",L"音乐",L"音樂"}, {L"残機",L"Lives",L"初始命数",L"初始命數"}, {L"ボム",L"Bombs",L"初始灵击",L"初始靈擊"},
-    {L"連射",L"Autofire",L"自动连射",L"自動連射"}, {L"演出",L"Effects",L"画面特效",L"畫面特效"}, {L"詳細情報",L"More Info",L"详细信息",L"詳細資訊"}, {L"全画面",L"Fullscreen",L"全屏",L"全螢幕"},
+    {L"連射",L"Autofire",L"自动连射",L"自動連射"}, {L"演出",L"Effects",L"画面特效",L"畫面特效"}, {L"低速移動",L"Slow Movement",L"低速移动",L"低速移動"}, {L"全画面",L"Fullscreen",L"全屏",L"全螢幕"},
     {L"判定",L"Hitboxes",L"碰撞判定",L"碰撞判定"}, {L"言語",L"Language",L"语言",L"語言"}, {L"ステージ導入",L"Stage Intro",L"关卡开场",L"關卡開場"},
     {L"動きの補間",L"Smooth Motion",L"运动平滑",L"動態平滑"},
     {L"音楽音量",L"Music Volume",L"音乐音量",L"音樂音量"}, {L"効果音音量",L"SFX Volume",L"音效音量",L"音效音量"},
@@ -276,7 +282,7 @@ inline std::wstring_view option_value(Language language,Menu::Option option,int 
     case O::Bombs: return digits[value];
     case O::Autofire: return autofire[value](language);
     case O::Effects: return effects[value](language);
-    case O::MoreInfo: case O::Fullscreen: case O::StageIntro: case O::SmoothBackground: return toggles[value](language);
+    case O::Focus: case O::Fullscreen: case O::StageIntro: case O::SmoothBackground: return toggles[value](language);
     case O::Hitboxes: return hitboxes[value](language);
     case O::Language: return language_names.at(value);
     case O::MusicVolume: case O::EffectVolume: return volumes[value];

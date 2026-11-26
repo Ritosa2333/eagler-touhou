@@ -614,8 +614,6 @@ void compose_options(Frame &frame,const th03::assets::BfntSheet &font,const Menu
         display_text(frame,text,x+2,y+2,0,language);
         display_text(frame,text,x,y,color,language);
     };
-    const std::wstring_view title=t::options_title(language);
-    draw(title,320-width(title)/2,180,yellow);
     for(unsigned row=0;row<Menu::option_rows.size();++row)for(unsigned column=0;column<Menu::option_rows[row].size();++column){
         const auto item=Menu::option_rows[row][column];
         if(item==Menu::Option::Empty)continue;
@@ -3825,11 +3823,12 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                             fast=app->dialogue_hold.poll(now,!app->stage_entry_release&&z_held&&app->stage_scene->dialogue.active());
                         }
                         if(!coop)input=advanced.filter(input,gameplay);
+                        input=app->menu.live_input(input);
                         if(app->local_coop){
                             auto &coop=*app->stage_scene->coop;
                             const auto mode=shot_mode(*app);
                             for(unsigned seat=0;seat<coop.config.count;++seat){
-                                auto raw=app->local_coop_input[seat];
+                                auto raw=app->menu.live_input(app->local_coop_input[seat]);
                                 if(app->stage_entry_release)raw&=~(soew::Shot|soew::Bomb|soew::OK);
                                 auto &fire=app->local_coop_fire[seat];
                                 fire.event((raw&soew::Shot)!=0,mode);
@@ -4062,7 +4061,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             const int initial_rank=app->menu.rank;
             option_key('Z');app->check(app->menu.rank==initial_rank);
             option_key(VK_RIGHT);app->check(app->menu.option()==Option::Rank&&app->menu.rank==Menu::ring(initial_rank,1,4));
-            option_key(VK_TAB);option_key(VK_DOWN);option_key(VK_DOWN);
+            option_key(VK_TAB);option_key(VK_DOWN);
             app->check(app->menu.option()==Option::Fullscreen);
             RECT windowed{},full{},restored{};GetWindowRect(hwnd,&windowed);
             option_key(VK_RIGHT);GetWindowRect(hwnd,&full);
@@ -4083,9 +4082,15 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             app->check(app->menu.option_value(Option::Autofire)==Menu::ring(initial_autofire,1,3));
             option_key(VK_F12);app->check(!app->practice_tools.open&&app->menu.option()==Option::Hitboxes);
             option_key(VK_LEFT);app->check(app->menu.hitboxes==initial_hitboxes);
-            option_key(VK_DOWN);option_key(VK_TAB);app->check(app->menu.option()==Option::Autofire);
+            for(int i=0;i<4;++i)option_key(VK_DOWN);
+            app->check(app->menu.option()==Option::Focus&&app->menu.focus_enabled);
+            option_key(VK_LEFT);app->check(!app->menu.focus_enabled);
+            option_key(VK_RIGHT);app->check(app->menu.focus_enabled);
+            option_key(VK_TAB);app->check(app->menu.option()==Option::Autofire);
             option_key(VK_LEFT);app->check(app->menu.option_value(Option::Autofire)==initial_autofire);
-            option_key(VK_TAB);app->check(app->menu.option()==Option::Language);
+            option_key(VK_TAB);
+            for(int i=0;i<3;++i)option_key(VK_UP);
+            app->check(app->menu.option()==Option::Language);
             const auto initial_language=app->menu.language;
             InvalidateRect(hwnd,nullptr,FALSE);UpdateWindow(hwnd);
             auto initial_options=app->frames[0];compose_options(initial_options,app->font,app->menu,app->settings_warning);
@@ -4103,10 +4108,10 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             }
             option_key(VK_LEFT);
             app->check(app->menu.language==initial_language);
-            option_key(VK_TAB);option_key(VK_DOWN);app->check(app->menu.option()==Option::StageIntro&&app->menu.stage_intro);
+            option_key(VK_DOWN);app->check(app->menu.option()==Option::StageIntro&&app->menu.stage_intro);
             option_key(VK_LEFT);app->check(!app->menu.stage_intro);
             option_key(VK_RIGHT);app->check(app->menu.stage_intro);
-            option_key(VK_DOWN);option_key(VK_DOWN);option_key(VK_TAB);app->check(app->menu.option()==Option::Back);
+            option_key(VK_DOWN);option_key(VK_DOWN);option_key(VK_DOWN);app->check(app->menu.option()==Option::Back);
             option_key(VK_RETURN);app->check(!app->menu.options&&app->menu.selected==3);
             app->menu.selected=2;app->menu.update(0);
             SendMessageW(hwnd,WM_KEYDOWN,VK_RETURN,0);app->check(app->scores_visible&&app->scores.has_value());
