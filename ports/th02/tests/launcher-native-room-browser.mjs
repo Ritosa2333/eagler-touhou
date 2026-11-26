@@ -25,7 +25,7 @@ async function open(url){
   page.on('requestfailed',request=>diagnostics.push(`${request.url()}: ${request.failure()?.errorText}`));
   page.on('response',response=>{if(response.status()>=400)diagnostics.push(`${response.status()} ${response.url()}`);});
   await page.setViewport({width:1400,height:900,hasTouch:touch});
-  if(touch)await enableTouch(page,{mode:challenge?'touch':'touch-unlimited',music:akyu?'ogg-akyu':undefined});
+  if(touch)await enableTouch(page,{mode:process.env.TH02_TEST_TOUCH_MODE??(challenge?'touch':'touch-unlimited'),music:akyu?'ogg-akyu':undefined});
   await page.exposeFunction('recordRuntimeEvent',m=>events.push(m));
   if(akyu&&!touch)await page.evaluateOnNewDocument(()=>{
     if(window===window.top)localStorage.setItem('eagler-touhou-game-options-v1-th02',JSON.stringify({music:'ogg-akyu',musicPreferenceExplicit:true}));
@@ -115,12 +115,13 @@ try {
   else await runtime(guest).click(gameCanvas);
   assert(await runtime(guest).$eval(gameCanvas,el=>document.activeElement===el&&getComputedStyle(el).outlineStyle==='none'));
   if(touch){
+    assert(!(await guest.$('#touchThpracMenu:not([hidden])')),'Practice keys must stay out of multiplayer');
     const read=page=>runtime(page).evaluate(hitboxPoints);
     const hostStart=await read(host),guestStart=await read(guest);
     assert.equal(hostStart.length,1);
     assert.equal(guestStart.length,1);
     assert.notEqual(hostStart[0].x,guestStart[0].x);
-    await touchGame(guest,-70,0);
+    await touchGame(guest,-70,0,300);
     await wait('guest drag updates player position',async()=>{
       const p=await read(guest);
       return p.length===1&&p[0].x<guestStart[0].x-10;

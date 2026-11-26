@@ -196,6 +196,22 @@ void check_focus_view(const std::filesystem::path &assets){
     verify(std::nullopt); // Spectators retain the shared view.
 }
 
+void check_limited_touch(){
+    PlayerMotion player(1);
+    player.x=389;
+    CoopPointerMotion pointer;
+    pointer.sample(pointer_radial|pointer_active|pointer_begin|(400ull<<12),false);
+    player.tick(0,&pointer);
+    check(player.x==390&&pointer.x==0);
+    pointer.sample(pointer_radial|pointer_active|(16368ull<<12),false);
+    player.tick(0,&pointer);
+    check(player.x==389);
+    const int start=player.y;
+    pointer.sample(pointer_radial|pointer_active|(32ull<<26),false,true);
+    player.tick(Focus,&pointer);
+    check(player.y==start+1);
+}
+
 void check_marisa_orb_damage(const std::filesystem::path &assets){
     auto scene=EncounterScene::load(assets,3,0,1,2,3);
     scene.marisa_enabled=scene.combat_enabled=true;
@@ -316,6 +332,7 @@ void check_run(const std::filesystem::path &assets){
 
 int main(int argc,char **argv){
     try{
+        check_limited_touch();
         check_shots();
         check_boss_damage();
         if(argc>1&&argv[1][0]){

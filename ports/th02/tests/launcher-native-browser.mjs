@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {findChromiumExecutable} from '../../../launcher/lib/chromium-executable.mjs';
-import {enableTouch,hitboxPoints,startTouchFire,touchButton,touchGame} from './browser-touch.mjs';
+import {enableTouch,hitboxPoints,startTouchFire,touchButton,touchCanvas,touchGame} from './browser-touch.mjs';
 
 const require=createRequire(new URL('../../../launcher/package.json',import.meta.url));
 const {launch}=require('puppeteer-core');
@@ -17,9 +17,10 @@ url.searchParams.set('test','th02');
 const browser=await launch({executablePath:await findChromiumExecutable(),headless:true});
 try {
   const page=await browser.newPage();
-  const touch=process.argv.includes('--touch');
+  const limitedTouch=process.argv.includes('--limited-touch');
+  const touch=limitedTouch||process.argv.includes('--touch');
   await page.setViewport({width:1360,height:900,hasTouch:touch});
-  if(touch)await enableTouch(page);
+  if(touch)await enableTouch(page,{mode:limitedTouch?'touch':'touch-unlimited'});
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.evaluateOnNewDocument(touch=>{
@@ -181,7 +182,7 @@ try {
       while(!(await read()).length&&Date.now()<deadline)await wait(100);
       const initial=await read();
       assert.equal(initial.length,1,'Launcher always-hitbox should draw one marker before pressing focus');
-      await touchGame(page,90,0);
+      await touchGame(page,90,0,limitedTouch?300:0);
       await wait(400);
       const moved=await read();
       assert.equal(moved.length,1);
@@ -200,9 +201,25 @@ try {
       await touchButton(page,'#touchEscape');
       await frame.waitForFunction(pauseMenu,{timeout:5000},false);
       await wait(300);
-      await touchGame(page,-90,0);
+      await touchGame(page,-90,0,limitedTouch?300:0);
       await wait(400);
       assert((await read())[0]?.x<moved[0].x-25,'Touch should move the player again after resuming');
+      const hasColor=(x,y,w,h,r,g,b,present=true)=>{
+        const c=document.querySelector('#canvas'),ctx=c.getContext('2d');
+        const p=ctx.getImageData(x*c.width/640,y*c.height/400,w*c.width/640,h*c.height/400).data;
+        return p.some((v,i)=>i%4===0&&v===r&&p[i+1]===g&&p[i+2]===b)===present;
+      };
+      await touchButton(page,'#touchThpracBackspace');
+      await frame.waitForFunction(hasColor,{timeout:5000},228,17,13,2,170,170,170);
+      await touchCanvas(page,frame,65,32);
+      await frame.waitForFunction(hasColor,{timeout:5000},45,24,125,18,102,255,136);
+      await wait(100);
+      await touchButton(page,'#touchThpracBackspace');
+      await touchButton(page,'#touchNativePracticeF12');
+      await frame.waitForFunction(hasColor,{timeout:5000},350,47,240,70,76,70,83);
+      await wait(100);
+      await touchButton(page,'#touchNativePracticeF12');
+      await frame.waitForFunction(hasColor,{timeout:5000},350,47,240,70,76,70,83,false);
       await frame.evaluate(()=>{
         const set=Module.eaglerSetAudioLevels;
         Module.eaglerSetAudioLevels=(music,effects)=>{window.lastMix=[music,effects];set(music,effects);};

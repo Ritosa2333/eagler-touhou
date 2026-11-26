@@ -337,7 +337,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
 
     const player = {key:deliverKey, unlock:unlockAudio, stop, sync:() => sync(false),
         setAudioLevels:(music,effects)=>wasm._soew_full_audio_levels(music,effects),
-        inputScene:()=>wasm._soew_full_input_scene(),
+        inputScene:(x=-1,y=-1)=>wasm._soew_full_input_scene(x,y),
         panelPointer({type,x,y}){
             if(type==='cancel')wasm._soew_host_pointer(533,0,0,0);
             else wasm._soew_host_pointer({down:513,move:512,up:514}[type],Math.floor(x),Math.floor(y),0);

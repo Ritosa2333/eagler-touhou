@@ -29,7 +29,7 @@ export function createNativeSolo({canvas,input,exit,fail,audioLevels}) {
       });
       canvas.focus();
     },
-    inputScene:()=>player?.inputScene()??0,
+    inputScene:(x,y)=>player?.inputScene(x,y)??0,
     panelPointer:message=>player?.panelPointer(message),
     unlock:()=>player?.unlock(),
     setAudioLevels:(music,effects)=>player?.setAudioLevels(music,effects),

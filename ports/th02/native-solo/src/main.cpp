@@ -4728,11 +4728,14 @@ extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_audio_levels(double music,double 
     browser_app.host_music_gain=music;browser_app.host_effect_gain=effects;
     update_audio_levels(browser_app);
 }
-extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_input_scene(){
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_input_scene(int x,int y){
     const auto &a=browser_app;
     if(a.confirmed_coop)return !a.confirmed_coop->paused&&
         soew::replay_tick_context(*a.stage_scene)==soew::NativeReplayContext::Gameplay?1:0;
     if(a.practice_visible||a.practice_tools.open)return 2;
+    const soew::PracticePoint point{x,y};
+    if(a.practice_assist.open&&live_assist_controls(a)&&
+        (a.practice_assist.in_header(point)||a.practice_assist.row_at(point)>=0))return 2;
     return a.stage_scene&&!a.stage_scene->paused&&!a.run_pause_menu&&!a.replay_playback&&
         !a.stage_entry_release&&!a.stage_intro.active()&&!a.ending_player&&
         soew::replay_tick_context(*a.stage_scene)==soew::NativeReplayContext::Gameplay?1:0;

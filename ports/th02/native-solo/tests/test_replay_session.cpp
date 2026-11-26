@@ -1209,7 +1209,13 @@ void touch_replay(const fs::path &root){
     tick(0);check(live->player.x==start+6);
     tick(pointer_active|pointer_begin|pointer_unlimited|(48ull<<16));
     check(live->player.x==start+54);
+    const int y=live->player.y;
+    tick(pointer_active|pointer_begin|pointer_radial|(320ull<<12)|(16224ull<<26));
+    check(live->player.x==start+56&&live->player.y==y-1);
+    tick(pointer_active|pointer_radial);
+    check(live->player.x==start+59&&live->player.y==y-2);
     tick(0);
+    check(live->player.x==start+59&&live->player.y==y-2);
     check(recorder.finalize(session.stop(*live)));
     const auto run=bytes_roundtrip(recorder.replay());
     check(run.events==recorder.replay().events);

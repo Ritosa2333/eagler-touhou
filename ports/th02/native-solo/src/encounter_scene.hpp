@@ -593,7 +593,7 @@ public:
         IRand rng(seed);sparks.initialize(rng,false);runtime.random.fill(rng);items.initialize(runtime.random);effects_enabled=true;
     }
     void tick(std::uint16_t input,bool dialogue_group_key=false,bool dialogue_fast_forward=false,std::uint64_t pointer=0){
-        solo_pointer.sample(pointer,false);
+        solo_pointer.sample(pointer,false,(input&Focus)!=0);
         if(paused)return;
         if(coop)coop->input[0]=input;
         if(!(input&Focus))player.clear_focus();

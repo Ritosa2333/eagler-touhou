@@ -19,7 +19,7 @@ const nativeActive=()=>launched&&nativeSolo&&api===nativeSolo;
 const input=managedInput({game,epoch,active:()=>launched,options:()=>options,
   onKey:(code,down,event)=>{if(nativeActive())nativeSolo.key(code,down,event);},
   allowNativeKey:event=>!(nativeActive()&&(event.metaKey||event.ctrlKey&&event.code==='KeyV')),
-  scene:()=>api?.inputScene?.()??0,panelPointer:message=>nativeSolo?.panelPointer(message)});
+  scene:(x,y)=>api?.inputScene?.(x,y)??0,panelPointer:message=>nativeSolo?.panelPointer(message)});
 globalThis.__eaglerPC98Options=()=>options;
 function live(message){
   switch(message.command){

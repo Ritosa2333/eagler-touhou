@@ -54,8 +54,9 @@ struct ConfirmedCoop {
         scene.sound.shot_cadence.set_autofire(autofire);
         for(unsigned seat=0;seat<coop.config.count;++seat){
             auto raw=std::uint16_t(masks[seat]&4095&~Cancel);
-            coop.pointer[seat].sample(context==NativeReplayContext::Gameplay&&scene.seat_life(seat).input_allowed()?masks[seat]:0,restrict_speed);
             if(!focus)raw&=~Focus;
+            coop.pointer[seat].sample(context==NativeReplayContext::Gameplay&&scene.seat_life(seat).input_allowed()?masks[seat]:0,
+                restrict_speed,(raw&Focus)!=0);
             if(challenge)raw&=~Bomb;
             coop.input[seat]=sample_coop_seat(coop,seat,fire[seat],raw,mode);
         }
@@ -97,6 +98,7 @@ struct ConfirmedCoop {
             const auto &s=scene.seat_shots(seat);const auto &k=scene.seat_pickups(seat);
             const auto &r=coop.rescue[seat];const auto &f=fire[seat];
             const auto &pointer=coop.pointer[seat];h.fields(pointer.active,pointer.unlimited,pointer.x,pointer.y);
+            if(pointer.radial)h.fields(pointer.radial,pointer.fraction_x,pointer.fraction_y);
             h.fields(p.x,p.y,p.shot,p.back_page,p.frame,p.pose,p.last_dx,p.last_dy,p.focused,p.focus_rx,p.focus_ry,
                      l.lives,l.bombs,l.invincibility,l.miss_frame,l.hit,l.miss_active,l.bomb_invincible,l.game_over,
                      k.power,k.overflow,k.points_collected,k.collected,r.presses,r.age,r.target,

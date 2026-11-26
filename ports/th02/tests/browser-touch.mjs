@@ -11,7 +11,7 @@ export async function enableTouch(page,{alwaysHitbox=true,mode='touch-unlimited'
   },{alwaysHitbox,mode,music});
 }
 
-export async function touchGame(page,dx=0,dy=0){
+export async function touchGame(page,dx=0,dy=0,hold=0){
   const surface=await page.waitForSelector('#touchDirectSurface',{visible:true});
   const {x,y,width,height}=await surface.boundingBox();
   const cx=Math.round(x+width/2),cy=Math.round(y+height/2);
@@ -19,7 +19,14 @@ export async function touchGame(page,dx=0,dy=0){
   if(dx||dy){
     for(let i=1;i<=8;++i)await finger.move(cx+dx*i/8,cy+dy*i/8);
   }
+  if(hold)await new Promise(resolve=>setTimeout(resolve,hold));
   await finger.end();
+}
+
+export async function touchCanvas(page,frame,x,y){
+  const canvas=await frame.$('#canvas');
+  const box=await canvas.boundingBox();
+  await page.touchscreen.tap(Math.round(box.x+x*box.width/640),Math.round(box.y+y*box.height/400));
 }
 
 export async function touchButton(page,selector){

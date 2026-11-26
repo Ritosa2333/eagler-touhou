@@ -187,10 +187,13 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     }, 70); timers.add(timer); refocus();
   }
   function pulseThprac(name: string | undefined) {
-    if (!name || !Object.hasOwn(thpracKeys, name) || !allowed() || !settings()?.options.thpracTouchControlsEnabled) return;
+    const current = settings();
+    const nativePracticeKey = current?.gameId === 'th02' && !current.multiplayer && (name === 'Backspace' || name === 'F12');
+    if (!name || !Object.hasOwn(thpracKeys, name) || !allowed() || !(nativePracticeKey || current?.options.thpracTouchControlsEnabled)) return;
     pulse(thpracKeys[name]);
   }
   function toggleMobileThpracPanels() {
+    if (settings()?.gameId === 'th02') {pulseThprac('Backspace'); return;}
     if (!allowed() || thpracPracticeOpen || !settings()?.options.thpracTouchControlsEnabled) return;
     thpracMenuOpen = !thpracMenuOpen; publish(); syncControls(); refocus();
   }

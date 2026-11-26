@@ -17,7 +17,8 @@ export function TouchControlPreview({settings, live, spectator = false, fireEnab
   const heldFire = game.touchFire.mode === 'held-key', heldFocus = th01Slide || options.touchFocusMode === 'hold-button';
   const focusOn = live?.focusEnabled ?? false, fireOn = heldFire ? live?.heldFire ?? false : live?.fireEnabled ?? fireEnabled;
   const touchSurfaceVisible = !spectator && options.touchEnabled || editing;
-  const thpracVisible = !spectator && options.thpracTouchControlsEnabled && (options.touchEnabled || editing);
+  const nativePractice = settings.gameId === 'th02' && !settings.multiplayer;
+  const thpracVisible = !spectator && (nativePractice || settings.gameId !== 'th02' && options.thpracTouchControlsEnabled) && (options.touchEnabled || editing);
   const extraU = 'thpracExtraFunctionKeys' in game && game.thpracExtraFunctionKeys.includes('U');
   return <>
     <nav className={`touch-hud${actions ? " native-actions" : ""}`} id="touchHud" aria-label={t('touch.leftControls')}>
@@ -37,8 +38,9 @@ export function TouchControlPreview({settings, live, spectator = false, fireEnab
     <UiButton variant="unstyled" className="touch-escape" id="touchEscape" data-touch-layout-control="escape" type="button" aria-label={t('touch.escapeAria')} title={t('touch.escapeTitle')}>ESC<Resize/></UiButton>
     <UiButton variant="unstyled" className="touch-restart" id="touchRestart" data-touch-layout-control="restart" type="button" aria-label="R" title={t('touch.restartTitle')} hidden={!options.restartButtonEnabled}>R<Resize/></UiButton>
     <UiButton variant="unstyled" className="touch-thprac-tab" id="touchThpracTab" data-touch-layout-control="thpracTab" data-thprac-key="Tab" type="button" hidden><strong>Tab</strong><small>Tracker</small><Resize/></UiButton>
-    <div className="touch-thprac-menu" id="touchThpracMenu" data-touch-layout-control="thpracMenu" hidden={!thpracVisible || (!editing && !!live?.thpracPracticeOpen)}>
-      <UiButton variant="unstyled" className="touch-thprac-backspace" id="touchThpracBackspace" type="button" aria-expanded={live?.thpracMenuOpen ?? false}>{t('touch.cheatsAndSettings')}</UiButton>
+    <div className={`touch-thprac-menu${nativePractice?' native-practice-touch-keys':''}`} id="touchThpracMenu" data-touch-layout-control="thpracMenu" hidden={!thpracVisible || (!nativePractice && !editing && !!live?.thpracPracticeOpen)}>
+      <UiButton variant="unstyled" className="touch-thprac-backspace" id="touchThpracBackspace" type="button" aria-expanded={nativePractice ? undefined : live?.thpracMenuOpen ?? false}>{nativePractice ? 'Backspace' : t('touch.cheatsAndSettings')}</UiButton>
+      <UiButton variant="unstyled" className="touch-thprac-backspace" id="touchNativePracticeF12" type="button" data-thprac-key="F12" hidden={!nativePractice}>F12</UiButton>
       <div className="touch-thprac-function-keys" id="touchThpracFunctionKeys" hidden>
         {([['F12','touch.advancedMenu'],['F1','touch.invincible'],['F2','touch.infiniteLives'],['F3','touch.infiniteBombs'],['F4','touch.infinitePower'],['F5','touch.timeLock'],['F6','touch.autoBomb'],['F7','touch.enemyBgm'],['U','touch.enemyInvincible']] as const).map(([key, label]) => <UiButton variant="unstyled" key={key} type="button" data-thprac-key={key} hidden={key === 'U' && !extraU}><strong>{key}</strong><small>{t(label)}</small></UiButton>)}
       </div><Resize/>

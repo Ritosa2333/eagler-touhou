@@ -38,6 +38,14 @@ test('direct touch packs each move once, accepts two-finger focus and releases o
   assert.equal(packTouch(0,h.touch.motion()),0);
 });
 
+test('limited drag sends radial deltas and drops the pending target on release',()=>{
+  const h=harness();h.scene(1);
+  h.point('down',1);h.point('move',1,116,203);
+  assert.deepEqual(unpackTouch(packTouch(0,h.touch.motion())),{active:true,unlimited:false,radial:true,begin:true,x:384,y:72});
+  h.point('up',1,116,203);
+  assert.equal(packTouch(0,h.touch.motion()),0);
+});
+
 test('joystick menus, Fire, Bomb and Esc share the regular touch controls',()=>{
   const h=harness('joystick-free');
   h.controls({joystickY:20000});

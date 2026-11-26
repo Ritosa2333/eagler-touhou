@@ -18,7 +18,7 @@ node ports/th02/scripts/dev.mjs
 
 ## 触控与网页设置
 
-书库和联机大厅共用触控布局及设置。单人滑动写入原生录像，联机滑动进入同步输入；房间禁止无限速时，滑动遵守机体限速。玩家只看见自己的判定点，观战保留全员视角。网页语言、音乐音源、音乐与音效音量、常显判定点和联机本机定位线由原生运行时读取。
+书库和联机大厅共用触控布局及设置。限速滑动可沿任意方向移动，松手停止追踪。单人滑动写入原生录像，联机滑动进入同步输入；房间禁止无限速时，滑动遵守机体限速。单人触控提供 Backspace 与 F12，打开后可直接点按练习器面板。玩家只看见自己的判定点，观战保留全员视角。网页语言、音乐音源、音乐与音效音量、常显判定点和联机本机定位线由原生运行时读取。
 
 ## 联机与观战
 
@@ -33,6 +33,7 @@ $env:PC98_LAUNCHER_URL='http://127.0.0.1:18320/'
 node ports/th02/tests/launcher-native-browser.mjs
 node ports/th02/tests/launcher-native-room-browser.mjs
 node ports/th02/tests/launcher-native-browser.mjs --touch
+node ports/th02/tests/launcher-native-browser.mjs --limited-touch
 $env:TH02_TEST_TOUCH='1'; node ports/th02/tests/launcher-native-room-browser.mjs
 node --test ports/th02/tests/hosted-touch.test.mjs ports/th02/tests/native-coop-peers.test.mjs
 $env:TH02_TEST_SEATS='3'; $env:TH02_TEST_ROUTE='relay'
