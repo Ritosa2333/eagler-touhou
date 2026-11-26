@@ -132,8 +132,8 @@ public:
     }
 };
 
-template<unsigned Opacity=256,class Texel>
-void blit_motion_sprite(std::span<std::uint32_t> pixels,RenderPoint at,int width,int height,Texel texel,SpriteClip clip={}){
+template<class Texel>
+void blit_motion_sprite(std::span<std::uint32_t> pixels,RenderPoint at,int width,int height,Texel texel,SpriteClip clip={},unsigned opacity=256){
     const int left=RenderPoint::floor(at.x),top=RenderPoint::floor(at.y);
     const unsigned fx=unsigned(at.x-left*256),fy=unsigned(at.y-top*256);
     const int first_x=std::max(0,clip.left-left),last_x=std::min(width+int(fx!=0),clip.right-left);
@@ -145,9 +145,9 @@ void blit_motion_sprite(std::span<std::uint32_t> pixels,RenderPoint at,int width
             auto row=pixels.data()+(top+y)*640+left+first_x;
             for(int x=first_x;x<last_x;++x,++row){
                 const auto rgb=texel(x,y);if(rgb==render_clear)continue;
-                if constexpr(Opacity==256)*row=rgb;
-                else *row=((((rgb&rb)*Opacity+(*row&rb)*(256-Opacity))>>8)&rb)|
-                          ((((rgb&g)*Opacity+(*row&g)*(256-Opacity))>>8)&g);
+                if(opacity==256)*row=rgb;
+                else *row=((((rgb&rb)*opacity+(*row&rb)*(256-opacity))>>8)&rb)|
+                          ((((rgb&g)*opacity+(*row&g)*(256-opacity))>>8)&g);
             }
         }
         return;
@@ -165,12 +165,12 @@ void blit_motion_sprite(std::span<std::uint32_t> pixels,RenderPoint at,int width
             };
             add(x,y,w00);add(x-1,y,w10);add(x,y-1,w01);add(x-1,y-1,w11);
             if(coverage){
-                if constexpr(Opacity==256){
+                if(opacity==256){
                     red_blue+=(*row&rb)*(256-coverage);green+=(*row&g)*(256-coverage);
                     *row=((red_blue>>8)&rb)|((green>>8)&g);
                 }else{
                     const auto blend=[&](unsigned src,unsigned dst){
-                        return (src*Opacity+dst*(65536-coverage*Opacity))>>16;
+                        return (src*opacity+dst*(65536-coverage*opacity))>>16;
                     };
                     *row=blend(red_blue>>16,(*row>>16)&255)<<16 |
                          blend(green>>8,(*row>>8)&255)<<8 |

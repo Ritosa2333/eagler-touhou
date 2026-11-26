@@ -66,7 +66,7 @@ window.launch = async (options, rules) => {
     const fail=error=>{state.error=error.message;};
     let peer;
     const player=await playFull(document.querySelector('canvas'),undefined,{
-        hosted:true,confirmedCoop:rules,
+        hosted:true,confirmedCoop:{rules,seat},
         beforeFrame(){if(peer?.ready&&!state.hold)clock.frame(performance.now(),()=>1,()=>peer.advance());}
     });
     const transport=createManagedTransport(options,['host','guest','guest2'],fail);

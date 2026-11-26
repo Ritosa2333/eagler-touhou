@@ -1465,9 +1465,10 @@ public:
         }
     }
     void render(std::span<std::uint32_t> pixels,bool show_boss_terminal=true,bool smooth_background=false,
-                unsigned subframe=scroll_subpixels,const MotionFrame *previous=nullptr,unsigned stride=1)const{
+                unsigned subframe=scroll_subpixels,const MotionFrame *previous=nullptr,unsigned stride=1,
+                std::optional<unsigned> view_seat=std::nullopt)const{
         const MotionSample motion{smooth_background&&previous&&previous->stage==stage&&previous->tick+stride==ticks?previous:nullptr,subframe};
-        render_frame(pixels,show_boss_terminal,smooth_background,motion);
+        render_frame(pixels,show_boss_terminal,smooth_background,motion,view_seat);
     }
 private:
     static constexpr unsigned pellet_pattern=~0u; // Procedural 8x8 sprite, not a bank cel.
@@ -1527,7 +1528,8 @@ private:
         const auto &north=stones.draw.back();
         if(north.visible&&north.dying)cel(north.pattern,pos(unsigned(stones.draw.size()-1)),stones.death_effects.front().frame<32);
     }
-    void render_frame(std::span<std::uint32_t> pixels,bool show_boss_terminal,bool smooth_background,const MotionSample &motion)const{
+    void render_frame(std::span<std::uint32_t> pixels,bool show_boss_terminal,bool smooth_background,const MotionSample &motion,
+                      std::optional<unsigned> view_seat)const{
         using T=MotionTrack;
         using Paint=StageSprites::Paint;
         if(extra_settlement.showing_bonus()&&!dialogue_snapshot.empty()){
@@ -1618,15 +1620,28 @@ private:
         if(!track_tiles.empty())for(const auto &[key,tile]:track_tiles){const unsigned virtual_row=key/24,col=key%24;const int top=368+int(scroll.display_pixels)-int(virtual_row*16);if(top>=terrain_bottom||top+16<=terrain_top)continue;for(int y=0;y<16;++y)for(unsigned x=0;x<16;++x){int py=top+y;if(py<terrain_top||py>=terrain_bottom)continue;const auto c=terrain_palette[background.tiles[tile][y*16+x]];pixels[py*640+32+col*16+x]=(unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];}}
         if(filter_terrain)filter_stage_background(pixels,lag,terrain_bottom);
         if(scroll_terrain)ambient_.render(pixels,terrain_palette,anim_phase,reduced_effects);
+        std::array<unsigned,3> opacity{256,256,256};
+        if(view_seat){
+            const auto position=[&](unsigned seat){
+                if(seat_life(seat).game_over)return coop->spawn(seat);
+                const auto &p=seat_motion(seat);
+                return PlayerLife::Point{p.x,p.y};
+            };
+            const auto local=position(*view_seat);
+            for(unsigned i=0;i<seat_count();++i){
+                const auto p=position(i);
+                opacity[i]=coop_art::view_opacity(i==*view_seat,seat_life(i).game_over,p.x-local.x,p.y-local.y);
+            }
+        }
         if(coop)for(unsigned i=0;i<seat_count();++i)if(seat_life(i).game_over){
             const auto pos=coop->spawn(i);
-            coop_art::ghost(pixels,i,RenderPoint::pixels(pos.x,pos.y));
+            coop_art::ghost(pixels,i,RenderPoint::pixels(pos.x,pos.y),opacity[i]);
         }
         if(const auto *art=current_bomb_art();bomb_enabled&&art)art->render(pixels,sprite_palette,bomb,reduced_effects);
         // th02_main.asm:1655–1657 draws Bomb before the boss update and its paints.
         if(sigma_enabled)draw_sigma(pixels,motion);
-        const auto put=[&](unsigned pat,RenderPoint p,Paint paint=Paint::Artwork,unsigned scale=1,bool zero_clear=false){
-            bank.put(pixels,sprite_palette,pat,p,paint,scale,zero_clear);
+        const auto put=[&](unsigned pat,RenderPoint p,Paint paint=Paint::Artwork,unsigned scale=1,bool zero_clear=false,unsigned alpha=256){
+            bank.put(pixels,sprite_palette,pat,p,paint,scale,zero_clear,{},alpha);
         };
         const auto draw_departure=[&](unsigned pattern,RenderPoint p){put(pattern,p);};
         departures_.draw(T::Enemy,motion,draw_departure);
@@ -1676,35 +1691,39 @@ private:
             else put(rika.draw_pattern,p,flash(rika.hit_flash));
         }
         if(combat_enabled){
-            departures_.draw(T::Shot,motion,draw_departure);
-            for(unsigned i=0;i<shots.slots.size();++i){const auto &s=shots.slots[i];if(s.flag==1)put(shots.pattern_for(s),motion.at(T::Shot,i,motion_q4(s.position[rendered_page]),s.motion_generation));}
+            const auto primary_shot=[&](unsigned pat,RenderPoint p){put(pat,p,Paint::Artwork,1,false,opacity[0]);};
+            departures_.draw(T::Shot,motion,primary_shot);
+            for(unsigned i=0;i<shots.slots.size();++i){const auto &s=shots.slots[i];if(s.flag==1)primary_shot(shots.pattern_for(s),motion.at(T::Shot,i,motion_q4(s.position[rendered_page]),s.motion_generation));}
             if(coop)for(unsigned seat=1;seat<seat_count();++seat){
                 const auto &s=seat_shots(seat);
                 const auto palette=coop_art::shot_palette(sprite_palette,seat);
                 for(const auto &shot:s.slots)if(shot.flag==1)
-                    bank.put(pixels,palette,s.pattern_for(shot),motion_q4(shot.position[rendered_page]));
+                    bank.put(pixels,palette,s.pattern_for(shot),motion_q4(shot.position[rendered_page]),Paint::Artwork,1,false,{},opacity[seat]);
             }
         }
         // Focus is a collision reference. Show the player and hostile bullets
         // from the checked frame, not the older interpolated pose of live slots.
         const auto *focus_frame=player.focused&&!paused?sampled_collision_frame():nullptr;
         const auto focus=focus_frame?focus_frame->player[static_cast<unsigned>(CollisionSample::Projectile)]:std::nullopt;
-        if(survival_enabled){if(life.pattern)put(*life.pattern,focus?RenderPoint::pixels(focus->x,focus->y):motion.at(T::Player,0,life.draw.x,life.draw.y,life.total_misses));}
-        else put(player.pose==PlayerMotion::LeanLeft?2:player.pose==PlayerMotion::LeanRight?3:0,motion.at(T::Player,0,player.x,player.y,life.total_misses));
-        if(options_visible()){
-            const unsigned pat=StageSprites::option_base+unsigned(player.shot);const auto p=motion.at(T::Option,0,shots.option_left,shots.option_top);
-            put(pat,p);put(pat,p.offset(48,0));
-        }
-        if(coop)for(unsigned i=0;i<seat_count();++i){
+        const auto draw_player=[&](unsigned i){
             const auto &l=seat_life(i);const auto &p=seat_motion(i);const auto &s=seat_shots(i);
-            if(!i||l.game_over)continue;
-            if(l.pattern)coop_art::player(pixels,bank,sprite_palette,i,*l.pattern,RenderPoint::pixels(l.draw.x,l.draw.y));
-            if(!l.hit&&!l.miss_active&&seat_pickups(i).power>=8){
-                const auto pos=RenderPoint::pixels(s.option_left,s.option_top);
-                const unsigned pat=StageSprites::option_base+unsigned(p.shot);
-                put(pat,pos);put(pat,pos.offset(48,0));
+            if(coop&&l.game_over)return;
+            const auto alpha=view_seat&&i!=*view_seat&&l.miss_active?opacity[i]/4:opacity[i];
+            if(!i&&!survival_enabled)
+                put(p.pose==PlayerMotion::LeanLeft?2:p.pose==PlayerMotion::LeanRight?3:0,motion.at(T::Player,0,p.x,p.y,l.total_misses),Paint::Artwork,1,false,alpha);
+            else if(l.pattern){
+                const auto pos=i?RenderPoint::pixels(l.draw.x,l.draw.y):focus?RenderPoint::pixels(focus->x,focus->y):motion.at(T::Player,0,l.draw.x,l.draw.y,l.total_misses);
+                coop_art::player(pixels,bank,sprite_palette,i,*l.pattern,pos,alpha);
             }
-        }
+            if(i?(!l.hit&&!l.miss_active&&seat_pickups(i).power>=8):options_visible()){
+                const auto pos=i?RenderPoint::pixels(s.option_left,s.option_top):motion.at(T::Option,0,s.option_left,s.option_top);
+                const unsigned pat=StageSprites::option_base+unsigned(p.shot);
+                put(pat,pos,Paint::Artwork,1,false,opacity[i]);put(pat,pos.offset(48,0),Paint::Artwork,1,false,opacity[i]);
+            }
+        };
+        // Only the local view changes painter order; hostile projectiles still follow all seats.
+        for(unsigned i=0;i<seat_count();++i)if(i!=view_seat)draw_player(i);
+        if(view_seat)draw_player(*view_seat);
         if(effects_enabled){
             for(unsigned i=0;i<items.slots.size();++i){const auto &s=items.slots[i];if(s.flag==1)put(StageSprites::item_patterns.at(s.type),motion.at(T::Item,i,item_motion(s),s.type,s.age));}
         }
@@ -1749,8 +1768,7 @@ private:
                 const auto p=motion.at(T::Spark,i,motion_q4(s.position[rendered_page]),unsigned(s.sprite)+2u*s.shot_hit,s.age);
                 const int size=s.sprite?8:1;
                 const auto texel=[&](int x,int y){return !s.sprite||(rows[y][s.age%8]&(128>>x))?rgb:render_clear;};
-                if(s.shot_hit)blit_motion_sprite<128>(pixels,p,size,size,texel);
-                else blit_motion_sprite(pixels,p,size,size,texel);
+                blit_motion_sprite(pixels,p,size,size,texel,{},s.shot_hit?128:256);
             }
         }
         if(mima_enabled)apply_mima_tone(pixels,mima_tone);

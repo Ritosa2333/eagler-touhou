@@ -1131,6 +1131,7 @@ struct App {
     std::optional<soew::NativeReplayRecorder> recorder;
     std::optional<soew::LocalCoopConfig> local_coop;
     std::optional<soew::ConfirmedCoop> confirmed_coop;
+    std::optional<unsigned> coop_view_seat;
     std::array<std::uint16_t,3> local_coop_input{};
     std::array<soew::ShotInput,3> local_coop_fire;
     unsigned local_coop_ticks=0;
@@ -3380,7 +3381,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
             if(show_stage_intro)soew::StageIntro::paint(app->composed.pixels,app->stage_intro_art->pixels);
             else{
                 app->stage_scene->render(app->composed.pixels,!app->practice_result,app->menu.smooth_background,app->scroll_phase,
-                    &app->motion_before,app->motion_stride);
+                    &app->motion_before,app->motion_stride,app->coop_view_seat);
                 if(!app->stage_intro.revealing()&&app->menu.hitboxes!=soew::HitboxMode::Off&&!app->practice_result&&!app->replay_menu.active())app->stage_scene->render_hitboxes(app->composed.pixels);
                 if(app->stage_intro.revealing())compose_curtain(app->composed,app->font,true,app->stage_intro.reveal_frame());
                 else{
@@ -4701,9 +4702,10 @@ extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_coop(int count,int stage,int
     return start_browser_coop(count,stage,rank,spare,stock,p1,p2,p3);
 }
 extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_confirmed_coop(int count,int stage,int rank,int spare,int stock,
-    int p1,int p2,int p3,std::uint32_t seed,unsigned rules,int lang){
-    if(rules>3||lang<0||lang>3)return 0;
+    int p1,int p2,int p3,std::uint32_t seed,unsigned rules,int lang,int seat){
+    if(rules>3||lang<0||lang>3||seat<0||seat>=count)return 0;
     auto &app=browser_app;
+    app.coop_view_seat=unsigned(seat);
     auto &run=app.confirmed_coop.emplace();
     run.seed=seed;run.focus=(rules&1)!=0;run.autofire=(rules&2)!=0;
     app.menu.language=soew::Language(lang);

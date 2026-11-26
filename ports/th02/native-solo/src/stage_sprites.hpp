@@ -107,7 +107,7 @@ public:
         put(target,bg.palette,id,point,paint,scale,zero_clear,clip);
     }
     void put(std::span<std::uint32_t> target,const StageBackground::Palette &palette,unsigned id,RenderPoint point,
-             Paint paint=Paint::Artwork,unsigned scale=1,bool zero_clear=false,SpriteClip clip={})const{
+             Paint paint=Paint::Artwork,unsigned scale=1,bool zero_clear=false,SpriteClip clip={},unsigned opacity=256)const{
         if(id>=sprites.size()||!sprites[id])throw std::runtime_error("Unregistered original sprite pattern "+std::to_string(id));
         const auto &image=*sprites[id];
         const auto transparent=zero_clear?0:image.transparent;
@@ -117,8 +117,8 @@ public:
             const auto &rgb=palette[paint_index(paint,c)];
             return (unsigned(rgb[0])<<16)|(unsigned(rgb[1])<<8)|rgb[2];
         };
-        if(scale==1)blit_motion_sprite(target,point,image.width,image.height,texel,clip);
-        else blit_motion_sprite(target,point,image.width*scale,image.height*scale,[&](int x,int y){return texel(x/int(scale),y/int(scale));},clip);
+        if(scale==1)blit_motion_sprite(target,point,image.width,image.height,texel,clip,opacity);
+        else blit_motion_sprite(target,point,image.width*scale,image.height*scale,[&](int x,int y){return texel(x/int(scale),y/int(scale));},clip,opacity);
     }
 };
 }

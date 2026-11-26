@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include "stage_sprites.hpp"
 
 namespace soew::coop_art {
@@ -20,15 +21,25 @@ inline StageBackground::Palette shot_palette(StageBackground::Palette palette,un
     }
     return palette;
 }
-inline void player(std::span<std::uint32_t> pixels,const StageSprites &bank,const StageBackground::Palette &palette,unsigned seat,unsigned pattern,RenderPoint point){
-    if(!seat){bank.put(pixels,palette,pattern,point);return;}
+// TH05's view-only curve: 20% up close, rising to roughly 50% farther away.
+inline unsigned view_opacity(bool local,bool ghost,int dx,int dy){
+    unsigned alpha=ghost?80:255;
+    if(!local){
+        const auto distance=std::sqrt(float(dx*dx+dy*dy));
+        const auto teammate=distance>=100.f?128u:std::min(128u,51u+unsigned(std::max(0.f,distance-50.f)*204.f/50.f));
+        alpha=std::min(alpha,teammate);
+    }
+    return (alpha*256+127)/255;
+}
+inline void player(std::span<std::uint32_t> pixels,const StageSprites &bank,const StageBackground::Palette &palette,unsigned seat,unsigned pattern,RenderPoint point,unsigned opacity=256){
+    if(!seat){bank.put(pixels,palette,pattern,point,StageSprites::Paint::Artwork,1,false,{},opacity);return;}
     const auto &image=*bank.sprites.at(pattern);
     blit_motion_sprite(pixels,point,int(image.width),int(image.height),[&](int x,int y)->std::uint32_t{
         const auto index=image.pixels[y*image.width+x];
         if(index==image.transparent)return render_clear;
         if(index>=1&&index<=4&&(pattern>=4||y<30))return player_rgb[seat-1][index-1];
         const auto c=palette[index];return (unsigned(c[0])<<16)|(unsigned(c[1])<<8)|c[2];
-    });
+    },{},opacity);
 }
 // ghost-preview/reimu-ghost-32.png: original P1 pixels and the matching
 // bow-only P2/P3 recolors from ghost-preview/th01-player-colors.
@@ -71,11 +82,11 @@ inline constexpr std::array<std::array<std::uint32_t,10>,3> ghost_rgb={{
     {0x00000000u,0xff282038u,0xff4488eeu,0xfffff8efu,0xff88b8ffu,0xff284898u,0xff584068u,0xff70b8cfu,0xffc8f0efu,0xff487898u},
     {0x00000000u,0xff282038u,0xff38b878u,0xfffff8efu,0xff88e0a8u,0xff206848u,0xff584068u,0xff70b8cfu,0xffc8f0efu,0xff487898u},
 }};
-inline void ghost(std::span<std::uint32_t> pixels,unsigned seat,RenderPoint point){
+inline void ghost(std::span<std::uint32_t> pixels,unsigned seat,RenderPoint point,unsigned opacity=256){
     blit_motion_sprite(pixels,point.offset(0,12),32,32,[&](int x,int y)->std::uint32_t{
         const char index=ghost_pixels[y][x];
         if(index=='0')return render_clear;
         return ghost_rgb[seat][index>='a'?index-'a'+10:index-'0']&0xffffffu;
-    });
+    },{},opacity);
 }
 }

@@ -271,7 +271,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     })]);
     if (wasm._soew_full_start() !== 0) throw Error(lastError ?? 'SoEW startup failed');
     if (localCoop && !wasm._soew_full_start_coop(...localCoop)) throw Error(lastError ?? 'SoEW local co-op startup failed');
-    if (confirmedCoop && !wasm._soew_full_start_confirmed_coop(...confirmedCoop)) {
+    if (confirmedCoop && !wasm._soew_full_start_confirmed_coop(...confirmedCoop.rules,confirmedCoop.seat)) {
         stop();
         throw Error(lastError ?? 'SoEW confirmed co-op startup failed');
     }

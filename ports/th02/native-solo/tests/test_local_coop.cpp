@@ -118,6 +118,62 @@ void check_ghost_layer(const std::filesystem::path &assets){
     player.pattern.reset();shot.flag=1;verify();
 }
 
+void check_player_view(const std::filesystem::path &assets){
+    auto scene=EncounterScene::load(assets,0,0,1,2,3);
+    scene.combat_enabled=scene.survival_enabled=scene.pickup_enabled=true;
+    scene.enable_coop({.count=3,.shots={0,1,2}});
+    const auto draw=[&](std::optional<unsigned> viewer=std::nullopt){
+        std::vector<std::uint32_t> pixels(640*400);
+        scene.render(pixels,true,false,scroll_subpixels,nullptr,1,viewer);
+        return pixels;
+    };
+    for(unsigned i=0;i<3;++i)scene.seat_life(i).pattern.reset();
+    const auto background=draw();
+    for(unsigned i=0;i<3;++i){
+        const int x=64+120*int(i);
+        auto &player=scene.seat_motion(i);player.x=x;player.y=320;
+        auto &life=scene.seat_life(i);life.pattern=0;life.draw={x,320};
+        auto &shots=scene.seat_shots(i);shots.option_left=x-8;shots.option_top=288;
+        auto &shot=shots.slots[0];shot.flag=1;shot.render_pattern=48;
+        shot.position.fill({std::uint16_t(x*16),100*16});
+        scene.seat_pickups(i).power=8;
+    }
+    const auto shared=draw();
+    for(unsigned local=0;local<3;++local){
+        const auto view=draw(local);
+        for(unsigned i=0;i<3;++i){
+            const unsigned alpha=i==local?256:129;
+            const int x=64+120*int(i);
+            for(const auto [top,bottom]:std::array{std::pair{96,160},std::pair{280,320},std::pair{320,384}}){
+                unsigned visible=0;
+                for(int y=top;y<bottom;++y)for(int col=x-8;col<x+72;++col){
+                    const auto at=y*640+col;
+                    std::uint32_t expected=0;
+                    for(auto shift:{0,8,16})expected|=((((shared[at]>>shift)&255)*alpha+((background[at]>>shift)&255)*(256-alpha))>>8)<<shift;
+                    check(view[at]==expected);
+                    if(shared[at]!=background[at])++visible;
+                }
+                check(visible>0);
+            }
+        }
+    }
+    check(coop_art::view_opacity(false,false,0,0)==51);
+    check(coop_art::view_opacity(false,false,60,0)>51);
+    check(coop_art::view_opacity(false,true,120,0)==80);
+    check(draw()==shared);
+
+    // When bodies overlap, whichever seat is local keeps its original colors.
+    auto &p1=scene.seat_life(0);auto &p2=scene.seat_life(1);
+    p2.draw=p1.draw;
+    scene.seat_motion(1).x=scene.seat_motion(0).x;
+    const auto check_overlap=[&](unsigned local,PlayerLife &remote){
+        remote.pattern.reset();const auto only_local=draw(local);
+        remote.pattern=0;const auto both=draw(local);
+        for(int y=320;y<368;++y)for(int x=64;x<96;++x)check(only_local[y*640+x]==both[y*640+x]);
+    };
+    check_overlap(0,p2);check_overlap(1,p1);
+}
+
 void check_marisa_orb_damage(const std::filesystem::path &assets){
     auto scene=EncounterScene::load(assets,3,0,1,2,3);
     scene.marisa_enabled=scene.combat_enabled=true;
@@ -244,6 +300,7 @@ int main(int argc,char **argv){
             check_midboss_damage(argv[1]);
             check_marisa_orb_damage(argv[1]);
             check_ghost_layer(argv[1]);
+            check_player_view(argv[1]);
             check_run(argv[1]);
         }
         return 0;
