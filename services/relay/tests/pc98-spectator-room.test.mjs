@@ -26,7 +26,9 @@ for (const route of ['rtc','relay']) test(`PC98 room admits a late viewer over $
       for(const c of [a,b])send(c,{type:'resource-progress',status:'ready',stage:'runtime',percent:100});
       await wait(()=>room(a)?.seats?.slice(0,2).every(s=>s?.resource?.status==='ready'),'resources');
       for(const c of [a,b])send(c,{type:'set-ready',ready:true});await wait(()=>room(a)?.seats?.slice(0,2).every(s=>s?.ready),'ready');
-      send(a,{type:'start',adonisMode:game==='01'?1:0});await wait(()=>a.json.some(m=>m.type==='start'||m.type==='error'),'start');assert.equal(a.json.at(-1).type,'start',JSON.stringify(a.json.at(-1)));
+      send(a,{type:'start',adonisMode:(game==='01'||game==='02')?1:0,...(game==='02'?{predictionLimit:0}:{})});
+      await wait(()=>a.json.some(m=>m.type==='start'||m.type==='error'),'start');
+      assert.equal(a.json.at(-1).type,'start',JSON.stringify(a.json.at(-1)));
       const p0=await open(base+`&player=0&member=member_host${game}`),p1=await open(base+`&player=1&member=member_guest${game}`);
       const s0=await open(base+`&player=0&signal=1&member=member_host${game}`),s1=await open(base+`&player=1&signal=1&member=member_guest${game}`);
       send(s0,{type:route==='rtc'?'rtc-ready':'rtc-failed'});send(s1,{type:route==='rtc'?'rtc-ready':'rtc-failed'});await wait(()=>s0.json.some(m=>m.type==='route'&&m.mode===route),'route');
