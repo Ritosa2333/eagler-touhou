@@ -13,9 +13,17 @@ const capture = process.argv[2];
 const continuous = process.argv.includes("--continuous");
 if (!capture) throw Error("Usage: node check-web.mjs <capture directory> [--reverse] [--opening-only] [--through FRAME] [--trace-window FIRST LAST] [--rollback-window FIRST LAST]");
 const diagnosticRoundSeedIndex=process.argv.indexOf("--diagnostic-round-wave-seed");
-const diagnosticRoundSeed=diagnosticRoundSeedIndex<0?null:Number(process.argv[diagnosticRoundSeedIndex+1]);
+let diagnosticRoundSeed=diagnosticRoundSeedIndex<0?null:Number(process.argv[diagnosticRoundSeedIndex+1]);
 if(diagnosticRoundSeed!==null&&(!Number.isSafeInteger(diagnosticRoundSeed)||diagnosticRoundSeed<1||diagnosticRoundSeed>=2147483647)){
   throw Error("--diagnostic-round-wave-seed requires an integer between 1 and 2147483646");
+}
+const diagnosticRoundSeedsIndex=process.argv.indexOf("--diagnostic-round-wave-seeds");
+if(diagnosticRoundSeedsIndex>=0){
+  if(diagnosticRoundSeed!==null)throw Error("Choose a diagnostic round seed or seed map, not both");
+  const map=JSON.parse(await readFile(process.argv[diagnosticRoundSeedsIndex+1],"utf8"));
+  if(!map||Array.isArray(map)||typeof map!=="object"||!Object.keys(map).length)throw Error("Diagnostic round seed map must be a nonempty object");
+  for(const [round,seed] of Object.entries(map))if(!Number.isSafeInteger(Number(round))||Number(round)<2||!Number.isSafeInteger(seed)||seed<1||seed>=2147483647)throw Error("Diagnostic round seed map requires round>=2 and integer seeds1..2147483646");
+  diagnosticRoundSeed=map;
 }
 const throughIndex = process.argv.indexOf("--through");
 const through = throughIndex < 0 ? null : Number(process.argv[throughIndex + 1]);
@@ -135,7 +143,7 @@ async function inGame(action, payload) {
     await page.evaluateOnNewDocument(() => {
       const output = console.log.bind(console);
       console.log = (...args) => {
-        if(typeof args[0] === "string" && /^(CPUDBG|ENEMYDBG|BULLETDBG|GRAZEDBG) /.test(args[0])) {
+        if(typeof args[0] === "string" && /^(CPUDBG|ENEMYDBG|ENEMYCONTACT|BULLETDBG|GRAZEDBG) /.test(args[0])) {
           const split = args[0].indexOf(" ");
           const event = JSON.parse(args[0].slice(split + 1));
           args[0] = args[0].slice(0, split + 1) + JSON.stringify({...event, captureFrame: window.top.__parityCaptureFrame ?? null});
@@ -152,7 +160,7 @@ async function inGame(action, payload) {
     page.on("console", message => {const line=message.text();if(line.startsWith("COMBODBG "))comboDebug.push(JSON.parse(line.slice(9)));});
     page.on("console", message => {const line=message.text();if(line.startsWith("GRAZEDBG "))grazeDebug.push(JSON.parse(line.slice(9)));});
     page.on("console", message => {const line=message.text();if(line.startsWith("BULLETDBG "))bulletDebug.push(JSON.parse(line.slice(10)));});
-    page.on("console", message => {const line=message.text();if(line.startsWith("ENEMYDBG "))enemyDebug.push(JSON.parse(line.slice(9)));});
+    page.on("console", message => {const line=message.text();if(line.startsWith("ENEMYDBG "))enemyDebug.push(JSON.parse(line.slice(9)));if(line.startsWith("ENEMYCONTACT "))enemyDebug.push({...JSON.parse(line.slice(13)),event:"enemy-contact-graze"});});
     page.on("pageerror", error => errors.push(error.message));
     await page.setViewport({width: 1280, height: 960});
     for (let navigationAttempt = 0; ; navigationAttempt++) {
@@ -241,7 +249,8 @@ function runCapture({captureAttackRanks, roundLoadingTicks, diagnosticRoundSeed,
           throw Error("Native loading presentation cadence rejected");
       }
       if(diagnosticRoundSeed&&state[1]>previousWebState[1]){
-        if(!c._th19_capture_round_wave_seed(diagnosticRoundSeed))throw Error("Diagnostic round table seed rejected");
+        const suppliedRoundSeed=typeof diagnosticRoundSeed==="object"?diagnosticRoundSeed[state[1]]:diagnosticRoundSeed;
+        if(!suppliedRoundSeed||!c._th19_capture_round_wave_seed(suppliedRoundSeed))throw Error("Diagnostic round table seed missing or rejected");
         state=readState();
       }
       if (!continuous && (state[1] !== 1 || state[29] < elapsed)) throw Error(`Round ended before frame ${frame}`);

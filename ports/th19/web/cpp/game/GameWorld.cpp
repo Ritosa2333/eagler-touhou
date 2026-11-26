@@ -13,6 +13,17 @@
 #include <cstdio>
 #include <algorithm>
 namespace th19 {
+static void tick_bullet_birth_animation(Bullet& b,bool versus){
+    // A reused slot dispatches its pending contact interrupt on the new VM
+    // before performing the ordinary constructor update.
+    if(b.contact_interrupt_pending){
+        b.animation.interrupt(1);
+        b.contact_interrupt_pending=false;
+        if(versus)b.animation.tick();
+    }
+    b.animation.tick();
+}
+
 extern bool traceOpeningRng;
 static void traceCancelSource(const char* source,int frame,int script,u32 id,float x,float y){
     if(traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"cancel-source\",\"source\":\"%s\",\"frame\":%d,\"script\":%d,\"id\":%u,\"position\":[%.9g,%.9g],\"seed\":%u}\n",source,frame,script,id,x,y,AnmVm::random_checkpoint());
@@ -124,6 +135,10 @@ void GameWorld::initialize_pending_charge_attacks(){
         const u32 id=entry.id;
         auto it=std::find_if(enemies.begin(),enemies.end(),[id](const Enemy& e){return e.id==id;});
         if(it==enemies.end()||!it->vm)continue;
+        // Registration occurs now, after flights that arrived while this attack was pending.
+        // Later newest-first visits must see the charge controller before those arrivals.
+        std::rotate(it,it+1,enemies.end());
+        it=enemies.end()-1;
         const size_t first=size_t(it-enemies.begin()),children=enemies.size();
         const bool prior_late=late_attack_registration;
         late_attack_registration=entry.late_registration;
@@ -151,7 +166,7 @@ bool GameWorld::queue_extra_attack(int character,float x,float y,int variant,con
     if(character==9){static const char* names[]={"ExAttackW","ExAttackO","ExAttackE"};if(variant<0||variant>2)return false;sub=names[variant];}
     bool found=false;for(const auto*p:source)for(const auto&s:p->subs)if(s.name==sub)found=true;
     if(!found||!std::isfinite(x)||!std::isfinite(y))return false;
-    ExtraFlight f;f.id=next_id++;f.character=character;f.x=x;f.y=y;
+    ExtraFlight f;f.id=next_id++;f.character=character;f.x=x;f.y=y;f.birth_frame=extra_frame;
     f.source_x=opponent_x;f.source_y=opponent_y;
     if(reward_mode==2&&character==0){
         // 0x53bdcc draws the 16-bit primary state for Reimu's flight duration.
@@ -163,6 +178,12 @@ bool GameWorld::queue_extra_attack(int character,float x,float y,int variant,con
         // 0x41872f samples the flight duration, then two primary tangents.
         AnmVm::rand_integer(true);
         f.duration=(AnmVm::random_checkpoint(true)&65535u)%80u+80u;
+        f.tangent_start=AnmVm::rand_signed_unit(100.f,true);
+        f.tangent_end=AnmVm::rand_signed_unit(100.f,true);
+    }else if(reward_mode==2&&character==3){
+        // 0x419770 uses the primary 16-bit duration, followed by two tangents.
+        AnmVm::rand_integer(true);
+        f.duration=(AnmVm::random_checkpoint(true)&65535u)%40u+50u;
         f.tangent_start=AnmVm::rand_signed_unit(100.f,true);
         f.tangent_end=AnmVm::rand_signed_unit(100.f,true);
     }else if(reward_mode==2&&character==1){
@@ -189,7 +210,9 @@ int GameWorld::send_native_extra_credit(GameWorld& target,const std::vector<cons
     static constexpr int costs[]={100,90,90,80},ranCosts[]={75,65,65,55},aunnCosts[]={50,45,45,40},animalCosts[]={80,70,70,60};
     const int cost=(character==3?ranCosts:character==4?aunnCosts:(character==9||character==14)?animalCosts:costs)[std::clamp(difficulty,0,3)];int sent=0;
     // 0x50e08c raises the VS limit after dispatch at 60, 120 and 180 seconds.
-    const size_t capacity=reward_mode!=2?20:versus_frame<=3600?32:versus_frame<=7200?64:versus_frame<=10800?128:999;
+    const size_t initialCapacity=character==3?30:32;
+    const size_t capacity=reward_mode!=2?20:versus_frame<=3600?initialCapacity:
+        versus_frame<=7200?2*initialCapacity:versus_frame<=10800?4*initialCapacity:999;
     if(traceOpeningRng&&result_phase)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"result-ex-budget\",\"credit\":%d,\"reserved\":%u,\"capacity\":%u}\n",battle_frame,pending_native_attack_credit,unsigned(native_extra_reservations.size()),unsigned(capacity));
     if(traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"extra-budget\",\"frame\":%d,\"credit\":%d,\"reserved\":%d,\"capacity\":%zu,\"sequence\":%u}\n",battle_frame,pending_native_attack_credit,native_extra_reserved_count,capacity,native_extra_sequence);
     while(pending_native_attack_credit>=cost){
@@ -204,6 +227,18 @@ int GameWorld::send_native_extra_credit(GameWorld& target,const std::vector<cons
             // The controller reserves and samples the edge before virtual
             // dispatch rejects result-state Sanae flights. No duration or
             // tangent draws and no release timer are created for that slot.
+            if(result_phase){++native_extra_sequence;++sent;continue;}
+            if(!target.queue_extra_attack(character,tx,ty,0,source))break;
+        }else if(reward_mode==2&&character==3){
+            // 0x419c00 samples one coordinate on the eleven-step edge cycle.
+            const unsigned phase=native_extra_sequence%11;
+            float tx,ty;
+            if(phase==0||phase==3||phase==7||phase==4||phase==8){
+                tx=AnmVm::rand_signed_unit(132.f,true);ty=(phase==4||phase==8)?448.f:0.f;
+            }else{
+                tx=(phase==1||phase==6||phase==9)?-148.f:148.f;
+                ty=AnmVm::rand_unit(true)*416.f+16.f;
+            }
             if(result_phase){++native_extra_sequence;++sent;continue;}
             if(!target.queue_extra_attack(character,tx,ty,0,source))break;
         }else if(reward_mode==2&&(character==0||character==1)){
@@ -259,8 +294,8 @@ int GameWorld::send_native_extra_credit(GameWorld& target,const std::vector<cons
             if(!target.queue_extra_attack(character,tx,ty,variant,source))break;
         }
         if(character==14)target.sound_events.push_back(44);
-        auto&flight=target.extra_flights.back();flight.source_x=attack_credit_x;flight.source_y=attack_credit_y;
-        if(character!=0&&character!=1&&!(reward_mode==2&&character==2))native_extra_reservations.push_back(flight.duration+240);
+        auto&flight=target.extra_flights.back();flight.credit_birth=true;flight.source_x=attack_credit_x;flight.source_y=attack_credit_y;
+        if(character!=0&&character!=1&&!(reward_mode==2&&(character==2||character==3)))native_extra_reservations.push_back(flight.duration+240);
         ++native_extra_sequence;++sent;
     }
     for(auto&t:native_extra_reservations)if(t>0&&--t==0)--native_extra_reserved_count;
@@ -345,12 +380,7 @@ bool GameWorld::fire_bullets(const LaserShooter&s,float ox,float oy){
         b.cancel_script=nativeBulletCancelScript(b.kind,b.color);b.visual_heading=p.angle;b.changes.records=s.changes;b.change_sound=s.end_sound;
         if(bullet_scripts){auto it=bullet_scripts->find(nativeBulletAnimation(s.type));if(it!=bullet_scripts->end()){
             b.animation.bind_entry(it->second.stream,it->second.len,bullet_scripts);
-            const bool recycledContactInterrupt=b.contact_interrupt_pending;
-            if(recycledContactInterrupt){b.animation.interrupt(1);b.contact_interrupt_pending=false;}
-            b.animation.tick();
-            // A recycled slot dispatches its pending contact callback before
-            // the ordinary birth update advances the new ANM once more.
-            if(reward_mode==2&&recycledContactInterrupt)b.animation.tick();
+            tick_bullet_birth_animation(b,reward_mode==2);
             if(s.changes[0].flags!=2){b.animation.interrupt(2);b.animation.tick();}}}
         if(bullet_scripts){int id=nativeBulletAttachedEffect(b.kind);auto it=bullet_scripts->find(id);
             if(id&&it!=bullet_scripts->end()){b.attached_effect.bind_entry(it->second.stream,it->second.len,bullet_scripts);b.attached_effect.tick();}}
@@ -511,28 +541,30 @@ bool GameWorld::damage_enemy(Enemy& e,int damage,bool forced,u32 damage_frame){
     }
     return dispatch_enemy_death(e);
 }
-bool GameWorld::dispatch_enemy_death(Enemy& e,bool opponent_animation_queue){
+bool GameWorld::dispatch_enemy_death(Enemy& e,bool opponent_animation_queue,bool emit_death_effect){
     if(!e.active||e.death_pending||!e.pending_phase.empty())return false;
     // 0x50c4ca: the death callback runs after death effects/rewards. Keep the
     // host until the damage pass ends, so an ECL spawn cannot invalidate a
     // caller's enemy iteration. Only native flag 0x08000000 preserves it.
     e.death_pending=!e.death_callback.empty()&&bool(e.vm);
     e.active=e.death_pending;++defeated;earned_score+=std::max(0,e.score);
-    // Native death dispatch preserves ECL323's file/script override.
-    const int deathScript=e.death_script?e.death_script:nativeEnemyDeathScript(e.animations[0].file,e.sprite);
-    const float heading=e.vx*e.vx+e.vy*e.vy<.2f*.2f?-1.57079632679f:std::atan2(e.vy,e.vx);
-    if(traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"death-effect-request\",\"frame\":%d,\"host\":%u,\"script\":%d}\n",battle_frame,e.id,deathScript);
-    EnemyDeath death{e.x,e.y,heading,deathScript,3+int(e.id&1),e.death_file};
-    death.opponent_animation_queue=reward_mode==2&&e.death_file==1&&opponent_animation_queue;
-    const auto* deathScripts=e.death_file==1?effect_scripts:e.death_file==0?bullet_scripts:nullptr;
-    if(reward_mode==2&&deathScripts){
-        const auto script=deathScripts->find(deathScript);
-        if(script!=deathScripts->end()){
-            death.animation.bind_entry(script->second.stream,script->second.len,deathScripts);
-            death.animation.rot_z=heading;death.animation.initialize_constructor();
+    if(emit_death_effect){
+        // Native death dispatch preserves ECL323's file/script override.
+        const int deathScript=e.death_script?e.death_script:nativeEnemyDeathScript(e.animations[0].file,e.sprite);
+        const float heading=e.vx*e.vx+e.vy*e.vy<.2f*.2f?-1.57079632679f:std::atan2(e.vy,e.vx);
+        if(traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"death-effect-request\",\"frame\":%d,\"host\":%u,\"script\":%d}\n",battle_frame,e.id,deathScript);
+        EnemyDeath death{e.x,e.y,heading,deathScript,3+int(e.id&1),e.death_file};
+        death.opponent_animation_queue=reward_mode==2&&e.death_file==1&&opponent_animation_queue;
+        const auto* deathScripts=e.death_file==1?effect_scripts:e.death_file==0?bullet_scripts:nullptr;
+        if(reward_mode==2&&deathScripts){
+            const auto script=deathScripts->find(deathScript);
+            if(script!=deathScripts->end()){
+                death.animation.bind_entry(script->second.stream,script->second.len,deathScripts);
+                death.animation.rot_z=heading;death.animation.initialize_constructor();
+            }
         }
+        deaths.push_back(std::move(death));
     }
-    deaths.push_back(std::move(death));
     if(e.item>0)spawn_pickup(e.item,e.x,e.y,0,-2.2f);
     e.item=0; // 0x50c3c5: an item is dropped once, even if the host revives.
     // 0x50c6d0 selects a scatter heading before checking the extra-drop count.
@@ -1158,7 +1190,10 @@ void GameWorld::spawn_pickup(int type,float x,float y,float vx,float vy){
     if(type>=9){
         // 0x521fa1 queues charge points and staggers their launch by spawn order.
         p.x=x;
-        p.delay=int(pickup_serial%4);
+        // Late enemy rewards compensate their later registration by one tick.
+        // Synchronous arrival rewards already precede the item pass and retain
+        // the original extra zero-delay waiting visit (0x520e06 JNS).
+        p.delay=int(pickup_serial%4)+int(pickup_birth_before_item_pass);
         p.state=p.delay?5:2;
     }
     pickups.push_back(p);
@@ -1309,6 +1344,8 @@ void GameWorld::tick_bullet_graze(Bullet& b,float px,float py,float player_radiu
     // at 0x4f4d77 still runs unless the first pass hit the player.
     const int passes=spawningGraze&&b.age>=8&&contact!=1?2:1;
     if(traceOpeningRng&&grazed)std::printf("ENEMYDBG {\"event\":\"bullet-graze-contact\",\"id\":%u,\"kind\":%d,\"color\":%d,\"position\":[%.9g,%.9g],\"player\":[%.9g,%.9g],\"radius\":[%.9g,%.9g],\"contact\":%d,\"aura\":%d,\"passes\":%d}\n",b.id,b.kind,b.color,b.x,b.y,px,py,radius,player_radius,contact,int(aura_graze),passes);
+    if(traceOpeningRng&&b.kind==11&&b.color==6)
+        std::printf("BULLETDBG {\"event\":\"graze-state\",\"frame\":%d,\"id\":%u,\"position\":[%.9g,%.9g],\"stock\":%d,\"elapsed\":%d,\"previous\":%d,\"outside\":%d,\"contacts\":%d,\"grazed\":%d}\n",battle_frame,b.id,b.x,b.y,b.graze.stock,b.graze.elapsed,b.graze.previous,b.graze.outsideFrames,b.graze.contactFrames,int(grazed));
     for(int pass=0;pass<passes;++pass){
         const auto result=b.graze.tick(grazed);
         if(result.interrupt&&b.attached_effect.stream){b.attached_effect.interrupt(result.interrupt);b.attached_effect.tick();}
@@ -1352,6 +1389,22 @@ void GameWorld::tick_graze(float px,float py,float player_radius,bool defer_rewa
     }
 }
 
+void GameWorld::tick_enemy_graze(const Enemy& e,float px,float py,float radius){
+    if(visit_enemy_contact)visit_enemy_contact(e);
+    // 0x50a277: graze follows this actor's contact visit, before the next ECL.
+    if(!e.active||!(e.flags&0x200)||(e.flags&0x22)||(e.status_flags&0x400)||
+       e.contact_protection_time>=1||e.age%6)return;
+    const float dx=px-e.x,dy=py-e.y;
+    const auto overlaps=[&](float r){return (e.flags&0x1000)
+        ? nativeEnemyRectangleContact(dx,dy,e.contact_angle,e.contact_w,e.contact_h,r)
+        : nativeCircleContact(dx,dy,r,e.contact_w*.5f);};
+    const float grazeRadius=radius+std::max(40.f,e.contact_w*.5f/2.5f);
+    if(!overlaps(radius)&&overlaps(grazeRadius)){
+        extern bool traceOpeningRng;
+        if(traceOpeningRng)std::printf("ENEMYCONTACT {\"frame\":%d,\"id\":%u,\"age\":%d,\"hold\":%u,\"position\":[%.9g,%.9g],\"player\":[%.9g,%.9g],\"flags\":[%u,%u]}\n",battle_frame,e.id,e.age,unsigned(e.spawn_hold),e.x,e.y,px,py,e.flags,e.status_flags);
+        award_graze(px,py,0);
+    }
+}
 void GameWorld::award_graze(float x,float y,u32 color){
     extern bool traceOpeningRng;
     if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"graze-reward\",\"position\":[%.9g,%.9g]}\n",battle_frame,x,y);
@@ -1761,16 +1814,45 @@ void GameWorld::prepare_sanae_extra_arrivals(float x,float y,float radius,bool r
         flight.arrival_registered=true;
     }
 }
-void GameWorld::resolve_marisa_extra_arrivals(u32 newer_than,bool result_phase,GameWorld* sender){
+void GameWorld::resolve_marisa_extra_arrivals(u32 newer_than,bool result_phase,GameWorld* sender,const std::function<bool(Enemy&)>& birth_clear,const ChargeRegion* birth_region){
     // 0x53d019 links new flights at the head. 0x53d200 runs ExtraAttack00
     // synchronously, so simultaneous arrivals take RNG in that order.
     for(auto it=extra_flights.rbegin();it!=extra_flights.rend();++it){
         auto& flight=*it;
-        if((flight.character!=0&&flight.character!=1&&flight.character!=2)||flight.age<flight.duration||flight.id<=newer_than)continue;
+        if((flight.character!=0&&flight.character!=1&&flight.character!=2&&flight.character!=3)||flight.age<flight.duration||flight.id<=newer_than)continue;
         extern bool traceOpeningRng;
         if(traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"extra-flight-arrival\",\"flight\":%u,\"age\":%d,\"duration\":%d,\"script\":%d,\"source\":[%.9g,%.9g],\"target\":[%.9g,%.9g]}\n",battle_frame,flight.id,flight.age,flight.duration,flight.script,flight.source_x,flight.source_y,flight.x,flight.y);
-        if(!result_phase&&!flight.arrival_registered)register_marisa_extra_arrival(flight.sub,flight.x,flight.y,flight.life,flight.programs);
-        if(sender)sender->register_native_extra_release();
+        if(!result_phase&&!flight.arrival_registered){
+            register_marisa_extra_arrival(flight.sub,flight.x,flight.y,flight.life,flight.programs);
+            if(flight.character==3&&!enemies.empty()){
+                auto& actor=enemies.back();
+                if(birth_clear&&birth_clear(actor)){
+                    actor.spawn_hold=2;
+                    // Respawn damage finishes the birth contact before the graze reward.
+                    actor.extra_birth_graze_visited=true;
+                }else{
+                actor.previous_x=actor.x;actor.previous_y=actor.y;
+                // The synchronous Ran arrival callback also visits contact/graze
+                // before the shared counter-flight callback consumes primary RNG.
+                if(reward_mode==2&&enemy_graze_enabled){
+                    pickup_birth_before_item_pass=true;
+                    tick_enemy_graze(actor,player_x,player_y,enemy_graze_radius);
+                    pickup_birth_before_item_pass=false;
+                    actor.extra_birth_graze_visited=true;
+                }
+                const auto& region=birth_region?*birth_region:charge_region;
+                const float step=!(actor.flags&0x20)&&region.contains(actor.x,actor.y,actor.hitbox_w*.5f)?.5f:1.f;
+                actor.set_absolute_position(snapEnemyCoordinate(actor.x+actor.vx*step),snapEnemyCoordinate(actor.y+actor.vy*step));
+                actor.combined_dx=actor.x-actor.previous_x;actor.combined_dy=actor.y-actor.previous_y;
+                actor.spawn_hold=1;actor.extra_birth_motion=true;
+                // Publish entry only when the body intersects the field. An EX
+                // born above the field remains registered for later clear damage.
+                if(actor.x+actor.body_half_width>=-148.f&&actor.x-actor.body_half_width<=148.f&&
+                   actor.y+actor.body_half_height>=0.f&&actor.y-actor.body_half_height<=448.f)actor.status_flags|=1u;
+                }
+            }
+        }
+        if(sender&&(flight.character!=3||flight.credit_birth))sender->register_native_extra_release();
         ++extra_arrivals;
         flight.age=flight.duration+1;
     }
@@ -1782,7 +1864,15 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
     ++battle_frame;
     for(auto&f:extra_flights){
         // 0x53d177 checks Marisa's flight age before 0x53d270 advances it.
-        if(reward_mode==2&&(f.character==0||f.character==1||f.character==2)){++f.age;continue;}
+        if(reward_mode==2&&(f.character==0||f.character==1||f.character==2||f.character==3)){
+            extern bool traceOpeningRng;
+            if(traceOpeningRng&&f.character==3)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"flight-clock\",\"id\":%u,\"age\":%d,\"duration\":%d,\"target\":[%.9g,%.9g]}\n",battle_frame,f.id,f.age,f.duration,f.x,f.y);
+            // Ran ECL arrivals register after this frame's native flight pass.
+            // 0x419e4f attack-credit flights register before it and tick at birth.
+            // Keep these phases distinct even when the target world ticks later.
+            if(f.character!=3||f.credit_birth||f.birth_frame!=extra_frame)++f.age;
+            continue;
+        }
         const int age=++f.age;
         if(age<f.duration)continue;
         spawn_enemy(f.sub,f.x,f.y,f.life,0,0,&f.programs);if(f.character==4||f.character==5||f.character==6)sound_events.push_back(62);++extra_arrivals;
@@ -1808,7 +1898,7 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
         if(b.state==4)continue;
         if(b.scripted)b.visual_heading=b.changes.angle;
         else if(b.vx!=0||b.vy!=0)b.visual_heading=std::atan2(b.vy,b.vx);
-        if(!b.animation.stream&&bullet_scripts){auto it=bullet_scripts->find(nativeBulletAnimation(b.kind));if(it!=bullet_scripts->end()){b.animation.bind_entry(it->second.stream,it->second.len,bullet_scripts);b.animation.tick();b.animation.interrupt(2);}}
+        if(!b.animation.stream&&bullet_scripts){auto it=bullet_scripts->find(nativeBulletAnimation(b.kind));if(it!=bullet_scripts->end()){b.animation.bind_entry(it->second.stream,it->second.len,bullet_scripts);tick_bullet_birth_animation(b,reward_mode==2);b.animation.interrupt(2);}}
         if(!b.attached_effect.stream&&bullet_scripts){int id=nativeBulletAttachedEffect(b.kind);auto it=bullet_scripts->find(id);if(id&&it!=bullet_scripts->end())b.attached_effect.bind_entry(it->second.stream,it->second.len,bullet_scripts);}
         if(b.attached_effect.stream)b.attached_effect.tick();
         if(b.defer_animation_update)b.defer_animation_update=false;
@@ -1869,6 +1959,8 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
             if(--spirit.spawn_hold==1&&reward_mode==2&&spirit.vm&&
                spirit.attack_entry!=Enemy::AttackEntry::RetireController)spirit.vm->step();
             apply_damage(enemies[i]);
+            if(reward_mode==2&&enemy_graze_enabled&&!enemies[i].extra_birth_graze_visited)tick_enemy_graze(enemies[i],player_x,player_y,enemy_graze_radius);
+            enemies[i].extra_birth_graze_visited=false;
             continue;
         }
         if(spirit.attack_entry==Enemy::AttackEntry::RetireController){spirit.active=false;continue;}
@@ -1913,7 +2005,11 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
         // 0x50925f reads the separate ECL rate, which stays at 1 in VS.
         auto& timed=enemies[i];
         const bool slowed=!(timed.status_flags&0x700000u)&&timed.sprite>=0&&!(timed.flags&0x20)&&in_aura;
-        const float motion_step=slowed&&reward_mode==2?.5f:1.f;
+        // The arrived EX already consumed its first displacement before CPU.
+        // Reuse that position on this visit while the ECL clock advances.
+        const bool reuse_birth_motion=timed.extra_birth_motion;
+        timed.extra_birth_motion=false;
+        const float motion_step=reuse_birth_motion?0.f:slowed&&reward_mode==2?.5f:1.f;
         timed.slow_clock+=slowed&&reward_mode!=2?.5f:1.f;
         const bool script_step=timed.slow_clock>=1;
         // 0x50923f advances motion before the active ECL tick at 0x50925f.
@@ -1953,8 +2049,7 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
             if(traceOpeningRng&&e.sprite>=0)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"motion-before\",\"id\":%u,\"position\":[%.9g,%.9g],\"absolute\":[%.9g,%.9g],\"polar\":[%.9g,%.9g],\"velocity\":[%.9g,%.9g],\"turn\":[%d,%.9g,%d,%.9g,%.9g]}\n",battle_frame,e.id,e.x,e.y,e.absolute_x(),e.absolute_y(),e.angle,e.speed,e.vx,e.vy,e.turn.duration,e.turn.elapsed,e.turn.mode,e.turn.from,e.turn.to);
             if(traceOpeningRng&&(e.status_flags&0x700000u)==0x200000u&&e.vm)
                 std::printf("ENEMYDBG {\"event\":\"wolf-ecl-clock\",\"frame\":%d,\"id\":%u,\"clock\":%.9g,\"arrival\":%d,\"converted\":%d}\n",battle_frame,e.id,e.vm->current_time(),int(e.arrival_motion),bool(e.status_flags&0x80000u));
-            e.previous_x=e.x;
-            e.previous_y=e.y;
+            if(!reuse_birth_motion){e.previous_x=e.x;e.previous_y=e.y;}
             if(e.relative_ellipse||reward_mode==2){e.x=e.absolute_x();e.y=e.absolute_y();}
             e.scale_x.advance(e.sx,motion_step);e.scale_y.advance(e.sy,motion_step);
             // 0x50a4cc and 0x50a4f3 advance the scalar clocks before
@@ -2067,6 +2162,8 @@ void GameWorld::tick_wave(bool tickSpiritMeter,
         auto& updated=enemies[i];
         if((updated.status_flags&0x80000u)&&updated.vm&&updated.vm->finished())updated.active=false;
         apply_damage(updated);
+        if(reward_mode==2&&enemy_graze_enabled&&!updated.extra_birth_graze_visited)tick_enemy_graze(updated,player_x,player_y,enemy_graze_radius);
+        updated.extra_birth_graze_visited=false;
     }
     // The VS laser manager advances newly registered beams after ECL clears.
     if(reward_mode==2&&!defer_new_lasers)finish_new_lasers();

@@ -689,11 +689,16 @@ struct SkillDamageCircle {float x,y,radius,growth;int remaining,damage;int inter
 
 
 std::vector<SkillDamageCircle> g_registered_skill_circles[2];
+struct SkillDamageRectangle {float x,y,width,height,angle;int damage;};
+std::vector<SkillDamageRectangle> g_registered_skill_rectangles[2];
 struct PlayerAttackState {
     int secondary_shot_clock=-1;
 th19::ChargeAttack charge_attack;
 th19::ChargeArea charge_area;
 th19::RanSkill ran_skill;
+bool ran_options_registered=false;
+bool ran_options_first_visit=false;
+bool ran_skill_registered=false;
 std::vector<ReimuSkillVisual> reimu_skills;
 std::vector<MarisaSkillVisual> marisa_skills;
 int marisa_skill_arrivals=0;
@@ -3809,7 +3814,7 @@ void draw_ecl_objects(int firstSide=0,int lastSide=2) {
             if(!enemy.active)continue;
             for(int slot=0;slot<16;++slot){
                 const auto& binding=enemy.animations[slot];
-                if(binding.file!=1||binding.script<147||binding.script>154)continue;
+                if(binding.file!=1||binding.script<145||binding.script>156)continue;
                 const auto script=g_focus_scripts.find(binding.script);
                 if(script==g_focus_scripts.end())continue;
                 auto& animation=rb_draw_ecl_objects_animations[side][(th19::u64(enemy.id)<<4)|slot];
@@ -3824,7 +3829,7 @@ void draw_ecl_objects(int firstSide=0,int lastSide=2) {
             if(!enemy->active)continue;
             for(int slot=15;slot>=0;--slot){
                 const auto& binding=enemy->animations[slot];
-                if(binding.file!=1||binding.script<147||binding.script>154)continue;
+                if(binding.file!=1||binding.script<145||binding.script>156)continue;
                 auto& animation=rb_draw_ecl_objects_animations[side][(th19::u64(enemy->id)<<4)|slot];
                 if(animation.vm.special_effect==1&&animation.mist_frame!=g_frame){
                     animation.mist.tick(binding.rotation,animation.vm.effect_angle,animation.vm.ivar[0],true,&g_focus_scripts);
@@ -4424,10 +4429,20 @@ void init_charge_visuals(){
         g_player_damage[side]={};
     }
 }
+int charge_gauge_particle_script(int side){
+    if(g_vs_mode&&(g_bombs[side].occupied()||g_bomb_visual_tail[side]==10))return 15;
+    if(!g_charge[side].charge&&!(g_vs_mode&&g_gauge_contact_frame[side]==g_frame))return -1;
+    // A new charge on the opponent's terminal death tick is cleared before
+    // the gauge callback can register its particle emitter.
+    const auto& opponent=g_player_damage[1-side];
+    if(g_vs_mode&&!g_gauge_particles[side].stream&&opponent.state==th19::PlayerDamage::Dead&&
+       opponent.frame==30&&(side?g_p1_lives:g_p2_lives)<=0)return -1;
+    return 13;
+}
 void prepare_charge_gauge_particles(int side){
     if(g_paused)return;
     auto& particles=g_gauge_particles[side];
-    const int scriptId=g_vs_mode&&(g_bombs[side].occupied()||g_bomb_visual_tail[side]==10)?15:(g_charge[side].charge>0||(g_vs_mode&&g_gauge_contact_frame[side]==g_frame))?13:-1;
+    const int scriptId=charge_gauge_particle_script(side);
     if(scriptId<0){particles={};return;}
     const auto script=g_aura_scripts.find(scriptId);
     if(script==g_aura_scripts.end()||particles.stream==script->second.stream)return;
@@ -4439,7 +4454,7 @@ void prepare_charge_gauge_particles(int side){
 void tick_charge_gauge_particles(int side){
     if(g_paused||g_gauge_particles_frame[side]==g_frame)return;
     g_gauge_particles_frame[side]=g_frame;
-    const int scriptId=g_vs_mode&&(g_bombs[side].occupied()||g_bomb_visual_tail[side]==10)?15:(g_charge[side].charge>0||(g_vs_mode&&g_gauge_contact_frame[side]==g_frame))?13:-1;
+    const int scriptId=charge_gauge_particle_script(side);
     auto& particles=g_gauge_particles[side];
     if(scriptId<0){particles={};return;}
     const auto script=g_aura_scripts.find(scriptId);
@@ -4555,7 +4570,6 @@ void advance_player_option_positions(int side,bool slow){
         float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
         auto&trail=g_player_trail[side];if(trail.empty())trail.assign(33,{px,py});
         if(trail[0].x!=px||trail[0].y!=py){trail.insert(trail.begin(),{px,py});trail.resize(33);}
-        if(!slow){g_attacks[side].option_lock_x=px;g_attacks[side].option_lock_y=py;}
         const auto&table=side?g_opp_shot_table:g_shot_table;
         const int power=ch==3?g_attacks[side].ran_skill.power(g_player_power):g_player_power;
         auto&options=g_player_options[side];
@@ -4565,6 +4579,16 @@ void advance_player_option_positions(int side,bool slow){
         if(g_vs_mode&&th19::traceOpeningRng)for(int i=0;i<int(options.size());++i)
             std::printf("ENEMYDBG {\"event\":\"option-origin-before\",\"side\":%d,\"index\":%d,\"state\":[%d,%d,%d],\"player\":[%.9g,%.9g],\"option\":[%.9g,%.9g],\"focus\":%d}\n",side,i,int(damage.state),damage.frame,int(g_deathbomb_shot_focus[side]),px,py,options[i].x,options[i].y,int(slow));
         if(damage.state==th19::PlayerDamage::Pending||g_deathbomb_shot_focus[side])return;
+        // On death tick four the native options reappear at the player. An
+        // already registered C1 can still emit from them while movement is frozen.
+        if(g_vs_mode&&ch==3&&damage.state==th19::PlayerDamage::Dead&&damage.frame==3){
+            for(size_t i=0;i<options.size();++i){
+                const auto offset=table.option_position(power,int(i),false);
+                options[i].x=px+offset.x;options[i].y=py+offset.y;
+            }
+        }
+        if(ch==3&&(damage.state==th19::PlayerDamage::Respawning||
+                   damage.state==th19::PlayerDamage::Dead||damage.state==th19::PlayerDamage::Finished))return;
         const bool recovering=damage.state==th19::PlayerDamage::Playing&&damage.frame==0;
         if(ch==2){
             // Native546880/547554 freezes Sanae's emitters on the first
@@ -4573,11 +4597,15 @@ void advance_player_option_positions(int side,bool slow){
             if(damage.state==th19::PlayerDamage::Repelled)return;
         }else if(damage.state==th19::PlayerDamage::Repelled||recovering){
             // Reimu resumes emitters on the first Playing tick after recovery.
-            if(ch==0?damage.state==th19::PlayerDamage::Repelled:(damage.frame!=0||recovering)){
+            if((ch==0||ch==3)?damage.state==th19::PlayerDamage::Repelled:(damage.frame!=0||recovering)){
                 return;
             }
             // The contact tick still publishes options before repel movement.
         }
+        // Native Ran keeps its focus-lock target while the repel/respawn
+        // callback freezes options; updating only the cache would move them later.
+        if(!slow){g_attacks[side].option_lock_x=px;g_attacks[side].option_lock_y=py;}
+        const bool ranPowerChanged=ch==3&&int(options.size())!=power;
         if(int(options.size())>power)options.resize(power);
         while(int(options.size())<power){PlayerOption o;o.x=px;o.y=py;o.phase=options.size()*3.14159265359f;
             if(!bind_player_animation(o.vm,table.option_script,side?g_opp:g_player,side?g_opp_scripts:g_player_scripts))break;
@@ -4586,7 +4614,7 @@ void advance_player_option_positions(int side,bool slow){
             float tx=px+p.x,ty=py+p.y;
             // 0x54654b's respawn recovery resets Reimu/Sanae option emitters to
             // their target on the first Playing update, before SHT registers.
-            bool snap=(ch==0||ch==2)&&recovering&&damage.respawn_damage_final_tick;
+            bool snap=ranPowerChanged||(ch==3&&g_attacks[side].ran_options_first_visit)||((ch==0||ch==2||ch==3)&&recovering&&damage.respawn_damage_final_tick);
             // Native option callbacks: Ran locks on focus; Seiran orbits.
             if(ch==3){tx=g_attacks[side].option_lock_x+p.x;ty=g_attacks[side].option_lock_y+p.y;}
             if(ch==6){float radius=slow?24.f:40.f;tx=px+std::cos(o.phase)*radius;ty=py+std::sin(o.phase)*radius;o.phase=std::remainder(o.phase+3.14159265359f/60.f,6.28318530718f);
@@ -4613,6 +4641,10 @@ void advance_player_option_positions(int side,bool slow){
             if(snap||(dx==0&&dy==0)){o.x=tx;o.y=ty;}else{o.x=(x+dx)/128.f;o.y=(y+dy)/128.f;}
             if(g_vs_mode&&th19::traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"option-origin-after\",\"side\":%d,\"index\":%d,\"position\":[%.9g,%.9g],\"target\":[%.9g,%.9g]}\n",side,i,o.x,o.y,tx,ty);
         }
+    if(ch==3){
+        // The rebuilt left C2 emitters snap on their first movement update.
+        g_attacks[side].ran_options_first_visit=g_vs_mode && side==0 && ranPowerChanged && power==4;
+    }
 }
 
 void tick_player_options(bool focused,unsigned advancedSides){
@@ -4808,7 +4840,9 @@ void dispatch_automatic_attack(int side,const std::vector<const th19::EclProgram
             const int tier = bit == 2 && !target.boss_occupied() ? 4 : 3;
             // Native Sanae automatic EX initializes after counter-flight creation,
             // in the existing shared arrival visit, just like her manual release.
-            const bool deferInitial=g_vs_mode&&(side?g_opp_sel:g_char_sel)==2;
+            const int character=side?g_opp_sel:g_char_sel;
+            // Ran spends EX credit before the new ExtraAttack script starts.
+            const bool deferInitial=g_vs_mode&&(character==2||(character==3&&tier==3));
             if (!target.receive_charge_attack(tier, 0, 0, source,deferInitial)) continue;
             auto& count = g_vs_attack_counts[side][tier == 4 ? 1 : 0];
             count = std::min(999, count + 1);
@@ -4825,6 +4859,7 @@ void dispatch_automatic_attack(int side,const std::vector<const th19::EclProgram
 }
 void consume_spirit_birth_shots(int side,size_t index);
 void tick_spirit_transits(){
+    for(auto& field:g_ecl_fields)field.world.extra_frame=g_frame;
     std::vector<const th19::EclProgram*> sources[2];
     for(int side=0;side<2;++side){
         auto&field=g_ecl_fields[side];auto& source=sources[side];
@@ -4848,18 +4883,55 @@ void tick_spirit_transits(){
             g_ecl_fields[side].world.send_native_extra_credit(g_ecl_fields[1-side].world,sources[side],side?g_opp_sel:g_char_sel,g_spirit_clock,battle_result_pending());
             tick_marisa_skills(side);
             auto& target=g_ecl_fields[1-side].world;
-            target.resolve_marisa_extra_arrivals(0,battle_result_pending(),&g_ecl_fields[side].world);
+            if((side?g_opp_sel:g_char_sel)==3){
+                target.player_x=side?g_p1_x:g_p2_x;
+                target.player_y=side?g_p1_y:g_p2_y;
+                // The native arrival visits the receiver after its respawn position update.
+                auto damage=g_player_damage[1-side];
+                if(g_vs_mode&&(damage.state==th19::PlayerDamage::Dead||damage.state==th19::PlayerDamage::Respawning)){
+                    int lives=side?g_p1_lives:g_p2_lives;
+                    int invulnerable=g_barrier[1-side].invulnerable;
+                    const auto event=damage.tick(lives,invulnerable);
+                    if(event==th19::PlayerDamage::Respawn)target.player_x=0;
+                    if(damage.state==th19::PlayerDamage::Respawning)target.player_y=damage.respawnY();
+                }
+            }
+            // A newborn EX samples this tick's receiver aura before its first displacement.
+            const int receiver=1-side;
+            auto birthRegion=target.charge_region;
+            const bool ranReceiver=g_vs_mode&&(receiver?g_opp_sel:g_char_sel)==3;
+            if(ranReceiver)birthRegion.tick(3,g_charge[receiver].held,target.player_x,target.player_y,
+                th19::ownsCard(player_cards(receiver),10)?125.f:100.f);
+            target.resolve_marisa_extra_arrivals(0,battle_result_pending(),&g_ecl_fields[side].world,[&](th19::Enemy& enemy){
+                const int seat=1-side;const auto& respawn=g_player_damage[seat];
+                if(!g_vs_mode||!respawn.respawnDamageActive()||!(enemy.flags&0x800))return false;
+                if(respawn.state==th19::PlayerDamage::Playing&&respawn.frame>0)return false;
+                const float cx=respawn.respawn_damage_final_tick?respawn.respawn_damage_final_x:(seat?g_p2_x:g_p1_x);
+                const float cy=respawn.respawn_damage_final_tick?400.f:respawn.respawnY();
+                const float dx=enemy.x-cx,dy=enemy.y-cy,radius=120.f+enemy.hitbox_w*.5f;
+                if(dx*dx+dy*dy>radius*radius)return false;
+                // Constructor contact returns before the registered ECL death
+                // callback is installed; its return does not retire the host.
+                const auto callback=enemy.death_callback;enemy.death_callback.clear();
+                // Constructor contact precedes the first update that assigns the default death effect.
+                enemy.status_flags|=0x04000000u;
+                target.dispatch_enemy_death(enemy,false,enemy.death_initialized||enemy.death_script!=0);
+                enemy.active=true;enemy.death_callback=callback;return true;
+            },ranReceiver?&birthRegion:nullptr);
             if((side?g_opp_sel:g_char_sel)==0){
                 target.late_attack_registration=true;
                 dispatch_automatic_attack(side,sources[side]);
                 target.late_attack_registration=false;
             }
-            if((side?g_opp_sel:g_char_sel)!=2)target.initialize_pending_charge_attacks();
+            const int character=side?g_opp_sel:g_char_sel;
+            if(character!=2&&character!=3)target.initialize_pending_charge_attacks();
         }
-        // Sanae's existing arrival callbacks finish before queued C3 ECL
-        // constructors consume their position draw (4fd74f before 4fc5af).
-        for(int side=1;side>=0;--side)if((side?g_opp_sel:g_char_sel)==2)
-            g_ecl_fields[1-side].world.initialize_pending_charge_attacks();
+        // Both arrival lists finish before Sanae and Ran charge constructors
+        // sample their positions, including a graze on the opposite field.
+        for(int side=1;side>=0;--side){
+            const int character=side?g_opp_sel:g_char_sel;
+            if(character==2||character==3)g_ecl_fields[1-side].world.initialize_pending_charge_attacks();
+        }
         for(int side=1;side>=0;--side){
                     for(auto& skill:g_attacks[side].reimu_skills)if(skill.pending_angle){
                         // A release forced by result entry still registers the skill,
@@ -4977,8 +5049,14 @@ bool defer_homing_shot(const PlayerProjectile& shot){
 bool defer_reimu_shot_contact(const PlayerProjectile& shot){
     // Native pl00.sht hit1 (0x54da60) is resolved by the damage manager
     // after enemy movement, using the primary stream for its five draws.
-    if(!g_vs_mode||shot.ability_bank||(shot.side?g_opp_sel:g_char_sel)!=0)return false;
+    if(!g_vs_mode||shot.ability_bank)return false;
+    const int character=shot.side?g_opp_sel:g_char_sel;
+    if(character!=0&&character!=3)return false;
     const bool pellet=shot.type==7&&shot.update==0&&shot.hit_callback==0&&shot.option==0&&!shot.charged;
+    // Ran's ordinary pellets use the same post-movement damage-area query.
+    // Sweeping against the prior enemy rectangle admits corner hits too early.
+    if(character==3)return shot.type==0&&shot.init_callback==0&&shot.update==0&&
+        shot.hit_callback==0&&!shot.piercing;
     const bool star=shot.type==0&&shot.hit_callback==1;
     // 0x54b370 retains the C1 talisman while its late damage area stays active.
     const bool charge=shot.type==0&&shot.init_callback==11&&shot.update==8&&shot.hit_callback==7&&shot.piercing;
@@ -5091,7 +5169,7 @@ struct DeferredShotContacts {
 
     explicit DeferredShotContacts(int side):side(side){
         for(auto& shot:g_player_projectiles){
-            if(shot.side!=side||(!defer_marisa_contact(shot)&&!defer_sanae_shot_contact(shot))||shot.ending)continue;
+            if(shot.side!=side||(!defer_marisa_contact(shot)&&!defer_sanae_shot_contact(shot)) )continue;
             if(!shot.age&&(shot.update==9||normalPellet(shot))){
                 // The native emitter samples the player after movement.
                 shot.x=(side?g_p2_x:g_p1_x)+shot.offset_x;
@@ -5126,9 +5204,31 @@ struct DeferredShotContacts {
         }
     }
 
-    int damage_to(const th19::Enemy& enemy){
+    int damage_to(th19::Enemy& enemy){
         // The constructor update checks contact while its HP timer still
         // protects the newborn. The following registration guard skips it.
+        // 0x509a83 checks cancelable EX against clear areas before ordinary
+        // invulnerability flags; 0x509b19 dispatches its death directly.
+        if(enemy.active&&enemy.spawn_hold!=1&&!enemy.extra_birth_motion&&enemy.sprite>=0&&(enemy.flags&0x800)){
+            const auto& respawn=g_player_damage[side];
+            if(g_vs_mode&&respawn.respawnDamageActive()){
+                const float centerX=respawn.respawn_damage_final_tick?respawn.respawn_damage_final_x:(side?g_p2_x:g_p1_x);
+                const float centerY=respawn.respawn_damage_final_tick?400.f:respawn.respawnY();
+                const float dx=enemy.x-centerX,dy=enemy.y-centerY;
+                const float radius=120.f+enemy.hitbox_w*.5f;
+                if(dx*dx+dy*dy<=radius*radius){
+                    enemy.status_flags|=0x04000000u;
+                    g_ecl_fields[side].world.dispatch_enemy_death(enemy);return 0;
+                }
+            }
+            for(const auto& r:g_registered_skill_rectangles[side]){
+                const float dx=enemy.x-r.x,dy=enemy.y-r.y;
+                const bool hit=(enemy.flags&0x1000)
+                    ? th19::shotRectanglesOverlap(dx,dy,r.angle,r.width,r.height,enemy.contact_angle,enemy.hitbox_w,enemy.hitbox_h)
+                    : th19::nativeEnemyRectangleContact(dx,dy,r.angle,r.width,r.height,enemy.hitbox_w*.5f);
+                if(hit){enemy.status_flags|=0x04000000u;g_ecl_fields[side].world.dispatch_enemy_death(enemy);return 0;}
+            }
+        }
         if(!enemy.active||enemy.spawn_hold==1||enemy.sprite<0||(enemy.flags&0x21)||enemy.hitbox_w<=0)return 0;
         // Constructor contacts precede the first displacement; registered
         // enemies use the ordinary post-motion damage pass.
@@ -5136,6 +5236,13 @@ struct DeferredShotContacts {
         const float targetX=registering?enemy.previous_x:enemy.x;
         const float targetY=registering?enemy.previous_y:enemy.y;
         int damage=0;
+        for(const auto& r:g_registered_skill_rectangles[side]){
+            const float dx=targetX-r.x,dy=targetY-r.y;
+            const bool hit=(enemy.flags&0x1000)
+                ? th19::shotRectanglesOverlap(dx,dy,r.angle,r.width,r.height,enemy.contact_angle,enemy.hitbox_w,enemy.hitbox_h)
+                : th19::nativeEnemyRectangleContact(dx,dy,r.angle,r.width,r.height,enemy.hitbox_w*.5f);
+            if(hit)damage+=r.damage;
+        }
         for(const auto& c:g_registered_skill_circles[side]){
             const float dx=targetX-c.x,dy=targetY-c.y;
             const float radius=c.radius+enemy.hitbox_w*.5f;
@@ -5229,7 +5336,7 @@ struct DeferredShotContacts {
             }
         }
         for(auto shot=g_player_projectiles.rbegin();shot!=g_player_projectiles.rend();++shot){
-            if(shot->side!=side||(!defer_reimu_shot_contact(*shot)&&!defer_sanae_shot_contact(*shot))||shot->ending||shot->damage<=0||(!shot->age&&shot->type!=7&&shot->hit_callback!=1&&!defer_sanae_shot_contact(*shot)&&!(shot->init_callback==11&&shot->update==8)))continue;
+            if(shot->side!=side||(!defer_reimu_shot_contact(*shot)&&!defer_sanae_shot_contact(*shot))||shot->ending||shot->damage<=0||(!shot->age&&shot->type!=7&&shot->hit_callback!=1&&!defer_sanae_shot_contact(*shot)&&((shot->side?g_opp_sel:g_char_sel)!=3)&&!(shot->init_callback==11&&shot->update==8)))continue;
             const float dx=targetX-shot->x,dy=targetY-shot->y;
             const bool hit=(enemy.flags&0x1000)
                 ? th19::shotRectanglesOverlap(dx,dy,shot->angle,shot->hit_width,shot->hit_height,
@@ -5237,6 +5344,7 @@ struct DeferredShotContacts {
                 : th19::nativeEnemyRectangleContact(dx,dy,shot->angle,shot->hit_width,shot->hit_height,enemy.hitbox_w*.5f);
             if(th19::traceOpeningRng&&std::abs(dx)<40&&std::abs(dy)<60)
                 std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"reimu-contact\",\"side\":%d,\"id\":%u,\"shot\":[%.9g,%.9g,%d,%d,%d],\"position\":[%.9g,%.9g],\"shape\":[%.9g,%.9g,%.9g],\"hit\":%d}\n",g_vs_match.elapsed,side,enemy.id,shot->x,shot->y,shot->type,shot->age,shot->option,targetX,targetY,shot->hit_width,shot->hit_height,enemy.hitbox_w*.5f,int(hit));
+            if(hit&&th19::traceOpeningRng)std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"ran-shot-hit-detail\",\"side\":%d,\"id\":%u,\"shot\":[%.9g,%.9g,%d,%d],\"physics\":[%d,%d,%.9g,%.9g,%.9g,%d,%d,%d]}\n",g_vs_match.elapsed,side,enemy.id,shot->x,shot->y,shot->age,shot->option,shot->damage,int(shot->charged),shot->angle,shot->vx,shot->vy,shot->init_callback,shot->update,shot->hit_callback);
             if(hit){
                 damage+=shot->damage;
                 if(!shot->piercing){
@@ -5302,6 +5410,8 @@ void consume_spirit_birth_shots(int side,size_t index){
 }
 
 void advance_deferred_shot_animations(int side,u32 before){
+    // A warning can present the same battle frame repeatedly while the field is frozen.
+    if(g_paused)return;
     for(auto& pair:rb_draw_ecl_objects_animations[side])
         for(auto& child:pair.second.vm.children)
             if(child.independent_tick&&child.independent_frame!=g_frame)
@@ -5430,6 +5540,7 @@ void tick_marisa_skills(int side){
 }
 unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& priorCharge){
     for(auto& circles:g_registered_skill_circles)circles.clear();
+    for(auto& rectangles:g_registered_skill_rectangles)rectangles.clear();
     // 0x54e742 skips ordinary fire while the charge timer is nonzero,
     // including the release cooldown. The emitter clocks stay at their last tick.
     const auto shotBlocked=[](int side){
@@ -5443,7 +5554,7 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
         if(th19::traceOpeningRng)std::printf("ENEMYDBG {\"event\":\"ordinary-shot-block\",\"side\":%d,\"gauge\":[%d,%d,%d,%d,%d],\"attack\":[%d,%d,%d,%d],\"clocks\":[%d,%d]}\n",side,g_charge[side].charge,g_charge[side].cooldown,int(g_charge[side].cooling_this_tick),int(g_charge[side].held),g_charge[side].held_frames,attack.character,attack.frame,attack.group,attack.release_tier,side?g_opp_shoot_frame:g_shoot_frame,g_attacks[side].secondary_shot_clock);
         // 0x54e757 also checks the attack controller's busy flag.
         return g_charge[side].suppress_ordinary_shot() ||
-            ((attack.delayed_versus_beam(g_vs_mode)||((side?g_opp_sel:g_char_sel)==0&&attack.group==10)||(side?g_opp_sel:g_char_sel)==2)&&attack.frame>=0);
+            ((attack.delayed_versus_beam(g_vs_mode)||((side?g_opp_sel:g_char_sel)==0&&attack.group==10)||((side?g_opp_sel:g_char_sel)==2||(side?g_opp_sel:g_char_sel)==3))&&attack.frame>=0);
     };
     const bool leftBlocked=shotBlocked(0);
     const bool rightBlocked=shotBlocked(1);
@@ -5461,7 +5572,6 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
     for(int side=0;side<2;++side){
         float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y,opx=side?g_p1_x:g_p2_x,opy=side?g_p1_y:g_p2_y;
         float cx=side?GAME_F2_CX:GAME_F1_CX,ocx=side?GAME_F1_CX:GAME_F2_CX;
-    g_attacks[side].ran_skill.tick();
     if(g_attacks[side].chiyari_skill.frame>=0){auto&s=g_attacks[side].chiyari_skill;
         // 0x42b7d0: recompute from both live player positions, t=frame/60.
         float t=s.frame/60.f;s.x=(cx+GAME_SCALE*px)*(1-t)+(ocx+GAME_SCALE*opx)*t;
@@ -5697,15 +5807,18 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
             // Normal pellets start native ANM viewport checks at age 15.
             // Their damage areas remain active above the field before then.
             const bool reimuStar=defer_reimu_shot_contact(b)&&b.hit_callback==1;
+            const bool ranPellet=(b.side?g_opp_sel:g_char_sel)==3&&defer_reimu_shot_contact(b);
             if(defer_homing_shot(b)&&g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
                 std::printf("ENEMYDBG {\"event\":\"homing-motion\",\"frame\":%d,\"side\":%d,\"registration\":%u,\"position\":[%.9g,%.9g],\"velocity\":[%.9g,%.9g],\"age\":%d,\"ending\":%d,\"target\":%u,\"vm\":[%d,%.9g,%.9g,%.9g,%.9g]}\n",g_vs_match.elapsed,b.side,b.vm.registration,b.x,b.y,b.vx,b.vy,b.age,int(b.ending),b.target_id,b.vm.sprite,b.vm.sx,b.vm.sy,b.vm.x+b.vm.child_x,b.vm.y+b.vm.child_y);
-            bool outside=!DeferredShotContacts::normalPellet(b)&&!defer_homing_shot(b)&&!reimuStar&&!defer_sanae_shot_contact(b)&&!(b.init_callback==11&&b.update==8)&&b.type!=2&&b.type!=8&&
+            bool outside=!DeferredShotContacts::normalPellet(b)&&!defer_homing_shot(b)&&!reimuStar&&!ranPellet&&!defer_sanae_shot_contact(b)&&!(b.init_callback==11&&b.update==8)&&b.type!=2&&b.type!=8&&
                          (b.y < -64||b.y>512||std::abs(b.x)>220);
             // Native54e0d9 checks the age before this update's increment.
             // Normal options already ran their birth update (native age is one
             // ahead of our counter). Only deferred C1 shots need the backstep.
-            const int boundsAge=b.age-(defer_sanae_shot_contact(b)&&b.charged&&b.update==4?1:0);
-            if((DeferredShotContacts::normalPellet(b)||defer_homing_shot(b)||reimuStar||defer_sanae_shot_contact(b)||(b.init_callback==11&&b.update==8)||b.update==9)&&!b.ending&&boundsAge>=15){
+            // Deferred Ran C1 rows leave the constructor age at zero.
+            // 54e0d9 sees the pre-increment age, preserving its final edge hit.
+            const int boundsAge=b.age-(((ranPellet&&b.charged)||(defer_sanae_shot_contact(b)&&b.charged&&b.update==4))?1:0);
+            if((DeferredShotContacts::normalPellet(b)||defer_homing_shot(b)||reimuStar||ranPellet||defer_sanae_shot_contact(b)||(b.init_callback==11&&b.update==8)||b.update==9)&&(!b.ending||ranPellet)&&boundsAge>=15){
                 const auto& sprites=b.effect_bank?g_focus_sprites:b.ability_bank?g_ability_sprites:(b.side?g_opp_sprites:g_player_sprites);
                 const auto& entries=b.effect_bank?g_focus_entries:b.ability_bank?g_ability_entries:(b.side?g_opp:g_player);
                 // 0x54e0d4 reads the quad before this tick's ANM interpolation.
@@ -5741,13 +5854,20 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
                         const float originY=(defer_homing_shot(b)||defer_sanae_shot_contact(b))?b.prior_bounds_y:b.y-b.vy;
                         const float px=originX+vm.x+vm.child_x+localX*c-localY*s;
                         const float py=originY+vm.y+vm.child_y+localX*s+localY*c;
-                        if(px>-148&&px<148&&py>0&&py<448)outside=false;
+                        // Native checks the final screen-space floats. At the field edge
+                        // adding the viewport origin can round a rotated corner onto it.
+                        if(ranPellet){
+                            const float screenX=480.f+px,screenY=136.f+py;
+                            if(screenX>332.f&&screenX<628.f&&screenY>136.f&&screenY<584.f)outside=false;
+                        }else if(px>-148&&px<148&&py>0&&py<448)outside=false;
                     }
                 }
             }
             // The normal VS option beam remains active as long as its emitter cycle runs.
             const bool continuousOptionBeam=g_vs_mode&&b.update==2&&b.hit_callback==2;
             const bool tooOld=!continuousOptionBeam&&b.age>std::max(1200,b.lifetime+120);
+            if(th19::traceOpeningRng&&ranPellet&&(outside||(b.vm.deleted&&b.vm.children.empty())))
+                std::printf("ENEMYDBG {\"event\":\"ran-pellet-retire\",\"side\":%d,\"registration\":%u,\"age\":%d,\"ending\":%d,\"outside\":%d,\"deleted\":%d,\"position\":[%.9g,%.9g],\"children\":%zu}\n",b.side,b.vm.registration,b.age,int(b.ending),int(outside),int(b.vm.deleted),b.x,b.y,b.vm.children.size());
             return b.consumed||(b.vm.deleted&&b.vm.children.empty())||outside||tooOld;
         });
         firstNewShot=size_t(retainedEnd-g_player_projectiles.begin());
@@ -5819,11 +5939,17 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
         // 0x54ece5 subtracts velocity from the row offset before adding
         // the emitter. The birth update then translates and floors it.
         // Keep each float operation: cancellation can change a centi-grid cell.
-        if(g_vs_mode&&character==0&&(DeferredShotContacts::normalPellet(b)||
-            (defer_reimu_shot_contact(b)&&b.hit_callback==1))){
+        if(g_vs_mode&&((character==0&&(DeferredShotContacts::normalPellet(b)||
+            (defer_reimu_shot_contact(b)&&b.hit_callback==1)))||
+            (character==3&&!charged&&defer_reimu_shot_contact(b)))){
             b.x=(d.x-b.vx)+x;
             b.y=(d.y-b.vy)+y;
             move_player_shot(b);
+        }
+        if(g_vs_mode&&character==3&&charged){
+            // Ran registers before its first movement; the newborn area can hit
+            // nearby enemies before the next projectile manager visit.
+            b.x=(d.x-b.vx)+x;b.y=(d.y-b.vy)+y;
         }
         // Normal Sanae options enter the manager during their birth tick.
         // Turning is tested at the pre-displacement origin, including its Y backstep.
@@ -5848,7 +5974,7 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
         if(d.init==2||d.init==12||d.init==18)play_sfx(20);
         if(charged)++g_attacks[side].charge_attack.emitted;
         collect_shot_detached_anms(b);
-        if(character==2&&th19::traceOpeningRng)
+        if((character==2||character==3)&&th19::traceOpeningRng)
             std::printf("ENEMYDBG {\"event\":\"sanae-shot-birth\",\"frame\":%d,\"side\":%d,\"registration\":%u,\"position\":[%.9g,%.9g],\"angle\":%.9g,\"speed\":%.9g,\"age\":%d,\"option\":%d,\"type\":%d,\"init\":%d,\"update\":%d,\"hit\":%d,\"damage\":%d}\n",g_vs_match.elapsed+1,side,b.vm.registration,b.x,b.y,b.angle,b.speed,b.age,b.option,b.type,b.init_callback,b.update,b.hit_callback,b.damage);
         if(character==0&&g_vs_match.elapsed+1>=g_capture_cpu_first&&g_vs_match.elapsed+1<=g_capture_cpu_last)
             std::printf("ENEMYDBG {\"frame\":%d,\"event\":\"reimu-shot-birth\",\"side\":%d,\"group\":%d,\"clock\":%d,\"shot\":[%.9g,%.9g,%d,%d,%d,%d,%d],\"velocity\":[%.9g,%.9g]}\n",g_vs_match.elapsed,side,group,clock,b.x,b.y,b.type,b.option,b.hit_callback,b.damage,b.age,b.vx,b.vy);
@@ -5879,7 +6005,10 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
         const bool delayedSanaeSkill=g_vs_mode&&character==2&&attack.group==11;
         if(delayedSanaeSkill&&attack.frame>=1&&attack.frame<th19::ChargeAttack::skill_fire_frames(2)+1)
             emit(side,11,attack.frame-1,0,true);
-        if(attack.firing()&&!delayedBeam&&!delayedTalisman&&!delayedSanae&&!delayedSanaeSkill)
+        const bool delayedRan=g_vs_mode&&character==3&&attack.group==10;
+        if(delayedRan&&attack.frame>=1&&attack.frame<th19::ChargeAttack::fire_frames[3]+1)
+            emit(side,10+(state.ran_skill.active()?1:0),attack.frame-1,0,true);
+        if(attack.firing()&&!delayedBeam&&!delayedTalisman&&!delayedSanae&&!delayedSanaeSkill&&!delayedRan)
             emit(side,attack.group+(side==0&&character==3&&state.ran_skill.active()?1:0),attack.frame,attack.secondary_clock(),true);
         if(character==1&&(delayedBeam?attack.release_tier:g_charge[side].last_release)==2&&
            (delayedBeam?attack.frame==1:attack.frame==0&&(side==1||attack.firing())))
@@ -5948,6 +6077,21 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
             }
         }
         updateExistingShots();
+        // The expiring Ran C2 callback rebuilds the emitters after ordinary
+        // SHT and before a younger C1 callback registers its pellets.
+        for(int side=0;side<2;++side){
+            auto& state=g_attacks[side];
+            if(state.ran_skill.remaining!=1||state.charge_attack.group!=10||
+               state.charge_attack.frame<1||state.charge_attack.frame>th19::ChargeAttack::fire_frames[3])continue;
+            state.ran_skill.tick();
+            // The rebuilt options fire from the current player before focus lock resumes.
+            const float lockX=state.option_lock_x,lockY=state.option_lock_y;
+            state.option_lock_x=side?g_p2_x:g_p1_x;
+            state.option_lock_y=side?g_p2_y:g_p1_y;
+            advance_player_option_positions(side,side?(g_opponent_controls&8)!=0:focused);
+            state.option_lock_x=lockX;state.option_lock_y=lockY;
+            state.ran_options_first_visit=true;
+        }
         // Persistent charge callbacks precede subsequently created BombInf
         // callbacks. Bomb callbacks visit their construction order.
         emitCharge(0,g_char_sel);
@@ -5979,7 +6123,7 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
         ++shot.age;
     }
     unsigned deferredShotSides=0;
-    for(int side=0;side<2;++side)if(!g_registered_skill_circles[side].empty())deferredShotSides|=1u<<side;
+    for(int side=0;side<2;++side)if(!g_registered_skill_circles[side].empty()||!g_registered_skill_rectangles[side].empty())deferredShotSides|=1u<<side;
     if(g_vs_mode)for(int side=0;side<2;++side)
         // The late player visit advances respawn before area contacts. Include
         // its first active tick even though this mask is prepared beforehand.
@@ -5988,6 +6132,24 @@ unsigned tick_player_shots(bool firing,bool focused,const std::array<int,2>& pri
             deferredShotSides|=1u<<side;
     for(const auto& shot:g_player_projectiles)if(defer_homing_shot(shot)||defer_reimu_shot_contact(shot)||defer_marisa_contact(shot)||defer_sanae_shot_contact(shot))deferredShotSides|=1u<<shot.side;
     for(int side=0;side<2;++side)if(defer_marisa_bomb_contact(side))deferredShotSides|=1u<<side;
+    // Nonterminal Ran skill clocks finish after SHT; expiry precedes launch.
+    for(int side=0;side<2;++side){
+        auto& attack=g_attacks[side];
+        if(attack.ran_skill_registered){
+            if(side==1){
+                attack.ran_skill.release();
+                // C2 rebuilds at the current player. The first 54a120 visit
+                // snaps to the independently preserved focus-lock target.
+                const float lockX=attack.option_lock_x,lockY=attack.option_lock_y;
+                attack.option_lock_x=g_p2_x;attack.option_lock_y=g_p2_y;
+                advance_player_option_positions(side,(g_opponent_controls&8)!=0);
+                attack.option_lock_x=lockX;attack.option_lock_y=lockY;
+            }
+            // Rebuilt Ran emitters snap on the first SHT visit for either seat.
+            attack.ran_options_first_visit=true;
+            attack.ran_skill_registered=false;
+        }else attack.ran_skill.tick();
+    }
     return deferredShotSides;
 }
 void bind_warning_portrait(int ch,int sender);
@@ -6226,7 +6388,14 @@ bool held=g_charge[side].held;int level=g_charge[side].level();g_charge[side].ch
                                 play_sfx(51);
                             }
                         }
-                        else if(ch==3){accepted=g_attacks[side].ran_skill.release();if(accepted){g_attacks[side].option_lock_x=px;g_attacks[side].option_lock_y=py;tick_player_options(slow);play_sfx(13);}}
+                        else if(ch==3){
+                            auto& skill=g_attacks[side].ran_skill;
+                            // Right-side C2 can renew on the outgoing callback's last tick.
+                            // Its four emitters keep their positions across the handoff.
+                            if(g_vs_mode&&side==1&&skill.remaining==1){
+                                skill.remaining=601;
+                                accepted=true;
+                            }else {accepted=g_vs_mode&&side==1?!skill.active():skill.release();if(accepted){g_attacks[side].ran_skill_registered=g_vs_mode;if(g_vs_mode){if(side==0){advance_player_option_positions(side,slow);g_attacks[side].ran_options_registered=true;}}else{g_attacks[side].option_lock_x=px;g_attacks[side].option_lock_y=py;tick_player_options(slow);}play_sfx(13);}}}
                         else if(ch==9&&g_attacks[side].charge_area.frame<0&&th19::mamizouSkillFragment(bombs,fragments))accepted=areaStarted=g_attacks[side].charge_area.release_skill(9,px,py);
                         else if(ch==5||ch==7||ch==8||ch==10||ch==12||ch==18)accepted=areaStarted=g_attacks[side].charge_area.release_skill(ch,px,py);
                         else if(ch==16&&g_attacks[side].chiyari_skill.frame<0){
@@ -6364,10 +6533,11 @@ void tick_player_bombs(int firstSide,int lastSide){
         const bool reimuEnding=b.character==0&&b.frame+1==b.duration;
         // 41819f advances Sanae before the duration gate at4181e8.
         const bool sanaeEnding=b.character==2&&b.frame+1==b.duration;
+        const bool ranEnding=b.character==3&&b.frame+1==b.duration;
         const bool resultEntry=g_vs_mode&&(battle_result_pending()||
             (g_player_damage[0].state==th19::PlayerDamage::Dead&&g_player_damage[0].frame>=30&&g_p1_lives<=0)||
             (g_player_damage[1].state==th19::PlayerDamage::Dead&&g_player_damage[1].frame>=30&&g_p2_lives<=0));
-        if(b.active()&&!marisaEnding&&!reimuEnding&&!sanaeEnding&&!resultEntry){
+        if(b.active()&&!marisaEnding&&!reimuEnding&&!sanaeEnding&&!ranEnding&&!resultEntry){
             if(b.character==5){
                 float tx=side?g_p2_x:g_p1_x,ty=side?g_p2_y:g_p1_y,best=320.f*320.f;
                 for(const auto&e:g_ecl_fields[side].world.enemies){
@@ -6409,7 +6579,8 @@ void tick_player_bombs(int firstSide,int lastSide){
                             event.animation.tick();
                         }
                     }else w.cancel_lasers_region(inside);
-                    if(!g_vs_mode||b.character!=1)
+                    if(g_vs_mode&&b.character==3)g_registered_skill_rectangles[side].push_back({x,y,width,height,angle,20});
+                    else if(!g_vs_mode||b.character!=1)
                         for(auto&e:w.enemies)if(inside(e.x,e.y))w.damage_enemy(e,20);
                 };
                 if(b.character==7)rectangle(b.x,b.y,b.radius*2,b.radius,b.angle);
@@ -6433,8 +6604,8 @@ void tick_player_bombs(int firstSide,int lastSide){
             }
         }else{
             if(((b.character==0||b.character==1||b.character==2)?b.frame+1:b.frame)==b.duration){area.interrupt_all(1);back.interrupt_all(1);for(int i=1;i<b.count;++i)g_bomb_extra[side][i-1].interrupt_all(1);play_sfx(44);}
-            if(marisaEnding||reimuEnding||sanaeEnding){
-                // Both Reimu and Marisa register a fifteen-tick, six-pixel exit shake.
+            if(marisaEnding||reimuEnding||sanaeEnding||ranEnding){
+                // The bomb exit starts a shared-RNG screen shake on the next world tick.
                 g_screen_shake.start({15,6,6});
                 ++b.frame;
             }
@@ -6943,10 +7114,10 @@ void tick_player_damage(unsigned skipSides=0,unsigned advancedRepelSides=0){
             // 0x549830 leaves registered VS shots alive. Their own update
             // callbacks end ordinary beams; charged fixed beams keep dealing damage.
             if(!g_vs_mode)g_player_projectiles.erase(std::remove_if(g_player_projectiles.begin(),g_player_projectiles.end(),[side](const auto&b){return b.side==side;}),g_player_projectiles.end());
-            // 0x549830 does not retire Sanae's registered C1 or C2 controller.
-            // Both finish their remaining emissions at the saved release origin.
-            const bool retainSanaeCharge=g_vs_mode&&(side?g_opp_sel:g_char_sel)==2;
-            if(!retainSanaeCharge)g_attacks[side].charge_attack={};
+            // Registered Sanae attacks and Ran C1 finish firing after the death callback.
+            const int character=side?g_opp_sel:g_char_sel;
+            const bool retainCharge=g_vs_mode&&(character==2||(character==3&&g_attacks[side].charge_attack.group==10));
+            if(!retainCharge)g_attacks[side].charge_attack={};
             g_attacks[side].charge_area={};
         }
         if(event==th19::PlayerDamage::Respawn){
@@ -7019,26 +7190,33 @@ void contact_player(int side,float px,float py,float sx,float sy,bool currentFra
         }
     }
 }
-const th19::Enemy* find_enemy_contact(int side,float px,float py,float radius){
+std::optional<std::pair<float,float>> find_enemy_contact(int side,float px,float py,float radius){
     const auto& enemies=g_ecl_fields[side].world.enemies;
     for(size_t i=0;i<enemies.size();++i){
         const auto& e=enemies[g_vs_mode?enemies.size()-1-i:i];
         // 0x509980: bit 1/5 excludes contact, status 0x400 excludes contact.
         if(!e.active||e.sprite<0||(e.flags&0x22)||(e.status_flags&0x400)||e.contact_protection_time>=1)continue;
         if(th19::cardIgnoresSpirit(player_cards(side),e.status_flags))continue;
-        const float dx=px-e.x,dy=py-e.y;
+        // The synchronous EX arrival tests contact at its spawn position.
+        const bool birth=g_vs_mode&&e.extra_birth_motion&&e.age==0;
+        const float x=birth?e.previous_x:e.x,y=birth?e.previous_y:e.y;
+        const float dx=px-x,dy=py-y;
         const bool hit=(e.flags&0x1000)
             ? th19::nativeEnemyRectangleContact(dx,dy,e.contact_angle,e.contact_w,e.contact_h,radius)
             : th19::nativeCircleContact(dx,dy,g_vs_mode?radius:3.f,e.contact_w*.5f);
-        if(hit)return &e;
+        if(hit)return std::pair{x,y};
     }
-    return nullptr;
+    return std::nullopt;
 }
-void check_vs_enemy_contacts(int side){
-    if(!g_player_collision_enabled||g_big_sprite>=0||!g_player_damage[side].vulnerable(g_barrier[side].invulnerable))return;
+void check_vs_enemy_contact(int side,const th19::Enemy& e){
+    if(!g_vs_mode||!g_player_collision_enabled||g_big_sprite>=0||!g_player_damage[side].vulnerable(g_barrier[side].invulnerable))return;
+    if(!e.active||e.sprite<0||(e.flags&0x22)||(e.status_flags&0x400)||e.contact_protection_time>=1||th19::cardIgnoresSpirit(player_cards(side),e.status_flags))return;
     const float px=side?g_p2_x:g_p1_x,py=side?g_p2_y:g_p1_y;
     const float radius=th19::ownsCard(player_cards(side),2)?1.5f:3.f;
-    if(const auto* e=find_enemy_contact(side,px,py,radius))contact_player(side,px,py,e->x,e->y,true);
+    const bool hit=(e.flags&0x1000)
+        ? th19::nativeEnemyRectangleContact(px-e.x,py-e.y,e.contact_angle,e.contact_w,e.contact_h,radius)
+        : th19::nativeCircleContact(px-e.x,py-e.y,radius,e.contact_w*.5f);
+    if(hit)contact_player(side,px,py,e.x,e.y,true);
 }
 // 527bb0 contacts curves after their current path samples and enemy clears.
 void check_vs_curve_contacts(int side){
@@ -7107,8 +7285,8 @@ void check_player_contacts(bool includeBullets=true,bool includeLasers=true,bool
             if(b.state!=1&&!(g_vs_mode&&b.state==2))continue;
             if(th19::nativeOrdinaryBulletContact(b.kind,px-b.x,py-b.y,th19::nativeBulletContactRadius(b.kind),cardRadius)==1){hit=true;sx=b.x;sy=b.y;contactBullet=&b;break;}
         }
-        if(!hit&&!g_vs_mode)if(const auto* e=find_enemy_contact(side,px,py,cardRadius)){
-            hit=true;sx=e->x;sy=e->y;
+        if(!hit&&!g_vs_mode)if(const auto contact=find_enemy_contact(side,px,py,cardRadius)){
+            hit=true;sx=contact->first;sy=contact->second;
         }
         if(!hit&&!g_vs_mode&&includeLasers)checkLasers();
         if(!hit)continue;
@@ -7473,17 +7651,19 @@ void frame(bool worldAdvanced,unsigned deferredShotSides,bool attackFrozen,unsig
             world.incoming_boss_level=g_charge[1-side].boss_level;
             // Initial stage registration precedes the first enemy-manager pass.
             // Once a wave exists, the registered stage host is visited last.
+            world.visit_enemy_contact=[side](const th19::Enemy& enemy){check_vs_enemy_contact(side,enemy);};
+            world.enemy_graze_enabled=g_vs_mode&&g_player_collision_enabled&&g_big_sprite<0;
+            world.enemy_graze_radius=th19::ownsCard(player_cards(side),2)?1.5f:3.f;
             const bool initialStage=world.current_wave==0;
             if(!g_vs_mode||initialStage)field.vm.step();
             if(deferredShotSides&(1u<<side)){
                 DeferredShotContacts contacts(side);
-                world.tick_wave(!g_vs_mode,[&](const th19::Enemy& enemy){return contacts.damage_to(enemy);},g_vs_mode);
+                world.tick_wave(!g_vs_mode,[&](th19::Enemy& enemy){return contacts.damage_to(enemy);},g_vs_mode);
                 contacts.finish();
                 world.finish_hit_feedback(world.spell.active?1u:0u);
             }else world.tick_wave(!g_vs_mode,{},g_vs_mode);
             if(g_vs_mode&&!initialStage&&(!battle_result_pending()||world.battle_frame<world.result_pause_frame))field.vm.step();
             // 0x50a1a5 tests the actor after updating its position.
-            if(g_vs_mode)check_vs_enemy_contacts(side);
             for(const auto& request:world.screen_shake_events)g_screen_shake.start(request);
             world.screen_shake_events.clear();
             if(g_vs_mode)collect_animal_spirit_launches(side,0);
@@ -7732,6 +7912,7 @@ void game_tick() {
     bool worldAdvanced=false;
     unsigned advancedMovementSides=0;
     unsigned advancedRepelSides=0;
+    unsigned arrivalContactSides=0;
     unsigned earlyDeathSides=0;
     unsigned advancedOptionSides=0;
     unsigned deferredShotSides=0;
@@ -8104,10 +8285,11 @@ void game_tick() {
                 if(g_vs_mode&&g_attack_warning.visible()&&g_attack_warning_frame<0){
                     tick_attack_warning_animations(g_frame+1);g_warning_portrait.tick();g_attack_warning_frame=g_frame+1;
                 }
-                // Sanae 546880 moves repel before the SHT visit. Charged rings
+                // 0x546880 moves Sanae and Ran before the SHT visit. Their shots
                 // therefore use this tick's displaced origin, not the preceding one.
                 if(g_vs_mode)for(int side=0;side<2;++side){
-                    if((side?g_opp_sel:g_char_sel)!=2||g_player_damage[side].state!=th19::PlayerDamage::Repelled)continue;
+                    const int character=side?g_opp_sel:g_char_sel;
+                    if((character!=2&&character!=3)||g_player_damage[side].state!=th19::PlayerDamage::Repelled)continue;
                     auto& px=side?g_p2_x:g_p1_x;auto& py=side?g_p2_y:g_p1_y;
                     g_player_damage[side].moveRepelled(px,py);
                     // VS 42fce0 uses fixed field bounds, independently of the sprite.
@@ -8117,13 +8299,13 @@ void game_tick() {
                 // 0x547554 -> 0x547673 -> 0x546ccb: move the player, then
                 // follow with options, then emit shots from the moved origins.
                 if(g_vs_mode){
-                    if(g_char_sel==0||(g_char_sel==2&&g_player_damage[0].controllable())){
+                    if(g_char_sel==0||((g_char_sel==2||g_char_sel==3)&&g_player_damage[0].controllable())){
                         g_p1_x=std::clamp(g_p1_x+(moveRight-moveLeft)*spd,-140.f,140.f);
                         g_p1_y+=(moveDown-moveUp)*spd;
                         if(g_player_damage[0].state!=th19::PlayerDamage::Respawning&&g_player_damage[0].state!=th19::PlayerDamage::Dead&&g_player_damage[0].state!=th19::PlayerDamage::Finished)g_p1_y=std::clamp(g_p1_y,32.f,432.f);
                         advancedMovementSides|=1;
                     }
-                    if((g_opp_sel==0||g_opp_sel==2)&&g_player_damage[1].controllable()){
+                    if((g_opp_sel==0||g_opp_sel==2||g_opp_sel==3)&&g_player_damage[1].controllable()){
                         const int dx=((g_opponent_controls&128)!=0)-((g_opponent_controls&64)!=0);
                         const int dy=((g_opponent_controls&32)!=0)-((g_opponent_controls&16)!=0);
                         const float speed=g_charge[1].movement_units(dx&&dy,(g_opponent_controls&8)!=0)/128.f;
@@ -8138,7 +8320,8 @@ void game_tick() {
                 // the regular animation phase and advance positions once.
                 if(g_vs_mode)for(int side=0;side<2;++side){
                     const int optionCharacter=side?g_opp_sel:g_char_sel;
-                    if(optionCharacter!=0&&optionCharacter!=2)continue;
+                    if(optionCharacter!=0&&optionCharacter!=2&&optionCharacter!=3)continue;
+                    if(g_attacks[side].ran_options_registered){g_attacks[side].ran_options_registered=false;advancedOptionSides|=1u<<side;continue;}
                     advance_player_option_positions(side,side?(g_opponent_controls&8)!=0:(cpuLeft?(g_cpu_left_bits&8)!=0:slow));
                     advancedOptionSides|=1u<<side;
                 }
@@ -8184,7 +8367,16 @@ void game_tick() {
                     emit_spirit_requests(side,world,g_spirit_clock+1);
 
                 }
+                const std::array<th19::PlayerDamage,2> priorDamage={g_player_damage[0],g_player_damage[1]};
                 tick_spirit_transits();
+                // A synchronous EX arrival follows the native player update.
+                // Its new damage timer and knockback start on the next tick.
+                for(int side=0;side<2;++side){
+                    const auto& damage=g_player_damage[side];
+                    if(damage.frame==0&&(damage.state==th19::PlayerDamage::Repelled||damage.state==th19::PlayerDamage::Pending)&&
+                       (damage.state!=priorDamage[side].state||priorDamage[side].frame!=0))
+                        arrivalContactSides|=1u<<side;
+                }
                 for(int side=0;side<2;++side){
                     auto& world=g_ecl_fields[side].world;
                     if(deferredShotSides&(1u<<side))world.finish_enemy_deaths();
@@ -8259,14 +8451,14 @@ void game_tick() {
                 if(r.character==5){const auto target=w.nazrin_seek_target(r.x,r.y,px,py);r.seek(target.x,target.y);}
                 if(r.character==13)for(int i=1;i<3;++i){const auto&o=g_player_options[side];r.centers[i]=i<=int(o.size())?th19::ChargeRegion::Point{o[i-1].x,o[i-1].y}:th19::ChargeRegion::Point{px,py};}
             }
-            if(g_vs_mode&&combatOpen)tick_player_pickups(advancedRepelSides);
+            if(g_vs_mode&&combatOpen)tick_player_pickups(advancedRepelSides|arrivalContactSides);
             if(g_vs_mode&&combatOpen)for(int side=0;side<2;++side){
                 auto& world=g_ecl_fields[side].world;
                 world.player_x=side?g_p2_x:g_p1_x;
                 world.player_y=side?g_p2_y:g_p1_y;
                 world.advance_discharge_scripts(true);
             }
-            tick_player_damage(resultEntrySides|earlyDeathSides,advancedRepelSides);check_player_contacts(!g_vs_mode);
+            tick_player_damage(resultEntrySides|earlyDeathSides|arrivalContactSides,advancedRepelSides);check_player_contacts(!g_vs_mode);
             if(g_vs_mode&&combatOpen)for(int side=0;side<2;++side){
                 const auto& damage=g_player_damage[side];
                 if(damage.state!=th19::PlayerDamage::Pending||damage.frame!=0)continue;

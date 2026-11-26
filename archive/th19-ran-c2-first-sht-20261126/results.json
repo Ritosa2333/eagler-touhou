@@ -1,0 +1,305 @@
+{
+  "fixture": "Ran vs Ran, Lunatic CPU vs CPU, no ability cards",
+  "roundWaveSeedOverride": false,
+  "nativeReference": "CPU rectangle obstacle radius normalized to zero",
+  "runs": [
+    {
+      "seeds": [
+        3058262,
+        424182232
+      ],
+      "wasmSha256": "cd56eaf5e24d393b7eba25e64931a19c9a1a48eb231e1edd26e80bd04d4295dc",
+      "nativeTraceSha256": "26f278449c8347b9db2bc53c6d3b13245d7ea8a8b025781548d468e79b95b078",
+      "frames": 36000,
+      "rng": {
+        "primary": {
+          "frame": 11011,
+          "web": 1067878236,
+          "original": 162670508
+        },
+        "animation": {
+          "frame": 4707,
+          "web": 608394849,
+          "original": 121875418
+        }
+      },
+      "cpu": {
+        "frame": 11002,
+        "web": [
+          0,
+          0
+        ],
+        "original": [
+          0,
+          1
+        ]
+      },
+      "position": {
+        "frame": 11050,
+        "web": [
+          -3.6953125,
+          400,
+          0,
+          400
+        ],
+        "original": [
+          0,
+          400,
+          0,
+          400
+        ]
+      },
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\ran-health-detail-20261126\\ran-c2-first-sht-20261126-24821\\th19-web-srtrtg\\report.json"
+    },
+    {
+      "seeds": [
+        37369202,
+        950438566
+      ],
+      "wasmSha256": "cd56eaf5e24d393b7eba25e64931a19c9a1a48eb231e1edd26e80bd04d4295dc",
+      "nativeTraceSha256": "728968060de5a9fa057d985ad780373eede68dba061bf0f3f75c0deffb71b769",
+      "frames": 36000,
+      "rng": {
+        "primary": {
+          "frame": 16965,
+          "web": 1844625351,
+          "original": 795862560
+        },
+        "animation": {
+          "frame": 6826,
+          "web": 402777654,
+          "original": 815804286
+        }
+      },
+      "cpu": {
+        "frame": 16962,
+        "web": [
+          1,
+          65
+        ],
+        "original": [
+          1,
+          1
+        ]
+      },
+      "position": {
+        "frame": 16962,
+        "web": [
+          0,
+          400,
+          -3.6953125,
+          400
+        ],
+        "original": [
+          0,
+          400,
+          0,
+          400
+        ]
+      },
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\ran-health-detail-20261126\\ran-c2-first-sht-20261126-24823\\th19-web-9pJ6T4\\report.json"
+    },
+    {
+      "seeds": [
+        1917850061,
+        1252598300
+      ],
+      "wasmSha256": "cd56eaf5e24d393b7eba25e64931a19c9a1a48eb231e1edd26e80bd04d4295dc",
+      "nativeTraceSha256": "22b545231521303c9b1518ff2f8e201c1074a3f74b8a824ac1c0015719ef25fb",
+      "frames": 36000,
+      "rng": {
+        "primary": {
+          "frame": 12525,
+          "web": 1750902875,
+          "original": 47896960
+        },
+        "animation": {
+          "frame": 5455,
+          "web": 1460363935,
+          "original": 1790850076
+        }
+      },
+      "cpu": {
+        "frame": 12454,
+        "web": [
+          43,
+          27
+        ],
+        "original": [
+          27,
+          27
+        ]
+      },
+      "position": {
+        "frame": 12454,
+        "web": [
+          24.3828125,
+          265.1484375,
+          -46.65625,
+          349.8515625
+        ],
+        "original": [
+          24.3828125,
+          261.1484375,
+          -46.65625,
+          349.8515625
+        ]
+      },
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\ran-health-detail-20261126\\ran-c2-first-sht-20261126-24824\\th19-web-Wj5lTo\\report.json"
+    },
+    {
+      "seeds": [
+        902687818,
+        1033942973
+      ],
+      "wasmSha256": "cd56eaf5e24d393b7eba25e64931a19c9a1a48eb231e1edd26e80bd04d4295dc",
+      "nativeTraceSha256": "9f282b75e0dcbbf4b8c8a6dad90f48c91bd14b9b420f41dc83eb8d847fccf6e7",
+      "frames": 36000,
+      "rng": {
+        "primary": {
+          "frame": 3329,
+          "web": 1204012307,
+          "original": 1698247788
+        },
+        "animation": {
+          "frame": 1130,
+          "web": 1807479743,
+          "original": 411753162
+        }
+      },
+      "cpu": {
+        "frame": 3519,
+        "web": [
+          155,
+          9
+        ],
+        "original": [
+          147,
+          9
+        ]
+      },
+      "position": {
+        "frame": 3519,
+        "web": [
+          -138.5859375,
+          425.3671875,
+          29.03125,
+          377.859375
+        ],
+        "original": [
+          -137.390625,
+          424.171875,
+          29.03125,
+          377.859375
+        ]
+      },
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\ran-health-detail-20261126\\ran-c2-first-sht-20261126-24825\\th19-web-yhSRht\\report.json"
+    },
+    {
+      "seeds": [
+        1722522020,
+        1607270561
+      ],
+      "wasmSha256": "cd56eaf5e24d393b7eba25e64931a19c9a1a48eb231e1edd26e80bd04d4295dc",
+      "nativeTraceSha256": "67e472ba314bade94be37e5c69667f557dc3804572434ec7c9f175d4cdba5207",
+      "frames": 36000,
+      "rng": {
+        "primary": {
+          "frame": 19602,
+          "web": 82883905,
+          "original": 811197193
+        },
+        "animation": {
+          "frame": 7831,
+          "web": 1665577806,
+          "original": 178708444
+        }
+      },
+      "cpu": {
+        "frame": 19593,
+        "web": [
+          1,
+          0
+        ],
+        "original": [
+          0,
+          1
+        ]
+      },
+      "position": {
+        "frame": 19641,
+        "web": [
+          0,
+          400,
+          -3.6953125,
+          400
+        ],
+        "original": [
+          0,
+          400,
+          0,
+          400
+        ]
+      },
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\ran-health-detail-20261126\\ran-c2-first-sht-20261126-24826\\th19-web-l1JvjI\\report.json"
+    },
+    {
+      "seeds": [
+        1747913714,
+        271794283
+      ],
+      "wasmSha256": "cd56eaf5e24d393b7eba25e64931a19c9a1a48eb231e1edd26e80bd04d4295dc",
+      "nativeTraceSha256": "f6ea2c53014ec4a508eb4c2116dcf0b5ab16d29fcc732a94f7717710499af7a4",
+      "frames": 36000,
+      "rng": {
+        "primary": {
+          "frame": 9408,
+          "web": 403168414,
+          "original": 1096060943
+        },
+        "animation": {
+          "frame": 3816,
+          "web": 670248630,
+          "original": 1811071144
+        }
+      },
+      "cpu": {
+        "frame": 9448,
+        "web": [
+          129,
+          1
+        ],
+        "original": [
+          1,
+          1
+        ]
+      },
+      "position": {
+        "frame": 9448,
+        "web": [
+          3.6953125,
+          400,
+          0,
+          400
+        ],
+        "original": [
+          0,
+          400,
+          0,
+          400
+        ]
+      },
+      "report": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\ran-health-detail-20261126\\ran-c2-first-sht-20261126-24827\\th19-web-Tyln3N\\report.json"
+    }
+  ],
+  "shortRunBulletAudit": {
+    "frames": 2350,
+    "through": 2350,
+    "coordinateTolerance": 0.05,
+    "differentFrames": 0,
+    "records": 0,
+    "insideFieldFrames": [],
+    "native": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\ran-random-five-20261125-b1\\native\\present-1rml_fb5\\native-present.jsonl",
+    "web": "D:\\Codex\\2026-11-10\\https-github-com-ritosa2333-eagler-touhou\\work\\ran-health-detail-20261126\\ran-c2-first-sht-20261126-24820\\th19-web-1TfEaW\\web-bullet-positions.jsonl"
+  }
+}

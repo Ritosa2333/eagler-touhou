@@ -30,7 +30,11 @@ struct PlayerBomb {
   x=back_x=px;y=back_y=py;
   if(ch==1)y=back_y=0; // 53dc50 explicitly clears BombMarisaInf+34.
   last_px=px;
-  duration=std::max(minimums[ch],coefficients[ch]*initial_energy/2500);
+  // Ran scales the single-precision gauge fraction before truncating.
+  // For 1325 energy this gives 158 ticks for the cross-shaped clear.
+  const int scaled_duration=ch==3?int((initial_energy/2500.f)*coefficients[ch]):
+      coefficients[ch]*initial_energy/2500;
+  duration=std::max(minimums[ch],scaled_duration);
   area_script=areas[ch];back_script=backs[ch];
   target_radius=ch==12?400+48*initial_energy/2500.f:
       (ch==5||ch==6)?80+80*initial_energy/4000.f:128+224*initial_energy/4000.f;

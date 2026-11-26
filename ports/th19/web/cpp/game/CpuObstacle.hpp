@@ -25,7 +25,12 @@ struct CpuObstacle {
    }else{
     float dx=x-px,dy=y-py,d=dx*dx+dy*dy-h.radius*h.radius*o.speed;
     if(d>=128*128)continue;
-    float delta=std::abs(wrap(o.heading-float(std::atan2(double(dy),double(dx)))));
+    // 0x4f9613 adjusts the bearing before subtraction across +/-pi.
+    // Rounding the difference first can swap two nearly symmetric threats.
+    float bearing=float(std::atan2(double(dy),double(dx)));
+    if(o.heading-bearing>pi)bearing+=2*pi;
+    else if(bearing-o.heading>pi)bearing-=2*pi;
+    const float delta=std::abs(o.heading-bearing);
     if(d>32*32){
      // 4d3720: forward ray / circle intersection, radius +16.
      float along=dx*std::cos(o.heading)+dy*std::sin(o.heading);

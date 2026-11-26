@@ -273,6 +273,8 @@ struct Enemy {
     ArrivalMotion arrival_motion=ArrivalMotion::Normal;
     bool arrival_slow_motion=false,arrival_aura_registered=false;
     u8 spawn_hold=0;
+    bool extra_birth_motion=false;
+    bool extra_birth_graze_visited=false;
     enum class AttackEntry : u8 { None, StepScript, RetireController };
     AttackEntry attack_entry=AttackEntry::None;
     i32 sprite=-1,kind=0;        // sprite = main sprite (slot 0); kind from ins_1027
@@ -370,12 +372,13 @@ public:
     u32 unused_bullet_slots() const {return unused_bullet_slots_;}
     void tick_graze(float px,float py,float player_radius=3,bool defer_rewards=false,bool invulnerable=false);
     struct ExtraFlight {
-        u32 id=0;int character=-1,age=0,duration=0,life=200,script=-1;
+        u32 id=0;int character=-1,age=0,duration=0,life=200,script=-1,birth_frame=-1;
         float x=0,y=0,source_x=0,source_y=0,tangent_start=0,tangent_end=0;
-        bool arrival_registered=false;
+        bool arrival_registered=false,credit_birth=false;
         std::string sub,file;std::vector<const EclProgram*> programs;
     };
     std::vector<ExtraFlight> extra_flights;
+    int extra_frame=0;
     ReflectionRng extra_rng;
     int extra_arrivals=0;
     bool queue_extra_attack(int character,float x,float y,int variant,const std::vector<const EclProgram*>& source);
@@ -421,6 +424,7 @@ public:
     std::vector<Pickup> pickups;
     std::vector<EnemyDeath> deaths;
     unsigned pickup_serial=0;
+    bool pickup_birth_before_item_pass=false;
     std::array<unsigned,2> retiring_pickup_slots{};
     int defeated=0,collected=0,combo=0,combo_timer=0,combo_peak=0,pickup_rate=100,pickup_fraction=0;
     float pickup_speed=5,pickup_range=70;
@@ -446,7 +450,7 @@ public:
         return damage_enemy(enemy,damage,forced,battle_frame);
     }
     bool damage_enemy(Enemy& enemy,int damage,bool forced,u32 damage_frame);
-    bool dispatch_enemy_death(Enemy& enemy,bool opponent_animation_queue=false);
+    bool dispatch_enemy_death(Enemy& enemy,bool opponent_animation_queue=false,bool emit_death_effect=true);
     void launch_animal_spirit(const Enemy& enemy);
     void finish_enemy_deaths();
     void finish_hit_feedback(u32 native_mode_flags=0);
@@ -513,11 +517,15 @@ public:
     void advance_guarded_enemy_scripts(bool first_async_only=false);
     void advance_discharge_scripts(bool birth_only=false);
     void prepare_sanae_extra_arrivals(float x,float y,float radius,bool result_phase=false);
-    void resolve_marisa_extra_arrivals(u32 newer_than=0,bool result_phase=false,GameWorld* sender=nullptr);
+    void resolve_marisa_extra_arrivals(u32 newer_than=0,bool result_phase=false,GameWorld* sender=nullptr,const std::function<bool(Enemy&)>& birth_clear={},const ChargeRegion* birth_region=nullptr);
     void register_native_extra_release();
     void register_marisa_extra_arrival(const std::string& sub,float x,float y,int life,
                                        const std::vector<const EclProgram*>& source);
 
+    std::function<void(const Enemy&)> visit_enemy_contact;
+    bool enemy_graze_enabled=false;
+    float enemy_graze_radius=3.f;
+    void tick_enemy_graze(const Enemy& enemy,float px,float py,float radius);
 private:
     enum class LaserPass { BeforeCpu, Remaining, NewStraight };
     void advance_lasers(LaserPass pass,int motion_frame);

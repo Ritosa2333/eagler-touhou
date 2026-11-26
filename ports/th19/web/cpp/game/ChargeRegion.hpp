@@ -55,7 +55,15 @@ struct ChargeRegion {
         const float dx=px-x,dy=py-y;
         if(character==1)return std::abs(dx)<radius;
         if(character==0)return dx*dx+dy*dy<radius*radius+object_radius*object_radius;
-        if(character==3)return (std::abs(dx)<=radius*3.5f+object_radius&&std::abs(dy)<=radius*.5f+object_radius)||(std::abs(dy)<=radius*3.5f+object_radius&&std::abs(dx)<=radius*.5f+object_radius);
+        if(character==3){
+            // Each arm uses rectangle/circle contact, including rounded corners.
+            // Expanding both axes independently admits spirits beyond the tips.
+            const float ax=std::max(std::abs(dx)-radius*3.5f,0.f);
+            const float ay=std::max(std::abs(dy)-radius*.5f,0.f);
+            const float bx=std::max(std::abs(dx)-radius*.5f,0.f);
+            const float by=std::max(std::abs(dy)-radius*3.5f,0.f);
+            return ax*ax+ay*ay<=object_radius*object_radius||bx*bx+by*by<=object_radius*object_radius;
+        }
         if(character==4||character==11){float a=character==4?-1.570796327f:angle,c=std::cos(a),s=std::sin(a),u=dx*c+dy*s,v=-dx*s+dy*c;return u*u/((minor+object_radius)*(minor+object_radius))+v*v/((radius+object_radius)*(radius+object_radius))<=1;}
         // Orin's native 0x41ca40 explicitly passes angle 0 and dimensions
         // (2r,r) to 0x4d44e0, even though her visual follows movement angle.

@@ -1,6 +1,6 @@
 # 文档总表
 
-共 601 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 603 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -463,8 +463,11 @@
 | 历史记录 | [archive/th19-network-selection-20261106/README.md](../archive/th19-network-selection-20261106/README.md) | TH19 network character selection |
 | 历史记录 | [archive/th19-orin-rank-20261106/README.md](../archive/th19-orin-rank-20261106/README.md) | Orin EX attack rank source |
 | 历史记录 | [archive/th19-orin-revival-20261108/README.md](../archive/th19-orin-revival-20261108/README.md) | 阿燐死灵妖精复活 |
+| 历史记录 | [八云蓝五个全新种子一轮通过](../archive/th19-ran-one-pass-20261127/README.md) | 31 组历史回归及五组新种子 |
+| 历史记录 | [archive/th19-ran-c2-first-sht-20261126/README.md](../archive/th19-ran-c2-first-sht-20261126/README.md) | 八云蓝 C2 子机首次射击对齐 |
 | 历史记录 | [archive/th19-recording-20261105/README.md](../archive/th19-recording-20261105/README.md) | TH19 旁观、录像与容量验证 |
 | 历史记录 | [archive/th19-reimu-random-five-20261123-b4/README.md](../archive/th19-reimu-random-five-20261123-b4/README.md) | 灵梦五随机种子一轮通过 |
+| 历史记录 | [archive/th19-sanae-one-pass-20261125/README.md](../archive/th19-sanae-one-pass-20261125/README.md) | 早苗五个全新种子一轮通过 |
 | 历史记录 | [archive/th19-shot-impact-20261106/README.md](../archive/th19-shot-impact-20261106/README.md) | TH19 projectile impacts |
 | 历史记录 | [archive/th19-touch-charge-20261105/README.md](../archive/th19-touch-charge-20261105/README.md) | TH19 蓄力触屏按钮 |
 | 历史记录 | [archive/th19-tsukasa-strengthening-20261106/README.md](../archive/th19-tsukasa-strengthening-20261106/README.md) | 管牧典 EX 弹幕强化 |
