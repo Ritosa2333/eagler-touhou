@@ -9,14 +9,17 @@ const seats=Number(process.env.TH02_TEST_SEATS??2);
 const rollback=process.env.TH02_TEST_ROLLBACK==='1', rapidFire=process.env.TH02_TEST_RAPID_FIRE!=='0';
 const renderer=rollback?'DOSBox-X / PC-98':'SoEW Native';
 assert([2,3].includes(seats));
-const browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,protocolTimeout:20000,
+const browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,protocolTimeout:60000,
   args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
 const pages=[];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function open(url){
-  const page=await (await browser.createBrowserContext()).newPage(),events=[];
-  pages.push({page,events});
+  const page=await (await browser.createBrowserContext()).newPage(),events=[],diagnostics=[];
+  pages.push({page,events,diagnostics});
   page.on('pageerror',error=>events.push({event:'error',message:error.message}));
+  page.on('console',entry=>{if(entry.type()==='error')diagnostics.push(entry.text());});
+  page.on('requestfailed',request=>diagnostics.push(`${request.url()}: ${request.failure()?.errorText}`));
+  page.on('response',response=>{if(response.status()>=400)diagnostics.push(`${response.status()} ${response.url()}`);});
   await page.setViewport({width:1400,height:900});
   await page.exposeFunction('recordRuntimeEvent',m=>events.push(m));
   await page.evaluateOnNewDocument(()=>addEventListener('message',e=>{
@@ -89,13 +92,13 @@ try {
   for(const page of players)assert.equal(await runtime(page).evaluate(()=>globalThis.__eaglerPC98Options().netplayRapidFire),rapidFire);
   console.log('PASS Eagler create, join, seat, ready, '+renderer+' '+seats+'P launch, rapid fire '+(rapidFire?'on':'off'));
 
-  if(!rollback){
+  {
     const observer=await open(roomUrl);
     await wait('join ongoing match as spectator',()=>enabled(observer,'#mpSpectatorPreviewJoin'));
     await observer.click('#mpSpectatorPreviewJoin');
-    await wait('running native spectator',()=>received(observer,m=>m.renderer==='SoEW Native')&&received(observer,m=>m.event==='first-frame')&&playback(observer)?.position>=120);
+    await wait('running spectator',()=>received(observer,m=>m.renderer===renderer)&&received(observer,m=>m.event==='first-frame')&&playback(observer)?.position>=120);
     assert.equal(await runtime(observer).evaluate(()=>globalThis.__eaglerPC98Options().netplayRapidFire),rapidFire);
-    const pixels=await runtime(observer).$eval('canvas',e=>{
+    const pixels=await runtime(observer).$eval('canvas:last-of-type',e=>{
       const data=e.getContext('2d').getImageData(0,0,e.width,e.height).data;
       return data.some((c,i)=>i%4!==3&&c>0);
     });
@@ -111,9 +114,9 @@ try {
     await wait('spectator seeks backwards',()=>playback(observer)?.position===30&&!playback(observer).seeking);
     await observer.click('#cooperativeSpectatorLive');
     await wait('spectator returns to live',()=>playback(observer)?.following&&playback(observer).position>paused);
-    console.log('PASS Eagler late join, native spectator pixels, pause, seek and return live');
+    console.log('PASS Eagler late join, '+renderer+' spectator pixels, pause, seek and return live');
   }
 } catch(error){
-  for(const {page,events} of pages)console.log(await page.evaluate(()=>({url:location.href,status:document.body.innerText.slice(-1700)})),events.slice(-6));
+  for(const {page,events,diagnostics} of pages)console.log(page.url(),events.slice(-6),diagnostics);
   throw error;
 } finally {await browser.close();}
