@@ -1,22 +1,19 @@
 import assert from 'node:assert/strict';
-import puppeteer from '../../../launcher/node_modules/puppeteer-core/lib/puppeteer/puppeteer-core.js';
+import {productionBrowser,wait} from './production-driver.mjs';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 const output=fileURLToPath(new URL('../build/launcher-controls-browser/',import.meta.url));mkdirSync(output,{recursive:true});
-const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--autoplay-policy=no-user-gesture-required'],defaultViewport:{width:1280,height:900,hasTouch:true}});
-const report={browser:await browser.version(),device:'Windows x64；键盘，DevTools 触控和虚拟标准手柄',checks:[],errors:[]};
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const report={device:'Windows x64；键盘，DevTools 触控和虚拟标准手柄',checks:[],errors:[]};
+const driver=await productionBrowser({url:process.env.THKKD_SITE_URL||'http://127.0.0.1:8174/',report,touch:true}),{browser}=driver;
 let page;
 try{
- page=await browser.newPage();page.on('pageerror',e=>report.errors.push(e.message));
+ page=driver.page;
  await page.evaluateOnNewDocument(()=>{window.testPads=[];Object.defineProperty(navigator,'getGamepads',{value:()=>window.testPads});});
- await page.goto(process.env.THKKD_SITE_URL||'http://127.0.0.1:8174/',{waitUntil:'networkidle0'});
- await page.evaluate(()=>[...document.querySelectorAll('#firstUseNoticeDialog button')].find(b=>b.textContent.trim()==='Got it')?.click());await page.waitForFunction(()=>!document.querySelector('#firstUseNoticeDialog')?.open);
- await wait(350);await page.click('a[data-book-product="thkkd"]');await page.waitForFunction(()=>new URL(location.href).searchParams.get('game')==='thkkd');
+ await driver.library();await page.click('#gameSettingsOpen');
  await page.evaluate(()=>{for(const element of document.querySelectorAll('*')){let fiber=element[Object.keys(element).find(k=>k.startsWith('__reactFiber$'))];while(fiber){const s=fiber.memoizedProps?.session;if(s?.keyboardPreferences){window.testSession=s;s.settings.setOption('touchEnabled',true);s.settings.setOption('magnifierEnabled',true);s.settings.setOption('touchMovementMode','touch');s.settings.setOption('touchSensitivity',200);s.settings.setOption('alwaysHitbox',true);return;}fiber=fiber.return;}}throw Error('启动器会话缺失');});
- await page.click('#touchLayoutEdit');await page.waitForSelector('#touchLayoutSave:not([disabled])');
+ if(await page.$eval('#mobileOptionsToggle',element=>element.getAttribute('aria-expanded'))!=='true')await page.click('#mobileOptionsToggle');await page.click('#touchLayoutEdit');await page.waitForSelector('#touchLayoutSave:not([disabled])');
  const layoutBefore=await page.evaluate(()=>testSession.touchLayout.getSnapshot().orientation);await page.evaluate(()=>testSession.touchLayout.updateControl('bomb',{x:.8,y:.8,scale:1.2}));await page.click('#touchLayoutSave');report.layout=await page.evaluate(()=>testSession.touchLayout.getSnapshot().saved);assert.equal(report.layout.profiles[layoutBefore].controls.bomb.x,.8);await page.click('#touchLayoutExit');await wait(350);report.checks.push('shared-layout-editor-save');
- await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Start game')?.click());
+ await page.click('#libraryBack');await driver.start();
  await page.waitForFunction(()=>document.querySelector('#gameFrame')?.contentWindow?.__thkkdRuntime?.status().first,{timeout:60000});
  const frame=page.frames().find(f=>f.url().includes('thkkd.html'));if(await page.$('#touchHelp[open]'))await page.click('#touchHelpClose');await wait(1200);
  for(let i=0;i<8;i++){if(await frame.evaluate(()=>__thkkdRuntime.core._thkkd_word(0xa8ce58)===100))break;await page.keyboard.down('z');await wait(65);await page.keyboard.up('z');await wait(500);}

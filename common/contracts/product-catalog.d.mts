@@ -30,7 +30,7 @@ export declare function isHostRuntimeFeatureId(value: string): value is HostRunt
 export declare function languagePriority(id: string): number;
 export declare const PRODUCT_GAMES: Readonly<{
     thkkd: Readonly<{
-        importOnly:true;
+        importOnly:true;buildOptIn:true;
         number:'KKD';title:'東方海恵堂';subtitle:'Marine Benefit';cardArtwork:'thkkd-card.jpg';
         storage:Readonly<{saveRoot:'/savesthkkd';scoreFile:'th_kaikeidou_score00.dat';configFiles:readonly string[]}>;
         runtime:'./runtime/thkkd/thkkd.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];

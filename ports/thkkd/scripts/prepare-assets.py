@@ -24,7 +24,7 @@ def main():
     sources = sorted((ROOT / 'assets').rglob('*'))
     cache_path = converted / 'conversion-cache.json'
     cache = json.loads(cache_path.read_text('utf-8')) if cache_path.exists() else {}
-    times_path = ROOT / 'assets.metadata.json'
+    times_path = ROOT.parents[1] / 'launcher/src/launcher/thkkd-original-assets.json'
     resource_times = json.loads(times_path.read_text('utf-8'))['files'] if times_path.exists() else {}
     next_cache = {}
     for source in sources:

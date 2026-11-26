@@ -40,7 +40,7 @@ export function notApplicable(check, game, variant) {
     return '本作多人模式不是合作玩法';
   }
   if (check.profile === 'singleplayer' && variant === 'multiplayer') return 'MP 使用多人 Replay 自一致性检查';
-  if (check.profile === 'midi' && !product.musicCapabilities?.midi) return '本作使用 OGG 音乐';
+  if (check.profile === 'midi' && !product.musicCapabilities?.midi) return game === 'thkkd' ? '本作使用原版 MP3 音乐' : '本作使用 OGG 音乐';
   if (check.profile === 'thprac' && build.features.thprac === false) return '该构建未提供 thprac';
   if (check.profile === 'language' && !product.features.languages) return '本作使用内置原文';
   return null;
@@ -64,7 +64,9 @@ export function adaptationMarkdown(port, {evidence = {}} = {}) {
         const reason = notApplicable(check, port.game, variant);
         return reason ? `${variant}：${reason}` : evidence[variant]?.[check.id]?.note ?? '';
       }).filter(Boolean).join('；') || '—';
-      lines.push(`| ${check.id} | [${check.label}](../../docs/adaptation/${section.file}#${check.id.toLowerCase()}) | ${states.join(' | ')} | ${notes} |`);
+      const label = port.game === 'thkkd' && check.id === 'AUDIO-01' ? '原版 MP3 音乐'
+        : port.game === 'thkkd' && check.id === 'LANG-01' ? '内置中文原文' : check.label;
+      lines.push(`| ${check.id} | [${label}](../../docs/adaptation/${section.file}#${check.id.toLowerCase()}) | ${states.join(' | ')} | ${notes} |`);
     }
     lines.push('');
   }

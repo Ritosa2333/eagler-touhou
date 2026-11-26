@@ -32,7 +32,10 @@ function expectedBookContract() {
     id: card.dataset.game, href: card.getAttribute('href'),
     title: normal(card.querySelector('h2').textContent), subtitle:card.querySelector('small').textContent,
     number: 'th' + card.querySelector('.no-label').textContent,
-  })).sort((a,b) => Number(a.number.slice(2)) - Number(b.number.slice(2)));
+  })).sort((a,b) => {
+    const order = value => {const number = Number(value.number.slice(2)); return Number.isFinite(number) ? number : Infinity;};
+    return order(a) - order(b);
+  });
 }
 function assertUniqueIds(document) {
   const ids = [...document.querySelectorAll('[id]')].map(node => node.id);
@@ -73,7 +76,8 @@ for (const path of ['/', '/index.html', '/en.html', '/ja.html', '/nested/', '/ne
     assert.equal(document.querySelector('.book-game-link[data-game=th17]'), null, 'test-only products stay out of the production SSR catalog');
     for (const game of ['th08', 'th10', 'th15', 'th11']) assert.ok(document.querySelector(`.book-game-link[data-game=${game}]`));
     assert.equal(document.querySelector('.book-game-link[data-game=th20]'), null);
-    assert.equal(document.querySelector('[data-book-category=doujin] small').textContent, '0');
+    assert.equal(document.querySelector('[data-book-category=doujin] small').textContent, '1');
+    assert.ok(document.querySelector('.book-game-link[data-book-product=thkkd]'));
     assert.equal(document.querySelectorAll('.book-recent-link').length, 0);
     assert.equal(document.querySelector('#uiLanguageSelect').value, locale);
     assert.equal(document.querySelector('.site-footer'), null);

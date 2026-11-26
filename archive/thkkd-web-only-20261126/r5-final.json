@@ -1,0 +1,347 @@
+{
+  "schema": "thkkd/r5-final/1",
+  "deliveryCommit": "4e9693cf3656fb2e5ceeb6e418a4133e94eedd39",
+  "browserTests": {
+    "pairedDxa": {
+      "result": "passed",
+      "checks": [
+        "file-picker-and-format-guidance",
+        "two-original-dxa-through-production-import",
+        "original-images-mp3-and-converted-video",
+        "four-original-video-dimensions-and-duration",
+        "refresh-reuses-installed-resources",
+        "offline-refresh-reuses-installed-resources"
+      ],
+      "media": {
+        "assets": 301,
+        "mp3": 18,
+        "webm": 4
+      },
+      "importSeconds": 245.695
+    },
+    "originalZip": {
+      "result": "passed",
+      "checks": [
+        "file-picker-and-format-guidance",
+        "original-zip-through-production-import",
+        "original-images-mp3-and-converted-video",
+        "four-original-video-dimensions-and-duration",
+        "refresh-reuses-installed-resources",
+        "offline-refresh-reuses-installed-resources"
+      ],
+      "media": {
+        "assets": 301,
+        "mp3": 18,
+        "webm": 4
+      },
+      "importSeconds": 249.429
+    },
+    "files": {
+      "result": "passed",
+      "checks": [
+        "actual-save-file-picker-overwrite-prompt-and-native-reload",
+        "actual-save-download-ZIP-preserves-native-bytes",
+        "multi-select-save-and-mixed-replay-batches-with-unique-filenames",
+        "actual-replay-workspace-import-and-download-preserve-original-format",
+        "native-and-extended-replays-play-to-end-from-workspace-buttons",
+        "replay-workspace-confirmed-rename",
+        "replay-workspace-confirmed-delete-updates-list",
+        "save-and-replay-deletion-persist-after-refresh"
+      ],
+      "played": [
+        {
+          "path": "replay/test.rpy",
+          "frame": 359,
+          "total": 359,
+          "ended": true
+        },
+        {
+          "path": "replay/test.thkkdr",
+          "frame": 599,
+          "total": 599,
+          "ended": true
+        }
+      ]
+    },
+    "audio": {
+      "result": "passed",
+      "checks": [
+        "actual-settings-sliders-propagate-independent-BGM-and-SFX-gains",
+        "in-game-volume-mute-and-restore-with-zero-muted-BGM-PCM",
+        "native-menu-SFX-PCM-through-selected-gain",
+        "native-unloaded-shot-SFX-slot-compatibility-and-actual-shot-objects",
+        "shared-exit-action-closes-audio-GL-media-and-object-URLs",
+        "relaunch-uses-new-epoch-saved-volumes-and-default-title-input",
+        "native-Quit-exit-event-and-third-launch"
+      ]
+    },
+    "nativeFlow": {
+      "result": "passed",
+      "checks": [
+        "native-pause-R-restarts-current-run",
+        "Z-save-prompt-slot-name-and-native-replay-export",
+        "native-replay-import-seek-and-live-input-isolation",
+        "invalid-replay-inspection-reports-error-and-keeps-current-playback",
+        "refresh-retains-original-replay-bytes"
+      ],
+      "saved": {
+        "path": "replay/thkkd00.rpy",
+        "bytes": 106,
+        "count": 44,
+        "description": {
+          "name": "A",
+          "character": 0,
+          "shot": 0,
+          "difficulty": 1,
+          "mode": "native",
+          "stages": [
+            {
+              "id": 0,
+              "label": "原作完整流程",
+              "score": null,
+              "frames": 44
+            }
+          ],
+          "lastStage": 0
+        }
+      },
+      "saveImmediatelyPersisted": true
+    },
+    "controls": {
+      "result": "passed",
+      "checks": [
+        "shared-layout-editor-save",
+        "formal-launcher-menu-and-normal-start",
+        "WASD-custom-bind-save-restore-and-default",
+        "mapped-gamepad-buttons-axes-disconnect-and-independent-keyboard-owner",
+        "production-touch-surface-limited-motion-and-cancel",
+        "portrait-and-landscape-shared-controls",
+        "shared-two-finger-magnifier-and-reset",
+        "blur-releases-input",
+        "separate-BGM-SFX-output-gains",
+        "fullscreen-toggle-and-return"
+      ]
+    },
+    "system": {
+      "result": "passed",
+      "checks": [
+        "production-video-texture-BGM-PCM-native-pause-resume",
+        "100-extra-presentations-preserve-complete-WASM-memory-commands-RNG-files-and-audio",
+        "all-nine-loadouts-native-shots-and-Bombs-in-production-runtime",
+        "six-stages-EX-and-Omniverse-resources-render-in-production-runtime"
+      ],
+      "nativeKeyConfigWorks": true
+    },
+    "normalCadence": {
+      "result": "passed",
+      "checks": [
+        "default-Z-menu-and-actual-shots",
+        "Z-pause-confirm"
+      ],
+      "cadences": [
+        {
+          "scene": "title",
+          "presentHz": 59.98670397803954,
+          "logicHz": 59.98670397803954
+        },
+        {
+          "scene": "difficulty",
+          "presentHz": 59.820724765401835,
+          "logicHz": 59.820724765401835
+        },
+        {
+          "scene": "gameplay",
+          "presentHz": 60.352095368776794,
+          "logicHz": 60.352095368776794
+        },
+        {
+          "scene": "pause",
+          "presentHz": 60.02456675584928,
+          "logicHz": 60.02456675584928
+        }
+      ]
+    },
+    "highCadence": {
+      "result": "passed",
+      "checks": [
+        "high-refresh-setting-survives-reload",
+        "default-Z-menu-and-actual-shots",
+        "Z-pause-confirm"
+      ],
+      "cadences": [
+        {
+          "scene": "title",
+          "presentHz": 3308.8178225346596,
+          "logicHz": 60.22805944564871
+        },
+        {
+          "scene": "difficulty",
+          "presentHz": 3612.840984290473,
+          "logicHz": 59.9872604375515
+        },
+        {
+          "scene": "gameplay",
+          "presentHz": 2211.057144278081,
+          "logicHz": 60.09317539786323
+        },
+        {
+          "scene": "pause",
+          "presentHz": 2503.4074156463107,
+          "logicHz": 59.95815291794868
+        }
+      ]
+    },
+    "dialogue": {
+      "result": "passed",
+      "checks": [],
+      "zWorks": true
+    },
+    "fullscreenF": {
+      "result": "passed",
+      "checks": [],
+      "cases": [
+        {
+          "name": "gameplay-F",
+          "focus": true,
+          "focusVisible": true,
+          "outline": "none",
+          "rect": {
+            "x": 35,
+            "y": 0,
+            "width": 1200,
+            "height": 900
+          },
+          "error": ""
+        },
+        {
+          "name": "reenter-fullscreen-F",
+          "focus": true,
+          "focusVisible": true,
+          "outline": "none",
+          "rect": {
+            "x": 35,
+            "y": 0,
+            "width": 1200,
+            "height": 900
+          },
+          "error": ""
+        }
+      ]
+    }
+  },
+  "runtimeIdentity": {
+    "result": "passed",
+    "r5RuntimeFiles": 25,
+    "currentCppInputs": 609,
+    "runtimeDifferencesFromReplayValidation": [
+      "manifest.json",
+      "runtime-generation.json",
+      "thkkd.html"
+    ],
+    "wasmSha256": "08dbae188106b4858eeec43946edf12c26dcb5d2339a2e66995ff2dddc0d1b8e"
+  },
+  "packages": [
+    {
+      "package": "thkkd-web-source.zip",
+      "sha256": "940e82cb13f63081cdbce02b6be00846f7c8e54165025e54bea0eaf456c451fc",
+      "entries": 3246,
+      "zipIntegrity": "passed",
+      "paths": "relative"
+    },
+    {
+      "package": "thkkd-web-local.zip",
+      "sha256": "7e84efc3b8596450a6472d3b233a6ed610276df48399d4d6ac7311b8453e48f0",
+      "entries": 633,
+      "zipIntegrity": "passed",
+      "paths": "relative"
+    }
+  ],
+  "metadataMove": {
+    "sameBytes": true,
+    "sha256": "e3629d0ec2ecda7635904c16f275725736acb575e499a0168860cd22ab75ee97",
+    "path": "launcher/src/launcher/thkkd-original-assets.json",
+    "compiledImporterSameAsR5": true,
+    "compiledImporterSha256": "d29694a5ea5e426c7e41c0b9ea33bcc6d76b6fe324c5de858b5eaeb5df0ac311"
+  },
+  "checks": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "translations": 2646,
+    "importAndFileTests": 68,
+    "portExtensionTests": 18,
+    "sourceInventoryTests": 2,
+    "isolatedFrontendBuildTests": 10,
+    "publication": "passed",
+    "projectContracts": 10,
+    "hostSelectionTests": 7,
+    "initialPresentationTests": 17,
+    "platformCoverageTests": 20,
+    "registeredImportAndMetadataTests": 9,
+    "productCatalogTest": "passed",
+    "thkkdMigrationDatabase": "registered",
+    "groupedSuite": {
+      "projects": [
+        "unit",
+        "support",
+        "repository"
+      ],
+      "passed": 2379,
+      "failed": 24,
+      "skipped": 8,
+      "suiteLoadFailures": 3,
+      "files": 248,
+      "durationSeconds": 1003.41,
+      "followup": "product catalog now passes; thkkd migration ownership and both new test registrations corrected; remaining failure cases reproduced on isolated upstream"
+    }
+  },
+  "scope": {
+    "completeReplayEvidence": "batch-validation.json",
+    "reusedOriginalReplays": 17,
+    "reusedSupplementalReplays": 2,
+    "reusedLogicSteps": 649645,
+    "continuousPositionInterpolation": "not enabled",
+    "physicalInputDevices": "separate device acceptance",
+    "practiceReplayCarryover": "retained as requested"
+  },
+  "candidateIntegration": {
+    "result": "passed",
+    "checks": [
+      "explicit-opt-in-site-launches-installed-original-resources",
+      "candidate-fullscreen-F-keeps-canvas-outline-hidden"
+    ],
+    "gameLogic": "unchanged",
+    "r5Delivery": "unchanged"
+  },
+  "upstreamComparison": {
+    "commit": "e5aa0a25563c4d81cd651f1212c8bdd874c575b3",
+    "method": "isolated upstream checkout with its own compiled frontend and shared installed dependencies",
+    "reproducedFailures": [
+      "adapter-capabilities",
+      "adapter-contract-report",
+      "development-site-manifest",
+      "frontend-manifest",
+      "i18n",
+      "library-index-scrub",
+      "netplay-run-lifecycle",
+      "operator-delivery",
+      "origin-migration:th01",
+      "release-entry:th01",
+      "runtime-generations",
+      "runtime-launch",
+      "runtime-source-plan",
+      "shared-font-selection",
+      "test-ownership",
+      "browser-session-mounted:5 original warning cases",
+      "room-views:TH17 and TH075 loadouts",
+      "account-session:2 profile cases",
+      "spectator-playback:TH03 score label",
+      "replay-description:encoded Windows path",
+      "package-module-fixture:bare fflate import"
+    ],
+    "thkkdCorrections": [
+      "product catalog expectations and local conversion input declarations",
+      "origin migration save database",
+      "default test registration for original import and portable metadata"
+    ]
+  }
+}

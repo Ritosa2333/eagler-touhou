@@ -15,9 +15,11 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 打开 `http://127.0.0.1:8174/`。构建结果位于 `build` 和 `runtime`；`build-site.ps1 -SkipCompile` 复用已编译 WASM 并刷新浏览器代码。只构建游戏程序可运行 `node ports/thkkd/scripts/build-eagler.mjs`。编译固定使用 `-fno-fast-math -ffp-contract=off` 和原 24 位有效数规则。
 
+本作按需参与构建，站点脚本显式选择 `thkkd` 并使用 `--test-build=1` 组装验证站点，游戏 Runtime 模式为 `normal`。默认全作品发布流程沿用已有游戏清单。
+
 ## 资源与显示
 
-网页导入两份独立 DXA 文件或原版 ZIP。启动器的 `thkkd-original`、`thkkd-dxa` 和 `thkkd-image` 模块读取 DXA v3/v4，按 `assets.metadata.json` 校验 327 项内容，生成 301 项运行资源。原始图片与遮罩生成 PNG，四段 WMV 在本机转为 WebM，MP3 和 WAV 使用原字节。游戏资源保留在本机被忽略的 `assets` 或 `content` 中。
+网页导入两份独立 DXA 文件或原版 ZIP。启动器的 `thkkd-original`、`thkkd-dxa` 和 `thkkd-image` 模块读取 DXA v3/v4，按 `launcher/src/launcher/thkkd-original-assets.json` 校验 327 项内容，生成 301 项运行资源。这份清单由启动器统一维护，支持只检出启动器与公共目录的前端构建。原始图片与遮罩生成 PNG，四段 WMV 在本机转为 WebM，MP3 和 WAV 使用原字节。游戏资源保留在本机被忽略的 `assets` 或 `content` 中。
 
 `prepare-assets.py` 用于生成本机显示与性能对照测试的 DATA；正式网站构建使用玩家导入流程。字体与转换依赖见 [THIRD_PARTY.md](../THIRD_PARTY.md)，透明混合、字体参数和 DPI 适配见 [RENDERING.md](RENDERING.md)，批量绘制与性能测量见 [PERFORMANCE.md](PERFORMANCE.md)。
 
@@ -33,7 +35,7 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 ```powershell
 node --test ports/thkkd/tests/extensions.test.mjs
-node --test launcher/tests/test-thkkd-original.mjs
+bun run --cwd launcher test:repository tests/test-thkkd-original.mjs tests/react-validation-paths.test.mjs
 python -X utf8 -B ports/thkkd/tests/test_release_source_inventory.py
 node tools/ports/check.mjs --game=thkkd --variant=normal
 ```

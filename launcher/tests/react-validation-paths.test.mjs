@@ -1,4 +1,4 @@
-import {test} from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
 import {portableReactValidationMetadata} from '../lib/react-frontend-artifact.mjs';

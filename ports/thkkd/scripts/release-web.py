@@ -125,7 +125,7 @@ def main():
     (source/'README.md').write_text('本源码包包含 eagler-touhou 启动器、公共模块、构建工具及海惠堂源码，原版资源由使用者本地提供。网页构建入口为 ports/thkkd/scripts/build-site.ps1，其他作品源码沿网页仓库独立维护。\n\n'+original,'utf-8')
     game=output/'thkkd-web-local'
     shutil.copytree(site,game/'site',copy_function=shutil.copy2)
-    shutil.copy2(PORT/'assets.metadata.json',game/'RESOURCE-TIMES.json')
+    shutil.copy2(ROOT/'launcher/src/launcher/thkkd-original-assets.json',game/'RESOURCE-TIMES.json')
     shutil.copy2(PORT/'THIRD_PARTY.md',game/'THIRD_PARTY.md')
     for name in ['scripts/serve-static.mjs','server/static-content-policy.mjs','lib/pc98-wasm-compression.mjs']:
         target=game/'launcher'/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(ROOT/'launcher'/name,target)

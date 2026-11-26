@@ -50,7 +50,7 @@ try{
    __auditPads=[{id:'System audit standard controller',index:0,connected:true,mapping:'standard',buttons:Array.from({length:17},()=>({pressed:false,value:0})),axes:[0,0,0,0]}];
    const model=__auditSession.gamepad;model.refresh();const device=model.getSnapshot().devices[0];model.select(0,device.key);model.setEnabled(true);model.bind(device.key,'confirm',[{kind:'button',index:3}]);
  });
- await key('ArrowDown');await key('ArrowDown');await key('ArrowDown');await key('ArrowDown');assert.equal((await nativeState(frame)).choice,6);await key('z');assert.equal((await nativeState(frame)).outer,15);
+ for(let i=0;i<9&&(await nativeState(frame)).choice!==6;i++)await key('ArrowDown');assert.equal((await nativeState(frame)).choice,6);await key('z');assert.equal((await nativeState(frame)).outer,15);
  await key('z');assert.equal((await nativeState(frame)).phase,2);
  await page.evaluate(()=>{__auditPads[0].buttons[1]={pressed:true,value:1};});await wait(200);report.keyConfig=await nativeState(frame);report.padSnapshot=await frame.evaluate(()=>({bits:__eaglerGamepadInputBridge.sample(0),native:__thkkdRuntime.input.padState?.()}));await page.evaluate(()=>{__auditPads[0].buttons[1]={pressed:false,value:0};});assert.equal(report.padSnapshot.bits&2,2);
  report.nativeKeyConfigWorks=report.keyConfig.phase===0;console.log(JSON.stringify({nativeKeyConfigWorks:report.nativeKeyConfigWorks,state:report.keyConfig}));

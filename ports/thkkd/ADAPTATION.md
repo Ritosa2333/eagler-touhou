@@ -81,17 +81,17 @@
 | DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-07 | [实际呈现后报告首帧](../../docs/adaptation/presentation.md#display-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| AUDIO-01 | [正常 OGG 音乐](../../docs/adaptation/presentation.md#audio-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-01 | [原版 MP3 音乐](../../docs/adaptation/presentation.md#audio-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-02 | [无 BGM 模式](../../docs/adaptation/presentation.md#audio-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-03 | [切曲、渐变、暂停、停止](../../docs/adaptation/presentation.md#audio-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 待核对 | normal：[immediate-sfx-routing](../../docs/adaptation/status.json) |
-| MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | normal：本作使用 OGG 音乐 |
-| MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | normal：本作使用 OGG 音乐 |
-| MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 不适用 | normal：本作使用 OGG 音乐 |
-| MIDI-04 | [MIDI 与 OGG 分开](../../docs/adaptation/presentation.md#midi-04) | 不适用 | normal：本作使用 OGG 音乐 |
+| MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | normal：本作使用原版 MP3 音乐 |
+| MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | normal：本作使用原版 MP3 音乐 |
+| MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 不适用 | normal：本作使用原版 MP3 音乐 |
+| MIDI-04 | [MIDI 与 OGG 分开](../../docs/adaptation/presentation.md#midi-04) | 不适用 | normal：本作使用原版 MP3 音乐 |
 
 ## 存档与 Replay
 
@@ -123,7 +123,7 @@
 | PRACTICE-06 | [触控功能键与指针](../../docs/adaptation/localization.md#practice-06) | 不适用 | normal：该构建未提供 thprac |
 | PRACTICE-07 | [练习语言跟随设置](../../docs/adaptation/localization.md#practice-07) | 不适用 | normal：该构建未提供 thprac |
 | PRACTICE-08 | [练习界面的可用功能](../../docs/adaptation/localization.md#practice-08) | 不适用 | normal：该构建未提供 thprac |
-| LANG-01 | [内置日语原文](../../docs/adaptation/localization.md#lang-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| LANG-01 | [内置中文原文](../../docs/adaptation/localization.md#lang-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | LANG-02 | [语言包身份与发布清单](../../docs/adaptation/localization.md#lang-02) | 不适用 | normal：本作使用内置原文 |
 | LANG-03 | [开局前挂载翻译与字体](../../docs/adaptation/localization.md#lang-03) | 不适用 | normal：本作使用内置原文 |
 | LANG-04 | [语言包失败时回到原文](../../docs/adaptation/localization.md#lang-04) | 不适用 | normal：本作使用内置原文 |
@@ -172,18 +172,21 @@
 
 ## 运行验收记录
 
-原始核心与显示计算沿用 原作基线，素材保持原字节和修改时间；源码与素材来源见[导入说明](../../docs/migration/thkkd-file-import-20261126.md)。本页引用的既有浏览器报告属于迁入前构建，本仓库的接入检查单独记录。
+当前交付为 r5（`4e9693cf`），本轮复核见 [r5 最终验收](../../archive/thkkd-web-only-20261126/R5-FINAL.md)。上方自动表记录源码与公共模块检查，本节按编号补充实际运行结果。原始核心与显示计算沿用原作基线，来源见[导入说明](../../docs/migration/thkkd-file-import-20261126.md)。
 
-| 项目 | 状态 | 结果 |
+| 检查编号 | 状态与范围 | 结果 |
 | --- | --- | --- |
-| 构建 | 已完成 | 固定 Emscripten 6.0.9；60 个用例、835289 逻辑步与固定基线逐字节一致 |
-| 启动 | 已完成 | 正式启动器安装、标题、正常开局、退出及再次启动 |
-| 显示音频 | 已完成 | 九机体射击与 Bomb、六面、EX、Omniverse、视频、完整字体、实际非零音乐 PCM 与媒体暂停恢复 |
-| 输入 | 已完成 | 公共改键和预设、生产手柄映射、多来源、实际触控表面、摇杆与手势、布局保存、横竖屏 |
-| 存档录像 | 已完成 | 六文件存档备份、明确覆盖确认、浏览器持久化、原版及扩展录制保存后重播一致 |
-| 额外功能 | 已完成 | 全屏、独立音量、原生重开、视觉判定点、高刷新快照、60 Hz 限制、标准离线安装 |
-| 交付 | 已完成 | 源码与本地成品由 release-web.py 生成，附清单、提交和 SHA-256 身份 |
+| BUILD-01～06、RUNTIME-01～05 | 已验证 | Emscripten 6.0.9；609 项 C++ 输入与 r5 一致；运行文件身份、正式启动、退出及再次启动通过 |
+| PACKAGE-01、02、05、06 | 已验证 | 双 DXA 与原版 ZIP 分别从空缓存导入，301 项资源加载，刷新与断网重开通过 |
+| INPUT-01～07、TOUCH-01、12、15～17、19 | 已验证 | 默认键盘、WASD、自定义布局、虚拟标准手柄、断开释放、实际触控表面、菜单对话、布局保存与双指放大镜 |
+| TOUCH-02～11、13、14、18 | 已实现 | 模块与共用控件检查覆盖自由移动、方向与自由摇杆、低速、双击 Bomb、灵敏度、同触点恢复及重开；具体边界见测试记录 |
+| DISPLAY-01～03、05～08 | 已验证 | 普通与高频浏览器呈现维持约 60 Hz 逻辑；额外绘制 100 次保持完整状态；九机体、六面、EX、Omniverse、暂停与全屏边缘检查通过 |
+| DISPLAY-04 | 待核对 | 正式循环使用当前逻辑帧的绘制快照，连续位置插值尚未启用 |
+| AUDIO-01～04、06、07 | 已验证 | 原版 MP3／WAV、独立音量、实际音乐与菜单音效输出、静音、暂停恢复和退出释放；错误路径另复用既有记录 |
+| REPLAY-01～07、SAVE-01～06 | 已验证 | 多选导入、原字节导出、文件管理、原生新录像保存与即时持久化、重新播放、实时输入隔离、刷新保留 |
+| VERIFY-02～08 | 已验证 | 核对 r5 与既有完整回放的代码身份，复用 17 份原版录像及两个补充用例、649645 个连续逻辑步的结束验证；核心固定基线另有 60 用例、835289 步对照 |
+| LANG-01 | 已验证 | 内置中文原文与字体及三语启动器提示通过 |
 
-[完整验收记录](../../archive/thkkd-web-20261126/README.md) 区分正式 WASM 浏览器操作、模块检查和物理设备范围。实际浏览器为 Windows x64 的 Microsoft Edge 158.0.4370.33，触控使用 DevTools 事件，手柄使用生产映射模型中的虚拟标准设备；实体触屏、实体手柄、物理高刷屏及其他引擎的人工体验未执行。共用放大镜已通过实际双指放大与复位检查，损坏 OGG 注入已触发生产音频健康错误事件。
+本轮浏览器为 Windows x64 的 Microsoft Edge 158.0.4370.45。触控使用 DevTools 事件，手柄使用生产映射模型中的虚拟标准设备，高频呈现采用浏览器解除显示限频的测试方式；实体设备体验另由实际设备验收。既有细项记录见[浏览器验收](../../archive/thkkd-web-20261126/README.md)与[批量导入及完整录像](../../archive/thkkd-web-only-20261126/BATCH-VALIDATION.md)。
 
-MIDI、翻译包和通用 THPrac 的不适用原因分别为原配乐使用 MP3、本作保留内置中文原文、本阶段使用原作 Practice 与 Omniverse。网页产品为单人模式，多人房间、旁观及云账号不在本次交付范围。
+MIDI、翻译包和通用 THPrac 的范围分别为原配乐使用 MP3、本作保留内置中文原文、本阶段使用原作 Practice 与 Omniverse。网页产品为单人模式，多人房间与旁观列为不适用。

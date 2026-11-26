@@ -14,7 +14,7 @@
 python -X utf8 -B ports/thkkd/scripts/release-web.py --site ports/thkkd/build/site --output ../exports/thkkd-original-import
 ```
 
-输出源码 ZIP 和本机网站 ZIP，各自附有文件清单、SHA-256。玩家启动本机网站后导入自己的原版资源 ZIP。运行程序、字体和原版资源导入组件由站点提供。本机网站使用 EMSDK 内的 `node/24.19.0_64bit`；也可通过 `--node-dir` 指定同时含有 `node.exe` 与 `LICENSE` 的 Node 分发目录。
+输出源码 ZIP 和本机网站 ZIP，各自附有文件清单、SHA-256。玩家启动本机网站后，同时导入原版 `dat.dxa`、`bgm.dxa`，或包含两者的 ZIP。运行程序、字体和原版资源导入组件由站点提供。本机网站使用 EMSDK 内的 `node/24.19.0_64bit`；也可通过 `--node-dir` 指定同时含有 `node.exe` 与 `LICENSE` 的 Node 分发目录。
 
 ## 包内容
 

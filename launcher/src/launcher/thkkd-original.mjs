@@ -1,4 +1,4 @@
-import original from '../../../ports/thkkd/assets.metadata.json' with {type:'json'};
+import original from './thkkd-original-assets.json' with {type:'json'};
 import {readDxArchive} from './thkkd-dxa.mjs';
 import {sha256Hex} from '../../package/package-integrity.mjs';
 const expectedFiles = new Map(Object.entries(original.files).map(([path,info])=>[path.toLowerCase(),info]));
@@ -9,6 +9,7 @@ export function selectThkkdArchives(inputs) {
     const path = String(input.archivePath || input.webkitRelativePath || input.name || '').replaceAll('\\','/');
     const parts = path.split('/'), name = parts.at(-1)?.toLowerCase();
     if (!['dat.dxa','bgm.dxa'].includes(name)) continue;
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: ZIP 路径需要拒绝 ASCII 控制字符。
     if (parts.length > 2 || parts.some(part=>!part || part==='.' || part==='..' || /[:\x00-\x1f]/.test(part))) throw Error('海惠堂资源应位于 ZIP 根目录或单层游戏目录');
     const parent = parts.slice(0,-1).join('/').toLowerCase();
     if (directory !== undefined && directory !== parent) throw Error('dat.dxa 和 bgm.dxa 应位于同一目录');

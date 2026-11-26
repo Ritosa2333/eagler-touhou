@@ -25,6 +25,8 @@ from touhou_formats import extract_pbg3_entry, extract_pbg4_entry, extract_pbgz_
 
 
 ARTWORK_BY_GAME = {
+    # 导入型同人游戏的封面由站点构建的素材目录提供。
+    "thkkd": ("thkkd-card.jpg",),
     "th01": ("th01-card.webp",),
     "th02": ("th02-card.webp",),
     "th03": ("th03-card.webp",),

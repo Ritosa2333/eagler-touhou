@@ -29,6 +29,7 @@ export function unpackDxLz(bytes, expected) {
   return out;
 }
 function safeName(value) {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: 资源文件名需要拒绝 ASCII 控制字符。
   if (!value || /[\\/:\x00-\x1f]/.test(value) || value === '.' || value === '..') throw Error('DXA 资源文件名无效');
   return value;
 }

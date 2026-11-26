@@ -99,7 +99,7 @@ const TH03_TOUCH_FIRE = Object.freeze({
 });
 export const PRODUCT_GAMES = Object.freeze({
     thkkd: Object.freeze({
-        importOnly:true,
+        importOnly:true,buildOptIn:true,
         number:'KKD',title:'東方海恵堂',subtitle:'Marine Benefit',cardArtwork:'thkkd-card.jpg',
         storage:Object.freeze({saveRoot:'/savesthkkd',scoreFile:'th_kaikeidou_score00.dat',configFiles:Object.freeze(['config.txt','th_kaikeidou01.dat','th_kaikeidou_score10.dat','th_kaikeidou_spell01.dat','th_kaikeidou_spell10.dat'])}),
         runtime:'./runtime/thkkd/thkkd.html',runtimeFileLayout:'directory',runtimeFileTree:true,

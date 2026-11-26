@@ -40,7 +40,7 @@ assert.deepEqual(
   ["ja", "lang_zh-hans", "lang_zh-hant", "lang_en", "lang_de", "lang_ru"],
 );
 
-assert.deepEqual(PRODUCT_IDS, ["th01", "th02", "th03", "th04", "th05", "hsob", "th06", "th07", "th075", "th08", "th09", "th10", "th11", "th12", "th13", "th14", "th15", "th17", "th19", "th20", "th01mp", "th02mp", "th03mp", "th04mp", "th05mp", "th06mp", "th07mp", "th075mp", "th08mp", "th09mp", "th10mp", "th11mp", "th12mp", "th13mp", "th14mp", "th15mp", "th17mp", "th19mp"]);
+assert.deepEqual(PRODUCT_IDS, ["thkkd", "th01", "th02", "th03", "th04", "th05", "hsob", "th06", "th07", "th075", "th08", "th09", "th10", "th11", "th12", "th13", "th14", "th15", "th17", "th19", "th20", "th01mp", "th02mp", "th03mp", "th04mp", "th05mp", "th06mp", "th07mp", "th075mp", "th08mp", "th09mp", "th10mp", "th11mp", "th12mp", "th13mp", "th14mp", "th15mp", "th17mp", "th19mp"]);
 assert.equal(DEFAULT_PRODUCT_ID, "th06");
 assert.ok(PRODUCT_IDS.includes(DEFAULT_PRODUCT_ID));
 assert.equal(DEFAULT_MULTIPLAYER_PRODUCT_ID, "th07mp");
@@ -128,8 +128,13 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 }
 
 const roots = new Set();
-assert.deepEqual(Object.keys(PRODUCT_CONTENT), Object.entries(PRODUCT_GAMES).filter(([, product]) => !product.importOnly).map(([game]) => game),
+assert.deepEqual(Object.keys(PRODUCT_CONTENT).filter(game => !PRODUCT_GAMES[game]?.importOnly), Object.entries(PRODUCT_GAMES).filter(([, product]) => !product.importOnly).map(([game]) => game),
   "every registered product must declare its original-content shape");
+assert.ok(Object.keys(PRODUCT_CONTENT).every(game => PRODUCT_GAMES[game]), "content declarations belong to registered games");
+assert.deepEqual(PRODUCT_CONTENT.thkkd.original.files, ['dat.dxa', 'bgm.dxa']);
+assert.equal(PRODUCT_GAMES.thkkd.importOnly, true);
+assert.equal(PRODUCT_GAMES.thkkd.buildOptIn, true);
+assert.equal(productEnabledForBuild('thkkd'), true, 'import-only games remain visible in the library');
 for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
   if (product.importOnly) continue;
   const content = PRODUCT_CONTENT[game];
@@ -304,7 +309,7 @@ assert.notEqual(PRODUCT_GAMES.th17.testOnly, true);
 assert.equal(PRODUCT_GAMES.th19.testOnly, true);
 assert.equal(productEnabledForBuild("th99", true), false);
 
-assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th01: false, th02: false, th03: false, th04: false, th05: false, hsob: false, th06: true, th07: true, th075: false, th08: true, th09: true, th10: true, th11: true, th12: true, th13: false, th14: false, th15: true, th17: false, th19: false, th20: false}, "high-refresh UI must follow the catalog capability");
+assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {thkkd: true, th01: false, th02: false, th03: false, th04: false, th05: false, hsob: false, th06: true, th07: true, th075: false, th08: true, th09: true, th10: true, th11: true, th12: true, th13: false, th14: false, th15: true, th17: false, th19: false, th20: false}, "high-refresh UI must follow the catalog capability");
 assert.equal(PRODUCT_GAMES.th15.features.languages,true);
 assert.equal(PRODUCT_GAMES.th15.features.thprac,true);
 assert.ok(PRODUCT_GAMES.th15.requiredShared.includes('/unifont.otf'));
