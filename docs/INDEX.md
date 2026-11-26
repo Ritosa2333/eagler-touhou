@@ -1,6 +1,6 @@
 # 文档总表
 
-共 670 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 666 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -36,7 +36,7 @@
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
 | 作品入口 | [ports/th01/README.md](../ports/th01/README.md) | TH01 主项目适配 |
-| 作品入口 | [ports/th02/README.md](../ports/th02/README.md) | TH02 主项目适配 |
+| 作品入口 | [ports/th02/README.md](../ports/th02/README.md) | TH02 东方封魔录 · SoEW Native |
 | 作品入口 | [ports/th03/README.md](../ports/th03/README.md) | TH03 原生网页版本 |
 | 作品入口 | [ports/th04/README.md](../ports/th04/README.md) | TH04 主项目接入 |
 | 作品入口 | [ports/th05-mp/README.md](../ports/th05-mp/README.md) | 東方怪綺談 · 原生多人版 |
@@ -93,10 +93,8 @@
 | 作品源码文档 | [ports/th01/README-NETPLAY.md](../ports/th01/README-NETPLAY.md) | 原生移植版 UDP 联机 |
 | 作品源码文档 | [ports/th01/README-PUBLIC.md](../ports/th01/README-PUBLIC.md) | 公网联机 |
 | 作品源码文档 | [ports/th01/README-UPSTREAM.md](../ports/th01/README-UPSTREAM.md) | TH01《东方灵异传》· 原生移植与多人合作 |
-| 作品源码文档 | [ports/th02/LAN-公网联机说明.md](../ports/th02/LAN-公网联机说明.md) | TH02 局域网与公网联机 |
-| 作品源码文档 | [ports/th02/README-UPSTREAM.md](../ports/th02/README-UPSTREAM.md) | TH02《东方封魔录》· 单人游戏与两／三人合作 |
-| 作品源码文档 | [ports/th02/TH02-PRACTICE-WEB.md](../ports/th02/TH02-PRACTICE-WEB.md) | TH02 网页练习工具 |
-| 作品源码文档 | [ports/th02/联机同时操作卡顿优化记录.md](../ports/th02/联机同时操作卡顿优化记录.md) | TH02 联机同时操作卡顿优化记录 |
+| 作品源码文档 | [ports/th02/native-solo/README.md](../ports/th02/native-solo/README.md) | SoEW Native — 東方封魔録 for Windows and the Web |
+| 作品源码文档 | [ports/th02/native-solo/WEB.md](../ports/th02/native-solo/WEB.md) | SoEW Native Web：完整单人版 |
 | 作品源码文档 | [ports/th03/README-UPSTREAM.md](../ports/th03/README-UPSTREAM.md) | TH03《东方梦时空》· DOSBox-X 性能版 |
 | 作品源码文档 | [ports/th03/ROLLBACK.md](../ports/th03/ROLLBACK.md) | TH03 原生联机回滚 |
 | 作品源码文档 | [ports/th04/DOSBox-PC98核心优化与五部作品迁移指南.md](../ports/th04/DOSBox-PC98核心优化与五部作品迁移指南.md) | DOSBox-PC98 核心优化与五部作品迁移指南 |
@@ -545,10 +543,8 @@
 | 许可证与声明 | [launcher/public/vendor/uzip.LICENSE](../launcher/public/vendor/uzip.LICENSE) | uzip |
 | 许可证与声明 | [launcher/public/vendor/webaudio-tinysynth.LICENSE](../launcher/public/vendor/webaudio-tinysynth.LICENSE) | webaudio tinysynth |
 | 许可证与声明 | [ports/th01/web/room-ui-assets/LICENSE.txt](../ports/th01/web/room-ui-assets/LICENSE.txt) | MIT License |
-| 许可证与声明 | [ports/th02/NOTICE-runtime.md](../ports/th02/NOTICE-runtime.md) | DOSBox-X / js-dos runtime for TH02 |
-| 许可证与声明 | [ports/th02/web/room-ui-assets/LICENSE.txt](../ports/th02/web/room-ui-assets/LICENSE.txt) | MIT License |
-| 许可证与声明 | [ports/th02/web/vendor/dosbox-x/LICENSE](../ports/th02/web/vendor/dosbox-x/LICENSE) | LICENSE |
-| 许可证与声明 | [ports/th02/web/vendor/dosbox-x/NOTICE.md](../ports/th02/web/vendor/dosbox-x/NOTICE.md) | DOSBox-X / js-dos runtime for TH02 |
+| 许可证与声明 | [ports/th02/native-solo/LICENSE](../ports/th02/native-solo/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th02/native-solo/NOTICE](../ports/th02/native-solo/NOTICE) | NOTICE |
 | 许可证与声明 | [ports/th04/web/room-ui-assets/LICENSE.txt](../ports/th04/web/room-ui-assets/LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th04/web/vendor/dosbox-x/LICENSE](../ports/th04/web/vendor/dosbox-x/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th04/web/vendor/dosbox-x/NOTICE.md](../ports/th04/web/vendor/dosbox-x/NOTICE.md) | DOSBox-X / js-dos runtime for TH04 |

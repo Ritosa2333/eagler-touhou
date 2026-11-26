@@ -2555,6 +2555,8 @@
   "account_discordPending": "Discord 登录将在接入账号服务后开放。",
   "profile_online_simulated": "| 模拟状态",
   "room_th02SpecialFocus": "禁用低速",
+  "room_th02RapidFire": "启用连射",
+  "room_th02NoRapidFire": "禁用连射",
   "touch_th01SlideHold": "按住滑铲",
   "room_th03SpecialFocus": "启用低速",
   "document_terms": "服务条款",

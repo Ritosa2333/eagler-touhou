@@ -113,22 +113,15 @@ practice_form_step:
 .dependencies:
     cmp byte [cs:practice_form_values+3],1
     jne .entry_valid
-%ifdef FORM_TH02
-    cmp byte [cs:practice_form_values],4
-    jne .entry_valid
-%else
     cmp byte [cs:practice_form_values],3
     jbe .entry_valid
-%endif
     mov byte [cs:practice_form_values+3],2
 .entry_valid:
-%ifndef FORM_TH02
     ; Gengetsu exists only in Extra; do not retain that branch on a normal stage.
     cmp byte [cs:practice_form_values],6
     je .branch_valid
     mov byte [cs:practice_form_values+8],0
 .branch_valid:
-%endif
     cmp cl,0
     je .reset_dependent
     cmp cl,1
@@ -680,19 +673,16 @@ practice_form_phase_mask:
     je .done
     cmp byte [cs:practice_form_values+3],1
     jne .boss
-%ifndef FORM_TH02
     mov edx,3
     cmp byte [cs:practice_form_values],0
     jne .done
     mov edx,9
-%endif
     ret
 .boss:
     xor bx,bx
     mov bl,[cs:practice_form_values]
     shl bx,2
     mov edx,[cs:practice_form_phase_masks+bx]
-%ifndef FORM_TH02
     cmp byte [cs:practice_form_values],3
     jne .extra
     cmp byte [cs:practice_form_values+1],2
@@ -704,7 +694,6 @@ practice_form_phase_mask:
     cmp byte [cs:practice_form_values+8],1
     jne .done
     mov edx,0x000001bd
-%endif
 .done:
     ret
 ; Match the supported per-entry HP range, keeping zero as original HP.
@@ -715,79 +704,13 @@ practice_form_hp_limit:
     mov bl,[cs:practice_form_values+3]
     test bl,bl
     jz .done
-%ifdef FORM_TH02
-    xor bx,bx
-    mov bl,[cs:practice_form_values]
-    cmp bl,2
-    je .done
-    cmp byte [cs:practice_form_values+3],1
-    jne .boss
-    shl bx,1
-    mov dx,[cs:practice_form_mid_hp+bx]
-    jmp .done
-.boss:
-    cmp bl,0
-    je .first
-    cmp bl,1
-    je .second
-    cmp bl,3
-    jne .later
-    mov dx,900
-    jmp .done
-.first:
-    mov dx,2261
-    cmp byte [cs:practice_form_values+4],0
-    je .done
-    mov dx,700
-    cmp byte [cs:practice_form_values+4],3
-    jne .done
-    mov dx,861
-    jmp .done
-.second:
-    mov dx,2400
-    cmp byte [cs:practice_form_values+4],0
-    je .done
-    mov dx,701
-    cmp byte [cs:practice_form_values+4],1
-    je .done
-    mov dx,800
-    cmp byte [cs:practice_form_values+4],2
-    je .done
-    mov dx,899
-    jmp .done
-.later:
-    xor bx,bx
-    mov bl,[cs:practice_form_values+4]
-    test bl,bl
-    jnz .phase_index
-    inc bl
-.phase_index:
-    shr bx,1
-    shl bx,1
-    cmp byte [cs:practice_form_values],4
-    jne .extra_hp
-    mov dx,[cs:practice_form_late_hp+bx]
-    jmp .done
-.extra_hp:
-    mov dx,[cs:practice_form_extra_hp+bx]
-%else
     mov dx,FORM_HP_MAX
-%endif
 .done:
     pop cx
     pop bx
     ret
-%ifdef FORM_TH02
-practice_form_mid_hp: dw 301,381,0,400,0,0
-practice_form_late_hp: dw 600,700,800,1500,1100
-practice_form_extra_hp: dw 1800,1800,1800,1800,1300
-%endif
 practice_form_phase_masks:
-%ifdef FORM_TH02
-    dd 0x0f,0x0f,1,1,0x2ab,0x2ab
-%else
     dd 0x1d,0x3d,0x09,0x05,0x36db5,0x15115,0x55
-%endif
 practice_form_labels:
     dw .stage,.character,.difficulty,.entry,.phase,.lives,.bombs,.power,.branch,.rank,.hp,.start,.options
 .stage: db 'STAGE                  ',0
@@ -833,13 +756,8 @@ practice_form_entries: dw practice_form_stage_value,practice_form_mid,practice_f
 practice_form_branches: dw practice_form_auto,practice_form_gengetsu
 practice_form_reimua: db 'REIMU A',0
 practice_form_reimub: db 'REIMU B',0
-%ifdef FORM_TH02
-practice_form_character3: db 'REIMU C',0
-practice_form_character4: db 'REIMU C',0
-%else
 practice_form_character3: db 'MARISA A',0
 practice_form_character4: db 'MARISA B',0
-%endif
 practice_form_easy: db 'EASY',0
 practice_form_normal: db 'NORMAL',0
 practice_form_hard: db 'HARD',0
@@ -848,11 +766,7 @@ practice_form_extra: db 'EXTRA',0
 practice_form_stage_value: db 'STAGE',0
 practice_form_mid: db 'MID',0
 practice_form_boss: db 'BOSS',0
-%ifdef FORM_TH02
-practice_form_auto: db 'AUTO',0
-%else
 practice_form_auto: db 'MUGETSU',0
-%endif
 practice_form_gengetsu: db 'GENGETSU',0
 %include 'practice-menu-input.inc'
 %include 'practice-menu-values.inc'

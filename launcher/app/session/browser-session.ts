@@ -851,14 +851,15 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     const operation = preparationIntent(product, intent.multiplayer, intent.signal, intent.replayPath), {owner, clickSettings, controller} = operation;
     try {
       if (owner.getSnapshot().epoch !== null && !await owner.close({decide: closeDecision})) return;
-      let prepared = await prepareGame({...operation.input, replayWorkspace: intent.replayWorkspace});
+      const input = {...operation.input, replayWorkspace: intent.replayWorkspace};
+      let prepared = await prepareGame(input);
       if(intent.beforeStart){
         transfer.hide();
         const decision=await intent.beforeStart();
         if(decision==='cancel')throw new RuntimeSessionSupersededError();
         if(controller.signal.aborted)throw new RuntimeSessionSupersededError();
         if(decision==='reload'||owner.getSnapshot().epoch!==prepared.runtimeSnapshot.epoch)
-          prepared=await prepareGame({...operation.input,replayWorkspace:intent.replayWorkspace});
+          prepared=await prepareGame(input);
       }
       // Main publishes readiness and starts optional background work on ACK,
       // before the distinct first-frame wait used by room launch covers.

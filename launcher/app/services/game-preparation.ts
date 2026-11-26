@@ -15,7 +15,7 @@ import type {SettingsSnapshot} from '../models/game-settings';
 import {prepareLanguagePack, type PreparedLanguagePack} from './language-pack';
 import {checkPreparationAbort, preparationErrorText, type AcquisitionRequest, type PackageAcquisition,
   type PackageAcquisitionResult, type PreparationProgress} from './package-acquisition';
-import {ensureOggStartup, ensurePC98Disks, ensureRequiredSharedResources, musicTransport, musicModeLabel, oggMusic, packageResourceIds, remoteMusicResources,
+import {deferredOggSources, ensureOggStartup, ensurePC98Disks, ensureRequiredSharedResources, musicTransport, musicModeLabel, oggMusic, packageResourceIds, remoteMusicResources,
   remoteRuntimeResources, sharedResources} from './game-resources';
 import {startPreparedGameBackground} from './game-preparation-background';
 import {runtimeOggFileIds} from './game-music-selection';
@@ -141,7 +141,6 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
   if (isMultiplayer && !multiplayer) throw new Error('Multiplayer launch requires a room, Replay or game-check intent');
   if (!isMultiplayer && multiplayer) throw new Error('A single-player Runtime cannot use multiplayer launch options');
   return {limitPresentationTo60: !product.support.highRefreshRate || options.frameLimit60Enabled,
-    ...(game === 'th02' ? {th02RapidFire: options.th02RapidFire} : {}),
     ...(game === 'th03' ? {th03RapidFire: options.th03RapidFire} : {}),
     ...(game === 'th03' && !isMultiplayer ? {th03FocusEnabled: options.th03FocusEnabled} : {}),
     touchEnabled: options.touchEnabled, touchMovementMode: options.touchMovementMode, touchSensitivity: options.touchSensitivity,
@@ -187,6 +186,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
     input.replayWorkspace === true || input.replayPath !== undefined);
   guard();
   const musicPolicy=PRODUCT_GAMES[input.settings.gameId].musicRuntime;
+  const onDemandOgg = 'onDemandOgg' in musicPolicy && musicPolicy.onDemandOgg;
   // A late TH14 spectator may reach any stage before background installation
   // can deliver its music. Use the same full soundtrack as the room preview.
   const th14Spectator = input.settings.gameId === 'th14' &&
@@ -194,7 +194,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   const completeOgg = (music === 'ogg-akyu' && ['th01','th02','th03','th04'].includes(input.settings.gameId)) || input.multiplayer?.kind === 'room-preload' || th14Spectator ||
     ('requiresCompleteOgg' in musicPolicy && musicPolicy.requiresCompleteOgg) ||
     input.settings.gameId === 'th09' && (input.multiplayer?.kind === 'room' || input.replayPath !== undefined || input.replayWorkspace === true);
-  ({generation, music} = await ensureOggStartup({generation, productId: input.productId, music, acquisition, signal: input.signal,
+  if(!onDemandOgg) ({generation, music} = await ensureOggStartup({generation, productId: input.productId, music, acquisition, signal: input.signal,
     completeSet: completeOgg,
     downloadSignal: input.musicDownloadSignal, onMusicDownloadActivity: input.onMusicDownloadActivity,
     translate: t, onProgress: input.onProgress, onWarning: input.onWarning}));
@@ -202,12 +202,13 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
   if (music !== 'none') await input.prepareMidi(music);
   guard();
   const useOptionalAlbum = !('embeddedOgg' in musicPolicy && musicPolicy.embeddedOgg === true) || music === 'ogg-akyu';
-  const ids = generation && oggMusic(music) && useOptionalAlbum ? runtimeOggFileIds(generation.descriptor, input.productId).filter(id => !!generation!.files[id]?.objectId) : [];
+  const ids = !onDemandOgg && generation && oggMusic(music) && useOptionalAlbum ? runtimeOggFileIds(generation.descriptor, input.productId).filter(id => !!generation!.files[id]?.objectId) : [];
   const options = gameRuntimeOptions(input, language, music, host);
   const shared = sharedResources({game: settings.gameId, generation, host, language,
     thprac: settings.options.thpracEnabled, baseUrl: input.baseUrl, translate: t});
   const plan: RuntimePlan = {...initial, ...(generation && generation !== initial.generation ? {resourceGeneration: generation} : {}),
-    configure: {language, music: musicTransport(music), resources: initial.th075SplitAssets || ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t, input.productId),
+    ...(onDemandOgg?{deferredOgg:deferredOggSources(settings.gameId,input.productId,generation,host,metadata.releaseCatalog,acquisition.catalogUrl,input.baseUrl,t)}:{}),
+    configure: {language, music: musicTransport(music), resources: onDemandOgg || initial.th075SplitAssets || ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t, input.productId),
       runtimeResources: initial.th075SplitAssets ? [] : remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
     ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: PRODUCT_GAMES[settings.gameId].musicCapabilities?.midi === true}} : {}),

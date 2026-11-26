@@ -5,7 +5,7 @@ import {resolve,extname,sep} from 'node:path';
 import {createHash} from 'node:crypto';
 import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
-for(const game of ['th02','th04']){
+for(const game of ['th04']){
  const root=resolve('ports',game,'build-eagler'),music=resolve('ports',game,'content/music'),data=await readFile(resolve('ports',game,'content',`${game}.data`));
  const album=JSON.parse(await readFile(resolve(root,'bgm/akyu/manifest.json'))),tracks=[...new Set(Object.values(album.tracks).map(t=>t.url.split('/').at(-1)))];
  const html=`<iframe src="/runtime/${game}.html?hosted=1&managedData=1&runtimeEpoch=1"></iframe><script>window.events=[];window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/data')).arrayBuffer()});addEventListener('message',e=>events.push(e.data));window.rpc=(command,fields={})=>new Promise((ok,no)=>{const f=document.querySelector('iframe'),request=crypto.randomUUID(),timer=setTimeout(()=>no(Error('timeout '+command)),90000);function recv(e){if(e.source!==f.contentWindow||e.data?.request!==request)return;clearTimeout(timer);removeEventListener('message',recv);e.data.ok?ok(e.data):no(Error(e.data.error));}addEventListener('message',recv);f.contentWindow.postMessage({protocol:'eagler-touhou/1',game:'${game}',epoch:1,request,command,...fields},location.origin)});</script>`;

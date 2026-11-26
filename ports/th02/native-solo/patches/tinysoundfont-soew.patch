@@ -1,0 +1,249 @@
+diff --git a/third_party/TinySoundFont/tsf.h b/third_party/TinySoundFont/tsf.h
+index 15d2ae5..b5e00b1 100644
+--- a/third_party/TinySoundFont/tsf.h
++++ b/third_party/TinySoundFont/tsf.h
+@@ -194,6 +194,12 @@ TSFDEF int tsf_active_voice_count(tsf* f);
+ //   flag_mixing: if 0 clear the buffer first, otherwise mix into existing data
+ TSFDEF void tsf_render_short(tsf* f, short* buffer, int samples, int flag_mixing CPP_DEFAULT0);
+ TSFDEF void tsf_render_float(tsf* f, float* buffer, int samples, int flag_mixing CPP_DEFAULT0);
++// Advance voice state with the same block boundaries as tsf_render_float, without mixing PCM.
++TSFDEF void tsf_advance_discard(tsf* f, int samples);
++// Private SoEW checkpoint codec. Asset identity and schema version are verified by its caller.
++TSFDEF unsigned int tsf_soew_state_size(const tsf* f);
++TSFDEF int tsf_soew_state_write(tsf* f, void* bytes, unsigned int size);
++TSFDEF int tsf_soew_state_read(tsf* f, const void* bytes, unsigned int size);
+ 
+ // Higher level channel based functions, set up channel parameters
+ //   channel: channel number
+@@ -1222,7 +1228,7 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
+ 	struct tsf_region* region = v->region;
+ 	float* input = f->fontSamples;
+ 	float* outL = outputBuffer;
+-	float* outR = (f->outputmode == TSF_STEREO_UNWEAVED ? outL + numSamples : TSF_NULL);
++	float* outR = (outL && f->outputmode == TSF_STEREO_UNWEAVED ? outL + numSamples : TSF_NULL);
+ 
+ 	// Cache some values, to give them at least some chance of ending up in registers.
+ 	TSF_BOOL updateModEnv = (region->modEnvToPitch || region->modEnvToFilterFc);
+@@ -1251,7 +1257,8 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
+ 	else pitchRatio = tsf_timecents2Secsd(v->pitchInputTimecents) * v->pitchOutputFactor, tmpModLfoToPitch = 0, tmpVibLfoToPitch = 0, tmpModEnvToPitch = 0;
+ 
+ 	if (dynamicGain) tmpModLfoToVolume = (float)region->modLfoToVolume * 0.1f;
+-	else noteGain = tsf_decibelsToGain(v->noteGainDB), tmpModLfoToVolume = 0;
++	else if (outputBuffer) noteGain = tsf_decibelsToGain(v->noteGainDB), tmpModLfoToVolume = 0;
++	else tmpModLfoToVolume = 0;
+ 
+ 	while (numSamples)
+ 	{
+@@ -1270,7 +1277,7 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
+ 		if (dynamicPitchRatio)
+ 			pitchRatio = tsf_timecents2Secsd(v->pitchInputTimecents + (v->modlfo.level * tmpModLfoToPitch + v->viblfo.level * tmpVibLfoToPitch + v->modenv.level * tmpModEnvToPitch)) * v->pitchOutputFactor;
+ 
+-		if (dynamicGain)
++		if (outputBuffer && dynamicGain)
+ 			noteGain = tsf_decibelsToGain(v->noteGainDB + (v->modlfo.level * tmpModLfoToVolume));
+ 
+ 		gainMono = noteGain * v->ampenv.level;
+@@ -1283,7 +1290,31 @@ static void tsf_voice_render(tsf* f, struct tsf_voice* v, float* outputBuffer, i
+ 		if (updateModLFO) tsf_voice_lfo_process(&v->modlfo, blockSamples);
+ 		if (updateVibLFO) tsf_voice_lfo_process(&v->viblfo, blockSamples);
+ 
+-		switch (f->outputmode)
++		if (!outputBuffer)
++		{
++			// Keep the same sample-by-sample position and loop rounding. Interpolation
++			// feeds the filter history, but has no persistent effect without a filter.
++			if (tmpLowpass.active)
++			{
++				while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEndDbl)
++				{
++					unsigned int pos = (unsigned int)tmpSourceSamplePosition, nextPos = (pos >= tmpLoopEnd && isLooping ? tmpLoopStart : pos + 1);
++					float alpha = (float)(tmpSourceSamplePosition - pos), val = (input[pos] * (1.0f - alpha) + input[nextPos] * alpha);
++					tsf_voice_lowpass_process(&tmpLowpass, val);
++					tmpSourceSamplePosition += pitchRatio;
++					if (tmpSourceSamplePosition >= tmpLoopEndDbl && isLooping) tmpSourceSamplePosition -= (tmpLoopEnd - tmpLoopStart + 1.0);
++				}
++			}
++			else
++			{
++				while (blockSamples-- && tmpSourceSamplePosition < tmpSampleEndDbl)
++				{
++					tmpSourceSamplePosition += pitchRatio;
++					if (tmpSourceSamplePosition >= tmpLoopEndDbl && isLooping) tmpSourceSamplePosition -= (tmpLoopEnd - tmpLoopStart + 1.0);
++				}
++			}
++		}
++		else switch (f->outputmode)
+ 		{
+ 			case TSF_STEREO_INTERLEAVED:
+ 				gainLeft = gainMono * v->panFactorLeft, gainRight = gainMono * v->panFactorRight;
+@@ -1744,6 +1775,14 @@ TSFDEF void tsf_render_float(tsf* f, float* buffer, int samples, int flag_mixing
+ 			tsf_voice_render(f, v, buffer, samples);
+ }
+ 
++TSFDEF void tsf_advance_discard(tsf* f, int samples)
++{
++	int i;
++	for (i = 0; i < f->voiceNum; ++i)
++		if (f->voices[i].playingPreset != -1)
++			tsf_voice_render(f, &f->voices[i], TSF_NULL, samples);
++}
++
+ static void tsf_channel_setup_voice(tsf* f, struct tsf_voice* v)
+ {
+ 	struct tsf_channel* c = &f->channels->channels[f->channels->activeChannel];
+@@ -1792,6 +1831,155 @@ static struct tsf_channel* tsf_channel_init(tsf* f, int channel)
+ 	return &f->channels->channels[channel];
+ }
+ 
++// Explicit little-endian scalars; no padding, pointers, or callback addresses.
++#include <stdint.h>
++#include <math.h>
++struct tsf_soew_codec { const unsigned char* in; unsigned char* out; unsigned int left; int ok; };
++static uint64_t tsf_soew_number(struct tsf_soew_codec* c, uint64_t n, unsigned int width)
++{
++	unsigned int i;
++	if (c->left < width) { c->ok = 0; return 0; }
++	c->left -= width;
++	if (c->in)
++	{
++		n = 0;
++		for (i = 0; i < width; ++i) n |= (uint64_t)*c->in++ << (8 * i);
++	}
++	else for (i = 0; i < width; ++i) *c->out++ = (unsigned char)(n >> (8 * i));
++	return n;
++}
++static float tsf_soew_float(struct tsf_soew_codec* c, float v)
++{
++	uint32_t bits; TSF_MEMCPY(&bits, &v, sizeof(bits));
++	bits = (uint32_t)tsf_soew_number(c, bits, 4); TSF_MEMCPY(&v, &bits, sizeof(bits));
++	if (!isfinite(v)) c->ok = 0;
++	return v;
++}
++static double tsf_soew_double(struct tsf_soew_codec* c, double v)
++{
++	uint64_t bits; TSF_MEMCPY(&bits, &v, sizeof(bits));
++	bits = tsf_soew_number(c, bits, 8); TSF_MEMCPY(&v, &bits, sizeof(bits));
++	if (!isfinite(v)) c->ok = 0;
++	return v;
++}
++#define TSF_SOEW_BYTE(v) (v) = (unsigned char)tsf_soew_number(c, (v), 1)
++#define TSF_SOEW_SHORT(v) (v) = (unsigned short)tsf_soew_number(c, (v), 2)
++#define TSF_SOEW_WORD(v) (v) = (uint32_t)tsf_soew_number(c, (v), 4)
++#define TSF_SOEW_INT(v) (v) = (int32_t)(uint32_t)tsf_soew_number(c, (v), 4)
++#define TSF_SOEW_FLOAT(v) (v) = tsf_soew_float(c, (v))
++#define TSF_SOEW_DOUBLE(v) (v) = tsf_soew_double(c, (v))
++static void tsf_soew_envelope(struct tsf_soew_codec* c, struct tsf_voice_envelope* e, int amp)
++{
++	unsigned char flags = (unsigned char)(e->segmentIsExponential | (e->isAmpEnv << 1));
++	unsigned short velocity = (unsigned short)e->midiVelocity;
++	TSF_SOEW_BYTE(e->segment); TSF_SOEW_BYTE(flags); TSF_SOEW_SHORT(velocity);
++	e->segmentIsExponential = flags & 1;
++	e->isAmpEnv = (flags >> 1) & 1;
++	e->midiVelocity = (short)velocity;
++	TSF_SOEW_FLOAT(e->level); TSF_SOEW_FLOAT(e->slope); TSF_SOEW_INT(e->samplesUntilNextSegment);
++	TSF_SOEW_FLOAT(e->parameters.delay); TSF_SOEW_FLOAT(e->parameters.attack);
++	TSF_SOEW_FLOAT(e->parameters.hold); TSF_SOEW_FLOAT(e->parameters.decay);
++	TSF_SOEW_FLOAT(e->parameters.sustain); TSF_SOEW_FLOAT(e->parameters.release);
++	TSF_SOEW_FLOAT(e->parameters.keynumToHold); TSF_SOEW_FLOAT(e->parameters.keynumToDecay);
++	if (e->segment == TSF_SEGMENT_NONE || e->segment > TSF_SEGMENT_DONE || flags > 3 || e->isAmpEnv != amp || velocity > 127 || e->samplesUntilNextSegment < 0) c->ok = 0;
++}
++static void tsf_soew_lfo(struct tsf_soew_codec* c, struct tsf_voice_lfo* lfo)
++{
++	TSF_SOEW_INT(lfo->samplesUntil); TSF_SOEW_FLOAT(lfo->level); TSF_SOEW_FLOAT(lfo->delta);
++	if (lfo->samplesUntil < 0) c->ok = 0;
++}
++static void tsf_soew_channel(struct tsf_soew_codec* c, struct tsf_channel* ch, int presets)
++{
++	unsigned short data = ch->midiData, sustain = ch->sustain;
++	TSF_SOEW_SHORT(ch->presetIndex); TSF_SOEW_SHORT(ch->bank); TSF_SOEW_SHORT(ch->pitchWheel);
++	TSF_SOEW_SHORT(ch->midiPan); TSF_SOEW_SHORT(ch->midiVolume); TSF_SOEW_SHORT(ch->midiExpression);
++	TSF_SOEW_SHORT(ch->midiRPN); TSF_SOEW_SHORT(data); TSF_SOEW_SHORT(sustain);
++	ch->midiData = data; ch->sustain = sustain;
++	TSF_SOEW_FLOAT(ch->panOffset); TSF_SOEW_FLOAT(ch->gainDB);
++	TSF_SOEW_FLOAT(ch->pitchRange); TSF_SOEW_FLOAT(ch->tuning);
++	if (ch->presetIndex >= presets || data > 16383 || sustain > 1) c->ok = 0;
++}
++static void tsf_soew_voice(struct tsf_soew_codec* c, const tsf* f, struct tsf_voice* v)
++{
++	struct tsf_preset* p;
++	uint32_t region = 0;
++	TSF_SOEW_INT(v->playingPreset);
++	if (v->playingPreset == -1) return;
++	if (v->playingPreset < 0 || v->playingPreset >= f->presetNum) { c->ok = 0; return; }
++	p = &f->presets[v->playingPreset];
++	if (c->out) region = (uint32_t)(v->region - p->regions);
++	TSF_SOEW_WORD(region);
++	if (region >= (uint32_t)p->regionNum) { c->ok = 0; return; }
++	v->region = &p->regions[region];
++	TSF_SOEW_INT(v->playingKey); TSF_SOEW_INT(v->playingChannel); TSF_SOEW_INT(v->heldSustain);
++	TSF_SOEW_DOUBLE(v->pitchInputTimecents); TSF_SOEW_DOUBLE(v->pitchOutputFactor);
++	TSF_SOEW_DOUBLE(v->sourceSamplePosition);
++	TSF_SOEW_FLOAT(v->noteGainDB); TSF_SOEW_FLOAT(v->panFactorLeft); TSF_SOEW_FLOAT(v->panFactorRight);
++	TSF_SOEW_WORD(v->playIndex); TSF_SOEW_WORD(v->loopStart); TSF_SOEW_WORD(v->loopEnd);
++	tsf_soew_envelope(c, &v->ampenv, 1); tsf_soew_envelope(c, &v->modenv, 0);
++	TSF_SOEW_BYTE(v->lowpass.active); TSF_SOEW_DOUBLE(v->lowpass.QInv);
++	if (v->lowpass.active)
++	{
++		TSF_SOEW_DOUBLE(v->lowpass.a0); TSF_SOEW_DOUBLE(v->lowpass.a1);
++		TSF_SOEW_DOUBLE(v->lowpass.b1); TSF_SOEW_DOUBLE(v->lowpass.b2);
++	}
++	TSF_SOEW_DOUBLE(v->lowpass.z1); TSF_SOEW_DOUBLE(v->lowpass.z2);
++	tsf_soew_lfo(c, &v->modlfo); tsf_soew_lfo(c, &v->viblfo);
++	if (v->playingKey < 0 || v->playingKey > 127 || v->playingChannel < 0 || v->playingChannel >= 16 || v->heldSustain < 0 || v->heldSustain > 1 ||
++		v->lowpass.active > 1 || v->pitchOutputFactor <= 0 || v->sourceSamplePosition < v->region->offset || v->sourceSamplePosition >= v->region->end ||
++		(!(v->loopStart == 0 && v->loopEnd == 0) && (v->loopStart != v->region->loop_start || (v->loopEnd != v->loopStart && v->loopEnd != v->region->loop_end)))) c->ok = 0;
++}
++// Each live voice occupies at most 257 bytes, including its slot identifier.
++TSFDEF unsigned int tsf_soew_state_size(const tsf* f)
++{
++	if (!f || !f->channels || f->channels->channelNum != 16 || f->voiceNum > 4096 || f->maxVoiceNum) return 0;
++	return 16 + 16 * 34 + (unsigned int)f->voiceNum * 257;
++}
++TSFDEF int tsf_soew_state_write(tsf* f, void* bytes, unsigned int size)
++{
++	struct tsf_soew_codec codec = { TSF_NULL, (unsigned char*)bytes, size, 1 }, *c = &codec;
++	int i, count;
++	if (!bytes || size < tsf_soew_state_size(f) || !tsf_soew_state_size(f)) return 0;
++	count = f->voiceNum;
++	TSF_SOEW_INT(count); TSF_SOEW_INT(f->channels->activeChannel); TSF_SOEW_WORD(f->voicePlayIndex); TSF_SOEW_FLOAT(f->globalGainDB);
++	for (i = 0; i < 16; ++i) tsf_soew_channel(c, &f->channels->channels[i], f->presetNum);
++	for (i = 0; i < count && c->ok; ++i) tsf_soew_voice(c, f, &f->voices[i]);
++	return c->ok ? (int)(size - c->left) : 0;
++}
++TSFDEF int tsf_soew_state_read(tsf* f, const void* bytes, unsigned int size)
++{
++	struct tsf_soew_codec codec = { (const unsigned char*)bytes, TSF_NULL, size, 1 }, *c = &codec;
++	struct tsf_voice* voices = TSF_NULL;
++	struct tsf_channel channels[16];
++	int i, count = 0, active = 0;
++	unsigned int playIndex = 0;
++	float gain = 0.0f;
++	if (!f || !bytes || !f->channels || f->channels->channelNum != 16 || f->maxVoiceNum) return 0;
++	TSF_SOEW_INT(count); TSF_SOEW_INT(active); TSF_SOEW_WORD(playIndex); TSF_SOEW_FLOAT(gain);
++	if (!c->ok || count < 0 || count > 4096 || active < 0 || active >= 16 || gain != 0.0f) return 0;
++	TSF_MEMSET(channels, 0, sizeof(channels));
++	for (i = 0; i < 16; ++i) tsf_soew_channel(c, &channels[i], f->presetNum);
++	if (count)
++	{
++		voices = (struct tsf_voice*)TSF_MALLOC((unsigned int)count * sizeof(struct tsf_voice));
++		if (!voices) return 0;
++		TSF_MEMSET(voices, 0, (unsigned int)count * sizeof(struct tsf_voice));
++	}
++	for (i = 0; i < count && c->ok; ++i) tsf_soew_voice(c, f, &voices[i]);
++	if (!c->ok || c->left) { TSF_FREE(voices); return 0; }
++	TSF_FREE(f->voices);
++	f->voices = voices; f->voiceNum = count; f->voicePlayIndex = playIndex; f->globalGainDB = gain;
++	f->channels->activeChannel = active;
++	TSF_MEMCPY(f->channels->channels, channels, sizeof(channels));
++	return 1;
++}
++#undef TSF_SOEW_BYTE
++#undef TSF_SOEW_SHORT
++#undef TSF_SOEW_WORD
++#undef TSF_SOEW_INT
++#undef TSF_SOEW_FLOAT
++#undef TSF_SOEW_DOUBLE
++
+ static void tsf_channel_applypitch(tsf* f, int channel, struct tsf_channel* c)
+ {
+ 	struct tsf_voice *v, *vEnd;

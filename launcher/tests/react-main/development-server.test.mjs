@@ -97,6 +97,35 @@ test('source server resolves workspace URLs consistently from a nested Launcher 
   } finally {await server.stop();}
 });
 
+test('source Runtime documents and module workers use the same isolation policy as the cached Launcher', async () => {
+  const fixtures = await Promise.all([
+    ['workspace-runtime.html', '<!doctype html><title>Runtime</title>'],
+    ['workspace-worker.mjs', 'export {};'],
+  ].map(async ([name, body]) => {
+    const fixture = resolve(work, name);
+    await writeFile(fixture, body);
+    return '/' + relative(workspaceRoot(), fixture).replaceAll('\\', '/') + '?hosted=1';
+  }));
+  const server = await start();
+  try {
+    for (const path of ['/', ...fixtures]) {
+      const url = server.base + path;
+      const response = await fetch(url);
+      assert.equal(response.status, 200);
+      const tag = response.headers.get('etag');
+      assert.ok(tag);
+      const revalidated = await fetch(url, {headers: {'If-None-Match': tag}});
+      assert.equal(revalidated.status, 304);
+      for (const result of [response, revalidated]) {
+        if (!path.includes('.mjs')) assert.equal(result.headers.get('Cross-Origin-Opener-Policy'), 'same-origin');
+        assert.equal(result.headers.get('Cross-Origin-Embedder-Policy'), 'require-corp');
+        assert.equal(result.headers.get('Cross-Origin-Resource-Policy'), 'same-origin');
+      }
+      await response.text();
+    }
+  } finally {await server.stop();}
+});
+
 test('host artwork covers registered cards without a development Runtime and rejects unrelated files', async () => {
   const artwork = resolve(work, 'host-artwork');
   await mkdir(artwork);

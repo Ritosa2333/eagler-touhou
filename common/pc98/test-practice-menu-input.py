@@ -1,4 +1,4 @@
-"""Execute the guest menu input routine for both games' native key masks."""
+"""Execute the guest menu input routine for TH04's native key masks."""
 from pathlib import Path
 import os
 import subprocess
@@ -29,7 +29,7 @@ def run(code, current, previous, selected, rows):
 
 
 def main():
-    for game, confirm, cancel in (('th02', 0x90, 0x40), ('th04', 0x2020, 0x1000)):
+    for game, confirm, cancel in (('th04', 0x2020, 0x1000),):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / 'menu.asm'
             binary = Path(tmp) / 'menu.bin'

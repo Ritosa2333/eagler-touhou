@@ -29,12 +29,12 @@ export function mountTitlePreview({game, lobby, waiting}) {
         module = globalThis.th01RoomPreload?.module || await WebAssembly.compile(await assetBytes('game.wasm', {hash:version.files['game.wasm']}));
       } else {
         const suffix = language === 'jp' ? '-jp' : '';
-        const manifestName = game === '02' ? 'solo-patch.json' : game === '03' ? 'disks/manifest.json' : game === '04' ? `solo-patch${suffix}.json` : 'solo-disks.json';
+        const manifestName = game === '03' ? 'disks/manifest.json' : game === '04' ? `solo-patch${suffix}.json` : 'solo-disks.json';
         const vendor = game === '05' ? 'vendor/dosbox-net/' : 'vendor/dosbox-x/';
-        const [manifest, runtime] = await Promise.all([freshJSON(manifestName), freshJSON(game==='02'?'netplay/runtime.json':vendor+'runtime.json')]);
-        const spec = game === '02' ? manifest.disks[language] : game === '03' ? manifest.games[`3-${language}`] : game === '04' ? manifest.disk : manifest.languages[language];
+        const [manifest, runtime] = await Promise.all([freshJSON(manifestName), freshJSON(vendor+'runtime.json')]);
+        const spec = game === '03' ? manifest.games[`3-${language}`] : game === '04' ? manifest.disk : manifest.languages[language];
         const url = spec.url || spec.file || `th04-solo${suffix}.hdi.gz`;
-        const hash = game==='02'?runtime.cores.plain.sha256:runtime.files['wdosbox-x-rollback.wasm'];
+        const hash = runtime.files['wdosbox-x-rollback.wasm'];
         if (!spec.sha256 || !hash) throw Error('标题资源缺少校验信息');
         [disk, wasmBinary] = await Promise.all([
           assetBytes(url, {hash:spec.sha256, size:spec.size, gzip:true}),

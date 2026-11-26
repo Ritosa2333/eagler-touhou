@@ -1,7 +1,6 @@
-import {takeManagedStartupAssets} from './preload-cache.js';
 export const DATA_SCHEMA = 'eagler-touhou/pc98-content/1';
 export const DATA_MAGIC = 'EPC98PK1';
-export const DATA_LAYOUT_SPEC = Object.freeze({schema: DATA_SCHEMA, magic: DATA_MAGIC, header: 'magic8+manifestBytesLE32+utf8JSON', files: 'relative-path+offset+bytes+sha256'});
+export const DATA_LAYOUT_SPEC = Object.freeze({schema: DATA_SCHEMA, magic: DATA_MAGIC, header: 'magic8+manifestBytesLE32+utf8JSON', files: 'native-path+offset+bytes+sha256;recordings=optional-ogg'});
 const text = new TextDecoder('utf-8', {fatal: true});
 const digest = async blob => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))].map(n => n.toString(16).padStart(2, '0')).join('');
 export function contentPath(path) {
@@ -21,22 +20,13 @@ export class ManagedContent {
     const files = new Map(); let end = 0;
     for (const item of manifest.files) {
       const path = contentPath(item.path);
-      if (files.has(path) || item.offset !== end || !Number.isSafeInteger(item.bytes) || item.bytes <= 0 || !/^[a-f0-9]{64}$/.test(item.sha256) || base + end + item.bytes > blob.size) throw Error('游戏资源包条目无效');
+      if (!path.startsWith('native/') || files.has(path) || item.offset !== end || !Number.isSafeInteger(item.bytes) || item.bytes <= 0 || !/^[a-f0-9]{64}$/.test(item.sha256) || base + end + item.bytes > blob.size) throw Error('游戏资源包条目无效');
       files.set(path, item); end += item.bytes;
     }
     if (base + end !== blob.size) throw Error('游戏资源包长度无效');
     return new ManagedContent(blob.slice(base), [...files], game);
   }
-  constructor(blob, entries, game) { this.blob = blob; this.files = new Map(entries); this.game = game; this.verified = new Map(); this.optional = new Map(); }
-  async addResources(resources) {
-    if(!Array.isArray(resources))throw Error('音乐资源无效');
-    for(const item of resources){
-      if(!item||!(/^\/bgm\/akyu\/\d{2}\.ogg$/.test(item.path)||/^\/pc98\/(?:disks\.json|disk-blocks\/[a-f0-9]{64}\.gz)$/.test(item.path))||typeof item.url!=='string'||!item.url.startsWith('blob:')||!Number.isSafeInteger(item.bytes)||item.bytes<=0||!/^[a-f0-9]{64}$/i.test(item.sha256||''))throw Error('音乐资源无效');
-      const response=await fetch(item.url);if(!response.ok)throw Error('音乐资源读取失败');
-      const blob=await response.blob();if(blob.size!==item.bytes||await digest(blob)!==item.sha256.toLowerCase())throw Error('音乐资源校验失败');
-      this.optional.set(item.path.slice(1),blob);
-    }
-  }
+  constructor(blob, entries) { this.blob = blob; this.files = new Map(entries); this.verified = new Map(); }
   async fetch(path) {
     const item = this.files.get(contentPath(path));
     if (!item) return new Response('Resource is not installed', {status: 404});
@@ -48,7 +38,7 @@ export class ManagedContent {
     await this.verified.get(path);
     return new Response(blob, {headers: {'Content-Type': mime(path), 'Content-Length': String(blob.size)}});
   }
-  install(environment, base) {
+  install(environment, base, loadMusic) {
     const nativeFetch = environment.fetch.bind(environment), root = new URL(base), content = this;
     environment.__eaglerPC98Content = this;
     environment.fetch = async (input, init) => {
@@ -58,37 +48,16 @@ export class ManagedContent {
       const url = new URL(source, environment.location.href);
       if (url.origin === root.origin && url.pathname.startsWith(root.pathname)) {
         const path = decodeURIComponent(url.pathname.slice(root.pathname.length));
-        if (content.optional.has(path)) return new Response(content.optional.get(path), {headers:{'Content-Type':mime(path)}});
         if (content.files.has(path)) {
           if ((init?.method ?? input.method ?? 'GET').toUpperCase() !== 'GET') throw Error('游戏资源为只读');
           const signal = init?.signal ?? input.signal; signal?.throwIfAborted();
           const response = await content.fetch(path); signal?.throwIfAborted(); return response;
         }
-        if (/\.hdi\.gz$/i.test(path) && content.optional.has('pc98/disks.json')) {
-          if ((init?.method ?? input.method ?? 'GET').toUpperCase() !== 'GET') throw Error('游戏资源为只读');
-          const {restoreManagedDisk} = await import('./pc98-disk-blocks.mjs');
-          const disk = await restoreManagedDisk(content.optional, path, content.game);
-          if (disk) return new Response(disk, {headers:{'Content-Type':'application/octet-stream'}});
-        }
-        // Never fall back to a server copy of missing game data.
-        if (/\.(?:hdi|gz|exe|com|dat|bin|bmp|png|svg|woff2?|ogg|opus|wav|mid)$/i.test(path)) return new Response('Resource is not installed', {status: 404});
+        const track=/^native\/content\/akyu\/(\d{2})\.opus$/.exec(path);
+        if(track) return new Response(await loadMusic(`/bgm/akyu/${track[1]}.ogg`,init?.signal ?? input.signal),{headers:{'Content-Type':'audio/ogg'}});
+        if (path.startsWith('native/content/') || path === 'native/soew-glyphs.bin') return new Response('Resource is not installed', {status: 404});
       }
       return nativeFetch(input, init);
     };
   }
-}
-
-export function installManagedWorkers(environment, content, base) {
-  if (!environment.Worker) return;
-  const NativeWorker = environment.Worker;
-  const bootstrap = new URL('managed-worker.mjs', base).href;
-  environment.Worker = class ManagedWorker extends NativeWorker {
-    constructor(url, options = {}) {
-      if (options.type !== 'module') throw Error('接入运行时需要模块 Worker');
-      super(bootstrap, {...options, type: 'module'});
-      const target=new URL(url, environment.location.href).href;
-      const startupAssets=/\/netplay\/runtime-worker\.js(?:[?#]|$)/.test(target)?takeManagedStartupAssets():[];
-      super.postMessage({type: 'eagler-content-init', url: target, base, game: content.game, blob: content.blob, entries: [...content.files], optional: [...content.optional], startupAssets}, startupAssets.map(([,bytes])=>bytes.buffer));
-    }
-  };
 }

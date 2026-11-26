@@ -27,13 +27,13 @@
 th01–th05 的移植、Web 适配与多人项目由 [IxinorTyan](https://github.com/IxinorTyan) 开发。
 
 th01 的原生 C++ 核心同时提供 Windows 与 Web 版本。
-th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合作与联机。
+TH02 使用 SoEW Native，Eagler 书库与联机大厅共用原生核心。TH03–TH05 另有使用 DOSBox-X PC-98 核心的独立项目。
 [NP2 浏览器合集](https://github.com/IxinorTyan/touhou-np2)另提供五作的单机入口。
 
 |  |  | 还原 | 移植 | Web 适配 | 多人联机 |
 | :---: | :---: | :---: | :---: | :---: | :---: |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th01.jpg" width="28" height="40" alt="东方灵异传"> | **[th01] 東方靈異伝** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th01)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th01-multiorb-lab)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th01-multiorb-lab)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th01-multiorb-lab)<br>![In Progress][in-progress] |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th02.jpg" width="32" height="40" alt="东方封魔录"> | **[th02] 東方封魔録** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th02)<br>![In Progress][in-progress] | - | [IxinorTyan](https://github.com/IxinorTyan/th02-coop-lab)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th02-coop-lab)<br>![In Progress][in-progress] |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th02.jpg" width="32" height="40" alt="东方封魔录"> | **[th02] 東方封魔録** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th02)<br>![In Progress][in-progress] | [SoEW Native](https://github.com/IxinorTyan/SoEW-native)<br>![Done][done] | [Eagler 书库](../ports/th02/README.md)<br>![Done][done] | [Eagler 联机大厅](../ports/th02/README.md#联机与观战)<br>![In Progress][in-progress] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th03.jpg" width="28" height="40" alt="东方梦时空"> | **[th03] 東方夢時空** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th03)<br>![In Progress][in-progress] | - | [IxinorTyan](https://github.com/IxinorTyan/th03-netplay-lab)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th03-netplay-lab)<br>![In Progress][in-progress] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th04.jpg" width="60" height="40" alt="东方幻想乡"> | **[th04] 東方幻想郷** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th04)<br>![In Progress][in-progress] | - | [IxinorTyan](https://github.com/IxinorTyan/th04-coop-lab)<br>![Done][done] | [IxinorTyan](https://github.com/IxinorTyan/th04-coop-lab)<br>![In Progress][in-progress] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th05.jpg" width="55" height="40" alt="东方怪绮谈"> | **[th05] 東方怪綺談** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th05)<br>![In Progress][in-progress] | [Goan114](https://github.com/Goan114/uth05win-vibe)<br>![Done][done] | [Goan114](../ports/th05/README.md)<br>![In Progress][in-progress] | [IxinorTyan](https://github.com/IxinorTyan/th05-coop-lab)<br>![In Progress][in-progress] |

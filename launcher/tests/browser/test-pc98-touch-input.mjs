@@ -6,7 +6,7 @@ const browser = await puppeteer.launch({executablePath: await findChromiumExecut
 try {
   const page = await browser.newPage();
   await page.goto(process.env.EAGLER_TEST_URL || 'http://127.0.0.1:18310/');
-  for (const game of ['th01', 'th02', 'th03', 'th04']) {
+  for (const game of ['th01', 'th03', 'th04']) {
     const result = await page.evaluate(async game => {
       const {managedInput} = await import(`/ports/${game}/build-eagler/managed-input.mjs`);
       const options = {touchEnabled:true, touchSensitivity:150, touchMovementMode:'touch-unlimited'};
@@ -34,7 +34,7 @@ try {
         input.pointer({type:'up',id:2,x:.6,y:.5}); input.pointer({type:'up',id:1,x:.5,y:.5}); back = menu();
       }
       let quickSwipe,releaseAfterSample,controls;
-      if(game==='th02'||game==='th04'){
+      if(game==='th04'){
         input.clear();input.touch({fireEnabled:true,focusEnabled:true,bombSerial:1,escapeSerial:1,joystickX:20000,joystickY:-20000});
         controls={first:input.sample({play:true}),held:input.sample({play:true})};
         input.clear();pointer('down',.5,.5);pointer('move',.6,.5);pointer('up',.6,.5);

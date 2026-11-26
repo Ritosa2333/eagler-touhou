@@ -1,0 +1,32 @@
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {contentPath} from '../web/managed-data.mjs';
+
+export const nativeNotices=['LICENSE','LICENSE-MIT-ORIGINAL','NOTICE'];
+
+// Runtime code is pinned to the Eagler generation. Original art, the glyph
+// atlas and optional audio live in the installed TH02 DATA instead.
+export async function stageNativeSolo({build,output,port,runtime,addData,addMusic}) {
+  const native=resolve(output,'native');
+  await mkdir(native,{recursive:true});
+  for(const name of ['soew-full.mjs','soew-full.wasm','full.mjs','audio.mjs','glyph-cells.mjs','clock.mjs',...nativeNotices.map(name=>name+'.txt')]) {
+    const source=name.endsWith('.txt')?resolve(port,'native-solo',name.slice(0,-4)):
+      name.startsWith('soew-')?resolve(build,name):resolve(port,'native-solo/web',name);
+    await writeFile(resolve(native,name),await readFile(source));
+    runtime.push(`native/${name}`);
+  }
+  await addData('native/soew-glyphs.bin',await readFile(resolve(build,'soew-glyphs.bin')));
+  const content=resolve(build,'content');
+  const names=JSON.parse(await readFile(resolve(content,'full-files.json'),'utf8'));
+  const files=new Set(names.map(contentPath).filter(name=>name.toUpperCase()!=='HUUHI.DAT'));
+  if(files.has('akyu.pack')) {
+    const tracks=JSON.parse(await readFile(resolve(content,'akyu.pack')));
+    for(const track of tracks) {
+      const path=contentPath(track.url),match=/^akyu\/(\d{2})\.opus$/.exec(path);
+      if(!match)throw Error('Invalid SoEW album track: '+path);
+      await addMusic(match[1]+'.ogg',await readFile(resolve(content,path)));
+    }
+  }
+  await addData('native/content/full-files.json',Buffer.from(JSON.stringify([...files])+'\n'));
+  for(const name of files) await addData(`native/content/${name}`,await readFile(resolve(content,name)));
+}

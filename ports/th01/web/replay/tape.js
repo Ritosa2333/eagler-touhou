@@ -14,12 +14,12 @@ export function stable(value){
 import {sha256} from './sha256.js';
 export const digest=bytes=>sha256(bytes instanceof ArrayBuffer?new Uint8Array(bytes):bytes);
 export function randomId(){return Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');}
-export async function fingerprint(paths){
-  const entries=await Promise.all(paths.map(async path=>{const r=await fetch(new URL(path,import.meta.url),{cache:'no-cache'});if(!r.ok)throw Error('录像资源读取失败：'+path);return [path,await digest(await r.arrayBuffer())];}));
+export async function fingerprint(paths,overrides={}){
+  const entries=await Promise.all(paths.map(async path=>{if(overrides[path])return [path,overrides[path]];const r=await fetch(new URL(path,import.meta.url),{cache:'no-cache'});if(!r.ok)throw Error('录像资源读取失败：'+path);return [path,await digest(await r.arrayBuffer())];}));
   return digest(new TextEncoder().encode(stable(entries)));
 }
 export function validateHeader(h){
-  if(h?.version!==VERSION||!['01','02','03','04'].includes(h.game)||!(h.adapter==='confirmed-worker/1'||h.game==='01'&&h.adapter==='native-local/1')||
+  if(h?.version!==VERSION||!['01','03','04'].includes(h.game)||!(h.adapter==='confirmed-worker/1'||h.game==='01'&&h.adapter==='native-local/1')||
     !Number.isInteger(h.players)||h.players<1||h.players>3||!Number.isInteger(h.hostSlot)||h.hostSlot<0||h.hostSlot>=h.players||
     !Number.isFinite(h.tickMs)||h.tickMs<10||h.tickMs>30||!h.settings||typeof h.settings!=='object'||
     !/^[a-f0-9]{64}$/.test(h.identity)||h.opening===undefined)throw Error('录像作品、版本或身份无效');

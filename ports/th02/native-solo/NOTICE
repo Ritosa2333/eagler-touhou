@@ -1,0 +1,75 @@
+Third-party notices
+===================
+
+SoEW Native was authored by Dr. Hydrangea Z (https://github.com/Hydrangea-Z).
+IxinorTyan maintains this fork and its Web port
+(https://github.com/IxinorTyan/SoEW-native).
+
+The SoEW Native project code in this fork is distributed under GPL-3.0-only
+(see LICENSE). LICENSE-MIT-ORIGINAL preserves the original SoEW Native
+copyright and MIT notice. Third-party code, translations and game data
+retain their respective terms.
+
+1. Touhou Project / 東方Project
+   The game being ported, its artwork, music, text and characters are the
+   property of ZUN / Team Shanghai Alice (上海アリス幻樂団).
+   This is an unofficial fan project (二次創作). You must own the original game
+   to build a runnable copy.
+
+2. libth03 / th98port (Christian Azinn)
+   https://github.com/christianazinn/th98port/tree/5d7e1ba0b139c4b048478f62bdd0f027082c7d08
+   bootstrap.ps1 fetches this revision and applies the patches in patches/.
+   CMakeLists.txt compiles its PI, RGB and BFT decoders and PMD/OPNA audio
+   support into the WebAssembly runtime. Fetching the source at build time
+   does not change what the runtime contains.
+   No project-wide license is published at the pinned revision. The SoEW
+   license does not grant rights to this code. A public binary release needs
+   separate permission for the th98port code it includes, covering the
+   applicable source distribution and downstream rights as well.
+   Its bundled 98fmplayer (BSD-2-Clause) and ymfm (BSD-3-Clause) have
+   separate notices in their third_party directories.
+
+3. TinySoundFont (reached through libth03's third_party directory)
+   Copyright (C) 2017-2023 Bernhard Schelling, based on SFZero,
+   Copyright (C) 2012 Steve Folta.  MIT license.
+
+4. GeneralUser GS v1.44 SoundFont — http://www.schristiancollins.com
+   Runtime data only, NOT included. Its "License v2.0" allows use in software
+   projects and modification of the bank or its packaging; keep the license
+   text next to any copy you redistribute. `tools/slim_soundfont.py` can
+   derive a TH02-only subset locally.
+
+5. ReC98 — https://github.com/nmlgc/ReC98
+   Research reference for the original PC-98 code. No ReC98 source is copied
+   into or redistributed by this repository.
+
+6. app_icon.ico
+   Generated procedurally by `tools/gen_icon.py`; it contains no
+   third-party artwork.
+
+7. zlib 1.4 — https://zlib.net/
+   Downloaded from upstream at configure time and linked statically for native
+   replay compression. The license notice from the release follows:
+
+   Copyright notice:
+
+    (C) 1995-2026 Jean-loup Gailly and Mark Adler
+
+     This software is provided 'as-is', without any express or implied
+     warranty.  In no event will the authors be held liable for any damages
+     arising from the use of this software.
+
+     Permission is granted to anyone to use this software for any purpose,
+     including commercial applications, and to alter it and redistribute it
+     freely, subject to the following restrictions:
+
+     1. The origin of this software must not be misrepresented; you must not
+        claim that you wrote the original software. If you use this software
+        in a product, an acknowledgment in the product documentation would be
+        appreciated but is not required.
+     2. Altered source versions must be plainly marked as such, and must not be
+        misrepresented as being the original software.
+     3. This notice may not be removed or altered from any source distribution.
+
+     Jean-loup Gailly        Mark Adler
+     jloup@gzip.org          madler@alumni.caltech.edu

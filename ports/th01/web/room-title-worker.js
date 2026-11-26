@@ -42,7 +42,7 @@ async function boot({game, canvas, disk, wasmBinary, module}) {
     return {colored:colored/samples,lit:lit/samples,hash:hash>>>0};
   };
   let opFrames = 0, frames = 0, graphics = false, pixels = sample();
-  const settle = ['02','04'].includes(game) ? 240 : 720;
+  const settle = game === '04' ? 240 : 720;
   // Boot offscreen without exposing DOS, logo transitions, or a partial fade.
   while (opFrames < settle || pixels.colored < .08 || pixels.lit < .12) {
     for (let i = 0; i < 30; i++) {

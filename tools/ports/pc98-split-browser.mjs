@@ -14,8 +14,8 @@ const puppeteer = require('puppeteer-core'), root = resolve(import.meta.dirname,
 const temp = await mkdtemp(join(tmpdir(),'pc98-split-browser-'));
 let browser, server;
 try {
-  const game = process.argv[2] || 'th02', language = process.argv[3] || 'ja', multiplayer = process.argv[4] === 'mp';
-  if (!['th02','th03','th04'].includes(game) || !['ja','lang_zh-hans'].includes(language)) throw Error('Invalid test target');
+  const game = process.argv[2] || 'th04', language = process.argv[3] || 'ja', multiplayer = process.argv[4] === 'mp';
+  if (!['th03','th04'].includes(game) || !['ja','lang_zh-hans'].includes(language)) throw Error('Invalid test target');
   const source = resolve(root,'ports',game,'content'), runtime = resolve(root,'ports',game,'build-eagler');
   const files = {}, components = {}, digest = bytes => createHash('sha256').update(bytes).digest('hex');
   const descriptorFile = async (source,target) => {const bytes=await readFile(join(temp,source));return {source,target,bytes:bytes.length,sha256:digest(bytes),revision:digest(bytes).slice(0,16)};};
@@ -48,7 +48,7 @@ try {
   if(multiplayer)await page.evaluate(()=>rpc('prepare-room'));
   else {await page.evaluate(()=>rpc('launch'));await page.waitForFunction(()=>events.some(e=>e.event==='first-frame')||events.some(e=>e.event==='error'),{timeout:90000});
     await page.evaluate(()=>rpc('sync'));const result=await page.evaluate(()=>rpc('list'));
-    const names={th02:['HUUHI.DAT','HUUMA.CFG'],th03:['YUME.NEM','YUME.CFG'],th04:['GENSOU.SCR','MIKO.CFG']}[game];
+    const names={th03:['YUME.NEM','YUME.CFG'],th04:['GENSOU.SCR','MIKO.CFG']}[game];
     for(const name of names)assert(result.files.some(file=>file.path===name),`missing saved file ${name}`);
   }
   const errors=await page.evaluate(()=>events.filter(e=>e.event==='error'));assert.deepEqual(errors,[]);

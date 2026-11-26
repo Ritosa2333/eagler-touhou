@@ -1,5 +1,5 @@
 // Real managed runtime: measure targeted practice and retry without a lobby.
-// node launcher/tests/browser/test-pc98-practice-load.mjs th02 [th04]
+// node launcher/tests/browser/test-pc98-practice-load.mjs th04
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
@@ -8,12 +8,12 @@ import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 
 const repo=resolve(import.meta.dirname,'../../..');
-const games=process.argv.slice(2).length?process.argv.slice(2):['th02','th04'];
+const games=process.argv.slice(2).length?process.argv.slice(2):['th04'];
 const label=process.env.PC98_PRACTICE_LABEL||'current';
 const output=resolve(repo,'.cache/practice-load');await mkdir(output,{recursive:true});
 const results=[];
 for(const game of games){
-  assert(['th02','th04'].includes(game));
+  assert.equal(game,'th04');
   const root=process.env.PC98_PRACTICE_RUNTIME?resolve(process.env.PC98_PRACTICE_RUNTIME):resolve(repo,'ports',game,'build-eagler');
   const data=await readFile(resolve(repo,'ports',game,'content',game+'.data'));
   const html=`<!doctype html><style>html,body,iframe{border:0;margin:0;width:100%;height:100%;background:#000}</style><iframe id="game" src="/runtime/${game}.html?hosted=1&managedData=1&runtimeEpoch=1"></iframe><script>
@@ -32,20 +32,18 @@ for(const game of games){
     if(!path.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('route');
     res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');
     let contents=await readFile(file);
-    if(process.env.PC98_PRACTICE_PERF==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from('\nexport function testDisableStandby(){retryBlocked=true;discardRetry();}\n'+(game==='th04'?"export function testDense(){return emulator.call('practiceTestDense');} export function testPerfProbe(){return emulator.call('practicePerfProbe');}\n":"export function testDense(){globalThis.testDenseMode=true;} export function testPerfProbe(){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;let bullets=0;for(let i=0;i<150;i++)if(h[d+0x2c18+i*20]===1)bullets++;return {bullets,slowdown:h[d+0x2bfd]};}\n"))]);
+    if(process.env.PC98_PRACTICE_PERF==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from('\nexport function testDisableStandby(){retryBlocked=true;discardRetry();}\n'+"export function testDense(){return emulator.call('practiceTestDense');} export function testPerfProbe(){return emulator.call('practicePerfProbe');}\n")]);
     if(process.env.PC98_PRACTICE_PERF==='1'&&game==='th04'&&path==='/runtime/solo-worker.js'){
       contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practicePerfProbe'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;let bullets=0;for(let i=0;i<440;i++)if(h[d+0x5a22+i*26]===1)bullets++;return {bullets,turbo:h[d+0x53a0]};}if(method==='practiceTestDense'){globalThis.testDenseMode=true;return;}if(method==='soloFault')"));
     }
     if(process.env.PC98_PRACTICE_PERF==='1'&&game==='th04'&&path==='/runtime/dosbox-adapter.js')contents=Buffer.from(contents.toString().replace('this.module.practiceSignal=(port,packed)=>this.practice.signal(port,packed);',`this.module.practiceSignal=(port,packed)=>{this.practice.signal(port,packed);if(port!==0x7fe1||!globalThis.testDenseMode)return;const d=this.practice.debug.d,h=this.module.HEAPU8,v=new DataView(h.buffer);h.fill(0,d+0x5a22,d+0x5a22+440*26);for(let i=0;i<300;i++){const at=d+0x5a22+i*26,x=(12+(i%20)*18)*16,y=(24+Math.floor(i/20)*20)*16;h[at]=1;h[at+1]=32;for(const [o,n] of [[2,x],[4,y],[6,x],[8,y]])v.setInt16(at+o,n,true);h[at+19]=2;v.setUint16(at+24,52+i%11,true);}h[d+0x4662]=255;};`));
-    if(process.env.PC98_PRACTICE_PERF==='1'&&game==='th02'&&path==='/runtime/dosbox-adapter.js')contents=Buffer.from(contents.toString().replace('this.module.practiceSignal=(port,packed)=>this.practice.signal(port,packed);',`this.module.practiceSignal=(port,packed)=>{this.practice.signal(port,packed);if(port!==0x7fd1||!globalThis.testDenseMode)return;const d=this.practice.debug.d,h=this.module.HEAPU8,v=new DataView(h.buffer);h.fill(0,d+0x2c18,d+0x2c18+150*20);for(let i=0;i<150;i++){const at=d+0x2c18+i*20,x=(12+(i%15)*24)*16,y=(24+Math.floor(i/15)*25)*16;h[at]=1;h[at+1]=2;for(const [o,n] of [[2,x],[4,y],[6,x],[8,y]])v.setInt16(at+o,n,true);v.setUint16(at+14,52+i%11,true);}h[d+0x2b95]=255;};`));
     if(process.env.PC98_PRACTICE_BASELINE==='1'&&path==='/runtime/dosbox-disk.js')contents=Buffer.from(contents.toString().replace('network||practice?30000:',"network?30000:practice?16000:"));
-    if(process.env.PC98_PRACTICE_BASELINE==='1'&&game==='th02'&&path==='/runtime/dosbox-disk.js')contents=Buffer.from(contents.toString().replace("network||practice?'30000':","network?'30000':practice?'16000':"));
     if(process.env.PC98_PRACTICE_BASELINE==='1'&&path==='/runtime/practice-engine.js')contents=Buffer.from(contents.toString().replace('heap()[resident+73]=1;','').replace('w8(0x53a0,1);',''));
-    if(process.env.PC98_PRACTICE_DEATH==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeHit(lives){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8;h[d+0xb2c]=lives;h[d+0xb2d]=0;h[d+0x2b94]=1;}\n`:`\nexport function testPracticeHit(lives){return emulator.call('practiceTestHit',[lives]);}\n`)]);
+    if(process.env.PC98_PRACTICE_DEATH==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(`\nexport function testPracticeHit(lives){return emulator.call('practiceTestHit',[lives]);}\n`)]);
     if(process.env.PC98_PRACTICE_DEATH==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestHit'){const d=emulator.practice.debug.d,h=emulator.module.HEAPU8,r=emulator.practice.debug.resident;h[r+11]=args[0]+1;h[r+13]=0;h[d+0x4669]=1;return;}if(method==='soloFault')"));
-    if(process.env.PC98_PRACTICE_CLEAR==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?`\nexport function testPracticeClear(){const d=emulator.practice.debug.d;emulator.module.HEAPU8[d+0x2bfa]=1;}\n`:`\nexport function testPracticeClear(){return emulator.call('practiceTestClear');}\n`)]);
+    if(process.env.PC98_PRACTICE_CLEAR==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(`\nexport function testPracticeClear(){return emulator.call('practiceTestClear');}\n`)]);
     if(process.env.PC98_PRACTICE_CLEAR==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')", "if(method==='practiceTestClear'){const d=emulator.practice.debug.d;emulator.module.HEAPU8[d+0x53d9]=254;return;}if(method==='soloFault')"));
-    if(process.env.PC98_PRACTICE_REPLAY==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from(game==='th02'?"\nexport function testProgram(){const m=emulator.module,r=emulator.practice?.debug.resident;return globalThis.titleOpened?'OP':r>=0&&m.HEAPU8[r+39]?'DEMO':m.UTF8ToString(m._emGetRunningProgram());} export function armTitle(){const fs=emulator.module.FS,open=fs.open;fs.open=function(path,...args){if(/(?:^|[\\\\/])OP(?:\\.EXE)?$/i.test(String(path)))globalThis.titleOpened=true;return open.call(this,path,...args);};}\n":"\nexport function testProgram(){return emulator.call('testProgram');} export function armTitle(){return emulator.call('armTitle');}\n")]);
+    if(process.env.PC98_PRACTICE_REPLAY==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from("\nexport function testProgram(){return emulator.call('testProgram');} export function armTitle(){return emulator.call('armTitle');}\n")]);
     if(process.env.PC98_PRACTICE_REPLAY==='1'&&game==='th04'&&path==='/runtime/solo-worker.js')contents=Buffer.from(contents.toString().replace("if(method==='soloFault')","if(method==='armTitle'){const fs=emulator.module.FS,open=fs.open;fs.open=function(path,...args){if(/(?:^|[\\\\/])OP(?:\\.EXE)?$/i.test(String(path)))globalThis.titleOpened=true;return open.call(this,path,...args);};return;}if(method==='testProgram'){const m=emulator.module,r=emulator.practice?.debug.resident;return globalThis.titleOpened?'OP':r>=0&&m.HEAPU8[r+62]?'DEMO':m.UTF8ToString(m._emGetRunningProgram());}if(method==='soloFault')"));
     if(process.env.PC98_PAUSE_RESTART==='1'&&path==='/runtime/managed-solo.mjs')contents=Buffer.concat([contents,Buffer.from('\nlet original;export function testMark(){original=emulator;}export function testSame(){return emulator===original;}\n')]);
     res.end(contents);
@@ -74,7 +72,7 @@ for(const game of games){
     await page.evaluate(()=>rpc('launch',{launchSerial:1}));
     const state=()=>frame.evaluate(async()=>(await import('./managed-solo.mjs')).managedAPI.practiceState());
     await frame.waitForSelector('.managed-practice-open:not([hidden])',{timeout:120000});
-    const stage=Number(process.env.PC98_PRACTICE_STAGE??(game==='th02'?5:6));
+    const stage=Number(process.env.PC98_PRACTICE_STAGE??6);
     const entry=process.env.PC98_PRACTICE_ENTRY||'boss',character=Number(process.env.PC98_PRACTICE_CHARACTER||0);
     await frame.click('.managed-practice-open');
     await frame.focus('[data-jump=character]');await page.keyboard.press('ArrowDown');

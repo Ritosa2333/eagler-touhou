@@ -2555,6 +2555,8 @@
   "account_discordPending": "Discordログインはアカウントサービスの接続後に利用できます。",
   "profile_online_simulated": "| デモ表示",
   "room_th02SpecialFocus": "低速移動なし",
+  "room_th02RapidFire": "連射を有効化",
+  "room_th02NoRapidFire": "連射なし",
   "touch_th01SlideHold": "長押しでスライディング",
   "room_th03SpecialFocus": "低速移動あり",
   "document_terms": "利用規約",

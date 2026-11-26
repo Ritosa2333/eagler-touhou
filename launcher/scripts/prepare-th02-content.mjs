@@ -1,7 +1,8 @@
-import {mkdir,readFile,copyFile,cp} from 'node:fs/promises';
+import {mkdir,readFile,copyFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
+import {PRODUCT_CONTENT} from '../lib/content-definition.mjs';
 const arg=name=>process.argv.find(value=>value.startsWith('--'+name+'='))?.slice(name.length+3);
 if(!arg('original')||!arg('output'))throw Error('Use --original=PREPARED_CONTENT_ROOT --output=DIR');
 const original=resolve(arg('original')),output=resolve(arg('output'));
@@ -14,14 +15,17 @@ const manifest=JSON.parse(bytes.subarray(12,base));
 if(manifest.schema!=='eagler-touhou/pc98-content/1'||manifest.game!=='th02'||!Array.isArray(manifest.files)||!manifest.files.length||manifest.files.length>10000)throw Error('Invalid TH02 DATA identity');
 const seen=new Set();let end=0;
 for(const file of manifest.files){
-  if(typeof file.path!=='string'||!file.path||/[\\:\0?#]/.test(file.path)||file.path.split('/').some(part=>!part||part==='.'||part==='..')||seen.has(file.path)||file.offset!==end||!Number.isSafeInteger(file.bytes)||file.bytes<=0||base+end+file.bytes>bytes.length)throw Error('Invalid TH02 DATA entry');
+  if(typeof file.path!=='string'||!file.path.startsWith('native/')||/[\\:\0?#]/.test(file.path)||file.path.split('/').some(part=>!part||part==='.'||part==='..')||seen.has(file.path)||file.offset!==end||!Number.isSafeInteger(file.bytes)||file.bytes<=0||base+end+file.bytes>bytes.length)throw Error('Invalid TH02 DATA entry');
   seen.add(file.path);
   const hash=createHash('sha256').update(bytes.subarray(base+end,base+end+file.bytes)).digest('hex');
   if(hash!==file.sha256)throw Error('Corrupt TH02 DATA asset: '+file.path);
   end+=file.bytes;
 }
-if(base+end!==bytes.length)throw Error('Invalid TH02 DATA length');
+if(base+end!==bytes.length||!seen.has('native/content/full-files.json')||!seen.has('native/soew-glyphs.bin'))throw Error('Incomplete SoEW Native DATA');
 await mkdir(output,{recursive:true});await copyFile(resolve(prepared,'th02.data'),resolve(output,'th02.data'));
 if(existsSync(resolve(prepared,'source.json')))await copyFile(resolve(prepared,'source.json'),resolve(output,'source.json'));
-if(existsSync(resolve(prepared,'disks.json'))){await copyFile(resolve(prepared,'disks.json'),resolve(output,'disks.json'));await cp(resolve(prepared,'disk-blocks'),resolve(output,'disk-blocks'),{recursive:true});}
+if(existsSync(resolve(prepared,'music'))){
+  await mkdir(resolve(output,'music'),{recursive:true});
+  for(const name of PRODUCT_CONTENT.th02.music.ogg.files)await copyFile(resolve(prepared,'music',name),resolve(output,'music',name));
+}
 console.log('Prepared verified TH02 content: '+output);

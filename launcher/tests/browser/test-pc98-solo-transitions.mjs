@@ -5,7 +5,7 @@ import {resolve,extname,sep} from 'node:path';
 import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 const repo=resolve(import.meta.dirname,'../../..');
-for(const game of process.argv.slice(2).length?process.argv.slice(2):['th02','th04']){
+for(const game of process.argv.slice(2).length?process.argv.slice(2):['th04']){
   const root=resolve(repo,'ports',game,'build-eagler'),data=await readFile(resolve(repo,'ports',game,'content',`${game}.data`));
   const html=`<!doctype html><style>html,body,iframe{border:0;margin:0;width:100%;height:100%;background:#000}</style><iframe src="/runtime/${game}.html?hosted=1&managedData=1&runtimeEpoch=1"></iframe><script>
     window.events=[];window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/data')).arrayBuffer()});
@@ -14,7 +14,7 @@ for(const game of process.argv.slice(2).length?process.argv.slice(2):['th02','th
   </script>`;
   const server=createServer(async(req,res)=>{try{const path=new URL(req.url,'http://localhost').pathname;if(path==='/'){res.setHeader('content-type','text/html');return res.end(html);}if(path==='/data')return res.end(data);
     const file=resolve(root,path.slice(9));if(!path.startsWith('/runtime/')||!file.startsWith(root+sep))throw Error('route');res.setHeader('content-type',({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.wasm':'application/wasm','.css':'text/css'})[extname(file)]||'application/octet-stream');
-    let bytes=await readFile(file);    if((game==='th04'||game==='th02')&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nlet old;export function mark(){old=emulator;}export function same(){return old===emulator;}export function snapshot(){return readState();}\n')]);
+    let bytes=await readFile(file);    if(game==='th04'&&path==='/runtime/managed-solo.mjs')bytes=Buffer.concat([bytes,Buffer.from('\nlet old;export function mark(){old=emulator;}export function same(){return old===emulator;}export function snapshot(){return readState();}\n')]);
     if(game==='th04'&&path==='/runtime/solo-worker.js')bytes=Buffer.from(bytes.toString().replace("if(method==='soloFault')","if(method==='testTurbo'){const d=emulator.practice.debug.d;return d<0?null:emulator.module.HEAPU8[d+0x53a0];}if(method==='soloFault')"));res.end(bytes);
   }catch{res.writeHead(404).end();}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;

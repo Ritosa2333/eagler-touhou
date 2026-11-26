@@ -2,7 +2,7 @@
 import {mountTitlePreview} from './room-title-preview.js';
 import {mountNetworkStatus} from './network-status.js';
 const games = {
-  '01': '东方灵异传', '02': '东方封魔录', '03': '东方梦时空',
+  '01': '东方灵异传', '03': '东方梦时空',
   '04': '东方幻想乡', '05': '东方怪绮谈',
 };
 const game = document.body.dataset.roomGame;

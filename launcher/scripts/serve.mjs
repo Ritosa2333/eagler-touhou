@@ -36,9 +36,12 @@ import { assertSafeDevelopmentServerScope } from "../lib/development-server-scop
 import { workspaceRoot } from "../lib/workspace-layout.mjs";
 import { resolveRuntimeGenerationWorkerSource } from "../lib/contracts-build.mjs";
 
-const host = process.env.EAGLER_TOUHOU_HOST || "127.0.0.1";
+const configuredHost = process.env.EAGLER_TOUHOU_HOST;
+const host = configuredHost || "127.0.0.1";
 const port = Number.parseInt(process.argv[2] || process.env.EAGLER_TOUHOU_PORT || "8130", 10);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("端口号无效");
+const origin = `http://${host.includes(":") ? `[${host}]` : host}:${port}`;
+const listenHosts = !configuredHost || host === "localhost" ? ["127.0.0.1", "::1"] : [host];
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sourceWorkspace = workspaceRoot();
 const root = resolve(process.argv[3] || sourceWorkspace);
@@ -54,7 +57,7 @@ if (!sourceDevelopmentServer) {
   throw new Error("Explicit directory serving for React must use the verified packaged static server, not the source development server");
 }
 if (REACT_FRONTEND_ARTIFACT.appShell && REACT_FRONTEND_ARTIFACT.appShell.origin !== 'same-origin' &&
-    REACT_FRONTEND_ARTIFACT.appShell.origin !== `http://${host}:${port}`) {
+    REACT_FRONTEND_ARTIFACT.appShell.origin !== origin) {
   throw new Error("React App Shell origin does not match this development server");
 }
 const appShellEnabled = REACT_FRONTEND_ARTIFACT.appShell !== null;
@@ -197,9 +200,9 @@ function etag(info) {
   return `\"${createHash("sha1").update(`${info.size}:${info.mtimeMs}`).digest("base64url")}\"`;
 }
 
-createServer(async (request, response) => {
+async function handleRequest(request, response) {
   try {
-    const url = new URL(request.url || "/", `http://${host}:${port}`);
+    const url = new URL(request.url || "/", origin);
     if (await handleThcrap(request, response, url)) return;
     let pathname = decodeURIComponent(url.pathname);
     if (pathname === "/eagler-touhou" || pathname === "/eagler-touhou/") {
@@ -310,6 +313,17 @@ createServer(async (request, response) => {
       "Last-Modified": info.mtime.toUTCString(),
       Vary: "Accept-Encoding",
     };
+    // Live documents and module workers must match the App Shell's isolation
+    // policy. Serve the same headers for scripts and worker entry requests so
+    // preload and revalidation can share the response.
+    const documentResponse = commonHeaders["Content-Type"].startsWith("text/html");
+    if (documentResponse) {
+      commonHeaders["Cross-Origin-Opener-Policy"] = "same-origin";
+    }
+    if (documentResponse || commonHeaders["Content-Type"].startsWith("text/javascript")) {
+      commonHeaders["Cross-Origin-Embedder-Policy"] = "require-corp";
+      commonHeaders["Cross-Origin-Resource-Policy"] = "same-origin";
+    }
     if (legacyRetirementWorker) commonHeaders["Service-Worker-Allowed"] = "/eagler-touhou/";
     if (request.headers["if-none-match"] === tag) {
       response.writeHead(304, commonHeaders); response.end(); return;
@@ -338,8 +352,14 @@ createServer(async (request, response) => {
     if (!response.headersSent) response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     if (!response.writableEnded) response.end("Not found");
   }
-}).listen(port, host, () => {
-  console.log(`eagler-touhou: http://${host}:${port}/`);
-  console.log(`host artwork: ${configuredArtworkDirectory || "not configured"}`);
-  console.log(`thcrap: ${thcrapEnabled ? (runtimeCompiler ? "enabled" : "enabled without runtime compiler") : "disabled"}`);
-});
+}
+
+let listening = 0;
+for (const address of listenHosts) {
+  createServer(handleRequest).listen(port, address, () => {
+    if (++listening !== listenHosts.length) return;
+    console.log(`eagler-touhou: ${listenHosts.length === 2 ? `http://localhost:${port}` : origin}/`);
+    console.log(`host artwork: ${configuredArtworkDirectory || "not configured"}`);
+    console.log(`thcrap: ${thcrapEnabled ? (runtimeCompiler ? "enabled" : "enabled without runtime compiler") : "disabled"}`);
+  });
+}

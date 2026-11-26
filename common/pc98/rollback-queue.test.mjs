@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {packTouch} from '../../ports/th02/web/touch-input.js';
+import {packTouch} from '../../ports/th04/web/touch-input.js';
 const coreModule=await WebAssembly.compile(await readFile(new URL('./rollback-core.wasm',import.meta.url)));
-for(const game of ['th02','th04']) {
+for(const game of ['th04']) {
  const {RollbackQueue}=await import(`../../ports/${game}/web/netplay/rollback-queue.js`);
  test(`${game}: delayed input, async completion and departure preserve the confirmed timeline`,()=>{
   const q=new RollbackQueue(0,3,{coreModule,directionPrediction:2,predictionLead:8});q.arm(0);

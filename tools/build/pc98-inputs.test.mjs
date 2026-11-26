@@ -17,5 +17,5 @@ for(const game of ['th01','th02','th03','th04','th05'])test(`${game} source insp
     const checkedInCore=game!=='th05';
     assert.equal(report.inputFiles.includes(resolve(owner,'web',resource)),checkedInCore,resource);
   }
-  assert.ok(report.compilerFlags.includes(game==='th05'?'native-core=external-precompiled':'native-core=checked-in-precompiled'));
+  assert.ok(report.compilerFlags.includes(['th02','th05'].includes(game)?'native-core=external-precompiled':'native-core=checked-in-precompiled'));
 });

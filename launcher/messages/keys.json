@@ -10629,6 +10629,14 @@
     "id": "room_th02SpecialFocus",
     "params": []
   },
+  "room.th02RapidFire": {
+    "id": "room_th02RapidFire",
+    "params": []
+  },
+  "room.th02NoRapidFire": {
+    "id": "room_th02NoRapidFire",
+    "params": []
+  },
   "account.verification": {
     "id": "account_verification",
     "params": []

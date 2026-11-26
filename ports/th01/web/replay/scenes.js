@@ -14,6 +14,5 @@ export function sceneLabel(scene,game){
   if(scene.kind==='round')return `对局段 ${scene.round}`;
   if(game==='01')return `第 ${scene.stage} 关${scene.stage>5?' · '+(scene.route?'地狱':'魔界'):''}`;
   if(game==='04'&&scene.stage===6)return 'Extra';
-  if(game==='02'&&scene.stage===5)return 'Extra';
   return `第 ${scene.stage+1} 面`;
 }

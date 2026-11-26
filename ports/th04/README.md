@@ -39,6 +39,6 @@ node ports/th04/tests/launcher-room-browser.mjs
 
 特定跳关沿用原资源预载与后台预备实例：目标就绪后准备下一次起点，Shift+F 使用已确认的目标与最新辅助选项，预备实例在激活前保持冻结。高级设置中的预备快速重试选项可控制后台准备。练习 REP 存入主项目录像文件空间。手机可直接操作浏览器面板；合作房间使用原有同步内核。
 
-统一练习器验证：启动包含 TH02、TH04、TH05 的主 Launcher 后运行 `node common/tests/pc98-practice-browser.mjs`。测试使用真实模拟器验证目标阶段、浏览器表单、辅助开关、后台预备完成与命中、暂停起点冻结、预备开关、右侧布局与窄屏面板。设置 `PC98_PRACTICE_MOBILE=1` 可验证移动浏览器面板与画面触控移动。
+练习器验证：构建 TH04 Runtime 和 DATA 后运行 `node launcher/tests/browser/test-pc98-practice-load.mjs th04`，检查浏览器练习表单、指定阶段和快速重试。运行 `node launcher/tests/browser/test-pc98-native-pause-retry.mjs th04` 验证原生暂停与练习切换。
 
 构建器默认使用当前 `ports/th04/web` 的代码；通过 `--assets=<原运行时 web 目录>` 提供游戏资源和预编译核心。`PC98_ASSETS_DIR` 可覆盖开发脚本默认的资源路径。源码基线与资源清单见 [source-import.json](source-import.json)，每次构建的实际输入哈希写入 `content/source.json`。

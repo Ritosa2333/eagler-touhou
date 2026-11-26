@@ -4,36 +4,6 @@ practice_restart_tick:
     cmp byte [cs:practice_restart_pending],0
     je .done
     mov byte [cs:practice_restart_pending],0
-%ifdef PRACTICE_RESTART_TH02
-    les bx,[0x27fc]
-    cmp byte [cs:practice_restart_values+5],0
-    je .stage02
-    mov al,[cs:practice_restart_values+1]
-    mov [es:bx+22],al
-    mov al,[cs:practice_restart_values+2]
-    mov [es:bx+38],al
-    mov al,[cs:practice_restart_values+3]
-    mov [es:bx+26],al
-    mov al,[cs:practice_restart_values+4]
-    mov [es:bx+25],al
-.stage02:
-    mov al,[cs:practice_restart_values]
-    mov [es:bx+11],al
-    mov [0x8f5],al
-    mov dword [es:bx+14],0
-    mov word [es:bx+18],0
-    mov al,[es:bx+25]
-    mov [es:bx+20],al
-    mov al,[es:bx+26]
-    mov [es:bx+21],al
-    mov byte [cs:0x10e],0xe9
-    mov word [cs:0x10f],9
-    mov dword [cs:0x111],0x6e69616d
-    mov byte [cs:0x115],0
-    mov byte [cs:0x13b],0x0e
-    mov word [cs:0x13d],0x111
-    mov byte [0x2b97],1
-%else
     les bx,[0xba86]
     cmp byte [cs:practice_restart_values+5],0
     je .stage04
@@ -65,7 +35,6 @@ practice_restart_tick:
     mov byte [cs:0x8d],0x0e
     mov word [cs:0x8f],0x88
     mov byte [0x5392],1
-%endif
     cmp byte [cs:practice_result_selecting],0
     je .done
     mov byte [cs:practice_result_selecting],0
@@ -130,11 +99,7 @@ practice_form_native_start:
     ; this MAIN, then restore the native data and resident configuration.
     mov byte [cs:practice_restart_pending],2
     push dx
-%ifdef PRACTICE_RESTART_TH02
-    mov dx,0x7fd1
-%else
     mov dx,0x7fe1
-%endif
     call signal
     cmp byte [cs:practice_checkpoint_use_baseline],0
     je .restore_selected
@@ -172,24 +137,15 @@ practice_form_native_start:
     mov byte [cs:target_preparing],1
     mov byte [cs:practice_target_reached],0
     mov byte [cs:practice_arrival_pending],0
-%ifdef PRACTICE_RESTART_TH02
-    mov byte [cs:redraw_pending],2
-    mov dx,0x7fd0
-%else
     mov byte [cs:practice_redraw_pending],2
     mov dx,0x7fe0
-%endif
     call signal
     pop dx
     ret
 .reload:
 %endif
     push dx
-%ifdef PRACTICE_RESTART_TH02
-    mov dx,0x7fd1
-%else
     mov dx,0x7fe1
-%endif
     call signal
     pop dx
     mov ax,0xa000
@@ -221,19 +177,13 @@ practice_form_native_start:
     jb .save_options
     mov al,[cs:practice_assists]
     mov [es:0x4fb],al
-%ifdef PRACTICE_RESTART_TH02
-    mov dword [es:0x4e0],0x32525054 ; TPR2
-%else
     mov dword [es:0x4e0],0x34525054 ; TPR4
-%endif
     mov al,[cs:practice_form_values]
-%ifndef PRACTICE_RESTART_TH02
     xor al,al
     cmp byte [cs:practice_form_values+2],4
     jne .stage_ready
     mov al,6
 .stage_ready:
-%endif
     mov [cs:practice_restart_values],al
     mov al,[cs:practice_form_values+2]
     mov [cs:practice_restart_values+1],al
@@ -277,30 +227,16 @@ practice_preparation_guard:
     cmp byte [cs:target_preparing],0
     je .done
     inc word [cs:practice_prepare_frames]
-%ifdef PRACTICE_RESTART_TH02
-    cmp word [cs:practice_prepare_frames],30000
-%else
     cmp word [cs:practice_prepare_frames],40000
-%endif
     jb .prepare
     mov byte [cs:target_preparing],0
     mov byte [cs:practice_outcome],2
     mov byte [cs:hold],1
     ret
 .prepare:
-%ifdef PRACTICE_RESTART_TH02
-    mov byte [0x2b94],0
-    mov byte [0x2b95],2
-    cmp word [cs:practice_prepare_frames],1
-    jne .done
-    cmp byte [cs:practice_initial_entry],0
-    je .done
-    mov dword [0x2ba2],159
-%else
     mov byte [0x4662],2
     mov byte [0x4669],0
     mov byte [0x466a],0
-%endif
 .done:
     ret
 practice_prepare_frames: dw 0
@@ -309,11 +245,6 @@ practice_prepare_frames: dw 0
 practice_native_restrictions:
     cmp byte [cs:target_practice],0
     je .done
-%ifdef PRACTICE_RESTART_TH02
-    mov bx,0x2538
-    mov cx,0x10
-    mov dx,0x20
-%else
     ; A long Boss attempt must not trigger the unrelated stage midboss.
     cmp byte [cs:practice_initial_entry],2
     jne .mid04
@@ -335,7 +266,6 @@ practice_native_restrictions:
     mov bx,0x3974
     mov cx,0x20
     mov dx,0x10
-%endif
     cmp byte [cs:target_preparing],0
     jne .clear_keys
     cmp byte [cs:practice_outcome],0
@@ -353,7 +283,6 @@ practice_native_restrictions:
     not dx
     and [bx],dx
 .focus:
-%ifndef PRACTICE_RESTART_TH02
     cmp byte [cs:practice_form_options+2],0
     je .force_focus
     mov byte [0x3976],0
@@ -362,50 +291,14 @@ practice_native_restrictions:
     cmp byte [cs:practice_form_options+4],0
     je .rank
     mov byte [0x3976],1
-%endif
 .rank:
     cmp byte [cs:practice_form_options],0
     je .done
     mov ax,[cs:practice_initial_rank]
-%ifdef PRACTICE_RESTART_TH02
-    cmp byte [0x8f4],0
-    jne .rank_normal
-    cmp ax,4
-    jle .rank_normal
-    mov ax,4
-.rank_normal:
-    mov [0x2802],ax
-%else
     mov [0x5395],al
-%endif
 .done:
     ret
 
-%ifdef PRACTICE_RESTART_TH02
-; Preserve AX and return the flags expected by the movement branch.
-practice_focus_test:
-    push ax
-    call practice_focus_hook
-    test ax,0x100
-    pop ax
-    ret
-; The solo movement adapter reads focus through this accessor. Keep the raw
-; key available for replay, but let native practice options override it.
-practice_focus_hook:
-    mov ax,[cs:SOLO_CURRENT_INPUT]
-    cmp byte [cs:target_practice],0
-    je .done
-    cmp byte [cs:practice_form_options+2],0
-    je .force
-    and ax,0xfeff
-    ret
-.force:
-    cmp byte [cs:practice_form_options+4],0
-    je .done
-    or ax,0x100
-.done:
-    ret
-%endif
 
 ; Consume only this game's one-shot resident configuration at MAIN load.
 practice_native_setup:
@@ -413,11 +306,7 @@ practice_native_setup:
     push bx
     xor ax,ax
     mov es,ax
-%ifdef PRACTICE_RESTART_TH02
-    cmp dword [es:0x4e0],0x32525054
-%else
     cmp dword [es:0x4e0],0x34525054
-%endif
     jne .done
     mov dword [es:0x4e0],0
 %ifdef PRACTICE_CHECKPOINT_BYTES
@@ -456,22 +345,6 @@ practice_native_setup:
     mov [cs:practice_initial_bombs],al
     mov al,[cs:practice_form_values+7]
     mov [cs:practice_initial_power],al
-%ifdef PRACTICE_RESTART_TH02
-    mov al,[cs:practice_form_values+9]
-    sub al,6
-    cbw
-    cmp byte [cs:practice_form_values+2],0
-    jne .rank_limit
-    cmp ax,4
-    jle .rank_ready
-    mov ax,4
-.rank_limit:
-    cmp ax,16
-    jle .rank_ready
-    mov ax,16
-.rank_ready:
-    mov [cs:practice_initial_rank],ax
-%else
     mov al,[cs:practice_form_values+8]
     mov [cs:practice_initial_gengetsu],al
     xor al,al
@@ -500,14 +373,11 @@ practice_native_setup:
     mov [0x5394],al
     add al,'0'
     mov [es:bx+19],al
-%endif
 .done:
     pop bx
     pop es
     ret
-%ifndef PRACTICE_RESTART_TH02
 practice_native_ranks: db 4,16,11,24,20,32,22,34,16,20
-%endif
 
 ; Empty native loading text from a prior MAIN on the first load of a normal
 ; game too; never erase unrelated HUD cells or title text.

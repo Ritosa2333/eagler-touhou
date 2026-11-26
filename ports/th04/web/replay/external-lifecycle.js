@@ -4,8 +4,8 @@ export function createSoloReplayLifecycle({game,patch},memory){
   const signature=new TextEncoder().encode(patch.signature);
   const mailboxOffset=patch.entries?.mailbox??patch.mailboxCsOffset??patch.mailbox_cs_offset;
   const dataDelta=((patch.dataSegment??patch.data_segment)-(patch.codeSegment??patch.code_segment))*16;
-  const residentOffset={'02':0x27fc,'03':0x1d90,'04':0xba86}[game];
-  const residentSignature=new TextEncoder().encode({'02':'MIKOConfig','03':'YUMEConfig','04':'HUMAConfig'}[game]);
+  const residentOffset={'03':0x1d90,'04':0xba86}[game];
+  const residentSignature=new TextEncoder().encode({'03':'YUMEConfig','04':'HUMAConfig'}[game]);
   let at=-1,cursor=0,started=false,generation=-1,fatal=false,lastStage=0;
   function matches(h,address,bytes){return address>=0&&address+bytes.length<=h.length&&bytes.every((b,i)=>h[address+i]===b);}
   function mapping(h,v,address){
@@ -36,20 +36,7 @@ export function createSoloReplayLifecycle({game,patch},memory){
     if(!mapped)return null;
     const {data,resident,mode,gen}=mapped;
     let active=false,paused=false,finish=null,stage=lastStage;
-    if(game==='02'){
-      if(h[resident+0x27])return null; // attract demo
-      const currentStage=h[resident+11];if(currentStage!==0x7f)stage=currentStage;
-      active=mode===1||mode===2;paused=mode===2;
-      const miss=h[data+0xaa7],frame=h[data+0x2b99],lives=h[data+0xb2c];
-      // lives counts spare lives. A respawn from one spare life reaches zero
-      // at frame 43, and must not be confused with the final death.
-      if(!miss||lives>0)fatal=false;
-      if(active&&miss&&lives===0&&frame>0&&frame<24)fatal=true;
-      if(started&&fatal&&miss&&lives===0&&frame===0)finish='game-over';
-      if(started&&v.getUint16(resident+18,true)>0)finish='game-over';
-      if(started&&mode===0)finish=finish||'end';
-      if(started&&currentStage===0x7f)finish='clear';
-    }else if(game==='04'){
+    if(game==='04'){
       if(h[resident+62])return null;
       stage=h[data+0x5394];active=mode===1||mode===2;paused=mode===2;
       const lives=h[resident+11],miss=h[data+0x466a],quit=h[data+0x5392],sequence=h[resident+48];

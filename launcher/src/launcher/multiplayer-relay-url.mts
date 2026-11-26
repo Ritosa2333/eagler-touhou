@@ -15,6 +15,7 @@ const relayRoleParams = Object.freeze([
   "unrated",
   "disableLocalChargePriority",
   "disableFocus",
+  "rapidFire",
   "showHitboxes",
   "ballCount",
   "initialSpares", "initialBombs",
@@ -63,7 +64,7 @@ export function multiplayerTransportRoomId(product: string, roomCode: string): s
 
 export function buildMultiplayerLobbyRelayUrl(
   baseUrl: string,
-  { product, roomCode, clientId, memberId, intent, visibility, disableCheatMovement, unrated, disableLocalChargePriority, disableFocus, showHitboxes, ballCount, initialSpares, initialBombs, challengeMode, challengeKeepBullets, chapterThreshold, th19Rules, prankMode, playerCount, difficulty }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string; visibility?: "public" | "private"; disableCheatMovement?: boolean; unrated?: boolean; disableLocalChargePriority?: boolean; disableFocus?:boolean; showHitboxes?:boolean; ballCount?:number; initialSpares?:number; initialBombs?:number; challengeMode?:boolean; challengeKeepBullets?:boolean; chapterThreshold?:number; th19Rules?:number[]; prankMode?:boolean; playerCount?: number; difficulty?: number },
+  { product, roomCode, clientId, memberId, intent, visibility, disableCheatMovement, unrated, disableLocalChargePriority, disableFocus, rapidFire, showHitboxes, ballCount, initialSpares, initialBombs, challengeMode, challengeKeepBullets, chapterThreshold, th19Rules, prankMode, playerCount, difficulty }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string; visibility?: "public" | "private"; disableCheatMovement?: boolean; unrated?: boolean; disableLocalChargePriority?: boolean; disableFocus?:boolean; rapidFire?:boolean; showHitboxes?:boolean; ballCount?:number; initialSpares?:number; initialBombs?:number; challengeMode?:boolean; challengeKeepBullets?:boolean; chapterThreshold?:number; th19Rules?:number[]; prankMode?:boolean; playerCount?: number; difficulty?: number },
 ): MultiplayerLobbyRelayUrl {
   const url = relayUrl(baseUrl);
   clearRelayRole(url);
@@ -80,6 +81,7 @@ export function buildMultiplayerLobbyRelayUrl(
     if(product === 'th01mp')url.searchParams.set('ballCount',String(ballCount ?? 2));
     if(product === 'th02mp'||product === 'th04mp'){url.searchParams.set('initialSpares',String(initialSpares??2));url.searchParams.set('initialBombs',String(initialBombs??2));}
     if(product === 'th02mp'||product === 'th03mp')url.searchParams.set('disableFocus',product === 'th03mp' ? (disableFocus!==false?'1':'0') : (disableFocus===true?'1':'0'));
+    if(product === 'th02mp' && rapidFire === false)url.searchParams.set('rapidFire','0');
     if(product === 'th03mp')url.searchParams.set('showHitboxes',showHitboxes===true?'1':'0');
     if(challengeMode!==undefined)url.searchParams.set("challengeMode",challengeMode?"1":"0");
     if(challengeMode&&challengeKeepBullets)url.searchParams.set("challengeKeepBullets","1");

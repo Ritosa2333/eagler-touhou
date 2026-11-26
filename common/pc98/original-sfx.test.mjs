@@ -9,7 +9,7 @@ test('failed original sound setup releases its context, node and worker',async()
   globalThis.AudioWorkletNode=class {constructor(){this.port={};}connect(){}disconnect(){calls.push('disconnect');}};
   globalThis.Worker=class {terminate(){calls.push('terminate');}};
   try{
-    await assert.rejects(OriginalSfx.create('th02',{find(){throw Error('missing driver');}}),/missing driver/);
+    await assert.rejects(OriginalSfx.create('th04',{find(){throw Error('missing driver');}}),/missing driver/);
     assert.deepEqual(calls,['terminate','disconnect','close']);
   }finally{for(const [key,value] of Object.entries(old)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
 });

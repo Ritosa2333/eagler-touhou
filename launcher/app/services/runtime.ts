@@ -71,11 +71,13 @@ export interface RuntimeFrame {
   removeEventListener(type: 'load', listener: EventListener): void;
 }
 export interface ManagedDataRequest { game: string; generation: string; epoch: number; preferBlob?: boolean }
+interface ManagedMusicRequest extends ManagedDataRequest {path: string; signal?: AbortSignal}
 export interface RuntimeHost {
   location: { href: string; origin: string };
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
   __eaglerPrepareManagedRuntimeDataV1?: (request: ManagedDataRequest) => ReturnType<typeof readManagedRuntimeData>;
+  __eaglerReadRuntimeMusicV1?: (request: ManagedMusicRequest) => Promise<ArrayBuffer>;
   __eaglerUploadTh09ReplayV1?: typeof uploadTh09Replay;
 }
 export interface RuntimeLauncherControls {
@@ -121,6 +123,8 @@ export interface RuntimePlan {
   /** Verified managed OGG; fallback permission is attested by the acquisition
    * owner against the validated Host and successfully prepared MIDI bridge. */
   localOgg?: {fileIds: readonly string[]; fallbackToMidi: boolean};
+  /** Optional tracks bound to this Runtime's Package and resolved on selection. */
+  deferredOgg?: Readonly<Record<string,{id?:string;url?:string;bytes?:number;sha256?:string}>>;
   /** Click-time Launcher-only controls, never added to native configure wire. */
   launcherControls?: RuntimeLauncherControls;
 }
@@ -561,6 +565,25 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       const failure = new GameDataAcquisitionError(errorText(error), {cause: error});
       fail(failure); throw failure;
     }
+  };
+  const provideMusic: NonNullable<RuntimeHost['__eaglerReadRuntimeMusicV1']> = async request => {
+    const token=sessions.current(), plan=preparedPlan;
+    if(!token||request?.epoch!==token.id||!plan||!launchRequested||closing)throw new RuntimeSessionSupersededError();
+    const generation=generations.resolve(request), before=runtimeIdentity(token);
+    const path=request.path, entry=plan.deferredOgg && Object.hasOwn(plan.deferredOgg,path)?plan.deferredOgg[path]:null;
+    if(!entry)throw new Error(options.translate('runtime.resourceDamaged',{path}));
+    request.signal?.throwIfAborted();
+    let buffer=entry.id?(await deps.readResource(generation,entry.id))?.buffer:undefined;
+    if(!buffer&&entry.url){
+      const response=await network.fetch(entry.url,{signal:request.signal},packageNetworkMetadata(plan.game,entry.url,baseUrl,options.translate));
+      if(response.ok)buffer=await response.arrayBuffer();
+    }
+    if(!buffer||entry.bytes&&buffer.byteLength!==entry.bytes||entry.sha256&&await sha256Hex(buffer)!==entry.sha256.toLowerCase())
+      throw new Error(options.translate('runtime.resourceDamaged',{path}));
+    const after=runtimeIdentity(token);
+    if(after.document!==before.document||preparedPlan!==plan||closing)throw new RuntimeSessionSupersededError();
+    request.signal?.throwIfAborted();
+    return buffer;
   };
   function onMessage(event: MessageEvent) {
     const token = sessions.current();
@@ -1507,6 +1530,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     audioMix.detach();
     host.removeEventListener('message', onMessage); frame.removeEventListener('load', onLoad);
     if (host.__eaglerPrepareManagedRuntimeDataV1 === provideData) delete host.__eaglerPrepareManagedRuntimeDataV1;
+    if (host.__eaglerReadRuntimeMusicV1 === provideMusic) delete host.__eaglerReadRuntimeMusicV1;
     if (host.__eaglerUploadTh09ReplayV1 === uploadTh09Replay) delete host.__eaglerUploadTh09ReplayV1;
     listeners.clear();
     eventListeners.clear();
@@ -1541,6 +1565,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     if (hadSession) warn(failure);
   }
   host.__eaglerPrepareManagedRuntimeDataV1 = provideData;
+  host.__eaglerReadRuntimeMusicV1 = provideMusic;
   host.__eaglerUploadTh09ReplayV1 = uploadTh09Replay;
   host.addEventListener('message', onMessage); frame.addEventListener('load', onLoad);
   return Object.freeze({ prepare, prepareWithReady, checkPreparedCodeUpdate, prepareRoomPreview, configurePreparedRoom, returnToRoom, launch, checkMultiplayer, sync, close, cancel, dispose, disposeDetachedFrame, withFileSession, send: request, cancelTitleNetwork, postInput, spectatorRoomState, getInputContext, getMidiEventContext, getLauncherControlContext, extendOggResources,

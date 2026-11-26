@@ -49,6 +49,8 @@ export interface MultiplayerRuntimeOptionInput {
   challengeKeepBullets?: boolean;
   disableLocalChargePriority?: boolean;
   disableFocus?: boolean;
+  rapidFire?: boolean;
+  disableCheatMovement?: boolean;
   showHitboxes?: boolean;
   ballCount?: number;
   chapterThreshold?: number;
@@ -84,6 +86,8 @@ export interface MultiplayerRuntimeOptions {
   netplayChallengeKeepBullets?: boolean;
   netplayDisableLocalChargePriority?: boolean;
   netplayDisableFocus?: boolean;
+  netplayRapidFire?: boolean;
+  netplayDisableCheatMovement?: boolean;
   netplayShowHitboxes?: boolean;
   netplayBallCount?: number;
   netplayChapterThreshold?: number;
@@ -125,6 +129,7 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error('蓄力进度参数无效');
   if(input.ballCount!==undefined && (roomProduct!=='th01mp'||![1,2,3,4,6,8,9].includes(input.ballCount)))throw new Error('TH01 ball count is invalid');
   if(input.disableFocus!==undefined&&((roomProduct!=='th02mp'&&roomProduct!=='th03mp')||typeof input.disableFocus!=='boolean'))throw new Error('低速规则参数无效');
+  if(input.rapidFire!==undefined&&(roomProduct!=='th02mp'||typeof input.rapidFire!=='boolean'))throw new Error('连射规则参数无效');
   if(input.showHitboxes!==undefined&&(roomProduct!=='th03mp'||typeof input.showHitboxes!=='boolean'))throw new Error('判定点规则参数无效');
   if (
     input.chapterThreshold !== undefined &&
@@ -234,7 +239,8 @@ export function buildMultiplayerRuntimeOptions(
     ...(input.challengeKeepBullets ? { netplayChallengeKeepBullets: true } : {}),
     ...(roomProduct === 'th09mp' ? {netplayDisableLocalChargePriority:input.disableLocalChargePriority===true} : {}),
     ...(roomProduct === 'th01mp' ? {netplayBallCount:input.ballCount ?? 2} : {}),
-    ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus!==false,netplayShowHitboxes:input.showHitboxes===true} : roomProduct === 'th02mp' ? {netplayDisableFocus:input.disableFocus===true} : {}),
+    ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus!==false,netplayShowHitboxes:input.showHitboxes===true} : roomProduct === 'th02mp' ? {netplayDisableFocus:input.disableFocus===true,netplayRapidFire:input.rapidFire!==false} : {}),
+    ...(roomProduct === 'th02mp' && input.disableCheatMovement ? {netplayDisableCheatMovement:true} : {}),
     netplayUrl: url.href,
     netplayPlayer: player,
     netplayPlayerCount: playerCount,

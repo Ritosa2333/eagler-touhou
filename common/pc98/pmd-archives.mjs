@@ -1,7 +1,6 @@
 // Original PC-98 archives are read from the player's game disk.
 const rawName=hex=>String.fromCharCode(...hex.match(/../g).map(byte=>parseInt(byte,16)));
 const archives={
-  th02:['HUMAROKU/'+rawName('938c95fb959596822e985e')],
   th03:['YUMEZIKU/'+rawName('96b28e9e8bf3312e444154')],
   th04:['GENSO/'+rawName('938c95fb8cb6917a2e8bbd'),'GENSO/'+rawName('8cb6917a8bbd45442e444154')],
 };
@@ -18,25 +17,6 @@ function unpack(data,compressed,limit){
   return Uint8Array.from(decoded.slice(0,limit));
 }
 function nameOf(bytes){return String.fromCharCode(...bytes).split('\0')[0].toLowerCase();}
-function extract02(data){
-  const view=new DataView(data.buffer,data.byteOffset,data.byteLength),tracks=[];
-  for(let at=0;at+32<=data.length;at+=32){
-    const kind=view.getUint16(at,true);if(!kind)break;
-    const name=nameOf(data.subarray(at+3,at+16).map(value=>value===0?0:value^255));
-    if(!/\.(m|efc)$/.test(name))continue;
-    const packed=view.getUint32(at+16,true),declaredSize=view.getUint32(at+20,true),offset=view.getUint32(at+24,true);
-    const bytes=data.subarray(offset,offset+packed).map(value=>value^0x12);
-    // The Chinese TH02 disk labels the unchanged original effect bank one
-    // byte too long. Verify the packed bank before correcting its size.
-    let size=declaredSize;
-    if(name==='huuma.efc'&&kind===0x9595&&packed===964&&size===1128){
-      let hash=2166136261;for(const byte of bytes)hash=Math.imul(hash^(byte^0x12),16777619)>>>0;
-      if(hash===0x7c2b4ce1)size=1127;
-    }
-    tracks.push([name,unpack(bytes,kind===0x9595,size)]);
-  }
-  return tracks;
-}
 function extract0304(data){
   const view=new DataView(data.buffer,data.byteOffset,data.byteLength),size=view.getUint16(0,true),table=data.slice(16,16+size);
   let key=data[6];
@@ -54,13 +34,13 @@ function extract0304(data){
 export function pmdHeaderHash(bytes){let hash=0x811c9dc5;for(const value of bytes.subarray(0,25))hash=Math.imul(hash^value,0x01000193)>>>0;return hash;}
 export function extractOriginalPmd(game,fat){
   const tracks=new Map();
-  for(const path of archives[game])for(const [name,bytes] of (game==='th02'?extract02:extract0304)(fat.read(fat.find(path)))){
+  for(const path of archives[game])for(const [name,bytes] of extract0304(fat.read(fat.find(path)))){
     if(!name.endsWith('.efc'))tracks.set(pmdHeaderHash(bytes),{name,bytes});
   }
   return tracks;
 }
 export function extractOriginalEffectBank(game,fat){
-  for(const path of archives[game])for(const [name,bytes] of (game==='th02'?extract02:extract0304)(fat.read(fat.find(path)))){
+  for(const path of archives[game])for(const [name,bytes] of extract0304(fat.read(fat.find(path)))){
     if(name.endsWith('.efc'))return {name,bytes};
   }
   throw Error('游戏磁盘缺少原始音效数据');

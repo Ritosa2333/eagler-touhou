@@ -4,7 +4,7 @@ import {sha256} from './netplay/sha256.js';
 const pending=new Map(),memory=new Map();let memoryBytes=0,database;
 const cacheLimit=()=> (globalThis.__eaglerPC98Content?64:24)*1024*1024;
 // Move only verified disk/core bytes into the single match worker.
-export function takeManagedStartupAssets(){const assets=[];for(const [key,bytes] of memory)if(/\/(?:th02-local(?:-jp|-cn)?|th04-coop(?:-jp)?)\.hdi\.gz\||\/wdosbox-x-rollback(?:-tracked)?\.wasm\|/.test(key)&&/\|[a-f0-9]{64}\|/.test(key)){memory.delete(key);memoryBytes-=bytes.byteLength;assets.push([key,bytes]);}return assets;}
+export function takeManagedStartupAssets(){const assets=[];for(const [key,bytes] of memory)if(/\/th04-coop(?:-jp)?\.hdi\.gz\||\/wdosbox-x-rollback(?:-tracked)?\.wasm\|/.test(key)&&/\|[a-f0-9]{64}\|/.test(key)){memory.delete(key);memoryBytes-=bytes.byteLength;assets.push([key,bytes]);}return assets;}
 function openCache(){
   return database??=new Promise(resolve=>{
     if(!globalThis.indexedDB){resolve(null);return;}

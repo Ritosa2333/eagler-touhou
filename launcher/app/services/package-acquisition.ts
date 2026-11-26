@@ -88,10 +88,10 @@ export function checkPreparationAbort(signal?: AbortSignal): void {
 }
 export const preparationErrorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 const isOgg = (music: MusicMode) => music === 'ogg-stream' || music === 'ogg-full' || music === 'ogg-akyu';
-const nativeTh03Layout = 'sha256-03621c9e4f8978c2763875c137938265dc3bc93b2457d6274028af95e72a7d3e';
 const isPC98 = (game: GameId) => game === 'th01' || game === 'th02' || game === 'th03' || game === 'th04';
-const isLegacyTh03 = (descriptor: PackageDescriptor) =>
-  descriptor.runtimeRequirement?.dataLayout !== nativeTh03Layout || !!descriptor.components?.['pc98-manifest'];
+const isNativePC98 = (game: GameId): game is 'th02'|'th03' => game === 'th02' || game === 'th03';
+const incompatiblePC98 = (game: GameId, descriptor: PackageDescriptor) => isNativePC98(game) &&
+  (descriptor.runtimeRequirement?.dataLayout !== PRODUCT_GAMES[game].dataLayout || !!descriptor.components?.['pc98-manifest']);
 function requiredShared(game: GameId) {const product = PRODUCT_GAMES[game]; return 'requiredShared' in product ? product.requiredShared : [];}
 
 /** Main app 3887–3978, 3980–4110, 5678–5953. Canonical Package Store and
@@ -141,7 +141,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       const requirement = descriptor.runtimeRequirement;
       const data = requirement && descriptor.files[requirement.dataFile];
       if (requirement?.protocol !== HOST_PROTOCOL || requirement.target !== game ||
-          (game === 'th03' && isLegacyTh03(descriptor)) ||
+          incompatiblePC98(game as GameId, descriptor) ||
           (hosted?.layout && requirement?.dataLayout !== hosted.layout) ||
           (hosted?.sha256 && data?.sha256 !== hosted.sha256) ||
           (hosted?.bytes && data?.bytes !== hosted.bytes)) {
@@ -181,12 +181,15 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     if (PRODUCT_GAMES[game].dataProvider !== 'retail-memory') return null;
     const descriptor = developmentDescriptor(game, host), hosted = host.games[game];
     if (!descriptor || !hosted?.gameData.source) return null;
+    const policy = PRODUCT_GAMES[game].musicRuntime;
+    const eagerOgg = !('onDemandOgg' in policy && policy.onDemandOgg) &&
+      (['th01','th02','th03','th04'].includes(game) ? request.music === 'ogg-akyu' : isOgg(request.music));
     checkPreparationAbort(request.signal);
     try {
       request.onAcquisitionActivity?.(true);
       progress(request, 'package.installingResources');
       const result = await deps.installAcquired({descriptor, source: 'remote',
-        desiredFileIds: ['game-data', ...((['th01','th02','th03','th04'].includes(game) ? request.music === 'ogg-akyu' : isOgg(request.music)) ? runtimeOggFileIds(descriptor, request.productId) : [])],
+        desiredFileIds: ['game-data', ...(eagerOgg ? runtimeOggFileIds(descriptor, request.productId) : [])],
         acquire: async (id, declaration) => {
           checkPreparationAbort(request.signal);
           const source = id === 'game-data' ? hosted.gameData.source! : `${typeof hosted.music.ogg?.base === 'string' ? hosted.music.ogg.base : ''}${declaration.source}`;
@@ -231,7 +234,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     if (metadataSnapshot.siteManifest?.profile === 'web-development') await installDevelopment(game, metadataSnapshot.siteManifest, request);
     let installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
-      const legacyTh03 = game === 'th03' && isLegacyTh03(installed.generation.descriptor);
+      const needsNativeData = incompatiblePC98(game, installed.generation.descriptor);
       if (isPC98(game) && (!metadataSnapshot.releaseCatalog || !metadataSnapshot.siteManifest)) {
         try {await metadata.initialize();} catch {checkPreparationAbort(request.signal);}
         metadataSnapshot = metadata.getSnapshot();
@@ -239,10 +242,10 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       const publishedRevision = metadataSnapshot.siteManifest?.shared.resourceMode === 'import'
         ? undefined : metadataSnapshot.releaseCatalog?.games[game]?.revision;
       const pc98Update = isPC98(game) && !!publishedRevision && publishedRevision !== installed.generation.descriptor.revision;
-      if (!legacyTh03 && !pc98Update) installed = await repair(installed, request);
+      if (!needsNativeData && !pc98Update) installed = await repair(installed, request);
       if (isPC98(game)) {
         const generation = installed.generation!;
-        const diskFiles = !legacyTh03 && !pc98Update && game !== 'th01' && generation.descriptor.components?.['pc98-manifest']
+        const diskFiles = !needsNativeData && !pc98Update && game !== 'th01' && !isNativePC98(game) && generation.descriptor.components?.['pc98-manifest']
           ? pc98RequiredBlockFiles(generation.descriptor, {game, language: request.language, multiplayer: isMultiplayerProductId(request.productId), replay: request.replay}) : [];
         const missingDisk = diskFiles.some(id => !generation.files[id]?.objectId);
         const legacyTh01 = game === 'th01' && generation.descriptor.runtimeRequirement?.dataLayout === 'sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579';
@@ -255,7 +258,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         const incompatible = !!hostedLayout && !!installedLayout && hostedLayout !== installedLayout;
         const published = metadataSnapshot.siteManifest?.shared.resourceMode === 'import'
           ? undefined : metadataSnapshot.releaseCatalog?.games[game];
-        if (legacyTh03 || incompatible || pc98Update || (missingDisk && published && published.revision !== generation.descriptor.revision)) {
+        if (needsNativeData || incompatible || pc98Update || (missingDisk && published && published.revision !== generation.descriptor.revision)) {
           if (!published) throw new GameDataAcquisitionError(t('package.incompatibleUpdateUnavailable'));
           request.onAcquisitionActivity?.(true);
           try {

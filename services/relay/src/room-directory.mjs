@@ -89,7 +89,7 @@ export function createRoomDirectory({
       disableCheatMovement: room.lobby.disableCheatMovement === true,
       ...(match[1] === 'th09mp' && room.lobby.unrated ? {unrated: true} : {}),
       challengeMode: room.lobby.challengeMode === true,
-      ...(match[1]==='th02mp'?{disableFocus:room.lobby.disableFocus===true}:{}),
+      ...(match[1]==='th02mp'?{disableFocus:room.lobby.disableFocus===true,rapidFire:room.lobby.rapidFire!==false}:{}),
       ...(match[1]==='th01mp'?{ballCount:room.lobby.ballCount??2}:{}),
       prankMode: room.lobby.prankMode === true,
       spectators,

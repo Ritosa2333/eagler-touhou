@@ -1,12 +1,7 @@
 ; A same-MAIN checkpoint for practice targets. The stack is above the
 ; saved data range. DOS owns the buffer and frees it when MAIN exits.
-%ifdef PRACTICE_RESTART_TH02
-%define PRACTICE_RESIDENT_PTR 0x27fc
-%define PRACTICE_RESIDENT_SIZE 48
-%else
 %define PRACTICE_RESIDENT_PTR 0xba86
 %define PRACTICE_RESIDENT_SIZE 74
-%endif
 %if PRACTICE_CHECKPOINT_BYTES <= 0 || PRACTICE_CHECKPOINT_BYTES + PRACTICE_RESIDENT_SIZE >= 65536
 %error Invalid MAIN data checkpoint range
 %endif
@@ -194,19 +189,6 @@ practice_checkpoint_can_seek:
     jne .done
     cmp byte [cs:practice_form_values+3],2
     jne .done
-%ifdef PRACTICE_RESTART_TH02
-    cmp byte [cs:practice_initial_stage],1
-    je .compatible
-    cmp byte [cs:practice_initial_stage],4
-    jne .done
-    ; Mima replaces her sprite allocation before phase 9. Do not reuse an
-    ; earlier checkpoint after that resource transition has freed its assets.
-    cmp byte [cs:practice_form_values+4],9
-    jne .compatible
-    cmp byte [cs:si+4],9
-    jne .done
-.compatible:
-%else
     ; Normal-stage Bosses and Gengetsu retain their loaded sprites while
     ; switching attacks. Mugetsu hands resources to a different encounter.
     cmp byte [cs:practice_initial_stage],5
@@ -216,7 +198,6 @@ practice_checkpoint_can_seek:
     cmp byte [cs:practice_initial_gengetsu],1
     jne .done
 .compatible:
-%endif
     xor bx,bx
 .compare:
     cmp bx,4

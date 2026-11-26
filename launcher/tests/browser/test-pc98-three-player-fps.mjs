@@ -1,7 +1,7 @@
 // Two or three real PC-98 player runtimes and a local Relay.
 // Reports native gameplay, actual page displays and frame intervals; does not assert machine-specific FPS.
 // Run from launcher with ROOM_RUNTIME_GAME, ROOM_RUNTIME_ROOT and
-// ROOM_RUNTIME_DATA pointing to a built TH02 or TH04 runtime and data file.
+// ROOM_RUNTIME_DATA pointing to a built TH04 runtime and data file.
 // Set EAGLER_NETPLAY_RELAY_DELAY_MS / EAGLER_NETPLAY_RELAY_JITTER_MS in the
 // test environment to simulate a slower link. Set PC98_FPS_ROLLBACK=0 for
 // a confirmed-lockstep comparison. All three players
@@ -12,11 +12,10 @@
 // PC98_FPS_PLAYERS selects 2 or 3 players (default 3).
 // PC98_FPS_TRANSPORT=rtc requires actual WebRTC, bypassing the relay delay.
 // PC98_FPS_RTC_DROP_EVERY drops every Nth fast-lane send, not reliable control.
-// PC98_FPS_PROFILE=1 adds TH04 worker phase counters to match TH02's profile.
+// PC98_FPS_PROFILE=1 adds TH04 worker phase counters.
 // PC98_FPS_SINGLE_TICK_CHECKPOINT=1 tests exact per-tick DOSBox checkpoints.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import {spawn} from 'node:child_process';
@@ -24,7 +23,7 @@ import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 import {PRODUCT_GAMES,multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
 const game=process.env.ROOM_RUNTIME_GAME;
-assert(['th02','th04'].includes(game),'ROOM_RUNTIME_GAME must be th02 or th04');
+assert.equal(game,'th04','ROOM_RUNTIME_GAME must be th04');
 const playerCount=Number(process.env.PC98_FPS_PLAYERS??3);
 assert([2,3].includes(playerCount),'PC98_FPS_PLAYERS must be 2 or 3');
 const sampleSeconds=Number(process.env.PC98_FPS_SECONDS??20);
@@ -59,8 +58,8 @@ let instrumented=false,chain=Promise.resolve();`);
 }
 if(singleTickCheckpoint){
   const path='netplay/runtime.js',source=overrides.get(path)??await readFile(resolve(runtime,path),'utf8');
-  const capture=game==='th02'?'const previous=states.get(frame-1),nativeFrame':'const previous=rollbackStates.get(frame-1);\n  const nativeFrame';
-  const retain=game==='th02'?'const previous=states.get(prefix-1);':'const previous=rollbackStates.get(prefix-1);\n  ';
+  const capture='const previous=rollbackStates.get(frame-1);\n  const nativeFrame';
+  const retain='const previous=rollbackStates.get(prefix-1);\n  ';
   const exact=replace(source.replaceAll('\r\n','\n'),capture+'=previous?.nativeFrame===frame-1?frame-1:frame','const nativeFrame=frame');
   overrides.set(path,replace(replace(exact,retain+'return previous?.nativeFrame===prefix-1?prefix-1:prefix;','return prefix;'),'checkpointFrames:2','checkpointFrames:1'));
 }
@@ -81,11 +80,6 @@ const server=createServer(async(req,res)=>{try{
   if(!path.startsWith('/runtime/'))throw Error('route');
   const file=resolve(runtime,path.slice(9));if(!file.startsWith(runtime+sep))throw Error('path');
   res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');
-  if(path==='/runtime/netplay/runtime.json'&&game==='th02'){
-    const manifest=JSON.parse(await readFile(file,'utf8'));
-    for(const [asset,source] of overrides)if(Object.hasOwn(manifest.assets,asset))manifest.assets[asset]=createHash('sha256').update(source).digest('hex');
-    res.end(JSON.stringify(manifest));return;
-  }
   const source=overrides.get(path.slice(9));
   if(source!==undefined){res.end(source);return;}
   res.end(await readFile(file));
@@ -127,7 +121,7 @@ try{
   for(let actor=0;actor<playerCount;actor++)await send(clients[actor],{type:'set-ready',ready:true},m=>m.room?.seats[actor]?.ready);
   const start=await send(clients[0],{type:'start',inputDelay:0,adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit},m=>m.type==='start');
   const run=start.serial;
-  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayChallengeMode:process.env.PC98_TEST_CHALLENGE==='1',netplayDisableFocus:process.env.PC98_TEST_DISABLE_FOCUS==='1',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,player:String(actor)}),netplayPlayer:actor,netplayPlayerCount:playerCount,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1},{character:game==='th02'?0:1,shot:game==='th02'?2:0}].slice(0,playerCount),netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:false,netplaySpectatorCount:0,netplaySpectatorTimeline:true});
+  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayChallengeMode:process.env.PC98_TEST_CHALLENGE==='1',netplayDisableFocus:process.env.PC98_TEST_DISABLE_FOCUS==='1',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,player:String(actor)}),netplayPlayer:actor,netplayPlayerCount:playerCount,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1},{character:1,shot:0}].slice(0,playerCount),netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:false,netplaySpectatorCount:0,netplaySpectatorTimeline:true});
   const configure=async(actor,serial)=>{
     await page.evaluate(async({actor,options})=>rpc(actor,'configure',{music:'none',options,resources:[],runtimeResources:[],sharedResources:[]}),{actor,options:options(actor)});
     // Give the running native title several ticks between protocol commands.

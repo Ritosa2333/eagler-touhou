@@ -17,6 +17,6 @@
   },
   "builder": "ports/th02/scripts/build-eagler.mjs",
   "inputIdentityRecord": "ports/th02/content/source.json",
-  "normalAndMultiplayer": "DOSBox-X adapter with main-room transport and independent save namespaces",
+  "normalAndMultiplayer": "SoEW Native WASM with Eagler lobby, WebRTC/Relay and live spectating",
   "record": "docs/migration/th02-eagler-20261025.md"
 }

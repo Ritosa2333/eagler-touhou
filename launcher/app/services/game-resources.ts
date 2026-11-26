@@ -133,8 +133,14 @@ export function sharedResources({game, generation, host, language, thprac, baseU
 export function remoteMusicResources(game: GameId, music: MusicMode, host: SiteManifest | null, baseUrl: string, t: Translate, productId: ProductId) {
   if (!oggMusic(music)) return [];
   if ('embeddedOgg' in PRODUCT_GAMES[game].musicRuntime && PRODUCT_GAMES[game].musicRuntime.embeddedOgg === true) return [];
+  if (!host?.games[game]?.music.ogg) throw new Error(t('music.manifestInvalid'));
+  return hostOggFiles(game,host,baseUrl,t,productId);
+}
+
+function hostOggFiles(game: GameId, host: SiteManifest | null, baseUrl: string, t: Translate, productId: ProductId) {
   const pack = host?.games[game]?.music.ogg;
-  if (!pack || !Array.isArray(pack.files)) throw new Error(t('music.manifestInvalid'));
+  if (!pack) return [];
+  if (!Array.isArray(pack.files)) throw new Error(t('music.manifestInvalid'));
   const mount = typeof pack.mount === 'string' ? pack.mount.replace(/\/$/, '') : '';
   const base = typeof pack.base === 'string' ? pack.base : './';
   return pack.files.flatMap((name, index) => {
@@ -144,6 +150,24 @@ export function remoteMusicResources(game: GameId, music: MusicMode, host: SiteM
     if (typeof pack.version === 'string' && pack.version) url.searchParams.set('v', pack.version);
     return {url: url.href, path: `${mount}/${name}`, size: Number(pack.sizes[index]) || 0};
   });
+}
+
+export function deferredOggSources(game: GameId, productId: ProductId, generation: InstalledPackageGeneration | null,
+  host: SiteManifest | null, catalog: ReleaseCatalog | null, catalogUrl: string, baseUrl: string, t: Translate) {
+  const descriptor = generation?.descriptor;
+  const descriptorUrl = descriptor && catalog?.games[game]?.revision === descriptor.revision
+    ? releaseCatalogEntryUrl(catalogUrl,catalog,game) : null;
+  const entries: [string,{id?:string;url?:string;bytes?:number;sha256?:string}][] = [];
+  for(const id of descriptor ? runtimeOggFileIds(descriptor,productId) : []){
+    const file=descriptor!.files[id];
+    entries.push([file.target,{id,...(descriptorUrl?{url:new URL(file.source,descriptorUrl).href}:{}),bytes:file.bytes??undefined,sha256:file.sha256??undefined}]);
+  }
+  if(host?.profile==='web-development'){
+    const sources=Object.fromEntries(entries);
+    for(const {path,url,size} of hostOggFiles(game,host,baseUrl,t,productId))
+      entries.push([path,{...sources[path],url,bytes:size||undefined}]);
+  }
+  return Object.fromEntries(entries);
 }
 /** Main 5768–5815: up to the first two OGG objects gate startup. An unavailable
  * optional soundtrack chooses the launch-only MIDI sentinel, never rewrites prefs. */

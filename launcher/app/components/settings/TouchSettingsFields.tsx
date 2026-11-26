@@ -67,7 +67,7 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
     </div>
     {!nativeActions && rowSwitch('doubleTapBombToggle', 'doubleTapBombEnabled', t('touch.doubleTapBomb'), t('touch.doubleTapBombHint'))}
     {rowSwitch('restartButtonToggle', 'restartButtonEnabled', 'R', t('touch.restartHint'))}
-    {rowSwitch('thpracTouchControlsToggle', 'thpracTouchControlsEnabled', t('touch.thpracButtons'), t('touch.thpracButtonsHint'))}
+    {state.gameId !== 'th02' && rowSwitch('thpracTouchControlsToggle', 'thpracTouchControlsEnabled', t('touch.thpracButtons'), t('touch.thpracButtonsHint'))}
     <div className="touch-layout-setting-row touch-layout-viewport-row">
       <div className="option-label-with-help"><span>{t('touch.viewportPosition')}</span><FieldHelp id="touchViewportHint" label={t('touch.viewportPosition')} option>{t('touch.viewportHint')}</FieldHelp></div>
       <div className="touch-layout-viewport-actions"><UiButton variant="outline" id="touchViewportAdjust" type="button" onClick={onAdjustViewport} aria-describedby="touchViewportHint">{t('touch.adjustViewport')}</UiButton><UiButton variant="outline" id="touchViewportReset" type="button" onClick={onResetViewport}>{t('action.reset')}</UiButton></div>

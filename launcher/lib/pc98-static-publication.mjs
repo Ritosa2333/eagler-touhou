@@ -24,7 +24,6 @@ export function validateNativeTH03Data(bytes) {
   if (base + end !== bytes.length) throw Error('Invalid TH03 DATA length');
 }
 const diskNames = Object.freeze({
-  th02: ['th02-local-cn.hdi.gz', 'th02-local-jp.hdi.gz', 'th02-solo-cn.hdi.gz', 'th02-solo-jp.hdi.gz'],
   th03: ['disks/3-cn.hdi.gz', 'disks/3-jp.hdi.gz'],
   th04: ['th04-coop-jp.hdi.gz', 'th04-coop.hdi.gz', 'th04-solo-jp.hdi.gz', 'th04-solo.hdi.gz'],
 });

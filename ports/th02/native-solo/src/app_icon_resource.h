@@ -1,0 +1,6 @@
+#ifndef SOEW_APP_ICON_RESOURCE_H
+#define SOEW_APP_ICON_RESOURCE_H
+
+#define IDI_SOEW_APP_ICON 101
+
+#endif

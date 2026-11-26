@@ -12,11 +12,11 @@ const path=`runtime/th04/multiplayer/${'a'.repeat(64)}/vendor/dosbox-x/wdosbox-x
 const raw=await readFile(new URL('../../ports/th04/web/vendor/dosbox-x/wdosbox-x-rollback.wasm',import.meta.url));
 let server;
 try{
-  for(const game of ['th02','th03','th04'])for(const name of ['wdosbox-x-rollback.wasm','wdosbox-x-rollback-tracked.wasm']){
+  for(const game of ['th04'])for(const name of ['wdosbox-x-rollback.wasm','wdosbox-x-rollback-tracked.wasm']){
     const dest=`runtime/${game}/multiplayer/${'a'.repeat(64)}/vendor/dosbox-x/${name}`,source=await readFile(new URL(`../../ports/${game}/web/vendor/dosbox-x/${name}`,import.meta.url));
     await mkdir(dirname(resolve(root,dest)),{recursive:true});await writeFile(resolve(root,dest),source);
   }
-  assert.equal(await preparePc98WasmGzip(root),6);
+  assert.equal(await preparePc98WasmGzip(root),2);
   const compressed=await readFile(pc98CompressedPath(root,path));assert.deepEqual(gunzipSync(compressed),raw);assert(compressed.length<raw.length);
   assert(!acceptsGzip('gzip;q=0, br'));assert(acceptsGzip('br, gzip;q=0.5'));
   const probe=createServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const port=probe.address().port;await new Promise(r=>probe.close(r));
