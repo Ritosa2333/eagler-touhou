@@ -24,3 +24,16 @@
 ## 验证环境与证据
 
 执行环境为 rootless Podman 临时容器（Node 24.22.3、emsdk 6.0.9、wasi-sdk 34）。合并验证覆盖回放、道具、Player、Bomb、过关、屏幕效果、弹幕、激光、绘制结构与 8 段长程参考：126 项通过、0 失败，21 段长程参考待重采跳过。[测量结果](results.json) 保存录像来源、哈希、预期分数和实际结果；JSON 的分数使用内部计分单位，游戏显示值为其 10 倍。[道具断言对拍](item-assertions.json) 保存四个场景的 20 组摘要，[演示与录制回放对拍](demo-assertions.json) 保存四段标题演示与单段/跨面录制回放的摘要。原始游戏资产、录像和运行捕获保留在本地 ignored 目录。
+
+## 构建身份
+
+回放一致性修复后的 normal Runtime 与 WASI harness 在同一容器工具链上重建：
+
+| 产物 | 结果 |
+| --- | --- |
+| normal Runtime | 2,827,147 字节，SHA-256 `5587e6e45893e9c5a61eb7d7bfa22e6417c886b2b1f8b0d1477cc328fae85321` |
+| 发布目录 | 9 个文件（8 个运行时文件 + 清单），`runtime-files.json` SHA-256 `5ce2ab4a20299485a94f5d539a1ca6045086a2141d960dddcd4f4834767506a6` |
+| 构建计划 | [build-plan.json](build-plan.json) SHA-256 `000e8a4c268533ecfa753957dd5f5066737700fb51b6063289748f64f7a34de6` |
+| WASI harness | [wasi-build.json](wasi-build.json) SHA-256 `2a4f4d929e62c9a7f663cedbf908320c57c911fe192205e60bacfa70490cce69` |
+
+构建与打包日志见 [build-and-package.log](build-and-package.log)，Web Runtime 构建清单见 [sdl3-build.json](sdl3-build.json)。
