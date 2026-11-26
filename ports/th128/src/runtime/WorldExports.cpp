@@ -696,7 +696,7 @@ template<class Writer>
 void writeNormalRecordState(Writer& text){
     text<<"{\"bound\":"<<(normalRecord?"true":"false")<<",\"started\":"<<((normalRecord&&normalRecord->started())?"true":"false")
         <<",\"prepared\":"<<((normalRecord&&normalRecord->prepared())?"true":"false")<<",\"acknowledged\":"<<((normalRecord&&normalRecord->acknowledged())?"true":"false")
-        <<",\"assisted\":"<<((normalRecord&&normalRecord->assisted())?"true":"false")
+        <<",\"assisted\":"<<((normalRecord&&normalRecord->assistedMovement())?"true":"false")
         <<",\"scoreEligible\":"<<((normalRecord&&normalRecord->scoreEligible())?"true":"false")
         <<",\"generation\":"<<worldGeneration<<",\"route\":"<<(normalRecord?normalRecord->route():0)<<",\"rank\":"<<(normalRecord?normalRecord->rank():0)
         <<",\"frames\":"<<(normalRecord?normalRecord->frames():0)<<",\"serial\":"<<((normalRecord&&normalRecord->prepared())?1:0)
@@ -2495,12 +2495,7 @@ int th128_world_thprac_tools_set(unsigned mask,unsigned generation){
         ||!playerConfigured||!grazeConfigured||!shotHitsConfigured||!playerShotGroupsConfigured
         ||((mask&2u)&&!playerDeathConfigured)||((mask&(4u|32u))&&!perfectConfigured)){operationError="practice tools require the actual idle unlocked owner and matching configured native hosts";return 0;}
     if(mask==thpracTools.mask)return 1;
-    if(!practice){
-        if(!applyPracticeTools(mask,operationError))return 0;
-        // Ordinary replay packets have no combat-tool history.
-        if(mask&63u){normalRecord->markAssisted();normalReplay->markPracticeToolsUsed();}
-        return 1;
-    }
+    if(!practice)return applyPracticeTools(mask,operationError);
     const auto frame=world->frame();const bool replace=!thpracTools.events.empty()&&thpracTools.events.back()[0]==frame;
     if(!replace&&thpracTools.events.size()>=4096){operationError="practice tools history budget";return 0;}
     if(!applyPracticeTools(mask,operationError))return 0;
@@ -3884,7 +3879,7 @@ int th128_world_pause_open(int reason){
     }
     try{
         const bool playbackFinished=reason==2||(gameOver&&playback);
-        originalPauseMenu->open(gameOver&&!playbackFinished,originalContinueCount,normalReplay&&normalReplay->frames()>0&&!normalReplay->usedPracticeTools()&&!debugRunTainted,
+        originalPauseMenu->open(gameOver&&!playbackFinished,originalContinueCount,normalReplay&&normalReplay->frames()>0&&!debugRunTainted,
             world->frame(),playback,world->thpracChapter().has_value()&&!playback,playbackFinished);
         originalMenuInput.reset();
         originalPauseSoundCursor=0;
@@ -4216,7 +4211,7 @@ int th128_world_replay_previews(const void* bytes,unsigned size){
 }
 int th128_world_replay_save_open(){
     operationError.clear();
-    if(!normalReplay||!normalReplay->frames()||normalReplay->usedPracticeTools()||!th128_world_pause_active()||normalReplaySave||originalContinueCount||debugRunTainted
+    if(!normalReplay||!normalReplay->frames()||!th128_world_pause_active()||normalReplaySave||originalContinueCount||debugRunTainted
        ||originalPauseMenu->state().action!=th128::pause::Action::ReplaySave||soundJournalWindowSerial||!grazeSounds.empty()){
         operationError="original replay save requires completed menu choice and actual uncontinued normal recording";return 0;
     }
@@ -4934,7 +4929,7 @@ int th128_world_tick(){
     }
     if(success&&normalReplay){
         try{const bool recorded=normalReplay->append(normalReplayInput,normalReplayAuxiliary,normalReplayFPS,normalReplayClock-normalReplayOrigin,nativeTouch.command);
-            if(assistedTouchMovement){normalReplay->markAssistedMovement();if(normalRecord)normalRecord->markAssisted();}
+            if(assistedTouchMovement){normalReplay->markAssistedMovement();if(normalRecord)normalRecord->markAssistedMovement();}
             if(recorded&&normalRecord)normalRecord->activeFrame(playerHit->snapshot().soundControl.flags60,th128::record::NativeRecordSessionPolicy::stageClearHeld(stageManager.flags5a04,stageManager.field5a0c));
             normalReplayClockPending=false;}
         catch(const std::exception& failure){world->reportRuntimeFault(failure.what());return 0;}

@@ -206,7 +206,7 @@ class Menu {
         }else if(subphase_==2)nameInput(input);
         else if(subphase_==3&&timer_>=6){
             interrupt(24,111,1);interrupt(24,132+int(context_.route),1);interrupt(24,141+int(context_.rank),1);
-            if(context_.normalRecord&&(context_.continues||(context_.normalReplay&&context_.normalReplay->usedPracticeTools()))){
+            if(context_.normalRecord&&context_.continues){
                 setPhase(1);selected_=0;choiceCount_=999;context_.normalReplay.reset();
                 music(1,7);music(2,7);
             }else setPhase(15);

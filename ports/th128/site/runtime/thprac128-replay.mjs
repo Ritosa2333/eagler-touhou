@@ -16,6 +16,7 @@ const practiceReplayCoreHistory=[
  '0ac44b48f08ca6afac2ad9d7cbd52424ec4b04da6d402931137df11e41397621',
  '54e8c73cabdadd627ffd90d0f7566fc8682caf5be0fd7c917d0bb459430f96d9',
  'ee582188cf319c996c17d4abc45bd1cb9efd6dea55fb151337b945e690b9dfce',
+ 'a6eeec124b0102d0d25c2b2088f17fef039fdc332626fc92822569911cf72e50',
 ];
 export function practiceReplayMatchesRuntime(recorded,current){
  const previous=identity(recorded),runtime=identity(current);

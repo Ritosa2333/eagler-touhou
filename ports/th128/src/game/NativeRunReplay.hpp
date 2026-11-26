@@ -22,7 +22,7 @@ class NativeRunReplay {
     };
     std::vector<Stage> stages_;
     unsigned route_=0,rank_=0,lastStage_=0;
-    bool practice_=false,assistedMovement_=false,usedPracticeTools_=false;
+    bool practice_=false,assistedMovement_=false;
     double seconds_=0,activeSeconds_=0;
     static void store16(std::span<std::uint8_t> bytes,std::size_t offset,std::uint16_t value){bytes[offset]=std::uint8_t(value);bytes[offset+1]=std::uint8_t(value>>8);}
     static void store32(std::span<std::uint8_t> bytes,std::size_t offset,std::uint32_t value){for(unsigned index=0;index<4;++index)bytes[offset+index]=std::uint8_t(value>>(index*8));}
@@ -41,8 +41,6 @@ public:
     static NativeRunReplay practice(){NativeRunReplay result;result.practice_=true;return result;}
     void markAssistedMovement(){if(stages_.empty())throw std::runtime_error("assisted movement lacks actual native run history");assistedMovement_=true;}
     bool assistedMovement()const noexcept{return assistedMovement_;}
-    void markPracticeToolsUsed()noexcept{usedPracticeTools_=true;}
-    bool usedPracticeTools()const noexcept{return usedPracticeTools_;}
     bool empty()const{return stages_.empty();}
     unsigned frames()const{unsigned count=0;for(const auto& stage:stages_)count+=unsigned(stage.input.frame());return count;}
     unsigned stages()const{return unsigned(stages_.size());}
@@ -112,7 +110,6 @@ public:
     }
     std::vector<std::uint8_t> snapshot(std::uint64_t timestamp,std::int32_t score,unsigned currentStage,unsigned continues,
                                       const std::array<std::uint8_t,8>& name)const{
-        if(usedPracticeTools_)throw std::runtime_error("Normal replay does not record practice tool changes");
         if(stages_.empty()||!frames()||timestamp>0x793406fffull||score<0||score>999999999||currentStage>23||continues>9)
             throw std::runtime_error("normal native replay snapshot has incomplete owner");
         std::vector<std::uint8_t> result(148);store32(result,0,0x72383231);store32(result,4,2);store32(result,0x10,0x100);
