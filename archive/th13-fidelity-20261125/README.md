@@ -28,7 +28,7 @@
 
 ## 门禁
 
-- 普通版：排版检查与无注释检查通过；`tests/combat/player_collision_oracle_test.cpp` 3 项通过（含 x86 宿主上 20 万组与 x87 的逐位对照）；三项回归摘要的金标由最终代码重生成（`replays=10 incomplete=0 unstable=(none)`）。一键门槛 `gate.sh` 的整套套件以 PR 的 Checks 为准。
+- 普通版：排版检查与无注释检查通过；`tests/combat/player_collision_oracle_test.cpp` 3 项通过（含 x86 宿主上 20 万组与 x87 的逐位对照）；三项回归摘要的金标由最终代码重生成（`replays=10 incomplete=0 unstable=(none)`）。一键门槛 `gate.sh` 整套套件在最终源码上的结果见 [th13-fidelity-20261126](../th13-fidelity-20261126/README.md) 的「门禁」一节。
 - 多人版：`gate.sh --mp` 里 anm 65、ecl 181、ui 550、score 16、audio 27、contracts 9、js 31 项通过；e2e 与 multiplayer 各 1 项失败，与基线相同（缺原版字体与 libdatachannel）。门槛结论：[gate] 相对基线无新增失败
 
 

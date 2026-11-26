@@ -1,0 +1,132 @@
+== th13 神灵庙移植开发环境 ==
+node    v22.23.3
+python  Python 3.11.2
+emcc    emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.9 (4e4223852a0835923411059a3929907d7df1232e)
+wasi    /opt/wasi-sdk
+ghidra  /opt/ghidra
+workdir /work
+
+==> 排版检查
+排版检查通过：491 个文件
+
+==> WASI harness 构建
+build th13 wasi harness (incremental)
+20/101 translation units
+40/101 translation units
+60/101 translation units
+80/101 translation units
+100/101 translation units
+objects reused 101/101
+{
+  "output": "/work/eagler-touhou/ports/th13/web/artifacts/wasi/th13-harness.wasm",
+  "manifest": "/work/eagler-touhou/ports/th13/web/artifacts/wasi/build.json",
+  "reused": 101
+}
+
+==> 回归摘要：状态与事件
+[1/10] th13_01.rpy: stages=6 frames=109708 rows=1838 ok(a1) (10.7s)
+[2/10] th13_udMy25.rpy: stages=6 frames=109648 rows=1837 ok(a1) (7.5s)
+[3/10] th13_udN01.rpy: stages=6 frames=93127 rows=1562 ok(a1) (9.0s)
+[4/10] th13_udPn16.rpy: stages=6 frames=106881 rows=1790 ok(a1) (10.8s)
+[5/10] th13_udSr01.rpy: stages=6 frames=105476 rows=1767 ok(a1) (7.8s)
+[6/10] th13_udWi11.rpy: stages=1 frames=39595 rows=661 ok(a1) (3.7s)
+[7/10] demo0.rpy: stages=1 frames=4048 rows=69 ok(a1) (0.3s)
+[8/10] demo1.rpy: stages=1 frames=4075 rows=69 ok(a1) (0.3s)
+[9/10] demo2.rpy: stages=1 frames=4046 rows=69 ok(a1) (0.3s)
+[10/10] demo3.rpy: stages=1 frames=3397 rows=58 ok(a1) (0.3s)
+digest-ok replay stride=60 replays=10 build=3ef9bcd3c01fdcf2629a7195d761d93e38c11be6978ffe8f2c2a10a06dbd5b0c
+
+==> 回归摘要：绘制清单
+[1/10] th13_01.rpy: stages=1 frames=601 rows=11 ok(a1) (1.5s)
+[2/10] th13_udMy25.rpy: stages=1 frames=601 rows=11 ok(a1) (1.4s)
+[3/10] th13_udN01.rpy: stages=1 frames=601 rows=11 ok(a1) (1.5s)
+[4/10] th13_udPn16.rpy: stages=1 frames=601 rows=11 ok(a1) (1.5s)
+[5/10] th13_udSr01.rpy: stages=1 frames=601 rows=11 ok(a1) (1.5s)
+[6/10] th13_udWi11.rpy: stages=1 frames=601 rows=11 ok(a1) (1.2s)
+[7/10] demo0.rpy: stages=1 frames=601 rows=11 ok(a1) (2.3s)
+[8/10] demo1.rpy: stages=1 frames=601 rows=11 ok(a1) (1.1s)
+[9/10] demo2.rpy: stages=1 frames=601 rows=11 ok(a1) (1.5s)
+[10/10] demo3.rpy: stages=1 frames=601 rows=11 ok(a1) (1.5s)
+digest-ok draws stride=60 replays=10 build=3ef9bcd3c01fdcf2629a7195d761d93e38c11be6978ffe8f2c2a10a06dbd5b0c
+
+==> 回归摘要：逐关绘制
+[1/10] th13_01.rpy: stages=6 frames=3606 rows=66 ok(a1) (12.3s)
+[2/10] th13_udMy25.rpy: stages=6 frames=3606 rows=66 ok(a1) (11.2s)
+[3/10] th13_udN01.rpy: stages=6 frames=3606 rows=66 ok(a1) (13.0s)
+[4/10] th13_udPn16.rpy: stages=6 frames=3606 rows=66 ok(a1) (12.6s)
+[5/10] th13_udSr01.rpy: stages=6 frames=3606 rows=66 ok(a1) (11.1s)
+[6/10] th13_udWi11.rpy: stages=1 frames=601 rows=11 ok(a1) (1.1s)
+[7/10] demo0.rpy: stages=1 frames=601 rows=11 ok(a1) (2.3s)
+[8/10] demo1.rpy: stages=1 frames=601 rows=11 ok(a1) (1.1s)
+[9/10] demo2.rpy: stages=1 frames=601 rows=11 ok(a1) (1.5s)
+[10/10] demo3.rpy: stages=1 frames=601 rows=11 ok(a1) (1.4s)
+digest-ok draws stride=60 replays=10 build=3ef9bcd3c01fdcf2629a7195d761d93e38c11be6978ffe8f2c2a10a06dbd5b0c
+
+==> 网页运行时构建
+Build th13 C++ / SDL3 / Emscripten
+20/112 translation units
+40/112 translation units
+60/112 translation units
+80/112 translation units
+100/112 translation units
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+warning: JS library symbol '$allocateUTF8' is deprecated. Please open a bug if you have a continuing need for this symbol [-Wdeprecated]
+emcc: warning: warnings in JS library compilation [-Wjs-compiler]
+{
+  "game": "th13",
+  "bytes": 3148333,
+  "sha256": "527473f57d10982b81b2531be9296ca9660c4eecfe9b12cfbd194ac9602fcc15",
+  "output": "/work/eagler-touhou/ports/th13/web/artifacts/sdl3/th13-sdl.mjs"
+}
+
+==> 全部套件与基线比对
+[gate] 开始 anm
+[gate] 开始 ecl
+[gate] 开始 ui
+[gate] 开始 replay
+[gate] 开始 items
+[gate] 开始 score
+[gate] 完成 anm：退出 0，通过 72，失败 0，27 秒
+[gate] 开始 combat
+[gate] 完成 ecl：退出 0，通过 186，失败 0，86 秒
+[gate] 开始 bomb
+[gate] 完成 bomb：退出 0，通过 0，失败 0，0 秒
+[gate] 开始 audio
+[gate] 完成 combat：退出 0，通过 0，失败 0，70 秒
+[gate] 开始 e2e
+[gate] 完成 e2e：退出 1，通过 0，失败 1，0 秒
+[gate] 开始 js
+[gate] 完成 js：退出 0，通过 46，失败 0，10 秒
+[gate] 完成 score：退出 0，通过 17，失败 0，128 秒
+[gate] 完成 ui：退出 0，通过 554，失败 0，132 秒
+[gate] 完成 audio：退出 0，通过 27，失败 0，52 秒
+[gate] 完成 items：退出 0，通过 60，失败 0，247 秒
+[gate] 完成 replay：退出 0，通过 33，失败 0，249 秒
+通过  anm  (72 通过 / 0 失败 / 0 断言)
+通过  ecl  (186 通过 / 0 失败 / 0 断言)
+通过  ui  (554 通过 / 0 失败 / 0 断言)
+通过  replay  (33 通过 / 0 失败 / 0 断言)
+通过  items  (60 通过 / 0 失败 / 0 断言)
+通过  score  (17 通过 / 0 失败 / 0 断言)
+通过  combat  (0 通过 / 0 失败 / 0 断言)
+通过  bomb  (0 通过 / 0 失败 / 0 断言)
+通过  audio  (27 通过 / 0 失败 / 0 断言)
+失败  e2e  (0 通过 / 1 失败 / 0 断言)
+通过  js  (46 通过 / 0 失败 / 0 断言)
+[gate] 结果：/work/artifacts/gate/th13/all/results.json
+修复  anm：reimu2406_real_bullet_anm_child_phase_with_follower
+修复  anm：reimu2406_real_bullet_anm_tail_parent_phase_late_by_one
+修复  anm：png_decode_stb
+修复  ecl：real_stage5_phantom_retains_radius_during_opening
+修复  ecl：real_stage3_card_emits_curve_lasers_through_711
+修复  ecl：extra_callback_spawns_real_enemy_and_consumes_trigger_once
+修复  ecl：real_stage2_boss_attack_registers_and_applies_moving_wall_callback
+修复  ecl：stage5_girld01_second_move_uses_sine_acceleration_not_linear
+修复  js：tests/managed-shell.test.mjs
+修复  js：actual GraphicsDevice native submission controls (no SDL/GLES dependency)
+[gate] 相对基线无新增失败
+
+real	6m26.556s
+user	0m0.145s
+sys	0m0.131s

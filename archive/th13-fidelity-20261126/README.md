@@ -74,3 +74,14 @@ ECL 全局读是两个 94 项跳转表：整型读 `0x420380`，浮点读 `0x420
 | 插值终值 x87 单次舍入 | `3a2edeb90` | th13_01.rpy 第 1 面 480 帧（state 流），连续三轮完整重跑同一帧 | `(end-start)*weight+start` 只舍入一次，etEx 缩放走 `scale_tween`；[digest-rounding.log](digest-rounding.log) |
 
 自 `3a2edeb90` 起金标未再变动。ECL 全局变量、插值角路径与其后的修正都没有改变三项摘要：状态流 `digest-ok replay`、首关绘制 `digest-ok draws`、全关卡绘制 `digest-ok draws`，日志见 [digest-check-replay.log](digest-check-replay.log)、[digest-check-draws.log](digest-check-draws.log)、[digest-check-draws-all.log](digest-check-draws-all.log)。
+
+## 门禁
+
+两侧一键门槛在最终源码上均退出 0，日志见 [gate-normal.log](gate-normal.log) 与 [gate-mp.log](gate-mp.log)：
+
+| 侧 | 排版 | 三项回归摘要 | 通过的套件 | 与基线相同的失败 |
+|---|---|---|---|---|
+| 普通版 | 491 个文件 | `digest-ok replay`、`digest-ok draws`、`digest-ok draws`（全关卡） | `anm` 72、`ecl` 186、`ui` 554、`replay` 33、`items` 60、`score` 17、`audio` 27、`js` 46 | `e2e` 1 项 |
+| 多人版 | 486 个文件 | — | `anm` 72、`ecl` 186、`ui` 551、`replay` 33、`items` 60、`score` 17、`audio` 27、`contracts` 9、`js` 31 | `combat`、`e2e`、`multiplayer` 各 1 项 |
+
+两侧结论都是 `[gate] 相对基线无新增失败`。基线内的失败来自环境输入缺席：e2e 与多人版 combat、M1–M9 需要 `msgothic.ttc` 与 libdatachannel。同一次验证里，无注释检查在普通版 588 个、多人版 718 个文件上通过，`docs:check` 与 `check-history --base main` 通过。CI 的 `Checks` 只汇总来源历史与发布检查，th13 的套件以本机门槛为准。
