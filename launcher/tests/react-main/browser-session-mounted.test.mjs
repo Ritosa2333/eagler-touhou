@@ -553,6 +553,17 @@ test('touch startup: dismissing the reminder cancels this launch and never ackno
   await click('#launch'); assert.equal(node('#decisionTitle').textContent, 'Touch controls are disabled');
 });
 
+test('touch startup: mobile defaults to touch with an existing preference that has no touch choice', async () => {
+  const f = await mountBrowser({initial: '/en.html?game=th06', touchDevice: true, mobileDevice: true, seedStorage(storage) {
+    storage.values.set(api.gamePreferenceStorageKey('th06'), JSON.stringify({music: 'none', options: {thpracEnabled: false}}));
+  }});
+  assert.equal(api.getTestSession().settings.getSnapshot().options.touchEnabled, true);
+  await start();
+  await until(() => commands().includes('launch'), 'launch forwards the default touch mode');
+  assert.equal(f.outbound.find(value => value.command === 'configure').options.touchEnabled, true);
+  assert.equal(node('#player').classList.contains('touch-enabled'), true);
+});
+
 test('touch startup: enabled controls skip the reminder', async () => {
   await mountBrowser({touchDevice: true, mobileDevice: true, seedStorage(storage) {
     storage.values.set(api.gamePreferenceStorageKey('th06'), JSON.stringify({music: 'none', options: {touchEnabled: true}}));
@@ -1281,8 +1292,33 @@ async function selectImport(file) {
   await React.act(async () => {input.dispatchEvent(new env.window.Event('change', {bubbles: true}));}); await tick();
 }
 
+test('actual BrowserLauncher: an import-only title starts from a published package', async () => {
+  const game = 'hsob';
+  const {descriptor} = await api.parsePackageZip(importPackageFile(game));
+  const host = subsetHost([game], {multiplayer: false});
+  host.shared.testBuild = true;
+  host.games[game].gameData.path = PRODUCT_GAMES[game].package.dataTarget.slice(1);
+  host.games[game].offlineCompatibility = structuredClone(siteManifest('import').games.th06.offlineCompatibility);
+  host.games[game].offlineCompatibility.runtimeCompatibility.dataLayout = host.games[game].gameData.layout;
+  const catalog = {schema: 'eagler-touhou/release-catalog/1', games: {[game]: {revision: descriptor.revision, descriptor: 'hsob.package.json'}}};
+  const f = await mountBrowser({initial: '/en.html?game=hsob&test', host, seedStorage(storage) {
+    storage.values.set(api.gamePreferenceStorageKey(game), JSON.stringify({music: 'none'}));
+  }, fetchBoundary(url) {
+    if (url.pathname.endsWith('/release-catalog.json')) return Response.json(catalog);
+    if (url.pathname.endsWith('/hsob.package.json')) return Response.json(descriptor);
+    if (Object.values(descriptor.files).some(file => url.pathname === '/' + file.source)) return new Response(new Uint8Array([1, 2, 3]));
+  }});
+  await until(() => node('#launchText').textContent === 'Start game', 'published resources enable Start');
+  await start();
+  await until(() => commands().includes('launch'), 'published data launches without a manual import');
+  assert.equal(node('#gameDataImportWindow').hidden, true);
+  assert.ok(f.fetches.some(({url}) => url.endsWith('/hsob.package.json')));
+  assert.deepEqual(f.dataReads, [[1, 2, 3]]);
+});
+
 test('actual BrowserLauncher: import-only Start → invalid file → valid canonical ZIP waits for another explicit Start', async () => {
-  const f = await mountBrowser({resourceMode: 'import'});
+  const f = await mountBrowser({initial: '/en.html?game=th06', resourceMode: 'import'});
+  assert.equal(node('#launchText').textContent, 'Import game files');
   await click('#launch'); await until(() => !node('#gameDataImportWindow').hidden, 'main import-required window opens');
   assert.equal(node('#decisionDialog').open, false); assert.equal(playerOpen(), false); assert.equal(f.navigations.length, 0);
   await selectImport(new NativeFile([], 'empty.zip'));
@@ -1292,6 +1328,7 @@ test('actual BrowserLauncher: import-only Start → invalid file → valid canon
   await until(() => node('#gameDataImportWindow').hidden, 'valid canonical ZIP finishes installation and closes recovery');
   assert.equal(commands().includes('launch'), false); assert.equal(playerOpen(), false);
   assert.equal(f.navigations.length, 0); assert.equal(node('#gameDataImportWindow').hidden, true, api.getTestSession().gameData.getSnapshot().reason);
+  await until(() => node('#launchText').textContent === 'Start game', 'install refreshes the primary button');
   await start(); await until(() => commands().includes('launch'), 'explicit Start launches the installed package');
   assert.equal(playerOpen(), true); assert.equal(node('#decisionDialog').open, false);
   let current; await React.act(async () => {current = await api.readCurrentPackageGeneration('th06');});
@@ -3203,18 +3240,20 @@ test('actual BrowserLauncher: spectator toolbar exits playback into the existing
   assert.equal(env.document.querySelector('#playbackExit'), null);
 });
 
-for (const mobileDevice of [false,true]) for (const game of ['th06','th09','th12']) for (const spectator of [true,false])
+for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th09','th12']) for (const spectator of [true,false]) {
+if (game === 'th07' && (!mobileDevice || spectator)) continue;
 test(`room Leave retires the ${mobileDevice?'mobile':'desktop'} ${game} ${spectator?'spectator':'player'} without exposing fullscreen`,async t=>{
  const agent=env.window.navigator.userAgent;t.onTestFinished(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:agent}));
  Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:mobileDevice?'Mozilla/5.0 Android Mobile':'Mozilla/5.0 Desktop'});
  const product=game+'mp',host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';host.shared.testBuild=true;
  const invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:spectator});
+ const challenge = mobileDevice && !spectator && (game === 'th06' || game === 'th07');
  const f=await mountBrowser({initial:'/?j='+invite,host,socketBoundary:true,actualHistory:true,seedPackages:[game],seedStorage(storage){
-  storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none',options:{touchEnabled:true,thpracEnabled:false}}));
+  storage.values.set(api.gamePreferenceStorageKey(game),JSON.stringify({music:'none',options:{thpracEnabled:false}}));
  }}),session=api.getTestSession();
  await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','room native menu loaded',15_000);
  const socket=f.sockets[0],id=new URL(socket.url).searchParams.get('lobby');
- const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,predictionLimit:game==='th12'?12:8,startSerial:4,spectatorTimeline:true,
+ const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,predictionLimit:game==='th12'?12:8,startSerial:4,spectatorTimeline:true,challengeMode:challenge,
   seats:[{clientId:spectator?'host':id,name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:spectator?[{clientId:id,name:'C'}]:[]};
  await React.act(async()=>{socket.open();socket.message({type:'state',room});socket.message({type:spectator?'spectator-start':'start',serial:4,room});});
  await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'room launch accepted',15_000);
@@ -3228,6 +3267,16 @@ test(`room Leave retires the ${mobileDevice?'mobile':'desktop'} ${game} ${specta
  if(!spectator){
   assert.equal(session.getSnapshot().roomPlayerExpanded,true,'Start leaves the input-blocking room preview on desktop and mobile');
   assert.equal(node('#player').classList.contains('room-workspace'),false,'live players mount gameplay input controls');
+  assert.equal(node('#touchBomb').hidden,challenge && game !== 'th07');
+  if(challenge){
+   assert.equal(f.outbound.findLast(value=>value.command==='configure').options.netplayChallengeMode,true);
+   assert.equal(node('#player').classList.contains('touch-enabled'),true);
+   assert.equal(node('#touchFire').hidden,false);
+   const fire=node('#touchFire'), before=session.touchFireState.getEnabled();
+   const press=()=>React.act(async()=>fire.dispatchEvent(new env.window.MouseEvent('pointerdown',{bubbles:true,cancelable:true})));
+   await press();assert.equal(session.touchFireState.getEnabled(),!before);
+   await press();assert.equal(session.touchFireState.getEnabled(),before);
+  }
  }
  if(f.fullscreen)await React.act(async()=>env.document.exitFullscreen());
  else if(session.getSnapshot().roomPlayerExpanded)await React.act(async()=>session.togglePlayerFullscreen());
@@ -3260,6 +3309,7 @@ test(`room Leave retires the ${mobileDevice?'mobile':'desktop'} ${game} ${specta
  assert.equal(f.order.filter(value=>value==='fullscreen-enter').length,entered);
  assertLobbyAddress(product);assert.deepEqual(socket.closes,[{code:1000,reason:'leave room'}]);
 });
+}
 
 for (const mobileDevice of [false,true]) for (const game of spectatorGames) {
  test(`actual BrowserLauncher: ${mobileDevice ? 'mobile' : 'desktop'} ${game} spectator return retains its Runtime and settles each launch cover`, async t => {

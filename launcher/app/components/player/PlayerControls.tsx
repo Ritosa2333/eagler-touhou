@@ -3,7 +3,7 @@ import { useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, ty
 import { createPortal } from 'react-dom';
 import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
 import { readTh075RoomScore } from '../../../src/launcher/th09-room-stats.mts';
-import { PRODUCT_GAMES } from '../../../src/contracts/product-catalog.mts';
+import { multiplayerConfigForProduct, PRODUCT_GAMES } from '../../../src/contracts/product-catalog.mts';
 import type { BrowserSession } from '../../session/browser-session';
 import {
   bindPlayerInput,
@@ -82,6 +82,11 @@ export function PlayerControls({
     session.room.service.getSnapshot,
     session.room.service.getSnapshot,
   );
+  const roomConfig = room.product ? multiplayerConfigForProduct(room.product) : null;
+  // TH07 uses Bomb to manually break an active Border in challenge mode.
+  const hideBomb = settings?.multiplayer === true && settings.gameId !== 'th07' &&
+    room.product === settings.context.productId && room.room?.challengeMode === true &&
+    roomConfig?.gameplay === 'cooperative' && roomConfig.challengeMode !== false;
   const spectatorTimeline = state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
   const mode = session.getPlayerMode(),
     spectating = mode === 'spectator';
@@ -204,7 +209,7 @@ export function PlayerControls({
         playerUsesGameInput(mode) &&
         !replayWorkspace &&
         navigation.surface !== 'touch' &&
-        state.playerOpen && <GameplayControls session={session} roomWorkspace={roomWorkspace} />}
+        state.playerOpen && <GameplayControls session={session} roomWorkspace={roomWorkspace} hideBomb={hideBomb} />}
     </>
   );
 }
@@ -273,7 +278,7 @@ function SpectatorChatKeyboard({ session }: { session: BrowserSession }) {
   }, [session]);
   return null;
 }
-function GameplayControls({ session, roomWorkspace }: { session: BrowserSession; roomWorkspace: boolean }) {
+function GameplayControls({ session, roomWorkspace, hideBomb }: { session: BrowserSession; roomWorkspace: boolean; hideBomb: boolean }) {
   const { t } = useLocale(),
     state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const settings = session.getActiveSettings()!,
@@ -368,7 +373,7 @@ function GameplayControls({ session, roomWorkspace }: { session: BrowserSession;
         aria-hidden="true"
         hidden={!(state.runtime?.launched && enabled && (hostDirect || pc98Direct) && !wheel)}
       />
-      <TouchControlPreview settings={settings} live={touch} spectator={spectator} />
+      <TouchControlPreview settings={settings} live={touch} spectator={spectator} hideBomb={hideBomb} />
     </>
   );
 }

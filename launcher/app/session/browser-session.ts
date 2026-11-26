@@ -41,7 +41,7 @@ import {describeBrowserEnvironment} from '../../src/launcher/runtime-diagnostics
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from '../models/site-preferences';
 import {createReplayModel, type ReplayModel} from '../models/replays';
 import {relocateReplayPlayback} from '../services/replay-relocation';
-import {createMetadataService} from '../services/metadata';
+import {createMetadataService, requiresLocalGameData} from '../services/metadata';
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
 import {musicModeLabel} from '../services/game-resources';
@@ -554,7 +554,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeEpoch: runtime?.getSnapshot().epoch ?? null,
       runtimeReady: runtime?.getSnapshot().ready === true && !roomPreload, launched: runtime?.getSnapshot().launched === true,
-      playerOpen: snapshot.playerOpen, importServer: productRequiresImport(gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
+      playerOpen: snapshot.playerOpen, importServer: requiresLocalGameData(metadata.getSnapshot(), gameIdForProduct(settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID)),
       fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
     ports: {
       pickFile: ({accept}) => ports.pickFile(accept), pickFiles: ({accept}) => ports.pickFiles(accept), feedback, showGameDataTransfer: transfer.revealGameData,
@@ -1097,7 +1097,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (isMultiplayerProductId(product)) {await roomSession!.service.launch(); return;}
       cloudSync?.prepareLocalLaunch();
       const game = gameIdForProduct(product);
-      if ((productRequiresImport(game) || metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import') && !(await acquisition.readCurrent(game)).generation) {
+      const resourceMetadata = metadata.getSnapshot();
+      if (productRequiresImport(game) && resourceMetadata.phase !== 'ready' &&
+          requiresLocalGameData(resourceMetadata, game)) await metadata.initialize();
+      if (requiresLocalGameData(metadata.getSnapshot(), game) && !(await acquisition.readCurrent(game)).generation) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
       if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings()) return;

@@ -199,6 +199,7 @@ function normalizeMusicMode(value: unknown): MusicMode {
 
 export interface NormalizeGamePreferencesContext {
   uiLocale?: string;
+  touchEnabledByDefault?: boolean;
   thpracAvailable: boolean;
   webAudioAvailable: boolean;
   // The remembered external MIDI output is only meaningful where the product
@@ -288,7 +289,7 @@ export function normalizeStoredGamePreferences(
     pixelPerfectEnabled: booleanOption(rawOptions, "pixelPerfectEnabled", DEFAULT_GAME_OPTIONS.pixelPerfectEnabled),
     bgmVolume: normalizeGameVolume(rawOptions?.bgmVolume),
     sfxVolume: normalizeGameVolume(rawOptions?.sfxVolume),
-    touchEnabled: booleanOption(rawOptions, "touchEnabled", DEFAULT_GAME_OPTIONS.touchEnabled),
+    touchEnabled: booleanOption(rawOptions, "touchEnabled", context.touchEnabledByDefault ?? DEFAULT_GAME_OPTIONS.touchEnabled),
     touchMovementMode: migratedMovement,
     touchSensitivity,
     touchControlOpacity: typeof rawOptions?.touchControlOpacity === "number" && Number.isFinite(rawOptions.touchControlOpacity)

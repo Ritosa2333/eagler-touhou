@@ -119,11 +119,11 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
       if(next===bits)return;controls.actionButtons=next;
       publish(true);syncControls();
     };
-    on(element,'pointerdown',event=>{if(ios||!customActions()||!allowed())return;event.preventDefault();event.stopImmediatePropagation();capture(element,event);change(event.pointerId,true);},{capture:true});
+    on(element,'pointerdown',event=>{if(ios||element.hidden||!customActions()||!allowed())return;event.preventDefault();event.stopImmediatePropagation();capture(element,event);change(event.pointerId,true);},{capture:true});
     for(const type of ['pointerup','pointercancel','lostpointercapture'] as const)on(element,type,event=>{if(ios||!customActions())return;event.preventDefault();event.stopImmediatePropagation();change(event.pointerId,false);},{capture:true});
-    on(element,'touchstart',event=>{if(!ios||!customActions()||!allowed())return;event.preventDefault();event.stopImmediatePropagation();for(const touch of Array.from(event.changedTouches))change(touch.identifier,true);},{capture:true,passive:false});
+    on(element,'touchstart',event=>{if(!ios||element.hidden||!customActions()||!allowed())return;event.preventDefault();event.stopImmediatePropagation();for(const touch of Array.from(event.changedTouches))change(touch.identifier,true);},{capture:true,passive:false});
     for(const type of ['touchend','touchcancel'] as const)on(element,type,event=>{if(!ios||!customActions())return;event.preventDefault();event.stopImmediatePropagation();for(const touch of Array.from(event.changedTouches))change(touch.identifier,false);},{capture:true,passive:false});
-    on(element,'click',event=>{if(!customActions())return;event.stopImmediatePropagation();if(event.detail===0&&allowed()){change(-1,true);const timer=win.setTimeout(()=>{timers.delete(timer);change(-1,false);},70);timers.add(timer);}},{capture:true});
+    on(element,'click',event=>{if(!customActions())return;event.stopImmediatePropagation();if(event.detail===0&&allowed()&&!element.hidden){change(-1,true);const timer=win.setTimeout(()=>{timers.delete(timer);change(-1,false);},70);timers.add(timer);}},{capture:true});
   }
   function capture(element: HTMLElement, event: PointerEvent) {try {element.setPointerCapture(event.pointerId);} catch {}}
   const focusMode = () => settings()?.gameId === 'th01' ? 'hold-button' : settings()?.options.touchFocusMode;
@@ -211,8 +211,8 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     [el.restart, () => pulse(restartKey)],
   ];
   for (const [button, activate] of actions) {
-    on(button, 'pointerdown', event => {if (!allowed() || (button === el.fire && heldMode())) return; event.preventDefault(); capture(button, event); activate();});
-    on(button, 'click', event => {if (event.detail === 0 && allowed() && !(button === el.fire && heldMode())) activate();});
+    on(button, 'pointerdown', event => {if (!allowed() || button.hidden || (button === el.fire && heldMode())) return; event.preventDefault(); capture(button, event); activate();});
+    on(button, 'click', event => {if (event.detail === 0 && allowed() && !button.hidden && !(button === el.fire && heldMode())) activate();});
   }
   function cancelPointers() {
     clearCustomActions(); cancelTouchFunction(); direct.cancel(false); joystick.reset(false); controls.focusEnabled = false; publish();
