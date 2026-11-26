@@ -4,7 +4,6 @@ import {dirname, resolve} from 'node:path';
 import {gzipSync, gunzipSync} from 'node:zlib';
 
 const DISKS = Object.freeze({
-  th02: ['th02-local-cn.hdi.gz', 'th02-local-jp.hdi.gz', 'th02-solo-cn.hdi.gz', 'th02-solo-jp.hdi.gz'],
   th03: ['disks/3-cn.hdi.gz', 'disks/3-jp.hdi.gz'],
   th04: ['th04-coop-jp.hdi.gz', 'th04-coop.hdi.gz', 'th04-solo-jp.hdi.gz', 'th04-solo.hdi.gz'],
 });

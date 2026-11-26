@@ -40,7 +40,14 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
   const nativeBodies = nativeFiles.map(path => ({path, text:readFileSync(path, 'utf8')}));
   const native = nativeBodies.map(item => item.text).join('\n');
   const records = [];
-  if (['th01','th02','th04'].includes(game)) {
+  if (game === 'th02') {
+    const testFile='tests/native-data.test.mjs', dataFile='web/managed-data.mjs';
+    return [result('native-data',['PACKAGE-02'],[dataFile,testFile],()=>{
+      execFileSync(process.execPath,['--test',resolve(root,directory,testFile)],
+        {cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
+    })];
+  }
+  if (['th01','th04'].includes(game)) {
     const testFile='tests/managed-adapter.test.mjs';
     return [
       ['runtime-protocol',['RUNTIME-01','RUNTIME-02','RUNTIME-03'],'pc98 protocol:'],

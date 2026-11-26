@@ -1,6 +1,5 @@
 // Install a game-native signed-number routine in the private cooperative MAIN.
 // The twelve leading bytes are three signed 32-bit counters in the guest CS.
-const code02='000000000000000000000000e8dddc666006b800a08ec031ed69fde00181c7b606b90b00b8200551e857dc59e2f983ef16e80c00452e3b2e288572dd076661c3665066536651665289ebc1e3022e668b87808f6685c0790d66f7d86650b82de1e81fdc665831c966bb0a0000006631d266f7f380c23052416685c075f058b4e151e8fedb59e2f6665a6659665b6658c3';
 const code04='000000000000000000000000e8f6d7666006b800a08ec031ed69fd400181c7ea04b90b00b8200551e87ad759e2f983ef16e80f00452e0fb606a29539c572da076661c3665066536651665289ebc1e3022e668b8720b96685c0790d66f7d86650b82de1e83fd7665831c966bb0a0000006631d266f7f380c23052416685c075f058b4e151e81ed759e2f6665a6659665b6658c3';
 const fromHex=value=>Uint8Array.from(value.match(/../g),b=>parseInt(b,16));
 function check(bytes,at,expected){return at>=0&&at+expected.length<=bytes.length&&expected.every((value,i)=>bytes[at+i]===value);}
@@ -20,32 +19,16 @@ function insertImage(source,at,gap,code){
   rel.forEach((loc,i)=>{hv.setUint16(table+i*4,loc%16,true);hv.setUint16(table+i*4+2,Math.floor(loc/16),true);});
   const result=new Uint8Array(hs+expanded.length);hv.setUint16(2,result.length%512,true);hv.setUint16(4,Math.ceil(result.length/512),true);result.set(header);result.set(expanded,hs);return result;
 }
-export function installChallengeHud(source,game,patch,th02Insert){
+export function installChallengeHud(source,game,patch){
   if(!(source instanceof Uint8Array)||source.length<32)throw Error('挑战模式程序无效');
   const hs=new DataView(source.buffer,source.byteOffset,source.byteLength).getUint16(8,true)*16;
-  let result,cs,offset,call,gap;
-  if(game==='02'){
-    // Place the HUD after the pause and rescue extensions; Bomb and bonus use the old near-code space.
-    cs=patch.codeSegment;offset=0x8f80;call=0x6b33;const base=hs+cs*16,code=fromHex(code02);
-    if(th02Insert!==cs*16+offset||!check(source,base+call,fromHex('e83601')))throw Error('TH02 挑战模式 HUD 原程序不匹配');
-    if(!check(source,base+0x6b00,fromHex('83c7066a46e83d0083c70231c02e80be2a85007503a02d0be85e06')))throw Error('TH02 挑战模式 HUD Bomb 绘制不匹配');
-    gap=code.length;result=insertImage(source,th02Insert,gap,code);result.fill(0x90,base+0x6b00,base+0x6b1b);
-    // In challenge mode pickups belong to the collector, not the whole team.
-    // Raise native per-step caps so several simultaneous pickups still count.
-    for(const [at,expected,replacement] of [
-      [0x7f0b,'2e803e147d02','e98400909090'],
-      [0x2595,'3d0500','3d6400'],[0x289e,'3d0500','3d6400'],
-      [0x2940,'3d0500','3d6400'],[0x2cb8,'3d0500','3d6400'],
-      [0x2d31,'3d0500','3d6400'],
-    ]){if(!check(result,base+at,fromHex(expected)))throw Error('TH02 挑战模式奖励补丁不匹配');result.set(fromHex(replacement),base+at);}
-  }else if(game==='04'){
-    cs=patch.code_segment;offset=0xb920;call=0x8fe3;const base=hs+cs*16,insert=patch.insert_image_offset+patch.insert_size,guard=fromHex(patch.near_code_guard.original),code=fromHex(code04);
-    if(insert!==cs*16+offset||!check(source,base+call,fromHex('e83f01'))||!check(source,hs+insert,guard))throw Error('TH04 挑战模式 HUD 原程序不匹配');
-    gap=160;result=insertImage(source,insert,gap,code);
-    if(!check(result,base+0x8ce0,fromHex('e81200')))throw Error('TH04 挑战模式奖励补丁不匹配');
-    result.fill(0x90,base+0x8ce0,base+0x8ce3);
-  }else throw Error('挑战模式作品无效');
-  const header=new DataView(result.buffer).getUint16(8,true)*16,base=header+cs*16,view=new DataView(result.buffer);
+  if(game!=='04')throw Error('挑战模式作品无效');
+  const cs=patch.code_segment,offset=0xb920,call=0x8fe3,base=hs+cs*16,insert=patch.insert_image_offset+patch.insert_size;
+  const guard=fromHex(patch.near_code_guard.original),code=fromHex(code04),gap=160;
+  if(insert!==cs*16+offset||!check(source,base+call,fromHex('e83f01'))||!check(source,hs+insert,guard))throw Error('TH04 挑战模式 HUD 原程序不匹配');
+  const result=insertImage(source,insert,gap,code),view=new DataView(result.buffer);
+  if(!check(result,base+0x8ce0,fromHex('e81200')))throw Error('TH04 挑战模式奖励补丁不匹配');
+  result.fill(0x90,base+0x8ce0,base+0x8ce3);
   result[base+call]=0xe8;view.setUint16(base+call+1,(offset+12-call-3)&65535,true);
   return {bytes:result,countsOffset:offset,addedParagraphs:gap/16};
 }

@@ -3,7 +3,7 @@ import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 const browser = await puppeteer.launch({executablePath: await findChromiumExecutable(), headless: true, args: ['--no-sandbox']});
 try {
-  for (const game of ['th02','th04']) {
+  for (const game of ['th04']) {
     const page = await browser.newPage();
     await page.goto(process.env.EAGLER_TEST_URL || 'http://127.0.0.1:8132/');
     const result = await page.evaluate(async game => {

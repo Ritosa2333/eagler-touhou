@@ -19,7 +19,9 @@ struct ConfirmedCoop {
     std::array<ShotInput,3> fire;
     unsigned frame=0;
     std::uint32_t seed=1234;
-    bool focus=true,autofire=true,restrict_speed=false,finished=false;
+    bool focus=true,autofire=true,restrict_speed=false,challenge=false,finished=false;
+    std::array<int,3> challenge_counts{};
+    static constexpr unsigned challenge_spares=2;
 
     // This clock is independent of painting, focus, throttling and the PC's
     // timer. A stalled transport never calls step with a fabricated row.
@@ -32,16 +34,26 @@ struct ConfirmedCoop {
                 throw std::runtime_error("Invalid TH02 confirmed seat input");
         }
         const auto context=replay_tick_context(scene);
+        scene.coop_challenge=challenge;
         const auto mode=shot_input_mode(autofire,true,context!=NativeReplayContext::Gameplay);
         scene.sound.shot_cadence.set_autofire(autofire);
         for(unsigned seat=0;seat<coop.config.count;++seat){
             auto raw=std::uint16_t(masks[seat]&4095);
             coop.pointer[seat].sample(context==NativeReplayContext::Gameplay&&scene.seat_life(seat).input_allowed()?masks[seat]:0,restrict_speed);
             if(!focus)raw&=~Focus;
+            if(challenge)raw&=~Bomb;
             coop.input[seat]=sample_coop_seat(coop,seat,fire[seat],raw,mode);
         }
         const auto group=(masks[0]&(Shot|Bomb|OK|Cancel))!=0;
         auto out=session.tick(scene,normalize_replay_tick(coop.input[0],group,false));
+        if(challenge){
+            for(unsigned seat=0;seat<scene.seat_count();++seat){
+                auto &life=scene.seat_life(seat);
+                challenge_counts[seat]+=int(challenge_spares)-int(life.lives)-int(life.bombs);
+                life.lives=challenge_spares;life.bombs=0;
+            }
+            scene.lives=scene.life.lives;
+        }
         if(out.consumed_tick)++frame;
         if(out.stage_advanced)fire={};
         finished=out.status!=ReplayStepStatus::Running;
@@ -53,7 +65,7 @@ struct ConfirmedCoop {
     std::uint64_t digest(const EncounterScene &scene)const{
         replay_session_detail::Digest h;
         const auto &coop=*scene.coop;
-        h.fields(frame,seed,focus,autofire,restrict_speed,replay_state_digest(scene),coop.input,coop.previous,
+        h.fields(frame,seed,focus,autofire,restrict_speed,challenge,challenge_counts,replay_state_digest(scene),coop.input,coop.previous,
                  coop.bomb_owner,coop.half_power,coop.fire_held,coop.hit_clear,
                  scene.midboss.damage_taken.sixths(),scene.midboss2.damage_taken.sixths(),
                  scene.midboss4.damage_taken.sixths(),scene.rika.damage_taken.sixths(),

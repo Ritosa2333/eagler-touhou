@@ -1,82 +1,34 @@
-# TH02 主项目适配
+# TH02 东方封魔录 · SoEW Native
 
-[适配检查](ADAPTATION.md) · [来源迁移](../../docs/migration/th02-eagler-20261025.md)
-[原仓库说明](README-UPSTREAM.md) · [来源与子树维护](../../docs/migration/th02-eagler-20261025.md)
+[适配检查](ADAPTATION.md) · [来源与子树维护](../../docs/migration/th02-eagler-20261025.md)
 
-`ports/th02` 将《东方封魔录》接入 Eagler Touhou。SoEW Native 提供原生单人版，以及从主大厅启动的二至三人合作与观战。
+书库单人、二至三人合作和观战都运行 SoEW Native。单人的练习、设置、成绩和 `.rep` 在游戏内管理；合作从 Eagler 大厅开局。
 
-## 原生单人版
+## 构建与启动
 
-按 [SoEW Native Web](native-solo/WEB.md) 构建 `soew-full` 并准备本地资源、字形和可选音源。然后将现有 DOS 资源与该构建目录交给 TH02 打包器：
-
-```sh
-node ports/th02/scripts/build-eagler.mjs --assets=<DOS资源目录> --native-build=ports/th02/native-solo/build-web
-```
-
-也可设置 `TH02_NATIVE_BUILD` 后运行 `ports/th02/scripts/dev.mjs`。在 [Eagler 测试书库](http://127.0.0.1:18320/?test=th02) 打开 TH02 单人卡片即可进入 SoEW。设置、成绩和 `.rep` 使用 SoEW 自己的浏览器存档与游戏内管理界面；旧 DOS 存档及 `.th02r` 继续在 Eagler 原有的文件与录像入口管理。联机的房间选项、同步和观战由现有运行时接管。
-
-浏览器验收：`node ports/th02/tests/launcher-native-browser.mjs`。
-
-## 原生联机与观战
-
-在 Eagler 联机大厅创建 TH02 房间。在房间设置中关闭回滚，按普通规则开局，即进入 SoEW Native。同一房间的观众从原有观战席进入，可暂停、回拖和回到直播。开启回滚或挑战规则时使用现有的 DOSBox-X 运行时。
-
-房间默认全员启用高速连射。房主可在规则选项中关闭「启用连射」；房间标题和大厅的特殊玩法随即显示「禁用连射」。
-
-原生联机复用 TH05 的房间传输，按约 56.4 Hz 的 PC-98 节拍推进；每 120 帧比对模拟状态。队友按各自本机视角半透明呈现。F12、退格辅助和练习调速不参与联机。
-
-构建含资源的 `soew-full`，安装 Launcher 和 Relay 的 npm 依赖，设置 `EAGLER_CHROME_PATH` 后，在仓库根目录运行：
+按 [SoEW Native Web](native-solo/WEB.md) 构建 `soew-full` 并准备素材、字形和音源。在仓库根目录运行：
 
 ```powershell
-node --test ports/th02/tests/native-coop-peers.test.mjs
-$env:PC98_LAUNCHER_URL='http://127.0.0.1:18320/'
-node ports/th02/tests/launcher-native-room-browser.mjs
-$env:TH02_TEST_SEATS='2'; $env:TH02_TEST_ROUTE='rtc'
-node ports/th02/tests/native-coop-network-browser.mjs
-$env:TH02_TEST_SEATS='3'; $env:TH02_TEST_ROUTE='relay'
-node ports/th02/tests/native-coop-network-browser.mjs
-```
-
-大厅测试通过主 Launcher 建房、就座、开局并中途加入观战，使用实际时间轴操作。传输测试启动真实 Relay 和独立 WASM 实例，验证双人 WebRTC 直连、三人 Relay 转发、缺帧停表以及恢复后的状态一致性。
-
-## DOS 运行时
-
-在 monorepo 根目录运行：
-
-```powershell
+node ports/th02/scripts/build-eagler.mjs --native-build=ports/th02/native-solo/build-web
 npm --prefix launcher run build:ui-rewrite
 node ports/th02/scripts/dev.mjs
 ```
 
-打开 `http://127.0.0.1:18320/?test=th02`。脚本从本目录代码与相邻 `../th02-coop-lab/web` 资源 构建运行时及本地 `content/th02.data`，并启动主 Launcher 与 Relay。主项目存档文件为 `HUUHI.DAT`，设置文件为 `HUUMA.CFG`；它们从游戏磁盘 `HUMAROKU` 导出。合作模式支持两人和三人，保留原项目的三种机体射击配置。
+用 `TH02_NATIVE_BUILD` 可指定另一 SoEW 构建目录。脚本启动 Launcher 和 Relay，测试入口为 [书库](http://127.0.0.1:18320/?test=th02) 和 [联机大厅](http://127.0.0.1:18320/lobby.html?test=th02)。Runtime 包含 SoEW WASM；DATA 提供原生素材、字形和音源。
 
-可重复验证：
+## 联机与观战
+
+建房后选难度、机体并准备即可开局。房间默认启用高速连射，房主关闭后大厅特殊玩法显示「禁用连射」。普通房和挑战房使用同一个引擎。联机按约 56.4 Hz 消费已确认的输入帧，经 WebRTC 或 Relay 传输；各席位按本机视角半透明绘制队友。观众可在开局后入场、暂停、回拖和返回直播。
+
+安装 Launcher 和 Relay 的依赖，设置 `EAGLER_CHROME_PATH` 后运行：
 
 ```powershell
-node ports/th02/tests/contracts.mjs
-node ports/th02/tests/hit-clear-content.mjs
-node ports/th02/tests/transport.mjs
-node ports/th02/tests/browser.mjs
-node ports/th02/tests/launcher-browser.mjs
-node ports/th02/tests/launcher-room-browser.mjs
+$env:PC98_LAUNCHER_URL='http://127.0.0.1:18320/'
+node ports/th02/tests/launcher-native-browser.mjs
+node ports/th02/tests/launcher-native-room-browser.mjs
+node --test ports/th02/tests/native-coop-peers.test.mjs
+$env:TH02_TEST_SEATS='3'; $env:TH02_TEST_ROUTE='relay'
+node ports/th02/tests/native-coop-network-browser.mjs
 ```
 
-`browser.mjs` 使用真实模拟器、WASM 和 DATA 检查单人、联机输入同步、Relay 与资源加载；Launcher 测试从主项目验证安装和房间流程。`PC98_TEST_PLAYERS=3`、`PC98_TEST_RELAY=1`、`PC98_TEST_ROLLBACK=1` 可切换运行人数、Relay 路由和回滚配置。日志与截图写入 `.cache/`。
-
-入口仍标记为 `testOnly`。适配由主项目提供房间与存档界面，DOSBox-X 内继续运行原来的封魔录。原实验仓库不被构建脚本修改。来源提交与 Git 子树状态见 [迁移登记](../../docs/migration/th02-eagler-20261025.md)。
-
-DOS 验收覆盖主 Launcher 单人安装与呈现、双人房间的座位、预载、游戏检查、开局、键盘和同房再开，以及三人 Relay 回滚。
-
-封面采用 THBWiki 原版外包装扫描，来源链接与 SHA-256 保存在 `artwork/cover-source.json`。
-
-多人模式任意玩家中弹都会清除全屏普通敌弹和独立激光池，P1／P2／P3 共用原生触发规则。原仓库的测试无敌下，三位玩家撞弹均会清弹且保留库存；正常中弹保留各自的扣命流程。清弹状态随原生内存一同回滚与重放。构建器要求来源包含 `hitClear.version = 1`，`hit-clear-content.mjs` 校验中日文 Package Store 内容中的实际 MAIN 补丁和联机碰撞补丁身份。
-
-单人游戏保留原有浏览器练习器。点击画面右上角“练习 / 辅助”，或按 F12 选择机体、难度、关卡、Boss 与攻击阶段；Backspace 展开辅助菜单，F1–F5、U 切换辅助，Tab 显示信息，Shift+F 从已确认的目标重新练习。
-
-辅助菜单与信息浮层沿用原布局，放在画面右侧信息区；F12 完整设置面板随实际画面缩放并可滚动，打开时进入原生暂停。参数表单、练习结果与快捷重试继续由浏览器控制。面板与结果弹窗打开时，主项目触控按钮暂时隐藏；移动手势从游戏画布开始，面板内保留点选与滚动。
-
-特定跳关沿用原资源预载与后台预备实例：目标就绪后准备下一次起点，Shift+F 使用已确认的目标与最新辅助选项，预备实例在激活前保持冻结。高级设置中的预备快速重试选项可控制后台准备。练习 REP 存入主项目录像文件空间。手机可直接操作浏览器面板；合作房间使用原有同步内核。
-
-统一练习器验证：启动包含 TH02、TH04、TH05 的主 Launcher 后运行 `node common/tests/pc98-practice-browser.mjs`。测试使用真实模拟器验证目标阶段、浏览器表单、辅助开关、后台预备完成与命中、暂停起点冻结、预备开关、右侧布局与窄屏面板。设置 `PC98_PRACTICE_MOBILE=1` 可验证移动浏览器面板与画面触控移动。
-
-构建器默认使用当前 `ports/th02/web` 的代码；通过 `--assets=<原运行时 web 目录>` 提供游戏资源和预编译核心。`PC98_ASSETS_DIR` 可覆盖开发脚本默认的资源路径。源码基线与资源清单见 [source-import.json](source-import.json)，每次构建的实际输入哈希写入 `content/source.json`。
+大厅测试走实际建房、就座、开局和中途观战流程；传输测试以独立 WASM 实例验证缺帧停表和恢复后的状态一致性。传输测试设 `TH02_TEST_SEATS=2`、`TH02_TEST_ROUTE=rtc` 可覆盖 WebRTC 直连。

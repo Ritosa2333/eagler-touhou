@@ -7,7 +7,7 @@ import {mkdirSync} from 'node:fs';
 const option=(name,fallback)=>process.argv.find(arg=>arg.startsWith(`--${name}=`))?.slice(name.length+3)||fallback;
 // Start a local site publishing the selected title and a relay; pass --url and --game.
 const base=new URL(option('url','http://127.0.0.1:8130/'));
-const game=option('game','th02');assert(['th01','th02','th03','th04'].includes(game),'invalid game');
+const game=option('game','th04');assert(['th01','th03','th04'].includes(game),'invalid game');
 const pointer=option('pointer','pen');assert(['pen','touch'].includes(pointer),'invalid pointer');
 const directory=resolve(option('output','artifacts/launcher-browser'));
 mkdirSync(directory,{recursive:true});
@@ -64,7 +64,7 @@ try{
   const w=document.querySelector('#gameFrame').contentWindow;
   const h=game==='th01'?w.th01Net?.session?.game?.state():game==='th03'?(await w.eval("import('./managed-native-room.mjs')")).managedAPI.health():await (await w.eval("import('./netplay/room.js')")).managedAPI.sampleGame();
   const s=document.querySelector('#touchDirectSurface'),r=s.getBoundingClientRect(),x=r.left+r.width*.65,y=r.top+r.height*.55;
-  const xPosition=game==='th01'?h?.players[1]?.left:game==='th03'?h?.players.find(p=>p.seat===1)?.x:game==='th04'?h?.players[1]?.[0]:h?.players[1]?.x;
+  const xPosition=game==='th01'?h?.players[1]?.left:game==='th03'?h?.players.find(p=>p.seat===1)?.x:h?.players[1]?.[0];
   return {xPosition,surface:{hidden:s.hidden,rect:{x:r.x,y:r.y,width:r.width,height:r.height},element:document.elementFromPoint(x,y)?.outerHTML.slice(0,250)}};
  },game);
  await pages[1].click('#fullscreenToggle');await new Promise(r=>setTimeout(r,1000));

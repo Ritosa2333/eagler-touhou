@@ -1,16 +1,13 @@
 import {componentFileIds} from './package-generation.mjs';
 
-// Multiplayer title previews in TH02 and TH04 use the solo disk as well.
+// Multiplayer title previews in TH04 use the solo disk as well.
 export function pc98RequiredBlockFiles(descriptor, {game, language, multiplayer, replay = false}) {
-  if (!['th02', 'th03', 'th04'].includes(game) || descriptor?.game !== game) throw Error('Invalid PC-98 game');
+  if (!['th03', 'th04'].includes(game) || descriptor?.game !== game) throw Error('Invalid PC-98 game');
   const japanese = language === 'ja';
-  let paths = game === 'th02'
-    ? [`th02-solo-${japanese ? 'jp' : 'cn'}.hdi.gz`, ...(multiplayer ? [`th02-local-${japanese ? 'jp' : 'cn'}.hdi.gz`] : [])]
-    : game === 'th03' ? [`disks/3-${japanese ? 'jp' : 'cn'}.hdi.gz`, ...(multiplayer && japanese ? ['disks/3-cn.hdi.gz'] : [])]
+  let paths = game === 'th03' ? [`disks/3-${japanese ? 'jp' : 'cn'}.hdi.gz`, ...(multiplayer && japanese ? ['disks/3-cn.hdi.gz'] : [])]
       : [`th04-solo${japanese ? '-jp' : ''}.hdi.gz`, ...(multiplayer ? [`th04-coop${japanese ? '-jp' : ''}.hdi.gz`] : [])];
   // A replay can carry a different language from the launcher's selection.
-  if (replay) paths = game === 'th02' ? ['th02-solo-jp.hdi.gz', 'th02-solo-cn.hdi.gz']
-    : game === 'th03' ? ['disks/3-jp.hdi.gz', 'disks/3-cn.hdi.gz']
+  if (replay) paths = game === 'th03' ? ['disks/3-jp.hdi.gz', 'disks/3-cn.hdi.gz']
       : ['th04-solo-jp.hdi.gz', 'th04-solo.hdi.gz'];
   const ids = ['pc98-disk-manifest'];
   const manifest = descriptor.components?.['pc98-manifest'];

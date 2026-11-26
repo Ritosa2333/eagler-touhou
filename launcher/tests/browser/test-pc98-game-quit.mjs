@@ -7,7 +7,7 @@ import {resolve,extname,sep} from 'node:path';
 import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 const repo=resolve(import.meta.dirname,'../../..');
-for(const game of process.argv.slice(2).length?process.argv.slice(2):['th02','th03','th04']){
+for(const game of process.argv.slice(2).length?process.argv.slice(2):['th03','th04']){
   const root=resolve(repo,'ports',game,'build-eagler'),data=await readFile(resolve(repo,'ports',game,'content',`${game}.data`));
   const html=`<!doctype html><style>html,body,iframe{border:0;margin:0;width:100%;height:100%;background:#000}</style><iframe src="/runtime/${game}.html?hosted=1&managedData=1&runtimeEpoch=1"></iframe><script>
     window.events=[];window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/data')).arrayBuffer()});

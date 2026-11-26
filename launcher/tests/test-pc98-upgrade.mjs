@@ -15,7 +15,7 @@ import {DATA_LAYOUT_SPEC as th04Layout} from '../../ports/th04/web/managed-data.
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const legacy = 'sha256-967f66a7de83b3e5580afa2bc0db41aac8b8c41ec90eb4b6767286570d76a579';
 
-test('PC-98 legacy installations upgrade before pinning a runtime when required', async () => {
+for (const game of ['th01','th02','th03','th04']) test(`${game} legacy installations upgrade before pinning a runtime`, async () => {
   const project=resolve(import.meta.dirname,'..'),require=createRequire(resolve(project,'package.json'));
   const {IDBFactory,IDBKeyRange}=require('fake-indexeddb');
   globalThis.indexedDB=new IDBFactory(); globalThis.IDBKeyRange=IDBKeyRange;
@@ -29,7 +29,7 @@ test('PC-98 legacy installations upgrade before pinning a runtime when required'
     const {build}=require('esbuild'),outfile=join(root,'owners.mjs');
     await build({absWorkingDir:project,stdin:{resolveDir:project,loader:'ts',contents:`export {createPackageAcquisition} from './app/services/package-acquisition.ts'; export {ensurePC98Disks} from './app/services/game-resources.ts'; export {installPackageFromRemote} from './package/package-installer.mjs'; export {readCurrentPackageGeneration} from './package/package-store.mjs';`},outfile,bundle:true,platform:'node',format:'esm',packages:'external',plugins:[{name:'fixture-assets',setup(context){context.onResolve({filter:/\?url$/},args=>({path:args.path,namespace:'fixture-url'}));context.onLoad({filter:/.*/,namespace:'fixture-url'},()=>({contents:'export default "https://fixture.invalid/asset"',loader:'js'}));}},authoredSourcesPlugin(project)],logLevel:'silent'});
     const {createPackageAcquisition,ensurePC98Disks,installPackageFromRemote,readCurrentPackageGeneration}=await import(pathToFileURL(outfile).href);
-    for (const game of ['th01','th02','th03','th04']) {
+    {
       const bodies=new Map();
       const file=(name,value,target)=>{const bytes=Buffer.from(value), digest=hash(bytes);bodies.set(name,bytes);return {source:name,target,bytes:bytes.length,sha256:digest,revision:digest.slice(0,16)};};
       const oldData=file(`${game}-old.data`,'old '+game,`/${game}.data`);
@@ -41,7 +41,7 @@ test('PC-98 legacy installations upgrade before pinning a runtime when required'
       let old=descriptor('old',oldData);
       const next=descriptor('new',newData);
       if(game!=='th01') {
-        const path=game==='th03'?'3-jp.hdi.gz':`${game}-solo-jp.hdi.gz`;
+        const path=game==='th03'?'3-jp.hdi.gz':game==='th02'?'previous-generation.hdi.gz':'th04-solo-jp.hdi.gz';
         const id='pc98-block:'+hash('block-'+game);
         const manifest=file(`${game}-manifest.json`,'manifest '+game,'/pc98/disks.json');
         const block=file(`${game}-block.gz`,'block '+game,`/pc98/disk-blocks/${id.slice(11)}.gz`);
@@ -66,12 +66,12 @@ test('PC-98 legacy installations upgrade before pinning a runtime when required'
       const descriptorUrl=`https://example.test/${game}.package.json`;
       const initial=await installPackageFromRemote(old,{descriptorUrl,fetchImpl,desiredFileIds:Object.keys(old.files)});
       const catalog={schema:'eagler-touhou/release-catalog/1',games:{[game]:{revision:'new',descriptor:`${game}.package.json`}}};
-      const snapshot={siteManifest:{games:{[game]:{gameData:{layout,sha256:newData.sha256,bytes:newData.bytes}}}},releaseCatalog:catalog};
+      const snapshot={siteManifest:{shared:{resourceMode:'hosted'},games:{[game]:{gameData:{layout,sha256:newData.sha256,bytes:newData.bytes}}}},releaseCatalog:catalog};
       let loaded=false;
       const acquisition=createPackageAcquisition({baseUrl:'https://example.test/',translate:key=>key,fetchImpl,
         metadata:{getSnapshot:()=>loaded?snapshot:{siteManifest:null,releaseCatalog:null},initialize:async()=>{loaded=true;},refreshInstalled:async()=>{}},
         dependencies:{repairInstalled:async current=>current.generation},testBuild:true});
-      for(const mode of ['offline','layout','descriptor','corrupt',...(game==='th03'?['native-layout-with-disks']:[])]){
+      for(const mode of ['offline','layout','descriptor','corrupt',...(['th02','th03'].includes(game)?['native-layout-with-disks']:[])]){
         requested.length=0; failure=mode;
         await assert.rejects(acquisition.acquire({productId:game,music:'none',language:'ja'}));
         assert.equal((await readCurrentPackageGeneration(game)).generation.id,initial.generation.id, `${game} ${mode}: keeps previous installation`);

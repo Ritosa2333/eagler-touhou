@@ -6,8 +6,8 @@ const require=createRequire(new URL('../../../launcher/package.json',import.meta
 const puppeteer=require('puppeteer-core');
 const base=process.env.PC98_LAUNCHER_URL||'http://127.0.0.1:18326/';
 const seats=Number(process.env.TH02_TEST_SEATS??2);
-const rollback=process.env.TH02_TEST_ROLLBACK==='1', rapidFire=process.env.TH02_TEST_RAPID_FIRE!=='0';
-const renderer=rollback?'DOSBox-X / PC-98':'SoEW Native';
+const challenge=process.env.TH02_TEST_CHALLENGE==='1',rapidFire=process.env.TH02_TEST_RAPID_FIRE!=='0';
+const renderer='SoEW Native';
 assert([2,3].includes(seats));
 const browser=await puppeteer.launch({executablePath:await findChromiumExecutable(),headless:true,protocolTimeout:60000,
   args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
@@ -71,26 +71,29 @@ try {
     const join=`[data-mp-seat-drop="${seat}"] button`;
     if(await enabled(page,join))await page.click(join);
   }
-  await wait('host can set rollback',()=>enabled(host,'#mpRollbackToggle'));
+  await wait('host can set room rules',()=>enabled(host,'#mpTh02RapidFire'));
   assert.equal(await host.$eval('#mpTh02RapidFire',e=>e.getAttribute('aria-checked')),'true');
   if(!rapidFire)await host.click('#mpTh02RapidFire');
-  if(rollback)assert.equal(await host.$eval('#mpRollbackToggle',e=>e.getAttribute('aria-checked')),'true');
-  else if(await host.$eval('#mpRollbackToggle',e=>e.getAttribute('aria-checked')==='true'))await host.click('#mpRollbackToggle');
+  assert.equal(await enabled(host,'#mpRollbackToggle'),false);
+  if(challenge)await host.click('#mpRoomChallengeToggle');
   await wait('room rules and seats ready',async()=>
     (await Promise.all(players.map(async page=>await enabled(page,'#mpReady')&&
-      await page.$eval('#mpRollbackToggle',(e,v)=>e.getAttribute('aria-checked')===String(v),rollback)&&
+      await page.$eval('#mpRoomChallengeToggle',(e,v)=>e.getAttribute('aria-checked')===String(v),challenge)&&
       await page.$eval('#mpTh02RapidFire',(e,v)=>e.getAttribute('aria-checked')===String(v),rapidFire)))).every(Boolean));
   if(!rapidFire)for(const page of players)assert(await page.$('.room-workspace-meta .room-challenge-on'));
   for(const page of players)await page.click('#mpReady');
   await wait('start match',()=>enabled(host,'#mpStartGame'));
   await host.click('#mpStartGame');
-  await wait('all players draw a frame',()=>players.every(page=>received(page,m=>m.renderer===renderer)&&received(page,m=>m.event==='first-frame')),
-    rollback?120000:45000);
+  await wait('all players draw a frame',()=>players.every(page=>received(page,m=>m.renderer===renderer)&&received(page,m=>m.event==='first-frame')));
   for(const page of players)assert(await runtime(page).$eval('#game canvas',e=>e.width>0&&e.height>0&&e.getBoundingClientRect().width>0));
   await wait('all players continue past the first state check',async()=>
     (await Promise.all(players.map(page=>runtime(page).evaluate(()=>globalThis.__eaglerNetplayLanConfirmed>=130)))).every(Boolean));
-  for(const page of players)assert.equal(await runtime(page).evaluate(()=>globalThis.__eaglerPC98Options().netplayRapidFire),rapidFire);
-  console.log('PASS Eagler create, join, seat, ready, '+renderer+' '+seats+'P launch, rapid fire '+(rapidFire?'on':'off'));
+  for(const page of players){
+    const options=await runtime(page).evaluate(()=>globalThis.__eaglerPC98Options());
+    assert.equal(options.netplayRapidFire,rapidFire);
+    assert.equal(options.netplayChallengeMode===true,challenge);
+  }
+  console.log('PASS Eagler create, join, seat, ready, '+renderer+' '+seats+'P launch, rapid fire '+(rapidFire?'on':'off')+', challenge '+(challenge?'on':'off'));
 
   {
     const observer=await open(roomUrl);

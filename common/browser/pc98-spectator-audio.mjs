@@ -12,10 +12,6 @@ export function createPc98SpectatorAudio(game,music,onError=()=>{}){
       return new Fat12(await loadVerifiedBytes(entry.url,entry.sha256,{gzip:true}));
     }
     const [{Fat12},{assetBytes}]=await Promise.all([load(paths.fat),load(paths.assets)]);
-    if(game==='02'){
-      const patch=await(await fetch(paths.patch)).json(),entry=patch.disks[settings.language];
-      return new Fat12(await assetBytes(entry.file,{hash:entry.sha256,size:entry.size,gzip:true}));
-    }
     const {gameVersion}=await load(paths.version),selected=gameVersion(settings.language),meta=await(await fetch('./'+selected.coopMeta)).json();
     return new Fat12(await assetBytes(selected.coopDisk,{hash:meta.sha256,size:meta.size,gzip:true}));
   }

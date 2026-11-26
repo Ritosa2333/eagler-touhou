@@ -1,8 +1,5 @@
 // Valid native score files with empty records, not copies of a developer disk.
 export function emptyPc98Scores(game){
-  if(game==='th02'){
-    const out=new Uint8Array(910);for(let section=0;section<5;section++)out.fill(0x12,section*182,section*182+178);return out;
-  }
   if(game==='th04'){
     const out=new Uint8Array(1960);
     for(let section=0;section<10;section++){

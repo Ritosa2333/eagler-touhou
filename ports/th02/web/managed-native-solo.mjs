@@ -1,7 +1,7 @@
 import {playFull} from './native/full.mjs';
 
 const virtualKeys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyX','KeyZ','ShiftLeft','Escape','Enter'];
-export function createNativeSolo({canvas,input,files,exit,fail}) {
+export function createNativeSolo({canvas,input,exit,fail}) {
   let player, virtual = 0, saved;
   const physical = new Set();
   const sync = () => {
@@ -35,10 +35,7 @@ export function createNativeSolo({canvas,input,files,exit,fail}) {
       if (!virtualHeld && !(code==='KeyV'&&event?.ctrlKey)) player.key(code,down,event);
     },
     health:()=>player?.health()??{frames:0,gameFrame:0,audio:{state:'suspended'}},
-    async files(message) {
-      if (message.command==='sync') {await sync();return {};}
-      return files(message);
-    },
+    sync,
     stop() {player?.stop();player=undefined;physical.clear();virtual=0;},
   };
 }

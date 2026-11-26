@@ -228,15 +228,18 @@ struct EncounterScene:StageScene {
         else life.lives=std::uint8_t(stock);
         lives=life.lives;
     }
+    bool coop_challenge=false;
     void coop_pickup(unsigned i,unsigned type,int x,int y){
         auto &p=seat_pickups(i);auto &l=seat_life(i);
         const unsigned previous=p.power;
         unsigned spare=type==ItemCore::OneUp?0u:l.lives,stock=l.bombs;
         p.item_skill=items.item_skill;p.collect(type,x,y,spare,stock,numbers);items.item_skill=p.item_skill;
         if(type==ItemCore::OneUp){
-            coop_life_award();
+            if(coop_challenge)++l.lives;
+            else coop_life_award();
         }else if(type==ItemCore::Bomb){
-            for(unsigned j=0;j<seat_count();++j){
+            if(coop_challenge)++l.bombs;
+            else for(unsigned j=0;j<seat_count();++j){
                 auto &other=seat_life(j);if(!other.game_over&&other.bombs<5)++other.bombs;
             }
         }else if(type==ItemCore::Power||type==ItemCore::BigPower){

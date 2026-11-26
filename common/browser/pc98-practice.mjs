@@ -4,7 +4,7 @@ export function mountManagedPractice(ui, input, {release, readState, nativeKey, 
   const panel = document.querySelector('#practice-panel');
   const screen = panel.parentElement;
   const button = document.querySelector('[data-practice-toolbar]');
-  button.closest('.th02-player,.th04-player').classList.add('managed-browser-game');
+  button.closest('.th04-player').classList.add('managed-browser-game');
   const modifiers = new Set(), nativeHeld = new Set();
   let retryHeld = false;
   const nativeCodes = new Set(['Backspace','F1','F2','F3','F4','F5','KeyU']);

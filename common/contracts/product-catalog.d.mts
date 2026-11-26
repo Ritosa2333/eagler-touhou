@@ -45,21 +45,21 @@ export declare const PRODUCT_GAMES: Readonly<{
     }>;
     th02: Readonly<{
         testOnly:true; practiceUI:'browser'; number:'02';title:'東方封魔録';subtitle:'the Story of Eastern Wonderland';cardArtwork:'th02-card.webp';
-        storage:Readonly<{saveRoot:'/savesth02';scoreFile:'HUUHI.DAT';configFiles:readonly string[]}>;
+        storage:Readonly<{saveRoot:'/soew/save';scoreFile:'soew-native-scores.dat';configFiles:readonly string[]}>;dataLayout:string;
         runtime:'./runtime/th02/th02.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
-        package:Readonly<{dataFileId:'game-data';dataTarget:'/th02.data';musicSourceDirectories:Readonly<{ogg:'bgm'}>;musicMounts:Readonly<{ogg:'/bgm'}>}>;
+        package:Readonly<{dataFileId:'game-data';dataTarget:'/th02.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;
         musicCapabilities:Readonly<{midi:false}>;musicRuntime:Readonly<{localOggConfigureMode:'runtime-selection';embeddedOgg:true}>;
         touchFire:Readonly<{mode:'toggle';labelKey:'touch.tapToggle'}>;
         support:Readonly<{highRefreshRate:false;sourceRepository:string}>;
         replay:Readonly<{prefix:'th02';extensions:readonly string[];naming:'filename'}>;
         multiplayerRuntime:'./runtime/th02/multiplayer/th02.html';
-        multiplayer:Readonly<{titleKey:'game.title.th02mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th02PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:12;sendPredictionLimit:6;rollbackDefault:true;runtimeTiming:true}>}>;
+        multiplayer:Readonly<{titleKey:'game.title.th02mp';gameplay:'cooperative';playerCounts:readonly [2,3];difficulties:readonly string[];loadouts:readonly MultiplayerLoadoutConfig[];peerTransportGlobal:'__th02PeerTransport';relaySourceEnvelope:true;spectator:true;titleRoomEntry:false;preflightWithoutRoom:true;challengeMode:true;inputTiming:Readonly<{rollbackLimit:0;rollbackDefault:false;runtimeTiming:true}>}>;
         features:Readonly<{thprac:false;languages:false;focusHitbox:false}>;
     }>;
     th03: Readonly<{
         testOnly:true; buildOptIn:true; number:'03';title:'東方夢時空';subtitle:'Phantasmagoria of Dim.Dream';cardArtwork:'th03-card.webp';
-        storage:Readonly<{saveRoot:'/savesth03';scoreFile:'YUME.NEM';configFiles:readonly string[]}>;
+        storage:Readonly<{saveRoot:'/savesth03';scoreFile:'YUME.NEM';configFiles:readonly string[]}>;dataLayout:string;
         runtime:'./runtime/th03/th03.html';runtimeFileLayout:'directory';runtimeFileTree:true;runtimeAssets:readonly string[];requiredShared:readonly string[];
         dataProvider:'retail-memory';runtimeResourceTransport:'resources';
         package:Readonly<{dataFileId:'game-data';dataTarget:'/th03.data';musicSourceDirectories:Readonly<{ogg:'music'}>;musicMounts:Readonly<{ogg:'/bgm/akyu'}>}>;

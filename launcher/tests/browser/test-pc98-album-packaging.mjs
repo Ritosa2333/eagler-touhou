@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {PRODUCT_GAMES} from '../../../common/contracts/product-catalog.mjs';
 import {PRODUCT_CONTENT} from '../../lib/content-definition.mjs';
-for(const game of ['th02','th04'])test(`${game} optional album is separately packaged and verified`,async()=>{
+for(const game of ['th04'])test(`${game} optional album is separately packaged and verified`,async()=>{
  const root=new URL(`../../../ports/${game}/`,import.meta.url),bytes=await readFile(new URL(`content/${game}.data`,root));
  const len=bytes.readUInt32LE(8),manifest=JSON.parse(bytes.subarray(12,12+len));
  assert(!manifest.files.some(f=>/^bgm\/akyu\/\d+\.(opus|ogg)$/.test(f.path)));

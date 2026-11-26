@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {installPlayerArt} from '../../ports/th02/web/player-art.js';
 import {installProjectileArt} from '../../ports/th04/web/projectile-art.js';
 
 function fixture(){
@@ -25,15 +24,6 @@ function exercise(f,art){
 }
 
 {
-  const f=fixture(),signature=new TextEncoder().encode('TH02COOPv0002!!\0'),mailbox=0x900000;
-  f.heap.set(signature,mailbox);f.heap[mailbox+22]=1;
-  const art=installPlayerArt(f.mod,{entries:{mailbox:0x2000,art_context:0x3000}},new Uint8Array([1]));
-  art.bind(mailbox);exercise(f,art);
-  // A rollback can restore the control block independently of the JS closure.
-  const v=new DataView(f.heap.buffer);v.setUint32(art.control,0,true);v.setUint32(art.control+12,0,true);
-  art.bind(mailbox);assert.equal(v.getUint32(art.control+12,true),mailbox+22);
-}
-{
   const f=fixture(),bytes=new Uint8Array([4,5,6]),fetch=globalThis.fetch;
   globalThis.fetch=async()=>new Response(bytes);
   try{
@@ -41,4 +31,4 @@ function exercise(f,art){
     art.bind(0x900000);exercise(f,art);
   }finally{globalThis.fetch=fetch;}
 }
-console.log('TH02/TH04 layer reset and rollback passed');
+console.log('TH04 layer reset and rollback passed');

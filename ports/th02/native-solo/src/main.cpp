@@ -3419,8 +3419,14 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM w, LPARAM l) {
                         draw_glyph(pixels,app->font,soew::original_hud::digit_zero+int(value),x+layout::stock_digit_dx,stock_y,0xffffffffu);
                         layout::draw_small_number(pixels,"/5",x+layout::stock_limit_dx+11,stock_y+5,layout::detail_ink);
                     };
-                    stock(item[soew::ItemCore::OneUp],l.lives,layout::lives_x);
-                    stock(item[soew::ItemCore::Bomb],l.bombs,layout::bombs_x);
+                    if(app->confirmed_coop&&app->confirmed_coop->challenge){
+                        sprite(item[soew::ItemCore::OneUp],layout::lives_x,stock_y);
+                        display_text(app->composed,std::to_wstring(app->confirmed_coop->challenge_counts[i]),
+                            layout::lives_x+layout::stock_digit_dx,stock_y,ink,lang);
+                    }else{
+                        stock(item[soew::ItemCore::OneUp],l.lives,layout::lives_x);
+                        stock(item[soew::ItemCore::Bomb],l.bombs,layout::bombs_x);
+                    }
                     sprite(item[soew::ItemCore::BigPower],layout::left,power_y);
                     layout::draw_power_gauge(pixels,scene.seat_pickups(i).power,power_y,ink);
                 }
@@ -4707,15 +4713,15 @@ static int start_browser_coop(int count,int stage,int rank,int spare,int stock,i
 }
 extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_confirmed_coop(int count,int stage,int rank,int spare,int stock,
     int p1,int p2,int p3,std::uint32_t seed,unsigned rules,int lang,int seat,int music){
-    if(rules>7||lang<0||lang>3||seat< -1||seat>=count||music< -1||music>3)return 0;
+    if(rules>15||lang<0||lang>3||seat< -1||seat>=count||music< -1||music>3)return 0;
     auto &app=browser_app;
     app.coop_view_seat=seat<0?std::nullopt:std::optional<unsigned>(seat);
     auto &run=app.confirmed_coop.emplace();
-    run.seed=seed;run.focus=(rules&1)!=0;run.autofire=(rules&2)!=0;run.restrict_speed=(rules&4)!=0;
+    run.seed=seed;run.focus=(rules&1)!=0;run.autofire=(rules&2)!=0;run.restrict_speed=(rules&4)!=0;run.challenge=(rules&8)!=0;
     app.menu.language=soew::Language(lang);
     if(music>=0)app.menu.music=music;
     app.settings_enabled=false;
-    return start_browser_coop(count,stage,rank,spare,stock,p1,p2,p3);
+    return start_browser_coop(count,stage,rank,run.challenge?run.challenge_spares:spare,run.challenge?0:stock,p1,p2,p3);
 }
 extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_confirmed_step(unsigned frame,double p1,double p2,double p3){
     auto &app=browser_app;

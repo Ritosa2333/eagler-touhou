@@ -2,7 +2,6 @@
 // Tests live playback, pause, seeking, and original sound effects.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {createHash} from 'node:crypto';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import {spawn} from 'node:child_process';
@@ -11,7 +10,7 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 import {PRODUCT_GAMES,multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
 import {verifyPc98IceRestart} from './verify-pc98-ice-restart.mjs';
 const game=process.env.ROOM_RUNTIME_GAME;
-assert(['th01','th02','th03','th04'].includes(game),'ROOM_RUNTIME_GAME must be a multiplayer title');
+assert(['th01','th03','th04'].includes(game),'ROOM_RUNTIME_GAME must be a multiplayer title');
 const lateJoin=process.env.PC98_TEST_INPUT_ONLY_LATE==='1'||process.env.PC98_TEST_LATE_JOIN==='1';
 const timing=multiplayerInputTimingPolicy(PRODUCT_GAMES[game].multiplayer);
 for(const key of ['ROOM_RUNTIME_ROOT','ROOM_RUNTIME_DATA'])assert(process.env[key],key+' is required');
@@ -19,33 +18,12 @@ const runtime=resolve(process.env.ROOM_RUNTIME_ROOT),out=resolve('.cache/native-
 await mkdir(out,{recursive:true});
 const data=await readFile(process.env.ROOM_RUNTIME_DATA),fonts=new Map();
 let instrumentedRuntime=null;
-if(process.env.PC98_TEST_ENDING==='1'){
-  assert.equal(game,'th02');
-  let source=await readFile(resolve(runtime,'netplay/runtime.js'),'utf8');
-  const config='config={...launchDefaults,...settings};';
-  assert(source.includes(config));source=source.replace(config,'config={...launchDefaults,...settings,stage:4};');
-  const marker=' m.netBeginFrame(frame,replay);';assert(source.includes(marker));
-  source=source.replace(marker,` if(frame===500&&mailbox>=0){const h=emulator.module.HEAPU8,cb=mailbox-patch.entries.mailbox,d=cb+(patch.dataSegment-patch.codeSegment)*16,end=h.slice(d+0x1a18,d+0x1a1c);emulator.module.thDirtyMark?.(cb+patch.entries.input_hook,5);h[cb+patch.entries.input_hook]=0xea;h.set(end,cb+patch.entries.input_hook+1);}\n`+marker);
-  const hook=' emulator.module.playerArt.view(localSlot);';assert(source.includes(hook));
-  source=source.replace(hook,hook+`\n {const fs=emulator.module.FS,open=fs.open;fs.open=function(path,...args){const result=open.call(this,path,...args);if(typeof path==='string'&&/maine\\.exe$/i.test(path))notifyParent({protocol:PROTOCOL,event:'qa-ending-open'});return result;};}`);
-  instrumentedRuntime=Buffer.from(source);
-}
 if(process.env.PC98_TEST_CHALLENGE_EVENTS==='1'){
-  assert(['th02','th04'].includes(game));
+  assert.equal(game,'th04');
   const source=await readFile(resolve(runtime,'netplay/runtime.js'),'utf8');
   const marker='  try{emulator.step();}catch(error){challenge?.abort();throw error;}';
   assert(source.includes(marker),'challenge instrumentation boundary');
-  const inject=game==='th02'?`if(challengeLayout&&[180,360,540,720].includes(ticks)){
-    const h=m.HEAPU8,v=new DataView(h.buffer),cb=mailbox-patch.entries.mailbox,d=cb+(patch.dataSegment-patch.codeSegment)*16;
-    if(ticks===540){m.thDirtyMark?.(d+0x2b94,1);h[d+0x2b94]=1;}
-    else{
-      if(ticks===720){m.thDirtyMark?.(cb+patch.entries.personal_stats,4);v.setUint32(cb+patch.entries.personal_stats,999999,true);}
-      let at=-1;for(let i=0;i<20;i++){const q=d+0x3ce6+i*16;if(h[q]===0){at=q;break;}}if(at<0)throw Error('test item slot');
-      m.thDirtyMark?.(at,16);h.fill(0,at,at+16);h[at]=1;h[at+1]=ticks===180?2:ticks===360?4:1;
-      const x=v.getInt16(d+0x2b86,true),y=v.getInt16(d+0x2b88,true)*16;
-      for(const k of [2,6])v.setInt16(at+k,x,true);for(const k of [4,8])v.setInt16(at+k,y,true);
-    }
-  }`:`if(challengeLayout&&[180,360,540,720].includes(ticks)){
+  const inject=`if(challengeLayout&&[180,360,540,720].includes(ticks)){
     const h=emulator.module.HEAPU8,v=new DataView(h.buffer),cb=mailbox-patch.mailbox_cs_offset,d=gameDataBase();
     if(ticks===540){emulator.module.thDirtyMark?.(d+0x4662,9);h[d+0x4662]=0;h[d+0x4669]=1;h[d+0x466a]=0;}
     else if(ticks===720){emulator.module.thDirtyMark?.(cb+patch.personal_stats.cs_offset,4);v.setUint32(cb+patch.personal_stats.cs_offset,3000000,true);}
@@ -57,14 +35,6 @@ if(process.env.PC98_TEST_CHALLENGE_EVENTS==='1'){
     }
   }`;
   instrumentedRuntime=Buffer.from(source.replace(marker,inject+'\n'+marker));
-}
-if(process.env.PC98_TEST_DISABLE_FOCUS==='1'){
-  assert.equal(game,'th02');
-  const source=instrumentedRuntime?.toString()??await readFile(resolve(runtime,'netplay/runtime.js'),'utf8');
-  const marker=' writeInputs(m.HEAPU8,mailbox,patch,nativeInput(inputs),players,config,(at,size)=>m.thDirtyMark?.(at,size));';
-  assert(source.includes(marker),'native focus instrumentation boundary');
-  instrumentedRuntime=Buffer.from(source.replace(marker,marker+`
- if(mailbox>=0&&state()&&(config.focusEnabled!==false||m.HEAPU8[mailbox+patch.focus.enabledOffset]!==0))throw Error('TH02 disabled focus did not reach native game');`));
 }
 let relayLog='',browser,page;
 const clients=[],errors=[],relay=spawn(process.execPath,['services/relay/src/netplay-relay.mjs'],{
@@ -84,8 +54,6 @@ const server=createServer(async(req,res)=>{try{
   if(!path.startsWith('/runtime/'))throw Error('route');
   const file=resolve(runtime,path.slice(9));if(!file.startsWith(runtime+sep))throw Error('path');
   res.setHeader('content-type',({'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(file)]||'application/octet-stream');if(instrumentedRuntime&&path==='/runtime/netplay/runtime.js'){res.end(instrumentedRuntime);return;}
-  if(instrumentedRuntime&&game==='th02'&&path==='/runtime/netplay/runtime.json'){const manifest=JSON.parse(await readFile(file,'utf8'));manifest.assets['netplay/runtime.js']=createHash('sha256').update(instrumentedRuntime).digest('hex');res.end(JSON.stringify(manifest));return;}
-  if(process.env.PC98_TEST_ENDING==='1'&&path==='/runtime/netplay/managed-runtime.js'){const source=await readFile(file,'utf8');assert(source.includes('notify(data.message)'));res.end(source.replace('notify(data.message)',"(data.message.event?.startsWith('qa-')?globalThis.__eaglerPC98Emit({event:data.message.event,name:data.message.name,tick:data.message.tick}):notify(data.message))"));return;}
   if(process.env.PC98_TEST_LATE_FRAME==='1'&&path==='/runtime/netplay/managed-runtime.js'){const source=await readFile(file,'utf8');if(!source.includes('return sync;'))throw Error('test runtime hook missing');res.end(source.replace('return sync;','globalThis.testManagedRuntime=sync;return sync;'));return;}
   res.end(await readFile(file));
 }catch{res.writeHead(404).end();}});
@@ -118,7 +86,7 @@ try{
   for(let actor=0;actor<2;actor++)await send(clients[actor],{type:'set-ready',ready:true},m=>m.room?.seats[actor]?.ready);
   const start=await send(clients[0],{type:'start',inputDelay:0,adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit},m=>m.type==='start');
   let run=start.serial,roles=[0,1,null];
-  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayChallengeMode:process.env.PC98_TEST_CHALLENGE==='1',netplayDisableFocus:process.env.PC98_TEST_DISABLE_FOCUS==='1',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,...roles[actor]===null?{spectator:'retention_client_'+actor}:{player:String(roles[actor])}}),netplayPlayer:roles[actor]??0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:roles[actor]===null,netplaySpectatorId:roles[actor]===null?'retention_client_'+actor:'',netplaySpectatorCount:1,netplaySpectatorTimeline:true});
+  const options=actor=>({touchEnabled:process.env.PC98_TOUCH_INPUT==='1',touchMovementMode:'touch-unlimited',touchSensitivity:150,netplayMode:'lan',netplayChallengeMode:process.env.PC98_TEST_CHALLENGE==='1',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(run),member:'retention_member_'+actor,...roles[actor]===null?{spectator:'retention_client_'+actor}:{player:String(roles[actor])}}),netplayPlayer:roles[actor]??0,netplayPlayerCount:2,netplaySeed:1234,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:0,shot:1}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:timing.rollback?0:1,netplayPredictionLimit:timing.predictionLimit,netplaySpectator:roles[actor]===null,netplaySpectatorId:roles[actor]===null?'retention_client_'+actor:'',netplaySpectatorCount:1,netplaySpectatorTimeline:true});
   const configure=async(actor,serial)=>{
     await page.evaluate(async({actor,options})=>rpc(actor,'configure',{music:'none',options,resources:[],runtimeResources:[],sharedResources:[]}),{actor,options:options(actor)});
     // Give the running native title several ticks between protocol commands.
@@ -134,21 +102,9 @@ try{
       for(const type of ['down','up']){await page.evaluate(({actor,type})=>rpc(actor,'direct-touch',{type,id:1,x:.5,y:.5}),{actor,type});await new Promise(r=>setTimeout(r,250));}
     }else for(const down of [true,false]){await page.evaluate(({actor,down})=>rpc(actor,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down}),{actor,down});await new Promise(r=>setTimeout(r,250));}
   }
-  if(game==='th02'||game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
+  if(game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}))));
   await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>120);},'native players advancing');
   if(process.env.PC98_TEST_RTC_RESTART==='1')await verifyPc98IceRestart(game,frames().slice(0,2),playerFrame,wait);
-  if(process.env.PC98_TEST_ENDING==='1'){
-    await page.evaluate(()=>{let down=false;window.qaEndingKeys=setInterval(()=>{down=!down;void rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down});},250);});
-    await wait(()=>page.evaluate(()=>[1,2].every(epoch=>events.some(e=>e.epoch===epoch&&e.event==='qa-ending-open'))),'both players load native ending',120000);
-    await wait(async()=>{const values=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(playerFrame)));return values.every(v=>v>=3800);},'ending progresses',120000);
-    await page.evaluate(()=>clearInterval(window.qaEndingKeys));
-    const captures=[];for(let n=0;n<2;n++)captures.push(await (await frames()[n].$('canvas')).screenshot({path:resolve(out,`ending-player-${n}.png`)}));
-    assert(captures.every(b=>b.length>3000),'both players should render the ending');
-    assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
-    await wait(async()=>{const music=await Promise.all(frames().slice(0,2).map(f=>f.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.health().music)));return music.every(m=>m.track==='end1-m86');},'both players hear the native ending track',30000);
-    console.log('TH02 ending music',JSON.stringify(await Promise.all(frames().slice(0,2).map(f=>f.evaluate(async()=>(await import('./netplay/room.js')).managedAPI.health().music)))));
-    console.log('PASS TH02 multiplayer ending render');
-  } else {
   if(process.env.PC98_TEST_LATE_FRAME==='1'){
     await page.evaluate(()=>{globalThis.testStall=setInterval(()=>{const until=performance.now()+100;while(performance.now()<until){}},400);});
     await new Promise(resolve=>setTimeout(resolve,5000));await page.evaluate(()=>clearInterval(globalThis.testStall));
@@ -196,8 +152,8 @@ try{
     await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));await new Promise(r=>setTimeout(r,180));await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
     await new Promise(r=>setTimeout(r,1500));
   }
-  if(game==='th02'||game==='th04')await page.evaluate(game=>Promise.all((game==='th02'?[1]:[0,1]).map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}))),game);
-  if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1'){
+  if(game==='th04')await page.evaluate(()=>Promise.all([0,1].map(n=>rpc(n,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}))));
+  if((game==='th04')&&process.env.PC98_NATIVE_MARKER==='1'){
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:true}));
     const start=await frames()[1].evaluate(playerFrame);
     await wait(async()=>await frames()[1].evaluate(playerFrame)>=start+300,'native marker keeps cooperative match synchronized',30000);
@@ -229,8 +185,7 @@ try{
   await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&!s.seeking;},{timeout:90000});
   if(process.env.PC98_TEST_INPUT_ONLY_LATE==='1')await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&s.received>1800&&s.received-s.position<180;},{timeout:120000});
   if(process.env.PC98_TEST_LATE_STAGE==='1')assert((await page.evaluate(()=>events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback?.min))>0,'late spectator should start from a stage checkpoint');
-  if(game==='th02')await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
-  if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1')
+  if((game==='th04')&&process.env.PC98_NATIVE_MARKER==='1')
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:true}));
   assert(await frames()[2].evaluate(game=>{const peer=globalThis['__'+game+'PeerTransport'];return peer?.relay?.readyState===WebSocket.OPEN&&peer.peers instanceof Map;},game),'launcher can observe the live spectator relay');
   await frames()[2].waitForFunction(()=>{const c=[...document.querySelectorAll('canvas')].find(n=>n.style.position==='fixed');if(!c)return false;const context=c.getContext('2d'),pixels=context.getImageData(0,0,c.width,c.height).data;for(let i=0;i<pixels.length;i+=4)if(pixels[i]||pixels[i+1]||pixels[i+2])return true;return false;},{timeout:90000});
@@ -259,17 +214,16 @@ try{
   await control('seek',target);await page.waitForFunction(target=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.paused&&!s.seeking&&s.position===target;},{timeout:90000},target);
   await control('live');await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s?.following&&!s.paused&&!s.seeking;},{timeout:90000});
   if(process.env.PC98_TEST_INPUT_ONLY_LATE==='1')await page.waitForFunction(()=>{const s=events.findLast(e=>e.epoch===3&&e.spectatorPlayback)?.spectatorPlayback;return s&&s.received-s.position<180;},{timeout:120000});
-  if((game==='th02'||game==='th04')&&process.env.PC98_NATIVE_MARKER==='1'){
+  if((game==='th04')&&process.env.PC98_NATIVE_MARKER==='1'){
     const start=await frames()[1].evaluate(playerFrame);
     await wait(async()=>await frames()[1].evaluate(playerFrame)>=start+300,'marker stays synchronized while spectating',30000);
     await page.evaluate(()=>rpc(1,'keyboard',{code:'ShiftLeft',key:'Shift',keyCode:16,location:1,down:false}));
   }
-  if((game==='th02'||game==='th03'||game==='th04')&&process.env.PC98_TEST_LATE_STAGE!=='1'&&process.env.PC98_TEST_INPUT_ONLY_LATE!=='1'){
+  if((game==='th03'||game==='th04')&&process.env.PC98_TEST_LATE_STAGE!=='1'&&process.env.PC98_TEST_INPUT_ONLY_LATE!=='1'){
     await page.click('#p0');await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:true}));
     await page.waitForFunction(()=>events.some(e=>e.epoch===3&&e.event==='audio-health'&&e.effects>0&&e.effectsPeak>0.001),{timeout:20000});
     await page.evaluate(()=>rpc(0,'keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,down:false}));
   }
   assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
   console.log('PASS PC98 real managed players and spectator',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.epoch===3&&e.spectatorPlayback).at(-1))));
-  }
-}finally{if(page){console.log('QA errors',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.event==='error'))));console.log('QA tail',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.epoch===3).slice(-6))));console.log('QA relay',relayLog);console.log('QA game',JSON.stringify(await Promise.all(page.frames().filter(f=>f.url().includes('runtimeEpoch=')).map(f=>f.evaluate(()=>({state:globalThis.th03SyncState||null,replayError:globalThis.th03Replay?.error||globalThis.th02Replay?.error||globalThis.th04Replay?.error||'',replayEnd:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.snapshot()?.end||null,recorderEnded:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.ended??null,pointError:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.pointError||'',replayPoints:(globalThis.th03Replay||globalThis.th02Replay||globalThis.th04Replay)?.snapshot()?.points?.map(p=>({frame:p.frame,scene:p.scene}))||[]}))))));}for(const c of clients)c.close();await browser?.close();await new Promise(r=>server.close(r));relay.kill();}
+}finally{if(page){console.log('QA errors',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.event==='error'))));console.log('QA tail',JSON.stringify(await page.evaluate(()=>events.filter(e=>e.epoch===3).slice(-6))));console.log('QA relay',relayLog);console.log('QA game',JSON.stringify(await Promise.all(page.frames().filter(f=>f.url().includes('runtimeEpoch=')).map(f=>f.evaluate(()=>({state:globalThis.th03SyncState||null,replayError:globalThis.th03Replay?.error||globalThis.th04Replay?.error||'',replayEnd:(globalThis.th03Replay||globalThis.th04Replay)?.snapshot()?.end||null,recorderEnded:(globalThis.th03Replay||globalThis.th04Replay)?.ended??null,pointError:(globalThis.th03Replay||globalThis.th04Replay)?.pointError||'',replayPoints:(globalThis.th03Replay||globalThis.th04Replay)?.snapshot()?.points?.map(p=>({frame:p.frame,scene:p.scene}))||[]}))))));}for(const c of clients)c.close();await browser?.close();await new Promise(r=>server.close(r));relay.kill();}

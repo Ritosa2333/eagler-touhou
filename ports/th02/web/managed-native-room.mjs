@@ -4,7 +4,8 @@ import {createManagedTransport} from './native/network/managed-transport.mjs';
 import {createConfirmedPeerRun,validCoopInput} from './native-coop-peers.mjs';
 import {packTouch} from './touch-input.js';
 import {createPc98SpectatorPublisher} from './pc98-spectator-publisher.mjs';
-import {createManagedSpectator} from './pc98-managed-spectator.mjs';
+import {createLocalSpectator} from './pc98-local-spectator.mjs';
+import {createPc98SpectatorChannel} from './pc98-spectator-channel.mjs';
 
 const tickMs=9328*1000/526315;
 const delay=3;
@@ -21,12 +22,9 @@ const roomRules=(options,language)=>[
     options.netplayPlayerCount,options.netplayDifficulty===4?5:0,Math.min(options.netplayDifficulty,3),
     options.netplayInitialSpares??2,options.netplayInitialBombs??3,
     ...roles.map((_,i)=>options.netplayLoadouts[i]?.shot??0),
-    options.netplaySeed>>>0,(options.netplayDisableFocus?0:1)|(options.netplayRapidFire===false?0:2)|(options.netplayDisableCheatMovement?4:0),lang(language),
+    options.netplaySeed>>>0,(options.netplayDisableFocus?0:1)|(options.netplayRapidFire===false?0:2)|
+        (options.netplayDisableCheatMovement?4:0)|(options.netplayChallengeMode?8:0),lang(language),
 ];
-
-// Rollback and challenge rules retain their existing DOS engine until the
-// native simulator implements those modes. This predicate is seat-independent.
-export const usesNativeRoom=options=>options.netplayMode==='lan'&&options.netplayAdonisMode===1&&!options.netplayChallengeMode;
 
 export function createNativeRoomPreview(host){
     let current;
@@ -96,31 +94,61 @@ export function createNativeRoom({input,emit}){
                 __eaglerNetplayLanConfirmed:frame,__eaglerNetplayInputDelayFrames:delay});
             return {...h,frames:running?h.frames:0};
         },
-        files:message=>globalThis.__eaglerPC98FileCommands(message),
         stop,
     };
 }
 
 export function createNativeRoomSpectator(emit){
-    let player,paused=false;
-    return createManagedSpectator('02',emit,{
-        createAudio:()=>({start(){},mode(value){paused=value;player?.pausePlayback(value);},event(){},stop(){},info:()=>player?.health().audio}),
-        headerCheck(h){
+    let player,viewer,canvas,channel,timer,run,revision=0;
+    const status={peers:new Map(),get relay(){return channel.relay;}};
+    const muted=()=>viewer.paused||!viewer.following||viewer.catching||viewer.seeking;
+    function report(){
+        const position=viewer.frame,received=viewer.received;
+        player?.pausePlayback(muted());
+        emit({event:'runtime-info',spectatorPlayback:{version:1,run,revision:++revision,min:viewer.min,position,received,
+            edge:received,target:viewer.target,paused:viewer.paused,seeking:viewer.seeking,following:viewer.following,ended:viewer.ended,nodes:viewer.nodes}});
+    }
+    function stop(){
+        clearInterval(timer);viewer?.stop();viewer=null;canvas?.remove();
+        if(globalThis.__th02PeerTransport===status)delete globalThis.__th02PeerTransport;
+        emit({event:'runtime-info',spectatorPlayback:null});
+    }
+    function validateHeader(h){
             if(h?.game!=='02'||h.version!==2||h.spectatorInputOnly!==true||h.tickMs!==tickMs||![2,3].includes(h.players)||
                 h.rules?.length!==11||h.rules[0]!==h.players||![0,5].includes(h.rules[1])||!own(h.rules[2],0,3)||
                 h.rules.slice(3,5).some(v=>!own(v,0,5))||h.rules.slice(5,8).some(v=>!own(v,0,2))||
-                !own(h.rules[8],0,0xffffffff)||!own(h.rules[9],0,7)||!own(h.rules[10],0,3))throw Error('观战开局数据无效');
+                !own(h.rules[8],0,0xffffffff)||!own(h.rules[9],0,15)||!own(h.rules[10],0,3))throw Error('观战开局数据无效');
+    }
+    return {
+        async start({options,music,language}){
+            run='pc98_02_'+new URL(options.netplayUrl).searchParams.get('run');
+            canvas=roomCanvas(document.querySelector('#game'));
+            const onError=error=>{stop();emit({event:'error',message:error.message});};
+            viewer=createLocalSpectator({game:'02',options,smoothPresentation:true,stable:JSON.stringify,validateHeader,
+                validateRow(row,h){if(!Array.isArray(row)||row.length!==3||row.some((v,i)=>!validCoopInput(v)||(i>=h.players&&v)))throw Error('观战输入无效');},
+                channelFactory(){channel=createPc98SpectatorChannel(options,onError);globalThis.__th02PeerTransport=status;return channel;},
+                async createReplica(header,{onFrame}){
+                    const instance=await playFull(canvas,undefined,{hosted:true,manualFrames:true,
+                        confirmedCoop:{rules:[...header.rules.slice(0,-1),lang(language)],seat:-1,music:sound(music,options)}});
+                    player=instance;instance.pausePlayback(muted());
+                    const gestures=new AbortController();
+                    for(const target of [window,parent])for(const name of ['click','keydown'])target.addEventListener(name,instance.unlock,{capture:true,signal:gestures.signal});
+                    let frame=0;
+                    return {get frame(){return frame;},advance(row){instance.confirmed.step(frame++,row);},
+                        present(){instance.present();onFrame(canvas);},stop(){gestures.abort();instance.stop();if(player===instance)player=null;}};
+                },onError});
+            timer=setInterval(report,200);
         },
-        rowCheck(row,h){if(!Array.isArray(row)||row.length!==3||row.some((v,i)=>!validCoopInput(v)||(i>=h.players&&v)))throw Error('观战输入无效');},
-        async replica(header,{canvas,onFrame,music,options,language}){
-            Object.assign(canvas.style,{margin:'auto',width:'min(100%,160vh)',height:'min(100%,62.5vw)'});
-            const instance=await playFull(canvas,undefined,{hosted:true,manualFrames:true,confirmedCoop:{rules:[...header.rules.slice(0,-1),lang(language)],seat:-1,music:sound(music,options)}});
-            player=instance;instance.pausePlayback(paused);
-            const gestures=new AbortController();
-            for(const target of [window,parent])for(const name of ['click','keydown'])target.addEventListener(name,instance.unlock,{capture:true,signal:gestures.signal});
-            let frame=0;
-            return {get frame(){return frame;},advance(row){instance.confirmed.step(frame++,row);},
-                present(){instance.present();onFrame(canvas);},stop(){gestures.abort();instance.stop();if(player===instance)player=null;}};
+        health(){return {frames:viewer?.frames??0,gameFrame:viewer?.frame??0,audio:player?.health().audio??{state:'loading'}};},
+        playback(message){
+            if(message.run!==run)throw Error('观战对局已改变');
+            if(message.action==='pause')viewer.pause(true);
+            else if(message.action==='play')viewer.pause(false);
+            else if(message.action==='live')viewer.live();
+            else if(message.action==='seek')viewer.seek(message.frame);
+            else throw Error('观战命令无效');
+            report();return {};
         },
-    });
+        stop,
+    };
 }
