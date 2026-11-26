@@ -26,6 +26,7 @@ struct LocalCoopState {
     LocalCoopConfig config;
     std::array<CoopSeat,2> extra;
     std::array<std::uint16_t,3> input{},previous{};
+    std::array<CoopPointerMotion,3> pointer{};
     std::array<CoopRescue,3> rescue{};
     std::array<bool,3> half_power{},fire_held{};
     unsigned bomb_owner=0;

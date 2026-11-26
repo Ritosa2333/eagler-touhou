@@ -1,5 +1,5 @@
 // Exercises the native frame bridge through the actual Eagler relay, using
-// TH05's transport on both routes without switching the existing TH02 rooms.
+// TH05's transport on both routes, independently of the Launcher UI.
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {readFile} from 'node:fs/promises';
@@ -48,6 +48,7 @@ function lobby(seat){
 
 const served=new Map([
     ['/peer.mjs',resolve(root,'ports/th02/web/native-coop-peers.mjs')],
+    ['/touch-input.js',resolve(root,'ports/th02/web/touch-input.js')],
     ['/full.mjs',resolve(root,'ports/th02/native-solo/web/full.mjs')],
     ['/managed-transport.mjs',resolve(root,'ports/th05-mp/web/managed-transport.mjs')],
     ['/input-transport.mjs',resolve(root,'ports/th05-mp/web/input-transport.mjs')],
@@ -57,6 +58,7 @@ const fixture=`<!doctype html><canvas width="640" height="400" style="width:640p
 <script type="module">
 import {playFull} from './full.mjs';
 import {createConfirmedPeerRun} from './peer.mjs';
+import {packTouch} from './touch-input.js';
 import {createManagedTransport} from './managed-transport.mjs';
 import {RetraceClock} from './clock.mjs';
 window.launch = async (options, rules) => {
@@ -73,7 +75,8 @@ window.launch = async (options, rules) => {
     peer=createConfirmedPeerRun({
         count,seat,delay:options.netplayInputDelay,identity:[options.netplayUrl.replace(/member=[^&]+/,'member='),rules],
         transport,world:player.confirmed,fail,checkpoint:(frame,hash)=>{state.hashes[frame]=hash;},
-        sample(){const f=state.samples++;return (f%97<27?(seat%2?8:4):0)|(f%47<18?16:0)|(f===180&&seat===1?32:0)|(f%120>65?1024:0);}
+        sample(){const f=state.samples++;const buttons=(f%97<27?(seat%2?8:4):0)|(f%47<18?16:0)|(f===180&&seat===1?32:0)|(f%120>65?1024:0);
+            return packTouch(buttons,{active:seat===1&&f>=150&&f<180,begin:f===150,x:48,y:-16,unlimited:false});}
     });
     state.status=()=>({frame:peer.frame,simulated:player.health().gameFrame,presented:player.health().frames,
         hash:state.hashes[240],route:window.__eaglerNetplayTransport,error:state.error});

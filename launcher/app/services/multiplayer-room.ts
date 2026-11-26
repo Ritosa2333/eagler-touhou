@@ -1387,6 +1387,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
         spectatorTimeline: room.spectatorTimeline === true,
         ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false,showHitboxes:room.showHitboxes===true} : product === 'th02mp' ? {disableFocus:room.disableFocus===true} : {}),
+        ...(product === 'th02mp' && room.disableCheatMovement ? {disableCheatMovement:true} : {}),
         ...(product === 'th01mp' ? {ballCount:room.ballCount ?? 2} : {}),
         ...(product === 'th09mp' ? {
           disableLocalChargePriority:room.disableLocalChargePriority === true,

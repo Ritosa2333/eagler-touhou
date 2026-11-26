@@ -268,35 +268,10 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
   const importRequired = (productRequiresImport(settings.gameId) || metadata.siteManifest?.shared.resourceMode === 'import') &&
     !metadata.installed.has(settings.gameId);
-  const th02Local = navigation.productId === 'th02' && settings.gameId === 'th02';
-  return <><LaunchActions primary={{id: 'launch', textId: 'launchText',
+  return <LaunchActions primary={{id: 'launch', textId: 'launchText',
     label: t(importRequired ? 'action.importGameData' : 'action.start'),
     onClick: () => {if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);}}}
-    secondary={{id: 'gamePackageImport', label: t('action.import'), onClick: () => navigation.openInfoDialog('gameDataImportDialog')}}/>
-    {th02Local && <Th02LocalCoopTest onLaunch={config => void session.launch('th02',config).catch(session.reportError)}/>}</>;
-}
-function Th02LocalCoopTest({onLaunch}:{onLaunch(config:string):void}) {
-  const [count,setCount] = useState(2), [stage,setStage] = useState(0);
-  const field = (name:string,label:string,values:readonly (string|number)[],initial=0) =>
-    <label>{label} <select name={name} defaultValue={initial}>{values.map((value,index)=><option key={index} value={index}>{value}</option>)}</select></label>;
-  return <details id="th02LocalCoop">
-    <summary>本地合作测试（TH02 Native）</summary>
-    <form onSubmit={event => {
-      event.preventDefault();
-      const data = new FormData(event.currentTarget);
-      onLaunch([count,stage,data.get('rank')??1,data.get('lives'),data.get('bombs'),data.get('p1'),data.get('p2'),data.get('p3')??2].join(','));
-    }}>
-      <label>人数 <select name="players" value={count} onChange={event=>setCount(Number(event.target.value))}><option value={2}>2</option><option value={3}>3</option></select></label>{' '}
-      <label>关卡 <select name="stage" value={stage} onChange={event=>setStage(Number(event.target.value))}>{['1','2','3','4','5','Extra'].map((value,index)=><option key={value} value={index}>{value}</option>)}</select></label>{' '}
-      {stage<5&&field('rank','难度',['Easy','Normal','Hard','Lunatic'],1)}{' '}
-      {field('lives','备用残机',[0,1,2,3,4,5],2)}{' '}
-      {field('bombs','Bomb',[0,1,2,3,4,5],3)}{' '}
-      {field('p1','P1',['A','B','C'])}{' '}
-      {field('p2','P2',['A','B','C'],1)}{' '}
-      {count===3&&field('p3','P3',['A','B','C'],2)}{' '}
-      <button id="th02LocalCoopStart" type="submit">开始本地合作</button>
-    </form>
-  </details>;
+    secondary={{id: 'gamePackageImport', label: t('action.import'), onClick: () => navigation.openInfoDialog('gameDataImportDialog')}}/>;
 }
 function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, network, onNetworkRunning}: {
   session: BrowserSession; firstUse: React.RefObject<FirstUseNoticeHandle | null>;

@@ -103,7 +103,6 @@ export interface RuntimePlan {
   /** Exact original hosted emscripten-preload fallback, with no Package DATA. */
   directPreloadHost?: SiteManifest;
   th075SplitAssets?: true;
-  th02LocalCoop?: string;
   /** Optional resources acquired after native ready; never replaces loaded DATA. */
   resourceGeneration?: InstalledPackageGeneration;
   entry: string;
@@ -944,7 +943,6 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
           }
           const url = splitAssets ? new URL(entry) : plan.generation
             ? new URL(managedRuntimeUrl(entry, plan.generation, plan.runtimeVariant, baseUrl)) : directPreloadRuntimeUrl(plan, baseUrl);
-          if(plan.th02LocalCoop)url.searchParams.set('localCoop',plan.th02LocalCoop);
           if (splitAssets) {
             url.searchParams.set('runtimeVariant', 'multiplayer');
             url.searchParams.set('th075Assets', splitAssets.url.href);

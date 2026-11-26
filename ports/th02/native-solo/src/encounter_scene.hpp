@@ -764,13 +764,13 @@ public:
         bool accepts_input=true;
         if(survival_enabled){life.begin_frame(page);handle_assisted_hit();accepts_input=life.input_allowed();if(accepts_input){player.x=life.positions[page].x;player.y=life.positions[page].y;}}
         player.back_page=page;
-        if(accepts_input){player.tick(input);if(survival_enabled)life.moved(page,player.x,player.y);}
+        if(accepts_input){player.tick(input,coop?&coop->pointer[0]:nullptr);if(survival_enabled)life.moved(page,player.x,player.y);}
         else player.clear_focus();
         if(survival_enabled){player.x=life.current.x;player.y=life.current.y;}
         if(coop)for(unsigned i=1;i<seat_count();++i){
             auto &p=seat_motion(i);auto &l=seat_life(i);
             l.begin_frame(page);p.back_page=page;
-            if(l.input_allowed()){p.x=l.positions[page].x;p.y=l.positions[page].y;p.tick(coop->input[i]);l.moved(page,p.x,p.y);}
+            if(l.input_allowed()){p.x=l.positions[page].x;p.y=l.positions[page].y;p.tick(coop->input[i],&coop->pointer[i]);l.moved(page,p.x,p.y);}
             else p.clear_focus();
             p.x=l.current.x;p.y=l.current.y;
         }

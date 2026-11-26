@@ -7,7 +7,7 @@ import {contentPath} from '../web/managed-data.mjs';
 export async function stageNativeSolo({build,output,port,runtime,addData}) {
   const native=resolve(output,'native');
   await mkdir(native,{recursive:true});
-  for(const name of ['soew-full.mjs','soew-full.wasm','full.mjs','glyph-cells.mjs','LICENSE.txt','NOTICE.txt']) {
+  for(const name of ['soew-full.mjs','soew-full.wasm','full.mjs','glyph-cells.mjs','clock.mjs','LICENSE.txt','NOTICE.txt']) {
     const source=name.endsWith('.txt')?resolve(port,'native-solo',name.slice(0,-4)):
       name.startsWith('soew-')?resolve(build,name):resolve(port,'native-solo/web',name);
     await writeFile(resolve(native,name),await readFile(source));

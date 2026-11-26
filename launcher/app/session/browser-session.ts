@@ -847,11 +847,11 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       },
       finish({hideTransfer = false}: {hideTransfer?: boolean} = {}) {linked.dispose(); if (launchAbort === controller) {if (hideTransfer) transfer.hide(); launchAbort = null; updateAbort = null; musicAbort = null; updating = false; downloadingMusic = false; downloadingPackage = false; downloadingLanguage = false; transfer.setCancellation(null); publish({});}}};
   }
-  async function configuredLaunch(product: ProductId, intent: {multiplayer?: MultiplayerPreparation; replayPath?: string; replayWorkspace?: boolean; th02LocalCoop?: string; signal?: AbortSignal; awaitFirstFrame?: boolean; throwErrors?: boolean; beforeStart?():Promise<'continue'|'reload'|'cancel'>; onStarted?(epoch: number): void} = {}) {
+  async function configuredLaunch(product: ProductId, intent: {multiplayer?: MultiplayerPreparation; replayPath?: string; replayWorkspace?: boolean; signal?: AbortSignal; awaitFirstFrame?: boolean; throwErrors?: boolean; beforeStart?():Promise<'continue'|'reload'|'cancel'>; onStarted?(epoch: number): void} = {}) {
     const operation = preparationIntent(product, intent.multiplayer, intent.signal, intent.replayPath), {owner, clickSettings, controller} = operation;
     try {
       if (owner.getSnapshot().epoch !== null && !await owner.close({decide: closeDecision})) return;
-      const input = {...operation.input, replayWorkspace: intent.replayWorkspace,th02LocalCoop:intent.th02LocalCoop};
+      const input = {...operation.input, replayWorkspace: intent.replayWorkspace};
       let prepared = await prepareGame(input);
       if(intent.beforeStart){
         transfer.hide();
@@ -1087,7 +1087,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     requiredNavigation().closeReplayFileLayers();
     await model.open(product);
   }
-  function launch(product: ProductId, th02LocalCoop?: string): Promise<void> {
+  function launch(product: ProductId): Promise<void> {
     if (launchPending) return launchPending;
     product = navigation?.syncSelectionFromRoute() ?? settings.getSnapshot()?.context.productId ?? product;
     let openedRevision: number | undefined;
@@ -1170,7 +1170,6 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       let timeout: ReturnType<typeof setTimeout> | undefined;
       try {
         await configuredLaunch(launchedProduct, {
-          th02LocalCoop,
           signal: intent.controller.signal,
           async beforeStart() {
             ready();

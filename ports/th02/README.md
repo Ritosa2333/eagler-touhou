@@ -3,7 +3,7 @@
 [适配检查](ADAPTATION.md) · [来源迁移](../../docs/migration/th02-eagler-20261025.md)
 [原仓库说明](README-UPSTREAM.md) · [来源与子树维护](../../docs/migration/th02-eagler-20261025.md)
 
-`ports/th02` 将《东方封魔录》接入 Eagler Touhou。SoEW Native 提供原生单人版；合作房间沿用 DOSBox-X 运行时、原盘与主项目的房间流程。
+`ports/th02` 将《东方封魔录》接入 Eagler Touhou。SoEW Native 提供原生单人版，以及从主大厅启动的二至三人合作与观战。
 
 ## 原生单人版
 
@@ -17,23 +17,25 @@ node ports/th02/scripts/build-eagler.mjs --assets=<DOS资源目录> --native-bui
 
 浏览器验收：`node ports/th02/tests/launcher-native-browser.mjs`。
 
-原生本机合作走 TH02 的 PC-98 固定节拍（约 56.4 Hz），每个节拍推进一个逻辑帧。单人的 F12、退格辅助和已保存的练习调速不参与多人运行。此节拍用于原生本机合作；在线房间继续使用现有同步内核。
+## 原生联机与观战
 
-## 原生联机开发验收
+在 Eagler 联机大厅创建 TH02 房间。在房间设置中关闭回滚，按普通规则开局，即进入 SoEW Native。同一房间的观众从原有观战席进入，可暂停、回拖和回到直播。开启回滚或挑战规则时使用现有的 DOSBox-X 运行时。
 
-原生联机复用 TH05 的房间传输。玩家用同一随机种子、房间参数和逐帧确认的座位输入驱动 SoEW；缺少输入时停在待确认帧，每 120 帧比对模拟状态。当前通过开发测试运行，Launcher 的 DOS 合作房间入口保持不变。
+原生联机复用 TH05 的房间传输，按约 56.4 Hz 的 PC-98 节拍推进；每 120 帧比对模拟状态。队友按各自本机视角半透明呈现。F12、退格辅助和练习调速不参与联机。
 
 构建含资源的 `soew-full`，安装 Launcher 和 Relay 的 npm 依赖，设置 `EAGLER_CHROME_PATH` 后，在仓库根目录运行：
 
 ```powershell
 node --test ports/th02/tests/native-coop-peers.test.mjs
+$env:PC98_LAUNCHER_URL='http://127.0.0.1:18320/'
+node ports/th02/tests/launcher-native-room-browser.mjs
 $env:TH02_TEST_SEATS='2'; $env:TH02_TEST_ROUTE='rtc'
 node ports/th02/tests/native-coop-network-browser.mjs
 $env:TH02_TEST_SEATS='3'; $env:TH02_TEST_ROUTE='relay'
 node ports/th02/tests/native-coop-network-browser.mjs
 ```
 
-浏览器测试启动真实 Relay 和独立 WASM 实例：双人走 WebRTC 直连，三人走带延迟和抖动的 Relay 路由。两组都验证缺帧停表和恢复后的第 240 帧状态一致性。
+大厅测试通过主 Launcher 建房、就座、开局并中途加入观战，使用实际时间轴操作。传输测试启动真实 Relay 和独立 WASM 实例，验证双人 WebRTC 直连、三人 Relay 转发、缺帧停表以及恢复后的状态一致性。
 
 ## DOS 运行时
 
@@ -61,7 +63,7 @@ node ports/th02/tests/launcher-room-browser.mjs
 
 入口仍标记为 `testOnly`。适配由主项目提供房间与存档界面，DOSBox-X 内继续运行原来的封魔录。原实验仓库不被构建脚本修改。来源提交与 Git 子树状态见 [迁移登记](../../docs/migration/th02-eagler-20261025.md)。
 
-本地验收覆盖主 Launcher 单人安装与呈现、双人建房与加入、座位、预载、游戏检查、准备开局、键盘按下与释放、协议结束后同房再开，以及离开房间。真实 DOSBox-X 三人 Relay 回滚模式已推进超过 480 个确认帧。游戏原生暂停菜单退出、移动设备与远程网络另作验收；多人录像工作台与观战为后续接入项。
+DOS 验收覆盖主 Launcher 单人安装与呈现、双人房间的座位、预载、游戏检查、开局、键盘和同房再开，以及三人 Relay 回滚。
 
 封面采用 THBWiki 原版外包装扫描，来源链接与 SHA-256 保存在 `artwork/cover-source.json`。
 

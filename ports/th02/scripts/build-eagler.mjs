@@ -73,6 +73,10 @@ if(nativeBuild){
   const entry='managed-native-solo.mjs';
   await copyFile(resolve(port,'web',entry),resolve(output,entry));runtime.push(entry);
   await patch('managed-shell.mjs',text=>replaceOnce(text,'const loadNativeSolo=null;',`const loadNativeSolo=()=>import('./${entry}');`,'SoEW Native entry'));
+  for(const [directory,names] of [[resolve(web),['managed-native-room.mjs']],[resolve(repo,'ports/th05-mp/web'),['managed-transport.mjs','input-transport.mjs']]]){
+    for(const name of names){await copyFile(resolve(directory,name),resolve(output,name));runtime.push(name);}
+  }
+  await patch('managed-shell.mjs',text=>replaceOnce(text,'const loadNativeRoom=null;',"const loadNativeRoom=()=>import('./managed-native-room.mjs');",'SoEW Native room'));
 }
 await copyFile(resolve(repo,'launcher/lib/pc98-disk-blocks.mjs'),resolve(output,'pc98-disk-blocks.mjs'));runtime.push('pc98-disk-blocks.mjs');
 await patch('bgm/akyu/manifest.json',text=>text.replace(/\.opus/g,'.ogg'));

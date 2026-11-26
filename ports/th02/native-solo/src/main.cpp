@@ -1765,7 +1765,7 @@ void launch_stage(App &app,int id,bool stage4_trial=false){
     const auto seed=app.confirmed_coop?app.confirmed_coop->seed:1234u;
     const bool reduced=!app.confirmed_coop&&app.menu.reduced;
     const soew::NativeReplayConfig config=app.replay_playback?app.replay_playback->config:soew::NativeReplayConfig{seed,id,rules.shot,rules.rank,rules.lives,rules.bombs,app.menu.replay_music(),reduced,app.menu.autofire,stage4_trial,id==4&&(app.local_coop||app.stage5_trial),bool(app.local_coop)||app.stage5_mainline,extra};
-    app.stage_scene=soew::load_replay_scene(app.assets_root,config,soew::simulation_language(app.menu.language));
+    app.stage_scene=soew::load_replay_scene(app.assets_root,config,app.confirmed_coop?soew::Language::Japanese:soew::simulation_language(app.menu.language));
     if(app.local_coop){
         auto &scene=*app.stage_scene;
         scene.enable_coop(*app.local_coop);
@@ -4686,6 +4686,13 @@ extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_fullscreen_changed(bool enabled){
     browser_app.dialogue_hold.clear();
     browser_app.stage_clock.reset(host_ms());
 }
+extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_preview_title(int lang){
+    auto &app=browser_app;
+    app.menu.language=soew::Language(lang);
+    app.zunsoft.skip();app.opening.skip();app.menu.music=0;
+    app.settings_enabled=false;
+    InvalidateRect(browser_hwnd,nullptr,FALSE);
+}
 static int start_browser_coop(int count,int stage,int rank,int spare,int stock,int p1,int p2,int p3){
     if(count<2||count>3||stage<0||stage>5||rank<0||rank>3||spare<0||spare>5||stock<0||stock>5||
         p1<0||p1>2||p2<0||p2>2||p3<0||p3>2)return 0;
@@ -4698,25 +4705,23 @@ static int start_browser_coop(int count,int stage,int rank,int spare,int stock,i
         return 1;
     }catch(const std::exception &error){std::cerr<<"Local co-op: "<<error.what()<<'\n';return 0;}
 }
-extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_coop(int count,int stage,int rank,int spare,int stock,int p1,int p2,int p3){
-    return start_browser_coop(count,stage,rank,spare,stock,p1,p2,p3);
-}
 extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_start_confirmed_coop(int count,int stage,int rank,int spare,int stock,
-    int p1,int p2,int p3,std::uint32_t seed,unsigned rules,int lang,int seat){
-    if(rules>3||lang<0||lang>3||seat<0||seat>=count)return 0;
+    int p1,int p2,int p3,std::uint32_t seed,unsigned rules,int lang,int seat,int music){
+    if(rules>7||lang<0||lang>3||seat< -1||seat>=count||music< -1||music>3)return 0;
     auto &app=browser_app;
-    app.coop_view_seat=unsigned(seat);
+    app.coop_view_seat=seat<0?std::nullopt:std::optional<unsigned>(seat);
     auto &run=app.confirmed_coop.emplace();
-    run.seed=seed;run.focus=(rules&1)!=0;run.autofire=(rules&2)!=0;
+    run.seed=seed;run.focus=(rules&1)!=0;run.autofire=(rules&2)!=0;run.restrict_speed=(rules&4)!=0;
     app.menu.language=soew::Language(lang);
+    if(music>=0)app.menu.music=music;
     app.settings_enabled=false;
     return start_browser_coop(count,stage,rank,spare,stock,p1,p2,p3);
 }
-extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_confirmed_step(unsigned frame,unsigned p1,unsigned p2,unsigned p3){
+extern "C" EMSCRIPTEN_KEEPALIVE int soew_full_confirmed_step(unsigned frame,double p1,double p2,double p3){
     auto &app=browser_app;
     try{
         auto &run=*app.confirmed_coop;
-        const auto step=run.step(*app.stage_scene,*app.replay_session,frame,{p1,p2,p3});
+        const auto step=run.step(*app.stage_scene,*app.replay_session,frame,{std::uint64_t(p1),std::uint64_t(p2),std::uint64_t(p3)});
         if(step.status==soew::ReplayStepStatus::Failed||!step.consumed_tick)
             throw std::runtime_error(step.error.empty()?"TH02 confirmed update did not advance":step.error);
         InvalidateRect(browser_hwnd,nullptr,FALSE);
@@ -4727,11 +4732,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE std::uint32_t soew_full_confirmed_hash(){
     const auto &app=browser_app;const auto hash=app.confirmed_coop->digest(*app.stage_scene);
     return std::uint32_t(hash^(hash>>32));
 }
-extern "C" EMSCRIPTEN_KEEPALIVE void soew_full_coop_inputs(unsigned p1,unsigned p2,unsigned p3){
-    browser_app.local_coop_input={std::uint16_t(p1),std::uint16_t(p2),std::uint16_t(p3)};
-}
 extern "C" EMSCRIPTEN_KEEPALIVE unsigned soew_full_coop_frame(){
-    return browser_app.confirmed_coop?browser_app.confirmed_coop->frame:browser_app.local_coop_ticks;
+    return browser_app.confirmed_coop->frame;
 }
 int soew_full_import_replay(){
     try{

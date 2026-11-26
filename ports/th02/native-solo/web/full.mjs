@@ -24,7 +24,7 @@ async function fetchFile(url) {
 const joined = (root, name) => new URL(name.split('/').map(encodeURIComponent).join('/'), root);
 
 export async function playFull(canvas, content = new URL('./content/', import.meta.url), {
-    hosted = false, beforeFrame, onExit, localCoop, confirmedCoop,
+    hosted = false, beforeFrame, onExit, confirmedCoop, manualFrames = false, titleLanguage,
 } = {}) {
     const screen = canvas.getContext('2d', {alpha: false});
     const framebuffer = new OffscreenCanvas(640,400);
@@ -37,7 +37,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     let wasm, cells, lastError, image, stopped = false, timer, frames = 0, ticks = 0;
     const listeners = new AbortController();
     const listen = (target,type,fn,options) => target.addEventListener(type,fn,{...options,signal:listeners.signal});
-    let audio, audioPaused = false, audioEnd = 0;
+    let audio, audioPaused = false, playbackPaused = false, audioEnd = 0;
     let album, albumTrack = null, albumLoad, albumNode;
     let albumVolume = 0, albumGain;
     const waiting = new Map(), scheduled = new Set();
@@ -120,7 +120,10 @@ export async function playFull(canvas, content = new URL('./content/', import.me
             waiting.clear();
             if (albumTrack) playAlbumTrack();
         }
-        if (!audioPaused && audio.state !== 'running') void audio.resume();
+        if (!audioPaused && !playbackPaused && audio.state !== 'running') void audio.resume();
+    }
+    function updateAudioPause(){
+        if(audio)void (audioPaused||playbackPaused?audio.suspend():audio.resume());
     }
     function stopAlbumTrack() {
         albumTrack = null;
@@ -220,7 +223,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         },
         audioPause(yes) {
             audioPaused = Boolean(yes);
-            if (audio) void (audioPaused ? audio.suspend() : audio.resume());
+            updateAudioPause();
         },
         audioReset() {
             stopAlbumTrack();
@@ -270,8 +273,8 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         wasm.FS.writeFile(path,bytes);
     })]);
     if (wasm._soew_full_start() !== 0) throw Error(lastError ?? 'SoEW startup failed');
-    if (localCoop && !wasm._soew_full_start_coop(...localCoop)) throw Error(lastError ?? 'SoEW local co-op startup failed');
-    if (confirmedCoop && !wasm._soew_full_start_confirmed_coop(...confirmedCoop.rules,confirmedCoop.seat)) {
+    if (titleLanguage !== undefined) wasm._soew_full_preview_title(titleLanguage);
+    if (confirmedCoop && !wasm._soew_full_start_confirmed_coop(...confirmedCoop.rules,confirmedCoop.seat,confirmedCoop.music??-1)) {
         stop();
         throw Error(lastError ?? 'SoEW confirmed co-op startup failed');
     }
@@ -342,8 +345,9 @@ export async function playFull(canvas, content = new URL('./content/', import.me
     },{passive:false});
 
     const player = {key:deliverKey, unlock:unlockAudio, stop, sync:() => sync(false),
-        coopInputs:(...seats)=>wasm._soew_full_coop_inputs(...seats),
-        health:() => ({frames,gameFrame:localCoop||confirmedCoop?wasm._soew_full_coop_frame():ticks,audio:{state:audio?.state ?? 'suspended'}})};
+        pausePlayback(value){if(playbackPaused!==value){playbackPaused=value;updateAudioPause();}},
+        present:frame,
+        health:() => ({frames,gameFrame:confirmedCoop?wasm._soew_full_coop_frame():ticks,audio:{state:audio?.state ?? 'suspended'}})};
     if (confirmedCoop) player.confirmed = {
         step(frame, masks) {
             const result = wasm._soew_full_confirmed_step(frame,...masks);
@@ -357,7 +361,7 @@ export async function playFull(canvas, content = new URL('./content/', import.me
         beforeFrame?.(player);
         const wait = wasm._soew_host_frame();
         ++ticks;
-        if (!stopped) timer = setTimeout(frame,Math.ceil(wait));
+        if (!stopped && !manualFrames) timer = setTimeout(frame,Math.ceil(wait));
     }
     resize.observe(canvas);
     focus();

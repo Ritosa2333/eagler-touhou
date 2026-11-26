@@ -60,6 +60,7 @@ try {
     await wait(700);
   }
   await openTh02();
+  assert.equal(await page.$('#th02LocalCoop'),null,'the single-player page has no local co-op entry');
   const frame=await launchSoew();
   const events=()=>page.evaluate(()=>window.runtimeEvents);
   assert((await events()).some(e=>e.event==='runtime-info'&&e.renderer==='SoEW Native'));

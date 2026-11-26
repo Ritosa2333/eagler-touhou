@@ -9,14 +9,13 @@ import {titlePreview} from './managed-preview.mjs';
 const protocol='eagler-touhou/1',game='th02';
 const query=new URL(location.href).searchParams,epoch=Number(query.get('runtimeEpoch'));
 const loadNativeSolo=null;
+const loadNativeRoom=null;
 if(parent===window||!Number.isSafeInteger(epoch)||epoch<=0)throw Error('请从 Eagler Touhou 启动游戏');
 const emit=payload=>parent.postMessage({protocol,game,epoch,...payload,
   ...(payload.event==='error'?{error:payload.message}:{}),
   ...(payload.event==='exit'?{status:payload.code===0?'success':'error'}:{})},location.origin);
 const multiplayer=query.get('runtimeVariant')==='multiplayer';
-const coopRequest=query.get('localCoop');
-const localCoop=coopRequest?.split(',').map(Number);
-let ready=false,configured=false,launched=false,options={},music='ogg',language='ja',api,preview,store,launchSerial=0,firstFrame=false,nativeSolo;
+let ready=false,configured=false,launched=false,options={},music='ogg',language='ja',api,preview,store,launchSerial=0,firstFrame=false,nativeSolo,nativeRoom;
 const nativeActive=()=>launched&&nativeSolo&&api===nativeSolo;
 const input=managedInput({game,epoch,active:()=>launched,options:()=>options,
   onKey:(code,down,event)=>{if(nativeActive())nativeSolo.key(code,down,event);},
@@ -26,7 +25,7 @@ globalThis.__eaglerPC98Input=input;globalThis.__eaglerPC98Emit=emit;globalThis._
 function live(message){
   switch(message.command){
     case 'keyboard':if(typeof message.code!=='string'||typeof message.down!=='boolean')throw Error('键盘输入无效');input.key(message);break;
-    case 'keyboard-clear':input.clearKeyboard();nativeSolo?.clearCoopKeys();break;
+    case 'keyboard-clear':input.clearKeyboard();break;
     case 'touch-cancel':input.cancelTouch();break;
     case 'touch-controls':input.touch(message);break;
     case 'direct-touch':input.pointer(message);break;
@@ -75,18 +74,23 @@ async function command(message){
     case 'prepare-room':if(!multiplayer||!configured||launched)throw Error('房间预载状态无效');return preview.prepare(language);
     case 'launch':
       if(!configured||launched)throw Error('游戏启动状态无效');
-      if(localCoop&&(options.replayViewer||options.replayPath))throw Error('本地合作无法启动单人录像');
       if(multiplayer&&options.multiplayerPreflight&&!options.netplaySpectator){
         launchSerial=message.launchSerial??0;
         await preview.prepare(language);launched=true;firstFrame=true;
-        emit({event:'runtime-info',renderer:'DOSBox-X / PC-98',architecture:'wasm',version:'pc98-managed-preview/1'});
+        emit({event:'runtime-info',renderer:nativeRoom?'SoEW Native':'DOSBox-X / PC-98',architecture:'wasm',version:nativeRoom?'soew-native/1':'pc98-managed-preview/1'});
         emit({event:'first-frame',launchSerial});return {};
       }
       preview?.stop();launchSerial=message.launchSerial??0;firstFrame=false;launched=true;
-      api=multiplayer&&options.netplaySpectator?(await import('./pc98-managed-spectator.mjs')).createManagedSpectator('02',emit)
-        :nativeSolo&&!options.replayViewer&&!options.replayPath?nativeSolo:await loadPlayer();
+      {
+        const useNative=nativeRoom?.usesNativeRoom(options);
+        const roomEmit=event=>{if(event.event==='exit'){launched=false;input.clear();}emit(event);};
+        api=useNative?(options.netplaySpectator?nativeRoom.createNativeRoomSpectator(roomEmit):nativeRoom.createNativeRoom({input,emit:roomEmit}))
+          :multiplayer&&options.netplaySpectator?(await import('./pc98-managed-spectator.mjs')).createManagedSpectator('02',emit)
+          :nativeSolo&&!options.replayViewer&&!options.replayPath?nativeSolo:await loadPlayer();
       try{await api.start({options,music,language});}catch(error){launched=false;await api.stop();throw error;}
-      emit({event:'runtime-info',renderer:api===nativeSolo?'SoEW Native':'DOSBox-X / PC-98',architecture:'wasm',version:api===nativeSolo?'soew-native/1':'pc98-managed-preview/1'});return {};
+        const native=useNative||api===nativeSolo;
+        emit({event:'runtime-info',renderer:native?'SoEW Native':'DOSBox-X / PC-98',architecture:'wasm',version:native?'soew-native/1':'pc98-managed-preview/1'});return {};
+      }
     case 'network-cancel':await api.files({command:'sync'});input.clear();preview?.stop();await api.stop();launched=false;emit({event:'exit',code:0});return {};
     case 'list':case 'read':case 'write':case 'remove':case 'sync':return (api??nativeSolo??await loadPlayer()).files(message);
     case 'playback':return (api??await loadPlayer()).playback(message);
@@ -113,15 +117,16 @@ try{
   content=await ManagedContent.open(result.buffer,game);const base=new URL('.',location.href).href;
   content.install(globalThis,base);installManagedWorkers(globalThis,content,base);
   const hasNative=loadNativeSolo&&content.files.has('native/content/full-files.json');
-  if(localCoop&&(multiplayer||!hasNative||!/^\d(?:,\d){7}$/.test(coopRequest)))
-    throw Error('本地合作需要 SoEW Native 和有效的开局参数');
   store=globalThis.__eaglerPC98Files=await openUserFiles({multiplayer});
   if(multiplayer){
     const {mountManagedRoom}=await import('./managed-room-layout.mjs');mountManagedRoom();
-    api=playerApi=(await import('./netplay/room.js')).managedAPI;preview=titlePreview(document.querySelector('#game .player-stage'));
+    api=playerApi=(await import('./netplay/room.js')).managedAPI;
+    if(hasNative&&loadNativeRoom)nativeRoom=await loadNativeRoom();
+    const host=document.querySelector('#game .player-stage');
+    preview=nativeRoom?nativeRoom.createNativeRoomPreview(host):titlePreview(host);
   }else if(hasNative){
     const {createNativeSolo}=await loadNativeSolo();
-    nativeSolo=createNativeSolo({canvas:document.getElementById('canvas'),input,localCoop,files:globalThis.__eaglerPC98FileCommands,
+    nativeSolo=createNativeSolo({canvas:document.getElementById('canvas'),input,files:globalThis.__eaglerPC98FileCommands,
       async exit(pending){launched=false;await pending;input.clear();emit({event:'exit',code:0});},
       fail:error=>emit({event:'error',message:error.message})});
   }else api=await loadPlayer();

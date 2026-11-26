@@ -49,6 +49,7 @@ export interface MultiplayerRuntimeOptionInput {
   challengeKeepBullets?: boolean;
   disableLocalChargePriority?: boolean;
   disableFocus?: boolean;
+  disableCheatMovement?: boolean;
   showHitboxes?: boolean;
   ballCount?: number;
   chapterThreshold?: number;
@@ -84,6 +85,7 @@ export interface MultiplayerRuntimeOptions {
   netplayChallengeKeepBullets?: boolean;
   netplayDisableLocalChargePriority?: boolean;
   netplayDisableFocus?: boolean;
+  netplayDisableCheatMovement?: boolean;
   netplayShowHitboxes?: boolean;
   netplayBallCount?: number;
   netplayChapterThreshold?: number;
@@ -235,6 +237,7 @@ export function buildMultiplayerRuntimeOptions(
     ...(roomProduct === 'th09mp' ? {netplayDisableLocalChargePriority:input.disableLocalChargePriority===true} : {}),
     ...(roomProduct === 'th01mp' ? {netplayBallCount:input.ballCount ?? 2} : {}),
     ...(roomProduct === 'th03mp' ? {netplayDisableFocus:input.disableFocus!==false,netplayShowHitboxes:input.showHitboxes===true} : roomProduct === 'th02mp' ? {netplayDisableFocus:input.disableFocus===true} : {}),
+    ...(roomProduct === 'th02mp' && input.disableCheatMovement ? {netplayDisableCheatMovement:true} : {}),
     netplayUrl: url.href,
     netplayPlayer: player,
     netplayPlayerCount: playerCount,

@@ -1,14 +1,18 @@
 // WebRTC and relay channels carry the same seat rows; the fast WebRTC lane
 // can deliver rows out of order.
 // No local input is sampled twice while a frame is waiting for a peer.
-export const TH02_NATIVE_COOP_PROTOCOL = 'th02-native-coop/1';
+import {MAX_INPUT,packTouch,unpackTouch} from './touch-input.js';
+
+export const TH02_NATIVE_COOP_PROTOCOL = 'th02-native-coop/2';
 export const TH02_COOP_INPUT_MASK = 0x04ff;
+export const validCoopInput = value => Number.isSafeInteger(value)&&value>=0&&value<=MAX_INPUT&&
+    !(value%4096&~TH02_COOP_INPUT_MASK)&&value===packTouch(value%4096,unpackTouch(value));
 const roles = ['host','guest','guest2'];
 const integer = (value,min,max) => Number.isSafeInteger(value) && value>=min && value<=max;
 const maxAhead = 64;
 const hashInterval = 120;
 
-export function createConfirmedPeerRun({count,seat,delay,identity,transport,world,sample,fail,checkpoint=()=>{}}){
+export function createConfirmedPeerRun({count,seat,delay,identity,transport,world,sample,fail,checkpoint=()=>{},confirmed=()=>{}}){
     if (![2,3].includes(count) || !integer(seat,0,count-1) || !integer(delay,0,9)) throw Error('Invalid TH02 peer run');
     const runIdentity = JSON.stringify([TH02_NATIVE_COOP_PROTOCOL,count,delay,identity]);
     const rows = Array.from({length:count},()=>new Map(Array.from({length:delay},(_,i)=>[i,0])));
@@ -31,7 +35,7 @@ export function createConfirmedPeerRun({count,seat,delay,identity,transport,worl
         catch(error) {close();fail(error);}
     };
     function insert(owner,at,mask){
-        if(!integer(at,Math.max(frame,delay),frame+maxAhead) || !integer(mask,0,TH02_COOP_INPUT_MASK) || (mask&~TH02_COOP_INPUT_MASK))
+        if(!integer(at,Math.max(frame,delay),frame+maxAhead) || !validCoopInput(mask))
             throw Error('TH02 input stream is out of sequence');
         const old=rows[owner].get(at);
         if(old!==undefined&&old!==mask)throw Error('Conflicting TH02 seat input');
@@ -76,6 +80,7 @@ export function createConfirmedPeerRun({count,seat,delay,identity,transport,worl
             if(rows.some(row=>!row.has(frame)))return false;
             const masks=rows.map(row=>row.get(frame));while(masks.length<3)masks.push(0);
             finished=world.step(frame,masks);
+            confirmed(frame,masks);
             for(const row of rows)row.delete(frame);
             ++frame;
             if(frame%hashInterval===0){

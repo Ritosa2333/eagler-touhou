@@ -6,23 +6,23 @@ import {validatePointIndex} from './replay/network.js';
 import {readLocalPoint} from './replay/local-points.js';
 import {createPc98SpectatorChannel} from './pc98-spectator-channel.mjs';
 
-export function createManagedSpectator(game,emit,{createAudio=createPc98SpectatorAudio}={}){
+export function createManagedSpectator(game,emit,{createAudio=createPc98SpectatorAudio,replica=createReplica,headerCheck=validateHeader,rowCheck=validateRow}={}){
   let viewer,canvas,audio,timer,run,transport,revision=0;
   function report(){if(!viewer)return;const position=viewer.frame,received=viewer.received;
     audio?.mode(viewer.paused||!viewer.following||viewer.catching||viewer.seeking);
     emit({event:'runtime-info',spectatorPlayback:{version:1,run,revision:++revision,min:viewer.min,position,received,edge:received,target:viewer.target,
       paused:viewer.paused,seeking:viewer.seeking,following:viewer.following,ended:viewer.ended,nodes:viewer.nodes}});}
   return {
-    async start({options,music}){
+    async start({options,music,language}){
       const url=new URL(options.netplayUrl);run='pc98_'+game+'_'+url.searchParams.get('run');revision=0;
       canvas=document.createElement('canvas');canvas.width=640;canvas.height=400;
       Object.assign(canvas.style,{position:'fixed',inset:'0',width:'100%',height:'100%',objectFit:'contain',imageRendering:'pixelated',background:'#000',zIndex:'2'});
       document.body.append(canvas);const context=canvas.getContext('2d',{alpha:false});
       audio=createAudio(game,music,error=>emit({event:'error',message:error.message}));
-      viewer=createLocalSpectator({game,options,createReplica,validateHeader,validateRow,validatePointIndex,readLocalPoint,stable,smoothPresentation:['01','02','03','04'].includes(game),
+      viewer=createLocalSpectator({game,options,createReplica:(header,hooks)=>replica(header,{...hooks,canvas,music,options,language}),validateHeader:headerCheck,validateRow:rowCheck,validatePointIndex,readLocalPoint,stable,smoothPresentation:['01','02','03','04'].includes(game),
         channelFactory:()=>{const channel=createPc98SpectatorChannel(options,error=>{viewer?.stop();emit({event:'error',message:error.message});});transport={peers:new Map(),get relay(){return channel.relay;}};globalThis['__th'+game+'PeerTransport']=transport;return channel;},
         onHeader:header=>{void audio.start(header.settings);},
-        onFrame:bitmap=>context.drawImage(bitmap,0,0),onEvent:event=>audio.event(event),onError:error=>emit({event:'error',message:error.message})});
+        onFrame:bitmap=>{if(bitmap!==canvas)context.drawImage(bitmap,0,0);},onEvent:event=>audio.event(event),onError:error=>emit({event:'error',message:error.message})});
       timer=setInterval(report,200);
     },
     health(){return {frames:viewer?.frames??0,gameFrame:viewer?.frame??0,running:!!viewer,audio:audio?.info?.()??{state:'loading'}};},

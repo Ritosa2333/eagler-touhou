@@ -1,10 +1,23 @@
 #pragma once
 #include "core_contract.hpp"
 #include <algorithm>
+#include <cstdlib>
 #include <stdexcept>
 namespace soew {
 // TH02 th02/main/playfld.hpp + player/player.hpp and player.cpp:19..61.
 // Coordinates are sprite top-left INTEGER pixels, not TH03/TH04 Q12.4 centers.
+struct CoopPointerMotion {
+    int x=0,y=0;
+    bool active=false,unlimited=false;
+    void sample(std::uint64_t value,bool restrict_speed){
+        if(!(value>>40&1)){*this={};return;}
+        if(value>>44&1)x=y=0;
+        const auto axis=[](unsigned bits){return int(bits^8192)-8192;};
+        x=std::clamp(x+axis(unsigned(value>>12&16383)),-8192,8191);
+        y=std::clamp(y+axis(unsigned(value>>26&16383)),-8192,8191);
+        active=true;unlimited=(value>>41&1)&&!restrict_speed;
+    }
+};
 struct PlayerMotion {
     enum Pose {Still,LeanLeft,LeanRight};
     int x=208,y=336,shot=1;
@@ -18,7 +31,7 @@ struct PlayerMotion {
         if(shot<0||shot>2||initial_page>1)throw std::runtime_error("Invalid player motion configuration");
     }
     void clear_focus(){focused=false;focus_rx=focus_ry=0;}
-    void tick(std::uint16_t input){
+    void tick(std::uint16_t input,CoopPointerMotion *pointer=nullptr){
         int dx=0,dy=0;
         const int aligned=shot==0?5:shot==1?4:3;
         const int diagonal=shot==0?4:3;
@@ -38,7 +51,6 @@ struct PlayerMotion {
             case Down|Right:dx=diagonal;dy=diagonal;break;
             default:break; // Opposite/3-way/4-way inputs are stationary in original.
         }
-        pose=dx<0?LeanLeft:dx>0?LeanRight:Still;
         // asm5628..5665: typeA loses one pixel on page1 on BOTH axes.
         // player_invalidate2518..2531 copies front position to back first;
         // this is per-frame movement, not independent two-frame trajectories.
@@ -52,6 +64,16 @@ struct PlayerMotion {
             };
             dx=half(dx,focus_rx);dy=half(dy,focus_ry);
         }else clear_focus();
+        if(pointer&&pointer->active){
+            const bool two_axes=std::abs(pointer->x)>=16&&std::abs(pointer->y)>=16;
+            const auto limit=pointer->unlimited?8192:
+                ((two_axes?diagonal:aligned)-(shot==0&&back_page?1:0))*((input&Focus)?8:16);
+            const auto consume=[limit](int &remaining){
+                const int amount=std::clamp(remaining,-limit,limit)/16;remaining-=amount*16;return amount;
+            };
+            dx=consume(pointer->x);dy=consume(pointer->y);
+        }
+        pose=dx<0?LeanLeft:dx>0?LeanRight:Still;
         last_dx=dx;last_dy=dy;
         x=std::clamp(x+dx,28,390);y=std::clamp(y+dy,16,344);
         if((x==28&&focus_rx<0)||(x==390&&focus_rx>0))focus_rx=0;

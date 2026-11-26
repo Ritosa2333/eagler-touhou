@@ -19,23 +19,24 @@ struct ConfirmedCoop {
     std::array<ShotInput,3> fire;
     unsigned frame=0;
     std::uint32_t seed=1234;
-    bool focus=true,autofire=true,finished=false;
+    bool focus=true,autofire=true,restrict_speed=false,finished=false;
 
     // This clock is independent of painting, focus, throttling and the PC's
     // timer. A stalled transport never calls step with a fabricated row.
     ReplayStep step(EncounterScene &scene,ReplaySession &session,unsigned at,
-                    const std::array<unsigned,3> &masks){
+                    const std::array<std::uint64_t,3> &masks){
         auto &coop=*scene.coop;
         if(at!=frame||finished)throw std::runtime_error("TH02 confirmed frame out of sequence");
         for(unsigned seat=0;seat<masks.size();++seat){
-            if((masks[seat]&~unsigned(coop_play_mask))||(seat>=coop.config.count&&masks[seat]))
+            if((masks[seat]&4095&~std::uint64_t(coop_play_mask))||(seat>=coop.config.count&&masks[seat]))
                 throw std::runtime_error("Invalid TH02 confirmed seat input");
         }
         const auto context=replay_tick_context(scene);
         const auto mode=shot_input_mode(autofire,false,context!=NativeReplayContext::Gameplay);
         scene.sound.shot_cadence.set_autofire(autofire);
         for(unsigned seat=0;seat<coop.config.count;++seat){
-            auto raw=std::uint16_t(masks[seat]);
+            auto raw=std::uint16_t(masks[seat]&4095);
+            coop.pointer[seat].sample(context==NativeReplayContext::Gameplay&&scene.seat_life(seat).input_allowed()?masks[seat]:0,restrict_speed);
             if(!focus)raw&=~Focus;
             coop.input[seat]=sample_coop_seat(coop,seat,fire[seat],raw,mode);
         }
@@ -52,7 +53,7 @@ struct ConfirmedCoop {
     std::uint64_t digest(const EncounterScene &scene)const{
         replay_session_detail::Digest h;
         const auto &coop=*scene.coop;
-        h.fields(frame,seed,focus,autofire,replay_state_digest(scene),coop.input,coop.previous,
+        h.fields(frame,seed,focus,autofire,restrict_speed,replay_state_digest(scene),coop.input,coop.previous,
                  coop.bomb_owner,coop.half_power,coop.fire_held,coop.hit_clear,
                  scene.midboss.damage_taken.sixths(),scene.midboss2.damage_taken.sixths(),
                  scene.midboss4.damage_taken.sixths(),scene.rika.damage_taken.sixths(),
@@ -68,6 +69,7 @@ struct ConfirmedCoop {
             const auto &p=scene.seat_motion(seat);const auto &l=scene.seat_life(seat);
             const auto &s=scene.seat_shots(seat);const auto &k=scene.seat_pickups(seat);
             const auto &r=coop.rescue[seat];const auto &f=fire[seat];
+            const auto &pointer=coop.pointer[seat];h.fields(pointer.active,pointer.unlimited,pointer.x,pointer.y);
             h.fields(p.x,p.y,p.shot,p.back_page,p.frame,p.pose,p.last_dx,p.last_dy,p.focused,p.focus_rx,p.focus_ry,
                      l.lives,l.bombs,l.invincibility,l.miss_frame,l.hit,l.miss_active,l.bomb_invincible,l.game_over,
                      k.power,k.overflow,k.points_collected,k.collected,r.presses,r.age,r.target,

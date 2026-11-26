@@ -39,7 +39,6 @@ export interface FilePreparationInput {
   onRuntimePlan?(plan: Readonly<RuntimePlan>): void;
 }
 export interface GamePreparationInput extends FilePreparationInput {
-  th02LocalCoop?: string;
   replayPath?: string;
   replayWorkspace?: boolean;
   /** Click-time Launcher controls. Root owns gameplay, input and navigation. */
@@ -282,7 +281,6 @@ export async function prepareGame(input: GamePreparationInput & {runtime: Runtim
   const acquired = split ? null : await input.acquisition.acquire(request);
   checkPreparationAbort(input.signal);
   const initial = split ?? await initialGamePlan(input, acquired!);
-  if(input.th02LocalCoop&&input.productId==='th02')initial.th02LocalCoop=input.th02LocalCoop;
   if (input.multiplayer?.kind === 'room') initial.multiplayerProgram = {
     generation: new URL(input.multiplayer.options.netplayUrl).searchParams.get('runtimeGeneration') ?? undefined,
   };
