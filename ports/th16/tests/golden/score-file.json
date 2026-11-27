@@ -1,0 +1,71 @@
+{
+ "cases": [
+  {
+   "name": "defaults",
+   "load": null,
+   "pokes": [],
+   "rng_seed": 16822,
+   "image": "e4b2db923d5499f2fe3e30cc4dd06055d680a741",
+   "saved": "224ea7d35d433162b3c632efcb87a9113f732991",
+   "saved_size": 15829,
+   "image_after_save": "742ff3e0ff42278c069f6851f5309ffb8ffe9099"
+  },
+  {
+   "name": "poked",
+   "load": null,
+   "pokes": [
+    "18:40420f00",
+    "1e:4142434445464748",
+    "515c:05000000",
+    "5160:4433221100000000",
+    "516c:03000000",
+    "5188:02000000",
+    "51e5:01",
+    "1590:07000000",
+    "14acc:01000000",
+    "19f8c:5045525355534d41",
+    "19fa9:01",
+    "19fc8:efbeadde01000000",
+    "19fd0:3412"
+   ],
+   "rng_seed": 16822,
+   "image": "e4b2db923d5499f2fe3e30cc4dd06055d680a741",
+   "saved": "fd1151861802aa47717954fd649a15f93528890e",
+   "saved_size": 15857,
+   "image_after_save": "1792f093cdb84564d61f47a1140652cfdc3f83ea"
+  },
+  {
+   "name": "reload",
+   "load": "poked",
+   "pokes": [],
+   "rng_seed": 16822,
+   "image": "1792f093cdb84564d61f47a1140652cfdc3f83ea",
+   "saved": "fd1151861802aa47717954fd649a15f93528890e",
+   "saved_size": 15857,
+   "image_after_save": "1792f093cdb84564d61f47a1140652cfdc3f83ea"
+  },
+  {
+   "name": "bad-header",
+   "load": "poked:badver",
+   "pokes": [],
+   "rng_seed": 16822,
+   "image": "e4b2db923d5499f2fe3e30cc4dd06055d680a741",
+   "saved": "224ea7d35d433162b3c632efcb87a9113f732991",
+   "saved_size": 15829,
+   "image_after_save": "742ff3e0ff42278c069f6851f5309ffb8ffe9099"
+  },
+  {
+   "name": "unlock-all",
+   "load": "poked",
+   "pokes": [
+    "155c0:9f860100",
+    "unlock-all"
+   ],
+   "rng_seed": 16822,
+   "image": "1792f093cdb84564d61f47a1140652cfdc3f83ea",
+   "saved": "d86581271002f03b0aedf2fa3f342f8bcd068867",
+   "saved_size": 15891,
+   "image_after_save": "6d3860b81fbe20a1c1218efc43a649ac7e237ee9"
+  }
+ ]
+}

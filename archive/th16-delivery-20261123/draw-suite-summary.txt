@@ -1,0 +1,35 @@
+--- draw.test.mjs.shard-0.log
+ℹ tests 14
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ duration_ms 6705695.071496
+--- draw.test.mjs.shard-1.log
+ℹ tests 14
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ duration_ms 7254440.632006
+--- draw.test.mjs.shard-2-rest.log
+ℹ tests 13
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ duration_ms 6873888.668233
+--- draw.test.mjs.shard-3.log
+ℹ tests 14
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ duration_ms 6860783.631967
+--- draw.test.mjs.heavy-2000.log
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ duration_ms 3518357.675156

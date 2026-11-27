@@ -1,0 +1,11 @@
+{
+  "note": "tools/oracle/game-oracle.py --enemies --bullets（Unicorn 直跑 th16.exe 全游戏）敌弹链表快照 bullet_digest / enemy_digest / 自机 frame_digest 的 FNV-1a 64；harness game-digest 同口径。st1-lunatic-front-211 截止在首次被弹后的决死窗口结束（第 212 帧进入复活态 2，Player 状态 2/3 待接）之前；st1-normal-bossspell-246 截止在 Boss 入场充能特效（effect.anm 155+ ins_508 → EffectManager 种类 1，消耗回放 RNG）影响 op 412 随机移动之前。",
+  "cases": [
+    {"name": "st1-lunatic-front-211", "stage": 1, "shot": 0, "season": 0, "difficulty": 3, "replay_slot": -1, "frames": 211, "input": "0:0",
+     "player_digest": "fe90adaaaebb5b64", "enemy_digest": "5af62057431946f1", "bullet_digest": "3306f89726f511ea", "last_count": 102},
+    {"name": "st1-lunatic-front-240", "stage": 1, "shot": 0, "season": 0, "difficulty": 3, "replay_slot": -1, "frames": 240, "input": "0:0",
+     "enemy_digest": "c4b57fb0a53063ef", "bullet_digest": "6a14d81c6fdd4090", "last_count": 120},
+    {"name": "st1-normal-bossspell-246", "stage": 1, "shot": 0, "season": 0, "difficulty": 1, "replay_slot": 0, "frames": 246, "input": "0:0",
+     "player_digest": "30355c6c5af2749f", "enemy_digest": "df614589f60f2c1e", "bullet_digest": "1dd4d499c0ca1424", "last_count": 72}
+  ]
+}

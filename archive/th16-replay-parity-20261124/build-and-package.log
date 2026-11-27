@@ -1,0 +1,237 @@
+== th16 天空璋移植开发环境 ==
+node    v24.22.3
+python  Python 3.11.2  oracle: /opt/venv/bin/python
+emcc    emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.9 (4e4223852a0835923411059a3929907d7df1232e)
+wasi    /opt/wasi-sdk
+clang   Debian clang version 14.0.6
+ghidra  /opt/ghidra
+workdir /work
+Build th16 C++ / SDL3 / Emscripten
+cache:INFO: generating system headers: sysroot_install.stamp... (this will be cached in "/work/.cache/emscripten/sysroot_install.stamp" for subsequent builds)
+cache:INFO:  - ok
+ports:INFO: retrieving port: zlib from https://github.com/madler/zlib/archive/refs/tags/v1.3.2.tar.gz
+ports:INFO: unpacking port: zlib
+cache:INFO: generating port: sysroot/lib/wasm32-emscripten/libz.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libz.a" for subsequent builds)
+system_libs:INFO: compiled 15 inputs in 0.21s
+cache:INFO:  - ok
+ports:INFO: retrieving port: freetype from https://github.com/freetype/freetype/archive/VER-2-14-3.zip
+ports:INFO: unpacking port: freetype
+cache:INFO: generating port: sysroot/lib/wasm32-emscripten/libfreetype.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libfreetype.a" for subsequent builds)
+system_libs:INFO: compiled 42 inputs in 0.95s
+cache:INFO:  - ok
+ports:INFO: retrieving port: harfbuzz from https://github.com/harfbuzz/harfbuzz/releases/download/3.2.0/harfbuzz-3.2.0.tar.xz
+ports:INFO: unpacking port: harfbuzz
+cache:INFO: generating port: sysroot/lib/wasm32-emscripten/libharfbuzz.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libharfbuzz.a" for subsequent builds)
+system_libs:INFO: compiled 55 inputs in 4.68s
+cache:INFO:  - ok
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+ports:INFO: retrieving port: sdl3 from https://github.com/libsdl-org/SDL/archive/release-3.4.2.zip
+ports:INFO: unpacking port: sdl3
+cache:INFO: generating port: sysroot/lib/wasm32-emscripten/libSDL3.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libSDL3.a" for subsequent builds)
+system_libs:INFO: compiled 181 inputs in 2.55s
+cache:INFO:  - ok
+ports:INFO: retrieving port: sdl3_ttf from https://github.com/libsdl-org/SDL_ttf/archive/release-3.2.2.zip
+ports:INFO: unpacking port: sdl3_ttf
+cache:INFO: generating port: sysroot/lib/wasm32-emscripten/libSDL3_ttf.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libSDL3_ttf.a" for subsequent builds)
+system_libs:INFO: compiled 6 inputs in 0.48s
+cache:INFO:  - ok
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libGL-webgl2-getprocaddr.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libGL-webgl2-getprocaddr.a" for subsequent builds)
+system_libs:INFO: compiled 4 inputs in 0.11s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libal.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libal.a" for subsequent builds)
+system_libs:INFO: compiled 1 inputs in 0.06s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libhtml5.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libhtml5.a" for subsequent builds)
+system_libs:INFO: compiled 5 inputs in 0.06s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libstubs.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libstubs.a" for subsequent builds)
+system_libs:INFO: compiled 2 inputs in 0.06s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libnoexit.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libnoexit.a" for subsequent builds)
+system_libs:INFO: compiled 1 inputs in 0.06s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libc.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libc.a" for subsequent builds)
+system_libs:INFO: compiled 1076 inputs in 1.07s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libdlmalloc.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libdlmalloc.a" for subsequent builds)
+system_libs:INFO: compiled 2 inputs in 0.16s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libclang_rt.builtins.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libclang_rt.builtins.a" for subsequent builds)
+system_libs:INFO: compiled 184 inputs in 0.39s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libc++-noexcept.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libc++-noexcept.a" for subsequent builds)
+system_libs:INFO: compiled 57 inputs in 1.92s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libc++abi-noexcept.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libc++abi-noexcept.a" for subsequent builds)
+system_libs:INFO: compiled 16 inputs in 0.73s
+cache:INFO:  - ok
+cache:INFO: generating system library: sysroot/lib/wasm32-emscripten/libsockets.a... (this will be cached in "/work/.cache/emscripten/sysroot/lib/wasm32-emscripten/libsockets.a" for subsequent builds)
+system_libs:INFO: compiled 27 inputs in 0.13s
+cache:INFO:  - ok
+{
+  "game": "th16",
+  "bytes": 2827147,
+  "sha256": "5587e6e45893e9c5a61eb7d7bfa22e6417c886b2b1f8b0d1477cc328fae85321",
+  "output": "/work/ports/th16/web/artifacts/sdl3/th16-sdl.mjs"
+}
+== th16 天空璋移植开发环境 ==
+node    v24.22.3
+python  Python 3.11.2  oracle: /opt/venv/bin/python
+emcc    emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.9 (4e4223852a0835923411059a3929907d7df1232e)
+wasi    /opt/wasi-sdk
+clang   Debian clang version 14.0.6
+ghidra  /opt/ghidra
+workdir /work
+build th16 wasi harness
+{
+  "output": "/work/ports/th16/web/artifacts/wasi/th16-harness.wasm",
+  "manifest": "/work/ports/th16/web/artifacts/wasi/build.json",
+  "reused": 0
+}
+== th16 天空璋移植开发环境 ==
+node    v24.22.3
+python  Python 3.11.2  oracle: /opt/venv/bin/python
+emcc    emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.9 (4e4223852a0835923411059a3929907d7df1232e)
+wasi    /opt/wasi-sdk
+clang   Debian clang version 14.0.6
+ghidra  /opt/ghidra
+workdir /work
+{
+  "game": "th16",
+  "out": "/work/ports/th16/build-eagler",
+  "files": 8,
+  "wasm": "5587e6e45893e9c5a61eb7d7bfa22e6417c886b2b1f8b0d1477cc328fae85321"
+}
+== th16 天空璋移植开发环境 ==
+node    v24.22.3
+python  Python 3.11.2  oracle: /opt/venv/bin/python
+emcc    
+wasi    /opt/wasi-sdk
+clang   Debian clang version 14.0.6
+ghidra  /opt/ghidra
+workdir /work
+{
+  "game": "th16",
+  "variant": "normal",
+  "owner": "th16",
+  "source": "/work/ports/th16",
+  "common": "/work/common",
+  "features": {
+    "thcrap": false,
+    "thprac": false
+  },
+  "toolchain": {
+    "root": "/opt/emsdk",
+    "compiler": "/opt/emsdk/upstream/emscripten/emcc.py",
+    "version": "6.0.9"
+  },
+  "environment": {
+    "EMSDK": "/opt/emsdk",
+    "TH09_EMSDK": "/opt/emsdk",
+    "TH15_EMSDK": "/opt/emsdk",
+    "EM_CONFIG": "/opt/emsdk/.emscripten",
+    "PYTHON": "python3",
+    "TH_PYTHON": "python3",
+    "EMCC_CORES": "4",
+    "TH_BUILD_JOBS": "4",
+    "EAGLER_COMMON_ROOT": "/work/common",
+    "EAGLER_COMMON_NETPLAY_ROOT": "/work/common",
+    "TH_ENABLE_THCRAP": "0",
+    "TH_ENABLE_THPRAC": "0"
+  },
+  "steps": [
+    {
+      "command": "/opt/node/bin/node",
+      "args": [
+        "/work/ports/th16/portable/build.mjs"
+      ],
+      "cwd": "/work/ports/th16"
+    }
+  ],
+  "sources": {
+    "source": {
+      "revision": "e730c24aed9b3bde22a3ec9a5a5e9dc5db06909a",
+      "sourcePath": "ports/th16",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked": [],
+      "submodules": [],
+      "dirty": false,
+      "sha256": "ddc4bac2a9da5e53750e882b47adc8e8269e469554e38fe8d6c937be3a0dd8f7"
+    },
+    "common": {
+      "revision": "e730c24aed9b3bde22a3ec9a5a5e9dc5db06909a",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked": [],
+      "submodules": [],
+      "dirty": false,
+      "sha256": "4c58396550b7a6519123f29eba7ebe262b6753302891dc736535b2dcd367070e"
+    },
+    "netplayCommon": {
+      "revision": "e730c24aed9b3bde22a3ec9a5a5e9dc5db06909a",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked": [],
+      "submodules": [],
+      "dirty": false,
+      "sha256": "4c58396550b7a6519123f29eba7ebe262b6753302891dc736535b2dcd367070e"
+    }
+  }
+}

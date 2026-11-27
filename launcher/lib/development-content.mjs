@@ -36,6 +36,7 @@ const th09ContentRoot = process.env.EAGLER_TH09_CONTENT_DIR?.trim()
 const th15ContentRoot = process.env.EAGLER_TH15_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH15_CONTENT_DIR.trim())
   : null;
+const th16ContentRoot = process.env.EAGLER_TH16_CONTENT_DIR?.trim() ? resolve(process.env.EAGLER_TH16_CONTENT_DIR.trim()) : null;
 const th17ContentRoot = process.env.EAGLER_TH17_CONTENT_DIR?.trim() || null;
 const th19ContentRoot = process.env.EAGLER_TH19_CONTENT_DIR?.trim() ? resolve(process.env.EAGLER_TH19_CONTENT_DIR.trim()) : null;
 const th20ContentRoot = process.env.EAGLER_TH20_CONTENT_DIR?.trim()
@@ -264,6 +265,16 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
           ...PRODUCT_CONTENT.th15.music.ogg,
         }),
       } : {}),
+    }),
+    th16: Object.freeze({
+      runtime: `${ws("th16", "build-eagler", "th16.html")}?hosted=1`,
+      data: Object.freeze(th16ContentRoot ? {
+        source: projectRelativePath(resolve(th16ContentRoot, "th16.data")),
+        layout: PRODUCT_CONTENT.th16.dataLayout,
+      } : {identity: Object.freeze({bytes: 77693268, sha256: "c84e04181c1c08c80fb0eaba641cec9eb27244ac372749314bd886e3e5a4b64f", layout: PRODUCT_CONTENT.th16.dataLayout})}),
+      music: availableMusic(th16ContentRoot ? {ogg: Object.freeze({
+        base: `${projectRelativePath(resolve(th16ContentRoot, "bgm-ogg"))}/`, ...PRODUCT_CONTENT.th16.music.ogg,
+      })} : {}),
     }),
     th17: Object.freeze({
       runtime: `${ws("th17", "build-eagler", "th17.html")}?hosted=1`,

@@ -1,0 +1,51 @@
+{
+ "$comment": "tools/oracle/game-oracle.py（--enemies --bullets --items --lasers --bombs --lives 8 --refill-lives）对暂停菜单重开（0x43ce10 case 0xa）的对拍：0x42d200 在同一关重开时置 DAT_004a5bec bit0——EnemyManager 只复位不析构（敌机 id 计数延续）、背景 ANM 槽不释放、Loading VM 放 (960,784)；0x42cb60 以 0x42e590 清本局资源。第一例经菜单光标（下 ×4 → 确定 → 二次确认），第二例按 R 直接重开。",
+ "cases": [
+  {
+   "name": "st1-pause-menu-restart-900",
+   "stage": 1,
+   "shot": 0,
+   "season": 0,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 900,
+   "input": "0:0x11,300:0x100,303:0x0,320:0x20,323:0,330:0x20,333:0,340:0x20,343:0,350:0x20,353:0,370:0x1,373:0,400:0x10,403:0,420:0x1,423:0,430:0x11",
+   "digests": {
+    "digest": "d71ff6567cbe1c01",
+    "enemies": "56eebac093481a7d",
+    "enemy_vms": "8af60849ad3e15ee",
+    "bullets": "a531a93e47d70c5c",
+    "items": "2e4d93899fa36a04",
+    "spell": "edbc0879dcd50484",
+    "lasers": "a531a93e47d70c5c",
+    "bombs": "c7c3ecc0e24baed4",
+    "menu": "034871b09eb8bf31"
+   }
+  },
+  {
+   "name": "st3-pause-r-key-restart-1200",
+   "stage": 3,
+   "shot": 1,
+   "season": 2,
+   "difficulty": 2,
+   "replay_slot": -1,
+   "lives": 8,
+   "refill": 1,
+   "frames": 1200,
+   "input": "0:0x11,500:0x100,503:0x0,540:0x200000,543:0,560:0x11,900:0x13,905:0x11",
+   "digests": {
+    "digest": "59f7964eda8f2789",
+    "enemies": "151046c37394ba1d",
+    "enemy_vms": "fb1569d264fe8003",
+    "bullets": "14b6a4f22643a939",
+    "items": "21e3ab6949839dce",
+    "spell": "701eebb7b0d36ce5",
+    "lasers": "d2fadbc3c4186e89",
+    "bombs": "5fb05ae11b8d7810",
+    "menu": "00483a0caf99d0a1"
+   }
+  }
+ ]
+}

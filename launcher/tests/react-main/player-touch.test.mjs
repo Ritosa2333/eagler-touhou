@@ -68,6 +68,16 @@ test('TH03 fire is a persistent toggle like TH02 and TH04', () => {
   assert.equal(f.touch.getSnapshot().fireEnabled,true);
   assert.equal(f.sent.at(-1).fireEnabled,true);
 });
+test('TH16 desktop startup does not send the saved touch auto-fire as held Z', () => {
+  const f = fixture({game: 'th16'});
+  f.settings.options.touchEnabled = false;
+  f.touch.syncControls();
+  assert.equal(f.sent.at(-1).fireEnabled, false);
+  assert.equal(f.touch.getSnapshot().fireEnabled, true);
+  f.settings.options.touchEnabled = true;
+  f.touch.syncControls();
+  assert.equal(f.sent.at(-1).fireEnabled, true);
+});
 test('declared native actions hold A/B/C/D together without keyboard or auto-fire ownership', () => {
   const f=fixture({game:'th075'});
   for(const [index,name] of ['fire','bomb','focus','functionKey'].entries())f.pointer(name,'pointerdown',{pointerId:index+1});

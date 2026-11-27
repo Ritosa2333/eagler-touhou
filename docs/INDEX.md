@@ -1,6 +1,6 @@
 # 文档总表
 
-共 670 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 684 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -59,6 +59,7 @@
 | 作品入口 | [ports/th14-mp/README.md](../ports/th14-mp/README.md) | TH14 多人版 |
 | 作品入口 | [ports/th15-mp/README.md](../ports/th15-mp/README.md) | 東方紺珠伝 TH15 多人版 |
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
+| 作品入口 | [ports/th16/README.md](../ports/th16/README.md) | 東方天空璋 TH16 |
 | 作品入口 | [ports/th17-mp/README.md](../ports/th17-mp/README.md) | TH17 MP · 东方鬼形兽联机版 |
 | 作品入口 | [ports/th17/README.md](../ports/th17/README.md) | TH17 · 东方鬼形兽 |
 | 作品入口 | [ports/th19/README.md](../ports/th19/README.md) | 东方兽王园 TH19 |
@@ -86,6 +87,7 @@
 | 作品适配表 | [ports/th13/ADAPTATION.md](../ports/th13/ADAPTATION.md) | th13 适配检查 |
 | 作品适配表 | [ports/th15-mp/ADAPTATION.md](../ports/th15-mp/ADAPTATION.md) | th15 MP 适配检查 |
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
+| 作品适配表 | [ports/th16/ADAPTATION.md](../ports/th16/ADAPTATION.md) | th16 适配检查 |
 | 作品适配表 | [ports/th17-mp/ADAPTATION.md](../ports/th17-mp/ADAPTATION.md) | th17 MP 适配检查 |
 | 作品适配表 | [ports/th17/ADAPTATION.md](../ports/th17/ADAPTATION.md) | th17 适配检查 |
 | 作品适配表 | [ports/th19/ADAPTATION.md](../ports/th19/ADAPTATION.md) | th19 适配检查 |
@@ -245,6 +247,12 @@
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
 | 作品源码文档 | [ports/th15/web/docs/mobile-gpu-diagnostics.md](../ports/th15/web/docs/mobile-gpu-diagnostics.md) | TH15 移动端 GPU 诊断 |
+| 作品源码文档 | [ports/th16/docs/ASSETS.md](../ports/th16/docs/ASSETS.md) | th16 资源与格式 |
+| 作品源码文档 | [ports/th16/docs/CODE_QUALITY.md](../ports/th16/docs/CODE_QUALITY.md) | th16 代码质量与可读性标准 |
+| 作品源码文档 | [ports/th16/docs/DECOMP.md](../ports/th16/docs/DECOMP.md) | th16 反编译分区 |
+| 作品源码文档 | [ports/th16/docs/DEVELOPMENT.md](../ports/th16/docs/DEVELOPMENT.md) | th16 开发指南 |
+| 作品源码文档 | [ports/th16/docs/plans/backlog.md](../ports/th16/docs/plans/backlog.md) | th16 待办 |
+| 作品源码文档 | [ports/th16/docs/plans/roadmap.md](../ports/th16/docs/plans/roadmap.md) | th16 路线图 |
 | 作品源码文档 | [ports/th17-mp/docs/DEVELOPMENT.md](../ports/th17-mp/docs/DEVELOPMENT.md) | TH17 MP 开发指南 |
 | 作品源码文档 | [ports/th17/docs/DEVELOPMENT.md](../ports/th17/docs/DEVELOPMENT.md) | TH17 开发指南 |
 | 作品源码文档 | [ports/th19/docs/DEVELOPMENT.md](../ports/th19/docs/DEVELOPMENT.md) | TH19 开发与构建 |
@@ -429,6 +437,10 @@
 | 历史记录 | [archive/th15-rollback-latency-performance-20261031/README.md](../archive/th15-rollback-latency-performance-20261031/README.md) | TH15 多人回滚快照与本机呈现 |
 | 历史记录 | [archive/th15-rollback-performance-20261105/README.md](../archive/th15-rollback-performance-20261105/README.md) | th15 MP 回滚性能 |
 | 历史记录 | [archive/th15-stage-transition-rollback-20261028/README.md](../archive/th15-stage-transition-rollback-20261028/README.md) | TH15 多人回滚换面输入节奏 |
+| 历史记录 | [archive/th16-delivery-20261123/README.md](../archive/th16-delivery-20261123/README.md) | TH16 构建、性能与逐帧验收 |
+| 历史记录 | [archive/th16-delivery-20261123/build-outputs.txt](../archive/th16-delivery-20261123/build-outputs.txt) | 3f9502c4d00588ecb2bda3bae43bbb888c77164f10467ba9be247f3f05072367 2827674 web/artifacts/sdl3/th16-sdl.wasm |
+| 历史记录 | [archive/th16-development-20261123/README.md](../archive/th16-development-20261123/README.md) | TH16 源码交付来源 |
+| 历史记录 | [archive/th16-replay-parity-20261124/README.md](../archive/th16-replay-parity-20261124/README.md) | 天空璋回放一致性验证 |
 | 历史记录 | [archive/th17-3p-hud-fragments-20261106/README.md](../archive/th17-3p-hud-fragments-20261106/README.md) | TH17 三人 HUD 碎片提示 · 2026-11-06 |
 | 历史记录 | [archive/th17-anm-combat-20261107/README.md](../archive/th17-anm-combat-20261107/README.md) | TH17 普通关动画与绘制开销 · 2026-11-07 |
 | 历史记录 | [archive/th17-combat-rollback-20261106/performance-validation.md](../archive/th17-combat-rollback-20261106/performance-validation.md) | TH17 回滚分帧压测 · 2026-11-06 |
@@ -656,6 +668,7 @@
 | 许可证与声明 | [ports/th15/portable/browser/LICENSE.eagler-common](../ports/th15/portable/browser/LICENSE.eagler-common) | LICENSE |
 | 许可证与声明 | [ports/th15/portable/sdl/third_party/miniaudio.LICENSE](../ports/th15/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th15/web/cpp/game/THPRAC-LICENSE.txt](../ports/th15/web/cpp/game/THPRAC-LICENSE.txt) | MIT License |
+| 许可证与声明 | [ports/th16/portable/sdl/third_party/miniaudio.LICENSE](../ports/th16/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th17-mp/LICENSE-launcher.txt](../ports/th17-mp/LICENSE-launcher.txt) | GNU GENERAL PUBLIC LICENSE |
 | 许可证与声明 | [ports/th17-mp/THIRD-PARTY-NOTICES.txt](../ports/th17-mp/THIRD-PARTY-NOTICES.txt) | Original game and assets: Team Shanghai Alice / ZUN. |
 | 许可证与声明 | [ports/th17-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th17-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
@@ -671,6 +684,7 @@
 | 协作约定 | [launcher/tools/maintainer/operator-delivery/payload/AGENTS.md](../launcher/tools/maintainer/operator-delivery/payload/AGENTS.md) | 部署代理约定 |
 | 协作约定 | [ports/th13-mp/AGENTS.md](../ports/th13-mp/AGENTS.md) | th13-mp 端口局部入口 |
 | 协作约定 | [ports/th13/AGENTS.md](../ports/th13/AGENTS.md) | th13 端口局部入口 |
+| 协作约定 | [ports/th16/AGENTS.md](../ports/th16/AGENTS.md) | th16 端口局部入口 |
 | CI 与协作模板 | [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) | 改动 |
 | 项目文档 | [docs/README.md](README.md) | 文档 |
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |

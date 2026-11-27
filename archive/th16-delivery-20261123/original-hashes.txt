@@ -1,0 +1,6 @@
+c11776019f083978e66027e7394dafb1fb9543afca986f28049a49417e341929  games/th16/original/th16.exe
+c84e04181c1c08c80fb0eaba641cec9eb27244ac372749314bd886e3e5a4b64f  games/th16/original/th16.dat
+96535a147e44c0128ded2ad3a6ccd93f7c8d0c9f2e60ca3817b1a3496b4701d7  artifacts/th16/dat/demo1.rpy
+34f72e146d3db2baf4c5157c6d7dee585f0c4ffb1d2761c2acbb518f249ad800  artifacts/th16/dat/demo2.rpy
+d7355a1214611a690c0181417674041bc7f5dd241935ec55c28525cdf283e6e6  artifacts/th16/dat/demo3.rpy
+d89ef385d52c9e0c7ead3a44a95f3cbde53b3db07ac6aa87868a5c50e7d02dee  artifacts/th16/dat/demo4.rpy

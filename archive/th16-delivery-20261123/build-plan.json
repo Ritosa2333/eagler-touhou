@@ -1,0 +1,71 @@
+{
+  "game": "th16",
+  "variant": "normal",
+  "owner": "th16",
+  "source": "/tmp/th16-acc/ports/th16",
+  "common": "/tmp/th16-acc/common",
+  "features": {
+    "thcrap": false,
+    "thprac": false
+  },
+  "toolchain": {
+    "root": "/opt/emsdk",
+    "compiler": "/opt/emsdk/upstream/emscripten/emcc.py",
+    "version": "6.0.9"
+  },
+  "environment": {
+    "EMSDK": "/opt/emsdk",
+    "TH09_EMSDK": "/opt/emsdk",
+    "TH15_EMSDK": "/opt/emsdk",
+    "EM_CONFIG": "/opt/emsdk/.emscripten",
+    "PYTHON": "python3",
+    "TH_PYTHON": "python3",
+    "EMCC_CORES": "4",
+    "TH_BUILD_JOBS": "4",
+    "EAGLER_COMMON_ROOT": "/tmp/th16-acc/common",
+    "EAGLER_COMMON_NETPLAY_ROOT": "/tmp/th16-acc/common",
+    "TH_ENABLE_THCRAP": "0",
+    "TH_ENABLE_THPRAC": "0"
+  },
+  "steps": [
+    {
+      "command": "/opt/node/bin/node",
+      "args": [
+        "/tmp/th16-acc/ports/th16/portable/build.mjs"
+      ],
+      "cwd": "/tmp/th16-acc/ports/th16"
+    }
+  ],
+  "sources": {
+    "source": {
+      "revision": "47c3f30ca9889119365f86b88bc69241ae7fd51a",
+      "sourcePath": "ports/th16",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked": [],
+      "submodules": [],
+      "dirty": false,
+      "sha256": "2c535dcb1c3b489039bf1da8896e27c4a53daa8cc766b1faee790b1d0b7dbd7f"
+    },
+    "common": {
+      "revision": "47c3f30ca9889119365f86b88bc69241ae7fd51a",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked": [],
+      "submodules": [],
+      "dirty": false,
+      "sha256": "12760f430f6709c7e6a5d17c3d3c05b6a63059c4c82b2c3112241b5648870647"
+    },
+    "netplayCommon": {
+      "revision": "47c3f30ca9889119365f86b88bc69241ae7fd51a",
+      "sourcePath": "common",
+      "stagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unstagedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked": [],
+      "submodules": [],
+      "dirty": false,
+      "sha256": "12760f430f6709c7e6a5d17c3d3c05b6a63059c4c82b2c3112241b5648870647"
+    }
+  }
+}

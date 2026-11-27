@@ -1,0 +1,38 @@
+{
+  "schema": "eagler-touhou/runtime-directory/1",
+  "game": "th16",
+  "files": {
+    "th16.html": {
+      "bytes": 1002,
+      "sha256": "cd2350df7ff547922fad154c8e211d4bc70901b7eba188e557cd25ed34aa9ae8"
+    },
+    "manifest.json": {
+      "bytes": 868,
+      "sha256": "e528402b77f60d4f354a14f5d4bf9ad54fb36c9db7ee799b4836542396841313"
+    },
+    "shell.mjs": {
+      "bytes": 11512,
+      "sha256": "7d5495470ce1dcdef4fc9584c018d1fc1f89a291e69f185e1dd15b44557d6dc8"
+    },
+    "directory-keyboard.mjs": {
+      "bytes": 11600,
+      "sha256": "72e0b099698f8e0696a9b271a62262f141990e6b2ad7666e36be825ac848e56d"
+    },
+    "eagler-host.mjs": {
+      "bytes": 9821,
+      "sha256": "7f8750d5a1be59526f2e3e5e6c060c86dd6180a5f92f350e38ac0826d1a0e432"
+    },
+    "th16-sdl.mjs": {
+      "bytes": 230974,
+      "sha256": "213a7eeb9b44c1ee541868aa2f90e654dc048c21b61bbd2bc27085fbe3adf30c"
+    },
+    "th16-sdl.wasm": {
+      "bytes": 2827674,
+      "sha256": "3f9502c4d00588ecb2bda3bae43bbb888c77164f10467ba9be247f3f05072367"
+    },
+    "resources.json": {
+      "bytes": 78,
+      "sha256": "2a24b3a6e3b8eb3331d986e10b3a953cb25df32ff606faed3e7957e9ce246ed9"
+    }
+  }
+}

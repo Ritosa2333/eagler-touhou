@@ -1,0 +1,15 @@
+{
+ "schema": "th16/stage-golden/v1",
+ "source": "th16.exe v1.00a executed under Unicorn (tools/oracle/stage-oracle.py): 0x409db0 create → 0x40add0 → 0x409e50 × frames; text.anm in slot 0, stNNwl.anm in slot 3+(stage&1)",
+ "frames": 6000,
+ "digest": "FNV-1a 64 over per-frame LE u32 [frame, timer.current, timer.current_f, ins_offset, rocking_mode, rocking_timer, stage_frame, flags, bg, cam[19], fog[7], layer_ids[8], radius_sq] + face VMs × 0x568 bytes + 8 layer VMs × 0x568 bytes (harness stage-digest)",
+ "stages": [
+  {"stage": 1, "std": "st01.std", "faces": 1, "digest": "64cd4d6ec87b1eac"},
+  {"stage": 2, "std": "st02.std", "faces": 2, "digest": "b76dc91bd2bd446f"},
+  {"stage": 3, "std": "st03.std", "faces": 8, "digest": "42cf07453e82bb84"},
+  {"stage": 4, "std": "st04.std", "faces": 3, "digest": "4075130047dacb75"},
+  {"stage": 5, "std": "st05.std", "faces": 13, "digest": "fbbbb40cc3a145c6"},
+  {"stage": 6, "std": "st06.std", "faces": 38, "digest": "283a653d0210c38a"},
+  {"stage": 7, "std": "st07.std", "faces": 14, "digest": "f75aaca54f5e1084"}
+ ]
+}

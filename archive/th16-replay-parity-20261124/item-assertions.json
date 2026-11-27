@@ -1,0 +1,129 @@
+{
+  "reference": "Original th16.exe v1.00a with screen field rectangle (128,16,384,448)",
+  "cases": {
+    "st1-lunatic-front-600": {
+      "player_digest": {
+        "old": "c7b512b6e4260899",
+        "original": "c7b512b6e4260899",
+        "port": "c7b512b6e4260899"
+      },
+      "enemy_digest": {
+        "old": "b9f8e498b2f40f74",
+        "original": "b9f8e498b2f40f74",
+        "port": "b9f8e498b2f40f74"
+      },
+      "bullet_digest": {
+        "old": "e519660b0b5fb35a",
+        "original": "e519660b0b5fb35a",
+        "port": "e519660b0b5fb35a"
+      },
+      "enemy_vm_digest": {
+        "old": "e2ad93c67d1ce5f4",
+        "original": "e2ad93c67d1ce5f4",
+        "port": "e2ad93c67d1ce5f4"
+      },
+      "item_digest": {
+        "old": "befff216c2a6f6ab",
+        "original": "befff216c2a6f6ab",
+        "port": "befff216c2a6f6ab"
+      }
+    },
+    "st1-normal-bossspell-400": {
+      "player_digest": {
+        "old": "f8b513da85c40dc5",
+        "original": "f8b513da85c40dc5",
+        "port": "f8b513da85c40dc5"
+      },
+      "enemy_digest": {
+        "old": "1f458e7567c3c322",
+        "original": "1f458e7567c3c322",
+        "port": "1f458e7567c3c322"
+      },
+      "bullet_digest": {
+        "old": "83d95191956acd94",
+        "original": "83d95191956acd94",
+        "port": "83d95191956acd94"
+      },
+      "enemy_vm_digest": {
+        "old": "5acd057a9757578d",
+        "original": "5acd057a9757578d",
+        "port": "5acd057a9757578d"
+      },
+      "item_digest": {
+        "old": "2d97fbc369a9f633",
+        "original": "2d97fbc369a9f633",
+        "port": "2d97fbc369a9f633"
+      }
+    },
+    "st1-normal-front-shoot-700": {
+      "player_digest": {
+        "old": "f719d236ef54db86",
+        "original": "42e1577437b7bbbb",
+        "port": "42e1577437b7bbbb"
+      },
+      "enemy_digest": {
+        "old": "3274159824d43773",
+        "original": "613deb1f9b69f5f9",
+        "port": "613deb1f9b69f5f9"
+      },
+      "bullet_digest": {
+        "old": "43c7dfd058b45e73",
+        "original": "43c7dfd058b45e73",
+        "port": "43c7dfd058b45e73"
+      },
+      "enemy_vm_digest": {
+        "old": "e24dd8547030e435",
+        "original": "70e2f108b5b6be8b",
+        "port": "70e2f108b5b6be8b"
+      },
+      "item_digest": {
+        "old": "1bc142f6672c4699",
+        "original": "4fbd9489e78b7a0a",
+        "port": "4fbd9489e78b7a0a"
+      }
+    },
+    "st1-normal-poc-1000": {
+      "player_digest": {
+        "old": "ed7b2cf7f3af39af",
+        "original": "6783c1781ab967eb",
+        "port": "6783c1781ab967eb"
+      },
+      "enemy_digest": {
+        "old": "aed1c5610f5a43c0",
+        "original": "b9bf307cc6771760",
+        "port": "b9bf307cc6771760"
+      },
+      "bullet_digest": {
+        "old": "966ed8edba77f053",
+        "original": "966ed8edba77f053",
+        "port": "966ed8edba77f053"
+      },
+      "enemy_vm_digest": {
+        "old": "d5cd3438da9e5c46",
+        "original": "28a197e34ae3fa98",
+        "port": "28a197e34ae3fa98"
+      },
+      "item_digest": {
+        "old": "f43fb16f56795f56",
+        "original": "9c3dcfd5c549e2d7",
+        "port": "9c3dcfd5c549e2d7"
+      }
+    }
+  },
+  "assertions": {
+    "shoot_score": 2110,
+    "shoot_last_score_frame": 695,
+    "point_items": 6,
+    "shoot_gauge": 41,
+    "season_activation_frame": 853,
+    "death_power_item_slots": [
+      593,
+      594,
+      595,
+      596,
+      597,
+      598,
+      599
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+**/artifacts/
+**/node_modules/
+**/.cache/
+**/test-results/
+**/tools/emsdk/
+**/tools/wasi-sdk*/
+*.exe
+*.dll
+*.wasm
+*.o
+*.obj
+*.a
+*.bin
+*.dat
+*.wav
+*.ogg
+*.rpy
+score*.dat
+*.cfg
+*.log
+.env
+**/__pycache__/
+*.py[cod]
+
+# 本机 harness 构建产物（tests/run.sh）
+tests/build/
+
+# 网页运行时资源（原版权材料：th16.dat 由使用者放入，不入库）
+web/sdl-runtime/assets/
+
+# 启动器运行时目录（portable/package-eagler.mjs 产物）
+build-eagler/

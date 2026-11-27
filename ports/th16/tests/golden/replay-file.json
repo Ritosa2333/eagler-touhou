@@ -1,0 +1,65 @@
+{
+  "note": "0x448c10 decode of artifacts/th16/dat/demo*.rpy",
+  "demos": {
+    "demo1": {
+      "name": "ZUN     ",
+      "stage_count": 1,
+      "stages": [
+        {
+          "stage": 3,
+          "seed": 30966,
+          "frames": 6777,
+          "input_nz": 6457,
+          "fps": 226,
+          "first": 25,
+          "held": "0x1"
+        }
+      ]
+    },
+    "demo2": {
+      "name": "ZUN     ",
+      "stage_count": 1,
+      "stages": [
+        {
+          "stage": 1,
+          "seed": 55089,
+          "frames": 5117,
+          "input_nz": 4864,
+          "fps": 171,
+          "first": 86,
+          "held": "0x10"
+        }
+      ]
+    },
+    "demo3": {
+      "name": "ZUN     ",
+      "stage_count": 1,
+      "stages": [
+        {
+          "stage": 2,
+          "seed": 32254,
+          "frames": 5396,
+          "input_nz": 5348,
+          "fps": 180,
+          "first": 30,
+          "held": "0x1"
+        }
+      ]
+    },
+    "demo4": {
+      "name": "ZUN     ",
+      "stage_count": 1,
+      "stages": [
+        {
+          "stage": 4,
+          "seed": 20920,
+          "frames": 6422,
+          "input_nz": 6322,
+          "fps": 215,
+          "first": 36,
+          "held": "0x10"
+        }
+      ]
+    }
+  }
+}

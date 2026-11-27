@@ -1,0 +1,83 @@
+{
+ "$comment": "tools/oracle/game-oracle.py --enemies --bullets --items --lasers --bombs --lives 0（Unicorn 直跑 th16.exe v1.00a，不补残机）：只射击不移动，自机被弹后残机 -1 → 0x43f350 续关画面。Extra 无续关（剩余续关 0 → 光标项「续关」禁用，停在「回标题」），确认后回标题（scene_exit 4）；第 3 面 Normal 下移一项回标题；第 3 面续关两次：第一次直接续关（分数未入榜），第二次 0x43f7e0 → 0x43e250 入榜第 9 名进入名字输入，连按 8 次 Z 填满后光标自动跳到「结束」(0x5a)，再确认回续关主菜单并续关（continues 2 / 剩余 3）。__time64 在 oracle 中固定为 0（移植版 insert_rank 同样传 0）。",
+ "cases": [
+  {
+   "name": "extra-gameover-to-title",
+   "stage": 7,
+   "shot": 1,
+   "season": 1,
+   "difficulty": 4,
+   "replay_slot": -1,
+   "lives": 0,
+   "refill": 0,
+   "mode": 0,
+   "frames": 1500,
+   "input": "0:0x1,250:0x0,400:0x1,401:0x0,460:0x1",
+   "scene_exit": 4,
+   "exit_frame": 414,
+   "digests": {
+    "digest": "6556ab0af03f8c27",
+    "enemies": "c44c6517950ee196",
+    "enemy_vms": "9b5c4c46730fd370",
+    "bullets": "228fc07d6a1009e5",
+    "items": "58252f53b7a14a30",
+    "spell": "1ab07564c9ca1e08",
+    "lasers": "ccc6e63df1a99354",
+    "bombs": "19646ff4119fa005",
+    "menu": "fe8ed62d16a2eee3"
+   }
+  },
+  {
+   "name": "st3-normal-gameover-to-title",
+   "stage": 3,
+   "shot": 2,
+   "season": 2,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 0,
+   "refill": 0,
+   "mode": 0,
+   "frames": 1200,
+   "input": "0:0x1,360:0x0,420:0x20,421:0x0,450:0x1,451:0x0,500:0x1",
+   "scene_exit": 4,
+   "exit_frame": 464,
+   "digests": {
+    "digest": "f091ee2c9a523c29",
+    "enemies": "b9d9a0ddc00c051d",
+    "enemy_vms": "3acbee99b4795550",
+    "bullets": "483a1880e86087a5",
+    "items": "8f36979a0ad853b3",
+    "spell": "a12ea0fa299b33ee",
+    "lasers": "0b0731de752b7685",
+    "bombs": "6fd65ff46578164c",
+    "menu": "db7dfcb7644f03f3"
+   }
+  },
+  {
+   "name": "st3-normal-continue-twice-name-entry",
+   "stage": 3,
+   "shot": 2,
+   "season": 2,
+   "difficulty": 1,
+   "replay_slot": -1,
+   "lives": 0,
+   "refill": 0,
+   "mode": 0,
+   "frames": 3000,
+   "input": "0:0x1,360:0x0,450:0x1,451:0x0,500:0x1,2200:0x0,2450:0x1,2451:0x0,2460:0x1,2461:0x0,2470:0x1,2471:0x0,2480:0x1,2481:0x0,2490:0x1,2491:0x0,2500:0x1,2501:0x0,2510:0x1,2511:0x0,2520:0x1,2521:0x0,2530:0x1,2531:0x0,2560:0x1,2561:0x0,2600:0x1,2601:0x0,2650:0x1",
+   "scene_exit": -1,
+   "exit_frame": 0,
+   "digests": {
+    "digest": "a08d160c4fdfdfa3",
+    "enemies": "4c6496252987a0ba",
+    "enemy_vms": "c42da3c94577e624",
+    "bullets": "50bb7c18d8ec8f23",
+    "items": "05fd5aadf94bf2de",
+    "spell": "f378e0764087e629",
+    "lasers": "fbba458e5a15be24",
+    "bombs": "5c5f5365825d0494",
+    "menu": "bc5bd4c57bf11b45"
+   }
+  }
+ ]
+}

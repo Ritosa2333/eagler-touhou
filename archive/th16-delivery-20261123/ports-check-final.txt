@@ -1,0 +1,4 @@
+> ports:check
+> node tools/ports/check.mjs --game=th16 --output=/work/.cache/th16/check-live-ports
+
+th16/normal: PASS (10/10 checks)

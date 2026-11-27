@@ -651,6 +651,25 @@
         ],
         "commonMarker": "browser/directory-keyboard.mjs"
       }
+    },
+    "th16": {
+      "builder": "prebuilt",
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "portable/build.mjs"
+        ]
+      },
+      "workspaceRepository": "th16",
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        }
+      }
     }
   }
 }

@@ -81,7 +81,11 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 33);
+  assert.equal(plans.length, 36);
+  const th16 = plans.find(plan => plan.game === "th16");
+  assert.equal(th16.variant, "normal");
+  assert.equal(th16.source, layout.path("th16"));
+  assert.equal(th16.steps[0].args[0], resolve(layout.path("th16"), "portable/build.mjs"));
   const th13 = plans.find(plan => plan.game === 'th13');
   assert.equal(th13.variant, 'normal');
   assert.equal(th13.source, layout.path('th13'));

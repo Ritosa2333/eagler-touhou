@@ -5036,6 +5036,260 @@
       ]
     },
     {
+      "game": "th16",
+      "variant": "normal",
+      "directory": "ports/th16",
+      "sourceDigest": "55cb9d188558da57871cad2327b2c243b983ed00a8fd7bce414ae9e8d6c8eca0",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 54,
+      "features": {
+        "thcrap": false,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "portable/build.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th16"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs",
+            "web/sdl-runtime/eagler-host.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs",
+            "web/sdl-runtime/eagler-host.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "web/cpp/sdl/Application.cpp"
+          ],
+          "complete": true
+        },
+        {
+          "id": "held-touch-continuity",
+          "excludeGames": [
+            "th01",
+            "th02",
+            "th03",
+            "th04"
+          ],
+          "level": "module",
+          "complete": false,
+          "checks": [
+            "TOUCH-09"
+          ],
+          "files": [
+            "tools/ports/touch-continuity.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "immediate-sfx-routing",
+          "excludeGames": [
+            "th01",
+            "th02",
+            "th03",
+            "th04"
+          ],
+          "level": "source-contract",
+          "complete": false,
+          "checks": [
+            "AUDIO-07"
+          ],
+          "files": [
+            "tools/ports/sfx-routing.test.mjs"
+          ],
+          "status": "passed"
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "normal-presentation",
+          "excludeGames": [
+            "th01",
+            "th02",
+            "th03",
+            "th04",
+            "th05"
+          ],
+          "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "launcher/tests/test-native-frame-pacing.mjs",
+            "launcher/tests/test-mobile-frame-pacing.mjs",
+            "launcher/tests/test-presentation-contract-coverage.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "status": "passed",
+          "complete": true,
+          "environment": "rootless Podman th16-dev --rm; Node 24.22.3; emsdk 6.0.9; wasi-sdk 34; Linux x86_64",
+          "id": "th16-build-plan",
+          "level": "build",
+          "checks": [
+            "BUILD-02"
+          ],
+          "command": [
+            "node",
+            "launcher/scripts/build-runtime.mjs",
+            "--game=th16",
+            "--variant=normal",
+            "--emsdk=/opt/emsdk",
+            "--dry-run"
+          ],
+          "evidence": {
+            "sha256": "08828a77981989cd8feaf14dd75e82bc41964698e8dad857b05ca6b67f4b4504",
+            "record": "archive/th16-delivery-20261123/README.md"
+          }
+        },
+        {
+          "status": "passed",
+          "complete": true,
+          "environment": "rootless Podman th16-dev --rm; Node 24.22.3; emsdk 6.0.9; wasi-sdk 34; Linux x86_64",
+          "id": "th16-build-runtime",
+          "level": "build",
+          "checks": [
+            "BUILD-03"
+          ],
+          "command": [
+            "node",
+            "launcher/scripts/build-runtime.mjs",
+            "--game=th16",
+            "--variant=normal",
+            "--emsdk=/opt/emsdk"
+          ],
+          "evidence": {
+            "sha256": "3f9502c4d00588ecb2bda3bae43bbb888c77164f10467ba9be247f3f05072367",
+            "record": "archive/th16-delivery-20261123/README.md"
+          }
+        },
+        {
+          "status": "passed",
+          "complete": true,
+          "environment": "rootless Podman th16-dev --rm; Node 24.22.3; emsdk 6.0.9; wasi-sdk 34; Linux x86_64",
+          "id": "th16-package-runtime",
+          "level": "package",
+          "checks": [
+            "BUILD-04"
+          ],
+          "command": [
+            "node",
+            "ports/th16/portable/package-eagler.mjs"
+          ],
+          "evidence": {
+            "sha256": "0660ebfd5ce033cb6b07ae628c77e91945c2625a899dde0cf4efe806b5a6532e",
+            "record": "archive/th16-delivery-20261123/README.md"
+          }
+        }
+      ]
+    },
+    {
       "game": "th17",
       "variant": "multiplayer",
       "directory": "ports/th17-mp",

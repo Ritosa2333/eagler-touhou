@@ -1,0 +1,4 @@
+node=v24.22.3
+emcc=emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.9 (4e4223852a0835923411059a3929907d7df1232e)
+wasi-clang=clang version 23.1.0-wasi-sdk (https://github.com/llvm/llvm-project 895aa2c896ada719451be2e3673c83da8ddf1141)
+kernel=Linux 7.3.5-2-cachyos x86_64 GNU/Linux
