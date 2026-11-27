@@ -30,13 +30,15 @@ export function writeTrace(path, {identity, provider, provenance, rows}) {
   let index = 0;
   for (const row of frames) {
     const categories = {};
-    for (const key of requiredCategories) categories[key] = row.categories[key];
+    for (const key of requiredCategories) {
+      categories[key] = key === 'clocks' ? logicClocks(row.categories[key]) : row.categories[key];
+    }
     const nextStage = row.stageName || String(row.stageId || 'stage');
     capture.tick({
       stage: stage === null ? nextStage : nextStage,
       replaySampleIndex: index,
       appliedInput: row.appliedInput | 0,
-      clocks: row.clocks,
+      clocks: logicClocks(row.clocks),
       scalars: row.scalars,
       categories,
     });
@@ -50,6 +52,13 @@ export function writeTrace(path, {identity, provider, provenance, rows}) {
     evidence: {samples: frames.length, align: 'post-mainmenu-replay'},
   });
   return {ticks: frames.length, complete, reason: end?.reason || null};
+}
+
+function logicClocks(clocks) {
+  if (!clocks || clocks.realTimeTotal === undefined) return clocks;
+  const copy = {...clocks};
+  delete copy.realTimeTotal;
+  return copy;
 }
 
 export function digest(value) {
