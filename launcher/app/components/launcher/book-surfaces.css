@@ -2,6 +2,7 @@
 :root {--book-rail-width:clamp(248px,24vw,296px)}
 /* Page surfaces and typography; shared colors and controls live in the UI system. */
 body:not(.mp-room-active):has(.book-masthead) {
+  min-block-size:100dvh;
   background:var(--book-bg);color:var(--book-ink);
 }
 html[data-ui-app] .library-background {display:none}

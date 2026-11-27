@@ -1000,11 +1000,13 @@ test('room names replace the regular label and keep special gameplay rules visib
   const standard = n('[data-key="th06mp-1234"] .lobby-room-rules');
   assert.equal(standard.querySelector('.lobby-room-rules-standard'),null);
   assert.equal(standard.textContent,'初见练习');
+  assert.equal(n('[data-key="th06mp-1234"] h2 .lobby-room-name[data-placement="heading"]').textContent,'初见练习');
   const custom = n('[data-key="th06mp-4321"] .lobby-room-rules');
   assert.match(custom.textContent,/挑战/);
   assert.equal(n('.lobby-room-name',custom).textContent,'避弹练习');
   await f.receive([room({roomName:'字'.repeat(11)})]);
   assert.equal(n('[data-key="th06mp-1234"] .lobby-room-rules').textContent,'常规');
+  assert.equal(env.document.querySelector('[data-key="th06mp-1234"] h2 .lobby-room-name'),null);
 });
 
 

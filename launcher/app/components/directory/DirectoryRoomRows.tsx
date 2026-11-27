@@ -119,6 +119,7 @@ function RoomRow({
   }) : [];
   const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
   const difficulty = directoryRoomDifficulty(room);
+  const customName = room.roomName && <bdi>{room.roomName}</bdi>;
   const state = directoryRoomState(room);
   const waitingSince = policy.gameplay === 'versus' && state === 'recruiting' ? room.createdAt : undefined;
   const [now, setNow] = useState(Date.now);
@@ -162,7 +163,11 @@ function RoomRow({
           {coverFailed && <span className="lobby-cover-number">{meta.number}</span>}
         </span>
         <div className="lobby-room-title">
-          <h2><span className="lobby-work-name" title={title}>{title}</span>{difficulty && <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()}>{difficulty}</span>}</h2>
+          <h2>
+            <span className="lobby-work-name" title={title}>{title}</span>
+            {difficulty && <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()}>{difficulty}</span>}
+            {customName && <span className="lobby-room-name" data-placement="heading" title={room.roomName ?? undefined}>{customName}</span>}
+          </h2>
           <div className="lobby-room-meta">
             <span className="lobby-room-code">#{room.code}</span>
             <span className="lobby-room-state" data-state={state} title={statusLabel}>
@@ -189,7 +194,7 @@ function RoomRow({
         </div>
       </div>
       <div className="lobby-room-rules">
-        {room.roomName && <span className="lobby-room-name"><bdi>{room.roomName}</bdi></span>}
+        {customName && <span className="lobby-room-name" data-placement="rules">{customName}</span>}
         {!room.disableCheatMovement && !room.challengeMode && !room.unrated && !(room.product === 'th01mp' && (room.ballCount ?? 2) !== 2) && !(room.product === 'th02mp' && room.disableFocus === true) ? (!room.roomName && <span className="lobby-room-rules-standard">{t('directory.regularRules')}</span>) :
           [room.disableCheatMovement ? t('lobby.noCheat') : '', room.challengeMode ? t('room.challengeMode') : '', room.unrated ? t('room.unrated') : '', room.product === 'th01mp' && (room.ballCount ?? 2) !== 2 ? t('room.th01SpecialBalls',{count:room.ballCount ?? 2}) : '', room.product === 'th02mp' && room.disableFocus === true ? t('room.th02SpecialFocus') : ''].filter(Boolean).map(rule => <span key={rule}>{rule}</span>)}
       </div>
