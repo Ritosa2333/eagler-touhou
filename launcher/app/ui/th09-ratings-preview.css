@@ -4,10 +4,11 @@
   margin-inline: auto;
   padding: 22px clamp(12px, 3vw, 36px);
 }
-.rating-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.rating-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px; border-radius: 8px; background: var(--book-reading-surface); }
 .rating-heading-title { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; min-width: 0; }
+.rating-heading-title h1 { display: flex; align-items: center; gap: 10px; min-width: 0; margin: 0; font-size: clamp(18px, 2vw, 25px); font-weight: 650; line-height: 1.2; }
 .rating-heading-icon { display: block; border-radius: 6px; object-fit: cover; }
-.rating-heading .rating-distribution-trigger { flex: none; padding-inline: 6px; }
+.rating-heading .rating-distribution-trigger { flex: none; padding-inline: 6px; color: var(--kit-foreground); }
 .rating-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .rating-tools {
   --rating-tool-height: 40px;
@@ -135,6 +136,12 @@ html[data-custom-background] .th09-rating-page :is(.rating-table-wrap, .rating-o
 .rating-table thead { background: var(--kit-muted); color: var(--kit-muted-foreground); }
 .rating-table thead th { padding-block: 0; }
 .rating-table th[data-column='position'] { width: var(--rating-rank-width); }
+.rating-table th[data-column='main-character'] { width: clamp(108px, 12vw, 176px); }
+.rating-column-label { display: block; padding-inline: 4px; font-size: 13px; font-weight: 500; line-height: 1.2; white-space: normal; }
+.rating-main-character { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; vertical-align: middle; font-size: 13px; font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
+.rating-main-character .rating-character-thumbnail { flex: none; }
+.rating-main-character-empty { color: var(--kit-muted-foreground); }
+.rating-main-character-compact { display: none; }
 .rating-table th[data-column='rating'] { width: 12%; }
 .rating-table th[data-column='deviation'] { width: 116px; }
 .rating-table th:is([data-column='overall'], [data-column='games'], [data-column='winRate'], [data-column='community'], [data-column='status']) { width: 8%; }
@@ -166,6 +173,7 @@ a.rating-player-name:hover { opacity: .8; }
   .rating-table :is(th, td) { padding-inline: 5px; }
   .rating-table th[data-column='rating'] { width: 10%; }
   .rating-table th[data-column='deviation'] { width: 100px; }
+  .rating-table th[data-column='main-character'] { width: clamp(96px, 12vw, 136px); }
   .rating-table th[data-column='community'] { width: 75px; }
   .rating-table th[data-column='last'] { width: 13%; }
   .rating-table th[data-column='status'] { width: 88px; }
@@ -176,6 +184,9 @@ a.rating-player-name:hover { opacity: .8; }
   .rating-table { min-width: 0; }
   .rating-table :is(th, td)[data-column]:not([data-compact]) { display: none; }
   .rating-table th[data-column='rating'] { width: 66px; }
+  .rating-main-character-compact:not(:empty) { display: block; margin-inline-start: 36px; color: var(--kit-muted-foreground); }
+  .rating-main-character-compact .rating-main-character { min-height: 20px; font-size: 12px; }
+  .rating-main-character-compact .rating-character-thumbnail { width: 18px; height: 18px; }
   .rating-layout[data-character-board] .rating-table th[data-column='rating'] { width: 98px; }
   .rating-layout[data-character-board] .rating-table th[data-column='overall'] { width: 74px; }
   .rating-layout[data-character-board] .rating-table th:is([data-column='rating'], [data-column='overall']) .rating-sort { gap: 4px; padding-inline: 0; }

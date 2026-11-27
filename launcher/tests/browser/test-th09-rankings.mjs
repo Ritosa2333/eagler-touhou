@@ -1,0 +1,59 @@
+import assert from 'node:assert/strict';
+import puppeteer from 'puppeteer-core';
+import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
+
+const base = new URL(process.argv[2] || 'http://127.0.0.1:5185/');
+const rating = {rating:2100, interval_halfwidth:160, status:'active', games:50, wins:30,
+  opponents:8, connected_group:1, last_at:Date.UTC(2026, 10, 25)};
+const top = [{character:0,games:34},{character:1,games:16}];
+const scores = [{character:0,rating:2000,interval:180,games:34},{character:1,rating:2400,interval:190,games:16}];
+const board = {as_of:rating.last_at, board:[
+  {...rating, player:'Frequent', profile:{username:'frequent',nickname:'常用玩家'}, top_characters:top, character_ratings:scores},
+  {...rating, player:'Private', rating:2050, top_characters:top},
+  {...rating, player:'No data', rating:2000},
+]};
+const browser = await puppeteer.launch({headless:true, executablePath:await findChromiumExecutable()});
+try {
+  const page = await browser.newPage();
+  await page.emulateMediaFeatures([{name:'prefers-reduced-motion', value:'reduce'}]);
+  await page.evaluateOnNewDocument(() => {
+    localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1');
+    localStorage.setItem('eagler.background.settings', JSON.stringify({mode:'grid', panel:88}));
+  });
+  const accountPaths = [];
+  await page.setRequestInterception(true);
+  page.on('request', request => {
+    const path = new URL(request.url()).pathname;
+    if (!path.startsWith('/api/')) return request.continue();
+    accountPaths.push(path);
+    const body = path === '/api/v1/th09/ratings/board' ? board : path === '/api/ready' ? {ready:true} : {user:null};
+    return request.respond({status:200, contentType:'application/json', body:JSON.stringify(body)});
+  });
+  const header = '.rating-table th[data-column="main-character"]';
+  const rows = '.rating-table tbody > tr';
+  const main = '[data-column="main-character"] .rating-main-character';
+  const compact = '.rating-main-character-compact .rating-main-character';
+  const shown = selector => page.$eval(selector, node => node.getBoundingClientRect().width > 0);
+  await page.setViewport({width:1707, height:819});
+  await page.goto(new URL('ratings.html?lang=zh-CN', base), {waitUntil:'domcontentloaded'});
+  await page.waitForSelector(main, {visible:true});
+  assert.equal(await page.$eval('.rating-heading h1', h => h.textContent.trim()), '排行榜');
+  assert.equal(await page.$eval(header, h => h.textContent.trim()), '惯用机体');
+  assert.deepEqual(await page.$$eval(rows, found => found.map(row => row.querySelector('td[data-column="main-character"] > span').dataset.character ?? null)), ['0',null,null],
+    'the most played character is shown even if its WHR is lower; hidden and absent values are omitted');
+  assert.match(await page.$eval(main, node => node.title), /34 局/);
+  assert.equal(await shown(compact), false);
+  for (const width of [860, 390, 320]) {
+    await page.setViewport({width, height:819});
+    assert.equal(await shown(header), width > 800);
+    assert.equal(await shown(compact), width <= 800);
+    assert.equal(await page.$eval('.rating-table-wrap', node => node.scrollWidth > node.clientWidth), false);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  }
+  await page.goto(new URL('ratings.html?lang=zh-CN&character=0', base), {waitUntil:'domcontentloaded'});
+  await page.waitForSelector('.rating-layout[data-character-board] .rating-character-score');
+  assert.equal(await page.$(header), null, 'character boards do not repeat the overall-board main character');
+  assert.equal(await page.$(compact), null);
+  assert.equal(accountPaths.some(path => path.startsWith('/api/v1/profiles/')), false, 'no per-player requests are needed');
+  console.log('PASS: TH09 rankings show public most-played characters on desktop and mobile');
+} finally {await browser.close();}

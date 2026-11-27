@@ -68,6 +68,7 @@ type Column = {
   title: UiMessageKey | '#';
   compact?: boolean;
   numeric?: boolean;
+  sortable?: false;
   value(row: RankedEntry): number | string;
   render?(row: RankedEntry): ReactNode;
 };
@@ -88,6 +89,10 @@ function useRatingColumns(characterBoard: boolean): Column[] {
   return [
     { key: 'position', title: '#', compact: true, numeric: true, value: row => row.position },
     { key: 'player', title: 'th09.boardPlayer', compact: true, value: playerName },
+    ...(!characterBoard ? [{
+      key: 'main-character', title: 'th09.boardMainCharacter', sortable: false,
+      value: () => '', render: row => <MostPlayedCharacter row={row} />,
+    } satisfies Column] : []),
     ...scoreColumns,
     { key: 'games', title: 'th09.boardGames', numeric: true, value: boardGames },
     { key: 'winRate', title: 'th09.winRate', numeric: true, value: winRate, render: row => percentages.format(winRate(row)) },
@@ -208,7 +213,7 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
   const showContext = contextScope === scope;
   const sort = sortState?.scope === scope ? sortState : defaultSort;
   const compactColumnCount = columns.filter(column => column.compact).length;
-  const detailColumns = columns.filter(column => !column.compact && (!characterBoard || column.key !== 'deviation'));
+  const detailColumns = columns.filter(column => !column.compact && column.key !== 'main-character' && (!characterBoard || column.key !== 'deviation'));
   const groups = [...new Set(rows?.map(row => row.connected_group))].sort((a, b) => a - b);
   const minGames = Math.max(1, Math.trunc(Number(minimum ?? defaultMinimum)) || 1);
   const search = query.trim().toLowerCase();
@@ -259,7 +264,7 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
   return <div className="rating-layout" data-character-board={characterBoard || undefined}>
     <div className="rating-heading">
       <div className="rating-heading-title">
-        <h1><img className="rating-heading-icon" src={th09Artwork} width={36} height={36} alt={boardTitle} /></h1>
+        <h1><img className="rating-heading-icon" src={th09Artwork} width={36} height={36} alt="" />{boardTitle}</h1>
         {characterBoard ? <FieldHelp id="character-rating-help" label={t('th09.boardCharacterHelp')}>
           {t('th09.boardCharacterHelpText')}
         </FieldHelp> : <FieldHelp id="rating-explanation" label={t('th09.boardHelp')}>
@@ -339,12 +344,12 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
         <thead><tr>{columns.map(item => <th key={item.key} scope="col" data-column={item.key}
           data-compact={item.compact || undefined} data-numeric={item.numeric || undefined}
           aria-sort={item.key === sort.key ? sort.direction === 1 ? 'ascending' : 'descending' : undefined}>
-          <Button variant="ghost" size="sm" className="rating-sort" onClick={() => sortBy(item)}>
+          {item.sortable === false ? <span className="rating-column-label">{columnTitle(item)}</span> : <Button variant="ghost" size="sm" className="rating-sort" onClick={() => sortBy(item)}>
             {columnTitle(item)}{sortDirection(item)}
-          </Button>
+          </Button>}
         </th>)}<th className="rating-mobile-cell" scope="col">
           <ActionMenu label={t('th09.boardSort')} trigger={<Button variant="ghost" size="icon" aria-label={t('th09.boardSort')}><ArrowDownUp aria-hidden="true" /></Button>}>
-            {columns.map(item => <ActionMenuItem key={item.key} onSelect={() => sortBy(item)}>
+            {columns.filter(item => item.sortable !== false).map(item => <ActionMenuItem key={item.key} onSelect={() => sortBy(item)}>
               {item.key === 'position' ? t('th09.rank') : columnTitle(item)}{sortDirection(item)}
             </ActionMenuItem>)}
           </ActionMenu>
@@ -361,7 +366,9 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
               tabIndex={located === row.player ? -1 : undefined}>
               {columns.map(item => item.key === 'player'
                 ? <th key={item.key} scope="row" data-compact="true" title={t('th09.boardOpponentsCount', {count: numbers.format(row.opponents)})}>
-                    <PlayerIdentity row={row} /><span className="sr-only"> {t('th09.boardOpponentsCount', {count: numbers.format(row.opponents)})}</span>
+                    <PlayerIdentity row={row} />
+                    {!characterBoard && <span className="rating-main-character-compact"><MostPlayedCharacter row={row} compact /></span>}
+                    <span className="sr-only"> {t('th09.boardOpponentsCount', {count: numbers.format(row.opponents)})}</span>
                   </th>
                 : <td key={item.key} data-column={item.key} data-compact={item.compact || undefined}
                     data-numeric={item.numeric || undefined}>{renderRatingCell(item, row)}</td>)}
@@ -395,6 +402,21 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
 function RatingCharacterThumbnail({character}: {character?: number}) {
   return <span className="rating-character-thumbnail" aria-hidden="true">
     {character === undefined ? <ListOrdered /> : <Th09CharacterPortrait character={character} />}
+  </span>;
+}
+
+function MostPlayedCharacter({row, compact = false}: {row: Entry; compact?: boolean}) {
+  const {locale, t} = useLocale();
+  // Match the profile card's privacy rule: hidden versus data omits character ratings.
+  const main = row.character_ratings?.length ? row.top_characters?.[0] : undefined;
+  if (!main) return compact ? null : <span className="rating-main-character-empty">—</span>;
+  const name = th09CharacterName(main.character, t);
+  const games = t('th09.characterGames', {count: new Intl.NumberFormat(locale).format(main.games)});
+  return <span className="rating-main-character" title={`${name} · ${games}`} data-character={main.character}>
+    {compact && <span className="sr-only">{t('th09.boardMainCharacter')}: </span>}
+    <RatingCharacterThumbnail character={main.character} />
+    <span>{name}</span>
+    <span className="sr-only"> · {games}</span>
   </span>;
 }
 

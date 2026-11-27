@@ -10155,6 +10155,10 @@
     "id": "th09_boardPlayer",
     "params": []
   },
+  "th09.boardMainCharacter": {
+    "id": "th09_boardMainCharacter",
+    "params": []
+  },
   "th09.boardRating": {
     "id": "th09_boardRating",
     "params": []
