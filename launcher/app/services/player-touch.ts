@@ -84,7 +84,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
   function syncControls() {
     const current = settings(); if (!current) return false;
     return postTouchControls(context(), {...controls,
-      fireEnabled: heldMode() ? false : controls.fireEnabled,
+      fireEnabled: current.options.touchEnabled && !heldMode() && controls.fireEnabled,
       thpracMobilePanelsEnabled: !runtime.getInputContext().spectator && current.options.touchEnabled && current.options.thpracTouchControlsEnabled,
       thpracMobilePanelsVisible: thpracMenuOpen && !options.editing(),
     }, current.options.touchSensitivity);
