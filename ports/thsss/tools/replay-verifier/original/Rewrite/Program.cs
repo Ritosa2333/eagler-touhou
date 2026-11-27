@@ -19,11 +19,14 @@ internal static class Program
 		var begin = sink.Methods.First(method => method.Name == "BeginFrame");
 		var note = sink.Methods.First(method => method.Name == "NoteRng" && method.Parameters.Count == 4);
 		var noteDouble = sink.Methods.First(method => method.Name == "NoteRngDouble");
+		var pause = sink.Methods.First(method => method.Name == "PauseRng");
+		var resume = sink.Methods.First(method => method.Name == "ResumeRng");
 		var game = exe.MainModule.Types.First(type => type.FullName == "Shooting.Game_Main");
 		var main = game.Methods.First(method => method.Name == "MainProcess" && method.HasBody);
 		var imported = exe.MainModule.ImportReference(after);
 		HookBegin(main, exe.MainModule.ImportReference(begin));
 		HookRandom(exe, exe.MainModule.ImportReference(note), exe.MainModule.ImportReference(noteDouble));
+		HookMusicLoading(exe, exe.MainModule.ImportReference(pause), exe.MainModule.ImportReference(resume));
 		var inserted = false;
 		for (var i = 0; i < main.Body.Instructions.Count; i++)
 		{
@@ -51,6 +54,23 @@ internal static class Program
 		exe.Write(args[2]);
 		Console.WriteLine("rewrote " + args[2]);
 		return 0;
+	}
+
+	static void HookMusicLoading(AssemblyDefinition exe, MethodReference pause, MethodReference resume)
+	{
+		var loading = exe.MainModule.Types.First(type => type.FullName == "Shooting.GameState_MusicLoading");
+		var update = loading.Methods.First(method => method.Name == "UpdateData" && method.HasBody);
+		var processor = update.Body.GetILProcessor();
+		var first = update.Body.Instructions[0];
+		processor.InsertBefore(first, processor.Create(OpCodes.Call, pause));
+		foreach (var ret in update.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Ret).ToList())
+		{
+			processor.InsertBefore(ret, processor.Create(OpCodes.Call, resume));
+		}
+		if (update.Body.MaxStackSize < 8)
+		{
+			update.Body.MaxStackSize = 8;
+		}
 	}
 
 	static void HookBegin(MethodDefinition main, MethodReference begin)

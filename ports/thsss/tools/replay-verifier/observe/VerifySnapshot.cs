@@ -13,6 +13,7 @@ namespace THSSS.Observe
 		public static class RngTape
 		{
 			public static bool Armed;
+			public static bool Paused;
 			static readonly List<int> frame = new List<int>();
 			static int[] playback;
 			static int cursor;
@@ -79,7 +80,7 @@ namespace THSSS.Observe
 			public static bool TryInt(int op, int a, int b, out int result)
 			{
 				result = 0;
-				if (!Armed || playback == null || cursor + 4 > playback.Length)
+				if (Paused || !Armed || playback == null || cursor + 4 > playback.Length)
 				{
 					return false;
 				}
@@ -96,7 +97,7 @@ namespace THSSS.Observe
 			public static bool TryDouble(out double value)
 			{
 				value = 0;
-				if (!Armed || playback == null || cursor + 4 > playback.Length || playback[cursor] != 3)
+				if (Paused || !Armed || playback == null || cursor + 4 > playback.Length || playback[cursor] != 3)
 				{
 					return false;
 				}

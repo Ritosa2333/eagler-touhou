@@ -14,6 +14,8 @@ namespace THSSS.Observe
 		static bool finished;
 		static bool noted;
 		static bool listen;
+		static bool listenHeld;
+		static int pauseDepth;
 		static int samples;
 		static StreamWriter writer;
 		static StreamWriter rngWriter;
@@ -24,6 +26,29 @@ namespace THSSS.Observe
 			{
 				listen = true;
 				RngTape.Armed = true;
+			}
+		}
+
+		public static void PauseRng()
+		{
+			if (pauseDepth == 0)
+			{
+				listenHeld = listen;
+			}
+			pauseDepth++;
+			listen = false;
+		}
+
+		public static void ResumeRng()
+		{
+			if (pauseDepth == 0)
+			{
+				return;
+			}
+			pauseDepth--;
+			if (pauseDepth == 0)
+			{
+				listen = listenHeld;
 			}
 		}
 

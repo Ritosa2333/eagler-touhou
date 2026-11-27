@@ -1,0 +1,23 @@
+diff --git a/Shooting/GameState_MusicLoading.cs b/Shooting/GameState_MusicLoading.cs
+--- a/Shooting/GameState_MusicLoading.cs
++++ b/Shooting/GameState_MusicLoading.cs
+@@ -25,6 +25,9 @@
+ 
+ 	public override void UpdateData()
+ 	{
++#if THSSS_DIAGNOSTIC
++		THSSS.Observe.RngTape.Paused = true;
++#endif
+ 		base.UpdateData();
+ 		if (TimeMain == 1)
+ 		{
+@@ -60,6 +63,9 @@
+ 			Scale = (float)StageData.Ran.Next(25, 70) / 100f,
+ 			LifeTime = 70
+ 		};
++#if THSSS_DIAGNOSTIC
++		THSSS.Observe.RngTape.Paused = false;
++#endif
+ 	}
+ 
+ 	private void PreloadMusic()

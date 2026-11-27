@@ -56,5 +56,8 @@
   ],
   "011-float-spread.patch": [
     "Shooting/BaseEmitter_CS.cs"
+  ],
+  "012-music-loading-rng.patch": [
+    "Shooting/GameState_MusicLoading.cs"
   ]
 }

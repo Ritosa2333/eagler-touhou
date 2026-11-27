@@ -10,3 +10,4 @@
 009-stage-fade.patch
 010-float-direction.patch
 011-float-spread.patch
+012-music-loading-rng.patch
