@@ -145,7 +145,7 @@ try {
     assert.ok(sameHeader, `${width}px: the live masthead stays mounted`);
     assert.equal(headerHeight > 0, !mobile, `${width}px: the account masthead is desktop-only`);
     if (!mobile) assert.equal(parseFloat(artClip.match(/^inset\(([^\s)]+)/)?.[1]), headerHeight, 'artwork snapshot starts below the masthead');
-    else assert.equal(snapshots, 0, 'mobile sign-in navigates without a page snapshot');
+    assert.equal(snapshots, 1, 'sign-in uses the shared page crossfade');
   }
   await page.setViewport({width:1440, height:1000});
   await goto(screenshotAddress.href);

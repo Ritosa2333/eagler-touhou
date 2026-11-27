@@ -24,7 +24,9 @@ async function assertMasthead(page, width) {
     const account = trailing.querySelector('.masthead-account-entry, .account-login-link, .account-loading, .book-profile-trigger');
     const wordmark = box(header.querySelector('.launcher-wordmark'));
     const center = node => box(node).top + box(node).height / 2;
-    const glyphs = visible('.masthead-action:not(.masthead-account-entry) > svg, .book-main-nav a > svg')
+    const glyphs = visible('.masthead-action:not(.masthead-account-entry) > svg')
+      .map(node => [parseFloat(getComputedStyle(node).width), parseFloat(getComputedStyle(node).height), center(node)]);
+    const navGlyphs = visible('.book-main-nav a > svg')
       .map(node => [parseFloat(getComputedStyle(node).width), parseFloat(getComputedStyle(node).height), center(node)]);
     return {
       height: headerBounds.height,
@@ -39,7 +41,8 @@ async function assertMasthead(page, width) {
       menuGroup: menu.closest('.masthead-leading, .masthead-trailing').className,
       menuLast: menu === menu.parentElement.lastElementChild,
       accountLast: !account || account === trailing.lastElementChild,
-      glyphs,
+      glyphs, navGlyphs,
+      navFonts:navigation.map(node => parseFloat(getComputedStyle(node).fontSize)),
       wordmarkWidth: wordmark.width,
       // Center of the l in the 480×140 source image.
       wordmarkGlyphCenter: wordmark.top + wordmark.height * 80.5 / 140,
@@ -65,6 +68,13 @@ async function assertMasthead(page, width) {
     assert.ok(layout.glyphs.every(([w, h, center]) => Math.abs(w - expectedSize) < .25 &&
       Math.abs(h - expectedSize) < .25 && Math.abs(center - layout.wordmarkGlyphCenter) < .5),
     'Desktop glyphs share the scale and optical center of the wordmark ascender');
+    if (width > 960) {
+      const navSize = layout.wordmarkWidth * .19;
+      assert.deepEqual(layout.navFonts,[20,20]);
+      assert.equal(layout.navGlyphs.length,2);
+      assert.ok(layout.navGlyphs.every(([w,h,center]) => Math.abs(w-navSize)<.25 && Math.abs(h-navSize)<.25 &&
+        Math.abs(center-layout.wordmarkGlyphCenter)<.5), 'The primary modes share larger, optically aligned icons');
+    }
     assert.equal(layout.navGap, 0, 'the navigation indicators can meet edge to edge');
     assert.equal(layout.underline, layout.foreground, 'the underline uses the theme foreground instead of the accent');
     assert.ok(layout.underlineWidths.every((width, index) => Math.abs(width - layout.nav[index]) < 1));

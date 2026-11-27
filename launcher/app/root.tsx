@@ -34,7 +34,7 @@ import UptimeRoute from './routes/uptime';
 import { helpDocumentAtPath, isStandalonePage, isTh09RatingPage } from './components/documents/catalog';
 import { isPreviewOnlyPage } from './release-features';
 import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
-import {launcherSection, profileSettingsPanel} from './components/launcher/launcher-sections';
+import {launcherMotionPage, launcherSection, profileSettingsPanel} from './components/launcher/launcher-sections';
 import {localLayerOwnsPageScroll, type PageLocation} from './navigation/page-history';
 const HelpRoute = lazy(() => import('./routes/help'));
 const Th09RatingsRoute = lazy(() => import('./routes/th09-ratings'));
@@ -55,7 +55,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const transition = useContext(UNSAFE_ViewTransitionContext);
   // The Router may replay a page transition on Back even when only the overlay URL changed.
-  const samePageTransition = transition.isTransitioning && transition.currentLocation.pathname === transition.nextLocation.pathname;
+  const samePageTransition = transition.isTransitioning &&
+    launcherMotionPage(transition.currentLocation) === launcherMotionPage(transition.nextLocation);
   const previewOnly = isPreviewOnlyPage(pathname);
   const review = !previewOnly && (/\/ui-review\.html\/?$/.test(pathname) || isStandalonePage(pathname));
   const home = previewOnly || isLauncherHomePath(pathname);

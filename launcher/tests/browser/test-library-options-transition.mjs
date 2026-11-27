@@ -19,7 +19,7 @@ try {
     await page.goto(origin, {waitUntil:'domcontentloaded'});
     await page.waitForFunction(() => window.__eaglerBoot?.done && document.querySelector('.launcher-page-surface[data-page="library"]'));
     await page.$eval(surface, node => {
-      const state = window.navigationProbe = {surface:node, fades:[], railFades:[], paneFades:[], snapshots:0, clickedDuringFade:[]};
+      const state = window.navigationProbe = {surface:node, fades:[], railFades:[], paneFades:[], snapshots:0, active:null, clickedDuringFade:[]};
       const animate = Element.prototype.animate;
       Element.prototype.animate = function (keyframes, options) {
         const animation = animate.call(this, keyframes, options);
@@ -37,21 +37,25 @@ try {
       if (document.startViewTransition) {
         const start = document.startViewTransition.bind(document);
         document.startViewTransition = (...args) => {
-          state.snapshots++;
-          return start(...args);
+          const isPage = document.documentElement.dataset.uiRouteTransition === 'page';
+          if (isPage) state.snapshots++;
+          const transition = start(...args);
+          if (isPage) state.active = transition;
+          void transition.finished.then(() => {
+            if (state.active === transition) state.active = null;
+          });
+          return transition;
         };
       }
       document.addEventListener('click', event => {
         const link = event.target.closest('.book-main-nav a');
-        if (link && state.fades.at(-1)?.target.getAnimations().some(animation => animation.playState === 'running')) {
+        if (link && state.active) {
           state.clickedDuringFade.push(link.matches('.book-lobby-link') ? 'lobby' : 'library');
         }
       }, true);
     });
-    const click = async selector => {
-      await page.waitForSelector(selector, {visible:true});
-      await page.click(selector);
-    };
+    const click = selector => page.locator(selector).click();
+    const settlePage = () => page.waitForFunction(() => !document.documentElement.hasAttribute('data-ui-route-transition'));
     const settle = () => page.$eval(surface, async node => {
       await Promise.allSettled(node.getAnimations({subtree:true}).filter(animation => animation.effect?.target.matches('.book-content, .lobby-rooms-column, .book-sidebar nav')).map(animation => animation.finished));
     });
@@ -84,7 +88,9 @@ try {
       assert.equal(page.url(), url);
     }
     await navigate('lobby');
+    await settlePage();
     await navigate('library');
+    await settlePage();
     await settle();
     assert.deepEqual(await page.evaluate(() => {
       const probe = window.navigationProbe;
@@ -93,8 +99,7 @@ try {
         railFades:probe.railFades.map(({page, categories}) => ({page, populated:categories > 1})),
         snapshots:probe.snapshots,
       };
-    }), {fades:['lobby','library'].map(page => ({local:true, page, duration:180})),
-      railFades:compact ? [] : ['lobby','library'].map(page => ({page, populated:true})), snapshots:0});
+    }), {fades:[], railFades:[], snapshots:2});
 
     const beforeOptions = await counts();
     const shelf = await page.$('#bookGameGrid');
@@ -127,19 +132,26 @@ try {
 
     if (!compact) {
       await page.evaluate(() => {window.navigationProbe.clickedDuringFade.length = 0;});
-      await page.addStyleTag({content:'.launcher-page-surface {--ui-surface-duration: 2s}'});
+      await page.addStyleTag({content:'html {--launcher-route-duration: 2s !important}'});
       for (const destination of ['lobby', 'library', 'lobby']) {
-        const {fades} = await counts();
+        const {snapshots} = await counts();
         await navigate(destination);
-        await page.waitForFunction((count, page) =>
-          window.navigationProbe.fades[count]?.page === page, {}, fades, destination);
+        await page.waitForFunction(count => window.navigationProbe.snapshots === count + 1, {}, snapshots);
       }
+      await settlePage();
       await settle();
       assert.deepEqual(await page.evaluate(() => {
         const {surface, clickedDuringFade, snapshots} = window.navigationProbe;
         return {clickedDuringFade, snapshots, opacity:getComputedStyle(surface).opacity, remaining:surface.getAnimations().length};
-      }), {clickedDuringFade:['library', 'lobby'], snapshots:0, opacity:'1', remaining:0});
+      }), {clickedDuringFade:['library', 'lobby'], snapshots:5, opacity:'1', remaining:0});
     }
+    await page.evaluate(() => {document.startViewTransition = undefined;});
+    const fallbackStart = await counts();
+    const next = await page.$eval(surface, node => node.dataset.page === 'lobby' ? 'library' : 'lobby');
+    await navigate(next);
+    await settle();
+    assert.deepEqual(await counts(), {...fallbackStart,fades:fallbackStart.fades + 1},
+      'browsers without View Transitions keep the live content fade');
     assert.deepEqual(errors, []);
     await page.close();
     console.log('PASS ' + width + 'px: primary navigation and local settings returns');

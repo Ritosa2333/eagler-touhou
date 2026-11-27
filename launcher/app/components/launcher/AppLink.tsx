@@ -2,7 +2,7 @@ import { Link, useHref, useLocation, useNavigate, type LinkProps } from 'react-r
 import { nextPageHistory, pageOf, readPageHistory, PAGE_HISTORY_KEY } from '../../navigation/page-history';
 import { routerDestination } from '../../navigation/addresses';
 import { isStandalonePage } from '../documents/catalog';
-import {primaryLauncherView, profileSettingsPanel} from './launcher-sections';
+import {launcherMotionPage, profileSettingsPanel} from './launcher-sections';
 
 /** Known launcher document links share the Router's fixed page parent records. */
 export function AppLink({ href, state, replace, rememberEntry, returnToEntry, onClick, ...props }: Omit<LinkProps, 'to'> & {
@@ -25,10 +25,7 @@ export function AppLink({ href, state, replace, rememberEntry, returnToEntry, on
   );
   const reloadDocument = props.reloadDocument || isStandalonePage(location.pathname) !== isStandalonePage(url.pathname);
   const next = new URL(destination, 'https://launcher.invalid');
-  // Full-height library, lobby and profile content enter in their final layout.
-  const previousPage = pageOf(location);
-  const sharedNavigation = (primaryLauncherView(location) || previousPage === 'single-options' || previousPage === 'profile')
-    && (primaryLauncherView(next) || destinationPage === 'single-options' || destinationPage === 'profile');
+  const changesPage = launcherMotionPage(location) !== launcherMotionPage(next);
   const entryHref = returnToEntry && !reloadDocument ? location.state?.launcherEntryHref : undefined;
   const isSettings = (path: {pathname: string; hash: string}) => /^\/u\/[^/]+\/?$/.test(path.pathname) && profileSettingsPanel(path.hash);
   const inlineSettings = isSettings(location) || isSettings(next);
@@ -36,7 +33,7 @@ export function AppLink({ href, state, replace, rememberEntry, returnToEntry, on
     <Link
       {...props}
       reloadDocument={reloadDocument}
-      viewTransition={!reloadDocument && !sharedNavigation && !inlineSettings && url.pathname !== currentUrl.pathname && props.viewTransition !== false}
+      viewTransition={!reloadDocument && changesPage && !inlineSettings && props.viewTransition !== false}
       to={typeof entryHref === 'string' ? entryHref : destination}
       replace={replace}
       onClick={event => {

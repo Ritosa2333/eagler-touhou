@@ -11,6 +11,7 @@ import { useLocale, translate } from '../i18n';
 import { withUiLanguage } from '../../src/launcher/i18n.mts';
 import { multiplayerGuideTopic } from '../../lib/multiplayer-guide.mjs';
 import { sitePageTitle } from '../navigation/document-locale';
+import { launcherMotionPage } from '../components/launcher/launcher-sections';
 import documentHistory from 'virtual:document-history';
 import { helpDocuments, helpDocumentAtPath, type HelpDocument } from '../components/documents/catalog';
 import { prepareHelpDocument, prepareMultiplayerRules } from '../components/documents/content';
@@ -47,13 +48,15 @@ export default function HelpRoute() {
 }
 function DocumentLink({ href = '', prefetch, ...props }: ComponentProps<'a'> & { prefetch?: boolean }) {
   const { locale } = useLocale();
-  const local =
-    href.startsWith('#') ||
-    (href.startsWith('/') && !!helpDocumentAtPath(new URL(href, 'https://launcher.invalid').pathname));
+  const location = useLocation();
+  const anchor = href.startsWith('#');
+  const destination = href.startsWith('/') ? new URL(href, 'https://launcher.invalid') : undefined;
+  const local = anchor || (destination && helpDocumentAtPath(destination.pathname));
   return local ? (
     <Link
       {...props}
-      to={href.startsWith('#') ? href : withUiLanguage(href, locale)}
+      to={anchor ? href : withUiLanguage(href, locale)}
+      viewTransition={!!destination && launcherMotionPage(location) !== launcherMotionPage(destination)}
       prefetch={prefetch ? 'intent' : 'none'}
     />
   ) : (

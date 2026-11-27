@@ -70,9 +70,9 @@ export function LauncherAccountRow({identity, assetUrl, compact = false, onNavig
   if (!user) return <div className="launcher-account-row">
     <span className="launcher-account-placeholder"><UserRound aria-hidden="true"/></span>
     <span className="launcher-account-sign-in">
-      <AppLink href={loginHref} replace={compact} rememberEntry viewTransition={false} onClick={onNavigate}>{t('account.login')}</AppLink>
+      <AppLink href={loginHref} replace={compact} rememberEntry onClick={onNavigate}>{t('account.login')}</AppLink>
       <span aria-hidden="true">/</span>
-      <AppLink href={registerHref} replace={compact} rememberEntry viewTransition={false} onClick={onNavigate}>{t('account.register')}</AppLink>
+      <AppLink href={registerHref} replace={compact} rememberEntry onClick={onNavigate}>{t('account.register')}</AppLink>
     </span>
   </div>;
   return <AppLink className="launcher-account-row launcher-account-link" href={withUiLanguage('/u/' + encodeURIComponent(user.username), locale)}

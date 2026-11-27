@@ -32,21 +32,12 @@ try {
       const transform = panel && getComputedStyle(panel).transform;
       return transform && (transform === 'none' || Math.abs(new DOMMatrixReadOnly(transform).m41) < .5);
     });
-    if (pathname === 'about.html') {
-      assert.equal(await page.$eval('#mastheadAboutToggle', node => node.getAttribute('aria-expanded')), 'false');
-      assert.ok(await page.$eval('#mastheadMenuPanel', panel => {
-        const footer = panel.lastElementChild;
-        return footer.matches('footer') && footer.querySelector('#mastheadAboutToggle') &&
-          Math.abs(footer.getBoundingClientRect().bottom - panel.getBoundingClientRect().bottom) < .5;
-      }), 'About remains anchored to the bottom of the drawer');
-      await tap('#mastheadAboutToggle');
-    }
     await tap(`#mastheadMenuPanel a[href*="${pathname}"]`);
   }
   async function waitForDocument(pathname) {
     await page.waitForFunction(path => location.pathname.endsWith(path) && document.querySelector('h1')?.textContent.trim(), {}, pathname);
     assert.equal(await page.$eval('#launcherNavigationTransition', node => node.textContent), '@view-transition{navigation:auto}');
-    await page.waitForFunction(() => ['160ms', '.16s', '0.16s'].includes(
+    await page.waitForFunction(() => ['260ms', '.26s', '0.26s'].includes(
       getComputedStyle(document.documentElement).getPropertyValue('--launcher-route-duration').trim(),
     ));
   }
@@ -60,7 +51,8 @@ try {
   await waitForDocument('/faq.html');
 
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
-  await openMenuAndTapLink('about.html');
+  // Help pages use their own mobile navigation, not the launcher drawer.
+  await page.evaluate(() => location.assign(new URL('about.html', location.href)));
   await waitForDocument('/about.html');
   await page.goBack();
   await waitForDocument('/faq.html');

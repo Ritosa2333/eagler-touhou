@@ -22,6 +22,13 @@ export function primaryLauncherView(location: {pathname: string; search: string}
   return launcherSection(location) ?? 'library';
 }
 
+/** Route identity excludes filters, game details and other inline URL state. */
+export function launcherMotionPage(location: {pathname: string; search: string}) {
+  if (isLauncherHomePath(location.pathname)) return launcherSection(location) ?? 'library';
+  if (/^\/lobby(?:\.html)?\/?$/.test(location.pathname)) return 'lobby';
+  return location.pathname.replace(/\/$/, '');
+}
+
 export function profileSettingsPanel(hash: string) {
   return ['#edit', '#settings', '#security', '#game-settings'].includes(hash) ? hash : '';
 }

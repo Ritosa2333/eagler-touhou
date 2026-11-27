@@ -75,6 +75,7 @@
     object-fit: contain;
   }
   .book-masthead .book-main-nav {
+    --masthead-icon-size: calc(var(--masthead-wordmark-width) * .19);
     grid-column: 2;
     grid-row: 1;
     display: grid;
@@ -88,14 +89,14 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    gap: 9px;
+    gap: 10px;
     min-width: clamp(98px, 7.5vw, 124px);
     min-height: var(--masthead-control-size);
     padding: 0 14px;
     border: 0;
     background: transparent;
     color: var(--kit-muted-foreground);
-    font: 600 17px / 1.2 var(--kit-font);
+    font: 600 20px / 1.2 var(--kit-font);
     letter-spacing: normal;
     text-decoration: none;
     cursor: pointer;
