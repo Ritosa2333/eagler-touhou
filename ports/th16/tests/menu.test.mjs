@@ -79,6 +79,20 @@ test('暂停菜单导航：下键移动光标并响音效 10（previous 记上�
   assert.equal(frames[262].menu.menu.mode, kClosed);
 });
 
+test('in-game replay name entry wraps between the first and last rows', needDat, () => {
+  const c = byName('st1-pause-nav-600');
+  // 1.00a Oracle: pause, select Save Replay, confirm, select the first slot.
+  const presses = [[200, 0x100], [215, 0x20], [230, 0x20], [245, 1], [280, 0x10], [285, 1], [320, 1],
+                   [334, 0x10], [336, 0x20], [338, 0x40], [340, 0x10], [342, 0x20]];
+  const input = presses.flatMap(([frame, bits]) => [`${frame}:${bits}`, `${frame + 1}:0`]).join(',');
+  const frames = gameRun({...c, input}, 343);
+  for (const [step, cursor] of [[333, 0], [334, 78], [336, 0], [338, 12], [340, 90], [342, 12]]) {
+    const menu = frames[step].menu.menu;
+    assert.equal(menu.state, 0xc);
+    assert.equal(menu.name_cursor[0], cursor, `frame ${step + 1}`);
+  }
+});
+
 test('暂停菜单确定：射击键在主菜单上选「回到游戏」→ 音效 7、状态 0x10；恢复后自机继续射击', needDat, () => {
   const frames = gameRun(byName('st1-pause-shoot-600'));
   assert.deepEqual(frames[230].menu.sfx, [kSfxConfirm]);

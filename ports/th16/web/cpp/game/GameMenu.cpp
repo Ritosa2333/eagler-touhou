@@ -515,7 +515,7 @@ bool GameMenu::register_rank() {
 void GameMenu::begin_name_entry() {
     name_cursor.set(0);
     name_cursor.count = kNameCharCount;
-    name_entry_active = 1;
+    name_cursor.wrap = true;  // 0x43f8e6 / 0x44069a: +0x1dc is the cursor's wrap flag.
     std::memcpy(name, ctx.scores->stats.last_name, 9);
     name_length = 0;
     if (std::strcmp(name, ScoreFile::kDefaultName) != 0) name_cursor.move(-1);

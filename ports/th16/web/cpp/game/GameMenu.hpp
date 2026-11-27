@@ -156,9 +156,8 @@ public:
     Timer timer2;                // +0x20
     MenuCursor cursor;           // +0x34（+0x104 = cursor.wrap，菜单打开时置 1；+0x108 = cursor.disabled_count，切模式时清零）
     i32 cursor_previous = 0;     // +0x38
-    MenuCursor name_cursor;      // +0x10c
+    MenuCursor name_cursor;      // +0x10c（+0x1dc = name_cursor.wrap）
     i32 name_cursor_previous = 0;// +0x110
-    i32 name_entry_active = 0;   // +0x1dc
     u32 menu_vm = 0;             // +0x1e4
     u32 screenshot_vm = 0;       // +0x1e8
     Mode mode = Closed;          // +0x1ec

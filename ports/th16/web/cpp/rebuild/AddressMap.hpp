@@ -662,6 +662,7 @@ constexpr AddressAnchor kAnchors[] = {
     {"game-menu-resume", 0x43F6A0, "game/GameMenu.cpp GameMenu::resume_game（模式 0 播放时长、flags &= ~0x10、速度 / 对话 0x42b820 / HUD 0x42c5c0 / 声音线程状态恢复）/ 0x43f740 / 0x43f790 close_overlay（截屏与菜单 VM 中断 1）"},
     {"game-menu-continue", 0x43F980, "game/GameMenu.cpp GameMenu::continue_game（case 0x10 模式 2 光标 0：Extra → 场景 0xe；残机 2 / 碎片 0 / 炸弹 2 / 火力 per 级 + 0x43ddf0(per×4) / 0x4440e0 子机 / 续关 +1 上限 9 / 分数 0 / 剩余续关 −1 / 0x440bd0 + 0x45ed00(2,-1,曲名) 续播）"},
     {"game-menu-rank", 0x43F7E0, "game/GameMenu.cpp GameMenu::register_rank（普通模式 0x43e250 入榜 → 光标槽 0x19 停在名次、名字缓冲取最近名字 +0x19f8c、与 8 空格不同则名字光标 −1、长度为末尾非空格位；练习更新 +0x5198 最高分；Extra 练习以关卡 9 记）"},
+    {"game-menu-name-cursor", 0x4401D8, "game/GameMenu.cpp GameMenu::run_state_machine（0xc / 0xf 共用 13 列字符表；0x43f8e6 / 0x44069a 初始化循环标志 +0x1dc）"},
     {"score-insert-rank", 0x43E250, "game/ScoreFile.hpp ScoreFile::insert_rank（首个 score ≤ 新分 的位置整体下移，新条目名字 8 空格、关卡 / 续关 / 时间 / 慢放率 / 季节）"},
     {"score-defaults", 0x4493C0, "game/ScoreFile.cpp reset_block（ScoreBlock 0x5318：6 难度 × 10 条 {100000 − 10000·i, 关卡 1, --------}；符卡 +0x90 序号 / +0x94 DAT_00491700 难度）"},
     {"game-menu-screenshot", 0x43EF20, "game/GameMenu.cpp GameMenu::capture_screenshot（text.anm 0x34 UI VM；后备缓冲 384×448 场地区域拷进其纹理属渲染侧）"},
