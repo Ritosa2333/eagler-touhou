@@ -8,6 +8,7 @@ void construct_animation_base(AnimationBase& a) noexcept {
     std::memset(reinterpret_cast<unsigned char*>(&a)+0x444,0,sizeof(a)-0x444);
 }
 void construct_animation(Animation& a) noexcept {
+    invalidate_layer_index();
     construct_animation_base(a.base);
     a.handle=a.index=0;a.timer_4c8={};a.timer_4d8={};a.field_4e8=0;
     for(auto& link:a.links)link={&a,nullptr,nullptr,nullptr,nullptr};
@@ -20,6 +21,7 @@ void construct_pooled_animation(PooledAnimation& a) noexcept {
     construct_animation(a.animation);a.free_link={};a.active=0;a.index=0;
 }
 void reset_animation_state(Animation& a) noexcept {
+    invalidate_layer_index();
 #ifdef TH_SDL3
     // Retail 4299d0 only resets selected fields. Reusing a VM can therefore
     // retain script variables, interpolation timers, callbacks and geometry
@@ -48,5 +50,5 @@ void reset_animation_state(Animation& a) noexcept {
     b.interpolation_2a0.duration=b.interpolation_2f4.duration=b.interpolation_320.duration=b.interpolation_34c.duration=0;
     a.fields_550[8]=0; // +0x570
 }
-void clear_animation_suffix(Animation& a) noexcept { a.field_5dc=a.field_5e0=0; }
+void clear_animation_suffix(Animation& a) noexcept { invalidate_layer_index();a.field_5dc=a.field_5e0=0; }
 }

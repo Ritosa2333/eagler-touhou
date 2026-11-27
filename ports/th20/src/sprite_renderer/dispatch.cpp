@@ -7,16 +7,61 @@
 #include "sprite.hpp"
 #include "../../../web/cpp/sdl/HitboxDisplay.hpp"
 #include "quad.hpp"
+#include <vector>
 extern "C" void sdl_startup_branding_draw(unsigned alpha);
 #endif
 namespace th20::source::sprite {
+namespace {
+std::int32_t effective_layer(const Animation& a,bool secondary) noexcept {
+    auto effective=static_cast<std::int32_t>(a.base.fields_10_28[1]);
+    if(secondary){if(effective>=29 && effective<=36)effective+=17;else effective=effective==26?45:47;}
+    else {if(effective>=46 && effective<=53)effective-=17;else if(effective==45)effective=26;}
+    return effective;
+}
+#ifdef TH_SDL3
+// SDL3 build: each of the ~50 layer draws of a frame used to walk every
+// animation of both groups to pick the ones on its layer; with thousands of
+// bullets and bomb particles that walk was a third of the game's CPU time.
+// The groups are now split by layer in one walk and the split is reused
+// until something changes list membership, order or an animation's layer
+// (invalidate_layer_index, called by every such change). The skip flag is
+// read at selection time, as before, so the selection is the same.
+constexpr std::int32_t indexed_layers=64;
+std::uint32_t layer_version=1;
+struct LayerIndex {
+    std::uint32_t version=0;const AnimationList* lists=nullptr;
+    std::vector<Animation*> layers[2][indexed_layers];
+} layer_index;
+void build_layer_index(AnimationList* group) {
+    for(auto& per_group:layer_index.layers)for(auto& layer:per_group)layer.clear();
+    for(int secondary=0;secondary<2;++secondary)
+        for(scheduler::Iterator it(reinterpret_cast<scheduler::Link*>(group[secondary].sentinel.next));it.current;it.advance()){
+            auto* a=reinterpret_cast<Animation*>(it.current->value);
+            const auto effective=effective_layer(*a,secondary!=0);
+            if(effective>=0&&effective<indexed_layers)layer_index.layers[secondary][effective].push_back(a);
+        }
+    layer_index.version=layer_version;layer_index.lists=group;
+}
+std::uint32_t select_indexed_animations(AnimationList* group,std::int32_t layer,bool secondary) {
+    if(layer_index.version!=layer_version||layer_index.lists!=group)build_layer_index(group);
+    initialize_animation_list(group[2]);std::uint32_t selected=0;
+    for(auto* a:layer_index.layers[secondary?1:0][layer]){
+        if(a->fields_550[8])continue;
+        initialize_animation_link(a->links[1],a);scheduler::append(reinterpret_cast<scheduler::List&>(group[2]),reinterpret_cast<scheduler::Link&>(a->links[1]));++selected;
+    }return selected;
+}
+#endif
+}
+#ifdef TH_SDL3
+void invalidate_layer_index() noexcept {++layer_version;}
+#else
+void invalidate_layer_index() noexcept {}
+#endif
 std::uint32_t select_layer_animations(AnimationList* group,std::int32_t layer,bool secondary) noexcept {
     initialize_animation_list(group[2]);std::uint32_t selected=0;
     for(scheduler::Iterator it(reinterpret_cast<scheduler::Link*>(group[secondary?1:0].sentinel.next));it.current;it.advance()){
         auto& a=*reinterpret_cast<Animation*>(it.current->value);if(a.fields_550[8])continue;
-        auto effective=static_cast<std::int32_t>(a.base.fields_10_28[1]);
-        if(secondary){if(effective>=29 && effective<=36)effective+=17;else effective=effective==26?45:47;}
-        else {if(effective>=46 && effective<=53)effective-=17;else if(effective==45)effective=26;}
+        const auto effective=effective_layer(a,secondary);
         if(effective==layer){initialize_animation_link(a.links[1],&a);scheduler::append(reinterpret_cast<scheduler::List&>(group[2]),reinterpret_cast<scheduler::Link&>(a.links[1]));++selected;}
     }return selected;
 }
@@ -70,7 +115,14 @@ void draw_selected_animations(Controller& c,AnimationList* group) {
 }
 std::int32_t draw_animation_layer(Controller& c,std::int32_t layer) {
     std::lock_guard lock(runtime::shared_locks().slot(9));
+#ifdef TH_SDL3
+    for(bool secondary:{false,true}){
+        const auto selected=layer<0||layer>=indexed_layers?select_layer_animations(c.lists,layer,secondary):select_indexed_animations(c.lists,layer,secondary);
+        if(selected){configure_animation_layer(c,layer,0);draw_selected_animations(dispatch_environment::controller(),c.lists);}
+    }
+#else
     for(bool secondary:{false,true})if(select_layer_animations(c.lists,layer,secondary)){configure_animation_layer(c,layer,0);draw_selected_animations(dispatch_environment::controller(),c.lists);}
+#endif
 #ifdef TH_SDL3
     web::draw_hitbox_layer(c,layer);
 #endif

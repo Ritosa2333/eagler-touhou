@@ -18,7 +18,7 @@ void spawn_named_animation(Controller& c,AnimationFile& file,std::uint32_t& out,
     select_animation_template(file,animation,script);
     animation.field_4e8=reinterpret_cast<std::uint32_t>(group);animation.base.flags[1]|=0x200;
     if(layer>=0) {
-        animation.base.fields_10_28[1]=static_cast<std::uint32_t>(layer);
+        invalidate_layer_index();animation.base.fields_10_28[1]=static_cast<std::uint32_t>(layer);
         if(layer<24) animation.base.flags[2]=(animation.base.flags[2]&~0x03000000u)|0x01000000u;
     }
     if(!position && !(flags&8)) animation.vector_5bc={};
