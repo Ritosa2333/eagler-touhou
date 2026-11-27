@@ -158,32 +158,47 @@ try {
         const surprise = await page.$eval(stinger, async cut => {
           const face = cut.querySelector('img');
           const animations = cut.getAnimations({subtree:true});
-          const [timer] = animations;
+          const timer = animations.find(animation => animation.animationName === 'loading-stinger-window');
           const {delay, duration, iterations} = timer.effect.getTiming();
-          timer.pause();
-          await timer.ready;
-          const visibilityAt = time => {
-            timer.currentTime = time;
-            return getComputedStyle(cut).visibility;
+          animations.forEach(animation => animation.pause());
+          await Promise.all(animations.map(animation => animation.ready));
+          const frameAt = time => {
+            animations.forEach(animation => { animation.currentTime = time; });
+            return {
+              visibility:getComputedStyle(cut).visibility,
+              shade:Number(getComputedStyle(cut,'::before').opacity),
+              portrait:face.getBoundingClientRect(),
+            };
           };
-          const before = visibilityAt(delay - 1);
-          const entry = visibilityAt(delay);
+          const before = frameAt(delay - 1);
+          const entry = frameAt(delay);
+          const rising = frameAt(delay + 125);
+          const held = frameAt(delay + 530);
+          const stillHeld = frameAt(delay + 1100);
+          const retreating = frameAt(delay + 1430);
+          const exit = frameAt(delay + duration - 1);
           const box = cut.getBoundingClientRect();
-          const portrait = face.getBoundingClientRect();
-          const held = visibilityAt(delay + duration - 1);
+          const portrait = held.portrait;
           const coversViewport = box.left === 0 && box.top === 0 && box.width === innerWidth && box.height === innerHeight;
           const fillsFrame = portrait.left < 0 && portrait.right > box.right && portrait.top < 0 && portrait.bottom > box.bottom;
           return {
-            delay,duration,iterations,before,entry,held,coversViewport,fillsFrame,
-            isHardCut:animations.length === 1 && getComputedStyle(cut).animationTimingFunction === 'steps(1)',
+            delay,duration,iterations,coversViewport,fillsFrame,
+            visibility:[before.visibility,entry.visibility,held.visibility,exit.visibility],
+            entersFromBelow:entry.portrait.top >= box.bottom && rising.portrait.top < box.bottom && rising.portrait.top > portrait.top,
+            holdsStill:stillHeld.portrait.top === portrait.top,
+            exitsDownward:retreating.portrait.top > portrait.top && retreating.portrait.top < box.bottom && exit.portrait.top >= box.bottom,
+            staysSameSize:[entry,rising,retreating,exit].every(frame => frame.portrait.width === portrait.width),
+            shadeFades:entry.shade === 0 && rising.shade > 0 && rising.shade < 1 && held.shade === 1
+              && retreating.shade > 0 && retreating.shade < 1 && exit.shade < .01,
           };
         });
         assert.equal(surprise.delay,10000);
-        assert.equal(surprise.duration,900);
+        assert.equal(surprise.duration,1550);
         assert.equal(surprise.iterations,1);
-        assert.deepEqual([surprise.before,surprise.entry,surprise.held],['hidden','visible','visible']);
+        assert.deepEqual(surprise.visibility,['hidden','visible','visible','visible']);
         assert.ok(surprise.coversViewport && surprise.fillsFrame, `Kogasa fills the viewport at ${width}×${height}`);
-        assert.equal(surprise.isHardCut,true, 'the reveal has no zoom or fade');
+        assert.ok(surprise.entersFromBelow && surprise.holdsStill && surprise.exitsDownward, `Kogasa slides in, holds and slides out at ${width}×${height}`);
+        assert.ok(surprise.staysSameSize && surprise.shadeFades, 'the face does not zoom and the backdrop fades');
       }
       const finishCut = randomValue => page.$eval(stinger, async (cut, randomValue) => {
         const random = Math.random;
@@ -212,7 +227,7 @@ try {
     }
     await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
     if (id === 'umbrella') {
-      assert.deepEqual(await page.$eval(stinger, cut => [getComputedStyle(cut).visibility, cut.getAnimations().length]), ['hidden',0]);
+      assert.deepEqual(await page.$eval(stinger, cut => [getComputedStyle(cut).visibility, cut.getAnimations({subtree:true}).length]), ['hidden',0]);
     }
     for (const [width,height] of [[1440,900],[515,627],[320,640],[640,320]]) {
       await page.setViewport({width,height});
@@ -224,7 +239,7 @@ try {
     await page.evaluate(() => document.body.classList.add('less-motion'));
     assert.ok((await snapshotScene(id)).motion.every(name => name === 'none'));
     if (id === 'umbrella') {
-      assert.deepEqual(await page.$eval(stinger, cut => [getComputedStyle(cut).visibility, cut.getAnimations().length]), ['hidden',0]);
+      assert.deepEqual(await page.$eval(stinger, cut => [getComputedStyle(cut).visibility, cut.getAnimations({subtree:true}).length]), ['hidden',0]);
     }
     await page.evaluate(() => document.body.classList.remove('less-motion'));
     await page.setViewport({width:1440,height:900});

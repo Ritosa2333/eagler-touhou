@@ -77,6 +77,9 @@
     filter:drop-shadow(0 1px 1px rgb(0 0 0 / .42));
   }
   .loading-scene-stinger {
+    --stinger-duration:1550ms;
+    --stinger-face-size:max(124vw, 132svh);
+    --stinger-offscreen:calc(54dvh + var(--stinger-face-size) / 2);
     position:fixed;
     inset:0;
     inline-size:100vw;
@@ -85,26 +88,44 @@
     overflow:clip;
     pointer-events:none;
     visibility:hidden;
-    background:radial-gradient(ellipse at 50% 40%, #301c3e 0%, #100b18 64%, #07060b 100%);
-    animation:loading-stinger-window 900ms step-end var(--stinger-delay);
+    animation:loading-stinger-window var(--stinger-duration) step-end var(--stinger-delay);
   }
-  .loading-scene-stinger::after {
+  .loading-scene-stinger::before, .loading-scene-stinger::after {
     content:"";
     position:absolute;
     inset:0;
+    opacity:0;
+    animation:loading-stinger-shade var(--stinger-duration) ease-in-out var(--stinger-delay);
+  }
+  .loading-scene-stinger::before {
+    background:radial-gradient(ellipse at 50% 40%, #301c3e 0%, #100b18 64%, #07060b 100%);
+  }
+  .loading-scene-stinger::after {
     background:radial-gradient(ellipse at 50% 55%, transparent 42%, #08050d80 100%);
   }
   .loading-scene-stinger-face {
     position:absolute;
     inset:48% auto auto 50%;
-    inline-size:max(124vw, 132svh);
+    inline-size:var(--stinger-face-size);
     max-inline-size:none;
     block-size:auto;
     translate:-50% -50%;
+    transform:translateY(var(--stinger-offscreen));
+    animation:loading-stinger-peek var(--stinger-duration) var(--stinger-delay);
   }
   @keyframes loading-stinger-window {
     from {visibility:visible}
     to {visibility:hidden}
+  }
+  @keyframes loading-stinger-shade {
+    0%, 100% {opacity:0}
+    26%, 79% {opacity:1}
+  }
+  @keyframes loading-stinger-peek {
+    0% {transform:translateY(var(--stinger-offscreen));animation-timing-function:cubic-bezier(.38,0,.28,1)}
+    23% {transform:translateY(-6px);animation-timing-function:ease-out}
+    30%, 79% {transform:translateY(0);animation-timing-function:cubic-bezier(.55,0,.76,.45)}
+    100% {transform:translateY(var(--stinger-offscreen))}
   }
   [data-scene-motion="drift"] {animation:loading-scene-drift 4.8s ease-in-out infinite}
   [data-scene-motion="breathe"] {animation:loading-scene-breathe 4s ease-in-out infinite}
@@ -132,8 +153,10 @@
     33%, 47% {transform:translateY(var(--scene-lift));}
   }
   :is(.less-motion, [data-still]) .loading-scene [data-scene-motion] {animation:none}
-  .less-motion .loading-scene-stinger {animation:none}
+  .less-motion :is(.loading-scene-stinger,.loading-scene-stinger-face),
+  .less-motion .loading-scene-stinger::before, .less-motion .loading-scene-stinger::after {animation:none}
   @media (prefers-reduced-motion:reduce) {
-    .loading-scene [data-scene-motion], .loading-scene-stinger {animation:none}
+    .loading-scene [data-scene-motion], .loading-scene-stinger, .loading-scene-stinger-face,
+    .loading-scene-stinger::before, .loading-scene-stinger::after {animation:none}
   }
 }
