@@ -72,7 +72,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
   const [exiting, setExiting] = useState<readonly DirectoryRoom[]>([]);
   useEffect(() => () => {exitTimers.current.forEach(timer => {window.clearTimeout(timer);}); exitTimers.current.clear();}, []);
   useLayoutEffect(() => {
-    if (snapshot.connection !== 'live' || snapshot.loading) return;
+    if (snapshot.connection !== 'live' || loading) return;
     const removed = previousVisible.current.filter(room => !liveRoomKeys.has(roomKey(room)));
     previousVisible.current = sortedRooms;
     const returned = new Set<string>();
