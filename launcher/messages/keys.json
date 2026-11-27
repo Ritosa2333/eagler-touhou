@@ -1,4 +1,8 @@
 {
+  "beautyPacks.title": {"id": "beautyPacks_title", "params": []},
+  "beautyPacks.enableAll": {"id": "beautyPacks_enableAll", "params": []},
+  "beautyPacks.restoreAll": {"id": "beautyPacks_restoreAll", "params": []},
+  "beautyPacks.empty": {"id": "beautyPacks_empty", "params": []},
   "loadingTip.controls": {"id": "loadingTip_controls", "params": []},
   "loadingTip.touch": {"id": "loadingTip_touch", "params": []},
   "loadingTip.replay": {"id": "loadingTip_replay", "params": []},

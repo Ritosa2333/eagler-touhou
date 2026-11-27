@@ -4,6 +4,7 @@ import {lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, u
 import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS, type ProductId} from '../src/contracts/product-catalog.mts';
+import {descriptorGameVersion} from '../package/game-version.mjs';
 import {multiplayerGuidePath} from '../lib/multiplayer-guide.mjs';
 import {buildMultiplayerDiagnosticRelayUrl} from '../src/launcher/multiplayer-relay-url.mts';
 import {generateMultiplayerRoomCode} from '../src/launcher/multiplayer-identity.mts';
@@ -16,6 +17,7 @@ import {useStoreSelector, shallowEqual} from './shared/react-store';
 import {RoomComposition} from './session/RoomComposition';
 import {RoomSettingsDrawer, MultiplayerSettingsControls, MultiplayerDiagnostics, MultiplayerOnlineFold} from './components/room';
 import {LauncherMasthead, MainSelect, createLibraryProducts} from './components/launcher';
+import type {LibraryProduct} from './components/launcher/products';
 import {LobbyDirectoryView} from './components/directory/LobbyDirectoryView';
 import {NetworkDiagnosticsDialog, type NetworkDiagnosticsHandle} from './components/directory/NetworkDiagnosticsDialog';
 import {DirectoryRoomDialog} from './components/directory/DirectoryRoomDialog';
@@ -24,6 +26,7 @@ import {FirstUseNotice, DonationDialog, AppleRefreshDialog,
 import {GameDataImportWindows} from './components/player/GameDataImportWindows';
 import {LoadingActivity} from './ui/loading-activity';
 import {GameDownloadProgress} from './components/launcher/GameDownloadProgress';
+import {BeautyPackManager} from './components/launcher/BeautyPackManager';
 import {MultiplayerQuickChat} from './components/player/MultiplayerQuickChat';
 import {PlayerControls} from './components/player/PlayerControls';
 import {FullscreenTransient} from './components/FullscreenTransient';
@@ -86,6 +89,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const host: LauncherHost = {
     desktopLibraryDetails: true,
     librarySearchTarget,
+    libraryTools: <SessionBeautyPacks session={session} products={products}/>,
     locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, preferences: session.preferences, touchLayout: session.touchLayout,
     settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions, readLocalSaves:session.readLocalSaves, cloudSync:session.cloudSync,
     watchTh09Replay: session.accessTh09MatchReplay,
@@ -264,6 +268,20 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
     onReplay={() => {void session.openReplayViewer(directory.selectedProduct || directory.products[0] || 'th06mp').catch(session.reportError);}}
     onOpenForm={mode => {if (session.directory.prepareForm(mode)) navigation.openDirectoryForm(mode);}}/>;
 }
+function SessionBeautyPacks({session, products}: {session: BrowserSession; products: readonly LibraryProduct[]}) {
+  const installed = useStoreSelector(session.metadata, value => value.beautyInstalled);
+  const settings = session.settings;
+  useSyncExternalStore(settings.subscribe, settings.getGameVersionsRevision, settings.getGameVersionsRevision);
+  const works = products.filter(product => !product.multiplayer && !product.hidden &&
+    product.gameId !== 'th075' && installed.has(product.gameId));
+  return <BeautyPackManager works={works.map(work => ({...work, version: settings.getGameVersion(work.gameId)}))}
+    onSetVersions={(games, version) => {
+      const selected = settings.getSnapshot()?.gameId;
+      const changed = settings.setGameVersions(games.filter(game => installed.has(game)), version);
+      for (const game of changed) if (game !== selected) void session.metadata.refreshInstalled(game);
+    }}/>;
+}
+
 function SessionLaunchActions({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation(), {t} = useLocale();
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
@@ -272,7 +290,9 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
     ? 'active' : value.pending.some(job => job.game === settings?.gameId) ? 'queued' : null);
   const checking = useStoreSelector(session, value => value.soloResourceCheck === settings?.gameId);
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
-  const ready = metadata.installed.has(settings.gameId) || hasBundledGameData(metadata, settings.gameId);
+  const installed = metadata.installed.get(settings.gameId);
+  const ready = settings.gameVersion === 'beauty' ? metadata.beautyInstalled.has(settings.gameId)
+    : (!!installed && descriptorGameVersion(installed.descriptor) === 'original') || hasBundledGameData(metadata, settings.gameId);
   const downloadable = canInstallGameData(metadata, settings.gameId);
   const labels = {
     active: t('downloadTasks.downloading'), queued: t('downloadTasks.queued'),

@@ -26,6 +26,8 @@ import { Tabs, Tooltip } from 'radix-ui';
 import { lazy, Suspense, type ReactNode, useEffect, useState } from 'react';
 import { useHref, useLocation } from 'react-router';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import {BeautyPackManager} from '../components/launcher/BeautyPackManager';
+import {createLibraryProducts} from '../components/launcher/products';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
 import { LibraryAnnouncements } from '../components/launcher/LibraryAnnouncements';
 import { bookGameArtwork } from '../components/launcher/book-artwork';
@@ -73,6 +75,8 @@ export default function UiReview() {
     <LocaleProvider locale={catalogLocale}>
       {import.meta.env.DEV && preview === 'loading'
         ? <LoadingActivityPreview/>
+        : import.meta.env.DEV && preview === 'beauty-packs'
+        ? <BeautyPackPreview/>
         : import.meta.env.DEV && preview === 'room-chat'
         ? <div className="ui-review"><main className="catalog-main"><RoomExample chatDemo announce={() => {}}/></main></div>
         : Th09RatingsPreview && preview === 'th09-ratings'
@@ -80,6 +84,22 @@ export default function UiReview() {
         : <Catalog />}
     </LocaleProvider>
   );
+}
+
+function BeautyPackPreview() {
+  const base = useHref('/');
+  const [works, setWorks] = useState(() => createLibraryProducts(['th06', 'th07', 'th08', 'th09'], path => base + path, () => base)
+    .map((work, index) => ({...work, version: index % 2 === 0 ? 'beauty' as const : 'original' as const})));
+  return <main className="ui-review">
+    <header className="ui-review-header">
+      <div className="book-tools">
+        <BeautyPackManager works={works} defaultOpen onSetVersions={(games, version) => {
+          setWorks(values => values.map(work => games.includes(work.gameId) ? {...work, version} : work));
+        }}/>
+      </div>
+      <BookThemeToggle/>
+    </header>
+  </main>;
 }
 
 function LoadingActivityPreview() {

@@ -1,4 +1,8 @@
 {
+  "beautyPacks_title": "外観パック",
+  "beautyPacks_enableAll": "すべて有効にする",
+  "beautyPacks_restoreAll": "すべて原作に戻す",
+  "beautyPacks_empty": "インストール済みの外観パックはありません",
   "loadingTip_controls": "操作を忘れたら、ゲーム中に右上の「？」から確認できます。",
   "loadingTip_touch": "ボタンに指が届きませんか？「キーとタッチ」で位置や大きさを調整できます。",
   "loadingTip_replay": "リプレイファイルは「リプレイ鑑賞」ウィンドウにドロップして取り込めます。",

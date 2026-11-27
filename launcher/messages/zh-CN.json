@@ -1,4 +1,8 @@
 {
+  "beautyPacks_title": "美化包",
+  "beautyPacks_enableAll": "全部启用",
+  "beautyPacks_restoreAll": "全部切回原版",
+  "beautyPacks_empty": "暂无已安装的美化包",
   "loadingTip_controls": "忘了怎么操作？进游戏后点右上角的「？」就能看操作说明。",
   "loadingTip_touch": "手机按键够不到？在「按键与触控」里可以拖动按键，也能调大小。",
   "loadingTip_replay": "手上有录像文件？直接拖进「观赏 Replay」窗口就能导入。",

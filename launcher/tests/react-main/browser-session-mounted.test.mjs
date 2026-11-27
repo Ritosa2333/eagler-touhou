@@ -1274,17 +1274,42 @@ function fixtureDataLayout(game) {
     : `sha256-${'b'.repeat(64)}`;
 }
 
-function importPackageFile(game = 'th06') {
+function importPackageFile(game = 'th06', gameVersion) {
   const data = new Uint8Array([1, 2, 3]), hash = createHash('sha256').update(data).digest('hex');
   const dataTarget=api.PRODUCT_GAMES[game].package.dataTarget,dataSource=dataTarget.slice(1);
   const files = Object.fromEntries([['game-data', dataSource, dataTarget], ['font', 'msgothic.ttc', '/msgothic.ttc'], ['unicode', 'unifont.otf', '/unifont.otf']]
     .map(([id, source, target]) => [id, {source, target, revision: `${id}-r1`, bytes: data.length, sha256: hash}]));
-  const descriptor = {schema: 'eagler-touhou/package/1', game, revision: 'synthetic-import-r1',
+  const descriptor = {schema: 'eagler-touhou/package/1', game, gameVersion, revision: 'synthetic-import-r1',
     runtimeRequirement: {protocol: 'eagler-touhou/1', target: game, dataFile: 'game-data', dataLayout: fixtureDataLayout(game)},
     files, base: {files: ['game-data', 'font', 'unicode']}, components: {}};
   const archive = zipSync({'package.json': strToU8(JSON.stringify(descriptor)), [dataSource]: data, 'msgothic.ttc': data, 'unifont.otf': data}, {level: 0});
   return new NativeFile([archive], `${game}.zip`, {type: 'application/zip'});
 }
+
+test('actual BrowserLauncher: library visual packs lists local beautified packages and shares game version preferences', async () => {
+  await mountBrowser({initial: '/en.html', host: subsetHost(['th06', 'th07', 'th08']), seedPackages: ['th08']});
+  const session = api.getTestSession();
+  await click('.beauty-packs-trigger');
+  await until(() => env.document.querySelector('.beauty-packs-empty'), 'empty visual packs dialog');
+  await React.act(async () => {
+    for (const game of ['th06', 'th07']) await session.acquisition.importPackage({game, file: importPackageFile(game, 'beauty')});
+  });
+  const dialog = () => env.document.querySelector('.beauty-packs-dialog');
+  const toggles = () => [...dialog().querySelectorAll('[role="switch"]')].map(item => item.getAttribute('aria-checked'));
+  await until(() => dialog().querySelectorAll('[role="switch"]').length === 2, 'only locally installed visual packs');
+  assert.deepEqual(toggles(), ['false', 'false']);
+  assert.equal(dialog().textContent.includes('th08'), false, 'an installed original does not count as a visual pack');
+  await click('.beauty-packs-tools button:first-child');
+  assert.deepEqual(toggles(), ['true', 'true']);
+  assert.equal(session.settings.getGameVersion('th07'), 'beauty');
+  await click('.beauty-packs-list li:first-child [role="switch"]');
+  assert.deepEqual(toggles(), ['false', 'true']);
+  assert.equal(session.settings.getGameVersion('th06'), 'original');
+  await click('.beauty-packs-tools button:last-child');
+  assert.deepEqual(toggles(), ['false', 'false']);
+  assert.equal(session.settings.getGameVersion('th07'), 'original');
+});
+
 async function selectImport(file) {
   await click('#transferImport');
   const input = node('#fileInput'); assert.equal(input.accept, '.zip,.dat,application/zip');

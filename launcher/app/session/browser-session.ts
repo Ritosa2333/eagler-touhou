@@ -2,7 +2,6 @@ import {collectLocalSaveFiles, readLocalSaveFiles} from '../services/local-save-
 import {accountsEnabled} from '../release-features';
 import type {CloudSaveSync} from '../services/cloud-save-sync';
 import {createRelayEntryRouting} from '../../src/launcher/relay-entry-routing.mts';
-import {loadGameVersion} from "../../package/game-version.mjs";
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
@@ -212,8 +211,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   let versionSwitch: Promise<void> | null = null;
   let roomSettingsBaseline: {settings: SettingsSnapshot; epoch: number} | null = null;
-  const selectedVersion = (game: GameId) => settings.getSnapshot()?.gameId === game
-    ? settings.getSnapshot()!.gameVersion : loadGameVersion(storage, game);
+  const selectedVersion = (game: GameId) => settings.getGameVersion(game);
   function applyGameAudio(preference: SettingsSnapshot | null) {
     const game = runtime?.getSnapshot().game;
     const selected = game && preference?.gameId !== game ? activeSettings : preference;
@@ -335,6 +333,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       pendingHostSelection = {productId: product, hasSelection: hadSelection && current.products.includes(product)};
       if (navigation) {navigation.applyHostSelection(pendingHostSelection); pendingHostSelection = null;}
       if (roomSession?.service.getSnapshot().room && host.shared.netplayRelay) roomSession.service.reconnect();
+    }
+    const active = settings.getSnapshot();
+    if (active && active.context.beautyInstalled !== current.beautyInstalled.has(active.gameId)) {
+      settings.refreshContext(settingsContext(active.context.productId, snapshot.locale));
     }
     diagnostics?.refresh();
     publish({metadataRevision: snapshot.metadataRevision + 1});

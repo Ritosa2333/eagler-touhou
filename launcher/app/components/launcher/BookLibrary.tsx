@@ -43,6 +43,7 @@ import {useBookDisclosures} from './use-book-disclosures';
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
   compact?: boolean;
   mobileSearchTarget?: HTMLElement | null;
+  tools?: ReactNode;
   detail?: ReactNode;
   onBrowse?: () => void;
 };
@@ -59,7 +60,7 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 const defaultDisclosures = {windows: true, versus: true, fighting: true};
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, mobileSearchTarget, detail, onBrowse }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, mobileSearchTarget, tools, detail, onBrowse }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
   const showDetail = !compact && detail != null;
@@ -332,6 +333,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                   ))}
                 </SelectContent>
               </Select>
+              {tools}
             </div>
           </div>
           <div

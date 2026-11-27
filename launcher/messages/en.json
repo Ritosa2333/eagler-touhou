@@ -1,4 +1,8 @@
 {
+  "beautyPacks_title": "Visual packs",
+  "beautyPacks_enableAll": "Enable all",
+  "beautyPacks_restoreAll": "Use originals",
+  "beautyPacks_empty": "No visual packs installed",
   "loadingTip_controls": "Forgot the controls? Select the ? in the top-right corner while in game.",
   "loadingTip_touch": "A button out of reach? Move or resize it in Controls & Touch.",
   "loadingTip_replay": "Have a replay file? Drop it into the Watch Replay window to import it.",
