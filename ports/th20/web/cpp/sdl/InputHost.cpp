@@ -153,18 +153,22 @@ struct SdlHost : Host {
         if (index < 0 || index >= 4 || !pads[index] || !SDL_GamepadConnected(pads[index])) return DIERR_INPUTLOST;
         auto* pad = pads[index];
         std::memset(output, 0, sizeof *output);
+        // The game sets every axis to the range -1000..1000 (input_win32.cpp
+        // set_axis_range) and compares lX / lY against its deadzone around 0,
+        // so report that range: the DirectInput default 0..65535 put a pad at
+        // rest at +32768, which read as right and down held.
         LONG* axes = &output->lX;
         for (int n = 0; n < 6; ++n) {
             const int value = SDL_GetGamepadAxis(pad, pad_axes[n]);
             const double unit = value < 0 ? value / 32768. : value / 32767.;
-            axes[n] = LONG(std::floor((unit + 1) * 32767.5 + .5));
+            axes[n] = LONG(std::lround(unit * 1000));
         }
         for (std::uint32_t n = 0; n < sizeof(pad_slots) / sizeof(*pad_slots); ++n)
             if (SDL_GetGamepadButton(pad, pad_slots[n])) output->rgbButtons[n] = 0x80;
         const int x = int(SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT)) - int(SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_LEFT));
         const int y = int(SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_DOWN)) - int(SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_UP));
-        if (x) { output->lX = x > 0 ? 65535 : 0; }
-        if (y) { output->lY = y > 0 ? 65535 : 0; }
+        if (x) { output->lX = x > 0 ? 1000 : -1000; }
+        if (y) { output->lY = y > 0 ? 1000 : -1000; }
         output->rgdwPOV[0] = (x || y)
             ? std::uint32_t((int(std::round(std::atan2(double(x), double(-y)) * 180 / 3.141592653589793)) + 360) % 360) * 100
             : ~0u;
