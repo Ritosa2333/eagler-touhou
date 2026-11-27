@@ -56,7 +56,7 @@ export function useLibraryMotion(grid: RefObject<HTMLDivElement | null>) {
       active.current.forEach(animation => {animation.cancel();}); active.current = [];
       inert.current.forEach(node => {node.removeAttribute('inert');}); inert.current = [];
       if (!nextIds && !reorder) {
-        animate(element, [{opacity: .65}, {opacity: 1}]);
+        animate(element, [{opacity: .82}, {opacity: 1}]);
         return;
       }
       const nextCards = Array.from(element.querySelectorAll<HTMLElement>(':scope > .book-card'));
@@ -71,7 +71,7 @@ export function useLibraryMotion(grid: RefObject<HTMLDivElement | null>) {
     };
     if (!leaving.length) {finish(); return;}
     inert.current = leaving; leaving.forEach(node => {node.setAttribute('inert', '');});
-    const exits = leaving.map(node => animate(node, [{opacity: 1}, {opacity: nextIds ? 0 : .65}], 130, true));
+    const exits = leaving.map(node => animate(node, [{opacity: 1}, {opacity: nextIds ? 0 : .82}], 110, true));
     void Promise.all(exits.map(animation => animation.finished.catch(() => {}))).then(finish);
   };
   return {run, cancel};

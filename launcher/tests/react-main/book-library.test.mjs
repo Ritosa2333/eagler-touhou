@@ -45,11 +45,11 @@ const ids = () => [...env.document.querySelectorAll('.book-grid [data-book-produ
 test('reordering keeps a short directional nudge even for a large layout change', () => {
   const [start, end] = api.microReorderFrames(120, -160);
   const [x, y] = start.translate.split(' ').map(value => Number.parseFloat(value));
-  assert.ok(Math.abs(Math.hypot(x, y) - 6) < 1e-8);
+  assert.ok(Math.abs(Math.hypot(x, y) - 3) < 1e-8);
   assert.ok(x > 0 && y < 0);
-  assert.equal(start.opacity, .78);
+  assert.equal(start.opacity, .9);
   assert.deepEqual(end, {translate:'0px 0px', opacity:1});
-  assert.deepEqual(api.microReorderFrames(3, 4)[0], {translate:'3px 4px'});
+  assert.deepEqual(api.microReorderFrames(1, 2)[0], {translate:'1px 2px'});
 });
 test('multiplayer game picker and covers share selection while favorites persist and sort first', async () => {
   const products=api.createLibraryProducts(['th06mp','th07mp','th08mp'],p=>p,id=>'?game='+id);

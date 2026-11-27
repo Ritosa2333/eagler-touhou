@@ -7,7 +7,7 @@
   }
   .loading-activity {
     --loading-face-size: clamp(32px, 7vmin, 48px);
-    --loading-hop: -4px;
+    --loading-hop: -2px;
     display: grid;
     justify-items: center;
     gap: 14px;
@@ -23,7 +23,7 @@
     object-fit: cover;
     object-position: left center;
   }
-  .loading-activity-dots {display:inline-flex;vertical-align:baseline;--loading-hop:-2px;}
+  .loading-activity-dots {display:inline-flex;vertical-align:baseline;--loading-hop:-1px;}
   :is(.loading-activity-faces img, .loading-activity-dots > span) {
     animation: ui-loading-hop 1.65s ease-in-out infinite;
   }
@@ -42,7 +42,7 @@
   }
   .loading-activity[data-compact] {
     --loading-face-size: 22px;
-    --loading-hop: -3px;
+    --loading-hop: -1.5px;
     grid-template-columns: auto minmax(0, 1fr);
     align-items:center;justify-items:start;gap:6px 12px;text-align:start;
   }
@@ -53,8 +53,8 @@
     .loading-activity[data-compact] {grid-template-columns: minmax(0, 1fr);}
   }
   @keyframes ui-loading-hop {
-    0%, 18%, 100% {transform:translateY(0);}
-    8% {transform:translateY(var(--loading-hop));}
+    0%, 14%, 100% {transform:translateY(0);}
+    7% {transform:translateY(var(--loading-hop));}
   }
   :is(body.less-motion, .loading-activity[data-still]) :is(.loading-activity-faces img, .loading-activity-dots > span) {animation-name:none;}
   @media (prefers-reduced-motion:reduce) {

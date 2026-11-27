@@ -233,7 +233,7 @@ test('Closed rooms briefly exit, cannot be entered, and recover if they return',
   assert.equal(departing.classList.contains('lobby-room-exiting'), false);
   assert.equal(departing.hasAttribute('inert'), false);
   await f.receive([]);
-  await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 550));});
+  await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 270));});
   assert.equal(env.document.querySelector('.lobby-room-row'), null);
   assert.equal(n('#roomList').hidden, true);
 });
@@ -368,7 +368,7 @@ test('empty rows from older relays disappear with consistent totals while specta
   assert.equal(f.service.getSnapshot().total,0);
   assert.equal(all('#roomList .lobby-room-exiting').length,3);
   assert.ok(all('#roomList .lobby-room-exiting').every(row=>row.getAttribute('aria-hidden')==='true'&&row.hasAttribute('inert')));
-  await React.act(async () => {await new Promise(resolve => setTimeout(resolve,550));});
+  await React.act(async () => {await new Promise(resolve => setTimeout(resolve,270));});
   assert.equal(all('#roomList .lobby-room-row').length,0);
   assert.equal(n('#roomCount').textContent,t('en','lobby.roomCount',{count:0}));
   assert.equal(n('#membership').hidden,false,'private recovery survives public row removal');
@@ -867,7 +867,7 @@ test('Truncated all-game response falls back to server filtering and restores th
   assert.deepEqual(f.service.getSnapshot().visibleRooms.map(item => `${item.product}-${item.code}`), ['th07mp-5678']);
   assert.deepEqual(all('#roomList .lobby-room-row:not(.lobby-room-exiting)').map(row => row.dataset.key), ['th07mp-5678']);
   assert.equal(all('#roomList .lobby-room-exiting').length, 1);
-  await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 550));});
+  await React.act(async () => {await new Promise(resolve => setTimeout(resolve, 270));});
   assert.deepEqual(all('#roomList .lobby-room-row').map(row => row.dataset.key), ['th07mp-5678']);
   await m.unmount();
 });
@@ -1095,7 +1095,7 @@ test('room filters combine checked options per facet and update with the live di
   await f.receive(rooms.slice(1));
   assert.equal(all('.lobby-room-exiting').length,1);
   assert.equal(n('.lobby-room-exiting').getAttribute('aria-hidden'),'true');
-  await React.act(async()=>{await new Promise(resolve=>setTimeout(resolve,550));});
+  await React.act(async()=>{await new Promise(resolve=>setTimeout(resolve,270));});
   assert.equal(keys().length, 0);
   assert.equal(n('#emptyTitle').textContent, 'No matching rooms');
   await filter('Lunatic', 'difficulty');

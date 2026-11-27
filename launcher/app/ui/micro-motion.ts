@@ -1,5 +1,6 @@
-const easing = 'cubic-bezier(.22,.7,.2,1)';
-export const microLayoutTiming = {duration: 200, easing};
+const easing = 'cubic-bezier(.4,0,.6,1)';
+export const microLayoutTiming = {duration: 180, easing};
+const reorderTravel = 3;
 
 export function prefersStillMotion(element: Element) {
   return !!element.closest('.less-motion') || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -7,17 +8,17 @@ export function prefersStillMotion(element: Element) {
 
 const iconFeedback = {
   favorite: [
-    {scale: '1', rotate: '0deg'},
-    {scale: '1.08', rotate: '-3deg', offset: .4},
-    {scale: '1', rotate: '0deg'},
+    {scale: '1', easing},
+    {scale: '1.035', easing},
+    {scale: '1'},
   ],
   theme: [
-    {opacity: .7, scale: '.96', rotate: '-8deg'},
-    {opacity: 1, scale: '1', rotate: '0deg'},
+    {opacity: .86, transform: 'rotate(-3deg)', easing},
+    {opacity: 1, transform: 'rotate(0deg)'},
   ],
   refresh: [
-    {rotate: '0deg'},
-    {rotate: '18deg', offset: .46},
+    {rotate: '0deg', easing},
+    {rotate: '6deg', easing},
     {rotate: '0deg'},
   ],
 } satisfies Record<string, Keyframe[]>;
@@ -29,7 +30,7 @@ export function playIconFeedback(button: HTMLElement, kind: keyof typeof iconFee
   const icon = button.querySelector('svg');
   if (!icon || prefersStillMotion(button)) return;
   active.get(icon)?.cancel();
-  const animation = icon.animate(iconFeedback[kind], {duration: 240, easing});
+  const animation = icon.animate(iconFeedback[kind], microLayoutTiming.duration);
   active.set(icon, animation);
   return animation;
 }
@@ -37,14 +38,14 @@ export function playIconFeedback(button: HTMLElement, kind: keyof typeof iconFee
 /** Stay close to the destination even when a result moves several columns. */
 export function microReorderFrames(x: number, y: number): Keyframe[] {
   const distance = Math.hypot(x, y);
-  const ratio = distance > 6 ? 6 / distance : 1;
+  const ratio = distance > reorderTravel ? reorderTravel / distance : 1;
   return [
-    {translate: `${x * ratio}px ${y * ratio}px`, ...(ratio < 1 && {opacity: .78})},
+    {translate: `${x * ratio}px ${y * ratio}px`, ...(ratio < 1 && {opacity: .9})},
     {translate: '0px 0px', ...(ratio < 1 && {opacity: 1})},
   ];
 }
 
 export const microArrivalFrames: Keyframe[] = [
-  {opacity: .72, translate: '0px 3px'},
+  {opacity: .86, translate: '0px 2px'},
   {opacity: 1, translate: '0px 0px'},
 ];

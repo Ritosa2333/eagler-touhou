@@ -19,7 +19,7 @@ try {
       .map(animation => animation.finished));
   });
   const style = selector => page.$eval(selector, el => {
-    const s = getComputedStyle(el.matches('.book-category-choice, [data-lobby-rail-product] > .book-rail-game') ? el.parentElement : el), r = el.getBoundingClientRect();
+    const s = getComputedStyle(el.matches('.book-category-choice') ? el.parentElement : el), r = el.getBoundingClientRect();
     const cover = el.querySelector('.book-lobby-cover');
     const railCover = el.querySelector('.book-category-game-cover');
     const offset = node => node ? node.getBoundingClientRect().x - r.x : null;
@@ -64,7 +64,7 @@ try {
       assert.equal(after.width, before.width); assert.equal(after.height, before.height);
       assert.equal(after.pressed, before.pressed); assert.equal(after.transform, 'none');
       if (before.railCover !== null) {
-        assert.equal(after.railCover - before.railCover, 3, 'the artwork follows the shared list hover');
+        assert.ok(Math.abs(after.railCover - before.railCover - .75) < .02, 'the artwork follows the shared micro nudge');
         assert.equal(after.railMarker, before.railMarker, 'the separate selection target stays fixed');
         assert.equal(after.railFavorite, before.railFavorite, 'the favorite remains at the row edge');
       }

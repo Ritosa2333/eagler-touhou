@@ -107,8 +107,8 @@
   .book-masthead .book-main-nav :is([aria-current="page"], [aria-pressed="true"]) {
     color: var(--kit-foreground);
   }
-  .book-masthead .book-main-nav :is(a,button)::after {content:"";position:absolute;inset:auto 0 0;height:2px;background:currentColor;transform:scaleX(0);transform-origin:center;transition:transform 420ms cubic-bezier(.22,.7,.2,1)}
-  .book-masthead .book-main-nav :is([aria-current="page"],[aria-pressed="true"],:focus-visible)::after {transform:scaleX(1)}
+  .book-masthead .book-main-nav :is(a,button)::after {content:"";position:absolute;inset:auto 0 0;height:2px;background:currentColor;opacity:0;transition:opacity var(--ui-micro-duration) var(--ui-micro-easing)}
+  .book-masthead .book-main-nav :is([aria-current="page"],[aria-pressed="true"],:focus-visible)::after {opacity:1}
   .book-main-nav button:disabled {
     opacity: 0.45;
     cursor: default;
@@ -252,7 +252,7 @@
   .book-masthead :is(.masthead-action:not(.masthead-menu-toggle),.masthead-link) {
     transition:background-color 320ms ease, color 320ms ease, border-color 320ms ease;
   }
-  .book-masthead .book-main-nav :is(a,button):not(:disabled):hover::after {transform:scaleX(1)}
+  .book-masthead .book-main-nav :is(a,button):not(:disabled):hover::after {opacity:1}
 }
 @media (prefers-reduced-motion:reduce) {
   .book-masthead .book-main-nav :is(a,button),.book-masthead .book-main-nav :is(a,button)::after,.book-masthead :is(.masthead-action,.masthead-link) {transition:none}
@@ -347,22 +347,21 @@
   transform-origin: center;
 }
 @media (hover:hover) and (pointer:fine) {
-  .book-masthead .book-top-donation:is(:hover,:focus-visible):not(:disabled) > svg {animation: masthead-heartbeat calc(var(--ui-micro-duration) * 1.75) ease-in-out both}
+  .book-masthead .book-top-donation:is(:hover,:focus-visible):not(:disabled) > svg {animation: masthead-heartbeat var(--ui-micro-duration) var(--ui-micro-easing)}
 }
-@keyframes masthead-heartbeat {0%, 45%, 100% {scale:1} 24% {scale:1.08} 67% {scale:1.04}}
+@keyframes masthead-heartbeat {50% {scale:1.035}}
 .book-top-faq .book-faq-question {
   transform-box: fill-box;
   transform-origin: center bottom;
 }
-.book-top-faq:focus-visible .book-faq-question {animation: masthead-faq-hop var(--ui-micro-duration) ease-in-out}
+.book-top-faq:focus-visible .book-faq-question {animation: masthead-faq-hop var(--ui-micro-duration) var(--ui-micro-easing)}
 @media (hover: hover) and (pointer: fine) {
-  .book-top-faq:hover .book-faq-question {animation: masthead-faq-hop var(--ui-micro-duration) ease-in-out}
+  .book-top-faq:hover .book-faq-question {animation: masthead-faq-hop var(--ui-micro-duration) var(--ui-micro-easing)}
 }
 @keyframes masthead-faq-hop {
-  24% {transform: scaleY(.96)}
-  55% {transform: translateY(calc(-1 * var(--ui-micro-nudge))) scaleY(1.04)}
+  50% {transform: translateY(calc(-1 * var(--ui-micro-nudge)))}
 }
-.book-masthead .book-top-donation:active:not(:disabled) > svg {animation:none;transform:scale(.96)}
+.book-masthead .book-top-donation:active:not(:disabled) > svg {animation:none;transform:scale(.98)}
 @media (prefers-reduced-motion:reduce) {
   :is(.book-faq-question, .book-top-donation > svg) {animation:none!important;transition:none;transform:none!important}
 }

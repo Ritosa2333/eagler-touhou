@@ -3,6 +3,7 @@ import {useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalSt
 import {BOOK_PREFERENCES_EVENT, readBookPreference, stringArray} from '../launcher/book-preferences';
 import {beginFilterReorder,useFavoriteReorder} from '../launcher/favorite-reorder';
 import {useLocale} from '../../i18n';
+import {microLayoutTiming} from '../../ui/micro-motion';
 import {LobbySurface, type LobbySurfaceProps} from '../launcher/LobbySurface';
 import {DirectoryRoomRows} from './DirectoryRoomRows';
 import {LobbyRoomTools} from './LobbyRoomTools';
@@ -13,6 +14,7 @@ import type {DirectoryFormMode, DirectoryRoom, LobbyDirectoryService} from '../.
 
 type Derived = 'roomFilters' | 'selectedProduct' | 'connectionWarning' | 'membership' | 'notice' | 'roomTools' | 'roomList' | 'hasRooms' | 'loading' | 'emptyState' | 'roomCount' | 'roomUsersArtwork';
 const roomKey = (room: DirectoryRoom) => `${room.product}-${room.code}`;
+const roomMotionRetention = microLayoutTiming.duration + 40;
 export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived> {
   service: LobbyDirectoryService;
   assetUrl(path: string): string;
@@ -40,7 +42,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
     const timer = window.setTimeout(() => {
       arrivalTimers.current.delete(timer);
       setArrivals(current => {const next = new Set(current); added.forEach(key => {next.delete(key);}); return next;});
-    }, 850);
+    }, roomMotionRetention);
     arrivalTimers.current.add(timer);
   }, [liveRoomKeys, snapshot.connection, snapshot.loading]);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -88,7 +90,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
         const id = roomKey(room);
         exitTimers.current.set(id, window.setTimeout(() => {
           exitTimers.current.delete(id); setExiting(current => current.filter(item => roomKey(item) !== id));
-        }, 500));
+        }, roomMotionRetention));
       }
     }
   }, [liveRoomKeys, snapshot.connection, loading, sortedRooms]);

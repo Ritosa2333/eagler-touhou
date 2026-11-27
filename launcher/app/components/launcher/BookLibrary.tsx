@@ -286,7 +286,6 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                 type="single"
                 className="book-view-switch"
                 data-toolbar-segments=""
-                data-view={view}
                 value={view}
                 onValueChange={(value) => {
                   if (value === 'covers' || value === 'list') {

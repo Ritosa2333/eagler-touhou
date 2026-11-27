@@ -134,10 +134,10 @@
     .book-directory .book-room-score[data-compact] .book-room-score-value {font-size:13px}
   }
 }
-@keyframes lobby-room-arrival {from {opacity:.72;translate:0 var(--ui-micro-offset)} to {opacity:1;translate:0 0}}
+@keyframes lobby-room-arrival {from {opacity:.86;translate:0 var(--ui-micro-offset)} to {opacity:1;translate:0 0}}
 .book-directory .lobby-room-row.lobby-room-arriving {animation:lobby-room-arrival var(--ui-micro-duration) var(--ui-micro-easing) both}
-@keyframes lobby-room-departure {from {opacity:1;translate:0 0} to {opacity:0;translate:0 calc(-1 * var(--ui-micro-offset))}}
-.book-directory .lobby-room-row.lobby-room-exiting {animation:lobby-room-departure 450ms ease-in both;pointer-events:none}
+@keyframes lobby-room-departure {from {opacity:1} to {opacity:0}}
+.book-directory .lobby-room-row.lobby-room-exiting {animation:lobby-room-departure var(--ui-micro-duration) var(--ui-micro-easing) both;pointer-events:none}
 @media(prefers-reduced-motion:reduce) {.book-directory .lobby-room-row.lobby-room-arriving {animation:none}}
 .less-motion .book-directory .lobby-room-row.lobby-room-arriving {animation:none}
 @media(prefers-reduced-motion:reduce) {.book-directory .lobby-room-row.lobby-room-exiting {animation:none;display:none}}

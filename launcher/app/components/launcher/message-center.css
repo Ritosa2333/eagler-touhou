@@ -25,18 +25,17 @@
     }
   }
   @keyframes masthead-megaphone-call {
-    35% {rotate:calc(-1 * var(--ui-micro-tilt))}
+    50% {rotate:calc(-1 * var(--ui-micro-tilt))}
   }
   @keyframes masthead-megaphone-wave {
-    from {opacity:0;translate:0 0}
-    42% {opacity:.65}
-    to {opacity:0;translate:var(--ui-micro-offset) 0}
+    from,to {opacity:0}
+    50% {opacity:.5}
   }
   @keyframes masthead-mail-lift {
-    42% {translate:0 calc(-1 * var(--ui-micro-nudge))}
+    50% {translate:0 calc(-1 * var(--ui-micro-nudge))}
   }
   @keyframes masthead-mail-flap {
-    46% {scale:1 .78}
+    50% {scale:1 .92}
   }
   .masthead-inbox-panel {
     z-index:var(--ui-layer-popup);width:min(392px,calc(100vw - 24px));max-height:var(--radix-popover-content-available-height);
