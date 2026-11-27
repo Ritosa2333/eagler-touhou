@@ -20,7 +20,7 @@ export function DirectoryRoomFilters({rooms, value, onChange}: {
     if (selected !== undefined && selected !== value[key]) onChange({...value, [key]:selected});
   };
   return <ActionMenu variant="selection" align="start" sideOffset={10} minimumWidth={0} label={label}
-    className="book-room-filter-popup" trigger={<BookButton variant="action" type="button" className="book-room-filter-trigger"
+    className="book-room-filter-popup" trigger={<BookButton variant="toolbar" type="button" className="book-room-filter-trigger px-4 text-xs"
       aria-label={label} title={label} data-active={hasDirectoryRoomFilters(value)}><ListFilter aria-hidden="true"/><span>{label}</span></BookButton>}>
     <div className="book-room-filter-groups">
       <ActionMenuRadioGroup aria-label={t('lobby.state')} value={value.status} onValueChange={next=>change('status',next,directoryRoomStatuses)}>

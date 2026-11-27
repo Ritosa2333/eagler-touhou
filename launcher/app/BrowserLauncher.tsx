@@ -272,9 +272,12 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
   const ready = metadata.installed.has(settings.gameId) || hasBundledGameData(metadata, settings.gameId);
   const downloadable = canInstallGameData(metadata, settings.gameId);
-  return <LaunchActions primary={{id: 'launch', textId: 'launchText',
-    label: t(task === 'active' ? 'downloadTasks.downloading' : task === 'queued' ? 'downloadTasks.queued' :
-      ready ? 'action.start' : 'downloadTasks.acquire'),
+  const labels = {
+    active: t('downloadTasks.downloading'), queued: t('downloadTasks.queued'),
+    start: t('action.start'), install: t('downloadTasks.acquire'),
+  };
+  return <LaunchActions primaryStateLabels={Object.values(labels)} primary={{id: 'launch', textId: 'launchText',
+    label: labels[task ?? (ready ? 'start' : 'install')],
     icon: !ready || task ? 'download' : undefined,
     disabled: (metadata.phase !== 'ready' && !ready) || !!task,
     onClick: () => {

@@ -39,7 +39,7 @@
   }
   .mobile-game-actions .launch:not(.launch-secondary) { flex: 1; }
   .mobile-game-actions .launch { min-inline-size: 44px; }
-  .mobile-game-actions .launch > span { overflow: hidden; text-overflow: ellipsis; }
+  .mobile-game-actions .launch-secondary > span { overflow: hidden; text-overflow: ellipsis; }
   @container (max-width: 330px) {
     .mobile-game-actions .mobile-game-settings-button { position: relative; inline-size: 44px; flex: none; }
     .mobile-game-settings-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }

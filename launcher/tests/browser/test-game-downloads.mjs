@@ -25,7 +25,11 @@ fixtures.set('/release-catalog.json', {contentType: 'application/json', body: JS
 
 const browser = await puppeteer.launch({headless: true, executablePath: await findChromiumExecutable()});
 try {
-  for (const width of [1440, 320]) {
+  for (const [width, lang, labels] of [
+    [1440, 'zh-CN', {install: '安装游戏', active: '获取中', queued: '排队中', start: '开始游戏'}],
+    [1440, 'en', {install: 'Install game', active: 'Getting game', queued: 'Queued', start: 'Start game'}],
+    [320, 'zh-CN', {install: '安装游戏', active: '获取中', queued: '排队中', start: '开始游戏'}],
+  ]) {
     const context = await browser.createBrowserContext();
     const gates = new Map();
     try {
@@ -49,6 +53,13 @@ try {
         const action = document.querySelector('#launch');
         return action?.textContent.trim() === text && action.disabled === disabled && action.getBoundingClientRect().width > 0;
       }, {}, text, disabled);
+      const launchWidth = async () => page.$eval('#launch', async action => {
+        await document.fonts.ready;
+        return action.getBoundingClientRect().width;
+      });
+      const sameWidth = async (expected, state) => {
+        assert.equal(await launchWidth(), expected, `${width}px/${lang}: primary width stays fixed when ${state}`);
+      };
       const clickGame = game => page.locator(`[data-book-sidebar-product="${game}"]`).click();
       const noTask = () => page.waitForFunction((trigger, dialog) => !document.querySelector(trigger) && !document.querySelector(dialog), {}, trigger, dialog);
       const startedFile = async game => {
@@ -56,24 +67,29 @@ try {
         while (!started.includes(game) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 25));
         assert.ok(started.includes(game), `fixture request for ${game}`);
       };
-      await page.goto(new URL('?game=th06&lang=zh-CN', origin).href, {waitUntil: 'domcontentloaded'});
-      await waitText('安装游戏', false);
+      await page.goto(new URL(`?game=th06&lang=${lang}`, origin).href, {waitUntil: 'domcontentloaded'});
+      await waitText(labels.install, false);
+      const th06Width = await launchWidth();
       await noTask();
       await page.locator('#launch').click();
-      await waitText('获取中', true);
+      await waitText(labels.active, true);
+      await sameWidth(th06Width, 'acquiring');
       await page.waitForSelector(trigger, {visible: true});
       assert.equal(await page.$(dialog), null, 'adding a task never opens its popup');
       await startedFile('th06');
 
+      let th07Width;
       if (width === 1440) {
         await clickGame('th07');
-        await waitText('安装游戏', false);
+        await waitText(labels.install, false);
+        th07Width = await launchWidth();
         await page.locator('#launch').click();
-        await waitText('排队中', true);
+        await waitText(labels.queued, true);
+        await sameWidth(th07Width, 'queued');
         await clickGame('th08');
-        await waitText('安装游戏', false);
+        await waitText(labels.install, false);
         await page.locator('#launch').click();
-        await waitText('排队中', true);
+        await waitText(labels.queued, true);
         assert.deepEqual(started, ['th06']);
       }
       assert.equal(await page.$eval(trigger, node => {
@@ -99,15 +115,23 @@ try {
         gates.get('th07').resolve();
         await noTask();
         await clickGame('th07');
-        await waitText('开始游戏', false);
+        await waitText(labels.start, false);
+        await sameWidth(th07Width, 'installed');
         assert.equal(await page.$eval('#player', node => node.getAttribute('aria-hidden')), 'true', 'installing does not launch a game');
         await page.reload({waitUntil: 'domcontentloaded'});
-        await waitText('开始游戏', false);
+        await waitText(labels.start, false);
         await noTask();
       } else {
         await page.locator('[data-download-active="th06"] button').click();
         await noTask();
-        await waitText('安装游戏', false);
+        await waitText(labels.install, false);
+        await sameWidth(th06Width, 'cancelled');
+        await page.locator('#launch').click();
+        await waitText(labels.active, true);
+        gates.get('th06').resolve();
+        await noTask();
+        await waitText(labels.start, false);
+        await sameWidth(th06Width, 'installed');
       }
       assert.deepEqual(errors, []);
     } finally {

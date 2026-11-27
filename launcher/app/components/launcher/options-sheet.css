@@ -277,36 +277,9 @@
   .options-lobby-link > svg:last-child {
     margin-left: auto;
   }
-  .launch-actions {
-    display: flex;
-    align-items: stretch;
-    gap: 8px;
-    flex: none;
-    margin: 0;
-    padding: 8px 16px max(8px, env(safe-area-inset-bottom));
-    border-top: 1px solid var(--kit-border);
-    background: var(--kit-card);
-  }
-  .launch-actions > .launch {
-    flex: 1;
-    justify-content: center;
-    gap: 8px;
-    min-width: 0;
-    margin: 0;
-    box-shadow: none;
-    letter-spacing: 0;
-  }
-  .launch-actions > .launch-secondary {
-    flex: 0 0 auto;
-  }
   .settings-field::before,
   .settings-field::after {
     display: none;
-  }
-  .launch-actions-compact {
-    padding: 12px 0 0;
-    border: 0;
-    background: transparent;
   }
   @media (max-width: 780px) {
     :is(.tools[data-options-panel], .mp-settings-room-drawer.settings-ui) {
@@ -337,9 +310,6 @@
     }
     .mp-settings-room-drawer .mp-settings-room-content {
       padding-inline: 20px;
-    }
-    .launch-actions {
-      padding-inline: 16px;
     }
   }
   @media (max-height: 520px) {

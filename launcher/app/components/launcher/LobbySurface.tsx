@@ -79,8 +79,7 @@ export function LobbySurface({
           <div className="lobby-filter-tools">
             {roomFilters}
             <nav className="lobby-support-links" aria-label={t('multiplayerGuide.title')}>
-            <BookButton variant="quiet" size="icon" asChild={!!guideHref}
-              className="lobby-support-link"
+            <BookButton variant="toolbar" size="icon" asChild={!!guideHref}
               id="lobbyGuideOpen"
               aria-label={t('multiplayerGuide.action')}
               title={t('multiplayerGuide.action')}
@@ -88,8 +87,7 @@ export function LobbySurface({
             >
               {guideHref ? <a href={guideHref}><BookOpen aria-hidden="true"/></a> : <BookOpen aria-hidden="true"/>}
             </BookButton>
-            <BookButton variant="quiet" size="icon"
-              className={`lobby-support-link${networkRunning ? ' running' : ''}`}
+            <BookButton variant="toolbar" size="icon" className="aria-disabled:cursor-progress aria-disabled:opacity-60"
               id="lobbyNetworkCheck"
               aria-label={t('networkCheck.action')}
               title={t('networkCheck.action')}
@@ -100,7 +98,7 @@ export function LobbySurface({
             >
               <Activity aria-hidden="true"/>
             </BookButton>
-            {ratings && <BookButton variant="quiet" size="icon" asChild className="lobby-support-link">
+            {ratings && <BookButton variant="toolbar" size="icon" asChild>
               <a href={ratings} aria-label={t('th09.ratingBoard')} title={t('th09.ratingBoard')}>
                 <Trophy aria-hidden="true"/>
               </a>

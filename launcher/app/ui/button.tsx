@@ -12,6 +12,7 @@ const buttonVariants = cva(
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/75',
         outline: 'border-[var(--kit-control-border)] bg-card text-foreground hover:bg-accent active:bg-secondary',
+        toolbar: 'border-[var(--kit-control-border)] bg-secondary font-semibold text-secondary-foreground hover:bg-[color-mix(in_srgb,var(--kit-secondary),var(--kit-foreground)_9%)] [&:is([data-active=true],[aria-expanded=true])]:border-ring [&:is([data-active=true],[aria-expanded=true])]:bg-[color-mix(in_srgb,var(--kit-secondary),var(--kit-foreground)_16%)]',
         ghost: 'bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground',
         destructive: 'bg-destructive/10 text-destructive hover:bg-destructive/20',
         link: 'bg-transparent text-foreground underline-offset-4 hover:underline',

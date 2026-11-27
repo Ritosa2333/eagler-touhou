@@ -38,10 +38,24 @@ try {
       railMarker: railCover && offset(el.parentElement.querySelector('.book-lobby-sidebar-check')),
       railFavorite: railCover && offset(el.parentElement.querySelector('.book-favorite'))};
   });
+  const toolbarFills = {};
   for (const theme of ['dark', 'light']) {
     await page.evaluate(theme => document.documentElement.dataset.bookTheme = theme, theme);
     await page.mouse.move(0, 0); await settle(); await settle();
-    for (const selector of ['.book-room-filter-trigger', '.lobby-game-sidebar [data-book-category="original"]', '#refreshRooms', '.lobby-game-sidebar .book-rail-game', '#hoverJoin']) {
+    const toolbar = await page.$$eval('.lobby-filter-tools [data-slot="button"]', buttons => buttons.map(button => {
+      const css = getComputedStyle(button), rect = button.getBoundingClientRect();
+      const token = document.createElement('span');
+      button.append(token);
+      token.style.backgroundColor = 'var(--kit-secondary)';
+      const fill = getComputedStyle(token).backgroundColor;
+      token.remove();
+      return {variant: button.dataset.variant, filled: css.backgroundColor === fill, background: css.backgroundColor, width: rect.width, height: rect.height};
+    }));
+    assert.ok(toolbar.length >= 3);
+    assert.ok(toolbar.every(control => control.variant === 'toolbar' && control.filled && control.height === 44));
+    assert.ok(toolbar.slice(1).every(control => control.width === 44));
+    toolbarFills[theme] = toolbar[0].background;
+    for (const selector of ['.book-room-filter-trigger', '#lobbyGuideOpen', '#lobbyNetworkCheck', '.lobby-game-sidebar [data-book-category="original"]', '#refreshRooms', '.lobby-game-sidebar .book-rail-game', '#hoverJoin']) {
       await page.mouse.move(0, 0); await settle();
       const before = await style(selector);
       await page.hover(selector); await settle();
@@ -67,6 +81,7 @@ try {
     assert.equal((await style('#hoverJoin')).transform, 'none', 'No legacy scale on press');
     await page.mouse.up();
   }
+  assert.notEqual(toolbarFills.dark, toolbarFills.light);
   const openFilters = async (columns) => {
     await page.click('.book-room-filter-trigger');
     const popup = await page.waitForSelector('.book-room-filter-popup[data-state="open"]', {visible:true});
@@ -86,10 +101,17 @@ try {
   await page.setViewport({width: 390, height: 844, isMobile: true, hasTouch: true});
   await page.waitForSelector('.book-lobby-picker-trigger', {visible:true});
   assert.ok(await page.$eval('[data-lobby-icon] .book-lobby-cover', el => parseFloat(getComputedStyle(el).transitionDuration) < .00001));
+  const filterTrigger = '.book-room-filter-trigger';
+  await page.mouse.move(0, 0); await settle();
+  const idleFilter = await style(filterTrigger);
   await openFilters(2);
+  await settle();
+  assert.notEqual((await style(filterTrigger)).background, idleFilter.background, 'an open filter is highlighted');
   await page.waitForSelector('[data-room-filter="open"]', {visible:true});
   await page.click('[data-room-filter="open"]');
-  assert.equal(await page.$eval('.book-room-filter-trigger', el => el.dataset.active), 'true');
+  assert.equal(await page.$eval(filterTrigger, el => el.dataset.active), 'true');
+  await page.mouse.move(0, 0); await settle();
+  assert.notEqual((await style(filterTrigger)).background, idleFilter.background, 'an applied filter stays highlighted after closing');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   for (const width of [320, 390, 600, 850, 1440]) {
     await page.setViewport({width, height: 844});

@@ -3,8 +3,9 @@ import {Checkbox, Switch, Slot} from 'radix-ui';
 import {CheckIcon} from '@radix-ui/react-icons';
 import {Button as KitButton, type ButtonProps as KitButtonProps} from './button';
 
-export type ButtonVariant = 'action' | 'primary' | 'quiet' | 'tab' | 'choice' | 'icon' | 'danger' | 'unstyled';
+export type ButtonVariant = 'action' | 'primary' | 'quiet' | 'toolbar' | 'tab' | 'choice' | 'icon' | 'danger' | 'unstyled';
 export type ButtonProps = Omit<KitButtonProps, 'variant'> & {variant?: ButtonVariant};
+const buttonAppearance = {action: 'outline', primary: 'default', danger: 'destructive', quiet: 'ghost', icon: 'ghost', toolbar: 'toolbar'} as const;
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {variant = 'action', className = '', type = 'button', asChild, size, ...props}, ref,
@@ -13,8 +14,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     const Element = asChild ? Slot.Root : 'button';
     return <Element {...props} ref={ref} type={asChild ? undefined : type} className={`${variant === 'unstyled' ? 'ui-control' : 'ui-button ui-control'} ${className}`.trim()} data-ui-variant={variant}/>;
   }
-  const appearance = variant === 'primary' ? 'default' : variant === 'danger' ? 'destructive' : variant === 'quiet' || variant === 'icon' ? 'ghost' : 'outline';
-  return <KitButton {...props} ref={ref} type={type} asChild={asChild} variant={appearance} size={size ?? (variant === 'icon' ? 'icon' : 'default')}
+  return <KitButton {...props} ref={ref} type={type} asChild={asChild} variant={buttonAppearance[variant]} size={size ?? (variant === 'icon' ? 'icon' : variant === 'toolbar' ? 'lg' : 'default')}
     data-ui-variant={variant} className={`ui-button ui-control ${className}`}/>;
 });
 

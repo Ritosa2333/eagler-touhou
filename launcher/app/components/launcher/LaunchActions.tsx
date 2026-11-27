@@ -1,6 +1,7 @@
 import { Button as UiButton } from '../../ui/button';
 import { Download, Play, FolderInput } from 'lucide-react';
 import type { ReactNode } from 'react';
+import './launch-actions.css';
 
 export interface LaunchAction {
   id: string;
@@ -12,13 +13,16 @@ export interface LaunchAction {
 }
 export interface LaunchActionsProps {
   primary: LaunchAction;
+  /** Keep the primary button sized for every state in the current language. */
+  primaryStateLabels?: readonly string[];
   secondary?: LaunchAction;
   /** Compact placement retains the original embedded replay row dimensions. */
   placement?: 'standard' | 'compact';
 }
 /** Shared play/import presentation; session and replay owners decide intent. */
-export function LaunchActions({ primary, secondary, placement = 'standard' }: LaunchActionsProps) {
+export function LaunchActions({ primary, primaryStateLabels, secondary, placement = 'standard' }: LaunchActionsProps) {
   const PrimaryIcon = primary.icon === 'download' ? Download : Play;
+  const primaryLabel = <span id={primary.textId}>{primary.label}</span>;
   return (
     <div className={`launch-wrap launch-actions${placement === 'compact' ? ' launch-actions-compact' : ''}`}>
       <UiButton
@@ -29,7 +33,10 @@ export function LaunchActions({ primary, secondary, placement = 'standard' }: La
         onClick={primary.onClick}
       >
         <PrimaryIcon aria-hidden="true" />
-        <span id={primary.textId}>{primary.label}</span>
+        {primaryStateLabels ? <span className="launch-action-label">
+          {primaryLabel}
+          {Array.from(new Set(primaryStateLabels), label => <span key={label} aria-hidden="true" data-measure-label={label} />)}
+        </span> : primaryLabel}
       </UiButton>
       {secondary && <UiButton
         variant="outline"
