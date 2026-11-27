@@ -57,15 +57,6 @@
       font-weight:500;
       line-height:1.2;
     }
-    .launcher-bottom-navigation .site-navigation-link > svg {
-      width:46px;
-      height:28px;
-      padding:5px 14px;
-      border-radius:999px;
-      transition:background-color var(--ui-feedback-duration) var(--ui-feedback-easing);
-    }
-    .launcher-bottom-navigation .site-navigation-link[aria-current="page"] {color:var(--kit-brand);font-weight:600}
-    .launcher-bottom-navigation .site-navigation-link[aria-current="page"] > svg {background:color-mix(in srgb,var(--kit-brand) 15%,var(--kit-card))}
     body:is(.mp-room-active,.player-active,.library-tools-open,.library-tools-closing) .launcher-bottom-navigation {visibility:hidden}
     .launcher-bottom-navigation + .launcher-page-surface {padding-bottom:calc(60px + var(--launcher-bottom-padding))}
     .launcher-home {
@@ -75,8 +66,3 @@
     html[data-ui-home] body:not(.mp-room-active) .main.library-layout {min-height:0}
     .launcher-back.launcher-mobile-back {display:inline-flex}
   }
-
-  @media (prefers-reduced-motion:reduce) {
-    .launcher-bottom-navigation .site-navigation-link > svg {transition:none}
-  }
-  .less-motion .launcher-bottom-navigation .site-navigation-link > svg {transition:none}
