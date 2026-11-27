@@ -7,6 +7,7 @@
 @layer components {
   .masthead.book-masthead {
     --masthead-control-size: 44px;
+    --masthead-row-height: 43px;
     --masthead-wordmark-width: clamp(112px, 11vw, 132px);
     /* Match the visible ink of Online's l in the 480px wordmark, not its image box. */
     --masthead-icon-size: calc(var(--masthead-wordmark-width) * .165);
@@ -16,13 +17,12 @@
     z-index: 20;
     display: grid;
     grid-template-columns: minmax(max-content, 1fr) max-content minmax(max-content, 1fr);
-    grid-template-rows: 60px;
+    grid-template-rows: var(--masthead-row-height);
     align-items: center;
     gap: 0 clamp(8px, 1.2vw, 20px);
     box-sizing: border-box;
     width: 100%;
     max-width: none;
-    min-height: 60px;
     margin: 0;
     padding: 0 max(var(--launcher-layout-gutter), var(--ui-safe-right)) 0 max(var(--launcher-layout-gutter), var(--ui-safe-left));
     border: 0;
@@ -78,6 +78,7 @@
     --masthead-icon-size: calc(var(--masthead-wordmark-width) * .19);
     grid-column: 2;
     grid-row: 1;
+    align-self: stretch;
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
@@ -91,7 +92,6 @@
     box-sizing: border-box;
     gap: 10px;
     min-width: clamp(98px, 7.5vw, 124px);
-    min-height: var(--masthead-control-size);
     padding: 0 14px;
     border: 0;
     background: transparent;
@@ -107,7 +107,7 @@
   .book-masthead .book-main-nav :is([aria-current="page"], [aria-pressed="true"]) {
     color: var(--kit-foreground);
   }
-  .book-masthead .book-main-nav :is(a,button)::after {content:"";position:absolute;inset:auto 0 -8px;height:2px;background:currentColor;transform:scaleX(0);transform-origin:center;transition:transform 420ms cubic-bezier(.22,.7,.2,1)}
+  .book-masthead .book-main-nav :is(a,button)::after {content:"";position:absolute;inset:auto 0 0;height:2px;background:currentColor;transform:scaleX(0);transform-origin:center;transition:transform 420ms cubic-bezier(.22,.7,.2,1)}
   .book-masthead .book-main-nav :is([aria-current="page"],[aria-pressed="true"],:focus-visible)::after {transform:scaleX(1)}
   .book-main-nav button:disabled {
     opacity: 0.45;
@@ -193,12 +193,12 @@
   @media (max-width: 780px) {
     .masthead.book-masthead:not([data-mobile-header="true"]) {display:none}
     .masthead.book-masthead[data-mobile-header="true"] {
+      --masthead-row-height: 55px;
       --masthead-icon-size: 20px;
       --masthead-icon-offset: 0px;
       position:relative;
       width:auto;
       grid-template-columns:var(--masthead-control-size) minmax(0,1fr) max-content;
-      grid-template-rows:55px;
       min-height:56px;
       gap:6px;
       padding-block:var(--ui-safe-top) 0;
@@ -220,7 +220,7 @@
 .book-masthead .masthead-action {
   box-sizing:border-box;
   width:var(--masthead-control-size);
-  height:var(--masthead-control-size);
+  height:min(var(--masthead-control-size),var(--masthead-row-height));
   min-height:0;
   padding:0;
   border:0;

@@ -42,7 +42,7 @@
 }
 
 .documentation-shell {
-  --fd-banner-height: var(--site-header-height, 61px);
+  --fd-banner-height: var(--site-header-height, 44px);
   font: 400 16px / 1.5 var(--kit-font);
   color: var(--color-fd-foreground);
 }

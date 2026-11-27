@@ -34,10 +34,13 @@ async function assertMasthead(page, width) {
       icons: icons.map(node => box(node).width),
       centers: [...actions, ...navigation].map(center),
       nav: navigation.map(node => box(node).width),
+      navHeight: navBounds.height,
+      navBottom: navBounds.bottom - headerBounds.top,
       navGap: navigation.length && box(navigation[1]).left - box(navigation[0]).right,
       underline: active && getComputedStyle(active, '::after').backgroundColor,
       foreground: active && getComputedStyle(active).color,
       underlineWidths: navigation.map(node=>parseFloat(getComputedStyle(node, '::after').width)),
+      underlineBottoms: navigation.map(node=>getComputedStyle(node, '::after').bottom),
       menuGroup: menu.closest('.masthead-leading, .masthead-trailing').className,
       menuLast: menu === menu.parentElement.lastElementChild,
       accountLast: !account || account === trailing.lastElementChild,
@@ -53,14 +56,16 @@ async function assertMasthead(page, width) {
         bounds.right <= headerBounds.right + 1 && (index === 0 || groups[index-1].right <= bounds.left + 1)),
     };
   });
-  assert.equal(layout.height, width <= 780 ? 56 : 61, `${width}px masthead retains the expected height`);
+  assert.equal(layout.height, width <= 780 ? 56 : 44, `${width}px masthead retains the expected height`);
   assert.ok(layout.controls.length >= 3);
-  assert.ok(layout.controls.every(([height,border]) => height === 44 && border === '0px'), `${width}px masthead actions share an unframed 44px height`);
-  assert.ok(layout.icons.every(size => size === 44), `${width}px icon actions are square`);
+  assert.ok(layout.controls.every(([height,border]) => height === (width <= 780 ? 44 : 43) && border === '0px'),
+    `${width}px masthead actions fit in the header row without borders`);
+  assert.ok(layout.icons.every(size => size === 44), `${width}px icon actions have a common width`);
   assert.ok(Math.max(...layout.centers) - Math.min(...layout.centers) <= 1, `${width}px masthead controls share a centerline`);
   assert.ok(layout.fits, `${width}px masthead groups fit without overlap`);
   assert.equal(layout.menuGroup, 'masthead-leading');
   if (layout.nav.length) {
+    assert.deepEqual([layout.navHeight, layout.navBottom], [43,43], 'primary navigation fills the desktop row');
     assert.ok(layout.menuLast, 'More sits after the left-hand desktop actions');
     assert.ok(layout.accountLast, 'The account sits after announcements and messages');
     const expectedSize = layout.wordmarkWidth * .165;
@@ -78,6 +83,7 @@ async function assertMasthead(page, width) {
     assert.equal(layout.navGap, 0, 'the navigation indicators can meet edge to edge');
     assert.equal(layout.underline, layout.foreground, 'the underline uses the theme foreground instead of the accent');
     assert.ok(layout.underlineWidths.every((width, index) => Math.abs(width - layout.nav[index]) < 1));
+    assert.deepEqual(layout.underlineBottoms, ['0px','0px'], 'indicators end inside the desktop row');
     assert.ok(layout.gutters.every(gap => gap >= 12 && gap <= 32), `${width}px outer groups sit by the viewport edges`);
     assert.equal(new Set(layout.nav).size, 1, 'Desktop mode links have the same width');
     assert.equal(layout.activeFill, 'rgba(0, 0, 0, 0)', 'The current mode uses an underline without a filled button');
@@ -119,6 +125,7 @@ try {
   await lobby.setViewport({width: 1440, height: 900});
   await lobby.goto(new URL('lobby.html', origin), {waitUntil: 'domcontentloaded'});
   await lobby.waitForSelector('.book-directory');
+  assert.equal(await lobby.$eval('.book-masthead', node => node.getBoundingClientRect().height), 44, 'the lobby shares the desktop masthead height');
   await lobby.$eval('.book-directory', directory => {
     // Match the directory's layout classes without joining a live room.
     const list = document.createElement('ul');
@@ -151,6 +158,12 @@ try {
     assert.equal(await lobby.$eval(`#layout-${entry}`, el => getComputedStyle(el).gridRowStart), '5', `Mobile ${entry} button must stay in the bottom row`);
   }
   await lobby.close();
+
+  const ratings = await browser.newPage();
+  await ratings.setViewport({width:1707, height:819});
+  await ratings.goto(new URL('ratings.html?lang=zh-CN', origin), {waitUntil:'domcontentloaded'});
+  assert.equal(await ratings.$eval('.book-masthead', node => node.getBoundingClientRect().height), 44, 'ratings match the production masthead height');
+  await ratings.close();
 
   const narrowDesktop = await browser.newPage();
   await narrowDesktop.setViewport({width:781, height:760});

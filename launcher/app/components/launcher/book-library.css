@@ -450,7 +450,7 @@
   }
   .book-grid > .book-empty {
     position: sticky;
-    top: calc(var(--site-header-height, 61px) + 12px);
+    top: calc(var(--site-header-height, 44px) + 12px);
   }
   .book-empty > svg {
     width: 24px;
