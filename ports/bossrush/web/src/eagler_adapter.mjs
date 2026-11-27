@@ -268,8 +268,11 @@ function luaStr(v) {
 /**
  * 规整 launcher 下发的 netplayLoadouts。
  * 支持 ['reimu_player', ...] 与 [{char|character, systems|broSystems, index}]，
- * 也容忍按槽位索引的对象。缺项留空（Lua 侧保持默认自机）。
+ * 也容忍按槽位索引的对象。character 也接受 launcher 下发的数字索引
+ * （0=reimu,1=marisa,2=chiruno,3=aya，见 product-catalog BRO_MULTIPLAYER_LOADOUTS）。
+ * 缺项留空（Lua 侧保持默认自机）。
  */
+const BRO_CHAR_CLASSES = ['reimu_player', 'marisa_player', 'chiruno_player', 'aya_player'];
 function normalizeNetplayLoadouts(loadouts, count) {
   const out = [];
   const push = (slot, raw) => {
@@ -279,7 +282,10 @@ function normalizeNetplayLoadouts(loadouts, count) {
     let char = null, systems = '', index = 1;
     if (typeof raw === 'string') char = raw;
     else if (raw && typeof raw === 'object') {
-      char = typeof raw.char === 'string' ? raw.char : (typeof raw.character === 'string' ? raw.character : null);
+      char = typeof raw.char === 'string' ? raw.char
+        : (typeof raw.character === 'string' ? raw.character
+          : (Number.isInteger(raw.character) && raw.character >= 0 && raw.character < BRO_CHAR_CLASSES.length
+            ? BRO_CHAR_CLASSES[raw.character] : null));
       const sys = raw.systems || raw.broSystems;
       if (Array.isArray(sys)) systems = sys.filter((n) => Number.isInteger(n) && n >= 1 && n <= 255).join(',');
       else if (typeof sys === 'string') systems = sys;

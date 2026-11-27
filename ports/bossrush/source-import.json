@@ -3,8 +3,8 @@
   "game": "bro",
   "repository": "https://github.com/TSake/TouHou-BossRushOnline",
   "branch": "master",
-  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；WASM build_id 4f12850d → 558441cb）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；3BA 双实例锁步 e2e + 卡外对象 frame 绑定（digest 顺序无关；WASM build_id 558441cb → 62f6bec6）。后续：阶段 3BB（远端真身同帧诞生 + 本地槽误绑修复；仅 Lua 改动 multiplayer.lua，WASM build_id 62f6bec6 → 36ae033c）。后续：阶段 3BC（门面层回环联机 e2e；仅 JS 改动 multiplayer.mjs 的 loadout systems 容错，WASM build_id 不变 = 36ae033c）。后续：阶段 3BD/3BE（TH06 混合角色开火分叁定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）。后续：阶段 3BD/3BE（TH06 混合角色开火分叉定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）；第七轮 3BF/3BG/3BH（正式房间默认 arm 轻量回滚 + 回滚重放支持 3 人；纯观战端跳过联机门面；Lua 未变，WASM build_id 沿用 5df2b19a）。后续：阶段 3BD/3BE（TH06 混合角色开火分叉定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）；第七轮 3BF/3BG/3BH（正式房间默认 arm 轻量回滚 + 回滚重放支持 3 人；纯观战端跳过联机门面；Lua 未变，WASM build_id 沿用 5df2b19a）；第八轮 3BI（回滚单人 Unlock* 全解锁，保留多人豁免；岐道四季 card 177 补 pin_task 钉 P1；Lua 改动 boot.lua/spell_player_mp.lua/web_patches.lua，WASM build_id 5df2b19a → 715a2bbd）。；本轮 bug 修复：网页版启动不再弹「无音乐/请选 OGG」（a68236163）、多人直进关停掉菜单 BGM 避免叠播（80b12a9，boot.lua）、游戏内退出游戏走 eagler exit 协议修 iframe 白屏（78d3cec）、实现 room-preview/room-return 让房间显示主界面并支持中途退房重开（597890e，managed-shell.mjs + eagler_adapter.mjs）、帧摘要改数值累加 + 摘要表环形裁剪修多人卡顿（696b5eb，multiplayer.lua/mjs）；WASM build_id 715a2bbd → d0f8baa9；本端口仍保留自己的 dist/package-manifest.json（96kbps 音乐包），未覆盖",
-  "buildId": "d0f8baa9",
+  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；WASM build_id 4f12850d → 558441cb）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；3BA 双实例锁步 e2e + 卡外对象 frame 绑定（digest 顺序无关；WASM build_id 558441cb → 62f6bec6）。后续：阶段 3BB（远端真身同帧诞生 + 本地槽误绑修复；仅 Lua 改动 multiplayer.lua，WASM build_id 62f6bec6 → 36ae033c）。后续：阶段 3BC（门面层回环联机 e2e；仅 JS 改动 multiplayer.mjs 的 loadout systems 容错，WASM build_id 不变 = 36ae033c）。后续：阶段 3BD/3BE（TH06 混合角色开火分叁定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）。后续：阶段 3BD/3BE（TH06 混合角色开火分叉定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）；第七轮 3BF/3BG/3BH（正式房间默认 arm 轻量回滚 + 回滚重放支持 3 人；纯观战端跳过联机门面；Lua 未变，WASM build_id 沿用 5df2b19a）。后续：阶段 3BD/3BE（TH06 混合角色开火分叉定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）；第七轮 3BF/3BG/3BH（正式房间默认 arm 轻量回滚 + 回滚重放支持 3 人；纯观战端跳过联机门面；Lua 未变，WASM build_id 沿用 5df2b19a）；第八轮 3BI（回滚单人 Unlock* 全解锁，保留多人豁免；岐道四季 card 177 补 pin_task 钉 P1；Lua 改动 boot.lua/spell_player_mp.lua/web_patches.lua，WASM build_id 5df2b19a → 715a2bbd）。；本轮 bug 修复：网页版启动不再弹「无音乐/请选 OGG」（a68236163）、多人直进关停掉菜单 BGM 避免叠播（80b12a9，boot.lua）、游戏内退出游戏走 eagler exit 协议修 iframe 白屏（78d3cec）、实现 room-preview/room-return 让房间显示主界面并支持中途退房重开（597890e，managed-shell.mjs + eagler_adapter.mjs）、帧摘要改数值累加 + 摘要表环形裁剪修多人卡顿（696b5eb，multiplayer.lua/mjs）；WASM build_id 715a2bbd → d0f8baa9；本端口仍保留自己的 dist/package-manifest.json（96kbps 音乐包），未覆盖；本轮 bug 修复：网页版启动不再弹「无音乐/请选 OGG」（a68236163）、多人直进关停掉菜单 BGM 避免叠播（80b12a9，boot.lua）、游戏内退出游戏走 eagler exit 协议修 iframe 白屏（78d3cec）、实现 room-preview/room-return 让房间显示主界面并支持中途退房重开（597890e，managed-shell.mjs + eagler_adapter.mjs）、帧摘要改数值累加 + 摘要表环形裁剪修多人卡顿（696b5eb，multiplayer.lua/mjs）、消弹点 colli hook 覆盖子类修远端收集卡住（3bd397b，web_patches.lua）、红烛/同类卡联机卡顿帧级缓存+几何快路径（3bd397b，spell_player_mp/multiplayer.lua）、数字 character 索引映射 BRO 角色类名（3bd397b，eagler_adapter.mjs）；WASM build_id d0f8baa9 → 512f0d1e；本端口仍保留自己的 dist/package-manifest.json（96kbps 音乐包），未覆盖",
+  "buildId": "512f0d1e",
   "credit": {
     "author": "吃药图书 (Cyoltose)",
     "webMaintainer": "清酒 (Tidew)",
@@ -20,17 +20,17 @@
     {
       "path": "bro.mjs",
       "bytes": 117745,
-      "sha256": "83e4106f597fb3f75ee4a9380917291c0c9e179f2d37e439ac14ab8aa93bf6ec"
+      "sha256": "8891d1b0d4209f650d8b52806a09b4b39c3f587bd2c0f9227beaf774c141b7b7"
     },
     {
       "path": "bro.wasm",
-      "bytes": 5188963,
-      "sha256": "d0f8baa952a73a9b4a1c139dd33618d154f129ebd700b77832aa1b1c65f8148a"
+      "bytes": 5194026,
+      "sha256": "512f0d1e75efdee0697668f0c5ac06d986ed937b9ac576d9efca00246f4cff08"
     },
     {
       "path": "dist/app-shell.json",
       "bytes": 11645,
-      "sha256": "dea1c427dfbd6d5870702b3bd5fb9be30adc9de67e85dabd6491e27b76cee399"
+      "sha256": "2f35806897e17fb6f724deb694e293dfa53a6cf5c2aae1a13400e62bdcae8f5a"
     },
     {
       "path": "dist/package-manifest.json",
@@ -40,7 +40,7 @@
     {
       "path": "dist/runtime.json",
       "bytes": 576,
-      "sha256": "9691a7db6ef1b4e253f6ddff47929f19ebc5a62017b05ae39784ddf093703751"
+      "sha256": "2c8ff5614f5c8d3f6ae42cf5477084e1f15034923d3afb2eab37a680c2e29ce1"
     },
     {
       "path": "managed-shell.mjs",
@@ -64,8 +64,8 @@
     },
     {
       "path": "src/eagler_adapter.mjs",
-      "bytes": 77421,
-      "sha256": "bb52808b0ebd81e02973beca713976105754440e030a7c9949a8b96b09d743b2"
+      "bytes": 77824,
+      "sha256": "a3f41aee3fc1da9bc2365fd982c5bc1834a277c7c661d7c35c5b65b869e737ad"
     },
     {
       "path": "src/input_buffer.mjs",
