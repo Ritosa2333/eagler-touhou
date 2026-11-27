@@ -77,7 +77,6 @@
     filter:drop-shadow(0 1px 1px rgb(0 0 0 / .42));
   }
   .loading-scene-stinger {
-    --stinger-duration:1450ms;
     position:fixed;
     inset:0;
     inline-size:100vw;
@@ -86,42 +85,26 @@
     overflow:clip;
     pointer-events:none;
     visibility:hidden;
-    animation:loading-stinger-window var(--stinger-duration) step-end var(--stinger-delay);
+    background:radial-gradient(ellipse at 50% 40%, #301c3e 0%, #100b18 64%, #07060b 100%);
+    animation:loading-stinger-window 900ms step-end var(--stinger-delay);
   }
-  .loading-scene-stinger::before, .loading-scene-stinger::after {
+  .loading-scene-stinger::after {
     content:"";
     position:absolute;
     inset:0;
-    opacity:0;
-    animation:loading-stinger-shade var(--stinger-duration) var(--stinger-delay);
-  }
-  .loading-scene-stinger::before {
-    background:radial-gradient(ellipse at 50% 40%, #301c3e 0%, #100b18 64%, #07060b 100%);
-  }
-  .loading-scene-stinger::after {
     background:radial-gradient(ellipse at 50% 55%, transparent 42%, #08050d80 100%);
   }
   .loading-scene-stinger-face {
     position:absolute;
     inset:48% auto auto 50%;
-    inline-size:max(120vw, 128svh);
+    inline-size:max(124vw, 132svh);
     max-inline-size:none;
     block-size:auto;
     translate:-50% -50%;
-    animation:loading-stinger-lunge var(--stinger-duration) ease-out var(--stinger-delay);
   }
   @keyframes loading-stinger-window {
     from {visibility:visible}
     to {visibility:hidden}
-  }
-  @keyframes loading-stinger-shade {
-    0%, 100% {opacity:0}
-    17%, 84% {opacity:1}
-  }
-  @keyframes loading-stinger-lunge {
-    0%, 100% {transform:var(--stinger-origin)}
-    14% {transform:scale(1.075) rotate(-2.5deg)}
-    22%, 84% {transform:scale(1.035) rotate(-1deg)}
   }
   [data-scene-motion="drift"] {animation:loading-scene-drift 4.8s ease-in-out infinite}
   [data-scene-motion="breathe"] {animation:loading-scene-breathe 4s ease-in-out infinite}
@@ -149,10 +132,8 @@
     33%, 47% {transform:translateY(var(--scene-lift));}
   }
   :is(.less-motion, [data-still]) .loading-scene [data-scene-motion] {animation:none}
-  .less-motion :is(.loading-scene-stinger,.loading-scene-stinger-face) {animation:none}
-  .less-motion .loading-scene-stinger::before, .less-motion .loading-scene-stinger::after {animation:none}
+  .less-motion .loading-scene-stinger {animation:none}
   @media (prefers-reduced-motion:reduce) {
-    .loading-scene [data-scene-motion], .loading-scene-stinger, .loading-scene-stinger-face,
-    .loading-scene-stinger::before, .loading-scene-stinger::after {animation:none}
+    .loading-scene [data-scene-motion], .loading-scene-stinger {animation:none}
   }
 }

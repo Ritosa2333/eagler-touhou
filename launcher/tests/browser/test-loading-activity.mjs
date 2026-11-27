@@ -157,47 +157,33 @@ try {
         await page.setViewport({width,height});
         const surprise = await page.$eval(stinger, async cut => {
           const face = cut.querySelector('img');
-          const source = document.querySelector('[data-loading-scene="umbrella"] img');
           const animations = cut.getAnimations({subtree:true});
-          const timer = animations.find(animation => animation.animationName === 'loading-stinger-window');
+          const [timer] = animations;
           const {delay, duration, iterations} = timer.effect.getTiming();
-          animations.forEach(animation => animation.pause());
-          await Promise.all(animations.map(animation => animation.ready));
-          await new Promise(requestAnimationFrame);
-          const frameAt = time => {
-            animations.forEach(animation => {animation.currentTime = time;});
-            return {
-              visibility:getComputedStyle(cut).visibility,
-              shade:Number(getComputedStyle(cut,'::before').opacity),
-              portrait:face.getBoundingClientRect(),
-            };
+          timer.pause();
+          await timer.ready;
+          const visibilityAt = time => {
+            timer.currentTime = time;
+            return getComputedStyle(cut).visibility;
           };
-          const before = frameAt(delay - 1);
-          const entry = frameAt(delay);
-          const large = frameAt(delay + 300);
-          const held = frameAt(delay + 1100);
-          const exit = frameAt(delay + duration - 1);
+          const before = visibilityAt(delay - 1);
+          const entry = visibilityAt(delay);
           const box = cut.getBoundingClientRect();
-          const base = source.getBoundingClientRect();
+          const portrait = face.getBoundingClientRect();
+          const held = visibilityAt(delay + duration - 1);
           const coversViewport = box.left === 0 && box.top === 0 && box.width === innerWidth && box.height === innerHeight;
-          const fillsFrame = ({left,right,top,bottom}) => left < 0 && right > box.right && top < 0 && bottom > box.bottom;
-          const matchesSource = ({left,top,width}) => Math.abs(left - base.left) < 2
-            && Math.abs(top - base.top) < 2 && Math.abs(width - base.width) < 2;
+          const fillsFrame = portrait.left < 0 && portrait.right > box.right && portrait.top < 0 && portrait.bottom > box.bottom;
           return {
-            delay,duration,iterations,coversViewport,before:before.visibility,visible:entry.visibility,
-            zoomsFromSource:matchesSource(entry.portrait) && matchesSource(exit.portrait),
-            fillsFrame:fillsFrame(large.portrait) && fillsFrame(held.portrait),
-            shadeFollowsFace:entry.shade === 0 && large.shade > .99 && held.shade > .99 && exit.shade < .05,
+            delay,duration,iterations,before,entry,held,coversViewport,fillsFrame,
+            isHardCut:animations.length === 1 && getComputedStyle(cut).animationTimingFunction === 'steps(1)',
           };
         });
         assert.equal(surprise.delay,10000);
-        assert.equal(surprise.duration,1450);
+        assert.equal(surprise.duration,900);
         assert.equal(surprise.iterations,1);
-        assert.equal(surprise.before,'hidden');
-        assert.equal(surprise.visible,'visible');
+        assert.deepEqual([surprise.before,surprise.entry,surprise.held],['hidden','visible','visible']);
         assert.ok(surprise.coversViewport && surprise.fillsFrame, `Kogasa fills the viewport at ${width}×${height}`);
-        assert.equal(surprise.zoomsFromSource,true, `Kogasa zooms from her original spot and back at ${width}×${height}`);
-        assert.equal(surprise.shadeFollowsFace,true, `the backdrop fades with the zoom at ${width}×${height}`);
+        assert.equal(surprise.isHardCut,true, 'the reveal has no zoom or fade');
       }
       const finishCut = randomValue => page.$eval(stinger, async (cut, randomValue) => {
         const random = Math.random;

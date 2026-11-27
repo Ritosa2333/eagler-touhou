@@ -1,4 +1,4 @@
-import {useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject} from 'react';
+import {useState, type CSSProperties, type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {siteBrandPath} from '../../lib/site-brand.mjs';
 import {loadingVignettes} from './loading-vignettes';
@@ -171,56 +171,28 @@ export const loadingSceneOptions = Object.entries(scenes).map(([id, {label}]) =>
 
 const repeatStingerDelay = () => 20_000 + Math.floor(Math.random() * 10_001);
 
-function LoadingSceneStinger({character, src, host, anchor}: {
-  character: Character; src: string; host: HTMLElement; anchor: RefObject<HTMLImageElement | null>;
-}) {
+function LoadingSceneStinger({character, src, host}: {character: Character; src: string; host: HTMLElement}) {
   const [{delay, shot}, setStinger] = useState({delay:10_000, shot:0});
-  const layerRef = useRef<HTMLDivElement>(null);
-  const faceRef = useRef<HTMLImageElement>(null);
-  // Each shot mounts a fresh portal node.
-  useLayoutEffect(() => {
-    const source = anchor.current, layer = layerRef.current, face = faceRef.current;
-    if (!source || !layer || !face) return;
-    const syncOrigin = () => {
-      const from = source.getBoundingClientRect(), viewport = layer.getBoundingClientRect();
-      const x = from.left + from.width / 2 - viewport.left - face.offsetLeft;
-      const y = from.top + from.height / 2 - viewport.top - face.offsetTop;
-      layer.style.setProperty('--stinger-origin', `translate(${x}px,${y}px) scale(${from.width / face.offsetWidth})`);
-    };
-    const atStart = (event: AnimationEvent) => {
-      if (event.animationName === 'loading-stinger-window') syncOrigin();
-    };
-    syncOrigin();
-    layer.addEventListener('animationstart', atStart);
-    window.addEventListener('resize', syncOrigin);
-    return () => {
-      layer.removeEventListener('animationstart', atStart);
-      window.removeEventListener('resize', syncOrigin);
-    };
-  });
-
   return createPortal(
-    <div key={shot} ref={layerRef} className="loading-scene-stinger" data-loading-stinger={character} aria-hidden="true"
+    <div key={shot} className="loading-scene-stinger" data-loading-stinger={character} aria-hidden="true"
       style={{'--stinger-delay': `${delay}ms`} as CSSProperties}
       onAnimationEnd={event => {
         if (event.animationName !== 'loading-stinger-window') return;
         const nextDelay = repeatStingerDelay();
         setStinger(({shot}) => ({delay:nextDelay, shot:shot + 1}));
       }}>
-      <img ref={faceRef} className="loading-scene-stinger-face" src={src} alt="" draggable={false}/>
+      <img className="loading-scene-stinger-face" src={src} alt="" draggable={false}/>
     </div>, host);
 }
 
 export function LoadingScene({scene, assetUrl}: {scene: LoadingSceneId; assetUrl(path: string): string}) {
   const {cast, artwork, foreground, stinger}: LoadingSceneSpec = scenes[scene];
-  const stingerAnchor = useRef<HTMLImageElement>(null);
   const portraitUrl = (character: Character) => character === 'reimu' ? reimuPortrait : assetUrl(siteBrandPath(characterFaces[character]));
   const host = stinger && uiPortalHost();
   return <>
     <div className="loading-scene" data-loading-scene={scene} aria-hidden="true">
       <svg className="loading-scene-art" viewBox="0 0 480 226" aria-hidden="true" focusable="false">{artwork}</svg>
       {cast.map(({character, at:[x,y], size = 48, pivot, action}) => <img key={`${character}:${x}:${y}`} className="loading-scene-portrait"
-        ref={character === stinger ? stingerAnchor : undefined}
         data-character={character} data-scene-motion={action} alt="" draggable={false} src={portraitUrl(character)}
         style={{
           left: `${x / 4.8}%`, top: `${y / 2.26}%`, inlineSize: `${size / 4.8}%`,
@@ -229,6 +201,6 @@ export function LoadingScene({scene, assetUrl}: {scene: LoadingSceneId; assetUrl
       {foreground && <svg className="loading-scene-art loading-scene-foreground" viewBox="0 0 480 226"
         aria-hidden="true" focusable="false">{foreground}</svg>}
     </div>
-    {stinger && host && <LoadingSceneStinger character={stinger} src={portraitUrl(stinger)} host={host} anchor={stingerAnchor}/>}
+    {stinger && host && <LoadingSceneStinger character={stinger} src={portraitUrl(stinger)} host={host}/>}
   </>;
 }
