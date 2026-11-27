@@ -1,0 +1,63 @@
+.ui-toolbar {
+  --toolbar-height: 36px;
+  --toolbar-font: 500 12px / 1.4 var(--kit-font);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.ui-toolbar > :is(button, [data-toolbar-segments]) {
+  box-sizing: border-box;
+  block-size: var(--toolbar-height);
+  min-block-size: var(--toolbar-height);
+  border: 1px solid var(--kit-border);
+  border-radius: 7px;
+  background: var(--kit-card);
+  color: var(--kit-foreground);
+  font: var(--toolbar-font);
+  transition: background-color var(--ui-feedback-duration) var(--ui-feedback-easing),
+    border-color var(--ui-feedback-duration) var(--ui-feedback-easing),
+    color var(--ui-feedback-duration) var(--ui-feedback-easing);
+}
+
+.ui-toolbar > button {
+  inline-size: var(--toolbar-control-width, auto);
+  padding-inline: 12px;
+  gap: 8px;
+}
+
+.ui-toolbar > button[data-toolbar-icon] {
+  inline-size: var(--toolbar-height);
+  padding-inline: 0;
+}
+
+.ui-toolbar > button:is(:hover, [aria-expanded="true"]):not(:disabled) {
+  background: var(--kit-accent);
+}
+
+.ui-toolbar > button:focus-visible {
+  outline: 2px solid var(--kit-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.ui-toolbar > [data-toolbar-segments] > button { font: var(--toolbar-font); }
+.ui-toolbar > button > svg,
+.ui-toolbar > [data-toolbar-segments] > button > svg {
+  inline-size: 16px;
+  block-size: 16px;
+  color: currentColor;
+}
+
+@media (max-width: 780px), (pointer: coarse) {
+  .ui-toolbar { --toolbar-height: 44px; }
+}
+
+@media (max-width: 780px) {
+  .ui-toolbar > [data-toolbar-show="wide"] { display: none; }
+}
+
+@media (width > 780px) {
+  .ui-toolbar > [data-toolbar-show="compact"] { display: none; }
+}

@@ -89,8 +89,28 @@ async function stableInputPanel(before){
   const after=await inputPanelOrigin();
   for(const axis of ['x','y'])assert.ok(Math.abs(after[axis]-before[axis])<=.5,'input panel moved on '+axis);
 }
+async function assertBookToolbar(){
+  await page.waitForSelector('.beauty-packs-trigger');
+  const result=await page.$eval('.book-tools',toolbar=>{
+    const narrow=innerWidth<=780;
+    const visible=[...toolbar.children].filter(element=>element.getClientRects().length);
+    return {narrow, height:narrow||matchMedia('(pointer: coarse)').matches?44:36,
+      fits:toolbar.scrollWidth<=toolbar.clientWidth+1,
+      entries:visible.filter(element=>element.hasAttribute('data-toolbar-show')).map(element=>element.dataset.toolbarShow),
+      controls:visible.map(element=>{
+        const {height,y}=element.getBoundingClientRect(),css=getComputedStyle(element);
+        return {height,y,background:css.backgroundColor,border:css.borderColor,radius:css.borderRadius,font:css.font};
+      })};
+  });
+  assert.equal(result.fits,true,'book toolbar stays in one row');
+  assert.deepEqual(result.entries,[result.narrow?'compact':'wide'],'only one visual pack entry is visible');
+  assert.equal(result.controls.length,3);
+  assert.equal(result.controls[0].height,result.height);
+  assert.deepEqual(result.controls, Array(3).fill(result.controls[0]), 'book toolbar uses shared alignment and styling');
+}
 async function application(){
   await go('/');await page.waitForSelector('#mastheadMenuToggle:not(:disabled)');await page.waitForSelector('#eaglerPreload',{hidden:true});await closeNotice();
+  await assertBookToolbar();
   await assertNavigationTypeface();
   await click('[data-book-view=covers]');await shot('home');
   for(const label of ['编号倒序','按作品名称','按作品编号']){

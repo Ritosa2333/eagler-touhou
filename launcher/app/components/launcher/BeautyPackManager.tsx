@@ -27,12 +27,12 @@ export function BeautyPackManager({works, onSetVersions, defaultOpen = false}: {
   const allGames = works.map(work => work.gameId);
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild>
-      <Button ref={desktop} variant="outline" size="sm" className="beauty-packs-trigger hidden min-[781px]:inline-flex">
+      <Button ref={desktop} variant="outline" size="sm" className="beauty-packs-trigger" data-toolbar-show="wide">
         <Sparkles aria-hidden="true"/>{title}
       </Button>
     </DialogTrigger>
     <ActionMenu label={more} trigger={
-      <Button ref={mobile} variant="outline" size="icon" className="beauty-packs-overflow min-[781px]:hidden" aria-label={more}>
+      <Button ref={mobile} variant="outline" size="icon" className="beauty-packs-overflow" data-toolbar-show="compact" data-toolbar-icon="" aria-label={more}>
         <Ellipsis aria-hidden="true"/>
       </Button>
     }>

@@ -58,6 +58,7 @@ import { PageInventory } from '../ui/page-inventory';
 import { RoomExample } from '../ui/room-example';
 import { Slider } from '../ui/slider';
 import { Skeleton } from '../ui/skeleton';
+import { Toolbar } from '../ui/toolbar';
 import '../components/player/replay-workspace.css';
 import '../ui/review.css';
 import { sitePageTitle } from '../navigation/document-locale';
@@ -92,11 +93,11 @@ function BeautyPackPreview() {
     .map((work, index) => ({...work, version: index % 2 === 0 ? 'beauty' as const : 'original' as const})));
   return <main className="ui-review">
     <header className="ui-review-header">
-      <div className="book-tools">
+      <Toolbar>
         <BeautyPackManager works={works} defaultOpen onSetVersions={(games, version) => {
           setWorks(values => values.map(work => games.includes(work.gameId) ? {...work, version} : work));
         }}/>
-      </div>
+      </Toolbar>
       <BookThemeToggle/>
     </header>
   </main>;

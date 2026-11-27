@@ -1,7 +1,4 @@
 @layer components {
-  .book-tools .beauty-packs-trigger, .book-tools .beauty-packs-overflow {
-    min-block-size: var(--book-tools-height, 36px);
-  }
   .ui-kit-dialog.beauty-packs-dialog {
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr);

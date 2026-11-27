@@ -17,6 +17,7 @@ import { Button } from '../../ui/button';
 import { Skeleton } from '../../ui/skeleton';
 import { ChoiceGroup, ChoiceItem } from '../../ui/choice-group';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../ui/select';
+import { Toolbar } from '../../ui/toolbar';
 import {useNavigationPageMotion} from '../../navigation/navigation-motion';
 import { useLocale } from '../../i18n';
 import { useOptionsTarget } from './options-ownership';
@@ -281,10 +282,11 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                   </ChoiceItem>)}
               </ChoiceGroup>
             </div>}
-            <div className="book-tools">
+            <Toolbar className="book-tools">
               <ChoiceGroup
                 type="single"
                 className="book-view-switch"
+                data-toolbar-segments=""
                 data-view={view}
                 value={view}
                 onValueChange={(value) => {
@@ -300,7 +302,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                   value="covers"
                   data-book-view="covers"
                   onClick={() => {if (view === 'covers') cancelLibraryMotion();}}
-                  className="px-2.5 py-1.5 text-xs"
+                  className="px-2.5 py-1.5"
                 >
                   <LayoutGrid aria-hidden="true" />
                   <span>{t('library.covers')}</span>
@@ -309,7 +311,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                   value="list"
                   data-book-view="list"
                   onClick={() => {if (view === 'list') cancelLibraryMotion();}}
-                  className="px-2.5 py-1.5 text-xs"
+                  className="px-2.5 py-1.5"
                 >
                   <List aria-hidden="true" />
                   <span>{t('library.list')}</span>
@@ -322,7 +324,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                 }}
                 disabled={!interactive}
               >
-                <SelectTrigger className="book-sort text-xs" aria-label={t('library.sort')}>
+                <SelectTrigger className="book-sort" aria-label={t('library.sort')}>
                   <SelectValue>{sortOptions.find((option) => option.value === sort)?.label}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -334,7 +336,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                 </SelectContent>
               </Select>
               {tools}
-            </div>
+            </Toolbar>
           </div>
           <div
             ref={results}

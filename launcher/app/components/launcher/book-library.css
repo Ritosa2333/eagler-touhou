@@ -242,9 +242,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 8px 16px;
     margin-bottom: 12px;
   }
+  .book-tools { margin-inline-start: auto; }
   .book-current {
     display: flex;
     align-items: baseline;
@@ -264,21 +266,8 @@
     font-size: 12px;
     white-space: nowrap;
   }
-  .book-tools {
-    --book-tools-height: 36px;
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
-    min-width: 0;
-  }
   .book-compact-categories {
     display: none;
-  }
-  .book-view-switch .book-view-choice {
-    height: 100%;
-    min-height: 0;
-    padding: 4px 8px;
-    font-size: 12px;
   }
   .book-view-switch {
     position: relative;
@@ -288,9 +277,6 @@
     gap: 3px;
     flex: none;
     padding: 3px;
-    border: 1px solid var(--kit-border);
-    border-radius: 7px;
-    background: var(--kit-muted);
   }
   .book-view-switch::before {
     content: "";
@@ -300,8 +286,7 @@
     left: 3px;
     width: calc((100% - 9px) / 2);
     border-radius: 6px;
-    background: var(--kit-card);
-    box-shadow: 0 1px 3px #00000012;
+    background: var(--kit-accent);
     transition: translate 420ms cubic-bezier(0.22, 0.7, 0.2, 1);
     pointer-events: none;
   }
@@ -314,11 +299,8 @@
     z-index: 1;
   }
   .book-sort {
-    min-width: 140px;
-  }
-  .book-tools :is(.book-sort, .book-view-switch) {
-    height: var(--book-tools-height);
-    min-height: var(--book-tools-height);
+    --toolbar-control-width: 176px;
+    min-inline-size: 0;
   }
   .book-grid {
     display: grid;
@@ -600,7 +582,6 @@
     }
     .book-view-header > .book-tools {
       width: 100%;
-      gap: 8px;
     }
     .book-current > span {
       position: absolute;
@@ -611,7 +592,6 @@
     }
     .book-view-header .book-sort {
       flex: 1;
-      min-width: 0;
     }
     .book-compact-categories {
       display: block;
@@ -652,11 +632,6 @@
     }
     .book-view-covers .book-card .book-identity > span:not(.book-title-line) {
       display: none;
-    }
-  }
-  @media (max-width: 780px), (pointer: coarse) {
-    .book-tools {
-      --book-tools-height: 44px;
     }
   }
 }
