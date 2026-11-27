@@ -1,0 +1,24 @@
+diff --git a/Shooting/BaseObject.cs b/Shooting/BaseObject.cs
+--- a/Shooting/BaseObject.cs
++++ b/Shooting/BaseObject.cs
+@@ -251,6 +251,9 @@ internal class BaseObject
+ 			{
+ 				value += Math.PI * 2.0;
+ 			}
++			// The retail x86 build keeps the x87 precision control at 24 bits, so every
++			// direction that reaches this setter has already been rounded to float32.
++			value = (double)(float)value;
+ 			if (!dirReady || value != direction)
+ 			{
+ 				direction = value;
+@@ -902,6 +905,8 @@ public virtual void Move()
+ 			dirReady = true;
+ 		}
+-		// The original rounds the screen position to float before subtracting the playfield offset.
++		// 24-bit x87 rounds each multiply, so the step is a float before it is added.
+ 		PointF position = Position;
+-		Position = new PointF((float)(position.X + Velocity * dirCos * scaleX), (float)(position.Y + Velocity * dirSin * scaleY));
++		float stepX = (float)(Velocity * dirCos) * scaleX;
++		float stepY = (float)(Velocity * dirSin) * scaleY;
++		Position = new PointF(position.X + stepX, position.Y + stepY);
+ 	}

@@ -50,5 +50,11 @@
   "009-stage-fade.patch": [
     "Shooting/BackgroundTransitionIn.cs",
     "Shooting/BaseStage.cs"
+  ],
+  "010-float-direction.patch": [
+    "Shooting/BaseObject.cs"
+  ],
+  "011-float-spread.patch": [
+    "Shooting/BaseEmitter_CS.cs"
   ]
 }

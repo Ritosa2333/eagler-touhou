@@ -8,3 +8,5 @@
 007-keyboard-menu.patch
 008-diagnostic-rng.patch
 009-stage-fade.patch
+010-float-direction.patch
+011-float-spread.patch
