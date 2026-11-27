@@ -100,8 +100,8 @@ try {
   await expectDocumentEntrance();
   assert.deepEqual(await page.$$eval('[data-help-page="about"] a[href^="https://qm.qq.com/q/"]', links =>
     links.map(link => [link.textContent, link.href, link.target, link.rel])), [
-    ['闲聊向QQ群', 'https://qm.qq.com/q/eeUrxIltug', '_blank', 'noopener noreferrer'],
     ['反馈向QQ群', 'https://qm.qq.com/q/XFO8KoiegU', '_blank', 'noopener noreferrer'],
+    ['闲聊向QQ群', 'https://qm.qq.com/q/eeUrxIltug', '_blank', 'noopener noreferrer'],
   ]);
   await page.reload({waitUntil:'domcontentloaded'});
   await waitForDocument('/about.html');
