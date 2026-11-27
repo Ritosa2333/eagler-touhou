@@ -18,6 +18,12 @@ function run(args) {
 }
 
 const endingPulses = (length, offset = 0) => Array.from({length: Math.ceil(length / 2)}, (_, i) => `${offset + i * 2}:0x1`);
+const holdEndingKey = (firstFrame, lastFrame, bits) =>
+  Array.from({length: lastFrame - firstFrame + 1}, (_, i) => `${firstFrame + i - 1}:${bits}`);
+
+function endingState(frames, seen, input) {
+  return run(['ending-smoke', dat, String(frames), `ending-seen=${seen}`, 'ending-clock', ...input]);
+}
 
 test('ending-smoke: skip after 0x78 frames returns to title', needDat, () => {
   const out = run(['ending-smoke', dat, '140', 'noskip=0', '121:0x1']);
@@ -63,6 +69,56 @@ test('ending: Loading clears after the animation loads and Z advances one line',
   assert.match(afterConfirm, /current_bgm=bgm\/th16_14\.wav\b/);
   assert.match(afterConfirm, /\bloading=0\b/);
 });
+
+test('ending: first viewing keeps the hold lock even when a different ending was seen', needDat, () => {
+  for (const seen of [0, 1]) {
+    const ctrl = endingState(90, seen, holdEndingKey(30, 90, '0x200'));
+    const z = endingState(90, seen, holdEndingKey(30, 90, '0x1'));
+    const confirmed = out => (out.match(/^event wait$/gm) ?? []).length;
+    assert.equal(confirmed(ctrl), 0);
+    assert.equal(confirmed(z), 1);
+  }
+});
+
+for (const [key, bits, secondLineFrame, staffStart, finalWait] of [
+  ['Ctrl', '0x200', 32, 338, 579],
+  ['Z', '0x1', 54, 354, 595],
+]) {
+  test(`ending: held ${key} follows the original repeat-view timing into Staff Roll`, needDat, () => {
+    // Japanese 1.00a Oracle, Normal Reimu, hold starts on ending frame 30.
+    const state = frame => endingState(frame, 2, holdEndingKey(30, frame, bits));
+    const countWaits = out => (out.match(/^event wait$/gm) ?? []).length;
+    const previous = countWaits(state(secondLineFrame - 1));
+    assert.equal(previous, key === 'Z' ? 1 : 0);
+    assert.equal(countWaits(state(secondLineFrame)), previous + 1);
+    assert.equal(countWaits(state(secondLineFrame + 5)), previous + 1);
+    assert.equal(countWaits(state(secondLineFrame + 6)), previous + 2);
+    assert.match(state(staffStart - 1), /\bmsg=e01\.msg\b/);
+    assert.match(state(staffStart), /\bmsg=staff2\.msg\b/);
+    assert.doesNotMatch(state(finalWait - 1), /\bwait=999\b/);
+    assert.match(state(finalWait), /^ending script_time=2880 wait=999$/m);
+  });
+}
+
+for (const [label, seen, bits, finalWait] of [
+  ['first viewer holds Ctrl', 0, '0x200', 3066],
+  ['viewer of another ending holds Ctrl', 1, '0x200', 426],
+  ['repeat viewer holds Z', 2, '0x1', 443],
+]) {
+  test(`Staff Roll: ${label} matches the original and still needs a final press`, needDat, () => {
+    // Tap through the story. Start holding when staff2.msg loads on frame 185.
+    const state = (frame, heldThrough = frame) => endingState(frame, seen, [
+      ...endingPulses(185), ...holdEndingKey(186, heldThrough, bits),
+      ...(heldThrough < frame ? [`${finalWait + 8}:0x1`] : []),
+    ]);
+    assert.doesNotMatch(state(finalWait - 1), /\bwait=999\b/);
+    assert.match(state(finalWait), /^ending script_time=2880 wait=999$/m);
+    assert.match(state(finalWait + 10), /\bending_live=1\b.*\bfinished=0\b/);
+    const exit = finalWait + 69;
+    assert.match(state(exit - 1, finalWait + 7), /\bending_live=1\b.*\bfinished=0\b/);
+    assert.match(state(exit, finalWait + 7), /\bending_live=0\b.*\bfinished=1\b/);
+  });
+}
 
 test('ending-script: mash confirm through dialogue reaches staff', needDat, () => {
   // 剧本时刻要走到 @152 才到 op12；noskip 关闭 >0x78 烟雾短路。

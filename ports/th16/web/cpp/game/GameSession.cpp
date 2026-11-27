@@ -563,8 +563,9 @@ bool GameSession::enter_ending(bool extra) {
             leave_ending();
             globals.title_origin = 3;
             supervisor.request(SceneId::Title);
+            return ChainResult::Continue;
         }
-        return ChainResult::Continue;
+        return ending.restart_staff_update(supervisor.input) ? ChainResult::Restart : ChainResult::Continue;
     }, 0x23, true);
     chains.enable(ending_update_chain_);
     // 绘制链 0x43（LAB_004197b0）：原版恒返回 1（空操作）；链登记对齐优先级

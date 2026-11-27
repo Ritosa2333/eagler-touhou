@@ -8,6 +8,19 @@
 namespace th16 {
 namespace {
 
+constexpr u32 kFirstViewOfEnding = 1u;
+constexpr u32 kFirstEndingEver = 2u;
+constexpr u32 kStaffScript = 2u;
+constexpr u32 kScriptLoading = 4u;
+constexpr i32 kShotHoldFrames = 20;
+constexpr i32 kDialogueSkipInterval = 6;
+constexpr i32 kStaffDrawInterval = 12;
+
+bool fast_forward_held(const InputState& input) {
+    return (input.held & InputState::kSkip) != 0 ||
+           ((input.held & InputState::kShot) != 0 && input.total_frames[0] >= kShotHoldFrames);
+}
+
 struct EndingIns {
     u16 time;
     u8 op;
@@ -42,15 +55,6 @@ void EndingScene::advance_pc() {
     if (script_pc == nullptr) return;
     const EndingIns* ins = read_ins(script_pc);
     script_pc = script_pc + 4 + ins->size;
-}
-
-bool EndingScene::waiting_for_input(const InputState& input) const {
-    // 0x4199f0 case 5/6：确认按下立即可过；否则需长按射击/跳过 ≥0x14 且外壳 flags bit0=0
-    if ((input.pressed & InputState::kConfirmMask) != 0) return false;
-    if ((flags & 1u) != 0) return true;
-    if ((input.held & InputState::kSkip) != 0) return false;
-    if ((input.held & InputState::kShot) != 0 && input.total_frames[0] >= 0x14) return false;
-    return true;
 }
 
 void EndingScene::paint_line(u32 vm_id, const char* text, i32 font, u32 color) {
@@ -90,7 +94,7 @@ bool EndingScene::switch_to_staff() {
     load_msg(bytes.data(), u32(bytes.size()), name);
     script_timer.reset();
     wait_timer.reset();
-    script_flags = 2;  // 原版 memset 后 |2；bit2 装载中不置
+    script_flags = kStaffScript;  // 原版 memset 后 |2；bit2 装载中不置
     text_color = 0xffffff;
     lines_written = 0;
     events.push_back("staff");
@@ -122,8 +126,8 @@ void EndingScene::begin(i32 shot, i32 shot_aux, i32 continues, ScoreFile* scores
     if (ending_index > 7) ending_index = 7;
 
     if (scores != nullptr) {
-        if (scores->stats.ending_seen[ending_index] == 0) flags |= 1u;
-        if (!scores->stats.any_ending_seen) flags |= 2u;
+        if (scores->stats.ending_seen[ending_index] == 0) flags |= kFirstViewOfEnding;
+        if (!scores->stats.any_ending_seen) flags |= kFirstEndingEver;
         scores->stats.ending_seen[ending_index] = u8(scores->stats.ending_seen[ending_index] | 1);
         if (difficulty == 1) scores->stats.ending_seen[ending_index] = u8(scores->stats.ending_seen[ending_index] | 2);
         else if (difficulty == 2) scores->stats.ending_seen[ending_index] = u8(scores->stats.ending_seen[ending_index] | 4);
@@ -152,7 +156,7 @@ bool EndingScene::load_msg(const u8* bytes, u32 size, const char* name) {
     }
     script_timer.reset();
     wait_timer.reset();
-    if ((script_flags & 2u) == 0) script_flags = 1;
+    if ((script_flags & kStaffScript) == 0) script_flags = 1;
     text_color = 0xffffff;
     lines_written = 0;
     events.push_back("msg-loaded");
@@ -192,7 +196,7 @@ void EndingScene::destroy_line_vms(AnmManager& anm) {
 
 EndingScene::ScriptResult EndingScene::step_script(const InputState& input) {
     // 0x4199f0：flags bit2 = 装载中则空转
-    if ((script_flags & 4u) != 0) return ScriptResult::Running;
+    if ((script_flags & kScriptLoading) != 0) return ScriptResult::Running;
     if (script_pc == nullptr || msg_bytes.empty()) return ScriptResult::Finished;
 
     for (;;) {
@@ -252,13 +256,13 @@ EndingScene::ScriptResult EndingScene::step_script(const InputState& input) {
             const i32 wait_arg = ins->size >= 4 ? arg_i32(script_pc, 0) : 0;
             if (wait_timer.current < 1) wait_timer.set(wait_arg);
             wait_timer.untick(1.0f);
-            if (wait_arg < 0) wait_timer.set(999);
+            if (ins->op == 5 && wait_arg < 0) wait_timer.set(999);
 
-            if (waiting_for_input(input) && wait_timer.current > 0) {
-                const bool can_ff = (flags & 1u) == 0 &&
-                    (((input.held & InputState::kSkip) != 0) ||
-                     ((input.held & InputState::kShot) != 0 && input.total_frames[0] >= 0x14));
-                if (!can_ff || (wait_timer.current % 6) != 0) {
+            // 0x419be9 / 0x419c9e：新按下确认立即通过。长按只在已看结局的等待间隔上通过。
+            // Staff 末尾 op5 把等待锁在 999，仍需一次新的确认。
+            if ((input.pressed & InputState::kConfirmMask) == 0 && wait_timer.current > 0) {
+                if ((flags & kFirstViewOfEnding) != 0 || !fast_forward_held(input) ||
+                    wait_timer.current % kDialogueSkipInterval != 0) {
                     return ScriptResult::Running;
                 }
             }
@@ -274,7 +278,7 @@ EndingScene::ScriptResult EndingScene::step_script(const InputState& input) {
             pending_anm_slot = slot_arg + 0x14;
             pending_anm_name.clear();
             if (ins->size > 4) pending_anm_name.assign(reinterpret_cast<const char*>(script_pc + 8));
-            script_flags |= 4u;
+            script_flags |= kScriptLoading;
             AnmFile* file = nullptr;
             if (load_ending_anm && !pending_anm_name.empty()) {
                 file = load_ending_anm(pending_anm_slot, pending_anm_name.c_str());
@@ -382,9 +386,9 @@ EndingScene::ScriptResult EndingScene::step_script(const InputState& input) {
 }
 
 bool EndingScene::finish_animation_load() {
-    if ((script_flags & 4u) == 0) return false;
+    if ((script_flags & kScriptLoading) == 0) return false;
     // 宿主已经同步读完动画。下一帧开始时提交装载完成。
-    script_flags &= ~4u;
+    script_flags &= ~kScriptLoading;
     return true;
 }
 
@@ -414,6 +418,13 @@ bool EndingScene::update(const InputState& input) {
         return true;
     }
     return false;
+}
+
+bool EndingScene::restart_staff_update(const InputState& input) const {
+    // 0x41973f：职员表用任一结局的已阅标记，按住时每 12 次更新绘制一次。
+    return (script_flags & (kStaffScript | kScriptLoading)) == kStaffScript &&
+           (flags & kFirstEndingEver) == 0 && fast_forward_held(input) &&
+           timer % kStaffDrawInterval != 0;
 }
 
 }  // namespace th16

@@ -407,8 +407,10 @@ int main(int argc, char** argv) {
         i32 score = 0;
         i32 shot = 0;
         i32 continues = 0;
+        i32 ending_seen = 0;
         u32 config_flags = 0;
         bool dump_ascii = false;
+        bool ending_clock = false;
         const char* replay_dir = nullptr;
         const char* playback_path = nullptr;
         const char* draw_path = nullptr;
@@ -420,8 +422,10 @@ int main(int argc, char** argv) {
             else if (std::strncmp(argv[a], "score=", 6) == 0) score = std::atoi(argv[a] + 6);
             else if (std::strncmp(argv[a], "shot=", 5) == 0) shot = std::atoi(argv[a] + 5);
             else if (std::strncmp(argv[a], "continues=", 10) == 0) continues = std::atoi(argv[a] + 10);
+            else if (std::strncmp(argv[a], "ending-seen=", 12) == 0) ending_seen = std::atoi(argv[a] + 12);
             else if (std::strncmp(argv[a], "config=", 7) == 0) config_flags = u32(std::strtoul(argv[a] + 7, nullptr, 0));
             else if (std::strcmp(argv[a], "ascii") == 0) dump_ascii = true;
+            else if (std::strcmp(argv[a], "ending-clock") == 0) ending_clock = true;
             else if (std::strncmp(argv[a], "replay_dir=", 11) == 0) replay_dir = argv[a] + 11;
             else if (std::strncmp(argv[a], "playback=", 9) == 0) playback_path = argv[a] + 9;
             else if (std::strncmp(argv[a], "draw=", 5) == 0) draw_path = argv[a] + 5;
@@ -455,12 +459,16 @@ int main(int argc, char** argv) {
                 }
             }
         }
-        if (shot < 0 || shot >= 4 || continues < 0 || difficulty < 0 || difficulty >= 5) return 1;
+        if (shot < 0 || shot >= 4 || continues < 0 || difficulty < 0 || difficulty >= 5 ||
+            ending_seen < 0 || ending_seen > 2) return 1;
         session.globals.shot = shot;
         session.globals.shot_aux = 0;
         session.globals.continues = continues;
         session.globals.difficulty = difficulty;
         session.globals.score = score;
+        // View history at entry: first ending, another ending seen, or this ending already seen.
+        if (ending_seen > 0) session.scores.stats.any_ending_seen = 1;
+        if (ending_seen == 2) session.scores.stats.ending_seen[shot * 2 + (continues != 0)] = 1;
         if (replay_dir != nullptr) session.demo_directory = replay_dir;
         if (playback_path != nullptr && clear_at < 0) return fail("playback requires clear-at");
         if (clear_at >= 0) {
@@ -511,6 +519,9 @@ int main(int argc, char** argv) {
                     session.ending.msg_name.c_str(),
                     session.music.current.empty() ? "-" : session.music.current.c_str(),
                     session.game.loading_vm != 0 ? 1 : 0);
+        if (ending_clock)
+            std::printf("ending script_time=%d wait=%d\n", session.ending.script_timer.current,
+                        session.ending.wait_timer.current);
         if (!session.ending.last_text.empty()) std::printf("text_bytes=%zu\n", session.ending.last_text.size());
         if (playback_path != nullptr)
             std::printf("replay menu_frame=%d title_frame=%d extend_sounds=%d\n",

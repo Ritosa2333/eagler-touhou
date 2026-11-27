@@ -86,13 +86,14 @@ struct EndingScene {
     ScriptResult step_script(const InputState& input);
     // 0x4196c0 + 跳过/超时门控（烟雾测试口径：>0x78 确认结束）
     bool update(const InputState& input);
+    // 0x41973f：重跑更新链，直到下一次职员表绘制。
+    bool restart_staff_update(const InputState& input) const;
     bool finish_animation_load();
     void end();
 
 private:
     static std::string decrypt_text(const u8* src);
     void advance_pc();
-    bool waiting_for_input(const InputState& input) const;
     void paint_line(u32 vm_id, const char* text, i32 font, u32 color);
     bool switch_to_staff();
 };
