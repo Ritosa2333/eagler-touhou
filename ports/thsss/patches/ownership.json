@@ -59,5 +59,11 @@
   ],
   "012-music-loading-rng.patch": [
     "Shooting/GameState_MusicLoading.cs"
+  ],
+  "013-float-degree.patch": [
+    "Shooting/BaseObject.cs"
+  ],
+  "014-float-aim.patch": [
+    "Shooting/BaseObject.cs"
   ]
 }

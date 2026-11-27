@@ -1,0 +1,13 @@
+diff --git a/Shooting/BaseObject.cs b/Shooting/BaseObject.cs
+--- a/Shooting/BaseObject.cs
++++ b/Shooting/BaseObject.cs
+@@ -1083,7 +1083,8 @@
+ 
+ 	public double GetDirection(PointF TargetOriginalPosition)
+ 	{
+-		return Math.PI + Math.Atan2(OriginalPosition.Y - TargetOriginalPosition.Y, OriginalPosition.X - TargetOriginalPosition.X);
++		// The retail x87 add of pi and atan2 rounds to float32 before the homing step.
++		return (float)(Math.PI + Math.Atan2(OriginalPosition.Y - TargetOriginalPosition.Y, OriginalPosition.X - TargetOriginalPosition.X));
+ 	}
+ 
+ 	public double GetDistance(BaseObject Target)
