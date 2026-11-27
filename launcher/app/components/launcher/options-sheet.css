@@ -294,6 +294,7 @@
     .tools[data-options-panel][data-book-sheet] {
       --options-height: auto;
       --book-sheet-clearance: max(var(--ui-safe-top), min(18dvh, 120px));
+      background: var(--book-panel-surface);
       top: auto;
       bottom: calc(100dvh - var(--options-view-height, 100dvh) - var(--options-view-top, 0px));
       max-height: calc(var(--options-view-height, 100dvh) - var(--book-sheet-clearance));

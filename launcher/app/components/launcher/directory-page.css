@@ -17,7 +17,7 @@
   .book-room-filter-groups > [role='group'] + [role='group'] {border-inline-start:1px solid var(--kit-border)}
   .book-room-filter-label {padding:6px 8px 4px;color:var(--kit-muted-foreground);font-size:12px;font-weight:600}
   .book-room-filter-count {margin-inline-start:auto;padding-inline-start:8px;color:var(--kit-muted-foreground);font-size:12px;font-variant-numeric:tabular-nums}
-  .book-directory .lobby-list-surface {position:relative;display:flex;flex-direction:column;min-width:0;min-height:280px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);overflow:hidden}
+  .book-directory .lobby-list-surface {position:relative;display:flex;flex-direction:column;min-width:0;min-height:280px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-panel-surface);overflow:hidden}
   .book-directory .lobby-refresh[data-loading='true'] svg {animation:lobby-refresh-loading 1.1s linear infinite}
   @keyframes lobby-refresh-loading {to {transform:rotate(360deg)}}
   .book-directory .lobby-room-list {flex:1;min-height:0}

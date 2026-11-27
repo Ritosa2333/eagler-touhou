@@ -126,7 +126,7 @@
 }
 .rating-table-wrap { overflow-x: auto; border: 1px solid var(--kit-border); border-radius: 6px; }
 html[data-custom-background] .th09-rating-page :is(.rating-table-wrap, .rating-overview) {
-  background-color: color-mix(in srgb, var(--kit-card) var(--custom-panel-opacity), transparent);
+  background-color: var(--book-panel-surface);
 }
 .rating-table-state { padding: 6px 8px; border-top: 1px solid var(--kit-border); }
 .rating-table { width: 100%; min-width: 740px; table-layout: fixed; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }

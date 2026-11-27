@@ -1,13 +1,27 @@
 @layer components {
   .game-detail-hero {
-    --game-hero-text: #f8f5f8;
-    --game-hero-muted: #e1d8e1;
+    --game-hero-base: #151515;
+    --game-hero-muted: #d6d6d6;
+    --game-hero-art-end: #000;
+    --game-hero-outline: #14141442;
+    --game-hero-outline-hover: #ffffff26;
+    --game-hero-edge: #fff5;
+    --game-hero-favorite: #f5d278;
     position: relative;
     isolation: isolate;
     overflow: clip;
-    background: #25222d;
-    color: var(--game-hero-text);
-    border-block-end: 1px solid #ffffff30;
+    background: var(--game-hero-base);
+    color: var(--kit-foreground);
+    border-block-end: 1px solid var(--kit-border);
+  }
+  html[data-book-theme="light"] .game-detail-hero {
+    --game-hero-base: #f6f6f6;
+    --game-hero-muted: #45454a;
+    --game-hero-art-end: #0007;
+    --game-hero-outline: #ffffff70;
+    --game-hero-outline-hover: #ffffffad;
+    --game-hero-edge: #0005;
+    --game-hero-favorite: var(--kit-warning);
   }
   .game-detail-backdrop {
     position: absolute;
@@ -19,7 +33,7 @@
     object-position: var(--detail-art-position, 50%) center;
     opacity: var(--game-detail-art-opacity, .54);
     filter: brightness(var(--detail-art-brightness, .68)) saturate(var(--detail-art-saturation, .85));
-    mask-image: linear-gradient(to right, transparent, black 95%);
+    mask-image: linear-gradient(to right, transparent, var(--game-hero-art-end) 95%);
     pointer-events: none;
   }
   .game-detail-identity {
@@ -73,6 +87,6 @@
 }
 
 :is(.game-detail-hero, .mobile-game-actions) .ui-kit-button.launch:not(.launch-secondary) { background: #95c796; color: #132c1c; font-weight: 700; }
-.game-detail-hero .ui-kit-button[data-variant="outline"] { background: #14131f42; border-color: #fff5; color: inherit; }
-.game-detail-hero .ui-kit-button[data-variant="outline"]:hover { background: #ffffff26; }
-.game-detail-hero .game-detail-favorite[aria-pressed="true"] { color: #f5d278; }
+.game-detail-hero .ui-kit-button[data-variant="outline"] { background: var(--game-hero-outline); border-color: var(--game-hero-edge); color: inherit; }
+.game-detail-hero .ui-kit-button[data-variant="outline"]:hover { background: var(--game-hero-outline-hover); }
+.game-detail-hero .game-detail-favorite[aria-pressed="true"] { color: var(--game-hero-favorite); }

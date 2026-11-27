@@ -21,7 +21,6 @@
   }
   html[data-background-mode="seigaiha"] body:not(.mp-room-active):has(.book-masthead),
   html[data-background-mode="seigaiha"][data-ui-home] body:not(.mp-room-active) {background-image:var(--custom-background-mask),var(--seigaiha-pattern),var(--seigaiha-pattern);background-size:auto,144px 72px,144px 72px;background-position:0 0,0 0,72px 36px;background-repeat:repeat}
-  html[data-custom-background] body:not(.mp-room-active) :is(.lobby-list-surface,.profile-panel) {background-color:color-mix(in srgb,var(--book-surface) var(--custom-panel-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-masthead {background-color:color-mix(in srgb,var(--book-surface) var(--custom-navigation-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-card {background-color:color-mix(in srgb,var(--book-surface) var(--custom-card-opacity),transparent)}
   html[data-custom-background] body:not(.mp-room-active) .book-directory .book-lobby-item {background-color:color-mix(in srgb,var(--book-surface) var(--custom-category-opacity),transparent)}

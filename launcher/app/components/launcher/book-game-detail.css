@@ -1,6 +1,7 @@
 @layer components {
   .book-game-detail {
     --game-detail-inset: clamp(20px, 3.9vw, 56px);
+    background: var(--book-panel-surface);
     min-width: 0;
     scroll-margin-top: var(--site-header-height, 44px);
   }
