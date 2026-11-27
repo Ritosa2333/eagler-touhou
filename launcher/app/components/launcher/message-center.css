@@ -55,6 +55,9 @@
   .masthead-inbox-all:hover {background:var(--kit-accent);color:var(--kit-foreground)}
   .masthead-inbox-empty {margin:8px 0;color:var(--kit-muted-foreground);font-size:13px}
 
+  .launcher-page-surface:is([data-page="announcements"],[data-page="messages"]) {
+    display:grid;grid-template-columns:minmax(0,1fr);min-block-size:var(--launcher-content-height)
+  }
   .message-center {display:grid;grid-template-columns:220px minmax(0,1fr);width:min(calc(100% - 48px),1030px);margin:58px auto 40px;padding:20px;border-radius:10px;background:var(--book-reading-surface)}
   .message-center-navigation {border-inline-end:1px solid var(--kit-border);padding-inline-end:28px}
   .message-center-navigation header {display:flex;align-items:center;min-height:35px;margin-block-end:12px;padding-inline:10px}

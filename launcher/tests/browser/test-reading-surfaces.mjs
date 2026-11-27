@@ -43,6 +43,21 @@ try {
     context.fillRect(0, 0, 1, 1);
     return {alpha:context.getImageData(0, 0, 1, 1).data[3], opacity:css.opacity};
   });
+  const announcement = responses['/api/v1/announcements'].items[0];
+  const checkMessagePageHeight = async (route, width) => {
+    const sizes = await page.$eval('.message-center', panel => ({
+      viewport: innerHeight,
+      pageBottom: panel.parentElement.getBoundingClientRect().bottom,
+      panelBottom: panel.getBoundingClientRect().bottom,
+      bodyBottom: document.body.getBoundingClientRect().bottom,
+      scrollHeight: document.documentElement.scrollHeight,
+    }));
+    const bottomMargin = width <= 780 ? 0 : 40;
+    assert.ok(sizes.bodyBottom >= sizes.viewport - 1, `${route}: wallpaper covers the viewport at ${width}px`);
+    assert.ok(Math.abs(sizes.panelBottom + bottomMargin - sizes.viewport) <= 1, `${route}: panel fills the available height at ${width}px`);
+    assert.ok(Math.abs(sizes.pageBottom - sizes.viewport) <= 1 && sizes.scrollHeight <= sizes.viewport + 1,
+      `${route}: no unnecessary page scrolling at ${width}px`);
+  };
   const cases = [
     ['?section=announcements', ['.message-center'], '.message-center .announcement-copy-content'],
     ['?section=messages', ['.message-center'], '.message-center .message-empty'],
@@ -61,7 +76,9 @@ try {
         const toggle = '.message-announcements .announcement-more[aria-expanded="false"]';
         await page.locator(toggle).click();
         await page.waitForSelector('.message-announcements .announcement-more[aria-expanded="true"]', {visible:true});
+        await page.locator('.message-announcements .announcement-more[aria-expanded="true"]').click();
       }
+      if (route === '?section=messages') await checkMessagePageHeight(route, width);
       for (const panel of [35, 88, 100]) {
         await settings('grid', panel);
         for (const selector of surfaces) {
@@ -74,6 +91,21 @@ try {
       for (const selector of surfaces) assert.equal((await paint(selector)).alpha, 0, `${route} keeps its plain-theme layout`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${route} fits ${width}px`);
     }
+    const route = '?section=announcements';
+    responses['/api/v1/announcements'].items = [];
+    await page.goto(new URL(route, base), {waitUntil:'domcontentloaded'});
+    await page.waitForSelector('.message-announcements .announcement-entry', {visible:true});
+    await checkMessagePageHeight(route, width);
+    const length = 12;
+    responses['/api/v1/announcements'].items = Array.from({length}, (_, index) =>
+      ({...announcement, id:index + 1, body:'Announcement preview.', publishedAt:announcement.publishedAt + index}));
+    await page.goto(new URL(route, base), {waitUntil:'domcontentloaded'});
+    await page.waitForFunction(count => document.querySelectorAll('.message-announcements .announcement-entry').length >= count, {}, length);
+    const last = await page.$('.message-announcements .announcement-entry:last-child');
+    await last.evaluate(node => node.scrollIntoView({block:'end'}));
+    assert.ok(await last.evaluate(node => node.getBoundingClientRect().bottom <= innerHeight + 1));
+    assert.ok(await page.evaluate(() => scrollY > 0), `long announcements scroll naturally at ${width}px`);
+    responses['/api/v1/announcements'].items = [announcement];
   }
   console.log('PASS: announcements, messages, home, public profile and uptime use the shared reading surface on desktop/mobile');
 } finally {await browser.close();}
