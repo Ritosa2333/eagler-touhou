@@ -43,5 +43,8 @@
   ],
   "007-keyboard-menu.patch": [
     "Shooting/MenuOption.cs"
+  ],
+  "008-diagnostic-rng.patch": [
+    "Shooting/MyRandom.cs"
   ]
 }

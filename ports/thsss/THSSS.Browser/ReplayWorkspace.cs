@@ -82,6 +82,9 @@ namespace Shooting
 			{
 				return false;
 			}
+#if THSSS_DIAGNOSTIC
+			THSSS.Observe.RngTape.Load("RngTape.txt");
+#endif
 			var info = Replay.ReadTitle(native);
 			string state;
 			int planeIndex;
@@ -139,6 +142,13 @@ namespace Shooting
 
 		public string WorkspaceStateJson()
 		{
+#if THSSS_DIAGNOSTIC
+			var snapshot = THSSS.Observe.VerifySnapshot.Build(this);
+			if (snapshot != null)
+			{
+				return snapshot;
+			}
+#endif
 			return "{\"frame\":" + WorkspaceFrame.ToString(CultureInfo.InvariantCulture)
 				+ ",\"total\":" + WorkspaceTotal.ToString(CultureInfo.InvariantCulture)
 				+ ",\"ended\":" + (WorkspaceEnded ? "true" : "false")

@@ -20,6 +20,8 @@
     <RootNamespace>Thsss.Browser</RootNamespace>
     <AssemblyName>THSSS.Browser</AssemblyName>
     <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
+    <DefineConstants Condition="'$(ThsssDiagnostic)' == 'true'">$(DefineConstants);THSSS_DIAGNOSTIC</DefineConstants>
+    <IlcGenerateCompleteTypeMetadata Condition="'$(ThsssDiagnostic)' == 'true'">true</IlcGenerateCompleteTypeMetadata>
     <!-- SYSLIB*: BinaryFormatter/DES APIs. CS0169/0649/0414: unused fields left by ILSpy decompile. -->
     <NoWarn>$(NoWarn);SYSLIB0011;SYSLIB0021;CS0169;CS0649;CS0414</NoWarn>
   </PropertyGroup>
@@ -62,6 +64,7 @@
     <DirectPInvoke Include="System.IO.Compression.Native" Visible="false" />
     <ProjectReference Include="..\THSSS.SlimDX\THSSS.SlimDX.csproj" />
     <ProjectReference Include="..\THSSS.Platform\THSSS.Platform.csproj" />
+    <Compile Include="..\tools\replay-verifier\observe\VerifySnapshot.cs" Link="VerifySnapshot.cs" />
     <EmbeddedResource Include="Shooting.RenderForm_Main.resources">
       <LogicalName>Shooting.RenderForm_Main.resources</LogicalName>
       <WithCulture>false</WithCulture>

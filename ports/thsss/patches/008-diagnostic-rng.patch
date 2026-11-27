@@ -1,0 +1,60 @@
+diff --git a/Shooting/MyRandom.cs b/Shooting/MyRandom.cs
+--- a/Shooting/MyRandom.cs
++++ b/Shooting/MyRandom.cs
+@@ -17,24 +17,56 @@
+ 
+ 	public override int Next()
+ 	{
++#if THSSS_DIAGNOSTIC
++		int taped;
++		if (THSSS.Observe.RngTape.TryInt(0, 0, 0, out taped))
++		{
++			ranValue = taped;
++			return ranValue;
++		}
++#endif
+ 		ranValue = base.Next();
+ 		return ranValue;
+ 	}
+ 
+ 	public override int Next(int maxValue)
+ 	{
++#if THSSS_DIAGNOSTIC
++		int taped;
++		if (THSSS.Observe.RngTape.TryInt(1, maxValue, 0, out taped))
++		{
++			ranValue = taped;
++			return ranValue;
++		}
++#endif
+ 		ranValue = base.Next(maxValue);
+ 		return ranValue;
+ 	}
+ 
+ 	public override int Next(int minValue, int maxValue)
+ 	{
++#if THSSS_DIAGNOSTIC
++		int taped;
++		if (THSSS.Observe.RngTape.TryInt(2, minValue, maxValue, out taped))
++		{
++			ranValue = taped;
++			return ranValue;
++		}
++#endif
+ 		ranValue = base.Next(minValue, maxValue);
+ 		return ranValue;
+ 	}
+ 
+ 	public override double NextDouble()
+ 	{
++#if THSSS_DIAGNOSTIC
++		double taped;
++		if (THSSS.Observe.RngTape.TryDouble(out taped))
++		{
++			ranValue = (int)(taped * 100.0);
++			return taped;
++		}
++#endif
+ 		double num = base.NextDouble();
+ 		ranValue = (int)(num * 100.0);
+ 		return num;

@@ -1,0 +1,27 @@
+{
+  "schema": "thsss/authoritative-state/v1",
+  "align": "post-mainmenu-replay",
+  "startCondition": "First OnReplay stage UpdateData after Splash fadeout has reached MainMenu. Splash and NowLoading frames are not compared.",
+  "endCondition": "Last OnReplay stage frame before GameOverMenu. The game-over menu itself is not a required tick.",
+  "samplePoint": "After PresentState.UpdateData returns, PresentInterval=1. Render, Present and audio callbacks are not required fields.",
+  "requiredCategories": ["clocks", "input", "rng", "player", "economy", "boss", "entities"],
+  "diagnosticOnly": ["draw"],
+  "floatEncoding": "float32-bits-int32",
+  "categories": {
+    "clocks": ["timeMain", "timeTotal", "realTimeTotal", "stageId", "difficulty", "stageName"],
+    "input": ["held"],
+    "rng": ["ranValue", "shape", "draws", "inext", "inextp", "seed", "core"],
+    "player": ["x", "y", "life", "lifeChip", "spell", "spellChip", "power", "score", "hiScore", "graze", "enchant", "enchantTime", "lastColor", "lifeUpCount", "starPoint", "highItemScore", "rate"],
+    "economy": ["continueTimes", "slowMode", "clearCheck"],
+    "boss": ["present", "type", "x", "y", "hp", "life", "time"],
+    "entities": ["bullets", "myBullets", "enemies", "items", "spells"],
+    "draw": ["effects", "interfaces", "background", "background2", "background3d", "particles"]
+  },
+  "entityFields": ["t", "x", "y", "hp", "time", "life", "region"],
+  "attribution": {
+    "capture": "sequence, tick-count, anchor or render-field mismatch",
+    "rng-runtime": "Framework Random versus net10 Random when the recorded draw tape is absent",
+    "web": "candidate logic or patch divergence after rng matches",
+    "original": "injected retail process failed"
+  }
+}

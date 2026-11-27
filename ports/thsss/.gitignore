@@ -157,3 +157,8 @@ THSSS.Browser/wwwroot/assets/
 
 # Launcher content directory (local links, not source)
 /content
+
+# Replay verifier build output and local Proton captures
+/artifacts/
+tools/replay-verifier/**/bin/
+tools/replay-verifier/**/obj/

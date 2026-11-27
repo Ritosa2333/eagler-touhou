@@ -50,17 +50,17 @@
 | INPUT-06 | [失焦与断开释放](../../docs/adaptation/input.md#input-06) | 已验证 | 按住移动时切后台／失焦后输入释放；重获焦点可继续操作。见[运行验收记录](#运行验收记录)。 |
 | INPUT-07 | [原作菜单与对话输入](../../docs/adaptation/input.md#input-07) | 已验证 | 键盘与手柄完成标题、难度、选人确认与对话快进；Esc 打开暂停“继续游戏”。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-01 | [限速滑动移动](../../docs/adaptation/input.md#touch-01) | 已验证 | `touchMovementMode=touch`，`InputSurface=play`。自右向左 `direct-touch` 拖动后，画面亮点从右侧集中区移到左侧。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-02 | [无限速滑动移动](../../docs/adaptation/input.md#touch-02) | 待验证 | 选项可设为 `touch-unlimited`。局内 play 表面远距跳变对照没做成。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-02 | [无限速滑动移动](../../docs/adaptation/input.md#touch-02) | 已验证 | 开局前设为 `touch-unlimited`，远距拖动跟随请求位置；改回 `touch` 后恢复限速。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-03 | [方向式虚拟摇杆](../../docs/adaptation/input.md#touch-03) | 已验证 | `touchMovementMode=joystick`。标题推下：菜单从 Game Start 移到 Replay；进局后 `joystickX` 推左右，自机在 play 表面移动。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-04 | [自由方向虚拟摇杆](../../docs/adaptation/input.md#touch-04) | 待验证 | 已切到 `joystick-free`，摇杆 HUD 出现；本地单测覆盖自由推杆位移。局内绕圈像素对照没做成。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-04 | [自由方向虚拟摇杆](../../docs/adaptation/input.md#touch-04) | 已验证 | 开局前设为 `joystick-free`。局内绕圈与变推杆幅度：自机连续转向，逻辑步进仍为原速。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-05 | [按住低速](../../docs/adaptation/input.md#touch-05) | 已验证 | `touchFocusMode=hold-button`，按钮文案“低速（按住）”。局内 `focusEnabled=true` 时与摇杆一并送出，抬起后 `focusEnabled=false`。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 已验证 | `touchFocusMode=toggle-button`，按钮文案“低速（切换）”。连续点击 `aria-pressed` 在 true／false 间切换。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待验证 | 没做双指。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 已验证 | `touch`／`touch-unlimited` 下 `touchFocusMode=two-finger`。移动中按下第二指进入低速，抬起恢复；移动指独立。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 已验证 | 开启触摸后左侧有开火／低速／BOMB／ESC。`touch-controls` 开火锁住后有 `se_plst00.wav`；键盘 X 与 BOMB 放出炸弹（现场可见）；`escapeSerial` 后进入暂停菜单。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 待验证 | 死亡后同一触点续拖没做成。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待验证 | 没做到结算与 Replay 落率。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 已验证 | 死亡后同一触点保留；可移动后从当前位置续拖。复活瞬间有小跳变，未跳回旧拖点。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 已验证 | 仅开 `touch-unlimited` 并实际移动后结算／保存 Replay，处理落率为 `100.0%`。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 已验证 | `doubleTapBombEnabled` 开启后，play 表面双击触发 Bomb（手动确认可见）。见[运行验收记录](#运行验收记录)。 |
-| TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待验证 | 标题静止点按播出 `se_ok00.wav`；摇杆模式下画布滑动可选菜单项。对话短按／长按没做。见[运行验收记录](#运行验收记录)。 |
+| TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 已验证 | 标题静止点按 `se_ok00.wav`；滑动／摇杆可选菜单。对话短按确认、长按跳过。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-13 | [确认键的新按下边沿](../../docs/adaptation/input.md#touch-13) | 已验证 | 保持射击进入对话后再触控确认，产生新按下边沿并推进流程。见[运行验收记录](#运行验收记录)。 |
 | TOUCH-14 | [100–300% 灵敏度](../../docs/adaptation/input.md#touch-14) | 已实现 | normal：[touch-sensitivity](../../docs/adaptation/status.json) |
 | TOUCH-15 | [触控与其他输入隔离](../../docs/adaptation/input.md#touch-15) | 已验证 | 键盘保持射击时取消触控或切换触控模式，键盘动作继续。见[运行验收记录](#运行验收记录)。 |
@@ -159,14 +159,14 @@
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| VERIFY-01 | [全部内置 Demo 对照](../../docs/adaptation/validation.md#verify-01) | 待核对 | 未适配。没有原版 Demo、长 Replay 或逐逻辑帧基准。 |
-| VERIFY-02 | [长 Replay 样本](../../docs/adaptation/validation.md#verify-02) | 待核对 | 未适配。没有原版 Demo、长 Replay 或逐逻辑帧基准。 |
-| VERIFY-03 | [原版基准与内容哈希](../../docs/adaptation/validation.md#verify-03) | 待核对 | 未适配。没有原版 Demo、长 Replay 或逐逻辑帧基准。 |
-| VERIFY-04 | [读取固定基准](../../docs/adaptation/validation.md#verify-04) | 待核对 | 未适配。没有原版 Demo、长 Replay 或逐逻辑帧基准。 |
-| VERIFY-05 | [单独维护原版基准](../../docs/adaptation/validation.md#verify-05) | 待核对 | 未适配。没有原版 Demo、长 Replay 或逐逻辑帧基准。 |
-| VERIFY-06 | [逐逻辑帧比较](../../docs/adaptation/validation.md#verify-06) | 待核对 | 未适配。没有原版 Demo、长 Replay 或逐逻辑帧基准。 |
-| VERIFY-07 | [诊断构建与正常构建](../../docs/adaptation/validation.md#verify-07) | 待核对 | 未适配。没有原版 Demo、长 Replay 或逐逻辑帧基准。 |
-| VERIFY-08 | [本作状态映射与结束条件](../../docs/adaptation/validation.md#verify-08) | 待核对 | 未适配。没有原版 Demo、长 Replay 或逐逻辑帧基准。 |
+| VERIFY-01 | [全部内置 Demo 对照](../../docs/adaptation/validation.md#verify-01) | 进行中 | quick 样本是 `Assets/Replay/thSSS_01.rpy`。对照从 Splash fadeout 后的起始页进入 Replay 开始，不比加载段。 |
+| VERIFY-02 | [长 Replay 样本](../../docs/adaptation/validation.md#verify-02) | 进行中 | `corpus.json` 的 daily 槽位已留出。当前 quick 只登记 `thSSS_01`。 |
+| VERIFY-03 | [原版基准与内容哈希](../../docs/adaptation/validation.md#verify-03) | 进行中 | 身份含零售 `THSSS.exe`、Replay 与资源树 SHA-256。`--accept 1` 才写入 `tools/replay-verifier/golden/`。 |
+| VERIFY-04 | [读取固定基准](../../docs/adaptation/validation.md#verify-04) | 进行中 | `run-gate.mjs --golden 1` 只读已有 golden，不改基准文件。 |
+| VERIFY-05 | [单独维护原版基准](../../docs/adaptation/validation.md#verify-05) | 进行中 | 原版轨迹只由 Proton 注入的 `THSSS.exe` 生成。接受基准是单独的 `--accept 1`。 |
+| VERIFY-06 | [逐逻辑帧比较](../../docs/adaptation/validation.md#verify-06) | 进行中 | 比较器报告首个分歧类别。玩家字段改写归因 `web`。诊断对照把原版 `MyRandom` 调用带回放到网页；`thSSS_01` 首个分歧是 tick 1 的 `rng.draws` 分组，归因 `web`。 |
+| VERIFY-07 | [诊断构建与正常构建](../../docs/adaptation/validation.md#verify-07) | 已实现 | `-p:ThsssDiagnostic=true` 才编译 `VerifySnapshot` 并扩展 `ReplayState`。正式 `stage:eagler` 不带这个开关。 |
+| VERIFY-08 | [本作状态映射与结束条件](../../docs/adaptation/validation.md#verify-08) | 已实现 | 权威字段见 `tools/replay-verifier/state-schema.json`。起点是 Splash fadeout 后的 `MainMenu`，再从第一帧 OnReplay 关卡 `UpdateData` 对齐；`GameOverMenu` 不是 required tick。加载段差异不记为网页逻辑错误。 |
 
 <!-- manual-verification -->
 
@@ -180,10 +180,16 @@
 
 存档：`Replay/thSSS_ud0001.rpy` 写入 `Prac` 四字节，读回一致；`../THSSS.Browser.wasm` 被拒绝。`sync` 后刷新并重新启动，列表仍有该文件、`Setting.INI`、`Score.dat` 和 `replay/AutoSave.trpy`，标题再次循环 `OP.ogg`。核对后删除该 Replay 并再次 `sync`。可见时 `frame-health` 为 60；强制 `document.hidden` 后下一笔为 15。AUDIO-05：`/BGM` 缺曲／坏曲经 `music-error`／`music-incomplete` 上报，`retry-music` 接受并保留未解决项；选无 BGM 清空待重试。
 
-INPUT／TOUCH：开启触摸后左侧出现开火／低速／BOMB／ESC／R。`InputSurface` 与 `TouchShift` 已绑定；标题为 menu，关卡为 play。方向键改变自机附近亮点；Z 连续 `se_plst00.wav`；X 与 BOMB 放出炸弹（现场可见）。标题静止点按 `direct-touch` 播出 `se_ok00.wav`。`touchMovementMode=touch` 时自右向左拖动，亮点从右侧移到左侧。`joystick` 推下标题菜单从 Game Start 移到 Replay，进局后左右推杆移动自机。`hold-button`／`toggle-button` 低速文案与切换正确；`doubleTapBombEnabled` 双击放出炸弹（手动确认）。`touch-controls` 开火锁住后有射击音；`escapeSerial` 进入暂停；`touch-cancel` 成功。布局编辑器可打开并保存。键位面板 WASD 改键生效；手柄映射与摇杆／按钮手动通过。无限速拖动、自由摇杆绕圈、双指、对话手势、灵敏度三档对照和放大镜没做完。
+INPUT／TOUCH：开启触摸后左侧出现开火／低速／BOMB／ESC／R。`InputSurface` 与 `TouchShift` 已绑定；标题为 menu，关卡为 play。方向键改变自机附近亮点；Z 连续 `se_plst00.wav`；X 与 BOMB 放出炸弹（现场可见）。标题静止点按 `direct-touch` 播出 `se_ok00.wav`。`touchMovementMode=touch` 时自右向左拖动，亮点从右侧移到左侧。`joystick` 推下标题菜单从 Game Start 移到 Replay，进局后左右推杆移动自机。`hold-button`／`toggle-button` 低速文案与切换正确；`doubleTapBombEnabled` 双击放出炸弹（手动确认）。`touch-controls` 开火锁住后有射击音；`escapeSerial` 进入暂停；`touch-cancel` 成功。布局编辑器可打开并保存。键位面板 WASD 改键生效；手柄映射与摇杆／按钮手动通过。自由摇杆绕圈、双指低速、死后同指续拖、无限速远距对照、无限速落率、对话短按／长按已手动通过；灵敏度三档对照和放大镜还没做完。
 
 这次核对覆盖 BUILD-05、RUNTIME-02、DISPLAY-06、DISPLAY-07、AUDIO-01、AUDIO-07、SAVE-02、SAVE-03、SAVE-04、INPUT-01、INPUT-02、INPUT-03、INPUT-04、TOUCH-01、TOUCH-03、TOUCH-05、TOUCH-06、TOUCH-08、TOUCH-11、TOUCH-16、TOUCH-17。联机、MIDI、语言包按产品声明记为不适用。AUDIO-05 已接入（实现＋单测）；原版逐帧基准没有适配。
 
-后续手动＋视觉核对：BUILD-05、RUNTIME-05、RUNTIME-06、PACKAGE-05、INPUT-06、INPUT-07、TOUCH-13、TOUCH-15、DISPLAY-04、DISPLAY-05、DISPLAY-08、AUDIO-02、AUDIO-03、AUDIO-06、REPLAY-01、REPLAY-02、REPLAY-04、REPLAY-05、REPLAY-06、REPLAY-07、SAVE-05、SAVE-06。AUDIO-04：切后台自动暂停 BGM，回前台从原游标续播。RUNTIME-04：切后台／恢复后声音与画面可继续，退出后监听器与临时输入已释放。REPLAY-03、SAVE-01、练习与 LANG-01、以及 TOUCH-02／04／07／09／10／12 等未在本轮关闭。
+后续手动＋视觉核对：BUILD-05、RUNTIME-05、RUNTIME-06、PACKAGE-05、INPUT-06、INPUT-07、TOUCH-13、TOUCH-15、DISPLAY-04、DISPLAY-05、DISPLAY-08、AUDIO-02、AUDIO-03、AUDIO-06、REPLAY-01、REPLAY-02、REPLAY-04、REPLAY-05、REPLAY-06、REPLAY-07、SAVE-05、SAVE-06。AUDIO-04：切后台自动暂停 BGM，回前台从原游标续播。RUNTIME-04：切后台／恢复后声音与画面可继续，退出后监听器与临时输入已释放。REPLAY-03、SAVE-01、练习与 LANG-01、以及 TOUCH-14／18／19 等未在本轮关闭。
+
+TOUCH-04／07／09（2026-11-24 手动）：开局前改设置。`joystick-free` 局内绕圈与变幅度连续转向、原速步进。滑动模式下 `two-finger` 第二指低速、移动指独立。死后同指续拖，从当前位置重建；复活瞬间有小跳变。对照 [input.md](../../docs/adaptation/input.md) 三项记为已验证。
+
+TOUCH-02／10／12（2026-11-24 手动）：`touch-unlimited` 远距跟随请求位置，改回 `touch` 恢复限速。仅无限速实际移动后结算／Replay 落率 `100.0%`。菜单点按与滑动已有记录；对话短按确认、长按跳过通过。三项记为已验证。
 
 BUILD：`node tools/workspace.mjs select thsss --variant=normal` 列出 launcher、common、tools、docs、ports/thsss。本机 .NET SDK 10.0.404、wasm-tools 10.0.115、Bun 1.4.4。`dotnet publish THSSS.Browser/THSSS.Browser.csproj -c Release -p:StageGameAssets=false` 退出码 0，`THSSS.Browser.wasm` sha256 `4e719e4cdbf9c07162c31aa82e6e7ad0365129470e2ca4ef12fcf8997fa5f6c3`。帧步进拆出后重新 `npm run stage:eagler`，`shell.mjs` 171717 字节，wasm 哈希未变，`runtime-files.json` 与 5 个运行文件一致。`node tools/ports/check.mjs --game=thsss --variant=normal` 为 10/10。
+
+VERIFY：权威逐帧对照从 Splash fadeout 后的 `MainMenu` 起，再对齐第一帧 OnReplay 关卡 `UpdateData`。Splash／NowLoading 不进 required 轨迹。原版侧是 Proton 注入的零售 `THSSS.exe`，网页侧是 `-p:ThsssDiagnostic=true` 的 `ReplayState`。绘制类字段只留在 raw，不参加 digest。入口是 `ports/thsss/tools/replay-verifier/run-gate.mjs`。`thSSS_01` 两侧各 1916 个逻辑帧并正常结束。首帧玩家坐标同为 (192, 398)。原版 `MyRandom.Next`／`NextDouble` 的结果写入 `thSSS_01.original.rng`，诊断构建按相同调用顺序回放。两侧各 10475 次调用，顺序和结果一致；从 tick 8 起逐帧 `rng.draws` 也一致。quick 门禁在 tick 1 给出 `DIVERGED web`，字段 `rng.draws.length` 为 140 对 20：原版把读谱界面的 7 颗星记在 `timeMain` 2，网页从 `timeMain` 2 到 8 每帧记 1 颗。这一帧的玩家、输入、时钟、Boss 和实体列表相同。负控确认改写玩家 digest 会归因 `web`。这次对照没有写入 golden。

@@ -2,7 +2,7 @@ const statuses = new Set(['ready', 'missing-replay', 'missing-original-provider'
 
 export function validateCorpus(corpus) {
   if (!corpus || corpus.schema !== 'eagler/replay-corpus/v1') throw new Error('Unsupported Replay corpus schema');
-  if (!/^th\d{2}$/.test(corpus.game ?? '')) throw new Error('Invalid corpus game id');
+  if (!/^th(\d{2}|sss)$/.test(corpus.game ?? '')) throw new Error('Invalid corpus game id');
   if (corpus.policy?.gameplayMutation !== 'forbidden') throw new Error('Corpus must forbid gameplay mutation');
   const demo = corpus.demo;
   if (!demo || !Array.isArray(demo.rotationOrder) || !demo.rotationOrder.length) throw new Error('Demo rotation order is required');
