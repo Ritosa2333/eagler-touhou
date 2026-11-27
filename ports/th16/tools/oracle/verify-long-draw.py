@@ -22,6 +22,13 @@ def sha256(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def read_cached(path):
+    try:
+        return json.loads(path.read_text(encoding='utf-8'))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+
 def covers_frame_range(segments, first, last):
     if first > last:
         return False
@@ -58,18 +65,22 @@ def main():
     tool = Path(__file__).parent
     oracle = tool / 'game-oracle.py'
     compare = tool / 'draw-compare.py'
+    draw_tools = tool.parent
+    digest_script = draw_tools / 'draw-digest.mjs'
     identity = {'exe_sha256': sha256(exe), 'dat_sha256': sha256(dat),
                 'harness_sha256': sha256(harness),
                 'verifier_sha256': sha256(__file__),
                 'oracle_sources': {str(p): sha256(p) for p in
                                    [oracle, tool / 'anm-oracle.py', tool / 'd3d-recorder.py',
-                                    tool / 'music-oracle.py', tool / 'sound-oracle.py', compare]}}
+                                    tool / 'music-oracle.py', tool / 'sound-oracle.py', compare,
+                                    digest_script, draw_tools / 'draw-structure.mjs']}}
     env = {k: v for k, v in os.environ.items() if not k.startswith('TH16_')}
 
     def run(case):
         started = time.monotonic()
         stem = output / case['name']
         result_path = stem.with_suffix('.result.json')
+        reference_path = stem.with_suffix('.reference.json')
         config = {k: v for k, v in case.items()
                   if k not in ('segments', 'state_digests', 'uninterrupted_bgm', 'verified', 'exit_frame')}
         if case['input'].startswith('@'):
@@ -77,39 +88,62 @@ def main():
         original_stream = stem.with_suffix('.original.jsonl')
         port_stream = stem.with_suffix('.candidate.jsonl')
         state = stem.with_suffix('.scene.json')
-        cached = None
-        if args.resume and result_path.exists():
-            cached = json.loads(result_path.read_text())
-            reference_id = cached.get('reference_identity', cached['identity'])
-            same_reference = all(reference_id[key] == identity[key]
-                                 for key in ['exe_sha256', 'dat_sha256', 'oracle_sources'])
-            if not (same_reference and cached['config'] == config and state.exists() and original_stream.exists()
-                    and sha256(state) == cached.get('scene_sha256')
-                    and sha256(original_stream) == cached['original_sha256']):
-                cached = None
+        cached = read_cached(result_path) if args.resume else None
+        reference = None
+        if args.resume:
+            for metadata in (read_cached(reference_path), cached):
+                if not metadata:
+                    continue
+                reference_id = metadata.get('reference_identity', metadata.get('identity', {}))
+                same_reference = all(reference_id.get(key) == identity[key]
+                                     for key in ['exe_sha256', 'dat_sha256', 'oracle_sources'])
+                if (same_reference and metadata.get('config') == config and state.is_file() and original_stream.is_file()
+                        and sha256(state) == metadata.get('scene_sha256')
+                        and sha256(original_stream) == metadata.get('original_sha256')):
+                    reference = {**metadata, 'reference_identity': reference_id}
+                    break
         first = case.get('from', 1)
         flags = []
         for key in ['stage', 'shot', 'season', 'difficulty', 'replay_slot', 'lives', 'mode']:
             if key in case:
                 flags += ['--' + key.replace('_', '-'), str(case[key])]
         flags += ['--input', case['input'], '--draw', '--draw-from', str(first),
-                  '--draw-digest', str(original_stream), '--every', str(2**31 - 1)]
+                  '--draw-ops', '-', '--every', str(2**31 - 1)]
         if case.get('refill', 1):
             flags += ['--refill-lives']
         if case.get('track_music', False):
             flags += ['--track-music']
-        if not cached:
-            with stem.with_suffix('.original.log').open('w') as log:
-                subprocess.run([sys.executable, '-X', 'utf8', str(oracle), str(exe), 'artifacts/th16/dat',
-                                str(case['frames']), str(state), *flags],
-                               env=env, stdout=log, stderr=log, check=True)
-        log = stem.with_suffix('.original.log').read_bytes()
+        original_log = stem.with_suffix('.original.log')
+        if reference is None:
+            with original_log.open('w') as log:
+                command = [sys.executable, '-X', 'utf8', str(oracle), str(exe), 'artifacts/th16/dat',
+                           str(case['frames']), str(state), *flags]
+                with subprocess.Popen(command, env=env, stdout=subprocess.PIPE, stderr=log) as oracle_process:
+                    try:
+                        digest = subprocess.run(['node', str(digest_script), '-', str(original_stream)],
+                                                env=env, stdin=oracle_process.stdout, stdout=log, stderr=log)
+                    finally:
+                        oracle_process.stdout.close()
+                    status = oracle_process.wait()
+                    digest.check_returncode()
+                    if status:
+                        raise subprocess.CalledProcessError(status, command)
+        log = original_log.read_bytes()
         if not re.search(rb'errors=\[\]\s*$', log):
             raise RuntimeError(f"{case['name']}: original oracle reported errors")
         exit_frame = json.loads(state.read_text())['exit_frame']
+        if reference is None:
+            reference = {'reference_identity': identity, 'config': config,
+                         'scene_sha256': sha256(state), 'original_sha256': sha256(original_stream)}
+            temporary = reference_path.with_suffix('.tmp')
+            temporary.write_text(json.dumps(reference, indent=2) + '\n', encoding='utf-8')
+            temporary.replace(reference_path)
         last = case['frames'] if exit_frame is None else min(case['frames'], exit_frame - 1)
         if (cached and cached['identity'] == identity and cached['verified']
                 and cached.get('exit_frame') == exit_frame
+                and cached['config'] == config
+                and cached['original_sha256'] == reference['original_sha256']
+                and cached['scene_sha256'] == reference['scene_sha256']
                 and covers_frame_range(cached['segments'], first, last)
                 and port_stream.is_file() and sha256(port_stream) == cached.get('candidate_sha256')):
             return case, cached
@@ -132,9 +166,9 @@ def main():
             diagnostics += f'Matched segments do not cover expected frames {first}–{last}.\n'
         stem.with_suffix('.compare.log').write_text(diagnostics, encoding='utf-8')
         result = {'identity': identity, 'config': config, 'verified': verified, 'exit_frame': exit_frame,
-                  'reference_identity': cached.get('reference_identity', cached['identity']) if cached else identity,
-                  'scene_sha256': sha256(state),
-                  'original_sha256': sha256(original_stream), 'candidate_sha256': sha256(port_stream),
+                  'reference_identity': reference['reference_identity'],
+                  'scene_sha256': reference['scene_sha256'],
+                  'original_sha256': reference['original_sha256'], 'candidate_sha256': sha256(port_stream),
                   'comparison': diagnostics.strip(),
                   'seconds': round(time.monotonic() - started, 3)}
         if result['verified']:

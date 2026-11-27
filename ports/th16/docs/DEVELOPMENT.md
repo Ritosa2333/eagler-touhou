@@ -157,7 +157,13 @@ python3 tools/oracle/draw-compare.py /tmp/st1.oracle.digest.jsonl /tmp/st1.port.
 
 定位到具体操作后，`TH16_VM_DUMP=<帧>`（或 `<起帧>-<止帧>`）让 harness 把这些帧进入 `AnmRenderer::draw_vm` 的每个 VM 的身份与状态写到 stderr：层、ANM 槽、脚本、精灵、位置、缩放、颜色、脚本时刻、存活帧数、父 VM，再对照 `harness anm-script` 的脚本反汇编查到指令。超过命令行单参数长度的通关脚本用 `@<路径>` 从文件读入，harness 的输入脚本参数与 `game-oracle.py --input` 同口径。原版在收到回标题 / 结局请求的那一帧并不切换场景（`switch_scene` 只记录请求），两侧在这一帧画的分别是游戏场景的重复帧与新场景首帧，所以两侧都不记录场景切换帧（`exit_frame`），绘制流止于它的前一帧。
 
-回归测试 `tests/draw-long.test.mjs` 对 `tests/golden/draw-long.json` 中已重采验证的用例逐帧核对，另有两个用例检查 harness 与 Node 生成的摘要是否一致。重采用 `tools/oracle/verify-long-draw.py --case-regex <名称正则>`。验证器要求摘要从指定起点连续覆盖到目标末帧，原版提前切换场景时覆盖到切换前一帧。加 `--update` 可在所选用例全部通过后更新段表并标记为已验证。
+回归测试 `tests/draw-long.test.mjs` 对 `tests/golden/draw-long.json` 中已重采验证的用例逐帧核对，另有两个用例检查 harness 与 Node 生成的摘要是否一致。重采用 `tools/oracle/verify-long-draw.py --case-regex <名称正则>`。验证器将原版绘制流交给 Node 折叠摘要，并在原版采集完成后写入独立校验清单。`--resume` 可在重跑移植侧时复用通过来源和哈希校验的原版记录。摘要从指定起点连续覆盖到目标末帧，原版提前切换场景时覆盖到切换前一帧。加 `--update` 可在所选用例全部通过后更新段表并标记为已验证。
+
+长程抽样状态使用原版的 `--every N` 和 harness 的 `TH16_FRAMES_EVERY=N`，两侧仍运行每一帧。Easy 灵梦春季整局绘制参考止于第 241676 帧，下一帧进入结局。使用 `game-draw --through-ending` 可在同一局继续记录到 Staff Roll 结束，`exit_frame` 和 `ending_exit_frame` 分别记录结局进入帧和结束帧。
+
+结局交接可用 `ending-oracle.py --shot 0 --difficulty 0 --normal-clear-at 100 --z-pulses` 快速复现。第六面触发过关奖励后，原版第 481 帧进入结局，第 3607 帧结束。
+
+第六面自然通关用 `ending-oracle.py --shot 0 --difficulty 0 --stage6-input ports/th16/tests/fixtures/st6-reimu-tap.input --refill-lives 8 --z-pulses`。输入脚本中的按键保持到下一条记录。Oracle 运行原版关卡结算，进入结局后再按隔帧 Z 推进对白。`tests/ending.test.mjs` 核对第 39121 帧进入结局和第 42247 帧结束的时序，以及中间全部 3126 帧绘制结构和顶点字。
 
 ## 页面壳
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record the original TH16 story ending or the Extra clear-to-name-entry transition."""
+"""Record the original TH16 story ending or a stage-clear transition."""
 import argparse
 import importlib.util
 import json
@@ -74,10 +74,11 @@ class EndingOracle(title_oracle.TitleOracle):
 
 
 class ExtraClearOracle(game_oracle.GameOracle):
-    def __init__(self, exe, dat_dir, shot):
+    def __init__(self, exe, dat_dir, shot, *, stage=7, difficulty=4, lives=None):
         self.title_worker_pending = False
         self.transition_frame = None
-        super().__init__(exe, dat_dir, stage=7, shot=shot, difficulty=4, season=4, draw=True)
+        super().__init__(exe, dat_dir, stage=stage, shot=shot, difficulty=difficulty,
+                         season=4 if stage == 7 else 0, lives=lives, draw=True)
 
     def narrow_hooks(self):
         self.replaced[0x47952B] = (0, self.defer_title_worker)
@@ -120,7 +121,7 @@ def record_extra_clear(args, events):
         oracle.on_draw_frame = record
         for frame in range(args.frames):
             if frame == args.extra_clear_at:
-                oracle.uc.mem_write(0x4A57B0, struct.pack('<I', args.extra_score))
+                oracle.uc.mem_write(0x4A57B0, struct.pack('<I', args.clear_score))
                 oracle.call(0x42E150)
             bits = int(frame % 2 == 0) if args.z_pulses else events.get(frame, 0)
             oracle.set_input(bits)
@@ -136,6 +137,82 @@ def record_extra_clear(args, events):
                       'title_frame': oracle.transition_frame}))
 
 
+class NormalClearOracle(ExtraClearOracle):
+    defer_ending_load = EndingOracle.defer_ending_load
+
+    def __init__(self, exe, dat_dir, shot, difficulty, lives):
+        self.ending_loads = []
+        self.draw_state = game_oracle.draw_compare.OracleState()
+        super().__init__(exe, dat_dir, shot, stage=6, difficulty=difficulty, lives=lives)
+
+    def narrow_hooks(self):
+        self.replaced[ENDING_THREAD_CREATE] = (8, self.defer_ending_load)
+        super().narrow_hooks()
+
+    def switch_scene(self):
+        if (self.u32(game_oracle.DAT_SCENE_CURRENT) == 7
+                and self.u32(game_oracle.DAT_SCENE_REQUEST) == ENDING):
+            self.recorder.begin_frame()
+            self.call(0x43CE10, ecx=game_oracle.DAT_UI_CAMERA)
+            for call in self.recorder.end_frame():
+                self.draw_state.apply(call)
+            if self.u32(game_oracle.DAT_SCENE_CURRENT) != ENDING:
+                raise RuntimeError('the original stage 6 clear did not enter Ending')
+            self.transition_frame = self.frame + 1
+        else:
+            super().switch_scene()
+
+    def tick_frame(self, bits):
+        loads, self.ending_loads = self.ending_loads, []
+        for arg in loads:
+            self.call(ENDING_LOAD_WORKER, args=(arg,))
+        self.set_input(bits)
+        self.tick()
+
+
+def record_normal_clear(args, events):
+    oracle = NormalClearOracle(args.exe, args.dat_dir, args.shot, args.difficulty, args.refill_lives)
+    oracle.boot()
+    oracle.uc.mem_write(0x4C11CC, struct.pack('<I', 21))  # D3DFMT_A8R8G8B8
+    gameplay = game_oracle.parse_input('@' + str(args.stage6_input)) if args.stage6_input else None
+    held = 0
+    frames_recorded = 0
+    with args.draw_ops.open('w', encoding='utf-8') as stream:
+        def record(frame, calls):
+            nonlocal frames_recorded
+            if oracle.transition_frame is None:
+                for call in calls:
+                    oracle.draw_state.apply(call)
+            elif oracle.u32(game_oracle.DAT_SCENE_REQUEST) == ENDING:
+                ops = oracle.draw_state.fold(calls)
+                if frame >= args.draw_from:
+                    stream.write(json.dumps({'frame': frame, 'ops': ops}, separators=(',', ':')) + '\n')
+                    frames_recorded += 1
+
+        oracle.on_draw_frame = record
+        for frame in range(args.frames):
+            if frame == args.normal_clear_at:
+                oracle.uc.mem_write(0x4A57B0, struct.pack('<I', args.clear_score))
+                oracle.call(0x42E150)
+            bits = events.get(frame, 0)
+            if oracle.transition_frame is None:
+                if gameplay is not None:
+                    held = gameplay.get(frame, held)
+                    bits = held
+                if args.refill_lives is not None and oracle.i32(0x4A57F4) < args.refill_lives:
+                    oracle.uc.mem_write(0x4A57F4, struct.pack('<i', args.refill_lives))
+            elif args.z_pulses:
+                bits = int((frame - oracle.transition_frame + 1) % 2 == 0)
+            oracle.tick_frame(bits)
+            if oracle.transition_frame is not None and oracle.u32(game_oracle.DAT_SCENE_REQUEST) == ENDING_EXIT:
+                break
+    errors = [error for error in oracle.errors if not error.startswith('note')]
+    if errors or oracle.transition_frame is None or oracle.u32(game_oracle.DAT_SCENE_REQUEST) != ENDING_EXIT:
+        raise RuntimeError(f'original story clear reference did not finish: {errors}')
+    print(json.dumps({'frames_recorded': frames_recorded, 'ending_from': oracle.transition_frame,
+                      'exit_frame': oracle.frame}))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('exe', type=Path)
@@ -146,8 +223,13 @@ def main():
     parser.add_argument('--difficulty', type=int, choices=range(4), default=1)
     parser.add_argument('--continues', type=int, choices=range(10), default=0)
     parser.add_argument('--draw-from', type=int, default=1, help='first one-based frame to write')
-    parser.add_argument('--extra-clear-at', type=int, help='award an Extra clear at this zero-based step')
-    parser.add_argument('--extra-score', type=int, default=800000, help='score just before the Extra clear bonus')
+    clear = parser.add_mutually_exclusive_group()
+    clear.add_argument('--extra-clear-at', type=int, help='award an Extra clear at this zero-based step')
+    clear.add_argument('--normal-clear-at', type=int, help='award a stage 6 clear at this zero-based step')
+    parser.add_argument('--stage6-input', type=Path, help='held-input script played until the stage 6 ending begins')
+    parser.add_argument('--refill-lives', type=int, choices=range(1, 9), help='refill stage 6 lives to this count')
+    parser.add_argument('--clear-score', '--extra-score', dest='clear_score', type=int, default=800000,
+                        help='score just before the clear bonus')
     inputs = parser.add_mutually_exclusive_group()
     inputs.add_argument('--input', default='', help='zero-based one-frame inputs, e.g. 121:0x1')
     inputs.add_argument('--z-pulses', action='store_true', help='press Z on alternate frames')
@@ -155,11 +237,20 @@ def main():
     if not 1 <= args.draw_from <= args.frames:
         parser.error('draw-from must be between 1 and frames')
     events = title_oracle.parse_input(args.input)
+    clear_step = args.normal_clear_at if args.normal_clear_at is not None else args.extra_clear_at
+    if clear_step is not None:
+        if not 0 <= clear_step < args.frames or not 0 <= args.clear_score <= 999999999:
+            parser.error('the clear step or score is out of range')
     if args.extra_clear_at is not None:
-        if not 0 <= args.extra_clear_at < args.frames or not 0 <= args.extra_score <= 999999999:
-            parser.error('the Extra clear step or score is out of range')
+        if args.stage6_input is not None or args.refill_lives is not None:
+            parser.error('--stage6-input and --refill-lives are for stage 6')
         record_extra_clear(args, events)
         return
+    if args.normal_clear_at is not None or args.stage6_input is not None:
+        record_normal_clear(args, events)
+        return
+    if args.refill_lives is not None:
+        parser.error('--refill-lives requires --stage6-input or --normal-clear-at')
 
     state = game_oracle.draw_compare.OracleState()
     oracle = EndingOracle(args.exe, args.dat_dir)

@@ -34,6 +34,7 @@
 //                                                自机弹 ×live、伤害源 ×live、本帧 sfx）+ 自机 VM 0x568 字节
 //                                                （与 tools/oracle/game-oracle.py 快照同结构；enemies/dialogue 为未移植管理器的 PlayerWorld 桩输入）
 //                                                环境变量 TH16_FRAMES_FROM=<n>：只输出第 n 帧（1 起）起的快照（长程跑只看换关附近，避免 GB 级 JSON）
+//                                                TH16_FRAMES_EVERY=<n>：只输出帧号为 n 的倍数的快照（不影响模拟或摘要）
 //   harness game-digest <...同上...>              → 同一状态流的 FNV-1a 64（tests/golden/player.json，game-oracle.py --digest 同口径）
 //   harness screen-fade <kind> <duration> <color> <frames> [hold_or_flag]
 //                                              → 每行 "frame alpha alive"（kind 4/6/7/9 步进；与 tools/oracle 对拍）
@@ -79,6 +80,7 @@
 #include "DrawDigest.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -1409,15 +1411,17 @@ int main(int argc, char** argv) {
         // 参数：<th16.dat> <stage> <shot> <season> <frames> <input "f:held,..."> [enemies "f:count,..."] [dialogue "f:v,..."]
         // 输入脚本语义与 game-oracle --input 相同：第 f 帧（0 起）起 held 持续到下一事件；"@<路径>" 从文件读入。
         // enemies/dialogue 为其它管理器未移植时的 PlayerWorld 外部输入（oracle 快照 enemy_count / dialogue 字段）。
-        // game-draw：与 game-run 同参，末尾加 <out.jsonl> [from_frame] [--draw-only | --state-digest]。
+        // game-draw：与 game-run 同参，末尾加 <out.jsonl> [from_frame] [--draw-only | --state-digest | --through-ending]。
         // --draw-only 保留逐帧绘制和场景切换数据，跳过标准输出中的玩法快照。
         // --state-digest 在绘制链运行后取玩法快照，标准输出用 game-digest 的摘要格式。
+        // --through-ending 从同一局继续记录结局和 Staff Roll，直到结局结束。
         // <out.jsonl> 的两种写法：
         //   "digest:<dst>"  每帧一行整段摘要（DrawDigest.hpp，tools/oracle/draw-compare.py frame_digests 同口径；tests/draw-long.test.mjs）
         //   "fd:<n>"        直接使用继承来的文件描述符（两种行格式都可，经管道流式读，整段不落盘）
         const bool draw_mode = command == "game-draw";
         const std::string_view draw_option = draw_mode && argc >= 17 ? argv[argc - 1] : "";
-        const bool draw_only = draw_option == "--draw-only";
+        const bool draw_ending = draw_option == "--through-ending";
+        const bool draw_only = draw_option == "--draw-only" || draw_ending;
         const bool draw_with_state_digest = draw_option == "--state-digest";
         const bool digest_only = command == "game-digest" || draw_with_state_digest;
         std::FILE* draw_out = nullptr;
@@ -1660,6 +1664,15 @@ int main(int argc, char** argv) {
         if (!digest_only) std::printf("{\"stage\":%d,\"shot\":%d,\"season\":%d,\"frames\":[", stage, shot, season);
         int frames_from = 1;
         if (const char* env = std::getenv("TH16_FRAMES_FROM")) frames_from = std::atoi(env);
+        int frames_every = 1;
+        if (!digest_only && !draw_only) {
+            if (const char* env = std::getenv("TH16_FRAMES_EVERY")) {
+                const char* end = env + std::strlen(env);
+                const auto [parsed, error] = std::from_chars(env, end, frames_every);
+                if (error != std::errc{} || parsed != end || frames_every <= 0)
+                    return fail("TH16_FRAMES_EVERY must be a positive 32-bit integer");
+            }
+        }
         bool first_printed = true;
         i32 held = 0;
         i32 enemy_hold = -1;
@@ -1670,6 +1683,7 @@ int main(int argc, char** argv) {
         // 在该帧停止，不再记录帧；scene_exit 为切换到的场景号
         i32 scene_exit = -1;
         i32 exit_frame = 0;
+        i32 ending_exit_frame = 0;
         for (int f = 0; f < frames; ++f) {
             for (const Event& e : input_script) if (e.frame == f) held = e.value;
             for (const Event& e : enemy_script) if (e.frame == f) enemy_hold = e.value;
@@ -1677,7 +1691,8 @@ int main(int argc, char** argv) {
             if (enemy_hold >= 0) session.game.world.enemy_count = enemy_hold;
             if (dialogue_hold >= 0) session.game.world.dialogue = dialogue_hold != 0;
             session.injected_input = u32(held);
-            if (refill_lives >= 0 && session.globals.lives < refill_lives) session.globals.lives = refill_lives;
+            if (exit_frame == 0 && refill_lives >= 0 && session.globals.lives < refill_lives)
+                session.globals.lives = refill_lives;
             bgm_trace.frame = f + 1;
             trace_state.current = f + 1;
             device.begin_frame();
@@ -1685,11 +1700,16 @@ int main(int argc, char** argv) {
             session.renderer.trace_current = f + 1;
             if (!session.logic_step()) return fail(session.failure.c_str());
             if (!session.game_live) {
-                // 场景在本步切换（exit_frame）：这一帧画的是新场景的首帧，而 oracle 在同一帧只记录请求、仍画游戏场景，
-                // 两侧不出图也不记录状态
-                scene_exit = i32(session.supervisor.current);
-                exit_frame = f + 1;
-                break;
+                if (exit_frame == 0) {
+                    scene_exit = i32(session.supervisor.current);
+                    exit_frame = f + 1;
+                }
+                // 游戏段参考截止于切换前一帧。结局参考从同一局的切换帧开始。
+                if (!draw_ending || scene_exit != i32(SceneId::Ending)) break;
+                if (!session.ending_live) {
+                    ending_exit_frame = f + 1;
+                    break;
+                }
             }
             if (draw_out != nullptr && f + 1 >= draw_from) {
                 if (digest_mode) write_digest_line(draw_out, f + 1, device.ops);
@@ -1712,7 +1732,7 @@ int main(int argc, char** argv) {
                     }
                 }
             }
-            if (draw_only || (!digest_only && f + 1 < frames_from)) continue;
+            if (draw_only || (!digest_only && (f + 1 < frames_from || (f + 1) % frames_every != 0))) continue;
             const Player& pl = session.game.player;
             const GameGlobals& g = session.globals;
             std::vector<u32> w;
@@ -2190,7 +2210,11 @@ int main(int argc, char** argv) {
                         (unsigned long long)spell_digest, (unsigned long long)laser_digest, (unsigned long long)bomb_digest,
                         (unsigned long long)menu_digest, (unsigned long long)sound_digest,
                         session.music.current.empty() ? "-" : session.music.current.c_str());
-        else std::printf("],\"scene_exit\":%d,\"exit_frame\":%d}\n", scene_exit, exit_frame);
+        else {
+            std::printf("],\"scene_exit\":%d,\"exit_frame\":%d", scene_exit, exit_frame);
+            if (draw_ending) std::printf(",\"ending_exit_frame\":%d", ending_exit_frame);
+            std::printf("}\n");
+        }
         if (record_dir != nullptr) {
             session.prepare_replay_save(session.globals.stage);
             if (!session.save_replay_slot(1, "TEST")) return fail(session.failure.c_str());

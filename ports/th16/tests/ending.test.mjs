@@ -2,7 +2,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync} from 'node:fs';
+import {copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {frameDigests, segmentDigest} from '../tools/draw-structure.mjs';
@@ -252,6 +252,37 @@ test('ending draw matches the original dialogue, fade and Staff Roll key frames'
       if (expected.has(frame)) actual.set(frame, frameDigests(ops).v);
     }
     assert.deepEqual(actual, expected);
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('Easy Reimu stage 6 playthrough preserves the original ending and Staff Roll', needDat, () => {
+  // ending-oracle.py --difficulty 0 --stage6-input fixtures/st6-reimu-tap.input --refill-lives 8 --z-pulses.
+  const firstFrame = 39121;
+  const exitFrame = 42247;
+  const dir = mkdtempSync(resolve(tmpdir(), 'th16-easy-ending-draw-'));
+  try {
+    const draw = resolve(dir, 'ending.jsonl');
+    const input = resolve(dir, 'inputs.txt');
+    const gameplay = readFileSync(resolve(here, 'fixtures/st6-reimu-tap.input'), 'utf8').trim();
+    // The game-draw schedule holds each mask. Clear the game input after the
+    // handoff, then press and release Z on alternating frames.
+    const ending = [];
+    for (let step = firstFrame; step < exitFrame; ++step) {
+      ending.push(`${step}:${(step - firstFrame) % 2}`);
+    }
+    writeFileSync(input, [gameplay, ...ending].join(','));
+    const out = JSON.parse(run(['game-draw', dat, '6', '0', '0', String(exitFrame + 1), `@${input}`,
+      '', '', '0', '-1', '8', '1', '0', `digest:${draw}`, String(firstFrame), '--through-ending']));
+    assert.equal(out.scene_exit, 15);
+    assert.equal(out.exit_frame, firstFrame);
+    assert.equal(out.ending_exit_frame, exitFrame);
+    const frames = Array.from({length: exitFrame - firstFrame}, (_, i) => firstFrame + i);
+    const captures = readFileSync(draw, 'utf8').trimEnd().split('\n').map(line => JSON.parse(line));
+    assert.deepEqual(captures.map(row => row.frame), frames);
+    const rows = new Map(captures.map(row => [row.frame, row]));
+    assert.equal(segmentDigest(rows, frames, 'v'), 'c3c934b321f4a29b670494bdd0d80a0caf35175a');
   } finally {
     rmSync(dir, {recursive: true, force: true});
   }
