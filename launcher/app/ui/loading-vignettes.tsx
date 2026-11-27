@@ -39,6 +39,11 @@ function SpiderLily({x, y, size}: {x: number; y: number; size: number}) {
     d="M0 0v-16m0 0q-7-8-12-8m12 8q-3-14-6-15m6 15q3-14 6-15M0-16q7-8 12-8m-12 8q-9-3-12 1m12-1q9-3 12 1"/>;
 }
 
+const wallDolls = [87, 128, 353, 394].map(x => ({
+  character:'alice' as const, at:[x, 106] as const, size:32,
+}));
+const workDoll = {character:'alice', at:[271,121], size:34, pivot:[271,75], action:'puppet'} as const;
+
 export const loadingVignettes = {
   'mansion-clock': {
     label: '红魔馆 · 咲夜停表',
@@ -146,24 +151,27 @@ export const loadingVignettes = {
   },
   puppets: {
     label: '爱丽丝的工房 · 人偶试线',
-    cast: [{character:'alice', at:[194,121]}],
+    cast: [{character:'alice', at:[194,121]}, workDoll, ...wallDolls],
     artwork: <>
       <path className="v-wall" d="M28 164V73l41-28h342l41 28v91Z"/>
       <path className="v-shadow" d="M12 168h456l12 29H0Z"/>
-      <path className="v-line" d="M47 163V79l32-25h322l32 25v84M88 142V60m309 0v84m-348 45h379"/>
-      <path className="v-shadow" d="M102 68h52v64h-52zm226 6h75v58h-75z"/>
-      <path className="v-line" d="M102 68h52v64h-52zm0 40h52m174-34h75v58h-75zm0 35h75"/>
-      <path className="v-accent" d="M113 94q-6-6 0-9 7-4 9 2t-9 7Zm15-5q8-11 15 0 1 11-10 10Z"/>
-      <path className="v-gold" d="M339 96h11v11h-11zm14-5h14v16h-14zm17 3h14v13h-14z"/>
+      <path className="v-line" d="M47 163V79l32-25h322l32 25v84M48 189h385"/>
+      <path className="v-shadow v-outline" d="M66 66h83v64H66zm266 0h83v64h-83z"/>
+      <path className="v-wood v-outline" d="M69 72h77v5H69zm266 0h77v5h-77z"/>
+      {wallDolls.map(({at:[x]}) => <g key={x} transform={`translate(${x} 75)`}>
+        <path className="v-line" d="M0 0q-4 4 0 7l-6 10m6-10 6 10"/>
+        <circle className="v-gold" r="1.65"/>
+      </g>)}
       <path className="v-wood" d="M160 154h157v8H160Zm9 8h7v31h-7Zm130 0h7v31h-7Z"/>
-      <path className="v-paper v-outline" d="M298 140h11v4h-11zm-2 5h15v7h-15z"/>
-      <path className="v-line" d="M251 79h37m-34-3v6m31-6v6"/>
-      <Cue x={270} y={79} pose="rotate(-9deg)">
-        <path className="v-line" d="M-11 1-9 39m18-38L8 39"/>
-        <circle className="v-paper v-outline" cy="33" r="6"/>
-        <path className="v-accent v-outline" d="M-4 39h8l8 15h-24Z"/>
-        <path className="v-line" d="m-9 41-4 7m22-7 4 7m-17 6-1 6m9-6 1 6"/>
-      </Cue>
+      <path className="v-paper v-outline" d="M299 140h11v4h-11zm-2 5h15v7h-15z"/>
+      <path className="v-accent v-outline" d="M216 141h12l-2 3v6l2 2h-12l2-2v-6Zm15 5h7l-1 4 1 2h-7l1-2Z"/>
+      <g transform={`translate(${workDoll.pivot[0]} ${workDoll.pivot[1]})`}>
+        <g data-scene-motion="puppet">
+          <path className="v-wood v-outline" d="M-19-2h38v4h-38Z"/>
+          <path className="v-line" d="M-12 2l2 35m22-35-2 35"/>
+          <circle className="v-gold" r="2"/>
+        </g>
+      </g>
     </>,
   },
   concert: {
@@ -191,7 +199,7 @@ export const loadingVignettes = {
   },
   umbrella: {
     label: '人间之里 · 小伞扑空',
-    cast: [{character:'kogasa', at:[275,134]}],
+    cast: [{character:'kogasa', at:[275,134], action:'startle'}],
     artwork: <>
       <path className="v-wall" d="M12 169V81l166-40 81 26 148-29 61 39v92Z"/>
       <path className="v-shadow" d="M9 84 178 36l91 31-14 10-83-26L9 99Zm248-15 151-36 70 43-10 13-61-41-150 35Z"/>

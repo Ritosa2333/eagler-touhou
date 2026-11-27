@@ -68,7 +68,6 @@
   .loading-scene-mist {opacity:.65}
   .loading-scene-portrait {
     position:absolute;
-    inline-size:10%;
     aspect-ratio:1;
     object-fit:cover;
     object-position:left center;

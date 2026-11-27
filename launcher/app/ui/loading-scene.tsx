@@ -27,7 +27,14 @@ const characterFaces = {
 } as const;
 
 type Character = 'reimu' | keyof typeof characterFaces;
-type Actor = {character: Character; at: readonly [x: number, y: number]; action?: 'search' | 'forage' | 'ferry' | 'notice'};
+type Point = readonly [x: number, y: number];
+type Actor = {
+  character: Character;
+  at: Point;
+  size?: number;
+  pivot?: Point;
+  action?: 'search' | 'forage' | 'ferry' | 'notice' | 'puppet' | 'startle';
+};
 export type LoadingSceneSpec = {label: string; cast: readonly Actor[]; artwork: ReactNode; foreground?: ReactNode};
 
 function Mountains() {
@@ -158,10 +165,13 @@ export function LoadingScene({scene, assetUrl}: {scene: LoadingSceneId; assetUrl
   const {cast, artwork, foreground}: LoadingSceneSpec = scenes[scene];
   return <div className="loading-scene" data-loading-scene={scene} aria-hidden="true">
     <svg className="loading-scene-art" viewBox="0 0 480 226" aria-hidden="true" focusable="false">{artwork}</svg>
-    {cast.map(({character, at:[x,y], action}) => <img key={character} className="loading-scene-portrait"
+    {cast.map(({character, at:[x,y], size = 48, pivot, action}) => <img key={`${character}:${x}:${y}`} className="loading-scene-portrait"
       data-character={character} data-scene-motion={action} alt="" draggable={false}
       src={character === 'reimu' ? reimuPortrait : assetUrl(siteBrandPath(characterFaces[character]))}
-      style={{left: `${x / 4.8}%`, top: `${y / 2.26}%`}}/>)}
+      style={{
+        left: `${x / 4.8}%`, top: `${y / 2.26}%`, inlineSize: `${size / 4.8}%`,
+        transformOrigin: pivot && `${50 + (pivot[0] - x) / size * 100}% ${50 + (pivot[1] - y) / size * 100}%`,
+      }}/>)}
     {foreground && <svg className="loading-scene-art loading-scene-foreground" viewBox="0 0 480 226"
       aria-hidden="true" focusable="false">{foreground}</svg>}
   </div>;

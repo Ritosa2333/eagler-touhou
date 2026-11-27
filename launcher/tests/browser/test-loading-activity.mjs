@@ -46,6 +46,7 @@ try {
     const faces = [...node.querySelectorAll('img')];
     return {
       cast:faces.map(image => [image.dataset.character, new URL(image.src).pathname.split('/').at(-1)]),
+      sizes:faces.map(image => Math.round(parseFloat(image.style.inlineSize) * 4.8)),
       uniquePositions:new Set(faces.map(image => `${image.style.left}:${image.style.top}`)).size,
       portraitMotion:faces.map(image => getComputedStyle(image).animationName),
       motion:[...node.querySelectorAll('[data-scene-motion]')]
@@ -56,7 +57,7 @@ try {
         const expectedY = box.top + parseFloat(face.style.top) / 100 * box.height;
         return Math.abs(bounds.left + bounds.width / 2 - expectedX) < 1
           && Math.abs(bounds.top + bounds.height / 2 - expectedY) < 1
-          && Math.abs(bounds.width - box.width / 10) < 1;
+          && Math.abs(bounds.width - box.width * parseFloat(face.style.inlineSize) / 100) < 1;
       }),
       fits:box.left >= 0 && box.right <= innerWidth && box.width > 0,
       viewportFits:document.documentElement.scrollWidth <= innerWidth,
@@ -73,7 +74,7 @@ try {
     ferry:[['komachi','face-F046.svg']],
     pharmacy:[['eirin','face-F03D.svg'],['reisen','face-F03C.svg']],
     pump:[['nitori','face-F04F.svg']],
-    puppets:[['alice','face-F01B.svg']],
+    puppets:Array.from({length:6}, () => ['alice','face-F01B.svg']),
     concert:[['lunasa','face-F02E.svg'],['merlin','face-F02D.svg'],['lyrica','face-F02C.svg']],
     umbrella:[['kogasa','face-F05F.svg']],
     lookout:[['momiji','face-F050.svg']],
@@ -87,6 +88,7 @@ try {
   const actorMotions = {
     shrine:'loading-scene-search', forest:'loading-scene-forage',
     ferry:'loading-vignette-ferry', lookout:'loading-vignette-notice',
+    umbrella:'loading-vignette-startle',
   };
   for (const [id, cast] of Object.entries(casting)) {
     await page.waitForSelector(sceneArtwork(id));
@@ -98,7 +100,9 @@ try {
     assert.deepEqual(scene.cast,cast,'characters are cast by scene, not drawn randomly');
     assert.equal(scene.uniquePositions,cast.length);
     const actorMotion = actorMotions[id] ?? 'none';
-    assert.deepEqual(scene.portraitMotion,Array(cast.length).fill(actorMotion));
+    assert.deepEqual(scene.portraitMotion,id === 'puppets'
+      ? ['none','loading-vignette-cue','none','none','none','none']
+      : Array(cast.length).fill(actorMotion));
     assert.ok(scene.decorative && scene.fits && scene.motion.some(name => name !== 'none'));
     if (id === 'mansion-clock') {
       const [held, resumed] = await page.$eval(sceneArtwork(id), async node => {
@@ -128,6 +132,55 @@ try {
           return [shift(portrait) / node.getBoundingClientRect().width, shift(boat) / 480];
         });
         assert.ok(deltas[0] > 0 && Math.abs(deltas[0] - deltas[1]) < .001, `Komachi and her boat stay locked together at ${width}px`);
+      }
+    }
+    if (id === 'puppets') {
+      assert.deepEqual(scene.sizes,[48,34,32,32,32,32]);
+      for (const width of [1440, 320]) {
+        await page.setViewport({width,height:640});
+        const attached = await page.$eval(sceneArtwork(id), async node => {
+          const [rig,doll] = node.querySelectorAll('[data-scene-motion="puppet"]');
+          const animations = [rig,doll].flatMap(piece => piece.getAnimations());
+          animations.forEach(animation => animation.pause());
+          await Promise.all(animations.map(animation => animation.ready));
+          animations.forEach(animation => { animation.currentTime = 1400; });
+          const bounds = doll.getBoundingClientRect();
+          const anchor = new DOMPoint(0,46).matrixTransform(rig.getScreenCTM());
+          return Math.abs(bounds.left + bounds.width / 2 - anchor.x) < 1
+            && Math.abs(bounds.top + bounds.height / 2 - anchor.y) < 1;
+        });
+        assert.ok(attached, `the strings and Alice doll keep the same pivot at ${width}px`);
+      }
+    }
+    if (id === 'umbrella') {
+      for (const width of [1440, 320]) {
+        await page.setViewport({width,height:640});
+        const surprise = await page.$eval(sceneArtwork(id), async node => {
+          const face = node.querySelector('[data-scene-motion="startle"]');
+          const [animation] = face.getAnimations();
+          const {delay,iterations} = animation.effect.getTiming();
+          animation.pause();
+          await animation.ready;
+          const scaleAt = time => {
+            animation.currentTime = time;
+            const transform = getComputedStyle(face).transform;
+            if (transform === 'none') return 1;
+            const matrix = new DOMMatrixReadOnly(transform);
+            return Math.hypot(matrix.a,matrix.b);
+          };
+          const before = scaleAt(9999);
+          const peak = scaleAt(10200);
+          const box = node.getBoundingClientRect(), portrait = face.getBoundingClientRect();
+          const fits = portrait.left >= box.left && portrait.right <= box.right
+            && portrait.top >= box.top && portrait.bottom <= box.bottom;
+          const afterward = scaleAt(12000);
+          return {delay,iterations,before,peak,afterward,fits};
+        });
+        assert.equal(surprise.delay,10000);
+        assert.equal(surprise.iterations,1);
+        assert.equal(surprise.before,1);
+        assert.ok(surprise.peak > 3.9 && surprise.fits, `Kogasa's surprise stays inside the stage at ${width}px`);
+        assert.equal(surprise.afterward,1);
       }
     }
     await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
