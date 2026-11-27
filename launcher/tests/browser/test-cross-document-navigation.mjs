@@ -98,9 +98,11 @@ try {
   await page.evaluate(() => location.assign(new URL('about.html?lang=zh-CN', location.href)));
   await waitForDocument('/about.html');
   await expectDocumentEntrance();
-  assert.equal(await page.$eval('[data-help-page="about"] a[href="https://qm.qq.com/q/eeUrxIltug"]', node => node.textContent), '闲聊向QQ群');
-  assert.equal(await page.$eval('[data-help-page="about"] a[href^="mqqapi:"]', link => link.textContent), '反馈向QQ群');
-  assert.equal(await page.$eval('[data-help-page="about"] a[href^="mqqapi:"]', link => new URL(link.href).searchParams.get('uin')), '1075766678');
+  assert.deepEqual(await page.$$eval('[data-help-page="about"] a[href^="https://qm.qq.com/q/"]', links =>
+    links.map(link => [link.textContent, link.href, link.target, link.rel])), [
+    ['闲聊向QQ群', 'https://qm.qq.com/q/eeUrxIltug', '_blank', 'noopener noreferrer'],
+    ['反馈向QQ群', 'https://qm.qq.com/q/XFO8KoiegU', '_blank', 'noopener noreferrer'],
+  ]);
   await page.reload({waitUntil:'domcontentloaded'});
   await waitForDocument('/about.html');
   await expectNoDocumentEntrance('reload has no route animation');

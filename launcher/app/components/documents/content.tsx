@@ -7,7 +7,6 @@ import {withUiLanguage, type UiLocale} from '../../../src/launcher/i18n.mts';
 
 type Node = DefaultTreeAdapterMap['node'];
 const tableContainers = new Set(['table', 'thead', 'tbody', 'tr']);
-const qqGroupCardHref = /^mqqapi:\/\/card\/show_pslcard\?src_type=internal&version=1&uin=[1-9]\d{4,11}&card_type=group&source=qrcode$/;
 const plainText = (node:Node,depth=0):string => depth>64?'':node.nodeName==='#text' ? (node as DefaultTreeAdapterMap['textNode']).value : 'childNodes' in node ? node.childNodes.map(child=>plainText(child,depth+1)).join('') : '';
 
 /** Render the shared authored vocabulary as React nodes. Full pages also collect TOC anchors. */
@@ -16,11 +15,10 @@ export function renderHelpContent(html:string, base:URL, locale:UiLocale, toc?:T
 }
 
 function renderHelpNodes(nodes: Node[], base:URL, locale:UiLocale, toc?:TOCItemType[]) {
-  const safeHref=(value:string,link=false)=>{
+  const safeHref=(value:string,mail=false)=>{
     if(!value.trim())return undefined;
     let url:URL; try{url=new URL(value,base);}catch{return undefined;}
-    if(link && qqGroupCardHref.test(url.href))return url.href;
-    if(!['http:','https:',...(link?['mailto:']:[])].includes(url.protocol))return undefined;
+    if(!['http:','https:',...(mail?['mailto:']:[])].includes(url.protocol))return undefined;
     if(url.origin!==base.origin)return url.href;
     if(value.startsWith('#'))return toc?value:url.href;
     if(!toc&&url.pathname===base.pathname&&url.search===base.search&&url.hash)return url.href;

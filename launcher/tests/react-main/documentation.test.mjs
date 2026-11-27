@@ -47,12 +47,6 @@ test('document history follows content provenance and detects uncommitted edits'
   assert.equal(api.readDocumentHistory(repo).ja.about.pending,true,'Untracked translations are explicitly marked');
 });
 
-test('document links accept the QQ group card only on anchors',()=>{
-  const group = 'mqqapi://card/show_pslcard?src_type=internal&amp;version=1&amp;uin=1075766678&amp;card_type=group&amp;source=qrcode';
-  const html=markup(api.prepareHelpDocument(`<a href="${group}">group</a><a href="${group.replace('card_type=group','card_type=person')}">person</a><a href="${group}&amp;extra=1">extra</a><img src="${group}">`,'/','en').body);
-  assert.equal(html,`<div><a href="${group}">group</a><a>person</a><a>extra</a></div>`);
-});
-
 test('all documentation languages render their authored headings and preserve About contact links',()=>{
   for(const locale of ['zh-CN','en','ja'])for(const page of api.helpDocuments){
     const source=api.translateUi(locale,page.content),{body,toc}=api.prepareHelpDocument(source,'/app/',locale),html=markup(body);
@@ -65,8 +59,9 @@ test('all documentation languages render their authored headings and preserve Ab
     }
     if(page.id==='about'){
       assert.ok(html.includes('mailto:ayanews@outlook.com'));
-      assert.ok(html.includes('href="https://qm.qq.com/q/eeUrxIltug"'));
-      assert.ok(html.includes('href="mqqapi://card/show_pslcard?src_type=internal&amp;version=1&amp;uin=1075766678&amp;card_type=group&amp;source=qrcode"'));
+      for(const invite of ['https://qm.qq.com/q/eeUrxIltug','https://qm.qq.com/q/XFO8KoiegU']){
+        assert.ok(html.includes(`href="${invite}" target="_blank" rel="noopener noreferrer"`), locale);
+      }
     }
     if(page.id==='firstUse'){
       assert.equal([...html.matchAll(/role="note"/g)].length,2,locale);
