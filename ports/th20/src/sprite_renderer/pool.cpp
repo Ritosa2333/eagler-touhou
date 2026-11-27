@@ -57,7 +57,7 @@ bool is_pooled_animation(const Controller& c,const Animation* a) noexcept {
 }
 std::int32_t retire_animation(Controller& c,Animation& a) {
     if(auto* callback=reinterpret_cast<AnimationCallback*>(a.fields_550[6])){callback->retire();destroy_callback(reinterpret_cast<AnimationCallback*>(a.fields_550[6]));a.fields_550[6]=0;}
-    release_animation_geometry(a);q::unlink(link(a.links[0]));q::unlink(link(a.links[4]));
+    release_animation_geometry(a);invalidate_layer_index();q::unlink(link(a.links[0]));q::unlink(link(a.links[4]));
     a.fields_550[2]=a.fields_550[3]=0;
     if(!is_pooled_animation(c,&a))destroy_heap_animation(&a);
     else {auto& pooled=c.pool[a.index];pooled.active=0;q::insert_after(link(c.free_sentinel),link(pooled.free_link));destroy_animation_contents(a);a.handle=0;}
@@ -76,7 +76,7 @@ Animation* resolve_animation_handle(Controller& c,std::uint32_t& handle) noexcep
     auto* a=find_animation(c,handle);if(!a)handle=0;return a;
 }
 std::uint32_t register_animation(Controller& c,AnimationList* group,Animation& a,bool secondary,bool front) noexcept {
-    a.field_4e8=reinterpret_cast<std::uint32_t>(group);auto& destination=group[secondary?1:0];
+    a.field_4e8=reinterpret_cast<std::uint32_t>(group);auto& destination=group[secondary?1:0];invalidate_layer_index();
     if(front)prepend_animation_link(destination,a.links[0]);else q::append(list(destination),link(a.links[0]));
     return assign_animation_handle(c,a);
 }

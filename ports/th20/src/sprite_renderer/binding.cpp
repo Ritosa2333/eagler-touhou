@@ -28,6 +28,7 @@ void store_sprite_descriptor(AnimationFile& file,std::int32_t index,const Sprite
     sprite.extent_48=div(sub(sprite.bottom,sprite.top),input.scale_54);
 }
 void copy_animation_base(Animation& destination,const Animation& source) noexcept {
+    invalidate_layer_index();
     std::memmove(&destination.base,&source.base,sizeof(AnimationBase));
 }
 void select_animation_template(AnimationFile& file,Animation& animation,std::int32_t index) {
@@ -48,6 +49,7 @@ void attach_animation_parent(Animation& animation,Animation* parent) noexcept {
     }
 }
 void set_animation_layer(Animation& animation,std::int32_t layer) noexcept {
+    invalidate_layer_index();
     animation.base.fields_10_28[1]=static_cast<std::uint32_t>(layer);
     const auto mode=layer>=3&&layer<=19?1u:layer>=20&&layer<=23?2u:0u;
     animation.base.flags[2]=(animation.base.flags[2]&~0x03000000u)|(mode<<24);
