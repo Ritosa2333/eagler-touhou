@@ -91,8 +91,13 @@ bool GameManager::update(AnmManager& manager, GameGlobals& globals, float game_s
         // 倒计时过 0x17b：非回放 → 结局场景 0xf（Extra 难度 → 0x10）；回放 → 0x43f240 回标题。
         // 每帧都会重复登记，直到主循环消费场景请求
         if (end_counter > 0x17b) {
-            if (mode == 0) globals.scene_request = globals.difficulty == 4 ? 0x10 : 0xf;
-            else if (on_return_to_title) on_return_to_title();
+            if (mode == 0) {
+                // 0x42d8da：退出标志也适用于正篇和 Extra 通关。
+                const bool quit_app = config_flags != nullptr && (*config_flags & 0x2000u) != 0;
+                globals.scene_request = quit_app ? 2 : (globals.difficulty == 4 ? 0x10 : 0xf);
+            } else if (on_return_to_title) {
+                on_return_to_title();
+            }
         }
     }
     // 过关奖励展示期间（Gui bit8、计时 < 0x78）整帧跳过（含帧计数与计时）

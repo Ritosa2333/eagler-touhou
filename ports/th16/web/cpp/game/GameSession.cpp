@@ -23,6 +23,9 @@ struct DiskReplayStore final : ReplayStore {
         if (session == nullptr || session->replay_directory().empty()) return false;
         return ReplayRecording::slot_exists(session->replay_directory().c_str(), slot);
     }
+    ReplaySummary prepare_save(i32 stage) override {
+        return session->prepare_replay_save(stage);
+    }
     void save(int slot, const char* name) override {
         if (session == nullptr) return;
         session->save_replay_slot(slot, name);
@@ -68,6 +71,11 @@ bool GameSession::open(const u8* bytes, u32 size) {
     return true;
 }
 
+ReplaySummary GameSession::prepare_replay_save(i32 stage) {
+    replay_recording_.set_save_metadata(stage, i32(std::time(nullptr)));
+    return replay_recording_.summary();
+}
+
 bool GameSession::save_replay_slot(int slot, const char* player_name) {
     if (replay_directory().empty()) {
         failure = "replay directory empty";
@@ -78,7 +86,6 @@ bool GameSession::save_replay_slot(int slot, const char* player_name) {
         failure = replay_recording_.error.empty() ? "replay save failed" : replay_recording_.error;
         return false;
     }
-    globals.replay_slot = slot;
     if (on_saved) on_saved();
     return true;
 }
@@ -426,7 +433,7 @@ bool GameSession::activate_title_menu() {
         return true;
     };
     title.current_replay_summary = [this]() { return replay_recording_.summary(); };
-    title.on_replay_full_run = [this]() { replay_recording_.mark_full_run(i32(std::time(nullptr))); };
+    title.on_replay_full_run = [this]() { prepare_replay_save(ReplaySummary::kAllStages); };
     title.on_screen_fade = [this](i32 kind, i32 duration, u32 color) { create_screen_fade(kind, duration, color); };
     title.on_transition_effect = [this]() {
         // 0x41a390 + 0x418ba0 + 0x46f0b0(..., 7)：Loading VM、过场种类 0、中断 7
@@ -1050,9 +1057,7 @@ bool GameSession::enter_game(i32 replay_mode) {
     replay_next_stage_index_ = -1;
     replay_stage_seed_ = u16(animations.visual_rng.seed & 0xffffu);
     if (replay_mode != 1) {
-        const i32 time32 = i32(std::time(nullptr));
-        menu.ctx.replay_timestamp = time32;
-        replay_recording_.begin_run(globals, time32);
+        replay_recording_.begin_run(globals, i32(std::time(nullptr)));
     }
 
     mark_stage_reached();
@@ -1883,7 +1888,11 @@ bool GameSession::logic_step() {
             if (!enter_game(1)) return false;
             supervisor.current = supervisor.requested = SceneId::Game;
         } else if (enter == SceneId::Ending || enter == SceneId::ExtraEnding) {
-            if (leave == SceneId::Game) leave_game();
+            if (leave == SceneId::Game) {
+                // 0x454034 saves a cleared run without the in-game save terminator.
+                replay_recording_.close_stage(false);
+                leave_game();
+            }
             if (leave == SceneId::Title) leave_title();
             if (!enter_ending(enter == SceneId::ExtraEnding)) return false;
         } else {
@@ -1945,6 +1954,8 @@ bool GameSession::logic_step() {
 }
 
 void GameSession::draw_frame() {
+    // 0x459240 writes text textures during update, before this frame samples them.
+    if (on_before_draw) on_before_draw();
     // 0x45a8a0：更新链之前出批并切 UI 相机；绘制前丢弃残批、雾缓存置未知后关雾；绘制后出批、解绑纹理
     renderer.use_camera(compositor.ui_camera);
     renderer.begin_frame();

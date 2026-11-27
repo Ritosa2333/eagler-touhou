@@ -142,14 +142,24 @@ struct GameGlobals {
         return float(season_gauge - season_threshold[level]) / float(season_step[level + 1]);
     }
 
-    // 0x43ddd0：当前分数 extend 阈值（Extra 用另一张表；表尾 1e9 哨兵）
-    i32 extend_threshold() const {
-        static constexpr i32 kNormal[12] = {500000, 1000000, 2000000, 4000000, 7000000, 10000000,
-                                            15000000, 25000000, 50000000, 100000000, 1000000000, 4794780};
-        static constexpr i32 kExtra[12] = {1000000, 2000000, 4000000, 6000000, 8000000, 10000000,
-                                           1000000000, 1084227584, 1092616192, 1101004800, 1106247680, 1109393408};
-        const int i = extend_index < 0 ? 0 : extend_index > 11 ? 11 : extend_index;
-        return difficulty == 4 ? kExtra[i] : kNormal[i];
+    // 0x43ddd0：当前分数 extend 阈值（Extra 用另一张表）。
+    u32 extend_threshold() const {
+        static constexpr u32 kNormal[] = {500000, 1000000, 2000000, 4000000, 7000000, 10000000,
+                                         15000000, 25000000, 50000000, 100000000, 1000000000};
+        static constexpr u32 kExtra[] = {1000000, 2000000, 4000000, 6000000, 8000000, 10000000,
+                                        1000000000, 1084227584, 1092616192, 1101004800, 1106247680,
+                                        1109393408, 1112014848, 0xffffffffu};
+        const i32 i = extend_index < 0 ? 0 : extend_index;
+        if (difficulty == 4) {
+            constexpr i32 last = i32(sizeof(kExtra) / sizeof(kExtra[0])) - 1;
+            return kExtra[i < last ? i : last];
+        }
+        if (i < i32(sizeof(kNormal) / sizeof(kNormal[0]))) return kNormal[i];
+        // 0x43e080 在限制分数前会继续扫描 1e9 后的数据。用两段最大值
+        // 保留一次合法加分所经过的索引，及第 214 或 238 项的停止条件。
+        if (i < 214) return 1000000000;
+        if (i < 238) return 1065353216;
+        return 1768125281;
     }
     // 0x42e590：新开局（0x42cb60 DAT_004c17d0 段）清本局资源——得点道具数、火力、炸弹 3 / 碎片 0、残机碎片、
     // extend 下标、自动收点统计、炸弹碎片道具数、被弹次数。同一关重开（DAT_004a5bec bit0）沿用全局区，故必须显式归零。
@@ -176,7 +186,7 @@ struct GameGlobals {
     i32 add_score(i32 value, OnExtend&& on_extend) {
         score += value / 10;
         i32 extends = 0;
-        while (score >= extend_threshold()) {
+        while (score >= 0 && u32(score) >= extend_threshold()) {
             if (lives < 8) {
                 lives = lives + 1 > 8 ? 8 : lives + 1;
                 ++extends;

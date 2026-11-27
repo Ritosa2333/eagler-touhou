@@ -319,7 +319,7 @@ void Gui::stage_clear() {
         // 0x42c070：过关奖励 VM（front.anm 0x78）、奖励 = 关卡 × 1,000,000（0x43e080 加分）、bit8 显示中、计时复位
         if (front != nullptr && animations != nullptr) clear_bonus_vm = animations->spawn(*front, 0x78, -1);
         clear_bonus = globals->stage * 1000000;
-        globals->add_score(clear_bonus);
+        globals->add_score(clear_bonus, [this]() { celebrate_extend(); });
         flags_1ac |= 0x100u;
         clear_timer.reset();
     }
@@ -348,7 +348,7 @@ void Gui::stage_clear() {
         i32 bonus = 0;
         if (globals->stage == 7 || globals->difficulty <= 3) bonus = (globals->bombs + globals->lives * 5) * 1000000;
         if (globals->stage == 6 && on_final_clear) on_final_clear();
-        globals->add_score(bonus);
+        globals->add_score(bonus, [this]() { celebrate_extend(); });
         clear_bonus += bonus;
         if (replay_playback) {
             if (on_return_to_title) on_return_to_title();

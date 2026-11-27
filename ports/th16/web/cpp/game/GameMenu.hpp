@@ -47,6 +47,7 @@ struct ScoreFile;
 // 回放头里菜单列表要显示的那部分（原版回放头 0x4483b0：+0x00 名字 / +0x0a 标志 bit1 符卡练习 / +0x0c 时刻（time32）/
 // +0x84 机体 / +0x88 机体副号 / +0x8c 难度 / +0x90 关卡 / +0x98 符卡号 / +0x9c 子季节）
 struct ReplaySummary {
+    static constexpr i32 kAllStages = 8;  // 关卡名表 0x4918f0[8] = "All"
     char name[9] = "        ";
     i32 timestamp = 0;           // 1970 起算的秒数（UTC）；0x43e9b0 用 gmtime 拆成 年/月/日
     bool spell_practice = false;
@@ -63,6 +64,7 @@ struct ReplaySummary {
 struct ReplayStore {
     virtual ~ReplayStore() = default;
     virtual bool slot_exists(int slot) = 0;                 // th16_%.2d.rpy 是否存在
+    virtual ReplaySummary prepare_save(i32 stage) = 0;    // 写本局元数据，供名字输入和存档共用
     virtual void save(int slot, const char* name) = 0;      // 以当前记录写入该槽
     // 槽列表一行要显示的头信息；返回 false 表示该槽为空（画 "--------" 占位行）
     virtual bool slot_summary(int slot, ReplaySummary& out) { (void)slot; (void)out; return false; }
@@ -112,7 +114,6 @@ struct GameMenuContext {
     MusicManager* music = nullptr;         // 0x45ed00 乐曲命令：暂停 6 / 恢复 7 / 续关换 th128_08 / 续播保存曲
     SoundRequests* sfx_sink = nullptr;     // 帧级音效表（为空时登记到 sfx_queue 由宿主取走）
     SoundEffects* sound = nullptr;         // 0x42e4d0 暂停 / 0x440bd0 恢复 / 0x45e330 排空
-    i32 replay_timestamp = 0;              // 本局回放头 +0xc 的开局时刻（0x4483b0 写 time32；Replay 接入前为 0）
     // 0x42e760 装载线程：help.anm 进槽 0x13；返回 nullptr 表示仍在装载（操作说明保持等待）
     std::function<bool(i32)> load_help_page;
     std::function<AnmFile*()> load_help_anm;
@@ -197,6 +198,8 @@ public:
     void destroy();
 
 private:
+    ReplaySummary replay_save_summary;
+
     void set_mode(Mode m);       // 0x43e150
     void set_state(State s);     // 0x43e200
     void run_state_machine();    // 0x43f980

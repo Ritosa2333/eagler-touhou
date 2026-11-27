@@ -13,7 +13,7 @@
 
 用法：
     title-oracle.py <th16.exe> <dat 目录> <frames> <out.json> [--input "f:held,..."] [--debug]
-                    [--draw-out path] [--draw-from N]
+                    [--draw-out path] [--draw-from N] [--pad "f:button-mask,..."] [--text]
 缺的导入按 game-oracle 抛错，不猜返回值。
 """
 import argparse, importlib.util, json, pathlib, struct, sys
@@ -33,21 +33,55 @@ BOOT_HOLD = 0xB4
 ASCII_ENTRIES, ASCII_STRIDE, ASCII_COUNT = 0xC08, 0x138, 0x19208
 HELP_BANK_WORKER = 0x42E760
 HELP_PAGE_WORKER = 0x42E7C0
+JOY_GET_POS_EX_IMPORT = 0x48B250
+JOY_INFO_BUTTONS = 0x20
+JOYERR_UNPLUGGED = 167
+DRAW_TEXT_TO_TEXTURE = 0x459240
 
 
 class TitleOracle(GameOracle):
-    def __init__(self, exe, dat_dir, debug=False):
+    def __init__(self, exe, dat_dir, debug=False, record_text=False):
         # 绘制链里的合成 / 纹理面需要 DeviceRecorder 的 GetBackBuffer，即使不落盘也要装上
+        self.text_paints = [] if record_text else None
         super().__init__(exe, dat_dir, debug=debug, draw=True)
         self.help_workers_pending = []
         self.manual_page_reads = []
+        self.pad_buttons = None
         self.title_armed = False
         self.boot_obj = 0
+
+    def setup_imports(self):
+        super().setup_imports()
+        address = self.make_stub2(8, self.on_joystick_poll)
+        self.uc.mem_write(JOY_GET_POS_EX_IMPORT, struct.pack('<I', address))
+
+    def on_joystick_poll(self, _):
+        # WinMM provides the buttons. The original 0x401c30 decodes the mask.
+        if self.pad_buttons is None:
+            self.uc.reg_write(game_oracle.UC_X86_REG_EAX, JOYERR_UNPLUGGED)
+            return
+        self.uc.mem_write(self.arg(1) + JOY_INFO_BUTTONS, struct.pack('<I', self.pad_buttons))
+        self.uc.reg_write(game_oracle.UC_X86_REG_EAX, 0)
 
     def narrow_hooks(self):
         # 0x43c5b0 的 ret 8 清理两个参数；目录和正文装载函数在下一帧前执行。
         self.replaced[game_oracle.THREAD_CREATE] = (8, self.on_title_loader)
+        if self.text_paints is not None:
+            self.replaced[DRAW_TEXT_TO_TEXTURE] = (0x20, self.on_text_paint)
         super().narrow_hooks()
+
+    def on_text_paint(self, _):
+        # 0x459240 takes the sprite rectangle in ECX and the text origin in EDX.
+        rect = self.uc.reg_read(game_oracle.UC_X86_REG_ECX)
+        x = self.uc.reg_read(game_oracle.UC_X86_REG_EDX)
+        height, color, outline, text, _, font, spacing, shadow = (self.arg(i) for i in range(8))
+        self.text_paints.append({
+            'frame': self.frame + 1, 'font': font, 'height': height,
+            'x': struct.unpack('<i', struct.pack('<I', x))[0],
+            'spacing': struct.unpack('<i', struct.pack('<I', spacing))[0], 'shadow': int(bool(shadow)),
+            'color': color, 'outline': outline, 'rect': list(struct.unpack('<4i', self.uc.mem_read(rect, 16))),
+            'text_hex': bytes(self.uc.mem_read(text, 0xA0)).split(b'\0', 1)[0].hex(),
+        })
 
     def on_title_loader(self, _):
         worker = self.arg(0)
@@ -216,15 +250,20 @@ def main():
     ap.add_argument('frames', type=int)
     ap.add_argument('out')
     ap.add_argument('--input', default='')
+    ap.add_argument('--pad', default='', help='held joystick button masks at the specified input frames')
     ap.add_argument('--debug', action='store_true')
     ap.add_argument('--draw-out', default='')
     ap.add_argument('--draw-from', type=int, default=1)
+    ap.add_argument('--text', action='store_true', help='record original 0x459240 arguments and raw CP932 bytes')
     args = ap.parse_args()
-    oracle = TitleOracle(pathlib.Path(args.exe), args.dat_dir, debug=args.debug)
+    oracle = TitleOracle(pathlib.Path(args.exe), args.dat_dir, debug=args.debug, record_text=args.text)
     oracle.boot_title()
     print('title booted chains=%s banks=%s' % (
         [(p, hex(cb)) for p, cb, _ctx in oracle.chain_list()], oracle.loaded_banks), file=sys.stderr)
     events = parse_input(args.input)
+    pad_events = parse_input(args.pad)
+    if pad_events:
+        oracle.pad_buttons = 0
     draw_file = None
     if args.draw_out:
         draw_file = open(args.draw_out, 'w')
@@ -257,6 +296,8 @@ def main():
     for index in range(args.frames):
         if index in events:
             held = events[index]
+        if index in pad_events:
+            oracle.pad_buttons = pad_events[index]
         oracle.set_input(held)
         frames.append(oracle.tick())
         if args.debug and (index < 3 or index + 1 in (180, 181, 312)):
@@ -264,9 +305,10 @@ def main():
             print('f=%d screen=%d sub=%d cursor=%d boot=%d live=%d sfx=%s ascii=%d' % (
                 st['frame'], st['screen'], st['sub'], st['cursor'], st['boot'], st['live'], st['sfx'], len(st['ascii'])),
                   file=sys.stderr)
-    pathlib.Path(args.out).write_text(json.dumps({
-        'frames': frames, 'manual_page_reads': oracle.manual_page_reads,
-    }, separators=(',', ':')))
+    recording = {'frames': frames, 'manual_page_reads': oracle.manual_page_reads}
+    if args.text:
+        recording['text_paints'] = oracle.text_paints
+    pathlib.Path(args.out).write_text(json.dumps(recording, separators=(',', ':')))
     last = frames[-1]
     print('frame=%d screen=%d sub=%d cursor=%d boot=%d live=%d sfx=%s ascii=%d' % (
         last['frame'], last['screen'], last['sub'], last['cursor'], last['boot'], last['live'],

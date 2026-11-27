@@ -78,11 +78,13 @@
 #include "RecordingDevice.hpp"
 #include "DrawDigest.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -403,8 +405,10 @@ int main(int argc, char** argv) {
         i32 score = 0;
         i32 shot = 0;
         i32 continues = 0;
+        u32 config_flags = 0;
         bool dump_ascii = false;
         const char* replay_dir = nullptr;
+        const char* playback_path = nullptr;
         const char* draw_path = nullptr;
         std::unordered_map<int, u32> inject;
         for (int a = 4; a < argc; ++a) {
@@ -414,8 +418,10 @@ int main(int argc, char** argv) {
             else if (std::strncmp(argv[a], "score=", 6) == 0) score = std::atoi(argv[a] + 6);
             else if (std::strncmp(argv[a], "shot=", 5) == 0) shot = std::atoi(argv[a] + 5);
             else if (std::strncmp(argv[a], "continues=", 10) == 0) continues = std::atoi(argv[a] + 10);
+            else if (std::strncmp(argv[a], "config=", 7) == 0) config_flags = u32(std::strtoul(argv[a] + 7, nullptr, 0));
             else if (std::strcmp(argv[a], "ascii") == 0) dump_ascii = true;
             else if (std::strncmp(argv[a], "replay_dir=", 11) == 0) replay_dir = argv[a] + 11;
+            else if (std::strncmp(argv[a], "playback=", 9) == 0) playback_path = argv[a] + 9;
             else if (std::strncmp(argv[a], "draw=", 5) == 0) draw_path = argv[a] + 5;
             else if (std::strncmp(argv[a], "draw-from=", 10) == 0) draw_from = std::atoi(argv[a] + 10);
             else if (std::strncmp(argv[a], "clear-at=", 9) == 0) clear_at = std::atoi(argv[a] + 9);
@@ -427,6 +433,7 @@ int main(int argc, char** argv) {
         std::vector<u8> bytes;
         if (!read_file(path, bytes)) return 1;
         GameSession session;
+        session.config_flags = config_flags;
         if (!session.open(bytes.data(), u32(bytes.size()))) { std::fprintf(stderr, "%s\n", session.failure.c_str()); return 1; }
         RecordingDevice device;
         const auto close_draw = [](std::FILE* file) { std::fclose(file); };
@@ -453,27 +460,42 @@ int main(int argc, char** argv) {
         session.globals.difficulty = difficulty;
         session.globals.score = score;
         if (replay_dir != nullptr) session.demo_directory = replay_dir;
+        if (playback_path != nullptr && clear_at < 0) return fail("playback requires clear-at");
         if (clear_at >= 0) {
-            if (!extra || difficulty != 4) return fail("clear-at requires Extra difficulty");
-            session.globals.stage = session.globals.stage_copy = 7;
-            session.globals.season = 4;
+            if (extra != (difficulty == 4)) return fail("clear-at difficulty and Extra must agree");
+            session.globals.stage = session.globals.stage_copy = extra ? 7 : 6;
+            session.globals.season = extra ? 4 : 0;
             session.globals.replay_slot = -1;
             session.supervisor.boot_frames = Supervisor::kBootHoldFrames;
-            if (!session.start_game_direct(0)) return fail(session.failure.c_str());
+            if (playback_path != nullptr) {
+                if (!session.load_replay_file(playback_path)) return fail(session.failure.c_str());
+                session.apply_replay_start(-1);
+            }
+            if (!session.start_game_direct(playback_path != nullptr ? 1 : 0)) return fail(session.failure.c_str());
         } else {
             session.supervisor.request(extra ? SceneId::ExtraEnding : SceneId::Ending);
             // The menu-only Extra probes begin after the title worker is armed.
             if (extra && !session.logic_step()) return fail(session.failure.c_str());
         }
+        int replay_menu_frame = 0;
+        int replay_title_frame = 0;
+        int clear_extend_sounds = 0;
         for (int f = 0; f < frames; ++f) {
             if (f == clear_at) {
                 session.globals.score = score;
+                const size_t previous_sfx = session.sfx_events.ids.size();
                 session.game.gui.stage_clear();
+                clear_extend_sounds = int(std::count(session.sfx_events.ids.begin() + previous_sfx,
+                                                     session.sfx_events.ids.end(), 0x11));
             }
             session.injected_input = inject.count(f) ? inject[f] : 0;
             session.ending.smoke_skip = !noskip;
             if (draw_file) device.begin_frame();
             if (!session.logic_step()) { std::fprintf(stderr, "%s\n", session.failure.c_str()); return 1; }
+            if (playback_path != nullptr) {
+                if (replay_menu_frame == 0 && session.menu.mode != GameMenu::Closed) replay_menu_frame = f + 1;
+                if (replay_title_frame == 0 && session.supervisor.current == SceneId::Title) replay_title_frame = f + 1;
+            }
             if (draw_file && f + 1 >= draw_from) device.write_frame(draw_file.get(), f + 1);
             session.ending.smoke_skip = !noskip;
         }
@@ -488,6 +510,9 @@ int main(int argc, char** argv) {
                     session.music.current.empty() ? "-" : session.music.current.c_str(),
                     session.game.loading_vm != 0 ? 1 : 0);
         if (!session.ending.last_text.empty()) std::printf("text_bytes=%zu\n", session.ending.last_text.size());
+        if (playback_path != nullptr)
+            std::printf("replay menu_frame=%d title_frame=%d extend_sounds=%d\n",
+                        replay_menu_frame, replay_title_frame, clear_extend_sounds);
         for (const char* e : session.ending.events) std::printf("event %s\n", e);
         if (dump_ascii) {
             for (i32 i = 0; i < session.ascii.entry_count(); ++i) {
@@ -937,6 +962,16 @@ int main(int argc, char** argv) {
         }
         return 0;
     }
+    if (command == "score-add" && argc == 7) {
+        GameGlobals g;
+        g.difficulty = std::atoi(argv[2]);
+        g.score = std::atoi(argv[3]);
+        g.extend_index = std::atoi(argv[4]);
+        g.lives = std::atoi(argv[5]);
+        const int extends = g.add_score(std::atoi(argv[6]));
+        std::printf("%d %d %d %d\n", g.score, g.extend_index, g.lives, extends);
+        return 0;
+    }
     if (command == "score-tool" && argc >= 6) {
         // tools/oracle/score-oracle.py 同口径：RNG 种子 0 → 0x4497e0（argv[2] 为 '-' 则无文件）→ 镜像；
         // 按 OFF:HEX（相对成绩对象基址）改镜像 → 0x449a00 写出 → 写盘后镜像
@@ -1374,12 +1409,17 @@ int main(int argc, char** argv) {
         // 参数：<th16.dat> <stage> <shot> <season> <frames> <input "f:held,..."> [enemies "f:count,..."] [dialogue "f:v,..."]
         // 输入脚本语义与 game-oracle --input 相同：第 f 帧（0 起）起 held 持续到下一事件；"@<路径>" 从文件读入。
         // enemies/dialogue 为其它管理器未移植时的 PlayerWorld 外部输入（oracle 快照 enemy_count / dialogue 字段）。
-        const bool digest_only = command == "game-digest";
-        // game-draw：与 game-run 同参，另加第 16/17 参 <out.jsonl> [from_frame]；跑绘制链并把每帧设备调用写成 JSON 行。
+        // game-draw：与 game-run 同参，末尾加 <out.jsonl> [from_frame] [--draw-only | --state-digest]。
+        // --draw-only 保留逐帧绘制和场景切换数据，跳过标准输出中的玩法快照。
+        // --state-digest 在绘制链运行后取玩法快照，标准输出用 game-digest 的摘要格式。
         // <out.jsonl> 的两种写法：
         //   "digest:<dst>"  每帧一行整段摘要（DrawDigest.hpp，tools/oracle/draw-compare.py frame_digests 同口径；tests/draw-long.test.mjs）
         //   "fd:<n>"        直接使用继承来的文件描述符（两种行格式都可，经管道流式读，整段不落盘）
         const bool draw_mode = command == "game-draw";
+        const std::string_view draw_option = draw_mode && argc >= 17 ? argv[argc - 1] : "";
+        const bool draw_only = draw_option == "--draw-only";
+        const bool draw_with_state_digest = draw_option == "--state-digest";
+        const bool digest_only = command == "game-digest" || draw_with_state_digest;
         std::FILE* draw_out = nullptr;
         bool digest_mode = false;
         int draw_from = 1;
@@ -1397,7 +1437,7 @@ int main(int argc, char** argv) {
             else draw_out = std::fopen(destination, "w");
 #endif
             if (draw_out == nullptr) return fail("cannot open draw output");
-            if (argc >= 17) draw_from = std::atoi(argv[16]);
+            if (argc >= 18 || (argc == 17 && !draw_only && !draw_with_state_digest)) draw_from = std::atoi(argv[16]);
         }
         const int stage = std::atoi(argv[3]);
         const int shot = std::atoi(argv[4]);
@@ -1672,6 +1712,7 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+            if (draw_only || (!digest_only && f + 1 < frames_from)) continue;
             const Player& pl = session.game.player;
             const GameGlobals& g = session.globals;
             std::vector<u32> w;
@@ -1877,7 +1918,7 @@ int main(int argc, char** argv) {
                                      u32(g.enemy_bonus_pending), u32(g.enemy_bonus), u32(g.spell_id)};
                 for (u32 v : words) feed_spell_u32(v);
             }
-            if (digest_only || f + 1 < frames_from) continue;
+            if (digest_only) continue;
 
             std::printf("%s{\"frame\":%d,\"stage\":%d,\"game_frame\":%d,\"stage_frame\":%d,\"input\":[%u,%u],\"power\":%d,\"season_gauge\":%d,"
                         "\"enemy_count\":%d,\"dialogue\":%d,\"rng\":[%u,%u],\"game_rng\":[%u,%u],\"player\":{",
@@ -2150,7 +2191,10 @@ int main(int argc, char** argv) {
                         (unsigned long long)menu_digest, (unsigned long long)sound_digest,
                         session.music.current.empty() ? "-" : session.music.current.c_str());
         else std::printf("],\"scene_exit\":%d,\"exit_frame\":%d}\n", scene_exit, exit_frame);
-        if (record_dir != nullptr && !session.save_replay_slot(1, "TEST")) return fail(session.failure.c_str());
+        if (record_dir != nullptr) {
+            session.prepare_replay_save(session.globals.stage);
+            if (!session.save_replay_slot(1, "TEST")) return fail(session.failure.c_str());
+        }
         if (!session.game.enemies.unknown_ops.empty()) {
             std::fprintf(stderr, "unknown_ecl_ops=");
             for (size_t i = 0; i < session.game.enemies.unknown_ops.size(); ++i)

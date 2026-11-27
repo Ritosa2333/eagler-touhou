@@ -96,6 +96,7 @@ public:
     // harness 提供 enemies 时间表时置 false，由桩保持 PlayerWorld.enemy_count（对齐旧桩语义）
     bool sync_enemy_count = true;
     OnResourceLoaded on_loaded;
+    std::function<void()> on_before_draw;
 
     GameSession();   // 0x43ba40 / 0x46a3a0：登记常驻绘制链
     bool open(const u8* archive_bytes, u32 size);
@@ -115,6 +116,7 @@ public:
     // 写盘成功后通知宿主（浏览器 IDBFS 回写）
     std::function<void()> on_saved;
     // 0x448400：把本局记录写入 replay_directory()/replay/th16_XX.rpy（或根目录回退）
+    ReplaySummary prepare_replay_save(i32 stage);
     bool save_replay_slot(int slot, const char* player_name);
     void restamp_replay_globals() { if (game.mode != 1) replay_recording_.restamp_globals(globals); }
     // scoreth16.dat 路径；空则不读不写（harness 默认）。启动幕 0x4497e0 读、0x42d200 / 0x43afe0 经 0x449a00 写

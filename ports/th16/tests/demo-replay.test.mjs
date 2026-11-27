@@ -75,6 +75,11 @@ test('replay-roundtrip: a two-segment recording (stage 1 clear → stage 2) play
     const segs = spawnSync(harness, ['replay-globals', rpy], { encoding: 'utf8' }).stdout.trim().split('\n')
       .map((l) => ({ stage: Number(l.match(/ stage=(\d+)/)[1]), frames: Number(l.match(/ frames=(\d+)/)[1]) }));
     assert.deepEqual(segs, g.segments, 'segment split at the 0x448eb0 point');
+    const title = spawnSync(harness, ['scene-boot', dat, '410', '314:0x20,316:0x20,318:0x20,322:1', 'ascii'],
+      {encoding: 'utf8', env: {...process.env, TH16_REPLAY_DIR: dir}});
+    assert.equal(title.status, 0, title.stderr);
+    const savedStage = title.stdout.split('\n').find(line => line.startsWith('ascii ') && line.includes('[No.01 ')) ?? '';
+    assert.match(savedStage, / St2\s+0\.0%\]$/, 'the list shows the stage where the replay was saved');
     const replayed = run({ TH16_REPLAY: rpy }, '0:0');
     for (const key of ['digest', 'enemies', 'enemy_vms', 'bullets', 'items', 'spell', 'lasers', 'bombs', 'menu', 'sound']) {
       assert.equal(recorded[key], g[key], `recording run ${key}`);
@@ -110,6 +115,35 @@ test('replay-globals: stage header +0x14 snapshot decodes the 0x4a5790 block', n
     'replay_slot=-1 pos=0,51200 focus=0 new_game=1 seed=30966 frames=6777');
 });
 
+test('Spell Practice recording shows the selected number and returns to title like the original',
+  { skip: !existsSync(dat) && 'th16.dat not present' }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'th16-spell-replay-'));
+  try {
+    const run = (args, env) => {
+      const result = spawnSync(harness, args, {encoding: 'utf8', env: {...process.env, ...env}});
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      return result.stdout;
+    };
+    // Stage 2, Easy, Reimu/Spring, spell index 12 in the selection screen.
+    run(['game-digest', dat, '2', '0', '0', '1600', '0:0x60,85:0', '', '', '0', '12', '', '0', '2'],
+      {TH16_RECORD_DIR: dir});
+    const recording = join(dir, 'replay', 'th16_01.rpy');
+    assert.ok(existsSync(recording));
+    const title = run(['scene-boot', dat, '410', '314:0x20,316:0x20,318:0x20,322:1', 'ascii'],
+      {TH16_REPLAY_DIR: dir});
+    const row = title.split('\n').find(line => line.startsWith('ascii ') && line.includes('[No.01 ')) ?? '';
+    assert.match(row, / SpellPr\s+13 0\.0%\]$/);
+
+    // Original --replay reads the terminator at frame 1601, then Z confirms the return.
+    const playback = run(['game-digest', dat, '2', '0', '0', '1670', '1648:1,1649:0', '', '', '0', '-1', '', '0', '0'],
+      {TH16_REPLAY: recording});
+    assert.match(playback, /\bscene_exit=4 exit_frame=1662 digest=68efa624c151cb03\b/);
+    assert.match(playback, /\bmenu=87781d6c875ffabb sound=13164b16e24cc3eb\b/);
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
+
 test('title Replay: a recording saved from Pause returns to the selected slot after playback',
   { skip: !existsSync(dat) && 'th16.dat not present' }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'th16-replay-menu-'));
@@ -122,11 +156,14 @@ test('title Replay: a recording saved from Pause returns to the selected slot af
       assert.equal(result.status, 0, result.stderr || result.stdout);
       return result.stdout;
     };
-    const saved = boot(1040, [
+    const saveInput = [
       '313:1,360:1,400:1,450:1,550:1,552:1,554:1',
       '700:0x100,731:0x20,736:0x20,745:1,788:0x10,795:1,829:1',
-      '852:1,854:1,856:1,858:1,860:1,862:1,864:1,866:1,868:1,907:2',
-    ].join(','));
+      '852:1,854:1,856:1,858:1,860:1,862:1,864:1,866:1,868:1',
+    ].join(',');
+    const slot = boot(900, saveInput).split('\n').find(line => line.startsWith('spell ')) ?? '';
+    assert.match(slot, /\breplay_slot=-1$/, 'saving leaves the live spell selection intact');
+    const saved = boot(1040, saveInput + ',907:2');
     assert.match(saved, /scene-change frame=920 7->4\b/);
     const recording = join(replays, 'th16_01.rpy');
     assert.ok(existsSync(recording), 'Pause saved the replay');

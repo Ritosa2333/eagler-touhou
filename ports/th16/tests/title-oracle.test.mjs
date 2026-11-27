@@ -33,6 +33,8 @@ const DIFF_DRAW_TO = 353;
 // 第 405 帧子状态 2。窗口取画面稳定后的 425–434。
 const OPTION_DRAW_FROM = 425;
 const OPTION_DRAW_TO = 434;
+// 从主菜单连续点按下键，随后确认进入 Option。
+const OPTION_ENTRY = '313:0x20,314:0,315:0x20,316:0,317:0x20,318:0,319:0x20,320:0,321:0x20,322:0,323:0x20,324:0,327:1,328:0';
 // Extra 禁用时 ↓×3 到 Replay，第 322 帧确认。第 343 帧进入 Replay（0x451750），第 351 帧子状态 2。
 // title-oracle 会把输入保持到下一条，所以每拍后写 0。窗口取稳定后的 360–369。
 const REPLAY_DRAW_FROM = 360;
@@ -101,7 +103,7 @@ test('title menu: 10 draw frames match original structure and vertices', needOra
     execFileSync(py, [oracle, exe, datDir, '321', state, '--draw-out', oracleDraw, '--draw-from', '312'],
                  {stdio: ['ignore', 'ignore', 'pipe']});
     execFileSync(harness, ['scene-boot', dat, '321', `draw=${portDraw}`, 'draw-from=312'], {stdio: ['ignore', 'ignore', 'pipe']});
-    execFileSync('python3', [compare, oracleDraw, portDraw, '--frames', '312-321', '--eps', '1e-4'],
+    execFileSync(py, [compare, oracleDraw, portDraw, '--frames', '312-321', '--eps', '1e-4'],
                  {stdio: ['ignore', 'pipe', 'pipe']});
   } finally {
     rmSync(dir, {recursive: true, force: true});
@@ -120,7 +122,7 @@ test('difficulty screen: 10 draw frames around a cursor-down match original stru
                  {stdio: ['ignore', 'ignore', 'pipe']});
     execFileSync(harness, ['scene-boot', dat, String(DIFF_DRAW_TO), input, `draw=${portDraw}`,
                            `draw-from=${DIFF_DRAW_FROM}`], {stdio: ['ignore', 'ignore', 'pipe']});
-    const compared = execFileSync('python3', [compare, oracleDraw, portDraw, '--frames', `${DIFF_DRAW_FROM}-${DIFF_DRAW_TO}`, '--eps', '1e-4'],
+    const compared = execFileSync(py, [compare, oracleDraw, portDraw, '--frames', `${DIFF_DRAW_FROM}-${DIFF_DRAW_TO}`, '--eps', '1e-4'],
                                   {encoding: 'utf8'});
     process.stdout.write(compared);
     assert.match(compared, /frames=10 mismatches=0/);
@@ -141,10 +143,50 @@ test('option screen: 10 settled draw frames match original structure and vertice
                  {stdio: ['ignore', 'ignore', 'pipe']});
     execFileSync(harness, ['scene-boot', dat, String(OPTION_DRAW_TO), input, `draw=${portDraw}`,
                            `draw-from=${OPTION_DRAW_FROM}`], {stdio: ['ignore', 'ignore', 'pipe']});
-    const compared = execFileSync('python3', [compare, oracleDraw, portDraw, '--frames', `${OPTION_DRAW_FROM}-${OPTION_DRAW_TO}`, '--eps', '1e-4'],
+    const compared = execFileSync(py, [compare, oracleDraw, portDraw, '--frames', `${OPTION_DRAW_FROM}-${OPTION_DRAW_TO}`, '--eps', '1e-4'],
                                   {encoding: 'utf8'});
     process.stdout.write(compared);
     assert.match(compared, /frames=10 mismatches=0/);
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('Option and Key Config: navigation, button swapping and return match original drawing', needOracle, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'th16-key-config-'));
+  try {
+    const state = join(dir, 'state.json');
+    const original = join(dir, 'original.jsonl');
+    const port = join(dir, 'port.jsonl');
+    const input = `${OPTION_ENTRY},357:0x20,358:0,359:0x20,360:0,361:1,362:0,397:2,398:0,403:0x20,404:0,413:0x10,414:0,423:0x10,424:0,433:2,434:0`;
+    execFileSync(py, [oracle, exe, datDir, '454', state, '--input', input,
+      '--pad', '399:0xa00,400:0,407:0x200,408:0', '--draw-out', original, '--draw-from', '357'],
+    {stdio: ['ignore', 'ignore', 'pipe']});
+    const result = execFileSync(harness, ['scene-boot', dat, '454', `${input},P399:9,P399:11,P407:9`,
+      `draw=${port}`, 'draw-from=357'], {encoding: 'utf8'});
+    assert.deepEqual(result.match(/^event key-button \d+$/gm), ['event key-button 9', 'event key-button 9']);
+    assert.equal(header(result).screen, 3);
+    const compared = execFileSync(py, [compare, original, port, '--frames', '357-454', '--eps', '0'], {encoding: 'utf8'});
+    assert.match(compared, /frames=98 mismatches=0/);
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('Option: SE previews follow the original menu timer and stop when the cursor leaves', needOracle, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'th16-option-preview-'));
+  try {
+    const state = join(dir, 'state.json');
+    const input = `${OPTION_ENTRY},357:0x20,358:0,490:0x10,491:0,550:0x20,551:0`;
+    execFileSync(py, [oracle, exe, datDir, '596', state, '--input', input], {stdio: ['ignore', 'ignore', 'pipe']});
+    const frames = JSON.parse(readFileSync(state, 'utf8')).frames;
+    const previews = frames.filter(frame => frame.screen === 3 && frame.sfx.includes(2)).map(frame => frame.frame);
+    assert.deepEqual(previews, [416, 476, 596]);
+    for (const frame of [415, 416, 475, 476, 536, 595, 596]) {
+      const result = execFileSync(harness, ['scene-boot', dat, String(frame), input], {encoding: 'utf8'});
+      const observed = result.match(/^event sfx 2$/gm)?.length ?? 0;
+      assert.equal(observed, previews.filter(preview => preview <= frame).length, `SE previews through frame ${frame}`);
+    }
   } finally {
     rmSync(dir, {recursive: true, force: true});
   }
@@ -162,7 +204,7 @@ test('replay screen: 10 settled draw frames match original structure and vertice
                  {stdio: ['ignore', 'ignore', 'pipe']});
     execFileSync(harness, ['scene-boot', dat, String(REPLAY_DRAW_TO), input, `draw=${portDraw}`,
                            `draw-from=${REPLAY_DRAW_FROM}`], {stdio: ['ignore', 'ignore', 'pipe']});
-    const compared = execFileSync('python3', [compare, oracleDraw, portDraw, '--frames', `${REPLAY_DRAW_FROM}-${REPLAY_DRAW_TO}`, '--eps', '1e-4'],
+    const compared = execFileSync(py, [compare, oracleDraw, portDraw, '--frames', `${REPLAY_DRAW_FROM}-${REPLAY_DRAW_TO}`, '--eps', '1e-4'],
                                   {encoding: 'utf8'});
     process.stdout.write(compared);
     assert.match(compared, /frames=10 mismatches=0/);
@@ -183,7 +225,7 @@ test('player data screen: 10 settled draw frames match original structure and ve
                  {stdio: ['ignore', 'ignore', 'pipe']});
     execFileSync(harness, ['scene-boot', dat, String(PDATA_DRAW_TO), input, `draw=${portDraw}`,
                            `draw-from=${PDATA_DRAW_FROM}`], {stdio: ['ignore', 'ignore', 'pipe']});
-    const compared = execFileSync('python3', [compare, oracleDraw, portDraw, '--frames', `${PDATA_DRAW_FROM}-${PDATA_DRAW_TO}`, '--eps', '1e-4'],
+    const compared = execFileSync(py, [compare, oracleDraw, portDraw, '--frames', `${PDATA_DRAW_FROM}-${PDATA_DRAW_TO}`, '--eps', '1e-4'],
                                   {encoding: 'utf8'});
     process.stdout.write(compared);
     assert.match(compared, /frames=10 mismatches=0/);
@@ -204,7 +246,7 @@ test('music room: 10 settled draw frames match original structure and vertices',
                  {stdio: ['ignore', 'ignore', 'pipe']});
     execFileSync(harness, ['scene-boot', dat, String(MUSIC_DRAW_TO), input, `draw=${portDraw}`,
                            `draw-from=${MUSIC_DRAW_FROM}`], {stdio: ['ignore', 'ignore', 'pipe']});
-    const compared = execFileSync('python3', [compare, oracleDraw, portDraw, '--frames', `${MUSIC_DRAW_FROM}-${MUSIC_DRAW_TO}`, '--eps', '1e-4'],
+    const compared = execFileSync(py, [compare, oracleDraw, portDraw, '--frames', `${MUSIC_DRAW_FROM}-${MUSIC_DRAW_TO}`, '--eps', '1e-4'],
                                   {encoding: 'utf8'});
     process.stdout.write(compared);
     assert.match(compared, /frames=10 mismatches=0/);
@@ -225,10 +267,33 @@ test('spell practice: 10 settled draw frames match original structure and vertic
                  {stdio: ['ignore', 'ignore', 'pipe']});
     execFileSync(harness, ['scene-boot', dat, String(SPELL_DRAW_TO), input, `draw=${portDraw}`,
                            `draw-from=${SPELL_DRAW_FROM}`], {stdio: ['ignore', 'ignore', 'pipe']});
-    const compared = execFileSync('python3', [compare, oracleDraw, portDraw, '--frames', `${SPELL_DRAW_FROM}-${SPELL_DRAW_TO}`, '--eps', '1e-4'],
+    const compared = execFileSync(py, [compare, oracleDraw, portDraw, '--frames', `${SPELL_DRAW_FROM}-${SPELL_DRAW_TO}`, '--eps', '1e-4'],
                                   {encoding: 'utf8'});
     process.stdout.write(compared);
     assert.match(compared, /frames=10 mismatches=0/);
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('Spell Practice: cancel hides the list scores as soon as the exit animation starts', needOracle, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'th16-title-spell-exit-'));
+  try {
+    const state = join(dir, 'state.json');
+    const original = join(dir, 'original.jsonl');
+    const port = join(dir, 'port.jsonl');
+    const input = `314:${DOWN},315:0,316:${DOWN},317:0,320:${Z},321:0,360:0x80,361:0,367:${DOWN},368:0,375:${Z},376:0,415:${Z},416:0,422:${DOWN},423:0,430:0x80,431:0,445:2,446:0,490:2,491:0`;
+    const from = '341';
+    const to = '525';
+    execFileSync(py, [oracle, exe, datDir, to, state, '--input', input, '--draw-out', original, '--draw-from', from],
+                 {stdio: ['ignore', 'ignore', 'pipe']});
+    const frames = JSON.parse(readFileSync(state, 'utf8')).frames;
+    assert.equal(frames[444].ascii.filter(line => line.includes('[SCORE')).length, 4);
+    assert.ok(frames.slice(445, 451).every(frame => frame.screen === 18 && frame.sub === 4 && frame.ascii.length === 0));
+    execFileSync(harness, ['scene-boot', dat, to, input, `draw=${port}`, `draw-from=${from}`],
+                 {stdio: ['ignore', 'ignore', 'pipe']});
+    const compared = execFileSync(py, [compare, original, port, '--frames', `${from}-${to}`, '--eps', '0'], {encoding: 'utf8'});
+    assert.match(compared, /frames=185 mismatches=0/);
   } finally {
     rmSync(dir, {recursive: true, force: true});
   }

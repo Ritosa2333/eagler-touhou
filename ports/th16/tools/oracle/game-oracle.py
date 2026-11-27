@@ -91,7 +91,7 @@ def f32(v):
 
 class GameOracle(Oracle):
     def __init__(self, exe, dat_dir, stage=1, shot=0, season=0, difficulty=1, seed=0, debug=False, replay_slot=-1,
-                 lives=None, mode=0, draw=False, demo=None, replay=None):
+                 lives=None, mode=0, draw=False, demo=None, replay=None, track_music=False):
         dat_dir = pathlib.Path(dat_dir)
         self.replay = replay   # (槽文件名 "th16_XX.rpy", 文件字节)：标题 Replay 选槽回放（bec bit6 不置，0x448c10 走 replay/%s 磁盘读）
         self.disk_files = {}   # CreateFileA 可见的只读文件（路径 → 字节）
@@ -162,6 +162,7 @@ class GameOracle(Oracle):
         else:
             self.setup_device()
         self.setup_laser_sound_buffer()
+        self.music_process = self.setup_music_queue(exe) if track_music else None
         self.narrow_hooks()
         if debug:
             from unicorn import UC_HOOK_BLOCK
@@ -171,6 +172,35 @@ class GameOracle(Oracle):
                 if len(self.trace) > 64:
                     del self.trace[:32]
             self.uc.hook_add(UC_HOOK_BLOCK, on_block)
+
+    def setup_music_queue(self, exe):
+        # 0x429ff0 reads DAT_004dc0f0 to decide whether to show a music title again.
+        # Run the original queue in the same sound environment as music-oracle.py.
+        path = pathlib.Path(__file__).with_name('music-oracle.py')
+        spec = importlib.util.spec_from_file_location('th16_music_oracle', path)
+        music = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(music)
+        queue = music.MusicOracle(exe, (self.dat_dir / 'thbgm.fmt').read_bytes(), True)
+        track_buffer = queue.alloc(0x100)
+
+        def enqueue(game):
+            kind, slot, name_ptr = (game.arg(i) for i in range(3))
+            name = game.cstr(name_ptr).encode('cp932', errors='replace') if name_ptr else b''
+            queue.uc.mem_write(track_buffer, name[:255] + b'\0')
+            result = queue.call(music.MUSIC_ENQUEUE, ecx=music.DAT_SOUND_MANAGER, args=(kind, slot, track_buffer))
+            game.uc.reg_write(UC_X86_REG_EAX, result)
+
+        def process(game):
+            # 0x42d200 can clear the name directly during teardown. Copy that change before advancing the queue.
+            address = music.DAT_CURRENT_NAME
+            queue.uc.mem_write(address, bytes(game.uc.mem_read(address, 0x100)))
+            result = queue.call(music.SOUND_PROCESS)
+            game.uc.mem_write(address, bytes(queue.uc.mem_read(address, 0x100)))
+            game.uc.reg_write(UC_X86_REG_EAX, result)
+
+        self.replaced[music.MUSIC_ENQUEUE] = (0x0C, enqueue)
+        self.replaced[music.SOUND_PROCESS] = (0, process)
+        return music.SOUND_PROCESS
 
     def call(self, fn, ecx=0, edx=0, args=(), limit=200_000_000):
         """同 Oracle.call，但支持桩在 PAUSE 处挂起：先在模拟器外执行 self.pending（可再嵌套 call），再替桩完成 stdcall 返回。"""
@@ -553,11 +583,12 @@ class GameOracle(Oracle):
 
     def setup_laser_sound_buffer(self):
         """DAT_004dba74：魔理沙激光循环音的 IDirectSoundBuffer（0x446260 每帧按自机 x 调 +0x40 SetPan）。
-        oracle 没有声音设备，这里放一只全部方法都返回 0 的假对象（COM stdcall：this + 1 参，RET 8），只计数。"""
+        0x42e4d0 暂停时还会调 +0x24 GetStatus 与 +0x48 Stop。"""
         methods = 0x60 // 4
         vt = self.alloc(methods * 4)
         for i in range(methods):
-            addr = self.make_stub2(8, (lambda idx: (lambda o: self.on_laser_sound_method(idx)))(i))
+            stack_bytes = 4 if i == 0x48 // 4 else 8
+            addr = self.make_stub2(stack_bytes, (lambda idx: (lambda o: self.on_laser_sound_method(idx)))(i))
             self.uc.mem_write(vt + i * 4, struct.pack('<I', addr))
         obj = self.alloc(0x10)
         self.uc.mem_write(obj, struct.pack('<I', vt))
@@ -566,6 +597,8 @@ class GameOracle(Oracle):
 
     def on_laser_sound_method(self, idx):
         self.laser_sound_calls[idx] = self.laser_sound_calls.get(idx, 0) + 1
+        if idx == 0x24 // 4:
+            self.uc.mem_write(self.arg(1), bytes(4))  # GetStatus(this, status*)：缓冲未播放
         self.uc.reg_write(UC_X86_REG_EAX, 0)
 
     # ---- D3DX 数学（float32 口径；仅供绘制矩阵，不参与游戏逻辑状态）----
@@ -990,6 +1023,8 @@ class GameOracle(Oracle):
     def tick(self):
         self.sfx_log = []
         self.sfx_pans = []
+        if self.music_process is not None:
+            self.call(self.music_process)  # 0x43b3d0：切换场景前推进队列；游戏内的排空循环也使用同一队列。
         self.switch_scene()
         if self.run_draw:
             # 0x45a8a0 更新前：排空批量顶点、3D 相机 DAT_004c1560 的 VIEW / PROJECTION 与视口（DAT_004c17b8 + 0xe0）
@@ -1711,6 +1746,7 @@ def main():
     ap.add_argument('--every', type=int, default=1)
     ap.add_argument('--debug', action='store_true')
     ap.add_argument('--draw', action='store_true', help='每帧按 0x45a8a0 顺序跑绘制链 0x4015a0，D3D 设备调用由 d3d-recorder.py 记录')
+    ap.add_argument('--track-music', action='store_true', help='执行原版 BGM 队列，同步影响绘制的当前曲名')
     ap.add_argument('--draw-out', default='', help='--draw 的设备调用流输出（JSON Lines，每帧一行；默认 <out>.draw.jsonl）')
     ap.add_argument('--draw-from', type=int, default=1, help='--draw 只记录帧号 ≥ 此值的帧（1 起）')
     ap.add_argument('--draw-digest', default='',
@@ -1736,7 +1772,8 @@ def main():
     o = GameOracle(pathlib.Path(a.exe), a.dat_dir, a.stage, a.shot, a.season, a.difficulty, a.seed, a.debug, a.replay_slot,
                    a.lives, a.mode, draw=a.draw,
                    demo=(('demo/' + pathlib.Path(a.demo).name), pathlib.Path(a.demo).read_bytes()) if a.demo else None,
-                   replay=(pathlib.Path(a.replay).name, pathlib.Path(a.replay).read_bytes()) if a.replay else None)
+                   replay=(pathlib.Path(a.replay).name, pathlib.Path(a.replay).read_bytes()) if a.replay else None,
+                   track_music=a.track_music)
     o.enemy_snap = a.enemies
     o.bullet_snap = a.bullets
     o.item_snap = a.items

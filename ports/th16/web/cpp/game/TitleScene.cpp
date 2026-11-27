@@ -623,7 +623,7 @@ void TitleScene::draw_replay_list(AsciiManager& ascii) {
 void TitleScene::draw_spell_hud(AsciiManager& ascii) {
     // 0x456d50：sub∈(0,3]（画面 0x13 时 sub==3 跳过）在 5 个槽上打 SCORE / GAME MODE
     if (screen != kSpellList && screen != kSpellShot && screen != kSpellStart) return;
-    if (sub < 1) return;
+    if (sub < 1 || sub > 3) return;
     if (sub == 3 && screen == kSpellShot) return;
     if (scores == nullptr) return;
 
@@ -1252,7 +1252,7 @@ void TitleScene::panel_item_interrupt_now(AnmManager& anm, i32 script, i32 value
 }
 
 void TitleScene::refresh_option_items(AnmManager& anm) {
-    // 0x44c8c0：光标前项脚本 i+0x17 / i+0x1c → 0x1e；光标后项 → 0x1f（选中由面板 interrupt 负责）
+    // 0x44c8c0：光标前项 → 0x1e，光标后项 → 0x1f，音量数字随所在项更新。
     if (vm[1] == 0) return;
     for (i32 i = 0; i < cursor.index; ++i) {
         panel_item_interrupt_now(anm, i + 0x17, 0x1e);
@@ -1261,6 +1261,13 @@ void TitleScene::refresh_option_items(AnmManager& anm) {
     for (i32 i = cursor.index + 1; i < 5; ++i) {
         panel_item_interrupt_now(anm, i + 0x17, 0x1f);
         panel_item_interrupt_now(anm, i + 0x1c, 0x1f);
+    }
+    if (cursor.index > 0) {
+        for (i32 script = 0x21; script < 0x29; ++script) panel_item_interrupt_now(anm, script, 0x1e);
+    }
+    if (cursor.index != 1) {
+        const i32 interrupt = cursor.index > 1 ? 0x1e : 0x1f;
+        for (i32 script = 0x29; script <= 0x30; ++script) panel_item_interrupt_now(anm, script, interrupt);
     }
 }
 
@@ -1315,7 +1322,6 @@ void TitleScene::update_option(AnmManager& anm, const InputState& input) {
         cursor.set(0);
         if (title_file != nullptr) spawn_into(anm, 1, *title_file, 1);  // +0x2c4 面板脚本 1
         apply_option_volume(anm);
-        refresh_option_items(anm);
         set_sub(1);
         events.push_back({"option", 0});
         [[fallthrough]];
@@ -1359,6 +1365,8 @@ void TitleScene::update_option(AnmManager& anm, const InputState& input) {
             set_sub(4);
             break;
         }
+        // 0x44c6e9：选中 SE 时在当前菜单计时的每个整秒播放试听音。
+        if (cursor.index == 1 && timer % 60 == 0) sfx(2);
         // 左右调音量（项 0 BGM / 1 SE），步进 5，夹到 0..100（0x4186f0）
         if (edge & InputState::kLeft) {
             if (cursor.index == 0) {
@@ -1399,13 +1407,12 @@ void TitleScene::update_option(AnmManager& anm, const InputState& input) {
     }
     case 4:
         if (timer > 9) {
+            // 0x44c855：面板继续执行中断 6 的退场脚本。
             if (cursor.index == 2) {
-                dismiss(anm, 1);
                 set_screen(kKeyConfig);
                 cursor.push();
                 events.push_back({"screen", screen});
             } else if (cursor.index == 4) {
-                dismiss(anm, 1);
                 set_screen(kMainMenu);
                 cursor.pop();
                 events.push_back({"screen", screen});
@@ -2626,7 +2633,7 @@ void TitleScene::update_key_config(AnmManager& anm, const InputState& input) {
     }
     case 4:
         if (timer > 9) {
-            dismiss(anm, 2);
+            // 0x44ec22：面板继续执行中断 6 的退场脚本。
             set_screen(kOption);
             cursor.pop();
             events.push_back({"screen", screen});

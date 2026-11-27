@@ -64,10 +64,12 @@ void ReplayRecording::begin_run(const GameGlobals& globals, i32 time32) {
     put_i32(user.data() + 0x88, globals.shot_aux);
     put_i32(user.data() + 0x8c, globals.difficulty);
     put_i32(user.data() + 0x90, globals.stage);
-    put_i32(user.data() + 0x98, globals.spell_id);
+    put_i32(user.data() + 0x98, globals.replay_slot);
     put_i32(user.data() + 0x9c, globals.season);
-    // +0xa bit1：符卡练习
-    if ((globals.flags & GameGlobals::kModeMask) == 0x20) user[0xa] = u8(user[0xa] | 2);
+    // 0x44786e：+0xa bit0 为关卡练习，bit1 为符卡练习。
+    const u32 mode = globals.flags & GameGlobals::kModeMask;
+    user[0xa] = u8((mode & 0x10u) >> 4);
+    if (mode == 0x20u) user[0xa] |= 2;
 }
 
 void ReplayRecording::snapshot_globals(const GameGlobals& globals, bool new_game) {
@@ -152,11 +154,11 @@ void ReplayRecording::close_stage(bool append_terminator) {
     stage_open = false;
 }
 
-void ReplayRecording::mark_full_run(i32 time32) {
+void ReplayRecording::set_save_metadata(i32 stage, i32 time32) {
     if (user.size() != ReplayFile::kUserSize) user.assign(ReplayFile::kUserSize, 0);
     timestamp = time32;
     put_i32(user.data() + 0xc, time32);
-    put_i32(user.data() + 0x90, 8);
+    put_i32(user.data() + 0x90, stage);
 }
 
 ReplaySummary ReplayRecording::summary() const {

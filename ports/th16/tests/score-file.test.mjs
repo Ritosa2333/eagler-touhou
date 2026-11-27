@@ -16,6 +16,27 @@ const needDat = {skip: !existsSync(dat) && 'original th16.dat not present'};
 const golden = JSON.parse(readFileSync(resolve(here, 'golden/score-file.json'), 'utf8'));
 const sha1 = bytes => createHash('sha1').update(bytes).digest('hex');
 
+test('score cap advances the same extend counters as original 0x43e080', () => {
+  // Arguments are difficulty, score, extend index, lives and points. The
+  // expected result records score, extend index, lives and extend count.
+  const scenarios = [
+    [[1, 999999998, 10, 6, 10], [999999999, 10, 6, 0]],
+    [[1, 999999999, 10, 6, 10], [999999999, 214, 8, 2]],
+    [[1, 999999999, 10, 8, 13000000], [999999999, 214, 8, 0]],
+    [[1, 999999999, 214, 8, 653532160], [999999999, 214, 8, 0]],
+    [[1, 999999999, 214, 8, 653532170], [999999999, 238, 8, 0]],
+    [[1, 999999999, 10, 8, 2147483647], [999999999, 238, 8, 0]],
+    [[4, 999999999, 6, 6, 10], [999999999, 7, 7, 1]],
+    [[4, 999999999, 12, 8, 1120148480], [999999999, 12, 8, 0]],
+    [[4, 999999999, 12, 8, 1120148490], [999999999, 13, 8, 0]],
+    [[4, 999999999, 6, 8, 2147483647], [999999999, 13, 8, 0]],
+  ];
+  for (const [args, expected] of scenarios) {
+    const result = execFileSync(harness, ['score-add', ...args.map(String)], {encoding: 'utf8', timeout: 5000});
+    assert.deepEqual(result.trim().split(/\s+/).map(Number), expected, args.join(' '));
+  }
+});
+
 function runCases(dir) {
   const saved = {};
   const results = {};
@@ -66,6 +87,30 @@ test('title reads scoreth16.dat at boot: a stored no-continue clear enables Extr
     assert.equal(fresh.cursor, 2, 'no file → Extra disabled');
     const loaded = header(execFileSync(harness, ['scene-boot', dat, String(t + 4), `${t}:0x20`, `score=${path}`], {encoding: 'utf8'}));
     assert.equal(loaded.cursor, 1, 'file with a no-continue clear → Extra selectable');
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('Spell Practice capture updates the high score, capture and attempt read back from scores', needDat, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'th16-spell-score-'));
+  try {
+    const path = join(dir, 'scoreth16.dat');
+    const chooseSpell = '314:0x20,316:0x20,320:1,355:1,395:1';
+    const shoot = Array.from({length: 1640 - 527 + 1}, (_, i) => `${527 + i}:9`).join(',');
+    const run = (frames, input, ...options) =>
+      execFileSync(harness, ['scene-boot', dat, String(frames), input, `score=${path}`, ...options],
+        {encoding: 'utf8'});
+
+    // Easy, Reimu/Spring, first spell. Q leaves the Spell Practice results.
+    const saved = run(1733, `${chooseSpell},440:1,485:1,${shoot},1670:0x10000`, 'unlock-spells', 'scenes');
+    assert.match(saved, /^scene-change frame=1683 7->4$/m);
+    assert.ok(existsSync(path));
+
+    const reopened = run(450, chooseSpell, 'ascii');
+    const score = reopened.split('\n').find(line => line.startsWith('ascii ') && line.includes('[SCORE')) ?? '';
+    // Original game score record contains 36440 units, printed with a trailing zero.
+    assert.match(score, /\[SCORE\s+364400\s+1\/\s+1\]$/);
   } finally {
     rmSync(dir, {recursive: true, force: true});
   }

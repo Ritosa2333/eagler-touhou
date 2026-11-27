@@ -771,7 +771,9 @@ void GameMenu::run_state_machine() {
         }
         flags = (flags & ~kFlagReplaySave) | kFlagNameEntry;
         set_state(ReplayName);
-        // 回放头：时间戳与关卡号（0x4483b0(1) 练习段）由 ReplayStore::save 时写入
+        // 0x4406a4：普通模式的通关结算用 All，其余存当前关卡。
+        const i32 stage = practice != 0 && g.mode() == 0 ? ReplaySummary::kAllStages : g.stage;
+        if (ctx.replays != nullptr) replay_save_summary = ctx.replays->prepare_save(stage);
         begin_name_entry();
         sfx(7);
         return;
@@ -1001,17 +1003,7 @@ void GameMenu::draw_replay_name_entry(AsciiManager& text) const {
     }
     draw_name_entry(text, {90.0f, y, 0.0f});
 
-    const GameGlobals& g = *ctx.globals;
-    ReplaySummary current;
-    current.timestamp = ctx.replay_timestamp;
-    current.spell_practice = (g.flags & GameGlobals::kModeMask) == 0x20;
-    current.shot = g.shot;
-    current.shot_aux = g.shot_aux;
-    current.difficulty = g.difficulty;
-    current.stage = g.stage;
-    current.spell_id = g.spell_id;
-    current.season = g.season;
-    draw_replay_row(text, {36.0f, y, 0.0f}, cursor.index + 1, current);
+    draw_replay_row(text, {36.0f, y, 0.0f}, cursor.index + 1, replay_save_summary);
 }
 
 // 0x43ec10：Game Over 排名——标题、入榜行的名字输入（x = 75）、本机体 × 难度的 10 条记录（行距 18）

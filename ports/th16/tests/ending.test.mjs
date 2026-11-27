@@ -17,6 +17,8 @@ function run(args) {
   return execFileSync(harness, args, {encoding: 'utf8'});
 }
 
+const endingPulses = (length, offset = 0) => Array.from({length: Math.ceil(length / 2)}, (_, i) => `${offset + i * 2}:0x1`);
+
 test('ending-smoke: skip after 0x78 frames returns to title', needDat, () => {
   const out = run(['ending-smoke', dat, '140', 'noskip=0', '121:0x1']);
   const headerLine = out.trim().split('\n')[0];
@@ -121,6 +123,59 @@ test('ExtraEnding → title_origin 3: name entry 0xe (0x4532f0) → replay save 
   assert.match(out, /current_bgm=th16_01\.wav\b/);
 });
 
+test('Normal and Extra clear honor the original quit flag after the countdown', needDat, () => {
+  for (const difficulty of [1, 4]) {
+    const clear = ['config=0x2000', `extra=${Number(difficulty === 4)}`, `diff=${difficulty}`, 'clear-at=100'];
+    assert.match(run(['ending-smoke', dat, '480', ...clear]), /^scene=7\b/);
+    assert.match(run(['ending-smoke', dat, '481', ...clear]), /^scene=2 ending_live=0\b/);
+  }
+});
+
+test('Extra clear replay saves the original final segment and returns to title on playback', needDat, () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'th16-extra-replay-'));
+  try {
+    const clear = ['extra=1', 'diff=4', 'score=800000', 'clear-at=100'];
+    const saved = run(['ending-smoke', dat, '625', ...clear, `replay_dir=${dir}`,
+      '530:0x1', '532:0x40', '534:0x10', '536:0x1', '560:0x1', '562:0x1', '580:0x2']);
+    assert.match(saved, /^title replay-saved 1$/m);
+    const replay = resolve(dir, 'replay/th16_01.rpy');
+    const info = run(['replay-info', replay]);
+    // Original 0x454034 -> 0x448400 saves 480 input frames including the clear countdown.
+    assert.match(info, /^0 stage=7 seed=\d+ frames=480 input_nz=0 fps=16 first=-1 held=0x0$/m);
+    const played = run(['ending-smoke', dat, '580', ...clear, `playback=${replay}`, '530:0x1']);
+    assert.match(played, /^replay menu_frame=101 title_frame=544 extend_sounds=2$/m);
+    assert.match(played.split('\n')[0], /^scene=4 .*\bcurrent_bgm=th16_01\.wav\b/);
+
+    // The original clear bonus crosses two extend thresholds before the replay menu.
+    const draw = resolve(dir, 'replay-extend.jsonl');
+    run(['ending-smoke', dat, '110', ...clear, `playback=${replay}`, 'draw-from=101', `draw=${draw}`]);
+    const records = readFileSync(draw, 'utf8').trim().split('\n').map(line => JSON.parse(line));
+    const frames = Array.from({length: 10}, (_, i) => i + 101);
+    assert.deepEqual(records.map(({frame}) => frame), frames);
+    const digests = new Map(records.map(({frame, ops}) => [frame, frameDigests(ops)]));
+    assert.equal(segmentDigest(digests, frames, 'v'), 'e5395b0338544c24666c78e53302c9a11621a968');
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
+
+test('Normal clear replay survives the Staff Roll and saves the original final segment', needDat, () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'th16-normal-clear-replay-'));
+  try {
+    const clear = ['diff=1', 'score=800000', 'clear-at=100'];
+    const saved = run(['ending-smoke', dat, '3710', ...clear, `replay_dir=${dir}`, ...endingPulses(3140, 480),
+      '3650:0x1', '3652:0x40', '3654:0x10', '3656:0x1', '3680:0x1', '3682:0x1', '3700:0x2']);
+    assert.match(saved.split('\n')[0], /\bfinished=1\b.*\bmsg=staff2\.msg\b.*current_bgm=th16_01\.wav/);
+    assert.match(saved, /^title replay-saved 1$/m);
+    const replay = resolve(dir, 'replay/th16_01.rpy');
+    assert.match(run(['replay-info', replay]), /^0 stage=6 seed=\d+ frames=480 input_nz=0 fps=16 first=-1 held=0x0$/m);
+    const played = run(['ending-smoke', dat, '580', ...clear, `playback=${replay}`, '530:0x1']);
+    assert.match(played, /^replay menu_frame=101 title_frame=544 extend_sounds=3$/m);
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
+
 test('name entry draw (0x4538b0) and replay-save draw (0x4541b0): Ascii rows / colours / slide', needDat, () => {
   const slots = '/tmp/th16-name-entry-slots';
   rmSync(slots, {recursive: true, force: true});
@@ -171,7 +226,6 @@ const endingCases = [
   [3, 0, 'e07.msg', 3137],
   [3, 1, 'e08.msg', 145],
 ];
-const endingPulses = length => Array.from({length: Math.ceil(length / 2)}, (_, i) => `${i * 2}:0x1`);
 
 test('ending draw matches the original dialogue, fade and Staff Roll key frames', needDat, () => {
   // tools/oracle/ending-oracle.py --z-pulses, Japanese 1.00a, Normal Reimu.

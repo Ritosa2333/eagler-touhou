@@ -126,7 +126,7 @@ void Gui::refresh_lives_display(i32 lives, i32 fragments) {
         if (lives > 7) return;
     }
     // 第 lives 格按碎片数分段点亮：中断 7 + 碎片×5 / 本级 extend 所需碎片
-    const u32 needed = u32(globals->extend_threshold());
+    const u32 needed = globals->extend_threshold();
     const i32 fragment_level = i32(i16(u32(fragments * 5) / needed));
     animations->request_interrupt(*life_vms[lit], fragment_level + 7);
     for (++lit; lit < kResourceSlots; ++lit) animations->request_interrupt(*life_vms[lit], 3);
@@ -569,8 +569,8 @@ void Gui::draw_hud_text(AsciiManager& text) {
     style.v_align = VAlign::Top;
     text.set_alpha(panel_alpha);
     style.scale = {0.6f, 0.6f};
-    const i32 extend_threshold = globals->extend_threshold();
-    if (u32(extend_threshold) < 900000000u) text.print_grouped({618.0f, 118.0f, 0.0f}, u32(extend_threshold * 10));
+    const u32 extend_threshold = globals->extend_threshold();
+    if (extend_threshold < 900000000u) text.print_grouped({618.0f, 118.0f, 0.0f}, extend_threshold * 10);
     // 炸弹碎片 n/5
     style.color = 0xffffffff;
     style.h_align = HAlign::Left;

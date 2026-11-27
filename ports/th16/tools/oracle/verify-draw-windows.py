@@ -90,7 +90,7 @@ def main():
                             str(config['season']), str(last + 1), config['input'], '', '',
                             str(config['difficulty']), str(config.get('replay_slot', -1)),
                             str(config.get('lives', 8)), str(config.get('refill', 0)), str(config.get('mode', 0)),
-                            str(candidate), str(first)],
+                            str(candidate), str(first), '--draw-only'],
                            env=env, stdout=subprocess.DEVNULL, stderr=log, check=True)
         comparison = subprocess.run([sys.executable, str(compare), str(original), str(candidate),
                                      '--frames', f'{first}-{last}', '--eps', '0'],
