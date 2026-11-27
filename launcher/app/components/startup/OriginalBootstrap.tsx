@@ -25,7 +25,7 @@ const tail = `(function(){var module=document.querySelector('script[type="module
 // One authored loading presentation for both document entries and warm routes.
 // Keep the lobby's failure carrier, while deriving its motion from Launcher.
 const sharedLobbyPreloadCss = original.library.css.replaceAll('#eaglerPreload', '#lobbyPreload').replaceAll('eagler-preload-', 'lobby-preload-') +
-  '\n.lobby-preload-card{padding:0;gap:normal}html[data-lobby-boot="failed"] .lobby-preload-card{width:min(420px,calc(100vw - 48px));height:auto;min-height:132px;padding:24px;gap:18px;animation:none}';
+  '\n.lobby-preload-card{padding:0;gap:normal}';
 
 const bootLoadingContexts = ['solo', 'multiplayer'] as const;
 const bootLoadingCopy = Object.fromEntries(UI_LOCALES.map(locale => [locale, {
@@ -74,9 +74,10 @@ export function OriginalBootstrapHead() {
       body:not(.mp-room-active){background-color:var(--kit-background)}
       :is(#eaglerPreload,#lobbyPreload){background:var(--kit-background);color:var(--kit-foreground);font-family:var(--kit-font)}
       :is(#eaglerPreload,#lobbyPreload).is-done{pointer-events:none}
-      :is(.eagler-preload-card,.lobby-preload-card){width:72px;height:72px;border-radius:12px;background:var(--kit-card);border-color:var(--kit-border);box-shadow:none}
+      :is(.eagler-preload-card,.lobby-preload-card){width:72px;height:72px;background:transparent;border:0;box-shadow:none}
       :is(.eagler-preload-spinner,.lobby-preload-spinner){border-color:var(--kit-border);border-top-color:var(--kit-brand)}
       :is(.eagler-preload-card,.lobby-preload-card):has(>.loading-activity){width:min(370px,calc(100vw - 32px));height:auto;padding:24px;box-sizing:border-box;animation:none}
+      html[data-lobby-boot="failed"] .lobby-preload-card{width:min(420px,calc(100vw - 48px));height:auto;min-height:132px;padding:24px;gap:18px;animation:none;border:1px solid var(--kit-border);border-radius:12px;background:var(--kit-card)}
       html[data-lobby-boot="failed"] .lobby-preload-card > .loading-activity{display:none}
       .lobby-preload-failure a{color:var(--kit-foreground)}
       #eaglerBootEmergency>div{border-radius:12px!important;background:var(--kit-card)!important;color:var(--kit-foreground)!important;border-color:var(--kit-border)!important;box-shadow:0 16px 48px #0003!important;font-family:var(--kit-font)!important}
