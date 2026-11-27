@@ -34,7 +34,12 @@ try {
   await page.setViewport({width:1440, height:900});
   await page.goto(new URL('ui-review.html?preview=loading',origin).href,{waitUntil:'domcontentloaded'});
   const sceneArtwork = id => `.loading-scene[data-loading-scene="${id}"]`;
-  const sceneControl = id => `[data-preview-scene="${id}"]`;
+  const picker = '[data-preview-scene-select]';
+  const nextScene = '[data-preview-step="next"]';
+  const previousScene = '[data-preview-step="previous"]';
+  const waitForPickerClose = () => page.waitForFunction(() => (
+    !document.querySelector('[role=listbox]') && getComputedStyle(document.body).pointerEvents !== 'none'
+  ));
   await page.waitForSelector(sceneArtwork('shrine'));
   const snapshotScene = id => page.$eval(sceneArtwork(id), node => {
     const box = node.getBoundingClientRect();
@@ -54,6 +59,7 @@ try {
           && Math.abs(bounds.width - box.width / 10) < 1;
       }),
       fits:box.left >= 0 && box.right <= innerWidth && box.width > 0,
+      viewportFits:document.documentElement.scrollWidth <= innerWidth,
       decorative:node.getAttribute('aria-hidden') === 'true',
     };
   });
@@ -62,9 +68,27 @@ try {
     forest:[['marisa','face-F001.svg']],
     courtyard:[['youmu','face-F02F.svg'],['yuyuko','face-F030.svg']],
     lake:[['daiyousei','face-F021.svg'],['cirno','face-F022.svg']],
+    'mansion-clock':[['sakuya','face-F026.svg']],
+    library:[['patchouli','face-F025.svg'],['koakuma','face-F024.svg']],
+    ferry:[['komachi','face-F046.svg']],
+    pharmacy:[['eirin','face-F03D.svg'],['reisen','face-F03C.svg']],
+    pump:[['nitori','face-F04F.svg']],
+    puppets:[['alice','face-F01B.svg']],
+    concert:[['lunasa','face-F02E.svg'],['merlin','face-F02D.svg'],['lyrica','face-F02C.svg']],
+    umbrella:[['kogasa','face-F05F.svg']],
+    lookout:[['momiji','face-F050.svg']],
+    sunflowers:[['yuuka','face-F016.svg']],
+  };
+  await page.click(picker);
+  await page.waitForSelector('[role=listbox]');
+  assert.deepEqual(await page.$$eval('[data-preview-scene]', options => options.map(option => option.dataset.previewScene)), [...Object.keys(casting),'classic']);
+  await page.keyboard.press('Escape');
+  await waitForPickerClose();
+  const actorMotions = {
+    shrine:'loading-scene-search', forest:'loading-scene-forage',
+    ferry:'loading-vignette-ferry', lookout:'loading-vignette-notice',
   };
   for (const [id, cast] of Object.entries(casting)) {
-    await page.click(sceneControl(id));
     await page.waitForSelector(sceneArtwork(id));
     await page.waitForFunction(selector => {
       const images = [...document.querySelectorAll(`${selector} img`)];
@@ -73,14 +97,44 @@ try {
     const scene = await snapshotScene(id);
     assert.deepEqual(scene.cast,cast,'characters are cast by scene, not drawn randomly');
     assert.equal(scene.uniquePositions,cast.length);
-    const actorMotion = {shrine:'loading-scene-search',forest:'loading-scene-forage'}[id] ?? 'none';
+    const actorMotion = actorMotions[id] ?? 'none';
     assert.deepEqual(scene.portraitMotion,Array(cast.length).fill(actorMotion));
     assert.ok(scene.decorative && scene.fits && scene.motion.some(name => name !== 'none'));
+    if (id === 'mansion-clock') {
+      const [held, resumed] = await page.$eval(sceneArtwork(id), async node => {
+        const pieces = [...node.querySelectorAll('[data-scene-motion^="time-"]')];
+        const animations = pieces.flatMap(piece => piece.getAnimations());
+        animations.forEach(animation => animation.pause());
+        await Promise.all(animations.map(animation => animation.ready));
+        const poseAt = time => {
+          animations.forEach(animation => { animation.currentTime = time; });
+          return pieces.map(piece => [getComputedStyle(piece).rotate, getComputedStyle(piece).translate]);
+        };
+        const frozen = poseAt(1000);
+        return [JSON.stringify(frozen) === JSON.stringify(poseAt(1600)), JSON.stringify(frozen) !== JSON.stringify(poseAt(2000))];
+      });
+      assert.ok(held && resumed, 'the watch and tea drop stop and resume together');
+    }
+    if (id === 'ferry') {
+      for (const width of [1440, 320]) {
+        await page.setViewport({width,height:640});
+        const deltas = await page.$eval(sceneArtwork(id), async node => {
+          const [portrait, boat] = node.querySelectorAll('[data-scene-motion="ferry"]');
+          const animations = [portrait, boat].flatMap(piece => piece.getAnimations());
+          animations.forEach(animation => animation.pause());
+          await Promise.all(animations.map(animation => animation.ready));
+          animations.forEach(animation => { animation.currentTime = 2200; });
+          const shift = piece => new DOMMatrixReadOnly(getComputedStyle(piece).transform).m41;
+          return [shift(portrait) / node.getBoundingClientRect().width, shift(boat) / 480];
+        });
+        assert.ok(deltas[0] > 0 && Math.abs(deltas[0] - deltas[1]) < .001, `Komachi and her boat stay locked together at ${width}px`);
+      }
+    }
     await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
     for (const [width,height] of [[1440,900],[515,627],[320,640],[640,320]]) {
       await page.setViewport({width,height});
       const state = await snapshotScene(id);
-      assert.ok(state.fits && state.aligned, `${id} cast stays anchored at ${width}×${height}`);
+      assert.ok(state.fits && state.aligned && state.viewportFits, `${id} cast stays anchored at ${width}×${height}`);
       assert.ok(state.motion.every(name => name === 'none'));
     }
     await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
@@ -88,8 +142,21 @@ try {
     assert.ok((await snapshotScene(id)).motion.every(name => name === 'none'));
     await page.evaluate(() => document.body.classList.remove('less-motion'));
     await page.setViewport({width:1440,height:900});
+    await page.click(nextScene);
   }
-  await page.click(sceneControl('classic'));
+  await waitForFaces();
+  await page.click(picker);
+  await page.waitForSelector('[role=listbox]');
+  await page.keyboard.press('Home');
+  await page.waitForFunction(() => document.activeElement?.getAttribute('data-preview-scene') === 'shrine');
+  await page.keyboard.press('Enter');
+  await waitForPickerClose();
+  await page.waitForSelector(sceneArtwork('shrine'));
+  await page.click(previousScene);
+  await waitForFaces();
+  await page.click(nextScene);
+  await page.waitForSelector(sceneArtwork('shrine'));
+  await page.click(previousScene);
   await waitForFaces();
   const first = await snapshot();
   assert.equal(new Set(first.images).size,4);
@@ -105,7 +172,7 @@ try {
   assert.deepEqual((await snapshot()).images,first.images,'resizing does not reroll the current load');
   const draws = [first.images.join(',')];
   for (let i = 0; i < 3; i++) {
-    await page.click('.loading-activity-preview-tools > button:last-child');
+    await page.click('[data-preview-replay]');
     await waitForFaces();
     const current = await snapshot();
     assert.equal(new Set(current.images).size,4);

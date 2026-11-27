@@ -1,0 +1,125 @@
+@layer components {
+  .loading-scene {
+    --v-wood: light-dark(#985e44,#855546);
+    --v-gold: light-dark(#cb8a31,#f6c779);
+    --v-paper: light-dark(#fff1ce,#f1dcbc);
+    --v-green: light-dark(#759a5b,#7b986c);
+  }
+  .loading-scene[data-loading-scene="mansion-clock"] {
+    --v-wall: light-dark(#e9bcc1,#4c293b);
+    --v-shadow: light-dark(#cb8e9b,#311b2c);
+    --v-accent: light-dark(#ac596f,#9c526c);
+    --v-line: light-dark(#7d4157,#c18d9d);
+  }
+  .loading-scene[data-loading-scene="library"] {
+    --v-wall: light-dark(#dcc6e7,#48324f);
+    --v-shadow: light-dark(#be9fca,#2d2037);
+    --v-accent: light-dark(#9b668c,#9d6191);
+    --v-line: light-dark(#734f77,#ad89b0);
+  }
+  .loading-scene[data-loading-scene="ferry"] {
+    --v-wall: light-dark(#abccc1,#274a4f);
+    --v-shadow: light-dark(#789c91,#172d31);
+    --v-accent: light-dark(#a34c62,#c77b8f);
+    --v-line: light-dark(#3d7776,#87b4ad);
+    --v-wood: light-dark(#8c624d,#90634d);
+  }
+  .loading-scene[data-loading-scene="pharmacy"] {
+    --v-wall: light-dark(#dbc0d8,#3d304c);
+    --v-shadow: light-dark(#b69fba,#292736);
+    --v-accent: light-dark(#856fa6,#a98ccb);
+    --v-line: light-dark(#71567b,#ac91b3);
+    --v-paper: light-dark(#fff2de,#ede0fa);
+  }
+  .loading-scene[data-loading-scene="pump"] {
+    --v-wall: light-dark(#aec9c1,#315651);
+    --v-shadow: light-dark(#839b94,#233832);
+    --v-accent: light-dark(#45879a,#5199ad);
+    --v-line: light-dark(#456b68,#8cbeb5);
+    --v-wood: light-dark(#75817b,#5d766e);
+  }
+  .loading-scene[data-loading-scene="puppets"] {
+    --v-wall: light-dark(#e7cbb0,#554037);
+    --v-shadow: light-dark(#c9a589,#352b34);
+    --v-accent: light-dark(#a6647b,#bd7d9b);
+    --v-line: light-dark(#835d4d,#c4a291);
+  }
+  .loading-scene[data-loading-scene="concert"] {
+    --v-wall: light-dark(#e4c3df,#543953);
+    --v-shadow: light-dark(#bd94bb,#362a43);
+    --v-line: light-dark(#825776,#bb9ebf);
+    --v-wood: light-dark(#9b626a,#8d5663);
+  }
+  .loading-scene[data-loading-scene="umbrella"] {
+    --v-wall: light-dark(#dbcaba,#51434b);
+    --v-shadow: light-dark(#b5a0a0,#322a38);
+    --v-accent: light-dark(#826398,#9771ac);
+    --v-line: light-dark(#755e76,#b99eac);
+  }
+  .loading-scene[data-loading-scene="lookout"] {
+    --v-wall: light-dark(#c1c8d3,#444f63);
+    --v-shadow: light-dark(#9eacba,#303e4f);
+    --v-line: light-dark(#694d49,#c6a9a3);
+    --v-paper: light-dark(#edf0f3,#adb6be);
+    --v-wood: light-dark(#b27a61,#935f50);
+  }
+  .loading-scene[data-loading-scene="sunflowers"] {
+    --v-wall: light-dark(#d8ddb1,#546247);
+    --v-shadow: light-dark(#c4cf93,#454138);
+    --v-line: light-dark(#6a744a,#c1a875);
+    --v-gold: light-dark(#e7aa35,#f2c25d);
+    --v-green: light-dark(#7e9b55,#809956);
+    --v-paper: light-dark(#fff9e9,#eedeb1);
+  }
+
+  .v-wall {fill:var(--v-wall)}
+  .v-shadow {fill:var(--v-shadow)}
+  .v-accent {fill:var(--v-accent)}
+  .v-wood {fill:var(--v-wood)}
+  .v-gold {fill:var(--v-gold)}
+  .v-paper {fill:var(--v-paper)}
+  .v-green {fill:var(--v-green)}
+  .v-feather {fill:#252436}
+  .v-sky {fill:light-dark(#c6d7dc,#506873)}
+  .v-line, .v-outline, .v-hand, .v-stem, .v-spark, .v-lily {stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
+  .v-line, .v-outline {stroke:var(--v-line)}
+  .v-line, .v-hand, .v-stem, .v-spark, .v-lily {fill:none}
+  .v-hand {stroke:#573937}
+  .v-stem {stroke:var(--v-green);stroke-width:2.5}
+  .v-spark {stroke:var(--v-gold)}
+  .v-lily {stroke:var(--v-accent);stroke-width:1.8}
+
+  [data-scene-motion="cue"] {
+    opacity:var(--v-cue-rest,1);
+    animation:loading-vignette-cue 3.6s ease-in-out infinite;
+  }
+  @keyframes loading-vignette-cue {
+    0%, 15%, 69%, 100% {transform:none;opacity:var(--v-cue-rest,1)}
+    34%, 44% {transform:var(--v-cue-pose);opacity:var(--v-cue-opacity,1)}
+  }
+  [data-scene-motion="time-hand"] {animation:loading-vignette-clock 3.6s linear infinite}
+  [data-scene-motion="time-drop"] {animation:loading-vignette-drop 3.6s linear infinite}
+  @keyframes loading-vignette-clock {
+    0% {rotate:0deg}
+    24%, 49% {rotate:82deg}
+    85%, 100% {rotate:360deg}
+  }
+  @keyframes loading-vignette-drop {
+    0%, 10% {translate:0 0;opacity:0}
+    13% {translate:0 0;opacity:1}
+    24%, 49% {translate:0 6px;opacity:1}
+    60% {translate:0 13px;opacity:1}
+    64%, 100% {translate:0 13px;opacity:0}
+  }
+  [data-scene-motion="ferry"] {--v-glide:7px;animation:loading-vignette-ferry 4.4s ease-in-out infinite}
+  .loading-scene-portrait[data-scene-motion="ferry"] {--v-glide:1.458333cqw}
+  @keyframes loading-vignette-ferry {
+    0%, 12%, 88%, 100% {transform:none}
+    45%, 55% {transform:translateX(var(--v-glide))}
+  }
+  [data-scene-motion="notice"] {animation:loading-vignette-notice 3.6s ease-in-out infinite}
+  @keyframes loading-vignette-notice {
+    0%, 18%, 65%, 100% {transform:none}
+    36%, 46% {transform:rotate(4deg) translateX(.35cqw)}
+  }
+}

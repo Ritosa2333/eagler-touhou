@@ -1,5 +1,6 @@
 import type {ReactNode} from 'react';
 import {siteBrandPath} from '../../lib/site-brand.mjs';
+import {loadingVignettes} from './loading-vignettes';
 import reimuPortrait from './reimu-hakurei.svg?url';
 import './loading-scene.css';
 
@@ -7,13 +8,27 @@ const characterFaces = {
   marisa: 'face-F001',
   daiyousei: 'face-F021',
   cirno: 'face-F022',
+  koakuma: 'face-F024',
+  patchouli: 'face-F025',
+  sakuya: 'face-F026',
+  lyrica: 'face-F02C',
+  merlin: 'face-F02D',
+  lunasa: 'face-F02E',
   youmu: 'face-F02F',
   yuyuko: 'face-F030',
+  reisen: 'face-F03C',
+  eirin: 'face-F03D',
+  komachi: 'face-F046',
+  nitori: 'face-F04F',
+  momiji: 'face-F050',
+  alice: 'face-F01B',
+  kogasa: 'face-F05F',
+  yuuka: 'face-F016',
 } as const;
 
 type Character = 'reimu' | keyof typeof characterFaces;
-type Actor = {character: Character; at: readonly [x: number, y: number]; action?: 'search' | 'forage'};
-type Scene = {label: string; cast: readonly Actor[]; artwork: ReactNode; foreground?: ReactNode};
+type Actor = {character: Character; at: readonly [x: number, y: number]; action?: 'search' | 'forage' | 'ferry' | 'notice'};
+export type LoadingSceneSpec = {label: string; cast: readonly Actor[]; artwork: ReactNode; foreground?: ReactNode};
 
 function Mountains() {
   return <path className="loading-landscape" d="M0 154 61 120 101 137 174 95 240 134 310 104 375 141 422 117 480 148V188H0Z"/>;
@@ -133,13 +148,14 @@ const scenes = {
       <g className="loading-scene-light loading-scene-late" data-scene-motion="drift"><circle cx="121" cy="98" r="1.5"/><circle cx="350" cy="93" r="1.5"/><circle cx="384" cy="130" r="2"/></g>
     </>,
   },
-} satisfies Record<string, Scene>;
+  ...loadingVignettes,
+} satisfies Record<string, LoadingSceneSpec>;
 
 export type LoadingSceneId = keyof typeof scenes;
 export const loadingSceneOptions = Object.entries(scenes).map(([id, {label}]) => ({id: id as LoadingSceneId, label}));
 
 export function LoadingScene({scene, assetUrl}: {scene: LoadingSceneId; assetUrl(path: string): string}) {
-  const {cast, artwork, foreground}: Scene = scenes[scene];
+  const {cast, artwork, foreground}: LoadingSceneSpec = scenes[scene];
   return <div className="loading-scene" data-loading-scene={scene} aria-hidden="true">
     <svg className="loading-scene-art" viewBox="0 0 480 226" aria-hidden="true" focusable="false">{artwork}</svg>
     {cast.map(({character, at:[x,y], action}) => <img key={character} className="loading-scene-portrait"

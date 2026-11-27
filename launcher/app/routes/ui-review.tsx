@@ -53,8 +53,6 @@ import { Check, Toggle } from '../ui/controls';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../ui/field';
 import { InputGroup, InputGroupInput } from '../ui/input-group';
-import {LoadingActivity} from '../ui/loading-activity';
-import {LoadingScene, loadingSceneOptions, type LoadingSceneId} from '../ui/loading-scene';
 import { PageInventory } from '../ui/page-inventory';
 import { RoomExample } from '../ui/room-example';
 import { Slider } from '../ui/slider';
@@ -69,14 +67,15 @@ export function meta() {return [{title:sitePageTitle('UI 手册')}];}
 export const links = () => import.meta.env.DEV ? [{rel:'stylesheet', href:ratingStyles}] : [];
 
 const Th09RatingsPreview = import.meta.env.DEV ? lazy(() => import('../ui/th09-ratings-preview')) : null;
+const LoadingActivityPreview = import.meta.env.DEV ? lazy(() => import('../ui/loading-activity-preview')) : null;
 
 export default function UiReview() {
   const {search} = useLocation();
   const preview = new URLSearchParams(search).get('preview');
   return (
     <LocaleProvider locale={catalogLocale}>
-      {import.meta.env.DEV && preview === 'loading'
-        ? <LoadingActivityPreview/>
+      {LoadingActivityPreview && preview === 'loading'
+        ? <Suspense fallback={null}><LoadingActivityPreview/></Suspense>
         : import.meta.env.DEV && preview === 'beauty-packs'
         ? <BeautyPackPreview/>
         : import.meta.env.DEV && preview === 'room-chat'
@@ -101,33 +100,6 @@ function BeautyPackPreview() {
       </Toolbar>
       <BookThemeToggle/>
     </header>
-  </main>;
-}
-
-function LoadingActivityPreview() {
-  const [attempt, setAttempt] = useState(0);
-  const [scene, setScene] = useState<LoadingSceneId | 'classic'>('shrine');
-  const {t} = useLocale(), base = useHref('/');
-  const assetUrl = (path: string) => base + path;
-  useEffect(() => {setAttempt(1);}, []);
-  return <main className="loading-activity-preview">
-    <div className="loading-activity-preview-tools">
-      <ChoiceGroup type="single" value={scene} aria-label="加载场景"
-        onValueChange={value => {
-          const selected = loadingSceneOptions.find(option => option.id === value);
-          if (value === 'classic') setScene(value);
-          else if (selected) setScene(selected.id);
-        }}>
-        {loadingSceneOptions.map(({id, label}) => <ChoiceItem value={id} key={id} data-preview-scene={id}>{label}</ChoiceItem>)}
-        <ChoiceItem value="classic" data-preview-scene="classic">原版</ChoiceItem>
-      </ChoiceGroup>
-      <BookThemeToggle/>
-      <Button variant="outline" onClick={() => setAttempt(value => value + 1)}><RotateCcw aria-hidden="true"/>{t('lobby.refresh')}</Button>
-    </div>
-    <div className="player-loading-cover" role="status">
-      {attempt !== 0 && <LoadingActivity key={attempt} assetUrl={assetUrl} status={t('player.loading')} context="multiplayer"
-        artwork={scene === 'classic' ? undefined : <LoadingScene key={scene} scene={scene} assetUrl={assetUrl}/>}/>}
-    </div>
   </main>;
 }
 
