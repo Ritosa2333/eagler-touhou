@@ -1,5 +1,5 @@
   .site-bottom-navigation.launcher-bottom-navigation,.launcher-back.launcher-mobile-back {display:none}
-  .launcher-home {width:min(100%,580px);margin-inline:auto;padding:16px}
+  .launcher-home {width:min(100%,580px);margin-inline:auto;padding:16px;background:var(--book-reading-surface)}
   .launcher-home h1 {margin:0 0 12px;font-size:21px;font-weight:600}
   .launcher-home-account {--launcher-account-height:74px;--launcher-counts-height:55px;margin-block-end:20px}
   .launcher-home-account .launcher-account-row {min-height:var(--launcher-account-height);padding-inline:12px}

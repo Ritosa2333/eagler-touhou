@@ -80,6 +80,8 @@ html:has(.book-masthead) .masthead-links>.book-profile-trigger{display:inline-fl
   gap:0 14px;
   align-items:end;
   padding:0 19px;
+  border-radius:0 0 10px 10px;
+  background:var(--book-reading-surface);
 }
 .profile-page .profile-page-banner .profile-avatar {
   width:96px;
@@ -129,6 +131,7 @@ html:has(.book-masthead) .masthead-links>.book-profile-trigger{display:inline-fl
 .profile-country{display:inline-flex;align-items:center;min-width:0;gap:5px;color:var(--book-muted);font-size:12px;overflow-wrap:anywhere}
 .profile-page .profile-columns{display:grid;grid-template-columns:200px minmax(0,1fr);gap:32px;padding-top:21px}
 .profile-page .profile-aside{display:block;min-width:0;position:sticky;top:calc(var(--site-header-height,60px) + 20px);align-self:start;max-height:calc(100dvh - 100px);overflow:auto}
+.profile-aside:has(.profile-social-summary,.profile-sidebar-details:not([data-empty])){background:var(--book-reading-surface);border-radius:8px;padding:8px}
 .profile-sidebar-details{padding-inline:4px}
 .profile-about-meta{display:grid;gap:7px;margin:14px 0 0;font-size:13px}
 .profile-about-meta>div,.profile-about-meta dt,.profile-links{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}

@@ -1,11 +1,12 @@
 @layer components {
+  .profile-game-data-card {background:var(--book-reading-surface);border-radius:10px;padding:clamp(8px,1.5vw,16px)}
   .profile-game-data-heading {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
   .profile-game-data-heading > h2 {margin:0;font-size:16px;font-weight:500}
   .profile-game-data-switch {display:inline-flex;gap:3px;padding:3px;border:1px solid var(--kit-border);border-radius:8px;background:var(--kit-card)}
   .profile-game-data-switch .ui-kit-choice {gap:7px;min-height:31px;padding:3px 9px;font-size:13px;font-weight:450;white-space:nowrap}
   .profile-game-data-switch .ui-kit-choice svg,.profile-game-data-switch img {width:18px;height:18px}
   .profile-game-data-switch img {display:block;object-fit:cover;border-radius:4px}
-  .profile-game-data-body > .profile-loading-panel {margin:0}
+  .profile-game-data-body > .profile-loading-panel {margin:0;background:transparent}
 }
 .profile-game-data-switch [data-state="on"] {
   background:color-mix(in srgb,var(--kit-brand) 16%,var(--kit-card));

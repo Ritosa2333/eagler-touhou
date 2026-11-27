@@ -52,6 +52,8 @@ html[data-book-theme='light'] {
   --kit-seat-ring-ready:#b7e9a7;--kit-seat-ring-loading:#f0ca56;
   --book-bg:var(--kit-background);--book-surface:var(--kit-card);--book-raised:var(--kit-muted);
   --book-panel-surface:var(--book-surface);
+  /* Flat reading sections only need a painted surface over wallpaper. */
+  --book-reading-surface:transparent;
   --book-ink:var(--kit-foreground);--book-muted:var(--kit-muted-foreground);--book-border:var(--kit-border);
   --book-accent:var(--kit-primary);--book-accent-soft:var(--kit-accent);--book-on-accent:var(--kit-primary-foreground);
   --ui-font:var(--kit-font);
@@ -61,4 +63,5 @@ html[data-book-theme='light'] {
 }
 html[data-custom-background] {
   --book-panel-surface:color-mix(in srgb,var(--book-surface) var(--custom-panel-opacity),transparent);
+  --book-reading-surface:var(--book-panel-surface);
 }

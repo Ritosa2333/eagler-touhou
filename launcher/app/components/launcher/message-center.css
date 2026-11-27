@@ -55,7 +55,7 @@
   .masthead-inbox-all:hover {background:var(--kit-accent);color:var(--kit-foreground)}
   .masthead-inbox-empty {margin:8px 0;color:var(--kit-muted-foreground);font-size:13px}
 
-  .message-center {display:grid;grid-template-columns:220px minmax(0,1fr);width:min(calc(100% - 48px),1030px);margin:58px auto 40px}
+  .message-center {display:grid;grid-template-columns:220px minmax(0,1fr);width:min(calc(100% - 48px),1030px);margin:58px auto 40px;padding:20px;border-radius:10px;background:var(--book-reading-surface)}
   .message-center-navigation {border-inline-end:1px solid var(--kit-border);padding-inline-end:28px}
   .message-center-navigation header {display:flex;align-items:center;min-height:35px;margin-block-end:12px;padding-inline:10px}
   .message-center-navigation h1 {margin:0;font-size:21px;font-weight:600}
@@ -92,8 +92,11 @@
   .announcement-copy-content li {position:relative;padding-inline-start:20px}
   .announcement-copy-content li::before {content:"–";position:absolute;inset-inline-start:0;color:var(--kit-brand)}
   .announcement-copy .announcement-more {height:auto;min-height:0;padding:0 2px;color:var(--kit-brand);font-size:12px;line-height:22px}
-  .announcement-copy[data-collapsed="true"] .announcement-more {position:absolute;inset:auto 0 0 auto;padding-inline-start:18px;background:linear-gradient(90deg,transparent,var(--kit-background) 16px)}
-  .masthead-inbox-panel .announcement-copy[data-collapsed="true"] .announcement-more {background:linear-gradient(90deg,transparent,var(--kit-popover) 16px)}
+  .announcement-copy[data-collapsed="true"] .announcement-more {position:absolute;inset:auto 0 0 auto;background:var(--kit-popover)}
+  .announcement-copy[data-collapsed="true"] .announcement-clip {
+    mask:linear-gradient(#000,#000) top / 100% calc(100% - 22px) no-repeat,
+      linear-gradient(to right,#000 calc(100% - 7ch),transparent calc(100% - 4ch)) bottom / 100% 22px no-repeat;
+  }
 
   .announcement-body,.private-message-list p {margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
   .message-announcements,.private-inbox,.private-conversation {display:grid;gap:14px;max-width:740px}
@@ -127,7 +130,7 @@
   .private-message-list time {display:block;margin-block-start:4px;color:var(--kit-muted-foreground);font-size:11px}
 
   @media(max-width:780px) {
-    .message-center {display:block;width:auto;margin:0}
+    .message-center {display:block;width:auto;margin:0;padding:0;border-radius:0}
     .message-center-navigation {padding:0;border:0}
     .message-center-navigation header {gap:8px;min-height:52px;margin:0;padding-inline:8px 16px}
     .message-center-navigation .launcher-back {display:inline-flex}

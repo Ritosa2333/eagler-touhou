@@ -1,12 +1,13 @@
 .standalone-page-shell{min-height:100dvh;background:var(--kit-background);color:var(--kit-foreground);font-family:var(--kit-font)}
 html[data-custom-background] .standalone-page-shell{background-color:transparent}
-.uptime-page{width:min(1160px,100%);margin:0 auto;padding:32px 24px max(48px,var(--ui-safe-bottom))}
+.uptime-page{width:min(1160px,100%);margin:0 auto;padding:32px 24px max(48px,var(--ui-safe-bottom));background:var(--book-reading-surface)}
 .uptime-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}
 .uptime-heading h1{margin:0;font-size:28px;line-height:1.25;font-weight:600;letter-spacing:-.025em}
 .uptime-ranges{flex:none;min-width:280px}
 .uptime-message{min-height:24px;margin:12px 0;color:var(--kit-muted-foreground);font-size:13px;line-height:24px}
 .uptime-message[role=alert]{color:var(--kit-destructive)}
 .uptime-list{min-height:100px;border:1px solid var(--kit-border);border-radius:8px;background:var(--kit-card);overflow:hidden}
+html[data-custom-background] .uptime-list{background:transparent}
 .uptime-list[data-empty-failure]{border-color:transparent;background:transparent}
 .uptime-columns,.uptime-row{display:grid;grid-template-columns:80px minmax(130px,1fr) minmax(180px,1.4fr) 90px 100px;gap:16px;align-items:center;padding:16px 20px}
 .uptime-columns{color:var(--kit-muted-foreground);font-size:12px}
