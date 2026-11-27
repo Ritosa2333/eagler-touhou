@@ -224,6 +224,20 @@ test('TH05 is discoverable through the PC98 category in the current library', as
   await click('[data-book-category="windows"]');
   assert.deepEqual(ids(), ['th06']);
 });
+test('TH03 appears in both versus and PC98 without duplication in all games', async () => {
+  const products = api.createLibraryProducts(['th03', 'th05', 'th09', 'th19'], p => p, id => '?game=' + id);
+  await mount(products);
+  assert.deepEqual(ids(), ['th03', 'th05', 'th09', 'th19']);
+  for (const [category, expected] of [['versus', ['th03', 'th09', 'th19']], ['pc98', ['th03', 'th05']]]) {
+    await click(`[data-book-category="${category}"]`);
+    assert.deepEqual(ids(), expected);
+    const control = `[data-book-category-disclosure="${category}"]`;
+    if (node(control).getAttribute('aria-expanded') !== 'true') await click(control);
+    assert.deepEqual([...node(`#bookCategory-${category}`).querySelectorAll('[data-book-sidebar-product]')]
+      .map(link => link.dataset.bookSidebarProduct), expected);
+    assert.equal(node(`[data-book-category="${category}"] .book-category-count`).textContent, String(expected.length));
+  }
+});
 test('sidebar disclosures list playable single-player entries without changing the category filter', async () => {
   const products = api.createLibraryProducts(['th13', 'th06mp', 'th01', 'th06', 'th07'], p => p, id => '?game=' + id);
   products.find(product => product.id === 'th07').hidden = true;

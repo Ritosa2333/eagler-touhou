@@ -47,12 +47,13 @@ export function bookLastPlayed(productId: string) {
 }
 
 export type BookCategory = 'all' | 'favorites' | 'pc98' | 'windows' | 'versus' | 'fighting' | 'spin-off' | 'doujin';
-export function bookCategory(product: LibraryProduct): BookCategory {
-  if (product.gameId === 'hsob' || /^th[a-z]/i.test(product.id)) return 'doujin';
-  if (isPc98Product(product)) return 'pc98';
+type BookWorkCategory = Exclude<BookCategory, 'all' | 'favorites'>;
+export function bookCategories(product: LibraryProduct): readonly [BookWorkCategory, ...BookWorkCategory[]] {
+  if (product.gameId === 'hsob' || /^th[a-z]/i.test(product.id)) return ['doujin'];
   const kind = bookGameKind(product.gameId);
-  if (kind !== 'original') return kind;
-  return Number.isInteger(Number(product.number)) ? 'windows' : 'spin-off';
+  if (isPc98Product(product)) return kind === 'original' ? ['pc98'] : ['pc98', kind];
+  if (kind !== 'original') return [kind];
+  return [Number.isInteger(Number(product.number)) ? 'windows' : 'spin-off'];
 }
 
 function compareBookNumbers(a: LibraryProduct, b: LibraryProduct, reverse: boolean) {
@@ -69,7 +70,7 @@ export function matchesBookQuery(product: LibraryProduct, query: string) {
 }
 export function filterBookProducts(products: readonly LibraryProduct[], category: BookCategory, favorites: readonly string[], query: string, sort: string) {
   return products.filter(product => !product.hidden && !product.multiplayer)
-    .filter(product => category === 'all' || (category === 'favorites' ? favorites.includes(product.id) : bookCategory(product) === category))
+    .filter(product => category === 'all' || (category === 'favorites' ? favorites.includes(product.id) : bookCategories(product).includes(category)))
     .filter(product => matchesBookQuery(product, query))
     .sort((a, b) =>
       (category === 'all' ? Number(favorites.includes(b.id)) - Number(favorites.includes(a.id)) : 0) ||
