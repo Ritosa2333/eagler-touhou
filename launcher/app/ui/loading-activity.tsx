@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, type ReactNode} from 'react';
 import {SITE_BRAND_FACES, siteBrandPath} from '../../lib/site-brand.mjs';
 import {useLocale, type UiMessageKey} from '../i18n';
 import {accountsEnabled} from '../release-features';
@@ -27,22 +27,23 @@ interface LoadingActivityProps {
   context: LoadingContext;
   compact?: boolean;
   statusId?: string;
+  artwork?: ReactNode;
 }
 
 export function LoadingCover(props: LoadingActivityProps) {
   return <div className="player-loading-cover" role="status"><LoadingActivity {...props}/></div>;
 }
 
-export function LoadingActivity({assetUrl, status, context, compact = false, statusId}: LoadingActivityProps) {
+export function LoadingActivity({assetUrl, status, context, compact = false, statusId, artwork}: LoadingActivityProps) {
   const {t} = useLocale();
   const label = status.replace(/(?:…|\.{3})$/, '');
   // Sample without replacement. The lineup and tip belong to this wait, not to progress updates.
   const [{faces, tip}] = useState(() => chooseLoadingActivity(SITE_BRAND_FACES, loadingTips[context]));
-  return <LoadingActivityContent faceSources={faces.map(face => assetUrl(siteBrandPath(face)))}
+  return <LoadingActivityContent faceSources={artwork == null ? faces.map(face => assetUrl(siteBrandPath(face))) : []} artwork={artwork}
     label={label} dots={label !== status} tip={t(tip)} context={context} compact={compact} statusId={statusId}/>;
 }
 
-export function LoadingActivityContent({faceSources, label, tip, dots, context, compact, statusId}: {
+export function LoadingActivityContent({faceSources, label, tip, dots, context, compact, statusId, artwork}: {
   faceSources: readonly (string | undefined)[];
   label: string;
   tip: string;
@@ -50,11 +51,12 @@ export function LoadingActivityContent({faceSources, label, tip, dots, context, 
   context?: LoadingContext;
   compact?: boolean;
   statusId?: string;
+  artwork?: ReactNode;
 }) {
-  return <div className="loading-activity" data-loading-context={context} data-compact={compact || undefined}>
-    <div className="loading-activity-faces" aria-hidden="true">
+  return <div className="loading-activity" data-loading-context={context} data-compact={compact || undefined} data-artwork={artwork != null || undefined}>
+    {artwork ?? <div className="loading-activity-faces" aria-hidden="true">
       {faceSources.map((src, index) => <img key={src ?? index} src={src} alt="" draggable={false}/>)}
-    </div>
+    </div>}
     <div className="loading-activity-copy">
       <strong className="loading-activity-status" id={statusId}><span>{label}</span>{dots &&
         <span className="loading-activity-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>}

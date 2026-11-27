@@ -33,6 +33,63 @@ try {
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
   await page.setViewport({width:1440, height:900});
   await page.goto(new URL('ui-review.html?preview=loading',origin).href,{waitUntil:'domcontentloaded'});
+  const sceneArtwork = id => `.loading-scene[data-loading-scene="${id}"]`;
+  const sceneControl = id => `[data-preview-scene="${id}"]`;
+  await page.waitForSelector(sceneArtwork('shrine'));
+  const snapshotScene = id => page.$eval(sceneArtwork(id), node => {
+    const box = node.getBoundingClientRect();
+    const faces = [...node.querySelectorAll('img')];
+    return {
+      cast:faces.map(image => [image.dataset.character, new URL(image.src).pathname.split('/').at(-1)]),
+      uniquePositions:new Set(faces.map(image => `${image.style.left}:${image.style.top}`)).size,
+      portraitMotion:faces.map(image => getComputedStyle(image).animationName),
+      motion:[...node.querySelectorAll('[data-scene-motion]')]
+        .map(effect => getComputedStyle(effect).animationName),
+      aligned:faces.every(face => {
+        const bounds = face.getBoundingClientRect();
+        const expectedX = box.left + parseFloat(face.style.left) / 100 * box.width;
+        const expectedY = box.top + parseFloat(face.style.top) / 100 * box.height;
+        return Math.abs(bounds.left + bounds.width / 2 - expectedX) < 1
+          && Math.abs(bounds.top + bounds.height / 2 - expectedY) < 1
+          && Math.abs(bounds.width - box.width / 10) < 1;
+      }),
+      fits:box.left >= 0 && box.right <= innerWidth && box.width > 0,
+      decorative:node.getAttribute('aria-hidden') === 'true',
+    };
+  });
+  const casting = {
+    shrine:[['reimu','reimu-hakurei.svg']],
+    forest:[['marisa','face-F001.svg']],
+    courtyard:[['youmu','face-F02F.svg'],['yuyuko','face-F030.svg']],
+    lake:[['daiyousei','face-F021.svg'],['cirno','face-F022.svg']],
+  };
+  for (const [id, cast] of Object.entries(casting)) {
+    await page.click(sceneControl(id));
+    await page.waitForSelector(sceneArtwork(id));
+    await page.waitForFunction(selector => {
+      const images = [...document.querySelectorAll(`${selector} img`)];
+      return images.length > 0 && images.every(image => image.complete && image.naturalWidth > 0);
+    }, {}, sceneArtwork(id));
+    const scene = await snapshotScene(id);
+    assert.deepEqual(scene.cast,cast,'characters are cast by scene, not drawn randomly');
+    assert.equal(scene.uniquePositions,cast.length);
+    const actorMotion = {shrine:'loading-scene-search',forest:'loading-scene-forage'}[id] ?? 'none';
+    assert.deepEqual(scene.portraitMotion,Array(cast.length).fill(actorMotion));
+    assert.ok(scene.decorative && scene.fits && scene.motion.some(name => name !== 'none'));
+    await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
+    for (const [width,height] of [[1440,900],[515,627],[320,640],[640,320]]) {
+      await page.setViewport({width,height});
+      const state = await snapshotScene(id);
+      assert.ok(state.fits && state.aligned, `${id} cast stays anchored at ${width}×${height}`);
+      assert.ok(state.motion.every(name => name === 'none'));
+    }
+    await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
+    await page.evaluate(() => document.body.classList.add('less-motion'));
+    assert.ok((await snapshotScene(id)).motion.every(name => name === 'none'));
+    await page.evaluate(() => document.body.classList.remove('less-motion'));
+    await page.setViewport({width:1440,height:900});
+  }
+  await page.click(sceneControl('classic'));
   await waitForFaces();
   const first = await snapshot();
   assert.equal(new Set(first.images).size,4);
@@ -48,7 +105,7 @@ try {
   assert.deepEqual((await snapshot()).images,first.images,'resizing does not reroll the current load');
   const draws = [first.images.join(',')];
   for (let i = 0; i < 3; i++) {
-    await page.click('.loading-activity-preview-tools button:last-child');
+    await page.click('.loading-activity-preview-tools > button:last-child');
     await waitForFaces();
     const current = await snapshot();
     assert.equal(new Set(current.images).size,4);
@@ -63,5 +120,5 @@ try {
   assert.deepEqual((await snapshot()).motion,Array(4).fill('none'));
   assert.deepEqual((await snapshot()).dots.map(([dot,motion]) => [dot,motion]),Array(3).fill(['.','none']));
   assert.deepEqual(errors,[]);
-  console.log('PASS randomized load lineups, sequential motion, tips, narrow layout, and both reduced-motion settings');
+  console.log('PASS loading previews: scene-specific casting, original random lineup, tips, narrow layout and reduced motion');
 } finally {await browser.close();}
