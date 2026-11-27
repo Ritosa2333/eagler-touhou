@@ -53,11 +53,11 @@ bool EndingScene::waiting_for_input(const InputState& input) const {
     return true;
 }
 
-void EndingScene::paint_line(u32 vm_id, const char* text, i32 font) {
+void EndingScene::paint_line(u32 vm_id, const char* text, i32 font, u32 color) {
     if (animations == nullptr || vm_id == 0) return;
     AnmVm* vm = animations->find(vm_id);
     if (vm == nullptr) return;
-    if (text_paint_vm(*animations, *vm, text_color, 0, font, 0, 0, text, text_paints)) {
+    if (text_paint_vm(*animations, *vm, color, 0, font, 0, 0, text, text_paints)) {
         ++text_paint_count;
     }
 }
@@ -166,8 +166,10 @@ void EndingScene::spawn_line_vms(AnmManager& anm, AnmFile* text_anm) {
         AnmVm* vm = nullptr;
         line_vms[i] = anm.spawn(*text_anm, 0x2e + i, -1, &vm);
         if (vm != nullptr) {
-            anm_set_layer(*vm, 0x10);
-            vm->flags_lo &= ~0x1000u;
+            // 0x4197c0 writes the two VM bytes without changing the script's drawing layer.
+            vm->unknown_52c[0] = 0x10;
+            vm->unknown_52c[1] = 0x10;
+            vm->flags_hi &= ~0x1000u;
         }
     }
     if (ending_index >= 8) flags |= 2u;
@@ -211,8 +213,12 @@ EndingScene::ScriptResult EndingScene::step_script(const InputState& input) {
             last_text = decrypt_text(script_pc + 4);
             events.push_back("text");
             if (lines_written == 0) {
-                for (u32 id : line_vms) paint_line(id, " ", 0);
-                paint_line(line_vms[0], last_text.c_str(), 0);
+                // 0x419a60 retires the previous page's line animations before painting the first new line.
+                for (u32 id : line_vms) {
+                    paint_line(id, " ", 0, 0xffffff);
+                    if (animations != nullptr && id != 0) animations->interrupt(id, 3);
+                }
+                paint_line(line_vms[0], last_text.c_str(), 0, text_color);
                 if (animations != nullptr && line_vms[0] != 0) animations->interrupt(line_vms[0], 2);
                 ++lines_written;
                 advance_pc();
@@ -221,7 +227,7 @@ EndingScene::ScriptResult EndingScene::step_script(const InputState& input) {
             {
                 const i32 slot = lines_written;
                 if (slot >= 0 && slot < 5) {
-                    paint_line(line_vms[slot], last_text.c_str(), 0);
+                    paint_line(line_vms[slot], last_text.c_str(), 0, text_color);
                     if (animations != nullptr && line_vms[slot] != 0) animations->interrupt(line_vms[slot], 2);
                 }
                 ++lines_written;
@@ -275,7 +281,6 @@ EndingScene::ScriptResult EndingScene::step_script(const InputState& input) {
                 events.push_back(file != nullptr ? "anm-loaded" : "anm-missing");
             }
             if (slot_arg >= 0 && slot_arg < 4) ending_anms[slot_arg] = file;
-            script_flags &= ~4u;
             advance_pc();
             return ScriptResult::Running;
         }
@@ -374,6 +379,13 @@ EndingScene::ScriptResult EndingScene::step_script(const InputState& input) {
             continue;
         }
     }
+}
+
+bool EndingScene::finish_animation_load() {
+    if ((script_flags & 4u) == 0) return false;
+    // 宿主已经同步读完动画。下一帧开始时提交装载完成。
+    script_flags &= ~4u;
+    return true;
 }
 
 void EndingScene::end() {

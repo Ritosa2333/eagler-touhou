@@ -425,14 +425,18 @@ void generate_strip_geometry(AnmVm& vm, const AnmGeometry& geometry) {
     strip_radii(vm, geometry.window_scale, outer, inner);
     const float u_outer = vm.uv_scroll.x + vm.uv[0].x;
     const float u_inner = vm.uv[1].x + vm.uv_scroll.x;
-    u32 color;
-    std::memcpy(&color, vm.color, 4);
+    u32 outer_color;
+    std::memcpy(&outer_color, vm.color, 4);
+    u32 inner_color = outer_color;
+    if ((vm.flags_lo & AnmVm::kColorModeMask) != 0) std::memcpy(&inner_color, vm.color2, 4);
+    // 0x463385 gives a full ring separate rim colors. Arc strips use one color for both rims.
+    if (mode != 9) outer_color = inner_color;
     auto emit = [&](ScreenColorUvVertex* pair, float angle, float v) {
-        pair[0].rhw = 1.0f; pair[0].color = color; pair[0].u = u_outer; pair[0].v = v;
+        pair[0].rhw = 1.0f; pair[0].color = outer_color; pair[0].u = u_outer; pair[0].v = v;
         polar_into(&pair[0].x, angle, outer);
         pair[0].z = 0.0f;
         pair[0].x = pair[0].x + world.x; pair[0].y = world.y + pair[0].y; pair[0].z = pair[0].z + world.z;
-        pair[1].rhw = 1.0f; pair[1].color = color; pair[1].u = u_inner; pair[1].v = v;
+        pair[1].rhw = 1.0f; pair[1].color = inner_color; pair[1].u = u_inner; pair[1].v = v;
         polar_into(&pair[1].x, angle, inner);
         pair[1].z = 0.0f;
         pair[1].x = pair[1].x + world.x; pair[1].y = world.y + pair[1].y; pair[1].z = pair[1].z + world.z;
@@ -456,8 +460,6 @@ void generate_strip_geometry(AnmVm& vm, const AnmGeometry& geometry) {
         out[segments * 2 + 1].v = vm.uv_scroll.y + v;
         return;
     }
-    // mode 0xd / 0xe：颜色按 color mode 取 color / color2
-    if ((vm.flags_lo & AnmVm::kColorModeMask) != 0) std::memcpy(&color, vm.color2, 4);
     float angle = mode == 0xe ? normalize_angle(vm.rotation.z) : normalize_angle(vm.rotation.z - vm.rotation.x * 0.5f);
     const float angle_step = vm.rotation.x / float(nodes - 1);
     const float v_step = float(vm.int_vars[1]) / float(nodes - 1);

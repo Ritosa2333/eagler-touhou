@@ -41,7 +41,7 @@ struct EndingScene {
     i32 difficulty = 1;            // DAT_004a57b4：op12 选 staffN
     u32 flags = 0;                 // 外壳 +0x1c（bit0 首次本结局、bit1 首次任意结局）
     bool finished = false;
-    bool smoke_skip = true;        // 移植烟雾：>0x78 确认整段结束；原版无此短路
+    bool smoke_skip = false;       // 仅 harness 显式启用；实际游戏始终执行完整剧本
     std::vector<u8> msg_bytes;
     std::string msg_name;
 
@@ -86,13 +86,14 @@ struct EndingScene {
     ScriptResult step_script(const InputState& input);
     // 0x4196c0 + 跳过/超时门控（烟雾测试口径：>0x78 确认结束）
     bool update(const InputState& input);
+    bool finish_animation_load();
     void end();
 
 private:
     static std::string decrypt_text(const u8* src);
     void advance_pc();
     bool waiting_for_input(const InputState& input) const;
-    void paint_line(u32 vm_id, const char* text, i32 font);
+    void paint_line(u32 vm_id, const char* text, i32 font, u32 color);
     bool switch_to_staff();
 };
 

@@ -87,17 +87,9 @@ void TitleScene::tick_idle_demo(const InputState& input) {
         g.flags = (g.flags & ~0x80u) | 0x40u;
         g.demo_saved_difficulty = g.difficulty;  // DAT_004a59c0
         g.title_origin = 1;
-        pending_demo = demo_index;
-        events.push_back({"demo", demo_index});
-        const i32 n = demo_index + 1;
-        const i64 prod = i64(n) * 0x55555555ll;
-        i32 edx = i32(u32(u64(prod) >> 32));
-        edx = edx - n;
-        edx >>= 1;
-        i32 ecx = edx;
-        ecx = i32(u32(ecx) >> 31);
-        ecx = ecx + edx;
-        demo_index = ecx * 3 + n;
+        pending_demo = g.next_demo_index;
+        events.push_back({"demo", pending_demo});
+        g.next_demo_index = (pending_demo + 1) % 3;
         g.scene_request = 0xd;
         events.push_back({"scene", g.scene_request});
         idle_frames = 0;
@@ -204,7 +196,7 @@ void TitleScene::update(AnmManager& anm, const InputState& input) {
     case kStage: update_stage(anm, input); break;
     case kOption: update_option(anm, input); break;
     case kReplay: update_replay(anm, input); break;
-    case kManual: update_manual(anm, input); break;
+    case kManual: update_manual(anm); break;
     case kMusicRoom: update_music(anm, input); break;
     case kSpellPractice: update_spell_practice(anm, input); break;
     case kSpellList: update_spell_list(anm, input); break;
@@ -341,9 +333,9 @@ void TitleScene::draw(AsciiManager& ascii) {
 }
 
 void TitleScene::draw_stage_practice_scores(AsciiManager& ascii) {
-    // 0x4513c0：sub∈[2,3] 且（timer>10 或 sub==3）时打 Stage 1..6 练习分
+    // 0x4513c0：sub∈[2,3] 且（timer≥10 或 sub==3）时打 Stage 1..6 练习分
     if (sub != 2 && sub != 3) return;
-    if (timer <= 10 && sub != 3) return;
+    if (timer < 10 && sub != 3) return;
     if (scores == nullptr || globals == nullptr) return;
 
     static constexpr const char* kStageNames[7] = {
@@ -1520,12 +1512,12 @@ void TitleScene::update_replay(AnmManager& anm, const InputState& input) {
     case 0: {
         cursor.count = 0x19;
         cursor.wrap = true;
-        cursor.set(last_replay_slot % 0x19);
+        cursor.set(globals->title_replay_slot % 0x19);
         page_cursor.count = 3;
         page_cursor.wrap = true;
-        page_cursor.set(last_replay_slot / 0x19);
+        page_cursor.set(globals->title_replay_slot / 0x19);
         // *(+0x2a4)=1：原版列表滚动相关；端口不需要独立字段
-        last_replay_slot = 0;
+        globals->title_replay_slot = 0;
         if (vm[kLeafEmitter] == 0 && ascii_file) spawn_into(anm, kLeafEmitter, *ascii_file, kLeafEmitterScript);
         if (title_file) spawn_into(anm, 0x6c, *title_file, 0x6c);
         set_sub(1);
@@ -1591,7 +1583,8 @@ void TitleScene::update_replay(AnmManager& anm, const InputState& input) {
             pending_replay_path = (replay_choice >= 0 && replay_choice < kReplayListSlots)
                                       ? replay_entries[replay_choice].path
                                       : std::string{};
-            last_replay_slot = replay_choice;
+            globals->title_replay_slot = replay_choice;
+            globals->title_origin = 2;
             globals->scene_request = 0xd;
             globals->replay_slot = replay_stage_choice;  // DAT_004a57c8 路径相关；阶段选择另见 pending
             events.push_back({"scene", 0xd});
@@ -1635,51 +1628,50 @@ void TitleScene::update_replay(AnmManager& anm, const InputState& input) {
     }
 }
 
-void TitleScene::close_help() {
+void TitleScene::close_help(AnmManager& anm) {
+    if (help == nullptr) return;
+    help->retire_animations(anm);
     delete help;
     help = nullptr;
 }
 
 // 0x4545a0：Manual → 0x42ea30 HelpScreen；关闭后回主菜单
-void TitleScene::update_manual(AnmManager& anm, const InputState& input) {
+void TitleScene::update_manual(AnmManager& anm) {
     switch (sub) {
     case 0: {
         if (vm[kLeafEmitter] == 0 && ascii_file) spawn_into(anm, kLeafEmitter, *ascii_file, kLeafEmitterScript);
         if (title_file) spawn_into(anm, 0x72, *title_file, 0x72);  // +0x488
-        close_help();
+        close_help(anm);
         help = new HelpScreen();
-        // 0x42e760 在装载线程里写 +0x12c。标题路径不跑该线程，help.anm 保持未装，目录项不生成。
-        // 局内暂停菜单有自己的装载回调，不走这里。
-        help->anm = nullptr;
-        help->scroll = 112.0f;  // 0x43000000
+        // 0x42e760：标题与暂停菜单共用原版 help.anm。
+        help->anm = load_help_anm ? load_help_anm() : nullptr;
+        help->load_page = load_help_page;
+        help->horizontal_offset = 128.0f;  // 0x43000000
         set_sub(1);
         events.push_back({"manual", 0});
         break;
     }
     case 1:
-        if (help != nullptr) {
-            if (help->anm != nullptr) {
-                help->update(anm, input, 1.0f);
-                for (i32 id : help->sfx_queue) sfx(id);
-                help->sfx_queue.clear();
-            } else if (input.pressed & InputState::kCancelMask) {
-                // help.anm 未装上时允许取消退出（harness 无 help 资源仍可回归）
-                sfx(9);
-                help->closed = true;
-            }
-            if (help->closed) {
-                close_help();
-                dismiss(anm, kLeafEmitter);
-                dismiss(anm, 0x72);
-                set_screen(kMainMenu);
-                cursor.pop();
-                events.push_back({"screen", screen});
-            }
+        if (help != nullptr && help->closed) {
+            close_help(anm);
+            dismiss(anm, kLeafEmitter);
+            dismiss(anm, 0x72);
+            set_screen(kMainMenu);
+            cursor.pop();
+            events.push_back({"screen", screen});
         }
         break;
     default:
         break;
     }
+}
+
+// 0x42eab0：操作说明在 UI 动画链之后推进，创建当帧仍在装载。
+void TitleScene::update_help_after_anm(AnmManager& anm, const InputState& input) {
+    if (help == nullptr || timer <= 1) return;
+    help->update(anm, input, 1.0f);
+    for (i32 id : help->sfx_queue) sfx(id);
+    help->sfx_queue.clear();
 }
 
 namespace {
@@ -2763,6 +2755,7 @@ void TitleScene::update_name_entry(AnmManager& anm, const InputState& input) {
     case 0: {
         cursor.count = 0x1e;
         bgm_name_entry();  // FUN_0043c370(0,"th128_08")
+        play_bgm_op(2);
         if (scores != nullptr) scores->mark_bgm_heard(0x11);   // 0x43c3f0(0, 0x11)
         if (vm[kLeafEmitter] == 0 && ascii_file) spawn_into(anm, kLeafEmitter, *ascii_file, kLeafEmitterScript);
         if (title_file) spawn_into(anm, 0x6f, *title_file, 0x6f);
@@ -2849,6 +2842,7 @@ void TitleScene::update_name_entry(AnmManager& anm, const InputState& input) {
             set_screen(kMainMenu);
             bgm_default();  // FUN_0043c370(0,"th16_01")
             if (scores != nullptr) scores->mark_bgm_heard(0);   // 0x43c3f0(0, 0)
+            play_bgm_op(2);
             events.push_back({"screen", screen});
         }
         break;
@@ -2935,6 +2929,7 @@ void TitleScene::update_name_confirm(AnmManager& anm, const InputState& input) {
             cursor.pop();
             bgm_default();  // FUN_0043c370(0,"th16_01")
             events.push_back({"screen", screen});
+            play_bgm_op(2);
             for (i32 i = 0; i < 0x19; ++i) {
                 save_slot_live[i] = false;
                 save_slots[i] = ReplaySummary{};

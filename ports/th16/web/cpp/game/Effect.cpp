@@ -107,6 +107,14 @@ u32 EffectManager::attach(i32 kind, AnmVm* host, const Vec3& pos) {
     return host != nullptr ? host->id : id;
 }
 
+// 0x418ba0 creates the title transition in the UI list via 0x418fe0.
+u32 EffectManager::spawn_title_transition() {
+    if (effect_anm == nullptr) return 0;
+    const u32 id = animations_->spawn_ui(*effect_anm, kKindTable[0].script);
+    AnmVm* vm = animations_->find(id);
+    return vm == nullptr ? 0 : attach(0, vm, {});
+}
+
 // 0x40e730
 u32 EffectManager::spawn(i32 kind, const Vec3& pos) {
     const i32 slot = allocate_slot();

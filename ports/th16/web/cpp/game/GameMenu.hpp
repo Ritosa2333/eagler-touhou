@@ -72,7 +72,7 @@ struct ReplayStore {
 // help.anm（槽 0x13）与各页 help_NN.png 由装载线程异步装入；这里由宿主回调同步提供 ANM 文件。
 struct HelpScreen {
     enum Phase : i32 { Loading = 0, Running = 1, Closing = 2 };
-    enum Step : i32 { BuildMenu = 0, Menu = 1, LoadPage = 2, PageReady = 3, Page = 4, TurnPage = 5 };
+    enum Step : i32 { BuildMenu = 0, Menu = 1, PageReady = 3, Page = 4, TurnPage = 5 };
 
     Phase phase = Loading;      // +0x0c
     Timer timer;                // +0x10
@@ -80,17 +80,20 @@ struct HelpScreen {
     u32 item_vms[9] = {};       // +0xfc：目录项 VM
     u32 page_vm = 0;            // +0x120：当前页 VM（脚本 9）
     bool closed = false;        // +0x124：关闭完成（GameMenu 据此回到主菜单）
-    float scroll = 0;           // +0x128
+    float horizontal_offset = 0; // +0x128
     AnmFile* anm = nullptr;     // +0x12c：help.anm
     Step step = BuildMenu;      // +0x134
     std::vector<i32> sfx_queue;
+    std::function<bool(i32)> load_page;  // 0x42e7c0: help_NN.png
 
     void update(AnmManager& anm_manager, const InputState& input, float game_speed);   // 0x42eab0
+    void retire_animations(AnmManager& anm_manager) const;
 
 private:
     void spawn_items(AnmManager& anm_manager);
     void highlight(AnmManager& anm_manager);
-    void start_page_load(AnmManager& anm_manager);
+    bool start_page_load(AnmManager& anm_manager);
+    void return_to_directory(AnmManager& anm_manager);
 };
 
 struct GameMenuContext {
@@ -111,6 +114,7 @@ struct GameMenuContext {
     SoundEffects* sound = nullptr;         // 0x42e4d0 暂停 / 0x440bd0 恢复 / 0x45e330 排空
     i32 replay_timestamp = 0;              // 本局回放头 +0xc 的开局时刻（0x4483b0 写 time32；Replay 接入前为 0）
     // 0x42e760 装载线程：help.anm 进槽 0x13；返回 nullptr 表示仍在装载（操作说明保持等待）
+    std::function<bool(i32)> load_help_page;
     std::function<AnmFile*()> load_help_anm;
     // 0x42dbc0 播放时长结算 / 0x45b130 取时刻重置起点 DAT_004a5c00（宿主墙钟；harness 无墙钟时为空操作）
     std::function<void()> accumulate_play_time;
@@ -215,6 +219,7 @@ private:
     void child_interrupt(i32 script, i32 value);// 0x46f5a0 + 0x46f0b0
     void hide_menu();            // 0x46f340
     void show_menu();            // 0x46f300
+    void close_help();
     bool nav(u32 bit) const;     // 0x4186f0
     void sfx(i32 id) { if (ctx.sfx_sink != nullptr) ctx.sfx_sink->push(id); else sfx_queue.push_back(id); }
     void suspend_sound() { if (ctx.sound != nullptr) ctx.sound->suspend(); }   // 0x42e4d0

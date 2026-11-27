@@ -92,8 +92,8 @@ public:
     const InputState* system_input = nullptr;   // DAT_004a50b0 组（宿主键盘，演示回放中按键回标题）
     const u32* config_flags = nullptr;          // DAT_004c1800（bit13：回标题改为场景 2）
     ScoreFile* scores = nullptr;                // DAT_004a6f0c：0x43c3f0 关卡曲音乐室已听过位
-    // 0x45d150(kind, duration, color)：GameSession 登记 ScreenEffect 链 0x13
-    std::function<void(i32, i32, u32)> on_screen_fade;
+    // 0x45d150：更新链固定为 0x13，绘制链优先级由调用者提供。
+    std::function<void(i32 kind, i32 duration, u32 color, i32 draw_priority)> on_screen_fade;
     // 0x40add0 开头：关卡的更新 / 绘制链在这里才置启用位（0x4097c0 建链时 `& ~2`）。
     // 换关过关奖励展示的 120 帧里 GameManager 整帧跳过，首帧尚未到来，背景 VM 与 std 脚本都不得推进
     std::function<void()> on_stage_started;

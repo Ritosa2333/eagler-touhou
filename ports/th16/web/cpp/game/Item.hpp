@@ -58,12 +58,11 @@ struct Item {
     Timer timer2;                  // +0xc3c（未用）
     i32 state = 0;                 // +0xc50 0 空 / 1 下落 / 2 上抛 / 3 季节减速 / 4 吸向自机 / 5 收点圈吸引 / 6 延迟出现
     i32 type = 0;                  // +0xc54
-    i32 type_copy = 0;             // +0xc58（得点池 = type；普通池 0）
+    i32 offscreen_indicator = 0;   // +0xc58 得点池生成时为 type，绘制 0x4307a0 写入是否位于屏幕上方
     float attract_speed = 0;       // +0xc5c
     i32 counter = 0;               // +0xc60 得点池出现延迟（按生成计数取模）
     i32 serial = 0;                // +0xc64 = 管理器 +0x1c972e8
     i32 flag = 0;                  // +0xc68 0x430960 末参数（1 = 解放 / 炸弹消弹所生，状态 3 结束时直接吸引）
-    i32 above_screen = 0;          // +0xc6c 0x4307a0：1 = 画屏幕上方指示（副 VM）
     i32 index = 0;                 // 池下标（移植附加；oracle 快照以下标标识）
 };
 

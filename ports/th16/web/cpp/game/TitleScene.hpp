@@ -63,7 +63,6 @@ public:
     AnmFile* title_v_file = nullptr; // +0x14
     AnmFile* ascii_file = nullptr;   // AsciiManager 槽 2
     i32 idle_frames = 0;             // DAT_004a5bf0：主菜单无输入帧计数
-    i32 demo_index = 0;              // DAT_004a5bf4：demo1..3 轮转（%3）
     i32 pending_demo = -1;           // 本帧触发的 demo 下标；GameSession 装文件后清
     // 标题 Replay 画面 0x451750
     MenuCursor page_cursor;          // +0x1d4：页（0..2），槽 = page*0x19 + cursor
@@ -83,7 +82,6 @@ public:
     i32 replay_choice = -1;          // +0x5b48：选中的绝对槽
     i32 replay_stage_choice = 0;     // +0x5b4c：开局关卡下标（1-based 存到 DAT_004a5790）
     u32 replay_ui_flags = 0;         // +0x5ce8：bit2 离开中 / bit3 扫描完成
-    i32 last_replay_slot = 0;        // DAT_004a6f28：再次进入时恢复
     std::string replay_directory;    // 宿主：th16_XX.rpy 所在目录
     std::string pending_replay_path; // 确认播放：GameSession case 0xd 装载
     HelpScreen* help = nullptr;      // DAT_004a6dd8：标题 Manual 0x4545a0
@@ -164,10 +162,11 @@ public:
     // GameSession 注入：0x45d150 淡入淡出 / 0x41a390 Loading + 0x418ba0 过场
     std::function<void(i32 kind, i32 duration, u32 color)> on_screen_fade;
     std::function<void()> on_transition_effect;
+    std::function<bool(i32)> load_help_page;
     std::function<AnmFile*()> load_help_anm;  // 0x42e760：help.anm
 
-    void activate(AnmFile* title, AnmFile* title_v, AnmFile* ascii, GameGlobals& g) {
-        close_help();
+    void activate(AnmManager& anm, AnmFile* title, AnmFile* title_v, AnmFile* ascii, GameGlobals& g) {
+        close_help(anm);
         auto fade = on_screen_fade;
         auto transition = on_transition_effect;
         auto help_loader = load_help_anm;
@@ -221,7 +220,8 @@ public:
     void enter_spell_entries(AnmManager& anm);                         // 0x455900 LAB_00455bd4
     // 主菜单空闲 demo 门控（0x708 / bit6 / 下标 %3）；供单测与 update 共用
     void tick_idle_demo(const InputState& input);
-    void close_help();  // 释放标题 Manual 的 HelpScreen
+    void update_help_after_anm(AnmManager& anm, const InputState& input);
+    void close_help(AnmManager& anm);  // 释放标题 Manual 的 HelpScreen
     void parse_music_cmt(const char* text, size_t len) { music_cmt.assign(text ? text : "", text ? len : 0); }
 
 private:
@@ -253,7 +253,7 @@ private:
     void update_stage(AnmManager& anm, const InputState& input);         // 0x450ef0
     void update_option(AnmManager& anm, const InputState& input);        // 0x44c570
     void update_replay(AnmManager& anm, const InputState& input);        // 0x451750
-    void update_manual(AnmManager& anm, const InputState& input);        // 0x4545a0
+    void update_manual(AnmManager& anm);                                // 0x4545a0
     void update_music(AnmManager& anm, const InputState& input);         // 0x4546f0
     void parse_music_tracks();                                           // 0x455330 / 0x455370 逐行切分
     void layout_music_items(AnmManager& anm);                            // 光标移动后重排曲目 VM

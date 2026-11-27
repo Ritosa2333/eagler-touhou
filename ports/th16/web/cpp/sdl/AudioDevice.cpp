@@ -423,7 +423,9 @@ void AudioDevice::open_stream(const BgmEntry& entry) {
     }
     // 循环区间 [+0x18 循环起点, +0x1c 末尾)；length = 0 的曲目不循环（MusicManager 按 play(looped) 传入）
     ma_data_source_set_loop_point_in_pcm_frames(s.source(), u64(entry.loop_start) / block, frames);
-    if (ma_sound_init_from_data_source(&a.engine, s.source(), MA_SOUND_FLAG_NO_SPATIALIZATION, nullptr, &s.sound) != MA_SUCCESS) {
+    // 原版 BGM 使用固定采样率，按指定的 PCM 帧开始播放。关闭无用的变调，避免重采样延后一帧。
+    constexpr ma_uint32 kMusicFlags = MA_SOUND_FLAG_NO_SPATIALIZATION | MA_SOUND_FLAG_NO_PITCH;
+    if (ma_sound_init_from_data_source(&a.engine, s.source(), kMusicFlags, nullptr, &s.sound) != MA_SUCCESS) {
         error = "audio: cannot attach music stream";
         s.close();
         return;

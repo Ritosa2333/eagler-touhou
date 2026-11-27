@@ -179,7 +179,8 @@ private:
     // 0x465280：mode 0..3 四角 → 像素对齐 / UV / 顶点色 / 视口剔除 / 入批
     int submit_screen_quad(AnmVm& vm, const AnmRuntimeSprite& sprite, float corners[4][2], bool pixel_align);
     // 0x465280：四角已含位置；加绘制偏移、可选像素对齐、UV、视口剔除、顶点色后入批
-    int submit_screen_corners(AnmVm& vm, const AnmRuntimeSprite& sprite, float corners[4][2], float z, bool pixel_align);
+    int submit_screen_corners(AnmVm& vm, const AnmRuntimeSprite& sprite, float corners[4][2], float z,
+                              bool pixel_align, bool axis_aligned);
     // 0x467410
     int draw_world_quad(AnmVm& vm, const AnmRuntimeSprite& sprite);
     // 0x468490 mode 0x11..0x13 分支 + 0x469640 / 0x469a00 / 0x469bd0
@@ -201,7 +202,7 @@ private:
     void ensure_modulate_combiner();
     // 顶点色 × 色调（每通道 >>7 并钳 255）
     u32 apply_tint(u32 color) const;
-    bool in_camera_viewport(const float corners[4][2]) const;
+    bool in_camera_viewport(const float corners[4][2], bool axis_aligned) const;
 };
 
 }  // namespace th16

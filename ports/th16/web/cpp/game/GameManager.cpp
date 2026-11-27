@@ -20,7 +20,7 @@ bool GameManager::first_frame(AnmManager& manager, GameGlobals& globals) {
     }
     if (previous_stage) {
         // 0x40c0d0：ScreenEffect kind 2（0x1e 帧、色 0）+ 上一关进入结束（bit1）；0x40c210：新关淡入（bit2，0x3c 帧）
-        if (on_screen_fade) on_screen_fade(2, 0x1e, 0);
+        if (on_screen_fade) on_screen_fade(2, 0x1e, 0, 0x0a);
         previous_stage->begin_end(0x1e, 2);
         if (stage_live && stage) stage->begin_end(0x3c, 4);
         flags |= kRetry;
@@ -87,7 +87,7 @@ bool GameManager::update(AnmManager& manager, GameGlobals& globals, float game_s
     if ((flags & kStageClear) != 0) {
         if ((flags & kMenuOpen) != 0) return false;
         ++end_counter;
-        if (end_counter == 0xb4 && on_screen_fade) on_screen_fade(5, 200, 0);
+        if (end_counter == 0xb4 && on_screen_fade) on_screen_fade(5, 200, 0, 0x54);
         // 倒计时过 0x17b：非回放 → 结局场景 0xf（Extra 难度 → 0x10）；回放 → 0x43f240 回标题。
         // 每帧都会重复登记，直到主循环消费场景请求
         if (end_counter > 0x17b) {
@@ -118,7 +118,8 @@ bool GameManager::update(AnmManager& manager, GameGlobals& globals, float game_s
         if ((system_input != nullptr && (system_input->held & 0x80103u) != 0) || (flags & kEndMask) != 0)
             globals.scene_request = title_scene;
         if (timer.current == 0xf00) {
-            if (on_screen_fade) on_screen_fade(5, 0x3c, 0);
+            // 0x42da06：演示淡出排在绘制链 0x33，先于后续标题过渡层。
+            if (on_screen_fade) on_screen_fade(5, 0x3c, 0, 0x33);
         } else if (timer.current == 0xf3c) {
             globals.scene_request = title_scene;
         }

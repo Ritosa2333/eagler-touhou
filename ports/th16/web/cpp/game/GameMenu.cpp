@@ -76,6 +76,7 @@ constexpr i32 kItemScripts[5][5] = {
 void HelpScreen::spawn_items(AnmManager& anm_manager) {
     for (int i = 0; i < 9; ++i) {
         item_vms[i] = anm != nullptr ? anm_manager.spawn_ui(*anm, i) : 0;
+        if (auto* vm = anm_manager.find(item_vms[i])) vm->entity_offset.x = horizontal_offset;
         anm_manager.interrupt_now(item_vms[i], cursor.index == i ? 2 : 3);
     }
 }
@@ -84,16 +85,37 @@ void HelpScreen::highlight(AnmManager& anm_manager) {
     for (int i = 0; i < 9; ++i) anm_manager.interrupt_now(item_vms[i], cursor.index == i ? 2 : 3);
 }
 
-// LAB_0042eddb：目录项退场，请求装载 help_NN.png（纹理替换属渲染侧；逻辑上直接视为装好）
-void HelpScreen::start_page_load(AnmManager& anm_manager) {
-    step = LoadPage;
+// LAB_0042eddb：同步读取成功后再让目录项退场。
+bool HelpScreen::start_page_load(AnmManager& anm_manager) {
+    if (load_page && !load_page(cursor.index)) return false;
+    step = PageReady;
     timer.set(0);
     for (u32 id : item_vms) anm_manager.interrupt(id, 1);
-    step = PageReady;
+    return true;
+}
+
+void HelpScreen::return_to_directory(AnmManager& anm_manager) {
+    anm_manager.interrupt(page_vm, 1);
+    page_vm = 0;
+    step = Menu;
+    timer.set(0);
+    spawn_items(anm_manager);
+}
+
+void HelpScreen::retire_animations(AnmManager& anm_manager) const {
+    // 目录和正文的退场精灵可能还活着；关闭时同时摘掉这一组。
+    if (anm != nullptr) anm_manager.kill_file(anm->slot);
 }
 
 // 0x42eab0
 void HelpScreen::update(AnmManager& anm_manager, const InputState& input, float game_speed) {
+    if (anm == nullptr) {
+        if ((input.pressed & InputState::kCancelMask) != 0) {
+            sfx_queue.push_back(9);
+            closed = true;
+        }
+        return;
+    }
     auto nav = [&](u32 bit) { return ((input.pressed | input.repeat) & bit) != 0; };
     switch (phase) {
     case Loading:
@@ -122,8 +144,7 @@ void HelpScreen::update(AnmManager& anm_manager, const InputState& input, float 
                 }
             }
             if ((input.pressed & InputState::kConfirmMask) != 0) {
-                sfx_queue.push_back(7);
-                start_page_load(anm_manager);
+                sfx_queue.push_back(start_page_load(anm_manager) ? 7 : 9);
             } else if ((input.pressed & InputState::kCancelMask) != 0) {
                 sfx_queue.push_back(9);
                 for (u32 id : item_vms) anm_manager.interrupt(id, 1);
@@ -132,10 +153,9 @@ void HelpScreen::update(AnmManager& anm_manager, const InputState& input, float 
                 timer.reset();
             }
             break;
-        case LoadPage:
-            break;
         case PageReady:
             page_vm = anm != nullptr ? anm_manager.spawn_ui(*anm, 9) : 0;
+            if (auto* vm = anm_manager.find(page_vm)) vm->entity_offset.x = horizontal_offset;
             step = Page;
             timer.set(0);
             [[fallthrough]];
@@ -155,17 +175,17 @@ void HelpScreen::update(AnmManager& anm_manager, const InputState& input, float 
                 anm_manager.interrupt_now(page_vm, 8);
             } else if ((input.pressed & (InputState::kConfirmMask | InputState::kCancelMask)) != 0) {
                 sfx_queue.push_back(9);
-                step = Menu;
-                timer.set(0);
-                anm_manager.interrupt(page_vm, 1);
-                spawn_items(anm_manager);
+                return_to_directory(anm_manager);
                 break;
             } else {
                 break;
             }
             [[fallthrough]];
         case TurnPage:
-            if (timer.current >= 0x14) start_page_load(anm_manager);
+            if (timer.current >= 0x14 && !start_page_load(anm_manager)) {
+                sfx_queue.push_back(9);
+                return_to_directory(anm_manager);
+            }
             break;
         }
         break;
@@ -833,24 +853,25 @@ void GameMenu::run_state_machine() {
     case HelpPages:
         if (timer.current == 0x14) {
             hide_menu();
-            delete help;
+            close_help();
             help = new HelpScreen();
             help->anm = ctx.load_help_anm ? ctx.load_help_anm() : nullptr;
-            help->scroll = 32.0f;
+            help->load_page = ctx.load_help_page;
+            help->horizontal_offset = 32.0f;
+            // The original help loader and the first HelpScreen update run on the following frame.
+            return;
         }
         if (help != nullptr) {
-            if (help->anm == nullptr && ctx.load_help_anm) help->anm = ctx.load_help_anm();
-            if (help->anm != nullptr) {
-                help->update(anm, *ctx.input, *ctx.game_speed);
-                sfx_queue.insert(sfx_queue.end(), help->sfx_queue.begin(), help->sfx_queue.end());
-                help->sfx_queue.clear();
-            }
             if (help->closed) {
-                delete help;
-                help = nullptr;
+                close_help();
                 set_state(MainMenu);
                 show_menu();
+                return;
             }
+            if (help->anm == nullptr && ctx.load_help_anm) help->anm = ctx.load_help_anm();
+            help->update(anm, *ctx.input, *ctx.game_speed);
+            sfx_queue.insert(sfx_queue.end(), help->sfx_queue.begin(), help->sfx_queue.end());
+            help->sfx_queue.clear();
         }
         return;
 
@@ -866,6 +887,12 @@ void GameMenu::run_state_machine() {
 // 0x43e4c0
 void GameMenu::destroy() {
     for (bool& used : replay_slot_used) used = false;
+    close_help();
+}
+
+void GameMenu::close_help() {
+    if (help == nullptr) return;
+    if (ctx.animations != nullptr) help->retire_animations(*ctx.animations);
     delete help;
     help = nullptr;
 }

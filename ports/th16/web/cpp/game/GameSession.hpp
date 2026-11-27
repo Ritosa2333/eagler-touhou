@@ -99,7 +99,7 @@ public:
 
     GameSession();   // 0x43ba40 / 0x46a3a0：登记常驻绘制链
     bool open(const u8* archive_bytes, u32 size);
-    bool begin_boot();                 // 0x43adc0：ascii + sig，注册启动幕绘制链，请求 Title
+    bool begin_boot(bool high_resolution_ascii = false);                 // 0x43adc0：ascii + sig，注册启动幕绘制链，请求 Title
     // 跳过启动幕/标题直接进入场景 7（harness）：装启动 bank 后按 globals（stage/shot/season/difficulty）装载关卡
     bool start_game_direct(i32 replay_mode = 0);
     // 0x448c10：装入回放文件；随后 enter_game(1) / start_game_direct(1) 走回放输入链
@@ -162,6 +162,7 @@ private:
     float global_fps_ = 60.0f;                       // FrameTimer+0x30（0x4262f0 测速；无墙钟时固定 60）
     ReplayFile replay_file_;                         // 0x448c10 展开后的回放
     ReplayPlaybackCursor replay_cursor_;             // 当前关卡段读指针（+0xc8 / +0xd8）
+    bool load_title_demo(i32 index);
     i32 replay_spell_time_(i32 index) const;
     i32 replay_next_stage_index_ = -1;               // 换关 0x449030(1) 已备好、待 0x448eb0 才切过去的段（+0x214 之前不动）
     u16 replay_stage_seed_ = 0;                      // 记录：0x447760 / 0x449030 装载时抄进新段头 +2 的 DAT_004a6d88
@@ -196,12 +197,14 @@ private:
     std::vector<ChainEntry*> fade_chains_;   // 0x45d150(0/2/3/5) 实例（链 0x13，自删）
 
     bool load_anm(const char* name, AnmResource*& out);
-    bool load_boot_banks();            // 0x43adc0 / 0x407cb0 / 0x43ad20 / 0x418790 的同步装载部分
+    bool load_help_page(i32 page);
+    bool load_boot_banks(bool high_resolution_ascii = false);            // 0x43adc0 / 0x407cb0 / 0x43ad20 / 0x418790 的同步装载部分
     bool create_player();              // 0x42cb60 新游戏段：0x441c60 + 火力/量表初值 + 0x4440e0
     bool enter_title_assets();
     bool activate_title_menu();
     void leave_title();
     void mark_stage_reached();  // 0x42cb60 +0x519d
+    void prepare_stage_bgm();
     bool enter_game(i32 replay_mode = 0);  // 0x43ce10 case 7 → 0x42d700(回放标志) + 0x42cb60（同步装载）
     bool bind_loaded_replay_();            // 0x448c10 成功后：选段、记 RNG 种子、复位游标
     const ReplayStageSegment* current_replay_segment_() const;   // 回放中的当前段（段头完整时）
@@ -216,6 +219,7 @@ private:
     bool create_stage();
     bool create_enemies();
     void spawn_loading_vm(const Vec3& pos);   // 0x41a390 / 0x42d200："Loading" VM（不存在时才建）
+    void dismiss_loading_vm();
     // 0x40d890：ECL 之后、Spellcard 之前建主炸弹 + 季节解放，挂更新链 0x18 / 0x19 与绘制链 0x28 / 0x29
     void create_bombs();
     // 0x40da90（0x42d200 无条件调用）
@@ -242,7 +246,7 @@ private:
     void create_screen_shake(const EnemyManager::ShakeRequest& request);
     void clear_screen_shake();
     // 0x45d150(kind, duration, color, …)：登记一条链 0x13 的淡入淡出（0x45c900），DAT_004c0f40 非零时自删
-    void create_screen_fade(i32 kind, i32 duration, u32 color);
+    void create_screen_fade(i32 kind, i32 duration, u32 color, i32 draw_priority = -1);
     void sample_input();
     void register_layer_draw_chains();   // 0x46a3a0：AnmManager 各层绘制链（含带相机切换的 0x46ddd0 / 0x46e030 族）
 };

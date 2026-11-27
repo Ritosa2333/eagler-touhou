@@ -34,6 +34,7 @@ public:
     u32 register_id(u32 id);
     // 0x418af0：kind 种类；host 非空（ins_508）时挂到该 VM，否则按表生成新 VM；pos 交给种类 init；返回 VM id
     u32 attach(i32 kind, AnmVm* host, const Vec3& pos);
+    u32 spawn_title_transition();  // 0x418ba0
     // 0x40e730（ECL 334 / 炸弹爆点）：生成 kind 并登记；返回 槽 | 0x80000000（0 = 表满）
     u32 spawn(i32 kind, const Vec3& pos);
     // 0x40e730 返回值 → 该槽记录的 VM id（0x40e9d0 / 0x40f240 据此改爆点 VM 的混合模式）

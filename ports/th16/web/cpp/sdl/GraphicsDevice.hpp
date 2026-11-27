@@ -28,15 +28,17 @@ class GraphicsDevice final : public RenderDevice {
     };
     std::map<u32, Texture> textures;
     std::map<const AnmResource*, std::vector<u32>> resources;
+    const AnmResource* recent_resource_ = nullptr;
+    const std::vector<u32>* recent_handles_ = nullptr;
     u32 next_handle = 3;
     static touhou::sdl::Surface resolve(void*, u32);
-    u32 handle_of(TextureRef ref) const;
+    u32 handle_of(TextureRef ref);
 
 public:
     static constexpr u32 screen = 1, depth = 2;
+    static constexpr u32 kRenderScale = 2;
     touhou::sdl::Renderer backend{10, resolve, this};
     std::string error;
-    u32 render_scale = 1;
     // TextureRef 槽号 → AnmFile → AnmResource 的解析来源（GameSession::animations）
     const AnmManager* animations = nullptr;
 
@@ -44,7 +46,7 @@ public:
     // 为 AnmResource 的每个 entry 建纹理句柄；无贴图且非 '@R' 的 entry 句柄为 0
     bool preload(const AnmResource&);
     void unload(const AnmResource&);
-    u32 texture(const AnmResource&, u32 entry) const;
+    u32 texture(const AnmResource&, u32 entry);
 
     // ---- RenderDevice ----
     touhou::graphics::PipelineState& pipeline() override { return backend.pipeline(); }
@@ -59,7 +61,7 @@ public:
     void present() { backend.present(screen); }
     void flush() { backend.flush(); }
 
-    // 0x459240 末步 D3DXLoadSurfaceFromMemory（FILTER_NONE）：A4R4G4B4 → BGRA8 整块覆盖并抬 revision
+    // 0x459240：写入 A4R4G4B4 文字矩形并抬 revision。
     void write_texture_argb4444(u32 handle, i32 left, i32 top, const u16* pixels, i32 width, i32 height);
 };
 

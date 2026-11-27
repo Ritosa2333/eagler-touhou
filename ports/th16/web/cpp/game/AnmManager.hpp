@@ -74,7 +74,7 @@ public:
 
     // 0x46cf80 + 0x46d1c0：把资源装进槽位，建精灵表、脚本表并预跑模板。texture 尺寸由调用方给出
     // （浏览器端为 GraphicsDevice 实际创建的纹理尺寸，离线 harness 为 entry 声明尺寸）。
-    AnmFile* load(int slot, const AnmResource& resource);
+    AnmFile* load(int slot, const AnmResource& resource, float first_entry_sprite_scale = 1.0f);
     AnmFile* file(int slot) const { return slot >= 0 && slot < kBankSlots ? banks_[slot].get() : nullptr; }
     // 0x46f270：标记该槽全部世界/UI VM 待删（flags_hi |= 0x20）；0x46d770 的前半。调用方随后 tick 回收，再 unload。
     void kill_file(int slot);

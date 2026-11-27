@@ -16,7 +16,7 @@
 </style>
 </head>
 <body>
-<canvas id="canvas" tabindex="0"></canvas>
+<canvas id="canvas" width="1280" height="960" tabindex="0"></canvas>
 <p id="loading" role="status">正在准备东方天空璋…</p>
 <p id="error" role="alert"></p>
 <script type="module">
@@ -88,7 +88,15 @@ try {
   if (!mod._th16_initialize()) throw new Error('初始化失败：' + mod.UTF8ToString(mod._th16_error()));
   document.getElementById('loading').textContent = '';
   canvas.focus();
-  window.addEventListener('keydown', e => { if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); });
+  const {createBrowserKeyboard} = await import('./directory-keyboard.mjs');
+  const keyboard = createBrowserKeyboard({send(code, down) {
+    const bytes = new TextEncoder().encode(code + '\0'), ptr = mod._malloc(bytes.length);
+    try { mod.HEAPU8.set(bytes, ptr); mod._sdl_key(ptr, Number(down)); } finally { mod._free(ptr); }
+  }});
+  for (const name of ['keydown', 'keyup']) window.addEventListener(name, event => {
+    if (keyboard.event(event, name === 'keydown')) event.preventDefault();
+  });
+  window.addEventListener('blur', () => { keyboard.clear(); mod._sdl_keys_clear(); });
   mod._th16_loop_start();
   window.__th16_ready = true;
 } catch (error) {

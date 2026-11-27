@@ -4,6 +4,7 @@
 #include "Distortion.hpp"
 #include "Effect.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -208,10 +209,17 @@ void AnmRenderer::apply_vm_state(const AnmVm& vm) {
     }
 }
 
-bool AnmRenderer::in_camera_viewport(const float corners[4][2]) const {
+bool AnmRenderer::in_camera_viewport(const float corners[4][2], bool axis_aligned) const {
     // 0x465280：四角包围盒与当前相机视口（DAT_004c17b8 +0xe0）不相交则跳过
     if (camera_ == nullptr) return true;
     const Viewport& vp = camera_->viewport;
+    if (axis_aligned) {
+        // Opposite corners cover both extrema, including mirrored sprites.
+        const float x0 = corners[0][0], x1 = corners[3][0];
+        const float y0 = corners[0][1], y1 = corners[3][1];
+        return !(std::max(x0, x1) < float(vp.x) || std::max(y0, y1) < float(vp.y) ||
+                 float(vp.x + vp.width) < std::min(x0, x1) || float(vp.y + vp.height) < std::min(y0, y1));
+    }
     float min_x = corners[0][0], max_x = corners[0][0], min_y = corners[0][1], max_y = corners[0][1];
     for (int i = 1; i < 4; ++i) {
         if (corners[i][0] > max_x) max_x = corners[i][0];
@@ -294,7 +302,7 @@ int AnmRenderer::draw_vm(AnmVm& vm) {
         if (!has_alpha || sprite == nullptr || camera_ == nullptr) return -1;
         float corners[4][2], depth;
         if (!geometry_.projected_corners(vm, *camera_, corners, depth)) return -1;
-        return submit_screen_corners(vm, *sprite, corners, depth, false);
+        return submit_screen_corners(vm, *sprite, corners, depth, false, false);
     }
     case AnmRenderMode::World:
         if (!has_alpha || sprite == nullptr) return -1;
@@ -369,11 +377,13 @@ int AnmRenderer::submit_screen_quad(AnmVm& vm, const AnmRuntimeSprite& sprite, f
         corners[i][0] = corners[i][0] + origin.x;
         corners[i][1] = corners[i][1] + origin.y;
     }
-    return submit_screen_corners(vm, sprite, corners, vm.entity_offset.z + vm.pos.z + vm.pos2.z, pixel_align);
+    const bool axis_aligned = pixel_align || vm.render_mode() == u32(AnmRenderMode::Quad);
+    return submit_screen_corners(vm, sprite, corners, vm.entity_offset.z + vm.pos.z + vm.pos2.z,
+                                 pixel_align, axis_aligned);
 }
 
 int AnmRenderer::submit_screen_corners(AnmVm& vm, const AnmRuntimeSprite& sprite, float corners[4][2], float z,
-                                       bool pixel_align) {
+                                      bool pixel_align, bool axis_aligned) {
     // 0x465280 开头：加绘制偏移（抖动）
     for (int i = 0; i < 4; ++i) {
         corners[i][0] = corners[i][0] + draw_offset_x_;
@@ -392,6 +402,7 @@ int AnmRenderer::submit_screen_corners(AnmVm& vm, const AnmRuntimeSprite& sprite
         corners[3][1] = corners[2][1];
     }
     for (int i = 0; i < 4; ++i) vm.drawn_corners[i] = {corners[i][0], corners[i][1], z};
+    if (!in_camera_viewport(corners, axis_aligned)) return 0;
 
     // UV：基 UV + 滚动，uv_scale 缩放宽 / 高分量。0x465480 起的次序是先舍入（滚动 + 基 UV），再加上（差 × 缩放）；
     // 写成 差 × 缩放 + 滚动 + 基 UV 会在个别帧差 1 ulp（第 1 面整段对拍里背景层的 V 坐标）
@@ -406,8 +417,6 @@ int AnmRenderer::submit_screen_corners(AnmVm& vm, const AnmRuntimeSprite& sprite
     v[2] = (uv[2].y - uv[0].y) * vm.uv_scale.y + (scroll.y + uv[0].y);
     u[3] = (uv[3].x - uv[2].x) * vm.uv_scale.x + (scroll.x + uv[2].x);
     v[3] = (uv[3].y - uv[1].y) * vm.uv_scale.y + (scroll.y + uv[1].y);
-
-    if (!in_camera_viewport(corners)) return 0;
 
     bind_sprite_texture(sprite);
     if (vertex_format_cache_ != VertexFormat::ScreenQuads) {

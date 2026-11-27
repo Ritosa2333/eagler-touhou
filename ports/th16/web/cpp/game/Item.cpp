@@ -123,7 +123,7 @@ Item* ItemManager::spawn(i32 type, const Vec3& pos, float angle, float speed, i3
         it->counter = 0;
         it->type = kind;
         spawn_effect(*it);
-        it->type_copy = 0;
+        it->offscreen_indicator = 0;
         if (anm != nullptr && kind >= 0 && kind <= 16) {
             bind_script(it->vm, kItemScripts[kind][0]);
             bind_script(it->vm2, kItemScripts[kind][1]);
@@ -143,7 +143,7 @@ Item* ItemManager::spawn(i32 type, const Vec3& pos, float angle, float speed, i3
     else it->counter = spawn_count % 32 + 0x10;
     it->state = 6;
     it->type = type;
-    it->type_copy = type;
+    it->offscreen_indicator = type;
     it->pos = pos;
     const Vec3 v = polar(angle, speed);
     it->velocity = {v.x, v.y, 0.0f};
@@ -602,7 +602,7 @@ void ItemManager::draw(AnmRenderer& renderer, bool season_pass) {
         it.vm2.entity_offset = it.pos;
         if (it.vm.pos.y >= -8.0f) {
             renderer.draw_vm(it.vm);
-            it.above_screen = 0;
+            it.offscreen_indicator = 0;
             continue;
         }
         if ((it.vm2.flags_lo & 1u) != 0) {
@@ -611,7 +611,7 @@ void ItemManager::draw(AnmRenderer& renderer, bool season_pass) {
             it.vm2.color[3] = (y + 8.0f < 32.0f) ? u8(i32((y + 8.0f) * 0.03125f * 255.0f)) : 0xff;
             renderer.draw_vm(it.vm2);
         }
-        it.above_screen = 1;
+        it.offscreen_indicator = 1;
     }
 }
 

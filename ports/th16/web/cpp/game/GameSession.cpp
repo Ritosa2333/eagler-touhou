@@ -84,6 +84,7 @@ bool GameSession::save_replay_slot(int slot, const char* player_name) {
 }
 
 bool GameSession::load_replay(const u8* bytes, u32 size) {
+    failure.clear();
     replay_file_loaded_ = false;
     replay_cursor_ = ReplayPlaybackCursor{};
     if (!replay_file_.open(bytes, size)) {
@@ -100,6 +101,27 @@ bool GameSession::load_replay_file(const char* path) {
         failure = replay_file_.error;
         return false;
     }
+    failure.clear();
+    return bind_loaded_replay_();
+}
+
+bool GameSession::load_title_demo(i32 index) {
+    char name[32];
+    std::snprintf(name, sizeof(name), "demo%d.rpy", index + 1);
+    ReplayFile candidate;
+    const auto playable = [&]() {
+        if (candidate.stages.empty()) return false;
+        const auto& first = candidate.stages.front();
+        return first.frames > 0 && first.stage >= 1 && first.stage <= 7;
+    };
+    std::vector<u8> bytes;
+    if (!(archive_.read(name, bytes) && candidate.open(bytes.data(), u32(bytes.size())) && playable())) {
+        const std::string nested = demo_directory + "/demo/" + name;
+        const std::string flat = demo_directory + "/" + name;
+        if (!(candidate.open_file(nested.c_str()) && playable()) &&
+            !(candidate.open_file(flat.c_str()) && playable())) return false;
+    }
+    replay_file_ = std::move(candidate);
     failure.clear();
     return bind_loaded_replay_();
 }
@@ -207,13 +229,46 @@ bool GameSession::load_anm(const char* name, AnmResource*& out) {
     return true;
 }
 
-bool GameSession::load_boot_banks() {
+// 0x42e7c0 / 0x42ef90: replace the help page texture with the original PNG.
+bool GameSession::load_help_page(i32 page) {
+    AnmResource* res = resource("help.anm");
+    if (res == nullptr || page < 0 || page >= 9) return false;
+    char name[32];
+    std::snprintf(name, sizeof(name), "help_%02d.png", page + 1);
+    std::vector<u8> bytes;
+    if (!archive_.read(name, bytes)) { failure = archive_.error; return false; }
+    for (u32 i = 0; i < res->entries.size(); ++i) {
+        if (res->entries[i].name != "@") continue;
+        if (!res->attach_external_texture(i, bytes.data(), u32(bytes.size()))) { failure = res->error; return false; }
+        // 0x46c8b0: D3DXLoadSurfaceFromFileInMemory(..., D3DX_FILTER_NONE).
+        auto& entry = res->entries[i];
+        auto& texture = entry.texture;
+        const u32 source_width = texture.width, source_height = texture.height;
+        std::vector<u8> pixels(size_t(entry.width) * entry.height * 4);
+        for (u32 y = 0; y < entry.height; ++y) for (u32 x = 0; x < entry.width; ++x) {
+            const u32 sx = u32((u64(x) * 2 + 1) * source_width / (u64(entry.width) * 2));
+            const u32 sy = u32((u64(y) * 2 + 1) * source_height / (u64(entry.height) * 2));
+            std::memcpy(pixels.data() + (size_t(y) * entry.width + x) * 4,
+                        texture.bgra.data() + (size_t(sy) * source_width + sx) * 4, 4);
+        }
+        texture.width = entry.width;
+        texture.height = entry.height;
+        texture.bgra = std::move(pixels);
+        return !on_loaded || on_loaded(*res);
+    }
+    failure = "help page texture missing";
+    return false;
+}
+
+bool GameSession::load_boot_banks(bool high_resolution_ascii) {
     AnmResource* ascii = nullptr;
     AnmResource* sig = nullptr;
-    // 0x407cb0 AsciiManager：ascii.anm → 槽 2，更新链 4 与三条按组绘制的链
-    if (!load_anm("ascii.anm", ascii)) return false;
-    AnmFile* ascii_file = animations.load(AnmManager::kAsciiSlot, *ascii);
-    if (ascii_file == nullptr) { failure = "ascii.anm load failed"; return false; }
+    // 0x407cb0 chooses the original ASCII atlas for the selected resolution.
+    // Only its first texture doubles in size. The Loading sprites use the same texture and geometry.
+    const bool use_detailed_atlas = high_resolution_ascii && archive_.find("ascii_1280.anm") >= 0;
+    if (!load_anm(use_detailed_atlas ? "ascii_1280.anm" : "ascii.anm", ascii)) return false;
+    AnmFile* ascii_file = animations.load(AnmManager::kAsciiSlot, *ascii, use_detailed_atlas ? 0.5f : 1.0f);
+    if (ascii_file == nullptr) { failure = "ASCII animation bank load failed"; return false; }
     this->ascii.window_scale = geometry.window_scale;
     this->ascii.create(animations, *ascii_file);
     ascii_update_chain_ = chains.create([this]() -> ChainResult {
@@ -266,6 +321,7 @@ bool GameSession::load_boot_banks() {
     // 速度不在这里抄：管理器的 game_speed 就是 Supervisor 的那一份（0x45f980 每次跑 VM 直接读 DAT_004a5788）
     ui_tick_chain_ = chains.create([this]() -> ChainResult {
         animations.tick_ui();
+        if (supervisor.title_menu_live) title.update_help_after_anm(animations, supervisor.input);
         return ChainResult::Continue;
     }, 9, true);
     chains.enable(ui_tick_chain_);
@@ -291,8 +347,8 @@ bool GameSession::load_boot_banks() {
     return true;
 }
 
-bool GameSession::begin_boot() {
-    if (!load_boot_banks()) return false;
+bool GameSession::begin_boot(bool high_resolution_ascii) {
+    if (!load_boot_banks(high_resolution_ascii)) return false;
 
     supervisor.boot_frames = 0;
     supervisor.current = SceneId::Boot;
@@ -346,7 +402,7 @@ bool GameSession::activate_title_menu() {
     if (title_file == nullptr || title_v_file == nullptr) { failure = "title banks missing"; return false; }
 
     // 0x44af80 case 0 → 0x44a560(1) → 0x44b5f0：标题对象在首次更新链调用时自行生成装饰/logo
-    title.activate(title_file, title_v_file, animations.file(AnmManager::kAsciiSlot), globals);
+    title.activate(animations, title_file, title_v_file, animations.file(AnmManager::kAsciiSlot), globals);
     title.bgm = &music;   // activate 重置了标题对象：乐曲 / 音效 / 游戏速度指针在此重挂
     title.sound = &sound;
     title.game_speed = &supervisor.game_speed;
@@ -375,9 +431,10 @@ bool GameSession::activate_title_menu() {
     title.on_transition_effect = [this]() {
         // 0x41a390 + 0x418ba0 + 0x46f0b0(..., 7)：Loading VM、过场种类 0、中断 7
         spawn_loading_vm(kLoadingVmPos);
-        globals.transition_effect_id = effects.attach(0, nullptr, {});
+        globals.transition_effect_id = effects.spawn_title_transition();
         animations.interrupt(globals.transition_effect_id, 7);
     };
+    title.load_help_page = [this](i32 page) { return load_help_page(page); };
     title.load_help_anm = [this]() -> AnmFile* {
         if (AnmFile* loaded = animations.file(0x13)) return loaded;
         AnmResource* res = nullptr;
@@ -453,13 +510,14 @@ bool GameSession::enter_ending(bool extra) {
         globals.title_origin = 3;  // → TitleScene 画面 0xe 名字输入
         supervisor.request(SceneId::Title);
         supervisor.current = supervisor.requested = SceneId::Title;
-        return enter_title_assets() && activate_title_menu();
+        return enter_title_assets();
     }
     leave_ending();
     // 0x4191f0：continues==0 → 偶下标；装 e0N.msg；成绩见过位；Loading VM ascii 0x11
     ending.animations = &animations;
     ending.text_paints = &text_into_texture;
     ending.load_ending_anm = [this](int slot, const char* name) -> AnmFile* {
+        spawn_loading_vm(kLoadingVmPos);
         AnmResource* res = nullptr;
         if (!load_anm(name, res) || res == nullptr) return nullptr;
         return animations.load(slot, *res);
@@ -507,13 +565,14 @@ bool GameSession::enter_ending(bool extra) {
     ending_draw_chain_ = chains.create([this]() -> ChainResult {
         (void)this;
         return ChainResult::Continue;
-    }, 0x43, true);
+    }, 0x43, false);
     chains.enable(ending_draw_chain_);
     supervisor.current = supervisor.requested = SceneId::Ending;
     return true;
 }
 
 void GameSession::leave_ending() {
+    if (ending_live) dismiss_loading_vm();
     if (ending_update_chain_) { chains.remove(ending_update_chain_); ending_update_chain_ = nullptr; }
     if (ending_draw_chain_) { chains.remove(ending_draw_chain_); ending_draw_chain_ = nullptr; }
     ending.destroy_line_vms(animations);
@@ -527,7 +586,7 @@ void GameSession::leave_title() {
     title_events.insert(title_events.end(), title.events.begin(), title.events.end());
     // 0x44ad20：析构时对落叶发射器（ascii.anm，+0x73c）interrupt 1，发射器与其子落叶在脚本 case 1 后自删
     animations.interrupt(title.vm[TitleScene::kLeafEmitter], 1);
-    title.close_help();
+    title.close_help(animations);
     title = TitleScene{};
     animations.kill_file(0x10);
     animations.kill_file(0x11);
@@ -589,14 +648,11 @@ bool GameSession::create_player() {
     if (mode == 2) {
         globals.lives = 0;
         globals.bombs = 0;
-        // 0x42cb60：符卡练习最高分取成绩块 +0x970 + replay_slot×0x9c（SpellRecord::high_score），续关位清零
-        const int spell = globals.replay_slot;
-        if (spell >= 0 && spell < ScoreFile::kSpellRecords)
-            globals.hiscore = i32(scores.blocks[globals.shot].spells[spell].high_score);
-        globals.hiscore_continues = 0;
+    } else if (mode == 0) {
+        globals.lives = 2;
+    } else {
+        globals.lives = globals.practice_lives == 0 ? 9 : globals.practice_lives - 1;
     }
-    else if (mode == 0) globals.lives = 2;
-    else globals.lives = globals.practice_lives == 0 ? 9 : globals.practice_lives - 1;
     // 剩余续关数（DAT_00492278 按难度：Extra 无续关）
     static constexpr i32 kContinues[6] = {5, 5, 5, 5, 0, 0};
     globals.continues_left = kContinues[diff];
@@ -608,6 +664,19 @@ bool GameSession::create_player() {
     static constexpr const char* kPlayerSubSht[5] = {"pl00sub.sht", "pl02sub.sht", "pl03sub.sht", "pl01sub.sht", "pl04sub.sht"};
     const int shot = globals.shot + globals.shot_aux;
     if (shot < 0 || shot > 3 || globals.season < 0 || globals.season > 4) { failure = "player shot/season out of range"; return false; }
+    // 0x42cc86：按开局模式读取本机体的榜首、练习关卡或符卡记录。
+    const ScoreBlock& records = scores.blocks[shot];
+    globals.hiscore_continues = 0;
+    if (mode == 0) {
+        globals.hiscore = i32(records.ranks[diff][0].score);
+        globals.hiscore_continues = records.ranks[diff][0].continues;
+    } else if (mode == 2) {
+        const int spell = globals.replay_slot;
+        if (spell >= 0 && spell < ScoreFile::kSpellRecords)
+            globals.hiscore = i32(records.spells[spell].high_score);
+    } else {
+        globals.hiscore = i32(records.practice[diff * 8 + stage_entry(globals.stage).index].score);
+    }
     AnmResource* pl_res = nullptr;
     AnmResource* sub_res = nullptr;
     if (!load_anm(kPlayerAnm[shot], pl_res)) return false;
@@ -927,7 +996,9 @@ void GameSession::register_game_chains() {
     game.system_input = &supervisor.input;
     game.config_flags = &config_flags;
     game.scores = &scores;
-    game.on_screen_fade = [this](i32 kind, i32 duration, u32 color) { create_screen_fade(kind, duration, color); };
+    game.on_screen_fade = [this](i32 kind, i32 duration, u32 color, i32 draw_priority) {
+        create_screen_fade(kind, duration, color, draw_priority);
+    };
     game.on_return_to_title = [this]() { if (menu_live) menu.open_return_to_title(); };
     game.on_frame_advanced = [this]() { compositor.tick(animations); };
     game.music = &music;
@@ -950,6 +1021,14 @@ void GameSession::mark_stage_reached() {
     // 0x42cb60 开头：GameManager+0xac == 0 的装载即置该关练习到达位（+0x519d）
     if (game.mode != 0) return;
     scores.mark_practice_reached(globals.shot + globals.shot_aux, globals.difficulty, globals.stage);
+}
+
+void GameSession::prepare_stage_bgm() {
+    // 0x42cb60：演示保留标题曲；其它模式在加载关卡时重置道中曲和 Boss 曲槽。
+    if ((globals.flags & 0x40u) != 0) return;
+    if ((globals.flags & 0x30u) != 0x20u) music.stop_track();
+    music.register_track(0, game.entry->bgm_name);
+    music.register_track(1, game.entry->bgm_boss_name);
 }
 
 bool GameSession::enter_game(i32 replay_mode) {
@@ -984,12 +1063,7 @@ bool GameSession::enter_game(i32 replay_mode) {
     globals.new_game = true;
     if (!create_player()) return false;
     if (!create_stage()) return false;
-    // 0x42cb60：非演示时 0x43c440 停曲（符卡练习除外），再以 0x43c370 把关卡曲 / Boss 曲登记到槽 0 / 1
-    if ((globals.flags & 0x40u) == 0) {
-        if ((globals.flags & 0x30u) != 0x20u) music.stop_track();
-        music.register_track(0, game.entry->bgm_name);
-        music.register_track(1, game.entry->bgm_boss_name);
-    }
+    prepare_stage_bgm();
 
     // 0x411dd0：BulletManager（bullet.anm 槽 7、effect.anm 槽 8）；更新链 0x1c（0x411880）、绘制链 0x25（0x411a30）
     {
@@ -1204,6 +1278,8 @@ bool GameSession::restart_game(SceneId reason, i32 replay_mode) {
     }
     leave_game();
     globals.stage = globals.stage_copy;
+    // 0x447760 selects the segment after 0x43ce10 restores the recording's starting stage.
+    if (replay_mode == 1 && replay_file_loaded_) bind_loaded_replay_();
     return enter_game(replay_mode);
 }
 
@@ -1212,6 +1288,12 @@ void GameSession::spawn_loading_vm(const Vec3& pos) {
     if (game.loading_vm != 0) return;
     if (AnmFile* ascii = animations.file(AnmManager::kAsciiSlot))
         game.loading_vm = animations.spawn_effect(*ascii, 0x11, -1, pos, 0.0f);
+}
+
+void GameSession::dismiss_loading_vm() {
+    if (game.loading_vm == 0) return;
+    animations.interrupt(game.loading_vm, 1);
+    game.loading_vm = 0;
 }
 
 bool GameSession::next_stage() {
@@ -1302,6 +1384,7 @@ bool GameSession::next_stage() {
     }
     if (!create_stage()) return false;
     if ((globals.flags & 9u) == 0 && !create_enemies()) return false;
+    prepare_stage_bgm();
     create_bombs();
     game.gui.bomb = game.bombs.main();
     bind_spellcard();
@@ -1450,11 +1533,11 @@ void GameSession::clear_screen_shake() {
 // 0x45d150 / 0x45d1a0 及其内联副本（0x40c0d0 / 0x409f90 / 0x4199f0）：更新链 0x13 + 绘制链
 //   kind 2 / 3（换关淡出 / 新关淡入）：绘制 0x45c990，优先级 0xa —— 紧跟关卡背景链 3 之后、层 3 绘制链之前，
 //     画进场地渲染目标，不改视口
-//   kind 0 / 5（结局 / 过关结束）：绘制 0x45c860，优先级 0x54 —— 先把视口拉成整幅后备缓冲再画
+//   kind 0 / 5：绘制 0x45c860，先把视口拉成整幅后备缓冲再画；默认优先级 0x54，演示退场为 0x33
 //   kind 4：绘制 0x45ccc0（场地矩形），优先级取 param_6，移植侧默认 0xa
 //   kind 6 / 9：绘制 0x45cb50；kind 7：绘制 0x45cba0 固定 (128,16)-(512,464)；优先级 0x54
 // 0x45d130：更新链自删时连同绘制链一起摘除
-void GameSession::create_screen_fade(i32 kind, i32 duration, u32 color) {
+void GameSession::create_screen_fade(i32 kind, i32 duration, u32 color, i32 draw_priority) {
     auto fade = std::make_shared<ScreenFade>();
     fade->kind = kind;
     fade->duration = duration;
@@ -1475,7 +1558,9 @@ void GameSession::create_screen_fade(i32 kind, i32 duration, u32 color) {
     const bool fade_from_aux = kind == 4;
     const bool fade_half = kind == 6 || kind == 7;
     const bool reset_viewport = kind == 0 || kind == 5;
-    const i32 draw_priority = (kind == 0 || kind == 5 || kind == 6 || kind == 7 || kind == 9) ? 0x54 : 0x0a;
+    if (draw_priority < 0) {
+        draw_priority = (kind == 0 || kind == 5 || kind == 6 || kind == 7 || kind == 9) ? 0x54 : 0x0a;
+    }
     ChainEntry* draw = chains.create([this, fade, reset_viewport, kind]() -> ChainResult {
         if (renderer.device == nullptr) return ChainResult::Continue;
         const float width = float(animations.render_target_width), height = float(animations.render_target_height);
@@ -1509,7 +1594,8 @@ void GameSession::create_screen_fade(i32 kind, i32 duration, u32 color) {
         } else if (fade_in) {
             alive = screen_fade_in_step(*fade, globals.post_load_frames, supervisor.game_speed);
         } else {
-            const bool frozen = ((game.flags | (game.flags >> 2)) & 1u) != 0;
+            // 0x45c95a only checks the freeze flags when the GameManager exists.
+            const bool frozen = game_live && ((game.flags | (game.flags >> 2)) & 1u) != 0;
             alive = screen_fade_step(*fade, globals.post_load_frames, frozen, supervisor.game_speed);
         }
         return alive ? ChainResult::Continue : ChainResult::Destroy;
@@ -1632,8 +1718,15 @@ void GameSession::leave_game() {
     // 留给下一局沿用（0x42cb60 以 0x42ca00 接手）；Loading VM 属 AsciiManager，不随 GameManager 消失
     const bool keep_enemies = (globals.flags & 9u) != 0 && game.enemies_live;
     const u32 loading_vm = game.loading_vm;
+    if (game.enemies_live) {
+        if (keep_enemies) game.enemies.reset();
+        else game.enemies.destroy();
+    }
+    // 0x42d596：标删关卡的 effect / bullet VM，避免关卡动画画进下一场景。
+    animations.kill_file(8);
+    animations.kill_file(BulletManager::kBulletAnmSlot);
+    spellcard.destroy();
     if (keep_enemies) {
-        game.enemies.reset();
         EnemyManager retained = std::move(game.enemies);
         game = GameManager{};
         game.enemies = std::move(retained);
@@ -1681,6 +1774,7 @@ void GameSession::create_menu() {
     // 0x42e760：help.anm → 槽 0x13（原版由装载线程异步完成；这里同步装入）
     menu.ctx.accumulate_play_time = [this]() { accumulate_play_time(); };
     menu.ctx.restart_play_clock = [this]() { restart_play_clock(); };
+    menu.ctx.load_help_page = [this](i32 page) { return load_help_page(page); };
     menu.ctx.load_help_anm = [this]() -> AnmFile* {
         if (AnmFile* loaded = animations.file(0x13)) return loaded;
         AnmResource* res = nullptr;
@@ -1747,13 +1841,26 @@ bool GameSession::logic_step() {
         supervisor.request(SceneId(globals.scene_request));
         globals.scene_request = -1;
     }
+    bool demo_loaded = false;
+    if (supervisor.current == SceneId::Title && supervisor.requested == SceneId::PracticeFromTitle &&
+        title.pending_demo >= 0 && title.pending_replay_path.empty()) {
+        // 演示录像是可选资源。先加载，再切走标题，失败时本帧仍处理标题输入。
+        demo_loaded = load_title_demo(title.pending_demo);
+        if (!demo_loaded) {
+            supervisor.request(SceneId::Title);
+            title.pending_demo = -1;
+            globals.flags &= ~0x40u;
+        }
+    }
     SceneId leave = SceneId::Invalid, enter = SceneId::Invalid;
     if (supervisor.consume_switch(leave, enter)) {
-        // 0x43ce10 case 0xd 需要在 leave_title 前抄出 demo 下标 / 选中的回放路径
-        const i32 pending_demo = (leave == SceneId::Title) ? title.pending_demo : -1;
+        // 0x43ce10 case 0xd 需要在 leave_title 前抄出选中的回放路径
         const std::string pending_replay = (leave == SceneId::Title) ? title.pending_replay_path : std::string{};
         const i32 pending_replay_stage = (leave == SceneId::Title) ? title.replay_stage_choice : 0;
         if (leave == SceneId::Title && enter != SceneId::PracticeFromTitle) leave_title();
+        // 0x42d2a5: the game opens Loading while the title thread is being prepared.
+        if (leave == SceneId::Game && (enter == SceneId::Title || enter == SceneId::ExtraEnding))
+            spawn_loading_vm(kLoadingVmPos);
         if (enter == SceneId::Title && !enter_title_assets()) return false;
         if (enter == SceneId::NextStage) {
             // 0x43ce10 case 0xc：GameManager 销毁 / 重建后场景仍为 7
@@ -1766,19 +1873,10 @@ bool GameSession::logic_step() {
             supervisor.current = supervisor.requested = SceneId::Game;
         } else if (enter == SceneId::PracticeFromTitle) {
             // 0x43ce10 case 0xd：标题 demo / Replay 选槽 / 练习进游戏，0x42d700(1)
-            bool loaded = false;
+            bool loaded = demo_loaded;
             if (!pending_replay.empty()) {
                 loaded = load_replay_file(pending_replay.c_str());
                 if (!loaded) return false;
-            } else if (pending_demo >= 0 && !demo_directory.empty()) {
-                char path[512];
-                std::snprintf(path, sizeof(path), "%s/demo/demo%d.rpy", demo_directory.c_str(), pending_demo + 1);
-                if (!load_replay_file(path)) {
-                    // artifacts/th16/dat 扁平布局：demo1.rpy 与 th16.dat 同级
-                    std::snprintf(path, sizeof(path), "%s/demo%d.rpy", demo_directory.c_str(), pending_demo + 1);
-                    if (!load_replay_file(path)) return false;
-                }
-                loaded = true;
             }
             if (loaded) apply_replay_start(pending_replay.empty() ? -1 : pending_replay_stage);
             if (leave == SceneId::Title) leave_title();
@@ -1805,6 +1903,8 @@ bool GameSession::logic_step() {
         }
     }
 
+    // 0x41a310：动画装载在帧间完成，先撤掉 Loading 再推进结局剧本。
+    if (ending_live && ending.finish_animation_load()) dismiss_loading_vm();
     // 启动幕：绘制链推进 boot_frames；标题线程等待条件（0x44abea / 0x44ac00）
     chains.run_update();
     // 0x45a9f0 族：更新链后 0x417bc0 符卡实时计时 / 0x4262f0 FPS 测速

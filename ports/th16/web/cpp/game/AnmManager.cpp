@@ -107,7 +107,7 @@ void AnmManager::init_pool() {
     }
 }
 
-AnmFile* AnmManager::load(int slot, const AnmResource& resource) {
+AnmFile* AnmManager::load(int slot, const AnmResource& resource, float first_entry_sprite_scale) {
     auto f = std::make_unique<AnmFile>();
     f->slot = slot;
     f->resource = &resource;
@@ -127,17 +127,19 @@ AnmFile* AnmManager::load(int slot, const AnmResource& resource) {
         f->texture_height.push_back(tex_h);
         const float ratio_x = float(tex_w) / float(entry_w);
         const float ratio_y = float(tex_h) / float(entry_h);
+        // Keep a denser atlas's UVs while converting its sprite dimensions to logical pixels.
+        const float sprite_scale = e == 0 ? first_entry_sprite_scale : 1.0f;
         for (const AnmSprite& s : entry.sprites) {
             AnmRuntimeSprite r;
             r.file_slot = slot;
             r.entry_index = i32(e);
             r.key = i32((u32(slot) << 8) | e);
-            r.x0 = s.x * ratio_x;
-            r.y0 = s.y * ratio_y;
-            r.x1 = (s.w + s.x) * ratio_x;
-            r.y1 = (s.h + s.y) * ratio_y;
-            r.tex_h = float(tex_h);
-            r.tex_w = float(tex_w);
+            r.x0 = (s.x * ratio_x) * sprite_scale;
+            r.y0 = (s.y * ratio_y) * sprite_scale;
+            r.x1 = ((s.w + s.x) * ratio_x) * sprite_scale;
+            r.y1 = ((s.h + s.y) * ratio_y) * sprite_scale;
+            r.tex_h = float(tex_h) * sprite_scale;
+            r.tex_w = float(tex_w) * sprite_scale;
             r.ratio_x = ratio_x;
             r.ratio_y = ratio_y;
             r.u0 = r.x0 / r.tex_w;

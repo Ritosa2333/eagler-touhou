@@ -22,10 +22,12 @@ struct GameGlobals {
     // 0x42cb60 练习初始残机 = 非零 ? 其值-1 : 9
     i32 practice_lives = 0;
     i32 demo_saved_difficulty = 0;// DAT_004a59c0：idle demo 触发时保存，回标题还原
+    i32 next_demo_index = 0;      // DAT_004a5bf4：跨标题与回放场景保留的轮播位置
     i32 spell_return_group = -1; // DAT_004a2970：符卡练习返回时还原的分组（0x4553d0 读后置 -1）
     i32 spell_return_list = -1;  // DAT_0049f2dc：…列表槽（0x455900）
     i32 spell_return_entry = -1; // DAT_0049f2d8：…条目（0x456a20）
     i32 title_origin = 0;        // DAT_004a6f1c：进入标题的来源（0 首次 1 正常 2 Replay 结束 4 练习返回 5 符卡练习返回）
+    i32 title_replay_slot = 0;   // DAT_004a6f28：回放结束后恢复到此前选中的列表槽位
     i32 stage_table = 0;         // DAT_004a6f18：0 = &DAT_004a23a4 普通关卡表，1 = &DAT_004a289c Extra 表（按季节表时另记）
     i32 scene_request = -1;      // DAT_004c17c4：Supervisor 场景请求（7 = Game）
     bool new_game = false;       // DAT_004c17d0：0x43ce10 case 7 进游戏时置 1、case 0xc 换关时清 0（HUD 面板 / 难度牌只在新开局建）

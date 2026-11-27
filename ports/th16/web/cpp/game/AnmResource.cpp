@@ -1,5 +1,11 @@
 #include "AnmResource.hpp"
 
+#define STB_IMAGE_STATIC
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#define STBI_NO_STDIO
+#include "../../../portable/sdl/third_party/stb_image.h"
+
 namespace th16 {
 namespace {
 
@@ -152,7 +158,19 @@ bool AnmResource::parse(const u8* bytes, u32 size, const char* file_name) {
 
 bool AnmResource::attach_external_texture(u32 index, const u8* bytes, u32 size) {
     if (index >= entries.size()) { error = "entry index out of range"; return false; }
-    return decode_thtx(bytes, size, entries[index].texture, error);
+    if (size >= 4 && std::memcmp(bytes, "THTX", 4) == 0)
+        return decode_thtx(bytes, size, entries[index].texture, error);
+    int width = 0, height = 0, channels = 0;
+    u8* rgba = stbi_load_from_memory(bytes, int(size), &width, &height, &channels, 4);
+    if (rgba == nullptr) { error = "external PNG decode failed"; return false; }
+    auto& texture = entries[index].texture;
+    texture.width = u16(width);
+    texture.height = u16(height);
+    texture.format = 1;
+    texture.bgra.assign(rgba, rgba + size_t(width) * height * 4);
+    stbi_image_free(rgba);
+    for (size_t i = 0; i < texture.bgra.size(); i += 4) std::swap(texture.bgra[i], texture.bgra[i + 2]);
+    return true;
 }
 
 }  // namespace th16

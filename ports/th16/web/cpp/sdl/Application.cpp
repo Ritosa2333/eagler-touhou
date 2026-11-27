@@ -36,6 +36,9 @@ void Application::sample_input() {
     u32 held = touch_controls.input_bits();
     u32 buttons = 0;
 #if defined(__EMSCRIPTEN__) || defined(TH16_HAS_SDL)
+#ifndef __EMSCRIPTEN__
+    // Browser keys have one owner: the DOM/launcher bridge. SDL may retain a
+    // pre-launch keydown whose keyup the bridge consumes, masking later edges.
     int n = 0;
     if (const bool* physical = SDL_GetKeyboardState(&n)) {
         for (int i = 0; i < n && i < SDL_SCANCODE_COUNT; ++i) {
@@ -44,6 +47,7 @@ void Application::sample_input() {
             if (di >= 0) keys[di] = 0x80;
         }
     }
+#endif
     if (gamepad == nullptr) {
         int count = 0;
         if (SDL_JoystickID* ids = SDL_GetGamepads(&count)) {
@@ -143,11 +147,12 @@ bool Application::initialize(const char* archive_path) {
         std::fprintf(stderr, "th16: audio disabled: %s\n", audio.error.c_str());
     }
     session.on_loaded = [this](AnmResource& res) -> bool {
+        graphics.unload(res);
         if (!graphics.preload(res)) { failure = graphics.error; session.failure = graphics.error; return false; }
         return true;
     };
 
-    if (!session.begin_boot()) { failure = session.failure; return false; }
+    if (!session.begin_boot(GraphicsDevice::kRenderScale == 2)) { failure = session.failure; return false; }
     initialized = true;
     return true;
 }
