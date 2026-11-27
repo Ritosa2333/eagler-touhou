@@ -225,17 +225,17 @@
   }
   .book-recent-link .book-art > :is(img, .book-cover-fallback) {
     transition:
-      transform 480ms cubic-bezier(0.22, 0.7, 0.2, 1),
+      transform var(--ui-micro-duration) var(--ui-micro-easing),
       filter 300ms ease;
   }
   @media (max-width: 780px) {
     .book-recent-link:focus-visible .book-art > :is(img, .book-cover-fallback) {
-      transform: scale(1.07);
+      transform: scale(1.025);
     }
   }
   @media (max-width: 780px) and (hover: hover) and (pointer: fine) {
     .book-recent-link:hover .book-art > :is(img, .book-cover-fallback) {
-      transform: scale(1.07);
+      transform: scale(1.025);
     }
   }
   .book-view-header {
@@ -317,8 +317,8 @@
     border-radius: 9px;
     background: var(--kit-card);
     transition:
-      transform 480ms cubic-bezier(0.2, 0.65, 0.25, 1),
-      box-shadow 480ms cubic-bezier(0.2, 0.65, 0.25, 1);
+      transform var(--ui-micro-duration) var(--ui-micro-easing),
+      box-shadow var(--ui-micro-duration) var(--ui-micro-easing);
   }
   @media (pointer: coarse) {
     :is(.book-game-link, .book-recent-link) {
@@ -821,19 +821,19 @@
   :is(.book-recent-link, .book-category-games .book-rail-game)
     > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
   .book-category-games :is(.book-lobby-sidebar-check, .book-favorite > svg) {
-    transition: translate 0.48s cubic-bezier(0.22, 0.7, 0.2, 1);
+    transition: translate var(--ui-micro-duration) var(--ui-micro-easing);
   }
   :is(.book-recent-link, .book-category-games .book-rail-game):focus-visible
     > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
   .book-category-games li:has(> :focus-visible) :is(.book-lobby-sidebar-check, .book-favorite > svg) {
-    translate: 3px 0;
+    translate: var(--ui-micro-nudge) 0;
   }
 }
 @media (min-width: 781px) and (hover: hover) and (pointer: fine) {
   :is(.book-recent-link:hover, .book-category-games li:hover > .book-rail-game)
     > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
   .book-category-games li:hover :is(.book-lobby-sidebar-check, .book-favorite > svg) {
-    translate: 3px 0;
+    translate: var(--ui-micro-nudge) 0;
   }
   .book-category-games li:hover > .book-rail-game {
     background: var(--kit-accent);
@@ -881,7 +881,7 @@
 @media (hover: hover) and (pointer: fine) {
   .book-card:hover {
     z-index: 1;
-    transform: translateY(-4px) scale(1.025);
+    transform: translateY(calc(-1 * var(--ui-micro-nudge)));
     box-shadow: 0 8px 22px #00000024;
   }
 }

@@ -8,40 +8,35 @@
     body:not(.less-motion) .masthead-inbox-action:is(:focus-visible,:active,[data-state="open"],:hover) {
       &[data-inbox-section="announcements"] > svg {
         transform-origin:45% 66%;
-        animation:masthead-megaphone-call calc(var(--ui-feedback-duration) * 3) var(--ui-feedback-easing);
+        animation:masthead-megaphone-call var(--ui-micro-duration) var(--ui-micro-easing);
       }
       &[data-inbox-section="announcements"]::before {
         content:"";position:absolute;inset:12px 6px auto auto;width:6px;height:11px;
         border-inline-end:1.5px solid currentColor;border-radius:0 65% 65% 0;pointer-events:none;
-        animation:masthead-megaphone-wave calc(var(--ui-feedback-duration) * 3) var(--ui-feedback-easing) both;
+        animation:masthead-megaphone-wave var(--ui-micro-duration) var(--ui-micro-easing) both;
       }
       &[data-inbox-section="messages"] > svg {
-        animation:masthead-mail-lift calc(var(--ui-feedback-duration) * 3) var(--ui-feedback-easing);
+        animation:masthead-mail-lift var(--ui-micro-duration) var(--ui-micro-easing);
       }
       &[data-inbox-section="messages"] > svg > path {
         transform-origin:50% 7px;
-        animation:masthead-mail-flap calc(var(--ui-feedback-duration) * 3) var(--ui-feedback-easing);
+        animation:masthead-mail-flap var(--ui-micro-duration) var(--ui-micro-easing);
       }
     }
   }
   @keyframes masthead-megaphone-call {
-    30% {rotate:-17deg}
-    56% {rotate:-7deg}
-    75% {rotate:-12deg}
+    35% {rotate:calc(-1 * var(--ui-micro-tilt))}
   }
   @keyframes masthead-megaphone-wave {
-    0%,100% {opacity:0;transform:translateX(-2px) scale(.6)}
-    45% {opacity:.8;transform:translateX(1px) scale(1)}
-    82% {opacity:0;transform:translateX(4px) scale(1.2)}
+    from {opacity:0;translate:0 0}
+    42% {opacity:.65}
+    to {opacity:0;translate:var(--ui-micro-offset) 0}
   }
   @keyframes masthead-mail-lift {
-    38%,62% {translate:0 -2px}
-    85% {translate:0 1px}
+    42% {translate:0 calc(-1 * var(--ui-micro-nudge))}
   }
   @keyframes masthead-mail-flap {
-    24% {scale:1 .1}
-    42%,60% {scale:1 -.75}
-    77% {scale:1 .1}
+    46% {scale:1 .78}
   }
   .masthead-inbox-panel {
     z-index:var(--ui-layer-popup);width:min(392px,calc(100vw - 24px));max-height:var(--radix-popover-content-available-height);

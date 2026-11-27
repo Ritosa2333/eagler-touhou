@@ -21,6 +21,8 @@ try {
     return {
       images:images.map(image => image.src),
       motion:images.map(image => getComputedStyle(image).animationName),
+      faceHop:getComputedStyle(images[0]).getPropertyValue('--loading-hop').trim(),
+      dotHop:getComputedStyle(dots[0]).getPropertyValue('--loading-hop').trim(),
       crops:images.map(image => [getComputedStyle(image).objectFit, getComputedStyle(image).objectPosition]),
       delays:images.map(image => getComputedStyle(image).animationDelay),
       dots:dots.map(dot => [dot.textContent, getComputedStyle(dot).animationName, getComputedStyle(dot).animationDelay]),
@@ -35,6 +37,7 @@ try {
   const first = await snapshot();
   assert.equal(new Set(first.images).size,4);
   assert.deepEqual(first.motion,Array(4).fill('ui-loading-hop'));
+  assert.deepEqual([first.faceHop,first.dotHop],['-4px','-2px'],'loading faces and dots keep their stagger without a large jump');
   assert.deepEqual(first.crops,Array(4).fill(['cover','0% 50%']),'the avatar is cropped out of its wordmark SVG');
   assert.deepEqual(first.delays,['0s','0.3s','0.6s','0.9s']);
   assert.deepEqual(first.dots,first.delays.slice(0,3).map(delay => ['.','ui-loading-hop',delay]));

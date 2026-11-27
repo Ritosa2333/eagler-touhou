@@ -2,6 +2,7 @@ import {BookButton} from '../launcher/BookButton';
 import {useLocale} from '../../i18n';
 import {useLayoutEffect, useRef} from 'react';
 import {KeyRound, Plus} from 'lucide-react';
+import {playIconFeedback} from '../../ui/micro-motion';
 
 /** Shared original lobby.html room actions, including its disabled boot state. */
 export function LobbyRoomTools({disabled, loading = false, onCreate, onJoin, onRefresh}: {
@@ -17,11 +18,7 @@ export function LobbyRoomTools({disabled, loading = false, onCreate, onJoin, onR
     <BookButton variant="action" className={`${buttonClass} lobby-secondary`} id="codeButton" type="button" disabled={disabled}
       aria-label={t('lobby.byCode')} title={t('lobby.byCode')} onClick={onJoin}><KeyRound aria-hidden="true"/><span>{t('lobby.byCode')}</span></BookButton>
     <BookButton variant="action" size="icon" className="lobby-button lobby-refresh" id="refreshRooms" type="button" aria-label={t('lobby.refresh')} aria-busy={loading} data-loading={loading} onClick={event=>{
-      const button=event.currentTarget, icon=button.querySelector('svg');
-      if (icon && !loading && !button.closest('.less-motion') && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        clickAnimation.current?.cancel();
-        clickAnimation.current = icon.animate([{transform:'rotate(0deg)'},{transform:'rotate(360deg)'}],{duration:650,easing:'cubic-bezier(.22,.7,.2,1)'});
-      }
+      if (!loading) clickAnimation.current = playIconFeedback(event.currentTarget, 'refresh') ?? null;
       onRefresh?.();
     }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.16 7v5h-5M20 12a8 8 0 1 0-2.3 5.7"/></svg></BookButton>
   </>;

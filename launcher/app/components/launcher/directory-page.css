@@ -128,7 +128,7 @@
 @media(prefers-reduced-motion:reduce) {.book-directory .lobby-refresh[data-loading='true'] svg {animation:none}}
 .less-motion .book-directory .lobby-refresh[data-loading='true'] svg {animation:none}
 .less-motion .book-lobby-check,.less-motion .book-lobby-check svg {transition:none}
-.book-lobby-icon > .book-lobby-cover {transition:scale 380ms cubic-bezier(.22,.7,.2,1)}
-.book-lobby-icon:is(:hover,:focus-visible):not(:disabled) > .book-lobby-cover {scale:1.06}
+.book-lobby-icon > .book-lobby-cover {transition:scale var(--ui-micro-duration) var(--ui-micro-easing)}
+.book-lobby-icon:is(:hover,:focus-visible):not(:disabled) > .book-lobby-cover {scale:1.035}
 @media(prefers-reduced-motion:reduce) {.book-lobby-icon > .book-lobby-cover {transition:none;scale:none}}
 .less-motion .book-lobby-icon > .book-lobby-cover {transition:none;scale:none}

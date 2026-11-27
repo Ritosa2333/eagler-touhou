@@ -7,7 +7,7 @@
   }
   .loading-activity {
     --loading-face-size: clamp(32px, 7vmin, 48px);
-    --loading-hop: -8px;
+    --loading-hop: -4px;
     display: grid;
     justify-items: center;
     gap: 14px;
@@ -23,7 +23,7 @@
     object-fit: cover;
     object-position: left center;
   }
-  .loading-activity-dots {display:inline-flex;vertical-align:baseline;--loading-hop:-3px;}
+  .loading-activity-dots {display:inline-flex;vertical-align:baseline;--loading-hop:-2px;}
   :is(.loading-activity-faces img, .loading-activity-dots > span) {
     animation: ui-loading-hop 1.65s ease-in-out infinite;
   }
@@ -42,7 +42,7 @@
   }
   .loading-activity[data-compact] {
     --loading-face-size: 22px;
-    --loading-hop: -4px;
+    --loading-hop: -3px;
     grid-template-columns: auto minmax(0, 1fr);
     align-items:center;justify-items:start;gap:6px 12px;text-align:start;
   }

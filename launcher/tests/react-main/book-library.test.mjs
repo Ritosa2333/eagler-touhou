@@ -24,6 +24,7 @@ before(async () => {
     export * from './app/components/launcher/book-preferences.ts';
     export {LocaleProvider} from './app/i18n.tsx';
     export {createLibraryProducts} from './app/components/launcher/products.ts';
+    export {microReorderFrames} from './app/ui/micro-motion.ts';
   `}, outfile, bundle: true, packages: 'external', platform: 'node', format: 'esm', jsx: 'automatic', logLevel: 'silent', plugins: [authoredSourcesPlugin(project)]});
   api = await import(pathToFileURL(outfile).href);
 });
@@ -41,6 +42,15 @@ const click = selector => React.act(async () => {
   await new Promise(resolve=>setTimeout(resolve,0));
 });
 const ids = () => [...env.document.querySelectorAll('.book-grid [data-book-product]')].map(node => node.dataset.bookProduct);
+test('reordering keeps a short directional nudge even for a large layout change', () => {
+  const [start, end] = api.microReorderFrames(120, -160);
+  const [x, y] = start.translate.split(' ').map(value => Number.parseFloat(value));
+  assert.ok(Math.abs(Math.hypot(x, y) - 6) < 1e-8);
+  assert.ok(x > 0 && y < 0);
+  assert.equal(start.opacity, .78);
+  assert.deepEqual(end, {translate:'0px 0px', opacity:1});
+  assert.deepEqual(api.microReorderFrames(3, 4)[0], {translate:'3px 4px'});
+});
 test('multiplayer game picker and covers share selection while favorites persist and sort first', async () => {
   const products=api.createLibraryProducts(['th06mp','th07mp','th08mp'],p=>p,id=>'?game='+id);
   function Fixture(){const[filters,setFilters]=React.useState([]);return React.createElement(api.BookDirectoryGames,{products,productFilters:filters,viewingProduct:'',onProductFiltersChange:setFilters,onSelect(){assert.fail('Filtering does not open game options');}});}

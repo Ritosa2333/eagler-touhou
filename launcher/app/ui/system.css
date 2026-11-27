@@ -23,6 +23,11 @@
   --ui-radius: 7px;
   --ui-feedback-duration: 140ms;
   --ui-feedback-easing: cubic-bezier(0.2, 0, 0, 1);
+  --ui-micro-nudge: 1px;
+  --ui-micro-offset: 3px;
+  --ui-micro-tilt: 6deg;
+  --ui-micro-duration: 240ms;
+  --ui-micro-easing: cubic-bezier(.22, .7, .2, 1);
   --ui-surface-duration: 180ms;
   --ui-surface-easing: cubic-bezier(0.2, 0, 0, 1);
   --ui-font: var(--kit-font);

@@ -100,13 +100,21 @@ async function assertInboxMotion(page) {
   const messages = action('messages');
   const animation = (selector, pseudo = null) => page.$eval(selector,
     (node, pseudo) => getComputedStyle(node, pseudo).animationName, pseudo);
+  const peak = (selector, offset, property) => page.$eval(selector, (node, {offset,property}) => {
+    const effect = node.getAnimations().find(item => item instanceof CSSAnimation);
+    effect.currentTime = effect.effect.getTiming().duration * offset;
+    return getComputedStyle(node)[property];
+  }, {offset,property});
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);
   await page.hover(announcements);
   assert.equal(await animation(`${announcements} > svg`), 'masthead-megaphone-call');
   assert.equal(await animation(announcements, '::before'), 'masthead-megaphone-wave');
+  assert.equal(await peak(`${announcements} > svg`, .35, 'rotate'), '-6deg');
   await page.hover(messages);
   assert.equal(await animation(`${messages} > svg`), 'masthead-mail-lift');
   assert.equal(await animation(`${messages} > svg > path`), 'masthead-mail-flap');
+  assert.equal(await peak(`${messages} > svg`, .42, 'translate'), '0px -1px');
+  assert.equal(await peak(`${messages} > svg > path`, .46, 'scale'), '1 0.78');
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
   assert.equal(await animation(`${messages} > svg`), 'none');
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);

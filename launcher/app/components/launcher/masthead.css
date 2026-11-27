@@ -242,8 +242,8 @@
   .masthead-trailing > .masthead-action {display:none}
 }
 
-.book-masthead .book-theme-toggle svg {rotate:0deg;transition:rotate 500ms cubic-bezier(.2,.65,.25,1)}
-@media (hover:hover) and (pointer:fine) {.book-masthead .book-theme-toggle:not(:disabled):hover svg {rotate:15deg}}
+.book-masthead .book-theme-toggle svg {rotate:0deg;transition:rotate var(--ui-micro-duration) var(--ui-micro-easing)}
+@media (hover:hover) and (pointer:fine) {.book-masthead .book-theme-toggle:not(:disabled):hover svg {rotate:var(--ui-micro-tilt)}}
 @media (prefers-reduced-motion:reduce) {.book-masthead .book-theme-toggle svg {transition:none;rotate:none!important}}
 .less-motion .book-masthead .book-theme-toggle svg {transition:none;rotate:none!important}
 
@@ -347,23 +347,22 @@
   transform-origin: center;
 }
 @media (hover:hover) and (pointer:fine) {
-  .book-masthead .book-top-donation:is(:hover,:focus-visible):not(:disabled) > svg {animation: masthead-heartbeat 800ms ease-in-out both}
+  .book-masthead .book-top-donation:is(:hover,:focus-visible):not(:disabled) > svg {animation: masthead-heartbeat calc(var(--ui-micro-duration) * 1.75) ease-in-out both}
 }
-@keyframes masthead-heartbeat {0%, 100% {transform:scale(1)} 25% {transform:scale(1.18)} 45% {transform:scale(1)} 65% {transform:scale(1.12)}}
+@keyframes masthead-heartbeat {0%, 45%, 100% {scale:1} 24% {scale:1.08} 67% {scale:1.04}}
 .book-top-faq .book-faq-question {
   transform-box: fill-box;
   transform-origin: center bottom;
 }
-.book-top-faq:focus-visible .book-faq-question {animation: masthead-faq-hop 460ms ease-in-out}
+.book-top-faq:focus-visible .book-faq-question {animation: masthead-faq-hop var(--ui-micro-duration) ease-in-out}
 @media (hover: hover) and (pointer: fine) {
-  .book-top-faq:hover .book-faq-question {animation: masthead-faq-hop 460ms ease-in-out}
+  .book-top-faq:hover .book-faq-question {animation: masthead-faq-hop var(--ui-micro-duration) ease-in-out}
 }
 @keyframes masthead-faq-hop {
-  24% {transform: scaleY(.82)}
-  52% {transform: translateY(-2px) scaleY(1.08)}
-  76% {transform: scaleY(.94)}
+  24% {transform: scaleY(.96)}
+  55% {transform: translateY(calc(-1 * var(--ui-micro-nudge))) scaleY(1.04)}
 }
-.book-masthead .book-top-donation:active:not(:disabled) > svg {animation:none;transform:scale(.9)}
+.book-masthead .book-top-donation:active:not(:disabled) > svg {animation:none;transform:scale(.96)}
 @media (prefers-reduced-motion:reduce) {
   :is(.book-faq-question, .book-top-donation > svg) {animation:none!important;transition:none;transform:none!important}
 }
