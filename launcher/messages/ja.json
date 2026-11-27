@@ -1,4 +1,12 @@
 {
+  "loadingTip_controls": "操作を忘れたら、ゲーム中に右上の「？」から確認できます。",
+  "loadingTip_touch": "ボタンに指が届きませんか？「キーとタッチ」で位置や大きさを調整できます。",
+  "loadingTip_replay": "リプレイファイルは「リプレイ鑑賞」ウィンドウにドロップして取り込めます。",
+  "loadingTip_chat": "定型文しか送れませんか？ログインすると自由に入力できます。",
+  "loadingTip_filter": "対戦部屋だけ探したいときは、ルームの絞り込みで PvP を選びましょう。",
+  "loadingTip_spectate": "次の対戦を待つなら、対応している部屋の観戦席に入れます。",
+  "loadingTip_queue": "別の作品もインストールしたい？キューに追加すれば順番にインストールされます。",
+  "loadingTip_favorites": "よく遊ぶ作品に星を付けると、次から「お気に入り」で見つけられます。",
   "downloadTasks_acquire": "ゲームをインストール",
   "downloadTasks_title": "取得状況",
   "downloadTasks_downloading": "取得中",

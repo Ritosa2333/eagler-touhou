@@ -125,3 +125,5 @@
 }
 
 .catalog-directory-filter-example{max-width:460px}
+.loading-activity-preview {position:relative;min-block-size:100dvh;}
+.loading-activity-preview-tools {position:absolute;z-index:2;inset:16px 16px auto auto;display:flex;align-items:center;gap:8px;}

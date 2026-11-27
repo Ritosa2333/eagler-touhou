@@ -101,6 +101,8 @@ try {
       }), true, 'the floating button is reachable, including over a mobile game sheet');
       await page.locator(trigger).click();
       await page.waitForSelector(`${dialog} [data-download-active="th06"] [role="progressbar"]`, {visible: true});
+      await page.waitForSelector(`${dialog} [data-loading-context="install"][data-compact] img`, {visible:true});
+      assert.equal(await page.$$eval(`${dialog} [data-loading-context="install"] img`, images => new Set(images.map(image=>image.src)).size),4);
       if (width === 1440) {
         assert.deepEqual(await page.$$eval('[data-download-queued]', rows => rows.map(row => row.dataset.downloadQueued)), ['th07','th08']);
         await page.locator('[data-download-queued="th08"] button').click();

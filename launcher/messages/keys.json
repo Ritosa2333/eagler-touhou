@@ -1,4 +1,12 @@
 {
+  "loadingTip.controls": {"id": "loadingTip_controls", "params": []},
+  "loadingTip.touch": {"id": "loadingTip_touch", "params": []},
+  "loadingTip.replay": {"id": "loadingTip_replay", "params": []},
+  "loadingTip.chat": {"id": "loadingTip_chat", "params": []},
+  "loadingTip.filter": {"id": "loadingTip_filter", "params": []},
+  "loadingTip.spectate": {"id": "loadingTip_spectate", "params": []},
+  "loadingTip.queue": {"id": "loadingTip_queue", "params": []},
+  "loadingTip.favorites": {"id": "loadingTip_favorites", "params": []},
   "downloadTasks.acquire": {
     "id": "downloadTasks_acquire",
     "params": []

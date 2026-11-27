@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { Tabs, Tooltip } from 'radix-ui';
 import { lazy, Suspense, type ReactNode, useEffect, useState } from 'react';
-import { useLocation } from 'react-router';
+import { useHref, useLocation } from 'react-router';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
 import { LibraryAnnouncements } from '../components/launcher/LibraryAnnouncements';
@@ -41,7 +41,7 @@ import { RoomActionMenu } from '../components/room/RoomActionMenu';
 import { OptionRow } from '../components/settings/OptionRow';
 import { OptionsGroup } from '../components/settings/OptionsGroup';
 import { SettingsSelect } from '../components/settings/SettingsSelect';
-import { LocaleProvider } from '../i18n';
+import { LocaleProvider, useLocale } from '../i18n';
 import { Button } from '../ui/button';
 import '../ui/document-body.css';
 import { ButtonGroup } from '../ui/button-group';
@@ -51,6 +51,7 @@ import { Check, Toggle } from '../ui/controls';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../ui/field';
 import { InputGroup, InputGroupInput } from '../ui/input-group';
+import {LoadingActivity} from '../ui/loading-activity';
 import { PageInventory } from '../ui/page-inventory';
 import { RoomExample } from '../ui/room-example';
 import { Slider } from '../ui/slider';
@@ -70,13 +71,30 @@ export default function UiReview() {
   const preview = new URLSearchParams(search).get('preview');
   return (
     <LocaleProvider locale={catalogLocale}>
-      {import.meta.env.DEV && preview === 'room-chat'
+      {import.meta.env.DEV && preview === 'loading'
+        ? <LoadingActivityPreview/>
+        : import.meta.env.DEV && preview === 'room-chat'
         ? <div className="ui-review"><main className="catalog-main"><RoomExample chatDemo announce={() => {}}/></main></div>
         : Th09RatingsPreview && preview === 'th09-ratings'
         ? <Suspense fallback={null}><Th09RatingsPreview /></Suspense>
         : <Catalog />}
     </LocaleProvider>
   );
+}
+
+function LoadingActivityPreview() {
+  const [attempt, setAttempt] = useState(0);
+  const {t} = useLocale(), base = useHref('/');
+  useEffect(() => {setAttempt(1);}, []);
+  return <main className="loading-activity-preview">
+    <div className="player-loading-cover" role="status">
+      {attempt !== 0 && <LoadingActivity key={attempt} assetUrl={path => base + path} status={t('player.loading')} context="multiplayer"/>}
+    </div>
+    <div className="loading-activity-preview-tools">
+      <BookThemeToggle/>
+      <Button variant="outline" onClick={() => setAttempt(value => value + 1)}><RotateCcw aria-hidden="true"/>{t('lobby.refresh')}</Button>
+    </div>
+  </main>;
 }
 
 function Catalog() {

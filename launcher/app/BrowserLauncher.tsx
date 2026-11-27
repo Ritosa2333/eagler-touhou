@@ -326,7 +326,7 @@ function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, ne
   useEffect(() => {void session.restoreRoomFromUrl(new URL(location.pathname+location.search+location.hash,session.baseUrl).href).catch(session.reportError);}, [session, location.pathname, location.search, location.hash]);
   useLayoutEffect(() => session.settleRoomReturnPresentation(navigation.surface, navigation.productId), [session, navigation.surface, navigation.productId]);
   useLayoutEffect(() => {if (navigation.directoryFormMode) session.directory.restoreFormMode(navigation.directoryFormMode);}, [session, navigation.directoryFormMode]);
-  return <><input id="fileInput" type="file" hidden/><GameDownloadProgress downloads={session.downloads}/><FullscreenTransient><ServerStatusNote session={session}/><Feedback model={session.feedback}/><StartupError model={session.startupError}/>
+  return <><input id="fileInput" type="file" hidden/><GameDownloadProgress downloads={session.downloads} assetUrl={assetUrl}/><FullscreenTransient><ServerStatusNote session={session}/><Feedback model={session.feedback}/><StartupError model={session.startupError}/>
     <GameDataImportWindows model={session.gameData} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}
       manualOpen={navigation.infoDialogOpen('gameDataImportDialog')} onManualClose={() => navigation.closeInfoDialog('gameDataImportDialog')}/></FullscreenTransient>
     {navigation.context === 'lobby' && <NetworkDiagnosticsDialog model={session.networkDiagnostics} ref={network} open={navigation.infoDialogOpen('lobbyNetworkDialog')} onCloseRequest={() => navigation.closeInfoDialog('lobbyNetworkDialog')}

@@ -1,4 +1,12 @@
 {
+  "loadingTip_controls": "忘了怎么操作？进游戏后点右上角的「？」就能看操作说明。",
+  "loadingTip_touch": "手机按键够不到？在「按键与触控」里可以拖动按键，也能调大小。",
+  "loadingTip_replay": "手上有录像文件？直接拖进「观赏 Replay」窗口就能导入。",
+  "loadingTip_chat": "只能发快捷消息？登录后就可以打字聊天啦～",
+  "loadingTip_filter": "只想找对战房？在「筛选房间」里勾选 PvP。",
+  "loadingTip_spectate": "想等下一局再上场？支持观战的房间可以先坐观战席。",
+  "loadingTip_queue": "想装另一部作品？可以先把它加入队列，游戏会按顺序安装。",
+  "loadingTip_favorites": "常玩的作品找不到？点一下旁边的星星，下次去「我的收藏」找。",
   "downloadTasks_acquire": "安装游戏",
   "downloadTasks_title": "获取进度",
   "downloadTasks_downloading": "获取中",

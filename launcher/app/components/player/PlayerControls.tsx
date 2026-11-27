@@ -24,6 +24,7 @@ import { TouchControlPreview } from '../settings/TouchControlPreview';
 import { GameSettingsPopover } from '../settings/GameAudioControls';
 import { useSurfaceNavigation } from '../../navigation/surface-navigation';
 import { useLocale } from '../../i18n';
+import {LoadingActivity} from '../../ui/loading-activity';
 import { FullscreenIcons, PlayerExitIcon, TouchHelpIcon, OrientationIcon } from './utility-icons';
 import { SpectatorMatchScore } from './SpectatorMatchScore';
 import { Th09MatchStats } from './Th09MatchStats';
@@ -90,6 +91,12 @@ export function PlayerControls({
   const spectatorTimeline = state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
   const mode = session.getPlayerMode(),
     spectating = mode === 'spectator';
+  const {t} = useLocale();
+  const runtime = state.runtime;
+  const needsLoadingCover = state.playerOpen && !roomWorkspace && !replayWorkspace &&
+    navigation.surface !== 'touch' && !state.bootTouchPreview && !state.startupError && !runtime?.error &&
+    (!!state.roomLaunchStage || (!runtime?.firstFrame && !runtime?.firstFrameTimedOut &&
+      (state.activity > 0 || room.launchBusy || (runtime?.launched && runtime.runtimeVariant !== 'multiplayer'))));
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
   const th09Information = state.runtime?.launched === true && (room.product === 'th075mp' || room.product === 'th09mp' || room.product === 'th19mp') && !state.replayViewer;
   const cooperativeSpectator =
@@ -186,6 +193,11 @@ export function PlayerControls({
         )}
         <NetplayPlayerStatus visible={network?.playerStatusVisible === true} rows={network?.playerStatus ?? []} />
       </PlayerInformationColumn>
+      {needsLoadingCover && <div className="player-loading-cover" role="status">
+        <LoadingActivity assetUrl={path => new URL(path, session.baseUrl).href}
+          status={t(state.roomLaunchStage === 'path' ? 'multiplayer.connection' : 'player.loading')}
+          context={settings?.multiplayer || state.roomLaunchStage ? 'multiplayer' : 'solo'}/>
+      </div>}
       {transferHost ? createPortal(transferPanel, transferHost) : transferPanel}
       <span id="playerStatus" className="visually-hidden" role="status">
         {feedback.playerStatus}

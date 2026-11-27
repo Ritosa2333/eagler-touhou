@@ -3656,11 +3656,18 @@ test('room resources can become ready when the Runtime has no native lobby previ
 
 test('ordinary game loading reports success only after its first frame',async()=>{
  const f=await mountBrowser(),session=api.getTestSession();
+ const ready = api.translate(session.getSnapshot().locale,'runtime.readyStatus');
  await start();await until(()=>session.getRuntime().getSnapshot().launched,'game acknowledged launch');
  assert.equal(session.getRuntime().getSnapshot().firstFrame,false);
- assert.doesNotMatch(node('#playerStatus').textContent,/^(Ready|Running)$/);
+ assert.notEqual(node('#playerStatus').textContent,ready);
+ const cover = node('#player .player-loading-cover');
+ const faces = [...cover.querySelectorAll('img')].map(image=>image.getAttribute('src'));
+ assert.equal(faces.length,4);
+ assert.equal(new Set(faces).size,4);
+ assert.ok(cover.querySelector('.loading-activity-tip span')?.textContent);
  await React.act(async()=>f.native.emit('first-frame'));
- assert.equal(session.getRuntime().getSnapshot().firstFrame,true);assert.equal(node('#playerStatus').textContent,'Ready');
+ assert.equal(session.getRuntime().getSnapshot().firstFrame,true);assert.equal(node('#playerStatus').textContent,ready);
+ assert.equal(cover.isConnected,false,'the loader leaves when a real frame arrives');
 });
 
 test('an existing native menu without a room preload record survives role changes and Ready',async()=>{

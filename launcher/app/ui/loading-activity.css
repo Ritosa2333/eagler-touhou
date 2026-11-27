@@ -1,0 +1,60 @@
+@layer components {
+  .player-loading-cover {
+    position:absolute;inset:0;z-index:1;display:grid;place-items:center;box-sizing:border-box;
+    padding:16px;pointer-events:none;
+    padding-block: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-bottom));
+    background:radial-gradient(ellipse at 50% 44%,var(--kit-card),var(--kit-background) 72%);
+  }
+  .loading-activity {
+    --loading-face-size: clamp(32px, 7vmin, 48px);
+    --loading-hop: -8px;
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+    min-inline-size: 0;
+    max-inline-size: min(100%, 34rem);
+    text-align: center;
+  }
+  .loading-activity-faces {display:flex;align-items:center;gap:8px;padding-block-start:8px;}
+  .loading-activity-faces img {
+    inline-size: var(--loading-face-size);
+    block-size: var(--loading-face-size);
+    /* The shared 1000 × 320 SVG places the portrait in its leftmost square. */
+    object-fit: cover;
+    object-position: left center;
+    animation: ui-loading-hop 1.65s ease-in-out infinite;
+  }
+  .loading-activity-faces img:nth-child(2) {animation-delay: 300ms;}
+  .loading-activity-faces img:nth-child(3) {animation-delay: 600ms;}
+  .loading-activity-faces img:nth-child(4) {animation-delay: 900ms;}
+  .loading-activity-copy {display:grid;gap:8px;justify-items:inherit;min-inline-size:0;}
+  .loading-activity-status {color:var(--kit-foreground);font-size:16px;font-weight:650;}
+  .loading-activity-tip {
+    display:flex;align-items:baseline;gap:8px;margin:0;text-align:start;
+    color:var(--kit-muted-foreground);font-size:13px;line-height:1.55;
+  }
+  .loading-activity-tip b {
+    flex:none;padding:0 5px;border:1px solid var(--kit-border);border-radius:4px;
+    color:var(--kit-foreground);font-size:10px;letter-spacing:.05em;
+  }
+  .loading-activity[data-compact] {
+    --loading-face-size: 22px;
+    --loading-hop: -4px;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items:center;justify-items:start;gap:6px 12px;text-align:start;
+  }
+  .loading-activity[data-compact] .loading-activity-faces {gap:2px;padding-block-start:4px;}
+  .loading-activity[data-compact] .loading-activity-copy {gap:4px;}
+  .loading-activity[data-compact] :is(.loading-activity-status,.loading-activity-tip) {font-size:12px;}
+  @media (max-width:360px) {
+    .loading-activity[data-compact] {grid-template-columns: minmax(0, 1fr);}
+  }
+  @keyframes ui-loading-hop {
+    0%, 18%, 100% {transform:translateY(0);}
+    8% {transform:translateY(var(--loading-hop));}
+  }
+  body.less-motion .loading-activity-faces img {animation-name:none;}
+  @media (prefers-reduced-motion:reduce) {
+    .loading-activity-faces img {animation-name:none;}
+  }
+}

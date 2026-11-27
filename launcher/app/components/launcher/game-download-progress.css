@@ -17,6 +17,7 @@
   }
   .game-download-dialog {width: min(480px, calc(100vw - 24px));}
   .game-download-active {margin-block-start: 12px;}
+  .game-download-wait {margin-block: 4px 10px;}
   .game-download-row {display: flex; align-items: center; gap: 8px; min-block-size: 40px;}
   .game-download-row > :first-child {flex: 1; min-inline-size: 0; overflow-wrap: anywhere;}
   .game-download-row > small, .game-download-meta {color: var(--kit-muted-foreground);}

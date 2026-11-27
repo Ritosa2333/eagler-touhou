@@ -2,6 +2,7 @@ import {Download, X} from 'lucide-react';
 import {useSyncExternalStore} from 'react';
 import {PRODUCT_GAMES} from '../../../src/contracts/product-catalog.mts';
 import {useLocale} from '../../i18n';
+import {LoadingActivity} from '../../ui/loading-activity';
 import type {GameDownloads} from '../../models/game-downloads';
 import {Button} from '../../ui/button';
 import {Dialog, DialogContent, DialogTitle, DialogTrigger} from '../../ui/dialog';
@@ -10,12 +11,13 @@ import './game-download-progress.css';
 
 const speedLabel = (bytes: number) => bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MiB/s` : `${Math.round(bytes / 1024)} KiB/s`;
 
-export function GameDownloadProgress({downloads}: {downloads: GameDownloads}) {
+export function GameDownloadProgress({downloads, assetUrl}: {downloads: GameDownloads; assetUrl(path: string): string}) {
   const {active, pending, failed, progress, network} = useSyncExternalStore(downloads.subscribe, downloads.getSnapshot, downloads.getSnapshot);
   const {t} = useLocale();
   if (!active) return null;
   const title = PRODUCT_GAMES[active.game].title;
   const task = network?.active.find(item => item.kind !== 'descriptor');
+  const preparing = !task || task.phase === 'requesting';
   const bytesPercent = task?.total ? Math.min(100, Math.floor(100 * task.loaded / task.total)) : null;
   const elapsed = task ? (task.updatedAt - task.startedAt) / 1000 : 0;
   const speed = task && elapsed > 0 && task.loaded > 0 ? speedLabel(task.loaded / elapsed) : null;
@@ -35,9 +37,13 @@ export function GameDownloadProgress({downloads}: {downloads: GameDownloads}) {
           <strong>{title}</strong>
           <Button variant="ghost" size="icon-sm" aria-label={t('action.cancel')} title={t('action.cancel')} onClick={() => downloads.cancel(active.game)}><X aria-hidden="true"/></Button>
         </div>
+        {preparing && <div className="game-download-wait" role="status">
+          <LoadingActivity key={active.game} assetUrl={assetUrl} context="install" compact
+            status={t(task ? 'transfer.waitingServer' : 'transfer.preparingShort')}/>
+        </div>}
         <Progress value={bytesPercent} aria-label={title}/>
         <div className="game-download-meta">
-          <span>{t(task ? 'downloadTasks.downloading' : 'transfer.preparingShort')}{bytesPercent !== null && ` · ${bytesPercent}%`}</span>
+          {!preparing && <span>{t('downloadTasks.downloading')}{bytesPercent !== null && ` · ${bytesPercent}%`}</span>}
           {speed && <span>{speed}</span>}
           {remaining !== null && <span>{t('downloadTasks.remaining', {count: remaining})}</span>}
         </div>

@@ -1,4 +1,12 @@
 {
+  "loadingTip_controls": "Forgot the controls? Select the ? in the top-right corner while in game.",
+  "loadingTip_touch": "A button out of reach? Move or resize it in Controls & Touch.",
+  "loadingTip_replay": "Have a replay file? Drop it into the Watch Replay window to import it.",
+  "loadingTip_chat": "Only seeing quick messages? Sign in to type in chat.",
+  "loadingTip_filter": "Only looking for versus rooms? Check PvP in the room filters.",
+  "loadingTip_spectate": "Waiting for the next round? Grab a spectator seat in rooms that support it.",
+  "loadingTip_queue": "Installing another game? Add it to the queue and it will wait its turn.",
+  "loadingTip_favorites": "Keep losing track of a game? Star it to find it later in My Favorites.",
   "downloadTasks_acquire": "Install game",
   "downloadTasks_title": "Acquisition progress",
   "downloadTasks_downloading": "Getting game",
