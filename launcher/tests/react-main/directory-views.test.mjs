@@ -1011,16 +1011,16 @@ test('room names replace the regular label and keep special gameplay rules visib
 
 
 test('facet counts match an independent filter for every option', () => {
-  const {countDirectoryRoomFacets, filterDirectoryRooms, directoryRoomStatuses, directoryRoomModes, directoryRoomDifficulties} = owners;
+  const {countDirectoryRoomFacets, filterDirectoryRooms, directoryRoomStatuses, directoryRoomModes, directoryRoomDifficulties, directoryRoomCapacities} = owners;
   const rooms = [
     room({players:0}), room({players:1, difficulty:3}),
-    room({phase:'lobby', players:3, capacity:3}), room({phase:'playing', players:2}),
-    room({product:'th09mp'}), room({product:'th19mp', difficulty:0}),
+    room({phase:'lobby', players:3, capacity:3}), room({phase:'playing', players:2, capacity:2}),
+    room({product:'th09mp', capacity:2}), room({product:'th19mp', difficulty:0, capacity:2}),
   ];
-  const options = {status:directoryRoomStatuses, mode:directoryRoomModes, difficulty:directoryRoomDifficulties, players:[0,1,2,3]};
+  const options = {status:directoryRoomStatuses, mode:directoryRoomModes, difficulty:directoryRoomDifficulties, capacity:directoryRoomCapacities};
   const defaults = owners.defaultDirectoryRoomFilters;
-  for (const filters of [defaults, {...defaults,status:['open','spectate'],mode:['pve'],difficulty:['Normal','Lunatic'],players:[0,2]},
-    {...defaults,status:['waiting'],mode:['pvp'],players:[1,3]}]) {
+  for (const filters of [defaults, {...defaults,status:['open','spectate'],mode:['pve'],difficulty:['Normal','Lunatic'],capacity:[2]},
+    {...defaults,status:['waiting'],mode:['pvp'],capacity:[2,3]}]) {
     const counts = countDirectoryRoomFacets(rooms, filters);
     for (const [facet, values] of Object.entries(options)) {
       assert.equal(counts[facet].total, filterDirectoryRooms(rooms,{...filters,[facet]:[]}).length, `${facet}: all`);
@@ -1028,6 +1028,30 @@ test('facet counts match an independent filter for every option', () => {
         filterDirectoryRooms(rooms,{...filters,[facet]:[value]}).length, `${facet}: ${value}`);
     }
   }
+});
+
+test('the room capacity facet offers two and three seats regardless of occupancy', async () => {
+  const [seat, anotherSeat] = room().seats;
+  const two = room({code:'1111', capacity:2, seats:[seat, null]});
+  const three = room({code:'2222', capacity:3, seats:[seat, null, null]});
+  const f = await fixture({selectedProduct:''}).live([two, three]);
+  await mountLobby(f);
+  const facet = '[data-room-facet="capacity"]';
+  const option = value => `${facet}[data-room-value="${value}"]`;
+  const counts = () => all(`${facet} .book-room-filter-count`).map(node => node.textContent);
+  const visible = () => all('.lobby-room-row').map(node => node.dataset.key);
+  await click('.book-room-filter-trigger');
+  assert.deepEqual(all(facet).map(node => node.dataset.roomValue), ['all', '2', '3']);
+  assert.deepEqual(counts(), ['2', '1', '1']);
+  await click(option(3));
+  assert.deepEqual(visible(), ['th06mp-2222']);
+  await f.receive([{...two, seats:[seat, anotherSeat]}, {...three, seats:[seat, anotherSeat, null]}]);
+  assert.deepEqual(counts(), ['2', '1', '1']);
+  assert.deepEqual(visible(), ['th06mp-2222']);
+  await click(option(2));
+  assert.deepEqual(visible(), ['th06mp-1111', 'th06mp-2222']);
+  await click(option(3));
+  assert.deepEqual(visible(), ['th06mp-1111']);
 });
 
 test('room filters combine checked options per facet and update with the live directory', async () => {
@@ -1056,7 +1080,7 @@ test('room filters combine checked options per facet and update with the live di
   await filter('waiting');
   await filter('spectate');
   assert.deepEqual(keys(), ['th06mp-2222', 'th06mp-3333']);
-  await filter('3', 'players');
+  await filter('3', 'capacity');
   assert.deepEqual(keys(), ['th06mp-2222', 'th06mp-3333']);
   await filter('Lunatic', 'difficulty');
   assert.deepEqual(keys(), ['th06mp-2222']);
@@ -1065,7 +1089,7 @@ test('room filters combine checked options per facet and update with the live di
   await filter('Normal', 'difficulty');
   assert.equal(n('#roomCount').textContent, t('en', 'lobby.roomCount', {count:1}));
   await filter('all', 'difficulty');
-  await filter('all', 'players');
+  await filter('all', 'capacity');
   await filter('all');
   await filter('open');
   await f.receive(rooms.slice(1));
@@ -1075,10 +1099,10 @@ test('room filters combine checked options per facet and update with the live di
   assert.equal(keys().length, 0);
   assert.equal(n('#emptyTitle').textContent, 'No matching rooms');
   await filter('Lunatic', 'difficulty');
-  await filter('3', 'players');
+  await filter('3', 'capacity');
   await click('#emptyAction');
   if (n('.book-room-filter-trigger').getAttribute('aria-expanded') === 'false') await click('.book-room-filter-trigger');
-  for (const facet of ['status', 'mode', 'difficulty', 'players']) assert.equal(n(option('all', facet)).getAttribute('aria-checked'), 'true');
+  for (const facet of ['status', 'mode', 'difficulty', 'capacity']) assert.equal(n(option('all', facet)).getAttribute('aria-checked'), 'true');
   assert.equal(keys().length, 3);
   assert.equal(f.navigations.length, 0, 'filtering never enters a room');
 });

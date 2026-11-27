@@ -4,10 +4,9 @@ import {useLocale} from '../../i18n';
 import type {DirectoryRoom} from '../../services/lobby-directory';
 import {ActionMenu, ActionMenuCheckboxItem, ActionMenuGroup, ActionMenuLabel} from '../../ui/action-menu';
 import {BookButton} from '../launcher/BookButton';
-import {countDirectoryRoomFacets, directoryRoomDifficulties, directoryRoomModes, directoryRoomStatuses, hasDirectoryRoomFilters, type DirectoryRoomFiltersValue} from './directory-room-filter';
+import {countDirectoryRoomFacets, directoryRoomCapacities, directoryRoomDifficulties, directoryRoomModes, directoryRoomStatuses, hasDirectoryRoomFilters, type DirectoryRoomFiltersValue} from './directory-room-filter';
 
 type Facet = keyof DirectoryRoomFiltersValue;
-const playerCounts = [0, 1, 2, 3];
 
 interface RoomFilterProps {
   rooms: readonly DirectoryRoom[];
@@ -58,7 +57,7 @@ function RoomFilterOptions({rooms, value, onChange}: RoomFilterProps) {
         {facet('difficulty', t('lobby.difficulty'), directoryRoomDifficulties, difficulty => difficulty)}
       </div>
       <div className="book-room-filter-column">
-        {facet('players', t('lobby.capacity'), playerCounts, String)}
+        {facet('capacity', t('lobby.capacity'), directoryRoomCapacities, count => t('lobby.playersCount', {count}))}
       </div>
     </div>
   );

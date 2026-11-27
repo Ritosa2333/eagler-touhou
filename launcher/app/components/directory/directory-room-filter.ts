@@ -5,13 +5,14 @@ import {bookGameKind} from '../launcher/products';
 
 export const directoryRoomStatuses = ['open', 'waiting', 'spectate'] as const;
 export const directoryRoomModes = ['pve', 'pvp'] as const;
+export const directoryRoomCapacities = [2, 3] as const satisfies readonly DirectoryRoom['capacity'][];
 export type DirectoryRoomFiltersValue = {
   status: readonly typeof directoryRoomStatuses[number][];
   mode: readonly typeof directoryRoomModes[number][];
   difficulty: readonly string[];
-  players: readonly number[];
+  capacity: readonly DirectoryRoom['capacity'][];
 };
-export const defaultDirectoryRoomFilters: DirectoryRoomFiltersValue = {status:[], mode:[], difficulty:[], players:[]};
+export const defaultDirectoryRoomFilters: DirectoryRoomFiltersValue = {status:[], mode:[], difficulty:[], capacity:[]};
 export const directoryRoomDifficulties = [...new Set(PRODUCT_IDS.filter(isMultiplayerProductId).flatMap(product =>
   multiplayerConfigForProduct(product)?.difficulties ?? []))];
 
@@ -20,8 +21,8 @@ export function directoryRoomDifficulty(room: DirectoryRoom) {
   return policy?.inGameSelection && room.product !== 'th03mp' ? '' : policy?.difficulties[room.difficulty] ?? '';
 }
 
-export function hasDirectoryRoomFilters({status, mode, difficulty, players}: DirectoryRoomFiltersValue) {
-  return !!(status.length || mode.length || difficulty.length || players.length);
+export function hasDirectoryRoomFilters({status, mode, difficulty, capacity}: DirectoryRoomFiltersValue) {
+  return !!(status.length || mode.length || difficulty.length || capacity.length);
 }
 
 function directoryRoomMode(room: DirectoryRoom) {
@@ -29,10 +30,10 @@ function directoryRoomMode(room: DirectoryRoom) {
   return kind === 'versus' || kind === 'fighting' ? 'pvp' : 'pve';
 }
 
-export function filterDirectoryRooms(rooms: readonly DirectoryRoom[], {status, mode, difficulty, players}: DirectoryRoomFiltersValue) {
+export function filterDirectoryRooms(rooms: readonly DirectoryRoom[], {status, mode, difficulty, capacity}: DirectoryRoomFiltersValue) {
   return rooms.filter(room => (!mode.length || mode.includes(directoryRoomMode(room))) &&
     (!difficulty.length || difficulty.includes(directoryRoomDifficulty(room))) &&
-    (!players.length || players.includes(room.players)) &&
+    (!capacity.length || capacity.includes(room.capacity)) &&
     (!status.length || status.some(item => matchesStatus(room, item))));
 }
 
@@ -44,8 +45,8 @@ function matchesStatus(room: DirectoryRoom, status: typeof directoryRoomStatuses
 const facetCounts = () => ({total: 0, options: new Map<string | number, number>()});
 
 /** Count each option with the other three groups' selections applied. */
-export function countDirectoryRoomFacets(rooms: readonly DirectoryRoom[], {status, mode, difficulty, players}: DirectoryRoomFiltersValue) {
-  const counts = {status: facetCounts(), mode: facetCounts(), difficulty: facetCounts(), players: facetCounts()};
+export function countDirectoryRoomFacets(rooms: readonly DirectoryRoom[], {status, mode, difficulty, capacity}: DirectoryRoomFiltersValue) {
+  const counts = {status: facetCounts(), mode: facetCounts(), difficulty: facetCounts(), capacity: facetCounts()};
   const increment = ({options}: ReturnType<typeof facetCounts>, option: string | number) =>
     options.set(option, (options.get(option) ?? 0) + 1);
   for (const room of rooms) {
@@ -53,24 +54,24 @@ export function countDirectoryRoomFacets(rooms: readonly DirectoryRoom[], {statu
     const roomDifficulty = directoryRoomDifficulty(room);
     const modeMatches = !mode.length || mode.includes(roomMode);
     const difficultyMatches = !difficulty.length || difficulty.includes(roomDifficulty);
-    const playersMatch = !players.length || players.includes(room.players);
+    const capacityMatches = !capacity.length || capacity.includes(room.capacity);
     const statuses = directoryRoomStatuses.filter(item => matchesStatus(room, item));
     const statusMatches = !status.length || statuses.some(item => status.includes(item));
-    if (modeMatches && difficultyMatches && playersMatch) {
+    if (modeMatches && difficultyMatches && capacityMatches) {
       counts.status.total++;
       for (const item of statuses) increment(counts.status, item);
     }
-    if (statusMatches && difficultyMatches && playersMatch) {
+    if (statusMatches && difficultyMatches && capacityMatches) {
       counts.mode.total++;
       increment(counts.mode, roomMode);
     }
-    if (statusMatches && modeMatches && playersMatch) {
+    if (statusMatches && modeMatches && capacityMatches) {
       counts.difficulty.total++;
       if (roomDifficulty) increment(counts.difficulty, roomDifficulty);
     }
     if (statusMatches && modeMatches && difficultyMatches) {
-      counts.players.total++;
-      increment(counts.players, room.players);
+      counts.capacity.total++;
+      increment(counts.capacity, room.capacity);
     }
   }
   return counts;
