@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {runInNewContext} from 'node:vm';
 import {createBrowserKeyboard} from '../browser/directory-keyboard.mjs';
 const identity={protocol:'eagler-touhou/1',game:'th08',epoch:7,origin:'https://launcher.invalid'};
@@ -116,7 +118,10 @@ test('IME-marked directions reach gameplay through native and hosted input witho
 
 test('embedded TH06 and TH07 bridges accept IME directions and preserve editor ownership',()=>{
  for(const game of ['th06','th07']){
-  const html=readFileSync(new URL(`../../ports/${game}/resources/shell.html`,import.meta.url),'utf8');
+  const path=`ports/${game}/resources/shell.html`,file=new URL('../../'+path,import.meta.url);
+  // The common CI lane uses a sparse checkout without the embedded shells.
+  const html=existsSync(file)?readFileSync(file,'utf8'):execFileSync('git',['show',`HEAD:${path}`],
+   {cwd:fileURLToPath(new URL('../..',import.meta.url)),encoding:'utf8'});
   const start=html.indexOf('      // BEGIN SHARED BROWSER KEYBOARD OWNERS'),end=html.indexOf('      // END SHARED BROWSER KEYBOARD OWNERS',start);
   assert.ok(start>=0&&end>start);
   const create=runInNewContext(html.slice(start,end)+'\ncreateKeyboardInputBridge;'),target={},events=[];
