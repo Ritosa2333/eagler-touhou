@@ -22,10 +22,9 @@ import {useNavigationPageMotion} from '../../navigation/navigation-motion';
 import { useLocale } from '../../i18n';
 import { useOptionsTarget } from './options-ownership';
 import type { LibraryCardsProps } from './LibraryCards';
-import type { LibraryProduct } from './products';
+import { bookWorkCategories, type LibraryProduct } from './products';
 import {
   BOOK_PREFERENCES_EVENT,
-  bookCategories,
   filterBookProducts,
   readBookPreference,
   writeBookPreference,
@@ -120,7 +119,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   ];
   const available = useMemo(() => products.filter(product => !product.multiplayer && !product.hidden), [products]);
   const detailProduct = showDetail ? available.find((product) => product.id === openedProduct) : undefined;
-  const detailCategory = detailProduct ? sidebarOrigin ?? bookCategories(detailProduct)[0] : undefined;
+  const detailCategory = detailProduct ? sidebarOrigin ?? bookWorkCategories(detailProduct)[0] : undefined;
   useLayoutEffect(() => {
     if (!detailCategory || !openedProduct) return;
     setDisclosure(detailCategory, true);

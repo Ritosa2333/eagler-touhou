@@ -23,14 +23,32 @@ export function isPc98Product(product: Pick<LibraryProduct, 'number'>): boolean 
   return Number.isInteger(number) && number <= 5;
 }
 
-export type MultiplayerGroup = 'versus' | 'original' | 'fighting' | 'pc98';
-export function bookGameKind(id: GameId): Exclude<MultiplayerGroup, 'pc98'> {
+type BookGameKind = 'versus' | 'original' | 'fighting';
+export function bookGameKind(id: GameId): BookGameKind {
   const game = PRODUCT_GAMES[id];
   if ('inputProfile' in game && game.inputProfile === 'fighting') return 'fighting';
   if ('multiplayer' in game && game.multiplayer.gameplay === 'versus') return 'versus';
   return 'original';
 }
 
+type BookWorkSeries = 'pc98' | 'windows' | 'spin-off' | 'doujin';
+export type BookWorkCategory = BookWorkSeries | Exclude<BookGameKind, 'original'>;
+
+function bookWorkSeries(product: Pick<LibraryProduct, 'number'>): BookWorkSeries {
+  if (!/^\d+(?:\.\d+)?$/.test(product.number)) return 'doujin';
+  if (isPc98Product(product)) return 'pc98';
+  return Number.isInteger(Number(product.number)) ? 'windows' : 'spin-off';
+}
+
+// The first category is the default sidebar group for a direct detail link.
+export function bookWorkCategories(product: Pick<LibraryProduct, 'gameId' | 'number'>): readonly [BookWorkCategory, ...BookWorkCategory[]] {
+  const series = bookWorkSeries(product);
+  const kind = bookGameKind(product.gameId);
+  if (kind === 'original') return [series];
+  return series === 'pc98' || series === 'doujin' ? [series, kind] : [kind, series];
+}
+
+export type MultiplayerGroup = BookGameKind | 'pc98';
 export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): MultiplayerGroup {
   const kind = bookGameKind(product.gameId);
   return kind === 'original' && isPc98Product(PRODUCT_GAMES[product.gameId]) ? 'pc98' : kind;
