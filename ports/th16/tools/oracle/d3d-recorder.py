@@ -83,6 +83,7 @@ class DeviceRecorder:
         self.pending_anm_texture = None   # 0x46d3b0 记下的 (bank 地址, entry 序号)
         self.backbuffer = oracle.alloc(0x10)
         self.surfaces[self.backbuffer] = 'backbuffer'
+        self.surface_pixels = {}
         self.install()
 
     # ---- 安装 ----
@@ -107,13 +108,18 @@ class DeviceRecorder:
             uc.mem_write(self.tex_vtable + i * 4, struct.pack('<I', generic))
         uc.mem_write(self.tex_vtable + 4, struct.pack('<I', release))
         uc.mem_write(self.tex_vtable + 8, struct.pack('<I', release))
+        # IDirect3DResource9::PreLoad 也要清理栈上的 this。
+        uc.mem_write(self.tex_vtable + 0x24, struct.pack('<I', release))
         uc.mem_write(self.tex_vtable + 0x44, struct.pack('<I', o.make_stub2(0xC, lambda _o: self.tex_get_level_desc())))
         uc.mem_write(self.tex_vtable + 0x48, struct.pack('<I', o.make_stub2(0xC, lambda _o: self.tex_get_surface_level())))
-        # 伪表面 vtable：只需 Release / GetDesc
+        # Manual 清除可锁定的目录正文表面。提供真实尺寸和独立的临时像素缓冲。
         self.surface_vtable = o.alloc(0x80)
         for i in range(0x20):
             uc.mem_write(self.surface_vtable + i * 4, struct.pack('<I', generic))
         uc.mem_write(self.surface_vtable + 8, struct.pack('<I', release))
+        uc.mem_write(self.surface_vtable + 0x30, struct.pack('<I', o.make_stub2(8, lambda _o: self.surface_get_desc())))
+        uc.mem_write(self.surface_vtable + 0x34, struct.pack('<I', o.make_stub2(16, lambda _o: self.surface_lock())))
+        uc.mem_write(self.surface_vtable + 0x38, struct.pack('<I', o.make_stub2(4, lambda _o: self.ret(0))))
         uc.mem_write(self.backbuffer, struct.pack('<I', self.surface_vtable))
         # 伪缓冲 vtable：Lock(this, offset, size, out**, flags) RET 0x14；Unlock(this) RET 4；Release RET 4
         self.buffer_vtable = o.alloc(0x80)
@@ -202,6 +208,29 @@ class DeviceRecorder:
     def tex_get_surface_level(self):
         this, out = self.arg(0), self.arg(2)
         self.uc.mem_write(out, struct.pack('<I', self.u32(this + 8)))
+        self.ret(0)
+
+    def surface_size(self, surface):
+        owner = self.surfaces[surface]
+        if owner == 'backbuffer':
+            return struct.unpack('<II', self.uc.mem_read(0x4D9D2C, 8))
+        return struct.unpack('<HH', self.uc.mem_read(owner + 4, 4))
+
+    def surface_get_desc(self):
+        width, height = self.surface_size(self.arg(0))
+        # 临时缓冲采用 A8R8G8B8；录制器对照的是绘制调用，不比对表面像素。
+        self.uc.mem_write(self.arg(1), struct.pack('<8I', 21, 1, 0, 0, 0, 0, width, height))
+        self.ret(0)
+
+    def surface_lock(self):
+        surface, out, rect = self.arg(0), self.arg(1), self.arg(2)
+        if rect:
+            raise RuntimeError('surface lock: partial rectangles are not supported')
+        width, height = self.surface_size(surface)
+        pitch = width * 4
+        if surface not in self.surface_pixels:
+            self.surface_pixels[surface] = self.o.alloc(pitch * height)
+        self.uc.mem_write(out, struct.pack('<II', pitch, self.surface_pixels[surface]))
         self.ret(0)
 
     def m_CreateTexture(self):

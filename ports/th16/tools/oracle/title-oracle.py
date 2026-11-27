@@ -31,16 +31,36 @@ DAT_BOOT, DAT_TITLE = 0x4A6EE4, 0x4A6F20
 TITLE_SIZE, BOOT_SIZE = 0x5E00, 0x63C
 BOOT_HOLD = 0xB4
 ASCII_ENTRIES, ASCII_STRIDE, ASCII_COUNT = 0xC08, 0x138, 0x19208
+HELP_BANK_WORKER = 0x42E760
+HELP_PAGE_WORKER = 0x42E7C0
 
 
 class TitleOracle(GameOracle):
     def __init__(self, exe, dat_dir, debug=False):
         # 绘制链里的合成 / 纹理面需要 DeviceRecorder 的 GetBackBuffer，即使不落盘也要装上
         super().__init__(exe, dat_dir, debug=debug, draw=True)
-        # 标题 Manual 的 help.anm 由装载线程写入。本 oracle 不跑该线程。
-        self.defer_help_anm = True
+        self.help_workers_pending = []
+        self.manual_page_reads = []
         self.title_armed = False
         self.boot_obj = 0
+
+    def narrow_hooks(self):
+        # 0x43c5b0 的 ret 8 清理两个参数；目录和正文装载函数在下一帧前执行。
+        self.replaced[game_oracle.THREAD_CREATE] = (8, self.on_title_loader)
+        super().narrow_hooks()
+
+    def on_title_loader(self, _):
+        worker = self.arg(0)
+        if worker in (HELP_BANK_WORKER, HELP_PAGE_WORKER):
+            self.help_workers_pending.append(worker)
+        self.uc.reg_write(game_oracle.UC_X86_REG_EAX, 0)
+
+    def on_read_file(self, oracle):
+        super().on_read_file(oracle)
+        if self.uc.reg_read(game_oracle.UC_X86_REG_EAX):
+            name = self.cstr(self.uc.reg_read(game_oracle.UC_X86_REG_ECX))
+            if name.startswith('help_') and name.endswith('.png'):
+                self.manual_page_reads.append(name)
 
     def boot_title(self):
         """Supervisor 环境 + 启动幕资源 + 0x44ac70。标题更新链保持禁用，等启动幕画满 0xb4 帧。"""
@@ -141,6 +161,9 @@ class TitleOracle(GameOracle):
         }
 
     def tick(self):
+        workers, self.help_workers_pending = self.help_workers_pending, []
+        for worker in workers:
+            self.call(worker)
         self.sfx_log = []
         self.sfx_pans = []
         if self.run_draw:
@@ -241,7 +264,9 @@ def main():
             print('f=%d screen=%d sub=%d cursor=%d boot=%d live=%d sfx=%s ascii=%d' % (
                 st['frame'], st['screen'], st['sub'], st['cursor'], st['boot'], st['live'], st['sfx'], len(st['ascii'])),
                   file=sys.stderr)
-    pathlib.Path(args.out).write_text(json.dumps({'frames': frames}, separators=(',', ':')))
+    pathlib.Path(args.out).write_text(json.dumps({
+        'frames': frames, 'manual_page_reads': oracle.manual_page_reads,
+    }, separators=(',', ':')))
     last = frames[-1]
     print('frame=%d screen=%d sub=%d cursor=%d boot=%d live=%d sfx=%s ascii=%d' % (
         last['frame'], last['screen'], last['sub'], last['cursor'], last['boot'], last['live'],

@@ -69,7 +69,7 @@ const drawJobs = Number(process.env.TH16_DRAW_JOBS ?? 2);
 assert.ok(Number.isSafeInteger(drawJobs) && drawJobs > 0, 'TH16_DRAW_JOBS must be a positive integer');
 // 只断言已按当前原版重采并核实的参考；未标记的参考保留上一轮摘要，待重采后纳入回归。
 const verifiedCases = golden.cases.filter(c => c.verified === true);
-assert.equal(verifiedCases.length, 8,
+assert.ok(verifiedCases.length >= 8,
   `verified long-draw references: ${verifiedCases.map(c => c.name).join(', ')}`);
 describe('long draw regressions', {concurrency: drawJobs}, () => {
   for (const c of golden.cases) {

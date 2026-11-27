@@ -108,8 +108,16 @@ test('draw structure: stage 1 Reimu / Autumn Normal season release, frames 1030�
   assert.equal(checkGolden('draw-st1-release'), 81);
 });
 
-test('draw structure: stage 1 continue menu Credit line (0x43edc0), frames 1050–1110', needDat, () => {
-  assert.equal(checkGolden('draw-st1-menu-credit'), 61);
+test('draw structure: pause Manual opens, turns pages and closes on the original frames', needDat, () => {
+  assert.equal(checkGolden('draw-st1-pause-manual'), 19);
+});
+
+test('draw structure: stage 2 Practice uses its own high score through quick restart', needDat, () => {
+  assert.equal(checkGolden('draw-st2-practice-restart'), 46);
+});
+
+test('draw structure: stage 1 Credit line and return to play after continuing, frames 1050–1140', needDat, () => {
+  assert.equal(checkGolden('draw-st1-menu-credit'), 91);
 });
 
 test('draw structure: stage 1 continue → replay slots → name entry (0x43e9b0 / 0x43eb50 / 0x43e730), frames 1120–1180', needDat, () => {

@@ -367,7 +367,7 @@ def compare_digests(oracle, port, segment, max_report):
                 segments.append(run)
                 run = []
             continue
-        if run and (run[-1][1] != grid or len(run) >= segment):
+        if run and (run[-1][0] + 1 != frame or run[-1][1] != grid or len(run) >= segment):
             segments.append(run)
             run = []
         run.append((frame, grid))
@@ -381,7 +381,7 @@ def compare_digests(oracle, port, segment, max_report):
     if missing:
         report.append('frames recorded on one side only: %s%s' % (missing[:max_report], ' …' if len(missing) > max_report else ''))
     golden = [[run[0][0], run[-1][0], run[0][1], segment_digest(oracle, [f for f, _ in run], run[0][1])] for run in segments]
-    return report, golden, not bad['structure'] and not bad['vertices'] and not missing
+    return report, golden, bool(frames) and not bad['structure'] and not bad['vertices'] and not missing
 
 
 def write_digests(path, out_path):

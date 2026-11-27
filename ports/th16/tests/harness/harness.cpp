@@ -40,7 +40,8 @@
 //   harness replay-ff <mode> <counter> <held> [gm=1] [loading=0]
 //                                              → 打印 0x448e40 返回码（1 Continue / 6 Restart）
 //   harness replay-fps-color <byte>            → 打印 0x4482f0 颜色（十进制）
-//   harness ending-smoke <th16.dat> <frames> [extra=0] [f:bits,...]
+//   harness ending-smoke <th16.dat> <frames> [extra=0] [shot=0] [continues=0] [draw=<path>] [draw-from=N] [f:bits,...]
+//                                              extra=1 diff=4 clear-at=N starts Extra and awards the clear at step N.
 //                                              → 启动后强制进结局（0xf）或 Extra 回标题（0x10）；报告 ending_live/index/finished/scene
 #include "../../web/cpp/game/Archive.hpp"
 #include "../../web/cpp/game/AnmManager.hpp"
@@ -111,11 +112,171 @@ u32 bits(float f) { u32 u; std::memcpy(&u, &f, 4); return u; }
 
 int fail(const char* message) { std::fprintf(stderr, "harness: %s\n", message); return 1; }
 
+struct BgmPlaybackTrace final : MusicOutput {
+    explicit BgmPlaybackTrace(const GameGlobals& globals) : globals(globals) {}
+
+    const GameGlobals& globals;
+    int frame = 0;
+    std::string track;
+
+    void open(const BgmEntry& entry) override { track = entry.name; }
+    void start() override { std::printf("bgm-start %d %d %s\n", frame, globals.stage, track.c_str()); }
+    void stop(bool close_file) override {
+        if (close_file)
+            std::printf("bgm-stop %d %d %s\n", frame, globals.stage, track.empty() ? "-" : track.c_str());
+    }
+    void seek(const BgmEntry&, u32) override {}
+    void play(bool, u32) override {}
+    void pause() override {}
+    void resume() override {}
+    void halt() override {}
+    void set_volume(i32) override {}
+    void switch_loop(const BgmEntry&) override {}
+    double position_seconds() override { return 0.0; }
+    void restart_at(double) override {}
+};
+
 }  // namespace
 
 int main(int argc, char** argv) {
     if (argc < 2) return fail("usage: harness <command> ...");
     const std::string command = argv[1];
+    if (command == "runtime-regressions" && argc >= 4) {
+        std::vector<u8> bytes;
+        if (!read_file(argv[2], bytes)) return fail("read DAT");
+        auto session = std::make_unique<GameSession>();
+        if (!session->open(bytes.data(), u32(bytes.size())) || !session->begin_boot()) return fail(session->failure.c_str());
+        auto step = [&](u32 input, int frames) {
+            session->injected_input = input;
+            for (int i = 0; i < frames; ++i) if (!session->logic_step()) return false;
+            return true;
+        };
+        if (!step(0, 330)) return fail(session->failure.c_str());
+        session->title.screen = TitleScene::kManual;
+        session->title.sub = 0;
+        session->title.timer = 0;
+        if (!step(0, 25) || session->title.help == nullptr || session->title.help->anm == nullptr) return fail("manual directory missing");
+        auto& manual = *session->title.help;
+        const auto load_page = manual.load_page;
+        manual.load_page = [](i32) { return false; };
+        if (!step(InputState::kShot, 1) || !step(0, 25) || manual.step != HelpScreen::Menu ||
+            !session->animations.find(manual.item_vms[0])) return fail("missing first manual page trapped the directory");
+        manual.load_page = load_page;
+        if (!step(InputState::kShot, 1) || !step(0, 25)) return fail("manual first page");
+        for (int page = 0; page < 9; ++page) {
+            auto* help = session->title.help;
+            const auto* res = session->resource("help.anm");
+            if (!help || help->cursor.index != page || help->step != HelpScreen::Page || !session->animations.find(help->page_vm)) return fail("manual page state");
+            if (!res || !res->entries.back().texture.present()) return fail("manual page pixels missing");
+            const auto& pixels = res->entries.back().texture.bgra;
+            std::printf("manual-page %d %016llx\n", page + 1, (unsigned long long)fnv1a64(pixels.data(), pixels.size()));
+            if (page < 8 && (!step(InputState::kDown, 1) || !step(0, 45))) return fail("manual turn page");
+        }
+        manual.load_page = [](i32) { return false; };
+        if (!step(InputState::kUp, 1) || !step(0, 45) || manual.step != HelpScreen::Menu ||
+            manual.cursor.index != 7 || !session->animations.find(manual.item_vms[7])) {
+            return fail("missing manual page while turning trapped the reader");
+        }
+        std::puts("manual page load failures kept the directory usable");
+        session.reset(new GameSession());
+        if (!session->open(bytes.data(), u32(bytes.size())) || !session->begin_boot()) return fail("ending boot");
+        if (!step(0, 330)) return fail("ending title boot");
+        session->supervisor.request(SceneId::Ending);
+        if (!step(0, 121) || !step(InputState::kShot, 1) || !step(0, 1)) return fail("ending update");
+        if (!session->ending_live || session->ending.finished || session->game.loading_vm != 0) return fail("ending prematurely skipped or loading retained");
+        std::puts("ending-confirm keeps full script; loading dismissed");
+        session.reset(new GameSession());
+        if (!session->open(bytes.data(), u32(bytes.size()))) return fail("stage archive");
+        session->globals.stage = 1;
+        session->globals.set_mode(0);
+        if (!session->start_game_direct()) return fail(session->failure.c_str());
+        if (!step(0, 10)) return fail("stage one");
+        session->drain_sound();
+        const auto first = session->music.current;
+        session->globals.stage = 2;
+        session->supervisor.request(SceneId::NextStage);
+        if (!step(0, 200)) return fail(session->failure.c_str());
+        session->drain_sound();
+        if (session->music.current == first || session->music.current != std::string(session->game.entry->bgm_name) + ".wav") return fail("stage BGM not switched");
+        std::printf("stage-bgm %s -> %s\n", first.c_str(), session->music.current.c_str());
+        if (!step(InputState::kEscape, 1) || !step(0, 18) || session->menu.state != GameMenu::MainMenu) {
+            return fail("pause menu did not open");
+        }
+        auto& pause_menu = session->menu;
+        const auto load_pause_help = pause_menu.ctx.load_help_anm;
+        pause_menu.ctx.load_help_anm = []() -> AnmFile* { return nullptr; };
+        for (int index = 0; index < GameMenu::Manual; ++index) {
+            if (!step(InputState::kDown, 1) || !step(0, 1)) return fail("pause menu navigation");
+        }
+        if (pause_menu.cursor.index != GameMenu::Manual || !step(InputState::kShot, 1) || !step(0, 25) ||
+            pause_menu.state != GameMenu::HelpPages || pause_menu.help == nullptr) return fail("pause manual did not open");
+        if (!step(InputState::kBomb, 1) || !step(0, 1) ||
+            pause_menu.state != GameMenu::MainMenu || pause_menu.help != nullptr) {
+            return fail("missing pause manual bank trapped the pause menu");
+        }
+        std::puts("pause manual can be cancelled when its animation bank is missing");
+        pause_menu.ctx.load_help_anm = load_pause_help;
+        if (!step(InputState::kShot, 1) || !step(0, 44) ||
+            !pause_menu.help || pause_menu.help->step != HelpScreen::Menu) return fail("pause manual directory");
+        for (u32 id : pause_menu.help->item_vms) {
+            const auto* item = session->animations.find(id);
+            if (!item || item->entity_offset.x != 32.0f || item->entity_offset.y != 0.0f) return fail("pause manual directory offset");
+        }
+        if (!step(InputState::kShot, 1) || !step(0, 24) ||
+            pause_menu.help->step != HelpScreen::Page) return fail("pause manual first page");
+        const auto* first_page = session->animations.find(pause_menu.help->page_vm);
+        if (!first_page || first_page->entity_offset.x != 32.0f || first_page->entity_offset.y != 0.0f) {
+            return fail("pause manual page offset");
+        }
+        std::puts("pause manual directory and first page use horizontal offsets");
+        session.reset(new GameSession());
+        if (!session->open(bytes.data(), u32(bytes.size())) || !session->begin_boot()) return fail("demo boot failed");
+        session->demo_directory = argv[3];
+        auto play_demo = [&](i32 stage) {
+            for (int i = 0; i < 2200 && session->supervisor.current != SceneId::Game; ++i) {
+                if (!step(0, 1)) return false;
+            }
+            if (session->supervisor.current != SceneId::Game || (session->globals.flags & 0x40u) == 0 ||
+                session->globals.stage != stage) return false;
+            return step(0, 4000) && session->supervisor.current == SceneId::Title &&
+                session->title.screen == TitleScene::kMainMenu && (session->globals.flags & 0x40u) == 0;
+        };
+        for (const i32 stage : {3, 1, 2, 3}) {
+            if (!play_demo(stage)) return fail("embedded demo rotation");
+            std::printf("embedded-demo played stage %d and returned to title\n", stage);
+        }
+        auto& archive = session->archive();
+        const i32 demo_index = archive.find("demo2.rpy");
+        if (demo_index < 0) return fail("demo removal fixture");
+        archive.entries[size_t(demo_index)].name = "hidden-demo2.rpy";
+        if (!step(0, 1850) || session->supervisor.current != SceneId::Title ||
+            !session->supervisor.title_menu_live || session->title.screen != TitleScene::kMainMenu ||
+            session->title.pending_demo >= 0 || session->globals.next_demo_index != 2 ||
+            (session->globals.flags & 0x40u) != 0 || session->music.current != "th16_01.wav") {
+            return fail("missing idle demo broke title");
+        }
+        if (!step(InputState::kShot, 1) || !step(0, 30) ||
+            session->title.screen != TitleScene::kDifficulty) {
+            return fail("title input after missing idle demo");
+        }
+        std::puts("missing idle demo kept the title and accepted game start");
+        if (!step(InputState::kBomb, 1) || !step(0, 70) || session->title.screen != TitleScene::kMainMenu) {
+            return fail("title input after demo recovery did not return to the menu");
+        }
+        std::vector<u8> demo;
+        const i32 next_demo = archive.find("demo3.rpy");
+        if (next_demo < 0 || !archive.read(u32(next_demo), demo)) return fail("demo fallback fixture");
+        const auto demo_path = session->demo_directory + "/demo3.rpy";
+        FILE* demo_file = std::fopen(demo_path.c_str(), "wb");
+        if (!demo_file) return fail("open demo fallback fixture");
+        const size_t written = std::fwrite(demo.data(), 1, demo.size(), demo_file);
+        if (std::fclose(demo_file) != 0 || written != demo.size()) return fail("write demo fallback fixture");
+        auto& damaged_demo = archive.entries[size_t(next_demo)];
+        damaged_demo.size = damaged_demo.compressed = 1;
+        if (!play_demo(2)) return fail("damaged idle demo did not fall back to disk");
+        std::puts("damaged embedded demo used the disk fallback in the next slot");
+        return 0;
+    }
     if (command == "rng" && argc >= 4) {
         Rng rng{u16(std::strtoul(argv[2], nullptr, 0))};
         const int steps = std::atoi(argv[3]);
@@ -235,19 +396,29 @@ int main(int argc, char** argv) {
         const char* path = argv[2];
         const int frames = std::atoi(argv[3]);
         bool extra = false;
-        bool noskip = false;
+        bool noskip = true;
+        int clear_at = -1;
+        int draw_from = 1;
         i32 difficulty = 1;
         i32 score = 0;
+        i32 shot = 0;
+        i32 continues = 0;
         bool dump_ascii = false;
         const char* replay_dir = nullptr;
+        const char* draw_path = nullptr;
         std::unordered_map<int, u32> inject;
         for (int a = 4; a < argc; ++a) {
             if (std::strncmp(argv[a], "extra=", 6) == 0) extra = std::atoi(argv[a] + 6) != 0;
             else if (std::strncmp(argv[a], "noskip=", 7) == 0) noskip = std::atoi(argv[a] + 7) != 0;
             else if (std::strncmp(argv[a], "diff=", 5) == 0) difficulty = std::atoi(argv[a] + 5);
             else if (std::strncmp(argv[a], "score=", 6) == 0) score = std::atoi(argv[a] + 6);
+            else if (std::strncmp(argv[a], "shot=", 5) == 0) shot = std::atoi(argv[a] + 5);
+            else if (std::strncmp(argv[a], "continues=", 10) == 0) continues = std::atoi(argv[a] + 10);
             else if (std::strcmp(argv[a], "ascii") == 0) dump_ascii = true;
             else if (std::strncmp(argv[a], "replay_dir=", 11) == 0) replay_dir = argv[a] + 11;
+            else if (std::strncmp(argv[a], "draw=", 5) == 0) draw_path = argv[a] + 5;
+            else if (std::strncmp(argv[a], "draw-from=", 10) == 0) draw_from = std::atoi(argv[a] + 10);
+            else if (std::strncmp(argv[a], "clear-at=", 9) == 0) clear_at = std::atoi(argv[a] + 9);
             else {
                 int f = 0; u32 bits = 0;
                 if (std::sscanf(argv[a], "%d:%x", &f, &bits) == 2) inject[f] = bits;
@@ -257,28 +428,65 @@ int main(int argc, char** argv) {
         if (!read_file(path, bytes)) return 1;
         GameSession session;
         if (!session.open(bytes.data(), u32(bytes.size()))) { std::fprintf(stderr, "%s\n", session.failure.c_str()); return 1; }
-        if (!session.begin_boot()) { std::fprintf(stderr, "%s\n", session.failure.c_str()); return 1; }
-        session.globals.shot = 0;
+        RecordingDevice device;
+        const auto close_draw = [](std::FILE* file) { std::fclose(file); };
+        std::unique_ptr<std::FILE, decltype(close_draw)> draw_file(nullptr, close_draw);
+        if (draw_path != nullptr) {
+            draw_file.reset(std::fopen(draw_path, "w"));
+            if (!draw_file) return fail("cannot open ending draw output");
+            session.attach_device(&device);
+        }
+        if (clear_at < 0) {
+            if (!session.begin_boot()) return fail(session.failure.c_str());
+            if (draw_file || extra) {
+                // Start the ending probe from the same settled title as the Oracle.
+                for (int f = 0; f < 312; ++f) {
+                    device.begin_frame();
+                    if (!session.logic_step()) return fail(session.failure.c_str());
+                }
+            }
+        }
+        if (shot < 0 || shot >= 4 || continues < 0 || difficulty < 0 || difficulty >= 5) return 1;
+        session.globals.shot = shot;
         session.globals.shot_aux = 0;
+        session.globals.continues = continues;
         session.globals.difficulty = difficulty;
         session.globals.score = score;
         if (replay_dir != nullptr) session.demo_directory = replay_dir;
-        session.supervisor.request(extra ? SceneId::ExtraEnding : SceneId::Ending);
-        // 先进一步以创建 Ending，再关烟雾短路（noskip 测 staff 全链）
+        if (clear_at >= 0) {
+            if (!extra || difficulty != 4) return fail("clear-at requires Extra difficulty");
+            session.globals.stage = session.globals.stage_copy = 7;
+            session.globals.season = 4;
+            session.globals.replay_slot = -1;
+            session.supervisor.boot_frames = Supervisor::kBootHoldFrames;
+            if (!session.start_game_direct(0)) return fail(session.failure.c_str());
+        } else {
+            session.supervisor.request(extra ? SceneId::ExtraEnding : SceneId::Ending);
+            // The menu-only Extra probes begin after the title worker is armed.
+            if (extra && !session.logic_step()) return fail(session.failure.c_str());
+        }
         for (int f = 0; f < frames; ++f) {
+            if (f == clear_at) {
+                session.globals.score = score;
+                session.game.gui.stage_clear();
+            }
             session.injected_input = inject.count(f) ? inject[f] : 0;
-            if (noskip) session.ending.smoke_skip = false;
+            session.ending.smoke_skip = !noskip;
+            if (draw_file) device.begin_frame();
             if (!session.logic_step()) { std::fprintf(stderr, "%s\n", session.failure.c_str()); return 1; }
-            if (noskip) session.ending.smoke_skip = false;
+            if (draw_file && f + 1 >= draw_from) device.write_frame(draw_file.get(), f + 1);
+            session.ending.smoke_skip = !noskip;
         }
         std::printf("scene=%d ending_live=%d ending_index=%d finished=%d title_live=%d title_screen=%d "
-                    "title_origin=%d color=%x lines=%d paints=%d bgm=%s msg=%s\n",
+                    "title_origin=%d color=%x lines=%d paints=%d bgm=%s msg=%s current_bgm=%s loading=%d\n",
                     int(session.supervisor.current), session.ending_live ? 1 : 0, session.ending.ending_index,
                     session.ending.finished ? 1 : 0, session.supervisor.title_menu_live ? 1 : 0,
                     int(session.title.screen), session.globals.title_origin,
                     session.ending.text_color, session.ending.lines_written, session.ending.text_paint_count,
                     session.ending.last_bgm.empty() ? "-" : session.ending.last_bgm.c_str(),
-                    session.ending.msg_name.c_str());
+                    session.ending.msg_name.c_str(),
+                    session.music.current.empty() ? "-" : session.music.current.c_str(),
+                    session.game.loading_vm != 0 ? 1 : 0);
         if (!session.ending.last_text.empty()) std::printf("text_bytes=%zu\n", session.ending.last_text.size());
         for (const char* e : session.ending.events) std::printf("event %s\n", e);
         if (dump_ascii) {
@@ -1227,6 +1435,8 @@ int main(int argc, char** argv) {
 
         GameSession session;
         if (!session.open(dat.data(), u32(dat.size()))) return fail(session.failure.c_str());
+        BgmPlaybackTrace bgm_trace(session.globals);
+        if (digest_only && std::getenv("TH16_TRACE_BGM") != nullptr) session.music.output = &bgm_trace;
         session.run_draw_chains = draw_mode;   // 非 draw 模式与不跑 0x4015a0 的 oracle 同口径
         RecordingDevice device;
         if (draw_mode) session.attach_device(&device);
@@ -1428,6 +1638,7 @@ int main(int argc, char** argv) {
             if (dialogue_hold >= 0) session.game.world.dialogue = dialogue_hold != 0;
             session.injected_input = u32(held);
             if (refill_lives >= 0 && session.globals.lives < refill_lives) session.globals.lives = refill_lives;
+            bgm_trace.frame = f + 1;
             trace_state.current = f + 1;
             device.begin_frame();
             if (f + 1 >= vm_dump_frame && f + 1 <= vm_dump_end) session.renderer.trace_frame = f + 1;
@@ -1604,7 +1815,7 @@ int main(int argc, char** argv) {
                 for (u32 v : head) feed_item_u32(v);
                 if (im) for (const Item& it : im->items) {
                     if (it.state == 0) continue;
-                    const u32 words[] = {u32(it.index), u32(it.state), u32(it.type), u32(it.type_copy),
+                    const u32 words[] = {u32(it.index), u32(it.state), u32(it.type), u32(it.offscreen_indicator),
                                          bits(it.pos.x), bits(it.pos.y), bits(it.pos.z),
                                          bits(it.velocity.x), bits(it.velocity.y), bits(it.velocity.z),
                                          bits(it.speed), bits(it.angle), bits(it.attract_speed), u32(it.counter), u32(it.flag),
@@ -1797,7 +2008,7 @@ int main(int argc, char** argv) {
                     std::printf("%s{\"index\":%d,\"state\":%d,\"type\":%d,\"type2\":%d,\"pos\":[%u,%u,%u],\"vel\":[%u,%u,%u],"
                                 "\"speed\":%u,\"angle\":%u,\"timer\":[%d,%d,%u,%d,%u],\"attract_speed\":%u,\"counter\":%d,\"serial\":%d,"
                                 "\"flag\":%d,\"vm\":[%d,%d,%u,%u,%d,%d,%u]}",
-                                first_item ? "" : ",", it.index, it.state, it.type, it.type_copy,
+                                first_item ? "" : ",", it.index, it.state, it.type, it.offscreen_indicator,
                                 bits(it.pos.x), bits(it.pos.y), bits(it.pos.z), bits(it.velocity.x), bits(it.velocity.y), bits(it.velocity.z),
                                 bits(it.speed), bits(it.angle), it.timer.previous, it.timer.current, bits(it.timer.current_f),
                                 it.timer.speed_slot, it.timer.flags, bits(it.attract_speed), it.counter, it.serial, it.flag,
@@ -1902,9 +2113,12 @@ int main(int argc, char** argv) {
             {
                 // GameMenu 快照（game-oracle.py menu_snapshot 同口径）
                 const GameGlobals& g = session.globals;
+                const SoundRequests& sound = session.sfx_events;
                 std::printf(",\"menu\":{\"game_flags\":%u,\"game_speed\":%u,\"continues_used\":%d,\"continues_left\":%d,\"sfx\":[",
                             session.game.flags, bits(session.supervisor.game_speed), g.continues, g.continues_left);
-                for (size_t i = 0; i < session.sfx_events.ids.size(); ++i) std::printf("%s%d", i ? "," : "", session.sfx_events.ids[i]);
+                for (size_t i = 0; i < sound.ids.size(); ++i) std::printf("%s%d", i ? "," : "", sound.ids[i]);
+                std::printf("],\"sfx_pan\":[");
+                for (size_t i = 0; i < sound.pans.size(); ++i) std::printf("%s%d", i ? "," : "", sound.pans[i]);
                 std::printf("],\"menu\":");
                 if (!session.menu_live) std::printf("null}");
                 else {

@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -80,6 +80,23 @@ test('replay-roundtrip: a two-segment recording (stage 1 clear → stage 2) play
       assert.equal(recorded[key], g[key], `recording run ${key}`);
       assert.equal(replayed[key], g[key], `port playback ${key}`);
     }
+
+    // Starting from the second segment and pressing R in Pause uses the stage
+    // stored as the run's start, along with that stage's replay state and input.
+    const chooseStage2 = '314:0x20,316:0x20,318:0x20,322:1,373:1,392:0x20,401:1';
+    const boot = (frames, input) => {
+      const result = spawnSync(harness, ['scene-boot', dat, String(frames), input, 'scenes'],
+        { encoding: 'utf8', env: { ...process.env, TH16_REPLAY_DIR: dir } });
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      assert.match(result.stdout, /^event replay-play 0$/m);
+      return result.stdout;
+    };
+    const secondStage = boot(545, chooseStage2);
+    assert.match(secondStage, /^scene=7 .*\bstage=2\b/m);
+    assert.match(secondStage, /^game .*\bstd=st02\.std\b/m);
+    const restarted = boot(650, chooseStage2 + ',550:0x100,583:0x200000');
+    assert.match(restarted, /^scene=7 .*\bstage=1\b/m);
+    assert.match(restarted, /^game .*\bframe=54\b.*\bstd=st01\.std\b/m);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -91,4 +108,44 @@ test('replay-globals: stage header +0x14 snapshot decodes the 0x4a5790 block', n
   assert.equal(r.stdout.trim(),
     '0 stage=3 shot=0+0 season=1 diff=2 score=0 lives=2/0 bombs=3/0 power=400/400/100 gauge=1140/1140 pv=1000000 graze=0 ' +
     'replay_slot=-1 pos=0,51200 focus=0 new_game=1 seed=30966 frames=6777');
+});
+
+test('title Replay: a recording saved from Pause returns to the selected slot after playback',
+  { skip: !existsSync(dat) && 'th16.dat not present' }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'th16-replay-menu-'));
+  try {
+    const replays = join(dir, 'replay');
+    mkdirSync(replays);
+    const boot = (frames, inputs, ...options) => {
+      const result = spawnSync(harness, ['scene-boot', dat, String(frames), inputs, 'scenes', ...options],
+        {encoding: 'utf8', env: {...process.env, TH16_REPLAY_DIR: dir}});
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      return result.stdout;
+    };
+    const saved = boot(1040, [
+      '313:1,360:1,400:1,450:1,550:1,552:1,554:1',
+      '700:0x100,731:0x20,736:0x20,745:1,788:0x10,795:1,829:1',
+      '852:1,854:1,856:1,858:1,860:1,862:1,864:1,866:1,868:1,907:2',
+    ].join(','));
+    assert.match(saved, /scene-change frame=920 7->4\b/);
+    const recording = join(replays, 'th16_01.rpy');
+    assert.ok(existsSync(recording), 'Pause saved the replay');
+    copyFileSync(recording, join(replays, 'th16_05.rpy'));
+
+    const draw = join(dir, 'returned-title.jsonl');
+    const replayed = boot(865, [
+      '314:0x20,316:0x20,318:0x20,322:1',
+      '356:0x20,358:0x20,360:0x20,362:0x20,373:1,401:1,705:1',
+    ].join(','), `draw=${draw}`, 'draw-from=865');
+    assert.match(replayed, /event replay-play 4\b/);
+    assert.match(replayed, /scene-change frame=434 4->7\b/);
+    assert.match(replayed, /scene-change frame=718 7->4\b/);
+    assert.match(replayed, /^scene=4 .*\bscreen=11 sub=2 cursor=4\b/m);
+    const {ops} = JSON.parse(readFileSync(draw, 'utf8'));
+    const gameSprites = ops.filter(op => op.op === 'draw' &&
+      (op.texture[0] === 7 || op.texture[0] === 8 || (op.texture[0] >= 10 && op.texture[0] < 16)));
+    assert.deepEqual(gameSprites, [], 'title draws no enemies, bullets or effects from the replay');
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
 });

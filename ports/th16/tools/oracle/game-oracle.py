@@ -470,6 +470,7 @@ class GameOracle(Oracle):
             'D3DXVec3Project': (24, self.on_vec3_project),
             'D3DXVec3ProjectArray': (36, self.on_vec3_project_array),
             'D3DXLoadSurfaceFromSurface': (36, lambda o: self.uc.reg_write(UC_X86_REG_EAX, 0)),  # 截屏（暂停/结束画面）
+            'D3DXLoadSurfaceFromFileInMemory': (36, self.on_load_surface_png),
             # 回放槽 / 成绩文件探测（0x402600 CreateFileA、CRT fopen 族）：一律当作“文件不存在”
             # ——菜单列表画出空槽占位行，不触发写盘；GetLastError 回 ERROR_FILE_NOT_FOUND
             'CreateFileA': (28, self.on_create_file_a),
@@ -498,6 +499,13 @@ class GameOracle(Oracle):
             else:
                 addr = self.make_stub2(0, (lambda nm: (lambda o: self.on_unknown_import(nm)))(name))
             self.uc.mem_write(slot, struct.pack('<I', addr))
+
+    def on_load_surface_png(self, _):
+        # Manual 的原始 PNG 由加载线程读取；几何记录器无需写入纹理像素。
+        source, size = self.arg(3), self.arg(4)
+        if size < 8 or self.uc.mem_read(source, 8) != b'\x89PNG\r\n\x1a\n':
+            raise RuntimeError('expected a PNG for the Manual page surface')
+        self.uc.reg_write(UC_X86_REG_EAX, 0)
 
     def on_create_file_a(self, o):
         # 只认 self.disk_files 里登记的路径（--replay 的 replay/th16_XX.rpy，只读）；其余一律失败
@@ -738,18 +746,9 @@ class GameOracle(Oracle):
 
     def on_anm_load_file(self, o):
         # 0x46d020 入口钩子：槽已装 → 直接返回；否则挂起，在模拟器外同步跑装载线程工作步（0x46cf80 / 0x46d1c0）。
-        # help.anm 由 0x43c5b0 丢给装载线程。标题 oracle 不跑该线程，+0x12c 保持空，
-        # HelpScreen 不生成目录项。同步装载会在进入当帧画出 9 个 help 图元。
         uc = self.uc
         slot = self.arg(0)
         name = self.cstr(self.arg(1))
-        if name == 'help.anm' and getattr(self, 'defer_help_anm', False):
-            esp = uc.reg_read(UC_X86_REG_ESP)
-            ret = struct.unpack('<I', uc.mem_read(esp, 4))[0]
-            uc.reg_write(UC_X86_REG_ESP, esp + 4 + 8)
-            uc.reg_write(UC_X86_REG_EAX, 0)
-            uc.reg_write(UC_X86_REG_EIP, ret)
-            return
         current = self.u32(self.manager + BANK_ARRAY + slot * 4)
         if current:
             esp = uc.reg_read(UC_X86_REG_ESP)
@@ -904,8 +903,11 @@ class GameOracle(Oracle):
         if request == 0xC:
             mode = self.u32(self.u32(DAT_GAME_MANAGER) + 0xAC)
             self.uc.mem_write(DAT_UI_CAMERA + 0x700, struct.pack('<I', 0))
+            self.call(GAME_DESTROY)
         elif request in (0xA, 0xB, 0xE, 0x13):
             mode = 1 if request == 0xB else 0
+            # 0x42d200 compares the outgoing stage against DAT_004a5794 to choose the teardown path.
+            self.call(GAME_DESTROY)
             self.uc.mem_write(DAT_UI_CAMERA + 0x700, struct.pack('<I', 1))
             self.uc.mem_write(DAT_UI_CAMERA + 0x704, struct.pack('<I', 1 if request == 0x13 else 0))
             stage = self.u32(DAT_STAGE_COPY)
@@ -914,7 +916,6 @@ class GameOracle(Oracle):
         else:
             self.scene_exit = request
             return
-        self.call(GAME_DESTROY)
         self.uc.mem_write(DAT_SCENE_REQUEST, struct.pack('<I', 7))
         self.game_manager = self.call(GAME_CREATE, ecx=mode)
         rc = self.call(GAME_LOAD)

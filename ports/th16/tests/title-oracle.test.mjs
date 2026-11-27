@@ -5,7 +5,7 @@
 // 第 342 帧光标下移，窗口含下移前后各几帧。
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {execFileSync} from 'node:child_process';
+import {execFileSync, spawnSync} from 'node:child_process';
 import {existsSync, mkdtempSync, readFileSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join, resolve} from 'node:path';
@@ -46,10 +46,9 @@ const MUSIC_DRAW_TO = 379;
 // ↓×2 到 Spell Practice，第 320 帧确认。第 341 帧进入（0x4553d0），第 353 帧子状态 2。窗口 360–369。
 const SPELL_DRAW_FROM = 360;
 const SPELL_DRAW_TO = 369;
-// ↓×7 到 Manual，第 330 帧确认。第 351 帧进入（0x4545a0）。help.anm 在装载线程里，
-// 标题路径不跑该线程，目录项不出现。窗口 360–369。
-const MANUAL_DRAW_FROM = 360;
-const MANUAL_DRAW_TO = 369;
+// ↓×7 到 Manual，第 330 帧确认。第 450 帧打开第一页，翻到末页并返回标题。
+const MANUAL_DRAW_FROM = 356;
+const MANUAL_DRAW_TO = 1220;
 
 function asciiLines(text) {
   return text.split('\n').filter(line => line.startsWith('ascii '));
@@ -235,22 +234,37 @@ test('spell practice: 10 settled draw frames match original structure and vertic
   }
 });
 
-test('manual screen: 10 settled draw frames match original structure and vertices', needOracle, () => {
+test('manual screen: nine pages, page bounds and return to title match original drawing', needOracle, () => {
   const dir = mkdtempSync(join(tmpdir(), 'th16-title-manual-'));
   try {
     const state = join(dir, 'state.json');
     const oracleDraw = join(dir, 'oracle.draw.jsonl');
     const portDraw = join(dir, 'port.draw.jsonl');
-    const input = `314:${DOWN},315:0,316:${DOWN},317:0,318:${DOWN},319:0,320:${DOWN},321:0,322:${DOWN},323:0,324:${DOWN},325:0,326:${DOWN},327:0,330:${Z},331:0`;
+    const keys = [
+      ...Array.from({length: 7}, (_, i) => [314 + i * 2, DOWN]),
+      [330, Z], [395, DOWN], [415, '0x10'], [450, Z],
+      ...Array.from({length: 8}, (_, i) => [502 + i * 50, DOWN]),
+      [902, DOWN], [952, '0x10'], [1002, DOWN], [1052, '0x2'], [1108, '0x2'],
+    ];
+    const input = keys.flatMap(([frame, key]) => [`${frame}:${key}`, `${frame + 1}:0`]).join(',');
     execFileSync(py, [oracle, exe, datDir, String(MANUAL_DRAW_TO), state, '--input', input,
                       '--draw-out', oracleDraw, '--draw-from', String(MANUAL_DRAW_FROM)],
                  {stdio: ['ignore', 'ignore', 'pipe']});
-    execFileSync(harness, ['scene-boot', dat, String(MANUAL_DRAW_TO), input, `draw=${portDraw}`,
-                           `draw-from=${MANUAL_DRAW_FROM}`], {stdio: ['ignore', 'ignore', 'pipe']});
-    const compared = execFileSync('python3', [compare, oracleDraw, portDraw, '--frames', `${MANUAL_DRAW_FROM}-${MANUAL_DRAW_TO}`, '--eps', '1e-4'],
-                                  {encoding: 'utf8'});
-    process.stdout.write(compared);
-    assert.match(compared, /frames=10 mismatches=0/);
+    const port = execFileSync(harness, ['scene-boot', dat, String(MANUAL_DRAW_TO), input, `draw=${portDraw}`,
+                                        `draw-from=${MANUAL_DRAW_FROM}`], {encoding: 'utf8'});
+    const compared = spawnSync(py, [compare, oracleDraw, portDraw, '--frames', `${MANUAL_DRAW_FROM}-${MANUAL_DRAW_TO}`, '--eps', '1e-4'],
+                               {encoding: 'utf8'});
+    if (compared.error) throw compared.error;
+    assert.equal(compared.status, 0, compared.stdout + compared.stderr);
+    const frameCount = MANUAL_DRAW_TO - MANUAL_DRAW_FROM + 1;
+    assert.ok(compared.stdout.includes(`frames=${frameCount} mismatches=0`), compared.stdout);
+    const recording = JSON.parse(readFileSync(state, 'utf8'));
+    const pages = [1, 2, 3, 4, 5, 6, 7, 8, 9, 8, 9];
+    assert.deepEqual(recording.manual_page_reads, pages.map(page => `help_${String(page).padStart(2, '0')}.png`));
+    const last = recording.frames.at(-1);
+    assert.equal(last.screen, 1, 'original returned to the title menu');
+    const portState = header(port);
+    assert.deepEqual([portState.screen, portState.sub, portState.cursor], [last.screen, last.sub, last.cursor]);
   } finally {
     rmSync(dir, {recursive: true, force: true});
   }

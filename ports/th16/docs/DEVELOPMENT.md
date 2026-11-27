@@ -43,6 +43,10 @@ node tools/run-harness.mjs anm games/th16/original/th16.dat title.anm      # 与
 
 两条构建共用 `tools/build/source-object.mjs` 的逐 TU 对象缓存；任一头文件、flags、编译器身份变化即全部失效。失败的构建会删除产物与 manifest。
 
+## 浏览器渲染
+
+浏览器版使用 640×480 逻辑坐标和 1280×960 后备缓冲。整屏渲染目标和深度缓冲使用相同的 2× 缩放，HUD 数字取原版 `ascii_1280.anm`。动态文字以 A4R4G4B4 保存，GPU 只更新重绘的矩形。
+
 ## 浮点语义
 
 `th16.exe` 以 SSE2 标量单精度编译：4289 条 SSE 标量指令对 428 条 x87；RNG 的浮点变体是 `CVTPD2PS` 后 `MULSS/SUBSS/DIVSS`。因此 C++ 侧全部使用 `float` 并禁用 FMA 融合（`-ffp-contract=off`），对 Unicorn 直跑原版函数的结果位级一致（`tests/golden/rng.json`）。仅 43 个游戏函数使用 x87 算术（34 处超越函数），这些在还原时逐个对照 `.asm`。
@@ -127,7 +131,7 @@ python3 tools/oracle/draw-compare.py /tmp/st1.oracle.digest.jsonl /tmp/st1.port.
 
 定位到具体操作后，`TH16_VM_DUMP=<帧>`（或 `<起帧>-<止帧>`）让 harness 把这些帧进入 `AnmRenderer::draw_vm` 的每个 VM 的身份与状态写到 stderr：层、ANM 槽、脚本、精灵、位置、缩放、颜色、脚本时刻、存活帧数、父 VM，再对照 `harness anm-script` 的脚本反汇编查到指令。超过命令行单参数长度的通关脚本用 `@<路径>` 从文件读入，harness 的输入脚本参数与 `game-oracle.py --input` 同口径。原版在收到回标题 / 结局请求的那一帧并不切换场景（`switch_scene` 只记录请求），两侧在这一帧画的分别是游戏场景的重复帧与新场景首帧，所以两侧都不记录场景切换帧（`exit_frame`），绘制流止于它的前一帧。
 
-回归守护在 `tests/draw-long.test.mjs`：`tests/golden/draw-long.json` 每个用例是一组参数加段表（段 = 起帧、止帧、网格、段摘要），测试只跑移植侧，各用例并发；另有两个自检用例拿同一段跑的原始 JSON 走 `tools/draw-structure.mjs`，要求与 harness 内折出的摘要逐帧相同。
+回归测试 `tests/draw-long.test.mjs` 对 `tests/golden/draw-long.json` 中已重采验证的用例逐帧核对，另有两个用例检查 harness 与 Node 生成的摘要是否一致。重采用 `tools/oracle/verify-long-draw.py --case-regex <名称正则>`。验证器要求摘要从指定起点连续覆盖到目标末帧，原版提前切换场景时覆盖到切换前一帧。加 `--update` 可在所选用例全部通过后更新段表并标记为已验证。
 
 ## 页面壳
 

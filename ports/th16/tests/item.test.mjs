@@ -4,8 +4,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {existsSync, readFileSync} from 'node:fs';
-import {resolve} from 'node:path';
+import {existsSync, mkdtempSync, readFileSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join, resolve} from 'node:path';
 
 const here = resolve(import.meta.dirname);
 const monorepo = resolve(here, '../../..');
@@ -24,6 +25,25 @@ function gameRun(c, frames = c.frames) {
     String(frames), c.input, '', '', String(c.difficulty), String(c.replay_slot),
   ]));
 }
+
+test('item: the first draw clears the original seasonal drop indicator field', needDat, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'th16-item-draw-'));
+  try {
+    const input = '0:0x11,140:0x41,170:0x49,220:0x89,400:0x809,401:0x09';
+    const {frames} = JSON.parse(run([
+      'game-draw', dat, '4', '3', '3', '477', input, '', '', '2', '-1', '8', '1', '0',
+      join(dir, 'draw.jsonl'), '478',
+    ]));
+    // Original 0x430bb2 seeds Item+0xc58 and 0x4308c6 clears it after drawing.
+    const drops = frame => frames[frame - 1].items.items.map(i => [i.index, i.state, i.type2]);
+    assert.deepEqual(drops(471), [[4695, 6, 16]]);
+    assert.deepEqual(drops(472), [[4695, 3, 0]]);
+    assert.deepEqual(drops(475), [[4694, 6, 16], [4695, 3, 0]]);
+    assert.deepEqual(drops(477), [[4694, 3, 0], [4695, 3, 0]]);
+  } finally {
+    rmSync(dir, {recursive: true, force: true});
+  }
+});
 
 const f32 = u => new Float32Array(new Uint32Array([u]).buffer)[0];
 const near = (u, v, eps = 1e-3) => Math.abs(f32(u) - v) <= eps;

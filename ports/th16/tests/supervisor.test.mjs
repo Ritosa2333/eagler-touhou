@@ -7,6 +7,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import {resolve} from 'node:path';
+import {frameDigests} from '../tools/draw-structure.mjs';
 
 const here = resolve(import.meta.dirname);
 const monorepo = resolve(here, '../../..');
@@ -880,4 +881,34 @@ test('practice return (DAT_004a6f1c = 4): difficulty → shot → season auto-co
   assert.deepEqual([screen(MENU_LIVE + 1), screen(MENU_LIVE + 2), screen(MENU_LIVE + 3)], [6, 7, 8]);
   const out = run(['scene-boot', dat, String(MENU_LIVE + 4), 'origin=4']);
   assert.equal(spellState(out).origin, '1', '0x450ef0 case 0 resets DAT_004a6f1c 4 → 1');
+});
+
+test('practice return: Pause Q restores stage 2 and draws the original transition and scores', needDat, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'th16-practice-return-'));
+  try {
+    const draw = path.join(dir, 'return.jsonl');
+    const input = [
+      '313:0x20,315:1,344:1,367:1,390:1,413:0x20,415:1',
+      '562:0x100,595:0x10000',
+    ].join(',');
+    const out = run(['scene-boot', dat, '633', input, 'reach=0,1,1', 'reach=0,1,2',
+      'scenes', 'draw-from=611', 'draw=' + draw]);
+    assert.match(out, /^scene-change frame=456 4->7$/m);
+    assert.match(out, /^scene-change frame=608 7->4$/m);
+    assert.match(out, /^scene=4 .*\bscreen=8 sub=2 cursor=1\b/m);
+
+    // Original D3D draws at the first return animation and first practice score table.
+    const expected = new Map([
+      [611, 'db98ae391c44ef6b73c4d1b3d43de3efa6b9e278'],
+      [633, '71f086df3929978302142f5ea0825e5f7cb38015'],
+    ]);
+    const actual = new Map();
+    for (const line of fs.readFileSync(draw, 'utf8').trim().split('\n')) {
+      const {frame, ops} = JSON.parse(line);
+      if (expected.has(frame)) actual.set(frame, frameDigests(ops).v);
+    }
+    assert.deepEqual(actual, expected);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
 });
