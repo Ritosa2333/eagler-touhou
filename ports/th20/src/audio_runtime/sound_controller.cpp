@@ -228,6 +228,12 @@ int SoundInf::shutdown() {
 }
 int SoundInf::poll() {
     std::unique_lock<std::recursive_mutex> initial(runtime::shared_locks().slot(11));
+#ifdef TH_SDL3
+    // No audio device (it failed to open): nothing will ever run these
+    // commands, and the stage loader waits for the queue to empty
+    // (load_gameplay: while audio_commands_pending). Drop them: play silent.
+    if(!device_owner) {for(auto& command:commands) command.type=0;return 0;}
+#endif
     if(!device_owner) return 0; // original returns zero from its unlocking helper
     initial.unlock();
     Command* current=commands;
