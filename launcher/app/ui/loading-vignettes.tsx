@@ -199,7 +199,8 @@ export const loadingVignettes = {
   },
   umbrella: {
     label: '人间之里 · 小伞扑空',
-    cast: [{character:'kogasa', at:[275,134], action:'startle'}],
+    cast: [{character:'kogasa', at:[275,134]}],
+    stinger: 'kogasa',
     artwork: <>
       <path className="v-wall" d="M12 169V81l166-40 81 26 148-29 61 39v92Z"/>
       <path className="v-shadow" d="M9 84 178 36l91 31-14 10-83-26L9 99Zm248-15 151-36 70 43-10 13-61-41-150 35Z"/>

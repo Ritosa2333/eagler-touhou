@@ -66,13 +66,52 @@
   .loading-scene-halo {fill:var(--scene-halo);opacity:.18}
   .loading-scene-line {fill:none;stroke:var(--scene-line);stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
   .loading-scene-mist {opacity:.65}
-  .loading-scene-portrait {
-    position:absolute;
+  :is(.loading-scene-portrait,.loading-scene-stinger-face) {
     aspect-ratio:1;
     object-fit:cover;
     object-position:left center;
+  }
+  .loading-scene-portrait {
+    position:absolute;
     translate:-50% -50%;
     filter:drop-shadow(0 1px 1px rgb(0 0 0 / .42));
+  }
+  .loading-scene-stinger {
+    --stinger-duration:620ms;
+    position:fixed;
+    inset:0;
+    inline-size:100vw;
+    block-size:100dvh;
+    z-index:var(--ui-layer-transient);
+    overflow:clip;
+    pointer-events:none;
+    visibility:hidden;
+    background:radial-gradient(ellipse at 50% 40%, #301c3e 0%, #100b18 64%, #07060b 100%);
+    animation:loading-stinger-cut var(--stinger-duration) step-end var(--stinger-delay);
+  }
+  .loading-scene-stinger::after {
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(ellipse at 50% 55%, transparent 42%, #08050d80 100%);
+  }
+  .loading-scene-stinger-face {
+    position:absolute;
+    inset:48% auto auto 50%;
+    inline-size:max(120vw, 128svh);
+    max-inline-size:none;
+    block-size:auto;
+    translate:-50% -50%;
+    animation:loading-stinger-lunge var(--stinger-duration) ease-out var(--stinger-delay);
+  }
+  @keyframes loading-stinger-cut {
+    from {visibility:visible}
+    to {visibility:hidden}
+  }
+  @keyframes loading-stinger-lunge {
+    0% {transform:scale(.94) rotate(3deg)}
+    12% {transform:translate(1.6vw,-1.5vh) scale(1.08) rotate(-4deg)}
+    28%, 100% {transform:scale(1.035) rotate(-1deg)}
   }
   [data-scene-motion="drift"] {animation:loading-scene-drift 4.8s ease-in-out infinite}
   [data-scene-motion="breathe"] {animation:loading-scene-breathe 4s ease-in-out infinite}
@@ -100,7 +139,8 @@
     33%, 47% {transform:translateY(var(--scene-lift));}
   }
   :is(.less-motion, [data-still]) .loading-scene [data-scene-motion] {animation:none}
+  .less-motion :is(.loading-scene-stinger,.loading-scene-stinger-face) {animation:none}
   @media (prefers-reduced-motion:reduce) {
-    .loading-scene [data-scene-motion] {animation:none}
+    .loading-scene [data-scene-motion], .loading-scene-stinger, .loading-scene-stinger-face {animation:none}
   }
 }

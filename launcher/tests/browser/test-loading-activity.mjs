@@ -35,6 +35,7 @@ try {
   await page.goto(new URL('ui-review.html?preview=loading',origin).href,{waitUntil:'domcontentloaded'});
   const sceneArtwork = id => `.loading-scene[data-loading-scene="${id}"]`;
   const picker = '[data-preview-scene-select]';
+  const stinger = '[data-loading-stinger="kogasa"]';
   const nextScene = '[data-preview-step="next"]';
   const previousScene = '[data-preview-step="previous"]';
   const waitForPickerClose = () => page.waitForFunction(() => (
@@ -88,7 +89,6 @@ try {
   const actorMotions = {
     shrine:'loading-scene-search', forest:'loading-scene-forage',
     ferry:'loading-vignette-ferry', lookout:'loading-vignette-notice',
-    umbrella:'loading-vignette-startle',
   };
   for (const [id, cast] of Object.entries(casting)) {
     await page.waitForSelector(sceneArtwork(id));
@@ -153,37 +153,63 @@ try {
       }
     }
     if (id === 'umbrella') {
-      for (const width of [1440, 320]) {
-        await page.setViewport({width,height:640});
-        const surprise = await page.$eval(sceneArtwork(id), async node => {
-          const face = node.querySelector('[data-scene-motion="startle"]');
-          const [animation] = face.getAnimations();
-          const {delay,iterations} = animation.effect.getTiming();
-          animation.pause();
-          await animation.ready;
-          const scaleAt = time => {
-            animation.currentTime = time;
-            const transform = getComputedStyle(face).transform;
-            if (transform === 'none') return 1;
-            const matrix = new DOMMatrixReadOnly(transform);
-            return Math.hypot(matrix.a,matrix.b);
+      for (const [width,height] of [[1440,900],[320,640],[640,320]]) {
+        await page.setViewport({width,height});
+        const surprise = await page.$eval(stinger, async cut => {
+          const face = cut.querySelector('img');
+          const [cutAnimation] = cut.getAnimations();
+          const animations = [cutAnimation, ...face.getAnimations()];
+          const {delay, iterations} = cutAnimation.effect.getTiming();
+          animations.forEach(animation => animation.pause());
+          await Promise.all(animations.map(animation => animation.ready));
+          const visibilityAt = time => {
+            animations.forEach(animation => {animation.currentTime = time;});
+            return getComputedStyle(cut).visibility;
           };
-          const before = scaleAt(9999);
-          const peak = scaleAt(10200);
-          const box = node.getBoundingClientRect(), portrait = face.getBoundingClientRect();
-          const fits = portrait.left >= box.left && portrait.right <= box.right
-            && portrait.top >= box.top && portrait.bottom <= box.bottom;
-          const afterward = scaleAt(12000);
-          return {delay,iterations,before,peak,afterward,fits};
+          const before = visibilityAt(delay - 1);
+          const visible = visibilityAt(delay + 1);
+          visibilityAt(delay + 100);
+          const box = cut.getBoundingClientRect();
+          const portrait = face.getBoundingClientRect();
+          const coversViewport = box.left === 0 && box.top === 0 && box.width === innerWidth && box.height === innerHeight;
+          const fillsFrame = portrait.left < 0 && portrait.right > box.right && portrait.top < 0 && portrait.bottom > box.bottom;
+          return {delay,iterations,before,visible,coversViewport,fillsFrame};
         });
         assert.equal(surprise.delay,10000);
         assert.equal(surprise.iterations,1);
-        assert.equal(surprise.before,1);
-        assert.ok(surprise.peak > 3.9 && surprise.fits, `Kogasa's surprise stays inside the stage at ${width}px`);
-        assert.equal(surprise.afterward,1);
+        assert.equal(surprise.before,'hidden');
+        assert.equal(surprise.visible,'visible');
+        assert.ok(surprise.coversViewport && surprise.fillsFrame, `Kogasa fills the viewport at ${width}×${height}`);
       }
+      const finishCut = randomValue => page.$eval(stinger, async (cut, randomValue) => {
+        const random = Math.random;
+        Math.random = () => randomValue;
+        try {
+          const replaced = new Promise(resolve => {
+            const observer = new MutationObserver(() => {
+              if (cut.isConnected) return;
+              observer.disconnect();
+              resolve();
+            });
+            observer.observe(cut.parentNode,{childList:true});
+          });
+          cut.getAnimations()[0].finish();
+          const after = getComputedStyle(cut).visibility;
+          await replaced;
+          return after;
+        } finally {
+          Math.random = random;
+        }
+      },randomValue);
+      assert.equal(await finishCut(.99999),'hidden');
+      assert.deepEqual(await page.$eval(stinger, cut => [getComputedStyle(cut).visibility, getComputedStyle(cut).animationDelay]), ['hidden','30s']);
+      assert.equal(await finishCut(0),'hidden');
+      assert.equal(await page.$eval(stinger, cut => getComputedStyle(cut).animationDelay),'20s');
     }
     await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
+    if (id === 'umbrella') {
+      assert.deepEqual(await page.$eval(stinger, cut => [getComputedStyle(cut).visibility, cut.getAnimations().length]), ['hidden',0]);
+    }
     for (const [width,height] of [[1440,900],[515,627],[320,640],[640,320]]) {
       await page.setViewport({width,height});
       const state = await snapshotScene(id);
@@ -193,9 +219,13 @@ try {
     await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
     await page.evaluate(() => document.body.classList.add('less-motion'));
     assert.ok((await snapshotScene(id)).motion.every(name => name === 'none'));
+    if (id === 'umbrella') {
+      assert.deepEqual(await page.$eval(stinger, cut => [getComputedStyle(cut).visibility, cut.getAnimations().length]), ['hidden',0]);
+    }
     await page.evaluate(() => document.body.classList.remove('less-motion'));
     await page.setViewport({width:1440,height:900});
     await page.click(nextScene);
+    if (id === 'umbrella') await page.waitForSelector(stinger,{hidden:true});
   }
   await waitForFaces();
   await page.click(picker);

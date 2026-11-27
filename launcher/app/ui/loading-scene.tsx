@@ -1,6 +1,8 @@
-import type {ReactNode} from 'react';
+import {useState, type CSSProperties, type ReactNode} from 'react';
+import {createPortal} from 'react-dom';
 import {siteBrandPath} from '../../lib/site-brand.mjs';
 import {loadingVignettes} from './loading-vignettes';
+import {uiPortalHost} from './portal';
 import reimuPortrait from './reimu-hakurei.svg?url';
 import './loading-scene.css';
 
@@ -33,9 +35,15 @@ type Actor = {
   at: Point;
   size?: number;
   pivot?: Point;
-  action?: 'search' | 'forage' | 'ferry' | 'notice' | 'puppet' | 'startle';
+  action?: 'search' | 'forage' | 'ferry' | 'notice' | 'puppet';
 };
-export type LoadingSceneSpec = {label: string; cast: readonly Actor[]; artwork: ReactNode; foreground?: ReactNode};
+export type LoadingSceneSpec = {
+  label: string;
+  cast: readonly Actor[];
+  artwork: ReactNode;
+  foreground?: ReactNode;
+  stinger?: Character;
+};
 
 function Mountains() {
   return <path className="loading-landscape" d="M0 154 61 120 101 137 174 95 240 134 310 104 375 141 422 117 480 148V188H0Z"/>;
@@ -161,18 +169,38 @@ const scenes = {
 export type LoadingSceneId = keyof typeof scenes;
 export const loadingSceneOptions = Object.entries(scenes).map(([id, {label}]) => ({id: id as LoadingSceneId, label}));
 
+const repeatStingerDelay = () => 20_000 + Math.floor(Math.random() * 10_001);
+
+function LoadingSceneStinger({character, src, host}: {character: Character; src: string; host: HTMLElement}) {
+  const [{delay, shot}, setStinger] = useState({delay:10_000, shot:0});
+  return createPortal(
+    <div key={shot} className="loading-scene-stinger" data-loading-stinger={character} aria-hidden="true"
+      style={{'--stinger-delay': `${delay}ms`} as CSSProperties}
+      onAnimationEnd={event => {
+        if (event.target !== event.currentTarget) return;
+        const nextDelay = repeatStingerDelay();
+        setStinger(({shot}) => ({delay:nextDelay, shot:shot + 1}));
+      }}>
+      <img className="loading-scene-stinger-face" src={src} alt="" draggable={false}/>
+    </div>, host);
+}
+
 export function LoadingScene({scene, assetUrl}: {scene: LoadingSceneId; assetUrl(path: string): string}) {
-  const {cast, artwork, foreground}: LoadingSceneSpec = scenes[scene];
-  return <div className="loading-scene" data-loading-scene={scene} aria-hidden="true">
-    <svg className="loading-scene-art" viewBox="0 0 480 226" aria-hidden="true" focusable="false">{artwork}</svg>
-    {cast.map(({character, at:[x,y], size = 48, pivot, action}) => <img key={`${character}:${x}:${y}`} className="loading-scene-portrait"
-      data-character={character} data-scene-motion={action} alt="" draggable={false}
-      src={character === 'reimu' ? reimuPortrait : assetUrl(siteBrandPath(characterFaces[character]))}
-      style={{
-        left: `${x / 4.8}%`, top: `${y / 2.26}%`, inlineSize: `${size / 4.8}%`,
-        transformOrigin: pivot && `${50 + (pivot[0] - x) / size * 100}% ${50 + (pivot[1] - y) / size * 100}%`,
-      }}/>)}
-    {foreground && <svg className="loading-scene-art loading-scene-foreground" viewBox="0 0 480 226"
-      aria-hidden="true" focusable="false">{foreground}</svg>}
-  </div>;
+  const {cast, artwork, foreground, stinger}: LoadingSceneSpec = scenes[scene];
+  const portraitUrl = (character: Character) => character === 'reimu' ? reimuPortrait : assetUrl(siteBrandPath(characterFaces[character]));
+  const host = stinger && uiPortalHost();
+  return <>
+    <div className="loading-scene" data-loading-scene={scene} aria-hidden="true">
+      <svg className="loading-scene-art" viewBox="0 0 480 226" aria-hidden="true" focusable="false">{artwork}</svg>
+      {cast.map(({character, at:[x,y], size = 48, pivot, action}) => <img key={`${character}:${x}:${y}`} className="loading-scene-portrait"
+        data-character={character} data-scene-motion={action} alt="" draggable={false} src={portraitUrl(character)}
+        style={{
+          left: `${x / 4.8}%`, top: `${y / 2.26}%`, inlineSize: `${size / 4.8}%`,
+          transformOrigin: pivot && `${50 + (pivot[0] - x) / size * 100}% ${50 + (pivot[1] - y) / size * 100}%`,
+        }}/>)}
+      {foreground && <svg className="loading-scene-art loading-scene-foreground" viewBox="0 0 480 226"
+        aria-hidden="true" focusable="false">{foreground}</svg>}
+    </div>
+    {stinger && host && <LoadingSceneStinger character={stinger} src={portraitUrl(stinger)} host={host}/>}
+  </>;
 }
