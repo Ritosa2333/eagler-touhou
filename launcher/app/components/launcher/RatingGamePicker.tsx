@@ -4,11 +4,14 @@ import {useLocale} from '../../i18n';
 import {ActionMenu, ActionMenuRadioGroup, ActionMenuRadioItem} from '../../ui/action-menu';
 import {Button} from '../../ui/button';
 import {bookGameArtwork} from './book-artwork';
+import {BookMultiplayerMenuGroup} from './BookMultiplayerMenuGroup';
 import {BookWorkNumber} from './BookWorkNumber';
+import {compareWorkNumbers, groupMultiplayerWorks} from './products';
 import './rating-game-picker.css';
 
 const ratingGames = ['th03', 'th075', 'th09', 'th19'] as const satisfies readonly GameId[];
 type RatingGame = typeof ratingGames[number];
+const groups = groupMultiplayerWorks(ratingGames.map(gameId => ({gameId, ...PRODUCT_GAMES[gameId]})).sort(compareWorkNumbers));
 
 export function RatingGamePicker({current}: {current: RatingGame}) {
   const {t} = useLocale();
@@ -22,10 +25,12 @@ export function RatingGamePicker({current}: {current: RatingGame}) {
     </Button>
   }>
     <ActionMenuRadioGroup value={current}>
-      {ratingGames.map(game => <ActionMenuRadioItem key={game} value={game} data-game={game} disabled={game !== current}>
-        <RatingGameIcon game={game} />
-        <span>{PRODUCT_GAMES[game].title}</span>
-      </ActionMenuRadioItem>)}
+      {groups.map(({id, products}) => <BookMultiplayerMenuGroup key={id} group={id} data-rating-category={id}>
+        {products.map(({gameId, title}) => <ActionMenuRadioItem key={gameId} value={gameId} data-game={gameId} disabled={gameId !== current}>
+          <RatingGameIcon game={gameId} />
+          <span>{title}</span>
+        </ActionMenuRadioItem>)}
+      </BookMultiplayerMenuGroup>)}
     </ActionMenuRadioGroup>
   </ActionMenu>;
 }

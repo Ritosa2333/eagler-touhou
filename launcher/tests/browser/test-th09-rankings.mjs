@@ -53,9 +53,11 @@ try {
   await page.click('.rating-game-picker');
   const gameOption = '[role="menuitemradio"][data-game]';
   await page.waitForSelector(gameOption, {visible:true});
-  assert.deepEqual(await page.$$eval(gameOption, options => options.map(option =>
-    [option.dataset.game, option.hasAttribute('data-disabled'), option.getAttribute('aria-checked')])),
-  [['th03',true,'false'], ['th075',true,'false'], ['th09',false,'true'], ['th19',true,'false']]);
+  assert.deepEqual(await page.$$eval('[data-rating-category]', (groups, selector) => groups.map(group =>
+    [group.dataset.ratingCategory, group.getAttribute('aria-label'), [...group.querySelectorAll(selector)].map(option =>
+      [option.dataset.game, option.hasAttribute('data-disabled'), option.getAttribute('aria-checked')])]), gameOption),
+  [['versus','对战',[['th03',true,'false'], ['th09',false,'true'], ['th19',true,'false']]],
+    ['fighting','格斗',[['th075',true,'false']]]]);
   await page.keyboard.press('Escape');
   assert.equal(await page.$eval(header, h => h.textContent.trim()), '惯用机体');
   assert.deepEqual(await page.$$eval(rows, found => found.map(row =>

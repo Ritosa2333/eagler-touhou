@@ -36,6 +36,21 @@ export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): Multi
   return kind === 'original' && isPc98Product(PRODUCT_GAMES[product.gameId]) ? 'pc98' : kind;
 }
 
+const multiplayerGroups = ['versus', 'original', 'fighting', 'pc98'] as const;
+
+export const multiplayerGroupLabelKey = (group: MultiplayerGroup) =>
+  group === 'pc98' ? 'library.category.pc98' : `directory.group.${group}` as const;
+
+export function groupMultiplayerWorks<T extends Pick<LibraryProduct, 'gameId'>>(works: readonly T[]) {
+  return multiplayerGroups
+    .map(id => ({id, products: works.filter(work => multiplayerGroup(work) === id)}))
+    .filter(group => group.products.length > 0);
+}
+
+export function compareWorkNumbers(a: Pick<LibraryProduct, 'number'>, b: Pick<LibraryProduct, 'number'>) {
+  return Number(a.number) - Number(b.number);
+}
+
 /** Same catalog fields as lib/frontend-assets.mjs; no copied product list. */
 export function createLibraryProducts(ids: readonly ProductId[], assetUrl: (path: string) => string, hrefForProduct: (id: ProductId) => string): LibraryProduct[] {
   return ids.map(id => {
