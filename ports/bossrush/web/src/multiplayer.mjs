@@ -974,21 +974,44 @@ export class BROMultiplayer {
 
     const col = this.clock.collect(f);
     this.lastCollect = col;
-    this.call('BRO_net_set_timing', this.clock.delay, col.frame, col.predicted.includes(true));
+    // 性能优化：把「set_timing + 每位玩家 apply_keys_at/feed_player_key」合并为
+    // 一次 evalLua。原来是 1 + 2*N 次跨 WASM 往返（4 人局 9 次，每次 bro_eval
+    // 约 4.5us），现在只有 1 次。调用顺序与逐个 call() 完全一致：
+    //   BRO_net_set_timing → (p=0 apply,feed) → (p=1 apply,feed) → ...
     // 3AC：从 2 人遗留改为 maxPlayers —— 4 人 Full Mesh 下 P2/P3/P4 的
     // 真值输入此前从未写进实体 p.key（col.inputs 本就覆盖 maxPlayers 槽），
     // 导致多人录像的远端槽全是 0。collect() 按 this.players=maxPlayers 生成 inputs。
-    for (let p = 0; p < this.maxPlayers; p++) {
-      this.call('BRO_net_apply_keys_at', p, col.frame, col.inputs[p], col.predicted[p]);
-      // 阶段 3H：把该帧输入写进真实实体的 p.key（无实体时无副作用）；
-      // 这样远端玩家用自己的 per-instance 输入表行动，本地全局 KeyState 不受污染。
-      this.call('BRO_net_feed_player_key', p, col.inputs[p]);
+    // 阶段 3H：feed_player_key 把该帧输入写进真实实体的 p.key（无实体时无副作用）；
+    // 这样远端玩家用自己的 per-instance 输入表行动，本地全局 KeyState 不受污染。
+    let lp = null;
+    {
+      const anyPredicted = col.predicted.includes(true);
+      let code = 'BRO_net_set_timing(' + luaValue(this.clock.delay) + ','
+        + luaValue(col.frame) + ',' + (anyPredicted ? 'true' : 'false') + ');';
+      for (let p = 0; p < this.maxPlayers; p++) {
+        const keys = luaValue(col.inputs[p]);
+        code += 'BRO_net_apply_keys_at(' + p + ',' + luaValue(col.frame) + ','
+          + keys + ',' + luaValue(col.predicted[p]) + ');';
+        code += 'BRO_net_feed_player_key(' + p + ',' + keys + ');';
+      }
+      // 阶段 3G：把本机坐标读取也折进同一次往返（原本 getLocalPos 是一次独立
+      // jsonCall ≈ 6.3us），回来后直接 JSON.parse。读取点与旧代码一致：
+      // BRO_net_tick 之后、bro_frame(advance) 之前。
+      if (this.posSync) {
+        code += 'return BRO_net_local_pos();';
+      } else {
+        code += 'return 1;';
+      }
+      const result = this.evalLua(code);
+      if (this.posSync) {
+        lp = JSON.parse(result);
+        this.localPos = lp;
+      }
     }
 
-    // 阶段 3G：读本地 player 坐标 → POS 帧发对端；步进远端代理插值。
+    // 阶段 3G：POS 帧发对端；步进远端代理插值。
     if (this.posSync) {
-      const lp = this.getLocalPos();
-      if (lp.ready && this.net && this.net.ready && typeof this.net.sendPos === 'function') {
+      if (lp && lp.ready && this.net && this.net.ready && typeof this.net.sendPos === 'function') {
         this.net.sendPos(col.frame, lp.x, lp.y);
       }
       this.call('BRO_net_step_entities', this.posAlpha);
@@ -1018,12 +1041,24 @@ export class BROMultiplayer {
   sampleDigest(frame) {
     const f = Number(frame) | 0;
     if (f < 0) return 0;
-    const hash = Number(this.call('BRO_net_frame_digest', f)) >>> 0;
-    this._lastDigest = { frame: f, hash };
-    if (this.net && this.net.ready && typeof this.net.sendDigest === 'function') {
-      const frames = Number(this.call('BRO_net_digest_local_frames')) || 0;
-      this.net.sendDigest(f, hash, frames);
+    // 性能优化：frame_digest + digest_local_frames 原本是两次跨 WASM 往返。
+    // 合成一次 evalLua：要发包时返回 "hash,frames"，否则只返回 "hash"。
+    // frame_digest 无论是否发包都要执行（登记本地摘要供回滚/对账用）。
+    const sending = this.net && this.net.ready && typeof this.net.sendDigest === 'function';
+    const code = sending
+      ? 'local h=BRO_net_frame_digest(' + luaValue(f) + ');return tostring(h)..","..tostring(BRO_net_digest_local_frames())'
+      : 'return tostring(BRO_net_frame_digest(' + luaValue(f) + '))';
+    const out = this.evalLua(code);
+    let hash, frames = 0;
+    if (sending) {
+      const comma = out.indexOf(',');
+      hash = Number(comma >= 0 ? out.slice(0, comma) : out) >>> 0;
+      if (comma >= 0) frames = Number(out.slice(comma + 1)) || 0;
+    } else {
+      hash = Number(out) >>> 0;
     }
+    this._lastDigest = { frame: f, hash };
+    if (sending) this.net.sendDigest(f, hash, frames);
     return hash;
   }
 
@@ -1353,7 +1388,11 @@ export class BROMultiplayer {
         // 对端 player 世界坐标 → 写远端代理目标；x/y 由 tick 里的 step 插值逼近。
         this.setPlayerTarget(who, x, y, frame);
         this._remotePosCount++;
-        this.emit('players', { frame, player: who, x, y, players: this.getPlayers() });
+        // 性能：getPlayers() 要 Serialize 整张玩家表（实测 ~22us/包）。这份快照只服务
+        // 'players' 诊断事件；生产（eagler_adapter）只订阅 'input'，无人订阅时不再白算。
+        const payload = { frame, player: who, x, y };
+        if ((this._listeners.get('players') || []).length > 0) payload.players = this.getPlayers();
+        this.emit('players', payload);
       });
     }
 
@@ -1384,12 +1423,18 @@ export class BROMultiplayer {
           this._divergenceAttempted.add(f);
           this._divergenceEvents.push({ kind: 'digest', frame: f, local: localRaw >>> 0, remote: h });
         }
-        const d = this.getDivergence();
-        if (d.mismatched > 0 && !this._divergenceSeen) {
-          this._divergenceSeen = true;
-          this.emit('divergence', d);
-        } else if (d.mismatched === 0) {
-          this._divergenceSeen = false;
+        // 性能：getDivergence() 每次 pairs(320) + sort + Serialize（实测 ~118us/包），
+        // 这是每帧每包一次。分叉判定已在上面用 BRO_net_local_digest O(1) 完成并入
+        // 回滚队列；这里的全表对账只为 'divergence' 诊断 UI 用——生产
+        // （eagler_adapter）只订阅 'input'，无人订阅时不再白算这 118us。
+        if ((this._listeners.get('divergence') || []).length > 0) {
+          const d = this.getDivergence();
+          if (d.mismatched > 0 && !this._divergenceSeen) {
+            this._divergenceSeen = true;
+            this.emit('divergence', d);
+          } else if (d.mismatched === 0) {
+            this._divergenceSeen = false;
+          }
         }
       });
     }
