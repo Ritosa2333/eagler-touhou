@@ -9527,6 +9527,10 @@
     "id": "cloudSave_backupUsed",
     "params": []
   },
+  "cloudSave.spellArchiveUnavailable": {
+    "id": "cloudSave_spellArchiveUnavailable",
+    "params": []
+  },
   "game.name.th19": {
     "id": "game_name_th19",
     "params": []

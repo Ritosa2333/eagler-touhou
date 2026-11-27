@@ -2260,6 +2260,7 @@
   "cloudSave_th06TimeHint": "th06 playtime is stored in score06.dat. Select it together with score.dat.",
   "cloudSave_th05ClearHint": "th05 clear progress is stored in game.cfg. Select it together with score.dat.",
   "cloudSave_backupUsed": "Statistics were recovered from the backup save.",
+  "cloudSave_spellArchiveUnavailable": "Spell card statistics use an unsupported format. You can still download and sync the save.",
   "game_name_th19": "東方獣王園",
   "game_title_th19mp": "Touhou 19 Multiplayer",
   "multiplayer_loadout_th19_0": "Reimu",
