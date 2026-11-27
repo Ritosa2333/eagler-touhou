@@ -90,7 +90,7 @@ try {
         railFades:probe.railFades.map(({page, categories}) => ({page, populated:categories > 1})),
         snapshots:probe.snapshots,
       };
-    }), {fades:[{local:true,page:'lobby',duration:140},{local:true,page:'library',duration:140}], railFades:[], snapshots:0});
+    }), {fades:[{local:true,page:'lobby',duration:240},{local:true,page:'library',duration:240}], railFades:[], snapshots:0});
 
     const beforeOptions = await counts();
     const shelf = await page.$('#bookGameGrid');

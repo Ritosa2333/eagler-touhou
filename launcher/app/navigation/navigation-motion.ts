@@ -1,5 +1,7 @@
 import {useLayoutEffect, useRef, useSyncExternalStore} from 'react';
+import {LESS_MOTION_STORAGE_KEY} from '../models/site-preferences';
 import {animateSurface, animateUiFrames} from '../ui/surface-motion';
+import {clearDocumentEntrance, pageEntranceOpacity, pageEntranceTiming} from './page-entrance';
 
 const compactQuery = '(max-width: 780px)';
 export function isCompactNavigation() {
@@ -19,7 +21,9 @@ interface PageEntranceOptions {
   contentSelector?: string;
 }
 
-const pageEntranceTiming = {duration: 140, ease: [.2, 0, 0, 1] as [number, number, number, number]};
+function savedLessMotion(view: Window) {
+  try {return view.localStorage.getItem(LESS_MOTION_STORAGE_KEY) === '1';} catch {return false;}
+}
 
 /** Reveal live content after a route commits. Never snapshot or delay a route. */
 export function usePageEntrance<T extends HTMLElement = HTMLDivElement>(page: string, {
@@ -30,19 +34,40 @@ export function usePageEntrance<T extends HTMLElement = HTMLDivElement>(page: st
     const changed = previousPage.current !== page;
     previousPage.current = page;
     const container = surface.current;
-    if (!changed || !container || reduced) return;
+    if (!container) return;
+    const doc = container.ownerDocument;
+    const view = doc.defaultView!;
     let entrance: ReturnType<typeof animateUiFrames>;
+    let ready: MutationObserver | undefined;
     const start = () => {
       const content = contentSelector ? container.querySelector<HTMLElement>(contentSelector) : container;
       if (!content) return false;
-      entrance = animateUiFrames(content, {opacity: ['.85', '1']}, {reduced}, pageEntranceTiming);
+      entrance = animateUiFrames(content, {opacity: [pageEntranceOpacity, '1']}, {reduced}, pageEntranceTiming);
       return true;
     };
-    if (start()) return () => entrance?.cancel();
-    // A lazy route can commit its shell before mounting the content.
-    const ready = new MutationObserver(() => {if (start()) ready.disconnect();});
-    ready.observe(container, {childList: true, subtree: true});
-    return () => {ready.disconnect(); entrance?.cancel();};
+    const reveal = () => {
+      if (reduced) return;
+      ready?.disconnect();
+      if (start()) return;
+      // A lazy route can commit its shell before mounting the content.
+      ready = new MutationObserver(() => {if (start()) ready?.disconnect();});
+      ready.observe(container, {childList: true, subtree: true});
+    };
+    if (changed) {
+      clearDocumentEntrance(doc);
+      reveal();
+    }
+    const restored = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      clearDocumentEntrance(doc);
+      if (!savedLessMotion(view)) reveal();
+    };
+    view.addEventListener('pageshow', restored);
+    return () => {
+      view.removeEventListener('pageshow', restored);
+      ready?.disconnect();
+      entrance?.cancel();
+    };
   }, [contentSelector, page, reduced]);
   return surface;
 }

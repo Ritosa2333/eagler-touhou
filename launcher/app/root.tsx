@@ -35,6 +35,7 @@ import { isPreviewOnlyPage } from './release-features';
 import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
 import {launcherSection, profileSettingsPanel} from './components/launcher/launcher-sections';
 import {localLayerOwnsPageScroll, type PageLocation} from './navigation/page-history';
+import {documentEntranceCss, documentEntranceScript} from './navigation/page-entrance';
 const HelpRoute = lazy(() => import('./routes/help'));
 const Th09RatingsRoute = lazy(() => import('./routes/th09-ratings'));
 
@@ -75,6 +76,8 @@ export function Layout({ children }: { children: ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <style id="ui-style-layers">{'@layer properties,foundation,theme,base,components,utilities;'}</style>
+        <style id="ui-document-entrance">{documentEntranceCss}</style>
+        <script suppressHydrationWarning>{documentEntranceScript}</script>
         <meta name="darkreader-lock" />
         <script>{`try{var theme=JSON.parse(localStorage.getItem('eagler.book.theme'));if(theme==='light'||theme==='dark'){document.documentElement.setAttribute('data-book-theme',theme);document.documentElement.className=theme;}}catch(e){}`}</script>
         {!review && <OriginalBootstrapHead />}

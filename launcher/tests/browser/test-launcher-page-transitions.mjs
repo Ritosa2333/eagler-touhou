@@ -35,7 +35,7 @@ try {
     Element.prototype.animate = function (frames, timing) {
       const animation = animate.call(this, frames, timing);
       const opacity = animation.effect.getKeyframes().map(frame => frame.opacity);
-      if (opacity.join(',') === '0.85,1') {
+      if (opacity.join(',') === '0.28,1') {
         const page = this.closest('.launcher-page-surface')?.dataset.page;
         window.routeFades.push({page, finished:animation.finished.catch(() => {})});
       }

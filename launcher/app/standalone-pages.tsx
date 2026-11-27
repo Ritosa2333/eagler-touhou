@@ -8,6 +8,7 @@ import {LocaleProvider, translate, useLocale, type UiMessageKey} from './i18n';
 import {sitePageTitle, useDocumentUiLocale} from './navigation/document-locale';
 import {StandaloneSurfaceLayers} from './navigation/surface-layer';
 import {usePageEntrance} from './navigation/navigation-motion';
+import {documentPageContent} from './navigation/page-entrance';
 import {UI_LOCALES, UI_LOCALE_LABELS, isUiLocale, localeHome, readUiLocalePreference, saveUiLocalePreference, withUiLanguage} from '../src/launcher/i18n.mts';
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from './models/site-preferences';
 import {RUNTIME_DIAGNOSTICS_STORAGE_KEY} from './models/runtime-diagnostics';
@@ -27,7 +28,10 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
   const assetUrl = (path: string) => base + path;
   const [preferences, setPreferences] = useState(() => createSitePreferencesModel({storage: null}));
   const prefs = useSyncExternalStore(preferences.subscribe, preferences.getSnapshot, preferences.getSnapshot);
-  const content = usePageEntrance<HTMLElement>(location.pathname, {reduced:prefs.lessMotion});
+  const content = usePageEntrance<HTMLElement>(location.pathname, {
+    reduced:prefs.lessMotion,
+    contentSelector:mainClassName === 'documentation-shell' ? documentPageContent : undefined,
+  });
   const attachContent = useCallback((element: HTMLElement | null) => {content.current = element;}, [content]);
   const [menu, setMenu] = useState(false), [donation, setDonation] = useState(false), [notice, setNotice] = useState(false);
   const [donationAvailable, setDonationAvailable] = useState(true), [diagnostics, setDiagnostics] = useState(false);

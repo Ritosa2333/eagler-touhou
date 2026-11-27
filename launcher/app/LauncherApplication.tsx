@@ -44,6 +44,7 @@ import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
 import { useSurfaceLayerState } from './navigation/surface-layer';
 import { useCompactNavigation, usePageEntrance } from './navigation/navigation-motion';
+import { launcherPageContent } from './navigation/page-entrance';
 import { useStoreSelector, shallowEqual } from './shared/react-store';
 import { accountsEnabled } from './release-features';
 import type {LocalSaveReader} from './services/local-save-storage';
@@ -162,11 +163,9 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const profilePage = accountsEnabled && /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const page = section ?? (accountPage ? 'account' : profilePage ? 'profile' : navigation.context);
   const compact = useCompactNavigation();
-  const contentSelector = page === 'library' ? '.book-content' : page === 'lobby' ? '.lobby-rooms-column' :
-    page === 'profile' ? '.profile-wrap' : page === 'account' ? '.account-content' : undefined;
   const pageSurface = usePageEntrance(accountPage || profilePage ? pathname : page, {
     reduced: host.lessMotion === true,
-    contentSelector,
+    contentSelector: launcherPageContent[page],
   });
   const showLibrary = !accountPage && !profilePage && !section && navigation.context === 'library';
   const keepLibrary = primary === 'home' || primary === 'lobby';
