@@ -10,7 +10,7 @@
 2. 已关闭：Extra 四季 600 帧矩阵已锁。见「已关闭」。
 3. 标题画面绘制对拍已关闭。见「已关闭」。
 4. 已关闭（数据不可达，不排期）：ANM mode 6（0x466820）在 `artifacts/th16/dat` 全部 54 个 `.anm` 的 ins_302 渲染模式中没有实例，实际只有 0/1/2/3/4/8/21。与钩子 6 相同，`AddressMap.hpp` 的空登记保留为说明。
-5. 当前 Oracle 已重采 12 段共 290200 帧，绘制指令逐帧位级一致，包含第 5 面与 Extra 的两段实战输入。其余 19 段待重采，历史记录见「已关闭」。
+5. 当前 Oracle 已重采 27 段共 791065 帧，绘制指令逐帧位级一致。覆盖灵梦春从一面至结局的整局 241676 帧、灵梦春和文冬六面通关、符卡练习收卡和超时后的重开，以及第 2–6 面和 Extra 实战。另有 14 段历史参考待重采。
 6. 已关闭（容器性能门禁）：WASI 3600 帧逻辑三次 0.334–0.363 秒，逻辑加完整绘制三次 8.230–8.451 秒，均通过 <10 秒门禁；normal Runtime 与发布打包已验收。Snapdragon 865 级 60fps 保持真机待验证。见[验收记录](../../../../archive/th16-delivery-20261123/README.md)。
 7. 已关闭：启动器工作区、构建配方、产品目录、`docs/TOUHOU_PROGRESS.md`、`ports/README`、`WORKSPACE.md` 与 `ADAPTATION.md` 登记和验收完成；`docs/migration` 与源码哈希清单由收尾快照固定本轮身份。全程不开 PR。
 8. 已关闭（可后接）：版本文件 0x43b480（`th16_%.4x%c.ver`）开机 0x43b520 读取并写入 DAT_004c1af0 / DAT_004c1aec，退出路径 0x43b681 释放缓冲，没有其它读者。宿主落盘是后续可选增强，不影响原版等价与本轮交付。
@@ -23,6 +23,7 @@
 - Player Data 画面绘制窗口第 362–371 帧已对拍（第 324 帧确认，第 345 帧进入，第 353 帧子状态 2）。测试 `player data screen: 10 settled draw frames match original structure and vertices`。
 - Music Room 画面绘制窗口第 370–379 帧已对拍（第 326 帧确认，第 347 帧进入，第 362 帧子状态 2）。测试 `music room: 10 settled draw frames match original structure and vertices`。
 - Spell Practice 画面绘制窗口第 360–369 帧已对拍（第 320 帧确认，第 341 帧进入，第 353 帧子状态 2）。测试 `spell practice: 10 settled draw frames match original structure and vertices`。
+- 符卡练习分组、锁定符卡、机体切换和退场共 185 帧绘制指令与原版一致。退出列表当帧清除分数栏，面板继续播放退场动画。测试 `Spell Practice: cancel hides the list scores as soon as the exit animation starts`。
 - Manual 目录和九页正文已覆盖标题和暂停入口的打开、翻页及返回。标题路径按原版装载线程的结果写入 help.anm 的正文纹理。测试 `manual screen: 10 settled draw frames match original structure and vertices`。
 - Extra 四季 600 帧矩阵已锁：第 7 面 4 机体 × 春夏秋冬（子季节 0..3）× 难度 Extra，16 组十个摘要字段与 `game-oracle.py` 一致，写入 `tests/golden/stage-matrix-st7.json`，原有 4 条土用 case 保留，由 `tests/stage-matrix.test.mjs` 驱动 harness `game-digest`。
 - 第 1–6 面 Easy 灵梦夏/秋/冬第 590–599 帧绘制顶点已对拍。测试 `stage 1–6 Easy Reimu summer/autumn/winter: frames 590–599 match original vertices`。

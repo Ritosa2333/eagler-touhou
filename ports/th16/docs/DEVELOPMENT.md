@@ -47,6 +47,14 @@ node tools/run-harness.mjs anm games/th16/original/th16.dat title.anm      # 与
 
 浏览器版使用 640×480 逻辑坐标和 1280×960 后备缓冲。整屏渲染目标和深度缓冲使用相同的 2× 缩放，HUD 数字取原版 `ascii_1280.anm`。动态文字以 A4R4G4B4 保存，GPU 只更新重绘的矩形。
 
+进关过场的透明度遮罩（`0x4073a0`）按像素边界覆盖目标。Windows D3D9 实测在 640×480 与 1280×960 下均保留原 RGB，并清零整个遮罩范围的透明度。GLES 提交遮罩时抵消着色器的半个逻辑像素偏移。Edge 在 1280×960 下从一面暂停菜单打开说明书，翻到第二页再翻回，第一页的全画布像素一致。
+
+后备缓冲和两个 `@R` 目标由 GLES 初始化为透明黑，省去三张 1280×960 RGBA8 纹理的 CPU 像素上传。TH13、TH15 与 TH16 的共享后端支持无 CPU 像素缓冲的 BGRA8 目标，TH16 用于以上三个表面。Edge WebGL2 中用相同的输入各跑三次，标题、一面实战和暂停界面截图均逐像素一致。480 帧实战的 `activeTexture` 调用从 17,129 次降到 0 次。
+
+逻辑更新入队的日文文字在本帧绘制前写入纹理。`title-oracle.py --text` 记录原版 `0x459240` 的帧号、CP932 字节和绘制参数。音乐室的 17 条曲目分 9 帧写入，Edge WebGL2 的上传帧和像素矩形与原版一致。音乐室、Player Data 和符卡练习的 116 条文字请求由 `text-paint.test.mjs` 对拍。
+
+文字阴影和正文复用同一次 SDL_ttf 字形栅格化。Edge 在音乐室入场、稳定画面和提示展开期间采集的 32 张画面与优化前逐像素一致。使用同一份 MS Gothic 字体时，首曲字形的像素范围与 Windows GDI 一致，边缘抗锯齿仍存在差异。
+
 ## 浮点语义
 
 `th16.exe` 以 SSE2 标量单精度编译：4289 条 SSE 标量指令对 428 条 x87；RNG 的浮点变体是 `CVTPD2PS` 后 `MULSS/SUBSS/DIVSS`。因此 C++ 侧全部使用 `float` 并禁用 FMA 融合（`-ffp-contract=off`），对 Unicorn 直跑原版函数的结果位级一致（`tests/golden/rng.json`）。仅 43 个游戏函数使用 x87 算术（34 处超越函数），这些在还原时逐个对照 `.asm`。
@@ -85,11 +93,29 @@ oracle 只桩掉堆分配、档案读取、D3D 纹理（按 THTX 头尺寸回报
 # 原版：--draw 让每帧按 0x45a8a0 顺序跑绘制链，D3D 调用由 tools/oracle/d3d-recorder.py 录成 JSON Lines
 toolchains/venv/bin/python ports/th16/tools/oracle/game-oracle.py games/th16/original/th16.exe artifacts/th16/dat 820 \
     /tmp/st1.json --stage 1 --shot 1 --season 2 --difficulty 1 --lives 8 --draw --draw-out /tmp/st1.draw.jsonl --draw-from 800
-# 移植版：game-draw 与 game-run 同参，末尾加 <out.jsonl> [from_frame]，用 tests/harness/RecordingDevice.hpp 录同口径数据
-tests/build/harness game-draw ../../games/th16/original/th16.dat 1 1 2 820 "" "" "" 1 -1 8 0 0 /tmp/st1.port.jsonl 800
+# 移植版：game-draw 与 game-run 同参，末尾加 <out.jsonl> [from_frame] [--draw-only | --state-digest]
+tests/build/harness game-draw ../../games/th16/original/th16.dat 1 1 2 820 "" "" "" 1 -1 8 0 0 /tmp/st1.port.jsonl 800 --draw-only
 # 对拍：目标 / 视口 / 清屏参数 / 图元 / 顶点格式 / 顶点字 / 渲染状态子集 / 世界格式的矩阵；退出码 1 表示有差异
 python3 tools/oracle/draw-compare.py /tmp/st1.draw.jsonl /tmp/st1.port.jsonl --frames 800-820
 ```
+
+有 `state_digests` 的整段回归用 `--state-digest` 在同一次运行中检查绘制与玩法状态。状态摘要取自原版启用 `--draw` 后的快照。`verify-long-draw.py` 重采绘制参考时保留已有的玩法状态摘要。
+
+绘制参考从 `from` 连续覆盖到 `frames`。原版提前切换场景的用例记录 `exit_frame`，绘制记录截止于切换前一帧。回归逐帧校验编号和摘要，覆盖范围与原版一致。
+
+符卡练习重开用 `--track-music` 运行原版音乐队列（`0x45ed00` / `0x45e330`），同步游戏读取的当前曲名。有相同曲名时，`0x429ff0` 会跳过曲名条和重复播放请求。整段参考用 `track_music: true` 记录这项 Oracle 配置。
+
+符卡练习录像的用户块 `+0x98` 保存选卡编号 `DAT_004a57c8`（`0x44789c`），标题 Replay 列表显示该编号加一。用户块 `+0xa` 的位 0、1 分别记录关卡练习和符卡练习模式。用例检查第 13 张符卡保存后在标题 Replay 的显示。成绩用例从标题进入 Easy 灵梦春季第 1 张，收卡后退回菜单，从新载入的存档读出原版同值 `364400` 分和 `1/1`。
+
+游戏内选定录像存档槽时，`0x4406b8` 将当前关卡和时间写入用户块，普通模式的通关结算由 `0x4483b0(1)` 写入 `All`。名字输入预览与写盘共用这份元数据。跨关回归检查第一面打到第二面时，列表显示 `St2`，录像仍有两段。
+
+原版 `0x448400` 给 1,600 帧的录像写入 54 个 FPS 字节和一个结束标记。原版 `0x448130` 在最后一个采样窗口有时读到样本末尾之后，移植版在耗尽时沿用最后一个有效值。两版回放同一份原版所写的录像时，该用例的玩法、菜单、音效和返回标题时机一致。
+
+结局后的录像保存（`0x454034 → 0x448400`）直接使用通关最后一段已录制的帧。Extra 回归在第 100 次更新后调用通关奖励，在标题存档得到与原版相同的 480 个输入帧和 16 个 FPS 字节。回放在第 101 帧打开结束菜单，确认后第 544 帧回标题。奖励通过 `0x43e080` 的加命逻辑时刷新残机图标、显示加命提示并登记音效 `0x11`，该例跨过两项加命门槛。
+
+正篇第 6 面用同样的通关触发验证结局和 Staff Roll 后的录像写入。段头、输入和 FPS 内容与原版逐字节一致。配置 `DAT_004c1800 & 0x2000` 启用退出行为时，正篇和 Extra 的通关倒计时都在第 481 帧转入退出场景（`0x42d8da`）。
+
+得分超过内部上限时，原版 `0x43e080` 会先推进加命门槛索引，再把分数限制为 `999999999`。对于有效分数和一次有符号 32 位加分，正篇在索引 214 或 238 停止扫描，Extra 最多推进到索引 13。分数上限回归核对分数、门槛索引、残机数和加命次数。
 
 定位差异时先看单侧的逐操作清单：`draw-compare.py … --dump oracle`（或 `--dump port`）按帧列出每个 Clear / 绘制的纹理槽、视口、
 前四个顶点；oracle 侧每项带 `[0x地址]`，即 DrawPrimitiveUP 发生时正在运行的绘制链回调（0x4015a0 链游标处的钩子记录），
@@ -122,7 +148,7 @@ toolchains/venv/bin/python ports/th16/tools/oracle/game-oracle.py games/th16/ori
     /tmp/st1.json --stage 1 --shot 0 --season 0 --difficulty 0 --lives 8 --refill-lives --input 0:0 --every 1000000 \
     --draw --draw-ops - 2> /tmp/st1.oracle.log | node ports/th16/tools/draw-digest.mjs - /tmp/st1.oracle.digest.jsonl
 # 移植版：harness 内直接折（输出路径写成 digest:<dst>；dst 可为 fd:<n>）
-tests/build/harness game-draw ../../games/th16/original/th16.dat 1 0 0 23000 "0:0" "" "" 0 -1 8 1 0 digest:/tmp/st1.port.digest.jsonl 1
+tests/build/harness game-draw ../../games/th16/original/th16.dat 1 0 0 23000 "0:0" "" "" 0 -1 8 1 0 digest:/tmp/st1.port.digest.jsonl 1 --draw-only
 # 逐帧比摘要：结构相同且顶点在网格 a 或 b 之一同格即通过；--golden-segments 把通过帧按网格折成段表
 python3 tools/oracle/draw-compare.py /tmp/st1.oracle.digest.jsonl /tmp/st1.port.digest.jsonl --compare-digests --golden-segments /tmp/st1.segments.json
 ```

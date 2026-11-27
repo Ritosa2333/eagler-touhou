@@ -62,14 +62,16 @@ def main():
                 'harness_sha256': sha256(harness),
                 'verifier_sha256': sha256(__file__),
                 'oracle_sources': {str(p): sha256(p) for p in
-                                   [oracle, tool / 'anm-oracle.py', tool / 'd3d-recorder.py', compare]}}
+                                   [oracle, tool / 'anm-oracle.py', tool / 'd3d-recorder.py',
+                                    tool / 'music-oracle.py', tool / 'sound-oracle.py', compare]}}
     env = {k: v for k, v in os.environ.items() if not k.startswith('TH16_')}
 
     def run(case):
         started = time.monotonic()
         stem = output / case['name']
         result_path = stem.with_suffix('.result.json')
-        config = {k: v for k, v in case.items() if k not in ('segments', 'verified')}
+        config = {k: v for k, v in case.items()
+                  if k not in ('segments', 'state_digests', 'uninterrupted_bgm', 'verified', 'exit_frame')}
         if case['input'].startswith('@'):
             config['input_sha256'] = sha256(case['input'][1:])
         original_stream = stem.with_suffix('.original.jsonl')
@@ -94,6 +96,8 @@ def main():
                   '--draw-digest', str(original_stream), '--every', str(2**31 - 1)]
         if case.get('refill', 1):
             flags += ['--refill-lives']
+        if case.get('track_music', False):
+            flags += ['--track-music']
         if not cached:
             with stem.with_suffix('.original.log').open('w') as log:
                 subprocess.run([sys.executable, '-X', 'utf8', str(oracle), str(exe), 'artifacts/th16/dat',
@@ -105,15 +109,17 @@ def main():
         exit_frame = json.loads(state.read_text())['exit_frame']
         last = case['frames'] if exit_frame is None else min(case['frames'], exit_frame - 1)
         if (cached and cached['identity'] == identity and cached['verified']
-                and covers_frame_range(cached['segments'], first, last)):
+                and cached.get('exit_frame') == exit_frame
+                and covers_frame_range(cached['segments'], first, last)
+                and port_stream.is_file() and sha256(port_stream) == cached.get('candidate_sha256')):
             return case, cached
         with stem.with_suffix('.candidate.log').open('w') as log:
             subprocess.run([
                 str(harness), 'game-draw', str(dat), str(case['stage']), str(case['shot']),
                 str(case['season']), str(case['frames']), case['input'], '', '',
                 str(case['difficulty']), str(case.get('replay_slot', -1)),
-                str(case.get('lives', 8)), str(case.get('refill', 1)), str(case.get('mode', 0)),
-                'digest:' + str(port_stream), str(first),
+                str(case.get('lives', '')), str(case.get('refill', 1)), str(case.get('mode', 0)),
+                'digest:' + str(port_stream), str(first), '--draw-only',
             ], env=env, stdout=subprocess.DEVNULL, stderr=log, check=True)
         segments = stem.with_suffix('.segments.json')
         comparison = subprocess.run([sys.executable, '-X', 'utf8', str(compare), str(original_stream), str(port_stream),
@@ -125,7 +131,7 @@ def main():
         if comparison.returncode == 0 and not verified:
             diagnostics += f'Matched segments do not cover expected frames {first}–{last}.\n'
         stem.with_suffix('.compare.log').write_text(diagnostics, encoding='utf-8')
-        result = {'identity': identity, 'config': config, 'verified': verified,
+        result = {'identity': identity, 'config': config, 'verified': verified, 'exit_frame': exit_frame,
                   'reference_identity': cached.get('reference_identity', cached['identity']) if cached else identity,
                   'scene_sha256': sha256(state),
                   'original_sha256': sha256(original_stream), 'candidate_sha256': sha256(port_stream),
@@ -150,6 +156,10 @@ def main():
         for case, result in results:
             case['segments'] = result['segments']
             case['verified'] = True
+            if result['exit_frame'] is None:
+                case.pop('exit_frame', None)
+            else:
+                case['exit_frame'] = result['exit_frame']
         golden_path.write_text(json.dumps(golden, ensure_ascii=False, indent=1) + '\n')
     print(f"Verified {len(results)} long drawing cases; updated={args.update}")
     return 0
