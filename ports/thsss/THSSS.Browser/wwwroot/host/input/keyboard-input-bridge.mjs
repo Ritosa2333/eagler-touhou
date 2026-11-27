@@ -36,7 +36,9 @@ export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch
   function currentProfile(){const next=profile();if(lastProfile!==undefined&&lastProfile!==next){const owner=mapper();if(owner)apply(owner.clear());gamepadMapper()?.clear();}lastProfile=next;return next;}
   function event(raw,down,source='physical') {
     const owner=mapper();if(!owner||!ready())return false;
-    const editing=!!raw.launcherOwnsFocus||!!raw.target?.closest?.('input,textarea,select,[contenteditable="true"]');
+    const field=raw.target?.closest?.('input,textarea,select,[contenteditable="true"]');
+    const panel=field?.closest?.('.thsss-prac');
+    const editing=!!raw.launcherOwnsFocus||(!!field&&!(panel&&(panel.hidden||panel.inert)));
     if(source==='physical'&&down&&(raw.isComposing||editing))return false;
     const events=owner.map({code:String(raw.code||''),key:String(raw.key||''),keyCode:Number(raw.keyCode)||0,
       location:Number(raw.location)||0,repeat:!!raw.repeat,altKey:!!raw.altKey,metaKey:!!raw.metaKey,ctrlKey:!!raw.ctrlKey,

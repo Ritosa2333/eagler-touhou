@@ -4,7 +4,9 @@ import { createPracticeState, practiceCopy, practiceLocale } from "../../wwwroot
 
 test("practice locale follows the launcher and function keys toggle the declared tools", () => {
   assert.equal(practiceLocale("zh-Hans"), "zh-CN");
-  assert.equal(practiceCopy("ja").title, "練習");
+  assert.equal(practiceLocale("ja"), "zh-CN");
+  assert.equal(practiceCopy("ja").title, "练习");
+  assert.equal(practiceCopy("ja-JP").stage, "关卡");
   const practice = createPracticeState("en-US");
   practice.configure({ thpracEnabled: true, thpracLocale: "zh-CN" });
   assert.equal(practice.toggle("F1"), true);

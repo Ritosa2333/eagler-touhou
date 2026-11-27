@@ -147,7 +147,7 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
     ...('sources' in product.musicRuntime ? {musicSource: (game === 'th03' ? settings.musicPreference === 'ogg-akyu' : music === 'ogg-akyu') ? 'akyu' as const : 'original' as const} : {}),
     ...(!isMultiplayer && productFeatureAvailable(game, 'thprac', features)
-      ? {thpracEnabled: options.thpracEnabled, thpracLocale: thpracLocaleForLanguage(language)} : {}),
+      ? {thpracEnabled: options.thpracEnabled, thpracLocale: game === 'thsss' ? 'zh-CN' : thpracLocaleForLanguage(language)} : {}),
     ...(game === 'th03' ? {focusHitboxEnabled: options.th03FocusPointEnabled} : productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
     ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),

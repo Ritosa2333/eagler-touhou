@@ -57,11 +57,9 @@ const COPY = {
 };
 
 export function practiceLocale(value) {
-  const text = String(value || "");
-  if (text === "zh-CN" || text === "ja-JP" || text === "en-US") return text;
-  if (/^zh/i.test(text)) return "zh-CN";
-  if (/^ja/i.test(text)) return "ja-JP";
-  return "en-US";
+  // The built-in script is Chinese. The launcher's no-pack language id is ja
+  // and arrives as ja-JP; that id selects this title's original copy.
+  return String(value || "") === "en-US" ? "en-US" : "zh-CN";
 }
 
 export function practiceCopy(locale) {
@@ -74,7 +72,7 @@ function clampInt(value, min, max, fallback) {
   return Math.max(min, Math.min(max, number));
 }
 
-export function createPracticeState(locale = "en-US") {
+export function createPracticeState(locale = "zh-CN") {
   const state = {
     enabled: false,
     locale: practiceLocale(locale),

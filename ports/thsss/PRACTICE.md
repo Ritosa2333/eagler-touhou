@@ -15,7 +15,7 @@
 
 `thpracEnabled` 为 false 时，上述入口不作用，原版 Stage Select 保持可用。
 
-语言为 `zh-CN`、`ja-JP`、`en-US`。触控功能键走同一组 Backspace / F1–F3。`thprac-mouse` 的按下命中练习菜单上的按钮。
+开局下发的 `thpracLocale` 为 `zh-CN`：内置原文是中文，启动器对无语言包作品使用的语言 id 是 `ja`。英文文案保留给显式的 `en-US`。触控功能键走同一组 Backspace / F1–F3。`thprac-mouse` 的按下命中练习菜单上的按钮。
 
 Replay 头在 `TouchDelta` 之后写一行 `Prac=1,无敌,禁炸弹,失焦不暂停,残机,炸弹,Power`。读档时还原这些值。没有旁路 sidecar。
 

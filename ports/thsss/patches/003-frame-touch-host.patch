@@ -217,7 +217,7 @@ index a96264f..49214a9 100644
  				base.Move();
 
 diff --git a/Shooting/Game_Main.cs b/Shooting/Game_Main.cs
-index c4e4893..a95ce42 100644
+index c4e4893..ff1025c 100644
 --- a/Shooting/Game_Main.cs
 +++ b/Shooting/Game_Main.cs
 @@ -2,7 +2,6 @@ using System;
@@ -549,7 +549,7 @@ index c4e4893..a95ce42 100644
  	private void ToggleFullScreen()
  	{
  		fullWindow = !fullWindow;
-@@ -670,12 +762,69 @@ public class Game_Main
+@@ -670,12 +762,85 @@ public class Game_Main
  
  	private void Form_Main_Deactivate(object sender, EventArgs e)
  	{
@@ -569,12 +569,24 @@ index c4e4893..a95ce42 100644
 +		}
 +		if (GameStatesDictionary != null && GameStatesDictionary.ContainsKey(warp) && PresentState != null && PresentState.StageData != null)
 +		{
-+			PresentState.StageData.SetReplayInfo(warp);
++			StageDataPackage stage = PresentState.StageData;
++			if (stage.MyPlane == null)
++			{
++				stage.MyPlane = new MyPlane_Reimu(stage, new Point(192, 398));
++				stage.OnPractice = true;
++			}
++			if (stage.Rep != null && !stage.Rep.CanRead)
++			{
++				stage.Rep.CreatRpy();
++			}
++			stage.Story = null;
++			stage.VibrateCancel();
++			stage.SetReplayInfo(warp);
 +			PresentState.StateSwitchData = new StateSwitchDataPackage
 +			{
 +				NextState = warp,
 +				NeedInit = true,
-+				SDPswitch = PresentState.StageData
++				SDPswitch = stage
 +			};
 +			Thsss.Browser.PracticeSession.ResourcesPending = true;
 +		}
@@ -609,7 +621,11 @@ index c4e4893..a95ce42 100644
 +		}
 +		if (Thsss.Browser.PracticeSession.Invulnerable)
 +		{
-+			plane.Time = plane.UnmatchedTime;
++			List<BaseObject> spells = plane.SpellList;
++			if ((spells == null || spells.Count == 0) && plane.Time >= plane.UnmatchedTime - 1)
++			{
++				plane.Time = plane.UnmatchedTime - 60;
++			}
 +		}
 +		if (Thsss.Browser.PracticeSession.DisableBomb)
 +		{
@@ -620,7 +636,7 @@ index c4e4893..a95ce42 100644
  	private void Form_Main_Activated(object sender, EventArgs e)
  	{
  		if (initSuccess)
-@@ -687,10 +836,7 @@ public class Game_Main
+@@ -687,10 +850,7 @@ public class Game_Main
  
  	private void Form_Main_FormClosing(object sender, FormClosingEventArgs e)
  	{
@@ -632,7 +648,7 @@ index c4e4893..a95ce42 100644
  		GlobalData.PData.SaveData();
  		GlobalData.Dispose();
  		if (!useDirectInput)
-@@ -717,6 +863,7 @@ public class Game_Main
+@@ -717,6 +877,7 @@ public class Game_Main
  		catch
  		{
  		}
@@ -640,7 +656,7 @@ index c4e4893..a95ce42 100644
  	}
  
  	private void Form_Main_KeyDown(object sender, KeyEventArgs e)
-@@ -860,4 +1007,44 @@ public class Game_Main
+@@ -860,4 +1021,44 @@ public class Game_Main
  		}
  		MouseCtrl.DrawCursor(!fullWindow);
  	}

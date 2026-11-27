@@ -115,11 +115,32 @@ const practice = mountPracticePanel({
   },
 });
 
+const menuHeld = new Set();
+
+function deliverKey(name, down, source) {
+  const wasOpen = practice.model.state.enabled && practice.model.state.open;
+  const shot = name === "Z" || name === "Return";
+  const id = shot ? "Z" : name;
+  if (!down) {
+    menuHeld.delete(id);
+    keys.setKey(name, false, source);
+    return;
+  }
+  if (practice.key(name, true, menuHeld.has(id))) {
+    menuHeld.add(id);
+    if (wasOpen && !(practice.model.state.enabled && practice.model.state.open) && menuHeld.has("Z")) {
+      keys.setKey("Z", true, source);
+    }
+    return;
+  }
+  menuHeld.delete(id);
+  keys.setKey(name, true, source);
+}
+
 function applyCanonicalKey(event, down) {
   const name = keyNameFromEvent(event);
   if (!name) return;
-  if (practice.key(name, !!down)) return;
-  keys.setKey(name, !!down, "key");
+  deliverKey(name, !!down, "key");
 }
 
 const keyboardBridge = hosted()
@@ -260,8 +281,7 @@ function onLocalKey(event) {
   if (!name) return;
   event.preventDefault();
   if (event.repeat) return;
-  if (practice.key(name, event.type === "keydown")) return;
-  keys.setKey(name, event.type === "keydown", "local");
+  deliverKey(name, event.type === "keydown", "local");
 }
 
 function onMessage(event) {

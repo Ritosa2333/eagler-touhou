@@ -42,11 +42,19 @@ export function mountPracticePanel({ parent, sync, warp }) {
     });
   }
 
+  function focusGame() {
+    const active = document.activeElement;
+    if (active && root.contains(active) && typeof active.blur === "function") active.blur();
+    root.inert = true;
+    document.getElementById("game")?.focus();
+  }
+
   function render() {
     const copy = model.copy();
     const on = model.state;
     const focused = controls().indexOf(document.activeElement);
     root.hidden = !(on.enabled && on.open);
+    root.inert = root.hidden;
     root.replaceChildren();
     const title = document.createElement("div");
     title.textContent = copy.title;
@@ -107,6 +115,9 @@ export function mountPracticePanel({ parent, sync, warp }) {
         on.stage = id;
         model.resources();
         push();
+        on.open = false;
+        render();
+        focusGame();
         if (typeof warp === "function") warp(id);
       });
       stages.append(button);
@@ -121,10 +132,14 @@ export function mountPracticePanel({ parent, sync, warp }) {
     if (!repeat && model.toggle(name)) {
       push();
       render();
-      if (!wasOpen && !root.hidden) controls()[0]?.focus();
-      if (wasOpen && root.hidden) document.getElementById("game")?.focus();
+      if (!wasOpen && !root.hidden) {
+        root.inert = false;
+        controls()[0]?.focus();
+      }
+      if (wasOpen && root.hidden) focusGame();
       return true;
     }
+    if (repeat && model.state.enabled && (name === "Back" || name === "F1" || name === "F2" || name === "F3")) return true;
     if (!wasOpen) return false;
     const items = controls();
     const index = items.indexOf(document.activeElement);
@@ -134,7 +149,7 @@ export function mountPracticePanel({ parent, sync, warp }) {
       case "Escape":
         model.state.open = false;
         render();
-        document.getElementById("game")?.focus();
+        focusGame();
         return true;
       case "Z":
       case "Return":
@@ -167,9 +182,10 @@ export function mountPracticePanel({ parent, sync, warp }) {
   }
 
   root.addEventListener("keydown", (event) => {
-    if (key(keyNameFromEvent(event), true, event.repeat)) {
+    if (root.hidden) return;
+    const name = keyNameFromEvent(event);
+    if (name === "Back" || name === "X" || name === "Escape" || name === "Z" || name === "Return" || name === "Up" || name === "Down" || name === "Left" || name === "Right") {
       event.preventDefault();
-      event.stopPropagation();
     }
   });
 

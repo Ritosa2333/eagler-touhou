@@ -116,12 +116,12 @@
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
 | PRACTICE-01 | [发布包中的练习能力](../../docs/adaptation/localization.md#practice-01) | 已验证 | 当前 Release 运行时打开原生练习面板，与目录 `thprac` / `native` 一致。见[运行验收记录](#运行验收记录)。 |
-| PRACTICE-02 | [开局前启用与语言](../../docs/adaptation/localization.md#practice-02) | 已验证 | 开局前 thprac 为开。面板标题为「練習」，语言为 `ja-JP`。见[运行验收记录](#运行验收记录)。 |
+| PRACTICE-02 | [开局前启用与语言](../../docs/adaptation/localization.md#practice-02) | 已验证 | 开局前 thprac 为开。面板标题为「练习」，语言为 `zh-CN`。见[运行验收记录](#运行验收记录)。 |
 | PRACTICE-03 | [游戏内练习状态](../../docs/adaptation/localization.md#practice-03) | 已验证 | `thpracEnabled=false` 开局后 Backspace 不打开练习面板。标题 Practice 进入原版难度选择，再进入 STAGE SELECT。见[运行验收记录](#运行验收记录)。 |
 | PRACTICE-04 | [关卡与资源参数](../../docs/adaptation/localization.md#practice-04) | 已验证 | 「ステージ 6」把林间关卡换成星空。保存的 Replay 关卡为 St6，资源为残机 8、炸弹 0、Power 120。见[运行验收记录](#运行验收记录)。 |
 | PRACTICE-05 | [练习 Replay 元数据](../../docs/adaptation/localization.md#practice-05) | 已验证 | `replay/thSSS_01.trpy` 在 `TouchDelta=1` 后写 `Prac=1,1,1,1,8,0,120`。回放菜单选 Stage06 后播出 `Stage06.ogg`。见[运行验收记录](#运行验收记录)。 |
 | PRACTICE-06 | [触控功能键与指针](../../docs/adaptation/localization.md#practice-06) | 已验证 | Backspace 打开原生面板；触控 F1 切换「無敵」。见[运行验收记录](#运行验收记录)。 |
-| PRACTICE-07 | [练习语言跟随设置](../../docs/adaptation/localization.md#practice-07) | 已验证 | 站点界面为英文，游戏语言是内置日文。练习菜单为日文。见[运行验收记录](#运行验收记录)。 |
+| PRACTICE-07 | [练习语言跟随设置](../../docs/adaptation/localization.md#practice-07) | 已验证 | 站点界面为英文。本作内置原文是中文，开局下发 `zh-CN`，练习菜单为中文。见[运行验收记录](#运行验收记录)。 |
 | PRACTICE-08 | [练习界面的可用功能](../../docs/adaptation/localization.md#practice-08) | 已验证 | 无敌、禁炸弹、失焦三项按下后写入 `Prac=1,1,1,1`。关卡按钮跳到 St6。失焦暂停由 `Form_Main_Deactivate` 处理，浏览器宿主没有调用 `RaiseDeactivate`。见[运行验收记录](#运行验收记录)。 |
 | LANG-01 | [内置日语原文](../../docs/adaptation/localization.md#lang-01) | 已验证 | 语言只有「Japanese (original)」。资源请求里没有语言包，局内 HUD 为原文。见[运行验收记录](#运行验收记录)。 |
 | LANG-02 | [语言包身份与发布清单](../../docs/adaptation/localization.md#lang-02) | 不适用 | normal：本作使用内置原文 |
@@ -215,6 +215,8 @@ PRACTICE-04／05／08：练习面板写入残机 8、炸弹 0、Power 120，三�
 PRACTICE-03：`configure.options.thpracEnabled` 为 false。Backspace 后 `.thsss-prac` 保持隐藏。标题菜单进入 Practice，经过 RANK SELECT 与自机选择，出现 STAGE SELECT，条目含 Stage1。
 
 PRACTICE-08：失焦暂停在 `Form_Main_Deactivate`，条件是未打开 `IgnoreFocusLoss`。`Form.RaiseDeactivate` 在本浏览器宿主没有调用方，这条暂停不会被页面失焦触发。
+
+练习面板：开局 `thpracLocale` 为 `zh-CN`。Backspace 打开的标题是「练习」，条目为「无敌 / 禁用炸弹 / 失焦不暂停」，关卡按钮为「关卡」「符卡」。
 
 TOUCH-04／07／09（2026-11-24 手动）：开局前改设置。`joystick-free` 局内绕圈与变幅度连续转向、原速步进。滑动模式下 `two-finger` 第二指低速、移动指独立。死后同指续拖，从当前位置重建；复活瞬间有小跳变。对照 [input.md](../../docs/adaptation/input.md) 三项记为已验证。
 

@@ -522,7 +522,17 @@ index 8381f7f..249c7ac 100644
  			float num = 60f * (float)RealTimeTotal / (float)Stopwatch.Frequency;
  			num = (num - (float)TimeTotal) * 100f / num;
  			return ((num < 0f) ? 0f : num).ToString("F1") + "%";
-@@ -366,33 +370,9 @@ public class StageDataPackage
+@@ -210,4 +214,9 @@ public class StageDataPackage
+ 		}
+ 	}
+ 
++	public void VibrateCancel()
++	{
++		VibrateTime = -1;
++	}
++
+ 	public void RemoveBullets()
+@@ -366,33 +375,9 @@ public class StageDataPackage
  		return cS_Data;
  	}
  
