@@ -75,8 +75,8 @@ void main(){
   }
  }else{value=originalPixel(sourceRect.xy+at*sourceRect.zw/destinationRect.zw);}
  uvec4 mask=uvec4(destinationMask);
- uvec4 packed=uvec4(channel(value.r,mask.r),channel(value.g,mask.g),channel(value.b,mask.b),channel(value.a,mask.a));
- outputColor=mix(vec4(1),vec4(packed)/max(vec4(mask),vec4(1)),greaterThan(mask,uvec4(0)));
+ uvec4 packedBits=uvec4(channel(value.r,mask.r),channel(value.g,mask.g),channel(value.b,mask.b),channel(value.a,mask.a));
+ outputColor=mix(vec4(1),vec4(packedBits)/max(vec4(mask),vec4(1)),greaterThan(mask,uvec4(0)));
 }
 )GLSL";
 }
