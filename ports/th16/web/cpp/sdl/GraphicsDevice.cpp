@@ -17,7 +17,7 @@ touhou::sdl::Surface GraphicsDevice::resolve(void* owner, u32 id) {
     if (it == device.textures.end()) return {};
     auto& t = it->second;
     const u32 bytes_per_pixel = t.format == touhou::graphics::PixelFormat::Argb4444 ? 2 : 4;
-    return {id, t.width, t.height, t.format, t.width * bytes_per_pixel, t.pixels.data(),
+    return {id, t.width, t.height, t.format, t.width * bytes_per_pixel, t.pixels.empty() ? nullptr : t.pixels.data(),
             u32(t.pixels.size()), t.revision, t.renderScale};
 }
 
@@ -30,7 +30,6 @@ bool GraphicsDevice::initialize() {
         t.width = kLogicalWidth;
         t.height = kLogicalHeight;
         t.format = id == screen ? PixelFormat::Bgra8 : PixelFormat::Depth16;
-        if (id == screen) t.pixels.resize(size_t(t.width) * t.height * 4);
     }
     SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, "#canvas");
     if (!backend.initialize()) {
@@ -70,7 +69,6 @@ bool GraphicsDevice::preload(const AnmResource& file) {
             t.width = animations != nullptr ? animations->render_target_width : kLogicalWidth;
             t.height = animations != nullptr ? animations->render_target_height : kLogicalHeight;
             t.renderScale = kRenderScale;
-            t.pixels.assign(size_t(t.width) * t.height * 4, 0);
         } else {
             // 原版 D3DXCreateTexture 按 entry 声明尺寸建纹理（0x46cb60），THTX 内容贴在左上；
             // GetLevelDesc 回读的是声明尺寸，ANM UV 亦按此计算——这里把解码像素衬到声明尺寸以对齐采样。
@@ -154,6 +152,12 @@ void GraphicsDevice::set_viewport(const Viewport& viewport) {
 void GraphicsDevice::draw(Topology topology, VertexLayout layout, u32 primitive_count, const void* vertices, u32 stride) {
     backend.state.layout = touhou::graphics::attributes(layout);
     backend.draw(topology, primitive_count, vertices, stride);
+}
+
+void GraphicsDevice::draw_alpha_mask(const ScreenRect& rect) {
+    // The screen shader adds half a logical pixel. Start at the pixel edge so
+    // the mask includes every physical row and column at any render scale.
+    draw_alpha_mask_quad(rect, -0.5f);
 }
 
 void GraphicsDevice::write_texture_argb4444(u32 handle, i32 left, i32 top, const u16* pixels, i32 width, i32 height) {

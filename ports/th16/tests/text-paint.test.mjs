@@ -2,7 +2,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +11,10 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const harness = process.env.TH16_HARNESS || join(root, 'tests/build/harness');
 const dat = process.env.TH16_DAT ?? resolve(root, '../../games/th16/original/th16.dat');
 const needDat = {skip: !existsSync(dat) && 'original th16.dat not present'};
+const exe = process.env.TH16_EXE ?? resolve(root, '../../games/th16/original/th16.exe');
+const datDir = resolve(root, '../../artifacts/th16/dat');
+const py = process.env.TH16_PYTHON ?? '/tmp/th16-venv/bin/python';
+const needOracle = {skip: ![dat, exe, datDir, py].every(path => existsSync(path)) && 'title oracle inputs not present'};
 
 test('text-paint: 0x46d990 sets flags_lo bit0; font heights match DAT_00491b68', () => {
   const r = spawnSync(harness, ['text-paint-flag'], { encoding: 'utf8' });
@@ -84,3 +89,52 @@ test('text-paint: Music Room 0x4546f0 rows, comments and the unheard-track notic
   assert.ok(from > 0, events.join('\n'));
   assert.deepEqual(events.slice(from - 1), ['bgm-op 3', 'music-notice 1', 'music-play 1', 'bgm-op 2']);
 });
+
+const titleTextCases = [
+  ['Music Room', 525, 49,
+    '314:0x20,315:0,316:0x20,317:0,318:0x20,319:0,320:0x20,321:0,322:0x20,323:0,326:1,327:0,' +
+    '376:0x20,377:0,382:1,383:0,410:1,411:0,432:0x10,433:0,440:0x10,441:0,452:1,453:0,480:2,481:0'],
+  ['Music Room rapid selection and wraparound', 620, 85,
+    '314:0x20,315:0,316:0x20,317:0,318:0x20,319:0,320:0x20,321:0,322:0x20,323:0,326:1,327:0,' +
+    '372:0x20,373:0,376:1,377:0,378:0x20,379:0,382:1,383:0,415:0x20,416:0,419:1,420:0,' +
+    '447:0x10,448:0,449:1,450:0,479:1,480:0,503:0x10,504:0,505:0x10,506:0,509:1,510:0,' +
+    '525:0x10,526:0,529:1,530:0,531:1,532:0,561:0x20,562:0,565:1,566:0,589:2,590:0'],
+  ['Player Data', 511, 40,
+    '314:0x20,315:0,316:0x20,317:0,318:0x20,319:0,320:0x20,321:0,324:1,325:0,' +
+    '377:1,378:0,402:0x80,403:0,431:0x20,432:0,446:1,447:0,471:2,472:0'],
+  ['Spell Practice', 525, 27,
+    '314:0x20,315:0,316:0x20,317:0,320:1,321:0,360:0x80,361:0,367:0x20,368:0,375:1,376:0,' +
+    '415:1,416:0,422:0x20,423:0,430:0x80,431:0,445:2,446:0,490:2,491:0'],
+];
+const textRow = /^text font=(-?\d+) height=(-?\d+) x=(-?\d+) spacing=(-?\d+) shadow=(\d+) color=([0-9a-f]+) outline=([0-9a-f]+) rect=([-\d,]+) \[(.*)\]$/;
+
+for (const [menu, frames, count, input] of titleTextCases) {
+  test(`text-paint: ${menu} matches the original text bytes and texture arguments`, needOracle, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'th16-title-text-'));
+    try {
+      const state = join(dir, 'state.json');
+      const original = spawnSync(py, [resolve(root, 'tools/oracle/title-oracle.py'), exe, datDir, String(frames), state,
+        '--input', input, '--text'], {encoding: 'utf8'});
+      assert.equal(original.status, 0, original.stderr);
+      const expected = JSON.parse(readFileSync(state, 'utf8')).text_paints;
+      assert.equal(expected.length, count);
+      const port = spawnSync(harness, ['scene-boot', dat, String(frames), input, 'text'], {encoding: 'latin1'});
+      assert.equal(port.status, 0, port.stderr);
+      const actual = port.stdout.split('\n').filter(line => line.startsWith('text ')).map(line => {
+        const match = line.match(textRow);
+        assert.ok(match, `Unexpected text record: ${line}`);
+        const [, font, height, x, spacing, shadow, color, outline, rect, bytes] = match;
+        return {font: Number(font), height: Number(height), x: Number(x), spacing: Number(spacing), shadow: Number(shadow),
+          color: parseInt(color, 16), outline: parseInt(outline, 16), rect: rect.split(',').map(Number),
+          text_hex: Buffer.from(bytes, 'latin1').toString('hex')};
+      });
+      assert.equal(actual.length, count);
+      for (const [index, row] of expected.entries()) {
+        const {frame, ...request} = row;
+        assert.deepEqual(actual[index], request, `Original frame ${frame}, text request ${index + 1}`);
+      }
+    } finally {
+      rmSync(dir, {recursive: true, force: true});
+    }
+  });
+}

@@ -1,7 +1,7 @@
 // th16 设备层：RenderDevice 的真机实现——ANM 纹理句柄 → 共享语义 GLES3 后端（portable/sdl/Renderer，与 th13/th15 同源不分叉）。
 //
 // 原版 0x46cdd0 族把 THTX 交给 D3D9 纹理；这里 CPU 解码为 BGRA8 后由 Renderer::surface() 惰性上传。
-// text.anm 的 '@R' 渲染目标 entry（0x46d3b0 改写为后备缓冲尺寸）对应一块空 BGRA8 表面，由帧缓冲纹理承接；
+// text.anm 的 '@R' 渲染目标 entry（0x46d3b0 改写为后备缓冲尺寸）与后备缓冲都直接使用 GPU 表面；
 // 所有目标共用同一块深度缓冲（D3D 的自动深度 / 模板面不随 SetRenderTarget 切换）。
 //
 // 纹理身份：游戏侧用 TextureRef{ANM 槽, entry}（与 harness RecordingDevice 同口径），这里经 AnmManager 槽表
@@ -56,6 +56,7 @@ public:
     void set_matrix(MatrixKind kind, const float matrix[16]) override { backend.transform(kind, matrix); }
     void bind_texture(TextureRef texture) override { backend.state.texture = handle_of(texture); }
     void draw(Topology topology, VertexLayout layout, u32 primitive_count, const void* vertices, u32 stride) override;
+    void draw_alpha_mask(const ScreenRect& rect) override;
 
     // 0x45a8a0 EndScene / Present：把后备缓冲表面送上窗口
     void present() { backend.present(screen); }

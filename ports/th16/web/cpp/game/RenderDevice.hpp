@@ -66,6 +66,11 @@ public:
     virtual void bind_texture(TextureRef texture) = 0;
     // primitive_count 与 D3D 口径一致（三角形列表 = 三角形数，条带 = 顶点数 - 2）
     virtual void draw(Topology topology, VertexLayout layout, u32 primitive_count, const void* vertices, u32 stride) = 0;
+    // 以当前混合状态绘制透明度遮罩，矩形使用左上含、右下不含的像素边界。
+    virtual void draw_alpha_mask(const ScreenRect& rect) { draw_alpha_mask_quad(rect, 0.0f); }
+
+protected:
+    void draw_alpha_mask_quad(const ScreenRect& rect, float edge_offset);
 };
 
 // 0x45ba80：设备创建后下发的一组渲染状态（原版此后只按需改动其中几项）。两种设备实现在建立 / 重置时都以它为起点
@@ -118,5 +123,16 @@ struct WorldColorUvVertex {       // D3DFVF_XYZ | DIFFUSE | TEX1（0x142，0x18 
 };
 static_assert(sizeof(ScreenColorUvVertex) == 0x1c && sizeof(ScreenColorVertex) == 0x14 &&
               sizeof(WorldUvVertex) == 0x14 && sizeof(WorldColorUvVertex) == 0x18, "FVF 顶点字节布局");
+
+inline void RenderDevice::draw_alpha_mask_quad(const ScreenRect& rect, float edge_offset) {
+    const float left = float(rect.left) + edge_offset;
+    const float top = float(rect.top) + edge_offset;
+    const float right = float(rect.right) + edge_offset;
+    const float bottom = float(rect.bottom) + edge_offset;
+    const ScreenColorVertex quad[] = {
+        {left, top, 0, 1, 0}, {right, top, 0, 1, 0}, {left, bottom, 0, 1, 0}, {right, bottom, 0, 1, 0},
+    };
+    draw(Topology::Strip, VertexLayout::ScreenColor, 2, quad, sizeof(ScreenColorVertex));
+}
 
 }  // namespace th16

@@ -151,6 +151,9 @@ bool Application::initialize(const char* archive_path) {
         if (!graphics.preload(res)) { failure = graphics.error; session.failure = graphics.error; return false; }
         return true;
     };
+    session.on_before_draw = [this]() {
+        fonts.flush(graphics, session.animations, session.text_into_texture);
+    };
 
     if (!session.begin_boot(GraphicsDevice::kRenderScale == 2)) { failure = session.failure; return false; }
     initialized = true;
@@ -161,7 +164,6 @@ bool Application::step() {
     if (!initialized) return false;
     sample_input();
     if (!session.logic_step()) { failure = session.failure; return false; }
-    fonts.flush(graphics, session.animations, session.text_into_texture);
     audio.pump();
     graphics.present();
     ++frames;
@@ -176,7 +178,6 @@ bool Application::step_at(double wall_seconds) {
     session.wall_clock_seconds = wall_seconds;
     for (u32 i = 0; i < steps; ++i) {
         if (!session.logic_step()) { failure = session.failure; return false; }
-        fonts.flush(graphics, session.animations, session.text_into_texture);
     }
     audio.pump();
     graphics.present();

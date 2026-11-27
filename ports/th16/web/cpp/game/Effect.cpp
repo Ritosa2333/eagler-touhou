@@ -434,12 +434,9 @@ void EffectManager::transition_draw(AnmVm& vm, AnmRenderer& renderer, u32 width,
         p.alphaBlendEquation = BlendEquation::Add;
         p.alpha.operation = p.color.operation = ColorOperation::First;
         p.alpha.first = p.color.first = {ArgumentSource::Diffuse};
-        float x0 = 0, y0 = 0, x1 = float(width), y1 = float(height);
-        if (tr->mode == 2) { x0 = 112.0f; y0 = 16.0f; x1 = 512.0f; y1 = 464.0f; }
-        const ScreenColorVertex quad[4] = {
-            {x0, y0, 0, 1, 0}, {x1, y0, 0, 1, 0}, {x0, y1, 0, 1, 0}, {x1, y1, 0, 1, 0},
-        };
-        renderer.device->draw(Topology::Strip, VertexLayout::ScreenColor, 2, quad, sizeof(ScreenColorVertex));
+        const ScreenRect mask = tr->mode == 2 ? ScreenRect{112, 16, 512, 464}
+                                              : ScreenRect{0, 0, i32(width), i32(height)};
+        renderer.device->draw_alpha_mask(mask);
         p.alphaTest = true;
         p.alpha.operation = p.color.operation = ColorOperation::Multiply;
         p.alpha.first = p.color.first = {ArgumentSource::Texture};

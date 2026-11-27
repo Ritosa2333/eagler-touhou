@@ -3,6 +3,7 @@
 #include "GraphicsDevice.hpp"
 
 #include <cstring>
+#include <string_view>
 
 #if defined(TH16_HAS_TTF)
 #include <SDL3/SDL.h>
@@ -42,8 +43,12 @@ struct FontPainter::Faces final : TextGlyphSource {
     TTF_Font* fonts[10] = {};
     bool has_meiryo = false;
     std::vector<u16> encoding;
+    TTF_Font* raster_font = nullptr;
+    std::string raster_text;
+    SDL_Surface* raster_surface = nullptr;
 
     ~Faces() override {
+        SDL_DestroySurface(raster_surface);
         for (TTF_Font* f : fonts)
             if (f) TTF_CloseFont(f);
         TTF_Quit();
@@ -109,12 +114,12 @@ struct FontPainter::Faces final : TextGlyphSource {
 
     bool meiryo() const override { return has_meiryo; }
 
-    void text_out(TextDib& dib, i32 font, i32 x, i32 y, u32 colorref, const char* bytes, i32 len) override {
-        TTF_Font* f = fonts[font >= 0 && font < 9 ? font : 9];
-        if (f == nullptr || len <= 0) return;
+    SDL_Surface* rasterize(TTF_Font* font, std::string_view bytes) {
+        if (raster_surface != nullptr && raster_font == font && raster_text == bytes) return raster_surface;
+
         std::string utf8;
-        const u8* p = reinterpret_cast<const u8*>(bytes);
-        const u8* end = p + len;
+        const u8* p = reinterpret_cast<const u8*>(bytes.data());
+        const u8* end = p + bytes.size();
         while (p < end) {
             u32 code = *p++;
             if (((code >= 0x81 && code <= 0x9f) || (code >= 0xe0 && code <= 0xfc)) && p < end) code = (code << 8) | *p++;
@@ -131,11 +136,25 @@ struct FontPainter::Faces final : TextGlyphSource {
                 utf8 += char(0x80 | (cp & 0x3f));
             }
         }
-        if (utf8.empty()) return;
-        SDL_Surface* surface = TTF_RenderText_Blended(f, utf8.c_str(), utf8.size(), SDL_Color{255, 255, 255, 255});
-        if (surface == nullptr) return;
+        if (utf8.empty()) return nullptr;
+        SDL_Surface* surface = TTF_RenderText_Blended(font, utf8.c_str(), utf8.size(), SDL_Color{255, 255, 255, 255});
+        if (surface == nullptr) return nullptr;
         SDL_Surface* rgba = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
         SDL_DestroySurface(surface);
+        if (rgba == nullptr) return nullptr;
+
+        SDL_DestroySurface(raster_surface);
+        raster_surface = rgba;
+        raster_font = font;
+        raster_text.assign(bytes);
+        return raster_surface;
+    }
+
+    void text_out(TextDib& dib, i32 font, i32 x, i32 y, u32 colorref, const char* bytes, i32 len) override {
+        TTF_Font* f = fonts[font >= 0 && font < 9 ? font : 9];
+        if (f == nullptr || len <= 0) return;
+        // The shadow and foreground reuse the same glyph coverage at different offsets and colors.
+        const SDL_Surface* rgba = rasterize(f, std::string_view(bytes, size_t(len)));
         if (rgba == nullptr) return;
         const u8* src = static_cast<const u8*>(rgba->pixels);
         for (int gy = 0; gy < rgba->h; ++gy) {
@@ -150,7 +169,6 @@ struct FontPainter::Faces final : TextGlyphSource {
                 pixel = text_dib_blend(pixel, colorref, coverage);
             }
         }
-        SDL_DestroySurface(rgba);
     }
 };
 #else

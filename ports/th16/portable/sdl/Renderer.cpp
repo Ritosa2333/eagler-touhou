@@ -137,6 +137,19 @@ void Renderer::changed(u32 id,u32 previous,const std::array<u32,4>& region){
 }
 Renderer::GPU& Renderer::surface(u32 h){
  auto s=resolve(owner,h);if(!s.handle||!s.width||!s.height){std::fprintf(stderr,"SDL invalid surface %u\n",h);std::abort();}auto& g=surfaces[h];if(!g.texture){glGenTextures(1,&g.texture);glGenFramebuffers(1,&g.framebuffer);bind_texture(g.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,g.texture,0);}
+ if(s.format==PixelFormat::Bgra8&&!s.data&&!s.size){
+  if(g.version==~0u){
+   bind_texture(g.texture);
+   glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,s.width*s.renderScale,s.height*s.renderScale,0,GL_RGBA,GL_UNSIGNED_BYTE,nullptr);
+   bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);
+   glDisable(GL_SCISSOR_TEST);glColorMask(true,true,true,true);drawState.pipeline.colorMask=15;
+   // Match the zeroed BGRA backing that GLES previously received.
+   const GLfloat transparent[4]{};
+   glClearBufferfv(GL_COLOR,0,transparent);
+   g.version=s.version;
+  }
+  return g;
+ }
  // Merge every known CPU edit since the last upload. Unknown edits retain
  // the full-image path so overlapping writes cannot be lost.
  const auto& r=g.dirty;
@@ -205,7 +218,8 @@ void Renderer::issue(const State& d,Topology primitive,u32 count,const void* dat
  auto arg=[](Argument a){return int(u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u));};
  integer(15,u32(p.color.operation));integer(16,arg(p.color.first));integer(17,arg(p.color.second));integer(18,u32(p.alpha.operation));integer(19,arg(p.alpha.first));integer(20,arg(p.alpha.second));integer(21,p.alphaTest);float alpha=float(p.alphaReference)/255;uniform(22,1,&alpha);integer(23,u32(p.alphaCompare));integer(24,version==10&&p.depthTest&&d.depth&&resolve(owner,d.depth).format==PixelFormat::Depth16);
  if(texture){
-  glActiveTexture(GL_TEXTURE0);bind_texture(texture->texture);
+  // Unit 0 stays active between draws. Resampling restores it after using unit 1.
+  bind_texture(texture->texture);
   constexpr GLint address[]{GL_REPEAT,GL_MIRRORED_REPEAT,GL_CLAMP_TO_EDGE};GLint sampler[]{address[u32(p.addressU)],address[u32(p.addressV)],p.minFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR,p.magFilter==Filter::Nearest?GL_NEAREST:GL_LINEAR};
   constexpr GLenum names[]{GL_TEXTURE_WRAP_S,GL_TEXTURE_WRAP_T,GL_TEXTURE_MIN_FILTER,GL_TEXTURE_MAG_FILTER};
   for(int i=0;i<4;i++)if(texture->sampler[i]!=sampler[i]){glTexParameteri(GL_TEXTURE_2D,names[i],sampler[i]);texture->sampler[i]=sampler[i];}
@@ -279,7 +293,7 @@ bool Renderer::resample(u32 src,const i32* from,u32 dst,const i32* to,const floa
  // valid VAOs, while the regular draw cache must restore all pipeline state.
  drawState=DrawStateCache{};output.rendered=true;output.version=b.version+1;++stats.resamples;return true;
 }
-void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.end()||!it->second.rendered)return;auto s=resolve(owner,id);auto& g=it->second;stats.readBytes+=s.size;pixels.resize(size_t(s.width)*s.height*s.renderScale*s.renderScale*4);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glPixelStorei(GL_PACK_ALIGNMENT,1);glReadPixels(0,0,s.width*s.renderScale,s.height*s.renderScale,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.end()||!it->second.rendered)return;auto s=resolve(owner,id);if(!s.data)return;auto& g=it->second;stats.readBytes+=s.size;pixels.resize(size_t(s.width)*s.height*s.renderScale*s.renderScale*4);bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);glPixelStorei(GL_PACK_ALIGNMENT,1);glReadPixels(0,0,s.width*s.renderScale,s.height*s.renderScale,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
  for(u32 y=0;y<s.height;y++)for(u32 x=0;x<s.width;x++){const auto scale=s.renderScale;const auto* p=pixels.data()+((size_t(y)*scale+scale/2)*s.width*scale+x*scale+scale/2)*4;u32 r=p[0],gc=p[1],b=p[2],a=p[3];auto* out=s.data+y*s.pitch;
   if(s.format==PixelFormat::Argb8332){const uint16_t value=uint16_t((a<<8)|(((r*7+127)/255)<<5)|(((gc*7+127)/255)<<2)|((b*3+127)/255));std::memcpy(out+x*2,&value,2);}else if(s.format==PixelFormat::Bgra8||s.format==PixelFormat::Bgrx8){out+=x*4;out[0]=b;out[1]=gc;out[2]=r;out[3]=s.format==PixelFormat::Bgra8?a:255;}else if((s.format==PixelFormat::Rgb565||s.format==PixelFormat::Xrgb1555||s.format==PixelFormat::Argb1555||s.format==PixelFormat::Argb4444)){uint16_t n=s.format==PixelFormat::Argb4444?(a>>4)<<12|(r>>4)<<8|(gc>>4)<<4|(b>>4):s.format==PixelFormat::Rgb565?(r>>3)<<11|(gc>>2)<<5|(b>>3):(s.format==PixelFormat::Argb1555&&a>=128?0x8000:0)|(r>>3)<<10|(gc>>3)<<5|(b>>3);std::memcpy(out+x*2,&n,2);}else if(s.format==PixelFormat::Alpha8)out[x]=a;else if(s.format==PixelFormat::Luminance8)out[x]=r;else std::abort();
  }g.rendered=false;
