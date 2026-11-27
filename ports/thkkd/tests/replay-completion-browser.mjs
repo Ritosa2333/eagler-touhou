@@ -12,7 +12,8 @@ const output=resolve(args.output||'ports/thkkd/build/replay-completion');mkdirSy
 const report={schema:'thkkd/replay-completion/1',checks:[],cases:[]};
 const driver=await productionBrowser({url:args.url||'http://127.0.0.1:18180/',report,protocolTimeout:1200000}),{page,browser}=driver;
 try{
-  await driver.library();const frame=await driver.start();
+  const expectedBuildId=JSON.parse(readFileSync(new URL('../runtime/manifest.json',import.meta.url),'utf8')).buildId;
+  await driver.library();const frame=await driver.start({expectedBuildId});
   await page.evaluate(()=>{
     window.__completionPlayback=null;
     addEventListener('message',event=>{const m=event.data;if(event.source===document.querySelector('#gameFrame')?.contentWindow&&m?.event==='runtime-info'&&m.playback)__completionPlayback=m.playback;});
@@ -58,6 +59,7 @@ try{
     const ending=await frame.evaluate(()=>({...__completionTrace,cursor:__thkkdRuntime.core._thkkd_word(0xb43110)}));
     await wait(250);const settled=await frame.evaluate(()=>({...__completionTrace,cursor:__thkkdRuntime.core._thkkd_word(0xb43110)}));
     assert.equal(settled.cursor,target);assert.equal(settled.steps,ending.steps);assert.equal(settled.skipped,0);assert.equal(settled.backwards,0);
+    assert.equal(settled.steps,target,'每个原生输入连续执行一次');
     const row={id:item.id,inputSha256:createHash('sha256').update(item.bytes).digest('hex'),count,finalCursor:target,steps:settled.steps,rate:item.normal?1:0,seconds:(Date.now()-started)/1000,ended:true,stoppedAtEnd:true,continuous:true};
     report.cases.push(row);writeFileSync(resolve(output,'progress.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(row));
   }

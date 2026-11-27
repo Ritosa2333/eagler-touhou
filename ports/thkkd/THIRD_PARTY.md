@@ -4,7 +4,7 @@
 
 浏览器使用 UPNG.js 2.1.0（MIT，Photopea）读取和生成 PNG；BMP 按原位深解码，JPEG 交给浏览器。原生 alpha 与独立 `_a` 遮罩的红色通道相乘。MP3 与 WAV 使用原字节，四段 WMV 通过 FFmpeg WebAssembly 在本机转为 VP8 WebM（CRF 10、2 Mbps，保留原时间戳）。UPNG 的许可证见 `third_party/UPNG-LICENSE.txt`。
 
-媒体转换固定使用 `@ffmpeg/ffmpeg` 0.12.15（MIT，Jerome Wu）及 `@ffmpeg/core` 0.12.10（GPL-2.0-or-later）。依赖由启动器的包管理器安装，Worker、JS 和 WASM 随网站构建，不从 CDN 加载。包装层源码与构建配方见 [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm)，FFmpeg 源码见 [FFmpeg](https://github.com/FFmpeg/FFmpeg)。许可证分别保存在 `third_party/FFmpeg-WASM-LICENSE.txt` 与 `third_party/FFmpeg-GPLv2.txt`。
+媒体转换使用仓库维护的专用 FFmpeg WebAssembly 内核，编译 FFmpeg 5.1.4、libvpx 1.13.1 及 ASF／WMV3→VP8 WebM 必需组件；Worker 包装层保持 `@ffmpeg/ffmpeg` 0.12.15（MIT，Jerome Wu）。源码、固定工具链、校验值与重建入口见[专用内核说明](../../launcher/third_party/thkkd-video/README.md)。FFmpeg 的 LGPL-2.1-or-later 与 libvpx 的 BSD 许可全文随组件及 Runtime 提供，FFmpeg.wasm 的 MIT 署名继续保留在 `third_party/FFmpeg-WASM-LICENSE.txt`。JS、Worker 和 WASM 随网站交付，首次转换视频时按需获取。
 
 DXA v3/v4 的默认密钥、索引与 LZ 压缩布局参考 [GARbro 的 DxLib 实现](https://github.com/morkt/GARbro/tree/master/ArcFormats/DxLib)。morkt 的 MIT 署名与许可全文保存在 `third_party/GARbro-LICENSE.txt`。
 

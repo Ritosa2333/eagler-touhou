@@ -32,6 +32,7 @@ class SourceInventoryTest(unittest.TestCase):
             'ports/thkkd/src/core/runtime/CombinedGameHost.hpp',
             'ports/thkkd/web/shell.mjs',
             'launcher/public/assets/favicon.png',
+            'launcher/third_party/thkkd-video/ffmpeg-core.wasm',
             'ports/thkkd/runtime/thkkd.wasm',
             'ports/thkkd/build/web/thkkd.wasm',
             'ports/thkkd/userdata/config.txt',
@@ -47,7 +48,7 @@ class SourceInventoryTest(unittest.TestCase):
             with patch.object(release, 'ROOT', root), patch.object(
                     release.subprocess, 'check_output', return_value='\0'.join(names).encode()):
                 selected = {path.relative_to(root).as_posix() for path in release.source_files()}
-        self.assertEqual(selected, set(names[:3]))
+        self.assertEqual(selected, set(names[:4]))
 
 
 if __name__ == '__main__':

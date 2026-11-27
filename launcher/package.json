@@ -217,7 +217,6 @@
   },
   "dependencies": {
     "7z-wasm": "1.2.0",
-    "@ffmpeg/core": "0.12.10",
     "@ffmpeg/ffmpeg": "0.12.15",
     "@fontsource-variable/noto-sans-jp": "5.3.1",
     "@fontsource-variable/noto-sans-sc": "5.3.1",

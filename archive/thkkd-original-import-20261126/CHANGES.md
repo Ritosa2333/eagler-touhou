@@ -46,7 +46,7 @@
 | M | [ports/thkkd/scripts/release-web.py](../../ports/thkkd/scripts/release-web.py) |
 | A | [ports/thkkd/tests/original-import-browser.mjs](../../ports/thkkd/tests/original-import-browser.mjs) |
 | M | [ports/thkkd/tests/test_release_source_inventory.py](../../ports/thkkd/tests/test_release_source_inventory.py) |
-| A | [ports/thkkd/third_party/FFmpeg-GPLv2.txt](../../ports/thkkd/third_party/FFmpeg-GPLv2.txt) |
+| A | [ports/thkkd/third_party/FFmpeg-GPLv2.txt（该版本许可原文）](https://github.com/FFmpeg/FFmpeg/blob/n5.1.4/COPYING.GPLv2) |
 | A | [ports/thkkd/third_party/FFmpeg-WASM-LICENSE.txt](../../ports/thkkd/third_party/FFmpeg-WASM-LICENSE.txt) |
 | A | [ports/thkkd/third_party/GARbro-LICENSE.txt](../../ports/thkkd/third_party/GARbro-LICENSE.txt) |
 | A | [ports/thkkd/third_party/UPNG-LICENSE.txt](../../ports/thkkd/third_party/UPNG-LICENSE.txt) |

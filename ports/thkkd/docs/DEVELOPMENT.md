@@ -19,7 +19,9 @@ node launcher/scripts/serve-static.mjs ports/thkkd/build/site 8174
 
 ## 资源与显示
 
-网页导入两份独立 DXA 文件或原版 ZIP。启动器的 `thkkd-original`、`thkkd-dxa` 和 `thkkd-image` 模块读取 DXA v3/v4，按 `launcher/src/launcher/thkkd-original-assets.json` 校验 327 项内容，生成 301 项运行资源。这份清单由启动器统一维护，支持只检出启动器与公共目录的前端构建。原始图片与遮罩生成 PNG，四段 WMV 在本机转为 WebM，MP3 和 WAV 使用原字节。游戏资源保留在本机被忽略的 `assets` 或 `content` 中。
+网页导入两份独立 DXA 文件或原版 ZIP。启动器的 `thkkd-original`、`thkkd-dxa` 和 `thkkd-image` 模块读取 DXA v3/v4，按 `launcher/src/launcher/thkkd-original-assets.json` 校验 327 项内容，生成 301 项运行资源。这份清单由启动器统一维护，支持只检出启动器与公共目录的前端构建。原始图片与遮罩生成 PNG，四段 WMV 使用仓库内的专用 FFmpeg 内核在本机转为 VP8 WebM，MP3 和 WAV 使用原字节。游戏资源保留在本机被忽略的 `assets` 或 `content` 中。
+
+转码内核的固定来源、组件和 Windows 便携重建入口见[构建说明](../../../launcher/third_party/thkkd-video/README.md)。普通网站构建直接使用已登记的 JS/WASM，游戏核心编译器保持 Emscripten 6.0.9。
 
 `prepare-assets.py` 用于生成本机显示与性能对照测试的 DATA；正式网站构建使用玩家导入流程。字体与转换依赖见 [THIRD_PARTY.md](../THIRD_PARTY.md)，透明混合、字体参数和 DPI 适配见 [RENDERING.md](RENDERING.md)，批量绘制与性能测量见 [PERFORMANCE.md](PERFORMANCE.md)。
 
@@ -67,3 +69,11 @@ node tools/ports/check.mjs --game=thkkd --variant=normal
 ## 本地交付
 
 `python -X utf8 -B ports/thkkd/scripts/release-web.py --site ports/thkkd/build/site --output ports/thkkd/dist/版本目录` 生成源码 ZIP 和本地网站 ZIP，并核对构建身份、文件清单、哈希。双击本地网站目录中的“启动海惠堂.cmd”启动浏览器服务器；它使用 Node 托管相同的网页程序。具体规则见 [packaging.md](packaging.md)。
+
+## 专用视频内核回归
+
+`video-transcode-browser.mjs --assets=原版视频目录 --baseline=旧内核目录 --output=结果目录` 使用原编码参数完整转换四段视频，记录耗时、WASM 线性内存容量、进度与取消／错误重试；再加 `--fixed-clock=1` 生成固定时钟输出，使用 `video-compare.py --real=真实时钟结果 --fixed=固定时钟结果 --output=比较.json` 完整解码、比较时间戳和画面，并核对耗时预算。固定时钟用于统一 libvpx realtime 的自适应速度选择，实际导入沿用浏览器真实时钟。
+
+`original-import-browser.mjs --controlled=1 --interrupt=1` 额外覆盖 Service Worker 接管后的 Blob Worker、转换中刷新重试、视频播放、安装后刷新和离线复用。视频内核改动运行此专项、六份长录像、适配模块、打包与项目接口检查；参考[单机转码验收](../../../archive/thkkd-video-core-20261127/README.md)。
+
+`installed-resource-browser.mjs --url=测试站点 --profile=旧版测试配置副本 --reference=r9` 检查沿用旧版已安装 DATA、启动当前 Runtime、刷新和转码 Worker 按需加载；测试配置使用独立副本。

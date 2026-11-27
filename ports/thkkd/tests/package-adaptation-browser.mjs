@@ -18,6 +18,7 @@ const expectedBuildId=JSON.parse(readFileSync(new URL('../runtime/manifest.json'
 try{
   await page.setBypassServiceWorker(true);await page.setCacheEnabled(false);await page.setBypassCSP(true);await driver.library();await driver.start({expectedBuildId});
   const config=[...new TextEncoder().encode('01100\n')],replay=[...replayFixture({count:420})];
+  if(args.save)await runtimeCommand(page,'write',{path:'th_kaikeidou01.dat',bytes:[...readFileSync(args.save)]});
   await runtimeCommand(page,'write',{path:'config.txt',bytes:config});await runtimeCommand(page,'write',{path:'replay/package-check.rpy',bytes:replay});await runtimeCommand(page,'sync');
   const saved=await runtimeCommand(page,'read',{path:'th_kaikeidou01.dat'});await driver.library();
   report.install=await page.evaluate(async moduleURL=>{

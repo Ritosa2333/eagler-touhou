@@ -1,0 +1,4 @@
+* text eol=lf
+ffmpeg-core.js -text whitespace=-blank-at-eol
+ffmpeg-core.wasm -text
+libvpx-LICENSE.txt whitespace=-blank-at-eof

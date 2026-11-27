@@ -1,0 +1,65 @@
+{
+  "schema": "thkkd/video-core-build/1",
+  "license": "LGPL-2.1-or-later",
+  "toolchain": "Emscripten 3.1.40",
+  "upstream": {
+    "ffmpeg": "5.1.4",
+    "libvpx": "1.13.1",
+    "ffmpegWasmCore": "0.12.10",
+    "ffmpegWasmRevision": "71aa99d37c02a7b4c435275ca9ef50e612f6efa1"
+  },
+  "singleThread": true,
+  "simd": true,
+  "components": {
+    "decoder": [
+      "H263_DECODER",
+      "VC1_DECODER",
+      "WMV3_DECODER"
+    ],
+    "encoder": [
+      "LIBVPX_VP8_ENCODER"
+    ],
+    "demuxer": [
+      "ASF_DEMUXER"
+    ],
+    "muxer": [
+      "WEBM_MUXER"
+    ],
+    "parser": [
+      "H263_PARSER",
+      "VC1_PARSER"
+    ],
+    "filter": [
+      "FORMAT_FILTER",
+      "NULL_FILTER",
+      "SCALE_FILTER"
+    ],
+    "protocol": [
+      "FILE_PROTOCOL"
+    ]
+  },
+  "libvpx": {
+    "vp8Encoder": true,
+    "vp8Decoder": false,
+    "vp9Encoder": false,
+    "vp9Decoder": false,
+    "multithread": false
+  },
+  "recipe": {
+    "sources.lock.json": "bac5e07f4b10f1f05b4de79e84ccf71d6093dc39a689c8253812fbde2fdad10e",
+    "build.sh": "61bf41d1d532c8cfdcae1aa9f11867cc574b24eef2d0d41318481bc31b24ff33",
+    "build.py": "de5feb8459b4ac4710036f947b668e09a5d812ea9852503d15b73820e6ea3594"
+  },
+  "files": {
+    "ffmpeg-core.js": {
+      "bytes": 83244,
+      "sha256": "3638576607ebde85015e2cae033f9d9e07317e9ef4f544daa6ce1b02aadf73b2",
+      "gzipBytes": 22510
+    },
+    "ffmpeg-core.wasm": {
+      "bytes": 2691835,
+      "sha256": "7cea94133787db6852a77951841add48100c57038ef831bd831abe59d1e7111a",
+      "gzipBytes": 901053
+    }
+  }
+}

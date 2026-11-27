@@ -66,8 +66,11 @@ else {
         mkdirSync(resolve(output,'fonts'),{recursive:true});copyFileSync(resolve(root,'third_party/unifont.woff2'),resolve(output,'fonts/unifont.woff2'));
         copyFileSync(resolve(root,'../../launcher/public/assets/fonts/OFL-Unifont.txt'),resolve(output,'OFL-Unifont.txt'));
         const names=[...walk(shell).map(p=>relative(shell,p)), 'directory-keyboard.mjs','keyboard-owners.mjs','keyboard-input-bridge.mjs','direct-input-bridge.mjs','save-sync.mjs','local-replay.mjs','thkkd.mjs','thkkd.wasm','fonts/unifont.woff2','OFL-Unifont.txt'];
-        for(const name of ['UPNG-LICENSE.txt','FFmpeg-WASM-LICENSE.txt','FFmpeg-GPLv2.txt','GARbro-LICENSE.txt']){
+        for(const name of ['UPNG-LICENSE.txt','FFmpeg-WASM-LICENSE.txt','GARbro-LICENSE.txt']){
             copyFileSync(resolve(root,'third_party',name),resolve(output,name));names.push(name);
+        }
+        for(const [source,name] of [['FFmpeg-LGPLv2.1.txt','FFmpeg-LGPLv2.1.txt'],['libvpx-LICENSE.txt','libvpx-LICENSE.txt'],['SOURCE.json','thkkd-video-source.json']]){
+            copyFileSync(resolve(root,'../../launcher/third_party/thkkd-video',source),resolve(output,name));names.push(name);
         }
         const runtimeFiles=Object.fromEntries(names.sort().map(n=>{const bytes=readFileSync(resolve(output,n));return [n,{bytes:bytes.length,sha256:sha(bytes)}];}));
         const buildId=sha(JSON.stringify(runtimeFiles));

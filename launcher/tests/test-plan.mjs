@@ -28,6 +28,7 @@ export const FRONTEND_BUILD_TESTS = Object.freeze([
 export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/react-validation-paths.test.mjs",
   "tests/test-thkkd-original.mjs",
+  "tests/thkkd-video-core.test.mjs",
   "tests/test-integrations.mjs",
   "tests/test-app-shell-host-artwork.mjs",
   "tests/test-th075-english-static.mjs",

@@ -1,0 +1,599 @@
+{
+  "schema": "thkkd/video-core-validation/1",
+  "date": "2026-11-27",
+  "scope": "singleplayer",
+  "baseCommit": "74d23342a623ab8591e1945e96dc5e6b5d1fd75d",
+  "runtimeBuildId": "f2e8cd3e696da5eb072a34faa5eae866000ab66bb407fa966d973e2c65582936",
+  "gameWasmSha256": "e1634bbe0db6f4d478c3c1b146428a5ffeeb55938c1c51ca9ea4e202aa346424",
+  "video": {
+    "schema": "thkkd/video-comparison/1",
+    "clockComparison": "fixed-20ms",
+    "inputs": {
+      "back100": {
+        "bytes": 45620751,
+        "sha256": "0d8f6bdc5e5a6809efd33d80ca03e697bb8dba4b894263dff477464a05a740bf"
+      },
+      "back200": {
+        "bytes": 28796987,
+        "sha256": "b90f72469191cc4c5694b57ae8dddaca6cad385cd11a325d5927aca8ea4e2d3a"
+      },
+      "back201": {
+        "bytes": 6481649,
+        "sha256": "8b26f8903501f2ddcbb635192c8270fcbcb25ff8b3710fce091932145cd71461"
+      },
+      "back300": {
+        "bytes": 26010897,
+        "sha256": "614e5db2bba6fc4aa7b8712f614fce6d8ddf33131093e9559146500ac4ce44a4"
+      }
+    },
+    "variants": {
+      "baseline": {
+        "wasmBytes": 32232419,
+        "gzipBytes": 10257774,
+        "wasmSha256": "9f57947a5bd530d8f00c5b3f2cb2a3492faa7e5d823315342d6a8656d0a6b7b7",
+        "files": [
+          {
+            "name": "back100",
+            "milliseconds": 76603.43500000238,
+            "outputBytes": 29547749,
+            "wasmLinearMemoryPeakBytes": 33554432,
+            "progressEvents": 153,
+            "progressFinite": true
+          },
+          {
+            "name": "back200",
+            "milliseconds": 80156.69500000775,
+            "outputBytes": 25924380,
+            "wasmLinearMemoryPeakBytes": 33554432,
+            "progressEvents": 160,
+            "progressFinite": true
+          },
+          {
+            "name": "back201",
+            "milliseconds": 18453.55499999225,
+            "outputBytes": 6532617,
+            "wasmLinearMemoryPeakBytes": 33554432,
+            "progressEvents": 39,
+            "progressFinite": true
+          },
+          {
+            "name": "back300",
+            "milliseconds": 66100.78499999642,
+            "outputBytes": 25764718,
+            "wasmLinearMemoryPeakBytes": 33554432,
+            "progressEvents": 132,
+            "progressFinite": true
+          }
+        ],
+        "loadMs": 261.1550000011921,
+        "capabilities": {},
+        "wasmLinearMemoryPeakBytes": 33554432
+      },
+      "candidate": {
+        "wasmBytes": 2691835,
+        "gzipBytes": 910680,
+        "wasmSha256": "7cea94133787db6852a77951841add48100c57038ef831bd831abe59d1e7111a",
+        "files": [
+          {
+            "name": "back100",
+            "milliseconds": 64208.810000002384,
+            "outputBytes": 29433461,
+            "wasmLinearMemoryPeakBytes": 33554432,
+            "progressEvents": 129,
+            "progressFinite": true
+          },
+          {
+            "name": "back200",
+            "milliseconds": 71879.08500000834,
+            "outputBytes": 25675467,
+            "wasmLinearMemoryPeakBytes": 33554432,
+            "progressEvents": 144,
+            "progressFinite": true
+          },
+          {
+            "name": "back201",
+            "milliseconds": 15373.484999999404,
+            "outputBytes": 6447582,
+            "wasmLinearMemoryPeakBytes": 33554432,
+            "progressEvents": 33,
+            "progressFinite": true
+          },
+          {
+            "name": "back300",
+            "milliseconds": 55016.784999996424,
+            "outputBytes": 25758663,
+            "wasmLinearMemoryPeakBytes": 33554432,
+            "progressEvents": 111,
+            "progressFinite": true
+          }
+        ],
+        "loadMs": 39.95000000298023,
+        "capabilities": {
+          "decoders": "ffmpeg version 5.1.4 Copyright (c) 2000-2023 the FFmpeg developers\n  built with emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.40 (5c27e79dd0a9c4e27ef2326841698cdd4f6b5784)\n  configuration: --tempprefix=/build/tmp/ffconf --prefix=/build/install --target-os=none --arch=x86_32 --enable-cross-compile --disable-asm --disable-stripping --disable-programs --disable-doc --disable-debug --disable-runtime-cpudetect --disable-autodetect --nm=emnm --ar=emar --ranlib=emranlib --cc=emcc --cxx=em++ --objcc=emcc --dep-cc=emcc --extra-cflags='-I/build/install/include -O3 -msimd128' --extra-ldflags=-L/build/install/lib --disable-pthreads --disable-w32threads --disable-os2threads --disable-everything --disable-avdevice --disable-postproc --disable-swresample --disable-network --enable-libvpx --enable-demuxer=asf --enable-decoder=wmv3 --enable-parser=vc1 --enable-encoder=libvpx_vp8 --enable-muxer=webm --enable-protocol=file --enable-filter='format,null,scale'\n  libavutil      57. 28.100 / 57. 28.100\n  libavcodec     59. 37.100 / 59. 37.100\n  libavformat    59. 27.100 / 59. 27.100\n  libavfilter     8. 44.100 /  8. 44.100\n  libswscale      6.  7.100 /  6.  7.100\nDecoders:\n V..... = Video\n A..... = Audio\n S..... = Subtitle\n .F.... = Frame-level multithreading\n ..S... = Slice-level multithreading\n ...X.. = Codec is experimental\n ....B. = Supports draw_horiz_band\n .....D = Supports direct rendering method 1\n ------\n V...BD h263                 H.263 / H.263-1996, H.263+ / H.263-1998 / H.263 version 2\n V....D vc1                  SMPTE VC-1\n V....D wmv3                 Windows Media Video 9\nAborted()",
+          "encoders": "ffmpeg version 5.1.4 Copyright (c) 2000-2023 the FFmpeg developers\n  built with emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.40 (5c27e79dd0a9c4e27ef2326841698cdd4f6b5784)\n  configuration: --tempprefix=/build/tmp/ffconf --prefix=/build/install --target-os=none --arch=x86_32 --enable-cross-compile --disable-asm --disable-stripping --disable-programs --disable-doc --disable-debug --disable-runtime-cpudetect --disable-autodetect --nm=emnm --ar=emar --ranlib=emranlib --cc=emcc --cxx=em++ --objcc=emcc --dep-cc=emcc --extra-cflags='-I/build/install/include -O3 -msimd128' --extra-ldflags=-L/build/install/lib --disable-pthreads --disable-w32threads --disable-os2threads --disable-everything --disable-avdevice --disable-postproc --disable-swresample --disable-network --enable-libvpx --enable-demuxer=asf --enable-decoder=wmv3 --enable-parser=vc1 --enable-encoder=libvpx_vp8 --enable-muxer=webm --enable-protocol=file --enable-filter='format,null,scale'\n  libavutil      57. 28.100 / 57. 28.100\n  libavcodec     59. 37.100 / 59. 37.100\n  libavformat    59. 27.100 / 59. 27.100\n  libavfilter     8. 44.100 /  8. 44.100\n  libswscale      6.  7.100 /  6.  7.100\nEncoders:\n V..... = Video\n A..... = Audio\n S..... = Subtitle\n .F.... = Frame-level multithreading\n ..S... = Slice-level multithreading\n ...X.. = Codec is experimental\n ....B. = Supports draw_horiz_band\n .....D = Supports direct rendering method 1\n ------\n V....D libvpx               libvpx VP8 (codec vp8)\nAborted()",
+          "demuxers": "ffmpeg version 5.1.4 Copyright (c) 2000-2023 the FFmpeg developers\n  built with emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.40 (5c27e79dd0a9c4e27ef2326841698cdd4f6b5784)\n  configuration: --tempprefix=/build/tmp/ffconf --prefix=/build/install --target-os=none --arch=x86_32 --enable-cross-compile --disable-asm --disable-stripping --disable-programs --disable-doc --disable-debug --disable-runtime-cpudetect --disable-autodetect --nm=emnm --ar=emar --ranlib=emranlib --cc=emcc --cxx=em++ --objcc=emcc --dep-cc=emcc --extra-cflags='-I/build/install/include -O3 -msimd128' --extra-ldflags=-L/build/install/lib --disable-pthreads --disable-w32threads --disable-os2threads --disable-everything --disable-avdevice --disable-postproc --disable-swresample --disable-network --enable-libvpx --enable-demuxer=asf --enable-decoder=wmv3 --enable-parser=vc1 --enable-encoder=libvpx_vp8 --enable-muxer=webm --enable-protocol=file --enable-filter='format,null,scale'\n  libavutil      57. 28.100 / 57. 28.100\n  libavcodec     59. 37.100 / 59. 37.100\n  libavformat    59. 27.100 / 59. 27.100\n  libavfilter     8. 44.100 /  8. 44.100\n  libswscale      6.  7.100 /  6.  7.100\nFile formats:\n D. = Demuxing supported\n .E = Muxing supported\n --\n D  asf             ASF (Advanced / Active Streaming Format)\nAborted()",
+          "muxers": "ffmpeg version 5.1.4 Copyright (c) 2000-2023 the FFmpeg developers\n  built with emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.40 (5c27e79dd0a9c4e27ef2326841698cdd4f6b5784)\n  configuration: --tempprefix=/build/tmp/ffconf --prefix=/build/install --target-os=none --arch=x86_32 --enable-cross-compile --disable-asm --disable-stripping --disable-programs --disable-doc --disable-debug --disable-runtime-cpudetect --disable-autodetect --nm=emnm --ar=emar --ranlib=emranlib --cc=emcc --cxx=em++ --objcc=emcc --dep-cc=emcc --extra-cflags='-I/build/install/include -O3 -msimd128' --extra-ldflags=-L/build/install/lib --disable-pthreads --disable-w32threads --disable-os2threads --disable-everything --disable-avdevice --disable-postproc --disable-swresample --disable-network --enable-libvpx --enable-demuxer=asf --enable-decoder=wmv3 --enable-parser=vc1 --enable-encoder=libvpx_vp8 --enable-muxer=webm --enable-protocol=file --enable-filter='format,null,scale'\n  libavutil      57. 28.100 / 57. 28.100\n  libavcodec     59. 37.100 / 59. 37.100\n  libavformat    59. 27.100 / 59. 27.100\n  libavfilter     8. 44.100 /  8. 44.100\n  libswscale      6.  7.100 /  6.  7.100\nFile formats:\n D. = Demuxing supported\n .E = Muxing supported\n --\n  E webm            WebM\nAborted()",
+          "protocols": "ffmpeg version 5.1.4 Copyright (c) 2000-2023 the FFmpeg developers\n  built with emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.40 (5c27e79dd0a9c4e27ef2326841698cdd4f6b5784)\n  configuration: --tempprefix=/build/tmp/ffconf --prefix=/build/install --target-os=none --arch=x86_32 --enable-cross-compile --disable-asm --disable-stripping --disable-programs --disable-doc --disable-debug --disable-runtime-cpudetect --disable-autodetect --nm=emnm --ar=emar --ranlib=emranlib --cc=emcc --cxx=em++ --objcc=emcc --dep-cc=emcc --extra-cflags='-I/build/install/include -O3 -msimd128' --extra-ldflags=-L/build/install/lib --disable-pthreads --disable-w32threads --disable-os2threads --disable-everything --disable-avdevice --disable-postproc --disable-swresample --disable-network --enable-libvpx --enable-demuxer=asf --enable-decoder=wmv3 --enable-parser=vc1 --enable-encoder=libvpx_vp8 --enable-muxer=webm --enable-protocol=file --enable-filter='format,null,scale'\n  libavutil      57. 28.100 / 57. 28.100\n  libavcodec     59. 37.100 / 59. 37.100\n  libavformat    59. 27.100 / 59. 27.100\n  libavfilter     8. 44.100 /  8. 44.100\n  libswscale      6.  7.100 /  6.  7.100\nSupported file protocols:\nInput:\n  file\nOutput:\n  file\nAborted()",
+          "filters": "ffmpeg version 5.1.4 Copyright (c) 2000-2023 the FFmpeg developers\n  built with emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.40 (5c27e79dd0a9c4e27ef2326841698cdd4f6b5784)\n  configuration: --tempprefix=/build/tmp/ffconf --prefix=/build/install --target-os=none --arch=x86_32 --enable-cross-compile --disable-asm --disable-stripping --disable-programs --disable-doc --disable-debug --disable-runtime-cpudetect --disable-autodetect --nm=emnm --ar=emar --ranlib=emranlib --cc=emcc --cxx=em++ --objcc=emcc --dep-cc=emcc --extra-cflags='-I/build/install/include -O3 -msimd128' --extra-ldflags=-L/build/install/lib --disable-pthreads --disable-w32threads --disable-os2threads --disable-everything --disable-avdevice --disable-postproc --disable-swresample --disable-network --enable-libvpx --enable-demuxer=asf --enable-decoder=wmv3 --enable-parser=vc1 --enable-encoder=libvpx_vp8 --enable-muxer=webm --enable-protocol=file --enable-filter='format,null,scale'\n  libavutil      57. 28.100 / 57. 28.100\n  libavcodec     59. 37.100 / 59. 37.100\n  libavformat    59. 27.100 / 59. 27.100\n  libavfilter     8. 44.100 /  8. 44.100\n  libswscale      6.  7.100 /  6.  7.100\nFilters:\n  T.. = Timeline support\n  .S. = Slice threading\n  ..C = Command support\n  A = Audio input/output\n  V = Video input/output\n  N = Dynamic number and/or type of input/output\n  | = Source or sink filter\n ... format            V->V       Convert the input video to one of the specified pixel formats.\n ... null              V->V       Pass the source unchanged to the output.\n ..C scale             V->V       Scale the input video size and/or convert the image format.\n ... abuffer           |->A       Buffer audio frames, and make them accessible to the filterchain.\n ... buffer            |->V       Buffer video frames, and make them accessible to the filterchain.\n ... abuffersink       A->|       Buffer audio frames, and make them available to the end of the filter graph.\n ... buffersink        V->|       Buffer video frames, and make them available to the end of the filter graph.\nAborted()"
+        },
+        "wasmLinearMemoryPeakBytes": 33554432
+      }
+    },
+    "actualCapabilities": {
+      "decoders": [
+        "h263",
+        "vc1",
+        "wmv3"
+      ],
+      "encoders": [
+        "libvpx"
+      ],
+      "demuxers": [
+        "asf"
+      ],
+      "muxers": [
+        "webm"
+      ],
+      "protocols": [
+        "file",
+        "file"
+      ],
+      "filters": [
+        "format",
+        "null",
+        "scale",
+        "abuffer",
+        "buffer",
+        "abuffersink",
+        "buffersink"
+      ]
+    },
+    "lifecycle": {
+      "invalidRejected": true,
+      "errorThenRetry": true,
+      "terminatedPendingRequest": true,
+      "cancelThenRetry": true
+    },
+    "videos": [
+      {
+        "name": "back100",
+        "frames": 4650,
+        "fixedPixelsAndTimestampsEqual": true,
+        "fixedDecodedSha256": "1585af31dbf0e3a1f2bbd20f42141f449de505d99e65ae7c798079537c6acba2",
+        "realTimestampsEqual": true,
+        "realOldVsNewSSIM": 0.984012,
+        "fixedContainerBytesEqual": false,
+        "fixedContainerUIDs": {
+          "TrackUID": {
+            "baseline": {
+              "offset": 284,
+              "value": "5b2af7315aaadf50"
+            },
+            "candidate": {
+              "offset": 284,
+              "value": "a2eb3fd3123235cf"
+            }
+          },
+          "TagTrackUID": {
+            "baseline": {
+              "offset": 570,
+              "value": "5b2af7315aaadf50"
+            },
+            "candidate": {
+              "offset": 570,
+              "value": "a2eb3fd3123235cf"
+            }
+          }
+        },
+        "fixedContainerEqualExceptTrackUIDs": true,
+        "containerMetadata": {
+          "baseline": {
+            "duration": "154.983000",
+            "tags": {
+              "BUFFER_AVERAGE": "37524",
+              "WMFSDKNEEDED": "0.0.0.0000",
+              "DEVICECONFORMANCETEMPLATE": "MP@ML",
+              "WMFSDKVERSION": "11.0.5721.5265",
+              "ISVBR": "1",
+              "VBR_PEAK": "3707344",
+              "ENCODER": "Lavf59.27.100"
+            },
+            "streamTags": {
+              "language": "jpn",
+              "ENCODER": "Lavc59.37.100 libvpx",
+              "DURATION": "00:02:34.983000000"
+            }
+          },
+          "candidate": {
+            "duration": "154.983000",
+            "tags": {
+              "BUFFER_AVERAGE": "37524",
+              "WMFSDKNEEDED": "0.0.0.0000",
+              "DEVICECONFORMANCETEMPLATE": "MP@ML",
+              "WMFSDKVERSION": "11.0.5721.5265",
+              "ISVBR": "1",
+              "VBR_PEAK": "3707344",
+              "ENCODER": "Lavf59.27.100"
+            },
+            "streamTags": {
+              "language": "jpn",
+              "ENCODER": "Lavc59.37.100 libvpx",
+              "DURATION": "00:02:34.983000000"
+            }
+          }
+        }
+      },
+      {
+        "name": "back200",
+        "frames": 4803,
+        "fixedPixelsAndTimestampsEqual": true,
+        "fixedDecodedSha256": "9839fb152a0c61b5f32bd30ae2f9b4d6f90570f6616dcde3d769f9b9da146ee3",
+        "realTimestampsEqual": true,
+        "realOldVsNewSSIM": 0.986794,
+        "fixedContainerBytesEqual": false,
+        "fixedContainerUIDs": {
+          "TrackUID": {
+            "baseline": {
+              "offset": 284,
+              "value": "eec74564d0ad05f0"
+            },
+            "candidate": {
+              "offset": 284,
+              "value": "02c23c5b2d17ec89"
+            }
+          },
+          "TagTrackUID": {
+            "baseline": {
+              "offset": 571,
+              "value": "eec74564d0ad05f0"
+            },
+            "candidate": {
+              "offset": 571,
+              "value": "02c23c5b2d17ec89"
+            }
+          }
+        },
+        "fixedContainerEqualExceptTrackUIDs": true,
+        "containerMetadata": {
+          "baseline": {
+            "duration": "161.028000",
+            "tags": {
+              "BUFFER_AVERAGE": "25431",
+              "WMFSDKNEEDED": "0.0.0.0000",
+              "DEVICECONFORMANCETEMPLATE": "MP@ML",
+              "WMFSDKVERSION": "11.0.5721.5265",
+              "ISVBR": "1",
+              "VBR_PEAK": "2078703",
+              "ENCODER": "Lavf59.27.100"
+            },
+            "streamTags": {
+              "language": "jpn",
+              "ENCODER": "Lavc59.37.100 libvpx",
+              "DURATION": "00:02:41.028000000"
+            }
+          },
+          "candidate": {
+            "duration": "161.028000",
+            "tags": {
+              "BUFFER_AVERAGE": "25431",
+              "WMFSDKNEEDED": "0.0.0.0000",
+              "DEVICECONFORMANCETEMPLATE": "MP@ML",
+              "WMFSDKVERSION": "11.0.5721.5265",
+              "ISVBR": "1",
+              "VBR_PEAK": "2078703",
+              "ENCODER": "Lavf59.27.100"
+            },
+            "streamTags": {
+              "language": "jpn",
+              "ENCODER": "Lavc59.37.100 libvpx",
+              "DURATION": "00:02:41.028000000"
+            }
+          }
+        }
+      },
+      {
+        "name": "back201",
+        "frames": 1131,
+        "fixedPixelsAndTimestampsEqual": true,
+        "fixedDecodedSha256": "84f97b5c7e3211d2b14a11288519d28ccc09c2a61b9dfade2f3bc8640294c38a",
+        "realTimestampsEqual": true,
+        "realOldVsNewSSIM": 0.987427,
+        "fixedContainerBytesEqual": false,
+        "fixedContainerUIDs": {
+          "TrackUID": {
+            "baseline": {
+              "offset": 284,
+              "value": "2c49bfed48df5d2a"
+            },
+            "candidate": {
+              "offset": 284,
+              "value": "ed45a6206b234e6a"
+            }
+          },
+          "TagTrackUID": {
+            "baseline": {
+              "offset": 570,
+              "value": "2c49bfed48df5d2a"
+            },
+            "candidate": {
+              "offset": 570,
+              "value": "ed45a6206b234e6a"
+            }
+          }
+        },
+        "fixedContainerEqualExceptTrackUIDs": true,
+        "containerMetadata": {
+          "baseline": {
+            "duration": "37.700000",
+            "tags": {
+              "BUFFER_AVERAGE": "2211",
+              "WMFSDKNEEDED": "0.0.0.0000",
+              "DEVICECONFORMANCETEMPLATE": "MP@ML",
+              "WMFSDKVERSION": "11.0.5721.5265",
+              "ISVBR": "1",
+              "VBR_PEAK": "1297442",
+              "ENCODER": "Lavf59.27.100"
+            },
+            "streamTags": {
+              "language": "jpn",
+              "ENCODER": "Lavc59.37.100 libvpx",
+              "DURATION": "00:00:37.700000000"
+            }
+          },
+          "candidate": {
+            "duration": "37.700000",
+            "tags": {
+              "BUFFER_AVERAGE": "2211",
+              "WMFSDKNEEDED": "0.0.0.0000",
+              "DEVICECONFORMANCETEMPLATE": "MP@ML",
+              "WMFSDKVERSION": "11.0.5721.5265",
+              "ISVBR": "1",
+              "VBR_PEAK": "1297442",
+              "ENCODER": "Lavf59.27.100"
+            },
+            "streamTags": {
+              "language": "jpn",
+              "ENCODER": "Lavc59.37.100 libvpx",
+              "DURATION": "00:00:37.700000000"
+            }
+          }
+        }
+      },
+      {
+        "name": "back300",
+        "frames": 4375,
+        "fixedPixelsAndTimestampsEqual": true,
+        "fixedDecodedSha256": "10988700ffafa8d9b41173995a9a8b3a8a6d52f993010691d6283537434dd62f",
+        "realTimestampsEqual": true,
+        "realOldVsNewSSIM": 0.995532,
+        "fixedContainerBytesEqual": false,
+        "fixedContainerUIDs": {
+          "TrackUID": {
+            "baseline": {
+              "offset": 284,
+              "value": "879813cfaf3d34f5"
+            },
+            "candidate": {
+              "offset": 284,
+              "value": "df8655e659ea67b0"
+            }
+          },
+          "TagTrackUID": {
+            "baseline": {
+              "offset": 570,
+              "value": "879813cfaf3d34f5"
+            },
+            "candidate": {
+              "offset": 570,
+              "value": "df8655e659ea67b0"
+            }
+          }
+        },
+        "fixedContainerEqualExceptTrackUIDs": true,
+        "containerMetadata": {
+          "baseline": {
+            "duration": "145.833000",
+            "tags": {
+              "BUFFER_AVERAGE": "2736",
+              "WMFSDKNEEDED": "0.0.0.0000",
+              "DEVICECONFORMANCETEMPLATE": "MP@ML",
+              "WMFSDKVERSION": "11.0.5721.5265",
+              "ISVBR": "1",
+              "VBR_PEAK": "1383962",
+              "ENCODER": "Lavf59.27.100"
+            },
+            "streamTags": {
+              "language": "jpn",
+              "ENCODER": "Lavc59.37.100 libvpx",
+              "DURATION": "00:02:25.833000000"
+            }
+          },
+          "candidate": {
+            "duration": "145.833000",
+            "tags": {
+              "BUFFER_AVERAGE": "2736",
+              "WMFSDKNEEDED": "0.0.0.0000",
+              "DEVICECONFORMANCETEMPLATE": "MP@ML",
+              "WMFSDKVERSION": "11.0.5721.5265",
+              "ISVBR": "1",
+              "VBR_PEAK": "1383962",
+              "ENCODER": "Lavf59.27.100"
+            },
+            "streamTags": {
+              "language": "jpn",
+              "ENCODER": "Lavc59.37.100 libvpx",
+              "DURATION": "00:02:25.833000000"
+            }
+          }
+        }
+      }
+    ],
+    "realTotalMilliseconds": {
+      "baseline": 241314.4699999988,
+      "candidate": 206478.16500000656
+    },
+    "realTimingRatio": 0.8556393862332731,
+    "memoryMetric": "Worker WASM linear memory capacity high-water mark; MEMFS and browser process memory recorded separately when sampled",
+    "result": "passed"
+  },
+  "replays": {
+    "result": "passed",
+    "runtimeBuildId": "f2e8cd3e696da5eb072a34faa5eae866000ab66bb407fa966d973e2c65582936",
+    "cases": [
+      {
+        "id": "corpus-02",
+        "inputSha256": "406072dd472da4d00db2b8d279ce09e5eb312c651873d9a8fc2fc67a4244df7b",
+        "count": 110374,
+        "finalCursor": 110373,
+        "steps": 110373,
+        "rate": 0,
+        "seconds": 597.958,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-13",
+        "inputSha256": "e165e1118d272f8b219829ff1d40d2a127c0f211e52f177ee1874ab1ac0ef212",
+        "count": 74806,
+        "finalCursor": 74805,
+        "steps": 74805,
+        "rate": 0,
+        "seconds": 517.516,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-14",
+        "inputSha256": "f54ed8e517bb9f73842bfbc7984678094a49a348aebb221baf2563505a0b43c5",
+        "count": 73458,
+        "finalCursor": 73457,
+        "steps": 73457,
+        "rate": 0,
+        "seconds": 469.106,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-15",
+        "inputSha256": "eee206c719c6d9160c23653f14da57e8544682dd2941e4f59c98b6a00947dc43",
+        "count": 72884,
+        "finalCursor": 72883,
+        "steps": 72883,
+        "rate": 0,
+        "seconds": 619.784,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-16",
+        "inputSha256": "d82f94aabc9bcbc82406a7144e8c0ff3b01f184c158620698312b9c5d9bf8bcf",
+        "count": 110282,
+        "finalCursor": 110281,
+        "steps": 110281,
+        "rate": 0,
+        "seconds": 739.219,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      },
+      {
+        "id": "corpus-17",
+        "inputSha256": "7e5bb1a7cb330b205c24f005b755a9550fbebd57365c90518ca97ffb7b82e30f",
+        "count": 84397,
+        "finalCursor": 84396,
+        "steps": 84396,
+        "rate": 0,
+        "seconds": 480.614,
+        "ended": true,
+        "stoppedAtEnd": true,
+        "continuous": true
+      }
+    ],
+    "steps": 526195,
+    "extraControlCases": 6,
+    "extraControlSteps": 2514
+  },
+  "checks": {
+    "T01": {
+      "result": "passed",
+      "steps": 526195,
+      "longReplays": 6
+    },
+    "T05": {
+      "result": "passed",
+      "importChecks": [
+        "import-after-service-worker-controlled-reload",
+        "file-picker-and-format-guidance",
+        "page-interruption-leaves-no-partial-install-and-retry",
+        "two-original-dxa-through-production-import",
+        "original-images-mp3-and-converted-video",
+        "four-original-video-dimensions-duration-and-playback",
+        "refresh-reuses-installed-resources",
+        "offline-refresh-reuses-installed-resources",
+        "lazy-load-and-worker-release"
+      ],
+      "installedAssets": {
+        "assets": 301,
+        "mp3": 18,
+        "webm": 4
+      },
+      "transactionChecks": [
+        "PACKAGE-03-interrupted-real-resource-install-keeps-current-generation",
+        "PACKAGE-03-resume-activates-complete-resource-generation",
+        "SAVE-06-resource-generation-replacement-preserves-native-save-config-and-replay",
+        "PACKAGE-03-reload-and-launch-after-replacement"
+      ],
+      "oldR9Checks": [
+        "previous-install-starts-with-current-runtime",
+        "301-existing-assets-and-four-webm",
+        "refresh-without-video-core-load"
+      ]
+    },
+    "T12": {
+      "result": "source-inventory-passed; package verification recorded with delivery",
+      "sourceInventoryTests": 2
+    },
+    "T13": {
+      "contracts": "10 passed",
+      "documents": "705 documents / 28 ports passed",
+      "lint": "passed with existing warnings",
+      "typecheck": "passed",
+      "i18n": "2651 messages passed",
+      "initialFullSuite": {
+        "passedFiles": 219,
+        "failedFiles": 44,
+        "passedTests": 1806,
+        "failedTests": 29,
+        "skippedTests": 688
+      },
+      "followup": {
+        "affectedFrontend": {
+          "passed": 628,
+          "failed": 16,
+          "failuresPresentInEarlierPublicRun": true
+        },
+        "additionalMounted": {
+          "passed": 26
+        },
+        "coldSourceBuild": {
+          "passed": 10,
+          "reuseWithinRound": 9,
+          "finalAdditional": 1
+        }
+      }
+    },
+    "T14": {
+      "result": "passed",
+      "tests": 23
+    },
+    "T20": {
+      "result": "passed",
+      "reproducibleCleanBuild": true,
+      "coreAndFormatTests": 11
+    }
+  }
+}

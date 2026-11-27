@@ -1,6 +1,6 @@
 # 文档总表
 
-共 702 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 705 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -310,6 +310,7 @@
 | Launcher | [launcher/scripts/README.md](../launcher/scripts/README.md) | 命令行脚本 |
 | Launcher | [launcher/tests/README.md](../launcher/tests/README.md) | 测试 |
 | Launcher | [launcher/tests/fixtures/ui-history/README.md](../launcher/tests/fixtures/ui-history/README.md) | Fixed UI history fixtures |
+| Launcher | [launcher/third_party/thkkd-video/README.md](../launcher/third_party/thkkd-video/README.md) | 海恵堂专用视频转换内核 |
 | Launcher | [launcher/tools/maintainer/EXTERNAL_RECOVERY_LANE.md](../launcher/tools/maintainer/EXTERNAL_RECOVERY_LANE.md) | 恢复 External 站点 |
 | Launcher | [launcher/tools/maintainer/PUBLIC_RELEASE_ASSETS.md](../launcher/tools/maintainer/PUBLIC_RELEASE_ASSETS.md) | 公开下载附件 |
 | Launcher | [launcher/tools/maintainer/README.md](../launcher/tools/maintainer/README.md) | 维护工具 |
@@ -533,6 +534,7 @@
 | 历史记录 | [archive/thkkd-rendering-20261126/DELIVERY.md](../archive/thkkd-rendering-20261126/DELIVERY.md) | 海惠堂网页单机显示验收 |
 | 历史记录 | [archive/thkkd-rendering-20261126/README.md](../archive/thkkd-rendering-20261126/README.md) | 海惠堂网页显示对照 |
 | 历史记录 | [archive/thkkd-replay-entry-20261127/README.md](../archive/thkkd-replay-entry-20261127/README.md) | 東方海恵堂 Omniverse 录像选关 |
+| 历史记录 | [archive/thkkd-video-core-20261127/README.md](../archive/thkkd-video-core-20261127/README.md) | 海恵堂单机专用视频内核验收 |
 | 历史记录 | [archive/thkkd-web-20261126/README.md](../archive/thkkd-web-20261126/README.md) | 海惠堂网页单机验证 |
 | 历史记录 | [archive/thkkd-web-only-20261126/BATCH-VALIDATION.md](../archive/thkkd-web-only-20261126/BATCH-VALIDATION.md) | 東方海恵堂批量导入与运行验证 |
 | 历史记录 | [archive/thkkd-web-only-20261126/R5-FINAL.md](../archive/thkkd-web-only-20261126/R5-FINAL.md) | 東方海恵堂 r5 最终验收 |
@@ -572,6 +574,7 @@
 | 许可证与声明 | [launcher/public/vendor/react-easy-crop.LICENSE](../launcher/public/vendor/react-easy-crop.LICENSE) | react easy crop |
 | 许可证与声明 | [launcher/public/vendor/uzip.LICENSE](../launcher/public/vendor/uzip.LICENSE) | uzip |
 | 许可证与声明 | [launcher/public/vendor/webaudio-tinysynth.LICENSE](../launcher/public/vendor/webaudio-tinysynth.LICENSE) | webaudio tinysynth |
+| 许可证与声明 | [launcher/third_party/thkkd-video/libvpx-LICENSE.txt](../launcher/third_party/thkkd-video/libvpx-LICENSE.txt) | libvpx LICENSE |
 | 许可证与声明 | [ports/th01/web/room-ui-assets/LICENSE.txt](../ports/th01/web/room-ui-assets/LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th02/NOTICE-runtime.md](../ports/th02/NOTICE-runtime.md) | DOSBox-X / js-dos runtime for TH02 |
 | 许可证与声明 | [ports/th02/web/room-ui-assets/LICENSE.txt](../ports/th02/web/room-ui-assets/LICENSE.txt) | MIT License |

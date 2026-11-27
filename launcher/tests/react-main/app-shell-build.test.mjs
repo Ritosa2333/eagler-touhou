@@ -25,7 +25,7 @@ before(async () => {
   coldSource = resolve(work, 'source'); await mkdir(coldSource);
   // Exercise the supported build from authored inputs, never a warm ignored
   // launcher cache. Keep dependency installation shared; copy no build output.
-  for (const path of ['app', 'src', 'lib', 'messages', 'project.inlang/settings.json', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
+  for (const path of ['app', 'src', 'lib', 'third_party', 'messages', 'project.inlang/settings.json', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
     'content', 'favicon.ico', 'docs/FAQ.md', 'docs/SELF_HOSTING.md', 'docs/SELF_HOSTING_REFERENCE.md', 'docs/EXTERNAL_RESOURCE_MODE.md',
     'docs/assets/game-covers/thumbnails/th14.jpg',
     'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'bun.lock', '.bun-version', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
