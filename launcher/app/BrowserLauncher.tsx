@@ -22,6 +22,7 @@ import {DirectoryRoomDialog} from './components/directory/DirectoryRoomDialog';
 import {FirstUseNotice, DonationDialog, AppleRefreshDialog,
   type FirstUseNoticeHandle} from './components/notices';
 import {GameDataImportWindows} from './components/player/GameDataImportWindows';
+import {LoadingActivity} from './ui/loading-activity';
 import {GameDownloadProgress} from './components/launcher/GameDownloadProgress';
 import {MultiplayerQuickChat} from './components/player/MultiplayerQuickChat';
 import {PlayerControls} from './components/player/PlayerControls';
@@ -269,6 +270,7 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
   const task = useStoreSelector(session.downloads, value => value.active && value.active.game === settings?.gameId
     ? 'active' : value.pending.some(job => job.game === settings?.gameId) ? 'queued' : null);
+  const checking = useStoreSelector(session, value => value.soloResourceCheck === settings?.gameId);
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
   const ready = metadata.installed.has(settings.gameId) || hasBundledGameData(metadata, settings.gameId);
   const downloadable = canInstallGameData(metadata, settings.gameId);
@@ -276,7 +278,9 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
     active: t('downloadTasks.downloading'), queued: t('downloadTasks.queued'),
     start: t('action.start'), install: t('downloadTasks.acquire'),
   };
-  return <LaunchActions primaryStateLabels={Object.values(labels)} primary={{id: 'launch', textId: 'launchText',
+  return <LaunchActions primaryStateLabels={Object.values(labels)}
+    loading={checking && <LoadingActivity assetUrl={path => new URL(path, session.baseUrl).href}
+      status={t('player.loading')} context="solo" compact/>} primary={{id: 'launch', textId: 'launchText',
     label: labels[task ?? (ready ? 'start' : 'install')],
     icon: !ready || task ? 'download' : undefined,
     disabled: (metadata.phase !== 'ready' && !ready) || !!task,
@@ -327,7 +331,7 @@ function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, ne
   useLayoutEffect(() => session.settleRoomReturnPresentation(navigation.surface, navigation.productId), [session, navigation.surface, navigation.productId]);
   useLayoutEffect(() => {if (navigation.directoryFormMode) session.directory.restoreFormMode(navigation.directoryFormMode);}, [session, navigation.directoryFormMode]);
   return <><input id="fileInput" type="file" hidden/><GameDownloadProgress downloads={session.downloads} assetUrl={assetUrl}/><FullscreenTransient><ServerStatusNote session={session}/><Feedback model={session.feedback}/><StartupError model={session.startupError}/>
-    <GameDataImportWindows model={session.gameData} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}
+    <GameDataImportWindows model={session.gameData} assetUrl={assetUrl} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}
       manualOpen={navigation.infoDialogOpen('gameDataImportDialog')} onManualClose={() => navigation.closeInfoDialog('gameDataImportDialog')}/></FullscreenTransient>
     {navigation.context === 'lobby' && <NetworkDiagnosticsDialog model={session.networkDiagnostics} ref={network} open={navigation.infoDialogOpen('lobbyNetworkDialog')} onCloseRequest={() => navigation.closeInfoDialog('lobbyNetworkDialog')}
       getRelayUrl={() => {const relay = session.directory.getSnapshot().siteManifest?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';}} onRunningChange={onNetworkRunning}/>}

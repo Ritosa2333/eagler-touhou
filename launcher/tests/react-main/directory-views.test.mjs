@@ -310,12 +310,14 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
   assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(n('#listLoading').hidden, false);
   assert.equal(n('#refreshRooms').getAttribute('aria-busy'), 'true');
   assert.equal(n('#refreshRooms').dataset.loading, 'true');
-  assert.equal(env.document.querySelector('#listLoading .lobby-preload-spinner'), null);
+  assert.equal(n('#listLoading .loading-activity').dataset.loadingContext, 'multiplayer');
+  assert.equal(all('#listLoading .loading-activity img').length, 4);
   assert.equal(n('#roomList').hidden, true, 'An unloaded list cannot displace the loading indicator');
   assert.equal(n('#roomCount').hidden, true);
   assert.equal(env.document.querySelector('#listHead'),null); assert.equal(env.document.querySelector('#emptyState'), null);
   assert.equal(n('#createButton').disabled, true); assert.equal(n('#codeButton').disabled, true); assert.equal(n('#roomCount').textContent, '');
   await f.live(); assert.equal(n('#roomList').getAttribute('aria-busy'), 'false'); assert.equal(n('#listLoading').hidden, true);
+  assert.equal(env.document.querySelector('#listLoading .loading-activity'), null);
   assert.equal(n('#refreshRooms').getAttribute('aria-busy'), 'false');
   assert.equal(n('#emptyTitle').textContent, t(locale, 'lobby.empty')); assert.equal(n('#emptyHint').textContent, t(locale, 'lobby.emptyHint'));
   assert.equal(n('#roomList').hidden,true,'An empty list cannot consume the empty-state layout space');

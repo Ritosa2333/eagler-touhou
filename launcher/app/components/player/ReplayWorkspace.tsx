@@ -1,4 +1,5 @@
 import {Input} from '../../ui/input';
+import {LoadingActivity, LoadingCover} from '../../ui/loading-activity';
 import {Button as UiButton} from '../../ui/controls';
 import {ArrowLeft, ChevronDown, Upload, Folder, FileText, MoreHorizontal, Play, Pause, RotateCcw} from 'lucide-react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
@@ -57,6 +58,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
   const closing = useRef(false);
   const list = useRef<HTMLDivElement>(null), scrollPositions = useRef(new Map<string, number>());
   const playback = app.runtime?.runtimeInfo.playback as ReplayPlaybackState | undefined;
+  const playbackLoading = app.replayViewer && (app.replayStarting || app.replayOpening);
   const archive = files.productId === 'th09mp' ? app.th09Replay : undefined;
   const folders = useMemo(() => groupReplayFolders(files.rows), [files.rows]);
   const folderExists = files.phase !== 'ready' || !requestedFolder || folders.some(item => item.key === requestedFolder);
@@ -112,7 +114,9 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
             disabled={busy} aria-label={t('lobby.game')} title={t('lobby.game')}><ChevronDown aria-hidden="true"/></UiButton>}/>}
       </div>
     </header>
-    {!fileOnly && stage && !playback && stage.querySelector('.game-viewport') && createPortal(<div className="replay-workspace-idle" data-ui-surface="game">{icon('player-play')}<p>{versus ? t('replay.ui.choosePlay') : t('replay.ui.chooseStage')}</p><small>{t('replay.ui.browseWhileLoading')}</small></div>, stage.querySelector('.game-viewport')!)}
+    {!fileOnly && viewport && (playbackLoading || !playback) && createPortal(
+      playbackLoading ? <LoadingCover assetUrl={assetUrl} status={t('player.loading')} context="solo"/> :
+      <div className="replay-workspace-idle" data-ui-surface="game">{icon('player-play')}<p>{versus ? t('replay.ui.choosePlay') : t('replay.ui.chooseStage')}</p><small>{t('replay.ui.browseWhileLoading')}</small></div>, viewport)}
     {!fileOnly && viewport && createPortal(<UiButton variant="icon" type="button" className="replay-fullscreen replay-fullscreen-exit replay-button" aria-label={t('replay.ui.exitFullscreen')} onClick={() => {void session.togglePlayerFullscreen();}} data-fullscreen="true"><FullscreenIcons/></UiButton>, viewport)}
     {!fileOnly && stage && createPortal(<>
     <ReplayTransport playback={playback} fps={files.productId === 'th05mp' ? 56 : 60} busy={busy} fullscreen={session.nativeTouch.isFullscreen()} speedId="replaySpeedSelect" onControl={(action, value) => {void control(action, value);}} onToggleFullscreen={() => {void session.togglePlayerFullscreen();}}/>
@@ -122,7 +126,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
       {error && <p className="replay-workspace-error" role="alert">{errorText(error,t)}</p>}
     </section>
     </>, stage)}
-    {archive ? <Th09ReplayArchive key={archive.username} current={archive} watch={session.accessTh09MatchReplay}/> :
+    {archive ? <Th09ReplayArchive key={archive.username} current={archive} watch={session.accessTh09MatchReplay} assetUrl={assetUrl}/> :
     <aside className="replay-file-browser" data-file-only={fileOnly || undefined} aria-label={t('replay.ui.files')} onDragOver={event => {if (!busy && event.dataTransfer.types.includes('Files')) event.preventDefault();}} onDrop={event => {event.preventDefault(); if (busy || files.phase !== 'ready') return; const list = [...event.dataTransfer.files]; if (list.length !== 1) {report(Error('请每次导入一个文件')); return;} void importFile(list[0]).catch(report);}}>
       <header><h2>{t('replay.ui.heading')}</h2><UiButton type="button" className="replay-button" disabled={busy || files.phase !== 'ready'} onClick={() => {setBusy(true); setError(''); void session.chooseReplayFile(files.productId!).catch(report).finally(() => setBusy(false));}}>{icon('replay-upload-simple')}<span>{t('replay.ui.import')}</span></UiButton></header>
       <nav className="replay-breadcrumb" aria-label={t('replay.ui.location')}>{icon('replay-folder')}<UiButton variant="quiet" size="sm" type="button" onClick={() => {if (folder) setFolder(null); else setMoving(null);}}>{t('replay.ui.all')}</UiButton>{folder && <span title={folder.slice(7)}>/ {folder.slice(7)}</span>}</nav>
@@ -133,7 +137,7 @@ export function ReplayWorkspace({session, products = []}: {session: BrowserSessi
       </form>}
       <div className="replay-workspace-files" ref={list} aria-busy={files.phase === 'loading' || busy}
         onScroll={event => {if (files.phase === 'ready') scrollPositions.current.set(scrollKey, event.currentTarget.scrollTop);}}>
-        {files.phase === 'loading' ? <p className="replay-workspace-empty">{t('replay.ui.loading')}</p> : files.phase === 'error' ? <div className="replay-workspace-empty"><p>{t('replay.ui.failed')}</p><UiButton type="button" onClick={() => {void model.refresh().catch(report);}}>{t('replay.ui.retry')}</UiButton></div> : <>
+        {files.phase === 'loading' ? <div className="replay-workspace-empty" role="status"><LoadingActivity assetUrl={assetUrl} status={t('replay.ui.loading')} context="solo" compact/></div> : files.phase === 'error' ? <div className="replay-workspace-empty"><p>{t('replay.ui.failed')}</p><UiButton type="button" onClick={() => {void model.refresh().catch(report);}}>{t('replay.ui.retry')}</UiButton></div> : <>
           {!folder && folders.map(item => <div className="replay-workspace-file replay-workspace-folder" key={item.key}><UiButton variant="unstyled" type="button" data-replay-folder={item.key} onClick={() => {setFolder(item.key);}}>{icon('replay-folder')}<strong title={item.name}>{item.name}</strong><small>{t('replay.ui.count',{count:item.rows.length})}</small></UiButton><ReplayFileMenu disabled={busy} label={t('replay.ui.manageFolder',{name:item.name})} actions={[{label: t('replay.ui.download'), run: () => {void model.downloadFolder(item.key);}}]}/></div>)}
           {rows.map(row => <ReplayFileRow key={row.path} path={row.path} name={row.name} size={row.size} versus={versus} selected={playback?.path === row.path} expanded={expanded === row.path} busy={busy}
             onOpen={fileOnly ? undefined : () => {setError(''); if (versus) {setBusy(true); void model.watch(row.path).finally(() => setBusy(false));} else {setExpanded(current => current === row.path ? null : row.path); void model.inspect(row.path);}}}

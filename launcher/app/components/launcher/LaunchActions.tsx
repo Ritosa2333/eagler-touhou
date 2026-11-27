@@ -16,11 +16,12 @@ export interface LaunchActionsProps {
   /** Keep the primary button sized for every state in the current language. */
   primaryStateLabels?: readonly string[];
   secondary?: LaunchAction;
+  loading?: ReactNode;
   /** Compact placement retains the original embedded replay row dimensions. */
   placement?: 'standard' | 'compact';
 }
 /** Shared play/import presentation; session and replay owners decide intent. */
-export function LaunchActions({ primary, primaryStateLabels, secondary, placement = 'standard' }: LaunchActionsProps) {
+export function LaunchActions({ primary, primaryStateLabels, secondary, loading, placement = 'standard' }: LaunchActionsProps) {
   const PrimaryIcon = primary.icon === 'download' ? Download : Play;
   const primaryLabel = <span id={primary.textId}>{primary.label}</span>;
   return (
@@ -29,7 +30,8 @@ export function LaunchActions({ primary, primaryStateLabels, secondary, placemen
         className="launch min-h-9 px-3 pointer-coarse:min-h-11 max-[780px]:min-h-11"
         id={primary.id}
         type="button"
-        disabled={primary.disabled}
+        disabled={primary.disabled || !!loading}
+        aria-busy={loading ? true : undefined}
         onClick={primary.onClick}
       >
         <PrimaryIcon aria-hidden="true" />
@@ -49,6 +51,7 @@ export function LaunchActions({ primary, primaryStateLabels, secondary, placemen
         <FolderInput aria-hidden="true" />
         <span id={secondary.textId}>{secondary.label}</span>
       </UiButton>}
+      {loading && <div className="launch-actions-status" role="status">{loading}</div>}
     </div>
   );
 }

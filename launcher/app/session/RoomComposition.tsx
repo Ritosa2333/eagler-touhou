@@ -74,6 +74,7 @@ export function RoomComposition({
         previewReady: state.runtime?.roomPreview === true,
         th09NetworkOverlayOpen: state.th09NetworkOverlayOpen,
         launchStage: state.roomLaunchStage === 'runtime' ? 'preparing' : state.roomLaunchStage,
+        checking: room.checkBusy && !(state.runtime?.launched && state.runtime.firstFrame) && !state.runtime?.error,
         touchEnabled: settings?.options.touchEnabled === true,
         touchMovementMode: settings?.options.touchMovementMode ?? DEFAULT_GAME_OPTIONS.touchMovementMode,
       }}

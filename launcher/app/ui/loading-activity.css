@@ -56,7 +56,7 @@
     0%, 18%, 100% {transform:translateY(0);}
     8% {transform:translateY(var(--loading-hop));}
   }
-  body.less-motion :is(.loading-activity-faces img, .loading-activity-dots > span) {animation-name:none;}
+  :is(body.less-motion, .loading-activity[data-still]) :is(.loading-activity-faces img, .loading-activity-dots > span) {animation-name:none;}
   @media (prefers-reduced-motion:reduce) {
     :is(.loading-activity-faces img, .loading-activity-dots > span) {animation-name:none;}
   }

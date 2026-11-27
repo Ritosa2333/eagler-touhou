@@ -109,9 +109,12 @@ export interface BrowserSessionSnapshot {
   activity: number;
   metadataRevision: number;
   startupError: unknown | null;
+  soloResourceCheck?: GameId | null;
   roomLaunchStage: 'runtime' | 'path' | null;
   roomReloadPending?: boolean;
   replayViewer: boolean;
+  replayStarting?: boolean;
+  replayOpening?: boolean;
   th09Replay?: Th09ReplayEntry;
   spectatorViewer?: boolean;
   th09NetworkOverlayOpen: boolean;
@@ -762,7 +765,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         await relocateReplayPlayback(requiredRuntime(), product, access.epoch, source, target, access.playback);
         if (selectedReplayPath === source) selectedReplayPath = target;
       },
-      watch: async (_product, path, stage) => {await requiredRuntime().send('playback', {action: 'open', path, ...(stage !== undefined ? {stage} : {})});}});
+      watch: async (_product, path, stage) => {await startReplayPlayback(path, {stage});}});
     files = createFileActions({runtime, prepareFiles, releasePrepared, translate: stringTranslate, confirm: decisions.askConfirmation,
       pickFile: ports.pickFile, download: ports.download, feedback, replayMutations: replays.mutations,
       replayManager: {open: async product => {requiredNavigation().openInfoDialog('replayDialog', {replace: true}); await replays!.open(product);},
@@ -934,16 +937,15 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       roomMusicConsentEpoch = requiredRuntime().getSnapshot().epoch;
     }
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
-    const cover = !fromTitle;
+    publish({roomLaunchStage: 'runtime', spectatorViewer: context.snapshot.spectatorRequested});
     if (fromTitle) {
       const owner = requiredRuntime();
       if (owner.getSnapshot().runtimeVariant === 'multiplayer' && owner.getSnapshot().roomReturnSupported) await owner.returnToRoom();
       else {await owner.sync(); if (!context.isCurrent()) throw new RuntimeSessionSupersededError(); await owner.close({discardUnsaved:true});}
+      if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
       titleNetwork.close(false);
     }
     requiredNavigation().closeRoomPanel(); requiredNavigation().closeRoomSettings();
-    publish({roomLaunchStage: cover ? 'runtime' : null});
-    publish({spectatorViewer: context.snapshot.spectatorRequested});
     await showRoomPlayer(context, !context.snapshot.spectatorRequested, context.snapshot.seat != null);
     const owner = requiredRuntime(), preloaded = roomPreload;
     const current = owner.getSnapshot();
@@ -952,15 +954,16 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
           preloaded?.product === context.product && preloaded.epoch === current.epoch)) {
       await owner.configurePreparedRoom(current.epoch, context.runtimeOptions);
       if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
-      await owner.launch({awaitFirstFrame: cover});
+      await owner.launch({awaitFirstFrame: true});
       if (preloaded?.epoch === current.epoch) void preloaded.prepared.startBackground().catch(reportError);
       // The prepared plan and permanent iframe remain the room's title owner.
       transfer.launchAcknowledged(); feedback.playerStatus(t('runtime.ready')); frame?.focus({preventScroll: true});
-    } else if (fromTitle) await configuredLaunch(context.product, {signal: context.signal, multiplayer: {kind: 'room', options: context.runtimeOptions}, awaitFirstFrame: cover, throwErrors: true});
+    } else if (fromTitle) await configuredLaunch(context.product, {signal: context.signal, multiplayer: {kind: 'room', options: context.runtimeOptions}, awaitFirstFrame: true, throwErrors: true});
     else throw new Error(t('room.resourcesUnavailable'));
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
-    if (cover) {publish({roomLaunchStage: 'path'}); await gameplayNetwork!.waitForGameplayPath({isCurrent: context.isCurrent});}
-    publish({roomLaunchStage: null});
+    publish({roomLaunchStage: 'path'});
+    await gameplayNetwork!.waitForGameplayPath({isCurrent: context.isCurrent});
+    if (context.isCurrent()) publish({roomLaunchStage: null});
   }
   async function checkRoom(context: RoomOperationContext) {
     if (!await confirmTouchInput('multiplayer', context.signal)) return;
@@ -1019,6 +1022,13 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   let replayPreparation: Promise<void> | null = null;
   let switchingReplayProduct = false;
+  async function startReplayPlayback(path: string, {stage, bytes}: {stage?: number; bytes?: Uint8Array}) {
+    publish({replayOpening: true});
+    try {
+      await requiredRuntime().send('playback', {action: 'open', path,
+        ...(stage !== undefined ? {stage} : {}), ...(bytes ? {bytes} : {})});
+    } finally {publish({replayOpening: false});}
+  }
   function prepareReplayWorkspace(product: ProductId): Promise<void> {
     if (switchingReplayProduct || !replays?.getSnapshot().open) return Promise.reject(new RuntimeSessionSupersededError());
     if (product === 'hsob') return Promise.resolve();
@@ -1026,14 +1036,14 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (snapshot.replayViewer && state.launched && state.game === gameIdForProduct(product) && state.runtimeVariant === (isMultiplayerProductId(product) ? 'multiplayer' : 'normal')) return Promise.resolve();
     if (replayPreparation) return replayPreparation;
     if (state.launched) return Promise.reject(new Error('请先退出当前游戏'));
-    publish({playerOpen: true, replayViewer: true, touchHelpOpen: false});
+    publish({playerOpen: true, replayViewer: true, replayStarting: true, touchHelpOpen: false});
     replayPreparation = configuredLaunch(product, {multiplayer: isMultiplayerProductId(product) ? {kind: 'replay'} : undefined, replayWorkspace: true, awaitFirstFrame: true, throwErrors: true}).then(() => {
       if (!replays?.getSnapshot().open || replays.getSnapshot().productId !== product || !owner.getSnapshot().launched) throw new RuntimeSessionSupersededError();
     }).catch(error => {
       const current = owner.getSnapshot();
       if (!current.launched && current.epoch === null && replays?.getSnapshot().productId === product) publish({playerOpen: false, replayViewer: false});
       throw error;
-    }).finally(() => {replayPreparation = null;});
+    }).finally(() => {replayPreparation = null; publish({replayStarting: false});});
     return replayPreparation;
   }
   function openReplayViewer(product: ProductId, path?: string, archive?: Th09ReplayEntry): Promise<void> {
@@ -1052,7 +1062,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       await openReplayViewer('th09mp', undefined, archive);
       await prepareReplayWorkspace('th09mp');
       const owner = requiredRuntime(), epoch = owner.getSnapshot().epoch;
-      await owner.send('playback', {action:'open', path, bytes});
+      await startReplayPlayback(path, {bytes});
       if (archive && replays?.getSnapshot().open && owner.getSnapshot().epoch === epoch) publish({th09Replay: archive});
     });
   }
@@ -1109,9 +1119,15 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       cloudSync?.prepareLocalLaunch();
       const game = gameIdForProduct(product);
       const resourceMetadata = metadata.getSnapshot();
-      if (productRequiresImport(game) && resourceMetadata.phase !== 'ready' &&
-          requiresLocalGameData(resourceMetadata, game)) await metadata.initialize();
-      if (requiresLocalGameData(metadata.getSnapshot(), game) && !(await acquisition.readCurrent(game)).generation) {
+      let missing = false;
+      if (requiresLocalGameData(resourceMetadata, game)) {
+        publish({soloResourceCheck: game});
+        try {
+          if (productRequiresImport(game) && resourceMetadata.phase !== 'ready') await metadata.initialize();
+          missing = requiresLocalGameData(metadata.getSnapshot(), game) && !(await acquisition.readCurrent(game)).generation;
+        } finally {publish({soloResourceCheck: null});}
+      }
+      if (missing) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
       if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings()) return;

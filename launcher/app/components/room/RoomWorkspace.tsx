@@ -77,9 +77,14 @@ export function RoomWorkspace(props: RoomViewProps) {
   const canChangeProduct = owner && state.globalRoomCodes && !!state.product && props.products.length > 1;
   const selecting = state.seat != null && !state.spectatorRequested;
   const preparation = state.preparation;
-  const loading = !!context.launchStage || preparation?.status === 'preparing' || preparation?.status === 'importing';
-  const showPreparation = !props.reloadPending && (!!context.launchStage || !(context.previewReady || context.launched));
-  const loadingText = t(context.launchStage ? 'room.preparingRuntime' : loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : preparation?.status === 'cancelled' ? 'room.resourcesCancelled' : 'room.resourcesUnavailable');
+  const checking = context.checking && preparation?.status !== 'failed' && preparation?.status !== 'cancelled';
+  const startingSpectator = state.spectatorRequested && state.launchBusy && preparation?.status === 'ready' && !context.launched;
+  const launching = !!context.launchStage || startingSpectator || checking;
+  const loading = launching || preparation?.status === 'preparing' || preparation?.status === 'importing';
+  const showPreparation = !props.reloadPending && (launching || !(context.previewReady || context.launched));
+  const loadingText = t(context.launchStage === 'path' ? 'multiplayer.connection' : checking ? 'multiplayer.checkingGame' :
+    startingSpectator || context.launchStage && state.spectatorRequested ? 'room.loadingSpectator' : context.launchStage ? 'room.preparingRuntime' :
+    loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : preparation?.status === 'cancelled' ? 'room.resourcesCancelled' : 'room.resourcesUnavailable');
   const icon = (name:string)=><img className="room-icon" src={assetUrl(`assets/${name}.svg`)} alt=""/>;
   const lounge = <RoomSpectatorPreview state={state} service={service} assetUrl={assetUrl} open={props.panel?.kind==='spectators'} onOpen={element=>openPanel('spectators',element)}/>;
   const roster = <div className="room-workspace-roster" data-side-lounge={sideLounge} data-player-count={room.playerCount}><RoomSeats state={state} service={service} network={network} context={context} openPanel={openPanel} ratings={players} myRating={mine}/><div className="room-workspace-lounge-host" ref={setLoungeHost}/></div>;

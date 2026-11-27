@@ -27,6 +27,7 @@ export interface RoomViewContext {
   previewReady?: boolean;
   th09NetworkOverlayOpen: boolean;
   launchStage: 'path' | 'preparing' | null;
+  checking?: boolean;
   touchEnabled: boolean;
   touchMovementMode: TouchMovementMode;
 }

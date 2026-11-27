@@ -19,6 +19,8 @@
     letter-spacing: 0;
   }
   .launch-actions > .launch-secondary { flex: 0 0 auto; }
+  .launch-actions:has(> .launch-actions-status) { flex-wrap: wrap; }
+  .launch-actions-status { order: 1; flex: 0 0 100%; grid-column: 1 / -1; min-inline-size: 0; padding-block: 4px; }
   .launch-actions-compact { padding: 12px 0 0; border: 0; background: transparent; }
   @media (max-width: 780px) {
     .launch-actions { padding-inline: 16px; }

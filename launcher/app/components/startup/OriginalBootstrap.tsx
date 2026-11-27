@@ -4,10 +4,15 @@ import yatraFontUrl from '../../../public/assets/fonts/yatra-one-latin.woff2?url
 import mediumFontUrl from '../../../public/assets/fonts/chill-round-gothic-site-medium-critical.woff2?url';
 import boldFontUrl from '../../../public/assets/fonts/chill-round-gothic-site-bold-critical.woff2?url';
 import {originalBootstrap as original} from 'virtual:original-bootstrap';
-import {useLocation} from 'react-router';
+import {useHref, useLocation} from 'react-router';
+import {SITE_BRAND_FACES, siteBrandPath} from '../../../lib/site-brand.mjs';
+import {UI_LOCALES} from '../../../src/launcher/i18n.mts';
 import {translate} from '../../i18n';
+import {LESS_MOTION_STORAGE_KEY} from '../../models/site-preferences';
 import {sitePageTitle, useDocumentUiLocale} from '../../navigation/document-locale';
 import {isLauncherHomePath} from '../../navigation/addresses';
+import {chooseLoadingActivity, LoadingActivityContent, loadingTips} from '../../ui/loading-activity';
+import loadingActivityCss from '../../ui/loading-activity.css?inline';
 
 // ES5 dispatch only: the original compatibility gate must precede the modern
 // bundle. Static SPA fallback HTML serves both original document contexts.
@@ -21,6 +26,31 @@ const tail = `(function(){var module=document.querySelector('script[type="module
 // Keep the lobby's failure carrier, while deriving its motion from Launcher.
 const sharedLobbyPreloadCss = original.library.css.replaceAll('#eaglerPreload', '#lobbyPreload').replaceAll('eagler-preload-', 'lobby-preload-') +
   '\n.lobby-preload-card{padding:0;gap:normal}html[data-lobby-boot="failed"] .lobby-preload-card{width:min(420px,calc(100vw - 48px));height:auto;min-height:132px;padding:24px;gap:18px;animation:none}';
+
+const bootLoadingContexts = ['solo', 'multiplayer'] as const;
+const bootLoadingCopy = Object.fromEntries(UI_LOCALES.map(locale => [locale, {
+  label: translate(locale, 'player.loading').replace(/(?:…|\.{3})$/, ''),
+  tips: Object.fromEntries(bootLoadingContexts.map(context => [context, loadingTips[context].map(key => translate(locale, key))])),
+}]));
+function showBootstrapLoading(copy: typeof bootLoadingCopy, faces: readonly string[], assetFolder: string, motionKey: string, choose: typeof chooseLoadingActivity) {
+  const lobby = document.documentElement.getAttribute('data-original-entry') === 'lobby';
+  const context = lobby ? 'multiplayer' : 'solo';
+  const prefix = lobby ? 'lobby' : 'eagler';
+  const slot = document.querySelector('#' + prefix + 'Preload .' + prefix + '-preload-spinner')!;
+  const template = document.querySelector<HTMLElement>('[data-bootstrap-loading]')!;
+  const loading = template.firstElementChild!.cloneNode(true) as HTMLElement;
+  const locale = new URLSearchParams(location.search).get('lang');
+  const text = copy[locale && Object.hasOwn(copy, locale) ? locale : document.documentElement.lang];
+  const selection = choose(faces, text.tips[context]);
+  const base = new URL(template.getAttribute('data-bootstrap-loading')!, location.href);
+  loading.setAttribute('data-loading-context', context);
+  loading.querySelectorAll('img').forEach((image, index) => {image.src = new URL(assetFolder + selection.faces[index] + '.svg', base).href;});
+  loading.querySelector('.loading-activity-status > span')!.textContent = text.label;
+  loading.querySelector('.loading-activity-tip > span')!.textContent = selection.tip;
+  try {if (localStorage.getItem(motionKey) === '1') loading.setAttribute('data-still', '');} catch {}
+  slot.replaceWith(loading);
+}
+const bootLoadingScript = `(${showBootstrapLoading.toString()})(${JSON.stringify(bootLoadingCopy)},${JSON.stringify(SITE_BRAND_FACES)},${JSON.stringify(siteBrandPath().replace(/[^/]+$/, ''))},${JSON.stringify(LESS_MOTION_STORAGE_KEY)},${chooseLoadingActivity.toString()});`;
 /** Source-extracted original pre-module safety gate and preload presentation. */
 export function OriginalBootstrapHead() {
   const {pathname, search} = useLocation();
@@ -38,6 +68,7 @@ export function OriginalBootstrapHead() {
     <script>{dispatch}</script>
     <style>{original.library.css + '\n' + original.lobby.css + '\n' + sharedLobbyPreloadCss +
       '\nhtml[data-original-entry="lobby"] #eaglerPreload,html:not([data-original-entry="lobby"]) #lobbyPreload{display:none}'}</style>
+    <style>{loadingActivityCss}</style>
     <style id="bookStartupTheme">{original.theme+`
       html{background:var(--kit-background)}
       body:not(.mp-room-active){background-color:var(--kit-background)}
@@ -45,6 +76,8 @@ export function OriginalBootstrapHead() {
       :is(#eaglerPreload,#lobbyPreload).is-done{pointer-events:none}
       :is(.eagler-preload-card,.lobby-preload-card){width:72px;height:72px;border-radius:12px;background:var(--kit-card);border-color:var(--kit-border);box-shadow:none}
       :is(.eagler-preload-spinner,.lobby-preload-spinner){border-color:var(--kit-border);border-top-color:var(--kit-brand)}
+      :is(.eagler-preload-card,.lobby-preload-card):has(>.loading-activity){width:min(370px,calc(100vw - 32px));height:auto;padding:24px;box-sizing:border-box;animation:none}
+      html[data-lobby-boot="failed"] .lobby-preload-card > .loading-activity{display:none}
       .lobby-preload-failure a{color:var(--kit-foreground)}
       #eaglerBootEmergency>div{border-radius:12px!important;background:var(--kit-card)!important;color:var(--kit-foreground)!important;border-color:var(--kit-border)!important;box-shadow:0 16px 48px #0003!important;font-family:var(--kit-font)!important}
       #eaglerBootEmergency :is(strong,pre){color:var(--kit-foreground)!important}
@@ -77,13 +110,18 @@ export function OriginalBootstrapHead() {
   </>;
 }
 export function OriginalPreloads() {
-  // The original boot owns cold entry. Templates retain that same authored cue
-  // for later same-document page entries without restarting its watchdog.
-  // biome-ignore lint/security/noDangerouslySetInnerHtml: Build-extracted repository HTML supplies the cold boot and inert templates; request and user data never enter it.
-  return <div style={{display: 'contents'}} data-surface-preload-host="" dangerouslySetInnerHTML={{__html:
-    original.library.preload + original.lobby.preload +
-    `<template data-surface-preload="library">${original.library.preload}</template>` +
-    `<template data-surface-preload="lobby">${original.lobby.preload}</template>`}}/>;
+  const base = useHref('/');
+  // The original boot owns reveal and failure. The parser fills its indicator
+  // with the same markup that React uses for waits after startup.
+  const preload = original.library.preload + original.lobby.preload;
+  return <>
+    {/* biome-ignore lint/security/noDangerouslySetInnerHtml: Build-extracted repository HTML, with no request or user data. */}
+    <div style={{display: 'contents'}} data-surface-preload-host="" suppressHydrationWarning dangerouslySetInnerHTML={{__html: preload}}/>
+    <div hidden data-bootstrap-loading={base}>
+      <LoadingActivityContent faceSources={[undefined, undefined, undefined, undefined]} label="" tip="" dots/>
+    </div>
+    <script suppressHydrationWarning>{bootLoadingScript}</script>
+  </>;
 }
 export function OriginalModuleRequestMark() {
   return <script>{'window.__eaglerBoot && window.__eaglerBoot.mark("app-module-request");'}</script>;

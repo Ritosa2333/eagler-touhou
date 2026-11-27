@@ -3,6 +3,7 @@ import type {ReactNode} from 'react';
 import {Activity, BookOpen, Clapperboard, Ellipsis, Trophy} from 'lucide-react';
 import { useLocale } from '../../i18n';
 import {ActionMenu, ActionMenuItem} from '../../ui/action-menu';
+import {LoadingActivity} from '../../ui/loading-activity';
 import type { LibraryCardsProps } from './LibraryCards';
 import {BookDirectoryGames} from './BookDirectoryGames';
 import {accountsEnabled} from '../../release-features';
@@ -33,6 +34,7 @@ export interface LobbySurfaceProps extends Omit<
   } | null;
   roomCount: string;
   roomUsersArtwork: string;
+  assetUrl?(path: string): string;
   children?: ReactNode;
   productFilters?: readonly string[];
   viewingProduct?: string;
@@ -57,12 +59,14 @@ export function LobbySurface({
   emptyState,
   roomCount,
   roomUsersArtwork,
+  assetUrl = path => path,
   children,
   ...rail
 }: LobbySurfaceProps) {
   const {t, locale} = useLocale();
   const ratings = accountsEnabled && rankingsHref ? withUiLanguage(rankingsHref, locale) : undefined;
   const more = t('nav.more');
+  const showLoading = loading && !hasRooms && rail.interactive !== false;
   return (
     <>
       <main className="lobby-main book-directory" inert={rail.interactive === false}>
@@ -132,7 +136,9 @@ export function LobbySurface({
           <ul className="lobby-room-list" id="roomList" aria-busy={loading} hidden={!hasRooms}>
             {roomList}
           </ul>
-          <div className="visually-hidden" id="listLoading" role="status" hidden={!loading}>{t('lobby.loadingHint')}</div>
+          <div className={showLoading ? 'lobby-empty' : 'visually-hidden'} id="listLoading" role="status" hidden={!loading}>
+            {showLoading ? <LoadingActivity assetUrl={assetUrl} status={t('lobby.loadingHint')} context="multiplayer"/> : t('lobby.loadingHint')}
+          </div>
           {emptyState && (
             <div className="lobby-empty" id="emptyState">
               <img src={roomUsersArtwork} alt="" width="36" height="36" />

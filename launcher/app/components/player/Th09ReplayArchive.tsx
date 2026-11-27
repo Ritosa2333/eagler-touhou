@@ -5,6 +5,7 @@ import {useLocale} from '../../i18n';
 import {th09Duel, type Th09ReplayEntry, type WatchTh09Replay} from '../../models/th09-replay-archive';
 import {accountRequest} from '../../services/account-client';
 import {Button} from '../../ui/controls';
+import {LoadingActivity} from '../../ui/loading-activity';
 import {DuelReplayGroup} from './DuelReplayGroup';
 
 const archivePage = z.object({
@@ -13,7 +14,7 @@ const archivePage = z.object({
 });
 type ReplayDuel = z.infer<typeof th09Duel>;
 
-export function Th09ReplayArchive({current, watch}: {current: Th09ReplayEntry; watch: WatchTh09Replay}) {
+export function Th09ReplayArchive({current, watch, assetUrl}: {current: Th09ReplayEntry; watch: WatchTh09Replay; assetUrl(path: string): string}) {
   const {t, locale} = useLocale();
   const {username} = current;
   const [groups, setGroups] = useState<ReplayDuel[]>([]);
@@ -56,7 +57,9 @@ export function Th09ReplayArchive({current, watch}: {current: Th09ReplayEntry; w
           </span>
           <ChevronRight className="replay-archive-chevron" aria-hidden="true"/>
         </>}/>)}
-      {pending && <p className="replay-workspace-empty" role="status">{t('replay.ui.loading')}</p>}
+      {pending && <div className="replay-workspace-empty" role="status">
+        <LoadingActivity assetUrl={assetUrl} status={t('replay.ui.loading')} context="solo" compact/>
+      </div>}
       {failed && <div className="replay-workspace-empty" role="alert">{t('account.requestFailed')}{' '}
         <Button type="button" onClick={() => setRequest({...request})}>{t('action.retry')}</Button>
       </div>}

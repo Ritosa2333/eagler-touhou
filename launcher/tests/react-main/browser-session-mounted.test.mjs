@@ -3009,11 +3009,13 @@ test('Replay Options close during native preload cancels once and the next Back 
   assert.equal(session.getSnapshot().playerOpen, true);
   assert.equal(session.getSnapshot().replayViewer, true);
   assert.equal(session.getRuntime().getSnapshot().ready, false);
+  assert.equal(node('#player .game-viewport .loading-activity').dataset.loadingContext, 'solo');
 
   await click('.replay-workspace-header .replay-back');
   await until(() => !env.document.querySelector('.replay-file-browser') && !session.getSnapshot().replayViewer &&
     f.router.state.location.state.launcherSurfaceEntry?.surface === 'options', 'closing the loading manager returns to its Options carrier');
   assert.equal(f.router.state.location.state.launcherSurfaceEntry.parentKey, parentKey);
+  assert.equal(env.document.querySelector('#player .game-viewport .loading-activity'), null);
   assertReplayPreloadRetired(session, f);
 
   await click('[data-book-category="all"]');
@@ -3347,6 +3349,7 @@ for (const mobileDevice of [false,true]) for (const game of spectatorGames) {
    assert.equal(f.native.options.netplaySpectator,true);
    assert.equal(f.order.filter(value=>value==='fullscreen-enter').length,fullscreenRequests,'spectating never requests fullscreen automatically');
    assert.equal(node('#player').classList.contains('room-workspace'),true,'the running spectator remains in the room player');
+   assert.equal(node('.room-workspace-preparation .loading-activity').dataset.loadingContext, 'multiplayer');
    assert.equal(env.document.querySelector('#touchHud'),null,'spectating has no gameplay touch buttons');
    assert.equal(env.document.querySelector('#touchEscape'),null);
    assert.equal(env.document.querySelector('#touchHelpOpen'),null);
@@ -3668,6 +3671,64 @@ test('ordinary game loading reports success only after its first frame',async()=
  await React.act(async()=>f.native.emit('first-frame'));
  assert.equal(session.getRuntime().getSnapshot().firstFrame,true);assert.equal(node('#playerStatus').textContent,ready);
  assert.equal(cover.isConnected,false,'the loader leaves when a real frame arrives');
+});
+
+test('TH09 native title room start keeps its loading cover until the gameplay path is ready',async()=>{
+ const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:'/?game=th09',host,socketBoundary:true,seedPackages:['th09'],seedStorage(storage){
+  for(const product of ['th09','th09mp'])storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none'}));
+ }});
+ const session=api.getTestSession();
+ await until(()=>node('#launchText').textContent===api.translate(session.getSnapshot().locale,'action.start')&&!node('#launch').disabled,'installed TH09 is ready to start');
+ await click('#launch');
+ await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'ordinary TH09 startup');
+ if(node('#decisionDialog').open)await click('#decisionConfirm');
+ await until(()=>session.getRuntime().getSnapshot().launched,'ordinary TH09 title launched');
+ await React.act(async()=>{
+  f.native.emit('first-frame');f.native.emit('network-request');
+  session.titleNetwork.setCode('1234');session.titleNetwork.join();
+ });
+ await until(()=>f.sockets.length>0,'title room opened');
+ const socket=f.sockets[0],localId=new URL(socket.url).searchParams.get('lobby');
+ const room={code:'1234',playerCount:2,difficulty:1,phase:'lobby',inputDelay:0,adonisMode:0,predictionLimit:8,startSerial:0,
+  seats:[{clientId:localId,name:'A',loadout:0,ready:false},{clientId:'peer',name:'B',loadout:1,ready:false}],spectators:[]};
+ await React.act(async()=>{socket.open();socket.message({type:'state',room});});
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','title room resources ready',15_000);
+ await React.act(async()=>socket.message({type:'start',serial:2,room:{...room,phase:'running',startSerial:2}}));
+ await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().runtimeVariant==='multiplayer','title room starts swapping Runtime');
+ if(node('#decisionDialog').open)await click('#decisionConfirm');
+ await until(()=>session.getRuntime().getSnapshot().launched&&session.getRuntime().getSnapshot().runtimeVariant==='multiplayer','multiplayer Runtime launched');
+ assert.equal(session.getSnapshot().roomLaunchStage,'runtime');
+ const cover=node('#player .player-loading-cover');
+ assert.equal(cover.querySelector('.loading-activity').dataset.loadingContext,'multiplayer');
+ await React.act(async()=>f.native.emit('first-frame'));
+ await until(()=>session.getSnapshot().roomLaunchStage==='path','first frame still waits for gameplay transport');
+ assert.equal(cover.isConnected,true);
+ f.native.Module={eaglerOptions:{netplayMode:'lan'}};
+ f.native.__eaglerNetplayTransport='relay';
+ f.native[api.multiplayerConfigForProduct('th09mp').peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
+ await until(()=>session.getSnapshot().roomLaunchStage===null,'transport ready uncovers the game');
+ assert.equal(cover.isConnected,false);
+});
+
+test('room game check shows the shared activity until its first frame',async()=>{
+ const host=developmentAcquisitionHost(['th06']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:'/?game=th06mp&mpRoom=1234',host,socketBoundary:true,seedPackages:['th06']});
+ const session=api.getTestSession();
+ const socket=f.sockets[0],localId=new URL(socket.url).searchParams.get('lobby');
+ await React.act(async()=>{socket.open();socket.message({type:'state',room:{
+  code:'1234',playerCount:2,difficulty:1,phase:'lobby',inputDelay:0,predictionLimit:8,startSerial:0,
+  seats:[{clientId:localId,name:'A',loadout:0,ready:false},null],spectators:[],
+ }});});
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','native room menu prepared',15_000);
+ let check;
+ await React.act(async()=>{check=session.room.service.checkGame();});
+ await until(()=>session.getRuntime().getSnapshot().launched,'check game launched');
+ const loader=node('.room-workspace-preparation .loading-activity');
+ assert.equal(loader.dataset.loadingContext,'multiplayer');
+ assert.ok(loader.querySelector('.loading-activity-status').textContent.startsWith(api.translate(session.getSnapshot().locale,'multiplayer.checkingGame').replace(/…$/, '')));
+ await React.act(async()=>{f.native.emit('first-frame');await check;});
+ assert.equal(loader.isConnected,false);
 });
 
 test('an existing native menu without a room preload record survives role changes and Ready',async()=>{
