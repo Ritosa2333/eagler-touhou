@@ -33,8 +33,47 @@ export function filterDirectoryRooms(rooms: readonly DirectoryRoom[], {status, m
   return rooms.filter(room => (!mode.length || mode.includes(directoryRoomMode(room))) &&
     (!difficulty.length || difficulty.includes(directoryRoomDifficulty(room))) &&
     (!players.length || players.includes(room.players)) &&
-    (!status.length || status.some(item => item === 'open' ? directoryRoomState(room) === 'recruiting' && directoryRoomCanEnter(room)
-      : item === 'waiting' ? room.phase === 'lobby' : directoryRoomSpectatorEntry(room))));
+    (!status.length || status.some(item => matchesStatus(room, item))));
+}
+
+function matchesStatus(room: DirectoryRoom, status: typeof directoryRoomStatuses[number]) {
+  return status === 'open' ? directoryRoomState(room) === 'recruiting' && directoryRoomCanEnter(room)
+    : status === 'waiting' ? room.phase === 'lobby' : directoryRoomSpectatorEntry(room);
+}
+
+const facetCounts = () => ({total: 0, options: new Map<string | number, number>()});
+
+/** Count each option with the other three groups' selections applied. */
+export function countDirectoryRoomFacets(rooms: readonly DirectoryRoom[], {status, mode, difficulty, players}: DirectoryRoomFiltersValue) {
+  const counts = {status: facetCounts(), mode: facetCounts(), difficulty: facetCounts(), players: facetCounts()};
+  const increment = ({options}: ReturnType<typeof facetCounts>, option: string | number) =>
+    options.set(option, (options.get(option) ?? 0) + 1);
+  for (const room of rooms) {
+    const roomMode = directoryRoomMode(room);
+    const roomDifficulty = directoryRoomDifficulty(room);
+    const modeMatches = !mode.length || mode.includes(roomMode);
+    const difficultyMatches = !difficulty.length || difficulty.includes(roomDifficulty);
+    const playersMatch = !players.length || players.includes(room.players);
+    const statuses = directoryRoomStatuses.filter(item => matchesStatus(room, item));
+    const statusMatches = !status.length || statuses.some(item => status.includes(item));
+    if (modeMatches && difficultyMatches && playersMatch) {
+      counts.status.total++;
+      for (const item of statuses) increment(counts.status, item);
+    }
+    if (statusMatches && difficultyMatches && playersMatch) {
+      counts.mode.total++;
+      increment(counts.mode, roomMode);
+    }
+    if (statusMatches && modeMatches && playersMatch) {
+      counts.difficulty.total++;
+      if (roomDifficulty) increment(counts.difficulty, roomDifficulty);
+    }
+    if (statusMatches && modeMatches && difficultyMatches) {
+      counts.players.total++;
+      increment(counts.players, room.players);
+    }
+  }
+  return counts;
 }
 
 export function orderTh09OpenRooms(rooms: DirectoryRoom[], players: Readonly<Record<string, Th09Rating>>, mine?: Th09Rating) {

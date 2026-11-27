@@ -10,9 +10,6 @@ body:not(.mp-room-active):has(.book-masthead) :is(.sheet,.book-directory) {posit
 .launcher-page-surface {--launcher-content-height:calc(100dvh - var(--site-header-height,44px));position:relative;width:100%;max-width:var(--launcher-layout-width);margin-inline:auto}
 html[data-ui-home] body:not(.mp-room-active) .launcher-page-surface[data-page="library"] {max-width:none;min-block-size:var(--launcher-content-height)}
 /* In-app routes capture the page only, leaving the real navigation clickable. */
-html[data-ui-route-transition] {view-transition-name:none}
-html[data-ui-route-transition="page"] :is(.launcher-page-surface, .standalone-page-shell > main, .documentation-shell) {view-transition-name:launcher-page}
-html[data-ui-route-transition]::view-transition {pointer-events:none}
 
 /* Alias the established settings vocabulary within the Launcher panels only.
    Existing settings models, focus handling and close transitions stay intact. */

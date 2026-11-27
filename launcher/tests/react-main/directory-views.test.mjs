@@ -39,6 +39,7 @@ before(async () => {
     export * from './app/components/directory/DirectoryRoomRows.tsx';
     export * from './app/components/directory/LobbyDirectoryView.tsx';
     export * from './app/components/directory/DirectoryRoomDialog.tsx';
+    export * from './app/components/directory/directory-room-filter.ts';
     export * from './app/services/lobby-directory.ts';
     export * from './app/i18n.tsx';
     export * from './app/navigation/surface-navigation.tsx';
@@ -1004,6 +1005,26 @@ test('room names replace the regular label and keep special gameplay rules visib
   assert.equal(n('[data-key="th06mp-1234"] .lobby-room-rules').textContent,'常规');
 });
 
+
+test('facet counts match an independent filter for every option', () => {
+  const {countDirectoryRoomFacets, filterDirectoryRooms, directoryRoomStatuses, directoryRoomModes, directoryRoomDifficulties} = owners;
+  const rooms = [
+    room({players:0}), room({players:1, difficulty:3}),
+    room({phase:'lobby', players:3, capacity:3}), room({phase:'playing', players:2}),
+    room({product:'th09mp'}), room({product:'th19mp', difficulty:0}),
+  ];
+  const options = {status:directoryRoomStatuses, mode:directoryRoomModes, difficulty:directoryRoomDifficulties, players:[0,1,2,3]};
+  const defaults = owners.defaultDirectoryRoomFilters;
+  for (const filters of [defaults, {...defaults,status:['open','spectate'],mode:['pve'],difficulty:['Normal','Lunatic'],players:[0,2]},
+    {...defaults,status:['waiting'],mode:['pvp'],players:[1,3]}]) {
+    const counts = countDirectoryRoomFacets(rooms, filters);
+    for (const [facet, values] of Object.entries(options)) {
+      assert.equal(counts[facet].total, filterDirectoryRooms(rooms,{...filters,[facet]:[]}).length, `${facet}: all`);
+      for (const value of values) assert.equal(counts[facet].options.get(value) ?? 0,
+        filterDirectoryRooms(rooms,{...filters,[facet]:[value]}).length, `${facet}: ${value}`);
+    }
+  }
+});
 
 test('room filters combine checked options per facet and update with the live directory', async () => {
   const fullSeats = [...room().seats.slice(0, 2), {initial: 'S', online: true, ready: false, controlMode: 'normal'}];

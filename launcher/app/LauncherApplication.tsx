@@ -43,7 +43,7 @@ import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
 import { useSurfaceLayerState } from './navigation/surface-layer';
-import { useCompactNavigation, useNavigationPageMotion } from './navigation/navigation-motion';
+import { useCompactNavigation, usePageEntrance } from './navigation/navigation-motion';
 import { useStoreSelector, shallowEqual } from './shared/react-store';
 import { accountsEnabled } from './release-features';
 import type {LocalSaveReader} from './services/local-save-storage';
@@ -161,14 +161,12 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const accountPage = accountsEnabled && /\/login\.html\/?$/.test(pathname);
   const profilePage = accountsEnabled && /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const page = section ?? (accountPage ? 'account' : profilePage ? 'profile' : navigation.context);
-  const libraryOrLobby = page === 'library' || page === 'lobby';
-  const contentSelector = page === 'library' ? '.book-content' : page === 'lobby' ? '.lobby-rooms-column' :
-    page === 'profile' ? '.profile-wrap' : undefined;
   const compact = useCompactNavigation();
-  const pageSurface = useNavigationPageMotion(accountPage || profilePage ? pathname : page, {
+  const contentSelector = page === 'library' ? '.book-content' : page === 'lobby' ? '.lobby-rooms-column' :
+    page === 'profile' ? '.profile-wrap' : page === 'account' ? '.account-content' : undefined;
+  const pageSurface = usePageEntrance(accountPage || profilePage ? pathname : page, {
     reduced: host.lessMotion === true,
     contentSelector,
-    railSelector: !compact && libraryOrLobby ? '.book-sidebar nav' : undefined,
   });
   const showLibrary = !accountPage && !profilePage && !section && navigation.context === 'library';
   const keepLibrary = primary === 'home' || primary === 'lobby';

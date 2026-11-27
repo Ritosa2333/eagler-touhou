@@ -128,24 +128,30 @@ try {
     await page.goto(mobile ? new URL('?section=home', base).href : base, {waitUntil:'domcontentloaded'});
     const loginLink = mobile ? '.launcher-account-sign-in a:first-child' : '.account-login-link';
     await page.waitForSelector(loginLink, {visible:true});
-    if (!mobile) await page.addStyleTag({content:'html[data-ui-route-transition="page"] {--launcher-route-duration: 2s !important}'});
     await page.evaluate(() => {
       window.loginHeader = document.querySelector('.book-masthead');
       window.loginSnapshots = 0;
-      const start = document.startViewTransition.bind(document);
-      document.startViewTransition = (...args) => {window.loginSnapshots++; return start(...args);};
+      const start = document.startViewTransition?.bind(document);
+      if (start) document.startViewTransition = (...args) => {window.loginSnapshots++; return start(...args);};
+      window.loginEntrances = 0;
+      const animate = Element.prototype.animate;
+      Element.prototype.animate = function (frames, timing) {
+        if (this.matches('.launcher-page-surface[data-page="account"] .account-content')) window.loginEntrances++;
+        return animate.call(this, frames, timing);
+      };
     });
     await page.click(loginLink);
     await page.waitForSelector('.account-art');
-    const {sameHeader, headerHeight, artClip, snapshots} = await page.evaluate(() => {
+    await page.waitForSelector('.account-content');
+    const {sameHeader, headerHeight, snapshots, entrances} = await page.evaluate(() => {
       const header = document.querySelector('.book-masthead');
       return {sameHeader: header === window.loginHeader, headerHeight: header.getBoundingClientRect().height,
-        artClip: getComputedStyle(document.querySelector('.account-art')).clipPath, snapshots:window.loginSnapshots};
+        snapshots:window.loginSnapshots, entrances:window.loginEntrances};
     });
     assert.ok(sameHeader, `${width}px: the live masthead stays mounted`);
     assert.equal(headerHeight > 0, !mobile, `${width}px: the account masthead is desktop-only`);
-    if (!mobile) assert.equal(parseFloat(artClip.match(/^inset\(([^\s)]+)/)?.[1]), headerHeight, 'artwork snapshot starts below the masthead');
-    assert.equal(snapshots, 1, 'sign-in uses the shared page crossfade');
+    assert.equal(snapshots, 0, 'sign-in does not snapshot the artwork');
+    assert.equal(entrances, 1, 'sign-in uses the shared live page entrance');
   }
   await page.setViewport({width:1440, height:1000});
   await goto(screenshotAddress.href);

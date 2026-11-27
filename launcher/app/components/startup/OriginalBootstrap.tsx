@@ -22,9 +22,6 @@ const tail = `(function(){var module=document.querySelector('script[type="module
 const sharedLobbyPreloadCss = original.library.css.replaceAll('#eaglerPreload', '#lobbyPreload').replaceAll('eagler-preload-', 'lobby-preload-') +
   '\n.lobby-preload-card{padding:0;gap:normal}html[data-lobby-boot="failed"] .lobby-preload-card{width:min(420px,calc(100vw - 48px));height:auto;min-height:132px;padding:24px;gap:18px;animation:none}';
 /** Source-extracted original pre-module safety gate and preload presentation. */
-export function LauncherNavigationTransitionOptIn() {
-  return <style id="launcherNavigationTransition">{'@view-transition{navigation:auto}'}</style>;
-}
 export function OriginalBootstrapHead() {
   const {pathname, search} = useLocation();
   const locale = useDocumentUiLocale();

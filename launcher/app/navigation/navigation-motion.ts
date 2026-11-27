@@ -1,7 +1,5 @@
-import {useContext, useLayoutEffect, useRef, useSyncExternalStore} from 'react';
-import {UNSAFE_ViewTransitionContext} from 'react-router';
+import {useLayoutEffect, useRef, useSyncExternalStore} from 'react';
 import {animateSurface, animateUiFrames} from '../ui/surface-motion';
-import {launcherMotionPage} from '../components/launcher/launcher-sections';
 
 const compactQuery = '(max-width: 780px)';
 export function isCompactNavigation() {
@@ -16,33 +14,60 @@ export function useCompactNavigation() {
   return useSyncExternalStore(subscribeCompactNavigation, isCompactNavigation, () => false);
 }
 
+interface PageEntranceOptions {
+  reduced?: boolean;
+  contentSelector?: string;
+}
+
+const pageEntranceTiming = {duration: 140, ease: [.2, 0, 0, 1] as [number, number, number, number]};
+
+/** Reveal live content after a route commits. Never snapshot or delay a route. */
+export function usePageEntrance<T extends HTMLElement = HTMLDivElement>(page: string, {
+  reduced, contentSelector,
+}: PageEntranceOptions = {}) {
+  const surface = useRef<T>(null), previousPage = useRef(page);
+  useLayoutEffect(() => {
+    const changed = previousPage.current !== page;
+    previousPage.current = page;
+    const container = surface.current;
+    if (!changed || !container || reduced) return;
+    let entrance: ReturnType<typeof animateUiFrames>;
+    const start = () => {
+      const content = contentSelector ? container.querySelector<HTMLElement>(contentSelector) : container;
+      if (!content) return false;
+      entrance = animateUiFrames(content, {opacity: ['.85', '1']}, {reduced}, pageEntranceTiming);
+      return true;
+    };
+    if (start()) return () => entrance?.cancel();
+    // A lazy route can commit its shell before mounting the content.
+    const ready = new MutationObserver(() => {if (start()) ready.disconnect();});
+    ready.observe(container, {childList: true, subtree: true});
+    return () => {ready.disconnect(); entrance?.cancel();};
+  }, [contentSelector, page, reduced]);
+  return surface;
+}
+
 interface NavigationMotionOptions {
   reduced?: boolean;
   contentSelector?: string;
-  railSelector?: string;
   direction?: 'forward' | 'back';
 }
 
-/** Animate the changing regions while the shared chrome keeps its layout. */
+/** Local view changes within a page, such as details or tabs. */
 export function useNavigationPageMotion(page: string | null, {
-  reduced = false, contentSelector, railSelector, direction,
+  reduced = false, contentSelector, direction,
 }: NavigationMotionOptions = {}) {
-  const transition = useContext(UNSAFE_ViewTransitionContext);
-  const pageTransition = transition.isTransitioning &&
-    launcherMotionPage(transition.currentLocation) !== launcherMotionPage(transition.nextLocation);
   const surface = useRef<HTMLDivElement>(null), previousPage = useRef(page);
   useLayoutEffect(() => {
     const changed = previousPage.current && page && previousPage.current !== page;
     previousPage.current = page;
     const container = surface.current;
-    if (!container || !changed || pageTransition || reduced) return;
+    if (!container || !changed || reduced) return;
     const content = contentSelector ? container.querySelector<HTMLElement>(contentSelector) : container;
-    const rail = railSelector ? container.querySelector<HTMLElement>(railSelector) : null;
     const entrance = content && (direction
       ? animateSurface(content, 'enter', {kind: 'inline', direction})
       : animateUiFrames(content, {opacity: [contentSelector ? '.6' : '.78', '1']}, {kind: 'content'}));
-    const railEntrance = rail && animateUiFrames(rail, {opacity: ['.55', '1']}, {kind: 'content'});
-    return () => {entrance?.cancel(); railEntrance?.cancel();};
-  }, [contentSelector, direction, page, pageTransition, railSelector, reduced]);
+    return () => entrance?.cancel();
+  }, [contentSelector, direction, page, reduced]);
   return surface;
 }

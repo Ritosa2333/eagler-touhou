@@ -1,9 +1,8 @@
 import { useDocumentUiLocale } from './navigation/document-locale';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, UNSAFE_ViewTransitionContext, useLocation, useNavigate } from 'react-router';
-import { useContext, useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLocation, useNavigate } from 'react-router';
+import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
 import { BrowserLauncher } from './BrowserLauncher';
 import {
-  LauncherNavigationTransitionOptIn,
   OriginalBootstrapHead,
   OriginalPreloads,
   OriginalModuleRequestMark,
@@ -34,7 +33,7 @@ import UptimeRoute from './routes/uptime';
 import { helpDocumentAtPath, isStandalonePage, isTh09RatingPage } from './components/documents/catalog';
 import { isPreviewOnlyPage } from './release-features';
 import { SITE_BRAND_PREPAINT_SCRIPT } from '../lib/site-brand.mjs';
-import {launcherMotionPage, launcherSection, profileSettingsPanel} from './components/launcher/launcher-sections';
+import {launcherSection, profileSettingsPanel} from './components/launcher/launcher-sections';
 import {localLayerOwnsPageScroll, type PageLocation} from './navigation/page-history';
 const HelpRoute = lazy(() => import('./routes/help'));
 const Th09RatingsRoute = lazy(() => import('./routes/th09-ratings'));
@@ -53,10 +52,6 @@ const pageScrollKey = (location: PageLocation & {key: string}) => {
 
 export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const transition = useContext(UNSAFE_ViewTransitionContext);
-  // The Router may replay a page transition on Back even when only the overlay URL changed.
-  const samePageTransition = transition.isTransitioning &&
-    launcherMotionPage(transition.currentLocation) === launcherMotionPage(transition.nextLocation);
   const previewOnly = isPreviewOnlyPage(pathname);
   const review = !previewOnly && (/\/ui-review\.html\/?$/.test(pathname) || isStandalonePage(pathname));
   const home = previewOnly || isLauncherHomePath(pathname);
@@ -71,7 +66,6 @@ export function Layout({ children }: { children: ReactNode }) {
       lang={locale}
       data-ui-locale={locale}
       data-ui-home={home ? '' : undefined}
-      data-ui-route-transition={transition.isTransitioning ? (samePageTransition ? 'inline' : 'page') : undefined}
       className="dark"
       data-book-theme="dark"
       data-original-entry={initialLobby ? 'lobby' : 'library'}
@@ -81,7 +75,6 @@ export function Layout({ children }: { children: ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <style id="ui-style-layers">{'@layer properties,foundation,theme,base,components,utilities;'}</style>
-        <LauncherNavigationTransitionOptIn />
         <meta name="darkreader-lock" />
         <script>{`try{var theme=JSON.parse(localStorage.getItem('eagler.book.theme'));if(theme==='light'||theme==='dark'){document.documentElement.setAttribute('data-book-theme',theme);document.documentElement.className=theme;}}catch(e){}`}</script>
         {!review && <OriginalBootstrapHead />}

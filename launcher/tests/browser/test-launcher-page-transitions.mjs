@@ -31,20 +31,26 @@ try {
   await page.evaluate(() => {
     window.routeSnapshots = 0;
     window.routeFades = [];
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, timing) {
+      const animation = animate.call(this, frames, timing);
+      const opacity = animation.effect.getKeyframes().map(frame => frame.opacity);
+      if (opacity.join(',') === '0.85,1') {
+        const page = this.closest('.launcher-page-surface')?.dataset.page;
+        window.routeFades.push({page, finished:animation.finished.catch(() => {})});
+      }
+      return animation;
+    };
     if (!document.startViewTransition) return;
     const start = document.startViewTransition.bind(document);
     document.startViewTransition = (...args) => {
       window.routeSnapshots++;
-      const transition = start(...args);
-      void transition.ready.then(() => {
-        const style = pseudo => getComputedStyle(document.documentElement, pseudo);
-        window.routeFades.push([style('::view-transition-old(launcher-page)').animationName,
-          style('::view-transition-new(launcher-page)').animationName, style('::view-transition-group(launcher-page)').animationName]);
-      }, () => {});
-      return transition;
+      return start(...args);
     };
   });
-  const settlePage = () => page.waitForFunction(() => !document.documentElement.hasAttribute('data-ui-route-transition'));
+  const settlePage = () => page.evaluate(async () => {
+    await Promise.all(window.routeFades.map(({finished}) => finished));
+  });
   async function openProfile() {
     const compact = page.viewport().width <= 780;
     if (compact && !await page.$('.launcher-page-surface[data-page="library"]')) {
@@ -61,7 +67,7 @@ try {
       const {x,y,width,height} = node.getBoundingClientRect();
       return node.contains(document.elementFromPoint(x+width/2,y+height/2));
     }, {}, link);
-    const before = await page.evaluate(() => window.routeSnapshots);
+    const before = await page.evaluate(() => window.routeFades.length);
     await link.click();
     return before;
   }
@@ -73,7 +79,7 @@ try {
     // The compact player profile uses its own header; use browser history to
     // return to the launcher before using the persistent primary controls.
     if (compact && await page.$('.launcher-page-surface[data-page="profile"]')) {
-      backCount = await page.evaluate(() => window.routeSnapshots);
+      backCount = await page.evaluate(() => window.routeFades.length);
       await page.goBack();
       await page.waitForSelector('.launcher-bottom-navigation a', {visible:true});
       await settlePage();
@@ -82,16 +88,15 @@ try {
     if (backCount !== undefined && await currentPage() === destination) before = backCount;
     else if (destination === 'profile') before = await openProfile();
     else {
-      before = await page.evaluate(() => window.routeSnapshots);
+      before = await page.evaluate(() => window.routeFades.length);
       const selector = `${compact ? '.launcher-bottom-navigation' : '.book-main-nav'} a:nth-child(${destination === 'library' ? 1 : 2})`;
       await page.waitForSelector(selector, {visible:true});
       await page.click(selector);
     }
     await page.waitForSelector(`.launcher-page-surface[data-page="${destination}"]`);
     await settlePage();
-    assert.equal(await page.evaluate(() => window.routeSnapshots), before + 1, `${destination} uses one shared page transition at ${page.viewport().width}px`);
-    assert.deepEqual(await page.evaluate(() => window.routeFades.at(-1)), ['launcher-route-out','launcher-route-in','none'],
-      'older and newer snapshots crossfade without animating their bounds');
+    assert.deepEqual(await page.evaluate(count => window.routeFades.slice(count).map(fade => fade.page), before),
+      [destination], `${destination} reveals only the incoming page at ${page.viewport().width}px`);
     if (destination === 'profile') await page.waitForSelector('.profile-wrap');
     if (destination === 'lobby') {
       if (compact) {
@@ -237,21 +242,21 @@ try {
         tabs[tab].click();
         await entered;
       }
-      const root = document.documentElement;
-      while (root.hasAttribute('data-ui-route-transition')) await new Promise(requestAnimationFrame);
+      const fades = window.routeFades.slice(fadeCount);
+      await Promise.all(fades.map(({finished}) => finished));
       const library = surface.querySelector('.book-content');
       return {
-        distinct: window.routeSnapshots - before,
-        finalFade: window.routeFades.slice(fadeCount).at(-1),
+        snapshots: window.routeSnapshots - before,
+        pages: fades.map(fade => fade.page),
         remaining: library.getAnimations().length,
         opacity: getComputedStyle(library).opacity,
       };
     });
   }
-  assert.deepEqual(await switchPrimaryPages(),{distinct:3,finalFade:['launcher-route-out','launcher-route-in','none'],remaining:0,opacity:'1'},
+  assert.deepEqual(await switchPrimaryPages(),{snapshots:0,pages:['lobby','home','library'],remaining:0,opacity:'1'},
     'each fast tab switch cleans up the previous transition');
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
-  assert.deepEqual(await switchPrimaryPages(),{distinct:3,finalFade:['none','none','none'],remaining:0,opacity:'1'},
+  assert.deepEqual(await switchPrimaryPages(),{snapshots:0,pages:[],remaining:0,opacity:'1'},
     'fast tab switches respect reduced motion');
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
   console.log('PASS rapid mobile switching with and without motion');
@@ -259,21 +264,23 @@ try {
   await page.goBack();
   await page.waitForSelector('.launcher-page-surface');
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
-  await openProfile();
+  const reducedProfileBefore = await openProfile();
   await page.waitForFunction(() => document.querySelector('.launcher-page-surface').dataset.page === 'profile');
   await settlePage();
-  assert.deepEqual(await page.evaluate(() => window.routeFades.at(-1)), ['none','none','none']);
+  assert.equal(await page.evaluate(() => window.routeFades.length), reducedProfileBefore);
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
   await page.click('.masthead-inbox-action[data-inbox-section="announcements"]');
   await page.click('.masthead-inbox-panel a[href*="section=announcements"]');
   await page.waitForSelector('.launcher-page-surface[data-page="announcements"]');
   await settlePage();
-  assert.deepEqual(await page.evaluate(() => window.routeFades.at(-1)), ['launcher-route-out','launcher-route-in','none']);
+  assert.equal(await page.evaluate(() => window.routeFades.at(-1).page), 'announcements');
+  const messageBefore = await page.evaluate(() => window.routeFades.length);
   await page.evaluate(() => document.body.classList.add('less-motion'));
   await page.click('.message-center-navigation a[href*="section=messages"]');
   await page.waitForSelector('.launcher-page-surface[data-page="messages"]');
   await settlePage();
-  assert.deepEqual(await page.evaluate(() => window.routeFades.at(-1)), ['none','none','none']);
+  assert.equal(await page.evaluate(() => window.routeFades.length), messageBefore);
+  assert.equal(await page.evaluate(() => window.routeSnapshots), 0);
   assert.deepEqual(errors, []);
   console.log('PASS Back, message sections and both reduced-motion settings');
 } finally {await browser.close();}

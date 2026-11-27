@@ -1,4 +1,4 @@
-import { Activity, useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { Activity, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
 import { createPortal } from 'react-dom';
 import {
@@ -116,7 +116,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     { value: 'reverse', label: t('library.sort.reverse') },
     { value: 'name', label: t('library.sort.name') },
   ];
-  const available = products.filter((product) => !product.multiplayer && !product.hidden);
+  const available = useMemo(() => products.filter(product => !product.multiplayer && !product.hidden), [products]);
   const detailProduct = showDetail ? available.find((product) => product.id === openedProduct) : undefined;
   const detailCategory = detailProduct ? sidebarOrigin ?? bookCategory(detailProduct) : undefined;
   useLayoutEffect(() => {
@@ -144,16 +144,16 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
       window.removeEventListener('storage', refresh);
     };
   }, [interactive]);
-  const list = filterBookProducts(products, category, favorites, query, sort);
-  const categoryProducts = new Map(categories.map(({id}) =>
-    [id, filterBookProducts(available, id, favorites, '', sort)] as const));
+  const list = useMemo(() => filterBookProducts(available, category, favorites, query, sort), [available, category, favorites, query, sort]);
+  const categoryProducts = useMemo(() => new Map(categories.map(({id}) =>
+    [id, filterBookProducts(available, id, favorites, '', sort)] as const)), [available, favorites, sort]);
   const selectedSidebar = sidebarOrigin && disclosures[sidebarOrigin] &&
     categoryProducts.get(sidebarOrigin)?.some(product => product.id === openedProduct) ? sidebarOrigin : null;
   const changeCategory = (value: string) => {
     if (!value) return;
     reserveResultsSpace();
     const next = value as BookCategory;
-    const nextIds = new Set(filterBookProducts(products, next, favorites, query, sort).map(product => product.id));
+    const nextIds = new Set(filterBookProducts(available, next, favorites, query, sort).map(product => product.id));
     animateLibraryChange(() => setCategory(next), {nextIds: view === 'covers' ? nextIds : undefined});
     if (showDetail) onBrowse?.();
   };

@@ -1,5 +1,5 @@
 import {BookButton} from '../launcher/BookButton';
-import {useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore} from 'react';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, stringArray} from '../launcher/book-preferences';
 import {beginFilterReorder,useFavoriteReorder} from '../launcher/favorite-reorder';
 import {useLocale} from '../../i18n';
@@ -12,6 +12,7 @@ import {useTh09Ratings} from '../../services/th09-ratings';
 import type {DirectoryFormMode, DirectoryRoom, LobbyDirectoryService} from '../../services/lobby-directory';
 
 type Derived = 'roomFilters' | 'selectedProduct' | 'connectionWarning' | 'membership' | 'notice' | 'roomTools' | 'roomList' | 'hasRooms' | 'loading' | 'emptyState' | 'roomCount' | 'roomUsersArtwork';
+const roomKey = (room: DirectoryRoom) => `${room.product}-${room.code}`;
 export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived> {
   service: LobbyDirectoryService;
   assetUrl(path: string): string;
@@ -23,16 +24,17 @@ export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived
 export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
   const {t} = useLocale(), snapshot = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const [roomFilter, setRoomFilter] = useState(defaultDirectoryRoomFilters);
+  const liveRoomKeys = useMemo(() => new Set(snapshot.rooms.map(roomKey)), [snapshot.rooms]);
   const seenRooms = useRef<Set<string> | null>(null);
   const arrivalTimers = useRef(new Set<number>());
   const [arrivals, setArrivals] = useState<ReadonlySet<string>>(() => new Set());
   useEffect(() => () => {arrivalTimers.current.forEach(timer => {window.clearTimeout(timer);}); arrivalTimers.current.clear();}, []);
   useEffect(() => {
     if (snapshot.connection !== 'live' || snapshot.loading) return;
-    const keys = snapshot.rooms.map(room => `${room.product}-${room.code}`);
-    if (!seenRooms.current) {seenRooms.current = new Set(keys); return;}
-    const added = keys.filter(key => !seenRooms.current!.has(key));
-    seenRooms.current = new Set(keys);
+    const previous = seenRooms.current;
+    seenRooms.current = liveRoomKeys;
+    if (!previous) return;
+    const added = [...liveRoomKeys].filter(key => !previous.has(key));
     if (!added.length) return;
     setArrivals(current => new Set([...current, ...added]));
     const timer = window.setTimeout(() => {
@@ -40,7 +42,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
       setArrivals(current => {const next = new Set(current); added.forEach(key => {next.delete(key);}); return next;});
     }, 850);
     arrivalTimers.current.add(timer);
-  }, [snapshot.rooms, snapshot.connection, snapshot.loading]);
+  }, [liveRoomKeys, snapshot.connection, snapshot.loading]);
   const [favorites, setFavorites] = useState<string[]>([]);
   useFavoriteReorder('.lobby-room-list > .lobby-room-row', favorites, JSON.stringify([roomFilter, surface.productFilters, surface.viewingProduct]));
   useEffect(() => {
@@ -49,47 +51,50 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
     return () => {window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh); window.removeEventListener('storage', refresh);};
   }, []);
   // Keep matching last-known rows while refreshing; the loading layer does not move them.
-  const visibleRooms = snapshot.loading
-    ? snapshot.rooms.filter(room => !snapshot.selectedProduct || room.product === snapshot.selectedProduct)
-    : surface.productFilters !== undefined ? snapshot.rooms : snapshot.visibleRooms;
-  const filteredRooms = surface.productFilters?.length ? visibleRooms.filter(room => surface.productFilters!.includes(room.product))
-    : surface.viewingProduct ? visibleRooms.filter(room => room.product === surface.viewingProduct) : visibleRooms;
-  const filtered = filterDirectoryRooms(filteredRooms, roomFilter).sort((a, b) =>
-    Number(favorites.includes(b.product)) - Number(favorites.includes(a.product)));
-  const th09Rooms = filtered.filter(room => room.product === 'th09mp');
-  const {players, mine, cards} = useTh09Ratings(surface.interactive !== false && th09Rooms.length > 0,
-    th09Rooms.flatMap(room => room.seats.map(seat => seat?.profile?.username)));
-  const state = {...snapshot, loading: snapshot.loading && !snapshot.connectionInterrupted,
-    visibleRooms: orderTh09OpenRooms(filtered, players, mine)};
+  const {loading, selectedProduct, rooms, visibleRooms: serverVisibleRooms} = snapshot;
+  const {productFilters, viewingProduct} = surface;
+  const filteredRooms = useMemo(() => {
+    const visible = loading
+      ? rooms.filter(room => !selectedProduct || room.product === selectedProduct)
+      : productFilters !== undefined ? rooms : serverVisibleRooms;
+    return productFilters?.length ? visible.filter(room => productFilters.includes(room.product))
+      : viewingProduct ? visible.filter(room => room.product === viewingProduct) : visible;
+  }, [loading, selectedProduct, rooms, serverVisibleRooms, productFilters, viewingProduct]);
+  const filtered = useMemo(() => filterDirectoryRooms(filteredRooms, roomFilter).sort((a, b) =>
+    Number(favorites.includes(b.product)) - Number(favorites.includes(a.product))), [filteredRooms, roomFilter, favorites]);
+  const th09Rooms = useMemo(() => filtered.filter(room => room.product === 'th09mp'), [filtered]);
+  const th09Roster = useMemo(() => th09Rooms.flatMap(room => room.seats.map(seat => seat?.profile?.username)), [th09Rooms]);
+  const {players, mine, cards} = useTh09Ratings(surface.interactive !== false && th09Rooms.length > 0, th09Roster);
+  const sortedRooms = useMemo(() => orderTh09OpenRooms(filtered, players, mine), [filtered, players, mine]);
+  const state = {...snapshot, loading: loading && !snapshot.connectionInterrupted, visibleRooms: sortedRooms};
   const previousVisible = useRef<readonly DirectoryRoom[]>([]);
   const exitTimers = useRef(new Map<string, number>());
   const [exiting, setExiting] = useState<readonly DirectoryRoom[]>([]);
   useEffect(() => () => {exitTimers.current.forEach(timer => {window.clearTimeout(timer);}); exitTimers.current.clear();}, []);
   useLayoutEffect(() => {
     if (snapshot.connection !== 'live' || snapshot.loading) return;
-    const key = (room: DirectoryRoom) => `${room.product}-${room.code}`;
-    const live = new Set(snapshot.rooms.map(key));
-    const removed = previousVisible.current.filter(room => !live.has(key(room)));
-    previousVisible.current = state.visibleRooms;
+    const removed = previousVisible.current.filter(room => !liveRoomKeys.has(roomKey(room)));
+    previousVisible.current = sortedRooms;
     const returned = new Set<string>();
-    if (live.size) {
-      for (const [id, timer] of exitTimers.current) if (live.has(id)) {
+    if (liveRoomKeys.size) {
+      for (const [id, timer] of exitTimers.current) if (liveRoomKeys.has(id)) {
         window.clearTimeout(timer); exitTimers.current.delete(id); returned.add(id);
       }
     }
     if (removed.length || returned.size) {
-      const newlyRemoved = removed.filter(room => !exitTimers.current.has(key(room)));
-      setExiting(current => [...current.filter(room => !live.has(key(room))), ...newlyRemoved]);
+      const newlyRemoved = removed.filter(room => !exitTimers.current.has(roomKey(room)));
+      setExiting(current => [...current.filter(room => !liveRoomKeys.has(roomKey(room))), ...newlyRemoved]);
       for (const room of newlyRemoved) {
-        const id = key(room);
+        const id = roomKey(room);
         exitTimers.current.set(id, window.setTimeout(() => {
-          exitTimers.current.delete(id); setExiting(current => current.filter(item => key(item) !== id));
+          exitTimers.current.delete(id); setExiting(current => current.filter(item => roomKey(item) !== id));
         }, 500));
       }
     }
-  }, [snapshot.rooms, snapshot.connection, snapshot.loading, state.visibleRooms]);
-  const exitingKeys = new Set(exiting.map(room => `${room.product}-${room.code}`));
-  const rows = {...state, visibleRooms: [...state.visibleRooms, ...exiting.filter(room => !snapshot.rooms.some(live => live.product === room.product && live.code === room.code))]};
+  }, [liveRoomKeys, snapshot.connection, loading, sortedRooms]);
+  const exitingKeys = useMemo(() => new Set(exiting.map(roomKey)), [exiting]);
+  const rows = {...state, visibleRooms: exiting.length
+    ? [...sortedRooms, ...exiting.filter(room => !liveRoomKeys.has(roomKey(room)))] : sortedRooms};
   const disabled = state.connection !== 'live' || !!state.mine || state.leaving || !state.products.length;
   const warning = <aside className="lobby-warning lobby-connection-warning" id="connectionWarning" role="alert" hidden={!state.connectionInterrupted}>
     <div><svg className="lobby-connection-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 4.7 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.7a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg><strong id="connectionWarningTitle">{t(state.connection === 'unsupported' ? 'lobby.unsupported' : state.rooms.length ? 'lobby.disconnected' : 'lobby.offline')}</strong><p id="connectionWarningHint">{t(state.connection === 'unsupported' ? 'lobby.unsupportedHint' : state.connection === 'missing' ? 'lobby.noService' : 'lobby.refreshHint')}{state.connectionDetail && ` | ${state.connectionDetail}`}</p></div>

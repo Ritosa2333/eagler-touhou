@@ -12,7 +12,12 @@ try {
     if (message.type() === 'error' && message.text().includes('ViewTransition opt-in disabled')) transitionErrors.push(message.text());
   });
   await page.setViewport({width:390,height:844,deviceScaleFactor:1,isMobile:true,hasTouch:true});
-  await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1'));
+  await page.evaluateOnNewDocument(() => {
+    localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1');
+    window.documentSnapshots = 0;
+    window.addEventListener('pagereveal', event => {if (event.viewTransition) window.documentSnapshots++;});
+    window.addEventListener('pageswap', event => {if (event.viewTransition) window.documentSnapshots++;});
+  });
   await page.goto(origin, {waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => window.__eaglerBoot?.done === true && !document.querySelector('#eaglerPreload'), {timeout:90000});
 
@@ -36,10 +41,7 @@ try {
   }
   async function waitForDocument(pathname) {
     await page.waitForFunction(path => location.pathname.endsWith(path) && document.querySelector('h1')?.textContent.trim(), {}, pathname);
-    assert.equal(await page.$eval('#launcherNavigationTransition', node => node.textContent), '@view-transition{navigation:auto}');
-    await page.waitForFunction(() => ['260ms', '.26s', '0.26s'].includes(
-      getComputedStyle(document.documentElement).getPropertyValue('--launcher-route-duration').trim(),
-    ));
+    assert.equal(await page.evaluate(() => window.documentSnapshots), 0, 'document navigation does not capture snapshots');
   }
 
   const closeNotice = await page.$('#firstUseNoticeClose');
@@ -58,6 +60,7 @@ try {
   await waitForDocument('/faq.html');
   await page.goBack();
   await page.waitForFunction(() => location.pathname === '/' || location.pathname.endsWith('/index.html'));
+  assert.equal(await page.evaluate(() => window.documentSnapshots), 0);
 
   assert.deepEqual(transitionErrors, []);
   assert.deepEqual(pageErrors, []);
