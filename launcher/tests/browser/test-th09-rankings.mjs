@@ -5,12 +5,13 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 const base = new URL(process.argv[2] || 'http://127.0.0.1:5185/');
 const rating = {rating:2100, interval_halfwidth:160, status:'active', games:50, wins:30,
   opponents:8, connected_group:1, last_at:Date.UTC(2026, 10, 25)};
-const top = [{character:0,games:34},{character:1,games:16}];
-const scores = [{character:0,rating:2000,interval:180,games:34},{character:1,rating:2400,interval:190,games:16}];
+const top = [{character:0,games:34},{character:1,games:12},{character:2,games:4}];
+const scores = [{character:0,rating:2000,interval:180,games:34},{character:1,rating:2400,interval:190,games:12}];
 const board = {as_of:rating.last_at, board:[
   {...rating, player:'Frequent', profile:{username:'frequent',nickname:'常用玩家'}, top_characters:top, character_ratings:scores},
   {...rating, player:'Private', rating:2050, top_characters:top},
   {...rating, player:'No data', rating:2000},
+  {...rating, player:'One character', rating:1950, top_characters:top.slice(0,1), character_ratings:scores.slice(0,1)},
 ]};
 const browser = await puppeteer.launch({headless:true, executablePath:await findChromiumExecutable()});
 try {
@@ -24,29 +25,34 @@ try {
   await page.setRequestInterception(true);
   page.on('request', request => {
     const path = new URL(request.url()).pathname;
+    if (/^\/assets\/th09-portraits\/\d+\.webp$/.test(path)) return request.respond({status:200, contentType:'image/svg+xml',
+      body:'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="10"/></svg>'});
     if (!path.startsWith('/api/')) return request.continue();
     accountPaths.push(path);
     const body = path === '/api/v1/th09/ratings/board' ? board : path === '/api/ready' ? {ready:true} : {user:null};
     return request.respond({status:200, contentType:'application/json', body:JSON.stringify(body)});
   });
-  const header = '.rating-table th[data-column="main-character"]';
+  const header = '.rating-table th[data-column="main-characters"]';
   const rows = '.rating-table tbody > tr';
-  const main = '[data-column="main-character"] .rating-main-character';
-  const compact = '.rating-main-character-compact .rating-main-character';
+  const main = '[data-column="main-characters"] .rating-main-characters [data-character]';
+  const compact = '.rating-main-characters-compact';
   const shown = selector => page.$eval(selector, node => node.getBoundingClientRect().width > 0);
   await page.setViewport({width:1707, height:819});
   await page.goto(new URL('ratings.html?lang=zh-CN', base), {waitUntil:'domcontentloaded'});
   await page.waitForSelector(main, {visible:true});
   assert.equal(await page.$eval('.rating-heading h1', h => h.textContent.trim()), '排行榜');
   assert.equal(await page.$eval(header, h => h.textContent.trim()), '惯用机体');
-  assert.deepEqual(await page.$$eval(rows, found => found.map(row => row.querySelector('td[data-column="main-character"] > span').dataset.character ?? null)), ['0',null,null],
-    'the most played character is shown even if its WHR is lower; hidden and absent values are omitted');
+  assert.deepEqual(await page.$$eval(rows, found => found.map(row =>
+    [...row.querySelectorAll('td[data-column="main-characters"] [data-character]')].map(icon => icon.dataset.character))), [['0','1','2'],[],[],['0']],
+    'portraits follow games played, not WHR; hidden or absent values are omitted and short lists are not padded');
+  assert.equal(await page.$$eval(main + ' img', images => images.length), 4);
   assert.match(await page.$eval(main, node => node.title), /34 局/);
   assert.equal(await shown(compact), false);
   for (const width of [860, 390, 320]) {
     await page.setViewport({width, height:819});
     assert.equal(await shown(header), width > 800);
     assert.equal(await shown(compact), width <= 800);
+    if (width <= 800) assert.deepEqual(await page.$$eval(compact + ' [data-character]', icons => icons.map(icon => icon.dataset.character)), ['0','1','2','0']);
     assert.equal(await page.$eval('.rating-table-wrap', node => node.scrollWidth > node.clientWidth), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   }

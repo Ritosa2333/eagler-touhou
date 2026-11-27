@@ -90,8 +90,8 @@ function useRatingColumns(characterBoard: boolean): Column[] {
     { key: 'position', title: '#', compact: true, numeric: true, value: row => row.position },
     { key: 'player', title: 'th09.boardPlayer', compact: true, value: playerName },
     ...(!characterBoard ? [{
-      key: 'main-character', title: 'th09.boardMainCharacter', sortable: false,
-      value: () => '', render: row => <MostPlayedCharacter row={row} />,
+      key: 'main-characters', title: 'th09.boardMainCharacter', sortable: false,
+      value: () => '', render: row => <MostPlayedCharacters row={row} />,
     } satisfies Column] : []),
     ...scoreColumns,
     { key: 'games', title: 'th09.boardGames', numeric: true, value: boardGames },
@@ -213,7 +213,7 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
   const showContext = contextScope === scope;
   const sort = sortState?.scope === scope ? sortState : defaultSort;
   const compactColumnCount = columns.filter(column => column.compact).length;
-  const detailColumns = columns.filter(column => !column.compact && column.key !== 'main-character' && (!characterBoard || column.key !== 'deviation'));
+  const detailColumns = columns.filter(column => !column.compact && column.key !== 'main-characters' && (!characterBoard || column.key !== 'deviation'));
   const groups = [...new Set(rows?.map(row => row.connected_group))].sort((a, b) => a - b);
   const minGames = Math.max(1, Math.trunc(Number(minimum ?? defaultMinimum)) || 1);
   const search = query.trim().toLowerCase();
@@ -367,7 +367,7 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
               {columns.map(item => item.key === 'player'
                 ? <th key={item.key} scope="row" data-compact="true" title={t('th09.boardOpponentsCount', {count: numbers.format(row.opponents)})}>
                     <PlayerIdentity row={row} />
-                    {!characterBoard && <span className="rating-main-character-compact"><MostPlayedCharacter row={row} compact /></span>}
+                    {!characterBoard && <MostPlayedCharacters row={row} compact />}
                     <span className="sr-only"> {t('th09.boardOpponentsCount', {count: numbers.format(row.opponents)})}</span>
                   </th>
                 : <td key={item.key} data-column={item.key} data-compact={item.compact || undefined}
@@ -405,18 +405,21 @@ function RatingCharacterThumbnail({character}: {character?: number}) {
   </span>;
 }
 
-function MostPlayedCharacter({row, compact = false}: {row: Entry; compact?: boolean}) {
+function MostPlayedCharacters({row, compact = false}: {row: Entry; compact?: boolean}) {
   const {locale, t} = useLocale();
   // Match the profile card's privacy rule: hidden versus data omits character ratings.
-  const main = row.character_ratings?.length ? row.top_characters?.[0] : undefined;
-  if (!main) return compact ? null : <span className="rating-main-character-empty">—</span>;
-  const name = th09CharacterName(main.character, t);
-  const games = t('th09.characterGames', {count: new Intl.NumberFormat(locale).format(main.games)});
-  return <span className="rating-main-character" title={`${name} · ${games}`} data-character={main.character}>
+  const characters = row.character_ratings?.length ? row.top_characters : undefined;
+  if (!characters?.length) return compact ? null : <span className="rating-main-characters-empty">—</span>;
+  const numbers = new Intl.NumberFormat(locale);
+  return <span className={compact ? 'rating-main-characters rating-main-characters-compact' : 'rating-main-characters'}>
     {compact && <span className="sr-only">{t('th09.boardMainCharacter')}: </span>}
-    <RatingCharacterThumbnail character={main.character} />
-    <span>{name}</span>
-    <span className="sr-only"> · {games}</span>
+    {characters.map(({character, games}) => {
+      const label = `${th09CharacterName(character, t)} · ${t('th09.characterGames', {count: numbers.format(games)})}`;
+      return <span key={character} data-character={character} title={label}>
+        <RatingCharacterThumbnail character={character} />
+        <span className="sr-only">{label}. </span>
+      </span>;
+    })}
   </span>;
 }
 

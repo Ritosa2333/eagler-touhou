@@ -136,12 +136,13 @@ html[data-custom-background] .th09-rating-page :is(.rating-table-wrap, .rating-o
 .rating-table thead { background: var(--kit-muted); color: var(--kit-muted-foreground); }
 .rating-table thead th { padding-block: 0; }
 .rating-table th[data-column='position'] { width: var(--rating-rank-width); }
-.rating-table th[data-column='main-character'] { width: clamp(108px, 12vw, 176px); }
+.rating-table th[data-column='main-characters'] { width: clamp(96px, 11vw, 158px); }
 .rating-column-label { display: block; padding-inline: 4px; font-size: 13px; font-weight: 500; line-height: 1.2; white-space: normal; }
-.rating-main-character { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; vertical-align: middle; font-size: 13px; font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
-.rating-main-character .rating-character-thumbnail { flex: none; }
-.rating-main-character-empty { color: var(--kit-muted-foreground); }
-.rating-main-character-compact { display: none; }
+.rating-main-characters { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
+.rating-main-characters > [data-character] { display: inline-flex; }
+.rating-main-characters .rating-character-thumbnail { width: 24px; height: 24px; }
+.rating-main-characters-empty { color: var(--kit-muted-foreground); }
+.rating-main-characters-compact { display: none; }
 .rating-table th[data-column='rating'] { width: 12%; }
 .rating-table th[data-column='deviation'] { width: 116px; }
 .rating-table th:is([data-column='overall'], [data-column='games'], [data-column='winRate'], [data-column='community'], [data-column='status']) { width: 8%; }
@@ -173,7 +174,6 @@ a.rating-player-name:hover { opacity: .8; }
   .rating-table :is(th, td) { padding-inline: 5px; }
   .rating-table th[data-column='rating'] { width: 10%; }
   .rating-table th[data-column='deviation'] { width: 100px; }
-  .rating-table th[data-column='main-character'] { width: clamp(96px, 12vw, 136px); }
   .rating-table th[data-column='community'] { width: 75px; }
   .rating-table th[data-column='last'] { width: 13%; }
   .rating-table th[data-column='status'] { width: 88px; }
@@ -184,9 +184,8 @@ a.rating-player-name:hover { opacity: .8; }
   .rating-table { min-width: 0; }
   .rating-table :is(th, td)[data-column]:not([data-compact]) { display: none; }
   .rating-table th[data-column='rating'] { width: 66px; }
-  .rating-main-character-compact:not(:empty) { display: block; margin-inline-start: 36px; color: var(--kit-muted-foreground); }
-  .rating-main-character-compact .rating-main-character { min-height: 20px; font-size: 12px; }
-  .rating-main-character-compact .rating-character-thumbnail { width: 18px; height: 18px; }
+  .rating-main-characters-compact { display: flex; margin-inline-start: 36px; }
+  .rating-main-characters-compact .rating-character-thumbnail { width: 20px; height: 20px; }
   .rating-layout[data-character-board] .rating-table th[data-column='rating'] { width: 98px; }
   .rating-layout[data-character-board] .rating-table th[data-column='overall'] { width: 74px; }
   .rating-layout[data-character-board] .rating-table th:is([data-column='rating'], [data-column='overall']) .rating-sort { gap: 4px; padding-inline: 0; }
