@@ -1,6 +1,6 @@
 {
   "schema": "bro/app-shell/1",
-  "version": "sha256-3cb74dadcd1f359f050c0a1c052dca93660c9c264d9711827373eda7d0b8ad66",
+  "version": "sha256-cfdb93e938660bb50626a7042f4f4c08085203bbc719cc24e721dcf3c74f6563",
   "files": [
     {
       "p": "bro.html",
@@ -79,8 +79,8 @@
     },
     {
       "p": "src/replay_archive.mjs",
-      "n": 5287,
-      "h": "67ec2c98ec83d907c559e28d555456ee78f3f4a3321292ff596041d86b5ddf76"
+      "n": 6570,
+      "h": "f119d2126e254f9fca53e6bee37cbd3a4ca09bf0cce2af606b8e1772643e7f2a"
     },
     {
       "p": "src/resource_cache.mjs",

@@ -32,6 +32,9 @@ export class ReplayArchive {
     this.anchors = [];
     this.minFrame = Infinity;
     this.maxFrame = -1;
+    // #55：淘汰水位——所有 < 该帧号的帧已从 frames 删除。用它把 _evict 从
+    // 「每帧全表扫描两遍」改成「按帧号精确删除新跨出窗口的区间」，摊还 O(1)。
+    this._evictWatermark = 0;
     this.stats = { recorded: 0, anchorCount: 0, evicted: 0, gaps: 0 };
   }
 
@@ -39,6 +42,13 @@ export class ReplayArchive {
   record(frame, inputs) {
     const f = Number(frame) | 0;
     if (f < 0) return false;
+    // #55：迟到的过期帧（< 淘汰水位）旧实现会先写入再在 _evict 删除，净效果不入档。
+    // 这里直接跳过，避免它把已抬升的 minFrame 拉回并绕开水位区间删除。
+    if (f < this._evictWatermark) {
+      this.stats.recorded++;
+      this.stats.evicted++;
+      return true;
+    }
     const row = new Array(this.players);
     for (let p = 0; p < this.players; p++) {
       const v = inputs && (Number(inputs[p]) & 0xff);
@@ -64,20 +74,30 @@ export class ReplayArchive {
     return true;
   }
 
-  /** 淘汰超出 keep 窗口的旧帧与旧锚点，内存有界。 */
+  /** 淘汰超出 keep 窗口的旧帧与旧锚点，内存有界（摊还 O(1)）。 */
   _evict() {
-    if (this.maxFrame - this.keep <= this.minFrame) return;
     const cutoff = this.maxFrame - this.keep;
-    for (const f of this.frames.keys()) {
-      if (f < cutoff) { this.frames.delete(f); this.stats.evicted++; }
+    // #55：水位以下已全删。只在 cutoff 首次跨过水位时删除 [watermark, cutoff)
+    // 这段新出窗口的帧号区间——每个帧号一生只删一次 → 摊还 O(1)，替代旧版
+    // 「每帧把 3600 项 frames 全表扫描两遍」（record 稳态 12.8us → 亚微秒）。
+    if (cutoff > this._evictWatermark) {
+      const end = Math.min(cutoff, this.maxFrame + 1);
+      for (let f = this._evictWatermark; f < end; f++) {
+        if (this.frames.delete(f)) this.stats.evicted++;
+      }
+      this._evictWatermark = cutoff;
+      // 只有被删区间确实触及旧下界时才抬升 minFrame：从 cutoff 向前找第一个
+      // 仍存在的帧。顺序记录时就是 cutoff 本身（O(1)），稀疏才多探几步。
+      if (this.minFrame < cutoff) {
+        let lo = cutoff;
+        while (lo <= this.maxFrame && !this.frames.has(lo)) lo++;
+        this.minFrame = lo > this.maxFrame ? (this.frames.size ? this.minFrame : -1) : lo;
+      }
     }
+    // 锚点已按帧号排序，从队头弹即可。
     while (this.anchors.length && this.anchors[0].frame < cutoff) {
       this.anchors.shift();
     }
-    // 重算 minFrame（淘汰后下界抬升）。
-    let lo = Infinity;
-    for (const f of this.frames.keys()) if (f < lo) lo = f;
-    this.minFrame = lo === Infinity ? -1 : lo;
   }
 
   /** 取某帧输入数组；缺帧返回 null（区别于「全松手」的 0 数组）。 */
