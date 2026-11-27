@@ -50,6 +50,13 @@ try {
   await page.goto(new URL('ratings.html?lang=zh-CN', base), {waitUntil:'domcontentloaded'});
   await page.waitForSelector(main, {visible:true});
   assert.equal(await page.$eval('.rating-heading h1', h => h.textContent.trim()), '排行榜');
+  await page.click('.rating-game-picker');
+  const gameOption = '[role="menuitemradio"][data-game]';
+  await page.waitForSelector(gameOption, {visible:true});
+  assert.deepEqual(await page.$$eval(gameOption, options => options.map(option =>
+    [option.dataset.game, option.hasAttribute('data-disabled'), option.getAttribute('aria-checked')])),
+  [['th03',true,'false'], ['th075',true,'false'], ['th09',false,'true'], ['th19',true,'false']]);
+  await page.keyboard.press('Escape');
   assert.equal(await page.$eval(header, h => h.textContent.trim()), '惯用机体');
   assert.deepEqual(await page.$$eval(rows, found => found.map(row =>
     [...row.querySelectorAll('td[data-column="main-characters"] [data-character]')].map(icon => icon.dataset.character))), [['0','1','2'],[],[],['0']],

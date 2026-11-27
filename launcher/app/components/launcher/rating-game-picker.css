@@ -1,0 +1,11 @@
+.rating-game-picker.ui-kit-button {
+  flex: none;
+  gap: 5px;
+  padding-inline: 6px;
+}
+
+.rating-game-picker-icon {
+  flex: none;
+  border-radius: 4px;
+  object-fit: cover;
+}

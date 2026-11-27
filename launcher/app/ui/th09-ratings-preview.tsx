@@ -6,8 +6,8 @@ import { AccountAvatar } from '../components/launcher/AccountAvatar';
 import { PlayerAvatarCard } from '../components/launcher/PlayerProfileCard';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
 import { MainSelect, MainSelectPrefix } from '../components/launcher/MainSelect';
+import { RatingGamePicker } from '../components/launcher/RatingGamePicker';
 import { Th09CharacterAvatar } from '../components/launcher/Th09CharacterPortrait';
-import th09Artwork from '../components/launcher/book-covers/th09.webp?url';
 import { useLocale, type UiMessageKey } from '../i18n';
 import { sitePageTitle } from '../navigation/document-locale';
 import {accountsEnabled} from '../release-features';
@@ -264,12 +264,13 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
   return <div className="rating-layout" data-character-board={characterBoard || undefined}>
     <div className="rating-heading">
       <div className="rating-heading-title">
-        <h1><img className="rating-heading-icon" src={th09Artwork} width={36} height={36} alt="" />{boardTitle}</h1>
+        <h1>{boardTitle}</h1>
         {characterBoard ? <FieldHelp id="character-rating-help" label={t('th09.boardCharacterHelp')}>
           {t('th09.boardCharacterHelpText')}
         </FieldHelp> : <FieldHelp id="rating-explanation" label={t('th09.boardHelp')}>
           {t('th09.boardHelpText')}
         </FieldHelp>}
+        <RatingGamePicker current="th09" />
       </div>
       <Button className="rating-distribution-trigger" variant="ghost" size="sm"
         aria-expanded={distributionOpen} aria-controls="rating-overview" disabled={!rows}

@@ -6,8 +6,7 @@
 }
 .rating-heading { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px; border-radius: 8px; background: var(--book-reading-surface); }
 .rating-heading-title { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; min-width: 0; }
-.rating-heading-title h1 { display: flex; align-items: center; gap: 10px; min-width: 0; margin: 0; font-size: clamp(18px, 2vw, 25px); font-weight: 650; line-height: 1.2; }
-.rating-heading-icon { display: block; border-radius: 6px; object-fit: cover; }
+.rating-heading-title h1 { min-width: 0; margin: 0; font-size: clamp(18px, 2vw, 25px); font-weight: 650; line-height: 1.2; }
 .rating-heading .rating-distribution-trigger { flex: none; padding-inline: 6px; color: var(--kit-foreground); }
 .rating-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .rating-tools {
