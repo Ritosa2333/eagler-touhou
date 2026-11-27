@@ -1,5 +1,5 @@
 {
-  "downloadTasks_acquire": "ゲームを取得",
+  "downloadTasks_acquire": "ゲームをインストール",
   "downloadTasks_title": "取得状況",
   "downloadTasks_downloading": "取得中",
   "downloadTasks_queued": "待機中",

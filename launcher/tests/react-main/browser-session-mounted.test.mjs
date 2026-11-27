@@ -1308,7 +1308,7 @@ test('actual BrowserLauncher: a published package is acquired before an explicit
     if (url.pathname.endsWith('/hsob.package.json')) return Response.json(descriptor);
     if (Object.values(descriptor.files).some(file => url.pathname === '/' + file.source)) return new Response(new Uint8Array([1, 2, 3]));
   }});
-  await until(() => node('#launchText').textContent === 'Get game' && !node('#launch').disabled, 'published resources enable Get game');
+  await until(() => node('#launchText').textContent === 'Install game' && !node('#launch').disabled, 'published resources enable Install game');
   await click('#launch');
   await until(() => node('#launchText').textContent === 'Start game', 'installed resources enable Start');
   assert.equal(playerOpen(), false, 'acquiring resources does not open the player');
@@ -1319,9 +1319,9 @@ test('actual BrowserLauncher: a published package is acquired before an explicit
   assert.deepEqual(f.dataReads, [[1, 2, 3]]);
 });
 
-test('actual BrowserLauncher: import-only Get game → invalid file → valid canonical ZIP waits for an explicit Start', async () => {
+test('actual BrowserLauncher: import-only installation → invalid file → valid canonical ZIP waits for an explicit Start', async () => {
   const f = await mountBrowser({initial: '/en.html?game=th06', resourceMode: 'import'});
-  await until(() => node('#launchText').textContent === 'Get game' && !node('#launch').disabled, 'import-only Get game is ready');
+  await until(() => node('#launchText').textContent === 'Install game' && !node('#launch').disabled, 'import-only installation is ready');
   await click('#launch'); await until(() => !node('#gameDataImportWindow').hidden, 'main import-required window opens');
   assert.equal(node('#decisionDialog').open, false); assert.equal(playerOpen(), false); assert.equal(f.navigations.length, 0);
   await selectImport(new NativeFile([], 'empty.zip'));

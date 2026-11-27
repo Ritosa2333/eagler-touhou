@@ -57,7 +57,7 @@ try {
         assert.ok(started.includes(game), `fixture request for ${game}`);
       };
       await page.goto(new URL('?game=th06&lang=zh-CN', origin).href, {waitUntil: 'domcontentloaded'});
-      await waitText('获取游戏', false);
+      await waitText('安装游戏', false);
       await noTask();
       await page.locator('#launch').click();
       await waitText('获取中', true);
@@ -67,11 +67,11 @@ try {
 
       if (width === 1440) {
         await clickGame('th07');
-        await waitText('获取游戏', false);
+        await waitText('安装游戏', false);
         await page.locator('#launch').click();
         await waitText('排队中', true);
         await clickGame('th08');
-        await waitText('获取游戏', false);
+        await waitText('安装游戏', false);
         await page.locator('#launch').click();
         await waitText('排队中', true);
         assert.deepEqual(started, ['th06']);
@@ -107,7 +107,7 @@ try {
       } else {
         await page.locator('[data-download-active="th06"] button').click();
         await noTask();
-        await waitText('获取游戏', false);
+        await waitText('安装游戏', false);
       }
       assert.deepEqual(errors, []);
     } finally {
