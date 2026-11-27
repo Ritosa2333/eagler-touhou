@@ -116,8 +116,9 @@ try {
         assert.equal(await sample.evaluate(row => {
           const box = selector => row.querySelector(selector).getBoundingClientRect();
           const game = box('.book-rail-game'), check = box('.book-lobby-sidebar-check'), favorite = box('.book-favorite');
-          return check.right <= game.left && game.right <= favorite.left && check.height === game.height && favorite.height === game.height;
-        }), true, 'multi-select, work and favorite have three independent, full-height targets');
+          return check.left === game.left - 3 && check.top === game.top - 1 && check.width === 20 && check.height === 20 &&
+            favorite.right === game.right && favorite.top === game.top;
+        }), true, 'the multiplayer rail uses the main layout with check and favorite in opposite top corners');
       }
     }
     const geometry = await page.evaluate(() => {
@@ -140,7 +141,7 @@ try {
     const row = rail.querySelector(':is([data-book-sidebar-product="th07"],[data-lobby-rail-product="th07mp"] .book-rail-game)');
     const favorite = row.parentElement.querySelector('.book-favorite');
     const star = favorite.querySelector('svg');
-    const subtitle = row.querySelector('.book-category-game-subtitle');
+    const title = row.querySelector('.book-category-game-title');
     const box = element => element.getBoundingClientRect();
     choice.focus({preventScroll:true});
     return {
@@ -150,9 +151,8 @@ try {
       rowHeight:box(row).height, layout:getComputedStyle(row).display,
       favoriteWidth:box(favorite).width, favoriteHeight:box(favorite).height,
       starWidth:box(star).width, starHeight:box(star).height,
-      favoriteAligned:box(favorite).top === box(row).top && box(favorite).right === box(row.parentElement).right &&
-        Math.abs((box(star).top + box(star).bottom - box(favorite).top - box(favorite).bottom) / 2) < 1,
-      subtitleClearsFavorite:box(subtitle).right <= box(favorite).left,
+      favoriteAligned:box(favorite).top === box(row).top && box(favorite).right === box(row).right,
+      titleClearsFavorite:box(title).right <= box(favorite).left,
     };
   });
   for (const width of [1440, 1024, 390]) {
@@ -166,9 +166,9 @@ try {
       const lobby = await sidebarGeometry();
       for (const key of ['width','searchWidth','categoryWidth','actionWidth','countRight','rowHeight','layout','favoriteWidth','favoriteHeight','starWidth','starHeight'])
         assert.equal(lobby[key],library[key],`desktop rails share ${key}`);
-      assert.equal(library.favoriteHeight,library.rowHeight,'favorite uses the full row height');
-      assert.ok(library.favoriteAligned && lobby.favoriteAligned,'the favorite is centered in the trailing action column');
-      assert.ok(library.subtitleClearsFavorite && lobby.subtitleClearsFavorite,'favorite leaves the subtitle unobstructed');
+      assert.deepEqual([library.favoriteWidth, library.favoriteHeight], [24,22], 'the rail uses the main favorite dimensions');
+      assert.ok(library.favoriteAligned && lobby.favoriteAligned,'the favorite is pinned to the top end of each row');
+      assert.ok(library.titleClearsFavorite && lobby.titleClearsFavorite,'favorite leaves the title unobstructed');
       assert.equal(library.actionWidth,library.categoryWidth,'the category controls fill the row');
       await navigate('library');
     }

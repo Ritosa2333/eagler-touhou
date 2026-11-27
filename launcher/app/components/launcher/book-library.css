@@ -108,6 +108,10 @@
     padding: 0;
     list-style: none;
   }
+  .book-category-games > li {
+    position: relative;
+    min-width: 0;
+  }
   .book-category-game-cover {
     display: grid;
     place-items: center;
@@ -137,6 +141,7 @@
     align-items: baseline;
     gap: 6px;
     min-width: 0;
+    padding-inline-end: 22px;
   }
   .book-category-game-title {
     font-weight: 550;
@@ -515,6 +520,14 @@
       grid-template-columns: minmax(0, 1fr);
     }
   }
+  @media (width > 780px) {
+    .book-view-covers .book-grid {
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+    }
+    .book-view-covers .book-card .book-art {
+      aspect-ratio: 2 / 3;
+    }
+  }
   @media (max-width: 780px) {
     html[data-ui-home] .book-library {
       display: block;
@@ -630,13 +643,6 @@
     }
   }
 }
-.book-category-games > li {
-  --book-rail-favorite-width: 38px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--book-rail-favorite-width);
-  min-width: 0;
-  border-radius: 6px;
-}
 .book-category-games .book-rail-game {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
@@ -667,8 +673,11 @@
   outline-offset: -2px;
 }
 .book-category-games .book-favorite.ui-kit-button {
-  width: 100%;
-  height: auto;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  width: 24px;
+  height: 22px;
   min-height: 0;
   padding: 0;
   color: var(--kit-muted-foreground);
@@ -676,19 +685,6 @@
 .book-category-games .book-favorite svg {
   width: 14px;
   height: 14px;
-}
-.book-category-games:has(> [data-lobby-rail-product]) {
-  margin-inline-start: 6px;
-}
-.book-category-games > [data-lobby-rail-product] {
-  grid-template-columns: 28px minmax(0, 1fr) var(--book-rail-favorite-width);
-}
-.book-category-games > [data-lobby-rail-product] > .book-rail-game {
-  padding-inline: 0 6px;
-  background: transparent;
-}
-.book-category-games > [data-lobby-rail-product]:has(> [aria-pressed="true"].book-rail-game) {
-  background: var(--kit-accent);
 }
 .book-category-disclosure svg {
   transition: rotate var(--ui-surface-duration) var(--ui-surface-easing);
@@ -823,20 +819,23 @@
 }
 @media (min-width: 781px) {
   :is(.book-recent-link, .book-category-games .book-rail-game)
-    > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity) {
+    > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
+  .book-category-games :is(.book-lobby-sidebar-check, .book-favorite > svg) {
     transition: translate 0.48s cubic-bezier(0.22, 0.7, 0.2, 1);
   }
   :is(.book-recent-link, .book-category-games .book-rail-game):focus-visible
-    > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity) {
+    > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
+  .book-category-games li:has(> :focus-visible) :is(.book-lobby-sidebar-check, .book-favorite > svg) {
     translate: 3px 0;
   }
 }
 @media (min-width: 781px) and (hover: hover) and (pointer: fine) {
   :is(.book-recent-link:hover, .book-category-games li:hover > .book-rail-game)
-    > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity) {
+    > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
+  .book-category-games li:hover :is(.book-lobby-sidebar-check, .book-favorite > svg) {
     translate: 3px 0;
   }
-  .book-category-games :is(li:not([data-lobby-rail-product]):hover > .book-rail-game, [data-lobby-rail-product]:hover) {
+  .book-category-games li:hover > .book-rail-game {
     background: var(--kit-accent);
     color: var(--kit-foreground);
   }
@@ -847,7 +846,8 @@
     transition: none;
   }
   :is(.book-recent-link, .book-category-games .book-rail-game)
-    > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity) {
+    > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
+  .book-category-games :is(.book-lobby-sidebar-check, .book-favorite > svg) {
     transition: none;
     translate: none !important;
   }
@@ -857,7 +857,8 @@
 }
 .less-motion
   :is(.book-recent-link, .book-category-games .book-rail-game)
-  > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity) {
+  > :is(.book-art, .book-identity, .book-category-game-cover, .book-category-game-identity),
+.less-motion .book-category-games :is(.book-lobby-sidebar-check, .book-favorite > svg) {
   transition: none;
   translate: none !important;
 }

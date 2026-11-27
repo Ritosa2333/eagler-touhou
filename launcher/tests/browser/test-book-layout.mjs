@@ -53,7 +53,7 @@ async function assertMasthead(page, width) {
         bounds.right <= headerBounds.right + 1 && (index === 0 || groups[index-1].right <= bounds.left + 1)),
     };
   });
-  assert.ok(layout.height >= (width <= 780 ? 56 : 60), `${width}px masthead has room around controls`);
+  assert.equal(layout.height, width <= 780 ? 56 : 61, `${width}px masthead retains the expected height`);
   assert.ok(layout.controls.length >= 3);
   assert.ok(layout.controls.every(([height,border]) => height === 44 && border === '0px'), `${width}px masthead actions share an unframed 44px height`);
   assert.ok(layout.icons.every(size => size === 44), `${width}px icon actions are square`);
@@ -261,6 +261,12 @@ try {
   await assertMasthead(resize, 1440);
   await resize.setViewport({width: 1707, height: 819});
   await assertMasthead(resize, 1707);
+  const coverGrid = await resize.$$eval('#bookGameGrid .book-card .book-art', covers => {
+    const boxes = covers.map(cover => cover.getBoundingClientRect());
+    return {columns:boxes.filter(box => box.top === boxes[0].top).length,
+      portrait:boxes.every(({width,height}) => Math.abs(height - width * 1.5) < 1)};
+  });
+  assert.ok(coverGrid.columns >= 7 && coverGrid.portrait, 'desktop cover grid fits at least seven 2:3 posters at 1707px');
   await assertInboxMotion(resize);
   await resize.setViewport({width: 1440, height: 540});
   await resize.waitForSelector('#bookRecentTitle', {visible:true});
