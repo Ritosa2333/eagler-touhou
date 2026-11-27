@@ -19,6 +19,7 @@ export function LoadingActivity({assetUrl, status, context, compact = false}: {
   compact?: boolean;
 }) {
   const {t} = useLocale();
+  const label = status.replace(/(?:…|\.{3})$/, '');
   // Sample without replacement. The lineup and tip belong to this wait, not to progress updates.
   const [{faces, tip}] = useState(() => {
     const pool = [...SITE_BRAND_FACES];
@@ -32,7 +33,9 @@ export function LoadingActivity({assetUrl, status, context, compact = false}: {
       {faces.map(face => <img key={face} src={assetUrl(siteBrandPath(face))} alt="" draggable={false}/>)}
     </div>
     <div className="loading-activity-copy">
-      <strong className="loading-activity-status">{status}</strong>
+      <strong className="loading-activity-status">{label}{label !== status &&
+        <span className="loading-activity-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>}
+      </strong>
       <p className="loading-activity-tip"><b>TIP</b><span>{t(tip)}</span></p>
     </div>
   </div>;

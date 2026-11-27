@@ -16,12 +16,14 @@ try {
   }, {}, faces);
   const snapshot = () => page.$eval(selector, (loader, faces) => {
     const images = [...loader.querySelectorAll(faces)];
+    const dots = [...loader.querySelectorAll('.loading-activity-dots > span')];
     const bounds = loader.getBoundingClientRect();
     return {
       images:images.map(image => image.src),
       motion:images.map(image => getComputedStyle(image).animationName),
       crops:images.map(image => [getComputedStyle(image).objectFit, getComputedStyle(image).objectPosition]),
       delays:images.map(image => getComputedStyle(image).animationDelay),
+      dots:dots.map(dot => [dot.textContent, getComputedStyle(dot).animationName, getComputedStyle(dot).animationDelay]),
       tip:loader.querySelector('.loading-activity-tip span').textContent,
       fits:bounds.left >= 0 && bounds.right <= innerWidth,
     };
@@ -35,6 +37,7 @@ try {
   assert.deepEqual(first.motion,Array(4).fill('ui-loading-hop'));
   assert.deepEqual(first.crops,Array(4).fill(['cover','0% 50%']),'the avatar is cropped out of its wordmark SVG');
   assert.deepEqual(first.delays,['0s','0.3s','0.6s','0.9s']);
+  assert.deepEqual(first.dots,first.delays.slice(0,3).map(delay => ['.','ui-loading-hop',delay]));
   assert.ok(first.tip);
   assert.ok(first.fits);
   await page.setViewport({width:320,height:640});
@@ -51,9 +54,11 @@ try {
   assert.ok(new Set(draws).size > 1,'new loads draw new random lineups');
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
   assert.deepEqual((await snapshot()).motion,Array(4).fill('none'));
+  assert.deepEqual((await snapshot()).dots.map(([dot,motion]) => [dot,motion]),Array(3).fill(['.','none']));
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
   await page.evaluate(() => document.body.classList.add('less-motion'));
   assert.deepEqual((await snapshot()).motion,Array(4).fill('none'));
+  assert.deepEqual((await snapshot()).dots.map(([dot,motion]) => [dot,motion]),Array(3).fill(['.','none']));
   assert.deepEqual(errors,[]);
   console.log('PASS randomized load lineups, sequential motion, tips, narrow layout, and both reduced-motion settings');
 } finally {await browser.close();}

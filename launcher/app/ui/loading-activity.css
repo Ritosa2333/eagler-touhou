@@ -22,10 +22,13 @@
     /* The shared 1000 × 320 SVG places the portrait in its leftmost square. */
     object-fit: cover;
     object-position: left center;
+  }
+  .loading-activity-dots {display:inline-flex;vertical-align:baseline;--loading-hop:-3px;}
+  :is(.loading-activity-faces img, .loading-activity-dots > span) {
     animation: ui-loading-hop 1.65s ease-in-out infinite;
   }
-  .loading-activity-faces img:nth-child(2) {animation-delay: 300ms;}
-  .loading-activity-faces img:nth-child(3) {animation-delay: 600ms;}
+  :is(.loading-activity-faces img, .loading-activity-dots > span):nth-child(2) {animation-delay: 300ms;}
+  :is(.loading-activity-faces img, .loading-activity-dots > span):nth-child(3) {animation-delay: 600ms;}
   .loading-activity-faces img:nth-child(4) {animation-delay: 900ms;}
   .loading-activity-copy {display:grid;gap:8px;justify-items:inherit;min-inline-size:0;}
   .loading-activity-status {color:var(--kit-foreground);font-size:16px;font-weight:650;}
@@ -53,8 +56,8 @@
     0%, 18%, 100% {transform:translateY(0);}
     8% {transform:translateY(var(--loading-hop));}
   }
-  body.less-motion .loading-activity-faces img {animation-name:none;}
+  body.less-motion :is(.loading-activity-faces img, .loading-activity-dots > span) {animation-name:none;}
   @media (prefers-reduced-motion:reduce) {
-    .loading-activity-faces img {animation-name:none;}
+    :is(.loading-activity-faces img, .loading-activity-dots > span) {animation-name:none;}
   }
 }
