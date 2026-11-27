@@ -36,7 +36,16 @@ try {
   const rows = '.rating-table tbody > tr';
   const main = '[data-column="main-characters"] .rating-main-characters [data-character]';
   const compact = '.rating-main-characters-compact';
+  const avatar = '.th09-character-avatar';
+  const scope = '#rating-board-scope-trigger';
   const shown = selector => page.$eval(selector, node => node.getBoundingClientRect().width > 0);
+  const checkAvatar = async (selector, size) => {
+    const box = await page.$eval(selector, node => {
+      const style = getComputedStyle(node);
+      return [node.offsetWidth, node.offsetHeight, style.borderRadius, style.overflow, node.firstElementChild.offsetWidth > node.offsetWidth];
+    });
+    assert.deepEqual(box, [size, size, '50%', 'hidden', true]);
+  };
   await page.setViewport({width:1707, height:819});
   await page.goto(new URL('ratings.html?lang=zh-CN', base), {waitUntil:'domcontentloaded'});
   await page.waitForSelector(main, {visible:true});
@@ -46,18 +55,31 @@ try {
     [...row.querySelectorAll('td[data-column="main-characters"] [data-character]')].map(icon => icon.dataset.character))), [['0','1','2'],[],[],['0']],
     'portraits follow games played, not WHR; hidden or absent values are omitted and short lists are not padded');
   assert.equal(await page.$$eval(main + ' img', images => images.length), 4);
+  await checkAvatar(main + ' ' + avatar, 24);
   assert.match(await page.$eval(main, node => node.title), /34 局/);
   assert.equal(await shown(compact), false);
+  assert.equal(await page.$(scope + ' ' + avatar), null);
+  await page.click(scope);
+  const option = '[role="option"]';
+  await page.waitForSelector(option + ' ' + avatar, {visible:true});
+  assert.deepEqual(await page.$$eval(option + ' ' + avatar + ' img', images => images.map(img => new URL(img.src).pathname)),
+    Array.from({length:16}, (_, id) => '/assets/th09-portraits/' + id + '.webp'));
+  await checkAvatar(option + '[data-value="0"] ' + avatar, 26);
+  await page.keyboard.press('Escape');
   for (const width of [860, 390, 320]) {
     await page.setViewport({width, height:819});
     assert.equal(await shown(header), width > 800);
     assert.equal(await shown(compact), width <= 800);
-    if (width <= 800) assert.deepEqual(await page.$$eval(compact + ' [data-character]', icons => icons.map(icon => icon.dataset.character)), ['0','1','2','0']);
+    if (width <= 800) {
+      assert.deepEqual(await page.$$eval(compact + ' [data-character]', icons => icons.map(icon => icon.dataset.character)), ['0','1','2','0']);
+      await checkAvatar(compact + ' ' + avatar, 20);
+    }
     assert.equal(await page.$eval('.rating-table-wrap', node => node.scrollWidth > node.clientWidth), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   }
   await page.goto(new URL('ratings.html?lang=zh-CN&character=0', base), {waitUntil:'domcontentloaded'});
   await page.waitForSelector('.rating-layout[data-character-board] .rating-character-score');
+  await checkAvatar(scope + ' ' + avatar, 22);
   assert.equal(await page.$(header), null, 'character boards do not repeat the overall-board main character');
   assert.equal(await page.$(compact), null);
   assert.equal(accountPaths.some(path => path.startsWith('/api/v1/profiles/')), false, 'no per-player requests are needed');

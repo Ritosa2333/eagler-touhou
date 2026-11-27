@@ -1,0 +1,19 @@
+.th09-character-avatar {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  inline-size: var(--th09-character-avatar-size, 24px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--kit-muted);
+}
+
+.th09-character-avatar > .th09-character-portrait {
+  position: absolute;
+  left: var(--th09-crop-left);
+  top: var(--th09-crop-top);
+  width: var(--th09-crop-size);
+  height: auto;
+  max-width: none;
+}

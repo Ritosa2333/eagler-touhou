@@ -6,7 +6,7 @@ import { AccountAvatar } from '../components/launcher/AccountAvatar';
 import { PlayerAvatarCard } from '../components/launcher/PlayerProfileCard';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
 import { MainSelect, MainSelectPrefix } from '../components/launcher/MainSelect';
-import { Th09CharacterPortrait } from '../components/launcher/Th09CharacterPortrait';
+import { Th09CharacterAvatar } from '../components/launcher/Th09CharacterPortrait';
 import th09Artwork from '../components/launcher/book-covers/th09.webp?url';
 import { useLocale, type UiMessageKey } from '../i18n';
 import { sitePageTitle } from '../navigation/document-locale';
@@ -282,7 +282,7 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
     </aside>
     <fieldset className="rating-tools" aria-label={t('th09.boardTools')}>
       <div className="rating-character-select">
-        <MainSelectPrefix prefix={<RatingCharacterThumbnail character={character} />}>
+        <MainSelectPrefix prefix={<RatingBoardIcon character={character} />}>
           <MainSelect id="rating-board-scope" aria-label={t('th09.boardSelect')} value={scope} onChange={event => {
             const value = event.currentTarget.value;
             setContextScope(null);
@@ -290,7 +290,7 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
             setExpanded(null);
             onCharacterChange(value === 'overall' ? undefined : Number(value));
           }} renderOption={({value, label}) => <span className="rating-character-option">
-            <RatingCharacterThumbnail character={value === 'overall' ? undefined : Number(value)} />
+            <RatingBoardIcon character={value === 'overall' ? undefined : Number(value)} />
             <span>{label}</span>
           </span>}>
             <option value="overall">{t('th09.boardOverall')}</option>
@@ -399,9 +399,9 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
   </div>;
 }
 
-function RatingCharacterThumbnail({character}: {character?: number}) {
-  return <span className="rating-character-thumbnail" aria-hidden="true">
-    {character === undefined ? <ListOrdered /> : <Th09CharacterPortrait character={character} />}
+function RatingBoardIcon({character}: {character?: number}) {
+  return <span className="rating-board-icon" aria-hidden="true">
+    {character === undefined ? <ListOrdered /> : <Th09CharacterAvatar character={character} />}
   </span>;
 }
 
@@ -416,7 +416,7 @@ function MostPlayedCharacters({row, compact = false}: {row: Entry; compact?: boo
     {characters.map(({character, games}) => {
       const label = `${th09CharacterName(character, t)} · ${t('th09.characterGames', {count: numbers.format(games)})}`;
       return <span key={character} data-character={character} title={label}>
-        <RatingCharacterThumbnail character={character} />
+        <Th09CharacterAvatar character={character} />
         <span className="sr-only">{label}. </span>
       </span>;
     })}
