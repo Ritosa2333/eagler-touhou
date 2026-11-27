@@ -227,24 +227,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           {props.languageControl}
         </div>}
         {compact && <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/>}
-        </nav>
-      </div>
-      <nav className="book-main-nav" aria-label={t('nav.main')}>
-        <Link href={props.launcherHref} title={t('nav.single')} aria-label={t('nav.single')}
-          aria-current={currentPage === 'library' ? 'page' : undefined}>
-          <NavigationIcon name="single" />
-          <span>{t('nav.single')}</span>
-        </Link>
-        <Link className="book-lobby-link" href={lobbyHref} title={t('nav.lobby')} aria-label={t('nav.lobby')}
-          aria-current={currentPage === 'lobby' ? 'page' : undefined}>
-          <NavigationIcon name="multiplayer" />
-          <span>{t('nav.lobby')}</span>
-        </Link>
-      </nav>
-      {props.librarySearchRef && <div className="masthead-library-search" ref={props.librarySearchRef}/>}
-      <div className="masthead-trailing">
-        {accountsEnabled && !compact && <AccountMenu interactive={interactive} assetUrl={props.assetUrl}/>}
-        <MastheadInbox compact={compact} interactive={interactive} homeHref={props.launcherHref} assetUrl={props.assetUrl} nativeLinks={props.nativeLinks}/>
         {!compact && <DropdownMenu.Root
           modal={false}
           open={interactive && menuOpen}
@@ -263,7 +245,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
               ref={content}
               className="ui-menu masthead-menu-panel ui-dropdown-motion"
               id="mastheadMenuPanel"
-              align="end"
+              align="start"
               sideOffset={8}
               collisionPadding={padding}
               onCloseAutoFocus={(event) => {
@@ -408,6 +390,24 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>}
+        </nav>
+      </div>
+      <nav className="book-main-nav" aria-label={t('nav.main')}>
+        <Link href={props.launcherHref} title={t('nav.single')} aria-label={t('nav.single')}
+          aria-current={currentPage === 'library' ? 'page' : undefined}>
+          <NavigationIcon name="single" />
+          <span>{t('nav.single')}</span>
+        </Link>
+        <Link className="book-lobby-link" href={lobbyHref} title={t('nav.lobby')} aria-label={t('nav.lobby')}
+          aria-current={currentPage === 'lobby' ? 'page' : undefined}>
+          <NavigationIcon name="multiplayer" />
+          <span>{t('nav.lobby')}</span>
+        </Link>
+      </nav>
+      {props.librarySearchRef && <div className="masthead-library-search" ref={props.librarySearchRef}/>}
+      <div className="masthead-trailing">
+        <MastheadInbox compact={compact} interactive={interactive} homeHref={props.launcherHref} assetUrl={props.assetUrl} nativeLinks={props.nativeLinks}/>
+        {accountsEnabled && !compact && <AccountMenu interactive={interactive} assetUrl={props.assetUrl}/>}
       </div>
       </Tooltip.Provider>
     </header>

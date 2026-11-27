@@ -7,8 +7,10 @@
 @layer components {
   .masthead.book-masthead {
     --masthead-control-size: 44px;
-    --masthead-icon-size: 20px;
     --masthead-wordmark-width: clamp(112px, 11vw, 132px);
+    /* Match the visible ink of Online's l in the 480px wordmark, not its image box. */
+    --masthead-icon-size: calc(var(--masthead-wordmark-width) * .165);
+    --masthead-icon-offset: calc(var(--masthead-wordmark-width) * .022);
     position: sticky;
     top: 0;
     z-index: 20;
@@ -101,10 +103,6 @@
   .book-masthead .book-main-nav :is(a, button):is(:hover,:focus-visible) {
     color: var(--kit-foreground);
   }
-  .book-masthead .book-main-nav .book-navigation-icon {
-    width: 22px;
-    height: 22px;
-  }
   .book-masthead .book-main-nav :is([aria-current="page"], [aria-pressed="true"]) {
     color: var(--kit-foreground);
   }
@@ -125,8 +123,8 @@
   .book-masthead .book-navigation-icon {
     display: block;
     flex: none;
-    width: 19px;
-    height: 19px;
+    width: var(--masthead-icon-size);
+    height: var(--masthead-icon-size);
     fill: none;
     stroke: currentColor;
     stroke-width: 1.75;
@@ -194,6 +192,8 @@
   @media (max-width: 780px) {
     .masthead.book-masthead:not([data-mobile-header="true"]) {display:none}
     .masthead.book-masthead[data-mobile-header="true"] {
+      --masthead-icon-size: 20px;
+      --masthead-icon-offset: 0px;
       position:relative;
       width:auto;
       grid-template-columns:var(--masthead-control-size) minmax(0,1fr) max-content;
@@ -225,9 +225,8 @@
   border:0;
   box-shadow:none;
 }
-.book-masthead .masthead-action > svg {width:var(--masthead-icon-size);height:var(--masthead-icon-size)}
+.book-masthead :is(.masthead-action,.book-main-nav a) > svg {width:var(--masthead-icon-size);height:var(--masthead-icon-size);translate:0 var(--masthead-icon-offset)}
 .book-masthead :is(.masthead-account-entry,.account-login-link) {gap:8px;width:auto;min-width:var(--masthead-control-size);padding:0 10px;max-width:144px}
-.book-masthead .masthead-trailing > :is(.masthead-account-entry,.account-login-link,.account-loading) {margin-inline-end:8px}
 .masthead-account-entry > span:not(.account-avatar) {min-width:0;overflow:hidden;text-overflow:ellipsis}
 .book-masthead .masthead-account-entry > svg {width:14px;height:14px}
 .masthead-account-entry .account-avatar {--account-avatar-size:28px}
