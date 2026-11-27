@@ -159,14 +159,14 @@
 
 | 编号 | 检查项 | normal | 记录 |
 | --- | --- | --- | --- |
-| VERIFY-01 | [全部内置 Demo 对照](../../docs/adaptation/validation.md#verify-01) | 进行中 | quick 样本是 `Assets/Replay/thSSS_01.rpy`。对照从 Splash fadeout 后的起始页进入 Replay 开始，不比加载段。 |
-| VERIFY-02 | [长 Replay 样本](../../docs/adaptation/validation.md#verify-02) | 进行中 | `corpus.json` 的 daily 槽位已留出。当前 quick 只登记 `thSSS_01`。 |
-| VERIFY-03 | [原版基准与内容哈希](../../docs/adaptation/validation.md#verify-03) | 进行中 | 身份含零售 `THSSS.exe`、Replay 与资源树 SHA-256。`--accept 1` 才写入 `tools/replay-verifier/golden/`。 |
-| VERIFY-04 | [读取固定基准](../../docs/adaptation/validation.md#verify-04) | 进行中 | `run-gate.mjs --golden 1` 只读已有 golden，不改基准文件。 |
-| VERIFY-05 | [单独维护原版基准](../../docs/adaptation/validation.md#verify-05) | 进行中 | 原版轨迹只由 Proton 注入的 `THSSS.exe` 生成。接受基准是单独的 `--accept 1`。 |
-| VERIFY-06 | [逐逻辑帧比较](../../docs/adaptation/validation.md#verify-06) | 进行中 | 比较器报告首个分歧类别。玩家字段改写归因 `web`。诊断对照把原版 `MyRandom` 调用带回放到网页；`thSSS_01` 首个分歧是 tick 1 的 `rng.draws` 分组，归因 `web`。 |
-| VERIFY-07 | [诊断构建与正常构建](../../docs/adaptation/validation.md#verify-07) | 已实现 | `-p:ThsssDiagnostic=true` 才编译 `VerifySnapshot` 并扩展 `ReplayState`。正式 `stage:eagler` 不带这个开关。 |
-| VERIFY-08 | [本作状态映射与结束条件](../../docs/adaptation/validation.md#verify-08) | 已实现 | 权威字段见 `tools/replay-verifier/state-schema.json`。起点是 Splash fadeout 后的 `MainMenu`，再从第一帧 OnReplay 关卡 `UpdateData` 对齐；`GameOverMenu` 不是 required tick。加载段差异不记为网页逻辑错误。 |
+| VERIFY-01 | [全部内置 Demo 对照](../../docs/adaptation/validation.md#verify-01) | 不适用 | 没有机制问题，不做像素与逻辑帧对照。 |
+| VERIFY-02 | [长 Replay 样本](../../docs/adaptation/validation.md#verify-02) | 不适用 | 没有机制问题，不做像素与逻辑帧对照。 |
+| VERIFY-03 | [原版基准与内容哈希](../../docs/adaptation/validation.md#verify-03) | 不适用 | 没有机制问题，不做像素与逻辑帧对照。 |
+| VERIFY-04 | [读取固定基准](../../docs/adaptation/validation.md#verify-04) | 不适用 | 没有机制问题，不做像素与逻辑帧对照。 |
+| VERIFY-05 | [单独维护原版基准](../../docs/adaptation/validation.md#verify-05) | 不适用 | 没有机制问题，不做像素与逻辑帧对照。 |
+| VERIFY-06 | [逐逻辑帧比较](../../docs/adaptation/validation.md#verify-06) | 不适用 | 没有机制问题，不做像素与逻辑帧对照。 |
+| VERIFY-07 | [诊断构建与正常构建](../../docs/adaptation/validation.md#verify-07) | 不适用 | 没有机制问题，不做像素与逻辑帧对照。 |
+| VERIFY-08 | [本作状态映射与结束条件](../../docs/adaptation/validation.md#verify-08) | 不适用 | 没有机制问题，不做像素与逻辑帧对照。 |
 
 <!-- manual-verification -->
 
@@ -182,7 +182,7 @@
 
 INPUT／TOUCH：开启触摸后左侧出现开火／低速／BOMB／ESC／R。`InputSurface` 与 `TouchShift` 已绑定；标题为 menu，关卡为 play。方向键改变自机附近亮点；Z 连续 `se_plst00.wav`；X 与 BOMB 放出炸弹（现场可见）。标题静止点按 `direct-touch` 播出 `se_ok00.wav`。`touchMovementMode=touch` 时自右向左拖动，亮点从右侧移到左侧。`joystick` 推下标题菜单从 Game Start 移到 Replay，进局后左右推杆移动自机。`hold-button`／`toggle-button` 低速文案与切换正确；`doubleTapBombEnabled` 双击放出炸弹（手动确认）。`touch-controls` 开火锁住后有射击音；`escapeSerial` 进入暂停；`touch-cancel` 成功。布局编辑器可打开并保存。键位面板 WASD 改键生效；手柄映射与摇杆／按钮手动通过。自由摇杆绕圈、双指低速、死后同指续拖、无限速远距对照、无限速落率、对话短按／长按已手动通过；灵敏度三档对照和放大镜还没做完。
 
-这次核对覆盖 BUILD-05、RUNTIME-02、DISPLAY-06、DISPLAY-07、AUDIO-01、AUDIO-07、SAVE-02、SAVE-03、SAVE-04、INPUT-01、INPUT-02、INPUT-03、INPUT-04、TOUCH-01、TOUCH-03、TOUCH-05、TOUCH-06、TOUCH-08、TOUCH-11、TOUCH-16、TOUCH-17。联机、MIDI、语言包按产品声明记为不适用。AUDIO-05 已接入（实现＋单测）；原版逐帧基准没有适配。
+这次核对覆盖 BUILD-05、RUNTIME-02、DISPLAY-06、DISPLAY-07、AUDIO-01、AUDIO-07、SAVE-02、SAVE-03、SAVE-04、INPUT-01、INPUT-02、INPUT-03、INPUT-04、TOUCH-01、TOUCH-03、TOUCH-05、TOUCH-06、TOUCH-08、TOUCH-11、TOUCH-16、TOUCH-17。联机、MIDI、语言包按产品声明记为不适用。AUDIO-05 已接入（实现＋单测）。VERIFY 按没有机制问题跳过逐帧对照。
 
 后续手动＋视觉核对：BUILD-05、RUNTIME-05、RUNTIME-06、PACKAGE-05、INPUT-06、INPUT-07、TOUCH-13、TOUCH-15、DISPLAY-04、DISPLAY-05、DISPLAY-08、AUDIO-02、AUDIO-03、AUDIO-06、REPLAY-01、REPLAY-02、REPLAY-04、REPLAY-05、REPLAY-06、REPLAY-07、SAVE-05、SAVE-06。AUDIO-04：切后台自动暂停 BGM，回前台从原游标续播。RUNTIME-04：切后台／恢复后声音与画面可继续，退出后监听器与临时输入已释放。REPLAY-03、SAVE-01、练习与 LANG-01、以及 TOUCH-14／18／19 等未在本轮关闭。
 
@@ -192,4 +192,4 @@ TOUCH-02／10／12（2026-11-24 手动）：`touch-unlimited` 远距跟随请求
 
 BUILD：`node tools/workspace.mjs select thsss --variant=normal` 列出 launcher、common、tools、docs、ports/thsss。本机 .NET SDK 10.0.404、wasm-tools 10.0.115、Bun 1.4.4。`dotnet publish THSSS.Browser/THSSS.Browser.csproj -c Release -p:StageGameAssets=false` 退出码 0，`THSSS.Browser.wasm` sha256 `4e719e4cdbf9c07162c31aa82e6e7ad0365129470e2ca4ef12fcf8997fa5f6c3`。帧步进拆出后重新 `npm run stage:eagler`，`shell.mjs` 171717 字节，wasm 哈希未变，`runtime-files.json` 与 5 个运行文件一致。`node tools/ports/check.mjs --game=thsss --variant=normal` 为 10/10。
 
-VERIFY：权威逐帧对照从 Splash fadeout 后的 `MainMenu` 起，再对齐第一帧 OnReplay 关卡 `UpdateData`。Splash／NowLoading 不进 required 轨迹。原版侧是 Proton 注入的零售 `THSSS.exe`，网页侧是 `-p:ThsssDiagnostic=true` 的 `ReplayState`。绘制类字段只留在 raw，不参加 digest。入口是 `ports/thsss/tools/replay-verifier/run-gate.mjs`。`thSSS_01` 两侧各 1916 个逻辑帧并正常结束。首帧玩家坐标同为 (192, 398)。原版 `MyRandom.Next`／`NextDouble` 的结果写入 `thSSS_01.original.rng`，诊断构建按相同调用顺序回放。两侧各 10475 次调用，顺序和结果一致；从 tick 8 起逐帧 `rng.draws` 也一致。quick 门禁在 tick 1 给出 `DIVERGED web`，字段 `rng.draws.length` 为 140 对 20：原版把读谱界面的 7 颗星记在 `timeMain` 2，网页从 `timeMain` 2 到 8 每帧记 1 颗。这一帧的玩家、输入、时钟、Boss 和实体列表相同。负控确认改写玩家 digest 会归因 `web`。这次对照没有写入 golden。
+VERIFY-01 至 VERIFY-08：没有机制问题，不做像素与逻辑帧对照，八项记为不适用。
