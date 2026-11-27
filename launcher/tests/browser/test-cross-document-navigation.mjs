@@ -99,7 +99,8 @@ try {
   await waitForDocument('/about.html');
   await expectDocumentEntrance();
   assert.equal(await page.$eval('[data-help-page="about"] a[href="https://qm.qq.com/q/eeUrxIltug"]', node => node.textContent), '闲聊向QQ群');
-  assert.ok(await page.$eval('[data-help-page="about"]', node => node.textContent.includes('反馈向QQ群：1075766678')));
+  assert.equal(await page.$eval('[data-help-page="about"] a[href^="mqqapi:"]', link => link.textContent), '反馈向QQ群：1075766678');
+  assert.equal(await page.$eval('[data-help-page="about"] a[href^="mqqapi:"]', link => new URL(link.href).searchParams.get('uin')), '1075766678');
   await page.reload({waitUntil:'domcontentloaded'});
   await waitForDocument('/about.html');
   await expectNoDocumentEntrance('reload has no route animation');
