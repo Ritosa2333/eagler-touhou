@@ -14,6 +14,7 @@ import {compareWorkNumbers,createLibraryProducts,groupMultiplayerWorks,multiplay
 import type {ProductId} from '../../../src/contracts/product-catalog.mts';
 import {bookArtwork} from './book-artwork';
 import {BOOK_PREFERENCES_EVENT,readBookPreference,writeBookPreference,stringArray,matchesBookQuery} from './book-preferences';
+import './book-game-strip.css';
 import './directory-page.css';
 
 const groupIcons = {versus:Swords, original:Monitor, fighting:Gamepad2, pc98:Disc3};

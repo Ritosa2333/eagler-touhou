@@ -1005,17 +1005,19 @@ test('room names replace the regular label and keep special gameplay rules visib
 });
 
 
-test('room quick filters distinguish playable seats, waiting rooms and spectators and update with the live directory', async () => {
+test('room filters combine checked options per facet and update with the live directory', async () => {
   const fullSeats = [...room().seats.slice(0, 2), {initial: 'S', online: true, ready: false, controlMode: 'normal'}];
   const rooms = [room({code: '1111'}), room({code: '2222', difficulty: 3, players: 3, seats: fullSeats}), room({code: '3333', phase: 'playing', players: 3, seats: fullSeats}), room({code: '4444', joinable: false})];
   const f = await fixture({selectedProduct: ''}).live(rooms);
   await mountLobby(f);
   const keys = () => all('.lobby-room-row').map(n => n.dataset.key);
-  const filter = async (id, facet = 'filter') => {
-    await click('.book-room-filter-trigger');
-    assert.equal(n('.book-room-filter-trigger').getAttribute('aria-expanded'),'true');
-    await click(`[data-room-${facet}="${id}"]`);
-    assert.equal(n('.book-room-filter-trigger').getAttribute('aria-expanded'),'false','Single-choice room filter closes after selection');
+  const option = (id, facet = 'status') => `[data-room-facet="${facet}"][data-room-value="${id}"]`;
+  const filter = async (id, facet) => {
+    const trigger = '.book-room-filter-trigger';
+    if (n(trigger).getAttribute('aria-expanded') === 'false') await click(trigger);
+    assert.equal(n(option(id, facet)).getAttribute('role'), 'menuitemcheckbox');
+    await click(option(id, facet));
+    assert.equal(n(trigger).getAttribute('aria-expanded'),'true','The menu stays open for more selections');
     await React.act(async()=>new Promise(resolve=>env.window.requestAnimationFrame(()=>env.window.requestAnimationFrame(resolve))));
   };
   assert.equal(keys().length, 4);
@@ -1023,15 +1025,23 @@ test('room quick filters distinguish playable seats, waiting rooms and spectator
   assert.deepEqual(keys(), ['th06mp-1111']);
   await filter('waiting');
   assert.deepEqual(keys(), ['th06mp-1111', 'th06mp-2222', 'th06mp-4444']);
+  assert.equal(n(option('open')).getAttribute('aria-checked'), 'true');
+  assert.equal(n(option('waiting')).getAttribute('aria-checked'), 'true');
+  await filter('open');
+  await filter('waiting');
   await filter('spectate');
   assert.deepEqual(keys(), ['th06mp-2222', 'th06mp-3333']);
   await filter('3', 'players');
   assert.deepEqual(keys(), ['th06mp-2222', 'th06mp-3333']);
   await filter('Lunatic', 'difficulty');
   assert.deepEqual(keys(), ['th06mp-2222']);
+  await filter('Normal', 'difficulty');
+  assert.deepEqual(keys(), ['th06mp-2222', 'th06mp-3333']);
+  await filter('Normal', 'difficulty');
   assert.equal(n('#roomCount').textContent, t('en', 'lobby.roomCount', {count:1}));
-  await filter('', 'difficulty');
-  await filter('', 'players');
+  await filter('all', 'difficulty');
+  await filter('all', 'players');
+  await filter('all');
   await filter('open');
   await f.receive(rooms.slice(1));
   assert.equal(all('.lobby-room-exiting').length,1);
@@ -1042,9 +1052,26 @@ test('room quick filters distinguish playable seats, waiting rooms and spectator
   await filter('Lunatic', 'difficulty');
   await filter('3', 'players');
   await click('#emptyAction');
-  await click('.book-room-filter-trigger');
-  assert.equal(n('[data-room-filter="all"]').getAttribute('aria-checked'), 'true');
-  for (const facet of ['difficulty', 'players']) assert.equal(n(`[data-room-${facet}=""]`).getAttribute('aria-checked'), 'true');
+  if (n('.book-room-filter-trigger').getAttribute('aria-expanded') === 'false') await click('.book-room-filter-trigger');
+  for (const facet of ['status', 'mode', 'difficulty', 'players']) assert.equal(n(option('all', facet)).getAttribute('aria-checked'), 'true');
   assert.equal(keys().length, 3);
   assert.equal(f.navigations.length, 0, 'filtering never enters a room');
+});
+
+test('PvP includes versus and fighting; PvE includes the remaining works', async () => {
+  const games = ['th01', 'th03', 'th06', 'th075', 'th09', 'th19'];
+  const f = await fixture({selectedProduct:'', host:{games}}).live(games.map(game =>
+    room({product:`${game}mp`, capacity:game === 'th06' ? 3 : 2})));
+  await mountLobby(f);
+  const visible = () => all('.lobby-room-row').map(row => row.dataset.key.split('-')[0]).sort();
+  const mode = name => click(`[data-room-facet="mode"][data-room-value="${name}"]`);
+  await click('.book-room-filter-trigger');
+  await mode('pvp');
+  assert.deepEqual(visible(), ['th03mp', 'th075mp', 'th09mp', 'th19mp']);
+  await mode('pve');
+  assert.deepEqual(visible(), games.map(game => `${game}mp`).sort());
+  await mode('pvp');
+  assert.deepEqual(visible(), ['th01mp', 'th06mp']);
+  await mode('all');
+  assert.deepEqual(visible(), games.map(game => `${game}mp`).sort());
 });

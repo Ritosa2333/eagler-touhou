@@ -58,6 +58,18 @@ try {
       [option.dataset.game, option.hasAttribute('data-disabled'), option.getAttribute('aria-checked')])]), gameOption),
   [['versus','对战',[['th03',true,'false'], ['th09',false,'true'], ['th19',true,'false']]],
     ['fighting','格斗',[['th075',true,'false']]]]);
+  const checkHorizontalGames = async () => {
+    const boxes = await page.$$eval(gameOption, options => options.map(option => {
+      const {x, y} = option.getBoundingClientRect();
+      return {x, y};
+    }));
+    assert.ok(boxes.every(({x,y}, index) => y === boxes[0].y && (index === 0 || x > boxes[index - 1].x)));
+    assert.equal(await page.$eval('.rating-game-menu', node => {
+      const {left,right} = node.getBoundingClientRect();
+      return left >= 0 && right <= innerWidth;
+    }), true);
+  };
+  await checkHorizontalGames();
   await page.keyboard.press('Escape');
   assert.equal(await page.$eval(header, h => h.textContent.trim()), '惯用机体');
   assert.deepEqual(await page.$$eval(rows, found => found.map(row =>
@@ -86,6 +98,10 @@ try {
     assert.equal(await page.$eval('.rating-table-wrap', node => node.scrollWidth > node.clientWidth), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   }
+  await page.click('.rating-game-picker');
+  await page.waitForSelector(gameOption, {visible:true});
+  await checkHorizontalGames();
+  await page.keyboard.press('Escape');
   await page.goto(new URL('ratings.html?lang=zh-CN&character=0', base), {waitUntil:'domcontentloaded'});
   await page.waitForSelector('.rating-layout[data-character-board] .rating-character-score');
   await checkAvatar(scope + ' ' + avatar, 22);

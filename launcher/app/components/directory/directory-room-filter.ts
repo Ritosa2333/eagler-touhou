@@ -1,10 +1,17 @@
 import {directoryRoomCanEnter, directoryRoomSpectatorEntry, directoryRoomState, type DirectoryRoom} from '../../services/lobby-directory';
 import type {Th09Rating} from '../../services/th09-ratings';
-import {PRODUCT_IDS, isMultiplayerProductId, multiplayerConfigForProduct} from '../../../src/contracts/product-catalog.mts';
+import {PRODUCT_IDS, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct} from '../../../src/contracts/product-catalog.mts';
+import {bookGameKind} from '../launcher/products';
 
-export const directoryRoomStatuses = ['all', 'open', 'waiting', 'spectate'] as const;
-export type DirectoryRoomFiltersValue = {status: typeof directoryRoomStatuses[number]; difficulty: string; players: string};
-export const defaultDirectoryRoomFilters: DirectoryRoomFiltersValue = {status:'all', difficulty:'', players:''};
+export const directoryRoomStatuses = ['open', 'waiting', 'spectate'] as const;
+export const directoryRoomModes = ['pve', 'pvp'] as const;
+export type DirectoryRoomFiltersValue = {
+  status: readonly typeof directoryRoomStatuses[number][];
+  mode: readonly typeof directoryRoomModes[number][];
+  difficulty: readonly string[];
+  players: readonly number[];
+};
+export const defaultDirectoryRoomFilters: DirectoryRoomFiltersValue = {status:[], mode:[], difficulty:[], players:[]};
 export const directoryRoomDifficulties = [...new Set(PRODUCT_IDS.filter(isMultiplayerProductId).flatMap(product =>
   multiplayerConfigForProduct(product)?.difficulties ?? []))];
 
@@ -13,15 +20,21 @@ export function directoryRoomDifficulty(room: DirectoryRoom) {
   return policy?.inGameSelection && room.product !== 'th03mp' ? '' : policy?.difficulties[room.difficulty] ?? '';
 }
 
-export function hasDirectoryRoomFilters({status, difficulty, players}: DirectoryRoomFiltersValue) {
-  return status !== 'all' || difficulty !== '' || players !== '';
+export function hasDirectoryRoomFilters({status, mode, difficulty, players}: DirectoryRoomFiltersValue) {
+  return !!(status.length || mode.length || difficulty.length || players.length);
 }
 
-export function filterDirectoryRooms(rooms: readonly DirectoryRoom[], {status, difficulty, players}: DirectoryRoomFiltersValue) {
-  return rooms.filter(room => (!difficulty || directoryRoomDifficulty(room) === difficulty) &&
-    (!players || room.players === Number(players)) &&
-    (status === 'all' || (status === 'open' ? directoryRoomState(room) === 'recruiting' && directoryRoomCanEnter(room)
-      : status === 'waiting' ? room.phase === 'lobby' : directoryRoomSpectatorEntry(room))));
+function directoryRoomMode(room: DirectoryRoom) {
+  const kind = bookGameKind(gameIdForProduct(room.product));
+  return kind === 'versus' || kind === 'fighting' ? 'pvp' : 'pve';
+}
+
+export function filterDirectoryRooms(rooms: readonly DirectoryRoom[], {status, mode, difficulty, players}: DirectoryRoomFiltersValue) {
+  return rooms.filter(room => (!mode.length || mode.includes(directoryRoomMode(room))) &&
+    (!difficulty.length || difficulty.includes(directoryRoomDifficulty(room))) &&
+    (!players.length || players.includes(room.players)) &&
+    (!status.length || status.some(item => item === 'open' ? directoryRoomState(room) === 'recruiting' && directoryRoomCanEnter(room)
+      : item === 'waiting' ? room.phase === 'lobby' : directoryRoomSpectatorEntry(room))));
 }
 
 export function orderTh09OpenRooms(rooms: DirectoryRoom[], players: Readonly<Record<string, Th09Rating>>, mine?: Th09Rating) {

@@ -2152,6 +2152,7 @@
   "account_documentTitle": "ログイン / 新規登録 ~ EAGLER TOUHOU",
   "directory_filters": "部屋を絞り込み",
   "directory_filter_all": "すべて",
+  "directory_filterMode": "モード",
   "directory_filter_open": "空席あり",
   "directory_filter_waiting": "開始前",
   "directory_filter_spectate": "観戦可能",

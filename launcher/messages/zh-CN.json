@@ -2152,6 +2152,7 @@
   "account_documentTitle": "登录 / 注册 ~ EAGLER TOUHOU",
   "directory_filters": "筛选房间",
   "directory_filter_all": "全部房间",
+  "directory_filterMode": "模式",
   "directory_filter_open": "有空位",
   "directory_filter_waiting": "等待开始",
   "directory_filter_spectate": "可旁观",

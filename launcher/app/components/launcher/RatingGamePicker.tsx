@@ -7,6 +7,7 @@ import {bookGameArtwork} from './book-artwork';
 import {BookMultiplayerMenuGroup} from './BookMultiplayerMenuGroup';
 import {BookWorkNumber} from './BookWorkNumber';
 import {compareWorkNumbers, groupMultiplayerWorks} from './products';
+import './book-game-strip.css';
 import './rating-game-picker.css';
 
 const ratingGames = ['th03', 'th075', 'th09', 'th19'] as const satisfies readonly GameId[];
@@ -16,7 +17,7 @@ const groups = groupMultiplayerWorks(ratingGames.map(gameId => ({gameId, ...PROD
 export function RatingGamePicker({current}: {current: RatingGame}) {
   const {t} = useLocale();
   const label = t('lobby.game');
-  return <ActionMenu label={label} variant="selection" align="start" trigger={
+  return <ActionMenu label={label} variant="selection" align="start" minimumWidth={252} className="rating-game-menu" trigger={
     <Button variant="outline" size="sm" className="rating-game-picker"
       aria-label={`${label}: ${PRODUCT_GAMES[current].title}`}>
       <RatingGameIcon game={current} />
@@ -24,17 +25,20 @@ export function RatingGamePicker({current}: {current: RatingGame}) {
       <ChevronDown aria-hidden="true" />
     </Button>
   }>
-    <ActionMenuRadioGroup value={current}>
+    <ActionMenuRadioGroup value={current} className="book-game-strip rating-game-strip">
       {groups.map(({id, products}) => <BookMultiplayerMenuGroup key={id} group={id} data-rating-category={id}>
-        {products.map(({gameId, title}) => <ActionMenuRadioItem key={gameId} value={gameId} data-game={gameId} disabled={gameId !== current}>
-          <RatingGameIcon game={gameId} />
-          <span>{title}</span>
-        </ActionMenuRadioItem>)}
+        <div className="rating-game-tiles">
+          {products.map(({gameId, title, number}) => <ActionMenuRadioItem key={gameId} value={gameId} data-game={gameId}
+            className="rating-game-tile" showIndicator={false} aria-label={title} title={title} disabled={gameId !== current}>
+            <RatingGameIcon game={gameId} size={32} />
+            <BookWorkNumber gameId={gameId} number={number} />
+          </ActionMenuRadioItem>)}
+        </div>
       </BookMultiplayerMenuGroup>)}
     </ActionMenuRadioGroup>
   </ActionMenu>;
 }
 
-function RatingGameIcon({game}: {game: RatingGame}) {
-  return <img className="rating-game-picker-icon" src={bookGameArtwork(game)} width={22} height={22} alt="" />;
+function RatingGameIcon({game, size = 22}: {game: RatingGame; size?: number}) {
+  return <img className="rating-game-picker-icon" src={bookGameArtwork(game)} width={size} height={size} alt="" />;
 }

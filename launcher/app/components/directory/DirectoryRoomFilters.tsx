@@ -1,9 +1,12 @@
-import {ListFilter} from 'lucide-react';
+import {Check, ListFilter} from 'lucide-react';
 import {useLocale} from '../../i18n';
 import type {DirectoryRoom} from '../../services/lobby-directory';
-import {ActionMenu, ActionMenuLabel, ActionMenuRadioGroup, ActionMenuRadioItem} from '../../ui/action-menu';
+import {ActionMenu, ActionMenuCheckboxItem, ActionMenuGroup, ActionMenuLabel} from '../../ui/action-menu';
 import {BookButton} from '../launcher/BookButton';
-import {directoryRoomDifficulties, directoryRoomStatuses, filterDirectoryRooms, hasDirectoryRoomFilters, type DirectoryRoomFiltersValue} from './directory-room-filter';
+import {directoryRoomDifficulties, directoryRoomModes, directoryRoomStatuses, filterDirectoryRooms, hasDirectoryRoomFilters, type DirectoryRoomFiltersValue} from './directory-room-filter';
+
+type Facet = keyof DirectoryRoomFiltersValue;
+const playerCounts = [0, 1, 2, 3];
 
 export function DirectoryRoomFilters({rooms, value, onChange}: {
   rooms: readonly DirectoryRoom[];
@@ -11,36 +14,41 @@ export function DirectoryRoomFilters({rooms, value, onChange}: {
   onChange(value: DirectoryRoomFiltersValue): void;
 }) {
   const {t} = useLocale();
-  const difficulties = ['', ...directoryRoomDifficulties];
-  const playerCounts = ['0', '1', '2', '3'];
   const label = t('directory.filters');
-  const count = (next: DirectoryRoomFiltersValue) => <span className="book-room-filter-count">{filterDirectoryRooms(rooms,next).length}</span>;
-  const change = <K extends keyof DirectoryRoomFiltersValue>(key: K, next: string, options: readonly DirectoryRoomFiltersValue[K][]) => {
-    const selected = options.find(option => option === next);
-    if (selected !== undefined && selected !== value[key]) onChange({...value, [key]:selected});
-  };
+  function facet<K extends Facet>(key: K, heading: string, options: readonly DirectoryRoomFiltersValue[K][number][],
+    text: (option: DirectoryRoomFiltersValue[K][number]) => string, allLabel = t('lobby.all')) {
+    const selected: readonly DirectoryRoomFiltersValue[K][number][] = value[key];
+    const forOption = (option: DirectoryRoomFiltersValue[K][number] | null) => {
+      const checked = option === null ? !selected.length : selected.includes(option);
+      const next = option === null ? [] : checked ? selected.filter(item => item !== option) : [...selected, option];
+      const count = filterDirectoryRooms(rooms, {...value, [key]: option === null ? [] : [option]}).length;
+      return <ActionMenuCheckboxItem key={option ?? 'all'} checked={checked} showIndicator={false}
+        className="book-room-filter-option" data-room-facet={key} data-room-value={option ?? 'all'}
+        onSelect={event => event.preventDefault()} onCheckedChange={() => onChange({...value, [key]: next})}>
+        <span className="book-room-filter-box" aria-hidden="true">{checked && <Check />}</span>
+        <span>{option === null ? allLabel : text(option)}</span>
+        <span className="book-room-filter-count">{count}</span>
+      </ActionMenuCheckboxItem>;
+    };
+    return <ActionMenuGroup className="book-room-filter-facet" aria-label={heading}>
+      <ActionMenuLabel className="book-room-filter-label">{heading}</ActionMenuLabel>
+      {[forOption(null), ...options.map(forOption)]}
+    </ActionMenuGroup>;
+  }
   return <ActionMenu variant="selection" align="start" sideOffset={10} minimumWidth={0} label={label}
     className="book-room-filter-popup" trigger={<BookButton variant="toolbar" type="button" className="book-room-filter-trigger px-4 text-xs"
       aria-label={label} title={label} data-active={hasDirectoryRoomFilters(value)}><ListFilter aria-hidden="true"/><span>{label}</span></BookButton>}>
     <div className="book-room-filter-groups">
-      <ActionMenuRadioGroup aria-label={t('lobby.state')} value={value.status} onValueChange={next=>change('status',next,directoryRoomStatuses)}>
-        <ActionMenuLabel className="book-room-filter-label">{t('lobby.state')}</ActionMenuLabel>
-        {directoryRoomStatuses.map(status=><ActionMenuRadioItem key={status} value={status} data-room-filter={status}>
-          {t(`directory.filter.${status}`)}{count({...value,status})}
-        </ActionMenuRadioItem>)}
-      </ActionMenuRadioGroup>
-      <ActionMenuRadioGroup aria-label={t('lobby.difficulty')} value={value.difficulty} onValueChange={next=>change('difficulty',next,difficulties)}>
-        <ActionMenuLabel className="book-room-filter-label">{t('lobby.difficulty')}</ActionMenuLabel>
-        {difficulties.map(difficulty=><ActionMenuRadioItem key={difficulty} value={difficulty} data-room-difficulty={difficulty}>
-          {difficulty || t('lobby.all')}{count({...value,difficulty})}
-        </ActionMenuRadioItem>)}
-      </ActionMenuRadioGroup>
-      <ActionMenuRadioGroup aria-label={t('lobby.capacity')} value={value.players} onValueChange={next=>change('players',next,['',...playerCounts])}>
-        <ActionMenuLabel className="book-room-filter-label">{t('lobby.capacity')}</ActionMenuLabel>
-        {['',...playerCounts].map(players=><ActionMenuRadioItem key={players} value={players} data-room-players={players}>
-          {players || t('lobby.all')}{count({...value,players})}
-        </ActionMenuRadioItem>)}
-      </ActionMenuRadioGroup>
+      <div className="book-room-filter-column book-room-filter-status-mode">
+        {facet('status', t('lobby.state'), directoryRoomStatuses, status => t(`directory.filter.${status}`), t('directory.filter.all'))}
+        {facet('mode', t('directory.filterMode'), directoryRoomModes, mode => mode === 'pvp' ? 'PvP' : 'PvE')}
+      </div>
+      <div className="book-room-filter-column">
+        {facet('difficulty', t('lobby.difficulty'), directoryRoomDifficulties, difficulty => difficulty)}
+      </div>
+      <div className="book-room-filter-column">
+        {facet('players', t('lobby.capacity'), playerCounts, String)}
+      </div>
     </div>
   </ActionMenu>;
 }

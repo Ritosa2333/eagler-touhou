@@ -2152,6 +2152,7 @@
   "account_documentTitle": "Log in / Sign up ~ EAGLER TOUHOU",
   "directory_filters": "Filter rooms",
   "directory_filter_all": "All rooms",
+  "directory_filterMode": "Mode",
   "directory_filter_open": "Open seats",
   "directory_filter_waiting": "Waiting",
   "directory_filter_spectate": "Spectatable",

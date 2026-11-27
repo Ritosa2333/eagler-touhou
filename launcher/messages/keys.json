@@ -9021,6 +9021,10 @@
     "id": "directory_filters",
     "params": []
   },
+  "directory.filterMode": {
+    "id": "directory_filterMode",
+    "params": []
+  },
   "directory.filter.all": {
     "id": "directory_filter_all",
     "params": []

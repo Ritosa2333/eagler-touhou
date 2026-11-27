@@ -107,8 +107,17 @@ try {
   await openFilters(2);
   await settle();
   assert.notEqual((await style(filterTrigger)).background, idleFilter.background, 'an open filter is highlighted');
-  await page.waitForSelector('[data-room-filter="open"]', {visible:true});
-  await page.click('[data-room-filter="open"]');
+  const openOption = '[data-room-facet="status"][data-room-value="open"]';
+  const waitingOption = '[data-room-facet="status"][data-room-value="waiting"]';
+  await page.waitForSelector(openOption, {visible:true});
+  await page.click(openOption);
+  await page.click(waitingOption);
+  assert.equal(await page.$eval(filterTrigger, el => el.getAttribute('aria-expanded')), 'true');
+  for (const selector of [openOption, waitingOption]) {
+    assert.equal(await page.$eval(selector, el => el.getAttribute('aria-checked')), 'true');
+  }
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.book-room-filter-popup', {hidden:true});
   assert.equal(await page.$eval(filterTrigger, el => el.dataset.active), 'true');
   await page.mouse.move(0, 0); await settle();
   assert.notEqual((await style(filterTrigger)).background, idleFilter.background, 'an applied filter stays highlighted after closing');
