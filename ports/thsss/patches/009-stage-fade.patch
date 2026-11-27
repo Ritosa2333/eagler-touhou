@@ -1,0 +1,104 @@
+diff --git a/Shooting/BackgroundTransitionIn.cs b/Shooting/BackgroundTransitionIn.cs
+--- a/Shooting/BackgroundTransitionIn.cs
++++ b/Shooting/BackgroundTransitionIn.cs
+@@ -1,15 +1,9 @@
+-using System;
+-using System.Collections.Generic;
+ using System.Drawing;
+ 
+ namespace Shooting;
+ 
+ internal class BackgroundTransitionIn : BaseObject
+ {
+-	private readonly List<Particle> stars = new List<Particle>();
+-
+-	private int loadingLight;
+-
+ 	public int Delay { get; set; }
+ 
+ 	public BackgroundTransitionIn(StageDataPackage StageData)
+@@ -27,65 +21,9 @@
+ 	public override void Ctrl()
+ 	{
+ 		Time++;
+-		if (Time <= Delay)
+-		{
+-			if (Time < 50)
+-			{
+-				loadingLight += 5;
+-			}
+-			else if (Time > 60)
+-			{
+-				if (Time % 60 >= 30)
+-				{
+-					loadingLight += 4;
+-				}
+-				else
+-				{
+-					loadingLight -= 4;
+-				}
+-			}
+-			if (loadingLight < 0)
+-			{
+-				loadingLight = 0;
+-			}
+-			else if (loadingLight > 255)
+-			{
+-				loadingLight = 255;
+-			}
+-			Particle particle = new Particle(StageData, "Star", new PointF(StageData.Ran.Next(400, 640), StageData.Ran.Next(440, 580)), StageData.Ran.Next(10, 20) / 10, -Math.PI / 2.0 - (double)((float)StageData.Ran.Next(1, 5) / 10f));
+-			particle.Active = true;
+-			particle.Scale = (float)StageData.Ran.Next(25, 70) / 100f;
+-			particle.LifeTime = 70;
+-			EffectList.Remove(particle);
+-			stars.Add(particle);
+-			for (int num = stars.Count - 1; num >= 0; num--)
+-			{
+-				stars[num].Ctrl();
+-				if (stars[num].Time > stars[num].LifeTime)
+-				{
+-					stars.RemoveAt(num);
+-				}
+-			}
+-		}
+-		else if (stars.Count > 0)
+-		{
+-			stars.Clear();
+-		}
+ 		if (Time > Delay)
+ 		{
+ 			TransparentValueF -= 255 / (LifeTime - Delay) + 1;
+ 		}
+ 	}
+-
+-	public void ShowLoading()
+-	{
+-		if (Time <= Delay)
+-		{
+-			for (int i = 0; i < stars.Count; i++)
+-			{
+-				stars[i].Show();
+-			}
+-			SpriteMain.Draw2D(TextureObjectDictionary["NowLoading-0"], 1f, 0f, new Point(520, 440), loadingLight);
+-		}
+-	}
+ }
+
+diff --git a/Shooting/BaseStage.cs b/Shooting/BaseStage.cs
+--- a/Shooting/BaseStage.cs
++++ b/Shooting/BaseStage.cs
+@@ -561,14 +561,6 @@
+ 		{
+ 			x.Show();
+ 		});
+-		for (int j = 0; j < Background.BackgroundList.Count; j++)
+-		{
+-			BackgroundTransitionIn backgroundTransitionIn = Background.BackgroundList[j] as BackgroundTransitionIn;
+-			if (backgroundTransitionIn != null)
+-			{
+-				backgroundTransitionIn.ShowLoading();
+-			}
+-		}
+ 		SpriteMain.End();
+ 		GlobalData.ScreenTexMan.End();
+ 		SpriteMain.Begin((SpriteFlags)16);
