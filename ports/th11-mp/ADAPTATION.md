@@ -179,6 +179,8 @@ MP 在完整原生事务之间生成高刷画面，独立 SimulationCadence 保�
 
 ## 运行验收记录
 
+2026-11-23 multiplayer：右侧 HUD 面板在高刷呈现下的中段滑动已修复。面板三段合成使用独立时钟，作者位移只生效一次，全部显示权重下保持在原始落点，普通精灵外推不受影响，见[静止合成记录](docs/records/2026-11-23-hud-panel-static-composition.md)。
+
 2026-10-28 multiplayer：高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。
 
 2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。

@@ -48,6 +48,34 @@ execFileSync('python',[emcc,
   '-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-o',resolve(out,'multiplayer-presentation-check.cjs'),
 ],{env,cwd:root,stdio:'inherit',windowsHide:true});
 execFileSync(process.execPath,[resolve(out,'multiplayer-presentation-check.cjs')],{env,cwd:root,stdio:'inherit',windowsHide:true});
+// The right-hand HUD panel is one static artwork composed from three abutting
+// bands. Their placement offsets must never be scaled by the display weight.
+execFileSync('python',[emcc,
+  resolve(root,'portable/multiplayer/hud-background-check.cpp'),
+  resolve(root,'web/cpp/game/AnmRenderer.cpp'),
+  resolve(root,'web/cpp/game/AnmPresentation.cpp'),
+  resolve(root,'web/cpp/game/AnmGeometry.cpp'),
+  resolve(root,'web/cpp/game/AnmProjection.cpp'),
+  resolve(root,'web/cpp/game/GraphicsMath.cpp'),
+  '-std=c++17','-O1','-ffp-contract=off','-fno-strict-aliasing','-DTH11_MULTIPLAYER=1',
+  '-I'+resolve(root,'web/cpp/game'),'-I'+resolve(root,'web/cpp'),'-I'+resolve(root,'../../common/include'),
+  '-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-o',resolve(out,'hud-background-check.cjs'),
+],{env,cwd:root,stdio:'inherit',windowsHide:true});
+execFileSync(process.execPath,[resolve(out,'hud-background-check.cjs')],{env,cwd:root,stdio:'inherit',windowsHide:true});
+// The panel composition must not disturb any other draw: ordinary sprites keep
+// interpolating while the composed bands stay pinned.
+execFileSync('python',[emcc,
+  resolve(root,'portable/multiplayer/hud-panel-isolation-check.cpp'),
+  resolve(root,'web/cpp/game/AnmRenderer.cpp'),
+  resolve(root,'web/cpp/game/AnmPresentation.cpp'),
+  resolve(root,'web/cpp/game/AnmGeometry.cpp'),
+  resolve(root,'web/cpp/game/AnmProjection.cpp'),
+  resolve(root,'web/cpp/game/GraphicsMath.cpp'),
+  '-std=c++17','-O1','-ffp-contract=off','-fno-strict-aliasing','-DTH11_MULTIPLAYER=1',
+  '-I'+resolve(root,'web/cpp/game'),'-I'+resolve(root,'web/cpp'),'-I'+resolve(root,'../../common/include'),
+  '-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-o',resolve(out,'hud-panel-isolation-check.cjs'),
+],{env,cwd:root,stdio:'inherit',windowsHide:true});
+execFileSync(process.execPath,[resolve(out,'hud-panel-isolation-check.cjs')],{env,cwd:root,stdio:'inherit',windowsHide:true});
 execFileSync('python',[emcc,
   resolve(root,'portable/multiplayer/frame-schedule.cpp'),
   '-std=c++17','-O2','-UNDEBUG','-DTH11_MULTIPLAYER=1','-ffp-contract=off','-fno-strict-aliasing',
