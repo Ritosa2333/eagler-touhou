@@ -1,0 +1,7 @@
+{"correctness":true,"strings":23}
+{"round":0,"method":"pinned-fml-source","calls":23000,"wallMs":460.190700,"cpuMs":468.750000}
+{"round":0,"method":"windows-api","calls":23000,"wallMs":2.066000,"cpuMs":0.000000}
+{"round":1,"method":"windows-api","calls":23000,"wallMs":2.581800,"cpuMs":0.000000}
+{"round":1,"method":"pinned-fml-source","calls":23000,"wallMs":498.959000,"cpuMs":500.000000}
+{"round":2,"method":"pinned-fml-source","calls":23000,"wallMs":551.447600,"cpuMs":484.375000}
+{"round":2,"method":"windows-api","calls":23000,"wallMs":2.513800,"cpuMs":15.625000}

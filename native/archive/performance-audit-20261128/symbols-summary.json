@@ -1,0 +1,211 @@
+{
+  "scope": "Offline resolution of previously recorded Windows stack addresses. No live process suspension, UI activation, engine replacement or SDK upgrade.",
+  "sourceCommit": "cd36de4a359e561a79c84ecfc220789ff5ba4ee5",
+  "input": "exit-live-stack-full.json",
+  "sampleIndex": 4,
+  "totalRecordedSamples": 6,
+  "resolvedEngineFrames": [
+    {
+      "offset": "3a960",
+      "symbol": "std::wstring_convert<std::codecvt_utf8_utf16<char16_t,1114111,0>,char16_t,std::allocator<char16_t>,std::allocator<char> >::wstring_convert",
+      "displacement": 182,
+      "symbolBytes": 236,
+      "sourceFile": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\flutter\\third_party\\depot_tools\\win_toolchain\\vs_files\\27370823e7\\VC\\Tools\\MSVC\\14.34.31933\\include\\xlocbuf",
+      "line": 319
+    },
+    {
+      "offset": "3aa34",
+      "symbol": "fml::Utf8ToUtf16",
+      "displacement": 47,
+      "symbolBytes": 138,
+      "sourceFile": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\flutter\\fml\\string_conversion.cc",
+      "line": 44
+    },
+    {
+      "offset": "3acb4",
+      "symbol": "std::wstring_convert<std::codecvt_utf8_utf16<char16_t,1114111,0>,char16_t,std::allocator<char16_t>,std::allocator<char> >::_Init",
+      "displacement": 60,
+      "symbolBytes": 171,
+      "sourceFile": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\flutter\\third_party\\depot_tools\\win_toolchain\\vs_files\\27370823e7\\VC\\Tools\\MSVC\\14.34.31933\\include\\xlocbuf",
+      "line": 308
+    },
+    {
+      "offset": "3ad3a",
+      "symbol": "std::locale::locale<std::codecvt_utf8_utf16<char16_t,1114111,0> >",
+      "displacement": 22,
+      "symbolBytes": 102,
+      "sourceFile": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\flutter\\third_party\\depot_tools\\win_toolchain\\vs_files\\27370823e7\\VC\\Tools\\MSVC\\14.34.31933\\include\\xlocale",
+      "line": 252
+    },
+    {
+      "offset": "90db24",
+      "symbol": "ui::AXPlatformNodeBase::GetString16Attribute",
+      "displacement": 38,
+      "symbolBytes": 72,
+      "sourceFile": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\flutter\\third_party\\accessibility\\ax\\platform\\ax_platform_node_base.cc",
+      "line": 448
+    },
+    {
+      "offset": "915c9f",
+      "symbol": "ui::AXNodeData::GetString16Attribute",
+      "displacement": 127,
+      "symbolBytes": 225,
+      "sourceFile": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\flutter\\third_party\\accessibility\\ax\\ax_node_data.cc",
+      "line": 359
+    },
+    {
+      "offset": "946e33",
+      "symbol": "ui::AXPlatformNodeWin::get_accValue",
+      "displacement": 123,
+      "symbolBytes": 147,
+      "sourceFile": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\flutter\\third_party\\accessibility\\ax\\platform\\ax_platform_node_win.cc",
+      "line": 1108
+    },
+    {
+      "offset": "94738a",
+      "symbol": "ui::AXPlatformNodeWin::GetValueAttributeAsBstr",
+      "displacement": 1342,
+      "symbolBytes": 1970,
+      "sourceFile": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\flutter\\third_party\\accessibility\\ax\\platform\\ax_platform_node_win.cc",
+      "line": 5383
+    },
+    {
+      "offset": "94f45b",
+      "symbol": "base::UTF8ToUTF16",
+      "displacement": 64,
+      "symbolBytes": 129,
+      "sourceFile": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\flutter\\third_party\\accessibility\\base\\string_utils.cc",
+      "line": 69
+    },
+    {
+      "offset": "f69d82",
+      "symbol": "std::locale::_Locimp::_Locimp",
+      "displacement": 106,
+      "symbolBytes": 121,
+      "sourceFile": "D:\\a\\_work\\1\\s\\src\\vctools\\crt\\github\\stl\\inc\\xlocale",
+      "line": 190
+    },
+    {
+      "offset": "f6a0de",
+      "symbol": "std::locale::_Locimp::_New_Locimp",
+      "displacement": 42,
+      "symbolBytes": 49,
+      "sourceFile": "D:\\a\\_work\\1\\s\\src\\vctools\\crt\\github\\stl\\src\\locale0.cpp",
+      "line": 179
+    },
+    {
+      "offset": "f6c65f",
+      "symbol": "std::locale::_Locimp::_Locimp_ctor",
+      "displacement": 71,
+      "symbolBytes": 215,
+      "sourceFile": "D:\\a\\_work\\1\\s\\src\\vctools\\crt\\github\\stl\\src\\locale.cpp",
+      "line": 84
+    },
+    {
+      "offset": "f6cb87",
+      "symbol": "std::locale::_Locimp::_Makeloc",
+      "displacement": 1175,
+      "symbolBytes": 1262,
+      "sourceFile": "D:\\a\\_work\\1\\s\\src\\vctools\\crt\\github\\stl\\src\\locale.cpp",
+      "line": 73
+    },
+    {
+      "offset": "f6e3eb",
+      "symbol": "_Getdateorder",
+      "displacement": 39,
+      "symbolBytes": 87,
+      "sourceFile": "D:\\a\\_work\\1\\s\\src\\vctools\\crt\\github\\stl\\src\\xdateord.cpp",
+      "line": 16
+    },
+    {
+      "offset": "f89bd2",
+      "symbol": "std::locale::_Locimp::_Makexloc",
+      "displacement": 1598,
+      "symbolBytes": 1995,
+      "sourceFile": "D:\\a\\_work\\1\\s\\src\\vctools\\crt\\github\\stl\\src\\xlocale.cpp",
+      "line": 43
+    }
+  ],
+  "engineSha256": "81d227453d4e34da29e399c62d615091ffc712e54fb2ec20010c1c95487e90b6",
+  "pdbSha256": "1e1e953dfa004441a177fca99e8bb4f2720f75c272ce02df9e6a004dd18bb5e1",
+  "codeView": {
+    "guid": "d7878747-e1df-406d-9b77-ff1459176f1a",
+    "age": 1,
+    "pdb": "C:\\b\\s\\w\\ir\\cache\\builder\\engine\\src\\out\\ci\\host_release\\flutter_windows.dll.pdb"
+  },
+  "exactPdbMatch": true,
+  "exportFallbackAllowed": false,
+  "sameEngineAsCurrentPreview": true,
+  "currentPreviewAot": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "unchangedProductSourceFiles": 113,
+  "conversionSource": {
+    "inputFile": "native/assets/game_catalog.json",
+    "inputSha256": "6fd277e99e9685788cbe90417fdb83ebbc8b26607afdadf6403bdb7031ac130a",
+    "strings": 23,
+    "expectedUtf16": "Python strict UTF-8 and UTF-16LE codecs",
+    "fmlSource": "D:\\workspace\\eagler\\toolchains\\flutter-stable\\engine\\src\\flutter\\fml\\string_conversion.cc",
+    "fmlSourceSha256": "535f9bd8f93932de33a166dc0be76bff0848d2dff63d1d1c778c432dbbb6c0ab",
+    "scope": "Pinned FML source compiled independently with local MSVC; component comparison, not a modified production engine or whole-app performance test"
+  },
+  "conversionResults": [
+    {
+      "correctness": true,
+      "strings": 23
+    },
+    {
+      "round": 0,
+      "method": "pinned-fml-source",
+      "calls": 23000,
+      "wallMs": 460.1907,
+      "cpuMs": 468.75
+    },
+    {
+      "round": 0,
+      "method": "windows-api",
+      "calls": 23000,
+      "wallMs": 2.066,
+      "cpuMs": 0.0
+    },
+    {
+      "round": 1,
+      "method": "windows-api",
+      "calls": 23000,
+      "wallMs": 2.5818,
+      "cpuMs": 0.0
+    },
+    {
+      "round": 1,
+      "method": "pinned-fml-source",
+      "calls": 23000,
+      "wallMs": 498.959,
+      "cpuMs": 500.0
+    },
+    {
+      "round": 2,
+      "method": "pinned-fml-source",
+      "calls": 23000,
+      "wallMs": 551.4476,
+      "cpuMs": 484.375
+    },
+    {
+      "round": 2,
+      "method": "windows-api",
+      "calls": 23000,
+      "wallMs": 2.5138,
+      "cpuMs": 15.625
+    }
+  ],
+  "componentScope": "Independent /O2 /MT C++20 executable, local MSVC14.50. Official engine PDB records MSVC14.34; this comparison is not a production engine A/B or UI FPS measurement.",
+  "conclusions": [
+    "The sampled engine stack contains MSAA get_accValue and UTF8ToUTF16/Utf8ToUtf16, with converter and locale construction",
+    "All15resolved addresses fall inside matched PDB symbol ranges",
+    "23realcatalog/empty strings matched independent Python UTF16 expectations",
+    "The prior nearest exported GPU-related labels do not identify these private functions"
+  ],
+  "remaining": [
+    "Sampling6stacks cannot quantify a CPU-time share",
+    "Historical snapshot does not contain its own DLL hash; current SDK and distributed engine files match, exact CodeView/PDB matching is verified",
+    "Query sender and sustained foreground correlation remain unconfirmed",
+    "No production engine modification or whole-app performance improvement is claimed"
+  ]
+}

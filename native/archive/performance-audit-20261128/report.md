@@ -169,6 +169,23 @@ Dart AOT 读取两份已有真实资源，分别匹配固定版 th07 清单和�
 
 两轮从关闭请求到引擎销毁标记分别为 141 和 266 ms，进程句柄均进入终止状态，没有强制结束测试进程。它们补充了当前 AOT 的正常退出样本，间歇性的驱动释放问题继续保留；未改动共享图形资源的生命周期，也没有操作原有预览窗口。[内核终止记录一](client-host-result.json) | [记录二](client-thread-result.json)
 
+## 引擎调用栈的离线符号定位
+
+SDK 自带的 Release PDB 可用于解析此前保留的地址。当前 SDK、预览包和原运行目录的引擎 DLL 均为 SHA-256 `81d227453d4e34da29e399c62d615091ffc712e54fb2ec20010c1c95487e90b6`。DbgHelp 开启严格符号匹配，实际加载 PDB，CodeView GUID 为 `d7878747-e1df-406d-9b77-ff1459176f1a`、Age 为 1；没有回退到导出名称。15 个地址均落在解析函数的范围内。[身份与结果](symbols-summary.json) | [解析入口](symbols-resolve-engine.cpp)
+
+六个既有样本中的第 5 个包含 `AXPlatformNodeWin::get_accValue`、`GetValueAttributeAsBstr`、`GetString16Attribute`、`UTF8ToUTF16` 和 `fml::Utf8ToUtf16`，随后进入转换器与 `std::locale` 构造。这把此前「Flutter 与系统区域设置」样本进一步定位到 MSAA 属性读取链路，不能按最近的 GPU 导出名称解释。对应 SDK 源码每次调用都会创建字符串转换器。[解析明细](symbols-resolved.tsv) | [固定源码](https://github.com/flutter/flutter/blob/ae9b586f34a8443573f82ef57c3bf914a908cbf7/engine/src/flutter/fml/string_conversion.cc#L42)
+
+独立程序直接编译该份 FML 源码，用目录中的中日文标题、英文副标题及空字符串，共 23 项，分别对照 Windows UTF-8 转换接口。每轮各执行 23,000 次，交替运行三轮。两条链路均与 Python 严格编码生成的 UTF-16 预期一致。
+
+| 组件 | 三轮墙钟耗时范围 |
+| --- | --- |
+| 固定 FML 源码 | 460.19–551.45 ms |
+| Windows 转换接口 | 2.07–2.58 ms |
+
+输入、编译参数和逐轮结果均保留。[输入](symbols-conversion-inputs.json) | [组件程序](symbols-conversion-probe.cpp) | [运行结果](symbols-conversion-results.jsonl) | [Windows 接口](https://learn.microsoft.com/en-us/windows/win32/api/stringapiset/nf-stringapiset-multibytetowidechar)
+
+本次只离线读取原地址和本地符号，没有挂起正在使用的窗口。既有栈记录没有独立保存当时的 DLL 摘要，身份核对以当前相同 SDK 及发布目录为依据。组件程序使用本机 MSVC 14.50 和静态运行库，官方引擎符号记录 MSVC 14.34；组件结果不代表替换引擎后的整页帧率，也不能由六个短栈样本计算 CPU 时间占比。查询发送方及持续前台相关性继续核对。产品 SDK、引擎、113 个交付源码和 Windows 程序包均未改变。
+
 ## 后续优先级
 
 1. 针对已抓到的网页插件图形资源退出栈验证释放时序，复测真实入口，避免进程关闭后持续占用 CPU。

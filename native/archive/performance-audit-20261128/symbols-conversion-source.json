@@ -1,0 +1,9 @@
+{
+  "inputFile": "native/assets/game_catalog.json",
+  "inputSha256": "6fd277e99e9685788cbe90417fdb83ebbc8b26607afdadf6403bdb7031ac130a",
+  "strings": 23,
+  "expectedUtf16": "Python strict UTF-8 and UTF-16LE codecs",
+  "fmlSource": "D:\\workspace\\eagler\\toolchains\\flutter-stable\\engine\\src\\flutter\\fml\\string_conversion.cc",
+  "fmlSourceSha256": "535f9bd8f93932de33a166dc0be76bff0848d2dff63d1d1c778c432dbbb6c0ab",
+  "scope": "Pinned FML source compiled independently with local MSVC; component comparison, not a modified production engine or whole-app performance test"
+}

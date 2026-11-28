@@ -147,7 +147,20 @@
     "client-prepare-host.py": "f12647ebe62e0ce61dd7f1269bbea2bba9d90349a13197ada9f8bcd5fbdeccab",
     "client-add-thread-observer.py": "e1f0d575ef40a69d5dd0fe0376c57d01bba92bdbf7a953bf052e57aa896f34fb",
     "client-run-host.py": "88179e3a2f1a5818e9a8a0f68dc0ee118a30c44e2317f5b4502026b3f8a34da9",
-    "client-run-thread.py": "3fcc642aa0a21274833a5b6ec3f02e0d865a45bab81e2c835eae18c7b2ecfd49"
+    "client-run-thread.py": "3fcc642aa0a21274833a5b6ec3f02e0d865a45bab81e2c835eae18c7b2ecfd49",
+    "symbols-resolve-engine.cpp": "02230f142791057941c8c4b99f6477893bc1fbfe70b9165a13c3e089f5421448",
+    "symbols-build.cmd": "1c562a96fe0b149c7c59dd2878ad5f0835b118f9d256b4e4ab3258b4447d484d",
+    "symbols-resolved.tsv": "1984b3f202a45ac42805776737a22c7f1393110f0cdc44a2fa4c49c6825161bc",
+    "symbols-offsets.json": "c95eb364dc5c6939183d94dd135de40c8b339415d89fad391adc54fc0e4b6fb7",
+    "symbols-prepare-conversion.py": "e383fea04ad0eeb0955b8d5f4804de3a2edca4ef4092b1544101090690d07894",
+    "symbols-conversion-probe.cpp": "5da7e32984c77fc9b6c724b92107c808580a03a3290a56b178674f2845125d55",
+    "symbols-conversion-inputs.h": "c0961b99b6a4798b33f942333ab128cb6993220231abc00ecbd462e2608e1fdd",
+    "symbols-conversion-inputs.json": "728a632cc8a1a72188cca365092f2233d54c5130d620b9a68c405ad412f5884a",
+    "symbols-conversion-source.json": "78b6816eccbbfd82e72429ab0c347b5c92f634de55e517ab5ef02b58defa3230",
+    "symbols-build-conversion.cmd": "46eb92275672305aafbf5cb3d7b195f49202ea7b375939a7385a918f80686b9d",
+    "symbols-build-conversion-static.log": "e2f686f87fdf824f6b06ac04c5c3c54c421b698001bcaea3e8451ae5832fcdde",
+    "symbols-conversion-results.jsonl": "f9f3cf2fd362795c7e1844432a16c1a0b40d15a289ae3be42cf56e1a299e5f06",
+    "symbols-summary.json": "dd7814c38b445712d11949a39812276c4003a8bccf9f1f1d4031d72b9033be3d"
   },
   "tracing": "Profile trace was captured before PERF_TRACE became optional. Reproduction needs --profile --trace-skia --endless-trace-buffer --dart-define=PERF_TRACE=true. Never use the traced process working set as ordinary app memory. Release target defaults to no tracing.",
   "browser": "Original public-profile native adapter A/B retained. New isolated Windows Debug account integration passes two visits and eight width states with native return to th08. Progressive screenshots include a real 320 px guest login form; other widths captured during loading. No credentials entered.",
@@ -457,5 +470,11 @@
     "summary": "client-summary.json",
     "scope": "Same ordinary main.dart AOT with diagnostic native runner. First launch sampled mixed focus; second explicitly prevented activation and sampled background. No current user-window interaction and no product-source change.",
     "productSourceUnchanged": true
+  },
+  "offlineEngineSymbols": {
+    "summary": "symbols-summary.json",
+    "exactPdbMatch": true,
+    "engineChanged": false,
+    "applicationSourceChanged": false
   }
 }
