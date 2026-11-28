@@ -133,3 +133,18 @@
      cookieManager = nullptr;
      platformUtil = nullptr;
    }
+--- a/custom_platform_view/texture_bridge.cc
++++ b/custom_platform_view/texture_bridge.cc
+@@ -109,6 +109,12 @@
+       assert(closable);
+       closable->Close();
+       capture_session_ = nullptr;
++      auto pool_closable =
++        frame_pool_.try_as<ABI::Windows::Foundation::IClosable>();
++      assert(pool_closable);
++      pool_closable->Close();
++      frame_pool_ = nullptr;
++      last_frame_ = nullptr;
+     }
+   }
+ 

@@ -17,6 +17,7 @@ function(launcher_align_webview_adapter)
     "in_app_webview/in_app_webview_manager.cpp|371661fcca87a233db55608f2f9f090fdfee0dff1dab2414f9067606eb19ba5a|0124ad03a2c1ac8a4a7b874403145249037e8212ec09fcee0e53c4e23632575c"
     "in_app_webview/in_app_webview_manager.h|7fd060d7febc708da8b89cd84d47fae93a4c71591592282707661eacbbd2d444|029b426b7e6a91cf778ea408005b0f30f92f68968c8e508f5b5a247dd6498c36"
     "flutter_inappwebview_windows_plugin.cpp|e8b0c1ebe4758e900fac91fbd2faaf6ce41a94c8fdf73c20e479874a74f91407|04fe4649f3f16d8607cd45124c2da4f1d35b1e2c3d853e833261a23023883034"
+    "custom_platform_view/texture_bridge.cc|03dec091996f07905b61fffb51e71dc499f9b3b080d11f3450f0cb5346171333|09cf6ea298be36f5adcaffdd1bb5859401da2f8afb5639efaeec1190e5a23071"
   )
   set(_work "${CMAKE_CURRENT_BINARY_DIR}/webview_adapter_input")
   set(_overlay "${CMAKE_CURRENT_BINARY_DIR}/webview_renderer_adapter")

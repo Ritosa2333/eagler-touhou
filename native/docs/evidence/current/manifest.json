@@ -1923,9 +1923,9 @@
   ],
   "capturedAtUtc": "2026-11-28T09:41:00.737744+00:00",
   "productionSourceMatchesWindowsPackage": {
-    "checkedAtUtc": "2026-11-28T11:09:46.857261+00:00",
+    "checkedAtUtc": "2026-11-28T12:36:23.667518+00:00",
     "package": "touhouonline-windows-preview.zip",
-    "sha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
+    "sha256": "f653ecac01ef6e3b7d7a8339ac46f86f462c1f2f7febe2adecc511ed0c1dd4ae",
     "aotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041",
     "source": {
       "integration_test/account_window_test.dart": "9b8cf88be0848f5ea55fa23ae43bde540b2a1be50a5640468e99e6546fe9a37b",
@@ -2040,11 +2040,11 @@
       "windows/runner/utils.h": "832e246b6758253f89016fb0374b30791242e97ad950d27fc678b3d9feacfdc4",
       "windows/runner/win32_window.cpp": "4e4f4dcf8e86ea6e097562cb3476039e693449bd8045367538afee579c017511",
       "windows/runner/win32_window.h": "d154cf89ba85f820631a9b5bedacbe64fc5815e428fe6bc5da579ce649f69841",
-      "windows/webview-renderer-adapter.patch": "5b75f7264ae5ca7e1a4efe0b70f8c4f79bcbf7d4467f84b2694353a7e7e0f2ae",
-      "windows/webview_renderer_adapter.cmake": "2e09ad833cbaef6514dde8e89acfb4c279faad7845a815bab1c55434c3c5bcb1"
+      "windows/webview-renderer-adapter.patch": "ba15ed9be0817ea580a131d65c8845efb7a6e8fe90037790cb0683f08f30d6f2",
+      "windows/webview_renderer_adapter.cmake": "28654d78d8016c6e2e9b7f1c3d4339a66b638e18aa50d3c1415461f6c34efa1c"
     },
     "entry": "lib/main.dart",
-    "scope": "Ordinary main.dart Release reassembly | account cancellation preserves loaded document | canonical native binaries and assets unchanged | integration AOTs identified separately | no deployment"
+    "scope": "Ordinary main.dart Windows Release | capture frame-pool cleanup | only Windows WebView DLL changed; ordinary Dart AOT and UI unchanged | no deployment"
   },
   "recaptureScope": "Stable desktop independent-page subtree | 133 layout/navigation checks | 210 fresh byte-identical widget images | not user visual approval"
 }

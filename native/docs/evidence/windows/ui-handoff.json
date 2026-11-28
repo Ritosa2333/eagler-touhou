@@ -1,10 +1,10 @@
 {
-  "checkedAtUtc": "2026-11-28T11:09:46.857261+00:00",
-  "builtAtUtc": "2026-11-28T11:09:43.048567+00:00",
+  "checkedAtUtc": "2026-11-28T12:36:23.667518+00:00",
+  "builtAtUtc": "2026-11-28T12:36:23.667518+00:00",
   "stage": "D:\\workspace\\eagler\\artifacts\\.native-room-client-win",
-  "scope": "Ordinary main.dart Release reassembly | account cancellation preserves loaded document | canonical native binaries and assets unchanged | integration AOTs identified separately | no deployment",
+  "scope": "Ordinary main.dart Windows Release | capture frame-pool cleanup | only Windows WebView DLL changed; ordinary Dart AOT and UI unchanged | no deployment",
   "package": "touhouonline-windows-preview.zip",
-  "packageSha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
+  "packageSha256": "f653ecac01ef6e3b7d7a8339ac46f86f462c1f2f7febe2adecc511ed0c1dd4ae",
   "aotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041",
   "entry": "D:\\Temp\\native-performance-20261128\\shutdown-guard\\production\\touhouonline.exe",
   "source": {
@@ -120,29 +120,24 @@
     "windows/runner/utils.h": "832e246b6758253f89016fb0374b30791242e97ad950d27fc678b3d9feacfdc4",
     "windows/runner/win32_window.cpp": "4e4f4dcf8e86ea6e097562cb3476039e693449bd8045367538afee579c017511",
     "windows/runner/win32_window.h": "d154cf89ba85f820631a9b5bedacbe64fc5815e428fe6bc5da579ce649f69841",
-    "windows/webview-renderer-adapter.patch": "5b75f7264ae5ca7e1a4efe0b70f8c4f79bcbf7d4467f84b2694353a7e7e0f2ae",
-    "windows/webview_renderer_adapter.cmake": "2e09ad833cbaef6514dde8e89acfb4c279faad7845a815bab1c55434c3c5bcb1"
+    "windows/webview-renderer-adapter.patch": "ba15ed9be0817ea580a131d65c8845efb7a6e8fe90037790cb0683f08f30d6f2",
+    "windows/webview_renderer_adapter.cmake": "28654d78d8016c6e2e9b7f1c3d4339a66b638e18aa50d3c1415461f6c34efa1c"
   },
-  "changes": "已加载账号网页的取消导航保留原实例，真正加载失败仍可重试。普通 AOT 更新，原生 DLL 和 353 份资源不变。",
+  "changes": "关闭 Windows 网页捕获帧池并释放末帧纹理；原生插件重新编译。普通 Dart AOT、页面布局和原预览文件不变。",
   "verification": {
-    "ordinaryMainReleaseReassembly": "passed",
-    "packageCrcAndAllFileHashes": "passed",
-    "changedRuntimeFiles": [
-      "data/app.so"
-    ],
-    "unchangedAssets": 353,
-    "accountWidgetChecks": 88,
-    "layoutNavigationChecks": 133,
-    "freshByteIdenticalWidgetImages": 210,
-    "containerIntegrationPassed": 1,
-    "publicDocumentIntegrationPassed": 1,
-    "publicDocumentCases": 6,
-    "externalNavigationIntegrationPassed": 1,
-    "externalNavigationScope": "390 px production account page and real WebView2; OS browser launch replaced by test adapter",
-    "resizeCases": 8,
-    "sameWebViewStateAndTexture": true,
-    "backAndCloseRestoreGameHeading": true,
-    "ordinaryAotStartupSmoke": "passed | own nonactivating diagnostic host, first frame and kernel-signaled normal exit"
+    "liveFormsPerCompleteTrial": 16,
+    "backPerCompleteTrial": 8,
+    "closePerCompleteTrial": 8,
+    "idleSeconds": 15,
+    "allCompleteTrialsRestoreSameGameHeading": true,
+    "allHostsNormalExit": true,
+    "allObservedDescendantsExited": true,
+    "sameTestAotAcrossAllTrials": true,
+    "sameOrdinaryDartAot": true,
+    "noForcedGc": true,
+    "noHeapTrimming": true,
+    "originalPreviewFilesUnchanged": 371,
+    "lockedPatchFiles": 7
   },
   "performanceReport": "archive/performance-audit-20261128/report.md",
   "pending": [
@@ -154,23 +149,43 @@
     "Current ordinary Release real-window resource import after checksum-worker change",
     "Graphics context loss, concurrent engines and other driver/device shutdown behavior",
     "Foreground high-frequency UIA cost; bounded tool caller identified separately",
-    "Credentialed WebView login/logout, upload/crop and real OS browser handoff"
+    "Credentialed WebView login/logout, upload/crop and real OS browser handoff",
+    "CookieManager successful lookup temporary WebView cleanup and generic handle/process lifetime",
+    "One public guest form load did not show expected fields; cause unconfirmed"
   ],
   "inheritedVerification": {
-    "scope": "Earlier account/API and widget checks from the prior Dart AOT. Current layout/navigation and capture checks are recorded separately in verification.",
-    "report": "archive/performance-audit-20261128/report.md",
-    "accountChecks": 93,
-    "publicApiChecks": 1,
-    "layoutNavigationCaptureChecks": 133,
-    "byteIdenticalRecapturedImages": 210
+    "scope": "Prior unchanged Dart/UI checks; not rerun for this native-only patch",
+    "packageSha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
+    "checks": {
+      "ordinaryMainReleaseReassembly": "passed",
+      "packageCrcAndAllFileHashes": "passed",
+      "changedRuntimeFiles": [
+        "data/app.so"
+      ],
+      "unchangedAssets": 353,
+      "accountWidgetChecks": 88,
+      "layoutNavigationChecks": 133,
+      "freshByteIdenticalWidgetImages": 210,
+      "containerIntegrationPassed": 1,
+      "publicDocumentIntegrationPassed": 1,
+      "publicDocumentCases": 6,
+      "externalNavigationIntegrationPassed": 1,
+      "externalNavigationScope": "390 px production account page and real WebView2; OS browser launch replaced by test adapter",
+      "resizeCases": 8,
+      "sameWebViewStateAndTexture": true,
+      "backAndCloseRestoreGameHeading": true,
+      "ordinaryAotStartupSmoke": "passed | own nonactivating diagnostic host, first frame and kernel-signaled normal exit"
+    }
   },
   "inheritedNativeVerification": {
-    "scope": "Earlier current-native-DLL lifetime checks. Native binaries match this package; independent of the new Dart AOT.",
+    "scope": "Historical native lifetime checks before the capture frame-pool fix. Current native tests are recorded in account-resources-summary.json.",
     "report": "archive/performance-audit-20261128/report.md",
     "canonicalLibraryCloseTrials": 2,
     "canonicalSequentialEngineRecreation": 1,
     "canonicalAccountContainerClose": 1,
     "allTrialExitCodes": 0,
-    "allProcessesKernelSignaled": true
+    "allProcessesKernelSignaled": true,
+    "packageSha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
+    "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373"
   }
 }

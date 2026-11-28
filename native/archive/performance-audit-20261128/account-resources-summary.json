@@ -1,0 +1,415 @@
+{
+  "checkedAtUtc": "2026-11-28T12:36:23.667518+00:00",
+  "scope": "Windows Release integration using the same production-main-importing test AOT before and after a native capture-frame-pool fix; owned nonactivating hosts; public guest account; native Back and Close at 390 px",
+  "input": {
+    "control": {
+      "psutil": "7.2.2",
+      "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+      "targetSha256": "92ca465595ccc569e88fd24dab0bef02ca1d3a71dddb9d6eb5170b78ed0625ed",
+      "testAotSha256": "32136f2b17fb0ef0703bbe1601487185e0acff2709f81cf30f4533ace45c50a4",
+      "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+      "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373",
+      "cycles": 0,
+      "sampleSeconds": 0.5,
+      "scope": "Owned process and descendants. Windows private commit and RSS are separate; no memory trimming or forced GC."
+    },
+    "repeated": {
+      "psutil": "7.2.2",
+      "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+      "targetSha256": "92ca465595ccc569e88fd24dab0bef02ca1d3a71dddb9d6eb5170b78ed0625ed",
+      "testAotSha256": "32136f2b17fb0ef0703bbe1601487185e0acff2709f81cf30f4533ace45c50a4",
+      "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+      "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373",
+      "cycles": 16,
+      "sampleSeconds": 0.5,
+      "scope": "Owned process and descendants. Windows private commit and RSS are separate; no memory trimming or forced GC."
+    },
+    "handle-types": {
+      "psutil": "7.2.2",
+      "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+      "targetSha256": "92ca465595ccc569e88fd24dab0bef02ca1d3a71dddb9d6eb5170b78ed0625ed",
+      "testAotSha256": "32136f2b17fb0ef0703bbe1601487185e0acff2709f81cf30f4533ace45c50a4",
+      "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+      "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373",
+      "cycles": 16,
+      "sampleSeconds": 0.5,
+      "scope": "Owned process and descendants. Windows private commit and RSS are separate; no memory trimming or forced GC."
+    },
+    "framepool": {
+      "psutil": "7.2.2",
+      "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+      "targetSha256": "92ca465595ccc569e88fd24dab0bef02ca1d3a71dddb9d6eb5170b78ed0625ed",
+      "testAotSha256": "32136f2b17fb0ef0703bbe1601487185e0acff2709f81cf30f4533ace45c50a4",
+      "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+      "pluginSha256": "e9e608aeaf064b6429a9cfa4541391cbea20de5efa530c660aec47b0f447ead8",
+      "cycles": 16,
+      "sampleSeconds": 0.5,
+      "scope": "Owned process and descendants. Windows private commit and RSS are separate; no memory trimming or forced GC."
+    },
+    "framepool-repeat": {
+      "psutil": "7.2.2",
+      "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+      "targetSha256": "92ca465595ccc569e88fd24dab0bef02ca1d3a71dddb9d6eb5170b78ed0625ed",
+      "testAotSha256": "32136f2b17fb0ef0703bbe1601487185e0acff2709f81cf30f4533ace45c50a4",
+      "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+      "pluginSha256": "e9e608aeaf064b6429a9cfa4541391cbea20de5efa530c660aec47b0f447ead8",
+      "cycles": 16,
+      "sampleSeconds": 0.5,
+      "scope": "Owned process and descendants. Windows private commit and RSS are separate; no memory trimming or forced GC."
+    },
+    "canonical": {
+      "psutil": "7.2.2",
+      "python": "3.14.3 (tags/v3.14.3:323c59a, Feb  3 2026, 16:04:56) [MSC v.1944 64 bit (AMD64)]",
+      "targetSha256": "92ca465595ccc569e88fd24dab0bef02ca1d3a71dddb9d6eb5170b78ed0625ed",
+      "testAotSha256": "32136f2b17fb0ef0703bbe1601487185e0acff2709f81cf30f4533ace45c50a4",
+      "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+      "pluginSha256": "4d8377ea5d322df8bec082fb0d5d7a4dc6bdec34c5f0b09ca65f1461c80068d3",
+      "cycles": 16,
+      "sampleSeconds": 0.5,
+      "scope": "Owned process and descendants. Windows private commit and RSS are separate; no memory trimming or forced GC."
+    }
+  },
+  "handles": {
+    "handle-types": [
+      {
+        "phase": "baseline",
+        "cycle": -1,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 939
+      },
+      {
+        "phase": "closed",
+        "cycle": 0,
+        "compositionDelta": 2,
+        "sharedResourceDelta": 1,
+        "total": 1080
+      },
+      {
+        "phase": "closed",
+        "cycle": 3,
+        "compositionDelta": 8,
+        "sharedResourceDelta": 4,
+        "total": 1139
+      },
+      {
+        "phase": "closed",
+        "cycle": 7,
+        "compositionDelta": 16,
+        "sharedResourceDelta": 8,
+        "total": 1201
+      },
+      {
+        "phase": "closed",
+        "cycle": 11,
+        "compositionDelta": 24,
+        "sharedResourceDelta": 12,
+        "total": 1242
+      },
+      {
+        "phase": "closed",
+        "cycle": 15,
+        "compositionDelta": 32,
+        "sharedResourceDelta": 16,
+        "total": 1309
+      },
+      {
+        "phase": "idle",
+        "cycle": 16,
+        "compositionDelta": 32,
+        "sharedResourceDelta": 16,
+        "total": 1277
+      }
+    ],
+    "framepool-repeat": [
+      {
+        "phase": "baseline",
+        "cycle": -1,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 902
+      },
+      {
+        "phase": "closed",
+        "cycle": 0,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1089
+      },
+      {
+        "phase": "closed",
+        "cycle": 3,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1094
+      },
+      {
+        "phase": "closed",
+        "cycle": 7,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1101
+      },
+      {
+        "phase": "closed",
+        "cycle": 11,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1104
+      },
+      {
+        "phase": "closed",
+        "cycle": 15,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1127
+      },
+      {
+        "phase": "idle",
+        "cycle": 16,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1103
+      }
+    ],
+    "canonical": [
+      {
+        "phase": "baseline",
+        "cycle": -1,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 900
+      },
+      {
+        "phase": "closed",
+        "cycle": 0,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1089
+      },
+      {
+        "phase": "closed",
+        "cycle": 3,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1101
+      },
+      {
+        "phase": "closed",
+        "cycle": 7,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1113
+      },
+      {
+        "phase": "closed",
+        "cycle": 11,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1118
+      },
+      {
+        "phase": "closed",
+        "cycle": 15,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1133
+      },
+      {
+        "phase": "idle",
+        "cycle": 16,
+        "compositionDelta": 0,
+        "sharedResourceDelta": 0,
+        "total": 1107
+      }
+    ]
+  },
+  "idleMemory": {
+    "handle-types": {
+      "samples": 10,
+      "parentPrivateCommitMiB": 297.316,
+      "parentHandles": 1273.0,
+      "liveDescendants": 0.0
+    },
+    "canonical": {
+      "samples": 10,
+      "parentPrivateCommitMiB": 295.504,
+      "parentHandles": 1107.0,
+      "liveDescendants": 0.0
+    }
+  },
+  "production": [
+    {
+      "name": "startup-high",
+      "mode": "high",
+      "pid": 34452,
+      "wait": 0,
+      "forced": false,
+      "exitCode": 0,
+      "elapsedSeconds": 13.078178299998399,
+      "firstFrames": 1,
+      "enginesDestroyed": 1,
+      "foregroundAlwaysOutsideTest": true,
+      "pluginSha256": "4d8377ea5d322df8bec082fb0d5d7a4dc6bdec34c5f0b09ca65f1461c80068d3",
+      "aotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041"
+    },
+    {
+      "name": "engines-default",
+      "mode": "default",
+      "pid": 18428,
+      "wait": 0,
+      "forced": false,
+      "exitCode": 0,
+      "elapsedSeconds": 11.69180420000339,
+      "firstFrames": 2,
+      "enginesDestroyed": 2,
+      "foregroundAlwaysOutsideTest": true,
+      "pluginSha256": "4d8377ea5d322df8bec082fb0d5d7a4dc6bdec34c5f0b09ca65f1461c80068d3",
+      "aotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041"
+    }
+  ],
+  "package": {
+    "oldPackageSha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
+    "sha256": "f653ecac01ef6e3b7d7a8339ac46f86f462c1f2f7febe2adecc511ed0c1dd4ae",
+    "bytes": 30535611,
+    "files": 370,
+    "changedFiles": [
+      "flutter_inappwebview_windows_plugin.dll"
+    ],
+    "pluginSha256": "4d8377ea5d322df8bec082fb0d5d7a4dc6bdec34c5f0b09ca65f1461c80068d3",
+    "aotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041",
+    "originalPreviewFilesUnchanged": 371
+  },
+  "verification": {
+    "liveFormsPerCompleteTrial": 16,
+    "backPerCompleteTrial": 8,
+    "closePerCompleteTrial": 8,
+    "idleSeconds": 15,
+    "allCompleteTrialsRestoreSameGameHeading": true,
+    "allHostsNormalExit": true,
+    "allObservedDescendantsExited": true,
+    "sameTestAotAcrossAllTrials": true,
+    "sameOrdinaryDartAot": true,
+    "noForcedGc": true,
+    "noHeapTrimming": true,
+    "originalPreviewFilesUnchanged": 371,
+    "lockedPatchFiles": 7
+  },
+  "interruptedTrial": {
+    "trial": "framepool",
+    "completedVisits": 15,
+    "reason": "Login path present but expected form fields absent on visit 16; cause unconfirmed; retained as a failed trial, not counted as full regression"
+  },
+  "remaining": [
+    "CookieManager successful lookup skips temporary WebView cleanup; source finding awaiting isolated non-session-cookie validation",
+    "Other generic handle counts and WebView2 helper-process churn need separate lifetime measurement",
+    "Foreground hover/detail frame pacing, GPU residency/power and other devices are separate acceptance scopes",
+    "Credentialed login/logout and real upload/crop remain outside public guest trials"
+  ],
+  "evidence": {
+    "file": "account-resources-evidence.zip",
+    "sha256": "40980b61dd9c31621c573ff858dc17597b1e2b9005818340b219a00b0fab19ca",
+    "entries": 94,
+    "files": {
+      "host/account_memory_probe.dart": "92ca465595ccc569e88fd24dab0bef02ca1d3a71dddb9d6eb5170b78ed0625ed",
+      "host/run.py": "24f7b014197770c85aebf26086911f2036e82d81d698bcb4b38b56cc9d58e9e7",
+      "host/run-memory-only.py": "ea14b16b6b3ed9fb7ff866979a72e16666e2c4f0922630e7afc39d2b7a429f49",
+      "host/analyze.py": "ff4730098ed95a288694fed2bcced8dc334094093526931fb59046274a4c7325",
+      "host/measurement.json": "a8f8678ec22d219626b33f67dfa60a61aeeefd804c34b52872b44983815341e0",
+      "host/prepare.py": "be5bbde3681657b963d1d6e9aca4f6f43853a59da67b04c7a8097ec65f87fac4",
+      "host/prepare-framepool.py": "6b94fe14e6b88f47e38c31ead69d28d218b88f89dca379da56b09adb4f50eb0a",
+      "host/handle-types.cpp": "9abbddc1a61d55e8ab8d82576ec828346bec9d868ab79f2eb765e22a69431112",
+      "host/build-handles.cmd": "437134687ca716525cb446abbda5e77065f744afb7f514e6cdd077cd74873e98",
+      "host/verify-production.py": "d3961af32d7b73895aadb8bacccfb72df0cc99209fe217cb7deb563f4b8dcff7",
+      "host/finalize.py": "9f648b0bdd85eafcfc39aa6851bea67947ba72af69d92b43a9a304791b748ac6",
+      "host/canonical-configure.log": "87888da9440ecb2ed85bc84afe4159e0f75b33e82802f03cdab116f45b082d5a",
+      "host/canonical-build.log": "37e0f8d1de0708d13fc90b152b8e52e264a3f28fe4948530a764b6a2bfbd32bc",
+      "host/production-results.json": "a9284287e6572186b8aa8e0871bdd450d64964ac1c8cb0cbe921ee182fc3d302",
+      "host/package.json": "c9c53da33f08ff5786274e6c93cdc8a687d9d5517e5152d9ee1482102529b132",
+      "host/startup-high-events.jsonl": "3eb974f6ce4e28d8f3096dfe0993571765cfeb7c85dadaace813655f6b128efd",
+      "host/startup-high-runtime.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "host/engines-default-events.jsonl": "ae0ab87ebb28cc77774a28bc5664c27966bb9bafc659c48a4c445c9a048a8685",
+      "host/engines-default-runtime.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "candidate/inputs.json": "8cd1c6abcfb0ffe66153ddfcb9e65694985528078eb8e4964811292a98f3cf77",
+      "candidate/compile.rsp": "0f5544ed3ab7fc2b57dd99e910c46a83f0f9276fe515d8246f19c1edca76c49e",
+      "candidate/link.rsp": "97304290d8c2eaefac887bfaed6a8d6f0907cc1890fd817f24e7043c7e51cfdf",
+      "candidate/build.cmd": "26521d22cb6664713b16cb7c29fb478740751dae16227ce5e7d21802db3a9738",
+      "candidate/build.log": "a12826f2f930f14881a76ae7627018a8fc2da20537a975f18f42f9f24150b647",
+      "candidate/source/custom_platform_view/texture_bridge.cc": "a19eb85a32237b63560ded4213f03b23ee2ba3066cdb26a34a58fe233403c7c0",
+      "control/events.jsonl": "5120b1c8109ff94951cebb38fdd89557605a35caaad3e39025c285200a699d67",
+      "control/input.json": "6196aa658d5a3a0a50ab02822c543eb02f7404b8381b29db7d812f7e794685ed",
+      "control/native-result.json": "6b91a0830fb30c9856d962c7da8eb7dd4d37c97ffb85de7dbba93c49440112ce",
+      "control/phase.json": "2acf2dba29e2ed31c2a3924560b3fb56c9c880e0e040f54a74f0f15f1ae2d962",
+      "control/process-result.json": "0cf8ec8e5cd8f1f55bfb88a9b802bc29d3aee7bf2e531bf3b7e439d69ecaed97",
+      "control/runtime.log": "c4caee610d32d09052347e9f6585b51522a5c046d9015a967c0c646ac994cabb",
+      "control/samples.jsonl": "795630968009d63e1f60eacd5df2be15f2ec99c94659d9c46149d92418e449fc",
+      "repeated/events.jsonl": "3bb54b5dbcdfa2f6fa10c0d0b93146fec584f66033b1a1888526581531684747",
+      "repeated/input.json": "f4dc86b65564d4a5c1ed9eb9cd7891b1c45080168c27cc943ccb31a4f4fdd270",
+      "repeated/native-result.json": "f74fdd60c291fecf5358ad7eee681920afae72597b40ab7e523edb9f0f9fda3b",
+      "repeated/phase.json": "816dff576914b983c5a357d4f2d3389513587a629a5fa8dc66563e8c8dc59d7e",
+      "repeated/process-result.json": "b40ba6cacf26551509a749394ed0c1e530b90e049a7cb0ee84481b05d838d23d",
+      "repeated/runtime.log": "a1c0d912978c22b05ee0fbf22d73cd424693a6d6c470eae5ef1a5c23f381469a",
+      "repeated/samples.jsonl": "1579e7ded3bb45fc92cbe1f694431a4bf585003e3e8bc8dd88989cd833f07997",
+      "handle-types/events.jsonl": "c3e89fa64b83fd62c72d46494373ec8c58d9d8b4e93ab19834de5128fb8e0e50",
+      "handle-types/handles-baseline--1.json": "c816397a31d46b79bf5a47d68371b48f4b75d672b5d753be08ffcd7a144f2ed0",
+      "handle-types/handles-closed-0.json": "dd3617908b3da01e385a905326c81679f1f7ff487bbfbf53aa85d49cadd5716f",
+      "handle-types/handles-closed-11.json": "0673652e4bbaf32f299992d23a2c4b84e1952f10c12d01f4e9f11742673c6209",
+      "handle-types/handles-closed-15.json": "15ddc19a9f736ca0f9b1ae83383135784a4e7c3134e5635ad3d4d215ec3c2bab",
+      "handle-types/handles-closed-3.json": "26e8904adbeb41892684f371fdbe49b33cf10b8315816c119f5957e2abf69e79",
+      "handle-types/handles-closed-7.json": "0d7fc1163d4fec20ba9012c1782a86c53a480da7813fd93e031fbf898b291ca7",
+      "handle-types/handles-idle-16.json": "03580099bc18f037a3b9c0be8a9e72df0085661f3f0a36df16e2cf66db8e3b54",
+      "handle-types/input.json": "f4dc86b65564d4a5c1ed9eb9cd7891b1c45080168c27cc943ccb31a4f4fdd270",
+      "handle-types/native-result.json": "4ed88e9ee1ef42ae9942aefeef36195b8e3c5a9cd9432b77ae276fd9aa039872",
+      "handle-types/phase.json": "b1f231eb231bc244989e0c175a29478127f8cc0b45e80a8d400eec6d25d5267e",
+      "handle-types/process-result.json": "c9a931108a77939c50f20ef17f71b73bd7ea9ea749fea3dfe9fb8f3e9c7d1747",
+      "handle-types/runtime.log": "39b7cc6fd1397ccf171368cd8e3c9a021549d6207df21c8bb38ccf3bb62d9cec",
+      "handle-types/samples.jsonl": "2036f53f86488070b8a14e419b71070efe6cfc7b8e89bbd38d7694246de6a6a9",
+      "framepool/events.jsonl": "f9cc3e9742988bf0bbd0db2e3eabcdb4ee165ae50e9b5c7965134176c982a3ac",
+      "framepool/handles-baseline--1.json": "b76971dca7e3adbe7ace043c7805fb886f30c20127ef0de09ad48fbc16936907",
+      "framepool/handles-closed-0.json": "4421b782d7456571365e863b7c4ace26678d61ffee0ad59d59004b9be687e91c",
+      "framepool/handles-closed-11.json": "2bd95b51a60b8f74d1c408c4bc95c05b9d903f47cc77fd3cb3d6b116a55c1e84",
+      "framepool/handles-closed-3.json": "1dde53eb7437776eeaed2c48e56c5bb1f8d0dee7f514f25b346333166c4b9257",
+      "framepool/handles-closed-7.json": "36c4e90a14550406c870150b3a6df122383996207976d0637c42278314353fd9",
+      "framepool/input.json": "b58871d08e53b2498f55f0e50d7e47be5220cb042524c4cc882b2d7d0117f2fb",
+      "framepool/native-result.json": "1b282690ba5e477422fdc7657ac7e4c21669a3c777f9af79a152f81b5327a646",
+      "framepool/phase.json": "0069520d4bd0cb4890b4a8726b4e705fa58bf9d816faa574461a7dfa27b49a9f",
+      "framepool/process-result.json": "875d22774955aa19d140a01a1e55d56f1aaec8505794a0fd431f3e6706c88a5d",
+      "framepool/runtime.log": "c447a4f86d081de90d714ac04f536c8d3a3e9f41fc2ad90d2b0c51b671a7ec2f",
+      "framepool/samples.jsonl": "f781ee07682e2baffdf614a278bc494d05729e4363ca77e00782845174f39130",
+      "framepool-repeat/events.jsonl": "b54b5fe7eaaab67b4836e7ac0ff9d8404f352f0d8eee64263e0af7366ae0a505",
+      "framepool-repeat/handles-baseline--1.json": "8ebe8b61713f9a176801f3a4f987168807995921b764cd0ff6436de657b5f5fb",
+      "framepool-repeat/handles-closed-0.json": "48446a5f1729884192cf86c99e20a912c29e13fd0bd8782138552109855dfdc9",
+      "framepool-repeat/handles-closed-11.json": "7140575658d5fee1aa934b0961827df5c442f958e0c71f68232baf448bce6088",
+      "framepool-repeat/handles-closed-15.json": "d70ad6ebfccb75954ceeb9266e80c23e9d2efb5749a8b7e0ae28b3cab79251da",
+      "framepool-repeat/handles-closed-3.json": "768cf6b6c15071804f021a087755830245bb968de81ac2e5ecbe1e9f70a0182a",
+      "framepool-repeat/handles-closed-7.json": "43b537b468033319d3582ee0b810bd9971cf9121ec92decb48c181674d9ee061",
+      "framepool-repeat/handles-idle-16.json": "e3bd157de8d21e1304005fd4f27eac39029227ecdd89f33fca0a3524a2673950",
+      "framepool-repeat/input.json": "b58871d08e53b2498f55f0e50d7e47be5220cb042524c4cc882b2d7d0117f2fb",
+      "framepool-repeat/native-result.json": "5db94bb1afbf9f17273f70dc3806381bee72fad0be2604dcbfd11f88c8b1beac",
+      "framepool-repeat/phase.json": "52e7a22703edab8a9124cb02782f155543406538a9884c1edb9bb51468cfc85d",
+      "framepool-repeat/process-result.json": "97d9c47fde43c793b36ab0fa2ac9d7b33ef1cac187af10c51d2dc9b6ab8181ba",
+      "framepool-repeat/runtime.log": "f9cfff60504abf8833c803fc4e2688d02d368d6189f049c740e1aceffa56a932",
+      "framepool-repeat/samples.jsonl": "89becf0ad8618a5a0c1e3cba38c85d9af190785bba869d70a54ffd599e058b3c",
+      "canonical/events.jsonl": "5e533988fceccbde66c10d3d1bae3ac4b13cc366c5ff5b42ae05cf76189fa1de",
+      "canonical/handles-baseline--1.json": "51be4a508acf78adaa2f403a1eda4005ff1dcafbfe20fedbf040b7436b2fa054",
+      "canonical/handles-closed-0.json": "d9a6a0b9c046411cbfab108cb4fdb83c688a351849a20ea9f3872ee1acd634a0",
+      "canonical/handles-closed-11.json": "481f6e67be5d91cd80584dc52873f8abacbe0b982b48b96ab1b02d68a5c4f38f",
+      "canonical/handles-closed-15.json": "e844e9b824b66a1a673c7b756677ec91735a761d1582dcb9ab71352deb087e1a",
+      "canonical/handles-closed-3.json": "d9d5fbd21410ca170b9ec7cb9b83799c10e5bdd108b7a35ca244a6bec82f7d23",
+      "canonical/handles-closed-7.json": "ba69d727848c211c2a7aecac96e3dcc5249cc1854b32fd933002100c37601a11",
+      "canonical/handles-idle-16.json": "a094e5a87d92a9e2616c6f70cf5cb837f60c2f3cfb6fb94264d64defff68fc10",
+      "canonical/input.json": "d7cb68fcd3bc222503a29e5bea3c4660a8a3ded55465eb55963c782ebc48865e",
+      "canonical/native-result.json": "75304434233f98f8f8a8a664e39ba72f0aa4fc688fa110a7b90855e61f329901",
+      "canonical/phase.json": "e82b4c55c93a18280506793fdb16327a0eb3a5a3417f0590df7bb2d84b228373",
+      "canonical/process-result.json": "b56cd4519b3eb00a436b42e7ee52bd70904356a5deb26cdaefe2a3e2ca60d58a",
+      "canonical/runtime.log": "ed786107b639b14eae39df923d676b33d83a6ea288e1535a130bdced16e0bfc4",
+      "canonical/samples.jsonl": "07a0693fa09e5217d472354bbacc61fae497aa09f3581c5198336c53aef9e72f",
+      "host/finish-metadata.py": "14d586aa1c7505925d6dd00a474a5ecb0f75c546a32d44c99519b80405ccce5b"
+    }
+  },
+  "references": [
+    "https://learn.microsoft.com/en-us/uwp/api/windows.graphics.capture.direct3d11captureframepool.close",
+    "https://github.com/niiightmarexd/windows-capture/blob/main/src/graphics_capture_api.rs",
+    "https://learn.microsoft.com/en-us/windows/win32/api/processsnapshot/nf-processsnapshot-psscapturesnapshot"
+  ]
+}
