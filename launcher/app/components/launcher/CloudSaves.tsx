@@ -246,6 +246,7 @@ export function CloudSaves({readLocalSaves, sync}: {readLocalSaves?: LocalSaveRe
               {latest.statistics.warnings.includes('playtime-file-missing') && <p className="cloud-save-hint">{t('cloudSave.th06TimeHint')}</p>}
               {latest.statistics.game === 'th05' && latest.statistics.warnings.includes('clear-unavailable') && <p className="cloud-save-hint">{t('cloudSave.th05ClearHint')}</p>}
               {latest.statistics.warnings.includes('backup-used') && <p className="cloud-save-hint">{t('cloudSave.backupUsed')}</p>}
+              {latest.statistics.warnings.includes('spell-archive-unavailable') && <p className="cloud-save-hint" role="status">{t('cloudSave.spellArchiveUnavailable')}</p>}
 
             </div>}
             {supported && <div className="cloud-save-upload">

@@ -23,6 +23,11 @@ export interface MetadataSnapshot {
   siteManifestError: unknown | null;
   releaseCatalogError: unknown | null;
 }
+/** An import-only catalog entry can still have a package on an external host. */
+export function requiresLocalGameData(snapshot: Pick<MetadataSnapshot, 'siteManifest' | 'releaseCatalog'>, game: GameId): boolean {
+  return snapshot.siteManifest?.shared.resourceMode === 'import' ||
+    (productRequiresImport(game) && !snapshot.releaseCatalog?.games[game]);
+}
 export interface MetadataServiceOptions {
   /** Deployment document/root URL, not a selected client route. */
   baseUrl: string;
@@ -154,7 +159,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
         audio: options.webAudioAvailable,
         embeddedOgg: 'embeddedOgg' in PRODUCT_GAMES[gameId].musicRuntime && PRODUCT_GAMES[gameId].musicRuntime.embeddedOgg === true,
         midiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && music?.midi?.supported !== false,
-        importServer: productRequiresImport(gameId) || snapshot.siteManifest?.shared.resourceMode === 'import',
+        importServer: requiresLocalGameData(snapshot, gameId),
         publishedOggCapable: Boolean(music?.ogg || music?.wav),
         remoteOggAdvertised: Boolean(music?.ogg),
         remoteRevision: snapshot.releaseCatalog?.games?.[gameId]?.revision ?? null,

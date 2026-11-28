@@ -1,4 +1,5 @@
 @layer foundation {
+:root {--book-rail-width:clamp(248px,24vw,296px)}
 /* Page surfaces and typography; shared colors and controls live in the UI system. */
 body:not(.mp-room-active):has(.book-masthead) {
   background:var(--book-bg);color:var(--book-ink);
@@ -6,8 +7,8 @@ body:not(.mp-room-active):has(.book-masthead) {
 html[data-ui-app] .library-background {display:none}
 body:not(.mp-room-active):has(.book-masthead) :is(.sheet,.book-directory) {position:relative;z-index:1;background:transparent}
 /* The same route layer serves the library, multiplayer, and profile pages. */
-.launcher-page-surface {position:relative;width:100%;max-width:var(--launcher-layout-width);margin-inline:auto;view-transition-name:launcher-page}
-html[data-ui-home] body:not(.mp-room-active) .launcher-page-surface[data-page="library"] {max-width:none}
+.launcher-page-surface {--launcher-content-height:calc(100dvh - var(--site-header-height,44px));position:relative;width:100%;max-width:var(--launcher-layout-width);margin-inline:auto;view-transition-name:launcher-page}
+html[data-ui-home] body:not(.mp-room-active) .launcher-page-surface[data-page="library"] {max-width:none;min-block-size:var(--launcher-content-height)}
 .book-masthead {view-transition-name:launcher-masthead}
 /* Keep the real masthead clickable while the content snapshots crossfade. */
 html[data-ui-route-transition],html[data-ui-route-transition] .book-masthead,

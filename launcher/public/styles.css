@@ -1093,6 +1093,7 @@ body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-surface-in .18s c
 /* TH075 development-package geometry and copy; the shared editor still owns customization. */
 .player.touch-enabled:not(.touch-layout-custom) .touch-hud.native-actions{position:absolute;left:auto;top:auto;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));width:216px;height:170px;display:block;}
 .player.touch-enabled .touch-hud.native-actions :is(#touchFire,#touchFocus,#touchBomb,#touchFunction){width:60px;height:60px;min-width:60px;min-height:60px;border-radius:50%;align-items:center;justify-content:center;padding:5px;text-align:center;display:flex;flex-direction:column;box-sizing:border-box;}
+.player .touch-hud #touchBomb[hidden]{display:none!important}
 .player:not(.touch-layout-custom) .touch-hud.native-actions button{position:absolute;right:auto;bottom:auto;}
 .player:not(.touch-layout-custom) .touch-hud.native-actions #touchFire{left:0;top:70px;}
 .player:not(.touch-layout-custom) .touch-hud.native-actions #touchFocus{left:65px;top:5px;}

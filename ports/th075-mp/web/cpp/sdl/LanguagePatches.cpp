@@ -15,23 +15,33 @@ void append(std::vector<u8>& out,u32 value){for(u8 i=0;i<4;i++)out.push_back(u8(
 void crypt(std::vector<u8>& text,bool music){u8 key=music?0x5c:99,step=music?0x5a:98;for(auto& b:text){b^=key;key=u8(key+step);step=u8(step+(music?0x3d:66));}}
 bool images(const std::vector<u8>& source,ByteReader& patch,u32 count,std::vector<u8>& out){
  ByteReader base(source.data(),source.size());const auto palettes=base.byte();if(palettes>127||!base.take(palettes*512))return false;
- const auto header=base.offset;struct Image{u32 width,height;std::size_t first,last;};std::vector<Image> records;
+ const auto header=base.offset;
+ struct Image{u32 width,height;std::size_t first,last;const u8* pixels=nullptr;u32 packed=0,size=0;};
+ std::vector<Image> records;
  while(base.offset<source.size()){
   const auto first=base.offset;const auto width=base.dword(),height=base.dword(),stride=base.dword();const auto depth=base.byte();const auto packed=base.dword();
   if(!base.valid||!width||!height||width>8192||height>8192||stride<width||stride>8192||(depth!=8&&depth!=16&&depth!=24&&depth!=32))return false;
   const auto bytes=packed?std::uint64_t(packed):std::uint64_t(stride)*height*(depth>=24?4:depth/8);if(bytes>134217728||!base.take(std::size_t(bytes)))return false;
   records.push_back({width,height,first,base.offset});
  }
- std::map<u32,std::vector<u8>> replacements;
+ std::size_t outputSize=source.size();
  for(u32 i=0;i<count;i++){
   const auto index=patch.dword(),width=patch.dword(),height=patch.dword(),packed=patch.dword(),size=patch.dword();
-  if(!patch.valid||index>=records.size()||replacements.count(index)||width!=records[index].width||height!=records[index].height||size>134217728||(packed?packed!=size||size%8:std::uint64_t(width)*height*4!=size))return false;
+  if(!patch.valid||index>=records.size()||records[index].pixels||width!=records[index].width||height!=records[index].height||size>134217728||(packed?packed!=size||size%8:std::uint64_t(width)*height*4!=size))return false;
   const auto* pixels=patch.take(size);if(!pixels)return false;
   if(packed){ByteReader runs(pixels,size);std::uint64_t total=0;while(runs.offset<size){const auto count=runs.dword();runs.dword();if(!count)return false;total+=count;}if(total!=std::uint64_t(width)*height)return false;}
-  auto& record=replacements[index];append(record,width);append(record,height);append(record,width);record.push_back(32);append(record,packed);record.insert(record.end(),pixels,pixels+size);
+  auto& record=records[index];record.pixels=pixels;record.packed=packed;record.size=size;
+  outputSize=outputSize-(record.last-record.first)+17+size;
  }
- if(patch.offset!=patch.size)return false;out.assign(source.begin(),source.begin()+header);
- for(u32 i=0;i<records.size();i++){const auto found=replacements.find(i);if(found!=replacements.end())out.insert(out.end(),found->second.begin(),found->second.end());else out.insert(out.end(),source.begin()+records[i].first,source.begin()+records[i].last);}
+ if(patch.offset!=patch.size)return false;
+ // Views point into the validated patch. Build the replacement once at its
+ // final size without allocating separate bitmap copies or growing the output.
+ out.clear();out.reserve(outputSize);out.insert(out.end(),source.begin(),source.begin()+header);
+ for(const auto& record:records){
+  if(!record.pixels){out.insert(out.end(),source.begin()+record.first,source.begin()+record.last);continue;}
+  append(out,record.width);append(out,record.height);append(out,record.width);out.push_back(32);append(out,record.packed);
+  out.insert(out.end(),record.pixels,record.pixels+record.size);
+ }
  return true;
 }
 bool text(const std::vector<u8>& source,ByteReader& patch,u32 count,bool music,std::vector<u8>& out){

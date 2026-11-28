@@ -386,7 +386,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 #endif
 
     GameWindow::ChecksumExecutable();
-    g_GameWindow.frequency = SDL_GetPerformanceFrequency();
+    g_GameWindow.frequency = eagler::presentation::FrameCounterFrequency();
 
 start:
     if (GameWindow::CreateGameWindow())

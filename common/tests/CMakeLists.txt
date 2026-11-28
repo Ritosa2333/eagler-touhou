@@ -40,6 +40,11 @@ if(Freetype_FOUND)
     add_test(NAME eagler-common.thprac-navigation COMMAND eagler_common_thprac_navigation_test)
 endif()
 
+add_executable(eagler_common_frame_deadline_test frame-deadline-test.cpp)
+target_compile_features(eagler_common_frame_deadline_test PRIVATE cxx_std_17)
+target_include_directories(eagler_common_frame_deadline_test PRIVATE ../include)
+add_test(NAME eagler-common.frame-deadline COMMAND eagler_common_frame_deadline_test)
+
 add_executable(eagler_common_assertions_enabled_test assertions-enabled-test.cpp)
 add_test(NAME eagler-common.assertions-enabled COMMAND eagler_common_assertions_enabled_test)
 

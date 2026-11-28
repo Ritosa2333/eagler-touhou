@@ -26,7 +26,8 @@ export function useOptionsViewport(ref: RefObject<HTMLElement | null>, active: b
     const schedule = () => {if (!frame) frame = requestAnimationFrame(() => {frame = 0; update();});};
     // On phones the CSS viewport units place the first frame. Reading
     // visualViewport dimensions here would force layout before the fade starts.
-    if (!isCompactNavigation()) update();
+    if (isCompactNavigation()) schedule();
+    else update();
     window.addEventListener('resize', schedule, {passive: true});
     window.visualViewport?.addEventListener('resize', schedule, {passive: true});
     window.visualViewport?.addEventListener('scroll', schedule, {passive: true});

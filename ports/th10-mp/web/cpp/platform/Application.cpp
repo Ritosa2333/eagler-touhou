@@ -415,9 +415,16 @@ i32 Application::multiplayer_update(){
             const bool checkpointTransition=value.screen==4&&state.pending_screen==7&&
                 world&&!world->actors.session&&state.multiplayer_session.configured&&
                 state.multiplayer_session.started&&runtime.StagePlaybackReady();
-            if(bootTransition||checkpointTransition){
+            // The last input in a stage can schedule the native next-stage
+            // transition before the next checkpoint arrives. Complete that
+            // transition without consuming another input or blocking a seek.
+            const auto& playback=runtime.StagePlaybackController();
+            const bool stageTransition=value.screen==7&&state.pending_screen==11&&
+                world&&world->actors.session&&(!playback.Paused()||playback.Seeking());
+            if(bootTransition||checkpointTransition||stageTransition){
                 frames.transition(value);
                 if(error){multiplayer_fail("Start spectator stage");return -1;}
+                if(stageTransition)multiplayer_waiting=true;
                 return 1;
             }
             multiplayer_waiting=true;return 1;
@@ -500,7 +507,7 @@ i32 Application::multiplayer_update(){
         };
         const double catchupStarted=multiplayer_work_now();
         const bool stepped=playback.Step(restore,tick,[&]{
-            return multiplayer_work_now()-catchupStarted>=4.0;
+            return state.pending_screen!=value.screen||multiplayer_work_now()-catchupStarted>=4.0;
         },multiplayer_spectator_catchup_budget());
         if(error)return -1;
         if(world->error||world->backgrounds.error){

@@ -1,4 +1,6 @@
 #include <eagler/presentation/Extrapolation.hpp>
+#include <eagler/presentation/FrameDeadline.hpp>
+#include <eagler/presentation/SdlFrameClock.hpp>
 #include "GameWindow.hpp"
 #include "AnmManager.hpp"
 #include "EaglerOptions.hpp"
@@ -189,13 +191,13 @@ RenderResult GameWindow::Render()
     }
 #endif
 
-    const u64 currentCounter = SDL_GetPerformanceCounter();
+    const u64 currentCounter = eagler::presentation::FrameCounter();
     if (this->lastPerformanceCounter == 0)
     {
         this->lastPerformanceCounter = currentCounter;
     }
     const f64 elapsed = static_cast<f64>(currentCounter - this->lastPerformanceCounter) /
-                        static_cast<f64>(SDL_GetPerformanceFrequency());
+                        static_cast<f64>(eagler::presentation::FrameCounterFrequency());
     this->lastPerformanceCounter = currentCounter;
     const f64 clampedElapsed = std::clamp(elapsed, 0.0, 0.1);
     this->accumulator += clampedElapsed;
@@ -291,16 +293,13 @@ RenderResult GameWindow::Render()
 #endif
     if ((limitPresentationTo60 || preserveReplayCadence) && targetDt==baseTargetDt)
     {
-        if (this->accumulator >= targetDt)
+        const f64 early = eagler::presentation::FrameEarlyTolerance(targetDt);
+        const auto slots = eagler::presentation::DueFrameSlots(this->accumulator, targetDt, early);
+        if (slots > 0)
         {
-            // Original TH06's 60 Hz path consumes all overdue wall-clock
-            // intervals but runs the game chains only once. Do not let a late
-            // browser callback turn into two or three simulation steps before
-            // the next picture; fast bullets make that catch-up visibly jump.
-            do
-            {
-                this->accumulator -= targetDt;
-            } while (this->accumulator >= targetDt);
+            this->accumulator = eagler::presentation::SingleFrameRemainingTime(
+                this->accumulator, clampedElapsed, targetDt, early, slots,
+                limitPresentationTo60 && !preserveReplayCadence);
 
             const i32 res = runSimulationTick();
             if (res == 0)
@@ -507,7 +506,7 @@ RenderResult GameWindow::Render()
 
 void GameWindow::ResetTiming()
 {
-    this->lastPerformanceCounter = SDL_GetPerformanceCounter();
+    this->lastPerformanceCounter = eagler::presentation::FrameCounter();
     this->accumulator = 0.0;
     g_RenderAlpha = 1.0f;
 }

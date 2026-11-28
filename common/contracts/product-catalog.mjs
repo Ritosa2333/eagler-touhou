@@ -391,11 +391,7 @@ export const PRODUCT_GAMES = Object.freeze({
             inputTiming:Object.freeze({rollbackLimit:8,sendPredictionLimit:8,measuredStartup:true,manualDelayLimit:9}),
             playerCounts:Object.freeze([2]), difficulties:TH09_MULTIPLAYER_DIFFICULTIES,
             loadouts:TH075_MULTIPLAYER_LOADOUTS, peerTransportGlobal:"__th075PeerTransport",
-            loadoutFields:Object.freeze([
-                Object.freeze({labelKey:"multiplayer.character"}),
-                Object.freeze({labelKey:"multiplayer.firstSpell",dependsOn:Object.freeze([0])}),
-                Object.freeze({labelKey:"multiplayer.secondSpell",dependsOn:Object.freeze([0])}),
-            ]),
+            inGameCharacterSelection:true,
             spectator:true, titleRoomEntry:false,
         }),
         features: Object.freeze({thprac:false,languages:true,focusHitbox:false}),

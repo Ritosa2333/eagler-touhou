@@ -4,8 +4,7 @@
   .book-directory .lobby-intro {margin:0 0 12px;padding:0;min-width:0}
   .book-directory .lobby-support-links {display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin:0}
   .book-directory .lobby-support-link {min-height:40px;padding-block:0;font-size:12px;color:var(--book-muted)}
-  .book-directory .lobby-directory-body {display:grid;grid-template-columns:250px minmax(0,1fr);align-items:start;gap:24px;min-width:0;min-height:0}
-  .book-directory .lobby-library {min-width:0;padding:0;background:none}
+  .book-directory .lobby-directory-body {display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
   .book-directory .lobby-rooms-column {display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0}
   .book-directory .lobby-room-tools {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0;min-width:0}
   .book-directory .lobby-actions {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;min-width:0;width:auto}
@@ -31,13 +30,9 @@
   .book-directory .lobby-list-surface .lobby-connection-icon {display:block;width:36px;height:36px;margin:0 0 10px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
   .book-directory .lobby-list-surface[data-has-rooms='false'] .lobby-connection-icon {margin-inline:auto}
   .book-directory .lobby-list-surface .lobby-connection-warning p {overflow-wrap:anywhere;color:var(--book-muted)}
-  .book-lobby-games {min-width:0}
-  .book-lobby-full-list {display:flex;flex-direction:column;gap:4px;min-width:0}
-  .book-lobby-group {display:flex;flex-direction:column;gap:4px;min-width:0}
-  .book-lobby-group-label {margin:10px 0 0;padding:0 8px;color:var(--kit-muted-foreground);font:500 11px/1.5 var(--kit-font)}
-  .book-lobby-item {display:grid;grid-template-columns:28px minmax(0,1fr) 44px;align-items:center;min-width:0;gap:2px;padding:2px;border:1px solid transparent;border-radius:7px;color:var(--book-ink)}
-  .book-lobby-item[data-selected='true'] {background:var(--book-accent-soft);border-color:var(--book-border)}
-  .book-lobby-game {display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:7px;min-width:0;min-height:44px;padding:0;border:0;background:transparent;color:inherit;text-align:left}
+  .book-lobby-games {--lobby-game-size:48px;display:flex;align-items:center;gap:6px;min-width:0}
+  .book-lobby-icon-strip {display:flex;align-items:center;gap:4px;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none}
+  .book-sidebar.lobby-game-sidebar {display:none}
   .book-lobby-cover {display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:4px;overflow:hidden;background:var(--book-raised);font-size:10px}
   .book-lobby-cover img {display:block;width:100%;height:100%;object-fit:cover}
   .book-lobby-cover>svg {width:18px;height:18px}
@@ -52,58 +47,76 @@
   .book-lobby-check svg {display:block;width:16px;height:16px;max-width:none;stroke-width:3.5;stroke-dasharray:24;stroke-dashoffset:24;opacity:0;translate:-2px -6px;transform:scale(.7);transition:opacity 180ms ease,transform 420ms cubic-bezier(.2,.7,.2,1),stroke-dashoffset 420ms cubic-bezier(.2,.7,.2,1)}
   .book-lobby-check[data-checked='true'] {border-color:transparent}
   .book-lobby-check[data-checked='true'] svg {opacity:1;transform:scale(1);stroke-dashoffset:0}
-  .book-lobby-check-control {display:grid;place-items:center;min-width:0;min-height:44px;padding:0;border:0;background:transparent}
   .book-lobby-favorite {display:flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:0;border:0;background:transparent;color:var(--kit-muted-foreground)}
   .book-lobby-favorite svg {width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linejoin:round}
   .book-lobby-favorite:is([aria-pressed='true'],[data-state='checked']) {color:var(--kit-warning)}
   .book-lobby-favorite:is([aria-pressed='true'],[data-state='checked']) svg {fill:currentColor}
-  .book-lobby-mobile {display:none}
-  .book-lobby-picker {width:min(400px,calc(100vw - 24px));max-width:calc(100vw - 24px)}
-  .book-lobby-menu-row {display:grid;grid-template-columns:44px minmax(0,1fr) 44px;height:48px;min-width:0;flex:none}
+  .book-lobby-picker {
+    --ui-selection-max-height:560px;
+    width:min(400px,var(--radix-dropdown-menu-content-available-width,calc(100vw - 24px)));
+    overscroll-behavior:contain;
+    scrollbar-gutter:stable;
+  }
+  .book-lobby-menu-row {position:relative;display:grid;grid-template-columns:minmax(0,1fr) 44px;min-height:48px;min-width:0;flex:none}
   .book-lobby-menu-row[data-selected='true'] {background:var(--kit-accent);border-radius:4px}
   .book-lobby-menu-choice {gap:8px;min-width:0}
+  .book-lobby-menu-choice .book-category-game-identity {flex:1}
   .book-lobby-menu-choice .book-lobby-cover {width:28px;height:28px}
-  .book-lobby-tile {position:relative;flex:none;width:48px;height:48px}
-  .book-lobby-icon {position:relative;display:flex;align-items:center;justify-content:center;flex:none;width:48px;height:48px;min-height:48px;margin:0;padding:4px;border:1px solid transparent;border-radius:6px;background:transparent}
+  .book-lobby-tile {position:relative;flex:none;width:var(--lobby-game-size);height:var(--lobby-game-size)}
+  .book-lobby-icon {position:relative;display:flex;align-items:center;justify-content:center;flex:none;width:var(--lobby-game-size);height:var(--lobby-game-size);margin:0;padding:4px;border:1px solid transparent;border-radius:6px;background:transparent}
   .book-lobby-icon[aria-pressed='true'] {border-color:var(--book-border);background:var(--book-accent-soft)}
   .book-lobby-icon .book-lobby-cover {width:32px;height:32px}
   .book-lobby-tile-toggle {position:absolute;top:0;right:0;z-index:2;display:grid;justify-content:end;align-content:start;width:24px;height:24px;min-height:24px;padding:1px;border:0;background:transparent}
   .book-lobby-short {position:absolute;right:1px;bottom:1px;z-index:1;display:grid;place-items:center;min-width:13px;height:13px;padding-inline:1px;border-radius:2px;background:var(--kit-card);color:var(--kit-foreground);font:600 10px/1 var(--kit-font);pointer-events:none}
-  @media(min-width:1001px) and (hover:hover) and (pointer:fine) {
+  @media(min-width:781px) {
     html:has(.lobby-page),body:has(.lobby-page) {height:100%;overflow:hidden}
-    .launcher-page-surface:has(.book-directory) {height:calc(100dvh - 61px);min-height:0;overflow:hidden}
-    .lobby-main.book-directory {display:flex;flex-direction:column;height:100%;max-width:none;overflow:hidden}
-    .book-directory .lobby-directory-body {flex:1;align-items:stretch;overflow:hidden}
-    .book-directory .lobby-library {overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+    .launcher-page-surface[data-page="lobby"] {height:var(--launcher-content-height);max-width:none;min-height:0;overflow:hidden}
+    .lobby-main.book-directory {display:flex;flex-direction:column;height:100%;max-width:none;padding:0;overflow:hidden}
+    .book-directory .lobby-directory-body {
+      --lobby-column-gutter:clamp(20px,3.9vw,56px);
+      display:grid;flex:1;grid-template:"sidebar rooms" minmax(0,1fr) / var(--book-rail-width) minmax(0,1fr);
+      gap:0;overflow:hidden;
+    }
+    .book-sidebar.lobby-game-sidebar {display:flex;grid-area:sidebar}
+    .book-directory .lobby-library {display:none}
+    .book-directory .lobby-rooms-column {grid-area:rooms;padding:12px var(--lobby-column-gutter) 24px;overflow:hidden}
+    .book-directory .lobby-intro {margin:0}
     .book-directory .lobby-list-surface {flex:1;min-height:0}
-    .book-directory .lobby-room-list {overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+    .book-directory .lobby-room-list {overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
   }
-  @media(max-width:1000px),(hover:none),(pointer:coarse) {
+  @media(max-width:780px) {
     html:has(.lobby-page),body:has(.lobby-page) {height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
-    .book-directory .lobby-directory-body {display:block}
-    .book-directory .lobby-library {margin-bottom:12px}
-    .book-lobby-desktop {display:none}
-    .book-lobby-mobile {display:flex;gap:6px;min-width:0}
-    .book-lobby-icon-strip {display:flex;align-items:center;gap:4px;min-width:0;padding:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none}
-    .book-lobby-picker-trigger {flex:none;width:48px;height:48px}
     .book-directory .lobby-room-tools {display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:6px}
     .book-directory .lobby-actions {display:flex;justify-content:flex-end;flex-wrap:nowrap;gap:6px;width:auto}
     .book-directory .lobby-actions .lobby-button {flex:1 1 0;width:auto;padding-inline:4px;font-size:12px}
     .book-directory .lobby-actions .lobby-refresh {width:44px;flex:0 0 44px}
   }
-  @media(max-width:360px) {
-    .book-directory .book-room-filter-trigger {width:44px;padding-inline:0;justify-content:center}
-    .book-directory .book-room-filter-trigger span {display:none}
+  .book-directory .lobby-actions .lobby-compact-replay {display:none}
+  @media(max-width:780px) {
+    .book-directory :is(.book-room-filter-trigger,.lobby-actions .lobby-labeled-action) {width:44px;flex:0 0 44px;padding-inline:0;justify-content:center}
+    .book-directory :is(.book-room-filter-trigger,.lobby-labeled-action) > span {display:none}
+    .book-directory .lobby-actions .lobby-compact-replay {display:inline-flex;flex:0 0 44px}
   }
 }
+.lobby-game-sidebar .book-lobby-sidebar-check,.book-lobby-menu-row .book-lobby-menu-check {
+  position:absolute;z-index:1;inset:-1px auto auto -3px;display:grid;width:20px;height:20px;min-height:0;
+  place-items:center;border:0;background:transparent;padding:0;
+}
+.book-lobby-menu-row .book-lobby-menu-check {inset:0 auto auto 0;width:24px;height:24px}
+.book-lobby-sidebar-check .book-lobby-check,.book-lobby-menu-check .book-lobby-check {background:var(--kit-card)}
+:is(.book-lobby-sidebar-check,.book-lobby-menu-check):is(:focus-visible,[data-highlighted]) {
+  outline:2px solid var(--kit-ring);outline-offset:-2px;
+}
+.book-lobby-menu-row .book-lobby-menu-choice {padding-inline:11px 4px}
+.book-lobby-menu-row .book-lobby-menu-all .book-lobby-cover {width:32px;height:32px}
 .book-directory :is(.lobby-actions .lobby-button,.book-room-filter-trigger,.lobby-room-row>.lobby-join) {font-family:var(--kit-font);font-weight:600;letter-spacing:0}
+.lobby-page .book-directory .lobby-button:active {transform:none}
 .book-directory .ui-button.book-lobby-favorite[aria-pressed='true'] {background:transparent;border-color:transparent;color:var(--kit-warning)}
 @media(prefers-reduced-motion:reduce) {.book-lobby-check,.book-lobby-check svg {transition:none}}
 @media(prefers-reduced-motion:reduce) {.book-directory .lobby-refresh[data-loading='true'] svg {animation:none}}
 .less-motion .book-directory .lobby-refresh[data-loading='true'] svg {animation:none}
 .less-motion .book-lobby-check,.less-motion .book-lobby-check svg {transition:none}
-.book-lobby-game > :is(.book-lobby-cover,.book-lobby-copy),.book-lobby-icon > .book-lobby-cover {transition:translate 380ms cubic-bezier(.22,.7,.2,1),scale 380ms cubic-bezier(.22,.7,.2,1)}
-.book-lobby-game:is(:hover,:focus-visible):not(:disabled) > :is(.book-lobby-cover,.book-lobby-copy) {translate:4px 0}
-.book-lobby-game:is(:hover,:focus-visible):not(:disabled) > .book-lobby-cover,.book-lobby-icon:is(:hover,:focus-visible):not(:disabled) > .book-lobby-cover {scale:1.06}
-@media(prefers-reduced-motion:reduce) {.book-lobby-game > :is(.book-lobby-cover,.book-lobby-copy),.book-lobby-icon > .book-lobby-cover {transition:none;translate:none!important;scale:none!important}}
-.less-motion .book-lobby-game > :is(.book-lobby-cover,.book-lobby-copy),.less-motion .book-lobby-icon > .book-lobby-cover {transition:none;translate:none!important;scale:none!important}
+.book-lobby-icon > .book-lobby-cover {transition:scale 380ms cubic-bezier(.22,.7,.2,1)}
+.book-lobby-icon:is(:hover,:focus-visible):not(:disabled) > .book-lobby-cover {scale:1.06}
+@media(prefers-reduced-motion:reduce) {.book-lobby-icon > .book-lobby-cover {transition:none;scale:none}}
+.less-motion .book-lobby-icon > .book-lobby-cover {transition:none;scale:none}

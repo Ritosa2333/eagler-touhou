@@ -1156,10 +1156,12 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     this.rtcReplaceRequested || peer.recoveryTimer || peer.restartInFlight) return;
                 const failed = peer.pc.connectionState === 'failed' || peer.pc.iceConnectionState === 'failed';
                 const disconnected = peer.pc.connectionState === 'disconnected' || peer.pc.iceConnectionState === 'disconnected';
-                const stalled = silentStall && peer.lastInputSentAt &&
+                const inputStalled = () => peer.lastInputSentAt &&
+                    !(performance.now() < this.inputStallResumeAt) &&
                     Date.now() - peer.lastReceivedAt >= 3000 &&
                     (globalThis.__eaglerNetplayLanActive === true ||
                      Number(peer.inputDc?.bufferedAmount || 0) + Number(peer.controlDc?.bufferedAmount || 0) >= 32768);
+                const stalled = silentStall && inputStalled();
                 if (!failed && !disconnected && !stalled) return;
                 if (peer.adaptive?.recover()) return;
                 peer.recoveryPending = true;
@@ -1174,10 +1176,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     peer.recoveryTimer = null;
                     const stillDisconnected = peer.pc.connectionState === 'disconnected' || peer.pc.iceConnectionState === 'disconnected';
                     const nowFailed = peer.pc.connectionState === 'failed' || peer.pc.iceConnectionState === 'failed';
-                    const stillStalled = stalled && peer.lastInputSentAt &&
-                        Date.now() - peer.lastReceivedAt >= 3000 &&
-                        (globalThis.__eaglerNetplayLanActive === true ||
-                         Number(peer.inputDc?.bufferedAmount || 0) + Number(peer.controlDc?.bufferedAmount || 0) >= 32768);
+                    const stillStalled = stalled && inputStalled();
                     if (!stillDisconnected && !nowFailed && !stillStalled) {this.clearPeerRecovery(peer);return;}
                     const after = silentStall ? null : await this.peerProgressSnapshot(peer);
                     const progressed = silentStall ? peer.lastReceivedAt > receivedAt :

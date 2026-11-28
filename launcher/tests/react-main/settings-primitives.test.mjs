@@ -8,6 +8,7 @@ import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 import {installMountedDom} from './mounted-dom-environment.mjs';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
+import {PRODUCT_IDS} from '../../../common/contracts/product-catalog.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 let env, work, React, createRoot, owners, root;
 const act = async callback => React.act(async () => {callback(); await new Promise(resolve => setTimeout(resolve, 0));});
@@ -39,6 +40,18 @@ function createSettings(productId, values = new Map()) {
   model.hydrate(context);
   return {model, context, storage, values};
 }
+test('all products default to touch on mobile and preserve an explicit opt-out', () => {
+  for (const productId of PRODUCT_IDS) {
+    const {model, context} = createSettings(productId);
+    assert.equal(model.getSnapshot().options.touchEnabled, false, productId);
+    const mobile = {...context, mobile: true};
+    model.hydrate(mobile);
+    assert.equal(model.getSnapshot().options.touchEnabled, true, productId);
+    model.setOption('touchEnabled', false);
+    model.hydrate(mobile);
+    assert.equal(model.getSnapshot().options.touchEnabled, false, productId);
+  }
+});
 function settingsActions() {
   const unavailable = () => {throw new Error('Unexpected settings action');};
   const midi = Object.freeze({enabled: false, granted: false, busy: false, supported: false, outputs: [], selectedId: '', hint: 'Unavailable'});
@@ -266,7 +279,9 @@ test('TH03 solo focus and always-visible hitbox settings are independent',async(
   const unexpected=()=>{throw Error('Unexpected action');};
   const actions={confirm:unexpected,file:unexpected,showAppleNotice:unexpected,feedback(){},reportError:unexpected,externalMidi:{subscribe:()=>()=>{},getSnapshot:()=>midi,setEnabled:unexpected,selectOutput:unexpected}};
   await render(React.createElement(owners.LocaleProvider,{locale:'en'},React.createElement(owners.SettingsBody,{model,actions,onOpenTouchLayout:unexpected})));
-  assert.equal(n('#th03FocusToggle').getAttribute('aria-checked'),'true');assert.equal(n('#th03AlwaysHitboxToggle').getAttribute('aria-checked'),'false');
-  await act(()=>n('#th03FocusToggle').click());await act(()=>n('#th03AlwaysHitboxToggle').click());
+  assert.equal(n('#th03FocusToggle').getAttribute('aria-checked'),'true');
+  await act(()=>n('#mobileOptionsToggle').click());
+  assert.equal(n('#alwaysHitboxToggle').getAttribute('aria-checked'),'false');
+  await act(()=>n('#th03FocusToggle').click());await act(()=>n('#alwaysHitboxToggle').click());
   assert.equal(model.getSnapshot().options.th03FocusEnabled,false);assert.equal(model.getSnapshot().options.alwaysHitbox,true);
 });

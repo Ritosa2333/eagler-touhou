@@ -1,4 +1,6 @@
 #include <eagler/presentation/Extrapolation.hpp>
+#include <eagler/presentation/FrameDeadline.hpp>
+#include <eagler/presentation/SdlFrameClock.hpp>
 #include "GameWindow.hpp"
 
 #include <SDL3/SDL.h>
@@ -242,7 +244,7 @@ RenderResult GameWindow::Render()
         EM_ASM({ globalThis.__eaglerDebugTargetDt = $0; }, targetDt);
 #endif
 
-    u64 currentPerfCounter = SDL_GetPerformanceCounter();
+    u64 currentPerfCounter = eagler::presentation::FrameCounter();
     if (g_LastPerfCounter == 0)
     {
         g_LastPerfCounter = currentPerfCounter;
@@ -374,17 +376,13 @@ RenderResult GameWindow::Render()
 #endif
     if (limitPresentationTo60 || preserveReplayCadence)
     {
-        if (this->accumulator >= targetDt)
+        const f64 early = eagler::presentation::FrameEarlyTolerance(targetDt);
+        const auto slots = eagler::presentation::DueFrameSlots(this->accumulator, targetDt, early);
+        if (slots > 0)
         {
-            // Original TH07 does the same thing as TH06 here: advance its
-            // timing baseline past every overdue 1/60 interval, then run the
-            // game chains only once. Catching up multiple simulation ticks in
-            // one visible frame is a portable-only behavior and is especially
-            // obvious on fast bullets.
-            do
-            {
-                this->accumulator -= targetDt;
-            } while (this->accumulator >= targetDt);
+            this->accumulator = eagler::presentation::SingleFrameRemainingTime(
+                this->accumulator, elapsed, targetDt, early, slots,
+                limitPresentationTo60 && !preserveReplayCadence);
 
             const i32 res = runSimulationTick();
             if (res == 0)
@@ -658,7 +656,7 @@ ZunResult GameWindow::CreateGameWindow()
 #endif
 
     g_GameWindow.isAppActive = 1;
-    g_LastPerfCounter = SDL_GetPerformanceCounter();
+    g_LastPerfCounter = eagler::presentation::FrameCounter();
 
 #ifdef USING_GL
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);

@@ -2,14 +2,13 @@
 // Real native/browser persistence is covered by the retained TH09 browser run.
 import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
-import {existsSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
-import {createRequire} from 'node:module';
-import {dirname, resolve} from 'node:path';
+import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 import {installMountedDom} from './mounted-dom-environment.mjs';
-const project=fileURLToPath(new URL('../../',import.meta.url)),require=createRequire(resolve(project,'package.json'));
+import {authoredSourcesPlugin} from './authored-sources.mjs';
+const project=fileURLToPath(new URL('../../',import.meta.url));
 let env,React,createRoot,api,work,root;
 before(async()=>{
   env=installMountedDom();React=await import('react');({createRoot}=await import('react-dom/client'));
@@ -19,10 +18,8 @@ before(async()=>{
     export * from './app/components/room/MultiplayerSettingsControls.tsx';
     export * from './app/components/notices/ReplayDialog.tsx';
     export * from './app/models/game-settings.ts'; export * from './app/models/replays.ts';
-    export * from './app/i18n.tsx'; export {gameRuntimeOptions} from './app/services/game-preparation.ts';`},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(work,'test.mjs'),logLevel:'silent',plugins:[{name:'authored',setup(ctx){
-      ctx.onResolve({filter:/^[^./]/},args=>({path:args.path.startsWith('node:')?args.path:args.path,external:true}));
-      ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const p=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(p))return {path:p};});
-    }}]});api=await import(pathToFileURL(resolve(work,'test.mjs')));
+    export * from './app/i18n.tsx'; export {gameRuntimeOptions} from './app/services/game-preparation.ts';`},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(work,'test.mjs'),logLevel:'silent',
+    packages:'external',plugins:[authoredSourcesPlugin(project)]});api=await import(pathToFileURL(resolve(work,'test.mjs')));
 });
 afterEach(async()=>{if(root)await act(()=>root.unmount());root=null;env.document.body.replaceChildren();assert.deepEqual(env.errors.splice(0),[]);});
 after(async()=>{env.close();await rm(work,{recursive:true,force:true});});

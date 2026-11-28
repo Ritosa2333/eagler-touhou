@@ -70,7 +70,7 @@ for(const locale of ['zh-CN','en'])test(locale+': cooperative data and commands 
  assert.equal(nodes[1].dataset.nodeKind,'boss');assert.equal(nodes[1].dataset.kind,'round');
  await React.act(async()=>nodes[1].click());assert.deepEqual(f.calls.pop(),['seek',1200,'session_1']);
  await f.click('[id$="Pause"]');assert.deepEqual(f.calls.pop(),['pause',undefined,'session_1']);
- assert.ok(panel.textContent.includes(locale==='en'?'Seeking':'正在定位'),'commands wait for authoritative native reports');
+ assert.ok(panel.textContent.includes(views.translate(locale,'spectator.seeking')),'commands wait for authoritative native reports');
  await f.update(report({revision:2,paused:true,seeking:false}));await f.click('[id$="Pause"]');assert.equal(f.calls.pop()[0],'play');
  await f.click('[id$="Live"]');assert.equal(f.calls.pop()[0],'live');
  await f.update(null,{...owner,epoch:4,game:'th09'});assert.equal(f.container.textContent,'');
@@ -82,7 +82,7 @@ test('seeking displays actual progress and keeps pause available before reaching
  assert.equal(panel.querySelector('[id$="Score"]').textContent,'Stage 4');
  await f.update(report({revision:2,position:900}));
  assert.equal(range.value,'900');assert.equal(range.getAttribute('aria-valuetext'),'0:05');
- assert.ok(panel.textContent.includes('Seeking'));
+ assert.ok(panel.textContent.includes(views.translate('en','spectator.seeking')));
  await f.click('[id$="Pause"]');assert.deepEqual(f.calls.pop(),['pause',undefined,'session_1']);
  await f.update(report({revision:3,position:900,target:900,paused:true,seeking:false}));
  assert.equal(range.value,'900');assert.ok(panel.textContent.includes('Paused'));

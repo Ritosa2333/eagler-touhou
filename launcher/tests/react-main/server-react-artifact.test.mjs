@@ -16,6 +16,7 @@ import { readReactFrontendArtifact } from '../../lib/react-frontend-artifact.mjs
 import { writeSyntheticRuntimeRelease } from '../support/runtime-release-fixture.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
+const validationGames = ['th06', 'th07', 'th08', 'th10'];
 const execute = promisify(execFile);
 const json = async (path) => JSON.parse(await readFile(path, 'utf8'));
 const cleanEnvironment = { ...process.env };
@@ -77,14 +78,15 @@ describe('opt-in React artifacts use the actual server packager and generic veri
       EAGLER_REACT_APP_SHELL_ORIGIN: 'https://review.invalid',
     });
     const runtimeRelease = await writeSyntheticRuntimeRelease(resolve(temporary, 'runtime'));
-    const seed = createPublicationHostSeed('web-validation-react-server');
+    const seed = createPublicationHostSeed('web-validation-react-server', validationGames);
     seed.schema = 'eagler-touhou/site-manifest/1';
     seed.shared = {
       resourceMode: 'hosted',
       vanillaFont: 'shared/msgothic.ttc?v=f',
       unicodeFont: 'shared/unifont.otf?v=g',
     };
-    for (const [game, product] of Object.entries(PRODUCT_GAMES))
+    for (const game of validationGames) {
+      const product = PRODUCT_GAMES[game];
       Object.assign(seed.games[game], {
         runtime: `runtime/${game}/${game}.html?hosted=1&v=old`,
         ...(product.multiplayerRuntime
@@ -100,15 +102,16 @@ describe('opt-in React artifacts use the actual server packager and generic veri
         features: { thprac: false, focusHitbox: false },
         music: { midi: { files: [], ...(product.musicCapabilities.midi ? {} : { supported: false }) } },
       });
+    }
     const features = {
       schema: 'eagler-touhou/server-features/1',
       resourceMode: 'import',
       games: Object.fromEntries(
-        Object.entries(PRODUCT_GAMES).map(([game, product]) => [
+        validationGames.map(game => [
           game,
           {
-            ...(product.features.languages ? { languages: ['ja'] } : {}),
-            ...(product.features.thprac ? { thprac: false } : {}),
+            ...(PRODUCT_GAMES[game].features.languages ? { languages: ['ja'] } : {}),
+            ...(PRODUCT_GAMES[game].features.thprac ? { thprac: false } : {}),
           },
         ]),
       ),
@@ -124,7 +127,7 @@ describe('opt-in React artifacts use the actual server packager and generic veri
           `--site-manifest=${resolve(temporary, 'host-seed.json')}`,
           `--feature-config=${resolve(temporary, 'features.json')}`,
           '--profile=web-validation-react-server',
-          '--games=th06,th07,th08,th10',
+          `--games=${validationGames.join(',')}`,
           '--music=midi',
           ...extra,
         ],
@@ -203,7 +206,7 @@ describe('opt-in React artifacts use the actual server packager and generic veri
     const runtime = await verifyRuntimePublication(plain, await json(resolve(plain, 'site-manifest.json')));
     assert.equal(
       runtime.groups.length,
-      ['th06', 'th07', 'th08', 'th10'].reduce(
+      validationGames.reduce(
         (count, game) => count + 1 + Number(Boolean(PRODUCT_GAMES[game].multiplayerRuntime)),
         0,
       ),

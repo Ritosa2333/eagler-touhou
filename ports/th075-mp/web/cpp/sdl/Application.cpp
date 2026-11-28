@@ -21,22 +21,83 @@ bool Application::warm_menu_images(){
  return true;
 }
 void Application::clear_transient(){for(auto id:transientTextures)graphics.destroy(id);transientTextures.clear();menuText=0;musicArtwork={};}
+bool Application::prepare_battle_assets(){
+ if(battleAssetsReady)return true;
+ using E=ResourceEdition;
+ std::vector<u8> bytes;
+ if(!resources.read(E::Base,"data/system/effect/effect.pat",bytes)||!effects.load(bytes.data(),bytes.size())){
+  error=resources.error+effects.error;return false;
+ }
+ battleAssetsReady=load_images(hudImages,E::Base,"data/system/battle.dat")&&
+                   load_images(effectImages,E::Base,"data/system/effect.dat")&&
+                   load_images(windowImages,E::Base,"data/system/window.dat");
+ return battleAssetsReady;
+}
 bool Application::prepare_text(u32& texture,const std::string& value,TextRasterOptions o){if(!texture){texture=fonts.create(value,o);if(texture)transientTextures.push_back(texture);}else if(!fonts.write(texture,value,o)){error=fonts.error;return false;}if(!texture){error=fonts.error;return false;}return true;}
 bool Application::initialize(u32 scale){if(initialized)return true;// The host schedules ticks with requestAnimationFrame. SDL's default swap
 // yield uses emscripten_sleep(0), whose timer can be deferred during mobile taps.
 SDL_SetHint(SDL_HINT_EMSCRIPTEN_ASYNCIFY,"0");SDL_SetHint(SDL_HINT_EMSCRIPTEN_CANVAS_SELECTOR,"#canvas");if(!graphics.initialize(scale)){error=graphics.error;return false;}if(!fonts.initialize()){error=fonts.error;return false;}if(!audio.initialize(resources)){error=audio.error;return false;}mkdir("/save",0777);mkdir("/save/replay",0777);std::vector<u8> bytes;if(FileResources::read_file("/save/score.dat",bytes)&&!profile.load(bytes.data(),bytes.size())){error=profile.error;return false;}if(FileResources::read_file("/save/config.dat",bytes)&&!settings.load(bytes.data(),bytes.size())){error="Invalid config.dat";return false;}if(!FileResources::read_file("/save/config.dat",bytes)){settings.mappings[0].bindings={0xcb,0xcd,0xc8,0xd0,0x2c,0x2d,0x2e,0x2f,0x1c};settings.mappings[1].bindings={0x1e,0x20,0x11,0x1f,0x24,0x25,0x26,0x17,0x12};}audio.musicVolume=settings.musicVolume;audio.soundVolume=settings.soundVolume;loadingReplay.random.state=u32(std::time(nullptr));selection.difficulty=settings.difficulty;
- if(!resources.read(ResourceEdition::Base,"data/system/effect/effect.pat",bytes)||!effects.load(bytes.data(),bytes.size())){error=resources.error+effects.error;return false;}if(!load_images(hudImages,ResourceEdition::Base,"data/system/battle.dat")||!load_images(effectImages,ResourceEdition::Base,"data/system/effect.dat")||!load_images(windowImages,ResourceEdition::Base,"data/system/window.dat"))return false;dialogueTexture=graphics.create_surface(1024,256);if(!FileResources::on_demand()&&!warm_menu_images())return false;initialized=true;sceneCode=0x2004;return enter(4);}
+ dialogueTexture=graphics.create_surface(1024,256);if(!FileResources::on_demand()&&(!prepare_battle_assets()||!warm_menu_images()))return false;initialized=true;sceneCode=0x2004;return enter(4);}
 bool Application::save_scores(){if(!initialized)return true;if(battle&&selection.mode==GameMode::Story&&battle->session.replayMode!=2&&battle->session.replayMode!=4)profile.store_spell_records(battle->simulation.rules);if(battle&&battle->session.replayMode!=2&&battle->session.replayMode!=4){for(u8 a=0;a<11;a++)for(u8 b=0;b<11;b++)profile.victories[a][b]=u32(battle->session.victories[a][b]);}auto b=profile.encode();if(!FileResources::write_file("/save/score.dat",b.data(),u32(b.size()))){error="Unable to save score.dat";return false;}auto cfg=settings.save();if(!FileResources::write_file("/save/config.dat",cfg.data(),u32(cfg.size()))){error="Unable to save config.dat";return false;}return true;}
-void Application::release_battle(bool characters){if(battle)pendingSession=battle->session;battleRenderer.reset();battleArt.reset();battle.reset();if(characters){loading.story={};loading.characters={};for(u8 i=0;i<2;i++){characterImages[i]->clear();portraitImages[i]->clear();captionImages[i]->clear();audio.release_character(i);characterAssets[i]=CharacterAssets{};}}}
+void Application::release_battle(bool characters){
+ if(battle)pendingSession=battle->session;
+ battleRenderer.reset();
+ battleArt.reset();
+ battle.reset();
+ stageImages.clear();
+ dialogueCache={};
+ if(characters){
+  loading.story={};
+  loading.characters={};
+  for(u8 i=0;i<2;i++){
+   characterImages[i]->clear();
+   portraitImages[i]->clear();
+   captionImages[i]->clear();
+   audio.release_character(i);
+   characterAssets[i]=CharacterAssets{};
+  }
+ }
+}
 void Application::change(u16 code){if(code==sceneCode)return;if(captureTexture)graphics.destroy(captureTexture);captureTexture=graphics.snapshot();sceneCode=code;fade.count=-1;fade.style=0;if(!(code&0xf00)&&(code&0xf000))enter(u8(code));}
 bool Application::enter(u8 next){scene=next;sceneStart=now;loaderReady=false;sceneImages.clear();selectionCharacters.clear();selectionBackgrounds.clear();clear_transient();using E=ResourceEdition;switch(scene){case 0:if(!battle){error="Battle scene missing after loading";return false;}break;case 1:if(!load_images(sceneImages,E::Base,"data/system/load.dat"))return false;break;case 2:release_battle(true);pendingSession={};recordingFinished=false;if(!load_images(sceneImages,E::Base,"data/system/title.dat"))return false;title.initialize(now,now,selection);select_music(40);start_music();break;case 3:release_battle(true);recording={};recording.header.fill(0);std::copy(profile.workingName.begin(),profile.workingName.end(),recording.header.begin());pendingSession={};pendingSession.replayMode=1;progress=profile.selection_progress();select.initialize(selection,progress,profile.selection_unlocks());if(!load_images(sceneImages,E::Patched,"data/system/select.dat")||!load_images(selectionCharacters,E::Patched,"data/system/selectchar.dat")||!load_images(selectionBackgrounds,E::Patched,"data/system/selectbg.dat"))return false;break;case 4:logoFrames=0;if(!load_images(sceneImages,E::Base,"data/system/logo.dat"))return false;break;case 5:release_battle(true);scan_replays();replays.initialize(replays.selected);if(!load_images(sceneImages,E::Patched,"data/system/replay.dat"))return false;break;case 6:if(!battle){error="Result has no battle";return false;}result.initialize(battle->simulation.characters[0]->actor,battle->simulation.characters[1]->actor,battle->simulation.rules,battle->session,battle->simulation.contacts.records.sessionCombo);if(!load_images(sceneImages,E::Base,"data/system/result.dat"))return false;break;case 7:nameEntry.initialize(true,pendingSession.replayDisposition);profile.workingName=blank_name();std::copy(profile.workingName.begin(),profile.workingName.end(),recording.header.begin());choose_replay_name();if(!load_images(sceneImages,E::Patched,"data/system/replay.dat"))return false;break;case 8:if(battle)loading.story=battle->simulation.story;if(!loading.characters[0]){error="Ending has no player";return false;}origin(35,360,true);text("",120,120,255,16,1,false);loading.characters[0]->actor.notice.dialogueVisible=0;selection.storyStage=loading.characters[0]->next_story_stage();loading.story.stage=selection.storyStage;loading.characters[0]->initialize_story(loading.characters[1]->actor,loading.story);load_story_artwork(*loading.characters[0],selection.storyStage);pendingSession.replayDisposition=selection.storyStage==8||selection.storyStage==9?0:-1;profile.unlock(i16(selection.character[0]+(selection.storyStage==8?0:selection.storyStage==9?20:40)));if(selection.storyStage!=8&&selection.storyStage!=9)++profile.selected().counters[1];break;case 9:options.initialize();if(!load_images(sceneImages,E::Base,"data/system/option.dat"))return false;description(0);break;case 10:{nameEntry.initialize(false,pendingSession.replayDisposition);profile.select(selection.character[0],selection.difficulty);u32 score=loading.characters[0]?u32(loading.characters[0]->actor.score):0;const auto timestamp=std::time(nullptr);const auto* date=std::localtime(&timestamp);nameEntry.rank=profile.selected().insert_score(score,u8(date->tm_mon+1),u8(date->tm_mday));profile.workingName=blank_name();if(!load_images(sceneImages,E::Base,"data/system/replay.dat"))return false;break;}case 11:case 13:cinema.initialize(scene==11,now,now);audio.stop_music();select_music(scene==11?41:40);start_music();if(!load_images(sceneImages,E::Base,scene==11?"data/system/staffroll.dat":"data/system/opening.dat"))return false;break;case 12:music.initialize();if(!resources.read(E::Patched,"musicroom.dat",readBuffer)||!music.catalog.load(readBuffer.data(),readBuffer.size())){error=music.catalog.error;return false;}if(!load_images(sceneImages,E::Base,"data/system/music.dat"))return false;update_music_catalog();update_title(0);update_details(0);break;case 14:resultList={};resultList.unlocks=profile.selection_unlocks();if(!load_images(sceneImages,E::Base,"data/system/resultlist.dat"))return false;load_result_character(0);update_result_text(false);break;default:error="Unknown scene";return false;}return error.empty();}
 bool Application::restart(){if(!battle)return false;return_title();change(0x2203);return true;}
 bool Application::prepare_multiplayer(u32 seed,u8 first,u8 other,u8 firstCards,u8 otherCards,u8 difficulty){
  if(first>10||other>10||firstCards>8||otherCards>8||difficulty>3)return false;
- release_battle(true);pendingSession={};pendingRules={};recording={};playerSettings={};selection={};
+ roomMatchSelection=false;playerSettings={};selection={};
  selection.mode=GameMode::VersusCpu;selection.activePlayer=0;selection.character={first,other};selection.difficulty=difficulty;
  selection.firstSpell={u8(firstCards%3),u8(otherCards%3)};selection.secondSpell={u8(firstCards/3),u8(otherCards/3)};
  selection.alternatePalette[1]=first==other?1:0;selection.background=0;
+ return start_multiplayer_battle(seed);
+}
+bool Application::prepare_multiplayer_selection(u32 seed,u8 difficulty){
+ if(difficulty>3)return false;
+ // This direct transition to selection has no fade that reads the old frame.
+ release_battle(true);
+ if(captureTexture){graphics.destroy(captureTexture);captureTexture=0;}
+ pendingRules={};loadingReplay={};loadingReplay.random.state=seed;
+ settings.renderEveryFrame=1;settings.deviceRefresh=1;settings.animatedBackground=1;
+ roomMatchSelection=true;
+ selection={};selection.mode=GameMode::VersusCpu;selection.character={0,1};selection.difficulty=difficulty;
+ playerSettings={};select={};
+ // Keep the three menu atlases across matches and seeks. Fighter and stage
+ // resources are still loaded by load_battle after both players finish.
+ for(const auto* path:{"data/system/select.dat","data/system/selectchar.dat","data/system/selectbg.dat"}){
+  const auto key=std::make_pair(ResourceEdition::Patched,std::string(path));
+  if(menuImages.count(key))continue;
+  auto bank=std::make_shared<TextureBank>(graphics);
+  if(!load_images(*bank,key.first,key.second))return false;
+  menuImages.emplace(key,std::move(bank));
+ }
+ sceneCode=3;
+ if(!enter(3))return false;
+ SelectionUnlocks roomUnlocks;roomUnlocks.storyFlags.fill(1);
+ progress={};select.initialize(selection,progress,roomUnlocks);
+ pendingSession.roundIndex=1;
+ select_music(40);start_music();
+ return error.empty();
+}
+bool Application::start_multiplayer_battle(u32 seed){
+ release_battle(true);pendingSession={};pendingRules={};recording={};
  // Local profiles never determine this match's initial win counters.
  pendingSession.roundIndex=1;pendingSession.replayMode=1;loadingReplay={};loadingReplay.random.state=seed;
  settings.renderEveryFrame=1;settings.deviceRefresh=1;settings.animatedBackground=1;
@@ -44,7 +105,7 @@ bool Application::prepare_multiplayer(u32 seed,u8 first,u8 other,u8 firstCards,u
 }
 bool Application::show_replays(){release_battle(true);sceneCode=5;return enter(5);}
 bool Application::save_multiplayer_replay(){
- if(recording.rounds.empty())return false;
+ if(recording.rounds.empty())return roomMatchSelection;
  if(battle)finish_replay_round();choose_replay_name();save_replay_name();return error.empty();
 }
 bool Application::probe_scene(u8 n){change(u16(0xf000|n));return error.empty();}
