@@ -1,0 +1,171 @@
+{
+  "schema": "eagler-touhou/prebuilt-source/1",
+  "game": "bro",
+  "repository": "https://github.com/TSake/TouHou-BossRushOnline",
+  "branch": "master",
+  "commit": "启动加载优化（#35）：清单先提交、首帧后后台预热贴图/SE，wasm 去掉重复内嵌的 BadApple（21MB）；顺带带出 #34 legacy 选项等高修正、#11 流式 BGM（commit 8b9a585，WASM build_id=96902659）；后续：观战阶段 A+B（BRO ae9a013 → 6057bcd；Lua 未变，WASM build_id 沿用 4f12850d）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；WASM build_id 4f12850d → 558441cb）。后续：观战阶段 A+B（BRO ae9a013 → 6057bcd）；阶段 3AY nearest-player 扩展 + 3AZ 联机主循环/远端真身（BRO 6057bcd → HEAD，Lua 改动：player_nearest.lua 新增、multiplayer.lua 自动生成；3BA 双实例锁步 e2e + 卡外对象 frame 绑定（digest 顺序无关；WASM build_id 558441cb → 62f6bec6）。后续：阶段 3BB（远端真身同帧诞生 + 本地槽误绑修复；仅 Lua 改动 multiplayer.lua，WASM build_id 62f6bec6 → 36ae033c）。后续：阶段 3BC（门面层回环联机 e2e；仅 JS 改动 multiplayer.mjs 的 loadout systems 容错，WASM build_id 不变 = 36ae033c）。后续：阶段 3BD/3BE（TH06 混合角色开火分叁定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）。后续：阶段 3BD/3BE（TH06 混合角色开火分叉定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）；第七轮 3BF/3BG/3BH（正式房间默认 arm 轻量回滚 + 回滚重放支持 3 人；纯观战端跳过联机门面；Lua 未变，WASM build_id 沿用 5df2b19a）。后续：阶段 3BD/3BE（TH06 混合角色开火分叉定性为纯视觉 GHOST 组，digest 跳过 group=0；3 人房锁步验收；Lua 改动 multiplayer.lua，WASM build_id 36ae033c → 5df2b19a）；第七轮 3BF/3BG/3BH（正式房间默认 arm 轻量回滚 + 回滚重放支持 3 人；纯观战端跳过联机门面；Lua 未变，WASM build_id 沿用 5df2b19a）；第八轮 3BI（回滚单人 Unlock* 全解锁，保留多人豁免；岐道四季 card 177 补 pin_task 钉 P1；Lua 改动 boot.lua/spell_player_mp.lua/web_patches.lua，WASM build_id 5df2b19a → 715a2bbd）。；本轮 bug 修复：网页版启动不再弹「无音乐/请选 OGG」（a68236163）、多人直进关停掉菜单 BGM 避免叠播（80b12a9，boot.lua）、游戏内退出游戏走 eagler exit 协议修 iframe 白屏（78d3cec）、实现 room-preview/room-return 让房间显示主界面并支持中途退房重开（597890e，managed-shell.mjs + eagler_adapter.mjs）、帧摘要改数值累加 + 摘要表环形裁剪修多人卡顿（696b5eb，multiplayer.lua/mjs）；WASM build_id 715a2bbd → d0f8baa9；本端口仍保留自己的 dist/package-manifest.json（96kbps 音乐包），未覆盖；本轮 bug 修复：网页版启动不再弹「无音乐/请选 OGG」（a68236163）、多人直进关停掉菜单 BGM 避免叠播（80b12a9，boot.lua）、游戏内退出游戏走 eagler exit 协议修 iframe 白屏（78d3cec）、实现 room-preview/room-return 让房间显示主界面并支持中途退房重开（597890e，managed-shell.mjs + eagler_adapter.mjs）、帧摘要改数值累加 + 摘要表环形裁剪修多人卡顿（696b5eb，multiplayer.lua/mjs）、消弹点 colli hook 覆盖子类修远端收集卡住（3bd397b，web_patches.lua）、红烛/同类卡联机卡顿帧级缓存+几何快路径（3bd397b，spell_player_mp/multiplayer.lua）、数字 character 索引映射 BRO 角色类名（3bd397b，eagler_adapter.mjs）；WASM build_id d0f8baa9 → 512f0d1e；本端口仍保留自己的 dist/package-manifest.json（96kbps 音乐包），未覆盖；本轮联机桥接性能优化（纯 JS，WASM build_id 仍 512f0d1e）：POS/DIGEST 包重载荷改惰性计算（无诊断订阅不调 BRO_net_divergence/BRO_net_players）、tick 输入写回 1+2N 次 eval 合成 1 次 + getLocalPos 折进同一次往返、sampleDigest 两次 eval 合成 1 次（multiplayer.mjs）；本轮联机桥接性能优化（纯 JS，WASM build_id 仍 512f0d1e）：POS/DIGEST 包重载荷改惰性计算（无诊断订阅不调 BRO_net_divergence/BRO_net_players）、tick 输入写回 1+2N 次 eval 合成 1 次 + getLocalPos 折进同一次往返、sampleDigest 两次 eval 合成 1 次（multiplayer.mjs）；输入长归档淘汰从 O(n) 双扫描改摊还 O(1) 水位精确删除（replay_archive.mjs，record 12.77us→0.115us）；修复端口同步回退启动加载优化（BRO 5512484 / bugs.md #56）：shell.mjs 恢复 commitOnly 清单先提交 + 首帧后 prefetchManifest 后台预热，避免 await 整包 191MB 阻塞首帧致「卡在准备 Runtime」；BRO 源仓已首次入库该优化，后续同步不再回退（shell_commitonly_unit.mjs 守卫）",
+  "buildId": "512f0d1e",
+  "credit": {
+    "author": "吃药图书 (Cyoltose)",
+    "webMaintainer": "清酒 (Tidew)",
+    "eagler": "eagler 开发者"
+  },
+  "note": "BadApple 明文 file1..7 改 BA1 稀疏增量编码（21.7MB→5.18MB），Web 端 boot 前解码写入 MEMFS；wasm 由 25.7MiB 降至 4.94MiB；修复 chapter_content_p1.lua 的 Lua 5.1 table.pack/unpack 兼容问题（AEX/BadApple 直接进关黑屏）。",
+  "inputs": [
+    {
+      "path": "bro.html",
+      "bytes": 1173,
+      "sha256": "fb35b33f1c628a4dac5a6ba2bd1d259572bf4eeaa90adde887ddf3f81d547e03"
+    },
+    {
+      "path": "bro.mjs",
+      "bytes": 117745,
+      "sha256": "8891d1b0d4209f650d8b52806a09b4b39c3f587bd2c0f9227beaf774c141b7b7"
+    },
+    {
+      "path": "bro.wasm",
+      "bytes": 5194026,
+      "sha256": "512f0d1e75efdee0697668f0c5ac06d986ed937b9ac576d9efca00246f4cff08"
+    },
+    {
+      "path": "dist/app-shell.json",
+      "bytes": 11645,
+      "sha256": "9e5bbed2140ab42abd8284ef31fd19cbc917c9e391a82a6367b56aa93a7f40cb"
+    },
+    {
+      "path": "dist/package-manifest.json",
+      "bytes": 250949,
+      "sha256": "887c98632c198f94b95fd7efbee82a96fa24dac433e0e68799e0fa8cfa753c70"
+    },
+    {
+      "path": "dist/runtime.json",
+      "bytes": 576,
+      "sha256": "2c8ff5614f5c8d3f6ae42cf5477084e1f15034923d3afb2eab37a680c2e29ce1"
+    },
+    {
+      "path": "managed-shell.mjs",
+      "bytes": 5887,
+      "sha256": "9352c12e08c6f0a8d6a78fed911ff70626d21c0342774289716ead6cdbed8b9b"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 6391,
+      "sha256": "1f2d33ec0014aaec9bb23852f981fea334a2ba12ef4fc13a57c3cf1bec730fd1"
+    },
+    {
+      "path": "shell.mjs",
+      "bytes": 5577,
+      "sha256": "c8f2071fedaba0d20050177b0dcd34d3d403f176b55027785ec1656dd9c5ffd3"
+    },
+    {
+      "path": "src/audio.mjs",
+      "bytes": 39537,
+      "sha256": "7168901a5d4e9238fc7c3101794b85d3aa8c5be8af6cf3e11ddbc8c7b773bf5f"
+    },
+    {
+      "path": "src/eagler_adapter.mjs",
+      "bytes": 77824,
+      "sha256": "a3f41aee3fc1da9bc2365fd982c5bc1834a277c7c661d7c35c5b65b869e737ad"
+    },
+    {
+      "path": "src/input_buffer.mjs",
+      "bytes": 12143,
+      "sha256": "e97695bf91912e1b02595477521368ca8d4dd7ee78aa8da10c7544db47c7e2fe"
+    },
+    {
+      "path": "src/input.mjs",
+      "bytes": 63321,
+      "sha256": "4d4afd41e32c9f3a0ae812204d9a5009cac02e563ad4ff74c7ac73951692574f"
+    },
+    {
+      "path": "src/logger.mjs",
+      "bytes": 16891,
+      "sha256": "4d97821b26ab6895695bc510cb0112870fd23367ebcf8d33eb974c0be7e045c2"
+    },
+    {
+      "path": "src/multiplayer.mjs",
+      "bytes": 68050,
+      "sha256": "90a6ce416d48fa62a5d0bf6e332fe1754ae468c097ea4664a79c1cea27f1a613"
+    },
+    {
+      "path": "src/netcode.mjs",
+      "bytes": 45926,
+      "sha256": "444b535cf0dd116a621afe93df1c521a8d155f597874e77f12389787552dc493"
+    },
+    {
+      "path": "src/netmesh.mjs",
+      "bytes": 15889,
+      "sha256": "a781ee588f00b0335e8e3ce475e41b5b5266f116c02385bd103cbfc7ed3725d8"
+    },
+    {
+      "path": "src/output_queue.mjs",
+      "bytes": 3159,
+      "sha256": "0fcc2a50719f1e0c6a43bd7ea5ce082f7a330cd12e2be240036ad8e2076ef996"
+    },
+    {
+      "path": "src/postfx.mjs",
+      "bytes": 19801,
+      "sha256": "9a55ef71a3c2646692e89b9da28845b67bd13f82fa3208f167362789fe4f51b6"
+    },
+    {
+      "path": "src/renderer.mjs",
+      "bytes": 125026,
+      "sha256": "cb8860f911b64ef452dcf951fe54dafe256940e03e211cf28f18653b410a24d6"
+    },
+    {
+      "path": "src/replay_archive.mjs",
+      "bytes": 6570,
+      "sha256": "f119d2126e254f9fca53e6bee37cbd3a4ca09bf0cce2af606b8e1772643e7f2a"
+    },
+    {
+      "path": "src/resource_cache.mjs",
+      "bytes": 19241,
+      "sha256": "61e5b8cbc7f8a12f04a8e1055559916fc90d335a8eefeb36d03fa93fda33562f"
+    },
+    {
+      "path": "src/save_files.mjs",
+      "bytes": 5603,
+      "sha256": "1368c421c3887255df068de6b6aedb9f159b0b860ecbcad3a60195e956dbbcde"
+    },
+    {
+      "path": "src/rollback.mjs",
+      "bytes": 4189,
+      "sha256": "99ae76c8c7d2f13f1ce11053cdcc72d5c4ba353d21e462be0647a787c006ed1e"
+    },
+    {
+      "path": "src/route_handoff.mjs",
+      "bytes": 5560,
+      "sha256": "d9c88dd3e816ecb6fd91fc0009cd1998f154ab3a32f760476b0217761b3c574e"
+    },
+    {
+      "path": "src/route_monitor.mjs",
+      "bytes": 7946,
+      "sha256": "b1cd0a9ff6efb63c0f210a42826b11810752ad37727f365a31c6626aaf767844"
+    },
+    {
+      "path": "src/route_selector.mjs",
+      "bytes": 7205,
+      "sha256": "89f44d6a2c32b22925c11459b2a31424dec374901da23d5f29f2401a7fe6db5d"
+    },
+    {
+      "path": "src/runtime_entry.mjs",
+      "bytes": 21986,
+      "sha256": "38dcc295a5535bdcbd13c5b289c30baf93af74aab9ca7c979dacc57abc157e4b"
+    },
+    {
+      "path": "src/storage.mjs",
+      "bytes": 11829,
+      "sha256": "377bf2e252e4efee838561395301fc6e6fb039b90bf99ec93ab19207f340b368"
+    },
+    {
+      "path": "src/text.mjs",
+      "bytes": 26283,
+      "sha256": "a98be98b266b2e2c71d7e6f03dbaffc28982710f030eb9da88fc0267753538c1"
+    },
+    {
+      "path": "src/bgm_stream.mjs",
+      "bytes": 14105,
+      "sha256": "56e1e80fa974af4d43949fd265e6faca0fbe1206d4a2e9e330403e8c568fd04a"
+    }
+  ]
+}

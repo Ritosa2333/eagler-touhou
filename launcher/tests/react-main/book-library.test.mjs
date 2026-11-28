@@ -203,6 +203,17 @@ test('the library separates versus games, fighting games and doujin games', asyn
   await click('[data-book-category="fighting"]');
   assert.deepEqual(ids(), ['th075']);
 });
+test('BossRush is listed with doujin games and not with official spin-offs', async () => {
+  const products = api.createLibraryProducts(['th075'], p => p, id => '?game=' + id);
+  products.push({...products[0], id: 'bro', gameId: 'bro', number: 'BRO', title: 'Touhou BossRush'});
+  await mount(products);
+  await click('[data-book-category="doujin"]');
+  assert.deepEqual(ids(), ['bro']);
+  await click('[data-book-category="spin-off"]');
+  assert.deepEqual(ids(), []);
+  await click('[data-book-category="fighting"]');
+  assert.deepEqual(ids(), ['th075']);
+});
 test('TH05 is discoverable through the PC98 category in the current library', async () => {
   const products = api.createLibraryProducts(['th05', 'th06'], p => p, id => '?game=' + id);
   await mount(products);

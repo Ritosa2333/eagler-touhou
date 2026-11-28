@@ -1,4 +1,5 @@
 import {TH19_VERSUS_RULES,validTh19VersusRules} from '../../../common/contracts/th19-versus-rules.mjs';
+import {BRO_DEFAULT_SYSTEMS,BRO_DEFAULT_STAGE_QUEUE,validBroSystems,validBroStageQueue} from '../../../common/contracts/bro-room-options.mjs';
 import {PC98_INITIAL_STOCK,validPc98InitialSpares,validPc98InitialBombs} from '../../../common/contracts/pc98-initial-stock.mjs';
 const pc98StockRoom=id=>/^th0[24]mp-/.test(id);
 const TH075_SPECTATOR_CONTROL = Buffer.from([69, 80, 84, 83, 1]);
@@ -529,6 +530,7 @@ function newRoom(id, chatScope = 'room-' + randomUUID()) {
       ...(id.startsWith('th01mp-') ? {ballCount:2} : {}),
       ...(pc98StockRoom(id)?{initialSpares:PC98_INITIAL_STOCK.spares,initialBombs:PC98_INITIAL_STOCK.bombs}:{}),
       ...(id.startsWith('th19mp-')?{th19Rules:[...TH19_VERSUS_RULES]}:{}),
+      ...(id.startsWith('bromp-')?{broSystems:[...BRO_DEFAULT_SYSTEMS],broStageQueue:[...BRO_DEFAULT_STAGE_QUEUE]}:{}),
       visibility: 'public',
       disableCheatMovement: false,
       ...(id.startsWith('th05mp-') ? { initialSpares: TH05_INITIAL_STOCK.spares, initialBombs: TH05_INITIAL_STOCK.bombs } : {}),
@@ -1552,6 +1554,7 @@ function lobbySnapshot(room) {
     ...(room.id.startsWith('th01mp-') ? {ballCount:room.lobby.ballCount} : {}),
     ...(pc98StockRoom(room.id)?{initialSpares:room.lobby.initialSpares,initialBombs:room.lobby.initialBombs}:{}),
     ...(room.id.startsWith('th19mp-')?{th19Rules:[...room.lobby.th19Rules]}:{}),
+    ...(room.id.startsWith('bromp-')?{broSystems:[...room.lobby.broSystems],broStageQueue:[...room.lobby.broStageQueue]}:{}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
     ...(room.multiplayer?.challengeKeepBullets ? {challengeKeepBullets: room.lobby.challengeKeepBullets} : {}),
@@ -1779,6 +1782,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     return;
   }
   if(initialPolicy?.th19Rules!==undefined&&(!roomId.startsWith('th19mp-')||!validTh19VersusRules(initialPolicy.th19Rules))){sendLobby(socket,{type:'error',error:'invalid TH19 versus rules'});socket.close(4007,'invalid settings');return;}
+  if(initialPolicy?.broSystems!==undefined&&(!roomId.startsWith('bromp-')||!validBroSystems(initialPolicy.broSystems))){sendLobby(socket,{type:'error',error:'invalid BRO systems'});socket.close(4007,'invalid settings');return;}
+  if(initialPolicy?.broStageQueue!==undefined&&(!roomId.startsWith('bromp-')||!validBroStageQueue(initialPolicy.broStageQueue))){sendLobby(socket,{type:'error',error:'invalid BRO stage queue'});socket.close(4007,'invalid settings');return;}
   const existing = rooms.get(roomId);
   if (!existing && intent !== 'join' && !abuseGuard.canCreateRoom(socket.relayAddress)) {
     rejectRoomCreation(socket);
@@ -1806,6 +1811,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   if (code) roomCodes.set(code, roomId);
   if (!existing && intent === 'create') {
     if(room.id.startsWith('th19mp-'))room.lobby.th19Rules=[...(initialPolicy?.th19Rules??TH19_VERSUS_RULES)];
+    if(room.id.startsWith('bromp-')){room.lobby.broSystems=[...(initialPolicy?.broSystems??BRO_DEFAULT_SYSTEMS)];room.lobby.broStageQueue=[...(initialPolicy?.broStageQueue??BRO_DEFAULT_STAGE_QUEUE)];}
     room.lobby.visibility = initialPolicy?.visibility === 'private' ? 'private' : 'public';
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
     room.lobby.unrated = room.id.startsWith('th09mp-') && initialPolicy?.unrated === true;
@@ -2492,6 +2498,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       }
       if(message.th19Rules!==undefined&&(!room.id.startsWith('th19mp-')||!validTh19VersusRules(message.th19Rules))){sendLobby(socket,{type:'error',error:'invalid TH19 versus rules'});return;}
       const th19Rules=message.th19Rules??room.lobby.th19Rules;
+      if(message.broSystems!==undefined&&(!room.id.startsWith('bromp-')||!validBroSystems(message.broSystems))){sendLobby(socket,{type:'error',error:'invalid BRO systems'});return;}
+      if(message.broStageQueue!==undefined&&(!room.id.startsWith('bromp-')||!validBroStageQueue(message.broStageQueue))){sendLobby(socket,{type:'error',error:'invalid BRO stage queue'});return;}
+      const broSystems=message.broSystems??room.lobby.broSystems;
+      const broStageQueue=message.broStageQueue??room.lobby.broStageQueue;
       const playerCount = Number(message.playerCount);
       if (!validPlayerCount(room.multiplayer, playerCount)) {
         sendLobby(socket, { type: 'error', error: 'invalid player count' });
@@ -2556,6 +2566,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       room.lobby.visibility = visibility;
       if (
         (room.id.startsWith('th19mp-')&&JSON.stringify(room.lobby.th19Rules)!==JSON.stringify(th19Rules)) ||
+        (room.id.startsWith('bromp-')&&(JSON.stringify(room.lobby.broSystems)!==JSON.stringify(broSystems)||JSON.stringify(room.lobby.broStageQueue)!==JSON.stringify(broStageQueue))) ||
         room.lobby.playerCount !== playerCount ||
         room.lobby.difficulty !== difficulty ||
         room.lobby.disableCheatMovement !== disableCheatMovement ||
@@ -2572,6 +2583,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       ) {
         invalidateLobbyReady(room);
         if(room.id.startsWith('th19mp-'))room.lobby.th19Rules=[...th19Rules];
+        if(room.id.startsWith('bromp-')){room.lobby.broSystems=[...broSystems];room.lobby.broStageQueue=[...broStageQueue];}
         room.lobby.disableCheatMovement = disableCheatMovement;
         if(room.id.startsWith('th03mp-')){room.lobby.disableFocus=disableFocus;room.lobby.showHitboxes=showHitboxes;}
         room.lobby.unrated = unrated;
@@ -3032,6 +3044,8 @@ server.on('connection', (socket, request) => {
       initialSpares: url.searchParams.has('initialSpares') ? Number(url.searchParams.get('initialSpares')) : undefined,
       initialBombs: url.searchParams.has('initialBombs') ? Number(url.searchParams.get('initialBombs')) : undefined,
       th19Rules: url.searchParams.has('th19Rules') ? (()=>{try{return JSON.parse(url.searchParams.get('th19Rules'));}catch{return null;}})() : undefined,
+      broSystems: url.searchParams.has('broSystems') ? (()=>{try{return JSON.parse(url.searchParams.get('broSystems'));}catch{return null;}})() : undefined,
+      broStageQueue: url.searchParams.has('broStageQueue') ? (()=>{try{return JSON.parse(url.searchParams.get('broStageQueue'));}catch{return null;}})() : undefined,
       chapterThreshold: url.searchParams.has('chapterThreshold')
         ? Number(url.searchParams.get('chapterThreshold'))
         : undefined,
@@ -3241,6 +3255,24 @@ server.on('connection', (socket, request) => {
       }
       if(acceptTh19SpectatorPayload(roomId,runId,room,run,payload))return;
       if (acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload)) return;
+      // BRO has no stage/checkpoint stream: its first live frame opens spectator
+      // admission so the backlog starts at that match frame. History stays
+      // bounded by the TH09 limits and, on overflow, live viewers keep going
+      // while late joins stop being admitted (closeTh09HistoryAdmission).
+      const broSpectator = roomId.startsWith('bromp-') && isSpectatorFrameForRoom(roomId, payload, run.playerCount);
+      if (broSpectator && !run.spectatorHistoryUnavailable) {
+        run.spectatorAdmissionOpen = true;
+        if (!run.spectatorTimeline) {
+          run.spectatorTimeline = true;
+          broadcastLobby(room);
+          for (const [id, lobby] of room.lobbyClients) {
+            if (!room.lobby.spectators.has(id) || run.admittedSpectators.has(id)) continue;
+            run.admittedSpectators.add(id);
+            run.memberIds.set(id, roomDirectory.memberIdFor(roomId, id));
+            sendLobby(lobby, { type: 'spectator-start', serial: room.lobby.startSerial, room: lobbySnapshot(room) });
+          }
+        }
+      }
       if (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0 && !run.spectatorHistoryUnavailable) return;
       const th09Stream = roomId.startsWith('th09mp-') && run.playerCount === 2;
       const ending =
@@ -3323,7 +3355,7 @@ server.on('connection', (socket, request) => {
           run.spectatorTimeline
             ? TH09_SPECTATOR_HISTORY_LIMITS
             : RELAY_LIMITS,
-          th09Stream && run.spectatorTimeline ? closeTh09HistoryAdmission : stopSpectatorStream,
+          (th09Stream || broSpectator) && run.spectatorTimeline ? closeTh09HistoryAdmission : stopSpectatorStream,
         )
       ) {
         if (run.spectatorStopped) return;

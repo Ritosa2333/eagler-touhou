@@ -4,6 +4,7 @@ import {
   gamePreferenceStorageKey, applySharedTouchPreferences, loadOrInitializeSharedTouchPreferences,
   loadStoredGamePreferences, loadStoredLanguagePreference, persistSharedTouchPreferences,
   persistStoredGamePreferences, touchMovementUsesJoystick, normalizeTh05MultiplayerDisplay, normalizeGameVolume,
+  normalizeBroResolution,
   type GameOptions, type GamePreferenceStorage, type MusicMode,
 } from '../../src/launcher/game-preferences.mts';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, productFeatureAvailable,
@@ -227,6 +228,7 @@ export function createGameSettingsModel({storage, onChange}: {
       if (name === 'touchControlOpacity') options.touchControlOpacity = Math.max(20, Math.min(100, Math.round(Number(value) / 5) * 5 || 20));
       if (name === 'bgmVolume') options.bgmVolume = normalizeGameVolume(value);
       if (name === 'sfxVolume') options.sfxVolume = normalizeGameVolume(value);
+      if (name === 'broResolution') options.broResolution = normalizeBroResolution(value);
       publish({...state, options}, 'option'); commitPreferences();
     },
     previewSensitivity(value: number) {

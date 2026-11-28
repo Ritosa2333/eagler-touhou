@@ -1,5 +1,6 @@
 import {isPc98StockProduct} from './pc98-initial-stock.mjs';
 import {validTh19VersusRules} from './th19-versus-rules.mjs';
+import {validBroSystems,validBroStageQueue} from './bro-room-options.mjs';
 import {validTh15ChapterThreshold} from "./th15-chapter-reward.mjs";
 import {validTh05InitialSpares,validTh05InitialBombs} from './th05-initial-stock.mjs';
 export const multiplayerRoomSessionStorageKey = (product: string): string =>
@@ -24,6 +25,8 @@ export interface MultiplayerRoomSessionSnapshot {
     challengeKeepBullets?:boolean;
   chapterThreshold?: number;
     th19Rules?: number[];
+  broSystems?: number[];
+  broStageQueue?: number[];
   initialSpares?: number;
     initialBombs?: number;
     prankMode?:boolean;
@@ -81,6 +84,8 @@ export function createMultiplayerRoomSessionStore({
           ballCount: snapshot.room.ballCount,
           chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,challengeKeepBullets:snapshot.room.challengeKeepBullets,prankMode:snapshot.room.prankMode,
           th19Rules:product==='th19mp'?snapshot.room.th19Rules:undefined,
+          broSystems:product==='bromp'?snapshot.room.broSystems:undefined,
+          broStageQueue:product==='bromp'?snapshot.room.broStageQueue:undefined,
           initialSpares:snapshot.room.initialSpares,initialBombs:snapshot.room.initialBombs,
           playerCount: snapshot.room.playerCount,
           difficulty: snapshot.room.difficulty,
@@ -132,6 +137,12 @@ export function createMultiplayerRoomSessionStore({
         ...(product === 'th03mp' ? {disableFocus:room.disableFocus!==false,showHitboxes:room.showHitboxes===true} : product === 'th02mp' ? {disableFocus:room.disableFocus===true} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
         ...(product==='th19mp'&&validTh19VersusRules(room.th19Rules)?{th19Rules:[...room.th19Rules]}:{}),
+        // validBro* treat undefined as "use defaults" (return true), so an
+        // explicit presence check is required before spreading: older saved
+        // bromp sessions predate these fields and would otherwise throw
+        // "undefined is not iterable" during restoreInvite -> initialize.
+        ...(product==='bromp'&&room.broSystems!==undefined&&validBroSystems(room.broSystems)?{broSystems:[...(room.broSystems as number[])]}:{}),
+        ...(product==='bromp'&&room.broStageQueue!==undefined&&validBroStageQueue(room.broStageQueue)?{broStageQueue:[...(room.broStageQueue as number[])]}:{}),
         ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialSpares(room.initialSpares)?{initialSpares:room.initialSpares as number}:{}),
         ...((product==='th05mp'||isPc98StockProduct(product))&&validTh05InitialBombs(room.initialBombs)?{initialBombs:room.initialBombs as number}:{}),
         ...(room.challengeMode!==undefined?{challengeMode:room.challengeMode===true}:{}),

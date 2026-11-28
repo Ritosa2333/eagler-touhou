@@ -1,6 +1,6 @@
 # 文档总表
 
-共 670 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 682 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -35,6 +35,7 @@
 | 适配指南 | [docs/adaptation/th15-pointdevice-issue113-20261020.md](adaptation/th15-pointdevice-issue113-20261020.md) | TH15 无欠检查点与完整存档导出 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
+| 作品入口 | [ports/bossrush/README.md](../ports/bossrush/README.md) | Touhou BossRush（BRO）网页版 |
 | 作品入口 | [ports/th01/README.md](../ports/th01/README.md) | TH01 主项目适配 |
 | 作品入口 | [ports/th02/README.md](../ports/th02/README.md) | TH02 主项目适配 |
 | 作品入口 | [ports/th03/README.md](../ports/th03/README.md) | TH03 原生网页版本 |
@@ -63,6 +64,7 @@
 | 作品入口 | [ports/th17/README.md](../ports/th17/README.md) | TH17 · 东方鬼形兽 |
 | 作品入口 | [ports/th19/README.md](../ports/th19/README.md) | 东方兽王园 TH19 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
+| 作品适配表 | [ports/bossrush/ADAPTATION.md](../ports/bossrush/ADAPTATION.md) | bro 适配检查 |
 | 作品适配表 | [ports/th01/ADAPTATION.md](../ports/th01/ADAPTATION.md) | th01 适配检查 |
 | 作品适配表 | [ports/th02/ADAPTATION.md](../ports/th02/ADAPTATION.md) | th02 适配检查 |
 | 作品适配表 | [ports/th03/ADAPTATION.md](../ports/th03/ADAPTATION.md) | th03 适配检查 |
@@ -90,6 +92,15 @@
 | 作品适配表 | [ports/th17/ADAPTATION.md](../ports/th17/ADAPTATION.md) | th17 适配检查 |
 | 作品适配表 | [ports/th19/ADAPTATION.md](../ports/th19/ADAPTATION.md) | th19 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
+| 作品源码文档 | [ports/bossrush/DISTRIBUTION-PERMISSION.md](../ports/bossrush/DISTRIBUTION-PERMISSION.md) | 東方 BossRush 网页版分发授权声明 |
+| 作品源码文档 | [ports/bossrush/RUNTIME_ARTIFACTS.md](../ports/bossrush/RUNTIME_ARTIFACTS.md) | BRO Runtime 产物落地说明（eagler fork bro-integration） |
+| 作品源码文档 | [ports/bossrush/docs/DEVELOPMENT.md](../ports/bossrush/docs/DEVELOPMENT.md) | BossRush 开发指南 |
+| 作品源码文档 | [ports/bossrush/docs/MUSIC_PACK.md](../ports/bossrush/docs/MUSIC_PACK.md) | BRO 未压缩音乐包（可选覆盖包） |
+| 作品源码文档 | [ports/bossrush/docs/STORAGE_REPLAY.md](../ports/bossrush/docs/STORAGE_REPLAY.md) | BRO 存档 / Replay 与 eagler 网页端对接：现状与可行性 |
+| 作品源码文档 | [ports/bossrush/proposals/ISSUE_DRAFT.md](../ports/bossrush/proposals/ISSUE_DRAFT.md) | Issue 草案：认领并接入 Touhou BossRush（第三方衍生作）到 eagler-touhou |
+| 作品源码文档 | [ports/bossrush/proposals/MANIFEST_DIFF.md](../ports/bossrush/proposals/MANIFEST_DIFF.md) | BRO manifest ↔ eagler product-catalog 字段差集 |
+| 作品源码文档 | [ports/bossrush/proposals/README.md](../ports/bossrush/proposals/README.md) | BRO 接入提案（待维护者确认） |
+| 作品源码文档 | [ports/bossrush/proposals/SPECTATOR.md](../ports/bossrush/proposals/SPECTATOR.md) | BRO 联机观战（spectator）适配评估与分阶段方案 |
 | 作品源码文档 | [ports/th01/README-NETPLAY.md](../ports/th01/README-NETPLAY.md) | 原生移植版 UDP 联机 |
 | 作品源码文档 | [ports/th01/README-PUBLIC.md](../ports/th01/README-PUBLIC.md) | 公网联机 |
 | 作品源码文档 | [ports/th01/README-UPSTREAM.md](../ports/th01/README-UPSTREAM.md) | TH01《东方灵异传》· 原生移植与多人合作 |
@@ -337,6 +348,7 @@
 | 迁移记录 | [docs/migration/th13mp-derivation-20261108.md](migration/th13mp-derivation-20261108.md) | th13-mp 目录来源登记（仓内派生） |
 | 迁移记录 | [docs/migration/th17-subtree-20261106.md](migration/th17-subtree-20261106.md) | TH17 普通版与多人版目录历史 |
 | 历史记录 | [archive/README.md](../archive/README.md) | 历史记录 |
+| 历史记录 | [archive/bossrush-development-20261125/README.md](../archive/bossrush-development-20261125/README.md) | BRO 源码交付来源 |
 | 历史记录 | [archive/hk-mirror-relay-20261028/deployment.md](../archive/hk-mirror-relay-20261028/deployment.md) | 香港镜像与统一 Relay 入口 ｜ 2026-10-28 |
 | 历史记录 | [archive/main-refresh-20261028/README.md](../archive/main-refresh-20261028/README.md) | 主线发布与镜像一致性 |
 | 历史记录 | [archive/main-thprac-th08-test-th12-20261028/README.md](../archive/main-thprac-th08-test-th12-20261028/README.md) | 主站 THPrac／TH08 与测试站 TH12 多人发布 |

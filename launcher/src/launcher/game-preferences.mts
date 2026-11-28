@@ -45,6 +45,18 @@ export interface GameOptions {
   restartButtonEnabled: boolean;
   alwaysHitbox: boolean;
   multiplayerLocalPlayerVisibility: boolean;
+  // BossRush-only settings. These are stored in the same per-game preference
+  // record (preferenceId === 'bro') but never surfaced for other products, so
+  // the web launcher is the authoritative, cached source of truth for BRO.
+  // The runtime receives them through `configure.options` and applies them in
+  // the game itself via BRO_web_apply_settings (see ports/bossrush).
+  broResolution: number;       // output height, 360..1440 (width = 16:9 even)
+  broDisplayBG: boolean;       // 3D background
+  broAuraDistortion: boolean;  // Boss aura distortion effect
+  broEasyRender: boolean;      // reduced dynamic UI rendering
+  broDisplayKey: boolean;      // show key-state overlay
+  broFrameskip: boolean;       // frame-skip mode (gameplay timing assist)
+  broBulletTexture: 'new' | 'legacy'; // bullet sprite style (new glow / original pixel)
   // Opaque `MIDIPort.id` of the selected external MIDI output. Empty means
   // "first available". The on/off switch itself is deliberately NOT a
   // GameOptions field: external MIDI playback is session-only and must be
@@ -78,6 +90,13 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   restartButtonEnabled: false,
   alwaysHitbox: false,
   multiplayerLocalPlayerVisibility: false,
+  broResolution: 720,
+  broDisplayBG: true,
+  broAuraDistortion: true,
+  broEasyRender: false,
+  broDisplayKey: true,
+  broFrameskip: false,
+  broBulletTexture: 'new',
   externalMidiDeviceId: "",
 });
 
@@ -87,6 +106,16 @@ export const TOUCH_MOVEMENT_MODES = new Set<TouchMovementMode>([
 
 export function normalizeGameVolume(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? Math.round(Math.max(0, Math.min(100, value))) : 100;
+}
+/** BRO output height: continuous 360..1440, snapped to 30px steps. */
+export function normalizeBroResolution(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return DEFAULT_GAME_OPTIONS.broResolution;
+  return Math.max(360, Math.min(1440, Math.round(value / 30) * 30));
+}
+/** BRO bullet sprite style: only 'new' (glow) / 'legacy' (original pixel). */
+export function normalizeBroBulletTexture(value: unknown): 'new' | 'legacy' {
+  if (value === 'legacy' || value === 'original') return 'legacy';
+  return 'new';
 }
 export const TOUCH_FOCUS_MODES = new Set<TouchFocusMode>([
   "two-finger", "hold-button", "toggle-button",
@@ -302,6 +331,13 @@ export function normalizeStoredGamePreferences(
     restartButtonEnabled: booleanOption(rawOptions, "restartButtonEnabled", DEFAULT_GAME_OPTIONS.restartButtonEnabled),
     alwaysHitbox: booleanOption(rawOptions, "alwaysHitbox", DEFAULT_GAME_OPTIONS.alwaysHitbox),
     multiplayerLocalPlayerVisibility: booleanOption(rawOptions, "multiplayerLocalPlayerVisibility", DEFAULT_GAME_OPTIONS.multiplayerLocalPlayerVisibility),
+    broResolution: normalizeBroResolution(rawOptions?.broResolution),
+    broDisplayBG: booleanOption(rawOptions, "broDisplayBG", DEFAULT_GAME_OPTIONS.broDisplayBG),
+    broAuraDistortion: booleanOption(rawOptions, "broAuraDistortion", DEFAULT_GAME_OPTIONS.broAuraDistortion),
+    broEasyRender: booleanOption(rawOptions, "broEasyRender", DEFAULT_GAME_OPTIONS.broEasyRender),
+    broDisplayKey: booleanOption(rawOptions, "broDisplayKey", DEFAULT_GAME_OPTIONS.broDisplayKey),
+    broFrameskip: booleanOption(rawOptions, "broFrameskip", DEFAULT_GAME_OPTIONS.broFrameskip),
+    broBulletTexture: normalizeBroBulletTexture(rawOptions?.broBulletTexture),
     externalMidiDeviceId: context.externalMidiAvailable !== false
       ? stringOption(rawOptions, "externalMidiDeviceId", DEFAULT_GAME_OPTIONS.externalMidiDeviceId)
       : "",

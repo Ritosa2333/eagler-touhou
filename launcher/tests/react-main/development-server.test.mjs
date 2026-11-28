@@ -118,6 +118,34 @@ test('host artwork covers registered cards without a development Runtime and rej
   } finally {await server.stop();}
 });
 
+test('/runtime/ responses carry isolation headers so the COEP launcher page can embed the runtime iframe', async () => {
+  // The app-shell service worker puts the launcher page in a COEP require-corp
+  // context. Chromium refuses to navigate an iframe whose document response
+  // lacks COEP headers ("coep-frame-resource-needs-coep-header"). The SW does
+  // not intercept local dev runtimes, so serve.mjs must stamp these headers
+  // for /runtime/ paths. Regression guard for the "stuck at 准备 Runtime" bug.
+  const probe = resolve(workspaceRoot(), 'runtime', '__serve_coep_probe__.html');
+  await mkdir(resolve(workspaceRoot(), 'runtime'), {recursive: true});
+  await writeFile(probe, '<!doctype html><title>coep probe</title>\n');
+  const server = await start();
+  try {
+    const runtime = await fetch(server.base + '/runtime/__serve_coep_probe__.html');
+    assert.equal(runtime.status, 200);
+    assert.equal(runtime.headers.get('cross-origin-embedder-policy'), 'require-corp');
+    assert.equal(runtime.headers.get('cross-origin-opener-policy'), 'same-origin');
+    assert.equal(runtime.headers.get('cross-origin-resource-policy'), 'same-origin');
+    // Header also applies to non-HTML runtime assets (WASM/JS) and to 304s.
+    const tag = runtime.headers.get('etag'); assert.ok(tag);
+    const notModified = await fetch(server.base + '/runtime/__serve_coep_probe__.html', {headers: {'If-None-Match': tag}});
+    assert.equal(notModified.status, 304);
+    assert.equal(notModified.headers.get('cross-origin-resource-policy'), 'same-origin');
+    // Pages outside /runtime/ must NOT gain these headers (the SW owns them).
+    const shell = await fetch(server.base + '/');
+    assert.equal(shell.status, 200);
+    assert.equal(shell.headers.get('cross-origin-embedder-policy'), null);
+  } finally {await server.stop(); await rm(probe, {force: true});}
+});
+
 test('explicit isolated root serves canonical worker only at its configured loopback origin', async () => {
   const selected = await port();
   const env = {...environment, EAGLER_REACT_BUILD_DIRECTORY: resolve(work, 'isolated'),

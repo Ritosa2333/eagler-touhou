@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta name="eagler-data-provider" content="retail-memory">
+  <!-- 线上增量资源清单（可选）。也可用 URL ?manifestUrl= 覆盖；留空则走导入包缓存/本地 dist 清单。 -->
+  <!-- <meta name="eagler-bro-manifest" content="https://your-cdn.example/bro/package-manifest.json"> -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>東方 BossRush</title>
+  <style>
+    html,body{margin:0;height:100%;background:#08090d;color:#e8eaf0;font-family:system-ui,sans-serif;overflow:hidden}
+    #screen{display:block;width:100vw;height:100vh;object-fit:contain;background:#000;outline:none}
+    #status{position:fixed;left:8px;bottom:6px;max-width:70vw;font:11px/1.4 ui-monospace,monospace;color:#9aa6bd;white-space:pre-line;pointer-events:none;text-shadow:0 1px 2px #000}
+  </style>
+</head>
+<body>
+  <canvas id="screen" width="1280" height="720" tabindex="0" aria-label="東方 BossRush 游戏画面"></canvas>
+  <pre id="status">BRO runtime: waiting for launcher...</pre>
+  <script type="module" src="./shell.mjs"></script>
+</body>
+</html>

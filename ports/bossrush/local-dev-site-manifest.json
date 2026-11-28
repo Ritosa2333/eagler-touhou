@@ -1,0 +1,46 @@
+{
+  "schema": "eagler-touhou/site-manifest/1",
+  "protocol": "eagler-touhou/1",
+  "profile": "web-development-bro",
+  "shared": {
+    "resourceMode": "import",
+    "testBuild": true
+  },
+  "games": {
+    "bro": {
+      "number": "BRO",
+      "title": "東方 BossRush",
+      "subtitle": "Touhou BossRush",
+      "runtime": "./runtime/bro/bro.html",
+      "multiplayerRuntime": "./runtime/bro/multiplayer/bro.html",
+      "gameData": {
+        "path": "bro.data",
+        "bytes": 1,
+        "sha256": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+        "version": "sha256-6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+        "layout": "sha256-b6784df3d45bbe950a06fdb9d4d1d365a1477b462f2381b1ef879b7e0ae3d329"
+      },
+      "features": {
+        "thprac": false
+      },
+      "music": {
+        "midi": {
+          "files": []
+        }
+      },
+      "offlineCompatibility": {
+        "schema": "eagler-touhou/offline-game-pack/1",
+        "runtimeCompatibility": {
+          "protocol": "eagler-touhou/1",
+          "dataLayout": "sha256-b6784df3d45bbe950a06fdb9d4d1d365a1477b462f2381b1ef879b7e0ae3d329",
+          "versionSource": "offline-pack"
+        },
+        "requiredShared": [],
+        "languages": {
+          "source": "offline-pack",
+          "baseline": ["ja"]
+        }
+      }
+    }
+  }
+}

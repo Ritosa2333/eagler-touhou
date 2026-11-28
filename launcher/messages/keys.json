@@ -1069,18 +1069,6 @@
     "id": "spectator_nodes",
     "params": []
   },
-  "spectator.versusNodes": {
-    "id": "spectator_versusNodes",
-    "params": []
-  },
-  "spectator.matchNode": {
-    "id": "spectator_matchNode",
-    "params": ["number"]
-  },
-  "spectator.roundNode": {
-    "id": "spectator_roundNode",
-    "params": ["number"]
-  },
   "spectator.progress": {
     "id": "spectator_progress",
     "params": []
@@ -3440,10 +3428,6 @@
   },
   "update.nextLaunch": {
     "id": "update_nextLaunch",
-    "params": []
-  },
-  "package.incompatibleUpdateUnavailable": {
-    "id": "package_incompatibleUpdateUnavailable",
     "params": []
   },
   "package.updateCancelled": {
@@ -7635,14 +7619,6 @@
     "id": "library_category_windows",
     "params": []
   },
-  "library.category.versus": {
-    "id": "library_category_versus",
-    "params": []
-  },
-  "library.category.fighting": {
-    "id": "library_category_fighting",
-    "params": []
-  },
   "library.category.spinOff": {
     "id": "library_category_spinOff",
     "params": []
@@ -10777,6 +10753,158 @@
     "id": "content_terms",
     "params": []
   },
+  "game.title.bromp": {
+    "id": "game_title_bromp",
+    "params": []
+  },
+  "settings.broBulletTexture": {
+    "id": "settings_broBulletTexture",
+    "params": []
+  },
+  "settings.broBulletTextureHint": {
+    "id": "settings_broBulletTextureHint",
+    "params": []
+  },
+  "settings.broBulletTextureNew": {
+    "id": "settings_broBulletTextureNew",
+    "params": []
+  },
+  "settings.broBulletTextureLegacy": {
+    "id": "settings_broBulletTextureLegacy",
+    "params": []
+  },
+  "settings.broFrameskip": {
+    "id": "settings_broFrameskip",
+    "params": []
+  },
+  "settings.broFrameskipHint": {
+    "id": "settings_broFrameskipHint",
+    "params": []
+  },
+  "settings.broResolution": {
+    "id": "settings_broResolution",
+    "params": []
+  },
+  "settings.broResolutionHint": {
+    "id": "settings_broResolutionHint",
+    "params": []
+  },
+  "settings.broDisplayBG": {
+    "id": "settings_broDisplayBG",
+    "params": []
+  },
+  "settings.broDisplayBGHint": {
+    "id": "settings_broDisplayBGHint",
+    "params": []
+  },
+  "settings.broAuraDistortion": {
+    "id": "settings_broAuraDistortion",
+    "params": []
+  },
+  "settings.broDisplayKey": {
+    "id": "settings_broDisplayKey",
+    "params": []
+  },
+  "settings.broEasyRender": {
+    "id": "settings_broEasyRender",
+    "params": []
+  },
+  "settings.broEasyRenderHint": {
+    "id": "settings_broEasyRenderHint",
+    "params": []
+  },
+  "multiplayer.loadout.bro.reimu": {
+    "id": "multiplayer_loadout_bro_reimu",
+    "params": []
+  },
+  "multiplayer.loadout.bro.marisa": {
+    "id": "multiplayer_loadout_bro_marisa",
+    "params": []
+  },
+  "multiplayer.loadout.bro.chiruno": {
+    "id": "multiplayer_loadout_bro_chiruno",
+    "params": []
+  },
+  "multiplayer.loadout.bro.aya": {
+    "id": "multiplayer_loadout_bro_aya",
+    "params": []
+  },
+  "room.broSystems": {
+    "id": "room_broSystems",
+    "params": []
+  },
+  "room.broSystemsHint": {
+    "id": "room_broSystemsHint",
+    "params": []
+  },
+  "room.broStageQueue": {
+    "id": "room_broStageQueue",
+    "params": []
+  },
+  "room.broStageQueueHint": {
+    "id": "room_broStageQueueHint",
+    "params": []
+  },
+  "room.broQueueAdd": {
+    "id": "room_broQueueAdd",
+    "params": []
+  },
+  "room.broQueueAddButton": {
+    "id": "room_broQueueAddButton",
+    "params": []
+  },
+  "room.broQueueEmpty": {
+    "id": "room_broQueueEmpty",
+    "params": []
+  },
+  "room.broQueueUp": {
+    "id": "room_broQueueUp",
+    "params": []
+  },
+  "room.broQueueDown": {
+    "id": "room_broQueueDown",
+    "params": []
+  },
+  "room.broQueueRemove": {
+    "id": "room_broQueueRemove",
+    "params": []
+  },
+  "room.broQueueClear": {
+    "id": "room_broQueueClear",
+    "params": []
+  },
+  "room.broQueueNote": {
+    "id": "room_broQueueNote",
+    "params": []
+  },
+  "spectator.versusNodes": {
+    "id": "spectator_versusNodes",
+    "params": []
+  },
+  "spectator.matchNode": {
+    "id": "spectator_matchNode",
+    "params": [
+      "number"
+    ]
+  },
+  "spectator.roundNode": {
+    "id": "spectator_roundNode",
+    "params": [
+      "number"
+    ]
+  },
+  "package.incompatibleUpdateUnavailable": {
+    "id": "package_incompatibleUpdateUnavailable",
+    "params": []
+  },
+  "library.category.versus": {
+    "id": "library_category_versus",
+    "params": []
+  },
+  "library.category.fighting": {
+    "id": "library_category_fighting",
+    "params": []
+  },
   "profile.clear.notAttempted": {
     "id": "profile_clear_notAttempted",
     "params": []
@@ -10973,7 +11101,9 @@
   },
   "messages.unread": {
     "id": "messages_unread",
-    "params": ["count"]
+    "params": [
+      "count"
+    ]
   },
   "messages.viewInbox": {
     "id": "messages_viewInbox",

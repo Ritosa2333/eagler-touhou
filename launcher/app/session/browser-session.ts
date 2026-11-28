@@ -4,6 +4,7 @@ import type {CloudSaveSync} from '../services/cloud-save-sync';
 import {createRelayEntryRouting} from '../../src/launcher/relay-entry-routing.mts';
 import {loadGameVersion} from "../../package/game-version.mjs";
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
+import {resolveMusicAvailability} from '../../src/launcher/music-availability.mts';
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {isAbortError, linkAbortSignals, waitWithAbort} from '../services/abort-signals';
@@ -21,6 +22,7 @@ import {translate, type Translate} from '../i18n';
 import {createGameSettingsModel, settingsChangeResetsRuntime, type SettingsSnapshot} from '../models/game-settings';
 import {createGamepadMappingModel} from '../../src/launcher/gamepad-mapping.mts';
 import {createKeyboardPreferences} from '../../src/launcher/keyboard-preferences.mts';
+import {broKeyBindingsFromAliases} from '../../src/launcher/bro-key-bindings.mts';
 import {createTh09LocalInput} from '../../src/launcher/th09-local-input.mts';
 import {createTouchLayoutModel, type TouchLayoutOrientation} from '../models/touch-layout';
 import {createDecisionStore, type DecisionOptions} from '../models/decisions';
@@ -814,6 +816,12 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   async function confirmMusicWarnings() {
     const state = settings.getSnapshot(); if (!state) return false;
     const music = state.music;
+    // Prompts only make sense when the player could act on them. A product that
+    // exposes no launcher-side music choice (BRO plays its own OGG soundtrack
+    // from the runtime) would otherwise be nagged at every launch to "choose OGG
+    // under Music" while the settings page offers no such option at all.
+    const availability = resolveMusicAvailability(state.context.musicAvailability);
+    if (!availability.ogg && !availability.midi) return true;
     if (music === 'none' || music === 'midi') return decisions.askConfirmation({message: t(music === 'none' ? 'music.noneLaunchWarning' : 'music.midiLaunchWarning'), confirmText: t('music.startAnyway')});
     return true;
   }
@@ -835,6 +843,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       prepareMidi: music => midi!.prepare(music), decideUpdate: value => decisions.askDecision(value),
       onProgress: transfer.preparationProgress, onWarning: feedback.toast, onStatus: feedback.playerStatus,
       onUpdateReady: epoch => gameUpdates?.ready({product, gameVersion:clickSettings.gameVersion, epoch}),
+      // BRO：网页键盘改键是权威。把 launcher 当前生效的别名折算成游戏本体键位，
+      // 经 configure → BRO_web_apply_settings 落到 setting.keys / keysys。
+      ...(gameIdForProduct(product) === 'bro'
+        ? {broKeyBindings: broKeyBindingsFromAliases(keyboardPreferences.getSnapshot())} : {}),
       onBackgroundError: (error, message) => {if (message) console.warn(message, error); else console.warn(error);}};
     return {owner, clickSettings, controller, input,
       recoverDirectPreloadTimeout(error: unknown) {

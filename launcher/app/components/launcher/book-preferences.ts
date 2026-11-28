@@ -48,7 +48,7 @@ export function bookLastPlayed(productId: string) {
 
 export type BookCategory = 'all' | 'favorites' | 'pc98' | 'windows' | 'versus' | 'fighting' | 'spin-off' | 'doujin';
 export function bookCategory(product: LibraryProduct): BookCategory {
-  if (product.gameId === 'hsob' || /^th[a-z]/i.test(product.id)) return 'doujin';
+  if (product.gameId === 'hsob' || product.gameId === 'bro' || /^th[a-z]/i.test(product.id)) return 'doujin';
   if (isPc98Product(product)) return 'pc98';
   const kind = bookGameKind(product.gameId);
   if (kind !== 'original') return kind;

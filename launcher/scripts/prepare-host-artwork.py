@@ -58,6 +58,10 @@ ARTWORK_BY_GAME = {
     "th14": ("th14-card.jpg",),
     "th17": ("th17-card.webp",),
     "th19": (),
+    # BRO is a third-party importOnly title: its Launcher card is a supplied
+    # derivative (see ports/bossrush/artwork/bro-card.webp), not extracted from
+    # a retail archive. No original game directory is required.
+    "bro": ("bro-card.webp",),
 }
 # Launcher cards are presentation derivatives, not archival copies of the
 # original title artwork.  The UI darkens/crops them heavily and Lighthouse's
@@ -379,6 +383,13 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         return (Path(__file__).resolve().parent.parent / "favicon.ico").read_bytes()
     if game == "th14" and name == "th14-card.jpg":
         return (Path(__file__).resolve().parent.parent / "docs/assets/game-covers/thumbnails/th14.jpg").read_bytes()
+    if game == "bro" and name == "bro-card.webp":
+        # Third-party importOnly title: the card is a supplied derivative
+        # committed in-tree, so no original game directory is required.
+        card = Path(__file__).resolve().parents[2] / "ports" / "bossrush" / "artwork" / name
+        data = card.read_bytes()
+        _validate_artwork(name, data)
+        return data
     root = roots.get(game)
     if root is None:
         raise FileNotFoundError(

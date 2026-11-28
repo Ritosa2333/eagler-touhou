@@ -1,0 +1,10 @@
+export declare const BRO_SYSTEM_COUNT: 11;
+export declare const BRO_STAGE_COUNT: 19;
+export declare const BRO_SYSTEMS: readonly Readonly<{ id: number; name: string }>[];
+export declare const BRO_STAGES: readonly Readonly<{ level: number; stage: string; name: string }>[];
+export declare const BRO_DEFAULT_SYSTEMS: readonly number[];
+export declare const BRO_DEFAULT_STAGE_QUEUE: readonly number[];
+export declare function validBroSystems(value: unknown): boolean;
+export declare function validBroStageQueue(value: unknown): boolean;
+export declare function normalizeBroSystems(value: unknown): number[] | undefined;
+export declare function normalizeBroStageQueue(value: unknown): number[] | undefined;

@@ -310,6 +310,21 @@ createServer(async (request, response) => {
       "Last-Modified": info.mtime.toUTCString(),
       Vary: "Accept-Encoding",
     };
+    // The React shell is served by the app-shell service worker with
+    // Cross-Origin-Embedder-Policy: require-corp, which puts the launcher page
+    // in a COEP context. Chromium then refuses to navigate an iframe whose
+    // document response has no COEP header ("coep-frame-resource-needs-coep-header").
+    // Runtime HTML/WASM is normally stamped with the isolation headers by the
+    // service worker (see app-shell-sw.js immutableResponse / deliverShell).
+    // Locally staged dev runtimes have no runtime manifest, so the worker
+    // deliberately does not intercept /runtime/ and the request lands here.
+    // Stamp the same headers the worker would have added so the runtime iframe
+    // can be embedded in the COEP launcher page.
+    if (pathname.startsWith("/runtime/")) {
+      commonHeaders["Cross-Origin-Embedder-Policy"] = "require-corp";
+      commonHeaders["Cross-Origin-Opener-Policy"] = "same-origin";
+      commonHeaders["Cross-Origin-Resource-Policy"] = "same-origin";
+    }
     if (legacyRetirementWorker) commonHeaders["Service-Worker-Allowed"] = "/eagler-touhou/";
     if (request.headers["if-none-match"] === tag) {
       response.writeHead(304, commonHeaders); response.end(); return;

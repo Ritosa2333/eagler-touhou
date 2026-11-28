@@ -66,6 +66,36 @@ assert.deepEqual(store.load({ product: "th07mp", roomCode: "4321", playerCounts:
   roomSettingsOpen: true,
 });
 
+// Regression: BRO room UI fields were added after bromp sessions could already
+// be saved. validBroSystems/validBroStageQueue intentionally accept undefined
+// ("use defaults"), so a saved session without them must restore cleanly
+// instead of throwing "undefined is not iterable" during restoreInvite.
+{
+  const bromp = new MemoryStorage();
+  const brompStore = createMultiplayerRoomSessionStore({ storage: bromp });
+  brompStore.save("bromp", {
+    room: { code: "2222", playerCount: 2, difficulty: 1, created: true },
+    seat: 0,
+    ready: false,
+    spectatorRequested: false,
+    roomSettingsOpen: false,
+  });
+  const legacyPayload = JSON.parse(bromp.getItem(multiplayerRoomSessionStorageKey("bromp")));
+  delete legacyPayload.room.broSystems;
+  delete legacyPayload.room.broStageQueue;
+  bromp.setItem(multiplayerRoomSessionStorageKey("bromp"), JSON.stringify(legacyPayload));
+  const restored = brompStore.load({ product: "bromp", roomCode: "2222", playerCounts: [2, 3], difficulties: ["hard", "lunatic"] });
+  assert.ok(restored, "a legacy bromp session without BRO option fields must restore");
+  assert.equal(restored.room.broSystems, undefined, "missing broSystems stays undefined so the caller applies defaults");
+  assert.equal(restored.room.broStageQueue, undefined, "missing broStageQueue stays undefined so the caller applies defaults");
+
+  // A present-but-invalid value is still rejected, as before.
+  legacyPayload.room.broSystems = { 0: 1 };
+  bromp.setItem(multiplayerRoomSessionStorageKey("bromp"), JSON.stringify(legacyPayload));
+  const rejected = brompStore.load({ product: "bromp", roomCode: "2222", playerCounts: [2, 3], difficulties: ["hard", "lunatic"] });
+  assert.equal(rejected?.room.broSystems, undefined, "a non-array broSystems is dropped");
+}
+
 store.clear("th06mp");
 assert.equal(storage.getItem(multiplayerRoomSessionStorageKey("th06mp")), null);
 
