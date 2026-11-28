@@ -154,16 +154,18 @@ class DesktopWindowPage extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) =>
-      !hasDesktopWindow ||
-          MediaQuery.sizeOf(context).width <= launcherCompactWidth
-      ? child
-      : Column(
-          children: [
-            const _WindowCaption(),
-            Expanded(child: child),
-          ],
-        );
+  Widget build(BuildContext context) {
+    if (!hasDesktopWindow) return child;
+    // Keep the page at the same depth when its caption moves to the outer frame.
+    // Reparenting here would destroy WebView and other page-local state.
+    return Column(
+      children: [
+        if (MediaQuery.sizeOf(context).width > launcherCompactWidth)
+          const _WindowCaption(),
+        Expanded(child: child),
+      ],
+    );
+  }
 }
 
 class _WindowCaption extends StatelessWidget {

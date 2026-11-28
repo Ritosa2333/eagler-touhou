@@ -121,6 +121,8 @@ Windows 实际进程以正式站参数启动后进入 th07，以其他域名参�
 
 `integration_test/desktop_window_test.dart` 从实际 main 入口打开 Windows 窗口，点击最小化、最大化和还原，拦截并核对关闭请求，再检查独立页导航与 1024、801、390、320 px 窗口。另在 1280、390、320 px 窗口实际点开 th06 封面并返回，核对封面与通关区边线和窗口按钮。这里的宽度为请求的窗口外框，内容绘制范围扣除了系统边框。桌面图像从实际 Flutter 引擎的页面绘制边界导出。[桌面窗口](evidence/windows/desktop-caption.png) | [窄桌面](evidence/windows/desktop-caption-801.png) | [独立页面](evidence/windows/desktop-caption-login.png) | [桌面详情](evidence/windows/detail-layout-1280.png) | [竖屏详情](evidence/windows/detail-layout-390.png) | [窄竖屏](evidence/windows/detail-layout-320.png)
 
+账号容器由 `integration_test/account_window_test.dart` 独立回归。共用 `DesktopWindowPage` 固定页面父层级，只切换窗口栏；780 px 断点不再销毁页面。Windows Release 集成验证同一 State、同一网页纹理及两条退出路径的 th06 标题坐标。[回归范围](../archive/performance-audit-20261128/account-return-summary.json)
+
 窗口按钮提供简中、英文和日文名称，最大化后随原生事件更新为还原。紧凑窗口的内容导航有独立语义边界，避免其 BlockSemantics 连带移除上方窗口栏。实际 Windows 集成覆盖 1280 与 320 px 三语、打开抽屉、最小化、最大化／还原和关闭取消。7 张同状态原生引擎图像与修改前字节一致，210 张核心控件截图也一致。Release 已由代理打开并以 Alt+F4 关闭。后续实测的 Flutter 控件树中，最小化、最大化、关闭与登录均有正确按钮名称。操作工具另出现控件树与截图目标不一致及控件索引失效，Release 鼠标入口仍待可靠复核。[Release 名称核对](evidence/windows/release-caption-accessibility.json)。[语义边界约定](https://api.flutter.dev/flutter/widgets/BlockSemantics-class.html) | [验证记录](evidence/windows/caption-accessibility.json)
 
 | 同状态原生引擎 | 调整前 | 调整后 |

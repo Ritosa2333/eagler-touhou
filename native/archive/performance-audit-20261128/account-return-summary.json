@@ -1,0 +1,103 @@
+{
+  "checkedAtUtc": "2026-11-28T09:37:40.592287+00:00",
+  "baselineCommit": "e72cbaafbb0537f80d5af111ec95a1d05934e6fa",
+  "scope": "Windows Release integration AOT importing real main, canonical native DLLs, guest account container. No foreground activation or external input. Standalone live-document test explicitly skipped in this final container-only run.",
+  "productSource": {
+    "lib/desktop_window.dart": "1a12a1dba16ad4f00d3b423a8bf085b6c3326ac2a7ffc40035aa7ad0fa8bd676"
+  },
+  "fixture": {
+    "compiledTargetSha256": "2bb56d6a4e37839b433a32f152a6aaf09645abc16a435e6135b3389fdb40501f",
+    "checkedInTargetSha256": "79f2e95a720ca66b8926a3e39c618c9108092091343f5e2970fa36704621f1c0",
+    "difference": "Only braces around a break in the skipped standalone-document setup. Executed container code is identical.",
+    "sourceArchive": "account-return-evidence.zip | host/"
+  },
+  "verification": {
+    "containerTestsPassed": 1,
+    "standaloneDocumentTestsSkipped": 1,
+    "resizeCases": 8,
+    "requestedWidths": [
+      1280,
+      390,
+      320,
+      1280
+    ],
+    "exitModes": [
+      "back",
+      "close"
+    ],
+    "sameWidgetStateAndNativeTexture": true,
+    "restoredGame": "th06",
+    "headingRectangleUnchanged": true,
+    "normalExit": true,
+    "kernelSignaled": true,
+    "foregroundSamples": 19,
+    "allForegroundSamplesOutsideTest": true,
+    "targetedAnalyzer": "passed",
+    "layoutNavigationChecks": 133,
+    "freshByteIdenticalWidgetImages": 210,
+    "ordinaryMainStartupSmoke": true,
+    "originalPreviewFilesUnchanged": 371
+  },
+  "documentCheck": {
+    "status": "not passed in separate earlier run",
+    "observed": "Public registration privacy anchor not present before the 30-second deadline; no credentials entered. Cause unconfirmed.",
+    "record": "account-return-evidence.zip | document-check/runtime.log"
+  },
+  "testAotSha256": "abb6a328042df506576618bfdf19a81c6f06bf95e484dfdbd19bc59e7f271ba3",
+  "nativePluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373",
+  "ordinaryWindowsPackage": {
+    "package": "touhouonline-windows-preview.zip",
+    "sha256": "0bbac79a4805c02ec258e08d4a73ae52c58920808a82b157b9c9b16db6146e37",
+    "aotSha256": "7e58aabca9ef35fd1907fe0b7bfcbccd636d7ef1f97bd77de20e9b331fc3cf95",
+    "changedRuntimeFiles": [
+      "data/app.so"
+    ],
+    "assetFilesCompared": 353,
+    "record": "account-return-evidence.zip | ordinary/package.json"
+  },
+  "pending": [
+    "Foreground ordinary EXE manual account operation",
+    "Current live form rendering, credentials, upload/crop and device behavior",
+    "Other OS and GPU devices",
+    "User visual acceptance"
+  ],
+  "evidence": {
+    "file": "account-return-evidence.zip",
+    "sha256": "5aec895b46340c31cb5633bc69ae9139c64b03b8a8014f974365d01785d33749",
+    "entries": {
+      "host/main.cpp": "3b24c3bad412eb1ce572e117771d18b1c692284ccd3e50d35a580348d2659512",
+      "host/window.cpp": "1fa061fe8ebe0fe15bd0b13917aac69bd44dc2a69dd80b4ab59644bada5c40c3",
+      "host/host.rc": "dc4593d0446f8bcee98e1416bf04202bcbf092f5aef1a4453551c7bdf5d54d22",
+      "host/main.rsp": "dc86cce8e9bfd3a97a166f9afe29f198112d2a4576a396b815f0b97501f66537",
+      "host/window.rsp": "aa76f05046489a181f9cfef0ffbcc28a3524ff88fc70f9043f82cf8fa269755e",
+      "host/link.rsp": "e2f38eee1cd35f95aeb230aeebbce0fc339ba2febfa329072fba379dd0842319",
+      "host/run.py": "2b0d20d7a0d26b01ff52de639c64a6b16892f90ad5f767854220d6818df55b98",
+      "host/build-host.cmd": "c221c7ecf1f5c069d93f34e974b6a787acbfb36da77b8e674d3d68132592197c",
+      "host/compiled-target.dart": "2bb56d6a4e37839b433a32f152a6aaf09645abc16a435e6135b3389fdb40501f",
+      "host/desktop-window-before.dart": "6c51d03b3a9be4f47bef454371504769178e2462f32b04a6e5d52b88adedce30",
+      "host/desktop-window-after.dart": "1a12a1dba16ad4f00d3b423a8bf085b6c3326ac2a7ffc40035aa7ad0fa8bd676",
+      "before/source.json": "79dfeaae2988c2ccdc63b148f1a337e53906422a718077ad33ef256c015a7657",
+      "before/process-result.json": "4d8b6a76a7c84d38c708845c01aca1eb8d71dd7925bd95c4bdbcc46c200d7e79",
+      "before/runtime.log": "ef51d5bfd7b67c33dc12a54030a2fe66135e277b9cf7a81ec0637c4edef39c40",
+      "document-check/source.json": "721800f46379575b187335689348554ad1a90684c703aa82b1766ecb2a29a227",
+      "document-check/process-result.json": "83c568ce2c942ac58149b261cd4635f581946efc8be015380206d32f331f3ace",
+      "document-check/runtime.log": "48b545c22f28bccd5f35760f9192d738c4dfb7dae6be6043a60d5121fded6ff4",
+      "container/source.json": "51d7b12e7b6ae4a78dabf01d27d74cdb02b30a3a101461ce396242f80df33f9e",
+      "container/process-result.json": "6637d9b8ca982e975973fb25296395a5becc773dca0c870e6a65310a026d1be5",
+      "container/runtime.log": "495ca37596d6a72eb85d31e139bffbcd435ad4ba4ce90a626863dd0426565638",
+      "container/events.jsonl": "e037b9bf272344d6550bd43fde15a8f0d4a1a38ef0c9bf088db6ad0acc8fee90",
+      "build/analyze.log": "965564d3b0db1a375e97940b4e99d432b6a06f75dd3fa479aba822c440120ed0",
+      "build/assemble.log": "12690b8d9f2f39547980df5c6103dc8cbf73e44fe73a04ca79cee78f92c9bd74",
+      "build/ordinary-assemble.log": "9310a4a02352d33bcbc440b3ffdd4b11a92bedb549fa6cec1110c6cc29bf7c46",
+      "ordinary/package.json": "68aa89151d622e50b1ff437d00ebee990fa2213b8d233f15c661eff78f0113ed",
+      "ordinary/ordinary-smoke-result.json": "e83e4f1e316bd324d4e6ff50a5ab189b573ecf8c127c3dc51a47700bbc522756",
+      "ordinary/ordinary-smoke-events.jsonl": "d7aaa1cc5217479888741de6f5c98c7120324db27ef5ad3a905733ac0344804f",
+      "ordinary/ordinary-smoke-runtime.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ordinary/original-preview-verification.json": "7a3c5020c21ea9f08f9d0e6b834fafacbe70fa560e1477246c8f5effd54afd0d",
+      "capture/captures.log": "889e668cb98ddf0cc443db7621ed417538ec3b869f4e0bbb3746a57a8b638672",
+      "capture/capture-comparison.json": "5b91a798ddfe3d186dd11b818fa44528249a6d86dc62afa350b8fe406d266af2",
+      "build/source-context.json": "3ec4a95a85863265ce08c39fd2a0760f78ed38ef438d99de9a9e51f2e2d7cdde",
+      "capture/command.json": "1fb4454296ab11bea21ae123172945a416f89674a2bf6628e3be03dc73f3f750"
+    }
+  }
+}

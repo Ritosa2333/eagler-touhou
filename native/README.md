@@ -20,7 +20,7 @@ flutter run -d windows
 
 Windows 构建依赖 Visual Studio 的 C++ 桌面开发工具、对应工具集的 C++ ATL、Windows SDK、NuGet CLI 和 Flutter 插件目录链接支持。运行 `flutter build windows --release` 后，可从 `build/windows/x64/runner/Release/` 启动 `touhouonline.exe`。分发时一并复制同目录的库和数据。
 
-Windows 窗口使用自定义标题栏。桌面实窗回归运行 `flutter test integration_test/desktop_window_test.dart -d windows`，通过实际入口检查窗口按钮、独立页视口和窄窗口。设置 `TOUHOU_DESKTOP_FRAME_CAPTURE` 可把页面图像写到指定的外部目录。测试会短暂最大化、最小化和调整自己的窗口，并在结束时恢复尺寸；关闭请求会被测试拦截。该验收还需连接正式站，读取登录文档并检查 1280、390、320 px 下账号页返回原游戏详情的布局；还检查注册页隐私链接在同一 WebView 中打开，以及 History API 的原生事件。还会读取真实登录和注册表单，在三种窗口宽度核对字段、字体及横向溢出，并保存 WebView2 网页区域图像。不会填写或提交凭据。
+Windows 窗口使用自定义标题栏。实窗验收分为两个入口，分别运行 `flutter test integration_test/desktop_window_test.dart -d windows` 与 `flutter test integration_test/account_window_test.dart -d windows`。前者检查窗口按钮、独立页视口和窄窗口，会短暂最大化、最小化及调整自己的窗口，结束后恢复尺寸，关闭请求由测试拦截。后者连接正式站，以游客身份在同一账号网页实例上往返 1280、390、320、1280 px，分别检查返回和关闭恢复原游戏布局；另检查登录注册表单的字段、字体、横向溢出，以及隐私链接和 History API。设置 `TOUHOU_DESKTOP_FRAME_CAPTURE` 可保存页面图像。测试不会填写或提交凭据。后台诊断宿主可用 `TOUHOU_DESKTOP_TEST_SCOPE=container` 单独运行容器回归；此范围显式跳过网页正文检查，不能作为表单验收。
 
 Windows 在 `windows/runner/main.cpp` 选择官方支持的 Skia 渲染路径。本机曾出现偏好读取完成后持续白屏，同一份应用产物切到 Skia 后恢复显示。Impeller 的重复启动也曾正常，触发条件还未稳定复现。 [Flutter 的 Windows 渲染配置](https://docs.flutter.dev/perf/impeller#windows) | [FlClash 的相关兼容记录](https://github.com/chen08209/FlClash/blob/main/.agents/flutter-upgrade.md#impeller-on-windows)
 
@@ -80,7 +80,7 @@ Flutter 控件图像在 Windows 下复现。将 `TOUHOU_CAPTURE_DIR` 指向截�
 
 共用头像运行 `flutter test test/account_avatar_test.dart test/account_transport_test.dart --concurrency=1`。需要公告入口截图时，设置 `TOUHOU_AVATAR_CAPTURE` 和 `TOUHOU_CAPTURE_FONTS`，输出目录须已存在。图片使用目录内机体样例，HTTP 检查在本机运行。[头像验收](docs/inbox.md#共用头像回归)
 
-账号、个人主页、资料编辑及裁切统一使用正式站应用内网页，旧 Flutter 专用测试和采集工具已归档。当前 Windows 网页与容器检查复用 `integration_test/desktop_window_test.dart`，截图范围与待验项见[账号验收](docs/account.md#windows-真实网页区域)。
+账号、个人主页、资料编辑及裁切统一使用正式站应用内网页，旧 Flutter 专用测试和采集工具已归档。当前 Windows 网页与容器检查使用 `integration_test/account_window_test.dart`，截图范围与待验项见[账号验收](docs/account.md#windows-真实网页区域)。
 
 联机大厅对照可指定网页截图场景 lobby-live,lobby-disconnected,lobby-capped,lobby-membership,lobby-rating-card,network-check。Flutter 设置 TOUHOU_LOBBY_CAPTURE 和 TOUHOU_CAPTURE_FONTS 后运行 flutter test test/lobby_page_test.dart --concurrency=1。设置 TOUHOU_VERIFY_LIVE_LOBBY=1 后另跑 flutter test test/lobby_directory_test.dart，可从正式站读取公开房间列表并刷新。
 
