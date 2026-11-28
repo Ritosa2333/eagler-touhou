@@ -1,3 +1,4 @@
+#include <eagler/input/BrowserGamepad.hpp>
 #include "GraphicsDevice.hpp"
 #if PORT_TITLE == 14
 #include "PauseCaptureTh14.hpp"
@@ -2393,12 +2394,16 @@ bool sample_and_tick_once(){
 #else
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
 #endif
+    const int mappedPad = eagler::input::BrowserGamepadState();
+    eagler::input::ApplyGamepadVirtualKeys(keys, mappedPad);
+    eagler::input::ApplyGamepadScanKeys(scans, mappedPad);
     if(app.session.title){auto& title=*app.session.title;for(u32 i=0;i<256;++i)title.key_edges[i]=scans[i]&~previous_scans[i];title.number_keys=0;for(u32 i=0;i<9;++i)if(keys[49+i])title.number_keys|=1u<<i;}
     previous_scans=scans;
     const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
     for(u32 n=0;n<256;++n)keys[n]=keys[n]||sample.keys[n];
     if(auto* b=app.session.battle.get()){b->player_input.movement.touch_mode=sample.motion;b->player_input.movement.touch_x=sample.x;b->player_input.movement.touch_y=sample.y;}
-    const u32 raw=sample_controller()|keyboard_keys(keys);
+    if(mappedPad>=0&&app.session.title)app.session.title->controller_buttons=0;
+    const u32 raw=(mappedPad<0?sample_controller():0)|keyboard_keys(keys);
     const u32 held=(raw&~0x80100u)|((raw&0x80000)?256:0);
 #if PORT_TITLE == 14 && defined(TH14_ENABLE_THPRAC)
     PracticeUiTh14::sample_keys(held);

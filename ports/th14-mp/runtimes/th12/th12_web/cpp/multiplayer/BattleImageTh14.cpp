@@ -10,8 +10,14 @@ void save_deformation(FrameImageTh14& image,ScreenDeformation& mesh){
 
 void AnmManager::capture_room_frame(FrameImageTh14& image){
     image.save(rate,script_rng,visual_rng,texture_high_precision,reference_positions,camera_delta,
-        default_tangent,render_space,th14_native_stack,th14_effect_stop,deferred_captures);
+        default_tangent,render_space,th14_native_stack,
+#if defined(TH14_CPP_STAGE_DECODE)
+        th14_effect_stop,
+#endif
+        deferred_captures);
+#if defined(TH14_CPP_STAGE_DECODE)
     if(auto* control=th14_control.get())image.save(control->flags,control->callbacks_enabled);
+#endif
     image.save(storage,available,active,geometry_sizes,geometry_owners,geometry_addresses,heads,tails,layers,
         next_id,spawn_depth,th14_draw_tail,th14_draw_epoch,th14_native_slots,th14_unused_slots);
     struct Animation {AnmVm* target;AnmVm value;};

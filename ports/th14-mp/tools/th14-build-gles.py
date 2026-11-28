@@ -38,6 +38,7 @@ def main():
     parser.add_argument('--common', type=Path, default=os.environ.get('EAGLER_COMMON', repo.parents[1] / 'common'))
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--jobs', type=int, choices=range(1, 17), default=3)
+    parser.add_argument('--single-threaded', action='store_true', help='Build the fallback for browsers without cross-origin isolation')
     args = parser.parse_args()
     sdk = args.emsdk.resolve()
     compiler = sdk / 'upstream/emscripten/emcc.py'
@@ -58,6 +59,11 @@ def main():
     sources = [portable / 'Renderer.cpp', *sorted((cpp / 'game').glob('*.cpp'), key=lambda p: p.name),
                *sorted((cpp / 'sdl').glob('*.cpp'), key=lambda p: p.name)]
     flags = profile['flags'][:]
+    if args.single_threaded:
+        threaded = {'-pthread', '-DTH14_CPP_BOOT_WORKER=1', '-DTH14_CPP_STAGE_WORKER=1',
+                    '-DTH14_CPP_STAGE_DECODE=1', '-DTH14_CPP_STAGE_RESOURCE_HANDSHAKE=1',
+                    '-DTH14_SHARED_SCENE_COPY=1', '-DTH14_STAGE_RESTORE_DELIVERY=1'}
+        flags = [flag for flag in flags if flag not in threaded]
     common = args.common.resolve()
     imgui = common / 'third_party/imgui'
     shared = common / 'include'
@@ -69,6 +75,8 @@ def main():
     common_files = [*sorted(imgui.glob('*.h')), *sorted(imgui.glob('*.inl')), *sorted(imgui.glob('*.cpp')),
                     *sorted((shared / 'eagler/thprac').glob('Practice*')),
                     shared / 'eagler/input/DialogueGesture.hpp',
+                    shared / 'eagler/input/BrowserGamepad.hpp',
+                    common / 'browser/browser-gamepad-input.hpp',
                     shared / 'eagler/input/LocalPlayerCue.hpp',
                     shared / 'eagler/gameplay/CooperativeRules.hpp']
     netplay = ('BrowserPeerTransport', 'InputReplay', 'NetplayCore', 'NetplayProtocol',
@@ -100,6 +108,9 @@ def main():
 
     link_flags = [str(portable / 'Th14WebGpuLibrary.js') if f == 'portable/sdl/Th14WebGpuLibrary.js' else f
                   for f in profile['linkFlags']]
+    if args.single_threaded:
+        link_flags = [flag for flag in link_flags
+                      if not flag.startswith('-sPTHREAD_') and flag != '-sALLOW_BLOCKING_ON_MAIN_THREAD=1']
     link_flags += ['-lwebsocket.js']
     names = ('room_open', 'room_frame', 'room_finished', 'room_close', 'room_rollback',
              'room_preview', 'room_preview_ready', 'room_return',

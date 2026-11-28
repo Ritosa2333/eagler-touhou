@@ -823,7 +823,7 @@ bool GameBattle::update(const std::function<bool()>& sample_input
     constexpr bool control_enabled=true;
 #endif
     if(control_enabled&&!stage_control()){last_error=-1009;return false;}
-#if PORT_TITLE == 14
+#if PORT_TITLE == 14 && defined(TH14_CPP_STAGE_DECODE)
     bool control_running=control_enabled&&(!transitioning||transition_started);
     // Native436be7 reads this live word after stage activation. Bit2 sets
     // bit7 and returns1: later Main callbacks still run, while Control's
@@ -844,7 +844,7 @@ bool GameBattle::update(const std::function<bool()>& sample_input
     // callback plays at activation and has no clock300 music-resume branch.
     if(kPortTitle!=14&&control_running&&!demo&&resources.stage_number==6&&frame==300)events.push_back({BattleEventKind::MusicResume});
     if(control_running)hud.score.update(economy.score_units);
-#if PORT_TITLE == 14
+#if PORT_TITLE == 14 && defined(TH14_CPP_STAGE_DECODE)
     // 436c80..436c98 returns3 for bits4/5/6 after the score callback.
     // Main401280 then stops this pass before Replay12 and all later callbacks.
     if(control_running&&(animations.th14_control.callback_flags()&0x70u))return true;
