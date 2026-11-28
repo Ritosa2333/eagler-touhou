@@ -19,7 +19,6 @@ inline std::uint32_t nearest_integer(double value) {
     const auto encoded = bits(value);
     const auto exponent = static_cast<int>((encoded >> 52) & 2047) - 1023;
     if (exponent < -1) return 0;
-    if (exponent >= 31) throw std::range_error("CRT phase integer outside recovered domain");
     const auto mantissa = (encoded & 0xfffffffffffffull) | (std::uint64_t(1) << 52);
     const auto shift = static_cast<unsigned>(52 - exponent);
     auto kept = mantissa >> shift;
@@ -28,9 +27,6 @@ inline std::uint32_t nearest_integer(double value) {
     if (lost > half || (lost == half && (kept & 1))) ++kept;
     const auto integer = static_cast<std::uint32_t>(kept);
     return encoded >> 63 ? 0u - integer : integer;
-}
-inline bool supports(std::uint64_t argument) noexcept {
-    return (argument & 0x7fffffffffffffffull) < 0x40f6000000000000ull;
 }
 
 template<std::size_t N> inline double polynomial(double argument, const std::array<std::uint64_t, 256>& table,
@@ -103,13 +99,11 @@ template<std::size_t N> inline double polynomial(double argument, const std::arr
 }
 
 inline std::uint64_t cosine_bits(std::uint64_t argument) {
-    if (!supports(argument)) throw std::range_error("CRT cosine requires large-argument fallback");
     const auto absolute = argument & 0x7fffffffffffffffull;
     if ((absolute >> 48) < 0x3030) return bits(sub(real(crt_trig_data::cos_parameters[18]), real(absolute)));
     return bits(polynomial(real(argument), crt_trig_data::cos_table, crt_trig_data::cos_parameters, 0x1c7610));
 }
 inline std::uint64_t sine_bits(std::uint64_t argument) {
-    if (!supports(argument)) throw std::range_error("CRT sine requires large-argument fallback");
     const auto upper = (argument >> 48) & 0x7fff;
     if (upper < 0x3030) {
         if (upper < 16) return bits(mul(real(argument), real(crt_trig_data::sin_parameters[16])));

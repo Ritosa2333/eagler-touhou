@@ -27,6 +27,7 @@ class WebHost final : public GamePlatformServices, public ApplicationStartupServ
 public:
     unsigned frames=0;
     bool exiting=false;
+    bool high_refresh=false;
     std::string replay_override;
     WebHost(GameState& state):GamePlatformServices(state,24,true){}
     using GamePlatformServices::invoke;

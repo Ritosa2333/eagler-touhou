@@ -114,11 +114,11 @@ void WebHost::draw_identity(){
     thkkd_draw_identity(id,birth,variant,pc,frame,world_.menu.outer_scene,world_.lifecycle.stage);
 }
 MenuScenePlatformResult WebHost::invoke(const MenuSceneRequest& r,MenuReplayFormatMemory* local){
-    U api=U(r.api);const auto& a=r.words;auto arg=[&](unsigned i){return a.at(i);};
+    U api=U(r.api);const auto& a=r.words;auto arg=[&](unsigned i){return a[i];};
     MenuScenePlatformResult out{0,world_.frame.registers.ecx,world_.frame.registers.edx,{},{}};
     if(suppress_drawing_&&drawing(api))return out;
     if(rendering_snapshot_&&(api==0x43e010||api==0x43e0d0||api==0x43fd40||api==0x440240||api==0x4425f0||api==0x4434d0))return out;
-    if(drawing(api)||api==0x41b8e0)draw_identity();
+    if(high_refresh&&(drawing(api)||api==0x41b8e0))draw_identity();
     switch(api){
     case 0x443e20:out.eax=exiting?U(-1):0;break;
     case 0x443db0:break;
@@ -136,7 +136,7 @@ MenuScenePlatformResult WebHost::invoke(const MenuSceneRequest& r,MenuReplayForm
     }
     case 0x432c20:out.eax=browser(r);out.writes.push_back({0x8b63f4,word(out.eax)});break;
     case 0x437f00:{
-        std::string formatted;const auto format=r.texts.at(0);unsigned argument=3,text_argument=1;
+        std::string formatted;const auto format=r.texts[0];unsigned argument=3,text_argument=1;
         for(std::size_t i=0;i<format.size();++i){
             if(format[i]!='%'){formatted+=format[i];continue;}
             if(i+1<format.size()&&format[i+1]=='%'){formatted+='%';++i;continue;}
@@ -144,7 +144,7 @@ MenuScenePlatformResult WebHost::invoke(const MenuSceneRequest& r,MenuReplayForm
             if(i==format.size())throw std::runtime_error("Incomplete display format");
             std::string spec(format.substr(start,i-start+1));char buffer[4096]{};
             if(format[i]=='s'){
-                std::string value;if(text_argument<r.texts.size()){value=std::string(r.texts.at(text_argument++));++argument;}else value=memory_string(arg(argument++));
+                std::string value;if(text_argument<r.texts.size()){value=std::string(r.texts[text_argument++]);++argument;}else value=memory_string(arg(argument++));
                 std::snprintf(buffer,sizeof(buffer),spec.c_str(),value.c_str());
             }else if(std::string("fFeEgG").find(format[i])!=std::string::npos){
                 std::uint64_t bits=arg(argument)|(std::uint64_t(arg(argument+1))<<32);argument+=2;double v;std::memcpy(&v,&bits,8);std::snprintf(buffer,sizeof(buffer),spec.c_str(),v);
@@ -175,10 +175,10 @@ MenuScenePlatformResult WebHost::invoke(const MenuSceneRequest& r,MenuReplayForm
 ApplicationStartupPlatformResult WebHost::invoke(const ApplicationStartupRequest& r){
     ApplicationStartupPlatformResult out;const auto& a=r.words;
     switch(r.api){
-    case 0x4f4572:{auto path=data_path(r.texts.at(0));const bool writing=r.texts.at(1).find('w')!=std::string::npos;auto mode=writing?std::ios::out|std::ios::trunc:std::ios::in;std::fstream f(path,mode|std::ios::binary);if(f){out.eax=++next_handle_;config_files_.emplace(out.eax,std::move(f));if(writing)config_write_paths_[out.eax]=path;}break;}
-    case 0x4f4366:{auto it=config_files_.find(a.at(2));if(it==config_files_.end())break;Bytes bytes;char c;while(bytes.size()+1<a.at(1)&&it->second.get(c)){bytes.push_back(std::uint8_t(c));if(c=='\n')break;}if(!bytes.empty()){bytes.push_back(0);out.writes.push_back({a.at(0),std::move(bytes)});out.eax=a.at(0);}break;}
-    case 0x4f4257:{auto it=config_files_.find(a.at(1));if(it!=config_files_.end())it->second<<r.texts.at(0);break;}
-    case 0x4f4600:{const auto handle=a.at(0);config_files_.erase(handle);const auto found=config_write_paths_.find(handle);if(found!=config_write_paths_.end()){thkkd_file_saved(found->second.c_str());config_write_paths_.erase(found);}break;}
+    case 0x4f4572:{auto path=data_path(r.texts[0]);const bool writing=r.texts[1].find('w')!=std::string::npos;auto mode=writing?std::ios::out|std::ios::trunc:std::ios::in;std::fstream f(path,mode|std::ios::binary);if(f){out.eax=++next_handle_;config_files_.emplace(out.eax,std::move(f));if(writing)config_write_paths_[out.eax]=path;}break;}
+    case 0x4f4366:{auto it=config_files_.find(a[2]);if(it==config_files_.end())break;Bytes bytes;char c;while(bytes.size()+1<a[1]&&it->second.get(c)){bytes.push_back(std::uint8_t(c));if(c=='\n')break;}if(!bytes.empty()){bytes.push_back(0);out.writes.push_back({a[0],std::move(bytes)});out.eax=a[0];}break;}
+    case 0x4f4257:{auto it=config_files_.find(a[1]);if(it!=config_files_.end())it->second<<r.texts[0];break;}
+    case 0x4f4600:{const auto handle=a[0];config_files_.erase(handle);const auto found=config_write_paths_.find(handle);if(found!=config_write_paths_.end()){thkkd_file_saved(found->second.c_str());config_write_paths_.erase(found);}break;}
     default:{std::vector<std::string_view> texts(r.texts.begin(),r.texts.end());out.eax=browser(MenuSceneRequest{static_cast<MenuSceneApi>(r.api),r.words,std::move(texts),{}});break;}
     }
     return out;

@@ -10,15 +10,18 @@ std::unique_ptr<WebHost> platform;
 std::unique_ptr<CombinedGameHost> game;
 std::string error;
 char replay_path[512]{};
+bool high_refresh=false;
 template<class F> int checked(F&& f){try{return f();}catch(const std::exception& e){error=e.what();return -1;}catch(const GameStartEntryAccessFault& e){error="State access fault at "+std::to_string(e.address);return -2;}}
 }
 extern "C" {
 EMSCRIPTEN_KEEPALIVE const char* thkkd_error(){return error.c_str();}
+EMSCRIPTEN_KEEPALIVE void thkkd_set_high_refresh(int enabled){high_refresh=enabled!=0;if(platform)platform->high_refresh=high_refresh;}
 EMSCRIPTEN_KEEPALIVE void thkkd_stop(){game.reset();platform.reset();world.reset();}
 EMSCRIPTEN_KEEPALIVE int thkkd_start(){return checked([]{
     thkkd_stop();std::filesystem::create_directories("/savesthkkd/replay");
     world=std::make_unique<GameState>();world->prepare_frame(true);
     platform=std::make_unique<WebHost>(*world);
+    platform->high_refresh=high_refresh;
     game=std::make_unique<CombinedGameHost>(world->combined_refs(),platform->combined_platform(),true,24,platform->math);
     platform->memory=&game->memory();world->initialize(*game,true);
     auto result=game->begin_application();if(result.kind!=ApplicationStartupKind::entered_outer)throw std::runtime_error("Application startup did not reach menu");return 0;

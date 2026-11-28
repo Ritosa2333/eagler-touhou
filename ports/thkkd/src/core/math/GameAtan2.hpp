@@ -36,7 +36,6 @@ inline Number first_quadrant(Number y, Number x) {
     const auto factor = crt_sse2::real(std::uint64_t(1023 + shift) << 52);
     quotient = {crt_sse2::mul(quotient.high, factor), crt_sse2::mul(quotient.low, factor)};
     const auto index = crt_sse2::nearest_integer(crt_sse2::mul(quotient.high, 16.));
-    if (index > 16) throw std::range_error("Atan reduction index outside range");
     const DoubleDouble center{static_cast<double>(index) * .0625, 0};
     const auto reduced = wide_float::divide(wide_float::sub(quotient, center),
         wide_float::add({1, 0}, wide_float::mul(quotient, center)));

@@ -14,13 +14,9 @@ public:
  GameStartEntryMemory& memory;GameStartEntryMachineFrame& frame;MenuScenePlatform& platform;
  GameplayHostPlatform(GameStartEntryMemory& m,GameStartEntryMachineFrame& f,MenuScenePlatform& p):memory(m),frame(f),platform(p){}
  MenuScenePlatformResult call(U api,std::vector<U> words={},std::vector<std::string_view> texts={},std::vector<std::uint8_t> bytes={}){
-  memory.reconcile();auto out=platform.invoke({static_cast<MenuSceneApi>(api),std::move(words),std::move(texts),std::move(bytes)});memory.reconcile();for(const auto& write:out.writes)memory.write(write.address,write.bytes);memory.reconcile();frame.registers.eax=out.eax;frame.registers.ecx=out.ecx;frame.registers.edx=out.edx;return out;
+  auto out=platform.invoke({static_cast<MenuSceneApi>(api),std::move(words),std::move(texts),std::move(bytes)});for(const auto& write:out.writes)memory.write(write.address,write.bytes);frame.registers.eax=out.eax;frame.registers.ecx=out.ecx;frame.registers.edx=out.edx;return out;
  }
- MenuScenePlatformResult call_drawing(U api,std::vector<U> words={}){
-  auto out=platform.invoke({static_cast<MenuSceneApi>(api),std::move(words),{},{}});
-  if(!out.writes.empty()){memory.reconcile();for(const auto& write:out.writes)memory.write(write.address,write.bytes);memory.reconcile();}
-  frame.registers.eax=out.eax;frame.registers.ecx=out.ecx;frame.registers.edx=out.edx;return out;
- }
+ MenuScenePlatformResult call_drawing(U api,std::vector<U> words={}){return call(api,std::move(words));}
  U color_drawing(U r,U g,U b){return call_drawing(0x4049a0,{r,g,b}).eax;}
  void pixel_drawing(U x,U y,U ink){call_drawing(0x41e7b0,{x,y,ink});}
  U physical(U binding){return read_menu_scene_input(memory,binding,false,[&](const MenuSceneRequest& q){return call(static_cast<U>(q.api),q.words,q.texts,q.bytes);});}
