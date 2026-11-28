@@ -1,5 +1,5 @@
 {
-  "checkedAtUtc": "2026-11-28T10:43:08.057301+00:00",
+  "checkedAtUtc": "2026-11-28T11:09:46.857261+00:00",
   "requirements": [
     "AUTH-WEB-01",
     "AUTH-WEB-02",
@@ -10,12 +10,12 @@
   "input": "Production public login and registration documents | guest | zh-CN | Windows WebView2 | requested outer widths 1280,390,320 | no fields filled or submitted",
   "source": {
     "integration_test/account_window_test.dart": "9b8cf88be0848f5ea55fa23ae43bde540b2a1be50a5640468e99e6546fe9a37b",
-    "lib/account_web_page.dart": "16121d296904729fbfe5820d3a1c58844d25520d709f9c8ad595c14cb7100b30",
+    "lib/account_web_page.dart": "f0c446a50281b00cd516da0e09713e38e00cf7789cc3a0ed899c98efcf1be14a",
     "lib/desktop_window.dart": "1a12a1dba16ad4f00d3b423a8bf085b6c3326ac2a7ffc40035aa7ad0fa8bd676"
   },
-  "scope": "Windows Release integration importing real main, canonical native DLLs, isolated guest. Own nonactivating diagnostic host. Native product source and ordinary main AOT unchanged. No credentials or global input.",
-  "testAotSha256": "6287ec3f98191f68d3cf1d7d9e718d96a20016206e64cfb7c2fcb7c49020697d",
-  "ordinaryPackageSha256": "0bbac79a4805c02ec258e08d4a73ae52c58920808a82b157b9c9b16db6146e37",
+  "scope": "Current Windows Release integration importing real main with account cancellation handling; canonical native DLLs; isolated guest; own nonactivating diagnostic host; no credentials or global input",
+  "testAotSha256": "1f2e1fba85dd1b481a24f32b512c93277edb87f2c2f20013bd4b9f41ea4992ed",
+  "ordinaryPackageSha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
   "validation": {
     "windowsIntegration": 2,
     "publicDocumentCases": 6,
@@ -150,7 +150,7 @@
   "screenshots": [
     {
       "file": "evidence/windows/webview-account-register-1280.png",
-      "sha256": "de6f4146430389b599fecd7cd47f1a63029c10ec346a67b5126f845febdb17c3",
+      "sha256": "f4140595d2e0b3f358ede616d1629dffcefb5d50d2d6c7862368bd2327460e62",
       "width": 1898,
       "height": 1068
     },

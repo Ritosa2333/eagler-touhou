@@ -347,8 +347,10 @@
     "uia-private-source.zip": "aeff020dfc2852bb5db444944eb2240801ba622c4d249d5cf10e86286a3bd3aa",
     "uia-private-summary.json": "fd7cd1456a22a2a1f6379604a2f17393e63023979ef990c67884602833a0a5d3",
     "account-return-evidence.zip": "5aec895b46340c31cb5633bc69ae9139c64b03b8a8014f974365d01785d33749",
-    "account-return-summary.json": "44ddcd11a3002db05719bfee51522a8fef1d2d0b905507f3a7f8456d1ed3e369",
-    "report.md": "9bdd96b16181701d05f390ef9a1561df8b26a2a6cc690886c4175d566e902448"
+    "account-return-summary.json": "d8e58ce9c937ad1a349624d414a9524def6c07153f2239de653dc9c158da767b",
+    "report.md": "9bdd96b16181701d05f390ef9a1561df8b26a2a6cc690886c4175d566e902448",
+    "account-navigation-summary.json": "1efbdf656cb1d1728d1a4db0325d8a56130b4a800d82b0155d8a3bf78056d378",
+    "account-navigation-evidence.zip": "3ba3eebc23b22df058f9009e086b6a2d203a54e7802f3d6e280a4c55061c890b"
   },
   "tracing": "Profile trace was captured before PERF_TRACE became optional. Reproduction needs --profile --trace-skia --endless-trace-buffer --dart-define=PERF_TRACE=true. Never use the traced process working set as ordinary app memory. Release target defaults to no tracing.",
   "browser": "Original public-profile native adapter A/B retained. New isolated Windows Debug account integration passes two visits and eight width states with native return to th08. Progressive screenshots include a real 320 px guest login form; other widths captured during loading. No credentials entered.",
@@ -707,5 +709,10 @@
   "privateUia": {
     "summary": "uia-private-summary.json",
     "scope": "Current ordinary main.dart AOT in nonactivating native diagnostic host. UIAutomationCore in-process ETW, no product/SDK/configuration changes; not a foreground or presented-FPS benchmark."
+  },
+  "accountNavigation": {
+    "summary": "account-navigation-summary.json",
+    "currentPackageSha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
+    "ordinaryAotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041"
   }
 }

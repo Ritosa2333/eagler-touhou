@@ -565,6 +565,64 @@ void main() {
     variant: nativePlatforms,
   );
 
+  testWidgets('Navigation cancellation preserves the loaded account document', (
+    tester,
+  ) async {
+    final address = Uri.https('touhouonline.com', '/login.html');
+    final router = await show(tester, _Session(), address);
+    var engine = platform.latest!;
+    engine.finish();
+    await tester.pumpAndSettle();
+    final state = tester.state(find.byType(_EngineView));
+    for (final type in [
+      web.WebResourceErrorType.CANCELLED,
+      web.WebResourceErrorType.CONNECTION_ABORTED,
+    ]) {
+      engine = platform.latest!;
+      engine.params.onReceivedError!(
+        engine.wrapped,
+        web.WebResourceRequest(
+          url: web.WebUri.uri(address),
+          isForMainFrame: true,
+        ),
+        web.WebResourceError(description: 'Navigation cancelled', type: type),
+      );
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/account');
+      expect(
+        find.byKey(const ValueKey('embedded-account-engine')),
+        findsOneWidget,
+      );
+      expect(identical(tester.state(find.byType(_EngineView)), state), isTrue);
+    }
+    // A subsequent allowed navigation must still surface a real load failure.
+    engine = platform.latest!;
+    engine.params.onLoadStart!(engine.wrapped, web.WebUri.uri(address));
+    engine.params.onReceivedError!(
+      engine.wrapped,
+      web.WebResourceRequest(
+        url: web.WebUri.uri(address),
+        isForMainFrame: true,
+      ),
+      web.WebResourceError(
+        description: 'Connection stopped before the document loaded',
+        type: web.WebResourceErrorType.CONNECTION_ABORTED,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('embedded-account-engine')), findsNothing);
+    expect(find.byIcon(Icons.refresh), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('embedded-account-engine')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    expect(router.state.uri.path, '/');
+  }, variant: nativePlatforms);
+
   testWidgets('System back uses web history and escapes a failed controller', (
     tester,
   ) async {

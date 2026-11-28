@@ -1,0 +1,198 @@
+{
+  "checkedAtUtc": "2026-11-28T11:09:46.857261+00:00",
+  "baselineCommit": "7ad276ce7fb5afbb68cd38ed2c6c0418eb13ceea",
+  "scope": "Production AccountWebPage, actual Windows engine, isolated guest at 390 px. Same probe and native DLLs before/after. External OS browser launch uses a platform test adapter. Separate current Release integration covers eight resize/return cases and six real public documents. No credentials or global input.",
+  "cause": "Intercepted navigation produces a main-frame aborted event. The container treated it as a load failure and disposed a valid loaded WebView.",
+  "fix": "Ignore explicit cancellation; preserve a completed document when navigation is aborted. A new allowed load resets completion, so genuine load failure still exposes retry.",
+  "productSource": {
+    "beforeSha256": "16121d296904729fbfe5820d3a1c58844d25520d709f9c8ad595c14cb7100b30",
+    "afterSha256": "f0c446a50281b00cd516da0e09713e38e00cf7789cc3a0ed899c98efcf1be14a"
+  },
+  "realEngine": {
+    "before": {
+      "passed": false,
+      "pid": 53988,
+      "scope": "Live production account widget and Windows engine; OS browser launch intercepted by platform test adapter; no credentials or global input",
+      "observations": [
+        {
+          "event": "before",
+          "bootReady": true,
+          "fields": [
+            "identity",
+            "password"
+          ],
+          "path": "/login.html",
+          "title": "登录 - TouhouOnline"
+        },
+        {
+          "event": "afterCancel",
+          "externalRequests": [
+            "https://example.com/navigation-check"
+          ],
+          "webViewPresent": false,
+          "retryVisible": true,
+          "sameState": false
+        }
+      ],
+      "failures": {
+        "Live account survives intercepted external navigation": "{\"methodName\":\"Live account survives intercepted external navigation\",\"details\":\"Instance of 'FlutterErrorDetails'\"}"
+      }
+    },
+    "after": {
+      "passed": true,
+      "pid": 57320,
+      "scope": "Live production account widget and Windows engine; OS browser launch intercepted by platform test adapter; no credentials or global input",
+      "observations": [
+        {
+          "event": "before",
+          "bootReady": true,
+          "fields": [
+            "identity",
+            "password"
+          ],
+          "path": "/login.html",
+          "title": "登录 - TouhouOnline"
+        },
+        {
+          "event": "afterCancel",
+          "externalRequests": [
+            "https://example.com/navigation-check"
+          ],
+          "webViewPresent": true,
+          "retryVisible": false,
+          "sameState": true
+        },
+        {
+          "event": "afterDocument",
+          "value": {
+            "fields": [
+              "identity",
+              "password"
+            ],
+            "path": "/login.html"
+          }
+        }
+      ],
+      "failures": {
+        "Live account survives intercepted external navigation": "success"
+      }
+    },
+    "inputs": {
+      "before": {
+        "variant": "before",
+        "targetSha256": "509ee47fa451ea94331cc368279b065380548e358793f0b9d1b59d16947e56c7",
+        "testAotSha256": "c7ac2be8a07ae6680dda094bac0b28ff7f4ab8c95bd55c1e9e0c4cb3512d6c36",
+        "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+        "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373"
+      },
+      "after": {
+        "variant": "after",
+        "targetSha256": "509ee47fa451ea94331cc368279b065380548e358793f0b9d1b59d16947e56c7",
+        "testAotSha256": "7614423395409bf71bcd6a910d56606cad78fe7db159a9b35b3549006f8f8e25",
+        "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+        "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373"
+      },
+      "container": {
+        "variant": "container",
+        "targetSha256": "9b8cf88be0848f5ea55fa23ae43bde540b2a1be50a5640468e99e6546fe9a37b",
+        "testAotSha256": "1f2e1fba85dd1b481a24f32b512c93277edb87f2c2f20013bd4b9f41ea4992ed",
+        "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+        "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373"
+      }
+    },
+    "normalExitAllTrials": true,
+    "foregroundSamplesOutsideTest": {
+      "before": 13,
+      "after": 12,
+      "container": 35
+    }
+  },
+  "verification": {
+    "accountWidgetChecks": 88,
+    "layoutNavigationChecks": 133,
+    "freshByteIdenticalWidgetImages": 210,
+    "containerResizeCases": 8,
+    "publicDocumentCases": 6,
+    "ordinaryAotStartupSmoke": {
+      "scope": "Ordinary main.dart AOT startup and close only; own nonactivating diagnostic host; no manual navigation or foreground FPS claim",
+      "pid": 49228,
+      "wait": 0,
+      "exitCode": 0,
+      "forced": false,
+      "elapsedSeconds": 3.1370919999899343,
+      "firstFrame": true,
+      "engineDestroyed": true,
+      "foregroundAlwaysOutsideTest": true,
+      "aotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041"
+    },
+    "originalPreviewFilesUnchanged": 371
+  },
+  "ordinaryWindowsPackage": {
+    "checkedAtUtc": "2026-11-28T11:09:43.048567+00:00",
+    "scope": "Official ordinary lib/main.dart Release reassembly; only Dart AOT changed; all 353 assets and native binaries unchanged; no deployment",
+    "oldPackageSha256": "0bbac79a4805c02ec258e08d4a73ae52c58920808a82b157b9c9b16db6146e37",
+    "package": "touhouonline-windows-preview.zip",
+    "sha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
+    "bytes": 30535423,
+    "aotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041",
+    "changedRuntimeFiles": [
+      "data/app.so"
+    ],
+    "unchangedAssets": 353
+  },
+  "reference": "https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/winrt/microsoft_web_webview2_core/corewebview2navigationcompletedeventargs",
+  "pending": [
+    "Real OS browser handoff and authenticated login/logout",
+    "File upload/crop and other OS/device engines",
+    "Foreground ordinary EXE operation and presented FPS",
+    "User visual acceptance"
+  ],
+  "evidence": {
+    "file": "account-navigation-evidence.zip",
+    "sha256": "3ba3eebc23b22df058f9009e086b6a2d203a54e7802f3d6e280a4c55061c890b",
+    "entries": {
+      "host/account_cancel_probe.dart": "509ee47fa451ea94331cc368279b065380548e358793f0b9d1b59d16947e56c7",
+      "host/compiled-account.dart": "9b8cf88be0848f5ea55fa23ae43bde540b2a1be50a5640468e99e6546fe9a37b",
+      "host/account-before.dart": "16121d296904729fbfe5820d3a1c58844d25520d709f9c8ad595c14cb7100b30",
+      "host/account-after.dart": "f0c446a50281b00cd516da0e09713e38e00cf7789cc3a0ed899c98efcf1be14a",
+      "host/widget-regression.dart": "0ac3c18a8196810d9c1b0a340c727c555accadd034c2bf864134a061726e8c6c",
+      "host/run.py": "e72bb131a091e193f693de6408fcd661dd27ba8e1e0455697982e0d73d8cdb57",
+      "host/package.py": "2df66ef3680c7c4a36981e8afba0291e976037436f2415608968636450ff1587",
+      "host/smoke.py": "0a950f3f08761b396ceb31753c60167803d1e5a1da7f4d68f174d5b7e6bb8ea0",
+      "host/analyze.log": "a5808891a55b6682ed7828b4f1b1144198025e524c109ade700a9d57a1292c6e",
+      "host/widget-tests.log": "af398000953ddf842176ca602fbadda3de6db35b3ca80f46927bd2cad0edc2b2",
+      "host/captures.log": "406823f047beb03536e70dc0934560e00aeb02fe72cc971de279cd3d96718289",
+      "host/capture-comparison.json": "450e49d09a9378843178c05dce0b0791bea3d5c545115f1c7be1eacb46103e3c",
+      "host/after-assemble.log": "12690b8d9f2f39547980df5c6103dc8cbf73e44fe73a04ca79cee78f92c9bd74",
+      "host/container-assemble.log": "12690b8d9f2f39547980df5c6103dc8cbf73e44fe73a04ca79cee78f92c9bd74",
+      "host/ordinary-assemble.log": "12690b8d9f2f39547980df5c6103dc8cbf73e44fe73a04ca79cee78f92c9bd74",
+      "host/ordinary-package.json": "e21fa6743312b09c3e58289be5f07c60a0c451a2a7e760d1a2ace82bc7f8638d",
+      "host/smoke-result.json": "e5206c9f735ce414afc4da17392aa85f8a7ea19c8d1b7749d230c0128e66e273",
+      "host/smoke-events.jsonl": "20c334e68c47a846c99b9f96a1e8663dbfb456e5ad8ca9e2cceeb0374f4311c2",
+      "host/smoke-runtime.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "before/events.jsonl": "85b82dd39d3fcc2604b740d71f12f2396f0e15ad6231b30f3a86e10a9d03297e",
+      "before/input.json": "8fce7f882a439016d008854fff7694c55b84bed418ae81ce6801696db99d880f",
+      "before/native-result.json": "4a81dadb7a63f07509ad64ac8cfee1a3c43b54f85a02f721ad9ffee52aadfd59",
+      "before/process-result.json": "43119366ac4bee1b202c46d542395282d9652cfef6edec0b60006702ab62ce6c",
+      "before/runtime.log": "20cef9b46d7a566db21ca77d486953d4d3f2c9d8e440874830f58e055258b5ca",
+      "after/events.jsonl": "b3fc4127e13ba394a67f14b04eb5ebe37d95a0f57ceb6cdf540d407f3239fe54",
+      "after/input.json": "5a5b899317716c2c92d2182149bb12a1dd47259d19b9e0558c85f002b75a7072",
+      "after/native-result.json": "feb2a629524a8563daec05417de7fe79d3d736564b47930c05978ec53297c1be",
+      "after/process-result.json": "b9c68b52e454b1014afdf88196bcee919644af0980be7fa49bfc9772cbe84b95",
+      "after/runtime.log": "fbb5e01ba1b6d22cc19a218bcc9a41e72dc724d6c798db86f56bdec49402ea21",
+      "container/events.jsonl": "e621c4b42cfa422f34aa29766dcde67398798019a740a4b8631c2282a0aa44d5",
+      "container/input.json": "255f4306cc0a853872faa734a856ef05f73611a6627d0eebd3cb655aac41bfb7",
+      "container/native-result.json": "d9089fcf04355f3f8554e49185eef716de444bbe62a5b0e6dff3cc721b98a783",
+      "container/process-result.json": "492c1e845d9e0a218e08d6d3e595270058e0b84f63e2664cfb54298f4f5d8d52",
+      "container/runtime.log": "c7766bb46e86c23a5f509e91093914327afae49ecd5cdf3cfea1a1dd22662195",
+      "container/capture/account-documents.json": "ab3607d8b51b03627dbf0f5dbb2da8ba85e221b38b7c4c791112630eb6c117e5",
+      "container/capture/account-login-1280.png": "6c3e2212fcfd4ac457a0cea655a1b3e10ca2795825138ad2c1cf5e6baa081806",
+      "container/capture/account-login-320.png": "a5fa802122dd59bfdd534de36658834be7ef9e7ba004f7e0211176d434e0b556",
+      "container/capture/account-login-390.png": "3133127ec1cb4dd9a64e3746cfc6dbef16a6598f94866e1271ec54b73f2da9cf",
+      "container/capture/account-register-1280.png": "f4140595d2e0b3f358ede616d1629dffcefb5d50d2d6c7862368bd2327460e62",
+      "container/capture/account-register-320.png": "c213bfa171dff508a866bc191ecad586b222d0bbec71fa35cb3e409fa565d817",
+      "container/capture/account-register-390.png": "75f5fb5cb1aaff8bd8abf8e2a9027336d601e3848cc83f7caf7b43a0f94e70bf",
+      "host/original-preview-verification.json": "681980a723e60f9c2f247c20cca40e22504c33605511450fddb007792b608ad5"
+    }
+  }
+}

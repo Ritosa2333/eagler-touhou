@@ -1,11 +1,11 @@
 {
-  "checkedAtUtc": "2026-11-28T10:43:08.057301+00:00",
-  "builtAtUtc": "2026-11-28T09:34:38.573922+00:00",
+  "checkedAtUtc": "2026-11-28T11:09:46.857261+00:00",
+  "builtAtUtc": "2026-11-28T11:09:43.048567+00:00",
   "stage": "D:\\workspace\\eagler\\artifacts\\.native-room-client-win",
-  "scope": "Ordinary main.dart Release reassembly | stable independent-page subtree | unchanged native binaries and resources | test entry sources are inventory context, separate integration AOT | no deployment",
+  "scope": "Ordinary main.dart Release reassembly | account cancellation preserves loaded document | canonical native binaries and assets unchanged | integration AOTs identified separately | no deployment",
   "package": "touhouonline-windows-preview.zip",
-  "packageSha256": "0bbac79a4805c02ec258e08d4a73ae52c58920808a82b157b9c9b16db6146e37",
-  "aotSha256": "7e58aabca9ef35fd1907fe0b7bfcbccd636d7ef1f97bd77de20e9b331fc3cf95",
+  "packageSha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
+  "aotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041",
   "entry": "D:\\Temp\\native-performance-20261128\\shutdown-guard\\production\\touhouonline.exe",
   "source": {
     "integration_test/account_window_test.dart": "9b8cf88be0848f5ea55fa23ae43bde540b2a1be50a5640468e99e6546fe9a37b",
@@ -13,7 +13,7 @@
     "lib/account.dart": "eccb15644d1f052d8c195fc98f10a6380c9e02cee3b0f64c48e5f11d4be3d889",
     "lib/account_api.dart": "07aa1931314e38bcdb44e3c5b290d9d4fd9f99645575d849c94d13a2391c3068",
     "lib/account_settings_layout.dart": "3cd3411d255f0783f4b5c0ecd401e48e38c3da3675b191061a092ea0adde54e9",
-    "lib/account_web_page.dart": "16121d296904729fbfe5820d3a1c58844d25520d709f9c8ad595c14cb7100b30",
+    "lib/account_web_page.dart": "f0c446a50281b00cd516da0e09713e38e00cf7789cc3a0ed899c98efcf1be14a",
     "lib/catalog.dart": "16e67e86442ddd28e9b8ea5bc0038b8830d48300d3c5c0b80e8b5983d14c78ba",
     "lib/cloud_save_comparison.dart": "25b15c418d807f746f6b62e8cd5d3eb39a0576f41b3cbbb412190f24794828b2",
     "lib/cloud_save_page.dart": "67a250400130715b31a65cd65f66f4075a678c94aada586695ec8d88bf7f025a",
@@ -101,7 +101,7 @@
     "lib/touch_preferences.dart": "02af8160319f8f30b89d221a6d34a71c75134b861a5b210eb1b411e44c70ade3",
     "pubspec.lock": "1539d2bc55bbac62bdacd22a654ecd297db5deb8c9ae50517e1ab30fb3a7af87",
     "pubspec.yaml": "713fc4f5312c6a29c0f705f35225e5329bdfd9b5f8d6280b1510db4f49ac835f",
-    "test/account_web_page_test.dart": "30ac740bdec2aa7aefa1ba2bdb115782f302ef1fe0fee1fdf34d9df9c4ef2341",
+    "test/account_web_page_test.dart": "0ac3c18a8196810d9c1b0a340c727c555accadd034c2bf864134a061726e8c6c",
     "windows/.gitignore": "955e3110cb16494ee76e1cd5df47e2c212309eb94a49a123fe87f718de413cb8",
     "windows/CMakeLists.txt": "c32db2d1e3d8935dd0ecd7b091e5b6df3aa98ded9ffa1fbef981af150d634fef",
     "windows/flutter/CMakeLists.txt": "bd05e3268b2f246bcbafdb778165fe67a7bafdba04eb73599502563a67b8ae7e",
@@ -123,23 +123,26 @@
     "windows/webview-renderer-adapter.patch": "5b75f7264ae5ca7e1a4efe0b70f8c4f79bcbf7d4467f84b2694353a7e7e0f2ae",
     "windows/webview_renderer_adapter.cmake": "2e09ad833cbaef6514dde8e89acfb4c279faad7845a815bab1c55434c3c5bcb1"
   },
-  "changes": "独立页固定父层级，跨 780 px 时保留网页 State 与纹理；验收入口分开。普通 AOT 重新生成，原生 DLL 和资源不变。",
+  "changes": "已加载账号网页的取消导航保留原实例，真正加载失败仍可重试。普通 AOT 更新，原生 DLL 和 353 份资源不变。",
   "verification": {
-    "ordinaryMainReleaseReassembly": "passed | fixed SDK release AOT; native binaries unchanged",
+    "ordinaryMainReleaseReassembly": "passed",
     "packageCrcAndAllFileHashes": "passed",
     "changedRuntimeFiles": [
       "data/app.so"
     ],
     "unchangedAssets": 353,
+    "accountWidgetChecks": 88,
+    "layoutNavigationChecks": 133,
+    "freshByteIdenticalWidgetImages": 210,
     "containerIntegrationPassed": 1,
-    "standaloneDocumentChecksSkippedInFinalContainerRun": 1,
+    "publicDocumentIntegrationPassed": 1,
+    "publicDocumentCases": 6,
+    "externalNavigationIntegrationPassed": 1,
+    "externalNavigationScope": "390 px production account page and real WebView2; OS browser launch replaced by test adapter",
     "resizeCases": 8,
     "sameWebViewStateAndTexture": true,
     "backAndCloseRestoreGameHeading": true,
-    "layoutNavigationChecks": 133,
-    "freshByteIdenticalWidgetImages": 210,
-    "ordinaryAotStartupSmoke": "passed | own nonactivating host, first frame and kernel-signaled normal exit",
-    "originalPreviewFilesUnchanged": 371
+    "ordinaryAotStartupSmoke": "passed | own nonactivating diagnostic host, first frame and kernel-signaled normal exit"
   },
   "performanceReport": "archive/performance-audit-20261128/report.md",
   "pending": [
@@ -151,7 +154,7 @@
     "Current ordinary Release real-window resource import after checksum-worker change",
     "Graphics context loss, concurrent engines and other driver/device shutdown behavior",
     "Foreground high-frequency UIA cost; bounded tool caller identified separately",
-    "Current standalone live account forms: registration privacy anchor did not appear within deadline"
+    "Credentialed WebView login/logout, upload/crop and real OS browser handoff"
   ],
   "inheritedVerification": {
     "scope": "Earlier account/API and widget checks from the prior Dart AOT. Current layout/navigation and capture checks are recorded separately in verification.",

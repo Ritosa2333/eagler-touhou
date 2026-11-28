@@ -7,7 +7,7 @@
     "lib/account.dart": "eccb15644d1f052d8c195fc98f10a6380c9e02cee3b0f64c48e5f11d4be3d889",
     "lib/account_api.dart": "07aa1931314e38bcdb44e3c5b290d9d4fd9f99645575d849c94d13a2391c3068",
     "lib/account_settings_layout.dart": "3cd3411d255f0783f4b5c0ecd401e48e38c3da3675b191061a092ea0adde54e9",
-    "lib/account_web_page.dart": "16121d296904729fbfe5820d3a1c58844d25520d709f9c8ad595c14cb7100b30",
+    "lib/account_web_page.dart": "f0c446a50281b00cd516da0e09713e38e00cf7789cc3a0ed899c98efcf1be14a",
     "lib/catalog.dart": "16e67e86442ddd28e9b8ea5bc0038b8830d48300d3c5c0b80e8b5983d14c78ba",
     "lib/cloud_save_comparison.dart": "25b15c418d807f746f6b62e8cd5d3eb39a0576f41b3cbbb412190f24794828b2",
     "lib/cloud_save_page.dart": "67a250400130715b31a65cd65f66f4075a678c94aada586695ec8d88bf7f025a",
@@ -109,7 +109,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-files-en",
-      "capturedAtUtc": "2026-11-28T07:17:17.020592+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:14.662166+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/desktop-game-files-zh-CN.png",
@@ -117,7 +117,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-files-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:21.099623+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:17.382808+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/desktop-game-settings-advanced-en.png",
@@ -125,7 +125,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-settings-advanced-en",
-      "capturedAtUtc": "2026-11-28T07:17:16.909209+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:14.485274+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/desktop-game-settings-advanced-zh-CN.png",
@@ -133,7 +133,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-settings-advanced-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:20.968529+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:17.294913+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/desktop-game-settings-display-en.png",
@@ -141,7 +141,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-settings-display-en",
-      "capturedAtUtc": "2026-11-28T07:17:16.230788+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:13.528165+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/desktop-game-settings-display-zh-CN.png",
@@ -149,7 +149,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-settings-display-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:20.000177+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:16.812268+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/desktop-game-settings-input-en.png",
@@ -157,7 +157,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-settings-input-en",
-      "capturedAtUtc": "2026-11-28T07:17:16.707725+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:14.146684+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/desktop-game-settings-input-zh-CN.png",
@@ -165,7 +165,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-settings-input-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:20.650543+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:17.089187+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/desktop-game-settings-volume-en.png",
@@ -173,7 +173,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-settings-volume-en",
-      "capturedAtUtc": "2026-11-28T07:17:16.808793+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:14.315592+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/desktop-game-settings-volume-zh-CN.png",
@@ -181,7 +181,7 @@
       "width": 1440,
       "height": 734,
       "sample": "desktop-game-settings-volume-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:20.758371+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:17.191425+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-files-ja.png",
@@ -189,7 +189,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-files-ja",
-      "capturedAtUtc": "2026-11-28T07:17:14.086274+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:12.111129+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-files-zh-CN.png",
@@ -197,7 +197,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-files-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:18.362642+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:15.975631+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-settings-advanced-ja.png",
@@ -205,7 +205,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-settings-advanced-ja",
-      "capturedAtUtc": "2026-11-28T07:17:13.982583+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:12.013807+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-settings-advanced-zh-CN.png",
@@ -213,7 +213,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-settings-advanced-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:18.246444+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:15.924324+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-settings-display-ja.png",
@@ -221,7 +221,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-settings-display-ja",
-      "capturedAtUtc": "2026-11-28T07:17:13.145035+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:11.643243+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-settings-display-zh-CN.png",
@@ -229,7 +229,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-settings-display-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:17.642692+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:15.645275+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-settings-input-ja.png",
@@ -237,7 +237,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-settings-input-ja",
-      "capturedAtUtc": "2026-11-28T07:17:13.715928+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:11.879831+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-settings-input-zh-CN.png",
@@ -245,7 +245,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-settings-input-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:18.030352+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:15.830466+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-settings-volume-ja.png",
@@ -253,7 +253,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-settings-volume-ja",
-      "capturedAtUtc": "2026-11-28T07:17:13.898837+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:11.956185+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-game-settings-volume-zh-CN.png",
@@ -261,7 +261,7 @@
       "width": 390,
       "height": 844,
       "sample": "mobile-game-settings-volume-zh-CN",
-      "capturedAtUtc": "2026-11-28T07:17:18.162107+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:15.879245+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-narrow-game-files-en.png",
@@ -269,7 +269,7 @@
       "width": 320,
       "height": 640,
       "sample": "mobile-narrow-game-files-en",
-      "capturedAtUtc": "2026-11-28T07:17:11.719581+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:10.964101+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-narrow-game-settings-advanced-en.png",
@@ -277,7 +277,7 @@
       "width": 320,
       "height": 640,
       "sample": "mobile-narrow-game-settings-advanced-en",
-      "capturedAtUtc": "2026-11-28T07:17:11.587234+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:10.849563+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-narrow-game-settings-display-en.png",
@@ -285,7 +285,7 @@
       "width": 320,
       "height": 640,
       "sample": "mobile-narrow-game-settings-display-en",
-      "capturedAtUtc": "2026-11-28T07:17:10.566526+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:10.249168+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-narrow-game-settings-input-en.png",
@@ -293,7 +293,7 @@
       "width": 320,
       "height": 640,
       "sample": "mobile-narrow-game-settings-input-en",
-      "capturedAtUtc": "2026-11-28T07:17:11.212385+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:10.656442+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings/mobile-narrow-game-settings-volume-en.png",
@@ -301,7 +301,7 @@
       "width": 320,
       "height": 640,
       "sample": "mobile-narrow-game-settings-volume-en",
-      "capturedAtUtc": "2026-11-28T07:17:11.455435+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:10.758188+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-english-dark-1-input.png",
@@ -309,7 +309,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-english-dark-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:33.830786+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:28.027106+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-english-dark-1-volume.png",
@@ -317,7 +317,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-english-dark-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:33.964491+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:28.219544+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-english-dark-2-input.png",
@@ -325,7 +325,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-english-dark-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:34.822278+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:29.129742+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-english-dark-2-volume.png",
@@ -333,7 +333,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-english-dark-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:35.021091+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:29.250415+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-english-light-1-input.png",
@@ -341,7 +341,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-english-light-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:36.322920+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:30.308848+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-english-light-1-volume.png",
@@ -349,7 +349,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-english-light-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:36.468149+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:30.478926+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-english-light-2-input.png",
@@ -357,7 +357,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-english-light-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:37.825324+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:31.532886+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-english-light-2-volume.png",
@@ -365,7 +365,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-english-light-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:37.967856+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:31.685150+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-dark-1-input.png",
@@ -373,7 +373,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-simplifiedChinese-dark-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:39.169413+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:32.551170+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-dark-1-volume.png",
@@ -381,7 +381,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-simplifiedChinese-dark-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:39.337867+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:32.651532+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-dark-2-input.png",
@@ -389,7 +389,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-simplifiedChinese-dark-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:40.438421+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:33.426208+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-dark-2-volume.png",
@@ -397,7 +397,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-simplifiedChinese-dark-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:40.585742+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:33.634040+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-light-1-input.png",
@@ -405,7 +405,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-simplifiedChinese-light-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:41.985755+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:34.602616+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-light-1-volume.png",
@@ -413,7 +413,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-simplifiedChinese-light-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:42.124154+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:34.725825+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-light-2-input.png",
@@ -421,7 +421,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-simplifiedChinese-light-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:43.456605+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:35.645301+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-light-2-volume.png",
@@ -429,7 +429,7 @@
       "width": 1440,
       "height": 844,
       "sample": "1440-simplifiedChinese-light-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:43.595924+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:35.794245+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/320-english-dark-1-input.png",
@@ -437,7 +437,7 @@
       "width": 320,
       "height": 844,
       "sample": "320-english-dark-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:21.788941+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:17.801483+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/320-english-dark-1-volume.png",
@@ -445,7 +445,7 @@
       "width": 320,
       "height": 844,
       "sample": "320-english-dark-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:21.904761+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:17.857195+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/320-english-dark-2-input.png",
@@ -453,7 +453,7 @@
       "width": 320,
       "height": 844,
       "sample": "320-english-dark-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:22.497627+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:18.251484+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/320-english-dark-2-volume.png",
@@ -461,7 +461,7 @@
       "width": 320,
       "height": 844,
       "sample": "320-english-dark-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:22.554061+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:18.298953+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/320-english-light-1-input.png",
@@ -469,7 +469,7 @@
       "width": 320,
       "height": 844,
       "sample": "320-english-light-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:23.048068+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:18.576960+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/320-english-light-1-volume.png",
@@ -477,7 +477,7 @@
       "width": 320,
       "height": 844,
       "sample": "320-english-light-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:23.100435+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:18.622536+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/320-english-light-2-input.png",
@@ -485,7 +485,7 @@
       "width": 320,
       "height": 844,
       "sample": "320-english-light-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:23.664206+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:19.049423+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/320-english-light-2-volume.png",
@@ -493,7 +493,7 @@
       "width": 320,
       "height": 844,
       "sample": "320-english-light-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:23.745073+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:19.104197+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-japanese-dark-1-input.png",
@@ -501,7 +501,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-japanese-dark-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:24.204849+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:19.453008+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-japanese-dark-1-volume.png",
@@ -509,7 +509,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-japanese-dark-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:24.291946+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:19.505650+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-japanese-dark-2-input.png",
@@ -517,7 +517,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-japanese-dark-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:24.782229+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:20.094828+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-japanese-dark-2-volume.png",
@@ -525,7 +525,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-japanese-dark-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:24.863829+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:20.212015+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-japanese-light-1-input.png",
@@ -533,7 +533,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-japanese-light-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:25.375118+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:21.038850+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-japanese-light-1-volume.png",
@@ -541,7 +541,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-japanese-light-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:25.446130+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:21.101838+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-japanese-light-2-input.png",
@@ -549,7 +549,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-japanese-light-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:25.876189+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:21.489467+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-japanese-light-2-volume.png",
@@ -557,7 +557,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-japanese-light-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:25.982371+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:21.535138+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-dark-1-input.png",
@@ -565,7 +565,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-simplifiedChinese-dark-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:26.439345+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:21.858227+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-dark-1-volume.png",
@@ -573,7 +573,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-simplifiedChinese-dark-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:26.480990+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:21.916634+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-dark-2-input.png",
@@ -581,7 +581,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-simplifiedChinese-dark-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:26.905990+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:22.362511+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-dark-2-volume.png",
@@ -589,7 +589,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-simplifiedChinese-dark-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:26.970547+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:22.422292+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-light-1-input.png",
@@ -597,7 +597,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-simplifiedChinese-light-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:27.385277+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:22.758144+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-light-1-volume.png",
@@ -605,7 +605,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-simplifiedChinese-light-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:27.445387+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:22.812153+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-light-2-input.png",
@@ -613,7 +613,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-simplifiedChinese-light-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:27.977428+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:23.245351+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-light-2-volume.png",
@@ -621,7 +621,7 @@
       "width": 390,
       "height": 844,
       "sample": "390-simplifiedChinese-light-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:28.030324+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:23.291689+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/781-english-dark-1-input.png",
@@ -629,7 +629,7 @@
       "width": 781,
       "height": 844,
       "sample": "781-english-dark-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:28.718984+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:24.011919+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/781-english-dark-1-volume.png",
@@ -637,7 +637,7 @@
       "width": 781,
       "height": 844,
       "sample": "781-english-dark-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:28.790090+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:24.098124+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/781-english-dark-2-input.png",
@@ -645,7 +645,7 @@
       "width": 781,
       "height": 844,
       "sample": "781-english-dark-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:29.543225+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:25.088233+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/781-english-dark-2-volume.png",
@@ -653,7 +653,7 @@
       "width": 781,
       "height": 844,
       "sample": "781-english-dark-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:29.637220+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:25.201746+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/781-english-light-1-input.png",
@@ -661,7 +661,7 @@
       "width": 781,
       "height": 844,
       "sample": "781-english-light-1-input",
-      "capturedAtUtc": "2026-11-28T07:17:30.975372+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:26.137629+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/781-english-light-1-volume.png",
@@ -669,7 +669,7 @@
       "width": 781,
       "height": 844,
       "sample": "781-english-light-1-volume",
-      "capturedAtUtc": "2026-11-28T07:17:31.198440+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:26.291621+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/781-english-light-2-input.png",
@@ -677,7 +677,7 @@
       "width": 781,
       "height": 844,
       "sample": "781-english-light-2-input",
-      "capturedAtUtc": "2026-11-28T07:17:32.745795+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:27.159020+00:00"
     },
     {
       "file": "docs/evidence/current/game-settings-layout/781-english-light-2-volume.png",
@@ -685,7 +685,7 @@
       "width": 781,
       "height": 844,
       "sample": "781-english-light-2-volume",
-      "capturedAtUtc": "2026-11-28T07:17:32.889490+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:27.251748+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-2.png",
@@ -694,7 +694,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:43.904304+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:16.940647+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-en-2.png",
@@ -703,7 +703,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:45.649851+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:18.574840+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-en-light-2.png",
@@ -712,7 +712,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:52.975914+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:23.613928+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-en-light.png",
@@ -721,7 +721,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-en-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:40.123905+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:13.233234+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-en.png",
@@ -730,7 +730,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-en",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:32.838610+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:07.508209+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-ja-2.png",
@@ -739,7 +739,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-ja-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:48.257691+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:20.178477+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-ja-light-2.png",
@@ -748,7 +748,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-ja-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:55.456327+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:25.222457+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-ja-light.png",
@@ -757,7 +757,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-ja-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:42.371505+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:15.137113+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-ja.png",
@@ -766,7 +766,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-ja",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:35.395250+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:09.699018+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-light-2.png",
@@ -775,7 +775,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:50.050589+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:21.828382+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-light.png",
@@ -784,7 +784,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:37.967605+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:11.458215+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-disconnected.png",
@@ -793,7 +793,7 @@
       "height": 734,
       "sample": "desktop-lobby-disconnected",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:30.248700+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:05.278725+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-2.png",
@@ -802,7 +802,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:44.102031+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:17.137793+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-en-2.png",
@@ -811,7 +811,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:45.972428+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:18.768343+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-en-light-2.png",
@@ -820,7 +820,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:53.343979+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:23.835863+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-en-light.png",
@@ -829,7 +829,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-en-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:40.341112+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:13.427891+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-en.png",
@@ -838,7 +838,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-en",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:33.054142+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:07.712577+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-ja-2.png",
@@ -847,7 +847,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-ja-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:48.490099+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:20.388214+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-ja-light-2.png",
@@ -856,7 +856,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-ja-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:55.750588+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:25.459142+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-ja-light.png",
@@ -865,7 +865,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-ja-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:42.518648+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:15.313695+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-ja.png",
@@ -874,7 +874,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-ja",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:35.713726+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:09.898370+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-light-2.png",
@@ -883,7 +883,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:50.370230+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:22.043905+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty-light.png",
@@ -892,7 +892,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:38.167761+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:11.648215+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-empty.png",
@@ -901,7 +901,7 @@
       "height": 734,
       "sample": "desktop-lobby-empty",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:30.601325+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:05.494516+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-2.png",
@@ -910,7 +910,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:43.811922+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:16.836647+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-en-2.png",
@@ -919,7 +919,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:45.528651+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:18.482063+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-en-light-2.png",
@@ -928,7 +928,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:52.850235+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:23.509166+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-en-light.png",
@@ -937,7 +937,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-en-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:39.995174+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:13.139179+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-en.png",
@@ -946,7 +946,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-en",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:32.743080+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:07.380744+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-ja-2.png",
@@ -955,7 +955,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-ja-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:48.134248+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:20.072185+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-ja-light-2.png",
@@ -964,7 +964,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-ja-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:55.344188+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:25.122655+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-ja-light.png",
@@ -973,7 +973,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-ja-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:42.250887+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:15.024012+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-ja.png",
@@ -982,7 +982,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-ja",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:35.188637+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:09.599101+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-light-2.png",
@@ -991,7 +991,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:49.940093+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:21.729520+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live-light.png",
@@ -1000,7 +1000,7 @@
       "height": 734,
       "sample": "desktop-lobby-live-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:37.867323+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:11.370027+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-live.png",
@@ -1009,7 +1009,7 @@
       "height": 734,
       "sample": "desktop-lobby-live",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:30.115670+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:05.180703+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-2.png",
@@ -1018,7 +1018,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:44.379348+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:17.430329+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-en-2.png",
@@ -1027,7 +1027,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:46.629293+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:19.061634+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-en-light-2.png",
@@ -1036,7 +1036,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:53.917319+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:24.150232+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-en-light.png",
@@ -1045,7 +1045,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-en-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:40.725950+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:13.744070+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-en.png",
@@ -1054,7 +1054,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-en",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:33.406095+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:08.219152+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-ja-2.png",
@@ -1063,7 +1063,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-ja-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:48.780664+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:20.709068+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-ja-light-2.png",
@@ -1072,7 +1072,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-ja-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:56.178397+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:25.779196+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-ja-light.png",
@@ -1081,7 +1081,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-ja-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:42.786076+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:15.642346+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-ja.png",
@@ -1090,7 +1090,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-ja",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:36.465634+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:10.234478+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-light-2.png",
@@ -1099,7 +1099,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:50.768120+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:22.388624+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-light.png",
@@ -1108,7 +1108,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:38.530239+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:12.004329+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-disconnected.png",
@@ -1117,7 +1117,7 @@
       "height": 844,
       "sample": "mobile-lobby-disconnected",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:31.283808+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:05.811765+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-2.png",
@@ -1126,7 +1126,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:44.514273+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:17.600708+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-en-2.png",
@@ -1135,7 +1135,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:46.820668+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:19.224173+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-en-light-2.png",
@@ -1144,7 +1144,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:54.155504+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:24.318035+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-en-light.png",
@@ -1153,7 +1153,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-en-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:40.979491+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:13.926129+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-en.png",
@@ -1162,7 +1162,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-en",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:33.729576+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:08.434736+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-ja-2.png",
@@ -1171,7 +1171,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-ja-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:48.938982+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:20.889207+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-ja-light-2.png",
@@ -1180,7 +1180,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-ja-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:56.410594+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:25.919173+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-ja-light.png",
@@ -1189,7 +1189,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-ja-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:42.952199+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:15.820873+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-ja.png",
@@ -1198,7 +1198,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-ja",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:36.789576+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:10.425199+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-light-2.png",
@@ -1207,7 +1207,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:51.031721+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:22.600431+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty-light.png",
@@ -1216,7 +1216,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:38.670773+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:12.165787+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-empty.png",
@@ -1225,7 +1225,7 @@
       "height": 844,
       "sample": "mobile-lobby-empty",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:31.630522+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:06.044351+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-2.png",
@@ -1234,7 +1234,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:44.334422+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:17.373836+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-en-2.png",
@@ -1243,7 +1243,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:46.545113+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:18.994462+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-en-light-2.png",
@@ -1252,7 +1252,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:53.842537+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:24.086764+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-en-light.png",
@@ -1261,7 +1261,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-en-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:40.651820+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:13.679042+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-en.png",
@@ -1270,7 +1270,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-en",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:33.328692+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:08.079743+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-ja-2.png",
@@ -1279,7 +1279,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-ja-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:48.733023+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:20.639295+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-ja-light-2.png",
@@ -1288,7 +1288,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-ja-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:56.091103+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:25.703457+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-ja-light.png",
@@ -1297,7 +1297,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-ja-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:42.732941+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:15.576334+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-ja.png",
@@ -1306,7 +1306,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-ja",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:36.279132+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:10.160687+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-light-2.png",
@@ -1315,7 +1315,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:50.709922+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:22.322315+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live-light.png",
@@ -1324,7 +1324,7 @@
       "height": 844,
       "sample": "mobile-lobby-live-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:38.448357+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:11.929093+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-live.png",
@@ -1333,7 +1333,7 @@
       "height": 844,
       "sample": "mobile-lobby-live",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:31.168303+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:05.748264+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-2.png",
@@ -1342,7 +1342,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:44.758183+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:17.867981+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-en-2.png",
@@ -1351,7 +1351,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:47.190675+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:19.447978+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-en-light-2.png",
@@ -1360,7 +1360,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:54.557971+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:24.541046+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-en-light.png",
@@ -1369,7 +1369,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-en-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:41.324000+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:14.249233+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-en.png",
@@ -1378,7 +1378,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-en",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:34.113173+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:08.765729+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-ja-2.png",
@@ -1387,7 +1387,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-ja-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:49.187088+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:21.131588+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-ja-light-2.png",
@@ -1396,7 +1396,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-ja-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:56.861216+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:26.170578+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-ja-light.png",
@@ -1405,7 +1405,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-ja-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:43.197947+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:16.122537+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-ja.png",
@@ -1414,7 +1414,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-ja",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:37.199617+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:10.730126+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-light-2.png",
@@ -1423,7 +1423,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:51.578942+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:22.899886+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-light.png",
@@ -1432,7 +1432,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:38.962234+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:12.438058+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-rooms-en-2.png",
@@ -1441,7 +1441,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-rooms-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:47.359080+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:19.479486+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-rooms-en-light-2.png",
@@ -1450,7 +1450,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected-rooms-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:54.667397+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:24.579290+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected.png",
@@ -1459,7 +1459,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-disconnected",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:32.006348+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:06.399653+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-2.png",
@@ -1468,7 +1468,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:44.920377+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:17.990863+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-en-2.png",
@@ -1477,7 +1477,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:47.587344+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:19.589069+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-en-light-2.png",
@@ -1486,7 +1486,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:54.795934+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:24.680932+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-en-light.png",
@@ -1495,7 +1495,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-en-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:41.579769+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:14.434952+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-en.png",
@@ -1504,7 +1504,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-en",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:34.275720+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:09.004911+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-ja-2.png",
@@ -1513,7 +1513,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-ja-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:49.324345+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:21.242612+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-ja-light-2.png",
@@ -1522,7 +1522,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-ja-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:57.005290+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:26.272520+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-ja-light.png",
@@ -1531,7 +1531,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-ja-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:43.375368+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:16.300992+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-ja.png",
@@ -1540,7 +1540,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-ja",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:37.324568+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:10.895329+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-light-2.png",
@@ -1549,7 +1549,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:51.864843+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:23.021221+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-light.png",
@@ -1558,7 +1558,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:39.232275+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:12.591859+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty.png",
@@ -1567,7 +1567,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-empty",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:32.129076+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:06.659339+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-2.png",
@@ -1576,7 +1576,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:44.711789+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:17.820925+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-en-2.png",
@@ -1585,7 +1585,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-en-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:47.128919+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:19.407959+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-en-light-2.png",
@@ -1594,7 +1594,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-en-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:54.498320+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:24.506999+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-en-light.png",
@@ -1603,7 +1603,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-en-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:41.264243+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:14.188250+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-en.png",
@@ -1612,7 +1612,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-en",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:34.052504+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:08.703194+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-ja-2.png",
@@ -1621,7 +1621,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-ja-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:49.141438+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:21.088980+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-ja-light-2.png",
@@ -1630,7 +1630,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-ja-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:56.792401+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:26.125619+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-ja-light.png",
@@ -1639,7 +1639,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-ja-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:43.138036+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:16.065042+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-ja.png",
@@ -1648,7 +1648,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-ja",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:37.127250+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:10.673552+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-light-2.png",
@@ -1657,7 +1657,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-light-2",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:51.487725+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:22.857478+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-light.png",
@@ -1666,7 +1666,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live-light",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:38.900867+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:12.381851+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live.png",
@@ -1675,7 +1675,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-live",
       "input": "Existing lobby-directory-fixture.json | connection, disconnect and empty samples",
-      "capturedAtUtc": "2026-11-28T07:18:31.935411+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:06.329739+00:00"
     },
     {
       "file": "docs/evidence/current/core/desktop-library.png",
@@ -1684,7 +1684,7 @@
       "height": 734,
       "sample": "desktop-library",
       "input": "Full current catalog | guest | production public announcement feed | dark | 100% text",
-      "capturedAtUtc": "2026-11-28T07:16:21.512550+00:00"
+      "capturedAtUtc": "2026-11-28T11:02:42.547293+00:00"
     },
     {
       "file": "docs/evidence/current/core/mobile-library.png",
@@ -1693,7 +1693,7 @@
       "height": 844,
       "sample": "mobile-library",
       "input": "Full current catalog | guest | production public announcement feed | dark | 100% text",
-      "capturedAtUtc": "2026-11-28T07:16:38.760441+00:00"
+      "capturedAtUtc": "2026-11-28T11:02:52.891201+00:00"
     },
     {
       "file": "docs/evidence/current/core/mobile-narrow-library.png",
@@ -1702,7 +1702,7 @@
       "height": 640,
       "sample": "mobile-narrow-library",
       "input": "Full current catalog | guest | production public announcement feed | dark | 100% text",
-      "capturedAtUtc": "2026-11-28T07:16:47.105034+00:00"
+      "capturedAtUtc": "2026-11-28T11:02:59.300483+00:00"
     },
     {
       "file": "docs/evidence/current/core/desktop-game-detail.png",
@@ -1711,7 +1711,7 @@
       "height": 734,
       "sample": "desktop-game-detail",
       "input": "Full current catalog | guest | production public announcement feed | dark | 100% text",
-      "capturedAtUtc": "2026-11-28T07:16:25.777858+00:00"
+      "capturedAtUtc": "2026-11-28T11:02:44.774328+00:00"
     },
     {
       "file": "docs/evidence/current/core/mobile-game-detail.png",
@@ -1720,7 +1720,7 @@
       "height": 844,
       "sample": "mobile-game-detail",
       "input": "Full current catalog | guest | production public announcement feed | dark | 100% text",
-      "capturedAtUtc": "2026-11-28T07:16:39.942693+00:00"
+      "capturedAtUtc": "2026-11-28T11:02:53.525414+00:00"
     },
     {
       "file": "docs/evidence/current/core/mobile-narrow-game-detail.png",
@@ -1729,7 +1729,7 @@
       "height": 640,
       "sample": "mobile-narrow-game-detail",
       "input": "Full current catalog | guest | production public announcement feed | dark | 100% text",
-      "capturedAtUtc": "2026-11-28T07:16:48.051501+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:00.235154+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-en-2-lobby-membership.png",
@@ -1738,7 +1738,7 @@
       "height": 734,
       "sample": "desktop-en-2-lobby-membership",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:28.655720+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:04.130197+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-capped.png",
@@ -1747,7 +1747,7 @@
       "height": 734,
       "sample": "desktop-lobby-capped",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:22.546340+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:57.639511+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-match-replay.png",
@@ -1756,7 +1756,7 @@
       "height": 734,
       "sample": "desktop-lobby-match-replay",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:05.287717+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:44.765296+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-membership.png",
@@ -1765,7 +1765,7 @@
       "height": 734,
       "sample": "desktop-lobby-membership",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:26.668528+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:01.716631+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-rating-card.png",
@@ -1774,7 +1774,7 @@
       "height": 734,
       "sample": "desktop-lobby-rating-card",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:20.787494+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:56.516916+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-lobby-replay-metadata.png",
@@ -1783,7 +1783,7 @@
       "height": 734,
       "sample": "desktop-lobby-replay-metadata",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:06.569280+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:45.819570+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/desktop-network-check.png",
@@ -1792,7 +1792,7 @@
       "height": 734,
       "sample": "desktop-network-check",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:09.312619+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:48.912128+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-ja-2-lobby-membership.png",
@@ -1801,7 +1801,7 @@
       "height": 844,
       "sample": "mobile-ja-2-lobby-membership",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:27.812357+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:03.124159+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-capped.png",
@@ -1810,7 +1810,7 @@
       "height": 844,
       "sample": "mobile-lobby-capped",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:19.072558+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:55.450104+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-match-replay.png",
@@ -1819,7 +1819,7 @@
       "height": 844,
       "sample": "mobile-lobby-match-replay",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:03.337497+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:43.360288+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-membership.png",
@@ -1828,7 +1828,7 @@
       "height": 844,
       "sample": "mobile-lobby-membership",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:25.278660+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:00.218249+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-rating-card.png",
@@ -1837,7 +1837,7 @@
       "height": 844,
       "sample": "mobile-lobby-rating-card",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:17.725328+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:54.641082+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-lobby-replay-metadata.png",
@@ -1846,7 +1846,7 @@
       "height": 844,
       "sample": "mobile-lobby-replay-metadata",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:04.008754+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:43.914976+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-en-2-lobby-membership.png",
@@ -1855,7 +1855,7 @@
       "height": 640,
       "sample": "mobile-narrow-en-2-lobby-membership",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:27.310962+00:00"
+      "capturedAtUtc": "2026-11-28T11:04:02.267091+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-capped.png",
@@ -1864,7 +1864,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-capped",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:16.734219+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:54.175052+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-match-replay.png",
@@ -1873,7 +1873,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-match-replay",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:01.521823+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:41.935117+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-membership.png",
@@ -1882,7 +1882,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-membership",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:24.255241+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:59.199121+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-rating-card.png",
@@ -1891,7 +1891,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-rating-card",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:15.621472+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:53.481068+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-lobby-replay-metadata.png",
@@ -1900,7 +1900,7 @@
       "height": 640,
       "sample": "mobile-narrow-lobby-replay-metadata",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:02.370411+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:42.619418+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-narrow-network-check.png",
@@ -1909,7 +1909,7 @@
       "height": 640,
       "sample": "mobile-narrow-network-check",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:07.525850+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:46.992769+00:00"
     },
     {
       "file": "docs/evidence/current/lobby/mobile-network-check.png",
@@ -1918,22 +1918,22 @@
       "height": 844,
       "sample": "mobile-network-check",
       "input": "Existing isolated lobby, replay, membership, rating and network-check fixtures | Windows platform | catalog images loaded",
-      "capturedAtUtc": "2026-11-28T07:18:08.189436+00:00"
+      "capturedAtUtc": "2026-11-28T11:03:47.888999+00:00"
     }
   ],
   "capturedAtUtc": "2026-11-28T09:41:00.737744+00:00",
   "productionSourceMatchesWindowsPackage": {
-    "checkedAtUtc": "2026-11-28T09:50:50.551651+00:00",
+    "checkedAtUtc": "2026-11-28T11:09:46.857261+00:00",
     "package": "touhouonline-windows-preview.zip",
-    "sha256": "0bbac79a4805c02ec258e08d4a73ae52c58920808a82b157b9c9b16db6146e37",
-    "aotSha256": "7e58aabca9ef35fd1907fe0b7bfcbccd636d7ef1f97bd77de20e9b331fc3cf95",
+    "sha256": "b13e7a464c1a99aad882603b768be222395e582b85d2b2bbe868d13a3bf609d1",
+    "aotSha256": "eda4530d7fed368f5d10a72cdb1be8004fd64f7c56d57aa585a4a0ce63959041",
     "source": {
       "integration_test/account_window_test.dart": "9b8cf88be0848f5ea55fa23ae43bde540b2a1be50a5640468e99e6546fe9a37b",
       "integration_test/desktop_window_test.dart": "a99392f761212620a415652b41e2a04da7d12f90c2b2ba1e293e3fffc1b1d4dc",
       "lib/account.dart": "eccb15644d1f052d8c195fc98f10a6380c9e02cee3b0f64c48e5f11d4be3d889",
       "lib/account_api.dart": "07aa1931314e38bcdb44e3c5b290d9d4fd9f99645575d849c94d13a2391c3068",
       "lib/account_settings_layout.dart": "3cd3411d255f0783f4b5c0ecd401e48e38c3da3675b191061a092ea0adde54e9",
-      "lib/account_web_page.dart": "16121d296904729fbfe5820d3a1c58844d25520d709f9c8ad595c14cb7100b30",
+      "lib/account_web_page.dart": "f0c446a50281b00cd516da0e09713e38e00cf7789cc3a0ed899c98efcf1be14a",
       "lib/catalog.dart": "16e67e86442ddd28e9b8ea5bc0038b8830d48300d3c5c0b80e8b5983d14c78ba",
       "lib/cloud_save_comparison.dart": "25b15c418d807f746f6b62e8cd5d3eb39a0576f41b3cbbb412190f24794828b2",
       "lib/cloud_save_page.dart": "67a250400130715b31a65cd65f66f4075a678c94aada586695ec8d88bf7f025a",
@@ -2021,7 +2021,7 @@
       "lib/touch_preferences.dart": "02af8160319f8f30b89d221a6d34a71c75134b861a5b210eb1b411e44c70ade3",
       "pubspec.lock": "1539d2bc55bbac62bdacd22a654ecd297db5deb8c9ae50517e1ab30fb3a7af87",
       "pubspec.yaml": "713fc4f5312c6a29c0f705f35225e5329bdfd9b5f8d6280b1510db4f49ac835f",
-      "test/account_web_page_test.dart": "30ac740bdec2aa7aefa1ba2bdb115782f302ef1fe0fee1fdf34d9df9c4ef2341",
+      "test/account_web_page_test.dart": "0ac3c18a8196810d9c1b0a340c727c555accadd034c2bf864134a061726e8c6c",
       "windows/.gitignore": "955e3110cb16494ee76e1cd5df47e2c212309eb94a49a123fe87f718de413cb8",
       "windows/CMakeLists.txt": "c32db2d1e3d8935dd0ecd7b091e5b6df3aa98ded9ffa1fbef981af150d634fef",
       "windows/flutter/CMakeLists.txt": "bd05e3268b2f246bcbafdb778165fe67a7bafdba04eb73599502563a67b8ae7e",
@@ -2044,7 +2044,7 @@
       "windows/webview_renderer_adapter.cmake": "2e09ad833cbaef6514dde8e89acfb4c279faad7845a815bab1c55434c3c5bcb1"
     },
     "entry": "lib/main.dart",
-    "scope": "Ordinary main.dart Release reassembly | stable independent-page subtree | unchanged native binaries and resources | test entry sources are inventory context, separate integration AOT | no deployment"
+    "scope": "Ordinary main.dart Release reassembly | account cancellation preserves loaded document | canonical native binaries and assets unchanged | integration AOTs identified separately | no deployment"
   },
   "recaptureScope": "Stable desktop independent-page subtree | 133 layout/navigation checks | 210 fresh byte-identical widget images | not user visual approval"
 }

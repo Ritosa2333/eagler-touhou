@@ -38,6 +38,7 @@ class _AccountWebPageState extends State<AccountWebPage> {
   String? _lastCookie;
   bool _ready = false;
   bool _failed = false;
+  bool _documentLoaded = false;
   bool _allowPop = false;
   bool _closing = false;
   bool _hasWebHistory = false;
@@ -74,6 +75,7 @@ class _AccountWebPageState extends State<AccountWebPage> {
     setState(() {
       _failed = false;
       _ready = false;
+      _documentLoaded = false;
       _hasWebHistory = false;
       _historyRevision++;
       _visitRevision++;
@@ -416,12 +418,24 @@ class _AccountWebPageState extends State<AccountWebPage> {
                   if (mounted) setState(() => _progress = progress);
                 },
                 onLoadStart: (_, _) {
+                  _documentLoaded = false;
                   _visitTimer?.cancel();
                   _visitRevision++;
                 },
-                onLoadStop: (_, url) => _visited(url),
+                onLoadStop: (_, url) {
+                  _documentLoaded = true;
+                  _visited(url);
+                },
                 onUpdateVisitedHistory: (_, url, reload) => _visited(url),
                 onReceivedError: (_, request, error) {
+                  // WebView2 reports an intercepted navigation as aborted even
+                  // though the previous document remains loaded and usable.
+                  if (error.type == web.WebResourceErrorType.CANCELLED ||
+                      (_documentLoaded &&
+                          error.type ==
+                              web.WebResourceErrorType.CONNECTION_ABORTED)) {
+                    return;
+                  }
                   if (request.isForMainFrame == true && mounted) {
                     setState(() => _failed = true);
                   }
