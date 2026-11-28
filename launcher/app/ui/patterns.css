@@ -13,6 +13,7 @@
 .ui-field-label{display:block;width:fit-content;color:var(--kit-foreground);font:500 13px/1.5 var(--kit-font);cursor:pointer}
 .ui-field-description{color:var(--kit-muted-foreground);font:400 12px/1.65 var(--kit-font);overflow-wrap:anywhere}
 .ui-field-description:empty{display:none}
+.option-label-with-help{display:flex;align-items:center;gap:4px;min-width:0}
 .ui-badge{display:inline-flex;max-width:100%;flex:none;align-items:center;gap:4px;padding:2px 6px;border:1px solid transparent;border-radius:4px;font:500 10px/1.4 var(--kit-font);vertical-align:middle}
 .ui-badge-secondary{background:var(--kit-muted);color:var(--kit-muted-foreground)}
 .ui-badge-outline{border-color:var(--kit-border);background:transparent;color:var(--kit-foreground)}

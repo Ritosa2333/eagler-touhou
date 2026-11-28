@@ -13,7 +13,6 @@ import {localeHome, uiLocaleSearch, type UiLocale} from '../../src/launcher/i18n
 import {updateSearchParameters} from '../../src/launcher/url-query.mts';
 import {navigateSurfaceLayer, SurfaceLayersContext, type LayerEntry, type LayerValue} from './surface-layer';
 import {UnsavedChangesContext, type UnsavedChangesGuard} from './unsaved-changes';
-import {isCompactNavigation} from './navigation-motion';
 const noDecisionSubscription = () => () => {};
 const noDecisionSnapshot = () => null;
 let dialogSessionSequence = 0;
@@ -23,7 +22,7 @@ const newDialogSession = () => `${Date.now().toString(36)}-${++dialogSessionSequ
 export type Surface = 'library' | 'options' | 'touch' | 'room';
 export type SurfaceContext = 'library' | 'lobby';
 export type DirectoryFormMode = 'create' | 'join';
-export const INFORMATION_DIALOG_IDS = ['mpGuideDialog', 'firstUseNoticeDialog', 'donationDialog', 'appleRefreshDialog', 'replayDialog', 'lobbyNetworkDialog'] as const;
+export const INFORMATION_DIALOG_IDS = ['mpGuideDialog', 'firstUseNoticeDialog', 'donationDialog', 'appleRefreshDialog', 'replayDialog', 'lobbyNetworkDialog', 'gameDataImportDialog'] as const;
 export type InformationDialogId = typeof INFORMATION_DIALOG_IDS[number];
 export interface SurfaceAddress {
   surface: Surface;
@@ -68,6 +67,12 @@ const roomFullscreenKey = 'launcherRoomFullscreen';
 const href = (location: Pick<Location, 'pathname' | 'search' | 'hash'>) => location.pathname + location.search + location.hash;
 function plainState(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? {...value} : {};
+}
+function removeReplayLayers(state: Record<string, unknown>) {
+  const layers = plainState(state[LOCAL_LAYERS_KEY]);
+  const values = Object.fromEntries(Object.entries(plainState(layers.values)).filter(([id]) => !id.startsWith('replay-')));
+  if (Object.keys(values).length) state[LOCAL_LAYERS_KEY] = {...layers, values};
+  else delete state[LOCAL_LAYERS_KEY];
 }
 function localLayerTransition(current: Location, next: Location) {
   if (href(current) !== href(next)) return false;
@@ -413,9 +418,14 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const topGame = playerOpen && typeof gameEntry.position === 'number' && gameEntry.position === pageHistory?.position;
   const pendingDirectorySelection = useRef<{position: number; product: ProductId} | null>(null);
   function returnToPageParent(parentProduct?: ProductId) {
-    const history = readPageHistory(location.state), parent = history && PAGE_PARENTS[history.page];
+    const routePage = pageOf(location);
+    // Host selection can open a game without writing a detail entry.
+    const hostOnlyDetail = address.surface === 'options' && (routePage === 'launcher' || routePage === 'directory');
+    const page = hostOnlyDetail ? routePage === 'launcher' ? 'single-options' : 'multi-options' : routePage;
+    const history = readPageHistory(location.state);
+    const parent = PAGE_PARENTS[page];
     if (!parent) return;
-    const distance = parentDistance(history);
+    const distance = parentDistance(history?.page === page ? history : null);
     roomPolicyNavigation.current = true;
     try {
       if (distance !== null) {
@@ -423,8 +433,9 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
         navigateAfterCleanup(distance);
       }
       else {
-        const next=pageAddress(location,parent,parentProduct??address.productId,locale);
-        void navigate(next,{replace:true,state:{},preventScrollReset:next.pathname===location.pathname});
+        const next = pageAddress(location, parent, parentProduct ?? address.productId, locale);
+        if (hostOnlyDetail) setHostSelection(null);
+        void navigate(next, {replace: true, state: withoutEntry(location.state), preventScrollReset: next.pathname === location.pathname});
       }
     } finally {roomPolicyNavigation.current = false;}
   }
@@ -523,7 +534,8 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const currentPage = readPageHistory(currentLocation.state), nextPage = readPageHistory(nextLocation.state);
     if (historyAction === 'POP' && currentPage && nextPage && nextPage.position < currentPage.position &&
         !playerOpen && !validInfo && !validForm && !ownedTouch && !validPanel && !validSettings) {
-      const parent = PAGE_PARENTS[currentPage.page];
+      // Account and profile pages can originate from any launcher page.
+      const parent = currentPage.page === 'account' || currentPage.page === 'profile' ? null : PAGE_PARENTS[currentPage.page];
       if (parent && (nextPage.page !== parent || nextPage.position !== currentPage.ancestors[parent])) {
         pendingBlockKind.current = 'page'; return true;
       }
@@ -555,7 +567,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
       }
       current.reset();
       const source = currentLocation.current, state = plainState(source.state);
-      delete state[infoEntryKey]; delete state[LOCAL_LAYERS_KEY];
+      delete state[infoEntryKey]; removeReplayLayers(state);
       void navigate({pathname: source.pathname, search: source.search, hash: source.hash},
         {replace: true, preventScrollReset: true, state});
     })().catch(() => {pendingBlockKind.current = null; const current = latestBlocker.current; if (current.state === 'blocked') current.reset();})
@@ -703,13 +715,13 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const search = params.toString();
     return {pathname: location.pathname, search: search ? `?${search}` : '', hash: location.hash};
   }
-  function setSurfaceLayer(id: string, value: LayerValue) {
+  function setSurfaceLayer(id: string, value: LayerValue, pageScroll?: boolean) {
     if (blocker.state !== 'unblocked') return;
     const prior = localValues[id];
     if ((prior?.value ?? null) === value) return;
     if (layerWrite.current?.key === location.key && layerWrite.current.id === id && layerWrite.current.value === value) return;
     layerWrite.current = {key: location.key, id, value};
-    navigateSurfaceLayer(location, navigate, dialogSession, localValues, id, value);
+    navigateSurfaceLayer(location, navigate, dialogSession, localValues, id, value, pageScroll);
   }
   function infoDialogOpen(id: InformationDialogId) {
     return validInfo && infoVisible[id] === true;
@@ -727,7 +739,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     // A manager opened from a non-running Launcher needs a physical parent,
     // especially when its carrier is the first BrowserHistory entry. Runtime
     // file actions still replace their carrier so Back cannot restore an old iframe.
-    const replace = options?.replace === true && (id !== 'replayDialog' || playerOpen || (pageHistory?.position ?? 0) > 0);
+    const replace = options?.replace === true && (id !== 'replayDialog' || playerOpen);
     // Bounded visible flags are the current Router-rendered UI, not retained
     // history receipts. Main keeps an open parent native dialog beneath child.
     const visible = Object.fromEntries(INFORMATION_DIALOG_IDS.map(name => [name, infoDialogOpen(name)]));
@@ -747,7 +759,8 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
         ? infoEntry.parentPosition - pageHistory.position : -1;
       void navigate(distance < 0 ? distance : -1);
     } else {
-      const state = plainState(location.state); delete state[infoEntryKey]; delete state[LOCAL_LAYERS_KEY];
+      const state = plainState(location.state); delete state[infoEntryKey];
+      if (activeInfo === 'replayDialog') removeReplayLayers(state);
       void navigate({pathname: location.pathname, search: location.search, hash: location.hash},
         {replace: true, preventScrollReset: true, state});
     }
@@ -823,7 +836,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const destination = new URL('lobby.html', new URL(href(location), 'https://launcher.invalid'));
     destination.searchParams.set('game', productId);
     void navigate({pathname: destination.pathname, search: destination.search, hash: destination.hash},
-      {state: {}, preventScrollReset: false, viewTransition: !isCompactNavigation()});
+      {state: {}, preventScrollReset: false});
   }
   function openPlayer(productId: ProductId, options?: {dismissInfo?: boolean}) {
     if (playerOpen || typeof gameEntry.position === 'number' && gameEntry.position === pageHistory?.position) return;
@@ -1041,7 +1054,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   }
   function closeSurface() {
     const localTop = Object.entries(localValues).sort((a, b) => b[1].parentPosition - a[1].parentPosition)[0];
-    if (localTop) {setSurfaceLayer(localTop[0], null); return;}
+    if (localTop && address.surface !== 'touch') {setSurfaceLayer(localTop[0], null); return;}
     if (topGame && blocker.state === 'unblocked' && closeIssuedKey.current !== location.key) {
       closeIssuedKey.current = location.key;
       manualRoomPlayerExit.current = address.surface === 'room';

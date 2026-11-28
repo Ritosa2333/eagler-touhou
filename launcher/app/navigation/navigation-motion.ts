@@ -1,5 +1,6 @@
-import {useLayoutEffect, useRef, useSyncExternalStore} from 'react';
-import {animate} from 'motion/mini';
+import {useContext, useLayoutEffect, useRef, useSyncExternalStore} from 'react';
+import {UNSAFE_ViewTransitionContext} from 'react-router';
+import {animateSurface, animateUiFrames} from '../ui/surface-motion';
 
 const compactQuery = '(max-width: 780px)';
 export function isCompactNavigation() {
@@ -14,23 +15,31 @@ export function useCompactNavigation() {
   return useSyncExternalStore(subscribeCompactNavigation, isCompactNavigation, () => false);
 }
 
-// GSAP power3.out, as used in the navigation motion preview.
-const easeOutQuart = (progress: number) => 1 - (1 - progress) ** 4;
-function motionAllowed(reduced: boolean) {
-  return !reduced && !window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+interface NavigationMotionOptions {
+  reduced?: boolean;
+  contentSelector?: string;
+  railSelector?: string;
+  direction?: 'forward' | 'back';
 }
 
-/** Animate live mobile content after navigation commits. */
-export function useNavigationPageMotion(pathname: string, reduced: boolean) {
-  const compact = useCompactNavigation();
-  const surface = useRef<HTMLDivElement>(null), previousPath = useRef(pathname);
+/** Animate the changing regions while the shared chrome keeps its layout. */
+export function useNavigationPageMotion(page: string | null, {
+  reduced = false, contentSelector, railSelector, direction,
+}: NavigationMotionOptions = {}) {
+  const {isTransitioning} = useContext(UNSAFE_ViewTransitionContext);
+  const surface = useRef<HTMLDivElement>(null), previousPage = useRef(page);
   useLayoutEffect(() => {
-    const changed = previousPath.current !== pathname;
-    previousPath.current = pathname;
-    const node = surface.current;
-    if (!changed || !compact || !node?.animate || !motionAllowed(reduced)) return;
-    const animation = animate(node, {opacity:[0, 1]}, {duration:.42, ease:easeOutQuart});
-    return () => {animation.cancel(); node.style.removeProperty('opacity');};
-  }, [compact, pathname, reduced]);
+    const changed = previousPage.current && page && previousPage.current !== page;
+    previousPage.current = page;
+    const container = surface.current;
+    if (!container || !changed || isTransitioning || reduced) return;
+    const content = contentSelector ? container.querySelector<HTMLElement>(contentSelector) : container;
+    const rail = railSelector ? container.querySelector<HTMLElement>(railSelector) : null;
+    const entrance = content && (direction
+      ? animateSurface(content, 'enter', {kind: 'inline', direction})
+      : animateUiFrames(content, {opacity: [contentSelector ? '.6' : '.78', '1']}, {kind: 'content'}));
+    const railEntrance = rail && animateUiFrames(rail, {opacity: ['.55', '1']}, {kind: 'content'});
+    return () => {entrance?.cancel(); railEntrance?.cancel();};
+  }, [contentSelector, direction, isTransitioning, page, railSelector, reduced]);
   return surface;
 }

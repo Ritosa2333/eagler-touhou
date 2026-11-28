@@ -49,9 +49,9 @@ function expected({visible, supported, locale, prefix}) {
     populateExternalMidiDeviceSelect() {}, t: (key, params) => owners.translate(locale, key, params),
   });
   const button = document.querySelector(`#${prefix}Toggle`);
-  return {title: button.title, disabled: button.disabled, hidden: document.querySelector(`#${prefix}Option`).hidden};
+  return {disabled: button.disabled, hidden: document.querySelector(`#${prefix}Option`).hidden};
 }
-for (const locale of ['zh-CN', 'en']) for (const productId of ['th06', 'th06mp']) test(`${locale} ${productId}: music label and MIDI title/disabled follow main across locale/support/visibility`, async () => {
+for (const locale of ['zh-CN', 'en']) for (const productId of ['th06', 'th06mp']) test(`${locale} ${productId}: music and MIDI help follow locale, support and visibility`, async () => {
   owners.setUiLocale(locale, {persist: false, notify: false});
   const musicId = productId.endsWith('mp') ? 'mpMusicSelect' : 'musicSelect';
   const values = new Map(), storage = {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, String(value))};
@@ -78,10 +78,14 @@ for (const locale of ['zh-CN', 'en']) for (const productId of ['th06', 'th06mp']
   assert.equal(musicSelect.parentElement.querySelector('.mizuki-select-trigger').getAttribute('aria-label'),
     musicLabel, 'the visible control has the localized music label');
   function compare() {
-    const visible = model.getSnapshot().music === 'midi', actual = {title: button.title, disabled: button.disabled, hidden: env.document.getElementById(`${prefix}Option`).hidden};
+    const visible = model.getSnapshot().music === 'midi', actual = {disabled: button.disabled, hidden: env.document.getElementById(`${prefix}Option`).hidden};
     assert.deepEqual(actual, expected({visible, supported: midi.supported, locale, prefix}));
     assert.equal(env.document.getElementById(`${prefix}Toggle`), button, 'Same shared control survives availability updates');
-    assert.equal(button.getAttribute('aria-describedby'), `${prefix}Hint`);
+    const hintId = `${prefix}Hint`;
+    assert.equal(button.getAttribute('aria-describedby'), hintId);
+    assert.equal(env.document.getElementById(hintId)?.textContent, midi.hint);
+    assert.equal(env.document.querySelector(`button[aria-describedby="${hintId}"][title]`)?.title, midi.hint);
+    assert.equal(button.title, '');
     assert.equal(button.getAttribute('aria-checked'), 'false');
   }
   compare(); await step(() => button.click()); assert.deepEqual(calls, []);
@@ -90,5 +94,5 @@ for (const locale of ['zh-CN', 'en']) for (const productId of ['th06', 'th06mp']
   await step(() => model.setMusic('none')); compare();
   await step(() => model.setMusic('midi')); compare();
   await step(() => {midi = Object.freeze({...midi, supported: false, hint: owners.translate(locale, 'settings.externalMidiUnsupported')}); for (const listener of listeners) listener();});
-  compare(); assert.equal(button.title, owners.translate(locale, 'settings.externalMidiUnsupported'));
+  compare();
 });

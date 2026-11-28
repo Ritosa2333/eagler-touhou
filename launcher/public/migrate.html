@@ -34,7 +34,11 @@
   --rating-green:#9be7ae;
   --kit-success:#8ed3aa;--kit-warning:#e5bd7f;
   --kit-control-border:#555660;
-  --kit-brand:#e4868e;--kit-font:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif;
+  --kit-brand:#ecaab2; /* Pencil selection and progress accent. */
+  --kit-progress-neutral:#282a30;
+  --kit-font:'Noto Sans SC Variable','Noto Sans SC','Microsoft YaHei',system-ui,sans-serif;
+  --kit-font-work:'Microsoft YaHei',var(--kit-font);
+  --kit-font-latin:'Segoe UI',var(--kit-font);
 }
 @media (prefers-reduced-motion: no-preference) {
   :is(.book-art,.book-lobby-cover,.lobby-cover) img {transition:filter 300ms ease}
@@ -51,6 +55,7 @@ html[data-book-theme='light'] {
   --kit-success:#247044;--kit-warning:#855914;
   --kit-control-border:#b7b7c1;
   --kit-brand:#a93648;
+  --kit-progress-neutral:var(--kit-muted);
 }
 :root,html[data-book-theme='light'],html[data-book-theme='dark'] {
   --kit-seat-loading:#ad6024;--kit-seat-unready:#bd4438;--kit-seat-ready:#00836f;

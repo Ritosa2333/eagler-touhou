@@ -1,7 +1,7 @@
+import {LauncherWordmark} from '../components/launcher/LauncherWordmark';
 import {
   ArrowLeft,
   ArrowUpRight,
-  BookOpen,
   Check as CheckIcon,
   CircleAlert,
   CircleCheck,
@@ -21,13 +21,10 @@ import {
   Settings2,
   Trash2,
   Upload,
-  UserRound,
-  Users,
 } from 'lucide-react';
 import { Tabs, Tooltip } from 'radix-ui';
 import { lazy, Suspense, type ReactNode, useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
-import { PRODUCT_GAMES } from '../../src/contracts/product-catalog.mts';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
 import { LibraryAnnouncements } from '../components/launcher/LibraryAnnouncements';
@@ -47,7 +44,6 @@ import { SettingsSelect } from '../components/settings/SettingsSelect';
 import { LocaleProvider } from '../i18n';
 import { Button } from '../ui/button';
 import '../ui/document-body.css';
-import {BookWorkNumber} from '../components/launcher/BookWorkNumber';
 import { ButtonGroup } from '../ui/button-group';
 import { catalogBoundaries, catalogChecks, catalogColors, catalogLocale, catalogSections } from '../ui/catalog';
 import { ChoiceGroup, ChoiceItem } from '../ui/choice-group';
@@ -101,7 +97,7 @@ function Catalog() {
       <div className="ui-review-layout">
         <aside>
           <a href="#foundations" className="catalog-wordmark" aria-label="EAGLER TOUHOU">
-            <SiteBrand />
+            <LauncherWordmark/>
             <span>界面与组件</span>
           </a>
           <nav aria-label="UI 手册目录">
@@ -293,9 +289,9 @@ function Catalog() {
           </Section>
           <Section
             id="navigation"
-            description="两种入口组织使用相同内容。候选支持分组折叠记忆，窄屏改为底栏，游戏区域预览隐藏站点导航。"
+            description="从实际页面检查桌面顶栏、手机底栏、消息中心与游戏详情。"
           >
-            <NavigationComparison />
+            <LauncherEntryGuide />
           </Section>
           <Section id="announcements" description="公告是站点顶栏的固定入口。绿点表示有未读；弹窗展示最近三条，标题和日期同行，正文另起一段。">
             <Tooltip.Provider delayDuration={0} disableHoverableContent>
@@ -844,159 +840,25 @@ function ReplayExample({ announce }: { announce(message: string): void }) {
   );
 }
 
-const navigationGroups = [
-  {
-    id: 'play',
-    label: '游玩',
-    items: [
-      { id: 'single', label: '单机', href: './', icon: Gamepad2 },
-      { id: 'lobby', label: '联机大厅', href: 'lobby.html', icon: Users },
-      { id: 'replay', label: '录像', href: './', icon: FileText },
-    ],
-  },
-  {
-    id: 'site',
-    label: '站点',
-    items: [
-      { id: 'account', label: '账户', href: 'profile.html', icon: UserRound },
-      { id: 'help', label: '帮助', href: 'faq.html', icon: BookOpen },
-      { id: 'settings', label: '设置', href: './', icon: Settings2 },
-    ],
-  },
-] as const;
-const navigationItems = navigationGroups.flatMap((group) => [...group.items]);
-function NavigationComparison() {
-  return (
-    <div className="catalog-navigation-comparison">
-      <p className="catalog-muted">仅预览入口和空间分配。选择入口会更新样板内容，游戏区域不会启动游戏。</p>
-      <div className="catalog-links">
-        <a href="#navigation-current">查看顶栏</a>
-        <a href="#navigation-proposal">查看侧栏与底栏</a>
-      </div>
-      {(['current', 'proposal'] as const).map((layout) => (
-        <NavigationFrame key={layout} layout={layout} />
-      ))}
+function LauncherEntryGuide() {
+  return <div className="catalog-demo">
+    <div className="catalog-links">
+      <a href="./">单机书库</a>
+      <a href="./lobby.html">联机大厅</a>
+      <a href="./?section=home">主页设置</a>
+      <a href="./?section=announcements">系统公告</a>
+      <a href="./?section=messages">私信</a>
+      <a href="./?game=th07">作品详情</a>
+      <a href="./profile.html">个人主页</a>
     </div>
-  );
-}
-function NavigationFrame({ layout }: { layout: 'current' | 'proposal' }) {
-  const [active, setActive] = useState('single'),
-    [gameArea, setGameArea] = useState(false);
-  const selected = navigationItems.find((item) => item.id === active) ?? navigationItems[0];
-  const onSelect = (item: SiteNavigationItem) => setActive(item.id);
-  const title = layout === 'current' ? '当前组织 | 顶栏' : '候选组织 | 桌面侧栏与手机底栏';
-  return (
-    <div
-      className="catalog-navigation-example"
-      id={layout === 'current' ? 'navigation-current' : 'navigation-proposal'}
-    >
-      <h3>{title}</h3>
-      <section className="navigation-preview-frame" data-layout={layout} data-running={gameArea} aria-label={title}>
-        {!gameArea && (
-          <header className="navigation-preview-header">
-            <SiteBrand />
-            <div className="navigation-preview-actions">
-              <BookThemeToggle />
-              <Button variant="ghost" size="icon" aria-label="预览账户入口" onClick={() => setActive('account')}>
-                <UserRound aria-hidden="true" />
-              </Button>
-            </div>
-            {layout === 'current' && (
-              <nav className="navigation-preview-top" aria-label="当前导航预览">
-                {navigationGroups[0].items.slice(0, 2).map((item) => (
-                  <Button
-                    key={item.id}
-                    variant={active === item.id ? 'secondary' : 'ghost'}
-                    onClick={() => onSelect(item)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-                <SiteNavigationMore
-                  items={navigationItems.filter((item) => !['single', 'lobby'].includes(item.id))}
-                  activeId={active}
-                  onSelect={onSelect}
-                />
-              </nav>
-            )}
-          </header>
-        )}
-        {!gameArea && layout === 'proposal' && (
-          <div className="navigation-preview-rail">
-            <SiteNavigationRail
-              groups={navigationGroups}
-              activeId={active}
-              onSelect={onSelect}
-              storageKey="navigation-candidate-groups-v1"
-            />
-          </div>
-        )}
-        <div className="navigation-preview-content" tabIndex={-1}>
-          {gameArea ? (
-            <div className="navigation-preview-workspace">
-              <div className="navigation-preview-game" role="img" aria-label="游戏区域示意">
-                <Gamepad2 aria-hidden="true" />
-                <span>游戏区域</span>
-              </div>
-              <Button variant="outline" onClick={() => setGameArea(false)}>
-                <ArrowLeft aria-hidden="true" />
-                返回导航预览
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="navigation-preview-page-title">
-                <h3>{selected.label}</h3>
-                <Button variant="outline" size="sm" onClick={() => setGameArea(true)}>
-                  <Play aria-hidden="true" />
-                  游戏区域预览
-                </Button>
-              </div>
-              {active === 'single' ? (
-                <div className="navigation-preview-covers">
-                  {(['th06', 'th07', 'th08', 'th10'] as const).map((id) => (
-                    <Button
-                      variant="outline"
-                      key={id}
-                      className="navigation-preview-cover h-auto min-w-0 flex-col gap-0 overflow-hidden whitespace-normal p-0 text-left"
-                      onClick={() => setGameArea(true)}
-                    >
-                      <img src={bookGameArtwork(id)} alt="" loading="lazy" />
-                      <span className="w-full text-left">
-                        <span className="flex min-w-0 items-center gap-1.5"><strong className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={PRODUCT_GAMES[id].title}>{PRODUCT_GAMES[id].title}</strong><BookWorkNumber gameId={id} number={PRODUCT_GAMES[id].number}/></span>
-                        <small>{PRODUCT_GAMES[id].subtitle}</small>
-                      </span>
-                    </Button>
-                  ))}
-                </div>
-              ) : (
-                <div className="navigation-preview-destination">
-                  <selected.icon aria-hidden="true" />
-                  <h3>{selected.label}</h3>
-                  {active === 'replay' && <p>从作品选项栏打开录像管理器。</p>}
-                  {active === 'settings' && <p>选择作品后打开选项栏。</p>}
-                  <Button variant="outline" asChild>
-                    <a href={selected.href} target="_blank" rel="noopener noreferrer">
-                      {['replay', 'settings'].includes(active) ? '前往启动器' : '打开实际页面'}
-                      <ArrowUpRight aria-hidden="true" />
-                    </a>
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-        {!gameArea && layout === 'proposal' && (
-          <div className="navigation-preview-bottom">
-            <SiteBottomNavigation
-              items={navigationGroups[0].items}
-              more={navigationGroups[1].items}
-              activeId={active}
-              onSelect={onSelect}
-            />
-          </div>
-        )}
-      </section>
-    </div>
-  );
+    <Usage title="桌面">
+      44 px 顶栏。字标、分隔线和辅助图标共用光学中线。单机与联机居中。公告和私信先打开各自的小窗。
+    </Usage>
+    <Usage title="手机">
+      单机顶栏承载搜索与抽屉。底栏提供单机、联机、主页。公告和私信直接打开消息中心，桌面和手机使用同一地址。
+    </Usage>
+    <Usage title="焦点与动效">
+      检查抽屉和小窗关闭后的焦点。设置展开期间使用分组自带动效，界面减弱动效和系统减弱动效都应即时完成操作。
+    </Usage>
+  </div>;
 }
