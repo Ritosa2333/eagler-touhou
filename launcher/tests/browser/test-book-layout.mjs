@@ -144,6 +144,11 @@ async function assertActionMotion(page) {
   const action = section => `.masthead-inbox-action[data-inbox-section="${section}"]`;
   const announcements = action('announcements');
   const messages = action('messages');
+  const theme = '.book-theme-toggle';
+  const redesigned = [
+    [announcements, `${announcements} > svg`, 'e', 0, 1.4],
+    [theme, `${theme} > svg`, 'a', 1, 1.04],
+  ];
   const progress = (selector, component, samples) => page.$eval(selector, (node, component, samples) => {
     getComputedStyle(node).transform;
     const motion = node.getAnimations().find(item => item instanceof CSSTransition && item.transitionProperty === 'transform');
@@ -156,6 +161,7 @@ async function assertActionMotion(page) {
   }, component, samples);
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);
   for (const [trigger, glyph, component, rest, pose] of [
+    ...redesigned,
     [messages, `${messages} > svg`, 'f', 0, -1.3],
     ['.book-top-faq', '.book-faq-question', 'f', 0, -1.25],
     ['.book-top-donation', '.book-top-donation > svg', 'a', 1, 1.07],
@@ -177,24 +183,27 @@ async function assertActionMotion(page) {
     assert.ok(Math.abs(exit.values[2] - rest) < .001);
   }
   assert.equal(await page.$eval(announcements, node => getComputedStyle(node, '::before').content), 'none');
+  await page.keyboard.press('Tab');
+  for (const [trigger, glyph, component, rest, pose] of redesigned) {
+    await page.focus(trigger);
+    assert.ok(await page.$eval(trigger, node => node.matches(':focus-visible')));
+    const focus = await progress(glyph, component, [.5, 1]);
+    assert.ok(Math.abs(focus.values[0] - (rest + pose) / 2) < .001);
+    assert.ok(Math.abs(focus.values[1] - pose) < .001);
+    await page.$eval(trigger, node => node.blur());
+  }
   const motionStyles = selector => page.$eval(`${selector} > svg`, node => {
     const {transform, transitionProperty, animationName} = getComputedStyle(node);
     return [transform, transitionProperty, animationName];
   });
-  for (const trigger of [announcements, '.book-theme-toggle']) {
-    await page.hover(trigger);
-    assert.equal(await page.$eval(`${trigger} > svg`, node => node.getAnimations().length), 0,
-      'the theme and announcement icons stay still on hover');
-    assert.equal((await motionStyles(trigger))[0], 'none');
-  }
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
-  await page.hover(messages);
-  assert.deepEqual(await motionStyles(messages), ['none', 'all', 'none']);
+  await page.hover(announcements);
+  assert.deepEqual(await motionStyles(announcements), ['none', 'none', 'none']);
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);
   const hadLessMotion = await page.evaluate(() => document.body.classList.contains('less-motion'));
   await page.evaluate(() => document.body.classList.add('less-motion'));
-  await page.hover(messages);
-  assert.deepEqual(await motionStyles(messages), ['none', 'all', 'none']);
+  await page.hover(theme);
+  assert.deepEqual(await motionStyles(theme), ['none', 'none', 'none']);
   await page.evaluate(hadLessMotion => document.body.classList.toggle('less-motion', hadLessMotion), hadLessMotion);
   await page.mouse.move(0, 0);
 }
