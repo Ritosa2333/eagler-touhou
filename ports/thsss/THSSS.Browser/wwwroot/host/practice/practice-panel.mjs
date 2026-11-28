@@ -8,7 +8,9 @@ const STYLE = `
 .thsss-prac button[aria-pressed="true"]{text-decoration:underline}
 .thsss-prac :focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .thsss-prac .row{display:flex;gap:6px;align-items:center}
-.thsss-prac input{width:4.5em;background:#111;color:inherit;border:1px solid #888}
+.thsss-prac .row .name{flex:1;min-width:0}
+.thsss-prac .step{width:2em;min-width:32px;min-height:32px;margin:0;padding:0;text-align:center;border:1px solid #888;touch-action:manipulation}
+.thsss-prac .value{min-width:3em;text-align:right;font-variant-numeric:tabular-nums}
 .thsss-prac .stages{display:flex;flex-wrap:wrap;gap:4px}
 .thsss-prac .stages button{width:auto;margin:0;padding:2px 6px}
 `;
@@ -26,7 +28,50 @@ export function mountPracticePanel({ parent, sync, warp }) {
   root.className = "thsss-prac";
   root.hidden = true;
   parent.append(style, root);
-  const controls = () => [...root.querySelectorAll("button,input")];
+  const controls = () => [...root.querySelectorAll("button")];
+
+  function changeResource(field, delta) {
+    model.state[field] += delta;
+    model.resources();
+    const shown = root.querySelector(`[data-value="${field}"]`);
+    if (shown) shown.textContent = String(model.state[field]);
+  }
+
+  function bindHold(button, action) {
+    let delay = 0;
+    let pulse = 0;
+    let fromPointer = false;
+    function stop() {
+      clearTimeout(delay);
+      clearInterval(pulse);
+      delay = 0;
+      pulse = 0;
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", cancel);
+    }
+    function cancel() {
+      fromPointer = false;
+      stop();
+    }
+    button.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      fromPointer = true;
+      stop();
+      action();
+      window.addEventListener("pointerup", stop);
+      window.addEventListener("pointercancel", cancel);
+      delay = setTimeout(() => {
+        pulse = setInterval(action, 50);
+      }, 320);
+    });
+    button.addEventListener("click", () => {
+      if (fromPointer) {
+        fromPointer = false;
+        return;
+      }
+      action();
+    });
+  }
 
   function push() {
     if (typeof sync !== "function") return;
@@ -75,26 +120,35 @@ export function mountPracticePanel({ parent, sync, warp }) {
       });
       root.append(button);
     }
-    for (const [field, label, max] of [
-      ["life", copy.life, 8],
-      ["spell", copy.spell, 8],
-      ["power", copy.power, 400],
+    for (const [field, label] of [
+      ["life", copy.life],
+      ["spell", copy.spell],
+      ["power", copy.power],
     ]) {
-      const row = document.createElement("label");
+      const row = document.createElement("div");
       row.className = "row";
-      row.textContent = label;
-      const input = document.createElement("input");
-      input.type = "number";
-      input.name = field;
-      input.min = "0";
-      input.max = String(max);
-      input.value = String(on[field]);
-      input.addEventListener("change", () => {
-        on[field] = Number(input.value);
-        model.resources();
-        input.value = String(on[field]);
-      });
-      row.append(input);
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = label;
+      const down = document.createElement("button");
+      down.type = "button";
+      down.className = "step";
+      down.dataset.field = field;
+      down.textContent = "−";
+      down.setAttribute("aria-label", label + " −");
+      bindHold(down, () => changeResource(field, -1));
+      const value = document.createElement("span");
+      value.className = "value";
+      value.dataset.value = field;
+      value.textContent = String(on[field]);
+      const up = document.createElement("button");
+      up.type = "button";
+      up.className = "step";
+      up.dataset.field = field;
+      up.textContent = "+";
+      up.setAttribute("aria-label", label + " +");
+      bindHold(up, () => changeResource(field, 1));
+      row.append(name, down, value, up);
       root.append(row);
     }
     const apply = document.createElement("button");
@@ -154,18 +208,11 @@ export function mountPracticePanel({ parent, sync, warp }) {
       case "Z":
       case "Return":
         if (!repeat && active?.localName === "button") active.click();
-        if (!repeat && active?.localName === "input") {
-          model.state[active.name] = Number(active.value);
-          model.resources();
-          active.value = String(model.state[active.name]);
-        }
         return true;
       case "Left":
       case "Right":
-        if (active?.localName === "input") {
-          if (name === "Left") active.stepDown();
-          else active.stepUp();
-          active.dispatchEvent(new Event("change"));
+        if (active?.dataset.field) {
+          changeResource(active.dataset.field, name === "Left" ? -1 : 1);
           return true;
         }
         break;
