@@ -515,7 +515,7 @@
   }
   @media (width > 780px) {
     .book-view-covers .book-grid {
-      --cover-max-columns: 6;
+      --cover-max-columns: 5;
       --cover-capped-track: calc((100% - (var(--cover-max-columns) - 1) * var(--book-grid-column-gap)) / var(--cover-max-columns));
       grid-template-columns: repeat(auto-fill, minmax(clamp(154px, var(--cover-capped-track), 100%), 1fr));
     }

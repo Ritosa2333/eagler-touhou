@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | 全局导航 | [LauncherMasthead](../app/components/launcher/LauncherMasthead.tsx)、[SiteBottomNavigation](../app/components/launcher/SiteNavigation.tsx) | 桌面顶栏 44 px，单机和联机居中。780 px 及以下，仅单机书库显示顶栏，单机、联机、主页共用底部导航。二级页使用透明返回按钮。 |
 | 搜索与抽屉 | [LibrarySearch](../app/components/launcher/LibrarySearch.tsx)、[MastheadOverview](../app/components/launcher/MastheadOverview.tsx) | 两种搜索位置共用查询值。手机抽屉从左进入，默认按帮助、站点、设置分组。界面语言和关于本站各有一级返回，主题入口使用共用主题设置窗。游客可以打开抽屉。 |
-| 书库 | [BookLibrary](../app/components/launcher/BookLibrary.tsx) | 桌面书库与游戏详情共用分类侧栏，系列与玩法独立分类，同一作品可出现在多个分类中。分类筛选与展开独立，单机和联机分别记住展开状态。封面卡使用竖版，桌面最多六列。侧栏底部固定提供下载与附加内容入口，分类、视图和排序沿用共同工具栏。 |
+| 书库 | [BookLibrary](../app/components/launcher/BookLibrary.tsx) | 桌面书库与游戏详情共用分类侧栏，系列与玩法独立分类，同一作品可出现在多个分类中。分类筛选与展开独立，单机和联机分别记住展开状态。封面卡使用竖版，桌面最多五列。侧栏底部固定提供下载与附加内容入口，分类、视图和排序沿用共同工具栏。 |
 | 联机大厅 | [LobbySurface](../app/components/launcher/LobbySurface.tsx)、[BookDirectoryGames](../app/components/launcher/BookDirectoryGames.tsx) | 桌面与单机共用侧栏规格和作品行。手机用横向封面条。两端共用作品选单、筛选状态和收藏。 |
 | 主页与设置 | [LauncherHome](../app/components/launcher/LauncherHome.tsx)、[SettingsGroup](../app/components/settings/SettingsGroup.tsx)、[LauncherPreferences](../app/components/launcher/LauncherPreferences.tsx) | 同组使用一个外框，行之间分隔，图标和箭头采用同一列距。分组默认收起。主题组可直接切换亮暗和进入背景设置。账户组直达个人资料、账户安全。 |
 | 消息中心 | [MastheadInbox](../app/components/launcher/MastheadInbox.tsx)、[MessageCenter](../app/components/launcher/MessageCenter.tsx)、[AnnouncementTimeline](../app/components/launcher/AnnouncementTimeline.tsx) | 桌面先打开小窗，手机直接进对应栏目。公告小窗显示最新一条，正文最多 6 行。全量列表每条默认最多 10 行，点击「查看更多」原位展开。未读数由公告 ID 和本地已读记录计算。 |
