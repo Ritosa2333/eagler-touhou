@@ -977,7 +977,10 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
         function event(raw,down,source='physical') {
           const owner=mapper();if(!owner||!ready())return false;
           const editing=!!raw.launcherOwnsFocus||!!raw.target?.closest?.('input,textarea,select,[contenteditable="true"]');
-          if(source==='physical'&&down&&(raw.isComposing||editing))return false;
+          // Direction keys can carry the IME composition flag with a hardware
+          // keyboard. Keep them usable over the game, while editors own all input.
+          const direction=/^Arrow(?:Up|Down|Left|Right)$/.test(raw.code&&raw.code!=='Unidentified'?raw.code:raw.key);
+          if(source==='physical'&&down&&(editing||(raw.isComposing&&!direction)))return false;
           const events=owner.map({code:String(raw.code||''),key:String(raw.key||''),keyCode:Number(raw.keyCode)||0,
             location:Number(raw.location)||0,repeat:!!raw.repeat,altKey:!!raw.altKey,metaKey:!!raw.metaKey,ctrlKey:!!raw.ctrlKey,
             launcherOwnsFocus:editing},!!down,source,currentProfile());

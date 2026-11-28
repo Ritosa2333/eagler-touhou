@@ -109,6 +109,25 @@ function fixture({android = false,chat:chatState=null,shortcutsOnly=false,mappin
 }
 const keyboard = f => f.messages.filter(item => item.command === 'keyboard');
 
+test('IME-marked arrow keys are forwarded over the game but remain owned by launcher inputs',()=>{
+  for(const mappingBridge of [false,true]){
+    const f=fixture({android:true,mappingBridge});
+    for(const code of ['ArrowLeft','ArrowUp','ArrowRight','ArrowDown']){
+      const fields={code,key:code,keyCode:229,isComposing:true};
+      assert.equal(f.key('keydown',fields).defaultPrevented,true);
+      assert.equal(f.key('keyup',fields).defaultPrevented,true);
+    }
+    assert.equal(keyboard(f).length,8);
+    const input=f.document.getElementById('input');
+    assert.equal(f.key('keydown',{code:'ArrowUp',key:'ArrowUp',isComposing:true},input).defaultPrevented,false);
+    assert.equal(keyboard(f).length,8);
+    if(mappingBridge){
+      f.key('keydown',{code:'KeyZ',key:'z',isComposing:true});
+      assert.equal(keyboard(f).length,8);
+    }
+  }
+});
+
 test('chat shortcut: bare Alt toggles on keyup, repeat is consumed, and close returns focus to the game', () => {
   const chat=chatFixture(),f=fixture({chat}),alt={code:'AltLeft',key:'Alt',keyCode:18,location:1,altKey:true};
   const down=f.key('keydown',alt),repeat=f.key('keydown',{...alt,repeat:true});

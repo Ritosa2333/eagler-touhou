@@ -1,5 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {existsSync,readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {runInNewContext} from 'node:vm';
 import {createBrowserKeyboard} from '../browser/directory-keyboard.mjs';
 const identity={protocol:'eagler-touhou/1',game:'th08',epoch:7,origin:'https://launcher.invalid'};
 function fixture(){
@@ -78,7 +82,7 @@ test('gamepad snapshots preserve native ownership until a matching frontend port
 
 
 test('hosted physical rejection never creates a raw keyboard owner',()=>{
- for(const rejected of [{isComposing:true},{launcherOwnsFocus:true}])for(const code of ['ArrowUp','ShiftLeft','KeyZ']){
+ for(const rejected of [{isComposing:true},{launcherOwnsFocus:true}])for(const code of ['ShiftLeft','KeyZ']){
   const f=fixture();let state=false;
   f.target.__eaglerKeyboardMapping={schema:'eagler-touhou/keyboard-input/1',...identity,
    supports:()=>true,map:(e,down)=>{if(down&&e.altKey)return null;state=down;return [{code:e.code,key:'',keyCode:0,location:0,down}];},clear:()=>[]};
@@ -88,6 +92,47 @@ test('hosted physical rejection never creates a raw keyboard owner',()=>{
   f.keyboard.event({code},false,'hosted');assert.equal(state,false);assert.ok(f.events.every(([,down])=>!down));
   f.keyboard.event({code},true,'hosted');f.keyboard.event({code},false,'hosted');
   assert.deepEqual(f.events.slice(-2),[[code,true],[code,false]],'the next ordinary press and release still work');
+ }
+});
+
+test('IME-marked directions reach gameplay through native and hosted input without losing diagonals',()=>{
+ for(const hosted of [false,true])for(const identified of [false,true]){
+  const f=fixture(),held=new Set();
+  f.target.__eaglerKeyboardMapping={schema:'eagler-touhou/keyboard-input/1',...identity,supports:()=>true,
+   map:(raw,down)=>{const code=identified?raw.code:raw.key;if(down)held.add(code);else held.delete(code);
+    return [{code,key:code,keyCode:0,location:0,down}];},clear:()=>[]};
+  const send=(code,down,extra={})=>{const event={...identity,command:'keyboard',code:identified?code:'Unidentified',key:code,
+   keyCode:229,isComposing:true,inputSource:'physical',down,...extra};
+   return hosted?f.keyboard.event(event,down,'hosted'):f.keyboard.mapNative(event,down);};
+  for(const pair of [['ArrowLeft','ArrowUp'],['ArrowRight','ArrowDown']]){
+   assert.equal(send(pair[0],true),true);assert.equal(send(pair[1],true),true);
+   assert.deepEqual([...held],pair);send(pair[0],false);assert.deepEqual([...held],[pair[1]]);
+   send(pair[1],false);assert.equal(held.size,0);
+  }
+  assert.equal(send('ArrowUp',true,{launcherOwnsFocus:true}),false);
+  assert.equal(send('ArrowUp',true,{target:{closest:()=>({})}}),false);
+  assert.equal(send('KeyZ',true),false,'text composition stays out of gameplay');
+  assert.equal(held.size,0);
+ }
+});
+
+test('embedded TH06 and TH07 bridges accept IME directions and preserve editor ownership',()=>{
+ for(const game of ['th06','th07']){
+  const path=`ports/${game}/resources/shell.html`,file=new URL('../../'+path,import.meta.url);
+  // The common CI lane uses a sparse checkout without the embedded shells.
+  const html=existsSync(file)?readFileSync(file,'utf8'):execFileSync('git',['show',`HEAD:${path}`],
+   {cwd:fileURLToPath(new URL('../..',import.meta.url)),encoding:'utf8'});
+  const start=html.indexOf('      // BEGIN SHARED BROWSER KEYBOARD OWNERS'),end=html.indexOf('      // END SHARED BROWSER KEYBOARD OWNERS',start);
+  assert.ok(start>=0&&end>start);
+  const create=runInNewContext(html.slice(start,end)+'\ncreateKeyboardInputBridge;'),target={},events=[];
+  target.__eaglerKeyboardMapping={schema:'eagler-touhou/keyboard-input/1',...identity,game,supports:()=>true,
+   map:(raw,down)=>[{code:raw.code,key:raw.key,keyCode:229,location:0,down}],clear:()=>[]};
+  const bridge=create({target,...identity,game,ready:()=>true,dispatch:(e,down)=>events.push([e.code,down]),reset:()=>{}});
+  const raw={code:'ArrowUp',key:'ArrowUp',keyCode:229,isComposing:true};
+  assert.equal(bridge.event(raw,true),true);assert.equal(bridge.keyDown('ArrowUp'),true);
+  assert.equal(bridge.event({...raw,target:{closest:()=>({})}},true),false);
+  assert.equal(bridge.event(raw,false),true);assert.equal(bridge.keyDown('ArrowUp'),false);
+  assert.deepEqual(events,[['ArrowUp',true],['ArrowUp',false]]);
  }
 });
 

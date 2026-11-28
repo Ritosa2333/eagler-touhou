@@ -227,7 +227,8 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
       return;
     }
     if (mapping && keyboardInputBridge(context)) {
-      if (event.type === 'keydown' && event.isComposing) return;
+      const direction = /^Arrow(?:Up|Down|Left|Right)$/.test(event.code && event.code !== 'Unidentified' ? event.code : event.key);
+      if (event.type === 'keydown' && event.isComposing && !direction) return;
       if (options.launcherOwnsTarget(event.target) && event.type === 'keydown') return;
       if (!mapping.recognizes(event) || (event.type === 'keydown' && (event.altKey || event.metaKey))) return;
       if (

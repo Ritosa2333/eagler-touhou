@@ -2,6 +2,7 @@ import {test, beforeAll as before} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {fileURLToPath} from 'node:url';
+import {createBrowserKeyboard} from '../../../common/browser/directory-keyboard.mjs';
 let KeyboardMapping,wasdKeyboardAliases,createKeyboardPreferences,keyboardCaptureCode;
 before(async()=>{
   const result=await build({stdin:{contents:`export {KeyboardMapping} from './src/launcher/keyboard-mapping.mts';export {wasdKeyboardAliases,createKeyboardPreferences,keyboardCaptureCode} from './src/launcher/keyboard-preferences.mts';`,resolveDir:fileURLToPath(new URL('../../',import.meta.url))},bundle:true,write:false,format:'esm',platform:'node'});
@@ -10,6 +11,30 @@ before(async()=>{
 const event=(code,extra={})=>({type:'keydown',code,key:'',keyCode:0,location:0,...extra});
 const context=()=>({target:{},game:'th06',epoch:1,launched:true,ready:true,spectator:false});
 const compact=changes=>changes?.map(e=>[e.code,e.down]);
+
+test('IME directions retain separate physical owners through the actual runtime bridge',()=>{
+  for(const hosted of [false,true])for(const codeAvailable of [false,true]){
+    const ctx={...context(),protocol:'eagler-touhou/1',origin:'https://launcher.invalid'},events=[];
+    const mapping=new KeyboardMapping();
+    ctx.target.__eaglerKeyboardMapping={...ctx,schema:'eagler-touhou/keyboard-input/1',
+      supports:code=>mapping.supports(code),clear:()=>mapping.clear(),
+      map:(event,down,source,profile)=>mapping.map(event,down,source,profile,ctx)};
+    const keyboard=createBrowserKeyboard({send:(code,down)=>events.push([code,down]),
+      hostContext:{...ctx,ready:()=>true}});
+    const send=(key,down,extra={})=>{
+      const event={...ctx,command:'keyboard',inputSource:'physical',down,code:codeAvailable?key:'Unidentified',
+        key,keyCode:229,isComposing:true,...extra};
+      return hosted?keyboard.event(event,down,'hosted'):keyboard.mapNative(event,down);
+    };
+    send('ArrowLeft',true);send('ArrowUp',true);send('ArrowLeft',true,{repeat:true});
+    send('ArrowLeft',false);send('ArrowUp',false);
+    assert.deepEqual(events,[['ArrowLeft',true],['ArrowUp',true],['ArrowLeft',false],['ArrowUp',false]]);
+    assert.equal(ctx.target.__eaglerKeyboardInputBridge.keyDown('ArrowUp'),false);
+    assert.equal(send('ArrowDown',true,{launcherOwnsFocus:true}),false);
+    assert.equal(send('Process',true),false);
+    assert.equal(events.length,4);
+  }
+});
 
 test('numeric editing preserves top-row, keypad, punctuation and edit keys',()=>{
   for(const code of [...Array.from({length:10},(_,i)=>'Digit'+i),...Array.from({length:10},(_,i)=>'Numpad'+i),
