@@ -89,13 +89,13 @@ function useRatingColumns(characterBoard: boolean): Column[] {
   return [
     { key: 'position', title: '#', compact: true, numeric: true, value: row => row.position },
     { key: 'player', title: 'th09.boardPlayer', compact: true, value: playerName },
+    ...scoreColumns,
+    { key: 'games', title: 'th09.boardGames', numeric: true, value: boardGames },
+    { key: 'winRate', title: 'th09.winRate', numeric: true, value: winRate, render: row => percentages.format(winRate(row)) },
     ...(!characterBoard ? [{
       key: 'main-characters', title: 'th09.boardMainCharacter', sortable: false,
       value: () => '', render: row => <MostPlayedCharacters row={row} />,
     } satisfies Column] : []),
-    ...scoreColumns,
-    { key: 'games', title: 'th09.boardGames', numeric: true, value: boardGames },
-    { key: 'winRate', title: 'th09.winRate', numeric: true, value: winRate, render: row => percentages.format(winRate(row)) },
     { key: 'community', title: 'th09.boardGroup', value: row => row.connected_group,
       render: row => t('th09.boardGroupNumber', {number: row.connected_group}) },
     { key: 'last', title: 'th09.boardLastGame', numeric: true, value: row => row.last_at,
@@ -213,7 +213,7 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
   const showContext = contextScope === scope;
   const sort = sortState?.scope === scope ? sortState : defaultSort;
   const compactColumnCount = columns.filter(column => column.compact).length;
-  const detailColumns = columns.filter(column => !column.compact && column.key !== 'main-characters' && (!characterBoard || column.key !== 'deviation'));
+  const detailColumns = columns.filter(column => !column.compact && (!characterBoard || column.key !== 'deviation'));
   const groups = [...new Set(rows?.map(row => row.connected_group))].sort((a, b) => a - b);
   const minGames = Math.max(1, Math.trunc(Number(minimum ?? defaultMinimum)) || 1);
   const search = query.trim().toLowerCase();
@@ -415,9 +415,16 @@ function MostPlayedCharacters({row, compact = false}: {row: Entry; compact?: boo
   return <span className={compact ? 'rating-main-characters rating-main-characters-compact' : 'rating-main-characters'}>
     {compact && <span className="sr-only">{t('th09.boardMainCharacter')}: </span>}
     {characters.map(({character, games}) => {
-      const label = `${th09CharacterName(character, t)} · ${t('th09.characterGames', {count: numbers.format(games)})}`;
+      const score = row.character_ratings?.find(item => item.character === character);
+      const uses = numbers.format(games);
+      const rating = score ? numbers.format(score.rating) : '—';
+      const label = `${th09CharacterName(character, t)} · ${t('th09.characterRating')}: ${rating} · ${t('th09.characterGames', {count: uses})}`;
       return <span key={character} data-character={character} title={label}>
         <Th09CharacterAvatar character={character} />
+        {!compact && <span className="rating-character-metrics" aria-hidden="true">
+          <strong className="rating-character-value">{rating}</strong>
+          <small className="rating-character-uses">({uses})</small>
+        </span>}
         <span className="sr-only">{label}. </span>
       </span>;
     })}

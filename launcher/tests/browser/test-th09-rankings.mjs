@@ -6,7 +6,7 @@ const base = new URL(process.argv[2] || 'http://127.0.0.1:5185/');
 const rating = {rating:2100, interval_halfwidth:160, status:'active', games:50, wins:30,
   opponents:8, connected_group:1, last_at:Date.UTC(2026, 10, 25)};
 const top = [{character:0,games:34},{character:1,games:12},{character:2,games:4}];
-const scores = [{character:0,rating:2000,interval:180,games:34},{character:1,rating:2400,interval:190,games:12}];
+const scores = [{character:0,rating:2000,interval:180,games:29},{character:1,rating:2400,interval:190,games:12}];
 const board = {as_of:rating.last_at, board:[
   {...rating, player:'Frequent', profile:{username:'frequent',nickname:'常用玩家'}, top_characters:top, character_ratings:scores},
   {...rating, player:'Private', rating:2050, top_characters:top},
@@ -77,7 +77,14 @@ try {
     'portraits follow games played, not WHR; hidden or absent values are omitted and short lists are not padded');
   assert.equal(await page.$$eval(main + ' img', images => images.length), 4);
   await checkAvatar(main + ' ' + avatar, 24);
-  assert.match(await page.$eval(main, node => node.title), /34 局/);
+  const metrics = selector => page.$$eval(selector, values => values.map(node => [
+    node.querySelector('.rating-character-value').textContent,
+    node.querySelector('.rating-character-uses').textContent,
+  ]));
+  const expectedMetrics = [['2,000','(34)'], ['2,400','(12)'], ['—','(4)']];
+  assert.deepEqual(await metrics(rows + ':first-child td' + main), expectedMetrics,
+    'each portrait shows its character rating and all uses, not just rating-eligible games');
+  assert.match(await page.$eval(main, node => node.title), /灵梦.*机体分: 2,000.*34 局/);
   assert.equal(await shown(compact), false);
   assert.equal(await page.$(scope + ' ' + avatar), null);
   await page.click(scope);
@@ -87,17 +94,26 @@ try {
     Array.from({length:16}, (_, id) => '/assets/th09-portraits/' + id + '.webp'));
   await checkAvatar(option + '[data-value="0"] ' + avatar, 26);
   await page.keyboard.press('Escape');
-  for (const width of [860, 390, 320]) {
+  for (const width of [1101, 860, 801, 390, 320]) {
     await page.setViewport({width, height:819});
     assert.equal(await shown(header), width > 800);
     assert.equal(await shown(compact), width <= 800);
     if (width <= 800) {
       assert.deepEqual(await page.$$eval(compact + ' [data-character]', icons => icons.map(icon => icon.dataset.character)), ['0','1','2','0']);
       await checkAvatar(compact + ' ' + avatar, 20);
+    } else {
+      assert.ok(await page.$$eval(rows + ':first-child td' + main, entries => entries.every(entry => {
+        const metrics = entry.querySelector('.rating-character-metrics').getBoundingClientRect();
+        return metrics.right <= entry.getBoundingClientRect().right + 1;
+      })), `${width}px keeps each character's numbers within its space`);
     }
     assert.equal(await page.$eval('.rating-table-wrap', node => node.scrollWidth > node.clientWidth), false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   }
+  await page.click(rows + ':first-child .rating-mobile-cell button');
+  const expandedCharacters = '.rating-mobile-detail [data-column="main-characters"] [data-character]';
+  await page.waitForSelector(expandedCharacters, {visible:true});
+  assert.deepEqual(await metrics(expandedCharacters), expectedMetrics);
   await page.click('.rating-game-picker');
   await page.waitForSelector(gameOption, {visible:true});
   await checkHorizontalGames();
