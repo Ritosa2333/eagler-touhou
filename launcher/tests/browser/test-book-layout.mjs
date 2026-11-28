@@ -73,7 +73,11 @@ async function assertMasthead(page, width) {
         login.querySelector('svg').classList.contains('lucide-user-round')],
       glyphs, navGlyphs,
       strokeWidths: visible('.masthead-action > svg').map(svg => getComputedStyle(svg).strokeWidth),
-      navFonts:navigation.map(node => parseFloat(getComputedStyle(node).fontSize)),
+      navFonts: navigation.map(node => {
+        const {fontSize, fontWeight} = getComputedStyle(node);
+        return [parseFloat(fontSize), parseInt(fontWeight, 10)];
+      }),
+      navLabelCenters: visible('.book-main-nav a > span').map(center),
       wordmarkWidth: wordmark.width,
       // Center of the l in the 480×140 source image.
       wordmarkGlyphCenter: wordmark.top + wordmark.height * 80.5 / 140,
@@ -112,12 +116,17 @@ async function assertMasthead(page, width) {
     assert.ok(layout.glyphs.every(([w, h, center]) => Math.abs(w - expectedSize) < .25 &&
       Math.abs(h - expectedSize) < .25 && Math.abs(center - layout.wordmarkGlyphCenter) < .5),
     'Desktop glyphs share the scale and optical center of the wordmark ascender');
-    assert.deepEqual(layout.navFonts, width > 960 ? [20,20] : [16,16], 'primary navigation retains its desktop type scale');
+    const navFont = [width > 960 ? 18 : 15, 500];
+    assert.deepEqual(layout.navFonts, [navFont, navFont], 'the primary labels share a smaller, lighter type scale');
+    const contentCenter = layout.navCenter + layout.wordmarkWidth * .022;
+    assert.equal(layout.navLabelCenters.length, 2);
+    assert.ok(layout.navLabelCenters.every(center => Math.abs(center-contentCenter)<.5),
+      'the primary navigation labels sit slightly below the row center');
     if (width > 960) {
       const navSize = layout.wordmarkWidth * .205;
       assert.equal(layout.navGlyphs.length,2);
       assert.ok(layout.navGlyphs.every(([w,h,center]) => Math.abs(w-navSize)<.25 && Math.abs(h-navSize)<.25 &&
-        Math.abs(center-layout.navCenter)<.5), 'The primary modes share larger icons centered vertically in the row');
+        Math.abs(center-contentCenter)<.5), 'the primary navigation icons and labels share an optical center');
     }
     assert.equal(layout.navGap, 0, 'the navigation indicators can meet edge to edge');
     assert.equal(layout.underline, layout.foreground, 'the underline uses the theme foreground instead of the accent');

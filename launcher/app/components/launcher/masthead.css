@@ -98,7 +98,7 @@
     border: 0;
     background: transparent;
     color: var(--kit-muted-foreground);
-    font: 600 20px / 1.2 var(--kit-font);
+    font: 500 18px / 1.2 var(--kit-font);
     letter-spacing: normal;
     text-decoration: none;
     cursor: pointer;
@@ -190,7 +190,7 @@
   }
   @media (780px < width <= 960px) {
     .book-masthead .book-main-nav .book-navigation-icon {display:none}
-    .book-masthead .book-main-nav :is(a,button) {padding-inline:12px;font-size:16px}
+    .book-masthead .book-main-nav :is(a,button) {padding-inline:12px;font-size:15px}
   }
   @media (max-width: 780px) {
     .masthead.book-masthead:not([data-mobile-header="true"]) {display:none}
@@ -229,7 +229,8 @@
   box-shadow:none;
 }
 .book-masthead :is(.masthead-action,.book-main-nav a) > svg {width:var(--masthead-icon-size);height:var(--masthead-icon-size)}
-.book-masthead .masthead-action > svg {translate:0 var(--masthead-icon-offset)}
+.book-masthead .masthead-action > svg,
+.book-masthead .book-main-nav a > :is(svg,span) {translate:0 var(--masthead-icon-offset)}
 .masthead-account-entry .account-avatar {--account-avatar-size:28px}
 @media (780px < width <= 1024px) {
   .book-masthead .masthead-links > .book-top-donation {display:none}
