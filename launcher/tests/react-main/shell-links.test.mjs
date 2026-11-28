@@ -186,7 +186,11 @@ test('the masthead groups help, site actions, settings and information',async()=
  assert.equal(n('.masthead-developer-trigger').closest('[role="group"]'),n('.masthead-language-trigger').closest('[role="group"]'));
  assert.deepEqual([...n('#mastheadMenuPanel').querySelectorAll('.masthead-menu-heading')].map(x=>x.textContent),['Help','Site','Settings','About this site']);
  const icons=[...link.closest('[role="group"]').querySelectorAll('svg')];
- assert.equal(icons.length,4);
+ assert.equal(icons.length,5);
+ const feedback=n('#mastheadMenuPanel a[href="https://feedback.touhouonline.com/"]');
+ assert.equal(feedback.closest('[role="group"]'),link.closest('[role="group"]'));
+ assert.equal(feedback.getAttribute('target'),'_blank');
+ assert.equal(feedback.getAttribute('rel'),'noopener noreferrer');
  assert.equal(new Set(icons.map(icon=>icon.innerHTML)).size,icons.length);
 });
 
