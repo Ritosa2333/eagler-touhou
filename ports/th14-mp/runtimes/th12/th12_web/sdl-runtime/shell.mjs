@@ -2,7 +2,6 @@
 // Game construction, input, timing, rendering, text and sound belong to C++.
 // Mirrors th10/th20 shell.mjs and imports the shared eagler-host transport.
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
-import createModule from './th11-sdl.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {validateMotionReplay} from './motion-replay.mjs';
 import {runtimeEpochContract} from './runtime-epoch.mjs';
@@ -391,12 +390,18 @@ const startupAbort=new AbortController();
 window.addEventListener('pagehide',event=>{if(!event.persisted)startupAbort.abort();},{once:true});
 const initialized=(async()=>{
  let audioContext;try{audioContext=parent.__touhouAudioContext;}catch{}
+ const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const useSingleThread=!!runtimeBuild.singleThreaded&&(ios||!globalThis.crossOriginIsolated||typeof SharedArrayBuffer!=='function');
+ const entry=useSingleThread?'./th14-sdl-single.':'./th11-sdl.';
+ const details={...runtimeBuild,threading:useSingleThread?'single':'workers'};
+ crashReporter?.identify?.(details);
+ const {default:createModule}=await import(entry+'mjs');
  Module=await createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
   onAbort:reason=>crashReporter?.fatal(new Error(String(reason)),{source:'wasm-abort'}),
-  instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch('./th11-sdl.wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}});
+  instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch(entry+'wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}});
  if(core.th14_audio_levels)Module.eaglerSetAudioLevels=(music,effects)=>core.th14_audio_levels(music,effects);
  window.Module=Module;window.FS=Module.FS;window.core=core;
- crashReporter?.bindCore(Module,{build:runtimeBuild,autoSample:false,hookAbort:false});
+ crashReporter?.bindCore(Module,{build:details,autoSample:false,hookAbort:false});
  Module.onWebGpuError=error;
  Module.onAsyncError=error;
  if(typeof Module._th14_async_frame==='function'){

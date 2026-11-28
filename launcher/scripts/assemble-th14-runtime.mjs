@@ -69,11 +69,11 @@ const fallbackNames = [];
 let singleThreaded;
 if (fallback) {
   const fallbackBuild = JSON.parse(await readFile(resolve(fallback, 'build.json'), 'utf8'));
-  if (multiplayer || !build.flags.includes('-pthread') ||
+  if (!build.flags.includes('-pthread') ||
       !fallbackBuild.flags?.includes('-DPORT_TITLE=14') || fallbackBuild.flags.includes('-pthread') ||
-      fallbackBuild.flags.includes('-DTH14_MULTIPLAYER=1') ||
+      fallbackBuild.flags.includes('-DTH14_MULTIPLAYER=1') !== multiplayer ||
       ['-DTH14_ENABLE_THPRAC=1', '-DTH_ENABLE_THCRAP=1'].some(flag => fallbackBuild.flags.includes(flag) !== build.flags.includes(flag)))
-    throw Error('Expected compatible threaded and single-threaded TH14 solo builds');
+    throw Error('Expected compatible threaded and single-threaded TH14 builds');
   for (const ext of ['wasm', 'mjs']) {
     const original = 'th14-sdl.' + ext;
     const output = 'th14-sdl-single.' + ext;
