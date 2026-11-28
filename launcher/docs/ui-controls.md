@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | 全局导航 | [LauncherMasthead](../app/components/launcher/LauncherMasthead.tsx)、[SiteBottomNavigation](../app/components/launcher/SiteNavigation.tsx) | 桌面顶栏 44 px，帮助、反馈、捐赠、主题和设置使用文字入口，按字标 Online 的可见字形对齐。单机和联机居中。窄桌面逐步将反馈、捐赠收进设置，1000 px 及以下隐藏字标。780 px 及以下，仅单机书库显示顶栏，单机、联机、主页共用底部导航。二级页使用透明返回按钮。 |
 | 搜索与抽屉 | [LibrarySearch](../app/components/launcher/LibrarySearch.tsx)、[MastheadOverview](../app/components/launcher/MastheadOverview.tsx) | 两种搜索位置共用查询值。手机抽屉从左进入，默认按帮助、站点、设置分组。界面语言和关于本站各有一级返回，主题入口使用共用主题设置窗。游客可以打开抽屉。 |
-| 书库 | [BookLibrary](../app/components/launcher/BookLibrary.tsx) | 桌面书库与游戏详情共用分类侧栏，系列与玩法独立分类，同一作品可出现在多个分类中。分类筛选与展开独立，单机和联机分别记住展开状态。封面卡使用竖版，桌面最多五列。侧栏底部固定提供下载与附加内容入口，分类、视图和排序沿用共同工具栏。 |
+| 书库 | [BookLibrary](../app/components/launcher/BookLibrary.tsx) | 桌面书库与游戏详情共用分类侧栏，单机按正作、小数点、旧作、同人排列，联机按对战、格斗、原作、旧作排列。分类筛选与展开独立，单机和联机分别记住展开状态。封面卡使用竖版，桌面最多五列。侧栏底部固定提供下载与附加内容入口，分类、视图和排序沿用共同工具栏。 |
 | 联机大厅 | [LobbySurface](../app/components/launcher/LobbySurface.tsx)、[BookDirectoryGames](../app/components/launcher/BookDirectoryGames.tsx) | 桌面与单机共用侧栏规格和作品行。手机用横向封面条。两端共用作品选单、筛选状态和收藏。 |
 | 主页与设置 | [LauncherHome](../app/components/launcher/LauncherHome.tsx)、[SettingsGroup](../app/components/settings/SettingsGroup.tsx)、[LauncherPreferences](../app/components/launcher/LauncherPreferences.tsx) | 同组使用一个外框，行之间分隔，图标和箭头采用同一列距。全局设置分组默认收起，单作设置页默认展开并可手动收起。主题组可直接切换亮暗和进入背景设置。账户组直达个人资料、账户安全。 |
 | 消息中心 | [MastheadInbox](../app/components/launcher/MastheadInbox.tsx)、[MessageCenter](../app/components/launcher/MessageCenter.tsx)、[AnnouncementTimeline](../app/components/launcher/AnnouncementTimeline.tsx) | 登录后显示顶栏入口。桌面先打开小窗，手机直接进对应栏目。公告小窗显示最新一条，正文最多 6 行。全量列表每条默认最多 10 行，点击「查看更多」原位展开。未读数由公告 ID 和本地已读记录计算。 |
@@ -25,7 +25,7 @@
 
 [SpellCardArchive](../app/components/launcher/SpellCardArchive.tsx) 接收通关矩阵选中的机体与难度，默认选游玩次数最多的组合。当 th07 存档提供逐卡数据时，按关卡与 Midboss / Boss 显示收取图和列表。收取图以主题色亮度表达收率，进度条显示该关已收取的符卡数。悬停、键盘聚焦或触屏点按显示原始编号、符卡名称和收取次数。列表使用对齐的编号和次数列，手机把分组名移到行上方。未遇到的名字按原长度显示全角问号。 [th07 符卡编号与难度](https://github.com/y-iihoshi/ThScoreFileConverter/blob/main/ThScoreFileConverter.Core/Models/Th07/Definitions.cs)
 
-混排先在共用组件校准可见字形。顶栏取字标里 `nline` 的视觉中线，对齐分隔线和四个辅助图标，沿用菜单图标自身比例。作品名和编号按基线排列，副标题另起一行。字体、字号或图标调整后，对照同尺寸、主题和交互状态的实际截图检查。触控命中区独立于图标尺寸。
+混排先在共用组件校准可见字形。顶栏取字标里 `nline` 的视觉中线，对齐分隔线和辅助文字入口，沿用菜单图标自身比例。作品名和编号按基线排列，副标题另起一行。字体、字号或图标调整后，对照同尺寸、主题和交互状态的实际截图检查。触控命中区独立于图标尺寸。
 
 共用界面使用本地托管的 Noto Sans SC 可变字体。主导航常态 500、选中 650，说明正文为 400。设置分组在浏览器中用 15 px / 475，使笔画接近 Pencil 的 15 px / 600，手机消息标题也按实际字形校准。游戏主标题依稿使用微软雅黑，英文副标题用 Segoe UI，系统缺少对应字体时回退到 Noto Sans SC。符卡列表的日文名称使用 Noto Sans JP，编号使用 11 px / 500 的 IBM Plex Mono。比较截图前按 CSS 尺寸对齐 Pencil 导出倍率，并核对实际加载的字形和字重。
 

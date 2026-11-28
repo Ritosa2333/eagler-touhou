@@ -31,10 +31,9 @@ export function bookGameKind(id: GameId): BookGameKind {
   return 'original';
 }
 
-type BookWorkSeries = 'pc98' | 'windows' | 'spin-off' | 'doujin';
-export type BookWorkCategory = BookWorkSeries | Exclude<BookGameKind, 'original'>;
+export type BookWorkCategory = 'pc98' | 'windows' | 'spin-off' | 'doujin';
 
-function bookWorkSeries(product: Pick<LibraryProduct, 'number'>): BookWorkSeries {
+function bookWorkSeries(product: Pick<LibraryProduct, 'number'>): BookWorkCategory {
   if (!/^\d+(?:\.\d+)?$/.test(product.number)) return 'doujin';
   if (isPc98Product(product)) return 'pc98';
   return Number.isInteger(Number(product.number)) ? 'windows' : 'spin-off';
@@ -42,10 +41,7 @@ function bookWorkSeries(product: Pick<LibraryProduct, 'number'>): BookWorkSeries
 
 // The first category is the default sidebar group for a direct detail link.
 export function bookWorkCategories(product: Pick<LibraryProduct, 'gameId' | 'number'>): readonly [BookWorkCategory, ...BookWorkCategory[]] {
-  const series = bookWorkSeries(product);
-  const kind = bookGameKind(product.gameId);
-  if (kind === 'original') return [series];
-  return series === 'pc98' || series === 'doujin' ? [series, kind] : [kind, series];
+  return [bookWorkSeries(product)];
 }
 
 export type MultiplayerGroup = BookGameKind | 'pc98';

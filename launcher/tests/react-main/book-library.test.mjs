@@ -206,11 +206,12 @@ test('only supplied published products become cards; hidden/MP/demo titles never
   await click('[data-book-category="doujin"]'); assert.deepEqual(ids(), []);
   assert.ok(node('.book-empty').textContent.includes('No matching games'));
   assert.equal(env.document.querySelector('[data-book-product="dj01"]'), null);
-  await click('[data-book-category="fighting"]'); assert.deepEqual(ids(), ['th075']);
+  await click('[data-book-category="spin-off"]'); assert.deepEqual(ids(), ['th075']);
 });
-test('the library filters by series or game genre', async () => {
+test('the library groups single-player works by series', async () => {
   const products = api.createLibraryProducts(['th06', 'th075', 'th09', 'hsob'], p => p, id => '?game=' + id);
   await mount(products);
+  assert.deepEqual([...env.document.querySelectorAll('[data-book-category]')].map(n => n.dataset.bookCategory), ['all','favorites','windows','spin-off','pc98','doujin']);
   await click('[data-book-category="doujin"]');
   assert.deepEqual(ids(), ['hsob']);
   assert.match(node('[data-book-product="hsob"] .book-art img').src, /^data:image\/webp;base64,/);
@@ -220,9 +221,7 @@ test('the library filters by series or game genre', async () => {
   assert.equal(sidebar.querySelector('img').src, node('[data-book-product="hsob"] .book-art img').src);
   await click('[data-book-category="windows"]');
   assert.deepEqual(ids(), ['th06', 'th09']);
-  await click('[data-book-category="versus"]');
-  assert.deepEqual(ids(), ['th09']);
-  await click('[data-book-category="fighting"]');
+  await click('[data-book-category="spin-off"]');
   assert.deepEqual(ids(), ['th075']);
 });
 test('TH05 is discoverable through the PC98 category in the current library', async () => {
@@ -239,8 +238,8 @@ test('different genres can share a series and each game appears once in all game
   await mount(products);
   assert.deepEqual(ids(), ['th03', 'th05', 'th06', 'th075', 'th09', 'th19']);
   for (const [category, expected] of [
-    ['versus', ['th03', 'th09', 'th19']], ['pc98', ['th03', 'th05']],
-    ['fighting', ['th075']], ['spin-off', ['th075']], ['windows', ['th06', 'th09', 'th19']],
+    ['pc98', ['th03', 'th05']],
+    ['spin-off', ['th075']], ['windows', ['th06', 'th09', 'th19']],
   ]) {
     await click(`[data-book-category="${category}"]`);
     assert.deepEqual(ids(), expected);

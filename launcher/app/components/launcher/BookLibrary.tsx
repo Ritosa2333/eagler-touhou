@@ -10,9 +10,7 @@ import {
   Puzzle,
   Disc3,
   Download,
-  Gamepad2,
   Shapes,
-  Swords,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Skeleton } from '../../ui/skeleton';
@@ -54,14 +52,12 @@ type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
 const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
   { id: 'all', Icon: LayoutGrid },
   { id: 'favorites', Icon: Star },
-  { id: 'versus', Icon: Swords },
-  { id: 'fighting', Icon: Gamepad2 },
   { id: 'windows', Icon: Monitor },
   { id: 'spin-off', Icon: Puzzle },
   { id: 'pc98', Icon: Disc3 },
   { id: 'doujin', Icon: Shapes },
 ];
-const defaultDisclosures = {windows: true, versus: true, fighting: true};
+const defaultDisclosures = {windows: true};
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
 export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, mobileSearchTarget, detail, onBrowse, homeHref, installProgress }: Props) {
@@ -111,8 +107,6 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     favorites: t('library.category.favorites'),
     pc98: t('library.category.pc98'),
     windows: t('library.category.windows'),
-    versus: t('library.category.versus'),
-    fighting: t('library.category.fighting'),
     'spin-off': t('library.category.spinOff'),
     doujin: t('library.category.doujin'),
   };
