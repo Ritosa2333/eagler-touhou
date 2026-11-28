@@ -256,7 +256,11 @@ try {
   for (const [width, theme] of [[320, 'light'], [390, 'dark']]) {
     const page = await browser.newPage();
     await page.setViewport({width, height: 780, isMobile: true, hasTouch: true});
-    await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
+    const customBackground = width === 390;
+    await page.evaluateOnNewDocument(customBackground => {
+      localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1');
+      if (customBackground) localStorage.setItem('eagler.background.settings', JSON.stringify({mode:'dots'}));
+    }, customBackground);
     await page.goto(origin, {waitUntil: 'domcontentloaded'});
     await page.waitForFunction(() => window.__eaglerBoot?.done);
     await assertMasthead(page, width);
@@ -277,6 +281,15 @@ try {
       await cdp.detach();
     }
     const card = await page.waitForSelector(pc98Cards, {visible: true});
+    if (customBackground) {
+      await page.waitForSelector('html[data-background-mode="dots"][data-custom-background]');
+    }
+    const corners = await card.evaluate(link => [link.closest('.book-card'), link.querySelector('.book-art')].map(node => {
+      const {borderRadius, overflow} = getComputedStyle(node);
+      return [borderRadius, overflow];
+    }));
+    assert.deepEqual(corners, [['6px', 'hidden'], ['6px', 'hidden']],
+      `${width}px cover and card surface share rounded clipping with ${customBackground ? 'a custom' : 'the default'} background`);
     await card.tap();
     const detail = '.tools[data-book-sheet][data-state="open"]';
     const settings = '.mobile-game-settings';

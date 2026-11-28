@@ -294,11 +294,12 @@
     gap: 20px var(--book-grid-column-gap);
   }
   .book-card {
+    --book-card-radius: 9px;
     position: relative;
     min-width: 0;
     overflow: hidden;
     border: 1px solid var(--kit-border);
-    border-radius: 9px;
+    border-radius: var(--book-card-radius);
     background: var(--kit-card);
     transition:
       transform var(--ui-micro-duration) var(--ui-micro-easing),
@@ -450,13 +451,13 @@
     gap: 0 20px;
   }
   .book-view-list .book-card {
+    --book-card-radius: 8px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 44px;
     align-items: center;
     overflow: visible;
     border: 0;
     border-bottom: 1px solid var(--kit-border);
-    border-radius: 8px;
     background: transparent;
     box-shadow: none;
   }
@@ -602,12 +603,12 @@
       row-gap: 16px;
     }
     .book-view-covers .book-card {
+      --book-card-radius: 6px;
       border: 0;
-      border-radius: 0;
       background: transparent;
     }
     .book-view-covers .book-card .book-art {
-      border-radius: 6px;
+      border-radius: var(--book-card-radius);
     }
     .book-view-covers .book-card .book-identity {
       min-height: 44px;
