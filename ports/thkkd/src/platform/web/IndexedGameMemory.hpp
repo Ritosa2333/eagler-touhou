@@ -49,12 +49,6 @@ class GameStartEntryMemory {
         auto it=std::upper_bound(spans.begin(),spans.end(),at,[](Q address,const Span& span){return address<span.first;});
         if(it==spans.begin())return missing;--it;if(at>=it->last)return missing;return recent_=std::size_t(it-spans.begin());
     }
-    std::size_t range(U address,std::size_t size,bool writing)const{
-        Q at=address,end=at+size;if(end>0x100000000ull)throw GameStartEntryAccessFault{address,U(size),writing};if(at>=end)return missing;
-        const auto first=find(at);auto index=first;const auto& spans=layout().spans;
-        while(at<end){if(index==missing||index>=spans.size()||spans[index].first>at)throw GameStartEntryAccessFault{U(at),U(end-at),writing};at=spans[index].last;++index;}
-        return first;
-    }
     void copy_out(U address,std::uint8_t* out,std::size_t size,std::size_t index)const{
         std::size_t done=0;while(done<size){const auto at=Q(address)+done;const auto& span=layout().spans[index];const auto& b=bindings_[span.bindings.front()];
             // 与原实现一致：从当前位置首个注册绑定复制到该绑定末尾。
@@ -103,12 +97,12 @@ public:
             }
         }commit_random();
     }
-    std::vector<std::uint8_t> read(U address,std::size_t size)const{const auto index=range(address,size,false);std::vector<std::uint8_t> out(size);copy_out(address,out.data(),size,index);return out;}
-    void write(U address,const std::uint8_t* bytes,std::size_t size){const auto index=range(address,size,true);const Q end=Q(address)+size;affected(address,size,index,[&](const Binding& b){const auto first=std::max(Q(address),Q(b.address)),last=std::min(end,Q(b.address)+b.size);if(first<last)std::memcpy(b.data+first-b.address,bytes+first-address,std::size_t(last-first));});accept_aliases();commit_random();}
-    void clear(U address,std::size_t size){const auto index=range(address,size,true);const Q end=Q(address)+size;affected(address,size,index,[&](const Binding& b){const auto first=std::max(Q(address),Q(b.address)),last=std::min(end,Q(b.address)+b.size);if(first<last)std::memset(b.data+first-b.address,0,std::size_t(last-first));});accept_aliases();commit_random();}
+    std::vector<std::uint8_t> read(U address,std::size_t size)const{const auto index=find(address);std::vector<std::uint8_t> out(size);copy_out(address,out.data(),size,index);return out;}
+    void write(U address,const std::uint8_t* bytes,std::size_t size){const auto index=find(address);const Q end=Q(address)+size;affected(address,size,index,[&](const Binding& b){const auto first=std::max(Q(address),Q(b.address)),last=std::min(end,Q(b.address)+b.size);if(first<last)std::memcpy(b.data+first-b.address,bytes+first-address,std::size_t(last-first));});accept_aliases();commit_random();}
+    void clear(U address,std::size_t size){const auto index=find(address);const Q end=Q(address)+size;affected(address,size,index,[&](const Binding& b){const auto first=std::max(Q(address),Q(b.address)),last=std::min(end,Q(b.address)+b.size);if(first<last)std::memset(b.data+first-b.address,0,std::size_t(last-first));});accept_aliases();commit_random();}
     void write(U address,const std::vector<std::uint8_t>& bytes){write(address,bytes.data(),bytes.size());}
-    std::uint8_t byte(U address)const{const auto index=range(address,1,false);const auto& b=bindings_[layout().spans[index].bindings.front()];return b.data[address-b.address];}
-    U word(U address)const{std::uint8_t bytes[4];const auto index=range(address,4,false);copy_out(address,bytes,4,index);return read_u32(bytes);}
+    std::uint8_t byte(U address)const{const auto index=find(address);const auto& b=bindings_[layout().spans[index].bindings.front()];return b.data[address-b.address];}
+    U word(U address)const{std::uint8_t bytes[4];const auto index=find(address);copy_out(address,bytes,4,index);return read_u32(bytes);}
     Q quad(U address)const{return Q(word(address))|(Q(word(address+4))<<32);}
     void word(U address,U value){std::uint8_t bytes[4];for(unsigned i=0;i<4;++i)bytes[i]=std::uint8_t(value>>(8*i));write(address,bytes,4);}
     void quad(U address,Q value){std::uint8_t bytes[8];for(unsigned i=0;i<8;++i)bytes[i]=std::uint8_t(value>>(8*i));write(address,bytes,8);}

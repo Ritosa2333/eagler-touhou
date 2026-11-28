@@ -40,17 +40,6 @@ class GameStartEntryMemory {
   }
   visit_marks_.assign(bindings_.size(),0);visit_epoch_=0;
  }
- void range(std::uint32_t address,std::size_t size,bool writing)const{
-  std::uint64_t at=address,end=at+size;
-  if(end>0x100000000ull)throw GameStartEntryAccessFault{address,static_cast<std::uint32_t>(size),writing};
-  while(at<end){
-   auto it=std::upper_bound(coverage_.begin(),coverage_.end(),at,[](std::uint64_t value,const auto& interval){return value<interval.first;});
-   if(it==coverage_.begin())throw GameStartEntryAccessFault{static_cast<std::uint32_t>(at),static_cast<std::uint32_t>(end-at),writing};
-   --it;
-   if(at<it->first||at>=it->second)throw GameStartEntryAccessFault{static_cast<std::uint32_t>(at),static_cast<std::uint32_t>(end-at),writing};
-   at=it->second;
-  }
- }
  const Binding* find_binding(std::uint64_t at)const{
   const auto found=pages_.find(std::uint32_t(at>>page_bits));if(found==pages_.end())return nullptr;
   for(const auto index:found->second){const auto& b=bindings_[index];if(b.address<=at&&at<std::uint64_t(b.address)+b.size)return &b;}
@@ -107,7 +96,7 @@ public:
   commit_random();
  }
  std::vector<std::uint8_t> read(std::uint32_t address,std::size_t size)const{
-  range(address,size,false);std::vector<std::uint8_t> out(size);std::size_t done=0;
+  std::vector<std::uint8_t> out(size);std::size_t done=0;
   while(done<size){const auto at=std::uint64_t(address)+done;const auto* b=find_binding(at);
    if(!b)throw GameStartEntryAccessFault{static_cast<std::uint32_t>(at),static_cast<std::uint32_t>(size-done),false};
    const auto count=std::min(size-done,b->size-static_cast<std::size_t>(at-b->address));std::memcpy(out.data()+done,b->data+at-b->address,count);done+=count;
@@ -115,12 +104,10 @@ public:
   return out;
  }
  void write(std::uint32_t address,const std::uint8_t* bytes,std::size_t size){
-  range(address,size,true);
   for_bindings(address,size,[&](Binding& b,std::uint64_t first,std::uint64_t finish){std::memcpy(b.data+first-b.address,bytes+first-address,static_cast<std::size_t>(finish-first));});
   accept_aliases();commit_random();
  }
  void clear(std::uint32_t address,std::size_t size){
-  range(address,size,true);
   for_bindings(address,size,[&](Binding& b,std::uint64_t first,std::uint64_t finish){std::memset(b.data+first-b.address,0,static_cast<std::size_t>(finish-first));});
   accept_aliases();commit_random();
  }
