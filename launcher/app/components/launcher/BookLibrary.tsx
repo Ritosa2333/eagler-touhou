@@ -54,9 +54,9 @@ type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
 const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
   { id: 'all', Icon: LayoutGrid },
   { id: 'favorites', Icon: Star },
-  { id: 'windows', Icon: Monitor },
   { id: 'versus', Icon: Swords },
   { id: 'fighting', Icon: Gamepad2 },
+  { id: 'windows', Icon: Monitor },
   { id: 'spin-off', Icon: Puzzle },
   { id: 'pc98', Icon: Disc3 },
   { id: 'doujin', Icon: Shapes },

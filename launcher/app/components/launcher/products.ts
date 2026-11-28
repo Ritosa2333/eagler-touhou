@@ -54,7 +54,7 @@ export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): Multi
   return kind === 'original' && isPc98Product(PRODUCT_GAMES[product.gameId]) ? 'pc98' : kind;
 }
 
-const multiplayerGroups = ['versus', 'original', 'fighting', 'pc98'] as const;
+const multiplayerGroups = ['versus', 'fighting', 'original', 'pc98'] as const;
 
 export const multiplayerGroupLabelKey = (group: MultiplayerGroup) =>
   group === 'pc98' ? 'library.category.pc98' : `directory.group.${group}` as const;
