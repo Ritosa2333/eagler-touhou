@@ -1,6 +1,6 @@
 # 启动器性能开销排查 | 2026-11-28
 
-本记录延续[前一轮性能整改](../performance-20261128/report.md)，独立检查启动、绘制、排序、页面生命周期、资源、后台任务、文件处理、网络和网页容器。Windows 网页空白通过纹理适配器补丁修复，账号页自动退出通过历史通知合并修复，普通 Release 已重新构建。SDK、依赖与界面布局沿用；适配器 A/B 使用相同旧 AOT，账号修复产生新的 AOT。当前工作副本相对本机记录的 origin/main 落后 8 个提交。
+本记录延续[前一轮性能整改](../performance-20261128/report.md)，独立检查启动、绘制、排序、页面生命周期、资源、后台任务、文件处理、网络和网页容器。Windows 网页空白通过纹理适配器补丁修复，账号页自动退出通过历史通知合并修复，普通 Release 已重新构建。SDK、依赖与界面布局沿用；适配器 A/B 使用相同旧 AOT，账号修复产生新的 AOT。起始排查时工作副本相对当时记录的 origin/main 落后 8 个提交，后续样本各自登记来源提交。
 
 ## 测量结果
 
@@ -110,6 +110,18 @@ Windows Release 使用生产 `main()`、实际 11 部作品目录和 1280 × 720
 83 项账号控件检查通过，静态分析无问题。布局、语言与导航等 133 项通过，210 张新采图与原图逐字节一致。Windows Debug 的隔离真实引擎测试两次进入账号页，每次按 1280、390、320、1280 px 改变窗口，再分别使用返回和关闭，均恢复 th08 和相同标题位置。测试检查真实纹理，不以控件被创建代替引擎可用。[实窗结果](account-history-live-result.json) | [测试入口](account-history-live-test.dart) | [截图比较](account-history-capture-comparison.json)
 
 截图依次观察到[桌面加载](account-history-loading-1280.png)、[390 px 骨架](account-history-skeleton-390.png)和[320 px 登录表单](account-history-login-320.png)。它们记录网页加载过程，不证明三个宽度均已完成出图。普通最终 Release 已构建，其手工跨宽度复验在检测到现有窗口用户输入后停止。未输入凭据，登录退出、上传与裁切继续需要对应输入。
+
+## 最终 Release 账号页与关闭异常
+
+相同普通 `main.dart` AOT 通过既有正式站账号链接入口，分别在三个独立游客进程加载登录页。只增加原生入口的初始尺寸、不激活显示、隔离应用元数据与关闭计时，没有修改 Dart、插件或引擎。三张实际窗口图均显示完整登录表单，加载后仍停留账号容器。系统为 144 DPI；原生日志核对的内容宽度分别为 1265.33、375.33 和 320 逻辑像素，不把外窗宽度当作内容宽度。[桌面实拍](account-release-login-1280.jpg) | [竖屏实拍](account-release-login-390.jpg) | [320 px 实拍](account-release-login-320.jpg) | [来源、尺寸与结果](account-release-summary.json)
+
+三轮各观察 24 次，五秒一次的前台 PID 均为其他进程。120 秒后向诊断窗口发送普通关闭请求，三轮都进入引擎销毁，但没有到达销毁完成标记。两轮在 140 秒期限后仍未终止，由测试结束自己的进程；另一轮在约 139.46 秒进入内核终止状态。系统 Application Error 同时确认三者均在 `flutter_windows.dll+0x15cdf` 出现 `c0000005` 与 `c000041d`，因此第三轮也属于崩溃，不能以句柄已终止判为正常退出。[筛选后的系统错误](account-release-errors.json) | [三轮原始结果](account-release-result-320.json)
+
+320 px 窗口在关闭后保留了 UI 线程栈。严格匹配的引擎 PDB 将故障地址定位到 `FlutterDesktopMessengerSetCallback`。插件使用原 94 份对象文件独立重链接，仅增加 `/MAP`，其 `.text` 的 987,648 字节与实际 DLL 完全相同；映射中的邻近函数依次包括 `FindInteractionController::dispose`、`ChannelDelegate::UnregisterMethodCallHandler`、`InAppWebView` 和插件析构。它们对应引擎 `Stop()` 的插件清理回调，区别于此前 `ExitProcess` 后的 Intel 驱动栈。[现场栈](account-release-close-stack-320.json) | [引擎精确符号](account-release-resolved-engine.tsv) | [插件映射与字节核对](account-release-resolved-plugin.json) | [完整链接映射](account-release-plugin-map.gz)
+
+固定 SDK 的引擎析构先将 messenger 的引擎指针清空，再执行 `Stop()`；插件析构仍调用注销消息通道。本轮把下一步缩小到引擎停止期间的通道清理与网页释放顺序，候选修复需要用相同入口对照。上游 [#2884](https://github.com/pichillilorenzo/flutter_inappwebview/issues/2884)记录控制器晚于宿主窗口关闭，[#2896](https://github.com/pichillilorenzo/flutter_inappwebview/issues/2896)记录异步纹理注销的资源寿命问题，二者作为独立参考，不直接代替本机归因。
+
+本轮图片由 Computer Use 直接返回 JPEG，按原字节归档；未输入凭据或操作表单。当前程序包与 113 个交付源码哈希不变。同一窗口跨宽度重排、返回发起游戏和真实账号写入继续分别验收；当前包的网页驻留关闭已明确未通过。
 
 ## 前台与后台的同进程对照
 

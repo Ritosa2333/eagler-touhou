@@ -1,0 +1,873 @@
+[
+  {
+    "pid": 59656,
+    "tid": 60156,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403194344314373,
+    "exited": 0,
+    "kernel100ns": 24843750,
+    "user100ns": 9531250,
+    "stackFrames": [
+      {
+        "address": "7ff95d315cdf",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "15cdf",
+        "export": "FlutterDesktopMessengerSetCallback",
+        "exportOffset": "26"
+      },
+      {
+        "address": "7ff95d315cdf",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "15cdf",
+        "export": "FlutterDesktopMessengerSetCallback",
+        "exportOffset": "26"
+      },
+      {
+        "address": "7ff9a0e99408",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "d9408",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "befd8"
+      },
+      {
+        "address": "7ff9a0de14af",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "214af",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "707f"
+      },
+      {
+        "address": "7ff9a0de17c0",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "217c0",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "7390"
+      },
+      {
+        "address": "7ff9a0e03bae",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "43bae",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "2977e"
+      },
+      {
+        "address": "7ff9a0e04846",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "44846",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "2a416"
+      },
+      {
+        "address": "7ff9a0e35ee4",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "75ee4",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "5bab4"
+      },
+      {
+        "address": "7ff9a0e78ea7",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "b8ea7",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "9ea77"
+      },
+      {
+        "address": "7ff9a0dfe6bd",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "3e6bd",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "2428d"
+      },
+      {
+        "address": "7ff9a0e76586",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "b6586",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "9c156"
+      },
+      {
+        "address": "7ff9a0e785aa",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "b85aa",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "9e17a"
+      },
+      {
+        "address": "7ff9a0ddbb1f",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "1bb1f",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "16ef"
+      },
+      {
+        "address": "7ff9a0ddbd54",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "1bd54",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "1924"
+      },
+      {
+        "address": "7ff9a0e98158",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "d8158",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "bdd28"
+      },
+      {
+        "address": "7ff9a0e98561",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "d8561",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "be131"
+      },
+      {
+        "address": "7ff9a0dd9fa3",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "19fa3",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff9a0e980d8",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "d80d8",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "bdca8"
+      },
+      {
+        "address": "7ff9a0e98811",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "d8811",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "be3e1"
+      },
+      {
+        "address": "7ff9a0e986f6",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_inappwebview_windows_plugin.dll",
+        "offset": "d86f6",
+        "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+        "exportOffset": "be2c6"
+      },
+      {
+        "address": "7ff95d318239",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "18239",
+        "export": "FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable",
+        "exportOffset": "23d2"
+      },
+      {
+        "address": "7ff95d316a5e",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "16a5e",
+        "export": "FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable",
+        "exportOffset": "bf7"
+      },
+      {
+        "address": "7ff95d31ba08",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "1ba08",
+        "export": "FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable",
+        "exportOffset": "5ba1"
+      },
+      {
+        "address": "7ff95d31559a",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "1559a",
+        "export": "FlutterDesktopViewControllerDestroy",
+        "exportOffset": "d"
+      },
+      {
+        "address": "7ff6bb7748ce",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\account-320.exe",
+        "offset": "48ce",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff6bb771a7e",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\account-320.exe",
+        "offset": "1a7e",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff6bb773546",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\account-320.exe",
+        "offset": "3546",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff6bb7737ae",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\account-320.exe",
+        "offset": "37ae",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ffa831352e6",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "152e6",
+        "export": "CallWindowProcW",
+        "exportOffset": "6a6"
+      },
+      {
+        "address": "7ffa83134dac",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "14dac",
+        "export": "CallWindowProcW",
+        "exportOffset": "16c"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d68d8",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "268d8",
+        "export": "DefSubclassProc",
+        "exportOffset": "88"
+      },
+      {
+        "address": "7ff9979948c7",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "d48c7",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "5bcd7"
+      },
+      {
+        "address": "7ff9979949d0",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "d49d0",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "5bde0"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d68d8",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "268d8",
+        "export": "DefSubclassProc",
+        "exportOffset": "88"
+      },
+      {
+        "address": "7ff997980c51",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "c0c51",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "48061"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d68d8",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "268d8",
+        "export": "DefSubclassProc",
+        "exportOffset": "88"
+      },
+      {
+        "address": "7ff997974c7d",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "b4c7d",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "3c08d"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d68d8",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "268d8",
+        "export": "DefSubclassProc",
+        "exportOffset": "88"
+      },
+      {
+        "address": "7ff99797dda4",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "bdda4",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "451b4"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d6c5f",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "26c5f",
+        "export": "Ordinal411",
+        "exportOffset": "19f"
+      },
+      {
+        "address": "7ffa831352e6",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "152e6",
+        "export": "CallWindowProcW",
+        "exportOffset": "6a6"
+      },
+      {
+        "address": "7ffa83134b6c",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "14b6c",
+        "export": "GetFocus",
+        "exportOffset": "1e3c"
+      },
+      {
+        "address": "7ffa8315f543",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "3f543",
+        "export": "GetWindowDpiAwarenessContext",
+        "exportOffset": "4d3"
+      },
+      {
+        "address": "7ffa853ea424",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "16a424",
+        "export": "KiUserCallbackDispatcher",
+        "exportOffset": "24"
+      },
+      {
+        "address": "7ffa82e81384",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1384",
+        "export": "NtUserMessageCall",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa83137ddb",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "17ddb",
+        "export": "IsWindowEnabled",
+        "exportOffset": "3ab"
+      },
+      {
+        "address": "7ffa8313794e",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "1794e",
+        "export": "SendMessageW",
+        "exportOffset": "12de"
+      },
+      {
+        "address": "7ff6bb773493",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\account-320.exe",
+        "offset": "3493",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff6bb7737ae",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\account-320.exe",
+        "offset": "37ae",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ffa831352e6",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "152e6",
+        "export": "CallWindowProcW",
+        "exportOffset": "6a6"
+      },
+      {
+        "address": "7ffa83134dac",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "14dac",
+        "export": "CallWindowProcW",
+        "exportOffset": "16c"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d68d8",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "268d8",
+        "export": "DefSubclassProc",
+        "exportOffset": "88"
+      },
+      {
+        "address": "7ff9979948c7",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "d48c7",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "5bcd7"
+      },
+      {
+        "address": "7ff9979949d0",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "d49d0",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "5bde0"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d68d8",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "268d8",
+        "export": "DefSubclassProc",
+        "exportOffset": "88"
+      },
+      {
+        "address": "7ff997980c51",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "c0c51",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "48061"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d68d8",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "268d8",
+        "export": "DefSubclassProc",
+        "exportOffset": "88"
+      },
+      {
+        "address": "7ff997974c0b",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "b4c0b",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "3c01b"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d68d8",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "268d8",
+        "export": "DefSubclassProc",
+        "exportOffset": "88"
+      },
+      {
+        "address": "7ff99797dda4",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\cnativeapi.dll",
+        "offset": "bdda4",
+        "export": "native_window_shape_get_point_count",
+        "exportOffset": "451b4"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d6c5f",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "26c5f",
+        "export": "Ordinal411",
+        "exportOffset": "19f"
+      },
+      {
+        "address": "7ffa831352e6",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "152e6",
+        "export": "CallWindowProcW",
+        "exportOffset": "6a6"
+      },
+      {
+        "address": "7ffa83135dbd",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "15dbd",
+        "export": "IsWindowUnicode",
+        "exportOffset": "20d"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ff95d315cdf",
+    "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+    "offset": "15cdf"
+  },
+  {
+    "pid": 59656,
+    "tid": 45864,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403194344314373,
+    "exited": 0,
+    "kernel100ns": 24843750,
+    "user100ns": 9531250,
+    "stackFrames": [
+      {
+        "address": "7ffa853e6464",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "166464",
+        "export": "NtWaitForSingleObject",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa853e6464",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "166464",
+        "export": "NtWaitForSingleObject",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8288427f",
+        "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+        "offset": "1427f",
+        "export": "WaitForSingleObjectEx",
+        "exportOffset": "af"
+      },
+      {
+        "address": "7ff95d3525df",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "525df",
+        "export": "InternalFlutterWindows_WindowManager_SetSatelliteParent",
+        "exportOffset": "1997a"
+      },
+      {
+        "address": "7ff95d348950",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "48950",
+        "export": "InternalFlutterWindows_WindowManager_SetSatelliteParent",
+        "exportOffset": "fceb"
+      },
+      {
+        "address": "7ff95d34d644",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "4d644",
+        "export": "InternalFlutterWindows_WindowManager_SetSatelliteParent",
+        "exportOffset": "149df"
+      },
+      {
+        "address": "7ff95d34d4c6",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "4d4c6",
+        "export": "InternalFlutterWindows_WindowManager_SetSatelliteParent",
+        "exportOffset": "14861"
+      },
+      {
+        "address": "7ff95e2a3f72",
+        "module": "D:\\Temp\\native-performance-20261128\\account-release\\preview\\flutter_windows.dll",
+        "offset": "fa3f72",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "7d0810"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa853e6464",
+    "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+    "offset": "166464"
+  },
+  {
+    "pid": 59656,
+    "tid": 58500,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403194344314373,
+    "exited": 0,
+    "kernel100ns": 24843750,
+    "user100ns": 9531250,
+    "stackFrames": [
+      {
+        "address": "7ffa853e6464",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "166464",
+        "export": "NtWaitForSingleObject",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa853e6464",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "166464",
+        "export": "NtWaitForSingleObject",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8288427f",
+        "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+        "offset": "1427f",
+        "export": "WaitForSingleObjectEx",
+        "exportOffset": "af"
+      },
+      {
+        "address": "7ff97e22b1af",
+        "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\nvtfsi.inf_amd64_1e9df1fb675db438\\nvwgf2umx.dll",
+        "offset": "97b1af",
+        "export": "NVDEV_Thunk",
+        "exportOffset": "86dff"
+      },
+      {
+        "address": "7ff97e7a68e6",
+        "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\nvtfsi.inf_amd64_1e9df1fb675db438\\nvwgf2umx.dll",
+        "offset": "ef68e6",
+        "export": "NVDEV_Thunk",
+        "exportOffset": "602536"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa853e6464",
+    "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+    "offset": "166464"
+  },
+  {
+    "pid": 59656,
+    "tid": 52740,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403194344314373,
+    "exited": 0,
+    "kernel100ns": 24843750,
+    "user100ns": 9531250,
+    "stackFrames": [
+      {
+        "address": "7ffa853e6464",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "166464",
+        "export": "NtWaitForSingleObject",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa853e6464",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "166464",
+        "export": "NtWaitForSingleObject",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8288427f",
+        "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+        "offset": "1427f",
+        "export": "WaitForSingleObjectEx",
+        "exportOffset": "af"
+      },
+      {
+        "address": "7ff97de1c5ee",
+        "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\nvtfsi.inf_amd64_1e9df1fb675db438\\nvwgf2umx.dll",
+        "offset": "56c5ee",
+        "export": "SetDependencyInfo",
+        "exportOffset": "69ace"
+      },
+      {
+        "address": "7ff97de1bf65",
+        "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\nvtfsi.inf_amd64_1e9df1fb675db438\\nvwgf2umx.dll",
+        "offset": "56bf65",
+        "export": "SetDependencyInfo",
+        "exportOffset": "69445"
+      },
+      {
+        "address": "7ff97de10cdd",
+        "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\nvtfsi.inf_amd64_1e9df1fb675db438\\nvwgf2umx.dll",
+        "offset": "560cdd",
+        "export": "SetDependencyInfo",
+        "exportOffset": "5e1bd"
+      },
+      {
+        "address": "7ff97e2fe83a",
+        "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\nvtfsi.inf_amd64_1e9df1fb675db438\\nvwgf2umx.dll",
+        "offset": "a4e83a",
+        "export": "NVDEV_Thunk",
+        "exportOffset": "15a48a"
+      },
+      {
+        "address": "7ff97e7a68e6",
+        "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\nvtfsi.inf_amd64_1e9df1fb675db438\\nvwgf2umx.dll",
+        "offset": "ef68e6",
+        "export": "NVDEV_Thunk",
+        "exportOffset": "602536"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa853e6464",
+    "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+    "offset": "166464"
+  },
+  {
+    "pid": 59656,
+    "tid": 56000,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403194344314373,
+    "exited": 0,
+    "kernel100ns": 24843750,
+    "user100ns": 9531250,
+    "stackFrames": [
+      {
+        "address": "7ffa853e6504",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "166504",
+        "export": "ZwRemoveIoCompletion",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa853e6504",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "166504",
+        "export": "ZwRemoveIoCompletion",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8288b13c",
+        "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+        "offset": "1b13c",
+        "export": "GetQueuedCompletionStatus",
+        "exportOffset": "6c"
+      },
+      {
+        "address": "7ffa0bdb2c9b",
+        "module": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\158.0.4370.33\\EBWebView\\x64\\EmbeddedBrowserWebView.dll",
+        "offset": "1b2c9b",
+        "export": "DllCanUnloadNow",
+        "exportOffset": "1744fb"
+      },
+      {
+        "address": "7ffa0bdb2821",
+        "module": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\158.0.4370.33\\EBWebView\\x64\\EmbeddedBrowserWebView.dll",
+        "offset": "1b2821",
+        "export": "DllCanUnloadNow",
+        "exportOffset": "174081"
+      },
+      {
+        "address": "7ffa0be64732",
+        "module": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\158.0.4370.33\\EBWebView\\x64\\EmbeddedBrowserWebView.dll",
+        "offset": "264732",
+        "export": "GetHandleVerifier",
+        "exportOffset": "26862"
+      },
+      {
+        "address": "7ffa0be4f7f1",
+        "module": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\158.0.4370.33\\EBWebView\\x64\\EmbeddedBrowserWebView.dll",
+        "offset": "24f7f1",
+        "export": "GetHandleVerifier",
+        "exportOffset": "11921"
+      },
+      {
+        "address": "7ffa0be57b00",
+        "module": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\158.0.4370.33\\EBWebView\\x64\\EmbeddedBrowserWebView.dll",
+        "offset": "257b00",
+        "export": "GetHandleVerifier",
+        "exportOffset": "19c30"
+      },
+      {
+        "address": "7ffa0be67544",
+        "module": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\158.0.4370.33\\EBWebView\\x64\\EmbeddedBrowserWebView.dll",
+        "offset": "267544",
+        "export": "GetHandleVerifier",
+        "exportOffset": "29674"
+      },
+      {
+        "address": "7ffa0be67662",
+        "module": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\158.0.4370.33\\EBWebView\\x64\\EmbeddedBrowserWebView.dll",
+        "offset": "267662",
+        "export": "GetHandleVerifier",
+        "exportOffset": "29792"
+      },
+      {
+        "address": "7ffa0be1ca58",
+        "module": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\158.0.4370.33\\EBWebView\\x64\\EmbeddedBrowserWebView.dll",
+        "offset": "21ca58",
+        "export": "DllCanUnloadNow",
+        "exportOffset": "1de2b8"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa853e6504",
+    "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+    "offset": "166504"
+  }
+]

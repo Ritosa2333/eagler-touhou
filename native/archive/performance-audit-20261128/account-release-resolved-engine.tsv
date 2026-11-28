@@ -1,0 +1,11 @@
+META	3	0	0	1	D:/workspace/eagler/toolchains/flutter-stable/bin/cache/artifacts/engine/windows-x64-release\flutter_windows.dll.pdb	d7878747-e1df-406d-9b77ff1459176f1a
+SYMBOL	1559a	FlutterDesktopViewControllerDestroy	13	39	C:\b\s\w\ir\cache\builder\engine\src\flutter\shell\platform\windows\flutter_windows.cc	141
+SYMBOL	15cdf	FlutterDesktopMessengerSetCallback	38	170	C:\b\s\w\ir\cache\builder\engine\src\flutter\shell\platform\windows\flutter_windows.cc	450
+SYMBOL	16a5e	flutter::FlutterWindowsEngine::~FlutterWindowsEngine	50	978	C:\b\s\w\ir\cache\builder\engine\src\flutter\shell\platform\windows\flutter_windows_engine.cc	273
+SYMBOL	18239	flutter::FlutterWindowsEngine::Stop	83	174	C:\b\s\w\ir\cache\builder\engine\src\flutter\shell\platform\windows\flutter_windows_engine.cc	571
+SYMBOL	1ba08	flutter::FlutterWindowsEngine::~FlutterWindowsEngine	16	45	C:\b\s\w\ir\cache\builder\engine\src\flutter\shell\platform\windows\flutter_windows_engine.cc	270
+SYMBOL	48950	fml::MessageLoopImpl::DoRun	34	70	C:\b\s\w\ir\cache\builder\engine\src\flutter\fml\message_loop_impl.cc	99
+SYMBOL	4d4c6	fml::ThreadHandle::ThreadHandle::<lambda_1>::__invoke	30	85	C:\b\s\w\ir\cache\builder\engine\src\flutter\fml\thread.cc	48
+SYMBOL	4d644	std::_Func_impl_no_alloc<`lambda at ..\..\..\flutter\fml\thread.cc:148:7',void>::_Do_call	184	231	C:\b\s\w\ir\cache\builder\engine\src\flutter\third_party\depot_tools\win_toolchain\vs_files\27370823e7\VC\Tools\MSVC\14.34.31933\include\functional	833
+SYMBOL	525df	fml::MessageLoopWin::Run	77	185	C:\b\s\w\ir\cache\builder\engine\src\flutter\fml\platform\win\message_loop_win.cc	40
+SYMBOL	fa3f72	thread_start<unsigned int (__cdecl*)(void *),1>	90	112	minkernel\crts\ucrt\src\appcrt\startup\thread.cpp	97

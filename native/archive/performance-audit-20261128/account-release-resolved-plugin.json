@@ -1,0 +1,181 @@
+{
+  "scope": "Relink existing94object inputs with /MAP only, into isolated files. Machine code is byte-identical. Public map names identify nearby functions; no private PDB/source-line or exact function-boundary claim.",
+  "originalSha256": "2fac8755e40ffa0d7c56436bae16cdc51a58b3da25e8b2f1f61d1a53bd325c79",
+  "mappedSha256": "345ccdb746610caeb023771b33dc019b4c173d8ce00bc360a95bee679ad6b8fc",
+  "text": {
+    "bytes": 987648,
+    "sha256": "5b34f57fec79b996ccf2fa88532f47b75227d6a17fd714e98d1ae5a1e34f7337"
+  },
+  "equalSections": [
+    ".text",
+    ".data",
+    ".pdata",
+    ".rsrc",
+    ".reloc"
+  ],
+  "mapSha256": "92e4df00eabb10b4f513242d76f85fbdbe9b805f0425c831e558a07df9a64214",
+  "resolved": [
+    {
+      "thread": 60156,
+      "frame": 2,
+      "rva": "d9408",
+      "symbolRva": "0xd9390",
+      "displacement": 120,
+      "mapPublicSymbol": "?SetMessageHandler@BinaryMessengerImpl@flutter@@UEAAXAEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$function@$$A6AXPEBE_KV?$function@$$A6AXPEBE_K@Z@std@@@Z@4@@Z",
+      "object": "f   FLUTTER_WRAPPER_PLUGIN:core_implementations.obj"
+    },
+    {
+      "thread": 60156,
+      "frame": 3,
+      "rva": "214af",
+      "symbolRva": "0x21460",
+      "displacement": 79,
+      "mapPublicSymbol": "?SetMethodCallHandler@?$MethodChannel@VEncodableValue@flutter@@@flutter@@QEBAXAEBV?$function@$$A6AXAEBV?$MethodCall@VEncodableValue@flutter@@@flutter@@V?$unique_ptr@V?$MethodResult@VEncodableValue@flutter@@@flutter@@U?$default_delete@V?$MethodResult@VEncodableValue@flutter@@@flutter@@@std@@@std@@@Z@std@@@Z",
+      "object": "f i CHANNEL_DELEGATE.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 4,
+      "rva": "217c0",
+      "symbolRva": "0x217a0",
+      "displacement": 32,
+      "mapPublicSymbol": "?UnregisterMethodCallHandler@ChannelDelegate@flutter_inappwebview_plugin@@QEBAXXZ",
+      "object": "f   CHANNEL_DELEGATE.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 5,
+      "rva": "43bae",
+      "symbolRva": "0x43ba0",
+      "displacement": 14,
+      "mapPublicSymbol": "?dispose@FindInteractionChannelDelegate@flutter_inappwebview_plugin@@QEAAXXZ",
+      "object": "f   FIND_INTERACTION_CHANNEL_DELEGATE.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 6,
+      "rva": "44846",
+      "symbolRva": "0x44780",
+      "displacement": 198,
+      "mapPublicSymbol": "?dispose@FindInteractionController@flutter_inappwebview_plugin@@QEAAXXZ",
+      "object": "f   FIND_INTERACTION_CONTROLLER.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 7,
+      "rva": "75ee4",
+      "symbolRva": "0x75ad0",
+      "displacement": 1044,
+      "mapPublicSymbol": "??1InAppWebView@flutter_inappwebview_plugin@@QEAA@XZ",
+      "object": "f   IN_APP_WEBVIEW.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 8,
+      "rva": "b8ea7",
+      "symbolRva": "0xb8e90",
+      "displacement": 23,
+      "mapPublicSymbol": "?_Destroy@?$_Ref_count_resource@PEAVInAppWebView@flutter_inappwebview_plugin@@U?$default_delete@VInAppWebView@flutter_inappwebview_plugin@@@std@@@std@@EEAAXXZ",
+      "object": "f i IN_APP_WEBVIEW_MANAGER.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 9,
+      "rva": "3e6bd",
+      "symbolRva": "0x3e5c0",
+      "displacement": 253,
+      "mapPublicSymbol": "??1CustomPlatformView@flutter_inappwebview_plugin@@QEAA@XZ",
+      "object": "f   CUSTOM_PLATFORM_VIEW.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 10,
+      "rva": "b6586",
+      "symbolRva": "0xb6530",
+      "displacement": 86,
+      "mapPublicSymbol": "??$_Erase_tree@V?$allocator@U?$_Tree_node@U?$pair@$$CB_KV?$unique_ptr@VCustomPlatformView@flutter_inappwebview_plugin@@U?$default_delete@VCustomPlatformView@flutter_inappwebview_plugin@@@std@@@std@@@std@@PEAX@std@@@std@@@?$_Tree_val@U?$_Tree_simple_types@U?$pair@$$CB_KV?$unique_ptr@VCustomPlatformView@flutter_inappwebview_plugin@@U?$default_delete@VCustomPlatformView@flutter_inappwebview_plugin@@@std@@@std@@@std@@@std@@@std@@QEAAXAEAV?$allocator@U?$_Tree_node@U?$pair@$$CB_KV?$unique_ptr@VCustomPlatformView@flutter_inappwebview_plugin@@U?$default_delete@VCustomPlatformView@flutter_inappwebview_plugin@@@std@@@std@@@std@@PEAX@std@@@1@PEAU?$_Tree_node@U?$pair@$$CB_KV?$unique_ptr@VCustomPlatformView@flutter_inappwebview_plugin@@U?$default_delete@VCustomPlatformView@flutter_inappwebview_plugin@@@std@@@std@@@std@@PEAX@1@@Z",
+      "object": "f i IN_APP_WEBVIEW_MANAGER.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 11,
+      "rva": "b85aa",
+      "symbolRva": "0xb8540",
+      "displacement": 106,
+      "mapPublicSymbol": "??_GInAppWebViewManager@flutter_inappwebview_plugin@@UEAAPEAXI@Z",
+      "object": "f i IN_APP_WEBVIEW_MANAGER.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 12,
+      "rva": "1bb1f",
+      "symbolRva": "0x1ba30",
+      "displacement": 239,
+      "mapPublicSymbol": "??1FlutterInappwebviewWindowsPlugin@flutter_inappwebview_plugin@@UEAA@XZ",
+      "object": "f   FLUTTER_INAPPWEBVIEW_WINDOWS_PLUGIN.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 13,
+      "rva": "1bd54",
+      "symbolRva": "0x1bd40",
+      "displacement": 20,
+      "mapPublicSymbol": "??_GFlutterInappwebviewWindowsPlugin@flutter_inappwebview_plugin@@UEAAPEAXI@Z",
+      "object": "f i FLUTTER_INAPPWEBVIEW_WINDOWS_PLUGIN.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 14,
+      "rva": "d8158",
+      "symbolRva": "0xd8100",
+      "displacement": 88,
+      "mapPublicSymbol": "??$_Erase_tree@V?$allocator@U?$_Tree_node@V?$unique_ptr@VPlugin@flutter@@U?$default_delete@VPlugin@flutter@@@std@@@std@@PEAX@std@@@std@@@?$_Tree_val@U?$_Tree_simple_types@V?$unique_ptr@VPlugin@flutter@@U?$default_delete@VPlugin@flutter@@@std@@@std@@@std@@@std@@QEAAXAEAV?$allocator@U?$_Tree_node@V?$unique_ptr@VPlugin@flutter@@U?$default_delete@VPlugin@flutter@@@std@@@std@@PEAX@std@@@1@PEAU?$_Tree_node@V?$unique_ptr@VPlugin@flutter@@U?$default_delete@VPlugin@flutter@@@std@@@std@@PEAX@1@@Z",
+      "object": "f i FLUTTER_WRAPPER_PLUGIN:plugin_registrar.obj"
+    },
+    {
+      "thread": 60156,
+      "frame": 15,
+      "rva": "d8561",
+      "symbolRva": "0xd8540",
+      "displacement": 33,
+      "mapPublicSymbol": "?ClearPlugins@PluginRegistrar@flutter@@IEAAXXZ",
+      "object": "f   FLUTTER_WRAPPER_PLUGIN:plugin_registrar.obj"
+    },
+    {
+      "thread": 60156,
+      "frame": 16,
+      "rva": "19fa3",
+      "symbolRva": "0x19f80",
+      "displacement": 35,
+      "mapPublicSymbol": "??_GPluginRegistrarWindows@flutter@@UEAAPEAXI@Z",
+      "object": "f i FLUTTER_INAPPWEBVIEW_WINDOWS_PLUGIN_C_API.OBJ"
+    },
+    {
+      "thread": 60156,
+      "frame": 17,
+      "rva": "d80d8",
+      "symbolRva": "0xd8080",
+      "displacement": 88,
+      "mapPublicSymbol": "??$_Erase_tree@V?$allocator@U?$_Tree_node@U?$pair@QEAUFlutterDesktopPluginRegistrar@@V?$unique_ptr@VPluginRegistrar@flutter@@U?$default_delete@VPluginRegistrar@flutter@@@std@@@std@@@std@@PEAX@std@@@std@@@?$_Tree_val@U?$_Tree_simple_types@U?$pair@QEAUFlutterDesktopPluginRegistrar@@V?$unique_ptr@VPluginRegistrar@flutter@@U?$default_delete@VPluginRegistrar@flutter@@@std@@@std@@@std@@@std@@@std@@QEAAXAEAV?$allocator@U?$_Tree_node@U?$pair@QEAUFlutterDesktopPluginRegistrar@@V?$unique_ptr@VPluginRegistrar@flutter@@U?$default_delete@VPluginRegistrar@flutter@@@std@@@std@@@std@@PEAX@std@@@1@PEAU?$_Tree_node@U?$pair@QEAUFlutterDesktopPluginRegistrar@@V?$unique_ptr@VPluginRegistrar@flutter@@U?$default_delete@VPluginRegistrar@flutter@@@std@@@std@@@std@@PEAX@1@@Z",
+      "object": "f i FLUTTER_WRAPPER_PLUGIN:plugin_registrar.obj"
+    },
+    {
+      "thread": 60156,
+      "frame": 18,
+      "rva": "d8811",
+      "symbolRva": "0xd8780",
+      "displacement": 145,
+      "mapPublicSymbol": "?_Erase@?$_Tree@V?$_Tmap_traits@PEAUFlutterDesktopPluginRegistrar@@V?$unique_ptr@VPluginRegistrar@flutter@@U?$default_delete@VPluginRegistrar@flutter@@@std@@@std@@U?$less@PEAUFlutterDesktopPluginRegistrar@@@3@V?$allocator@U?$pair@QEAUFlutterDesktopPluginRegistrar@@V?$unique_ptr@VPluginRegistrar@flutter@@U?$default_delete@VPluginRegistrar@flutter@@@std@@@std@@@std@@@3@$0A@@std@@@std@@AEAA_KU?$pair@PEAU?$_Tree_node@U?$pair@QEAUFlutterDesktopPluginRegistrar@@V?$unique_ptr@VPluginRegistrar@flutter@@U?$default_delete@VPluginRegistrar@flutter@@@std@@@std@@@std@@PEAX@std@@PEAU12@@2@@Z",
+      "object": "f i FLUTTER_WRAPPER_PLUGIN:plugin_registrar.obj"
+    },
+    {
+      "thread": 60156,
+      "frame": 19,
+      "rva": "d86f6",
+      "symbolRva": "0xd8640",
+      "displacement": 182,
+      "mapPublicSymbol": "?OnRegistrarDestroyed@PluginRegistrarManager@flutter@@CAXPEAUFlutterDesktopPluginRegistrar@@@Z",
+      "object": "f   FLUTTER_WRAPPER_PLUGIN:plugin_registrar.obj"
+    }
+  ]
+}

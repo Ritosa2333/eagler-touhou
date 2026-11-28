@@ -1,0 +1,232 @@
+{
+  "sourceCommit": "e1db974f42bf3808498456c5c9745b4ac8b60bbf",
+  "scope": "Ordinary production main.dart AOT launched through its existing production-account deep-link entry. Only native runner size, nonactivation, isolated product metadata and timer markers differ. Each width is a separate process; not same-window resize or back-button acceptance.",
+  "unchangedProductSourceFiles": 113,
+  "windowsPackageSha256Unchanged": "2e39acda9dfe2b13c9dbb99b4219a53b7000200ef1d8724734eafd50b0d10e79",
+  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "pluginSha256": "2fac8755e40ffa0d7c56436bae16cdc51a58b3da25e8b2f1f61d1a53bd325c79",
+  "runs": [
+    {
+      "label": 390,
+      "pid": 58256,
+      "source": {
+        "scope": "Ordinary production AOT. Native diagnostic runner adds fixed initial width, no-activate display, isolated Windows product metadata and normal-close timer. No Dart, plugin or engine changes.",
+        "nominalOuterWidth": 390,
+        "isolatedCompany": "com.touhouonline.diagnostics",
+        "isolatedProduct": "account-release-390",
+        "launchUrl": "https://touhouonline.com/login.html?lang=zh-CN",
+        "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+        "engineSha256": "81d227453d4e34da29e399c62d615091ffc712e54fb2ec20010c1c95487e90b6",
+        "windowSourceSha256": "797e29bcacf60e540d84dc6562ad20441826ada554976a5374b4d667e6464e73",
+        "mainSourceSha256": "4fc6b7f0e1eee0f0688d816d5c23e9e1ed8c49eded5e76d08ba45d599a4e3476"
+      },
+      "clientPhysicalPixels": [
+        563,
+        1069
+      ],
+      "clientLogicalPixels": [
+        375.3333333333333,
+        712.6666666666666
+      ],
+      "dpi": 144,
+      "snapshotCount": 24,
+      "foregroundSnapshotCount": 0,
+      "observedContent": "Actual production login page, username/email and password fields, forgot-password link, login button and registration link visible; no credentials or UI input",
+      "screenshot": "account-release-login-390.jpg",
+      "screenshotFormat": "JPEG from Computer Use, bytes unchanged",
+      "screenshotPixels": [
+        378,
+        714
+      ],
+      "screenshotSha256": "aba2a9f6ea2f286ad7f71c1c4df52cd5c13eb2818ccb818e61bc9c476a85f55f",
+      "closeRequestedTick": 49662359,
+      "engineDestroyedMarker": false,
+      "kernelSignaledWithin140s": false,
+      "testOnlyForcedTermination": true,
+      "shutdownStatus": "crashed",
+      "applicationErrors": [
+        {
+          "timeUtc": "2026-11-28T06:03:30.5970296Z",
+          "provider": "Application Error",
+          "eventId": 1000,
+          "AppName": "account-390.exe",
+          "ModuleName": "flutter_windows.dll",
+          "ExceptionCode": "c000041d",
+          "FaultingOffset": "0000000000015cdf",
+          "ProcessId": "0xe390",
+          "ProcessCreationTime": "0x1dd7efde27e8fcf"
+        },
+        {
+          "timeUtc": "2026-11-28T06:03:21.8328855Z",
+          "provider": "Application Error",
+          "eventId": 1000,
+          "AppName": "account-390.exe",
+          "ModuleName": "flutter_windows.dll",
+          "ExceptionCode": "c0000005",
+          "FaultingOffset": "0000000000015cdf",
+          "ProcessId": "0xe390",
+          "ProcessCreationTime": "0x1dd7efde27e8fcf"
+        }
+      ],
+      "exitCodeRecorded": false
+    },
+    {
+      "label": 1280,
+      "pid": 57288,
+      "source": {
+        "scope": "Ordinary production AOT. Native diagnostic runner adds fixed initial width, no-activate display, isolated Windows product metadata and normal-close timer. No Dart, plugin or engine changes.",
+        "nominalOuterWidth": 1280,
+        "isolatedCompany": "com.touhouonline.diagnostics",
+        "isolatedProduct": "account-release-1280",
+        "launchUrl": "https://touhouonline.com/login.html?lang=zh-CN",
+        "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+        "engineSha256": "81d227453d4e34da29e399c62d615091ffc712e54fb2ec20010c1c95487e90b6",
+        "windowSourceSha256": "052b14e8e44394a675ec601785a79dc79c3f799bf4f87ba8e851b2255467ff61",
+        "mainSourceSha256": "092892738a28d363350ff1abff98b33ee6bc064a8bb0c12399c282958fcf8a90"
+      },
+      "clientPhysicalPixels": [
+        1898,
+        1069
+      ],
+      "clientLogicalPixels": [
+        1265.3333333333333,
+        712.6666666666666
+      ],
+      "dpi": 144,
+      "snapshotCount": 24,
+      "foregroundSnapshotCount": 0,
+      "observedContent": "Actual production login page, username/email and password fields, forgot-password link, login button and registration link visible; no credentials or UI input",
+      "screenshot": "account-release-login-1280.jpg",
+      "screenshotFormat": "JPEG from Computer Use, bytes unchanged",
+      "screenshotPixels": [
+        1268,
+        714
+      ],
+      "screenshotSha256": "410de3c6b3dade15f433c1408e4da50b12068a690b82cfcf60e224cf7b31d1fa",
+      "closeRequestedTick": 49729015,
+      "engineDestroyedMarker": false,
+      "kernelSignaledWithin140s": false,
+      "testOnlyForcedTermination": true,
+      "shutdownStatus": "crashed",
+      "applicationErrors": [
+        {
+          "timeUtc": "2026-11-28T06:04:36.4709636Z",
+          "provider": "Application Error",
+          "eventId": 1000,
+          "AppName": "account-1280.exe",
+          "ModuleName": "flutter_windows.dll",
+          "ExceptionCode": "c000041d",
+          "FaultingOffset": "0000000000015cdf",
+          "ProcessId": "0xdfc8",
+          "ProcessCreationTime": "0x1dd7efe0a3212f0"
+        },
+        {
+          "timeUtc": "2026-11-28T06:04:28.2588554Z",
+          "provider": "Application Error",
+          "eventId": 1000,
+          "AppName": "account-1280.exe",
+          "ModuleName": "flutter_windows.dll",
+          "ExceptionCode": "c0000005",
+          "FaultingOffset": "0000000000015cdf",
+          "ProcessId": "0xdfc8",
+          "ProcessCreationTime": "0x1dd7efe0a3212f0"
+        }
+      ],
+      "exitCodeRecorded": false
+    },
+    {
+      "label": 320,
+      "pid": 59656,
+      "source": {
+        "scope": "Ordinary production AOT. Native diagnostic runner adds fixed initial width, no-activate display, isolated Windows product metadata and normal-close timer. No Dart, plugin or engine changes.",
+        "nominalOuterWidth": 335,
+        "requestedContentWidth": 320,
+        "widthPolicy": "15logical pixels added to compensate observed22physical border pixels at144DPI; actual client dimensions must be verified from native logs",
+        "isolatedCompany": "com.touhouonline.diagnostics",
+        "isolatedProduct": "account-release-320",
+        "launchUrl": "https://touhouonline.com/login.html?lang=zh-CN",
+        "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+        "engineSha256": "81d227453d4e34da29e399c62d615091ffc712e54fb2ec20010c1c95487e90b6",
+        "windowSourceSha256": "985f7fad646d74ab18f9760ace564e93863b0bc7dd98834110f33fd8dc46db19",
+        "mainSourceSha256": "5b8a721261db6a69f0f6a996b419efe1df6d6dcc4d60ca1a98042434a141c509"
+      },
+      "clientPhysicalPixels": [
+        480,
+        1069
+      ],
+      "clientLogicalPixels": [
+        320.0,
+        712.6666666666666
+      ],
+      "dpi": 144,
+      "snapshotCount": 24,
+      "foregroundSnapshotCount": 0,
+      "observedContent": "Actual production login page, username/email and password fields, forgot-password link, login button and registration link visible; no credentials or UI input",
+      "screenshot": "account-release-login-320.jpg",
+      "screenshotFormat": "JPEG from Computer Use, bytes unchanged",
+      "screenshotPixels": [
+        323,
+        714
+      ],
+      "screenshotSha256": "b817d4a352471b47581d96feeafa356f50e94155ea2aaba693866fb199b578aa",
+      "closeRequestedTick": 49817921,
+      "engineDestroyedMarker": false,
+      "kernelSignaledWithin140s": true,
+      "testOnlyForcedTermination": false,
+      "shutdownStatus": "crashed",
+      "applicationErrors": [
+        {
+          "timeUtc": "2026-11-28T06:06:06.3881767Z",
+          "provider": "Application Error",
+          "eventId": 1000,
+          "AppName": "account-320.exe",
+          "ModuleName": "flutter_windows.dll",
+          "ExceptionCode": "c000041d",
+          "FaultingOffset": "0000000000015cdf",
+          "ProcessId": "0xe908",
+          "ProcessCreationTime": "0x1dd7efe3f921605"
+        },
+        {
+          "timeUtc": "2026-11-28T06:05:57.4028033Z",
+          "provider": "Application Error",
+          "eventId": 1000,
+          "AppName": "account-320.exe",
+          "ModuleName": "flutter_windows.dll",
+          "ExceptionCode": "c0000005",
+          "FaultingOffset": "0000000000015cdf",
+          "ProcessId": "0xe908",
+          "ProcessCreationTime": "0x1dd7efe3f921605"
+        }
+      ],
+      "exitCodeRecorded": false
+    }
+  ],
+  "stackIdentity": {
+    "uiThread": 60156,
+    "liveEngineOffset": "0x15cdf",
+    "exactPdbFunction": "FlutterDesktopMessengerSetCallback",
+    "sourceLine": 450,
+    "exactPdbModuleGuid": "d7878747-e1df-406d-9b77-ff1459176f1a",
+    "pluginMapTextEqual": true,
+    "pluginMapTextSha256": "5b34f57fec79b996ccf2fa88532f47b75227d6a17fd714e98d1ae5a1e34f7337"
+  },
+  "conclusions": [
+    "Production login rendered in all three observed windows",
+    "All three closes generated Application Error at the same engine offset during plugin teardown",
+    "Kernel termination alone is insufficient for successful exit: one process signaled after recorded native crashes",
+    "The new fault precedes engine-destroyed logging and differs from the earlier post-ExitProcess Intel-driver stack"
+  ],
+  "remaining": [
+    "Verify a shutdown candidate while engine messaging and WebView parent windows remain usable",
+    "Repeat actual ordinary Release closes and inspect both exit codes and Application Error records",
+    "Same-window resize, native back/close restoration, authentication, upload and cropping remain separate acceptance items",
+    "Screenshots show login only; no current registration or password-reset submission verified"
+  ],
+  "primarySources": [
+    "https://github.com/flutter/flutter/blob/ae9b586f34a8443573f82ef57c3bf914a908cbf7/engine/src/flutter/shell/platform/windows/flutter_windows_engine.cc#L270",
+    "https://github.com/flutter/flutter/blob/ae9b586f34a8443573f82ef57c3bf914a908cbf7/engine/src/flutter/shell/platform/windows/flutter_windows.cc#L442",
+    "https://github.com/pichillilorenzo/flutter_inappwebview/issues/2884",
+    "https://github.com/pichillilorenzo/flutter_inappwebview/issues/2896",
+    "https://learn.microsoft.com/en-us/cpp/build/reference/map-generate-mapfile"
+  ]
+}

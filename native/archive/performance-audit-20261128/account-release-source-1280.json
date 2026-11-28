@@ -1,0 +1,11 @@
+{
+  "scope": "Ordinary production AOT. Native diagnostic runner adds fixed initial width, no-activate display, isolated Windows product metadata and normal-close timer. No Dart, plugin or engine changes.",
+  "nominalOuterWidth": 1280,
+  "isolatedCompany": "com.touhouonline.diagnostics",
+  "isolatedProduct": "account-release-1280",
+  "launchUrl": "https://touhouonline.com/login.html?lang=zh-CN",
+  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "engineSha256": "81d227453d4e34da29e399c62d615091ffc712e54fb2ec20010c1c95487e90b6",
+  "windowSourceSha256": "052b14e8e44394a675ec601785a79dc79c3f799bf4f87ba8e851b2255467ff61",
+  "mainSourceSha256": "092892738a28d363350ff1abff98b33ee6bc064a8bb0c12399c282958fcf8a90"
+}

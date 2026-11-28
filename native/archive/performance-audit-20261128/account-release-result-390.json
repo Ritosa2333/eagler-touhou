@@ -1,0 +1,564 @@
+{
+  "pid": 58256,
+  "observations": [
+    {
+      "elapsedSeconds": 1.004789200000232,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 2.0169435999996495,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 3.0181750999981887,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 4.029365200003667,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 5.036564699999872,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 6.037178600003244,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 7.044894500002556,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 8.049293800002488,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 9.052870999999868,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 10.056500999999116,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 11.058757899998454,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 12.07093729999906,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 13.079418799999985,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 14.081188099997235,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 15.08953279999696,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 16.09811389999959,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 17.107452700001886,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 18.117491099998006,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 19.122359300003154,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 20.13239210000029,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 21.137523500001407,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 22.147594900001423,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 23.159402899997076,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 24.1659445999976,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 25.174380800002837,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 26.17987059999723,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 27.187569100002293,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 28.20245910000085,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 29.20951459999924,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 30.213492299997597,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 31.22447149999789,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 32.231728400001884,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 33.241846500000975,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 34.244577299999946,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 35.25126640000235,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 36.26149940000323,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 37.26373869999952,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 38.26934230000188,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 39.276039199998195,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 40.28806849999819,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 41.295220300002256,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 42.3041424999974,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 43.31233600000269,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 44.31870969999727,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 45.32951260000118,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 46.33712250000099,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 47.3428430999993,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 48.35067179999896,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 49.360901200001535,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 50.371654199996556,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 51.38518569999724,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 52.39949920000072,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 53.409227800002554,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 54.41578699999809,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 55.42711060000147,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 56.436454100003175,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 57.44644189999963,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 58.45604630000162,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 59.46931549999863,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 60.48162710000179,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 61.49277689999872,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 62.50017880000087,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 63.500611199997365,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 64.50946790000307,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 65.5175046000004,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 66.52938739999809,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 67.53720259999682,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 68.54861700000038,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 69.54951869999786,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 70.55952930000058,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 71.56748430000152,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 72.57691640000121,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 73.58130910000182,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 74.5903776999985,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 75.59686769999826,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 76.60232959999848,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 77.605604700002,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 78.61523450000095,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 79.6228340000016,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 80.62323060000199,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 81.62958210000215,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 82.63728509999783,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 83.6473690999992,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 84.65628580000339,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 85.66164019999997,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 86.67025770000328,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 87.67998380000063,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 88.69427369999903,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 89.70099170000321,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 90.70777120000275,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 91.71728540000186,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 92.72306730000128,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 93.72987439999997,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 94.7373649000001,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 95.74538900000334,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 96.75540059999912,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 97.76239429999987,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 98.77659909999784,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 99.78477430000203,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 100.79754829999729,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 101.81153910000285,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 102.82137389999843,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 103.83517150000262,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 104.84472300000198,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 105.85189399999945,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 106.86026680000214,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 107.87440819999756,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 108.87560680000024,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 109.88774320000084,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 110.90100979999988,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 111.91094739999971,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 112.92306909999752,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 113.93256210000254,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 114.94779600000038,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 115.95744589999958,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 116.96394999999757,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 117.96624000000156,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 118.97242169999663,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 119.98662579999655,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 120.99795409999933,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 122.00869550000061,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 123.02141429999756,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 124.0323236999975,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 125.04216199999792,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 126.05496660000063,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 127.06732139999804,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 128.07808600000135,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 129.08772779999708,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 130.09887719999824,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 131.11338139999862,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 132.12618320000183,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 133.13532269999996,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 134.14750040000217,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 135.16165660000115,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 136.16877840000234,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 137.17464530000143,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 138.1824024000016,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 139.1973610999994,
+      "kernelWait": 258
+    },
+    {
+      "elapsedSeconds": 140.20577339999727,
+      "kernelWait": 258
+    }
+  ],
+  "signaledWithin140s": false,
+  "forcedTermination": true,
+  "finalWait": 0
+}
