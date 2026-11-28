@@ -1,3 +1,4 @@
+#include <eagler/presentation/SdlFrameClock.hpp>
 #ifdef __EMSCRIPTEN__
 #include "ReplayManager.hpp"
 #include "ReplayExtension.hpp"
@@ -87,7 +88,7 @@ EMSCRIPTEN_KEEPALIVE const unsigned* eagler_replay_state(){
 EMSCRIPTEN_KEEPALIVE void eagler_replay_present(){if(g_GfxBackend)g_GfxBackend->SwapBuffers();}
 EMSCRIPTEN_KEEPALIVE int eagler_replay_step(unsigned present){
     const eagler::replay::DeferPresentation presentation(!present);
-    g_GameWindow.isAppActive=1;g_GameWindow.accumulator=1./60.;g_GameWindow.lastPerformanceCounter=SDL_GetPerformanceCounter();
+    g_GameWindow.isAppActive=1;g_GameWindow.accumulator=1./60.;g_GameWindow.lastPerformanceCounter=eagler::presentation::FrameCounter();
     const auto result=g_GameWindow.Render();if(g_ReplayManager&&(!g_ReplayManager->replayData||!g_ReplayManager->replayInputs))return reject("Native Replay input could not be loaded");if(g_ReplayManager)started=true;return result==RENDER_RESULT_KEEP_RUNNING;
 }
 }

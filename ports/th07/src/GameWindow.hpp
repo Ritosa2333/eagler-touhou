@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SDL3/SDL_timer.h>
+#include <eagler/presentation/SdlFrameClock.hpp>
 #include <SDL3/SDL_video.h>
 
 #include "ZunResult.hpp"
@@ -32,7 +32,7 @@ struct GameWindow
     void ResetAccumulator()
     {
         this->accumulator = 0.0;
-        g_LastPerfCounter = SDL_GetPerformanceCounter();
+        g_LastPerfCounter = eagler::presentation::FrameCounter();
     }
 
     SDL_Window *window;
