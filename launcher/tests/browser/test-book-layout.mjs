@@ -94,6 +94,37 @@ async function assertMasthead(page, width) {
   }
 }
 
+async function assertModeHover(page) {
+  const inactive = '.book-main-nav a:not([aria-current="page"])';
+  const active = '.book-main-nav a[aria-current="page"]';
+  const indicator = node => {
+    const line = getComputedStyle(node, '::after');
+    return {
+      scale: new DOMMatrixReadOnly(line.transform).a,
+      origin: parseFloat(line.transformOrigin),
+      transition: line.transitionProperty,
+      width: node.offsetWidth,
+    };
+  };
+  const initial = await page.$eval(inactive, indicator);
+  assert.equal(initial.scale, 0, 'inactive underline starts collapsed');
+  assert.equal(initial.origin, initial.width / 2, 'underline grows from the center');
+  assert.equal(initial.transition, 'transform');
+  await page.hover(inactive);
+  await page.waitForFunction(selector => {
+    const width = new DOMMatrixReadOnly(getComputedStyle(document.querySelector(selector), '::after').transform).a;
+    return width > 0 && width < 1;
+  }, {}, inactive);
+  assert.equal((await page.$eval(active, indicator)).scale, 1, 'the active tab stays marked while the other is hovered');
+  await page.waitForFunction(selector => new DOMMatrixReadOnly(getComputedStyle(document.querySelector(selector), '::after').transform).a === 1, {}, inactive);
+  assert.equal((await page.$eval(inactive, indicator)).width, initial.width, 'hover does not resize the tab');
+  await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
+  await page.mouse.move(1, 100);
+  assert.equal((await page.$eval(inactive, indicator)).scale, 0);
+  assert.equal((await page.$eval(inactive, indicator)).transition, 'none');
+  await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);
+}
+
 async function assertInboxMotion(page) {
   const action = section => `.masthead-inbox-action[data-inbox-section="${section}"]`;
   const announcements = action('announcements');
@@ -290,6 +321,7 @@ try {
     assert.equal(coverGrid.columns, columns, `${width}px cover grid column count`);
     console.log(`Cover grid at ${width}px: ${coverGrid.columns} covers per row, ${Math.round(coverGrid.coverWidth)}px per cover`);
   }
+  await assertModeHover(resize);
   await assertInboxMotion(resize);
   await resize.setViewport({width: 1440, height: 540});
   await resize.waitForSelector('#bookRecentTitle', {visible:true});

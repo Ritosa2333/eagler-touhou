@@ -107,8 +107,8 @@
   .book-masthead .book-main-nav :is([aria-current="page"], [aria-pressed="true"]) {
     color: var(--kit-foreground);
   }
-  .book-masthead .book-main-nav :is(a,button)::after {content:"";position:absolute;inset:auto 0 0;height:2px;background:currentColor;opacity:0;transition:opacity var(--ui-micro-duration) var(--ui-micro-easing)}
-  .book-masthead .book-main-nav :is([aria-current="page"],[aria-pressed="true"],:focus-visible)::after {opacity:1}
+  .book-masthead .book-main-nav :is(a,button)::after {content:"";position:absolute;inset:auto 0 0;height:2px;background:currentColor;transform:scaleX(0);transform-origin:center;transition:transform 420ms cubic-bezier(.22,.7,.2,1)}
+  .book-masthead .book-main-nav :is([aria-current="page"],[aria-pressed="true"],:focus-visible)::after {transform:scaleX(1)}
   .book-main-nav button:disabled {
     opacity: 0.45;
     cursor: default;
@@ -252,7 +252,7 @@
   .book-masthead :is(.masthead-action:not(.masthead-menu-toggle),.masthead-link) {
     transition:background-color 320ms ease, color 320ms ease, border-color 320ms ease;
   }
-  .book-masthead .book-main-nav :is(a,button):not(:disabled):hover::after {opacity:1}
+  .book-masthead .book-main-nav :is(a,button):not(:disabled):hover::after {transform:scaleX(1)}
 }
 @media (prefers-reduced-motion:reduce) {
   .book-masthead .book-main-nav :is(a,button),.book-masthead .book-main-nav :is(a,button)::after,.book-masthead :is(.masthead-action,.masthead-link) {transition:none}
