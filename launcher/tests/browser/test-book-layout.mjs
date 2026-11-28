@@ -72,6 +72,7 @@ async function assertMasthead(page, width) {
       wordmarkGlyphCenter: wordmark.top + wordmark.height * 80.5 / 140,
       gutters: [groups[0].left - headerBounds.left, headerBounds.right - groups.at(-1).right],
       navOffset: (navBounds.left + navBounds.right - headerBounds.left - headerBounds.right) / 2,
+      navCenter: center(header.querySelector('.book-main-nav')),
       activeFill: navigation.length ? getComputedStyle(active).backgroundColor : null,
       fits: groups.every((bounds,index) => bounds.left >= headerBounds.left - 1 &&
         bounds.right <= headerBounds.right + 1 && (index === 0 || groups[index-1].right <= bounds.left + 1)),
@@ -101,11 +102,11 @@ async function assertMasthead(page, width) {
       Math.abs(h - expectedSize) < .25 && Math.abs(center - layout.wordmarkGlyphCenter) < .5),
     'Desktop glyphs share the scale and optical center of the wordmark ascender');
     if (width > 960) {
-      const navSize = layout.wordmarkWidth * .19;
-      assert.deepEqual(layout.navFonts,[20,20]);
+      const navSize = layout.wordmarkWidth * .205;
+      assert.deepEqual(layout.navFonts,[21,21]);
       assert.equal(layout.navGlyphs.length,2);
       assert.ok(layout.navGlyphs.every(([w,h,center]) => Math.abs(w-navSize)<.25 && Math.abs(h-navSize)<.25 &&
-        Math.abs(center-layout.wordmarkGlyphCenter)<.5), 'The primary modes share larger, optically aligned icons');
+        Math.abs(center-layout.navCenter)<.5), 'The primary modes share larger icons centered vertically in the row');
     }
     assert.equal(layout.navGap, 0, 'the navigation indicators can meet edge to edge');
     assert.equal(layout.underline, layout.foreground, 'the underline uses the theme foreground instead of the accent');
@@ -422,6 +423,33 @@ try {
     return recent.getBoundingClientRect().left === all.getBoundingClientRect().left &&
       getComputedStyle(recent).font === getComputedStyle(all).font && !recent.querySelector('svg');
   }),true,'shelf headings use the same typography and left edge');
+  assert.deepEqual(await resize.evaluate(() => {
+    const recent = document.querySelector('.book-recent-link');
+    const cover = document.querySelector('.book-card');
+    const root = document.documentElement;
+    const context = document.createElement('canvas').getContext('2d');
+    const backgroundOf = node => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = getComputedStyle(node).backgroundColor;
+      context.fillRect(0, 0, 1, 1);
+      return Array.from(context.getImageData(0, 0, 1, 1).data);
+    };
+    const defaultBackground = backgroundOf(recent);
+    const update = settings => {
+      localStorage.setItem('eagler.background.settings', JSON.stringify(settings));
+      window.dispatchEvent(new Event('eagler-background-settings-change'));
+    };
+    recent.style.transition = 'none';
+    update({mode:'dots', card:68});
+    const adjusted = backgroundOf(recent), matches = adjusted.join() === backgroundOf(cover).join();
+    const hadBackground = root.hasAttribute('data-custom-background');
+    update({mode:'plain', card:31});
+    const plain = backgroundOf(recent);
+    localStorage.removeItem('eagler.background.settings');
+    window.dispatchEvent(new Event('eagler-background-settings-change'));
+    recent.style.removeProperty('transition');
+    return [defaultBackground[3], adjusted[3], plain[3], matches, hadBackground];
+  }),[224,173,79,true,true],'recent cards use the theme card surface with or without a custom background');
   const publishedCard = await resize.waitForSelector(pc98Cards, {visible: true});
   const product = await publishedCard.evaluate(link => link.dataset.bookProduct);
   const card = `#bookGameGrid [data-book-product="${product}"]`;

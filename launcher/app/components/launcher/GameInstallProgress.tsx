@@ -27,6 +27,14 @@ const shortcutState = (value: ReturnType<GameDownloads['getSnapshot']>) => ({
   active: value.active !== null, pending: value.pending.length, percent: gameDownloadProgress(value).percent,
 });
 
+const activeInstallPercent = (value: ReturnType<GameDownloads['getSnapshot']>) =>
+  value.active ? gameDownloadProgress(value).percent : null;
+
+export function GameInstallSidebarProgress({downloads}: Pick<InstallProps, 'downloads'>) {
+  const percent = useStoreSelector(downloads, activeInstallPercent);
+  return percent === null ? null : <span className="book-sidebar-footer-progress">{percent}%</span>;
+}
+
 export function GameInstallShortcut({downloads, assetUrl}: InstallProps) {
   const section = useLauncherSection(), {locale, t} = useLocale();
   const {active, pending, percent} = useStoreSelector(downloads, shortcutState, shallowEqual);

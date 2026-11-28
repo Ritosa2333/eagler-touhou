@@ -80,8 +80,12 @@ export function RoomWorkspace(props: RoomViewProps) {
   const checking = context.checking && preparation?.status !== 'failed' && preparation?.status !== 'cancelled';
   const startingSpectator = state.spectatorRequested && state.launchBusy && preparation?.status === 'ready' && !context.launched;
   const launching = !!context.launchStage || startingSpectator || checking;
-  const loading = launching || preparation?.status === 'preparing' || preparation?.status === 'importing';
-  const showPreparation = !props.reloadPending && (launching || !(context.previewReady || context.launched));
+  const preparing = preparation?.status === 'preparing' || preparation?.status === 'importing';
+  const awaitingRoom = !room.synced && preparation?.status !== 'failed' && preparation?.status !== 'cancelled';
+  const connecting = awaitingRoom && !launching && !preparing;
+  const loading = launching || preparing || awaitingRoom;
+  const showPreparation = !props.reloadPending && (launching || awaitingRoom || !(context.previewReady || context.launched));
+  const connectionText = !ready ? roomConnectionMessage(state,t) : '';
   const loadingText = t(context.launchStage === 'path' ? 'multiplayer.connection' : checking ? 'multiplayer.checkingGame' :
     startingSpectator || context.launchStage && state.spectatorRequested ? 'room.loadingSpectator' : context.launchStage ? 'room.preparingRuntime' :
     loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : preparation?.status === 'cancelled' ? 'room.resourcesCancelled' : 'room.resourcesUnavailable');
@@ -160,8 +164,9 @@ export function RoomWorkspace(props: RoomViewProps) {
       </section>}
       <div className="room-workspace-preparation" role="status" data-preview-ready={context.previewReady || context.launched || undefined} hidden={!showPreparation}>
         <div className="room-preparation-caption">
-          {loading && showPreparation ? <LoadingActivity assetUrl={assetUrl} status={loadingText} context="multiplayer"/> : <strong>{loadingText}</strong>}
-          <span id="mpRoomConnection">{!ready && roomConnectionMessage(state,t)}</span>
+          {loading && showPreparation ? <LoadingActivity assetUrl={assetUrl} status={connecting ? connectionText : loadingText}
+            context="multiplayer" statusId={connecting ? 'mpRoomConnection' : undefined}/> : <strong>{loadingText}</strong>}
+          {!connecting && <span id="mpRoomConnection">{connectionText}</span>}
           <RoomProgress state={state} service={service} transfer={context.transfer} showLabel={preparation?.status !== 'failed' && preparation?.status !== 'cancelled'}/>
           {preparation?.error && preparation.error !== loadingText && <p>{preparation.error}</p>}
         </div>

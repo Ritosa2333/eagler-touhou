@@ -3658,17 +3658,34 @@ for(const presented of [true,false])test(`room ready requires native game menu p
  else assert.notEqual(node('#mpRoomResourceLabel').textContent,'Game loaded');
 });
 
-test('room resources can become ready when the Runtime has no native lobby preview',async()=>{
+test('room loading stays visible until the initial roster sync when resources are already ready',async()=>{
  const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
  const invite=api.encodeRoomInvite({g:'th09mp',r:'1234',f:true,a:'join',s:true});
  const f=await mountBrowser({initial:'/?j='+invite,host,autoReady:false,socketBoundary:true,seedPackages:['th09']});
  const session=api.getTestSession();
  await until(()=>!!f.native?.envelope,'native program loading',15_000);
+ const loader=node('.room-workspace-preparation .loading-activity');
+ assert.equal(loader.dataset.loadingContext,'multiplayer');
+ assert.ok(loader.querySelector('[data-loading-scene]'));
+ assert.ok(loader.querySelector('.loading-activity-tip span').textContent);
  f.holdRoomPreview=true;
  await React.act(async()=>f.native.emit('ready'));
  await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','prepared without a title preview');
  assert.equal(session.getRuntime().getSnapshot().phase,'prepared');
  assert.equal(f.outbound.some(message=>message.command==='prepare-room'),false);
+ assert.equal(node('.room-workspace-preparation .loading-activity'),loader);
+ const waiting=session.room.service.getSnapshot().room;
+ assert.equal(waiting.synced,false);
+ assert.equal(node('#mpRoomConnection').textContent,api.translate(session.getSnapshot().locale,
+  waiting.connection === 'reconnecting' ? 'multiplayer.reconnecting' : 'multiplayer.connectingRoom'));
+ const socket=f.sockets.at(-1);
+ await React.act(async()=>socket.open());
+ assert.equal(node('#mpRoomConnection').textContent,api.translate(session.getSnapshot().locale,'multiplayer.syncingMembers'));
+ await React.act(async()=>socket.message({type:'state',room:{
+  code:'1234',playerCount:2,difficulty:1,phase:'lobby',inputDelay:0,startSerial:0,seats:[null,null],spectators:[],
+ }}));
+ assert.equal(session.room.service.getSnapshot().room.synced,true);
+ assert.equal(loader.isConnected,false,'the initial room snapshot removes the animation');
 });
 
 test('ordinary game loading reports success only after its first frame',async()=>{

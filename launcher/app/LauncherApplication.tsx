@@ -87,6 +87,7 @@ export interface LauncherHost {
   masthead: ReactNode;
   librarySearchTarget?: HTMLElement | null;
   installsPage?: ReactNode;
+  installProgress?: ReactNode;
   launcherPreferences?: LauncherPreferencesProps;
   lobby: LobbyPresentation;
   renderLobby?(props: LobbySurfaceProps): ReactNode;
@@ -420,6 +421,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             onActivate={activate}
             masthead={null}
             mobileSearchTarget={host.librarySearchTarget}
+            installProgress={host.installProgress}
             active={showLibrary}
             optionsOpen={!inlineProduct && presence.open}
             compact={compact}

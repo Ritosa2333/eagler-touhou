@@ -204,7 +204,7 @@
     box-sizing: border-box;
     border: 1px solid transparent;
     border-radius: 8px;
-    background: transparent;
+    background: var(--book-card-surface);
     color: var(--kit-foreground);
     text-decoration: none;
     transition:
@@ -212,7 +212,7 @@
       border-color 320ms ease;
   }
   .book-recent-link:is(:hover, :focus-visible) {
-    background: var(--kit-muted);
+    border-color: var(--kit-border);
   }
   .book-recent-link:focus-visible {
     outline: 2px solid var(--kit-ring);
@@ -647,6 +647,12 @@
 }
 .book-sidebar-footer-link.ui-kit-button > span {
   color: var(--kit-muted-foreground);
+}
+.book-sidebar-footer-progress {
+  flex: none;
+  margin-inline-start: auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 .book-sidebar-footer-link.ui-kit-button > svg {
   width: 26px;

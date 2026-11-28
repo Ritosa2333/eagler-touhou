@@ -40,6 +40,15 @@ async function verifyBootLoading(path, preloadId, draw, expected) {
     await page.waitForSelector(tip);
     const scene = `${activity} [data-loading-scene="${expected}"]`;
     await page.waitForSelector(scene,{visible:true});
+    const stinger = `${activity} [data-loading-stinger]`;
+    if (expected === 'umbrella') {
+      await page.$eval(stinger, node => {
+        const animation = node.getAnimations().find(animation => animation.animationName === 'loading-stinger-window');
+        if (animation.effect.getTiming().delay !== 10000) throw new Error('The first stinger should wait ten seconds');
+        animation.finish();
+      });
+      await page.waitForFunction(selector => getComputedStyle(document.querySelector(selector)).animationDelay === '27.9s',{},stinger);
+    }
     await page.waitForFunction(selector => {
       const faces = [...document.querySelectorAll(`${selector} img`)];
       return faces.length > 0 && faces.every(face => face.complete && face.naturalWidth > 0);
@@ -52,13 +61,6 @@ async function verifyBootLoading(path, preloadId, draw, expected) {
     await page.evaluate(() => window.tipClock.tick());
     const next = await read();
     assert.notEqual(next,initial);
-    const stinger = `${activity} [data-loading-stinger]`;
-    if (expected === 'umbrella') {
-      assert.equal(await page.$eval(stinger, node => getComputedStyle(node).animationDelay),'10s');
-      await page.$eval(stinger, node => node.getAnimations().find(animation => animation.animationName === 'loading-stinger-window').finish());
-      await page.waitForFunction(selector => getComputedStyle(document.querySelector(selector)).animationDelay === '27.900s' ||
-        getComputedStyle(document.querySelector(selector)).animationDelay === '27.9s',{},stinger);
-    }
     await page.$eval(`#${preloadId}`, node => node.classList.add('is-done'));
     assert.ok(await page.$eval(scene, element => element.getAnimations({subtree:true}).every(animation => animation.playState === 'paused')));
     if (expected === 'umbrella') assert.equal(await page.$eval(stinger, node => node.getAnimations({subtree:true}).length),0);
@@ -68,8 +70,63 @@ async function verifyBootLoading(path, preloadId, draw, expected) {
   } finally {await page.close();}
 }
 
+async function verifyRoomLoading() {
+  const page = await browser.newPage();
+  try {
+    await page.setViewport({width:1280,height:800});
+    await page.evaluateOnNewDocument(() => {
+      localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1');
+      Math.random = () => .1;
+      const NativeSocket = window.WebSocket;
+      class RoomFixture extends EventTarget {
+        readyState = 0;
+        send() {}
+        close() {this.readyState = 3;}
+        reject() {
+          this.close();
+          this.dispatchEvent(new CloseEvent('close', {code:4004}));
+        }
+      }
+      window.WebSocket = class extends NativeSocket {
+        constructor(url, protocols) {
+          if (new URL(url).searchParams.has('room')) {
+            window.roomFixture = new RoomFixture();
+            return window.roomFixture;
+          }
+          super(url, protocols);
+        }
+      };
+    });
+    const host = new URL(origin).origin;
+    await page.setRequestInterception(true);
+    page.on('request', request => {
+      const url = new URL(request.url());
+      if (url.pathname.endsWith('.package.json') || url.pathname.startsWith('/runtime/')) return;
+      void (url.origin === host || url.protocol === 'data:' || url.protocol === 'blob:' ? request.continue() : request.abort());
+    });
+    await page.goto(new URL('./?game=th06mp&mpRoom=1234&lang=zh-CN',origin).href,{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(() => window.roomFixture);
+    const activity = '.room-workspace-preparation .loading-activity[data-loading-context="multiplayer"]';
+    await page.waitForSelector(activity,{visible:true});
+    await page.waitForFunction(selector => {
+      const scene = document.querySelector(`${selector} [data-loading-scene]`);
+      return scene?.getBoundingClientRect().width > 0 &&
+        [...scene.querySelectorAll('img')].every(image => image.complete && image.naturalWidth > 0) &&
+        scene.getAnimations({subtree:true}).some(animation => animation.playState === 'running') &&
+        !!document.querySelector(`${selector} .loading-activity-tip span`)?.textContent;
+    },{},activity);
+    await page.evaluate(() => window.roomFixture.reject());
+    await page.waitForFunction(() => location.pathname.endsWith('/lobby.html'));
+    await page.waitForSelector(activity,{hidden:true});
+  } finally {await page.close();}
+}
+
 try {
-  await Promise.all([verifyBootLoading('./?lang=zh-CN','eaglerPreload',0,'shrine'), verifyBootLoading('lobby.html?lang=zh-CN','lobbyPreload',.79,'umbrella')]);
+  await Promise.all([
+    verifyBootLoading('./?lang=zh-CN','eaglerPreload',0,'shrine'),
+    verifyBootLoading('lobby.html?lang=zh-CN','lobbyPreload',.79,'umbrella'),
+  ]);
+  await verifyRoomLoading();
   const page = await browser.newPage();
   await controlTipClock(page);
   const errors = [];
@@ -360,6 +417,16 @@ try {
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
   await page.evaluate(() => document.body.classList.add('less-motion'));
   assert.deepEqual((await snapshot()).dots.map(([dot,motion]) => [dot,motion]),Array(3).fill(['.','none']));
+  await page.setViewport({width:1280,height:800});
+  await page.goto(new URL('ui-review.html#feedback',origin).href,{waitUntil:'domcontentloaded'});
+  await page.waitForSelector('.ui-review-header .book-theme-toggle:not(:disabled)');
+  await page.evaluate(() => document.fonts.ready);
+  await page.locator('button::-p-text(演示加载)').click();
+  const handbookActivity = '#feedback .loading-activity';
+  await page.waitForSelector(handbookActivity,{visible:true});
+  assert.ok(await page.$(`${handbookActivity} [data-loading-scene]`));
+  await page.locator('button::-p-text(结束演示)').click();
+  await page.waitForSelector(handbookActivity,{hidden:true});
   assert.deepEqual(errors,[]);
-  console.log('PASS loading previews: casting, five-second tip rotation before and after hydration, narrow layout and reduced motion');
+  console.log('PASS loading scenes: startup, live room preparation, handbook preview, tip rotation, narrow layout and reduced motion');
 } finally {await browser.close();}

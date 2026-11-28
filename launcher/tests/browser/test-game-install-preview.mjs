@@ -13,6 +13,7 @@ try {
   await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
   const menuEntry = '#mastheadMenuPanel a[href*="section=installs"]';
   const railEntry = '.book-sidebar-footer a[href*="section=installs"]';
+  const railProgress = `${railEntry} .book-sidebar-footer-progress`;
   const menuToggle = '#mastheadMenuToggle:not(:disabled)';
   const openDownloads = async width => {
     if (width === 390) {
@@ -31,6 +32,7 @@ try {
     await page.waitForSelector('#eaglerPreload', {hidden:true});
     const entryUrl = page.url();
     if (width === 1440) {
+      assert.equal(await page.$(railProgress), null, 'the sidebar has no percent while idle');
       assert.equal(await page.$eval(railEntry, link => {
         const sidebar = link.closest('.book-sidebar');
         const list = sidebar.querySelector('nav');
@@ -75,6 +77,10 @@ try {
       getComputedStyle(fill).backgroundImage.startsWith('linear-gradient');
   });
   await page.waitForSelector('#launch [aria-valuenow]');
+  await page.waitForFunction(selector => {
+    const percent = document.querySelector('#launch [aria-valuenow]')?.getAttribute('aria-valuenow');
+    return Number(percent) > 0 && document.querySelector(selector)?.textContent === `${percent}%`;
+  }, {}, railProgress);
   assert.deepEqual(await size(), idleSize);
   await page.waitForFunction(() => {
     const button = document.querySelector('#launch');
@@ -93,6 +99,7 @@ try {
   await page.waitForSelector('.game-install-empty', {timeout:30000});
   await page.locator('.game-install-page .launcher-back').click();
   await page.waitForFunction(() => document.querySelector('#launchText')?.textContent === '开始游戏');
+  assert.equal(await page.$(railProgress), null, 'the sidebar clears completed progress');
   assert.equal(await page.$eval('#launch', button => button.disabled), true, 'simulated installs do not enable actual play');
   await page.locator('#installPreviewAgain').click();
   await page.waitForSelector('#launch [aria-valuenow]');
@@ -101,8 +108,9 @@ try {
   await page.waitForSelector('.game-install-empty');
   await page.locator('.game-install-page .launcher-back').click();
   await page.waitForFunction(() => document.querySelector('#launchText')?.textContent === '安装游戏');
+  assert.equal(await page.$(railProgress), null, 'the sidebar clears cancelled progress');
   assert.deepEqual(resources, []);
-  console.log('PASS: desktop sidebar and mobile menu entries, back, full-button progress, repeat, cancel, and no game-resource requests');
+  console.log('PASS: sidebar and mobile entries, synchronized sidebar/button progress, repeat, cancel, and no game-resource requests');
 } finally {
   await browser.close();
 }

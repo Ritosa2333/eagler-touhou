@@ -77,7 +77,7 @@
     object-fit: contain;
   }
   .book-masthead .book-main-nav {
-    --masthead-icon-size: calc(var(--masthead-wordmark-width) * .19);
+    --masthead-icon-size: calc(var(--masthead-wordmark-width) * .205);
     grid-column: 2;
     grid-row: 1;
     align-self: stretch;
@@ -98,7 +98,7 @@
     border: 0;
     background: transparent;
     color: var(--kit-muted-foreground);
-    font: 600 20px / 1.2 var(--kit-font);
+    font: 600 21px / 1.2 var(--kit-font);
     letter-spacing: normal;
     text-decoration: none;
     cursor: pointer;
@@ -190,7 +190,7 @@
   }
   @media (780px < width <= 960px) {
     .book-masthead .book-main-nav .book-navigation-icon {display:none}
-    .book-masthead .book-main-nav :is(a,button) {padding-inline:12px;font-size:16px}
+    .book-masthead .book-main-nav :is(a,button) {padding-inline:12px;font-size:17px}
   }
   @media (max-width: 780px) {
     .masthead.book-masthead:not([data-mobile-header="true"]) {display:none}
@@ -229,8 +229,7 @@
   box-shadow:none;
 }
 .book-masthead :is(.masthead-action,.book-main-nav a) > svg {width:var(--masthead-icon-size);height:var(--masthead-icon-size)}
-.book-masthead :is(.masthead-action,.book-main-nav a) > :is(svg,.masthead-action-label),
-.book-masthead .book-main-nav a > span {translate:0 var(--masthead-icon-offset)}
+.book-masthead .masthead-action > :is(svg,.masthead-action-label) {translate:0 var(--masthead-icon-offset)}
 .book-masthead .masthead-account-entry {gap:8px;width:auto;min-width:var(--masthead-control-size);padding:0 10px;max-width:144px}
 .masthead-action-label {display:none}
 @media (min-width: 1440px) {

@@ -47,6 +47,7 @@ type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
   homeHref: string;
   compact?: boolean;
   mobileSearchTarget?: HTMLElement | null;
+  installProgress?: ReactNode;
   detail?: ReactNode;
   onBrowse?: () => void;
 };
@@ -63,7 +64,7 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 const defaultDisclosures = {windows: true, versus: true, fighting: true};
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, mobileSearchTarget, detail, onBrowse, homeHref }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, mobileSearchTarget, detail, onBrowse, homeHref, installProgress }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
   const showDetail = !compact && detail != null;
@@ -227,6 +228,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
           <AppLink href={launcherSectionHref(homeHref, 'installs')} rememberEntry>
             <Download aria-hidden="true"/>
             <span>{t('downloadTasks.pageTitle')}</span>
+            {installProgress}
           </AppLink>
         </Button>}
         search={{query, inputRef:input, id:'librarySearch', controls:showDetail ? undefined : 'bookGameGrid',

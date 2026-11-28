@@ -25,7 +25,7 @@ import {FirstUseNotice, DonationDialog, AppleRefreshDialog,
   type FirstUseNoticeHandle} from './components/notices';
 import {GameDataImportWindows} from './components/player/GameDataImportWindows';
 import {LoadingActivity} from './ui/loading-activity';
-import {GameInstallPage, GameInstallShortcut} from './components/launcher/GameInstallProgress';
+import {GameInstallPage, GameInstallShortcut, GameInstallSidebarProgress} from './components/launcher/GameInstallProgress';
 import {BeautyPackManager} from './components/launcher/BeautyPackManager';
 import {MultiplayerQuickChat} from './components/player/MultiplayerQuickChat';
 import {PlayerControls} from './components/player/PlayerControls';
@@ -93,6 +93,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     installsPage: <GameInstallPage downloads={session.downloads} assetUrl={assetUrl}>
       <SessionBeautyPacks session={session} products={products}/>
     </GameInstallPage>,
+    installProgress: <GameInstallSidebarProgress downloads={session.downloads}/>,
     locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, preferences: session.preferences, touchLayout: session.touchLayout,
     settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions, readLocalSaves:session.readLocalSaves, cloudSync:session.cloudSync,
     watchTh09Replay: session.accessTh09MatchReplay,
