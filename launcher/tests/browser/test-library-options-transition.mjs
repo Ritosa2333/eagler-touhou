@@ -7,141 +7,108 @@ const browser = await puppeteer.launch({headless:true, executablePath:await find
 try {
   for (const width of [1440, 390]) {
     const page = await browser.newPage();
-    const compact = width < 780;
-    const surface = '.launcher-page-surface';
-    const primaryNav = compact ? '.launcher-bottom-navigation' : '.book-main-nav';
-    const gameLink = '#bookGameGrid .book-game-link';
-    const detailBack = compact ? '.mobile-game-view #libraryBack' : '.book-game-detail-back';
-    const errors = [];
-    page.on('pageerror', error => errors.push(error.message));
     await page.setViewport({width, height:900});
     await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
     await page.goto(origin, {waitUntil:'domcontentloaded'});
     await page.waitForFunction(() => window.__eaglerBoot?.done && document.querySelector('.launcher-page-surface[data-page="library"]'));
-    await page.$eval(surface, node => {
-      const state = window.navigationProbe = {surface:node, fades:[], railFades:[], paneFades:[], snapshots:0, clickedDuringFade:[]};
-      const animate = Element.prototype.animate;
-      Element.prototype.animate = function (keyframes, options) {
-        const animation = animate.call(this, keyframes, options);
-        if (this.matches('.book-content, .lobby-rooms-column')) state.fades.push({
-          target:this, page:this.closest('.launcher-page-surface').dataset.page, duration:animation.effect.getTiming().duration,
-        });
-        if (this.matches('.book-sidebar nav')) state.railFades.push({
-          page:this.closest('.launcher-page-surface').dataset.page, categories:this.children.length,
-        });
-        if (this.matches('.book-game-detail, .book-content-main')) state.paneFades.push({
-          detail:this.matches('.book-game-detail'), frames:animation.effect.getKeyframes(), duration:animation.effect.getTiming().duration,
-        });
-        return animation;
+    await page.evaluate(() => {
+      window.pageSnapshots = [];
+      const start = document.startViewTransition.bind(document);
+      document.startViewTransition = (...args) => {
+        const transition = start(...args);
+        void transition.ready.then(() => {
+          const root = document.documentElement;
+          const participants = [root, ...document.querySelectorAll('.book-masthead,.launcher-page-surface')];
+          window.pageSnapshots.push({
+            names: participants.map(node => getComputedStyle(node).viewTransitionName).filter(name => name !== 'none'),
+            duration: getComputedStyle(root, '::view-transition-new(launcher-page)').animationDuration,
+          });
+        }, () => {});
+        return transition;
       };
-      if (document.startViewTransition) {
-        const start = document.startViewTransition.bind(document);
-        document.startViewTransition = (...args) => {
-          state.snapshots++;
-          return start(...args);
-        };
-      }
-      document.addEventListener('click', event => {
-        const link = event.target.closest('.book-main-nav a');
-        if (link && state.fades.at(-1)?.target.getAnimations().some(animation => animation.playState === 'running')) {
-          state.clickedDuringFade.push(link.matches('.book-lobby-link') ? 'lobby' : 'library');
-        }
-      }, true);
     });
-    const click = async selector => {
-      await page.waitForSelector(selector, {visible:true});
-      await page.click(selector);
-    };
-    const settle = () => page.$eval(surface, async node => {
-      await Promise.allSettled(node.getAnimations({subtree:true}).filter(animation => animation.effect?.target.matches('.book-content, .lobby-rooms-column, .book-sidebar nav')).map(animation => animation.finished));
-    });
-    const counts = () => page.evaluate(() => ({
-      fades:window.navigationProbe.fades.length, snapshots:window.navigationProbe.snapshots,
-    }));
-    async function navigate(destination) {
-      const index = destination === 'library' ? 1 : 2;
-      await click(primaryNav + ' a:nth-child(' + index + ')');
-      await page.waitForSelector(surface + '[data-page="' + destination + '"]');
-    }
+    const settle = () => page.waitForFunction(() => !document.documentElement.matches(':active-view-transition'));
     async function openOverview() {
       await page.waitForFunction(() => getComputedStyle(document.body).pointerEvents !== 'none');
-      await click('#mastheadMenuToggle');
-      await page.waitForSelector('#mastheadMenuPanel[data-state="open"]', {visible:true});
+      await page.click('#mastheadMenuToggle');
+      await page.waitForFunction(() => {
+        const panel = document.querySelector('#mastheadMenuPanel[data-state="open"]');
+        const transform = panel && getComputedStyle(panel).transform;
+        return transform && (transform === 'none' || Math.abs(new DOMMatrixReadOnly(transform).m41) < .5);
+      });
     }
-    if (compact) {
+    async function navigate(destination) {
+      const index = destination === 'library' ? 1 : 2;
+      let selector = `.book-main-nav a:nth-child(${index})`;
+      if (width < 780) {
+        await openOverview();
+        selector = `#mastheadMenuPanel[data-state="open"] nav a:nth-child(${index})`;
+      }
+      await page.click(selector);
+      await page.waitForSelector(`.launcher-page-surface[data-page="${destination}"]`);
+      await settle();
+    }
+    if (width < 780) {
       const url = page.url();
       await openOverview();
       assert.equal(page.url(), url);
       await page.goBack();
       await page.waitForSelector('#mastheadMenuPanel', {hidden:true});
       assert.equal(page.url(), url);
-      await openOverview();
-      await click('#mastheadMenuPanel [aria-labelledby="masthead-overview-site"] button');
-      await page.waitForSelector('#donationDialog[open]', {visible:true});
+      await navigate('lobby');
+      await page.goBack();
+      await page.waitForSelector('.launcher-page-surface[data-page="library"]');
+      assert.equal(await page.$('#mastheadMenuPanel[data-state="open"]'), null, 'Back after a drawer link returns to the page without reopening the drawer');
       await page.waitForSelector('#mastheadMenuPanel', {hidden:true});
+      await openOverview();
+      await page.click('#mastheadMenuPanel [aria-labelledby="masthead-overview-site"] > button');
+      await page.waitForSelector('#donationDialog[open]');
+      assert.equal(await page.$('#mastheadMenuPanel'), null, 'The donation entry must not revive the drawer');
       await page.goBack();
       await page.waitForSelector('#donationDialog:not([open])');
       assert.equal(page.url(), url);
     }
     await navigate('lobby');
     await navigate('library');
-    await settle();
-    assert.deepEqual(await page.evaluate(() => {
-      const probe = window.navigationProbe;
-      return {
-        fades:probe.fades.map(({target, page, duration}) => ({local:target !== probe.surface, page, duration})),
-        railFades:probe.railFades.map(({page, categories}) => ({page, populated:categories > 1})),
-        snapshots:probe.snapshots,
-      };
-    }), {fades:['lobby','library'].map(page => ({local:true, page, duration:180})),
-      railFades:compact ? [] : ['lobby','library'].map(page => ({page, populated:true})), snapshots:0});
-
-    const beforeOptions = await counts();
-    const shelf = await page.$('#bookGameGrid');
+    const pageSnapshots = () => page.evaluate(() => window.pageSnapshots);
+    const snapshots = await pageSnapshots();
+    assert.deepEqual(snapshots, width < 780 ? [] : Array.from({length:2}, () => ({names:['launcher-page'], duration:'0.16s'})));
     for (const exit of ['button', 'browser Back']) {
-      const beforeEntry = await page.evaluate(() => window.navigationProbe.paneFades.length);
-      await click(gameLink);
-      await click('#gameSettingsOpen');
-      if (!compact) assert.equal(await page.evaluate(count => window.navigationProbe.paneFades.slice(count)
-        .some(({detail, frames}) => detail && Number.parseFloat(frames[0].translate) === 8),beforeEntry),true);
-      await page.waitForSelector('.game-settings-page:not([hidden])', {visible:true});
-      if (exit === 'button') await click('#libraryBack');
+      await page.click('#bookGameGrid .book-game-link');
+      await page.waitForSelector('.tools.is-open #libraryBack', {visible:true});
+      if (exit === 'button') await page.click('#libraryBack');
       else await page.goBack();
-      await page.waitForSelector('#gameSettingsOpen', {visible:true});
-      await page.waitForSelector('.game-settings-page:not([hidden])', {hidden:true});
-      assert.equal(await page.evaluate(() => document.activeElement.id), 'gameSettingsOpen');
-
-      const oldFades = await page.evaluate(() => window.navigationProbe.paneFades.length);
-      if (exit === 'button') await click(detailBack);
-      else await page.goBack();
-      await page.waitForFunction(() => !new URLSearchParams(location.search).has('game'));
-      await page.waitForSelector(gameLink, {visible:true});
-      await page.waitForFunction(selector => document.activeElement.matches(selector), {timeout:3000}, gameLink);
-      if (!compact) {
-        assert.equal(await page.evaluate(count => window.navigationProbe.paneFades.slice(count)
-          .some(({detail, frames}) => !detail && Number.parseFloat(frames[0].translate) === -8),oldFades),true);
-        assert.equal(await shelf.evaluate(grid => grid === document.querySelector('#bookGameGrid')),true);
-      }
-    }
-    assert.deepEqual(await counts(), beforeOptions, 'Game detail and settings should transition within the library surface.');
-
-    if (!compact) {
-      await page.evaluate(() => {window.navigationProbe.clickedDuringFade.length = 0;});
-      await page.addStyleTag({content:'.launcher-page-surface {--ui-surface-duration: 2s}'});
-      for (const destination of ['lobby', 'library', 'lobby']) {
-        const {fades} = await counts();
-        await navigate(destination);
-        await page.waitForFunction((count, page) =>
-          window.navigationProbe.fades[count]?.page === page, {}, fades, destination);
-      }
+      await page.waitForFunction(() => !new URLSearchParams(location.search).has('game') &&
+        !document.body.classList.contains('library-tools-open'));
       await settle();
-      assert.deepEqual(await page.evaluate(() => {
-        const {surface, clickedDuringFade, snapshots} = window.navigationProbe;
-        return {clickedDuringFade, snapshots, opacity:getComputedStyle(surface).opacity, remaining:surface.getAnimations().length};
-      }), {clickedDuringFade:['library', 'lobby'], snapshots:0, opacity:'1', remaining:0});
+      assert.ok((await pageSnapshots()).slice(snapshots.length).every(({names}) => names.length === 0), `${exit} must not capture a page snapshot`);
+      assert.equal(await page.evaluate(() => document.activeElement.matches('#bookGameGrid .book-game-link')), true);
     }
-    assert.deepEqual(errors, []);
+    if (width === 1440) {
+      // Give automation time to send trusted clicks during an unfinished fade.
+      await page.addStyleTag({content:':root {--launcher-route-duration: 2s !important}'});
+      await page.evaluate(() => {
+        window.clickedDuringFade = [];
+        document.addEventListener('click', event => {
+          const link = event.target.closest('.book-main-nav a');
+          if (link && document.documentElement.matches(':active-view-transition')) {
+            window.clickedDuringFade.push(link.matches('.book-lobby-link') ? 'lobby' : 'library');
+          }
+        }, true);
+      });
+      for (const [destination, selector] of [
+        ['lobby', '.book-main-nav .book-lobby-link'],
+        ['library', '.book-main-nav a:first-child'],
+        ['lobby', '.book-main-nav .book-lobby-link'],
+      ]) {
+        const count = (await pageSnapshots()).length;
+        await page.click(selector);
+        await page.waitForFunction((destination, count) => window.pageSnapshots.length > count &&
+          document.querySelector('.launcher-page-surface')?.dataset.page === destination, {timeout:4000}, destination, count);
+      }
+      assert.deepEqual(await page.evaluate(() => window.clickedDuringFade), ['library', 'lobby']);
+    }
     await page.close();
-    console.log('PASS ' + width + 'px: primary navigation and local settings returns');
+    console.log(`PASS ${width}px: options close locally after lobby navigation`);
   }
 } finally {await browser.close();}

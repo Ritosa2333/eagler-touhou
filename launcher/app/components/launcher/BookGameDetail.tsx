@@ -1,79 +1,62 @@
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { ArrowLeft, Settings2 } from 'lucide-react';
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { Gamepad2 } from 'lucide-react';
 import { useLocale } from '../../i18n';
-import { Button } from '../../ui/button';
-import { useContentMotion } from '../../ui/use-surface-motion';
 import { bookArtwork } from './book-artwork';
-import { GameDetailFavorite, GameDetailIdentity, GameDetailMetrics } from './GameDetailChrome';
 import type { LibraryProduct } from './products';
 import './book-game-detail.css';
 
-export function BookGameDetail({ product, actions, children, statistics, friends, playtime, saved, active, settings, setSettings, onBack }: {
+export function BookGameDetail({ product, actions, children, statistics, active }: {
   product: LibraryProduct;
   actions?: ReactNode;
   children?: ReactNode;
   statistics?: ReactNode;
-  friends?: ReactNode;
-  playtime?: number | null;
-  saved: boolean;
   active: boolean;
-  settings: boolean;
-  setSettings(open: boolean): void;
-  onBack(): void;
 }) {
   const { t } = useLocale();
-  const title = useRef<HTMLHeadingElement>(null), settingsEntry = useRef<HTMLButtonElement>(null);
-  const settingsBack = useRef<HTMLButtonElement>(null), previousSettings = useRef(false);
-  const article = useContentMotion<HTMLElement>(settings ? 'settings' : 'detail');
+  const title = useRef<HTMLHeadingElement>(null);
   const cover = bookArtwork(product);
+  const composition = product.presentation;
+  const compositionStyle = composition ? {
+    '--detail-art-position': `${composition.positionPercent}%`,
+    '--detail-art-brightness': composition.artBrightness,
+    '--detail-art-saturation': composition.artSaturation,
+  } as CSSProperties : undefined;
   useLayoutEffect(() => {
     if (!active) return;
-    const container = article.current;
-    if (!container || container.dataset.gameDetail !== product.id) return;
-    const changed = previousSettings.current !== settings;
-    previousSettings.current = settings;
-    if (changed || !container.contains(document.activeElement)) {
-      const target = settings ? settingsBack.current : changed ? settingsEntry.current : title.current;
-      target?.focus({preventScroll: true});
-    }
-    const top = parseFloat(getComputedStyle(container).scrollMarginTop);
-    if (changed || container.getBoundingClientRect().top < top) container.scrollIntoView({block: 'start'});
-  }, [active, article, product.id, settings]);
+    const node = title.current;
+    const article = node?.closest('article[data-game-detail]');
+    if (!node || !article || article.getAttribute('data-game-detail') !== product.id) return;
+    if (!article.contains(document.activeElement)) node.focus({ preventScroll: true });
+    const top = getComputedStyle(article).scrollMarginTop;
+    if (article.getBoundingClientRect().top < parseFloat(top)) article.scrollIntoView({ block: 'start' });
+  }, [active, product.id]);
 
   return (
-    <article ref={article} className="book-game-detail" data-game-detail={product.id}
-      aria-labelledby={settings ? 'bookGameSettings' : 'gameTitle'} inert={!active}>
-      <div hidden={settings} inert={settings}>
-        <header className="game-detail-hero book-game-detail-hero">
-          <Button variant="ghost" size="icon" className="book-game-detail-back" onClick={onBack} aria-label={t('library.back')}>
-            <ArrowLeft aria-hidden="true"/>
-          </Button>
-          {cover && <img className="game-detail-backdrop" src={cover} alt="" aria-hidden="true" decoding="async"/>}
-          <GameDetailIdentity product={product} cover={cover} titleId="gameTitle" titleRef={title} desktop/>
-          <div className="book-game-detail-actions">
-            {actions}
-            <GameDetailMetrics productId={product.id} playtime={playtime} saved={saved}/>
-            <Button variant="outline" id={settings ? undefined : 'gameSettingsOpen'} ref={settingsEntry} onClick={() => setSettings(true)}>
-              <Settings2 aria-hidden="true"/>{t('game.settings')}
-            </Button>
-            <GameDetailFavorite productId={product.id}/>
-          </div>
-        </header>
-        <div className="book-game-detail-content" data-has-friends={!!friends || undefined}>
-          {statistics}
-          {friends}
+    <article className="book-game-detail" data-game-detail={product.id} aria-labelledby="gameTitle" inert={!active}>
+      <div className="book-game-detail-hero" style={compositionStyle}>
+        {cover && <div className="book-game-detail-art" aria-hidden="true">
+          <img src={cover} alt="" decoding="async" />
+        </div>}
+        <div className="book-game-detail-cover" aria-hidden="true">
+          {cover ? <img src={cover} alt="" decoding="async" /> : <Gamepad2 />}
+        </div>
+        <div className="book-game-detail-intro">
+          <span className="book-game-detail-code" id="gameId" data-game={product.gameId}>{product.gameId}</span>
+          <h2 id="gameTitle" ref={title} tabIndex={-1}>{product.title}</h2>
+          {product.subtitle && <p>{product.subtitle}</p>}
+          {actions}
         </div>
       </div>
-      <section className="book-game-detail-settings game-settings-page" aria-labelledby="bookGameSettings" hidden={!settings} inert={!settings}>
-        <header>
-          <Button ref={settingsBack} id={settings ? 'libraryBack' : undefined} variant="ghost" size="sm"
-            className="book-game-settings-back" onClick={() => setSettings(false)}>
-            <ArrowLeft aria-hidden="true"/>{t('game.backToDetail')}
-          </Button>
-          <GameDetailIdentity product={product} cover={cover} titleId="bookGameSettings" desktop/>
-        </header>
-        {children}
-      </section>
+      <div className="book-game-detail-content">
+        <section className="book-game-detail-statistics" aria-labelledby="bookGameStatistics">
+          <h3 id="bookGameStatistics">{t('library.statistics')}</h3>
+          {statistics}
+        </section>
+        <section className="book-game-detail-settings" aria-labelledby="bookGameSettings">
+          <h3 id="bookGameSettings">{t('room.gameSettingsGroup')}</h3>
+          {children}
+        </section>
+      </div>
     </article>
   );
 }

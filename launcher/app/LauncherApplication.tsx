@@ -2,11 +2,9 @@ import type {CloudSaveSync} from './services/cloud-save-sync';
 import { useLocation } from 'react-router';
 import { bookArtwork } from './components/launcher/book-artwork';
 import {
-  Activity,
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -17,15 +15,12 @@ import {
 } from 'react';
 import { isProductId, isMultiplayerProductId, type ProductId } from '../src/contracts/product-catalog.mts';
 import type { UiLocale } from '../src/launcher/i18n.mts';
-import {localeHome} from '../src/launcher/i18n.mts';
 import { TH09_RATINGS_DOCUMENT } from '../lib/frontend-static-manifest.mjs';
 import { LocaleProvider, translate } from './i18n';
 import { PlayerSurface } from './components/player/PlayerSurface';
 import { LibrarySurface } from './components/launcher/LibrarySurface';
 import { BookGameDetail } from './components/launcher/BookGameDetail';
-import { MobileGameDetail } from './components/launcher/MobileGameDetail';
 import { BookGameStatistics, useBookGameStatistics } from './components/launcher/BookGameStatistics';
-import { GameFriends, SocialProvider } from './components/launcher/SocialSection';
 import { LobbySurface, type LobbySurfaceProps } from './components/launcher/LobbySurface';
 import { ProfileLoading } from './components/launcher/ProfileLoading';
 import { OptionsPanel } from './components/launcher/OptionsPanel';
@@ -36,21 +31,16 @@ import { useLibraryOptionsPresence } from './components/launcher/use-library-opt
 import type { LibraryProduct } from './components/launcher/products';
 import { SettingsBody } from './components/settings/SettingsBody';
 import type { SettingsActions, TouchEditorNativePorts } from './components/settings/types';
-import type { GameSettingsModel, SettingsContext, SettingsDisclosureState } from './models/game-settings';
+import type { GameSettingsModel, SettingsContext } from './models/game-settings';
 import type { WatchTh09Replay } from './models/th09-replay-archive';
 import type { SitePreferencesModel } from './models/site-preferences';
 import type { DecisionStore } from './models/decisions';
 import type { TouchLayoutModel } from './models/touch-layout';
 import { SurfaceNavigationProvider, useSurfaceNavigation } from './navigation/surface-navigation';
-import { useSurfaceLayerState } from './navigation/surface-layer';
 import { useCompactNavigation, useNavigationPageMotion } from './navigation/navigation-motion';
 import { useStoreSelector, shallowEqual } from './shared/react-store';
 import { accountsEnabled } from './release-features';
 import type {LocalSaveReader} from './services/local-save-storage';
-import {primaryLauncherView, useLauncherSection} from './components/launcher/launcher-sections';
-import type {LauncherPreferencesProps} from './components/launcher/LauncherPreferences';
-import {LauncherHome} from './components/launcher/LauncherHome';
-import {MessageCenter} from './components/launcher/MessageCenter';
 
 const AccountPage = lazy(() => import('./components/launcher/AccountPage').then(module => ({default:module.AccountPage})));
 const ProfilePage = lazy(() => import('./components/launcher/ProfilePreview').then(module => ({default:module.ProfilePage})));
@@ -84,8 +74,7 @@ export interface LauncherHost {
   assetUrl(path: string): string;
   lobbyHref: string;
   masthead: ReactNode;
-  librarySearchTarget?: HTMLElement | null;
-  launcherPreferences?: LauncherPreferencesProps;
+  serverStatusNote?: ReactNode;
   lobby: LobbyPresentation;
   renderLobby?(props: LobbySurfaceProps): ReactNode;
   /** Full launch/room owners compose their original controls at this seam. */
@@ -149,34 +138,11 @@ export function LauncherApplication({ host }: { host: LauncherHost }) {
 
 function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const navigation = useSurfaceNavigation();
-  const location = useLocation();
-  const { pathname, key: locationKey } = location;
-  const section = useLauncherSection();
-  const showHome = section === 'home';
-  const [homeVisited, setHomeVisited] = useState(showHome);
-  useEffect(() => {
-    if (showHome) setHomeVisited(true);
-  }, [showHome]);
-  const primary = primaryLauncherView(location);
+  const { pathname, key: locationKey } = useLocation();
+  const pageSurface = useNavigationPageMotion(pathname, host.lessMotion === true);
+  const compact = useCompactNavigation();
   const accountPage = accountsEnabled && /\/login\.html\/?$/.test(pathname);
   const profilePage = accountsEnabled && /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
-  const page = section ?? (accountPage ? 'account' : profilePage ? 'profile' : navigation.context);
-  const libraryOrLobby = page === 'library' || page === 'lobby';
-  const contentSelector = page === 'library' ? '.book-content' : page === 'lobby' ? '.lobby-rooms-column' :
-    page === 'profile' ? '.profile-wrap' : undefined;
-  const compact = useCompactNavigation();
-  const pageSurface = useNavigationPageMotion(accountPage || profilePage ? pathname : page, {
-    reduced: host.lessMotion === true,
-    contentSelector,
-    railSelector: !compact && libraryOrLobby ? '.book-sidebar nav' : undefined,
-  });
-  const showLibrary = !accountPage && !profilePage && !section && navigation.context === 'library';
-  const keepLibrary = primary === 'home' || primary === 'lobby';
-  const [libraryVisited, setLibraryVisited] = useState(showLibrary);
-  useEffect(() => {
-    if (showLibrary) setLibraryVisited(true);
-    else if (!keepLibrary) setLibraryVisited(false);
-  }, [showLibrary, keepLibrary]);
   const settings = useSyncExternalStore(host.settings.subscribe, host.settings.getSnapshot, host.settings.getSnapshot);
   const isEditing = useStoreSelector(host.touchLayout, (value) => value.isEditing);
   const [preview, setPreview] = useState<string | undefined>(navigation.productId ?? host.products[0]?.id);
@@ -185,8 +151,6 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   );
   const contextRevision = useRef<number | undefined>(undefined);
   const [playerElement, setPlayerElement] = useState<HTMLElement | null>(null);
-  const touchReturn = useRef<HTMLElement | null>(null);
-  const [gamePageDisclosures, setGamePageDisclosures] = useState<Partial<SettingsDisclosureState>>({});
   const browseIssuedFor = useRef<string | null>(null);
   useLayoutEffect(() => {
     if (browseIssuedFor.current !== locationKey) browseIssuedFor.current = null;
@@ -201,32 +165,31 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
     retainedProduct.current = navigation.productId;
   // Main keeps the selected panel in the DOM during its closing transition.
   const selectedProduct = catalog.find((product) => product.id === retainedProduct.current);
-  const inlineLibrary = host.desktopLibraryDetails && !compact && !section && !accountPage && !profilePage && navigation.context === 'library';
+  const inlineLibrary = host.desktopLibraryDetails && !compact && !accountPage && !profilePage && navigation.context === 'library';
   const inlineProduct = inlineLibrary && optionsOpen && selectedProduct?.id === navigation.productId &&
     !selectedProduct.multiplayer ? selectedProduct : undefined;
-  const fullPage = !!(host.desktopLibraryDetails && compact && !section && navigation.context === 'library' && !accountPage && !profilePage);
+  const [inlineDetailPresent, setInlineDetailPresent] = useState(!!inlineProduct);
+  const onDetailExit = useCallback(() => setInlineDetailPresent(false), []);
+  useLayoutEffect(() => {
+    if (inlineProduct) setInlineDetailPresent(true);
+    else if (!inlineLibrary) onDetailExit();
+  }, [inlineLibrary, inlineProduct, onDetailExit]);
+  const bookSheet = !!(host.desktopLibraryDetails && compact && navigation.context === 'library' && !accountPage && !profilePage);
+  const detailProduct = inlineProduct ?? (bookSheet && optionsOpen && selectedProduct?.id === navigation.productId &&
+    !selectedProduct.multiplayer ? selectedProduct : undefined);
+  const gameStatistics = useBookGameStatistics(detailProduct?.gameId);
+  const statistics = detailProduct && <BookGameStatistics game={detailProduct.gameId} view={gameStatistics} />;
   const presence = useLibraryOptionsPresence({
     open: optionsOpen && !inlineProduct,
     context: navigation.context,
     product: selectedProduct,
     lessMotion: host.lessMotion === true,
-    fullPage,
+    bookSheet,
     concealed:
       !!inlineProduct || ((host.runtimeOpen === true || host.runtimeLaunched === true || host.replayWorkspace === true) &&
       navigation.surface !== 'touch'),
     focusActive: navigation.surface === 'options',
   });
-  const mobileProduct = fullPage && (optionsOpen || presence.open) && !presence.product?.multiplayer ? presence.product : undefined;
-  const detailProduct = inlineProduct ?? mobileProduct;
-  const [detailSettingsOpen, setDetailSettingsOpen] = useSurfaceLayerState<boolean>('game-detail-settings', false);
-  const gameStatistics = useBookGameStatistics(detailProduct?.gameId);
-  const save = gameStatistics?.status === 'ready' ? gameStatistics.save : undefined;
-  const statistics = detailProduct && <BookGameStatistics game={detailProduct.gameId} view={gameStatistics}/>;
-  const friends = detailProduct && gameStatistics?.owner && (!compact || gameStatistics.status !== 'loading') ? (
-    <SocialProvider key={gameStatistics.owner} username={gameStatistics.owner} includeLists list="friends">
-      <GameFriends username={gameStatistics.owner} game={detailProduct.gameId}/>
-    </SocialProvider>
-  ) : undefined;
   useLayoutEffect(() => {
     if (!optionsOpen && !roomOpen) {
       if (navigation.context === 'lobby') selectedLifetime.current = null;
@@ -284,45 +247,31 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       }
     }
   };
-  const touchEntry = useRef({open: navigation.openTouchLayout, playing: host.runtimeLaunched, locale: host.locale,
-    feedback: host.settingsActions.feedback, multiplayer: settings?.multiplayer});
-  useLayoutEffect(() => {
-    touchEntry.current = {open: navigation.openTouchLayout, playing: host.runtimeLaunched, locale: host.locale,
-      feedback: host.settingsActions.feedback, multiplayer: settings?.multiplayer};
-  });
-  const openTouchLayout = useCallback(() => {
-    const {open, playing, locale, feedback, multiplayer} = touchEntry.current;
-    if (playing) {
-      const reason = translate(locale, 'touch.editWhileRunning');
-      feedback(reason, translate(locale, 'status.errorReason', { reason }));
+  const openTouchLayout = () => {
+    if (host.runtimeLaunched) {
+      const reason = translate(host.locale, 'touch.editWhileRunning');
+      host.settingsActions.feedback(reason, translate(host.locale, 'status.errorReason', { reason }));
       return;
     }
-    touchReturn.current = document.getElementById(multiplayer ? 'mpTouchLayoutEdit' : 'touchLayoutEdit');
-    open();
-  }, []);
+    navigation.openTouchLayout();
+  };
   const browseLibrary = () => {
     // Several input events can arrive before the same history return commits.
     if (browseIssuedFor.current === locationKey) return;
     browseIssuedFor.current = locationKey;
     navigation.closeSurface();
   };
-  const gamePage = navigation.context === 'library' &&
-    !(navigation.productId && isMultiplayerProductId(navigation.productId));
-  const multiplayerSettings = gamePage ? undefined : host.multiplayerControls;
-  const settingsBody = useMemo(() => (
+  const settingsBody = (
     <SettingsBody
       model={host.settings}
-      gamePage={gamePage ? {
-        disclosures: gamePageDisclosures,
-        setDisclosure: (name, open) => setGamePageDisclosures(previous => ({...previous, [name]: open})),
-      } : undefined}
       actions={host.settingsActions}
       onOpenTouchLayout={openTouchLayout}
-      multiplayerControls={multiplayerSettings}
+      multiplayerControls={host.multiplayerControls}
       preferences={host.preferences}
     />
-  ), [gamePage, gamePageDisclosures, host.settings, host.settingsActions, host.preferences, multiplayerSettings, openTouchLayout]);
-  const settingsPanel = !inlineProduct && presence.product && (
+  );
+  // The fading detail still owns the settings DOM until its exit completes.
+  const settingsPanel = !inlineProduct && !(inlineLibrary && inlineDetailPresent && !roomOpen) && presence.product && (
     <OptionsPanel
       product={presence.product}
       coverArtwork={roomOpen ? undefined : bookArtwork(presence.product)}
@@ -334,13 +283,8 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       multiplayerOnline={host.multiplayerOnline}
       lobbyHref={host.lobbyHref}
       embeddedInLobby={navigation.context === 'lobby'}
-      fullPage={fullPage && !presence.product.multiplayer}
-      page={mobileProduct && <MobileGameDetail key={mobileProduct.id} product={mobileProduct} cover={bookArtwork(mobileProduct)}
-        actions={settings?.context.productId === mobileProduct.id ? host.optionsActions : undefined}
-        statistics={statistics} friends={friends} playtime={save?.statistics.playtimeSeconds} saved={!!save}
-        settings={detailSettingsOpen} setSettings={setDetailSettingsOpen} onBack={navigation.closeSurface}>
-        {settings?.context.productId === mobileProduct.id && settingsBody}
-      </MobileGameDetail>}
+      bookSheet={bookSheet && !presence.product.multiplayer}
+      statistics={presence.product.id === detailProduct?.id ? statistics : undefined}
       actions={host.optionsActions}
     >
       {settingsBody}
@@ -354,12 +298,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       actions={host.settingsActions}
       native={host.nativeTouch}
       onCloseIntent={navigation.closeSurface}
-      onClosed={() => {
-        const trigger = touchReturn.current;
-        touchReturn.current = null;
-        if (trigger?.isConnected && !trigger.closest('[hidden], [inert]')) trigger.focus({preventScroll:true});
-        else presence.restoreFocus(true);
-      }}
+      onClosed={() => presence.restoreFocus(true)}
       fireEnabled={host.touchFireEnabled}
       previewImage={
         host.previewImage ?? (selectedProduct?.artwork ? `url(${JSON.stringify(selectedProduct.artwork)})` : 'none')
@@ -395,25 +334,19 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
       <div
         ref={pageSurface}
         className="launcher-page-surface"
-        data-page={page}
+        data-page={accountPage ? 'account' : profilePage ? 'profile' : navigation.context}
       >
         {accountPage ? (
           <Suspense fallback={<main className="account-page" aria-busy="true"/>}><AccountPage /></Suspense>
         ) : profilePage ? (
           <Suspense fallback={<ProfileLoading/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync} watchTh09Replay={host.watchTh09Replay}/></Suspense>
-        ) : section === 'announcements' || section === 'messages' ? (
-          <MessageCenter section={section} homeHref={host.assetUrl(localeHome(host.locale))} assetUrl={host.assetUrl}/>
-        ) : !showHome && navigation.context === 'lobby' ? (
+        ) : navigation.context === 'lobby' ? (
           host.renderLobby ? (
             host.renderLobby(lobbyProps)
           ) : (
             <LobbySurface {...lobbyProps} />
           )
-        ) : null}
-        {(showHome || homeVisited) && <Activity mode={showHome ? 'visible' : 'hidden'}>
-          <LauncherHome active={showHome} settings={host.launcherPreferences} assetUrl={host.assetUrl}/>
-        </Activity>}
-        {(showLibrary || keepLibrary && libraryVisited) && <Activity mode={showLibrary ? 'visible' : 'hidden'}>
+        ) : (
           <LibrarySurface
             products={host.products}
             selectedProduct={preview}
@@ -421,34 +354,33 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             onSelect={setPreview}
             onActivate={activate}
             masthead={null}
-            mobileSearchTarget={host.librarySearchTarget}
-            active={showLibrary}
             optionsOpen={!inlineProduct && presence.open}
             compact={compact}
             onBrowse={browseLibrary}
+            onDetailExit={onDetailExit}
             detail={inlineProduct && (
               <BookGameDetail
                 product={inlineProduct}
-                onBack={navigation.closeSurface}
                 active={navigation.surface === 'options' && !host.runtimeOpen && !host.runtimeLaunched && !host.replayWorkspace}
                 actions={settings?.context.productId === inlineProduct.id ? host.optionsActions : undefined}
-                statistics={statistics} friends={friends} playtime={save?.statistics.playtimeSeconds} saved={!!save}
-                settings={detailSettingsOpen} setSettings={setDetailSettingsOpen}
+                statistics={statistics}
               >
                 {settings?.context.productId === inlineProduct.id && settingsBody}
               </BookGameDetail>
             )}
             roomOpen={roomOpen}
             roomDrawer={host.roomDrawer}
+            onDonation={() => navigation.openInfoDialog('donationDialog')}
           >
             {host.roomSurface}
           </LibrarySurface>
-        </Activity>}
+        )}
       </div>
-      {!accountPage && !profilePage && !section && navigation.context === 'library' && (
+      {!accountPage && !profilePage && navigation.context === 'library' && (
         <>
-          {!inlineProduct && !fullPage && <OptionsBackdrop onBack={navigation.closeSurface}/>}
-          {host.replayWorkspace && !roomOpen && !fullPage ? null : settingsPanel}
+          {host.serverStatusNote}
+          {!inlineProduct && <OptionsBackdrop onBack={navigation.closeSurface} bookSheet={bookSheet} />}
+          {host.replayWorkspace && !roomOpen ? null : settingsPanel}
         </>
       )}
       <PlayerSurface

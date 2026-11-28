@@ -14,7 +14,6 @@ export const th09Duel = z.object({
     username: th09PublicUsername,
     displayName: z.string().min(1).max(128),
     avatar: z.string().regex(/^[a-f0-9]{16}$/).optional(),
-    countryCode: z.string().regex(/^[A-Z]{2}$/).nullish().catch(undefined),
   }).nullable(),
 }).refine(value => value.wins + value.losses > 0 && Number.isSafeInteger(value.wins + value.losses));
 

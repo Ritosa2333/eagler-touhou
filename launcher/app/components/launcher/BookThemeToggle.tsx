@@ -1,13 +1,11 @@
 import {Button as UiButton} from '../../ui/button';
 import {useEffect, useRef, useState} from 'react';
 import {useLocale} from '../../i18n';
-import {useSurfaceLayerState} from '../../navigation/surface-layer';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, writeBookPreference} from './book-preferences';
 import {NavigationIcon} from './NavigationIcon';
 import {impressTheme} from './ink-feedback';
 import {MastheadTooltip} from './MastheadTooltip';
-import {BackgroundSettings, BaseThemeChoices, type BackgroundSurface} from './CustomBackground';
-import {SettingsRowContent} from '../settings/SettingsGroup';
+import {BackgroundSettings, type BackgroundSurface} from './CustomBackground';
 
 let themeTransitionTimer: number | undefined;
 let pendingTheme: 'light' | 'dark' | undefined;
@@ -47,12 +45,12 @@ function applyTheme(value: 'light' | 'dark', animate: boolean) {
   }, 180);
 }
 
-export function BookThemeToggle({interactive = true, row = false, tooltip = false, rowLabel, inlineChoices = false, surfaces}: {
-  interactive?: boolean; row?: boolean; tooltip?: boolean; rowLabel?: string; inlineChoices?: boolean; surfaces?: readonly BackgroundSurface[];
+export function BookThemeToggle({interactive = true, row = false, tooltip = false, surfaces}: {
+  interactive?: boolean; row?: boolean; tooltip?: boolean; surfaces?: readonly BackgroundSurface[];
 }) {
-  const {locale, t} = useLocale();
+  const {locale} = useLocale();
   const [dark, setDark] = useState(true);
-  const [open, setOpen] = useSurfaceLayerState<boolean>('background-settings', false);
+  const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -64,21 +62,10 @@ export function BookThemeToggle({interactive = true, row = false, tooltip = fals
     refresh(); window.addEventListener('storage', refresh); window.addEventListener(BOOK_PREFERENCES_EVENT, refresh);
     return () => {window.removeEventListener('storage', refresh); window.removeEventListener(BOOK_PREFERENCES_EVENT, refresh);};
   }, []);
-  const label = rowLabel ?? (inlineChoices ? t('nav.themeBackground') : locale === 'zh-CN' ? '主题设置' : locale === 'ja' ? 'テーマ設定' : 'Theme settings');
-  const changeTheme = (value: 'light' | 'dark') => {
-    if ((value === 'dark') === dark) return;
-    setDark(value === 'dark');
-    applyTheme(value, true);
-    writeBookPreference('theme', value);
-    if (trigger.current) impressTheme(trigger.current);
-  };
-  const icon = <NavigationIcon name={dark ? 'moon' : 'sun'}/>;
-  const button = <UiButton ref={trigger} type="button" variant="ghost" size={row ? "row" : "icon"} className={row ? "settings-navigation-row masthead-overview-theme" : "masthead-action book-theme-toggle [&_svg]:size-5"} disabled={!interactive || !ready}
-    aria-label={label} aria-haspopup="dialog" onClick={() => setOpen(true)} title={tooltip ? undefined : label}>
-    {row ? <SettingsRowContent icon={inlineChoices ? undefined : icon}>{label}</SettingsRowContent> : icon}
-  </UiButton>;
-  return <>{inlineChoices && <BaseThemeChoices dark={dark} onThemeChange={changeTheme}/>}
-    {tooltip ? <MastheadTooltip label={label}>{button}</MastheadTooltip> : button}
-    <BackgroundSettings open={open} onOpenChange={setOpen} dark={dark} onThemeChange={changeTheme} surfaces={surfaces} showBase={!inlineChoices}/>
+  const label = locale === 'zh-CN' ? '主题设置' : locale === 'ja' ? 'テーマ設定' : 'Theme settings';
+  const button = <UiButton ref={trigger} type="button" variant="ghost" size={row ? "row" : "icon"} className={row ? "masthead-overview-theme" : "masthead-action book-theme-toggle [&_svg]:size-5"} disabled={!interactive || !ready}
+    aria-label={label} aria-haspopup="dialog" onClick={() => setOpen(true)} title={tooltip ? undefined : label}><NavigationIcon name={dark ? 'moon' : 'sun'}/>{row && <span>{label}</span>}</UiButton>;
+  return <>{tooltip ? <MastheadTooltip label={label}>{button}</MastheadTooltip> : button}
+    <BackgroundSettings open={open} onOpenChange={setOpen} dark={dark} surfaces={surfaces} onThemeChange={value=>{if ((value==='dark')===dark) return; setDark(value==='dark');applyTheme(value,true);writeBookPreference('theme',value);if(trigger.current)impressTheme(trigger.current);}}/>
   </>;
 }

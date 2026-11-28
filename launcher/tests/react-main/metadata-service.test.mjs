@@ -223,7 +223,7 @@ test('metadata: original language overlays and music context use current package
   assert.deepEqual(context.languages.map(entry => entry.id), ['ja', 'lang_zh-hans', 'lang_zh-hant', 'lang_en']);
   assert.equal(context.languages.find(entry => entry.id === 'lang_zh-hant').packageObjectId, 'obj-zh');
   assert.equal(context.languages.find(entry => entry.id === 'lang_en').title, 'en:gameLanguage.en');
-  assert.deepEqual(context.musicAvailability, {audio: false, midiAvailable: false, importServer: false, embeddedOgg: false,
+  assert.deepEqual(context.musicAvailability, {audio: false, midiAvailable: false, importServer: false,
     publishedOggCapable: true, remoteOggAdvertised: false, remoteRevision: 'published-r1',
     installed: {revision: 'installed-r1', oggFileIds: ['ogg-1'], files: idb.generation.files}});
   assert.equal(context.productId, 'th06mp'); assert.equal(context.webMidiAvailable, true); assert.equal(context.mobile, true); service.dispose();

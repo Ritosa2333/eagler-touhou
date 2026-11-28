@@ -4,13 +4,10 @@ import './fullscreen-transient.css';
 /** Main's transient-overlay host rule, with a stable React portal target so
  * native dialog state/focus survives fullscreen changes without remounting. */
 export function FullscreenTransient({children, anchor}: {children: ReactNode; anchor?: HTMLElement | null}) {
-  const [host, setHost] = useState<HTMLDivElement | null>(null);
-  useLayoutEffect(() => {
-    const element = document.createElement('div');
-    element.dataset.launcherTransientHost = '';
-    element.dataset.launcherDocument = '';
-    setHost(element);
-  }, []);
+  const [host] = useState(() => {
+    if (typeof document === 'undefined') return null;
+    const element = document.createElement('div'); element.dataset.launcherTransientHost = ''; element.dataset.launcherDocument = ''; return element;
+  });
   useLayoutEffect(() => {
     if (!host) return;
     const sync = () => {

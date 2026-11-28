@@ -61,8 +61,6 @@ export function LobbySurface({
     <>
       <main className="lobby-main book-directory" inert={rail.interactive === false}>
         {masthead}
-        <div className="lobby-directory-body">
-        <BookDirectoryGames {...rail} renderContent={gameBar => <div className="lobby-rooms-column">
         <header className="lobby-intro">
           <h1 className="visually-hidden">{t('lobby.title')}</h1>
           <nav className="lobby-support-links" aria-label={t('multiplayerGuide.title')}>
@@ -97,7 +95,11 @@ export function LobbySurface({
           {notice}
         </p>
         {membership}
-        {gameBar}
+        <div className="lobby-directory-body">
+        <section className="lobby-library" aria-label={t('lobby.game')}>
+          <BookDirectoryGames {...rail}/>
+        </section>
+        <div className="lobby-rooms-column">
         <header className="lobby-room-tools">
           {roomFilters}
           <div className="lobby-actions">{roomTools}</div>
@@ -131,7 +133,7 @@ export function LobbySurface({
           )}
           <p className="lobby-directory-count" id="roomCount" aria-live="polite" hidden={!hasRooms}>{roomCount}</p>
         </section>
-        </div>}/>
+        </div>
         </div>
       </main>
       {children}

@@ -32,8 +32,6 @@ bun run vendor
 | Touhou 98 | [`thwiki/font-touhou98`](https://github.com/thwiki/font-touhou98)，`font-touhou98@1.0.0` | MIT | `public/assets/fonts/touhou98.woff2`，用于作品展示中的装饰文字。 |
 | Yatra One | [Google Fonts, Yatra One](https://github.com/google/fonts/tree/main/ofl/yatraone)；Copyright 2014 The Yatra Project Authors | SIL Open Font License 1.1 | 拉丁字母和数字；`public/assets/fonts/yatra-one-latin.woff2`，许可证 `OFL-YatraOne.txt`。 |
 | ChillRoundGothic | [Warren2060/ChillRoundGothic](https://github.com/Warren2060/ChillRoundGothic)；Copyright 2023 The ChillRoundGothic Project Authors | SIL Open Font License 1.1 | 界面文字；`public/assets/fonts/` 中的 Medium、Bold、Heavy WOFF2 子集，许可证 `OFL-ChillRoundGothic.txt`。Medium 用于正文、Bold 用于标题、Heavy 用于两张主卡片标题。 |
-| Noto Sans SC、Noto Sans JP | [Noto CJK](https://github.com/notofonts/noto-cjk)，由 [Fontsource](https://github.com/fontsource/fontsource) 提供网页子集 | SIL Open Font License 1.1 | 启动器共用界面文字使用 SC 可变字重，日文符卡名使用 JP 字形。许可证位于 `public/assets/fonts/` 下的 `OFL-NotoSansSC.txt` 和 `OFL-NotoSansJP.txt`。 |
-| IBM Plex Mono | [IBM Plex](https://github.com/IBM/plex)，由 [Fontsource](https://github.com/fontsource/fontsource) 提供网页子集 | SIL Open Font License 1.1 | 符卡编号的等宽字体。许可证为 `public/assets/fonts/OFL-IBMPlexMono.txt`。 |
 | GNU Unifont 15.1.05 | [Unifoundry](https://unifoundry.com/unifont/)；Copyright 1998–2024 Roman Czyborra, Paul Hardy, Qianqian Fang, Andrew Miller, Johnnie Weaver, David Corbett, Nils Moskopp, Rebecca Bettencourt, Ho-Seok Ee et al. | 本分发采用 SIL Open Font License 1.1；Unifont 也以 GPLv2+ 和 GNU Font Embedding Exception 提供。 | 缺字回退；`public/assets/fonts/unifont-site.woff2`，许可证 `OFL-Unifont.txt`。 |
 
 ## Host 适配器与 Runtime 工具链
@@ -45,7 +43,7 @@ bun run vendor
 
 ## 图标与服务标志
 
-站点角色头像由 plasticparakeet 绘制，来自 [RebeccaRGB/emojifont-touhou](https://github.com/RebeccaRGB/emojifont-touhou)，按 [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) 使用。站点增加字标、配色选择与响应式排版。头像署名和许可随资源提供。启动器顶栏的横排「東方 Online」字标为本站品牌资源，分别提供亮暗版本。
+站点角色头像由 plasticparakeet 绘制，来自 [RebeccaRGB/emojifont-touhou](https://github.com/RebeccaRGB/emojifont-touhou)，按 [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) 使用。站点增加双行字标、配色选择与响应式排版；头像署名和许可随资源提供。
 
 - 主页通用操作使用 [Lucide](https://github.com/lucide-icons/lucide)，包为 lucide-react@1.65.0，采用 ISC。作品封面独立于通用图标系统。
 

@@ -1,7 +1,7 @@
 import {useLocale} from '../../i18n';
 import {Activity, ArrowUpRight, CircleHelp, Cloud, Gamepad2, Heart, Link2, UsersRound} from 'lucide-react';
 import {siDiscord, siGithub, siQq} from 'simple-icons/icons';
-import {LauncherWordmark} from './LauncherWordmark';
+import {SiteBrand} from './SiteBrand';
 import './site-footer.css';
 
 const labels = {
@@ -14,7 +14,7 @@ export function SiteFooter({onDonation}: {onDonation?: () => void}) {
   const {locale} = useLocale();
   const text = labels[locale];
   return <footer className="site-footer"><div className="site-footer-grid">
-    <a className="site-footer-brand" href="./" aria-label="東方 Online"><LauncherWordmark/></a>
+    <a className="site-footer-brand" href="./" aria-label="Eagler Touhou"><SiteBrand/></a>
     <nav aria-label={text.play}><h2>{text.play}</h2><a href="./"><Gamepad2/>{text.single}</a><a href="./lobby.html"><UsersRound/>{text.lobby}</a></nav>
     <nav aria-label={text.site}><h2>{text.site}</h2><a href="./about.html"><CircleHelp/>{text.about}</a><a href="./uptime/"><Activity/>{text.status}</a>{onDonation && <button type="button" onClick={onDonation}><Heart/>{text.donate}</button>}</nav>
     <nav aria-label={text.community}><h2>{text.community}</h2><a href="https://discord.gg/HwVz9ZTSF"><BrandIcon path={siDiscord.path}/>Discord<ArrowUpRight className="site-footer-external"/></a><a href="https://github.com/YomotsuHisami/eagler-touhou"><BrandIcon path={siGithub.path}/>GitHub<ArrowUpRight className="site-footer-external"/></a><a href="https://qm.qq.com/q/eeUrxIltug"><BrandIcon path={siQq.path}/>QQ<ArrowUpRight className="site-footer-external"/></a></nav>

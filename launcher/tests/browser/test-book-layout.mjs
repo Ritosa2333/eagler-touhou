@@ -3,7 +3,6 @@ import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 
 const origin = process.argv[2] || process.env.LAUNCHER_URL || 'http://127.0.0.1:5173/';
-const pc98Cards = '#bookGameGrid :is([data-book-product="th01"],[data-book-product="th05"])';
 const browser = await puppeteer.launch({headless: true, executablePath: await findChromiumExecutable()});
 try {
   const lobby = await browser.newPage();
@@ -50,78 +49,72 @@ try {
     await page.goto(origin, {waitUntil: 'domcontentloaded'});
     await page.waitForFunction(() => window.__eaglerBoot?.done);
     await page.evaluate(theme => document.documentElement.dataset.bookTheme = theme, theme);
-    assert.match(await page.$eval('meta[name="viewport"]', node => node.content), /viewport-fit=contain/);
-    if (width === 390) {
-      const chromeBounds = () => page.evaluate(() => {
-        const header = document.querySelector('.book-masthead');
-        const nav = document.querySelector('.launcher-bottom-navigation');
-        const surface = document.querySelector('.launcher-page-surface');
-        return [header.offsetHeight, nav.offsetHeight, getComputedStyle(surface).paddingBottom];
-      });
-      const baseline = await chromeBounds();
-      const cdp = await page.createCDPSession();
-      await cdp.send('Emulation.setSafeAreaInsetsOverride', {insets: {top: 40, bottom: 16}});
-      assert.deepEqual(await chromeBounds(), baseline, 'Forwarded Android system bars must not enlarge the browser chrome');
-      await cdp.send('Emulation.setSafeAreaInsetsOverride', {insets: {top: 0, bottom: 0}});
-      await cdp.detach();
-    }
-    const card = await page.waitForSelector(pc98Cards, {visible: true});
-    await card.tap();
-    const detail = '.tools[data-full-page][data-state="open"]';
-    const settings = '.mobile-game-settings';
-    const settingsControl = '#gameSettingsOpen';
-    const back = detail + ' #libraryBack';
-    await page.waitForSelector(settingsControl, {visible: true});
-    assert.equal(await page.$('.book-sidebar'), null, 'Mobile uses category tabs instead of the desktop sidebar');
+    const card = '#bookGameGrid [data-book-product="th01"]';
+    await page.waitForSelector(card, {visible: true});
+    await page.tap(card);
+    const sheet = '.tools[data-book-sheet][data-state="open"]';
+    const settings = `${sheet} [data-book-sheet-section="settings"]`;
+    const toggle = `${settings} .book-sheet-toggle`;
+    const fold = `${settings} .book-sheet-fold`;
+    await page.waitForSelector(toggle, {visible: true});
+    assert.equal(await page.$eval('.book-sidebar .book-category-fold', el => getComputedStyle(el).display), 'none', 'Mobile keeps the category list collapsed');
     await page.waitForFunction(selector => {
       const node = document.querySelector(selector);
-      if (!node) return false;
-      const rect = node.getBoundingClientRect();
-      return Math.abs(rect.top) < 1 && Math.abs(rect.bottom - innerHeight) < 1;
-    }, {}, detail);
-    const actions = await page.$eval(detail, panel => ['#launch', '#gamePackageImport', '#gameSettingsOpen'].map(selector => {
-      const button = panel.querySelector(selector);
-      const {left, right, top, bottom, height} = button.getBoundingClientRect();
-      return left >= 0 && right <= innerWidth + 1 && top >= 0 && bottom <= innerHeight + 1 && height >= 44 && !button.closest('[inert]');
-    }));
-    assert.deepEqual(actions, [true, true, true], 'Detail actions fit with comfortable touch targets');
-    await page.tap(settingsControl);
-    await page.waitForSelector(settings, {visible: true});
-    assert.equal(await page.$eval(settings, node => node.scrollWidth <= node.clientWidth + 1), true);
-    assert.equal(await page.$eval(detail + ' #launch', button => Boolean(button.closest('[hidden][inert]'))), true);
-    await page.tap(back);
-    await page.waitForSelector(settingsControl, {visible: true});
+      return node && Math.abs(node.getBoundingClientRect().bottom - innerHeight) < 1;
+    }, {}, sheet);
+    assert.equal(await page.$eval(fold, el => el.inert), true);
+    const closedBackground = await page.$eval(toggle, el => getComputedStyle(el).backgroundColor);
+    await page.tap(toggle);
+    await page.waitForFunction(selector => {
+      const node = document.querySelector(selector);
+      return node?.dataset.open === 'true' && !node.getAnimations().length && node.clientHeight > 0;
+    }, {}, fold);
+    const hierarchy = await page.$eval(settings, section => {
+      const button = section.querySelector('.book-sheet-toggle');
+      const detail = section.querySelector('.book-sheet-section-content');
+      const main = button.getBoundingClientRect(), nested = detail.getBoundingClientRect();
+      const start = section.closest('aside').querySelector('#launch').getBoundingClientRect();
+      const importButton = section.closest('aside').querySelector('#gamePackageImport').getBoundingClientRect();
+      return {
+        selectedBackground: getComputedStyle(button).backgroundColor,
+        inset: Math.min(nested.left - main.left, main.right - nested.right),
+        separateSurface: getComputedStyle(detail).backgroundColor !== getComputedStyle(section.closest('aside')).backgroundColor,
+        fits: detail.scrollWidth <= detail.clientWidth + 1,
+        actionsVisible: ['#launch', '#gamePackageImport'].every(selector => {
+          const action = section.closest('aside').querySelector(selector);
+          const bounds = action?.getBoundingClientRect();
+          return bounds && bounds.width > 0 && bounds.top >= 0 && bounds.bottom <= innerHeight + 1 && !action.closest('[inert]');
+        }),
+        actionWidthDifference: Math.abs(start.width - importButton.width),
+        actionOrder: start.bottom <= importButton.top,
+      };
+    });
+    assert.notEqual(hierarchy.selectedBackground, closedBackground);
+    assert.ok(hierarchy.inset >= 16 && hierarchy.separateSurface, 'Nested settings need a visibly separate inset surface');
+    assert.ok(hierarchy.fits, 'Nested settings must fit without horizontal scrolling');
+    assert.ok(hierarchy.actionsVisible, 'Start and Import must remain visible outside the fold');
+    assert.ok(hierarchy.actionWidthDifference < 1, 'Mobile Start and Import buttons must have equal width');
+    assert.ok(hierarchy.actionOrder, 'Mobile Start must be above Import');
+    await page.tap(toggle);
+    assert.equal(await page.$eval(fold, el => el.inert), true);
+    await page.waitForFunction(selector => document.querySelector(selector)?.clientHeight === 0, {}, fold);
     await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
-    await page.tap(settingsControl);
-    await page.waitForSelector(settings, {visible: true});
-    assert.equal(await page.$eval('.mobile-game-pages', node => node.getAnimations().length), 0);
-    await page.goBack();
-    await page.waitForSelector(settings, {hidden: true});
-    await page.waitForSelector(settingsControl, {visible: true});
-    await page.tap(back);
-    await page.waitForSelector(detail, {hidden: true});
+    await page.tap(toggle);
+    assert.deepEqual(await page.$eval(fold, el => [el.inert, el.getAnimations().length]), [false, 0]);
+    await page.tap(`${sheet} #libraryBack`);
+    await page.waitForSelector(sheet, {hidden: true});
     await page.close();
   }
 
   const resize = await browser.newPage();
   await resize.setViewport({width: 1440, height: 540});
-  await resize.evaluateOnNewDocument(() => {
-    localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1');
-    localStorage.setItem('eagler.book.recent', JSON.stringify(['th01','th05']));
-  });
+  await resize.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
   await resize.goto(origin, {waitUntil: 'domcontentloaded'});
   await resize.waitForFunction(() => window.__eaglerBoot?.done);
-  await resize.waitForSelector('#bookRecentTitle', {visible:true});
-  assert.equal(await resize.evaluate(() => {
-    const recent = document.querySelector('#bookRecentTitle'), all = document.querySelector('.book-current h2');
-    return recent.getBoundingClientRect().left === all.getBoundingClientRect().left &&
-      getComputedStyle(recent).font === getComputedStyle(all).font && !recent.querySelector('svg');
-  }),true,'shelf headings use the same typography and left edge');
-  const publishedCard = await resize.waitForSelector(pc98Cards, {visible: true});
-  const product = await publishedCard.evaluate(link => link.dataset.bookProduct);
-  const card = `#bookGameGrid [data-book-product="${product}"]`;
-  const detail = `[data-game-detail="${product}"]`;
-  const mobileDetail = '.tools[data-full-page][data-state="open"]';
+  const card = '#bookGameGrid [data-book-product="th01"]';
+  const detail = '[data-game-detail="th01"]';
+  const sheet = '.tools[data-book-sheet][data-state="open"]';
+  await resize.waitForSelector(card, {visible: true});
   const categoryToggle = '[data-book-category-disclosure="pc98"]';
   const categoryPanel = '#bookCategory-pc98';
   await resize.focus(categoryToggle);
@@ -139,37 +132,26 @@ try {
   }, {}, categoryPanel);
   await resize.click(card);
   await resize.waitForSelector(`${detail} #launch`, {visible: true});
-  await resize.waitForFunction(selector => !document.querySelector(selector).getAnimations().length, {}, detail);
   const desktopLayout = await resize.$eval(detail, node => {
     const bounds = selector => node.querySelector(selector).getBoundingClientRect();
-    const hero = bounds('.book-game-detail-hero');
-    const content = node.closest('.book-content').getBoundingClientRect();
-    const launch = bounds('#launch'), importButton = bounds('#gamePackageImport'), settings = bounds('#gameSettingsOpen');
     return {
-      flush: hero.left === content.left && hero.right === content.right,
-      actionHeight: [launch.height, importButton.height, settings.height],
-      actionRow: [launch.top, importButton.top, settings.top],
-      actionOrder: launch.right <= importButton.left && importButton.right <= settings.left,
+      statistics: bounds('.book-game-detail-statistics').width,
+      settings: bounds('.book-game-detail-settings').width,
+      launch: bounds('#launch').width,
+      import: bounds('#gamePackageImport').width,
+      actionOrder: bounds('#launch').bottom <= bounds('#gamePackageImport').top,
     };
   });
-  assert.equal(desktopLayout.flush, true, 'Desktop hero reaches the sidebar and the viewport edge');
-  assert.equal(new Set(desktopLayout.actionHeight).size, 1, 'Desktop buttons have the same height');
-  assert.equal(new Set(desktopLayout.actionRow).size, 1, 'Desktop actions share one row');
-  assert.ok(desktopLayout.actionOrder, 'Desktop Start is left of Import and Settings');
-  await resize.waitForSelector(`${detail} .clear-matrix[data-loadouts="true"] tbody [data-status="unread"]`, {visible: true});
+  assert.ok(desktopLayout.statistics > desktopLayout.settings, 'Desktop gives the statistics column more space');
+  assert.ok(Math.abs(desktopLayout.launch - desktopLayout.import) < 1, 'Desktop Start and Import buttons must have equal width');
+  assert.ok(desktopLayout.actionOrder, 'Desktop Start must be above Import');
+  await resize.waitForSelector(`${detail} .profile-clear-chart .profile-clear-shot [data-status="unread"]`, {visible: true});
   const selectedUrl = resize.url(), historyLength = await resize.evaluate(() => history.length);
-  await resize.click('#gameSettingsOpen');
-  await resize.waitForSelector('.book-game-detail-settings', {visible: true});
-  await resize.setViewport({width: 390, height: 540});
-  await resize.waitForSelector('.mobile-game-settings', {visible: true});
-  await resize.setViewport({width: 1440, height: 540});
-  await resize.waitForSelector('.book-game-detail-settings', {visible: true});
-  await resize.goBack();
-  await resize.waitForSelector(`${detail} #gameSettingsOpen`, {visible: true});
+  await resize.$eval(`${detail} .book-game-detail-settings`, node => node.scrollIntoView({block:'end'}));
   for (const width of [390, 1440, 390, 1440, 390]) {
     await resize.setViewport({width, height: 540});
     const compact = width === 390;
-    const surface = compact ? mobileDetail : detail;
+    const surface = compact ? sheet : detail;
     await resize.waitForSelector(`${surface} #launch`, {visible: true});
     const state = await resize.$eval(surface, node => {
       const rect = node.getBoundingClientRect();
@@ -179,30 +161,29 @@ try {
           id: animation.id, frames: animation.effect.getKeyframes(),
         })),
         launchCount: document.querySelectorAll('#launch').length,
-        grid: !!document.querySelector('#bookGameGrid')?.getClientRects().length,
+        grid: !!document.querySelector('#bookGameGrid'),
         libraryInert: document.querySelector('.game-library').inert,
         focus: document.activeElement.id,
         historyLength: history.length,
       };
     });
     assert.deepEqual(state.animations, [], `${width}px resize must not start a navigation animation`);
-    if (compact) assert.ok(state.bottomOffset <= 1, 'The first mobile detail frame is already pinned to the viewport');
+    if (compact) assert.ok(state.bottomOffset <= 1, 'The first mobile sheet frame is already pinned to the viewport');
     assert.equal(state.launchCount, 1, 'Only the active surface owns the game controls');
     assert.equal(state.grid, compact);
     assert.equal(state.libraryInert, compact);
     assert.equal(state.focus, compact ? 'libraryBack' : 'gameTitle');
-    assert.equal(state.historyLength, historyLength + 1, 'Only opening Settings adds a history entry');
+    assert.equal(state.historyLength, historyLength);
     assert.equal(resize.url(), selectedUrl);
   }
   await resize.goBack();
   await resize.waitForFunction(() => !new URLSearchParams(location.search).has('game'));
   await resize.setViewport({width: 1440, height: 540});
-  await resize.waitForSelector('.book-sidebar', {visible: true});
   await resize.waitForSelector(card, {visible: true});
   assert.equal(await resize.evaluate(() =>
     document.querySelector('.game-library').inert ||
     document.body.classList.contains('library-tools-closing') ||
-    !!document.querySelector('[data-game-detail]')), false, 'Resize must retire an exiting mobile detail');
+    !!document.querySelector('[data-game-detail]')), false, 'Resize must retire an exiting mobile sheet');
   await resize.close();
 
   const handbook = await browser.newPage();

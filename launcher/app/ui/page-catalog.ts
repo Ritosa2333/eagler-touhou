@@ -64,7 +64,7 @@ export const catalogPages: readonly CatalogPage[] = [
   },
   {
     id: 'launch',
-    name: '游戏详情与游戏设置',
+    name: '启动选项',
     area: '游玩',
     href: './?game=th10',
     views: ['普通版 / 多人版', '常用 / 高级设置'],
@@ -72,8 +72,7 @@ export const catalogPages: readonly CatalogPage[] = [
       region(
         'launch',
         '作品与启动',
-        ['heading', '方形封面、作品名与返回', '背景暗化和模糊、两行作品名、长标题、缺失封面、关闭重开'],
-        ['progress', '通关进度与游戏时间', '未读取、部分记录、一命通关、选择机体与难度'],
+        ['heading', '封面、作品名与返回', '长标题、缺失封面、关闭重开'],
         ['resources', '资源提示', '缺少 DATA、准备中、资源就绪、失败'],
         ['actions', '启动与导入', '可启动、准备中禁用、导入入口'],
       ),
@@ -106,7 +105,7 @@ export const catalogPages: readonly CatalogPage[] = [
     name: '键盘与手柄',
     area: '游玩',
     href: './?game=th10',
-    entryPath: '游戏详情 | 游戏设置 | 输入设置',
+    entryPath: '作品选项 | 输入设置',
     views: ['键盘改键', '手柄改键', '本地玩家设备分配'],
     regions: [
       region(

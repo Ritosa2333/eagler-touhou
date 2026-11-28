@@ -1,4 +1,4 @@
-import {useId, useLayoutEffect, useState, type MouseEvent, type ReactNode} from 'react';
+import {useId, useLayoutEffect, useState, type MouseEvent} from 'react';
 import {Collapsible} from 'radix-ui';
 import {ChevronDown, MoreHorizontal, type LucideIcon} from 'lucide-react';
 import {Button} from '../../ui/button';
@@ -10,21 +10,15 @@ import './site-navigation.css';
 export interface SiteNavigationItem {id: string; label: string; href: string; icon: LucideIcon;}
 export interface SiteNavigationGroup {id: string; label: string; items: readonly SiteNavigationItem[];}
 interface NavigationProps {activeId: string; onSelect?(item: SiteNavigationItem): void;}
-type RenderNavigationLink = (item: SiteNavigationItem, props: {
-  'aria-current'?: 'page'; children: ReactNode;
-}) => ReactNode;
 
 function intercept(event: MouseEvent<HTMLAnchorElement>, item: SiteNavigationItem, onSelect: NavigationProps['onSelect']) {
   if (!onSelect || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   event.preventDefault(); onSelect(item);
 }
-function NavigationLink({item, activeId, onSelect, vertical = false, renderLink}: NavigationProps & {item: SiteNavigationItem; vertical?: boolean; renderLink?: RenderNavigationLink}) {
+function NavigationLink({item, activeId, onSelect, vertical = false}: NavigationProps & {item: SiteNavigationItem; vertical?: boolean}) {
   const Icon = item.icon;
-  const current = activeId === item.id ? 'page' : undefined;
-  const content = <><Icon aria-hidden="true"/><span>{item.label}</span></>;
   return <Button asChild variant={activeId === item.id ? 'secondary' : 'ghost'} className={vertical ? 'site-navigation-link h-auto min-h-11 min-w-0 flex-1 flex-col gap-1 whitespace-normal px-1 py-2 text-xs' : 'site-navigation-link h-11 w-full min-w-0 justify-start gap-3'}>
-    {renderLink ? renderLink(item, {'aria-current':current, children:content}) :
-      <a href={item.href} aria-current={current} onClick={event => intercept(event, item, onSelect)}>{content}</a>}
+    <a href={item.href} aria-current={activeId === item.id ? 'page' : undefined} onClick={event => intercept(event, item, onSelect)}><Icon aria-hidden="true"/><span>{item.label}</span></a>
   </Button>;
 }
 
@@ -55,13 +49,7 @@ export function SiteNavigationMore({items, activeId, onSelect, vertical = false}
   </ActionMenu>;
 }
 
-export function SiteBottomNavigation({items, more = [], activeId, onSelect, className, renderLink}: NavigationProps & {
-  items: readonly SiteNavigationItem[]; more?: readonly SiteNavigationItem[];
-  className?: string; renderLink?: RenderNavigationLink;
-}) {
+export function SiteBottomNavigation({items, more, activeId, onSelect}: NavigationProps & {items: readonly SiteNavigationItem[]; more: readonly SiteNavigationItem[];}) {
   const {t} = useLocale();
-  return <nav className={['site-bottom-navigation', className].filter(Boolean).join(' ')} aria-label={t('nav.main')}>
-    {items.map(item => <NavigationLink key={item.id} item={item} activeId={activeId} onSelect={onSelect} renderLink={renderLink} vertical/>)}
-    {more.length > 0 && <SiteNavigationMore items={more} activeId={activeId} onSelect={onSelect} vertical/>}
-  </nav>;
+  return <nav className="site-bottom-navigation" aria-label={t('nav.main')}>{items.map(item => <NavigationLink key={item.id} item={item} activeId={activeId} onSelect={onSelect} vertical/>)}<SiteNavigationMore items={more} activeId={activeId} onSelect={onSelect} vertical/></nav>;
 }

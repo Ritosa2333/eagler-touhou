@@ -9,29 +9,22 @@ import {BookButton} from './BookButton';
 import {useEffect, useLayoutEffect, useRef, useState, type FormEvent} from 'react';
 import {PasswordField} from './PasswordField';
 import {PasswordResetForm} from './PasswordResetForm';
-import {useHref, useLocation, useNavigate, useSearchParams} from 'react-router';
+import {useHref, useSearchParams} from 'react-router';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
 import {RegistrationTerms} from './RegistrationTerms';
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
 import './account-page.css';
 import {useLocale, type UiMessageKey} from '../../i18n';
-import {LauncherBack} from './LauncherBack';
-import {localeHome} from '../../../src/launcher/i18n.mts';
 
 type RegistrationChallenge = {challengeId: string; expiresAt: number};
 type AccountMode = 'login' | 'register' | 'reset';
 
 export function AccountPage(props: {artworkSrc?:string}) {
-  const {t, locale} = useLocale(), {state,retry} = useAccountSession();
-  const [search] = useSearchParams();
-  const resetFormVisible = state.status === 'guest' && search.get('mode') === 'reset';
+  const {t} = useLocale(), {state,retry} = useAccountSession();
   useEffect(() => {if (state.status === 'member') location.replace(loginDestination());}, [state.status]);
   return <main className="account-page" aria-busy={state.status === 'loading'}>
     <aside className="account-art" aria-hidden="true"><img src={props.artworkSrc ?? backgroundUrl} alt="" className="account-art-image"/></aside>
     <section className="account-shell">
-      {!resetFormVisible && <div className="account-toolbar">
-        <LauncherBack href={localeHome(locale)} className="launcher-mobile-back" replace returnToEntry/>
-      </div>}
       {state.status === 'guest' ? <AccountForm/> : state.status === 'error' ?
         <div className="account-content"><BookButton variant="action" className="account-submit" onClick={retry}>{t('account.requestFailed')}</BookButton></div> :
         <div className="account-content account-loading" aria-hidden="true">
@@ -45,7 +38,6 @@ function AccountForm() {
   const {locale, t} = useLocale();
   const privacyHref = useHref('/privacy.html');
   const [search, setSearch] = useSearchParams();
-  const {state} = useLocation(), navigate = useNavigate();
   const registering = search.get('mode') === 'register';
   const resetting = search.get('mode') === 'reset';
   const entryInput = useRef<HTMLInputElement>(null);
@@ -54,16 +46,12 @@ function AccountForm() {
   const activeMode = resetting ? 'reset' : registering ? 'register' : 'login';
   const changeMode = (mode: AccountMode, keyboard: boolean) => {
     focusMode.current = keyboard ? mode : null;
-    if (resetting && mode === 'login' && state?.accountResetFromLogin === true) {
-      void navigate(-1);
-      return;
-    }
     setSearch(previous => {
       const next = new URLSearchParams(previous);
       if (mode === 'login') next.delete('mode');
       else next.set('mode', mode);
       return next;
-    }, {replace:mode !== 'reset',state:{...state,accountResetFromLogin:mode === 'reset'}});
+    });
   };
   useLayoutEffect(() => {
     if (focusMode.current !== activeMode) return;

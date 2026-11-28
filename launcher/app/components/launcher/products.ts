@@ -24,16 +24,12 @@ export function isPc98Product(product: Pick<LibraryProduct, 'number'>): boolean 
 }
 
 export type MultiplayerGroup = 'versus' | 'original' | 'fighting' | 'pc98';
-export function bookGameKind(id: GameId): Exclude<MultiplayerGroup, 'pc98'> {
-  const game = PRODUCT_GAMES[id];
+export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): MultiplayerGroup {
+  const game = PRODUCT_GAMES[product.gameId];
   if ('inputProfile' in game && game.inputProfile === 'fighting') return 'fighting';
   if ('multiplayer' in game && game.multiplayer.gameplay === 'versus') return 'versus';
+  if (isPc98Product(game)) return 'pc98';
   return 'original';
-}
-
-export function multiplayerGroup(product: Pick<LibraryProduct, 'gameId'>): MultiplayerGroup {
-  const kind = bookGameKind(product.gameId);
-  return kind === 'original' && isPc98Product(PRODUCT_GAMES[product.gameId]) ? 'pc98' : kind;
 }
 
 /** Same catalog fields as lib/frontend-assets.mjs; no copied product list. */

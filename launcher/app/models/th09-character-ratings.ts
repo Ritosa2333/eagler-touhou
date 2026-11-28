@@ -3,11 +3,6 @@ import {th09CharacterLoadout} from '../../src/launcher/th09-room-stats.mjs';
 import type {Translate, UiMessageKey} from '../i18n';
 
 export const th09CharacterIds = Array.from({length:16}, (_, index) => index);
-export function profileTh09Character(search: string) {
-  const params = new URLSearchParams(search);
-  const value = params.get('character') ?? params.get('loadout');
-  return value !== null && /^(?:[0-9]|1[0-5])$/.test(value) ? Number(value) : null;
-}
 const positive = z.number().int().positive();
 export const th09RatingPoint = z.object({at:z.number().int().nonnegative().max(8.64e15), rating:z.number().int()});
 export const th09CharacterRating = z.object({

@@ -1,5 +1,5 @@
 import {Button as UiButton} from '../../ui/controls';
-import {useEffectEvent, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
+import {useEffectEvent, useLayoutEffect, useState, useSyncExternalStore} from 'react';
 import {useLocale} from '../../i18n';
 import type {GameDataImportModel} from '../../models/game-data-import';
 import {closeMainSelectMenus} from '../launcher/MainSelect';
@@ -9,37 +9,15 @@ export interface GameDataImportWindowsProps {
   model: GameDataImportModel;
   /** Read the live Runtime state for main's programmatic-popup fallback policy. */
   getRuntimeReady(): boolean;
-  manualOpen?: boolean;
-  onManualClose?(): void;
 }
 
 /** Main public/index.html838–864 + app.mts3328–3367,9643–9672.
- * Manual import owns a Router entry. Automatic prompts follow the active
- * transfer and reuse the same import model and fullscreen overlay host.
+ * Host places these transient sections in the correct fullscreen overlay host;
+ * no second dialog/history, file session, continuation or startup owner.
  */
-export function GameDataImportWindows({model, getRuntimeReady, manualOpen, onManualClose}: GameDataImportWindowsProps) {
+export function GameDataImportWindows({model, getRuntimeReady}: GameDataImportWindowsProps) {
   const {t} = useLocale(), state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const [password, setPassword] = useState('');
-  const manualAttempt = useRef<number | undefined>(undefined);
-  const finishManual = useEffectEvent(() => onManualClose?.());
-  useLayoutEffect(() => {
-    if (manualOpen) {
-      model.openManual();
-      manualAttempt.current = model.getSnapshot().attempt?.id;
-      const frame = requestAnimationFrame(() => document.getElementById('gameDataImportClose')?.focus({preventScroll:true}));
-      return () => cancelAnimationFrame(frame);
-    }
-    if (manualAttempt.current === undefined) return;
-    if (manualAttempt.current === model.getSnapshot().attempt?.id) model.dismissImport();
-    manualAttempt.current = undefined;
-    document.getElementById('gamePackageImport')?.focus({preventScroll:true});
-  }, [manualOpen, model]);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Check committed model state because opening manual import synchronously updates the snapshot.
-  useLayoutEffect(() => {
-    if (!manualOpen) return;
-    const current = model.getSnapshot();
-    if (!current.importOpen || current.attempt?.id !== manualAttempt.current) finishManual();
-  }, [manualOpen, model, state.importOpen, state.attempt?.id]);
   const present = useEffectEvent(() => {
     // Main app.mts3361/9656 closes menus on presentation, including repeated
     // opens. A hidden remount must not replay an earlier presentation, and

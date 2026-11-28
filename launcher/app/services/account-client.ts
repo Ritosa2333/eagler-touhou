@@ -189,13 +189,10 @@ export async function accountRequest<T = unknown>(path: string, body?: Record<st
 
 async function sendAccountRequest<T>(path: string, body: Record<string, unknown> | FormData | undefined, options: RequestOptions): Promise<T> {
   if (!accountsEnabled) throw new AccountRequestError('ACCOUNT_FEATURE_DISABLED');
-  const [pathname = '', query, ...extra] = path.split('?');
-  const segments = pathname.split('/');
+  const segments = path.split('/');
   if (
-    !/^[a-z0-9._/-]+$/i.test(pathname) ||
-    pathname.startsWith('/') ||
-    extra.length > 0 ||
-    (query !== undefined && !/^[a-z0-9._%&=~+*-]*$/i.test(query)) ||
+    !/^[a-z0-9._/-]+$/i.test(path) ||
+    path.startsWith('/') ||
     segments.some((segment) => !segment || segment === '.' || segment === '..')
   )
     throw new AccountRequestError('ACCOUNT_REQUEST_FAILED');

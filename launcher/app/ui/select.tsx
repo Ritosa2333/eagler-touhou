@@ -16,12 +16,14 @@ import {
 import { Select as Primitive } from 'radix-ui';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { uiPortalHost } from './portal';
+import { useSurfaceMotion } from './use-surface-motion';
 import { cn } from './utils';
 import { listPopupIndicatorClass } from './list-popup';
 import './menu-motion.css';
 
 type SelectContextValue = {
   trigger: RefObject<HTMLButtonElement | null>;
+  content: RefObject<HTMLDivElement | null>;
   host?: HTMLElement;
   surface?: string;
   open: boolean;
@@ -74,6 +76,7 @@ export function Select({
   ...props
 }: ComponentPropsWithoutRef<typeof Primitive.Root>) {
   const trigger = useRef<HTMLButtonElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen ?? false);
   const [host, setHost] = useState<HTMLElement>();
   const [surface, setSurface] = useState<string>();
@@ -104,6 +107,8 @@ export function Select({
   const close = useCallback(() => setOpen(false), [setOpen]);
   const closeRef = useRef(close);
   closeRef.current = close;
+
+  useSurfaceMotion(content, open ? 'enter' : null, { kind: 'menu' });
 
   useLayoutEffect(() => {
     if (disabled) return;
@@ -156,7 +161,7 @@ export function Select({
     };
   }, [close, disabled]);
 
-  const context: SelectContextValue = { trigger, host, surface, open, setOpen };
+  const context: SelectContextValue = { trigger, content, host, surface, open, setOpen };
   return (
     <SelectContext.Provider value={context}>
       <Primitive.Root {...props} disabled={disabled} open={open} onOpenChange={setOpen}>
@@ -229,18 +234,18 @@ type SelectContentProps = ComponentPropsWithoutRef<typeof Primitive.Content> & {
 
 export const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
   function SelectContent({ children, className, 'data-ui-surface': dataUiSurface, ...props }, forwardedRef) {
-    const { host, surface } = useSelectContext();
+    const { content, host, surface } = useSelectContext();
     return (
       <Primitive.Portal container={host}>
         <Primitive.Content
           {...props}
-          ref={forwardedRef}
+          ref={mergeRefs(forwardedRef, content)}
           position="popper"
           sideOffset={6}
           collisionPadding={12}
           data-slot="select-content"
           data-ui-surface={dataUiSurface ?? surface}
-          className={cn('ui-select-content ui-kit-select-content ui-dropdown-motion', className)}
+          className={cn('ui-select-content ui-kit-select-content ui-select-exit-motion', className)}
         >
           <Primitive.ScrollUpButton className="ui-select-scroll">
             <ChevronUp aria-hidden="true" />

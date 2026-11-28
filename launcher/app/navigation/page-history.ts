@@ -12,12 +12,6 @@ export const PAGE_PARENTS: Readonly<Record<Page, Page | null>> = Object.freeze({
 export interface PageHistory {version: 1; position: number; page: Page; pagePosition: number; ancestors: Partial<Record<Page, number>>}
 export interface PageLocation {pathname: string; search: string; hash: string; state?: unknown}
 const object = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
-export function localLayerOwnsPageScroll({pathname, search, hash, state}: PageLocation): boolean {
-  const layers = object(object(state)[LOCAL_LAYERS_KEY]);
-  return layers.href === pathname + search + hash &&
-    Object.values(object(layers.values)).some(entry => object(entry).pageScroll === true);
-}
-
 export function readPageHistory(state: unknown): PageHistory | null {
   const source = object(state);
   const entry = object(source[PAGE_HISTORY_KEY]);
@@ -41,7 +35,7 @@ export function readPageHistory(state: unknown): PageHistory | null {
 }
 export function pageOf(location: PageLocation): Page {
   if (/\/login\.html\/?$/.test(location.pathname)) return 'account';
-  if (/\/(?:profile\.html|u\/[^/]+)\/?$/.test(location.pathname)) return 'profile';
+  if (/\/profile\.html\/?$/.test(location.pathname)) return 'profile';
   const state = object(location.state), options = object(state.launcherSurfaceEntry);
   if (state.launcherClosedPlayerSelection) return 'launcher';
   if (/\/(?:lobby|lobby\.html)\/?$/.test(location.pathname)) return options.surface === 'options' ? 'multi-options' : 'directory';

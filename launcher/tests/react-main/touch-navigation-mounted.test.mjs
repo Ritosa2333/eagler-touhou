@@ -357,7 +357,7 @@ test('synthetic mounted lobby: another room product opens settings without repla
   await mountEntry([entry], {roomOptionsProduct: 'th07mp'});
   await click('#fixtureRoomSettings'); await until(() => hasOptions('th07mp'), 'real shared settings use the room product');
   assert.equal(url(), entry, 'settings product is independent of directory filter');
-    assert.equal(node('[data-lobby-icon][aria-pressed="true"]').dataset.lobbyIcon, 'th06mp', 'directory rail retains its viewed game');
+    assert.equal(node('.book-lobby-desktop [data-lobby-product][data-selected="true"]').dataset.lobbyProduct, 'th06mp', 'directory rail retains its viewed game');
   await openEditor(); await click('#touchLayoutExit'); await until(() => !hasEditor(), 'room-origin editor closes');
   await traverse(1); await until(() => hasOptions('th07mp') && !hasEditor(), 'retired Forward retains room product options');
   assert.equal(url(), entry, 'retired marker cleanup preserves raw query encoding');
@@ -423,7 +423,7 @@ test('synthetic mounted decisions: secondary and hidden Cancel retain focus and 
   let second;
   await React.act(async () => {second = mounted.host.decisions.askDecision({message: 'No cancel button', secondaryText: 'Other', hideCancel: true, confirmOnEnter: true});});
   const secondDialog = node('#decisionDialog');
-  assert.equal(env.document.querySelector('#decisionCancel'), null); assert.equal(secondDialog.dataset.options, '2');
+  assert.equal(node('#decisionCancel').hidden, true); assert.equal(secondDialog.dataset.options, '2');
   assert.equal(env.document.activeElement, node('#decisionConfirm'));
   await React.act(async () => {
     const enter = new env.window.KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true});
@@ -492,7 +492,7 @@ for (const context of ['library', 'lobby']) test(`synthetic mounted reload: old 
   assert.ok(!hasEditor()); assert.deepEqual(mounted.nativeCalls, []);
   if (context === 'lobby') {
     assert.ok(hasParent('lobby')); assert.equal(mounted.router.state.location.state.launcherSurfaceEntry, undefined);
-    assert.equal(node('[data-lobby-icon][aria-pressed="true"]').dataset.lobbyIcon, product);
+    assert.equal(node('.book-lobby-desktop [data-lobby-product][data-selected="true"]').dataset.lobbyProduct, product);
   } else assert.ok(hasOptions(product));
 });
 
@@ -529,7 +529,6 @@ for (const dismiss of ['escape', 'backdrop', 'back']) {
     await mountEntry([entry], {roomDrawer: true, strictMode: true});
     const frame = node('#gameFrame'); await click('#mpSettingsRoomDrawerToggle');
     await until(() => !node('#mpSettingsRoomDrawer').hidden, 'actual room drawer opens');
-    if (node('#mpMobileOptionsToggle').getAttribute('aria-expanded') !== 'true') await click('#mpMobileOptionsToggle');
     assert.ok(node('#mpSettingsRoomDrawer').contains(node('#mpTouchLayoutEdit')), 'production options relocation owns the same settings control');
     const settingsKey = mounted.router.state.location.key;
     await openEditor(); await editBomb(); const draft = structuredClone(mounted.host.touchLayout.getSnapshot().draft);

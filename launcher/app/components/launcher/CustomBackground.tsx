@@ -1,10 +1,9 @@
-import {useEffect, useId, useRef, useState, type PointerEvent} from 'react';
+import {useEffect, useRef, useState, type PointerEvent} from 'react';
 import {Dialog, DialogContent, DialogTitle} from '../../ui/dialog';
 import {Button} from '../../ui/button';
 import {ChoiceGroup, ChoiceItem} from '../../ui/choice-group';
 import {Sun, Moon} from 'lucide-react';
 import {useLocale} from '../../i18n';
-import {SettingsField} from '../settings/SettingsGroup';
 import './custom-background.css';
 
 const settingsEvent = 'eagler-background-settings-change';
@@ -76,23 +75,9 @@ export function BackgroundController() {
   },[]);
   return null;
 }
-const themeChoiceClass = 'gap-1 px-2 py-0 text-xs hover:bg-transparent data-[state=on]:bg-transparent [&_svg]:size-3.5';
-
-export function BaseThemeChoices({dark,onThemeChange}:{dark:boolean;onThemeChange(value:'light'|'dark'):void}) {
-  const {locale} = useLocale();
-  const labels = text[locale], id = useId();
-  return <SettingsField label={labels.base} labelId={id}>
-    <ChoiceGroup type="single" aria-labelledby={id} className="custom-theme-switch" data-theme={dark?'dark':'light'}
-      value={dark?'dark':'light'} onValueChange={value=>{if(value==='light'||value==='dark')onThemeChange(value);}}>
-      <ChoiceItem value="light" data-theme-value="light" className={themeChoiceClass}><Sun aria-hidden="true"/>{labels.light}</ChoiceItem>
-      <ChoiceItem value="dark" data-theme-value="dark" className={themeChoiceClass}><Moon aria-hidden="true"/>{labels.dark}</ChoiceItem>
-    </ChoiceGroup>
-  </SettingsField>;
-}
-
-export function BackgroundSettings({open,onOpenChange,dark,onThemeChange,surfaces=backgroundSurfaces,showBase=true}: {
+export function BackgroundSettings({open,onOpenChange,dark,onThemeChange,surfaces=backgroundSurfaces}: {
   open:boolean;onOpenChange(open:boolean):void;dark:boolean;onThemeChange(value:'light'|'dark'):void;
-  surfaces?:readonly BackgroundSurface[]; showBase?:boolean;
+  surfaces?:readonly BackgroundSurface[];
 }) {
   const {locale}=useLocale(), labels=text[locale] ?? text.en, input=useRef<HTMLInputElement>(null);
   const dialog=useRef<HTMLDivElement>(null);
@@ -120,12 +105,20 @@ export function BackgroundSettings({open,onOpenChange,dark,onThemeChange,surface
   async function remove(){try{await imageStore('readwrite',null);setHasImage(false);setError(false);announceImage();}catch{setError(true);}}
   const mode = values.mode === 'image' && !hasImage ? 'plain' : values.mode;
   const opacitySettings = ['shade', ...surfaces] as const;
+  const theme = dark ? 'dark' : 'light';
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent ref={dialog} className="custom-background-dialog" overlayClassName="custom-background-overlay" aria-describedby={undefined} style={{translate:`${offset.x}px ${offset.y}px`}}>
       <div className="custom-background-drag-handle" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}>
         <DialogTitle>{labels.title}</DialogTitle>
       </div>
-      {showBase && <BaseThemeChoices dark={dark} onThemeChange={onThemeChange}/>}
+      <div className="custom-theme-base">
+        <span id="custom-theme-label">{labels.base}</span>
+        <ChoiceGroup type="single" aria-labelledby="custom-theme-label" className="custom-theme-switch" data-theme={theme} value={theme}
+          onValueChange={value=>{if(value==='dark'||value==='light')onThemeChange(value);}}>
+          <ChoiceItem value="light" data-theme-value="light"><Sun aria-hidden="true"/>{labels.light}</ChoiceItem>
+          <ChoiceItem value="dark" data-theme-value="dark"><Moon aria-hidden="true"/>{labels.dark}</ChoiceItem>
+        </ChoiceGroup>
+      </div>
       <h3>{labels.background}</h3>
       <fieldset className="background-presets" aria-label={labels.presets}>
         {backgroundModes.filter(preset=>preset!=='image'||hasImage).map(preset=><button type="button" key={preset} className="background-preset"

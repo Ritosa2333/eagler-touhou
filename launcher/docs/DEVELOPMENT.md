@@ -31,10 +31,6 @@ bun run dev
 
 `tests/visual/layout.html` 的“记录下一次动效”从真实操作开始逐帧检查透明度、状态和动画清理。浏览器回归使用 `npm run test:ui-motion:browser -- <开发地址>`，分别验证正常动效、站内减弱动效和系统减弱动效，覆盖亮暗与横竖屏。结果保存实际资源地址和逐帧记录；静态截图的减弱动效设置不代替正常动效验收。
 
-返回路径使用 `npm run test:return-paths:browser -- <启用账号且提供 th07 的启动器地址>` 验证。测试拦截账号请求，覆盖手机与桌面的页面返回、抽屉和设置子页。两种减少动画设置各跑一次。测试逐帧检查个人主页进入单作时的滚动和侧栏位置，验证单作和手机机体分对照的页面返回与浏览器返回。桌面用滚轮检查书架、单机详情、游戏设置和联机大厅的侧栏位置。
-
-页面内切换前后保持外层布局稳定，动画只作用于变化的内容区。真正进入子页时，以浏览器历史为准，并检查返回能否恢复原列表及焦点。参考 [Chrome 的页面栈](https://developer.chrome.com/docs/modern-web-guidance/guides/ui-components/stack-drill-down)和[局部切换](https://developer.chrome.com/docs/modern-web-guidance/guides/ui-behaviors/scoped-component-transitions)。
-
 ### th09mp 评分原型
 
 准备一份本地 JSON 快照。`as_of` 是快照时间，`games` 的每项是 `[玩家编号, 对手编号, 对局时间, 胜方座位]`，末尾可再加双方机体编号，缺失的机体用 `null`。时间用毫秒时间戳，胜方用 `0` 或 `1`，每条已确认的双账号对局录入一次。

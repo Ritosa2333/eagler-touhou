@@ -4,7 +4,7 @@
   body.mp-room-active .site-footer {display: none;}
   .site-footer-grid {max-width: var(--launcher-layout-width); box-sizing: border-box; margin: auto; padding: 32px var(--launcher-layout-gutter) 36px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px;}
   .site-footer-brand {grid-column: 1 / -1; display: flex; align-items: flex-start; width: 132px;}
-  .site-footer-brand .launcher-wordmark {width: 100%;}
+  .site-footer-brand .site-brand {width: 100%;}
   .site-footer h2 {margin: 0 0 8px; font: 500 15px / 24px var(--kit-font);}
   .site-footer nav {min-width: 0;}
   .site-footer nav :is(a, button) {display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--kit-muted-foreground); font: 400 14px / 20px var(--kit-font); text-decoration: none; text-align: left; overflow-wrap: anywhere; cursor: pointer;}

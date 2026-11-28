@@ -1,16 +1,13 @@
 import { Button as UiButton } from '../../ui/button';
 import { ButtonGroup } from '../../ui/button-group';
 import { Field, FieldContent, FieldGroup } from '../../ui/field';
-import { PopoverClose } from '../../ui/popover';
-import { Collapsible } from 'radix-ui';
-import { Download, Upload, FileText, FolderOpen, Trash2, ChevronRight, Hand, Monitor, SlidersHorizontal, Volume2 } from 'lucide-react';
+import { Download, Upload, FolderOpen, Trash2, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import { PRODUCT_GAMES, productFeatureAvailable } from '../../../src/contracts/product-catalog.mts';
 import { isMusicMode } from '../../../src/launcher/game-preferences.mts';
 import { resolveMusicAvailability } from '../../../src/launcher/music-availability.mts';
-import type { GameSettingsModel, SettingsDisclosureState } from '../../models/game-settings';
+import type { GameSettingsModel } from '../../models/game-settings';
 import { useLocale } from '../../i18n';
-import { useCompactNavigation } from '../../navigation/navigation-motion';
 import { OptionsGroup, OptionsGroupHeading } from './OptionsGroup';
 import { InputSettings } from './InputSettings';
 import { GameAudioFields, QuickChatVolumeField } from './GameAudioControls';
@@ -19,7 +16,6 @@ import { OptionRow } from './OptionRow';
 import { OptionSwitch } from './TouchSettingsFields';
 import { SettingsSelect } from './SettingsSelect';
 import type { SettingsActions, SettingsFileAction } from './types';
-import './settings-group.css';
 
 /** Both library and lobby mount this exact component against the same model.
  * Room timing/launch rows are composed by their existing domain owner. */
@@ -29,17 +25,12 @@ export function SettingsBody({
   onOpenTouchLayout,
   multiplayerControls,
   preferences,
-  gamePage: gamePageOptions,
 }: {
   model: GameSettingsModel;
   actions: SettingsActions;
   onOpenTouchLayout(): void;
   multiplayerControls?: ReactNode;
   preferences?: SitePreferencesModel;
-  gamePage?: {
-    disclosures: Partial<SettingsDisclosureState>;
-    setDisclosure(name: keyof SettingsDisclosureState, open: boolean): void;
-  };
 }) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const midi = useSyncExternalStore(
@@ -48,21 +39,14 @@ export function SettingsBody({
     actions.externalMidi.getSnapshot,
   );
   const { t } = useLocale();
-  const compact = useCompactNavigation();
   const midiVisible = !!state && PRODUCT_GAMES[state.gameId].musicCapabilities.midi && state.music === 'midi';
   useEffect(() => {
     if (!midiVisible && midi.enabled) void actions.externalMidi.setEnabled(false).catch(actions.reportError);
   }, [midiVisible, midi.enabled, actions]);
   if (!state) return null;
-  const gamePage = !!gamePageOptions;
   const { context, options, multiplayer } = state,
-    disclosure = gamePageOptions ? {display: compact, touch: false, files: false, audio: false, advanced: false, ...gamePageOptions.disclosures} : state.disclosure,
-    mobileOpen = disclosure.touch,
+    mobileOpen = state.disclosure.touch,
     product = PRODUCT_GAMES[state.gameId];
-  const setDisclosure = (name: keyof typeof disclosure, open: boolean) => {
-    if (gamePageOptions) gamePageOptions.setDisclosure(name, open);
-    else model.setDisclosure(name, open);
-  };
   const availability = resolveMusicAvailability(context.musicAvailability);
   const id = (name: string) => (multiplayer ? `mp${name[0].toUpperCase()}${name.slice(1)}` : name);
   const item = (extra: string) => `item ${extra}`;
@@ -121,21 +105,21 @@ export function SettingsBody({
   // Its stable sibling key lets React move the same controls across the file,
   // display and advanced groups while preserving focus and local owners.
   const touch = (
-    <Collapsible.Root key="touch-options" asChild open={mobileOpen} onOpenChange={open => setDisclosure('touch', open)}><section
+    <section
+      key="touch-options"
       className={`item mobile-options options-group${mobileOpen ? ' open' : ''}`}
       id={id('mobileOptions')}
     >
-      <Collapsible.Trigger asChild><OptionsGroupHeading icon={Hand}
+      <OptionsGroupHeading
         className="mobile-options-head"
         id={id('mobileOptionsToggle')}
+        aria-expanded={mobileOpen}
         aria-controls={id('mobileOptionsBody')}
+        onClick={() => model.setDisclosure('touch', !mobileOpen)}
       >
         {t('options.touch')}
-      </OptionsGroupHeading></Collapsible.Trigger>
-      <Collapsible.Content id={id('mobileOptionsBody')} inert={!mobileOpen}
-        className={gamePage ? 'settings-disclosure-content' : undefined}
-        {...(gamePage ? {} : {forceMount: true as const, hidden: !mobileOpen})}>
-      <FieldGroup className="mobile-options-body">
+      </OptionsGroupHeading>
+      <FieldGroup className="mobile-options-body" id={id('mobileOptionsBody')} hidden={!mobileOpen} inert={!mobileOpen}>
         <OptionRow
           className="mobile-option"
           label={t('settings.touchEnabled')}
@@ -177,36 +161,36 @@ export function SettingsBody({
           }
         />
         <UiButton
-          variant={gamePage ? 'ghost' : 'outline'}
+          variant="outline"
           size="row"
-          className="settings-entry touch-layout-option settings-navigation-row"
+          className="settings-entry touch-layout-option"
           id={id('touchLayoutEdit')}
           type="button"
           onClick={onOpenTouchLayout}
         >
-          {!gamePage && <SlidersHorizontal aria-hidden="true" />}
+          <SlidersHorizontal aria-hidden="true" />
           <span className="min-w-0 flex-1">{t('settings.touchLayout')}</span>
-          <ChevronRight className="settings-row-chevron" aria-hidden="true" />
+          <ChevronRight aria-hidden="true" />
         </UiButton>
       </FieldGroup>
-      </Collapsible.Content>
-    </section></Collapsible.Root>
+    </section>
   );
-  const files = (
+  return (
+    <div className={multiplayer ? 'mp-settings-body options-settings' : 'options-singleplayer options-settings'}>
+      {multiplayer && multiplayerControls}
+      {context.mobile && touch}
       <OptionsGroup
         id={id('fileOptions')}
-        animated={gamePage}
-        icon={FileText}
         title={t('options.files')}
-        open={disclosure.files}
-        onOpenChange={(open) => setDisclosure('files', open)}
+        open={state.disclosure.files}
+        onOpenChange={(open) => model.setDisclosure('files', open)}
         bodyClassName="file-tools-grid"
       >
         <Field className="file-tool-item" id={id('saveFileTool')} orientation="horizontal">
           <FieldContent>
             <span className="ui-field-label">{t('settings.save')}</span>
           </FieldContent>
-          <ButtonGroup className={gamePage ? 'settings-file-actions' : undefined} aria-label={t('settings.save')}>
+          <ButtonGroup aria-label={t('settings.save')}>
             {actionButton('export-save', t('settings.download'))}
             {actionButton('import-save', t('settings.import'))}
           </ButtonGroup>
@@ -215,7 +199,7 @@ export function SettingsBody({
           <FieldContent>
             <span className="ui-field-label">{t('settings.replay')}</span>
           </FieldContent>
-          <ButtonGroup className={gamePage ? 'settings-file-actions' : undefined} aria-label={t('settings.replay')}>
+          <ButtonGroup aria-label={t('settings.replay')}>
             {actionButton('export-replay', t('settings.download'))}
             {actionButton('manage-replay', t('settings.manage'))}
           </ButtonGroup>
@@ -224,21 +208,17 @@ export function SettingsBody({
           <FieldContent>
             <span className="ui-field-label">{t('settings.hint')}</span>
           </FieldContent>
-          <ButtonGroup className={gamePage ? 'settings-file-actions' : undefined} aria-label={t('settings.hint')}>
+          <ButtonGroup aria-label={t('settings.hint')}>
             {actionButton('import-hint', t('settings.import'))}
             {actionButton('delete-hint', t('action.delete'))}
           </ButtonGroup>
         </Field>
       </OptionsGroup>
-  );
-  const display = (
       <OptionsGroup
         id={id('displayOptions')}
-        animated={gamePage}
-        icon={Monitor}
         title={t('options.display')}
-        open={disclosure.display}
-        onOpenChange={(open) => setDisclosure('display', open)}
+        open={state.disclosure.display}
+        onOpenChange={(open) => model.setDisclosure('display', open)}
         bodyClassName="options-advanced-body"
       >
         {state.gameId === 'th03' && <OptionRow className={item('option-frame-limit')} label={t('settings.th02RapidFire')} control={<OptionSwitch id={id('th03RapidFireToggle')} label={t('settings.th02RapidFire')} checked={options.th03RapidFire} onChange={() => model.setOption('th03RapidFire', !options.th03RapidFire)}/>}/>}
@@ -247,9 +227,9 @@ export function SettingsBody({
           className={item('option-frame-limit')}
           hidden={!product.support.highRefreshRate}
           label={t('settings.frameLimit')}
-          hint={t('settings.frameLimitHint')}
-          hintAction={
-            <PopoverClose asChild>
+          hint={
+            <>
+              <span id={id('frameLimitHintText')}>{t('settings.frameLimitHint')}</span>{' '}
               <UiButton
                 variant="link"
                 size="sm"
@@ -260,7 +240,7 @@ export function SettingsBody({
               >
                 {t('settings.appleNotice')}
               </UiButton>
-            </PopoverClose>
+            </>
           }
           hintId={id('frameLimitHint')}
           control={
@@ -383,13 +363,6 @@ export function SettingsBody({
             }/>)}
         </>}
       </OptionsGroup>
-  );
-  return (
-    <div className={multiplayer ? 'mp-settings-body options-settings' : 'options-singleplayer options-settings'}>
-      {multiplayer && multiplayerControls}
-      {!gamePage && context.mobile && touch}
-      {!gamePage && files}
-      {display}
       {(actions.keyboard || actions.gamepad) && (
         <InputSettings
           keyboard={state.gameId === 'th075' ? actions.th075Keyboard : state.gameId === 'th19' ? actions.th19Keyboard : actions.keyboard}
@@ -399,27 +372,21 @@ export function SettingsBody({
           th09Local={state.gameId === 'th09' && !multiplayer ? actions.th09Local : undefined}
         />
       )}
-      {gamePage && touch}
       <OptionsGroup
         id={id('audioOptions')}
-        animated={gamePage}
-        icon={Volume2}
         title={t('options.volume')}
-        open={disclosure.audio}
-        onOpenChange={(open) => setDisclosure('audio', open)}
+        open={state.disclosure.audio}
+        onOpenChange={(open) => model.setDisclosure('audio', open)}
         bodyClassName="options-advanced-body"
       >
         <GameAudioFields model={model} />
         {preferences && <QuickChatVolumeField preferences={preferences}/>}
       </OptionsGroup>
-      {gamePage && files}
       <OptionsGroup
         id={id('advancedOptions')}
-        animated={gamePage}
-        icon={SlidersHorizontal}
         title={t('options.advanced')}
-        open={disclosure.advanced}
-        onOpenChange={(open) => setDisclosure('advanced', open)}
+        open={state.disclosure.advanced}
+        onOpenChange={(open) => model.setDisclosure('advanced', open)}
         bodyClassName="options-advanced-body"
       >
         <div id={id('gameVersionOption')}>
@@ -447,7 +414,7 @@ export function SettingsBody({
             id={id('musicSelect')}
             label={t('settings.music')}
             aria-label={t('settings.music')}
-            description={availability.audio ? undefined : t('settings.webAudioUnavailable')}
+            title={availability.audio ? '' : t('settings.webAudioUnavailable')}
             value={state.music}
             onChange={(event) => {
               if (isMusicMode(event.target.value)) model.setMusic(event.target.value);
@@ -504,8 +471,7 @@ export function SettingsBody({
           id={id('externalMidiOption')}
           hidden={!midiVisible}
           label={t('settings.externalMidi')}
-          hint={midi.enabled ? undefined : midi.hint}
-          status={midi.enabled ? midi.hint : undefined}
+          hint={midi.hint}
           hintId={id('externalMidiHint')}
           control={
             <OptionSwitch
@@ -514,6 +480,7 @@ export function SettingsBody({
               describedBy={id('externalMidiHint')}
               checked={midiVisible && midi.enabled}
               disabled={!midiVisible || !midi.supported}
+              title={midiVisible && !midi.supported ? t('settings.externalMidiUnsupported') : ''}
               onChange={() => {
                 void actions.externalMidi.setEnabled(!midi.enabled).catch(actions.reportError);
               }}
@@ -546,7 +513,7 @@ export function SettingsBody({
           </SettingsSelect>
         </div>
       </OptionsGroup>
-      {!gamePage && !context.mobile && touch}
+      {!context.mobile && touch}
     </div>
   );
 }

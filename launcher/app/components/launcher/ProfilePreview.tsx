@@ -3,22 +3,19 @@ import {AccountRequestError, accountRequest} from '../../services/account-client
 import {accountSession, notifyRoomProfileChange, useAccountSession} from '../../services/account-session';
 
 import {AccountAvatar} from './AccountAvatar';
-import {ArrowUp, ArrowUpRight, CalendarDays, CloudCheck, CodeXml, Link2, MessageCircle, Pencil, TvMinimal} from 'lucide-react';
+import {ArrowUp, ArrowUpRight, CalendarDays, CodeXml, Link2, MessageCircle, TvMinimal} from 'lucide-react';
 import {OverflowText} from '../../ui/overflow-text';
 import {Button as UiButton} from '../../ui/controls';
 import {Button} from '../../ui/button';
 import {BookButton} from './BookButton';
-import {AppLink} from './AppLink';
-import {LauncherBack} from './LauncherBack';
-import {launcherSectionHref} from './launcher-sections';
-import {lazy, Suspense, useEffect, useState} from 'react';
-import {Navigate, useHref, useLocation} from 'react-router';
+import {lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode} from 'react';
+import {Link, Navigate, useLocation, useNavigate} from 'react-router';
 import {useLocale, type UiMessageKey} from '../../i18n';
-import {localeHome, withUiLanguage} from '../../../src/launcher/i18n.mts';
-import {ProfileLoading} from './ProfileLoading';
+import {withUiLanguage} from '../../../src/launcher/i18n.mts';
+import {ProfileLoading, ProfilePanelLoading} from './ProfileLoading';
 import {ProfileGameDataCard} from './ProfileGameDataCard';
 import type {WatchTh09Replay} from './ProfileTh09Duels';
-import {ProfileBanner} from './ProfileBanner';
+import {ProfileCover} from './ProfileCover';
 import {CountryFlag} from './CountryFlag';
 import {profileSocialTab, SocialCounts, SocialFollowControl, SocialProvider, SocialSection} from './SocialSection';
 import {getProfileStatistics, type ProfileStatistics} from '../../services/cloud-saves';
@@ -33,7 +30,7 @@ const safeUrl = (value: string) => {try {const url = new URL(value); return ['ht
 export type ProfileReview = Partial<Record<'name' | 'bio' | 'avatar' | 'cover' | 'links', 'pending' | 'rejected'>>;
 type RemoteProfile = {username: string; nickname: string; joinedAt: string | null; countryCode?:string | null; regionCode?:string | null; roomAvatarReady?:boolean; reviewPending?:boolean; characterRatingPreview?:boolean; details: (Profile & {display:unknown}) | null};
 export function ProfilePage({readLocalSaves,cloudSync,watchTh09Replay}:{readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;watchTh09Replay?:WatchTh09Replay}={}) {
-  const {pathname, search, hash, state: entryState} = useLocation();
+  const {pathname, search, hash} = useLocation();
   const {state,retry} = useAccountSession();
   const {locale} = useLocale();
   const viewer = state.status === 'member' ? state.user.username : '';
@@ -42,7 +39,7 @@ export function ProfilePage({readLocalSaves,cloudSync,watchTh09Replay}:{readLoca
     if (state.status === 'error') return <ProfileLoading message="account.requestFailed" retry={retry}/>;
     const destination = viewer ? {pathname:'/u/'+encodeURIComponent(viewer),search,hash} :
       withUiLanguage('/login.html?next='+encodeURIComponent(pathname+search+hash),locale);
-    return <><ProfileLoading/><Navigate to={destination} state={entryState} replace/></>;
+    return <><ProfileLoading/><Navigate to={destination} replace/></>;
   }
   return <AccountProfile key={pathname} pathname={pathname} viewer={viewer} viewerLoading={state.status==='loading'} readLocalSaves={readLocalSaves} cloudSync={cloudSync} watchTh09Replay={watchTh09Replay}/>;
 }
@@ -98,7 +95,7 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
   remote:RemoteProfile;owner:boolean;panel:string;viewer:string;viewerLoading:boolean;readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;watchTh09Replay?:WatchTh09Replay;
 }) {
   const {locale,t}=useLocale();
-  const location=useLocation();
+  const location=useLocation(),navigate=useNavigate();
   const socialTab=profileSocialTab(location.search,location.hash);
   const showingSocial=!!socialTab;
   const [legacySaved, setLegacySaved] = useState<{source:RemoteProfile;profile:Profile;display:ProfileDisplay}>();
@@ -120,8 +117,7 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
     ? new Intl.DisplayNames('en', {type:'region'}).of(country) : undefined;
   const visitor = !owner;
   const characterPreview = import.meta.env?.DEV && remote.characterRatingPreview === true;
-  const profileHref = location.pathname + location.search;
-  const messagesHref = launcherSectionHref(useHref('/' + localeHome(locale).replace(/^\.\//, '')), 'messages');
+  const editProfile = () => navigate({pathname:location.pathname,search:location.search,hash:'#edit'});
   const showGameData = display.visible.versus || display.visible.career || display.visible.records;
   const links = [...new Map(profile.links.map(link => [link.url,link])).values()];
   const details = characterPreview ? null : <><p className="profile-bio">{profile.bio || t('profile.bio.missing')}</p>{remote.joinedAt && <dl className="profile-about-meta">
@@ -136,64 +132,83 @@ function ProfileBody({remote,owner,panel,viewer,viewerLoading,readLocalSaves,clo
     onSave={(next,visibility) => {if (remote.reviewPending === undefined) setLegacySaved({source:remote,profile:next,display:visibility});}}/></Suspense>;
   const actionButtons = owner ? <>
     <Button variant="outline" size="sm" asChild>
-      <AppLink href={profileHref + '#game-settings'} rememberEntry><CloudCheck aria-hidden="true"/>{t('cloudSave.title')}</AppLink>
+      <Link to={{pathname:location.pathname,search:location.search,hash:'#game-settings'}}>{t('cloudSave.title')}</Link>
     </Button>
-    <BookButton variant="action" size="sm" asChild>
-      <AppLink href={profileHref + '#edit'} rememberEntry><Pencil aria-hidden="true"/>{t('profile.edit')}</AppLink>
-    </BookButton>
-  </> : !characterPreview && !viewerLoading ? <>
-    {viewer && <Button variant="outline" size="sm" asChild>
-      <AppLink href={messagesHref + '&' + new URLSearchParams({to: remote.username})} rememberEntry><MessageCircle aria-hidden="true"/>{t('messages.contact')}</AppLink>
-    </Button>}
-    <SocialFollowControl username={remote.username}/>
-  </> : null;
+    <BookButton variant="action" size="sm" type="button" onClick={editProfile}>{t('profile.edit')}</BookButton>
+  </> : !characterPreview && !viewerLoading ? <SocialFollowControl username={remote.username}/> : null;
   const actions = actionButtons && <div className="profile-action-buttons">{actionButtons}</div>;
-  const overview = <>
-    <ProfileBanner src={imageData(profile.cover) ? profile.cover : undefined}>
-      <LauncherBack href={localeHome(locale)} className="launcher-mobile-back profile-page-back" replace returnToEntry/>
+  return <main className="player-profile profile-page" aria-labelledby={socialTab ? "profile-social-title" : "profile-name"}>
+    {!socialTab && <ProfileBanner src={imageData(profile.cover) ? profile.cover : undefined}>
       <div className="profile-identity">
-        {visitor ? <UiButton variant="unstyled" type="button" className="profile-avatar" disabled>
-          <AccountAvatar src={profile.avatar} alt={t('profile.avatar.alt')}/>
-        </UiButton> : <UiButton variant="unstyled" asChild className="profile-avatar">
-          <AppLink href={profileHref + '#edit'} rememberEntry aria-label={t('profile.avatar.change')}>
-            <AccountAvatar src={profile.avatar} alt={t('profile.avatar.alt')}/>
-          </AppLink>
-        </UiButton>}
+        <UiButton variant="unstyled" type="button" className="profile-avatar" aria-label={t('profile.avatar.change')}
+          disabled={visitor} onClick={editProfile}><AccountAvatar src={profile.avatar} alt={t('profile.avatar.alt')}/></UiButton>
         <div className="profile-name">
           <h1 id="profile-name" tabIndex={-1}><OverflowText>{profile.name || t('profile.name.missing')}</OverflowText></h1>
           <div className="profile-name-meta">
-            <span className="profile-username">@{remote.username}</span>
+            <Link className="profile-username" to={'/u/'+remote.username}>@{remote.username}</Link>
             {country && countryName && <span className="profile-country" lang="en">
               <CountryFlag code={country}/>{countryName}
             </span>}
           </div>
         </div>
-        <div className="profile-actions">{actions}</div>
-      </div>
-    </ProfileBanner>
-    <div className="profile-wrap">
-      <div className="profile-columns">
-        <aside className="profile-aside">
-          {!characterPreview && <div className="profile-social-summary"><SocialCounts username={remote.username}/></div>}
-          <div className="profile-sidebar-details" data-empty={(!profile.bio.trim() && !links.length) || undefined}>{details}</div>
-        </aside>
-        <div className="profile-content">
-          {showGameData && <ProfileGameDataCard key={remote.username} username={remote.username} owner={owner} watchTh09Replay={watchTh09Replay}
-            display={display} statistics={statistics} statisticsError={statisticsError}/>}
-          <div className="profile-end-actions"><BackToTop/></div>
+        <div className="profile-actions">
+          {characterPreview ? actions : <SocialProvider key={viewer} username={remote.username} includeLists={false} anonymous={!viewer}>
+            <SocialCounts username={remote.username}/>
+            {actions}
+          </SocialProvider>}
         </div>
       </div>
+    </ProfileBanner>}
+    <div className="profile-wrap">
+    {socialTab ? <SocialProvider key={viewer} username={remote.username} includeLists list={socialTab} anonymous={!viewer}>
+      <SocialSection username={remote.username} tab={socialTab}/>
+    </SocialProvider> : <>
+      <div className="profile-header-details">{details}</div>
+      <div className="profile-columns"><aside className="profile-aside"><div className="profile-sidebar-details">{details}</div></aside>
+        <div className="profile-content">
+        {showGameData && <ProfileGameDataCard key={remote.username} username={remote.username} owner={owner} watchTh09Replay={watchTh09Replay}
+          display={display} statistics={statistics} statisticsError={statisticsError}/>}
+        <div className="profile-end-actions"><BackToTop/></div>
+        </div></div>
+    </>}
+  </div></main>;
+}
+
+function ProfileBanner({src,children}: {src?: string;children: ReactNode}) {
+  const banner = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const element = banner.current;
+    const header = document.querySelector<HTMLElement>('.book-masthead');
+    if (!element || !header || typeof IntersectionObserver === 'undefined') return;
+    let intersection: IntersectionObserver | undefined;
+    let headerHeight = -1;
+    const observeCover = () => {
+      const bounds = header.getBoundingClientRect();
+      if (bounds.height === headerHeight) return;
+      headerHeight = bounds.height;
+      intersection?.disconnect();
+      header.toggleAttribute('data-profile-cover-overlap', element.getBoundingClientRect().bottom > bounds.bottom);
+      intersection = new IntersectionObserver(([entry], observer) => {
+        if (observer === intersection) header.toggleAttribute('data-profile-cover-overlap', entry.isIntersecting);
+      }, {rootMargin: `-${headerHeight}px 0px 0px`});
+      intersection.observe(element);
+    };
+    observeCover();
+    const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(observeCover);
+    resize?.observe(header, {box: 'border-box'});
+    return () => {
+      resize?.disconnect();
+      intersection?.disconnect();
+      intersection = undefined;
+      header.removeAttribute('data-profile-cover-overlap');
+    };
+  },[]);
+  return <section id="profile-overview" className="profile-page-banner profile-public-section" ref={banner} aria-labelledby="profile-name">
+    <div className="profile-page-banner-art">
+      <ProfileCover src={src} className="profile-page-banner-cover" responsive />
     </div>
-  </>;
-  return <main className="player-profile profile-page" aria-labelledby={socialTab ? "profile-social-title" : "profile-name"}>
-    {socialTab ? <div className="profile-wrap">
-      <SocialProvider key={viewer} username={remote.username} includeLists list={socialTab} anonymous={!viewer}>
-        <SocialSection username={remote.username} tab={socialTab}/>
-      </SocialProvider>
-    </div> : characterPreview ? overview : <SocialProvider key={viewer} username={remote.username} includeLists={false} anonymous={!viewer}>
-      {overview}
-    </SocialProvider>}
-  </main>;
+    {children}
+  </section>;
 }
 
 function BackToTop() {

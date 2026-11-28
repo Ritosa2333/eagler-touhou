@@ -62,23 +62,6 @@ async function shot(module){
 }
 async function closeNotice(){await page.evaluate(()=>document.querySelector('#siteNotice:not([hidden]) #siteNoticeClose')?.click());}
 async function closeTouch(){await click('#touchLayoutExit');if(await page.$('dialog[open] #decisionConfirm'))await click('#decisionConfirm');await page.waitForSelector('#touchLayoutEditor',{hidden:true});}
-async function assertNavigationTypeface() {
-  const navigation = view.width <= 780 ? '.launcher-bottom-navigation' : '.book-main-nav';
-  const selected = `${navigation} [aria-current="page"]`;
-  await page.waitForSelector(selected, {visible:true});
-  await page.evaluate(()=>document.fonts.ready);
-  assert.equal(await page.$eval(selected,element=>getComputedStyle(element).fontWeight),'650');
-  assert.equal(await page.$eval(`${navigation} a:not([aria-current="page"])`,element=>getComputedStyle(element).fontWeight),'500');
-  const client=await page.createCDPSession();
-  try {
-    await client.send('DOM.enable');
-    await client.send('CSS.enable');
-    const {root}=await client.send('DOM.getDocument');
-    const {nodeId}=await client.send('DOM.querySelector',{nodeId:root.nodeId,selector:selected});
-    const {fonts}=await client.send('CSS.getPlatformFontsForNode',{nodeId});
-    assert.ok(fonts.some(font=>font.isCustomFont&&font.familyName.includes('Noto Sans SC')),'Navigation uses the bundled face');
-  } finally {await client.detach();}
-}
 async function stableLayout(before,label){
   assert.deepEqual(layoutDifferences(before,await page.evaluate(readUiLayout)),[],label);
 }
@@ -91,7 +74,6 @@ async function stableInputPanel(before){
 }
 async function application(){
   await go('/');await page.waitForSelector('#mastheadMenuToggle:not(:disabled)');await page.waitForSelector('#eaglerPreload',{hidden:true});await closeNotice();
-  await assertNavigationTypeface();
   await click('[data-book-view=covers]');await shot('home');
   for(const label of ['编号倒序','按作品名称','按作品编号']){
     const before=await page.evaluate(readUiLayout);
@@ -99,7 +81,7 @@ async function application(){
     await button(label,'[role=option]');await stableLayout(before,'sort selection');
   }
   await click('[data-book-view=list]');await shot('home-list');await click('[data-book-view=covers]');
-  await page.type(view.width <= 780 ? '.masthead-search input' : '.book-sidebar input[type=search]','no-matching-visual-specimen');await shot('home-empty');
+  await page.type('#librarySearch','no-matching-visual-specimen');await shot('home-empty');
   // Reload clears the unsaved search.
   await go('/');await page.waitForSelector('#eaglerPreload',{hidden:true});await closeNotice();
   await click('#mastheadMenuToggle');await shot('more-menu');await page.keyboard.press('Escape');
@@ -108,9 +90,7 @@ async function application(){
   await click('.book-game-link[href*="game=th10"]');await page.waitForSelector('.tools.is-open',{visible:true});await shot('options-scrolled');
   await click('#libraryBack');await page.waitForSelector('body:not(.library-tools-open)');
   await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
-  await click('.book-game-link[href*="game=th06"]');await page.waitForSelector('.tools.is-open',{visible:true});await shot('game-detail');
-  await click('#gameSettingsOpen');await page.waitForSelector('.game-settings-page',{visible:true});await shot('options');
-  await click('.input-settings-heading[aria-expanded="false"]');
+  await click('.book-game-link[href*="game=th06"]');await page.waitForSelector('.tools.is-open',{visible:true});await shot('options');
   for(const [name,module]of [['键盘改键','keyboard'],['手柄改键','gamepad']]){
     await page.$eval('.input-settings-entries',element=>element.scrollIntoView({block:'nearest',behavior:'instant'}));
     const before=await page.evaluate(readUiLayout);
@@ -193,10 +173,9 @@ async function windows(){
   await button('触控帮助','.window-specimen-nav button');await shot('touch-help');await click('#help-controls .options-group-head');await shot('touch-help-focus');
   await button('格斗操作','.window-specimen-nav button');await shot('fighting-help');
 }
-async function verifyMotion(name,end,action,{selector,waitForInput=true,expectMotion=true}={}) {
-  const pending=page.evaluate(captureSurfaceMotion,{selector,waitForInput,publishReady:true,duration:expectMotion?1000:600});
+async function verifyMotion(name,end,action,{waitForInput=true,expectMotion=true}={}) {
+  const pending=page.evaluate(captureSurfaceMotion,{waitForInput,duration:expectMotion?1000:600});
   void pending.catch(()=>{});
-  await page.waitForFunction(()=>document.documentElement.dataset.motionCaptureReady==='true',{timeout:4000});
   await action();
   const trace=await pending,inspection=await page.evaluate(inspectSurfaceMotion);
   const errors=[...surfaceMotionFailures(trace,{end,expectMotion}),...inspection.errors];
@@ -214,28 +193,17 @@ async function motionAcceptance(mode){
     localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1');
   },{theme,mode});
   await go('/');await page.waitForSelector('#mastheadMenuToggle:not(:disabled)');await page.waitForSelector('#eaglerPreload',{hidden:true});await closeNotice();
-  const compact = view.width <= 780;
-  const detail = compact ? '.tools' : '.book-game-detail';
-  const back = compact ? '#libraryBack' : '.book-game-detail-back';
-  const returned = compact ? 'closed' : 'open';
-  const openOptions = {selector:detail,expectMotion:mode==='normal'};
-  const closeOptions = {...openOptions,selector:compact ? detail : '.book-content-main'};
-  const openGame = () => click('#bookGameGrid .book-game-link');
-  const waitForDetail = open => page.waitForSelector(detail,{visible:open,hidden:!open});
-  await verifyMotion(mode+'-open','open',openGame,openOptions);
-  await verifyMotion(mode+'-close',returned,()=>click(back),closeOptions);
-  await waitForDetail(false);
+  const options={expectMotion:mode==='normal'};
+  await verifyMotion(mode+'-open','open',()=>click('#bookGameGrid .book-game-link'),options);
+  await verifyMotion(mode+'-close','closed',()=>click('#libraryBack'),options);
   if(mode==='normal'){
-    await openGame();await waitForDetail(true);
+    await click('#bookGameGrid .book-game-link');await page.waitForSelector('.tools.is-open',{visible:true});
     await verifyMotion('normal-back-forward','open',async()=>{
-      await page.goBack();await waitForDetail(false);
-      await page.goForward();await waitForDetail(true);
-    },{...openOptions,waitForInput:false});
-    if (compact) await page.waitForFunction(()=>document.activeElement?.id==='libraryBack');
-    else await page.focus(back);
-    await verifyMotion(compact ? 'normal-escape' : 'normal-keyboard-back',returned,
-      ()=>page.keyboard.press(compact ? 'Escape' : 'Enter'),closeOptions);
-    await waitForDetail(false);
+      await page.goBack();await page.waitForFunction(()=>!document.body.classList.contains('library-tools-open'));
+      await page.goForward();await page.waitForFunction(()=>document.body.classList.contains('library-tools-open'));
+    },{waitForInput:false});
+    await page.waitForFunction(()=>document.activeElement?.id==='libraryBack');
+    await verifyMotion('normal-escape','closed',()=>page.keyboard.press('Escape'));
   }
 }
 try{

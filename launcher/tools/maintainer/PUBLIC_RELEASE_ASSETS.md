@@ -27,4 +27,4 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tools/maintainer/build-github-rele
 node tools/maintainer/verify-public-first-install.mjs https://staging.example.com/ --game=th06
 ```
 
-检查结果应包含 IndexedDB 安装 generation 提交、Runtime 就绪和实际首帧。启用离线外壳的站点可加 `--offline-reopen=true`，验证断网后重开启动器，并用原安装再次启动到首帧。把测试环境与结果放进发布记录，审阅附件和公开说明后再发布。
+检查结果应包含 IndexedDB 安装 generation 提交、Runtime 就绪和实际首帧。把测试环境与结果放进发布记录，审阅附件和公开说明后再发布。

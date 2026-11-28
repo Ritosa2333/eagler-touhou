@@ -890,10 +890,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     player.classList.add('open'); player.setAttribute('aria-hidden', 'false'); document.body.classList.add('player-active');
     if (fullscreen) {
       try {await enterRoomPlayerFullscreen(player);}
-      catch (error) {
-        // The match has started even if the browser denies native fullscreen.
-        feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));
-      }
+      catch (error) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false}); feedback.toast(t('fullscreen.autoBlocked', {reason: errorText(error, t)}));}
     }
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
   }
@@ -1586,7 +1583,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       try {
         if (roomPlayer) await enterRoomPlayerFullscreen(target);
         else await nativeTouch.enterFullscreen(target);
-      } catch (error) {feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
+      } catch (error) {if (roomPlayer) {navigation?.closeRoomFullscreen?.(); publish({roomPlayerExpanded: false});} feedback.playerStatus(t('fullscreen.switchFailed', {reason: errorText(error)}));}
     },
     getRuntime: () => runtime, getReplays: () => replays, getDiagnostics: () => diagnostics, getGameplayNetwork: () => gameplayNetwork,
     async chooseReplayFile(product: ProductId) {const file = await ports.pickFile(replayImportAcceptFor(product)); if (file) await importReplayFile(file, product);},

@@ -19,10 +19,9 @@ export interface LobbyDirectoryViewProps extends Omit<LobbySurfaceProps, Derived
   /** The owner prepares the model then opens the original same-URL form entry. */
   onOpenForm(mode: DirectoryFormMode): void;
   initialRows?: boolean;
-  onReplay?(): void;
 }
 /** Original lobby.mts349–385 render conditions, composed once in LobbySurface. */
-export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
+export function LobbyDirectoryView({service, assetUrl, onOpenForm, initialRows = false, ...surface}: LobbyDirectoryViewProps) {
   const {t} = useLocale(), snapshot = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot);
   const [roomFilter, setRoomFilter] = useState<DirectoryRoomFilter>('all');
   const seenRooms = useRef<Set<string> | null>(null);
@@ -98,7 +97,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
     <BookButton variant="action" className="lobby-button" id="connectionRefresh" type="button" onClick={service.retry}>{t('lobby.refresh')}</BookButton>
   </aside>;
   const membership = <aside className="lobby-membership" id="membership" hidden={!state.mine}><strong id="membershipTitle">{state.mine ? t('lobby.mine', {code: state.mine.code}) : ''}</strong><p id="membershipHint">{t(state.supportsRecovery ? 'lobby.mineHint' : 'lobby.releaseUnsupported')}</p><BookButton variant="action" className="lobby-button" id="releaseMembership" type="button" hidden={!state.mine || !state.supportsRecovery} disabled={!!state.recovering || state.connection !== 'live' || state.leaving || !state.mine?.recoveryToken} onClick={service.releaseMembership}>{t(state.recovering ? 'lobby.releasing' : 'lobby.release')}</BookButton></aside>;
-  const roomTools = <LobbyRoomTools disabled={disabled} loading={state.loading} onCreate={() => onOpenForm('create')} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms} onReplay={onReplay}/>;
+  const roomTools = <LobbyRoomTools disabled={disabled} loading={state.loading} onCreate={() => onOpenForm('create')} onJoin={() => onOpenForm('join')} onRefresh={service.refreshRooms}/>;
   const roomFilters=<DirectoryRoomFilters rooms={filteredRooms} value={roomFilter} onChange={next => {beginFilterReorder(); setRoomFilter(next);}}/>;
   const filtering = roomFilter !== 'all' || !!surface.productFilters?.length || !!surface.viewingProduct;
   const empty = state.loading || state.visibleRooms.length || state.connectionInterrupted ? null : {
@@ -114,7 +113,7 @@ export function LobbyDirectoryView({service, assetUrl, onOpenForm, onReplay, ini
 
 export function DirectoryRoomFilters({rooms,value,onChange}:{rooms:readonly DirectoryRoom[];value:DirectoryRoomFilter;onChange(value:DirectoryRoomFilter):void}) {
   const {t}=useLocale();
-  return <ActionMenu variant="selection" align="start" sideOffset={10} label={t('directory.filters')} className="book-room-filter-popup" trigger={<BookButton variant="action" type="button" className="book-room-filter-trigger" aria-label={t('directory.filters')} title={t('directory.filters')} data-active={value !== 'all'}><ListFilter aria-hidden="true"/><span>{t('directory.filters')}</span></BookButton>}>
+  return <ActionMenu variant="selection" align="start" sideOffset={10} label={t('directory.filters')} className="book-room-filter-popup" trigger={<BookButton variant="action" type="button" className="book-room-filter-trigger" aria-label={t('directory.filters')} data-active={value !== 'all'}><ListFilter aria-hidden="true"/><span>{t('directory.filters')}</span></BookButton>}>
     <ActionMenuRadioGroup value={value} onValueChange={next=>onChange(next as DirectoryRoomFilter)}>{(['all','open','waiting','spectate'] as const).map(id=><ActionMenuRadioItem key={id} value={id} data-room-filter={id}>{t(`directory.filter.${id}`)}<span className="ml-auto text-xs text-muted-foreground">{filterDirectoryRooms(rooms,id).length}</span></ActionMenuRadioItem>)}</ActionMenuRadioGroup>
   </ActionMenu>;
 }

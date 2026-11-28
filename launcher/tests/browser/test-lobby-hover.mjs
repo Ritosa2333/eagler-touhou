@@ -9,77 +9,42 @@ try {
   // Local style fixture: no live room or relay action is invoked.
   await page.$eval('.book-directory', el => {
     const fixture = document.createElement('section');
-    fixture.innerHTML = '<div class="lobby-room-row lobby-room-initial"><button id="hoverJoin" class="ui-button ui-control lobby-button lobby-join" data-ui-variant="primary" data-entry="join">加入</button></div>';
+    fixture.innerHTML = '<div class="lobby-room-row lobby-room-initial"><button id="hoverJoin" class="ui-control lobby-button lobby-join" data-ui-variant="primary">加入</button><button id="hoverDisabled" class="ui-control lobby-button lobby-primary" data-ui-variant="primary" disabled>不可用</button></div>';
     el.append(fixture);
   });
-  const settle = () => page.evaluate(async () => {
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    await Promise.allSettled(document.getAnimations()
-      .filter(animation => animation.effect.getTiming().iterations !== Infinity)
-      .map(animation => animation.finished));
-  });
+  const settle = () => page.evaluate(() => new Promise(resolve => setTimeout(resolve, 180)));
   const style = selector => page.$eval(selector, el => {
-    const s = getComputedStyle(el.matches('.book-category-choice') ? el.parentElement : el), r = el.getBoundingClientRect();
-    const cover = el.querySelector('.book-lobby-cover');
-    const railCover = el.querySelector('.book-category-game-cover');
-    const offset = node => node ? node.getBoundingClientRect().x - r.x : null;
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 1;
-    const context = canvas.getContext('2d');
-    const rgba = value => {
-      context.clearRect(0,0,1,1);
-      context.fillStyle = value;
-      context.fillRect(0,0,1,1);
-      return context.getImageData(0,0,1,1).data.join(',');
-    };
-    return {background: rgba(s.backgroundColor), color: rgba(s.color), transform: s.transform, width: r.width, height: r.height,
-      pressed: el.getAttribute('aria-pressed'), coverScale: cover && getComputedStyle(cover).scale,
-      railCover: offset(railCover),
-      railMarker: railCover && offset(el.parentElement.querySelector('.book-lobby-sidebar-check')),
-      railFavorite: railCover && offset(el.parentElement.querySelector('.book-favorite'))};
+    const s = getComputedStyle(el), r = el.getBoundingClientRect();
+    return {background: s.backgroundColor, color: s.color, transform: s.transform, width: r.width, height: r.height, pressed: el.getAttribute('aria-pressed')};
   });
   for (const theme of ['dark', 'light']) {
     await page.evaluate(theme => document.documentElement.dataset.bookTheme = theme, theme);
     await page.mouse.move(0, 0); await settle(); await settle();
-    for (const selector of ['.book-room-filter-trigger', '.lobby-game-sidebar [data-book-category="original"]', '#refreshRooms', '.lobby-game-sidebar .book-rail-game', '#hoverJoin']) {
+    for (const selector of ['[data-room-filter="open"]', '.book-room-view-toggle button[aria-pressed="false"]', '#watchReplayButton', '.book-lobby-game', '.book-lobby-favorite', '#hoverJoin']) {
       await page.mouse.move(0, 0); await settle();
       const before = await style(selector);
       await page.hover(selector); await settle();
       const after = await style(selector);
-      assert.ok(after.background !== before.background || after.coverScale !== before.coverScale, `${theme}/${selector}: visible hover`);
+      assert.notEqual(after.background, before.background, `${theme}/${selector}: visible hover`);
       assert.equal(after.width, before.width); assert.equal(after.height, before.height);
       assert.equal(after.pressed, before.pressed); assert.equal(after.transform, 'none');
-      if (before.railCover !== null) {
-        assert.equal(after.railCover - before.railCover, 3, 'the artwork follows the shared list hover');
-        assert.equal(after.railMarker - before.railMarker, 3, 'the selection mark follows the artwork');
-        assert.equal(after.railFavorite, before.railFavorite, 'the favorite remains at the row edge');
-      }
     }
-    const selected = '.lobby-game-sidebar [data-selected="true"]';
+    const selected = '[data-room-filter="all"]';
     await page.mouse.move(0, 0); await settle(); const before = await style(selected);
     await page.hover(selected); await settle(); const after = await style(selected);
     assert.equal(after.background, before.background); assert.equal(after.color, before.color);
-    if (await page.$eval('#createButton', button => button.disabled)) {
-      await page.mouse.move(0, 0); await settle(); const disabled = await style('#createButton');
-      await page.hover('#createButton'); await settle(); assert.deepEqual(await style('#createButton'), disabled);
-    }
+    await page.mouse.move(0, 0); await settle(); const disabled = await style('#hoverDisabled');
+    await page.hover('#hoverDisabled'); await settle(); assert.deepEqual(await style('#hoverDisabled'), disabled);
     await page.hover('#hoverJoin'); await page.mouse.down(); await settle();
     assert.equal((await style('#hoverJoin')).transform, 'none', 'No legacy scale on press');
     await page.mouse.up();
   }
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
-  const row = '.lobby-game-sidebar .book-rail-game';
-  await page.mouse.move(0, 0); await settle();
-  const reduced = await style(row);
-  await page.hover(row); await settle();
-  assert.equal((await style(row)).railCover, reduced.railCover, 'reduced motion disables horizontal hover movement');
+  assert.ok(await page.$eval('[data-room-filter="open"]', el => parseFloat(getComputedStyle(el).transitionDuration) < .00001));
   await page.setViewport({width: 390, height: 844, isMobile: true, hasTouch: true});
-  await page.waitForSelector('.book-lobby-picker-trigger', {visible:true});
-  assert.ok(await page.$eval('[data-lobby-icon] .book-lobby-cover', el => parseFloat(getComputedStyle(el).transitionDuration) < .00001));
-  await page.click('.book-room-filter-trigger');
-  await page.waitForSelector('[data-room-filter="open"]', {visible:true});
+  await page.waitForSelector('[data-room-filter="open"]');
   await page.click('[data-room-filter="open"]');
-  assert.equal(await page.$eval('.book-room-filter-trigger', el => el.dataset.active), 'true');
+  assert.equal(await page.$eval('[data-room-filter="open"]', el => el.getAttribute('aria-pressed')), 'true');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   console.log('PASS: lobby hover in both themes, selected/disabled states, fixed geometry, no scale, reduced motion and narrow filtering');
 } finally {await browser.close();}

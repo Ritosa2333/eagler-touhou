@@ -12,7 +12,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {readUiHistoryText} from '../support/ui-history.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const pinned = name => readUiHistoryText('8bdf6dbf4a81032f0725cc841b86d03e1465fe07', `src/launcher/${name}`);
-const th09CatalogEntry = '  Object.freeze({ id: "th09", short: "TH09", title: "花映冢" }),\n';
+const th09CatalogEntry = '  Object.freeze({ id: "th09", short: "TH09", title: "花映塚" }),\n';
 const th15CatalogEntry = '  Object.freeze({ id: "th15", short: "TH15", title: "绀珠传" }),\n';
 // The shared guide gained its TH09 and TH15 player-facing tabs after the
 // original controller was pinned. Extend only those catalog entries in the
@@ -56,7 +56,7 @@ const publishedGuide=readFileSync(resolve(project,'public/content/MULTIPLAYER.ht
 const cases = {
   authored: publishedGuide.replace(/(<h2>)th(?=\d{2})/g,'$1TH'),
   headings: '<p>Before any group</p><h2>  通用规则 \n </h2><h3>First</h3><p>Common A</p><h4>Nested</h4><p>Common B</p><h2>TH06 红魔乡</h2><h3>本作特有规则</h3><h4>Flattened</h4><p>Six</p><h3>Section</h3><h4>Nested section</h4><p>Six detail</p><h2>TH07 妖妖梦</h2><p>Direct child</p><h2>TH07 妖妖梦</h2><h3>Last duplicate wins</h3><p>Replacement</p><h2>Unknown group</h2><p>Not a game panel</p>',
-  versus: '<h2>通用规则</h2><p>合作规则</p><h2>TH09 花映冢</h2><h3>本作特有规则</h3><p>双人对战</p>',
+  versus: '<h2>通用规则</h2><p>合作规则</p><h2>TH09 花映塚</h2><h3>本作特有规则</h3><p>双人对战</p>',
   empty: '',
   noCommon: '<h2>TH06 红魔乡</h2><p>Kept sanitized without guide grouping</p>',
   hostile: '<h2>通用规则</h2><h3>Readable</h3><p id="Module" style="display:none" onclick="bad()" class="markdown-blockquote evil">Safe <strong>text</strong><a href="java&#x09;script:bad()">Unsafe</a><a href="/safe" target="_blank" rel="opener">Safe link</a></p><script>bad()</script><iframe srcdoc="bad"></iframe><svg><text>Bad</text></svg><math><mtext>Bad</mtext></math><img src="data:bad"><img src="/safe.png" onerror="bad()"><h2>TH08 永夜抄</h2><h3>本作特有规则</h3><ol start="-3"><li>Rule</li></ol><table><tr><td align="right" style="color:red">Cell</td></tr></table>' + '<div>'.repeat(70) + '<p>Too deep</p>' + '</div>'.repeat(70),
@@ -90,11 +90,6 @@ test('published lowercase work headings retain all legacy guide panels and inter
   const current=execute(api.buildRuleGuide,api.renderContentFragment,publishedGuide,'th15');
   const legacyHeadingCase=execute(api.buildRuleGuide,api.renderContentFragment,cases.authored,'th15');
   assert.deepEqual(current.trace,legacyHeadingCase.trace);
-});
-test('the old th09 spelling still selects the authored rules', () => {
-  const current = execute(api.buildRuleGuide, api.renderContentFragment, cases.versus, 'th09');
-  const old = execute(api.buildRuleGuide, api.renderContentFragment, cases.versus.replace('花映冢', '花映塚'), 'th09');
-  assert.deepEqual(old.trace, current.trace);
 });
 for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th15', 'unknown', '']) test(`pinned executed guide transformation: ${name}, initial=${game || '(empty)'}`, () => {
   const expected = execute(api.pinnedBuilder, api.pinnedSanitizer, html, game);

@@ -2,31 +2,33 @@ import type {ReactNode} from 'react';
 import type {LibraryCardsProps} from './LibraryCards';
 import {BookLibrary} from './BookLibrary';
 import {useLocale} from '../../i18n';
+import {SiteFooter} from './SiteFooter';
 
 export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
-  active?: boolean;
   optionsOpen: boolean;
   compact?: boolean;
-  mobileSearchTarget?: HTMLElement | null;
   detail?: ReactNode;
   onBrowse?: () => void;
+  onDetailExit?: () => void;
   roomOpen?: boolean;
   roomDrawer?: ReactNode;
   children?: ReactNode;
+  onDonation?: () => void;
 }
 /** The book houses inline details; compact and multiplayer overlays keep their own carriers. */
-export function LibrarySurface({masthead, active = true, optionsOpen, roomOpen = false, roomDrawer, children, ...rail}: LibrarySurfaceProps) {
+export function LibrarySurface({masthead, optionsOpen, roomOpen = false, roomDrawer, children, onDonation, ...rail}: LibrarySurfaceProps) {
   const {t} = useLocale();
   return <><div className="library-background" aria-hidden="true"/><div className="sheet">
     {masthead}
-    <main className={`main library-layout${roomOpen ? ' mp-room-open' : ''}`} id={active ? 'main' : undefined}>
+    <main className={`main library-layout${roomOpen ? ' mp-room-open' : ''}`} id="main">
       <h1 className="visually-hidden">{t('site.documentTitle')}</h1>
       <div className="game-library" inert={optionsOpen}>
         <BookLibrary {...rail}/>
       </div>
       {children}
     </main>
+    <SiteFooter onDonation={onDonation}/>
     {roomDrawer}
   </div></>;
 }

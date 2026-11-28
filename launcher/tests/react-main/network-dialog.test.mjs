@@ -232,8 +232,6 @@ function normalized(node) {
 }
 function originalDialog(locale) {
   const doc = new env.window.DOMParser().parseFromString(originalHTML, 'text/html'), dialog = n('#lobbyNetworkDialog', doc);
-  // The shared window controller also owns the diagnostics dialog motion.
-  dialog.setAttribute('data-window-managed', '');
   for (const element of dialog.querySelectorAll('[data-i18n]')) element.textContent = t(locale, element.dataset.i18n);
   for (const element of dialog.querySelectorAll('[data-i18n-aria-label]')) element.setAttribute('aria-label', t(locale, element.dataset.i18nAriaLabel));
   return dialog;

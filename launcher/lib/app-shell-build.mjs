@@ -152,8 +152,7 @@ export async function buildAppShell({
   const normalizedDeferredPaths = [...new Set([
     ...deferredPaths.map(normalizePath),
     ...manifestEntries.map(entry => normalizePath(entry.url))
-      .filter(path => /^assets\/(?:noto-sans-(?:sc|jp)|ibm-plex-mono)-[^/]+\.woff2?$/.test(path) ||
-        normalizedDeferredPrefixes.some(prefix => path.startsWith(prefix))),
+      .filter(path => normalizedDeferredPrefixes.some(prefix => path.startsWith(prefix))),
   ])];
   let runtimeManifest = null;
   let runtimeManifestBytes = null;

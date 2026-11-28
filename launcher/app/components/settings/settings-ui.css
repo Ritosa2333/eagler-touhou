@@ -374,6 +374,12 @@
     min-width: 44px;
     background: transparent;
   }
+  .touch-settings-fields .touch-layout-setting-row small {
+    display: block;
+    margin: 2px 0 0;
+    color: var(--kit-muted-foreground);
+    font: 400 11px / 1.5 var(--kit-font);
+  }
   .touch-settings-fields .touch-sensitivity-presets {
     display: flex;
     width: 100%;

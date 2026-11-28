@@ -21,9 +21,6 @@ import {GameDataIcon} from './ProfileGameDataCard';
 import {ProfilePanelLoading} from './ProfileLoading';
 import type {Profile, ProfileReview} from './ProfilePreview';
 import {gameDataViews, gameDataViewLabels, normalizeProfileDisplay, type ProfileDisplay, type GameDataView} from '../../models/profile-display';
-import {AppLink} from './AppLink';
-import {launcherSectionHref} from './launcher-sections';
-import {localeHome} from '../../../src/launcher/i18n.mts';
 import './account-settings.css';
 
 type SaveProfile = (profile:Profile, display:ProfileDisplay, review?:ProfileReview) => void;
@@ -34,10 +31,8 @@ export function AccountSettings({initialProfile, initialDisplay, reviewPending, 
   reviewPending?:boolean; onSave:SaveProfile; username?: string;
   readLocalSaves?:LocalSaveReader;cloudSync?:CloudSaveSync|null;
 }) {
-  const {locale, t} = useLocale();
-  const launcherHomeHref = launcherSectionHref(new URL(localeHome(locale), 'https://launcher.invalid/').pathname, 'home');
+  const {t} = useLocale();
   const location = useLocation();
-  const fromHome = location.state?.settingsFromHome === true;
   const editing = panel === '#edit';
   const gameSettings = panel === '#game-settings';
   const detail = panel !== '#settings';
@@ -51,20 +46,17 @@ export function AccountSettings({initialProfile, initialDisplay, reviewPending, 
     return () => animation?.cancel();
   },[panel]);
   const address = (hash:string) => ({pathname:location.pathname,search:location.search,hash});
-  const panelLink = {state: location.state, replace: true};
   return <main className="account-settings" data-detail={detail} aria-label={t('profile.settings')}>
-    <AppLink className="account-settings-back" href={fromHome ? launcherHomeHref : location.pathname + location.search} replace returnToEntry>
-      <ChevronLeft aria-hidden="true"/>{t(fromHome ? 'launcher.home' : location.state?.launcherEntryHref ? 'action.back' : 'profile.pageTitle')}
-    </AppLink>
     <aside className="account-settings-nav">
       <h1>{t('profile.settings')}</h1>
       <nav aria-label={t('profile.settingsNavigation')}>
-        <Link {...panelLink} to={address('#security')} aria-current={!editing&&!gameSettings?'page':undefined}><ShieldCheck aria-hidden="true"/><span>{t('profile.security')}</span><ChevronRight aria-hidden="true"/></Link>
-        <Link {...panelLink} to={address('#edit')} aria-current={editing?'page':undefined}><UserRound aria-hidden="true"/><span>{t('profile.personalSettings')}</span><ChevronRight aria-hidden="true"/></Link>
-        <Link {...panelLink} to={address('#game-settings')} aria-current={gameSettings?'page':undefined}><Gamepad2 aria-hidden="true"/><span>{t('room.gameSettingsGroup')}</span><ChevronRight aria-hidden="true"/></Link>
+        <Link to={address('#security')} aria-current={!editing&&!gameSettings?'page':undefined}><ShieldCheck aria-hidden="true"/><span>{t('profile.security')}</span><ChevronRight aria-hidden="true"/></Link>
+        <Link to={address('#edit')} aria-current={editing?'page':undefined}><UserRound aria-hidden="true"/><span>{t('profile.personalSettings')}</span><ChevronRight aria-hidden="true"/></Link>
+        <Link to={address('#game-settings')} aria-current={gameSettings?'page':undefined}><Gamepad2 aria-hidden="true"/><span>{t('room.gameSettingsGroup')}</span><ChevronRight aria-hidden="true"/></Link>
       </nav>
     </aside>
     <div className="account-settings-content" ref={content}>
+      <Link className="account-settings-back" to={address('#settings')}><ChevronLeft aria-hidden="true"/>{t('profile.settings')}</Link>
       {editing ? reviewPending === undefined
         ? <ProfileSettings username={username} initialProfile={initialProfile} initialDisplay={initialDisplay} onSave={onSave}/>
         : <ProfileDraftSettings username={username} pending={reviewPending} onSave={onSave}/>

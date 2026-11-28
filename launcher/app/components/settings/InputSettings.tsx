@@ -32,7 +32,7 @@ export function InputSettings({
   const { t } = useLocale(),
     id = useId(),
     trigger = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useState(false),
+  const [open, setOpen] = useState(true),
     [editing, setEditing] = useState(false);
   const [device, setDevice] = useState<'keyboard' | 'gamepad'>(keyboard ? 'keyboard' : 'gamepad');
   const [scope, setScope] = useState<'general' | 'local'>('general');
@@ -59,7 +59,7 @@ export function InputSettings({
     <Collapsible.Root open={open} onOpenChange={setOpen} asChild>
       <section className="options-group input-settings" data-open={open}>
         <Collapsible.Trigger asChild>
-          <OptionsGroupHeading icon={Keyboard} className="input-settings-heading" aria-controls={id}>
+          <OptionsGroupHeading className="input-settings-heading" aria-controls={id}>
             {title}
           </OptionsGroupHeading>
         </Collapsible.Trigger>

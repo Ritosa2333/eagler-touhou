@@ -150,14 +150,14 @@ def check_populated_directory(page, base, cases):
                 return {gap:bar.right-menu.right,width:menu.width,height:menu.height};
             }""")
             assert 0 <= header['gap'] <= 40, (width, height, header)
-            if width <= 780:
-                assert header['width'] == 0 and header['height'] == 0, header
+            if width <= 844:
+                assert header['width'] >= 43.9 and header['height'] >= 43.9, header
             layout = page.evaluate("""() => {
                 const box=node=>{const r=node.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,left:r.left,right:r.right};};
                 const library=document.querySelector('.lobby-library');
                 return {library:{width:library.clientWidth,scroll:library.scrollWidth},
                   business:[...document.querySelectorAll('#createButton,#watchReplayButton,#codeButton')].map(box),
-                  games:box(library),
+                  favorites:[...document.querySelectorAll('.book-lobby-desktop [data-lobby-product]')].map(row=>({row:box(row),button:box(row.querySelector('.book-lobby-favorite'))})),
                   countInside:!!document.querySelector('.lobby-list-surface #roomCount'),
                   count:box(document.querySelector('#roomCount')),panel:box(document.querySelector('.lobby-list-surface')),
                   refreshBorder:getComputedStyle(document.querySelector('#refreshRooms')).borderTopStyle};
@@ -169,18 +169,18 @@ def check_populated_directory(page, base, cases):
             if width <= 844:
                 assert max(box['top'] for box in layout['business']) - min(box['top'] for box in layout['business']) < 1, layout
                 assert max(box['height'] for box in layout['business']) - min(box['height'] for box in layout['business']) < 1, layout
-            assert abs(layout['games']['left'] - layout['panel']['left']) < 1, layout
-            assert layout['games']['bottom'] <= layout['panel']['top'], layout
+            else:
+                assert all(item['button']['right'] <= item['row']['right'] + 1 for item in layout['favorites']), layout
             cases.append({"viewport": [width, height], "theme": theme, "rows": rows})
             page.screenshot(path=str(OUTPUT / f"directory-{width}x{height}-{theme}.png"), full_page=True)
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto(base + '/lobby.html')
-    th06_filter = page.locator('[data-lobby-toggle="th06mp"]')
+    th06_filter = page.locator('.book-lobby-mobile [data-lobby-toggle="th06mp"]')
     th06_filter.click()
-    page.wait_for_function("document.querySelector('[data-lobby-toggle=\"th06mp\"]')?.getAttribute('aria-checked') === 'true'")
-    th09_filter = page.locator('[data-lobby-toggle="th09mp"]')
+    page.wait_for_function("document.querySelector('.book-lobby-mobile [data-lobby-toggle=\"th06mp\"]')?.getAttribute('aria-checked') === 'true'")
+    th09_filter = page.locator('.book-lobby-mobile [data-lobby-toggle="th09mp"]')
     th09_filter.click()
-    page.wait_for_function("document.querySelector('[data-lobby-toggle=\"th09mp\"]')?.getAttribute('aria-checked') === 'true'")
+    page.wait_for_function("document.querySelector('.book-lobby-mobile [data-lobby-toggle=\"th09mp\"]')?.getAttribute('aria-checked') === 'true'")
     page.wait_for_function("document.querySelectorAll('.lobby-room-row').length===2")
     page.locator('.book-lobby-picker-trigger').click()
     popup = page.get_by_role('menu', name='联机作品')
@@ -192,15 +192,15 @@ def check_populated_directory(page, base, cases):
     popup.get_by_role('menuitemcheckbox', name='筛选 東方風神録', exact=True).click()
     assert popup.is_visible(), 'Multiple selection must not close the work list'
     page.wait_for_function("document.querySelectorAll('.lobby-room-row').length===3")
-    assert page.locator('[data-lobby-toggle][aria-checked="true"]').count() == 3
-    assert popup.locator('.book-lobby-menu-check[aria-checked="true"]').count() == 3
+    assert page.locator('.book-lobby-mobile [aria-checked="true"]').count() == 3
+    assert page.locator('.book-lobby-desktop [role="checkbox"][aria-checked="true"]').count() == 3
     anchor, panel = page.locator('.book-lobby-picker-trigger').bounding_box(), popup.bounding_box()
     assert panel['y'] >= anchor['y'] + anchor['height'] - 1
     assert panel['x'] >= 0 and panel['x'] + panel['width'] <= 390
     popup.press('Escape')
-    page.locator('#lobbyGameRail .book-lobby-all').click()
+    page.locator('.book-lobby-mobile .book-lobby-all').click()
     page.wait_for_function("document.querySelectorAll('.lobby-room-row').length===5")
-    page.locator('[data-lobby-icon="th07mp"]').click()
+    page.locator('.book-lobby-mobile [data-lobby-icon="th07mp"]').click()
     page.locator('#emptyState').wait_for()
     empty = page.evaluate("""() => {
         const rect=node=>{const r=node.getBoundingClientRect();return {top:r.top,bottom:r.bottom};};

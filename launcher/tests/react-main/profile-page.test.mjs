@@ -91,7 +91,7 @@ test('the editor keeps the saved draft while the public profile waits for approv
     await React.act(async()=>env.document.querySelector('.settings-save-profile').click());
     assert.equal(submitted.bio,draft.bio);
     await React.act(async()=>moveHistory('/u/player?lang=en'));
-    const publicBio=()=>env.document.querySelector('.profile-aside .profile-bio')?.textContent;
+    const publicBio=()=>env.document.querySelector('.profile-header-details .profile-bio')?.textContent;
     assert.equal(publicBio(),owners.translate('en','profile.bio.missing'));
     approved=true;
     await waitForProfile(()=>publicBio()===draft.bio);
@@ -113,9 +113,7 @@ test('lays out the page before any API and renders sections without waiting for 
   };
   await mount(owners.ProfilePage,{},['/u/visitor?lang=en']);
   await waitForProfile(()=>calls.some(({path})=>path==='v1/profiles/visitor'));
-  const loading = env.document.querySelector('main.player-profile[aria-busy="true"]');
-  assert.ok(loading?.querySelector('.profile-page-banner .profile-page-banner-art'));
-  assert.equal(loading.querySelector('.profile-username').textContent,'@visitor');
+  assert.ok(env.document.querySelector('.profile-loading-banner'));
   await React.act(async()=>profile.resolve(remoteProfile('visitor')));
   await waitForProfile(()=>calls.filter(({path})=>/\/(statistics|th09-duels|social)$/.test(path)).length===3);
   assert.ok(calls.filter(({path})=>/\/(statistics|th09-duels|social)$/.test(path)).every(({options})=>options.anonymous));
@@ -126,9 +124,8 @@ test('lays out the page before any API and renders sections without waiting for 
   await waitForProfile(()=>!!env.document.getElementById('profile-versus'));
   assert.equal(env.document.querySelector('#profile-records'),null);
   await React.act(async()=>{auth.resolve(null);statistics.resolve(visitorStatistics);social.resolve({visible:true,following:null,followers:[],friends:[],followingUsers:[]});});
-  const allGames=owners.translate('en','profile.clear.allGames');
-  await React.act(async()=>env.document.querySelector(`.profile-game-data-switch button[aria-label="${allGames}"]`).click());
-  await waitForProfile(()=>!!env.document.querySelector('#profile-records'));
+  await React.act(async()=>env.document.querySelector('.profile-game-data-switch button').click());
+  await waitForProfile(()=>!!env.document.querySelector('.profile-flight-total'));
   assert.equal(env.document.querySelector('#profile-name'),header);
   assert.equal(calls.filter(({path})=>path==='v1/profiles/visitor').length,1);
 });
@@ -171,10 +168,9 @@ test('saves default view and visibility and previews two duel rows across dates'
     assert.equal(savedDisplay.visible.versus,false);
 
     await React.act(async()=>moveHistory('/u/player?lang=en'));
-    await waitForProfile(()=>!!env.document.querySelector('#profile-career .clear-matrix'));
+    await waitForProfile(()=>!!env.document.querySelector('.profile-clear-chart'));
     assert.deepEqual(sectionOrder(),['profile-versus']);
-    assert.equal(env.document.querySelector('.profile-game-data-switch'),null);
-    assert.equal(env.document.querySelector('.profile-th09'),null);
+    assert.equal(env.document.querySelectorAll('.profile-game-data-switch button').length,1);
   } finally {globalThis.ResizeObserver=BaseResizeObserver;}
 });
 
@@ -183,13 +179,12 @@ test('profile overview and game data are visible without section navigation',asy
   await waitForProfile(()=>['versus'].every(key=>env.document.getElementById('profile-'+key)));
   assert.ok(env.document.getElementById('profile-overview'));
   assert.equal(env.document.querySelector('.profile-section-nav'),null);
-  assert.equal(env.document.querySelector('.profile-aside .profile-bio').textContent,'Profile text');
-  assert.equal(env.document.querySelectorAll('.player-profile .profile-bio').length,1);
+  assert.equal(env.document.querySelector('.profile-header-details .profile-bio').textContent,'Profile text');
+  assert.ok(env.document.querySelector('.profile-aside .profile-bio'));
   assert.equal(env.document.querySelector('.profile-country').textContent,'China');
   assert.equal(env.document.querySelector('.profile-country').getAttribute('lang'),'en');
-  const followers='.launcher-social-counts a[href*="social=followers"]';
-  await waitForProfile(()=>!!env.document.querySelector(followers));
-  await React.act(async()=>env.document.querySelector(followers).click());
+  await waitForProfile(()=>!!env.document.querySelector('.profile-social-counts a'));
+  await React.act(async()=>env.document.querySelector('.profile-social-counts a').click());
   await waitForProfile(()=>!!env.document.querySelector('.profile-social-users a'));
   assert.equal(env.document.querySelector('.profile-social-tabs [aria-current="page"]').textContent,'Followers');
   assert.equal(env.document.querySelector('.profile-social-users a').textContent,'Marisa');
@@ -201,7 +196,7 @@ test('profile overview and game data are visible without section navigation',asy
 
 test('legacy profile deep links and history navigation preserve game data',async()=>{
   await mount(owners.ProfilePage,{},['/profile.html?lang=en#profile-career']);
-  await waitForProfile(()=>!!env.document.querySelector('#profile-career .clear-matrix'));
+  await waitForProfile(()=>!!env.document.querySelector('.profile-clear-chart'));
   const card=env.document.getElementById('profile-versus');
   await React.act(async()=>moveHistory('/u/player?lang=en#profile-versus'));
   assert.equal(env.document.getElementById('profile-versus'),card);
@@ -213,10 +208,10 @@ test('legacy profile deep links and history navigation preserve game data',async
 
 test('public profile statistics omit career data hidden by the profile privacy settings',async()=>{
   await mount(owners.ProfilePage,{},['/u/visitor?lang=en#profile-records']);
-  await waitForProfile(()=>!!env.document.querySelector('#profile-records'));
-  assert.equal(env.document.querySelector('#profile-career'),null);
+  await waitForProfile(()=>!!env.document.querySelector('.profile-flight-total'));
+  assert.equal(env.document.querySelector('.profile-clear-chart'),null);
   assert.equal(env.document.getElementById('profile-content'),null);
-  assert.ok(env.document.querySelector('#profile-records'));
+  assert.ok(env.document.querySelector('.profile-flight-total'));
   assert.equal(env.document.getElementById('profile-friends'),null);
   assert.equal(env.document.querySelector('.profile-section-nav'),null);
   assert.equal(env.document.querySelector('.profile-social-tools label'),null);
@@ -234,17 +229,16 @@ test('profile ownership and private statistics refresh when the signed-in accoun
     throw Error(`Unexpected profile API request: ${path}`);
   };
   await mount(owners.ProfilePage,{},['/u/player?lang=en#profile-career']);
-  await waitForProfile(()=>!!env.document.querySelector('#profile-career .clear-matrix'));
-  const editLink='.profile-actions a[href$="#edit"]';
-  assert.ok(env.document.querySelector(editLink), 'the signed-in owner gets profile actions');
+  await waitForProfile(()=>!!env.document.querySelector('.profile-clear-chart'));
+  assert.ok(env.document.querySelector('.profile-actions button'), 'the signed-in owner gets profile actions');
   const previousProfiles=profileCalls,previousStatistics=statisticsCalls;
   viewer='visitor';
   await React.act(async()=>owners.notifyAccountChange());
-  await waitForProfile(()=>statisticsCalls>previousStatistics&&!!env.document.querySelector('#profile-records'));
+  await waitForProfile(()=>statisticsCalls>previousStatistics&&!!env.document.querySelector('.profile-flight-total'));
   assert.equal(profileCalls,previousProfiles,'the public profile remains mounted across viewer changes');
-  assert.equal(env.document.querySelector('#profile-career'),null,'the new viewer receives only public career data');
-  assert.equal(env.document.querySelector('#profile-records header strong')?.textContent,'1 hr 1 min');
-  assert.equal(env.document.querySelector(editLink),null,'owner editing controls disappear after the session changes');
+  assert.equal(env.document.querySelector('.profile-clear-chart'),null,'the new viewer receives only public career data');
+  assert.equal(env.document.querySelector('.profile-flight-total')?.textContent,'Total flight time 1h 1m');
+  assert.equal(env.document.querySelector('.profile-actions button'),null,'owner editing controls disappear after the session changes');
 });
 
 test('background session failures preserve an edited owner form while unauthorized sessions lose owner controls',async()=>{
@@ -310,7 +304,7 @@ test('cloud save uploads and deletions refresh the mounted profile statistics',a
   };
   await mountCloudSync(['/u/player?lang=en#profile-records']);
   await waitForProfile(()=>statisticsCalls>=1&&!!env.document.querySelector('.cloud-save-section'));
-  assert.equal(env.document.querySelector('#profile-records'),null,'the profile starts without uploaded save statistics');
+  assert.equal(env.document.querySelector('.profile-flight-total'),null,'the profile starts without uploaded save statistics');
 
   await waitForProfile(()=>!!env.document.querySelector('.cloud-save-add button'));
   assert.equal(env.document.querySelector('.cloud-save-row'),null,'a stale server marker does not imply a cloud save or a conflict');
@@ -326,15 +320,15 @@ test('cloud save uploads and deletions refresh the mounted profile statistics',a
   const upload=[...env.document.querySelectorAll('.cloud-save-upload button')].find(button=>button.textContent.includes(owners.translate('en','cloudSave.upload')));
   assert.ok(upload,'the selected valid save can be uploaded');
   await React.act(async()=>upload.click());
-  await waitForProfile(()=>statisticsCalls>=2&&!!env.document.querySelector('#profile-records'));
-  assert.equal(env.document.querySelector('#profile-records header strong').textContent,'1 hr 1 min');
+  await waitForProfile(()=>statisticsCalls>=2&&!!env.document.querySelector('.profile-flight-total'));
+  assert.match(env.document.querySelector('.profile-flight-total')?.textContent??'',/1h 1m/);
 
   const deleteButton=env.document.querySelector('.cloud-save-delete');
   assert.ok(deleteButton,'the uploaded revision can be deleted');
   await React.act(async()=>deleteButton.click());
   assert.equal(env.document.getElementById('cloudSaveDeleteDialog')?.open,true);
   await React.act(async()=>env.document.getElementById('cloudSaveDeleteConfirm').click());
-  await waitForProfile(()=>statisticsCalls>=3&&env.document.querySelector('#profile-records')===null);
+  await waitForProfile(()=>statisticsCalls>=3&&env.document.querySelector('.profile-flight-total')===null);
   assert.equal(env.document.querySelector('.cloud-save-current'),null,'the deleted cloud revision leaves the settings list');
   assert.equal(env.document.querySelector('.cloud-save-row')?.getAttribute('aria-expanded'),'true','the selected product stays expanded after deletion');
 });
@@ -377,7 +371,7 @@ test('profile shows all-time TH09 results and keeps paginated duels in the same 
   await mount(owners.ProfilePage,{},['/u/player?lang=en']);
   await waitForProfile(()=>!!env.document.querySelector('.profile-th09-history li'));
   const panel=env.document.querySelector('.profile-th09');
-  assert.deepEqual([...panel.querySelectorAll('dd')].map(node=>node.textContent),['5 / 9 (56%)']);
+  assert.deepEqual([...panel.querySelectorAll('dd')].map(node=>node.textContent),['5/9 (56%)']);
   assert.equal(panel.querySelector('.profile-th09-whr figcaption strong').textContent,'1,530');
   assert.equal(panel.querySelector('.profile-th09-whr polyline').getAttribute('points'),'0,80 1000,20');
   const scrubber=panel.querySelector('.profile-th09-whr [role="slider"]');

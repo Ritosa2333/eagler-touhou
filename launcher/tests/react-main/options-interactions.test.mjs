@@ -79,7 +79,7 @@ test('options keep content-gutter width through modal resize and close, while re
   let contentWidth=380.25;
   Object.defineProperty(env.window,'visualViewport',{configurable:true,value:viewport});
   env.document.body.getBoundingClientRect=()=>new env.window.DOMRect(0,0,contentWidth,viewport.height);
-  function Fixture(){const ref=React.useRef(null);owners.useOptionsViewport(ref, true);return React.createElement('aside',{ref,id:'viewport-fixture'});}
+  function Fixture(){const ref=React.useRef(null);owners.useOptionsViewport(ref);return React.createElement('aside',{ref,id:'viewport-fixture'});}
   const resize=()=>React.act(async()=>{viewport.dispatchEvent(new env.window.Event('resize'));await new Promise(resolve=>env.window.requestAnimationFrame(()=>env.window.requestAnimationFrame(resolve)));});
   try {
     await render(React.createElement(Fixture));const panel=env.document.querySelector('#viewport-fixture');

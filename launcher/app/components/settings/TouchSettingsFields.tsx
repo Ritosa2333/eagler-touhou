@@ -1,7 +1,6 @@
 import './settings-ui.css';
 import {Toggle} from '../../ui/controls';
 import {Button as UiButton} from '../../ui/button';
-import {FieldHelp} from '../../ui/field-help';
 import {ChoiceGroup,ChoiceItem} from '../../ui/choice-group';
 import {Slider} from '../../ui/slider';
 import {PRODUCT_GAMES} from '../../../src/contracts/product-catalog.mts';
@@ -36,10 +35,7 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
     }
   }
   const rowSwitch = (id: string, name: 'doubleTapBombEnabled' | 'restartButtonEnabled' | 'thpracTouchControlsEnabled', title: string, hint: string) =>
-    <div className="touch-layout-setting-row">
-      <div className="option-label-with-help"><label htmlFor={id}>{title}</label><FieldHelp id={id+'-hint'} label={title} option>{hint}</FieldHelp></div>
-      <OptionSwitch id={id} checked={options[name]} label={title} describedBy={id+'-hint'} onChange={() => model.setOption(name, !options[name])}/>
-    </div>;
+    <div className="touch-layout-setting-row"><span><span>{title}</span><small>{hint}</small></span><OptionSwitch id={id} checked={options[name]} label={title} onChange={() => model.setOption(name, !options[name])}/></div>;
   return <section className="touch-layout-settings touch-settings-fields" id="touchLayoutSettingsPanel" aria-label={t('touch.settingsAria')}><div className="touch-layout-settings-list">
     <div className="touch-layout-setting-row"><label htmlFor="touchMovementMode">{t('touch.movement')}</label><MainSelect className="option-select" id="touchMovementMode" value={options.touchMovementMode} aria-label={t('touch.movement')} onChange={event => setMovement(event.target.value)}>
       <option value="touch" hidden={nativeActions}>{t('touch.movement.touch')}</option>
@@ -50,12 +46,8 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
     <div className="touch-layout-setting-row" hidden={nativeActions || state.gameId === 'th01'}><label htmlFor="touchFocusMode">{t('touch.focusMethod')}</label><MainSelect className="option-select" id="touchFocusMode" value={options.touchFocusMode} aria-label={t('touch.focusMethod')} onChange={event => {if (isTouchFocusMode(event.target.value)) model.setOption('touchFocusMode', event.target.value);}}>
       <option value="hold-button">{t('touch.focus.hold')}</option><option value="toggle-button">{t('touch.focus.toggle')}</option><option value="two-finger" disabled={wheel}>{t('touch.focus.twoFinger')}</option>
     </MainSelect></div>
-    <div className="touch-layout-setting-row touch-sensitivity-row" hidden={nativeActions}>
-      <div className="touch-sensitivity-heading">
-        <div className="option-label-with-help"><span>{t('touch.sensitivity')}</span><FieldHelp id="touchSensitivityHint" label={t('touch.sensitivity')} option>{t('touch.sensitivityHint')}</FieldHelp></div>
-        <output id="touchSensitivityValue">{options.touchSensitivity}%</output>
-      </div>
-      <ChoiceGroup type="single" value={custom?'custom':String(options.touchSensitivity)} disabled={wheel} className="touch-sensitivity-presets" aria-label={t('touch.sensitivityPresets')} aria-describedby="touchSensitivityHint"
+    <div className="touch-layout-setting-row touch-sensitivity-row" hidden={nativeActions}><span className="touch-sensitivity-heading"><span>{t('touch.sensitivity')}</span> <output id="touchSensitivityValue">{options.touchSensitivity}%</output></span><small>{t('touch.sensitivityHint')}</small>
+      <ChoiceGroup type="single" value={custom?'custom':String(options.touchSensitivity)} disabled={wheel} className="touch-sensitivity-presets" aria-label={t('touch.sensitivityPresets')}
         onValueChange={value=>{if(!value)return;setCustomOpen(value==='custom');if(value!=='custom')model.setOption('touchSensitivity',Number(value));}}>
         {[100, 150, 200].map(value => <ChoiceItem key={value} value={String(value)} type="button" data-touch-sensitivity-preset={value}>{value}%</ChoiceItem>)}
         <ChoiceItem value="custom" type="button" id="touchSensitivityCustomToggle" aria-expanded={custom}>{t('touch.custom')}</ChoiceItem>
@@ -68,16 +60,7 @@ export function TouchSettingsFields({model, actions, onAdjustViewport, onResetVi
     {!nativeActions && rowSwitch('doubleTapBombToggle', 'doubleTapBombEnabled', t('touch.doubleTapBomb'), t('touch.doubleTapBombHint'))}
     {rowSwitch('restartButtonToggle', 'restartButtonEnabled', 'R', t('touch.restartHint'))}
     {rowSwitch('thpracTouchControlsToggle', 'thpracTouchControlsEnabled', t('touch.thpracButtons'), t('touch.thpracButtonsHint'))}
-    <div className="touch-layout-setting-row touch-layout-viewport-row">
-      <div className="option-label-with-help"><span>{t('touch.viewportPosition')}</span><FieldHelp id="touchViewportHint" label={t('touch.viewportPosition')} option>{t('touch.viewportHint')}</FieldHelp></div>
-      <div className="touch-layout-viewport-actions"><UiButton variant="outline" id="touchViewportAdjust" type="button" onClick={onAdjustViewport} aria-describedby="touchViewportHint">{t('touch.adjustViewport')}</UiButton><UiButton variant="outline" id="touchViewportReset" type="button" onClick={onResetViewport}>{t('action.reset')}</UiButton></div>
-    </div>
-    <div className="touch-layout-setting-row touch-opacity-row">
-      <div className="touch-opacity-heading">
-        <div className="option-label-with-help"><span>{t('touch.opacity')}</span><FieldHelp id="touchControlOpacityHint" label={t('touch.opacity')} option>{t('touch.opacityHint')}</FieldHelp></div>
-        <output id="touchControlOpacityValue">{options.touchControlOpacity}%</output>
-      </div>
-      <Slider id="touchControlOpacity" min={20} max={100} step={5} value={options.touchControlOpacity} aria-label={t('touch.opacity')} aria-valuetext={`${options.touchControlOpacity}%`} aria-describedby="touchControlOpacityHint" onValueChange={value => model.setOption('touchControlOpacity', value)}/>
-    </div>
+    <div className="touch-layout-setting-row touch-layout-viewport-row"><span><span>{t('touch.viewportPosition')}</span><small>{t('touch.viewportHint')}</small></span><div className="touch-layout-viewport-actions"><UiButton variant="outline" id="touchViewportAdjust" type="button" onClick={onAdjustViewport}>{t('touch.adjustViewport')}</UiButton><UiButton variant="outline" id="touchViewportReset" type="button" onClick={onResetViewport}>{t('action.reset')}</UiButton></div></div>
+    <div className="touch-layout-setting-row touch-opacity-row"><div className="touch-opacity-heading"><span>{t('touch.opacity')}</span><output id="touchControlOpacityValue">{options.touchControlOpacity}%</output></div><Slider id="touchControlOpacity" min={20} max={100} step={5} value={options.touchControlOpacity} aria-label={t('touch.opacity')} aria-valuetext={`${options.touchControlOpacity}%`} aria-describedby="touchControlOpacityHint" onValueChange={value => model.setOption('touchControlOpacity', value)}/><small id="touchControlOpacityHint">{t('touch.opacityHint')}</small></div>
   </div></section>;
 }
