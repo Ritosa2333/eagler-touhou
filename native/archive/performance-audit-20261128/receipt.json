@@ -247,7 +247,22 @@
     "shutdown-guard-events-8.jsonl": "0abb56aaba5fb9398ffd8940364d445df08f03a19e6796870868943e4bec2df8",
     "shutdown-guard-result-8.json": "9961eb3c39fe5059674d18230c3cdaeb9f9f8011f590f5d589a6177773435445",
     "shutdown-guard-events-9.jsonl": "ffe5424bde5206a00bba0bb33801b1596b59c77b94f404bbb8e3ad028c926af2",
-    "shutdown-guard-result-9.json": "f4b01deea5b5e9c8f9b5426f31c798fd7a184aefe8231f03112d40badaa81f28"
+    "shutdown-guard-result-9.json": "f4b01deea5b5e9c8f9b5426f31c798fd7a184aefe8231f03112d40badaa81f28",
+    "account-resize-summary.json": "f06ed690f2006de8c03099afa3637e29b82a4ed83a64bc4778c8441fa34eb3d7",
+    "account-resize-source.json": "486e3d9a7a81ac71c8feb85fbd1d28c083819511c45a882b20e6517cec79fa20",
+    "account-resize-events-1.jsonl": "2397e606816e9559964469b4d478c32798de79f9f65c6f51ee69b90797f9e913",
+    "account-resize-result-1.json": "532e4ad3bc0b080dfd4f0ec24c457b8f4e3b9d4cc8c0b0d7f730a2cc7e1c0dbd",
+    "account-resize-mobile-390.jpg": "c643ff0bfaf768c64c1acc8ac4c8be09df0440d12f245207422e2d1b73c21965",
+    "account-resize-resize-main.cpp": "216d0962392cf7b01b0d6e98189f4156d9cfb98544c35ad93826ef3a2fb96902",
+    "account-resize-resize-window.cpp": "fc5e663ac86a3d78bfa2f4235a864d67c344afc1c51ba133cbde17b84dae44b4",
+    "account-resize-resize.rc": "31c298c6897b09419d009b30d2875924987b8314892e28a4a548f935ad241832",
+    "account-resize-resize-main.rsp": "35a2e8874681b240e4b7a313c4de86c3fc85a064306f1483fe7b92f44cf7a0de",
+    "account-resize-resize-window.rsp": "a769ceda2af1ec92818afbd34ed8c698d10d1c0c3ac00fb57b5150fd0f89a981",
+    "account-resize-resize-link.rsp": "b9177f6c127a268d0d2c11ac5ad1857a1d939a9a598084af9f46acebd16943d6",
+    "account-resize-build.cmd": "638ec92020b7d59e731772030815680cd68567c9315df9754c4a4ae2961e5bbc",
+    "account-resize-build.log": "25b0d4d7abe60543c3db0798dd59f67e2781cc697fbdc9f449b6571c0225fe63",
+    "account-resize-run.py": "d4d409a99146abe24eae0a906d7be1307786e90c5c17596bc078406b115b8952",
+    "account-resize-system-errors.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
   },
   "tracing": "Profile trace was captured before PERF_TRACE became optional. Reproduction needs --profile --trace-skia --endless-trace-buffer --dart-define=PERF_TRACE=true. Never use the traced process working set as ordinary app memory. Release target defaults to no tracing.",
   "browser": "Original public-profile native adapter A/B retained. New isolated Windows Debug account integration passes two visits and eight width states with native return to th08. Progressive screenshots include a real 320 px guest login form; other widths captured during loading. No credentials entered.",
@@ -585,5 +600,11 @@
     "currentPackageSha256": "7fdda3cdeeb4cea1a160e7412a6909b696cfe42a079cc3229184ce00c142e672",
     "ordinaryAotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
     "scope": "Production main.dart AOT and actual production guest login deep link. Diagnostic native host adds nonactivation, isolated Windows metadata, 320 logical pixel client width, timer WM_CLOSE and native destruction markers. Six component trials and three complete canonical Release DLL-set trials. Host differs from distributed EXE; no authenticated writes or same-window resize/back acceptance."
+  },
+  "sameWindowAccountResize": {
+    "summary": "account-resize-summary.json",
+    "scope": "Same process, production main.dart AOT and complete canonical Release native DLL set. Native diagnostic host changes only initial width, isolated application metadata, nonactivation, resize schedule and timing markers. No product source or package changes.",
+    "visualCoverage": "390 px after desktop resize only; other width captures occluded",
+    "exitCode": 0
   }
 }

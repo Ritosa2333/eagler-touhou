@@ -64,4 +64,6 @@ Windows Release 在双显卡机器上另复现网页纹理空白。通过官方 
 
 该普通 Release AOT 后续在三个独立游客窗口真实显示了登录表单，320 px 内容宽度也由原生像素与 DPI 核对。三次带网页关闭曾在引擎销毁阶段出现相同消息回调异常。构建适配模块加入引擎可用性检查后，六轮插件候选与三轮完整 Release DLL 集合均通过真实窗口关闭，退出码为 0。诊断宿主与交付 EXE 的差异见[修复验收](../archive/performance-audit-20261128/report.md#网页驻留关闭修复)。三个固定尺寸样本不代替同一窗口跨宽度与返回验收。[当前实拍、系统错误与符号定位](../archive/performance-audit-20261128/report.md#最终-release-账号页与关闭异常)
 
+同一普通 Release 进程另完成 1280／390／320／1280 逻辑像素往返，390 px 真实表单持续显示，约 115 秒后正常关闭。其余尺寸图像受遮挡，完整视觉与返回操作继续待验。[同窗口记录](../archive/performance-audit-20261128/report.md#账号页同窗口尺寸切换)
+
 历史实现规格见[归档账号规格](../archive/web-only/docs/account.md)。公告和私信继续见[消息中心](inbox.md)。

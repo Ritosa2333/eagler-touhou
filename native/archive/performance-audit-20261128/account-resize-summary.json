@@ -1,0 +1,40 @@
+{
+  "checkedAtUtc": "2026-11-28T06:53:42.884274+00:00",
+  "scope": "Same process, production main.dart AOT and complete canonical Release native DLL set. Native diagnostic host changes only initial width, isolated application metadata, nonactivation, resize schedule and timing markers. No product source or package changes.",
+  "pid": 27644,
+  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "packageSha256": "7fdda3cdeeb4cea1a160e7412a6909b696cfe42a079cc3229184ce00c142e672",
+  "actualClientWidthsLogical": [
+    1280,
+    390,
+    320,
+    1280
+  ],
+  "clientHeightLogical": 712.6666666666666,
+  "dpi": 144,
+  "secondsFirstFrameToClose": 115.032,
+  "closeToEngineDestroyedMs": 234,
+  "exitCode": 0,
+  "forcedTermination": false,
+  "backgroundSnapshots": 115,
+  "samplingIntervalSeconds": 1,
+  "originalPreviewFilesUnchanged": 371,
+  "visualEvidence": {
+    "mobile-390.jpg": "Complete username/email, password, forgot-password, sign-in and register form visible after same-window desktop-to-390 resize.",
+    "desktopAnd320": "Other foreground windows occluded capture. Those images discarded, not archived or counted as visual acceptance."
+  },
+  "notCovered": [
+    "Native back or close-to-origin interaction",
+    "All width states fully visible",
+    "Authenticated writes",
+    "Presented FPS or continuous focus guarantee"
+  ],
+  "inputHash": {
+    "resize-main.cpp": "216d0962392cf7b01b0d6e98189f4156d9cfb98544c35ad93826ef3a2fb96902",
+    "resize-window.cpp": "fc5e663ac86a3d78bfa2f4235a864d67c344afc1c51ba133cbde17b84dae44b4",
+    "resize.rc": "31c298c6897b09419d009b30d2875924987b8314892e28a4a548f935ad241832",
+    "resize-main.rsp": "35a2e8874681b240e4b7a313c4de86c3fc85a064306f1483fe7b92f44cf7a0de",
+    "resize-window.rsp": "a769ceda2af1ec92818afbd34ed8c698d10d1c0c3ac00fb57b5150fd0f89a981",
+    "resize-link.rsp": "b9177f6c127a268d0d2c11ac5ad1857a1d939a9a598084af9f46acebd16943d6"
+  }
+}

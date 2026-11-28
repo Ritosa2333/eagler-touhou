@@ -1,0 +1,18 @@
+{
+  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "nativeBundle": "Canonical shutdown-guard/production, hardlinked without replacing files",
+  "scheduleSeconds": [
+    1,
+    25,
+    55,
+    85,
+    115
+  ],
+  "requestedClientWidths": [
+    1280,
+    390,
+    320,
+    1280
+  ],
+  "fixture": "Own native host self-resizes with SWP_NOACTIVATE and records actual client pixels and DPI. No product source, DLL, AOT or original preview changes."
+}
