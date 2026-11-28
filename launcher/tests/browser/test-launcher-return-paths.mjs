@@ -411,8 +411,8 @@ try {
         const lobby = '.launcher-bottom-navigation a[href*="lobby"]';
         await tap(lobby);
         await wait('.book-directory');
-        await tap('.lobby-tools-more');
-        await tap('.lobby-tools-menu [role="menuitem"]:has(.lucide-activity)');
+        await tap('.lobby-help-trigger');
+        await tap('.lobby-help-menu [role="menuitem"]:has(.lucide-activity)');
         await wait('#lobbyNetworkDialog[open]');
         await page.goBack();
         await wait('#lobbyNetworkDialog[open]',true);

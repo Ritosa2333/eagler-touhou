@@ -129,31 +129,36 @@ try {
       const bounds = selector => node.querySelector(selector).getBoundingClientRect();
       const tools = bounds('.lobby-actions'), filter = bounds('.book-room-filter-trigger');
       const more = bounds('.lobby-tools-more'), support = bounds('.lobby-support-links');
-      const buttons = ['#createButton', '#codeButton', '#refreshRooms', '.lobby-tools-more'].map(bounds);
+      const links = bounds('.lobby-mobile-links');
+      const buttons = ['#createButton', '#codeButton', '#refreshRooms'].map(bounds);
       return {
-        compact: more.width > 0, support: support.width > 0,
+        overflow: more.width > 0, support: support.width > 0, mobileLinks: links.width > 0,
         fits: tools.right <= node.getBoundingClientRect().right + 1,
         touchTargets: buttons.every(rect => rect.width === 44 && rect.height === 44),
         aligned: filter.top === tools.top || filter.left === tools.left,
         label: bounds('.book-room-filter-trigger > span').width > 0,
+        linksBelowTools: links.top >= Math.max(filter.bottom, tools.bottom) &&
+          links.right <= node.getBoundingClientRect().right + 1 &&
+          [...node.querySelectorAll('.lobby-mobile-links .ui-kit-button')].every(button => button.offsetHeight >= 44),
       };
     });
-    if ([320, 390, 850, 1440].includes(width)) {
-      assert.equal(toolbar.compact, width !== 1440, `${width}px uses the room column width`);
-    }
-    assert.equal(toolbar.support, !toolbar.compact);
+    assert.equal(toolbar.overflow, width === 850, 'only the narrow desktop layout retains the original overflow menu');
+    assert.equal(toolbar.support, width === 1440);
+    assert.equal(toolbar.mobileLinks, width <= 780);
     assert.ok(toolbar.fits && toolbar.label && toolbar.aligned);
-    if (toolbar.compact) assert.ok(toolbar.touchTargets);
+    if (width <= 390 || width === 850) assert.ok(toolbar.touchTargets);
+    if (toolbar.mobileLinks) assert.ok(toolbar.linksBelowTools);
   }
   await page.setViewport({width: 390, height: 844});
-  await page.waitForSelector('.lobby-tools-more', {visible: true});
-  await page.focus('.lobby-tools-more');
+  await page.waitForSelector('.lobby-mobile-links button:has(.lucide-clapperboard)', {visible: true});
+  await page.waitForSelector('.lobby-help-trigger', {visible: true});
+  await page.focus('.lobby-help-trigger');
   await page.keyboard.press('Enter');
-  const more = await page.waitForSelector('.lobby-tools-menu[data-state="open"]', {visible: true});
-  assert.ok(await more.$('a[href*="/docs/multiplayer"]'), 'the overflow retains the guide link');
-  assert.ok(await more.$('.lucide-activity'), 'the overflow includes network diagnostics');
-  assert.ok(await more.$('.lucide-clapperboard'), 'the overflow includes replays');
+  const help = await page.waitForSelector('.lobby-help-menu[data-state="open"]', {visible: true});
+  assert.ok(await help.$('a[href*="/docs/multiplayer"]'), 'Help retains the guide link');
+  assert.ok(await help.$('.lucide-activity'), 'Help includes network diagnostics');
+  assert.equal((await help.$$('[role="menuitem"]')).length, 2, 'Help does not contain replays or the rankings');
   await page.keyboard.press('Escape');
-  assert.equal(await page.evaluate(() => document.activeElement.matches('.lobby-tools-more')), true);
+  assert.equal(await page.evaluate(() => document.activeElement.matches('.lobby-help-trigger')), true);
   console.log('PASS: lobby hover in both themes, selected/disabled states, fixed geometry, no scale, reduced motion and narrow filtering');
 } finally {await browser.close();}

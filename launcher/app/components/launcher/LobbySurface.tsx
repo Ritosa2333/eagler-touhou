@@ -1,8 +1,9 @@
 import {BookButton} from './BookButton';
 import type {ReactNode} from 'react';
-import {Activity, BookOpen, Clapperboard, Ellipsis, Trophy} from 'lucide-react';
+import {Activity, BookOpen, CircleHelp, Clapperboard, Ellipsis, Trophy} from 'lucide-react';
 import { useLocale } from '../../i18n';
 import {ActionMenu, ActionMenuItem} from '../../ui/action-menu';
+import {Button} from '../../ui/button';
 import {LoadingActivity} from '../../ui/loading-activity';
 import type { LibraryCardsProps } from './LibraryCards';
 import {BookDirectoryGames} from './BookDirectoryGames';
@@ -66,6 +67,14 @@ export function LobbySurface({
   const {t, locale} = useLocale();
   const ratings = accountsEnabled && rankingsHref ? withUiLanguage(rankingsHref, locale) : undefined;
   const more = t('nav.more');
+  const help = t('nav.help');
+  const supportItems = <>
+    {guideHref ? <ActionMenuItem asChild><a href={guideHref}><BookOpen aria-hidden="true"/>{t('multiplayerGuide.action')}</a></ActionMenuItem>
+      : <ActionMenuItem disabled><BookOpen aria-hidden="true"/>{t('multiplayerGuide.action')}</ActionMenuItem>}
+    <ActionMenuItem disabled={!onNetwork || networkRunning} onAction={onNetwork ?? undefined}>
+      <Activity aria-hidden="true"/>{t('networkCheck.action')}
+    </ActionMenuItem>
+  </>;
   const showLoading = loading && !hasRooms && rail.interactive !== false;
   return (
     <>
@@ -116,16 +125,25 @@ export function LobbySurface({
               <BookButton variant="action" size="icon" className="lobby-button lobby-tools-more"
                 type="button" aria-label={more} title={more}><Ellipsis aria-hidden="true"/></BookButton>
             }>
-              {guideHref ? <ActionMenuItem asChild><a href={guideHref}><BookOpen aria-hidden="true"/>{t('multiplayerGuide.action')}</a></ActionMenuItem>
-                : <ActionMenuItem disabled><BookOpen aria-hidden="true"/>{t('multiplayerGuide.action')}</ActionMenuItem>}
-              <ActionMenuItem disabled={!onNetwork || networkRunning} onAction={onNetwork ?? undefined}>
-                <Activity aria-hidden="true"/>{t('networkCheck.action')}
-              </ActionMenuItem>
+              {supportItems}
               {ratings && <ActionMenuItem asChild><a href={ratings}><Trophy aria-hidden="true"/>{t('th09.ratingBoard')}</a></ActionMenuItem>}
               {onReplay && <ActionMenuItem onAction={onReplay}><Clapperboard aria-hidden="true"/>{t('lobby.watchReplay')}</ActionMenuItem>}
             </ActionMenu>
             </div>
           </div>
+          <nav className="lobby-mobile-links" aria-label={t('lobby.title')}>
+            {ratings && <Button asChild variant="ghost" size="sm">
+              <a href={ratings}><Trophy aria-hidden="true"/>{t('th09.ratingBoard')}</a>
+            </Button>}
+            {onReplay && <Button variant="ghost" size="sm" onClick={onReplay}>
+              <Clapperboard aria-hidden="true"/>{t('lobby.watchReplay')}
+            </Button>}
+            <ActionMenu label={help} className="lobby-help-menu" trigger={
+              <Button variant="ghost" size="sm" className="lobby-help-trigger">
+                <CircleHelp aria-hidden="true"/>{help}
+              </Button>
+            }>{supportItems}</ActionMenu>
+          </nav>
         </header>
         <section
           className="lobby-list-surface"

@@ -104,12 +104,13 @@ try {
         await page.waitForSelector('#lobbyGameRail', {visible:true});
         assert.equal(await page.$eval('.book-directory', lobby => {
           const bounds = selector => lobby.querySelector(selector).getBoundingClientRect();
-          const more = bounds('.lobby-tools-more'), bar = bounds('.book-lobby-games'), tools = bounds('.lobby-room-tools');
+          const links = bounds('.lobby-mobile-links'), help = bounds('.lobby-help-trigger');
+          const bar = bounds('.book-lobby-games'), tools = bounds('.lobby-room-tools');
           const filter = bounds('.book-room-filter-trigger');
           const list = bounds('.book-lobby-picker-trigger'), all = bounds('.book-lobby-all');
-          return bar.bottom <= tools.top && filter.right <= more.left && filter.top === more.top && more.width === 44 &&
+          return bar.bottom <= tools.top && filter.bottom <= links.top && help.height >= 44 && links.right <= tools.right &&
             list.width === list.height && all.width === all.height && list.width === all.width && list.top === all.top;
-        }), true, 'mobile lobby keeps its overflow trigger and filter aligned below the game bar');
+        }), true, 'mobile lobby keeps its secondary links below the room tools');
       } else {
         await page.waitForSelector('.lobby-library .book-lobby-picker-trigger', {hidden:true});
         const sample = await page.waitForSelector('.lobby-game-sidebar [data-lobby-rail-product]', {visible:true});

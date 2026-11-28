@@ -48,7 +48,7 @@ before(async () => {
     export * from './src/contracts/product-catalog.mts';
     export * from './src/launcher/room-invite.mts';
     export {MemoryRouter} from 'react-router';
-  `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', loader: {'.webp': 'dataurl'}, outfile: resolve(work, 'actual-bundle.mjs'), logLevel: 'silent',
+  `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', loader: {'.webp': 'dataurl', '.svg': 'dataurl'}, outfile: resolve(work, 'actual-bundle.mjs'), logLevel: 'silent',
     plugins: [{name: 'installed-deps-original-mts', setup(ctx) {
       ctx.onResolve({filter: /^[^./]/}, args => ({path: args.path, external: true}));
       ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
@@ -311,7 +311,7 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
   assert.equal(n('#refreshRooms').getAttribute('aria-busy'), 'true');
   assert.equal(n('#refreshRooms').dataset.loading, 'true');
   assert.equal(n('#listLoading .loading-activity').dataset.loadingContext, 'multiplayer');
-  assert.equal(all('#listLoading .loading-activity img').length, 4);
+  assert.ok(n('#listLoading [data-loading-scene] .loading-scene-portrait'));
   assert.equal(n('#roomList').hidden, true, 'An unloaded list cannot displace the loading indicator');
   assert.equal(n('#roomCount').hidden, true);
   assert.equal(env.document.querySelector('#listHead'),null); assert.equal(env.document.querySelector('#emptyState'), null);
@@ -504,8 +504,16 @@ test('Lobby defaults to live ratings and shows no-rating games without a win-rat
 });
 
 test('Lobby failed live connection retains stale room warning, interrupted reconnect, and recovery', async () => {
-  const f = await fixture().live([room()]); await mountLobby(f); await f.emit('error');
+  let networkChecks = 0, replayOpens = 0;
+  const f = await fixture().live([room()]);
+  await mountLobby(f, {onNetwork: () => {networkChecks++;}, onReplay: () => {replayOpens++;}});
+  await click('.lobby-mobile-links button:has(.lucide-clapperboard)');
+  assert.equal(replayOpens, 1, 'the mobile Replay shortcut opens directly');
+  assert.equal(env.document.querySelector('.lobby-warning-network'), null);
+  await f.emit('error');
   assert.equal(n('#connectionWarningTitle').textContent, t('en', 'lobby.disconnected')); assert.equal(n('#connectionWarning').hidden, false);
+  await click('.lobby-warning-network');
+  assert.equal(networkChecks, 1, 'the warning exposes network diagnostics');
   assert.equal(n('.lobby-join').disabled, true); assert.equal(env.document.querySelector('#emptyState'), null);
   await click('#connectionRefresh'); assert.equal(f.service.getSnapshot().connection, 'loading'); assert.equal(n('#connectionWarning').hidden, false);
   assert.equal(n('#listLoading').hidden, true); assert.equal(all('.lobby-room-row').length, 1);
@@ -517,6 +525,7 @@ test('Lobby failed live connection retains stale room warning, interrupted recon
     assert.equal(n('.lobby-room-row'), retainedRow, 'reconnect keeps the existing row without replaying its entrance');
   }
   await f.receive(); assert.equal(n('#connectionWarning').hidden, true);
+  assert.equal(env.document.querySelector('.lobby-warning-network'), null);
   await React.act(async () => {await new Promise(resolve => setTimeout(resolve,550));});
   assert.ok(n('#emptyState'));
   await f.receive([room()]);

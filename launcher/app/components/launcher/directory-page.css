@@ -8,7 +8,7 @@
   .book-directory .lobby-room-tools {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0;min-width:0}
   .book-directory .lobby-actions {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;min-width:0;width:auto}
   .book-directory .lobby-actions .lobby-button {min-width:0;min-height:44px;white-space:nowrap}
-  .book-directory .lobby-tools-overflow {display:none}
+  .book-directory :is(.lobby-tools-overflow,.lobby-mobile-links,.lobby-warning-network) {display:none}
   .book-directory .lobby-actions .lobby-button:not(.lobby-primary) {background:var(--kit-card);border-color:var(--kit-border);color:var(--kit-foreground)}
   .book-directory .lobby-actions .lobby-button:not(.lobby-primary):not(:disabled):hover {background:var(--kit-accent)}
   .book-room-filter-popup {width:min(540px,var(--radix-dropdown-menu-content-available-width));box-sizing:border-box}
@@ -38,6 +38,7 @@
   .book-directory .lobby-list-surface .lobby-connection-icon {display:block;width:36px;height:36px;margin:0 0 10px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
   .book-directory .lobby-list-surface[data-has-rooms='false'] .lobby-connection-icon {margin-inline:auto}
   .book-directory .lobby-list-surface .lobby-connection-warning p {overflow-wrap:anywhere;color:var(--book-muted)}
+  .lobby-connection-actions {display:contents}
   .book-lobby-games {--lobby-game-size:48px;display:flex;align-items:center;gap:6px;min-width:0}
   .book-sidebar.lobby-game-sidebar {display:none}
   .book-lobby-cover {display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:4px;overflow:hidden;background:var(--book-raised);font-size:10px}
@@ -92,6 +93,12 @@
   }
   @media(max-width:780px) {
     html:has(.lobby-page),body:has(.lobby-page) {height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+    .book-directory .lobby-support-links {display:none}
+    .book-directory .lobby-mobile-links {display:flex;align-items:center;flex-wrap:wrap;flex-basis:100%;gap:2px}
+    .lobby-mobile-links .ui-kit-button {min-block-size:44px;padding-inline:8px;gap:5px}
+    .lobby-mobile-links .lobby-help-trigger {margin-inline-start:auto}
+    .book-directory .lobby-warning-network {display:inline-flex}
+    .lobby-connection-warning > .lobby-connection-actions {display:flex;flex:0 0 auto;max-inline-size:100%;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px}
   }
   @media(max-width:540px) {
     .book-room-filter-popup {width:min(354px,var(--radix-dropdown-menu-content-available-width))}
@@ -106,8 +113,10 @@
     .book-directory .lobby-support-links {display:none}
     .book-directory .lobby-actions {gap:6px}
     .book-directory .lobby-actions .lobby-button {width:44px;flex:0 0 44px;padding-inline:0;justify-content:center}
-    .book-directory .lobby-tools-overflow {display:flex}
     .book-directory .lobby-labeled-action > span {display:none}
+    @media(min-width:781px) {
+      .book-directory .lobby-tools-overflow {display:flex}
+    }
   }
 }
 .lobby-game-sidebar .book-lobby-sidebar-check,.book-lobby-menu-row .book-lobby-menu-check {
