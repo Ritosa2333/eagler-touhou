@@ -135,7 +135,7 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
   return <>
     <BookGameRail label={t('directory.gameFilter')} className="lobby-game-sidebar"
       search={{query,onChange:setQuery}} groups={railGroups} interactive={interactive}
-      favorites={favorites} onFavorite={favorite}
+      favorite={{ids:favorites, onToggle:favorite}}
       gameAction={product => ({
         label:t('directory.viewGame',{game:product.title}), selected:selected.includes(product.id),
         onClick:() => selectOnly(product.id),

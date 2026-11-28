@@ -140,7 +140,6 @@ try {
     const choice = category.querySelector('.book-category-choice');
     const row = rail.querySelector(':is([data-book-sidebar-product="th07"],[data-lobby-rail-product="th07mp"] .book-rail-game)');
     const favorite = row.parentElement.querySelector('.book-favorite');
-    const star = favorite.querySelector('svg');
     const title = row.querySelector('.book-category-game-title');
     const box = element => element.getBoundingClientRect();
     choice.focus({preventScroll:true});
@@ -149,10 +148,11 @@ try {
       categoryWidth:box(category).width, actionWidth:[...category.querySelectorAll('button')].reduce((width,button) => width + box(button).width,0),
       countRight:box(category.querySelector('.book-category-count')).right,
       rowHeight:box(row).height, layout:getComputedStyle(row).display,
-      favoriteWidth:box(favorite).width, favoriteHeight:box(favorite).height,
-      starWidth:box(star).width, starHeight:box(star).height,
-      favoriteAligned:box(favorite).top === box(row).top && box(favorite).right === box(row).right,
-      titleClearsFavorite:box(title).right <= box(favorite).left,
+      favorite: favorite && {
+        size:[box(favorite).width, box(favorite).height],
+        aligned:box(favorite).top === box(row).top && box(favorite).right === box(row).right,
+        clearsTitle:box(title).right <= box(favorite).left,
+      },
     };
   });
   for (const width of [1440, 1024, 390]) {
@@ -164,11 +164,10 @@ try {
       const library = await sidebarGeometry();
       await navigate('lobby');
       const lobby = await sidebarGeometry();
-      for (const key of ['width','searchWidth','categoryWidth','actionWidth','countRight','rowHeight','layout','favoriteWidth','favoriteHeight','starWidth','starHeight'])
+      for (const key of ['width','searchWidth','categoryWidth','actionWidth','countRight','rowHeight','layout'])
         assert.equal(lobby[key],library[key],`desktop rails share ${key}`);
-      assert.deepEqual([library.favoriteWidth, library.favoriteHeight], [24,22], 'the rail uses the main favorite dimensions');
-      assert.ok(library.favoriteAligned && lobby.favoriteAligned,'the favorite is pinned to the top end of each row');
-      assert.ok(library.titleClearsFavorite && lobby.titleClearsFavorite,'favorite leaves the title unobstructed');
+      assert.equal(library.favorite, null, 'single-player rail rows have no favorite');
+      assert.deepEqual(lobby.favorite, {size:[24,22], aligned:true, clearsTitle:true}, 'lobby rail favorites keep their size and placement');
       assert.equal(library.actionWidth,library.categoryWidth,'the category controls fill the row');
       await navigate('library');
     }

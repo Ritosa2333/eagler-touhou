@@ -268,9 +268,10 @@ test('sidebar disclosures list playable single-player entries without changing t
   assert.ok(node(`${disclosure('windows')} svg[data-expanded="true"]`));
   assert.deepEqual(members('windows'), ['th06', 'th13']);
   assert.deepEqual(ids(), ['th01', 'th06', 'th13']);
-  await click('[data-book-sidebar-favorite="th13"]');
+  assert.equal(env.document.querySelector('[data-book-sidebar-favorite]'), null);
+  await click('[data-book-favorite="th13"]');
   assert.equal(node('[data-book-favorite="th13"]').getAttribute('aria-pressed'), 'true');
-  await click('[data-book-sidebar-favorite="th13"]');
+  await click('[data-book-favorite="th13"]');
   assert.equal(node('[data-book-favorite="th13"]').getAttribute('aria-pressed'), 'false');
   await click(disclosure('pc98'));
   assert.deepEqual(members('pc98'), ['th01']);

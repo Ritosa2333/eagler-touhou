@@ -240,7 +240,6 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
               }
             }};
         })}
-        favorites={favorites} onFavorite={toggleFavorite}
         gameAction={(product,id) => ({href:product.href, selected:openedProduct === product.id,
           anchorRef:selectedSidebar === id && openedProduct === product.id ? selectedCard : undefined,
           onClick:event => activate(event, product, id)})}/>}

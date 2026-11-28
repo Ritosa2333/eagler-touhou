@@ -141,6 +141,8 @@
     align-items: baseline;
     gap: 6px;
     min-width: 0;
+  }
+  .book-category-games > li:has(> .book-favorite) .book-category-game-name {
     padding-inline-end: 22px;
   }
   .book-category-game-title {
@@ -503,10 +505,7 @@
   }
   @media (width > 780px) {
     .book-view-covers .book-grid {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
-    }
-    .book-view-covers .book-card .book-art {
-      aspect-ratio: 2 / 3;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 146px), 1fr));
     }
   }
   @media (max-width: 780px) {

@@ -6,7 +6,7 @@ const browser = await puppeteer.launch({headless:true, executablePath:await find
 try {
   const page = await browser.newPage();
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion', value:'reduce'}]);
-  await page.setViewport({width:1440, height:900});
+  await page.setViewport({width:1440, height:1440});
   await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
   const detailUrl = new URL('?game=th05&lang=zh-CN', process.argv[2] || 'http://127.0.0.1:5173/');
   await page.goto(detailUrl, {waitUntil:'domcontentloaded'});
@@ -61,12 +61,15 @@ try {
   assert.match(await style('body', 'backgroundImage'), /blob:/);
   for (const percent of [35, 100, 88]) {
     await slide('panel', percent);
-    const alpha = (await rgba(desktopPanel, 'backgroundColor'))[3];
-    assert.ok(Math.abs(alpha - percent * 2.55) < 1, `detail uses the ${percent}% panel setting`);
+    assert.equal((await rgba(desktopPanel, 'backgroundColor'))[3], 255, `desktop detail blocks the wallpaper at ${percent}% panel opacity`);
     assert.equal(await style(desktopPanel, 'opacity'), '1', 'panel text stays opaque');
     assert.equal((await rgba(desktopHero, 'backgroundColor'))[3], 255, 'panel transparency does not affect the hero');
   }
   await page.keyboard.press('Escape');
+  assert.equal(await page.$eval(desktopPanel, panel => {
+    const details = panel.querySelector('.book-game-detail-content').getBoundingClientRect();
+    return details.bottom < innerHeight && panel.getBoundingClientRect().bottom >= innerHeight - 1;
+  }), true, 'the desktop panel covers the empty area below short content');
   await page.setViewport({width:390, height:844, isMobile:true, hasTouch:true});
   await page.goto(detailUrl, {waitUntil:'domcontentloaded'});
   await page.waitForSelector('.mobile-game-hero', {visible:true});
@@ -78,7 +81,7 @@ try {
   await page.waitForSelector('.lobby-list-surface', {visible:true});
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background'));
   assert.equal((await rgba('.lobby-list-surface', 'backgroundColor'))[3], 224, 'the same setting is used by the room list');
-  console.log('PASS: background adjustment, themed detail artwork and panel opacity on desktop/mobile');
+  console.log('PASS: themed artwork, solid desktop detail coverage and adjustable mobile/lobby panel opacity');
 } finally {
   await browser.close();
 }

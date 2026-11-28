@@ -278,14 +278,18 @@ try {
   await resize.goto(origin, {waitUntil: 'domcontentloaded'});
   await resize.waitForFunction(() => window.__eaglerBoot?.done);
   await assertMasthead(resize, 1440);
-  await resize.setViewport({width: 1707, height: 819});
-  await assertMasthead(resize, 1707);
-  const coverGrid = await resize.$$eval('#bookGameGrid .book-card .book-art', covers => {
-    const boxes = covers.map(cover => cover.getBoundingClientRect());
-    return {columns:boxes.filter(box => box.top === boxes[0].top).length,
-      portrait:boxes.every(({width,height}) => Math.abs(height - width * 1.5) < 1)};
-  });
-  assert.ok(coverGrid.columns >= 7 && coverGrid.portrait, 'desktop cover grid fits at least seven 2:3 posters at 1707px');
+  for (const [width, minColumns] of [[1440, 6], [1707, 8]]) {
+    await resize.setViewport({width, height: 819});
+    await assertMasthead(resize, width);
+    const coverGrid = await resize.$$eval('#bookGameGrid .book-card .book-art', covers => {
+      const boxes = covers.map(cover => cover.getBoundingClientRect());
+      return {columns:boxes.filter(box => box.top === boxes[0].top).length,
+        square:boxes.every(({width,height}) => Math.abs(height - width) < 1)};
+    });
+    assert.ok(coverGrid.square, `covers stay square at ${width}px`);
+    assert.ok(coverGrid.columns >= minColumns, `${width}px fits ${coverGrid.columns} covers, expected at least ${minColumns}`);
+    console.log(`Cover grid at ${width}px: ${coverGrid.columns} covers per row`);
+  }
   await assertInboxMotion(resize);
   await resize.setViewport({width: 1440, height: 540});
   await resize.waitForSelector('#bookRecentTitle', {visible:true});

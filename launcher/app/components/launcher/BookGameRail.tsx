@@ -30,14 +30,13 @@ type GameAction = {
   onClick(event: MouseEvent<HTMLElement>): void;
 };
 
-export function BookGameRail<Id extends string>({label, className, groups, search, interactive, favorites, onFavorite, gameAction}: {
+export function BookGameRail<Id extends string>({label, className, groups, search, interactive, favorite, gameAction}: {
   label: string;
   className?: string;
   groups: readonly BookRailGroup<Id>[];
   search: Omit<ComponentProps<typeof LibrarySearch>, 'interactive' | 'desktop'>;
   interactive: boolean;
-  favorites: readonly string[];
-  onFavorite(id: string): void;
+  favorite?: {ids: readonly string[]; onToggle(id: string): void};
   gameAction(product: LibraryProduct, group: Id): GameAction;
 }) {
   const {t} = useLocale();
@@ -81,12 +80,12 @@ export function BookGameRail<Id extends string>({label, className, groups, searc
                           aria-pressed={action.selected} disabled={!interactive} onClick={action.onClick}>
                           <BookRailGameIdentity product={product}/>
                         </Button>}
-                    <Button variant="ghost" size="icon-sm" className="book-favorite" disabled={!interactive}
+                    {favorite && <Button variant="ghost" size="icon-sm" className="book-favorite" disabled={!interactive}
                       data-book-sidebar-favorite={product.id} aria-label={t('library.favorite', {title:product.title})}
-                      aria-pressed={favorites.includes(product.id)}
-                      onClick={event => {impressFavorite(event.currentTarget); onFavorite(product.id);}}>
+                      aria-pressed={favorite.ids.includes(product.id)}
+                      onClick={event => {impressFavorite(event.currentTarget); favorite.onToggle(product.id);}}>
                       <Star aria-hidden="true"/>
-                    </Button>
+                    </Button>}
                   </li>;
                 })}
               </ul>
