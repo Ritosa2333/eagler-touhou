@@ -86,7 +86,6 @@ export interface LauncherHost {
   lobbyHref: string;
   masthead: ReactNode;
   librarySearchTarget?: HTMLElement | null;
-  libraryTools?: ReactNode;
   installsPage?: ReactNode;
   launcherPreferences?: LauncherPreferencesProps;
   lobby: LobbyPresentation;
@@ -424,7 +423,6 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
             onActivate={activate}
             masthead={null}
             mobileSearchTarget={host.librarySearchTarget}
-            tools={host.libraryTools}
             active={showLibrary}
             optionsOpen={!inlineProduct && presence.open}
             compact={compact}

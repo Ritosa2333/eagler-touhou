@@ -13,6 +13,8 @@
   "loadingTip_favorites": "常玩的作品找不到？点一下旁边的星星，下次去「我的收藏」找。",
   "downloadTasks_acquire": "安装游戏",
   "downloadTasks_title": "安装进度",
+  "downloadTasks_pageTitle": "下载与附加内容",
+  "downloadTasks_addOns": "附加内容",
   "downloadTasks_downloading": "安装中",
   "downloadTasks_queued": "排队中",
   "downloadTasks_failed": "安装失败",

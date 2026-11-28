@@ -1286,19 +1286,21 @@ function importPackageFile(game = 'th06', gameVersion) {
   return new NativeFile([archive], `${game}.zip`, {type: 'application/zip'});
 }
 
-test('actual BrowserLauncher: library visual packs lists local beautified packages and shares game version preferences', async () => {
+test('actual BrowserLauncher: downloads and add-ons lists local visual packs and shares game version preferences', async () => {
   await mountBrowser({initial: '/en.html', host: subsetHost(['th06', 'th07', 'th08']), seedPackages: ['th08']});
   const session = api.getTestSession();
-  await click('.beauty-packs-trigger');
-  await until(() => env.document.querySelector('.beauty-packs-empty'), 'empty visual packs dialog');
+  assert.equal(env.document.querySelector('.game-install-shortcut'), null, 'no progress shortcut while idle');
+  await click('#mastheadMenuToggle');
+  await click('#mastheadMenuPanel a[href*="section=installs"]');
+  await until(() => env.document.querySelector('.game-install-page .beauty-packs-empty'), 'empty visual packs section');
   await React.act(async () => {
     for (const game of ['th06', 'th07']) await session.acquisition.importPackage({game, file: importPackageFile(game, 'beauty')});
   });
-  const dialog = () => env.document.querySelector('.beauty-packs-dialog');
-  const toggles = () => [...dialog().querySelectorAll('[role="switch"]')].map(item => item.getAttribute('aria-checked'));
-  await until(() => dialog().querySelectorAll('[role="switch"]').length === 2, 'only locally installed visual packs');
+  const packs = () => node('.game-install-page .beauty-packs');
+  const toggles = () => [...packs().querySelectorAll('[role="switch"]')].map(item => item.getAttribute('aria-checked'));
+  await until(() => packs().querySelectorAll('[role="switch"]').length === 2, 'only locally installed visual packs');
   assert.deepEqual(toggles(), ['false', 'false']);
-  assert.equal(dialog().textContent.includes('th08'), false, 'an installed original does not count as a visual pack');
+  assert.equal(packs().textContent.includes('th08'), false, 'an installed original does not count as a visual pack');
   await click('.beauty-packs-tools button:first-child');
   assert.deepEqual(toggles(), ['true', 'true']);
   assert.equal(session.settings.getGameVersion('th07'), 'beauty');

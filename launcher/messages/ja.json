@@ -13,6 +13,8 @@
   "loadingTip_favorites": "よく遊ぶ作品に星を付けると、次から「お気に入り」で見つけられます。",
   "downloadTasks_acquire": "ゲームをインストール",
   "downloadTasks_title": "インストール状況",
+  "downloadTasks_pageTitle": "ダウンロードと追加コンテンツ",
+  "downloadTasks_addOns": "追加コンテンツ",
   "downloadTasks_downloading": "インストール中",
   "downloadTasks_queued": "待機中",
   "downloadTasks_failed": "インストールに失敗しました",

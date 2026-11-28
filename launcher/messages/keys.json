@@ -19,6 +19,8 @@
     "id": "downloadTasks_title",
     "params": []
   },
+  "downloadTasks.pageTitle": {"id": "downloadTasks_pageTitle", "params": []},
+  "downloadTasks.addOns": {"id": "downloadTasks_addOns", "params": []},
   "downloadTasks.downloading": {
     "id": "downloadTasks_downloading",
     "params": []

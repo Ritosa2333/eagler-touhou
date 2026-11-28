@@ -27,11 +27,6 @@
   gap: 8px;
 }
 
-.ui-toolbar > button[data-toolbar-icon] {
-  inline-size: var(--toolbar-height);
-  padding-inline: 0;
-}
-
 .ui-toolbar > button:is(:hover, [aria-expanded="true"]):not(:disabled) {
   background: var(--kit-accent);
 }
@@ -52,12 +47,4 @@
 
 @media (max-width: 780px), (pointer: coarse) {
   .ui-toolbar { --toolbar-height: 44px; }
-}
-
-@media (max-width: 780px) {
-  .ui-toolbar > [data-toolbar-show="wide"] { display: none; }
-}
-
-@media (width > 780px) {
-  .ui-toolbar > [data-toolbar-show="compact"] { display: none; }
 }

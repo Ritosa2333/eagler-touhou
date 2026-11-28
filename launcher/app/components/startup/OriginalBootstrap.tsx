@@ -87,7 +87,7 @@ export function OriginalBootstrapHead() {
   const installs = launcherSection({pathname, search}) === 'installs';
   const mode = account ? new URLSearchParams(search).get('mode') : null;
   const page = account ? mode === 'register' ? 'account.register' : mode === 'reset' ? 'account.forgotPassword' : 'account.login'
-    : lobby ? 'lobby.title' : profile ? 'profile.pageTitle' : installs ? 'downloadTasks.title' : null;
+    : lobby ? 'lobby.title' : profile ? 'profile.pageTitle' : installs ? 'downloadTasks.pageTitle' : null;
   const title = page ? sitePageTitle(translate(locale, page)) : translate(locale, 'site.documentTitle');
   const description = translate(locale, 'site.description');
   return <>

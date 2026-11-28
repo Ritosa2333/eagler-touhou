@@ -11,6 +11,27 @@ try {
     if (/\.(?:package\.json|data|wasm|bin)(?:$|\?)/.test(request.url())) resources.push(request.url());
   });
   await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
+  const menuEntry = '#mastheadMenuPanel a[href*="section=installs"]';
+  const openDownloads = async () => {
+    await page.locator('#mastheadMenuToggle:not(:disabled)').click();
+    await page.locator(menuEntry).click();
+    await page.waitForSelector('.game-install-page .beauty-packs', {visible:true});
+    await page.waitForSelector('#mastheadMenuPanel', {hidden:true});
+  };
+  for (const width of [1440, 390]) {
+    await page.setViewport({width, height:819, isMobile:width === 390, hasTouch:width === 390});
+    await page.goto(new URL('?preview=install', origin).href, {waitUntil:'domcontentloaded'});
+    await page.waitForSelector('#eaglerPreload', {hidden:true});
+    const entryUrl = page.url();
+    await openDownloads();
+    assert.equal(await page.$('.game-install-shortcut'), null, 'the floating shortcut stays hidden while idle');
+    assert.ok(await page.$eval('.game-install-empty', node => node.offsetHeight < 60), 'idle install status occupies one row');
+    await page.locator('.game-install-page .launcher-back').click();
+    await page.waitForSelector('.game-install-page', {hidden:true});
+    assert.equal(page.url(), entryUrl);
+    await page.waitForSelector('#mastheadMenuPanel', {hidden:true});
+  }
+  await page.setViewport({width:1440, height:819, isMobile:false, hasTouch:false});
   await page.goto(new URL('?game=th07&lang=zh-CN&preview=install',origin).href, {waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => document.querySelector('#launchText')?.textContent === '安装游戏');
   const size = () => page.$eval('#launch', async node => {
@@ -47,13 +68,13 @@ try {
   assert.equal(await page.$eval('#launch', button => button.disabled), true, 'simulated installs do not enable actual play');
   await page.locator('#installPreviewAgain').click();
   await page.waitForSelector('#launch [aria-valuenow]');
-  await page.locator('.game-install-shortcut').click();
+  await openDownloads();
   await page.locator('[data-download-active="th07"] button').click();
   await page.waitForSelector('.game-install-empty');
   await page.locator('.game-install-page .launcher-back').click();
   await page.waitForFunction(() => document.querySelector('#launchText')?.textContent === '安装游戏');
   assert.deepEqual(resources, []);
-  console.log('PASS: full-button progress motion, simulated completion, repeat, cancel, and no game-resource requests');
+  console.log('PASS: menu entry and back on desktop/mobile, full-button progress, repeat, cancel, and no game-resource requests');
 } finally {
   await browser.close();
 }

@@ -11,6 +11,7 @@ import {
   BookOpen as ReaderIcon,
   Check as CheckIcon,
   PlaySquare,
+  Download,
   Code,
   FlaskConical,
   FileText,
@@ -148,6 +149,10 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     }
   }, [languagesOpen, developerOpen, menuOpen]);
   const lobbyHref = withUiLanguage(props.assetUrl('lobby.html'), locale);
+  const installsLink: MastheadSiteLink | undefined = section === 'installs' ? undefined : {
+    href: launcherSectionHref(props.launcherHref, 'installs'), icon: <Download aria-hidden="true"/>, label: t('downloadTasks.pageTitle'),
+  };
+  const canWatchReplay = variant === 'lobby' && !!props.onReplay;
   const faqLink: MastheadSiteLink = {href: props.faqHref, icon: <NavigationIcon name="faq"/>, label: t('nav.faq')};
   const helpLinks: MastheadSiteLink[] = [
     faqLink,
@@ -226,7 +231,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
         {!compact && <div hidden ref={language}>
           {props.languageControl}
         </div>}
-        {compact && <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/>}
+        {compact && <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} installsLink={installsLink} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/>}
         {!compact && <DropdownMenu.Root
           modal={false}
           open={interactive && menuOpen}
@@ -319,10 +324,15 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                 </>
               ) : (
                 <>
-                  {variant === 'lobby' && props.onReplay && <>
+                  {canWatchReplay &&
                     <DropdownMenu.Item className="ui-menu-item" id="watchReplayButton" onSelect={() => {replayAfterClose.current = true;}}><PlaySquare aria-hidden="true"/>{t('lobby.watchReplay')}</DropdownMenu.Item>
-                    <DropdownMenu.Separator className="ui-menu-separator" />
-                  </>}
+                  }
+                  {installsLink && <DropdownMenu.Item asChild>
+                    <Link className="ui-menu-item" href={installsLink.href} {...(props.nativeLinks ? {} : {rememberEntry:true})}>
+                      {installsLink.icon}{installsLink.label}
+                    </Link>
+                  </DropdownMenu.Item>}
+                  {(canWatchReplay || installsLink) && <DropdownMenu.Separator className="ui-menu-separator" />}
                   <DropdownMenu.Group aria-label={t('nav.help')}>
                     <DropdownMenu.Label className="masthead-menu-heading">{t('nav.help')}</DropdownMenu.Label>
                     <DropdownMenu.Item className="ui-menu-item" id="firstUseNoticeOpen" onSelect={props.onFirstUse}>

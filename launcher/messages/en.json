@@ -13,6 +13,8 @@
   "loadingTip_favorites": "Keep losing track of a game? Star it to find it later in My Favorites.",
   "downloadTasks_acquire": "Install game",
   "downloadTasks_title": "Installation progress",
+  "downloadTasks_pageTitle": "Downloads & add-ons",
+  "downloadTasks_addOns": "Add-ons",
   "downloadTasks_downloading": "Installing",
   "downloadTasks_queued": "Queued",
   "downloadTasks_failed": "Installation failed",

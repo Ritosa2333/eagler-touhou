@@ -1,5 +1,5 @@
 import {Download, X} from 'lucide-react';
-import {useMemo, useSyncExternalStore} from 'react';
+import {useMemo, useSyncExternalStore, type ReactNode} from 'react';
 import {PRODUCT_GAMES, type GameId} from '../../../src/contracts/product-catalog.mts';
 import {localeHome} from '../../../src/launcher/i18n.mts';
 import {useLocale} from '../../i18n';
@@ -68,7 +68,7 @@ function ActiveInstall({downloads, assetUrl, gameId, progress}: InstallProps & {
     <img className="game-install-cover" src={bookGameArtwork(gameId)} alt=""/>
     <div className="game-install-identity">
       <span className="book-work-number">{gameId}</span>
-      <h2 id="game-install-active-title">{game.title}</h2>
+      <h3 id="game-install-active-title">{game.title}</h3>
       <p>{game.subtitle}</p>
     </div>
     <CancelInstall downloads={downloads} game={gameId}/>
@@ -91,19 +91,16 @@ function ActiveInstall({downloads, assetUrl, gameId, progress}: InstallProps & {
   </section>;
 }
 
-export function GameInstallPage({downloads, assetUrl}: InstallProps) {
+function InstallTasks({downloads, assetUrl}: InstallProps) {
   const snapshot = useSyncExternalStore(downloads.subscribe, downloads.getSnapshot, downloads.getSnapshot);
-  const {locale, t} = useLocale();
+  const {t} = useLocale();
   const {active, pending, failed} = snapshot;
-  return <main id="main" className="game-install-page" aria-labelledby="game-install-heading">
-    <header className="game-install-header">
-      <LauncherBack href={assetUrl(localeHome(locale))} returnToEntry replace/>
-      <h1 id="game-install-heading">{t('downloadTasks.title')}</h1>
-    </header>
+  return <section className="game-install-tasks" aria-labelledby="game-install-tasks-heading">
+    <h2 id="game-install-tasks-heading">{t('downloadTasks.title')}</h2>
     {active && <ActiveInstall key={active.game} downloads={downloads} assetUrl={assetUrl}
       gameId={active.game} progress={gameDownloadProgress(snapshot)}/>}
     {pending.length > 0 && <section className="game-install-group" aria-labelledby="game-install-queued-heading">
-      <h2 id="game-install-queued-heading">{t('downloadTasks.queued')}</h2>
+      <h3 id="game-install-queued-heading">{t('downloadTasks.queued')}</h3>
       <ol className="game-install-list">
         {pending.map(({game}, index) => <li key={game} data-download-queued={game}>
           <span className="game-install-order" aria-hidden="true">{index + 1}</span>
@@ -114,7 +111,7 @@ export function GameInstallPage({downloads, assetUrl}: InstallProps) {
       </ol>
     </section>}
     {failed.length > 0 && <section className="game-install-group" aria-labelledby="game-install-failed-heading">
-      <h2 id="game-install-failed-heading">{t('downloadTasks.failed')}</h2>
+      <h3 id="game-install-failed-heading">{t('downloadTasks.failed')}</h3>
       <ul className="game-install-list">
         {failed.map(({game}) => <li key={game} data-download-failed={game}>
           <img className="game-install-cover" src={bookGameArtwork(game)} alt=""/>
@@ -126,5 +123,20 @@ export function GameInstallPage({downloads, assetUrl}: InstallProps) {
     {!active && failed.length === 0 && <div className="game-install-empty" role="status">
       <Download aria-hidden="true"/><span>{t('downloadTasks.empty')}</span>
     </div>}
+  </section>;
+}
+
+export function GameInstallPage({downloads, assetUrl, children}: InstallProps & {children: ReactNode}) {
+  const {locale, t} = useLocale();
+  return <main id="main" className="game-install-page" aria-labelledby="game-install-heading">
+    <header className="game-install-header">
+      <LauncherBack href={assetUrl(localeHome(locale))} returnToEntry replace/>
+      <h1 id="game-install-heading">{t('downloadTasks.pageTitle')}</h1>
+    </header>
+    <InstallTasks downloads={downloads} assetUrl={assetUrl}/>
+    <section className="game-install-group" aria-labelledby="game-install-add-ons-heading">
+      <h2 id="game-install-add-ons-heading">{t('downloadTasks.addOns')}</h2>
+      {children}
+    </section>
   </main>;
 }

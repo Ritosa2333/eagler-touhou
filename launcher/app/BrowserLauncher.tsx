@@ -90,8 +90,9 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const host: LauncherHost = {
     desktopLibraryDetails: true,
     librarySearchTarget,
-    libraryTools: <SessionBeautyPacks session={session} products={products}/>,
-    installsPage: <GameInstallPage downloads={session.downloads} assetUrl={assetUrl}/>,
+    installsPage: <GameInstallPage downloads={session.downloads} assetUrl={assetUrl}>
+      <SessionBeautyPacks session={session} products={products}/>
+    </GameInstallPage>,
     locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, preferences: session.preferences, touchLayout: session.touchLayout,
     settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions, readLocalSaves:session.readLocalSaves, cloudSync:session.cloudSync,
     watchTh09Replay: session.accessTh09MatchReplay,
