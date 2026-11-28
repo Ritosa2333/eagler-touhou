@@ -1,0 +1,56 @@
+[
+  {
+    "at": "2026-11-28T01:26:09.0245249Z",
+    "pid": 39464,
+    "workingSetBytes": 236896256,
+    "privateBytes": 340041728,
+    "handles": 952,
+    "threadCount": 97,
+    "cpuSeconds": 230.890625
+  },
+  {
+    "at": "2026-11-28T01:26:10.0817725Z",
+    "pid": 39464,
+    "workingSetBytes": 236896256,
+    "privateBytes": 340041728,
+    "handles": 952,
+    "threadCount": 97,
+    "cpuSeconds": 231.296875
+  },
+  {
+    "at": "2026-11-28T01:26:11.0951275Z",
+    "pid": 39464,
+    "workingSetBytes": 236896256,
+    "privateBytes": 340041728,
+    "handles": 952,
+    "threadCount": 97,
+    "cpuSeconds": 231.40625
+  },
+  {
+    "at": "2026-11-28T01:26:12.1138925Z",
+    "pid": 39464,
+    "workingSetBytes": 236896256,
+    "privateBytes": 340041728,
+    "handles": 952,
+    "threadCount": 97,
+    "cpuSeconds": 231.40625
+  },
+  {
+    "at": "2026-11-28T01:26:13.1188054Z",
+    "pid": 39464,
+    "workingSetBytes": 236896256,
+    "privateBytes": 340041728,
+    "handles": 953,
+    "threadCount": 97,
+    "cpuSeconds": 231.609375
+  },
+  {
+    "at": "2026-11-28T01:26:14.1378261Z",
+    "pid": 39464,
+    "workingSetBytes": 236896256,
+    "privateBytes": 340041728,
+    "handles": 952,
+    "threadCount": 97,
+    "cpuSeconds": 232.09375
+  }
+]

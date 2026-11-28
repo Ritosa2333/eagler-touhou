@@ -1,0 +1,910 @@
+{
+  "address": "/terms.html?lang=zh-CN",
+  "lang": "zh-CN",
+  "theme": "dark",
+  "viewport": [
+    1440,
+    734
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    1430,
+    734
+  ],
+  "elements": [
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "单机 联机 常见问题 1 登录",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        1430,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": "launcherLink",
+      "label": "東方 Online",
+      "href": "/./",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        28,
+        0,
+        98,
+        43
+      ],
+      "font": [
+        "14px",
+        "650"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "主导航",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        640,
+        0,
+        150,
+        43
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "单机",
+      "href": "/./",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        640,
+        5.5,
+        74,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "联机",
+      "href": "/lobby.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        716,
+        5.5,
+        74,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "站点信息",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        140,
+        0,
+        135,
+        43
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "常见问题",
+      "href": "/faq.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        147,
+        5.5,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "捐赠",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        179,
+        5.5,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "主题设置",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        211,
+        5.5,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mastheadMenuToggle",
+      "label": "更多",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        243,
+        5.5,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "消息中心",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        1252,
+        5.5,
+        76,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "系统公告 (1)",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        1252,
+        5.5,
+        36,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "私信",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        1292,
+        5.5,
+        36,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "登录",
+      "href": "/login.html?lang=zh-CN&next=%2Fterms.html%3Flang%3Dzh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        1334,
+        5.5,
+        68,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": null,
+      "id": "nd-sidebar",
+      "label": "文档 帮助 首次使用须知 常见问题 联机 关于本站 服务条款 隐私条款",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        44,
+        268,
+        690
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "文档",
+      "href": "/faq.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        22,
+        61.3,
+        30,
+        21.4
+      ],
+      "font": [
+        "15px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "收起文档导航",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        224,
+        56,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "首次使用须知",
+      "href": "/guide.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        138,
+        244,
+        36
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "常见问题",
+      "href": "/faq.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        174,
+        244,
+        36
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "联机",
+      "href": "/docs/multiplayer?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        210,
+        244,
+        36
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "服务条款",
+      "href": "/terms.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        292,
+        244,
+        36
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "隐私条款",
+      "href": "/privacy.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        328,
+        244,
+        36
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        269,
+        53,
+        1152,
+        40
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "服务条款",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        313,
+        109,
+        750,
+        42
+      ],
+      "font": [
+        "28px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "捐助",
+      "href": "/assets/donation.webp",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        377,
+        245,
+        32,
+        24
+      ],
+      "font": [
+        "16px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "section-1",
+      "label": "哪些内容可能被删除",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        313,
+        319,
+        750,
+        32
+      ],
+      "font": [
+        "24px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "section-2",
+      "label": "哪些对局可能作废",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        313,
+        523,
+        750,
+        32
+      ],
+      "font": [
+        "24px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "section-3",
+      "label": "哪些行为可能导致账号被限制或封禁",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        313,
+        727,
+        750,
+        32
+      ],
+      "font": [
+        "24px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "Discord",
+      "href": "https://discord.gg/HwVz9ZTSF",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        604.6,
+        1109,
+        57.5,
+        24
+      ],
+      "font": [
+        "16px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h3",
+      "role": null,
+      "id": null,
+      "label": "本页目录",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        1127,
+        117,
+        240,
+        20
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "哪些内容可能被删除",
+      "href": "#section-1",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        1127,
+        149,
+        240,
+        28
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "哪些对局可能作废",
+      "href": "#section-2",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        1127,
+        177,
+        240,
+        28
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "哪些行为可能导致账号被限制或封禁",
+      "href": "#section-3",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        1127,
+        205,
+        240,
+        28
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

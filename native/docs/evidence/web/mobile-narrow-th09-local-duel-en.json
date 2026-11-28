@@ -1,0 +1,1839 @@
+{
+  "address": "/?game=th09&lang=en",
+  "lang": "en",
+  "theme": "dark",
+  "viewport": [
+    320,
+    640
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    320,
+    1440
+  ],
+  "elements": [
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "2",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        320,
+        48
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "Site information",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        8,
+        0,
+        44,
+        47
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mastheadMenuToggle",
+      "label": "More",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        8,
+        1.5,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": "_r_1s_",
+      "label": "Search games",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        91,
+        1.5,
+        122,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "Message center",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        220,
+        1.5,
+        92,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "Announcements (2)",
+      "href": "/en.html?section=announcements",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        220,
+        1.5,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "Direct messages",
+      "href": "/en.html?section=messages",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        268,
+        1.5,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "main",
+      "role": null,
+      "id": "main",
+      "label": "Single-player - TouhouOnline All games 11 games All games 11 Favorites 0 Main series 8 Versus 1 Fighting 1 PC-98 games 1 Cover view List Number 東方怪綺談 th05 東方紅魔郷",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        48,
+        320,
+        1328.1
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "Single-player - TouhouOnline",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        -1,
+        47,
+        1,
+        1
+      ],
+      "font": [
+        "32px",
+        "700"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": "dialog",
+      "id": null,
+      "label": "東方花映塚 th09 Phantasmagoria of Flower View Display settings High refresh rate High-refresh mode predicts visuals by up to one frame while gameplay runs at 60 Hz. ",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        320,
+        640
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "東方花映塚 th09 Phantasmagoria of Flower View",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        8,
+        16,
+        296,
+        52
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "libraryBack",
+      "label": "Back",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        8,
+        20,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": "gameTitle",
+      "label": "東方花映塚",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        122,
+        19.9,
+        95,
+        23.8
+      ],
+      "font": [
+        "19px",
+        "700"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Display settings",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        89,
+        286,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Help | High refresh rate",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        169,
+        149,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "frameLimitToggle",
+      "label": "High refresh rate",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        243,
+        143,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "languageSelect",
+      "label": "Game language",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        199.8,
+        191,
+        1,
+        1
+      ],
+      "font": [
+        "10px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "languageSelect-trigger",
+      "label": "Game language",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        200.8,
+        192,
+        86.2,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "pixelPerfectToggle",
+      "label": "Enable pixel-perfect display",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        243,
+        241,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Input settings",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        294,
+        286,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Keyboard",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        348,
+        222,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Gamepad",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        392,
+        222,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mobileOptionsToggle",
+      "label": "Touch settings",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        445,
+        286,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Volume settings",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        500,
+        286,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Saves & replays",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        555,
+        286,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Advanced settings",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        610,
+        286,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "div",
+      "role": "dialog",
+      "id": "radix-_r_2b_",
+      "label": "Input settings Control context Single player / Online Local two-player Local two-player Enable local two-player controls Only for local versus. Overrides both p",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        16,
+        296,
+        608
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "Input settings",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        13,
+        17,
+        294,
+        65
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "_r_29_-title",
+      "label": "Input settings",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        29,
+        37.1,
+        113.7,
+        23.8
+      ],
+      "font": [
+        "17px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Close input settings",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        255,
+        27,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "_r_29_-scope",
+      "label": "Control context",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        96,
+        93,
+        1,
+        1
+      ],
+      "font": [
+        "10px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "_r_29_-scope-trigger",
+      "label": "Control context",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": true,
+        "disabled": false
+      },
+      "rect": [
+        97,
+        94,
+        194,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "checkbox",
+      "id": null,
+      "label": "",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        29,
+        180,
+        18,
+        18
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "div",
+      "role": "tablist",
+      "id": null,
+      "label": "Local player",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        29,
+        278.6,
+        262,
+        45
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "tab",
+      "id": "radix-_r_31_-trigger-0",
+      "label": "Player 1",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        29,
+        278.6,
+        49.7,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "tab",
+      "id": "radix-_r_31_-trigger-1",
+      "label": "Player 2",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        102.7,
+        278.6,
+        49.7,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "th09LocalDevice",
+      "label": "Player input device",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        96,
+        338.6,
+        1,
+        1
+      ],
+      "font": [
+        "10px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "th09LocalDevice-trigger",
+      "label": "Player input device",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        97,
+        339.6,
+        194,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "th09LocalLayout",
+      "label": "Two-player keyboard layout",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        96,
+        398.6,
+        1,
+        1
+      ],
+      "font": [
+        "10px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "th09LocalLayout-trigger",
+      "label": "Two-player keyboard layout",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        97,
+        399.6,
+        93.4,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Save layout",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        198.4,
+        399.6,
+        92.6,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Shoot / Confirm: Z, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        489.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Shoot / Confirm",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        489.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Quick attack / Cancel: X, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        542.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Quick attack / Cancel",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        542.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Focus / Charge: Shift / R Shift, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        595.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Focus / Charge",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        595.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Pause / Menu: Escape, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        648.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Pause / Menu",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        648.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Up: T / R / Y, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        701.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Up",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        701.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Down: B / V / N, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        754.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Down",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        754.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Left: F / R / V, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        807.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Left",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        807.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Right: H / Y / N, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        860.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Right",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        860.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Skip dialogue: Ctrl / R Ctrl, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        913.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Skip dialogue",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        913.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Confirm: Enter / Num Enter, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        966.1,
+        102.5,
+        62
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Confirm",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        975.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Retry: Backspace, change binding",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        136.5,
+        1037.1,
+        102.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Clear binding | Retry",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        247,
+        1037.1,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "footer",
+      "role": null,
+      "id": null,
+      "label": "Saved automatically for each player Restore original",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        29,
+        1102.1,
+        262,
+        44
+      ],
+      "font": [
+        "12px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Restore original",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        174.9,
+        1102.1,
+        116.1,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

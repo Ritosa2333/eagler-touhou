@@ -1,0 +1,26 @@
+{
+  "summary": {
+    "visible": true,
+    "following": null,
+    "followingCount": 1234,
+    "followerCount": 2,
+    "followingUsers": [],
+    "followers": [],
+    "friends": []
+  },
+  "following": [
+    {"username": "reader", "nickname": "Reader", "countryCode": "JP"}
+  ],
+  "followers": [
+    {"username": "peer", "nickname": "Peer", "countryCode": "JP"},
+    {"username": "reader", "nickname": "Reader", "countryCode": "US"}
+  ],
+  "friends": [],
+  "private": {
+    "visible": false,
+    "following": null,
+    "followingUsers": [],
+    "followers": [],
+    "friends": []
+  }
+}

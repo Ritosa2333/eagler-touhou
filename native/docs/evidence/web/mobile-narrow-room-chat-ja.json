@@ -1,0 +1,883 @@
+{
+  "address": "/?lang=ja&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+  "lang": "ja",
+  "theme": "dark",
+  "viewport": [
+    320,
+    640
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    320,
+    1326
+  ],
+  "elements": [
+    {
+      "tag": "main",
+      "role": null,
+      "id": "main",
+      "label": "シングルプレイ - TouhouOnline",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        18,
+        22,
+        284,
+        1220.1
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "シングルプレイ - TouhouOnline",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        21,
+        1,
+        1
+      ],
+      "font": [
+        "32px",
+        "700"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpRoomResourceCancel",
+      "label": "ダウンロードをキャンセル",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        59,
+        -17.8,
+        202,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "全画面にする",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        251,
+        -4,
+        44,
+        44
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": null,
+      "id": "transfer",
+      "label": "ゲームリソースをダウンロード中… th06 th06.data サーバーの応答を待っています… 応答を待機中 1件の要求",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        21,
+        -160,
+        260,
+        105
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "auto",
+        "auto"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "ゲームリソースをダウンロード中…",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        34,
+        -151,
+        234,
+        28
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "この端末",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": true
+      },
+      "rect": [
+        65,
+        120.5,
+        36,
+        16
+      ],
+      "font": [
+        "9px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "自分のキャラクター",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        13,
+        66,
+        214,
+        82
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "自分 → P2 | 直接接続 — | TURN — | 接続の詳細",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        210.5,
+        93.8,
+        16
+      ],
+      "font": [
+        "9px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "radix-_r_51_",
+      "label": "P2を管理",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        179,
+        160,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "観戦席 1",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        241.3,
+        72,
+        61.5,
+        24
+      ],
+      "font": [
+        "11px",
+        "700"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "観戦者 1",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        252,
+        102,
+        40,
+        40
+      ],
+      "font": [
+        "17.6px",
+        "700"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpSpectatorPreviewJoin",
+      "label": "観戦",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        241,
+        188,
+        62,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "東方紅魔郷 2人協力プレイ Normal 4157",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        -225,
+        296,
+        44
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpLeaveRoom",
+      "label": "戻る",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        -225,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "mpRoomTitle",
+      "label": "東方紅魔郷",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        64,
+        -220.6,
+        68.6,
+        18.2
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "roomProductSelect",
+      "label": "作品",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        126.6,
+        -233.5,
+        44,
+        44
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpCopyRoomCode",
+      "label": "部屋番号をコピー",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        182.8,
+        -225,
+        77.2,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpSettingsRoomDrawerToggle",
+      "label": "設定",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        264,
+        -225,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": null,
+      "id": null,
+      "label": "チャット 部屋／難易度設定 魔 魔理沙 P2 等下一位玩家再开始。",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        251,
+        296,
+        289
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "div",
+      "role": "tablist",
+      "id": null,
+      "label": "部屋／難易度設定",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        13,
+        252,
+        246,
+        45
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "tab",
+      "id": "roomWorkspaceTab-chat",
+      "label": "チャット",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        25,
+        252,
+        107.8,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "tab",
+      "id": "roomWorkspaceTab-game",
+      "label": "部屋／難易度設定",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        139.2,
+        252,
+        107.8,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "音楽",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        259,
+        252.5,
+        40,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "魔理沙 P2 等下一位玩家再开始。",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        69,
+        422.1,
+        140,
+        42.9
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": null,
+      "label": "メッセージ",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": true
+      },
+      "rect": [
+        42,
+        478,
+        88,
+        44
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "送信",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": true
+      },
+      "rect": [
+        138,
+        484,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "radix-_r_20_",
+      "label": "定型チャット",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        191,
+        478,
+        50,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "radix-_r_22_",
+      "label": "メッセージを非表示",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        249,
+        478,
+        42,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "footer",
+      "role": null,
+      "id": null,
+      "label": "準備完了 ゲーム開始",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        567,
+        320,
+        73
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpReady",
+      "label": "準備完了",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "disabled": true
+      },
+      "rect": [
+        14,
+        580,
+        141,
+        48
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpStartGame",
+      "label": "ゲーム開始",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": true
+      },
+      "rect": [
+        165,
+        580,
+        141,
+        48
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "mode": "scoped",
+    "milliseconds": 955.0233,
+    "process": {
+      "id": 12140,
+      "open": true,
+      "waitResult": 0,
+      "exitCode": 0,
+      "stoppedHungTest": false
+    },
+    "output": "create HRESULT=0x00000000\r\nreturning from main\r\n"
+  },
+  {
+    "mode": "static",
+    "milliseconds": 210.7614,
+    "process": {
+      "id": 45300,
+      "open": true,
+      "waitResult": 0,
+      "exitCode": 0,
+      "stoppedHungTest": false
+    },
+    "output": "create HRESULT=0x00000000\r\nreturning from main\r\n"
+  },
+  {
+    "mode": "scoped",
+    "milliseconds": 228.1265,
+    "process": {
+      "id": 37928,
+      "open": true,
+      "waitResult": 0,
+      "exitCode": 0,
+      "stoppedHungTest": false
+    },
+    "output": "create HRESULT=0x00000000\r\nreturning from main\r\n"
+  },
+  {
+    "mode": "static",
+    "milliseconds": 666.3563,
+    "process": {
+      "id": 50764,
+      "open": true,
+      "waitResult": 0,
+      "exitCode": 0,
+      "stoppedHungTest": false
+    },
+    "output": "create HRESULT=0x00000000\r\nreturning from main\r\n"
+  },
+  {
+    "mode": "scoped",
+    "milliseconds": 253.893,
+    "process": {
+      "id": 29904,
+      "open": true,
+      "waitResult": 0,
+      "exitCode": 0,
+      "stoppedHungTest": false
+    },
+    "output": "create HRESULT=0x00000000\r\nreturning from main\r\n"
+  },
+  {
+    "mode": "static",
+    "milliseconds": 765.082,
+    "process": {
+      "id": 34576,
+      "open": true,
+      "waitResult": 0,
+      "exitCode": 0,
+      "stoppedHungTest": false
+    },
+    "output": "create HRESULT=0x00000000\r\nreturning from main\r\n"
+  }
+]

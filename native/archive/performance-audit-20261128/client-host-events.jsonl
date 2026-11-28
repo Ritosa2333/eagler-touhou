@@ -1,0 +1,13 @@
+{"event":"destroy_enter","tick":45661281}
+{"event":"destroy_exit","tick":45661281}
+{"event":"first_frame","tick":45663406}
+{"event":"snapshot","tick":45668421,"pid":29112,"foregroundPid":29112,"cpu100ns":33437500,"getobjectCount":0,"msaa":0,"uia":0,"other":0,"getobjectTotalMs":0.000000,"getobjectMaxMs":0.000000,"createHr":0,"clientsHr":0,"nullArray":true,"clients":[]}
+{"event":"snapshot","tick":45673421,"pid":29112,"foregroundPid":29112,"cpu100ns":57031250,"getobjectCount":0,"msaa":0,"uia":0,"other":0,"getobjectTotalMs":0.000000,"getobjectMaxMs":0.000000,"createHr":0,"clientsHr":0,"nullArray":true,"clients":[]}
+{"event":"snapshot","tick":45678421,"pid":29112,"foregroundPid":3772,"cpu100ns":65312500,"getobjectCount":0,"msaa":0,"uia":0,"other":0,"getobjectTotalMs":0.000000,"getobjectMaxMs":0.000000,"createHr":0,"clientsHr":0,"nullArray":true,"clients":[]}
+{"event":"snapshot","tick":45683421,"pid":29112,"foregroundPid":49440,"cpu100ns":73593750,"getobjectCount":1,"msaa":1,"uia":0,"other":0,"getobjectTotalMs":0.877300,"getobjectMaxMs":0.877300,"createHr":0,"clientsHr":0,"nullArray":true,"clients":[]}
+{"event":"snapshot","tick":45688421,"pid":29112,"foregroundPid":9828,"cpu100ns":74687500,"getobjectCount":1,"msaa":1,"uia":0,"other":0,"getobjectTotalMs":0.877300,"getobjectMaxMs":0.877300,"createHr":0,"clientsHr":0,"nullArray":true,"clients":[]}
+{"event":"snapshot","tick":45693421,"pid":29112,"foregroundPid":9828,"cpu100ns":76406250,"getobjectCount":1,"msaa":1,"uia":0,"other":0,"getobjectTotalMs":0.877300,"getobjectMaxMs":0.877300,"createHr":0,"clientsHr":0,"nullArray":true,"clients":[]}
+{"event":"close_requested","tick":45693421}
+{"event":"destroy_enter","tick":45693500}
+{"event":"engine_destroyed","tick":45693562}
+{"event":"destroy_exit","tick":45693562}

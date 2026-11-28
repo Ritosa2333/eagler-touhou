@@ -1,6 +1,6 @@
 # 文档总表
 
-共 670 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 702 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -544,6 +544,7 @@
 | 许可证与声明 | [launcher/public/vendor/react-easy-crop.LICENSE](../launcher/public/vendor/react-easy-crop.LICENSE) | react easy crop |
 | 许可证与声明 | [launcher/public/vendor/uzip.LICENSE](../launcher/public/vendor/uzip.LICENSE) | uzip |
 | 许可证与声明 | [launcher/public/vendor/webaudio-tinysynth.LICENSE](../launcher/public/vendor/webaudio-tinysynth.LICENSE) | webaudio tinysynth |
+| 许可证与声明 | [native/licenses/ThScoreFileConverter.txt](../native/licenses/ThScoreFileConverter.txt) | ThScoreFileConverter |
 | 许可证与声明 | [ports/th01/web/room-ui-assets/LICENSE.txt](../ports/th01/web/room-ui-assets/LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th02/NOTICE-runtime.md](../ports/th02/NOTICE-runtime.md) | DOSBox-X / js-dos runtime for TH02 |
 | 许可证与声明 | [ports/th02/web/room-ui-assets/LICENSE.txt](../ports/th02/web/room-ui-assets/LICENSE.txt) | MIT License |
@@ -669,6 +670,7 @@
 | 许可证与声明 | [services/turn/LICENSE](../services/turn/LICENSE) | LICENSE |
 | 协作约定 | [AGENTS.md](../AGENTS.md) | 主仓库合并：房间选项与观战 |
 | 协作约定 | [launcher/tools/maintainer/operator-delivery/payload/AGENTS.md](../launcher/tools/maintainer/operator-delivery/payload/AGENTS.md) | 部署代理约定 |
+| 协作约定 | [native/AGENTS.md](../native/AGENTS.md) | Flutter 界面修改 |
 | 协作约定 | [ports/th13-mp/AGENTS.md](../ports/th13-mp/AGENTS.md) | th13-mp 端口局部入口 |
 | 协作约定 | [ports/th13/AGENTS.md](../ports/th13/AGENTS.md) | th13 端口局部入口 |
 | CI 与协作模板 | [.github/PULL_REQUEST_TEMPLATE.md](../.github/PULL_REQUEST_TEMPLATE.md) | 改动 |
@@ -676,3 +678,33 @@
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |
 | 项目文档 | [docs/pc98-server-build.md](pc98-server-build.md) | TH01–TH04 服务器构建 |
 | 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | th075 语言资源准备 |
+| 其他说明 | [native/README.md](../native/README.md) | 东方 Online Flutter 启动器 |
+| 其他说明 | [native/archive/performance-20261128/report.md](../native/archive/performance-20261128/report.md) | Windows 启动器性能验收 ｜ 2026-11-28 |
+| 其他说明 | [native/archive/performance-audit-20261128/report.md](../native/archive/performance-audit-20261128/report.md) | 启动器性能开销排查 ｜ 2026-11-28 |
+| 其他说明 | [native/archive/web-only/README.md](../native/archive/web-only/README.md) | 已归档 ｜ 不再维护 |
+| 其他说明 | [native/archive/web-only/assets/documents/privacy.en.md](../native/archive/web-only/assets/documents/privacy.en.md) | Privacy Policy |
+| 其他说明 | [native/archive/web-only/assets/documents/privacy.ja.md](../native/archive/web-only/assets/documents/privacy.ja.md) | プライバシーポリシー |
+| 其他说明 | [native/archive/web-only/assets/documents/privacy.zh-CN.md](../native/archive/web-only/assets/documents/privacy.zh-CN.md) | 隐私条款 |
+| 其他说明 | [native/archive/web-only/assets/documents/terms.en.md](../native/archive/web-only/assets/documents/terms.en.md) | Terms of Service |
+| 其他说明 | [native/archive/web-only/assets/documents/terms.ja.md](../native/archive/web-only/assets/documents/terms.ja.md) | 利用規約 |
+| 其他说明 | [native/archive/web-only/assets/documents/terms.zh-CN.md](../native/archive/web-only/assets/documents/terms.zh-CN.md) | 服务条款 |
+| 其他说明 | [native/archive/web-only/docs/account.md](../native/archive/web-only/docs/account.md) | 历史规格 ｜ 已停止原生维护 |
+| 其他说明 | [native/archive/web-only/docs/profile.md](../native/archive/web-only/docs/profile.md) | 历史规格 ｜ 已停止原生维护 |
+| 其他说明 | [native/archive/web-only/docs/site-content.md](../native/archive/web-only/docs/site-content.md) | 已归档 ｜ 不再维护 |
+| 其他说明 | [native/docs/acceptance.md](../native/docs/acceptance.md) | 迁移验收 |
+| 其他说明 | [native/docs/account.md](../native/docs/account.md) | 账号统一使用正式站网页 |
+| 其他说明 | [native/docs/appearance.md](../native/docs/appearance.md) | 主题与背景 |
+| 其他说明 | [native/docs/baseline.md](../native/docs/baseline.md) | 网页启动器迁移基准 |
+| 其他说明 | [native/docs/cloud-saves.md](../native/docs/cloud-saves.md) | 云存档 |
+| 其他说明 | [native/docs/comparison.md](../native/docs/comparison.md) | 网页、Pencil 与 Flutter 对照 |
+| 其他说明 | [native/docs/evidence/current/README.md](../native/docs/evidence/current/README.md) | 截图采集登记 |
+| 其他说明 | [native/docs/game.md](../native/docs/game.md) | 游戏详情、通关进度与单作设置 |
+| 其他说明 | [native/docs/inbox.md](../native/docs/inbox.md) | 消息中心 |
+| 其他说明 | [native/docs/library.md](../native/docs/library.md) | 书架与主导航 |
+| 其他说明 | [native/docs/lobby.md](../native/docs/lobby.md) | 联机大厅 |
+| 其他说明 | [native/docs/platforms.md](../native/docs/platforms.md) | 平台启动与原生边界 |
+| 其他说明 | [native/docs/profile.md](../native/docs/profile.md) | 个人主页和账号内容使用网页 |
+| 其他说明 | [native/docs/room.md](../native/docs/room.md) | 联机房间 |
+| 其他说明 | [native/docs/site-content.md](../native/docs/site-content.md) | 站点入口与网页 |
+| 其他说明 | [native/docs/th09-ratings.md](../native/docs/th09-ratings.md) | 花映塚评分与对局 |
+| 其他说明 | [native/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md](../native/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md) | Launch Screen Assets |

@@ -1,0 +1,937 @@
+[
+  {
+    "branchOpacity": [
+      1.0,
+      0.0
+    ],
+    "timeMs": 0,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.01055385172367096
+    ],
+    "timeMs": 16,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.04296875
+    ],
+    "timeMs": 32,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.09770496189594269
+    ],
+    "timeMs": 48,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.17647801339626312
+    ],
+    "timeMs": 64,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.27590154111385345
+    ],
+    "timeMs": 80,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.39235635101795197
+    ],
+    "timeMs": 96,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.5146465748548508
+    ],
+    "timeMs": 112,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.63897705078125
+    ],
+    "timeMs": 128,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.7502373307943344
+    ],
+    "timeMs": 144,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.8459415286779404
+    ],
+    "timeMs": 160,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.9181658029556274
+    ],
+    "timeMs": 176,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.9678608030080795
+    ],
+    "timeMs": 192,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.9941273778676987
+    ],
+    "timeMs": 208,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0
+    ],
+    "timeMs": 224,
+    "action": "联机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.0
+    ],
+    "timeMs": 0,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.01055385172367096
+    ],
+    "timeMs": 16,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.04296875
+    ],
+    "timeMs": 32,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.09770496189594269
+    ],
+    "timeMs": 48,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.17647801339626312
+    ],
+    "timeMs": 64,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.27590154111385345
+    ],
+    "timeMs": 80,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.39235635101795197
+    ],
+    "timeMs": 96,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.5146465748548508
+    ],
+    "timeMs": 112,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.63897705078125
+    ],
+    "timeMs": 128,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.7502373307943344
+    ],
+    "timeMs": 144,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.8459415286779404
+    ],
+    "timeMs": 160,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.9181658029556274
+    ],
+    "timeMs": 176,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.9678608030080795
+    ],
+    "timeMs": 192,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.9941273778676987
+    ],
+    "timeMs": 208,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0
+    ],
+    "timeMs": 224,
+    "action": "主页",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      0.0,
+      1.0
+    ],
+    "timeMs": 0,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.989446148276329
+    ],
+    "timeMs": 16,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.95703125
+    ],
+    "timeMs": 32,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.9022950381040573
+    ],
+    "timeMs": 48,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.8235219866037369
+    ],
+    "timeMs": 64,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.7240984588861465
+    ],
+    "timeMs": 80,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.607643648982048
+    ],
+    "timeMs": 96,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.48535342514514923
+    ],
+    "timeMs": 112,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.36102294921875
+    ],
+    "timeMs": 128,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.2497626692056656
+    ],
+    "timeMs": 144,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.15405847132205963
+    ],
+    "timeMs": 160,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.08183419704437256
+    ],
+    "timeMs": 176,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.03213919699192047
+    ],
+    "timeMs": 192,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0,
+      0.005872622132301331
+    ],
+    "timeMs": 208,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0
+    ],
+    "timeMs": 224,
+    "action": "单机",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0
+    ],
+    "timeMs": 0,
+    "action": "open th08",
+    "bottomNavigation": [
+      0.0,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      0.0,
+      48.0,
+      390.0,
+      606.0
+    ]
+  },
+  {
+    "branchOpacity": [
+      1.0
+    ],
+    "timeMs": 16,
+    "action": "open th08",
+    "bottomNavigation": [
+      -1.0023734394460915,
+      654.0,
+      390.0,
+      66.0
+    ],
+    "bookViewport": [
+      -1.0023734394460915,
+      48.0,
+      390.0,
+      606.0
+    ]
+  }
+]

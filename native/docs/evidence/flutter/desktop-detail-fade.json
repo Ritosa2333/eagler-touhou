@@ -1,0 +1,786 @@
+{
+  "before": [
+    {
+      "action": "enter",
+      "timeMs": 0,
+      "opacity": 0.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 16,
+      "opacity": 0.0,
+      "bookOpacity": 0.8524465560913086,
+      "coverage": 0.8524465560913086,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 32,
+      "opacity": 0.0,
+      "bookOpacity": 0.5278192553669214,
+      "coverage": 0.5278192553669214,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 48,
+      "opacity": 0.0,
+      "bookOpacity": 0.09228515625,
+      "coverage": 0.09228515625,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 64,
+      "opacity": 0.32467134296894073,
+      "bookOpacity": 0.0,
+      "coverage": 0.32467134296894073,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 80,
+      "opacity": 0.5672015100717545,
+      "bookOpacity": 0.0,
+      "coverage": 0.5672015100717545,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 96,
+      "opacity": 0.7346437722444534,
+      "bookOpacity": 0.0,
+      "coverage": 0.7346437722444534,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 112,
+      "opacity": 0.8481215238571167,
+      "bookOpacity": 0.0,
+      "coverage": 0.8481215238571167,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 128,
+      "opacity": 0.9256544467061758,
+      "bookOpacity": 0.0,
+      "coverage": 0.9256544467061758,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 144,
+      "opacity": 0.9732524156570435,
+      "bookOpacity": 0.0,
+      "coverage": 0.9732524156570435,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 160,
+      "opacity": 0.9961776081472635,
+      "bookOpacity": 0.0,
+      "coverage": 0.9961776081472635,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 176,
+      "opacity": 1.0,
+      "bookOpacity": 0.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 192,
+      "opacity": 1.0,
+      "bookOpacity": 0.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 208,
+      "opacity": 1.0,
+      "bookOpacity": 0.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 224,
+      "opacity": 1.0,
+      "bookOpacity": 0.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 0,
+      "opacity": 1.0,
+      "bookOpacity": 0.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 16,
+      "opacity": 0.8524465560913086,
+      "bookOpacity": 0.0,
+      "coverage": 0.8524465560913086,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 32,
+      "opacity": 0.5278192553669214,
+      "bookOpacity": 0.0,
+      "coverage": 0.5278192553669214,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 48,
+      "opacity": 0.09228515625,
+      "bookOpacity": 0.0,
+      "coverage": 0.09228515625,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 64,
+      "opacity": 0.0,
+      "bookOpacity": 0.32467134296894073,
+      "coverage": 0.32467134296894073,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 80,
+      "opacity": 0.0,
+      "bookOpacity": 0.5672015100717545,
+      "coverage": 0.5672015100717545,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 96,
+      "opacity": 0.0,
+      "bookOpacity": 0.7346437722444534,
+      "coverage": 0.7346437722444534,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 112,
+      "opacity": 0.0,
+      "bookOpacity": 0.8481215238571167,
+      "coverage": 0.8481215238571167,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 128,
+      "opacity": 0.0,
+      "bookOpacity": 0.9256544467061758,
+      "coverage": 0.9256544467061758,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 144,
+      "opacity": 0.0,
+      "bookOpacity": 0.9732524156570435,
+      "coverage": 0.9732524156570435,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 160,
+      "opacity": 0.0,
+      "bookOpacity": 0.9961776081472635,
+      "coverage": 0.9961776081472635,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 176,
+      "opacity": 0.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 192,
+      "opacity": 0.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 208,
+      "opacity": 0.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 224,
+      "opacity": 0.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    }
+  ],
+  "after": [
+    {
+      "action": "enter",
+      "timeMs": 0,
+      "opacity": 0.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 16,
+      "opacity": 0.08,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 32,
+      "opacity": 0.16,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 48,
+      "opacity": 0.24,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 64,
+      "opacity": 0.32,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 80,
+      "opacity": 0.39999999999999997,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 96,
+      "opacity": 0.48,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 112,
+      "opacity": 0.5599999999999999,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 128,
+      "opacity": 0.64,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 144,
+      "opacity": 0.7199999999999999,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 160,
+      "opacity": 0.7999999999999999,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 176,
+      "opacity": 0.8799999999999999,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 192,
+      "opacity": 0.96,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 208,
+      "opacity": 1.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "enter",
+      "timeMs": 224,
+      "opacity": 1.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 0,
+      "opacity": 1.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 16,
+      "opacity": 0.92,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 32,
+      "opacity": 0.84,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 48,
+      "opacity": 0.76,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 64,
+      "opacity": 0.6799999999999999,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 80,
+      "opacity": 0.6000000000000001,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 96,
+      "opacity": 0.52,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 112,
+      "opacity": 0.44000000000000006,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 128,
+      "opacity": 0.36,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 144,
+      "opacity": 0.28000000000000014,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 160,
+      "opacity": 0.20000000000000007,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 176,
+      "opacity": 0.1200000000000001,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 192,
+      "opacity": 0.040000000000000036,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 208,
+      "opacity": 0.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    },
+    {
+      "action": "leave",
+      "timeMs": 224,
+      "opacity": 0.0,
+      "bookOpacity": 1.0,
+      "coverage": 1.0,
+      "sidebar": [
+        0.0,
+        44.0,
+        296.0,
+        690.0
+      ]
+    }
+  ]
+}

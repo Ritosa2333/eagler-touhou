@@ -1,0 +1,505 @@
+{
+  "address": "/u/fixture?lang=zh-CN#game-settings",
+  "lang": "zh-CN",
+  "theme": "dark",
+  "viewport": [
+    320,
+    640
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    320,
+    1062
+  ],
+  "elements": [
+    {
+      "tag": "main",
+      "role": null,
+      "id": null,
+      "label": "账户设置",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        20,
+        280,
+        994
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "个人主页",
+      "href": "/u/fixture?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        16,
+        20,
+        84,
+        36
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "游戏设置",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        68,
+        280,
+        49
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "game-settings-title",
+      "label": "游戏设置",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        68,
+        280,
+        28
+      ],
+      "font": [
+        "20px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h3",
+      "role": null,
+      "id": "cloud-save-title",
+      "label": "云存档",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        145,
+        45,
+        24
+      ],
+      "font": [
+        "15px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "刷新",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        268,
+        141,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "東方妖々夢 2026年11月25日 08:20",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        182,
+        280,
+        62
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "本地存档",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        35,
+        265,
+        110,
+        25
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h3",
+      "role": null,
+      "id": null,
+      "label": "本地存档",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        35,
+        265,
+        52,
+        18.8
+      ],
+      "font": [
+        "13px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "云端存档",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        265,
+        110,
+        25
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h3",
+      "role": null,
+      "id": null,
+      "label": "云端存档",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        265,
+        52,
+        18.8
+      ],
+      "font": [
+        "13px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "下载云端存档",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        174,
+        541.1,
+        122,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": null,
+      "label": "选择存档文件",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        23,
+        613.1,
+        1,
+        1
+      ],
+      "font": [
+        "13.3333px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "比较并选择存档",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        614.1,
+        110,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "选择此浏览器保存的文件",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        666.1,
+        158,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "选择存档文件",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        190,
+        666.1,
+        98,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "删除云存档",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        783.1,
+        110,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "cloud-save-auto-sync",
+      "label": "",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "true",
+        "disabled": false
+      },
+      "rect": [
+        256,
+        931.5,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

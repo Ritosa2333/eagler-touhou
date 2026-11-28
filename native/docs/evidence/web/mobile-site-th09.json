@@ -1,0 +1,235 @@
+{
+  "address": "/docs/multiplayer/th09/?lang=zh-CN",
+  "lang": "zh-CN",
+  "theme": "dark",
+  "viewport": [
+    390,
+    844
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    390,
+    844
+  ],
+  "elements": [
+    {
+      "tag": "header",
+      "role": null,
+      "id": "nd-subnav",
+      "label": "文档",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        390,
+        44
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "文档",
+      "href": "/faq.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        16,
+        10,
+        32,
+        24
+      ],
+      "font": [
+        "16px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "打开文档导航",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        346,
+        5,
+        34,
+        34
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "花映冢",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        61,
+        84,
+        42
+      ],
+      "font": [
+        "28px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "radix-_R_4pkqb5_",
+      "label": "切换联机玩法文档",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        322,
+        60,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "上一页 绀珠传 下一页 兽王园",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        300,
+        342,
+        168
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "上一页 绀珠传",
+      "href": "/docs/multiplayer/th15?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        300,
+        342,
+        78
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "下一页 兽王园",
+      "href": "/docs/multiplayer/th19?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        390,
+        342,
+        78
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

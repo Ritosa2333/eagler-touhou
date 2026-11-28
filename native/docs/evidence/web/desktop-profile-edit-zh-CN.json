@@ -1,0 +1,1279 @@
+{
+  "address": "/u/fixture?lang=zh-CN#edit",
+  "lang": "zh-CN",
+  "theme": "dark",
+  "viewport": [
+    1440,
+    734
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    1430,
+    971
+  ],
+  "elements": [
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "单机 联机 常见问题 1 测试玩家",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        1430,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": "launcherLink",
+      "label": "東方 Online",
+      "href": "/",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        28,
+        0,
+        98,
+        43
+      ],
+      "font": [
+        "14px",
+        "650"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "主导航",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        640,
+        0,
+        150,
+        43
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "单机",
+      "href": "/",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        640,
+        5.5,
+        74,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "联机",
+      "href": "/lobby.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        716,
+        5.5,
+        74,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "站点信息",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        140,
+        0,
+        135,
+        43
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "常见问题",
+      "href": "https://touhouonline.com/faq.html?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        147,
+        5.5,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "捐赠",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        179,
+        5.5,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "主题设置",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        211,
+        5.5,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mastheadMenuToggle",
+      "label": "更多",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        243,
+        5.5,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "消息中心",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1203,
+        5.5,
+        76,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "系统公告 (1)",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1203,
+        5.5,
+        36,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "私信",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1243,
+        5.5,
+        36,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "radix-_r_s_",
+      "label": "账号操作 测试玩家",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1285,
+        5.5,
+        117,
+        32
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "main",
+      "role": null,
+      "id": null,
+      "label": "账户设置",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        80,
+        1080,
+        819.1
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "个人主页",
+      "href": "/u/fixture?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        80,
+        84,
+        36
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": null,
+      "id": null,
+      "label": "账户设置 账户安全 个人资料 游戏设置",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        128,
+        176,
+        172
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "账户设置",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        185,
+        128,
+        166,
+        28
+      ],
+      "font": [
+        "18px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "账户设置分类",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        172,
+        176,
+        128
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "账户安全",
+      "href": "/u/fixture?lang=zh-CN#security",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        172,
+        176,
+        40
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "个人资料",
+      "href": "/u/fixture?lang=zh-CN#edit",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        216,
+        176,
+        40
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "游戏设置",
+      "href": "/u/fixture?lang=zh-CN#game-settings",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        260,
+        176,
+        40
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "个人资料",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        399,
+        128,
+        800,
+        49
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "profile-settings-title",
+      "label": "个人资料",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        399,
+        128,
+        800,
+        28
+      ],
+      "font": [
+        "20px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "测试玩家 @fixture 进入主页",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        400,
+        206,
+        289.6,
+        70
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "h3",
+      "role": null,
+      "id": null,
+      "label": "测试玩家",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        467,
+        220.9,
+        117.6,
+        21.6
+      ],
+      "font": [
+        "16px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "进入主页",
+      "href": "/u/fixture?lang=zh-CN",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        593.6,
+        225,
+        82,
+        32
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "选择图片",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        592.6,
+        299,
+        98,
+        32
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": "settings-avatar",
+      "label": "头像",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        591.6,
+        314.5,
+        1,
+        1
+      ],
+      "font": [
+        "13.3333px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "选择图片",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        592.6,
+        356,
+        98,
+        32
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": "settings-cover",
+      "label": "主页封面",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        591.6,
+        371.5,
+        1,
+        1
+      ],
+      "font": [
+        "13.3333px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": "settings-name",
+      "label": "",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        718.6,
+        231.5,
+        480.4,
+        36
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "textarea",
+      "role": null,
+      "id": "settings-bio",
+      "label": "",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        718.6,
+        314,
+        480.4,
+        109
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "auto",
+        "auto"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": null,
+      "label": "名称",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        718.6,
+        497.1,
+        144.1,
+        36
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": null,
+      "label": "地址",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        870.8,
+        497.1,
+        288.3,
+        36
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "删除链接 1",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1167,
+        499.1,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "添加链接",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        718.6,
+        543.1,
+        98,
+        32
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h3",
+      "role": null,
+      "id": "settings-display-title",
+      "label": "隐私与个性化",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        718.6,
+        620.1,
+        480.4,
+        24
+      ],
+      "font": [
+        "15px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "settings-game-data-default-all",
+      "label": "全作 | 默认展示",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1076,
+        664.1,
+        78,
+        32
+      ],
+      "font": [
+        "11px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "settings-game-data-all",
+      "label": "全作 | 隐藏",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1159,
+        664.1,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "settings-game-data-default-th09",
+      "label": "花映冢 | 默认展示",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "true",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1076,
+        708.1,
+        78,
+        32
+      ],
+      "font": [
+        "11px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "settings-game-data-th09",
+      "label": "花映冢 | 隐藏",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1159,
+        708.1,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "settings-friends",
+      "label": "",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "true",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1155,
+        762.1,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": null,
+      "label": "",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1111,
+        762.1,
+        44,
+        44
+      ],
+      "font": [
+        "13.3333px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "保存资料",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        1085,
+        863.1,
+        114,
+        36
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

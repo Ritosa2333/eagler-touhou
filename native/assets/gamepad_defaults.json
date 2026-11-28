@@ -1,0 +1,91 @@
+{
+  "bindings": {
+    "shoot": [
+      {
+        "kind": "button",
+        "index": 0
+      }
+    ],
+    "bomb": [
+      {
+        "kind": "button",
+        "index": 1
+      }
+    ],
+    "focus": [
+      {
+        "kind": "button",
+        "index": 4
+      }
+    ],
+    "pause": [
+      {
+        "kind": "button",
+        "index": 9
+      }
+    ],
+    "up": [
+      {
+        "kind": "button",
+        "index": 12
+      },
+      {
+        "kind": "axis",
+        "index": 1,
+        "rest": 0,
+        "value": -1
+      }
+    ],
+    "down": [
+      {
+        "kind": "button",
+        "index": 13
+      },
+      {
+        "kind": "axis",
+        "index": 1,
+        "rest": 0,
+        "value": 1
+      }
+    ],
+    "left": [
+      {
+        "kind": "button",
+        "index": 14
+      },
+      {
+        "kind": "axis",
+        "index": 0,
+        "rest": 0,
+        "value": -1
+      }
+    ],
+    "right": [
+      {
+        "kind": "button",
+        "index": 15
+      },
+      {
+        "kind": "axis",
+        "index": 0,
+        "rest": 0,
+        "value": 1
+      }
+    ],
+    "skip": [
+      {
+        "kind": "button",
+        "index": 5
+      }
+    ],
+    "confirm": [],
+    "action": [
+      {
+        "kind": "button",
+        "index": 2
+      }
+    ],
+    "restart": []
+  },
+  "threshold": 0.5
+}

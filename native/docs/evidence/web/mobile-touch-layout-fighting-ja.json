@@ -1,0 +1,1451 @@
+{
+  "address": "/?lang=ja&game=th075",
+  "lang": "ja",
+  "theme": "dark",
+  "viewport": [
+    390,
+    844
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    390,
+    1650
+  ],
+  "elements": [
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "2",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        390,
+        48
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "サイト情報",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        8,
+        0,
+        44,
+        47
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mastheadMenuToggle",
+      "label": "その他",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        8,
+        1.5,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": "_r_1s_",
+      "label": "作品を検索",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        91,
+        1.5,
+        192,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "メッセージセンター",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        290,
+        1.5,
+        92,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "お知らせ (2)",
+      "href": "/ja.html?section=announcements",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        290,
+        1.5,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "ダイレクトメッセージ",
+      "href": "/ja.html?section=messages",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        338,
+        1.5,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "main",
+      "role": null,
+      "id": "main",
+      "label": "シングルプレイ - TouhouOnline すべて 11作品 すべて 11 お気に入り 0 本編 8 対戦作品 1 格闘作品 1 旧作 1 ジャケット表示 一覧 作品番号順 東方怪綺談 th05 東方紅魔郷 th06 東方妖々夢 th07 東方萃夢想 th07.5 東方永夜抄 th08 東方花映塚 th09 東方風神",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        48,
+        390,
+        1538.1
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "シングルプレイ - TouhouOnline",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        -1,
+        47,
+        1,
+        1
+      ],
+      "font": [
+        "32px",
+        "700"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": "dialog",
+      "id": null,
+      "label": "東方萃夢想 th07.5 Immaterial and Missing Power 表示設定 言語内蔵 日本語（原作） 简体中文 English 日本語（原作） ピクセル等倍表示を有効化 入力設定 タッチ設定 タッチ操作を有効にする 当たり判定を常時表示 ピンチで拡大 プレイ中に2本指の操作でゲーム画面を拡大できます。",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        390,
+        844
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "東方萃夢想 th07.5 Immaterial and Missing Power",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        8,
+        16,
+        366,
+        52
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "libraryBack",
+      "label": "戻る",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        8,
+        20,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": "gameTitle",
+      "label": "東方萃夢想",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        122,
+        19.9,
+        95,
+        23.8
+      ],
+      "font": [
+        "19px",
+        "700"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "表示設定",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        89,
+        356,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "languageSelect",
+      "label": "ゲームの言語",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        223,
+        146,
+        1,
+        1
+      ],
+      "font": [
+        "10px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "languageSelect-trigger",
+      "label": "ゲームの言語",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        224,
+        147,
+        133,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "pixelPerfectToggle",
+      "label": "ピクセル等倍表示を有効化",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        313,
+        196,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "入力設定",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        249,
+        356,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mobileOptionsToggle",
+      "label": "タッチ設定",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        312,
+        356,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "touchToggle",
+      "label": "タッチ操作を有効にする",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "true",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        313,
+        366,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "alwaysHitboxToggle",
+      "label": "当たり判定を常時表示",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        313,
+        411,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "ヘルプ | ピンチで拡大",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        147,
+        462,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "magnifierToggle",
+      "label": "ピンチで拡大",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        313,
+        456,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchLayoutEdit",
+      "label": "ボタン配置・タッチ設定",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        500,
+        292,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "音量設定",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        553,
+        356,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "セーブ・リプレイ",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        608,
+        356,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "詳細設定",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        663,
+        356,
+        54
+      ],
+      "font": [
+        "15px",
+        "475"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "⠿ ボタン・タッチ操作 縦向き",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        36,
+        77,
+        318,
+        48
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchLayoutCollapse",
+      "label": "パネルを折りたたむ",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        304,
+        78.5,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchLayoutReset",
+      "label": "この向きの配置を初期状態に戻す",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        48,
+        139,
+        206,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "touchMovementMode",
+      "label": "移動方式",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        123,
+        248,
+        1,
+        1
+      ],
+      "font": [
+        "8px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "touchMovementMode-trigger",
+      "label": "移動方式",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        124,
+        249,
+        218,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "ヘルプ | R",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        60.9,
+        330,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "restartButtonToggle",
+      "label": "R",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        298,
+        324,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "ヘルプ | thpracボタン",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        132.9,
+        405,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "thpracTouchControlsToggle",
+      "label": "thpracボタン",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        298,
+        399,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "ヘルプ | ゲーム画面の位置",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        155.6,
+        474,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchViewportAdjust",
+      "label": "＋ ゲーム画面を調整",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        48,
+        512,
+        162.7,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchViewportReset",
+      "label": "リセット",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        218.7,
+        512,
+        123.3,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "ヘルプ | ボタンの不透明度",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        156,
+        587,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "footer",
+      "role": null,
+      "id": null,
+      "label": "タッチ設定は自動保存されます 終了 配置を保存",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        36,
+        413.5,
+        318,
+        83.5
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchLayoutExit",
+      "label": "終了",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        48,
+        445,
+        143,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchLayoutSave",
+      "label": "配置を保存",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        199,
+        445,
+        143,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": "touchHud",
+      "label": "左側のタッチ操作",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        390,
+        844
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchFocus",
+      "label": "B 強攻撃",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        227,
+        667,
+        60,
+        60
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchFire",
+      "label": "A 弱攻撃",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        162,
+        732,
+        60,
+        60
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchBomb",
+      "label": "C 射撃",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        292,
+        732,
+        60,
+        60
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchFunction",
+      "label": "D ダッシュ",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": "false",
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        227,
+        770,
+        60,
+        60
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "touchEscape",
+      "label": "戻る／一時停止",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        14,
+        14,
+        40,
+        40
+      ],
+      "font": [
+        "12px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ],
+  "touchGeometry": {
+    "width": 374,
+    "height": 828,
+    "controls": {
+      "focus": {
+        "x": 0.6658,
+        "y": 0.8321,
+        "width": 60,
+        "height": 60
+      },
+      "fire": {
+        "x": 0.492,
+        "y": 0.9106,
+        "width": 60,
+        "height": 60
+      },
+      "bomb": {
+        "x": 0.8396,
+        "y": 0.9106,
+        "width": 60,
+        "height": 60
+      },
+      "function": {
+        "x": 0.6658,
+        "y": 0.9589,
+        "width": 60,
+        "height": 60
+      },
+      "joystick": {
+        "x": 0.1551,
+        "y": 0.93,
+        "width": 112,
+        "height": 112
+      },
+      "escape": {
+        "x": 0.0695,
+        "y": 0.0314,
+        "width": 44,
+        "height": 44
+      },
+      "restart": {
+        "x": 0.0535,
+        "y": 0.0845,
+        "width": 40,
+        "height": 40
+      },
+      "thpracTab": {
+        "x": 0.9251,
+        "y": 0.5857,
+        "width": 56,
+        "height": 34
+      },
+      "thpracMenu": {
+        "x": 0.8824,
+        "y": 0.4589,
+        "width": 88,
+        "height": 32
+      }
+    }
+  }
+}

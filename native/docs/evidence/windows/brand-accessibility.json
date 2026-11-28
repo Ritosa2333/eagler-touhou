@@ -1,0 +1,44 @@
+{
+  "checkedAtUtc": "2026-11-27T15:50:01.104370+00:00",
+  "source": {
+    "lib/desktop_masthead.dart": "baf943c3a4e2cf7ed7bdf46a71c2e9a4cb0a52a68bd9c7fcdc5b680d5fde1724",
+    "lib/library.dart": "21411cc59eb3649d2633b1367908568117b629fa6d02d44728621e1099c58d15",
+    "lib/messages.dart": "0865f62e21dcb5f2a1f15b50ef04f0da0e6d375c8d692dc9908b466e14782459",
+    "test/library_accessibility_test.dart": "03cbffd029acb2f579795d191cc78c990c0961b29ee081e2bea0089a29b8084e",
+    "test/lobby_page_test.dart": "31c3fb77d5d82e98df18a96501c22adf39884dfe11b8ea344458308e0d06c8ae",
+    "integration_test/desktop_window_test.dart": "4b1e1c0cefc4c3cf0f4d4f09ff71e8405327feba80530a33bbde710684be4bdc"
+  },
+  "packageSha256": "5a402e017c2a6f593b6ee30e421d390cd2492473f53fdb23c5985d5eae86845a",
+  "validation": {
+    "staticAnalysis": "No issues",
+    "affectedUiTestsPassed": 64,
+    "newSharedControlCases": 2,
+    "validationMethod": "Affected navigation, library order, message preview and accessibility suites plus full current UI capture fixtures.",
+    "captureChecksPassed": 101,
+    "unchangedCaptures": 210,
+    "nativeIntegrationPassed": 1,
+    "zipCrc": "passed",
+    "requiredNativeLibraries": [
+      "touhouonline.exe",
+      "flutter_windows.dll",
+      "cnativeapi.dll",
+      "flutter_inappwebview_windows_plugin.dll",
+      "WebView2Loader.dll",
+      "data/app.so",
+      "data/flutter_assets/assets/game_catalog.json"
+    ],
+    "imageComparison": {
+      "captures": 210,
+      "byteIdentical": 210,
+      "changed": [],
+      "scope": "Same capture fixtures and viewports | byte comparison is not design approval"
+    },
+    "nativeCompactNavigation": "Real Windows 1024 and 801 px navigation buttons expose full names and selected state",
+    "accountWebsite": "Six current guest login/registration document cases at 1280/390/320; native close/back return geometry, privacy link and History API passed"
+  },
+  "priorReleaseBrandName": {
+    "packageSha256": "700357c6c595bb9a5e344b1c4df5b4f2b5e6f95446e3859fe79a268cbae1bd18",
+    "observed": "button 東方 Online",
+    "scope": "Read-only actual Release UIA before the current selection change. Does not establish new Release pointer operation."
+  }
+}

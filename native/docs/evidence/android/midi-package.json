@@ -1,0 +1,26 @@
+{
+  "package": "com.touhouonline.touhouonline",
+  "minimumApi": 24,
+  "targetApi": 36,
+  "optionalFeatures": [
+    "android.software.midi",
+    "android.hardware.bluetooth"
+  ],
+  "signature": "v2 | debug certificate",
+  "nativeAlignment": "16 KB",
+  "libraries": [
+    {
+      "path": "lib/arm64-v8a/libapp.so",
+      "sha256": "c427f53b4df481c012897162746fec3ddb62036a8e37004cf57d3ea3e9ada7d8"
+    },
+    {
+      "path": "lib/armeabi-v7a/libapp.so",
+      "sha256": "3c32351ffdf5a005ac005cc4d919be6f8acf87efd8e2d18ef68739f194521b8f"
+    },
+    {
+      "path": "lib/x86_64/libapp.so",
+      "sha256": "d6b53ada50f83bd9d040a26207abcd4a851a4145ef592690c614074a0f1a4b70"
+    }
+  ],
+  "apkSha256": "dcea667926e2a9d5bc14d5d82cadf3eb662ee894d5bdca42bfbdf993826615c6"
+}

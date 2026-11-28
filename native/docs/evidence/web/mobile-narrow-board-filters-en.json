@@ -1,0 +1,719 @@
+{
+  "address": "/ratings.html?lang=en",
+  "lang": "en",
+  "theme": "dark",
+  "viewport": [
+    320,
+    640
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    320,
+    640
+  ],
+  "elements": [
+    {
+      "tag": "main",
+      "role": null,
+      "id": null,
+      "label": "± shows the estimated uncertainty. Ratings become established below 220 points of uncertainty. Groups are linked by actual matches. Cross-group ranks are approx",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        320,
+        326.9
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        43.4,
+        36,
+        36
+      ],
+      "font": [
+        "32px",
+        "700"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Help | About ratings",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        56,
+        45.4,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Rating distribution",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        162.6,
+        39.4,
+        145.4,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "rating-board-scope",
+      "label": "Select ranking",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        112.9,
+        2,
+        2
+      ],
+      "font": [
+        "13.3333px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "rating-board-scope-trigger",
+      "label": "Select ranking",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        12,
+        112.9,
+        104,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": null,
+      "label": "Find player",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        133,
+        113.9,
+        54.6,
+        42
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Locate in rankings",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": true
+      },
+      "rect": [
+        189.6,
+        118.9,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Filters active",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        230.6,
+        112.9,
+        77.4,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "#",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        31.6,
+        169.9,
+        13.4,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Player",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        61,
+        169.9,
+        45.4,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "WHR",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        205,
+        169.9,
+        50,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "radix-_R_2bab5_",
+      "label": "Sort",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        263,
+        169.9,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "魔理沙",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        61,
+        222.9,
+        28,
+        28
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "魔理沙 @other",
+      "href": "/u/other?lang=en",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        97,
+        226.9,
+        86.7,
+        20
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Expand records for 魔理沙",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        263,
+        214.9,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "灵梦",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        61,
+        267.9,
+        28,
+        28
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "灵梦 @rated",
+      "href": "/u/rated?lang=en",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        97,
+        271.9,
+        71.8,
+        20
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Expand records for 灵梦",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        263,
+        259.9,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "div",
+      "role": "dialog",
+      "id": "radix-_R_6qb5_",
+      "label": "Filter",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        52,
+        163,
+        256,
+        362.5
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "auto",
+        "auto"
+      ]
+    },
+    {
+      "tag": "input",
+      "role": null,
+      "id": "rating-minimum",
+      "label": "",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": true,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        221.5,
+        230,
+        44
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "rating-group",
+      "label": "Opponent group",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        337,
+        2,
+        2
+      ],
+      "font": [
+        "13.3333px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "rating-group-trigger",
+      "label": "Opponent group",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        337,
+        230,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "rating-status",
+      "label": "Rating status",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        452.5,
+        2,
+        2
+      ],
+      "font": [
+        "13.3333px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "rating-status-trigger",
+      "label": "Rating status",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        452.5,
+        230,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

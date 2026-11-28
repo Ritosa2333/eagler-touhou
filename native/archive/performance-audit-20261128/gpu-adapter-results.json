@@ -1,0 +1,149 @@
+{
+  "probe": [
+    {
+      "variant": "default",
+      "exitCode": 0,
+      "milliseconds": 756.32,
+      "output": "vendor=8086 device=a78b adapter=Intel(R) UHD Graphics luid=00000000:00012c80"
+    },
+    {
+      "variant": "nvidia",
+      "exitCode": 0,
+      "milliseconds": 1048.4,
+      "output": "vendor=10de device=28a0 adapter=NVIDIA GeForce RTX 4060 Laptop GPU luid=00000000:0001678d"
+    },
+    {
+      "variant": "default",
+      "exitCode": 0,
+      "milliseconds": 76.68,
+      "output": "vendor=8086 device=a78b adapter=Intel(R) UHD Graphics luid=00000000:00012c80"
+    },
+    {
+      "variant": "nvidia",
+      "exitCode": 0,
+      "milliseconds": 315.79,
+      "output": "vendor=10de device=28a0 adapter=NVIDIA GeForce RTX 4060 Laptop GPU luid=00000000:0001678d"
+    },
+    {
+      "variant": "default",
+      "exitCode": 0,
+      "milliseconds": 102.74,
+      "output": "vendor=8086 device=a78b adapter=Intel(R) UHD Graphics luid=00000000:00012c80"
+    },
+    {
+      "variant": "nvidia",
+      "exitCode": 0,
+      "milliseconds": 230.05,
+      "output": "vendor=10de device=28a0 adapter=NVIDIA GeForce RTX 4060 Laptop GPU luid=00000000:0001678d"
+    }
+  ],
+  "ordinaryPid": 39464,
+  "processMemory": [
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0",
+      "DedicatedUsage": 0,
+      "SharedUsage": 15028224,
+      "TotalCommitted": 23261184
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0",
+      "DedicatedUsage": 75730944,
+      "SharedUsage": 364544,
+      "TotalCommitted": 123740160
+    }
+  ],
+  "processEngines": [
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_0_engtype_3D",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_10_engtype_GDI Render",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_11_engtype_",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_12_engtype_",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_1_engtype_VideoDecode",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_2_engtype_Copy",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_3_engtype_VideoProcessing",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_4_engtype_",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_5_engtype_",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_6_engtype_",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_7_engtype_",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_8_engtype_",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x00012C80_phys_0_eng_9_engtype_",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_0_engtype_3D",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_1_engtype_LegacyOverlay",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_2_engtype_VideoDecode",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_3_engtype_Copy",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_4_engtype_Copy",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_5_engtype_Security",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_6_engtype_VideoEncode",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_7_engtype_VideoEncode",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_8_engtype_OFA_0",
+      "UtilizationPercentage": 0
+    },
+    {
+      "Name": "pid_39464_luid_0x00000000_0x0001678D_phys_0_eng_9_engtype_VR",
+      "UtilizationPercentage": 0
+    }
+  ]
+}

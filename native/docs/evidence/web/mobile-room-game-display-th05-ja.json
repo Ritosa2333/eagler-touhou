@@ -1,0 +1,1307 @@
+{
+  "address": "/?lang=ja&j=eyJnIjoidGgwNW1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+  "lang": "ja",
+  "theme": "dark",
+  "viewport": [
+    390,
+    844
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    390,
+    1536
+  ],
+  "elements": [
+    {
+      "tag": "main",
+      "role": null,
+      "id": "main",
+      "label": "シングルプレイ - TouhouOnline",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        18,
+        22,
+        354,
+        1430.1
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "シングルプレイ - TouhouOnline",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        21,
+        1,
+        1
+      ],
+      "font": [
+        "32px",
+        "700"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpRoomResourceCancel",
+      "label": "ダウンロードをキャンセル",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        94,
+        245.4,
+        202,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "全画面にする",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        321,
+        285.5,
+        44,
+        44
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": null,
+      "id": "transfer",
+      "label": "ゲームリソースをダウンロード中… th05 th05.data サーバーの応答を待っています… 応答を待機中 1件の要求",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        21,
+        77,
+        260,
+        105
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "auto",
+        "auto"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "ゲームリソースをダウンロード中…",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        34,
+        86,
+        234,
+        28
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "この端末",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": true
+      },
+      "rect": [
+        65,
+        410,
+        36,
+        16
+      ],
+      "font": [
+        "9px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "自分のキャラクター",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        13,
+        355.5,
+        266.5,
+        82
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "自分 → P2 | 直接接続 — | TURN — | 接続の詳細",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        500,
+        93.8,
+        16
+      ],
+      "font": [
+        "9px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "radix-_r_5q_",
+      "label": "P2を管理",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        231.5,
+        449.5,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "観戦席 1",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        302.5,
+        361.5,
+        61.5,
+        24
+      ],
+      "font": [
+        "11px",
+        "700"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "観戦者 1",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        313.3,
+        391.5,
+        40,
+        40
+      ],
+      "font": [
+        "17.6px",
+        "700"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpSpectatorPreviewJoin",
+      "label": "観戦",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        293.5,
+        477.5,
+        79.5,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpSettingsRoomBackdrop",
+      "label": "設定を閉じる",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        390,
+        844
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": "dialog",
+      "id": "mpSettingsRoomDrawer",
+      "label": "設定",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        64,
+        390,
+        780
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "h3",
+      "role": null,
+      "id": "gameTitle",
+      "label": "東方怪綺談",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        208.6,
+        350,
+        29.7
+      ],
+      "font": [
+        "22px",
+        "600"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "libraryBack",
+      "label": "設定を閉じる",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": true,
+        "disabled": false
+      },
+      "rect": [
+        336,
+        75,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpReplayViewer",
+      "label": "リプレイを見る",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        36,
+        -484.7,
+        190,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpGamePackageImport",
+      "label": "インポート",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        234,
+        -484.7,
+        120,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpMobileOptionsToggle",
+      "label": "タッチ設定",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        -436.7,
+        350,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTouchToggle",
+      "label": "タッチ操作を有効にする",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        326,
+        -384.7,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpAlwaysHitboxToggle",
+      "label": "当たり判定を常時表示",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        326,
+        -328.7,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "ヘルプ | ピンチで拡大",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        115,
+        -266.7,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpMagnifierToggle",
+      "label": "ピンチで拡大",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        326,
+        -272.7,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpTouchLayoutEdit",
+      "label": "ボタン配置・タッチ設定",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        33,
+        -222.7,
+        337,
+        44
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "セーブ・リプレイ",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        -157.7,
+        350,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "ダウンロード",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        139,
+        -107.7,
+        122,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "インポート",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        260,
+        -107.7,
+        110,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "ダウンロード",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        175,
+        -55.7,
+        122,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "管理",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        296,
+        -55.7,
+        74,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "表示設定",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        13.3,
+        350,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "mpLanguageSelect",
+      "label": "ゲームの言語",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        236,
+        72.3,
+        1,
+        1
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "mpLanguageSelect-trigger",
+      "label": "ゲームの言語",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        237,
+        73.3,
+        133,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpPixelPerfectToggle",
+      "label": "ピクセル等倍表示を有効化",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        326,
+        129.3,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpFocusHitboxToggle",
+      "label": "低速移動中に当たり判定を表示",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        326,
+        185.3,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "mpTh05BossBarSelect",
+      "label": "原作のサイドバー 紅魔郷風の上部ゲージ 円形ゲージ",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        223,
+        248.3,
+        1,
+        1
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "mpTh05BossBarSelect-trigger",
+      "label": "原作のサイドバー",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        224,
+        249.3,
+        146,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05PhaseMarkersToggle",
+      "label": "体力ゲージの段階マーカー",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        326,
+        305.3,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05PhaseStarsToggle",
+      "label": "残り段階数を星で表示",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": true
+      },
+      "rect": [
+        326,
+        361.3,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05PhaseTimeoutToggle",
+      "label": "段階の残り時間 / 回数",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        326,
+        417.3,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05TimeoutAsTimeToggle",
+      "label": "攻撃回数を時間に換算",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": true
+      },
+      "rect": [
+        326,
+        473.3,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05NumericDreamToggle",
+      "label": "夢ゲージを数値で表示",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        326,
+        529.3,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05NumericPowerToggle",
+      "label": "パワーを数値で表示",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        326,
+        585.3,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "入力設定",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        656.3,
+        350,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "音量設定",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        717.3,
+        350,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "詳細設定",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        774.3,
+        350,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

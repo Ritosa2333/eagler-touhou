@@ -1,0 +1,451 @@
+{
+  "address": "/docs/multiplayer/th08/?lang=en",
+  "lang": "en",
+  "theme": "dark",
+  "viewport": [
+    390,
+    844
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    390,
+    1534
+  ],
+  "elements": [
+    {
+      "tag": "header",
+      "role": null,
+      "id": "nd-subnav",
+      "label": "Documentation",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        390,
+        44
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "Documentation",
+      "href": "/faq.html?lang=en",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        16,
+        10,
+        120.5,
+        24
+      ],
+      "font": [
+        "16px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Open navigation",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        346,
+        5,
+        34,
+        34
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "Human/youkai gauge and team state",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        44,
+        390,
+        40
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "On this page",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        44,
+        390,
+        40
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "IN",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        101,
+        29.7,
+        42
+      ],
+      "font": [
+        "28px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "radix-_r_8_",
+      "label": "Choose a multiplayer guide",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        322,
+        100,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "Co-op rules",
+      "href": "/docs/multiplayer/coop?lang=en",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        215.3,
+        193,
+        76.5,
+        20
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "section-1",
+      "label": "Human/youkai gauge and team state",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        274,
+        342,
+        64
+      ],
+      "font": [
+        "24px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "section-2",
+      "label": "Familiars",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        522,
+        342,
+        32
+      ],
+      "font": [
+        "24px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "section-3",
+      "label": "Time orbs and night time",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        810,
+        342,
+        32
+      ],
+      "font": [
+        "24px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "section-4",
+      "label": "Power items",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        942,
+        342,
+        32
+      ],
+      "font": [
+        "24px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h2",
+      "role": null,
+      "id": "section-5",
+      "label": "Unlocks",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        1194,
+        342,
+        32
+      ],
+      "font": [
+        "24px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "nav",
+      "role": null,
+      "id": null,
+      "label": "Previous page PCB Next page MoF",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        1334,
+        342,
+        168
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "Previous page PCB",
+      "href": "/docs/multiplayer/th07?lang=en",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        1334,
+        342,
+        78
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "a",
+      "role": null,
+      "id": null,
+      "label": "Next page MoF",
+      "href": "/docs/multiplayer/th10?lang=en",
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "disabled": false
+      },
+      "rect": [
+        24,
+        1424,
+        342,
+        78
+      ],
+      "font": [
+        "14px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

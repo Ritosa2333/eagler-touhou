@@ -1,0 +1,83 @@
+{
+  "general": {
+    "actions": {
+      "shoot": "KeyZ",
+      "bomb": "KeyX",
+      "focus": "ShiftLeft",
+      "pause": "Escape",
+      "up": "ArrowUp",
+      "down": "ArrowDown",
+      "left": "ArrowLeft",
+      "right": "ArrowRight",
+      "skip": "ControlLeft",
+      "confirm": "Enter",
+      "action": "KeyC",
+      "restart": "KeyR"
+    },
+    "wasd": {
+      "KeyW": "ArrowUp",
+      "KeyA": "ArrowLeft",
+      "KeyS": "ArrowDown",
+      "KeyD": "ArrowRight",
+      "KeyJ": "KeyZ",
+      "KeyK": "KeyX",
+      "KeyL": "ShiftLeft",
+      "Space": "ShiftLeft",
+      "KeyH": "KeyC"
+    }
+  },
+  "th075": {
+    "actions": {
+      "shoot": "KeyZ",
+      "bomb": "KeyX",
+      "focus": "KeyV",
+      "pause": "Escape",
+      "up": "ArrowUp",
+      "down": "ArrowDown",
+      "left": "ArrowLeft",
+      "right": "ArrowRight",
+      "skip": "ControlLeft",
+      "confirm": "Enter",
+      "action": "KeyC",
+      "restart": "KeyR"
+    },
+    "wasd": {
+      "KeyW": "ArrowUp",
+      "KeyA": "ArrowLeft",
+      "KeyS": "ArrowDown",
+      "KeyD": "ArrowRight",
+      "KeyJ": "KeyZ",
+      "KeyK": "KeyX",
+      "KeyL": "KeyV",
+      "Space": "KeyV",
+      "KeyH": "KeyC"
+    }
+  },
+  "th19": {
+    "actions": {
+      "shoot": "KeyZ",
+      "bomb": "KeyC",
+      "focus": "ShiftLeft",
+      "pause": "Escape",
+      "up": "ArrowUp",
+      "down": "ArrowDown",
+      "left": "ArrowLeft",
+      "right": "ArrowRight",
+      "skip": "ControlLeft",
+      "confirm": "Enter",
+      "action": "KeyX",
+      "restart": "KeyR"
+    },
+    "wasd": {
+      "KeyW": "ArrowUp",
+      "KeyA": "ArrowLeft",
+      "KeyS": "ArrowDown",
+      "KeyD": "ArrowRight",
+      "KeyJ": "KeyZ",
+      "KeyK": "KeyC",
+      "KeyL": "ShiftLeft",
+      "Space": "ShiftLeft",
+      "KeyH": "KeyX"
+    }
+  }
+}

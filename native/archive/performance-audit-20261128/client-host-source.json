@@ -1,0 +1,11 @@
+{
+  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "diagnosticChanges": [
+    "native child WM_GETOBJECT observer",
+    "read-only client source snapshots every5s",
+    "nonactivating show",
+    "normal close after6samples",
+    "native shutdown markers"
+  ],
+  "productionSourcesModified": false
+}

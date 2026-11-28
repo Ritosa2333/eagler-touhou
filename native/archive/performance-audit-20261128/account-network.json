@@ -1,0 +1,29 @@
+{
+  "scope": "Unauthenticated HTTP check, not WebView rendering or session validation",
+  "records": [
+    {
+      "requested": "https://touhouonline.com/login.html?lang=zh-CN",
+      "status": 200,
+      "finalUrl": "https://touhouonline.com/login.html?lang=zh-CN",
+      "title": "登录 - TouhouOnline",
+      "redirects": [],
+      "milliseconds": 1433.4
+    },
+    {
+      "requested": "https://touhouonline.com/profile.html?lang=zh-CN",
+      "status": 200,
+      "finalUrl": "https://touhouonline.com/profile.html?lang=zh-CN",
+      "title": "个人主页 - TouhouOnline",
+      "redirects": [],
+      "milliseconds": 535.2
+    },
+    {
+      "requested": "https://touhouonline.com/u/ritosa?lang=zh-CN",
+      "status": 200,
+      "finalUrl": "https://touhouonline.com/u/ritosa?lang=zh-CN",
+      "title": "个人主页 - TouhouOnline",
+      "redirects": [],
+      "milliseconds": 502.4
+    }
+  ]
+}

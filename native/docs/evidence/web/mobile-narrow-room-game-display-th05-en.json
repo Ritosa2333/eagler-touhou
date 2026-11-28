@@ -1,0 +1,1307 @@
+{
+  "address": "/?lang=en&j=eyJnIjoidGgwNW1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+  "lang": "en",
+  "theme": "dark",
+  "viewport": [
+    320,
+    640
+  ],
+  "scroll": [
+    0,
+    0
+  ],
+  "documentSize": [
+    320,
+    1326
+  ],
+  "elements": [
+    {
+      "tag": "main",
+      "role": null,
+      "id": "main",
+      "label": "Single-player - TouhouOnline",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        18,
+        22,
+        284,
+        1220.1
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "h1",
+      "role": null,
+      "id": null,
+      "label": "Single-player - TouhouOnline",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        17,
+        21,
+        1,
+        1
+      ],
+      "font": [
+        "32px",
+        "700"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpRoomResourceCancel",
+      "label": "Cancel download",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        85.5,
+        219.2,
+        148.9,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Enter fullscreen",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        251,
+        233,
+        44,
+        44
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": null,
+      "id": "transfer",
+      "label": "Downloading game resources… th05 th05.data Waiting for server response… Waiting for response 1 request(s)",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        21,
+        77,
+        260,
+        105
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "auto",
+        "auto"
+      ]
+    },
+    {
+      "tag": "header",
+      "role": null,
+      "id": null,
+      "label": "Downloading game resources…",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        34,
+        86,
+        234,
+        28
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Local",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": true
+      },
+      "rect": [
+        65,
+        357.5,
+        22.8,
+        16
+      ],
+      "font": [
+        "9px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "My character",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        13,
+        303,
+        214,
+        82
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "You → P2 | Direct — | TURN — | Connection details",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        65,
+        447.5,
+        83.4,
+        16
+      ],
+      "font": [
+        "9px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "radix-_r_5p_",
+      "label": "Manage P2",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        179,
+        397,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Spectators 1",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        241,
+        309,
+        62,
+        50.6
+      ],
+      "font": [
+        "11px",
+        "700"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Spectator 1",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        252,
+        365.6,
+        40,
+        40
+      ],
+      "font": [
+        "17.6px",
+        "700"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpSpectatorPreviewJoin",
+      "label": "Spectate",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        241,
+        425,
+        62,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpSettingsRoomBackdrop",
+      "label": "Close settings",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        0,
+        320,
+        640
+      ],
+      "font": [
+        "16px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "aside",
+      "role": "dialog",
+      "id": "mpSettingsRoomDrawer",
+      "label": "Settings",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        0,
+        51.2,
+        320,
+        588.8
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "h3",
+      "role": null,
+      "id": "gameTitle",
+      "label": "東方怪綺談",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        162.9,
+        280,
+        29.7
+      ],
+      "font": [
+        "22px",
+        "600"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "libraryBack",
+      "label": "Close settings",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": true,
+        "disabled": false
+      },
+      "rect": [
+        266,
+        62.2,
+        44,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpReplayViewer",
+      "label": "Watch replay",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        36,
+        -540.4,
+        143.8,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpGamePackageImport",
+      "label": "Import",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        187.8,
+        -540.4,
+        96.2,
+        44
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpMobileOptionsToggle",
+      "label": "Touch settings",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        -492.4,
+        280,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTouchToggle",
+      "label": "Enable touch controls",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        256,
+        -440.4,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpAlwaysHitboxToggle",
+      "label": "Always show hitbox",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        256,
+        -384.4,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Help | Pinch to zoom",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        125.2,
+        -322.4,
+        32,
+        32
+      ],
+      "font": [
+        "14px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpMagnifierToggle",
+      "label": "Pinch to zoom",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        256,
+        -328.4,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": "mpTouchLayoutEdit",
+      "label": "Button layout & touch settings",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        33,
+        -278.4,
+        267,
+        54.4
+      ],
+      "font": [
+        "13px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Saves & replays",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        -203,
+        280,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Download",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        103.1,
+        -153,
+        108.3,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Import",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        210.4,
+        -153,
+        89.6,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Download",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        98,
+        -101,
+        108.3,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Manage",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        205.3,
+        -101,
+        94.7,
+        44
+      ],
+      "font": [
+        "12px",
+        "500"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Display settings",
+      "href": null,
+      "state": {
+        "expanded": "true",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        -32,
+        280,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "mpLanguageSelect",
+      "label": "Game language",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        141.1,
+        27,
+        1,
+        1
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "mpLanguageSelect-trigger",
+      "label": "Game language",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        142.1,
+        28,
+        157.9,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpPixelPerfectToggle",
+      "label": "Enable pixel-perfect display",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        256,
+        84,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpFocusHitboxToggle",
+      "label": "Show hitbox while focused",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        256,
+        140,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "select",
+      "role": null,
+      "id": "mpTh05BossBarSelect",
+      "label": "Original sidebar EoSD top bar Ring health bar",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        160.9,
+        203,
+        1,
+        1
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "clip",
+        "clip"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "combobox",
+      "id": "mpTh05BossBarSelect-trigger",
+      "label": "Original sidebar",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        161.9,
+        204,
+        138.1,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05PhaseMarkersToggle",
+      "label": "Health phase markers",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        256,
+        260,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05PhaseStarsToggle",
+      "label": "Remaining phases as stars",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": true
+      },
+      "rect": [
+        256,
+        316,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05PhaseTimeoutToggle",
+      "label": "Phase time / turns remaining",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        256,
+        372,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05TimeoutAsTimeToggle",
+      "label": "Show attack cycles as time",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": true
+      },
+      "rect": [
+        256,
+        428,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05NumericDreamToggle",
+      "label": "Numeric dream meter",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        256,
+        484,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": "switch",
+      "id": "mpTh05NumericPowerToggle",
+      "label": "Numeric power meters",
+      "href": null,
+      "state": {
+        "expanded": null,
+        "pressed": null,
+        "checked": "false",
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        256,
+        540,
+        44,
+        44
+      ],
+      "font": [
+        "13px",
+        "400"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Input settings",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        611,
+        280,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Volume settings",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        672,
+        280,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    },
+    {
+      "tag": "button",
+      "role": null,
+      "id": null,
+      "label": "Advanced settings",
+      "href": null,
+      "state": {
+        "expanded": "false",
+        "pressed": null,
+        "checked": null,
+        "focused": false,
+        "disabled": false
+      },
+      "rect": [
+        20,
+        729,
+        280,
+        44
+      ],
+      "font": [
+        "14px",
+        "600"
+      ],
+      "overflow": [
+        "visible",
+        "visible"
+      ]
+    }
+  ]
+}

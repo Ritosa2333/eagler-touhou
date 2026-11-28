@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=TouhouOnline
+Exec=touhouonline %u
+Icon=com.touhouonline.touhouonline
+Terminal=false
+Categories=Game;
+StartupWMClass=com.touhouonline.touhouonline
+MimeType=x-scheme-handler/touhouonline;

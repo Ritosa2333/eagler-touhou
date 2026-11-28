@@ -1,0 +1,400 @@
+{
+  "captures": [
+    {
+      "file": "desktop-announcement.png",
+      "original": [
+        2880,
+        1468
+      ],
+      "archived": [
+        1440,
+        734
+      ]
+    },
+    {
+      "file": "desktop-game-detail.png",
+      "original": [
+        2880,
+        2186
+      ],
+      "archived": [
+        1440,
+        1093
+      ]
+    },
+    {
+      "file": "desktop-game-settings.png",
+      "original": [
+        2880,
+        1520
+      ],
+      "archived": [
+        1440,
+        760
+      ]
+    },
+    {
+      "file": "desktop-inbox-popover.png",
+      "original": [
+        2880,
+        1468
+      ],
+      "archived": [
+        1440,
+        734
+      ]
+    },
+    {
+      "file": "desktop-inbox-thread.png",
+      "original": [
+        2880,
+        1468
+      ],
+      "archived": [
+        1440,
+        734
+      ]
+    },
+    {
+      "file": "desktop-inbox.png",
+      "original": [
+        2880,
+        1468
+      ],
+      "archived": [
+        1440,
+        734
+      ]
+    },
+    {
+      "file": "desktop-library.png",
+      "original": [
+        2880,
+        1468
+      ],
+      "archived": [
+        1440,
+        734
+      ]
+    },
+    {
+      "file": "desktop-message-center.png",
+      "original": [
+        2880,
+        1468
+      ],
+      "archived": [
+        1440,
+        734
+      ]
+    },
+    {
+      "file": "desktop-profile.png",
+      "original": [
+        2880,
+        1766
+      ],
+      "archived": [
+        1440,
+        883
+      ]
+    },
+    {
+      "file": "desktop-spell-list.png",
+      "original": [
+        1568,
+        1568
+      ],
+      "archived": [
+        784,
+        784
+      ]
+    },
+    {
+      "file": "desktop-spell-map.png",
+      "original": [
+        1568,
+        626
+      ],
+      "archived": [
+        784,
+        313
+      ]
+    },
+    {
+      "file": "desktop-top.png",
+      "original": [
+        2880,
+        88
+      ],
+      "archived": [
+        1440,
+        44
+      ]
+    },
+    {
+      "file": "desktop-whr.png",
+      "original": [
+        2880,
+        2020
+      ],
+      "archived": [
+        1440,
+        1010
+      ]
+    },
+    {
+      "file": "mobile-announcement.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-bottom.png",
+      "original": [
+        780,
+        128
+      ],
+      "archived": [
+        390,
+        64
+      ]
+    },
+    {
+      "file": "mobile-character-chart.png",
+      "original": [
+        780,
+        970
+      ],
+      "archived": [
+        390,
+        485
+      ]
+    },
+    {
+      "file": "mobile-drawer-guest.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-drawer-member.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-game-detail.png",
+      "original": [
+        780,
+        2090
+      ],
+      "archived": [
+        390,
+        1045
+      ]
+    },
+    {
+      "file": "mobile-game-settings.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-home-expanded.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-home-guest.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-home-member.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-inbox-thread.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-inbox.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-library-scrolled.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-library.png",
+      "original": [
+        780,
+        1440
+      ],
+      "archived": [
+        390,
+        720
+      ]
+    },
+    {
+      "file": "mobile-match-record.png",
+      "original": [
+        716,
+        124
+      ],
+      "archived": [
+        358,
+        62
+      ]
+    },
+    {
+      "file": "mobile-profile-work.png",
+      "original": [
+        780,
+        1350
+      ],
+      "archived": [
+        390,
+        675
+      ]
+    },
+    {
+      "file": "mobile-profile.png",
+      "original": [
+        780,
+        1612
+      ],
+      "archived": [
+        390,
+        806
+      ]
+    },
+    {
+      "file": "mobile-rounds.png",
+      "original": [
+        780,
+        1258
+      ],
+      "archived": [
+        390,
+        629
+      ]
+    },
+    {
+      "file": "mobile-spell-list.png",
+      "original": [
+        716,
+        2458
+      ],
+      "archived": [
+        358,
+        1229
+      ]
+    },
+    {
+      "file": "mobile-spell-map.png",
+      "original": [
+        716,
+        626
+      ],
+      "archived": [
+        358,
+        313
+      ]
+    },
+    {
+      "file": "mobile-top.png",
+      "original": [
+        780,
+        96
+      ],
+      "archived": [
+        390,
+        48
+      ]
+    },
+    {
+      "file": "mobile-whr.png",
+      "original": [
+        780,
+        1892
+      ],
+      "archived": [
+        390,
+        946
+      ]
+    },
+    {
+      "file": "spell-tooltip.png",
+      "original": [
+        404,
+        72
+      ],
+      "archived": [
+        202,
+        36
+      ]
+    }
+  ]
+}

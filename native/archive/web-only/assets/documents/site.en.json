@@ -1,0 +1,1071 @@
+{
+  "/guide.html": {
+    "title": "Before You Start",
+    "sections": [
+      {
+        "title": "1. Play offline",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "This is a website, but it works a lot like an app.  \nTry **downloading a game**, disconnecting from the internet, and reloading the page.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "2. If a game does not work, check the FAQ in the top-right menu first",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "If the FAQ does not resolve the issue, report it through the project’s **feedback channels**.",
+            "columns": 0
+          },
+          {
+            "text": "The FAQ also covers strategy guides, saves, and future plans.",
+            "columns": 0,
+            "notice": "NOTE"
+          }
+        ]
+      },
+      {
+        "title": "3. We need developers who work with AI",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "We’re short on experienced developers and tokens. If you’re interested, **join the developer group and help us build the project**.",
+            "columns": 0
+          },
+          {
+            "text": "We’re especially looking for people familiar with **frontend or backend web development, infrastructure** such as SMTP and TURN servers, **multiplayer protocols, or cross-platform app development**.  \n (No experience needed. You’re welcome to just chat, too.)",
+            "columns": 0,
+            "notice": "NOTE"
+          }
+        ]
+      },
+      {
+        "title": "4. Servers and development cost money",
+        "id": "section-4",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "If you enjoy the project, you can support us through **Donate** in the top-right menu.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/faq.html": {
+    "title": "FAQ",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "Thanks to Goan114 for compiling this information, and to everyone who tested and provided feedback.\n\n If the information below does not solve your problem, please contact us through [Discord](<https://discord.gg/HwVz9ZTSF>), the [QQ group](<https://qm.qq.com/q/eeUrxIltug>), or [GitHub Issues](<https://github.com/Ritosa2333/eagler-touhou/issues/new/choose>).",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "What should I do about crashes, lag, black screens, loading problems, or interrupted touch input?",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "First, try a recommended browser:",
+            "columns": 0
+          },
+          {
+            "columns": 2,
+            "rows": [
+              [
+                "Device",
+                "Recommended browser"
+              ],
+              [
+                "Android",
+                "The latest [Edge](<https://www.microsoft.com/edge/download>) or [Chrome](<https://www.google.com/chrome/>); Via is not recommended"
+              ],
+              [
+                "Huawei devices",
+                "Try the built-in browser; do not use Zhuoyitong or Via"
+              ],
+              [
+                "Windows",
+                "The included Edge, [Chrome](<https://google.cn/chrome>), or [Firefox](<https://www.firefox.com/>)"
+              ],
+              [
+                "Windows 7 and earlier",
+                "[Supermium](<https://www.supermium.net/>)"
+              ],
+              [
+                "Apple devices",
+                "Any browser"
+              ]
+            ]
+          },
+          {
+            "text": "Built-in and other domestic browsers are not recommended. Quark is known to interrupt touch input. If the recommended browsers do not solve the problem, please contact us.",
+            "columns": 0
+          },
+          {
+            "text": "If an older browser cannot open the home page or the WebGL 2.0 check fails, see the [device and browser compatibility guide](</compatibility.en.html>) for Supermium installation and Chrome OpenGL backend instructions.",
+            "columns": 0,
+            "notice": "NOTE"
+          }
+        ]
+      },
+      {
+        "title": "Where can I find controls, guides, and the story?",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- **Controls**: Start the game and select “?” in the upper-right corner.\n- **Original manuals and story**: See the [Touhou Project supplementary documents](<https://omake.thwiki.cc/>).\n- **Strategy guides**: See the [THBWiki strategy guides](<https://thbwiki.cc/%e6%b8%b8%e6%88%8f%e6%94%bb%e7%95%a5>), for example to learn about the cherry point system.\n\n If you are unfamiliar with Touhou Project's setting or gameplay, we recommend starting with THBWiki for its thorough, accessible explanations.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Can I save my game?",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "“Saving” can mean two different things:",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Can I resume a run after exiting?",
+        "id": "section-4",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "**No.** As in the original game, you cannot resume a run with its previous lives and other in-game state after exiting. A run takes about 25 minutes on average.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Are clear records and other play data saved?",
+        "id": "section-5",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "**Yes.** Clear records, play time, and other data outside the current run can be saved. Testing confirmed that the `score.dat` save file is compatible with the original game.",
+            "columns": 0
+          },
+          {
+            "text": "**Save files are specific to each game.** For example, th06's `score.dat` cannot be used in th07.",
+            "columns": 0,
+            "notice": "WARNING"
+          }
+        ]
+      },
+      {
+        "title": "Will more games be added?",
+        "id": "section-6",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "See the [game adaptation progress table](<faq.html?view=progress>) (Chinese only).\n\n Enable “Preview features” in “Developer options” to check upcoming content.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "What if resources will not download?",
+        "id": "section-7",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "1. Make sure you are not using a VPN.\n2. Avoid extensions that take over downloads. Internet Download Manager and similar extensions are known to interfere with resource loading.\n3. If downloading still fails, use the import package.\n\n Once the site has been opened, you can refresh or reopen the launcher even if the server later becomes unavailable or you go offline; nearly all newer browsers support this.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "What if multiplayer has problems?",
+        "id": "section-8",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "Do not use browser extensions such as WebRTC Control that affect WebRTC.\n\n Multiplayer lag generally has two causes:\n\n 1. Network fluctuations or packet loss. For example, a jump from 50 ms to 200 ms causes noticeable lag; this is normal, as players familiar with Hisoutensoku may know.\n2. Game performance issues.\n\n If your network fluctuates significantly, multiplayer is not recommended. One player's fluctuations can cause everyone in the session to lag.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Support the project",
+        "id": "section-9",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "If you like the project, please consider starring it on [GitHub](<https://github.com/YomotsuHisami/eagler-touhou/>).",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "5bfd144042fbf7695d1b3ca4d9bf71704c214f9b",
+      "date": "2026-11-11T12:07:37.000Z"
+    }
+  },
+  "/about.html": {
+    "title": "About",
+    "sections": [
+      {
+        "title": "Contribute",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "Find the source and development discussions in the [GitHub repository](<https://github.com/Ritosa2333/eagler-touhou>).\n\n- To port a game, start with the [game adaptation guide](<https://github.com/Ritosa2333/eagler-touhou/blob/main/docs/adaptation/README.md>) and the [developer documentation](<https://github.com/Ritosa2333/eagler-touhou/blob/main/docs/README.md>).\n- Discuss bugs or features in [Issues](<https://github.com/Ritosa2333/eagler-touhou/issues>) and submit changes through a [pull request](<https://github.com/Ritosa2333/eagler-touhou/pulls>).",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Contact",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Email [ayanews@outlook.com](<mailto:ayanews@outlook.com>)\n- [Join Discord](<https://discord.gg/HwVz9ZTSF>)\n- [Join the QQ group](<https://qm.qq.com/q/eeUrxIltug>)",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "5bfd144042fbf7695d1b3ca4d9bf71704c214f9b",
+      "date": "2026-11-11T12:07:37.000Z"
+    }
+  },
+  "/faq.html?view=progress": {
+    "title": "东方作品进度",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "表中按阶段记录进度，署名链接指向对应项目或维护者。各作功能验收见 [适配检查](https://github.com/Ritosa2333/eagler-touhou/blob/main/docs/adaptation/README.md)。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Windows 正作",
+        "id": "windows-正作",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "|  |  | 还原 | 移植 | Web 适配 | 多人联机 |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| 东方红魔乡 | **[th06] 東方紅魔郷 v1.02h** | [GensokyoClub](https://github.com/GensokyoClub/th06/tree/master) **Done** | [GensokyoClub](https://github.com/GensokyoClub/th06/tree/portable) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th06/tree/eagler) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th06/tree/eagler) **Done** |\n| 东方妖妖梦 | **[th07] 東方妖々夢 v1.00b** | [some100](https://github.com/some100/th07/tree/main) **Done** | [some100](https://github.com/some100/th07/tree/reallyportable) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th07/tree/eagler) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th07/tree/eagler) **Done** |\n| 东方永夜抄 | **[th08] 東方永夜抄 v1.00d** | [SteinsGateON](https://github.com/Ritosa2333/th08/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th08/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th08/tree/eagler) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th08/tree/experiment/th08-multiplayer) **Done** |\n| 东方花映塚 | **[th09] 東方花映塚 v1.50a** | [SteinsGateON](https://github.com/Ritosa2333/th09/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th09/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th09/tree/eagler) [**In Progress**](#th09-web-适配) | [Ritosa2333](https://github.com/Ritosa2333/th09/tree/experiment/th09-multiplayer) **Done** |\n| 东方风神录 | **[th10] 東方風神録 v1.00a** | [SteinsGateON](https://github.com/Ritosa2333/th10/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th10/tree/portable) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th10/tree/eagler) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th10/tree/experiment/th10-multiplayer) **Done** |\n| 东方地灵殿 | **[th11] 東方地霊殿 v1.00a** | [SteinsGateON](https://github.com/Ritosa2333/th11/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th11/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th11/tree/eagler) [**In Progress**](#th11-web-适配) | [Ritosa2333](https://github.com/Ritosa2333/th11/tree/eagler) [**In Progress**](#th11-多人联机) |\n| 东方星莲船 | **[th12] 東方星蓮船 v1.00b** | [Tweet-META](https://github.com/Tweet-META/th12/tree/main) **Done** | [Tweet-META](https://github.com/Goan114/eagler-touhou/tree/main/ports/th12) **Done** | [Tweet-META](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th12/README.md) [**In Progress**](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th12/ADAPTATION.md) | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th12-mp) **In Progress** |\n| 东方神灵庙 | **[th13] 東方神霊廟 v1.00c** | [AgentMystia](https://github.com/AgentMystia) **In Progress** | - | - | - |\n| 东方辉针城 | **[th14] 東方輝針城 v1.00b** | [AdingApkgg](https://github.com/AdingApkgg/thp) **In Progress** | [AdingApkgg](https://github.com/AdingApkgg/thp) **In Progress** | [AdingApkgg](https://github.com/AdingApkgg/thp) **In Progress** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th14-mp) **In Progress** |\n| 东方绀珠传 | **[th15] 東方紺珠伝 v1.00b** | [SteinsGateON](https://github.com/Ritosa2333/th15/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th15/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th15/tree/eagler) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th15-mp/ADAPTATION.md) [**In Progress**](#th15-多人联机) |\n| 东方天空璋 | **[th16] 東方天空璋 v1.00a** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** | - |\n| 东方鬼形兽 | **[th17] 東方鬼形獣 v1.00b** | [SteinsGateON](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th17) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th17/README.md) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th17/ADAPTATION.md) **In Progress** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th17-mp) **In Progress** |\n| 东方虹龙洞 | **[th18] 東方虹龍洞 v1.00a** | [owo-aya](https://github.com/owo-aya) **In Progress** | - | - | - |\n| 东方兽王园 | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** |\n| 东方锦上京 | **[th20] 東方錦上京 v1.00c** | [Oracatt](https://github.com/Oracatt/Touhou20/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th20) **Done** | 搁置 | - |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "旧作（PC-98）",
+        "id": "旧作pc-98",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "th01–th05 的移植、Web 适配与多人项目由 [IxinorTyan](https://github.com/IxinorTyan) 开发。\n\nth01 的原生 C++ 核心同时提供 Windows 与 Web 版本。\nth02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合作与联机。\n[NP2 浏览器合集](https://github.com/IxinorTyan/touhou-np2)另提供五作的单机入口。",
+            "columns": 0
+          },
+          {
+            "text": "|  |  | 还原 | 移植 | Web 适配 | 多人联机 |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| 东方灵异传 | **[th01] 東方靈異伝** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th01) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th01-multiorb-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th01-multiorb-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th01-multiorb-lab) **In Progress** |\n| 东方封魔录 | **[th02] 東方封魔録** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th02) **In Progress** | - | [IxinorTyan](https://github.com/IxinorTyan/th02-coop-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th02-coop-lab) **In Progress** |\n| 东方梦时空 | **[th03] 東方夢時空** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th03) **In Progress** | - | [IxinorTyan](https://github.com/IxinorTyan/th03-netplay-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th03-netplay-lab) **In Progress** |\n| 东方幻想乡 | **[th04] 東方幻想郷** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th04) **In Progress** | - | [IxinorTyan](https://github.com/IxinorTyan/th04-coop-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th04-coop-lab) **In Progress** |\n| 东方怪绮谈 | **[th05] 東方怪綺談** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th05) **In Progress** | [Goan114](https://github.com/Goan114/uth05win-vibe) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th05/README.md) **In Progress** | [IxinorTyan](https://github.com/IxinorTyan/th05-coop-lab) **In Progress** |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "小数点作",
+        "id": "小数点作",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "|  |  | 还原 | 移植 | Web 适配 | 多人联机 |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| 东方萃梦想 | **[th075] 東方萃夢想** | [SteinsGateON](https://space.bilibili.com/34714121) **Done** | [SteinsGateON](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075) **In Progress** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075-mp) **In Progress** |\n| 东方文花帖 | **[th095] 東方文花帖** | **Unassigned** | - | - | - |\n| 东方绯想天 | **[th105] 東方緋想天** | **Unassigned** | - | - | - |\n| 东方非想天则 | **[th123] 東方非想天則** | **Unassigned** | - | - | - |\n| 东方文花帖DS | **[th125] ダブルスポイラー** | **Unassigned** | - | - | - |\n| 妖精大战争 | **[th128] 妖精大戦争** | **Unassigned** | - | - | - |\n| 东方心绮楼 | **[th135] 東方心綺楼** | **Unassigned** | - | - | - |\n| 弹幕天邪鬼 | **[th143] 弾幕アマノジャク** | [Idle](https://github.com/Idle233333) **In Progress** | - | - | - |\n| 东方深秘录 | **[th145] 東方深秘録** | **Unassigned** | - | - | - |\n| 东方凭依华 | **[th155] 東方憑依華** | **Unassigned** | - | - | - |\n| 秘封噩梦日记 | **[th165] 秘封ナイトメアダイアリー** | **Unassigned** | - | - | - |\n| 东方刚欲异闻 | **[th175] 東方剛欲異聞** | **Unassigned** | - | - | - |\n| 弹幕狂们的黑市 | **[th185] バレットフィリア達の闇市場** | **Unassigned** | - | - | - |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "适配详情",
+        "id": "适配详情",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "[th09] 東方花映塚 v1.50a",
+        "id": "th09-東方花映塚-v150a",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "th09 Web 适配",
+        "id": "th09-web-适配",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 协议 | 高刷新率 | 触控 | 多语言 | thprac | Replay |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| ✅ | ❌ | ✅ | ✅ | ❌ | ✅ |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "[th11] 東方地霊殿 v1.00a",
+        "id": "th11-東方地霊殿-v100a",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "th11 Web 适配",
+        "id": "th11-web-适配",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 协议 | 高刷新率 | 触控 | 多语言 | thprac | Replay |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "th11 多人联机",
+        "id": "th11-多人联机",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 规则 | 预测回滚 | 重开 | Replay | 旁观 |\n| :---: | :---: | :---: | :---: | :---: |\n| ✅ | ❌ | ✅ | ✅ | ✅ |",
+            "columns": 5
+          }
+        ]
+      },
+      {
+        "title": "[th15] 東方紺珠伝 v1.00b",
+        "id": "th15-東方紺珠伝-v100b",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "th15 多人联机",
+        "id": "th15-多人联机",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 规则 | 预测回滚 | 重开 | Replay | 旁观 |\n| :---: | :---: | :---: | :---: | :---: |\n| ❌ | ❌ | ❌ | ❌ | ❌ |",
+            "columns": 5
+          }
+        ]
+      },
+      {
+        "title": "能力表样例",
+        "id": "能力表样例",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "Web 适配",
+        "id": "web-适配",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 协议 | 高刷新率 | 触控 | 多语言 | thprac | Replay |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "多人联机",
+        "id": "多人联机",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 规则 | 预测回滚 | 重开 | Replay | 旁观 |\n| :---: | :---: | :---: | :---: | :---: |\n| ✅ | ✅ | ✅ | ✅ | ✅ |",
+            "columns": 5
+          }
+        ]
+      },
+      {
+        "title": "图片来源",
+        "id": "图片来源",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "[THBWiki / 图片来源记录](../launcher/docs/assets/game-covers/sources.json)\n\n[done]: https://img.shields.io/badge/Done-2ea44f?style=flat-square\n[in-progress]: https://img.shields.io/badge/In%20Progress-f59e0b?style=flat-square\n[in-progress-detail]: https://img.shields.io/badge/In%20Progress%20%28Click%20for%20detail%29-f59e0b?style=flat-square\n[unassigned]: https://img.shields.io/badge/Unassigned-808080?style=flat-square",
+            "columns": 0
+          }
+        ]
+      }
+    ]
+  },
+  "/terms.html": {
+    "title": "Terms of Service",
+    "sections": [],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "fc3b890376fc25826df0591ece430512370060f4",
+      "date": "2026-11-24T13:01:35.000Z"
+    }
+  },
+  "/privacy.html": {
+    "title": "Privacy Policy",
+    "sections": [],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "d2c1ea9d424a63d99995eda28521dfc8f320888a",
+      "date": "2026-11-19T12:43:32.000Z"
+    }
+  },
+  "/docs/multiplayer": {
+    "title": "Multiplayer",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "1. Choose a game when creating a room, then share the room code or invite link with your friends.\n2. Choose a room to join.\n3. Take a player seat, choose a character, and ready up. The other players wait for the host to start the game.\n\nThat’s the basic flow.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Co-op",
+        "id": "co-op",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "If you know the original games, you can jump right in. Play a few runs or browse the quick chat messages to learn most co-op mechanics.\n\nRead the guide below for more details.\n\n[Co-op rules](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Versus",
+        "id": "versus",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "Versus games work differently. Start with a tutorial to get familiar with the mechanics before your first match.\n\nVersus tutorials are in preparation.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/docs/multiplayer/coop": {
+    "title": "Co-op rules",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "columns": 2,
+            "rows": [
+              [
+                "Category",
+                "What changes in co-op"
+              ],
+              [
+                "Mode",
+                "[Challenge mode](<#challenge-mode>) Bombs are disabled, players respawn after each death, and the life counter counts deaths"
+              ],
+              [
+                "Resources",
+                "[Life transfer / revive a teammate](<#life-transfer>) Move near a teammate, stop shooting, and press Focus five times"
+              ],
+              [
+                "Resources",
+                "[Extra Power items](<#item-drops>) In most games, normal P drops scale with player count"
+              ],
+              [
+                "Resources",
+                "[Power transfer](<#power-transfer>) Get close to a teammate and tap Shoot 5 times"
+              ],
+              [
+                "Survival",
+                "[Ghosts / team wipe](<#death-and-revival>) Run out of lives to become a ghost, revive at stage clear, and lose the run if everyone becomes a ghost"
+              ],
+              [
+                "Combat",
+                "[Longer deathbomb window](<#deathbomb>) Double the time to press Bomb and save a life after being hit"
+              ],
+              [
+                "Combat",
+                "[Boss damage](<#boss-damage>) Each player deals less damage to bosses as the party grows"
+              ],
+              [
+                "Controls",
+                "[Shared controls](<#shared-controls>) Share dialogue and pause, save replays individually"
+              ],
+              [
+                "Progress",
+                "[Unlocks](<#unlocks>) Characters and stages unlock during co-op"
+              ]
+            ]
+          },
+          {
+            "text": "You can stop here after reading the table. The sections below explain it in more detail.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Challenge mode",
+        "id": "challenge-mode",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "The host can enable Challenge Mode in the room’s game settings. Bombs are set to zero, and the life display counts deaths. Each death drops items and respawns the player as usual, so the run continues.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Boss endurance and player count",
+        "id": "boss-damage",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "Boss HP and stage-script thresholds follow the original game. In co-op, damage dealt to bosses scales with the number of active players.",
+            "columns": 0
+          },
+          {
+            "columns": 2,
+            "rows": [
+              [
+                "Active players",
+                "Damage multiplier"
+              ],
+              [
+                "1",
+                "1"
+              ],
+              [
+                "2",
+                "0.75"
+              ],
+              [
+                "3",
+                "2/3"
+              ]
+            ]
+          },
+          {
+            "text": "When a player becomes a ghost, they are removed from the count and the multiplier adjusts.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Deathbomb window",
+        "id": "deathbomb",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "The deathbomb window is how long you can still press Bomb to save a life after being hit.\n\nIn co-op, the deathbomb window is **twice as long**. The extra time for touch controls still applies.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Death behavior",
+        "id": "death-and-revival",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "When a player runs out of lives:\n\n- They become an uncontrollable ghost that drifts without shooting. Dropped items match the original final-death drops.\n- They can be revived through life transfer.\n- All ghosts revive after a stage clear.\n\nWhen all players die:\n\n- A team wipe occurs only after every participant has entered the ghost/revivable state.\n- A synchronized buffer of 180 normal logic frames (about 3 seconds) follows.\n- The run then ends, without continues.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Shared controls and the end of a run",
+        "id": "shared-controls",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "Any player can advance dialogue, pause or resume. Pausing stops simulation for everyone; pressing R while paused restarts the run for everyone.\n\nThe run ends after the team-wipe rescue buffer, a full clear or confirmed exit. Endings, result menus, names, replay saving and returning to the title are then controlled independently. After playing the last confirmed frame, spectators can choose a native replay slot, enter a name and save the complete multiplayer replay locally.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Automatic Power-item distribution",
+        "id": "section-6",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- At the point of collection, red items target the **nearest controllable player below full Power**; when everyone is full, they target the nearest controllable player. Ties favor the lower seat number.\n- **This also applies to collecting below the collection line.** The recipient need not cross the line and is not limited by the 20-pixel manual-transfer range.\n- A player below full Power collects normally. If a full-Power player touches a red item, it flies to the nearest teammate below full Power. If everyone is full, collection is normal.\n- A flying item keeps its recipient, but retargets the nearest non-full teammate if that recipient reaches full Power. Ghosts and inactive seats cannot receive red items.\n- When the whole team is full, the game's original full-Power item and scoring rules apply.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Life transfer",
+        "id": "life-transfer",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "To transfer a life:\n\n1. Move within 20 pixels of a teammate.\n2. The donor must **release the fire button** and hold at least 1 spare life.\n3. **Tap Shift / Focus 5 times**, with no more than 24 logic frames (about 0.4 seconds) between presses.\n\nEffects:\n\n- The donor loses 1 spare life. A controllable recipient receives a homing life item and gains 1 spare life.\n- A ghost recipient **revives**.\n- Priority is: ghosts, then fewer spare lives, then lower seat number.\n- Holding counts as one press. Shooting, timing out or leaving range resets the count.\n- The third and fourth taps show `L 3/5` and `L 4/5`. The fifth transfers a life; release Focus and tap 5 more times for another transfer.\n\nAdditional effects for a revived ghost:\n\n- Bonus lives alone do not revive ghosts; a teammate must transfer a life, or the stage must end.\n- Power becomes half of that shot type's maximum.\n- Bombs return to the initial count.\n- Revived players gain about 4 seconds of invulnerability. Bullets stay on screen.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Power transfer",
+        "id": "power-transfer",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "To transfer Power:\n\n- Move within 20 pixels of a teammate.\n- The donor taps fire 5 times.\n- No more than 24 logic frames (about 0.4 seconds) may separate taps.\n\nEffects:\n\n- A transfer counter appears above the donor from the third tap.\n- The corresponding Power is deducted, and equivalent homing items fly to the recipient.\n\nOn the 0–128 Power scale, each transfer sends 20 Power (2 large P items and 4 small P items).\n\nLimits:\n\n- The donor must hold the full amount required for one transfer.\n- The recipient must be below full Power.\n- Priority is lower Power, then lower seat number.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Unlock synchronization",
+        "id": "unlocks",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "Extra, characters and practice stages unlock for co-op. These unlocks are temporary. You can save replays.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Rank adjustments",
+        "id": "section-10",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Dying or bombing reduces Rank less than in single-player.\n- The reduction is divided by player count.\n- This prevents simultaneous deaths from lowering difficulty too quickly.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Other rules",
+        "id": "item-drops",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Spell captures and failures are shared.\n- Score- or point-item-based extends are distributed to teammates, subject to individual life caps.\n- In games with bombs, the initial count for each shot type is one below the original, with a minimum of 1.\n- Normal P drops scale with the number of players. Full Power drop counts stay fixed.\n- Mid-stage life and bomb drops use 1× for 2 players and 2× for 3.\n- Nearby teammates and attached effects, including hitboxes and shots, become more transparent.\n- Spell-card portraits are removed; text declarations remain.\n- When one player uses a Bomb, the whole team gains invulnerability.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Exceptions",
+        "id": "exceptions",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- [PCB](</docs/multiplayer/th07>) turns on-screen P into Cherry items when one player reaches full Power. Phantasm is available in co-op.\n- [IN](</docs/multiplayer/th08>) unlocks all routes in co-op.\n- [MoF](</docs/multiplayer/th10>) doubles enemy P drops with two players and multiplies them by six with three. Each transfer sends 1.00 Power, and rescue gives about 4.67 seconds of invulnerability.\n- [SA](</docs/multiplayer/th11>) gives Marisa A’s Bomb invulnerability to her alone. Marisa C’s shield protects teammates once it absorbs a hit.\n- [LoLK](</docs/multiplayer/th15>) keeps P drop counts fixed and increases the value of small P with more players. Ghosts keep any spare lives they banked when rescued.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/docs/multiplayer/th06": {
+    "title": "EoSD",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "None",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/docs/multiplayer/th07": {
+    "title": "PCB",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> For deathbombs, life transfers, and other shared mechanics, see [Co-op rules](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Power-item distribution",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- When one player reaches full Power, P items on screen become Cherry items and keep moving along their original paths. Once everyone is at full Power, new P drops become Cherry items too.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Cherry+ adjustments",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- With 2 players, the Supernatural Border threshold is 50,000 Cherry+.\n- With 3 players, the threshold is 75,000 Cherry+.\n- Cherry and Cherry+ are shared and Borders activate together. If bombing creates different Border timings, the first player's Border ending ends every player's Border.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Unlocks",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Phantasm is available in co-op.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/docs/multiplayer/th08": {
+    "title": "IN",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> For deathbombs, life transfers, and other shared mechanics, see [Co-op rules](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Human/youkai gauge and team state",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Each player has an independent gauge and human/youkai form. Shots, bombs, deathbombs and team-specific actions follow the selected team.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Familiars",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Whether a familiar can be attacked, and its visible attackable state, depend on the local player.\n- Familiars never deal contact damage.\n- Bullets fired by familiars still follow the host.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Time orbs and night time",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- The team shares time orbs and night time.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Power items",
+        "id": "section-4",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Multiplied P drops spread upward separately. Small P items still give 1 Power; large P items give 8.\n- One full-Power player does not convert P items that other players still need.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Unlocks",
+        "id": "section-5",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- All routes are available in co-op.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/docs/multiplayer/th10": {
+    "title": "MoF",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> For deathbombs, life transfers, and other shared mechanics, see [Co-op rules](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Power items",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- P items on screen turn into point items only after every controllable player reaches full Power.\n- Enemy P drops are twice the original count with 2 players and six times the original count with 3. P spawned directly uses the original count with 2 players and doubles with 3.\n- Each transfer sends **1.00 Power**.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Rescue",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- The revived player gains **280 logic frames (about 4.67 seconds)** of invulnerability.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/docs/multiplayer/th11": {
+    "title": "SA",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> For deathbombs, life transfers, and other shared mechanics, see [Co-op rules](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Item collection and life fragments",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- With a full communication gauge, you can attract items that have been on screen for at least 40 frames from anywhere on screen. Ordinary items keep following the player who attracted them.\n- Life fragment drops match the original. Every 5 shared fragments give each player 1 life, up to 9 spares. Ghosts can store these lives for rescue.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Bombs and shields",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Marisa A’s Bomb gives invulnerability to her alone.\n- Marisa C’s shield gives teammates 40 frames of invulnerability when it absorbs a hit. If it expires unused, it refunds half the spent Power and leaves the spell capture intact.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/docs/multiplayer/th15": {
+    "title": "LoLK",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> For deathbombs, life transfers, and other shared mechanics, see [Co-op rules](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Mode and team accounting",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Co-op uses Legacy mode.\n- The team shares score, point-item value and graze. Different players can graze the same bullet, and each player’s graze glow is visible.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Life fragments and stored lives",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Each qualifying chapter reward or collected life fragment adds **1 shared fragment**, rather than 2 or 3 based on player count.\n- Chapter rewards use the displayed chapter bonus: default thresholds are **1,250,000** for 2 players and **1,500,000** for 3. Before starting, the host can choose **500,000–5,000,000**, in steps of **250,000**. The UI also shows the required graze at 100% destruction (threshold ÷ 5,000). The threshold locks at start and does not fall when a teammate becomes a ghost.\n- Normally, 3 shared fragments grant an extend. In Extra, each of the first 5 extends requires 5 fragments; no further fragment extends follow. Each player can hold at most 8 spare lives.\n- Ghosts keep any spare lives earned from fragments when rescued. Death itself grants no fragment. Whole lives, whole Bombs and Bomb fragments belong to their collector.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Life transfer and rescue",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Rescue grants 280 frames of invulnerability (about 4.67 seconds). Stage-clear revival grants 120 frames (about 2 seconds).",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Power values and gifting",
+        "id": "section-4",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- A small P gives **0.02 Power** in a 2-player room or **0.03 Power** in a 3-player room. A large P remains **1.00 Power**. Room size, not survivors, determines the value; original full-Power scoring remains.\n- P drops use the original counts. Full Power fills the collector’s Power.\n- You need at least **2.00 Power** to give one large P, which costs **1.00 Power**. If the recipient becomes a ghost, the item becomes an ordinary drop.\n- The third and fourth taps show a large-P icon and count. Life-transfer prompts have priority. No Power-transfer prompt appears below the donation threshold.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Bombs and teammate protection",
+        "id": "section-5",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Each life in standard co-op starts with 2 Bombs.\n- Reimu, Marisa and Sanae grant teammates 120 frames of invulnerability when bombing. Each update during the bomb, including the last, tops up teammates to at least 40 frames.\n- Reisen grants at least 30 frames when activating her shield or breaking any layer, including the last. A persistent shield protects only Reisen, not the entire team indefinitely.\n- On mobile, you can keep dragging when Reisen’s shield breaks.",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Display, movement and replays",
+        "id": "section-6",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- Each player sees only their own hitbox, including focused and always-visible hitboxes. Teammate hitboxes remain hidden during fading. Only drawing changes; collision and network state do not.\n- Ghosts gain no graze. Aimed bullets and moving lasers pick controllable players as targets.\n- The 2P panel keeps fragment text and numbers with tighter spacing. The 3P panel removes life/bomb fragment text and numbers but retains icon-fill animations; accounting is unchanged.\n- During mobile dialogue, dragging moves the player when native movement is allowed. Tap to confirm; hold still for 500ms to skip. Dragging does not confirm, skip, auto-fire or double-tap bomb.\n- Multiplayer replays save every seat's character, seed, build identity and confirmed input. Playback requires a compatible multiplayer build; original single-player replays are not accepted. Spell timing uses confirmed logic frames, excluding network waits.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/docs/multiplayer/th09": {
+    "title": "PoFV",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "This is a two-player versus mode. Take a seat to play, or open a room from the lobby to spectate.\n\nThe room keeps a running count of rounds won by each player. Sign in to see your match history on your profile.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  },
+  "/docs/multiplayer/th19": {
+    "title": "UDoALG",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "This is a two-player versus mode. Take a seat to play, or open a room from the lobby to spectate.\n\nThe room updates the score after both players confirm the result. Enable automatic replay saving in room settings.",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "date": "2026-11-09T11:23:58.000Z"
+    }
+  }
+}

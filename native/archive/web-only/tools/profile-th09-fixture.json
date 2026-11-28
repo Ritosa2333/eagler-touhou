@@ -1,0 +1,45 @@
+{
+  "history": {
+    "summary": {"games": 32, "wins": 20},
+    "durationFrames": 145800,
+    "ratingHistory": [
+      {"at": 1795276800000, "rating": 1315},
+      {"at": 1795363200000, "rating": 1386},
+      {"at": 1795449600000, "rating": 1438}
+    ],
+    "rankHistory": [
+      {"at": 1795276800000, "rank": 84},
+      {"at": 1795363200000, "rank": 72},
+      {"at": 1795449600000, "rank": 65}
+    ],
+    "characters": [{"character": 0, "games": 18, "wins": 13}, {"character": 4, "games": 14, "wins": 7}],
+    "characterRatings": [
+      {
+        "character": 0, "rating": 1410, "interval": 90, "games": 18,
+        "history": [{"at": 1795276800000, "rating": 1300}, {"at": 1795449600000, "rating": 1410}]
+      },
+      {"character": 4, "rating": 1290, "interval": 120, "games": 14}
+    ],
+    "duels": [
+      {
+        "duelId": "563a71a3-ee93-4fb8-908a-de3b334f8510",
+        "wins": 2, "losses": 1, "playedAt": 1795449600000, "durationFrames": 7200, "replayCount": 1,
+        "opponent": {"username": "peer", "displayName": "Peer"}
+      },
+      {
+        "duelId": "f0bd4e60-8804-452b-9a80-fb31ea56c231",
+        "wins": 0, "losses": 2, "playedAt": 1795363200000, "durationFrames": 4800,
+        "opponent": null
+      },
+      {
+        "duelId": "8340f323-3182-4f5b-9ee3-5f88ac654ac2",
+        "wins": 1, "losses": 1, "playedAt": 1795276800000, "durationFrames": 3600,
+        "opponent": null
+      }
+    ],
+    "nextCursor": null
+  },
+  "replays": {
+    "files": [{"roundId": "1:2", "characters": [0, 4], "frames": 7200}]
+  }
+}

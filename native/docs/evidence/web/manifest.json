@@ -1,0 +1,3317 @@
+{
+  "revision": "85941f0d564cf10378d2af6b14d41a000bd27612",
+  "origin": "https://touhouonline.com",
+  "captures": [
+    {
+      "screen": "library",
+      "device": "desktop",
+      "address": "/",
+      "pencil": "desktop-library.png",
+      "screenshot": "desktop-library.png",
+      "inventory": "desktop-library.json",
+      "observed": 88
+    },
+    {
+      "screen": "game-detail",
+      "device": "desktop",
+      "address": "/?game=th06",
+      "pencil": "desktop-game-detail.png",
+      "screenshot": "desktop-game-detail.png",
+      "inventory": "desktop-game-detail.json",
+      "observed": 59
+    },
+    {
+      "screen": "login",
+      "device": "desktop",
+      "address": "/login.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-login.png",
+      "inventory": "desktop-login.json",
+      "observed": 24
+    },
+    {
+      "screen": "register",
+      "device": "desktop",
+      "address": "/login.html?lang=zh-CN&mode=register",
+      "pencil": null,
+      "screenshot": "desktop-register.png",
+      "inventory": "desktop-register.json",
+      "observed": 32
+    },
+    {
+      "screen": "announcements-guest",
+      "device": "desktop",
+      "address": "/?section=announcements",
+      "pencil": "desktop-message-center.png",
+      "screenshot": "desktop-announcements-guest.png",
+      "inventory": "desktop-announcements-guest.json",
+      "observed": 22
+    },
+    {
+      "screen": "library",
+      "device": "mobile",
+      "address": "/",
+      "pencil": "mobile-library.png",
+      "screenshot": "mobile-library.png",
+      "inventory": "mobile-library.json",
+      "observed": 56
+    },
+    {
+      "screen": "game-detail",
+      "device": "mobile",
+      "address": "/?game=th06",
+      "pencil": "mobile-game-detail.png",
+      "screenshot": "mobile-game-detail.png",
+      "inventory": "mobile-game-detail.json",
+      "observed": 18
+    },
+    {
+      "screen": "login",
+      "device": "mobile",
+      "address": "/login.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-login.png",
+      "inventory": "mobile-login.json",
+      "observed": 11
+    },
+    {
+      "screen": "register",
+      "device": "mobile",
+      "address": "/login.html?lang=zh-CN&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-register.png",
+      "inventory": "mobile-register.json",
+      "observed": 19
+    },
+    {
+      "screen": "announcements-guest",
+      "device": "mobile",
+      "address": "/?section=announcements",
+      "pencil": "mobile-announcement.png",
+      "screenshot": "mobile-announcements-guest.png",
+      "inventory": "mobile-announcements-guest.json",
+      "observed": 9
+    },
+    {
+      "screen": "library",
+      "device": "mobile-narrow",
+      "address": "/",
+      "pencil": null,
+      "screenshot": "mobile-narrow-library.png",
+      "inventory": "mobile-narrow-library.json",
+      "observed": 56
+    },
+    {
+      "screen": "game-detail",
+      "device": "mobile-narrow",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-detail.png",
+      "inventory": "mobile-narrow-game-detail.json",
+      "observed": 18
+    },
+    {
+      "screen": "login",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-login.png",
+      "inventory": "mobile-narrow-login.json",
+      "observed": 11
+    },
+    {
+      "screen": "register",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=zh-CN&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-narrow-register.png",
+      "inventory": "mobile-narrow-register.json",
+      "observed": 19
+    },
+    {
+      "screen": "announcements-guest",
+      "device": "mobile-narrow",
+      "address": "/?section=announcements",
+      "pencil": null,
+      "screenshot": "mobile-narrow-announcements-guest.png",
+      "inventory": "mobile-narrow-announcements-guest.json",
+      "observed": 9
+    },
+    {
+      "screen": "library-list",
+      "device": "desktop",
+      "address": "/",
+      "pencil": null,
+      "screenshot": "desktop-library-list.png",
+      "inventory": "desktop-library-list.json",
+      "observed": 89
+    },
+    {
+      "screen": "game-settings",
+      "device": "desktop",
+      "address": "/?game=th06",
+      "pencil": "desktop-game-settings.png",
+      "screenshot": "desktop-game-settings.png",
+      "inventory": "desktop-game-settings.json",
+      "observed": 61
+    },
+    {
+      "screen": "lobby",
+      "device": "desktop",
+      "address": "/lobby.html",
+      "pencil": null,
+      "screenshot": "desktop-lobby.png",
+      "inventory": "desktop-lobby.json",
+      "observed": 76
+    },
+    {
+      "screen": "reset",
+      "device": "desktop",
+      "address": "/login.html?lang=zh-CN&mode=reset",
+      "pencil": null,
+      "screenshot": "desktop-reset.png",
+      "inventory": "desktop-reset.json",
+      "observed": 21
+    },
+    {
+      "screen": "messages-guest",
+      "device": "desktop",
+      "address": "/?section=messages",
+      "pencil": null,
+      "screenshot": "desktop-messages-guest.png",
+      "inventory": "desktop-messages-guest.json",
+      "observed": 20
+    },
+    {
+      "screen": "faq",
+      "device": "desktop",
+      "address": "/faq.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-faq.png",
+      "inventory": "desktop-faq.json",
+      "observed": 58
+    },
+    {
+      "screen": "terms",
+      "device": "desktop",
+      "address": "/terms.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-terms.png",
+      "inventory": "desktop-terms.json",
+      "observed": 33
+    },
+    {
+      "screen": "privacy",
+      "device": "desktop",
+      "address": "/privacy.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-privacy.png",
+      "inventory": "desktop-privacy.json",
+      "observed": 32
+    },
+    {
+      "screen": "library-list",
+      "device": "mobile",
+      "address": "/",
+      "pencil": null,
+      "screenshot": "mobile-library-list.png",
+      "inventory": "mobile-library-list.json",
+      "observed": 56
+    },
+    {
+      "screen": "game-settings",
+      "device": "mobile",
+      "address": "/?game=th06",
+      "pencil": "mobile-game-settings.png",
+      "screenshot": "mobile-game-settings.png",
+      "inventory": "mobile-game-settings.json",
+      "observed": 25
+    },
+    {
+      "screen": "lobby",
+      "device": "mobile",
+      "address": "/lobby.html",
+      "pencil": null,
+      "screenshot": "mobile-lobby.png",
+      "inventory": "mobile-lobby.json",
+      "observed": 56
+    },
+    {
+      "screen": "home-guest",
+      "device": "mobile",
+      "address": "/?section=home",
+      "pencil": "mobile-home-guest.png",
+      "screenshot": "mobile-home-guest.png",
+      "inventory": "mobile-home-guest.json",
+      "observed": 8
+    },
+    {
+      "screen": "reset",
+      "device": "mobile",
+      "address": "/login.html?lang=zh-CN&mode=reset",
+      "pencil": null,
+      "screenshot": "mobile-reset.png",
+      "inventory": "mobile-reset.json",
+      "observed": 7
+    },
+    {
+      "screen": "messages-guest",
+      "device": "mobile",
+      "address": "/?section=messages",
+      "pencil": null,
+      "screenshot": "mobile-messages-guest.png",
+      "inventory": "mobile-messages-guest.json",
+      "observed": 8
+    },
+    {
+      "screen": "faq",
+      "device": "mobile",
+      "address": "/faq.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-faq.png",
+      "inventory": "mobile-faq.json",
+      "observed": 31
+    },
+    {
+      "screen": "terms",
+      "device": "mobile",
+      "address": "/terms.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-terms.png",
+      "inventory": "mobile-terms.json",
+      "observed": 11
+    },
+    {
+      "screen": "privacy",
+      "device": "mobile",
+      "address": "/privacy.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-privacy.png",
+      "inventory": "mobile-privacy.json",
+      "observed": 10
+    },
+    {
+      "screen": "library-list",
+      "device": "mobile-narrow",
+      "address": "/",
+      "pencil": null,
+      "screenshot": "mobile-narrow-library-list.png",
+      "inventory": "mobile-narrow-library-list.json",
+      "observed": 56
+    },
+    {
+      "screen": "game-settings",
+      "device": "mobile-narrow",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-settings.png",
+      "inventory": "mobile-narrow-game-settings.json",
+      "observed": 23
+    },
+    {
+      "screen": "lobby",
+      "device": "mobile-narrow",
+      "address": "/lobby.html",
+      "pencil": null,
+      "screenshot": "mobile-narrow-lobby.png",
+      "inventory": "mobile-narrow-lobby.json",
+      "observed": 42
+    },
+    {
+      "screen": "home-guest",
+      "device": "mobile-narrow",
+      "address": "/?section=home",
+      "pencil": null,
+      "screenshot": "mobile-narrow-home-guest.png",
+      "inventory": "mobile-narrow-home-guest.json",
+      "observed": 8
+    },
+    {
+      "screen": "reset",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=zh-CN&mode=reset",
+      "pencil": null,
+      "screenshot": "mobile-narrow-reset.png",
+      "inventory": "mobile-narrow-reset.json",
+      "observed": 7
+    },
+    {
+      "screen": "messages-guest",
+      "device": "mobile-narrow",
+      "address": "/?section=messages",
+      "pencil": null,
+      "screenshot": "mobile-narrow-messages-guest.png",
+      "inventory": "mobile-narrow-messages-guest.json",
+      "observed": 8
+    },
+    {
+      "screen": "faq",
+      "device": "mobile-narrow",
+      "address": "/faq.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-faq.png",
+      "inventory": "mobile-narrow-faq.json",
+      "observed": 31
+    },
+    {
+      "screen": "terms",
+      "device": "mobile-narrow",
+      "address": "/terms.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-terms.png",
+      "inventory": "mobile-narrow-terms.json",
+      "observed": 11
+    },
+    {
+      "screen": "privacy",
+      "device": "mobile-narrow",
+      "address": "/privacy.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-privacy.png",
+      "inventory": "mobile-narrow-privacy.json",
+      "observed": 10
+    },
+    {
+      "screen": "game-settings-display",
+      "device": "desktop",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "desktop-game-settings-display.png",
+      "inventory": "desktop-game-settings-display.json",
+      "observed": 67
+    },
+    {
+      "screen": "game-data-import",
+      "device": "desktop",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "desktop-game-data-import.png",
+      "inventory": "desktop-game-data-import.json",
+      "observed": 66
+    },
+    {
+      "screen": "game-data-import",
+      "device": "mobile",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-game-data-import.png",
+      "inventory": "mobile-game-data-import.json",
+      "observed": 24
+    },
+    {
+      "screen": "game-data-import",
+      "device": "mobile-narrow",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-data-import.png",
+      "inventory": "mobile-narrow-game-data-import.json",
+      "observed": 24
+    },
+    {
+      "screen": "game-keyboard",
+      "device": "desktop",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "desktop-game-keyboard.png",
+      "inventory": "desktop-game-keyboard.json",
+      "observed": 99
+    },
+    {
+      "screen": "game-keyboard",
+      "device": "mobile",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-game-keyboard.png",
+      "inventory": "mobile-game-keyboard.json",
+      "observed": 63
+    },
+    {
+      "screen": "game-keyboard",
+      "device": "mobile-narrow",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-keyboard.png",
+      "inventory": "mobile-narrow-game-keyboard.json",
+      "observed": 63
+    },
+    {
+      "screen": "game-gamepad",
+      "device": "desktop",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "desktop-game-gamepad.png",
+      "inventory": "desktop-game-gamepad.json",
+      "observed": 73
+    },
+    {
+      "screen": "game-gamepad",
+      "device": "mobile",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-game-gamepad.png",
+      "inventory": "mobile-game-gamepad.json",
+      "observed": 37
+    },
+    {
+      "screen": "game-gamepad",
+      "device": "mobile-narrow",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-gamepad.png",
+      "inventory": "mobile-narrow-game-gamepad.json",
+      "observed": 37
+    },
+    {
+      "screen": "th09-local-duel",
+      "device": "desktop",
+      "address": "/?game=th09",
+      "pencil": null,
+      "screenshot": "desktop-th09-local-duel.png",
+      "inventory": "desktop-th09-local-duel.json",
+      "observed": 102
+    },
+    {
+      "screen": "th09-local-duel",
+      "device": "mobile",
+      "address": "/?game=th09",
+      "pencil": null,
+      "screenshot": "mobile-th09-local-duel.png",
+      "inventory": "mobile-th09-local-duel.json",
+      "observed": 65
+    },
+    {
+      "screen": "th09-local-duel",
+      "device": "mobile-narrow",
+      "address": "/?game=th09",
+      "pencil": null,
+      "screenshot": "mobile-narrow-th09-local-duel.png",
+      "inventory": "mobile-narrow-th09-local-duel.json",
+      "observed": 65
+    },
+    {
+      "screen": "touch-layout",
+      "device": "desktop",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "desktop-touch-layout.png",
+      "inventory": "desktop-touch-layout.json",
+      "observed": 82
+    },
+    {
+      "screen": "touch-layout-fighting",
+      "device": "desktop",
+      "address": "/?game=th075",
+      "pencil": null,
+      "screenshot": "desktop-touch-layout-fighting.png",
+      "inventory": "desktop-touch-layout-fighting.json",
+      "observed": 74
+    },
+    {
+      "screen": "touch-layout",
+      "device": "mobile",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-touch-layout.png",
+      "inventory": "mobile-touch-layout.json",
+      "observed": 60
+    },
+    {
+      "screen": "touch-layout-fighting",
+      "device": "mobile",
+      "address": "/?game=th075",
+      "pencil": null,
+      "screenshot": "mobile-touch-layout-fighting.png",
+      "inventory": "mobile-touch-layout-fighting.json",
+      "observed": 49
+    },
+    {
+      "screen": "touch-layout",
+      "device": "mobile-narrow",
+      "address": "/?game=th06",
+      "pencil": null,
+      "screenshot": "mobile-narrow-touch-layout.png",
+      "inventory": "mobile-narrow-touch-layout.json",
+      "observed": 60
+    },
+    {
+      "screen": "touch-layout-fighting",
+      "device": "mobile-narrow",
+      "address": "/?game=th075",
+      "pencil": null,
+      "screenshot": "mobile-narrow-touch-layout-fighting.png",
+      "inventory": "mobile-narrow-touch-layout-fighting.json",
+      "observed": 49
+    },
+    {
+      "screen": "game-files",
+      "device": "desktop",
+      "address": "/?game=th09",
+      "pencil": null,
+      "screenshot": "desktop-game-files.png",
+      "inventory": "desktop-game-files.json",
+      "observed": 65
+    },
+    {
+      "screen": "game-files",
+      "device": "mobile",
+      "address": "/?game=th09",
+      "pencil": null,
+      "screenshot": "mobile-game-files.png",
+      "inventory": "mobile-game-files.json",
+      "observed": 28
+    },
+    {
+      "screen": "game-files",
+      "device": "mobile-narrow",
+      "address": "/?game=th09",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-files.png",
+      "inventory": "mobile-narrow-game-files.json",
+      "observed": 28
+    },
+    {
+      "screen": "registration-terms",
+      "device": "desktop",
+      "address": "/login.html?lang=zh-CN&mode=register",
+      "pencil": null,
+      "screenshot": "desktop-registration-terms.png",
+      "inventory": "desktop-registration-terms.json",
+      "observed": 42
+    },
+    {
+      "screen": "registration-terms",
+      "device": "mobile",
+      "address": "/login.html?lang=zh-CN&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-registration-terms.png",
+      "inventory": "mobile-registration-terms.json",
+      "observed": 29
+    },
+    {
+      "screen": "registration-terms",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=zh-CN&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-narrow-registration-terms.png",
+      "inventory": "mobile-narrow-registration-terms.json",
+      "observed": 29
+    },
+    {
+      "screen": "profile-public",
+      "device": "desktop",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-profile-public.png",
+      "inventory": "desktop-profile-public.json",
+      "observed": 47
+    },
+    {
+      "screen": "profile-all-games",
+      "device": "desktop",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": "desktop-profile.png",
+      "screenshot": "desktop-profile-all-games.png",
+      "inventory": "desktop-profile-all-games.json",
+      "observed": 34
+    },
+    {
+      "screen": "profile-social-followers",
+      "device": "desktop",
+      "address": "/u/ritosa?lang=zh-CN&social=followers",
+      "pencil": null,
+      "screenshot": "desktop-profile-social-followers.png",
+      "inventory": "desktop-profile-social-followers.json",
+      "observed": 34
+    },
+    {
+      "screen": "profile-public",
+      "device": "mobile",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-profile-public.png",
+      "inventory": "mobile-profile-public.json",
+      "observed": 31
+    },
+    {
+      "screen": "profile-all-games",
+      "device": "mobile",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": "mobile-profile.png",
+      "screenshot": "mobile-profile-all-games.png",
+      "inventory": "mobile-profile-all-games.json",
+      "observed": 21
+    },
+    {
+      "screen": "profile-social-followers",
+      "device": "mobile",
+      "address": "/u/ritosa?lang=zh-CN&social=followers",
+      "pencil": null,
+      "screenshot": "mobile-profile-social-followers.png",
+      "inventory": "mobile-profile-social-followers.json",
+      "observed": 20
+    },
+    {
+      "screen": "profile-public",
+      "device": "mobile-narrow",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-profile-public.png",
+      "inventory": "mobile-narrow-profile-public.json",
+      "observed": 31
+    },
+    {
+      "screen": "profile-all-games",
+      "device": "mobile-narrow",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-profile-all-games.png",
+      "inventory": "mobile-narrow-profile-all-games.json",
+      "observed": 21
+    },
+    {
+      "screen": "profile-social-followers",
+      "device": "mobile-narrow",
+      "address": "/u/ritosa?lang=zh-CN&social=followers",
+      "pencil": null,
+      "screenshot": "mobile-narrow-profile-social-followers.png",
+      "inventory": "mobile-narrow-profile-social-followers.json",
+      "observed": 20
+    },
+    {
+      "screen": "profile-edit",
+      "device": "desktop",
+      "address": "/u/fixture?lang=zh-CN#edit",
+      "pencil": null,
+      "screenshot": "desktop-profile-edit.png",
+      "inventory": "desktop-profile-edit.json",
+      "observed": 45,
+      "fixture": "profile-editor"
+    },
+    {
+      "screen": "profile-edit",
+      "device": "mobile",
+      "address": "/u/fixture?lang=zh-CN#edit",
+      "pencil": null,
+      "screenshot": "mobile-profile-edit.png",
+      "inventory": "mobile-profile-edit.json",
+      "observed": 25,
+      "fixture": "profile-editor"
+    },
+    {
+      "screen": "profile-edit",
+      "device": "mobile-narrow",
+      "address": "/u/fixture?lang=zh-CN#edit",
+      "pencil": null,
+      "screenshot": "mobile-narrow-profile-edit.png",
+      "inventory": "mobile-narrow-profile-edit.json",
+      "observed": 25,
+      "fixture": "profile-editor"
+    },
+    {
+      "screen": "account-security",
+      "device": "desktop",
+      "address": "/u/fixture?lang=zh-CN#security",
+      "pencil": null,
+      "screenshot": "desktop-account-security.png",
+      "inventory": "desktop-account-security.json",
+      "observed": 34,
+      "fixture": "profile-editor"
+    },
+    {
+      "screen": "account-security-password",
+      "device": "desktop",
+      "address": "/u/fixture?lang=zh-CN#security",
+      "pencil": null,
+      "screenshot": "desktop-account-security-password.png",
+      "inventory": "desktop-account-security-password.json",
+      "observed": 34,
+      "fixture": "profile-editor"
+    },
+    {
+      "screen": "account-security",
+      "device": "mobile",
+      "address": "/u/fixture?lang=zh-CN#security",
+      "pencil": null,
+      "screenshot": "mobile-account-security.png",
+      "inventory": "mobile-account-security.json",
+      "observed": 14,
+      "fixture": "profile-editor"
+    },
+    {
+      "screen": "account-security-password",
+      "device": "mobile",
+      "address": "/u/fixture?lang=zh-CN#security",
+      "pencil": null,
+      "screenshot": "mobile-account-security-password.png",
+      "inventory": "mobile-account-security-password.json",
+      "observed": 14,
+      "fixture": "profile-editor"
+    },
+    {
+      "screen": "account-security",
+      "device": "mobile-narrow",
+      "address": "/u/fixture?lang=zh-CN#security",
+      "pencil": null,
+      "screenshot": "mobile-narrow-account-security.png",
+      "inventory": "mobile-narrow-account-security.json",
+      "observed": 14,
+      "fixture": "profile-editor"
+    },
+    {
+      "screen": "account-security-password",
+      "device": "mobile-narrow",
+      "address": "/u/fixture?lang=zh-CN#security",
+      "pencil": null,
+      "screenshot": "mobile-narrow-account-security-password.png",
+      "inventory": "mobile-narrow-account-security-password.json",
+      "observed": 14,
+      "fixture": "profile-editor"
+    },
+    {
+      "screen": "lobby-live",
+      "device": "desktop",
+      "address": "/lobby.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-lobby-live.png",
+      "inventory": "desktop-lobby-live.json",
+      "observed": 70,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-disconnected",
+      "device": "desktop",
+      "address": "/lobby.html?lang=zh-CN&capture=disconnected",
+      "pencil": null,
+      "screenshot": "desktop-lobby-disconnected.png",
+      "inventory": "desktop-lobby-disconnected.json",
+      "observed": 72,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-live",
+      "device": "mobile",
+      "address": "/lobby.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-lobby-live.png",
+      "inventory": "mobile-lobby-live.json",
+      "observed": 50,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-disconnected",
+      "device": "mobile",
+      "address": "/lobby.html?lang=zh-CN&capture=disconnected",
+      "pencil": null,
+      "screenshot": "mobile-lobby-disconnected.png",
+      "inventory": "mobile-lobby-disconnected.json",
+      "observed": 52,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-live",
+      "device": "mobile-narrow",
+      "address": "/lobby.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-lobby-live.png",
+      "inventory": "mobile-narrow-lobby-live.json",
+      "observed": 50,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-disconnected",
+      "device": "mobile-narrow",
+      "address": "/lobby.html?lang=zh-CN&capture=disconnected",
+      "pencil": null,
+      "screenshot": "mobile-narrow-lobby-disconnected.png",
+      "inventory": "mobile-narrow-lobby-disconnected.json",
+      "observed": 52,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "room-waiting",
+      "device": "desktop",
+      "address": "/?lang=zh-CN&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "desktop-room-waiting.png",
+      "inventory": "desktop-room-waiting.json",
+      "observed": 51,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-chat",
+      "device": "desktop",
+      "address": "/?lang=zh-CN&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "desktop-room-chat.png",
+      "inventory": "desktop-room-chat.json",
+      "observed": 52,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-waiting",
+      "device": "mobile",
+      "address": "/?lang=zh-CN&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-room-waiting.png",
+      "inventory": "mobile-room-waiting.json",
+      "observed": 29,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-chat",
+      "device": "mobile",
+      "address": "/?lang=zh-CN&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-room-chat.png",
+      "inventory": "mobile-room-chat.json",
+      "observed": 32,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-waiting",
+      "device": "mobile-narrow",
+      "address": "/?lang=zh-CN&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-narrow-room-waiting.png",
+      "inventory": "mobile-narrow-room-waiting.json",
+      "observed": 29,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-chat",
+      "device": "mobile-narrow",
+      "address": "/?lang=zh-CN&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-narrow-room-chat.png",
+      "inventory": "mobile-narrow-room-chat.json",
+      "observed": 32,
+      "fixture": "room"
+    },
+    {
+      "screen": "game-progress-guest",
+      "device": "desktop",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-game-progress-guest.png",
+      "inventory": "desktop-game-progress-guest.json",
+      "observed": 61
+    },
+    {
+      "screen": "game-progress",
+      "device": "desktop",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-game-progress.png",
+      "inventory": "desktop-game-progress.json",
+      "observed": 100,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "spell-map",
+      "device": "desktop",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": "desktop-spell-map.png",
+      "screenshot": "desktop-spell-map.png",
+      "inventory": "desktop-spell-map.json",
+      "observed": 100,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "spell-list",
+      "device": "desktop",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": "desktop-spell-list.png",
+      "screenshot": "desktop-spell-list.png",
+      "inventory": "desktop-spell-list.json",
+      "observed": 84,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "game-progress-guest",
+      "device": "mobile",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-game-progress-guest.png",
+      "inventory": "mobile-game-progress-guest.json",
+      "observed": 19
+    },
+    {
+      "screen": "game-progress",
+      "device": "mobile",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-game-progress.png",
+      "inventory": "mobile-game-progress.json",
+      "observed": 58,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "spell-map",
+      "device": "mobile",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": "mobile-spell-map.png",
+      "screenshot": "mobile-spell-map.png",
+      "inventory": "mobile-spell-map.json",
+      "observed": 58,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "spell-list",
+      "device": "mobile",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": "mobile-spell-list.png",
+      "screenshot": "mobile-spell-list.png",
+      "inventory": "mobile-spell-list.json",
+      "observed": 42,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "game-progress-guest",
+      "device": "mobile-narrow",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-progress-guest.png",
+      "inventory": "mobile-narrow-game-progress-guest.json",
+      "observed": 19
+    },
+    {
+      "screen": "game-progress",
+      "device": "mobile-narrow",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-progress.png",
+      "inventory": "mobile-narrow-game-progress.json",
+      "observed": 58,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "spell-map",
+      "device": "mobile-narrow",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-spell-map.png",
+      "inventory": "mobile-narrow-spell-map.json",
+      "observed": 58,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "spell-list",
+      "device": "mobile-narrow",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-spell-list.png",
+      "inventory": "mobile-narrow-spell-list.json",
+      "observed": 42,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "cloud-saves",
+      "device": "desktop",
+      "address": "/u/fixture?lang=zh-CN#game-settings",
+      "pencil": null,
+      "screenshot": "desktop-cloud-saves.png",
+      "inventory": "desktop-cloud-saves.json",
+      "observed": 38,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "cloud-saves",
+      "device": "mobile",
+      "address": "/u/fixture?lang=zh-CN#game-settings",
+      "pencil": null,
+      "screenshot": "mobile-cloud-saves.png",
+      "inventory": "mobile-cloud-saves.json",
+      "observed": 18,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "cloud-saves",
+      "device": "mobile-narrow",
+      "address": "/u/fixture?lang=zh-CN#game-settings",
+      "pencil": null,
+      "screenshot": "mobile-narrow-cloud-saves.png",
+      "inventory": "mobile-narrow-cloud-saves.json",
+      "observed": 18,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "profile-whr",
+      "device": "desktop",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": "desktop-whr.png",
+      "screenshot": "desktop-profile-whr.png",
+      "inventory": "desktop-profile-whr.json",
+      "observed": 48
+    },
+    {
+      "screen": "profile-whr-comparison",
+      "device": "desktop",
+      "address": "/u/ritosa?lang=zh-CN&character=0",
+      "pencil": null,
+      "screenshot": "desktop-profile-whr-comparison.png",
+      "inventory": "desktop-profile-whr-comparison.json",
+      "observed": 48
+    },
+    {
+      "screen": "profile-duel-replays",
+      "device": "desktop",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-profile-duel-replays.png",
+      "inventory": "desktop-profile-duel-replays.json",
+      "observed": 64
+    },
+    {
+      "screen": "profile-whr",
+      "device": "mobile",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": "mobile-whr.png",
+      "screenshot": "mobile-profile-whr.png",
+      "inventory": "mobile-profile-whr.json",
+      "observed": 31
+    },
+    {
+      "screen": "profile-whr-comparison",
+      "device": "mobile",
+      "address": "/u/ritosa?lang=zh-CN&character=0",
+      "pencil": null,
+      "screenshot": "mobile-profile-whr-comparison.png",
+      "inventory": "mobile-profile-whr-comparison.json",
+      "observed": 11
+    },
+    {
+      "screen": "profile-duel-replays",
+      "device": "mobile",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": "mobile-match-record.png",
+      "screenshot": "mobile-profile-duel-replays.png",
+      "inventory": "mobile-profile-duel-replays.json",
+      "observed": 47
+    },
+    {
+      "screen": "profile-whr",
+      "device": "mobile-narrow",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-profile-whr.png",
+      "inventory": "mobile-narrow-profile-whr.json",
+      "observed": 31
+    },
+    {
+      "screen": "profile-whr-comparison",
+      "device": "mobile-narrow",
+      "address": "/u/ritosa?lang=zh-CN&character=0",
+      "pencil": null,
+      "screenshot": "mobile-narrow-profile-whr-comparison.png",
+      "inventory": "mobile-narrow-profile-whr-comparison.json",
+      "observed": 11
+    },
+    {
+      "screen": "profile-duel-replays",
+      "device": "mobile-narrow",
+      "address": "/u/ritosa?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-profile-duel-replays.png",
+      "inventory": "mobile-narrow-profile-duel-replays.json",
+      "observed": 47
+    },
+    {
+      "screen": "th09-board",
+      "device": "desktop",
+      "address": "/ratings.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-th09-board.png",
+      "inventory": "desktop-th09-board.json",
+      "observed": 144
+    },
+    {
+      "screen": "th09-board",
+      "device": "mobile",
+      "address": "/ratings.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-th09-board.png",
+      "inventory": "mobile-th09-board.json",
+      "observed": 181
+    },
+    {
+      "screen": "th09-board",
+      "device": "mobile-narrow",
+      "address": "/ratings.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-th09-board.png",
+      "inventory": "mobile-narrow-th09-board.json",
+      "observed": 181
+    },
+    {
+      "screen": "site-faq",
+      "device": "desktop",
+      "address": "/faq.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-faq.png",
+      "inventory": "desktop-site-faq.json",
+      "observed": 58
+    },
+    {
+      "screen": "site-about",
+      "device": "desktop",
+      "address": "/about.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-about.png",
+      "inventory": "desktop-site-about.json",
+      "observed": 36
+    },
+    {
+      "screen": "site-guide",
+      "device": "desktop",
+      "address": "/docs/multiplayer/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-guide.png",
+      "inventory": "desktop-site-guide.json",
+      "observed": 32
+    },
+    {
+      "screen": "site-guide-coop",
+      "device": "desktop",
+      "address": "/docs/multiplayer/coop/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-guide-coop.png",
+      "inventory": "desktop-site-guide-coop.json",
+      "observed": 72
+    },
+    {
+      "screen": "site-uptime",
+      "device": "desktop",
+      "address": "/uptime/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-uptime.png",
+      "inventory": "desktop-site-uptime.json",
+      "observed": 22
+    },
+    {
+      "screen": "site-donation",
+      "device": "desktop",
+      "address": "/",
+      "pencil": null,
+      "screenshot": "desktop-site-donation.png",
+      "inventory": "desktop-site-donation.json",
+      "observed": 92
+    },
+    {
+      "screen": "site-first-use",
+      "device": "desktop",
+      "address": "/guide.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-first-use.png",
+      "inventory": "desktop-site-first-use.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-progress",
+      "device": "desktop",
+      "address": "/faq.html?lang=zh-CN&view=progress",
+      "pencil": null,
+      "screenshot": "desktop-site-progress.png",
+      "inventory": "desktop-site-progress.json",
+      "observed": 140
+    },
+    {
+      "screen": "site-terms",
+      "device": "desktop",
+      "address": "/terms.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-terms.png",
+      "inventory": "desktop-site-terms.json",
+      "observed": 32
+    },
+    {
+      "screen": "site-privacy",
+      "device": "desktop",
+      "address": "/privacy.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-privacy.png",
+      "inventory": "desktop-site-privacy.json",
+      "observed": 32
+    },
+    {
+      "screen": "site-th06",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th06/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-th06.png",
+      "inventory": "desktop-site-th06.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-th07",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th07/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-th07.png",
+      "inventory": "desktop-site-th07.json",
+      "observed": 43
+    },
+    {
+      "screen": "site-th08",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th08/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-th08.png",
+      "inventory": "desktop-site-th08.json",
+      "observed": 47
+    },
+    {
+      "screen": "site-th10",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th10/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-th10.png",
+      "inventory": "desktop-site-th10.json",
+      "observed": 41
+    },
+    {
+      "screen": "site-th11",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th11/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-th11.png",
+      "inventory": "desktop-site-th11.json",
+      "observed": 41
+    },
+    {
+      "screen": "site-th15",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th15/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-th15.png",
+      "inventory": "desktop-site-th15.json",
+      "observed": 49
+    },
+    {
+      "screen": "site-th09",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th09/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-th09.png",
+      "inventory": "desktop-site-th09.json",
+      "observed": 30
+    },
+    {
+      "screen": "site-th19",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th19/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-site-th19.png",
+      "inventory": "desktop-site-th19.json",
+      "observed": 29
+    },
+    {
+      "screen": "site-faq",
+      "device": "mobile",
+      "address": "/faq.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-faq.png",
+      "inventory": "mobile-site-faq.json",
+      "observed": 31
+    },
+    {
+      "screen": "site-about",
+      "device": "mobile",
+      "address": "/about.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-about.png",
+      "inventory": "mobile-site-about.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-guide",
+      "device": "mobile",
+      "address": "/docs/multiplayer/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-guide.png",
+      "inventory": "mobile-site-guide.json",
+      "observed": 12
+    },
+    {
+      "screen": "site-guide-coop",
+      "device": "mobile",
+      "address": "/docs/multiplayer/coop/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-guide-coop.png",
+      "inventory": "mobile-site-guide-coop.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-uptime",
+      "device": "mobile",
+      "address": "/uptime/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-uptime.png",
+      "inventory": "mobile-site-uptime.json",
+      "observed": 9
+    },
+    {
+      "screen": "site-first-use",
+      "device": "mobile",
+      "address": "/guide.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-first-use.png",
+      "inventory": "mobile-site-first-use.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-progress",
+      "device": "mobile",
+      "address": "/faq.html?lang=zh-CN&view=progress",
+      "pencil": null,
+      "screenshot": "mobile-site-progress.png",
+      "inventory": "mobile-site-progress.json",
+      "observed": 106
+    },
+    {
+      "screen": "site-terms",
+      "device": "mobile",
+      "address": "/terms.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-terms.png",
+      "inventory": "mobile-site-terms.json",
+      "observed": 11
+    },
+    {
+      "screen": "site-privacy",
+      "device": "mobile",
+      "address": "/privacy.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-privacy.png",
+      "inventory": "mobile-site-privacy.json",
+      "observed": 10
+    },
+    {
+      "screen": "site-th06",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th06/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-th06.png",
+      "inventory": "mobile-site-th06.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th07",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th07/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-th07.png",
+      "inventory": "mobile-site-th07.json",
+      "observed": 14
+    },
+    {
+      "screen": "site-th08",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th08/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-th08.png",
+      "inventory": "mobile-site-th08.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-th10",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th10/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-th10.png",
+      "inventory": "mobile-site-th10.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th11",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th11/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-th11.png",
+      "inventory": "mobile-site-th11.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th15",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th15/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-th15.png",
+      "inventory": "mobile-site-th15.json",
+      "observed": 17
+    },
+    {
+      "screen": "site-th09",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th09/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-th09.png",
+      "inventory": "mobile-site-th09.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th19",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th19/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-site-th19.png",
+      "inventory": "mobile-site-th19.json",
+      "observed": 7
+    },
+    {
+      "screen": "library-drawer",
+      "device": "mobile",
+      "address": "/",
+      "pencil": "mobile-drawer-guest.png",
+      "screenshot": "mobile-library-drawer.png",
+      "inventory": "mobile-library-drawer.json",
+      "observed": 72
+    },
+    {
+      "screen": "site-faq",
+      "device": "mobile-narrow",
+      "address": "/faq.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-faq.png",
+      "inventory": "mobile-narrow-site-faq.json",
+      "observed": 31
+    },
+    {
+      "screen": "site-about",
+      "device": "mobile-narrow",
+      "address": "/about.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-about.png",
+      "inventory": "mobile-narrow-site-about.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-guide",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-guide.png",
+      "inventory": "mobile-narrow-site-guide.json",
+      "observed": 12
+    },
+    {
+      "screen": "site-guide-coop",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/coop/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-guide-coop.png",
+      "inventory": "mobile-narrow-site-guide-coop.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-uptime",
+      "device": "mobile-narrow",
+      "address": "/uptime/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-uptime.png",
+      "inventory": "mobile-narrow-site-uptime.json",
+      "observed": 9
+    },
+    {
+      "screen": "site-first-use",
+      "device": "mobile-narrow",
+      "address": "/guide.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-first-use.png",
+      "inventory": "mobile-narrow-site-first-use.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-progress",
+      "device": "mobile-narrow",
+      "address": "/faq.html?lang=zh-CN&view=progress",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-progress.png",
+      "inventory": "mobile-narrow-site-progress.json",
+      "observed": 106
+    },
+    {
+      "screen": "site-terms",
+      "device": "mobile-narrow",
+      "address": "/terms.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-terms.png",
+      "inventory": "mobile-narrow-site-terms.json",
+      "observed": 11
+    },
+    {
+      "screen": "site-privacy",
+      "device": "mobile-narrow",
+      "address": "/privacy.html?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-privacy.png",
+      "inventory": "mobile-narrow-site-privacy.json",
+      "observed": 10
+    },
+    {
+      "screen": "site-th06",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th06/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th06.png",
+      "inventory": "mobile-narrow-site-th06.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th07",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th07/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th07.png",
+      "inventory": "mobile-narrow-site-th07.json",
+      "observed": 14
+    },
+    {
+      "screen": "site-th08",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th08/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th08.png",
+      "inventory": "mobile-narrow-site-th08.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-th10",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th10/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th10.png",
+      "inventory": "mobile-narrow-site-th10.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th11",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th11/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th11.png",
+      "inventory": "mobile-narrow-site-th11.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th15",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th15/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th15.png",
+      "inventory": "mobile-narrow-site-th15.json",
+      "observed": 17
+    },
+    {
+      "screen": "site-th09",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th09/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th09.png",
+      "inventory": "mobile-narrow-site-th09.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th19",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th19/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th19.png",
+      "inventory": "mobile-narrow-site-th19.json",
+      "observed": 7
+    },
+    {
+      "screen": "library-drawer",
+      "device": "mobile-narrow",
+      "address": "/",
+      "pencil": null,
+      "screenshot": "mobile-narrow-library-drawer.png",
+      "inventory": "mobile-narrow-library-drawer.json",
+      "observed": 72
+    },
+    {
+      "screen": "library-reverse",
+      "device": "desktop",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-library-reverse.png",
+      "inventory": "desktop-library-reverse.json",
+      "observed": 89
+    },
+    {
+      "screen": "library-list-reverse",
+      "device": "desktop",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-library-list-reverse.png",
+      "inventory": "desktop-library-list-reverse.json",
+      "observed": 89
+    },
+    {
+      "screen": "library-reverse",
+      "device": "mobile",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-library-reverse.png",
+      "inventory": "mobile-library-reverse.json",
+      "observed": 56
+    },
+    {
+      "screen": "library-list-reverse",
+      "device": "mobile",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-library-list-reverse.png",
+      "inventory": "mobile-library-list-reverse.json",
+      "observed": 56
+    },
+    {
+      "screen": "library-reverse",
+      "device": "mobile-narrow",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-library-reverse.png",
+      "inventory": "mobile-narrow-library-reverse.json",
+      "observed": 56
+    },
+    {
+      "screen": "library-list-reverse",
+      "device": "mobile-narrow",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-library-list-reverse.png",
+      "inventory": "mobile-narrow-library-list-reverse.json",
+      "observed": 56
+    },
+    {
+      "screen": "library-recent",
+      "device": "desktop",
+      "address": "/?lang=zh-CN",
+      "pencil": "desktop-library.png",
+      "screenshot": "desktop-library-recent.png",
+      "inventory": "desktop-library-recent.json",
+      "observed": 96,
+      "fixture": "recent-library"
+    },
+    {
+      "screen": "game-last-played",
+      "device": "desktop",
+      "address": "/?game=th06&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-game-last-played.png",
+      "inventory": "desktop-game-last-played.json",
+      "observed": 61,
+      "fixture": "recent-library"
+    },
+    {
+      "screen": "library-recent",
+      "device": "mobile",
+      "address": "/?lang=zh-CN",
+      "pencil": "mobile-library.png",
+      "screenshot": "mobile-library-recent.png",
+      "inventory": "mobile-library-recent.json",
+      "observed": 64,
+      "fixture": "recent-library"
+    },
+    {
+      "screen": "game-last-played",
+      "device": "mobile",
+      "address": "/?game=th06&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-game-last-played.png",
+      "inventory": "mobile-game-last-played.json",
+      "observed": 18,
+      "fixture": "recent-library"
+    },
+    {
+      "screen": "library-recent",
+      "device": "mobile-narrow",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-library-recent.png",
+      "inventory": "mobile-narrow-library-recent.json",
+      "observed": 64,
+      "fixture": "recent-library"
+    },
+    {
+      "screen": "game-last-played",
+      "device": "mobile-narrow",
+      "address": "/?game=th06&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-last-played.png",
+      "inventory": "mobile-narrow-game-last-played.json",
+      "observed": 18,
+      "fixture": "recent-library"
+    },
+    {
+      "screen": "interface-language",
+      "device": "desktop",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-interface-language.png",
+      "inventory": "desktop-interface-language.json",
+      "observed": 89
+    },
+    {
+      "screen": "library-en",
+      "device": "desktop",
+      "address": "/en.html",
+      "pencil": null,
+      "screenshot": "desktop-library-en.png",
+      "inventory": "desktop-library-en.json",
+      "observed": 88
+    },
+    {
+      "screen": "library-ja",
+      "device": "desktop",
+      "address": "/ja.html",
+      "pencil": null,
+      "screenshot": "desktop-library-ja.png",
+      "inventory": "desktop-library-ja.json",
+      "observed": 88
+    },
+    {
+      "screen": "interface-language",
+      "device": "mobile",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-interface-language.png",
+      "inventory": "mobile-interface-language.json",
+      "observed": 63
+    },
+    {
+      "screen": "library-en",
+      "device": "mobile",
+      "address": "/en.html",
+      "pencil": null,
+      "screenshot": "mobile-library-en.png",
+      "inventory": "mobile-library-en.json",
+      "observed": 56
+    },
+    {
+      "screen": "library-ja",
+      "device": "mobile",
+      "address": "/ja.html",
+      "pencil": null,
+      "screenshot": "mobile-library-ja.png",
+      "inventory": "mobile-library-ja.json",
+      "observed": 56
+    },
+    {
+      "screen": "interface-language",
+      "device": "mobile-narrow",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-interface-language.png",
+      "inventory": "mobile-narrow-interface-language.json",
+      "observed": 63
+    },
+    {
+      "screen": "library-en",
+      "device": "mobile-narrow",
+      "address": "/en.html",
+      "pencil": null,
+      "screenshot": "mobile-narrow-library-en.png",
+      "inventory": "mobile-narrow-library-en.json",
+      "observed": 56
+    },
+    {
+      "screen": "library-ja",
+      "device": "mobile-narrow",
+      "address": "/ja.html",
+      "pencil": null,
+      "screenshot": "mobile-narrow-library-ja.png",
+      "inventory": "mobile-narrow-library-ja.json",
+      "observed": 56
+    },
+    {
+      "screen": "home-language",
+      "device": "mobile",
+      "address": "/?section=home&lang=zh-CN",
+      "pencil": "mobile-home-expanded.png",
+      "screenshot": "mobile-home-language.png",
+      "inventory": "mobile-home-language.json",
+      "observed": 14
+    },
+    {
+      "screen": "home-language",
+      "device": "mobile-narrow",
+      "address": "/?section=home&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-home-language.png",
+      "inventory": "mobile-narrow-home-language.json",
+      "observed": 14
+    },
+    {
+      "screen": "login-en",
+      "device": "desktop",
+      "address": "/login.html?lang=en&mode=login",
+      "pencil": null,
+      "screenshot": "desktop-login-en.png",
+      "inventory": "desktop-login-en.json",
+      "observed": 24
+    },
+    {
+      "screen": "register-en",
+      "device": "desktop",
+      "address": "/login.html?lang=en&mode=register",
+      "pencil": null,
+      "screenshot": "desktop-register-en.png",
+      "inventory": "desktop-register-en.json",
+      "observed": 32
+    },
+    {
+      "screen": "reset-en",
+      "device": "desktop",
+      "address": "/login.html?lang=en&mode=reset",
+      "pencil": null,
+      "screenshot": "desktop-reset-en.png",
+      "inventory": "desktop-reset-en.json",
+      "observed": 21
+    },
+    {
+      "screen": "registration-terms-en",
+      "device": "desktop",
+      "address": "/login.html?lang=en&mode=register",
+      "pencil": null,
+      "screenshot": "desktop-registration-terms-en.png",
+      "inventory": "desktop-registration-terms-en.json",
+      "observed": 42
+    },
+    {
+      "screen": "privacy-en",
+      "device": "desktop",
+      "address": "/privacy.html?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-privacy-en.png",
+      "inventory": "desktop-privacy-en.json",
+      "observed": 32
+    },
+    {
+      "screen": "login-ja",
+      "device": "desktop",
+      "address": "/login.html?lang=ja&mode=login",
+      "pencil": null,
+      "screenshot": "desktop-login-ja.png",
+      "inventory": "desktop-login-ja.json",
+      "observed": 24
+    },
+    {
+      "screen": "register-ja",
+      "device": "desktop",
+      "address": "/login.html?lang=ja&mode=register",
+      "pencil": null,
+      "screenshot": "desktop-register-ja.png",
+      "inventory": "desktop-register-ja.json",
+      "observed": 32
+    },
+    {
+      "screen": "reset-ja",
+      "device": "desktop",
+      "address": "/login.html?lang=ja&mode=reset",
+      "pencil": null,
+      "screenshot": "desktop-reset-ja.png",
+      "inventory": "desktop-reset-ja.json",
+      "observed": 21
+    },
+    {
+      "screen": "registration-terms-ja",
+      "device": "desktop",
+      "address": "/login.html?lang=ja&mode=register",
+      "pencil": null,
+      "screenshot": "desktop-registration-terms-ja.png",
+      "inventory": "desktop-registration-terms-ja.json",
+      "observed": 42
+    },
+    {
+      "screen": "privacy-ja",
+      "device": "desktop",
+      "address": "/privacy.html?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-privacy-ja.png",
+      "inventory": "desktop-privacy-ja.json",
+      "observed": 33
+    },
+    {
+      "screen": "login-en",
+      "device": "mobile",
+      "address": "/login.html?lang=en&mode=login",
+      "pencil": null,
+      "screenshot": "mobile-login-en.png",
+      "inventory": "mobile-login-en.json",
+      "observed": 11
+    },
+    {
+      "screen": "register-en",
+      "device": "mobile",
+      "address": "/login.html?lang=en&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-register-en.png",
+      "inventory": "mobile-register-en.json",
+      "observed": 19
+    },
+    {
+      "screen": "reset-en",
+      "device": "mobile",
+      "address": "/login.html?lang=en&mode=reset",
+      "pencil": null,
+      "screenshot": "mobile-reset-en.png",
+      "inventory": "mobile-reset-en.json",
+      "observed": 7
+    },
+    {
+      "screen": "registration-terms-en",
+      "device": "mobile",
+      "address": "/login.html?lang=en&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-registration-terms-en.png",
+      "inventory": "mobile-registration-terms-en.json",
+      "observed": 29
+    },
+    {
+      "screen": "privacy-en",
+      "device": "mobile",
+      "address": "/privacy.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-privacy-en.png",
+      "inventory": "mobile-privacy-en.json",
+      "observed": 10
+    },
+    {
+      "screen": "login-ja",
+      "device": "mobile",
+      "address": "/login.html?lang=ja&mode=login",
+      "pencil": null,
+      "screenshot": "mobile-login-ja.png",
+      "inventory": "mobile-login-ja.json",
+      "observed": 11
+    },
+    {
+      "screen": "register-ja",
+      "device": "mobile",
+      "address": "/login.html?lang=ja&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-register-ja.png",
+      "inventory": "mobile-register-ja.json",
+      "observed": 19
+    },
+    {
+      "screen": "reset-ja",
+      "device": "mobile",
+      "address": "/login.html?lang=ja&mode=reset",
+      "pencil": null,
+      "screenshot": "mobile-reset-ja.png",
+      "inventory": "mobile-reset-ja.json",
+      "observed": 7
+    },
+    {
+      "screen": "registration-terms-ja",
+      "device": "mobile",
+      "address": "/login.html?lang=ja&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-registration-terms-ja.png",
+      "inventory": "mobile-registration-terms-ja.json",
+      "observed": 29
+    },
+    {
+      "screen": "privacy-ja",
+      "device": "mobile",
+      "address": "/privacy.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-privacy-ja.png",
+      "inventory": "mobile-privacy-ja.json",
+      "observed": 10
+    },
+    {
+      "screen": "login-en",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=en&mode=login",
+      "pencil": null,
+      "screenshot": "mobile-narrow-login-en.png",
+      "inventory": "mobile-narrow-login-en.json",
+      "observed": 11
+    },
+    {
+      "screen": "register-en",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=en&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-narrow-register-en.png",
+      "inventory": "mobile-narrow-register-en.json",
+      "observed": 19
+    },
+    {
+      "screen": "reset-en",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=en&mode=reset",
+      "pencil": null,
+      "screenshot": "mobile-narrow-reset-en.png",
+      "inventory": "mobile-narrow-reset-en.json",
+      "observed": 7
+    },
+    {
+      "screen": "registration-terms-en",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=en&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-narrow-registration-terms-en.png",
+      "inventory": "mobile-narrow-registration-terms-en.json",
+      "observed": 29
+    },
+    {
+      "screen": "privacy-en",
+      "device": "mobile-narrow",
+      "address": "/privacy.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-privacy-en.png",
+      "inventory": "mobile-narrow-privacy-en.json",
+      "observed": 10
+    },
+    {
+      "screen": "login-ja",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=ja&mode=login",
+      "pencil": null,
+      "screenshot": "mobile-narrow-login-ja.png",
+      "inventory": "mobile-narrow-login-ja.json",
+      "observed": 11
+    },
+    {
+      "screen": "register-ja",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=ja&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-narrow-register-ja.png",
+      "inventory": "mobile-narrow-register-ja.json",
+      "observed": 19
+    },
+    {
+      "screen": "reset-ja",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=ja&mode=reset",
+      "pencil": null,
+      "screenshot": "mobile-narrow-reset-ja.png",
+      "inventory": "mobile-narrow-reset-ja.json",
+      "observed": 7
+    },
+    {
+      "screen": "registration-terms-ja",
+      "device": "mobile-narrow",
+      "address": "/login.html?lang=ja&mode=register",
+      "pencil": null,
+      "screenshot": "mobile-narrow-registration-terms-ja.png",
+      "inventory": "mobile-narrow-registration-terms-ja.json",
+      "observed": 29
+    },
+    {
+      "screen": "privacy-ja",
+      "device": "mobile-narrow",
+      "address": "/privacy.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-privacy-ja.png",
+      "inventory": "mobile-narrow-privacy-ja.json",
+      "observed": 10
+    },
+    {
+      "screen": "site-faq-en",
+      "device": "desktop",
+      "address": "/faq.html?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-faq-en.png",
+      "inventory": "desktop-site-faq-en.json",
+      "observed": 59
+    },
+    {
+      "screen": "site-about-en",
+      "device": "desktop",
+      "address": "/about.html?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-about-en.png",
+      "inventory": "desktop-site-about-en.json",
+      "observed": 36
+    },
+    {
+      "screen": "site-first-use-en",
+      "device": "desktop",
+      "address": "/guide.html?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-first-use-en.png",
+      "inventory": "desktop-site-first-use-en.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-guide-coop-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/coop/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-guide-coop-en.png",
+      "inventory": "desktop-site-guide-coop-en.json",
+      "observed": 73
+    },
+    {
+      "screen": "site-th07-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th07/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-th07-en.png",
+      "inventory": "desktop-site-th07-en.json",
+      "observed": 43
+    },
+    {
+      "screen": "site-th08-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th08/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-th08-en.png",
+      "inventory": "desktop-site-th08-en.json",
+      "observed": 47
+    },
+    {
+      "screen": "site-th10-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th10/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-th10-en.png",
+      "inventory": "desktop-site-th10-en.json",
+      "observed": 41
+    },
+    {
+      "screen": "site-th11-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th11/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-th11-en.png",
+      "inventory": "desktop-site-th11-en.json",
+      "observed": 41
+    },
+    {
+      "screen": "site-th15-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th15/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-th15-en.png",
+      "inventory": "desktop-site-th15-en.json",
+      "observed": 50
+    },
+    {
+      "screen": "site-th09-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th09/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-th09-en.png",
+      "inventory": "desktop-site-th09-en.json",
+      "observed": 30
+    },
+    {
+      "screen": "site-th19-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th19/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-th19-en.png",
+      "inventory": "desktop-site-th19-en.json",
+      "observed": 29
+    },
+    {
+      "screen": "site-faq-ja",
+      "device": "desktop",
+      "address": "/faq.html?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-faq-ja.png",
+      "inventory": "desktop-site-faq-ja.json",
+      "observed": 59
+    },
+    {
+      "screen": "site-about-ja",
+      "device": "desktop",
+      "address": "/about.html?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-about-ja.png",
+      "inventory": "desktop-site-about-ja.json",
+      "observed": 36
+    },
+    {
+      "screen": "site-first-use-ja",
+      "device": "desktop",
+      "address": "/guide.html?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-first-use-ja.png",
+      "inventory": "desktop-site-first-use-ja.json",
+      "observed": 36
+    },
+    {
+      "screen": "site-guide-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-guide-ja.png",
+      "inventory": "desktop-site-guide-ja.json",
+      "observed": 33
+    },
+    {
+      "screen": "site-guide-coop-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/coop/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-guide-coop-ja.png",
+      "inventory": "desktop-site-guide-coop-ja.json",
+      "observed": 73
+    },
+    {
+      "screen": "site-th06-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th06/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-th06-ja.png",
+      "inventory": "desktop-site-th06-ja.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-th07-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th07/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-th07-ja.png",
+      "inventory": "desktop-site-th07-ja.json",
+      "observed": 43
+    },
+    {
+      "screen": "site-th08-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th08/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-th08-ja.png",
+      "inventory": "desktop-site-th08-ja.json",
+      "observed": 47
+    },
+    {
+      "screen": "site-th10-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th10/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-th10-ja.png",
+      "inventory": "desktop-site-th10-ja.json",
+      "observed": 41
+    },
+    {
+      "screen": "site-th11-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th11/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-th11-ja.png",
+      "inventory": "desktop-site-th11-ja.json",
+      "observed": 41
+    },
+    {
+      "screen": "site-th15-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th15/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-th15-ja.png",
+      "inventory": "desktop-site-th15-ja.json",
+      "observed": 50
+    },
+    {
+      "screen": "site-th09-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th09/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-th09-ja.png",
+      "inventory": "desktop-site-th09-ja.json",
+      "observed": 31
+    },
+    {
+      "screen": "site-th19-ja",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th19/?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-site-th19-ja.png",
+      "inventory": "desktop-site-th19-ja.json",
+      "observed": 30
+    },
+    {
+      "screen": "site-faq-en",
+      "device": "mobile",
+      "address": "/faq.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-faq-en.png",
+      "inventory": "mobile-site-faq-en.json",
+      "observed": 31
+    },
+    {
+      "screen": "site-about-en",
+      "device": "mobile",
+      "address": "/about.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-about-en.png",
+      "inventory": "mobile-site-about-en.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-first-use-en",
+      "device": "mobile",
+      "address": "/guide.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-first-use-en.png",
+      "inventory": "mobile-site-first-use-en.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-guide-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-guide-en.png",
+      "inventory": "mobile-site-guide-en.json",
+      "observed": 12
+    },
+    {
+      "screen": "site-guide-coop-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/coop/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-guide-coop-en.png",
+      "inventory": "mobile-site-guide-coop-en.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-th06-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th06/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-th06-en.png",
+      "inventory": "mobile-site-th06-en.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th07-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th07/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-th07-en.png",
+      "inventory": "mobile-site-th07-en.json",
+      "observed": 14
+    },
+    {
+      "screen": "site-th08-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th08/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-th08-en.png",
+      "inventory": "mobile-site-th08-en.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-th10-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th10/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-th10-en.png",
+      "inventory": "mobile-site-th10-en.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th11-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th11/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-th11-en.png",
+      "inventory": "mobile-site-th11-en.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th15-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th15/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-th15-en.png",
+      "inventory": "mobile-site-th15-en.json",
+      "observed": 17
+    },
+    {
+      "screen": "site-th09-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th09/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-th09-en.png",
+      "inventory": "mobile-site-th09-en.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th19-en",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th19/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-site-th19-en.png",
+      "inventory": "mobile-site-th19-en.json",
+      "observed": 7
+    },
+    {
+      "screen": "site-faq-ja",
+      "device": "mobile",
+      "address": "/faq.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-faq-ja.png",
+      "inventory": "mobile-site-faq-ja.json",
+      "observed": 31
+    },
+    {
+      "screen": "site-about-ja",
+      "device": "mobile",
+      "address": "/about.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-about-ja.png",
+      "inventory": "mobile-site-about-ja.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-first-use-ja",
+      "device": "mobile",
+      "address": "/guide.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-first-use-ja.png",
+      "inventory": "mobile-site-first-use-ja.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-guide-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-guide-ja.png",
+      "inventory": "mobile-site-guide-ja.json",
+      "observed": 12
+    },
+    {
+      "screen": "site-guide-coop-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/coop/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-guide-coop-ja.png",
+      "inventory": "mobile-site-guide-coop-ja.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-th06-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th06/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-th06-ja.png",
+      "inventory": "mobile-site-th06-ja.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th07-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th07/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-th07-ja.png",
+      "inventory": "mobile-site-th07-ja.json",
+      "observed": 14
+    },
+    {
+      "screen": "site-th08-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th08/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-th08-ja.png",
+      "inventory": "mobile-site-th08-ja.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-th10-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th10/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-th10-ja.png",
+      "inventory": "mobile-site-th10-ja.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th11-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th11/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-th11-ja.png",
+      "inventory": "mobile-site-th11-ja.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th15-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th15/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-th15-ja.png",
+      "inventory": "mobile-site-th15-ja.json",
+      "observed": 17
+    },
+    {
+      "screen": "site-th09-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th09/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-th09-ja.png",
+      "inventory": "mobile-site-th09-ja.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th19-ja",
+      "device": "mobile",
+      "address": "/docs/multiplayer/th19/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-site-th19-ja.png",
+      "inventory": "mobile-site-th19-ja.json",
+      "observed": 7
+    },
+    {
+      "screen": "site-faq-en",
+      "device": "mobile-narrow",
+      "address": "/faq.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-faq-en.png",
+      "inventory": "mobile-narrow-site-faq-en.json",
+      "observed": 31
+    },
+    {
+      "screen": "site-about-en",
+      "device": "mobile-narrow",
+      "address": "/about.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-about-en.png",
+      "inventory": "mobile-narrow-site-about-en.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-first-use-en",
+      "device": "mobile-narrow",
+      "address": "/guide.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-first-use-en.png",
+      "inventory": "mobile-narrow-site-first-use-en.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-guide-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-guide-en.png",
+      "inventory": "mobile-narrow-site-guide-en.json",
+      "observed": 12
+    },
+    {
+      "screen": "site-guide-coop-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/coop/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-guide-coop-en.png",
+      "inventory": "mobile-narrow-site-guide-coop-en.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-th06-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th06/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th06-en.png",
+      "inventory": "mobile-narrow-site-th06-en.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th07-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th07/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th07-en.png",
+      "inventory": "mobile-narrow-site-th07-en.json",
+      "observed": 14
+    },
+    {
+      "screen": "site-th08-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th08/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th08-en.png",
+      "inventory": "mobile-narrow-site-th08-en.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-th10-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th10/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th10-en.png",
+      "inventory": "mobile-narrow-site-th10-en.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th11-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th11/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th11-en.png",
+      "inventory": "mobile-narrow-site-th11-en.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th15-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th15/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th15-en.png",
+      "inventory": "mobile-narrow-site-th15-en.json",
+      "observed": 17
+    },
+    {
+      "screen": "site-th09-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th09/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th09-en.png",
+      "inventory": "mobile-narrow-site-th09-en.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th19-en",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th19/?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th19-en.png",
+      "inventory": "mobile-narrow-site-th19-en.json",
+      "observed": 7
+    },
+    {
+      "screen": "site-faq-ja",
+      "device": "mobile-narrow",
+      "address": "/faq.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-faq-ja.png",
+      "inventory": "mobile-narrow-site-faq-ja.json",
+      "observed": 31
+    },
+    {
+      "screen": "site-about-ja",
+      "device": "mobile-narrow",
+      "address": "/about.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-about-ja.png",
+      "inventory": "mobile-narrow-site-about-ja.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-first-use-ja",
+      "device": "mobile-narrow",
+      "address": "/guide.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-first-use-ja.png",
+      "inventory": "mobile-narrow-site-first-use-ja.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-guide-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-guide-ja.png",
+      "inventory": "mobile-narrow-site-guide-ja.json",
+      "observed": 12
+    },
+    {
+      "screen": "site-guide-coop-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/coop/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-guide-coop-ja.png",
+      "inventory": "mobile-narrow-site-guide-coop-ja.json",
+      "observed": 35
+    },
+    {
+      "screen": "site-th06-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th06/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th06-ja.png",
+      "inventory": "mobile-narrow-site-th06-ja.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th07-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th07/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th07-ja.png",
+      "inventory": "mobile-narrow-site-th07-ja.json",
+      "observed": 14
+    },
+    {
+      "screen": "site-th08-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th08/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th08-ja.png",
+      "inventory": "mobile-narrow-site-th08-ja.json",
+      "observed": 16
+    },
+    {
+      "screen": "site-th10-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th10/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th10-ja.png",
+      "inventory": "mobile-narrow-site-th10-ja.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th11-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th11/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th11-ja.png",
+      "inventory": "mobile-narrow-site-th11-ja.json",
+      "observed": 13
+    },
+    {
+      "screen": "site-th15-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th15/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th15-ja.png",
+      "inventory": "mobile-narrow-site-th15-ja.json",
+      "observed": 17
+    },
+    {
+      "screen": "site-th09-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th09/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th09-ja.png",
+      "inventory": "mobile-narrow-site-th09-ja.json",
+      "observed": 8
+    },
+    {
+      "screen": "site-th19-ja",
+      "device": "mobile-narrow",
+      "address": "/docs/multiplayer/th19/?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-site-th19-ja.png",
+      "inventory": "mobile-narrow-site-th19-ja.json",
+      "observed": 7
+    },
+    {
+      "screen": "site-guide-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-guide-en.png",
+      "inventory": "desktop-site-guide-en.json",
+      "observed": 32
+    },
+    {
+      "screen": "site-th06-en",
+      "device": "desktop",
+      "address": "/docs/multiplayer/th06/?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-site-th06-en.png",
+      "inventory": "desktop-site-th06-en.json",
+      "observed": 35
+    },
+    {
+      "screen": "lobby-live-en",
+      "device": "desktop",
+      "address": "/lobby.html?lang=en",
+      "pencil": null,
+      "screenshot": "desktop-lobby-live-en.png",
+      "inventory": "desktop-lobby-live-en.json",
+      "observed": 70,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-disconnected-en",
+      "device": "desktop",
+      "address": "/lobby.html?lang=en&capture=disconnected",
+      "pencil": null,
+      "screenshot": "desktop-lobby-disconnected-en.png",
+      "inventory": "desktop-lobby-disconnected-en.json",
+      "observed": 72,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "room-waiting-en",
+      "device": "desktop",
+      "address": "/?lang=en&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "desktop-room-waiting-en.png",
+      "inventory": "desktop-room-waiting-en.json",
+      "observed": 51,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-chat-en",
+      "device": "desktop",
+      "address": "/?lang=en&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "desktop-room-chat-en.png",
+      "inventory": "desktop-room-chat-en.json",
+      "observed": 52,
+      "fixture": "room"
+    },
+    {
+      "screen": "lobby-live-ja",
+      "device": "desktop",
+      "address": "/lobby.html?lang=ja",
+      "pencil": null,
+      "screenshot": "desktop-lobby-live-ja.png",
+      "inventory": "desktop-lobby-live-ja.json",
+      "observed": 70,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-disconnected-ja",
+      "device": "desktop",
+      "address": "/lobby.html?lang=ja&capture=disconnected",
+      "pencil": null,
+      "screenshot": "desktop-lobby-disconnected-ja.png",
+      "inventory": "desktop-lobby-disconnected-ja.json",
+      "observed": 72,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "room-waiting-ja",
+      "device": "desktop",
+      "address": "/?lang=ja&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "desktop-room-waiting-ja.png",
+      "inventory": "desktop-room-waiting-ja.json",
+      "observed": 51,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-chat-ja",
+      "device": "desktop",
+      "address": "/?lang=ja&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "desktop-room-chat-ja.png",
+      "inventory": "desktop-room-chat-ja.json",
+      "observed": 52,
+      "fixture": "room"
+    },
+    {
+      "screen": "lobby-live-en",
+      "device": "mobile",
+      "address": "/lobby.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-lobby-live-en.png",
+      "inventory": "mobile-lobby-live-en.json",
+      "observed": 50,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-disconnected-en",
+      "device": "mobile",
+      "address": "/lobby.html?lang=en&capture=disconnected",
+      "pencil": null,
+      "screenshot": "mobile-lobby-disconnected-en.png",
+      "inventory": "mobile-lobby-disconnected-en.json",
+      "observed": 52,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "room-waiting-en",
+      "device": "mobile",
+      "address": "/?lang=en&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-room-waiting-en.png",
+      "inventory": "mobile-room-waiting-en.json",
+      "observed": 31,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-chat-en",
+      "device": "mobile",
+      "address": "/?lang=en&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-room-chat-en.png",
+      "inventory": "mobile-room-chat-en.json",
+      "observed": 32,
+      "fixture": "room"
+    },
+    {
+      "screen": "lobby-live-ja",
+      "device": "mobile",
+      "address": "/lobby.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-lobby-live-ja.png",
+      "inventory": "mobile-lobby-live-ja.json",
+      "observed": 50,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-disconnected-ja",
+      "device": "mobile",
+      "address": "/lobby.html?lang=ja&capture=disconnected",
+      "pencil": null,
+      "screenshot": "mobile-lobby-disconnected-ja.png",
+      "inventory": "mobile-lobby-disconnected-ja.json",
+      "observed": 52,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "room-waiting-ja",
+      "device": "mobile",
+      "address": "/?lang=ja&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-room-waiting-ja.png",
+      "inventory": "mobile-room-waiting-ja.json",
+      "observed": 31,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-chat-ja",
+      "device": "mobile",
+      "address": "/?lang=ja&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-room-chat-ja.png",
+      "inventory": "mobile-room-chat-ja.json",
+      "observed": 32,
+      "fixture": "room"
+    },
+    {
+      "screen": "lobby-live-en",
+      "device": "mobile-narrow",
+      "address": "/lobby.html?lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-lobby-live-en.png",
+      "inventory": "mobile-narrow-lobby-live-en.json",
+      "observed": 50,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-disconnected-en",
+      "device": "mobile-narrow",
+      "address": "/lobby.html?lang=en&capture=disconnected",
+      "pencil": null,
+      "screenshot": "mobile-narrow-lobby-disconnected-en.png",
+      "inventory": "mobile-narrow-lobby-disconnected-en.json",
+      "observed": 52,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "room-waiting-en",
+      "device": "mobile-narrow",
+      "address": "/?lang=en&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-narrow-room-waiting-en.png",
+      "inventory": "mobile-narrow-room-waiting-en.json",
+      "observed": 31,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-chat-en",
+      "device": "mobile-narrow",
+      "address": "/?lang=en&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-narrow-room-chat-en.png",
+      "inventory": "mobile-narrow-room-chat-en.json",
+      "observed": 32,
+      "fixture": "room"
+    },
+    {
+      "screen": "lobby-live-ja",
+      "device": "mobile-narrow",
+      "address": "/lobby.html?lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-narrow-lobby-live-ja.png",
+      "inventory": "mobile-narrow-lobby-live-ja.json",
+      "observed": 50,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "lobby-disconnected-ja",
+      "device": "mobile-narrow",
+      "address": "/lobby.html?lang=ja&capture=disconnected",
+      "pencil": null,
+      "screenshot": "mobile-narrow-lobby-disconnected-ja.png",
+      "inventory": "mobile-narrow-lobby-disconnected-ja.json",
+      "observed": 52,
+      "fixture": "lobby-directory"
+    },
+    {
+      "screen": "room-waiting-ja",
+      "device": "mobile-narrow",
+      "address": "/?lang=ja&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-narrow-room-waiting-ja.png",
+      "inventory": "mobile-narrow-room-waiting-ja.json",
+      "observed": 31,
+      "fixture": "room"
+    },
+    {
+      "screen": "room-chat-ja",
+      "device": "mobile-narrow",
+      "address": "/?lang=ja&j=eyJnIjoidGgwNm1wIiwiciI6IjQxNTciLCJmIjp0cnVlfQ",
+      "pencil": null,
+      "screenshot": "mobile-narrow-room-chat-ja.png",
+      "inventory": "mobile-narrow-room-chat-ja.json",
+      "observed": 32,
+      "fixture": "room"
+    },
+    {
+      "screen": "announcement-preview",
+      "device": "desktop",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-announcement-preview.png",
+      "inventory": "desktop-announcement-preview.json",
+      "observed": 93
+    },
+    {
+      "screen": "inbox-preview-guest",
+      "device": "desktop",
+      "address": "/?lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-inbox-preview-guest.png",
+      "inventory": "desktop-inbox-preview-guest.json",
+      "observed": 92
+    },
+    {
+      "screen": "inbox-member",
+      "device": "desktop",
+      "address": "/?section=messages&lang=zh-CN",
+      "pencil": "desktop-inbox.png",
+      "screenshot": "desktop-inbox-member.png",
+      "inventory": "desktop-inbox-member.json",
+      "observed": 26,
+      "fixture": "private-inbox"
+    },
+    {
+      "screen": "inbox-thread",
+      "device": "desktop",
+      "address": "/?section=messages&to=peer&lang=zh-CN",
+      "pencil": "desktop-inbox-thread.png",
+      "screenshot": "desktop-inbox-thread.png",
+      "inventory": "desktop-inbox-thread.json",
+      "observed": 27,
+      "fixture": "private-inbox"
+    },
+    {
+      "screen": "game-friend-activity",
+      "device": "desktop",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "desktop-game-friend-activity.png",
+      "inventory": "desktop-game-friend-activity.json",
+      "observed": 103,
+      "fixture": "game-friends"
+    },
+    {
+      "screen": "game-friend-activity",
+      "device": "mobile",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-game-friend-activity.png",
+      "inventory": "mobile-game-friend-activity.json",
+      "observed": 61,
+      "fixture": "game-friends"
+    },
+    {
+      "screen": "game-friend-activity",
+      "device": "mobile-narrow",
+      "address": "/?game=th07&lang=zh-CN",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-friend-activity.png",
+      "inventory": "mobile-narrow-game-friend-activity.json",
+      "observed": 61,
+      "fixture": "game-friends"
+    },
+    {
+      "screen": "game-settings-display-en",
+      "device": "desktop",
+      "address": "/?game=th06&lang=en",
+      "pencil": null,
+      "screenshot": "desktop-game-settings-display-en.png",
+      "inventory": "desktop-game-settings-display-en.json",
+      "observed": 67
+    },
+    {
+      "screen": "game-files-en",
+      "device": "desktop",
+      "address": "/?game=th06&lang=en",
+      "pencil": null,
+      "screenshot": "desktop-game-files-en.png",
+      "inventory": "desktop-game-files-en.json",
+      "observed": 65
+    },
+    {
+      "screen": "game-settings-display-ja",
+      "device": "mobile",
+      "address": "/?game=th06&lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-game-settings-display-ja.png",
+      "inventory": "mobile-game-settings-display-ja.json",
+      "observed": 25
+    },
+    {
+      "screen": "game-files-ja",
+      "device": "mobile",
+      "address": "/?game=th06&lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-game-files-ja.png",
+      "inventory": "mobile-game-files-ja.json",
+      "observed": 29
+    },
+    {
+      "screen": "game-settings-display-en",
+      "device": "mobile-narrow",
+      "address": "/?game=th06&lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-settings-display-en.png",
+      "inventory": "mobile-narrow-game-settings-display-en.json",
+      "observed": 25
+    },
+    {
+      "screen": "game-files-en",
+      "device": "mobile-narrow",
+      "address": "/?game=th06&lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-files-en.png",
+      "inventory": "mobile-narrow-game-files-en.json",
+      "observed": 29
+    },
+    {
+      "screen": "game-keyboard-en",
+      "device": "desktop",
+      "address": "/?game=th09&lang=en",
+      "pencil": null,
+      "screenshot": "desktop-game-keyboard-en.png",
+      "inventory": "desktop-game-keyboard-en.json",
+      "observed": 101
+    },
+    {
+      "screen": "game-gamepad-en",
+      "device": "desktop",
+      "address": "/?game=th09&lang=en",
+      "pencil": null,
+      "screenshot": "desktop-game-gamepad-en.png",
+      "inventory": "desktop-game-gamepad-en.json",
+      "observed": 75
+    },
+    {
+      "screen": "th09-local-duel-en",
+      "device": "desktop",
+      "address": "/?game=th09&lang=en",
+      "pencil": null,
+      "screenshot": "desktop-th09-local-duel-en.png",
+      "inventory": "desktop-th09-local-duel-en.json",
+      "observed": 102
+    },
+    {
+      "screen": "replay-manager-empty-en",
+      "device": "desktop",
+      "address": "/?game=th09&lang=en",
+      "pencil": null,
+      "screenshot": "desktop-replay-manager-empty-en.png",
+      "inventory": "desktop-replay-manager-empty-en.json",
+      "observed": 73
+    },
+    {
+      "screen": "game-keyboard-ja",
+      "device": "mobile",
+      "address": "/?game=th09&lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-game-keyboard-ja.png",
+      "inventory": "mobile-game-keyboard-ja.json",
+      "observed": 64
+    },
+    {
+      "screen": "game-gamepad-ja",
+      "device": "mobile",
+      "address": "/?game=th09&lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-game-gamepad-ja.png",
+      "inventory": "mobile-game-gamepad-ja.json",
+      "observed": 38
+    },
+    {
+      "screen": "th09-local-duel-ja",
+      "device": "mobile",
+      "address": "/?game=th09&lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-th09-local-duel-ja.png",
+      "inventory": "mobile-th09-local-duel-ja.json",
+      "observed": 65
+    },
+    {
+      "screen": "replay-manager-empty-ja",
+      "device": "mobile",
+      "address": "/?game=th09&lang=ja",
+      "pencil": null,
+      "screenshot": "mobile-replay-manager-empty-ja.png",
+      "inventory": "mobile-replay-manager-empty-ja.json",
+      "observed": 66
+    },
+    {
+      "screen": "game-keyboard-en",
+      "device": "mobile-narrow",
+      "address": "/?game=th09&lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-keyboard-en.png",
+      "inventory": "mobile-narrow-game-keyboard-en.json",
+      "observed": 64
+    },
+    {
+      "screen": "game-gamepad-en",
+      "device": "mobile-narrow",
+      "address": "/?game=th09&lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-game-gamepad-en.png",
+      "inventory": "mobile-narrow-game-gamepad-en.json",
+      "observed": 38
+    },
+    {
+      "screen": "th09-local-duel-en",
+      "device": "mobile-narrow",
+      "address": "/?game=th09&lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-th09-local-duel-en.png",
+      "inventory": "mobile-narrow-th09-local-duel-en.json",
+      "observed": 65
+    },
+    {
+      "screen": "replay-manager-empty-en",
+      "device": "mobile-narrow",
+      "address": "/?game=th09&lang=en",
+      "pencil": null,
+      "screenshot": "mobile-narrow-replay-manager-empty-en.png",
+      "inventory": "mobile-narrow-replay-manager-empty-en.json",
+      "observed": 66
+    },
+    {
+      "screen": "cloud-saves-en",
+      "device": "desktop",
+      "address": "/u/fixture?lang=en#game-settings",
+      "pencil": null,
+      "screenshot": "desktop-cloud-saves-en.png",
+      "inventory": "desktop-cloud-saves-en.json",
+      "observed": 38,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "cloud-saves-ja",
+      "device": "mobile",
+      "address": "/u/fixture?lang=ja#game-settings",
+      "pencil": null,
+      "screenshot": "mobile-cloud-saves-ja.png",
+      "inventory": "mobile-cloud-saves-ja.json",
+      "observed": 18,
+      "fixture": "cloud-saves"
+    },
+    {
+      "screen": "cloud-saves-en",
+      "device": "mobile-narrow",
+      "address": "/u/fixture?lang=en#game-settings",
+      "pencil": null,
+      "screenshot": "mobile-narrow-cloud-saves-en.png",
+      "inventory": "mobile-narrow-cloud-saves-en.json",
+      "observed": 18,
+      "fixture": "cloud-saves"
+    }
+  ]
+}

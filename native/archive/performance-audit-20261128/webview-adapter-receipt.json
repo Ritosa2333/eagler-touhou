@@ -1,0 +1,41 @@
+{
+  "scope": "Native-only adapter compatibility experiment | unchanged SDK, dependencies, AOT and Dart UI",
+  "upstreamVersion": "0.7.0-beta.3",
+  "originalDllSha256": "d50a8658b4c905ba11522bcc52dd0724787a20b810183f4a8f2918acc9c91004",
+  "originalAotSha256": "6bdb5ec6b5498fd8d4368700747dc360f02c2cd578a7b1f1bb22b4cb45caa269",
+  "patchedFiles": {
+    "custom_platform_view/graphics_context.h": {
+      "original": "4386aae0bd6c39e1e596162a1cf8af8cf3513e12abf3d740f5ee541f70e7f66b",
+      "patched": "413f931ebcda54889b0e4e68b25320e2d76430e4aef43a01d926df94e7ff092b"
+    },
+    "custom_platform_view/graphics_context.cc": {
+      "original": "e1eba76fbfc804e1bf81fde0354f6ebd0be42ffbb423ef1ff3126be426765e3e",
+      "patched": "836ddcf95d748714e2f4c5fa324d446231b7bc6863f70174c15697f228b1df9a"
+    },
+    "custom_platform_view/util/d3dutil.h": {
+      "original": "9ac80f75b468454a0f3436452243148c864559e41ee1dd9cd7e2cf4ea7fb2b56",
+      "patched": "cb160eaa9c0416edc2a4a3f659df22d1e9ab391e201af6142474b1b8dae3d0b0"
+    },
+    "in_app_webview/in_app_webview_manager.cpp": {
+      "original": "371661fcca87a233db55608f2f9f090fdfee0dff1dab2414f9067606eb19ba5a",
+      "patched": "1051d89944aa10e1bb29773b2d2b134aacb16431bc8abf857b7baed90a86e88c"
+    }
+  },
+  "candidateDllSha256": "861c7565b3b61cb982662df7ad908497364877b05826b5bbf88d63a60ac522ad",
+  "candidateAotSha256": "6bdb5ec6b5498fd8d4368700747dc360f02c2cd578a7b1f1bb22b4cb45caa269",
+  "changedPackageFiles": [
+    "flutter_inappwebview_windows_plugin.dll"
+  ],
+  "candidateEntry": "C:\\Users\\Ritosa\\AppData\\Local\\Temp\\native-process-proof-20261128\\webview-adapter\\preview\\touhouonline.exe",
+  "publicProfileInput": {
+    "url": "https://touhouonline.com/u/ritosa?lang=zh-CN",
+    "scope": "Temporary native runner adds one documented entrypoint argument when no arguments supplied. Both variants use the same runner, unchanged AOT and package data. Only native WebView DLL differs. No account credentials entered.",
+    "runnerSha256": "2a73f7dbc58d49b3ac78320ea774441bb057e8e7aad78347d469828141b74c10",
+    "sourceSha256": "40fa1ce15d93172aa6009699f682b15f33746b21a05251ae59b1482eda7e02a3",
+    "baselineEntry": "C:\\Users\\Ritosa\\AppData\\Local\\Temp\\native-process-proof-20261128\\webview-adapter\\profile-baseline\\touhouonline-profile.exe",
+    "adapterEntry": "C:\\Users\\Ritosa\\AppData\\Local\\Temp\\native-process-proof-20261128\\webview-adapter\\preview\\touhouonline-profile.exe",
+    "changedFiles": [
+      "flutter_inappwebview_windows_plugin.dll"
+    ]
+  }
+}

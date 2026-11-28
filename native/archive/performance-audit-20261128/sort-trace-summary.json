@@ -1,0 +1,745 @@
+{
+  "events": 1001052,
+  "earliestUs": 30151772134,
+  "latestUs": 30156819352,
+  "longest": [
+    {
+      "ms": 506.699,
+      "name": "GPURasterizer::Draw",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 506.691,
+      "name": "Rasterizer::DoDraw",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 506.686,
+      "name": "Rasterizer::DrawToSurfaces",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 504.118,
+      "name": "FlutterCompositorPresentLayers",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 480.263,
+      "name": "GPURasterizer::Draw",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 480.26,
+      "name": "Rasterizer::DoDraw",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 480.257,
+      "name": "Rasterizer::DrawToSurfaces",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 479.722,
+      "name": "FlutterCompositorPresentLayers",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 18.534,
+      "name": "ConcurrentMark",
+      "thread": "DartWorker (39288)"
+    },
+    {
+      "ms": 15.663,
+      "name": "VsyncProcessCallback",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 15.66,
+      "name": "Animator::BeginFrame",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 15.641,
+      "name": "ConcurrentMark",
+      "thread": "DartWorker (44172)"
+    },
+    {
+      "ms": 15.619,
+      "name": "Dart_InvokeClosure",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 14.475,
+      "name": "VsyncProcessCallback",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 14.462,
+      "name": "Animator::BeginFrame",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 14.182,
+      "name": "Dart_InvokeClosure",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.36,
+      "name": "VsyncProcessCallback",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.358,
+      "name": "Animator::BeginFrame",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.343,
+      "name": "Dart_InvokeClosure",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.291,
+      "name": "VsyncProcessCallback",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.288,
+      "name": "Animator::BeginFrame",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.274,
+      "name": "Dart_InvokeClosure",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.022,
+      "name": "VsyncProcessCallback",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.02,
+      "name": "VsyncProcessCallback",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.018,
+      "name": "Animator::BeginFrame",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 13.016,
+      "name": "Animator::BeginFrame",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 12.993,
+      "name": "Dart_InvokeClosure",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 12.981,
+      "name": "Dart_InvokeClosure",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 12.697,
+      "name": "VsyncProcessCallback",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 12.692,
+      "name": "Animator::BeginFrame",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 12.644,
+      "name": "Dart_InvokeClosure",
+      "thread": "io.flutter.ui (46672)"
+    },
+    {
+      "ms": 12.577,
+      "name": "GPURasterizer::Draw",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 12.574,
+      "name": "Rasterizer::DoDraw",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 12.57,
+      "name": "Rasterizer::DrawToSurfaces",
+      "thread": "io.flutter.raster (34356)"
+    },
+    {
+      "ms": 12.249,
+      "name": "VsyncProcessCallback",
+      "thread": "io.flutter.ui (46672)"
+    }
+  ],
+  "groups": [
+    {
+      "name": "GPURasterizer::Draw",
+      "thread": "io.flutter.raster (34356)",
+      "count": 599,
+      "totalInclusiveMs": 2421.429,
+      "maxMs": 506.699,
+      "medianMs": 2.155
+    },
+    {
+      "name": "Rasterizer::DoDraw",
+      "thread": "io.flutter.raster (34356)",
+      "count": 599,
+      "totalInclusiveMs": 2418.778,
+      "maxMs": 506.691,
+      "medianMs": 2.151
+    },
+    {
+      "name": "Rasterizer::DrawToSurfaces",
+      "thread": "io.flutter.raster (34356)",
+      "count": 599,
+      "totalInclusiveMs": 2417.303,
+      "maxMs": 506.686,
+      "medianMs": 2.147
+    },
+    {
+      "name": "FlutterCompositorPresentLayers",
+      "thread": "io.flutter.raster (34356)",
+      "count": 599,
+      "totalInclusiveMs": 1376.746,
+      "maxMs": 504.118,
+      "medianMs": 0.446
+    },
+    {
+      "name": "EmbedderExternalView::Render",
+      "thread": "io.flutter.raster (34356)",
+      "count": 600,
+      "totalInclusiveMs": 714.97,
+      "maxMs": 5.653,
+      "medianMs": 1.0
+    },
+    {
+      "name": "VsyncProcessCallback",
+      "thread": "io.flutter.ui (46672)",
+      "count": 820,
+      "totalInclusiveMs": 699.68,
+      "maxMs": 15.663,
+      "medianMs": 0.413
+    },
+    {
+      "name": "Animator::BeginFrame",
+      "thread": "io.flutter.ui (46672)",
+      "count": 820,
+      "totalInclusiveMs": 697.239,
+      "maxMs": 15.66,
+      "medianMs": 0.409
+    },
+    {
+      "name": "Dart_InvokeClosure",
+      "thread": "io.flutter.ui (46672)",
+      "count": 1532,
+      "totalInclusiveMs": 695.237,
+      "maxMs": 15.619,
+      "medianMs": 0.056
+    },
+    {
+      "name": "SEMANTICS (root)",
+      "thread": "io.flutter.ui (46672)",
+      "count": 601,
+      "totalInclusiveMs": 406.487,
+      "maxMs": 4.393,
+      "medianMs": 0.765
+    },
+    {
+      "name": "SEMANTICS",
+      "thread": "io.flutter.ui (46672)",
+      "count": 601,
+      "totalInclusiveMs": 402.808,
+      "maxMs": 4.388,
+      "medianMs": 0.761
+    },
+    {
+      "name": "void __cdecl SkCanvas::drawPath(const SkPath &, const SkPaint &)",
+      "thread": "io.flutter.raster (34356)",
+      "count": 3314,
+      "totalInclusiveMs": 378.445,
+      "maxMs": 1.277,
+      "medianMs": 0.093
+    },
+    {
+      "name": "skgpu::ganesh::Device::drawPath",
+      "thread": "io.flutter.raster (34356)",
+      "count": 3314,
+      "totalInclusiveMs": 376.735,
+      "maxMs": 1.276,
+      "medianMs": 0.093
+    },
+    {
+      "name": "SurfaceDrawContext::drawPath",
+      "thread": "io.flutter.raster (34356)",
+      "count": 3314,
+      "totalInclusiveMs": 375.382,
+      "maxMs": 1.276,
+      "medianMs": 0.092
+    },
+    {
+      "name": "SurfaceDrawContext::drawShape",
+      "thread": "io.flutter.raster (34356)",
+      "count": 3314,
+      "totalInclusiveMs": 373.821,
+      "maxMs": 1.275,
+      "medianMs": 0.092
+    },
+    {
+      "name": "SurfaceDrawContext::internalDrawPath",
+      "thread": "io.flutter.raster (34356)",
+      "count": 3314,
+      "totalInclusiveMs": 372.763,
+      "maxMs": 1.275,
+      "medianMs": 0.091
+    },
+    {
+      "name": "SurfaceDrawContext::addDrawOp",
+      "thread": "io.flutter.raster (34356)",
+      "count": 58293,
+      "totalInclusiveMs": 312.604,
+      "maxMs": 0.644,
+      "medianMs": 0.0
+    },
+    {
+      "name": "SurfaceDrawContext::drawFilledQuad",
+      "thread": "io.flutter.raster (34356)",
+      "count": 18467,
+      "totalInclusiveMs": 229.962,
+      "maxMs": 0.644,
+      "medianMs": 0.001
+    },
+    {
+      "name": "Semantics.ensureGeometry",
+      "thread": "io.flutter.ui (46672)",
+      "count": 1202,
+      "totalInclusiveMs": 220.124,
+      "maxMs": 1.183,
+      "medianMs": 0.082
+    },
+    {
+      "name": "bool __cdecl GrGpu::writePixels(GrSurface *, SkIRect, GrColorType, GrColorType, const GrMipLevel *, int, bool)",
+      "thread": "io.flutter.raster (34356)",
+      "count": 10121,
+      "totalInclusiveMs": 206.899,
+      "maxMs": 0.756,
+      "medianMs": 0.012
+    },
+    {
+      "name": "GrDrawingManager::flush",
+      "thread": "io.flutter.raster (34356)",
+      "count": 1200,
+      "totalInclusiveMs": 187.553,
+      "maxMs": 4.93,
+      "medianMs": 0.091
+    },
+    {
+      "name": "virtual GrRenderTask::ExecutionResult __cdecl skgpu::ganesh::OpsTask::onExecute(GrOpFlushState *)",
+      "thread": "io.flutter.raster (34356)",
+      "count": 662,
+      "totalInclusiveMs": 133.134,
+      "maxMs": 4.722,
+      "medianMs": 0.171
+    },
+    {
+      "name": "ConcurrentMark",
+      "thread": "DartWorker (39288)",
+      "count": 12,
+      "totalInclusiveMs": 118.005,
+      "maxMs": 18.534,
+      "medianMs": 9.23
+    },
+    {
+      "name": "LAYOUT (root)",
+      "thread": "io.flutter.ui (46672)",
+      "count": 601,
+      "totalInclusiveMs": 115.88,
+      "maxMs": 10.392,
+      "medianMs": 0.031
+    },
+    {
+      "name": "ConcurrentMark",
+      "thread": "DartWorker (44172)",
+      "count": 12,
+      "totalInclusiveMs": 115.327,
+      "maxMs": 15.641,
+      "medianMs": 9.299
+    },
+    {
+      "name": "LAYOUT",
+      "thread": "io.flutter.ui (46672)",
+      "count": 601,
+      "totalInclusiveMs": 114.757,
+      "maxMs": 10.39,
+      "medianMs": 0.03
+    },
+    {
+      "name": "void __cdecl SkCanvas::drawTextBlob(const SkTextBlob *, SkScalar, SkScalar, const SkPaint &)",
+      "thread": "io.flutter.raster (34356)",
+      "count": 40936,
+      "totalInclusiveMs": 105.529,
+      "maxMs": 0.14,
+      "medianMs": 0.001
+    },
+    {
+      "name": "CompositorContext::ScopedFrame::Raster",
+      "thread": "io.flutter.raster (34356)",
+      "count": 600,
+      "totalInclusiveMs": 94.729,
+      "maxMs": 1.145,
+      "medianMs": 0.132
+    },
+    {
+      "name": "skgpu::ganesh::Device::drawGlyphRunList",
+      "thread": "io.flutter.raster (34356)",
+      "count": 40936,
+      "totalInclusiveMs": 88.719,
+      "maxMs": 0.139,
+      "medianMs": 0.001
+    },
+    {
+      "name": "BUILD",
+      "thread": "io.flutter.ui (46672)",
+      "count": 736,
+      "totalInclusiveMs": 85.304,
+      "maxMs": 6.275,
+      "medianMs": 0.012
+    },
+    {
+      "name": "Dart_NotifyIdle",
+      "thread": "io.flutter.ui (46672)",
+      "count": 577,
+      "totalInclusiveMs": 79.949,
+      "maxMs": 4.28,
+      "medianMs": 0.003
+    },
+    {
+      "name": "NotifyIdle",
+      "thread": "io.flutter.ui (46672)",
+      "count": 577,
+      "totalInclusiveMs": 79.508,
+      "maxMs": 4.28,
+      "medianMs": 0.002
+    },
+    {
+      "name": "SurfaceDrawContext::drawGlyphRunList",
+      "thread": "io.flutter.raster (34356)",
+      "count": 40936,
+      "totalInclusiveMs": 77.673,
+      "maxMs": 0.138,
+      "medianMs": 0.001
+    },
+    {
+      "name": "FillRectOp",
+      "thread": "io.flutter.raster (34356)",
+      "count": 23734,
+      "totalInclusiveMs": 77.096,
+      "maxMs": 4.102,
+      "medianMs": 0.002
+    },
+    {
+      "name": "LayerTree::Paint",
+      "thread": "io.flutter.raster (34356)",
+      "count": 600,
+      "totalInclusiveMs": 68.652,
+      "maxMs": 1.088,
+      "medianMs": 0.087
+    },
+    {
+      "name": "HandleMessage",
+      "thread": "DartWorker (44184)",
+      "count": 2821,
+      "totalInclusiveMs": 66.051,
+      "maxMs": 8.457,
+      "medianMs": 0.01
+    },
+    {
+      "name": "PAINT (root)",
+      "thread": "io.flutter.ui (46672)",
+      "count": 601,
+      "totalInclusiveMs": 64.217,
+      "maxMs": 0.772,
+      "medianMs": 0.145
+    },
+    {
+      "name": "PAINT",
+      "thread": "io.flutter.ui (46672)",
+      "count": 601,
+      "totalInclusiveMs": 63.549,
+      "maxMs": 0.771,
+      "medianMs": 0.144
+    },
+    {
+      "name": "CollectNewGeneration",
+      "thread": "io.flutter.ui (46672)",
+      "count": 32,
+      "totalInclusiveMs": 63.017,
+      "maxMs": 3.606,
+      "medianMs": 2.255
+    },
+    {
+      "name": "Scavenge",
+      "thread": "io.flutter.ui (46672)",
+      "count": 32,
+      "totalInclusiveMs": 60.207,
+      "maxMs": 3.413,
+      "medianMs": 2.195
+    },
+    {
+      "name": "Semantics.updateChildren",
+      "thread": "io.flutter.ui (46672)",
+      "count": 1202,
+      "totalInclusiveMs": 51.575,
+      "maxMs": 1.069,
+      "medianMs": 0.0
+    },
+    {
+      "name": "AtlasTextOp",
+      "thread": "io.flutter.raster (34356)",
+      "count": 10568,
+      "totalInclusiveMs": 34.874,
+      "maxMs": 0.083,
+      "medianMs": 0.003
+    },
+    {
+      "name": "COMPOSITING",
+      "thread": "io.flutter.ui (46672)",
+      "count": 601,
+      "totalInclusiveMs": 34.682,
+      "maxMs": 0.16,
+      "medianMs": 0.065
+    },
+    {
+      "name": "Scavenge",
+      "thread": "DartWorker (44172)",
+      "count": 21,
+      "totalInclusiveMs": 31.674,
+      "maxMs": 3.527,
+      "medianMs": 1.811
+    },
+    {
+      "name": "SurfaceDrawContext::drawTexturedQuad",
+      "thread": "io.flutter.raster (34356)",
+      "count": 3283,
+      "totalInclusiveMs": 30.054,
+      "maxMs": 0.342,
+      "medianMs": 0.002
+    },
+    {
+      "name": "void __cdecl SkCanvas::drawOval(const SkRect &, const SkPaint &)",
+      "thread": "io.flutter.raster (34356)",
+      "count": 1585,
+      "totalInclusiveMs": 29.664,
+      "maxMs": 0.115,
+      "medianMs": 0.017
+    },
+    {
+      "name": "skgpu::ganesh::Device::drawOval",
+      "thread": "io.flutter.raster (34356)",
+      "count": 1585,
+      "totalInclusiveMs": 28.775,
+      "maxMs": 0.115,
+      "medianMs": 0.016
+    },
+    {
+      "name": "SurfaceDrawContext::drawOval",
+      "thread": "io.flutter.raster (34356)",
+      "count": 1585,
+      "totalInclusiveMs": 27.943,
+      "maxMs": 0.114,
+      "medianMs": 0.016
+    },
+    {
+      "name": "ConcurrentSweep",
+      "thread": "DartWorker (44172)",
+      "count": 7,
+      "totalInclusiveMs": 27.622,
+      "maxMs": 5.378,
+      "medianMs": 3.911
+    },
+    {
+      "name": "Sweep",
+      "thread": "DartWorker (44172)",
+      "count": 7,
+      "totalInclusiveMs": 27.604,
+      "maxMs": 5.375,
+      "medianMs": 3.908
+    },
+    {
+      "name": "Scavenge",
+      "thread": "DartWorker (39288)",
+      "count": 15,
+      "totalInclusiveMs": 27.174,
+      "maxMs": 3.215,
+      "medianMs": 2.168
+    },
+    {
+      "name": "LayerTree::Preroll",
+      "thread": "io.flutter.raster (34356)",
+      "count": 600,
+      "totalInclusiveMs": 24.771,
+      "maxMs": 0.182,
+      "medianMs": 0.04
+    },
+    {
+      "name": "virtual void __cdecl skgpu::ganesh::OpsTask::onPrepare(GrOpFlushState *)",
+      "thread": "io.flutter.raster (34356)",
+      "count": 662,
+      "totalInclusiveMs": 22.674,
+      "maxMs": 0.159,
+      "medianMs": 0.032
+    },
+    {
+      "name": "Semantics.ensureSemanticsNode",
+      "thread": "io.flutter.ui (46672)",
+      "count": 1202,
+      "totalInclusiveMs": 21.72,
+      "maxMs": 0.244,
+      "medianMs": 0.001
+    },
+    {
+      "name": "sk_sp<GrTexture> __cdecl GrGpu::createTexture(SkISize, const GrBackendFormat &, GrTextureType, GrRenderable, int, skgpu::Budgeted, GrProtected, GrColorType, GrColorType, const GrMipLevel *, int, std::string_view)",
+      "thread": "io.flutter.raster (34356)",
+      "count": 93,
+      "totalInclusiveMs": 18.383,
+      "maxMs": 0.658,
+      "medianMs": 0.173
+    },
+    {
+      "name": "ConcurrentSweep",
+      "thread": "DartWorker (39288)",
+      "count": 5,
+      "totalInclusiveMs": 17.971,
+      "maxMs": 3.979,
+      "medianMs": 3.665
+    },
+    {
+      "name": "Sweep",
+      "thread": "DartWorker (39288)",
+      "count": 5,
+      "totalInclusiveMs": 17.961,
+      "maxMs": 3.977,
+      "medianMs": 3.662
+    },
+    {
+      "name": "POST_FRAME",
+      "thread": "io.flutter.ui (46672)",
+      "count": 601,
+      "totalInclusiveMs": 17.078,
+      "maxMs": 0.451,
+      "medianMs": 0.039
+    },
+    {
+      "name": "void __cdecl SkCanvas::drawRect(const SkRect &, const SkPaint &)",
+      "thread": "io.flutter.raster (34356)",
+      "count": 7200,
+      "totalInclusiveMs": 15.561,
+      "maxMs": 0.072,
+      "medianMs": 0.002
+    },
+    {
+      "name": "TextureOp",
+      "thread": "io.flutter.raster (34356)",
+      "count": 1880,
+      "totalInclusiveMs": 14.367,
+      "maxMs": 4.296,
+      "medianMs": 0.004
+    },
+    {
+      "name": "skgpu::ganesh::Device::drawRect",
+      "thread": "io.flutter.raster (34356)",
+      "count": 7200,
+      "totalInclusiveMs": 13.134,
+      "maxMs": 0.072,
+      "medianMs": 0.001
+    },
+    {
+      "name": "IterateStoreBuffers",
+      "thread": "io.flutter.ui (46672)",
+      "count": 32,
+      "totalInclusiveMs": 12.475,
+      "maxMs": 1.297,
+      "medianMs": 0.404
+    },
+    {
+      "name": "FINALIZE TREE",
+      "thread": "io.flutter.ui (46672)",
+      "count": 601,
+      "totalInclusiveMs": 12.286,
+      "maxMs": 1.137,
+      "medianMs": 0.001
+    },
+    {
+      "name": "SurfaceDrawContext::drawRect",
+      "thread": "io.flutter.raster (34356)",
+      "count": 7200,
+      "totalInclusiveMs": 10.827,
+      "maxMs": 0.072,
+      "medianMs": 0.001
+    },
+    {
+      "name": "CircularRRectOp",
+      "thread": "io.flutter.raster (34356)",
+      "count": 2592,
+      "totalInclusiveMs": 10.323,
+      "maxMs": 0.052,
+      "medianMs": 0.003
+    },
+    {
+      "name": "SurfaceFillContext::clear",
+      "thread": "io.flutter.raster (34356)",
+      "count": 7924,
+      "totalInclusiveMs": 9.784,
+      "maxMs": 0.07,
+      "medianMs": 0.001
+    },
+    {
+      "name": "VsyncFireCallback",
+      "thread": "io.flutter.ui (46672)",
+      "count": 820,
+      "totalInclusiveMs": 9.602,
+      "maxMs": 0.236,
+      "medianMs": 0.006
+    },
+    {
+      "name": "Dart_StringToUTF8",
+      "thread": "io.flutter.ui (46672)",
+      "count": 95352,
+      "totalInclusiveMs": 9.385,
+      "maxMs": 0.057,
+      "medianMs": 0.0
+    },
+    {
+      "name": "shader_compile",
+      "thread": "io.flutter.raster (34356)",
+      "count": 2,
+      "totalInclusiveMs": 8.256,
+      "maxMs": 4.214,
+      "medianMs": 4.128
+    },
+    {
+      "name": "HandleOOBMessage",
+      "thread": "io.flutter.ui (46672)",
+      "count": 26,
+      "totalInclusiveMs": 8.146,
+      "maxMs": 1.604,
+      "medianMs": 0.029
+    },
+    {
+      "name": "IterateStoreBuffers",
+      "thread": "DartWorker (44172)",
+      "count": 21,
+      "totalInclusiveMs": 8.144,
+      "maxMs": 1.354,
+      "medianMs": 0.39
+    }
+  ],
+  "note": "Full Skia traced Profile | trace allocation affects timings and memory | intervals inclusive and overlap; do not sum totals."
+}

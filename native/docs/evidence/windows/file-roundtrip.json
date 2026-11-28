@@ -1,0 +1,33 @@
+{
+  "baseline": "85941f0d564cf10378d2af6b14d41a000bd27612",
+  "windowsPackageSha256": "30af1060342032c38c3a5e9f9a622c0428ef66a1e9a4ce3c89bebc9673621d5e",
+  "windowPixels": [
+    386,
+    714
+  ],
+  "entry": "书架搜索 th09 | 详情 | 游戏设置 | 存档与录像",
+  "files": [
+    {
+      "file": "score.dat",
+      "bytes": 3000,
+      "sha256": "8fd6a03c9d9a55e3d805a202e61ef34c5f9003ee7d84f7701d93911547b26606",
+      "identical": true
+    },
+    {
+      "file": "th9_01.rpy",
+      "bytes": 15562,
+      "sha256": "f561b9b9e35e86eb4b64b746a8cf1f66a04315e5c95de4f5b23152f9acfcd9b2",
+      "identical": true
+    }
+  ],
+  "zip": {
+    "file": "th09-replay-2026-11-26.zip",
+    "entry": "replay/th9_01.rpy",
+    "bytes": 15562,
+    "sha256": "f561b9b9e35e86eb4b64b746a8cf1f66a04315e5c95de4f5b23152f9acfcd9b2",
+    "identical": true,
+    "archiveSha256": "77dd1de4913fa4097c1a719f669780fa978bd1c8fadb3355f7c8f85989fd2424"
+  },
+  "keyboard": "Shift+Tab 定位导入 | 空格打开 | 系统对话框 Esc 取消 | 空格重新打开 | Esc 回设置",
+  "return": "未跳到页面顶部，设置分组位置一致"
+}

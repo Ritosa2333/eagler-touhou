@@ -1,0 +1,1086 @@
+{
+  "/guide.html": {
+    "title": "首次使用须知",
+    "sections": [
+      {
+        "title": "1. 支持离线访问，断网了也能玩",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "注意这虽然是个网站，但是就和 App 差不多。  \n不信的话，可以**下好游戏之后**把网关了再刷新网站试试。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "2. 无法正常进行游戏时，请先查看页面右上角的常见问题页",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "如果看完了还是无法解决，再通过项目提供的**反馈渠道**报告问题。",
+            "columns": 0
+          },
+          {
+            "text": "游戏攻略、存档问题、未来展望等也在常见问题里。",
+            "columns": 0,
+            "notice": "NOTE"
+          }
+        ]
+      },
+      {
+        "title": "3. 我们急需会使用 AI 的开发者们。",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "我们目前很缺有经验的开发者和 token。如果您有意向，欢迎**进入开发者群，和我们一起进行项目的开发**。",
+            "columns": 0
+          },
+          {
+            "text": "尤其需要了解这些的开发者：  \n**网站前后端开发、基础设施**（比如 SMTP 和 turn 服务器）、**联机协议、跨平台应用开发**。  \n（完全没有经验也可以，闲聊也欢迎）",
+            "columns": 0,
+            "notice": "NOTE"
+          }
+        ]
+      },
+      {
+        "title": "4. 联机服务器运营 和 功能开发 都挺烧钱的",
+        "id": "section-4",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "如果您觉得我们做的很不错，欢迎在页面右上角的「**捐赠**」栏里支持我们。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/faq.html": {
+    "title": "常见问题",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "感谢 Goan114 的整理，以及各位玩家的测试与反馈。\n\n 如果下述内容未能解决问题，请通过 [Discord](<https://discord.gg/HwVz9ZTSF>)、[QQ 群](<https://qm.qq.com/q/eeUrxIltug>)或 [GitHub Issues](<https://github.com/Ritosa2333/eagler-touhou/issues/new/choose>) 提交反馈。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "游戏闪退、卡顿、黑屏、加载异常或断触怎么办？",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "请先尝试使用推荐浏览器：",
+            "columns": 0
+          },
+          {
+            "columns": 2,
+            "rows": [
+              [
+                "设备",
+                "推荐浏览器"
+              ],
+              [
+                "Android",
+                "最新版 [Edge](<https://www.microsoft.com/edge/download>) 或 [Chrome](<https://www.google.com/chrome/>)，不建议使用 Via"
+              ],
+              [
+                "华为设备",
+                "可以尝试系统浏览器，不要使用卓易通或 Via"
+              ],
+              [
+                "Windows",
+                "系统自带的 Edge、[Chrome](<https://google.cn/chrome>) 或 [Firefox](<https://www.firefox.com/>)"
+              ],
+              [
+                "Windows 7 及更早版本",
+                "[Supermium](<https://www.supermium.net/>)"
+              ],
+              [
+                "苹果设备",
+                "浏览器不限"
+              ]
+            ]
+          },
+          {
+            "text": "不建议使用系统自带浏览器和各种国内浏览器。例如目前已知夸克浏览器会断触。\n\n 如果使用推荐浏览器后仍有问题，请向我们反馈。",
+            "columns": 0
+          },
+          {
+            "text": "如果旧版浏览器无法进入首页，或 WebGL 2.0 检测失败，请查看[设备与浏览器兼容指南](<compatibility.html>)，其中有 Supermium 安装和 Chrome OpenGL 后端设置步骤。",
+            "columns": 0,
+            "notice": "NOTE"
+          }
+        ]
+      },
+      {
+        "title": "哪里能找到操作说明、攻略和剧情？",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- **操作说明**：启动游戏后，点击右上角的「?」。\n- **原版玩法说明和剧情**：查看[东方 Project 附带文档总览](<https://omake.thwiki.cc/>)。\n- **游戏攻略**：查看 [THBWiki 游戏攻略页](<https://thbwiki.cc/%e6%b8%b8%e6%88%8f%e6%94%bb%e7%95%a5>)。例如，想了解樱点系统怎么玩，就可以在那找。\n\n 如果对东方 Project 的世界观和游戏玩法了解不深，我们更建议先查阅 THBWiki，它对游戏机制的解析十分全面易懂。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "游戏可以存档吗？",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "「存档」有两种不同的意思：",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "中途退出后，能继续这一局吗？",
+        "id": "section-4",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "**不能。** 原版游戏的机制就是如此：退出后，不能在下次打开时继续使用这一局原先的残机等状态。一局游戏平均约 25 分钟。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "通关记录等游玩数据能保存吗？",
+        "id": "section-5",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "**可以。** 通关记录、游玩时长等非游戏内状态数据可以保存。经过测试，存档与原版游戏互通，存档文件为 `score.dat`。",
+            "columns": 0
+          },
+          {
+            "text": "**不同作品的存档不能混用。** 例如，th06 的 `score.dat` 不能用于 th07。",
+            "columns": 0,
+            "notice": "WARNING"
+          }
+        ]
+      },
+      {
+        "title": "还会增加其他作品吗？",
+        "id": "section-6",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "请看[作品适配进度表](<faq.html?view=progress>)。\n\n 您可以通过启用「开发人员选项」中的「测试版功能」，来检查即将上架的新内容。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "下载不了资源怎么办？",
+        "id": "section-7",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "1. 确认没有使用 VPN。\n2. 避免使用接管网页下载的浏览器插件。目前已确认 Internet Download Manager 等插件可能与网页资源加载不兼容。\n3. 如果仍然无法下载，请使用导入包。\n\n 站点成功打开过一次后，即使服务器随后不可用或设备断网，刷新或重新打开页面也可以进入启动器；较新的浏览器几乎都支持。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "遇到联机问题怎么办？",
+        "id": "section-8",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "请不要使用 WebRTC Control 等会影响 WebRTC 的浏览器扩展。\n\n 联机卡顿一般有两个原因：\n\n 1. 网络波动或丢包（如 50ms-\\>200ms 时会出现显著卡顿，这是完全正常的，如果您接触过非想天则等游戏就会知道）。\n2. 游戏性能问题。\n\n 如果您网络波动较大，那么就不建议玩联机了。只要一个人波动，就会让一起联机的所有人都一起卡顿。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "支持项目",
+        "id": "section-9",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "如果觉得这个项目很好，欢迎在 [GitHub](<https://github.com/YomotsuHisami/eagler-touhou/>) 页面点亮右上角的 Star。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-11T15:46:46+08:00",
+      "commit": "a2d253a4427c1988f4e24662da88c79f108f0721",
+      "pending": false
+    }
+  },
+  "/about.html": {
+    "title": "关于",
+    "sections": [
+      {
+        "title": "贡献方式",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "项目源码和开发讨论都在 [GitHub 仓库](<https://github.com/Ritosa2333/eagler-touhou>)。\n\n - 要移植一部作品，请先阅读[游戏适配指南](<https://github.com/Ritosa2333/eagler-touhou/blob/main/docs/adaptation/README.md>)和[开发文档](<https://github.com/Ritosa2333/eagler-touhou/blob/main/docs/README.md>)。\n- 在 [Issues](<https://github.com/Ritosa2333/eagler-touhou/issues>) 讨论问题或功能，用 [Pull Request](<https://github.com/Ritosa2333/eagler-touhou/pulls>) 提交改动。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "联系方式",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 邮件 [ayanews@outlook.com](<mailto:ayanews@outlook.com>)\n- [加入 Discord](<https://discord.gg/HwVz9ZTSF>)\n- [加入 QQ 群](<https://qm.qq.com/q/eeUrxIltug>)",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-11T20:07:37+08:00",
+      "commit": "5bfd144042fbf7695d1b3ca4d9bf71704c214f9b",
+      "pending": false
+    }
+  },
+  "/faq.html?view=progress": {
+    "title": "东方作品进度",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "表中按阶段记录进度，署名链接指向对应项目或维护者。各作功能验收见 [适配检查](https://github.com/Ritosa2333/eagler-touhou/blob/main/docs/adaptation/README.md)。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Windows 正作",
+        "id": "windows-正作",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "|  |  | 还原 | 移植 | Web 适配 | 多人联机 |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| 东方红魔乡 | **[th06] 東方紅魔郷 v1.02h** | [GensokyoClub](https://github.com/GensokyoClub/th06/tree/master) **Done** | [GensokyoClub](https://github.com/GensokyoClub/th06/tree/portable) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th06/tree/eagler) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th06/tree/eagler) **Done** |\n| 东方妖妖梦 | **[th07] 東方妖々夢 v1.00b** | [some100](https://github.com/some100/th07/tree/main) **Done** | [some100](https://github.com/some100/th07/tree/reallyportable) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th07/tree/eagler) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th07/tree/eagler) **Done** |\n| 东方永夜抄 | **[th08] 東方永夜抄 v1.00d** | [SteinsGateON](https://github.com/Ritosa2333/th08/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th08/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th08/tree/eagler) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th08/tree/experiment/th08-multiplayer) **Done** |\n| 东方花映塚 | **[th09] 東方花映塚 v1.50a** | [SteinsGateON](https://github.com/Ritosa2333/th09/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th09/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th09/tree/eagler) [**In Progress**](#th09-web-适配) | [Ritosa2333](https://github.com/Ritosa2333/th09/tree/experiment/th09-multiplayer) **Done** |\n| 东方风神录 | **[th10] 東方風神録 v1.00a** | [SteinsGateON](https://github.com/Ritosa2333/th10/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th10/tree/portable) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th10/tree/eagler) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th10/tree/experiment/th10-multiplayer) **Done** |\n| 东方地灵殿 | **[th11] 東方地霊殿 v1.00a** | [SteinsGateON](https://github.com/Ritosa2333/th11/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th11/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th11/tree/eagler) [**In Progress**](#th11-web-适配) | [Ritosa2333](https://github.com/Ritosa2333/th11/tree/eagler) [**In Progress**](#th11-多人联机) |\n| 东方星莲船 | **[th12] 東方星蓮船 v1.00b** | [Tweet-META](https://github.com/Tweet-META/th12/tree/main) **Done** | [Tweet-META](https://github.com/Goan114/eagler-touhou/tree/main/ports/th12) **Done** | [Tweet-META](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th12/README.md) [**In Progress**](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th12/ADAPTATION.md) | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th12-mp) **In Progress** |\n| 东方神灵庙 | **[th13] 東方神霊廟 v1.00c** | [AgentMystia](https://github.com/AgentMystia) **In Progress** | - | - | - |\n| 东方辉针城 | **[th14] 東方輝針城 v1.00b** | [AdingApkgg](https://github.com/AdingApkgg/thp) **In Progress** | [AdingApkgg](https://github.com/AdingApkgg/thp) **In Progress** | [AdingApkgg](https://github.com/AdingApkgg/thp) **In Progress** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th14-mp) **In Progress** |\n| 东方绀珠传 | **[th15] 東方紺珠伝 v1.00b** | [SteinsGateON](https://github.com/Ritosa2333/th15/tree/main) **Done** | [SteinsGateON](https://github.com/Ritosa2333/th15/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/th15/tree/eagler) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th15-mp/ADAPTATION.md) [**In Progress**](#th15-多人联机) |\n| 东方天空璋 | **[th16] 東方天空璋 v1.00a** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** | - |\n| 东方鬼形兽 | **[th17] 東方鬼形獣 v1.00b** | [SteinsGateON](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th17) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th17/README.md) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th17/ADAPTATION.md) **In Progress** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th17-mp) **In Progress** |\n| 东方虹龙洞 | **[th18] 東方虹龍洞 v1.00a** | [owo-aya](https://github.com/owo-aya) **In Progress** | - | - | - |\n| 东方兽王园 | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** | [Idle](https://github.com/Idle233333) **In Progress** |\n| 东方锦上京 | **[th20] 東方錦上京 v1.00c** | [Oracatt](https://github.com/Oracatt/Touhou20/tree/main) **Done** | [Ritosa2333](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th20) **Done** | 搁置 | - |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "旧作（PC-98）",
+        "id": "旧作pc-98",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "th01–th05 的移植、Web 适配与多人项目由 [IxinorTyan](https://github.com/IxinorTyan) 开发。\n\nth01 的原生 C++ 核心同时提供 Windows 与 Web 版本。\nth02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合作与联机。\n[NP2 浏览器合集](https://github.com/IxinorTyan/touhou-np2)另提供五作的单机入口。",
+            "columns": 0
+          },
+          {
+            "text": "|  |  | 还原 | 移植 | Web 适配 | 多人联机 |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| 东方灵异传 | **[th01] 東方靈異伝** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th01) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th01-multiorb-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th01-multiorb-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th01-multiorb-lab) **In Progress** |\n| 东方封魔录 | **[th02] 東方封魔録** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th02) **In Progress** | - | [IxinorTyan](https://github.com/IxinorTyan/th02-coop-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th02-coop-lab) **In Progress** |\n| 东方梦时空 | **[th03] 東方夢時空** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th03) **In Progress** | - | [IxinorTyan](https://github.com/IxinorTyan/th03-netplay-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th03-netplay-lab) **In Progress** |\n| 东方幻想乡 | **[th04] 東方幻想郷** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th04) **In Progress** | - | [IxinorTyan](https://github.com/IxinorTyan/th04-coop-lab) **Done** | [IxinorTyan](https://github.com/IxinorTyan/th04-coop-lab) **In Progress** |\n| 东方怪绮谈 | **[th05] 東方怪綺談** | [nmlgc](https://github.com/nmlgc/ReC98/tree/master/th05) **In Progress** | [Goan114](https://github.com/Goan114/uth05win-vibe) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/blob/main/ports/th05/README.md) **In Progress** | [IxinorTyan](https://github.com/IxinorTyan/th05-coop-lab) **In Progress** |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "小数点作",
+        "id": "小数点作",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "|  |  | 还原 | 移植 | Web 适配 | 多人联机 |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| 东方萃梦想 | **[th075] 東方萃夢想** | [SteinsGateON](https://space.bilibili.com/34714121) **Done** | [SteinsGateON](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075) **Done** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075) **In Progress** | [Goan114](https://github.com/Ritosa2333/eagler-touhou/tree/main/ports/th075-mp) **In Progress** |\n| 东方文花帖 | **[th095] 東方文花帖** | **Unassigned** | - | - | - |\n| 东方绯想天 | **[th105] 東方緋想天** | **Unassigned** | - | - | - |\n| 东方非想天则 | **[th123] 東方非想天則** | **Unassigned** | - | - | - |\n| 东方文花帖DS | **[th125] ダブルスポイラー** | **Unassigned** | - | - | - |\n| 妖精大战争 | **[th128] 妖精大戦争** | **Unassigned** | - | - | - |\n| 东方心绮楼 | **[th135] 東方心綺楼** | **Unassigned** | - | - | - |\n| 弹幕天邪鬼 | **[th143] 弾幕アマノジャク** | [Idle](https://github.com/Idle233333) **In Progress** | - | - | - |\n| 东方深秘录 | **[th145] 東方深秘録** | **Unassigned** | - | - | - |\n| 东方凭依华 | **[th155] 東方憑依華** | **Unassigned** | - | - | - |\n| 秘封噩梦日记 | **[th165] 秘封ナイトメアダイアリー** | **Unassigned** | - | - | - |\n| 东方刚欲异闻 | **[th175] 東方剛欲異聞** | **Unassigned** | - | - | - |\n| 弹幕狂们的黑市 | **[th185] バレットフィリア達の闇市場** | **Unassigned** | - | - | - |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "适配详情",
+        "id": "适配详情",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "[th09] 東方花映塚 v1.50a",
+        "id": "th09-東方花映塚-v150a",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "th09 Web 适配",
+        "id": "th09-web-适配",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 协议 | 高刷新率 | 触控 | 多语言 | thprac | Replay |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| ✅ | ❌ | ✅ | ✅ | ❌ | ✅ |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "[th11] 東方地霊殿 v1.00a",
+        "id": "th11-東方地霊殿-v100a",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "th11 Web 适配",
+        "id": "th11-web-适配",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 协议 | 高刷新率 | 触控 | 多语言 | thprac | Replay |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "th11 多人联机",
+        "id": "th11-多人联机",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 规则 | 预测回滚 | 重开 | Replay | 旁观 |\n| :---: | :---: | :---: | :---: | :---: |\n| ✅ | ❌ | ✅ | ✅ | ✅ |",
+            "columns": 5
+          }
+        ]
+      },
+      {
+        "title": "[th15] 東方紺珠伝 v1.00b",
+        "id": "th15-東方紺珠伝-v100b",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "th15 多人联机",
+        "id": "th15-多人联机",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 规则 | 预测回滚 | 重开 | Replay | 旁观 |\n| :---: | :---: | :---: | :---: | :---: |\n| ❌ | ❌ | ❌ | ❌ | ❌ |",
+            "columns": 5
+          }
+        ]
+      },
+      {
+        "title": "能力表样例",
+        "id": "能力表样例",
+        "depth": 2,
+        "blocks": []
+      },
+      {
+        "title": "Web 适配",
+        "id": "web-适配",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 协议 | 高刷新率 | 触控 | 多语言 | thprac | Replay |\n| :---: | :---: | :---: | :---: | :---: | :---: |\n| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |",
+            "columns": 6
+          }
+        ]
+      },
+      {
+        "title": "多人联机",
+        "id": "多人联机",
+        "depth": 3,
+        "blocks": [
+          {
+            "text": "| 规则 | 预测回滚 | 重开 | Replay | 旁观 |\n| :---: | :---: | :---: | :---: | :---: |\n| ✅ | ✅ | ✅ | ✅ | ✅ |",
+            "columns": 5
+          }
+        ]
+      },
+      {
+        "title": "图片来源",
+        "id": "图片来源",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "[THBWiki / 图片来源记录](../launcher/docs/assets/game-covers/sources.json)\n\n[done]: https://img.shields.io/badge/Done-2ea44f?style=flat-square\n[in-progress]: https://img.shields.io/badge/In%20Progress-f59e0b?style=flat-square\n[in-progress-detail]: https://img.shields.io/badge/In%20Progress%20%28Click%20for%20detail%29-f59e0b?style=flat-square\n[unassigned]: https://img.shields.io/badge/Unassigned-808080?style=flat-square",
+            "columns": 0
+          }
+        ]
+      }
+    ]
+  },
+  "/terms.html": {
+    "title": "服务条款",
+    "sections": [],
+    "revision": {
+      "author": "Goan114",
+      "date": "2026-11-20T16:43:56+08:00",
+      "commit": "613a3933c5b50b70c3c48848bee2909bcb34e6ee",
+      "pending": false
+    }
+  },
+  "/privacy.html": {
+    "title": "隐私条款",
+    "sections": [],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-19T20:43:32+08:00",
+      "commit": "d2c1ea9d424a63d99995eda28521dfc8f320888a",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer": {
+    "title": "联机",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "1. 开房时先选作品。把房间号或邀请链接发给朋友。\n2. 选一个房间加入。\n3. 坐到玩家席，选好机体并准备，其他人等房主开始游戏。\n\n这就是基本流程了。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "协作",
+        "id": "协作",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "如果您熟悉原作，多人几乎不需要教程。您可以通过随便玩，或者看快捷发言来知道大部分机制。\n\n您也可以通过以下文章来了解具体情况。\n\n[协作通用规则](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "对战",
+        "id": "对战",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "对于对战作，则截然不同。每个萌新都应当先看看教程。熟悉机制能让您快速入门。\n\n对战入门教程筹备中。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer/coop": {
+    "title": "协作通用规则",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "columns": 2,
+            "rows": [
+              [
+                "类别",
+                "联机机制"
+              ],
+              [
+                "模式",
+                "[挑战模式](<#challenge-mode>) 禁用 Bomb，死亡后照常重生，生命栏只记死亡次数"
+              ],
+              [
+                "资源",
+                "[残机转移 / 复活队友](<#life-transfer>) 靠近队友，停火并点 5 下低速键"
+              ],
+              [
+                "资源",
+                "[P 点倍增](<#item-drops>) 多数作品的普通 P 点掉落按人数倍增"
+              ],
+              [
+                "资源",
+                "[P 点转移](<#power-transfer>) 靠近队友后点 5 下射击键"
+              ],
+              [
+                "生存",
+                "[幽灵 / 团灭](<#death-and-revival>) 用完残机变幽灵，过关复活，全队变幽灵就结束"
+              ],
+              [
+                "战斗",
+                "[决死翻倍](<#deathbomb>) 中弹后还能按 Bomb 保命的时间翻倍"
+              ],
+              [
+                "战斗",
+                "[Boss 伤害](<#boss-damage>) 参战人数越多，每个人的伤害越低"
+              ],
+              [
+                "操作",
+                "[共同操作](<#shared-controls>) 全队共用对话和暂停，录像各自保存"
+              ],
+              [
+                "进度",
+                "[解锁](<#unlocks>) 联机时直接解锁角色和关卡"
+              ]
+            ]
+          },
+          {
+            "text": "这个表看完之后其实就不用往下看了，因为后面内容就是在详细解释这张表。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "挑战模式",
+        "id": "challenge-mode",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "房主可以在房间的游戏设置中开启挑战模式。Bomb 清零，生命栏改为累计死亡次数。每次死亡都照常掉落道具并重生，游戏继续。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Boss 耐久与玩家人数",
+        "id": "boss-damage",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "Boss 的血量和关卡脚本阈值沿用原作。联机时，Boss 受到的伤害按可操作玩家人数缩放。",
+            "columns": 0
+          },
+          {
+            "columns": 2,
+            "rows": [
+              [
+                "可操作玩家",
+                "伤害系数"
+              ],
+              [
+                "1 人",
+                "1"
+              ],
+              [
+                "2 人",
+                "0.75"
+              ],
+              [
+                "3 人",
+                "2/3"
+              ]
+            ]
+          },
+          {
+            "text": "玩家变成幽灵后，从人数中扣除，伤害系数随之调整。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "决死时间",
+        "id": "deathbomb",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "中弹后还能按 Bomb 保命的时间。\n\n联机时，决死时间是原作的 **2 倍**。触控的额外宽限仍然有效。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "死亡行为",
+        "id": "death-and-revival",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "玩家耗尽生命时：\n\n- 自机会变为幽灵状态（无法操控或发射子弹，随机飘动），掉落的物品内容和原作最终死亡掉落保持一致。\n- 可以被复活。详见「残机转移」。\n- 通过关卡后，所有处于幽灵状态的玩家都会复活。\n\n全部玩家死亡：\n\n- 只有所有参战玩家都进入幽灵/可复活状态后，才会判定团队团灭。\n- 团队团灭后保留 180 个正常游戏逻辑帧（约 3 秒）的同步缓冲。\n- 缓冲结束后结束本局，无法续关。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "共同操作与本局结束",
+        "id": "shared-controls",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "任意玩家都可推进对话、暂停和继续游戏。暂停时所有玩家共同停止游戏演算；暂停中按 R 共同重新开始本局。\n\n全员全灭的救援等待结束、整局通关或确认退出当前对局时，本局结束。此后的 Ending、结果菜单、署名、保存 Replay 和返回标题由各端独立操作。旁观者播完本局尾帧后，可在本机原生结果界面选槽、署名并保存完整多人 Replay。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "红点自动分配",
+        "id": "section-6",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 上线收点时，红点优先飞向 **距离道具最近且未满 Power 的可操作玩家**；全员满 Power 时飞向最近的可操作玩家。距离相同时优先选择席位编号较低的玩家。\n- **上线收点和线下拾取均适用**。接收者无需上线，也不受主动赠送的 20 像素距离限制。\n- 直接拾取时，未满 Power 的玩家正常收取；满 Power 的玩家碰到红点时，道具会飞向最近的未满 Power 队友。全员满 Power 时正常收取。\n- 道具飞行期间保留接收者；接收者随后满 Power 时，再飞向最近的未满 Power 队友。幽灵和未启用的席位不接收红点。\n- 全队满 Power 时，沿用本作满 Power 的道具与得分规则。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "残机转移",
+        "id": "life-transfer",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "操作方法：\n\n1. 两位自机靠近，距离 20 像素以内\n2. 赠送残机者 **松开射击键**，并至少持有 1 个备用残机\n3. 赠送残机者 **快速点按 Shift／低速键 5 次**，相邻两次按下间隔不超过 24 个逻辑帧（约 0.4 秒）\n\n基本效果：\n\n- 扣除赠送残机者的 1 个残机。给予仍可操作的队友时，1 个生命道具会自动飞向对方，增加对方 1 个残机。\n- 对于幽灵状态的玩家，**会复活对方**。\n- 若范围内同时有多名符合条件的接收方，赠送顺序：处于幽灵状态的玩家 \\> 残机数更少的玩家 \\> 席位编号更低的玩家。\n- 每次按下只计 1 次，持续长按不会继续积累。开火、超时或离开有效距离会清空计数。\n- 第 3、4 次有效点按时，自机附近显示 `L 3/5`、`L 4/5`。第 5 次完成一次转移，再次转移需松开低速键并重新点按 5 次。\n\n对于幽灵状态的队友的额外效果：\n\n- 奖励残机不会直接复活幽灵；仍需队友转移残机，或通过关卡后复活。\n- 被救援者的 Power 设为所选机体满 Power 的一半。\n- 被救援者的 Bomb 数恢复到其初始 Bomb 数。\n- 救援不会消除弹幕。复活的队友获得约 4 秒无敌。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Power 转移",
+        "id": "power-transfer",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "操作方法：\n\n- 两位自机靠近，距离 20 像素以内\n- 赠送Power者快速点按射击键 5 次\n- 相邻两次点按间隔不超过 24 个逻辑帧（约 0.4 秒）\n\n效果：\n\n- 从第 3 次点按开始，自机上方会显示转移计数器\n- 扣除赠送者对应转移量的 Power，随后等价值的 Power 道具会自动追踪并飞向被赠送者\n- 使用 0～128 Power 制式时，一次送出 20 Power（2 个大 P 和 4 个小 P）。\n\n限制：\n\n- 只有给予方拥有至少 1 次完整转移所需的 Power 时才能发动\n- 接收方不得达到本作满 Power\n- 顺序：Power 更少者 \\> 席位编号更低的玩家",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "解锁状态同步",
+        "id": "unlocks",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "联机时可直接选择 Extra、所有角色和练习关卡。解锁只在联机时生效，录像可以保存。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "难度等级（Rank）调整",
+        "id": "section-10",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 死亡或使用炸弹导致的 Rank 降低幅度会比单人模式小\n- 降低量会根据玩家人数进行分摊\n- 这样可以避免多人同时损失生命导致难度曲线下降过快",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "杂项",
+        "id": "item-drops",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 所有玩家共享符卡收取或收取失败的状态。\n- 达到本作额外残机的分数阈值或点数道具数量目标时，奖励会分配给队友，受各自的残机上限限制。\n- 有 Bomb 的作品，各机体每条命的初始 Bomb 数量为原作数量减 1，最低为 1。\n- 普通 P 道具掉落数量按参战人数倍增。Full Power 道具数量固定。\n- 道中掉落的残机、Bomb 道具，2 人时为 1 倍，3 人时为 2 倍。\n- 联机队友靠近时增加透明度，包括其身边附属的一切内容，如判定点、自机开火轨迹等一切跟随队友机体的内容。\n- 取消符卡释放立绘，仅保留文字宣言。\n- 有人使用 Bomb 时，全队一起获得无敌。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "特例",
+        "id": "特例",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- [妖妖梦](</docs/multiplayer/th07>)中，有人满 Power 时，场上的 P 点会变成樱点。联机可直接选 Phantasm。\n- [永夜抄](</docs/multiplayer/th08>)联机时可以直接选各条路线。\n- [风神录](</docs/multiplayer/th10>)的敌机 P 点掉落在双人时为 2 倍，三人时为 6 倍。一次送 1.00 Power，救援后无敌约 4.67 秒。\n- [地灵殿](</docs/multiplayer/th11>)中，魔理沙 A 放 Bomb 时只有自己无敌。魔理沙 C 的护盾挡到攻击后，队友才会获得无敌。\n- [绀珠传](</docs/multiplayer/th15>)的 P 点掉落数量不变，小 P 随人数升值。幽灵可以暂存残机，获救时保留。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer/th06": {
+    "title": "红魔乡",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "无",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer/th07": {
+    "title": "妖妖梦",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> 这里列出本作特有的机制。决死、送残等基础操作见 [协作通用规则](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "P 点变成樱点",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 一人达到满 Power 时，场上的 P 点变成樱点，沿原轨迹移动。全队满 Power 后，新掉落的 P 点也变成樱点。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "樱点+（Cherry+）调整",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 2 人时，发动森罗结界的Cherry+阈值为50000点。\n- 3 人时，发动森罗结界的Cherry+阈值为75000点。\n- 所有玩家共享樱点和樱点+，会同时展开森罗结界。如果某位玩家使用了Bomb时触发了森罗结界，导致结界时间不同步，有 1 位玩家森罗结界时间结束，全体森罗结界都会结束。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "解锁",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 联机时可直接选择 Phantasm。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer/th08": {
+    "title": "永夜抄",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> 这里列出本作特有的机制。决死、送残等基础操作见 [协作通用规则](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "人妖率与队伍状态",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 每位玩家拥有独立的人妖率与当前人/妖形态；射击、Bomb、Deathbomb 和队伍固有行为都按各自所选队伍结算。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "使魔",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 使魔是否可被本机攻击，由本机控制；使魔可否被攻击的显示效果也跟随本机。\n- 使魔在任何情况下都没有碰撞伤害。\n- 使魔发射的弹幕仍跟随房主。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "刻符与夜晚时间",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 全队共享刻符池和夜晚时间。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Power 道具",
+        "id": "section-4",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 倍增的 P 道具分开并向上散开；每个小 P 仍增加 1 Power，每个大 P 仍增加 8 Power。\n- 不会因为某位玩家满 Power 而转换其他玩家仍需要的场上 P 道具。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "解锁",
+        "id": "section-5",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 联机时可直接选择各条路线。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer/th10": {
+    "title": "风神录",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> 这里列出本作特有的机制。决死、送残等基础操作见 [协作通用规则](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Power 道具",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 场上仍可操作的玩家全部达到满 Power 后，场上的 P 道具才会转换为点数道具。\n- 敌机掉落的普通 P 点，2 人时为原作的 2 倍，3 人时为 6 倍。游戏直接生成的普通 P 点，2 人时数量不变，3 人时为 2 倍。\n- 每次赠送 **1.00 Power**。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "救援",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 被救援者获得 **280 个逻辑帧（约 4.67 秒）** 的无敌时间。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer/th11": {
+    "title": "地灵殿",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> 这里列出本作特有的机制。决死、送残等基础操作见 [协作通用规则](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "收点与残机碎片",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 通信槽满时，可以全屏吸引已经掉落至少 40 帧的道具。普通道具一旦开始追踪，就归触发收点的玩家。\n- 残机碎片掉落量与原作相同，全队每收齐 5 片，每人获得 1 残，最多存 9 残。幽灵也可以暂存奖励残机，等待救援。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Bomb 与护盾",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 魔理沙 A 使用 Bomb 时，只有她自己获得无敌。\n- 魔理沙 C 的护盾挡下攻击时，队友获得 40 帧无敌。护盾未挡到攻击就结束时，返还一半消耗的 Power，符卡照常计算。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer/th15": {
+    "title": "绀珠传",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "> 这里列出本作特有的机制。决死、送残等基础操作见 [协作通用规则](</docs/multiplayer/coop>)",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "模式与计分",
+        "id": "section-1",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 联机使用传统遗产模式（Legacy）。\n- 全队共享得分、最大得点和擦弹数。同一颗子弹可以让不同玩家各擦一次，各人的擦弹都会显示闪光。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "生命碎片与暂存残机",
+        "id": "section-2",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 每次满足条件的小节奖残或拾取生命碎片，全队共享计数只增加 **1 个生命碎片**，不会按人数增加为 2 个或 3 个。\n- 小节奖励按显示的小节奖励分数判断：默认 2 人达到 **1,250,000**，3 人达到 **1,500,000** 时奖励一个共享生命碎片。房主可在开局前的联机设置中调整为 **500,000–5,000,000**，每次 **250,000**；界面同时显示折合 100% 击破率所需的擦弹数（得分门槛 ÷ 5,000）。开局后锁定，不因队友成为幽灵而降低。\n- 通常难度每 3 个共享生命碎片奖残；Extra 前 5 次奖残每次需要 5 个，之后不再通过碎片奖残。每位玩家最多持有 8 个备用残机。\n- 幽灵可以暂存碎片奖励的残机，获救时保留。死亡本身不奖生命碎片。整残机、整 Bomb 道具和 Bomb 碎片归拾取者。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "送残与救援",
+        "id": "section-3",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 被救援后无敌 280 帧（约 4.67 秒），过关复活后无敌 120 帧（约 2 秒）。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Power 价值与赠送",
+        "id": "section-4",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 小 P 在 2 人房间增加 **0.02 Power**，3 人房间增加 **0.03 Power**；大 P 保持 **1.00 Power**。按房间人数计算，不按存活人数计算；满 Power 时的原版得分不变。\n- P 点掉落数量与原作相同。Full Power 只填满实际拾取者。\n- 至少有 **2.00 Power** 才能赠送，一次送 1 个大 P，扣除 **1.00 Power**。接收者变成幽灵时，赠送道具转为普通掉落。\n- 第 3、4 次有效点按显示大 P 图标和次数；送残点按计数优先显示。低于赠送门槛不显示送 P 提示。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "Bomb 与队友保护",
+        "id": "section-5",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 普通协作模式每条命有 2 个初始 Bomb。\n- 灵梦、魔理沙、早苗发动 Bomb 时给予队友 120 帧无敌，Bomb 活跃期间每次更新将队友剩余无敌补到至少 40 帧，包含结束的最后一帧。\n- 铃仙开盾以及任意一层护盾破坏时，给予队友至少 30 帧无敌，最后一层同样有效。持续存在的护盾只保护铃仙自己，不使全队一直无敌。\n- 铃仙破盾时，手机上的拖动可以继续。",
+            "columns": 0
+          }
+        ]
+      },
+      {
+        "title": "显示、移动与录像",
+        "id": "section-6",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "- 在自己的视角下只显示自己的判定点，包括低速判定点和常显判定点；队友判定点在淡出阶段也隐藏。只过滤绘制，不修改实际碰撞或联机状态。\n- 幽灵不会累积擦弹。自机狙和移动激光会从仍可操作的玩家中选择目标。\n- 2P 面板保留碎片文本与数字但缩小组间距；3P 删除生命/Bomb 碎片文本及数字，保留图标的碎片填充动画，资源结算不变。\n- 手机对话中，原生自机允许移动时可以拖动；短点按确认，原地按住 500ms 跳过，拖动不作为确认/跳过，也不自动射击或双击放 Bomb。\n- 多人 Replay 保存全部席位的角色、种子、构建身份及确认输入；需使用兼容的多人构建播放，不接受原版单人 Replay。符卡时间按确认逻辑帧计算，网络等待不计入游戏时间。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer/th09": {
+    "title": "花映冢",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "这是双人对战。两位玩家各坐一个玩家席，旁观者可从大厅进入房间观战。\n\n房间会累计双方的小局胜场。登录账号后，可以在个人主页查看自己的对战记录。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  },
+  "/docs/multiplayer/th19": {
+    "title": "兽王园",
+    "sections": [
+      {
+        "title": "",
+        "id": "",
+        "depth": 2,
+        "blocks": [
+          {
+            "text": "这是双人对战。两位玩家各坐一个玩家席，旁观者可从大厅进入房间观战。\n\n双方确认比分后，房间才会更新对战成绩。可以在房间设置中开启自动保存录像。",
+            "columns": 0
+          }
+        ]
+      }
+    ],
+    "revision": {
+      "author": "Ritosa2333",
+      "date": "2026-11-09T19:23:58+08:00",
+      "commit": "4d9f0667cf04fdfaaa07878701122d513e002549",
+      "pending": false
+    }
+  }
+}

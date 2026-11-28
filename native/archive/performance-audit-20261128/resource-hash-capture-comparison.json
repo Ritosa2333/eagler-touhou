@@ -1,0 +1,846 @@
+{
+  "images": 210,
+  "allByteIdentical": true,
+  "files": [
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-files-en.png",
+      "sha256": "58db25165d1f6ce1a45cf597b07c5504505181693e6238962d0f9e4e90fd45d7"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-files-zh-CN.png",
+      "sha256": "01d5b08b9b9112f23f1ddc34920dde0501a8a32fe4b730084dcac98ff6a2c787"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-settings-advanced-en.png",
+      "sha256": "48feac1c4b2058ab85c765c3e286a01694a0f08ba7cc862d69c3d1101fa7d253"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-settings-advanced-zh-CN.png",
+      "sha256": "3e0bd97b34dc48d93db8edab3fb4ba2e2fa5c966f4daa6c6031ebd3b5fb2f2f7"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-settings-display-en.png",
+      "sha256": "a5ce325f10b0ae696d191d74f2abe8768a15a3081d86c72be5a20141f4246f9d"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-settings-display-zh-CN.png",
+      "sha256": "fb483a005601d172d01f8b2bbb6c9d2207f0bbdb178f0bb0efb4d8abc2bf084a"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-settings-input-en.png",
+      "sha256": "5f7ff1e1a8894f50ceeadda4c83943dae718f8aba437fcd7fe8dc3e73403894a"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-settings-input-zh-CN.png",
+      "sha256": "d65f45eedeeaed4c633bc243068984c7733ad714f19fce41862c4e0991af77b4"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-settings-volume-en.png",
+      "sha256": "107d346334936750fb87d1b81744f4f40f58f46754c4d50c56cb45c984c8dbff"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/desktop-game-settings-volume-zh-CN.png",
+      "sha256": "d709afe568c4fbc964c219d79df227d487c0dc45432bea9deb99013cb9a59dc1"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-files-ja.png",
+      "sha256": "4833ed578fd33a0ae36b2b35d06481c14650d31c82bff891bbc32f170ec69926"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-files-zh-CN.png",
+      "sha256": "3b48772a73479936ad4da98f4201720b2ce9b38178f7fd4b8d7a4fd869d6b84d"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-settings-advanced-ja.png",
+      "sha256": "458986875130cd45ab6b043f79bcfdd64a7bfb3d60ad92657a629f65ff0906e6"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-settings-advanced-zh-CN.png",
+      "sha256": "359d29f6d6f842d5ddb303066d5470e68f5ce6d748f49f1e945c58ca78f63511"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-settings-display-ja.png",
+      "sha256": "8c42fc9c5cacab9a0bc72e623a4be6caa1f4e31765ba26d79724f8fe2e9b7c7d"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-settings-display-zh-CN.png",
+      "sha256": "a525d717acf0c50a48ad06404d960083095614d7a717db6f8a167b299ea135ef"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-settings-input-ja.png",
+      "sha256": "e5d5045f00662e517dc2e8492e264f4c4b4756b5df358505a91a5b109cf26498"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-settings-input-zh-CN.png",
+      "sha256": "4015f0e5711f40d20393fbd37513093ace47a163f9a54e95f29dd3e65bebffce"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-settings-volume-ja.png",
+      "sha256": "48150c7b6bd599ec80bd873794163b5158d1933737b675b7524cca9677878f46"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-game-settings-volume-zh-CN.png",
+      "sha256": "cacccd638e619d97432c26b31369db0f3e61d30d45a44c4057ba36fddb091b2d"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-narrow-game-files-en.png",
+      "sha256": "2394e9141e909be39704d7c17187a34495c423a481b038cd6c1073a0b5bdcac7"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-narrow-game-settings-advanced-en.png",
+      "sha256": "28233e24f00a695ba739b09f4335be1cdb9622c8c7d025e7e1529bfba49e24b1"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-narrow-game-settings-display-en.png",
+      "sha256": "082329e58853290a318e82a62a2f68c244598d50590b372cbfa88a25efe72419"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-narrow-game-settings-input-en.png",
+      "sha256": "ac734464469643eb003d617eb5e18b1042b67c9d1f8ab666af0f1d80d4bed3bc"
+    },
+    {
+      "file": "docs/evidence/current/game-settings/mobile-narrow-game-settings-volume-en.png",
+      "sha256": "96bef0ee15c04bdc1a40e06bb576ed2174040e97b643e0b53269933a538b50f1"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-english-dark-1-input.png",
+      "sha256": "a63bb338bf5f5666267001b93029b603529cc3031c6cd99aaa4863675d03c016"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-english-dark-1-volume.png",
+      "sha256": "8f5c19f87e54f7cd2105b6cb809d80f77736629a47ba8cbd1bdaba572f725139"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-english-dark-2-input.png",
+      "sha256": "34615f3f4366a709b3cf1c948b7204863fdaf88107edfe7c8ac6aa337468499a"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-english-dark-2-volume.png",
+      "sha256": "adef520ed5986fecc56a006e22d1f0e2b14655ff83a16750595e34a6014b0fdd"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-english-light-1-input.png",
+      "sha256": "23fb5f66f9090329635478a58981e792e2f0c32db4d4e0a1aa2e565f2957d2be"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-english-light-1-volume.png",
+      "sha256": "1dba73b362a743d75639cdfbc69c9aa247c3f488a1407fb9baff27443889ad8e"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-english-light-2-input.png",
+      "sha256": "f67f8b37dabadfc5c9c7d3c4056710f1c69863fbbbb7a9f813393aed9ad9fa82"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-english-light-2-volume.png",
+      "sha256": "7a75068d26d11e26ded603ae80f4cc6582127dec2206e15bbfbaa03c802f5e79"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-dark-1-input.png",
+      "sha256": "76f0b43cb49baffb6e1b5acc008bd017d0032ecf0e1ccc42a55c67e4eb81f5d8"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-dark-1-volume.png",
+      "sha256": "50f0c0aad3ccbf11433c3b01fc32e91d6052f7950341bb0dff3033951ede6d6e"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-dark-2-input.png",
+      "sha256": "e86eaa353bb2bf227dd3fba9aa5b0cba2fd99c321b624e3aff4b3290e742ee6b"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-dark-2-volume.png",
+      "sha256": "7e08d68cb46fb027d1a94cdc2ca369ac60f78c1a9457c9f3c96aafe17f0286df"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-light-1-input.png",
+      "sha256": "bbf57b843aa1fe7b69fa383baa46c439fb5f3f45263d3dd4eb51feaa34202047"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-light-1-volume.png",
+      "sha256": "526957be2ddc57f030ba2adc2bf6340e301e0cc507dc1fd8c1bcc071953d5eaf"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-light-2-input.png",
+      "sha256": "0d28bda0d723063a9ba28b6f61f1bed59b05bcdb45a0809bf8324b9f3ca2920b"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/1440-simplifiedChinese-light-2-volume.png",
+      "sha256": "26e3ee079fc05503f70568efcf4ac1ed07773e37995dbee53c2027fb9f3093bc"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/320-english-dark-1-input.png",
+      "sha256": "f7979c37abb017221917d983475ec309929538144dedc4af2aff922ba8d38c20"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/320-english-dark-1-volume.png",
+      "sha256": "1d9c7e2658f0ecd98dbafa1f91082ac297d2c657bb530d456e5068c28a639eb6"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/320-english-dark-2-input.png",
+      "sha256": "80234afe0467626f02219f43f17df414d7e69118648a18fa3db4442da8a1f986"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/320-english-dark-2-volume.png",
+      "sha256": "e65d737e9cb1388a23367fa34e858b42b1b1c6da850c763e535f2c5500afcf51"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/320-english-light-1-input.png",
+      "sha256": "7ee2c07ce8653e3b55f6438ce1e7be431affdfb7ef2098a4a3c10eaf09277c63"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/320-english-light-1-volume.png",
+      "sha256": "0bdc0530acf69b7141e8a19b0bc94ee8a72f70f4cc74b7161bf5b7108e69df59"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/320-english-light-2-input.png",
+      "sha256": "0203e0931b03560c4fb584319b9f015f7bdad237b1381307577f5bf8ab014828"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/320-english-light-2-volume.png",
+      "sha256": "0d7953511476965df5f4ec13d2fb3dbfd4c0763e0e8086459506fd9652403986"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-japanese-dark-1-input.png",
+      "sha256": "e5d5045f00662e517dc2e8492e264f4c4b4756b5df358505a91a5b109cf26498"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-japanese-dark-1-volume.png",
+      "sha256": "48150c7b6bd599ec80bd873794163b5158d1933737b675b7524cca9677878f46"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-japanese-dark-2-input.png",
+      "sha256": "edc00fa8fb49ca17deff0c9065a84ac6d4bc805d5bce55f6d5ee7d31d4b12aaa"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-japanese-dark-2-volume.png",
+      "sha256": "5cb1606f8a23d5d32306d3012d372dcaf4de956e3e0aeca44d2e30258f996661"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-japanese-light-1-input.png",
+      "sha256": "8cd596d37712b0b7624e091312d5ab8dea9a47fe9116825378d50f20c424cc31"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-japanese-light-1-volume.png",
+      "sha256": "73221f80de8d537f3a5c0f8bfad3f4b3ef772f0008f436579bbff4ea082a26ee"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-japanese-light-2-input.png",
+      "sha256": "3754e27d263747af1a233374b598f5a0e4fe064bda9c5a0f872beb7c90447c2d"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-japanese-light-2-volume.png",
+      "sha256": "b9dd3f7e1c2a2c0830d411f8663c80745124398e5aeaa0ff43af236e9a217bf2"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-dark-1-input.png",
+      "sha256": "4015f0e5711f40d20393fbd37513093ace47a163f9a54e95f29dd3e65bebffce"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-dark-1-volume.png",
+      "sha256": "cacccd638e619d97432c26b31369db0f3e61d30d45a44c4057ba36fddb091b2d"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-dark-2-input.png",
+      "sha256": "0e44faf853f30ea09fa910dda24f60d960a479f5b65377ce600f0750b5e06418"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-dark-2-volume.png",
+      "sha256": "310810b541be26e5b89ec8f7c3cc725ca6f87cb15e3c30f30d84d1b7d6739921"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-light-1-input.png",
+      "sha256": "a84679fb60535ba3a941576f5d1b6b7ba7c7fe5d0984689478152efbc5a319cd"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-light-1-volume.png",
+      "sha256": "f256b3748016d7d143c466ad6b7dc177f1ca9e8cbc974360bcd1608432f76064"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-light-2-input.png",
+      "sha256": "e475860067d44211aa7bd27d22e7b199cc33a12811a718ba4bbd25dfbaf7e89b"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/390-simplifiedChinese-light-2-volume.png",
+      "sha256": "cedc02c4236be1589a80686ddbf20b85521e91b05b0f07fc67a874fa9f580692"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/781-english-dark-1-input.png",
+      "sha256": "6c621c5f20f395957060860dfddb31c38ab5ec937cff279a930be998e3e5ca60"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/781-english-dark-1-volume.png",
+      "sha256": "804b93a0edcddcc9ac8ec78e6260a09de68afe3373a97eedc3e5941d6a23e6ee"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/781-english-dark-2-input.png",
+      "sha256": "569330c9df55a22a5ea4b1fb60c2b036eb123b468cb0ae865bb125b10b5da307"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/781-english-dark-2-volume.png",
+      "sha256": "184ba3a2c7fdd6e8f1ab9111b1c93a139b90db7deea3ccfdd2771c6d65768b3b"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/781-english-light-1-input.png",
+      "sha256": "0018c4258b184019e84f7e8f144ab3fd074a73301e08548c8964d6d26f1f6f11"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/781-english-light-1-volume.png",
+      "sha256": "0165f72f317112f89b3b7a681629dc2730bacde9ceb1f5edb7ccb4463381549d"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/781-english-light-2-input.png",
+      "sha256": "e9c22f888c6f6f5d05c9b0aabda0ab15667f468d1f98072675bc5a3c1eab8d77"
+    },
+    {
+      "file": "docs/evidence/current/game-settings-layout/781-english-light-2-volume.png",
+      "sha256": "4481dbc1fbf4cbe3c416379b77f32fb9ae1f3c563414fcf505cee8bd02e05a42"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-2.png",
+      "sha256": "029e8f8b18b03b3524a7e170c62edf57f3b0a4c0e60b31d0930b1a080efae3e0"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-en-2.png",
+      "sha256": "b2d4aee17a8564cd30fe295aabc15f05ef424bb1f92b215e07353b6453d38d55"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-en-light-2.png",
+      "sha256": "2bef783a108f8a16d900e134b46bb38f4d241758eb3b948a25480f46773e1cf1"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-en-light.png",
+      "sha256": "9963f82db669ce22c814cb9c4562cd42a994662b602c916da406ce23449a11b1"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-en.png",
+      "sha256": "c4e72772b4e8c1c83afc00c8577d68b6bffecb35f405a886fbc855ecdbf9fc43"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-ja-2.png",
+      "sha256": "1bc6a7f3168de2dc8d7ceabdbc748a49c99f0aec4f14215c7a682d1cf6aedda9"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-ja-light-2.png",
+      "sha256": "8d4697fb449aa953eefe0e07de2eed19da5cbc33dc496e0e84162a3bd3972d0f"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-ja-light.png",
+      "sha256": "ce976814667ceb00c77f6a02a43d52b4a8e9108d5bc63be9416cf1ef7ce9f67d"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-ja.png",
+      "sha256": "eefe39fc3972f9381f24043876bc50534559da41436f1bf483b9e16e00e0ba20"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-light-2.png",
+      "sha256": "c7ffa7c05bc9f84adb075275ec58b3e52b705c97d47bd8f4bef226b443149919"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected-light.png",
+      "sha256": "68188a58f14eb0ea0fcab445b4e621e00feb64587f509027b86aef73621593e8"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-disconnected.png",
+      "sha256": "1e9b2a071e07b1db5365aac2248e4cfe6c867a68ec5111eb417a4c0896c483a2"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-2.png",
+      "sha256": "093ebf9829b50bed33ba41a3fba810b1e49050c6725e79c4a3e230e7b2db8637"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-en-2.png",
+      "sha256": "5c0718166821293f02f7d4c990f1cc7e5c5cc1276fc024ade0afcdcf34b91ba5"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-en-light-2.png",
+      "sha256": "ad097c783c4486e584eddf34155568089bdbaae94f025f2ee516ffcb1a2d9130"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-en-light.png",
+      "sha256": "bab837e48195ed1254ba019d67714f2075f7b6d10fac41be80e6ac9e5a78af09"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-en.png",
+      "sha256": "f31357e8ff70ddfb72533d66d1c062e144a3420be2ff58abcff69b66144617fb"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-ja-2.png",
+      "sha256": "1932f32514e421c758ada560db703798f656ae21a6ede2632b97a3632c09b368"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-ja-light-2.png",
+      "sha256": "9a8afc6f80198e008465ac91bdbcff707c458064f2df69454836070aad8b1090"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-ja-light.png",
+      "sha256": "b0fae7bb5ced6911d7229229cbef19f4626420da33029f87cf747d459c5968cb"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-ja.png",
+      "sha256": "4ea6d32128d4fc94160e0057f3f15087c617607aff0773ce01859ba6a71a9fd0"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-light-2.png",
+      "sha256": "bbeefd5b1c967d0c0f9f8e9cabe10188e16816079c25f182dbfb09421048b45a"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty-light.png",
+      "sha256": "d43e751f25f007b9b8ca0e405f74f43e6d8bdb73da9dbbf0a24d39f7a4da9a0c"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-empty.png",
+      "sha256": "5846bd7107729a039160fd77d5737f8fa5f7364073365fdb3896e3af5663f91f"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-2.png",
+      "sha256": "fe833f667fafde455ddf64e1c41121081bacb58564483ecef2364fb3d413981b"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-en-2.png",
+      "sha256": "b10a9b4166556d51d9c769ed69b4be61a9acfa8ee6a3182d02eddff0204dc11e"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-en-light-2.png",
+      "sha256": "e2f41fd8dd65a5ea5b9a275b6be8fe9c871617d62d6e61118aa0853dd0a165ff"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-en-light.png",
+      "sha256": "78b1261d8ded1973da7456988823dd99188ff3f68f258392d1b8b713269549c9"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-en.png",
+      "sha256": "66c1d048c0aa29635535c5bb1452687745163873ae1bee370db6ddba9c921c9e"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-ja-2.png",
+      "sha256": "1a18db17064cc2677e9bd8f7dfe590b23cfc9eb29dda5e2909e8771df46afb28"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-ja-light-2.png",
+      "sha256": "313f20fb2469b2213bb2bf161a11d35c5e5e16b10875bb75d1f2401f0cf2dd15"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-ja-light.png",
+      "sha256": "b07b39be7db5ecabe00beb27cdfef678798db54edcbb4060e0a6b96ff34e172d"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-ja.png",
+      "sha256": "6543c9513e99e415ca867e6f55fcbff2557fa234051fea1d51c02d89486b7cd9"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-light-2.png",
+      "sha256": "eb2721f76798e69376ecdc625a6b3f4c221ee3fbcabc96748983ddca6ca4384f"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live-light.png",
+      "sha256": "61885123beb3dc135d9a434ef39cc627ff6984197bb4b22279c1c94ffab08cab"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-live.png",
+      "sha256": "2857844d618f25e319cb4e4684c2990a83e19a666d8df6f30e56b3c2fa7c704d"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-2.png",
+      "sha256": "008a8bf00a0b7fd5c1d50f42d707745d95026a825741f9e251601ee25d662a9e"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-en-2.png",
+      "sha256": "f965f0f1d7547d3e84fca5dc6cde8dc39917e61f1c8b5637d203a0ed8a378435"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-en-light-2.png",
+      "sha256": "9c27c4d98fa91ab7e17bbe1ee8aaf65bced2bad244c5348847c1a1a13b906200"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-en-light.png",
+      "sha256": "a8c143e5f9685364672211b4b8af85bd92d1b89b62021cefc4bb93a61f7afe9d"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-en.png",
+      "sha256": "dc3dde161b4505df0f26d9e276df538cc535a626509977841f2a030dd4d2f198"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-ja-2.png",
+      "sha256": "0711285f419d7012a943eb3117ee1ddf488c7644348d063af9457b2bd3c40e48"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-ja-light-2.png",
+      "sha256": "7826e68e713949b391dcfefe30834b86a17ab45f3be4d9bd3953f355bb0078b8"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-ja-light.png",
+      "sha256": "dd7a312eba4b5972957ca8db7aef35a1fef966c60fc056bdfb73e2b18314fcf9"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-ja.png",
+      "sha256": "b6c57fb949cd67535c592f09672f54f1c86ab00a0b1ee63cc523ca7d53176555"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-light-2.png",
+      "sha256": "68c87da4c4e646ef3e0cbf006e80e711b0379206a889c3694e06fa8d86b6b794"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected-light.png",
+      "sha256": "4639660f843e06aaa2e6805769abd0c574998090f1b5139d0306d4a111709520"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-disconnected.png",
+      "sha256": "98a2193c6ec9ed96134af6b51e16f56d472a5f3d5bce0c02986643d9e03f4897"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-2.png",
+      "sha256": "c58ccc74da97eefc5af7ebe811760fb86351da669f919d326f097ffc01237427"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-en-2.png",
+      "sha256": "e41f3c9750e2848badd83c6acbd4b5b7d1b616014a83277e24c156bd505b8ae0"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-en-light-2.png",
+      "sha256": "b0c033a4eaf704bcaa1ae769afd560909f2ea4545e68dbb7861e50b8c082aa59"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-en-light.png",
+      "sha256": "bae81de4f6a2ba0b4384d3c5df61b4bcb6be99613c2f1bc878c925baaae8fac4"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-en.png",
+      "sha256": "e8b544a63f38bdf2f040d7079294be29336e6981a5ae8e43e261846203f41bc9"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-ja-2.png",
+      "sha256": "568db9c789953a9cec97d0d6bba335b8b08fc4d297c4b6436393a117c02f481c"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-ja-light-2.png",
+      "sha256": "1731d1b734f1fb00c4f9c77a68a63fad4047d9a4bf50887724d0335d703aedb3"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-ja-light.png",
+      "sha256": "6506fed2689bd5263e11f694ba9182d811137d89bf8f98c2fa4a598eef248f8d"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-ja.png",
+      "sha256": "3da7df0cb758520a9fc8e0b0db80306cced519e5fdc14ad8eb116a8f28442639"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-light-2.png",
+      "sha256": "0e3d8005c8d0b040815e56a0122f96fe9b84305376c0daf9377bcef42c4e4bdf"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty-light.png",
+      "sha256": "fb981f44ec630f570ed3bc9230ccac5905936b600592f8f477da9600a08944b1"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-empty.png",
+      "sha256": "93ae46069fb5cfac2e54bb94298962b159264bcdffb34997c137ae494df92810"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-2.png",
+      "sha256": "3c8d66a9b4bc13719c7253abb02340966a9a83104fb3b8600d1fd2110e47f949"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-en-2.png",
+      "sha256": "e84457c3f72a8d0a946727681bacc94d1db5b4a6d4ba174364707a85b7e40cfe"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-en-light-2.png",
+      "sha256": "99e70be27b90d78dbff11fe3d70461f80f8a98c146ebd849edb1112299de9a29"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-en-light.png",
+      "sha256": "78c2e9aa311e3d8d56ae2c920ee797fab376307608390f599f17d7b04e85e864"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-en.png",
+      "sha256": "78f3ee2099bd272cff7f98c301058d26c1a2396d84c5ee16f00c97dd3de6abab"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-ja-2.png",
+      "sha256": "d38311fca60946c4c7579a8c2236b6f409b0b8aced5631757b7862d81984bdbe"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-ja-light-2.png",
+      "sha256": "3e9d70fde4a7e4ed5f672764f83b4313f9c50ef42c7b134de3d5ed6449fe9aa7"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-ja-light.png",
+      "sha256": "e2a2131c7686c0db762c1069df4d513b0522416eeedfeff4ec91a1280d2450bc"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-ja.png",
+      "sha256": "6ecd1d75464f6bada422cddfdaaaf552e749a373cc89c834142814738611fe68"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-light-2.png",
+      "sha256": "a0b23b7e0287fff2d5ca2313bed76f584cb685554209858e535c57a2439c35b4"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live-light.png",
+      "sha256": "6b3f3501110f41a7591bb2f7d94282aeb1a1d1cdb85b5ebc0b9df7c175132e68"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-live.png",
+      "sha256": "0a7a1e20b3372c384de34f183f9c7e38eafd8b0c70f65c064b12b6f3fe4ef255"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-2.png",
+      "sha256": "68a489d9ba1eec82525340b9fa1e34d9eb3321600f4c4b0e90fca466b4dec626"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-en-2.png",
+      "sha256": "828f34afea82c733f3bd391a65f92d7e191a64029f37f80179f86fefccb3289b"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-en-light-2.png",
+      "sha256": "001f4be1d16448469d0b6b30c2ebf50d7b129102a50a1ba96ab2efa459191ead"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-en-light.png",
+      "sha256": "c19ec16daf482664ababd576db50aa1c39d51fb4c2d041d7e365363c38863a50"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-en.png",
+      "sha256": "9b7a149b111da931fdd9e3ce0ec95b1848095b8a7ee6a6b508be9a2c0fc7e9aa"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-ja-2.png",
+      "sha256": "e0881959d50cb1509d6c4c6353866626f9d88579af19770b1995e06024feb12e"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-ja-light-2.png",
+      "sha256": "e9b357cd642978e650e0240e85f674c5d869c56b851f4d7eba82ac7fad658b9f"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-ja-light.png",
+      "sha256": "19979204f4421e0abbd86716bda7e76af79049fd66192eedec4ed4060fcdb52e"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-ja.png",
+      "sha256": "ad41f4942b7d9ba05c65298c8c1e2f8c8efc3b8cfd8731dc70ed866ef37f1d59"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-light-2.png",
+      "sha256": "3a1ba775be83135712847646367e0a13e1b824eec892a0b2b2a9df23411b74b5"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-light.png",
+      "sha256": "56844add9a39a471509827171e3867687e003139b7a18fe725767991f5814f4b"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-rooms-en-2.png",
+      "sha256": "74455fabc331b0b0427d5290e651a2d1deee25cec66b3b1ac8db41988693ceb8"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected-rooms-en-light-2.png",
+      "sha256": "d8704370ff8bd859770e4cf24d5021e896f765e262fd6159bc218936e21db270"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-disconnected.png",
+      "sha256": "4f8381992dd0d4158ef8f20033bb2a3f3a8ae2da5f8859f36285fb6a60015317"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-2.png",
+      "sha256": "c0a2baf1ba8a5d5e6dc63c132b0d43bcd0506399e4dfa65042949115a4f4b5c9"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-en-2.png",
+      "sha256": "5cfabb1490e03904df0627c7b19089d7ddd80dc274eaf6cebc3cac94370af2eb"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-en-light-2.png",
+      "sha256": "c014a3684ede060d803c22b72b08538023c50ceb1f2c0daeb1aa57c7e2657b2e"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-en-light.png",
+      "sha256": "6e20e8be6d54f448ae3a58336e297ed388247952e525d15c7e94adde95367669"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-en.png",
+      "sha256": "3cfe5ea8c14a4221a18c715a1a12c10ce67131a8f140df701ff74b7b43d0b461"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-ja-2.png",
+      "sha256": "0a32e6903fb51ebbb077c8cd44d1bb87259c3fcf823aac2dcd86687da800e7a3"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-ja-light-2.png",
+      "sha256": "9daeae9c792e11c632813a96e5cb937c0bc0810101b58596d9ad6525f326275c"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-ja-light.png",
+      "sha256": "64894b5238b7f069e7da7fd58dca81635b3b282bd055f956d2ccd89b216d003d"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-ja.png",
+      "sha256": "227085a7c606de5511eedf4af5da173ea08a95c730ba197b5501c77a950fb7a4"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-light-2.png",
+      "sha256": "e7a0a254735e4fe7c4b093c4bc03916f728b36b5ea483c3890efbcf10f7a980a"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty-light.png",
+      "sha256": "3ef7e89b00a311f29696af5fcdd8795e8da6afc4da9a3e79285ba21d9f75f062"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-empty.png",
+      "sha256": "8a12857511acb62b667b61da47a7a442eea5bf2f61adc467da21a10a804f5cef"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-2.png",
+      "sha256": "50237603ad5c42b8bc3f1f06958e6eb3a415be8bd70afb800cc2447c52211126"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-en-2.png",
+      "sha256": "d6c75cb3717a0c52fb3c83f545e1ca1c038460b980eec1a14fc32882a881c500"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-en-light-2.png",
+      "sha256": "ab7d510cf3a9953f15fe5990feefe89a0279e274c3f037c4f7e2912042a8e047"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-en-light.png",
+      "sha256": "6c7f6c9fe2c754c7affe0afd99c0ec82c4c519a58a6f8c8e21c87100075e59a7"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-en.png",
+      "sha256": "f97d11ee9e07dffa7269c79e900adc436b0704cd892158f6af9a4e6f7eb9fc26"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-ja-2.png",
+      "sha256": "33b08a136c2c3c1647a39020d818c67d3fa821796b85824275804f74d236e541"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-ja-light-2.png",
+      "sha256": "ff7106fd77fbdf4f8ef9fa88a8eb02580c33a67fc33aa06f3d3703c2b56bfb18"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-ja-light.png",
+      "sha256": "34e8d84db50fd96e9a89a2520e48dac28119e54b9b2a99373fd20ed1f3dd1540"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-ja.png",
+      "sha256": "7fbdcfab19a7a2f5d690b6f4ec476bd50245e8dc5898934be860129a11c7da41"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-light-2.png",
+      "sha256": "6e1751f22f525d6956f91877d6757c6057b5f77b92b6295f9e4ddc7c74b5ba01"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live-light.png",
+      "sha256": "d4fec375e81ac9301172e1bd5e1ccc4ebfe4c1a536f1fb113a533dcd3dee3798"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-live.png",
+      "sha256": "e458502aecce8cb67cbf48dc7bd4752764383126f326958eba3befd04d14569a"
+    },
+    {
+      "file": "docs/evidence/current/core/desktop-library.png",
+      "sha256": "44d55ac6251ca00709fee064b609c50e8fe2b8b7b89efb58f3336fa9bd9fbec0"
+    },
+    {
+      "file": "docs/evidence/current/core/mobile-library.png",
+      "sha256": "f0cbd02e4d2449aabf7bef924b4f161574a5216c34d807e4d099434b4b81fb97"
+    },
+    {
+      "file": "docs/evidence/current/core/mobile-narrow-library.png",
+      "sha256": "53cb0e2c68414f947f6307ad09cbaeb9001494905d10451fd3c81de669451315"
+    },
+    {
+      "file": "docs/evidence/current/core/desktop-game-detail.png",
+      "sha256": "000d49df9db4d1253a81876c982f9a05dc2ef1259ceb249cd32fb25a130558bf"
+    },
+    {
+      "file": "docs/evidence/current/core/mobile-game-detail.png",
+      "sha256": "5c6c25e031178d4b133cf50562896446b2c76b114cba388b42568ce73491ac03"
+    },
+    {
+      "file": "docs/evidence/current/core/mobile-narrow-game-detail.png",
+      "sha256": "b72acec6da07ca9db804353cf7cc3213c938cd5bbad1e6ee41827f9e46865393"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-en-2-lobby-membership.png",
+      "sha256": "6ece835392383891d6e58d50932a5b60d740b6dcad0716e64eb8521a8b94a110"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-capped.png",
+      "sha256": "d1568dd3ecb11e7ace3142d27029abf2681ca78a3da71bc1a2a4e4d174fe2d30"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-match-replay.png",
+      "sha256": "3d9623b38945b612385c7d09ccd38f08bdfc3624d29370cfc7d60e51f5e4b33c"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-membership.png",
+      "sha256": "2febc9f2fab9b85110367faa31f6903e0964e3492f33fd9f30dab61f50146651"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-rating-card.png",
+      "sha256": "ae26532bf18d47e71d822823d621495743dff88bba053a69681d920ae9608e06"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-lobby-replay-metadata.png",
+      "sha256": "bdbef15afafb1b5b3d210d0617680053d742635a501565cc1003d1f097a025a5"
+    },
+    {
+      "file": "docs/evidence/current/lobby/desktop-network-check.png",
+      "sha256": "316e930fd2011ba4fcb89eaf39a11ddc3fcbdc06ee61fee81c7c109b980eb3af"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-ja-2-lobby-membership.png",
+      "sha256": "b40dc29c8ed9be28a06e440f7caf2b8a23d44b31881579543b58bb8f7e1ad5d4"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-capped.png",
+      "sha256": "df7876552958d47857b2b3b99bc3c670157ffdf7099edcc8c72973694cf742d1"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-match-replay.png",
+      "sha256": "f3e79e53e8df361cc4ca57834bdf4611becc38ce7a0839a77c9112cc1af4b7ea"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-membership.png",
+      "sha256": "ed55efd4393a622eb17bef8fc5045c2b18fabd4d3b34630e95f5f71dbf9c6112"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-rating-card.png",
+      "sha256": "02a87cefd6b29b90bdf0d0448577ed465cdde7992e413b637b4c516f9c1032b0"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-lobby-replay-metadata.png",
+      "sha256": "4983b614ff80ce8809822b14f9ed020bcb9a6b9e2d579360e5bfb5730f5a19c0"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-en-2-lobby-membership.png",
+      "sha256": "ff20dd95815fc2301b6da8747da072ae649f9a47411180359661e4b1f5ad270a"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-capped.png",
+      "sha256": "7d6b7ce1d9fa0fb0f8ebbbd4f418dcbd4273c34b0d99b7217130e0eddedf369e"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-match-replay.png",
+      "sha256": "a08bafdf1b8c8ba87912ff5b576389362ae5ffc3b5e72540879aeb417408900a"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-membership.png",
+      "sha256": "cfd0b062888956f5bad92ff8bea02aa5c4281e81229a709e1e3d3380d93f1e05"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-rating-card.png",
+      "sha256": "843eb4dcc8bd5961e75e532caa47c7cb023e508735ab6e07189ee184d339c734"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-lobby-replay-metadata.png",
+      "sha256": "9f817fa41c3c1afd508b4ee92c35d62b0d518d80377ae8e54c8d25be8ed2c395"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-narrow-network-check.png",
+      "sha256": "d8c9688ed2ff02d6d45849df81aa4d26260e68bd57ad2508ce089ce3202c10d2"
+    },
+    {
+      "file": "docs/evidence/current/lobby/mobile-network-check.png",
+      "sha256": "68f2111c3607d06272fc44a988b2db1a02a862bdc2f4dae74a5823edd4780293"
+    }
+  ]
+}

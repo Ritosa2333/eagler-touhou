@@ -1,0 +1,1517 @@
+{
+  "@@locale": "zh",
+  "windowMinimize": "最小化",
+  "windowMaximize": "最大化",
+  "windowRestore": "还原",
+  "externalMidi": "使用外部 MIDI 设备播放",
+  "externalMidiDevice": "MIDI 输出设备",
+  "externalMidiNoDevice": "未检测到设备",
+  "profileCropAvatar": "裁切头像",
+  "profileCropCover": "裁切封面",
+  "profileCropRoomPreview": "房间预览",
+  "profileCropZoom": "图片缩放",
+  "profileCropZoomIn": "放大",
+  "profileCropZoomOut": "缩小",
+  "profileCropReset": "重置位置",
+  "profileCropConfirm": "使用此图片",
+  "profileCropError": "图片处理失败，请重新选择图片",
+  "profileCropMobile": "移动端",
+  "profileCropDesktop": "桌面端",
+  "importPackageCopying": "正在导入游戏包…",
+  "importPackageVerifying": "正在校验本地游戏数据…",
+  "importPackageDigestMismatch": "游戏数据包 SHA-256 校验失败",
+  "importPackageDownload": "游戏包下载",
+  "importPackageAddress": "链接",
+  "importPackageHint": "提取码 / 提示",
+  "importPackageNoReference": "当前服务器未提供备用下载链接",
+  "importPackageOpenReference": "打开链接",
+  "progressOneCredit": "一命通关",
+  "progressCleared": "已通关",
+  "progressFailed": "未通关",
+  "progressUntried": "未尝试",
+  "progressUnavailable": "存档未提供",
+  "progressUnread": "未读取",
+  "progressLoadoutNumber": "机体 {number}",
+  "progressLegacy": "传统模式",
+  "progressPointdevice": "绀珠传模式",
+  "progressWork": "作品",
+  "progressLoadout": "机体",
+  "progressBestScore": "最高分",
+  "spellCards": "符卡收取",
+  "spellAllLoadouts": "全部机体与难度合计",
+  "spellMap": "收取图",
+  "spellList": "符卡列表",
+  "spellStageColumn": "关卡",
+  "spellCaptured": "已收取",
+  "spellAttempted": "遇到未收取",
+  "spellUnknown": "未遇到",
+  "spellStage": "第 {stage} 关",
+  "spellUnavailable": "当前存档没有符卡收取统计",
+  "language": "界面语言",
+  "singlePlayer": "单机",
+  "multiplayer": "联机",
+  "home": "主页",
+  "settings": "设置",
+  "launcherSettings": "启动器设置",
+  "lessMotion": "更少动画",
+  "themeSettings": "主题设置",
+  "backgroundSettings": "背景设置",
+  "accountSettings": "账户设置",
+  "personalProfile": "个人资料",
+  "accountSecurity": "账户安全",
+  "cloudSaves": "云存档",
+  "signOut": "退出登录",
+  "signIn": "登录",
+  "register": "注册",
+  "viewProfile": "查看个人主页",
+  "editProfile": "编辑资料",
+  "help": "帮助",
+  "site": "站点",
+  "firstUse": "首次使用须知",
+  "faq": "常见问题",
+  "multiplayerGuide": "联机玩法介绍",
+  "supportUs": "支持我们",
+  "serviceStatus": "服务状态",
+  "uptimeTitle": "服务器运行状态",
+  "uptimeStatus": "状态",
+  "uptimeService": "服务",
+  "uptimeDay": "24 小时",
+  "uptimeWeek": "7 天",
+  "uptimeQuarter": "90 天",
+  "uptimeHistoryRange": "历史范围",
+  "uptimeHistory": "{range} 历史",
+  "uptimeFailed": "暂时无法读取状态，正在自动重试。",
+  "uptimeLoading": "正在读取…",
+  "uptimeEmpty": "暂无服务。",
+  "uptimeResponse": "响应",
+  "uptimeAvailability": "可用率",
+  "uptimeAvailabilityHint": "已完成探测的可用率",
+  "uptimeNormal": "正常",
+  "uptimeOutage": "异常",
+  "uptimeUnknown": "未知",
+  "uptimeSite": "主站",
+  "uptimeDownload": "下载服务",
+  "uptimeNetplay": "联机服务",
+  "uptimeTurn": "TURN 中继",
+  "uptimeRetry": "重试",
+  "switchTheme": "切换主题",
+  "about": "关于本站",
+  "siteInformation": "站点信息",
+  "terms": "服务条款",
+  "privacy": "隐私条款",
+  "allGames": "全部游戏",
+  "favorites": "我的收藏",
+  "mainlineGames": "正作",
+  "versusGames": "对战作",
+  "fightingGames": "格斗作",
+  "spinOffs": "小数点",
+  "classicGames": "旧作",
+  "fanGames": "同人",
+  "multiplayerAll": "全部联机",
+  "multiplayerVersus": "对战",
+  "multiplayerOriginal": "原作",
+  "multiplayerFighting": "格斗",
+  "searchGames": "搜索游戏或代号",
+  "searchGamesShort": "搜索游戏",
+  "clearSearch": "清空搜索",
+  "sortNumber": "按作品编号",
+  "sortReverse": "编号倒序",
+  "sortName": "按作品名称",
+  "recentGames": "最近游玩",
+  "gameCount": "{count} 部作品",
+  "coverView": "封面",
+  "listView": "列表",
+  "favoriteGame": "收藏 {title}",
+  "filterMultiplayerGame": "筛选 {game}",
+  "emptyFavorites": "暂无收藏作品",
+  "emptySearch": "找不到匹配的作品",
+  "lastPlayed": "最后运行日期",
+  "playTime": "游戏时间",
+  "startGame": "开始游戏",
+  "gameSettings": "游戏设置",
+  "cloudAccountSave": "云端存档",
+  "cloudChooseFiles": "选择存档文件",
+  "cloudUploadParse": "上传并解析",
+  "cloudDownload": "下载云端存档",
+  "cloudNoSave": "尚无云存档",
+  "cloudAutoSync": "自动同步",
+  "cloudClearLevels": "通关难度",
+  "cloudBestScore": "最高分",
+  "cloudUnsupported": "暂不支持这份存档的版本，当前云存档未变更。",
+  "cloudBackupUsed": "当前统计由备份存档恢复。",
+  "cloudFileList": "文件",
+  "cloudLocalModified": "本地修改",
+  "cloudUploadedAt": "云端上传",
+  "cloudTh05ClearHint": "怪绮谈的通关记录位于 game.cfg，可与 score.dat 一起上传。",
+  "inputSave": "保存",
+  "inputUp": "上",
+  "inputDown": "下",
+  "inputLeft": "左",
+  "inputRight": "右",
+  "inputShoot": "射击 / 确认",
+  "inputBomb": "炸弹 / 取消",
+  "inputFocus": "低速",
+  "inputSpecial": "特殊动作",
+  "inputConfirm": "确认",
+  "inputSkip": "跳过对话",
+  "inputRestart": "重试",
+  "inputQuick": "快速攻击 / 取消",
+  "inputDuelFocus": "低速 / 蓄力",
+  "inputDuelPause": "暂停 / 菜单",
+  "inputSaveLayout": "保存布局",
+  "inputLayoutName": "布局名称",
+  "inputCustom": "自定义",
+  "inputLayoutSaved": "布局已保存",
+  "inputDeleteLayout": "删除布局",
+  "inputRestoreOriginal": "恢复原版",
+  "inputDuelEnabled": "启用本地双人配置",
+  "inputDevice": "输入设备",
+  "inputContext": "配置场景",
+  "inputGeneralScope": "单人 / 联机",
+  "inputKeyboardDevice": "键盘",
+  "inputGamepadDevice": "手柄",
+  "inputController": "手柄设备",
+  "inputControllerDisconnected": "已保存的手柄未连接",
+  "inputControllerConflict": "这个手柄已分配给另一位玩家",
+  "inputConnectController": "连接手柄后，先按一下按钮以识别设备。",
+  "inputChangeControllerBinding": "点击按键，再按手柄按钮或推动摇杆。",
+  "inputControllerDefaults": "恢复默认",
+  "inputControllerAutosave": "按设备自动保存",
+  "inputActionColumn": "动作",
+  "inputBindingColumn": "按键",
+  "replayManager": "录像管理",
+  "replayMove": "移动",
+  "replayRoot": "根目录",
+  "replayNewFolder": "新建文件夹",
+  "replayFolderName": "文件夹名称",
+  "replayDownloadFolder": "下载文件夹",
+  "replayPlay": "播放",
+  "replayRename": "改名",
+  "replayConfirm": "确定",
+  "th09DuelReplays": "对局录像",
+  "gameDisplaySettings": "显示设置",
+  "gameInputSettings": "输入设置",
+  "gameTouchSettings": "触控设置",
+  "gameVolumeSettings": "音量设置",
+  "gameStorageSettings": "存档与录像",
+  "gameAdvancedSettings": "高级设置",
+  "gameHighRefresh": "高刷新率",
+  "gameRenderResolution": "渲染分辨率",
+  "gameLanguage": "游戏语言",
+  "gameLanguageBuiltIn": "内置",
+  "gamePixelPerfect": "启用邻近缩放",
+  "gameFocusHitbox": "低速时显示判定点",
+  "gameFaithBar": "头顶信仰槽",
+  "gameRapidFire": "连射",
+  "gameFocusMode": "启用低速",
+  "gameLowOverhead": "低开销渲染（640×480）",
+  "th05BossBar": "Boss 血条样式",
+  "th05BarNative": "原版侧栏",
+  "th05BarEosd": "红魔乡式顶部血条",
+  "th05BarRing": "环形血条",
+  "th05PhaseMarkers": "血条提示阶段",
+  "th05PhaseStars": "按星星显示阶段数",
+  "th05PhaseTimeout": "阶段剩余时间 / 次数",
+  "th05TimeoutAsTime": "攻击循环换算为时间",
+  "th05NumericDream": "梦槽以数字显示",
+  "th05NumericPower": "火力以数字显示",
+  "gameKeyboard": "键盘改键",
+  "gameGamepad": "手柄改键",
+  "gameLocalDuel": "本地双人",
+  "gameTouchEnabled": "启用触摸功能",
+  "gameAlwaysHitbox": "始终显示判定点",
+  "gameMagnifier": "放大镜",
+  "gameTouchLayout": "按键布局与触控设置",
+  "touchEditorTitle": "按键与触控",
+  "touchEditorCollapse": "收起面板",
+  "touchEditorExpand": "展开面板",
+  "touchEditorPortrait": "竖屏",
+  "touchEditorLandscape": "横屏",
+  "touchEditorRotatePortrait": "切换到竖屏",
+  "touchEditorRotateLandscape": "切换到横屏",
+  "touchEditorRestore": "恢复本方向默认",
+  "touchEditorSave": "保存布局",
+  "touchEditorDiscardBody": "退出将丢弃当前未保存的触控布局修改。",
+  "touchEditorDiscard": "放弃修改",
+  "touchEditorChoose": "选择按键",
+  "touchEditorMove": "移动方法",
+  "touchEditorDrag": "拖动移动（原版移速）",
+  "touchEditorUnlimited": "拖动移动（不限速）",
+  "touchEditorJoystick": "八向移动",
+  "touchEditorStick": "摇杆",
+  "touchEditorFreeJoystick": "不限向移动（摇杆）",
+  "touchEditorFocusMethod": "低速方法",
+  "touchEditorFocusHold": "按钮（按住时低速）",
+  "touchEditorFocusToggle": "按钮（按下时切换状态）",
+  "touchEditorFocusTwo": "双指",
+  "touchEditorSensitivity": "触控灵敏度",
+  "touchEditorSensitivityHint": "手指拖动距离与自机目标移动距离的比例。在背景拖动可以预览效果。",
+  "touchEditorCustom": "自定义",
+  "touchEditorCustomSensitivity": "自定义灵敏度",
+  "touchEditorDoubleBomb": "双击 Bomb",
+  "touchEditorRestartHint": "在暂停菜单按下后，会重开本局。",
+  "touchEditorThprac": "thprac 按键",
+  "touchEditorOpacity": "按键透明度",
+  "touchEditorFinishAdjust": "调整完成",
+  "touchEditorExit": "退出",
+  "touchEditorFocus": "低速",
+  "touchEditorSlide": "滑铲",
+  "touchEditorFire": "开火",
+  "touchEditorSpecial": "特殊功能",
+  "touchEditorCheatMenu": "作弊和高级设置",
+  "touchEditorLight": "轻攻击",
+  "touchEditorHeavy": "重攻击",
+  "touchEditorProjectile": "弹幕",
+  "touchEditorDash": "冲刺",
+  "gameMusicVolume": "游戏音乐",
+  "gameEffectsVolume": "游戏音效",
+  "gameVersion": "游戏版本",
+  "gameOriginal": "原版",
+  "gameMusic": "音乐",
+  "gameMusicAkyu": "幺乐团专辑版",
+  "gameMusicNone": "无",
+  "gameLocalVisibility": "增强本机玩家可见性",
+  "gameSave": "存档",
+  "gameReplay": "录像",
+  "gameDownload": "下载",
+  "gameUpload": "上传",
+  "gameManage": "管理",
+  "gameHintDeleted": "已删除 Hint",
+  "gameSaveOverwrite": "导入将覆盖当前游戏已有的存档。",
+  "gameContinueImport": "继续导入",
+  "gameSelectFile": "选择导入文件",
+  "gameFileDelete": "删除",
+  "gameFileImport": "导入",
+  "friends": "好友",
+  "viewFriends": "查看好友",
+  "noFriendActivity": "暂无可显示的好友游玩记录。",
+  "socialLoadFailed": "无法加载列表，请重试。",
+  "messageCenter": "消息中心",
+  "announcements": "系统公告",
+  "privateMessages": "私信",
+  "publishAnnouncement": "发布公告",
+  "announcementInput": "输入公告正文",
+  "loginForMessages": "登录后查看私信",
+  "announcementMore": "展开",
+  "announcementLess": "收起",
+  "rankings": "排行榜",
+  "roomFilters": "筛选房间",
+  "allRooms": "全部房间",
+  "openRooms": "可加入",
+  "waitingRooms": "等待开局",
+  "spectateRooms": "可观战",
+  "createRoom": "创建房间",
+  "roomByCode": "输入房间号",
+  "watchReplay": "观赏录像",
+  "refreshLobby": "刷新",
+  "roomCount": "{count} 个房间",
+  "lobbyGames": "联机作品选单",
+  "onlyGame": "只看 {game}",
+  "noMatchingRooms": "没有符合筛选条件的房间",
+  "noRooms": "当前没有房间",
+  "clearRoomFilters": "清除筛选",
+  "lobbyOffline": "暂时无法连接大厅",
+  "lobbyDisconnected": "大厅连接已中断",
+  "lobbyNotConfigured": "此站点尚未配置联机服务。",
+  "lobbyOfflineHint": "请刷新重试。",
+  "retryLobby": "重试连接",
+  "roomGame": "作品",
+  "roomCode": "房间号",
+  "cancel": "取消",
+  "close": "关闭",
+  "join": "加入",
+  "lobbyLoadFailed": "大厅暂时未能加载。",
+  "roomCapacity": "人数",
+  "roomDifficultyLabel": "难度",
+  "roomPlayerCount": "{count} 人",
+  "roomBallCount": "{count} 球",
+  "roomPrivate": "私人",
+  "roomPrivateOption": "私人房间",
+  "roomPublic": "公开",
+  "roomLimitMovement": "禁用不限速移动",
+  "roomUnrated": "休闲对战",
+  "roomChallenge": "挑战模式",
+  "roomDisableFocus": "禁用低速",
+  "roomDefaultRules": "常规",
+  "roomPinnedSettings": "房间设置",
+  "roomCodeCopy": "复制房间号",
+  "roomCodeCopied": "房间号已复制",
+  "roomYou": "你",
+  "roomLeaveSeat": "离开座位",
+  "roomManageSeat": "管理 P{seat}",
+  "roomMoveSpectator": "移到旁观席",
+  "roomRemoveSpectator": "移除旁观者",
+  "roomUnnamedSpectator": "未命名旁观者",
+  "roomRemoveSpectatorConfirm": "将这位旁观者移出房间并拉黑？",
+  "roomRemoveSeatConfirm": "将 P{seat} 移出这个房间并拉黑？",
+  "roomSpectators": "旁观席",
+  "roomSpectatorEmpty": "暂无旁观者",
+  "roomWatch": "旁观",
+  "roomJoinSpectator": "加入旁观",
+  "roomLeaveSpectator": "退出旁观",
+  "roomWaiting": "等待开局",
+  "roomPlaying": "游戏中",
+  "roomStarting": "正在启动",
+  "roomReconnecting": "正在重新连接房间",
+  "roomConnecting": "正在连接房间",
+  "lobbyConnecting": "正在连接大厅…",
+  "roomOfflineService": "联机服务未配置，请联系站点管理员。",
+  "roomExpired": "房间长时间无操作，已关闭。",
+  "roomReplaced": "房间已在另一个标签页接续。",
+  "roomConflict": "你已在另一个房间或标签页中，请先退出原房间。",
+  "roomGone": "房间已关闭或房间号已被使用，请重新选择。",
+  "roomRemoved": "房主将你移出了房间",
+  "roomRoomLimit": "已达到同时保留的房间数量限制，请关闭原房间后重试。",
+  "roomConnectionLimit": "连接数量已达上限，请关闭其他连接后重试。",
+  "roomSeatReady": "已准备",
+  "roomSeatWaiting": "未准备",
+  "roomSeatEmpty": "等待玩家",
+  "roomMovementNormal": "八向移动",
+  "roomMovementRequired": "请切换移动方式",
+  "roomMovementRequiredHint": "这个房间禁用不限速移动。切换为「不限向移动」或「八向移动」后即可入座或准备。",
+  "roomUseTouch": "切换为不限向移动",
+  "roomUseJoystick": "切换为八向移动",
+  "roomMovementTouch": "不限向移动",
+  "roomMovementCheat": "不限速移动",
+  "roomLobbyOpen": "招募中",
+  "roomLobbyFull": "已满",
+  "roomElapsed": "进行时间 {time}",
+  "roomWaitTime": "等待时间 {time}",
+  "roomQuickChat": "快捷发言",
+  "lobbyMembershipChanged": "房间连接已变化，请确认后重新操作。",
+  "lobbyMembershipRelease": "退出原房间",
+  "lobbyMembershipReleased": "已退出原房间，可以重新加入或创建房间了。",
+  "lobbyMembershipUnconfirmed": "尚未确认退出，请检查连接后重试。",
+  "networkCheckAvailable": "可用",
+  "networkCheckChecking": "检测中…",
+  "networkCheckDirect": "P2P 直连能力",
+  "networkCheckFailed": "连接失败",
+  "networkCheckLatency": "{latency} ms",
+  "networkCheckServer": "服务器能力",
+  "networkCheckTitle": "网络状况",
+  "networkCheckUnavailable": "不可用",
+  "roomAlwaysHitbox": "始终显示判定点",
+  "roomChallengeHint": "无法使用 Bomb，原先的残机个数改为死亡次数",
+  "roomChallengeKeepBullets": "Miss 不清屏",
+  "roomChallengeKeepBulletsHint": "中弹照常计入 Miss 并复活，场上的敌弹和激光保留。",
+  "roomChallengeMode": "挑战模式",
+  "roomDecreaseDelay": "减少输入延迟",
+  "roomIncreaseDelay": "增加输入延迟",
+  "roomInputDelay": "输入延迟",
+  "roomInputDelayAutoToggle": "自动实测",
+  "roomLocalChargePriority": "回滚不吞蓄力条",
+  "roomLocalChargeReplayHint": "默认使用原版蓄力逻辑。开启后优先采用本机蓄力进度，录像会额外保存蓄力数据。",
+  "roomPc98ChallengeHint": "无限残机，不能使用 Bomb；每人中弹 +1，获得 Bomb、1UP 或分数奖残 −1。",
+  "roomQuickChatVolume": "快捷发言语音",
+  "roomResetAutoDelay": "恢复自动延迟",
+  "roomRollbackHint": "开启后输入延迟固定为 0 帧；关闭后使用所选输入延迟。开局后设置固定。",
+  "roomRuleSettings": "规则选项",
+  "roomTakeHostSeat": "成为房主",
+  "roomTh01BallCount": "球的数量",
+  "roomTh02DisableFocus": "禁用低速",
+  "roomTh03SpecialFocus": "启用低速",
+  "roomTh05InitialBombs": "初始 Bomb",
+  "roomTh05InitialSpares": "初始残机",
+  "roomTh15ChapterGraze": "折合100%击破率的擦弹数：{count}",
+  "roomTh15ChapterThreshold": "奖残所需得分",
+  "roomTimingAuto": "自动",
+  "th09RatingGames": "(局数 {games})",
+  "roomChatTitle": "房间聊天",
+  "roomChatEmpty": "暂无消息",
+  "roomChatMessage": "输入消息",
+  "roomChatMute": "屏蔽此成员",
+  "roomChatUnavailable": "文字聊天暂不可用",
+  "roomChatSignIn": "登录后可发送文字",
+  "roomChatBan": "当前无法发言",
+  "roomChatSentReport": "举报已提交",
+  "roomChatSendSlow": "发言太快，请稍后重试。",
+  "roomChatReportSlow": "举报太频繁，每5秒可举报一次。",
+  "roomChatFailed": "操作失败，请稍后重试。",
+  "roomChatReport": "举报",
+  "roomChatActions": "消息操作",
+  "roomChatSpectator": "旁观",
+  "roomRetry": "重试",
+  "roomSave": "保存",
+  "roomRequestTimeout": "请求超时",
+  "roomConnectionError": "连接失败",
+  "guideNavigation": "切换联机玩法文档",
+  "documentToc": "本文目录",
+  "documentPrevious": "上一页",
+  "documentNext": "下一页",
+  "documentModified": "最后修改：",
+  "documentUncommitted": "未提交修改",
+  "donationTitle": "捐赠以支持服务器运行",
+  "donationScan": "使用微信扫码。",
+  "donationImage": "Tenko 的赞赏码",
+  "registerTitle": "注册账号",
+  "resetPassword": "重置密码",
+  "accountIdentity": "用户名或邮箱",
+  "identityRequired": "请输入用户名或邮箱",
+  "username": "用户名",
+  "usernameFormat": "3 到 12 位字母、数字、下划线或点",
+  "nickname": "昵称",
+  "nicknameLength": "最多 12 个字符",
+  "email": "邮箱",
+  "emailInvalid": "请输入有效的邮箱地址",
+  "emailCode": "邮箱验证码",
+  "requestCode": "发送验证码",
+  "resendCode": "重发验证码",
+  "password": "密码",
+  "newPassword": "新密码",
+  "passwordHint": "至少 8 个字符",
+  "passwordRequired": "请输入密码",
+  "passwordLength": "密码至少为 8 个字符",
+  "confirmPassword": "确认密码",
+  "passwordMismatch": "两次输入的密码不一致",
+  "forgotPassword": "忘记密码？",
+  "termsConsent": "我同意服务条款",
+  "termsAgree": "同意",
+  "editRegistration": "重新填写资料",
+  "backToSignIn": "返回登录",
+  "codeSent": "验证码已发送",
+  "resetCodeSent": "若此邮箱已注册，你将收到验证码。若未收到，请检查垃圾邮件。",
+  "passwordResetDone": "密码已重置",
+  "usernameInUse": "此用户名已被使用",
+  "invalidCredentials": "用户名、邮箱或密码有误",
+  "emailInUse": "此邮箱已注册",
+  "invalidCode": "验证码有误或已过期",
+  "codeExpired": "验证码已过期，请重新填写资料",
+  "tooManyAttempts": "操作过于频繁，请稍后重试",
+  "accountRequestFailed": "请求失败，请检查网络后重试",
+  "captchaInvalid": "安全验证已失效，请重新验证",
+  "captchaUnavailable": "安全验证暂不可用，请稍后重试",
+  "hidePassword": "隐藏密码",
+  "showPassword": "显示密码",
+  "changeEmail": "修改邮箱",
+  "newEmail": "新邮箱",
+  "newEmailInvalid": "请输入有效的新邮箱地址",
+  "newEmailCodeRequired": "请先向新邮箱获取验证码",
+  "getCode": "获取验证码",
+  "emailChanged": "邮箱已更换",
+  "changePassword": "修改密码",
+  "currentPassword": "当前密码",
+  "confirmNewPassword": "确认新密码",
+  "th09BoardWinRateColumn": "胜率",
+  "th09BoardCharacterScore": "机体分",
+  "profileRefresh": "刷新资料",
+  "profileMissing": "找不到该玩家",
+  "profileRetry": "无法读取个人主页，重试",
+  "profileReviewPending": "部分资料正在审核",
+  "profileNoBio": "暂无简介",
+  "profileJoined": "注册时间 {date}",
+  "profileLinkFailed": "无法打开链接",
+  "profileFollowing": "关注",
+  "profileFollowers": "粉丝",
+  "profileSocialTitle": "关系列表",
+  "profileFollowersEmpty": "暂无粉丝",
+  "profileFollowingEmpty": "暂无关注",
+  "profileFriendsEmpty": "暂无好友",
+  "profileFollowSignIn": "登录后关注",
+  "profileFollow": "关注",
+  "profileUnfollow": "取消关注",
+  "profileSocialPrivate": "该玩家未公开关系列表",
+  "profileSocialRetry": "无法读取关系列表，重试",
+  "profileFollowFailed": "无法更新关注状态，请重试",
+  "profileSocialLoading": "正在读取关系列表",
+  "profileEditorTitle": "个人资料",
+  "profileEditorSignIn": "登录后编辑个人资料",
+  "profileEditorOwner": "仅账户本人可编辑个人资料",
+  "profileEditorLoad": "无法读取个人资料，请重试",
+  "profileEditorReload": "重新读取个人资料",
+  "profileEditorImageFailed": "无法打开图片",
+  "profileEditorDiscardTitle": "放弃未保存的修改？",
+  "profileEditorContinue": "继续编辑",
+  "profileEditorDiscard": "放弃修改",
+  "profileEditorRejected": "资料未通过审核，请修改后重试",
+  "profileEditorReviewUnavailable": "审核暂不可用，请稍后重试",
+  "profileEditorQuota": "账户存储空间不足",
+  "profileEditorInvalidImage": "图片不符合上传要求，请重新选择",
+  "profileEditorSaveFailed": "无法保存个人资料，请重试",
+  "profileEditorPending": "审核中",
+  "profileEditorNotApproved": "未通过审核",
+  "profileEditorSomeRejected": "部分资料未通过审核",
+  "profileEditorSubmitted": "资料已提交审核",
+  "profileEditorSaved": "个人资料已保存",
+  "profileEditorSave": "保存",
+  "profileEditorPublic": "查看公开个人主页",
+  "profileEditorImageHint": "PNG、JPEG 或 WebP，最大 20 MiB",
+  "profileEditorChooseImage": "选择图片",
+  "profileEditorAvatar": "头像",
+  "profileEditorCover": "封面",
+  "profileEditorRemoveAvatar": "移除头像",
+  "profileEditorRemoveCover": "移除封面",
+  "profileEditorName": "昵称",
+  "profileEditorNameInvalid": "请输入 1 到 12 个字符",
+  "profileEditorBio": "简介",
+  "profileEditorBioInvalid": "简介最多 500 个字符",
+  "profileEditorLinks": "个人链接",
+  "profileEditorAddLink": "添加链接",
+  "profileEditorDisplay": "显示设置",
+  "profileEditorDefault": "设为默认视图",
+  "profileEditorHide": "隐藏此视图",
+  "profileEditorShow": "显示此视图",
+  "profileEditorSocial": "公开关系列表",
+  "profileEditorLinkName": "链接名称",
+  "profileEditorLinkNameInvalid": "请输入链接名称，最多 40 个字符",
+  "profileEditorDeleteLink": "删除链接",
+  "profileEditorLinkUrl": "链接地址",
+  "profileEditorLinkUrlInvalid": "请输入有效的 HTTP 或 HTTPS 地址",
+  "profileEditorImageSize": "图片不能超过 20 MiB",
+  "profileEditorImageFormat": "请选择 PNG、JPEG 或 WebP 图片",
+  "profileEditorImagePixels": "图片像素过多，请先缩小图片",
+  "profileEditorImageRead": "无法读取图片",
+  "profileEditorImageCrop": "裁剪范围无效，请重新裁剪",
+  "profileEditorImageCompress": "图片压缩后仍超出大小限制，请选另一张",
+  "profileGameData": "游戏数据",
+  "profileGameDataAll": "全部作品",
+  "profileGameDataEmpty": "暂无公开的游戏数据",
+  "profileCareerTitle": "单机生涯",
+  "profileTotalPlaytime": "累计游玩",
+  "profileMatchWin": "胜利",
+  "profileMatchLoss": "失败",
+  "profileMatchDraw": "平局",
+  "profileMatchReplays": "{count} 局录像",
+  "th09RankHistory": "名次走势",
+  "th09RatingHistory": "WHR 走势",
+  "th09CharacterComparison": "机体分对照",
+  "th09CharacterRecord": "机体战绩",
+  "th09MatchHistory": "对局记录",
+  "th09Guest": "游客",
+  "th09NoMatches": "暂无花映塚对局记录",
+  "th09MoreMatches": "更多对局",
+  "th09AllCharacters": "全部机体",
+  "profileDataRetry": "无法读取游戏数据，重试",
+  "profileBackAllGames": "返回全部作品",
+  "th09ProfileLabel": "花映塚",
+  "th09HistoryRetry": "无法读取对局，重试",
+  "th09LessMatches": "收起对局记录",
+  "th09ExpandCharacters": "展开机体战绩",
+  "th09CollapseCharacters": "收起机体战绩",
+  "th09LoadMoreMatches": "加载更多",
+  "th09MatchSummary": "{wins} 胜 / {games} 局",
+  "th09MatchDuration": "记录时长 {time}",
+  "th09CurrentWhr": "当前 WHR {value}",
+  "th09CurrentRank": "排名 #{value}",
+  "th09BackToRating": "返回 WHR 走势",
+  "th09PreviousPoint": "上一个数据点",
+  "th09NextPoint": "下一个数据点",
+  "th09BoardRank": "名次",
+  "th09BoardActive": "正式",
+  "th09BoardProvisional": "暂定",
+  "th09BoardInactive": "不活跃",
+  "th09BoardPlayer": "玩家",
+  "th09BoardRating": "WHR",
+  "th09BoardDeviation": "偏差",
+  "th09BoardCharacterDeviation": "机体偏差",
+  "th09BoardGames": "局数",
+  "th09BoardGroup": "交手组",
+  "th09BoardGroupNumber": "组 {number}",
+  "th09BoardLastGame": "最近对局",
+  "th09BoardStatus": "定级状态",
+  "th09BoardHelp": "评分与定级说明",
+  "th09BoardCharacterHelp": "机体榜说明",
+  "th09BoardCharacterHelpText": "按机体分降序，同分先看计分局数，再按用户名排序。± 为评分的估计误差。",
+  "th09BoardHelpText": "± 是评分的估计误差，误差小于 220 分时转正。交手组按实际对战连接划分，跨组名次仅供参考。",
+  "th09BoardDistribution": "评分分布",
+  "th09BoardSelect": "选择榜单",
+  "th09BoardOverall": "总榜",
+  "th09BoardSearch": "查找玩家",
+  "th09BoardLocate": "在全榜定位",
+  "th09BoardFilterOn": "筛选（已启用）",
+  "th09BoardFilter": "筛选",
+  "th09BoardMinimum": "最少局数",
+  "th09BoardCharacter": "{name}机体榜",
+  "th09BoardSort": "排序",
+  "th09BoardFailed": "榜单读取失败。",
+  "th09BoardLoading": "正在读取榜单",
+  "th09BoardOpponentsCount": "不同对手 {count}",
+  "th09BoardNoMatches": "没有符合条件的玩家。",
+  "th09BoardEmpty": "暂无战绩。",
+  "th09BoardClear": "清除筛选",
+  "th09BoardUpdated": "更新于 {time}",
+  "th09BoardPlayerCount": "{count} 人",
+  "th09BoardBinSize": "每 {points} 分一档",
+  "th09BoardHighlights": "高亮 {count} 个搜索结果",
+  "th09BoardTitle": "花映塚排行榜",
+  "th09BoardAll": "全部",
+  "th09BoardRetry": "重试",
+  "th09BoardRefresh": "刷新榜单",
+  "th09BoardGamesCount": "{count} 局",
+  "th09BoardWinRate": "胜率 {value}",
+  "th09BoardLastPlayed": "最近对局 {date}",
+  "th09BoardBin": "{score} 分起 | {count} 人",
+  "th09BoardAscending": "升序",
+  "th09BoardDescending": "降序",
+  "externalMidiRefresh": "刷新设备",
+  "externalMidiReadFailed": "无法读取 MIDI 设备",
+  "externalMidiDisconnected": "未连接",
+  "uptimeRefresh": "刷新服务状态",
+  "uptimeUpdated": "更新于 {time}",
+  "uptimeNoHistory": "暂无历史",
+  "uptimeSampleCount": "{count} 条记录",
+  "uptimeShowSample": "查看历史采样",
+  "uptimeHideSample": "收起历史采样",
+  "uptimePreviousSample": "上一条采样",
+  "uptimeNextSample": "下一条采样",
+  "touchEditorSaved": "触控布局已保存",
+  "touchEditorRead": "重新读取触控布局",
+  "touchEditorSaveFailed": "保存布局失败，请重试",
+  "touchEditorOptionsFailed": "保存触控设置失败，请重试",
+  "touchEditorRotationFailed": "无法旋转屏幕",
+  "touchEditorDiscardTitle": "退出触控布局？",
+  "touchEditorContinue": "继续编辑",
+  "touchEditorAdjust": "调整画面位置",
+  "touchEditorResetViewport": "重置画面位置",
+  "touchEditorControlSize": "按键大小",
+  "touchEditorControlPosition": "按键位置",
+  "touchEditorHorizontal": "横向位置",
+  "touchEditorVertical": "纵向位置",
+  "touchEditorViewportOffset": "画面水平偏移",
+  "touchEditorCharge": "蓄力",
+  "touchEditorViewport": "游戏画面",
+  "touchEditorDragViewport": "左右拖动游戏画面",
+  "touchEditorResize": "拖动调整大小",
+  "profileCropHint": "拖动裁切框定位，滑动下方控件调整范围。",
+  "accountChecking": "正在检查登录状态",
+  "accountRestoreRetry": "重试恢复登录",
+  "roomCodeOrInvite": "房间号或邀请链接",
+  "roomCodeOrInviteInvalid": "请输入有效的房间号或邀请链接",
+  "roomInviteUnavailable": "邀请不可用",
+  "roomInviteUnavailableHint": "请返回联机大厅，检查作品和房间号。",
+  "importPackageReferenceLoading": "正在读取下载地址…",
+  "importPackageReferenceFailed": "无法读取下载地址",
+  "importPackageRetryReference": "重试",
+  "lobbyMembershipTitle": "本机已加入房间 {code}",
+  "lobbyMembershipHint": "退出原房间后，可以加入或创建其他房间。",
+  "lobbyMembershipReleasing": "正在退出…",
+  "lobbyMembershipUnsupported": "当前服务尚不支持在大厅退出。请在原窗口退出，或等待旧连接自动释放。",
+  "networkCheckAttention": "需确认",
+  "roomQuickChatAll": "全部",
+  "roomQuickChatChooseSlot": "选择常用槽位 {slot} 的短语",
+  "roomQuickChatEdit": "编辑常用发言",
+  "roomQuickChatFavorites": "常用",
+  "roomRollback": "回滚",
+  "roomTiming": "联机时序",
+  "th09PlayerCardLabel": "查看 {name} 的评分",
+  "th09RatingsTitle": "花映塚评分",
+  "importPackageTitle": "导入游戏资源",
+  "importPackageHelp": "选择 DATA 文件或发布版 ZIP。",
+  "importPackageChoose": "选择文件",
+  "importPackageInstalled": "此版本的资源已导入",
+  "importPackageExtracting": "正在读取 ZIP…",
+  "importPackageIncorrectName": "请选择 {name} 或发布版 ZIP",
+  "importPackageSizeMismatch": "文件大小与发布清单不符",
+  "importPackageUnreadable": "无法读取此发布版 ZIP",
+  "importPackageWrongGame": "这个游戏包属于其他作品",
+  "importPackageIoError": "无法读取或保存本地文件，请重试",
+  "spellCardColumn": "符卡",
+  "spellStory": "正作游玩",
+  "spellPractice": "符卡练习",
+  "spellLastWord": "Last Word",
+  "spellBranch": "第 {stage} 关",
+  "cloudProgressLoading": "正在读取云存档",
+  "spellStageProgress": "{stage}，已收取 {captured} 张，共 {total} 张",
+  "cloudDiscard": "放弃",
+  "cloudRefresh": "刷新云存档",
+  "cloudSignIn": "登录以管理云存档",
+  "cloudReadFailed": "无法读取云存档，重试",
+  "cloudAdd": "添加云存档",
+  "cloudAutoSyncPlaceholder": "原生游戏运行接入后可用",
+  "cloudReadingLocal": "正在读取本机存档",
+  "cloudReadLocalFailed": "无法读取本机存档，重试",
+  "cloudPlaytimeNeedsConfig": "游玩时长需要同一存档的配置文件",
+  "cloudMissingLocalSave": "本机缺少主要存档文件。也可以从设备选择存档。",
+  "cloudExported": "云存档已保存",
+  "cloudRestore": "恢复到本机",
+  "cloudPreviewLocal": "解析本机存档",
+  "cloudChooseLocal": "选择本机存档",
+  "cloudMainFiles": "主要文件 | {files}",
+  "cloudClearChoice": "取消选择",
+  "cloudDelete": "删除云端存档",
+  "cloudDiscardTitle": "放弃所选文件？",
+  "cloudDiscardDetail": "所选文件尚未上传。",
+  "cloudConflict": "云端版本已变化。请比较新版本，再决定是否上传。",
+  "cloudBusy": "云端正处理另一项存档操作，请稍后重试。",
+  "cloudQuota": "账号云存档空间已满",
+  "cloudTooLarge": "所选存档超出服务器限制",
+  "cloudInvalid": "存档无法解析，请核对作品及主要文件",
+  "cloudOperationFailed": "云存档操作失败，请重试",
+  "cloudCheckingVersion": "正在重新核对云端版本，请确认后再操作。",
+  "cloudVersionChecked": "已重新读取云端版本，请核对操作结果。",
+  "cloudReplaceTitle": "替换云端存档？",
+  "cloudReplaceDetail": "所选文件会成为此作品的最新云端版本。",
+  "cloudUploaded": "已上传，游戏统计已更新。",
+  "cloudDeleteTitle": "删除云端存档？",
+  "cloudDeleteDetail": "删除会移除此作品的云端版本及其统计。",
+  "cloudDeleted": "云端存档已删除",
+  "cloudRestoreTitle": "恢复到本机？",
+  "cloudRestoreDetail": "这会用云端版本替换此作品对应语言的本机存档和配置。",
+  "cloudRestoreAction": "恢复",
+  "cloudRestored": "已恢复到本机",
+  "cloudLocalSave": "本地存档",
+  "cloudIdentical": "本机与云端文件一致",
+  "cloudNoVersion": "暂无存档",
+  "cloudPlaytime": "游玩时长",
+  "cloudPlayCount": "游玩次数",
+  "cloudNotCleared": "未通关",
+  "playtimeUnderSecond": "<1 秒",
+  "playtimeSeconds": "{count} 秒",
+  "playtimeMinutes": "{count} 分钟",
+  "playtimeHours": "{count} 小时",
+  "playtimeHoursMinutes": "{hours} 小时 {minutes} 分",
+  "fileIssueTooManyLocalSaves": "本机存档文件过多",
+  "fileIssueCannotReadLocal": "本机目录或文件无法读取",
+  "fileIssueNoLocalSaveFolder": "此作品没有本机存档目录",
+  "fileIssueNoRouteHint": "此作品没有路线提示文件",
+  "fileIssueCloudSaveTooLarge": "存档超出云存档大小限制",
+  "fileIssueCloudSaveEmptyOrLarge": "存档为空或超出云存档大小限制",
+  "fileIssueIncompleteSave": "存档为空或读取不完整",
+  "fileIssueReplaySlotsFull": "当前作品的录像槽位已满",
+  "fileIssueReplayUnsupported": "当前作品无法读取录像",
+  "fileIssueRollbackFailed": "恢复本机文件失败，原文件副本保存在应用暂存目录",
+  "fileIssueReplayMissing": "录像文件已不存在",
+  "fileIssueNameTaken": "目标文件名已被使用",
+  "fileIssueKeepReplayExtension": "请保留原录像扩展名",
+  "fileIssueReplayNameRequired": "请填写录像文件名",
+  "fileIssueSaveNamesInvalid": "所选存档名称与作品不匹配或重复",
+  "fileIssueTooManySelectedSaves": "所选存档文件过多",
+  "fileIssueExportTooLarge": "所选文件超出可导出的大小",
+  "fileIssueImportTooLarge": "文件超出可导入的大小",
+  "fileIssueWrongGameFormat": "文件格式与当前作品不匹配",
+  "fileIssueInvalidPath": "文件路径无效",
+  "fileIssueImportNameConflict": "文件名冲突，请重新导入",
+  "fileIssueWrongReplayName": "文件名与当前作品的录像命名规则不符",
+  "fileIssueImportEmptyOrLarge": "文件为空或超出可导入的大小",
+  "fileIssueCloudFileEmptyOrLarge": "文件为空或超过云存档大小限制",
+  "fileIssueIncompleteFile": "文件为空或读取不完整",
+  "fileIssueCannotReadReplayName": "无法读取录像文件名",
+  "fileIssueCannotReadArchive": "无法读取压缩包，请核对文件",
+  "fileIssueCannotReadCloudArchive": "无法读取云存档压缩包",
+  "fileIssueArchiveSpecialFile": "压缩包包含非普通文件",
+  "fileIssueArchiveInvalidPath": "压缩包包含无法导入的文件路径",
+  "fileIssueArchiveDuplicateFile": "压缩包包含重复文件名",
+  "fileIssueArchiveTooManyFiles": "压缩包文件过多",
+  "fileIssueArchiveSizeInvalid": "压缩包中的文件大小无法导入",
+  "fileIssueArchiveMetadataMismatch": "压缩包中的文件信息不一致",
+  "fileIssueArchiveNoUsableFiles": "压缩包中没有可导入的文件",
+  "fileIssueRestoreCancelled": "已取消恢复存档",
+  "fileIssueCloudSaveWrongFileFormat": "云存档包含格式异常的文件",
+  "fileIssueCloudMainSaveMissing": "云存档缺少当前游戏语言的主要文件",
+  "fileIssueCloudManifestMissing": "云存档缺少文件清单",
+  "fileIssueCloudChecksumFailed": "云存档文件校验失败",
+  "fileIssueCloudArchiveIncomplete": "云存档压缩包不完整",
+  "fileIssueCloudManifestMismatch": "云存档压缩包和文件清单不一致",
+  "fileIssueCloudWrongGameOrLimit": "云存档与当前作品不匹配或超出限制",
+  "fileIssueGameNotInCatalog": "作品未安装在此启动器中",
+  "inputDone": "完成",
+  "inputPause": "暂停",
+  "inputCharge": "蓄力",
+  "inputLightAttack": "A | 轻攻击",
+  "inputHeavyAttack": "B | 重攻击",
+  "inputDanmaku": "C | 弹幕",
+  "inputDash": "D | 冲刺",
+  "inputUnbound": "未绑定",
+  "inputChangeAction": "更改{action}",
+  "inputSaving": "正在保存…",
+  "inputSaveFailed": "保存失败，请重试",
+  "inputNeedLayoutName": "请输入布局名称，最多保存 32 套布局",
+  "inputReadLayout": "重新读取布局",
+  "inputKeyboardLayout": "键盘布局",
+  "inputArrowPreset": "方向键",
+  "inputResetPreset": "重置预设",
+  "inputLayoutDeleted": "已删除保存的布局",
+  "inputKeyboardHint": "点按按键即可改键。同一个键分给多个动作时，以最后一次设置为准。",
+  "inputResetKey": "恢复原按键",
+  "inputAutosave": "更改会自动保存",
+  "inputUnsupported": "此按键或组合键不受支持，按 Esc 取消",
+  "inputCaptureHint": "请按下物理键盘上的新按键，按 Esc 取消",
+  "inputReadController": "重新读取手柄设置",
+  "inputMappingEnabled": "启用手柄映射",
+  "inputSelectController": "请选择手柄",
+  "inputWaiting": "等待输入…",
+  "inputClearBinding": "清除绑定",
+  "inputCancelCapture": "取消录入",
+  "inputReleaseControls": "先松开按钮和摇杆，再录入新键位",
+  "inputStickThreshold": "摇杆触发阈值",
+  "inputButtonNumber": "按钮 {number}",
+  "inputAxisNumber": "轴 {number} {direction}",
+  "inputReadDuel": "重新读取双人配置",
+  "inputDuelNote": "此配置应用于本机双人对战。",
+  "inputPlayer": "玩家 {number}",
+  "inputConfigureController": "分配与配置手柄",
+  "inputDuelLayout": "键位布局",
+  "inputOriginalLeft": "原版左区",
+  "inputOriginalRight": "原版右区",
+  "inputClearKey": "清除按键",
+  "inputKeyConflict": "{key} 已被另一位玩家使用",
+  "replayFileFailed": "录像文件操作失败，请重试",
+  "replayDeleteTitle": "删除录像？",
+  "replayRenameTitle": "重命名录像",
+  "replayFileName": "文件名",
+  "replayMoveTitle": "移动录像",
+  "replayRead": "重新读取录像",
+  "replayChooseGame": "选择录像所属作品",
+  "th09ReplayRound": "第 {round} 局",
+  "th09ReplayPlayRound": "播放第 {round} 局",
+  "th09ReplayDownloadRound": "下载第 {round} 局",
+  "th09ReplayWinner": "胜者 {name}",
+  "replayImport": "导入录像",
+  "replayActions": "录像操作",
+  "replayFolderCount": "{count} 个文件",
+  "gameHighRefreshHint": "提高画面呈现频率，游戏逻辑保持 60 Hz",
+  "gameMusicStream": "OGG | 流式解码",
+  "gameMusicFull": "OGG | 全量解码",
+  "gameReadSettings": "重新读取设置",
+  "gameSaveSettingsFailed": "保存设置失败，请重试",
+  "gameReplayUnavailable": "原生录像播放暂不可用",
+  "gameReturnToReplays": "返回录像管理",
+  "gameFileFailed": "文件操作失败，请重试",
+  "gameImportSaveTitle": "导入存档？",
+  "gameFileSaved": "文件已保存",
+  "gameNoSave": "这里还没有存档",
+  "gameNoReplay": "这里还没有录像",
+  "gamePickLocal": "可以选择设备上的文件导入。",
+  "gameHint": "路线提示",
+  "gameDeleteHint": "删除路线提示？",
+  "gameDeleteHintNote": "这会移除当前作品的本机路线提示。",
+  "gameFilesImported": "已导入 {count} 个文件",
+  "recentConversations": "最近会话",
+  "chooseConversation": "选择一条会话",
+  "closeConversation": "关闭当前会话",
+  "latestAnnouncement": "最新公告",
+  "announcementJustNow": "刚刚",
+  "announcementDaysAgo": "{count} 天前",
+  "announcementHoursAgo": "{count} 小时前",
+  "announcementMinutesAgo": "{count} 分钟前",
+  "announcementByline": "{author} 于 {time}",
+  "viewAllMessages": "查看全部",
+  "openInbox": "打开私信收件箱",
+  "messageUnread": "{count} 条未读",
+  "noAnnouncements": "暂无公告",
+  "messageLoadRetry": "加载失败，重试",
+  "loadMoreMessages": "加载更多",
+  "messageUsername": "对方用户名",
+  "invalidMessageUsername": "请输入有效的用户名",
+  "openConversation": "打开会话",
+  "noConversations": "暂无会话",
+  "noDirectMessages": "暂无消息",
+  "directMessageInput": "输入私信",
+  "sendPrivateMessage": "发送私信",
+  "olderDirectMessages": "更早的消息",
+  "messageSendRetry": "发送失败，请重试",
+  "messageUserMissing": "找不到可接收私信的用户。",
+  "announcementPublishRetry": "发布失败，请重试",
+  "announcementPublishedNotice": "公告已发布",
+  "roomNumber": "房间 #{code}",
+  "roomInviteCopy": "复制邀请链接",
+  "roomInviteCopied": "房间邀请链接已复制",
+  "roomRemove": "移出房间",
+  "roomRemoveConfirmAction": "移出",
+  "roomTakeSeat": "入座",
+  "roomOffline": "离线",
+  "roomOnline": "在线",
+  "roomSpectatorCount": "{count} 人旁观",
+  "roomPrepareError": "无法准备游戏，请检查本地资源",
+  "roomChatLatest": "跳到最新消息",
+  "roomChatJoin": "加入座位或旁观后可发言",
+  "roomChatSend": "发送消息",
+  "roomChatReportTitle": "举报消息",
+  "roomChatReportReason": "举报理由（选填）",
+  "roomChatInterrupted": "连接中断，请查看消息记录后重试",
+  "roomChatAlreadyReported": "已经举报过这条消息",
+  "roomRejected": "房间操作失败",
+  "roomGameMissing": "此房间使用的作品不可用",
+  "roomServiceUnavailable": "无法读取联机服务",
+  "roomWatchGame": "观战",
+  "documentNote": "提示",
+  "documentWarning": "警告",
+  "documentMissing": "找不到该文档",
+  "cannotOpenLink": "无法打开链接",
+  "nicknameRequired": "请输入昵称",
+  "nicknameRejected": "昵称未通过审核，请修改后重试",
+  "nicknameReviewUnavailable": "昵称审核暂不可用，请稍后重试",
+  "registrationDone": "注册成功，请登录",
+  "sixDigitCode": "请输入六位验证码",
+  "codeCooldown": "{seconds}s",
+  "retryDocument": "无法读取，重试",
+  "captchaTitle": "安全验证",
+  "captchaLoadFailed": "无法加载安全验证，请重试",
+  "captchaRetryAlignment": "拼图位置未对齐，请再试一次",
+  "captchaCheckFailed": "验证失败，请重新加载",
+  "captchaInstructions": "拖动滑块，将拼图放入缺口",
+  "captchaHandle": "拼图滑块",
+  "captchaNewPuzzle": "换一张",
+  "signInForSecurity": "登录后管理账户安全",
+  "codeAttemptsExhausted": "验证码尝试次数已用完，请重新获取",
+  "currentPasswordRequired": "请输入当前密码",
+  "invalidCurrentPassword": "当前密码不正确",
+  "newPasswordRange": "新密码须为 8 到 128 个字符",
+  "newPasswordLength": "新密码至少 8 个字符",
+  "securityRequestFailed": "请求失败，请稍后重试",
+  "passwordChanged": "密码已更改，其他会话已退出",
+  "checkNetwork": "检查网络",
+  "checkingLobby": "正在检查大厅连接",
+  "checkingLobbyResponse": "正在检查大厅响应",
+  "lobbyConnectionOk": "大厅连接正常",
+  "checkAgain": "重新检查",
+  "create": "创建",
+  "roomCodeFormat": "4 到 8 位数字",
+  "roomCountPartial": "{shown} / {total} 个房间",
+  "backgroundPresets": "背景预设",
+  "backgroundPlain": "空白",
+  "backgroundDots": "星点",
+  "backgroundGrid": "方格",
+  "backgroundWaves": "青海波",
+  "backgroundCustom": "自定义图片",
+  "backgroundChoose": "选择图片",
+  "backgroundReplace": "更换图片",
+  "backgroundRemove": "移除图片",
+  "backgroundLocalNote": "图片只保存在此设备。",
+  "backgroundError": "无法更新背景。请选择不超过 10 MiB 的有效图片，或重试。",
+  "backgroundFit": "图片铺放",
+  "backgroundCover": "铺满",
+  "backgroundContain": "完整显示",
+  "backgroundShade": "背景遮罩",
+  "backgroundPanel": "内容面板不透明度",
+  "backgroundNavigation": "顶部栏不透明度",
+  "backgroundCategory": "分类条不透明度",
+  "backgroundCard": "作品卡片不透明度",
+  "profileLoading": "正在加载个人主页",
+  "themeBase": "主题基底",
+  "systemTheme": "跟随系统",
+  "lightTheme": "亮色",
+  "darkTheme": "暗色",
+  "closeMenu": "关闭菜单",
+  "siteMenu": "站点菜单",
+  "account": "账户",
+  "profile": "个人主页",
+  "signOutFailed": "退出失败，请重试",
+  "selectionFailed": "无法保存语言设置，请重试",
+  "removeFavorite": "取消收藏 {title}",
+  "expandGroup": "展开 {name}",
+  "collapseGroup": "折叠 {name}",
+  "gameNotFound": "找不到该作品",
+  "importingResources": "导入资源",
+  "resourcesImported": "游戏资源已导入",
+  "resourceFolderError": "无法打开游戏资源目录",
+  "openingGame": "正在打开",
+  "runtimeUnavailable": "原生游戏暂不可用",
+  "backToGame": "返回详情",
+  "startFailed": "启动失败，请重试",
+  "clearProgress": "通关进度",
+  "cloudUpload": "云端上传",
+  "@profileJoined": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@profileMatchReplays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@th09MatchSummary": {
+    "placeholders": {
+      "wins": {
+        "type": "String"
+      },
+      "games": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09MatchDuration": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09CurrentWhr": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09CurrentRank": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardGroupNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardCharacter": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardOpponentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardPlayerCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardBinSize": {
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardHighlights": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardGamesCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardWinRate": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardLastPlayed": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09BoardBin": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@gameCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@uptimeHistory": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "@uptimeUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@uptimeSampleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@gameFilesImported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@cloudMainFiles": {
+    "placeholders": {
+      "files": {
+        "type": "String"
+      }
+    }
+  },
+  "@importPackageIncorrectName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@playtimeSeconds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@playtimeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@playtimeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inputChangeAction": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "@inputButtonNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "@inputPlayer": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "@progressLoadoutNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "@spellStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "@spellBranch": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "@inputKeyConflict": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "@replayFolderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@th09ReplayRound": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "@th09ReplayPlayRound": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "@th09ReplayDownloadRound": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "@th09ReplayWinner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@messageUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@announcementDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@announcementHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@announcementMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@codeCooldown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@roomCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@roomNumber": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@roomManageSeat": {
+    "placeholders": {
+      "seat": {
+        "type": "int"
+      }
+    }
+  },
+  "@roomRemoveSeatConfirm": {
+    "placeholders": {
+      "seat": {
+        "type": "int"
+      }
+    }
+  },
+  "@roomSpectatorCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@roomPlayerCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@roomBallCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@lobbyMembershipTitle": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "@networkCheckLatency": {
+    "placeholders": {
+      "latency": {
+        "type": "int"
+      }
+    }
+  },
+  "@roomQuickChatChooseSlot": {
+    "placeholders": {
+      "slot": {
+        "type": "int"
+      }
+    }
+  },
+  "@roomTh15ChapterGraze": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@th09PlayerCardLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@th09RatingGames": {
+    "placeholders": {
+      "games": {
+        "type": "String"
+      }
+    }
+  },
+  "@roomElapsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@roomWaitTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@onlyGame": {
+    "placeholders": {
+      "game": {
+        "type": "String"
+      }
+    }
+  },
+  "@favoriteGame": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "@filterMultiplayerGame": {
+    "placeholders": {
+      "game": {
+        "type": "String"
+      }
+    }
+  },
+  "@removeFavorite": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "@expandGroup": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@collapseGroup": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@playtimeHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@inputAxisNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "direction": {
+        "type": "String"
+      }
+    }
+  },
+  "@announcementByline": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@spellStageProgress": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      },
+      "captured": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@roomCountPartial": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
+}

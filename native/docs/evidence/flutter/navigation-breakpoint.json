@@ -1,0 +1,51 @@
+[
+  {
+    "step": "book to compact",
+    "game": null,
+    "drawerVisible": false,
+    "width": 780.0,
+    "scrollOffset": 140.0
+  },
+  {
+    "step": "detail to wide",
+    "game": "th06",
+    "drawerVisible": false,
+    "width": 781.0,
+    "scrollOffset": 140.0
+  },
+  {
+    "step": "detail to compact",
+    "game": "th06",
+    "drawerVisible": false,
+    "width": 780.0,
+    "scrollOffset": 140.0
+  },
+  {
+    "step": "returned book to wide",
+    "game": null,
+    "drawerVisible": false,
+    "width": 781.0,
+    "scrollOffset": 140.0
+  },
+  {
+    "step": "book back to compact",
+    "game": null,
+    "drawerVisible": false,
+    "width": 780.0,
+    "scrollOffset": 140.0
+  },
+  {
+    "step": "menu to wide",
+    "game": null,
+    "drawerVisible": false,
+    "width": 781.0,
+    "scrollOffset": 140.0
+  },
+  {
+    "step": "menu back to compact",
+    "game": null,
+    "drawerVisible": false,
+    "width": 780.0,
+    "scrollOffset": 140.0
+  }
+]

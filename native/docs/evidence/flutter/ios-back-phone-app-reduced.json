@@ -1,0 +1,857 @@
+[
+  {
+    "file": "ios-390-app-reduced-0-cancel-before.png",
+    "sequence": "ios-390-app-reduced-0-cancel",
+    "phase": "before",
+    "ms": 0,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-0-cancel-first.png",
+    "sequence": "ios-390-app-reduced-0-cancel",
+    "phase": "first",
+    "ms": 16,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-0-cancel-middle.png",
+    "sequence": "ios-390-app-reduced-0-cancel",
+    "phase": "middle",
+    "ms": 32,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 0.7692307692307692,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-0-cancel-release.png",
+    "sequence": "ios-390-app-reduced-0-cancel",
+    "phase": "release",
+    "ms": 232,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 0.9615384615384615,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-0-cancel-settling.png",
+    "sequence": "ios-390-app-reduced-0-cancel",
+    "phase": "settling",
+    "ms": 248,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 0.9615384615384615,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-0-cancel-settled.png",
+    "sequence": "ios-390-app-reduced-0-cancel",
+    "phase": "settled",
+    "ms": 748,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-1-cancel-before.png",
+    "sequence": "ios-390-app-reduced-1-cancel",
+    "phase": "before",
+    "ms": 0,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-1-cancel-first.png",
+    "sequence": "ios-390-app-reduced-1-cancel",
+    "phase": "first",
+    "ms": 16,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-1-cancel-middle.png",
+    "sequence": "ios-390-app-reduced-1-cancel",
+    "phase": "middle",
+    "ms": 32,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 0.7692307692307692,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-1-cancel-release.png",
+    "sequence": "ios-390-app-reduced-1-cancel",
+    "phase": "release",
+    "ms": 232,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 0.9615384615384615,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-1-cancel-settling.png",
+    "sequence": "ios-390-app-reduced-1-cancel",
+    "phase": "settling",
+    "ms": 248,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 0.9615384615384615,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-1-cancel-settled.png",
+    "sequence": "ios-390-app-reduced-1-cancel",
+    "phase": "settled",
+    "ms": 748,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-2-commit-before.png",
+    "sequence": "ios-390-app-reduced-2-commit",
+    "phase": "before",
+    "ms": 0,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-2-commit-first.png",
+    "sequence": "ios-390-app-reduced-2-commit",
+    "phase": "first",
+    "ms": 16,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-2-commit-middle.png",
+    "sequence": "ios-390-app-reduced-2-commit",
+    "phase": "middle",
+    "ms": 32,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 0.7692307692307692,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-2-commit-release.png",
+    "sequence": "ios-390-app-reduced-2-commit",
+    "phase": "release",
+    "ms": 232,
+    "page": "GameSettingsPage",
+    "route": "/game/th08/settings",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-2-commit-settling.png",
+    "sequence": "ios-390-app-reduced-2-commit",
+    "phase": "settling",
+    "ms": 248,
+    "page": "GameSettingsPage",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": false,
+    "pageBounds": null,
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-2-commit-settled.png",
+    "sequence": "ios-390-app-reduced-2-commit",
+    "phase": "settled",
+    "ms": 348,
+    "page": "GameSettingsPage",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": false,
+    "pageBounds": null,
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-3-cancel-before.png",
+    "sequence": "ios-390-app-reduced-3-cancel",
+    "phase": "before",
+    "ms": 0,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-3-cancel-first.png",
+    "sequence": "ios-390-app-reduced-3-cancel",
+    "phase": "first",
+    "ms": 16,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-3-cancel-middle.png",
+    "sequence": "ios-390-app-reduced-3-cancel",
+    "phase": "middle",
+    "ms": 32,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 0.7692307692307692,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-3-cancel-release.png",
+    "sequence": "ios-390-app-reduced-3-cancel",
+    "phase": "release",
+    "ms": 232,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 0.9615384615384615,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-3-cancel-settling.png",
+    "sequence": "ios-390-app-reduced-3-cancel",
+    "phase": "settling",
+    "ms": 248,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 0.9615384615384615,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-3-cancel-settled.png",
+    "sequence": "ios-390-app-reduced-3-cancel",
+    "phase": "settled",
+    "ms": 748,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-4-commit-before.png",
+    "sequence": "ios-390-app-reduced-4-commit",
+    "phase": "before",
+    "ms": 0,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-4-commit-first.png",
+    "sequence": "ios-390-app-reduced-4-commit",
+    "phase": "first",
+    "ms": 16,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-4-commit-middle.png",
+    "sequence": "ios-390-app-reduced-4-commit",
+    "phase": "middle",
+    "ms": 32,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 0.7692307692307692,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-4-commit-release.png",
+    "sequence": "ios-390-app-reduced-4-commit",
+    "phase": "release",
+    "ms": 232,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-4-commit-settling.png",
+    "sequence": "ios-390-app-reduced-4-commit",
+    "phase": "settling",
+    "ms": 248,
+    "page": "ProfilePage",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": false,
+    "pageBounds": null,
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-4-commit-settled.png",
+    "sequence": "ios-390-app-reduced-4-commit",
+    "phase": "settled",
+    "ms": 348,
+    "page": "ProfilePage",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": false,
+    "pageBounds": null,
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-5-commit-before.png",
+    "sequence": "ios-390-app-reduced-5-commit",
+    "phase": "before",
+    "ms": 0,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-5-commit-first.png",
+    "sequence": "ios-390-app-reduced-5-commit",
+    "phase": "first",
+    "ms": 16,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-5-commit-middle.png",
+    "sequence": "ios-390-app-reduced-5-commit",
+    "phase": "middle",
+    "ms": 32,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 0.7692307692307692,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-5-commit-release.png",
+    "sequence": "ios-390-app-reduced-5-commit",
+    "phase": "release",
+    "ms": 232,
+    "page": "GameDetail",
+    "route": "/game/th08",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-5-commit-settling.png",
+    "sequence": "ios-390-app-reduced-5-commit",
+    "phase": "settling",
+    "ms": 248,
+    "page": "GameDetail",
+    "route": "/",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": false,
+    "pageBounds": null,
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-5-commit-settled.png",
+    "sequence": "ios-390-app-reduced-5-commit",
+    "phase": "settled",
+    "ms": 348,
+    "page": "GameDetail",
+    "route": "/",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": false,
+    "pageBounds": null,
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-6-commit-before.png",
+    "sequence": "ios-390-app-reduced-6-commit",
+    "phase": "before",
+    "ms": 0,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": false,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-6-commit-first.png",
+    "sequence": "ios-390-app-reduced-6-commit",
+    "phase": "first",
+    "ms": 16,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 1.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": null,
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-6-commit-middle.png",
+    "sequence": "ios-390-app-reduced-6-commit",
+    "phase": "middle",
+    "ms": 32,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 0.7692307692307692,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-6-commit-release.png",
+    "sequence": "ios-390-app-reduced-6-commit",
+    "phase": "release",
+    "ms": 232,
+    "page": "ProfilePage",
+    "route": "/u/fixture",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": true,
+    "pageBounds": [
+      0.0,
+      0.0,
+      390.0,
+      844.0
+    ],
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-6-commit-settling.png",
+    "sequence": "ios-390-app-reduced-6-commit",
+    "phase": "settling",
+    "ms": 248,
+    "page": "ProfilePage",
+    "route": "/lobby",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": false,
+    "pageBounds": null,
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  },
+  {
+    "file": "ios-390-app-reduced-6-commit-settled.png",
+    "sequence": "ios-390-app-reduced-6-commit",
+    "phase": "settled",
+    "ms": 348,
+    "page": "ProfilePage",
+    "route": "/lobby",
+    "background": "plain",
+    "progress": 0.0,
+    "gesture": false,
+    "pageBounds": null,
+    "navigation": [
+      0.0,
+      778.0,
+      390.0,
+      66.0
+    ],
+    "sidebar": null,
+    "libraryScroll": 634.0
+  }
+]

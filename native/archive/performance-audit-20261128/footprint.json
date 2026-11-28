@@ -1,0 +1,324 @@
+{
+  "bundleBytes": 68889904,
+  "groups": {
+    ".dll": {
+      "files": 13,
+      "bytes": 46582336
+    },
+    ".json": {
+      "files": 1,
+      "bytes": 45
+    },
+    ".exe": {
+      "files": 1,
+      "bytes": 107008
+    },
+    ".so": {
+      "files": 1,
+      "bytes": 12698584
+    },
+    ".dat": {
+      "files": 1,
+      "bytes": 864880
+    },
+    ".txt": {
+      "files": 1,
+      "bytes": 1301
+    },
+    "assets": {
+      "files": 353,
+      "bytes": 8635750
+    }
+  },
+  "largestFiles": [
+    {
+      "file": "flutter_windows.dll",
+      "bytes": 21332480
+    },
+    {
+      "file": "libwebrtc.dll",
+      "bytes": 20530688
+    },
+    {
+      "file": "data/app.so",
+      "bytes": 12698584
+    },
+    {
+      "file": "cnativeapi.dll",
+      "bytes": 1619456
+    },
+    {
+      "file": "flutter_inappwebview_windows_plugin.dll",
+      "bytes": 1517056
+    },
+    {
+      "file": "data/icudtl.dat",
+      "bytes": 864880
+    },
+    {
+      "file": "data/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w600.ttf",
+      "bytes": 559504
+    },
+    {
+      "file": "flutter_webrtc_plugin.dll",
+      "bytes": 544768
+    },
+    {
+      "file": "data/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w300.ttf",
+      "bytes": 543036
+    },
+    {
+      "file": "data/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w200.ttf",
+      "bytes": 537556
+    },
+    {
+      "file": "data/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w400.ttf",
+      "bytes": 514452
+    },
+    {
+      "file": "data/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w500.ttf",
+      "bytes": 513864
+    },
+    {
+      "file": "data/flutter_assets/packages/country_flags/res/si/rs.si",
+      "bytes": 513292
+    },
+    {
+      "file": "data/flutter_assets/packages/lucide_icons_flutter/assets/build_font/LucideVariable-w100.ttf",
+      "bytes": 491988
+    },
+    {
+      "file": "data/flutter_assets/packages/country_flags/res/si/do.si",
+      "bytes": 224904
+    },
+    {
+      "file": "audioplayers_windows_plugin.dll",
+      "bytes": 203776
+    },
+    {
+      "file": "data/flutter_assets/packages/prism_ui/shaders/liquid_glass.frag",
+      "bytes": 187744
+    },
+    {
+      "file": "data/flutter_assets/assets/book-covers/th10.webp",
+      "bytes": 182502
+    }
+  ],
+  "images": [
+    {
+      "file": "assets/app-icon.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 23825,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/launcher-wordmark-dark.png",
+      "width": 480,
+      "height": 140,
+      "bytes": 13278,
+      "rgbaDecodedBytes": 268800
+    },
+    {
+      "file": "assets/launcher-wordmark-light.png",
+      "width": 480,
+      "height": 140,
+      "bytes": 12595,
+      "rgbaDecodedBytes": 268800
+    },
+    {
+      "file": "assets/book-covers/th05.webp",
+      "width": 329,
+      "height": 329,
+      "bytes": 18606,
+      "rgbaDecodedBytes": 432964
+    },
+    {
+      "file": "assets/book-covers/th06.webp",
+      "width": 640,
+      "height": 632,
+      "bytes": 60276,
+      "rgbaDecodedBytes": 1617920
+    },
+    {
+      "file": "assets/book-covers/th07.webp",
+      "width": 640,
+      "height": 632,
+      "bytes": 105500,
+      "rgbaDecodedBytes": 1617920
+    },
+    {
+      "file": "assets/book-covers/th075.webp",
+      "width": 400,
+      "height": 400,
+      "bytes": 39476,
+      "rgbaDecodedBytes": 640000
+    },
+    {
+      "file": "assets/book-covers/th08.webp",
+      "width": 640,
+      "height": 632,
+      "bytes": 108970,
+      "rgbaDecodedBytes": 1617920
+    },
+    {
+      "file": "assets/book-covers/th09.webp",
+      "width": 640,
+      "height": 632,
+      "bytes": 181456,
+      "rgbaDecodedBytes": 1617920
+    },
+    {
+      "file": "assets/book-covers/th10.webp",
+      "width": 640,
+      "height": 632,
+      "bytes": 182502,
+      "rgbaDecodedBytes": 1617920
+    },
+    {
+      "file": "assets/book-covers/th11.webp",
+      "width": 640,
+      "height": 632,
+      "bytes": 94286,
+      "rgbaDecodedBytes": 1617920
+    },
+    {
+      "file": "assets/book-covers/th12.webp",
+      "width": 640,
+      "height": 632,
+      "bytes": 83330,
+      "rgbaDecodedBytes": 1617920
+    },
+    {
+      "file": "assets/book-covers/th15.webp",
+      "width": 640,
+      "height": 632,
+      "bytes": 137552,
+      "rgbaDecodedBytes": 1617920
+    },
+    {
+      "file": "assets/book-covers/th17.webp",
+      "width": 640,
+      "height": 632,
+      "bytes": 95142,
+      "rgbaDecodedBytes": 1617920
+    },
+    {
+      "file": "assets/th09-portraits/0.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 20878,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/1.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 15294,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/10.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 18742,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/11.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 18096,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/12.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 22348,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/13.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 22090,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/14.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 23012,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/15.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 19954,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/2.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 14908,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/3.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 18204,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/4.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 12866,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/5.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 16990,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/6.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 18660,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/7.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 21358,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/8.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 12630,
+      "rgbaDecodedBytes": 262144
+    },
+    {
+      "file": "assets/th09-portraits/9.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 17696,
+      "rgbaDecodedBytes": 262144
+    }
+  ],
+  "coverCount": 11,
+  "allCoversRgbaBytes": 15634244,
+  "coverMaxWidth": 640,
+  "coverMaxHeight": 632,
+  "note": "Disk file size and theoretical uncompressed RGBA size. Neither is resident process memory."
+}

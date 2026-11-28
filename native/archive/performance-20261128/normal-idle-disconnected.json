@@ -1,0 +1,84 @@
+{
+  "input": "Same ordinary Release | guest shelf | inspection JavaScript session reset after launch | no new GUI observations",
+  "processId": 42052,
+  "logicalProcessors": 24,
+  "durationSeconds": 11.1436289,
+  "averageCpuOneCorePercent": 0.4206439430157263,
+  "averageCpuMachinePercent": 0.017526830958988594,
+  "rssMiB": 213.23046875,
+  "privateMiB": 316.19921875,
+  "samples": [
+    {
+      "atUtc": "2026-11-27T17:58:07.4142844Z",
+      "cpuSeconds": 1.03125,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:08.4322645Z",
+      "cpuSeconds": 1.03125,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:09.4466770Z",
+      "cpuSeconds": 1.03125,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:10.4544082Z",
+      "cpuSeconds": 1.03125,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:11.4579209Z",
+      "cpuSeconds": 1.046875,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:12.4804826Z",
+      "cpuSeconds": 1.0625,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:13.5005606Z",
+      "cpuSeconds": 1.0625,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:14.5102010Z",
+      "cpuSeconds": 1.0625,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:15.5248591Z",
+      "cpuSeconds": 1.078125,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:16.5356732Z",
+      "cpuSeconds": 1.078125,
+      "rssBytes": 223617024,
+      "privateBytes": 331599872
+    },
+    {
+      "atUtc": "2026-11-27T17:58:17.5430056Z",
+      "cpuSeconds": 1.078125,
+      "rssBytes": 223588352,
+      "privateBytes": 331558912
+    },
+    {
+      "atUtc": "2026-11-27T17:58:18.5579133Z",
+      "cpuSeconds": 1.078125,
+      "rssBytes": 223588352,
+      "privateBytes": 331558912
+    }
+  ]
+}

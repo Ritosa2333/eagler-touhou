@@ -1,0 +1,329 @@
+{
+  "profiles": {
+    "shared": {
+      "portrait": {
+        "width": 374,
+        "height": 828,
+        "controls": {
+          "focus": {
+            "x": 0.1818,
+            "y": 0.8309,
+            "width": 136,
+            "height": 56,
+            "scale": 1,
+            "priority": 0
+          },
+          "fire": {
+            "x": 0.0856,
+            "y": 0.7512,
+            "width": 64,
+            "height": 60,
+            "scale": 1,
+            "priority": 1
+          },
+          "function": {
+            "x": 0.3636,
+            "y": 0.913,
+            "width": 64,
+            "height": 64,
+            "scale": 1,
+            "priority": 5.5
+          },
+          "bomb": {
+            "x": 0.1283,
+            "y": 0.9324,
+            "width": 64,
+            "height": 64,
+            "scale": 1.5,
+            "priority": 2
+          },
+          "joystick": {
+            "x": 0.1551,
+            "y": 0.93,
+            "width": 112,
+            "height": 112,
+            "scale": 1,
+            "priority": 3
+          },
+          "escape": {
+            "x": 0.0695,
+            "y": 0.0314,
+            "width": 44,
+            "height": 44,
+            "scale": 1,
+            "priority": 4
+          },
+          "restart": {
+            "x": 0.0535,
+            "y": 0.0845,
+            "width": 40,
+            "height": 40,
+            "scale": 1,
+            "priority": 5
+          },
+          "thpracTab": {
+            "x": 0.9251,
+            "y": 0.5857,
+            "width": 56,
+            "height": 34,
+            "scale": 1,
+            "priority": 6
+          },
+          "thpracMenu": {
+            "x": 0.8824,
+            "y": 0.4589,
+            "width": 88,
+            "height": 32,
+            "scale": 1,
+            "priority": 7
+          }
+        }
+      },
+      "landscape": {
+        "width": 1414,
+        "height": 718,
+        "controls": {
+          "focus": {
+            "x": 0.082,
+            "y": 0.5,
+            "width": 136,
+            "height": 56,
+            "scale": 1,
+            "priority": 0
+          },
+          "fire": {
+            "x": 0.0566,
+            "y": 0.4081,
+            "width": 64,
+            "height": 60,
+            "scale": 1,
+            "priority": 1
+          },
+          "function": {
+            "x": 0.1301,
+            "y": 0.5947,
+            "width": 64,
+            "height": 64,
+            "scale": 1,
+            "priority": 5.5
+          },
+          "bomb": {
+            "x": 0.0679,
+            "y": 0.617,
+            "width": 64,
+            "height": 64,
+            "scale": 1.5,
+            "priority": 2
+          },
+          "joystick": {
+            "x": 0.0523,
+            "y": 0.8969,
+            "width": 128,
+            "height": 128,
+            "scale": 1,
+            "priority": 3
+          },
+          "escape": {
+            "x": 0.0184,
+            "y": 0.0362,
+            "width": 44,
+            "height": 44,
+            "scale": 1,
+            "priority": 4
+          },
+          "restart": {
+            "x": 0.0163,
+            "y": 0.1017,
+            "width": 42,
+            "height": 42,
+            "scale": 1,
+            "priority": 5
+          },
+          "thpracTab": {
+            "x": 0.9788,
+            "y": 0.5989,
+            "width": 56,
+            "height": 34,
+            "scale": 1,
+            "priority": 6
+          },
+          "thpracMenu": {
+            "x": 0.9646,
+            "y": 0.4526,
+            "width": 96,
+            "height": 32,
+            "scale": 1,
+            "priority": 7
+          }
+        }
+      }
+    },
+    "th075": {
+      "portrait": {
+        "width": 374,
+        "height": 828,
+        "controls": {
+          "focus": {
+            "x": 0.6658,
+            "y": 0.8321,
+            "width": 60,
+            "height": 60,
+            "scale": 1,
+            "priority": 0
+          },
+          "fire": {
+            "x": 0.492,
+            "y": 0.9106,
+            "width": 60,
+            "height": 60,
+            "scale": 1,
+            "priority": 1
+          },
+          "bomb": {
+            "x": 0.8396,
+            "y": 0.9106,
+            "width": 60,
+            "height": 60,
+            "scale": 1,
+            "priority": 2
+          },
+          "function": {
+            "x": 0.6658,
+            "y": 0.9589,
+            "width": 60,
+            "height": 60,
+            "scale": 1,
+            "priority": 5.5
+          },
+          "joystick": {
+            "x": 0.1551,
+            "y": 0.93,
+            "width": 112,
+            "height": 112,
+            "scale": 1,
+            "priority": 3
+          },
+          "escape": {
+            "x": 0.0695,
+            "y": 0.0314,
+            "width": 44,
+            "height": 44,
+            "scale": 1,
+            "priority": 4
+          },
+          "restart": {
+            "x": 0.0535,
+            "y": 0.0845,
+            "width": 40,
+            "height": 40,
+            "scale": 1,
+            "priority": 5
+          },
+          "thpracTab": {
+            "x": 0.9251,
+            "y": 0.5857,
+            "width": 56,
+            "height": 34,
+            "scale": 1,
+            "priority": 6
+          },
+          "thpracMenu": {
+            "x": 0.8824,
+            "y": 0.4589,
+            "width": 88,
+            "height": 32,
+            "scale": 1,
+            "priority": 7
+          }
+        }
+      },
+      "landscape": {
+        "width": 1414,
+        "height": 718,
+        "controls": {
+          "focus": {
+            "x": 0.9116,
+            "y": 0.8064,
+            "width": 60,
+            "height": 60,
+            "scale": 1,
+            "priority": 0
+          },
+          "fire": {
+            "x": 0.8656,
+            "y": 0.8969,
+            "width": 60,
+            "height": 60,
+            "scale": 1,
+            "priority": 1
+          },
+          "bomb": {
+            "x": 0.9576,
+            "y": 0.8969,
+            "width": 60,
+            "height": 60,
+            "scale": 1,
+            "priority": 2
+          },
+          "function": {
+            "x": 0.9116,
+            "y": 0.9526,
+            "width": 60,
+            "height": 60,
+            "scale": 1,
+            "priority": 5.5
+          },
+          "joystick": {
+            "x": 0.0523,
+            "y": 0.8969,
+            "width": 128,
+            "height": 128,
+            "scale": 1,
+            "priority": 3
+          },
+          "escape": {
+            "x": 0.0184,
+            "y": 0.0362,
+            "width": 44,
+            "height": 44,
+            "scale": 1,
+            "priority": 4
+          },
+          "restart": {
+            "x": 0.0163,
+            "y": 0.1017,
+            "width": 42,
+            "height": 42,
+            "scale": 1,
+            "priority": 5
+          },
+          "thpracTab": {
+            "x": 0.9788,
+            "y": 0.5989,
+            "width": 56,
+            "height": 34,
+            "scale": 1,
+            "priority": 6
+          },
+          "thpracMenu": {
+            "x": 0.9646,
+            "y": 0.4526,
+            "width": 96,
+            "height": 32,
+            "scale": 1,
+            "priority": 7
+          }
+        }
+      }
+    }
+  },
+  "functionGames": [
+    "th03",
+    "th11",
+    "th13",
+    "th19",
+    "hsob"
+  ],
+  "minScale": 0.6,
+  "maxScale": 3
+}

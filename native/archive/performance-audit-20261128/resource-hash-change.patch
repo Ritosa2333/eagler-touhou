@@ -1,0 +1,24 @@
+--- before/lib/game_resources.dart
++++ after/lib/game_resources.dart
+@@ -160,8 +160,7 @@
+         );
+       }
+       progress((phase: DataImportPhase.verifying, percent: null));
+-      final digest = await sha256.bind(draft.openRead()).first;
+-      if (digest.toString() != data.sha256) {
++      if (!await _verifyData(draft.path, data.sha256)) {
+         throw const GameDataImportException(DataImportError.checksum);
+       }
+       return await draft.rename(target.path);
+@@ -174,6 +173,11 @@
+ }
+ 
+ const _invalidArchive = GameDataImportException(DataImportError.archive);
++
++Future<bool> _verifyData(String path, String expected) => Isolate.run(() async {
++  final digest = await sha256.bind(File(path).openRead()).first;
++  return digest.toString() == expected;
++});
+ 
+ void _extractData(String source, String target, String game, GameData data) {
+   final archive = InputFileStream(source)..byteOrder = ByteOrder.littleEndian;

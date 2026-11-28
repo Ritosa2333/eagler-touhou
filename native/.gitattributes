@@ -1,0 +1,5 @@
+# Source and evidence manifests verify exact file bytes across checkouts.
+* -text whitespace=trailing-space,space-before-tab,cr-at-eol
+# Archived evidence and patch context preserve their original formatting.
+archive/** -whitespace
+*.patch -whitespace

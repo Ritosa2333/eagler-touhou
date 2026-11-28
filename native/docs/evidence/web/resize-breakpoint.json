@@ -1,0 +1,51 @@
+{
+  "origin": "https://touhouonline.com",
+  "revision": "85941f0d564cf10378d2af6b14d41a000bd27612",
+  "observations": [
+    {
+      "width": 781,
+      "address": "/?lang=zh-CN&game=th06",
+      "text": [
+        "東方紅魔郷",
+        "th06",
+        ""
+      ],
+      "bounds": [
+        248,
+        44,
+        523,
+        280.40625
+      ]
+    },
+    {
+      "width": 780,
+      "address": "/?lang=zh-CN&game=th06",
+      "text": [
+        "東方紅魔郷",
+        "th06",
+        ""
+      ],
+      "bounds": [
+        0,
+        0,
+        780,
+        261
+      ]
+    },
+    {
+      "width": 781,
+      "address": "/?lang=zh-CN&game=th06",
+      "text": [
+        "東方紅魔郷",
+        "th06",
+        ""
+      ],
+      "bounds": [
+        248,
+        44,
+        523,
+        280.40625
+      ]
+    }
+  ]
+}

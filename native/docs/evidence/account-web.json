@@ -1,0 +1,129 @@
+{
+  "checkedAtUtc": "2026-11-27T12:10:45.592603+00:00",
+  "scope": "Account website-to-native navigation, including native caller exit veto",
+  "validation": {
+    "analyzer": "No issues",
+    "accountAndLinks": {
+      "passed": 85,
+      "tests": [
+        "test/account_web_page_test.dart",
+        "test/account_web_session_test.dart",
+        "test/site_links_test.dart"
+      ]
+    },
+    "navigation": {
+      "passed": 41,
+      "test": "test/launcher_navigation_test.dart"
+    },
+    "mainUi": {
+      "passed": 10,
+      "test": "test/widget_test.dart"
+    },
+    "captureChecks": {
+      "passed": 91,
+      "registeredImages": 210,
+      "renderer": "Windows Flutter widget renderer; design approval is separate"
+    },
+    "windowsIntegration": {
+      "passed": 1,
+      "test": "integration_test/desktop_window_test.dart",
+      "input": "Production guest login and registration pages, real target=_blank privacy anchor, real browser History API",
+      "observed": [
+        "Native window controls and layout passed",
+        "Account back and close restored game layout at 1280,390,320 px",
+        "Privacy link loaded in the same WebView2 instance",
+        "History address changed and fired a native event without replacing the document"
+      ],
+      "boundary": "Plugin event probe is separate from widget-level native route handoff; no credentials were entered or submitted"
+    },
+    "windowsRelease": "Built successfully",
+    "packageSha256": "c76fe9006ff43758575e7e82e7e3f3015c39c63ac0e2517868e6bacf2a86bda5",
+    "supportingCloudAndProgress": {
+      "passed": 31,
+      "skipped": 1,
+      "realSaveInputs": [
+        {
+          "game": "th06",
+          "file": "D:\\workspace\\eagler\\games\\th06\\score.dat",
+          "sha256": "96529114c6579ccba86c245a15a25e8951d44f4799cb2c503a34c8d9585a23ac",
+          "matchesRecordedInput": true
+        },
+        {
+          "game": "th07",
+          "file": "D:\\workspace\\original touhou\\[th07] 東方妖々夢 v1.00b\\score.dat",
+          "sha256": "c0eaa57a5a689b042fcc9329e11dd4b999ad0cd0be91666b5dbcaeca12b89bd0",
+          "matchesRecordedInput": true
+        },
+        {
+          "game": "th08",
+          "file": "D:\\workspace\\original touhou\\[th08] 東方永夜抄 v1.00d\\score.dat",
+          "sha256": "0546a930faa3897bcb574a035e44d809b9a80b2f876fe884b7ec8395b0e6dbb4",
+          "matchesRecordedInput": true
+        },
+        {
+          "game": "th10",
+          "file": "D:\\workspace\\original touhou\\[th10] 東方風神録 v1.00a\\scoreth10.dat",
+          "sha256": "53abff9076d938c74058ae180304cffcbbf6059bfa0bd3f443d311905b368229",
+          "matchesRecordedInput": true
+        },
+        {
+          "game": "th11",
+          "file": "D:\\workspace\\original touhou\\[th11] 東方地霊殿 v1.00a\\scoreth11.dat",
+          "sha256": "75cf0b59e91f03ee98073050adcaa3405270df307d6f0ffa28ef07555f977bce",
+          "matchesRecordedInput": true
+        },
+        {
+          "game": "th12",
+          "file": "D:\\workspace\\original touhou\\[th12] 東方星蓮船 v1.00b\\scoreth12.dat",
+          "sha256": "6f0bbe5332581ef5160d338456fc680a1730db90e794dd7f2c4b32e17410648e",
+          "matchesRecordedInput": true
+        }
+      ],
+      "parsedInputSha256": "5510149ffae740fc6c84d2f82a41214e5e2b7f7970bebb85969a5b353491f30b",
+      "th08SpellSample": {
+        "source": "Generated from existing parser regression fixture, not a real populated save",
+        "sha256": "3e8f274e308e4dccb3fcbf3a4f8185fa2c7236ba0f522f523ff493938e3523bc"
+      },
+      "boundary": "Six real-save parsed results were checked against the recorded raw-file SHA256 values. th08 populated spell data is an existing parser fixture. th09 real ZIP round-trip remains skipped because its real input was not found."
+    },
+    "currentChecksPassed": 258
+  },
+  "reproductions": [
+    {
+      "scenario": "Close account, cover route before pop, uncover and close again",
+      "before": "Failed in all five platform styles",
+      "after": "Recovered close passed in all five platform styles"
+    },
+    {
+      "scenario": "Website changes its history address to a game without reloading",
+      "before": "Remained in account container in all five platform styles",
+      "after": "Native handoff passed for history and load events in all five platform styles"
+    },
+    {
+      "scenario": "Native caller rejects account-to-native handoff",
+      "before": "10 failures: synchronous and delayed refusal in five platform styles left the account overlay open and closing latched",
+      "after": "Overlay closes first; native caller remains usable after refusal and a subsequent navigation succeeds. Direct account entry without a parent also passes.",
+      "boundary": "Real GoRouter with a controlled onExit callback; actual cloud page separately verifies repeated discard cancellation and confirmed departure."
+    }
+  ],
+  "implementation": {
+    "routing": "Existing native deep-link parser remains responsible for game and invite addresses. Shared production-origin validation and core URL canonicalization live in site_documents.dart.",
+    "popups": "Uses the pinned official plugin single-window fallback; no popup manager or second account UI.",
+    "plugin": "flutter_inappwebview 6.2.0-beta.3",
+    "exitVeto": "Pop only the unguarded account overlay, then ask the existing native router to navigate. The native caller continues to own its exit decision."
+  },
+  "source": {
+    "lib/account_web_page.dart": "0a99fb893a284835681b6618ceb153c7da0cc8b16466f3527e02dbb04a9548f2",
+    "lib/site_documents.dart": "af5d3b13ee925dc620a1841b222528c3bdb774d9d3468848f4208f6f1fe81c74",
+    "test/account_web_page_test.dart": "6370250cfd6ec310e99ee970fc6bb1660d3c21e1cf44124c3c8f15f8677c4eb1",
+    "test/site_links_test.dart": "0c0044e2d105b45e206c783acb73e4bcc7146872868842778695f8ee192d91b1",
+    "integration_test/desktop_window_test.dart": "7872e5fd1c16f36ba9782866a24372c4a86ae9cd9892b1fe9eddcb42ced02ff4"
+  },
+  "pending": [
+    "Real embedded login and logout with credentials",
+    "File selection, upload and avatar/cover crop",
+    "Native Linux build and WPE WebKit runtime",
+    "macOS, iOS and Android device behavior; Android build and device testing not requested",
+    "th09 real save ZIP round-trip input remains unavailable"
+  ]
+}

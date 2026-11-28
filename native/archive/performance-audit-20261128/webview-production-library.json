@@ -1,0 +1,123 @@
+{
+  "phase": "library",
+  "pid": 15288,
+  "created": 134403063401462328,
+  "input": "D:/workspace/eagler/artifacts/.native-room-client-win/build/windows/x64/runner/Release/touhouonline.exe",
+  "corePercent": 19.78708512305115,
+  "foregroundSamples": 11,
+  "samples": [
+    {
+      "seconds": 0.0043405,
+      "cpu": 17.390625,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 1.0411893,
+      "cpu": 17.984375,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 2.0545735,
+      "cpu": 18.03125,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 3.0734131,
+      "cpu": 18.078125,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 4.0940863,
+      "cpu": 18.078125,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 5.101963,
+      "cpu": 18.421875,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 6.1188027,
+      "cpu": 18.59375,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 7.1380431,
+      "cpu": 18.734375,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 8.1614627,
+      "cpu": 18.875,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 9.1734277,
+      "cpu": 18.9375,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    },
+    {
+      "seconds": 10.1909091,
+      "cpu": 19.40625,
+      "foregroundPid": 15288,
+      "workingSet": 571101184,
+      "privateBytes": 335347712,
+      "threads": 117,
+      "handles": 1059
+    }
+  ],
+  "gpu": [
+    {
+      "Name": "pid_15288_luid_0x00000000_0x00012C80_phys_0",
+      "DedicatedUsage": 0,
+      "SharedUsage": 19640320,
+      "TotalCommitted": 19640320
+    },
+    {
+      "Name": "pid_15288_luid_0x00000000_0x0001678D_phys_0",
+      "DedicatedUsage": 90783744,
+      "SharedUsage": 30457856,
+      "TotalCommitted": 140361728
+    }
+  ]
+}

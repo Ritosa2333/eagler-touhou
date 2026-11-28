@@ -1,0 +1,134 @@
+{
+  "mobile-narrow-polish-library": {
+    "viewport": [
+      320,
+      640
+    ],
+    "icons": {
+      "menu": {
+        "ink": [
+          21,
+          18,
+          34,
+          29
+        ],
+        "verticalCenter": 24.0
+      },
+      "search": {
+        "ink": [
+          73,
+          17,
+          86,
+          30
+        ],
+        "verticalCenter": 24.0
+      },
+      "announcements": {
+        "ink": [
+          234,
+          16,
+          249,
+          31
+        ],
+        "verticalCenter": 24.0
+      },
+      "inbox": {
+        "ink": [
+          282,
+          17,
+          297,
+          30
+        ],
+        "verticalCenter": 24.0
+      }
+    }
+  },
+  "mobile-polish-library": {
+    "viewport": [
+      390,
+      844
+    ],
+    "icons": {
+      "menu": {
+        "ink": [
+          21,
+          18,
+          34,
+          29
+        ],
+        "verticalCenter": 24.0
+      },
+      "search": {
+        "ink": [
+          73,
+          17,
+          86,
+          30
+        ],
+        "verticalCenter": 24.0
+      },
+      "announcements": {
+        "ink": [
+          304,
+          16,
+          319,
+          31
+        ],
+        "verticalCenter": 24.0
+      },
+      "inbox": {
+        "ink": [
+          352,
+          17,
+          367,
+          30
+        ],
+        "verticalCenter": 24.0
+      }
+    }
+  },
+  "mobile-narrow-en-polish-library": {
+    "viewport": [
+      320,
+      640
+    ],
+    "icons": {
+      "menu": {
+        "ink": [
+          21,
+          18,
+          34,
+          29
+        ],
+        "verticalCenter": 24.0
+      },
+      "search": {
+        "ink": [
+          73,
+          17,
+          86,
+          30
+        ],
+        "verticalCenter": 24.0
+      },
+      "announcements": {
+        "ink": [
+          234,
+          16,
+          249,
+          31
+        ],
+        "verticalCenter": 24.0
+      },
+      "inbox": {
+        "ink": [
+          282,
+          17,
+          297,
+          30
+        ],
+        "verticalCenter": 24.0
+      }
+    }
+  }
+}

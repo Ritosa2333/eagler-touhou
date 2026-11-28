@@ -1,0 +1,186 @@
+{
+  "checkedAtUtc": "2026-11-27T15:50:01.104370+00:00",
+  "requirements": [
+    "AUTH-WEB-01",
+    "AUTH-WEB-02",
+    "AUTH-WEB-03",
+    "AUTH-WEB-05",
+    "AUTH-WEB-06"
+  ],
+  "input": "Production public login and registration documents | guest | zh-CN | Windows WebView2 | requested outer widths 1280,390,320 | no fields filled or submitted",
+  "source": {
+    "integration_test/desktop_window_test.dart": "4b1e1c0cefc4c3cf0f4d4f09ff71e8405327feba80530a33bbde710684be4bdc",
+    "lib/account_web_page.dart": "0a99fb893a284835681b6618ceb153c7da0cc8b16466f3527e02dbb04a9548f2",
+    "lib/desktop_masthead.dart": "baf943c3a4e2cf7ed7bdf46a71c2e9a4cb0a52a68bd9c7fcdc5b680d5fde1724"
+  },
+  "packageSha256": "5a402e017c2a6f593b6ee30e421d390cd2492473f53fdb23c5985d5eae86845a",
+  "validation": {
+    "windowsIntegration": 1,
+    "publicDocumentCases": 6,
+    "documents": [
+      {
+        "mode": "register",
+        "windowWidth": 1280.0,
+        "contentWidth": 1255,
+        "fields": [
+          "username",
+          "nickname",
+          "email",
+          "password",
+          "confirmation"
+        ],
+        "fonts": "loaded",
+        "language": "zh-CN",
+        "ready": "complete",
+        "title": "注册 - TouhouOnline",
+        "url": "https://touhouonline.com/login.html?mode=register&lang=zh-CN",
+        "viewportHeight": 712,
+        "viewportWidth": 1265,
+        "imageWidth": 1898,
+        "imageHeight": 1068
+      },
+      {
+        "mode": "register",
+        "windowWidth": 390.0,
+        "contentWidth": 365,
+        "fields": [
+          "username",
+          "nickname",
+          "email",
+          "password",
+          "confirmation"
+        ],
+        "fonts": "loaded",
+        "language": "zh-CN",
+        "ready": "complete",
+        "title": "注册 - TouhouOnline",
+        "url": "https://touhouonline.com/login.html?mode=register&lang=zh-CN",
+        "viewportHeight": 712,
+        "viewportWidth": 375,
+        "imageWidth": 563,
+        "imageHeight": 1068
+      },
+      {
+        "mode": "register",
+        "windowWidth": 320.0,
+        "contentWidth": 295,
+        "fields": [
+          "username",
+          "nickname",
+          "email",
+          "password",
+          "confirmation"
+        ],
+        "fonts": "loaded",
+        "language": "zh-CN",
+        "ready": "complete",
+        "title": "注册 - TouhouOnline",
+        "url": "https://touhouonline.com/login.html?mode=register&lang=zh-CN",
+        "viewportHeight": 712,
+        "viewportWidth": 305,
+        "imageWidth": 458,
+        "imageHeight": 1068
+      },
+      {
+        "mode": "login",
+        "windowWidth": 1280.0,
+        "contentWidth": 1255,
+        "fields": [
+          "identity",
+          "password"
+        ],
+        "fonts": "loaded",
+        "language": "zh-CN",
+        "ready": "complete",
+        "title": "登录 - TouhouOnline",
+        "url": "https://touhouonline.com/login.html?lang=zh-CN",
+        "viewportHeight": 712,
+        "viewportWidth": 1265,
+        "imageWidth": 1898,
+        "imageHeight": 1068
+      },
+      {
+        "mode": "login",
+        "windowWidth": 390.0,
+        "contentWidth": 365,
+        "fields": [
+          "identity",
+          "password"
+        ],
+        "fonts": "loaded",
+        "language": "zh-CN",
+        "ready": "complete",
+        "title": "登录 - TouhouOnline",
+        "url": "https://touhouonline.com/login.html?lang=zh-CN",
+        "viewportHeight": 712,
+        "viewportWidth": 375,
+        "imageWidth": 563,
+        "imageHeight": 1068
+      },
+      {
+        "mode": "login",
+        "windowWidth": 320.0,
+        "contentWidth": 295,
+        "fields": [
+          "identity",
+          "password"
+        ],
+        "fonts": "loaded",
+        "language": "zh-CN",
+        "ready": "complete",
+        "title": "登录 - TouhouOnline",
+        "url": "https://touhouonline.com/login.html?lang=zh-CN",
+        "viewportHeight": 712,
+        "viewportWidth": 305,
+        "imageWidth": 458,
+        "imageHeight": 1068
+      }
+    ],
+    "existingAccountContainer": "Real account container opened from th06; close and back restore original detail geometry at 1280,390,320 px",
+    "existingPublicLinks": "Production registration privacy link stays in the same WebView; browser History API events observed",
+    "visualReview": "Five webpage-region PNGs match the previously opened images exactly. The fresh desktop login image was opened separately: Chinese fields and layout fit; its content brightness differs from the earlier frame. It is an observed entry frame, not an animation-settled visual baseline."
+  },
+  "screenshots": [
+    {
+      "file": "evidence/windows/webview-account-register-1280.png",
+      "sha256": "f4140595d2e0b3f358ede616d1629dffcefb5d50d2d6c7862368bd2327460e62",
+      "width": 1898,
+      "height": 1068
+    },
+    {
+      "file": "evidence/windows/webview-account-register-390.png",
+      "sha256": "75f5fb5cb1aaff8bd8abf8e2a9027336d601e3848cc83f7caf7b43a0f94e70bf",
+      "width": 563,
+      "height": 1068
+    },
+    {
+      "file": "evidence/windows/webview-account-register-320.png",
+      "sha256": "c213bfa171dff508a866bc191ecad586b222d0bbec71fa35cb3e409fa565d817",
+      "width": 458,
+      "height": 1068
+    },
+    {
+      "file": "evidence/windows/webview-account-login-1280.png",
+      "sha256": "51e47e96a4702fb7d0960dd158a653d985adabe732c9df25c7075d1215bc11e9",
+      "width": 1898,
+      "height": 1068
+    },
+    {
+      "file": "evidence/windows/webview-account-login-390.png",
+      "sha256": "3133127ec1cb4dd9a64e3746cfc6dbef16a6598f94866e1271ec54b73f2da9cf",
+      "width": 563,
+      "height": 1068
+    },
+    {
+      "file": "evidence/windows/webview-account-login-320.png",
+      "sha256": "a5fa802122dd59bfdd534de36658834be7ef9e7ba004f7e0211176d434e0b556",
+      "width": 458,
+      "height": 1068
+    }
+  ],
+  "limitations": [
+    "Debug native integration is distinct from Release OS pointer automation",
+    "No credentialed login/logout, upload or crop performed",
+    "Other platform engines unverified"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "input": "8 MiB, current cloud total byte limit, deterministic bytes",
+  "inline": {
+    "totalMs": 491.124,
+    "maxEventLoopGapMs": 491.216,
+    "ticks": 5,
+    "sha256": "0f952d6a523d40eb29f22d2838e6a689b23a966172b2e24f0f1c95771bceb534"
+  },
+  "worker": {
+    "totalMs": 491.242,
+    "maxEventLoopGapMs": 16.089,
+    "ticks": 37,
+    "sha256": "0f952d6a523d40eb29f22d2838e6a689b23a966172b2e24f0f1c95771bceb534"
+  }
+}

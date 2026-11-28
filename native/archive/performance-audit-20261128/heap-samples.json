@@ -1,0 +1,417 @@
+{
+  "mode": "Profile VM service | no forced GC | whole-isolate aggregate",
+  "samples": [
+    {
+      "at": 1795826278.3833857,
+      "phase": "roundtrip_40",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 41830336,
+          "heapCapacity": 50806784,
+          "externalUsage": 47952
+        }
+      ]
+    },
+    {
+      "at": 1795826280.4332476,
+      "phase": "roundtrip_50",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 48478976,
+          "heapCapacity": 53428224,
+          "externalUsage": 57840
+        }
+      ]
+    },
+    {
+      "at": 1795826282.4711418,
+      "phase": "roundtrip_50",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 46657920,
+          "heapCapacity": 51331072,
+          "externalUsage": 69744
+        }
+      ]
+    },
+    {
+      "at": 1795826284.5266387,
+      "phase": "roundtrip_50",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 48556448,
+          "heapCapacity": 54476800,
+          "externalUsage": 70096
+        }
+      ]
+    },
+    {
+      "at": 1795826286.58843,
+      "phase": "roundtrip_50",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 44873440,
+          "heapCapacity": 49758208,
+          "externalUsage": 64144
+        }
+      ]
+    },
+    {
+      "at": 1795826288.6483858,
+      "phase": "roundtrip_60",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 50922192,
+          "heapCapacity": 55525376,
+          "externalUsage": 62512
+        }
+      ]
+    },
+    {
+      "at": 1795826290.7023609,
+      "phase": "sort_ready",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 41234192,
+          "heapCapacity": 46088192,
+          "externalUsage": 51776
+        }
+      ]
+    },
+    {
+      "at": 1795826292.742368,
+      "phase": "sort_ready",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 37810304,
+          "heapCapacity": 43991040,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826298.4718256,
+      "error": "TimeoutError"
+    },
+    {
+      "at": 1795826300.9763722,
+      "phase": "sort_ready",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 39218784,
+          "heapCapacity": 46157824,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826303.0549543,
+      "phase": "sort_ready",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 37501200,
+          "heapCapacity": 44060672,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826307.2456737,
+      "phase": "sort_ready",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 41376640,
+          "heapCapacity": 48254976,
+          "externalUsage": 365984
+        }
+      ]
+    },
+    {
+      "at": 1795826309.3091092,
+      "phase": "sort_ready",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 123847424,
+          "heapCapacity": 131616768,
+          "externalUsage": 5879200
+        }
+      ]
+    },
+    {
+      "at": 1795826311.3715584,
+      "phase": "sort_ready",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 871067776,
+          "heapCapacity": 884260864,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826313.4391594,
+      "phase": "sort_ready",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 965855328,
+          "heapCapacity": 1310887936,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826315.4944286,
+      "phase": "sort_done",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 966917696,
+          "heapCapacity": 1246400512,
+          "externalUsage": 39488
+        }
+      ]
+    },
+    {
+      "at": 1795826317.5556638,
+      "phase": "sort_done",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 955035088,
+          "heapCapacity": 1233293312,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826319.6146655,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 991626560,
+          "heapCapacity": 1239519232,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826321.6933434,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1203202288,
+          "heapCapacity": 1406435328,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826323.750942,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1351702160,
+          "heapCapacity": 1425317888,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826326.216893,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1728334672,
+          "heapCapacity": 1999306752,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826328.318154,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1725006896,
+          "heapCapacity": 1995636736,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826333.350544,
+      "error": "TimeoutError"
+    },
+    {
+      "at": 1795826336.8607166,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1735998096,
+          "heapCapacity": 2007171072,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826339.1831417,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1736217872,
+          "heapCapacity": 2007171072,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826341.2443144,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1733741952,
+          "heapCapacity": 2004549632,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826343.3161263,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1726030544,
+          "heapCapacity": 1996685312,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826345.4213102,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1725361296,
+          "heapCapacity": 1996161024,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826347.503326,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1734759152,
+          "heapCapacity": 2005598208,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826349.5964293,
+      "phase": "web_open_0",
+      "isolates": [
+        {
+          "name": "main",
+          "type": "MemoryUsage",
+          "heapUsage": 1732255072,
+          "heapCapacity": 2002976768,
+          "externalUsage": 38304
+        }
+      ]
+    },
+    {
+      "at": 1795826351.6596222,
+      "error": "HTTPError"
+    },
+    {
+      "at": 1795826355.7223735,
+      "error": "URLError"
+    },
+    {
+      "at": 1795826359.7610135,
+      "error": "URLError"
+    },
+    {
+      "at": 1795826363.8235576,
+      "error": "URLError"
+    },
+    {
+      "at": 1795826367.8501844,
+      "error": "URLError"
+    },
+    {
+      "at": 1795826371.8966372,
+      "error": "URLError"
+    },
+    {
+      "at": 1795826375.9406312,
+      "error": "URLError"
+    },
+    {
+      "at": 1795826379.9687107,
+      "error": "URLError"
+    },
+    {
+      "at": 1795826384.0192475,
+      "error": "URLError"
+    },
+    {
+      "at": 1795826388.0528266,
+      "error": "URLError"
+    }
+  ]
+}

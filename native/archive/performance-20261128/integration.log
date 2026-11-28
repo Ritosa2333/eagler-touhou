@@ -1,0 +1,16 @@
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/integration_test/desktop_window_test.dart
+Building Windows application...                                 
+CMake Warning (dev) at flutter/ephemeral/.plugin_symlinks/flutter_inappwebview_windows/windows/CMakeLists.txt:32 (add_custom_command):
+  The following keywords are not supported when using
+  add_custom_command(TARGET): DEPENDS.
+
+  Policy CMP0175 is not set: add_custom_command() rejects invalid arguments.
+  Run "cmake --help-policy CMP0175" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+Building Windows application...                                    48.1s
+√ Built build\windows\x64\runner\Debug\touhouonline.exe
+00:00 +0: Desktop caption operates the real launcher window
+01:00 +1: (tearDownAll)
+01:00 +1: All tests passed!

@@ -1,0 +1,13 @@
+{
+  "scope": "Existing release th07 DATA, independently matched to bundled published descriptor. Temporary ZIP fixture wraps the same real bytes in the existing package schema; it is not a separately published full release. Existing import verifier and widget entry fixtures use th07 with a distinct th08 wrong-game sample. Widget wait deadline scales for the larger real input and is not a performance assertion. No downloads or changes to the original file.",
+  "data": {
+    "name": "th07.data",
+    "bytes": 23829135,
+    "sha256": "5fe8d772191505bf208f966da8070ee0a9e0d0ee8567a8827ef3a362bcb0c287"
+  },
+  "zipSha256": "1deba3641fb5399df0486c5409a7c68878502506afb1bcdd332aaacba42d4b45",
+  "zipBytes": 23829672,
+  "sourceSha256": "73f1f7d5f38485e9b4a02f8fdb675b276e21b40d7889caae697b8a3e9a07cf11",
+  "verifierSha256": "2ef177c0259231921fb39710cdd3b646db51e82af849ff38555781674fc514ca",
+  "uiTestSha256": "945d7b09fcf6c9c83e50659486fd670757ed9d9d5196186594954f9262ef1900"
+}

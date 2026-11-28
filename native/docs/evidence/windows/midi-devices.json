@@ -1,0 +1,23 @@
+{
+  "platform": "windows",
+  "failed": false,
+  "outputs": [
+    {
+      "id": "VirtualMIDISynth #1",
+      "name": "VirtualMIDISynth #1"
+    },
+    {
+      "id": "Microsoft GS Wavetable Synth",
+      "name": "Microsoft GS Wavetable Synth"
+    },
+    {
+      "id": "VST MIDI Synth (port A)",
+      "name": "VST MIDI Synth (port A)"
+    },
+    {
+      "id": "VST MIDI Synth (port B)",
+      "name": "VST MIDI Synth (port B)"
+    }
+  ],
+  "processMilliseconds": 2101
+}

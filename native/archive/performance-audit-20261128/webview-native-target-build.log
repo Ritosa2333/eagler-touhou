@@ -1,0 +1,192 @@
+适用于 .NET Framework MSBuild 版本 18.0.5+e22287bf1
+
+C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(558,5): warning MSB8029: The Intermediate directory or Output directory cannot reside under the Temporary directory as it could lead to issues with incremental build. [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+  Building Custom Rule D:/workspace/eagler/toolchains/flutter-pub-cache/hosted/pub.dev/flutter_inappwebview_windows-0.7.0-beta.3/windows/CMakeLists.txt
+C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(558,5): warning MSB8029: The Intermediate directory or Output directory cannot reside under the Temporary directory as it could lead to issues with incremental build. [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\ZERO_CHECK.vcxproj]
+  flutter_inappwebview_windows_plugin_c_api.cpp
+  flutter_inappwebview_windows_plugin.cpp
+  base64.cpp
+  channel_delegate.cpp
+  url_request.cpp
+  navigation_action.cpp
+  web_resource_error.cpp
+  web_resource_request.cpp
+  web_resource_response.cpp
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\types\web_resource_response.cpp(54,28): warning C4244: “参数”: 从“__int64”转换到“int”，可能丢失数据 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+  web_history.cpp
+  web_history_item.cpp
+  content_world.cpp
+  user_script.cpp
+  plugin_script.cpp
+  size_2d.cpp
+  rect.cpp
+  screenshot_configuration.cpp
+  create_window_action.cpp
+  new_window_requested_args.cpp
+  window_features.cpp
+  正在生成代码...
+  正在编译...
+  ssl_certificate.cpp
+  permission_response.cpp
+  custom_scheme_response.cpp
+  custom_scheme_registration.cpp
+C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(215,3): warning C4458: “value”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+  (compiling source file 'D:/workspace/eagler/toolchains/flutter-pub-cache/hosted/pub.dev/flutter_inappwebview_windows-0.7.0-beta.3/windows/types/custom_scheme_registration.cpp')
+      C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt\wrl\implements.h(81,31):
+      参见“Microsoft::WRL::RuntimeClassFlags<4>::value”的声明
+      C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(215,3):
+      模板实例化上下文(最早的实例化上下文)为
+          D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\types\custom_scheme_registration.cpp(38,7):
+          查看对正在编译的 类 模板 实例化“CoreWebView2CustomSchemeRegistrationBase<LPVOID (__cdecl *)(SIZE_T),LPVOID CoTaskMemAlloc(SIZE_T),void (__cdecl *)(LPVOID),void CoTaskMemFree(LPVOID)>”的引用
+          C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(215,3):
+          在编译 类 模板 成员函数“HRESULT CoreWebView2CustomSchemeRegistrationBase<LPVOID (__cdecl *)(SIZE_T),LPVOID CoTaskMemAlloc(SIZE_T),void (__cdecl *)(LPVOID),void CoTaskMemFree(LPVOID)>::put_HasAuthorityComponent(BOOL)”时
+              D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\types\custom_scheme_registration.cpp(48,58):
+              请参阅 "flutter_inappwebview_plugin::CustomSchemeRegistration::toWebView2CustomSchemeRegistration" 中对 "CoreWebView2CustomSchemeRegistrationBase<LPVOID (__cdecl *)(SIZE_T),LPVOID CoTaskMemAlloc(SIZE_T),void (__cdecl *)(LPVOID),void CoTaskMemFree(LPVOID)>::put_HasAuthorityComponent" 的第一个引用
+  
+C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(214,3): warning C4458: “value”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+  (compiling source file 'D:/workspace/eagler/toolchains/flutter-pub-cache/hosted/pub.dev/flutter_inappwebview_windows-0.7.0-beta.3/windows/types/custom_scheme_registration.cpp')
+      C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt\wrl\implements.h(81,31):
+      参见“Microsoft::WRL::RuntimeClassFlags<4>::value”的声明
+      C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(214,3):
+      模板实例化上下文(最早的实例化上下文)为
+          C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(214,3):
+          在编译 类 模板 成员函数“HRESULT CoreWebView2CustomSchemeRegistrationBase<LPVOID (__cdecl *)(SIZE_T),LPVOID CoTaskMemAlloc(SIZE_T),void (__cdecl *)(LPVOID),void CoTaskMemFree(LPVOID)>::put_TreatAsSecure(BOOL)”时
+              D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\types\custom_scheme_registration.cpp(44,50):
+              请参阅 "flutter_inappwebview_plugin::CustomSchemeRegistration::toWebView2CustomSchemeRegistration" 中对 "CoreWebView2CustomSchemeRegistrationBase<LPVOID (__cdecl *)(SIZE_T),LPVOID CoTaskMemAlloc(SIZE_T),void (__cdecl *)(LPVOID),void CoTaskMemFree(LPVOID)>::put_TreatAsSecure" 的第一个引用
+  
+  javascript_handler_function_data.cpp
+  ssl_error.cpp
+  url_credential.cpp
+  url_protection_space.cpp
+  url_authentication_challenge.cpp
+  http_authentication_challenge.cpp
+  http_auth_response.cpp
+  client_cert_challenge.cpp
+  client_cert_response.cpp
+  server_trust_challenge.cpp
+  server_trust_auth_response.cpp
+  security_origin.cpp
+  frame_info.cpp
+  process_failed_detail.cpp
+  render_process_gone_detail.cpp
+  download_start_request.cpp
+  正在生成代码...
+  正在编译...
+  download_start_response.cpp
+  favicon_changed_request.cpp
+  launching_external_uri_scheme_request.cpp
+  launching_external_uri_scheme_response.cpp
+  notification_received_request.cpp
+  notification_received_response.cpp
+  save_as_ui_showing_request.cpp
+  save_as_ui_showing_response.cpp
+  save_file_security_check_starting_request.cpp
+  save_file_security_check_starting_response.cpp
+  screen_capture_starting_request.cpp
+  screen_capture_starting_response.cpp
+  web_notification.cpp
+  browser_process_exited_detail.cpp
+  browser_process_info.cpp
+  browser_process_infos_changed_detail.cpp
+  physical_key_status.cpp
+  accelerator_key_pressed_detail.cpp
+  custom_platform_view.cc
+  texture_bridge.cc
+  正在生成代码...
+  正在编译...
+  graphics_context.cc
+  direct3d11.interop.cc
+  rohelper.cc
+  string_converter.cc
+  find_interaction_channel_delegate.cpp
+  find_interaction_controller.cpp
+  web_notification_channel_delegate.cpp
+  web_notification_controller.cpp
+  print_job_channel_delegate.cpp
+  print_job_controller.cpp
+  print_job_info.cpp
+  print_job_manager.cpp
+  print_job_settings.cpp
+  web_message_channel.cpp
+  web_message_listener.cpp
+  web_message_listener_channel_delegate.cpp
+  webview_environment_settings.cpp
+  webview_environment.cpp
+C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(215,3): warning C4458: “value”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+  (compiling source file 'D:/workspace/eagler/toolchains/flutter-pub-cache/hosted/pub.dev/flutter_inappwebview_windows-0.7.0-beta.3/windows/webview_environment/webview_environment.cpp')
+      C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt\wrl\implements.h(81,31):
+      参见“Microsoft::WRL::RuntimeClassFlags<4>::value”的声明
+      C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(215,3):
+      模板实例化上下文(最早的实例化上下文)为
+          D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\webview_environment\webview_environment.cpp(61,44):
+          查看对正在编译的 类 模板 实例化“CoreWebView2CustomSchemeRegistrationBase<LPVOID (__cdecl *)(SIZE_T),LPVOID CoTaskMemAlloc(SIZE_T),void (__cdecl *)(LPVOID),void CoTaskMemFree(LPVOID)>”的引用
+          C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(215,3):
+          在编译 类 模板 成员函数“HRESULT CoreWebView2CustomSchemeRegistrationBase<LPVOID (__cdecl *)(SIZE_T),LPVOID CoTaskMemAlloc(SIZE_T),void (__cdecl *)(LPVOID),void CoTaskMemFree(LPVOID)>::put_HasAuthorityComponent(BOOL)”时
+  
+C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(214,3): warning C4458: “value”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+  (compiling source file 'D:/workspace/eagler/toolchains/flutter-pub-cache/hosted/pub.dev/flutter_inappwebview_windows-0.7.0-beta.3/windows/webview_environment/webview_environment.cpp')
+      C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt\wrl\implements.h(81,31):
+      参见“Microsoft::WRL::RuntimeClassFlags<4>::value”的声明
+      C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(214,3):
+      模板实例化上下文(最早的实例化上下文)为
+          C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\packages\Microsoft.Web.WebView2\build\native\include\WebView2EnvironmentOptions.h(214,3):
+          在编译 类 模板 成员函数“HRESULT CoreWebView2CustomSchemeRegistrationBase<LPVOID (__cdecl *)(SIZE_T),LPVOID CoTaskMemAlloc(SIZE_T),void (__cdecl *)(LPVOID),void CoTaskMemFree(LPVOID)>::put_TreatAsSecure(BOOL)”时
+  
+  webview_environment_manager.cpp
+  webview_environment_channel_delegate.cpp
+  正在生成代码...
+  正在编译...
+  user_content_controller.cpp
+  in_app_webview_settings.cpp
+  in_app_webview.cpp
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.cpp(2656,70): warning C4458: “id”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+      D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.h(104,40):
+      参见“flutter_inappwebview_plugin::InAppWebView::id”的声明
+  
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.cpp(2662,92): warning C4458: “id”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+      D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.h(104,40):
+      参见“flutter_inappwebview_plugin::InAppWebView::id”的声明
+  
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.cpp(2668,72): warning C4458: “id”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+      D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.h(104,40):
+      参见“flutter_inappwebview_plugin::InAppWebView::id”的声明
+  
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.cpp(2691,63): warning C4458: “id”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+      D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.h(104,40):
+      参见“flutter_inappwebview_plugin::InAppWebView::id”的声明
+  
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.cpp(2697,78): warning C4458: “id”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+      D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.h(104,40):
+      参见“flutter_inappwebview_plugin::InAppWebView::id”的声明
+  
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.cpp(2703,65): warning C4458: “id”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+      D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.h(104,40):
+      参见“flutter_inappwebview_plugin::InAppWebView::id”的声明
+  
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.cpp(2726,73): warning C4458: “settings”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+      D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.h(112,43):
+      参见“flutter_inappwebview_plugin::InAppWebView::settings”的声明
+  
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.cpp(2855,66): warning C4458: “settings”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+      D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.h(112,43):
+      参见“flutter_inappwebview_plugin::InAppWebView::settings”的声明
+  
+D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.cpp(4139,17): warning C4458: “id”的声明隐藏了类成员 [C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\flutter_inappwebview_windows_plugin.vcxproj]
+      D:\workspace\eagler\toolchains\flutter-pub-cache\hosted\pub.dev\flutter_inappwebview_windows-0.7.0-beta.3\windows\in_app_webview\in_app_webview.h(104,40):
+      参见“flutter_inappwebview_plugin::InAppWebView::id”的声明
+  
+  in_app_webview_manager.cpp
+  webview_channel_delegate.cpp
+  headless_in_app_webview.cpp
+  headless_in_app_webview_manager.cpp
+  headless_webview_channel_delegate.cpp
+  in_app_browser_settings.cpp
+  in_app_browser_manager.cpp
+  in_app_browser.cpp
+  in_app_browser_channel_delegate.cpp
+  cookie_manager.cpp
+  platform_util.cpp
+  texture_bridge_gpu.cc
+  正在生成代码...
+    正在创建库 C:/Users/Ritosa/AppData/Local/Temp/native-process-proof-20261128/webview-adapter/cmake-check/build/upstream/Release/flutter_inappwebview_windows_plugin.lib 和对象 C:/Users/Ritosa/AppData/Local/Temp/native-process-proof-20261128/webview-adapter/cmake-check/build/upstream/Release/flutter_inappwebview_windows_plugin.exp
+  flutter_inappwebview_windows_plugin.vcxproj -> C:\Users\Ritosa\AppData\Local\Temp\native-process-proof-20261128\webview-adapter\cmake-check\build\upstream\Release\flutter_inappwebview_windows_plugin.dll

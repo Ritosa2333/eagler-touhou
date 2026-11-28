@@ -1,0 +1,14 @@
+{
+  "originalSha256": "0a99fb893a284835681b6618ceb153c7da0cc8b16466f3527e02dbb04a9548f2",
+  "diagnosticSha256": "ef4d4862476074aaca67b666ac91d0d070c6556119878afb6c8fb6bed75b1b0e",
+  "scope": "Temporary staged Dart event logging. No credentials, cookie values, form values or full query strings recorded. Published source and preview untouched.",
+  "observedRootToLoginMs": 6.842,
+  "closeBeforeIdentityVerification": true,
+  "beforeRegression": "Five platform widget variants fail: route became / instead of /account",
+  "afterRegression": "83 account-container widget cases passed on Windows, with simulated platform variants. No device build.",
+  "candidateChecks": [
+    "Single getUrl read: live login still returned automatically",
+    "Initial document-load guard: desktop login displayed, responsive resize still exited"
+  ],
+  "currentStrategy": "100 ms cancellable history debounce, live URL check and stale-result revision; explicit main-frame navigation stays immediate"
+}

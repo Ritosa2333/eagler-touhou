@@ -1,0 +1,798 @@
+[
+  {
+    "pid": 39464,
+    "tid": 34564,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403020014238096,
+    "exited": 0,
+    "kernel100ns": 839375000,
+    "user100ns": 1064062500,
+    "stackFrames": [
+      {
+        "address": "7ffa8287a0c4",
+        "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+        "offset": "a0c4",
+        "export": "LocalFree",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8287a0c4",
+        "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+        "offset": "a0c4",
+        "export": "LocalFree",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa63f63cc6",
+        "module": "C:\\WINDOWS\\SYSTEM32\\OLEACC.dll",
+        "offset": "13cc6",
+        "export": "LresultFromObject",
+        "exportOffset": "1016"
+      },
+      {
+        "address": "7ffa63f639f2",
+        "module": "C:\\WINDOWS\\SYSTEM32\\OLEACC.dll",
+        "offset": "139f2",
+        "export": "LresultFromObject",
+        "exportOffset": "d42"
+      },
+      {
+        "address": "7ffa3b1b47e5",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "647e5",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "4f295"
+      },
+      {
+        "address": "7ffa3b1b4676",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "64676",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "4f126"
+      },
+      {
+        "address": "7ffa3b1b4b4b",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "64b4b",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "4f5fb"
+      },
+      {
+        "address": "7ffa3b1b4964",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "64964",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "4f414"
+      },
+      {
+        "address": "7ffa3b264785",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "114785",
+        "export": "UiaRaiseAutomationEvent",
+        "exportOffset": "10515"
+      },
+      {
+        "address": "7ffa3b16dc2d",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "1dc2d",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "86dd"
+      },
+      {
+        "address": "7ffa3b16d6dc",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "1d6dc",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "818c"
+      },
+      {
+        "address": "7ffa3b1eec11",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "9ec11",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "896c1"
+      },
+      {
+        "address": "7ffa3b1ee92a",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "9e92a",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "893da"
+      },
+      {
+        "address": "7ffa8313b4fb",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "1b4fb",
+        "export": "PostMessageW",
+        "exportOffset": "5bb"
+      },
+      {
+        "address": "7ffa8315f543",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "3f543",
+        "export": "GetWindowDpiAwarenessContext",
+        "exportOffset": "4d3"
+      },
+      {
+        "address": "7ffa853ea424",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "16a424",
+        "export": "KiUserCallbackDispatcher",
+        "exportOffset": "24"
+      },
+      {
+        "address": "7ffa82e81364",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1364",
+        "export": "NtUserGetMessage",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8314ae52",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "2ae52",
+        "export": "GetMessageW",
+        "exportOffset": "22"
+      },
+      {
+        "address": "7ff717e524bd",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "24bd",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff717e5620a",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "620a",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa8287a0c4",
+    "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+    "offset": "a0c4"
+  },
+  {
+    "pid": 39464,
+    "tid": 34564,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403020014238096,
+    "exited": 0,
+    "kernel100ns": 839531250,
+    "user100ns": 1064375000,
+    "stackFrames": [
+      {
+        "address": "7ffa82e81364",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1364",
+        "export": "NtUserGetMessage",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa82e81364",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1364",
+        "export": "NtUserGetMessage",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8314ae52",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "2ae52",
+        "export": "GetMessageW",
+        "exportOffset": "22"
+      },
+      {
+        "address": "7ff717e524bd",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "24bd",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff717e5620a",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "620a",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa82e81364",
+    "module": "C:\\WINDOWS\\System32\\win32u.dll",
+    "offset": "1364"
+  },
+  {
+    "pid": 39464,
+    "tid": 34564,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403020014238096,
+    "exited": 0,
+    "kernel100ns": 839531250,
+    "user100ns": 1064375000,
+    "stackFrames": [
+      {
+        "address": "7ffa82e81364",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1364",
+        "export": "NtUserGetMessage",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa82e81364",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1364",
+        "export": "NtUserGetMessage",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8314ae52",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "2ae52",
+        "export": "GetMessageW",
+        "exportOffset": "22"
+      },
+      {
+        "address": "7ff717e524bd",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "24bd",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff717e5620a",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "620a",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa82e81364",
+    "module": "C:\\WINDOWS\\System32\\win32u.dll",
+    "offset": "1364"
+  },
+  {
+    "pid": 39464,
+    "tid": 34564,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403020014238096,
+    "exited": 0,
+    "kernel100ns": 840000000,
+    "user100ns": 1065625000,
+    "stackFrames": [
+      {
+        "address": "7ffa82e81364",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1364",
+        "export": "NtUserGetMessage",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa82e81364",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1364",
+        "export": "NtUserGetMessage",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8314ae52",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "2ae52",
+        "export": "GetMessageW",
+        "exportOffset": "22"
+      },
+      {
+        "address": "7ff717e524bd",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "24bd",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff717e5620a",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "620a",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa82e81364",
+    "module": "C:\\WINDOWS\\System32\\win32u.dll",
+    "offset": "1364"
+  },
+  {
+    "pid": 39464,
+    "tid": 34564,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403020014238096,
+    "exited": 0,
+    "kernel100ns": 840156250,
+    "user100ns": 1066093750,
+    "stackFrames": [
+      {
+        "address": "7ffa828d3009",
+        "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+        "offset": "63009",
+        "export": "GetLocaleInfoHelper",
+        "exportOffset": "3da9"
+      },
+      {
+        "address": "7ffa828d3009",
+        "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+        "offset": "63009",
+        "export": "GetLocaleInfoHelper",
+        "exportOffset": "3da9"
+      },
+      {
+        "address": "7ffa828cf22c",
+        "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+        "offset": "5f22c",
+        "export": "GetLocaleInfoEx",
+        "exportOffset": "3c"
+      },
+      {
+        "address": "7ff9965de3eb",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "f6e3eb",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "79ac89"
+      },
+      {
+        "address": "7ff9965f9bd2",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "f89bd2",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "7b6470"
+      },
+      {
+        "address": "7ff9965dcb87",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "f6cb87",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "799425"
+      },
+      {
+        "address": "7ff9965dc65f",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "f6c65f",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "798efd"
+      },
+      {
+        "address": "7ff9965d9d82",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "f69d82",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "796620"
+      },
+      {
+        "address": "7ff9965da0de",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "f6a0de",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "79697c"
+      },
+      {
+        "address": "7ff9956aad3a",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "3ad3a",
+        "export": "InternalFlutterWindows_WindowManager_SetSatelliteParent",
+        "exportOffset": "20d5"
+      },
+      {
+        "address": "7ff9956aacb4",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "3acb4",
+        "export": "InternalFlutterWindows_WindowManager_SetSatelliteParent",
+        "exportOffset": "204f"
+      },
+      {
+        "address": "7ff9956aa960",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "3a960",
+        "export": "InternalFlutterWindows_WindowManager_SetSatelliteParent",
+        "exportOffset": "1cfb"
+      },
+      {
+        "address": "7ff9956aaa34",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "3aa34",
+        "export": "InternalFlutterWindows_WindowManager_SetSatelliteParent",
+        "exportOffset": "1dcf"
+      },
+      {
+        "address": "7ff995fbf45b",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "94f45b",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "17bcf9"
+      },
+      {
+        "address": "7ff995f85c9f",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "915c9f",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "14253d"
+      },
+      {
+        "address": "7ff995f7db24",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "90db24",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "13a3c2"
+      },
+      {
+        "address": "7ff995fb738a",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "94738a",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "173c28"
+      },
+      {
+        "address": "7ff995fb6e33",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\flutter_windows.dll",
+        "offset": "946e33",
+        "export": "InternalFlutterGpu_Texture_InitializeFromImage",
+        "exportOffset": "1736d1"
+      },
+      {
+        "address": "7ffa63f5dbf2",
+        "module": "C:\\WINDOWS\\SYSTEM32\\OLEACC.dll",
+        "offset": "dbf2",
+        "export": "PropMgrClient_LookupProp",
+        "exportOffset": "1ba2"
+      },
+      {
+        "address": "7ffa3b1ff502",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "af502",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "99fb2"
+      },
+      {
+        "address": "7ffa3b2bc63c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "16c63c",
+        "export": "UiaNodeFromProvider",
+        "exportOffset": "6f4c"
+      },
+      {
+        "address": "7ffa3b1c02b3",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "702b3",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "5ad63"
+      },
+      {
+        "address": "7ffa3b1d5cb5",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "85cb5",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "70765"
+      },
+      {
+        "address": "7ffa3b1aa4fc",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "5a4fc",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "44fac"
+      },
+      {
+        "address": "7ffa3b1abc27",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "5bc27",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "466d7"
+      },
+      {
+        "address": "7ffa3b20bbdd",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "bbbdd",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "a668d"
+      },
+      {
+        "address": "7ffa3b20b06e",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "bb06e",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "a5b1e"
+      },
+      {
+        "address": "7ffa3b20acdf",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "bacdf",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "a578f"
+      },
+      {
+        "address": "7ffa3b2c7b2d",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "177b2d",
+        "export": "UiaNodeFromProvider",
+        "exportOffset": "1243d"
+      },
+      {
+        "address": "7ffa3b1d5cb5",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "85cb5",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "70765"
+      },
+      {
+        "address": "7ffa3b172f4a",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "22f4a",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "d9fa"
+      },
+      {
+        "address": "7ffa3b1740e5",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "240e5",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "eb95"
+      },
+      {
+        "address": "7ffa3b173d63",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "23d63",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "e813"
+      },
+      {
+        "address": "7ffa3b16d832",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "1d832",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "82e2"
+      },
+      {
+        "address": "7ffa3b1eec11",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "9ec11",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "896c1"
+      },
+      {
+        "address": "7ffa3b1ee92a",
+        "module": "C:\\WINDOWS\\SYSTEM32\\UIAutomationCore.DLL",
+        "offset": "9e92a",
+        "export": "UiaRaiseAutomationPropertyChangedEvent",
+        "exportOffset": "893da"
+      },
+      {
+        "address": "7ffa8313b4fb",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "1b4fb",
+        "export": "PostMessageW",
+        "exportOffset": "5bb"
+      },
+      {
+        "address": "7ffa8315f543",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "3f543",
+        "export": "GetWindowDpiAwarenessContext",
+        "exportOffset": "4d3"
+      },
+      {
+        "address": "7ffa853ea424",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "16a424",
+        "export": "KiUserCallbackDispatcher",
+        "exportOffset": "24"
+      },
+      {
+        "address": "7ffa82e81364",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1364",
+        "export": "NtUserGetMessage",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8314ae52",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "2ae52",
+        "export": "GetMessageW",
+        "exportOffset": "22"
+      },
+      {
+        "address": "7ff717e524bd",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "24bd",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff717e5620a",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "620a",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa828d3009",
+    "module": "C:\\WINDOWS\\System32\\KERNELBASE.dll",
+    "offset": "63009"
+  },
+  {
+    "pid": 39464,
+    "tid": 34564,
+    "exitCode": 259,
+    "waitResult": 258,
+    "created": 134403020014238096,
+    "exited": 0,
+    "kernel100ns": 841406250,
+    "user100ns": 1067343750,
+    "stackFrames": [
+      {
+        "address": "7ffa82e81464",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1464",
+        "export": "NtUserGetProp",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa82e81464",
+        "module": "C:\\WINDOWS\\System32\\win32u.dll",
+        "offset": "1464",
+        "export": "NtUserGetProp",
+        "exportOffset": "14"
+      },
+      {
+        "address": "7ffa8314b6e9",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "2b6e9",
+        "export": "GetPropW",
+        "exportOffset": "139"
+      },
+      {
+        "address": "7ffa699d689e",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "2689e",
+        "export": "DefSubclassProc",
+        "exportOffset": "4e"
+      },
+      {
+        "address": "7ffa699d66b5",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "266b5",
+        "export": "Str_SetPtrW",
+        "exportOffset": "205"
+      },
+      {
+        "address": "7ffa699d6c5f",
+        "module": "C:\\WINDOWS\\WinSxS\\amd64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.26100.8328_none_87eede957a2ccddd\\COMCTL32.dll",
+        "offset": "26c5f",
+        "export": "Ordinal411",
+        "exportOffset": "19f"
+      },
+      {
+        "address": "7ffa831352e6",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "152e6",
+        "export": "CallWindowProcW",
+        "exportOffset": "6a6"
+      },
+      {
+        "address": "7ffa83135dbd",
+        "module": "C:\\WINDOWS\\System32\\USER32.dll",
+        "offset": "15dbd",
+        "export": "IsWindowUnicode",
+        "exportOffset": "20d"
+      },
+      {
+        "address": "7ff717e524aa",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "24aa",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ff717e5620a",
+        "module": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\touhouonline.exe",
+        "offset": "620a",
+        "export": "",
+        "exportOffset": "0"
+      },
+      {
+        "address": "7ffa8496dda7",
+        "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+        "offset": "2dda7",
+        "export": "BaseThreadInitThunk",
+        "exportOffset": "17"
+      },
+      {
+        "address": "7ffa85349c5c",
+        "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+        "offset": "c9c5c",
+        "export": "RtlUserThreadStart",
+        "exportOffset": "2c"
+      }
+    ],
+    "modules": 129,
+    "rip": "7ffa82e81464",
+    "module": "C:\\WINDOWS\\System32\\win32u.dll",
+    "offset": "1464"
+  }
+]

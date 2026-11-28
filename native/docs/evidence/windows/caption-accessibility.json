@@ -1,0 +1,187 @@
+{
+  "checkedAtUtc": "2026-11-27T13:35:21.262432+00:00",
+  "requirements": [
+    "NAV-08"
+  ],
+  "source": {
+    "integration_test/desktop_window_test.dart": "e7bc18598f02ad17ac4c6cb75b823484f301541a7e673d40f2e177b827ddc193",
+    "lib/desktop_window.dart": "6c51d03b3a9be4f47bef454371504769178e2462f32b04a6e5d52b88adedce30",
+    "lib/l10n/generated/launcher_strings.dart": "220c1e1ced23a2b0af3b22894f1f1a55e68c93de7237757327acdd7ca28fb9dd",
+    "lib/l10n/generated/launcher_strings_en.dart": "0c6f366cf2c32f4163c4f19a09ca4b68d0617d9781248dfaab1f3ce952c0bea8",
+    "lib/l10n/generated/launcher_strings_ja.dart": "1e87c21438d2928aca1cef6dba6a752d4eb6b06e9676fb7851481c1e58dc3389",
+    "lib/l10n/generated/launcher_strings_zh.dart": "0570b32f0c75650314cdc90fbaead7674ca1a07f89e72eaaf3cba57dac043326",
+    "lib/l10n/launcher_en.arb": "95cae84639e3c9d114561f68076a8b8a52795a0bd042d76c5c177bcd5b68d0fe",
+    "lib/l10n/launcher_ja.arb": "6f7facc2c33c701e0a68501cc8b9d454cda69ac52c2c4bc708ff92c1dfbddbe3",
+    "lib/l10n/launcher_zh.arb": "b470af318a803267fe74dbfae040068eee5bb8c2c8aa85ed5d027ed1cf94601a"
+  },
+  "packageSha256": "11b76768508b2412004a30b7b7ec95c1998b71105245eb434de9f60f7caf6117",
+  "reproduction": {
+    "before": "Real Windows integration failed because the visible stock window caption buttons had empty accessible names",
+    "compactCause": "At 320 px the body Navigator blocked semantics of the preceding caption sibling. The recorded tree omitted the top 32 px caption",
+    "fix": "Compose stock WindowCaptionButton and MaximizeButtonArea with localized labels. Give the body Navigator a separate semantic boundary. Keep stock native actions and painting",
+    "frameworkReference": "https://api.flutter.dev/flutter/widgets/BlockSemantics-class.html"
+  },
+  "validation": {
+    "analyzer": "No issues",
+    "checksPassed": 142,
+    "navigationChecks": 41,
+    "mainUiChecks": 10,
+    "captureChecks": 91,
+    "windowsIntegration": 1,
+    "captionActions": {
+      "cases": [
+        {
+          "width": 1280.0,
+          "language": "zh",
+          "labels": [
+            "最小化",
+            "最大化",
+            "关闭"
+          ]
+        },
+        {
+          "width": 1280.0,
+          "language": "en",
+          "labels": [
+            "Minimize",
+            "Maximize",
+            "Close"
+          ]
+        },
+        {
+          "width": 1280.0,
+          "language": "ja",
+          "labels": [
+            "最小化",
+            "最大化",
+            "閉じる"
+          ]
+        },
+        {
+          "width": 320.0,
+          "language": "zh",
+          "labels": [
+            "最小化",
+            "最大化",
+            "关闭"
+          ]
+        },
+        {
+          "width": 320.0,
+          "language": "en",
+          "labels": [
+            "Minimize",
+            "Maximize",
+            "Close"
+          ]
+        },
+        {
+          "width": 320.0,
+          "language": "ja",
+          "labels": [
+            "最小化",
+            "最大化",
+            "閉じる"
+          ]
+        }
+      ],
+      "maximizeRestore": true,
+      "minimizeRestore": true,
+      "closeVeto": true
+    },
+    "drawer": "The matching-source Windows integration asserts all three caption names remain exposed with the compact drawer open",
+    "registeredScreenshots": 210,
+    "corePixelDifferences": 0,
+    "nativeFrames": {
+      "nativeFrames": [
+        {
+          "file": "desktop-caption-1024.png",
+          "beforeSha256": "3bb0ae463167c5683c5d729a5a6c101e8646c161c15a9e15e2d92489be715bf7",
+          "afterSha256": "3bb0ae463167c5683c5d729a5a6c101e8646c161c15a9e15e2d92489be715bf7",
+          "identical": true
+        },
+        {
+          "file": "desktop-caption-320.png",
+          "beforeSha256": "9be3d4a2c256eae16641aacf701651cc7496709f2b262a858d133a81bdaf92c2",
+          "afterSha256": "9be3d4a2c256eae16641aacf701651cc7496709f2b262a858d133a81bdaf92c2",
+          "identical": true
+        },
+        {
+          "file": "desktop-caption-390.png",
+          "beforeSha256": "ab48307c5f146b15a4ffdfe09b954b29c8110186971f50464c89c1e2422b5dd2",
+          "afterSha256": "ab48307c5f146b15a4ffdfe09b954b29c8110186971f50464c89c1e2422b5dd2",
+          "identical": true
+        },
+        {
+          "file": "desktop-caption-801.png",
+          "beforeSha256": "7d2e6c0ef2c9300b1980d76e7a7e7f6758b68c61bff656f1c592d2f94247db0f",
+          "afterSha256": "7d2e6c0ef2c9300b1980d76e7a7e7f6758b68c61bff656f1c592d2f94247db0f",
+          "identical": true
+        },
+        {
+          "file": "desktop-caption-game-settings.png",
+          "beforeSha256": "b0b34d0b72032db0fe0c33b2920218c21c211846f168cb21c22a21d83279383e",
+          "afterSha256": "b0b34d0b72032db0fe0c33b2920218c21c211846f168cb21c22a21d83279383e",
+          "identical": true
+        },
+        {
+          "file": "desktop-caption-maximized.png",
+          "beforeSha256": "01d180bbcab657438da961514c823b6abee20f01185175c58b4c5d7aeb0171b1",
+          "afterSha256": "01d180bbcab657438da961514c823b6abee20f01185175c58b4c5d7aeb0171b1",
+          "identical": true
+        },
+        {
+          "file": "desktop-caption.png",
+          "beforeSha256": "5ce40f9e0e338a89a2f0b12d4d3e79670c94e3e9a391521994a8e8ca4ffce25f",
+          "afterSha256": "5ce40f9e0e338a89a2f0b12d4d3e79670c94e3e9a391521994a8e8ca4ffce25f",
+          "identical": true
+        }
+      ],
+      "matchingFrames": 7,
+      "scope": "Same original locale/theme/catalog in the real Windows engine; interactive semantics do not imply visual-design approval"
+    },
+    "release": {
+      "build": "passed",
+      "openedByAgent": true,
+      "processId": 24440,
+      "close": "Alt+F4 followed by process not found and no returned application window",
+      "accessibilityTree": "Tool returned null; Release UIA label verification not established this run",
+      "accountPointerNavigation": "No transition observed after tool clicks; unresolved. Do not count this as passed"
+    }
+  },
+  "boundaries": [
+    "Framework semantic actions in native integration do not establish successful Release UIA invocation",
+    "Actual Release account pointer navigation needs a fresh reliable observation",
+    "Native mouse drag, edge resize and Windows Snap still need reliable operation evidence",
+    "Credentialed login/logout, uploads and crop remain unverified",
+    "These images are implementation evidence, not user-approved visual baselines"
+  ],
+  "captures": [
+    {
+      "file": "evidence/windows/caption-accessibility-before-desktop-caption.png",
+      "sha256": "5ce40f9e0e338a89a2f0b12d4d3e79670c94e3e9a391521994a8e8ca4ffce25f",
+      "rendering": "Same-state real Windows Debug engine; source before/after fix"
+    },
+    {
+      "file": "evidence/windows/caption-accessibility-before-desktop-caption-320.png",
+      "sha256": "9be3d4a2c256eae16641aacf701651cc7496709f2b262a858d133a81bdaf92c2",
+      "rendering": "Same-state real Windows Debug engine; source before/after fix"
+    },
+    {
+      "file": "evidence/windows/caption-accessibility-after-desktop-caption.png",
+      "sha256": "5ce40f9e0e338a89a2f0b12d4d3e79670c94e3e9a391521994a8e8ca4ffce25f",
+      "rendering": "Same-state real Windows Debug engine; source before/after fix"
+    },
+    {
+      "file": "evidence/windows/caption-accessibility-after-desktop-caption-320.png",
+      "sha256": "9be3d4a2c256eae16641aacf701651cc7496709f2b262a858d133a81bdaf92c2",
+      "rendering": "Same-state real Windows Debug engine; source before/after fix"
+    },
+    {
+      "file": "evidence/windows/caption-accessibility-release-library.png",
+      "sha256": "d1fc8ef093da20d2be17fd63f52b12c8c5913abd1756a4bb40f0b35b66d8cfc0",
+      "packageSha256": "11b76768508b2412004a30b7b7ec95c1998b71105245eb434de9f60f7caf6117",
+      "rendering": "Actual Windows Release window"
+    }
+  ]
+}

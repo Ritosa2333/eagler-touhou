@@ -1,0 +1,43 @@
+{
+  "checkedAtUtc": "2026-11-27T14:12:43.311689+00:00",
+  "requirements": [
+    "CLOUD-06",
+    "GAME-SET-06"
+  ],
+  "packageSha256": "11b76768508b2412004a30b7b7ec95c1998b71105245eb434de9f60f7caf6117",
+  "productSourceUnchanged": true,
+  "reference": "file-roundtrip.json | existing Windows original-game save and replay verification",
+  "inputs": [
+    {
+      "name": "score.dat",
+      "bytes": 3000,
+      "sha256": "8fd6a03c9d9a55e3d805a202e61ef34c5f9003ee7d84f7701d93911547b26606"
+    },
+    {
+      "name": "th9_01.rpy",
+      "bytes": 15562,
+      "sha256": "f561b9b9e35e86eb4b64b746a8cf1f66a04315e5c95de4f5b23152f9acfcd9b2"
+    }
+  ],
+  "source": {
+    "lib/cloud_saves.dart": "f2f01681116898b99bcf798b08a122f4f633a3ccfe58fc5f61d55decfdc185cd",
+    "lib/game_user_files.dart": "9a32e2fa808ffb10fa59e0fc6b0280dde313284147553f10515a4dbc2e18fe50",
+    "lib/game_file_archive.dart": "8e959de9908a6261f5b52a379a8715b2c67a90ce25f073c69c9d74a01a4ebd52",
+    "assets/game_catalog.json": "6fd277e99e9685788cbe90417fdb83ebbc8b26607afdadf6403bdb7031ac130a",
+    "test/cloud_saves_test.dart": "210fc840df1252514833d6996f8e25739242adfa70d6a59a94d5ec879130d3b6",
+    "tools/verify_game_files_test.dart": "c69e4ce5b74cb0b5ecf16a3035b1edcb5254e8c6e76c16f1c1b7d02c04917331"
+  },
+  "validation": {
+    "checksPassed": 2,
+    "cloudZip": "The existing real th09 test is no longer skipped: restore a ZIP against the catalog and directory file metadata into an isolated workspace, then read local cloud-upload payload and compare exact original bytes",
+    "files": "Import/export the original th09 save and replay; reject an incomplete file without overwriting the prior save; allocate a duplicate replay name, rename it, move it into a Chinese directory, export/import the replay ZIP and verify hashes; confirm solo and multiplayer namespace isolation",
+    "additionalFixtures": "Existing th10 hint-language isolation and th15 ZIP preservation use constructed bytes. These do not establish parsing or gameplay validity of real th10/th15 saves",
+    "originalFilesUnchanged": true,
+    "isolatedFileScratchEmpty": true
+  },
+  "boundaries": [
+    "Actual file-selection dialogs were not exercised this run; the exporter writes only inside the isolated test directory",
+    "Cloud directory metadata is an existing isolated fixture, not an authenticated production upload",
+    "This test proves transfer and preservation of the recorded input bytes, not th09 save-statistics parsing"
+  ]
+}

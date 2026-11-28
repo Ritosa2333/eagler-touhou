@@ -1,0 +1,218 @@
+{
+  "pid": 29112,
+  "observations": [
+    {
+      "elapsed": 1.0032532000041101,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 2.017189000005601,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 3.030046500003664,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 4.045078900002409,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 5.05447809999896,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 6.054602800002613,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 7.061784299999999,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 8.073881299998902,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 9.082707300003676,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 10.084565299999667,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 11.094061700001475,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 12.105348000004597,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 13.115133700004662,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 14.126940400004969,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 15.137611999998626,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 16.14050220000354,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 17.15531280000141,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 18.15964140000142,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 19.16910750000534,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 20.181443900000886,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 21.190000300004613,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 22.197789900004864,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 23.204931899999792,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 24.214473799998814,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 25.21479679999902,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 26.22301249999873,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 27.22556320000149,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 28.228306400000292,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 29.23710790000041,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 30.25049289999879,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 31.252287800001795,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 32.25544960000116,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 33.25612209999963,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 259
+    },
+    {
+      "elapsed": 34.26121930000227,
+      "wait": 258,
+      "getExitCodeOk": true,
+      "exitCode": 0
+    },
+    {
+      "elapsed": 34.40088670000114,
+      "wait": 0,
+      "getExitCodeOk": true,
+      "exitCode": 0
+    }
+  ],
+  "signaledWithin48s": true,
+  "testOnlyTerminated": false,
+  "finalWait": 0
+}

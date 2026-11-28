@@ -1,0 +1,29 @@
+[
+  {
+    "utc": "2026-11-28T03:58:42.7785701Z",
+    "run": "skia-5",
+    "pid": 40480,
+    "handleOpened": true,
+    "openError": 0,
+    "waitZeroMs": 0,
+    "scope": "Post-run kernel synchronization check, not a reconstruction of the earlier close deadline"
+  },
+  {
+    "utc": "2026-11-28T03:58:42.7854905Z",
+    "run": "impeller-2",
+    "pid": 42592,
+    "handleOpened": true,
+    "openError": 0,
+    "waitZeroMs": 0,
+    "scope": "Post-run kernel synchronization check, not a reconstruction of the earlier close deadline"
+  },
+  {
+    "utc": "2026-11-28T03:58:42.7856387Z",
+    "run": "impeller-3",
+    "pid": 42484,
+    "handleOpened": true,
+    "openError": 0,
+    "waitZeroMs": 0,
+    "scope": "Post-run kernel synchronization check, not a reconstruction of the earlier close deadline"
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "ratings": {
+    "sequence": 1,
+    "players": {
+      "fixture": {"rating": 1470, "interval": 40, "games": 30, "group": 1},
+      "rated": {"rating": 1438, "interval": 120, "games": 18, "group": 1},
+      "other": {"rating": 1710, "interval": 95, "games": 23, "group": 1}
+    },
+    "cards": {
+      "rated": {"rating": 1438, "characters": [[0, 1410], [2, 1380], [4, 1290]]},
+      "other": {"rating": 1710, "characters": [[1, 1550]]}
+    }
+  },
+  "profiles": {
+    "rated": {"username": "rated", "nickname": "灵梦", "details": {"display": {"visible": {"records": true, "versus": true}}}},
+    "other": {"username": "other", "nickname": "魔理沙", "details": {"display": {"visible": {"records": true, "versus": true}}}},
+    "unrated": {"username": "unrated", "nickname": "妖梦", "details": {"display": {"visible": {"records": true, "versus": true}}}}
+  },
+  "board": {
+    "as_of": 1795536000000,
+    "default_min_games": 11,
+    "board": [
+      {"player":"other","profile":{"username":"other","nickname":"魔理沙"},"rating":1710,"interval_halfwidth":95,"games":23,"wins":11,"opponents":5,"connected_group":1,"last_at":1795449600000,"status":"active"},
+      {"player":"rated","profile":{"username":"rated","nickname":"灵梦"},"rating":1438,"interval_halfwidth":120,"games":26,"wins":13,"opponents":7,"connected_group":1,"last_at":1795449600000,"status":"active","top_characters":[{"character":0,"games":13},{"character":2,"games":8},{"character":4,"games":5}],"character_ratings":[{"character":0,"rating":1410,"games":13,"interval":90},{"character":2,"rating":1380,"games":8,"interval":103},{"character":4,"rating":1290,"games":5,"interval":120}]}
+    ]
+  },
+  "rooms": [
+    {"product":"th09mp","code":"4202","capacity":2,"difficulty":1,"phase":"lobby","joinable":true,"publicNames":true,"seats":[{"initial":"魔","name":"魔理沙","controlMode":"normal","profile":{"username":"other","th09":{"games":23,"wins":11}}},null]},
+    {"product":"th09mp","code":"4201","capacity":2,"difficulty":1,"phase":"lobby","joinable":true,"publicNames":true,"seats":[{"initial":"灵","name":"灵梦","controlMode":"normal","profile":{"username":"rated","th09":{"games":26,"wins":13}}},null]},
+    {"product":"th09mp","code":"4203","capacity":2,"difficulty":1,"phase":"lobby","joinable":true,"publicNames":true,"seats":[{"initial":"妖","name":"妖梦","controlMode":"normal","profile":{"username":"unrated","th09":{"games":6,"wins":3}}},null]}
+  ]
+}

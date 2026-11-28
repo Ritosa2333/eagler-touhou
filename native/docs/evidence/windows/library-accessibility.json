@@ -1,0 +1,92 @@
+{
+  "checkedAtUtc": "2026-11-27T12:52:03.800727+00:00",
+  "requirements": [
+    "LIB-03",
+    "LIB-05",
+    "LIB-06",
+    "LIB-07",
+    "NAV-08"
+  ],
+  "scope": "Library button roles and independent favorites; desktop window operation evidence",
+  "source": {
+    "lib/library.dart": "53b080159be0012f75a28af21c71250cb4c521d68466a95dcd6f14921ad974d9",
+    "test/library_accessibility_test.dart": "70c2679819d088495e86b40c9bb2ca05bd929a0a68dc80c6b54e6e4cb63e5424"
+  },
+  "packageSha256": "dd5ae9cd8d253a5be4b04bec7e616847f85d5ec5239ee24e0d8c96e278540580",
+  "reproduction": {
+    "before": "Six cases failed: grid and recent entries at 320,390,1440 px lacked the button role",
+    "after": "All six verify named button role, no image role, semantic tap to the correct detail and keyboard Enter after return; grid cases also activate favorite without opening detail"
+  },
+  "validation": {
+    "libraryChecks": 71,
+    "navigationChecks": 41,
+    "mainUiChecks": 10,
+    "captureChecks": 91,
+    "windowsIntegration": 1,
+    "registeredScreenshots": 210,
+    "pixelDifferences": 0,
+    "windowsAccessibility": "Actual Release UI Automation tree exposes the th06 game entry as a named button rather than an image; pointer activation and return separately observed",
+    "analyzer": "No issues",
+    "checksPassed": 213,
+    "nativeInteraction": {
+      "entry": "Coordinate pointer click on the observed th06 cover; UIA role verification is separate",
+      "detailAndReturn": "Actual th06 detail opened and returned to the library",
+      "processAfterClose": {
+        "Id": 23184,
+        "HasExited": true,
+        "ProcessLookup": "not found"
+      }
+    },
+    "releaseBuild": {
+      "result": "passed",
+      "unchangedRuntimeCopy": "MSBuild SkipUnchangedFilesOnCopyAlways=true scoped to this build, after source and destination SHA256 matched",
+      "runtimeSha256": "8427b1fc58ec707813e5c0a51eb5d69397bb333250a7b891be4d3b123f1e0f1c"
+    }
+  },
+  "boundaries": [
+    "Platform-styled widget cases do not establish mobile screen-reader device behavior",
+    "Native mouse dragging, edge resize and Windows Snap still need reliable operation evidence",
+    "Windows actual login/logout, upload and crop remain pending"
+  ],
+  "windowProbe": {
+    "captures": [
+      {
+        "name": "restored-before",
+        "width": 1268,
+        "height": 714,
+        "originX": 24,
+        "originY": 15
+      },
+      {
+        "name": "maximized",
+        "width": 1707,
+        "height": 1019,
+        "originX": 0,
+        "originY": 0
+      },
+      {
+        "name": "restored-after",
+        "width": 1268,
+        "height": 714,
+        "originX": 24,
+        "originY": 15
+      }
+    ],
+    "observed": "Blank titlebar double-click maximized the actual Release window. Mouse drag did not establish stable final geometry with this automation, so movement/edge resize/Snap remain unverified.",
+    "packageSha256": "c76fe9006ff43758575e7e82e7e3f3015c39c63ac0e2517868e6bacf2a86bda5"
+  },
+  "captures": [
+    {
+      "file": "evidence/windows/library-accessibility-release-library.png",
+      "sha256": "38a535dc4284b253bf79cb9db6404f0ed6c4f567909026ce2aa75f3e9a0ea8c4",
+      "packageSha256": "dd5ae9cd8d253a5be4b04bec7e616847f85d5ec5239ee24e0d8c96e278540580",
+      "scope": "Actual Windows Release window; not a visual-design approval"
+    },
+    {
+      "file": "evidence/windows/library-accessibility-release-detail.png",
+      "sha256": "cff72019e6085ed9576e6ef03964c2a23179a2689d53c938efa89f271dca28bd",
+      "packageSha256": "dd5ae9cd8d253a5be4b04bec7e616847f85d5ec5239ee24e0d8c96e278540580",
+      "scope": "Actual Windows Release window; not a visual-design approval"
+    }
+  ]
+}

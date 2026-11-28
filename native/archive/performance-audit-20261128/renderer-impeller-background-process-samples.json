@@ -1,0 +1,618 @@
+[
+  {
+    "utc": "2026-11-28T03:54:09.5539972Z",
+    "cpuSeconds": 4.21875,
+    "workingSet": 249561088,
+    "privateBytes": 474497024,
+    "handles": 1050,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:10.6663216Z",
+    "cpuSeconds": 5.859375,
+    "workingSet": 248791040,
+    "privateBytes": 474533888,
+    "handles": 1052,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:11.7040286Z",
+    "cpuSeconds": 7.25,
+    "workingSet": 251559936,
+    "privateBytes": 524963840,
+    "handles": 1052,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:12.7234230Z",
+    "cpuSeconds": 8.421875,
+    "workingSet": 248045568,
+    "privateBytes": 487886848,
+    "handles": 1053,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:13.7324816Z",
+    "cpuSeconds": 9.140625,
+    "workingSet": 250142720,
+    "privateBytes": 489472000,
+    "handles": 1053,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:14.7418036Z",
+    "cpuSeconds": 9.796875,
+    "workingSet": 242593792,
+    "privateBytes": 380571648,
+    "handles": 1053,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:15.7700865Z",
+    "cpuSeconds": 10.71875,
+    "workingSet": 248832000,
+    "privateBytes": 387047424,
+    "handles": 1053,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:16.7847862Z",
+    "cpuSeconds": 11.84375,
+    "workingSet": 235638784,
+    "privateBytes": 374452224,
+    "handles": 1055,
+    "threads": 121
+  },
+  {
+    "utc": "2026-11-28T03:54:17.8076581Z",
+    "cpuSeconds": 13.21875,
+    "workingSet": 239509504,
+    "privateBytes": 378130432,
+    "handles": 1055,
+    "threads": 121
+  },
+  {
+    "utc": "2026-11-28T03:54:18.8227438Z",
+    "cpuSeconds": 14.234375,
+    "workingSet": 247074816,
+    "privateBytes": 386002944,
+    "handles": 1055,
+    "threads": 121
+  },
+  {
+    "utc": "2026-11-28T03:54:19.8540619Z",
+    "cpuSeconds": 15.1875,
+    "workingSet": 246890496,
+    "privateBytes": 385908736,
+    "handles": 1054,
+    "threads": 121
+  },
+  {
+    "utc": "2026-11-28T03:54:20.9134544Z",
+    "cpuSeconds": 16.3125,
+    "workingSet": 240730112,
+    "privateBytes": 379621376,
+    "handles": 1054,
+    "threads": 121
+  },
+  {
+    "utc": "2026-11-28T03:54:21.9446524Z",
+    "cpuSeconds": 17.578125,
+    "workingSet": 244011008,
+    "privateBytes": 381177856,
+    "handles": 1048,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:22.9809238Z",
+    "cpuSeconds": 18.75,
+    "workingSet": 248590336,
+    "privateBytes": 387227648,
+    "handles": 1048,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:24.0162277Z",
+    "cpuSeconds": 19.921875,
+    "workingSet": 237682688,
+    "privateBytes": 375500800,
+    "handles": 1053,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:25.0579261Z",
+    "cpuSeconds": 20.59375,
+    "workingSet": 247398400,
+    "privateBytes": 385474560,
+    "handles": 1053,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:26.0758433Z",
+    "cpuSeconds": 21.671875,
+    "workingSet": 246726656,
+    "privateBytes": 384421888,
+    "handles": 1053,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:27.1428592Z",
+    "cpuSeconds": 22.9375,
+    "workingSet": 240046080,
+    "privateBytes": 468021248,
+    "handles": 1055,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:28.1662259Z",
+    "cpuSeconds": 23.890625,
+    "workingSet": 235130880,
+    "privateBytes": 462766080,
+    "handles": 1055,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:29.2176897Z",
+    "cpuSeconds": 24.96875,
+    "workingSet": 246882304,
+    "privateBytes": 498364416,
+    "handles": 1055,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:30.2536557Z",
+    "cpuSeconds": 25.90625,
+    "workingSet": 247226368,
+    "privateBytes": 513171456,
+    "handles": 1055,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:31.3174383Z",
+    "cpuSeconds": 26.984375,
+    "workingSet": 245030912,
+    "privateBytes": 510537728,
+    "handles": 1055,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:32.3531419Z",
+    "cpuSeconds": 28.0625,
+    "workingSet": 245022720,
+    "privateBytes": 528478208,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:33.4118761Z",
+    "cpuSeconds": 28.984375,
+    "workingSet": 241221632,
+    "privateBytes": 477007872,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:34.4311523Z",
+    "cpuSeconds": 30.03125,
+    "workingSet": 248573952,
+    "privateBytes": 508391424,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:35.5244894Z",
+    "cpuSeconds": 31.046875,
+    "workingSet": 248328192,
+    "privateBytes": 508493824,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:36.5527403Z",
+    "cpuSeconds": 31.84375,
+    "workingSet": 247099392,
+    "privateBytes": 506826752,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:37.6112390Z",
+    "cpuSeconds": 33.0,
+    "workingSet": 244740096,
+    "privateBytes": 504205312,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:38.6450929Z",
+    "cpuSeconds": 33.984375,
+    "workingSet": 241266688,
+    "privateBytes": 501059584,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:39.6750003Z",
+    "cpuSeconds": 34.703125,
+    "workingSet": 243703808,
+    "privateBytes": 503152640,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:40.7249619Z",
+    "cpuSeconds": 35.375,
+    "workingSet": 242065408,
+    "privateBytes": 477675520,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:41.8035083Z",
+    "cpuSeconds": 36.203125,
+    "workingSet": 248328192,
+    "privateBytes": 508534784,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:42.8377216Z",
+    "cpuSeconds": 37.484375,
+    "workingSet": 245633024,
+    "privateBytes": 505389056,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:43.9370365Z",
+    "cpuSeconds": 38.796875,
+    "workingSet": 240336896,
+    "privateBytes": 499613696,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:44.9982372Z",
+    "cpuSeconds": 39.703125,
+    "workingSet": 248057856,
+    "privateBytes": 508014592,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:46.0222101Z",
+    "cpuSeconds": 40.5,
+    "workingSet": 244977664,
+    "privateBytes": 480968704,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:47.0685001Z",
+    "cpuSeconds": 41.25,
+    "workingSet": 245575680,
+    "privateBytes": 504860672,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:48.1371687Z",
+    "cpuSeconds": 42.03125,
+    "workingSet": 237080576,
+    "privateBytes": 472035328,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:49.1598171Z",
+    "cpuSeconds": 42.921875,
+    "workingSet": 247791616,
+    "privateBytes": 483733504,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:50.2122466Z",
+    "cpuSeconds": 43.515625,
+    "workingSet": 245911552,
+    "privateBytes": 407736320,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:51.2500199Z",
+    "cpuSeconds": 44.171875,
+    "workingSet": 245460992,
+    "privateBytes": 383492096,
+    "handles": 1052,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:52.3661515Z",
+    "cpuSeconds": 45.09375,
+    "workingSet": 260964352,
+    "privateBytes": 444915712,
+    "handles": 1054,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:53.4012368Z",
+    "cpuSeconds": 46.703125,
+    "workingSet": 246439936,
+    "privateBytes": 430743552,
+    "handles": 1054,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:54:54.4577216Z",
+    "cpuSeconds": 48.3125,
+    "workingSet": 245735424,
+    "privateBytes": 430755840,
+    "handles": 1057,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:55.5508665Z",
+    "cpuSeconds": 50.03125,
+    "workingSet": 246202368,
+    "privateBytes": 431276032,
+    "handles": 1059,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:56.6379446Z",
+    "cpuSeconds": 51.671875,
+    "workingSet": 248520704,
+    "privateBytes": 547037184,
+    "handles": 1065,
+    "threads": 121
+  },
+  {
+    "utc": "2026-11-28T03:54:57.7140506Z",
+    "cpuSeconds": 53.453125,
+    "workingSet": 263544832,
+    "privateBytes": 651534336,
+    "handles": 1074,
+    "threads": 120
+  },
+  {
+    "utc": "2026-11-28T03:54:58.8148611Z",
+    "cpuSeconds": 55.421875,
+    "workingSet": 263671808,
+    "privateBytes": 686174208,
+    "handles": 1090,
+    "threads": 121
+  },
+  {
+    "utc": "2026-11-28T03:54:59.9272276Z",
+    "cpuSeconds": 57.109375,
+    "workingSet": 266448896,
+    "privateBytes": 687759360,
+    "handles": 1090,
+    "threads": 121
+  },
+  {
+    "utc": "2026-11-28T03:55:00.9981251Z",
+    "cpuSeconds": 58.78125,
+    "workingSet": 259526656,
+    "privateBytes": 657240064,
+    "handles": 1090,
+    "threads": 121
+  },
+  {
+    "utc": "2026-11-28T03:55:02.0574779Z",
+    "cpuSeconds": 60.3125,
+    "workingSet": 259620864,
+    "privateBytes": 568537088,
+    "handles": 1088,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:55:03.1321874Z",
+    "cpuSeconds": 61.9375,
+    "workingSet": 261414912,
+    "privateBytes": 537174016,
+    "handles": 1088,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:55:04.2438659Z",
+    "cpuSeconds": 63.34375,
+    "workingSet": 263757824,
+    "privateBytes": 514838528,
+    "handles": 1083,
+    "threads": 118
+  },
+  {
+    "utc": "2026-11-28T03:55:05.3478195Z",
+    "cpuSeconds": 64.796875,
+    "workingSet": 270364672,
+    "privateBytes": 591867904,
+    "handles": 1078,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:06.4099475Z",
+    "cpuSeconds": 66.28125,
+    "workingSet": 271839232,
+    "privateBytes": 561811456,
+    "handles": 1080,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:07.5165164Z",
+    "cpuSeconds": 68.125,
+    "workingSet": 272146432,
+    "privateBytes": 561737728,
+    "handles": 1080,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:08.6259086Z",
+    "cpuSeconds": 69.578125,
+    "workingSet": 259338240,
+    "privateBytes": 423198720,
+    "handles": 1080,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:09.7400451Z",
+    "cpuSeconds": 71.140625,
+    "workingSet": 266027008,
+    "privateBytes": 498466816,
+    "handles": 1080,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:10.7943318Z",
+    "cpuSeconds": 72.609375,
+    "workingSet": 263196672,
+    "privateBytes": 495316992,
+    "handles": 1081,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:11.9455324Z",
+    "cpuSeconds": 74.296875,
+    "workingSet": 270114816,
+    "privateBytes": 549937152,
+    "handles": 1080,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:13.0314780Z",
+    "cpuSeconds": 75.765625,
+    "workingSet": 269922304,
+    "privateBytes": 519368704,
+    "handles": 1082,
+    "threads": 118
+  },
+  {
+    "utc": "2026-11-28T03:55:14.1405082Z",
+    "cpuSeconds": 77.484375,
+    "workingSet": 263458816,
+    "privateBytes": 512024576,
+    "handles": 1065,
+    "threads": 118
+  },
+  {
+    "utc": "2026-11-28T03:55:15.2484540Z",
+    "cpuSeconds": 79.203125,
+    "workingSet": 256573440,
+    "privateBytes": 450154496,
+    "handles": 1061,
+    "threads": 118
+  },
+  {
+    "utc": "2026-11-28T03:55:16.3580682Z",
+    "cpuSeconds": 80.640625,
+    "workingSet": 274522112,
+    "privateBytes": 478830592,
+    "handles": 1061,
+    "threads": 118
+  },
+  {
+    "utc": "2026-11-28T03:55:17.5398374Z",
+    "cpuSeconds": 82.34375,
+    "workingSet": 257638400,
+    "privateBytes": 462008320,
+    "handles": 1061,
+    "threads": 118
+  },
+  {
+    "utc": "2026-11-28T03:55:18.6619617Z",
+    "cpuSeconds": 83.875,
+    "workingSet": 270139392,
+    "privateBytes": 474550272,
+    "handles": 1056,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:19.8166334Z",
+    "cpuSeconds": 85.765625,
+    "workingSet": 260526080,
+    "privateBytes": 454115328,
+    "handles": 1056,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:20.9423276Z",
+    "cpuSeconds": 87.59375,
+    "workingSet": 251654144,
+    "privateBytes": 443285504,
+    "handles": 1056,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:22.1344555Z",
+    "cpuSeconds": 89.3125,
+    "workingSet": 263749632,
+    "privateBytes": 371064832,
+    "handles": 1056,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:23.2648078Z",
+    "cpuSeconds": 91.109375,
+    "workingSet": 254476288,
+    "privateBytes": 383848448,
+    "handles": 1056,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:24.4352138Z",
+    "cpuSeconds": 93.0,
+    "workingSet": 262221824,
+    "privateBytes": 391729152,
+    "handles": 1056,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:25.5194256Z",
+    "cpuSeconds": 94.203125,
+    "workingSet": 256389120,
+    "privateBytes": 385957888,
+    "handles": 1056,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:26.6395356Z",
+    "cpuSeconds": 95.5625,
+    "workingSet": 256524288,
+    "privateBytes": 386285568,
+    "handles": 1056,
+    "threads": 117
+  },
+  {
+    "utc": "2026-11-28T03:55:27.7808647Z",
+    "cpuSeconds": 96.171875,
+    "workingSet": 260403200,
+    "privateBytes": 362094592,
+    "handles": 1061,
+    "threads": 118
+  },
+  {
+    "utc": "2026-11-28T03:55:28.9884229Z",
+    "cpuSeconds": 98.09375,
+    "workingSet": 258342912,
+    "privateBytes": 361054208,
+    "handles": 1064,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:55:30.0644102Z",
+    "cpuSeconds": 99.46875,
+    "workingSet": 256966656,
+    "privateBytes": 360005632,
+    "handles": 1064,
+    "threads": 119
+  },
+  {
+    "utc": "2026-11-28T03:55:31.1346261Z",
+    "cpuSeconds": 100.390625,
+    "workingSet": 266956800,
+    "privateBytes": 372981760,
+    "handles": 1063,
+    "threads": 119
+  }
+]

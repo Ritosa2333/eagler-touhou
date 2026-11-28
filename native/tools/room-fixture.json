@@ -1,0 +1,75 @@
+{
+  "product": "th06mp",
+  "code": "4157",
+  "timing": {
+    "product": "th08mp",
+    "adonisMode": 1,
+    "timingChoice": 2,
+    "inputDelay": 2,
+    "inputDelayAuto": false
+  },
+  "chatHistory": {
+    "type": "chat-history",
+    "room": "th06mp-4157",
+    "throughId": 1,
+    "entries": [
+      {
+        "type": "free-chat",
+        "room": "th06mp-4157",
+        "serial": 0,
+        "seat": 1,
+        "clientId": "fixture-guest",
+        "name": "魔理沙",
+        "text": "等下一位玩家再开始。",
+        "authorId": "fixture-room-account",
+        "messageId": 1
+      }
+    ]
+  },
+  "state": {
+    "type": "state",
+    "roomActions": 1,
+    "roomDirectory": {
+      "version": 1,
+      "globalRoomCodes": true,
+      "controlModes": true
+    },
+    "room": {
+      "playerCount": 2,
+      "difficulty": 1,
+      "phase": "lobby",
+      "visibility": "public",
+      "disableCheatMovement": true,
+      "challengeMode": false,
+      "challengeKeepBullets": false,
+      "loadout": 0,
+      "settingsVersion": 2,
+      "adonisMode": 0,
+      "startedAt": 0,
+      "startSerial": 0,
+      "seats": [
+        {
+          "clientId": "fixture-host",
+          "name": "灵梦",
+          "loadout": 0,
+          "controlMode": "normal",
+          "ready": false
+        },
+        {
+          "clientId": "fixture-guest",
+          "name": "魔理沙",
+          "loadout": 0,
+          "controlMode": "normal",
+          "ready": false
+        }
+      ],
+      "spectators": [
+        {
+          "clientId": "fixture-viewer",
+          "name": "咲夜"
+        }
+      ],
+      "spectatorCount": 1
+    }
+  }
+}

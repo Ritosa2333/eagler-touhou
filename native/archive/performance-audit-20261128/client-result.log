@@ -1,0 +1,3 @@
+CoInitializeEx=0x00000000
+CoCreateInstance=0x00000000
+GetConnectedClients=0x00000000

@@ -1,0 +1,99 @@
+{
+  "type": "directory",
+  "version": 1,
+  "globalRoomCodes": true,
+  "membershipRecovery": true,
+  "roomNames": false,
+  "product": "",
+  "mine": null,
+  "total": 4,
+  "rooms": [
+    {
+      "product": "th09mp",
+      "code": "1048",
+      "capacity": 2,
+      "difficulty": 1,
+      "phase": "lobby",
+      "joinable": true,
+      "spectators": 0,
+      "publicNames": true,
+      "seats": [
+        {
+          "name": "灵梦",
+          "initial": "灵",
+          "controlMode": "normal"
+        },
+        null
+      ]
+    },
+    {
+      "product": "th06mp",
+      "code": "5601",
+      "capacity": 2,
+      "difficulty": 4,
+      "phase": "running",
+      "joinable": false,
+      "spectatable": true,
+      "spectators": 2,
+      "disableCheatMovement": true,
+      "publicNames": true,
+      "seats": [
+        {
+          "name": "魔理沙",
+          "initial": "魔",
+          "controlMode": "normal"
+        },
+        {
+          "name": "咲夜",
+          "initial": "咲",
+          "controlMode": "touch"
+        }
+      ]
+    },
+    {
+      "product": "th08mp",
+      "code": "8466",
+      "capacity": 3,
+      "difficulty": 3,
+      "phase": "running",
+      "joinable": false,
+      "spectators": 10,
+      "publicNames": true,
+      "seats": [
+        {
+          "name": "早苗",
+          "initial": "早",
+          "controlMode": "normal"
+        },
+        {
+          "name": "妖梦",
+          "initial": "妖",
+          "controlMode": "touch"
+        },
+        {
+          "name": "琪露诺",
+          "initial": "琪",
+          "controlMode": "cheat"
+        }
+      ]
+    },
+    {
+      "product": "th075mp",
+      "code": "1961",
+      "capacity": 2,
+      "difficulty": 1,
+      "phase": "lobby",
+      "joinable": true,
+      "spectators": 0,
+      "publicNames": true,
+      "seats": [
+        {
+          "name": "紫",
+          "initial": "紫",
+          "controlMode": "normal"
+        },
+        null
+      ]
+    }
+  ]
+}

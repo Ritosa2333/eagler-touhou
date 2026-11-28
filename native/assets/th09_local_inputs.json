@@ -1,0 +1,255 @@
+{
+  "original": [
+    {
+      "shoot": [
+        "KeyZ"
+      ],
+      "bomb": [
+        "KeyX"
+      ],
+      "focus": [
+        "ShiftLeft",
+        "ShiftRight"
+      ],
+      "pause": [
+        "Escape"
+      ],
+      "up": [
+        "KeyT",
+        "KeyR",
+        "KeyY"
+      ],
+      "down": [
+        "KeyB",
+        "KeyV",
+        "KeyN"
+      ],
+      "left": [
+        "KeyF",
+        "KeyR",
+        "KeyV"
+      ],
+      "right": [
+        "KeyH",
+        "KeyY",
+        "KeyN"
+      ],
+      "skip": [
+        "ControlLeft",
+        "ControlRight"
+      ],
+      "confirm": [
+        "Enter",
+        "NumpadEnter"
+      ],
+      "action": [],
+      "restart": [
+        "Backspace"
+      ]
+    },
+    {
+      "shoot": [
+        "ArrowDown"
+      ],
+      "bomb": [
+        "ArrowRight"
+      ],
+      "focus": [
+        "ArrowLeft"
+      ],
+      "pause": [
+        "Escape"
+      ],
+      "up": [
+        "Numpad8",
+        "Numpad7",
+        "Numpad9"
+      ],
+      "down": [
+        "Numpad2",
+        "Numpad1",
+        "Numpad3"
+      ],
+      "left": [
+        "Numpad4",
+        "Numpad7",
+        "Numpad1"
+      ],
+      "right": [
+        "Numpad6",
+        "Numpad9",
+        "Numpad3"
+      ],
+      "skip": [
+        "ControlLeft",
+        "ControlRight"
+      ],
+      "confirm": [
+        "Enter",
+        "NumpadEnter"
+      ],
+      "action": [],
+      "restart": [
+        "Backspace"
+      ]
+    }
+  ],
+  "wasd": [
+    {
+      "shoot": [
+        "KeyJ"
+      ],
+      "bomb": [
+        "KeyK"
+      ],
+      "focus": [
+        "KeyL",
+        "Space"
+      ],
+      "pause": [
+        "Escape"
+      ],
+      "up": [
+        "KeyW"
+      ],
+      "down": [
+        "KeyS"
+      ],
+      "left": [
+        "KeyA"
+      ],
+      "right": [
+        "KeyD"
+      ],
+      "skip": [
+        "ControlLeft",
+        "ControlRight"
+      ],
+      "confirm": [
+        "Enter",
+        "NumpadEnter"
+      ],
+      "action": [],
+      "restart": [
+        "Backspace"
+      ]
+    },
+    {
+      "shoot": [
+        "KeyJ"
+      ],
+      "bomb": [
+        "KeyK"
+      ],
+      "focus": [
+        "KeyL",
+        "Space"
+      ],
+      "pause": [
+        "Escape"
+      ],
+      "up": [
+        "KeyW"
+      ],
+      "down": [
+        "KeyS"
+      ],
+      "left": [
+        "KeyA"
+      ],
+      "right": [
+        "KeyD"
+      ],
+      "skip": [
+        "ControlLeft",
+        "ControlRight"
+      ],
+      "confirm": [
+        "Enter",
+        "NumpadEnter"
+      ],
+      "action": [],
+      "restart": [
+        "Backspace"
+      ]
+    }
+  ],
+  "arrows": [
+    {
+      "shoot": [
+        "Numpad1"
+      ],
+      "bomb": [
+        "Numpad2"
+      ],
+      "focus": [
+        "Numpad3"
+      ],
+      "pause": [
+        "Escape"
+      ],
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "skip": [
+        "ControlLeft",
+        "ControlRight"
+      ],
+      "confirm": [
+        "Enter",
+        "NumpadEnter"
+      ],
+      "action": [],
+      "restart": [
+        "Backspace"
+      ]
+    },
+    {
+      "shoot": [
+        "Numpad1"
+      ],
+      "bomb": [
+        "Numpad2"
+      ],
+      "focus": [
+        "Numpad3"
+      ],
+      "pause": [
+        "Escape"
+      ],
+      "up": [
+        "ArrowUp"
+      ],
+      "down": [
+        "ArrowDown"
+      ],
+      "left": [
+        "ArrowLeft"
+      ],
+      "right": [
+        "ArrowRight"
+      ],
+      "skip": [
+        "ControlLeft",
+        "ControlRight"
+      ],
+      "confirm": [
+        "Enter",
+        "NumpadEnter"
+      ],
+      "action": [],
+      "restart": [
+        "Backspace"
+      ]
+    }
+  ]
+}

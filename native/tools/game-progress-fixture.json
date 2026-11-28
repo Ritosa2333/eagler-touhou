@@ -1,0 +1,221 @@
+{
+  "products": [
+    {
+      "id": "th07",
+      "game": "th07",
+      "multiplayer": false,
+      "files": [
+        "score.dat",
+        "th07.cfg"
+      ],
+      "requiredFiles": [
+        "score.dat"
+      ],
+      "revision": 3
+    }
+  ],
+  "saves": [
+    {
+      "product": "th07",
+      "revision": 2,
+      "uploadedAt": "2026-11-24T10:00:00Z",
+      "files": [
+        {
+          "name": "score.dat",
+          "bytes": 16,
+          "sha256": "c561c5cbb326c7d5e391b77e061cfe9ebb78eb9e0f8de8b0e8f93613eb10df48"
+        }
+      ],
+      "statistics": {
+        "game": "th07",
+        "parserVersion": 1,
+        "format": "fixture",
+        "complete": true,
+        "playtimeSeconds": 1,
+        "applicationTimeSeconds": 8000,
+        "playCount": 22,
+        "clearCount": 2,
+        "oneCreditClearCount": 1,
+        "loadouts": [],
+        "progress": [],
+        "spellArchive": {
+          "scope": "loadout",
+          "cards": [
+            {
+              "number": 8,
+              "name": "冬符「フラワーウィザラウェイ」",
+              "loadouts": [
+                {
+                  "character": 0,
+                  "shot": 0,
+                  "difficulty": "normal",
+                  "attempts": 11,
+                  "captures": 7
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "name": "寒符「リンガリングコールド」",
+              "loadouts": [
+                {
+                  "character": 0,
+                  "shot": 0,
+                  "difficulty": "normal",
+                  "attempts": 11,
+                  "captures": 11
+                }
+              ]
+            },
+            {
+              "number": 12,
+              "name": "仙符「鳳凰卵」",
+              "loadouts": [
+                {
+                  "character": 0,
+                  "shot": 0,
+                  "difficulty": "normal",
+                  "attempts": 3,
+                  "captures": 0
+                }
+              ]
+            }
+          ]
+        },
+        "warnings": []
+      }
+    },
+    {
+      "product": "th07",
+      "revision": 3,
+      "uploadedAt": "2026-11-25T00:20:00Z",
+      "files": [
+        {
+          "name": "score.dat",
+          "bytes": 16,
+          "sha256": "c561c5cbb326c7d5e391b77e061cfe9ebb78eb9e0f8de8b0e8f93613eb10df48"
+        }
+      ],
+      "statistics": {
+        "game": "th07",
+        "parserVersion": 1,
+        "format": "fixture",
+        "complete": true,
+        "playtimeSeconds": 7800,
+        "applicationTimeSeconds": 8000,
+        "playCount": 22,
+        "clearCount": 2,
+        "oneCreditClearCount": 1,
+        "loadouts": [],
+        "progress": [
+          {
+            "playtimeSeconds": null,
+            "clearCount": null,
+            "difficulty": "normal",
+            "character": 0,
+            "shot": 0,
+            "cleared": true,
+            "oneCreditClear": true,
+            "playCount": 15,
+            "bestScore": 12345678
+          },
+          {
+            "playtimeSeconds": null,
+            "clearCount": null,
+            "difficulty": "easy",
+            "character": 0,
+            "shot": 0,
+            "cleared": true,
+            "oneCreditClear": false,
+            "playCount": 5,
+            "bestScore": 1500000
+          },
+          {
+            "playtimeSeconds": null,
+            "clearCount": null,
+            "difficulty": "hard",
+            "character": 0,
+            "shot": 1,
+            "cleared": false,
+            "oneCreditClear": false,
+            "playCount": 2,
+            "bestScore": 42000
+          },
+          {
+            "playtimeSeconds": null,
+            "clearCount": null,
+            "difficulty": "normal",
+            "character": 1,
+            "shot": 0,
+            "cleared": false,
+            "oneCreditClear": false,
+            "playCount": 0,
+            "bestScore": null
+          },
+          {
+            "playtimeSeconds": null,
+            "clearCount": null,
+            "difficulty": "extra",
+            "character": 2,
+            "shot": 1,
+            "cleared": null,
+            "oneCreditClear": null,
+            "playCount": null,
+            "bestScore": null
+          }
+        ],
+        "spellArchive": {
+          "scope": "loadout",
+          "cards": [
+            {
+              "number": 8,
+              "name": "冬符「フラワーウィザラウェイ」",
+              "loadouts": [
+                {
+                  "character": 0,
+                  "shot": 0,
+                  "difficulty": "normal",
+                  "attempts": 11,
+                  "captures": 7
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "name": "寒符「リンガリングコールド」",
+              "loadouts": [
+                {
+                  "character": 0,
+                  "shot": 0,
+                  "difficulty": "normal",
+                  "attempts": 11,
+                  "captures": 11
+                }
+              ]
+            },
+            {
+              "number": 12,
+              "name": "仙符「鳳凰卵」",
+              "loadouts": [
+                {
+                  "character": 0,
+                  "shot": 0,
+                  "difficulty": "normal",
+                  "attempts": 3,
+                  "captures": 0
+                }
+              ]
+            }
+          ]
+        },
+        "warnings": []
+      }
+    }
+  ],
+  "pending": [],
+  "limits": {
+    "fileBytes": 4194304,
+    "totalBytes": 8388608,
+    "files": 6
+  }
+}

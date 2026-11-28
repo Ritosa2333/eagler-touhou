@@ -1,0 +1,36 @@
+{
+  "scope": "PE COFF and debug-directory timestamps normalized in memory only. Original DLLs unchanged. All remaining binary bytes compared.",
+  "equalAfterTimestampNormalization": true,
+  "files": [
+    {
+      "path": "D:\\Temp\\native-performance-20261128\\io-cost\\production-assets\\native_assets\\windows\\cnativeapi.dll",
+      "sha256": "1a8cf7bb66c5dc26e29b9006de7061b4a4f8e03cb71985a34c649306d90f3039",
+      "normalizedSha256": "5c00eee3ade1c25e9554c465c941703406be83dd5ed82057655f95cd30d3d1d7",
+      "normalizedFields": [
+        {
+          "kind": "COFF.TimeDateStamp",
+          "offset": 280
+        },
+        {
+          "kind": "IMAGE_DEBUG_DIRECTORY.TimeDateStamp",
+          "offset": 1230644
+        }
+      ]
+    },
+    {
+      "path": "D:\\workspace\\eagler\\artifacts\\native-launcher-85941f0d56\\hover-detail-perf\\preview\\cnativeapi.dll",
+      "sha256": "0f5de24548012fe9f3b8c265a1c1963eb48bc4239b412db5c0cce40b8ae4069b",
+      "normalizedSha256": "5c00eee3ade1c25e9554c465c941703406be83dd5ed82057655f95cd30d3d1d7",
+      "normalizedFields": [
+        {
+          "kind": "COFF.TimeDateStamp",
+          "offset": 280
+        },
+        {
+          "kind": "IMAGE_DEBUG_DIRECTORY.TimeDateStamp",
+          "offset": 1230644
+        }
+      ]
+    }
+  ]
+}

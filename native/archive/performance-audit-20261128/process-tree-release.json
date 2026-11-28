@@ -1,0 +1,1005 @@
+{
+  "scope": "Own profile app and WebView child process tree | resident sum can count shared pages twice",
+  "samples": [
+    {
+      "seconds": 0.4091009,
+      "phase": "shelf_idle",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 3.921875,
+          "workingSet": 600031232,
+          "privateBytes": 375447552,
+          "handles": 987,
+          "threads": 108
+        }
+      ]
+    },
+    {
+      "seconds": 2.668448,
+      "phase": "shelf_idle",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 4.921875,
+          "workingSet": 607375360,
+          "privateBytes": 400273408,
+          "handles": 993,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 4.8689364,
+      "phase": "shelf_idle",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 5.84375,
+          "workingSet": 598798336,
+          "privateBytes": 393457664,
+          "handles": 993,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 7.0825462,
+      "phase": "shelf_idle",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 6.171875,
+          "workingSet": 595353600,
+          "privateBytes": 388775936,
+          "handles": 988,
+          "threads": 108
+        }
+      ]
+    },
+    {
+      "seconds": 9.2949449,
+      "phase": "roundtrip_10",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 7.3125,
+          "workingSet": 599158784,
+          "privateBytes": 404209664,
+          "handles": 991,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 11.5526978,
+      "phase": "roundtrip_10",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 8.0,
+          "workingSet": 610336768,
+          "privateBytes": 421097472,
+          "handles": 993,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 13.7462688,
+      "phase": "roundtrip_10",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 9.125,
+          "workingSet": 601419776,
+          "privateBytes": 412803072,
+          "handles": 993,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 15.9193891,
+      "phase": "roundtrip_20",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 9.96875,
+          "workingSet": 608157696,
+          "privateBytes": 419328000,
+          "handles": 992,
+          "threads": 108
+        }
+      ]
+    },
+    {
+      "seconds": 18.2892376,
+      "phase": "roundtrip_20",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 11.953125,
+          "workingSet": 606355456,
+          "privateBytes": 416038912,
+          "handles": 987,
+          "threads": 107
+        }
+      ]
+    },
+    {
+      "seconds": 20.5609248,
+      "phase": "roundtrip_20",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 13.0,
+          "workingSet": 610471936,
+          "privateBytes": 419913728,
+          "handles": 987,
+          "threads": 107
+        }
+      ]
+    },
+    {
+      "seconds": 22.8094109,
+      "phase": "roundtrip_20",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 13.546875,
+          "workingSet": 602165248,
+          "privateBytes": 412569600,
+          "handles": 990,
+          "threads": 108
+        }
+      ]
+    },
+    {
+      "seconds": 25.1243796,
+      "phase": "roundtrip_30",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 14.75,
+          "workingSet": 597602304,
+          "privateBytes": 408457216,
+          "handles": 990,
+          "threads": 108
+        }
+      ]
+    },
+    {
+      "seconds": 27.4121744,
+      "phase": "roundtrip_30",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 15.84375,
+          "workingSet": 601251840,
+          "privateBytes": 410365952,
+          "handles": 988,
+          "threads": 107
+        }
+      ]
+    },
+    {
+      "seconds": 29.5965789,
+      "phase": "roundtrip_30",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 17.125,
+          "workingSet": 607657984,
+          "privateBytes": 417705984,
+          "handles": 991,
+          "threads": 108
+        }
+      ]
+    },
+    {
+      "seconds": 31.8706593,
+      "phase": "roundtrip_40",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 17.90625,
+          "workingSet": 600276992,
+          "privateBytes": 410697728,
+          "handles": 991,
+          "threads": 108
+        }
+      ]
+    },
+    {
+      "seconds": 34.2581664,
+      "phase": "roundtrip_40",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 19.40625,
+          "workingSet": 607371264,
+          "privateBytes": 414281728,
+          "handles": 988,
+          "threads": 107
+        }
+      ]
+    },
+    {
+      "seconds": 36.5347695,
+      "phase": "roundtrip_40",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 20.34375,
+          "workingSet": 607244288,
+          "privateBytes": 414322688,
+          "handles": 988,
+          "threads": 107
+        }
+      ]
+    },
+    {
+      "seconds": 38.7070584,
+      "phase": "roundtrip_40",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 21.9375,
+          "workingSet": 609226752,
+          "privateBytes": 416104448,
+          "handles": 988,
+          "threads": 107
+        }
+      ]
+    },
+    {
+      "seconds": 41.0750769,
+      "phase": "roundtrip_50",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 22.84375,
+          "workingSet": 609566720,
+          "privateBytes": 417849344,
+          "handles": 993,
+          "threads": 108
+        }
+      ]
+    },
+    {
+      "seconds": 43.4258354,
+      "phase": "roundtrip_50",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 24.828125,
+          "workingSet": 603815936,
+          "privateBytes": 407527424,
+          "handles": 993,
+          "threads": 105
+        }
+      ]
+    },
+    {
+      "seconds": 45.6960304,
+      "phase": "roundtrip_50",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 26.359375,
+          "workingSet": 616525824,
+          "privateBytes": 416935936,
+          "handles": 985,
+          "threads": 104
+        }
+      ]
+    },
+    {
+      "seconds": 48.017448,
+      "phase": "roundtrip_60",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 27.0,
+          "workingSet": 607354880,
+          "privateBytes": 408207360,
+          "handles": 988,
+          "threads": 105
+        }
+      ]
+    },
+    {
+      "seconds": 50.2605312,
+      "phase": "sort_ready",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 27.5625,
+          "workingSet": 636870656,
+          "privateBytes": 459595776,
+          "handles": 990,
+          "threads": 105
+        }
+      ]
+    },
+    {
+      "seconds": 52.5156235,
+      "phase": "sort_ready",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 29.328125,
+          "workingSet": 629891072,
+          "privateBytes": 456290304,
+          "handles": 990,
+          "threads": 105
+        }
+      ]
+    },
+    {
+      "seconds": 54.7304575,
+      "phase": "sort_ready",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 30.53125,
+          "workingSet": 631656448,
+          "privateBytes": 457482240,
+          "handles": 990,
+          "threads": 105
+        }
+      ]
+    },
+    {
+      "seconds": 57.0533615,
+      "phase": "sort_done",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 31.21875,
+          "workingSet": 620724224,
+          "privateBytes": 435924992,
+          "handles": 990,
+          "threads": 105
+        }
+      ]
+    },
+    {
+      "seconds": 59.4678238,
+      "phase": "web_created_0",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 32.859375,
+          "workingSet": 617259008,
+          "privateBytes": 435548160,
+          "handles": 1049,
+          "threads": 108
+        },
+        {
+          "id": 41320,
+          "parent": 50352,
+          "name": "msedgewebview2",
+          "cpuSeconds": 1.671875,
+          "workingSet": 137121792,
+          "privateBytes": 48418816,
+          "handles": 901,
+          "threads": 61
+        },
+        {
+          "id": 25016,
+          "parent": 41320,
+          "name": "msedgewebview2",
+          "cpuSeconds": 0.09375,
+          "workingSet": 16965632,
+          "privateBytes": 3325952,
+          "handles": 180,
+          "threads": 12
+        }
+      ]
+    },
+    {
+      "seconds": 61.7701669,
+      "phase": "web_created_0",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 33.765625,
+          "workingSet": 624906240,
+          "privateBytes": 405340160,
+          "handles": 1062,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 63.9897028,
+      "phase": "web_open_0",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 34.171875,
+          "workingSet": 623181824,
+          "privateBytes": 396222464,
+          "handles": 1058,
+          "threads": 108
+        }
+      ]
+    },
+    {
+      "seconds": 66.3947507,
+      "phase": "web_created_1",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 35.921875,
+          "workingSet": 631975936,
+          "privateBytes": 404963328,
+          "handles": 1082,
+          "threads": 110
+        },
+        {
+          "id": 10116,
+          "parent": 50352,
+          "name": "msedgewebview2",
+          "cpuSeconds": 1.65625,
+          "workingSet": 141291520,
+          "privateBytes": 48521216,
+          "handles": 889,
+          "threads": 59
+        },
+        {
+          "id": 31892,
+          "parent": 10116,
+          "name": "msedgewebview2",
+          "cpuSeconds": 0.078125,
+          "workingSet": 16982016,
+          "privateBytes": 3342336,
+          "handles": 180,
+          "threads": 12
+        }
+      ]
+    },
+    {
+      "seconds": 68.7730768,
+      "phase": "web_created_1",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 36.96875,
+          "workingSet": 637419520,
+          "privateBytes": 410738688,
+          "handles": 1078,
+          "threads": 110
+        }
+      ]
+    },
+    {
+      "seconds": 71.0738331,
+      "phase": "web_closed_1",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 37.453125,
+          "workingSet": 629825536,
+          "privateBytes": 400969728,
+          "handles": 1074,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 73.3658073,
+      "phase": "web_created_2",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 39.3125,
+          "workingSet": 635822080,
+          "privateBytes": 404344832,
+          "handles": 1103,
+          "threads": 111
+        }
+      ]
+    },
+    {
+      "seconds": 75.7152165,
+      "phase": "web_created_2",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 40.53125,
+          "workingSet": 625491968,
+          "privateBytes": 374546432,
+          "handles": 1092,
+          "threads": 111
+        }
+      ]
+    },
+    {
+      "seconds": 77.9226401,
+      "phase": "web_closed_2",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 41.28125,
+          "workingSet": 631291904,
+          "privateBytes": 379785216,
+          "handles": 1087,
+          "threads": 110
+        }
+      ]
+    },
+    {
+      "seconds": 80.1194193,
+      "phase": "web_closed_2",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 41.28125,
+          "workingSet": 627949568,
+          "privateBytes": 376442880,
+          "handles": 1087,
+          "threads": 110
+        }
+      ]
+    },
+    {
+      "seconds": 82.3341395,
+      "phase": "web_closed_2",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 41.296875,
+          "workingSet": 627929088,
+          "privateBytes": 375386112,
+          "handles": 1082,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 84.7541787,
+      "phase": "web_closed_2",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 41.359375,
+          "workingSet": 627929088,
+          "privateBytes": 375386112,
+          "handles": 1082,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 87.0249359,
+      "phase": "web_closed_2",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 41.375,
+          "workingSet": 724811776,
+          "privateBytes": 375386112,
+          "handles": 1082,
+          "threads": 109
+        }
+      ]
+    },
+    {
+      "seconds": 89.2884722,
+      "phase": "shelf_final_idle",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 41.375,
+          "workingSet": 734281728,
+          "privateBytes": 385441792,
+          "handles": 1082,
+          "threads": 110
+        }
+      ]
+    },
+    {
+      "seconds": 91.7410327,
+      "phase": "shelf_final_idle",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 41.78125,
+          "workingSet": 710156288,
+          "privateBytes": 369434624,
+          "handles": 1085,
+          "threads": 110
+        }
+      ]
+    },
+    {
+      "seconds": 94.0274619,
+      "phase": "minimized",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 42.78125,
+          "workingSet": 717398016,
+          "privateBytes": 377327616,
+          "handles": 1095,
+          "threads": 111
+        }
+      ]
+    },
+    {
+      "seconds": 96.4009259,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 43.53125,
+          "workingSet": 697159680,
+          "privateBytes": 348000256,
+          "handles": 1094,
+          "threads": 111
+        }
+      ]
+    },
+    {
+      "seconds": 98.645222,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 44.1875,
+          "workingSet": 685355008,
+          "privateBytes": 334917632,
+          "handles": 1085,
+          "threads": 110
+        }
+      ]
+    },
+    {
+      "seconds": 100.9202371,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 44.71875,
+          "workingSet": 670261248,
+          "privateBytes": 323182592,
+          "handles": 1085,
+          "threads": 110
+        }
+      ]
+    },
+    {
+      "seconds": 103.1314972,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 45.265625,
+          "workingSet": 671850496,
+          "privateBytes": 324681728,
+          "handles": 1085,
+          "threads": 107
+        }
+      ]
+    },
+    {
+      "seconds": 105.4137125,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 45.8125,
+          "workingSet": 673505280,
+          "privateBytes": 325722112,
+          "handles": 1082,
+          "threads": 106
+        }
+      ]
+    },
+    {
+      "seconds": 107.6703941,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 46.5,
+          "workingSet": 675241984,
+          "privateBytes": 327294976,
+          "handles": 1082,
+          "threads": 106
+        }
+      ]
+    },
+    {
+      "seconds": 109.8626013,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 46.890625,
+          "workingSet": 674222080,
+          "privateBytes": 328343552,
+          "handles": 1082,
+          "threads": 106
+        }
+      ]
+    },
+    {
+      "seconds": 112.0904167,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 47.265625,
+          "workingSet": 673275904,
+          "privateBytes": 329392128,
+          "handles": 1082,
+          "threads": 106
+        }
+      ]
+    },
+    {
+      "seconds": 114.3286962,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 47.53125,
+          "workingSet": 671801344,
+          "privateBytes": 330383360,
+          "handles": 1074,
+          "threads": 104
+        }
+      ]
+    },
+    {
+      "seconds": 116.5600647,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 47.96875,
+          "workingSet": 672915456,
+          "privateBytes": 331431936,
+          "handles": 1074,
+          "threads": 104
+        }
+      ]
+    },
+    {
+      "seconds": 118.7921448,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 48.296875,
+          "workingSet": 665772032,
+          "privateBytes": 332480512,
+          "handles": 1074,
+          "threads": 104
+        }
+      ]
+    },
+    {
+      "seconds": 121.0490302,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 48.65625,
+          "workingSet": 660127744,
+          "privateBytes": 333004800,
+          "handles": 1074,
+          "threads": 104
+        }
+      ]
+    },
+    {
+      "seconds": 123.275603,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 49.078125,
+          "workingSet": 661045248,
+          "privateBytes": 334053376,
+          "handles": 1074,
+          "threads": 104
+        }
+      ]
+    },
+    {
+      "seconds": 125.5411202,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 49.5625,
+          "workingSet": 645083136,
+          "privateBytes": 320372736,
+          "handles": 1082,
+          "threads": 106
+        }
+      ]
+    },
+    {
+      "seconds": 127.8580216,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 50.0625,
+          "workingSet": 646262784,
+          "privateBytes": 321421312,
+          "handles": 1082,
+          "threads": 106
+        }
+      ]
+    },
+    {
+      "seconds": 130.1702181,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 50.28125,
+          "workingSet": 647213056,
+          "privateBytes": 320360448,
+          "handles": 1074,
+          "threads": 104
+        }
+      ]
+    },
+    {
+      "seconds": 132.4856445,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 50.609375,
+          "workingSet": 648196096,
+          "privateBytes": 321409024,
+          "handles": 1074,
+          "threads": 104
+        }
+      ]
+    },
+    {
+      "seconds": 134.9034807,
+      "phase": "restored",
+      "processes": [
+        {
+          "id": 50352,
+          "parent": 26092,
+          "name": "touhouonline",
+          "cpuSeconds": 51.0,
+          "workingSet": 649244672,
+          "privateBytes": 322457600,
+          "handles": 1074,
+          "threads": 104
+        }
+      ]
+    }
+  ]
+}

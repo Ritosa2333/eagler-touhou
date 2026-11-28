@@ -1,0 +1,155 @@
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart
+
+
+🚀 Hi, flutter_inappwebview here, thank you for using it! If you like this plugin → 💙 Support development https://inappwebview.dev/donate ⭐ Star on GitHub https://github.com/pichillilorenzo/flutter_inappwebview 📱 Showcase your app https://inappwebview.dev/showcase
+
+00:00 +0: (setUpAll)
+00:00 +0: Transient login history never closes the account container (variant: TargetPlatform.windows)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: '/account'
+  Actual: '/'
+   Which: is different. Both strings start the same, but the actual value is missing the following
+trailing characters: account
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart:505:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1968:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart line 505
+The test description was:
+  Transient login history never closes the account container (variant: TargetPlatform.windows)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:00 +0 -1: Transient login history never closes the account container (variant: TargetPlatform.windows) [E]
+  Test failed. See exception logs above.
+  The test description was: Transient login history never closes the account container (variant: TargetPlatform.windows)
+  
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+00:00 +0 -1: Transient login history never closes the account container (variant: TargetPlatform.linux)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: '/account'
+  Actual: '/'
+   Which: is different. Both strings start the same, but the actual value is missing the following
+trailing characters: account
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart:505:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1968:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart line 505
+The test description was:
+  Transient login history never closes the account container (variant: TargetPlatform.linux)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -2: Transient login history never closes the account container (variant: TargetPlatform.linux) [E]
+  Test failed. See exception logs above.
+  The test description was: Transient login history never closes the account container (variant: TargetPlatform.linux)
+  
+00:01 +0 -2: Transient login history never closes the account container (variant: TargetPlatform.macOS)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: '/account'
+  Actual: '/'
+   Which: is different. Both strings start the same, but the actual value is missing the following
+trailing characters: account
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart:505:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1968:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart line 505
+The test description was:
+  Transient login history never closes the account container (variant: TargetPlatform.macOS)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -3: Transient login history never closes the account container (variant: TargetPlatform.macOS) [E]
+  Test failed. See exception logs above.
+  The test description was: Transient login history never closes the account container (variant: TargetPlatform.macOS)
+  
+00:01 +0 -3: Transient login history never closes the account container (variant: TargetPlatform.iOS)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: '/account'
+  Actual: '/'
+   Which: is different. Both strings start the same, but the actual value is missing the following
+trailing characters: account
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart:505:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1968:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart line 505
+The test description was:
+  Transient login history never closes the account container (variant: TargetPlatform.iOS)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -4: Transient login history never closes the account container (variant: TargetPlatform.iOS) [E]
+  Test failed. See exception logs above.
+  The test description was: Transient login history never closes the account container (variant: TargetPlatform.iOS)
+  
+00:01 +0 -4: Transient login history never closes the account container (variant: TargetPlatform.android)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: '/account'
+  Actual: '/'
+   Which: is different. Both strings start the same, but the actual value is missing the following
+trailing characters: account
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart:505:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1968:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart line 505
+The test description was:
+  Transient login history never closes the account container (variant: TargetPlatform.android)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -5: Transient login history never closes the account container (variant: TargetPlatform.android) [E]
+  Test failed. See exception logs above.
+  The test description was: Transient login history never closes the account container (variant: TargetPlatform.android)
+  
+00:01 +0 -5: (tearDownAll)
+00:01 +0 -5: Some tests failed.
+
+Failing tests:
+  D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart: Transient login history never closes the account container (variant: TargetPlatform.android)
+  D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart: Transient login history never closes the account container (variant: TargetPlatform.iOS)
+  D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart: Transient login history never closes the account container (variant: TargetPlatform.linux)
+  D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart: Transient login history never closes the account container (variant: TargetPlatform.macOS)
+  D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart: Transient login history never closes the account container (variant: TargetPlatform.windows)

@@ -1,0 +1,12 @@
+import json,statistics,hashlib
+from pathlib import Path
+root=Path(__file__).parent
+data=json.loads((root/'exhaustive-release.json').read_text())
+proc=json.loads((root/'process-tree-release.json').read_text(encoding='utf-8-sig'))
+frames=data['sortFrames']
+def dist(values):
+    values=sorted(values)
+    return {'count':len(values),'medianMs':round(statistics.median(values)/1000,3),'p95Ms':round(values[int((len(values)-1)*.95)]/1000,3),'maxMs':round(max(values)/1000,3)}
+result={'status':data['status'],'input':'Same locked SDK and dependencies | production main() and actual 11-game catalog | 1280x720 Windows Release | temporary integration observer entry | no full Skia tracing | 60 game entry/exit cycles, 12 alternating sorts, 3 account WebView creations, minimize/restore','sort':{field:dist([f[field] for f in frames]) for field in ['buildUs','rasterUs','totalUs']},'samples':data['samples'],'webAutomaticReturns':{k:v for k,v in data.items() if k.startswith('webAutomaticallyReturned_')},'processTree':{'samples':len(proc['samples']),'maxWebProcesses':max(sum(p['name']=='msedgewebview2' for p in row['processes']) for row in proc['samples']),'maxWebWorkingSetSum':max(sum(p['workingSet'] for p in row['processes'] if p['name']=='msedgewebview2') for row in proc['samples']),'maxWebPrivateBytesSum':max(sum(p['privateBytes'] for p in row['processes'] if p['name']=='msedgewebview2') for row in proc['samples'])},'limits':['Window focus changes were recorded per stable state; do not assume focus remained fixed for every frame','Guest account view returned to native / automatically during these samples; this measures browser startup/lifetime, not sustained authenticated content','Working-set sums may count shared pages repeatedly; neither process working set nor private bytes equal Dart heap','Full Skia timeline and VM heap samples belong to a separate traced Profile run; its numbers are not comparable to ordinary app memory','Other game validation windows were observed on this shared host during later ordinary-preview inspection; GPU contention is a possible confound, not an established root cause','No device, energy, thermal, presented FPS or sustained busy-room input acceptance']}
+(root/'audit-summary.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
+print(json.dumps({k:v for k,v in result.items() if k not in ['samples','limits']},ensure_ascii=False,indent=2))

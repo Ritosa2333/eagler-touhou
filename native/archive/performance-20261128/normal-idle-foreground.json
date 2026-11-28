@@ -1,0 +1,60 @@
+{
+  "windowStates": [
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    },
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    },
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    },
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    },
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    },
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    },
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    },
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    },
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    },
+    {
+      "foregroundProcess": 43792,
+      "foreground": true,
+      "minimized": false
+    }
+  ],
+  "cpuMachinePercent": 1.6796875,
+  "input": "Ordinary Release | no new UIA tree inspection | foreground state sampled each second | native host already has accessibility clients",
+  "rssMiB": 226.359375,
+  "privateMiB": 327.8984375,
+  "cpuOneCorePercent": 40.3125,
+  "processId": 43792
+}

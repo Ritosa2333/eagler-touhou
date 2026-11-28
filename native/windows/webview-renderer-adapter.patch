@@ -1,0 +1,66 @@
+--- a/custom_platform_view/graphics_context.h
++++ b/custom_platform_view/graphics_context.h
+@@ -11,7 +11,7 @@
+ {
+   class GraphicsContext {
+   public:
+-    GraphicsContext(rx::RoHelper* rohelper);
++    GraphicsContext(rx::RoHelper* rohelper, IDXGIAdapter* adapter);
+ 
+     inline bool IsValid() const { return valid_; }
+ 
+--- a/custom_platform_view/graphics_context.cc
++++ b/custom_platform_view/graphics_context.cc
+@@ -5,9 +5,9 @@
+ 
+ namespace flutter_inappwebview_plugin
+ {
+-  GraphicsContext::GraphicsContext(rx::RoHelper* rohelper) : rohelper_(rohelper)
++  GraphicsContext::GraphicsContext(rx::RoHelper* rohelper, IDXGIAdapter* adapter) : rohelper_(rohelper)
+   {
+-    device_ = CreateD3DDevice();
++    device_ = CreateD3DDevice(adapter);
+     if (!device_) {
+       return;
+     }
+--- a/custom_platform_view/util/d3dutil.h
++++ b/custom_platform_view/util/d3dutil.h
+@@ -5,7 +5,7 @@
+ #include <winrt/Windows.System.h>
+ 
+ inline auto CreateD3DDevice(D3D_DRIVER_TYPE const type,
+-                            winrt::com_ptr<ID3D11Device>& device) {
++                            winrt::com_ptr<ID3D11Device>& device, IDXGIAdapter* adapter = nullptr) {
+   WINRT_ASSERT(!device);
+ 
+   UINT flags =
+@@ -15,13 +15,13 @@
+   //	flags |= D3D11_CREATE_DEVICE_DEBUG;
+   //#endif
+ 
+-  return D3D11CreateDevice(nullptr, type, nullptr, flags, nullptr, 0,
++  return D3D11CreateDevice(adapter, adapter ? D3D_DRIVER_TYPE_UNKNOWN : type, nullptr, flags, nullptr, 0,
+                            D3D11_SDK_VERSION, device.put(), nullptr, nullptr);
+ }
+ 
+-inline auto CreateD3DDevice() {
++inline auto CreateD3DDevice(IDXGIAdapter* adapter) {
+   winrt::com_ptr<ID3D11Device> device;
+-  HRESULT hr = CreateD3DDevice(D3D_DRIVER_TYPE_HARDWARE, device);
++  HRESULT hr = CreateD3DDevice(D3D_DRIVER_TYPE_HARDWARE, device, adapter);
+ 
+   if (DXGI_ERROR_UNSUPPORTED == hr) {
+     CreateD3DDevice(D3D_DRIVER_TYPE_WARP, device);
+--- a/in_app_webview/in_app_webview_manager.cpp
++++ b/in_app_webview/in_app_webview_manager.cpp
+@@ -41,7 +41,9 @@
+           return;
+         }
+ 
+-        graphics_context_ = std::make_unique<GraphicsContext>(rohelper_.get());
++        winrt::com_ptr<IDXGIAdapter> rendering_adapter;
++        plugin->registrar->GetGraphicsAdapter(rendering_adapter.put());
++        graphics_context_ = std::make_unique<GraphicsContext>(rohelper_.get(), rendering_adapter.get());
+         compositor_ = graphics_context_->CreateCompositor();
+         if (compositor_) {
+           // fix for KernelBase.dll RaiseFailFastException

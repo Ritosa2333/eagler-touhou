@@ -1,0 +1,19 @@
+{
+  "checkedAtUtc": "2026-11-28T00:18:03.884306+00:00",
+  "previousPackageSha256": "5a402e017c2a6f593b6ee30e421d390cd2492473f53fdb23c5985d5eae86845a",
+  "actualPackageSha256": "62722f3d86271c4cab7160be45f635075a95f7f8041db01d660ff98a972c810d",
+  "actualAotSha256": "6bdb5ec6b5498fd8d4368700747dc360f02c2cd578a7b1f1bb22b4cb45caa269",
+  "previousSourceEntries": 6,
+  "currentSourceEntries": 93,
+  "verification": "Actual Windows ZIP SHA-256, archive CRC, AOT hash and every recorded source file checked before replacing the stale public handoff. The package and app source did not change.",
+  "staleRecordDetected": "Windows handoff does not identify the package recorded with current screenshots\nWindows handoff source differs from its package: lib/account.dart, lib/account_api.dart, lib/account_settings_layout.dart, lib/account_web_page.dart, lib/catalog.dart, lib/cloud_save_comparison.dart, lib/cloud_save_page.dart, lib/cloud_saves.dart, lib/desktop_window.dart, lib/external_midi.dart, lib/game_clear_matrix.dart, lib/game_detail.dart, lib/game_file_archive.dart, lib/game_file_feedback.dart, lib/game_file_picker.dart, lib/game_files_panel.dart, lib/game_friends.dart, lib/game_import_dialog.dart, lib/game_input_dialog.dart, lib/game_launcher.dart, lib/game_preferences.dart, lib/game_progress_catalog.dart, lib/game_resources.dart, lib/game_settings.dart, lib/game_spell_archive.dart, lib/game_user_files.dart, lib/gamepad_preferences.dart, lib/gamepad_settings.dart, lib/inbox.dart, lib/input_binding_row.dart, lib/input_settings_frame.dart, lib/keyboard_layouts.dart, lib/keyboard_settings.dart, lib/l10n/generated/launcher_strings.dart, lib/l10n/generated/launcher_strings_en.dart, lib/l10n/generated/launcher_strings_ja.dart, lib/l10n/generated/launcher_strings_zh.dart, lib/l10n/launcher_en.arb, lib/l10n/launcher_ja.arb, lib/l10n/launcher_zh.arb, lib/l10n/strings.dart, lib/launcher_appearance.dart, lib/launcher_background.dart, lib/launcher_language.dart, lib/launcher_navigation.dart, lib/launcher_prism.dart, lib/launcher_rendering.dart, lib/launcher_select.dart, lib/launcher_wallpaper.dart, lib/library.dart, lib/lobby_directory.dart, lib/lobby_page.dart, lib/lobby_room_card.dart, lib/local_duel_preferences.dart, lib/local_duel_settings.dart, lib/main.dart, lib/message_highlights.dart, lib/modal_keyboard_dismiss.dart, lib/network_check_dialog.dart, lib/network_diagnostics.dart, lib/profile_data.dart, lib/profile_display.dart, lib/profile_identity.dart, lib/profile_regions.dart, lib/replay_manager.dart, lib/room_chat.dart, lib/room_chat_pane.dart, lib/room_options_fields.dart, lib/room_page.dart, lib/room_phrases.dart, lib/room_quick_picker.dart, lib/room_session.dart, lib/room_voice.dart, lib/save_progress.dart, lib/site_documents.dart, lib/site_manifest.dart, lib/site_navigation.dart, lib/statistics_tile.dart, lib/th09_duel_replay_list.dart, lib/th09_player_card.dart, lib/th09_rating_chart.dart, lib/th09_rating_feed.dart, lib/th09_ratings.dart, lib/th09_replay_match.dart, lib/touch_layout_editor.dart, lib/touch_layout_preview.dart, lib/touch_preferences.dart, pubspec.lock, pubspec.yaml, windows/runner/main.cpp\n",
+  "scope": "Delivery record consistency; UI appearance and cross-platform acceptance are separate.",
+  "uiObservation": {
+    "packageSha256": "62722f3d86271c4cab7160be45f635075a95f7f8041db01d660ff98a972c810d",
+    "entry": "Existing normal Release process, selected by returned path/window ID",
+    "titleBarDoubleClick": "Maximize and restore observed through the real pointer and native accessibility state",
+    "maximizedDrag": "Attempt did not change the maximized state; remains unverified",
+    "screenshots": "Selected window can be occluded by other apps. Raised the preview through its exposed window action before inspecting it. Evidence is in the chat UI observations, not a new static design baseline."
+  },
+  "guardRegressionCasesPassed": 8
+}

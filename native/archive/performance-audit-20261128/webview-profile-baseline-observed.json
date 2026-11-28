@@ -1,0 +1,123 @@
+{
+  "variant": "baseline",
+  "pid": 23212,
+  "image": "C:\\Users\\Ritosa\\AppData\\Local\\Temp\\native-process-proof-20261128\\webview-adapter\\profile-baseline\\touhouonline-profile.exe",
+  "samples": [
+    {
+      "atUtc": "2026-11-28T01:55:35.2189020Z",
+      "cpuSeconds": 4.609375,
+      "workingSet": 198901760,
+      "privateBytes": 250081280,
+      "threads": 107,
+      "handles": 1015
+    },
+    {
+      "atUtc": "2026-11-28T01:55:36.2428239Z",
+      "cpuSeconds": 4.640625,
+      "workingSet": 198901760,
+      "privateBytes": 250081280,
+      "threads": 107,
+      "handles": 1015
+    },
+    {
+      "atUtc": "2026-11-28T01:55:37.2588591Z",
+      "cpuSeconds": 4.6875,
+      "workingSet": 198901760,
+      "privateBytes": 250081280,
+      "threads": 107,
+      "handles": 1015
+    },
+    {
+      "atUtc": "2026-11-28T01:55:38.2690933Z",
+      "cpuSeconds": 4.734375,
+      "workingSet": 198901760,
+      "privateBytes": 250081280,
+      "threads": 107,
+      "handles": 1015
+    },
+    {
+      "atUtc": "2026-11-28T01:55:39.2834226Z",
+      "cpuSeconds": 4.875,
+      "workingSet": 198901760,
+      "privateBytes": 250081280,
+      "threads": 107,
+      "handles": 1016
+    },
+    {
+      "atUtc": "2026-11-28T01:55:40.2996838Z",
+      "cpuSeconds": 5.0,
+      "workingSet": 198901760,
+      "privateBytes": 250081280,
+      "threads": 107,
+      "handles": 1015
+    },
+    {
+      "atUtc": "2026-11-28T01:55:41.3124004Z",
+      "cpuSeconds": 5.03125,
+      "workingSet": 198901760,
+      "privateBytes": 250081280,
+      "threads": 107,
+      "handles": 1015
+    },
+    {
+      "atUtc": "2026-11-28T01:55:42.3172538Z",
+      "cpuSeconds": 5.15625,
+      "workingSet": 198901760,
+      "privateBytes": 250081280,
+      "threads": 107,
+      "handles": 1015
+    }
+  ],
+  "webProcesses": [
+    {
+      "pid": 38672,
+      "parentPid": 23212,
+      "workingSet": 174804992,
+      "privateBytes": 62803968
+    },
+    {
+      "pid": 6280,
+      "parentPid": 38672,
+      "workingSet": 25231360,
+      "privateBytes": 4313088
+    },
+    {
+      "pid": 30372,
+      "parentPid": 38672,
+      "workingSet": 160313344,
+      "privateBytes": 131538944
+    },
+    {
+      "pid": 45744,
+      "parentPid": 38672,
+      "workingSet": 50405376,
+      "privateBytes": 16248832
+    },
+    {
+      "pid": 41800,
+      "parentPid": 38672,
+      "workingSet": 25579520,
+      "privateBytes": 8187904
+    },
+    {
+      "pid": 22396,
+      "parentPid": 38672,
+      "workingSet": 201486336,
+      "privateBytes": 133742592
+    }
+  ],
+  "gpu": [
+    {
+      "Name": "pid_23212_luid_0x00000000_0x00012C80_phys_0",
+      "DedicatedUsage": 0,
+      "SharedUsage": 53329920,
+      "TotalCommitted": 38518784
+    },
+    {
+      "Name": "pid_23212_luid_0x00000000_0x0001678D_phys_0",
+      "DedicatedUsage": 50020352,
+      "SharedUsage": 11636736,
+      "TotalCommitted": 80068608
+    }
+  ]
+}

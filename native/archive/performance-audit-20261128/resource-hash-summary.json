@@ -1,0 +1,73 @@
+{
+  "scope": "Dart AOT | real files with independent known hashes | producer isolate timestamps before SendPort.send, consumer timestamps on receipt | unchanged SHA-256 and async file reads | component mailbox latency, not whole UI FrameTiming or FPS | shared Windows host and warm filesystem cache",
+  "baseline": {
+    "elapsedMs": 1002.103,
+    "mailboxSamples": 61,
+    "maxMailboxLagMs": 0.057,
+    "p95MailboxLagMs": 0.04,
+    "medianMailboxLagMs": 0.023
+  },
+  "byInput": {
+    "th07": {
+      "inline": {
+        "rounds": 3,
+        "maxMailboxLagRangeMs": [
+          1.097,
+          1.321
+        ],
+        "wallTimeRangeMs": [
+          206.962,
+          217.119
+        ],
+        "bytes": 23829135,
+        "sha256": "5fe8d772191505bf208f966da8070ee0a9e0d0ee8567a8827ef3a362bcb0c287"
+      },
+      "worker": {
+        "rounds": 3,
+        "maxMailboxLagRangeMs": [
+          0.04,
+          0.054
+        ],
+        "wallTimeRangeMs": [
+          201.022,
+          221.301
+        ],
+        "bytes": 23829135,
+        "sha256": "5fe8d772191505bf208f966da8070ee0a9e0d0ee8567a8827ef3a362bcb0c287"
+      }
+    },
+    "th14": {
+      "inline": {
+        "rounds": 3,
+        "maxMailboxLagRangeMs": [
+          5.208,
+          6.492
+        ],
+        "wallTimeRangeMs": [
+          1509.513,
+          2460.886
+        ],
+        "bytes": 90776747,
+        "sha256": "57d84a5cbe82460931cca26f090a0fde7aef180889ce5bfe8315851fc97b0233"
+      },
+      "worker": {
+        "rounds": 3,
+        "maxMailboxLagRangeMs": [
+          0.08,
+          0.325
+        ],
+        "wallTimeRangeMs": [
+          1945.589,
+          2223.288
+        ],
+        "bytes": 90776747,
+        "sha256": "57d84a5cbe82460931cca26f090a0fde7aef180889ce5bfe8315851fc97b0233"
+      }
+    }
+  },
+  "currentSourceSha256": "73f1f7d5f38485e9b4a02f8fdb675b276e21b40d7889caae697b8a3e9a07cf11",
+  "ordinaryAotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "actualInputRegression": "6 passed | real th07 DATA and derived package ZIP, compatible legacy ZIP, wrong game, unsafe path and corrupted replacement, three widget viewport entry/return paths and native launch placeholder data hash",
+  "recapturedImages": 210,
+  "allImagesByteIdentical": true
+}

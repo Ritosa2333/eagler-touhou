@@ -1,0 +1,36 @@
+{
+  "empty": {
+    "nickname": "暂无记录的玩家",
+    "career": false,
+    "records": false,
+    "playCount": 4
+  },
+  "other": {
+    "nickname": "玩其他作品的好友",
+    "game": "th06",
+    "playCount": 7
+  },
+  "played": {
+    "nickname": "曾经游玩过的好友",
+    "playCount": 2
+  },
+  "cleared": {
+    "nickname": "通关玩家",
+    "career": true,
+    "records": false,
+    "cleared": true
+  },
+  "scored": {
+    "nickname": "有分数记录的好友",
+    "career": true,
+    "bestScore": 28000
+  },
+  "recent": {
+    "nickname": "第五位玩家",
+    "playtimeSeconds": 78
+  },
+  "extra": {
+    "nickname": "第七位玩家",
+    "playtimeSeconds": 18
+  }
+}

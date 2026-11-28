@@ -1,0 +1,53 @@
+{
+  "input": "Isolated content-hash fixtures | no UI rendering or production file mutation",
+  "cases": [
+    {
+      "case": "valid",
+      "passed": true,
+      "exitCode": 0,
+      "output": "1 screenshots and Windows handoff match their recorded source, image and package hashes\n0 unique requirement definitions | 0 local links\n"
+    },
+    {
+      "case": "stale-package",
+      "passed": true,
+      "exitCode": 1,
+      "output": "Windows handoff does not identify the package recorded with current screenshots\n"
+    },
+    {
+      "case": "stale-aot",
+      "passed": true,
+      "exitCode": 1,
+      "output": "Windows handoff does not identify the package recorded with current screenshots\n"
+    },
+    {
+      "case": "missing-source-entry",
+      "passed": true,
+      "exitCode": 1,
+      "output": "Windows handoff source differs from its package: lib/app.dart\n"
+    },
+    {
+      "case": "edited-source",
+      "passed": true,
+      "exitCode": 1,
+      "output": "Current screenshots are stale or changed: lib/app.dart\n"
+    },
+    {
+      "case": "capture-build-disagree",
+      "passed": true,
+      "exitCode": 1,
+      "output": "Windows handoff source differs from its package: lib/app.dart\nCurrent screenshots are stale or changed: lib/app.dart\n"
+    },
+    {
+      "case": "missing-build-receipt",
+      "passed": true,
+      "exitCode": 1,
+      "output": "Current screenshots have no Windows package source receipt\nWindows handoff does not identify the package recorded with current screenshots\n"
+    },
+    {
+      "case": "edited-capture",
+      "passed": true,
+      "exitCode": 1,
+      "output": "Current screenshots are stale or changed: docs/evidence/current/capture.bin\n"
+    }
+  ]
+}

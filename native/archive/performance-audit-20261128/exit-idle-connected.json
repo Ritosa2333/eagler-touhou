@@ -1,0 +1,295 @@
+{
+  "run": "connected",
+  "input": "Ordinary Release | no pointer input | native process times and foreground PID, no UIA tree query during sample",
+  "summary": [
+    {
+      "name": "visible",
+      "id": 43284,
+      "oneCorePercent": 16.089267254768824,
+      "foregroundSamples": 11
+    },
+    {
+      "name": "closed",
+      "id": 39724,
+      "oneCorePercent": 98.39205744262473,
+      "foregroundSamples": 11
+    }
+  ],
+  "samples": [
+    {
+      "seconds": 0.0022697,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1358906250,
+        "user100ns": 1932343750,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 180625000,
+        "user100ns": 13963437500,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 1.0271544,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1359218750,
+        "user100ns": 1932968750,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 180781250,
+        "user100ns": 13973437500,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 2.0285948,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1359218750,
+        "user100ns": 1932968750,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 181093750,
+        "user100ns": 13983125000,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 3.0299247,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1360468750,
+        "user100ns": 1933906250,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 181406250,
+        "user100ns": 13992656250,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 4.0339763,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1361562500,
+        "user100ns": 1935312500,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 181562500,
+        "user100ns": 14002187500,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 5.037537,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1362812500,
+        "user100ns": 1936093750,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 181562500,
+        "user100ns": 14012187500,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 6.0518104,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1362812500,
+        "user100ns": 1936093750,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 181562500,
+        "user100ns": 14022343750,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 7.065214,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1363437500,
+        "user100ns": 1936562500,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 181718750,
+        "user100ns": 14032187500,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 8.0793971,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1364843750,
+        "user100ns": 1937812500,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 181875000,
+        "user100ns": 14041875000,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 9.0891883,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1366562500,
+        "user100ns": 1939531250,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 182031250,
+        "user100ns": 14051718750,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    },
+    {
+      "seconds": 10.1021703,
+      "visible": {
+        "id": 43284,
+        "open": true,
+        "created": 134403004281791220,
+        "exited": 0,
+        "kernel100ns": 1366875000,
+        "user100ns": 1940625000,
+        "exitCode": 259,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      },
+      "closed": {
+        "id": 39724,
+        "open": true,
+        "created": 134403002615118907,
+        "exited": 0,
+        "kernel100ns": 182031250,
+        "user100ns": 14061406250,
+        "exitCode": 0,
+        "waitResult": 258,
+        "foregroundPid": 43284
+      }
+    }
+  ]
+}

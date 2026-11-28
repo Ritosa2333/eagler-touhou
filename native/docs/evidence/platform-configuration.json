@@ -1,0 +1,328 @@
+{
+  "kind": "source_configuration_checks",
+  "native_builds": {
+    "ios": "not_run",
+    "macos": "not_run",
+    "linux": "not_run"
+  },
+  "metadata_platforms": [
+    "android",
+    "ios",
+    "linux",
+    "macos",
+    "root",
+    "windows"
+  ],
+  "apple_configuration": {
+    "ios_minimum": "15.0",
+    "macos_minimum": "12.0",
+    "ios_entitlement_configurations": 3,
+    "plist_files_parsed": 7
+  },
+  "icons": [
+    {
+      "platform": "ios",
+      "file": "Icon-App-20x20@2x.png",
+      "pixels": [
+        40,
+        40
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-20x20@3x.png",
+      "pixels": [
+        60,
+        60
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-29x29@1x.png",
+      "pixels": [
+        29,
+        29
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-29x29@2x.png",
+      "pixels": [
+        58,
+        58
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-29x29@3x.png",
+      "pixels": [
+        87,
+        87
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-40x40@2x.png",
+      "pixels": [
+        80,
+        80
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-40x40@3x.png",
+      "pixels": [
+        120,
+        120
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-57x57@1x.png",
+      "pixels": [
+        57,
+        57
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-57x57@2x.png",
+      "pixels": [
+        114,
+        114
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-60x60@2x.png",
+      "pixels": [
+        120,
+        120
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-60x60@3x.png",
+      "pixels": [
+        180,
+        180
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-20x20@1x.png",
+      "pixels": [
+        20,
+        20
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-20x20@2x.png",
+      "pixels": [
+        40,
+        40
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-29x29@1x.png",
+      "pixels": [
+        29,
+        29
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-29x29@2x.png",
+      "pixels": [
+        58,
+        58
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-40x40@1x.png",
+      "pixels": [
+        40,
+        40
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-40x40@2x.png",
+      "pixels": [
+        80,
+        80
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-50x50@1x.png",
+      "pixels": [
+        50,
+        50
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-50x50@2x.png",
+      "pixels": [
+        100,
+        100
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-72x72@1x.png",
+      "pixels": [
+        72,
+        72
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-72x72@2x.png",
+      "pixels": [
+        144,
+        144
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-76x76@1x.png",
+      "pixels": [
+        76,
+        76
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-76x76@2x.png",
+      "pixels": [
+        152,
+        152
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-83.5x83.5@2x.png",
+      "pixels": [
+        167,
+        167
+      ]
+    },
+    {
+      "platform": "ios",
+      "file": "Icon-App-1024x1024@1x.png",
+      "pixels": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_16.png",
+      "pixels": [
+        16,
+        16
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_32.png",
+      "pixels": [
+        32,
+        32
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_32.png",
+      "pixels": [
+        32,
+        32
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_64.png",
+      "pixels": [
+        64,
+        64
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_128.png",
+      "pixels": [
+        128,
+        128
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_256.png",
+      "pixels": [
+        256,
+        256
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_256.png",
+      "pixels": [
+        256,
+        256
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_512.png",
+      "pixels": [
+        512,
+        512
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_512.png",
+      "pixels": [
+        512,
+        512
+      ]
+    },
+    {
+      "platform": "macos",
+      "file": "app_icon_1024.png",
+      "pixels": [
+        1024,
+        1024
+      ]
+    }
+  ],
+  "linux_configuration": {
+    "desktop_entry": {
+      "type": "Application",
+      "name": "TouhouOnline",
+      "exec": "touhouonline %u",
+      "icon": "com.touhouonline.touhouonline",
+      "terminal": "false",
+      "categories": "Game;",
+      "startupwmclass": "com.touhouonline.touhouonline",
+      "mimetype": "x-scheme-handler/touhouonline;"
+    },
+    "bundle_icon_pixels": [
+      256,
+      256
+    ]
+  },
+  "dependencies": {
+    "unchanged_versions": 154,
+    "new_generator_dependencies": [
+      "checked_yaml",
+      "cli_util",
+      "flutter_launcher_icons"
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "username": "fixture",
+  "draft": {
+    "name": "测试玩家",
+    "bio": "测试个人资料",
+    "avatar": "",
+    "cover": "",
+    "links": [
+      {
+        "label": "项目主页",
+        "url": "https://example.org/"
+      }
+    ],
+    "display": {
+      "order": [
+        "career",
+        "versus",
+        "records",
+        "content",
+        "friends",
+        "favorites"
+      ],
+      "visible": {
+        "career": true,
+        "versus": true,
+        "records": true,
+        "content": true,
+        "friends": true
+      },
+      "gameDataDefault": "th09"
+    },
+    "roomAvatarReady": false
+  },
+  "review": {}
+}
+

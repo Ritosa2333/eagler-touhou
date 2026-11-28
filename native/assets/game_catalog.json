@@ -1,0 +1,1068 @@
+[
+  {
+    "id": "th05",
+    "number": "05",
+    "title": "東方怪綺談",
+    "subtitle": "Mystic Square",
+    "category": "pc98",
+    "artwork": "th05.webp",
+    "multiplayer": true,
+    "shortTitle": "怪",
+    "multiplayerRules": {
+      "product": "th05mp",
+      "playerCounts": [
+        2,
+        3
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra"
+      ],
+      "selectInGame": false,
+      "challengeMode": true,
+      "timing": {
+        "rollback": true,
+        "measuredStartup": true,
+        "runtimeTiming": false,
+        "manualDelayLimit": 9
+      }
+    },
+    "data": {
+      "name": "th05.data",
+      "bytes": 8105844,
+      "sha256": "4db1eb024e05e85869d5c7a3f880529b9320b89726eb4b32c90d164c1a748416"
+    },
+    "files": {
+      "score": "score.dat",
+      "hints": [],
+      "saveArchive": false,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth05",
+        "prefix": "th05",
+        "sharedExtensionSlot": false,
+        "slotPrefix": "replay",
+        "slots": 100,
+        "filename": false,
+        "extensions": [
+          "rpy"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth05mp",
+        "prefix": "th05mp",
+        "sharedExtensionSlot": false,
+        "slotPrefix": null,
+        "slots": 100,
+        "filename": false,
+        "extensions": [
+          "rpy"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": false,
+      "features": [
+        "thprac",
+        "languages",
+        "focusHitbox"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "简体中文",
+          "bytes": 21050
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "ogg-akyu",
+        "none"
+      ]
+    },
+    "nameOrder": 4
+  },
+  {
+    "id": "th06",
+    "number": "06",
+    "title": "東方紅魔郷",
+    "subtitle": "the Embodiment of Scarlet Devil",
+    "category": "windows",
+    "artwork": "th06.webp",
+    "multiplayer": true,
+    "shortTitle": "红",
+    "multiplayerRules": {
+      "product": "th06mp",
+      "playerCounts": [
+        2,
+        3
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra"
+      ],
+      "selectInGame": false,
+      "challengeMode": true
+    },
+    "data": {
+      "name": "th06.data",
+      "bytes": 8064942,
+      "sha256": "1d7f548eaaef3c42c4ce10c0cce83d0cbec4edd6823d91ed320b6e71a17ece6b"
+    },
+    "files": {
+      "score": "score.dat",
+      "hints": [],
+      "saveArchive": false,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth06",
+        "prefix": "th6",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth06-multiplayer",
+        "prefix": "th6",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": true,
+      "features": [
+        "thprac",
+        "languages",
+        "focusHitbox"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "中文（简体）",
+          "bytes": 1273239
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 1020710
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 6
+  },
+  {
+    "id": "th07",
+    "number": "07",
+    "title": "東方妖々夢",
+    "subtitle": "Perfect Cherry Blossom",
+    "category": "windows",
+    "artwork": "th07.webp",
+    "multiplayer": true,
+    "shortTitle": "妖",
+    "multiplayerRules": {
+      "product": "th07mp",
+      "playerCounts": [
+        2,
+        3
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra",
+        "Phantasm"
+      ],
+      "selectInGame": false,
+      "challengeMode": true
+    },
+    "data": {
+      "name": "th07.data",
+      "bytes": 23829135,
+      "sha256": "5fe8d772191505bf208f966da8070ee0a9e0d0ee8567a8827ef3a362bcb0c287"
+    },
+    "files": {
+      "score": "score.dat",
+      "hints": [],
+      "saveArchive": false,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth07",
+        "prefix": "th7",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth07-multiplayer",
+        "prefix": "th7",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": true,
+      "features": [
+        "thprac",
+        "languages"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "中文（简体）",
+          "bytes": 1844596
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 2701897
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 9
+  },
+  {
+    "id": "th075",
+    "number": "07.5",
+    "title": "東方萃夢想",
+    "subtitle": "Immaterial and Missing Power",
+    "category": "fighting",
+    "artwork": "th075.webp",
+    "multiplayer": true,
+    "shortTitle": "萃",
+    "multiplayerRules": {
+      "product": "th075mp",
+      "playerCounts": [
+        2
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic"
+      ],
+      "selectInGame": false,
+      "challengeMode": false,
+      "timing": {
+        "rollback": true,
+        "measuredStartup": true,
+        "runtimeTiming": false,
+        "manualDelayLimit": 9
+      }
+    },
+    "data": {
+      "name": "th075.data",
+      "bytes": 289359081,
+      "sha256": "741c7208439b06fb427fde98d0079f0114ed6cb13db45d84f45a110ef483123e"
+    },
+    "packageMaxBytes": 536870912,
+    "files": {
+      "score": "score.dat",
+      "hints": [],
+      "saveArchive": false,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth075",
+        "prefix": "th075",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": true,
+        "extensions": [
+          "rep"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth075mp",
+        "prefix": "th075",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": true,
+        "extensions": [
+          "rep"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": false,
+      "features": [
+        "languages"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 11041566
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "Simplified Chinese language pack",
+          "bytes": 10955935
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 0
+  },
+  {
+    "id": "th08",
+    "number": "08",
+    "title": "東方永夜抄",
+    "subtitle": "Imperishable Night",
+    "category": "windows",
+    "artwork": "th08.webp",
+    "multiplayer": true,
+    "shortTitle": "永",
+    "multiplayerRules": {
+      "product": "th08mp",
+      "playerCounts": [
+        2,
+        3
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra"
+      ],
+      "selectInGame": false,
+      "challengeMode": true,
+      "timing": {
+        "rollback": true,
+        "measuredStartup": true,
+        "runtimeTiming": false,
+        "manualDelayLimit": 9
+      }
+    },
+    "data": {
+      "name": "th08.data",
+      "bytes": 46838025,
+      "sha256": "9d7edf43b8ddd347cbb641836f6b5050745dd936f688daebbf9382ca557043bb"
+    },
+    "files": {
+      "score": "score.dat",
+      "hints": [],
+      "saveArchive": false,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth08",
+        "prefix": "th8",
+        "sharedExtensionSlot": true,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth08-multiplayer",
+        "prefix": "th8",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": true,
+      "features": [
+        "thprac",
+        "languages"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "中文（简体）",
+          "bytes": 3708968
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 1954688
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 10
+  },
+  {
+    "id": "th09",
+    "number": "09",
+    "title": "東方花映塚",
+    "subtitle": "Phantasmagoria of Flower View",
+    "category": "versus",
+    "artwork": "th09.webp",
+    "multiplayer": true,
+    "shortTitle": "花",
+    "multiplayerRules": {
+      "product": "th09mp",
+      "playerCounts": [
+        2
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic"
+      ],
+      "selectInGame": true,
+      "challengeMode": false,
+      "timing": {
+        "rollback": true,
+        "measuredStartup": true,
+        "runtimeTiming": false,
+        "manualDelayLimit": 9
+      }
+    },
+    "data": {
+      "name": "th09.data",
+      "bytes": 88180006,
+      "sha256": "73a344a2cb7b1113831058010758f03d6d20e7710d889a95f249046fb8fa5ea0"
+    },
+    "files": {
+      "score": "score.dat",
+      "hints": [],
+      "saveArchive": false,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth09",
+        "prefix": "th9",
+        "sharedExtensionSlot": true,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth09mp",
+        "prefix": "th9",
+        "sharedExtensionSlot": true,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": true,
+      "features": [
+        "languages"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 6117125
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "简体中文",
+          "bytes": 6018253
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 7
+  },
+  {
+    "id": "th10",
+    "number": "10",
+    "title": "東方風神録",
+    "subtitle": "Mountain of Faith",
+    "category": "windows",
+    "artwork": "th10.webp",
+    "multiplayer": true,
+    "shortTitle": "风",
+    "multiplayerRules": {
+      "product": "th10mp",
+      "playerCounts": [
+        2,
+        3
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra"
+      ],
+      "selectInGame": false,
+      "challengeMode": true,
+      "timing": {
+        "rollback": true,
+        "measuredStartup": true,
+        "runtimeTiming": false,
+        "manualDelayLimit": 9
+      }
+    },
+    "data": {
+      "name": "th10.data",
+      "bytes": 27696219,
+      "sha256": "1fb1d0ffe34115f563f5feb43755c0feee2315b0ac2b32e2f9e84c81e9433bea"
+    },
+    "files": {
+      "score": "scoreth10.dat",
+      "hints": [
+        "hint/hint_user.txt",
+        "hint/hint_auto.txt"
+      ],
+      "saveArchive": false,
+      "languageScoped": true,
+      "normal": {
+        "namespace": "savesth10",
+        "prefix": "th10",
+        "sharedExtensionSlot": true,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth10-multiplayer",
+        "prefix": "th10",
+        "sharedExtensionSlot": true,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": true,
+      "features": [
+        "thprac",
+        "languages"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "中文（简体）",
+          "bytes": 2626145
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 2817030
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 2
+  },
+  {
+    "id": "th11",
+    "number": "11",
+    "title": "東方地霊殿",
+    "subtitle": "Subterranean Animism",
+    "category": "windows",
+    "artwork": "th11.webp",
+    "multiplayer": true,
+    "shortTitle": "地",
+    "multiplayerRules": {
+      "product": "th11mp",
+      "playerCounts": [
+        2,
+        3
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra"
+      ],
+      "selectInGame": false,
+      "challengeMode": true,
+      "timing": {
+        "rollback": true,
+        "measuredStartup": true,
+        "runtimeTiming": false,
+        "manualDelayLimit": 9
+      }
+    },
+    "data": {
+      "name": "th11.dat",
+      "bytes": 26610794,
+      "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+    },
+    "files": {
+      "score": "scoreth11.dat",
+      "hints": [],
+      "saveArchive": false,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth11",
+        "prefix": "th11",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth11mp",
+        "prefix": "th11",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": true,
+      "features": [
+        "thprac",
+        "languages"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "中文（简体）",
+          "bytes": 4582864
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 4857387
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 1
+  },
+  {
+    "id": "th12",
+    "number": "12",
+    "title": "東方星蓮船",
+    "subtitle": "Undefined Fantastic Object",
+    "category": "windows",
+    "artwork": "th12.webp",
+    "multiplayer": true,
+    "shortTitle": "星",
+    "multiplayerRules": {
+      "product": "th12mp",
+      "playerCounts": [
+        2,
+        3
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra"
+      ],
+      "selectInGame": false,
+      "challengeMode": true,
+      "timing": {
+        "rollback": true,
+        "measuredStartup": true,
+        "runtimeTiming": false,
+        "manualDelayLimit": 9
+      }
+    },
+    "data": {
+      "name": "th12.data",
+      "bytes": 88852083,
+      "sha256": "bedf5456e7aa7a1db673dfca410aa97f35fbefefcd08997b3d64fa62e736fcc4"
+    },
+    "files": {
+      "score": "scoreth12.dat",
+      "hints": [],
+      "saveArchive": false,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth12",
+        "prefix": "th12",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth12mp",
+        "prefix": "th12_mp",
+        "sharedExtensionSlot": false,
+        "slotPrefix": null,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": true,
+      "features": [
+        "thprac",
+        "languages"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "中文（简体）",
+          "bytes": 2406449
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 2556399
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 8
+  },
+  {
+    "id": "th15",
+    "number": "15",
+    "title": "東方紺珠伝",
+    "subtitle": "Legacy of Lunatic Kingdom",
+    "category": "windows",
+    "artwork": "th15.webp",
+    "multiplayer": true,
+    "shortTitle": "绀",
+    "multiplayerRules": {
+      "product": "th15mp",
+      "playerCounts": [
+        2,
+        3
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra"
+      ],
+      "selectInGame": false,
+      "challengeMode": true,
+      "timing": {
+        "rollback": true,
+        "measuredStartup": true,
+        "runtimeTiming": false,
+        "manualDelayLimit": 9
+      }
+    },
+    "data": {
+      "name": "th15.dat",
+      "bytes": 77453661,
+      "sha256": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7"
+    },
+    "files": {
+      "score": "scoreth15.dat",
+      "hints": [],
+      "saveArchive": true,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth15",
+        "prefix": "th15",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth15mp",
+        "prefix": "th15mp",
+        "sharedExtensionSlot": false,
+        "slotPrefix": null,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": "th15"
+      }
+    },
+    "settings": {
+      "highRefresh": true,
+      "features": [
+        "thprac",
+        "languages"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 13754937
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "中文（简体）",
+          "bytes": 11538082
+        }
+      ],
+      "renderScales": [],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 3
+  },
+  {
+    "id": "th17",
+    "number": "17",
+    "title": "東方鬼形獣",
+    "subtitle": "Wily Beast and Weakest Creature",
+    "category": "windows",
+    "artwork": "th17.webp",
+    "multiplayer": true,
+    "shortTitle": "兽",
+    "multiplayerRules": {
+      "product": "th17mp",
+      "playerCounts": [
+        2,
+        3
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Lunatic",
+        "Extra"
+      ],
+      "selectInGame": false,
+      "challengeMode": true,
+      "timing": {
+        "rollback": true,
+        "measuredStartup": false,
+        "runtimeTiming": false,
+        "manualDelayLimit": 9
+      }
+    },
+    "data": {
+      "name": "th17.dat",
+      "bytes": 79861613,
+      "sha256": "109c193c492f0ba322752b70b217f765fc9b2bc9a10615bd0cf3c28d9401381b"
+    },
+    "files": {
+      "score": "scoreth17.dat",
+      "hints": [],
+      "saveArchive": false,
+      "languageScoped": false,
+      "normal": {
+        "namespace": "savesth17",
+        "prefix": "th17",
+        "sharedExtensionSlot": false,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      },
+      "multiplayer": {
+        "namespace": "savesth17mp",
+        "prefix": "th17mp",
+        "sharedExtensionSlot": false,
+        "slotPrefix": null,
+        "slots": 0,
+        "filename": false,
+        "extensions": [
+          "rpy",
+          "rpyx"
+        ],
+        "legacyPrefix": null
+      }
+    },
+    "settings": {
+      "highRefresh": false,
+      "features": [
+        "thprac",
+        "languages"
+      ],
+      "languages": [
+        {
+          "id": "ja",
+          "title": "日本語",
+          "bytes": 0
+        },
+        {
+          "id": "lang_en",
+          "title": "English",
+          "bytes": 15305229
+        },
+        {
+          "id": "lang_zh-hans",
+          "title": "中文（简体）",
+          "bytes": 15691932
+        }
+      ],
+      "renderScales": [
+        2,
+        1
+      ],
+      "music": [
+        "ogg-stream",
+        "ogg-full",
+        "none"
+      ]
+    },
+    "nameOrder": 5
+  }
+]

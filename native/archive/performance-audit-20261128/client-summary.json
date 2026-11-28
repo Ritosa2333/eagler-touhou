@@ -1,0 +1,164 @@
+{
+  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "productionSourceHashesVerified": 113,
+  "scope": "Same ordinary main.dart AOT with diagnostic native runner. First launch sampled mixed focus; second explicitly prevented activation and sampled background. No current user-window interaction and no product-source change.",
+  "limitations": [
+    "Foreground PID sampled only every5s; no continuous focus/input monitor",
+    "Client API returned S_OK with null arrays; does not identify historical query sender or prove absence of MSAA consumers",
+    "Child-only first sample cannot establish whole-thread WM_GETOBJECT count",
+    "Background thread observer did not reproduce high query load; not a foreground CPU A/B",
+    "Two normal exits do not establish intermittent shutdown issue resolved"
+  ],
+  "sources": {
+    "clientApi": "https://learn.microsoft.com/en-us/windows/win32/api/uiautomationcore/nf-uiautomationcore-iuiautomationclientinfosource-getconnectedclients",
+    "metadata": {
+      "url": "https://raw.githubusercontent.com/microsoft/win32metadata/main/generation/WinSDK/RecompiledIdlHeaders/um/UIAutomationCore.h",
+      "bytes": 272552,
+      "sha256": "8cdb210c245003c8be3fe170ad1fa57905877440f75389e0a288de2d74ef2bc8"
+    }
+  },
+  "runs": [
+    {
+      "test": "host",
+      "pid": 29112,
+      "samples": 6,
+      "foregroundSampleCount": 2,
+      "intervals": [
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 47.1875,
+          "startForeground": true,
+          "endForeground": true
+        },
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 16.5625,
+          "startForeground": true,
+          "endForeground": false
+        },
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 16.5625,
+          "startForeground": false,
+          "endForeground": false
+        },
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 2.1875,
+          "startForeground": false,
+          "endForeground": false
+        },
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 3.4375,
+          "startForeground": false,
+          "endForeground": false
+        }
+      ],
+      "clientSourceHresults": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "allClientArraysNull": true,
+      "childGetObject": 1,
+      "threadGetObject": null,
+      "threadObservedMessages": null,
+      "requestToEngineDestroyedMs": 141,
+      "processSignaled": true,
+      "forcedTermination": false
+    },
+    {
+      "test": "thread",
+      "pid": 42352,
+      "samples": 6,
+      "foregroundSampleCount": 0,
+      "intervals": [
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 1.875,
+          "startForeground": false,
+          "endForeground": false
+        },
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 0.3125,
+          "startForeground": false,
+          "endForeground": false
+        },
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 1.875,
+          "startForeground": false,
+          "endForeground": false
+        },
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 1.25,
+          "startForeground": false,
+          "endForeground": false
+        },
+        {
+          "milliseconds": 5000,
+          "oneCorePercent": 0.625,
+          "startForeground": false,
+          "endForeground": false
+        }
+      ],
+      "clientSourceHresults": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "allClientArraysNull": true,
+      "childGetObject": 0,
+      "threadGetObject": 0,
+      "threadObservedMessages": 10,
+      "requestToEngineDestroyedMs": 266,
+      "processSignaled": true,
+      "forcedTermination": false
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "comparedFiles": 371,
+  "changedFiles": [
+    "touhouonline.exe"
+  ],
+  "aotSha256": "622b4a67d8d3b525b245c94d51d392e59e5885dfe3b630a1462942255500279e",
+  "beforeExeSha256": "96771fee9e68bcdcc4ef78084003e5a959c4c17f1a64168e6ecde8b209a3b3a0",
+  "gpuExeSha256": "1b9971a42f7341bcaf8c4ec313e7dba26e8b366ad95da45e9a944ee6479227b0",
+  "scope": "GPU preference only | identical AOT and assets"
+}

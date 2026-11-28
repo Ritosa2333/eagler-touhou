@@ -1,0 +1,85 @@
+{
+  "checkedAtUtc": "2026-11-27T11:07:59.352080+00:00",
+  "scope": "Production account webpage container | official Linux plugin registration | session rotation | current capture inputs",
+  "dependencies": {
+    "flutter_inappwebview": "6.2.0-beta.3",
+    "flutter_inappwebview_android": "1.2.0-beta.3",
+    "flutter_inappwebview_internal_annotations": "1.3.0",
+    "flutter_inappwebview_ios": "1.2.0-beta.3",
+    "flutter_inappwebview_linux": "0.1.0-beta.1",
+    "flutter_inappwebview_macos": "1.2.0-beta.3",
+    "flutter_inappwebview_platform_interface": "1.4.0-beta.3",
+    "flutter_inappwebview_web": "1.2.0-beta.3",
+    "flutter_inappwebview_windows": "0.7.0-beta.3"
+  },
+  "validation": {
+    "analyzer": "No issues",
+    "regression": {
+      "passed": 247,
+      "skipped": 6,
+      "execution": "Initial 244-case validation completed in sequential segments after memory exhaustion. Account cases rechecked as 51 passing after three gesture cases were added. Counts exclude reruns.",
+      "segments": [
+        {
+          "log": "final-all.log",
+          "completedBefore": "launcher_language_test.dart",
+          "passed": 156,
+          "skipped": 6
+        },
+        {
+          "log": "remaining-captures.log",
+          "completedBefore": "lobby_page_test.dart",
+          "passed": 32
+        },
+        {
+          "log": "lobby-capture-final.log",
+          "passed": 56
+        }
+      ],
+      "focusedAccountLog": "gesture-verified.log",
+      "focusedAccountPassed": 51,
+      "latestCaptureTestsPassed": 91
+    },
+    "windowsIntegration": {
+      "log": "windows-integration-gesture.log",
+      "passed": 1,
+      "scope": "Real window caption and layout; production account WebView loaded and returned to game caller at 1280,390,320 px | no credentials entered"
+    },
+    "registeredImages": 210,
+    "renderer": "Windows Flutter widget renderer | not a native WebView screenshot",
+    "windowsRelease": {
+      "result": "Built successfully; source matches delivery receipt",
+      "log": "windows-build-gesture.log"
+    },
+    "webView2LoaderVersion": "1.0.3650.58",
+    "packageSha256": "48c415f07d7cda618e201a4243addb44093a32b79a19c1997f0b871b1d62043a"
+  },
+  "linux": {
+    "nativeRegistrant": "Generated official plugin registration",
+    "dartRegistrant": "Generated LinuxInAppWebViewPlatform registration",
+    "cookieSession": "Default platform network session shared with CookieManager",
+    "nativeBuild": "Not run; Linux host unavailable"
+  },
+  "source": {
+    "lib/account.dart": "b59c331bc60128d75a6c23f98aa23908c4455de93cdbe0bd6a66a308c332ac60",
+    "lib/account_api.dart": "10205c30af9fd77b683a6df44fd0a57df7baf2cd968a316d1ebba86206abf6c4",
+    "lib/account_web_page.dart": "63cd2e83030767a59ae897a99b15de182f6d3625b8f799b8ef7f50814cdd33aa",
+    "lib/main.dart": "9d86e2428b23348cb8f29790de61de5aac4bb66102aaa64c54a5b6fff6c9d7bc",
+    "lib/site_documents.dart": "fbf5ea53e9dc6273549b54ec1fabf5bdd38d63379a3de23d0302a2aefdbdb621",
+    "pubspec.yaml": "713fc4f5312c6a29c0f705f35225e5329bdfd9b5f8d6280b1510db4f49ac835f",
+    "pubspec.lock": "1539d2bc55bbac62bdacd22a654ecd297db5deb8c9ae50517e1ab30fb3a7af87",
+    "test/account_web_page_test.dart": "a6630fc1c15c9ae45b55435ccabccac8ab0b3d3d227f80dacf55fd39ba8b61ec",
+    "test/account_web_session_test.dart": "6434053e6c82e0d5746079ea71147bed5cb60be47d50241ab45bec294b2877c6",
+    "test/lobby_page_test.dart": "197306ea203ddb6b02c0ad3c193f35069299c724c5a80271e472f8791d654e21",
+    "integration_test/desktop_window_test.dart": "743d6c9196635eeec4653ee3adb9d3c2a1f33e27fb8268f8e603a5126ac792e8"
+  },
+  "pending": [
+    "Actual embedded WebView login, logout, file selection, upload and avatar/cover crop",
+    "iOS system WebView history gestures on actual hardware; route gestures passed Windows widget tests",
+    "Account website core-page handoff and new-window navigation review",
+    "Linux native build and actual WPE WebKit engine; no Linux host available",
+    "macOS, iOS and Android device behavior; no Android build attempted",
+    "Six real-save sample checks skipped because sample input was not supplied to the run"
+  ],
+  "nativeLaunch": "User explicitly requested agent operation after prior approval refusal. Preview launched successfully. Production Chinese login page observed inside WebView2. Automated integration then checked native return behavior.",
+  "status": "Historical platform-migration and session evidence; current navigation proof is in account-web.json"
+}

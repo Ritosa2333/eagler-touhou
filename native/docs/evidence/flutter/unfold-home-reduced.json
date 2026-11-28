@@ -1,0 +1,62 @@
+[
+  {
+    "phase": "before",
+    "ms": 0,
+    "nextY": 201.0
+  },
+  {
+    "phase": "open",
+    "ms": 0,
+    "nextY": 311.0
+  },
+  {
+    "phase": "open",
+    "ms": 32,
+    "nextY": 311.0
+  },
+  {
+    "phase": "open",
+    "ms": 64,
+    "nextY": 311.0
+  },
+  {
+    "phase": "open",
+    "ms": 128,
+    "nextY": 311.0
+  },
+  {
+    "phase": "open",
+    "ms": 240,
+    "nextY": 311.0
+  },
+  {
+    "phase": "open",
+    "ms": 400,
+    "nextY": 311.0
+  },
+  {
+    "phase": "close",
+    "ms": 64,
+    "nextY": 201.0
+  },
+  {
+    "phase": "reverse",
+    "ms": 0,
+    "nextY": 311.0
+  },
+  {
+    "phase": "reverse",
+    "ms": 32,
+    "nextY": 311.0
+  },
+  {
+    "phase": "reverse",
+    "ms": 128,
+    "nextY": 311.0
+  },
+  {
+    "phase": "reverse",
+    "ms": 400,
+    "nextY": 311.0
+  }
+]

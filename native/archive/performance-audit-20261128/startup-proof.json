@@ -1,0 +1,36 @@
+{
+  "scope": "Temporary native first-frame timing only | production main.cpp, DLLs and identical Dart AOT | not time to fully interactive or isolated cold start",
+  "samples": [
+    {
+      "pid": 39312,
+      "processCreatedToFrameCallbackMs": 3633.22,
+      "processCreatedToWindowCreateMs": 173.135,
+      "windowCreateToControllerReadyMs": 2609.6,
+      "pluginRegistrationMs": 129.491,
+      "pluginsReadyToFrameCallbackMs": 720.993
+    },
+    {
+      "pid": 38292,
+      "processCreatedToFrameCallbackMs": 3485.84,
+      "processCreatedToWindowCreateMs": 122.38,
+      "windowCreateToControllerReadyMs": 2656.42,
+      "pluginRegistrationMs": 71.758,
+      "pluginsReadyToFrameCallbackMs": 635.281
+    },
+    {
+      "pid": 49164,
+      "processCreatedToFrameCallbackMs": 3427.86,
+      "processCreatedToWindowCreateMs": 135.636,
+      "windowCreateToControllerReadyMs": 2529.21,
+      "pluginRegistrationMs": 80.8887,
+      "pluginsReadyToFrameCallbackMs": 682.133
+    }
+  ],
+  "aotSha256": "6bdb5ec6b5498fd8d4368700747dc360f02c2cd578a7b1f1bb22b4cb45caa269",
+  "runnerSha256": "925e88c28e3dc498db9bce520f27f372bc34ba785f5e4bccca8c498bb9e1f15c",
+  "sourceSha256": "67dcc09e8fa74064d8685b4418261c255875dc3e6ac8fe226b2481c409ff84b6",
+  "productionMainSourceSha256": "76d4a5a86d03a8967c90c0fb4bd67ad32fa8c048d66825c4f4cf5c1a2efcd102",
+  "productionPluginSha256": "0fa1619fd3773b0396a39dfe15d32d0bda66373c8df8d0ff3388c5989e33bcef",
+  "allSampleProcessesGoneAfterClose": true,
+  "sharedHost": "Separate th17 test window observed. No game process was modified."
+}

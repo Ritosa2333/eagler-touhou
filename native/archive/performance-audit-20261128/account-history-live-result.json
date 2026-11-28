@@ -1,0 +1,55 @@
+{
+  "scope": "Real Windows engine and production LauncherApp | isolated guest settings and WebView data | no credentials or global input",
+  "pid": 21224,
+  "states": [
+    {
+      "cycle": 0,
+      "width": 1280.0,
+      "route": "/web-account",
+      "webViews": 1
+    },
+    {
+      "cycle": 0,
+      "width": 390.0,
+      "route": "/web-account",
+      "webViews": 1
+    },
+    {
+      "cycle": 0,
+      "width": 320.0,
+      "route": "/web-account",
+      "webViews": 1
+    },
+    {
+      "cycle": 0,
+      "width": 1280.0,
+      "route": "/web-account",
+      "webViews": 1
+    },
+    {
+      "cycle": 1,
+      "width": 1280.0,
+      "route": "/web-account",
+      "webViews": 1
+    },
+    {
+      "cycle": 1,
+      "width": 390.0,
+      "route": "/web-account",
+      "webViews": 1
+    },
+    {
+      "cycle": 1,
+      "width": 320.0,
+      "route": "/web-account",
+      "webViews": 1
+    },
+    {
+      "cycle": 1,
+      "width": 1280.0,
+      "route": "/web-account",
+      "webViews": 1
+    }
+  ],
+  "status": "passed"
+}

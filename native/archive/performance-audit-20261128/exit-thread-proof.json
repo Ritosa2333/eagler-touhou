@@ -1,0 +1,72 @@
+[
+  {
+    "pid": 39724,
+    "tid": 6232,
+    "exitCode": 0,
+    "waitResult": 258,
+    "created": 134403002615118907,
+    "exited": 0,
+    "kernel100ns": 134531250,
+    "user100ns": 7697187500,
+    "modules": 123,
+    "rip": "7ffa6a5a776a",
+    "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+    "offset": "16776a"
+  },
+  {
+    "pid": 39724,
+    "tid": 6232,
+    "exitCode": 0,
+    "waitResult": 258,
+    "created": 134403002615118907,
+    "exited": 0,
+    "kernel100ns": 134687500,
+    "user100ns": 7699375000,
+    "modules": 123,
+    "rip": "7ffa852bad6b",
+    "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+    "offset": "3ad6b"
+  },
+  {
+    "pid": 39724,
+    "tid": 6232,
+    "exitCode": 0,
+    "waitResult": 258,
+    "created": 134403002615118907,
+    "exited": 0,
+    "kernel100ns": 134687500,
+    "user100ns": 7701406250,
+    "modules": 123,
+    "rip": "7ffa6a5a7826",
+    "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+    "offset": "167826"
+  },
+  {
+    "pid": 39724,
+    "tid": 6232,
+    "exitCode": 0,
+    "waitResult": 258,
+    "created": 134403002615118907,
+    "exited": 0,
+    "kernel100ns": 134687500,
+    "user100ns": 7703437500,
+    "modules": 123,
+    "rip": "7ffa6a450730",
+    "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+    "offset": "10730"
+  },
+  {
+    "pid": 39724,
+    "tid": 6232,
+    "exitCode": 0,
+    "waitResult": 258,
+    "created": 134403002615118907,
+    "exited": 0,
+    "kernel100ns": 134687500,
+    "user100ns": 7705781250,
+    "modules": 123,
+    "rip": "7ffa852bbaae",
+    "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+    "offset": "3baae"
+  }
+]

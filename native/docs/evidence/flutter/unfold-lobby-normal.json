@@ -1,0 +1,212 @@
+[
+  {
+    "phase": "before",
+    "ms": 0,
+    "nextY": 574.0,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "close",
+    "ms": 0,
+    "nextY": 574.0,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "close",
+    "ms": 32,
+    "nextY": 515.4109206588564,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "close",
+    "ms": 64,
+    "nextY": 428.75454937592343,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "close",
+    "ms": 96,
+    "nextY": 362.93828206323246,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "close",
+    "ms": 160,
+    "nextY": 297.3818812739597,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "close",
+    "ms": 240,
+    "nextY": 275.1377386293255,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "close",
+    "ms": 400,
+    "nextY": 270.0,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "open",
+    "ms": 0,
+    "nextY": 270.0,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "open",
+    "ms": 64,
+    "nextY": 415.24545062407657,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "reverse",
+    "ms": 0,
+    "nextY": 415.24545062407657,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "reverse",
+    "ms": 32,
+    "nextY": 422.47263859562435,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "reverse",
+    "ms": 96,
+    "nextY": 335.55640078927286,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "reverse",
+    "ms": 240,
+    "nextY": 273.8731434659404,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  },
+  {
+    "phase": "reverse",
+    "ms": 400,
+    "nextY": 270.0,
+    "sidebar": [
+      0.0,
+      44.0,
+      296.0,
+      956.0
+    ],
+    "headerTop": 232.0,
+    "scrollY": 0.0,
+    "contentSha256": "9dfc3e4a32f651fe15e92d1e8f7769515f517042855c387fa42c06fb8a4aefa4"
+  }
+]

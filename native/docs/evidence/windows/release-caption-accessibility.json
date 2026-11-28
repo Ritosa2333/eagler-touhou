@@ -1,0 +1,110 @@
+{
+  "checkedAtUtc": "2026-11-27T14:02:22.983656+00:00",
+  "requirements": [
+    "NAV-08",
+    "AUTH-WEB-01"
+  ],
+  "packageSha256": "11b76768508b2412004a30b7b7ec95c1998b71105245eb434de9f60f7caf6117",
+  "productSourceUnchanged": true,
+  "localizationGeneration": {
+    "before": {
+      "zh": {
+        "missingFromGenerator": [
+          "siteInformation",
+          "uptimeService",
+          "uptimeStatus",
+          "windowMaximize",
+          "windowMinimize",
+          "windowRestore"
+        ],
+        "unexpectedGenerated": [],
+        "valueDifferences": [
+          "cloudLocalSave",
+          "cloudAccountSave"
+        ],
+        "sameOrder": false
+      },
+      "en": {
+        "missingFromGenerator": [
+          "siteInformation",
+          "uptimeService",
+          "uptimeStatus",
+          "windowMaximize",
+          "windowMinimize",
+          "windowRestore"
+        ],
+        "unexpectedGenerated": [],
+        "valueDifferences": [
+          "cloudLocalSave",
+          "cloudAccountSave"
+        ],
+        "sameOrder": false
+      },
+      "ja": {
+        "missingFromGenerator": [
+          "siteInformation",
+          "uptimeService",
+          "uptimeStatus",
+          "windowMaximize",
+          "windowMinimize",
+          "windowRestore"
+        ],
+        "unexpectedGenerated": [],
+        "valueDifferences": [
+          "cloudLocalSave",
+          "cloudAccountSave"
+        ],
+        "sameOrder": false
+      }
+    },
+    "after": {
+      "zh": {
+        "missingFromGenerator": [],
+        "unexpectedGenerated": [],
+        "valueDifferences": [],
+        "sameOrder": true
+      },
+      "en": {
+        "missingFromGenerator": [],
+        "unexpectedGenerated": [],
+        "valueDifferences": [],
+        "sameOrder": true
+      },
+      "ja": {
+        "missingFromGenerator": [],
+        "unexpectedGenerated": [],
+        "valueDifferences": [],
+        "sameOrder": true
+      }
+    },
+    "source": {
+      "tools/sync-localizations.mjs": "3c69b7020b37090e5da5f432f4932be868c70ef5c4ecbd213bfd546bb590f155"
+    },
+    "result": "All three existing ARBs are reproducible with the same keys, values and ordering. The existing --check command passes after normalizing Windows CRLF line endings",
+    "scope": "Canonical source now includes window names and missing shared labels, and preserves the existing short cloud-save labels. No current ARB, generated Dart or app payload changed"
+  },
+  "releaseAccessibility": {
+    "result": "passed for names and roles",
+    "target": "TouhouOnline | touhouonline.exe | Release",
+    "flutterButtons": [
+      "最小化",
+      "最大化",
+      "关闭",
+      "登录"
+    ],
+    "scope": "Matched inside the Flutter pane before the separate OS title-bar nodes; not inferred from the native OS caption buttons",
+    "treeSha256": "872d5d4f321f48beb8033cb7c38c9218c1e319d7c9792c4a1b48a01914ceb9de"
+  },
+  "inputToolObservation": {
+    "screenshots": "One observation returned a TouhouOnline accessibility tree with a screenshot of a different foreground window. Explicit activation briefly aligned both, but a later click/refresh mismatched them again",
+    "uiaInvoke": "A click using the freshly returned login element index failed because the helper reported the element unavailable in cached app state",
+    "coordinateInput": "Not accepted as proof of native account behavior. No more coordinate input after the repeated surface mismatch",
+    "cause": "The tool surface mismatch is directly observed. The source of the foreground change and whether the earlier account clicks reached the app remain unconfirmed"
+  },
+  "cleanup": "Stopped only the preview started by this task after confirming its exact Release path and process ID 17600; subsequent process lookup found no process",
+  "boundaries": [
+    "Native Release pointer activation and account open/return remain unverified",
+    "Names and roles in the actual Release accessibility tree do not prove UIA Invoke works",
+    "Credentialed login/logout, uploads, crop, native dragging, edge resize, Snap and other platform devices remain unverified"
+  ]
+}

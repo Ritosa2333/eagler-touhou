@@ -1,0 +1,11 @@
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/tools/verify_th07_io_cost_test.dart
+00:00 +0: D:/workspace/eagler/artifacts/.native-room-client-win/tools/verify_th07_io_cost_test.dart: Import release DATA, reject corrupted replacement, reopen the original
+00:01 +1: D:/workspace/eagler/artifacts/.native-room-client-win/tools/verify_th07_io_cost_test.dart: Extract release ZIP and compatible legacy ZIP into the same verified DATA
+00:05 +2: D:/workspace/eagler/artifacts/.native-room-client-win/tools/verify_th07_io_cost_test.dart: Read the published download reference over HTTP
+00:05 +3: loading D:/workspace/eagler/artifacts/.native-room-client-win/test/game_import_th07_io_cost_test.dart
+00:06 +3: D:/workspace/eagler/artifacts/.native-room-client-win/test/game_import_th07_io_cost_test.dart: (setUpAll)
+00:06 +3: D:/workspace/eagler/artifacts/.native-room-client-win/test/game_import_th07_io_cost_test.dart: mobile-narrow opens import and returns from the download reference
+00:09 +4: D:/workspace/eagler/artifacts/.native-room-client-win/test/game_import_th07_io_cost_test.dart: mobile opens import and returns from the download reference
+00:10 +5: D:/workspace/eagler/artifacts/.native-room-client-win/test/game_import_th07_io_cost_test.dart: desktop opens import and returns from the download reference
+00:12 +6: D:/workspace/eagler/artifacts/.native-room-client-win/test/game_import_th07_io_cost_test.dart: (tearDownAll)
+00:12 +6: All tests passed!

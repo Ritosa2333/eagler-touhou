@@ -1,0 +1,29 @@
+{
+  "measured": [
+    "Release FrameTiming: 32 operation cases, desktop and portrait",
+    "Skia first-detail shader compilation timeline",
+    "8 MiB deterministic SHA-256 AOT work and event-loop responsiveness",
+    "Current screenshot pixel hashes, navigation geometry and interruption",
+    "Production WebView2 guest login/register documents and font/viewport checks"
+  ],
+  "reviewed": {
+    "startup": "Catalog and preference reads are asynchronous. Windows graphics choice and shader warm-up add work before first UI. Bootstrap timings cover app.main, not whole-process TTI.",
+    "rendering": "Shared row RepaintBoundary isolates hover. Existing detail blur and wallpaper boundaries are used. Offstage branches keep scroll/state, mute tickers, exclude focus/input/semantics.",
+    "images": "Book artwork shares full asset cache across small and large views. Wallpaper ResizeImage is bounded at 1920x1440. No speculative per-size caches or cover quality reduction added.",
+    "timers": "Hidden lobby elapsed-time timer now stops. Rating feed already observes visibility/lifecycle. Message summary polling every 30 seconds is foreground/account gated. Connection deadlines and backoff are bounded.",
+    "network": "Lobby/room WebSockets preserve presence/membership across page changes. Request generations reject stale responses. This round does not alter server protocols or disconnect background membership.",
+    "local_files": "ZIP compression, decompression and checkpoint statistics already use workers. File copy is asynchronous and progress is integer-percent throttled. Large cloud hash/byte comparison now uses a worker.",
+    "api_decode": "Account JSON decode is synchronous after bounded asynchronous response reads. Large authenticated response parsing needs real-account payload profiling before changing ownership or caching.",
+    "webview": "Production account pages use the shared Windows WebView2 environment. Controllers follow page lifetime; the environment and browser cache may outlive a page. Browser process memory must be counted separately.",
+    "native_game": "Current native game execution is a placeholder. Game frame time, audio, downloads/runtime memory are outside this launcher measurement.",
+    "observability": "Windows main-thread message sample: 10518 WM_GETOBJECT vs 84 WM_NULL in 10 seconds. Foreground CPU around 0.29-0.40 core under this host. A low sample after inspection disconnect did not preserve verified focus. Exact query client is unconfirmed; kernel and UIA ETW recording require unavailable privileges. Accessibility remains enabled."
+  },
+  "notMeasured": [
+    "Authenticated large cloud/social responses",
+    "Busy live rooms with sustained chat and voice",
+    "Long-duration memory/energy and thermal behavior",
+    "Other GPUs/refresh rates and OS builds",
+    "Android, iOS, macOS, Linux devices",
+    "Physical touch gestures and native game runtime"
+  ]
+}
