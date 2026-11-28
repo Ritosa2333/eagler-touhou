@@ -112,6 +112,19 @@ export declare const PRODUCT_GAMES: Readonly<{
         replay: Readonly<{prefix: "Main_replay"; extensions: readonly ["dat"]}>;
         features: Readonly<{thprac: false; languages: false; focusHitbox: false}>;
     }>;
+    thsss: Readonly<{
+        testOnly: true; buildOptIn: true; number: "SSS"; title: "東方夏夜祭"; subtitle: "Shining Shooting Star"; cardArtwork: "thsss-card.webp";
+        storage: Readonly<{saveRoot: "/savesthsss"; scoreFile: "Score.dat"; configFiles: readonly string[]}>;
+        runtime: "./runtime/thsss/thsss.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
+        requiredShared: readonly string[]; runtimeAssets: readonly string[];
+        musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"}>;
+        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
+        support: Readonly<{highRefreshRate: true; sourceRepository: "https://github.com/sblzdddd/THSSS-WASM"}>;
+        package: Readonly<{dataFileId: "game-data"; dataTarget: "/thsss.dat"; musicSourceDirectories: Readonly<{ogg: "BGM"}>; musicMounts: Readonly<{ogg: "/BGM"}>}>;
+        replay: Readonly<{prefix: "thSSS"; extensions: readonly ["rpy", "trpy"]}>;
+        thpracRuntime: Readonly<{session: "native"}>;
+        features: Readonly<{thprac: true; languages: false; focusHitbox: false}>;
+    }>;
     th06: Readonly<{
         cardArtwork: "th06-card.webp";
         number: "06";

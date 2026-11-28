@@ -1,0 +1,62 @@
+From: PrepareGameSources
+Subject: 007-keyboard-menu.patch
+---
+
+diff --git a/Shooting/MenuOption.cs b/Shooting/MenuOption.cs
+index 74d2b02..ece8051 100644
+--- a/Shooting/MenuOption.cs
++++ b/Shooting/MenuOption.cs
+@@ -42,21 +42,32 @@ internal class MenuOption : BaseMenuGroup
+ 		MenuItemList[MenuSelectIndex].Selected = true;
+ 	}
+ 
++	private void BeginClose()
++	{
++		OnRemoveMenu = TimeMain + 20;
++		TransparentVelocity = -15f;
++		foreach (BaseMenuItem item in MenuItemList)
++		{
++			item.DestPoint = new PointF(60f, 160f);
++			item.OnRemove = true;
++		}
++	}
++
+ 	public override void ProcessKeys()
+ 	{
++		if ((KClass.Key_X || KClass.Key_ESC) && LastX == 0)
++		{
++			BeginClose();
++			StageData.SoundPlay("se_cancel00.wav");
++			return;
++		}
+ 		base.ProcessKeys();
+ 		if (KClass.Key_Z && LastZ == 0)
+ 		{
+ 			switch (MenuItemList[MenuSelectIndex].Name)
+ 			{
+ 			case "Menu_Quit":
+-				OnRemoveMenu = TimeMain + 20;
+-				TransparentVelocity = -15f;
+-				foreach (BaseMenuItem menuItem in MenuItemList)
+-				{
+-					menuItem.DestPoint = new PointF(60f, 160f);
+-					menuItem.OnRemove = true;
+-				}
++				BeginClose();
+ 				break;
+ 			default:
+ 				StageData.StateSwitchData = new StateSwitchDataPackage
+@@ -72,12 +83,6 @@ internal class MenuOption : BaseMenuGroup
+ 			}
+ 			StageData.SoundPlay("se_ok00.wav");
+ 		}
+-		if ((KClass.Key_X || KClass.Key_ESC) && LastX == 0)
+-		{
+-			MenuSelectIndex = MenuItemList.Count - 1;
+-			SelectItemChanged();
+-			StageData.SoundPlay("se_cancel00.wav");
+-		}
+ 		string name;
+ 		if (KClass.ArrowRight && (LastRight == 0 || LastRight > 30))
+ 		{
+

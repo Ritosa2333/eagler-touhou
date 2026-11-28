@@ -1,0 +1,15 @@
+{
+  "name": "thsss-wasm",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "game:prepare": "dotnet build tools/PrepareGameSources/PrepareGameSources.csproj -c Release --nologo && dotnet exec THSSS.Browser/obj/prepare-game-sources/PrepareGameSources.dll prepare --repo .",
+    "game:refresh-patches": "dotnet build tools/PrepareGameSources/PrepareGameSources.csproj -c Release --nologo && dotnet exec THSSS.Browser/obj/prepare-game-sources/PrepareGameSources.dll refresh-patches --repo .",
+    "game:decompile": "dotnet tool restore && dotnet build tools/PrepareGameSources/PrepareGameSources.csproj -c Release --nologo && dotnet exec THSSS.Browser/obj/prepare-game-sources/PrepareGameSources.dll decompile --repo .",
+    "stage:eagler": "node THSSS.Browser/stage-eagler-runtime.mjs",
+    "test": "node --test THSSS.Browser/tests/**/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

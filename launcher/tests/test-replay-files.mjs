@@ -39,7 +39,7 @@ test("HSoB uses native DAT paths and preserves occupied Replay slots", () => {
 });
 
 test("replay files", async () => {
-assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.th01r,.th02r,.th03r,.th04r,.rep");
+assert.equal(replayImportAccept, ".zip,.rpy,.rpyx,.th01r,.th02r,.th03r,.th04r,.trpy,.rep");
 assert.equal(isReplayFilePath("replay/replay000.rep"), true);
 assert.equal(isValidReplayName("th075", "replay000.rep"), true);
 assert.equal(isValidReplayName("th075", "../replay000.rep"), false);
@@ -86,6 +86,11 @@ assert.deepEqual(th05NestedImport, {
     {sourcePath: "backup/slotA/replay00.rpy", targetPath: "replay/slotA/replay02.rpy", kind: "replay"},
   ],
 }, "archive slot allocation must stay within the selected subdirectory and skip occupied names");
+assert.equal(isValidReplayName("thSSS", "thSSS_01.rpy"), true);
+assert.equal(isValidReplayName("thSSS", "thSSS_01.trpy"), true);
+assert.equal(isValidReplayName("thSSS", "thSSS_ud00af.trpy"), true);
+assert.equal(isReplayFilePath("replay/thSSS_01.trpy"), true);
+assert.equal(allocateReplayName("thSSS", [], "thSSS_01.trpy"), "thSSS_01.trpy");
 assert.equal(isValidReplayName("th6", "th6_01.rpy"), true);
 assert.equal(allocateReplayName("th6", [], "th6_01.rpy"), "th6_01.rpy");
 assert.equal(allocateReplayName("th6", ["replay/th6_01.rpy"], "th6_01.rpy"), "th6_ud0000.rpy",

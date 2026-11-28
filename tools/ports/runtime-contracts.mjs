@@ -19,6 +19,7 @@ export function runtimeSourceFiles(game, product) {
   // TH13 owns its Host protocol and shared keyboard/gamepad bridge in these two
   // modules; it does not ship the older eagler-host.mjs split.
   if (game === 'th13') return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/directory-keyboard.mjs'];
+  if (game === 'thsss') return ['THSSS.Browser/wwwroot/shell.mjs', 'THSSS.Browser/wwwroot/eagler-host.mjs'];
   if (['th075', 'th15', 'th17', 'th19'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
   return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/eagler-host.mjs'];
 }
@@ -73,6 +74,42 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
       execFileSync(process.execPath,['--test','--test-name-pattern='+pattern,resolve(root,directory,testFile)],
         {cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
     }));
+  }
+  if (game === 'thsss') {
+    const shell = 'THSSS.Browser/wwwroot/shell.mjs';
+    const touch = 'THSSS.Browser/wwwroot/host/input/touch-bridge.mjs';
+    const pad = 'THSSS.Browser/wwwroot/host/input/gamepad-keys.mjs';
+    const bridge = 'THSSS.Browser/wwwroot/host/input/keyboard-input-bridge.mjs';
+    const padTest = 'THSSS.Browser/tests/input/gamepad-keys.test.mjs';
+    return [
+      result('runtime-protocol', ['RUNTIME-01', 'RUNTIME-02', 'RUNTIME-03'], [shell, 'THSSS.Browser/wwwroot/eagler-host.mjs'], () => {
+        const source = read(shell);
+        assert.match(source, /runtimeEpoch/, 'Runtime must bind messages to its navigation epoch');
+        assert.match(source, /message\.epoch\s*!==\s*epoch/, 'Runtime must reject a retired epoch');
+        for (const command of RUNTIME_PROTOCOL_COMMANDS) {
+          const games = RUNTIME_PROTOCOL_COMMAND_BEHAVIOR[command].games;
+          if (games && !games.includes(game)) continue;
+          assert.match(source, new RegExp(`command\\s*===\\s*["']${command}["']`), `Missing command: ${command}`);
+        }
+        for (const event of RUNTIME_PROTOCOL_EVENTS) {
+          if (event === 'transfer') continue;
+          assert.ok(new RegExp(`emit\\(["']${event}["']`).test(source) ||
+            (event === 'ready' && /event:\s*["']ready["']/.test(source)), `Missing event: ${event}`);
+        }
+      }),
+      result('touch-sensitivity', ['TOUCH-14'], [touch], () => {
+        const text = read(touch);
+        assert.match(text, /Math\.max\(\s*100,\s*Math\.min\(\s*300/);
+        assert.match(text, />=\s*100\s*&&\s*[\w.]+\s*<=\s*300/);
+      }),
+      result('native-gamepad', ['INPUT-04'], [pad, bridge, padTest], () => {
+        assert.match(read(pad), /__eaglerGamepadInputBridge/);
+        assert.match(read(pad), /bridge\.sample\(/);
+        assert.match(read(bridge), /__eaglerGamepadInputBridge\s*=\s*Object\.freeze/);
+        execFileSync(process.execPath, ['--test', resolve(root, directory, padTest)],
+          {cwd: resolve(root, directory), encoding: 'utf8', windowsHide: true});
+      }),
+    ];
   }
   const th13ManagedShellTest = 'tests/managed-shell.test.mjs';
   const protocolFiles = game === 'th13' ? [...files, th13ManagedShellTest] : files;

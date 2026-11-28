@@ -1,0 +1,30 @@
+{
+  "schema": "eagler/replay-corpus/v1",
+  "game": "thsss",
+  "version": "1.01",
+  "demo": {
+    "rotationOrder": ["Assets/Replay/thSSS_01.rpy"]
+  },
+  "policy": {
+    "gameplayMutation": "forbidden",
+    "candidate": "diagnostic-wasm",
+    "original": "proton-injected-retail",
+    "align": "post-mainmenu-replay",
+    "demoScope": "replay-after-splash-fadeout",
+    "dailyScope": "reserved"
+  },
+  "suites": {
+    "quick": ["thSSS_01"],
+    "daily": []
+  },
+  "cases": [
+    {
+      "id": "thSSS_01",
+      "kind": "demo",
+      "stage": 1,
+      "source": "Assets/Replay/thSSS_01.rpy",
+      "replaySha256": "b1a711876d9141f44f8ea1d8b0158175552c982a67428a2d95482102bb0023b7",
+      "status": "ready"
+    }
+  ]
+}

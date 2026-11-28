@@ -244,6 +244,14 @@ test('TH05 album preference survives settings restore and maps to its configure 
   assert.notEqual(ordinary.model.getSnapshot().musicPreference, 'ogg-akyu');
 });
 
+test('thsss practice copy follows the Chinese built-in script', () => {
+  const state = settingsFixture({productId: 'thsss'});
+  state.model.setOption('thpracEnabled', true);
+  const options = api.gameRuntimeOptions({productId: 'thsss', settings: state.model.getSnapshot()}, 'ja', 'ogg', null);
+  assert.equal(options.thpracEnabled, true);
+  assert.equal(options.thpracLocale, 'zh-CN');
+});
+
 test('TH05 native thprac preference reaches configure without a Windows session payload', () => {
   const state = settingsFixture({productId: 'th05'});
   state.model.setOption('thpracEnabled', true);

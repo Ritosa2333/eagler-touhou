@@ -9,6 +9,63 @@ import {exportReplayName as th09ReplayName} from '../../../ports/th09/web/sdl-ru
 export interface StoredReplay {path: string; size: number; bytes: Uint8Array; modifiedAt?: number; replayMatch?: Th09ReplayMatch}
 export interface ReplayStorageSelection {path?: string; directory?: string; language?: string}
 export interface ReplayStorageReader {read(product: ProductId, selection?: ReplayStorageSelection): Promise<StoredReplay[]>}
+function decodeBase64(value: string): Uint8Array {
+  const binary = atob(value);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i) & 255;
+  return out;
+}
+
+/** thsss persists user files in IndexedDB `thsss-saves`, not Emscripten IDBFS. */
+async function readThsssSaves(indexedDB: IDBFactory, validPath: (path: string) => boolean, selection: ReplayStorageSelection): Promise<StoredReplay[]> {
+  const database = await new Promise<IDBDatabase | null>((resolve, reject) => {
+    let missing = false, settled = false;
+    const request = indexedDB.open('thsss-saves');
+    request.onupgradeneeded = event => {missing = event.oldVersion === 0; request.transaction?.abort();};
+    request.onerror = () => {if (settled) return; settled = true; if (missing) resolve(null); else reject(request.error);};
+    request.onsuccess = () => {
+      const opened = request.result;
+      if (settled) {opened.close(); return;}
+      settled = true;
+      if (opened.version !== 1 || !opened.objectStoreNames.contains('files')) {opened.close(); reject(new Error('无法识别本地存储版本')); return;}
+      opened.onversionchange = () => opened.close();
+      resolve(opened);
+    };
+  });
+  if (!database) return [];
+  try {
+    return await new Promise<StoredReplay[]>((resolve, reject) => {
+      const transaction = database.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.openCursor();
+      const files: StoredReplay[] = [];
+      let failed: Error | null = null;
+      request.onsuccess = () => {
+        if (failed) return;
+        const cursor = request.result;
+        if (!cursor) return;
+        try {
+          const key = String(cursor.key || '');
+          const replay = key.match(/^Replay\/([^/]+)$/);
+          const path = replay ? 'replay/' + replay[1] : '';
+          if (path && validPath(path) && (!selection.path || path === selection.path) && (!selection.directory || path.slice(0, path.lastIndexOf('/')) === selection.directory)) {
+            if (typeof cursor.value !== 'string') throw new Error('本地录像内容无效');
+            const bytes = decodeBase64(cursor.value);
+            if (bytes.length > 64 * 1024 * 1024) throw new Error('本地录像内容无效');
+            files.push({path, bytes, size: bytes.length});
+          }
+          cursor.continue();
+        } catch (error) {
+          failed = error instanceof Error ? error : new Error('本地录像内容无效');
+          transaction.abort();
+        }
+      };
+      transaction.onerror = transaction.onabort = () => reject(failed ?? transaction.error ?? new Error('读取录像失败'));
+      transaction.oncomplete = () => resolve(files);
+    });
+  } finally {database.close();}
+}
+
 /** Compatibility reader for Emscripten IDBFS v21. Runtime remains the sole writer.
  * A missing database is never created; an unknown schema fails without fallback. */
 export function createReplayStorageReader(environment: () => {indexedDB: IDBFactory; keyRange: typeof IDBKeyRange}): ReplayStorageReader {
@@ -20,6 +77,7 @@ export function createReplayStorageReader(environment: () => {indexedDB: IDBFact
     if (selection.directory && !isTh09ReplayDirectory(selection.directory)) throw new Error('录像文件夹无效');
     const {indexedDB, keyRange} = environment();
     if (!indexedDB || !keyRange) throw new Error('浏览器无法读取本地录像存储');
+    if (game === 'thsss') return readThsssSaves(indexedDB, validPath, selection);
     const database = await openIdbfsDatabase(indexedDB, databaseName);
     if (!database) return [];
     try {

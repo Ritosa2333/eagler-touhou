@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>THSSS</title>
+  <style>
+    html, body { margin: 0; background: #111; color: #ddd; font-family: sans-serif; }
+    #wrap { display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    canvas { width: min(96vw, 960px); height: auto; aspect-ratio: 4 / 3; background: #000; margin-top: 12px; outline: none; }
+    #fps-row { margin-top: 10px; font-size: 14px; user-select: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" width="640" height="480" tabindex="0"></canvas>
+    <label id="fps-row"><input id="unlock-fps" type="checkbox" checked /> 解锁最大帧数（游戏速度保持 60 帧）</label>
+  </div>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

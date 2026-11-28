@@ -47,6 +47,9 @@ const th06ContentRoot = process.env.EAGLER_TH06_CONTENT_DIR?.trim()
 const th07ContentRoot = process.env.EAGLER_TH07_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH07_CONTENT_DIR.trim())
   : null;
+const thsssContentRoot = process.env.EAGLER_THSSS_CONTENT_DIR?.trim()
+  ? resolve(process.env.EAGLER_THSSS_CONTENT_DIR.trim())
+  : null;
 function availableMusic(declarations) {
   return Object.freeze(Object.fromEntries(Object.entries(declarations).filter(([, entry]) =>
     entry.files.every(name => existsSync(resolve(project, entry.base, name))))));
@@ -92,6 +95,21 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
       ...(process.env.EAGLER_TH05_LANGUAGE_PACK_DIR?.trim() ? {languagePackDirectory: projectRelativePath(process.env.EAGLER_TH05_LANGUAGE_PACK_DIR.trim())} : {}),
       data: Object.freeze({source: th05ContentRoot ? projectRelativePath(resolve(th05ContentRoot,"th05.data")) : ws("th05","artifacts","content","th05.data"), layout: PRODUCT_CONTENT.th05.dataLayout}),
       music: availableMusic(th05ContentRoot ? {ogg: Object.freeze({base: `${projectRelativePath(resolve(th05ContentRoot,"music"))}/`, ...PRODUCT_CONTENT.th05.music.ogg})} : {}),
+    }),
+    thsss: Object.freeze({
+      runtime: `${ws("thsss", "build-eagler", "thsss.html")}?hosted=1`,
+      data: Object.freeze({
+        source: thsssContentRoot
+          ? projectRelativePath(resolve(thsssContentRoot, "thsss.dat"))
+          : ws("thsss", "content", "thsss.dat"),
+        layout: PRODUCT_CONTENT.thsss.dataLayout,
+      }),
+      music: availableMusic(thsssContentRoot ? {
+        ogg: Object.freeze({
+          base: `${projectRelativePath(resolve(thsssContentRoot, "BGM"))}/`,
+          ...PRODUCT_CONTENT.thsss.music.ogg,
+        }),
+      } : {}),
     }),
     th06: Object.freeze({
       runtime: `${ws("th06", "build", "web", "normal", "th06.html")}?hosted=1&v=audio-music-modes-1`,

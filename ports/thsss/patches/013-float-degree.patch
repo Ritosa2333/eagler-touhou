@@ -1,0 +1,33 @@
+diff --git a/Shooting/BaseObject.cs b/Shooting/BaseObject.cs
+--- a/Shooting/BaseObject.cs
++++ b/Shooting/BaseObject.cs
+@@ -204,11 +204,12 @@
+ 	{
+ 		get
+ 		{
+-			return Angle / Math.PI * 180.0;
++			return (float)((float)(Angle / Math.PI) * 180f);
+ 		}
+ 		set
+ 		{
+-			Angle = value * Math.PI / 180.0;
++			float degrees = (float)value;
++			Angle = (float)((float)(degrees * Math.PI) / 180f);
+ 		}
+ 	}
+ 
+@@ -236,11 +237,12 @@
+ 	{
+ 		get
+ 		{
+-			return Direction / Math.PI * 180.0;
++			return (float)((float)(Direction / Math.PI) * 180f);
+ 		}
+ 		set
+ 		{
+-			Direction = value * Math.PI / 180.0;
++			float degrees = (float)value;
++			Direction = (float)((float)(degrees * Math.PI) / 180f);
+ 		}
+ 	}
+ 

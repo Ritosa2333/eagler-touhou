@@ -54,6 +54,7 @@ const verification = Object.freeze({
   th17: {kind:'runtime', scripts:['portable/check-frame-cadence.mjs']},
   th19: {kind:'runtime', scripts:['portable/check-frame-cadence.mjs']},
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
+  thsss: {kind:'runtime', scripts:['THSSS.Browser/tests/presentation-cadence.mjs']},
 });
 
 const sourceGames = [...new Set(sourceTargets().filter(target => !["th01","th02","th03","th04"].includes(target.game)).map(target => target.game))].sort();

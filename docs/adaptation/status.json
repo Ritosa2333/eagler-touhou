@@ -5892,6 +5892,226 @@
           "status": "passed"
         }
       ]
+    },
+    {
+      "game": "thsss",
+      "variant": "normal",
+      "directory": "ports/thsss",
+      "sourceDigest": "643f33f9ca22a02cc50f5958638d93443729e7b129725f3d43dd6c0aee6f2725",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 656,
+      "features": {
+        "thcrap": false,
+        "thprac": true
+      },
+      "command": [
+        "node",
+        "scripts/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/thsss"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "THSSS.Browser/wwwroot/shell.mjs",
+            "THSSS.Browser/wwwroot/eagler-host.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "THSSS.Browser/wwwroot/host/input/touch-bridge.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "THSSS.Browser/wwwroot/host/input/gamepad-keys.mjs",
+            "THSSS.Browser/wwwroot/host/input/keyboard-input-bridge.mjs",
+            "THSSS.Browser/tests/input/gamepad-keys.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "runner": "vitest",
+          "project": "repository",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "runner": "vitest",
+          "project": "unit",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "normal-presentation",
+          "excludeGames": [
+            "th01",
+            "th02",
+            "th03",
+            "th04",
+            "th05"
+          ],
+          "level": "source-contract",
+          "runner": "vitest",
+          "project": "workspace",
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "launcher/tests/test-native-frame-pacing.mjs",
+            "launcher/tests/test-mobile-frame-pacing.mjs",
+            "launcher/tests/test-presentation-contract-coverage.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "dotnet-publish",
+          "status": "passed",
+          "level": "build",
+          "complete": true,
+          "checks": [
+            "BUILD-02",
+            "BUILD-03"
+          ],
+          "command": [
+            "dotnet",
+            "publish",
+            "THSSS.Browser/THSSS.Browser.csproj",
+            "-c",
+            "Release",
+            "-p:StageGameAssets=false"
+          ],
+          "environment": "CachyOS; .NET SDK 10.0.404; wasm-tools 10.0.115/10.0.100; Node v24.22.1; Bun 1.4.4",
+          "evidence": {
+            "sha256": "4e719e4cdbf9c07162c31aa82e6e7ad0365129470e2ca4ef12fcf8997fa5f6c3"
+          }
+        },
+        {
+          "id": "staged-runtime",
+          "status": "passed",
+          "level": "build",
+          "complete": true,
+          "checks": [
+            "BUILD-04"
+          ],
+          "command": [
+            "npm",
+            "run",
+            "stage:eagler"
+          ],
+          "environment": "CachyOS; .NET SDK 10.0.404; wasm-tools 10.0.115/10.0.100; Node v24.22.1; Bun 1.4.4",
+          "evidence": {
+            "sha256": "b9f2ef31a3a54a240d8489eb5437a08cf33e0d6187b328242abfe76049475a00",
+            "files": {
+              "THSSS.Browser.wasm": {
+                "bytes": 6029938,
+                "sha256": "4e719e4cdbf9c07162c31aa82e6e7ad0365129470e2ca4ef12fcf8997fa5f6c3"
+              },
+              "directory-keyboard.mjs": {
+                "bytes": 1797,
+                "sha256": "972cc9c67802fbcba3fe8e4c239ac4023c677b28c9128c2f0e196ca2b3ce746f"
+              },
+              "manifest.json": {
+                "bytes": 170,
+                "sha256": "8d052e81c70f79bb76e76211ecffbb4cb46158325a8acf2c8ccd291e0d1946b6"
+              },
+              "shell.mjs": {
+                "bytes": 171717,
+                "sha256": "af5bb562c03cd2e4d4516cd2d3661dbe479d586c3bd8d9e6a290d424c0a500c2"
+              },
+              "thsss.html": {
+                "bytes": 616,
+                "sha256": "9d99f12f0c195d3315abd77d5fac65dd2b3c239ffdc5a6b66e4a0ce842a12d5e"
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

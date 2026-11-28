@@ -1,0 +1,36 @@
+diff --git a/Shooting/BaseEmitter_CS.cs b/Shooting/BaseEmitter_CS.cs
+--- a/Shooting/BaseEmitter_CS.cs
++++ b/Shooting/BaseEmitter_CS.cs
+@@ -276,7 +276,10 @@ public void ShootBullet()
+ 		}
+ 		double num6 = num5 * Math.PI / 180.0 / (double)num3;
+ 		edi -= (double)(num3 - 1) * num6 / 2.0;
+ 		num -= (double)(num3 - 1) * num6 / 2.0;
++		num6 = (double)(float)num6;
++		edi = (double)(float)edi;
++		num = (double)(float)num;
+ 		if (EffectType == 2)
+ 		{
+ 			new EmitterSaveEnegy3D(StageData, originalPosition, CSEffect.ColorValue);
+@@ -292,7 +295,9 @@ public void ShootBullet()
+ 		}
+ 		for (int i = 0; i < num3; i++)
+ 		{
+-			PointF p = new PointF((float)((double)originalPosition.X + (double)num2 * Math.Cos(num)), (float)((double)originalPosition.Y + (double)num2 * Math.Sin(num)));
++			float alongX = (float)(num2 * Math.Cos(num));
++			float alongY = (float)(num2 * Math.Sin(num));
++			PointF p = new PointF(originalPosition.X + alongX, originalPosition.Y + alongY);
+ 			for (int j = 0; j < Count; j++)
+ 			{
+ 				if (EmitterMode == EmitterMode.Bullet || EmitterMode == EmitterMode.StraightLaser || EmitterMode == EmitterMode.RadialLaser || EmitterMode == EmitterMode.BendLaser)
+@@ -434,8 +439,8 @@ public void ShootBullet()
+ 					EffectList.Add(baseEffect_CS);
+ 				}
+ 			}
+-			num += num6;
+-			edi += num6;
++			num = (double)(float)(num + num6);
++			edi = (double)(float)(edi + num6);
+ 			if (SpecifySE)
+ 			{
+ 				StageData.SoundPlay(SoundName);

@@ -303,13 +303,22 @@ createServer(async (request, response) => {
     // Content-addressed language ZIPs are safe to keep immutable; everything
     // else must revalidate its ETag on each navigation/fetch.
     const cacheControl = legacyRetirementWorker ? "no-store" : staticContentCacheControl(file);
+    const contentType = staticContentType(file);
     const commonHeaders = {
-      "Content-Type": staticContentType(file),
+      "Content-Type": contentType,
       "Cache-Control": cacheControl,
       ETag: tag,
       "Last-Modified": info.mtime.toUTCString(),
       Vary: "Accept-Encoding",
+      // App Shell enables COEP on the launcher document. Embedded Runtime HTML
+      // and its same-origin subresources must advertise CORP the same way the
+      // immutable Runtime worker does, or iframe navigation is blocked.
+      "Cross-Origin-Resource-Policy": "same-origin",
     };
+    if (contentType.startsWith("text/html")) {
+      commonHeaders["Cross-Origin-Embedder-Policy"] = "require-corp";
+      commonHeaders["Cross-Origin-Opener-Policy"] = "same-origin";
+    }
     if (legacyRetirementWorker) commonHeaders["Service-Worker-Allowed"] = "/eagler-touhou/";
     if (request.headers["if-none-match"] === tag) {
       response.writeHead(304, commonHeaders); response.end(); return;

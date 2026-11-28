@@ -1,0 +1,75 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="eagler-data-provider" content="verify">
+<base href="/">
+<canvas id="game" width="640" height="480"></canvas>
+<script type="module">
+import {prepareRuntime} from "./main.js";
+const params = new URLSearchParams(location.search);
+const replay = params.get("replay");
+const stage = Number(params.get("stage") || 1);
+const max = Number(params.get("max") || 0);
+try {
+  const dat = await fetch("assets/thsss.dat");
+  if (!dat.ok) throw Error("Missing assets/thsss.dat (" + dat.status + ")");
+  globalThis.__thsssArchive = new Uint8Array(await dat.arrayBuffer());
+  const runtime = await prepareRuntime({captureKeys: false});
+  const module = runtime.module;
+  module._thsss_start();
+  const readyAt = performance.now();
+  while (module._thsss_ready() === 0) {
+    if (performance.now() - readyAt > 180000) throw Error("runtime not ready");
+    await new Promise(accept => setTimeout(accept, 16));
+  }
+  if (module._thsss_ready() < 0) throw Error("runtime failed");
+  const writeUser = (path, bytes) => {
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    const pathPtr = module.stringToNewUTF8(path);
+    const dataPtr = module.stringToNewUTF8(btoa(binary));
+    module._thsss_write_user_file(pathPtr, dataPtr);
+    module._thsss_free(pathPtr);
+    module._thsss_free(dataPtr);
+  };
+  writeUser(replay, new Uint8Array(await (await fetch("/fixture.rpy")).arrayBuffer()));
+  const tape = await fetch("/rng-tape");
+  if (tape.ok) writeUser("RngTape.txt", new Uint8Array(await tape.arrayBuffer()));
+  const menuAt = performance.now();
+  while (module._thsss_replay_ready() === 0) {
+    if (performance.now() - menuAt > 180000) throw Error("main menu was not reached");
+    module._thsss_simulate();
+    await new Promise(accept => setTimeout(accept, 0));
+  }
+  const opened = module._thsss_replay_open(module.stringToNewUTF8(replay), stage);
+  if (opened !== 1) throw Error("replay open failed");
+  const text = new TextDecoder();
+  const take = ptr => {
+    if (!ptr) return "";
+    const heap = new Uint8Array(module.HEAPU8.buffer, ptr);
+    let end = 0;
+    while (heap[end]) end++;
+    const value = text.decode(heap.subarray(0, end));
+    module._thsss_free(ptr);
+    return value;
+  };
+  const rows = [];
+  let complete = false;
+  for (let i = 0; i < 200000; i++) {
+    if (max > 0 && rows.length >= max) break;
+    if (module._thsss_replay_step(0) !== 1) {
+      window.__thsssVerifyError = "replay step failed after " + rows.length + " frames";
+      break;
+    }
+    const line = take(module._thsss_replay_state());
+    const row = JSON.parse(line || "{}");
+    if (row.record) rows.push(row);
+    if (row.ended && !row.record) { complete = true; break; }
+  }
+  window.__thsssVerifyRows = rows;
+  window.__thsssVerifyComplete = complete;
+  document.title = "thsss-verify-done";
+} catch (error) {
+  window.__thsssVerifyError = String(error && error.stack || error);
+  document.title = "thsss-verify-done";
+}
+</script>

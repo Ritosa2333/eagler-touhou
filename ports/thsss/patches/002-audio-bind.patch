@@ -1,0 +1,311 @@
+From: PrepareGameSources
+Subject: 002-audio-bind.patch
+---
+
+diff --git a/Shooting/XAudio2_Player.cs b/Shooting/XAudio2_Player.cs
+index 956487d..7ddd022 100644
+--- a/Shooting/XAudio2_Player.cs
++++ b/Shooting/XAudio2_Player.cs
+@@ -20,8 +20,10 @@ public class XAudio2_Player
+ 	{
+ 		get
+ 		{
+-			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
+-			//IL_000b: Unknown result type (might be due to invalid IL or missing references)
++			if (sourceVoice == null)
++			{
++				return 0L;
++			}
+ 			VoiceState state = sourceVoice.State;
+ 			return state.SamplesPlayed / 44;
+ 		}
+@@ -31,13 +33,21 @@ public class XAudio2_Player
+ 	{
+ 		get
+ 		{
+-			return (int)(((Voice)sourceVoice).Volume * 200f);
++			if (sourceVoice == null)
++			{
++				return 0;
++			}
++			return (int)(sourceVoice.Volume * 200f);
+ 		}
+ 		set
+ 		{
++			if (sourceVoice == null)
++			{
++				return;
++			}
+ 			if (0 <= value && value <= 100)
+ 			{
+-				((Voice)sourceVoice).Volume = (float)value / 200f;
++				sourceVoice.Volume = (float)value / 200f;
+ 			}
+ 		}
+ 	}
+@@ -50,22 +60,16 @@ public class XAudio2_Player
+ 
+ 	private bool LoadSound(string fileName)
+ 	{
+-		//IL_0007: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_000d: Expected Obj, but got Unknown
+-		//IL_0013: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_001d: Expected Obj, but got Unknown
+-		//IL_0055: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_005f: Expected Obj, but got Unknown
+ 		try
+ 		{
+-			FileStream fileStream = File.OpenRead(fileName);
+-			WaveStream val = new WaveStream((Stream)fileStream);
+-			fileStream.Close();
++			if (string.IsNullOrEmpty(fileName))
++			{
++				return false;
++			}
+ 			buffer = new AudioBuffer();
+-			buffer.AudioData = (Stream)(object)val;
+-			buffer.AudioBytes = (int)((Stream)(object)val).Length;
+ 			buffer.Flags = (BufferFlags)64;
+-			sourceVoice = new SourceVoice(device, val.Format);
++			sourceVoice = new SourceVoice(device, null);
++			sourceVoice.Bind(fileName);
+ 			Volume = 40;
+ 			return true;
+ 		}
+
+diff --git a/Shooting/XAudio2_PlayerV2.cs b/Shooting/XAudio2_PlayerV2.cs
+index 607a90b..7e03062 100644
+--- a/Shooting/XAudio2_PlayerV2.cs
++++ b/Shooting/XAudio2_PlayerV2.cs
+@@ -1,3 +1,4 @@
++using System;
+ using System.IO;
+ using SlimDX.Multimedia;
+ using SlimDX.XAudio2;
+@@ -20,8 +21,10 @@ public class XAudio2_PlayerV2
+ 	{
+ 		get
+ 		{
+-			//IL_0006: Unknown result type (might be due to invalid IL or missing references)
+-			//IL_000b: Unknown result type (might be due to invalid IL or missing references)
++			if (sourceVoice == null)
++			{
++				return 0L;
++			}
+ 			VoiceState state = sourceVoice.State;
+ 			return state.SamplesPlayed / 44;
+ 		}
+@@ -31,13 +34,21 @@ public class XAudio2_PlayerV2
+ 	{
+ 		get
+ 		{
+-			return (int)(((Voice)sourceVoice).Volume * 100f);
++			if (sourceVoice == null)
++			{
++				return 0;
++			}
++			return (int)(sourceVoice.Volume * 100f);
+ 		}
+ 		set
+ 		{
++			if (sourceVoice == null)
++			{
++				return;
++			}
+ 			if (0 <= value && value <= 100)
+ 			{
+-				((Voice)sourceVoice).Volume = (float)value / 100f;
++				sourceVoice.Volume = (float)value / 100f;
+ 			}
+ 		}
+ 	}
+@@ -50,38 +61,18 @@ public class XAudio2_PlayerV2
+ 
+ 	private bool LoadSound(string fileName)
+ 	{
+-		//IL_0021: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_002b: Expected Obj, but got Unknown
+-		//IL_0065: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_006f: Expected Obj, but got Unknown
+-		//IL_008b: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0091: Expected Obj, but got Unknown
+-		//IL_0092: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_009c: Expected Obj, but got Unknown
+-		//IL_00d6: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_00e0: Expected Obj, but got Unknown
+ 		try
+ 		{
+-			FileInfo fileInfo = new FileInfo(fileName);
+-			if (fileInfo.Extension == ".xwma")
++			if (string.IsNullOrEmpty(fileName))
+ 			{
+-				xWMAStream xWMAStream2 = new xWMAStream(fileName);
+-				buffer = new AudioBuffer();
+-				buffer.AudioData = xWMAStream2;
+-				buffer.AudioBytes = (int)xWMAStream2.Length;
+-				buffer.Flags = (BufferFlags)64;
+-				sourceVoice = new SourceVoice(device, xWMAStream2.Format, (VoiceFlags)24);
+-				xwmaMode = true;
+-			}
+-			else if (fileInfo.Extension == ".wav")
+-			{
+-				WaveStream val = new WaveStream(fileName);
+-				buffer = new AudioBuffer();
+-				buffer.AudioData = (Stream)(object)val;
+-				buffer.AudioBytes = (int)((Stream)(object)val).Length;
+-				buffer.Flags = (BufferFlags)64;
+-				sourceVoice = new SourceVoice(device, val.Format, (VoiceFlags)24);
++				return false;
+ 			}
++			FileInfo fileInfo = new FileInfo(fileName);
++			xwmaMode = string.Equals(fileInfo.Extension, ".xwma", StringComparison.OrdinalIgnoreCase);
++			buffer = new AudioBuffer();
++			buffer.Flags = (BufferFlags)64;
++			sourceVoice = new SourceVoice(device, null, (VoiceFlags)24);
++			sourceVoice.Bind(fileName);
+ 			Volume = 100;
+ 			return true;
+ 		}
+@@ -164,6 +155,10 @@ public class XAudio2_PlayerV2
+ 
+ 	public void SetLoop(int PlayBegin, int PlayLength, int LoopCount, int LoopBegin, int LoopEnd)
+ 	{
++		if (buffer == null)
++		{
++			return;
++		}
+ 		buffer.PlayBegin = PlayBegin;
+ 		buffer.PlayLength = PlayLength;
+ 		buffer.LoopCount = LoopCount;
+@@ -176,9 +171,10 @@ public class XAudio2_PlayerV2
+ 
+ 	public void FilterON()
+ 	{
+-		//IL_0002: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_002e: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0052: Unknown result type (might be due to invalid IL or missing references)
++		if (sourceVoice == null)
++		{
++			return;
++		}
+ 		FilterParameters filterParameters = default;
+ 		filterParameters.Type = (FilterType)2;
+ 		filterParameters.Frequency = 0.5f;
+@@ -189,9 +185,10 @@ public class XAudio2_PlayerV2
+ 
+ 	public void FilterOFF()
+ 	{
+-		//IL_0002: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_002e: Unknown result type (might be due to invalid IL or missing references)
+-		//IL_0052: Unknown result type (might be due to invalid IL or missing references)
++		if (sourceVoice == null)
++		{
++			return;
++		}
+ 		FilterParameters filterParameters = default;
+ 		filterParameters.Type = (FilterType)2;
+ 		filterParameters.Frequency = 0f;
+@@ -206,7 +203,10 @@ public class XAudio2_PlayerV2
+ 		{
+ 			Stop();
+ 			sourceVoice.Dispose();
+-			buffer.AudioData.Dispose();
++			if (buffer.AudioData != null)
++			{
++				buffer.AudioData.Dispose();
++			}
+ 			buffer.Dispose();
+ 		}
+ 	}
+
+diff --git a/Shooting/xWMAStream.cs b/Shooting/xWMAStream.cs
+index abdff66..4d0650d 100644
+--- a/Shooting/xWMAStream.cs
++++ b/Shooting/xWMAStream.cs
+@@ -69,18 +69,18 @@ internal class xWMAStream : Stream
+ 		//IL_0224: Expected Obj, but got Unknown
+ 		byte[] array = new byte[4];
+ 		dataStream.Seek(0L, SeekOrigin.Begin);
+-		dataStream.Read(array, 0, 4);
++		dataStream.ReadExactly(array, 0, 4);
+ 		if (Encoding.ASCII.GetString(array) != "RIFF")
+ 		{
+ 			throw new InvalidDataException("Invalid xWMA file.");
+ 		}
+-		dataStream.Read(array, 0, 4);
++		dataStream.ReadExactly(array, 0, 4);
+ 		int num = BitConverter.ToInt32(array, 0);
+ 		if (dataStream.Length != num + 8)
+ 		{
+ 			throw new InvalidDataException("Invalid Format");
+ 		}
+-		dataStream.Read(array, 0, 4);
++		dataStream.ReadExactly(array, 0, 4);
+ 		if (Encoding.ASCII.GetString(array) != "XWMA")
+ 		{
+ 			throw new InvalidDataException("Invalid xWMA file.");
+@@ -89,24 +89,24 @@ internal class xWMAStream : Stream
+ 		for (num2 = dataStream.Read(array, 0, 4); num2 > 3; num2 = dataStream.Read(array, 0, 4))
+ 		{
+ 			string text = Encoding.ASCII.GetString(array);
+-			dataStream.Read(array, 0, 4);
++			dataStream.ReadExactly(array, 0, 4);
+ 			num = BitConverter.ToInt32(array, 0);
+ 			switch (text)
+ 			{
+ 			case "fmt ":
+ 			{
+-				dataStream.Read(array, 0, 2);
++				dataStream.ReadExactly(array, 0, 2);
+ 				ushort num4 = BitConverter.ToUInt16(array, 0);
+ 				format = new WaveFormat();
+-				dataStream.Read(array, 0, 2);
++				dataStream.ReadExactly(array, 0, 2);
+ 				format.Channels = (short)BitConverter.ToUInt16(array, 0);
+-				dataStream.Read(array, 0, 4);
++				dataStream.ReadExactly(array, 0, 4);
+ 				format.SamplesPerSecond = BitConverter.ToInt32(array, 0);
+-				dataStream.Read(array, 0, 4);
++				dataStream.ReadExactly(array, 0, 4);
+ 				format.AverageBytesPerSecond = BitConverter.ToInt32(array, 0);
+-				dataStream.Read(array, 0, 2);
++				dataStream.ReadExactly(array, 0, 2);
+ 				format.BlockAlignment = BitConverter.ToInt16(array, 0);
+-				dataStream.Read(array, 0, 2);
++				dataStream.ReadExactly(array, 0, 2);
+ 				format.BitsPerSample = BitConverter.ToInt16(array, 0);
+ 				switch (num4)
+ 				{
+@@ -122,18 +122,18 @@ internal class xWMAStream : Stream
+ 					((WaveFormat)val).AverageBytesPerSecond = format.AverageBytesPerSecond;
+ 					((WaveFormat)val).BlockAlignment = format.BlockAlignment;
+ 					((WaveFormat)val).BitsPerSample = format.BitsPerSample;
+-					dataStream.Read(array, 0, 2);
++					dataStream.ReadExactly(array, 0, 2);
+ 					num = BitConverter.ToInt16(array, 0);
+ 					if (num != 22)
+ 					{
+ 						throw new InvalidDataException("Invalid Format.");
+ 					}
+-					dataStream.Read(array, 0, 2);
++					dataStream.ReadExactly(array, 0, 2);
+ 					val.ValidBitsPerSample = BitConverter.ToInt16(array, 0);
+-					dataStream.Read(array, 0, 4);
++					dataStream.ReadExactly(array, 0, 4);
+ 					val.ChannelMask = (Speakers)BitConverter.ToUInt32(array, 0);
+ 					byte[] array2 = new byte[16];
+-					dataStream.Read(array2, 0, 16);
++					dataStream.ReadExactly(array2, 0, 16);
+ 					val.SubFormat = new Guid(array2);
+ 					((WaveFormat)val).FormatTag = (WaveFormatTag)65534;
+ 					format = (WaveFormat)(object)val;
+@@ -154,7 +154,7 @@ internal class xWMAStream : Stream
+ 				decodedPacketCumulativeBytes = new int[num3];
+ 				for (int i = 0; i < num3; i++)
+ 				{
+-					dataStream.Read(array, 0, 4);
++					dataStream.ReadExactly(array, 0, 4);
+ 					decodedPacketCumulativeBytes[i] = BitConverter.ToInt32(array, 0);
+ 				}
+ 				break;
+

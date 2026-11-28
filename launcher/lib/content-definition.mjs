@@ -38,6 +38,12 @@ function pc98PreparedContent(game, tracks, script, layout = PC98_DATA_LAYOUT) {
 
 // Product content shape only. This file declares names and Runtime mounts, but
 // never points at a workstation build, asset directory, or generated identity.
+const THSSS_MUSIC_FILES = Object.freeze([
+  "Boss01.ogg", "Boss02.ogg", "Boss03.ogg", "Boss04.ogg", "Boss05.ogg", "Boss06.ogg", "Boss06FSC.ogg", "BossEx.ogg",
+  "ED.ogg", "OP.ogg", "Staff.ogg",
+  "Stage01.ogg", "Stage02.ogg", "Stage03.ogg", "Stage04.ogg", "Stage05.ogg", "Stage06.ogg", "StageEx.ogg",
+]);
+
 export const PRODUCT_CONTENT = Object.freeze({
   th01: pc98PreparedContent("th01", 14, "scripts/prepare-th01-content.mjs", "sha256-3b51bdd9400868145f321cd9e62eedf2846d5a164e023f61c987a4cfa4ea169e"),
   th02: pc98PreparedContent("th02", 15, "scripts/prepare-th02-content.mjs"),
@@ -52,6 +58,32 @@ export const PRODUCT_CONTENT = Object.freeze({
       artwork: Object.freeze({kind: "prepared-content", directory: "artwork"}),
       ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
       languagePack: Object.freeze({kind: "retail-overlay-compiler", script: "scripts/prepare-th05-language-pack.mjs", optional: true, languages: Object.freeze(["lang_zh-hans"])}),
+    }),
+  }),
+  thsss: Object.freeze({
+    original: Object.freeze({
+      files: Object.freeze(["thsss.dat"]),
+      preparedAlternative: Object.freeze({
+        directory: "assets",
+        markerFiles: Object.freeze(["thsss.dat", "BGM/OP.ogg", "artwork/thsss-card.webp"]),
+      }),
+    }),
+    // sha256(JSON.stringify({files:[{filename:"/thsss.dat"}]}))
+    dataLayout: "sha256-0052fd14e9ebd7db72759bedf361d27120807ee5bb28a2774dfb613d52ab997f",
+    music: Object.freeze({
+      ogg: Object.freeze({
+        mount: PRODUCT_GAMES.thsss.package.musicMounts.ogg,
+        files: THSSS_MUSIC_FILES,
+      }),
+    }),
+    hostPreparation: Object.freeze({
+      artwork: Object.freeze({ kind: "prepared-content", directory: "artwork" }),
+      preparedContent: Object.freeze({
+        directory: "assets",
+        markerFiles: Object.freeze(["thsss.dat", "BGM/OP.ogg", "artwork/thsss-card.webp"]),
+      }),
+      ogg: Object.freeze({ kind: "prepared-content" }),
+      dataAssets: Object.freeze({ kind: "original-file", source: "thsss.dat" }),
     }),
   }),
   th06: Object.freeze({

@@ -1,0 +1,15 @@
+# Ordered browser-port patches applied to the ILSpy decompile of vendor/THSSS.exe
+001-browser-stubs.patch
+002-audio-bind.patch
+003-frame-touch-host.patch
+004-textures-draw.patch
+005-polish-batch.patch
+006-touch-replay.patch
+007-keyboard-menu.patch
+008-diagnostic-rng.patch
+009-stage-fade.patch
+010-float-direction.patch
+011-float-spread.patch
+012-music-loading-rng.patch
+013-float-degree.patch
+014-float-aim.patch
