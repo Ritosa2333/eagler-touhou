@@ -1,8 +1,3 @@
-// Production configuration multiplayer performance gate (4x CPU throttle).
-// Per-frame audit is disabled (production mode); 60-frame wire digests remain
-// active and mismatch-free. Pilot debug inspections are deferred outside the
-// timed C++ callback window while production shell.mjs onGameFrame stays timed.
-// Does not replace formal-flow.mjs (per-frame full-state audit).
 import {createRequire} from 'node:module';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -39,7 +34,7 @@ const dir = resolve(
 );
 const origin = process.env.TH13_ORIGIN || 'http://127.0.0.1:18760';
 await mkdir(resolve(dir, '..'), {recursive: true});
-await mkdir(dir); // Never overwrite or append to prior run evidence.
+await mkdir(dir);
 
 let interruptedSignal = null;
 const sleepWaiters = new Set();
@@ -569,7 +564,6 @@ try {
       await page.locator('#mpRoomPanelClose').click();
     }
     await page.evaluate(() => {
-      // Production config: ensure per-frame audit stays explicitly off (0).
       const m = document.querySelector('#gameFrame')?.contentWindow?.Module;
       m?._th13_mp_audit?.(0);
       const u = new URL(location.href);

@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict';
 import {appendFile} from 'node:fs/promises';
 
-// Runs in each runtime frame, before the first audit enable. The native rings
-// have one consumer; batches remain queued until the host persists and acks.
 export function installFormalAudit() {
   globalThis.__installFormalAudit = module => {
     if (!module || module.__formalAuditInstalled) return;
@@ -38,8 +36,6 @@ export function installFormalAudit() {
   };
 }
 
-// Persist raw observations before validating. A subsequent failure flush may
-// see unacknowledged batches again; rawPending prevents writing them twice.
 export async function persistAuditCapture(path, capture, cursor) {
   const fresh = capture.batches.slice(cursor.rawPending);
   if (fresh.length) {

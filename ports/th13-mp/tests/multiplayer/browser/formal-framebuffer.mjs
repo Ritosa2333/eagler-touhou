@@ -1,4 +1,3 @@
-// Install in the game iframe; no pumping, drawing or game state writes.
 export function installFramebufferCapture() {
   globalThis.__installFramebufferCapture = (module, seatCount) => {
     const state = globalThis.__framebufferCapture = {pendingReasons: [], candidate: null,
@@ -52,9 +51,6 @@ export function installFramebufferCapture() {
         const readBinding=gl.getParameter(gl.READ_FRAMEBUFFER_BINDING);
         const drawBinding=gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING);
         if (drawBinding!==null) {
-          // Correction callbacks can leave an offscreen draw target and submit
-          // nothing. Qualify this attempt against the corresponding work row
-          // before treating it as a presentation/capture error.
           state.candidate={reasons:state.pendingReasons.slice(),started,
             elapsedMs:performance.now()-started,unsubmittedTarget:true,
             readBinding:readBinding===null?'default':'non-default',drawBinding:'non-default',
@@ -114,7 +110,7 @@ export function installFramebufferCapture() {
         } else if (!work.ok || work.presentations!==0) {
           state.failures.push('Capture requires exactly one successful timed presentation');
         }
-        state.candidate=null; // no presentation: retain reasons and retry.
+        state.candidate=null;
       }
     };
     state.snapshot=()=>({captures:state.captures.slice(),candidate:state.candidate,

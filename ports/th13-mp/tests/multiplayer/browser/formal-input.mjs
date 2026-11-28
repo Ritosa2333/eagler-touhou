@@ -1,5 +1,3 @@
-// Short taps enter through the hosted production keyboard, with no manual
-// world pumping. The audit proves both edges survive real network correction.
 import assert from 'node:assert/strict';
 
 export async function runInputEdges({pages, inspect, evidence}) {
@@ -29,16 +27,12 @@ export async function runInputEdges({pages, inspect, evidence}) {
       const state = JSON.parse(m.UTF8ToString(m._th13_debug_mp_net_state()));
       const correcting = m.HEAPU32[(m._th13_mp_rollback_status() >>> 2) + 7];
       if (correcting && !w.__inputEdgesTap) {
-        // Both quick taps occur inside a budget-yielded real correction.
         const clock = performance.now();
         for (const down of [1, 0, 1, 0]) m._th13_key(42, down);
         m._th13_key(200, 1); m._th13_key(200, 0);
         w.__inputEdgesTap = {frame: state.capture_frame, clock, scan: 42,
           downs: [1, 0, 1, 0], correcting: true, state};
       }
-      // Keep producing remote changes after this seat's tap so the other
-      // seat still has corrections to observe, even when its first replays
-      // finish within the normal production work budget.
       const next = state.capture_frame % 12 < 6 ? 203 : 205;
       if (next !== direction) {
         if (direction) m._th13_key(direction, 0);
@@ -52,14 +46,10 @@ export async function runInputEdges({pages, inspect, evidence}) {
       delete w.__inputEdgesStop;
     };
   })));
-  // Both diagnostic streams are bounded. Drain while waiting for the other
-  // seat's actual budget yield, preserving all confirmed history in order.
   let drainError;
   const timer = setInterval(() => { collect().catch(error => { drainError = error; }); }, 100);
   try {
     for (let seat = 0; seat < pages.length; ++seat) {
-      // Wait for an actual restore. Capture and simulation are observed, never
-      // edited; the configured transport disturbance creates the correction.
       await pages[seat].waitForFunction(() =>
         document.querySelector('#gameFrame').contentWindow.__inputEdgesTap,
       {}, {timeout: 30000});

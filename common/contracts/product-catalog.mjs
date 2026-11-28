@@ -632,7 +632,7 @@ export const PRODUCT_GAMES = Object.freeze({
             "keyboard.mjs",
             "directory-keyboard.mjs",
             "runtime-assets.mjs",
-            "low-latency-canvas.mjs",
+            "context-attributes.mjs",
             "language-pack.mjs",
             "practice-catalog.mjs",
             "startup-branding.mjs",

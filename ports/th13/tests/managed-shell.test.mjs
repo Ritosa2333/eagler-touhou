@@ -5,7 +5,10 @@ import {createRequire} from 'node:module';
 import {runInNewContext} from 'node:vm';
 
 const require = createRequire(new URL('../../../launcher/package.json', import.meta.url));
-const {parse} = require('acorn');
+let acorn;
+try { acorn = require('acorn'); }
+catch { acorn = createRequire(import.meta.url)(`${process.env.EMSDK ?? '/opt/emsdk'}/upstream/emscripten/node_modules/acorn`); }
+const {parse} = acorn;
 const source = readFileSync(new URL('../web/sdl-runtime/shell.mjs', import.meta.url), 'utf8');
 const ast = parse(source, {ecmaVersion: 'latest', sourceType: 'module'});
 const functions = ['apply', 'command'].map(name => {

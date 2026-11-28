@@ -1,6 +1,3 @@
-// RULES R-G: MP doubles the retail eight-frame deathbomb window to sixteen.
-// Real collision callbacks, player updates and original SHT data; no main so
-// this translation unit links with the existing M4 suite entry point.
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 #include <fstream>
@@ -58,9 +55,7 @@ struct DeathbombFixture {
         if (!battle.load(provider, "deathbomb.ecl", 2, host, progress, hud, score)) return false;
         if (players >= 2) {
             if (!battle.enable_seats(provider, players, {character, character, character})) return false;
-        } else battle.seat_count = players; // Both public single-seat step forms.
-        // Initialize the combat fixture before collision; every later phase,
-        // timer, life and Bomb change comes from the production step path.
+        } else battle.seat_count = players;
         for (i32 seat = 0; seat < (players >= 2 ? players : 1); ++seat) {
             auto& player = state(seat);
             player.phase = StagePlayerState::Phase::Active;
@@ -124,8 +119,6 @@ void check_success(DeathbombFixture& f, i32 owner) {
     CHECK_EQ(f.resources(owner).power, 300);
     CHECK_EQ(f.state(owner).bomb_generation, 1u);
     CHECK(f.state(owner).bomb_timer > 0);
-    // A held X and a fresh second press while that Bomb is active both keep
-    // the single original owner debit and generation.
     CHECK(f.step(owner));
     CHECK(f.step());
     CHECK(f.step(owner));
@@ -134,7 +127,7 @@ void check_success(DeathbombFixture& f, i32 owner) {
     CHECK_EQ(f.state(owner).bomb_generation, 1u);
     f.peers_unchanged(owner);
 }
-}  // namespace
+}
 
 TEST(mp_deathbomb_last_frame) {
     DeathbombFixture f;
@@ -179,7 +172,6 @@ TEST(mp_deathbomb_x_at_and_after_expiry) {
 }
 
 TEST(single_seat_deathbomb_eight_frames) {
-    // Both public production entry forms must retain the retail window.
     for (i32 count : {0, 1}) for (i32 age = 0; age < 10; ++age) {
         DeathbombFixture f;
         CHECK(f.boot(count));

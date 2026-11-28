@@ -79,7 +79,6 @@ test('real network13 mismatched build is rejected and normal14 delivery matches'
   assert.equal(deliveredBad.length,3);
   assert(deliveredBad.every(row=>row.sha256==='e04eb01fbce6833d78d63978a122d15cd64dd179198e1c256a9bcb473c63f1b0'));
   assert.throws(()=>assertBuildDelivery({expectedFiles:bad.expectedFiles,delivery:bad.delivery,playerCount:3}),/Seat 0: delivered th13-sdl.mjs hash/);
-  // Independently expose the original WASM mismatch, without changing report files.
   const mjs=bad.delivery.find(row=>row.seat===0 && new URL(row.url).pathname.endsWith('/th13-sdl.mjs'));
   const expectedWithObservedLoader=bad.expectedFiles.map(file=>file.name==='th13-sdl.mjs'?{...file,bytes:mjs.bytes,sha256:mjs.sha256}:file);
   assert.throws(()=>assertBuildDelivery({expectedFiles:expectedWithObservedLoader,delivery:bad.delivery,playerCount:3}),/Seat 0: delivered th13-sdl.wasm size/);
@@ -108,7 +107,6 @@ test('legacy reports are explicitly hash-only and cannot satisfy frame-bound mod
   assert.match(assertBuildDelivery(input).scope,/frame identity not checked/);
   assert.throws(()=>assertBuildDelivery({...input,frameGuids:['frame@0','frame@1','frame@2'],documentEpochs:[0,0,0]}),/delivery frame identity/);
 });
-
 
 test('document epoch rejects older navigation in the same frame and requires paired identity', () => {
   const input=sample(), frameGuids=['f0','f1','f2'],documentEpochs=[3,1,7];

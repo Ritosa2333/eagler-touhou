@@ -1,5 +1,3 @@
-// Stable value serialization for rollback state. Resource and callback
-// identities are fixed within a confirmed scene epoch; pointers never hash.
 #pragma once
 #include "../game/AnmOverlay.hpp"
 #include <tuple>
@@ -114,9 +112,6 @@ template<class T, class=void> struct IsRange : std::false_type {};
 template<class T> struct IsRange<T,std::void_t<decltype(std::declval<T>().begin())>> : std::true_type {};
 template<class T> void digest_value(DigestSink& d, const T& v) {
     if constexpr(IsInterpolation<T>::value) {
-        // Default ANM channels are entirely zero. Preserve all five array
-        // lengths, their elements and every Timer/duration/mode byte. Test
-        // the bits so negative zero and NaN retain their original encoding.
         if (interpolation_zero(v)) {
             for (unsigned i = 0; i < 5; ++i) {
                 d.u64(IsInterpolation<T>::width);
@@ -131,8 +126,6 @@ template<class T> void digest_value(DigestSink& d, const T& v) {
         using Fields = std::tuple<const float (&)[16]>;
         static_assert(std::is_same_v<decltype(state_fields(v)), Fields> && sizeof(float) == 4,
                       "Matrix serialization fields changed");
-        // Preserve the array length and all sixteen float bit patterns. Most
-        // ANM matrices are diagonal; only positive zero can take this path.
         constexpr unsigned off_diagonal[]{1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14};
         bool diagonal = true;
         for (unsigned index : off_diagonal) {
@@ -170,4 +163,4 @@ template<class A, class B> void digest_value(DigestSink& d,const std::pair<A,B>&
 template<class K,class V> void digest_value(DigestSink& d,const std::unordered_map<K,V>& v) {
     std::map<K,V> ordered(v.begin(),v.end());digest_range(d,ordered);
 }
-} // namespace th13::multiplayer
+}

@@ -14,7 +14,8 @@ test('actual GraphicsDevice native submission controls (no SDL/GLES dependency)'
   const compile=spawnSync('g++',['-std=c++17','-O2','-Wall','-Wextra','-Werror','-Wno-attributes',
     '-Wno-missing-field-initializers','-fno-exceptions','-fno-rtti','-ffp-contract=off',
     '-I'+resolve(port,'tests/submission/include'),resolve(port,'tests/submission/submission_test.cpp'),
-    resolve(port,'web/cpp/sdl/GraphicsDevice.cpp'),resolve(port,'web/cpp/game/TextureImage.cpp'),
+    resolve(port,'web/cpp/sdl/GraphicsDevice.cpp'),resolve(port,'web/cpp/sdl/LanguagePack.cpp'),
+    resolve(port,'web/cpp/game/TextureImage.cpp'),resolve(port,'web/cpp/game/AnmTextureDecode.cpp'),
     '-o',join(dir,'test')],{encoding:'utf8'});
   assert.equal(compile.status,0,compile.stdout+compile.stderr);
   const run=spawnSync(join(dir,'test'),[dir],{encoding:'utf8'});

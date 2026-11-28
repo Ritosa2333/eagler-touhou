@@ -1,9 +1,4 @@
 <!doctype html>
-<!-- Production multiplayer session driver for performance runs. It follows the
-     production start sequence (th13_mp_configure -> connect -> start -> rAF loop)
-     and replaces only the human with a scripted pilot. Query: seat, players,
-     chars, room, relay, stage, slot, diff, protect, delay, gov (1 = frame-rate-drop
-     handling on, 0 = fixed two-step clock). -->
 <html lang="zh">
 <head>
 <meta charset="utf-8">
@@ -92,7 +87,6 @@ try {
     await new Promise(done => setTimeout(done, 10));
   }
 
-  // Scripted pilot: hold the shot key, walk a deterministic pattern, focus in bursts.
   const KEY = {shot: 44, focus: 42, left: 203, right: 205, up: 200, down: 208};
   const held = new Set();
   const set = (code, down) => {
@@ -128,8 +122,6 @@ try {
     requestAnimationFrame(watchRaf);
   };
   requestAnimationFrame(watchRaf);
-  // A 100 ms timer alongside rAF. If this stays on time while rAF gaps stretch,
-  // the main thread is free and the compositor is holding the frame.
   let timerLast = performance.now();
   window.__bench.timerGapMax = 0;
   setInterval(() => {

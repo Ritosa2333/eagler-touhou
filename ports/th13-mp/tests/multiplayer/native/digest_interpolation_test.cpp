@@ -1,4 +1,3 @@
-// Independent literal FNV reference for the interpolation digest wire order.
 #include "multiplayer/WorldState.hpp"
 #include "multiplayer/DigestSink.hpp"
 #include "multiplayer/WorldDigestValues.hpp"
@@ -71,8 +70,6 @@ template<class T> void fields_and_random() {
     T value{};
     CHECK(agrees(value, random));
     LiteralFnv original; original.interpolation(value);
-    // Each serialized field is separately altered; bit patterns include -0,
-    // NaN, infinities and nonzero integer representations.
     for (const uint32_t bits : {1u, 0x80000000u, 0x7fc00001u, 0x7f800000u, 0xffffffffu, 0x3f800000u}) {
         each_field(value, [&](auto* field) {
             std::memcpy(field, &bits, sizeof bits);
@@ -148,7 +145,6 @@ TEST(digest_matrix_exact) {
     Matrix4 value{};
     for (unsigned pending : {0u, 1u, 7u, 1023u, 1024u, 1025u, 2048u}) compare(value, pending);
     LiteralFnv zero; zero.matrix(value);
-    // Every position, including each diagonal, must retain arbitrary bits.
     for (unsigned index = 0; index < 16; ++index) {
         for (const uint32_t bits : {1u, 0x80000000u, 0x7fc00001u, 0x7f800000u,
                                     0xff800000u, 0xffffffffu, 0x3f800000u}) {
@@ -170,7 +166,6 @@ TEST(digest_matrix_exact) {
             std::memcpy(&element, &bits, sizeof bits);
         }
         compare(value, iteration % 19);
-        // Exercise arbitrary diagonal values through the sparse path too.
         for (unsigned index : {1u, 2u, 3u, 4u, 6u, 7u, 8u, 9u, 11u, 12u, 13u, 14u}) {
             const uint32_t positive_zero = 0;
             std::memcpy(&value.m[index], &positive_zero, sizeof positive_zero);

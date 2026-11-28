@@ -1,0 +1,12 @@
+m8.rollback_one_three_twelve 旧实现的负载结果（24 忙循环，loadavg≈40）
+
+运行 | 1帧 档 | 3帧 档 | 12帧 档
+--- | --- | --- | ---
+第 1 次 | 通过（maxDistance=2 restores=1 resimulated=2） | 通过（maxDistance=4 restores=1 resimulated=4） | 失败（{"restores":0,"resimulated":0,"checkpoints":57,"committed":48,"maxDistance":0,"r）
+第 2 次 | 通过（maxDistance=2 restores=1 resimulated=2） | 失败（{"restores":0,"resimulated":0,"checkpoints":59,"committed":56,"maxDistance":0,"r） | 未执行
+第 3 次 | 通过（maxDistance=2 restores=1 resimulated=2） | 通过（maxDistance=4 restores=1 resimulated=4） | 通过（maxDistance=8 restores=1 resimulated=8）
+第 4 次 | 通过（maxDistance=2 restores=1 resimulated=2） | 通过（maxDistance=4 restores=1 resimulated=4） | 通过（maxDistance=10 restores=1 resimulated=10）
+第 5 次 | 通过（maxDistance=2 restores=1 resimulated=2） | 失败（{"restores":0,"resimulated":0,"checkpoints":59,"committed":56,"maxDistance":0,"r） | 未执行
+第 6 次 | 通过（maxDistance=2 restores=1 resimulated=2） | 通过（maxDistance=4 restores=1 resimulated=4） | 失败（{"restores":0,"resimulated":0,"checkpoints":56,"committed":48,"maxDistance":0,"r）
+
+旧实现通过时每档只有 1 次回滚（启动瞬态），距离 2/4/10；失败时 restores=0（输入改走未延迟的 RTC 修复通道，预测全对）。

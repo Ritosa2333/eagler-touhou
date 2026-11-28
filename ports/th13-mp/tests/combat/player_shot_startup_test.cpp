@@ -35,8 +35,7 @@ TEST(firing_waits_for_original_startup_gate) {
     HudScoreState score;
     StageBattle battle;
     provider.animations = &battle.sim.anim_list;
-    CHECK(battle.load(provider, "st01.ecl", 2, host, progress, player, score,
-                      nullptr, "pl00a.sht"));
+    CHECK(battle.load(provider, "st01.ecl", 2, host, progress, player, score, nullptr, "pl00a.sht"));
     if (!battle.error().empty()) return;
 
     GameInput input;

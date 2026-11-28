@@ -1,8 +1,5 @@
 import assert from 'node:assert/strict';
 
-// Compare all collected HTTP response bodies. This function cannot prove that
-// pending responses have settled or that a response belongs to the game iframe;
-// the caller must establish both before relying on this result.
 export function assertBuildDelivery({expectedFiles, delivery, playerCount, frameGuids, documentEpochs}) {
   assert(Number.isSafeInteger(playerCount) && playerCount > 0, 'Delivery player count');
   assert(Array.isArray(expectedFiles), 'Expected executable list');

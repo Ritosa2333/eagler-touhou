@@ -1,9 +1,8 @@
-// 暂停帧回调（th15 PauseFrame 裁剪：失焦自动暂停保留，恢复/节流延后）。
 #pragma once
 
+#include "FrameScheduler.hpp"
 #include "PauseMenu.hpp"
 #include "SessionState.hpp"
-#include "FrameScheduler.hpp"
 
 namespace th13 {
 
@@ -30,9 +29,15 @@ public:
     void controls(const PauseFrameInput& value) noexcept { input = value; }
     void enable(bool value) noexcept { callback.enabled = value; }
     bool update(const PauseFrameInput&);
-    struct RollbackState { PauseFrameInput input; bool enabled; };
+    struct RollbackState {
+        PauseFrameInput input;
+        bool enabled;
+    };
     RollbackState capture_rollback() const { return {input, callback.enabled}; }
-    void restore_rollback(const RollbackState& saved) { input = saved.input; callback.enabled = saved.enabled; }
+    void restore_rollback(const RollbackState& saved) {
+        input = saved.input;
+        callback.enabled = saved.enabled;
+    }
 };
 
-}  // namespace th13
+}

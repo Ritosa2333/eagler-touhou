@@ -34,8 +34,6 @@ reject(samples, {...options, expectedStages: [1, 2, 3]});
 reject(samples.map(row => row.stage === 2 ? {...row, milliseconds: 20, end: row.begin + 20} : row));
 reject(samples.map(row => ({...row, milliseconds: 20, end: row.begin + 20})));
 reject(samples.map((row, i) => i === 5 ? {...row, presentationAt: row.end + 1} : row));
-// Synchronous loading callbacks are whole work records in the same sequence.
-// They may submit without exposing the exact presentation timestamp.
 const startupIndices = [0, 1, 7, 8, 9, 10];
 const startup = samples.map((row, i) => startupIndices.includes(i)
   ? {...row, source: startupIndices.indexOf(i) + 4, phase: 'loading',
@@ -49,8 +47,6 @@ reject(startup.map((row, i) => i === 7 ? {...row, begin: startup[6].begin} : row
 reject(startup.map((row, i) => i === 8 ? {...row, ok: false} : row));
 const readyPoll = startup.map((row, i) => i === 10 ? {...row, source: 10} : row);
 assert.equal(evaluateFrameWork(readyPoll, options).passed, true);
-// One expensive actual initialization remains visible in its source, even
-// when it does not change the mandated overall/stage p95.
 const slowStartup = readyPoll.map((row, i) => i === 9 ? {...row, milliseconds: 19, end: row.begin + 19} : row);
 assert.equal(evaluateFrameWork(slowStartup, options).sources['8'].max, 19);
 const ambiguous = samples.map((row, i) => i === 5 ? {...row, presentations: 2, presentationAt: null} : row);
@@ -64,7 +60,6 @@ assert.equal(preWorldResult.passed, true);
 assert.equal(preWorldResult.stages['0'].max, 19);
 assert.equal(preWorldResult.total.max, 19);
 reject(preWorld.map((row, i) => i === 0 ? {...row, phase: 'active', source: 1} : row));
-// Startup work is never removed or exempted from the overall hard limit.
 const slowPreWorld = evaluateFrameWork(preWorld.map((row, i) => i >= 5 && i < 9 ? {...row, stage: 0, endStage: 0,
   phase: 'loading', source: 4, simulated: 0, rollback: 0, restores: 0,
   milliseconds: 19, end: row.begin + 19} : row), options);

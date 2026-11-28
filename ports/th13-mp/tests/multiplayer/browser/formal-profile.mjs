@@ -1,5 +1,3 @@
-// Optional, read-only CDP sampling on the already running room pages.
-// Keep the regular audit drain active while the returned capture runs.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFile, writeFile} from 'node:fs/promises';

@@ -9,20 +9,16 @@ using touhou::sdl::FrameCadence;
 using touhou::sdl::FrameRateMeter;
 using th13::multiplayer::FrameSchedule;
 
-// Deterministic callback-time jitter in [-amplitude, amplitude] seconds.
 double jitter(unsigned i, double amplitude) {
     const unsigned h = (i * 2654435761u) >> 16;
     return ((h % 2001) / 1000. - 1.) * amplitude;
 }
-// Callbacks are late around the display's vsync, so the delta is the
-// difference of two bounded offsets rather than an unbounded random walk.
 double callback_delta(unsigned i, double period, double amplitude) {
     return period + jitter(i + 1, amplitude) - jitter(i, amplitude);
 }
 
 struct CadenceRun { float low = 99, high = 0; unsigned zero = 0, double_ = 0; };
 
-// The browser loop: sample at callback start, then credit and run the ticks.
 CadenceRun run_cadence(double period, double amplitude, unsigned callbacks, unsigned stall_at = ~0u) {
     FrameCadence cadence;
     cadence.debt = FrameCadence::interval / 2;
@@ -45,25 +41,18 @@ CadenceRun run_cadence(double period, double amplitude, unsigned callbacks, unsi
 }
 
 int main() {
-    // A jittery 60 Hz display runs every credited frame: the readout is exact.
     const auto steady = run_cadence(1. / 60., .003, 1200);
     assert(steady.low >= 59.95f && steady.high <= 60.f);
-    assert(steady.zero == 0 && steady.double_ == 0);  // one logic frame per refresh
-    // Wider jitter can move a tick between refreshes, never off the readout.
+    assert(steady.zero == 0 && steady.double_ == 0);
     const auto rough = run_cadence(1. / 60., .007, 1200);
     assert(rough.low >= 59.95f && rough.high <= 60.f);
-    // 59.94 Hz still runs 60 logic frames per second of wall time.
     const auto ntsc = run_cadence(1001. / 60000., .002, 1800);
     assert(ntsc.low >= 59.95f && ntsc.high <= 60.f);
-    // Time the cadence cannot credit is real slowdown, as in the original.
     const auto stall = run_cadence(1. / 60., .002, 600, 300);
     assert(stall.low < 58.f);
-    // A display at 50 Hz gives the game 50 logic frames per second.
     const auto slow = run_cadence(1. / 50., 0, 600);
-    assert(std::fabs(slow.low - 60.f) < .01f);  // cadence catches up (2-tick turns)
+    assert(std::fabs(slow.low - 60.f) < .01f);
 
-    // MP: the gap schedule with a half-frame phase spends exactly one due frame
-    // per jittery refresh, and completed frames feed the same meter.
     FrameSchedule schedule;
     schedule.align_phase();
     FrameRateMeter meter;
@@ -81,7 +70,6 @@ int main() {
     }
     assert(uneven == 0);
     assert(low >= 59.95f);
-    // Frames the gap schedule holds for the network still run later: no loss.
     const auto network = [](bool gap) {
         FrameSchedule held;
         held.align_phase();
@@ -99,7 +87,6 @@ int main() {
         return lowest;
     };
     assert(network(true) >= 59.f);
-    // Without the gap credit a network wait stalls the clock: real slowdown.
     assert(network(false) < 50.f);
     std::puts("frame rate meter ok");
     return 0;

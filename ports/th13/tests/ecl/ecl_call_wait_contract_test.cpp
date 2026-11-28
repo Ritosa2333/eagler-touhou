@@ -7,7 +7,7 @@ TEST(synchronous_call_wait_preserves_caller_and_has_no_child_context) {
     std::vector<u8> main, child;
     th13test::emit(main, 0, 40, 0, 255, 0, {0});
     th13test::emit(main, 0, 100, 0, 255, 0, {1});
-    const char name[8] = {'c','h','i','l','d',0,0,0};
+    const char name[8] = {'c', 'h', 'i', 'l', 'd', 0, 0, 0};
     th13test::emit(main, 0, 11, 0, 255, 0, {8}, name, sizeof name);
     th13test::emit(main, 0, 100, 0, 255, 0, {3});
     th13test::emit(main, 0, 23, 0, 255, 0, {100});
@@ -38,8 +38,6 @@ TEST(synchronous_call_wait_preserves_caller_and_has_no_child_context) {
     CHECK_EQ(threads.step(1), 0);
     CHECK_EQ(commands.calls.size(), 2u);
     CHECK_EQ(threads.step(1), 0);
-    // 004772a0/00477030: the original binary emits [1,2] at frame0,
-    // then [4,3] at frame3, with one unchanged context address throughout.
     CHECK_EQ(commands.calls.size(), 4u);
     CHECK_EQ(commands.calls[2].ints[0], 4);
     CHECK_EQ(commands.calls[3].ints[0], 3);

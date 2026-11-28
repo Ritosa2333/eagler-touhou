@@ -1,4 +1,3 @@
-// M6：WorldState 实现——capture/restore/digest（头文件注释即契约）。
 #include "WorldState.hpp"
 #include "HostState.hpp"
 #include "DigestSink.hpp"
@@ -10,8 +9,7 @@
 
 namespace th13::multiplayer {
 
-
-} // namespace th13::multiplayer
+}
 #include "WorldDigestValues.hpp"
 namespace th13::multiplayer {
 void DigestSink::vm(const AnmVm& v) {
@@ -23,8 +21,6 @@ void DigestSink::vm(const AnmVm& v) {
     if(v.resource)u64(v.resource->content_identity());
     boolean(v.sprite_resource!=nullptr);
     if(v.sprite_resource)u64(v.sprite_resource->content_identity());
-    // Use the actual bound pointers, not source_script/visual.sprite: those
-    // retain the original file-local fields, including fallback selections.
     const auto script_index=v.resource?v.resource->script_index(v.script):(v.script?-2:-1);
     i32(script_index);
     if(script_index==-2 && v.script)u64(anm_script_identity(*v.script));
@@ -228,8 +224,6 @@ uint64_t WorldState::digest_host(const HostState& state) {
     if (e.chapter) d.i32(*e.chapter);
     d.boolean(e.fallback_sprite_resource != nullptr);
     if (e.fallback_sprite_resource) d.u64(e.fallback_sprite_resource->content_identity());
-    // Resolution, raster scale, screen offsets and physical dimensions belong
-    // to each display. Their logical simulation values above remain compared.
     digest_value(d, std::tie(s.loading_animation_rate, s.loading_signature, s.loading_prayer));
     d.boolean(bool(s.loading_registry));
     if (s.loading_registry) digest_registry(d, *s.loading_registry);
@@ -342,7 +336,6 @@ void digest_bullet(DigestSink& d, const StageBullet& bullet) {
         for (float value : bullet.target_speed_velocity) d.f32(value);
 }
 
-// P3.2：激光全值域 digest（缺口 3——此前仅 u64(size)，三处 sink 同补）。
 void digest_laser(DigestSink& d, const StageLaser& laser) {
     d.tag("laser");
     d.i32(i32(laser.kind)); d.i32(laser.id); d.u32(laser.generation);
@@ -368,7 +361,6 @@ void digest_laser(DigestSink& d, const StageLaser& laser) {
     d.boolean(laser.pending_remove); d.boolean(laser.has_updated);
     d.f32(laser.line_limit);
     d.f32(laser.line_descriptor_angle); d.f32(laser.line_initial_length);
-    // 曲线激光路径段 + 采样点（vector——先尺寸后逐点，稳定序）。
     d.u64(laser.curve_path.segments.size());
     for (const CurveLaserSegment& segment : laser.curve_path.segments) {
         d.f32(segment.start_time); d.f32(segment.end_time); d.i32(segment.mode);
@@ -418,8 +410,6 @@ void digest_stage_enemy(DigestSink& d, const StageEnemy& enemy,
     d.f32(enemy.pos.origin[2]); d.f32(enemy.pos.sine_phase);
     d.f32(enemy.pos.aux[0]); d.f32(enemy.pos.aux[1]); d.f32(enemy.pos.aux[2]);
     d.u32(enemy.pos.mode);
-    // P3.2：mover 嵌套插值器（缺口 3——polar/radial/postime 此前全漏，
-    // 活动插值中的敌机在回滚重放后会按旧端点继续插值而 digest 不报）。
     for (const StageMover* mover : {&enemy.vel, &enemy.pos}) {
         d.f32(mover->polar.from_a); d.f32(mover->polar.from_b);
         d.f32(mover->polar.to_a); d.f32(mover->polar.to_b);
@@ -507,8 +497,6 @@ void digest_stage_enemy(DigestSink& d, const StageEnemy& enemy,
     d.i32(enemy.anm_slot0_bank); d.i32(enemy.anm_slot0_script_offset);
     for (i32 value : enemy.anm_script) d.i32(value);
     for (u32 value : enemy.anm_slot_handle) {
-        // Title and loading animations can allocate different local IDs before
-        // the same combat starts. Keep slot occupancy in the wire checksum.
         d.u32(include_animation_ids ? value : u32(value != 0));
     }
     for (const Vec3& offset : enemy.anm_slot_offset) {
@@ -559,8 +547,6 @@ void digest_ecl_threads(DigestSink& d, const EclThreadsSnapshot& threads) {
                     break;
                 }
             }
-            // Non-null foreign or non-boundary pointers have no legal program
-            // identity. Distinguish them from null without reading that storage.
             if (!found) d.u8(2);
         }
     };
@@ -605,7 +591,6 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
                          u32 transition_handle) {
     ready_ = false;
     StageSim& sim = battle.sim;
-    // ---- StageBattle 玩家面 ----
     battle_.seat_count = battle.seat_count;
     battle_.active_seat = battle.active_seat;
     if (battle.seat_count < 2) {
@@ -621,10 +606,7 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
     battle_.trance_generation = battle.trance_generation;
     battle_.death_trance_generation = battle.death_trance_generation;
     battle_.trance_task_frame = battle.trance_task_frame_;
-    // ---- StageSim ----
     sim_.frame = sim.frame;
-    // P4：resize 复用槽内 EnemySnapshot（fields 的 string 与 threads 的
-    // vector 容量跨帧保留；capture_fields 的拷贝赋值复用既有 string 容量）。
     sim_.enemies.resize(sim.enemies.size());
     for (size_t index = 0; index < sim.enemies.size(); ++index) {
         EnemySnapshot& snapshot = sim_.enemies[index];
@@ -634,7 +616,6 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
         if (enemy.fog) { snapshot.has_fog = true; snapshot.fog = *enemy.fog; }
         else snapshot.has_fog = false;
     }
-    // P4：assign 复用既有容量（稳态零堆分配；值语义与整拷赋值等价）。
     sim_.bullets.assign(sim.bullets.begin(), sim.bullets.end());
     sim_.lasers.assign(sim.lasers.begin(), sim.lasers.end());
     sim_.gvars_writable_ints.assign(sim.gvars.writable_ints_.begin(), sim.gvars.writable_ints_.end());
@@ -672,7 +653,6 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
     sim_.anm_effects.assign(sim.anm_effects.begin(), sim.anm_effects.end());
     sim_.bomb_active = sim.bomb_active;
     sim_.spell = sim.spell.state();
-    // ---- ItemManager ----
     items_.items = battle.item_manager.items();
     items_.spirits = battle.item_manager.spirits();
     items_.ordinary_free.assign(battle.item_manager.ordinary_free_.begin(), battle.item_manager.ordinary_free_.end());
@@ -686,32 +666,24 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
     items_.cancel_total = battle.item_manager.cancel_total_;
     items_.cancel_wave = battle.item_manager.cancel_wave_;
     items_.point_items = battle.item_manager.point_items_;
-    // ---- 会话/分数 ----
     if (sim.session) progress_ = *sim.session;
     else progress_ = SessionState{};
     score_ = battle.score_ ? *battle.score_ : HudScoreState{};
-    // ---- 双 RNG ----
     game_rng_.seed = sim.random.seed();
     game_rng_.index = sim.random.index();
     visual_rng_.seed = visual.seed();
     visual_rng_.index = visual.index();
-    // ---- 表现层手账（生产路径：registry 快照同批次的句柄映射 + 自有
-    // VM 值。无头测试无 presentation → 空手账，restore 跳过）----
     has_present_ = presentation != nullptr;
     if (presentation) {
         if (!presentation->capture_presentation(present_)) return false;
     } else {
         present_ = StagePresentation::SnapshotData{};
     }
-    // Capture the owner identities first: draw-only item VMs have no registry
-    // node, but their semantic slot and restore binding belong to presentation.
     if (battle.mp_registry()) {
         if (!battle.mp_registry()->capture(anm_, present_.embedded_identities)) return false;
     } else {
         anm_ = AnmRegistry::SnapshotData{};
     }
-    // ---- P3.2 宿主域（RunScene：震动/对话/STD；转场句柄由调用方供给）。
-    // 无头测试不传 scene = 该组域为空，restore 跳过（与 presentation 同门）。
     has_scene_ = scene != nullptr;
     if (scene) {
         scene_state_ = scene->capture_rollback();
@@ -744,7 +716,6 @@ bool WorldState::capture(StageBattle& battle, GameRandom& visual, const ReplayVi
         previous_scenery_extra_ = StageScenery::ExtraSnapshot{};
         transition_handle_ = 0;
     }
-    // ---- 宿主回放面（回放会话输入游标；live run 不传 = 不快照）----
     has_replay_ = replay != nullptr;
     if (replay) replay_ = *replay;
     ready_ = true;
@@ -756,8 +727,6 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
                          u32* transition_handle_out) {
     if (!ready_) return false;
     StageSim& sim = battle.sim;
-    // Embedded VMs are reused in place by presentation restore. Only changed
-    // addresses enter remapped_, while embedded draw references resolve via O(1) slot index.
     remapped_.clear();
     restored_embedded_.clear();
     const bool has_embedded = presentation && has_present_;
@@ -767,9 +736,6 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
     if (battle.mp_registry() &&
         !battle.mp_registry()->restore(anm_, remapped_, has_embedded ? &restored_embedded_ : nullptr))
         return false;
-    // ---- P3.2 宿主域恢复（敌机池/RNG 已恢复之后：震动回调的 run 引用
-    // scene.battle.sim.random，battle 必须先就位；重建经 start_shake 生产
-    // 路径保持注册序。capture 无 scene 时跳过（无头测试路径）。----
     if (scene && has_scene_) {
         if (!scene->restore_shakes(shakes_)) return false;
         scene->restore_dialog({dialog_, dialog_advance_, dialog_ready_});
@@ -783,24 +749,15 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
         }
         if (transition_handle_out) *transition_handle_out = transition_handle_;
     }
-    // ---- StageSim 敌机池（数量对齐 → 逐只值拷贝 + 线程恢复）----
     while (sim.enemies.size() > sim_.enemies.size()) sim.enemies.pop_back();
     while (sim.enemies.size() < sim_.enemies.size()) {
-        // 新敌机对象：threads 由 snapshot 恢复时重建（EclThreads::restore
-        // 校验 program 指针一致——同一 sim 的 program 不变）。
         sim.enemies.push_back(std::make_unique<StageEnemy>());
     }
     for (size_t i = 0; i < sim_.enemies.size(); ++i) {
         StageEnemy& enemy = *sim.enemies[i];
         const EnemySnapshot& snapshot = sim_.enemies[i];
-        // 值域替换（restore_fields 保留 threads/fog 对象身份）。
         enemy.restore_fields(snapshot.fields);
         if (!enemy.threads) {
-            // 新建线程组必须复刻生产接线（StageSim 敌机生成处）：
-            // EclThreads 构造只设 program/variables/random，commands 由
-            // 宿主补接；EclThreads::restore 的 rebind 以目标对象自身的
-            // commands 指针为准——不补接则游戏指令（弹幕 spawn 等）静默
-            // 失效，restore 后第一帧权威态即分歧。
             enemy.threads = std::make_unique<EclThreads>(
                 sim.program, &sim.gvars, &sim.random);
             enemy.threads->main.commands = &sim.commands;
@@ -851,7 +808,6 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
     sim.anm_effects = sim_.anm_effects;
     sim.bomb_active = sim_.bomb_active;
     sim.spell.restore(sim_.spell);
-    // ---- ItemManager ----
     battle.item_manager.items() = items_.items;
     battle.item_manager.spirits() = items_.spirits;
     battle.item_manager.ordinary_free_ = items_.ordinary_free;
@@ -865,15 +821,12 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
     battle.item_manager.cancel_total_ = items_.cancel_total;
     battle.item_manager.cancel_wave_ = items_.cancel_wave;
     battle.item_manager.point_items_ = items_.point_items;
-    // ---- 会话/分数 ----
     if (sim.session) *sim.session = progress_;
     if (battle.score_) *battle.score_ = score_;
-    // ---- 双 RNG ----
     sim.random.reseed(game_rng_.seed);
     sim.random.set_index(game_rng_.index);
     visual.reseed(visual_rng_.seed);
     visual.set_index(visual_rng_.index);
-    // ---- StageBattle 玩家面 ----
     battle.seat_count = battle_.seat_count;
     battle.active_seat = battle_.active_seat;
     battle.seats = battle_.seats;
@@ -885,10 +838,6 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
     battle.trance_generation = battle_.trance_generation;
     battle.death_trance_generation = battle_.death_trance_generation;
     battle.trance_task_frame_ = battle_.trance_task_frame;
-    // M6 复核修复：restore 与下一帧 step_mp 的 copy-in 之间，宿主可能读
-    // 活动席窗口（end_trance 的 owner 定向死亡读 player_x/bomb_timer 等
-    // 发散期旧值）。多席时用权威槽位刷新窗口，消除读窗；单席窗口即
-    // 权威（enable_seats 前不触 seats），保持不动。
     if (battle.seat_count >= 2) {
         battle.player_state_ = battle.seats[size_t(battle.active_seat)];
         battle.player_ = &battle.seat_huds[size_t(battle.active_seat)];
@@ -898,11 +847,7 @@ bool WorldState::restore(StageBattle& battle, GameRandom& visual, ReplayView* re
         battle.player_state_ = battle_.single_player;
         if (battle.player_) *battle.player_ = battle_.single_hud;
     }
-    // ---- 宿主回放面（capture 时带游标的会话才恢复——live run 的
-    // replay_consumed/cursor 不在快照边界内）----
     if (replay && has_replay_) *replay = replay_;
-    // HUD pointers and draw opacity are views of the restored world. A render
-    // may follow restoration before any new update, including a paused frame.
     if (scene && has_scene_) scene->sync_mp_hud_view();
     return true;
 }
@@ -926,8 +871,6 @@ void WorldState::discard() noexcept {
 }
 
 const char* WorldState::field_ledger() {
-    // M6 交付台账：快照覆盖的权威域（测试断言逐条引用；新权威域落地时
-    // 必须同步登记——ledger 即快照完整性契约）。
     return "battle.seats|battle.seat_huds|battle.seat_characters|"
            "battle.seats.bomb_protection|battle.seats.final_death|"
            "battle.seats.ghost_drift|battle.seats.ghost_just_entered|"
@@ -942,7 +885,6 @@ const char* WorldState::field_ledger() {
            "items.pool|items.spirits|items.free_lists|items.events|"
            "items.counters|session.state|score.view|"
            "rng.game|rng.visual|anm.registry.v2_live|present.bullets.v2_live|"
-           // P3.2 宿主域（scene 非空时有效；transition 句柄经接线传入）。
            "scene.shakes|scene.dialog|scene.scenery|scene.transition";
 }
 
@@ -1004,20 +946,15 @@ std::string WorldState::diagnostic_detail() const {
     return out;
 }
 
-
 namespace {
 struct ItemFixedStream {
     uint64_t factor = 1;
     std::array<uint64_t, 256> adjustment{};
 };
-// F_S(h) = h * P^|S| + C_S[h & 255]. XOR only changes the low byte;
-// multiplication makes the remaining high 56 input bits a linear contribution.
 const std::array<ItemFixedStream, 12>& default_item_streams() {
     static const auto streams = [] {
         std::array<ItemFixedStream, 12> result{};
         std::array<uint8_t, 69> bytes{};
-        // The unchanged Item serializer has 17 little-endian 32-bit fields
-        // followed by alive. Only target, tracking and anm_frame_prev are -1.
         for (size_t word : {size_t(3), size_t(4), size_t(14)})
             for (size_t byte = 0; byte < 4; ++byte) bytes[word * 4 + byte] = 255;
         auto& first = result[0];
@@ -1070,7 +1007,7 @@ template<size_t N> void digest_items_exact(DigestSink& d, const std::array<Item,
     }
     if (defaults) append_default_items(d, defaults);
 }
-} // namespace
+}
 
 uint64_t WorldState::digest_core() const {
     DigestSink d;
@@ -1214,7 +1151,6 @@ void WorldState::digest_rng_fields(DigestSink& d) const {
     d.u32(visual_rng_.seed); d.u32(visual_rng_.index);
 }
 
-// 分域 digest（诊断面）：core 各域独立摘要（首差域定位）。
 void WorldState::digest_domains(char* buffer, size_t capacity) const {
     bool first = true;
     auto write = [&](const char* name, uint64_t value) {
@@ -1404,8 +1340,6 @@ void WorldState::digest_core_sink(DigestSink& d, bool include_animation_ids) con
 
 static void digest_registry(DigestSink& d, const AnmRegistry::SnapshotData& anm_);
 
-// ANM registry：序号化摘要（不 hash 指针——VM 值 + 链关系 + 句柄）。
-// digest_core_sink 尾接调用（全量 digest 专用——表现层 VM 池面）。
 void WorldState::digest_anm_sink(DigestSink& d) const {
     digest_registry(d, anm_);
 }
@@ -1438,4 +1372,4 @@ static void digest_registry(DigestSink& d, const AnmRegistry::SnapshotData& anm_
     }
 }
 
-}  // namespace th13::multiplayer
+}

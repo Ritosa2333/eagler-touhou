@@ -1,22 +1,3 @@
-// m1.draw_purity_rng —— M1/T7 固定 case：Draw 纯度观察器法 + 300/600/1200
-// 三窗 + present×3（workflow T7「T5 观察器法 + 300/600/1200 三窗 + present×3」）。
-//
-// 被测生产面（全部 public，零生产钩子）：
-//   - GameRandom::instance_draw_observer（Rng.hpp:57-59 实例感知抽取观测，
-//     只读不改变取值）：双流 = game 0x4dc324（app.game_random）/ visual
-//     0x4dc31c（app.visual）（ApplicationState.hpp:389-394 注释）。
-//   - ApplicationState::present（Application.cpp:1618-1632）：一次呈现段，
-//     M1 红线「Draw 不得推进模拟/RNG」——观察器计数与双流 (seed,index) 在
-//     present×N 后必须恒 0/不变。
-//
-// 断言命题：
-//   1) 三个独立窗（300/600/1200 帧，回放 th13_01 对局 f 起）：每一帧的
-//      present 段（常态 ×1、采样帧 ×3）双流抽取计数恒 0、流状态不变；
-//   2) 正控：同窗 update+commit 段双流都发生真实抽取（累计 >0）——证明
-//      计数面在真实抽取上会亮，纯度断言非空转；
-//   3) 跨实例：300 帧窗内 update+commit+present×3 与 update+commit-only
-//      双实例的双流 (seed,index) 逐帧全等——present 次数不改变任何流的
-//      取值序列（跨实例口径，非自比）。
 #include "../../harness/test_framework.hpp"
 
 #include "game/GameInput.hpp"
@@ -53,7 +34,6 @@ bool read_repo_file(const std::string& relative, std::vector<u8>& out) {
     return got == out.size();
 }
 
-// 确定性回放 boot（套件同款拍：真实资产 + 回放种子恢复）。
 bool boot_replay_battle(App& app, const std::vector<u8>& rpy, const char* save_name) {
     ::setenv("TH13_SAVE_PATH", save_name, 1);
     const char* asset_root = std::getenv("TH13_NATIVE_ASSET_ROOT");
@@ -86,7 +66,6 @@ bool boot_replay_battle(App& app, const std::vector<u8>& rpy, const char* save_n
     return app.run != nullptr && app.failure.empty();
 }
 
-// ---- 双流抽取计数器（instance_draw_observer 公开面）----
 struct StreamCounters {
     const th13::GameRandom* visual = nullptr;
     const th13::GameRandom* game = nullptr;
@@ -95,7 +74,7 @@ struct StreamCounters {
 };
 StreamCounters* g_counters = nullptr;
 
-void counting_observer(const th13::GameRandom* stream, u32 /*before*/, u32 /*after*/) {
+void counting_observer(const th13::GameRandom* stream, u32 , u32 ) {
     if (!g_counters || !stream) return;
     if (stream == g_counters->visual) ++g_counters->visual_draws;
     else if (stream == g_counters->game) ++g_counters->game_draws;
@@ -121,7 +100,6 @@ struct ObserverGuard {
     ~ObserverGuard() { uninstall(); }
 };
 
-// RNG 流身份（seed+index 位级；GameRandom 0x472c90 镜像的状态对）。
 struct StreamState {
     u32 visual_seed = 0, visual_index = 0;
     u32 game_seed = 0, game_index = 0;
@@ -141,9 +119,8 @@ bool operator==(const StreamState& a, const StreamState& b) {
            a.game_seed == b.game_seed && a.game_index == b.game_index;
 }
 
-}  // namespace
+}
 
-// ---- 1) 300/600/1200 三窗：每帧 present 段双流计数恒 0 + 采样帧 present×3 ----
 TEST(draw_purity_rng_observer_windows_300_600_1200) {
     std::vector<u8> rpy;
     CHECK(read_repo_file("games/replays/th13_01.rpy", rpy));
@@ -169,14 +146,10 @@ TEST(draw_purity_rng_observer_windows_300_600_1200) {
                     guard.uninstall();
                     return;
                 }
-                // 正控累计：update+commit 段的抽取计入窗合计后清零——
-                // 后续 present 段计数必须从零开始且保持为零。
                 game_positive += counters.game_draws;
                 visual_positive += counters.visual_draws;
                 counters.game_draws = 0;
                 counters.visual_draws = 0;
-                // stage1 回放 f0..f1200 实测 destination-free；屏障帧出现即
-                // 窗口选点漂移（回放换关在 f11675 之外）。
                 if (app.pending_destination >= 0) {
                     std::printf("  失败 window%d f%d: 屏障帧混入纯度窗（pending_destination=%d）\n",
                                 window, f, app.pending_destination);
@@ -210,7 +183,6 @@ TEST(draw_purity_rng_observer_windows_300_600_1200) {
                 }
                 CHECK(before == after);
             }
-            // 正控收口：模拟段双流都有真实抽取（计数面非空转）。
             if (game_positive == 0 || visual_positive == 0) {
                 std::printf("  失败 window%d: 正控失败 game=%u visual=%u（观察器计数面失效）\n",
                             window, game_positive, visual_positive);
@@ -222,13 +194,10 @@ TEST(draw_purity_rng_observer_windows_300_600_1200) {
     }
 }
 
-// ---- 2) 跨实例：update+commit+present×3 与 update+commit-only 双流逐帧全等 ----
 TEST(draw_purity_rng_streams_cross_instance_present_x3_300) {
     std::vector<u8> rpy;
     CHECK(read_repo_file("games/replays/th13_01.rpy", rpy));
     if (rpy.empty()) return;
-    // 双实例同 boot（回放种子恢复同一状态）；full 臂每帧 present×3、split 臂
-    // 不 present——300 帧全窗双流 (seed,index) 逐帧全等。
     App arm_full, arm_split;
     CHECK(boot_replay_battle(arm_full, rpy, "t7dp-xfull-save.bin"));
     CHECK(boot_replay_battle(arm_split, rpy, "t7dp-xsplit-save.bin"));

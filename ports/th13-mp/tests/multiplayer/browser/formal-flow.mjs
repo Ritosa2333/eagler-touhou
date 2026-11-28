@@ -1,6 +1,3 @@
-// Production Launcher/Relay full-run acceptance. Start the repository Launcher
-// and relay first; TH13_ORIGIN, TH13_CASE, TH13_ROUTE, TH13_RTT, TH13_DIFFICULTY
-// select the matrix cell. Outputs remain in ignored artifacts. No state injection.
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,7 +34,7 @@ const dir = resolve(
 );
 const origin = process.env.TH13_ORIGIN || "http://127.0.0.1:18760";
 await mkdir(resolve(dir, ".."), { recursive: true });
-await mkdir(dir); // A rerun must not append to evidence from a previous run.
+await mkdir(dir);
 const expectedFiles = [];
 let runtimeManifestBytes;
 const report = {
@@ -100,8 +97,6 @@ const runtimeResponse = url => {
 };
 async function settleRuntimeDelivery(label) {
   await boundedOperation(label, async () => {
-    // New responses may arrive while an earlier body is being read. Drain
-    // the live request and task sets, rather than a single promise snapshot.
     while (deliveryTasks.size || deliveryRequests.size) {
       await Promise.all([...deliveryTasks]);
       if (deliveryRequests.size) await new Promise(resolve => setTimeout(resolve, 10));
@@ -364,8 +359,6 @@ try {
       : new URL("../../../build-eagler-multiplayer/" + name, import.meta.url));
     return {name, bytes:bytes.length, sha256:createHash("sha256").update(bytes).digest("hex")};
   })));
-  // Retain the actual build artifact before launching any client. Delivered
-  // response hashes below bind each document to these exact output bytes.
   runtimeManifestBytes = await readFile(process.env.TH13_MP_BUILD
     ? resolve(process.env.TH13_MP_BUILD, "build.json")
     : new URL("../../../build-eagler-multiplayer/build.json", import.meta.url));
@@ -408,8 +401,6 @@ try {
     if (defaultFlow) await context.addInitScript(installFormalAudit);
     if (defaultFlow) await context.addInitScript(installFramebufferCapture);
     await context.addInitScript(() => {
-      // Install before the managed runtime publishes Module, so loading and
-      // the first callback cannot disappear from the performance evidence.
       const work = globalThis.__frameWork = {samples: [], errors: [],
         capture: {first: null, last: null, count: 0}};
       let moduleValue;
@@ -583,7 +574,6 @@ try {
         document.querySelector("#mpLoadoutField0")?.value === String(value) &&
         !document.querySelector("#mpLoadoutField0")?.disabled, desired);
     } else {
-      // TH13 has one shot per character, with the room's normal next control.
       await page.locator(`[data-mp-seat="${seat}"] .mp-seat-edit`).click();
       for (let step = 0; step < desired; ++step) {
         await page.locator("#mpLoadoutNextSeat").click();
@@ -696,8 +686,6 @@ try {
         m.onGameFrame = (ok, ms, ticks) => {
           w.__health.push({ t: performance.now(), ok, ms, ticks });
           if (w.__health.length > 100) w.__health.shift();
-          // Capture the final confirmed tail before the normal shell closes
-          // its session on room return. Read-only, once per finished world.
           if (!w.__formalAudit && !w.__formalTail && m._th13_room_return_ready()) {
             w.__formalTail = {
               audit: JSON.parse(m.UTF8ToString(m._th13_mp_audit_take())),
@@ -774,8 +762,6 @@ try {
     Number(process.env.TH13_TIMEOUT_MINUTES || 90) * 60 * 1000
   ) {
     if (!initialStates) await new Promise((r) => setTimeout(r, 2000));
-    // inspect drains the confirmed audit. The identity/character check above
-    // already took the first batch; consume it before requesting another.
     const states = initialStates || await inspectAll();
     initialStates = null;
     for (let seat = 0; seat < PLAYER_COUNT; seat++) {
@@ -1020,9 +1006,6 @@ try {
   report.failure = error.stack;
   console.error(error.stack);
 } finally {
-  // Freeze every reachable client before any profile finalization, file IO or
-  // analysis; a failed client is still an incomplete observation, and cannot
-  // prevent the others from saving their independently bounded tails.
   const freezes=await Promise.allSettled(pages.map((page,seat)=>
     inspectTimedOut.has(seat) ? Promise.reject(Error('Prior inspection timed out; tail incomplete')) :
       boundedOperation(`seat ${seat} freeze`,()=>page.evaluate(freezeFrameWork),15000)));
@@ -1040,8 +1023,6 @@ try {
   report.performance = [];
   const finalFlushes=await Promise.allSettled(pages.map(async (page,seat)=>{
       const boundary=boundaries[seat];
-      // Even if freeze failed, attempt to preserve reachable raw observations;
-      // it cannot qualify as a complete boundary.
       const final = await inspectBounded(page);
       if (!boundary || boundary.unmatchedCandidate || !final.work || boundary.count!==final.work.capture.count || boundary.first!==final.work.capture.first ||
           boundary.last!==final.work.capture.last)
@@ -1096,8 +1077,6 @@ try {
         report.errors.push({browserIndex:index,message:`Browser close failed: ${result.reason}`});
         report.passed=false;
       }
-    // A response may finish during final identity collection or browser close.
-    // Persist after the observation sources close and all body reads settle.
     try {
       await settleRuntimeDelivery('Closed runtime response bodies');
       report.closedDelivery = assertBuildDelivery({expectedFiles,delivery:report.delivery,

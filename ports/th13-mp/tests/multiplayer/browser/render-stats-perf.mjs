@@ -1,18 +1,3 @@
-// Real-browser render workload probe (single-player path shared by both ports).
-//
-// A headless Chromium client boots the production runtime, enters a Spell
-// Practice card (or a stage) and pumps deterministic frames with a scripted
-// pilot. Every frame records its CPU cost and the renderer's submission
-// statistics (draw calls, batches, vertex bytes, binds, buffer replacements).
-// The workload numbers are deterministic and independent of this machine's
-// GPU, so a card's GPU submission pressure can be read and compared directly.
-//
-//   TH13_STAGE=3 TH13_SLOT=3 TH13_DIFF=3 node tests/multiplayer/browser/render-stats-perf.mjs [--out dir]
-//
-// Environment: TH13_STAGE (3), TH13_SLOT (spell slot, -1 = whole stage, 3),
-// TH13_CHAR (0), TH13_DIFF (3 = Lunatic), TH13_FRAMES (1800), TH13_RUNTIME
-// (module path; /sp/artifacts/sdl3/th13-sdl.mjs for ports/th13), TH13_PRESENT
-// (1 = present every frame), TH13_CHROME_FLAGS, PLAYWRIGHT_MODULE, CHROME_PATH.
 import {createRequire} from 'node:module';
 import {mkdir, writeFile} from 'node:fs/promises';
 import {join, resolve} from 'node:path';
@@ -74,9 +59,6 @@ try {
   }
   const samples = await page.evaluate(() => window.__probe.samples);
   await writeFile(join(out, 'samples.json'), JSON.stringify(samples));
-  // Frames where the stage clock advanced are live gameplay; the pilot is
-  // scripted and may die, after which the game idles on a prompt and keeps
-  // redrawing the same scene. Only live frames describe the card's workload.
   const live = samples.filter((row, index) => index === 0 || row.stage_frame !== samples[index - 1].stage_frame);
   const column = name => live.map(row => row[name]);
   const peak = live.reduce((best, row) => row.calls > best.calls ? row : best, live[0]);

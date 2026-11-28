@@ -18,7 +18,6 @@ function makeStream({
   const rows = [];
   let seq = 0;
   let now = 0;
-  // Startup loading row (stage 0, source 4) + menu row (stage 1, source 1)
   rows.push({
     sequence: ++seq, begin: now, end: now + 3, milliseconds: 3,
     stage: 0, endStage: 1, phase: 'loading', source: 4,
@@ -84,9 +83,6 @@ test('healthy 60fps production stream passes all strict gates', () => {
 });
 
 test('negative control: zero-sim wakeups diluting P95 below 16.67ms are rejected by simulatedOnly gate', () => {
-  // Make half the callbacks simulated=0 (0.2ms) and 20% of simulated>0 callbacks 22ms:
-  // All-callback P95 stays <= 16.67ms (~90% of all rows are <= 6ms),
-  // so raw evaluateFrameWork passes, while simulatedOnly P95 is 22ms -> MUST FAIL.
   const {rows, options} = makeStream({
     stages: [1, 2],
     activePerStage: 300,
@@ -120,7 +116,6 @@ test('negative control: single-stage simulated-only breach is rejected even when
 });
 
 test('negative control: low forward FPS (starved simulation) is rejected even when callback P95 is tiny', () => {
-  // 30 fps progression (stepMs = 33.3ms) with 4ms callbacks: P95 is 4ms, but game runs at half speed.
   const {rows, options} = makeStream({stepMs: 33.3, workMs: 4.0, zeroEvery: 20});
   const res = evaluateMpPerformance(rows, options);
   assert.equal(res.frameWork.passed, true);
@@ -170,7 +165,6 @@ test('untimed pilot keeps production onGameFrame inside timed window and pilot o
   globalThis.document = {querySelector: () => ({contentWindow: win})};
   try {
     installUntimedPilot({seat: 2, pilotSource: String(fakePilot)});
-    // Simulate C++ drive_one_frame: th13_browser_frame -> finish -> th13_browser_work_frame
     module.onGameFrame(1, 5.5, 1);
     assert.deepEqual(order, [['prodOnGameFrame', 1, 5.5, 1]], 'Pilot must NOT run before work row is recorded');
     module.onGameWorkFrame({sequence: 1, begin: 10, end: 15.5, milliseconds: 5.5});
@@ -182,7 +176,6 @@ test('untimed pilot keeps production onGameFrame inside timed window and pilot o
     assert.equal(win.__pilotDeferred.executed, 1);
     assert.deepEqual(work.errors, []);
 
-    // Unpaired onGameFrame must flag an error
     module.onGameFrame(1, 4.0, 1);
     module.onGameFrame(1, 4.2, 1);
     assert.equal(work.errors.length, 1);

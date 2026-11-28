@@ -1,56 +1,121 @@
-// stage1 全局变量供给（0x420380 int 视图 / 0x420d00 float 视图的行为子集）。
-// 语义依据与【待校准】清单见 docs/plans/event-contract.md；事件字段是 oracle 合同。
-#include "StageSim.hpp"
+#include "AnmVm.hpp"
 #include "SessionState.hpp"
+#include "StageSim.hpp"
 
 #include <algorithm>
 #include <cmath>
-#include <cstring>
+#include <vector>
 
 namespace th13 {
 
 namespace {
-const StageEnemy* primary_boss(const StageSim& sim) {
+StageEnemy* primary_boss(StageSim& sim) {
     if (sim.boss_slot[0] < 0) return nullptr;
-    for (const auto& enemy : sim.enemies)
+    for (auto& enemy : sim.enemies)
         if (!enemy->dead && enemy->script_id == sim.boss_slot[0]) return enemy.get();
     return nullptr;
 }
+
+float aim(const StageSim& sim, const StageEnemy* enemy, const float* source) {
+    if (!enemy) return 0.0f;
+    const float dy = sim.player_y - source[1];
+    const float dx = sim.player_x - source[0];
+    if (dy == 0.0f && dx == 0.0f) return 1.5707964f;
+    return float(std::atan2(double(dy), double(dx)));
 }
 
-// ---------------- 全局变量（0x420380 int 视图 / 0x420d00 float 视图） ----------------
+float motion_angle(const StageEnemy* enemy) {
+    if (!enemy) return 0.0f;
+    return float(std::atan2(double(enemy->motion_delta[1]), double(enemy->motion_delta[0])));
+}
+
+float distance_to_enemy(const StageSim& sim, const StageEnemy* enemy) {
+    const double dx = double(sim.player_x) - double(enemy ? enemy->position[0] : 0.0f);
+    const double dy = double(sim.player_y) - double(enemy ? enemy->position[1] : 0.0f);
+    const float squared = float(dx * dx + dy * dy);
+    return float(std::sqrt(double(squared)));
+}
+
+i32 active_enemy_count(const StageSim& sim) {
+    i32 count = 0;
+    for (const auto& enemy : sim.enemies)
+        if ((enemy->flags & 0x31u) == 0 && enemy->invulnerable < 1) ++count;
+    return count;
+}
+
+float float_script(i32 script) {
+    if (script >= 0) return float(script);
+    return float(double(script) + 4294967296.0);
+}
+}
 
 bool StageGvars::integer(i32 id, i32& value) {
     StageSim& sim = *this->sim;
-    if(id>=-9926&&id<=-9923){value=sim.shared_integers[id+9926];return true;}
-    if(id>=-9922&&id<=-9915){value=truncate_int(sim.shared_floats[id+9922]);return true;}
+    if (id >= -9926 && id <= -9923) {
+        value = sim.shared_integers[id + 9926];
+        return true;
+    }
+    if (id >= -9922 && id <= -9915) {
+        value = truncate_int(sim.shared_floats[id + 9922]);
+        return true;
+    }
     StageEnemy* e = sim.current;
     switch (id) {
-    case -10000:  // RAND（0x472c90 & 0x7fffffff）
+    case -10000:
         GameRandom::tag(0);
         value = i32(sim.random.next() & 0x7fffffffu);
         return true;
-    case -9999:  // RANDF 的 int 视图：ftol 截断（消耗一次抽取）
+    case -9999:
         GameRandom::tag(1);
         value = i32(sim.random.unit());
         return true;
-    case -9988:  // TIME int 视图（+0x14A8）
-        value = i32(e ? e->age : 0);
-        return true;
-    case -9987:  // RANDF2 int 视图：0x472e10 → ftol
-        // 0x420380 跳转表 case 0xffffd8fd（index 13）→ 0x4203cc
-        // `mov ecx,0x4dc324; call 0x472e10`：**game 流**。round-22 曾把
-        // 0x40120b/0x401342/0x401835（ANM 轨迹/特效处理器，非 ECL 求值器）
-        // 当作 ECL rand 调用点改读 visual 流，导致 udN01 S1 f60 起
-        // game_index 0 vs native 2、visual_index +2（S1 捕获 f1626 死亡）。
-        GameRandom::tag(2);
-        value = i32(sim.random.signed_unit());
-        return true;
-    case -9986:  // 00420380: enemy+0x521c bit25, set by timeout interruption
-        value = e && e->phase_timed_out ? 1 : 0;
-        return true;
-    case -9998:  // int getter 无对应 case，走 default 0（不消耗 RNG）
+    case -9998:
         value = 0;
+        return true;
+    case -9997:
+    case -9977:
+        value = e ? truncate_int(e->position[0]) : 0;
+        return true;
+    case -9996:
+    case -9976:
+        value = e ? truncate_int(e->position[1]) : 0;
+        return true;
+    case -9995:
+    case -9975:
+        value = e ? truncate_int(e->vel.pos[0]) : 0;
+        return true;
+    case -9994:
+    case -9974:
+        value = e ? truncate_int(e->vel.pos[1]) : 0;
+        return true;
+    case -9993:
+    case -9973:
+        value = e ? truncate_int(e->pos.pos[0]) : 0;
+        return true;
+    case -9992:
+    case -9972:
+        value = e ? truncate_int(e->pos.pos[1]) : 0;
+        return true;
+    case -9991:
+    case -9965:
+        value = truncate_int(sim.player_x);
+        return true;
+    case -9990:
+    case -9964:
+        value = truncate_int(sim.player_y);
+        return true;
+    case -9989:
+        value = 0;
+        return true;
+    case -9988:
+        value = e ? truncate_int(e->age) : 0;
+        return true;
+    case -9987:
+        GameRandom::tag(2);
+        value = truncate_int(sim.random.signed_unit());
+        return true;
+    case -9986:
+        value = e && e->phase_timed_out ? 1 : 0;
         return true;
     case -9985:
     case -9984:
@@ -61,107 +126,134 @@ bool StageGvars::integer(i32 id, i32& value) {
     case -9981:
     case -9980:
     case -9979:
-    case -9978:  // F0-F3 int 视图（ftol）
-        value = e ? i32(e->f_slots[id + 9981]) : 0;
+    case -9978:
+        value = e ? truncate_int(e->f_slots[id + 9981]) : 0;
         return true;
-    case -9935: case -9934: case -9933: case -9932:  // F4-F7, 00420380.
-        value = e ? truncate_int(e->f_slots[id + 9939]) : 0;
+    case -9971:
+        value = e ? truncate_int(e->vel.angle) : 0;
         return true;
-    case -9965: {
-        // M3：最近合格玩家（R-G；查询时点 = ECL 变量求值，敌机位置基准）。
-        float aim_x, aim_y;
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
-        value = i32(aim_x);
+    case -9970:
+        value = e ? truncate_int(e->pos.angle) : 0;
         return true;
-    }
-    case -9964: {
-        float aim_x, aim_y;
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
-        value = i32(aim_y);
+    case -9969:
+        value = e ? truncate_int(e->vel.speed) : 0;
         return true;
-    }
-    case -9944: {  // 00420669: player distance, rounded to f32 before ftol.
-        float distance = 0.0f;
-        floating(id, distance);
-        value = truncate_int(distance);
+    case -9968:
+        value = e ? truncate_int(e->pos.speed) : 0;
         return true;
-    }
-    case -9943: case -9942: case -9941: case -9940: {
-        const auto* boss = primary_boss(sim);
-        value = boss ? boss->i_slots[id + 9943] : 0;
+    case -9967:
+        value = e ? truncate_int(e->vel.radius) : 0;
         return true;
-    }
-    case -9939: case -9938: case -9937: case -9936: {
-        const auto* boss = primary_boss(sim);
-        value = boss ? i32(boss->f_slots[id + 9939]) : 0;
+    case -9966:
+        value = e ? truncate_int(e->pos.radius) : 0;
         return true;
-    }
     case -9963: {
-        StageEnemy* boss = sim.boss();
-        value = boss ? i32(boss->position[0]) : 0;
+        StageEnemy* boss = primary_boss(sim);
+        value = boss ? truncate_int(boss->position[0]) : 0;
         return true;
     }
     case -9962: {
-        StageEnemy* boss = sim.boss();
-        value = boss ? i32(boss->position[1]) : 0;
+        StageEnemy* boss = primary_boss(sim);
+        value = boss ? truncate_int(boss->position[1]) : 0;
         return true;
     }
-    case -9960:  // RANK
+    case -9961: {
+        AnmVm* vm = e && sim.enemy_animation ? sim.enemy_animation(*e, 0) : nullptr;
+        value = vm ? vm->source_script : 0;
+        return true;
+    }
+    case -9960:
         value = sim.rank;
         return true;
-    case -9959:  // DIFF
+    case -9959:
         value = sim.diff;
         return true;
-    case -9958:  // 420380: atan2(inner+0x7c, inner+0x78), then ftol.
-        value = e ? i32(std::atan2(double(e->motion_delta[1]), double(e->motion_delta[0]))) : 0;
-        return true;
-    case -9954:  // LIFE (+0x5138 in the enemy ECL manager)
-        value = e ? i32(e->life) : 0;
-        return true;
-    case -9953:
-    case -9952:
-    case -9951:
-    case -9950:  // EASY/NORMAL/HARD/LUNATIC flags, distinct from RANK
-        value = sim.diff == id + 9953;
+    case -9958:
+        value = truncate_int(motion_angle(e));
         return true;
     case -9957:
         value = 1;
         return true;
+    case -9956:
+        value = truncate_int(aim(sim, e, e ? e->vel.pos : nullptr));
+        return true;
+    case -9955:
+        value = truncate_int(aim(sim, e, e ? e->pos.pos : nullptr));
+        return true;
+    case -9954:
+        value = e ? truncate_int(e->life) : 0;
+        return true;
+    case -9953:
+    case -9952:
+    case -9951:
+    case -9950:
+        value = sim.diff == id + 9953 ? 1 : 0;
+        return true;
+    case -9949:
+    case -9948:
+    case -9947: {
+        const i32* slot = integer_destination(id);
+        value = slot ? *slot : 0;
+        return true;
+    }
     case -9946:
-        // ENM_CNT_REAL（mgr+0xB8）：0x420638 直读计数器，计数在链表摘除时
-        // 才减——遍历中途读取时，已标 dead 但未被本趟游标到达的敌机仍在列。
-        // 移植侧 vector 摘除同拍（step_frame 游标到达时擦除），故计数 =
-        // 当前 vector 大小（含 root；勿用 !dead 过滤——会把已标未摘者漏计，
-        // 回放实测 frame 3252 由此少 1 导致 Phantom01 生成门 [-9946]<11 误开）。
         value = i32(sim.enemies.size());
         return true;
-    case -9909:  // 0x420380 case 0xffffd94b：+0x11E8（trace_id，0x4183f0:61 的
-        // param2[0x14]）。oracle 实测 Phantom01（MBoss1_at 子线程创建）求值
-        // 得 75 = MBoss id（433 的 moveEnm 目标）。
-        value = e ? e->trace_id : 0;
+    case -9945:
+        value = (sim.session ? sim.session->stage : 1) + sim.diff;
         return true;
-    case -9908:  // 00417e90: count eligible nodes still linked to the manager.
-        value = 0;
-        for (const auto& enemy : sim.enemies)
-            if ((enemy->flags & 0x31u) == 0 && enemy->invulnerable < 1) ++value;
+    case -9944:
+        value = truncate_int(distance_to_enemy(sim, e));
         return true;
-    case -9907:  // SPELL_ID
-        value = sim.session ? sim.session->selected_spell_id : -1;
+    case -9943:
+    case -9942:
+    case -9941:
+    case -9940: {
+        StageEnemy* boss = primary_boss(sim);
+        value = boss ? boss->i_slots[id + 9943] : 0;
         return true;
-    case -9914:  // ID（+0x11E4）
-        value = e ? e->script_id : 0;
+    }
+    case -9939:
+    case -9938:
+    case -9937:
+    case -9936: {
+        StageEnemy* boss = primary_boss(sim);
+        value = boss ? truncate_int(boss->f_slots[id + 9939]) : 0;
         return true;
-    case -9931:  // 420380: enemy manager+0xc0, last constructor-assigned ID.
+    }
+    case -9935:
+    case -9934:
+    case -9933:
+    case -9932:
+        value = e ? truncate_int(e->f_slots[id + 9939]) : 0;
+        return true;
+    case -9931:
         value = sim.last_created_enemy_id;
         return true;
+    case -9930:
+        value = sim.player_lives;
+        return true;
+    case -9914:
+        value = e ? e->script_id : 0;
+        return true;
+    case -9911:
+        value = truncate_int(motion_angle(primary_boss(sim)));
+        return true;
+    case -9910: {
+        StageEnemy* boss = primary_boss(sim);
+        value = boss ? truncate_int(boss->vel.speed) : 0;
+        return true;
+    }
+    case -9909:
+        value = e ? e->trace_id : 0;
+        return true;
+    case -9908:
+        value = active_enemy_count(sim);
+        return true;
+    case -9907:
+        value = sim.session ? sim.session->selected_spell_id : -1;
+        return true;
     default:
-        for (const auto& pair : writable_ints_)
-            if (pair.first == id) {
-                value = pair.second;
-                return true;
-            }
         value = 0;
         return true;
     }
@@ -169,70 +261,67 @@ bool StageGvars::integer(i32 id, i32& value) {
 
 bool StageGvars::floating(i32 id, float& value) {
     StageSim& sim = *this->sim;
-    if (id == -9931) { value = float(sim.last_created_enemy_id); return true; }
-    if(id>=-9926&&id<=-9923){value=float(sim.shared_integers[id+9926]);return true;}
-    if(id>=-9922&&id<=-9915){value=sim.shared_floats[id+9922];return true;}
+    if (id >= -9926 && id <= -9923) {
+        value = float(sim.shared_integers[id + 9926]);
+        return true;
+    }
+    if (id >= -9922 && id <= -9915) {
+        value = sim.shared_floats[id + 9922];
+        return true;
+    }
     StageEnemy* e = sim.current;
     switch (id) {
     case -10000:
         GameRandom::tag(3);
         value = float(sim.random.next() & 0x7fffffffu);
         return true;
-    case -9999:  // RANDF（0x472de0）
+    case -9999:
         GameRandom::tag(4);
         value = sim.random.unit();
         return true;
-    case -9998:  // RANDRAD（0x472e10 × π）
+    case -9998:
         GameRandom::tag(5);
         value = float(sim.random.signed_unit() * 3.1415927410125732);
         return true;
-    case -9997:  // FINAL_X/Y（主位置 +0x1230）
+    case -9997:
+    case -9977:
+        value = e ? e->position[0] : 0.0f;
+        return true;
     case -9996:
-        value = e ? e->position[id == -9997 ? 0 : 1] : 0.0f;
+    case -9976:
+        value = e ? e->position[1] : 0.0f;
         return true;
-    case -9995:  // ABS_X/Y（+0x1274，ctor 写出生点后未见解更新——窗口内无人读）
+    case -9995:
+    case -9975:
+        value = e ? e->vel.pos[0] : 0.0f;
+        return true;
     case -9994:
-        value = e ? e->vel.pos[id == -9995 ? 0 : 1] : 0.0f;
+    case -9974:
+        value = e ? e->vel.pos[1] : 0.0f;
         return true;
-    case -9993:  // REL_X/Y（+0x12B8，恒 0）
+    case -9993:
+    case -9973:
+        value = e ? e->pos.pos[0] : 0.0f;
+        return true;
     case -9992:
-        value = 0.0f;
+    case -9972:
+        value = e ? e->pos.pos[1] : 0.0f;
         return true;
+    case -9991:
     case -9965:
-    case -9991: {
-        float aim_x, aim_y;  // M3：最近合格玩家
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
-        value = aim_x;
+        value = sim.player_x;
         return true;
-    }
+    case -9990:
     case -9964:
-    case -9990: {
-        float aim_x, aim_y;
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
-        value = aim_y;
+        value = sim.player_y;
         return true;
-    }
-    case -9989: {  // ANGLE_PLAYER（0x443f60：自机位置指向玩家）
-        float aim_x, aim_y;  // M3：最近合格玩家
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
-        const float dy = aim_y - (e ? e->position[1] : 0.0f);
-        const float dx = aim_x - (e ? e->position[0] : 0.0f);
-        if (dy == 0.0f && dx == 0.0f) {
-            value = 1.5707964f;
-        } else {
-            value = float(std::atan2(static_cast<double>(dy), static_cast<double>(dx)));
-        }
+    case -9989:
+        value = aim(sim, e, e ? e->position : nullptr);
         return true;
-    }
     case -9988:
         value = e ? e->age : 0.0f;
         return true;
     case -9987:
-        // 0x420d00 跳转表 case 0xffffd8fd（index 13）→ 0x420d5b
-        // `mov ecx,0x4dc324; call 0x472e10`：game 流（与 int 视图同源）。
         GameRandom::tag(6);
         value = sim.random.signed_unit();
         return true;
@@ -251,49 +340,54 @@ bool StageGvars::floating(i32 id, float& value) {
     case -9978:
         value = e ? e->f_slots[id + 9981] : 0.0f;
         return true;
-    case -9935: case -9934: case -9933: case -9932:  // +0x1494..0x14a0.
-        value = e ? e->f_slots[id + 9939] : 0.0f;
+    case -9971:
+        value = e ? e->vel.angle : 0.0f;
+        return true;
+    case -9970:
+        value = e ? e->pos.angle : 0.0f;
+        return true;
+    case -9969:
+        value = e ? e->vel.speed : 0.0f;
+        return true;
+    case -9968:
+        value = e ? e->pos.speed : 0.0f;
+        return true;
+    case -9967:
+        value = e ? e->vel.radius : 0.0f;
+        return true;
+    case -9966:
+        value = e ? e->pos.radius : 0.0f;
         return true;
     case -9963: {
-        StageEnemy* boss = sim.boss();
+        StageEnemy* boss = primary_boss(sim);
         value = boss ? boss->position[0] : 0.0f;
         return true;
     }
     case -9962: {
-        StageEnemy* boss = sim.boss();
-        value = boss ? boss->position[1] : 128.0f;
+        StageEnemy* boss = primary_boss(sim);
+        value = boss ? boss->position[1] : 0.0f;
         return true;
     }
+    case -9961:
+        value = 0.0f;
+        return true;
     case -9960:
         value = float(sim.rank);
         return true;
-    case -9958:  // 421107 reads the pre-quantization movement delta, not velocity.
-        value = e ? float(std::atan2(double(e->motion_delta[1]), double(e->motion_delta[0]))) : 0.f;
-        return true;
-    case -9944: {  // 00421367 -> 00423e20: current enemy to player distance.
-        float aim_x, aim_y;  // M3：最近合格玩家
-        sim.nearest_player(e ? e->position[0] : 0.0f, e ? e->position[1] : 0.0f,
-                           aim_x, aim_y);
-        const double dx = double(e ? e->position[0] : 0.0f) - double(aim_x);
-        const double dy = double(e ? e->position[1] : 0.0f) - double(aim_y);
-        // x87 keeps the differences/products wide, then stores the squared
-        // distance as f32 before sqrt; the returned distance is also f32.
-        const float squared = float(dx * dx + dy * dy);
-        value = float(std::sqrt(double(squared)));
-        return true;
-    }
-    case -9943: case -9942: case -9941: case -9940: {
-        const auto* boss = primary_boss(sim);
-        value = boss ? float(boss->i_slots[id + 9943]) : 0.f;
-        return true;
-    }
-    case -9939: case -9938: case -9937: case -9936: {
-        const auto* boss = primary_boss(sim);
-        value = boss ? boss->f_slots[id + 9939] : 0.f;
-        return true;
-    }
     case -9959:
         value = float(sim.diff);
+        return true;
+    case -9958:
+        value = motion_angle(e);
+        return true;
+    case -9957:
+        value = 1.0f;
+        return true;
+    case -9956:
+        value = aim(sim, e, e ? e->vel.pos : nullptr);
+        return true;
+    case -9955:
+        value = aim(sim, e, e ? e->pos.pos : nullptr);
         return true;
     case -9954:
         value = e ? e->life : 0.0f;
@@ -302,19 +396,71 @@ bool StageGvars::floating(i32 id, float& value) {
     case -9952:
     case -9951:
     case -9950:
-        value = float(sim.diff == id + 9953);
+        value = sim.diff == id + 9953 ? 1.0f : 0.0f;
         return true;
-    case -9957:
-        value = 1.0f;
-        return true;
-    case -9908: { // 00420d00 calls the same 00417e90 as the integer getter.
-        i32 count = 0;
-        integer(id, count);
-        value = float(count);
+    case -9949:
+    case -9948:
+    case -9947: {
+        const i32* slot = integer_destination(id);
+        value = slot ? float(*slot) : 0.0f;
         return true;
     }
-    case -9907:  // 00420d00: the float view of DAT_004be7d4, including -1.
-        value = float(sim.session ? sim.session->selected_spell_id : -1);
+    case -9946:
+        value = float(sim.enemies.size());
+        return true;
+    case -9945:
+        value = float((sim.session ? sim.session->stage : 1) + sim.diff);
+        return true;
+    case -9944:
+        value = distance_to_enemy(sim, e);
+        return true;
+    case -9943:
+    case -9942:
+    case -9941:
+    case -9940: {
+        StageEnemy* boss = primary_boss(sim);
+        value = boss ? float(boss->i_slots[id + 9943]) : 0.0f;
+        return true;
+    }
+    case -9939:
+    case -9938:
+    case -9937:
+    case -9936: {
+        StageEnemy* boss = primary_boss(sim);
+        value = boss ? boss->f_slots[id + 9939] : 0.0f;
+        return true;
+    }
+    case -9935:
+    case -9934:
+    case -9933:
+    case -9932:
+        value = e ? e->f_slots[id + 9939] : 0.0f;
+        return true;
+    case -9931:
+        value = float(sim.last_created_enemy_id);
+        return true;
+    case -9930:
+        value = float(sim.player_lives);
+        return true;
+    case -9914:
+        value = e ? float_script(e->script_id) : 0.0f;
+        return true;
+    case -9911:
+        value = motion_angle(primary_boss(sim));
+        return true;
+    case -9910: {
+        StageEnemy* boss = primary_boss(sim);
+        value = boss ? boss->vel.speed : 0.0f;
+        return true;
+    }
+    case -9909:
+        value = e ? float_script(e->trace_id) : 0.0f;
+        return true;
+    case -9908:
+        value = float(active_enemy_count(sim));
+        return true;
+    case -9907:
+        value = sim.session ? float(sim.session->selected_spell_id) : -1.0f;
         return true;
     default:
         value = 0.0f;
@@ -323,13 +469,17 @@ bool StageGvars::floating(i32 id, float& value) {
 }
 
 i32* StageGvars::integer_destination(i32 id) {
-    if(id>=-9926&&id<=-9923)return &sim->shared_integers[id+9926];
-    StageEnemy* e = sim->current;
+    StageSim& sim = *this->sim;
+    if (id >= -9926 && id <= -9923) return &sim.shared_integers[id + 9926];
+    StageEnemy* e = sim.current;
     if (e && id >= -9985 && id <= -9982) return &e->i_slots[id + 9985];
-    if (id == -9914 && e) return &e->script_id;
-    for (auto& pair : writable_ints_)
-        if (pair.first == id) return &pair.second;
-    if (id == -9949 || id == -9948 || id == -9947) {  // MISS/BOMB/CAPTURE 计数（MBoss 族写入）
+    if (id >= -9943 && id <= -9940) {
+        StageEnemy* boss = primary_boss(sim);
+        return boss ? &boss->i_slots[id + 9943] : e ? &e->i_slots[id + 9943] : nullptr;
+    }
+    if (id >= -9949 && id <= -9947) {
+        for (auto& pair : writable_ints_)
+            if (pair.first == id) return &pair.second;
         writable_ints_.emplace_back(id, 0);
         return &writable_ints_.back().second;
     }
@@ -337,11 +487,18 @@ i32* StageGvars::integer_destination(i32 id) {
 }
 
 float* StageGvars::float_destination(i32 id) {
-    if(id>=-9922&&id<=-9915)return &sim->shared_floats[id+9922];
-    StageEnemy* e = sim->current;
+    StageSim& sim = *this->sim;
+    if (id >= -9922 && id <= -9915) return &sim.shared_floats[id + 9922];
+    StageEnemy* e = sim.current;
+    if (e && id >= -9995 && id <= -9994) return &e->vel.pos[id + 9995];
+    if (e && id >= -9993 && id <= -9992) return &e->pos.pos[id + 9993];
     if (e && id >= -9981 && id <= -9978) return &e->f_slots[id + 9981];
     if (e && id >= -9935 && id <= -9932) return &e->f_slots[id + 9939];
+    if (id >= -9939 && id <= -9936) {
+        StageEnemy* boss = primary_boss(sim);
+        return boss ? &boss->f_slots[id + 9939] : e ? &e->f_slots[id + 9939] : nullptr;
+    }
     return nullptr;
 }
 
-}  // namespace th13
+}

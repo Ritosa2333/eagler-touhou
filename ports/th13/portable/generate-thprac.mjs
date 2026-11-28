@@ -1,5 +1,3 @@
-// Generate TH13 practice catalogs from RUEEE/thprac (MIT, Ack 2022).
-// Usage: node portable/generate-thprac.mjs /path/to/thprac [--check]
 import {createHash} from 'node:crypto';
 import {readFileSync, writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';

@@ -1,4 +1,3 @@
-// Generated from eagler-common/browser/startup-developers.mjs.
 export async function installStartupBranding(core,{game,builtAt,fs=core.FS}={}){
   if(!['th10','th11','th12','th13','th15','th20'].includes(game))throw Error('Unsupported startup build timestamp');
   const date=builtAt===undefined&&game==='th12'?null:new Date(builtAt);
@@ -11,8 +10,6 @@ export async function installStartupBranding(core,{game,builtAt,fs=core.FS}={}){
   fs.writeFile('/eagler-startup.rgba',ctx.getImageData(0,0,1280,960).data);
 }
 
-// Advance only the isolated original signature animation while menu assets
-// prepare. Its own RGB/alpha interpolation covers the credit in the same pass.
 export async function finishStartupAnimation(startedAt,draw){
   let rendered=0;
   while(true){

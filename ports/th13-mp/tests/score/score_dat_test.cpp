@@ -1,5 +1,3 @@
-// ScoreDat 原始容器与字段视图测试。
-// 黄金样本组依赖 artifacts/score_golden/（gitignored）；字段视图组无需资产。
 #include "../harness/test_framework.hpp"
 
 #include "game/ScoreDat.hpp"
@@ -11,10 +9,10 @@
 
 namespace {
 
-using th13::u8;
+using th13::ScoreDat;
 using th13::u16;
 using th13::u32;
-using th13::ScoreDat;
+using th13::u8;
 
 bool read_file(const std::string& relative, std::vector<u8>& out) {
     static const char* bases[] = {".", "../../..", "../../../..", "../../../../.."};
@@ -36,8 +34,7 @@ bool read_file(const std::string& relative, std::vector<u8>& out) {
 bool images_equal(const u8* actual, const u8* expected, size_t size, const char* label) {
     for (size_t i = 0; i < size; ++i) {
         if (actual[i] != expected[i]) {
-            std::printf("  %s 首个分歧字节 0x%zX: 实际 %02X 期望 %02X\n",
-                        label, i, actual[i], expected[i]);
+            std::printf("  %s 首个分歧字节 0x%zX: 实际 %02X 期望 %02X\n", label, i, actual[i], expected[i]);
             return false;
         }
     }
@@ -117,7 +114,8 @@ TEST(route_c_dropped_column_quirk) {
     }
     CHECK_EQ(image.size(), size_t(0x15F9C));
     CHECK(!dat.column_present[1]);
-    for (int column : {0, 2, 3, 4}) CHECK(dat.column_present[column]);
+    for (int column : {0, 2, 3, 4})
+        CHECK(dat.column_present[column]);
     std::vector<u8> built(ScoreDat::kImageSize);
     const size_t length = dat.build_image(built.data(), built.size());
     CHECK_EQ(length, image.size());
@@ -137,13 +135,13 @@ TEST(corrupted_cr_magic_drops_column_and_shortens) {
     CHECK_EQ(length, image.size() - ScoreDat::kCRSize);
     const size_t cut = 2 * ScoreDat::kCRSize;
     CHECK(images_equal(built.data(), image.data(), cut, "before dropped column"));
-    CHECK(images_equal(built.data() + cut, image.data() + cut + ScoreDat::kCRSize,
-                       length - cut, "after dropped column"));
+    CHECK(
+        images_equal(built.data() + cut, image.data() + cut + ScoreDat::kCRSize, length - cut, "after dropped column"));
     ScoreDat reparsed;
     CHECK(reparsed.parse_image(built.data(), length));
     CHECK(!reparsed.column_present[2]);
-    CHECK(reparsed.column_present[0] && reparsed.column_present[1] &&
-          reparsed.column_present[3] && reparsed.column_present[4]);
+    CHECK(reparsed.column_present[0] && reparsed.column_present[1] && reparsed.column_present[3] &&
+          reparsed.column_present[4]);
 }
 
 TEST(entry_and_progress_field_views) {
@@ -171,9 +169,7 @@ TEST(entry_and_progress_field_views) {
     CHECK_EQ(round.time_lo, u32(1600000000));
     CHECK_EQ(round.time_hi, u32(0x22222222));
     CHECK_EQ(round.rate_bits, u32(0x3F800000));
-    CHECK_EQ(column[ScoreDat::kEntriesOff + 2 * ScoreDat::kRankTableStride +
-                        3 * ScoreDat::kEntrySize + 15],
-             u8(0));
+    CHECK_EQ(column[ScoreDat::kEntriesOff + 2 * ScoreDat::kRankTableStride + 3 * ScoreDat::kEntrySize + 15], u8(0));
 
     ScoreDat::set_play_count(column, 12345);
     ScoreDat::set_play_frames(column, 215999999);
@@ -258,8 +254,6 @@ TEST(parse_failure_paths) {
     CHECK(!dat.parse_image(broken_image.data(), broken_image.size()));
 }
 
-}  // namespace
-
-int main() {
-    return th13test::run_all("ScoreDat scoreth13.dat 容器");
 }
+
+int main() { return th13test::run_all("ScoreDat scoreth13.dat 容器"); }

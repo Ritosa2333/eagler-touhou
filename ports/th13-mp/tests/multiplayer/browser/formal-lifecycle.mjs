@@ -1,8 +1,6 @@
-// Short lifecycle regression through the production Launcher and keyboard path.
 import assert from 'node:assert/strict';
 export async function runRoomLifecycle({pages, inspect, rounds = 3, evidence = []}) {
   await Promise.all(pages.map(p => p.evaluate(() => {
-    // Launcher may install the Runtime as srcdoc, leaving src empty.
     window.__lifecycleDocument = document.querySelector('#gameFrame').contentDocument;
     window.__lifecycleModule = document.querySelector('#gameFrame').contentWindow.Module;
   })));
@@ -26,8 +24,6 @@ export async function runRoomLifecycle({pages, inspect, rounds = 3, evidence = [
     const p = JSON.parse(m.UTF8ToString(m._th13_debug_pause_state()));
     return p.screen === 1 && p.phase === 6;
   };
-  // The room root uses display:contents; its visible header and Ready button
-  // prove that the returned room is actually presented and usable.
   const room = () => !!document.querySelector('#mpRoomView .room-workspace-header')?.getClientRects().length &&
     !!document.querySelector('#mpReady:not(:disabled)')?.getClientRects().length;
   for (let round = 0; round < rounds; round++) {
@@ -38,7 +34,6 @@ export async function runRoomLifecycle({pages, inspect, rounds = 3, evidence = [
       if (net.error) throw Error(net.error);
       return m._th13_debug_stage_frame() >= 120;
     })));
-    // P2 pauses both worlds, then resumes both. Network frames keep advancing.
     await pulse(pages[1], 1);
     await Promise.all(pages.map(page => wait(page, paused)));
     const before = await Promise.all(pages.map(inspect));
@@ -56,7 +51,6 @@ export async function runRoomLifecycle({pages, inspect, rounds = 3, evidence = [
       const m = document.querySelector('#gameFrame').contentWindow.Module;
       return !JSON.parse(m.UTF8ToString(m._th13_debug_pause_state())).screen;
     })));
-    // P2's Q shortcut selects Return to title through the ordinary pause menu.
     await pulse(pages[1], 1);
     await Promise.all(pages.map(page => wait(page, paused)));
     await pulse(pages[1], 16);

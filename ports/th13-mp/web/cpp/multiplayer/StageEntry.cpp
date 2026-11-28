@@ -1,4 +1,3 @@
-// TH13 MP 关头延续快照实现（M9）。契约见 StageEntry.hpp。
 #include "StageEntry.hpp"
 
 #include "../game/StageBattle.hpp"
@@ -8,20 +7,7 @@
 namespace th13::multiplayer {
 
 namespace {
-// 线布局（v2；v1 读取时以原共享下标迁移各席）：
-//   version(4) stage(4) chapter_frame(4) seatCount(4)
-//   shared: ending(4) goodEndings(4) pointItems(4) maxPoint(4) maxPointCap(4)
-//           graze(4) lifePieceIndex(4) score(4) highScore(4)
-//   trance: mode(4) owner(4) generation(4) taskFrame(4)
-//   rng: gameSeed(2) gameIndex(4) visualSeed(2) visualIndex(4)
-//   seats × seatCount: lives(4) lifePieces(4) bombs(4) bombPieces(4) power(4)
-//                      maxPower(4) powerStep(4) deaths(4) modeFlags(4)
-//                      character(4) ghost(4) lifePieceIndex(4)
-//                      input: held(4) previous(4) repeated(4) pressed(4)
-//                             released(4) longHeld(4) repeatAge(32*4)
-//                             duration(32*4)
 constexpr std::size_t kSeatBytes = 12 * 4 + 6 * 4 + 32 * 4 * 2;
-// 头部：4(头) + 9×4(shared) + 4×4(trance) + 2+4+2+4(rng) = 80。
 constexpr std::size_t kHeaderBytes = 4 * 4 + 9 * 4 + 4 * 4 + 2 + 4 + 2 + 4;
 
 std::uint32_t Read32(const std::uint8_t* p) {
@@ -34,7 +20,7 @@ void Write32(std::vector<std::uint8_t>& out, std::uint32_t value) {
     out.push_back(std::uint8_t(value >> 16));
     out.push_back(std::uint8_t(value >> 24));
 }
-}  // namespace
+}
 
 std::vector<std::uint8_t> StageEntry::Encode() const {
     if (!valid()) return {};
@@ -102,7 +88,6 @@ bool StageEntry::Decode(const std::uint8_t* bytes, std::size_t size, StageEntry&
     const auto seat_bytes = version == Version ? kSeatBytes : kSeatBytes - 4;
     if (size != kHeaderBytes + seatCount * seat_bytes) return false;
     const std::uint8_t* p = bytes + 16;
-    // shared 段 9×4（ending..highScore，Encode 同序）。
     entry.ending_points = std::int32_t(Read32(p));
     entry.good_endings = std::int32_t(Read32(p + 4));
     entry.point_items = std::int32_t(Read32(p + 8));
@@ -112,12 +97,10 @@ bool StageEntry::Decode(const std::uint8_t* bytes, std::size_t size, StageEntry&
     entry.life_piece_threshold_index = std::int32_t(Read32(p + 24));
     entry.score = std::int32_t(Read32(p + 28));
     entry.high_score = std::int32_t(Read32(p + 32));
-    // trance 段 4×4。
     entry.trance_mode = std::int32_t(Read32(p + 36));
     entry.trance_owner_seat = std::int32_t(Read32(p + 40));
     entry.trance_generation = Read32(p + 44);
     entry.trance_task_frame = std::int32_t(Read32(p + 48));
-    // RNG 段（p+52 起 = offset 68）：gameSeed(2) gameIndex(4) visualSeed(2) visualIndex(4)。
     entry.game_seed = std::uint16_t(p[52] | std::uint16_t(p[53]) << 8);
     entry.game_index = Read32(p + 54);
     entry.visual_seed = std::uint16_t(p[58] | std::uint16_t(p[59]) << 8);
@@ -173,7 +156,7 @@ void StageEntry::Capture(const StageBattle& battle, const SessionState& progress
     max_point_cap = progress.max_point_cap;
     graze = progress.graze;
     life_piece_threshold_index = progress.life_piece_threshold_index;
-    this->score = score.score;  // 成员（i32）← HudScoreState::score（参数名遮蔽）
+    this->score = score.score;
     high_score = progress.high_score;
     seat_count = std::uint32_t(battle.seat_count >= 2 ? battle.seat_count : 1);
     for (std::uint32_t seat = 0; seat < seat_count && seat < MaxSeats; ++seat) {
@@ -197,7 +180,6 @@ void StageEntry::Capture(const StageBattle& battle, const SessionState& progress
     trance_owner_seat = battle.trance_owner_seat;
     trance_generation = battle.trance_generation;
     trance_task_frame = battle.trance_task_frame_;
-    // 双 RNG 位相由调用方供值（参数名与成员同名——this 消歧）。
     this->game_seed = game_seed;
     this->game_index = game_index;
     this->visual_seed = visual_seed;
@@ -218,7 +200,7 @@ void StageEntry::Restore(StageBattle& battle, SessionState& progress,
     progress.graze = graze;
     progress.life_piece_threshold_index = life_piece_threshold_index;
     progress.high_score = high_score;
-    score.score = this->score;  // HudScoreState::score ← 成员（参数名遮蔽）
+    score.score = this->score;
     RestoreBattleCarry(battle);
     game_seed = this->game_seed;
     game_index = this->game_index;
@@ -229,16 +211,8 @@ void StageEntry::Restore(StageBattle& battle, SessionState& progress,
 void StageEntry::PrepareStageClear(HudPlayerState& first_player, const StageBattle& previous) {
     stage_clear_positions_.fill(std::nullopt);
     for (std::uint32_t seat = 0; seat < seat_count && seat < MaxSeats; ++seat) {
-        // The last life is deducted at death commit, before the 30-frame
-        // animation marks the seat as a ghost. Clear revives both phases.
-        // Shared rewards may increase stock during the final death animation.
-        // Its committed death remains final until explicit rescue or clear.
         if (seats[seat].extra_lives < 0 || previous.seats[seat].final_death)
             seats[seat].ghost = true;
-        // Seat 0 uses the persistent single-player object. Other seats are
-        // reconstructed when the new battle is enabled. Only an Active seat
-        // carries its end-of-stage position: a seat interrupted mid-death or
-        // mid-respawn re-enters at the spawn point like a revived seat.
         if (seat > 0 && !seats[seat].ghost &&
             previous.seats[seat].phase == StagePlayerState::Phase::Active) {
             const auto& player = previous.seats[seat];
@@ -292,4 +266,4 @@ void StageEntry::RestoreBattleCarry(StageBattle& battle) const {
     battle.trance_task_frame_ = trance_task_frame;
 }
 
-}  // namespace th13::multiplayer
+}

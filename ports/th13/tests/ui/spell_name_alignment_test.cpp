@@ -1,7 +1,3 @@
-// 符卡宣言名（text.anm script74 / sprite9）右对齐栅格落点测试。
-// 原版 004135c3 -> 0046e970 -> 0046e810 -> 0045aef0：
-// layout x = W - (nominal-1)*len/2，TextOutA 再乘 2。
-// sprite9 = (0,92,320,17)（text.anm entry0 实测），nominal 17。
 #include "../harness/test_framework.hpp"
 #include "game/AnmText.hpp"
 
@@ -26,14 +22,17 @@ struct Fixture {
     AnmVm vm;
     Sink sink;
     Fixture() {
-        sprite.x = 0; sprite.y = 92; sprite.width = 320; sprite.height = 17;
-        vm.resource = &resource; vm.sprite = &sprite;
+        sprite.x = 0;
+        sprite.y = 92;
+        sprite.width = 320;
+        sprite.height = 17;
+        vm.resource = &resource;
+        vm.sprite = &sprite;
     }
-    // 8/6 个全角字符的替身栅格：32 scratch 像素步进、每字符 12 像素白色竖条
-    // （模拟 MS Gothic 32px 固定步进），返回回调收到的 x。
     int fill(i32 chars) {
         int drawn = -1;
-        CHECK(rasterize_anm_text(vm, sink,
+        CHECK(rasterize_anm_text(
+            vm, sink,
             [&](TextureImage& image, i32 x, i32 y, u32, const std::string&) {
                 drawn = x;
                 for (i32 c = 0; c < chars; ++c)
@@ -42,11 +41,11 @@ struct Fixture {
                             const i32 px = x + c * 32 + 10 + dx;
                             if (px < 0 || px >= int(image.width)) continue;
                             const u16 value = 0xf000;
-                            std::memcpy(image.pixels.data() + size_t(yy) * image.pitch +
-                                            size_t(px) * 2, &value, 2);
+                            std::memcpy(image.pixels.data() + size_t(yy) * image.pitch + size_t(px) * 2, &value, 2);
                         }
                 return true;
-            }, 0xffffffu, std::string(size_t(chars) * 2, '\x81'), AnmTextAlignment::Right, 17));
+            },
+            0xffffffu, std::string(size_t(chars) * 2, '\x81'), AnmTextAlignment::Right, 17));
         return drawn;
     }
     int ink_start() const {
@@ -61,9 +60,8 @@ struct Fixture {
         return sink.image.pixels.data() + size_t(100) * sink.image.pitch + size_t(px) * 2;
     }
 };
-}  // namespace
+}
 
-// 16 CP932 bytes: original layout192 -> TextOutA384 (Unicorn arithmetic probe).
 TEST(spell_name_right_alignment_keeps_the_double_resolution_text_origin) {
     Fixture fixture;
     const int drawn = fixture.fill(8);
@@ -74,7 +72,6 @@ TEST(spell_name_right_alignment_keeps_the_double_resolution_text_origin) {
     CHECK((fixture.sink.changes[0] == std::array<u32, 4>{0, 92, 320, 109}));
 }
 
-// 12 CP932 bytes: original layout224 -> TextOutA448; shorter names move right.
 TEST(spell_name_right_alignment_scales_with_cp932_byte_count) {
     Fixture fixture;
     CHECK_EQ(fixture.fill(6), 448);

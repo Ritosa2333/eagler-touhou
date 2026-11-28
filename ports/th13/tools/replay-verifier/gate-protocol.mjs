@@ -1,4 +1,3 @@
-// Pure gate protocol; legacy baselines require an explicit audited migration.
 export function parseComparison(run, expected) {
   if (run.error || run.signal || ![0, 1].includes(run.status)) throw Error('Comparator process failed or diagnostic result');
   const lines = (run.stdout || '').trim().split(/\r?\n/);

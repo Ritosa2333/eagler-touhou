@@ -12,9 +12,6 @@
 
 namespace th13::multiplayer {
 
-// The Application checkpoint and confirmed host digest consume this same
-// value object. Device addresses and raw animation handles are restored but
-// are not semantic identities for the digest.
 struct HostState {
     struct FadeState {
         i32 kind = 0, duration = 0, time = 0, alpha = 0;
@@ -44,10 +41,6 @@ struct HostState {
         std::vector<FadeState> fades;
     } state_fields;
 
-    // Keep the original rollback behavior for these values. They measure
-    // local wall-clock presentation/audio and feed save/display metadata,
-    // never battle progression. Comparing their bits across peers would
-    // compare different clocks/mixers. Clock active/index above remain shared.
     struct LocalFields {
         SpellTimeClock spell_time_clock;
         i32 spell_time_packed = 0;
@@ -62,4 +55,4 @@ struct HostState {
     u64 dialogue_digest = 0;
 };
 
-}  // namespace th13::multiplayer
+}

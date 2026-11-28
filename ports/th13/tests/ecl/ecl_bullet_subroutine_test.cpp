@@ -8,13 +8,10 @@ struct Rig {
     StageSim sim;
     StageEnemy owner;
     EclContext context;
-    // ECL 640 retains an instruction string, exactly like a loaded program.
     std::deque<std::vector<u8>> instructions;
     Rig() {
         std::vector<u8> child, root;
-        // Constructor-time use proves that arguments arrived before ECL ran.
-        th13test::emit(child, 0, 500, 3, 255, 0,
-                      {float_to_bits(-9981.f), float_to_bits(-9980.f)});
+        th13test::emit(child, 0, 500, 3, 255, 0, {float_to_bits(-9981.f), float_to_bits(-9980.f)});
         th13test::emit(child, 0, 510, 1, 255, 0, {u32(-9985)});
         th13test::emit(child, 0, 23, 0, 255, 0, {600});
         th13test::emit(child, 0, 10, 0, 255, 0, {});
@@ -46,23 +43,19 @@ struct Rig {
         std::memcpy(padded.data(), name, std::strlen(name));
         instructions.emplace_back();
         auto& bytes = instructions.back();
-        th13test::emit(bytes, 0, 640, 0, 255, 0,
-                      {u32(emitter), u32(index), size}, padded.data(), size);
+        th13test::emit(bytes, 0, 640, 0, 255, 0, {u32(emitter), u32(index), size}, padded.data(), size);
         context.instruction = reinterpret_cast<const EclInstruction*>(bytes.data());
         return sim.commands.execute(context, 640);
     }
     int descriptor(i32 index) {
-        return op(610, {0, u32(index), 0, 0x1000000,
-                       16777217u, u32(-16777217), 0x7fffffffu, 0x80000000u,
-                       float_to_bits(31.f), float_to_bits(47.f),
-                       float_to_bits(-2.5f), float_to_bits(.25f)});
+        return op(610, {0, u32(index), 0, 0x1000000, 16777217u, u32(-16777217), 0x7fffffffu, 0x80000000u,
+                        float_to_bits(31.f), float_to_bits(47.f), float_to_bits(-2.5f), float_to_bits(.25f)});
     }
 };
 
 TEST(bullet_subroutine_uses_original_arguments_during_constructor) {
     Rig r;
     CHECK_EQ(r.op(600, {0}), 0);
-    // Name can precede descriptor writes; these touch disjoint native fields.
     CHECK_EQ(r.bind_name(0, 0, "Child"), 0);
     CHECK_EQ(r.descriptor(0), 0);
     CHECK_EQ(r.op(605, {0, 0, 0}), 0);
@@ -74,8 +67,6 @@ TEST(bullet_subroutine_uses_original_arguments_during_constructor) {
     CHECK_EQ(child.routine, std::string("Child"));
     CHECK_EQ(child.position[0], 12.f);
     CHECK_EQ(child.position[1], 45.f);
-    // 40e840 gives the bullet z=0.1; 40f030 copies that live bullet value,
-    // rather than restoring the firing enemy's z=3.
     CHECK_EQ(child.position[2], .1f);
     CHECK_EQ(child.trace_id, 0);
     CHECK_EQ(child.life, 10000.f);
@@ -109,10 +100,7 @@ TEST(bullet_subroutine_survives_emitter_copy_reset_and_delayed_execution) {
     CHECK_EQ(r.owner.et[0].ex[1].subroutine, nullptr);
     CHECK_EQ(r.op(601, {1}), 0);
     CHECK_EQ(r.sim.enemies.size(), size_t(0));
-    // The live bullet owns a copied descriptor, not a reference to this slot.
     CHECK_EQ(r.op(600, {1}), 0);
-    // 40db10 consumes the following entry in the SAME update that clears
-    // the wait bit. Native wait=2 emits on update index2, not index3.
     for (int frame = 0; frame < 2; ++frame) {
         r.sim.advance_bullets();
         CHECK(r.sim.error().empty());

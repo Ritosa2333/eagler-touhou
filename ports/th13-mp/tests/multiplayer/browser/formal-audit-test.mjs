@@ -25,11 +25,11 @@ test('batches stay ordered until acknowledged and the production callback remain
   f.setTiming({clock:'steady-microseconds',events:[{kind:'sample',frame:0}],overflow:0});
   f.module.onGameFrame(true,1,1);
   f.setAudit({frames:[{frame:1}],overflow:0,terminal:null});
-  f.state.drain(); // loading work callback
+  f.state.drain();
   const first=f.state.snapshot();
   assert.deepEqual(first.batches.map(row=>row.sequence),[1,2]);
   assert.deepEqual(first.batches.flatMap(row=>row.audit.frames.map(frame=>frame.frame)),[0,1]);
-  assert.throws(()=>f.state.ack(1,3,2)); // Wrong acknowledgement keeps data.
+  assert.throws(()=>f.state.ack(1,3,2));
   assert.deepEqual(f.state.snapshot().batches,first.batches);
   f.state.ack(1,2,2);
   assert.deepEqual(f.state.snapshot().batches,[]);
@@ -64,7 +64,7 @@ test('overflow and drain error are persisted before failure and remain unacknowl
   assert.deepEqual(JSON.parse(raw),capture.batches[0]);
   assert.deepEqual(f.state.snapshot().batches,capture.batches);
   await assert.rejects(persistAuditCapture(path,f.state.snapshot(),cursor));
-  assert.equal(await readFile(path,'utf8'),raw); // failure flush writes no duplicate
+  assert.equal(await readFile(path,'utf8'),raw);
   f.state.errors.push('native parse error');
   await assert.rejects(persistAuditCapture(path,f.state.snapshot(),cursor),/Audit drain errors/);
   assert.match(await readFile(path,'utf8'),/native parse error/);

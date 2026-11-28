@@ -1,6 +1,3 @@
-// STD 舞台背景场景：图元 VM 池（st01wl.anm 脚本）+ 相机脚本驱动 + 实例
-// （FACE）遍历绘制（裁剪/雾/深度写）。数据通路对齐 th15 StageScene 的 th13
-// 同族裁剪：包含 STD 内嵌动画槽，不包含 th15 专属形变服务。
 #pragma once
 #include "AnmManager.hpp"
 #include "AnmRenderer.hpp"
@@ -16,8 +13,6 @@ public:
     std::string error;
     u32 frames = 0;
     bool ready() const noexcept { return initialized; }
-    // 0x404c lifecycle flags: bit1=geometry, bit2=fade-out, bit4=fade-in,
-    // bit8=retired. These are per STD instance, not global scene flags.
     void begin_exit() noexcept;
     void begin_enter() noexcept;
     bool retired() const noexcept { return (lifecycle_flags & 8u) != 0; }
@@ -32,19 +27,9 @@ public:
     const Vec3& camera_direction() const noexcept { return view_direction; }
     bool initialize(AnmManager& animations, i32 bank);
     bool update(AnmManager& animations, AnmEnvironment& environment, float rate = 1);
-    // layer_first..layer_last 的对象组绘制（背景 0-7 / 前景 8-11 两段调用），
-    // 逐层分趟（0x406d90/0x407310 的层主序）。cull_extent 仅为调用方兼容
-    // 保留：th13 裁剪窗是绝对屏幕矩形 [128,512]x[16,464]（0x4076c0）。
-    bool draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphics& graphics,
-              i32 layer_first, i32 layer_last, const GraphicsViewport& viewport, Vec2 cull_extent,
-              Vec2 screen_shake = {});
+    bool draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphics& graphics, i32 layer_first, i32 layer_last,
+              const GraphicsViewport& viewport, Vec2 cull_extent, Vec2 screen_shake = {});
     bool interrupt_objects(i32 label);
-    // ---- M6/P3.2 快照面（WorldState 的 STD 域）----
-    // 值域全量：图元/内嵌槽 VM（visual 面自持池，不在 AnmRegistry）、
-    // 对象/实例标志、生命周期（flags/timer/fade_in/transition_color）、
-    // 帧计数与视线。file（StageResource）与 script.background_command
-    //（接线回调）不快照——资源只读、回调身份稳定。script.state 是 public
-    // 成员，由 WorldState 直接值拷贝。
     struct ExtraSnapshot {
         std::vector<AnmVm> primitives;
         std::array<AnmVm, 8> background_slots{};
@@ -60,13 +45,14 @@ public:
     };
     ExtraSnapshot capture_extra() const;
     void restore_extra(const ExtraSnapshot& source);
+
 private:
     std::vector<AnmVm> primitives;
     std::array<AnmVm, 8> background_slots{};
     std::vector<u8> object_flags;
     std::vector<i16> instance_flags;
     bool initialized = false;
-    u32 lifecycle_flags = 1; // normal scene: geometry enabled
+    u32 lifecycle_flags = 1;
     Timer lifecycle_timer{0, 0, 0, 0, 0};
     bool fade_in_pending = false;
     u32 transition_color = 0x00808080u;
@@ -78,4 +64,4 @@ private:
         return false;
     }
 };
-}  // namespace th13
+}

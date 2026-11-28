@@ -1,6 +1,6 @@
 # 文档总表
 
-共 670 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 679 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -214,6 +214,7 @@
 | 作品源码文档 | [ports/th13/docs/DECOMP.md](../ports/th13/docs/DECOMP.md) | th13 反编译函数地图 |
 | 作品源码文档 | [ports/th13/docs/DEVELOPMENT.md](../ports/th13/docs/DEVELOPMENT.md) | th13 开发指南 |
 | 作品源码文档 | [ports/th13/docs/feedback-fast-forward-20261107.md](../ports/th13/docs/feedback-fast-forward-20261107.md) | 2026-11-07 Replay / result / staff feedback fixes |
+| 作品源码文档 | [ports/th13/docs/fidelity-map.md](../ports/th13/docs/fidelity-map.md) | TH13 保真地图 |
 | 作品源码文档 | [ports/th13/docs/plans/anm-pipeline.md](../ports/th13/docs/plans/anm-pipeline.md) | TH13 ANM（v8）管线行为规格与移植方案 |
 | 作品源码文档 | [ports/th13/docs/plans/coverage-matrix.md](../ports/th13/docs/plans/coverage-matrix.md) | 场景覆盖矩阵（coverage matrix） |
 | 作品源码文档 | [ports/th13/docs/plans/draw-contract.md](../ports/th13/docs/plans/draw-contract.md) | 语义绘制清单契约（draw contract）v1 |
@@ -410,7 +411,15 @@
 | 历史记录 | [archive/th12-web-adaptation-20261020/README.md](../archive/th12-web-adaptation-20261020/README.md) | th12 旧网页前端接入记录 |
 | 历史记录 | [archive/th12mp-public-20261028/README.md](../archive/th12mp-public-20261028/README.md) | 星莲船正式发布 |
 | 历史记录 | [archive/th12mp-public-20261028/cn129.md](../archive/th12mp-public-20261028/cn129.md) | 原主站入口同步 |
+| 历史记录 | [archive/th13-address-snapshot-20261124/README.md](../archive/th13-address-snapshot-20261124/README.md) | th13 原版地址核查快照（2026-11-24） |
+| 历史记录 | [archive/th13-fidelity-20261125/README.md](../archive/th13-fidelity-20261125/README.md) | th13 自机受击对齐（2026-11-25） |
+| 历史记录 | [archive/th13-fidelity-20261126/README.md](../archive/th13-fidelity-20261126/README.md) | th13 保真地图分歧收尾（2026-11-26） |
+| 历史记录 | [archive/th13-mp-lockstep-determinism-20261125/README.md](../archive/th13-mp-lockstep-determinism-20261125/README.md) | th13 多人版验收的锁步判定（2026-11-25） |
+| 历史记录 | [archive/th13-mp-lockstep-determinism-20261125/soak-governor-runs.md](../archive/th13-mp-lockstep-determinism-20261125/soak-governor-runs.md) | soak governor runs |
 | 历史记录 | [archive/th13-mp-sync-20261112/README.md](../archive/th13-mp-sync-20261112/README.md) | TH13 MP 同步修复与提交交接（2026-11-12） |
+| 历史记录 | [archive/th13-performance-20261124/README.md](../archive/th13-performance-20261124/README.md) | th13 热路径优化（2026-11-24） |
+| 历史记录 | [archive/th13-presentation-20261124/README.md](../archive/th13-presentation-20261124/README.md) | th13 呈现链加固与打包链路的验证记录（2026-11-24） |
+| 历史记录 | [archive/th13-refactor-baseline-20261124/README.md](../archive/th13-refactor-baseline-20261124/README.md) | th13 / th13-mp 重构基线（2026-11-24） |
 | 历史记录 | [archive/th13-scoredat-youmu-20261123/README.md](../archive/th13-scoredat-youmu-20261123/README.md) | TH13 scoreth13.dat 四角色 + 合计列原版直调验证 |
 | 历史记录 | [archive/th14-rollback-20261114/README.md](../archive/th14-rollback-20261114/README.md) | TH14 多人延迟输入验证 |
 | 历史记录 | [archive/th15-bomb-snapshot-memory-20261028/README.md](../archive/th15-bomb-snapshot-memory-20261028/README.md) | TH15 多人放雷快照内存峰值 |

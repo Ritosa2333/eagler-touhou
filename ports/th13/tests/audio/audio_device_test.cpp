@@ -1,14 +1,3 @@
-// PCM-level audio diagnostics for the original TH13 sound engine.
-// Original anchors:
-//   00460bc0 start voice (12 frame channels, count 0..0x3c per channel)
-//   00460c50 start voice with pan argument (same channel table)
-//   00460d40 stop voice / stop all (negative count marker)
-//   00460dd0 per-update drain: one voice object per ID is restarted with the
-//            averaged channel entries; duplicate requests coalesce.
-//   004613c0 SE voice start: cubic (1-(1-v/100)^3) f32 curve + 0x4971f0
-//            truncation, applied once per start from global DAT_004e4770.
-// These tests consume the real original WAV assets; no synthetic PCM is
-// substituted for the original tables.
 #include "../harness/test_framework.hpp"
 
 #ifndef TH13_AUDIO_MIXER_ONLY
@@ -64,7 +53,7 @@ i32 attenuation_for(i32 id, i32 volume) {
     return audio.voice_attenuation(id);
 }
 
-}  // namespace
+}
 
 TEST(request_observer_preserves_raw_order_and_does_not_change_queue) {
     AudioDevice audio;
@@ -77,22 +66,28 @@ TEST(request_observer_preserves_raw_order_and_does_not_change_queue) {
     CHECK(audio.queue_music(5, 3, "fade"));
     CHECK_EQ(observed.size(), size_t(4));
     CHECK(observed[0].kind == AudioDevice::RequestObservation::Kind::Voice);
-    CHECK_EQ(observed[0].id, 60); CHECK(observed[0].positional); CHECK_EQ(observed[0].x, -96.f);
-    CHECK_EQ(observed[1].id, 63); CHECK(!observed[1].positional);
+    CHECK_EQ(observed[0].id, 60);
+    CHECK(observed[0].positional);
+    CHECK_EQ(observed[0].x, -96.f);
+    CHECK_EQ(observed[1].id, 63);
+    CHECK(!observed[1].positional);
     CHECK(observed[2].kind == AudioDevice::RequestObservation::Kind::Stop);
     CHECK(observed[3].kind == AudioDevice::RequestObservation::Kind::Music);
-    CHECK_EQ(observed[3].id, 5); CHECK_EQ(observed[3].value, 3);
+    CHECK_EQ(observed[3].id, 5);
+    CHECK_EQ(observed[3].value, 3);
     CHECK_EQ(observed[3].text, std::string("fade"));
     audio.update();
-    CHECK_EQ(audio.statistics().started, u64(1)); // 60 stop marker wins
+    CHECK_EQ(audio.statistics().started, u64(1));
 }
 
 TEST(direct_buffer_pan_preserves_playback_and_start_pan) {
     AudioDevice audio, reference;
     CHECK(audio.initialize_effects_for_test(kAssetRoot));
     CHECK(reference.initialize_effects_for_test(kAssetRoot));
-    CHECK(audio.enqueue(30, -96.f)); CHECK(reference.enqueue(30, -96.f));
-    audio.update(); reference.update();
+    CHECK(audio.enqueue(30, -96.f));
+    CHECK(reference.enqueue(30, -96.f));
+    audio.update();
+    reference.update();
     CHECK(render(audio, 128) == render(reference, 128));
     const auto before = audio.statistics();
     std::vector<AudioDevice::RequestObservation> events;
@@ -104,17 +99,17 @@ TEST(direct_buffer_pan_preserves_playback_and_start_pan) {
     CHECK_EQ(audio.statistics().pending_voices, before.pending_voices);
     CHECK_EQ(events.size(), size_t(1));
     CHECK(events[0].kind == AudioDevice::RequestObservation::Kind::Pan);
-    CHECK_EQ(events[0].id, 30); CHECK_EQ(events[0].x, 192.f);
+    CHECK_EQ(events[0].id, 30);
+    CHECK_EQ(events[0].x, 192.f);
     const auto changed = render(audio, 512);
-    // Reference at -500 has half right gain. Doubling that channel checks
-    // the same playback cursor while the direct setter mutes the left.
     const auto expected = render(reference, 512);
     CHECK(channel_nonzero(expected, 1));
     for (size_t i = 0; i < changed.size(); i += 2) {
         CHECK_EQ(changed[i], 0.f);
         CHECK_EQ(changed[i + 1], expected[i + 1] * 2.f);
     }
-    CHECK(audio.enqueue(30, 0.f)); audio.update();
+    CHECK(audio.enqueue(30, 0.f));
+    audio.update();
     CHECK_EQ(audio.voice_pan(30), 0);
     CHECK(channel_nonzero(render(audio, 512), 0));
 }
@@ -136,7 +131,6 @@ TEST(audio_failure_paths_are_explicit_and_not_silent_devices) {
     CHECK(!missing.statistics().ready);
     CHECK(!missing.enqueue(0));
 
-    // Mixer-only binaries cannot open an SDL device; the failure is retained.
     AudioDevice no_device;
     CHECK(!no_device.initialize(true));
     CHECK(!no_device.error.empty());
@@ -146,8 +140,6 @@ TEST(audio_failure_paths_are_explicit_and_not_silent_devices) {
     CHECK(effects.initialize_effects_for_test(kAssetRoot));
     CHECK(effects.statistics().ready);
     CHECK(!effects.statistics().device);
-    // 00460bc0:0x460c19-0x460c42 / 00460c50:0x460cc0-0x460ce3：负数 id 没有
-    // 门，原版写入第一个负数（空）通道后正常返回，无失败路径。
     CHECK(effects.enqueue(-1));
     CHECK(effects.error.empty());
 
@@ -156,7 +148,6 @@ TEST(audio_failure_paths_are_explicit_and_not_silent_devices) {
     CHECK(!invalid_high.enqueue(71));
     CHECK(invalid_high.error.find("Invalid") != std::string::npos);
 
-    // The highest real definition ID (70) is valid.
     AudioDevice highest;
     CHECK(highest.initialize_effects_for_test(kAssetRoot));
     CHECK(highest.enqueue(70));
@@ -165,7 +156,6 @@ TEST(audio_failure_paths_are_explicit_and_not_silent_devices) {
     CHECK(!highest.stop(71));
     CHECK(highest.error.find("Invalid") != std::string::npos);
 
-    // Music commands fail cleanly before initialization and for invalid codes.
     AudioDevice commands;
     CHECK(commands.initialize_effects_for_test(kAssetRoot));
     CHECK(!commands.queue_music(0, 0, ""));
@@ -183,27 +173,23 @@ TEST(audio_failure_paths_are_explicit_and_not_silent_devices) {
 
     AudioDevice full;
     CHECK(full.initialize_for_test(kAssetRoot, kMusicArchive));
-    for (int n = 0; n < 31; ++n) CHECK(full.queue_music(1, 0, "th13_01.wav"));
+    for (int n = 0; n < 31; ++n)
+        CHECK(full.queue_music(1, 0, "th13_01.wav"));
     CHECK(full.finish_music_requests());
-    for (int n = 0; n < 31; ++n) CHECK(full.queue_music(1, 0, "th13_01.wav"));
+    for (int n = 0; n < 31; ++n)
+        CHECK(full.queue_music(1, 0, "th13_01.wav"));
     CHECK(!full.queue_music(1, 0, "th13_01.wav"));
     CHECK(full.error.find("full") != std::string::npos);
 }
 
 TEST(se_volume_curve_matches_0x4613c0_cubic_truncation) {
-    struct Row { i32 volume, id, definition_volume, expected; };
-    // Expected values from
-    // artifacts/verification/codex-recovery-20261029/fixes/audio/curve_reference.py
-    // (f32 store points:
-    // x, 1-x, (1-x)^3, 1-(1-x)^3; then trunc(curve*(def+5000))-5000).
-    // id 0 = se_plst00.wav definition volume -1900.
-    // id 20 = se_lazer02.wav definition volume -3000.
+    struct Row {
+        i32 volume, id, definition_volume, expected;
+    };
     const Row rows[] = {
-        {0, 0, -1900, -10000}, {20, 0, -1900, -3488}, {50, 0, -1900, -2288},
-        {80, 0, -1900, -1925}, {100, 0, -1900, -1900},
-        {0, 20, -3000, -10000}, {20, 20, -3000, -4025},
-        {50, 20, -3000, -3250}, {80, 20, -3000, -3017},
-        {100, 20, -3000, -3000},
+        {0, 0, -1900, -10000},  {20, 0, -1900, -3488},   {50, 0, -1900, -2288},  {80, 0, -1900, -1925},
+        {100, 0, -1900, -1900}, {0, 20, -3000, -10000},  {20, 20, -3000, -4025}, {50, 20, -3000, -3250},
+        {80, 20, -3000, -3017}, {100, 20, -3000, -3000},
     };
     for (const auto& row : rows) {
         const SoundDefinition* definition = find_definition(row.id);
@@ -211,24 +197,18 @@ TEST(se_volume_curve_matches_0x4613c0_cubic_truncation) {
         if (definition) CHECK_EQ(definition->volume, row.definition_volume);
         CHECK_EQ(attenuation_for(row.id, row.volume), row.expected);
     }
-    // The pre-fix square/lround formula gave -3080 for (80, id 20), not -3017.
-    // -3017 also distinguishes the f32 timing from exact real arithmetic
-    // (-3016); see
-    // artifacts/verification/codex-recovery-20261029/fixes/audio/curve_reference.py.
 }
 
 TEST(global_effect_volume_is_read_at_voice_start_not_initialize) {
     AudioDevice audio;
-    CHECK_EQ(audio.effect_volume, 80);  // original default config 0x5064 high byte
-    audio.effect_volume = 20;           // options write point before device init
+    CHECK_EQ(audio.effect_volume, 80);
+    audio.effect_volume = 20;
     CHECK(audio.initialize_effects_for_test(kAssetRoot));
-    CHECK_EQ(audio.effect_volume, 20);  // initialize must not freeze a startup value
+    CHECK_EQ(audio.effect_volume, 20);
     CHECK(audio.enqueue(0));
     audio.update();
     CHECK_EQ(audio.voice_attenuation(0), -3488);
 
-    // Changing the global while the voice plays does not retroactively change
-    // it: 0x4613c0 only runs when a voice starts.
     audio.effect_volume = 100;
     CHECK_EQ(audio.voice_attenuation(0), -3488);
     const auto fixed = render(audio, 512);
@@ -241,14 +221,12 @@ TEST(global_effect_volume_is_read_at_voice_start_not_initialize) {
     const auto expected = render(reference, 512);
     CHECK(fixed == expected);
 
-    // Restarting the same ID after the write reads the new global.
     audio.stop(-1);
     audio.update();
     CHECK(audio.enqueue(0));
     audio.update();
     CHECK_EQ(audio.voice_attenuation(0), -1900);
 
-    // A write after initialize but before enqueue is honored as well.
     AudioDevice late;
     CHECK(late.initialize_effects_for_test(kAssetRoot));
     late.effect_volume = 50;
@@ -283,15 +261,17 @@ TEST(se_volume_curve_reaches_pcm_gain) {
     const double ratio = std::sqrt(soft_energy / loud_energy);
     const double expected = std::pow(10.0, (-3017.0 - (-3000.0)) / 2000.0);
     CHECK_NEAR(ratio, expected, 1e-6);
-    // The old square curve would give about 0.912 here.
     CHECK(ratio > 0.97);
 }
 
 TEST(pan_entries_aggregate_like_0x460c50) {
-    struct Row { float pan; i32 expected; };
+    struct Row {
+        float pan;
+        i32 expected;
+    };
     const Row rows[] = {
         {192.0f, 1000}, {-192.0f, -1000}, {96.0f, 500}, {-96.0f, -500},
-        {1.0f, 5}, {-1.0f, -5}, {0.0f, 0}, {191.9f, 999},
+        {1.0f, 5},      {-1.0f, -5},      {0.0f, 0},    {191.9f, 999},
     };
     for (const auto& row : rows) {
         AudioDevice audio;
@@ -301,7 +281,6 @@ TEST(pan_entries_aggregate_like_0x460c50) {
         CHECK_EQ(audio.voice_pan(0), row.expected);
     }
 
-    // 0x460dd0 averages all entries for the ID with signed integer division.
     {
         AudioDevice audio;
         CHECK(audio.initialize_effects_for_test(kAssetRoot));
@@ -325,40 +304,37 @@ TEST(pan_entries_aggregate_like_0x460c50) {
         CHECK(audio.enqueue(0, 192.0f));
         CHECK(audio.enqueue(0));
         audio.update();
-        // 0x460bc0 stores 0 for the pan-less request; (1000+0)/2 = 500.
         CHECK_EQ(audio.voice_pan(0), 500);
     }
     {
         AudioDevice audio;
         CHECK(audio.initialize_effects_for_test(kAssetRoot));
-        for (int n = 0; n < 61; ++n) CHECK(audio.enqueue(0, 192.0f));
+        for (int n = 0; n < 61; ++n)
+            CHECK(audio.enqueue(0, 192.0f));
         CHECK_EQ(audio.statistics().dropped_requests, u64(1));
         audio.update();
         CHECK_EQ(audio.statistics().started, u64(1));
         CHECK_EQ(audio.voice_pan(0), 1000);
     }
 
-    // 12 channels x 60 entries: all 720 entries are accepted, the 13th ID is
-    // discarded, and every channel averages its own 60 entries.
     {
         AudioDevice audio;
         CHECK(audio.initialize_effects_for_test(kAssetRoot));
         for (i32 id = 0; id < 12; ++id)
-            for (int n = 0; n < 60; ++n) CHECK(audio.enqueue(id, 96.0f));
+            for (int n = 0; n < 60; ++n)
+                CHECK(audio.enqueue(id, 96.0f));
         CHECK(audio.enqueue(12));
         CHECK_EQ(audio.statistics().dropped_requests, u64(1));
         audio.update();
         const auto stats = audio.statistics();
         CHECK_EQ(stats.started, u64(12));
         CHECK_EQ(stats.active_voices, 12u);
-        for (i32 id = 0; id < 12; ++id) CHECK_EQ(audio.voice_pan(id), 500);
+        for (i32 id = 0; id < 12; ++id)
+            CHECK_EQ(audio.voice_pan(id), 500);
     }
 }
 
 TEST(pan_reaches_pcm_balance) {
-    // Verifies the 0x460c50/0x460dd0 aggregation and the host linear balance
-    // only. The original sound-buffer vtable+0x40 pan law is not decompiled;
-    // this is not an original-PCM pan certification.
     AudioDevice plain;
     CHECK(plain.initialize_effects_for_test(kAssetRoot));
     CHECK(plain.enqueue(0));
@@ -367,8 +343,6 @@ TEST(pan_reaches_pcm_balance) {
     CHECK(channel_nonzero(centered, 0));
     CHECK(channel_nonzero(centered, 1));
 
-    // enqueue(id, 0) is the 0x460c50 path with a zero pan entry; it must be
-    // indistinguishable from the 0x460bc0 pan-less path.
     AudioDevice zero_pan;
     CHECK(zero_pan.initialize_effects_for_test(kAssetRoot));
     CHECK(zero_pan.enqueue(0, 0.0f));
@@ -391,7 +365,6 @@ TEST(pan_reaches_pcm_balance) {
     CHECK(channel_nonzero(left_pcm, 0));
     CHECK(!channel_nonzero(left_pcm, 1));
 
-    // Opposite pan entries average back to center.
     AudioDevice averaged;
     CHECK(averaged.initialize_effects_for_test(kAssetRoot));
     CHECK(averaged.enqueue(0, 192.0f));
@@ -404,11 +377,12 @@ TEST(duplicate_voice_requests_coalesce_into_one_voice_per_update) {
     auto single = [](u32 requests) {
         AudioDevice audio;
         CHECK(audio.initialize_effects_for_test(kAssetRoot));
-        for (u32 n = 0; n < requests; ++n) CHECK(audio.enqueue(0));
+        for (u32 n = 0; n < requests; ++n)
+            CHECK(audio.enqueue(0));
         audio.update();
         const auto stats = audio.statistics();
         CHECK_EQ(stats.requests, u64(requests));
-        CHECK_EQ(stats.started, u64(1));  // 00460dd0: one start per ID
+        CHECK_EQ(stats.started, u64(1));
         CHECK_EQ(stats.active_voices, 1u);
         CHECK_EQ(stats.dropped_requests, 0u);
         return render(audio, 1024);
@@ -416,15 +390,14 @@ TEST(duplicate_voice_requests_coalesce_into_one_voice_per_update) {
     const auto once = single(1);
     const auto repeated = single(5);
     CHECK(has_nonzero(once));
-    // If duplicates were separate instances the summed PCM would differ.
     CHECK(once == repeated);
 }
 
 TEST(twelve_frame_channels_sixty_entries_and_stop_markers) {
-    // 12 distinct IDs occupy all channels; the 13th distinct ID is discarded.
     AudioDevice audio;
     CHECK(audio.initialize_effects_for_test(kAssetRoot));
-    for (i32 id = 0; id < 12; ++id) CHECK(audio.enqueue(id));
+    for (i32 id = 0; id < 12; ++id)
+        CHECK(audio.enqueue(id));
     CHECK(audio.enqueue(12));
     auto stats = audio.statistics();
     CHECK_EQ(stats.dropped_requests, u64(1));
@@ -434,17 +407,15 @@ TEST(twelve_frame_channels_sixty_entries_and_stop_markers) {
     CHECK_EQ(stats.active_voices, 12u);
     CHECK_EQ(stats.pending_voices, 0u);
 
-    // A new frame gets a fresh channel table. The same ID accepts 60 queued
-    // entries; the 61st is discarded (00460bc0: count >= 0x3c).
     const u64 started_before = stats.started;
-    for (int n = 0; n < 61; ++n) CHECK(audio.enqueue(0));
+    for (int n = 0; n < 61; ++n)
+        CHECK(audio.enqueue(0));
     stats = audio.statistics();
     CHECK_EQ(stats.dropped_requests, u64(2));
     audio.update();
     stats = audio.statistics();
-    CHECK_EQ(stats.started, started_before + 1);  // still one coalesced start
+    CHECK_EQ(stats.started, started_before + 1);
 
-    // A stop marker queued earlier this frame wins over later starts.
     AudioDevice marker;
     CHECK(marker.initialize_effects_for_test(kAssetRoot));
     CHECK(marker.enqueue(0));
@@ -455,10 +426,9 @@ TEST(twelve_frame_channels_sixty_entries_and_stop_markers) {
     CHECK_EQ(marker.statistics().active_voices, 0u);
     CHECK_EQ(marker.statistics().dropped_requests, u64(1));
 
-    // Stopping a playing looping ID retires it and mutes the mix.
     AudioDevice playing;
     CHECK(playing.initialize_effects_for_test(kAssetRoot));
-    CHECK(playing.enqueue(55));  // se_msl2.wav, definition flags bit0 = loop
+    CHECK(playing.enqueue(55));
     playing.update();
     CHECK_EQ(playing.statistics().active_voices, 1u);
     CHECK(playing.stop(55));
@@ -468,7 +438,6 @@ TEST(twelve_frame_channels_sixty_entries_and_stop_markers) {
     CHECK_EQ(playing.statistics().active_voices, 0u);
     CHECK(!has_nonzero(render(playing, 2048)));
 
-    // Negative ID stops every original voice object (00460d40 negative path).
     AudioDevice all;
     CHECK(all.initialize_effects_for_test(kAssetRoot));
     CHECK(all.enqueue(0));
@@ -480,10 +449,10 @@ TEST(twelve_frame_channels_sixty_entries_and_stop_markers) {
     CHECK_EQ(all.statistics().active_voices, 0u);
     CHECK(!has_nonzero(render(all, 2048)));
 
-    // All 12 channels occupied: a stop for a 13th ID has no free slot.
     AudioDevice full;
     CHECK(full.initialize_effects_for_test(kAssetRoot));
-    for (i32 id = 0; id < 12; ++id) CHECK(full.enqueue(id));
+    for (i32 id = 0; id < 12; ++id)
+        CHECK(full.enqueue(id));
     CHECK(full.stop(12));
     CHECK_EQ(full.statistics().dropped_requests, u64(1));
     full.update();
@@ -493,16 +462,16 @@ TEST(twelve_frame_channels_sixty_entries_and_stop_markers) {
 TEST(looping_voice_repeats_until_original_stop_marker) {
     AudioDevice audio;
     CHECK(audio.initialize_effects_for_test(kAssetRoot));
-    CHECK(audio.enqueue(55));  // se_msl2.wav, definition flags bit0 = loop
+    CHECK(audio.enqueue(55));
     audio.update();
     CHECK_EQ(audio.statistics().active_voices, 1u);
 
     const auto first = render(audio, 44100);
     const auto looped = render(audio, 44100);
     CHECK(has_nonzero(first));
-    CHECK(has_nonzero(looped));  // 1.056 s sample is still looping at 2 s
+    CHECK(has_nonzero(looped));
 
-    CHECK(audio.stop(55));  // 00460d40 positive ID: per-channel stop marker
+    CHECK(audio.stop(55));
     audio.update();
     const auto stats = audio.statistics();
     CHECK_EQ(stats.stopped, u64(1));
@@ -512,7 +481,6 @@ TEST(looping_voice_repeats_until_original_stop_marker) {
 }
 
 TEST(real_asset_pcm_positive_and_negative_controls) {
-    // Positive control: the decoded original SE is audible at volume 100.
     AudioDevice audible;
     CHECK(audible.initialize_effects_for_test(kAssetRoot));
     audible.effect_volume = 100;
@@ -522,9 +490,9 @@ TEST(real_asset_pcm_positive_and_negative_controls) {
     CHECK(has_nonzero(pcm));
     CHECK(channel_nonzero(pcm, 0));
     CHECK(channel_nonzero(pcm, 1));
-    for (float sample : pcm) CHECK(sample >= -1.0f && sample <= 1.0f);
+    for (float sample : pcm)
+        CHECK(sample >= -1.0f && sample <= 1.0f);
 
-    // Negative control: volume 0 is exact silence (0x4613c0 -10000 path).
     AudioDevice muted;
     CHECK(muted.initialize_effects_for_test(kAssetRoot));
     muted.effect_volume = 0;
@@ -533,13 +501,10 @@ TEST(real_asset_pcm_positive_and_negative_controls) {
     CHECK_EQ(muted.voice_attenuation(0), -10000);
     CHECK(!has_nonzero(render(muted, 4096)));
 
-    // Negative control: no queued voice is silence.
     AudioDevice idle;
     CHECK(idle.initialize_effects_for_test(kAssetRoot));
     CHECK(!has_nonzero(render(idle, 4096)));
 
-    // A non-looping voice retires at the decoded real sample length
-    // (se_plst00.wav: 3552 frames at 22050 Hz -> 7104 frames at 44100 Hz).
     AudioDevice retire;
     CHECK(retire.initialize_effects_for_test(kAssetRoot));
     CHECK(retire.enqueue(0));

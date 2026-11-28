@@ -1,4 +1,3 @@
-// Independent Bomb protection audit: real X input and whole source lifetime.
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "multiplayer/WorldState.hpp"
 #include <fstream>
@@ -84,8 +83,6 @@ TEST(bomb_window_all_roles_all_seats_each_frame) {
             CHECK_EQ(receiver.phase,StagePlayerState::Phase::Active);
             CHECK_EQ(receiver.invulnerable,source.bomb_protection);
             CHECK_EQ(f.battle.seats[size_t(long_target)].invulnerable,999-frame);
-            // The source is an independent counter: compare protection truth
-            // against the owner's actual player collision gate each frame.
             CHECK_EQ(source.bomb_protection>0,source.invulnerable>0);
             if(source.bomb_protection<=0) { done=true;break; }
             for(int kind=0;kind<3;++kind) {
@@ -98,8 +95,6 @@ TEST(bomb_window_all_roles_all_seats_each_frame) {
             if(saved) { multiplayer::WorldState state; CHECK(state.capture(f.battle,f.visual)); forward.push_back(state.digest()); }
         }
         CHECK(done); CHECK(saved); CHECK(tail_saved); CHECK_EQ(saved_frame,180);
-        // Actual unprotected collision proves each geometry is lethal. Restore
-        // the same post-tail snapshot before each independent negative control.
         multiplayer::WorldState end;CHECK(end.capture(f.battle,f.visual));
         for(int kind=0;kind<3;++kind) {
             CHECK(end.restore(f.battle,f.visual));f.collision(target,kind);
@@ -133,8 +128,6 @@ TEST(bomb_window_overlap_ghost_and_death) {
         CHECK(f.battle.seats[0].bomb_protection>0);
         CHECK(f.battle.seats[1].bomb_protection>0);
         multiplayer::WorldState checkpoint;CHECK(checkpoint.capture(f.battle,f.visual));
-        // Force owner 0 to expire its last life; its pre-existing protection
-        // source continues independently, and the other Bomb is not erased.
         auto& dying=f.battle.seats[0];
         f.battle.seat_huds[0].extra_lives=0;
         dying.phase=StagePlayerState::Phase::Deathbomb;dying.phase_frame=16;
@@ -157,8 +150,6 @@ TEST(bomb_tail_spell_damage_uses_teammate_protection) {
     CHECK(f.battle.seats[1].bomb_protection>0);
     CHECK_EQ(f.battle.seats[0].invulnerable,f.battle.seats[1].bomb_protection);
     CHECK(!f.battle.sim.bomb_active);
-    // The initial ECL root may already have been killed by the real Bomb.
-    // Create this diagnostic target through the normal entity constructor.
     auto* target=f.battle.sim.spawn_enemy("main",0,100,1000,nullptr,false);
     CHECK(target!=nullptr); if(!target)return;
     auto& enemy=*target;
@@ -179,21 +170,19 @@ TEST(bomb_tail_spell_damage_uses_teammate_protection) {
     std::printf("# spell probe: dead=%d flags=%x hp=%g spellhp=%d phase=%d clock=%d/%d reg=%d regclock=%d/%d\n",
         enemy.dead,enemy.flags,double(enemy.life),enemy.spell_life,int(player.phase),
         player.phase_clock.current,player.phase_clock.previous,reg.active,reg.clock.current,reg.clock.previous);
-    CHECK_EQ(7000-enemy.spell_life,1); // owner protection: floor(20/5), Boss absorbs 60% (3 seats)
+    CHECK_EQ(7000-enemy.spell_life,1);
     CHECK(saved.restore(f.battle,f.visual));
-    f.battle.seats[0].invulnerable=0; // negative control for this consumer
+    f.battle.seats[0].invulnerable=0;
     StageEnemy* restored_target=nullptr;
     for(auto& candidate:f.battle.sim.enemies)
         if(candidate && candidate->serial==target_serial)restored_target=candidate.get();
     CHECK(restored_target!=nullptr);if(!restored_target)return;
     f.battle.sim.enemy_hit(*restored_target);
-    CHECK_EQ(7000-restored_target->spell_life,8); // Boss absorbs 60% of 20 with 3 operable seats
+    CHECK_EQ(7000-restored_target->spell_life,8);
 }
 TEST(bomb_start_frame_real_world_collisions) {
     for(int kind=0;kind<3;++kind) for(bool bombing : {false,true}) {
         Fixture f; const bool initialized=f.init(0,2); CHECK(initialized);if(!initialized)continue;
-        // High seat starts X while low seat already overlaps a real hazard.
-        // The manager callbacks below observe normal sim.step_frame traversal.
         const auto& player=f.battle.seats[0];
         int observed=0;
         int observed_protection=-1, observed_source=-1;
@@ -222,7 +211,7 @@ TEST(bomb_start_frame_real_world_collisions) {
             };
         } else {
             auto enemy=std::make_unique<StageEnemy>();
-            enemy->serial=9003;enemy->life=1000;enemy->flags=1; // no shot damage, live body
+            enemy->serial=9003;enemy->life=1000;enemy->flags=1;
             enemy->position[0]=player.x;enemy->position[1]=player.y;
             enemy->vel.pos[0]=player.x;enemy->vel.pos[1]=player.y;
             enemy->hitbox[0]=enemy->hitbox[1]=24;
@@ -258,7 +247,6 @@ void verify_transition_window(Fixture& f, int owner, bool ghost_case, int frames
     const int receiver = (owner + 1) % 3, other = (owner + 2) % 3;
     const auto& b = f.battle;
     const int source = b.seats[size_t(owner)].bomb_protection;
-    // Keep provenance on the caster: sharing must not create new sources.
     CHECK_EQ(b.seats[size_t(receiver)].bomb_protection, 0);
     CHECK_EQ(b.seats[size_t(other)].bomb_protection, 0);
     CHECK_EQ(b.seats[size_t(receiver)].invulnerable, source);
@@ -301,9 +289,6 @@ void transition_window(int character, int owner, bool ghost_case, bool starts_in
 }
 }
 
-// Transition pauses enemy/bullet/laser managers. These cases verify the actual
-// player X path, complete protection state and replay, without claiming that
-// an enemy collision naturally runs during the transition.
 TEST(transition_real_x_team_window_and_restore) {
     for (int character = 0; character < 4; ++character)
         for (int owner = 0; owner < 3; ++owner)

@@ -1,5 +1,3 @@
-// Directed cooperation through the production Launcher keyboard bridge.
-// The caller supplies three started pages before installing the combat pilot.
 import assert from 'node:assert/strict';
 
 export function installGiftGesture({ donor = 0 }) {

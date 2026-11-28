@@ -1,4 +1,3 @@
-// TH13 MP 多人 Replay 独立格式实现（M9）。契约见 ReplayArchive.hpp。
 #include "ReplayArchive.hpp"
 
 #include <cstring>
@@ -6,10 +5,6 @@
 namespace th13::multiplayer {
 
 namespace {
-// Header 线布局（v1）：
-//   magic(4) version(4) headerLen(4) | setupWords(22*4) timestamp(8) score(4)
-//   completed(4) nameLen(4) name(nameLen) entryCount(4)
-//   entries: chapter(4) length(4) bytes(length) ×entryCount
 constexpr std::size_t kFixedHeader = 4 + 4 + 4 + SessionSetup::Words * 4 + 8 + 4 + 4 + 4;
 
 std::uint32_t Read32(const std::uint8_t* p) {
@@ -29,12 +24,12 @@ void Write64(std::vector<std::uint8_t>& out, std::uint64_t value) {
     Write32(out, std::uint32_t(value));
     Write32(out, std::uint32_t(value >> 32));
 }
-}  // namespace
+}
 
 bool ReplayArchive::Begin(const SessionSetup& setup, std::uint64_t timestamp) {
     if (!setup.valid()) return false;
     Netplay::InputReplayConfig config;
-    config.gameId = 0x54483133u;  // 'TH13'（SessionChannel 会话同值）
+    config.gameId = 0x54483133u;
     config.gameplayAbi = GameplayAbi(setup);
     config.playerCount = std::uint8_t(setup.player_count);
     config.recordedPlayer = std::uint8_t(setup.local_player);
@@ -62,7 +57,7 @@ bool ReplayArchive::AppendStageEntry(std::uint32_t chapter,
                                      std::vector<std::uint8_t> entry) {
     if (!replay_.Recording() || !chapter || entry.empty()) return false;
     for (std::uint32_t label : entryChapters_)
-        if (label == chapter) return false;  // 同章节重复登记拒绝
+        if (label == chapter) return false;
     if (entryChapters_.size() >= MaxChapters) return false;
     entryChapters_.push_back(chapter);
     entryBytes_.push_back(std::move(entry));
@@ -79,8 +74,6 @@ bool ReplayArchive::Encode(std::vector<std::uint8_t>& out, const char* name,
         EncodeHeader(name ? name : "", score, completed);
     Write32(out, std::uint32_t(header.size()));
     out.insert(out.end(), header.begin(), header.end());
-    // InputReplay 线格式（自带签名/长度；description = header 的哈希锚——
-    // 回放端 Load 时先解 header 再解输入流，两段独立校验）。
     std::vector<std::uint8_t> body;
     if (!replay_.Encode(&body)) return false;
     out.insert(out.end(), body.begin(), body.end());
@@ -96,7 +89,6 @@ std::vector<std::uint8_t> ReplayArchive::EncodeHeader(const char* name,
     Write64(header, timestamp_);
     Write32(header, score);
     Write32(header, completed ? 1u : 0u);
-    // 名字：UTF-8，长度界 64（菜单显示面）。
     const std::string text = name ? name : "";
     const std::size_t nameLen = text.size() < 64 ? text.size() : 64;
     Write32(header, std::uint32_t(nameLen));
@@ -149,7 +141,6 @@ bool ReplayArchive::DecodeHeader(const std::uint8_t* bytes, std::size_t size,
     const std::uint32_t entryCount = Read32(p);
     p += 4;
     if (entryCount > MaxChapters) return false;
-    // 章节条目由调用方（Load）继续解析——此处只校验头部边界。
     headerBytes = 12 + declared;
     setup = decoded;
     return true;
@@ -166,9 +157,6 @@ bool ReplayArchive::Load(const std::uint8_t* bytes, std::size_t size) {
     if (!DecodeHeader(bytes, size, setup, timestamp, score, completed, name,
                       headerBytes))
         return false;
-    // 重解析头部拿章节条目（DecodeHeader 校验后的信任区间内）。
-    // 布局：[12 外层][setup 22*4][timestamp 8][score 4][completed 4][nameLen 4]
-    //       [name][entryCount 4][entries]——nameLen 在 12+88+8+4+4 = 112。
     const std::uint32_t declared = Read32(bytes + 8);
     const std::uint8_t* p = bytes + 12 + SessionSetup::Words * 4 + 8 + 4 + 4;
     const std::uint32_t nameLen = Read32(p);
@@ -188,15 +176,13 @@ bool ReplayArchive::Load(const std::uint8_t* bytes, std::size_t size) {
         q += 4;
         if (!length || q + length > bytes + 12 + declared) return false;
         for (std::uint32_t prior : chapters)
-            if (prior == chapter) return false;  // 重复章节拒绝
+            if (prior == chapter) return false;
         chapters.push_back(chapter);
         entries.emplace_back(q, q + length);
         p = q + length;
     }
-    // 输入流（InputReplay 线格式）。
     Netplay::InputReplay replay;
     if (!replay.Decode(bytes + headerBytes, size - headerBytes)) return false;
-    // 章节一致性：每个 StageEntry 章节必须存在于输入流章节表。
     const auto& info = replay.Info();
     for (std::uint32_t chapter : chapters) {
         bool found = false;
@@ -241,4 +227,4 @@ void ReplayArchive::Clear() {
     entryBytes_.clear();
 }
 
-}  // namespace th13::multiplayer
+}

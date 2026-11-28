@@ -1,22 +1,3 @@
-// m1.unit_frame_split_equivalence —— M1/T2 三臂等价回归（M1-plan §1 等价口径
-// 的 T2 单元窗）。三臂：A=update+commit（M8 重算形态）、B=+present（生产单
-// present）、C=present×2（present 次数不敏感形态）；destination 屏障帧不入臂
-// 差分（三臂一致走生产单 present，序由 frame_split_order_probes 钉住）。
-//
-// 两个窗（均为真实生产入口）：
-//   1) replay boot（th13_debug_replay 生产序：draw_loading(false)+3 装载帧+
-//      begin_replay_run(th13_01.rpy,0)）直入 destination-free 窗 battle
-//      f0..f31——含装载 caption 窗 f0..10（r5 起 caption tick 已在 commit，
-//      此窗纳入三臂）与窗外稳态帧；
-//   2) live-run 窗（start_game(1)→合成输入 Z）：destination 屏障帧 + battle
-//      f0..f12（caption 窗 + 窗外帧）。
-//
-// 逐帧断言：三臂 after_commit / final 全 FrameDigest 逐分量全等（M1-plan §1
-// 逐帧比较集：projection 16 项、双 RNG seed+index、AudioDevice statistics、
-// FileStore 计数、双 ANM registry 全链序+每 VM 位级、回放游标/屏障旗标、
-// 钉 meta 的 recorder encode 字节）；B/C 臂内 after_commit==final（present
-// 纯度——「draw-only 派生缓存可变化；VM/RNG/几何/链/池权威态不随 present
-// 次数变化」的直接反例探针）。
 #include "../../harness/test_framework.hpp"
 
 #include "game/GameInput.hpp"
@@ -117,8 +98,6 @@ struct ArmFrame {
     int presents = 0;
 };
 
-// 一帧三段驱动：destination 屏障帧三臂一致单 present；destination-free 帧
-// 按臂定义（A=0、B=1、C=2 次 present）。失败即整体 false（arm 内 failure 面）。
 bool drive_arm(Arm arm, App& app, th13::GameInput& input, u32 held, ArmFrame& out) {
     input.update(held);
     if (!app.update(input, false)) return false;
@@ -133,9 +112,6 @@ bool drive_arm(Arm arm, App& app, th13::GameInput& input, u32 held, ArmFrame& ou
     return app.failure.empty();
 }
 
-// 三臂逐分量相等断言（差异分量名进 stdout 证据；返回值供 CHECK 汇总）。
-// expect_purity=false 用于 destination 屏障帧：present 尾正当构建装载挡板
-// （draw_loading(false)+pending_load，可确认屏障），不作为 present 纯度反例面。
 bool check_arms_equal(const char* window, int frame, const ArmFrame& fa,
                       const ArmFrame& fb, const ArmFrame& fc, bool expect_purity) {
     bool equal = true;
@@ -158,7 +134,7 @@ bool check_arms_equal(const char* window, int frame, const ArmFrame& fa,
     return equal;
 }
 
-}  // namespace
+}
 
 TEST(equivalence_replay_boot_three_arms_full_digest) {
     std::vector<u8> rpy;
@@ -176,7 +152,6 @@ TEST(equivalence_replay_boot_three_arms_full_digest) {
     }
     CHECK_EQ(app_a.progress.stage_frame, 0);
     th13::GameInput in_a, in_b, in_c;
-    // battle f0..f31：caption 窗（f0..10，含 f10 retire）+ 窗外稳态 20 帧。
     constexpr int kFrames = 32;
     for (int F = 0; F < kFrames; ++F) {
         ArmFrame fa, fb, fc;
@@ -195,7 +170,7 @@ TEST(equivalence_replay_boot_three_arms_full_digest) {
         CHECK_EQ(fa.presents, 0);
         CHECK_EQ(fb.presents, 1);
         CHECK_EQ(fc.presents, 2);
-        CHECK_EQ(app_a.pending_destination, -1);  // 窗内 destination-free
+        CHECK_EQ(app_a.pending_destination, -1);
         CHECK_EQ(app_a.pending_load, 0u);
         CHECK(check_arms_equal("replay", F, fa, fb, fc, true));
     }
@@ -212,8 +187,6 @@ TEST(equivalence_live_run_caption_window_three_arms) {
         return;
     }
     th13::GameInput in_a, in_b, in_c;
-    // step0 = destination 屏障帧（三臂一致单 present；装载挡板两拍原样帧尾）；
-    // step1..13 = battle f0..f12（合成输入 Z：battle f0 按下沿并连射）。
     for (int step = 0; step <= 13; ++step) {
         const u32 held = step >= 1 ? kZ : 0u;
         ArmFrame fa, fb, fc;
@@ -240,7 +213,7 @@ TEST(equivalence_live_run_caption_window_three_arms) {
             CHECK_EQ(fc.presents, 2);
             CHECK_EQ(fa.presents, 0);
             CHECK_EQ(app_b.replay_active, false);
-            CHECK(app_b.recorder.ready());  // live 臂真录制（digest 消费钉 meta encode）
+            CHECK(app_b.recorder.ready());
         }
         CHECK(check_arms_equal("live", step, fa, fb, fc, step >= 1));
     }

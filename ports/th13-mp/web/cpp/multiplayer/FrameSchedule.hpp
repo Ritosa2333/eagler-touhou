@@ -7,9 +7,6 @@
 #include <eagler/netplay/PendingFrameSchedule.hpp>
 
 namespace th13::multiplayer {
-// A corrected clear can precede the saved forward frontier. Apply its
-// confirmed stage door before the next replayed frame, without presenting
-// historical images or replacing resources while records still retain them.
 template<class Apply>
 bool CompleteConfirmedStageHandoff(bool pending, unsigned committed,
                                    unsigned simulated, Apply apply) {
@@ -28,27 +25,19 @@ public:
         return delta;
     }
 };
-// Frame-rate-drop handling for rollback play, the netplay counterpart of the
-// original loop's slowdown: when the remote seats cannot keep up, the local
-// clock stretches in proportion to the sustained prediction depth, so the game
-// slows smoothly and rollbacks stay short instead of the prediction window
-// filling and the game stalling. Wall-clock advice only; inputs, prediction,
-// rollback and world state never depend on it.
 class SlowdownGovernor {
 public:
-    static constexpr unsigned kWindow = 12;      // SessionSetup::MaxRollbackFrames
-    static constexpr unsigned kOnset = 8;        // sustained depth where stretching starts
-    static constexpr unsigned kFull = 11;        // sustained depth at the full stretch
-    static constexpr double kMaxStretch = 3.;    // clock speed floor 20 Hz
+    static constexpr unsigned kWindow = 12;
+    static constexpr unsigned kOnset = 8;
+    static constexpr unsigned kFull = 11;
+    static constexpr double kMaxStretch = 3.;
     static constexpr double kAttack = .35, kRelease = .08;
-    static constexpr std::size_t kSpan = 6;      // callbacks in the sustained-depth envelope
+    static constexpr std::size_t kSpan = 6;
 
     void reset() { *this = SlowdownGovernor{}; }
     double stretch() const { return stretch_; }
     unsigned sustained_depth() const { return sustained_; }
 
-    // depth = RollbackCore::PrepareFrame's distance for the next frame: how far
-    // it lies beyond the newest input confirmed by every remote.
     static unsigned depth_of(std::uint32_t next_frame, std::uint32_t confirmed) {
         return confirmed == 0xFFFFFFFFu || next_frame <= confirmed ? 0 : next_frame - confirmed;
     }
@@ -65,11 +54,6 @@ public:
         const double target = 1. + pressure * (kMaxStretch - 1.);
         stretch_ += (target - stretch_) * (target > stretch_ ? kAttack : kRelease);
         if (stretch_ < 1.0005) stretch_ = 1.;
-        // Depth parked on the prediction window while the clock is already at
-        // its slowest is symmetric pressure: both peers are display-bound, and
-        // slowing both does not close the gap. Release so the original catch-up
-        // can spend the display gap. A peer that is genuinely ahead sees its
-        // depth fall once it slows, and never takes this branch.
         if (sustained_ >= kWindow && stretch_ >= kMaxStretch - .05) ++pinned_;
         else pinned_ = 0;
         if (pinned_ > kSpan) {
@@ -86,16 +70,12 @@ private:
     double stretch_ = 1.;
 };
 
-// Only elapsed clock time earns new frames. Both display and packet callbacks
-// can spend due credit; replaying history never spends a fresh frame's credit.
 class FrameSchedule {
     using Cadence = touhou::sdl::FrameCadence;
     Netplay::PendingFrameSchedule<Cadence> schedule_;
     unsigned offered_ = 0, completed_ = 0;
 public:
     void reset() { schedule_.reset(); offered_ = 0; gap_cap_ = 0; }
-    // Starting half a frame into the interval keeps callback jitter below
-    // half a frame from splitting a steady display into 0- and 2-frame turns.
     void align_phase() { schedule_.debt = Cadence::interval / 2; }
     double credit() const { return schedule_.debt; }
     unsigned take_completed() { const unsigned done = completed_; completed_ = 0; return done; }
@@ -109,9 +89,6 @@ public:
         offered_ = schedule_.advance(elapsed, true);
         return offered_;
     }
-    // Credit the whole display gap, the way the original 1/60 catch-up loop does.
-    // A gap longer than kGapDebtCap becomes slowdown rather than a catch-up
-    // spiral; frames the prediction window cannot run yet stay credited.
     static constexpr double kGapDebtCap = 2.;
     unsigned advance_gap(double elapsed) {
         gap_cap_ = kGapDebtCap;

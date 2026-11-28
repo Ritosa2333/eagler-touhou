@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Build the independent production-Renderer WebGL fixture from this directory.
-# Run through `make exec CMD='bash eagler-touhou/ports/th13/tests/render/
-# color01-fixture/build.sh'`; this does not touch the game build or artifacts.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

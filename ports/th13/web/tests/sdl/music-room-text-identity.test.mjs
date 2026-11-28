@@ -1,34 +1,3 @@
-// 音楽室（Music Room）文本身份回归：真实生产 WASM + 原始 title.anm / text.anm /
-// musiccmt.txt，断言 8 行注释与 17 行曲目的脚本/精灵/纹理/矩形身份、生产提交
-// 记录（th13_debug_capture_begin 的 submission-v2 Update 事件）与零控制台错误。
-//
-// 身份 expected 来源（不是从 Web 输出反推）：
-//   - 原版数据：artifacts/reference/raw/{title.anm,text.anm,ascii.anm,musiccmt.txt}
-//     由本测试内独立 ANM/musiccmt 解析器读取（布局同 game/AnmResource.cpp：
-//     entry 64B 头 + sprite 偏移表 + {id,offset} 脚本表 + 8B 指令头）。
-//   - 原版脚本号锚点：0x4554f0 注释块 = text.anm scripts 41..48（8 行），
-//     曲目行 = title.anm scripts 160..（musiccmt 曲数），徽记 = title.anm 106，
-//     粒子 = ascii.anm 19（TitleMusicRoomView.cpp 头注 + 反汇编）。
-//   - musiccmt.txt 的 17 个 @bgm 块、每块 8 行注释；空白行（0x81 0x40 全角
-//     空格）不作为“有墨”期望，其余行要求生产纹理内容哈希发生变化。
-//
-// 工具缺口（明确登记，不伪造 Exact 字形通过）：
-//   现有导出没有任何一处暴露 rasterize_anm_text 收到的 CP932 字节，也没有
-//   单字形/单区域墨量读数；submission-v2 只给整张纹理的 SHA-256。因此本测试
-//   能证明“原版矩形被生产栅格器写入，且内容变化模式与原始文本的空白/非空白
-//   结构一致”，不能证明字形轮廓与原版 GDI MS Gothic 逐像素一致。该最终字形
-//   认证保持 BLOCKED。精确 CP932 字节（交给生产栅格器之前的字符串）由
-//   tests/ui/music_room_real_assets_test.cpp 用原始 musiccmt.txt 逐字节断言。
-//   最小只读探针建议（产品源码变更，本轮不实施）：
-//     1) 在 rasterize_anm_text 成功提交处记录 (bank/script, sprite rect,
-//        cp932 原始字节 hex, font profile, color, region ink count/bounds)；
-//     2) 新增 th13_debug_text_report() 只读导出，返回上述 per-VM 最近一次
-//        文本身份；测试即可把字节与 musiccmt.txt / 0x4c0da0 占位串逐字节比较，
-//        而不必从 Web 输出反推。
-//
-// 用法（th13-shot 镜像，工作区根）：
-//   make shot CMD='node --test eagler-touhou/ports/th13/web/tests/sdl/music-room-text-identity.test.mjs'
-// 可选证据输出：TH13_MUSIC_ROOM_EVIDENCE=/path/out.json
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -39,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
 
 const port = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const workspace = resolve(port, '../../..');       // 工作区根（artifacts/reference/raw）
+const workspace = resolve(port, '../../..');
 const runtime = join(port, 'web/sdl-runtime');
 const build = process.env.TH13_SDL3_BUILD_DIR ?? join(port, 'web/artifacts');
 const evidence = process.env.TH13_MUSIC_ROOM_EVIDENCE;
@@ -50,11 +19,6 @@ catch { ({chromium} = require(join(process.env.NODE_PATH ?? '/opt/shot/node_modu
 
 const sha256 = data => createHash('sha256').update(data).digest('hex');
 
-// ---------------------------------------------------------------------------
-// 原版数据解析（独立于生产代码；expected 的唯一来源）
-// ---------------------------------------------------------------------------
-
-// musiccmt.txt（0x4724c0 语义）：'@' 起块，块内曲名 + 8 行注释；CRLF 剥 \r。
 function parseMusiccmt(bytes) {
   const lines = [];
   let start = 0;
@@ -68,8 +32,8 @@ function parseMusiccmt(bytes) {
   const tracks = [];
   for (let i = 0; i < lines.length; ++i) {
     const line = lines[i];
-    if (line.length < 4 || line[0] !== 0x40 /* '@' */) continue;
-    const slash = line.indexOf(0x2f /* '/' */);
+    if (line.length < 4 || line[0] !== 0x40) continue;
+    const slash = line.indexOf(0x2f);
     if (slash < 0) continue;
     const track = {name: line.subarray(slash + 1), title: null, comments: []};
     for (let k = 0; k < 9; ++k) {
@@ -85,7 +49,6 @@ function parseMusiccmt(bytes) {
   return tracks;
 }
 
-// CP932 文本是否含可见墨迹（全角空格 0x81 0x40 / ASCII 空格 / TAB 不算）。
 function hasInk(cp932) {
   for (let i = 0; i < cp932.length; ++i) {
     const byte = cp932[i];
@@ -102,7 +65,6 @@ const f32 = bits => {
   return buffer.readFloatLE(0);
 };
 
-// ANM 归档解析（与 game/AnmResource.cpp 的 entry 链/全局表序一致）。
 function parseAnm(bytes, label) {
   const data = Buffer.from(bytes);
   const size = data.length;
@@ -167,7 +129,6 @@ function parseAnm(bytes, label) {
   return {entries, sprites, scripts};
 }
 
-// 脚本身份：首条 ins_300 选中的全局精灵 + 首条 ins_400 的脚本坐标。
 function scriptIdentity(anm, index) {
   const script = anm.scripts[index];
   if (!script) throw Error(`missing script ${index}`);
@@ -188,7 +149,6 @@ function scriptIdentity(anm, index) {
   };
 }
 
-// 从生产 th13_debug_layer_report() 文本里取一个 VM 的视觉记录。
 function layerRecord(text, script, size, origin) {
   const lines = text.split('\n');
   for (let i = 0; i + 1 < lines.length; ++i) {
@@ -240,7 +200,6 @@ function assertVmIdentity(vm, expected, bank, label, {position = true} = {}) {
   assert.ok((vm.color >>> 24) !== 0, `${label}: zero-alpha text VM`);
 }
 
-// submission-v2 Update 事件按原始矩形分组成一次完整显影 pass。
 function commentPasses(updates, expected) {
   const key = region => region.join(',');
   const keys = expected.map(item => [
@@ -265,12 +224,9 @@ function assertHash(value, label) {
   assert.match(value ?? '', /^[0-9a-f]{64}$/, `${label}: content hash is not sha256 hex`);
 }
 
-// ---------------------------------------------------------------------------
-
 test('production Music Room text identity: original ANM scripts/textures, ' +
      'submission ink, paging identity, zero console errors',
      {timeout: 300000}, async () => {
-  // ---- 构建身份（构建落后源码时明确 BUILD_DRIFT，不冒充生产通过）----
   const manifestPath = join(build, 'sdl3/build.json');
   const wasmPath = join(build, 'sdl3/th13-sdl.wasm');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
@@ -300,11 +256,13 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
   ];
   const drift = [];
   const musicDrift = [];
-  for (const [absolute, recorded] of Object.entries(inventory)) {
+  const portPrefix = port.replaceAll('\\', '/') + '/';
+  const portRelative = absolute => {
     const normalized = absolute.replaceAll('\\', '/');
-    const suffix = normalized.includes('/ports/th13/')
-      ? normalized.slice(normalized.indexOf('/ports/th13/') + '/ports/th13/'.length)
-      : null;
+    return normalized.startsWith(portPrefix) ? normalized.slice(portPrefix.length) : null;
+  };
+  for (const [absolute, recorded] of Object.entries(inventory)) {
+    const suffix = portRelative(absolute);
     if (!suffix) continue;
     let actual;
     try { actual = await currentHash(suffix); } catch { actual = null; }
@@ -317,16 +275,11 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
   assert.deepEqual(musicDrift, [],
     'BUILD_DRIFT (build artifact predates current music-room sources; not a product failure): ' +
     JSON.stringify(musicDrift));
-  const tracked = new Set(Object.keys(inventory).map(absolute => {
-    const normalized = absolute.replaceAll('\\', '/');
-    return normalized.includes('/ports/th13/')
-      ? normalized.slice(normalized.indexOf('/ports/th13/') + '/ports/th13/'.length)
-      : null;
-  }).filter(Boolean));
+  const tracked = new Set(Object.keys(inventory).map(portRelative).filter(Boolean));
+  assert.ok(tracked.size > 0, 'build manifest lists this port\'s sources');
   assert.deepEqual(musicPath.filter(relative => !tracked.has(relative)), [],
     'music-room path source missing from build manifest (cannot certify build identity)');
 
-  // ---- 原始资产身份：运行时实际加载的副本必须与 artifacts/reference/raw 相同 ----
   const assetNames = ['musiccmt.txt', 'title.anm', 'text.anm', 'ascii.anm'];
   const assetIdentity = {};
   const rawDir = join(workspace, 'artifacts/reference/raw');
@@ -381,7 +334,6 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
   assert.equal(badgeIdentity.spriteIndex, 84, 'title.anm script 106 sprite');
   assert.equal(badgeIdentity.textureName, 'title/select01.png', 'title.anm script 106 texture');
   assert.ok(asciiAnm.scripts[19], 'ascii.anm script 19 (particles) exists');
-  // 纹理身份 = GraphicsDevice preload 的 "anm:<name>:entry:<texture index>"。
   const commentTexture = `anm:${commentIdentity[0].textureName}:entry:${commentIdentity[0].textureIndex}`;
   const rowTexture = `anm:${rowIdentity[0].textureName}:entry:${rowIdentity[0].textureIndex}`;
   assert.equal(commentTexture, 'anm:@:entry:0');
@@ -394,14 +346,11 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
     item.rect[0], item.rect[1], item.rect[0] + item.rect[2], item.rect[1] + item.rect[3],
   ]);
 
-  // ---- 浏览器：真实生产运行时 ----
   const consoleErrors = [], consoleLines = [], pageErrors = [], requestFailures = [];
   const missingRequests = [];
   const server = createServer(async (request, response) => {
     try {
       const path = new URL(request.url, 'http://localhost').pathname;
-      // 浏览器自动请求 favicon；页面本身没有该资源，返回 204 避免把浏览器
-      // 噪声当成产品控制台错误（其余 404 仍记录并让测试失败）。
       if (path === '/favicon.ico') { response.writeHead(204).end(); return; }
       const file = path.startsWith('/artifacts/') ? join(build, path.slice(11))
         : path.startsWith('/assets/') ? join(runtime, 'assets', path.slice(8))
@@ -451,7 +400,6 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
       const report = () => mod.UTF8ToString(mod._th13_debug_layer_report());
       const anmState = () => JSON.parse(mod.UTF8ToString(mod._th13_debug_anm_state()));
       const capture = name => {
-        // 导出签名是 const char*：原始 wasm 导出只接受指针，不能直接传 JS 字符串。
         const pointer = mod.allocateUTF8(name);
         if (!pointer) throw Error('capture begin: path allocation failed');
         try {
@@ -485,7 +433,7 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
         try { complete = JSON.parse(tail).complete === true; } catch { complete = false; }
         return {frames, complete, updates: collect(text, identities)};
       };
-      frame(440);  // 标题 intro → 主菜单可交互
+      frame(440);
       for (let guard = 0; (state()[8] !== 1 || state()[9] !== 2) && guard < 240; ++guard)
         frame();
       if (state()[8] !== 1 || state()[9] !== 2)
@@ -493,19 +441,16 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
       for (let i = 0; state()[10] !== 6 && i < 12; ++i) tap(208);
       if (state()[10] !== 6) throw Error('Cannot select main-menu row 6: ' + JSON.stringify(state()));
 
-      // 第一次捕获：进入音楽室 + 8 行注释显影（同时覆盖 17 行曲目栅格）。
       capture('/music-room-entry.trace');
       tap(44);
       frame(120);
       const entry = {state: state(), anm: anmState(), layer: report()};
       const entryTrace = finish('/music-room-entry.trace', [commentTexture, rowTexture]);
 
-      // 翻页：↓×10 越过 10 行窗口（top=10），只做导航，不触发注释重栅格。
       for (let i = 0; i < 10; ++i) tap(208);
       frame(30);
       const paged = {state: state(), anm: anmState(), layer: report()};
 
-      // 第二次捕获：Z 两次 = 未听锁定占位 8 行 → 真实第 10 曲 8 行。
       capture('/music-room-page.trace');
       tap(44);
       frame(120);
@@ -526,7 +471,6 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
     assert.equal(result.entryTrace.complete, true, 'entry submission trace complete');
     assert.equal(result.pageTrace.complete, true, 'paging submission trace complete');
 
-    // ---- 8 行注释：生产 VM 的 bank/script/sprite/texture/rect 身份 ----
     for (const [line, expected] of commentIdentity.entries()) {
       const vms = vmByBankScript(result.entry.anm, 0, expected.script);
       assert.equal(vms.length, 1, `entry comment line ${line}: VM count`);
@@ -535,10 +479,8 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
         [64, 320 + 18 * line]);
       assert.ok(record, `entry comment line ${line}: layer record missing`);
       assert.ok((record.color >>> 24) !== 0, `entry comment line ${line}: color alpha`);
-      // text.anm 的 bank 首纹理与该精灵纹理都是空白 '@'。
       assert.equal(record.textureField, '@/@', `entry comment line ${line}: layer texture`);
     }
-    // ---- 17 行曲目：title.anm scripts 160..176 / sprites 132..148 / 空白纹理 entry21 ----
     for (const [row, expected] of rowIdentity.entries()) {
       const vms = vmByBankScript(result.entry.anm, 16, expected.script);
       assert.equal(vms.length, 1, `entry row ${row}: VM count`);
@@ -546,13 +488,7 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
       const record = layerRecord(result.entry.layer, expected.script, [512, 18]);
       assert.ok(record, `entry row ${row}: layer record missing`);
       assert.ok((record.color >>> 24) !== 0, `entry row ${row}: color alpha`);
-      // layer 报告 tex= 的第一段是 bank 首纹理（title.anm = title/title01.png），
-      // 第二段才是该精灵实际采样的纹理（空白 entry21 = '@'）；身份以
-      // th13_debug_anm_state 的 texture_index/texture_name 为准（上一断言）。
     }
-    // 生产目录曲数/注释行数必须与原始 musiccmt 一致：恰好 8 个注释 VM
-    // （text.anm scripts 41..48）与 17 个曲目行 VM（title.anm scripts 160..176），
-    // 没有多建 177+ 行或 49+ 注释 VM。
     const commentVms = (result.entry.anm.vms ?? []).filter(vm =>
       vm.bank === 0 && vm.script >= 41 && vm.script <= 48);
     const rowVms = (result.entry.anm.vms ?? []).filter(vm =>
@@ -563,14 +499,12 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
       'no row VM beyond the original track count');
     assert.equal(vmByBankScript(result.entry.anm, 0, 49).length, 0,
       'no comment VM beyond the original eight lines');
-    // ---- 徽记/粒子身份（音乐室非注释 UI）----
     const badge = vmByBankScript(result.entry.anm, 16, 106);
     assert.equal(badge.length, 1, 'music room badge VM count');
     assertVmIdentity(badge[0], badgeIdentity, 16, 'music room badge', {position: false});
     assert.equal(vmByBankScript(result.entry.anm, 2, 19).length, 1,
       'music room particle VM (ascii.anm script 19)');
 
-    // ---- 生产提交：注释纹理 Update 事件覆盖原始 8 个矩形 ----
     const entryComments = result.entryTrace.updates[commentTexture];
     const entryPasses = commentPasses(entryComments, commentIdentity);
     assert.equal(entryComments.length, 8,
@@ -585,8 +519,6 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
         `entry comment line ${line}: submitted region`);
       assertHash(update.content, `entry comment line ${line}`);
     }
-    // 非空行：每次栅格必须改变整张纹理内容哈希（= 真实写入非零墨量）。
-    // 首次显影时矩形尚未被写过，空白行（全角空格）必须保持哈希不变。
     const prior = entryComments.filter(update => update.seq < entryPass[0].seq);
     assert.equal(prior.length, 0, 'unexpected text updates before the comment pass');
     let previousContent = blankTextureHash;
@@ -601,7 +533,6 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
     }
     assert.notEqual(entryPass[7].content, blankTextureHash,
       'entry comment texture still blank after all eight lines');
-    // 曲目行：17 个原始矩形各有一次生产 Update（每行锁定/曲名文本均有墨）。
     const entryRows = result.entryTrace.updates[rowTexture];
     const rowPasses = commentPasses(entryRows, rowIdentity);
     assert.equal(entryRows.length, 17,
@@ -622,14 +553,11 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
     assert.notEqual(rowPass[16].content, blankTextureHash,
       'row title texture still blank after all tracks');
 
-    // ---- 翻页（↓×10）：身份/句柄保持，10 行窗口显隐切换 ----
     const entryCommentHandles = commentIdentity.map(expected =>
       vmByBankScript(result.entry.anm, 0, expected.script)[0].handle);
     const entryRowHandles = rowIdentity.map(expected =>
       vmByBankScript(result.entry.anm, 16, expected.script)[0].handle);
     assert.equal(result.paged.state[8], 13, 'paging left the music room');
-    // 音楽室行光标是菜单私有 +0x28（row_），不写 state.menu.cursor；翻页效果
-    // 由下面 10 行窗口可见位（scripts 160..169 隐藏 / 170..176 显示）证明。
     for (const [line, expected] of commentIdentity.entries()) {
       const after = vmByBankScript(result.paged.anm, 0, expected.script);
       assert.equal(after.length, 1, `paged comment line ${line}: VM count`);
@@ -646,21 +574,15 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
       assertVmIdentity(after[0], expected, 16, `paged row ${row}`, {position: false});
       if ((after[0].flags & 2) !== 0) visibleRows.push(row);
     }
-    // 10 次 ↓ 后 row_=10，view 的 10 行窗口 top=row-9=1（0x4554f0:190
-    // 页顶+10 显隐门）→ 可见行 1..10；0 与 11..16 隐藏。
     assert.deepEqual(visibleRows, Array.from({length: 10}, (_, index) => index + 1),
       'paged 10-row window visibility');
-    // 选中行 x=60（±4 poke 对），其余 x=64；翻页确实移动了选中行。
     const selectedPosition = decodePosition(vmByBankScript(result.paged.anm, 16, 170)[0]);
     const neighbourPosition = decodePosition(vmByBankScript(result.paged.anm, 16, 161)[0]);
     assert.ok(Math.abs(selectedPosition[0] - 60) < 1e-4,
       `paged selected row x ${selectedPosition[0]} != 60`);
     assert.ok(Math.abs(neighbourPosition[0] - 64) < 1e-4,
       `paged neighbour row x ${neighbourPosition[0]} != 64`);
-    // 翻页本身不改变注释块（comment_track 仍为 0）；身份由上面的句柄/脚本/
-    // 精灵/纹理断言保持。下一次捕获只覆盖 Z 的两次注释重栅格。
 
-    // ---- Z×2：同一 8 个脚本/精灵/矩形上先占位后真实文本，身份保持 ----
     const pageComments = result.pageTrace.updates[commentTexture];
     assert.equal(pageComments.length, 16,
       'page trace must contain exactly two 8-line Update passes; updates=' +
@@ -698,7 +620,6 @@ test('production Music Room text identity: original ANM scripts/textures, ' +
       assertVmIdentity(vms[0], expected, 16, `real row ${row}`, {position: false});
     }
 
-    // ---- 控制台/pageerror 零 ----
     assert.deepEqual(pageErrors, [], 'pageerror must stay empty');
     assert.deepEqual(consoleErrors, [],
       'console error must stay empty; missing requests: ' + JSON.stringify(missingRequests));

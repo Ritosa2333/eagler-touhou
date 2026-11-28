@@ -2,8 +2,6 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {appendFile, writeFile} from 'node:fs/promises';
 
-// Never acknowledge a failed or partly written batch. A failed persistence is
-// terminal for this collector, so the final flush cannot overwrite evidence.
 export async function persistFramebufferCapture(dir, seat, capture, cursor, evidence) {
   if (cursor.failure) throw Error(cursor.failure);
   try {

@@ -1,10 +1,3 @@
-// scoreth13.dat 的原始块容器与字段视图。
-// 文件 = 0x18 明文头 + xor_encrypt(LZ 压缩(镜像体), key0=0xAC, step=0x35,
-// block=0x10)。镜像体 = 5 个 CR 记录列（4 名角色 + 合计，各 0x56DC）+ ST 块。
-// 每个 CR 列包含 6 组难度榜表，每组 10 条；界面使用前 5 个难度槽。
-//
-// parse/build 保留块内未解释字节。保存时只收录魔数为 'CR' 的列，并按列号
-// 重写 +0x0C 与校验和；缺席列不进入文件，uncompSize 随之缩短。
 #pragma once
 
 #include "../game/Types.hpp"
@@ -32,7 +25,7 @@ public:
     static constexpr size_t kPlayFramesOff = 0x7BC;
     static constexpr size_t kClearCountOff = 0x7C0;
     static constexpr size_t kNoContinueClearCountOff = 0x7DC;
-    static constexpr size_t kProgressRowsOff = 0x7F4;
+    static constexpr size_t kProgressRowsOff = 0x7F8;
     static constexpr size_t kPracticeOff = 0x978;
     static constexpr size_t kPracticeSize = 0x9C;
     static constexpr size_t kPracticeNameSize = 0x80;
@@ -51,7 +44,7 @@ public:
     static constexpr size_t kEndingBytes = 13;
 
     static_assert(kEntriesOff + kDifficultySlots * kRankTableStride == kMidOff);
-    static_assert(kNoContinueClearCountOff + kDifficultySlots * 4 == kProgressRowsOff);
+    static_assert(kNoContinueClearCountOff + kDifficultySlots * 4 + 4 == kProgressRowsOff);
     static_assert(kPracticeOff + kPracticeCount * kPracticeSize == kCRSize);
 
     struct Entry {
@@ -100,8 +93,7 @@ public:
     static void set_progress_row_flag(u8* column, int difficulty, int stage, int which, u8 value);
 
     static std::array<u8, kPracticeNameSize> practice_name(const u8* column, int i);
-    static void set_practice_name(u8* column, int i,
-                                  const std::array<u8, kPracticeNameSize>& name);
+    static void set_practice_name(u8* column, int i, const std::array<u8, kPracticeNameSize>& name);
     static u32 practice_u32(const u8* column, int i, size_t field_offset);
     static void set_practice_u32(u8* column, int i, size_t field_offset, u32 value);
 
@@ -121,4 +113,4 @@ private:
     }
 };
 
-}  // namespace th13
+}

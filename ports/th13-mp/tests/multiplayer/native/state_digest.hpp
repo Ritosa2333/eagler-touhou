@@ -1,29 +1,3 @@
-// M1/T2 状态摘要 walker（tests/multiplayer/native/ 共享头；零生产钩子）。
-//
-// 依据 M1-plan §1 等价口径：帧边界全 digest = projection 16 项 + 双 RNG 流
-//（game 0x4dc324 / visual 0x4dc31c 的 seed+index）+ AudioDevice::Statistics
-// 全字段 + FileStore 计数 + 双 ANM registry（animations / loading_animations）
-// 的 ordered_handle 全链序 + 每 VM 字段位级 + registry count/generation/
-// ordered_count + 回放游标/触控面。观测接口全部 public（ApplicationState 是
-// struct；AnmRegistry::layer/ordered_handle/find/count/generation_counter、
-// AnmVm timer/age/instruction_offset/source_script/visible/pending_interrupt/
-// slowdown/ordering/variables/visual/interpolators 全可读），不接任何生产钩子。
-//
-// 排除/规范化项（位级摘要的明确非模拟量与 draw 派生表示，注释即契约）：
-//   - AnmVm::presentation_generation：进程级静态分配计数器
-//    （AnmVm.hpp:35 inline static），跨 ApplicationState 实例比较必然错位，
-//     与地址/padding 同类；VM 身份已由链序+句柄覆盖。
-//   - AnmVm::geometry：draw 派生缓存（present 期重算，确定性同值重写）；
-//     权威几何回填在 Update 20（M1-plan §0），digest 只钉 update 侧权威态。
-//   - AnmVisualState::transform_matrix：绘制侧每次从 sprite_matrix+scale+
-//     rotation 重推导（AnmTransforms.cpp:14-16 幂等）——draw 派生缓存；
-//   - AnmVisualState::flags bit2/bit3：op 写侧 dirty 标记、绘制消费清零
-//    （AnmInterpreter.cpp:183-214 置、AnmTransforms.cpp:14-15 清）；
-//   - AnmVariables::rotation 按 normalize_angle 规范化：绘制侧 total_rotation
-//    对有父 VM 就地规范化（AnmInterpreter.cpp:54，幂等）——权威为规范化等价类。
-//   - 资源/宿主指针（resource/sprite/sprite_source/environment/object_host/
-//     rotation_parent/creation_parent/pre_tick）：跨实例地址不稳定。
-// float 一律按 memcpy 位比较（NaN/±0 不做数值容差——快照语义要求位级稳定）。
 #pragma once
 
 #include "game/Types.hpp"
@@ -48,13 +22,12 @@
 
 namespace mpdigest {
 
-// ---- 累加器：域分隔的 FNV-1a 64（顺序敏感；同序同值 ⇒ 同摘要）----
 class DigestSink {
 public:
     void tag(const char* text) {
         mix(0x9e3779b97f4a7c15ull ^ static_cast<uint64_t>(std::strlen(text)));
         for (const char* p = text; *p; ++p) mix(static_cast<uint8_t>(*p));
-        mix(0);  // 域终止符，防 "ab"+"c" 与 "a"+"bc" 拼接歧义
+        mix(0);
     }
     void u8(uint8_t value) { mix(value); }
     void u32(uint32_t value) {
@@ -95,7 +68,6 @@ private:
     uint64_t state_ = 0xcbf29ce484222325ull;
 };
 
-// ---- 帧计时器（Timer.hpp 全字段）----
 inline void digest_timer(DigestSink& d, const char* tag, const th13::Timer& timer) {
     d.tag(tag);
     d.i32(timer.previous);
@@ -105,10 +77,6 @@ inline void digest_timer(DigestSink& d, const char* tag, const th13::Timer& time
     d.u32(timer.flags);
 }
 
-// ---- ANM 变量表（AnmVariables.hpp 全字段；float 位级）----
-// rotation 按 normalize_angle 规范化后入摘要：绘制侧 total_rotation 对有父
-// VM 就地规范化（AnmInterpreter.cpp:54，幂等），update 侧 op 写原始值——
-// 权威值是规范化等价类，否则 present 次数会改摘要（draw 派生表示泄漏）。
 inline void digest_variables(DigestSink& d, const th13::AnmVariables& v) {
     d.tag("vars.int");
     for (int i = 0; i < 4; ++i) d.i32(v.integers[i]);
@@ -148,14 +116,6 @@ inline void digest_matrix(DigestSink& d, const char* tag, const th13::Matrix4& m
     for (int i = 0; i < 16; ++i) d.f32(m.m[i]);
 }
 
-// ---- ANM 可视状态（AnmVisualState.hpp 权威字段；位级）----
-// 两处 draw 派生面按「draw-only 派生缓存可变化」（M1-plan §1）排除，否则
-// present 次数改变摘要、三臂等价在正确实现下反假：
-//   - transform_matrix：绘制侧 scale_sprite/rotate/resolution 每次绘制从
-//     sprite_matrix+scale+rotation 重推导（AnmTransforms.cpp:14-16，幂等）；
-//     update 侧 op 也会写——其值是派生缓存，权威=sprite_matrix+scale+rotation。
-//   - flags bit2/bit3（op401/402/410-412/434 置 dirty，AnmInterpreter.cpp:183/
-//     184/192-194/214；绘制 scale_sprite/rotate 消费清零）——绘制消费的脏标记。
 inline void digest_visual(DigestSink& d, const th13::AnmVisualState& v) {
     d.tag("vis.flags");
     d.u32(v.flags & ~0xCu);
@@ -181,17 +141,12 @@ inline void digest_visual(DigestSink& d, const th13::AnmVisualState& v) {
     }
     digest_vec2(d, "vis.sprite_size", v.sprite_size);
     digest_matrix(d, "vis.sprite_matrix", v.sprite_matrix);
-    // transform_matrix = draw 派生缓存，排除（见 digest_visual 头注）。
     digest_matrix(d, "vis.uv_matrix", v.uv_matrix);
     d.tag("vis.rest");
     d.i32(v.sprite_frame);
     digest_vec3(d, "vis.translation", v.translation);
-    // quad[4]（pack_quad 每次绘制的像素对齐投影缓存，AnmRenderer.cpp:134）与
-    // inherited_color（颜色链派生缓存，AnmRenderer.cpp:139）均为 draw 派生缓存，
-    // 全仓无渲染器外消费者——排除（同 transform_matrix 类）。
 }
 
-// ---- ANM 插值通道族（FloatInterpolation / IntegerInterpolation 泛型）----
 template <class Channel>
 void digest_interpolation(DigestSink& d, const char* tag, const Channel& ch) {
     using Sample = decltype(ch.start[0]);
@@ -232,8 +187,6 @@ inline void digest_interpolators(DigestSink& d, const th13::AnmInterpolators& it
     digest_interpolation(d, "it.uv_y", it.uv_y);
 }
 
-// ---- 单 VM 位级摘要（M1-plan §1 字段集；geometry/presentation_generation/
-//      指针面按文件头注释排除）----
 inline void digest_vm(DigestSink& d, const th13::AnmVm& vm) {
     digest_timer(d, "vm.timer", vm.timer);
     digest_timer(d, "vm.age", vm.age);
@@ -252,12 +205,6 @@ inline void digest_vm(DigestSink& d, const th13::AnmVm& vm) {
     digest_interpolators(d, vm.interpolators);
 }
 
-// ---- 双 registry 全链序 + 每 VM 位级（M1-plan §1 digest walker 本体）----
-// 主链（alternate=false，层 0-30）→ 副链（alternate=true，层 31/32）按
-// ordered_handle 顺序展开；再按 33 个层桶登记成员句柄序（append_draw 的
-// 外部内嵌 VM 句柄为 0，同样确定）。generation/count 为分配面位。
-// （AnmRegistry::generation_counter() 返回非常量引用（AnmRegistry.hpp:72），
-//   故本 walker 取非常量 registry——只读不改。）
 inline uint64_t digest_registry(th13::AnmRegistry& registry, const char* tag) {
     DigestSink d;
     d.tag(tag);
@@ -288,18 +235,14 @@ inline uint64_t digest_registry(th13::AnmRegistry& registry, const char* tag) {
     return d.value();
 }
 
-// 装载 caption（loading_animations）专用窄摘要：签名单臂相位断言用。
 inline uint64_t digest_loading_caption(th13::sdl::ApplicationState& app) {
     return digest_registry(app.loading_animations.registry, "loading.registry");
 }
 
-// battle_frame 取值（commit/draw 门控键 progress.stage_frame-1 的同式读法）。
 inline int battle_frame_of(const th13::sdl::ApplicationState& app) {
     return app.progress.stage_frame - 1;
 }
 
-// layer31 前池中 source_script==script 的 VM 指针（script14 计时观测用）；
-// 不存在（树未 spawn 前池）返回 nullptr——调用方按路径断言。
 inline const th13::AnmVm* find_fore_vm(const th13::sdl::ApplicationState& app,
                                        int script) {
     for (const th13::AnmVm* vm : app.loading_animations.registry.layer(31))
@@ -307,7 +250,6 @@ inline const th13::AnmVm* find_fore_vm(const th13::sdl::ApplicationState& app,
     return nullptr;
 }
 
-// ---- 帧边界全 digest（M1-plan §1 逐帧比较集）----
 struct FrameDigest {
     uint64_t projection = 0;
     uint64_t rng = 0;
@@ -326,7 +268,6 @@ struct FrameDigest {
     }
     bool operator!=(const FrameDigest& other) const { return !(*this == other); }
 
-    // 逐分量差异名（失败证据；空 = 全等）。
     std::string diff_against(const FrameDigest& other) const {
         std::string out;
         const auto add = [&](const char* name, bool differs) {
@@ -347,12 +288,6 @@ struct FrameDigest {
     }
 };
 
-// 帧边界快照：update+commit 之后与臂内全部段跑完之后各取一次（present 纯度
-// 由两者相等的断言直接钉住）。recorder 字节用固定 ReplaySaveMeta（date/slow
-// 钉死）——默认 encode 语义取真实时钟（ReplayRecorder.hpp:14），跨臂比较会
-// 被墙钟污染；钉住后逐字节确定。未 ready（回放臂不录制）计 0。
-// （projection() 为非常量成员（ApplicationState.cpp:1478 重填 projected 缓冲），
-//   故 capture 取非常量引用——只读权威态，不引入写路径。）
 inline FrameDigest capture(th13::sdl::ApplicationState& app) {
     FrameDigest out;
     {
@@ -400,8 +335,6 @@ inline FrameDigest capture(th13::sdl::ApplicationState& app) {
     {
         DigestSink d;
         d.tag("files");
-        // 播放计数镜像（00449760 表，FileStore.cpp:158-168 record_play_frame
-        // 的 update 侧落点）：逐角色 play_count/total_frames + 骯标志。
         for (const auto& records : app.files.ordinary_records) {
             d.i32(records.play_count);
             d.i32(records.total_frames);
@@ -434,7 +367,7 @@ inline FrameDigest capture(th13::sdl::ApplicationState& app) {
             th13::ReplaySaveMeta pinned;
             pinned.date = 1234567;
             pinned.slow_numerator = 0.0;
-            pinned.slow_denominator = 1099511627776.0;  // 2^40（slow=0%）
+            pinned.slow_denominator = 1099511627776.0;
             pinned.stage_field = 8;
             pinned.append_eof = false;
             pinned.version = "1.00c";
@@ -452,4 +385,4 @@ inline FrameDigest capture(th13::sdl::ApplicationState& app) {
     return out;
 }
 
-}  // namespace mpdigest
+}

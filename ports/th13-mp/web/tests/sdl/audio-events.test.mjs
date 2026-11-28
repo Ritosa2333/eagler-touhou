@@ -1,28 +1,3 @@
-// Production browser audio-event matrix for the real TH13 stage-1 replay.
-//
-// Expected rows below are transcribed from the original v1.00c SFX request
-// trace, not from this Web implementation. The first 600 rows were verified
-// against the checked-in reference trace
-//   artifacts/th13-longrun-20261029/sound-native-600/battle-sound-trace.jsonl
-// and the full-stage rows come from the same Unicorn battle oracle run with the
-// same real replay (games/replays/th13_01.rpy, stage 0, 11675 frames):
-//   TH13_SOUND_TRACE=1 python3 -m oracle.battle_oracle \
-//     games/th13/th13.exe artifacts/reference/raw /tmp/battle-frame-counts.jsonl \
-//     --replay games/replays/th13_01.rpy --replay-stage 0 --frames 11675 \
-//     --draw-log off --out-dir /tmp/native-full
-// The Web side only supplies the observed production output; it is never used
-// to derive expected values. Timing is compared by exact frame id, request id,
-// positional flag and (where transcribed) the original x coordinate bits.
-//
-// Covered matrix:
-//   pause activation voice 14 (physical Esc on a frozen real replay frame)
-//   spirit birth 60, spirit collect 63, spirit gauge 68 (0x44)
-//   big-power pair 13 (0x0d power level) + 37 (0x25 item collect)
-//   spell start 0x21 (33) and spell capture 0x2e (46)
-//
-// Not covered here: the 0x15/0x26/0x2a gaps visible in the same native trace
-// (IDs 21/38/42) are outside this matrix and are reported separately; see the
-// final report for their native counts and callers.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -42,7 +17,6 @@ const REPLAY_SHA256 = '2869c854167537e066579c1435d794bbefb06ed49b771a74904b0c394
 const STAGE_FRAMES = 11675;
 const PAUSE_AFTER_FRAMES = 30;
 
-// Original trace rows, frame <= 600: [frame, sound_id, positional, x_bits].
 const FIRST_600_TARGET_STREAM = [
   [98,60,1,3271369687],[128,60,1,3265897431],[179,60,1,1116813394],[216,60,1,1116034826],[237,60,1,3263274680],[267,63,1,3270950257],
   [272,37,1,3271191337],[277,63,1,3266305065],[300,60,1,3198072914],[301,60,1,1034147594],[331,60,1,3250611814],[333,63,1,1119142543],
@@ -54,9 +28,6 @@ const FIRST_600_TARGET_STREAM = [
   [576,60,1,3265803059],[598,63,1,1095751434],[598,63,1,1094608486],
 ];
 
-// Original full-stage stream for the spirit/spell matrix: [frame, id, positional].
-// 60 = spirit birth, 63 = spirit collect, 68 = 0x44 spirit gauge crossing,
-// 33 = 0x21 spell start, 46 = 0x2e spell capture, 13 = 0x0d power level-up.
 const SPIRIT_SPELL_STREAM = [
   [98,60,1],[128,60,1],[179,60,1],[216,60,1],[237,60,1],[267,63,1],[277,63,1],[300,60,1],
   [301,60,1],[331,60,1],[333,63,1],[365,60,1],[378,60,1],[402,60,1],[437,60,1],[457,60,1],
@@ -159,7 +130,6 @@ async function withProductionPage(run) {
         '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required']});
     const page = await browser.newPage({viewport: {width: 640, height: 480}});
     page.on('pageerror', error => pageErrors.push(String(error)));
-    // The original reference trace was produced with synthetic boot clock 0.
     await page.addInitScript(() => { window.__th13_boot_seed = 0; });
     await page.goto(`http://127.0.0.1:${server.address().port}/sdl-runtime/th13.html`,
       {waitUntil: 'domcontentloaded'});
@@ -222,7 +192,7 @@ test('pause activation emits original voice 14 at the frozen replay frame',
       }
       const beforePause = progress();
       const beforePauseEvents = events.length;
-      mod._th13_key(1, 1);  // physical Esc
+      mod._th13_key(1, 1);
       if (!mod._th13_debug_frame()) throw new Error(mod.UTF8ToString(mod._th13_error()));
       take();
       mod._th13_key(1, 0);

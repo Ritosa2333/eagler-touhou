@@ -1,0 +1,15 @@
+浸泡负载验证第一轮（提交 12f55607e 的产品树；当次的中间版断言：收敛期对齐帧差 ≤12、稳态 ≤4，尚未区分调速器介入）
+环境：th13-shot 容器内 24 个忙循环占 CPU（loadavg≈40），3 个软件渲染页面
+
+head=12f55607e loadJobs=24
+load: 24 busy loops started; loadavg=2.88
+loaddiag-1 exit=0 seconds=263 loadavg=39.83 28.06 19.14
+loaddiag-2 exit=0 seconds=311 loadavg=39.99 35.99 25.17
+load-1 exit=1 seconds=242 loadavg=42.29 38.67 28.74
+load-2 exit=0 seconds=482 loadavg=42.39 41.15 33.88
+load-3 exit=1 seconds=549 loadavg=39.21 40.84 37.17
+load stopped; loadavg=39.21 40.84 37.17
+
+load-1: FAILED case m9.runtime_page_soak: soak 3p 锁步偏差（aligned=16.02 frames=[63,78,63] frameAgeMs=[5,22,22] phase=收敛）
+load-2: PASS through=M9 cases=1 clients=5 wasm=619fc3ae64ef…
+load-3: FAILED case m9.runtime_page_soak: soak 3p 停等帧在上界内（stall=885 ≤12）

@@ -1,4 +1,3 @@
-// Generated from RUEEE/thprac (MIT). definitions 748ad3affe12d6f30913c6c6401a92885a89afcfb1be665406238e18d0369359
 export const practiceSections = [
   {
     "id": 1,

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# 最小构建入口：只编译游戏源 + portrait_identity_test.cpp（立绘身份回归）。
-# 用法：tests/ui/run_portrait_identity.sh [--debug]
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

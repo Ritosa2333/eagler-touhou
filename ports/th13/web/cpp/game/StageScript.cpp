@@ -1,6 +1,3 @@
-// STD 相机脚本执行体（th15 同族 StageScript 的 th13 指令面；插值通道复用
-// Interpolation.hpp 的 Vec3 通道与缓动权重，雾通道按 StageFog 独立插值——
-// 通道语义同 th15 StageFog.cpp，浮点算术序保持一致）。
 #include "StageScript.hpp"
 #include <cmath>
 namespace th13 {
@@ -8,18 +5,21 @@ void StageFog::set(u32 packed, float near_value, float far_value) noexcept {
     color = packed;
     near_distance = near_value;
     far_distance = far_value;
-    for (u32 i = 0; i < 4; ++i) channels[i] = float((packed >> (i * 8)) & 255);
+    for (u32 i = 0; i < 4; ++i)
+        channels[i] = float((packed >> (i * 8)) & 255);
 }
 void StageFog::pack() noexcept {
     color = 0;
-    for (u32 i = 0; i < 4; ++i) color |= (u32(truncate_int(channels[i])) & 255) << (i * 8);
+    for (u32 i = 0; i < 4; ++i)
+        color |= (u32(truncate_int(channels[i])) & 255) << (i * 8);
 }
 namespace {
 StageFog add(const StageFog& a, const StageFog& b) noexcept {
     StageFog out;
     out.near_distance = float(b.near_distance + a.near_distance);
     out.far_distance = float(b.far_distance + a.far_distance);
-    for (u32 i = 0; i < 4; ++i) out.channels[i] = float(b.channels[i] + a.channels[i]);
+    for (u32 i = 0; i < 4; ++i)
+        out.channels[i] = float(b.channels[i] + a.channels[i]);
     out.pack();
     return out;
 }
@@ -27,7 +27,8 @@ StageFog subtract(const StageFog& a, const StageFog& b) noexcept {
     StageFog out;
     out.near_distance = float(a.near_distance - b.near_distance);
     out.far_distance = float(a.far_distance - b.far_distance);
-    for (u32 i = 0; i < 4; ++i) out.channels[i] = float(a.channels[i] - b.channels[i]);
+    for (u32 i = 0; i < 4; ++i)
+        out.channels[i] = float(a.channels[i] - b.channels[i]);
     out.pack();
     return out;
 }
@@ -35,7 +36,8 @@ StageFog multiply(const StageFog& a, float t) noexcept {
     StageFog out;
     out.near_distance = float(a.near_distance * t);
     out.far_distance = float(a.far_distance * t);
-    for (u32 i = 0; i < 4; ++i) out.channels[i] = float(a.channels[i] * t);
+    for (u32 i = 0; i < 4; ++i)
+        out.channels[i] = float(a.channels[i] * t);
     out.pack();
     return out;
 }
@@ -49,7 +51,7 @@ void interpolate(Vec3Interpolation& v, const Vec3& from, const StageInstruction&
 }
 float sine(float phase) { return float(std::sin(double(phase))); }
 float cosine(float phase) { return float(std::cos(double(phase))); }
-}  // namespace
+}
 StageFog StageFogInterpolation::step(float rate) noexcept {
     if (duration > 0) {
         timer.tick(&rate);
@@ -77,12 +79,11 @@ StageFog StageFogInterpolation::step(float rate) noexcept {
         const float h11 = float(float(a * t) * t);
         const float h01 = float(float(3 - twice) * float(t * t));
         const float h10 = float(b * b * t);
-        current = add(add(add(multiply(start, h00), multiply(end, h01)), multiply(control1, h10)),
-                      multiply(control2, h11));
+        current =
+            add(add(add(multiply(start, h00), multiply(end, h01)), multiply(control1, h10)), multiply(control2, h11));
     } else {
-        current = add(multiply(subtract(end, start),
-                               interpolation_weight(mode, timer.fractional, float(duration))),
-                      start);
+        current =
+            add(multiply(subtract(end, start), interpolation_weight(mode, timer.fractional, float(duration))), start);
     }
     return current;
 }
@@ -105,7 +106,6 @@ bool StageScript::step(float rate) {
             error = "STD instruction loop limit";
             return false;
         }
-        // th13 实测指令面的最小参数量（st01-st07 dump 全集；ins_14 需 2 参）。
         static constexpr u8 minimum[13] = {0, 2, 3, 5, 3, 5, 3, 1, 3, 5, 11, 11, 1};
         if ((c->opcode >= 0 && c->opcode <= 12 && c->arguments.size() < minimum[u32(c->opcode)]) ||
             (c->opcode == 14 && c->arguments.size() < 2)) {
@@ -115,7 +115,9 @@ bool StageScript::step(float rate) {
         const auto& command = *c;
         auto& s = state;
         switch (command.opcode) {
-        case 0: stopped = true; break;
+        case 0:
+            stopped = true;
+            break;
         case 1:
             s.timer.set(command.argument<i32>(1));
             s.instruction_offset = command.argument<u32>(0);
@@ -123,24 +125,31 @@ bool StageScript::step(float rate) {
         case 2: {
             const auto prior = s.camera.position;
             s.camera.position = vector(vector(command, 0));
-            s.camera.animation_delta = {float(s.camera.position.x - prior.x),
-                                        float(s.camera.position.y - prior.y),
+            s.camera.animation_delta = {float(s.camera.position.x - prior.x), float(s.camera.position.y - prior.y),
                                         float(s.camera.position.z - prior.z)};
             break;
         }
-        case 3: interpolate(s.position, s.camera.position, command); break;
-        case 4: s.camera.direction = vector(vector(command, 0)); break;
-        case 5: interpolate(s.direction, s.camera.direction, command); break;
-        case 6: s.camera.up = vector(vector(command, 0)); break;
-        case 7: s.camera.fov = command.argument<float>(0); break;
+        case 3:
+            interpolate(s.position, s.camera.position, command);
+            break;
+        case 4:
+            s.camera.direction = vector(vector(command, 0));
+            break;
+        case 5:
+            interpolate(s.direction, s.camera.direction, command);
+            break;
+        case 6:
+            s.camera.up = vector(vector(command, 0));
+            break;
+        case 7:
+            s.camera.fov = command.argument<float>(0);
+            break;
         case 8:
-            s.camera.fog.set(command.argument<u32>(0), command.argument<float>(1),
-                             command.argument<float>(2));
+            s.camera.fog.set(command.argument<u32>(0), command.argument<float>(1), command.argument<float>(2));
             break;
         case 9:
             s.fog.start = s.camera.fog;
-            s.fog.end.set(command.argument<u32>(2), command.argument<float>(3),
-                          command.argument<float>(4));
+            s.fog.end.set(command.argument<u32>(2), command.argument<float>(3), command.argument<float>(4));
             s.fog.duration = command.argument<i32>(0);
             s.fog.mode = command.argument<i32>(1);
             s.fog.timer.set(0);
@@ -150,7 +159,7 @@ bool StageScript::step(float rate) {
             if (!s.camera_effect) s.camera.eye_offset = {};
             s.effect_timer.set(0);
             break;
-        case 14: {  // 0x408a43：背景子 ANM 槽隐藏/模板重挂（arg0=槽、arg1=模板号）
+        case 14: {
             const i32 slot = command.argument<i32>(0), template_index = command.argument<i32>(1);
             if (slot < 0 || slot >= i32(s.background.size())) {
                 error = "STD ins_14 slot outside background pool";
@@ -172,9 +181,9 @@ bool StageScript::step(float rate) {
             }
             break;
         }
-        case 16: break;  // 中断标号（interrupt 扫描锚点，顺序执行无动作）
+        case 16:
+            break;
         default:
-            // 未定域指令：显式停机，不静默近似。
             error = "STD camera opcode not yet implemented: " + std::to_string(command.opcode);
             return false;
         }
@@ -215,8 +224,6 @@ void StageScript::camera_effect(float rate) noexcept {
     i32 period = 512;
     switch (kind) {
     case 1:
-        // 0x408c8a（unicorn 直跑实测 + 常量池 0x4aef78=-120.0/0x4aef70=-50.0）：
-        // eye.x=−120·sin(φ)、eye.z=−50·sin(2φ)；up/target 公式不变。
         phase = normalize_angle(float(phase * (1.f / 512)));
         wave = sine(phase);
         s.camera.eye_offset.x = float(wave * -120);
@@ -276,4 +283,4 @@ void StageScript::camera_effect(float rate) noexcept {
     s.effect_timer.tick(&rate);
     if (s.effect_timer.current >= period) s.effect_timer.set(0);
 }
-}  // namespace th13
+}

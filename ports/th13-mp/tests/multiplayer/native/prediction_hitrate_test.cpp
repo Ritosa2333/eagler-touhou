@@ -1,27 +1,3 @@
-// P0.4 预测命中率基线评估器（诊断工具；不登记进 workflow-cases.json/门禁）。
-//
-// 目的：用真人录像输入量化生产预测算法（mode=2、input_delay=2、
-// maxRollbackFrames=12）的「预测错了多少次、每次要回滚多远」。后续阶段
-// 换预测算法后重跑本文件做前后对照。
-//
-// 数据流：
-//   games/replays/**/*.rpy（真人录像）→ ReplayFile 解码 → 每帧 state 的
-//   gameplay 位（InputLanes::HeldMask）→ InputLanes::Capture → 远端席
-//   FrameInput 流（席 1）。
-//
-// 固定到达延迟 L：帧 g 的远端输入在准备模拟帧 g+L 之前才提交
-// （SubmitRemoteInput）。乱序变体在 L 上叠加固定种子 LCG 的 0..3 帧额外
-// 延迟；输入可乱序/晚到，核心的真实确认前沿决定预测与回滚。
-//
-// 每帧流程：提交到期的远端输入 → 若有回滚请求：计一次回滚（距离 = 已
-// 模拟到的下一帧号 − RollbackFrame），RewindSimulationTo(目标) 后把目标
-// 到当前的帧重新 PrepareFrame+MarkSimulated → 对当前帧 PrepareFrame+
-// MarkSimulated。本地席每帧提交空输入（capture f → 生效帧 f+2）。
-//
-// 输出（每 replay × L × jitter 一行，前缀 "# prediction " 供外层脚本收集）：
-//   总帧数 / 回滚次数 / 每 1000 帧回滚次数 / 平均回滚距离 / 最大回滚距离 /
-//   因超窗停等的帧数。只断言流程自洽（全部帧最终确认、无冲突提交），
-//   不对命中率数值设阈值。
 #include "../../harness/test_framework.hpp"
 
 #include "game/ReplayFile.hpp"
@@ -71,7 +47,6 @@ bool ends_with(const std::string& text, const char* suffix) {
     return text.size() >= n && text.compare(text.size() - n, n, suffix) == 0;
 }
 
-// 递归列出 games/replays 下的 .rpy（排序保证输出顺序确定）。
 void collect_replays(const std::string& dir, const std::string& relative,
                      std::vector<std::string>& out) {
     DIR* handle = ::opendir(dir.c_str());
@@ -97,7 +72,6 @@ void collect_replays(const std::string& dir, const std::string& relative,
     }
 }
 
-// 录像 → 远端席输入流：逐 stage 逐帧 state 的 gameplay 位；EOF 帧跳过。
 bool replay_inputs(const std::string& path, std::vector<Netplay::FrameInput>& out) {
     std::vector<u8> bytes;
     if (!read_file(path, bytes)) {
@@ -145,11 +119,11 @@ Metrics run_stream(const std::vector<Netplay::FrameInput>& remote, unsigned dela
                    bool jitter) {
     th13::multiplayer::SessionSetup setup;
     setup.version = th13::multiplayer::SessionSetup::Version;
-    setup.mode = 2;  // 生产预测模式
+    setup.mode = 2;
     setup.session_id = 0x7013'0000ull + delay;
     setup.player_count = 2;
     setup.local_player = 0;
-    setup.input_delay = 2;  // 生产配置
+    setup.input_delay = 2;
     setup.prediction_limit = th13::multiplayer::SessionSetup::MaxRollbackFrames;
     const Netplay::CoreConfig config =
         th13::multiplayer::NetplayRuntime::CoreConfigFor(setup);
@@ -164,9 +138,8 @@ Metrics run_stream(const std::vector<Netplay::FrameInput>& remote, unsigned dela
     const std::uint32_t total = std::uint32_t(remote.size());
     metrics.frames = total;
 
-    // 到达时刻 = g + L (+ LCG 0..3)。固定种子，逐 (replay,L,jitter) 重置。
     std::uint32_t seed = 0x13579BDFu;
-    using Arrival = std::pair<std::uint32_t, std::uint32_t>;  // (时刻, 帧号)
+    using Arrival = std::pair<std::uint32_t, std::uint32_t>;
     std::priority_queue<Arrival, std::vector<Arrival>, std::greater<Arrival>> arrivals;
     for (std::uint32_t g = 0; g < total; ++g) {
         std::uint32_t extra = 0;
@@ -190,8 +163,6 @@ Metrics run_stream(const std::vector<Netplay::FrameInput>& remote, unsigned dela
             submit_frame(g);
         }
     };
-    // 回滚处理：next_frame = 已模拟到的下一帧号（连续）。把目标到该点的
-    // 决策历史全部按当前确认输入重新 Prepare/Mark。
     std::uint32_t next_frame = 0;
     auto handle_rollback = [&]() {
         if (!core.HasRollbackRequest()) return;
@@ -219,8 +190,6 @@ Metrics run_stream(const std::vector<Netplay::FrameInput>& remote, unsigned dela
         handle_rollback();
         auto decision = core.PrepareFrame(frame);
         if (!decision.canAdvance) {
-            // 超窗停等（预期 0：L+3 最大 11 < maxRollbackFrames=12）。
-            // 诊断流程允许网络时间继续前进：提交后续已到达输入后重试。
             ++metrics.stall_frames;
             while (!decision.canAdvance && !arrivals.empty()) {
                 const std::uint32_t g = arrivals.top().second;
@@ -236,7 +205,6 @@ Metrics run_stream(const std::vector<Netplay::FrameInput>& remote, unsigned dela
         ++next_frame;
     }
 
-    // 尾部：提交剩余远端输入并消化迟到纠正，直到全部确认。
     while (!arrivals.empty()) {
         const std::uint32_t g = arrivals.top().second;
         arrivals.pop();
@@ -253,7 +221,7 @@ Metrics run_stream(const std::vector<Netplay::FrameInput>& remote, unsigned dela
     return metrics;
 }
 
-}  // namespace
+}
 
 TEST(prediction_hitrate_baseline) {
     const std::string root = repo_root();

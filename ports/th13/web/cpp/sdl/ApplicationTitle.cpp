@@ -1,6 +1,5 @@
-// 标题期平台服务（th15 ApplicationTitle.cpp 裁剪：音乐请求先落桩）。
-#include "ApplicationState.hpp"
 #include "../game/AnmTextureDecode.hpp"
+#include "ApplicationState.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -10,15 +9,11 @@
 namespace th13::sdl {
 
 void ApplicationState::connect_record_menus() {
-    player_data_host.count_records = [](i32 difficulty) {
-        return FileStore::player_data_record_count(difficulty);
-    };
-    player_data_host.read_record = [this](i32 difficulty, i32 character, i32 ordinal,
-                                         TitlePlayerDataRecord& out) {
+    player_data_host.count_records = [](i32 difficulty) { return FileStore::player_data_record_count(difficulty); };
+    player_data_host.read_record = [this](i32 difficulty, i32 character, i32 ordinal, TitlePlayerDataRecord& out) {
         return files.player_data_record(difficulty, character, ordinal, out);
     };
-    player_data_host.read_summary = [this](i32 difficulty, i32 character,
-                                          TitlePlayerDataSummary& out) {
+    player_data_host.read_summary = [this](i32 difficulty, i32 character, TitlePlayerDataSummary& out) {
         return files.player_data_summary(difficulty, character, out);
     };
     spell_practice_host.encountered = [this](i32 id) {
@@ -33,11 +28,8 @@ void ApplicationState::connect_record_menus() {
         const auto* counters = files.spell_counters(4, id);
         return counters && (counters->attempts[0] > 0 || counters->attempts[1] > 0);
     };
-    // The original catalog is shared with production ECL; missing assets stay
-    // unavailable and retain the catalog error for diagnosis.
-    if (spell_catalog.load([this](const std::string& name, std::vector<u8>& bytes) {
-            return read(name, bytes, false);
-        }))
+    if (spell_catalog.load(
+            [this](const std::string& name, std::vector<u8>& bytes) { return read(name, bytes, false); }))
         spell_practice_host.catalog = &spell_catalog;
 }
 
@@ -47,10 +39,7 @@ bool ApplicationState::hud_text(const HudTextDraw& value) {
     return captions.enqueue(value, 0, value.style.shadow) || fail(captions.error);
 }
 
-bool ApplicationState::clear_title_overlay() {
-    // 过场覆盖层（th15 transition overlay）随 Stage 转场分期接入；标题无残留。
-    return true;
-}
+bool ApplicationState::clear_title_overlay() { return true; }
 
 bool ApplicationState::queue_title_music(i32 code, i32 value, const std::string& name) {
     return audio_device.queue_music(code, value, name) || fail(audio_device.error);
@@ -59,7 +48,6 @@ bool ApplicationState::queue_title_music(i32 code, i32 value, const std::string&
 bool ApplicationState::clear_current_wave() { return true; }
 
 bool ApplicationState::title_exit(i32 value) {
-    // StartGame 与 Quit 共享 TitleScreen 值 2：开局请求已排队时不覆盖（th15 同款守卫）。
     if (pending_destination == i32(Destination::Run)) return true;
     pending_destination = value;
     return true;
@@ -70,10 +58,6 @@ bool ApplicationState::fade_out_title_music() {
 }
 
 bool ApplicationState::begin_transition(u32& animation) {
-    // 0x451bc8/0x451bd7/0x452043/0x452a43/0x45786f: title/practice/spell
-    // launch creates effect.anm script0 via 0x415650(type 0), initializes the
-    // AnmOverlay and applies label7. 0x417370 at the same sites is the
-    // ascii.anm script17 loading prayer, not this effect.
     if (!begin_run_transition()) return false;
     animation = run_transition.handle();
     return true;
@@ -99,11 +83,8 @@ bool ApplicationState::start_game(i32 stage) {
 
 bool ApplicationState::queue_run(i32 stage) {
     selected_stage = active_practice.applied ? active_practice.stage : stage;
-    // 新局/Retry 不能沿用上一局的零残机、灵力、得分；换关则不经过此入口。
     selection_player = HudPlayerState{};
     selection_player.extra_lives = std::max(0, progress.configured_lives - 1);
-    // 0042b990: Spell Practice has no spare lives/bombs and starts at full power.
-    // Keep the selected card on Retry; ordinary starts clear the old selection.
     if ((progress.run_mode_flags & 0x30u) == 0x20u) {
         selection_player.extra_lives = 0;
         selection_player.bombs = 0;
@@ -111,26 +92,12 @@ bool ApplicationState::queue_run(i32 stage) {
     } else {
         progress.selected_spell_id = -1;
     }
-    // 0x42b990:133-155（dcc30!=0 新局/Retry 的开局灵力选择）：
-    // DAT_004be81c>1（stage≥2：练习/Retry 后段；Extra 菜单置 be81c=7）或
-    // mode==2（0x20 符卡练习）→ power = min(step*4, max)，stage1 新局 →
-    // step(1.00)。此前正常路径不经过 StageBattle::prepare_player 的
-    // cold_entry 块（那是 0x42b990 同段的 replay 冷启动副本），power 停在
-    // HudPlayerState 默认 100——EX/stage2+ 练习与 Retry 应为 4.00 而未达。
-    // 换关 0xc 延续（dcc30==0）不经此入口，跨关 power 保留。
-    const i32 entry_steps =
-        (selected_stage > 1 || (progress.run_mode_flags & 0x30u) == 0x20u) ? 4 : 1;
-    selection_player.power =
-        std::min(entry_steps * selection_player.power_step, selection_player.max_power);
+    const i32 entry_steps = (selected_stage > 1 || (progress.run_mode_flags & 0x30u) == 0x20u) ? 4 : 1;
+    selection_player.power = std::min(entry_steps * selection_player.power_step, selection_player.max_power);
     selection_score = HudScoreState{};
     progress.continues = 0;
     progress.life_piece_threshold_index = 0;
-    // 0x4be7d8 点道具取得计数（0x42b990 dcc30!=0 新局/Retry 随 be7b8 块复位；
-    // 0xc 换关不经过此口、跨关保留）。stage 头 +0x34 快照源。
     progress.point_items = 0;
-    // 0x42b990 dcc30!=0（新局/Retry）→0x42d3c0：esi=0x4be7b8（0x42bb5a），
-    // 0x42d404 写 [esi+0x50]=0xc8 → DAT_004be808=200；符卡练习 mode==2
-    // 随后 0x42bbfd 清零。helper 按 run_mode_flags bit4-5 分流（0x20→0，其余→200）。
     trance_reset_fresh_entry(progress);
     if (active_practice.applied) {
         if (active_practice.life >= 0) selection_player.extra_lives = active_practice.life;
@@ -147,17 +114,13 @@ bool ApplicationState::queue_run(i32 stage) {
 }
 
 bool ApplicationState::can_start_spell_practice(const SpellPracticeCommand& command) const {
-    // 004576c0 writes stage, character, intrinsic rank and selected card together.
-    if (command.action != SpellPracticeAction::Launch || command.stage < 1 ||
-        command.stage > 7 || command.character < 0 || command.character >= 4 ||
-        !ecl_difficulty_mask(command.rank) || command.spell_id < 0 ||
+    if (command.action != SpellPracticeAction::Launch || command.stage < 1 || command.stage > 7 ||
+        command.character < 0 || command.character >= 4 || !ecl_difficulty_mask(command.rank) || command.spell_id < 0 ||
         command.spell_id >= kSaveSpellSlots)
         return false;
-    const auto* entry = spell_catalog.variant(command.stage, command.spell_slot,
-                                               command.difficulty);
+    const auto* entry = spell_catalog.variant(command.stage, command.spell_slot, command.difficulty);
     if (!entry || entry->id != command.spell_id || entry->rank != command.rank ||
-        !spell_practice_host.spell_variant_available(command.stage, command.spell_slot,
-                                                      command.difficulty))
+        !spell_practice_host.spell_variant_available(command.stage, command.spell_slot, command.difficulty))
         return false;
     return true;
 }
@@ -169,106 +132,67 @@ bool ApplicationState::start_spell_practice(const SpellPracticeCommand& command)
     progress.difficulty = command.rank;
     progress.selected_spell_id = command.spell_id;
     progress.run_mode_flags = (progress.run_mode_flags & ~0x70u) | 0x20u;
-    // 0043c1c0 destination 7 -> 0042c490(0): this is not Stage Practice.
     progress.practice_mode = 0;
     return start_game(command.stage);
 }
 
 bool ApplicationState::request_destination(i32 raw) {
-    // 对局终了的 supervisor 请求（raw = DAT_004dcc24 真值，results-flow.md §1）。
-    // 接线本阶段覆盖主线：0xc 下一关 / 0xf 结局 / 4 战后标题 / 0xa 重开 / 0xe
-    // 重开（续关计费变体不在此层区分）。其余（练习 0xd/演示等）分期时补。
-    // 开局请求已排队时不覆盖（th15 title_exit 同款守卫；RunScene 转发失败即
-    // 回传，不静默丢 dcc24 请求）。
     switch (raw) {
     case 0xc:
-        if (pending_destination != i32(Destination::Run))
-            pending_destination = i32(Destination::NextStage);
+        if (pending_destination != i32(Destination::Run)) pending_destination = i32(Destination::NextStage);
         return true;
     case 0xf:
-        if (pending_destination != i32(Destination::Run))
-            pending_destination = i32(Destination::Ending);
+        if (pending_destination != i32(Destination::Run)) pending_destination = i32(Destination::Ending);
         return true;
     case 0x10:
-        // Ending 脚本 END（0x416610 置 DAT_004dcc24=0x10）→ 0x43c1c0 case0x10
-        // 拆卸回标题（变体 3）。
         pending_destination = i32(Destination::AfterEnding);
         return true;
     case 4:
-        if (pending_destination != i32(Destination::Run) &&
-            pending_destination != i32(Destination::NextStage))
+        if (pending_destination != i32(Destination::Run) && pending_destination != i32(Destination::NextStage))
             pending_destination = i32(Destination::Title);
         return true;
     case 0xa:
     case 0xe:
-        if (pending_destination != i32(Destination::NextStage))
-            pending_destination = i32(Destination::Run);
+        if (pending_destination != i32(Destination::NextStage)) pending_destination = i32(Destination::Run);
         return true;
     default:
         return fail("Unmapped post-game destination: " + std::to_string(raw));
     }
 }
 
-// ---- TitleMenuServices / TitleOptionPlatform（r4/menu-extras 契约）----
+bool ApplicationState::character_cleared(i32 character, i32 difficulty) { return files.cleared(character, difficulty); }
 
-bool ApplicationState::character_cleared(i32 character, i32 difficulty) {
-    // 真实存档门：score 块 +0x56dc*char + 0x7e4 + diff*4 != 0（0x451450 case0）。
-    // 缺档/坏档 FileStore 已按原版语义取全 0 → 全隐，与真机无存档一致。
-    return files.cleared(character, difficulty);
-}
-
-bool ApplicationState::extra_unlocked(i32 character) {
-    // Extra 解锁位（0x44bec0 读 0x1b26b+char*2 bit0x10 / 0x1b26c+char*2；
-    // 0x44c570 case0 汇成 +0x5c40 bit1）。缺档 = 0 = 禁用，与真机无存档一致。
-    return files.extra_unlocked(character);
-}
+bool ApplicationState::extra_unlocked(i32 character) { return files.extra_unlocked(character); }
 
 bool ApplicationState::practice_stage_played(i32 character, i32 difficulty, i32 stage) {
     return files.practice_stage_played(character, difficulty, stage);
 }
 
 void ApplicationState::apply_volumes(i32 bgm, i32 effect) {
-    // 0044ed70 侧 DAT_004e476c/70 写的 port 等价：即编即效写设备真值——
-    // effect_volume 走 0x4613f3 per-voice 曲线、music_volume 混音块实时读
-    //（AudioDevice.cpp :287-297/:306，实测生效非仅存字段）。
     audio_device.music_volume = bgm;
     audio_device.effect_volume = effect;
 }
 
 bool ApplicationState::persist_options(const TitleOptionVolumes& volumes) {
-    // 离屏随存档落盘（原版 scoreth13.dat；网页 = FileStore.save()）。
-    // 失败如实 false + error——菜单记录错误、不假成功、不阻断返回主菜单。
     files.bgm_volume = volumes.bgm;
     files.effect_volume = volumes.effect;
     return files.save();
 }
 
 bool ApplicationState::open_key_config() {
-    // キー配置（case4 → screen 4 = 0x44fcc0）宿主接线：BrowserRuntime 每帧把
-    // SDL 原始按钮位图写入 raw_pad_buttons（00471510 的 DAT_004e52e8 等价），
-    // 五键/swapped 值来自 FileStore v3 pad_bindings；保存走同一 save()。
-    // 网页无独立手柄连接位：raw 位非 0 才视为有输入（无手柄时学习自然为空，
-    // 不伪造连接/默认 true）。标题场景由本对象独占，title 必存在。
     if (!title) return false;
     ApplicationState* self = this;
     title->connect_key_config(
-        [self] { return self->raw_pad_buttons != 0; },
-        [self] { return self->raw_pad_buttons; },
+        [self] { return self->raw_pad_buttons != 0; }, [self] { return self->raw_pad_buttons; },
         [self] { return self->files.pad_bindings; },
-        [self](const std::array<i16, 5>& bindings) {
-            return self->persist_pad_bindings(bindings);
-        });
+        [self](const std::array<i16, 5>& bindings) { return self->persist_pad_bindings(bindings); });
     return true;
 }
-
-// ---- TitleMusicRoomPlatform（musicroom-host.md；r4/menu-extras §六）----
 
 void ApplicationState::load_music_room_catalog() {
     music_room.clear();
     std::vector<u8> bytes;
-    if (!read("musiccmt.txt", bytes, false)) return;  // 缺资产 = 空目录（如实）
-    // 0x4724c0 语义：cp932 文本；'@' 起块（@bgm/播放名），块内 1 曲名行 +
-    // 8 注释行；'#' 头部注释与空档天然跳过（不以 '@' 开头）。CRLF 行尾剥 \r。
+    if (!read("musiccmt.txt", bytes, false)) return;
     std::vector<std::string> lines;
     const u8* const base = bytes.data();
     for (size_t at = 0; at < bytes.size();) {
@@ -285,12 +209,13 @@ void ApplicationState::load_music_room_catalog() {
         if (slash == std::string::npos) continue;
         MusicRoomTrack track;
         track.name = lines[i].substr(slash + 1);
-        for (u32 k = 0; k < 9; ++k) {  // 曲名行 + 8 注释行；遇下一 '@' 提前止
-            if (i + 1 >= lines.size() || (!lines[i + 1].empty() && lines[i + 1][0] == '@'))
-                break;
+        for (u32 k = 0; k < 9; ++k) {
+            if (i + 1 >= lines.size() || (!lines[i + 1].empty() && lines[i + 1][0] == '@')) break;
             ++i;
-            if (k == 0) track.title = lines[i];
-            else track.comment[k - 1] = lines[i];
+            if (k == 0)
+                track.title = lines[i];
+            else
+                track.comment[k - 1] = lines[i];
         }
         music_room.push_back(std::move(track));
     }
@@ -311,46 +236,34 @@ std::string ApplicationState::track_comment(i32 track, i32 line) {
 bool ApplicationState::track_heard(i32 track) const { return files.music_heard(track); }
 
 void ApplicationState::mark_heard(i32 track) {
-    // 0x4554f0 Z 路径落档：置位即存（写失败留 files.error 如实，不吞不假成功）。
     files.set_music_heard(track);
     (void)files.save();
 }
 
 bool ApplicationState::play_track(i32 track) {
-    // 0x43adc0(0, 曲名) → 461830(1,0)：曲名+".wav" 入预载槽 0；
-    // 461830(2,0)：播该槽（AudioDevice case 1/2 同构，0x460dd0 起停序列）。
     if (track < 0 || u32(track) >= music_room.size()) return false;
     const std::string wav = music_room[u32(track)].name + ".wav";
     return audio_device.queue_music(1, 0, wav) && audio_device.queue_music(2, 0, "");
 }
 
-bool ApplicationState::play_locked_response() {
-    return audio_device.queue_music(3, 0, "");  // 0x461830(3/4,0)：锁定曲停曲响应
-}
+bool ApplicationState::play_locked_response() { return audio_device.queue_music(3, 0, ""); }
 
 bool ApplicationState::resume_title_music() {
-    // 0x43adc0(0,"th13_00")：退出收面回标题曲。
     return audio_device.queue_music(1, 0, "th13_00.wav") && audio_device.queue_music(2, 0, "");
 }
-
-// ---- TitleManualPlatform（0x455330 supervisor + 0x42d940/0x42d740/0x42da10）----
 
 namespace {
 constexpr i32 kHelpBank = 19;
 constexpr u32 kHelpPageTexture = 1;
-constexpr i32 kHelpPageCount = 8;  // 0x42da10: +0x30=8
-}  // namespace
+constexpr i32 kHelpPageCount = 8;
+}
 
 bool ApplicationState::open_manual() {
     if (!manual_viewer) {
         manual_viewer = std::make_unique<ManualViewer>(animations, kHelpBank);
         manual_viewer->sound = [this](i32 id) { return sound(id); };
-        // 0x42da10 case1 Z：sprintf("help_%.2d.png", page+1) → 文件读取线程
-        // （0x42d6f0）→ case3 D3DX 载入 entry1 的 blank 纹理。网页同步完成
-        // 读取/解码/上传，再建 page VM；纹理内容在同一帧绘制前就绪。
         manual_viewer->load_page = [this](i32 page) -> bool {
-            if (page < 0 || page >= kHelpPageCount)
-                return fail("Manual page index outside help.anm");
+            if (page < 0 || page >= kHelpPageCount) return fail("Manual page index outside help.anm");
             char name[16];
             std::snprintf(name, sizeof name, "help_%02d.png", page + 1);
             std::vector<u8> bytes;
@@ -369,9 +282,6 @@ bool ApplicationState::open_manual() {
             if (!target || target->format != touhou::graphics::PixelFormat::Argb4444 ||
                 target->pitch != target->width * 2)
                 return fail("Manual help.anm blank texture unavailable");
-            // 目标 = help.anm entry1 的 384x512 ARGB4444 blank 纹理。原版
-            // D3DXLoadSurfaceFromFileInMemory 的 filter/缩放真值未取得；这里按
-            // 纹理左上角裁入（页内容 bbox <= 384x448），像素级保持 BLOCKED。
             std::fill(target->pixels.begin(), target->pixels.end(), u8(0));
             const u32 copy_width = std::min(width, target->width);
             const u32 copy_height = std::min(height, target->height);
@@ -393,8 +303,7 @@ bool ApplicationState::open_manual() {
         };
     }
     if (!manual_viewer->open()) {
-        fail(manual_viewer->error.empty() ? "Title manual viewer unavailable"
-                                          : manual_viewer->error);
+        fail(manual_viewer->error.empty() ? "Title manual viewer unavailable" : manual_viewer->error);
         return false;
     }
     return true;
@@ -409,12 +318,10 @@ bool ApplicationState::update_manual(u32 pressed, u32 repeated) {
     return true;
 }
 
-bool ApplicationState::manual_finished() const {
-    return manual_viewer && manual_viewer->finished();
-}
+bool ApplicationState::manual_finished() const { return manual_viewer && manual_viewer->finished(); }
 
 void ApplicationState::close_manual() {
     if (manual_viewer) manual_viewer->close();
 }
 
-}  // namespace th13::sdl
+}

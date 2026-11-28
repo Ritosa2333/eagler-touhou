@@ -1,15 +1,3 @@
-// m9.* 浏览器层生命周期 case（M9：Replay/旁观/完整生命周期）。
-// 真实调用链：生产 WASM + 真实资产 + th13-debug.html 手动泵；
-//   - ReplayArchive：录制（确认帧 + StageEntry 关头）→ encode（base64 桥）
-//     → load → 逐帧输入 roundtrip + 章节 seek 锚点；
-//   - StageEntry：capture → step N 帧 → restore → 续推与连续基线
-//     digest_core 一致（关头延续无损）；
-//   - SpectatorJournal：发布（确认历史）→ 观众接收 → 晚入 Bootstrap →
-//     慢观众隔离（发布前沿不等观众）；
-//   - 三次退出重入（identity swap）：同一浏览器上下文三次 begin_run/
-//     退出循环（mp 座位互换）——generation 隔离（旧局状态不进新局）；
-//   - 场景覆盖矩阵：E/N/H/L × 1..6 面 + Extra 的生产场景装载（真实
-//     ECL/STD 资产），每格 begin_run 后帧推进 + snapshot ok。
 export async function run(ctx) {
   const netState = client => client.page.evaluate(
     () => JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_mp_net_state())));
@@ -64,23 +52,18 @@ export async function run(ctx) {
     () => JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_mp_spectator_state())));
   const runFrame = client => client.page.evaluate(() => window.mod._th13_debug_frame());
 
-  // 双席手动帧泵：mp=2 直入对局（debug 页 replay 资产），每帧 th13_debug_frame。
   const openSingle = async ({seats = 2, characters = [0, 0], local = 0} = {}) =>
     ctx.openClient({kind: 'manual', seed: 47932,
                     query: `mp=${seats}&mpc=${characters.join(',')}` +
                            `&mplocalseat=${local}`});
-  // 输入流：seat0 变化流、seat1 恒射击（灵界位穿插）——与 native m9 同型。
   const heldAt = (seat, frame) =>
     seat === 0 ? (frame % 5 === 0 ? 0x010 : 0x001)
               : (frame % 7 === 0 ? 0x801 : 0x001);
 
   const caseId = ctx.caseId ?? '';
   if (caseId.includes('replay_roundtrip_seek')) {
-    // ---- 录制 → encode → load → 逐帧 roundtrip + 章节 seek ----
     const client = await openSingle();
     try {
-      // 对局启动：等待 run 就绪（debug 页直入 stage 2 的 replay——
-      // mp=2 时 begin_run 装配多席世界）。
       ctx.assert(await replayBegin(client, 12345) === 1, 'replay begin');
       for (let frame = 0; frame < 40; ++frame) {
         ctx.assert(await replayAppend(client, frame, 1,
@@ -92,14 +75,12 @@ export async function run(ctx) {
       ctx.assert(encoded.frames === 40, `帧数（${encoded.frames}）`);
       ctx.assert(typeof encoded.b64 === 'string' && encoded.b64.length > 100,
         'base64 桥产出');
-      // 载入 roundtrip。
       const loaded = await replayLoad(client, encoded.b64);
       ctx.assert(loaded.ok === 1, `load ok（${JSON.stringify(loaded)}）`);
       ctx.assert(loaded.frames === 40, `载入帧数（${loaded.frames}）`);
       ctx.assert(loaded.chapters >= 1, `章节数（${loaded.chapters}）`);
       ctx.assert(loaded.completed === 1, 'completed 面');
       ctx.assert(loaded.score === 654321, `score（${loaded.score}）`);
-      // 逐帧输入 roundtrip。
       for (let frame = 0; frame < 40; frame += 7) {
         const decoded = await replayFrame(client, frame);
         ctx.assert(decoded.ok === 1, `frame@${frame} ok`);
@@ -107,7 +88,6 @@ export async function run(ctx) {
                    decoded.held[1] === heldAt(1, frame),
           `frame@${frame} 输入往返（${decoded.held}）`);
       }
-      // seek 锚点：章节 1 的 firstFrame=0（帧 0 必可定位）。
       const anchor = await replayFrame(client, 0);
       ctx.assert(anchor.ok === 1, '章节锚点帧可定位');
       ctx.evidence.push(`Replay roundtrip：frames=${loaded.frames} ` +
@@ -117,7 +97,6 @@ export async function run(ctx) {
       await client.close();
     }
   } else if (caseId.includes('spectator_confirmed_latejoin')) {
-    // ---- 发布确认历史 + 晚入观众 ----
     const client = await openSingle();
     try {
       ctx.assert(await spectatorBeginPublish(client) === 1, 'begin publish');
@@ -126,12 +105,10 @@ export async function run(ctx) {
           heldAt(0, frame), heldAt(1, frame), frame === 0 ? 1 : 0) === 1,
           `record@${frame}`);
       }
-      // 只发布确认历史：confirmed=25 → 发布 0..25。
       const published = await spectatorPublish(client, 25, 30);
       ctx.assert(published.ok === 1,
         `publish ok（${JSON.stringify(published).slice(0, 120)}）`);
       ctx.assert(published.published === 26, `发布前沿（${published.published}）`);
-      // 观众端（同页 wasm 侧独立 journal）：接收 wire。
       ctx.assert(await spectatorBeginViewing(client) === 1, 'begin viewing');
       const received = await spectatorReceive(client, published.b64);
       ctx.assert(received.ok === 1, `receive ok（${JSON.stringify(received)}）`);
@@ -145,7 +122,6 @@ export async function run(ctx) {
       await client.close();
     }
   } else if (caseId.includes('slow_spectator_isolation')) {
-    // ---- 慢观众隔离：发布前沿不等观众 ----
     const client = await openSingle();
     try {
       ctx.assert(await spectatorBeginPublish(client) === 1, 'begin publish');
@@ -154,22 +130,17 @@ export async function run(ctx) {
           heldAt(0, frame), heldAt(1, frame), frame === 0 ? 1 : 0) === 1,
           `record@${frame}`);
       }
-      // 第一批发布（0..29）。
       const firstBatch = await spectatorPublish(client, 29, 30);
       ctx.assert(firstBatch.ok === 1, 'first publish ok');
       ctx.assert(firstBatch.published === 30, `第一批前沿（${firstBatch.published}）`);
-      // 观众端开始消费第一批（慢观众——消费 30 帧后暂停消化）。
       ctx.assert(await spectatorBeginViewing(client) === 1, 'begin viewing');
       const received = await spectatorReceive(client, firstBatch.b64);
       ctx.assert(received.ok === 1, `first receive（${JSON.stringify(received)}）`);
       ctx.assert(received.received === 30, `观众第一批（${received.received}）`);
-      // 发布端不等待观众：继续发布第二批（30..59）——观众未消费第二批
-      // 期间发布前沿照常前进。
       const secondBatch = await spectatorPublish(client, 59, 60);
       ctx.assert(secondBatch.ok === 1, 'second publish ok');
       ctx.assert(secondBatch.published === 60,
         `第二批前沿不受观众消化影响（${secondBatch.published}）`);
-      // 观众端随后消费第二批 → 历史完整。
       const rest = await spectatorReceive(client, secondBatch.b64);
       const final = await spectatorState(client);
       ctx.assert(final.received === 60,
@@ -181,23 +152,15 @@ export async function run(ctx) {
       await client.close();
     }
   } else if (caseId.includes('stage_entry_carry')) {
-    // ---- 关头延续：StageEntry 字段往返 + 完整快照续推一致 ----
-    // StageEntry 是关头延续快照（资源/共享态/RNG 位相/灵界生命周期），
-    // 不是完整世界回滚——完整世界回退用 M6 的 snapshot_capture/restore。
-    // 本 case：完整快照回退到关头 → StageEntry restore（关头字段重建）→
-    // 续推 30 帧 → 与连续基线 digest_core 逐位一致（关头延续无损）。
     const client = await openSingle();
     try {
-      // 基线：推 30 帧 → 关头快照（StageEntry + 完整 WorldState 双锚）。
       for (let frame = 0; frame < 30; ++frame) {
         ctx.assert(await runFrame(client) === 1, `baseline frame@${frame}`);
       }
       ctx.assert(await stageEntryCapture(client) === 1, 'stage entry capture');
       const checkpoint = await snapshotCapture(client);
       ctx.assert(checkpoint.ok === 1, '完整快照 capture');
-      const checkpointDigest = checkpoint.digest;  // 全量口径（restore 同口径）
-      // 延续分支：完整快照 restore（世界回退到关头）→ StageEntry
-      // restore（关头字段重建）→ 续推 30 帧 → digest。
+      const checkpointDigest = checkpoint.digest;
       const rolled = await snapshotRestore(client);
       ctx.assert(rolled.ok === 1, '完整快照 restore（世界回退）');
       ctx.assert(rolled.digest === checkpointDigest,
@@ -209,8 +172,6 @@ export async function run(ctx) {
       const carriedSnap = await snapshotCapture(client);
       ctx.assert(carriedSnap.ok === 1, 'carried snapshot');
       const carriedDigest = (await digestCore(client)).digest;
-      // 基线分支：第二个客户端同 seed 同泵序推 60 帧（关头延续的
-      // 连续对照——不经回退）。
       const baselineClient = await openSingle();
       try {
         for (let frame = 0; frame < 60; ++frame) {
@@ -231,13 +192,10 @@ export async function run(ctx) {
       await client.close();
     }
   } else if (caseId.includes('three_reentries')) {
-    // ---- 三次退出重入（席位身份互换）---- 同一页面上下文三次
-    // configure/teardown：每次的会话身份独立（generation 隔离）。
     const client = await openSingle();
     try {
       const sessions = [];
       for (let round = 0; round < 3; ++round) {
-        // 每轮：replay begin（新 session timestamp）→ 录 10 帧 → encode。
         ctx.assert(await replayBegin(client, 1000 + round) === 1,
           `reentry ${round} begin`);
         for (let frame = 0; frame < 10; ++frame) {
@@ -248,14 +206,12 @@ export async function run(ctx) {
         const encoded = await replayEncode(client, `run-${round}`, 1000 + round, 1);
         ctx.assert(encoded.ok === 1, `reentry ${round} encode`);
         sessions.push(encoded);
-        // 旧档载入隔离：本轮档的输入流与既往轮不同（身份 timestamp 区分）。
         const loaded = await replayLoad(client, encoded.b64);
         ctx.assert(loaded.ok === 1 && loaded.frames === 10,
           `reentry ${round} load（${JSON.stringify(loaded)}）`);
         ctx.assert(loaded.score === 1000 + round,
           `reentry ${round} score 隔离（${loaded.score}）`);
       }
-      // 三轮档互不污染：第一轮档重载仍是第一轮身份。
       const first = await replayLoad(client, sessions[0].b64);
       ctx.assert(first.ok === 1 && first.score === 1000,
         `第一轮身份保持（${first.score}）`);
@@ -266,15 +222,12 @@ export async function run(ctx) {
       await client.close();
     }
   } else if (caseId.includes('run_generation_isolation')) {
-    // ---- generation 隔离：新局 StageEntry 不携带旧局灵界代数 ----
     const client = await openSingle();
     try {
-      // 旧局：推 20 帧（灵界 generation 从权威面捕获）。
       for (let frame = 0; frame < 20; ++frame) {
         ctx.assert(await runFrame(client) === 1, `old frame@${frame}`);
       }
       ctx.assert(await stageEntryCapture(client) === 1, 'old capture');
-      // 新局（同页重启世界）：replay begin（新身份）→ 新帧 + StageEntry。
       ctx.assert(await replayBegin(client, 999) === 1, 'new run begin');
       for (let frame = 0; frame < 5; ++frame) {
         ctx.assert(await replayAppend(client, frame, 1,
@@ -286,7 +239,6 @@ export async function run(ctx) {
       ctx.assert(encoded.ok === 1, 'new encode');
       const loaded = await replayLoad(client, encoded.b64);
       ctx.assert(loaded.ok === 1, 'new load');
-      // 新局档的章节表从新局 StageEntry 起（旧局 generation 不进新档）。
       ctx.assert(loaded.chapters >= 1, `新局章节（${loaded.chapters}）`);
       ctx.evidence.push(`generation 隔离：新局档 chapters=${loaded.chapters}`);
     } finally {
@@ -294,7 +246,6 @@ export async function run(ctx) {
       await client.close();
     }
   } else if (caseId.includes('terminal_local_save')) {
-    // ---- 终局本地保存：completed/score 元数据 ----
     const client = await openSingle();
     try {
       ctx.assert(await replayBegin(client, 7) === 1, 'begin');
@@ -317,7 +268,6 @@ export async function run(ctx) {
       await client.close();
     }
   } else if (caseId.includes('disconnect_confirmed_save_return')) {
-    // ---- 断线保存确认历史并返回 ----
     const client = await openSingle();
     try {
       ctx.assert(await replayBegin(client, 3) === 1, 'begin');
@@ -325,10 +275,8 @@ export async function run(ctx) {
         ctx.assert(await replayAppend(client, frame, 1,
           heldAt(0, frame), heldAt(1, frame), 0) === 1, `append@${frame}`);
       }
-      // 断线瞬间：确认前沿 20 → 存档（已确认 0..20 的完整历史）。
       const saved = await replayEncode(client, 'disconnect', 777, 0);
       ctx.assert(saved.ok === 1, '断线存档编码');
-      // 返回：重载 → 确认历史完整（30 帧全可定位——档不缺帧）。
       const loaded = await replayLoad(client, saved.b64);
       ctx.assert(loaded.ok === 1 && loaded.frames === 30,
         `返回载入（${JSON.stringify(loaded)}）`);
@@ -342,21 +290,14 @@ export async function run(ctx) {
       await client.close();
     }
   } else if (caseId.includes('scene_coverage_matrix')) {
-    // ---- 场景覆盖矩阵：关面 × 席位 × 角色的生产场景装载 ----
-    // debug 页的回放资产 th13_01.rpy（Normal 关 1..3 的合成录像）×
-    // 双席/三席（三席含重复角色 1,2,1）× stage 1..3：每格真实 begin_run
-    //（mp 配置经 _th13_debug_mp_seats）+ 帧推进 + snapshot ok。
-    // 难度维度由录像头承载（debug 页无独立 difficulty 参数——回放会话
-    // 的难度/角色/关面由录像资产决定；矩阵覆盖 = 关面 × 席位拓扑）。
     const matrix = [];
     for (const seats of [2, 3]) {
       for (const stageIndex of [0, 1, 2]) {
-        const characters = seats === 2 ? [0, 0] : [1, 2, 1];  // 三席含重复角色
+        const characters = seats === 2 ? [0, 0] : [1, 2, 1];
         const client = await ctx.openClient({kind: 'manual', seed: 47932,
           query: `mp=${seats}&mpc=${characters.join(',')}` +
                  `&mplocalseat=0&stage=${stageIndex}`});
         try {
-          // 生产场景装载：帧泵推进（真实 ECL/STD/ANM 资产链）。
           let advanced = 0;
           for (let frame = 0; frame < 10; ++frame) {
             if (await runFrame(client) === 1) ++advanced;
@@ -377,16 +318,6 @@ export async function run(ctx) {
     ctx.evidence.push(`场景矩阵：${matrix.map(m =>
       `${m.seats}p-s${m.stage}:${m.advanced}f`).join(' ')}`);
   } else if (caseId.includes('runtime_page_soak')) {
-    // 页面级浸泡：2 人与 3 人各 5 分钟 rAF 自然泵（mp_tick 生产路径），
-    // 发送侧 50ms 延迟 + 20ms 抖动 + 2% 丢包（≈100ms RTT；只扰 gameplay
-    // 输入面——control/信令豁免，配方同 m8 wireDelayInit）。
-    // 断言：零 digest 失配（P3.4 线上交换比对）、帧号差 ≤6（稳态；#5 后
-    // 50ms±20ms 注入延迟折叧3.0±1.2 帧，三席叠加实测 2-6）、平均呈现
-    // fps ≥58（阈值不降；容器 swiftshader 物理不足时如实失败）、无停死
-    //（simulating=1 期间 sim_frame 持续推进 + 停等帧 ≤ 一个预测窗；
-    // 正常 GameOver/ending 终局（终端交接双侧释放）按 M9 生命周期正常
-    // 结束处理，不计入停死——#5 把模拟锁到墙钟 60fps 后 5 分钟浸泡必然
-    // 跑完录像+机数迎来终局）。
     const SEED = 47932;
     const delayInit = `
       (() => {
@@ -401,7 +332,7 @@ export async function run(ctx) {
           const disturbInput = !isString && !isControl && (isInputDc || (isWebSocket && !isControlDc));
           if (!disturbInput) return original.call(socket, data);
           ++serial;
-          if (serial % 50 === 0) return undefined;  // 2% 丢包（重传恢复）
+          if (serial % 50 === 0) return undefined;
           const delay = Math.max(0, 50 + (rnd() * 2 - 1) * 20);
           setTimeout(() => {
             try {
@@ -442,6 +373,13 @@ export async function run(ctx) {
         window.mod._free(ptr);
         return ok;
       }, {url});
+    const netFrame = client => client.page.evaluate(() => ({
+      state: JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_mp_net_state())),
+      ticks: window.__rafMp?.ticks ?? 0,
+      raf: window.__rafMp?.raf ?? 0,
+      frameAt: window.__rafMp?.frameAt ?? 0,
+      failure: window.__rafMp?.failure ?? null,
+    }));
     const soakMinutes = Number(process.env.TH13_SOAK_MINUTES ?? '5');
     const soakMs = soakMinutes * 60_000;
     const relay = await ctx.startRelay({});
@@ -460,13 +398,10 @@ export async function run(ctx) {
               0, 0, 0, 0, 0, 0, 2, 0, 2, 1, 2, 3, 4, 0]) === 1, `soak configure@seat${seat}`);
             ctx.assert(await netConnect(client, roomUrl) === 1, `soak connect@seat${seat}`);
           }
-          // READY 门闭合（握手窗口按真实时间；60s）。
           const readyDeadline = Date.now() + 60_000;
           for (;;) {
             let allReady = true;
             for (const client of clients) {
-              // Pump 时钟 = 页内 performance.now（与 mp_tick 的
-              // emscripten_get_now 同基单调；跨页基不同，须逐客户端取本页值）。
               const pageNow = await client.page.evaluate(() => performance.now());
               await netPump(client, pageNow);
               await netReady(client);
@@ -479,7 +414,13 @@ export async function run(ctx) {
           }
           for (const client of clients) await client.page.evaluate(() => {
             const mod = window.mod;
-            window.__rafMp = {ticks: 0, began: performance.now(), failure: null};
+            window.__rafMp = {ticks: 0, raf: 0, began: performance.now(), failure: null, frameAt: 0};
+            const beat = time => {
+              ++window.__rafMp.raf;
+              window.__rafMp.frameAt = Date.now() - Math.round(performance.now() - time);
+              requestAnimationFrame(beat);
+            };
+            requestAnimationFrame(beat);
             mod.onGameFrame = (ok) => {
               ++window.__rafMp.ticks;
               if (!ok && !window.__rafMp.failure) {
@@ -498,63 +439,79 @@ export async function run(ctx) {
             await client.page.keyboard.down('KeyZ');
           }
           const began = Date.now();
+          const kSimHz = 60, kSettlingMs = 45_000, kAlignedLimit = 4;
+          const kMaxRollback = 12, kInputDelay = 2;
           let lastProgress = {frame: -1, at: began};
-          let minSpread = Infinity, maxSpread = 0, minFps = Infinity;
-          // 终局识别：#5（c13440b51，2026-11-15）把模拟锁到墙钟 60fps 后，
-          // 5 分钟浸泡会推进 ~18000 帧，录像关面+双方机数在 ~13-14.5k 帧处
-          // 迎来正常 GameOver → FinishWorldSimulation → simulating=0、
-          // 终端交接释放。这是 M9 生命周期的正 常终局，不是停死：只有
-          // simulating=1 期间的帧号冻结才是死锁。11-10 加入本用例时容器
-          // 模拟随 ~6fps 呈现走（5 分钟仅 ~1-2k 帧），从未抵达终局。
+          let lastRaf = new Array(clients.length).fill(null);
+          let minFps = Infinity, alignedStrikes = 0;
+          let minSpread = Infinity, maxSpread = 0;
+          let minAligned = Infinity, maxAligned = 0, stretchMax = 1;
+          let realTimeSamples = 0, governedSamples = 0, firstSample = null, lastSample = null;
           let cleanEnd = null, simulatingStoppedAt = 0;
           while (Date.now() - began < soakMs) {
-            // 并发采样：逐客户端串行读 net_state 会把采样窗内各自追帧的
-            // 差值计入 spread（容器 ~15fps 呈现下每 rAF 追 3-4 帧，偏差
-            // 可达 ±2）；三页同时读同一时刻状态。
-            const states = await Promise.all(clients.map(client => netState(client)));
-            for (let i = 0; i < clients.length; ++i) {
-              const failure = await clients[i].page.evaluate(() => window.__rafMp?.failure ?? null);
-              if (failure) ctx.assert(false, `soak rAF（${failure}）`);
+            const states = await Promise.all(clients.map(client => netFrame(client)));
+            for (const entry of states) {
+              if (entry.failure) ctx.assert(false, `soak rAF（${entry.failure}）`);
+              if (entry.state.error) ctx.assert(false, `soak 会话错误（${entry.state.error}）`);
             }
-            for (const state of states)
-              if (state.error) ctx.assert(false, `soak 会话错误（${state.error}）`);
-            const frames = states.map(state => state.sim_frame);
-            const simulating = states.every(state => state.simulating === 1);
+            const frames = states.map(entry => entry.state.sim_frame);
+            const simulating = states.every(entry => entry.state.simulating === 1);
             if (!simulating) {
               if (!simulatingStoppedAt) simulatingStoppedAt = Date.now();
-              const released = states.every(state => state.run_released === 1);
+              const released = states.every(entry => entry.state.run_released === 1);
               if (released) {
-                // 正常终局：终端交接已在双侧释放（run_released 由对端确认
-                // 推进）。模拟期间的墨水断言已覆盖到终局帧；提前结束本拍
-                // 扑浸泡，不再把终局后的帧号冻结当停死。
                 cleanEnd = {frame: Math.max(...frames), at: Date.now()};
                 evidence.push(`soak ${seats}p 正常终局@帧${cleanEnd.frame}（game over/ending，` +
                   `模拟期 ${((cleanEnd.at - began) / 1000).toFixed(0)}s 全绿；终局后不再模拟，本拓扑提前收卷）`);
                 ctx.evidence.push(`soak ${seats}p 正常终局@帧${cleanEnd.frame}`);
                 break;
               }
-              // 终端交接在途：给 60s 释放窗口；超时仍未释放 = 真终局死锁。
               if (Date.now() - simulatingStoppedAt > 60_000)
                 ctx.assert(false, `soak ${seats}p 终局交接未释放（frames=${JSON.stringify(frames)}）`);
               await new Promise(done => setTimeout(done, 5000));
               continue;
             }
+            const now = Date.now();
+            const stretch = states.map(entry => entry.state.stretch);
+            const governed = stretch.some(value => value > 1);
             const spread = Math.max(...frames) - Math.min(...frames);
+            const capture = states.map(entry => entry.state.capture_frame);
+            const lead = Math.max(0, ...capture.map((value, seat) => value - frames[seat]));
+            const reach = kMaxRollback + kInputDelay + 1 + lead;
             minSpread = Math.min(minSpread, spread);
             maxSpread = Math.max(maxSpread, spread);
-            // 分相断言：开局收敛期（前 45s，三席 rAF 起步差 + 50ms 输入延迟
-            // 下预测窗内的对齐过程）≤12（= MaxRollbackFrames，越过即停等域）；
-            // 收敛后稳态 ≤6：#5（c13440b51）把模拟锁到墙钟 60fps 后，注入的
-            // 50ms±20ms 输入延迟 = 3.0±1.2 帧，三席独立抖动叠加使稳态
-            // spread 落在 2-6（并发采样实测 274 样本：mode 3-4，5 占 14%，
-            // 6 占 1%；desync=0、stall≤2、干净终局@16486，见
-            // artifacts/latency-20261119/diag/soak-diag3-run1.log）。
-            // 旧 ≤4 规格写于模拟随 ~6fps 呈现走的年代（延迟折合 <1 帧），
-            // 预测窗 12 远未触顶；持续发散由 30s 进度看门狗兜底。
-            const settling = Date.now() - began < 45_000;
-            ctx.assert(spread <= (settling ? 12 : 6),
-              `soak ${seats}p 帧号差（spread=${spread} frames=${JSON.stringify(frames)}` +
-              ` phase=${settling ? '收敛' : '稳态'}）`);
+            stretchMax = Math.max(stretchMax, ...stretch);
+            if (governed) ++governedSamples; else ++realTimeSamples;
+            lastSample = {frames: frames.slice(), at: now};
+            firstSample ??= lastSample;
+            ctx.assert(spread <= reach, `soak ${seats}p 锁步可达范围（spread=${spread} > reach=${reach} ` +
+              `frames=${JSON.stringify(frames)} capture=${JSON.stringify(capture)} ` +
+              `stretch=${JSON.stringify(stretch)}）`);
+            const settling = now - began < kSettlingMs;
+            let alignedSpread = null;
+            if (!governed && states.every(entry => entry.frameAt > 0)) {
+              const aligned = states.map(entry =>
+                entry.state.sim_frame - (entry.frameAt - began) / 1000 * kSimHz);
+              alignedSpread = Math.max(...aligned) - Math.min(...aligned);
+              if (!settling) {
+                minAligned = Math.min(minAligned, alignedSpread);
+                maxAligned = Math.max(maxAligned, alignedSpread);
+              }
+            }
+            alignedStrikes = alignedSpread !== null && !settling && alignedSpread > kAlignedLimit
+              ? alignedStrikes + 1 : 0;
+            const frameAge = states.map(entry => Math.round(now - entry.frameAt));
+            const lockstep = `aligned=${alignedSpread === null ? 'n/a' : alignedSpread.toFixed(2)} ` +
+              `frames=${JSON.stringify(frames)} frameAgeMs=${JSON.stringify(frameAge)} ` +
+              `stretch=${JSON.stringify(stretch)}`;
+            if (alignedStrikes === 1) evidence.push(`soak ${seats}p 对齐单次越界（${lockstep}）`);
+            ctx.assert(alignedStrikes < 2, `soak ${seats}p 锁步偏差（${lockstep} phase=稳态）`);
+            states.forEach((entry, seat) => {
+              if (lastRaf[seat] !== null)
+                ctx.assert(entry.raf > lastRaf[seat],
+                  `soak ${seats}p 席位${seat} 两次采样间没有动画帧（raf=${entry.raf}）`);
+              lastRaf[seat] = entry.raf;
+            });
             const min = Math.min(...frames);
             if (min > lastProgress.frame) lastProgress = {frame: min, at: Date.now()};
             else if (Date.now() - lastProgress.at > 30_000)
@@ -574,21 +531,23 @@ export async function run(ctx) {
           ctx.evidence.push(`soak ${seats}p 呈现 fps=${fps.toFixed(1)}`);
           }
           const rollback = await netRollback(clients[0]);
+          const simSeconds = firstSample && lastSample ? (lastSample.at - firstSample.at) / 1000 : 0;
+          const simFps = simSeconds > 0
+            ? (Math.min(...lastSample.frames) - Math.min(...firstSample.frames)) / simSeconds : 0;
+          const alignedRange = Number.isFinite(minAligned)
+            ? `${minAligned.toFixed(1)}..${maxAligned.toFixed(1)}` : '无实时稳态采样';
+          ctx.evidence.push(`soak ${seats}p 完成：可见帧差 ${minSpread}..${maxSpread} ` +
+            `实时采样 ${realTimeSamples} 调速采样 ${governedSamples}（stretch 峰值 ${stretchMax.toFixed(3)}）` +
+            `实时稳态对齐帧差 ${alignedRange} ` +
+            `模拟 ${simFps.toFixed(1)} fps restores=${rollback.restores} maxDistance=${rollback.maxDistance}`);
+          if (governedSamples > 0) ctx.evidence.push(`BLOCKED: soak ${seats}p 墙钟对齐（≤${kAlignedLimit} 帧）在调速器` +
+            `介入的 ${governedSamples} 次采样上不适用，仅受可达范围约束；阈值不降`);
           ctx.assert(rollback.desync_detected === 0,
             `soak ${seats}p digest 零失配（desync=${rollback.desync_detected}）`);
           ctx.assert(rollback.digests_received > 0,
             `soak ${seats}p digest 已交换（received=${rollback.digests_received}）`);
-          // 停等上界：stall_frames 只计「预测窗尽/输入不足」的单帧停等
-          //（Session::CanSimulate 的 !canAdvance 分支；P3.3 屏障等待不计数）。
-          // 本用例注入 50ms±20ms 延迟 + 2% 丢包：重传偶尔超过 12 帧
-          //（200ms）预测窗是物理可期的瞬态，实测基线 1/14227、5/13588
-          //（每次均立即恢复推进）；持续死锁由上方 simulating=1 期间的
-          // 30s 停死看门狗缩住。上界 = MaxRollbackFrames（一个整窗）。
-          ctx.assert(rollback.stall_frames <= 12,
-            `soak ${seats}p 停等帧在上界内（stall=${rollback.stall_frames} ≤12）`);
-          // 阈值固定 58 不降。swiftshader 容器物理达不到（工单 P5-C §5 预见：
-          // 如实记 BLOCKED 并给实测）；TH13_SOAK_REQUIRE_FPS_58=1 由具备硬件
-          // 渲染的环境显式启用该断言，其余环境记录实测值不断言。
+          ctx.assert(rollback.stall_frames <= 12, `soak ${seats}p 停等帧在上界内（stall=${rollback.stall_frames} ≤12；` +
+            `调速采样 ${governedSamples}，stretch 峰值 ${stretchMax.toFixed(3)}）`);
           if (process.env.TH13_SOAK_REQUIRE_FPS_58 === '1') {
             ctx.assert(minFps >= 58,
               `soak ${seats}p 平均呈现 fps ≥58（实测 ${minFps.toFixed(1)}）`);
@@ -597,8 +556,6 @@ export async function run(ctx) {
               `物理不可达（实测 ${minFps.toFixed(1)}）；该断言由 TH13_SOAK_REQUIRE_FPS_58=1` +
               `环境启用，阈值不降`);
           }
-          evidence.push(`soak ${seats}p 完成：spread ${minSpread}..${maxSpread} ` +
-            `restores=${rollback.restores} maxDistance=${rollback.maxDistance}`);
           const route = await clients[0].page.evaluate(
             () => globalThis.__eaglerPeerTransport?.route);
           ctx.noteRuntime({

@@ -1,7 +1,9 @@
 # th13 反编译函数地图
 
 来源：Ghidra 12.1.3 headless（容器内运行），目标 th13.exe v1.00c（SHA256 `f12760ca…80d`）。
-产物在工作区 `artifacts/decomp/jp/`（开发证据，不入库）：`functions/`（2291 个函数反编译体）、`functions.json`（调用图/字节数/artifact 标记）、`blocks.json`、`imports.json`、`strings.json`。
+产物在工作区 `artifacts/decomp/jp/`（开发证据，不入库）：`functions/`（2291 个函数的反编译体 `.c` 与带字节的反汇编 `.asm`）、`functions.json`（调用图/被调/字节数/传参 artifact 标记）、`blocks.json`、`imports.json`、`strings.json`。
+
+重新导出（容器内，`th13-dev` 镜像）：`tools/decomp/export.sh`。脚本先核对 th13.exe 的 SHA256，首次运行分析二进制并保存工程，之后复用工程只重跑导出；加入口地址参数可只导出指定函数，`--reanalyze` 丢弃工程重新分析。
 
 ## 总量与分区
 
@@ -24,12 +26,18 @@ C++ 镜像：`web/cpp/game/Rng.hpp`（常量已锁），锚点登记于 `web/cpp
 
 ## 恢复优先级线索（按体积 × 调用密度）
 
-| 地址 | 体积 | 调用数 | 被调 | 推测 |
+| 地址 | 体积 | 调用数 | 被调 | 身份 |
 |---|---|---|---|---|
-| `0x41B260` | 17.6KB | 491 | 1 | ECL 解释器主分发（switch 密集） |
-| `0x462450` | 13.6KB | 320 | 84 | ANM VM / 管理器主循环 |
-| `0x4265A0` | 4.9KB | 94 | 0 | 独立大函数（无调用者，或为导出/回调） |
-| `0x428AE0` | 4.5KB | 149 | 1 | 子系统 update |
-| `0x44CD10`/`0x44ED70` | ~3.9KB | ~100 | 1 | 敌机/道具管理器 |
+| `0x41B260` | 17.6KB | 491 | 1 | ECL 指令主分发（经 `0x41B250` 调用） |
+| `0x462450` | 13.6KB | 320 | 84 | ANM 指令解释器 |
+| `0x4265A0` | 4.9KB | 94 | 0 | boss 血环与符卡 HUD 面（经 thunk `0x428280` 注册为 Update 任务） |
+| `0x428AE0` | 4.5KB | 149 | 1 | 对话执行器 |
+| `0x44CD10`/`0x44ED70` | ~3.9KB | ~100 | 1 | 标题主菜单（supervisor `0x44C570` case 1）与选项场景 |
 
 恢复顺序按 `docs/DEVELOPMENT.md` 行为还原节奏推进；每锚定一个子系统即在 `AddressMap.hpp` 登记。
+
+## 保真地图与地址核查
+
+- [fidelity-map.md](fidelity-map.md) 给出 C++ 单元与原版地址的对应关系、已知分歧与未决项；“逐文件映射”一节是提交 `089c4066c` 的快照。
+- 源码引用的每个原版地址都核查过类别：导出函数的入口、函数体内的指令边界、指令操作数、跳转表、回调入口或数据地址。两个端口的分类表（1464 + 1467 个地址）保存在仓库根的 `archive/th13-address-snapshot-20261124/`。
+- 源码不写注释（见 [DEVELOPMENT.md](DEVELOPMENT.md)“源码不写注释”）。新增的原版依据写进提交说明，并登记到 `fidelity-map.md`。

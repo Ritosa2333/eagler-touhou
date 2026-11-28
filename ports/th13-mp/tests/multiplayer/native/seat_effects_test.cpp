@@ -1,5 +1,3 @@
-// Per-seat player presentation ownership. Uses the real player ANM scripts;
-// no combat rules, resources, or production animation lifetime are replaced.
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "multiplayer/WorldState.hpp"
 #include "game/StagePresentation.hpp"
@@ -77,8 +75,6 @@ struct Fixture {
         return ok;
     }
     bool frame(int number, bool simultaneous = false) {
-        // Legal separate pressed edges, with one overlap and a later Bomb for
-        // each seat. No resource grants or combat state changes during play.
         const u32 p0=(number==120 || number==620)?2:0;
         const u32 p1=(number==(simultaneous?120:80) || number==(simultaneous?620:580))?2:0;
         battle.seat_inputs[1].update(p1);
@@ -216,8 +212,6 @@ TEST(mixed_character_options_focus_and_death_stay_with_their_seat) {
     CHECK(!after.option_rebuild_pending && !after.teammate_effects[0].option_rebuild_pending && !after.teammate_effects[1].option_rebuild_pending);
 }
 TEST(reimu_slow_time_zero_age_births_once_and_replays_exactly) {
-    // Both rates repeat integral age zero. Count the real synchronous births,
-    // retain their registry handles and replay across the fractional timer.
     for(float rate : {0.5f,0.25f}) {
         Fixture f;const bool loaded=f.load();CHECK(loaded);if(!loaded)return;
         const bool booted=f.boot();CHECK(booted);if(!booted)return;
@@ -228,7 +222,7 @@ TEST(reimu_slow_time_zero_age_births_once_and_replays_exactly) {
             return f.presentation.reimu_bomb_orb_birth(battle,orb);
         };
         f.battle.sim.set_time_rate(rate);
-        if(!f.frame(80)) {CHECK(false);return;}  // P2 presses Bomb.
+        if(!f.frame(80)) {CHECK(false);return;}
         CHECK_EQ(f.battle.seats[1].bomb_age,0);
         CHECK_EQ(births[0],0u);CHECK_EQ(births[1],8u);
         StagePresentation::SnapshotData first;CHECK(f.presentation.capture_presentation(first));
@@ -291,8 +285,6 @@ TEST(equal_generation_shot_fades_are_independent_for_every_seat) {
     CHECK(!stage.empty() && f.animations.load(4,stage.data(),stage.size()));
     f.presentation.enemies_from_ecl=true;
     f.battle.defer_item_side=true;
-    // Real pl00 script10 carries the hit interrupt. Equal generations are
-    // legal because every seat owns its own projectile generation counter.
     for(i32 seat=0;seat<3;++seat) {
         PlayerShot shot; shot.alive=true; shot.state=2; shot.script=10;
         shot.generation=7; shot.owner_seat=seat; shot.x=float(seat*40); shot.y=250;
@@ -312,7 +304,6 @@ TEST(equal_generation_shot_fades_are_independent_for_every_seat) {
         CHECK(vm->resource==f.animations.resource(seat==0?6:seat==1?7:9));
     }
     CHECK_EQ(handles.size(),size_t(3));
-    // Repeating sync must not enqueue another fade for the same seat/generation.
     CHECK(f.animations.update(false));
     CHECK(f.presentation.sync(f.battle,0));
     CHECK(f.presentation.capture_presentation(snapshot));
@@ -328,10 +319,6 @@ TEST(shot_fade_snapshot_order_and_restore_boundaries) {
     StagePresentation::SnapshotData state;
     CHECK(f.presentation.capture_presentation(state));
     CHECK(state.shot_faded_generations.empty());
-    // Simulated accumulated generations, including equal generations across
-    // seats and the full 32-bit generation boundary. Deliberately unordered
-    // input and duplicates exercise restore semantics rather than assuming a
-    // pre-sorted capture.
     const std::vector<u64> input = {
         (u64(2)<<32)|0xffffffffu, 7, (u64(1)<<32)|7,
         0, (u64(2)<<32)|7, (u64(1)<<32)|7, 0xffffffffu,
@@ -344,7 +331,6 @@ TEST(shot_fade_snapshot_order_and_restore_boundaries) {
     const std::set<u64> expected(input.begin(),input.end());
     CHECK(captured.shot_faded_generations==std::vector<u64>(expected.begin(),expected.end()));
     CHECK_EQ(captured.shot_faded_generations.size(),size_t(7));
-    // Capture remains a deep value even after replacement and a second restore.
     const auto retained=captured.shot_faded_generations;
     state.shot_faded_generations={(u64(2)<<32)|9, 8, 8};
     CHECK(f.presentation.restore_presentation(state));
@@ -364,10 +350,6 @@ TEST(shot_fade_history_preserves_unknown_high_words_and_future_reuse) {
         f.presentation.enemies_from_ecl=true; f.battle.defer_item_side=true;
         StagePresentation::SnapshotData history;
         CHECK(f.presentation.capture_presentation(history));
-        // All u64 values accepted by restore remain observable, even when the
-        // high word is outside the three current seats. No live shot or fade
-        // owns these historical keys. The same generation can recur after
-        // the seat's counter wraps; it must retain the old consumption result.
         history.shot_faded_generations={~u64(0),u64(0xffffffffu)<<32,
             (u64(3)<<32)|7,0xffffffffu,0,~u64(0)};
         const u64 key=(u64(u32(seat))<<32)|7;
@@ -390,7 +372,6 @@ TEST(shot_fade_history_preserves_unknown_high_words_and_future_reuse) {
         if(vm) CHECK_EQ(vm->pending_interrupt,consumed ? 0 : 1);
         auto expected=restored; expected.insert(key);
         CHECK(captured.shot_faded_generations==std::vector<u64>(expected.begin(),expected.end()));
-        // Restoring the older snapshot must replace the later branch deeply.
         CHECK(f.presentation.restore_presentation(history));
         CHECK(f.presentation.capture_presentation(captured));
         CHECK(captured.shot_faded_generations==std::vector<u64>(restored.begin(),restored.end()));
@@ -403,8 +384,6 @@ TEST(ghost_ship_bodies_remain_visible_with_draw_only_opacity) {
         const auto stage=asset("st01enm.anm");
         CHECK(!stage.empty() && f.animations.load(4,stage.data(),stage.size()));
         f.presentation.enemies_from_ecl=true; f.battle.defer_item_side=true;
-        // Production centered playfield offsets; a zeroed environment would
-        // incorrectly cull the negative-x ship in this draw-only fixture.
         f.environment.screen_offsets={320,240,320,16};
         GameInput idle;
         for(i32 frame=0;frame<32;++frame) CHECK(f.battle.step(idle));
@@ -432,8 +411,6 @@ TEST(ghost_ship_bodies_remain_visible_with_draw_only_opacity) {
         for(i32 draw=0;draw<2;++draw) {
             f.graphics.submitted.clear();
             CHECK(f.presentation.draw(1)); f.renderer.flush();
-            // Two remote ships and the local ghost: actual production quad
-            // submission, including alpha, rather than the opacity setting.
             CHECK_EQ(f.graphics.submitted.size(),size_t(18));
             for(size_t vertex=0;vertex<f.graphics.submitted.size();++vertex)
                 CHECK_EQ(f.graphics.submitted[vertex].color>>24,vertex<12?160u:140u);
@@ -478,8 +455,6 @@ TEST(teammate_attacks_use_higher_draw_only_opacity) {
 }
 
 TEST(focus_exit_tree_does_not_create_an_extra_bullet_collision) {
-    // Diagnostic fixture: production input and ANM lifecycle, then inject one
-    // stationary enemy bullet into each of the two separated positions.
     Fixture f; const bool loaded=f.load(); CHECK(loaded); if(!loaded)return;
     const bool booted=f.boot(); CHECK(booted); if(!booted)return;
     GameInput input;
@@ -489,9 +464,7 @@ TEST(focus_exit_tree_does_not_create_an_extra_bullet_collision) {
         return f.battle.step(input) && f.presentation.initialize_player_effects(f.battle) &&
                f.animations.update(false);
     };
-    // Wait out the normal entry invulnerability before testing contact.
     for(int i=0;i<110;++i) { const bool ok=step(0); CHECK(ok); if(!ok)return; }
-    // Keep the second seat away from both test locations.
     auto& other=f.battle.seats[1]; other.x=120; other.fixed_x=120*128;
     for(int i=0;i<24;++i) { const bool ok=step(8); CHECK(ok); if(!ok)return; }
     StagePresentation::SnapshotData before;

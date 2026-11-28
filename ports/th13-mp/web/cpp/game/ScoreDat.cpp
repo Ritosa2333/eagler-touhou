@@ -19,30 +19,22 @@ constexpr u32 kEncryptBlock = 0x10;
 constexpr u8 kEntryNameDefault[9] = {'-', '-', '-', '-', '-', '-', '-', '-', 0x00};
 constexpr u8 kStNameDefault[9] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0x00};
 
-// 0x4bbd30：练习记录槽对应的关卡 id。
 constexpr u8 kPracticeStageTable[ScoreDat::kPracticeCount] = {
-    0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3, 0, 1,
-    2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3,
-    0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0,
-    1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 1,
-    2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1,
-    2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1,
-    2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 4, 4, 4, 4, 4, 4,
-    4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5,
+    0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3,
+    0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 1,
+    2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1,
+    2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5,
 };
 
-u16 read_u16(const u8* at) {
-    return u16(u16(at[0]) | u16(at[1]) << 8);
-}
-u32 read_u32(const u8* at) {
-    return u32(at[0]) | u32(at[1]) << 8 | u32(at[2]) << 16 | u32(at[3]) << 24;
-}
+u16 read_u16(const u8* at) { return u16(u16(at[0]) | u16(at[1]) << 8); }
+u32 read_u32(const u8* at) { return u32(at[0]) | u32(at[1]) << 8 | u32(at[2]) << 16 | u32(at[3]) << 24; }
 void put_u16(u8* at, u16 value) {
     at[0] = u8(value);
     at[1] = u8(value >> 8);
 }
 void put_u32(u8* at, u32 value) {
-    for (int i = 0; i < 4; ++i) at[i] = u8(value >> (i * 8));
+    for (int i = 0; i < 4; ++i)
+        at[i] = u8(value >> (i * 8));
 }
 
 void fill_default_column(u8* column, u32 column_index) {
@@ -78,7 +70,7 @@ void set_default_st_block(u8* st, u16 seed) {
     }
 }
 
-}  // namespace
+}
 
 u16 ScoreDat::lcg_next(u16& state) {
     const u32 x = u32(u16(state ^ 0x9630) - 0x6553) & 0xFFFF;
@@ -104,7 +96,8 @@ void ScoreDat::set_default_column(u32 column) {
 
 u32 ScoreDat::block_checksum(const u8* block, size_t size) {
     u32 sum = 0;
-    for (size_t i = 8; i < size; ++i) sum += block[i];
+    for (size_t i = 8; i < size; ++i)
+        sum += block[i];
     return sum;
 }
 
@@ -122,8 +115,7 @@ bool ScoreDat::parse_file(const u8* data, size_t size) {
     std::vector<u8> plain(data + kHeaderSize, data + kHeaderSize + comp_size);
     ReplayFile::xor_decrypt(plain.data(), plain.size(), kEncryptKey0, kEncryptStep, kEncryptBlock);
     std::vector<u8> image;
-    if (!ReplayFile::inflate(plain.data(), plain.size(), image, uncomp_size))
-        return fail("score file inflate failed");
+    if (!ReplayFile::inflate(plain.data(), plain.size(), image, uncomp_size)) return fail("score file inflate failed");
 
     const bool ok = parse_image(image.data(), image.size());
     if (!ok) error = "score file walk: " + error;
@@ -145,16 +137,14 @@ bool ScoreDat::parse_image(const u8* image, size_t size) {
         if (block_size == 0 || pos + block_size > size) return fail("block overruns image");
         const u8* block = image + pos;
         if (magic == kCRMagic) {
-            if (version != kBlockVersion || block_size != kCRSize ||
-                checksum != block_checksum(block, kCRSize))
+            if (version != kBlockVersion || block_size != kCRSize || checksum != block_checksum(block, kCRSize))
                 return fail("CR block failed validation");
             const u32 column = read_u32(block + 0x0C);
             if (column >= u32(kColumnCount)) return fail("CR column out of range");
             std::memcpy(columns[column].data(), block, kCRSize);
             column_present[column] = true;
         } else if (magic == kSTMagic) {
-            if (version != kBlockVersion || block_size != kSTSize ||
-                checksum != block_checksum(block, kSTSize))
+            if (version != kBlockVersion || block_size != kSTSize || checksum != block_checksum(block, kSTSize))
                 return fail("ST block failed validation");
             std::memcpy(st.data(), block, kSTSize);
             st_present = true;
@@ -215,8 +205,7 @@ void ScoreDat::wrap_file(std::vector<u8> comp, size_t uncomp, std::vector<u8>& o
 
 ScoreDat::Entry ScoreDat::read_entry(const u8* column, int difficulty, int rank) {
     Entry entry;
-    const u8* at = column + kEntriesOff +
-                   (size_t(difficulty) * kRankCount + size_t(rank)) * kEntrySize;
+    const u8* at = column + kEntriesOff + (size_t(difficulty) * kRankCount + size_t(rank)) * kEntrySize;
     entry.score = read_u32(at);
     entry.stage = at[4];
     entry.continues = at[5];
@@ -228,8 +217,7 @@ ScoreDat::Entry ScoreDat::read_entry(const u8* column, int difficulty, int rank)
 }
 
 void ScoreDat::write_entry(u8* column, int difficulty, int rank, const Entry& entry) {
-    u8* at = column + kEntriesOff +
-             (size_t(difficulty) * kRankCount + size_t(rank)) * kEntrySize;
+    u8* at = column + kEntriesOff + (size_t(difficulty) * kRankCount + size_t(rank)) * kEntrySize;
     put_u32(at, entry.score);
     at[4] = entry.stage;
     at[5] = entry.continues;
@@ -240,21 +228,13 @@ void ScoreDat::write_entry(u8* column, int difficulty, int rank, const Entry& en
     put_u32(at + 0x18, entry.rate_bits);
 }
 
-u32 ScoreDat::play_count(const u8* column) {
-    return read_u32(column + kPlayCountOff);
-}
+u32 ScoreDat::play_count(const u8* column) { return read_u32(column + kPlayCountOff); }
 
-void ScoreDat::set_play_count(u8* column, u32 value) {
-    put_u32(column + kPlayCountOff, value);
-}
+void ScoreDat::set_play_count(u8* column, u32 value) { put_u32(column + kPlayCountOff, value); }
 
-u32 ScoreDat::play_frames(const u8* column) {
-    return read_u32(column + kPlayFramesOff);
-}
+u32 ScoreDat::play_frames(const u8* column) { return read_u32(column + kPlayFramesOff); }
 
-void ScoreDat::set_play_frames(u8* column, u32 value) {
-    put_u32(column + kPlayFramesOff, value);
-}
+void ScoreDat::set_play_frames(u8* column, u32 value) { put_u32(column + kPlayFramesOff, value); }
 
 u32 ScoreDat::clear_count(const u8* column, int difficulty) {
     return read_u32(column + kClearCountOff + size_t(difficulty) * 4);
@@ -294,8 +274,7 @@ std::array<u8, ScoreDat::kPracticeNameSize> ScoreDat::practice_name(const u8* co
     return name;
 }
 
-void ScoreDat::set_practice_name(u8* column, int i,
-                                 const std::array<u8, kPracticeNameSize>& name) {
+void ScoreDat::set_practice_name(u8* column, int i, const std::array<u8, kPracticeNameSize>& name) {
     std::memcpy(column + kPracticeOff + size_t(i) * kPracticeSize, name.data(), name.size());
 }
 
@@ -315,8 +294,7 @@ u64 ScoreDat::max_entry_timestamp() const {
         for (int difficulty = 0; difficulty < kDifficultySlots; ++difficulty) {
             for (int rank = 0; rank < kRankCount; ++rank) {
                 const Entry entry = read_entry(block, difficulty, rank);
-                newest = std::max(newest,
-                                  u64(entry.time_lo) | u64(entry.time_hi) << 32);
+                newest = std::max(newest, u64(entry.time_lo) | u64(entry.time_hi) << 32);
             }
         }
     }
@@ -341,4 +319,4 @@ void ScoreDat::write_ending_bytes(u8* st, const u8 (&in)[kEndingBytes]) {
     std::memcpy(st + kStEndingOff, in, kEndingBytes);
 }
 
-}  // namespace th13
+}

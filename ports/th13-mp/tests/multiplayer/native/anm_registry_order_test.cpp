@@ -1,5 +1,3 @@
-// 独立原生回归：池外节点的序列化不能随分配地址变化，回滚须恢复创建序。
-// 此文件自带 main 和受控分配器，不与公共 test main 链接。
 #include "game/AnmRegistry.hpp"
 #include <array>
 #include <cstdint>
@@ -8,8 +6,6 @@
 #include <new>
 
 namespace allocation_order {
-// 只将显式指定的下一次 Node 分配置入固定块，构造相反的真实地址序。
-// registry 的 map/list/vector 仍走正常分配器，不注入生产钩子。
 constexpr std::size_t block_size = 65536;
 alignas(std::max_align_t) unsigned char blocks[16][block_size];
 int next_block = -1;
@@ -43,8 +39,6 @@ using Snapshot = AnmRegistry::SnapshotData;
     std::printf("FAIL %s:%d %s\n", __FILE__, __LINE__, #condition); return false; \
 } } while (false)
 
-// 仅比较此用例的序列化顺序/关系域；真实 VM 数值全摘要由 WorldState 测试负责。
-// raw 宿主地址不比较，使用同输入建立的 source_script 标记区分根身份。
 bool same_order(const Snapshot& a, const Snapshot& b) {
     if (a.entries.size() != b.entries.size() || a.free_slots != b.free_slots ||
         a.generation != b.generation || a.active_count != b.active_count ||
@@ -80,10 +74,10 @@ bool external_address_order() {
         roots_a[i].source_script = roots_b[i].source_script = 200 + i;
         child_a->creation_parent = child_a->rotation_parent = &roots_a[i];
         child_b->creation_parent = child_b->rotation_parent = &roots_b[i];
-        allocation_order::redirect_next(i);  // A: 第一个根地址 < 第二个根地址。
+        allocation_order::redirect_next(i);
         CHECK(a.attach(*child_a, roots_a[i]));
         CHECK(allocation_order::next_block == -1);
-        allocation_order::redirect_next(3 - i);  // B: 第一个根地址 > 第二个根地址。
+        allocation_order::redirect_next(3 - i);
         CHECK(b.attach(*child_b, roots_b[i]));
         CHECK(allocation_order::next_block == -1);
     }
@@ -125,7 +119,6 @@ bool overflow_address_and_restore_order() {
     CHECK(same_order(sa, sb));
     CHECK(sa.entries[0x1fff].serialization_ordinal == 1);
     CHECK(sa.entries[0x2000].serialization_ordinal == 2);
-    // 使 B 的 next 序先偏离，再回滚；下一创建必须与未回滚 A 完全一致。
     auto* speculative = b.allocate();
     CHECK(b.submit(*speculative) != 0);
     CHECK(b.restore(sb));
@@ -204,7 +197,7 @@ bool main_and_alternate_chain_positions() {
     }
     registry.requeue_to_back(*vms[0]);
     CHECK(registry.discard(*vms[2]));
-    registry.allocate(); // Allocated but unregistered slots have no chain index.
+    registry.allocate();
     Snapshot before;
     CHECK(registry.capture(before));
     u32 visited = 0;

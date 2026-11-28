@@ -1,10 +1,6 @@
-// TH13 多人 Runtime 桥（P5 轨道 B）。
-// 语义与样板 ports/th15-mp/web/sdl-runtime/multiplayer.mjs 逐段对应；TH13
-// 差异：无 Adonis 校准、SessionSetup 22 词线格式（SessionSetup.cpp）、
-// 房间前缀 th13mp-、模式映射 adonisMode===1 → 1（纯延迟）其余 → 2（回滚）。
 const BUILD_WORDS = 4;
 const SETUP_WORDS = 22;
-const SETUP_VERSION = 2;  // SessionSetup::Version（v2 预测/回滚线格式）
+const SETUP_VERSION = 2;
 const ADONIS_MODE_DELAY = 1;
 const WIRE_MODE_DELAY = 1;
 const WIRE_MODE_ROLLBACK = 2;
@@ -32,7 +28,6 @@ export function validateMultiplayerOptions(options = {}) {
   const count = options.netplayPlayerCount;
   const spectator = options.netplaySpectator === true;
   const seat = spectator ? 0 : options.netplayPlayer;
-  // TH13 没有 Adonis：adonisMode 1 = 纯延迟（wire mode 1），其余 = 回滚（wire mode 2）。
   const mode = options.netplayAdonisMode === ADONIS_MODE_DELAY ? WIRE_MODE_DELAY : WIRE_MODE_ROLLBACK;
   const delay = options.netplayInputDelay ?? (mode === WIRE_MODE_DELAY ? 2 : 0);
   const automatic = options.netplayInputDelayAuto ?? false;
@@ -48,8 +43,6 @@ export function validateMultiplayerOptions(options = {}) {
        options.netplayPredictionLimit !== (mode === WIRE_MODE_ROLLBACK ? 12 : 0)))
     throw Error('TH13 多人连接或输入时序配置无效');
   const loadouts = options.netplayLoadouts;
-  // 席位选人：0..3（四角色，允许重复）；shot 不在 SessionSetup 线格式内，
-  // 仅接受目录当前声明的 0（th15 的 shot 语义在此裁剪）。
   if (!Array.isArray(loadouts) || loadouts.length !== count ||
       loadouts.some(v => !v || !Number.isInteger(v.character) || v.character < 0 || v.character > 3 ||
         (v.shot !== undefined && v.shot !== 0)))
@@ -71,12 +64,6 @@ export async function multiplayerSetupWords(options, buildWords, cryptoProvider 
     throw Error('TH13 构建身份或连接配置无效');
   const digest = new DataView(await cryptoProvider.subtle.digest(
     'SHA-256', new TextEncoder().encode('th13mp:' + c.room + ':' + c.run)));
-  // SessionSetup.cpp DecodeSessionSetup / EncodeSessionSetup 的 22 词布局：
-  // 0 version, 1 player_count, 2 local_player, 3 difficulty, 4 seed,
-  // 5/6 session_id lo/hi, 7 requested_delay(=input_delay), 8..10 selections,
-  // 11..13 padding, 14 mode, 15 automatic, 16 prediction_reserve,
-  // 17..20 build, 21 challenge。prediction_limit/measured_prediction 不在线上
-  // 词表内（由 C++ 侧常量 MaxRollbackFrames 持有）。
   const words = new Array(SETUP_WORDS).fill(0);
   words[0] = SETUP_VERSION;
   words[1] = c.count;
@@ -120,7 +107,6 @@ export function createMultiplayerBridge({core, getOptions, manifest, emit, onErr
     if (receiveTransport?.onReceive === receiveHook) receiveTransport.onReceive = previousReceive;
     receiveTransport = receiveHook = previousReceive = null;
   }
-  // 传输层收到包后唤醒单帧泵（th15 桥同款）；旁观者只收不玩，不装钩子。
   function attachWake() {
     if (getOptions().netplaySpectator || typeof core._th13_mp_wake !== 'function') return;
     detachWake();
@@ -147,8 +133,6 @@ export function createMultiplayerBridge({core, getOptions, manifest, emit, onErr
           id => core._th13_mp_spectator_connect(url, id)))
       : string(options.netplayUrl, url => core._th13_mp_connect(url));
     if (!connected) throw Error('TH13 多人连接失败：' + error());
-    // start 返回 0 = frame0 READY 门未闭合（每次调用内部 Pump + MarkLocalReady）。
-    // 桥轮询到门闭合；错误面非空即硬失败，不吞成“永远未就绪”。
     const deadline = Date.now() + 60_000;
     let canStart = 0;
     for (;;) {
@@ -175,8 +159,6 @@ export function createMultiplayerBridge({core, getOptions, manifest, emit, onErr
     const at = core._th13_mp_status() >>> 2;
     if (!at) return;
     const s = Array.from(core.HEAPU32.subarray(at, at + 24));
-    // th13 的 ConfirmedThroughAllRemotes 在 frame0 前是 INVALID_FRAME；诊断
-    // 全局按 th11 口径给 undefined，避免 launcher 显示 4294967295。
     target.__eaglerNetplayLanConfirmed = s[4] === 0xffffffff ? undefined : s[4];
     target.__eaglerNetplayLanFrame = s[3];
     if (typeof core._th13_mp_rollback_status === 'function') {
@@ -207,9 +189,6 @@ export function createMultiplayerBridge({core, getOptions, manifest, emit, onErr
     retire();
     core._th13_mp_close();
   }
-  // 录像回放入口：th15 从 FS 读档；TH13 的 Replay 由宿主（IDBFS 布局的
-  // /savesth13mp 库 + 内存索引）持有，因此第三参可直传字节。stage 仅在 C++ 提供可选 select_stage 导出时转发
-  //（正式导出表未列入，缺省时由录像自身的首关开始）。
   function openReplay(path, stage, replayBytes) {
     close();
     core._th13_loop_stop();

@@ -1,6 +1,3 @@
-// 2P shot draw decides from the VM alone. It never walks creation_parent,
-// so the label-1 impact fade of a spent shot is submitted like
-// single-player, and a parent that is not a live VM is never loaded.
 #include "../harness/test_framework.hpp"
 
 #include "game/AnmRenderer.hpp"
@@ -27,7 +24,7 @@ struct QuietGraphics final : ZunGraphics {
 private:
     touhou::graphics::PipelineState state;
 };
-}  // namespace
+}
 
 TEST(stale_shot_parent_is_not_loaded) {
     QuietGraphics graphics;
@@ -58,8 +55,6 @@ TEST(spent_shot_fade_draws_through_parent) {
     vm.creation_parent = &parent;
     vm.visual.flags = 3;
     vm.visual.color = 0xffc0c0c0u;
-    // Pixel snap places the empty quad at -0.5, which the default viewport
-    // culls (0); -1 would mean the VM was rejected before the draw.
     CHECK_EQ(renderer.draw(vm), 0);
 }
 

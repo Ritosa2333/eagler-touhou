@@ -7,8 +7,6 @@ const sha=b=>createHash('sha256').update(b).digest('hex');
 const base='/work/artifacts/delivery-start-browser-20261112';
 const build='/work/artifacts/work-observer-mp-zero-interpolation-20261112/build.json';
 const fixtureBuild='/work/eagler-touhou/ports/th13-mp/web/artifacts/hud-fixture-20261112/build.json';
-// Reproduce the historical build's source world without making a claim about
-// current sources. Exact paths and hashes are checked against its build record.
 const sourceRoot='/work/eagler-touhou/ports/th13-mp/';
 const historicalRoot='/work/artifacts/mp-hud-framebuffer-20261112/background-fixture/';
 const historicalSources=[
@@ -29,8 +27,6 @@ async function historicalReadBytes(path) {
 async function realInput() {
   const runtimeManifestBytes=await readFile(build);
   const formalReport=JSON.parse(await readFile(base+'/positive-01/formal-smoke.json','utf8'));
-  // The diagnostic predates retaining these fields; derive from its two
-  // independently recorded frame/epoch rows for this unit test only.
   Object.assign(formalReport,{playerCount:2,frameGuids:['frame-1','frame-2'],documentEpochs:[2,2],
     runtimeBuild:{path:'runtime-build.json',sha256:sha(runtimeManifestBytes)},
     deliveryBoundary:{closed:true,settled:true,pendingRequests:0,pendingBodies:0}});

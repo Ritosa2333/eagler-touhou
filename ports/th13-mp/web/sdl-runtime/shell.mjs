@@ -1,47 +1,27 @@
 import {installStartupBranding, finishStartupAnimation} from './startup-branding.mjs';
 import createModule from './th13-sdl.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
-import {installLowLatencyCanvas} from './low-latency-canvas.mjs';
+import {installContextAttributes} from './context-attributes.mjs';
 import {installLanguagePack} from './language-pack.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {runtimeAssets} from './runtime-assets.mjs';
 
-const runtimeBuild = /*TH13_BUILD_INFO*/{version: 'development-incomplete', completeGame: false};
+const runtimeBuild = {version: 'development-incomplete', completeGame: false};
 const game = 'th13', protocol = 'eagler-touhou/1', query = new URLSearchParams(location.search), canvas = document.querySelector('canvas'), $ = s => document.querySelector(s);
 const epoch = Number(query.get('runtimeEpoch'));
 const validEpoch = Number.isSafeInteger(epoch) && epoch > 0;
 let core, launched = false, first = false, stopping = false, options = {}, music = true, queue = Promise.resolve();
 let multiplayerBridge = null;
 let spectatorPlayback = null;
-// 房间预览（launcher prepare-room）：正式多人页在房间内先呈现标题面，
-// launch 时停掉预览泵再交给桥进局（th15 shell 同型）。
 let roomPreview = false, roomOwned = false, launchSerial = 0;
 const emit = (event, fields = {}) => parent.postMessage({protocol, game, epoch, event,
   ...((event === 'first-frame' || event === 'room-menu') ? {launchSerial} : {}), ...fields}, location.origin);
-// E2 input kick：壳消息路径 down 边沿后的即时微拍（?inputKick=0 关闭，默认开）。
-// launcher 内嵌时 iframe URL 由 launcher 自构（不透传站点页 query）；
-// 同源下回退读父窗 query——把 ?inputKick=0 加到站点 URL 重载即可关闭
-//（生产回退路径；跨源读不到时保持默认开）。
-const inputKickParam = () => {
-  let value = query.get('inputKick');
-  if (value === null && parent !== window)
-    try { value = new URLSearchParams(parent.location.search).get('inputKick'); } catch {}
-  return value;
-};
-const inputKick = inputKickParam() !== '0';
-// 触摸坐标换算的 canvas 包围盒缓存：resize/视口变化时失效，避免每次
-// pointermove 消息都强制布局（getBoundingClientRect）。
 let canvasBox = null;
 const invalidateCanvasBox = () => { canvasBox = null; };
 addEventListener('resize', invalidateCanvasBox);
 visualViewport?.addEventListener?.('resize', invalidateCanvasBox);
 const canvasRect = () => canvasBox ??= canvas.getBoundingClientRect();
-// 低延迟画布：SP/MP shell 与独立 th13.html 共用模块（详见 low-latency-canvas.mjs）。
-// desynchronized 让支持的平台的画布绕过合成器排队，提前一个刷新周期上屏；
-// high-performance 在双显卡机器上选独显。实际生效情况记入 renderer 报告。
-const lowLatency = installLowLatencyCanvas(canvas);
-const canvasPresentation = () => lowLatency?.presentation() ?? {desynchronized: false, powerPreference: null};
-const rendererReport = () => lowLatency?.rendererReport() ?? 'SDL3 / WebGL2 / C++';
+installContextAttributes(canvas);
 const keyboard = createBrowserKeyboard({
   hostContext: {
     protocol,
@@ -54,7 +34,6 @@ const keyboard = createBrowserKeyboard({
   accept: code => !!scanCodes[code],
   send: (code, down) => {
     core?._th13_key(scanCodes[code], +down);
-    if (+down && inputKick) core?._th13_input_kick?.(performance.now());
   },
 });
 function clearKeyboard() {
@@ -171,7 +150,7 @@ function offerMultiplayerReport(message, stack) {
     browser: navigator.userAgent,
     presentation: {canvas: [canvas.width, canvas.height], devicePixelRatio,
       visibility: document.visibilityState, fps: window.__eaglerNetplayPresentationFps ?? null,
-      playerAnimation, ...canvasPresentation()},
+      playerAnimation},
     network: {route: ['rtc', 'relay'].includes(route) ? route : null,
       transport: (() => {
         const t = globalThis.__eaglerPeerTransport;
@@ -205,15 +184,11 @@ function offerMultiplayerReport(message, stack) {
 const fatal = e => {
   const message = e?.message || String(e);
   $('#error').textContent = message;
-  try { core?._th13_loop_pause(1); } catch { /* The WASM instance may have trapped. */ }
+  try { core?._th13_loop_pause(1); } catch {}
   offerMultiplayerReport(message, e?.stack);
   emit('error', {error: message});
 };
 
-// 存档读：优先 'th13.scoredat'（原版格式存档键，launcher 存档线写入）；
-// 新键缺席时回退读旧 'th13.save'——过渡兼容：已放出去的旧存档在壳升级后
-// 不至于「消失」。回退只读不写：写路径一律落新键（旧键并存由 remove 统一
-// 清理），一旦写过新键即恒优先。
 function readSaveBytes() {
   try {
     const text = localStorage.getItem('th13.scoredat') ?? localStorage.getItem('th13.save');
@@ -227,8 +202,6 @@ function readSaveBytes() {
   }
 }
 
-// 存档写：一律落 'th13.scoredat'。旧 'th13.save' 保留不动，供旧版本壳
-// 过渡回退读取。
 function writeSaveBytes(bytes) {
   try {
     let binary = '';
@@ -240,30 +213,13 @@ function writeSaveBytes(bytes) {
   }
 }
 
-// ---- Replay 文件通道（replay/th13_(\d{2}|ud[a-z0-9]{4})\.rpyx? 命名空间）----
-// launcher Replay 工作台经 list/read/write/remove postMessage 命令读写本
-// 存储区；游戏内保存经 Module.onReplaySaved 落同一索引（C++ 已先行 import
-// 进 catalog），launch 时 restoreReplaysToCatalog 重导入。键定死（与
-// th13.html 同款内联实现——打包名册固定，不新增模块文件）：索引
-// th13.replays = JSON 数组 [{name,size,ts}]，blob th13.replay.<name> =
-// base64；name 恒为小写（sanitizePath 已归一）。护栏：单条 >1MiB 拒收；
-// 索引总量（base64 账面）超 5MiB 先逐出最旧条目，配额溢出再逐出重试——
-// 正在写入的条目绝不逐出，全部失败返回 false 由调用方报错（不静默丢档）。
-// 多人 Replay 使用独立命名空间（th13mp_XX.rpy）与独立 localStorage 键，
-// 避免与单人 Replay/成绩互相覆盖（MP-DEVELOPMENT 的存储根约定）。
 const replayStem = runtimeBuild.multiplayer ? 'th13mp' : 'th13';
 const replayIndexKey = replayStem + '.replays', replayBlobPrefix = replayStem + '.replay.';
-// launcher 的 replayFilePolicy 目前仍按 th13_ 命名（th15mp 才有 mp 前缀特例）；
-// 正式页同时接受 th13mp_（原生约定）与 th13_（launcher 导入分配）两种名字。
 const replayNamePattern = runtimeBuild.multiplayer
   ? /^th13(?:mp)?_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/
   : /^th13_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?$/;
 const replaySingleMax = runtimeBuild.multiplayer ? 16 * 1024 * 1024 : 1024 * 1024;
 const replayTotalMax = 5 * 1024 * 1024;
-// All-seat recordings exceed localStorage's quota during a normal full run.
-// Keep synchronous native reads in memory; sync/close await durable IDB writes.
-// The durable copy is the Emscripten IDBFS v21 layout the launcher Replay
-// manager reads (replayStorageLocation('th13mp')): /savesth13mp/replay/<name>.
 const multiplayerReplays = new Map();
 const multiplayerReplayRoot = '/savesth13mp', multiplayerReplayDir = multiplayerReplayRoot + '/replay/';
 const idbfsDirectoryMode = 0o40777, idbfsFileMode = 0o100666;
@@ -278,11 +234,9 @@ function idbRequest(request) {
 function idbTransaction(transaction) {
   return new Promise((resolve, reject) => {
     transaction.oncomplete = resolve;
-    // Explicit abort() leaves IDBTransaction.error null.
     transaction.onabort = () => reject(transaction.error || new DOMException('Replay transaction aborted', 'AbortError'));
   });
 }
-// Earlier builds kept records {name, bytes, size, ts} in a private database.
 async function takeLegacyMultiplayerReplays() {
   let missing = false;
   const request = indexedDB.open('th13mp.replays.v1');
@@ -327,7 +281,6 @@ async function initializeMultiplayerReplays() {
   await done;
   if (legacy.length) await idbRequest(indexedDB.deleteDatabase('th13mp.replays.v1')).catch(() => {});
   core.FS.mkdirTree('/save/replay');
-  // Native slot selection must see the same files after a new iframe starts.
   for (const entry of replayIndex()) {
     const bytes = readReplayFile(entry.name);
     if (bytes) core.FS.writeFile('/save/replay/' + entry.name, bytes);
@@ -391,7 +344,7 @@ function writeReplayFile(name, bytes) {
     }
     const list = replayIndex().filter(entry => entry.name !== name);
     list.push({name, size: bytes.length, ts: Date.now()});
-    const weight = entry => Math.ceil((entry.size || 0) * 4 / 3);  // base64 账面
+    const weight = entry => Math.ceil((entry.size || 0) * 4 / 3);
     const dropOldest = () => {
       let oldest = 0;
       for (let i = 1; i < list.length; ++i) if ((list[i].ts ?? 0) < (list[oldest].ts ?? 0)) oldest = i;
@@ -404,8 +357,6 @@ function writeReplayFile(name, bytes) {
       replayWriteIndex(list);
     };
     try {
-      // list 已含本次条目：超总量时逐最旧，绝不逐出正写入的条目（最新 ts，
-      // 且 list.length>1 兜底——单条 ≤1MiB 恒小于总量上限，理论到不了）。
       while (list.reduce((sum, entry) => sum + weight(entry), 0) > replayTotalMax && list.length > 1)
         dropOldest();
       save();
@@ -416,7 +367,7 @@ function writeReplayFile(name, bytes) {
           dropOldest();
           save();
           return true;
-        } catch { /* 继续逐出最旧 */ }
+        } catch {}
       }
       return false;
     }
@@ -438,10 +389,6 @@ function removeReplayFile(name) {
   replayWriteIndex(replayIndex().filter(entry => entry.name !== name));
   return true;
 }
-// launch 时按索引把持久化录像重导入 catalog（与手动导入同一
-// _th13_replay_import 路径：th13_NN.rpy → 编号槽 NN-1 覆盖，其余 → 首个
-// 空闲用户槽；原文件名 → 槽位语义不变）。失败只记 console——持久档损坏
-// 不阻断启动，launcher 工作台仍可读/删原文件。
 function restoreReplaysToCatalog() {
   for (const entry of replayIndex()) {
     const bytes = readReplayFile(entry.name);
@@ -469,7 +416,6 @@ function closeAudio() {
     if (borrowed) s.audioContext = context;
   }
 }
-// M9/P6：多人录像 inspect（native 描述面——eagler_replay_inspect）。
 function inspectReplay(bytes) {
   const pointer = core._malloc(bytes.length);
   try {
@@ -483,7 +429,6 @@ function inspectReplay(bytes) {
     core._free(pointer);
   }
 }
-// M9/P6：回放进度报告（ReplayTransport 消费；replayViewer 打开后周期发布）。
 let playbackPath = null, playbackPaused = false, playbackRate = 1;
 let playbackReportTimer = null;
 function publishPlaybackState() {
@@ -587,8 +532,6 @@ async function initializeTitle() {
     try { scaleOption = new URLSearchParams(parent.location.search).get('renderScale'); } catch {}
   }
   const requested = Number(scaleOption);
-  // 移动端默认 renderScale=1（= 原版原生 640×480 分辨率）：粗指针/小屏
-  // 默认降档保 60fps；显式 options/URL 指定优先。桌面与无头捕获不受影响。
   const mobileDefault = matchMedia('(pointer: coarse)').matches ||
       Math.min(screen.width || 9999, screen.height || 9999) < 640 ? 1 : 2;
   core._th13_render_scale(options.renderScale === 1 ? 1 : options.renderScale === 2 ? 2
@@ -611,8 +554,6 @@ async function command(m) {
   switch (m.command) {
     case 'prepare-room':
       roomOwned = true;
-      // 正式房间预载：呈现原生标题面后才允许 READY（launcher 以
-      // response.presented===true 作为 ACK）。
       if (!runtimeBuild.multiplayer || launched || options.netplayMode === 'lan' ||
           options.replayViewer) throw Error('房间预览需要未启动的多人标题页');
       if (!roomPreview) {
@@ -671,8 +612,6 @@ async function command(m) {
       spectatorPlayback?.stop();
       clearKeyboard();
       core._th13_loop_stop();
-      // Retain the terminal input/ACK cache until the next launch. The other
-      // client can still be completing its last frame when this room appears.
       multiplayerBridge.retire();
       if (!core._th13_room_return() || !core._th13_room_preview())
         throw Error(err() || '返回房间失败');
@@ -691,11 +630,6 @@ async function command(m) {
         apply();
         first = false;
         $('#loading').textContent = '';
-        // 多人：configure → connect → start 由桥完成，成功后才启动 rAF 泵；
-        // 缺省（非多人）保持单席原有顺序。录像启动不建立玩家连接，桥返回
-        // false 时交给 playback 命令/宿主回放器接管。观众启动同理：桥的
-        // launch 走 spectator_connect → start（收流待命），泵启动后由
-        // 观战桥发布 native 报告。
         let loopStarted = !runtimeBuild.multiplayer;
         if (runtimeBuild.multiplayer) {
           if (options.replayViewer === true && typeof options.replayPath === 'string' && options.replayPath) {
@@ -709,23 +643,15 @@ async function command(m) {
           first = true;
           emit('first-frame');
         }
-        // 观众：桥启动后开始周期发布观战报告（暂停/定位控制面）。
         if (options.netplaySpectator) spectatorPlayback?.start();
-        // 持久化录像回灌 catalog（launcher 工作台经 write 写入的、以及上次
-        // 会话游戏内保存的）：晚于 loop_start，与 th13.html 内置预装同一拍。
-        // 多人 Replay 使用独立命名空间，不回灌单席 catalog。
         if (!runtimeBuild.multiplayer) restoreReplaysToCatalog();
-        emit('runtime-info', {renderer: rendererReport(), presentation: canvasPresentation(),
-          architecture: protocol, ...runtimeBuild});
+        emit('runtime-info', {renderer: 'SDL3 / WebGL2 / C++', architecture: protocol, ...runtimeBuild});
       }
       return {};
     case 'spectator-playback':
-      // 观战控制（暂停/继续/定位/回直播）：native SpectatorStageView。
       if (!runtimeBuild.multiplayer) throw Error('此 Runtime 不支持观战控制');
       return spectatorPlayback.command(m);
     case 'playback': {
-      // M9/P6：多人录像回放——open 建档启动；inspect/pause/play/seek/rate
-      // 走 native 观测/控制面（eagler_replay_state / replay_pause 族导出）。
       if (!runtimeBuild.multiplayer) throw Error('此 Runtime 不支持录像回放控制');
       if (!launched || options.replayViewer !== true) throw Error('请先打开录像管理器');
       if (m.action === 'inspect') {
@@ -750,7 +676,6 @@ async function command(m) {
         return {};
       }
       if (m.action === 'seek') {
-        // Timeline values are absolute replay frames.
         if (!core._th13_mp_replay_seek(Number(m.value) || 0))
           throw Error('回放定位目标无效');
         publishPlaybackState();
@@ -814,7 +739,6 @@ async function command(m) {
       const target = sanitizePath(m.path);
       if (target === 'scoreth13.dat') {
         localStorage.removeItem('th13.scoredat');
-        // 过渡键一并清除：readSaveBytes 的回退读会 resurrect 旧档。
         localStorage.removeItem('th13.save');
         return {};
       }
@@ -850,7 +774,6 @@ document.addEventListener('visibilitychange', () => {
   if (launched) {
     clearKeyboard();
     core?._th13_touch_cancel();
-    // M1：多人失焦不得单端暂停；单席保持原有隐藏暂停语义。
     if (!runtimeBuild.multiplayer) core._th13_loop_pause(+document.hidden);
   }
 });
@@ -888,6 +811,7 @@ canvas.addEventListener('webglcontextlost', e => {
   e.preventDefault();
   fatal(Error('图形环境失效，请退出后重新开始。'));
 });
+canvas.addEventListener('webglcontextrestored', () => console.warn('[th13] 图形上下文已恢复，请重新启动游戏。'));
 window.addEventListener('error', event => {
   if (launched && runtimeBuild.multiplayer && options.netplayMode === 'lan' &&
       event.error instanceof WebAssembly.RuntimeError) fatal(event.error);
@@ -945,14 +869,12 @@ const initialized = (async () => {
   });
 
   core.SDL3 = core.SDL3 || {};
+  if (query.get('glDebug') === '1') core._th13_debug_gl_checks?.(1);
   if (parent !== window && parent.__touhouAudioContext) core.SDL3.audioContext = parent.__touhouAudioContext;
   window.Module = core;
   window.FS = core.FS;
   core.resetBrowserKeyboard = () => keyboard.clear();
   await initializeMultiplayerReplays();
-  // 游戏内保存录像（save_replay_slot → 下载 EM_JS 钩子）：catalog 已由
-  // C++ 侧 import_replay_bytes 入槽，这里只补 localStorage 持久化。自吞
-  // 异常——持久化失败不影响游戏内保存/下载流程。
   core.onReplaySaved = (name, bytes) => {
     try {
       return writeReplayFile(String(name).toLowerCase(), bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
@@ -967,11 +889,9 @@ const initialized = (async () => {
       throw Error('请从 eagler-touhou 启动此运行时');
     }
     const {buffer} = await parent.__eaglerPrepareManagedRuntimeDataV1({game, generation: query.get('gameGeneration'), epoch});
-    // The Launcher owns this buffer in the parent realm. Check the native
-    // ArrayBuffer brand instead of comparing its constructor with the iframe's.
     let byteLength = 0;
     try { byteLength = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength').get.call(buffer); }
-    catch { /* Non-ArrayBuffer values are invalid package data. */ }
+    catch {}
     if (byteLength < 16 || byteLength > 256 * 1024 * 1024)
       throw Error('游戏资源包无效');
     const view = new DataView(buffer);
@@ -1025,14 +945,11 @@ const initialized = (async () => {
     if (font && font.ok) core.FS.writeFile('/msgothic.ttc', new Uint8Array(await font.arrayBuffer()));
   }
 
-  // 多人变体由打包器写入 runtimeBuild.multiplayer=true；桥只在正式多人页加载。
   if (runtimeBuild.multiplayer) {
     const {createMultiplayerBridge} = await import('./multiplayer.mjs');
     const manifest = await (await fetch('./manifest.json')).json();
     multiplayerBridge = createMultiplayerBridge({core, getOptions: () => options, manifest,
       emit, onError: fatal, onExit: stop});
-    // 观战桥（M9/P6）：native 观战报告/控制转发；观众端完整录像落地
-    //（complete = th13_mp_spectator_result，接管后可本地保存）。
     spectatorPlayback = createSpectatorPlaybackBridge({
       active: () => launched && options.netplaySpectator === true && !stopping,
       memory: () => core.HEAPU8,

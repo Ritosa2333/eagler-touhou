@@ -1,5 +1,3 @@
-// Generated from eagler-common/browser/{keyboard-owners,keyboard-input-bridge,directory-keyboard}.mjs.
-// Generic browser ownership only. The adapter maps DOM events to logical bits.
 export function keyboardLocation(event) {
   const code = event.code || "";
   if (/^(Shift|Control)(Left|Right)$/.test(code)) return code.endsWith("Left") ? 1 : 2;
@@ -17,22 +15,17 @@ export function updateKeyboardOwners(owners, event, bit, down) {
   if (down) {
     const existing = owners.get(id) || (!code && sameSide.length === 1 ? sameSide[0][1]
       : !code && !location && candidates.length === 1 ? candidates[0][1] : null);
-    // Lifecycle cancellation must not be undone by an old auto-repeat event.
     if (event.repeat && !existing) return false;
     if (!existing) owners.set(id, {bit, location, code});
     return true;
   }
   let released = owners.has(id) ? [[id, owners.get(id)]] : sameSide;
   if (!released.length) released = candidates.filter(([, owner]) => !owner.code && !owner.location);
-  // With no physical evidence, release all candidates rather than arbitrarily
-  // removing one and permanently stranding the other. Known sides stay distinct.
   if (!released.length && !code && !location) released = candidates;
   for (const [owner] of released) owners.delete(owner);
   return released.length > 0;
 }
 
-// The Launcher owns remapping. Runtime adapters synchronously consume the
-// resulting canonical key transitions before their next simulation sample.
 export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch,origin,ready,dispatch,reset,profile=()=> 'standard'}) {
   const schema='eagler-touhou/keyboard-input/1',held=new Set();
   function gamepadMapper(){
@@ -73,8 +66,6 @@ export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch
     sampleLocal(seat){const mode=currentProfile(),owner=mapper();if(mode!=='th09-local'||typeof owner?.sampleLocal!=='function')return -1;
       if(!ready()){apply(owner.clear());return 0;}const bits=owner.sampleLocal(seat);return Number.isInteger(bits)&&bits>=-1&&bits<=4095?bits:0;},
     active:()=>!!mapper(),keyDown:code=>held.has(code),
-    // SDL uses USB HID scancodes. Keep physical-only THPrac helpers on the
-    // same canonical keyboard without sampling or consuming gameplay pulses.
     scancodeState(scan){
       const owner=mapper();if(!owner)return -1;
       const special={40:'Enter',41:'Escape',42:'Backspace',43:'Tab',44:'Space',45:'Minus',55:'Period',
@@ -97,8 +88,6 @@ export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch
   return bridge;
 }
 
-
-// Full browser keyboard boundary; gameplay bindings remain title-owned.
 const names={escape:'Escape',esc:'Escape',backspace:'Backspace',tab:'Tab',enter:'Enter',
   shift:'Shift',control:'Control',alt:'Alt',meta:'Meta',os:'Meta',capslock:'CapsLock',
   numlock:'NumLock',scrolllock:'ScrollLock',pause:'Pause',printscreen:'PrintScreen',
@@ -162,8 +151,6 @@ export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{},hostC
       if(source==='hosted'&&input?.event(event,down,event.inputSource==='physical'?'physical':'virtual'))return true;
       const code=runtimeKeyboardCode(event);if(!code||!accept(code))return false;
       let owners=sources.get(source);if(!owners){owners=new Map();sources.set(source,owners);}
-      // Match releases using the actual event evidence, never the synthesized
-      // Left fallback. Save the resolved DOWN code to publish the eventual UP.
       const evidence={code:event.code,key:event.key,keyCode:event.keyCode,
         location:/^(Alt|Meta)(Left|Right)$/.test(event.code||'')?
           (event.code.endsWith('Right')?2:1):event.location,repeat:!!event.repeat};

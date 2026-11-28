@@ -1,5 +1,3 @@
-// Narrow evidence adapter. This is not an oracle, a pixel comparator, or a
-// substitute for the versioned acceptance contract. Unknown formats stay blocked.
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {execFile} from 'node:child_process';
@@ -23,8 +21,6 @@ const ADDITIONAL_SOURCES = [
   '/work/eagler-touhou/ports/th13-mp/portable/sdl/UnormBlendProfile.hpp',
   '/work/eagler-touhou/ports/th13-mp/web/cpp/sdl/Application.cpp',
 ];
-// Exact identity of a reviewed, bounded diagnostic evidence set; these hashes
-// identify inputs, not golden pixels or tolerance changes.
 const HUD_FILES = {
   "run-5/max.rgba": "a85d98cacc896c2b91e657f7b415ae57cca66a5cb26a63e060a9fe9579f06060",
   "run-5/ghost.rgba": "c97198e3a05711cb2dada9c34badbada44f10043e21a1892be9cea98f9b8ddd8",
@@ -91,9 +87,6 @@ async function hudEvidence(readBytes, runtimeManifest) {
       if (hash(await readBytes(join('/work/artifacts/reference/raw',file))) !== expected)
         throw Error(`HUD asset mismatch: ${file}`);
     }
-    // Execute the fixed-identity checkers on their original raw inputs. They
-    // normally write JSON summaries; suppress only those output writes to keep
-    // this adapter read-only. Do not suppress validation or alter inputs.
     const bootstrap = "import pathlib,runpy,sys; pathlib.Path.write_text=lambda self,*a,**k: 0; runpy.run_path(sys.argv[1],run_name='__main__')";
     for (const file of VERIFY) {
       await execFileAsync('python3',['-c',bootstrap,join(HUD_ROOT,file)],{cwd:'/work',timeout:30000,maxBuffer:8*1024*1024});
@@ -132,9 +125,6 @@ async function originalCapture(readBytes) {
   }
 }
 
-// Build manifest is the trusted, retained build artifact supplied by the caller;
-// equality checks do not cryptographically attest its source inventory. The
-// caller is responsible for retaining it from the actual build and acquisition.
 export function assertRuntimeBuildBinding({expectedFiles, runtimeManifestBytes}) {
   assert(Buffer.isBuffer(runtimeManifestBytes) || runtimeManifestBytes instanceof Uint8Array,
     'Runtime build manifest bytes required');
@@ -156,8 +146,6 @@ export function assertRuntimeBuildBinding({expectedFiles, runtimeManifestBytes})
   return {manifest,sha256:hash(runtimeManifestBytes)};
 }
 
-/** Evaluate a closed delivery and a retained build manifest. The independent
- * reference and full pixel contract are not implemented, so they stay blocked. */
 export async function evaluateRequiredAcceptance({formalReport, runtimeManifestBytes, readBytes=readFile} = {}) {
   const original=await originalCapture(readBytes);
   let hud, runtime;

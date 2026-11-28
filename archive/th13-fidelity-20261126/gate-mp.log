@@ -1,0 +1,101 @@
+== th13 神灵庙移植开发环境 ==
+node    v22.23.3
+python  Python 3.11.2
+emcc    emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.9 (4e4223852a0835923411059a3929907d7df1232e)
+wasi    /opt/wasi-sdk
+ghidra  /opt/ghidra
+workdir /work
+
+==> 排版检查
+排版检查通过：486 个文件
+
+==> WASI harness 构建
+build th13 wasi harness (incremental)
+20/101 translation units
+40/101 translation units
+60/101 translation units
+80/101 translation units
+100/101 translation units
+objects reused 100/101
+{
+  "output": "/work/eagler-touhou/ports/th13-mp/web/artifacts/wasi/th13-harness.wasm",
+  "manifest": "/work/eagler-touhou/ports/th13-mp/web/artifacts/wasi/build.json",
+  "reused": 100
+}
+
+==> 网页运行时构建
+Build th13 C++ / SDL3 / Emscripten
+20/131 translation units
+40/131 translation units
+60/131 translation units
+80/131 translation units
+100/131 translation units
+120/131 translation units
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+emcc: warning: sdl3 port is still experimental [-Wexperimental]
+warning: JS library symbol '$allocateUTF8' is deprecated. Please open a bug if you have a continuing need for this symbol [-Wdeprecated]
+emcc: warning: warnings in JS library compilation [-Wjs-compiler]
+{
+  "game": "th13",
+  "bytes": 4472382,
+  "sha256": "b5004745fe24e9e4b4876acefc1e3927b5234b50008c57341c755ff614f88c76",
+  "output": "/work/eagler-touhou/ports/th13-mp/web/artifacts/sdl3/th13-sdl.mjs"
+}
+
+==> 全部套件与基线比对
+[gate] 开始 anm
+[gate] 开始 ecl
+[gate] 开始 ui
+[gate] 开始 replay
+[gate] 开始 items
+[gate] 开始 score
+[gate] 完成 anm：退出 0，通过 72，失败 0，27 秒
+[gate] 开始 combat
+[gate] 完成 combat：退出 1，通过 0，失败 1，55 秒
+[gate] 开始 bomb
+[gate] 完成 bomb：退出 0，通过 0，失败 0，0 秒
+[gate] 开始 audio
+[gate] 完成 ecl：退出 0，通过 186，失败 0，86 秒
+[gate] 开始 e2e
+[gate] 完成 e2e：退出 1，通过 0，失败 1，0 秒
+[gate] 开始 contracts
+[gate] 完成 contracts：退出 0，通过 9，失败 0，0 秒
+[gate] 开始 multiplayer
+[gate] 完成 multiplayer：退出 1，通过 56，失败 1，0 秒
+[gate] 开始 js
+[gate] 完成 js：退出 0，通过 31，失败 0，4 秒
+[gate] 完成 audio：退出 0，通过 27，失败 0，52 秒
+[gate] 完成 ui：退出 0，通过 551，失败 0，137 秒
+[gate] 完成 score：退出 0，通过 17，失败 0，141 秒
+[gate] 完成 items：退出 0，通过 60，失败 0，258 秒
+[gate] 完成 replay：退出 0，通过 33，失败 0，258 秒
+通过  anm  (72 通过 / 0 失败 / 24730 断言)
+通过  ecl  (186 通过 / 0 失败 / 97586 断言)
+通过  ui  (551 通过 / 0 失败 / 1546049 断言)
+通过  replay  (33 通过 / 0 失败 / 11561 断言)
+通过  items  (60 通过 / 0 失败 / 436 断言)
+通过  score  (17 通过 / 0 失败 / 2592 断言)
+失败  combat  (0 通过 / 1 失败 / 0 断言)
+通过  bomb  (0 通过 / 0 失败 / 0 断言)
+通过  audio  (27 通过 / 0 失败 / 18994 断言)
+失败  e2e  (0 通过 / 1 失败 / 0 断言)
+通过  contracts  (9 通过 / 0 失败 / 55 断言)
+失败  multiplayer  (56 通过 / 1 失败 / 78781 断言)
+通过  js  (31 通过 / 0 失败 / 0 断言)
+[gate] 结果：/work/artifacts/gate/th13-mp/all/results.json
+修复  anm：reimu2406_real_bullet_anm_child_phase_with_follower
+修复  anm：reimu2406_real_bullet_anm_tail_parent_phase_late_by_one
+修复  anm：png_decode_stb
+修复  ecl：real_stage5_phantom_retains_radius_during_opening
+修复  ecl：real_stage3_card_emits_curve_lasers_through_711
+修复  ecl：extra_callback_spawns_real_enemy_and_consumes_trigger_once
+修复  ecl：real_stage2_boss_attack_registers_and_applies_moving_wall_callback
+修复  ecl：stage5_girld01_second_move_uses_sine_acceleration_not_linear
+修复  ui：independent_real_bubble_restore_and_missing_restore_negative_control
+修复  js：tests/managed-shell.test.mjs
+修复  js：actual GraphicsDevice native submission controls (no SDL/GLES dependency)
+[gate] 相对基线无新增失败
+
+real	4m22.870s
+user	0m0.112s
+sys	0m0.090s

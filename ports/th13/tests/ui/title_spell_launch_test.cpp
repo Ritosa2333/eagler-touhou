@@ -14,7 +14,10 @@ struct Host final : TitleScenePlatform {
     bool fade_out_title_music() override { return true; }
     bool sound(i32) override { return true; }
     i32 transitions = 0;
-    bool begin_transition(u32&) override { ++transitions; return true; }
+    bool begin_transition(u32&) override {
+        ++transitions;
+        return true;
+    }
     bool start_game(i32) override { return false; }
     bool title_exit(i32) override { return true; }
     bool hud_text(const HudTextDraw&) override { return true; }

@@ -1,5 +1,3 @@
-// Production ECL target identities enter the full world capture and digest.
-// The same registered tests run standalone and in the cumulative m6 binary.
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "multiplayer/WorldState.hpp"
 
@@ -24,7 +22,6 @@ u64 threads_digest(const EclThreadsSnapshot& threads) {
 std::vector<u8> archive() {
     std::vector<u8> script;
     emit(script, 0, 40, 0, 255, 0, {8});
-    // Equal instruction bytes at distinct real offsets must remain distinct.
     for (u32 destination : {0u, 0u, 4u})
         emit(script, 0, 91, 2, 255, 0,
              {0, bits_of(float(destination)), 10, 0, bits_of(0.f), bits_of(10.f)});
@@ -112,7 +109,6 @@ TEST(null_valid_and_invalid_targets_have_separate_identities) {
     invalid.main.interpolation_targets[0] = reinterpret_cast<const EclInstruction*>(std::uintptr_t(1));
     CHECK(threads_digest(invalid) != empty_digest);
     CHECK(threads_digest(invalid) != valid_digest);
-    // In-range aligned parameter bytes and unaligned bytes are not instructions.
     for (u32 offset : {1u, 16u}) {
         invalid.main.interpolation_targets[0] = reinterpret_cast<const EclInstruction*>(
             reinterpret_cast<const u8*>(instruction(program, 0, 1)) + offset);

@@ -1,0 +1,18 @@
+== th13 神灵庙移植开发环境 ==
+node    v22.23.3
+python  Python 3.11.2
+emcc    emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.9 (4e4223852a0835923411059a3929907d7df1232e)
+wasi    /opt/wasi-sdk
+ghidra  /opt/ghidra
+workdir /work
+[1/10] th13_01.rpy: stages=6 frames=3606 rows=66 ok(a1) (11.3s)
+[2/10] th13_udMy25.rpy: stages=6 frames=3606 rows=66 ok(a1) (10.1s)
+[3/10] th13_udN01.rpy: stages=6 frames=3606 rows=66 ok(a1) (12.1s)
+[4/10] th13_udPn16.rpy: stages=6 frames=3606 rows=66 ok(a1) (11.7s)
+[5/10] th13_udSr01.rpy: stages=6 frames=3606 rows=66 ok(a1) (10.4s)
+[6/10] th13_udWi11.rpy: stages=1 frames=601 rows=11 ok(a1) (1.0s)
+[7/10] demo0.rpy: stages=1 frames=601 rows=11 ok(a1) (2.1s)
+[8/10] demo1.rpy: stages=1 frames=601 rows=11 ok(a1) (1.1s)
+[9/10] demo2.rpy: stages=1 frames=601 rows=11 ok(a1) (1.5s)
+[10/10] demo3.rpy: stages=1 frames=601 rows=11 ok(a1) (1.4s)
+digest-ok draws stride=60 replays=10 build=3ef9bcd3c01fdcf2629a7195d761d93e38c11be6978ffe8f2c2a10a06dbd5b0c

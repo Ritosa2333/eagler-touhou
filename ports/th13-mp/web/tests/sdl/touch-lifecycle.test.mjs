@@ -17,8 +17,6 @@ catch { ({chromium} = require(join(process.env.NODE_PATH ?? '/opt/shot/node_modu
 const MIME = {'.mjs': 'text/javascript', '.wasm': 'application/wasm',
   '.html': 'text/html', '.png': 'image/png'};
 
-// Real page + real production wasm. New coverage below only dispatches
-// PointerEvents and reads production state through the exported probes.
 function startRuntimeServer() {
   const server = createServer(async (request, response) => {
     try {
@@ -47,8 +45,6 @@ async function openRuntime(server) {
 
 function assertRuntimeLogs(consoleMessages, pageErrors) {
   assert.deepEqual(pageErrors, [], 'pageerror raised by the runtime page');
-  // The test server has no favicon.ico; that 404 is host-page noise, not a
-  // product failure. Every other console error fails the test.
   const unexpected = consoleMessages.filter(message =>
     message.type === 'error' && !message.url.endsWith('/favicon.ico'));
   assert.deepEqual(unexpected, [], 'unexpected console errors');
@@ -139,7 +135,6 @@ test('mobile auto fire survives pause, canvas resume and retry in a real run', {
     await page.waitForFunction(() => window.mod?._th13_frame() > 10, null, {timeout: 120000});
     const result = await page.evaluate(() => {
       const mod = window.mod;
-      // Stop RAF without calling loop_stop(), which deliberately clears input.
       mod._th13_loop_pause(1);
       const state = () => [...mod.HEAP32.subarray(mod._th13_probe_state() / 4, mod._th13_probe_state() / 4 + 16)];
       const step = (n = 1) => { for (let i = 0; i < n; ++i)
@@ -159,7 +154,6 @@ test('mobile auto fire survives pause, canvas resume and retry in a real run', {
       const newest = () => Math.max(0, ...generations());
       const fire = document.querySelector('[data-touch="fire"]');
       if (fire.getAttribute('aria-pressed') !== 'true') throw Error('auto fire initially disabled');
-      // Count calls from here onward to detect any control re-send after resume/retry.
       const original = mod._th13_touch_controls; let sends = 0;
       mod._th13_touch_controls = (...args) => { ++sends; return original(...args); };
       until(() => state()[0] === 0 && state()[8] === 1 && state()[9] === 2, 500, 'main');
@@ -174,7 +168,7 @@ test('mobile auto fire survives pause, canvas resume and retry in a real run', {
       until(() => state()[14] === 0, 70, 'resume');
       until(() => newest() > beforeResume, 120, 'resumed shots');
       const sendsAtResume = sends;
-      step(15); // Allow the menu-confirm and pause pulses to release.
+      step(15);
       button('pause'); step(20);
       if (state()[14] === 0) throw Error('second pause did not open');
       const retry = document.querySelector('[data-touch="retry"]');
@@ -201,7 +195,6 @@ test('four-finger canvas contacts open pause and auto fire resumes in a real run
     const {page} = opened;
     const result = await page.evaluate(() => {
       const mod = window.mod;
-      // Stop RAF without calling loop_stop(), which deliberately clears input.
       mod._th13_loop_pause(1);
       const state = () => [...mod.HEAP32.subarray(mod._th13_probe_state() / 4, mod._th13_probe_state() / 4 + 16)];
       const step = (n = 1) => { for (let i = 0; i < n; ++i)
@@ -224,8 +217,6 @@ test('four-finger canvas contacts open pause and auto fire resumes in a real run
 
       const fire = document.querySelector('[data-touch="fire"]');
       const before = {state: state(), fire: fire.getAttribute('aria-pressed'), newest: newest()};
-      // Record only the canvas gesture path. The control-button path calls
-      // _th13_touch_controls; the trance/retry buttons call _th13_key.
       const touchCalls = [], controlCalls = [], keyCalls = [];
       const originalTouch = mod._th13_touch;
       mod._th13_touch = (...args) => { touchCalls.push(args.slice(0, 4)); return originalTouch(...args); };
@@ -238,17 +229,14 @@ test('four-finger canvas contacts open pause and auto fire resumes in a real run
       const fractions = [0.2, 0.35, 0.5, 0.65];
       const points = fractions.map(f => [box.left + box.width * f, box.top + box.height * 0.5]);
       for (let i = 0; i < 4; ++i) pointer(canvas, 'pointerdown', i + 1, points[i][0], points[i][1]);
-      // DOM events alone must not fake the pause: the sampled controller
-      // turns the fourth contact into its Escape pulse on the next frame.
       const immediate = {state: state(), phase: mod._th13_phase()};
-      step(20); // Pause opening frames; same settle as the existing button-path test.
+      step(20);
       const paused = {state: state(), phase: mod._th13_phase(), newest: newest()};
       const frozenFrame = paused.state[5];
       step(10);
       const stillPaused = {state: state(), phase: mod._th13_phase()};
       for (let i = 0; i < 4; ++i) pointer(canvas, 'pointerup', i + 1, points[i][0], points[i][1]);
       step(2);
-      // A canvas tap confirms the pause menu and resumes the run.
       const center = [box.left + box.width * 0.5, box.top + box.height * 0.5];
       pointer(canvas, 'pointerdown', 11, center[0], center[1]);
       pointer(canvas, 'pointerup', 11, center[0], center[1]);
@@ -271,7 +259,6 @@ test('four-finger canvas contacts open pause and auto fire resumes in a real run
     assert.equal(result.after.phase, 1, 'phase probe did not report run after resume');
     assert.equal(result.after.fire, 'true', 'auto fire toggle was lost across pause');
     assert.ok(result.after.newest > result.resumedAt, 'auto fire did not produce new shots after resume');
-    // Four distinct canvas contacts, ids 1..4, mapped through the canvas box.
     const downs = result.touchCalls.filter(call => call[0] === 0 && call[1] >= 1 && call[1] <= 4);
     assert.deepEqual(downs.map(call => call[1]), [1, 2, 3, 4], 'canvas pointerdown ids');
     for (let i = 0; i < downs.length; ++i) {
@@ -283,7 +270,6 @@ test('four-finger canvas contacts open pause and auto fire resumes in a real run
     assert.deepEqual(ups.map(call => call[1]), [1, 2, 3, 4], 'canvas pointerup ids');
     assert.ok(result.touchCalls.some(call => call[0] === 0 && call[1] === 11), 'resume canvas tap down');
     assert.ok(result.touchCalls.some(call => call[0] === 2 && call[1] === 11), 'resume canvas tap up');
-    // Canvas coordinates must not travel through the touch-control button path.
     assert.deepEqual(result.controlCalls, [], 'canvas gesture sent touch-control button state');
     assert.deepEqual(result.keyCalls, [], 'canvas gesture used the key-button path');
     console.log('four-finger evidence: ' + JSON.stringify({
@@ -355,16 +341,12 @@ test('single-finger canvas drag moves the player and stops on release in a real 
       const released = {player: player(), state: state()};
       return {before, down, dragged, released, touchCalls, controlCalls, keyCalls};
     });
-    // Auto fire holds Z (90); direction keys 37..40 must be absent so the
-    // observed movement can only come from the canvas drag path.
     assert.deepEqual(result.before.keys.filter(key => key >= 37 && key <= 40), [],
       'direction keys were held before the drag');
     assert.equal(result.before.state[0], 1, 'run scene was not active before the drag');
     assert.equal(result.down.state[14], 0, 'canvas pointerdown paused the run');
     assert.ok(Math.abs(result.down.player[0] - result.before.player[0]) < 1e-6,
       'player moved on pointerdown alone');
-    // 0.2 canvas-width drag: the production controller converts the delta to
-    // playfield coordinates and the 60Hz battle moves the player each step.
     assert.ok(result.dragged.player[0] - result.before.player[0] > 20,
       `drag did not move player right: ${JSON.stringify([result.before.player, result.dragged.player])}`);
     assert.ok(Math.abs(result.dragged.player[1] - result.before.player[1]) < 1e-6,

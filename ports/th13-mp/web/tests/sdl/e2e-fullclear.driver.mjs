@@ -1,25 +1,3 @@
-// E2E 全流程驱动：th13.html 页面上用原版 th13_01.rpy 的逐帧键态当"玩家键盘"
-// 驱动全新对局 1CC 全通，走原版保存流程（结算名 ARINATEI → 回放保存槽 1 →
-// END）触发导出，落盘导出件与 th13.scoredat，并断言 catalog/persistence。
-//
-// 驱动方式与认证轮同源：页面壳 loop_start 后立即 _th13_loop_pause(1) 冻结
-// rAF 帧，全部帧推进走 _th13_debug_frame() 确定性单帧泵；键态经 _th13_key
-// 键沿注入生产 GameKeyboard::keyboard_keys → GameInput::update 链（与真实
-// 键盘同一转换路径，无任何测试后门）。
-//
-// 种子对齐：对局模拟只消费 game_random（0x4dc324；ANM 管理器全部绑定
-// visual 流，ApplicationState.hpp:183），boot→stage1 关首之间无战斗系统 →
-// game_random 在 stage1 关首的种子 == boot 种子。原版 th13_01.rpy stage1
-// 头 +0x02 stamp 即原版关首 RNG 态（回放恢复 0x449070 同源语义），故
-// __th13_boot_seed = stage1 stamp 时全新对局与原版录像逐帧同态。中段以
-// 各关关首分（原版 stage 头 +0x1C）为硬门，最终以导出件逐字段比对为准。
-//
-// 用法（外层仓库根，shot 镜像）：
-//   make shot CMD='node eagler-touhou/ports/th13/web/tests/sdl/e2e-fullclear.driver.mjs \
-//     --inputs artifacts/tmp-scratch/e2e_inputs.json --out artifacts/tmp-scratch/e2e'
-// 截断冒烟：--limit-stage 2 = 驱动完整 stage1 并在 stage2 关首门过后即停。
-// 产物：--out 目录下 e2e_export.rpy / e2e_export_download.rpy（如有）/
-//   e2e_score.dat / e2e_report.json / *.png。
 import {createServer} from 'node:http';
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
 import {dirname, join, resolve} from 'node:path';
@@ -33,15 +11,15 @@ const opt = (name, fallback) => {
 };
 const flag = name => args.includes('--' + name);
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../../..'); // 外层仓库根
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../../..');
 const portRoot = join(root, 'eagler-touhou/ports/th13');
 const runtimeDir = join(portRoot, 'web/sdl-runtime');
 const buildDir = process.env.TH13_SDL3_BUILD_DIR ?? join(portRoot, 'web/artifacts');
 const inputsPath = resolve(root, opt('inputs', 'artifacts/tmp-scratch/e2e_inputs.json'));
 const outDir = resolve(root, opt('out', 'artifacts/tmp-scratch/e2e'));
 const deadlineMin = Number(opt('deadline-min', '55'));
-const limitStage = Number(opt('limit-stage', '0'));   // >0：N 关关首门过后即停（截断冒烟）
-const bootSeedArg = opt('boot-seed', '');             // 缺省 = stage1 stamp（N=0 假设）
+const limitStage = Number(opt('limit-stage', '0'));
+const bootSeedArg = opt('boot-seed', '');
 
 const inputs = JSON.parse(await readFile(inputsPath, 'utf8'));
 const stage1Seed = inputs.stages[0].seed;
@@ -51,11 +29,8 @@ if (!Number.isInteger(bootSeed) || bootSeed < 0 || bootSeed > 65535)
 const held = inputs.stages.map(s => Uint16Array.from(s.held));
 const expectedScore = inputs.stages.map(s => s.start_score);
 const NAME = 'ARINATEI';
-// 0x454050 字符表（TitleResultEntry.cpp kTitleResultNameCharacters；0..87
-// 字符 + 88=SPACE/89=DEL/90=END）。13 列网格，光标规则见 edit_name。
 const NAME_POS = {A: 0, R: 17, I: 8, N: 13, T: 19, E: 4};
 
-// Z/X/Shift/方向/Esc/Ctrl/C 的 Windows 扫描码（KeyboardMap.inc 同表）。
 const SCAN = {Z: 44, X: 45, SHIFT: 42, UP: 200, DOWN: 208, LEFT: 203, RIGHT: 205,
               ESC: 1, CTRL: 29, C: 46};
 
@@ -71,8 +46,6 @@ const deadline = started + deadlineMin * 60000;
 const left = () => deadline - Date.now();
 if (left() <= 0) throw Error('deadline already passed');
 
-// 91 格名字光标的最短按键路径（↑↓±13、←→±1 带行首/行尾环绕；
-// 与 TitleResultEntry::edit_name 完全同式）。
 function nameMoves(from, to) {
   const step = c => [
     [(c + 91 - 13) % 91, SCAN.UP],
@@ -143,7 +116,6 @@ try {
       mark('download-captured', {suggested: d.suggestedFilename()});
     } catch (e) { mark('download-save-failed', {error: String(e)}); }
   });
-  // 种子必须先于模块初始化（prepare_platform 的 0x43a040 种子序）。
   await page.addInitScript(seed => { window.__th13_boot_seed = seed; }, bootSeed);
   await page.addInitScript(() => {
     let module;
@@ -153,15 +125,12 @@ try {
         const start = value._th13_loop_start;
         value._th13_loop_start = () => {
           start();
-          // 冻结 rAF 帧钟：对局推进全部走 th13_debug_frame 确定性泵。
           value._th13_loop_pause(1);
           window.__e2e_loop_paused = true;
         };
       }});
   });
 
-  // __e2e 句柄挂在页面 window 上，reload 会清空全部页面 JS 状态；
-  // 必须随每次 boot 重装，reload 持久化复查才能继续用 probe。
   const installE2e = () => page.evaluate(() => {
     window.__e2e = {
       probe() {
@@ -202,7 +171,6 @@ try {
   if (seedSeen !== bootSeed) throw Error('boot seed override did not take effect');
 
   const probe = async () => page.evaluate(() => window.__e2e.probe());
-  // 分块等待谓词：单块 4000 泵，块间可打日志/查截止时间。
   const pumpUntil = async (pred, cap, what) => {
     let done = 0, last;
     while (done < cap) {
@@ -220,13 +188,10 @@ try {
     await page.evaluate(s => { window.__e2e.key(s, 1); window.__e2e.pump(1);
                                window.__e2e.key(s, 0); window.__e2e.pump(2); }, scan);
   };
-  // 确认拍（自机 Z → 对局请求）：只泵确认帧本身，装载/创建/首个对局帧交给
-  // game() 锚定臂，避免 held[0] 前的任何多余对局帧（差一帧即全跑偏）。
   const tapOnce = async scan => {
     await page.evaluate(s => { window.__e2e.key(s, 1); window.__e2e.pump(1);
                                window.__e2e.key(s, 0); }, scan);
   };
-  // 截图辅助证据：失败/超时不杀主链路（截图曾 30s 超时打断已到结算屏的运行）。
   const shot = async name => {
     try {
       await page.screenshot({path: join(outDir, name + '.png'), timeout: 15000});
@@ -234,14 +199,11 @@ try {
     } catch (e) { mark('screenshot-failed', {name, error: String(e).slice(0, 120)}); }
   };
 
-  // ---- 标题 → 新对局 → 灵梦/Normal ----
   mark('title-wait');
   await pumpUntil('p[0]===0 && p[8]===1 && p[9]===2', 1500, 'title interactive');
   await shot('01-title');
-  await tap(SCAN.Z);                                             // Start
+  await tap(SCAN.Z);
   await pumpUntil('p[8]===6 && p[9]===2', 400, 'difficulty screen');
-  // 难度光标初值 = configured_difficulty（TitleSelectionSettings 默认 1 =
-  // Normal，非 0）——按 probe 实测归位到 Normal(1)，不盲按方向键。
   {
     let p = await probe();
     let guard = 0;
@@ -260,10 +222,9 @@ try {
     mark('character-screen', {cursor: p[10], difficulty: p[3], character: p[4]});
   }
   await shot('02-character');
-  await tapOnce(SCAN.Z);                                         // Reimu（初始光标 0）
+  await tapOnce(SCAN.Z);
   mark('character-confirmed');
 
-  // ---- 对局：逐帧键态注入（锚定臂 + 关首切换 + 关首分硬门）----
   const game = await page.evaluate(src => {
     const held = src.map(a => Uint16Array.from(a));
     const scanFor = h => {
@@ -297,7 +258,6 @@ try {
           ++g.pumped;
           const p = window.__e2e.probe();
           if (p[0] === 1 && p[2] === 1) {
-            // 创建拍（complete_loading）：本拍无场景 tick；下一拍 = 录像帧 1。
             g.anchored = true; g.stream = 0; g.i = 0;
             g.stageScores[0] = p[8]; g.stageFrames[0] = p[5];
           }
@@ -310,8 +270,6 @@ try {
             apply(0);
             return {finished: true, g};
           }
-          // 本拍 = 下一关激活拍（startup_age 30 → activate_next_stage 同拍
-          // begin_record_stage + 场景 tick 记录新块第 1 帧）。
           g.stream += 1; g.i = 0; g.activationPending = g.stream + 1;
         }
         apply(held[g.stream][g.i]);
@@ -369,7 +327,6 @@ try {
     if (r.finished || g.finished) { mark('stage6-stream-exhausted', {index: g.finishedAtIndex}); break; }
   }
   if (limitStage > 0) {
-    // 截断冒烟：对局未通关、无导出，只落证据。
     await shot('smoke-stop');
     await writeFile(join(outDir, 'e2e_report.json'),
                     JSON.stringify({mode: 'smoke', bootSeed, stage1Seed, limitStage,
@@ -378,10 +335,6 @@ try {
                                    null, 2) + '\n');
     mark('smoke-done');
   } else {
-    // ---- 结算演出 → Ending → 标题结算名录入 ----
-    // 首见结局 bit0 封锁持键快进（EndingScene op_text_wait else 分支）；
-    // 原生放行 = Z 按下沿逐条释放文本等待（0x416b9b 三路放行 a）——真实
-    // 玩家路径。逐块连打 Z 直到标题结算屏（e01+staff 全程自然等待过长）。
     let endingPumps = 0;
     for (;;) {
       if (left() < 120000) throw Error('deadline while in ending');
@@ -405,8 +358,6 @@ try {
     }
     await shot('03-result-name');
 
-    // 名录入：新档 ST 上次名为空，编辑器从字符表首位 0 起步；第 8 字后
-    // 光标自动跳 90（END）。
     let cursor = 0;
     for (let k = 0; k < NAME.length; ++k) {
       const target = NAME_POS[NAME[k]];
@@ -414,19 +365,15 @@ try {
       await tap(SCAN.Z);
       cursor = k === NAME.length - 1 ? 90 : target;
     }
-    await tap(SCAN.Z);  // END → record_clear_result_name → 续关数 0 → 流程 0xf
+    await tap(SCAN.Z);
     await pumpUntil('p[8]===15 && p[9]===2', 800, 'replay slot screen');
     mark('replay-slot-screen');
     await shot('04-replay-slot');
-    await tap(SCAN.Z);  // 槽 1（result_slot 默认 0）→ 名字编辑（ARINATEI 已携带，光标 90）
+    await tap(SCAN.Z);
     await pumpUntil('p[8]===15 && p[9]===3', 800, 'replay name editor');
-    await tap(SCAN.Z);  // END → save_replay_slot(1, ARINATEI) → encode+import+下载+持久化
+    await tap(SCAN.Z);
     mark('save-committed');
 
-    // scoreth13.dat 镜像按帧分片压缩（FileStore kScoreDatTokensPerFrame=400）：
-    // END 落榜只登记待写镜像，localStorage 要等编码器整幅跑完才更新。保存点后
-    // 按块泵帧直到 'th13.scoredat' 连续两块稳定再采样——否则读到的是滞后镜像
-    //（榜表默认、ST 名空白），且 reload 前后不一致会误报存储漂移。
     let drained = await page.evaluate(() => localStorage.getItem('th13.scoredat'));
     let drainStable = 0;
     for (let chunk = 0; chunk < 20 && drainStable < 2; ++chunk) {
@@ -458,11 +405,10 @@ try {
       mark('hint-unexpected', {hint: saved.hint, note: 'save 链 import 应置 th13_01 → 槽 0'});
     await shot('05-after-save');
 
-    // ---- 回主菜单 → Replay 菜单出现 th13_01 → 实播验证 catalog ----
-    await tap(SCAN.X);  // 槽屏 Esc → 收面回主菜单
+    await tap(SCAN.X);
     await pumpUntil('p[8]===1 && p[9]===2', 1200, 'back to main menu');
     mark('back-to-main');
-    for (let i = 0; i < 4; ++i) await tap(SCAN.DOWN);              // Start → Replay
+    for (let i = 0; i < 4; ++i) await tap(SCAN.DOWN);
     {
       const p = await probe();
       if (p[10] !== 4) throw Error('main menu cursor ' + p[10] + ' != 4 (Replay)');
@@ -470,18 +416,14 @@ try {
     await tap(SCAN.Z);
     await pumpUntil('p[8]===11', 1200, 'replay menu');
     await shot('06-replay-menu');
-    // Replay 菜单入场有自己的 substate 时序：进入 11 屏后等一拍再 Z；
-    // 未激活则每轮 60 泵后重试（与 e2e-c4-assert.mjs 的收尾断言同款）。
     let rp = null;
     for (let attempt = 0; attempt < 8 && !(rp && rp.active); ++attempt) {
       await page.evaluate(n => window.__e2e.pump(n), 60);
-      await tap(SCAN.Z);  // 高亮槽（hint=0 → th13_01）实播：catalog 内容即本次导出
+      await tap(SCAN.Z);
       rp = await page.evaluate(cap => {
         let j = null;
         for (let i = 0; i < cap; ++i) {
           if (!window.mod._th13_debug_frame()) break;
-          // progress 返回 char*（指针数字），必须 UTF8ToString 再 parse——
-          // 直接 JSON.parse(指针)会得到纯数字，形如 80540432（两轮 E2E 实测踩坑）。
           j = JSON.parse(window.mod.UTF8ToString(window.mod._th13_debug_replay_progress()));
           if (j.active && j.slot_index === 0 && j.slot_number === 1 && j.consumed >= 30) return j;
         }
@@ -495,7 +437,6 @@ try {
       throw Error('replay menu playback did not open our export: ' + JSON.stringify(rp));
     await shot('07-replay-playing');
 
-    // ---- 刷新持久化（catalog 重建后仍在）----
     await page.reload({waitUntil: 'domcontentloaded'});
     await boot();
     const after = await page.evaluate(() => ({

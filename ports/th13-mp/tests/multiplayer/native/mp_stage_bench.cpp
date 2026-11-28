@@ -1,7 +1,3 @@
-// Diagnostic benchmark: real production scene, 2-3 seats, one stage at a chosen
-// difficulty, scripted inputs. Reports per-phase wall time (simulate, present,
-// predicted-frame checkpoint capture, restore) bucketed by boss/spell activity.
-//   TH13_BENCH_STAGE=3 TH13_BENCH_DIFF=3 TH13_BENCH_SEATS=2 TH13_BENCH_FRAMES=30000
 #include "../../harness/test_framework.hpp"
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/Session.hpp"
@@ -41,7 +37,7 @@ struct Series {
     }
 };
 u32 script_input(i32 seat, long frame) {
-    u32 held = 1;  // shot
+    u32 held = 1;
     const long phase = (frame / 45 + seat * 7) % 8;
     switch (phase) {
         case 0: held |= 0x40; break;
@@ -56,7 +52,7 @@ u32 script_input(i32 seat, long frame) {
     if ((frame / 200 + seat) % 3 == 0) held |= 8;
     return held;
 }
-}  // namespace
+}
 
 int main() {
     const long stage = env_int("TH13_BENCH_STAGE", 3);

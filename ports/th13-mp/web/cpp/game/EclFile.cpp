@@ -1,25 +1,17 @@
-// th13 ECL 线程快照实现（块布局见 EclFile.hpp 文件头）。
 #include "EclFile.hpp"
 
 #include <cmath>
 
 namespace th13 {
 namespace {
-template <class T>
-void put(u8* p, u32 at, const T& v) {
-    std::memcpy(p + at, &v, sizeof v);
-}
-template <class T>
-void get(const u8* p, u32 at, T& v) {
-    std::memcpy(&v, p + at, sizeof v);
-}
+template <class T> void put(u8* p, u32 at, const T& v) { std::memcpy(p + at, &v, sizeof v); }
+template <class T> void get(const u8* p, u32 at, T& v) { std::memcpy(&v, p + at, sizeof v); }
 u32 word(const u8* p, u32 at) {
     u32 v;
     get(p, at, v);
     return v;
 }
 
-// 游标合法性：偏移必须落在指令边界上（逐指令推进复核）。
 const EclInstruction* locate(EclProgram& p, i32 routine, i32 offset) {
     if (routine < 0 || u32(routine) >= p.definitions.size() || offset < 0) return nullptr;
     const auto& d = p.definitions[routine];
@@ -35,7 +27,6 @@ const EclInstruction* locate(EclProgram& p, i32 routine, i32 offset) {
     return cursor == u32(offset) ? reinterpret_cast<const EclInstruction*>(code + offset) : nullptr;
 }
 
-// 指令指针 → {routine, offset}（快照侧代理；空指针 → {0,0}）。
 bool address(const EclContext& c, const EclInstruction* target, i32& routine, i32& offset) {
     if (!target) {
         routine = offset = 0;
@@ -56,8 +47,6 @@ bool address(const EclContext& c, const EclInstruction* target, i32& routine, i3
     return false;
 }
 
-// 通道目标打包：u32 = routine<<18 | (offset/2)。偏移 4 对齐且 < 0x80000、
-// routine < 16384 时无损；越界视为快照损坏。
 bool pack_target(i32 routine, i32 offset, u32& out) {
     if (routine < 0 || routine >= 1 << 14 || offset < 0 || offset >= 1 << 19 || offset % 4) return false;
     out = (u32(routine) << 18) | (u32(offset) >> 1);
@@ -68,7 +57,7 @@ bool unpack_target(u32 raw, i32& routine, i32& offset) {
     offset = i32((raw & 0x3ffff) << 1);
     return true;
 }
-}  // namespace
+}
 
 bool EclFile::write(const EclContext& c, Block& out) {
     error.clear();
@@ -155,9 +144,10 @@ bool EclFile::read(const u8* data, u32 size, EclContext& out, EclProgram& progra
     return true;
 }
 
-bool EclFile::write_threads(const EclThreadsSnapshot& threads, std::vector<u8>& out, u32 owner_offset, u32 child_offset) {
+bool EclFile::write_threads(const EclThreadsSnapshot& threads, std::vector<u8>& out, u32 owner_offset,
+                            u32 child_offset) {
     error.clear();
-    constexpr u32 kStride = 0x11d4;  // 0x11C4 块 + 16 字节链表节点
+    constexpr u32 kStride = 0x11d4;
     if (owner_offset > out.size() || out.size() - owner_offset < 0x11dc || child_offset > out.size() ||
         child_offset < owner_offset + 0x11dc || threads.children.size() > 65536) {
         error = "ECL checkpoint owner/child region is unavailable";
@@ -166,7 +156,6 @@ bool EclFile::write_threads(const EclThreadsSnapshot& threads, std::vector<u8>& 
     Block main_block;
     if (!write(threads.main, main_block)) return false;
     std::memcpy(out.data() + owner_offset + 16, main_block.data(), main_block.size());
-    // 子线程存在标志放在主线程块尾节点 +8（node dword 2）。
     put(out.data(), owner_offset + 0x11d8, threads.children.empty() ? u32(0) : u32(1));
     for (u32 i = 0; i < threads.children.size(); i++) {
         Block child;
@@ -178,7 +167,6 @@ bool EclFile::write_threads(const EclThreadsSnapshot& threads, std::vector<u8>& 
         }
         out.resize(at + kStride, 0);
         std::memcpy(out.data() + at, child.data(), child.size());
-        // 链继续标志放在块尾 +4（节点首 dword 位置）。
         put(out.data(), at + 0x11c4, i + 1 < threads.children.size() ? u32(1) : u32(0));
     }
     return true;
@@ -197,7 +185,7 @@ bool EclFile::read_threads(const u8* data, u32 size, EclThreadsSnapshot& out, Ec
     EclThreadsSnapshot next;
     if (!read(owner + 16, size - owner_offset - 16, next.main, p)) return false;
     u32 at = child_offset;
-    if (word(owner, 0x11d8)) {  // 主线程块尾节点 +8 的子线程存在标志
+    if (word(owner, 0x11d8)) {
         bool more = true;
         while (more) {
             if (next.children.size() >= 65536 || size - at < 0x11d4) {
@@ -215,4 +203,4 @@ bool EclFile::read_threads(const u8* data, u32 size, EclThreadsSnapshot& out, Ec
     return true;
 }
 
-}  // namespace th13
+}

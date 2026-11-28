@@ -1,9 +1,7 @@
-// Practice state-machine regression: original 0x44cd10 -> 0x450fb0 ->
-// 0x451450 -> 0x451cb0. Synthetic ANM tests behavior, not visual fidelity.
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
-#include "game/TitleScene.hpp"
 #include "game/PostGameFlow.hpp"
+#include "game/TitleScene.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include <memory>
 #include <vector>
@@ -16,12 +14,14 @@ std::vector<u8> practice_title_fixture() {
     auto scripts = trivial_scripts(243);
     auto children = [&](i32 root, std::initializer_list<i32> ids) {
         scripts[u32(root)].clear();
-        for (i32 id : ids) scripts[u32(root)].push_back(spawn(id));
+        for (i32 id : ids)
+            scripts[u32(root)].push_back(spawn(id));
         scripts[u32(root)].push_back(wait());
         scripts[u32(root)].push_back(stop());
     };
     scripts[0].clear();
-    for (i32 id = 3; id <= 22; ++id) scripts[0].push_back(spawn(id));
+    for (i32 id = 3; id <= 22; ++id)
+        scripts[0].push_back(spawn(id));
     scripts[0].push_back(wait());
     scripts[0].push_back(stop());
     children(89, {92, 93, 91, 90});
@@ -47,10 +47,10 @@ struct PracticeHost final : TitleScenePlatform {
     bool clear_current_wave() override { return true; }
     bool title_exit(i32) override { return true; }
     bool fade_out_title_music() override { return true; }
-    bool sound(i32 id) override { sounds.push_back(id); return true; }
-    // Native launch sites (0x451cb0/0x452a43/0x45786f → 0x415650 type0) create
-    // the run-owned transition root on the application side; the scene only
-    // delegates. Mirror that contract: the host creates the bank-8 root.
+    bool sound(i32 id) override {
+        sounds.push_back(id);
+        return true;
+    }
     bool begin_transition(u32& animation) override {
         animation = animations.create(8, 0, -1, 0, {});
         return animation != 0;
@@ -64,10 +64,12 @@ struct PracticeHost final : TitleScenePlatform {
         launched_mode = progress.run_mode_flags & 0x30u;
         return true;
     }
-    bool hud_text(const HudTextDraw& text) override { texts.push_back(text); return true; }
+    bool hud_text(const HudTextDraw& text) override {
+        texts.push_back(text);
+        return true;
+    }
     bool practice_stage_played(i32 c, i32 d, i32 s) override {
-        return c >= 0 && c < 4 && d >= 0 && d < 4 && s >= 1 && s <= 6 &&
-               (played[u32(c * 4 + d)] & (1u << (s - 1)));
+        return c >= 0 && c < 4 && d >= 0 && d < 4 && s >= 1 && s <= 6 && (played[u32(c * 4 + d)] & (1u << (s - 1)));
     }
 };
 
@@ -85,11 +87,8 @@ struct PracticeHarness {
         for (i32 i = 0; i < 2; ++i) {
             updates[u32(i)].owner = &manager;
             updates[u32(i)].enabled = true;
-            updates[u32(i)].run = i == 0 ? +[](void* p) {
-                return static_cast<AnmManager*>(p)->update(true) ? 1 : 5;
-            } : +[](void* p) {
-                return static_cast<AnmManager*>(p)->update(false) ? 1 : 5;
-            };
+            updates[u32(i)].run = i == 0 ? +[](void* p) { return static_cast<AnmManager*>(p)->update(true) ? 1 : 5; }
+                                         : +[](void* p) { return static_cast<AnmManager*>(p)->update(false) ? 1 : 5; };
             CHECK(scheduler.add(updates[u32(i)], FramePass::Update, i == 0 ? 9 : 34) >= 0);
         }
         CHECK(load_bank(manager, 16, practice_title_fixture()));
@@ -104,7 +103,10 @@ struct PracticeHarness {
         CHECK(scheduler.update() >= 0);
         CHECK(scene->error.empty());
     }
-    void advance(i32 count) { for (i32 i = 0; i < count; ++i) frame(); }
+    void advance(i32 count) {
+        for (i32 i = 0; i < count; ++i)
+            frame();
+    }
     void ready_main() {
         advance(kTitleBootIntroFrames + kTitleMenuReadyDelay + 3);
         CHECK_EQ(i32(scene->state.screen), i32(TitleScreen::Main));
@@ -114,7 +116,7 @@ struct PracticeHarness {
         settings.configured_difficulty = rank;
         settings.preferred_character = character;
         ready_main();
-        frame(0x20);  // default save skips Extra: 0 -> 2
+        frame(0x20);
         CHECK_EQ(scene->state.menu.cursor, 2);
         frame(1);
         advance(32);
@@ -133,11 +135,11 @@ struct PracticeHarness {
         CHECK_EQ(progress.character, character);
         CHECK_EQ(progress.difficulty, rank);
         CHECK_EQ(progress.run_mode_flags & 0x30u, 0x10u);
-        CHECK_EQ(progress.practice_mode, 0);  // launch, not menu entry, configures GameInf
+        CHECK_EQ(progress.practice_mode, 0);
         CHECK_EQ(host.launches, 0);
     }
 };
-}  // namespace
+}
 
 TEST(practice_default_save_has_six_locked_navigable_stages) {
     PracticeHarness h;
@@ -183,9 +185,10 @@ TEST(practice_stage1_launch_inherits_selected_character_rank_and_mode) {
 TEST(practice_stage6_gate_is_independent_per_character_and_rank) {
     PracticeHarness h;
     h.enter_practice(3, 1);
-    for (i32 row = 0; row < 5; ++row) h.frame(0x20);
-    h.host.played[0 * 4 + 3] = 0x20;  // wrong character
-    h.host.played[1 * 4 + 2] = 0x20;  // wrong difficulty
+    for (i32 row = 0; row < 5; ++row)
+        h.frame(0x20);
+    h.host.played[0 * 4 + 3] = 0x20;
+    h.host.played[1 * 4 + 2] = 0x20;
     h.frame(1);
     CHECK_EQ(h.scene->state.substate, 2);
     h.host.played[1 * 4 + 3] = 0x20;
@@ -203,18 +206,18 @@ TEST(practice_stage6_gate_is_independent_per_character_and_rank) {
 TEST(practice_cancel_chain_then_ordinary_start_has_no_mode_or_cursor_leak) {
     PracticeHarness h;
     h.enter_practice(2, 1);
-    h.frame(0x20);  // remember Stage 2 row
+    h.frame(0x20);
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Character));
-    CHECK_EQ(h.scene->state.menu.cursor, 1);  // 0x451450 uses the character index.
+    CHECK_EQ(h.scene->state.menu.cursor, 1);
     CHECK_EQ(h.scene->state.menu.depth, 2);
     CHECK_EQ(h.settings.practice_stage, 1);
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Difficulty));
     CHECK_EQ(h.scene->state.menu.cursor, 2);
-    CHECK_EQ(h.scene->state.handles[129], 0u);  // 0x451450 case4 retires the active root.
+    CHECK_EQ(h.scene->state.handles[129], 0u);
     CHECK_EQ(h.scene->state.menu.depth, 1);
     h.frame(0x100);
     h.advance(25);
@@ -225,7 +228,7 @@ TEST(practice_cancel_chain_then_ordinary_start_has_no_mode_or_cursor_leak) {
     CHECK_EQ(h.progress.run_mode_flags & 0x30u, 0u);
     CHECK_EQ(h.progress.practice_mode, 0);
     CHECK(h.scene->state.version_bar != 0);
-    h.frame(0x10);  // Practice -> Start, skipping Extra again
+    h.frame(0x10);
     CHECK_EQ(h.scene->state.menu.cursor, 0);
     h.frame(1);
     h.advance(32);
@@ -314,10 +317,6 @@ TEST(practice_game_return_restores_stage_and_entire_cancel_history_without_scori
     h.settings.preferred_character = h.settings.configured_difficulty = 0;
     h.settings.practice_stage = 0;
     h.scene = std::make_unique<TitleScene>(h.progress, h.settings, h.manager, h.host, h.scheduler);
-    // Application begin_title translates a real Practice quit (pause Exit
-    // reason1 / GameOver-exit reason3, both original scene request 4) to
-    // reason4. Retry is the separate original destination0xb path; it never
-    // reaches begin_title (0x43c1c0 case0xb restarts the stage in place).
     CHECK(returns_to_practice_selection(h.progress, 1, false));
     CHECK(returns_to_practice_selection(h.progress, 3, false));
     h.scene->state.return_reason = 4;
@@ -336,7 +335,7 @@ TEST(practice_game_return_restores_stage_and_entire_cancel_history_without_scori
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Character));
-    CHECK_EQ(h.scene->state.menu.cursor, 3);  // 0x451450 cursor is the character index.
+    CHECK_EQ(h.scene->state.menu.cursor, 3);
     h.frame(0x100);
     h.advance(15);
     CHECK_EQ(i32(h.scene->state.screen), i32(TitleScreen::Difficulty));
@@ -356,9 +355,6 @@ TEST(practice_return_classifier_preserves_ordinary_replay_and_gameover_paths) {
     progress.practice_mode = 1;
     progress.difficulty = 2;
     progress.starting_stage = 3;
-    // Pause Exit (reason1) and GameOver Continue-menu exit (reason3) both issue
-    // original scene request 4 (0x43e780:209 / 0x43fa90:549); both re-enter
-    // Stage Select while dc670==4 survives.
     CHECK(returns_to_practice_selection(progress, 1, false));
     CHECK(returns_to_practice_selection(progress, 3, false));
     CHECK(!returns_to_practice_selection(progress, 0, false));
@@ -376,9 +372,6 @@ TEST(practice_return_classifier_preserves_ordinary_replay_and_gameover_paths) {
 }
 
 TEST(ordinary_and_replay_style_returns_still_enter_main) {
-    // reason 3 语义更新（0x43c1c0 case0x10 → dc670=3 → 0x454050 战后名前
-    // 录入）：不再直入主菜单，战后流程由 title_result_flow_test 覆盖；
-    // 这里只保留 reason 1（自对局/回放返回）的直入主菜单语义。
     for (i32 reason : {1}) {
         PracticeHarness h;
         h.scene->state.return_reason = reason;

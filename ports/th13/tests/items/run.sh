@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# 道具/神霊/灵界单测构建与运行（容器内 g++，无外部依赖；与 tests/ecl 同法）。
-# 自动发现 tests/items/items_*_test.cpp 套件；--debug 切 -O0 -g。
-# 用法：tests/items/run.sh [--debug]（在容器 /work 内执行）
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +12,6 @@ flags="-O2 -Wall -Wextra"
 out_dir="$port_dir/tests/items/build"
 mkdir -p "$out_dir"
 
-# 游戏源自动发现（独立套件，不依赖 harness.cpp）。
 sources=(eagler-touhou/ports/th13/web/cpp/game/*.cpp)
 
 status=0

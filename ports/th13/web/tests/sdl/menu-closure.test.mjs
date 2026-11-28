@@ -78,8 +78,6 @@ test('production Manual, Music Room and menu return survive repeated entry with 
         const second = report();
         if (!/script=9\b/.test(second)) throw Error('Manual next-page VM is missing');
         tap(1); frame(35);
-        // Manual end needs age>29 (0x42da10) and the rebuilt 90/91 fade is
-        // ins_409(60,0,255); allow both before asserting alpha 255.
         tap(1); frame(100);
         if (state()[8] !== 1 || state()[9] !== 2 || !portrait())
           throw Error('Manual return did not restore the title portrait: ' + JSON.stringify(state()) + '\n' + report());
@@ -121,22 +119,35 @@ test('production Manual, Music Room and menu return survive repeated entry with 
       };
       await context.resume();
       mod._th13_loop_start();
-      await new Promise(resolve => setTimeout(resolve, 700));
+      const waitForFrames = async count => {
+        const start = mod._th13_frame(), deadline = performance.now() + 90000;
+        while (mod._th13_frame() - start < count && performance.now() < deadline)
+          await new Promise(resolve => setTimeout(resolve, 50));
+        return mod._th13_frame() - start;
+      };
+      const running = await waitForFrames(10);
+      const runningPcm = {...pcm};
       mod._th13_loop_pause(1);
-      const paused = {...pcm};
-      mod._th13_loop_pause(0);
+      const pausedAt = mod._th13_frame();
       await new Promise(resolve => setTimeout(resolve, 700));
-      const resumed = {...pcm};
+      const paused = {...pcm}, pausedFrames = mod._th13_frame() - pausedAt;
+      mod._th13_loop_pause(0);
+      const resumed = await waitForFrames(10);
+      const resumedPcm = {...pcm};
       node.onaudioprocess = original;
       mod._th13_loop_stop();
-      return {snapshots, paused, resumed, audio: mod.th13Audio,
+      return {snapshots, running, runningPcm, paused, pausedFrames, resumed, resumedPcm, audio: mod.th13Audio,
         error: mod.UTF8ToString(mod._th13_error())};
     });
     assert.equal(result.error, '');
     assert.equal(result.snapshots.length, 3);
-    assert.ok(result.paused.nonzero > 0, 'actual Web Audio output contains PCM');
-    assert.ok(result.resumed.nonzero > result.paused.nonzero, 'actual PCM output resumes');
-    assert.ok(result.resumed.peak > 0 && Number.isFinite(result.resumed.peak));
+    assert.ok(result.running >= 10 && result.resumed >= 10, 'production loop advances game frames');
+    assert.ok(result.runningPcm.nonzero > 0, 'actual Web Audio output contains PCM');
+    assert.equal(result.pausedFrames, 0, 'paused loop does not advance game frames');
+    assert.ok(result.paused.nonzero - result.runningPcm.nonzero <= 32768,
+      'paused loop stops feeding audio once the queued frames have played');
+    assert.ok(result.resumedPcm.nonzero - result.paused.nonzero > 0, 'actual PCM output resumes');
+    assert.ok(result.resumedPcm.peak > 0 && Number.isFinite(result.resumedPcm.peak));
     assert.deepEqual(errors, []);
     if (output) {
       await mkdir(output, {recursive: true});

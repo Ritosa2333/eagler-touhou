@@ -23,13 +23,15 @@ struct Fixture {
 
     int count() {
         int result = 0;
-        for (const auto& item : items.items()) result += item.alive;
+        for (const auto& item : items.items())
+            result += item.alive;
         return result;
     }
 
     int spirits() {
         int result = 0;
-        for (const auto& spirit : items.spirits()) result += spirit.alive;
+        for (const auto& spirit : items.spirits())
+            result += spirit.alive;
         return result;
     }
 };
@@ -84,9 +86,11 @@ TEST(enemy_death_consumes_extra_drop_table) {
     CHECK_EQ(f->enemy.drop_extra[ItemPoint - 1], 0);
 }
 TEST(enemy_death_spirit_timer_and_difficulty_match_original) {
-    struct Case { i32 difficulty, age, expected; };
-    for (const auto value : {Case{1, 37, 1}, Case{1, 60, 1}, Case{1, 61, 0},
-                             Case{2, 37, 2}, Case{3, 60, 2}, Case{1, 0, 2}}) {
+    struct Case {
+        i32 difficulty, age, expected;
+    };
+    for (const auto value :
+         {Case{1, 37, 1}, Case{1, 60, 1}, Case{1, 61, 0}, Case{2, 37, 2}, Case{3, 60, 2}, Case{1, 0, 2}}) {
         auto f = std::make_unique<Fixture>();
         f->sim.diff = value.difficulty;
         f->enemy.age = float(value.age);
@@ -155,6 +159,6 @@ TEST(enemy_invalid_death_spirit_divisor_is_reported) {
     CHECK_EQ(f->spirits(), 0);
     CHECK_EQ(f->count(), 0);
 }
-}  // namespace
+}
 
 int main() { return th13test::run_all("Enemy death drops"); }

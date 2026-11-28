@@ -1,15 +1,3 @@
-// M3 原生固定 case（目标解析：最近合格玩家）。
-// 被测生产面（RULES R-G/R-I7/R-I8）：
-//   - StageSim::nearest_player（平距平方最小、平局取小席位、全不合格
-//     回退 seat 0）；
-//   - StageSim.seat_x/seat_y/seat_eligible（step_mp 帧尾写入的多席目标面）；
-//   - StageGvars -9965/-9964/-9991/-9990/-9989/-9944（ECL 变量按敌机位置
-//     取最近合格玩家）；
-//   - StageCommands fire_et 出生瞄准角（发弹时点求值，不缓存）。
-//
-// 固定 case 映射（workflow-cases.json m3.*）：
-//   target_all_consumers_ties → nearest 单元语义 + gvars/发弹消费者 + 平局
-//   drop_rng_unchanged        → 多席位置不影响掉落 RNG（敌死亡掉灵流一致）
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "game/StageBattle.hpp"
 #include <cmath>
@@ -44,7 +32,6 @@ public:
         if (name.size() > 4 && name.compare(name.size() - 4, 4, ".sht") == 0) {
             static const std::string root = [] {
                 std::string path = __FILE__;
-                // 文件名 → 工作根 /work：逐次探测含 artifacts/ 的根。
                 for (int i = 0; i < 8; ++i) {
                     const std::string probe = path + "/artifacts/reference/raw/pl00a.sht";
                     std::FILE* check = std::fopen(probe.c_str(), "rb");
@@ -93,7 +80,6 @@ struct Fixture {
     }
 };
 
-// 把每席摆到指定位（直接写权威槽位；不经过输入循环）。
 void place_seats(StageBattle& battle, std::array<float, 3> xs, std::array<float, 3> ys) {
     for (i32 seat = 0; seat < battle.seat_count; ++seat) {
         battle.seats[size_t(seat)].x = xs[size_t(seat)];
@@ -109,11 +95,9 @@ void place_seats(StageBattle& battle, std::array<float, 3> xs, std::array<float,
     }
 }
 
-}  // namespace
+}
 
-// ---- target_all_consumers_ties：最近合格玩家全语义 ----
 TEST(target_all_consumers_ties) {
-    // ① nearest_player 单元语义（直接驱动共享面）。
     {
         StageSim sim;
         sim.seat_count = 3;
@@ -121,23 +105,19 @@ TEST(target_all_consumers_ties) {
         sim.seat_y = {400.0f, 400.0f, 400.0f};
         sim.seat_eligible = {true, true, true};
         float x = 0, y = 0;
-        sim.nearest_player(90.0f, 400.0f, x, y);   // 距 seat2=10、seat1=90
+        sim.nearest_player(90.0f, 400.0f, x, y);
         CHECK_EQ(x, 100.0f);
         CHECK_EQ(y, 400.0f);
-        sim.nearest_player(-90.0f, 400.0f, x, y);  // 距 seat0=10
+        sim.nearest_player(-90.0f, 400.0f, x, y);
         CHECK_EQ(x, -100.0f);
-        // 平局取小席位：(-50,400) 距 seat0=50、seat1=50。
         sim.nearest_player(-50.0f, 400.0f, x, y);
-        CHECK_EQ(x, -100.0f);  // seat 0 胜出
-        // 不合格席排除：seat2 幽灵位 → (90,400) 最近变 seat1。
+        CHECK_EQ(x, -100.0f);
         sim.seat_eligible = {true, true, false};
         sim.nearest_player(90.0f, 400.0f, x, y);
         CHECK_EQ(x, 0.0f);
-        // 全不合格回退 seat 0。
         sim.seat_eligible = {false, false, false};
         sim.nearest_player(90.0f, 400.0f, x, y);
         CHECK_EQ(x, -100.0f);
-        // 单席退化：seat_count==0 → player_x/y。
         StageSim single;
         single.player_x = 12.5f;
         single.player_y = 300.0f;
@@ -145,14 +125,11 @@ TEST(target_all_consumers_ties) {
         CHECK_EQ(x, 12.5f);
         CHECK_EQ(y, 300.0f);
     }
-    // ② 战斗面：2 席分立，敌机侧 gvars 瞄准取最近席。
     {
         Fixture dual;
         CHECK(dual.init());
         dual.enable(2, {0, 0, 0});
         place_seats(dual.battle, {-120.0f, 120.0f, 0.0f}, {400.0f, 400.0f, 0.0f});
-        // ECL 变量 -9989（ANGLE_PLAYER）：敌机在 (110,400) → 最近 seat1
-        // (120,400)：角度 atan2(0,10)=0（正右）。
         auto enemy = std::make_unique<StageEnemy>();
         enemy->serial = 1;
         enemy->script_id = 1;
@@ -163,16 +140,13 @@ TEST(target_all_consumers_ties) {
         float angle = 0;
         sim.gvars.floating(-9989, angle);
         CHECK(std::fabs(angle - 0.0f) < 1e-4f);
-        // 敌机在 (-110,400) → 最近 seat0 (-120,400)：atan2(0,-10)=π。
         enemy->position[0] = -110.0f;
         sim.gvars.floating(-9989, angle);
         CHECK(std::fabs(angle - 3.1415927f) < 1e-4f);
-        // -9944 距离：敌机 (110,400) → seat1 距离 10。
         enemy->position[0] = 110.0f;
         float distance = 0;
         sim.gvars.floating(-9944, distance);
         CHECK(std::fabs(distance - 10.0f) < 1e-3f);
-        // 坐标变量 -9991/-9990：敌机 (110,400) → seat1 (120,400)。
         float px = 0, py = 0;
         sim.gvars.floating(-9991, px);
         sim.gvars.floating(-9990, py);
@@ -180,7 +154,6 @@ TEST(target_all_consumers_ties) {
         CHECK_EQ(py, 400.0f);
         sim.current = nullptr;
     }
-    // ③ 幽灵位消费者：seat1 不合格 → 敌机 (110,400) 瞄准回 seat0。
     {
         Fixture dual;
         CHECK(dual.init());
@@ -201,15 +174,11 @@ TEST(target_all_consumers_ties) {
     }
 }
 
-// ---- drop_rng_unchanged：掉落 RNG 与席位数无关 ----
-// 同一合成 stage（无掉落表，敌机恒零掉落）下：单席与 2/3 席实例的
-// game RNG index 逐帧一致（目标面写入不消耗 RNG；步进序不变）。
 TEST(drop_rng_unchanged) {
     Fixture single, dual, triple;
     CHECK(single.init()); CHECK(dual.init()); CHECK(triple.init());
     dual.enable(2, {0, 0, 0});
     triple.enable(3, {0, 0, 0});
-    // 摆出非对称席位（若目标选择错误地消耗 RNG 或影响敌步进序会显形）。
     place_seats(dual.battle, {-100.0f, 100.0f, 0.0f}, {400.0f, 300.0f, 0.0f});
     place_seats(triple.battle, {-100.0f, 0.0f, 100.0f}, {400.0f, 300.0f, 200.0f});
     GameInput none;

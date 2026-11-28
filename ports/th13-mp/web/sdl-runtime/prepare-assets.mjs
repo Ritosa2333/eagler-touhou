@@ -1,6 +1,3 @@
-// 从 raw 解包目录与原版 thbgmogg.dat 生成网页运行时资源。
-// 产物为原版权材料，git 不入库（.gitignore 已忽略 assets/）。
-// 用法（容器内，仓库根）：node eagler-touhou/ports/th13/web/sdl-runtime/prepare-assets.mjs
 import {copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {resolve, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -13,7 +10,7 @@ import {
 } from './runtime-assets.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const workspace = resolve(here, '../../../../..');  // 工作区根（容器内 /work）
+const workspace = resolve(here, '../../../../..');
 const raw = resolve(workspace, 'artifacts/reference/raw');
 const music = resolve(workspace, 'games/th13/thbgmogg.dat');
 const out = resolve(here, 'assets');

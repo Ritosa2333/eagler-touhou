@@ -8,24 +8,37 @@
   2. WASI 无头 harness：wasi-sdk（`portable/build-harness.mjs` → `web/artifacts/wasi/`），供 oracle 对照与 CI。
 - **Oracle 对照**：Unicorn 无头模拟原版 EXE（桩掉 Win32/D3D），以录像驱动逐帧导出状态池，与 harness 输出逐字段比对，首个分歧即回归定位点。原版二进制与 oracle 轨迹只在开发期使用，不进网页构建。
 - **地址锚点**：`web/cpp/rebuild/AddressMap.hpp` 登记每个子系统的原版入口，供 oracle 与回归脚本引用。
+- **呈现**：画面只在动画帧回调内提交。窗口尺寸为零时保留待提交帧，帧缓冲首次作为绘制目标绑定时检查完整性；页面带 `?glDebug=1` 时每次呈现后读取 GL 错误码。画布上下文属性集中在 `web/sdl-runtime/context-attributes.mjs`。打包入口是 `portable/build-eagler.mjs`（`build.mjs` 加 `package-eagler.mjs`）；目录型运行时的文件清单由 `package-eagler.mjs` 与产品目录的 `runtimeAssets` 共同维护，改清单时两处一起改。
 
 ## 统一容器环境
 
 全工作流在标准容器内进行（本地 podman 与 GitHub Actions 共用本目录 `container/Dockerfile`，多阶段：base → tools → dev → ci / shot）。Emscripten 端口缓存经 `EM_CACHE` 落工作区卷（`.cache/emscripten`），跨容器运行复用。
 
-仓库内自带 Dockerfile，克隆 monorepo 后即可直接使用（无需外部包装）：
+仓库内自带 Dockerfile，在 monorepo 根目录构建一次：
 
 ```sh
-# 仓库根目录下：
 podman build --target dev -t th13-dev --build-arg DEV_UID=$(id -u) --build-arg DEV_GID=$(id -g) ports/th13/container
-podman run --rm --userns=keep-id -e HOME=/home/dev -it -v "$PWD:/work:Z" -w /work/eagler-touhou/ports/th13 th13-dev bash
-# 单命令（构建/测试）：
-podman run --rm --userns=keep-id -e HOME=/home/dev -v "$PWD:/work:Z" -w /work/eagler-touhou/ports/th13 th13-dev bash -lc 'node portable/build.mjs'
+podman build --target shot -t th13-shot ports/th13/container
 ```
+
+日常全部经统一入口 `tools/container.sh`，它固定挂载、用户映射与缓存目录，容器内即 `/work/eagler-touhou/ports/th13`：
+
+```sh
+# 构建与测试（th13-dev 镜像）
+TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh node portable/build.mjs
+# 多人版目录
+TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --mp node portable/build.mjs
+# 浏览器验证（th13-shot 镜像）
+TH13_WORKSPACE=<外层工作区> ports/th13/tools/container.sh --shot bash
+```
+
+容器内进程不可转储：宿主用 systemd-coredump 收集转储时，容器里的崩溃会写进宿主的 `/var/lib/systemd/coredump`。需要在容器里取转储时设 `TH13_ALLOW_COREDUMP=1`。
+
+外层工作区提供 `games/th13`（原版资源）与 `artifacts/`，默认取 monorepo 的上级目录；以 `TH13_` 或 `TH_` 开头的环境变量原样传入容器。
 
 工具链版本（构建时固定）：Node 22 / Emscripten 6.0.9 / wasi-sdk 34 / Ghidra 12.1.3 / Temurin JDK 21。
 
-开发工作区另有外层 `Makefile` 包装上述命令（`make image / shell / exec-port CMD='…'`），并管理原版资源与 thtk 临时构建；工作区顶层的 `games/`（原版资源）与 `artifacts/`（大体积产物、Ghidra 导出、参考视频帧）不入库。thtk 以临时克隆方式构建、用后清理。
+工作区顶层的 `games/`（原版资源）与 `artifacts/`（大体积产物、Ghidra 导出、参考视频帧）不入库。外层参考工作区另有 `Makefile` 包装这些命令（`make image / shell / exec-port CMD='…'`）；本目录的入口不依赖它。
 
 ## 原版资源准备
 
@@ -37,7 +50,7 @@ make extract   # 解包 th13ogg.7z → games/th13/，生成 SHA256 清单与版�
 
 ## 行为还原节奏
 
-每个子系统三重门：Ghidra 参考 → oracle 比对绿灯 → `node --test`。恢复顺序：
+每个子系统三重门：Ghidra 参考 → 回归摘要门禁（oracle 缺席时的主门槛）→ `node --test`。各子系统对应的原版入口、已知分歧与未决项见 [fidelity-map.md](fidelity-map.md)。恢复顺序：
 
 1. RNG 与帧计时
 2. ANM 虚拟机（动画脚本）
@@ -58,6 +71,43 @@ make extract   # 解包 th13ogg.7z → games/th13/，生成 SHA256 清单与版�
 
 参考工作流（th10）采用机械静态重编译 + 渐进类型化替换的双层形态（`rebuild/` 与 `game/` 并存）。本项目当前为 clean-room + oracle 验收路线，Stage 1 事件流已逐字节对齐证明可行；若后续关卡/Boss 重符卡段频繁卡在浮点或边界语义，启动最小转译层（页级翻译仅覆盖卡住的函数，与 `game/` 并存），向参考工作流的混合形态收敛。
 
+## 代码排版
+
+C++ 源码由 `tools/format.mjs` 按端口目录下的 `.clang-format` 统一排版，检查与修复同一条命令：
+
+```sh
+ports/th13/tools/container.sh bash -lc 'node tools/format.mjs --check'        # 普通版：只检查，未排版即非零退出
+ports/th13/tools/container.sh bash -lc 'node tools/format.mjs'                # 普通版：排版
+ports/th13/tools/container.sh --mp bash -lc 'node tools/format.mjs --check'   # 多人版
+```
+
+- **范围**（`tools/source-layout.mjs`）：`web/cpp`、`portable`、`tests` 下的 C/C++，不含 `third_party` 与生成文件。多人版只排版与普通版同路径的文件，联机目录保持自己的原样。
+- **工具链**：镜像内 wasi-sdk 自带的 clang-format，全仓库同一个版本；`.clang-format` 两侧逐字节相同，由 `tests/shared-sources.test.mjs` 守住。
+- **内联 JS**：`EM_JS` / `EM_ASM` 的函数体在预处理里是裸 token，按 C++ 规则重排会把它改坏（`??` 变成 `? ?`，`=>` 变成 `= >`）。每一处都放在 `// clang-format off` 与 `// clang-format on` 之间；`tools/format.mjs` 发现未受保护的内联 JS 会在动手前停下并指出位置，同一条规则由测试固化为门禁。
+
+排版后的产物与排版前逐字节相同：两个端口的网页 wasm、JS 胶水层与 WASI harness 的 sha256 全部不变。全量排版提交登记在仓库根的 `.git-blame-ignore-revs`，执行 `git config blame.ignoreRevsFile .git-blame-ignore-revs` 后 `git blame` 自动跳过它们。
+
+## 源码不写注释
+
+两个端口的源码、脚本、测试、页面与配置文件都不带注释：`//`、`/* */`、`#`、`<!-- -->` 和 Python docstring 一律不出现。原本写在注释里的信息各有去处：
+
+| 内容 | 去处 |
+| --- | --- |
+| 原版地址与行为依据 | 提交说明；[fidelity-map.md](fidelity-map.md) |
+| 契约与不变量 | 断言它的测试 |
+| 用法与流程 | 本目录 `docs/` |
+| 排版保护 | `// clang-format off` / `on` 是给排版器的指令，保留 |
+
+`tools/no-comments.mjs` 按语言取注释区间：C/C++/Java 与 CSS 用词法状态机，字符串、字符字面量与原始字符串字面量都识别；JS 与 HTML 内联脚本用 acorn；shell 识别引号、`$()`、`${}` 与 heredoc；Python 用 tokenize 与 ast，docstring 一并删除。范围是 git 已跟踪的文件，生成文件（`*.gen.hpp`、`MsgPlayerCp932.hpp` 等）与 `third_party/` 不在内。多人版 `shell.mjs` 的 `// BEGIN GENERATED SPECTATOR PLAYBACK` 到 `// END GENERATED SPECTATOR PLAYBACK` 是与 `common/browser/spectator-playback.mjs` 逐字节一致的副本，原样保留。
+
+```sh
+ports/th13/tools/container.sh bash -lc 'node tools/no-comments.mjs'          # 普通版：检查，发现注释即非零退出
+ports/th13/tools/container.sh bash -lc 'node tools/no-comments.mjs --strip'  # 普通版：删除
+ports/th13/tools/container.sh --mp bash -lc 'node tools/no-comments.mjs'     # 多人版
+```
+
+`tests/no-comments.test.mjs` 把规则纳入门槛。全量删除的两个提交登记在仓库根的 `.git-blame-ignore-revs`，`git blame` 自动跳过它们。
+
 ## 测试
 
 ```sh
@@ -67,6 +117,62 @@ node portable/build-harness.mjs && node --experimental-wasi-unstable-preview1 to
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs stage1   # stage1：st01 跑 3600 帧，事件流落 web/artifacts/wasi/stage1-events.jsonl（契约见 docs/plans/event-contract.md）
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs replay games/replays/th13_udSr01.rpy   # 录像解码 + 逐帧输入注入（格式见 docs/plans/replay.md）
 ```
+
+### 一键门槛
+
+```sh
+ports/th13/tools/gate.sh            # 普通版
+ports/th13/tools/gate.sh --mp       # 多人版（套件另含 M1–M9 累计原生工作流）
+ports/th13/tools/gate.sh --browser  # 追加浏览器套件（th13-shot 镜像）
+```
+
+依次执行排版检查、WASI harness 构建、三项回归摘要（普通版）、网页运行时构建、全部套件与基线比对，任何一步回归即非零退出。基线是动产品代码之前登记的逐套件失败清单（`archive/th13-refactor-baseline-20261124/`），带基线比对时退出码只反映基线之外的新失败。
+
+`--browser` 需要运行时资源目录，固定 4 并发：更多并发会让无头 Chromium 的音频线程饿死，报 AudioContext 错误。
+
+### 回归摘要门禁
+
+重构类改动以逐位不变的回归摘要证明行为不变：harness 在整段录像上每 60 帧采样一次状态池、事件流与绘制清单的滚动 FNV-1a 摘要，与 `tools/replay-verifier/golden/` 的金标逐行比对，报出首个分歧的录像、关卡与帧。
+
+```sh
+node portable/build-harness.mjs
+node tools/regression-digest.mjs --check                              # 状态与事件：10 份录像、35 关、58 万帧
+node tools/regression-digest.mjs --draws --check                       # 绘制清单：每份录像首关前 600 帧
+node tools/regression-digest.mjs --draws --draws-stages all --check    # 绘制清单：每关前 600 帧
+```
+
+三项合计约两分钟。工具默认就是比对；重生成金标要显式加 `--write`，只有改变模拟或绘制行为的修正才这样做，并在提交说明里写明依据。
+
+输入是外层工作区的 `games/replays/*.rpy` 与 `artifacts/reference/raw/demo0..3.rpy`。harness 在 `TH13_DIGEST_LOG` 下逐采样帧写 `stage <s> frame <f> state <16hex> events <16hex> [draws <16hex>] stepped <0|1>`，末行是 `total`；没跑完的录像在金标里记为 `stable:false`，只保留停止点，不参与摘要比较。构建身份（wasm sha256）只作来源记录，比对不看它——门禁比较的正是不同构建。工具拒绝使用旧于源码的 harness 产物。
+
+harness 进程固定带 `--no-incremental-marking`（调用方没带时运行器重启自身）。Node 22.23 的 V8（12.4.254.21）在增量标记的栈扫描里会遍历到返回地址无效的帧，在 `CommonFrame::IterateTurbofanOptimizedFrame` 内解引用崩溃，Node 的信号处理器把它重发为 SIGSEGV。这与移植代码无关：崩溃与 `--stack-size`（200KB–15MB）和 JIT 模式无关；关掉增量标记后，叠加 `--gc-interval=500 --stress-compaction --verify-heap` 的整卷回放全部跑完、堆校验通过，原生 ASan/UBSan 构建同样全绿。
+
+### 原版直调探针
+
+`tools/oracle/` 在容器里用 Unicorn 直接调用原版函数，给数值语义与状态门取证：
+
+```sh
+ports/th13/tools/container.sh python3 -m tools.oracle.probes --out /work/artifacts/th13-fidelity/collision.json
+ports/th13/tools/container.sh python3 -m tools.oracle.probes --out-dir /work/artifacts/th13-fidelity/oracle-out
+```
+
+`machine.py` 负责装载 th13.exe、堆与栈、额外映射、代码 hook、寄存器访问和直调约定（`[ESP]` 为返回地址、`[ESP+4+4i]` 为第 i 个参数，`thiscall` 的 this 放 ECX），构造时执行 FINIT，把 FPCW 置为 0x37F，与游戏内随机函数 `0x472de0`/`0x472e10` 一致。`--out` 写碰撞探针；`--out-dir` 写全部七份证据：
+
+| 输出 | 用途 | 原版直调 |
+| --- | --- | --- |
+| `collision.json` | 判定尺寸表、自机碰撞状态矩阵与距离扫描 | `0x444140` |
+| `anm-variables.json` | ANM VM 整数与浮点变量的读写目的地、随机流消费后的种子和计数 | `0x461e80`、`0x4621b0`、`0x4622c0`、`0x462380` |
+| `interpolation.json` | 六组插值用例的逐帧值与剩余帧数 | `0x4120f0` |
+| `practice-rows.json` | 练习解锁在存档镜像中写入的字节行 | `0x42ba42`–`0x42ba6f`、`0x42d087`–`0x42d0bc` |
+| `save-image.json` | 压缩前存档镜像、标记字节与压缩文件偏移 | `0x449e50`，hook `0x47a0ed` 与 `0x449fc6` |
+| `stage-gvars.json` | ECL 全局变量 94 个整型读与 94 个浮点读、读后随机流的种子与计数，以及 −9944 距离与负 id 两组变体 | `0x420380`、`0x420d00`、`0x423e20` |
+| `interpolation-angle.json` | 角度插值七组用例的逐帧值与剩余帧数 | `0x4662e0` |
+
+探针只读原版文件，产物落外层工作区 `artifacts/`，同一探针两次运行的输出逐字节相同。新探针证据登记在 `archive/th13-fidelity-20261126/`，碰撞证据在 `archive/th13-fidelity-20261125/`。探针锁定的值由原生测试断言，登记在 [fidelity-map.md](fidelity-map.md)「已对齐项」。
+
+### 性能测量
+
+热点以带函数名的 harness 剖析为准：`portable/build-harness.mjs` 的链接参数加 `-g`，再用 `node --cpu-prof` 采样。计时一律用交替 A/B（基线与改动版交替构建运行三轮取中位数），因为同一台机器在不同时刻的绝对耗时相差可达一倍。保留一项改动的条件：三项回归摘要不变、门槛无新增失败、交替 A/B 有实测收益。首轮结果与剖面分布见 `archive/th13-performance-20261124/README.md`（WASI harness 回放计时，不含浏览器端帧时间）。
 
 ### 网页 thprac
 

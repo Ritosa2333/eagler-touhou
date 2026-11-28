@@ -17,8 +17,14 @@ struct Provider : EclResourceProvider {
         th13test::emit(body, 0, 10, 0, 255, 0, {});
         bytes = th13test::build_scpt({{"main", body}}, {"enemy.anm", "st01enm.anm"});
     }
-    bool read(const std::string&, std::vector<u8>& out) override { out = bytes; return true; }
-    bool animation(u32, const std::string& name) override { names->push_back(name); return true; }
+    bool read(const std::string&, std::vector<u8>& out) override {
+        out = bytes;
+        return true;
+    }
+    bool animation(u32, const std::string& name) override {
+        names->push_back(name);
+        return true;
+    }
 };
 
 TEST(contact_protection_does_not_prevent_player_hit_but_preserves_bullet) {
@@ -36,15 +42,14 @@ TEST(contact_protection_does_not_prevent_player_hit_but_preserves_bullet) {
         battle.player_phase = StageBattle::PlayerPhase::Active;
         battle.invulnerable = 0;
         StageBullet bullet;
-        bullet.x = 0; bullet.y = 200;
+        bullet.x = 0;
+        bullet.y = 200;
         bullet.cancel_protection = protected_bullet ? 5 : 0;
         battle.sim.bullets.push_back(bullet);
         CHECK(battle.step(GameInput{}));
         CHECK(battle.player_phase == StageBattle::PlayerPhase::Deathbomb);
         CHECK_EQ(battle.sim.bullets.size(), size_t(1));
         CHECK(battle.sim.bullets[0].alive);
-        // 0040dd02/0040dd17 checks cancel protection, then enters state3;
-        // protected bullets keep their live state instead of being unlinked.
         CHECK_EQ(battle.sim.bullets[0].state, protected_bullet ? 1 : 3);
     }
 }

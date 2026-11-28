@@ -1,5 +1,3 @@
-// Test pilot: observes diagnostics, changes only the same hosted keys as the
-// production keyboard bridge. It never changes game state, rate or resources.
 export function installPilot({ seat }) {
   const w = document.querySelector("#gameFrame").contentWindow,
     m = w.Module;
@@ -28,8 +26,6 @@ export function installPilot({ seat }) {
     decisions: 0,
     movementDecisions: 0,
   });
-  // Keep the SHT movement estimate inside installPilot
-  // so Playwright page.evaluate's function serialization has no free imports.
   function createMovementModel(m, w) {
     const identities = [
       '41efe8effa3b0a591ed8bf3db646c2a8d3e8d37d35cd744d1687778068a93769',
@@ -46,7 +42,7 @@ export function installPilot({ seat }) {
       cache.set(character, record);
       try {
         const file = `/assets/pl0${character}a.sht`;
-        const bytes = new Uint8Array(m.FS.readFile(file)); // immutable snapshot
+        const bytes = new Uint8Array(m.FS.readFile(file));
         if (bytes.byteLength < 32) throw Error('sht-short');
         const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
         const speeds128 = Array.from({length:4}, (_, i) => {
@@ -63,8 +59,6 @@ export function installPilot({ seat }) {
         }).catch(() => { record.reason = 'sha256-failed'; });
       } catch (error) {
         record.reason = `sht-read:${error.message}`;
-        // An asset may not yet be mounted when the pilot installs.
-        // Retry on the next observation instead of caching an early read failure.
         cache.delete(character);
       }
       return record;
@@ -72,9 +66,6 @@ export function installPilot({ seat }) {
     function path({character, s, hazards, team, shift, dx, dy, horizons}) {
       const record = request(character);
       if (record.status !== 'ready') return {mode:'fallback', reason:record.reason};
-      // Browser x/y are printed to six decimals. Reconstruct the 1/128 grid;
-      // refuse inconsistent or missing observations. phase_frame and the list of
-      // live hazards are proxies, not the production startup/enemy gates.
       if (!s || s.character !== character || !Number.isFinite(s.x) || !Number.isFinite(s.y) ||
           s.phase !== 1 || s.ghost || s.dead || !Number.isInteger(s.phase_frame) || s.phase_frame < 0 ||
           !Array.isArray(hazards?.enemies) || !team || ![0,1,false,true].includes(team.active) || team.active ||
@@ -105,8 +96,6 @@ export function installPilot({ seat }) {
     if (state.events.length > 256) state.events.shift();
   };
   const set = (mask, dialogue = true) => {
-    // A dialogue opened while Z/Ctrl were already held needs a new press to
-    // arm skip. Supply ordinary release/press edges without changing its state.
     if (dialogue && state.lastFrame % 60 < 10) mask &= ~(1 | 512);
     for (const [bit, scan] of keys)
       if ((mask ^ state.mask) & bit) m._th13_key(scan, +!!(mask & bit));
@@ -116,9 +105,6 @@ export function installPilot({ seat }) {
   m.onGameFrame = (ok, ms, ticks) => {
     old?.(ok, ms, ticks);
     if (!ok) return;
-    // Receive work can expose a historical correction boundary. Keep the
-    // current hosted keys until replay finishes; pending fresh capture alone
-    // does not make a forward world historical.
     const network = json(m._th13_debug_mp_net_state);
     const correction = m._th13_mp_rollback_status() >>> 2;
     if (network.simulating && m.HEAPU32[correction + 7]) return;
@@ -182,8 +168,6 @@ export function installPilot({ seat }) {
       state.resources = `${s.extra_lives}/${s.bombs}/${s.phase}`;
       emit({ type: "resources", stage, frame, seat: s, team });
     }
-    // Election is based only on sampled seats. The elected donor keeps its
-    // own attempt until the recipient recovers or the donor becomes ineligible.
     const seats = Array.from({ length: s.seat_count }, (_, index) =>
       index === seat ? s : json(() => m._th13_debug_mp_seat_state(index)));
     const eligibleDonor = player => !player.ghost && !player.dead &&
@@ -225,7 +209,6 @@ export function installPilot({ seat }) {
         ),
       );
     const hitSize = [2, 3, 3, 3][s.character];
-    // Spawning bullets become live within a few frames; dodge them already.
     const bullets = hazards.bullets
       .filter(b => b.alive && (b.flags & 2) &&
         Math.abs(b.x - s.x) < 170 && b.y > s.y - 180 && b.y < s.y + 70)
@@ -264,8 +247,6 @@ export function installPilot({ seat }) {
       targetX = recipient.x; targetY = recipient.y;
       const distance = Math.hypot(s.x - targetX, s.y - targetY);
       if (rescue.phase === "approach" && distance <= 12) {
-        // First release the ordinary held focus/fire keys and let that release
-        // pass through a real device sample before beginning the five presses.
         rescue.phase = "tap"; rescue.down = false; rescue.changedAt = capture;
       } else if (rescue.phase !== "approach" && distance > 18) {
         rescue.phase = "approach"; rescue.presses = 0;
@@ -291,21 +272,14 @@ export function installPilot({ seat }) {
       }
     }
     state.rescue = rescue;
-    // Decide from each fresh visible world through ordinary hosted input.
-    // Corrections above never resample the controller from historical state.
     const chooseMovement = capture >= nextMoveCapture;
     const retainedSpeed = move & 8 ? 2 : 4.5,
       retainedX = move & 64 ? -1 : move & 128 ? 1 : 0,
       retainedY = move & 16 ? -1 : move & 32 ? 1 : 0;
     let best = null;
-    // Every frame through 10 so a fast bullet cannot cross the hitbox between
-    // samples; later frames only steer away from what is coming.
     const horizons = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 17, 20];
     const weights = horizons.map(t => t <= 4 ? 1 : t <= 10 ? 0.6 : 0.3);
     const sparse = [1, 3, 6, 10].map(t => horizons.indexOf(t));
-    // Curving and accelerating patterns: carry each bullet's last observed
-    // turn and speed change forward. A reused slot (position does not follow
-    // from the previous velocity) starts over as a straight line.
     const history = state.bulletHistory || new Map(), nextHistory = new Map();
     const predicted = bullets.map(b => {
       const speed = Math.hypot(b.vx, b.vy), angle = Math.atan2(b.vy, b.vx);
@@ -367,8 +341,6 @@ export function installPilot({ seat }) {
 
           let laserDanger = false;
           let bodyDanger = false;
-          // Use the same live collision geometry/gates as StageBattle. Enemy
-          // motion is observed, so a moving body cannot look like empty space.
           for (const enemy of bodies)
             for (const point of sparse) {
               const t = horizons[point], ex = enemy.x + enemy.dx * t,
@@ -424,9 +396,6 @@ export function installPilot({ seat }) {
     }
     let mask = 1 | dialogueMask | move;
     const deathbomb = s.phase === 4;
-    // When even the best of the 18 candidate paths has no clearance within
-    // three frames, spend trance or a bomb before the hit instead of relying
-    // on the 16-frame deathbomb window alone.
     const cornered = !deathbomb && s.phase === 1 && s.invulnerable === 0 && !team.active &&
       !hazards.dialogue && frame - bombAt > 24 &&
       (best.imminent < 0.5 || (best.laserDanger && best.nearest < 4) || best.bodyDanger);
@@ -439,14 +408,9 @@ export function installPilot({ seat }) {
           laserDanger: best.laserDanger, bodyDanger: best.bodyDanger, deathbomb, mask });
       }
     }
-    // Predicted paths select movement; spend finite defense resources only
-    // after the real production hit opens the 16-frame deathbomb window.
     if (deathbomb) {
       if (team.slot >= 600 && !team.active) mask |= 2048;
       else if (s.bombs > 0 && (!team.active || team.owner !== seat)) mask |= 2;
-      // A previous defensive press can have been rejected by a dialogue or
-      // active Bomb. During the actual deathbomb window, release a held key
-      // before trying the next press through the production input sampler.
       if (deathbomb) mask &= ~(state.mask & (2 | 2048));
       if (mask & (2048 | 2)) {
         bombAt = frame;

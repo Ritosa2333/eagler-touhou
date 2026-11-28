@@ -8,23 +8,13 @@
 
 namespace th13 {
 namespace {
-// VA 004bbd30, used by 00412970/00456b50. This is the existing score-slot
-// rank contract, shared by storage and the runtime metadata parser.
 constexpr std::array<u8, 127> kDifficulties = {
-    0,1,2,3, 0,1,2,3, 0,1,2,3, 2,3,
-    0,1,2,3, 0,1,2,3, 0,1,2,3, 0,1,2,3, 2,3,
-    0,1,2,3, 0,1,2,3, 0,1,2,3, 1,2,3,
-    0,1,2,3, 0,1,2,3, 0,1,2,3, 1,2,3,
-    0,1,2,3, 0,1,2,3, 0,1,2,3, 0,1,2,3, 0,1,2,3,
-    0,1,2,3, 0,1,2,3, 0,1,2,3, 0,1,2,3, 0,1,2,3, 0,1,2,3,
-    4,4,4,4,4,4,4,4,4,4,4,4,4,
-    5,5,5,5,5,5,5,5
-};
+    0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 2, 3,
+    0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 1,
+    2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1,
+    2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5};
 
-bool is_spell(u16 opcode) {
-    return opcode == 522 || opcode == 528 || opcode == 537 ||
-           opcode == 538 || opcode == 539;
-}
+bool is_spell(u16 opcode) { return opcode == 522 || opcode == 528 || opcode == 537 || opcode == 538 || opcode == 539; }
 
 bool decode_name(const EclInstruction& instruction, std::string& out) {
     if (instruction.length < 36) return false;
@@ -49,7 +39,7 @@ i32 first_id(const std::array<SpellCatalogVariant, 5>& family) {
         if (variant.id >= 0) result = std::min(result, variant.id);
     return result;
 }
-} // namespace
+}
 
 i32 SpellCatalog::difficulty(i32 id) {
     return id >= 0 && id < i32(kDifficulties.size()) ? kDifficulties[size_t(id)] : -1;
@@ -111,9 +101,6 @@ bool SpellCatalog::load_stage(i32 stage, const Reader& reader) {
                         if (rank >= 4) continue;
                         id += rank - (instruction.opcode - 537);
                     }
-                    // A subroutine may be invoked for only some ranks even if its
-                    // instructions use mask 0xff. The intrinsic table excludes
-                    // those unreachable combinations (e.g. stage3 midboss E/N).
                     if (difficulty(id) != rank) continue;
                     const i32 row = stage == 7 ? (rank == 4 ? 0 : 1) : (rank == 5 ? 4 : rank);
                     if (row < 0 || row >= 5 || (stage != 7 && rank == 4)) continue;
@@ -134,9 +121,8 @@ bool SpellCatalog::load_stage(i32 stage, const Reader& reader) {
     char name[20];
     std::snprintf(name, sizeof name, "st%02d.ecl", stage);
     if (!scan(name)) return false;
-    std::sort(families.begin(), families.end(), [](const Family& left, const Family& right) {
-        return first_id(left) < first_id(right);
-    });
+    std::sort(families.begin(), families.end(),
+              [](const Family& left, const Family& right) { return first_id(left) < first_id(right); });
     if (families.size() != size_t(kSpellPracticeSlots[stage - 1])) {
         error = "Spell catalog family count does not match stage";
         return false;
@@ -178,14 +164,12 @@ bool SpellCatalog::spell_unlocked(i32 stage, i32 slot, const Check& encountered)
     return false;
 }
 
-bool SpellCatalog::variant_available(i32 stage, i32 slot, i32 rank,
-                                    const Check& encountered, const Check& captured) const {
+bool SpellCatalog::variant_available(i32 stage, i32 slot, i32 rank, const Check& encountered,
+                                     const Check& captured) const {
     const auto* entry = variant(stage, slot, rank);
     if (!entry || !encountered) return false;
     if (encountered(entry->id)) return true;
     if (entry->rank != 5 || !captured) return false;
-    // 00456b50: Overdrive also opens after every preceding ordinary/Extra
-    // variant has a capture in either game mode or spell practice.
     bool preceding = false;
     for (const auto& other : *family(stage, slot)) {
         if (other.id < 0 || other.rank >= 5) continue;
@@ -203,4 +187,4 @@ std::string SpellCatalog::spell_name(i32 stage, i32 slot, const Check& encounter
     return {};
 }
 
-} // namespace th13
+}

@@ -24,7 +24,7 @@
 | `play_count` / `total_frames` | `+0x7B8` / `+0x7BC` | 0x42c550 / 0x42b990 计数路径 |
 | `clear_count[d]` | `+0x7C0+d*4` | 0x42cd40；对应全局 `score+0x7C8+…` |
 | `no_continue_clear_count[d]` | `+0x7DC+d*4` | 0x42cd40；通关门 0x451450 全局 `+0x7E4` |
-| 练习行分数/通过/游玩旗 | `+0x7F4+(d*8+stage)*8` 的 `+0/+4/+5` | 0x451cb0 全局 `+0x7FC`，0x42cd40/0x42b990 |
+| 练习行分数/通过/游玩旗 | 列内 `+0x7F0+8*stage+64*d`（stage 取 1 起）的 `+0/+4/+5`；游戏侧 `score+0x7F8+8*stage+64*d` | 0x42cd40 写通过旗、0x42b990 写游玩旗与分数；0x451cb0/0x452170/0x452299 读 |
 | 符卡名 | `+0x978+i*0x9C` 起 128 字节 | 0x413270/0x413a60 会话路径 |
 | 符卡捕获数 | 同记录 `+0x80/+0x84` | 普通/练习两列 |
 | 符卡尝试数 | 同记录 `+0x88/+0x8C` | 普通/练习两列 |
@@ -40,27 +40,29 @@
 
 ## FileStore 集成语义
 
-- TH13SAVE v7 是应用侧权威：加载、内存和再保存都走 v7 原语义。
-- `save_score()` 对应原版保存点：写 v7 → 同步得分面 → 构建 scoreth13.dat
+- TH13SAVE v8 是应用侧权威：加载、内存和再保存都走 v8 语义；v7 及更早的档位读入后
+  按迁移规则升级，`CLR1` 段（16 字节练习通过旗）缺失时补零。
+- `save_score()` 对应原版保存点：写 v8 → 同步得分面 → 构建 scoreth13.dat
+  镜像。
   镜像。web 后端为 localStorage `th13.scoredat`（base64）；native/WASI 不
   激活该存储通道，镜像保留在内存供单测直测。
 - dat 导入仅在应用档缺失/无效，或 dat 全条目最大 `__time64` 大于应用档榜表
   最大时间戳时发生。导入覆盖可映射字段，不改变设置类字段。
 - 压缩按帧分片推进（`kScoreDatTokensPerFrame`）；镜像未变化时直接跳过压缩
   与存储写入。保存点只登记待写镜像，`th13.scoredat` 键在整幅编码完成后一次
-  更新；v7 `th13.save` 同步落盘且权威，滞后镜像随后续帧自行追平，导入按
+  更新；v8 `th13.save` 同步落盘且权威，滞后镜像随后续帧自行追平，导入按
   时间戳仲裁不会被滞后镜像回灌。外部观测（E2E/工具）读该键前需等编码器
   排空——`e2e-fullclear.driver.mjs` 在保存点后按块泵帧至键值连续稳定。
-- v1–v7 TH13SAVE 读档与写档布局保持不变。
+- v1–v8 TH13SAVE 读档与写档布局保持不变；v7 档读入时 `CLR1` 段按零补齐并随下次保存升级。
 
 ## 验证
 
 - `tests/score/score_dat_test.cpp`：黄金文件 parse/build 逐字节、缺席列、
   字段视图、LCG 与失败路径。黄金样本位于 ignored `artifacts/score_golden/`。
-- `tests/score/filestore_score_test.cpp`：v7 权威、镜像往返、ST 名、坏 dat
+- `tests/score/filestore_score_test.cpp`：v8 权威、`CLR1` 段、镜像往返、ST 名、坏 dat
   回退、整文件冒烟与原版妖梦样本导入。
 - `tests/score/filestore_score_mapping_test.cpp`：4 角色 × 5 难度坐标、妖梦
-  完整读写、符卡个人/合计列、Extra 解禁与旧 v7 重存。
+  完整读写、符卡个人/合计列、Extra 解禁、旧 v7 重存与练习行坐标。
 - `tests/e2e/run.sh`：原版 `th13_01.rpy` 输入流全流程，导出 Replay 与原文件
   逐字节相同；保存点得分面进入同一 FileStore/ScoreDat 路径。
 - 原版 `0x449e50/0x449be0` 直调生成与读回证据见

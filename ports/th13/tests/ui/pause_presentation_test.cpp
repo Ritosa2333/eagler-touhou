@@ -1,16 +1,5 @@
-// 暂停覆盖层真实资源测试（新增独立文件；不改既有 pause_test.cpp、产品代码）。
-// 覆盖三条此前合成 bank 无法证明的数据面：
-// 1) open 用真实 text.anm script75 建背景，用真实 front.anm 132/133/134/142/147
-//    建菜单根，并真正出生 120-123/154、124-126、127/128、137-141、144-146；
-//    cursor 129/130/131 只在 root 收到 label14 后出生（132 的 Yes/No 路径）。
-// 2) 继续 / Esc / 回标题关闭后 overlay 树经 0x20 回收，句柄与 registry 计数归零。
-// 3) focus ring script22/子21 的 timer 冻结归属：StagePresentation 的
-//    create_player_effect 安装 pre_tick，RunPause 只切 environment.paused。
-//    用同 manager 直建、无 pre_tick 的 script22 作反证，不越权改产品。
-// 负控：错误脚本（front2/text0）不得产出暂停子 VM；错误 bank 身份（132 不在
-// text.anm）必须让 open 失败，而不是靠“句柄非零”放行。
-#include "ui_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
+#include "ui_test_fixtures.hpp"
 
 #include "game/AnmRenderer.hpp"
 #include "game/FrameScheduler.hpp"
@@ -67,7 +56,6 @@ struct PauseHost final : RunPausePlatform {
     }
 };
 
-// 真实资源夹具：text.anm 进 bank0、front.anm 进 bank3，与 RunPause 生产槽一致。
 struct RealPause {
     GameRandom random;
     AnmEnvironment environment;
@@ -99,19 +87,17 @@ struct RealPause {
         CHECK(manager.update());
     }
     void advance(int frames, u32 pressed = 0) {
-        for (int i = 0; i < frames; i++) frame(pressed);
+        for (int i = 0; i < frames; i++)
+            frame(pressed);
     }
     AnmVm* root() { return pause ? manager.registry.find(pause->state.menu_animation) : nullptr; }
-    AnmVm* backdrop() {
-        return pause ? manager.registry.find(pause->state.snapshot_animation) : nullptr;
-    }
+    AnmVm* backdrop() { return pause ? manager.registry.find(pause->state.snapshot_animation) : nullptr; }
     AnmVm* child(i32 script) {
         auto* menu = root();
         return menu ? manager.registry.find_child_script(*menu, script, 0) : nullptr;
     }
 };
 
-// 所有暂停菜单项的真实子脚本都存在，且 source_script 与请求脚本一致。
 void check_children(RealPause& h, std::initializer_list<i32> scripts) {
     for (i32 script : scripts) {
         auto* vm = h.child(script);
@@ -120,7 +106,7 @@ void check_children(RealPause& h, std::initializer_list<i32> scripts) {
     }
 }
 
-}  // namespace
+}
 
 TEST(real_pause_overlay_builds_text75_backdrop_and_front132_tree) {
     RealPause h;
@@ -133,7 +119,6 @@ TEST(real_pause_overlay_builds_text75_backdrop_and_front132_tree) {
     auto* backdrop = h.backdrop();
     CHECK(backdrop != nullptr);
     if (!backdrop) return;
-    // 背景来自常驻 text.anm（bank0）script75，不是 front.anm 的同号脚本。
     CHECK(backdrop->resource == h.manager.resource(0));
     CHECK(backdrop->resource != h.manager.resource(3));
     CHECK_EQ(backdrop->source_script, 75);
@@ -146,18 +131,16 @@ TEST(real_pause_overlay_builds_text75_backdrop_and_front132_tree) {
     CHECK(menu->resource == h.manager.resource(3));
     CHECK_EQ(menu->source_script, 132);
     check_children(h, {120, 121, 122, 154, 123});
-    check_children(h, {117, 118});  // 真实根 132 的行条装饰子体
-    // cursor 129/130/131 在 label14 之后才出生；open 只 interrupt(3)。
+    check_children(h, {117, 118});
     CHECK(h.child(129) == nullptr);
     CHECK(h.child(130) == nullptr);
     CHECK(h.child(131) == nullptr);
 
-    // 回标题项确认 → phase8 的 interrupt(root,14) 才出生真实 cursor 子体。
     h.advance(12);
     CHECK_EQ(h.pause->state.phase, 6);
-    h.frame(0x20);  // ↓ → タイトルへ
+    h.frame(0x20);
     CHECK_EQ(h.pause->state.menu.cursor, 1);
-    h.frame(1);  // 确认 → 20 帧闪烁
+    h.frame(1);
     h.advance(21);
     CHECK_EQ(h.pause->state.phase, 9);
     check_children(h, {129, 130, 131});
@@ -167,7 +150,6 @@ TEST(real_pause_overlay_builds_text75_backdrop_and_front132_tree) {
     CHECK(no != nullptr);
     if (yes) CHECK_EQ(yes->source_script, 130);
     if (no) CHECK_EQ(no->source_script, 131);
-    // 默认 No（131）取消后回到菜单，不触发回标题。
     h.frame(0x102);
     CHECK_EQ(h.pause->state.phase, 10);
     h.advance(21);
@@ -194,10 +176,9 @@ TEST(real_practice_pause_uses_front133_entries) {
     h.advance(12);
     CHECK_EQ(h.pause->state.phase, 6);
     CHECK(h.pause->state.practice);
-    h.frame(0x20);  // ↓ → タイトルへ
+    h.frame(0x20);
     CHECK_EQ(h.pause->state.menu.cursor, 1);
     h.frame(1);
-    // practice 分支不进入 Yes/No（无 cursor 130/131），12 帧后直接执行。
     CHECK_EQ(h.pause->state.phase, 16);
     h.advance(21);
     CHECK(!h.pause->active());
@@ -222,8 +203,7 @@ TEST(real_practice_end_uses_front134_entries) {
 
     h.advance(12);
     CHECK_EQ(h.pause->state.phase, 6);
-    CHECK_EQ(h.pause->state.menu.cursor, 1);  // 继续项被禁用，光标落タイトルへ
-    // 结束局 Esc 不恢复；菜单仍由真实 134 树承载。
+    CHECK_EQ(h.pause->state.menu.cursor, 1);
     h.frame(0x100);
     CHECK(h.pause->active());
     CHECK_EQ(h.pause->state.menu.cursor, 1);
@@ -247,14 +227,13 @@ TEST(real_game_over_uses_front142_entries_without_cursor_children) {
     CHECK_EQ(menu->source_script, 142);
     check_children(h, {137, 138, 139, 140, 141});
     check_children(h, {135, 136});
-    // 142 的真实脚本没有 cursor 130/131；GameOver 也不走 Yes/No。
     CHECK(h.child(130) == nullptr);
     CHECK(h.child(131) == nullptr);
 
     h.advance(12);
     CHECK_EQ(h.pause->state.phase, 6);
     CHECK_EQ(h.pause->state.menu.cursor, 0);
-    h.frame(1);  // 继续
+    h.frame(1);
     h.advance(15);
     CHECK(!h.pause->active());
     CHECK_EQ(h.host.continues, 1);
@@ -281,11 +260,10 @@ TEST(real_extra_results_use_front147_entries) {
     CHECK_EQ(h.pause->state.phase, 6);
     CHECK_EQ(h.pause->state.menu.count, 3);
     CHECK_EQ(h.pause->state.menu.cursor, 0);
-    h.frame(1);  // タイトルへ
+    h.frame(1);
     h.advance(15);
     CHECK(!h.pause->active());
     CHECK_EQ(h.host.titles, 1);
-    // 回标题由宿主切场景；暂停位保持（原版冻结语义，不由本测试改）。
     CHECK(h.environment.paused);
     CHECK(h.pause->error.empty());
 }
@@ -296,7 +274,6 @@ TEST(real_overlay_trees_are_collected_after_continue_close_and_title) {
     const u32 baseline = h.manager.registry.count();
     CHECK_EQ(baseline, 0u);
 
-    // 继续：retire(menu/snapshot) 后 0x20 树在下一次 manager.update 回收。
     CHECK(h.pause->open(PauseEntrance::Pause));
     const u32 menu_handle = h.pause->state.menu_animation;
     const u32 backdrop_handle = h.pause->state.snapshot_animation;
@@ -319,9 +296,9 @@ TEST(real_overlay_trees_are_collected_after_continue_close_and_title) {
     CHECK_EQ(h.manager.registry.count(), baseline);
     CHECK(h.manager.registry.find(menu_handle) == nullptr);
     CHECK(h.manager.registry.find(backdrop_handle) == nullptr);
-    for (u32 handle : children) CHECK(h.manager.registry.find(handle) == nullptr);
+    for (u32 handle : children)
+        CHECK(h.manager.registry.find(handle) == nullptr);
 
-    // Esc 关闭同样回收。
     CHECK(h.pause->open(PauseEntrance::Pause));
     const u32 menu_escape = h.pause->state.menu_animation;
     h.advance(12);
@@ -332,14 +309,13 @@ TEST(real_overlay_trees_are_collected_after_continue_close_and_title) {
     CHECK_EQ(h.manager.registry.count(), baseline);
     CHECK(h.manager.registry.find(menu_escape) == nullptr);
 
-    // 回标题：overlay 回收，但 run 仍冻结等宿主换场景。
     CHECK(h.pause->open(PauseEntrance::Pause));
     const u32 menu_title = h.pause->state.menu_animation;
     h.advance(12);
     h.frame(0x20);
     h.frame(1);
     h.advance(21);
-    h.frame(0x10);  // Yes
+    h.frame(0x10);
     h.frame(1);
     h.advance(21);
     h.advance(13);
@@ -366,8 +342,6 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     CHECK(!ascii.empty());
     if (effect.empty() || front.empty() || text.empty() || ascii.empty()) return;
     CHECK(manager.load(0, text.data(), u32(text.size())));
-    // 生产同构：ascii bank 兼任负值精灵回落（Application.cpp:266），effect 的
-    // 模板在装载期消费 ins_300(-1)，缺回落会整体装载失败。
     CHECK(manager.load(2, ascii.data(), u32(ascii.size())));
     CHECK(manager.sprite_fallback(2));
     CHECK(manager.load(3, front.data(), u32(front.size())));
@@ -383,7 +357,6 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     if (!focus_root) return;
     CHECK_EQ(focus_root->source_script, 22);
     CHECK(focus_root->resource == manager.resource(8));
-    // 停机回调由 StagePresentation::create_player_effect 安装（实际所有者）。
     CHECK(focus_root->pre_tick != nullptr);
     auto* focus_child = manager.registry.find_child_script(*focus_root, 21, 0);
     CHECK(focus_child != nullptr);
@@ -391,18 +364,12 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     CHECK_EQ(focus_child->source_script, 21);
     CHECK(focus_child->pre_tick != nullptr);
 
-    // 负控：同 manager 直建 script22，不经过 create_player_effect → 无 pre_tick。
-    // 0x462450:301-308 的暂停门只冻结 (render_flags & 0xc000)==0x4000 的主链
-    // VM；0x405010:65 的普通 VM 稳态正是 0x4000。这里把 bare 根显式置为
-    // 0x8000（门位清除）作为“无门 VM 继续推进”的负控；另建 gated 保留默认
-    // 0x4000，验证暂停门本身（BUG 8 修复）。
     const u32 bare = manager.create(8, 22, 12, 0, {40, 300, 0});
     CHECK(bare != 0);
     auto* bare_root = manager.registry.find(bare);
     CHECK(bare_root != nullptr);
     if (!bare_root) return;
-    bare_root->visual.render_flags =
-        (bare_root->visual.render_flags & ~0xc000u) | 0x8000u;
+    bare_root->visual.render_flags = (bare_root->visual.render_flags & ~0xc000u) | 0x8000u;
     const u32 gated = manager.create(8, 22, 12, 0, {80, 300, 0});
     CHECK(gated != 0);
     auto* gated_root = manager.registry.find(gated);
@@ -415,7 +382,8 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     if (!bare_child) return;
     CHECK(bare_child->pre_tick == nullptr);
 
-    for (int i = 0; i < 5; i++) CHECK(manager.update());
+    for (int i = 0; i < 5; i++)
+        CHECK(manager.update());
     const i32 root_time = focus_root->timer.current;
     const i32 child_time = focus_child->timer.current;
     const i32 root_age = focus_root->age.current;
@@ -434,28 +402,22 @@ TEST(focus_ring_script22_freeze_is_owned_by_stage_presentation_not_run_pause) {
     auto* menu = manager.registry.find(pause->state.menu_animation);
     CHECK(menu != nullptr);
     const i32 menu_age = menu ? menu->age.current : 0;
-    // 12 帧覆盖入场延迟（age>9）到 phase6，再发确认键。
     for (int i = 0; i < 12; i++) {
         pause->controls({0, 0, false});
         CHECK(scheduler.update() >= 0);
         CHECK(manager.update());
     }
     CHECK_EQ(pause->state.phase, 6);
-    // RunPause 只置 environment.paused；focus 的冻结来自 StagePresentation pre_tick。
     CHECK_EQ(focus_root->timer.current, root_time);
     CHECK_EQ(focus_child->timer.current, child_time);
     CHECK_EQ(focus_root->age.current, root_age);
     CHECK_EQ(focus_root->variables.rotation.z, root_rotation);
-    // 负控：显式清掉暂停门位（0x8000）的同脚本 VM 不被冻结。
     CHECK(bare_root->timer.current > bare_time);
-    // 正控：默认 0x4000 的主链 VM 被 0x462450:308 暂停门冻结（不依赖 pre_tick）。
     CHECK_EQ(gated_root->timer.current, gated_time);
-    // 覆盖层副链本身继续走（0xc000 已清），暂停不是全局停表。
     if (menu) CHECK(menu->age.current > menu_age);
-    CHECK(manager.registry.find(focus) != nullptr);  // 冻结 ≠ 回收
+    CHECK(manager.registry.find(focus) != nullptr);
     CHECK(manager.registry.find(bare) != nullptr);
 
-    // 继续：finish_selection(0) 清暂停位后 focus/子恢复推进。
     pause->controls({1, 0, false});
     CHECK(scheduler.update() >= 0);
     CHECK(manager.update());
@@ -483,7 +445,6 @@ TEST(real_pause_resource_identity_and_wrong_script_negative_controls) {
     CHECK(manager.load(0, text.data(), u32(text.size())));
     CHECK(manager.load(3, front.data(), u32(front.size())));
 
-    // 错误脚本：front2/text0 不 spawn，也不得产出 120/76 子 VM。
     const u32 wrong_front = manager.create(3, 2, -1, 4);
     const u32 wrong_text = manager.create(0, 0, -1, 4);
     CHECK(wrong_front != 0);
@@ -498,7 +459,6 @@ TEST(real_pause_resource_identity_and_wrong_script_negative_controls) {
     CHECK(manager.registry.find_child_script(*wrong_front_vm, 120, 0) == nullptr);
     CHECK(manager.registry.find_child_script(*wrong_text_vm, 76, 0) == nullptr);
 
-    // 正确脚本必须产出同一断言：证明上面的检查不是“句柄非零”。
     const u32 right_front = manager.create(3, 132, -1, 4);
     const u32 right_text = manager.create(0, 75, -1, 4);
     CHECK(right_front != 0);
@@ -512,8 +472,6 @@ TEST(real_pause_resource_identity_and_wrong_script_negative_controls) {
     CHECK(manager.registry.find_child_script(*right_text_vm, 76, 0) != nullptr);
     const auto before_failed_open = manager.registry.count();
 
-    // 错误 bank 身份：front 槽喂 text.anm、text 槽喂 front.anm。两资源都在，
-    // prepare 会过；text.anm 没有 script132，open 必须在建菜单时失败。
     SessionState progress;
     progress.rate = 1;
     FrameScheduler scheduler;
@@ -526,7 +484,6 @@ TEST(real_pause_resource_identity_and_wrong_script_negative_controls) {
     CHECK_EQ(swapped.state.snapshot_animation, 0u);
     CHECK(!swapped.active());
     CHECK_EQ(progress.scene_flags & 0x10u, 0u);
-    // 失败发生在挂起音频/暂停位之前：环境不得被半激活，背景也须回收。
     CHECK(!environment.paused);
     CHECK(manager.update());
     CHECK_EQ(manager.registry.count(), before_failed_open);

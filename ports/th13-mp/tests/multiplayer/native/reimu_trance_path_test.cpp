@@ -1,5 +1,3 @@
-// Real Reimu block-10 shot path (R-T2, R-G): a synthetic stationary Boss,
-// but production SHT, input, projectile registration and ANM lifecycle.
 #include "../../ecl/ecl_test_fixtures.hpp"
 #include "multiplayer/WorldState.hpp"
 #include "game/StagePresentation.hpp"
@@ -107,7 +105,6 @@ TEST(reimu_trance_shot_real_sht_to_boss_and_rollback) {
         Fixture f; const bool initialized=f.init(); CHECK(initialized);
         if(!initialized) continue;
         CHECK(f.find_boss()); if(!f.find_boss()) continue;
-        // Normal C edge, after the actual 30-frame activation gate.
         f.progress.ending_points=600;
         for(int frame=0;frame<32;++frame) CHECK(f.frame({0,0,0}));
         std::array<u32,3> buttons{};
@@ -146,12 +143,10 @@ TEST(reimu_trance_shot_real_sht_to_boss_and_rollback) {
             CHECK(vm); if(vm) { CHECK_EQ(vm->source_script,14); CHECK_EQ(vm->shot_effect_owner,u8(shooter+1)); }
         }
         if(registration[0]<0 || registration[1]<0 || !handle[0] || !handle[1]) continue;
-        // Geometry negative control: distant boss cannot consume the actual registrations.
         const float hp=f.boss().life;
         f.battle.sim.enemy_hit(f.boss());
         CHECK_EQ(f.boss().life,hp);
         for(i32 slot:registration) CHECK(f.battle.seats[size_t(shooter)].damage_registrations[size_t(slot)].active);
-        // Move only the synthetic Boss, not either projectile or its registration.
         const auto& a=f.battle.seats[size_t(shooter)].damage_registrations[size_t(registration[0])];
         const auto& b=f.battle.seats[size_t(shooter)].damage_registrations[size_t(registration[1])];
         f.boss().position[0]=(a.center_x+b.center_x)*.5f;
@@ -160,7 +155,6 @@ TEST(reimu_trance_shot_real_sht_to_boss_and_rollback) {
         multiplayer::WorldState saved;
         CHECK(saved.capture(f.battle,f.random,nullptr,&f.presentation));
         const u64 saved_digest=saved.digest();
-        // EX spell Bomb immunity consumes the same real shots but blocks HP.
         SpellSnapshot immune; immune.id=109; immune.flags=kSpellActive;
         f.battle.sim.spell.restore(immune); f.battle.sim.bomb_active=true;
         f.battle.sim.enemy_hit(f.boss());
@@ -171,7 +165,7 @@ TEST(reimu_trance_shot_real_sht_to_boss_and_rollback) {
         CHECK(f.find_boss()); if(!f.find_boss()) continue;
         auto collide_and_fade=[&](std::vector<u64>& digests) {
             f.battle.sim.enemy_hit(f.boss());
-            CHECK_EQ(hp-f.boss().life,17.f); // three seats: the Boss absorbs 60% of 44
+            CHECK_EQ(hp-f.boss().life,17.f);
             CHECK_EQ(f.boss().mp_boss_damage_remainder,3);
             for(size_t i=0;i<2;++i) {
                 const auto& reg=f.battle.seats[size_t(shooter)].damage_registrations[size_t(registration[i])];
@@ -186,13 +180,9 @@ TEST(reimu_trance_shot_real_sht_to_boss_and_rollback) {
                 CHECK(vm);
                 if(!vm) continue;
                 CHECK_EQ(vm->pending_interrupt,1);
-                // The label-1 fade is the boss-hit spark. Draw must submit it.
                 CHECK_EQ(f.renderer.draw(*vm),0);
             }
             CHECK(f.animations.update(false));
-            // pl00.anm script14 label1 is op403(192), then op409(30,0,0).
-            // Mode 0 is linear: f32(frame/30), x87 192-192*weight,
-            // then one integer truncation. The first tick advances to frame 1.
             const auto expected_alpha=[](int tick) {
                 const float weight=float(tick)/30.f;
                 return u32(int(192.0-192.0*double(weight)));
@@ -261,9 +251,6 @@ TEST(reimu_team_trance_nonowner_natural_boss_and_geometry_boundaries) {
         CHECK(f.find_boss()); if(!f.find_boss())continue;
         const auto& shot=shots[0];
         const auto& reg=f.battle.seats[size_t(shooter)].damage_registrations[size_t(shot.registration_slot)];
-        // After the next normal player update, shot14 moves 24 pixels at
-        // -pi/2. A synthetic axis-aligned enemy whose right edge is one pixel
-        // beyond or exactly at the shot's left edge gives a geometric control.
         const float next_x=reg.center_x, next_y=reg.center_y-shot.speed;
         const float half_x=reg.height*.5f, half_y=reg.width*.5f;
         auto prepare=[&](float separation) {
@@ -276,8 +263,6 @@ TEST(reimu_team_trance_nonowner_natural_boss_and_geometry_boundaries) {
             boss.vel.pos[0]=x;boss.vel.pos[1]=next_y;
             boss.tick_gate=false;
         };
-        // Inspect both registrations and exclude the other shot from the
-        // tiny box; inputs are released before the natural enemy update.
         CHECK(std::fabs(shots[1].x-shot.x)>2.f*half_x+2.f);
         multiplayer::WorldState before;CHECK(before.capture(f.battle,f.random,nullptr,&f.presentation));
         prepare(1.f);
@@ -288,7 +273,6 @@ TEST(reimu_team_trance_nonowner_natural_boss_and_geometry_boundaries) {
         CHECK(f.find_boss());if(!f.find_boss())continue;
         prepare(0.f);
         CHECK(f.frame({0,0,0})); CHECK(f.find_boss());if(!f.find_boss())continue;
-        // 22 points: 3/5 lands 13 (remainder 1/5); 2/5 lands 8 (remainder 4/5).
         CHECK_EQ(10000.f-f.boss().life,count==2?13.f:8.f);
         CHECK_EQ(f.boss().mp_boss_damage_remainder,count==2?1:4);
         CHECK_EQ(f.battle.seats[size_t(shooter)].shots[0].state,2);

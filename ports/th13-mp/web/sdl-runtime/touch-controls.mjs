@@ -1,5 +1,3 @@
-// Standalone page touch controls. The native controller owns gesture timing and
-// game context; this view only forwards contacts and the user's control state.
 export function bindTouchControls(mod, canvas) {
   const coarse = window.matchMedia?.('(pointer: coarse)');
   if (!(coarse?.matches || navigator.maxTouchPoints > 0)) return () => {};
@@ -79,10 +77,9 @@ export function bindTouchControls(mod, canvas) {
     });
     return () => owners.clear();
   };
-  const clearTrance = keyButton(tranceButton, 46); // C
-  const clearRetry = keyButton(retryButton, 19); // R
+  const clearTrance = keyButton(tranceButton, 46);
+  const clearRetry = keyButton(retryButton, 19);
   const contacts = new Set();
-  // 包围盒缓存：pointermove 高频路径不再每次强制布局；resize/视口变化失效。
   let box = null;
   addEventListener('resize', () => { box = null; });
   visualViewport?.addEventListener?.('resize', () => { box = null; });

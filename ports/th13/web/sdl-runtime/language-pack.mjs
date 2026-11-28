@@ -1,5 +1,3 @@
-// Shared static thcrap pack installer. The launcher sends the same
-// eagler-touhou/thcrap-static-pack/1 payload used by the other titles.
 export async function installLanguagePack(core, pack, game) {
   if (!pack) return;
   if (typeof pack.url !== 'string' || typeof pack.language !== 'string' ||

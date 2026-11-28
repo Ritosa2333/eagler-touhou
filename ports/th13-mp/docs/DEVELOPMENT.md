@@ -8,6 +8,7 @@
   2. WASI 无头 harness：wasi-sdk（`portable/build-harness.mjs` → `web/artifacts/wasi/`），供 oracle 对照与 CI。
 - **Oracle 对照**：Unicorn 无头模拟原版 EXE（桩掉 Win32/D3D），以录像驱动逐帧导出状态池，与 harness 输出逐字段比对，首个分歧即回归定位点。原版二进制与 oracle 轨迹只在开发期使用，不进网页构建。
 - **地址锚点**：`web/cpp/rebuild/AddressMap.hpp` 登记每个子系统的原版入口，供 oracle 与回归脚本引用。
+- **呈现**：画面只在动画帧回调内提交。窗口尺寸为零时保留待提交帧，帧缓冲首次作为绘制目标绑定时检查完整性；页面带 `?glDebug=1` 时每次呈现后读取 GL 错误码。画布上下文属性集中在 `web/sdl-runtime/context-attributes.mjs`。打包入口是 `portable/build-eagler.mjs`（`build.mjs` 加 `package-eagler.mjs`）；目录型运行时的文件清单由 `package-eagler.mjs` 与产品目录的 `runtimeAssets` 共同维护，改清单时两处一起改。
 
 ## 统一容器环境
 
@@ -58,6 +59,16 @@ make extract   # 解包 th13ogg.7z → games/th13/，生成 SHA256 清单与版�
 
 参考工作流（th10）采用机械静态重编译 + 渐进类型化替换的双层形态（`rebuild/` 与 `game/` 并存）。本项目当前为 clean-room + oracle 验收路线，Stage 1 事件流已逐字节对齐证明可行；若后续关卡/Boss 重符卡段频繁卡在浮点或边界语义，启动最小转译层（页级翻译仅覆盖卡住的函数，与 `game/` 并存），向参考工作流的混合形态收敛。
 
+## 源码不写注释
+
+多人版目录与普通版执行同一条规则：源码、脚本、测试、页面与配置文件不带注释，依据写进提交说明和测试。工具与豁免范围见[普通版开发指南](../../th13/docs/DEVELOPMENT.md)“源码不写注释”。
+
+```sh
+ports/th13/tools/container.sh --mp bash -lc 'node tools/no-comments.mjs'
+```
+
+`tests/no-comments.test.mjs` 把规则纳入门槛。`shell.mjs` 的观战生成块与 `common/browser/spectator-playback.mjs` 逐字节一致，原样保留，由 `tests/contracts/spectator-bridge.test.mjs` 守住。
+
 ## 测试
 
 ```sh
@@ -67,6 +78,10 @@ node portable/build-harness.mjs && node --experimental-wasi-unstable-preview1 to
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs stage1   # stage1：st01 跑 3600 帧，事件流落 web/artifacts/wasi/stage1-events.jsonl（契约见 docs/plans/event-contract.md）
 node --experimental-wasi-unstable-preview1 tools/run-harness.mjs replay games/replays/th13_udSr01.rpy   # 录像解码 + 逐帧输入注入（格式见 docs/plans/replay.md）
 ```
+
+ECL 全局变量证据使用普通版 `tools/oracle` 生成的 `stage-gvars.json`；两侧的
+`tests/ecl/ecl_stage_gvars_oracle_test.cpp` 断言同一份 setup、94 个整型读与
+94 个浮点读，以及 −9944 距离与负 id 两组变体。
 
 ## 同帧取像（golden 对拍）
 

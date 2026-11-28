@@ -4,19 +4,17 @@
 #include "BulletAppearance.hpp"
 #include "StageSim.hpp"
 #include <map>
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 
 namespace th13 {
-// External body/orb VMs, as in LaserInfiniteInf. Neither root joins the ANM
-// registry update chain; the laser manager alone ticks them.
 class LaserPresentation {
     struct Visual {
         struct Source final : AnmSpriteSource {
             i32 type = 0, color = 0;
             bool curve = false;
             i32 sprite_index(i32 parameter) const noexcept override {
-                if(curve)return 526+color; // 437d50 ignores the ANM parameter
+                if (curve) return 526 + color;
                 return bullet_animation_parameter(type, color, parameter);
             }
         } source;
@@ -32,6 +30,7 @@ class LaserPresentation {
     void retire(u32 generation);
     bool tick(AnmVm&);
     bool fail(const std::string& message);
+
 public:
     struct SnapshotData {
         struct Entry {

@@ -1,16 +1,4 @@
 #!/usr/bin/env python3
-"""Run the narrow real-transition MP replay seek fixture, without a browser.
-
-Requires a native build manifest with `flags` and `objects` (source/sourceSha256/
-object/sha256). Sources and objects are checked before reuse. The fixture extracts
-the current BrowserRuntime functions verbatim, not a second seek implementation.
-Example:
-  python3 tests/multiplayer/replay-prefix-seek.py --objects <build.json> \
-      --out /work/artifacts/replay-prefix-seek
-
-This uses existing ignored original assets. It does not certify a natural clear,
-network transport, browser rendering, or late-join spectator checkpoints.
-"""
 import argparse
 import hashlib
 import json
@@ -19,10 +7,8 @@ from pathlib import Path
 import subprocess
 import time
 
-
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
 
 def extract(text, signature):
     start = text.index(signature)
@@ -35,7 +21,6 @@ def extract(text, signature):
             depth -= 1
         cursor += 1
     return text[start:cursor]
-
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -96,7 +81,6 @@ def main():
     print(json.dumps(report))
     print((out / "run.log").read_text().splitlines()[-1])
     raise SystemExit(result.returncode)
-
 
 if __name__ == "__main__":
     main()

@@ -54,8 +54,6 @@ TEST(ordinary_point_spirit_adds_ten_displayed_points_as_one_thousand_raw) {
     CHECK_EQ(fixture.progress.max_point, 1003000);
     CHECK_EQ(fixture.score.score, 0);
     fixture.item(ItemPoint);
-    // Retail f409: 00438bc3 supplied 10.0 three times; 0042eaf2 then
-    // supplied 5680 to 00413bf0. Point collection does not increment max_point.
     CHECK_EQ(fixture.progress.max_point, 1003000);
     CHECK_EQ(fixture.score.score, 568);
 }

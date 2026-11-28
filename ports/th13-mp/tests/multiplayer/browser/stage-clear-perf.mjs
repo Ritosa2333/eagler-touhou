@@ -1,19 +1,3 @@
-// Real-browser stage transition probe (single-player path shared by both ports).
-//
-// A headless Chromium client boots the production runtime, enters a run and
-// triggers the stage clear after a warm-up, recording the wall cost of every
-// frame together with the transition state. The report isolates the frames the
-// transition adds (door, loader gate, activation) against the ordinary frame
-// cost, so a smooth transition is a measurable property: no transition frame
-// may cost more than a handful of ordinary frames.
-//
-//   TH13_STAGE=1 TH13_FRAMES=300 node tests/multiplayer/browser/stage-clear-perf.mjs [--out dir]
-//
-// Environment: TH13_STAGE (stage to clear, default 1), TH13_CHAR (0), TH13_DIFF (1),
-// TH13_FRAMES (frames before the clear, 300), TH13_AFTER (frames into the next
-// stage, 240), TH13_RUNTIME (module path, default this port's build; use
-// /sp/artifacts/sdl3/th13-sdl.mjs for ports/th13), TH13_MODE (pump | raf),
-// TH13_CPU (CDP CPU throttle), TH13_CHROME_FLAGS, PLAYWRIGHT_MODULE, CHROME_PATH.
 import {createRequire} from 'node:module';
 import {mkdir, writeFile} from 'node:fs/promises';
 import {join, resolve} from 'node:path';
@@ -80,10 +64,6 @@ try {
   }
   const samples = await page.evaluate(() => window.__probe.samples);
   await writeFile(join(out, 'samples.json'), JSON.stringify(samples));
-  // A frame belongs to the transition when it starts inside the clear gate,
-  // the loader gate or a pending stage door. Ordinary frames are everything
-  // before the clear and the next stage after activation (the first frames of
-  // a stage carry the entry caption; they are ordinary gameplay frames too).
   const inTransition = row => row.b_clear_age >= 0 || row.b_transition || row.b_loading ||
     row.b_pending >= 0 || row.b_pending_load > 0;
   const ordinary = samples.filter(row => row.run && !inTransition(row) && !row.loading_waiting).map(row => row.ms);

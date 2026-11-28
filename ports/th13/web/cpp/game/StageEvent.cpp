@@ -1,5 +1,3 @@
-// stage1 事件落盘实现。JSON 键序与 event-contract.md §4 一致；
-// 浮点 %.9g（float32 往返无损），整数十进制。
 #include "StageEvent.hpp"
 
 #include "StageMath.hpp"
@@ -32,7 +30,7 @@ void StageEventSink::key(const char* name) {
 
 void StageEventSink::num(float value) {
     if (!std::isfinite(value)) {
-        failed_ = true;  // 契约域外值：以失败暴露，不产出非法 JSON
+        failed_ = true;
         raw("null");
         return;
     }
@@ -47,16 +45,15 @@ void StageEventSink::unum(u32 value) {
     raw(buffer);
 }
 
-void StageEventSink::enemy_spawn(u32 enemy, const std::string& routine, float x, float y, float z,
-                                 float life, u32 parent) {
+void StageEventSink::enemy_spawn(u32 enemy, const std::string& routine, float x, float y, float z, float life,
+                                 u32 parent) {
     if (!out_) return;
     ++emitted_;
     char head[96];
-    std::snprintf(head, sizeof head, "{\"frame\":%u,\"seq\":%u,\"type\":\"enemy_spawn\",\"enemy\":%u",
-                  frame_, seq_++, enemy);
+    std::snprintf(head, sizeof head, "{\"frame\":%u,\"seq\":%u,\"type\":\"enemy_spawn\",\"enemy\":%u", frame_, seq_++,
+                  enemy);
     raw(head);
     raw(",\"routine\":\"");
-    // 子程序名字符集为 [A-Za-z0-9_]（SCPT 名表约束），仍做最小转义防御。
     for (char c : routine) {
         if (c == '"' || c == '\\' || c < 0x20) {
             char escape[8];
@@ -84,8 +81,8 @@ void StageEventSink::enemy_move(u32 enemy, u16 op, const u32* integral, const fl
     if (!out_) return;
     ++emitted_;
     char head[96];
-    std::snprintf(head, sizeof head, "{\"frame\":%u,\"seq\":%u,\"type\":\"enemy_move\",\"enemy\":%u,\"op\":%u",
-                  frame_, seq_++, enemy, op);
+    std::snprintf(head, sizeof head, "{\"frame\":%u,\"seq\":%u,\"type\":\"enemy_move\",\"enemy\":%u,\"op\":%u", frame_,
+                  seq_++, enemy, op);
     raw(head);
     raw(",\"args\":[");
     for (u32 i = 0; i < count; ++i) {
@@ -101,8 +98,8 @@ void StageEventSink::enemy_move(u32 enemy, u16 op, const u32* integral, const fl
     raw("]}\n");
 }
 
-void StageEventSink::bullet_spawn(u32 enemy, u32 slot, u32 way, u32 idx, float x, float y, float z,
-                                  float angle, float speed, u32 sprite, u32 subtype) {
+void StageEventSink::bullet_spawn(u32 enemy, u32 slot, u32 way, u32 idx, float x, float y, float z, float angle,
+                                  float speed, u32 sprite, u32 subtype) {
     if (!out_) return;
     ++emitted_;
     char head[128];
@@ -132,8 +129,7 @@ void StageEventSink::player(float x, float y, u32 state) {
     if (!out_) return;
     ++emitted_;
     char head[80];
-    std::snprintf(head, sizeof head,
-                  "{\"frame\":%u,\"seq\":%u,\"type\":\"player\",\"x\":", frame_, seq_++);
+    std::snprintf(head, sizeof head, "{\"frame\":%u,\"seq\":%u,\"type\":\"player\",\"x\":", frame_, seq_++);
     raw(head);
     num(x);
     key("\"y\"");
@@ -147,8 +143,7 @@ void StageEventSink::kill(u32 enemy, float x, float y) {
     if (!out_) return;
     ++emitted_;
     char head[96];
-    std::snprintf(head, sizeof head,
-                  "{\"frame\":%u,\"seq\":%u,\"type\":\"kill\",\"enemy\":%u,\"x\":", frame_, seq_++,
+    std::snprintf(head, sizeof head, "{\"frame\":%u,\"seq\":%u,\"type\":\"kill\",\"enemy\":%u,\"x\":", frame_, seq_++,
                   enemy);
     raw(head);
     num(x);
@@ -161,8 +156,7 @@ void StageEventSink::boss_op(u32 enemy, u16 op, const i32* args, u32 count, cons
     if (!out_) return;
     ++emitted_;
     char head[96];
-    std::snprintf(head, sizeof head,
-                  "{\"frame\":%u,\"seq\":%u,\"type\":\"boss_op\",\"enemy\":%u,\"op\":%u,\"args\":[",
+    std::snprintf(head, sizeof head, "{\"frame\":%u,\"seq\":%u,\"type\":\"boss_op\",\"enemy\":%u,\"op\":%u,\"args\":[",
                   frame_, seq_++, enemy, op);
     raw(head);
     for (u32 i = 0; i < count; ++i) {
@@ -175,8 +169,7 @@ void StageEventSink::boss_op(u32 enemy, u16 op, const i32* args, u32 count, cons
     for (const char* p = name; p && *p; ++p) {
         if (*p == '"' || *p == '\\' || static_cast<unsigned char>(*p) < 0x20) {
             char escape[8];
-            std::snprintf(escape, sizeof escape, "\\u%04x",
-                          static_cast<unsigned char>(*p));
+            std::snprintf(escape, sizeof escape, "\\u%04x", static_cast<unsigned char>(*p));
             raw(escape);
         } else {
             const char single[2] = {*p, 0};
@@ -186,4 +179,4 @@ void StageEventSink::boss_op(u32 enemy, u16 op, const i32* args, u32 count, cons
     raw("\"}\n");
 }
 
-}  // namespace th13
+}

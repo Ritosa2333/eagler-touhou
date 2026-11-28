@@ -1,5 +1,3 @@
-// Allocation/copy diagnostic for the production checkpoint path. No game
-// pumping, resource replacement, drawing or state digest field changes.
 #include "game/AnmRegistry.hpp"
 #include <algorithm>
 #include <array>

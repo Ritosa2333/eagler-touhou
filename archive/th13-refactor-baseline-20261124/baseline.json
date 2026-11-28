@@ -1,0 +1,333 @@
+{
+  "th13": {
+    "schema": "th13/gate-baseline/v1",
+    "port": "th13",
+    "group": "all",
+    "commit": "3acc887419d07af1ec2b51237880f7205685d298",
+    "recordedAt": "2026-11-24T01:38:19.311Z",
+    "totals": {
+      "passed": 952,
+      "failed": 11,
+      "assertions": 0
+    },
+    "suites": [
+      {
+        "name": "anm",
+        "exitCode": 1,
+        "seconds": 26.4,
+        "passed": 62,
+        "assertions": 0,
+        "failed": [
+          {
+            "test": "reimu2406_real_bullet_anm_child_phase_with_follower",
+            "cause": "运行时资源目录未准备：测试读 web/sdl-runtime/assets/bullet.anm（prepare-assets.mjs 生成）"
+          },
+          {
+            "test": "reimu2406_real_bullet_anm_tail_parent_phase_late_by_one",
+            "cause": "运行时资源目录未准备：测试读 web/sdl-runtime/assets/bullet.anm（prepare-assets.mjs 生成）"
+          },
+          {
+            "test": "png_decode_stb",
+            "cause": "缺输入：测试读取 thtk 提取产物 artifacts/reference/textures/effect/eff_switch.png"
+          }
+        ]
+      },
+      {
+        "name": "ecl",
+        "exitCode": 1,
+        "seconds": 81.1,
+        "passed": 176,
+        "assertions": 0,
+        "failed": [
+          {
+            "test": "real_stage5_phantom_retains_radius_during_opening",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/circle-time-20261027"
+          },
+          {
+            "test": "real_stage3_card_emits_curve_lasers_through_711",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/curve-production-20261027"
+          },
+          {
+            "test": "extra_callback_spawns_real_enemy_and_consumes_trigger_once",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/enemy-functions-20261027"
+          },
+          {
+            "test": "real_stage2_boss_attack_registers_and_applies_moving_wall_callback",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/enemy-functions-20261027"
+          },
+          {
+            "test": "stage5_girld01_second_move_uses_sine_acceleration_not_linear",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/stage5-hit-20261027"
+          }
+        ]
+      },
+      {
+        "name": "ui",
+        "exitCode": 0,
+        "seconds": 129.1,
+        "passed": 553,
+        "assertions": 0,
+        "failed": []
+      },
+      {
+        "name": "replay",
+        "exitCode": 0,
+        "seconds": 244.9,
+        "passed": 33,
+        "assertions": 0,
+        "failed": []
+      },
+      {
+        "name": "items",
+        "exitCode": 0,
+        "seconds": 244.1,
+        "passed": 60,
+        "assertions": 0,
+        "failed": []
+      },
+      {
+        "name": "score",
+        "exitCode": 0,
+        "seconds": 128.9,
+        "passed": 16,
+        "assertions": 0,
+        "failed": []
+      },
+      {
+        "name": "combat",
+        "exitCode": 0,
+        "seconds": 67.9,
+        "passed": 0,
+        "assertions": 0,
+        "failed": []
+      },
+      {
+        "name": "bomb",
+        "exitCode": 0,
+        "seconds": 0.3,
+        "passed": 0,
+        "assertions": 0,
+        "failed": []
+      },
+      {
+        "name": "audio",
+        "exitCode": 0,
+        "seconds": 53.6,
+        "passed": 27,
+        "assertions": 0,
+        "failed": []
+      },
+      {
+        "name": "e2e",
+        "exitCode": 1,
+        "seconds": 0.0,
+        "passed": 0,
+        "assertions": 0,
+        "failed": [
+          {
+            "test": "退出码 1",
+            "cause": "缺原版字体 msgothic.ttc"
+          }
+        ]
+      },
+      {
+        "name": "js",
+        "exitCode": 1,
+        "seconds": 2.6,
+        "passed": 25,
+        "assertions": 0,
+        "failed": [
+          {
+            "test": "tests/managed-shell.test.mjs",
+            "cause": "容器内没有 launcher 的 node_modules（缺 acorn）"
+          },
+          {
+            "test": "actual GraphicsDevice native submission controls (no SDL/GLES dependency)",
+            "cause": "测试只编译 GraphicsDevice.cpp，缺 LanguagePack.cpp 导致链接失败"
+          }
+        ]
+      }
+    ]
+  },
+  "th13-mp": {
+    "schema": "th13/gate-baseline/v1",
+    "port": "th13-mp",
+    "group": "all",
+    "commit": "3acc887419d07af1ec2b51237880f7205685d298",
+    "recordedAt": "2026-11-24T01:49:56.502Z",
+    "totals": {
+      "passed": 953,
+      "failed": 14,
+      "assertions": 1683671
+    },
+    "suites": [
+      {
+        "name": "anm",
+        "exitCode": 1,
+        "seconds": 26.8,
+        "passed": 62,
+        "assertions": 7709,
+        "failed": [
+          {
+            "test": "reimu2406_real_bullet_anm_child_phase_with_follower",
+            "cause": "运行时资源目录未准备：测试读 web/sdl-runtime/assets/bullet.anm（prepare-assets.mjs 生成）"
+          },
+          {
+            "test": "reimu2406_real_bullet_anm_tail_parent_phase_late_by_one",
+            "cause": "运行时资源目录未准备：测试读 web/sdl-runtime/assets/bullet.anm（prepare-assets.mjs 生成）"
+          },
+          {
+            "test": "png_decode_stb",
+            "cause": "缺输入：测试读取 thtk 提取产物 artifacts/reference/textures/effect/eff_switch.png"
+          }
+        ]
+      },
+      {
+        "name": "ecl",
+        "exitCode": 1,
+        "seconds": 81.3,
+        "passed": 176,
+        "assertions": 96950,
+        "failed": [
+          {
+            "test": "real_stage5_phantom_retains_radius_during_opening",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/circle-time-20261027"
+          },
+          {
+            "test": "real_stage3_card_emits_curve_lasers_through_711",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/curve-production-20261027"
+          },
+          {
+            "test": "extra_callback_spawns_real_enemy_and_consumes_trigger_once",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/enemy-functions-20261027"
+          },
+          {
+            "test": "real_stage2_boss_attack_registers_and_applies_moving_wall_callback",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/enemy-functions-20261027"
+          },
+          {
+            "test": "stage5_girld01_second_move_uses_sine_acceleration_not_linear",
+            "cause": "测试把事件输出写死到历史证据目录 artifacts/verification/stage5-hit-20261027"
+          }
+        ]
+      },
+      {
+        "name": "ui",
+        "exitCode": 1,
+        "seconds": 137.5,
+        "passed": 549,
+        "assertions": 1545509,
+        "failed": [
+          {
+            "test": "independent_real_bubble_restore_and_missing_restore_negative_control",
+            "cause": "多人版独有测试：按旧的相对层级（../artifacts/reference/raw）查找原版 ANM，在容器工作目录下落空"
+          }
+        ]
+      },
+      {
+        "name": "replay",
+        "exitCode": 0,
+        "seconds": 250.3,
+        "passed": 33,
+        "assertions": 11561,
+        "failed": []
+      },
+      {
+        "name": "items",
+        "exitCode": 0,
+        "seconds": 249.8,
+        "passed": 60,
+        "assertions": 436,
+        "failed": []
+      },
+      {
+        "name": "score",
+        "exitCode": 0,
+        "seconds": 139.8,
+        "passed": 16,
+        "assertions": 2457,
+        "failed": []
+      },
+      {
+        "name": "combat",
+        "exitCode": 1,
+        "seconds": 56.0,
+        "passed": 0,
+        "assertions": 0,
+        "failed": [
+          {
+            "test": "退出码 1",
+            "cause": "MP combat 套件编译依赖 libdatachannel 头文件，th13-dev 镜像未安装"
+          }
+        ]
+      },
+      {
+        "name": "bomb",
+        "exitCode": 0,
+        "seconds": 0.3,
+        "passed": 0,
+        "assertions": 0,
+        "failed": []
+      },
+      {
+        "name": "audio",
+        "exitCode": 0,
+        "seconds": 54.8,
+        "passed": 27,
+        "assertions": 18994,
+        "failed": []
+      },
+      {
+        "name": "e2e",
+        "exitCode": 1,
+        "seconds": 0.0,
+        "passed": 0,
+        "assertions": 0,
+        "failed": [
+          {
+            "test": "退出码 1",
+            "cause": "缺原版字体 msgothic.ttc"
+          }
+        ]
+      },
+      {
+        "name": "contracts",
+        "exitCode": 0,
+        "seconds": 0.3,
+        "passed": 9,
+        "assertions": 55,
+        "failed": []
+      },
+      {
+        "name": "multiplayer",
+        "exitCode": 1,
+        "seconds": 0.0,
+        "passed": 0,
+        "assertions": 0,
+        "failed": [
+          {
+            "test": "退出码 1",
+            "cause": "缺原版字体 msgothic.ttc"
+          }
+        ]
+      },
+      {
+        "name": "js",
+        "exitCode": 1,
+        "seconds": 2.8,
+        "passed": 21,
+        "assertions": 0,
+        "failed": [
+          {
+            "test": "tests/managed-shell.test.mjs",
+            "cause": "容器内没有 launcher 的 node_modules（缺 acorn）"
+          },
+          {
+            "test": "actual GraphicsDevice native submission controls (no SDL/GLES dependency)",
+            "cause": "测试只编译 GraphicsDevice.cpp，缺 LanguagePack.cpp 导致链接失败"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,5 +1,4 @@
 #pragma once
-// Native boundary test declarations only; no SDL/GL implementation is linked.
 #include <cstddef>
 struct SDL_Window {};
 using SDL_GLContext = void*;

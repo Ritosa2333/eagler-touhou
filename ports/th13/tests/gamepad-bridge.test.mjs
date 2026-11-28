@@ -1,7 +1,3 @@
-// TH13 consumes the Launcher's canonical gamepad mapping through the shared
-// browser bridge. This test executes the real bridge, not a source-shape mock:
-// identity is bound to protocol/game/epoch/origin, invalid bits fail closed,
-// and not-ready clears the Launcher owner.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createKeyboardInputBridge} from '../web/sdl-runtime/directory-keyboard.mjs';

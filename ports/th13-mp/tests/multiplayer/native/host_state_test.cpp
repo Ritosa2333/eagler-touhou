@@ -1,6 +1,3 @@
-// Host control state is compared alongside the world at confirmed frames.
-// These negative controls keep the battle and dialogue unchanged while
-// changing a host field that can alter the next update or scene handoff.
 #include "../../harness/test_framework.hpp"
 #include "sdl/ApplicationState.hpp"
 #include "multiplayer/HostState.hpp"
@@ -46,7 +43,7 @@ bool world(App& app, WorldState& state) {
     return state.capture(app.run->battle, app.visual, nullptr,
         app.run->presentation.get(), app.run.get(), app.run_transition.handle());
 }
-} // namespace
+}
 
 TEST(host_digest_detects_control_state_mutations) {
     HostState original;
@@ -208,8 +205,6 @@ TEST(new_session_discards_local_startup_loader_history) {
         CHECK(app.audio_device.initialize_for_test(assets,
             std::string(root) + "/games/th13/thbgmogg.dat"));
         CHECK(app.initialize(false));
-        // Browser startup advances this isolated manager before the title;
-        // its duration and RNG history belong to the individual device.
         for (unsigned i = 0; i < client * 73; ++i) CHECK(app.advance_loading_caption());
         for (unsigned i = 0; i < 30; ++i) CHECK(app.advance_loading(.1));
         GameInput idle;
@@ -252,5 +247,4 @@ TEST(new_session_discards_local_startup_loader_history) {
     }
 }
 
-// This suite also registers its cases in the cumulative m6 binary.
 int __attribute__((weak)) main() { return run_all("MP host state digest and restore"); }

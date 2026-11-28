@@ -1,13 +1,14 @@
+#include "../ecl/ecl_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 #include "game/ReplaySession.hpp"
 #include "game/StageBattle.hpp"
-#include "../ecl/ecl_test_fixtures.hpp"
 
 namespace {
 using namespace th13;
 
 void put32(std::vector<u8>& bytes, u32 offset, i32 value) {
-    for (u32 byte = 0; byte < 4; ++byte) bytes[offset + byte] = u8(u32(value) >> (8 * byte));
+    for (u32 byte = 0; byte < 4; ++byte)
+        bytes[offset + byte] = u8(u32(value) >> (8 * byte));
 }
 
 ReplayStage stage(u16 number, u16 seed, i32 score, i32 power) {
@@ -71,73 +72,125 @@ TEST(replay_next_stage_restores_its_own_seed_and_resources) {
 }
 
 TEST(replay_load_and_transition_have_distinct_rng_restoration) {
-    ReplayFile file; file.stages.push_back(stage(1, 0x1234, 42, 100));
-    SessionState progress; HudPlayerState player; HudScoreState score;
+    ReplayFile file;
+    file.stages.push_back(stage(1, 0x1234, 42, 100));
+    SessionState progress;
+    HudPlayerState player;
+    HudScoreState score;
     GameRandom game(0xaaaa), visual(0xbbbb);
-    game.next(); visual.next(); visual.step16();
+    game.next();
+    visual.next();
+    visual.step16();
     const auto visual_seed = visual.seed();
     const auto visual_index = visual.index();
     ReplayRestoreTarget target{&progress, &player, &score, &game, &visual};
-    ReplayRestoreLog log; std::string error;
-    // 00447900:200-201: game seed and counter only, preserving visual state.
+    ReplayRestoreLog log;
+    std::string error;
     CHECK(ReplaySession::restore_stage(file, 0, target, log, error, ReplayRestorePhase::Load));
-    CHECK_EQ(game.seed(), u16(0x1234)); CHECK_EQ(game.index(), 0u);
-    CHECK_EQ(visual.seed(), visual_seed); CHECK_EQ(visual.index(), visual_index);
+    CHECK_EQ(game.seed(), u16(0x1234));
+    CHECK_EQ(game.index(), 0u);
+    CHECK_EQ(visual.seed(), visual_seed);
+    CHECK_EQ(visual.index(), visual_index);
     game.next();
-    // 00449070:40-42: both seeds, only the game counter is reset.
     CHECK(ReplaySession::restore_stage(file, 0, target, log, error, ReplayRestorePhase::Transition));
-    CHECK_EQ(game.seed(), u16(0x1234)); CHECK_EQ(game.index(), 0u);
-    CHECK_EQ(visual.seed(), u16(0x1234)); CHECK_EQ(visual.index(), visual_index);
+    CHECK_EQ(game.seed(), u16(0x1234));
+    CHECK_EQ(game.index(), 0u);
+    CHECK_EQ(visual.seed(), u16(0x1234));
+    CHECK_EQ(visual.index(), visual_index);
 }
 TEST(replay_start_restores_signed_fixed_position_and_focus_without_clamping) {
-    StageBattle battle;std::string error;auto saved=stage(5,123,0,100);
-    put32(saved.header,0x0c,-6163);put32(saved.header,0x10,47332);put32(saved.header,0x6c,1);
-    CHECK(ReplaySession::restore_player_start(saved,battle,error));
-    CHECK_EQ(battle.pos_fx,-6163);CHECK_EQ(battle.pos_fy,47332);
-    CHECK_EQ(battle.player_x,-48.1484375f);CHECK_EQ(battle.player_y,369.78125f);
-    CHECK_EQ(battle.sim.player_x,battle.player_x);CHECK(battle.focus);
-    put32(saved.header,0x0c,0);put32(saved.header,0x10,61440);put32(saved.header,0x6c,0);
-    CHECK(ReplaySession::restore_player_start(saved,battle,error));
-    CHECK_EQ(battle.player_y,480.f);CHECK(!battle.focus);
-    saved.header.resize(0x6f);CHECK(!ReplaySession::restore_player_start(saved,battle,error));
-    CHECK_EQ(battle.pos_fy,61440);
+    StageBattle battle;
+    std::string error;
+    auto saved = stage(5, 123, 0, 100);
+    put32(saved.header, 0x0c, -6163);
+    put32(saved.header, 0x10, 47332);
+    put32(saved.header, 0x6c, 1);
+    CHECK(ReplaySession::restore_player_start(saved, battle, error));
+    CHECK_EQ(battle.pos_fx, -6163);
+    CHECK_EQ(battle.pos_fy, 47332);
+    CHECK_EQ(battle.player_x, -48.1484375f);
+    CHECK_EQ(battle.player_y, 369.78125f);
+    CHECK_EQ(battle.sim.player_x, battle.player_x);
+    CHECK(battle.focus);
+    put32(saved.header, 0x0c, 0);
+    put32(saved.header, 0x10, 61440);
+    put32(saved.header, 0x6c, 0);
+    CHECK(ReplaySession::restore_player_start(saved, battle, error));
+    CHECK_EQ(battle.player_y, 480.f);
+    CHECK(!battle.focus);
+    saved.header.resize(0x6f);
+    CHECK(!ReplaySession::restore_player_start(saved, battle, error));
+    CHECK_EQ(battle.pos_fy, 61440);
 }
-struct StartProvider final:EclResourceProvider {
-    StageSim& sim;explicit StartProvider(StageSim& s):sim(s){}
-    bool read(const std::string&,std::vector<u8>& out)override {
-        std::vector<u8> root;th13test::emit(root,0,23,0,255,0,{600});th13test::emit(root,0,10,0,255,0,{});
-        out=th13test::build_scpt({{"main",root}},{"enemy.anm","st01enm.anm"});return true;
+struct StartProvider final : EclResourceProvider {
+    StageSim& sim;
+    explicit StartProvider(StageSim& s) : sim(s) {}
+    bool read(const std::string&, std::vector<u8>& out) override {
+        std::vector<u8> root;
+        th13test::emit(root, 0, 23, 0, 255, 0, {600});
+        th13test::emit(root, 0, 10, 0, 255, 0, {});
+        out = th13test::build_scpt({{"main", root}}, {"enemy.anm", "st01enm.anm"});
+        return true;
     }
-    bool animation(u32,const std::string& name)override{sim.anim_list.push_back(name);return true;}
+    bool animation(u32, const std::string& name) override {
+        sim.anim_list.push_back(name);
+        return true;
+    }
 };
-struct StartHost final:StageBattleServices {
-    bool life_hud(i32,i32)override{return true;}bool bomb_hud(i32,i32)override{return true;}
-    bool request_game_over()override{return true;}bool hud_sound(i32)override{return true;}
+struct StartHost final : StageBattleServices {
+    bool life_hud(i32, i32) override { return true; }
+    bool bomb_hud(i32, i32) override { return true; }
+    bool request_game_over() override { return true; }
+    bool hud_sound(i32) override { return true; }
 };
 TEST(replay_start_initializes_youmu_follow_history_before_first_movement) {
-    StageBattle battle;StartProvider provider{battle.sim};StartHost host;
-    SessionState progress;progress.character=3;HudPlayerState player;player.power=400;
-    HudScoreState score;CHECK(battle.load(provider,"start.ecl",2,host,progress,player,score));
-    auto saved=stage(3,123,0,400);put32(saved.header,0x0c,12800);put32(saved.header,0x10,25600);
-    std::string error;CHECK(ReplaySession::restore_player_start(saved,battle,error));
-    CHECK_EQ(battle.option_count,4);
-    for(int i=0;i<4;++i){CHECK_EQ(battle.options[i].x,100.f);CHECK_EQ(battle.options[i].y,200.f);}
-    GameInput input;input.held=0x80;CHECK(battle.step(input));
-    CHECK(battle.player_x>100.f);
-    for(int i=0;i<4;++i){CHECK_EQ(battle.options[i].x,100.f);CHECK_EQ(battle.options[i].y,200.f);}
+    StageBattle battle;
+    StartProvider provider{battle.sim};
+    StartHost host;
+    SessionState progress;
+    progress.character = 3;
+    HudPlayerState player;
+    player.power = 400;
+    HudScoreState score;
+    CHECK(battle.load(provider, "start.ecl", 2, host, progress, player, score));
+    auto saved = stage(3, 123, 0, 400);
+    put32(saved.header, 0x0c, 12800);
+    put32(saved.header, 0x10, 25600);
+    std::string error;
+    CHECK(ReplaySession::restore_player_start(saved, battle, error));
+    CHECK_EQ(battle.option_count, 4);
+    for (int i = 0; i < 4; ++i) {
+        CHECK_EQ(battle.options[i].x, 100.f);
+        CHECK_EQ(battle.options[i].y, 200.f);
+    }
+    GameInput input;
+    input.held = 0x80;
+    CHECK(battle.step(input));
+    CHECK(battle.player_x > 100.f);
+    for (int i = 0; i < 4; ++i) {
+        CHECK_EQ(battle.options[i].x, 100.f);
+        CHECK_EQ(battle.options[i].y, 200.f);
+    }
 }
 TEST(youmu_option_uses_history_entry_seven_for_first_option) {
-    StageBattle battle; StartProvider provider{battle.sim}; StartHost host;
-    SessionState progress; progress.character = 3; HudPlayerState player; player.power = 100;
-    HudScoreState score; CHECK(battle.load(provider, "start.ecl", 2, host, progress, player, score));
+    StageBattle battle;
+    StartProvider provider{battle.sim};
+    StartHost host;
+    SessionState progress;
+    progress.character = 3;
+    HudPlayerState player;
+    player.power = 100;
+    HudScoreState score;
+    CHECK(battle.load(provider, "start.ecl", 2, host, progress, player, score));
     battle.restore_replay_player(0, 51200, false);
-    GameInput input; input.held = 0x80;
-    for (int i = 0; i < 7; ++i) CHECK(battle.step_transition(input));
+    GameInput input;
+    input.held = 0x80;
+    for (int i = 0; i < 7; ++i)
+        CHECK(battle.step_transition(input));
     CHECK_EQ(battle.options[0].x, 0.f);
     CHECK(battle.step_transition(input));
-    // 00445660: +14770 is entry 7 relative to +14738, not entry 8.
     CHECK(battle.options[0].x > 0.f);
 }
-}  // namespace
+}
 
 int main() { return th13test::run_all("Replay stage restoration"); }
