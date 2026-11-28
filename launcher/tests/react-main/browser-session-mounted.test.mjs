@@ -1282,8 +1282,7 @@ test('actual BrowserLauncher: downloads and add-ons lists local visual packs and
   await mountBrowser({initial: '/en.html', host: subsetHost(['th06', 'th07', 'th08']), seedPackages: ['th08']});
   const session = api.getTestSession();
   assert.equal(env.document.querySelector('.game-install-shortcut'), null, 'no progress shortcut while idle');
-  await click('#mastheadMenuToggle');
-  await click('#mastheadMenuPanel a[href*="section=installs"]');
+  await click('.book-sidebar-footer a[href*="section=installs"]');
   await until(() => env.document.querySelector('.game-install-page .beauty-packs-empty'), 'empty visual packs section');
   await React.act(async () => {
     for (const game of ['th06', 'th07']) await session.acquisition.importPackage({game, file: importPackageFile(game, 'beauty')});

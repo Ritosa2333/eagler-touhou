@@ -118,6 +118,7 @@ function InitialSurface({ lobby, profile, account }: { lobby: boolean; profile: 
   ) : (
     <LibrarySurface
       masthead={masthead}
+      homeHref={mastheadUrl(localeHome(locale))}
       products={products}
       interactive={false}
       onSelect={inactive}

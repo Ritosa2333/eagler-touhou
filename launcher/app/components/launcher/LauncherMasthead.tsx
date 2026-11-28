@@ -152,6 +152,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
   const installsLink: MastheadSiteLink | undefined = section === 'installs' ? undefined : {
     href: launcherSectionHref(props.launcherHref, 'installs'), icon: <Download aria-hidden="true"/>, label: t('downloadTasks.pageTitle'),
   };
+  const desktopInstallsLink = variant === 'library' && !section && !profileOpen ? undefined : installsLink;
   const canWatchReplay = variant === 'lobby' && !!props.onReplay;
   const faqLink: MastheadSiteLink = {href: props.faqHref, icon: <NavigationIcon name="faq"/>, label: t('nav.faq')};
   const helpLinks: MastheadSiteLink[] = [
@@ -329,12 +330,12 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                   {canWatchReplay &&
                     <DropdownMenu.Item className="ui-menu-item" id="watchReplayButton" onSelect={() => {replayAfterClose.current = true;}}><PlaySquare aria-hidden="true"/>{t('lobby.watchReplay')}</DropdownMenu.Item>
                   }
-                  {installsLink && <DropdownMenu.Item asChild>
-                    <Link className="ui-menu-item" href={installsLink.href} {...(props.nativeLinks ? {} : {rememberEntry:true})}>
-                      {installsLink.icon}{installsLink.label}
+                  {desktopInstallsLink && <DropdownMenu.Item asChild>
+                    <Link className="ui-menu-item" href={desktopInstallsLink.href} {...(props.nativeLinks ? {} : {rememberEntry:true})}>
+                      {desktopInstallsLink.icon}{desktopInstallsLink.label}
                     </Link>
                   </DropdownMenu.Item>}
-                  {(canWatchReplay || installsLink) && <DropdownMenu.Separator className="ui-menu-separator" />}
+                  {(canWatchReplay || desktopInstallsLink) && <DropdownMenu.Separator className="ui-menu-separator" />}
                   <DropdownMenu.Group aria-label={t('nav.help')}>
                     <DropdownMenu.Label className="masthead-menu-heading">{t('nav.help')}</DropdownMenu.Label>
                     <DropdownMenu.Item className="ui-menu-item" id="firstUseNoticeOpen" onSelect={props.onFirstUse}>

@@ -12,18 +12,41 @@ try {
   });
   await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
   const menuEntry = '#mastheadMenuPanel a[href*="section=installs"]';
-  const openDownloads = async () => {
-    await page.locator('#mastheadMenuToggle:not(:disabled)').click();
-    await page.locator(menuEntry).click();
+  const railEntry = '.book-sidebar-footer a[href*="section=installs"]';
+  const menuToggle = '#mastheadMenuToggle:not(:disabled)';
+  const openDownloads = async width => {
+    if (width === 390) {
+      assert.equal(await page.$(railEntry), null, 'phones have no desktop sidebar entry');
+      await page.locator(menuToggle).click();
+      await page.locator(menuEntry).click();
+    } else {
+      await page.locator(railEntry).click();
+    }
     await page.waitForSelector('.game-install-page .beauty-packs', {visible:true});
     await page.waitForSelector('#mastheadMenuPanel', {hidden:true});
   };
   for (const width of [1440, 390]) {
-    await page.setViewport({width, height:819, isMobile:width === 390, hasTouch:width === 390});
+    await page.setViewport({width, height:width === 390 ? 819 : 430, isMobile:width === 390, hasTouch:width === 390});
     await page.goto(new URL('?preview=install', origin).href, {waitUntil:'domcontentloaded'});
     await page.waitForSelector('#eaglerPreload', {hidden:true});
     const entryUrl = page.url();
-    await openDownloads();
+    if (width === 1440) {
+      assert.equal(await page.$eval(railEntry, link => {
+        const sidebar = link.closest('.book-sidebar');
+        const list = sidebar.querySelector('nav');
+        const before = link.getBoundingClientRect();
+        list.scrollTop = list.scrollHeight;
+        const after = link.getBoundingClientRect();
+        return list.scrollTop > 0 && before.top === after.top && after.bottom === sidebar.getBoundingClientRect().bottom - 12 &&
+          list.getBoundingClientRect().bottom <= after.top;
+      }), true, 'the downloads row stays at the bottom when the categories scroll');
+      await page.locator(menuToggle).click();
+      await page.waitForSelector('#mastheadMenuPanel', {visible:true});
+      assert.equal(await page.$(menuEntry), null, 'the library desktop menu does not duplicate the sidebar link');
+      await page.keyboard.press('Escape');
+      await page.waitForSelector('#mastheadMenuPanel', {hidden:true});
+    }
+    await openDownloads(width);
     assert.equal(await page.$('.game-install-shortcut'), null, 'the floating shortcut stays hidden while idle');
     assert.ok(await page.$eval('.game-install-empty', node => node.offsetHeight < 60), 'idle install status occupies one row');
     await page.locator('.game-install-page .launcher-back').click();
@@ -68,13 +91,13 @@ try {
   assert.equal(await page.$eval('#launch', button => button.disabled), true, 'simulated installs do not enable actual play');
   await page.locator('#installPreviewAgain').click();
   await page.waitForSelector('#launch [aria-valuenow]');
-  await openDownloads();
+  await openDownloads(1440);
   await page.locator('[data-download-active="th07"] button').click();
   await page.waitForSelector('.game-install-empty');
   await page.locator('.game-install-page .launcher-back').click();
   await page.waitForFunction(() => document.querySelector('#launchText')?.textContent === '安装游戏');
   assert.deepEqual(resources, []);
-  console.log('PASS: menu entry and back on desktop/mobile, full-button progress, repeat, cancel, and no game-resource requests');
+  console.log('PASS: desktop sidebar and mobile menu entries, back, full-button progress, repeat, cancel, and no game-resource requests');
 } finally {
   await browser.close();
 }

@@ -30,13 +30,14 @@ type GameAction = {
   onClick(event: MouseEvent<HTMLElement>): void;
 };
 
-export function BookGameRail<Id extends string>({label, className, groups, search, interactive, favorite, gameAction}: {
+export function BookGameRail<Id extends string>({label, className, groups, search, interactive, favorite, gameAction, footer}: {
   label: string;
   className?: string;
   groups: readonly BookRailGroup<Id>[];
   search: Omit<ComponentProps<typeof LibrarySearch>, 'interactive' | 'desktop'>;
   interactive: boolean;
   favorite?: {ids: readonly string[]; onToggle(id: string): void};
+  footer?: ReactNode;
   gameAction(product: LibraryProduct, group: Id): GameAction;
 }) {
   const {t} = useLocale();
@@ -94,5 +95,6 @@ export function BookGameRail<Id extends string>({label, className, groups, searc
         }}
       </Disclosure>)}
     </nav>
+    {footer && <footer className="book-sidebar-footer">{footer}</footer>}
   </aside>;
 }

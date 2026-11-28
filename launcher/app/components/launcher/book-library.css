@@ -74,6 +74,17 @@
     overflow-y: auto;
     overscroll-behavior-y: contain;
   }
+  .book-sidebar-footer {
+    flex: none;
+    margin-block-start: auto;
+    padding-block-start: 8px;
+    border-block-start: 1px solid var(--kit-border);
+  }
+  .book-sidebar-footer-link.ui-kit-button {
+    width: 100%;
+    gap: 8px;
+    padding-inline: 10px;
+  }
   .book-category-row small {
     justify-self: end;
     text-align: right;

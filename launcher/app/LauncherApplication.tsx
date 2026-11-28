@@ -413,6 +413,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
         {(showLibrary || keepLibrary && libraryVisited) && <Activity mode={showLibrary ? 'visible' : 'hidden'}>
           <LibrarySurface
             products={host.products}
+            homeHref={host.assetUrl(localeHome(host.locale))}
             selectedProduct={preview}
             openedProduct={inlineProduct?.id ?? presence.openedProduct}
             onSelect={setPreview}

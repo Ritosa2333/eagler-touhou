@@ -9,6 +9,7 @@ import {
   Monitor,
   Puzzle,
   Disc3,
+  Download,
   Gamepad2,
   Shapes,
   Swords,
@@ -39,8 +40,11 @@ import {LibrarySearch} from './LibrarySearch';
 import {useContentMotion} from '../../ui/use-surface-motion';
 import {useLibraryMotion} from './use-library-motion';
 import {useBookDisclosures} from './use-book-disclosures';
+import {AppLink} from './AppLink';
+import {launcherSectionHref} from './launcher-sections';
 
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
+  homeHref: string;
   compact?: boolean;
   mobileSearchTarget?: HTMLElement | null;
   detail?: ReactNode;
@@ -59,7 +63,7 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 const defaultDisclosures = {windows: true, versus: true, fighting: true};
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, mobileSearchTarget, detail, onBrowse }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, mobileSearchTarget, detail, onBrowse, homeHref }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
   const showDetail = !compact && detail != null;
@@ -219,6 +223,12 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   return (
     <div className={`book-library book-view-${view}`} data-ui-kit="home">
       {!compact && <BookGameRail label={t('library.categories')} interactive={interactive}
+        footer={<Button asChild variant="ghost" size="row" className="book-sidebar-footer-link">
+          <AppLink href={launcherSectionHref(homeHref, 'installs')} rememberEntry>
+            <Download aria-hidden="true"/>
+            <span>{t('downloadTasks.pageTitle')}</span>
+          </AppLink>
+        </Button>}
         search={{query, inputRef:input, id:'librarySearch', controls:showDetail ? undefined : 'bookGameGrid',
           onChange:next => {
             reserveResultsSpace();
