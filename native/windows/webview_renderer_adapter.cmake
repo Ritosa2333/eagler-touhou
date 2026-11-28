@@ -1,5 +1,5 @@
-# DXGI shared textures must use the same adapter as the Flutter renderer.
-# Apply the narrow fix to generated build inputs, leaving the Pub cache intact.
+# Keep WebView textures and plugin cleanup compatible with the pinned engine.
+# Patch generated build inputs, leaving the Pub cache and SDK intact.
 function(launcher_align_webview_adapter)
   set(_plugin flutter_inappwebview_windows_plugin)
   if(NOT TARGET ${_plugin})
@@ -79,3 +79,46 @@ function(launcher_align_webview_adapter)
 endfunction()
 
 launcher_align_webview_adapter()
+
+# Plugins can remove handlers while Flutter is destroying their registrar.
+# At that point the messenger can outlive its engine, as it does for late replies.
+function(launcher_guard_plugin_messenger)
+  get_target_property(_sources flutter_wrapper_plugin SOURCES)
+  set(_guarded_sources)
+  set(_found FALSE)
+  foreach(_source IN LISTS _sources)
+    get_filename_component(_name "${_source}" NAME)
+    if(_name STREQUAL "core_implementations.cc")
+      file(READ "${_source}" _content)
+      string(REPLACE "\r\n" "\n" _content "${_content}")
+      string(SHA256 _actual "${_content}")
+      if(NOT _actual STREQUAL "854e39feb1e64cdb4766e74b7daa365c8307fd706308c73cc54ef32a460fb5b6")
+        message(FATAL_ERROR "Review the messenger lifetime fix before changing Flutter SDK")
+      endif()
+      string(REPLACE
+        "    FlutterDesktopMessengerSetCallback(messenger_, channel.c_str(), nullptr,\n                                       nullptr);"
+        "    if (FlutterDesktopMessengerIsAvailable(messenger_)) {\n      FlutterDesktopMessengerSetCallback(messenger_, channel.c_str(), nullptr,\n                                         nullptr);\n    }"
+        _content "${_content}")
+      string(SHA256 _patched "${_content}")
+      if(NOT _patched STREQUAL "b992469da4631798ab69a75534bfe10689553c7f4f4dcfb0b32f5f74bba66979")
+        message(FATAL_ERROR "Unexpected messenger lifetime patch output")
+      endif()
+      set(_work "${CMAKE_CURRENT_BINARY_DIR}/messenger_lifetime_input.cc")
+      set(_overlay "${CMAKE_CURRENT_BINARY_DIR}/messenger_lifetime/core_implementations.cc")
+      file(WRITE "${_work}" "${_content}")
+      configure_file("${_work}" "${_overlay}" COPYONLY)
+      get_filename_component(_headers "${_source}" DIRECTORY)
+      target_include_directories(flutter_wrapper_plugin PRIVATE "${_headers}")
+      list(APPEND _guarded_sources "${_overlay}")
+      set(_found TRUE)
+    else()
+      list(APPEND _guarded_sources "${_source}")
+    endif()
+  endforeach()
+  if(NOT _found)
+    message(FATAL_ERROR "Flutter plugin messenger wrapper source is unavailable")
+  endif()
+  set_property(TARGET flutter_wrapper_plugin PROPERTY SOURCES ${_guarded_sources})
+endfunction()
+
+launcher_guard_plugin_messenger()

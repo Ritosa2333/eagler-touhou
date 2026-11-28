@@ -121,7 +121,17 @@ Windows Release 使用生产 `main()`、实际 11 部作品目录和 1280 × 720
 
 固定 SDK 的引擎析构先将 messenger 的引擎指针清空，再执行 `Stop()`；插件析构仍调用注销消息通道。本轮把下一步缩小到引擎停止期间的通道清理与网页释放顺序，候选修复需要用相同入口对照。上游 [#2884](https://github.com/pichillilorenzo/flutter_inappwebview/issues/2884)记录控制器晚于宿主窗口关闭，[#2896](https://github.com/pichillilorenzo/flutter_inappwebview/issues/2896)记录异步纹理注销的资源寿命问题，二者作为独立参考，不直接代替本机归因。
 
-本轮图片由 Computer Use 直接返回 JPEG，按原字节归档；未输入凭据或操作表单。当前程序包与 113 个交付源码哈希不变。同一窗口跨宽度重排、返回发起游戏和真实账号写入继续分别验收；当前包的网页驻留关闭已明确未通过。
+本轮图片由 Computer Use 直接返回 JPEG，按原字节归档；未输入凭据或操作表单。当前程序包与 113 个交付源码哈希不变。同一窗口跨宽度重排、返回发起游戏和真实账号写入继续分别验收；该旧包的网页驻留关闭未通过，后续修复与复验见下一节。
+
+## 网页驻留关闭修复
+
+插件注销消息通道前，现在先检查 messenger 是否仍有可用引擎。补丁进入现有 Windows 构建适配模块，锁定 Flutter 3.50.1 包装层的输入与输出哈希，并生成独立构建输入。SDK、Pub 缓存、Dart 和界面均未改动。该检查与 SDK 处理晚到回复时已有的可用性判断一致。[官方接口](https://api.flutter.dev/windows-embedder/flutter__messenger_8h.html) | [构建模块](../../windows/webview_renderer_adapter.cmake)
+
+同一普通 AOT 与正式站游客登录地址，完成六轮独立插件候选和三轮完整 Release DLL 集合的真实窗口关闭。九轮内核退出码均为 0，全部到达引擎销毁完成标记，没有强制终止；筛选系统 Application Error 1000 未发现这些诊断宿主的错误。诊断宿主增加不激活显示、隔离应用元数据、320 逻辑像素内容区及定时普通关闭，和交付 EXE 的差异单列。[逐轮结果与范围](shutdown-guard-summary.json) | [320 px 登录实拍](shutdown-guard-login-candidate.jpg)
+
+普通 `lib/main.dart` 已用完整 Flutter Windows Release 命令构建成功，沿用默认图标裁剪。Dart AOT 与修复前逐字节一致，字体子集也完全相同；新 ZIP 已逐文件校验哈希与 CRC。正在使用的原预览目录 371 个文件全部未变。[构建日志](shutdown-guard-production-build-final.log) | [程序包校验](shutdown-guard-canonical-package.json)
+
+这组结果解决上述引擎已失效后的消息通道注销崩溃。此前 `ExitProcess` 后的驱动清理等待、连续前台无障碍查询开销、实际呈现帧率、真实登录写入、同窗口跨宽度返回及其他硬件仍按各自验收项继续核对。
 
 ## 前台与后台的同进程对照
 

@@ -1,6 +1,6 @@
 {
-  "checkedAtUtc": "2026-11-28T04:33:27.267841+00:00",
-  "builtAtUtc": "2026-11-28T04:33:27.267841+00:00",
+  "checkedAtUtc": "2026-11-28T06:44:04.912009+00:00",
+  "builtAtUtc": "2026-11-28T06:44:04.912009+00:00",
   "stage": "Core UI candidate ready for user review; not user-approved or complete platform acceptance",
   "scope": [
     "Desktop and portrait library",
@@ -10,7 +10,7 @@
     "Existing in-app production account website"
   ],
   "package": "touhouonline-windows-preview.zip",
-  "packageSha256": "2e39acda9dfe2b13c9dbb99b4219a53b7000200ef1d8724734eafd50b0d10e79",
+  "packageSha256": "7fdda3cdeeb4cea1a160e7412a6909b696cfe42a079cc3229184ce00c142e672",
   "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
   "entry": "lib/main.dart",
   "source": {
@@ -108,7 +108,7 @@
     "pubspec.yaml": "713fc4f5312c6a29c0f705f35225e5329bdfd9b5f8d6280b1510db4f49ac835f",
     "windows/runner/main.cpp": "76d4a5a86d03a8967c90c0fb4bd67ad32fa8c048d66825c4f4cf5c1a2efcd102",
     "windows/CMakeLists.txt": "c32db2d1e3d8935dd0ecd7b091e5b6df3aa98ded9ffa1fbef981af150d634fef",
-    "windows/webview_renderer_adapter.cmake": "710adaab5a70761e16fa969d312a9e05c40e0b68fa4fbb052abfa28962f5cdc2",
+    "windows/webview_renderer_adapter.cmake": "2c433b7c858e4d83c8cf517de0a71da8fb3385f0a1ba58d3c1fc965a6a0707c6",
     "windows/webview-renderer-adapter.patch": "0faf6f8af1a07b152aa4c4d5d945f977d6dd75a36dd161ee507ca4729b863e4a",
     "windows/.gitignore": "955e3110cb16494ee76e1cd5df47e2c212309eb94a49a123fe87f718de413cb8",
     "windows/flutter/CMakeLists.txt": "bd05e3268b2f246bcbafdb778165fe67a7bafdba04eb73599502563a67b8ae7e",
@@ -128,18 +128,16 @@
     "windows/runner/win32_window.h": "d154cf89ba85f820631a9b5bedacbe64fc5815e428fe6bc5da579ce649f69841",
     "test/account_web_page_test.dart": "30ac740bdec2aa7aefa1ba2bdb115782f302ef1fe0fee1fdf34d9df9c4ef2341"
   },
-  "changes": "Resource SHA-256 runs in a path-only worker. Actual th07 import/corruption/return regression passes. 210 widget images byte-identical. Existing native renderer and WebView adapter unchanged.",
+  "changes": "Plugin null-handler cleanup checks engine availability. Complete canonical Windows Release rebuilt. Dart AOT, screenshot inputs and icon subsets unchanged.",
   "verification": {
-    "windowsReleaseAssembly": "passed",
-    "nativeBuildInputsUnchanged": 20,
-    "nativeAssetTimestampEquivalence": true,
-    "runningOriginalBundleUnchanged": true,
-    "staticAnalysis": "No issues",
-    "realResourceEntryRegression": 6,
-    "layoutLanguageNavigationCaptureTests": 133,
-    "recapturedImages": 210,
-    "byteIdenticalImages": 210,
-    "zipCrcAndAllFileHashes": "passed"
+    "windowsReleaseBuild": "passed | canonical Flutter CLI main.dart, default icon tree shaking",
+    "shutdownComponentTrials": 6,
+    "shutdownCanonicalDllTrials": 3,
+    "allTrialExitCodes": 0,
+    "runningOriginalBundleUnchangedFiles": 371,
+    "zipCrcAndAllFileHashes": "passed",
+    "unchangedDartAot": true,
+    "unchangedFontSubsets": true
   },
   "performanceReport": "archive/performance-audit-20261128/report.md",
   "pending": [
@@ -169,6 +167,21 @@
       "isolatedWindowsDebugIntegration": "passed | two account visits, eight width states, real texture, native back/close to th08 with unchanged heading geometry",
       "zipCrcAndAllFileHashes": "passed",
       "windowsSourceTreeMatchesBuild": true
+    }
+  },
+  "sameAotEarlierChecks": {
+    "scope": "Recorded before native cleanup fix; same Dart AOT. These checks were not rerun on new native DLLs.",
+    "checks": {
+      "windowsReleaseAssembly": "passed",
+      "nativeBuildInputsUnchanged": 20,
+      "nativeAssetTimestampEquivalence": true,
+      "runningOriginalBundleUnchanged": true,
+      "staticAnalysis": "No issues",
+      "realResourceEntryRegression": 6,
+      "layoutLanguageNavigationCaptureTests": 133,
+      "recapturedImages": 210,
+      "byteIdenticalImages": 210,
+      "zipCrcAndAllFileHashes": "passed"
     }
   }
 }

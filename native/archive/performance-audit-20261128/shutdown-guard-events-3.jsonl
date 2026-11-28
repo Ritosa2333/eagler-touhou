@@ -1,0 +1,8 @@
+{"event":"destroy_enter","tick":50937125,"pid":39120,"foregroundPid":3772,"clientPixels":[0,0],"dpi":0}
+{"event":"first_frame","tick":50938718,"pid":39120,"foregroundPid":3772,"clientPixels":[480,1069],"dpi":144}
+{"event":"snapshot","tick":50943734,"pid":39120,"foregroundPid":3772,"clientPixels":[480,1069],"dpi":144}
+{"event":"snapshot","tick":50948734,"pid":39120,"foregroundPid":3772,"clientPixels":[480,1069],"dpi":144}
+{"event":"snapshot","tick":50953734,"pid":39120,"foregroundPid":3772,"clientPixels":[480,1069],"dpi":144}
+{"event":"close_requested","tick":50953734,"pid":39120,"foregroundPid":3772,"clientPixels":[480,1069],"dpi":144}
+{"event":"destroy_enter","tick":50953828,"pid":39120,"foregroundPid":3772,"clientPixels":[0,0],"dpi":0}
+{"event":"engine_destroyed","tick":50953875,"pid":39120,"foregroundPid":3772,"clientPixels":[0,0],"dpi":0}

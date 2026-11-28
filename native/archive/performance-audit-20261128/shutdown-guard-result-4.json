@@ -1,0 +1,202 @@
+{
+  "round": 4,
+  "pid": 60640,
+  "observations": [
+    {
+      "elapsedSeconds": 0.9983293999976013,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 2.006327000002784,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 3.0133341000037035,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 4.026646899998013,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 5.035291499996674,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 6.045982000003278,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 7.051261599997815,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 8.054287799997837,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 9.063544500000717,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 10.06969620000018,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 11.076379500002076,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 12.08578700000362,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 13.09865870000067,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 14.11037309999665,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 15.112392600000021,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 16.120004600001266,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 17.131690200003504,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 18.137431499999366,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 19.145982599999115,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 20.15454999999929,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 21.160524400002032,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 22.167762500001118,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 23.177766300002986,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 24.188165300001856,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 25.195596500001557,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 26.202364800003124,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 27.20774920000258,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 28.21958900000027,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 29.223430999998527,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 30.22568460000184,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 31.228005500001018,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 31.56854700000258,
+      "kernelWait": 0,
+      "exitCodeRead": true,
+      "exitCode": 0
+    }
+  ],
+  "kernelSignaled": true,
+  "exitCode": 0,
+  "forcedTermination": false,
+  "finalWait": 0
+}

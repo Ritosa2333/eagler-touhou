@@ -1,0 +1,118 @@
+{
+  "round": 1,
+  "pid": 16420,
+  "observations": [
+    {
+      "elapsedSeconds": 1.0166607999999542,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 2.0247855999987223,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 3.030427300000156,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 4.03574440000375,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 5.048382799999672,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 6.062818500002322,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 7.0641236000010394,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 8.0720610999997,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 9.0856877000042,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 10.09750019999774,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 11.107709500000055,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 12.113224699998682,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 13.12000010000338,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 14.132579199998872,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 15.143724200002907,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 16.151771400000143,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 17.163270199998806,
+      "kernelWait": 258,
+      "exitCodeRead": true,
+      "exitCode": 259
+    },
+    {
+      "elapsedSeconds": 17.727137399997446,
+      "kernelWait": 0,
+      "exitCodeRead": true,
+      "exitCode": 0
+    }
+  ],
+  "kernelSignaled": true,
+  "exitCode": 0,
+  "forcedTermination": false,
+  "finalWait": 0
+}

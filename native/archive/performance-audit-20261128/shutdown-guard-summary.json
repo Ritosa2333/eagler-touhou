@@ -1,0 +1,84 @@
+{
+  "checkedAtUtc": "2026-11-28T06:45:58.729452+00:00",
+  "scope": "Production main.dart AOT and actual production guest login deep link. Diagnostic native host adds nonactivation, isolated Windows metadata, 320 logical pixel client width, timer WM_CLOSE and native destruction markers. Six component trials and three complete canonical Release DLL-set trials. Host differs from distributed EXE; no authenticated writes or same-window resize/back acceptance.",
+  "rounds": [
+    {
+      "round": 1,
+      "pid": 16420,
+      "nativeInputs": "isolated patched WebView DLL",
+      "closeToEngineDestroyedMs": 109,
+      "exitCode": 0,
+      "forcedTermination": false
+    },
+    {
+      "round": 2,
+      "pid": 49856,
+      "nativeInputs": "isolated patched WebView DLL",
+      "closeToEngineDestroyedMs": 156,
+      "exitCode": 0,
+      "forcedTermination": false
+    },
+    {
+      "round": 3,
+      "pid": 39120,
+      "nativeInputs": "isolated patched WebView DLL",
+      "closeToEngineDestroyedMs": 141,
+      "exitCode": 0,
+      "forcedTermination": false
+    },
+    {
+      "round": 4,
+      "pid": 60640,
+      "nativeInputs": "isolated patched WebView DLL",
+      "closeToEngineDestroyedMs": 78,
+      "exitCode": 0,
+      "forcedTermination": false
+    },
+    {
+      "round": 5,
+      "pid": 51932,
+      "nativeInputs": "isolated patched WebView DLL",
+      "closeToEngineDestroyedMs": 219,
+      "exitCode": 0,
+      "forcedTermination": false
+    },
+    {
+      "round": 6,
+      "pid": 37080,
+      "nativeInputs": "isolated patched WebView DLL",
+      "closeToEngineDestroyedMs": 172,
+      "exitCode": 0,
+      "forcedTermination": false
+    },
+    {
+      "round": 7,
+      "pid": 61712,
+      "nativeInputs": "complete canonical Release DLL set",
+      "closeToEngineDestroyedMs": 125,
+      "exitCode": 0,
+      "forcedTermination": false
+    },
+    {
+      "round": 8,
+      "pid": 35340,
+      "nativeInputs": "complete canonical Release DLL set",
+      "closeToEngineDestroyedMs": 187,
+      "exitCode": 0,
+      "forcedTermination": false
+    },
+    {
+      "round": 9,
+      "pid": 60820,
+      "nativeInputs": "complete canonical Release DLL set",
+      "closeToEngineDestroyedMs": 282,
+      "exitCode": 0,
+      "forcedTermination": false
+    }
+  ],
+  "systemApplicationError1000ForGuardHost": [],
+  "packageSha256": "7fdda3cdeeb4cea1a160e7412a6909b696cfe42a079cc3229184ce00c142e672",
+  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "originalPreviewFilesUnchanged": 371,
+  "fix": "Before unregistering a null message handler, check FlutterDesktopMessengerIsAvailable. Preserve SDK and Pub cache originals. Hash-check normalized pinned SDK input and patch output.",
+  "remaining": "Separate post-ExitProcess driver teardown hang, foreground automation-query overhead, presented FPS, authenticated account and other hardware acceptance remain open."
+}

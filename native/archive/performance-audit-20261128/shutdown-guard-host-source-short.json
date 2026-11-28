@@ -1,0 +1,14 @@
+{
+  "scope": "Isolated component candidate: only null-handler callback cleanup checks the existing engine-availability API. Product files and SDK unchanged.",
+  "originalSource": "D:\\workspace\\eagler\\artifacts\\.native-room-client-win\\windows\\flutter\\ephemeral\\cpp_client_wrapper\\core_implementations.cc",
+  "originalSha256": "c0de8b2c1df4d25abb336a62364fb8dd4810536e8eb28da0601b1e3ed969a777",
+  "candidateSha256": "3c2cfbc16173c96eec8dd156bf9573a56ae9c5730e31455398be8bfb4d24adbb",
+  "priorPluginSha256": "2fac8755e40ffa0d7c56436bae16cdc51a58b3da25e8b2f1f61d1a53bd325c79",
+  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "candidatePluginSha256": "661970aa530600a42e1579f764ad8a68d167e09ba03ef622531f7560d5dd35f1",
+  "hostSourceSha256": {
+    "host-main.cpp": "88965832ae676732691619a9127f58d0b073ce795049f047ef02214949220dc5",
+    "host-window.cpp": "c0c475c44a329eba06287fc2b49e91cd906826c78c21834765015ca2c20c6db8",
+    "host.rc": "7c6186957f3d07d1d296d9f9a49cb5f514af8b2556271301abb49baff078ec4c"
+  }
+}
