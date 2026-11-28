@@ -30,10 +30,14 @@
   .launch-action-label > span { grid-area: 1 / 1; overflow: hidden; text-overflow: ellipsis; }
   .launch-action-label > [data-measure-label] { visibility: hidden; }
   .launch-action-label > [data-measure-label]::before { content: attr(data-measure-label); }
-  .launch[data-action-activity] {position:relative;overflow:clip;}
-  .launch-action-progress {
-    --ui-progress-fill:currentColor;
-    position:absolute;inset:auto 0 0;height:3px;border-radius:0;
-    background:color-mix(in srgb,currentColor 12%,transparent);
+  .launch[data-action-activity="active"] {position:relative;isolation:isolate;overflow:clip;}
+  .launch .launch-action-progress {
+    --ui-progress-fill:var(--launch-meter-fill, var(--kit-success));
+    position:absolute;inset:0;z-index:-1;block-size:auto;border-radius:inherit;pointer-events:none;
+    background:var(--launch-meter-track, color-mix(in srgb, var(--kit-primary) 88%, var(--kit-primary-foreground)));
+  }
+  .launch-action-progress .ui-progress-indicator {border-radius:0;}
+  .launch-action-progress[data-state="indeterminate"] {
+    --ui-progress-fill:linear-gradient(90deg, transparent, var(--launch-meter-fill, var(--kit-success)), transparent);
   }
 }
