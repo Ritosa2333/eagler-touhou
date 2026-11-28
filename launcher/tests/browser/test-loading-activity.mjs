@@ -4,8 +4,56 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 
 const origin = process.env.LAUNCHER_URL || 'http://127.0.0.1:5185/';
 const browser = await puppeteer.launch({headless:true, executablePath:await findChromiumExecutable()});
-try {
+
+async function controlTipClock(page) {
+  await page.evaluateOnNewDocument(() => {
+    const set = window.setInterval.bind(window), clear = window.clearInterval.bind(window);
+    const callbacks = new Map();
+    let id = -1;
+    window.setInterval = (callback, delay, ...args) => {
+      if (delay !== 5000) return set(callback, delay, ...args);
+      callbacks.set(id, () => callback(...args));
+      return id--;
+    };
+    window.clearInterval = key => {
+      if (!callbacks.delete(key)) clear(key);
+    };
+    window.tipClock = {active:() => callbacks.size, tick:() => callbacks.forEach(callback => callback())};
+  });
+}
+
+async function verifyBootTips(path, preloadId) {
   const page = await browser.newPage();
+  try {
+    await controlTipClock(page);
+    await page.setRequestInterception(true);
+    page.on('request', request => {
+      void (request.resourceType() === 'script'
+        ? request.respond({status:200, contentType:'text/javascript', body:''})
+        : request.continue());
+    });
+    await page.goto(new URL(path,origin).href,{waitUntil:'domcontentloaded'});
+    const activity = `#${preloadId} .loading-activity`;
+    const tip = `${activity} .loading-activity-tip span`;
+    const read = () => page.$eval(tip, node => node.textContent);
+    await page.waitForSelector(tip);
+    const initial = await read();
+    assert.ok(initial);
+    assert.equal(await page.evaluate(() => window.tipClock.active()),1,'boot starts its 5s clock before the app loads');
+    await page.evaluate(() => window.tipClock.tick());
+    const next = await read();
+    assert.notEqual(next,initial);
+    await page.$eval(`#${preloadId}`, node => node.classList.add('is-done'));
+    await page.evaluate(() => window.tipClock.tick());
+    assert.equal(await read(),next,'hidden startup tip no longer changes');
+    assert.equal(await page.evaluate(() => window.tipClock.active()),0);
+  } finally {await page.close();}
+}
+
+try {
+  await Promise.all([verifyBootTips('./?lang=zh-CN','eaglerPreload'), verifyBootTips('lobby.html?lang=zh-CN','lobbyPreload')]);
+  const page = await browser.newPage();
+  await controlTipClock(page);
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   const faces = '.loading-activity-faces img';
@@ -269,6 +317,19 @@ try {
   assert.deepEqual(first.dots,first.delays.slice(0,3).map(delay => ['.','ui-loading-hop',delay]));
   assert.ok(first.tip);
   assert.ok(first.fits);
+  const seenTips = [first.tip];
+  assert.equal(await page.evaluate(() => window.tipClock.active()),1);
+  for (let index = 1; index <= 4; index++) {
+    await page.evaluate(() => window.tipClock.tick());
+    await page.waitForFunction(previous => document.querySelector('.loading-activity-tip span').textContent !== previous, {}, seenTips.at(-1));
+    const current = await snapshot();
+    assert.deepEqual(current.images,first.images,'rotating tips does not restart the artwork');
+    seenTips.push(current.tip);
+    if (current.tip === first.tip) break;
+  }
+  assert.equal(seenTips.at(-1),first.tip);
+  assert.ok(seenTips.length >= 4,'the multiplayer pool has at least three tips');
+  assert.equal(new Set(seenTips).size,seenTips.length - 1);
   await page.setViewport({width:320,height:640});
   assert.ok((await snapshot()).fits);
   assert.deepEqual((await snapshot()).images,first.images,'resizing does not reroll the current load');
@@ -277,6 +338,7 @@ try {
     await page.click('[data-preview-replay]');
     await waitForFaces();
     const current = await snapshot();
+    assert.equal(await page.evaluate(() => window.tipClock.active()),1,'replaying replaces the previous tip clock');
     assert.equal(new Set(current.images).size,4);
     draws.push(current.images.join(','));
   }
@@ -289,5 +351,5 @@ try {
   assert.deepEqual((await snapshot()).motion,Array(4).fill('none'));
   assert.deepEqual((await snapshot()).dots.map(([dot,motion]) => [dot,motion]),Array(3).fill(['.','none']));
   assert.deepEqual(errors,[]);
-  console.log('PASS loading previews: scene-specific casting, original random lineup, tips, narrow layout and reduced motion');
+  console.log('PASS loading previews: casting, five-second tip rotation before and after hydration, narrow layout and reduced motion');
 } finally {await browser.close();}

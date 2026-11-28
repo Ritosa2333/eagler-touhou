@@ -1,4 +1,4 @@
-import {useState, type ReactNode} from 'react';
+import {useEffect, useState, type ReactNode} from 'react';
 import {SITE_BRAND_FACES, siteBrandPath} from '../../lib/site-brand.mjs';
 import {useLocale, type UiMessageKey} from '../i18n';
 import {accountsEnabled} from '../release-features';
@@ -13,12 +13,30 @@ export const loadingTips: Record<LoadingContext, readonly UiMessageKey[]> = {
 };
 
 // Also runs in the document boot script, before the app module is available.
-export function chooseLoadingActivity<T>(pool: readonly string[], tips: readonly T[]) {
+export function chooseLoadingActivity(pool: readonly string[], tipCount: number) {
   const remaining = [...pool];
   return {
     faces: Array.from({length: 4}, () => remaining.splice(Math.floor(Math.random() * remaining.length), 1)[0]!),
-    tip: tips[Math.floor(Math.random() * tips.length)]!,
+    tipIndex: Math.floor(Math.random() * tipCount),
   };
+}
+
+export function startLoadingTipRotation(tipCount: number, initialIndex: number, show: (index: number) => boolean | void) {
+  let index = initialIndex;
+  const interval = window.setInterval(() => {
+    index = (index + 1) % tipCount;
+    if (show(index) === false) stop();
+  }, 5000);
+  const stop = () => window.clearInterval(interval);
+  return stop;
+}
+
+function RotatingLoadingTip({context, initialIndex}: {context: LoadingContext; initialIndex: number}) {
+  const {t} = useLocale();
+  const tips = loadingTips[context];
+  const [index, setIndex] = useState(initialIndex);
+  useEffect(() => startLoadingTipRotation(tips.length, initialIndex, setIndex), [tips, initialIndex]);
+  return t(tips[index]);
 }
 
 interface LoadingActivityProps {
@@ -35,18 +53,17 @@ export function LoadingCover(props: LoadingActivityProps) {
 }
 
 export function LoadingActivity({assetUrl, status, context, compact = false, statusId, artwork}: LoadingActivityProps) {
-  const {t} = useLocale();
   const label = status.replace(/(?:…|\.{3})$/, '');
-  // Sample without replacement. The lineup and tip belong to this wait, not to progress updates.
-  const [{faces, tip}] = useState(() => chooseLoadingActivity(SITE_BRAND_FACES, loadingTips[context]));
+  const [{faces, tipIndex}] = useState(() => chooseLoadingActivity(SITE_BRAND_FACES, loadingTips[context].length));
   return <LoadingActivityContent faceSources={artwork == null ? faces.map(face => assetUrl(siteBrandPath(face))) : []} artwork={artwork}
-    label={label} dots={label !== status} tip={t(tip)} context={context} compact={compact} statusId={statusId}/>;
+    label={label} dots={label !== status} tip={<RotatingLoadingTip key={context} context={context}
+      initialIndex={tipIndex % loadingTips[context].length}/>} context={context} compact={compact} statusId={statusId}/>;
 }
 
 export function LoadingActivityContent({faceSources, label, tip, dots, context, compact, statusId, artwork}: {
   faceSources: readonly (string | undefined)[];
   label: string;
-  tip: string;
+  tip: ReactNode;
   dots: boolean;
   context?: LoadingContext;
   compact?: boolean;
@@ -61,7 +78,7 @@ export function LoadingActivityContent({faceSources, label, tip, dots, context, 
       <strong className="loading-activity-status" id={statusId}><span>{label}</span>{dots &&
         <span className="loading-activity-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>}
       </strong>
-      <p className="loading-activity-tip"><b>TIP</b><span>{tip}</span></p>
+      <p className="loading-activity-tip" aria-live="off"><b>TIP</b><span>{tip}</span></p>
     </div>
   </div>;
 }

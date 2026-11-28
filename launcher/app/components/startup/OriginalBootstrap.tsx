@@ -11,7 +11,7 @@ import {translate} from '../../i18n';
 import {LESS_MOTION_STORAGE_KEY} from '../../models/site-preferences';
 import {sitePageTitle, useDocumentUiLocale} from '../../navigation/document-locale';
 import {isLauncherHomePath} from '../../navigation/addresses';
-import {chooseLoadingActivity, LoadingActivityContent, loadingTips} from '../../ui/loading-activity';
+import {chooseLoadingActivity, LoadingActivityContent, loadingTips, startLoadingTipRotation} from '../../ui/loading-activity';
 import loadingActivityCss from '../../ui/loading-activity.css?inline';
 
 // ES5 dispatch only: the original compatibility gate must precede the modern
@@ -32,25 +32,34 @@ const bootLoadingCopy = Object.fromEntries(UI_LOCALES.map(locale => [locale, {
   label: translate(locale, 'player.loading').replace(/(?:…|\.{3})$/, ''),
   tips: Object.fromEntries(bootLoadingContexts.map(context => [context, loadingTips[context].map(key => translate(locale, key))])),
 }]));
-function showBootstrapLoading(copy: typeof bootLoadingCopy, faces: readonly string[], assetFolder: string, motionKey: string, choose: typeof chooseLoadingActivity) {
+function showBootstrapLoading(copy: typeof bootLoadingCopy, faces: readonly string[], assetFolder: string, motionKey: string,
+  choose: typeof chooseLoadingActivity, rotate: typeof startLoadingTipRotation) {
   const lobby = document.documentElement.getAttribute('data-original-entry') === 'lobby';
   const context = lobby ? 'multiplayer' : 'solo';
   const prefix = lobby ? 'lobby' : 'eagler';
-  const slot = document.querySelector('#' + prefix + 'Preload .' + prefix + '-preload-spinner')!;
+  const preload = document.getElementById(prefix + 'Preload')!;
+  const slot = preload.querySelector('.' + prefix + '-preload-spinner')!;
   const template = document.querySelector<HTMLElement>('[data-bootstrap-loading]')!;
   const loading = template.firstElementChild!.cloneNode(true) as HTMLElement;
   const locale = new URLSearchParams(location.search).get('lang');
   const text = copy[locale && Object.hasOwn(copy, locale) ? locale : document.documentElement.lang];
-  const selection = choose(faces, text.tips[context]);
+  const tips = text.tips[context];
+  const selection = choose(faces, tips.length);
   const base = new URL(template.getAttribute('data-bootstrap-loading')!, location.href);
   loading.setAttribute('data-loading-context', context);
   loading.querySelectorAll('img').forEach((image, index) => {image.src = new URL(assetFolder + selection.faces[index] + '.svg', base).href;});
   loading.querySelector('.loading-activity-status > span')!.textContent = text.label;
-  loading.querySelector('.loading-activity-tip > span')!.textContent = selection.tip;
+  const tip = loading.querySelector('.loading-activity-tip > span')!;
+  tip.textContent = tips[selection.tipIndex];
   try {if (localStorage.getItem(motionKey) === '1') loading.setAttribute('data-still', '');} catch {}
   slot.replaceWith(loading);
+  rotate(tips.length, selection.tipIndex, index => {
+    if (!loading.isConnected || preload.classList.contains('is-done') ||
+      (lobby && document.documentElement.getAttribute('data-lobby-boot') === 'failed')) return false;
+    tip.textContent = tips[index];
+  });
 }
-const bootLoadingScript = `(${showBootstrapLoading.toString()})(${JSON.stringify(bootLoadingCopy)},${JSON.stringify(SITE_BRAND_FACES)},${JSON.stringify(siteBrandPath().replace(/[^/]+$/, ''))},${JSON.stringify(LESS_MOTION_STORAGE_KEY)},${chooseLoadingActivity.toString()});`;
+const bootLoadingScript = `(${showBootstrapLoading.toString()})(${JSON.stringify(bootLoadingCopy)},${JSON.stringify(SITE_BRAND_FACES)},${JSON.stringify(siteBrandPath().replace(/[^/]+$/, ''))},${JSON.stringify(LESS_MOTION_STORAGE_KEY)},${chooseLoadingActivity.toString()},${startLoadingTipRotation.toString()});`;
 /** Source-extracted original pre-module safety gate and preload presentation. */
 export function OriginalBootstrapHead() {
   const {pathname, search} = useLocation();
