@@ -1,0 +1,13 @@
+{
+  "packageSha256": "4d18753e44c82d7350fee86425779a118ef79eb3ea70f27b73a14d94feae7858",
+  "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+  "bytes": 30536645,
+  "files": 370,
+  "sourceChange": [
+    "lib/account_api.dart"
+  ],
+  "allOriginalPreviewFilesUnchanged": 371,
+  "verification": "Canonical main.dart Release build, ZIP CRC and all file hashes, all recorded product sources match stage.",
+  "previousPackageSha256": "7fdda3cdeeb4cea1a160e7412a6909b696cfe42a079cc3229184ce00c142e672",
+  "previousAotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05"
+}

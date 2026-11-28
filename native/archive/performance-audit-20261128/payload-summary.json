@@ -1,0 +1,47 @@
+{
+  "checkedAtUtc": "2026-11-28T07:28:44.290702+00:00",
+  "scope": "Five real public HTTPS responses; pinned Dart AOT component measurements and current application API regression. Size-gated parsing >=64 KiB moves UTF-8/JSON decode to Isolate.run; smaller bodies use the same direct parser. Response limits and model semantics unchanged. Separate producer timestamps quantify message-receive lag, not Flutter frame time or presented FPS. Shared Windows desktop.",
+  "boardBytes": 182420,
+  "boardPlayers": 265,
+  "boardReceiveLagP95RangeMs": {
+    "previousInline": [
+      14.634,
+      15.871
+    ],
+    "currentSizeGated": [
+      0.182,
+      0.501
+    ]
+  },
+  "ratingBytes": 20137,
+  "ratingReceiveLagP95RangeMs": {
+    "previousInline": [
+      1.116,
+      1.201
+    ],
+    "currentSizeGated": [
+      1.144,
+      1.189
+    ]
+  },
+  "accountChecks": 93,
+  "actualPublicApiChecks": 1,
+  "layoutNavigationCaptureChecks": 133,
+  "imagesByteIdentical": 210,
+  "packageSha256": "4d18753e44c82d7350fee86425779a118ef79eb3ea70f27b73a14d94feae7858",
+  "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+  "releaseGuestContainer": {
+    "nativeHostDiffersFromDistributedExe": true,
+    "exitCode": 0,
+    "closeToEngineDestroyedMs": 94,
+    "forcedTermination": false,
+    "readOnlyAccessibilityVerified": true,
+    "webContentPixelsNotCaptured": true
+  },
+  "remaining": [
+    "Authenticated and maximum-size payloads",
+    "Device and OS performance",
+    "Presented FPS and persistent foreground automation-query overhead",
+    "Existing driver teardown and full pointer/back acceptance"
+  ]
+}

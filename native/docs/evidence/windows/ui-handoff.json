@@ -1,6 +1,6 @@
 {
-  "checkedAtUtc": "2026-11-28T06:44:04.912009+00:00",
-  "builtAtUtc": "2026-11-28T06:44:04.912009+00:00",
+  "checkedAtUtc": "2026-11-28T07:26:39.266913+00:00",
+  "builtAtUtc": "2026-11-28T07:23:12.701656+00:00",
   "stage": "Core UI candidate ready for user review; not user-approved or complete platform acceptance",
   "scope": [
     "Desktop and portrait library",
@@ -10,13 +10,13 @@
     "Existing in-app production account website"
   ],
   "package": "touhouonline-windows-preview.zip",
-  "packageSha256": "7fdda3cdeeb4cea1a160e7412a6909b696cfe42a079cc3229184ce00c142e672",
-  "aotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+  "packageSha256": "4d18753e44c82d7350fee86425779a118ef79eb3ea70f27b73a14d94feae7858",
+  "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
   "entry": "lib/main.dart",
   "source": {
     "integration_test/desktop_window_test.dart": "4b1e1c0cefc4c3cf0f4d4f09ff71e8405327feba80530a33bbde710684be4bdc",
     "lib/account.dart": "eccb15644d1f052d8c195fc98f10a6380c9e02cee3b0f64c48e5f11d4be3d889",
-    "lib/account_api.dart": "10205c30af9fd77b683a6df44fd0a57df7baf2cd968a316d1ebba86206abf6c4",
+    "lib/account_api.dart": "07aa1931314e38bcdb44e3c5b290d9d4fd9f99645575d849c94d13a2391c3068",
     "lib/account_settings_layout.dart": "3cd3411d255f0783f4b5c0ecd401e48e38c3da3675b191061a092ea0adde54e9",
     "lib/account_web_page.dart": "16121d296904729fbfe5820d3a1c58844d25520d709f9c8ad595c14cb7100b30",
     "lib/catalog.dart": "16e67e86442ddd28e9b8ea5bc0038b8830d48300d3c5c0b80e8b5983d14c78ba",
@@ -128,16 +128,25 @@
     "windows/runner/win32_window.h": "d154cf89ba85f820631a9b5bedacbe64fc5815e428fe6bc5da579ce649f69841",
     "test/account_web_page_test.dart": "30ac740bdec2aa7aefa1ba2bdb115782f302ef1fe0fee1fdf34d9df9c4ef2341"
   },
-  "changes": "Plugin null-handler cleanup checks engine availability. Complete canonical Windows Release rebuilt. Dart AOT, screenshot inputs and icon subsets unchanged.",
+  "changes": "Account JSON >=64 KiB decodes in a short-lived worker. Smaller responses keep direct parsing. Full Windows Release rebuilt; 210 fresh control captures byte-identical.",
   "verification": {
-    "windowsReleaseBuild": "passed | canonical Flutter CLI main.dart, default icon tree shaking",
-    "shutdownComponentTrials": 6,
-    "shutdownCanonicalDllTrials": 3,
-    "allTrialExitCodes": 0,
-    "runningOriginalBundleUnchangedFiles": 371,
+    "windowsReleaseBuild": "passed | canonical main.dart with default icon tree shaking",
+    "accountChecks": 93,
+    "actualPublicApiChecks": 1,
+    "staticAnalysis": "No issues",
+    "layoutLanguageNavigationCaptureChecks": 133,
+    "recapturedImages": 210,
+    "byteIdenticalImages": 210,
+    "currentAotGuestContainer": {
+      "nativeHostDiffersFromDistributedExe": true,
+      "exitCode": 0,
+      "closeToEngineDestroyedMs": 94,
+      "forcedTermination": false,
+      "readOnlyAccessibilityVerified": true,
+      "webContentPixelsNotCaptured": true
+    },
     "zipCrcAndAllFileHashes": "passed",
-    "unchangedDartAot": true,
-    "unchangedFontSubsets": true
+    "originalPreviewFilesUnchanged": 371
   },
   "performanceReport": "archive/performance-audit-20261128/report.md",
   "pending": [
@@ -154,34 +163,9 @@
     "Current ordinary Release real-window resource import after checksum-worker change"
   ],
   "inheritedVerification": {
-    "scope": "Previous package checks retain their original AOT scope; prior account tests and Windows Debug real-engine checks are not current ordinary Release device acceptance. Earlier rendering/performance measurements retain the scopes in the reports.",
-    "previousPackageSha256": "78681b42e237d4439316ab811975e36ecda946c87de2bb5d7cafd784cf17578e",
-    "previousAotSha256": "214cc88efe7636506ad943191b4a8ef083c1fd5f82f60e99d64f9fd79e4771a4",
-    "previousChecks": {
-      "windowsReleaseBuild": "passed",
-      "staticAnalysis": "No issues",
-      "accountWidgetTests": 83,
-      "layoutLanguageNavigationCaptureTests": 133,
-      "recapturedImages": 210,
-      "byteIdenticalImages": 210,
-      "isolatedWindowsDebugIntegration": "passed | two account visits, eight width states, real texture, native back/close to th08 with unchanged heading geometry",
-      "zipCrcAndAllFileHashes": "passed",
-      "windowsSourceTreeMatchesBuild": true
-    }
-  },
-  "sameAotEarlierChecks": {
-    "scope": "Recorded before native cleanup fix; same Dart AOT. These checks were not rerun on new native DLLs.",
-    "checks": {
-      "windowsReleaseAssembly": "passed",
-      "nativeBuildInputsUnchanged": 20,
-      "nativeAssetTimestampEquivalence": true,
-      "runningOriginalBundleUnchanged": true,
-      "staticAnalysis": "No issues",
-      "realResourceEntryRegression": 6,
-      "layoutLanguageNavigationCaptureTests": 133,
-      "recapturedImages": 210,
-      "byteIdenticalImages": 210,
-      "zipCrcAndAllFileHashes": "passed"
-    }
+    "scope": "Earlier resource, native shutdown, same-window width and performance checks retain their original AOT and native-host scopes in the report.",
+    "previousPackageSha256": "7fdda3cdeeb4cea1a160e7412a6909b696cfe42a079cc3229184ce00c142e672",
+    "previousAotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
+    "report": "archive/performance-audit-20261128/report.md"
   }
 }

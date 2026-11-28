@@ -168,6 +168,20 @@ Dart AOT 读取两份已有真实资源，分别匹配固定版 th07 清单和�
 
 这里测量 Dart 组件的消息延迟，不等于 Flutter 整页帧率。样本使用共享 Windows 主机和文件缓存；th14 是额外的大文件输入，没有给固定目录新增作品。校验总时长未形成稳定加速结论。新普通 Release 使用 Flutter 官方 assemble 增量生成，原生构建输入沿用；cnativeapi.dll 仅 PE 时间戳不同，除时间戳外全部字节一致。产物写入独立目录，运行中的旧预览文件逐项核对未改动。[构建输入](io-build-inputs.json) | [原生库比较](io-native-asset-equivalence.json)
 
+## 网络响应解析
+
+账号接口达到 64 KiB 的成功与错误响应使用 SDK `Isolate.run` 解析 UTF-8 和 JSON，小响应直接解析。独立函数只接收字节，避免带入 HTTP 客户端或账号状态。现有响应大小限制、模型转换、状态码及错误码处理沿用原接口。[官方后台解析指导](https://docs.flutter.dev/cookbook/networking/background-parsing) | [SDK 传值与异常约定](https://api.dart.dev/dart-isolate/Isolate/run.html)
+
+五份正式站公开响应从 596 到 182,420 字节，另保留 37,844 字节战绩、20,137 字节大厅评分及 110,138 字节站点清单。组件使用锁定 SDK 的原生 AOT，榜单与评分复用产品模型构造器，数量由 Python 独立解析核对。首组采样量化解析与模型耗时，后两组用独立发送端时间戳测消息接收延迟，逐次解析间隔 17–23 ms，三轮交替测试顺序。交付采样开始前确认本轮 Flutter 编译、构建及测试进程均已结束。[输入身份](payload-inputs.json) | [完整样本与范围](payload-measurements.json) | [组件源码](payload-mailbox.dart)
+
+| 实际输入 | 原链路三轮消息接收延迟 p95 | 当前三轮消息接收延迟 p95 |
+| --- | --- | --- |
+| 265 人榜单，182,420 字节 | 14.634–15.871 ms | 0.182–0.501 ms |
+
+后台任务增加调度与传值，总墙钟耗时不由消息延迟表推定。20,137 字节大厅评分继续走直接解析。测量覆盖相同实际输入与返回数量，来自共享 Windows 主机；消息到达时间包含系统调度，不等于 Flutter 帧耗时、实际呈现帧率或手机性能。其他输入的应用模型构造、已认证大响应及 32 MiB 上限没有由这份样本验证。[分项与待验项](payload-summary.json)
+
+93 项账号传输、会话、网页及头像检查通过；真实榜单回归覆盖全部 265 行、损坏 JSON 和大错误响应。当前客户端另直接读取正式站榜单与大厅评分成功。133 项布局、语言、导航与采集检查通过，210 张控件图逐字节一致。普通 Windows Release 已完整构建，新 AOT 的账号容器通过只读状态检查，普通关闭后 94 ms 到达引擎销毁，退出码为 0；诊断宿主的非激活显示、隔离元数据和关闭计时与交付 EXE 的差异另列。[回归](payload-regression.log) | [正式服务入口](payload-public-entry.json) | [画面校验](payload-capture-comparison.json) | [构建](payload-release-build.log) | [新 AOT 实窗范围](payload-smoke-inputs.json) | [进程退出](payload-smoke-result.json)
+
 ## 资源体积
 
 初始性能候选发布目录为 68,889,904 字节，约 65.7 MiB，其中 DLL 为 44.4 MiB，AOT 数据约 12.1 MiB，全部 Flutter 资源约 8.2 MiB。主要固定体积来自 Flutter 引擎和 WebRTC。11 张封面的理论 RGBA 展开量约 14.9 MiB，最大宽 640、高 632 像素。[逐文件清单](footprint.json)区分磁盘字节和理论解码字节，二者都不是实际驻留内存。

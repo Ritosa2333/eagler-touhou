@@ -7,6 +7,64 @@ import 'package:touhouonline/account_api.dart';
 
 void main() {
   test(
+    'Large production response preserves rows and transport failures',
+    () async {
+      final bytes = gzip.decode(
+        File('archive/performance-audit-20261128/payload-board.json.gz')
+            .readAsBytesSync(),
+      );
+      final reference = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
+      final players = reference['board'] as List;
+      expect(players, hasLength(265));
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final api = AccountApi(origin: Uri.http('127.0.0.1:${server.port}'));
+      addTearDown(api.close);
+      addTearDown(() => server.close(force: true));
+      var mode = 'board';
+      server.listen((request) async {
+        expect(request.uri.path, '/api/v1/th09/ratings/board');
+        final response = request.response;
+        response.headers.contentType = ContentType.json;
+        switch (mode) {
+          case 'board':
+            response.add(bytes);
+          case 'malformed':
+            response.add(bytes.sublist(0, bytes.length - 1));
+          case 'error':
+            response.statusCode = HttpStatus.serviceUnavailable;
+            response.write(
+              jsonEncode({
+                'error': {'code': 'BUSY'},
+                'details': players,
+              }),
+            );
+        }
+        await response.close();
+      });
+      final board = await api.th09Board();
+      expect(
+        board.players.map((player) => player.id),
+        players.map((row) => row['player']),
+      );
+      mode = 'malformed';
+      await expectLater(api.th09Board(), throwsFormatException);
+      mode = 'error';
+      await expectLater(
+        api.th09Board(),
+        throwsA(
+          isA<AccountRequestException>()
+              .having(
+                (error) => error.status,
+                'status',
+                HttpStatus.serviceUnavailable,
+              )
+              .having((error) => error.code, 'code', 'BUSY'),
+        ),
+      );
+    },
+  );
+
+  test(
     'Shared avatar reads versioned profile media and retries failed lookups',
     () async {
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);

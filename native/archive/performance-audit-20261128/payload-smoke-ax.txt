@@ -1,0 +1,25 @@
+Window: "TouhouOnline | shutdown guard", App: guard-host.exe.
+	0 window (窗口) TouhouOnline | shutdown guard Secondary Actions: Raise
+		1 pane (窗格)
+			2 group (组)
+				3 group (组)
+					4 text (文本)
+					5 text (文本) TouhouOnline
+					6 text (文本)
+					7 button (按钮) 最小化
+					8 button (按钮) 最大化
+					9 button (按钮) 关闭
+					10 text (文本)
+					11 group (组)
+						12 group (组)
+							13 group (组)
+								14 group (组)
+									15 button (按钮) 返回
+									16 group (组) 账户
+									17 button (按钮) 关闭
+		18 title bar (标题栏) (settable, string) Value: TouhouOnline | shutdown guard
+			19 menu bar (菜单栏) 系统 ID: MenuBar
+				20 menu item (菜单项) 系统
+			21 button (按钮) 最小化
+			22 button (按钮) 最大化
+			23 button (按钮) 关闭

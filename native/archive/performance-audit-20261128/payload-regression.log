@@ -1,0 +1,116 @@
+transport.log
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/test/account_transport_test.dart
+00:00 +0: Large production response preserves rows and transport failures
+00:00 +1: Shared avatar reads versioned profile media and retries failed lookups
+00:00 +2: Saved session is verified, rotated and deleted across clients
+00:00 +3: Cloud saves read the authenticated current single-player revision
+00:00 +4: All tests passed!
+
+account_web_session_test.dart.log
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_session_test.dart
+00:00 +0: A delayed browser response cannot replace a newer verified account
+00:00 +1: Web session is verified, rotated, restored and cleared across clients
+00:00 +2: Web credentials reject another origin, cookie name, domain and insecure transport
+00:00 +3: All tests passed!
+
+account_web_page_test.dart.log
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/test/account_web_page_test.dart
+
+
+🚀 Hi, flutter_inappwebview here, thank you for using it! If you like this plugin → 💙 Support development https://inappwebview.dev/donate ⭐ Star on GitHub https://github.com/pichillilorenzo/flutter_inappwebview 📱 Showcase your app https://inappwebview.dev/showcase
+
+00:00 +0: (setUpAll)
+00:00 +0: Native caller can reject account handoff | delayed=false (variant: TargetPlatform.windows)
+00:00 +1: Native caller can reject account handoff | delayed=false (variant: TargetPlatform.linux)
+00:01 +2: Native caller can reject account handoff | delayed=false (variant: TargetPlatform.macOS)
+00:01 +3: Native caller can reject account handoff | delayed=false (variant: TargetPlatform.iOS)
+00:01 +4: Native caller can reject account handoff | delayed=false (variant: TargetPlatform.android)
+00:01 +5: Native caller can reject account handoff | delayed=true (variant: TargetPlatform.windows)
+00:01 +6: Native caller can reject account handoff | delayed=true (variant: TargetPlatform.linux)
+00:01 +7: Native caller can reject account handoff | delayed=true (variant: TargetPlatform.macOS)
+00:01 +8: Native caller can reject account handoff | delayed=true (variant: TargetPlatform.iOS)
+00:02 +9: Native caller can reject account handoff | delayed=true (variant: TargetPlatform.android)
+00:02 +10: Direct account entry can open a native destination (variant: TargetPlatform.windows)
+00:02 +11: Direct account entry can open a native destination (variant: TargetPlatform.linux)
+00:02 +12: Direct account entry can open a native destination (variant: TargetPlatform.macOS)
+00:02 +13: Direct account entry can open a native destination (variant: TargetPlatform.iOS)
+00:02 +14: Direct account entry can open a native destination (variant: TargetPlatform.android)
+00:02 +15: A covered close attempt does not disable a later close (variant: TargetPlatform.windows)
+00:02 +16: A covered close attempt does not disable a later close (variant: TargetPlatform.linux)
+00:02 +17: A covered close attempt does not disable a later close (variant: TargetPlatform.macOS)
+00:03 +18: A covered close attempt does not disable a later close (variant: TargetPlatform.iOS)
+00:03 +19: A covered close attempt does not disable a later close (variant: TargetPlatform.android)
+00:03 +20: Profile core links enter native pages while account links stay web (variant: TargetPlatform.windows)
+00:03 +21: Profile core links enter native pages while account links stay web (variant: TargetPlatform.linux)
+00:04 +22: Profile core links enter native pages while account links stay web (variant: TargetPlatform.macOS)
+00:04 +23: Profile core links enter native pages while account links stay web (variant: TargetPlatform.iOS)
+00:04 +24: Profile core links enter native pages while account links stay web (variant: TargetPlatform.android)
+00:05 +25: Website history and load callbacks enter the native game (variant: TargetPlatform.windows)
+00:05 +26: Website history and load callbacks enter the native game (variant: TargetPlatform.linux)
+00:05 +27: Website history and load callbacks enter the native game (variant: TargetPlatform.macOS)
+00:05 +28: Website history and load callbacks enter the native game (variant: TargetPlatform.iOS)
+00:05 +29: Website history and load callbacks enter the native game (variant: TargetPlatform.android)
+00:05 +30: Transient login history never closes the account container (variant: TargetPlatform.windows)
+00:06 +31: Transient login history never closes the account container (variant: TargetPlatform.linux)
+00:06 +32: Transient login history never closes the account container (variant: TargetPlatform.macOS)
+00:06 +33: Transient login history never closes the account container (variant: TargetPlatform.iOS)
+00:06 +34: Transient login history never closes the account container (variant: TargetPlatform.android)
+00:07 +35: Embedded website retains URL and closes while session verification waits (variant: TargetPlatform.windows)
+00:07 +36: Embedded website retains URL and closes while session verification waits (variant: TargetPlatform.linux)
+00:07 +37: Embedded website retains URL and closes while session verification waits (variant: TargetPlatform.macOS)
+00:07 +38: Embedded website retains URL and closes while session verification waits (variant: TargetPlatform.iOS)
+00:07 +39: Embedded website retains URL and closes while session verification waits (variant: TargetPlatform.android)
+00:07 +40: System back uses web history and escapes a failed controller (variant: TargetPlatform.windows)
+00:07 +41: System back uses web history and escapes a failed controller (variant: TargetPlatform.linux)
+00:07 +42: System back uses web history and escapes a failed controller (variant: TargetPlatform.macOS)
+00:07 +43: System back uses web history and escapes a failed controller (variant: TargetPlatform.iOS)
+00:07 +44: System back uses web history and escapes a failed controller (variant: TargetPlatform.android)
+00:08 +45: iOS edge back cancels and completes account return | reduced=false (variant: TargetPlatform.iOS)
+00:08 +46: iOS edge back cancels and completes account return | reduced=true (variant: TargetPlatform.iOS)
+00:08 +47: iOS web history takes back navigation before the native caller (variant: TargetPlatform.iOS)
+00:08 +48: A verified login returns to its native caller (variant: TargetPlatform.windows)
+00:08 +49: A verified login returns to its native caller (variant: TargetPlatform.linux)
+00:08 +50: A verified login returns to its native caller (variant: TargetPlatform.macOS)
+00:08 +51: A verified login returns to its native caller (variant: TargetPlatform.iOS)
+00:08 +52: A verified login returns to its native caller (variant: TargetPlatform.android)
+00:09 +53: Login return cancels a web room before restoring its native caller (variant: TargetPlatform.windows)
+00:09 +54: Login return cancels a web room before restoring its native caller (variant: TargetPlatform.linux)
+00:09 +55: Login return cancels a web room before restoring its native caller (variant: TargetPlatform.macOS)
+00:09 +56: Login return cancels a web room before restoring its native caller (variant: TargetPlatform.iOS)
+00:09 +57: Login return cancels a web room before restoring its native caller (variant: TargetPlatform.android)
+00:09 +58: Another origin never creates an embedded account engine (variant: TargetPlatform.windows)
+00:09 +59: Another origin never creates an embedded account engine (variant: TargetPlatform.linux)
+00:09 +60: Another origin never creates an embedded account engine (variant: TargetPlatform.macOS)
+00:09 +61: Another origin never creates an embedded account engine (variant: TargetPlatform.iOS)
+00:09 +62: Another origin never creates an embedded account engine (variant: TargetPlatform.android)
+00:10 +63: A saved native session enters the system cookie store (variant: TargetPlatform.windows)
+00:10 +64: A saved native session enters the system cookie store (variant: TargetPlatform.linux)
+00:10 +65: A saved native session enters the system cookie store (variant: TargetPlatform.macOS)
+00:10 +66: A saved native session enters the system cookie store (variant: TargetPlatform.iOS)
+00:10 +67: A saved native session enters the system cookie store (variant: TargetPlatform.android)
+00:10 +68: A failed cookie store leaves the native session untouched (variant: TargetPlatform.windows)
+00:10 +69: A failed cookie store leaves the native session untouched (variant: TargetPlatform.linux)
+00:10 +70: A failed cookie store leaves the native session untouched (variant: TargetPlatform.macOS)
+00:10 +71: A failed cookie store leaves the native session untouched (variant: TargetPlatform.iOS)
+00:10 +72: A failed cookie store leaves the native session untouched (variant: TargetPlatform.android)
+00:10 +73: Service rotation updates the browser cookie once (variant: TargetPlatform.windows)
+00:10 +74: Service rotation updates the browser cookie once (variant: TargetPlatform.linux)
+00:10 +75: Service rotation updates the browser cookie once (variant: TargetPlatform.macOS)
+00:11 +76: Service rotation updates the browser cookie once (variant: TargetPlatform.iOS)
+00:11 +77: Service rotation updates the browser cookie once (variant: TargetPlatform.android)
+00:11 +78: Late service rotation cannot overwrite a browser logout (variant: TargetPlatform.windows)
+00:11 +79: Late service rotation cannot overwrite a browser logout (variant: TargetPlatform.linux)
+00:11 +80: Late service rotation cannot overwrite a browser logout (variant: TargetPlatform.macOS)
+00:11 +81: Late service rotation cannot overwrite a browser logout (variant: TargetPlatform.iOS)
+00:11 +82: Late service rotation cannot overwrite a browser logout (variant: TargetPlatform.android)
+00:11 +83: (tearDownAll)
+00:11 +83: All tests passed!
+
+account_avatar_test.dart.log
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/test/account_avatar_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: Shared avatar ignores a previous identity and handles missing media
+00:00 +1: Announcement entry refreshes every shared avatar | 320.0
+00:01 +2: Announcement entry refreshes every shared avatar | 1440.0
+00:01 +3: (tearDownAll)
+00:02 +3: All tests passed!

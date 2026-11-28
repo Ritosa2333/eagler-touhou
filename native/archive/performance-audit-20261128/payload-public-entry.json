@@ -1,0 +1,10 @@
+{
+  "checkedAtUtc": "2026-11-28T07:23:54.862104Z",
+  "origin": "https://touhouonline.com",
+  "authentication": false,
+  "entry": "Current AccountApi.th09Board and th09LobbyRatings",
+  "boardPlayers": 265,
+  "ratingPlayers": 265,
+  "minimumGames": 10,
+  "scope": "Headless Flutter test using production API methods and real HTTPS. No account writes, presentation or authenticated payload acceptance."
+}

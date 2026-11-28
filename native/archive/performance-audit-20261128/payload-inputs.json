@@ -1,0 +1,49 @@
+{
+  "capturedAtUtc": "2026-11-28T06:59:11.958195+00:00",
+  "authentication": "None; public responses only",
+  "inputs": [
+    {
+      "name": "profile",
+      "url": "https://touhouonline.com/api/v1/profiles/ritosa?media=urls",
+      "bytes": 596,
+      "sha256": "cd40be84e1091edbef97d76a13ea6581c246ddc8b12898b016fbda83b4784384",
+      "status": 200
+    },
+    {
+      "name": "statistics",
+      "url": "https://touhouonline.com/api/v1/profiles/ritosa/statistics",
+      "bytes": 37844,
+      "sha256": "d8d0245525088fefc410cfa87aecfcf0199449bd53bac9b34ea37d149a5a726a",
+      "status": 200
+    },
+    {
+      "name": "board",
+      "url": "https://touhouonline.com/api/v1/th09/ratings/board",
+      "bytes": 182420,
+      "sha256": "68defd099a28a285f43d1209d24914e1ed3d64b108ccdec4aff3e9f5700e4e58",
+      "status": 200
+    },
+    {
+      "name": "ratings",
+      "url": "https://touhouonline.com/api/v1/th09/ratings",
+      "bytes": 20137,
+      "sha256": "a038ad76fcfcf6e4dc7085a2e7db1bb47607efe82721618e54521c30acd491f6",
+      "status": 200
+    },
+    {
+      "name": "manifest",
+      "url": "https://touhouonline.com/site-manifest.json",
+      "bytes": 110138,
+      "sha256": "d9ef78af5e6d78eb8d9525e036135fb6813e1e44c98e56c5c5c289ca39afbaf5",
+      "status": 200
+    }
+  ],
+  "dartSdk": "3.14.0",
+  "productSourceSha256": {
+    "lib/account_api.dart": "07aa1931314e38bcdb44e3c5b290d9d4fd9f99645575d849c94d13a2391c3068",
+    "lib/th09_ratings.dart": "39e1f05ec3d07a7e69f7d51afe6cdc1f6e44b49eb11fd55cada5332e9ccb87d2",
+    "test/account_transport_test.dart": "92144f6b06ab49708e590f8783d56f28897d3ceee0a7eb249a0cdf6e52487aaf"
+  },
+  "benchmark": "Native Dart AOT; UTF-8 + JSON, production board/ratings model constructors. Profile/statistics/manifest model construction not measured. No authentication, uploads, writes or synthetic 32 MiB payload.",
+  "decoderExactExtractVerified": true
+}

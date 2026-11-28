@@ -1,0 +1,1177 @@
+{
+  "initialCosts": [
+    {
+      "round": 1,
+      "pid": 35604,
+      "observations": [
+        {
+          "elapsedSeconds": 1.0128122999958578,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 2.0230054999992717,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 3.023432399997546,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 4.029072699995595,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 5.038653399999021,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 6.044900499997311,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 7.053741499999887,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 8.05805899999541,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 9.067610199999763,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 10.071930999998585,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 11.079832999996142,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 12.092474199998833,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 13.09746240000095,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 14.106326100001752,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 15.10938349999924,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 16.11420779999753,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 17.126652399994782,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 18.133951999996498,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 19.142297899998084,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 20.151941099997202,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 21.166067699996347,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 22.173408399998152,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 23.17813970000134,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 24.183406399999512,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 25.19401139999536,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 26.198893199994927,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 27.20640569999523,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 28.220254699997895,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 29.233442099997774,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 30.239558199995372,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 31.24476770000183,
+          "kernelWait": 258,
+          "exitCodeRead": true,
+          "exitCode": 259
+        },
+        {
+          "elapsedSeconds": 32.17382199999702,
+          "kernelWait": 0,
+          "exitCodeRead": true,
+          "exitCode": 0
+        }
+      ],
+      "kernelSignaled": true,
+      "exitCode": 0,
+      "forcedTermination": false,
+      "finalWait": 0
+    },
+    {
+      "scope": "Pinned Dart SDK native AOT component measurement. Five actual unauthenticated production responses. Exact current UTF-8/JSON expression; existing production model constructors measured for board and ratings only. Other cases perform independent reference-count checks, excluding application model construction and site-manifest structural validation. File/network I/O excluded. Results checked against independently parsed JSON counts. Worker experiment offloads only decode, returns real Map, then runs the same constructor or reference check. Worker wall time is not UI-thread blocking or presented FPS. No product-source changes.",
+      "cases": [
+        {
+          "input": "profile",
+          "bytes": 596,
+          "modelScope": "Reference count only; application model construction excluded",
+          "verifiedModelCount": 6,
+          "firstUseDecodeAndModelMs": 0.011,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 0.002,
+            "p95Ms": 0.004,
+            "maxMs": 0.016
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.0,
+            "p95Ms": 0.0,
+            "maxMs": 0.001
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 0.002,
+            "p95Ms": 0.004,
+            "maxMs": 0.016
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 0.064,
+            "p95Ms": 0.129,
+            "maxMs": 1.799
+          }
+        },
+        {
+          "input": "statistics",
+          "bytes": 37844,
+          "modelScope": "Reference count only; application model construction excluded",
+          "verifiedModelCount": 5,
+          "firstUseDecodeAndModelMs": 0.208,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 0.172,
+            "p95Ms": 0.274,
+            "maxMs": 0.319
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.0,
+            "p95Ms": 0.0,
+            "maxMs": 0.001
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 0.172,
+            "p95Ms": 0.274,
+            "maxMs": 0.319
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 0.349,
+            "p95Ms": 0.397,
+            "maxMs": 0.432
+          }
+        },
+        {
+          "input": "board",
+          "bytes": 182420,
+          "modelScope": "Existing production constructor",
+          "verifiedModelCount": 265,
+          "firstUseDecodeAndModelMs": 3.641,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 2.657,
+            "p95Ms": 4.15,
+            "maxMs": 30.81
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.25,
+            "p95Ms": 0.418,
+            "maxMs": 1.071
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 2.913,
+            "p95Ms": 4.437,
+            "maxMs": 31.099
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 3.684,
+            "p95Ms": 4.489,
+            "maxMs": 42.079
+          }
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "modelScope": "Existing production constructor",
+          "verifiedModelCount": 265,
+          "firstUseDecodeAndModelMs": 0.244,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 0.156,
+            "p95Ms": 0.169,
+            "maxMs": 0.328
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.053,
+            "p95Ms": 0.056,
+            "maxMs": 0.063
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 0.21,
+            "p95Ms": 0.225,
+            "maxMs": 0.378
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 0.369,
+            "p95Ms": 0.707,
+            "maxMs": 0.912
+          }
+        },
+        {
+          "input": "manifest",
+          "bytes": 110138,
+          "modelScope": "Reference count only; application model construction excluded",
+          "verifiedModelCount": 20,
+          "firstUseDecodeAndModelMs": 0.851,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 0.77,
+            "p95Ms": 0.867,
+            "maxMs": 1.013
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.0,
+            "p95Ms": 0.001,
+            "maxMs": 0.001
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 0.77,
+            "p95Ms": 0.867,
+            "maxMs": 1.013
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 0.964,
+            "p95Ms": 1.161,
+            "maxMs": 1.199
+          }
+        }
+      ]
+    },
+    {
+      "scope": "Pinned Dart SDK native AOT component measurement. Five actual unauthenticated production responses. Exact current UTF-8/JSON expression; existing production model constructors measured for board and ratings only. Other cases perform independent reference-count checks, excluding application model construction and site-manifest structural validation. File/network I/O excluded. Results checked against independently parsed JSON counts. Worker experiment offloads only decode, returns real Map, then runs the same constructor or reference check. Worker wall time is not UI-thread blocking or presented FPS. No product-source changes.",
+      "cases": [
+        {
+          "input": "profile",
+          "bytes": 596,
+          "modelScope": "Reference count only; application model construction excluded",
+          "verifiedModelCount": 6,
+          "firstUseDecodeAndModelMs": 0.008,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 0.002,
+            "p95Ms": 0.004,
+            "maxMs": 0.01
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.0,
+            "p95Ms": 0.0,
+            "maxMs": 0.001
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 0.002,
+            "p95Ms": 0.005,
+            "maxMs": 0.01
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 0.05,
+            "p95Ms": 0.11,
+            "maxMs": 5.64
+          }
+        },
+        {
+          "input": "statistics",
+          "bytes": 37844,
+          "modelScope": "Reference count only; application model construction excluded",
+          "verifiedModelCount": 5,
+          "firstUseDecodeAndModelMs": 0.229,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 0.198,
+            "p95Ms": 0.312,
+            "maxMs": 0.434
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.0,
+            "p95Ms": 0.001,
+            "maxMs": 0.001
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 0.198,
+            "p95Ms": 0.312,
+            "maxMs": 0.435
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 0.386,
+            "p95Ms": 0.466,
+            "maxMs": 0.565
+          }
+        },
+        {
+          "input": "board",
+          "bytes": 182420,
+          "modelScope": "Existing production constructor",
+          "verifiedModelCount": 265,
+          "firstUseDecodeAndModelMs": 3.891,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 2.504,
+            "p95Ms": 3.264,
+            "maxMs": 5.355
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.238,
+            "p95Ms": 0.362,
+            "maxMs": 1.255
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 2.746,
+            "p95Ms": 3.745,
+            "maxMs": 5.592
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 3.318,
+            "p95Ms": 4.203,
+            "maxMs": 4.368
+          }
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "modelScope": "Existing production constructor",
+          "verifiedModelCount": 265,
+          "firstUseDecodeAndModelMs": 0.238,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 0.153,
+            "p95Ms": 0.162,
+            "maxMs": 0.275
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.052,
+            "p95Ms": 0.055,
+            "maxMs": 0.063
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 0.205,
+            "p95Ms": 0.216,
+            "maxMs": 0.324
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 0.381,
+            "p95Ms": 0.518,
+            "maxMs": 0.537
+          }
+        },
+        {
+          "input": "manifest",
+          "bytes": 110138,
+          "modelScope": "Reference count only; application model construction excluded",
+          "verifiedModelCount": 20,
+          "firstUseDecodeAndModelMs": 0.801,
+          "currentDecode": {
+            "samples": 100,
+            "medianMs": 0.763,
+            "p95Ms": 0.786,
+            "maxMs": 0.89
+          },
+          "currentModel": {
+            "samples": 100,
+            "medianMs": 0.0,
+            "p95Ms": 0.001,
+            "maxMs": 0.002
+          },
+          "currentCombined": {
+            "samples": 100,
+            "medianMs": 0.763,
+            "p95Ms": 0.786,
+            "maxMs": 0.891
+          },
+          "candidateDecodeWorkerAndModelWall": {
+            "samples": 20,
+            "medianMs": 0.879,
+            "p95Ms": 1.054,
+            "maxMs": 1.173
+          }
+        }
+      ]
+    }
+  ],
+  "alternatingWhileVerificationWasActive": [
+    {
+      "scope": "Native Dart AOT; actual production board/ratings, exact extracted current size-gated decoder, existing production model constructors and independent 265-row reference. Separate producer isolate timestamps each message using Timeline.now. Receiver measures arrival lag during one request-sized parse; 17-23 ms idle gaps avoid a synthetic synchronous bulk loop. One second baseline. Shared Windows desktop, not Flutter frame timing, UI presentation, 32 MiB maximum or device acceptance.",
+      "baseline": {
+        "samples": 61,
+        "medianMs": 0.026,
+        "p95Ms": 0.047,
+        "maxMs": 0.068
+      },
+      "cases": [
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 3.62,
+            "p95Ms": 13.218,
+            "maxMs": 22.082
+          },
+          "processingMailboxLag": {
+            "samples": 28,
+            "medianMs": 3.514,
+            "p95Ms": 10.755,
+            "maxMs": 10.876
+          },
+          "idleMailboxLag": {
+            "samples": 176,
+            "medianMs": 0.03,
+            "p95Ms": 9.839,
+            "maxMs": 22.184
+          },
+          "totalHeartbeatSamples": 204
+        },
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 11.802,
+            "p95Ms": 18.903,
+            "maxMs": 24.723
+          },
+          "processingMailboxLag": {
+            "samples": 66,
+            "medianMs": 0.04,
+            "p95Ms": 0.228,
+            "maxMs": 0.377
+          },
+          "idleMailboxLag": {
+            "samples": 177,
+            "medianMs": 0.048,
+            "p95Ms": 0.229,
+            "maxMs": 0.424
+          },
+          "totalHeartbeatSamples": 243
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.34,
+            "p95Ms": 1.18,
+            "maxMs": 2.015
+          },
+          "processingMailboxLag": {
+            "samples": 17,
+            "medianMs": 0.322,
+            "p95Ms": 1.207,
+            "maxMs": 1.207
+          },
+          "idleMailboxLag": {
+            "samples": 154,
+            "medianMs": 0.051,
+            "p95Ms": 1.149,
+            "maxMs": 1.268
+          },
+          "totalHeartbeatSamples": 171
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.33,
+            "p95Ms": 1.146,
+            "maxMs": 1.204
+          },
+          "processingMailboxLag": {
+            "samples": 26,
+            "medianMs": 0.258,
+            "p95Ms": 1.203,
+            "maxMs": 1.204
+          },
+          "idleMailboxLag": {
+            "samples": 139,
+            "medianMs": 0.048,
+            "p95Ms": 1.184,
+            "maxMs": 2.122
+          },
+          "totalHeartbeatSamples": 165
+        }
+      ]
+    },
+    {
+      "scope": "Native Dart AOT; actual production board/ratings, exact extracted current size-gated decoder, existing production model constructors and independent 265-row reference. Separate producer isolate timestamps each message using Timeline.now. Receiver measures arrival lag during one request-sized parse; 17-23 ms idle gaps avoid a synthetic synchronous bulk loop. One second baseline. Shared Windows desktop, not Flutter frame timing, UI presentation, 32 MiB maximum or device acceptance.",
+      "baseline": {
+        "samples": 62,
+        "medianMs": 0.021,
+        "p95Ms": 0.04,
+        "maxMs": 0.065
+      },
+      "cases": [
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 4.143,
+            "p95Ms": 15.918,
+            "maxMs": 20.675
+          },
+          "processingMailboxLag": {
+            "samples": 36,
+            "medianMs": 0.056,
+            "p95Ms": 0.577,
+            "maxMs": 1.464
+          },
+          "idleMailboxLag": {
+            "samples": 162,
+            "medianMs": 0.029,
+            "p95Ms": 0.113,
+            "maxMs": 0.265
+          },
+          "totalHeartbeatSamples": 198
+        },
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 6.627,
+            "p95Ms": 16.594,
+            "maxMs": 19.19
+          },
+          "processingMailboxLag": {
+            "samples": 35,
+            "medianMs": 4.957,
+            "p95Ms": 12.907,
+            "maxMs": 15.382
+          },
+          "idleMailboxLag": {
+            "samples": 179,
+            "medianMs": 0.035,
+            "p95Ms": 12.08,
+            "maxMs": 17.397
+          },
+          "totalHeartbeatSamples": 214
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.352,
+            "p95Ms": 1.152,
+            "maxMs": 1.699
+          },
+          "processingMailboxLag": {
+            "samples": 26,
+            "medianMs": 0.364,
+            "p95Ms": 0.606,
+            "maxMs": 1.091
+          },
+          "idleMailboxLag": {
+            "samples": 157,
+            "medianMs": 0.049,
+            "p95Ms": 1.164,
+            "maxMs": 1.818
+          },
+          "totalHeartbeatSamples": 183
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.253,
+            "p95Ms": 0.431,
+            "maxMs": 1.453
+          },
+          "processingMailboxLag": {
+            "samples": 30,
+            "medianMs": 0.252,
+            "p95Ms": 0.404,
+            "maxMs": 0.414
+          },
+          "idleMailboxLag": {
+            "samples": 143,
+            "medianMs": 0.034,
+            "p95Ms": 0.391,
+            "maxMs": 1.178
+          },
+          "totalHeartbeatSamples": 173
+        }
+      ]
+    },
+    {
+      "scope": "Native Dart AOT; actual production board/ratings, exact extracted current size-gated decoder, existing production model constructors and independent 265-row reference. Separate producer isolate timestamps each message using Timeline.now. Receiver measures arrival lag during one request-sized parse; 17-23 ms idle gaps avoid a synthetic synchronous bulk loop. One second baseline. Shared Windows desktop, not Flutter frame timing, UI presentation, 32 MiB maximum or device acceptance.",
+      "baseline": {
+        "samples": 60,
+        "medianMs": 0.029,
+        "p95Ms": 0.054,
+        "maxMs": 0.085
+      },
+      "cases": [
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 4.373,
+            "p95Ms": 15.439,
+            "maxMs": 18.699
+          },
+          "processingMailboxLag": {
+            "samples": 34,
+            "medianMs": 4.308,
+            "p95Ms": 13.371,
+            "maxMs": 16.185
+          },
+          "idleMailboxLag": {
+            "samples": 170,
+            "medianMs": 0.037,
+            "p95Ms": 7.2,
+            "maxMs": 15.507
+          },
+          "totalHeartbeatSamples": 204
+        },
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 11.033,
+            "p95Ms": 19.325,
+            "maxMs": 85.271
+          },
+          "processingMailboxLag": {
+            "samples": 61,
+            "medianMs": 0.049,
+            "p95Ms": 0.166,
+            "maxMs": 0.32
+          },
+          "idleMailboxLag": {
+            "samples": 183,
+            "medianMs": 0.055,
+            "p95Ms": 0.224,
+            "maxMs": 0.767
+          },
+          "totalHeartbeatSamples": 244
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.355,
+            "p95Ms": 1.155,
+            "maxMs": 1.26
+          },
+          "processingMailboxLag": {
+            "samples": 20,
+            "medianMs": 0.358,
+            "p95Ms": 1.186,
+            "maxMs": 1.236
+          },
+          "idleMailboxLag": {
+            "samples": 151,
+            "medianMs": 0.064,
+            "p95Ms": 1.169,
+            "maxMs": 1.381
+          },
+          "totalHeartbeatSamples": 171
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.453,
+            "p95Ms": 1.171,
+            "maxMs": 1.221
+          },
+          "processingMailboxLag": {
+            "samples": 19,
+            "medianMs": 0.395,
+            "p95Ms": 1.211,
+            "maxMs": 1.211
+          },
+          "idleMailboxLag": {
+            "samples": 148,
+            "medianMs": 0.05,
+            "p95Ms": 1.24,
+            "maxMs": 1.328
+          },
+          "totalHeartbeatSamples": 167
+        }
+      ]
+    }
+  ],
+  "deliveryRounds": [
+    {
+      "scope": "Native Dart AOT; actual production board/ratings, exact extracted current size-gated decoder, existing production model constructors and independent 265-row reference. Separate producer isolate timestamps each message using Timeline.now. Receiver measures arrival lag during one request-sized parse; 17-23 ms idle gaps avoid a synthetic synchronous bulk loop. One second baseline. Shared Windows desktop, not Flutter frame timing, UI presentation, 32 MiB maximum or device acceptance.",
+      "baseline": {
+        "samples": 61,
+        "medianMs": 0.034,
+        "p95Ms": 0.041,
+        "maxMs": 0.055
+      },
+      "cases": [
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 4.782,
+            "p95Ms": 13.016,
+            "maxMs": 82.008
+          },
+          "processingMailboxLag": {
+            "samples": 30,
+            "medianMs": 5.37,
+            "p95Ms": 14.634,
+            "maxMs": 15.626
+          },
+          "idleMailboxLag": {
+            "samples": 178,
+            "medianMs": 0.036,
+            "p95Ms": 8.134,
+            "maxMs": 82.039
+          },
+          "totalHeartbeatSamples": 208
+        },
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 10.526,
+            "p95Ms": 17.472,
+            "maxMs": 20.143
+          },
+          "processingMailboxLag": {
+            "samples": 54,
+            "medianMs": 0.063,
+            "p95Ms": 0.501,
+            "maxMs": 0.766
+          },
+          "idleMailboxLag": {
+            "samples": 188,
+            "medianMs": 0.041,
+            "p95Ms": 0.129,
+            "maxMs": 0.366
+          },
+          "totalHeartbeatSamples": 242
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.284,
+            "p95Ms": 1.157,
+            "maxMs": 1.284
+          },
+          "processingMailboxLag": {
+            "samples": 50,
+            "medianMs": 0.27,
+            "p95Ms": 1.201,
+            "maxMs": 1.325
+          },
+          "idleMailboxLag": {
+            "samples": 147,
+            "medianMs": 0.036,
+            "p95Ms": 1.173,
+            "maxMs": 1.298
+          },
+          "totalHeartbeatSamples": 197
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.333,
+            "p95Ms": 1.137,
+            "maxMs": 2.356
+          },
+          "processingMailboxLag": {
+            "samples": 49,
+            "medianMs": 0.328,
+            "p95Ms": 1.189,
+            "maxMs": 2.395
+          },
+          "idleMailboxLag": {
+            "samples": 149,
+            "medianMs": 0.036,
+            "p95Ms": 1.146,
+            "maxMs": 1.98
+          },
+          "totalHeartbeatSamples": 198
+        }
+      ]
+    },
+    {
+      "scope": "Native Dart AOT; actual production board/ratings, exact extracted current size-gated decoder, existing production model constructors and independent 265-row reference. Separate producer isolate timestamps each message using Timeline.now. Receiver measures arrival lag during one request-sized parse; 17-23 ms idle gaps avoid a synthetic synchronous bulk loop. One second baseline. Shared Windows desktop, not Flutter frame timing, UI presentation, 32 MiB maximum or device acceptance.",
+      "baseline": {
+        "samples": 62,
+        "medianMs": 0.022,
+        "p95Ms": 0.034,
+        "maxMs": 0.057
+      },
+      "cases": [
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 4.545,
+            "p95Ms": 16.355,
+            "maxMs": 21.873
+          },
+          "processingMailboxLag": {
+            "samples": 42,
+            "medianMs": 0.068,
+            "p95Ms": 0.478,
+            "maxMs": 1.296
+          },
+          "idleMailboxLag": {
+            "samples": 168,
+            "medianMs": 0.034,
+            "p95Ms": 0.194,
+            "maxMs": 0.276
+          },
+          "totalHeartbeatSamples": 210
+        },
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 5.885,
+            "p95Ms": 15.24,
+            "maxMs": 21.153
+          },
+          "processingMailboxLag": {
+            "samples": 55,
+            "medianMs": 3.687,
+            "p95Ms": 15.871,
+            "maxMs": 18.69
+          },
+          "idleMailboxLag": {
+            "samples": 170,
+            "medianMs": 0.035,
+            "p95Ms": 13.923,
+            "maxMs": 21.217
+          },
+          "totalHeartbeatSamples": 225
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.277,
+            "p95Ms": 1.117,
+            "maxMs": 1.149
+          },
+          "processingMailboxLag": {
+            "samples": 50,
+            "medianMs": 0.264,
+            "p95Ms": 1.149,
+            "maxMs": 1.177
+          },
+          "idleMailboxLag": {
+            "samples": 147,
+            "medianMs": 0.031,
+            "p95Ms": 0.524,
+            "maxMs": 1.316
+          },
+          "totalHeartbeatSamples": 197
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.301,
+            "p95Ms": 1.097,
+            "maxMs": 1.199
+          },
+          "processingMailboxLag": {
+            "samples": 49,
+            "medianMs": 0.317,
+            "p95Ms": 1.116,
+            "maxMs": 1.246
+          },
+          "idleMailboxLag": {
+            "samples": 149,
+            "medianMs": 0.046,
+            "p95Ms": 0.533,
+            "maxMs": 1.236
+          },
+          "totalHeartbeatSamples": 198
+        }
+      ]
+    },
+    {
+      "scope": "Native Dart AOT; actual production board/ratings, exact extracted current size-gated decoder, existing production model constructors and independent 265-row reference. Separate producer isolate timestamps each message using Timeline.now. Receiver measures arrival lag during one request-sized parse; 17-23 ms idle gaps avoid a synthetic synchronous bulk loop. One second baseline. Shared Windows desktop, not Flutter frame timing, UI presentation, 32 MiB maximum or device acceptance.",
+      "baseline": {
+        "samples": 62,
+        "medianMs": 0.02,
+        "p95Ms": 0.051,
+        "maxMs": 0.099
+      },
+      "cases": [
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 3.047,
+            "p95Ms": 14.451,
+            "maxMs": 15.574
+          },
+          "processingMailboxLag": {
+            "samples": 30,
+            "medianMs": 3.024,
+            "p95Ms": 14.811,
+            "maxMs": 15.618
+          },
+          "idleMailboxLag": {
+            "samples": 174,
+            "medianMs": 0.029,
+            "p95Ms": 5.801,
+            "maxMs": 15.304
+          },
+          "totalHeartbeatSamples": 204
+        },
+        {
+          "input": "board",
+          "bytes": 182420,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 3.969,
+            "p95Ms": 16.501,
+            "maxMs": 18.963
+          },
+          "processingMailboxLag": {
+            "samples": 53,
+            "medianMs": 0.042,
+            "p95Ms": 0.182,
+            "maxMs": 0.219
+          },
+          "idleMailboxLag": {
+            "samples": 160,
+            "medianMs": 0.046,
+            "p95Ms": 0.209,
+            "maxMs": 0.552
+          },
+          "totalHeartbeatSamples": 213
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Previous inline decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.238,
+            "p95Ms": 1.129,
+            "maxMs": 1.16
+          },
+          "processingMailboxLag": {
+            "samples": 48,
+            "medianMs": 0.237,
+            "p95Ms": 1.132,
+            "maxMs": 1.175
+          },
+          "idleMailboxLag": {
+            "samples": 149,
+            "medianMs": 0.042,
+            "p95Ms": 1.182,
+            "maxMs": 1.24
+          },
+          "totalHeartbeatSamples": 197
+        },
+        {
+          "input": "ratings",
+          "bytes": 20137,
+          "strategy": "Current size-gated decoder",
+          "wallTime": {
+            "samples": 100,
+            "medianMs": 0.298,
+            "p95Ms": 1.152,
+            "maxMs": 1.376
+          },
+          "processingMailboxLag": {
+            "samples": 44,
+            "medianMs": 0.294,
+            "p95Ms": 1.144,
+            "maxMs": 1.179
+          },
+          "idleMailboxLag": {
+            "samples": 154,
+            "medianMs": 0.054,
+            "p95Ms": 1.199,
+            "maxMs": 1.426
+          },
+          "totalHeartbeatSamples": 198
+        }
+      ]
+    }
+  ],
+  "deliveryHost": {
+    "checkedAtUtc": "2026-11-28T07:24:58.2048116Z",
+    "ownFlutterBuildTestProcesses": 0,
+    "hostScope": "Shared interactive Windows desktop; no exclusive CPU/GPU claim"
+  }
+}

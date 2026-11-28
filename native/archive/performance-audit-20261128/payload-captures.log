@@ -1,0 +1,154 @@
+capture-0.log
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/tools/capture_native_baseline_test.dart
+00:00 +0: Render desktop library and detail (variant: TargetPlatform.windows)
+00:20 +1: Render mobile library and detail (variant: TargetPlatform.windows)
+00:27 +2: Render mobile-narrow library and detail (variant: TargetPlatform.windows)
+00:34 +3: All tests passed!
+
+capture-1.log
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/test/launcher_language_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: Mobile language switches in place and survives restart and system locale
+00:04 +1: Desktop language menu returns to the same game details
+00:07 +2: Game settings use the interface locale | mobile-narrow en (variant: TargetPlatform.windows)
+00:10 +3: Game settings use the interface locale | mobile ja (variant: TargetPlatform.windows)
+00:12 +4: Game settings use the interface locale | desktop en (variant: TargetPlatform.windows)
+00:15 +5: Game settings use the interface locale | mobile zh-CN (variant: TargetPlatform.windows)
+00:16 +6: Game settings use the interface locale | desktop zh-CN (variant: TargetPlatform.windows)
+00:19 +7: Game settings layout | 320-english-dark-1 (variant: TargetPlatform.windows)
+00:19 +8: Game settings layout | 320-english-dark-2 (variant: TargetPlatform.windows)
+00:20 +9: Game settings layout | 320-english-light-1 (variant: TargetPlatform.windows)
+00:21 +10: Game settings layout | 320-english-light-2 (variant: TargetPlatform.windows)
+00:21 +11: Game settings layout | 390-japanese-dark-1 (variant: TargetPlatform.windows)
+00:22 +12: Game settings layout | 390-japanese-dark-2 (variant: TargetPlatform.windows)
+00:22 +13: Game settings layout | 390-japanese-light-1 (variant: TargetPlatform.windows)
+00:23 +14: Game settings layout | 390-japanese-light-2 (variant: TargetPlatform.windows)
+00:23 +15: Game settings layout | 390-simplifiedChinese-dark-1 (variant: TargetPlatform.windows)
+00:24 +16: Game settings layout | 390-simplifiedChinese-dark-2 (variant: TargetPlatform.windows)
+00:25 +17: Game settings layout | 390-simplifiedChinese-light-1 (variant: TargetPlatform.windows)
+00:25 +18: Game settings layout | 390-simplifiedChinese-light-2 (variant: TargetPlatform.windows)
+00:26 +19: Game settings layout | 781-english-dark-1 (variant: TargetPlatform.windows)
+00:26 +20: Game settings layout | 781-english-dark-2 (variant: TargetPlatform.windows)
+00:27 +21: Game settings layout | 781-english-light-1 (variant: TargetPlatform.windows)
+00:29 +22: Game settings layout | 781-english-light-2 (variant: TargetPlatform.windows)
+00:31 +23: Game settings layout | 1440-english-dark-1 (variant: TargetPlatform.windows)
+00:32 +24: Game settings layout | 1440-english-dark-2 (variant: TargetPlatform.windows)
+00:33 +25: Game settings layout | 1440-english-light-1 (variant: TargetPlatform.windows)
+00:34 +26: Game settings layout | 1440-english-light-2 (variant: TargetPlatform.windows)
+00:36 +27: Game settings layout | 1440-simplifiedChinese-dark-1 (variant: TargetPlatform.windows)
+00:37 +28: Game settings layout | 1440-simplifiedChinese-dark-2 (variant: TargetPlatform.windows)
+00:38 +29: Game settings layout | 1440-simplifiedChinese-light-1 (variant: TargetPlatform.windows)
+00:40 +30: Game settings layout | 1440-simplifiedChinese-light-2 (variant: TargetPlatform.windows)
+00:41 +31: Invalid saved locale uses the default Chinese language
+00:41 +32: (tearDownAll)
+00:41 +32: All tests passed!
+
+capture-2.log
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/test/lobby_page_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: Room elapsed time stops updating while the lobby is hidden
+00:04 +1: mobile-narrow imports a th09 match archive from the lobby (variant: TargetPlatform.windows)
+00:06 +2: mobile imports a th09 match archive from the lobby (variant: TargetPlatform.windows)
+00:08 +3: desktop imports a th09 match archive from the lobby (variant: TargetPlatform.windows)
+00:11 +4: mobile-narrow lobby diagnostics reports four rows and cancels on close (variant: TargetPlatform.windows)
+00:11 +5: mobile lobby diagnostics reports four rows and cancels on close (variant: TargetPlatform.windows)
+00:12 +6: desktop lobby diagnostics reports four rows and cancels on close (variant: TargetPlatform.windows)
+00:13 +7: 320 px game strip and tools share filters with the work menu (variant: TargetPlatform.windows)
+00:19 +8: mobile-narrow th09 rating cards respect visibility and room order (variant: TargetPlatform.windows)
+00:20 +9: mobile-narrow capped lobby reaches a room beyond the first 200 (variant: TargetPlatform.windows)
+00:20 +10: mobile th09 rating cards respect visibility and room order (variant: TargetPlatform.windows)
+00:22 +11: mobile capped lobby reaches a room beyond the first 200 (variant: TargetPlatform.windows)
+00:23 +12: desktop th09 rating cards respect visibility and room order (variant: TargetPlatform.windows)
+00:25 +13: desktop capped lobby reaches a room beyond the first 200 (variant: TargetPlatform.windows)
+00:26 +14: desktop room rows and shared sidebar scroll independently (variant: TargetPlatform.windows)
+00:28 +15: mobile-narrow lobby releases a previous room after acknowledgment (variant: TargetPlatform.windows)
+00:29 +16: mobile lobby releases a previous room after acknowledgment (variant: TargetPlatform.windows)
+00:29 +17: desktop lobby releases a previous room after acknowledgment (variant: TargetPlatform.windows)
+00:31 +18: mobile-narrow-en-2 lobby releases a previous room after acknowledgment (variant: TargetPlatform.windows)
+00:31 +19: mobile-ja-2 lobby releases a previous room after acknowledgment (variant: TargetPlatform.windows)
+00:32 +20: desktop-en-2 lobby releases a previous room after acknowledgment (variant: TargetPlatform.windows)
+00:33 +21: capture desktop lobby (variant: TargetPlatform.windows)
+00:34 +22: capture mobile lobby (variant: TargetPlatform.windows)
+00:35 +23: capture mobile-narrow lobby (variant: TargetPlatform.windows)
+00:36 +24: capture desktop-en lobby (variant: TargetPlatform.windows)
+00:37 +25: capture mobile-en lobby (variant: TargetPlatform.windows)
+00:37 +26: capture mobile-narrow-en lobby (variant: TargetPlatform.windows)
+00:38 +27: capture desktop-ja lobby (variant: TargetPlatform.windows)
+00:39 +28: capture mobile-ja lobby (variant: TargetPlatform.windows)
+00:41 +29: capture mobile-narrow-ja lobby (variant: TargetPlatform.windows)
+00:41 +30: capture desktop-light lobby (variant: TargetPlatform.windows)
+00:42 +31: capture mobile-light lobby (variant: TargetPlatform.windows)
+00:42 +32: capture mobile-narrow-light lobby (variant: TargetPlatform.windows)
+00:43 +33: capture desktop-en-light lobby (variant: TargetPlatform.windows)
+00:44 +34: capture mobile-en-light lobby (variant: TargetPlatform.windows)
+00:45 +35: capture mobile-narrow-en-light lobby (variant: TargetPlatform.windows)
+00:45 +36: capture desktop-ja-light lobby (variant: TargetPlatform.windows)
+00:46 +37: capture mobile-ja-light lobby (variant: TargetPlatform.windows)
+00:47 +38: capture mobile-narrow-ja-light lobby (variant: TargetPlatform.windows)
+00:47 +39: capture desktop-2 lobby (variant: TargetPlatform.windows)
+00:48 +40: capture mobile-2 lobby (variant: TargetPlatform.windows)
+00:48 +41: capture mobile-narrow-2 lobby (variant: TargetPlatform.windows)
+00:49 +42: capture desktop-en-2 lobby (variant: TargetPlatform.windows)
+00:50 +43: capture mobile-en-2 lobby (variant: TargetPlatform.windows)
+00:51 +44: capture mobile-narrow-en-2 lobby (variant: TargetPlatform.windows)
+00:51 +45: capture desktop-ja-2 lobby (variant: TargetPlatform.windows)
+00:52 +46: capture mobile-ja-2 lobby (variant: TargetPlatform.windows)
+00:53 +47: capture mobile-narrow-ja-2 lobby (variant: TargetPlatform.windows)
+00:53 +48: capture desktop-light-2 lobby (variant: TargetPlatform.windows)
+00:54 +49: capture mobile-light-2 lobby (variant: TargetPlatform.windows)
+00:55 +50: capture mobile-narrow-light-2 lobby (variant: TargetPlatform.windows)
+00:56 +51: capture desktop-en-light-2 lobby (variant: TargetPlatform.windows)
+00:57 +52: capture mobile-en-light-2 lobby (variant: TargetPlatform.windows)
+00:58 +53: capture mobile-narrow-en-light-2 lobby (variant: TargetPlatform.windows)
+00:59 +54: capture desktop-ja-light-2 lobby (variant: TargetPlatform.windows)
+00:59 +55: capture mobile-ja-light-2 lobby (variant: TargetPlatform.windows)
+01:00 +56: capture mobile-narrow-ja-light-2 lobby (variant: TargetPlatform.windows)
+01:01 +57: (tearDownAll)
+01:01 +57: All tests passed!
+
+capture-3.log
+00:00 +0: loading D:/workspace/eagler/artifacts/.native-room-client-win/test/launcher_navigation_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: Game links use the catalog route and validate the host and query
+00:00 +1: mobile opens a cold game link and returns to the library
+00:04 +2: desktop opens a cold game link and returns to the library
+00:07 +3: Mobile tab and game transitions keep viewports stable | normal
+00:09 +4: Mobile tab and game transitions keep viewports stable | app-reduced
+00:11 +5: Mobile tab and game transitions keep viewports stable | system-reduced
+00:11 +6: Rapid tab changes continue from the last visible frame | dark
+00:12 +7: Rapid tab changes continue from the last visible frame | light
+00:13 +8: Rapid tab changes continue from the last visible frame | desktop
+00:15 +9: Shared sidebar columns coincide | dark
+00:16 +10: Shared sidebar columns coincide | light
+00:17 +11: Crossing the navigation breakpoint retains the open game and library scroll
+00:21 +12: Desktop hover animates the star inside the same row
+00:22 +13: Desktop masthead aligns across widths and routes
+00:29 +14: Desktop sidebars stay in their viewport and outside page scrolling
+00:33 +15: Desktop detail exit stays visible through the transition | 781.0
+00:35 +16: Desktop detail exit stays visible through the transition | 1440.0
+00:36 +17: iOS edge-back preserves routes and scroll | 390.0 normal plain (variant: TargetPlatform.iOS)
+00:38 +18: iOS edge-back preserves routes and scroll | 390.0 normal dots (variant: TargetPlatform.iOS)
+00:39 +19: iOS edge-back preserves routes and scroll | 390.0 app-reduced plain (variant: TargetPlatform.iOS)
+00:40 +20: iOS edge-back preserves routes and scroll | 390.0 app-reduced dots (variant: TargetPlatform.iOS)
+00:41 +21: iOS edge-back preserves routes and scroll | 390.0 system-reduced plain (variant: TargetPlatform.iOS)
+00:42 +22: iOS edge-back preserves routes and scroll | 390.0 system-reduced dots (variant: TargetPlatform.iOS)
+00:43 +23: iOS edge-back preserves routes and scroll | 834.0 normal plain (variant: TargetPlatform.iOS)
+00:45 +24: iOS edge-back preserves routes and scroll | 834.0 normal dots (variant: TargetPlatform.iOS)
+00:48 +25: iOS edge-back preserves routes and scroll | 834.0 app-reduced plain (variant: TargetPlatform.iOS)
+00:49 +26: iOS edge-back preserves routes and scroll | 834.0 app-reduced dots (variant: TargetPlatform.iOS)
+00:51 +27: iOS edge-back preserves routes and scroll | 834.0 system-reduced plain (variant: TargetPlatform.iOS)
+00:51 +28: iOS edge-back preserves routes and scroll | 834.0 system-reduced dots (variant: TargetPlatform.iOS)
+00:53 +29: Sidebar fold preserves continuity | false normal (variant: TargetPlatform.windows)
+00:54 +30: Sidebar fold preserves continuity | false app-reduced (variant: TargetPlatform.windows)
+00:55 +31: Sidebar fold preserves continuity | false system-reduced (variant: TargetPlatform.windows)
+00:55 +32: Sidebar fold preserves continuity | true normal (variant: TargetPlatform.windows)
+00:57 +33: Sidebar fold preserves continuity | true app-reduced (variant: TargetPlatform.windows)
+00:58 +34: Sidebar fold preserves continuity | true system-reduced (variant: TargetPlatform.windows)
+00:58 +35: Settings fold shares motion and reduction | 320.0 normal (variant: TargetPlatform.windows)
+00:59 +36: Settings fold shares motion and reduction | 320.0 app-reduced (variant: TargetPlatform.windows)
+00:59 +37: Settings fold shares motion and reduction | 320.0 system-reduced (variant: TargetPlatform.windows)
+00:59 +38: Settings fold shares motion and reduction | 1440.0 normal (variant: TargetPlatform.windows)
+01:00 +39: Settings fold shares motion and reduction | 1440.0 app-reduced (variant: TargetPlatform.windows)
+01:00 +40: Settings fold shares motion and reduction | 1440.0 system-reduced (variant: TargetPlatform.windows)
+01:01 +41: (tearDownAll)
+01:01 +41: All tests passed!

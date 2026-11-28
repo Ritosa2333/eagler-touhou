@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -13,6 +14,12 @@ import 'profile_data.dart';
 import 'th09_ratings.dart';
 import 'th09_replay_match.dart' show th09ReplayLimit;
 import 'save_progress.dart';
+
+Future<Object?> _decodeAccountJson(Uint8List bytes) async {
+  if (bytes.length < 64 * 1024) return jsonDecode(utf8.decode(bytes));
+  // Pass bytes alone, avoiding capture of the HTTP client or account session.
+  return Isolate.run(() => jsonDecode(utf8.decode(bytes)));
+}
 
 class PublicAnnouncement {
   const PublicAnnouncement({
@@ -223,7 +230,7 @@ class AccountApi {
     );
     return payload.isEmpty
         ? null
-        : jsonDecode(utf8.decode(payload)) as Map<String, dynamic>?;
+        : (await _decodeAccountJson(payload)) as Map<String, dynamic>?;
   }
 
   Future<Uint8List> _exchange(
@@ -291,7 +298,7 @@ class AccountApi {
       if (!ok) {
         String? code;
         try {
-          final json = jsonDecode(utf8.decode(bytes));
+          final json = await _decodeAccountJson(bytes);
           if (json is Map<String, dynamic>) {
             final error = json['error'];
             final value =

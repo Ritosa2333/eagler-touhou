@@ -262,7 +262,33 @@
     "account-resize-build.cmd": "638ec92020b7d59e731772030815680cd68567c9315df9754c4a4ae2961e5bbc",
     "account-resize-build.log": "25b0d4d7abe60543c3db0798dd59f67e2781cc697fbdc9f449b6571c0225fe63",
     "account-resize-run.py": "d4d409a99146abe24eae0a906d7be1307786e90c5c17596bc078406b115b8952",
-    "account-resize-system-errors.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    "account-resize-system-errors.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "payload-inputs.json": "180ee8dcdb41bc95bf6e0692066c2ad10ec3d72a97255b30cc4c236b7d396827",
+    "payload-expected.json": "4d07b8c6e52f7c619138b78b6f088c9109f3a8ebf34a8803c1bd3e7473da09ff",
+    "payload-responses.json.gz": "58929776997b9c1e8b6a2b05e2731a9e29d62a72b49b2cc683e05a10c388f6d9",
+    "payload-probe.dart": "8ceb828a804c3cab60061c9d9cf5bf26fc761ca1a7e52ba3029a8778857f4291",
+    "payload-current-decoder.dart": "eb4cf526f57786bcfbad62d785fb97fd553fa1ff2838dca9edf87f1bda2a543b",
+    "payload-mailbox.dart": "5071fa4cb34362043ea787a86caeafee48b35f1ffc1042fc072c9c13efe13b0b",
+    "payload-measurements.json": "54b344324ee9044bcd96c881efd6726f1aa92b25cb68b7d1d383555fab55d416",
+    "payload-summary.json": "c30d863b4e2bac83b0ae83a4b7731b93efad2211ec23c43ebfd4062499430f38",
+    "payload-compile.log": "d3067de7604ce0663db9abb09896b0803ea2fe206c72f843f781e6e7655b6361",
+    "payload-mailbox-compile.log": "d3067de7604ce0663db9abb09896b0803ea2fe206c72f843f781e6e7655b6361",
+    "payload-regression.log": "d5d22d01d9f4a81d64cedefaf4031e1ad310262244331a708c9e9b2e07f5f34c",
+    "payload-analyze.log": "844821590def57eafafeee9e874dff49cd3d6b4cb16d22304b9d6437ce72a5f3",
+    "payload-public-entry.log": "38e9988412d86ce2f759dfb242b9572f4ec158f84b1330fbdf97fbdfbd3c10da",
+    "payload-public-entry.json": "196077529b2c7dc4fccb8b1a91ba9bf49530226ee700a5e0e17f399c1db6e0d6",
+    "payload-public-entry-test.dart": "346a11330c2b77c90ac78758e9f16ca70ced028d2add1293b59987b9857e2240",
+    "payload-captures.log": "fdf310001101f10e34d83c7ae7c787d2102e796b174483b0ab36e3ec3aff971d",
+    "payload-capture.ps1": "46d9efe6d60a868688ab9372dcb677825b2f03297877d8fd87a344e24727c0b0",
+    "payload-capture-comparison.json": "e37337702c0769ccfea9743834dc27d29cba35f15d1e725c7942df14d2b700ae",
+    "payload-release-build.log": "705ac32b3230f6e580356d24552835ca797ab93dd78669913783824088edbf4c",
+    "payload-package.json": "e0988af8b42348284a80c4d03b11639d8efbd918a36e5ba186ab3df1af87b969",
+    "payload-smoke.py": "9de3b53796a66819ff22d7c3ea3c5316e1423a7bfe50ab732f26a41e17977baa",
+    "payload-smoke-inputs.json": "55cca245c095339839417bf1a412094368bd598b1f6b29df5c402079b58c6a83",
+    "payload-smoke-events.jsonl": "678072af297667c270b741638b9ba929ce3e52d4050abc5629aaf978f9ab153b",
+    "payload-smoke-result.json": "a05c54f7a8581bb869eb98e36af3bcf0a34ea906d1de2c0fd5ca627ee689fe23",
+    "payload-smoke-ax.txt": "29768bb5a266a5f89b74766bc0ad70bc1d88e63a4ab4225518927f79c33d0947",
+    "payload-board.json.gz": "0fa5e3f5a7e718bd113e7aec8c8c1b268fe7355070e1c2b1019c5458e620fbe9"
   },
   "tracing": "Profile trace was captured before PERF_TRACE became optional. Reproduction needs --profile --trace-skia --endless-trace-buffer --dart-define=PERF_TRACE=true. Never use the traced process working set as ordinary app memory. Release target defaults to no tracing.",
   "browser": "Original public-profile native adapter A/B retained. New isolated Windows Debug account integration passes two visits and eight width states with native return to th08. Progressive screenshots include a real 320 px guest login form; other widths captured during loading. No credentials entered.",
@@ -606,5 +632,11 @@
     "scope": "Same process, production main.dart AOT and complete canonical Release native DLL set. Native diagnostic host changes only initial width, isolated application metadata, nonactivation, resize schedule and timing markers. No product source or package changes.",
     "visualCoverage": "390 px after desktop resize only; other width captures occluded",
     "exitCode": 0
+  },
+  "accountJsonWorker": {
+    "summary": "payload-summary.json",
+    "currentPackageSha256": "4d18753e44c82d7350fee86425779a118ef79eb3ea70f27b73a14d94feae7858",
+    "ordinaryAotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+    "scope": "Five real public HTTPS responses; pinned Dart AOT component measurements and current application API regression. Size-gated parsing >=64 KiB moves UTF-8/JSON decode to Isolate.run; smaller bodies use the same direct parser. Response limits and model semantics unchanged. Separate producer timestamps quantify message-receive lag, not Flutter frame time or presented FPS. Shared Windows desktop."
   }
 }
