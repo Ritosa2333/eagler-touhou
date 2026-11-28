@@ -80,10 +80,10 @@ function probe(name){return env.document.querySelector(`[data-session-probe="${n
 
 test('same-page and cross-tab identity changes are shared, and late account data cannot restore a retired user',async()=>{
   const sessions=[],profiles=[];
-  globalThis.__accountRequest=(path)=>{
+  globalThis.__accountRequest=(path,_body,options)=>{
     if(path==='auth/get-session'){const task=deferred();sessions.push(task);return task.promise;}
-    const match=path.match(/^v1\/profiles\/([^/?]+)\?media=urls$/);
-    if(match){const task=deferred();profiles.push({username:decodeURIComponent(match[1]),task});return task.promise;}
+    const match=path.match(/^v1\/profiles\/([^/?]+)$/);
+    if(match && options?.query?.get('media')==='urls'){const task=deferred();profiles.push({username:decodeURIComponent(match[1]),task});return task.promise;}
     throw Error(`Unexpected account request: ${path}`);
   };
   const page=await mount();
@@ -110,7 +110,7 @@ test('same-page and cross-tab identity changes are shared, and late account data
   const account=page.querySelector('.masthead-account-entry');
   assert.match(account?.getAttribute('aria-label')??'',/Bobby/);
   assert.doesNotMatch(account?.getAttribute('aria-label')??'',/Alice/);
-  assert.equal(account.textContent,'Bobby');
+  assert.equal(account.textContent,'','the masthead shows only the account avatar');
 
   const oldUrl=env.window.location.href;
   await React.act(async()=>env.window.dispatchEvent(new env.window.StorageEvent('storage',{key:'account-session-changed',newValue:'other-tab'})));
@@ -143,9 +143,9 @@ test('an unavailable session keeps the account icon and can be retried',async()=
 });
 
 test('a failed sign-out leaves the account menu open with its error',async()=>{
-  globalThis.__accountRequest=async path=>{
+  globalThis.__accountRequest=async (path,_body,options)=>{
     if(path==='auth/get-session')return {user:{username:'alice',name:'Alice'}};
-    if(path==='v1/profiles/alice?media=urls')return {nickname:'Alice profile',details:{avatar:''}};
+    if(path==='v1/profiles/alice' && options?.query?.get('media')==='urls')return {nickname:'Alice profile',details:{avatar:''}};
     if(path==='auth/sign-out')throw Error('sign-out unavailable');
     throw Error(`Unexpected account request: ${path}`);
   };

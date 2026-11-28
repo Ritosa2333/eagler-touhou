@@ -98,7 +98,7 @@
     border: 0;
     background: transparent;
     color: var(--kit-muted-foreground);
-    font: 600 21px / 1.2 var(--kit-font);
+    font: 600 20px / 1.2 var(--kit-font);
     letter-spacing: normal;
     text-decoration: none;
     cursor: pointer;
@@ -190,7 +190,7 @@
   }
   @media (780px < width <= 960px) {
     .book-masthead .book-main-nav .book-navigation-icon {display:none}
-    .book-masthead .book-main-nav :is(a,button) {padding-inline:12px;font-size:17px}
+    .book-masthead .book-main-nav :is(a,button) {padding-inline:12px;font-size:16px}
   }
   @media (max-width: 780px) {
     .masthead.book-masthead:not([data-mobile-header="true"]) {display:none}
@@ -229,21 +229,8 @@
   box-shadow:none;
 }
 .book-masthead :is(.masthead-action,.book-main-nav a) > svg {width:var(--masthead-icon-size);height:var(--masthead-icon-size)}
-.book-masthead .masthead-action > :is(svg,.masthead-action-label) {translate:0 var(--masthead-icon-offset)}
-.book-masthead .masthead-account-entry {gap:8px;width:auto;min-width:var(--masthead-control-size);padding:0 10px;max-width:144px}
-.masthead-action-label {display:none}
-@media (min-width: 1440px) {
-  .book-masthead .masthead-action:has(> .masthead-action-label) {width:auto;min-width:var(--masthead-control-size);padding-inline:9px;gap:6px}
-  .book-masthead .masthead-action-label {display:block;font:500 13px / 1.25 var(--kit-font);white-space:nowrap}
-  .masthead-tooltip[data-icon-only] {display:none}
-}
-.masthead-account-entry > span:not(.account-avatar) {min-width:0;overflow:hidden;text-overflow:ellipsis}
-.book-masthead .masthead-account-entry > svg {width:14px;height:14px;translate:none}
+.book-masthead .masthead-action > svg {translate:0 var(--masthead-icon-offset)}
 .masthead-account-entry .account-avatar {--account-avatar-size:28px}
-@media (780px < width <= 960px) {
-  .book-masthead .masthead-account-entry {width:var(--masthead-control-size);padding:0}
-  .book-masthead :is(.masthead-account-entry > span:not(.account-avatar),.masthead-account-entry > svg) {display:none}
-}
 @media (780px < width <= 1024px) {
   .book-masthead .masthead-links > .book-top-donation {display:none}
 }

@@ -33,7 +33,7 @@ import { isTh09RatingPage } from '../documents/catalog';
 import { MastheadOverview, type MastheadSiteLink } from './MastheadOverview';
 import { useLocation } from 'react-router';
 import { AccountMenu } from './AccountMenu';
-import { MastheadActionLabel, MastheadTooltip } from './MastheadTooltip';
+import { MastheadTooltip } from './MastheadTooltip';
 import { NavigationIcon } from './NavigationIcon';
 import {SiteBottomNavigation} from './SiteNavigation';
 import {LauncherWordmark} from './LauncherWordmark';
@@ -207,7 +207,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
         >
           {t('nav.oldSiteMigration')}
         </a>
-        <MastheadTooltip label={faqLink.label} iconOnly>
+        <MastheadTooltip label={faqLink.label}>
           <Button asChild variant="ghost" size="icon" className="masthead-action book-top-faq">
             <a href={faqLink.href} aria-label={faqLink.label}>
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -217,24 +217,21 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                   <path d="M12 17h.01" />
                 </g>
               </svg>
-              <MastheadActionLabel>{t('nav.help')}</MastheadActionLabel>
             </a>
           </Button>
         </MastheadTooltip>
-        <MastheadTooltip label={feedbackLink.label} iconOnly>
+        <MastheadTooltip label={feedbackLink.label}>
           <Button asChild variant="ghost" size="icon" className="masthead-action book-top-feedback">
             <a href={feedbackLink.href} aria-label={feedbackLink.label} target="_blank" rel="noopener noreferrer">
               {feedbackLink.icon}
-              <MastheadActionLabel>{feedbackLink.label}</MastheadActionLabel>
             </a>
           </Button>
         </MastheadTooltip>
         {props.donationAvailable !== false && (
-          <MastheadTooltip label={t('nav.donate')} iconOnly>
+          <MastheadTooltip label={t('nav.donate')}>
             <Button variant="ghost" size="icon" className="masthead-action book-top-donation"
               aria-label={t('nav.donate')} onClick={props.onDonation} disabled={!interactive}>
               <HeartIcon aria-hidden="true"/>
-              <MastheadActionLabel>{t('nav.donate')}</MastheadActionLabel>
             </Button>
           </MastheadTooltip>
         )}

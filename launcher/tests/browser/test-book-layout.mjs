@@ -23,8 +23,6 @@ async function assertMasthead(page, width) {
     const box = node => node.getBoundingClientRect();
     const visible = selector => [...header.querySelectorAll(selector)].filter(node => box(node).width > 0);
     const actions = visible('.masthead-action');
-    const icons = actions.filter(node => ![...node.querySelectorAll(':scope > .masthead-action-label, :scope.masthead-account-entry > span:not(.account-avatar)')]
-      .some(child => box(child).width > 0));
     const navigation = visible('.book-main-nav a');
     const groups = visible('.masthead-leading, .book-main-nav, .masthead-trailing, .masthead-library-search')
       .map(box).sort((left, right) => left.left - right.left);
@@ -45,9 +43,14 @@ async function assertMasthead(page, width) {
     return {
       height: headerBounds.height,
       controls: actions.map(node => [box(node).height, getComputedStyle(node).borderTopWidth]),
-      icons: icons.map(node => box(node).width),
-      labels: visible('.masthead-action-label').map(label => label.textContent),
-      labelOffsets: visible('.masthead-action-label, .book-main-nav a > span').flatMap(label => {
+      icons: actions.map(node => box(node).width),
+      actionLabels: actions.map(action => {
+        const copy = action.cloneNode(true);
+        copy.querySelectorAll('svg, small[aria-hidden="true"]').forEach(node => node.remove());
+        return copy.textContent.trim();
+      }),
+      accessible: actions.filter(node => node.matches('a, button')).map(node => node.getAttribute('aria-label')),
+      labelOffsets: visible('.book-main-nav a > span').flatMap(label => {
         const glyph = label.parentElement.querySelector(':scope > svg');
         return glyph && box(glyph).width ? [center(label) - center(glyph)] : [];
       }),
@@ -87,10 +90,10 @@ async function assertMasthead(page, width) {
   assert.ok(layout.controls.every(([height,border]) => height === (width <= 780 ? 44 : 43) && border === '0px'),
     `${width}px masthead actions fit in the header row without borders`);
   assert.ok(layout.icons.every(size => size === 44), `${width}px icon actions have a common width`);
-  assert.ok(width < 1440 ? layout.labels.length === 0 : layout.labels.length >= 5 && layout.labels.every(Boolean),
-    `${width}px masthead shows action labels only on wide screens`);
+  assert.ok(layout.actionLabels.every(label => label === ''), `${width}px masthead actions display icons only`);
+  assert.ok(layout.accessible.every(Boolean), `${width}px masthead actions retain accessible names`);
   assert.ok(layout.labelOffsets.every(offset => Math.abs(offset) < .5),
-    `${width}px masthead labels and icons share their optical alignment`);
+    `${width}px primary navigation labels and icons share their optical alignment`);
   assert.ok(Math.max(...layout.centers) - Math.min(...layout.centers) <= 1, `${width}px masthead controls share a centerline`);
   assert.ok(layout.fits, `${width}px masthead groups fit without overlap`);
   assert.equal(layout.menuGroup, 'masthead-leading');
@@ -109,9 +112,9 @@ async function assertMasthead(page, width) {
     assert.ok(layout.glyphs.every(([w, h, center]) => Math.abs(w - expectedSize) < .25 &&
       Math.abs(h - expectedSize) < .25 && Math.abs(center - layout.wordmarkGlyphCenter) < .5),
     'Desktop glyphs share the scale and optical center of the wordmark ascender');
+    assert.deepEqual(layout.navFonts, width > 960 ? [20,20] : [16,16], 'primary navigation retains its desktop type scale');
     if (width > 960) {
       const navSize = layout.wordmarkWidth * .205;
-      assert.deepEqual(layout.navFonts,[21,21]);
       assert.equal(layout.navGlyphs.length,2);
       assert.ok(layout.navGlyphs.every(([w,h,center]) => Math.abs(w-navSize)<.25 && Math.abs(h-navSize)<.25 &&
         Math.abs(center-layout.navCenter)<.5), 'The primary modes share larger icons centered vertically in the row');

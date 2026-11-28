@@ -3,8 +3,8 @@ import {DropdownMenu} from 'radix-ui';
 import {Button} from '../../ui/button';
 import {AccountAvatar} from './AccountAvatar';
 import {NavigationIcon} from './NavigationIcon';
-import {MastheadActionLabel, MastheadTooltip} from './MastheadTooltip';
-import {ChevronDown, House, LogOut, Pencil, ShieldCheck} from 'lucide-react';
+import {MastheadTooltip} from './MastheadTooltip';
+import {House, LogOut, Pencil, ShieldCheck} from 'lucide-react';
 import {AppLink} from './AppLink';
 import {accountRequest} from '../../services/account-client';
 import {notifyAccountChange} from '../../services/account-session';
@@ -25,16 +25,14 @@ export function AccountMenu({interactive,assetUrl}:{interactive:boolean;assetUrl
     <Button variant="ghost" size="icon" className="masthead-action book-profile-trigger"
       onClick={retry} aria-label={`${t('nav.account')} | ${t('action.retry')}`}>
       <NavigationIcon name="profile"/>
-      <MastheadActionLabel>{t('nav.account')}</MastheadActionLabel>
     </Button>
   </MastheadTooltip>;
   if (!user) {
     const label=t('account.login');
-    return <MastheadTooltip label={label} iconOnly>
+    return <MastheadTooltip label={label}>
       <Button asChild variant="ghost" size="icon" className="masthead-action account-login-link">
         <AppLink href={loginHref} rememberEntry aria-label={label}>
           <NavigationIcon name="profile"/>
-          <MastheadActionLabel>{label}</MastheadActionLabel>
         </AppLink>
       </Button>
     </MastheadTooltip>;
@@ -49,7 +47,7 @@ export function AccountMenu({interactive,assetUrl}:{interactive:boolean;assetUrl
     catch {setFailed(true);setBusy(false);setOpen(true);}
   }
   return <DropdownMenu.Root open={open} onOpenChange={setOpen}><MastheadTooltip label={t('account.actions')}><DropdownMenu.Trigger asChild><Button variant="ghost" size="icon" className="masthead-action masthead-account-entry" aria-label={t('account.actions')+' '+nickname}>
-    {avatarView}<span>{nickname}</span><ChevronDown aria-hidden="true"/>
+    {avatarView}
   </Button></DropdownMenu.Trigger></MastheadTooltip><DropdownMenu.Portal container={uiPortalHost()}>
     <DropdownMenu.Content align="end" sideOffset={8} className="ui-menu account-menu-panel ui-dropdown-motion">
       <DropdownMenu.Label className="account-menu-identity">{avatarView}<span><strong>{nickname}</strong><IdentityMetadata username={user.username} country={country}/></span></DropdownMenu.Label>

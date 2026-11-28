@@ -7,7 +7,7 @@ import {uiPortalHost} from '../../ui/portal';
 import {AppLink} from './AppLink';
 import {AnnouncementTimeline, useAnnouncementUnread} from './AnnouncementTimeline';
 import {launcherSectionHref, type MessageSection} from './launcher-sections';
-import {MastheadActionLabel, MastheadTooltip} from './MastheadTooltip';
+import {MastheadTooltip} from './MastheadTooltip';
 import './message-center.css';
 
 export function MastheadInbox({compact, interactive, homeHref, assetUrl, nativeLinks}: {
@@ -23,13 +23,13 @@ export function MastheadInbox({compact, interactive, homeHref, assetUrl, nativeL
   const Link = useAppLink ? AppLink : 'a';
   const entryLink = useAppLink ? {rememberEntry:true} : {};
   const items = [
-    {id: 'announcements' as const, Icon: Megaphone, label: t('announcements.title'), shortLabel: t('notice.label'), count: unread, heading: t('announcements.latest')},
-    {id: 'messages' as const, Icon: Mail, label: t('messages.private'), shortLabel: t('messages.private'), count: messages ?? 0, heading: t('messages.private')},
+    {id: 'announcements' as const, Icon: Megaphone, label: t('announcements.title'), count: unread, heading: t('announcements.latest')},
+    {id: 'messages' as const, Icon: Mail, label: t('messages.private'), count: messages ?? 0, heading: t('messages.private')},
   ];
   return <nav className="masthead-inbox" aria-label={t('messages.center')}>
-    {items.map(({id, Icon, label, shortLabel, count, heading}) => {
+    {items.map(({id, Icon, label, count, heading}) => {
       const href = launcherSectionHref(homeHref, id);
-      const contents = <><Icon aria-hidden="true"/><MastheadActionLabel>{shortLabel}</MastheadActionLabel>{count > 0 && <small aria-hidden="true">{count}</small>}</>;
+      const contents = <><Icon aria-hidden="true"/>{count > 0 && <small aria-hidden="true">{count}</small>}</>;
       const accessible = count ? `${label} (${count})` : label;
       const action = {'aria-label': accessible, 'data-unread': count > 0, 'data-inbox-section': id};
       return compact || !interactive
@@ -37,7 +37,7 @@ export function MastheadInbox({compact, interactive, homeHref, assetUrl, nativeL
           <Link href={href} {...entryLink} {...action}>{contents}</Link>
         </Button>
         : <Popover.Root key={id}>
-          <MastheadTooltip label={label} iconOnly><Popover.Trigger asChild>
+          <MastheadTooltip label={label}><Popover.Trigger asChild>
             <Button variant="ghost" size="icon" className="masthead-action masthead-inbox-action"
               {...action}>{contents}</Button>
           </Popover.Trigger></MastheadTooltip>
