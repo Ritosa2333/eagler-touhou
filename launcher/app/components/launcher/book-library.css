@@ -627,8 +627,11 @@
       gap: 4px;
     }
     .book-view-covers .book-card .book-identity strong {
-      font-size: 13px;
-      font-weight: 400;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .book-view-covers .book-card .book-work-number {
+      font-size: 11px;
     }
     .book-view-covers .book-card .book-identity > span:not(.book-title-line) {
       display: none;
