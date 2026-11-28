@@ -40,6 +40,8 @@
   }
   .book-sidebar {
     --book-rail-action-size: 32px;
+    --book-sidebar-inline-inset: 16px;
+    --book-sidebar-bottom-inset: 12px;
     position: sticky;
     top: var(--site-header-height, 44px);
     align-self: start;
@@ -47,7 +49,7 @@
     display: flex;
     flex-direction: column;
     block-size: var(--launcher-content-height, calc(100dvh - var(--site-header-height, 44px)));
-    padding: 18px 16px 12px;
+    padding: 18px var(--book-sidebar-inline-inset) var(--book-sidebar-bottom-inset);
     border-inline-end: 1px solid var(--kit-border);
     background: var(--book-category-surface);
   }
@@ -77,13 +79,10 @@
   .book-sidebar-footer {
     flex: none;
     margin-block-start: auto;
-    padding-block-start: 8px;
-    border-block-start: 1px solid var(--kit-border);
-  }
-  .book-sidebar-footer-link.ui-kit-button {
-    width: 100%;
-    gap: 8px;
-    padding-inline: 10px;
+    margin-block-end: calc(-1 * var(--book-sidebar-bottom-inset));
+    margin-inline: calc(-1 * var(--book-sidebar-inline-inset));
+    border-block-start: 1px solid var(--kit-control-border);
+    background: color-mix(in srgb, var(--kit-background) var(--custom-category-opacity, 100%), transparent);
   }
   .book-category-row small {
     justify-self: end;
@@ -635,6 +634,29 @@
       display: none;
     }
   }
+}
+.book-sidebar-footer-link.ui-kit-button {
+  width: 100%;
+  min-height: 50px;
+  gap: 10px;
+  padding-inline: var(--book-sidebar-inline-inset);
+  border: 0;
+  border-radius: 0;
+  color: var(--kit-foreground);
+  font: 550 14px / 1.25 var(--kit-font);
+}
+.book-sidebar-footer-link.ui-kit-button > svg {
+  width: 26px;
+  height: 26px;
+  padding: 4px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  background: var(--kit-secondary);
+}
+.book-sidebar-footer-link.ui-kit-button:focus-visible {
+  outline: 2px solid var(--kit-ring);
+  outline-offset: -2px;
+  box-shadow: none;
 }
 .book-category-games .book-rail-game {
   display: grid;

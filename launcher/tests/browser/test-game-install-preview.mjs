@@ -34,12 +34,17 @@ try {
       assert.equal(await page.$eval(railEntry, link => {
         const sidebar = link.closest('.book-sidebar');
         const list = sidebar.querySelector('nav');
+        const rail = sidebar.getBoundingClientRect();
+        const footer = link.parentElement.getBoundingClientRect();
         const before = link.getBoundingClientRect();
         list.scrollTop = list.scrollHeight;
         const after = link.getBoundingClientRect();
-        return list.scrollTop > 0 && before.top === after.top && after.bottom === sidebar.getBoundingClientRect().bottom - 12 &&
-          list.getBoundingClientRect().bottom <= after.top;
-      }), true, 'the downloads row stays at the bottom when the categories scroll');
+        const icon = link.querySelector('svg').getBoundingClientRect();
+        return list.scrollTop > 0 && before.top === after.top && footer.bottom === rail.bottom &&
+          footer.left === rail.left && Math.abs(footer.right - rail.right) <= 1 &&
+          list.getBoundingClientRect().bottom <= footer.top && after.height >= 50 && icon.width === 26 &&
+          getComputedStyle(link).fontSize === '14px';
+      }), true, 'the downloads band fills only the bottom of the sidebar and stays put when categories scroll');
       await page.locator(menuToggle).click();
       await page.waitForSelector('#mastheadMenuPanel', {visible:true});
       assert.equal(await page.$(menuEntry), null, 'the library desktop menu does not duplicate the sidebar link');
