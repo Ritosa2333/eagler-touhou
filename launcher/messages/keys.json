@@ -34,6 +34,7 @@
   "downloadTasks.saving": {"id": "downloadTasks_saving", "params": []},
   "downloadTasks.empty": {"id": "downloadTasks_empty", "params": []},
   "downloadTasks.eta": {"id": "downloadTasks_eta", "params": ["time"]},
+  "downloadTasks.previewAgain": {"id": "downloadTasks_previewAgain", "params": []},
   "cloudSave.waitingTitle": {
     "id": "cloudSave_waitingTitle",
     "params": []

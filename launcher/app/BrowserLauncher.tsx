@@ -288,14 +288,17 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation(), {t} = useLocale();
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
+  const preview = session.installPreview;
+  const job = settings && {game: settings.gameId, version: settings.gameVersion};
   const task = useStoreSelector(session.downloads, value => {
-    if (value.active && value.active.game === settings?.gameId) return {state: 'active' as const, percent: gameDownloadProgress(value).percent};
-    return {state: value.pending.some(job => job.game === settings?.gameId) ? 'queued' as const : null, percent: null};
+    if (value.active && value.active.game === job?.game) return {state: 'active' as const, percent: gameDownloadProgress(value).percent, simulated: false};
+    return {state: value.pending.some(item => item.game === job?.game) ? 'queued' as const : null, percent: null,
+      simulated: !!(job && preview?.installed(job))};
   }, shallowEqual);
   const checking = useStoreSelector(session, value => value.soloResourceCheck === settings?.gameId);
-  if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
+  if (!job || settings.multiplayer || navigation.context === 'lobby') return null;
   const installed = metadata.installed.get(settings.gameId);
-  const ready = settings.gameVersion === 'beauty' ? metadata.beautyInstalled.has(settings.gameId)
+  const ready = preview ? task.simulated : settings.gameVersion === 'beauty' ? metadata.beautyInstalled.has(settings.gameId)
     : (!!installed && descriptorGameVersion(installed.descriptor) === 'original') || hasBundledGameData(metadata, settings.gameId);
   const downloadable = canInstallGameData(metadata, settings.gameId);
   const labels = {
@@ -309,15 +312,17 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
     label: task.percent === null ? label : `${label} ${task.percent}%`,
     icon: task.state === 'queued' ? 'clock' : !ready || task.state ? 'download' : undefined,
     activity: task.state ? {state: task.state, value: task.percent} : undefined,
-    disabled: (metadata.phase !== 'ready' && !ready) || !!task.state,
+    disabled: preview ? ready || !!task.state : (metadata.phase !== 'ready' && !ready) || !!task.state,
     onClick: () => {
-      if (ready) {
+      if (preview) session.downloads.enqueue(job);
+      else if (ready) {
         if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);
-      } else if (downloadable) session.downloads.enqueue({game: settings.gameId, version: settings.gameVersion});
+      } else if (downloadable) session.downloads.enqueue(job);
       else if (requiresLocalGameData(metadata, settings.gameId)) session.gameData.beginImportRequired();
       else navigation.openInfoDialog('gameDataImportDialog');
     }}}
-    secondary={{id: 'gamePackageImport', label: t('action.import'), onClick: () => navigation.openInfoDialog('gameDataImportDialog')}}/>;
+    secondary={preview && ready ? {id: 'installPreviewAgain', label: t('downloadTasks.previewAgain'), icon: 'repeat', onClick: () => session.downloads.enqueue(job)}
+      : {id: 'gamePackageImport', label: t('action.import'), onClick: () => navigation.openInfoDialog('gameDataImportDialog')}}/>;
 }
 function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, network, onNetworkRunning}: {
   session: BrowserSession; firstUse: React.RefObject<FirstUseNoticeHandle | null>;

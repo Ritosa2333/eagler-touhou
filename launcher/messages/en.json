@@ -19,6 +19,7 @@
   "downloadTasks_saving": "Saving",
   "downloadTasks_empty": "No games installing",
   "downloadTasks_eta": "Estimated time left: {time}",
+  "downloadTasks_previewAgain": "Simulate again",
   "cloudSave_waitingTitle": "Preparing cloud save",
   "cloudSave_waitingMessage": "You can keep waiting or start with this browser’s save.",
   "cloudSave_keepWaiting": "Keep waiting",

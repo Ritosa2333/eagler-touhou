@@ -12,7 +12,7 @@ interface DownloadSnapshot {
   task: NetworkActivitySnapshot['active'][number] | null;
   received: number;
 }
-interface DownloadRun {
+export interface DownloadRun {
   signal: AbortSignal;
   onTotals(value: PackageInstallTotals): void;
   onNetwork(value: NetworkActivitySnapshot): void;

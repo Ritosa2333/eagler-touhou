@@ -1,5 +1,5 @@
 import { Button as UiButton } from '../../ui/button';
-import { Clock3, Download, Play, FolderInput } from 'lucide-react';
+import { Clock3, Download, Play, FolderInput, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Progress } from '../../ui/progress';
 import './launch-actions.css';
@@ -17,7 +17,7 @@ export interface LaunchActionsProps {
   primary: LaunchAction;
   /** Keep the primary button sized for every state in the current language. */
   primaryStateLabels?: readonly string[];
-  secondary?: LaunchAction;
+  secondary?: Omit<LaunchAction, 'icon'> & {icon?: 'repeat'};
   loading?: ReactNode;
   /** Compact placement retains the original embedded replay row dimensions. */
   placement?: 'standard' | 'compact';
@@ -25,6 +25,7 @@ export interface LaunchActionsProps {
 /** Shared play/import presentation; session and replay owners decide intent. */
 export function LaunchActions({ primary, primaryStateLabels, secondary, loading, placement = 'standard' }: LaunchActionsProps) {
   const PrimaryIcon = primary.icon === 'clock' ? Clock3 : primary.icon === 'download' ? Download : Play;
+  const SecondaryIcon = secondary?.icon === 'repeat' ? RotateCcw : FolderInput;
   const primaryLabel = <span id={primary.textId}>{primary.label}</span>;
   return (
     <div className={`launch-wrap launch-actions${placement === 'compact' ? ' launch-actions-compact' : ''}`}>
@@ -53,7 +54,7 @@ export function LaunchActions({ primary, primaryStateLabels, secondary, loading,
         disabled={secondary.disabled}
         onClick={secondary.onClick}
       >
-        <FolderInput aria-hidden="true" />
+        <SecondaryIcon aria-hidden="true" />
         <span id={secondary.textId}>{secondary.label}</span>
       </UiButton>}
       {loading && <div className="launch-actions-status" role="status">{loading}</div>}

@@ -27,6 +27,7 @@ import {classifyPlayerMode, playerUsesGameInput, type PlayerMode} from '../model
 import {createGameUpdatePrompt, type GameUpdateContext} from '../models/game-update-prompt';
 import {createTransferModel} from '../models/transfer';
 import {createGameDownloads} from '../models/game-downloads';
+import {createGameInstallPreview, isLocalInstallPreview} from '../models/game-install-preview';
 import {createNetworkActivityTracker} from '../../src/launcher/network-activity.mts';
 import {createGameDataImportModel} from '../models/game-data-import';
 import {roomCodeFromUrl, resolveRoomInvite, routedProductFromUrl} from '../../src/launcher/route-state.mts';
@@ -353,13 +354,14 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const acquisition = createPackageAcquisition({metadata, baseUrl, getGameVersion: selectedVersion, translate: t, fetchImpl: fetchResource, network: preparationNetwork,
     testBuild,
     requestPersistence: async () => {try {await window.navigator.storage?.persist?.();} catch {}}});
+  const installPreview = isLocalInstallPreview(entryUrl, import.meta.env?.DEV === true) ? createGameInstallPreview(window) : null;
   const downloads = createGameDownloads({
-    async download({game, version}, {signal, onTotals, onNetwork}) {
+    download: installPreview?.download ?? (async ({game, version}, {signal, onTotals, onNetwork}) => {
       const tracker = createNetworkActivityTracker({fetchImpl: fetchResource, onChange: onNetwork});
       const result = await acquisition.acquire({productId: game, gameVersion: version, music: 'none', language: 'ja', signal, onPackageTotals: onTotals,
         packageFetch: (input, init) => tracker.resourceFetch(input, init, packageNetworkMetadata(game, input, baseUrl, t))});
       if (result.kind !== 'managed') throw new Error(t('package.unavailable'));
-    },
+    }),
     onFailure({game}) {
       feedback.toast(`${PRODUCT_GAMES[game].title} · ${t('downloadTasks.failed')}`, 5000);
     },
@@ -1545,7 +1547,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       if (command) await owner.send('spectator-playback', command);
     },
     room, titleNetwork, calibration, networkDiagnostics, appShell: appShellOwner, baseUrl, storage, mobile, metadata, settingsContext, acquisition, directory, gameData, transfer, startupError, startup, settings, gamepad, keyboardPreferences, th19Keyboard, th075Keyboard, th19Gamepad, th09LocalInput, touchLayout, preferences, feedback, decisions, nativeTouch, settingsActions,
-    readLocalSaves, downloads, get cloudSync(){return cloudSync;},
+    readLocalSaves, downloads, installPreview, get cloudSync(){return cloudSync;},
     subscribe(listener: () => void) {listeners.add(listener); return () => {listeners.delete(listener);};}, getSnapshot: () => snapshot,
     initialize, attachFrame, requestRuntimeClose, requestReplayManagerClose, launch, openReplayViewer, switchReplayProduct, exitRoomPlayerFullscreen,
     restoreRoomFromUrl,

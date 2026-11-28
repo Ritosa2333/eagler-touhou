@@ -19,6 +19,7 @@
   "downloadTasks_saving": "保存中",
   "downloadTasks_empty": "インストール中のゲームはありません",
   "downloadTasks_eta": "残り時間の目安：{time}",
+  "downloadTasks_previewAgain": "もう一度試す",
   "cloudSave_waitingTitle": "クラウドセーブを準備中",
   "cloudSave_waitingMessage": "そのまま待つか、このブラウザーのセーブで開始できます。",
   "cloudSave_keepWaiting": "クラウドセーブを待つ",
