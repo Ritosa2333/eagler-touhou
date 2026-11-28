@@ -12,7 +12,7 @@
 
 | 修改位置 | 实现 | 交互边界 |
 | --- | --- | --- |
-| 全局导航 | [LauncherMasthead](../app/components/launcher/LauncherMasthead.tsx)、[SiteBottomNavigation](../app/components/launcher/SiteNavigation.tsx) | 桌面顶栏 44 px，单机和联机居中。780 px 及以下，仅单机书库显示顶栏，单机、联机、主页共用底部导航。二级页使用透明返回按钮。 |
+| 全局导航 | [LauncherMasthead](../app/components/launcher/LauncherMasthead.tsx)、[SiteBottomNavigation](../app/components/launcher/SiteNavigation.tsx) | 桌面顶栏 44 px，帮助、反馈、支持、主题和更多使用文字入口，按字标 Online 的可见字形对齐。单机和联机居中。780 px 及以下，仅单机书库显示顶栏，单机、联机、主页共用底部导航。二级页使用透明返回按钮。 |
 | 搜索与抽屉 | [LibrarySearch](../app/components/launcher/LibrarySearch.tsx)、[MastheadOverview](../app/components/launcher/MastheadOverview.tsx) | 两种搜索位置共用查询值。手机抽屉从左进入，默认按帮助、站点、设置分组。界面语言和关于本站各有一级返回，主题入口使用共用主题设置窗。游客可以打开抽屉。 |
 | 书库 | [BookLibrary](../app/components/launcher/BookLibrary.tsx) | 桌面书库与游戏详情共用分类侧栏，系列与玩法独立分类，同一作品可出现在多个分类中。分类筛选与展开独立，单机和联机分别记住展开状态。封面卡使用竖版，桌面最多五列。侧栏底部固定提供下载与附加内容入口，分类、视图和排序沿用共同工具栏。 |
 | 联机大厅 | [LobbySurface](../app/components/launcher/LobbySurface.tsx)、[BookDirectoryGames](../app/components/launcher/BookDirectoryGames.tsx) | 桌面与单机共用侧栏规格和作品行。手机用横向封面条。两端共用作品选单、筛选状态和收藏。 |

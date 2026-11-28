@@ -2,6 +2,10 @@
 
 本文记录 Launcher 图像、字体的来源、Host 生成方式和发布位置。许可证见 [`THIRD_PARTY.md`](THIRD_PARTY.md)；保留随资源提供的上游许可证文件。
 
+## 站名字标
+
+字标源文件为提供的[定稿 SVG](public/assets/launcher-wordmark.svg)，包含字形路径、阴阳玉和镂空遮罩。顶栏沿用导出的深浅两张透明 PNG，由站内主题选择。
+
 ## 游戏封面
 
 书库卡片复用已登记的原作封面。界面使用的 WebP 位于 `app/components/launcher/book-covers/`；TH01–TH04 使用原包装扫描的 960px 方形裁剪，其余封面最长边为 640px，质量为 82。同目录 `sources.json` 记录素材来源与文件的 SHA-256。Vite 将这些封面纳入前端资源图与离线缓存。封面素材不决定作品是否展示，卡片成员始终由主项目的发布目录决定。

@@ -173,9 +173,9 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
       {icon}{label}
     </a>
   </DropdownMenu.Item>);
-  const menuTrigger = <Button ref={trigger} variant="ghost" size="icon" className="masthead-action masthead-menu-toggle"
+  const menuTrigger = <Button ref={trigger} variant="ghost" size="icon" className="masthead-action masthead-text-action masthead-menu-toggle"
     id="mastheadMenuToggle" aria-label={t('nav.more')} disabled={!interactive}>
-    <NavigationIcon name="menu"/>
+    <NavigationIcon name="menu"/><span className="masthead-action-label">{t('nav.more')}</span>
   </Button>;
   return <>
     <header
@@ -227,33 +227,24 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           {t('nav.oldSiteMigration')}
         </a>
         <MastheadTooltip label={faqLink.label}>
-          <Button asChild variant="ghost" size="icon" className="masthead-action book-top-faq">
-            <a href={faqLink.href}>
-              <span className="sr-only">{faqLink.label}</span>
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <g className="book-faq-question">
-                  <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4" />
-                  <path d="M12 17h.01" />
-                </g>
-              </svg>
-            </a>
+          <Button asChild variant="ghost" size="sm" className="masthead-action masthead-text-action book-top-faq">
+            <a href={faqLink.href} aria-label={faqLink.label}><span className="masthead-action-label">{t('nav.help')}</span></a>
           </Button>
         </MastheadTooltip>
         <MastheadTooltip label={feedbackLink.label}>
-          <Button asChild variant="ghost" size="icon" className="masthead-action book-top-feedback">
-            <a href={feedbackLink.href} aria-label={feedbackLink.label} target="_blank" rel="noopener noreferrer">{feedbackLink.icon}</a>
+          <Button asChild variant="ghost" size="sm" className="masthead-action masthead-text-action book-top-feedback">
+            <a href={feedbackLink.href} aria-label={feedbackLink.label} target="_blank" rel="noopener noreferrer"><span className="masthead-action-label">{feedbackLink.label}</span></a>
           </Button>
         </MastheadTooltip>
         {props.donationAvailable !== false && (
           <MastheadTooltip label={t('nav.donate')}>
-            <Button variant="ghost" size="icon" className="masthead-action book-top-donation"
+            <Button variant="ghost" size="sm" className="masthead-action masthead-text-action book-top-donation"
               aria-label={t('nav.donate')} onClick={props.onDonation} disabled={!interactive}>
-              <HeartIcon aria-hidden="true"/>
+              <span className="masthead-action-label">{t('nav.support')}</span>
             </Button>
           </MastheadTooltip>
         )}
-        <BookThemeToggle interactive={interactive} surfaces={themeSurfaces} tooltip />
+        <BookThemeToggle interactive={interactive} surfaces={themeSurfaces} tooltip textLabel={t('nav.theme')}/>
         {!compact && <div hidden ref={language}>
           {props.languageControl}
         </div>}
@@ -363,7 +354,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                     <DropdownMenu.Item className="ui-menu-item" id="firstUseNoticeOpen" onSelect={props.onFirstUse}>
                       <NavigationIcon name="firstUse"/>{t('nav.firstUseNotice')}
                     </DropdownMenu.Item>
-                    {menuLinks([...helpLinks, ...handbookLink])}
+                    {menuLinks([...helpLinks, feedbackLink, ...handbookLink])}
                   </DropdownMenu.Group>
                   <DropdownMenu.Separator className="ui-menu-separator" />
                   <DropdownMenu.Group aria-label={t('nav.site')}>

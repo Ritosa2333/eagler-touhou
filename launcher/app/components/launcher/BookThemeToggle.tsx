@@ -47,8 +47,8 @@ function applyTheme(value: 'light' | 'dark', animate: boolean) {
   }, 180);
 }
 
-export function BookThemeToggle({interactive = true, row = false, tooltip = false, rowLabel, inlineChoices = false, surfaces}: {
-  interactive?: boolean; row?: boolean; tooltip?: boolean; rowLabel?: string; inlineChoices?: boolean; surfaces?: readonly BackgroundSurface[];
+export function BookThemeToggle({interactive = true, row = false, tooltip = false, rowLabel, inlineChoices = false, surfaces, textLabel}: {
+  interactive?: boolean; row?: boolean; tooltip?: boolean; rowLabel?: string; inlineChoices?: boolean; surfaces?: readonly BackgroundSurface[]; textLabel?: string;
 }) {
   const {locale, t} = useLocale();
   const [dark, setDark] = useState(true);
@@ -73,9 +73,9 @@ export function BookThemeToggle({interactive = true, row = false, tooltip = fals
     if (trigger.current) impressTheme(trigger.current);
   };
   const icon = <NavigationIcon name={dark ? 'moon' : 'sun'}/>;
-  const button = <UiButton ref={trigger} type="button" variant="ghost" size={row ? "row" : "icon"} className={row ? "settings-navigation-row masthead-overview-theme" : "masthead-action book-theme-toggle [&_svg]:size-5"} disabled={!interactive || !ready}
+  const button = <UiButton ref={trigger} type="button" variant="ghost" size={row ? "row" : textLabel ? "sm" : "icon"} className={row ? "settings-navigation-row masthead-overview-theme" : `masthead-action book-theme-toggle${textLabel ? " masthead-text-action" : " [&_svg]:size-5"}`} disabled={!interactive || !ready}
     aria-label={label} aria-haspopup="dialog" onClick={() => setOpen(true)} title={tooltip ? undefined : label}>
-    {row ? <SettingsRowContent icon={inlineChoices ? undefined : icon}>{label}</SettingsRowContent> : icon}
+    {row ? <SettingsRowContent icon={inlineChoices ? undefined : icon}>{label}</SettingsRowContent> : textLabel ? <span className="masthead-action-label">{textLabel}</span> : icon}
   </UiButton>;
   return <>{inlineChoices && <BaseThemeChoices dark={dark} onThemeChange={changeTheme}/>}
     {tooltip ? <MastheadTooltip label={label}>{button}</MastheadTooltip> : button}
