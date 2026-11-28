@@ -6030,6 +6030,10 @@
     "id": "nav_help",
     "params": []
   },
+  "nav.feedback": {
+    "id": "nav_feedback",
+    "params": []
+  },
   "nav.settings": {
     "id": "nav_settings",
     "params": []

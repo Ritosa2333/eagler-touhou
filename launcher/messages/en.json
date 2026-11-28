@@ -1452,6 +1452,7 @@
   "nav_single": "Single-player",
   "nav_lobby": "Multiplayer",
   "nav_help": "Help",
+  "nav_feedback": "Feedback",
   "nav_settings": "Settings",
   "nav_closePanel": "Close navigation panel",
   "nav_serviceStatus": "Service status",

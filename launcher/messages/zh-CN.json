@@ -1452,6 +1452,7 @@
   "nav_single": "单机",
   "nav_lobby": "联机",
   "nav_help": "帮助",
+  "nav_feedback": "反馈",
   "nav_settings": "设置",
   "nav_closePanel": "关闭导航面板",
   "nav_serviceStatus": "服务器运行状态",

@@ -244,6 +244,9 @@
   .book-masthead .masthead-account-entry {width:var(--masthead-control-size);padding:0}
   .book-masthead :is(.masthead-account-entry > span:not(.account-avatar),.masthead-account-entry > svg) {display:none}
 }
+@media (780px < width <= 1024px) {
+  .book-masthead .masthead-links > .book-top-donation {display:none}
+}
 @media (max-width: 780px) {
   .masthead-library-search > .book-compact-search {height:var(--masthead-control-size);padding-inline:10px 0;border:0;border-radius:8px;background:var(--kit-secondary)}
   .book-compact-search input {min-width:0;font-size:13px;font-weight:500}
@@ -252,6 +255,9 @@
 }
 
 @media (hover:hover) and (pointer:fine) {
+  .book-masthead .masthead-action:hover:not([aria-expanded="true"], [data-state="open"]) {
+    background-color: transparent;
+  }
   .book-masthead .book-main-nav :is(a,button),
   .book-masthead :is(.masthead-action:not(.masthead-menu-toggle),.masthead-link) {
     transition:background-color 320ms ease, color 320ms ease, border-color 320ms ease;
@@ -277,7 +283,7 @@
   font: 500 12px / 1.4 var(--kit-font);
 }
 @media (max-width: 780px) {
-  .book-masthead .masthead-links > :is(.book-top-faq, .book-top-donation, .book-theme-toggle) {
+  .book-masthead .masthead-links > .masthead-action:not(.masthead-menu-toggle) {
     display: none;
   }
 }

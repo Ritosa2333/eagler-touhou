@@ -74,6 +74,15 @@ test('Original hidden legacy online fold preserves readiness, retained normalize
  await React.act(async()=>update('missing'));await React.act(async()=>update('ready'));assert.equal(head.getAttribute('aria-expanded'),'true');assert.equal(input.value,'12345678');assert.equal(fold.hidden,true);
 });
 function Masthead({variant='lobby',assetUrl=x=>x,launcherHref='/en.html',faqHref='faq.html',aboutHref='about.html',...props}){const[open,setOpen]=React.useState(false);return el(owners.LauncherMasthead,{...props,variant,assetUrl,launcherHref,faqHref,aboutHref,menuOpen:open,onMenuOpenChange:setOpen,lessMotion:false,onToggleMotion(){},diagnosticsEnabled:false,onToggleDiagnostics(){},onDonation(){},onFirstUse(){},languageControl:el(owners.MainSelect,{id:'uiLanguageSelect',className:'option-select ui-language-select','data-trigger-i18n':'ui.language.menu',value:'en',onChange(){}},el('option',{value:'zh-CN'},'简体中文'),el('option',{value:'en'},'English'),el('option',{value:'ja'},'日本語'))});}
+test('shared help masthead links to the feedback site beside FAQ',async()=>{
+ await mount(el(Masthead,{variant:'help',nativeLinks:true}),{initialEntries:['/faq.html?lang=en']});
+ const feedback=n('.masthead-leading a.book-top-feedback');
+ assert.equal(feedback.previousElementSibling,n('.book-top-faq'));
+ assert.equal(feedback.getAttribute('aria-label'),'Feedback');
+ assert.equal(feedback.getAttribute('href'),'https://feedback.touhouonline.com/');
+ assert.equal(feedback.target,'_blank');
+ assert.equal(feedback.rel,'noopener noreferrer');
+});
 test('Lobby launcher back keeps original anchor and uses Router, standalone docs remain native',async()=>{await mount(el(Masthead));assert.equal(n('#launcherLink').getAttribute('href'),'/en.html');assert.equal(n('a[href="faq.html"]').getAttribute('data-discover'),null);await click('#launcherLink');assert.equal(n('#address').textContent,'/en.html');});
 async function openMasthead() {await React.act(async()=>{const trigger=n('#mastheadMenuToggle');trigger.focus();trigger.dispatchEvent(new env.window.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true}));});await vi.waitFor(async()=>{await React.act(async()=>{await new Promise(resolve=>env.window.requestAnimationFrame(resolve));});assert.ok(env.document.querySelector('#mastheadMenuPanel'));});}
 test('Radix masthead menu opens by keyboard and Escape restores its trigger',async()=>{

@@ -32,6 +32,7 @@ async function assertMasthead(page, width) {
     const headerBounds = box(header);
     const navBounds = box(header.querySelector('.book-main-nav'));
     const menu = header.querySelector('#mastheadMenuToggle');
+    const feedback = header.querySelector('.masthead-leading .book-top-feedback');
     const trailing = header.querySelector('.masthead-trailing');
     const account = trailing.querySelector('.masthead-account-entry, .account-login-link, .account-loading, .book-profile-trigger');
     const login = trailing.querySelector('.account-login-link');
@@ -61,6 +62,9 @@ async function assertMasthead(page, width) {
       underlineBottoms: navigation.map(node=>getComputedStyle(node, '::after').bottom),
       menuGroup: menu.closest('.masthead-leading, .masthead-trailing').className,
       menuLast: menu === menu.parentElement.lastElementChild,
+      menuIconOnly: [box(menu).width, menu.textContent.trim(), menu.getAttribute('aria-label')],
+      feedback: [box(feedback).width > 0, feedback.href, feedback.target, feedback.previousElementSibling.matches('.book-top-faq')],
+      donation: visible('.book-top-donation').length > 0,
       accountLast: !account || account === trailing.lastElementChild,
       login: login && [login.dataset.size, login.dataset.variant,
         login.querySelector('svg').classList.contains('lucide-user-round')],
@@ -90,6 +94,10 @@ async function assertMasthead(page, width) {
   assert.ok(Math.max(...layout.centers) - Math.min(...layout.centers) <= 1, `${width}px masthead controls share a centerline`);
   assert.ok(layout.fits, `${width}px masthead groups fit without overlap`);
   assert.equal(layout.menuGroup, 'masthead-leading');
+  assert.deepEqual(layout.menuIconOnly.slice(0,2), [44,'']);
+  assert.ok(layout.menuIconOnly[2]);
+  assert.deepEqual(layout.feedback, [width > 780, 'https://feedback.touhouonline.com/', '_blank', true]);
+  assert.equal(layout.donation, width > 1024, 'the donation action uses the menu on narrower screens');
   if (layout.nav.length) {
     assert.deepEqual([layout.navHeight, layout.navBottom], [43,43], 'primary navigation fills the desktop row');
     assert.ok(layout.menuLast, 'More sits after the left-hand desktop actions');
@@ -158,6 +166,14 @@ async function assertActionMotion(page) {
   const announcements = action('announcements');
   const messages = action('messages');
   const theme = '.book-theme-toggle';
+  const assertNoHoverFill = async trigger => {
+    const paint = await page.$eval(trigger, node => {
+      getComputedStyle(node).backgroundColor;
+      node.getAnimations().find(animation => animation.transitionProperty === 'background-color')?.finish();
+      return [node.matches(':hover'), getComputedStyle(node).backgroundColor, getComputedStyle(node).boxShadow];
+    });
+    assert.deepEqual(paint, [true,'rgba(0, 0, 0, 0)','none'], `${trigger} stays frameless on hover`);
+  };
   const redesigned = [
     [announcements, `${announcements} > svg`, 'e', 0, 1.4],
     [theme, `${theme} > svg`, 'a', 1, 1.04],
@@ -181,6 +197,7 @@ async function assertActionMotion(page) {
   ]) {
     await page.hover(trigger);
     const enter = await progress(glyph, component, [0, .12, .5, .88, 1]);
+    await assertNoHoverFill(trigger);
     assert.equal(enter.duration, 520);
     assert.equal(enter.opacity, '1');
     const [start, early, mid, late, end] = enter.values.map(value => (value-rest)/(pose-rest));
@@ -195,6 +212,11 @@ async function assertActionMotion(page) {
     assert.ok(Math.abs(exit.values[1] - rest) < Math.abs(pose - rest));
     assert.ok(Math.abs(exit.values[2] - rest) < .001);
   }
+  for (const trigger of ['.book-top-feedback', '#mastheadMenuToggle']) {
+    await page.hover(trigger);
+    await assertNoHoverFill(trigger);
+  }
+  await page.mouse.move(1, 100);
   assert.equal(await page.$eval(announcements, node => getComputedStyle(node, '::before').content), 'none');
   await page.keyboard.press('Tab');
   for (const [trigger, glyph, component, rest, pose] of redesigned) {
@@ -289,6 +311,11 @@ try {
     await page.evaluate(theme => document.documentElement.dataset.bookTheme = theme, theme);
     assert.match(await page.$eval('meta[name="viewport"]', node => node.content), /viewport-fit=contain/);
     if (width === 390) {
+      await page.locator('#mastheadMenuToggle').click();
+      const feedback = await page.waitForSelector('#mastheadMenuPanel a[href="https://feedback.touhouonline.com/"]', {visible:true});
+      assert.equal(await feedback.evaluate(link => link.target), '_blank');
+      await page.keyboard.press('Escape');
+      await page.waitForSelector('#mastheadMenuPanel', {hidden:true});
       const chromeBounds = () => page.evaluate(() => {
         const header = document.querySelector('.book-masthead');
         const nav = document.querySelector('.launcher-bottom-navigation');

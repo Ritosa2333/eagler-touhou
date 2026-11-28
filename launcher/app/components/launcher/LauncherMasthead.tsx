@@ -155,6 +155,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
   const desktopInstallsLink = variant === 'library' && !section && !profileOpen ? undefined : installsLink;
   const canWatchReplay = variant === 'lobby' && !!props.onReplay;
   const faqLink: MastheadSiteLink = {href: props.faqHref, icon: <NavigationIcon name="faq"/>, label: t('nav.faq')};
+  const feedbackLink: MastheadSiteLink = {href: 'https://feedback.touhouonline.com/', icon: <NavigationIcon name="feedback"/>, label: t('nav.feedback'), external: true};
   const helpLinks: MastheadSiteLink[] = [
     faqLink,
     {href: withUiLanguage(props.assetUrl(MULTIPLAYER_GUIDE_PATH.slice(1)), locale), icon: <NavigationIcon name="multiplayerGuide"/>, label: t('multiplayerGuide.title')},
@@ -176,7 +177,6 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
   const menuTrigger = <Button ref={trigger} variant="ghost" size="icon" className="masthead-action masthead-menu-toggle"
     id="mastheadMenuToggle" aria-label={t('nav.more')} disabled={!interactive}>
     <NavigationIcon name="menu"/>
-    <MastheadActionLabel>{t('nav.more')}</MastheadActionLabel>
   </Button>;
   return <>
     <header
@@ -221,6 +221,14 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             </a>
           </Button>
         </MastheadTooltip>
+        <MastheadTooltip label={feedbackLink.label} iconOnly>
+          <Button asChild variant="ghost" size="icon" className="masthead-action book-top-feedback">
+            <a href={feedbackLink.href} aria-label={feedbackLink.label} target="_blank" rel="noopener noreferrer">
+              {feedbackLink.icon}
+              <MastheadActionLabel>{feedbackLink.label}</MastheadActionLabel>
+            </a>
+          </Button>
+        </MastheadTooltip>
         {props.donationAvailable !== false && (
           <MastheadTooltip label={t('nav.donate')} iconOnly>
             <Button variant="ghost" size="icon" className="masthead-action book-top-donation"
@@ -234,7 +242,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
         {!compact && <div hidden ref={language}>
           {props.languageControl}
         </div>}
-        {compact && <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} installsLink={installsLink} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/>}
+        {compact && <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} installsLink={installsLink} helpLinks={[...helpLinks, feedbackLink]} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/>}
         {!compact && <DropdownMenu.Root
           modal={false}
           open={interactive && menuOpen}
@@ -247,7 +255,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             onMenuOpenChange(open);
           }}
         >
-          <MastheadTooltip label={t('nav.more')} iconOnly><DropdownMenu.Trigger asChild>{menuTrigger}</DropdownMenu.Trigger></MastheadTooltip>
+          <MastheadTooltip label={t('nav.more')}><DropdownMenu.Trigger asChild>{menuTrigger}</DropdownMenu.Trigger></MastheadTooltip>
           <DropdownMenu.Portal container={host}>
             <DropdownMenu.Content
               ref={content}
