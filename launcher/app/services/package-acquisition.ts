@@ -5,7 +5,7 @@ import type {GameVersion} from "../../src/contracts/package-read-models.mts";
 import {PACKAGE_DESCRIPTOR_SCHEMA} from '../../package/package-descriptor.mjs';
 import {pc98RequiredBlockFiles} from '../../package/pc98-block-selection.mjs';
 import {installPublishedPackage, repairInstalledPackage} from '../../package/package-launcher.mjs';
-import {installPackageFromAcquisition, installParsedPackageZip} from '../../package/package-installer.mjs';
+import {installPackageFromAcquisition, installParsedPackageZip, type PackageInstallTotalsListener} from '../../package/package-installer.mjs';
 import {parsePackageZip} from '../../package/package-zip.mjs';
 import {readCurrentPackageGeneration, readPackageObject} from '../../package/package-store.mjs';
 import {adaptLegacyGamePackToPackage} from '../../compat/legacy-package-adapter.mjs';
@@ -67,6 +67,7 @@ export interface AcquisitionRequest {
   onAcquisitionActivity?(active: boolean): void;
   /** An independent task can own the Package network progress instead of the player. */
   packageFetch?: typeof fetch;
+  onPackageTotals?: PackageInstallTotalsListener;
   onProgress?(progress: PreparationProgress): void;
   onWarning?(message: string): void;
   onUpdateReady?(): void;
@@ -189,6 +190,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       request.onAcquisitionActivity?.(true);
       progress(request, 'package.installingResources');
       const result = await deps.installAcquired({descriptor, source: 'remote', signal: request.signal,
+        onTotals: request.onPackageTotals,
         desiredFileIds: ['game-data', ...((['th01','th02','th03','th04'].includes(game) ? request.music === 'ogg-akyu' : isOgg(request.music)) ? runtimeOggFileIds(descriptor, request.productId) : [])],
         acquire: async (id, declaration) => {
           checkPreparationAbort(request.signal);
@@ -219,7 +221,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         const publication = await getPublication(gameVersion, request.signal);
         if (!publication.catalog?.games[game]) throw new Error(`${game} 尚未提供美化版资源`);
         progress(request, 'package.installingResources');
-        const result = await installPublished(game, {...publication, gameVersion, addComponents: [],
+        const result = await installPublished(game, {...publication, gameVersion, addComponents: [], onTotals: request.onPackageTotals,
           fetchImpl: getPackageFetch(game, request), signal: request.signal,
           onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
         checkPreparationAbort(request.signal); await installedChanged(game);
@@ -264,7 +266,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
           try {
             progress(request, 'package.installingResources');
             const result = await installPublished(game, {catalog: metadataSnapshot.releaseCatalog!, catalogUrl,
-              gameVersion, expectedGenerationId: generation.id, preserveLocalSource: true, signal: request.signal,
+              gameVersion, expectedGenerationId: generation.id, preserveLocalSource: true, signal: request.signal, onTotals: request.onPackageTotals,
               fetchImpl: getPackageFetch(game, request), onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
             checkPreparationAbort(request.signal);
             await installedChanged(game);
@@ -282,7 +284,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
           if (!publication.catalog?.games[game]) throw new Error('游戏资源与当前版本不兼容，请更新游戏资源');
           const result = await installPublished(game, {...publication, gameVersion,
             expectedGenerationId: installed.generation!.id, preserveLocalSource: true,
-            addComponents: [], signal: request.signal, fetchImpl: getPackageFetch(game, request),
+            addComponents: [], signal: request.signal, fetchImpl: getPackageFetch(game, request), onTotals: request.onPackageTotals,
             onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
           checkPreparationAbort(request.signal);
           if (result.generation.descriptor.runtimeRequirement?.dataLayout !== requiredLayout)
@@ -307,6 +309,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         request.onAcquisitionActivity?.(true);
         progress(request, 'package.installingResources');
         const result = await installPublished(game, {catalog, catalogUrl, gameVersion: request.gameVersion ?? "original", addComponents: [], fetchImpl: getPackageFetch(game, request), signal: request.signal,
+          onTotals: request.onPackageTotals,
           onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
         checkPreparationAbort(request.signal); await installedChanged(game);
         return {kind: 'managed', generation: result.generation, deferredUpdate: null};
@@ -348,6 +351,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
           return getPublication(request.gameVersion, request.signal);
         },
         fetchImpl: getPackageFetch(game, request), signal: request.signal,
+        onTotals: request.onPackageTotals,
         onProgress: value => progress(request, 'package.installingResourcesProgress', {...value}),
       });
       checkPreparationAbort(request.signal);

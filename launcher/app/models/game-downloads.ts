@@ -1,24 +1,44 @@
 import type {GameId} from '../../src/contracts/product-catalog.mts';
 import type {GameVersion} from '../../src/contracts/package-read-models.mts';
 import type {NetworkActivitySnapshot} from '../../src/launcher/network-activity.mts';
-import type {PreparationProgress} from '../services/package-acquisition';
+import type {PackageInstallTotals} from '../../package/package-installer.mjs';
 
 export interface GameDownload {game: GameId; version: GameVersion}
 interface DownloadSnapshot {
   active: GameDownload | null;
   pending: readonly GameDownload[];
   failed: readonly GameDownload[];
-  progress: PreparationProgress | null;
-  network: NetworkActivitySnapshot | null;
+  totals: PackageInstallTotals | null;
+  task: NetworkActivitySnapshot['active'][number] | null;
+  received: number;
 }
 interface DownloadRun {
   signal: AbortSignal;
-  onProgress(value: PreparationProgress): void;
+  onTotals(value: PackageInstallTotals): void;
   onNetwork(value: NetworkActivitySnapshot): void;
 }
-const idle: DownloadSnapshot = {active: null, pending: [], failed: [], progress: null, network: null};
+const idle: DownloadSnapshot = {active: null, pending: [], failed: [], totals: null, task: null, received: 0};
 
-/** The launcher document owns the FIFO, independently of views and dialogs. */
+/** Percent tracks all declared package bytes; readiness still belongs to the commit. */
+export function gameDownloadProgress({task, totals, received}: DownloadSnapshot) {
+  const total = totals?.totalBytes ?? null;
+  const loaded = total === null ? received : Math.min(total, (totals?.completedBytes ?? 0) + received);
+  const elapsed = task ? task.updatedAt - task.startedAt : 0;
+  const speed = task?.phase === 'receiving' && elapsed > 0 && task.loaded > 0 ? task.loaded * 1000 / elapsed : null;
+  const phase = task ? task.phase === 'receiving' ? 'receiving' : 'waiting'
+    : received > 0 || totals && totals.completed === totals.total ? 'saving' : 'preparing';
+  return {
+    loaded,
+    total,
+    // Do not call it complete before the package has been saved.
+    percent: total && loaded > 0 ? Math.min(99, Math.floor(loaded / total * 100)) : null,
+    speed,
+    eta: total !== null && speed !== null && loaded < total ? (total - loaded) / speed : null,
+    phase,
+  } as const;
+}
+
+/** The launcher document owns the FIFO independently of its pages. */
 export function createGameDownloads({download, onFailure}: {
   download(job: GameDownload, options: DownloadRun): Promise<void>;
   onFailure(job: GameDownload): void;
@@ -32,12 +52,12 @@ export function createGameDownloads({download, onFailure}: {
   function advance([job, ...pending]: readonly GameDownload[], failed: readonly GameDownload[]) {
     if (!job) {
       current = null;
-      publish(idle);
+      publish({...idle, failed});
       return;
     }
     const controller = new AbortController();
     current = controller;
-    publish({active: job, pending, failed, progress: null, network: null});
+    publish({...idle, active: job, pending, failed});
     void run(job, controller);
   }
   async function run(job: GameDownload, controller: AbortController) {
@@ -45,8 +65,14 @@ export function createGameDownloads({download, onFailure}: {
     try {
       await download(job, {
         signal: controller.signal,
-        onProgress(progress) {if (current === controller && !controller.signal.aborted) publish({...snapshot, progress});},
-        onNetwork(network) {if (current === controller && !controller.signal.aborted) publish({...snapshot, network});},
+        onTotals(totals) {
+          if (current === controller && !controller.signal.aborted) publish({...snapshot, totals, received: 0});
+        },
+        onNetwork(network) {
+          if (current !== controller || controller.signal.aborted) return;
+          const task = network.active.find(item => item.kind !== 'descriptor') ?? null;
+          publish({...snapshot, task, received: task?.loaded ?? snapshot.received});
+        },
       });
     } catch {
       failed = !controller.signal.aborted;

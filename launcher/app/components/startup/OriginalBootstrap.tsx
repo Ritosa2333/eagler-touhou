@@ -10,6 +10,7 @@ import {translate} from '../../i18n';
 import {LESS_MOTION_STORAGE_KEY} from '../../models/site-preferences';
 import {sitePageTitle, useDocumentUiLocale} from '../../navigation/document-locale';
 import {isLauncherHomePath} from '../../navigation/addresses';
+import {launcherSection} from '../launcher/launcher-sections';
 import {chooseLoadingIndex, LoadingActivityContent, loadingTips, startLoadingTipRotation} from '../../ui/loading-activity';
 import {LoadingScene, loadingSceneOptions, repeatStingerDelay} from '../../ui/loading-scene';
 import loadingActivityCss from '../../ui/loading-activity.css?inline';
@@ -83,9 +84,10 @@ export function OriginalBootstrapHead() {
   const account = /\/login\.html\/?$/.test(pathname);
   const profile = /^(?:\/profile\.html|\/u\/[^/]+)\/?$/.test(pathname);
   const home = isLauncherHomePath(pathname);
+  const installs = launcherSection({pathname, search}) === 'installs';
   const mode = account ? new URLSearchParams(search).get('mode') : null;
   const page = account ? mode === 'register' ? 'account.register' : mode === 'reset' ? 'account.forgotPassword' : 'account.login'
-    : lobby ? 'lobby.title' : profile ? 'profile.pageTitle' : null;
+    : lobby ? 'lobby.title' : profile ? 'profile.pageTitle' : installs ? 'downloadTasks.title' : null;
   const title = page ? sitePageTitle(translate(locale, page)) : translate(locale, 'site.documentTitle');
   const description = translate(locale, 'site.description');
   return <>
@@ -109,7 +111,7 @@ export function OriginalBootstrapHead() {
       #eaglerBootEmergency button{border-radius:6px!important;background:var(--kit-secondary)!important;color:var(--kit-foreground)!important}
       #eaglerBootEmergency button:first-of-type{background:var(--kit-primary)!important;color:var(--kit-primary-foreground)!important}
     `}</style>
-    <title data-i18n={lobby || profile || account ? undefined : 'site.documentTitle'}>{title}</title>
+    <title data-i18n={page ? undefined : 'site.documentTitle'}>{title}</title>
     <meta name="theme-color" content={lobby ? '#111210' : '#10100f'}/>
     {lobby ? <meta name="robots" content="noindex"/> : <>
       <meta name="color-scheme" content="dark"/>

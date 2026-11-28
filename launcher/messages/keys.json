@@ -31,10 +31,9 @@
     "id": "downloadTasks_failed",
     "params": []
   },
-  "downloadTasks.remaining": {
-    "id": "downloadTasks_remaining",
-    "params": ["count"]
-  },
+  "downloadTasks.saving": {"id": "downloadTasks_saving", "params": []},
+  "downloadTasks.empty": {"id": "downloadTasks_empty", "params": []},
+  "downloadTasks.eta": {"id": "downloadTasks_eta", "params": ["time"]},
   "cloudSave.waitingTitle": {
     "id": "cloudSave_waitingTitle",
     "params": []

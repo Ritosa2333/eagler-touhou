@@ -71,7 +71,7 @@
   .game-detail-metrics dl { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; font-size: 12px; }
   .game-detail-metrics dd { margin: 1px 0 0; font-variant-numeric: tabular-nums; }
   :is(.game-detail-hero, .mobile-game-actions) .launch-actions { display: contents; }
-  :is(.game-detail-hero, .mobile-game-actions) .launch:not(.launch-secondary) svg { fill: currentColor; }
+  :is(.game-detail-hero, .mobile-game-actions) .launch[data-action-icon="play"] svg { fill: currentColor; }
   .book-game-detail-statistics { min-width: 0; container-type: inline-size; }
   .game-detail-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-block-end: 12px; }
   :is(.game-detail-section-heading, .game-detail-friends) h2 { margin: 0; font: 700 19px/1.4 var(--kit-font-work); }

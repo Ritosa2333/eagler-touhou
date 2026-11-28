@@ -20,11 +20,17 @@
 .ui-badge-destructive{background:var(--kit-muted);color:var(--kit-destructive)}
 .ui-badge svg{width:12px;height:12px;flex:none}
 .ui-progress{height:5px;overflow:hidden;border-radius:4px;background:var(--kit-muted)}
-.ui-progress-indicator{display:block;height:100%;border-radius:inherit;background:var(--kit-primary)}
+.ui-progress-indicator{display:block;height:100%;border-radius:inherit;background:var(--ui-progress-fill,var(--kit-primary))}
+.ui-progress[data-smooth]:not([data-state='indeterminate'])>.ui-progress-indicator{transform-origin:left;transition:transform 190ms ease-out}
 .ui-progress[data-state='indeterminate']>.ui-progress-indicator{width:34%;animation:ui-progress-sweep .9s linear infinite}
+.ui-progress[data-smooth][data-state='indeterminate']>.ui-progress-indicator{animation-duration:1.3s;animation-timing-function:ease-in-out}
 @keyframes ui-progress-sweep{from{transform:translateX(-120%)}to{transform:translateX(320%)}}
 .less-motion .ui-progress[data-state='indeterminate']>.ui-progress-indicator{width:100%;animation:none;opacity:.55}
-@media(prefers-reduced-motion:reduce){.ui-progress[data-state='indeterminate']>.ui-progress-indicator{width:100%;animation:none;opacity:.55}}
+.less-motion .ui-progress[data-smooth]>.ui-progress-indicator{transition:none}
+@media(prefers-reduced-motion:reduce){
+  .ui-progress[data-state='indeterminate']>.ui-progress-indicator{width:100%;animation:none;opacity:.55}
+  .ui-progress[data-smooth]:not([data-state='indeterminate'])>.ui-progress-indicator{transition:none}
+}
 .ui-field-group>.ui-field+.ui-field{border-top:1px solid var(--kit-border)}
 .ui-field>[role='switch']{flex:none}
 .ui-field:has(:disabled) .ui-field-label{cursor:default}

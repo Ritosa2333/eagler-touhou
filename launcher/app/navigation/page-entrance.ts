@@ -4,6 +4,7 @@ export const pageEntranceOpacity = '.28';
 export const pageEntranceTiming = {duration: 240, ease: [.25, .1, .25, 1] as [number, number, number, number]};
 export const launcherPageContent: Partial<Record<string, string>> = {
   library: '.book-content', lobby: '.lobby-rooms-column', profile: '.profile-wrap', account: '.account-content',
+  installs: '.game-install-page',
 };
 export const documentPageContent = '#nd-page';
 

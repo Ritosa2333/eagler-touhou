@@ -26,8 +26,14 @@
     .launch-actions { padding-inline: 16px; }
   }
 
-  .launch-action-label { display: grid; min-inline-size: 0; }
+  .launch-action-label { display: grid; min-inline-size: 0; font-variant-numeric:tabular-nums; }
   .launch-action-label > span { grid-area: 1 / 1; overflow: hidden; text-overflow: ellipsis; }
   .launch-action-label > [data-measure-label] { visibility: hidden; }
   .launch-action-label > [data-measure-label]::before { content: attr(data-measure-label); }
+  .launch[data-action-activity] {position:relative;overflow:clip;}
+  .launch-action-progress {
+    --ui-progress-fill:currentColor;
+    position:absolute;inset:auto 0 0;height:3px;border-radius:0;
+    background:color-mix(in srgb,currentColor 12%,transparent);
+  }
 }

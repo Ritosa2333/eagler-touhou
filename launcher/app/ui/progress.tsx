@@ -8,12 +8,15 @@ export const ProgressIndicator = forwardRef<HTMLDivElement, ComponentPropsWithou
   },
 );
 
-export const Progress = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<typeof Primitive.Root>>(
-  function Progress({className, value, max = 100, children, ...props}, ref) {
+export const Progress = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<typeof Primitive.Root> & {smooth?: boolean; inline?: boolean}>(
+  function Progress({className, value, max = 100, smooth, inline, children, asChild, ...props}, ref) {
     const limit = Number.isFinite(max) && max > 0 ? max : 100;
     const current = typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(limit, value)) : null;
-    return <Primitive.Root {...props} ref={ref} value={current} max={limit} data-slot="progress" className={cn('ui-progress', className)}>
-      {children ?? <ProgressIndicator style={current === null ? undefined : {width: `${current / limit * 100}%`}}/>}
+    const ratio = current === null ? null : current / limit;
+    const style = ratio === null ? undefined : smooth ? {transform: `scaleX(${ratio})`} : {width: `${ratio * 100}%`};
+    const body = children ?? (inline ? <ProgressIndicator asChild><span style={style}/></ProgressIndicator> : <ProgressIndicator style={style}/>);
+    return <Primitive.Root {...props} asChild={inline || asChild} ref={ref} value={current} max={limit} data-slot="progress" data-smooth={smooth || undefined} className={cn('ui-progress', className)}>
+      {inline ? <span>{body}</span> : body}
     </Primitive.Root>;
   },
 );

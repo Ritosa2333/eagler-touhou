@@ -25,7 +25,7 @@ import {FirstUseNotice, DonationDialog, AppleRefreshDialog,
   type FirstUseNoticeHandle} from './components/notices';
 import {GameDataImportWindows} from './components/player/GameDataImportWindows';
 import {LoadingActivity} from './ui/loading-activity';
-import {GameDownloadProgress} from './components/launcher/GameDownloadProgress';
+import {GameInstallPage, GameInstallShortcut} from './components/launcher/GameInstallProgress';
 import {BeautyPackManager} from './components/launcher/BeautyPackManager';
 import {MultiplayerQuickChat} from './components/player/MultiplayerQuickChat';
 import {PlayerControls} from './components/player/PlayerControls';
@@ -36,6 +36,7 @@ import {Feedback} from './components/feedback/Feedback';
 import {useSurfaceNavigation} from './navigation/surface-navigation';
 import {isLauncherHomePath, launcherBaseUrl, routerDestination} from './navigation/addresses';
 import {useLocale} from './i18n';
+import {gameDownloadProgress} from './models/game-downloads';
 import {recordBookLaunch} from './components/launcher/book-preferences';
 import {testFeaturesEnabled, reloadTestFeatures} from '../src/launcher/test-features.mts';
 import type {LobbySurfaceProps} from './components/launcher/LobbySurface';
@@ -90,6 +91,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     desktopLibraryDetails: true,
     librarySearchTarget,
     libraryTools: <SessionBeautyPacks session={session} products={products}/>,
+    installsPage: <GameInstallPage downloads={session.downloads} assetUrl={assetUrl}/>,
     locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, preferences: session.preferences, touchLayout: session.touchLayout,
     settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions, readLocalSaves:session.readLocalSaves, cloudSync:session.cloudSync,
     watchTh09Replay: session.accessTh09MatchReplay,
@@ -286,8 +288,10 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation(), {t} = useLocale();
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
-  const task = useStoreSelector(session.downloads, value => value.active && value.active.game === settings?.gameId
-    ? 'active' : value.pending.some(job => job.game === settings?.gameId) ? 'queued' : null);
+  const task = useStoreSelector(session.downloads, value => {
+    if (value.active && value.active.game === settings?.gameId) return {state: 'active' as const, percent: gameDownloadProgress(value).percent};
+    return {state: value.pending.some(job => job.game === settings?.gameId) ? 'queued' as const : null, percent: null};
+  }, shallowEqual);
   const checking = useStoreSelector(session, value => value.soloResourceCheck === settings?.gameId);
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
   const installed = metadata.installed.get(settings.gameId);
@@ -298,12 +302,14 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
     active: t('downloadTasks.downloading'), queued: t('downloadTasks.queued'),
     start: t('action.start'), install: t('downloadTasks.acquire'),
   };
-  return <LaunchActions primaryStateLabels={Object.values(labels)}
+  const label = labels[task.state ?? (ready ? 'start' : 'install')];
+  return <LaunchActions primaryStateLabels={[...Object.values(labels), `${labels.active} 100%`]}
     loading={checking && <LoadingActivity assetUrl={path => new URL(path, session.baseUrl).href}
       status={t('player.loading')} context="solo" compact/>} primary={{id: 'launch', textId: 'launchText',
-    label: labels[task ?? (ready ? 'start' : 'install')],
-    icon: !ready || task ? 'download' : undefined,
-    disabled: (metadata.phase !== 'ready' && !ready) || !!task,
+    label: task.percent === null ? label : `${label} ${task.percent}%`,
+    icon: task.state === 'queued' ? 'clock' : !ready || task.state ? 'download' : undefined,
+    activity: task.state ? {state: task.state, value: task.percent} : undefined,
+    disabled: (metadata.phase !== 'ready' && !ready) || !!task.state,
     onClick: () => {
       if (ready) {
         if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);
@@ -350,7 +356,7 @@ function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, ne
   useEffect(() => {void session.restoreRoomFromUrl(new URL(location.pathname+location.search+location.hash,session.baseUrl).href).catch(session.reportError);}, [session, location.pathname, location.search, location.hash]);
   useLayoutEffect(() => session.settleRoomReturnPresentation(navigation.surface, navigation.productId), [session, navigation.surface, navigation.productId]);
   useLayoutEffect(() => {if (navigation.directoryFormMode) session.directory.restoreFormMode(navigation.directoryFormMode);}, [session, navigation.directoryFormMode]);
-  return <><input id="fileInput" type="file" hidden/><GameDownloadProgress downloads={session.downloads} assetUrl={assetUrl}/><FullscreenTransient><ServerStatusNote session={session}/><Feedback model={session.feedback}/><StartupError model={session.startupError}/>
+  return <><input id="fileInput" type="file" hidden/>{!playerOpen && <GameInstallShortcut downloads={session.downloads} assetUrl={assetUrl}/>}<FullscreenTransient><ServerStatusNote session={session}/><Feedback model={session.feedback}/><StartupError model={session.startupError}/>
     <GameDataImportWindows model={session.gameData} assetUrl={assetUrl} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}
       manualOpen={navigation.infoDialogOpen('gameDataImportDialog')} onManualClose={() => navigation.closeInfoDialog('gameDataImportDialog')}/></FullscreenTransient>
     {navigation.context === 'lobby' && <NetworkDiagnosticsDialog model={session.networkDiagnostics} ref={network} open={navigation.infoDialogOpen('lobbyNetworkDialog')} onCloseRequest={() => navigation.closeInfoDialog('lobbyNetworkDialog')}

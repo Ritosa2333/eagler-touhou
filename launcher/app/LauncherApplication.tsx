@@ -87,6 +87,7 @@ export interface LauncherHost {
   masthead: ReactNode;
   librarySearchTarget?: HTMLElement | null;
   libraryTools?: ReactNode;
+  installsPage?: ReactNode;
   launcherPreferences?: LauncherPreferencesProps;
   lobby: LobbyPresentation;
   renderLobby?(props: LobbySurfaceProps): ReactNode;
@@ -169,7 +170,7 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
     contentSelector: launcherPageContent[page],
   });
   const showLibrary = !accountPage && !profilePage && !section && navigation.context === 'library';
-  const keepLibrary = primary === 'home' || primary === 'lobby';
+  const keepLibrary = primary === 'home' || primary === 'lobby' || section === 'installs';
   const [libraryVisited, setLibraryVisited] = useState(showLibrary);
   useEffect(() => {
     if (showLibrary) setLibraryVisited(true);
@@ -402,6 +403,8 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
           <Suspense fallback={<ProfileLoading/>}><ProfilePage readLocalSaves={host.readLocalSaves} cloudSync={host.cloudSync} watchTh09Replay={host.watchTh09Replay}/></Suspense>
         ) : section === 'announcements' || section === 'messages' ? (
           <MessageCenter section={section} homeHref={host.assetUrl(localeHome(host.locale))} assetUrl={host.assetUrl}/>
+        ) : section === 'installs' ? (
+          host.installsPage
         ) : !showHome && navigation.context === 'lobby' ? (
           host.renderLobby ? (
             host.renderLobby(lobbyProps)

@@ -354,9 +354,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     testBuild,
     requestPersistence: async () => {try {await window.navigator.storage?.persist?.();} catch {}}});
   const downloads = createGameDownloads({
-    async download({game, version}, {signal, onProgress, onNetwork}) {
+    async download({game, version}, {signal, onTotals, onNetwork}) {
       const tracker = createNetworkActivityTracker({fetchImpl: fetchResource, onChange: onNetwork});
-      const result = await acquisition.acquire({productId: game, gameVersion: version, music: 'none', language: 'ja', signal, onProgress,
+      const result = await acquisition.acquire({productId: game, gameVersion: version, music: 'none', language: 'ja', signal, onPackageTotals: onTotals,
         packageFetch: (input, init) => tracker.resourceFetch(input, init, packageNetworkMetadata(game, input, baseUrl, t))});
       if (result.kind !== 'managed') throw new Error(t('package.unavailable'));
     },
