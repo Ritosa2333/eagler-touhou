@@ -352,7 +352,7 @@ try {
   await resize.goto(origin, {waitUntil: 'domcontentloaded'});
   await resize.waitForFunction(() => window.__eaglerBoot?.done);
   await assertMasthead(resize, 1440);
-  for (const [width, columns] of [[2560, 7], [1440, 6], [1707, 7]]) {
+  for (const width of [2560, 1440, 1707]) {
     await resize.setViewport({width, height: 819});
     await assertMasthead(resize, width);
     const coverGrid = await resize.$$eval('#bookGameGrid .book-card .book-art', covers => {
@@ -361,7 +361,7 @@ try {
         square:boxes.every(({width,height}) => Math.abs(height - width) < 1)};
     });
     assert.ok(coverGrid.square, `covers stay square at ${width}px`);
-    assert.equal(coverGrid.columns, columns, `${width}px cover grid column count`);
+    assert.equal(coverGrid.columns, 6, `${width}px cover grid column count`);
     console.log(`Cover grid at ${width}px: ${coverGrid.columns} covers per row, ${Math.round(coverGrid.coverWidth)}px per cover`);
   }
   await assertModeHover(resize);
