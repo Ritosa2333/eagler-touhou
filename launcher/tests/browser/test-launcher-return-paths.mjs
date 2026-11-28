@@ -18,6 +18,7 @@ const workStatistics = {
   spellCards:[{number:3,name:'Test Spell',attempts:[3,0,0,0,0,0],captures:[2,0,0,0,0,0]}],
 };
 const fixtures = {
+  '/release-catalog.json': {schema:'eagler-touhou/release-catalog/1', games:{}},
   '/api/ready': {ready:true},
   '/api/auth/get-session': {user},
   '/api/v1/me/cloud-saves': {
@@ -76,7 +77,7 @@ try {
       await page.setRequestInterception(true);
       page.on('request', async request => {
         const url = new URL(request.url());
-        if (url.origin !== origin.origin || !url.pathname.startsWith('/api/')) return request.continue();
+        if (url.origin !== origin.origin || (!url.pathname.startsWith('/api/') && url.pathname !== '/release-catalog.json')) return request.continue();
         const paused = pausedFixtures.get(url.pathname);
         if (paused) await paused;
         const data = url.pathname === '/api/auth/get-session' && !signedIn ? {user:null} : fixtures[url.pathname];
@@ -512,13 +513,14 @@ try {
       }
 
       await tap('.profile-th09-history-meta button');
-      await wait('.profile-th09-replays[data-open=true] tbody tr');
-      await wait('.profile-th09-replays .profile-round-actions button');
+      await wait('.profile-th09-replays[data-open=true] .th09-replay-row');
+      await wait('.profile-th09-replays .th09-replay-actions button');
       assert.equal(new URL(page.url()).pathname,profile,'rounds expand inside the current profile');
       await tap('.profile-th09-history-meta button');
       await wait('.profile-th09-replays[data-open=true]',true);
 
       const gameDataTab = name => '.profile-game-data-switch button[aria-label="' + name + '"]';
+      await page.$eval(gameDataTab('全部作品'), button => button.scrollIntoView({block:'center',behavior:'instant'}));
       await tap(gameDataTab('全部作品'));
       {
         const viewport = page.viewport();

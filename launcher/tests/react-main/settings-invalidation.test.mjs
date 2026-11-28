@@ -13,7 +13,7 @@ const project = fileURLToPath(new URL('../../', import.meta.url));
 let work, api;
 before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true});
-  work = await mkdtemp(resolve(project, '.cache/react-main-settings-policy-'));
+  work = await mkdtemp(resolve(process.env.EAGLER_TEST_OUTPUT_DIR || project, '.cache/react-main-settings-policy-'));
   const outfile = resolve(work, 'model.mjs');
   await build({absWorkingDir: project, entryPoints: ['app/models/game-settings.ts'], outfile,
     bundle: true, platform: 'node', format: 'esm', logLevel: 'silent',
@@ -291,6 +291,33 @@ test('game version persists per game across SP/MP while language/options remain 
   assert.equal(model.getSnapshot().gameVersion,'original');
   model.hydrate(context);assert.equal(model.getSnapshot().gameVersion,'beauty');
   model.setGameVersion('original');assert.equal(model.getSnapshot().language,'ja');
+});
+
+test('library version changes persist as one batch and only reload the selected work', () => {
+  const saved = new Map(), changes = [], notifications = [];
+  const storage = {getItem: key => saved.get(key) ?? null, setItem: (key, value) => saved.set(key, value)};
+  const context = {...fixture().context, beautyInstalled: true};
+  const model = api.createGameSettingsModel({storage, onChange: change => changes.push(change)});
+  model.hydrate(context);
+  model.subscribe(() => notifications.push(model.getGameVersionsRevision()));
+
+  assert.deepEqual(model.setGameVersions(['th07', 'th075', 'th07'], 'beauty'), ['th07']);
+  assert.equal(model.getGameVersion('th07'), 'beauty');
+  assert.equal(model.getGameVersion('th075'), 'original');
+  assert.equal(model.getSnapshot().gameVersion, 'original');
+  assert.deepEqual(notifications, [1]);
+  assert.equal(changes.length, 1, 'changing an unselected version does not invalidate the current runtime');
+
+  assert.deepEqual(model.setGameVersions(['th06', 'th07', 'th08'], 'beauty'), ['th06', 'th08']);
+  assert.deepEqual(notifications, [1, 2]);
+  assert.equal(changes.at(-1).reason, 'game-version');
+  assert.equal(api.settingsChangeResetsRuntime(changes.at(-1)), true);
+  model.hydrate({...context, productId: 'th08'});
+  assert.equal(model.getSnapshot().gameVersion, 'beauty');
+  assert.equal(model.getGameVersion('th06'), 'beauty');
+  assert.deepEqual(model.setGameVersions(['th06', 'th07', 'th08'], 'original'), ['th06', 'th07', 'th08']);
+  model.hydrate({...context, productId: 'th07mp'});
+  assert.equal(model.getSnapshot().gameVersion, 'original');
 });
 
 test('single-player and multiplayer bind common options while keeping practice single-player only', () => {

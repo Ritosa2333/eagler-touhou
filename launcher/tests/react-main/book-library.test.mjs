@@ -12,7 +12,7 @@ const project = fileURLToPath(new URL('../../', import.meta.url));
 let env, React, createRoot, api, work, root;
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client'));
-  work = await mkdtemp(resolve(project, '.cache/book-library-'));
+  work = await mkdtemp(resolve(process.env.EAGLER_TEST_OUTPUT_DIR || project, '.cache/book-library-'));
   const outfile = resolve(work, 'views.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'tsx', contents: `
     export {MemoryRouter} from 'react-router';
@@ -24,6 +24,7 @@ before(async () => {
     export * from './app/components/launcher/book-preferences.ts';
     export {LocaleProvider} from './app/i18n.tsx';
     export {createLibraryProducts} from './app/components/launcher/products.ts';
+    export {microReorderFrames} from './app/ui/micro-motion.ts';
   `}, outfile, bundle: true, packages: 'external', platform: 'node', format: 'esm', jsx: 'automatic', logLevel: 'silent', plugins: [authoredSourcesPlugin(project)]});
   api = await import(pathToFileURL(outfile).href);
 });
@@ -41,6 +42,15 @@ const click = selector => React.act(async () => {
   await new Promise(resolve=>setTimeout(resolve,0));
 });
 const ids = () => [...env.document.querySelectorAll('.book-grid [data-book-product]')].map(node => node.dataset.bookProduct);
+test('reordering keeps a short directional nudge even for a large layout change', () => {
+  const [start, end] = api.microReorderFrames(120, -160);
+  const [x, y] = start.translate.split(' ').map(value => Number.parseFloat(value));
+  assert.ok(Math.abs(Math.hypot(x, y) - 3) < 1e-8);
+  assert.ok(x > 0 && y < 0);
+  assert.equal(start.opacity, .9);
+  assert.deepEqual(end, {translate:'0px 0px', opacity:1});
+  assert.deepEqual(api.microReorderFrames(1, 2)[0], {translate:'1px 2px'});
+});
 test('multiplayer game picker and covers share selection while favorites persist and sort first', async () => {
   const products=api.createLibraryProducts(['th06mp','th07mp','th08mp'],p=>p,id=>'?game='+id);
   function Fixture(){const[filters,setFilters]=React.useState([]);return React.createElement(api.BookDirectoryGames,{products,productFilters:filters,viewingProduct:'',onProductFiltersChange:setFilters,onSelect(){assert.fail('Filtering does not open game options');}});}
@@ -49,6 +59,18 @@ test('multiplayer game picker and covers share selection while favorites persist
   const checked=()=>[...env.document.querySelectorAll('[data-lobby-toggle][aria-checked="true"]')].map(n=>n.dataset.lobbyToggle).sort();
   const favorite='.book-lobby-picker [data-lobby-product="th08mp"] .book-lobby-favorite';
   await render();
+  const sidebar = id => `[data-lobby-rail-product="${id}"]`;
+  await click(`${sidebar('th06mp')} .book-lobby-sidebar-check`);
+  await click(`${sidebar('th07mp')} .book-lobby-sidebar-check`);
+  assert.deepEqual(checked(),['th06mp','th07mp']);
+  await click(`${sidebar('th06mp')} .book-rail-game`);
+  assert.deepEqual(checked(),['th06mp']);
+  await click(`${sidebar('th08mp')} .book-favorite`);
+  assert.equal(node(`${sidebar('th08mp')} .book-favorite`).getAttribute('aria-pressed'),'true');
+  assert.deepEqual(checked(),['th06mp'],'a favorite does not change the active filter');
+  await click(`${sidebar('th08mp')} .book-favorite`);
+  await click('[data-book-category="all"]');
+  assert.deepEqual(checked(),[]);
   await click('[data-lobby-toggle="th06mp"]');
   await click('[data-lobby-toggle="th08mp"]');assert.deepEqual(checked(),['th06mp','th08mp']);
   assert.equal(node('[data-lobby-toggle="th06mp"]').getAttribute('aria-checked'),'true');
@@ -186,7 +208,7 @@ test('only supplied published products become cards; hidden/MP/demo titles never
   assert.equal(env.document.querySelector('[data-book-product="dj01"]'), null);
   await click('[data-book-category="fighting"]'); assert.deepEqual(ids(), ['th075']);
 });
-test('the library separates versus games, fighting games and doujin games', async () => {
+test('the library filters by series or game genre', async () => {
   const products = api.createLibraryProducts(['th06', 'th075', 'th09', 'hsob'], p => p, id => '?game=' + id);
   await mount(products);
   await click('[data-book-category="doujin"]');
@@ -197,7 +219,7 @@ test('the library separates versus games, fighting games and doujin games', asyn
   assert.equal(sidebar.querySelector('.book-work-number').textContent, 'thHSOB');
   assert.equal(sidebar.querySelector('img').src, node('[data-book-product="hsob"] .book-art img').src);
   await click('[data-book-category="windows"]');
-  assert.deepEqual(ids(), ['th06']);
+  assert.deepEqual(ids(), ['th06', 'th09']);
   await click('[data-book-category="versus"]');
   assert.deepEqual(ids(), ['th09']);
   await click('[data-book-category="fighting"]');
@@ -212,6 +234,23 @@ test('TH05 is discoverable through the PC98 category in the current library', as
   await click('[data-book-category="windows"]');
   assert.deepEqual(ids(), ['th06']);
 });
+test('different genres can share a series and each game appears once in all games', async () => {
+  const products = api.createLibraryProducts(['th03', 'th05', 'th06', 'th075', 'th09', 'th19'], p => p, id => '?game=' + id);
+  await mount(products);
+  assert.deepEqual(ids(), ['th03', 'th05', 'th06', 'th075', 'th09', 'th19']);
+  for (const [category, expected] of [
+    ['versus', ['th03', 'th09', 'th19']], ['pc98', ['th03', 'th05']],
+    ['fighting', ['th075']], ['spin-off', ['th075']], ['windows', ['th06', 'th09', 'th19']],
+  ]) {
+    await click(`[data-book-category="${category}"]`);
+    assert.deepEqual(ids(), expected);
+    const control = `[data-book-category-disclosure="${category}"]`;
+    if (node(control).getAttribute('aria-expanded') !== 'true') await click(control);
+    assert.deepEqual([...node(`#bookCategory-${category}`).querySelectorAll('[data-book-sidebar-product]')]
+      .map(link => link.dataset.bookSidebarProduct), expected);
+    assert.equal(node(`[data-book-category="${category}"] .book-category-count`).textContent, String(expected.length));
+  }
+});
 test('sidebar disclosures list playable single-player entries without changing the category filter', async () => {
   const products = api.createLibraryProducts(['th13', 'th06mp', 'th01', 'th06', 'th07'], p => p, id => '?game=' + id);
   products.find(product => product.id === 'th07').hidden = true;
@@ -219,6 +258,7 @@ test('sidebar disclosures list playable single-player entries without changing t
   const disclosure = id => `[data-book-category-disclosure="${id}"]`;
   const members = id => [...node(`#bookCategory-${id}`).querySelectorAll('[data-book-sidebar-product]')]
     .map(link => link.dataset.bookSidebarProduct);
+  assert.equal(env.document.querySelector('[data-book-category-group="all"] .book-category-disclosure, #bookCategory-all'), null);
   assert.equal(env.document.querySelector(disclosure('favorites')), null);
   const windows = () => node('#bookCategory-windows');
   assert.equal(node(disclosure('windows')).getAttribute('aria-controls'), windows().id);
@@ -228,9 +268,10 @@ test('sidebar disclosures list playable single-player entries without changing t
   assert.ok(node(`${disclosure('windows')} svg[data-expanded="true"]`));
   assert.deepEqual(members('windows'), ['th06', 'th13']);
   assert.deepEqual(ids(), ['th01', 'th06', 'th13']);
-  await click('[data-book-sidebar-favorite="th13"]');
+  assert.equal(env.document.querySelector('[data-book-sidebar-favorite]'), null);
+  await click('[data-book-favorite="th13"]');
   assert.equal(node('[data-book-favorite="th13"]').getAttribute('aria-pressed'), 'true');
-  await click('[data-book-sidebar-favorite="th13"]');
+  await click('[data-book-favorite="th13"]');
   assert.equal(node('[data-book-favorite="th13"]').getAttribute('aria-pressed'), 'false');
   await click(disclosure('pc98'));
   assert.deepEqual(members('pc98'), ['th01']);
@@ -245,6 +286,9 @@ test('sidebar disclosures list playable single-player entries without changing t
   assert.equal(windows().hasAttribute('inert'), true);
   assert.deepEqual(members('windows'), ['th06', 'th13'], 'entries stay mounted for the closing animation');
   assert.deepEqual(ids(), ['th01']);
+  await click('[data-book-category="all"]');
+  assert.deepEqual(ids(), ['th01', 'th06', 'th13']);
+  assert.equal(node('[data-book-category="all"]').getAttribute('aria-pressed'), 'true');
   await React.act(async () => root.unmount());
   await mount(products);
   assert.equal(node(disclosure('windows')).getAttribute('aria-expanded'), 'false');

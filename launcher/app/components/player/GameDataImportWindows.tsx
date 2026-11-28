@@ -4,9 +4,11 @@ import {useLocale} from '../../i18n';
 import type {GameDataImportModel} from '../../models/game-data-import';
 import {closeMainSelectMenus} from '../launcher/MainSelect';
 import {TransientWindow} from '../TransientWindow';
+import {LoadingActivity} from '../../ui/loading-activity';
 
 export interface GameDataImportWindowsProps {
   model: GameDataImportModel;
+  assetUrl?(path: string): string;
   /** Read the live Runtime state for main's programmatic-popup fallback policy. */
   getRuntimeReady(): boolean;
   manualOpen?: boolean;
@@ -17,7 +19,7 @@ export interface GameDataImportWindowsProps {
  * Manual import owns a Router entry. Automatic prompts follow the active
  * transfer and reuse the same import model and fullscreen overlay host.
  */
-export function GameDataImportWindows({model, getRuntimeReady, manualOpen, onManualClose}: GameDataImportWindowsProps) {
+export function GameDataImportWindows({model, assetUrl = path => path, getRuntimeReady, manualOpen, onManualClose}: GameDataImportWindowsProps) {
   const {t} = useLocale(), state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const [password, setPassword] = useState('');
   const manualAttempt = useRef<number | undefined>(undefined);
@@ -52,7 +54,10 @@ export function GameDataImportWindows({model, getRuntimeReady, manualOpen, onMan
     <TransientWindow id="gameDataImportWindow" titleId="gameDataImportTitle" title={t('package.importTitle')}
       closeId="gameDataImportClose" closeLabel={t('package.closeImport')} open={state.importOpen} busy={state.busy} onClose={model.dismissImport}>
       <p id="gameDataImportReason">{state.reason || t('package.unavailable')}</p>
-      <div className="game-data-import-busy" id="gameDataImportBusy" role="status" aria-live="polite" hidden={!state.busy}><i className="eagler-preload-spinner" aria-hidden="true"/><span id="gameDataImportBusyText">{state.busyText || t('package.installing')}</span></div>
+      <div className="game-data-import-busy" id="gameDataImportBusy" role="status" aria-live="polite" hidden={!state.busy}>
+        {state.busy && <LoadingActivity assetUrl={assetUrl} status={state.busyText || t('package.installing')}
+          statusId="gameDataImportBusyText" context="install" compact/>}
+      </div>
       {state.passwordRequired && <div className="game-data-archive-password">
         <input type="password" aria-label={t('package.originalPassword')} autoComplete="off" value={password}
           disabled={state.busy} onChange={event => setPassword(event.target.value)}

@@ -11,7 +11,8 @@ import {RoomTiming, type RoomTimingActions} from './RoomTiming';
 import {OptionSwitch} from '../settings/TouchSettingsFields';
 import {Th19VersusSettings} from './Th19VersusSettings';
 import {SettingsSelect} from '../settings/SettingsSelect';
-export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setRoomSettings' | 'takeSeat'> & RoomTimingActions; hidden: boolean}) {
+import {RoomNameSettings} from './RoomNameField';
+export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnapshot; service: Pick<MultiplayerRoomService, 'setRoomSettings' | 'setRoomName' | 'takeSeat'> & RoomTimingActions; hidden: boolean}) {
   const {t} = useLocale(), {room, ready, owner, config} = roomPresentation(state, t)!;
   const disabled = !ready || !owner || room.phase !== 'lobby';
   const privateHelp = room.visibility === 'private';
@@ -38,6 +39,9 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
           onChange={() => service.setRoomSettings({unrated: !room.unrated})}/>
       </div>}
       {!inGameDifficulty && <RoomChoiceGroup title={<><span>{t('lobby.difficulty')}</span>{room.challengeMode && <span className="room-challenge-on">{t('room.challengeEnabled')}</span>}</>} name="difficulty" valueAttribute="data-mp-difficulty" choices={config.difficulties.map((label, index) => ({value:index,label,selected:room.difficulty === index,disabled}))} onSelect={difficulty => service.setRoomSettings({difficulty})}/>}
+      {state.roomNames && !disabled ? <RoomNameSettings key={room.code+JSON.stringify(room.roomName)} name={room.roomName ?? null}
+        status={state.roomNameStatus} save={service.setRoomName}/>
+        : room.roomName && <div><span>{t('roomName.label')}: </span><bdi>{room.roomName}</bdi></div>}
     </section>
     <section className="room-settings-group">
       <h3 className="flex items-center gap-1">

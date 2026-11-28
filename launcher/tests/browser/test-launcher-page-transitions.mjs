@@ -30,6 +30,17 @@ try {
   assert.equal(await page.$$eval('.masthead-inbox-action .lucide-megaphone', nodes => nodes.length), 1);
   await page.evaluate(() => {
     window.routeSnapshots = 0;
+    window.routeFades = [];
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, timing) {
+      const animation = animate.call(this, frames, timing);
+      const opacity = animation.effect.getKeyframes().map(frame => frame.opacity);
+      if (opacity.join(',') === '0.28,1') {
+        const page = this.closest('.launcher-page-surface')?.dataset.page;
+        window.routeFades.push({page, finished:animation.finished.catch(() => {})});
+      }
+      return animation;
+    };
     if (!document.startViewTransition) return;
     const start = document.startViewTransition.bind(document);
     document.startViewTransition = (...args) => {
@@ -37,35 +48,55 @@ try {
       return start(...args);
     };
   });
+  const settlePage = () => page.evaluate(async () => {
+    await Promise.all(window.routeFades.map(({finished}) => finished));
+  });
   async function openProfile() {
     const compact = page.viewport().width <= 780;
     if (compact && !await page.$('.launcher-page-surface[data-page="library"]')) {
       await page.click('.launcher-bottom-navigation a:first-child');
       await page.waitForSelector('.launcher-page-surface[data-page="library"]');
+      await settlePage();
     }
     const trigger = compact ? '#mastheadMenuToggle' : '.masthead-account-entry';
     await page.waitForSelector(trigger, {visible:true});
     await page.click(trigger);
     const profile = compact ? '#mastheadMenuPanel .launcher-account-link' : '.account-menu-panel a[href*="/u/"]';
-    await page.waitForSelector(profile, {visible:true});
-    await page.click(profile);
+    const link = await page.waitForSelector(profile, {visible:true});
+    await page.waitForFunction(node => {
+      const {x,y,width,height} = node.getBoundingClientRect();
+      return node.contains(document.elementFromPoint(x+width/2,y+height/2));
+    }, {}, link);
+    const before = await page.evaluate(() => window.routeFades.length);
+    await link.click();
+    return before;
   }
   async function navigate(destination) {
+    await settlePage();
     const compact = page.viewport().width <= 780;
+    const currentPage = () => page.$eval('.launcher-page-surface', node => node.dataset.page);
+    let backCount;
     // The compact player profile uses its own header; use browser history to
     // return to the launcher before using the persistent primary controls.
     if (compact && await page.$('.launcher-page-surface[data-page="profile"]')) {
+      backCount = await page.evaluate(() => window.routeFades.length);
       await page.goBack();
       await page.waitForSelector('.launcher-bottom-navigation a', {visible:true});
+      await settlePage();
     }
-    if (destination === 'profile') await openProfile();
+    let before;
+    if (backCount !== undefined && await currentPage() === destination) before = backCount;
+    else if (destination === 'profile') before = await openProfile();
     else {
+      before = await page.evaluate(() => window.routeFades.length);
       const selector = `${compact ? '.launcher-bottom-navigation' : '.book-main-nav'} a:nth-child(${destination === 'library' ? 1 : 2})`;
       await page.waitForSelector(selector, {visible:true});
       await page.click(selector);
     }
     await page.waitForSelector(`.launcher-page-surface[data-page="${destination}"]`);
-    assert.equal(await page.evaluate(() => window.routeSnapshots), 0, 'library, lobby and profile share live content transitions');
+    await settlePage();
+    assert.deepEqual(await page.evaluate(count => window.routeFades.slice(count).map(fade => fade.page), before),
+      [destination], `${destination} reveals only the incoming page at ${page.viewport().width}px`);
     if (destination === 'profile') await page.waitForSelector('.profile-wrap');
     if (destination === 'lobby') {
       if (compact) {
@@ -82,10 +113,11 @@ try {
         await page.waitForSelector('.lobby-library .book-lobby-picker-trigger', {hidden:true});
         const sample = await page.waitForSelector('.lobby-game-sidebar [data-lobby-rail-product]', {visible:true});
         assert.equal(await sample.evaluate(row => {
-          const cover = row.querySelector('.book-category-game-cover').getBoundingClientRect();
-          const check = row.querySelector('.book-lobby-check').getBoundingClientRect();
-          return Math.abs(check.x + check.width/2 - cover.x) <= 6 && Math.abs(check.y + check.height/2 - cover.y) <= 8;
-        }), true, 'the multi-select mark stays on the cover corner');
+          const box = selector => row.querySelector(selector).getBoundingClientRect();
+          const game = box('.book-rail-game'), check = box('.book-lobby-sidebar-check'), favorite = box('.book-favorite');
+          return check.left === game.left - 3 && check.top === game.top - 1 && check.width === 20 && check.height === 20 &&
+            favorite.right === game.right && favorite.top === game.top;
+        }), true, 'the multiplayer rail uses the main layout with check and favorite in opposite top corners');
       }
     }
     const geometry = await page.evaluate(() => {
@@ -107,18 +139,19 @@ try {
     const choice = category.querySelector('.book-category-choice');
     const row = rail.querySelector(':is([data-book-sidebar-product="th07"],[data-lobby-rail-product="th07mp"] .book-rail-game)');
     const favorite = row.parentElement.querySelector('.book-favorite');
-    const subtitle = row.querySelector('.book-category-game-subtitle');
-    const mark = category.querySelector('.book-category-disclosure svg');
+    const title = row.querySelector('.book-category-game-title');
     const box = element => element.getBoundingClientRect();
     choice.focus({preventScroll:true});
     return {
       width:box(rail).width, searchWidth:box(rail.querySelector('input')).width,
       categoryWidth:box(category).width, actionWidth:[...category.querySelectorAll('button')].reduce((width,button) => width + box(button).width,0),
-      markRight:box(mark).right,
       countRight:box(category.querySelector('.book-category-count')).right,
-      rowWidth:box(row).width, rowHeight:box(row).height, layout:getComputedStyle(row).display,
-      favoriteRight:box(row).right - box(favorite).right,
-      subtitleClearsFavorite:box(subtitle).top >= box(favorite).bottom - 1,
+      rowHeight:box(row).height, layout:getComputedStyle(row).display,
+      favorite: favorite && {
+        size:[box(favorite).width, box(favorite).height],
+        aligned:box(favorite).top === box(row).top && box(favorite).right === box(row).right,
+        clearsTitle:box(title).right <= box(favorite).left,
+      },
     };
   });
   for (const width of [1440, 1024, 390]) {
@@ -129,8 +162,11 @@ try {
     if (width > 780) {
       const library = await sidebarGeometry();
       await navigate('lobby');
-      assert.deepEqual(await sidebarGeometry(),library,'desktop rail geometry matches across modes');
-      assert.equal(library.subtitleClearsFavorite,true,'favorite leaves the subtitle unobstructed');
+      const lobby = await sidebarGeometry();
+      for (const key of ['width','searchWidth','categoryWidth','actionWidth','countRight','rowHeight','layout'])
+        assert.equal(lobby[key],library[key],`desktop rails share ${key}`);
+      assert.equal(library.favorite, null, 'single-player rail rows have no favorite');
+      assert.deepEqual(lobby.favorite, {size:[24,22], aligned:true, clearsTitle:true}, 'lobby rail favorites keep their size and placement');
       assert.equal(library.actionWidth,library.categoryWidth,'the category controls fill the row');
       await navigate('library');
     }
@@ -177,13 +213,13 @@ try {
       assert.equal(state.visible, true, `${route} hid the bottom navigation`);
       assert.deepEqual(state.bounds, state.expected, `${route} shifted the bottom navigation`);
       if (route === 'library') {
-        assert.equal(state.mastheadHeight,48);
+        assert.equal(state.mastheadHeight,56);
         await page.waitForSelector('.book-masthead .book-compact-search input', {visible:true});
       } else {
         assert.equal(state.mastheadHeight,0,`${route} shows a mobile masthead`);
         assert.equal(state.pageTop,0,`${route} leaves room for a hidden masthead`);
       }
-      if (route !== 'lobby') assert.equal(await page.$$eval('#main', nodes => nodes.length),1, `${route} has duplicate main targets`);
+      if (route !== 'lobby') await page.waitForFunction(() => document.querySelectorAll('#main').length === 1);
     }
     await page.evaluate(() => window.scrollTo({top:180,behavior:'instant'}));
     await page.waitForFunction(() => window.scrollY >= 140);
@@ -198,42 +234,58 @@ try {
     return page.evaluate(async () => {
       const surface = document.querySelector('.launcher-page-surface');
       const tabs = document.querySelectorAll('.launcher-bottom-navigation a');
-      const animations = [];
-      const targets = {lobby:'.lobby-rooms-column', library:'.book-content'};
+      const before = window.routeSnapshots, fadeCount = window.routeFades.length;
       for (const [tab, destination] of [[1,'lobby'], [2,'home'], [0,'library']]) {
         const entered = new Promise(resolve => {
           const observer = new MutationObserver(() => {
             if (surface.dataset.page !== destination) return;
             observer.disconnect();
-            const target = targets[destination] ? surface.querySelector(targets[destination]) : surface;
-            resolve(target.getAnimations()[0]);
+            resolve();
           });
           observer.observe(surface, {attributes:true, attributeFilter:['data-page']});
         });
         tabs[tab].click();
-        animations.push(await entered);
+        await entered;
       }
-      const library = surface.querySelector(targets.library);
-      await Promise.allSettled(library.getAnimations().map(animation => animation.finished));
+      const fades = window.routeFades.slice(fadeCount);
+      await Promise.all(fades.map(({finished}) => finished));
+      const library = surface.querySelector('.book-content');
       return {
-        distinct: new Set(animations.filter(Boolean)).size,
+        snapshots: window.routeSnapshots - before,
+        pages: fades.map(fade => fade.page),
         remaining: library.getAnimations().length,
         opacity: getComputedStyle(library).opacity,
       };
     });
   }
-  assert.deepEqual(await switchPrimaryPages(),{distinct:3,remaining:0,opacity:'1'},'each fast tab switch owns and clears its entrance');
+  assert.deepEqual(await switchPrimaryPages(),{snapshots:0,pages:['lobby','home','library'],remaining:0,opacity:'1'},
+    'each fast tab switch cleans up the previous transition');
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
-  assert.deepEqual(await switchPrimaryPages(),{distinct:0,remaining:0,opacity:'1'},'fast tab switches respect reduced motion');
+  assert.deepEqual(await switchPrimaryPages(),{snapshots:0,pages:[],remaining:0,opacity:'1'},
+    'fast tab switches respect reduced motion');
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
   console.log('PASS rapid mobile switching with and without motion');
   await page.setViewport({width:1440, height:900});
   await page.goBack();
   await page.waitForSelector('.launcher-page-surface');
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
-  await openProfile();
+  const reducedProfileBefore = await openProfile();
   await page.waitForFunction(() => document.querySelector('.launcher-page-surface').dataset.page === 'profile');
-  assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement,'::view-transition-new(launcher-page)').animationName), 'none');
+  await settlePage();
+  assert.equal(await page.evaluate(() => window.routeFades.length), reducedProfileBefore);
+  await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
+  await page.click('.masthead-inbox-action[data-inbox-section="announcements"]');
+  await page.click('.masthead-inbox-panel a[href*="section=announcements"]');
+  await page.waitForSelector('.launcher-page-surface[data-page="announcements"]');
+  await settlePage();
+  assert.equal(await page.evaluate(() => window.routeFades.at(-1).page), 'announcements');
+  const messageBefore = await page.evaluate(() => window.routeFades.length);
+  await page.evaluate(() => document.body.classList.add('less-motion'));
+  await page.click('.message-center-navigation a[href*="section=messages"]');
+  await page.waitForSelector('.launcher-page-surface[data-page="messages"]');
+  await settlePage();
+  assert.equal(await page.evaluate(() => window.routeFades.length), messageBefore);
+  assert.equal(await page.evaluate(() => window.routeSnapshots), 0);
   assert.deepEqual(errors, []);
-  console.log('PASS Back and reduced motion');
+  console.log('PASS Back, message sections and both reduced-motion settings');
 } finally {await browser.close();}

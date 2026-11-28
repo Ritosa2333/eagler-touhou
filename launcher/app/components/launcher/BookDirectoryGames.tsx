@@ -1,27 +1,22 @@
 import {Checkbox} from 'radix-ui';
 import {Check,Disc3,Gamepad2,LayoutGrid,List,Monitor,Star,Swords} from 'lucide-react';
 import {useEffect,useMemo,useState,type ReactElement,type ReactNode} from 'react';
-import {ActionMenu,ActionMenuItem,ActionMenuCheckboxItem,ActionMenuGroup,ActionMenuLabel,ActionMenuRadioGroup,ActionMenuRadioItem} from '../../ui/action-menu';
+import {ActionMenu,ActionMenuItem,ActionMenuCheckboxItem,ActionMenuRadioGroup,ActionMenuRadioItem} from '../../ui/action-menu';
 import {useLocale} from '../../i18n';
 import {BookGameRail, type BookRailGroup} from './BookGameRail';
 import {BookButton} from './BookButton';
+import {BookMultiplayerMenuGroup} from './BookMultiplayerMenuGroup';
 import {BookRailGameIdentity} from './BookRailGameIdentity';
 import {useBookDisclosures} from './use-book-disclosures';
 import {impressFavorite} from './ink-feedback';
 import {beginFavoriteReorder,beginFilterReorder,useFavoriteReorder} from './favorite-reorder';
-import {createLibraryProducts,multiplayerGroup,type LibraryProduct,type MultiplayerGroup} from './products';
+import {compareWorkNumbers,createLibraryProducts,groupMultiplayerWorks,multiplayerGroupLabelKey,type LibraryProduct,type MultiplayerGroup} from './products';
 import type {ProductId} from '../../../src/contracts/product-catalog.mts';
 import {bookArtwork} from './book-artwork';
 import {BOOK_PREFERENCES_EVENT,readBookPreference,writeBookPreference,stringArray,matchesBookQuery} from './book-preferences';
+import './book-game-strip.css';
 import './directory-page.css';
 
-function groupGames(products: readonly LibraryProduct[]) {
-  return (['versus','original','fighting','pc98'] as const)
-    .map(id=>({id,products:products.filter(product=>multiplayerGroup(product)===id)}))
-    .filter(group=>group.products.length);
-}
-
-const groupLabelKey = (id:MultiplayerGroup) => id==='pc98' ? 'library.category.pc98' : `directory.group.${id}` as const;
 const groupIcons = {versus:Swords, original:Monitor, fighting:Gamepad2, pc98:Disc3};
 const defaultDisclosures = {versus: true, original: true};
 
@@ -49,17 +44,16 @@ export function BookProductMenu<Product extends ProductId>({products,value,asset
 }) {
   const {t}=useLocale();
   const label=t('lobby.game');
-  const groups=useMemo(()=>groupGames(createLibraryProducts(products,assetUrl,id=>`?game=${id}`)
-    .sort((a,b)=>Number(a.number)-Number(b.number))),[products,assetUrl]);
+  const groups=useMemo(()=>groupMultiplayerWorks(createLibraryProducts(products,assetUrl,id=>`?game=${id}`)
+    .sort(compareWorkNumbers)),[products,assetUrl]);
   return <ActionMenu variant="selection" label={label} align="start" minimumWidth={280} className="book-lobby-picker" trigger={trigger}>
     <ActionMenuRadioGroup value={value} onValueChange={next=>{const product=products.find(id=>id===next);if(product)onChange(product);}}>
-      {groups.map(group=><ActionMenuGroup key={group.id} aria-label={t(groupLabelKey(group.id))} data-lobby-category={group.id}>
-        <ActionMenuLabel className="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground">{t(groupLabelKey(group.id))}</ActionMenuLabel>
+      {groups.map(group=><BookMultiplayerMenuGroup key={group.id} group={group.id} data-lobby-category={group.id}>
         {group.products.map(product=><ActionMenuRadioItem key={product.id} value={product.id} data-product-choice={product.id}
           className="book-lobby-menu-choice h-12">
           <ProductCover product={product}/><ProductCopy product={product}/>
         </ActionMenuRadioItem>)}
-      </ActionMenuGroup>)}
+      </BookMultiplayerMenuGroup>)}
     </ActionMenuRadioGroup>
   </ActionMenu>;
 }
@@ -100,17 +94,17 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
     writeBookPreference('multiplayer-favorites',latest.includes(id)?latest.filter(value=>value!==id):[...latest,id]);
   };
   const orderGames=(order:readonly string[])=>products.filter(product=>!product.hidden)
-    .sort((a,b)=>Number(order.includes(b.id))-Number(order.includes(a.id))||Number(a.number)-Number(b.number));
+    .sort((a,b)=>Number(order.includes(b.id))-Number(order.includes(a.id))||compareWorkNumbers(a,b));
   const visible=orderGames(favorites);
-  const groups=groupGames(visible);
-  const menuGroups=menuOrder ? groupGames(orderGames(menuOrder)) : groups;
-  const groupLabel=(id:MultiplayerGroup)=>t(groupLabelKey(id));
+  const groups=groupMultiplayerWorks(visible);
+  const menuGroups=menuOrder ? groupMultiplayerWorks(orderGames(menuOrder)) : groups;
+  const groupLabel=(id:MultiplayerGroup)=>t(multiplayerGroupLabelKey(id));
   const checkmark=(checked:boolean)=><span className="book-lobby-check" data-checked={checked} aria-hidden="true"><Check/></span>;
   const railProducts = visible.filter(product => matchesBookQuery(product, query));
   const railGroups: BookRailGroup<MultiplayerGroup | 'all'>[] = [
     {id:'all', label:t('directory.allGames'), icon:LayoutGrid, count:railProducts.length,
       selected:!selected.length, onSelect:reset},
-    ...groupGames(railProducts).map(({id, products}) => ({
+    ...groupMultiplayerWorks(railProducts).map(({id, products}) => ({
       id, label:groupLabel(id), icon:groupIcons[id], count:products.length, products,
       expanded:expanded[id] ?? !!query.trim(),
       onExpand:(open:boolean) => setExpanded(id,open,true),
@@ -122,11 +116,12 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
       <ActionMenuItem className="book-lobby-menu-choice book-lobby-menu-all" disabled={!interactive} onSelect={reset}>{allCopy}</ActionMenuItem>
       <span aria-hidden="true"/>
     </div>
-    {menuGroups.map(group=><ActionMenuGroup key={group.id} aria-label={groupLabel(group.id)} data-lobby-category={group.id}><ActionMenuLabel className="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground">{groupLabel(group.id)}</ActionMenuLabel>{group.products.map(product=><div key={product.id} className="book-lobby-menu-row" role="presentation" data-lobby-product={product.id} data-selected={selected.includes(product.id)}>
+    {menuGroups.map(group=><BookMultiplayerMenuGroup key={group.id} group={group.id} data-lobby-category={group.id}>
+      {group.products.map(product=><div key={product.id} className="book-lobby-menu-row" role="presentation" data-lobby-product={product.id} data-selected={selected.includes(product.id)}>
       <ActionMenuCheckboxItem className="book-lobby-menu-check" showIndicator={false} aria-label={t('directory.filterGame',{game:product.title})} checked={selected.includes(product.id)} disabled={!interactive} onCheckedChange={checked=>toggle(product.id,checked===true)} onSelect={event=>event.preventDefault()}>{checkmark(selected.includes(product.id))}</ActionMenuCheckboxItem>
       <ActionMenuItem className="book-lobby-menu-choice book-rail-game" aria-label={t('directory.viewGame',{game:product.title})} disabled={!interactive} onSelect={()=>selectOnly(product.id)}><BookRailGameIdentity product={product}/></ActionMenuItem>
       <ActionMenuCheckboxItem className="book-lobby-favorite w-11 min-h-11 justify-center p-0" showIndicator={false} aria-label={t('directory.favoriteGame',{game:product.title})} checked={favorites.includes(product.id)} disabled={!interactive} onCheckedChange={()=>favorite(product.id)} onSelect={event=>{event.preventDefault();if(event.currentTarget instanceof HTMLElement) impressFavorite(event.currentTarget);}}><Star aria-hidden="true"/></ActionMenuCheckboxItem>
-    </div>)}</ActionMenuGroup>)}
+    </div>)}</BookMultiplayerMenuGroup>)}
   </>;
   const gameBar = <nav className="book-lobby-games lobby-library" aria-label={t('directory.gameFilter')}>
     <ActionMenu variant="selection" label={t('directory.games')} align="start" minimumWidth={280} className="book-lobby-picker"
@@ -140,13 +135,13 @@ export function BookDirectoryGames({products,selectedProduct,viewingProduct,prod
   return <>
     <BookGameRail label={t('directory.gameFilter')} className="lobby-game-sidebar"
       search={{query,onChange:setQuery}} groups={railGroups} interactive={interactive}
-      favorites={favorites} onFavorite={favorite}
+      favorite={{ids:favorites, onToggle:favorite}}
       gameAction={product => ({
         label:t('directory.viewGame',{game:product.title}), selected:selected.includes(product.id),
         onClick:() => selectOnly(product.id),
-        marker:<Checkbox.Root asChild checked={selected.includes(product.id)} disabled={!interactive}
+        selection:<Checkbox.Root asChild checked={selected.includes(product.id)} disabled={!interactive}
           onCheckedChange={checked=>toggle(product.id,checked===true)}>
-          <BookButton variant="choice" className="book-lobby-sidebar-check"
+          <BookButton variant="choice" type="button" className="book-lobby-sidebar-check"
             aria-label={t('directory.filterGame',{game:product.title})}>{checkmark(selected.includes(product.id))}</BookButton>
         </Checkbox.Root>,
       })}/>

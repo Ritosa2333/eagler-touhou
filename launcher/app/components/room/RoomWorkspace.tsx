@@ -6,6 +6,7 @@ import {ChevronDown} from 'lucide-react';
 import {useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import {useLocale} from '../../i18n';
+import {LoadingActivity} from '../../ui/loading-activity';
 import {Th09RatingCardsContext, useTh09Ratings} from '../../services/th09-ratings';
 import type {RoomViewProps, RoomPanelKind} from './types';
 import {roomPresentation, roomConnectionMessage} from './presentation';
@@ -76,8 +77,18 @@ export function RoomWorkspace(props: RoomViewProps) {
   const canChangeProduct = owner && state.globalRoomCodes && !!state.product && props.products.length > 1;
   const selecting = state.seat != null && !state.spectatorRequested;
   const preparation = state.preparation;
-  const loading = !!context.launchStage || preparation?.status === 'preparing' || preparation?.status === 'importing';
-  const loadingText = t(context.launchStage ? 'room.preparingRuntime' : loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : preparation?.status === 'cancelled' ? 'room.resourcesCancelled' : 'room.resourcesUnavailable');
+  const checking = context.checking && preparation?.status !== 'failed' && preparation?.status !== 'cancelled';
+  const startingSpectator = state.spectatorRequested && state.launchBusy && preparation?.status === 'ready' && !context.launched;
+  const launching = !!context.launchStage || startingSpectator || checking;
+  const preparing = preparation?.status === 'preparing' || preparation?.status === 'importing';
+  const awaitingRoom = !room.synced && preparation?.status !== 'failed' && preparation?.status !== 'cancelled';
+  const connecting = awaitingRoom && !launching && !preparing;
+  const loading = launching || preparing || awaitingRoom;
+  const showPreparation = !props.reloadPending && (launching || awaitingRoom || !(context.previewReady || context.launched));
+  const connectionText = !ready ? roomConnectionMessage(state,t) : '';
+  const loadingText = t(context.launchStage === 'path' ? 'multiplayer.connection' : checking ? 'multiplayer.checkingGame' :
+    startingSpectator || context.launchStage && state.spectatorRequested ? 'room.loadingSpectator' : context.launchStage ? 'room.preparingRuntime' :
+    loading ? 'room.workspaceLoading' : preparation?.status === 'ready' ? selecting ? 'room.workspaceReady' : state.spectatorRequested ? 'room.workspaceSpectating' : 'multiplayer.chooseSeatOrSpectate' : preparation?.status === 'cancelled' ? 'room.resourcesCancelled' : 'room.resourcesUnavailable');
   const icon = (name:string)=><img className="room-icon" src={assetUrl(`assets/${name}.svg`)} alt=""/>;
   const lounge = <RoomSpectatorPreview state={state} service={service} assetUrl={assetUrl} open={props.panel?.kind==='spectators'} onOpen={element=>openPanel('spectators',element)}/>;
   const roster = <div className="room-workspace-roster" data-side-lounge={sideLounge} data-player-count={room.playerCount}><RoomSeats state={state} service={service} network={network} context={context} openPanel={openPanel} ratings={players} myRating={mine}/><div className="room-workspace-lounge-host" ref={setLoungeHost}/></div>;
@@ -151,7 +162,15 @@ export function RoomWorkspace(props: RoomViewProps) {
         <p role="status">{t('room.reloadSettingsPrompt')}</p>
         <div><UiButton variant="primary" type="button" className="room-resource-reload-confirm" onClick={props.onReloadResources}>{t('room.reloadResources')}</UiButton><UiButton type="button" onClick={props.onRestoreSettings}>{t('room.restoreSettings')}</UiButton></div>
       </section>}
-      <div className="room-workspace-preparation" role="status" data-preview-ready={context.previewReady || context.launched || undefined} hidden={props.reloadPending || !context.launchStage && (context.previewReady || context.launched)}><div className="room-preparation-caption">{loading && <i className="room-preparation-spinner" aria-hidden="true"/>}<strong>{loadingText}</strong><span id="mpRoomConnection">{!ready && roomConnectionMessage(state,t)}</span><RoomProgress state={state} service={service} transfer={context.transfer} showLabel={preparation?.status !== 'failed' && preparation?.status !== 'cancelled'}/>{preparation?.error && preparation.error !== loadingText && <p>{preparation.error}</p>}</div></div>
+      <div className="room-workspace-preparation" role="status" data-preview-ready={context.previewReady || context.launched || undefined} hidden={!showPreparation}>
+        <div className="room-preparation-caption">
+          {loading && showPreparation ? <LoadingActivity assetUrl={assetUrl} status={connecting ? connectionText : loadingText}
+            context="multiplayer" statusId={connecting ? 'mpRoomConnection' : undefined}/> : <strong>{loadingText}</strong>}
+          {!connecting && <span id="mpRoomConnection">{connectionText}</span>}
+          <RoomProgress state={state} service={service} transfer={context.transfer} showLabel={preparation?.status !== 'failed' && preparation?.status !== 'cancelled'}/>
+          {preparation?.error && preparation.error !== loadingText && <p>{preparation.error}</p>}
+        </div>
+      </div>
       <div className="room-workspace-viewport-tools">
         <UiButton variant="unstyled" className="room-workspace-fullscreen" type="button" aria-label={t('player.enterFullscreen')} onClick={props.onFullscreen}><FullscreenIcons/></UiButton>
         {props.playerSettings}

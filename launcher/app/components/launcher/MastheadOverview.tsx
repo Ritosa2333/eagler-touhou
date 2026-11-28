@@ -9,6 +9,7 @@ import {accountsEnabled} from '../../release-features';
 import {SettingsField, SettingsGroup, SettingsRowContent} from '../settings/SettingsGroup';
 import type {BackgroundSurface} from './CustomBackground';
 import {BookThemeToggle} from './BookThemeToggle';
+import {AppLink} from './AppLink';
 import {MastheadTooltip} from './MastheadTooltip';
 import type {LauncherMastheadProps} from './LauncherMasthead';
 import {NavigationIcon} from './NavigationIcon';
@@ -25,11 +26,12 @@ export interface MastheadSiteLink {
 type OverviewAction = 'onDonation' | 'onFirstUse';
 type OverviewPanel = 'language' | 'about';
 
-export function MastheadOverview({host, open, onOpenChange, trigger, helpLinks, statusLink, aboutLinks, themeSurfaces}: {
+export function MastheadOverview({host, open, onOpenChange, trigger, installsLink, helpLinks, statusLink, aboutLinks, themeSurfaces}: {
   host: LauncherMastheadProps;
   open: boolean;
   onOpenChange(open: boolean): void;
   trigger: ReactElement;
+  installsLink?: MastheadSiteLink;
   helpLinks: readonly MastheadSiteLink[];
   statusLink: MastheadSiteLink;
   aboutLinks: readonly MastheadSiteLink[];
@@ -54,6 +56,7 @@ export function MastheadOverview({host, open, onOpenChange, trigger, helpLinks, 
   }, [open, panel]);
   const identity = useLauncherIdentity(accountsEnabled && open);
   const title = panel === 'language' ? t('ui.language') : panel === 'about' ? t('nav.aboutSite') : t('nav.main');
+  const PageLink = host.nativeLinks ? 'a' : AppLink;
   function openPanel(next: OverviewPanel) {
     returnPanel.current = next;
     setPanel(next);
@@ -118,6 +121,15 @@ export function MastheadOverview({host, open, onOpenChange, trigger, helpLinks, 
           </Button>}
         </SettingsGroup> : <>
           {accountsEnabled && <LauncherAccountRow compact identity={identity} assetUrl={host.assetUrl}/>}
+          {installsLink && <div className="masthead-overview-group">
+            <SettingsGroup>
+              <Button asChild variant="ghost" size="row" className="settings-navigation-row">
+                <PageLink href={installsLink.href} {...(host.nativeLinks ? {onClick:follow} : {replace:true, rememberEntry:true})}>
+                  <SettingsRowContent icon={installsLink.icon}>{installsLink.label}</SettingsRowContent>
+                </PageLink>
+              </Button>
+            </SettingsGroup>
+          </div>}
           <section className="masthead-overview-group" aria-labelledby="masthead-overview-help">
             <h3 id="masthead-overview-help">{t('nav.help')}</h3>
             <SettingsGroup>

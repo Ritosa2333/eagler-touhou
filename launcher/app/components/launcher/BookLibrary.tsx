@@ -1,4 +1,4 @@
-import { Activity, useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { Activity, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
 import { createPortal } from 'react-dom';
 import {
@@ -9,6 +9,7 @@ import {
   Monitor,
   Puzzle,
   Disc3,
+  Download,
   Gamepad2,
   Shapes,
   Swords,
@@ -17,14 +18,14 @@ import { Button } from '../../ui/button';
 import { Skeleton } from '../../ui/skeleton';
 import { ChoiceGroup, ChoiceItem } from '../../ui/choice-group';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../ui/select';
+import { Toolbar } from '../../ui/toolbar';
 import {useNavigationPageMotion} from '../../navigation/navigation-motion';
 import { useLocale } from '../../i18n';
 import { useOptionsTarget } from './options-ownership';
 import type { LibraryCardsProps } from './LibraryCards';
-import type { LibraryProduct } from './products';
+import { bookWorkCategories, type LibraryProduct } from './products';
 import {
   BOOK_PREFERENCES_EVENT,
-  bookCategory,
   filterBookProducts,
   readBookPreference,
   writeBookPreference,
@@ -39,10 +40,14 @@ import {LibrarySearch} from './LibrarySearch';
 import {useContentMotion} from '../../ui/use-surface-motion';
 import {useLibraryMotion} from './use-library-motion';
 import {useBookDisclosures} from './use-book-disclosures';
+import {AppLink} from './AppLink';
+import {launcherSectionHref} from './launcher-sections';
 
 type Props = Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> & {
+  homeHref: string;
   compact?: boolean;
   mobileSearchTarget?: HTMLElement | null;
+  installProgress?: ReactNode;
   detail?: ReactNode;
   onBrowse?: () => void;
 };
@@ -59,7 +64,7 @@ const categories: { id: BookCategory; Icon: typeof LayoutGrid }[] = [
 const defaultDisclosures = {windows: true, versus: true, fighting: true};
 
 /** Product membership, settings activation and persistence stay with their existing owners. */
-export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, mobileSearchTarget, detail, onBrowse }: Props) {
+export function BookLibrary({ products, openedProduct, onSelect, onActivate, interactive = true, compact = false, mobileSearchTarget, detail, onBrowse, homeHref, installProgress }: Props) {
   const { t } = useLocale(),
     [search] = useSearchParams();
   const showDetail = !compact && detail != null;
@@ -116,9 +121,9 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
     { value: 'reverse', label: t('library.sort.reverse') },
     { value: 'name', label: t('library.sort.name') },
   ];
-  const available = products.filter((product) => !product.multiplayer && !product.hidden);
+  const available = useMemo(() => products.filter(product => !product.multiplayer && !product.hidden), [products]);
   const detailProduct = showDetail ? available.find((product) => product.id === openedProduct) : undefined;
-  const detailCategory = detailProduct ? sidebarOrigin ?? bookCategory(detailProduct) : undefined;
+  const detailCategory = detailProduct ? sidebarOrigin ?? bookWorkCategories(detailProduct)[0] : undefined;
   useLayoutEffect(() => {
     if (!detailCategory || !openedProduct) return;
     setDisclosure(detailCategory, true);
@@ -144,16 +149,16 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
       window.removeEventListener('storage', refresh);
     };
   }, [interactive]);
-  const list = filterBookProducts(products, category, favorites, query, sort);
-  const categoryProducts = new Map(categories.map(({id}) =>
-    [id, filterBookProducts(available, id, favorites, '', sort)] as const));
+  const list = useMemo(() => filterBookProducts(available, category, favorites, query, sort), [available, category, favorites, query, sort]);
+  const categoryProducts = useMemo(() => new Map(categories.map(({id}) =>
+    [id, filterBookProducts(available, id, favorites, '', sort)] as const)), [available, favorites, sort]);
   const selectedSidebar = sidebarOrigin && disclosures[sidebarOrigin] &&
     categoryProducts.get(sidebarOrigin)?.some(product => product.id === openedProduct) ? sidebarOrigin : null;
   const changeCategory = (value: string) => {
     if (!value) return;
     reserveResultsSpace();
     const next = value as BookCategory;
-    const nextIds = new Set(filterBookProducts(products, next, favorites, query, sort).map(product => product.id));
+    const nextIds = new Set(filterBookProducts(available, next, favorites, query, sort).map(product => product.id));
     animateLibraryChange(() => setCategory(next), {nextIds: view === 'covers' ? nextIds : undefined});
     if (showDetail) onBrowse?.();
   };
@@ -219,6 +224,13 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
   return (
     <div className={`book-library book-view-${view}`} data-ui-kit="home">
       {!compact && <BookGameRail label={t('library.categories')} interactive={interactive}
+        footer={<Button asChild variant="ghost" size="row" className="book-sidebar-footer-link">
+          <AppLink href={launcherSectionHref(homeHref, 'installs')} rememberEntry>
+            <Download aria-hidden="true"/>
+            <span>{t('downloadTasks.pageTitle')}</span>
+            {installProgress}
+          </AppLink>
+        </Button>}
         search={{query, inputRef:input, id:'librarySearch', controls:showDetail ? undefined : 'bookGameGrid',
           onChange:next => {
             reserveResultsSpace();
@@ -230,7 +242,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
           return {id, icon:Icon, label:labels[id], count:entries.length, selected:id === category, panelId:`bookCategory-${id}`,
             products:Object.hasOwn(disclosures, id) ? entries : undefined,
             expanded:disclosures[id] === true,
-            onExpand:entries.length ? (open:boolean) => setDisclosure(id, open, true) : undefined,
+            onExpand:id !== 'all' && entries.length ? (open:boolean) => setDisclosure(id, open, true) : undefined,
             onSelect:() => {
               if (id !== category) changeCategory(id);
               else {
@@ -239,7 +251,6 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
               }
             }};
         })}
-        favorites={favorites} onFavorite={toggleFavorite}
         gameAction={(product,id) => ({href:product.href, selected:openedProduct === product.id,
           anchorRef:selectedSidebar === id && openedProduct === product.id ? selectedCard : undefined,
           onClick:event => activate(event, product, id)})}/>}
@@ -280,11 +291,11 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                   </ChoiceItem>)}
               </ChoiceGroup>
             </div>}
-            <div className="book-tools">
+            <Toolbar className="book-tools">
               <ChoiceGroup
                 type="single"
                 className="book-view-switch"
-                data-view={view}
+                data-toolbar-segments=""
                 value={view}
                 onValueChange={(value) => {
                   if (value === 'covers' || value === 'list') {
@@ -299,7 +310,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                   value="covers"
                   data-book-view="covers"
                   onClick={() => {if (view === 'covers') cancelLibraryMotion();}}
-                  className="px-2.5 py-1.5 text-xs"
+                  className="px-2.5 py-1.5"
                 >
                   <LayoutGrid aria-hidden="true" />
                   <span>{t('library.covers')}</span>
@@ -308,7 +319,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                   value="list"
                   data-book-view="list"
                   onClick={() => {if (view === 'list') cancelLibraryMotion();}}
-                  className="px-2.5 py-1.5 text-xs"
+                  className="px-2.5 py-1.5"
                 >
                   <List aria-hidden="true" />
                   <span>{t('library.list')}</span>
@@ -321,7 +332,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                 }}
                 disabled={!interactive}
               >
-                <SelectTrigger className="book-sort text-xs" aria-label={t('library.sort')}>
+                <SelectTrigger className="book-sort" aria-label={t('library.sort')}>
                   <SelectValue>{sortOptions.find((option) => option.value === sort)?.label}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -332,7 +343,7 @@ export function BookLibrary({ products, openedProduct, onSelect, onActivate, int
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </Toolbar>
           </div>
           <div
             ref={results}

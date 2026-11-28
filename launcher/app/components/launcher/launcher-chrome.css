@@ -31,7 +31,7 @@
   .book-masthead .account-login-link,.book-masthead .account-loading {height:32px;min-height:0}
   .masthead-account-entry .account-avatar {--account-avatar-size:24px}
   .masthead-library-search,.site-bottom-navigation.launcher-bottom-navigation,.launcher-back.launcher-mobile-back {display:none}
-  .launcher-home {width:min(100%,580px);margin-inline:auto;padding:16px}
+  .launcher-home {width:min(100%,580px);margin-inline:auto;padding:16px;background:var(--book-reading-surface)}
   .launcher-home h1 {margin:0 0 12px;font-size:21px;font-weight:600}
   .launcher-home-account {--launcher-account-height:74px;--launcher-counts-height:55px;margin-block-end:20px}
   .launcher-home-account .launcher-account-row {min-height:var(--launcher-account-height);padding-inline:12px}
@@ -102,15 +102,6 @@
       font-weight:500;
       line-height:1.2;
     }
-    .launcher-bottom-navigation .site-navigation-link > svg {
-      width:46px;
-      height:28px;
-      padding:5px 14px;
-      border-radius:999px;
-      transition:background-color var(--ui-feedback-duration) var(--ui-feedback-easing);
-    }
-    .launcher-bottom-navigation .site-navigation-link[aria-current="page"] {color:var(--kit-brand);font-weight:600}
-    .launcher-bottom-navigation .site-navigation-link[aria-current="page"] > svg {background:color-mix(in srgb,var(--kit-brand) 15%,var(--kit-card))}
     body:is(.mp-room-active,.player-active,.library-tools-open,.library-tools-closing) .launcher-bottom-navigation {visibility:hidden}
     .launcher-bottom-navigation + .launcher-page-surface {padding-bottom:calc(60px + var(--launcher-bottom-padding))}
     .launcher-home {

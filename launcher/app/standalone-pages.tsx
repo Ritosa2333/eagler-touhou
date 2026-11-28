@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState, useSyncExternalStore, type ReactNode} from 'react';
+import {useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode} from 'react';
 import {useHref, useLocation, useNavigate} from 'react-router';
 import {LauncherMasthead} from './components/launcher/LauncherMasthead';
 import {MainSelect} from './components/launcher/MainSelect';
@@ -7,6 +7,8 @@ import {FirstUseNotice, type FirstUseNoticeHandle} from './components/notices/Fi
 import {LocaleProvider, translate, useLocale, type UiMessageKey} from './i18n';
 import {sitePageTitle, useDocumentUiLocale} from './navigation/document-locale';
 import {StandaloneSurfaceLayers} from './navigation/surface-layer';
+import {usePageEntrance} from './navigation/navigation-motion';
+import {documentPageContent} from './navigation/page-entrance';
 import {UI_LOCALES, UI_LOCALE_LABELS, isUiLocale, localeHome, readUiLocalePreference, saveUiLocalePreference, withUiLanguage} from '../src/launcher/i18n.mts';
 import {createSitePreferencesModel, bindSitePreferencesToDocument} from './models/site-preferences';
 import {RUNTIME_DIAGNOSTICS_STORAGE_KEY} from './models/runtime-diagnostics';
@@ -26,6 +28,11 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
   const assetUrl = (path: string) => base + path;
   const [preferences, setPreferences] = useState(() => createSitePreferencesModel({storage: null}));
   const prefs = useSyncExternalStore(preferences.subscribe, preferences.getSnapshot, preferences.getSnapshot);
+  const content = usePageEntrance<HTMLElement>(location.pathname, {
+    reduced:prefs.lessMotion,
+    contentSelector:mainClassName === 'documentation-shell' ? documentPageContent : undefined,
+  });
+  const attachContent = useCallback((element: HTMLElement | null) => {content.current = element;}, [content]);
   const [menu, setMenu] = useState(false), [donation, setDonation] = useState(false), [notice, setNotice] = useState(false);
   const [donationAvailable, setDonationAvailable] = useState(true), [diagnostics, setDiagnostics] = useState(false);
   const [migration, setMigration] = useState({known: false, available: false});
@@ -81,7 +88,7 @@ function StandaloneShell({children, titleKey, mainClassName}: {children: ReactNo
         saveUiLocalePreference(document, localStorageOrNull(), new URL(base, window.location.href), value);
         navigate(withUiLanguage(location.pathname + location.search + location.hash, value));
       }}>{UI_LOCALES.map(value => <option key={value} value={value}>{t(UI_LOCALE_LABELS[value])}</option>)}</MainSelect>}/></StandaloneSurfaceLayers>
-    <Main className={mainClassName}>{children}</Main>
+    <Main ref={attachContent} className={mainClassName}>{children}</Main>
     <DonationDialog open={donation} onCloseRequest={() => setDonation(false)} assetUrl={assetUrl} onArtworkUnavailable={() => setDonationAvailable(false)}/>
     <FirstUseNotice ref={firstUse} open={notice} onOpenRequest={() => setNotice(true)} onCloseRequest={() => setNotice(false)} contentUrl={assetUrl('content/FIRST_USE_NOTICE.html')} edgeGestures={false}/>
   </div>;

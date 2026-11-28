@@ -233,11 +233,6 @@
   .game-data-import-busy[hidden] {
     display: none;
   }
-  .game-data-import-busy .eagler-preload-spinner {
-    width: 20px;
-    height: 20px;
-    flex: none;
-  }
   .game-data-import-actions {
     display: flex;
     justify-content: flex-end;

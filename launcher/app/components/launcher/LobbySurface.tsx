@@ -5,6 +5,7 @@ import type { LibraryCardsProps } from './LibraryCards';
 import {BookDirectoryGames} from './BookDirectoryGames';
 import {accountsEnabled} from '../../release-features';
 import {withUiLanguage} from '../../../src/launcher/i18n.mts';
+import {LoadingActivity} from '../../ui/loading-activity';
 
 export interface LobbySurfaceProps extends Omit<
   LibraryCardsProps,
@@ -19,6 +20,7 @@ export interface LobbySurfaceProps extends Omit<
   membership?: ReactNode;
   notice?: string;
   roomTools: ReactNode;
+  assetUrl?(path: string): string;
   roomFilters?: ReactNode;
   roomList: ReactNode;
   hasRooms: boolean;
@@ -53,10 +55,12 @@ export function LobbySurface({
   emptyState,
   roomCount,
   roomUsersArtwork,
+  assetUrl = path => path,
   children,
   ...rail
 }: LobbySurfaceProps) {
   const {t, locale} = useLocale();
+  const showLoading = loading && !hasRooms && rail.interactive !== false;
   return (
     <>
       <main className="lobby-main book-directory" inert={rail.interactive === false}>
@@ -111,7 +115,9 @@ export function LobbySurface({
           <ul className="lobby-room-list" id="roomList" aria-busy={loading} hidden={!hasRooms}>
             {roomList}
           </ul>
-          <div className="visually-hidden" id="listLoading" role="status" hidden={!loading}>{t('lobby.loadingHint')}</div>
+          <div className={showLoading ? 'lobby-empty' : 'visually-hidden'} id="listLoading" role="status" hidden={!loading}>
+            {showLoading ? <LoadingActivity assetUrl={assetUrl} status={t('lobby.loadingHint')} context="multiplayer"/> : t('lobby.loadingHint')}
+          </div>
           {emptyState && (
             <div className="lobby-empty" id="emptyState">
               <img src={roomUsersArtwork} alt="" width="36" height="36" />

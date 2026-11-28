@@ -1,4 +1,42 @@
 {
+  "beautyPacks.title": {"id": "beautyPacks_title", "params": []},
+  "beautyPacks.enableAll": {"id": "beautyPacks_enableAll", "params": []},
+  "beautyPacks.restoreAll": {"id": "beautyPacks_restoreAll", "params": []},
+  "beautyPacks.empty": {"id": "beautyPacks_empty", "params": []},
+  "loadingTip.controls": {"id": "loadingTip_controls", "params": []},
+  "loadingTip.touch": {"id": "loadingTip_touch", "params": []},
+  "loadingTip.replay": {"id": "loadingTip_replay", "params": []},
+  "loadingTip.chat": {"id": "loadingTip_chat", "params": []},
+  "loadingTip.filter": {"id": "loadingTip_filter", "params": []},
+  "loadingTip.spectate": {"id": "loadingTip_spectate", "params": []},
+  "loadingTip.queue": {"id": "loadingTip_queue", "params": []},
+  "loadingTip.favorites": {"id": "loadingTip_favorites", "params": []},
+  "downloadTasks.acquire": {
+    "id": "downloadTasks_acquire",
+    "params": []
+  },
+  "downloadTasks.title": {
+    "id": "downloadTasks_title",
+    "params": []
+  },
+  "downloadTasks.pageTitle": {"id": "downloadTasks_pageTitle", "params": []},
+  "downloadTasks.addOns": {"id": "downloadTasks_addOns", "params": []},
+  "downloadTasks.downloading": {
+    "id": "downloadTasks_downloading",
+    "params": []
+  },
+  "downloadTasks.queued": {
+    "id": "downloadTasks_queued",
+    "params": []
+  },
+  "downloadTasks.failed": {
+    "id": "downloadTasks_failed",
+    "params": []
+  },
+  "downloadTasks.saving": {"id": "downloadTasks_saving", "params": []},
+  "downloadTasks.empty": {"id": "downloadTasks_empty", "params": []},
+  "downloadTasks.eta": {"id": "downloadTasks_eta", "params": ["time"]},
+  "downloadTasks.previewAgain": {"id": "downloadTasks_previewAgain", "params": []},
   "cloudSave.waitingTitle": {
     "id": "cloudSave_waitingTitle",
     "params": []
@@ -1535,6 +1573,48 @@
   },
   "lobby.loadingOptions": {
     "id": "lobby_loadingOptions",
+    "params": []
+  },
+  "roomName.label": {
+    "id": "roomName_label",
+    "params": []
+  },
+  "roomName.limit": {
+    "id": "roomName_limit",
+    "params": [
+      "count"
+    ]
+  },
+  "roomName.save": {
+    "id": "roomName_save",
+    "params": []
+  },
+  "roomName.status.reviewing": {
+    "id": "roomName_status_reviewing",
+    "params": []
+  },
+  "roomName.status.saved": {
+    "id": "roomName_status_saved",
+    "params": []
+  },
+  "roomName.status.approved": {
+    "id": "roomName_status_approved",
+    "params": []
+  },
+  "roomName.status.rejected": {
+    "id": "roomName_status_rejected",
+    "params": []
+  },
+  "roomName.status.invalid": {
+    "id": "roomName_status_invalid",
+    "params": []
+  },
+  "roomName.status.unavailable": {
+    "id": "roomName_status_unavailable",
+    "params": []
+  },
+  "roomName.status.rate-limited": {
+    "id": "roomName_status_rate_limited",
     "params": []
   },
   "room.visibility": {
@@ -5950,6 +6030,10 @@
     "id": "nav_help",
     "params": []
   },
+  "nav.feedback": {
+    "id": "nav_feedback",
+    "params": []
+  },
   "nav.settings": {
     "id": "nav_settings",
     "params": []
@@ -8955,6 +9039,10 @@
     "id": "directory_filters",
     "params": []
   },
+  "directory.filterMode": {
+    "id": "directory_filterMode",
+    "params": []
+  },
   "directory.filter.all": {
     "id": "directory_filter_all",
     "params": []
@@ -10093,6 +10181,10 @@
     "id": "th09_boardPlayer",
     "params": []
   },
+  "th09.boardMainCharacter": {
+    "id": "th09_boardMainCharacter",
+    "params": []
+  },
   "th09.boardRating": {
     "id": "th09_boardRating",
     "params": []
@@ -10779,6 +10871,10 @@
   },
   "profile.clear.notAttempted": {
     "id": "profile_clear_notAttempted",
+    "params": []
+  },
+  "nav.theme": {
+    "id": "nav_theme",
     "params": []
   },
   "nav.themeBackground": {

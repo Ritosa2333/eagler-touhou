@@ -318,7 +318,7 @@ html[data-custom-background] body:not(.mp-room-active) .account-settings :is(.ac
   padding: 20px;
   border: 1px solid var(--kit-border);
   border-radius: 10px;
-  background-color: color-mix(in srgb, var(--book-surface) var(--custom-panel-opacity, 88%), transparent);
+  background-color: var(--book-panel-surface);
 }
 @media (max-width: 700px), (orientation: portrait) and (max-width: 900px) {
   html[data-custom-background] body:not(.mp-room-active) .account-settings :is(.account-settings-nav,.account-settings-content) {padding:16px}

@@ -42,7 +42,7 @@
 }
 
 .first-use-notice-dialog {
-  --notice-top: calc(var(--site-header-height, 61px) + 12px);
+  --notice-top: calc(var(--site-header-height, 44px) + 12px);
   --notice-bottom: max(12px, var(--ui-safe-bottom));
   position: fixed;
   inset: var(--notice-top) max(12px, var(--ui-safe-right)) auto auto;

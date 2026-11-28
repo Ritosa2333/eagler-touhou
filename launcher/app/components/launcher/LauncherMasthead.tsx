@@ -11,6 +11,7 @@ import {
   BookOpen as ReaderIcon,
   Check as CheckIcon,
   PlaySquare,
+  Download,
   Code,
   FlaskConical,
   FileText,
@@ -148,7 +149,12 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     }
   }, [languagesOpen, developerOpen, menuOpen]);
   const lobbyHref = withUiLanguage(props.assetUrl('lobby.html'), locale);
+  const installsLink: MastheadSiteLink | undefined = section === 'installs' ? undefined : {
+    href: launcherSectionHref(props.launcherHref, 'installs'), icon: <Download aria-hidden="true"/>, label: t('downloadTasks.pageTitle'),
+  };
+  const desktopInstallsLink = variant === 'library' && !section && !profileOpen ? undefined : installsLink;
   const faqLink: MastheadSiteLink = {href: props.faqHref, icon: <NavigationIcon name="faq"/>, label: t('nav.faq')};
+  const feedbackLink: MastheadSiteLink = {href: 'https://feedback.touhouonline.com/', icon: <NavigationIcon name="feedback"/>, label: t('nav.feedback'), external: true};
   const helpLinks: MastheadSiteLink[] = [
     faqLink,
     {href: withUiLanguage(props.assetUrl(MULTIPLAYER_GUIDE_PATH.slice(1)), locale), icon: <NavigationIcon name="multiplayerGuide"/>, label: t('multiplayerGuide.title')},
@@ -234,6 +240,11 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             </a>
           </Button>
         </MastheadTooltip>
+        <MastheadTooltip label={feedbackLink.label}>
+          <Button asChild variant="ghost" size="icon" className="masthead-action book-top-feedback">
+            <a href={feedbackLink.href} aria-label={feedbackLink.label} target="_blank" rel="noopener noreferrer">{feedbackLink.icon}</a>
+          </Button>
+        </MastheadTooltip>
         {props.donationAvailable !== false && (
           <MastheadTooltip label={t('nav.donate')}>
             <Button variant="ghost" size="icon" className="masthead-action book-top-donation"
@@ -246,7 +257,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
         {!compact && <div hidden ref={language}>
           {props.languageControl}
         </div>}
-        {compact ? <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} helpLinks={helpLinks} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/> : <DropdownMenu.Root
+        {compact ? <MastheadOverview host={props} open={interactive && overviewOpen} onOpenChange={setOverviewOpen} trigger={menuTrigger} installsLink={installsLink} helpLinks={[...helpLinks, feedbackLink]} statusLink={statusLink} aboutLinks={[...aboutLinks, ...handbookLink]} themeSurfaces={themeSurfaces}/> : <DropdownMenu.Root
           modal={false}
           open={interactive && menuOpen}
           onOpenChange={(open) => {
@@ -338,6 +349,11 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                 </>
               ) : (
                 <>
+                  {desktopInstallsLink && <DropdownMenu.Item asChild>
+                    <Link className="ui-menu-item" href={desktopInstallsLink.href} {...(props.nativeLinks ? {} : {rememberEntry:true})}>
+                      {desktopInstallsLink.icon}{desktopInstallsLink.label}
+                    </Link>
+                  </DropdownMenu.Item>}
                   {variant === 'lobby' && props.onReplay && <>
                     <DropdownMenu.Item className="ui-menu-item" id="watchReplayButton" onSelect={() => {replayAfterClose.current = true;}}><PlaySquare aria-hidden="true"/>{t('lobby.watchReplay')}</DropdownMenu.Item>
                     <DropdownMenu.Separator className="ui-menu-separator" />

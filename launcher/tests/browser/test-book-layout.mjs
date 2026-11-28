@@ -210,7 +210,7 @@ try {
   await handbook.goto(new URL('ui-review.html#page-room-settings', origin), {waitUntil: 'domcontentloaded'});
   const sample = '#page-room-settings #mpRoomSettings';
   await handbook.waitForSelector(`${sample} #mpRoomVisibility-trigger`, {visible: true});
-  assert.equal(await handbook.$eval(sample, el => !!el.querySelector('#mpRoomName')), false);
+  assert.equal(await handbook.$eval(sample, el => !!el.querySelector('#mpRoomName')), true);
   await handbook.close();
   console.log('PASS: room action alignment, shared disclosure, desktop/mobile detail handoff, and room settings specimen');
 } finally {

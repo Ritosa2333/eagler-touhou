@@ -2,7 +2,7 @@ import {useLocation} from 'react-router';
 import {isLauncherHomePath} from '../../navigation/addresses';
 
 export type MessageSection = 'announcements' | 'messages';
-export type LauncherSection = 'home' | MessageSection;
+export type LauncherSection = 'home' | 'installs' | MessageSection;
 
 export function useLauncherSection(): LauncherSection | null {
   return launcherSection(useLocation());
@@ -11,7 +11,7 @@ export function useLauncherSection(): LauncherSection | null {
 export function launcherSection({pathname, search}: {pathname: string; search: string}): LauncherSection | null {
   if (!isLauncherHomePath(pathname)) return null;
   const section = new URLSearchParams(search).get('section');
-  return section === 'home' || section === 'announcements' || section === 'messages' ? section : null;
+  return section === 'home' || section === 'announcements' || section === 'messages' || section === 'installs' ? section : null;
 }
 
 export function primaryLauncherView(location: {pathname: string; search: string}) {

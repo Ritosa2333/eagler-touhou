@@ -3,8 +3,8 @@ import { useId, useMemo, useState } from 'react';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import {BookDirectoryGames} from '../components/launcher/BookDirectoryGames';
 import {BookWorkNumber} from '../components/launcher/BookWorkNumber';
-import {DirectoryRoomFilters} from '../components/directory/LobbyDirectoryView';
-import type {DirectoryRoomFilter} from '../components/directory/directory-room-filter';
+import {DirectoryRoomFilters} from '../components/directory/DirectoryRoomFilters';
+import {defaultDirectoryRoomFilters} from '../components/directory/directory-room-filter';
 import { LaunchActions } from '../components/launcher/LaunchActions';
 import { createLibraryProducts } from '../components/launcher/products';
 import { SiteBrand } from '../components/launcher/SiteBrand';
@@ -495,7 +495,7 @@ function PlaybackExample() {
 }
 const sampleDirectoryProducts=createLibraryProducts(['th06mp','th07mp','th075mp','th08mp','th09mp','th10mp','th11mp','th12mp','th15mp'],path=>path,id=>`./lobby.html?game=${id}`);
 function DirectoryFilters() {
-  const [selected,setSelected]=useState<string[]>([]),[favorites,setFavorites]=useState<string[]>([]),[roomFilter,setRoomFilter]=useState<DirectoryRoomFilter>('all');
+  const [selected,setSelected]=useState<string[]>([]),[favorites,setFavorites]=useState<string[]>([]),[roomFilter,setRoomFilter]=useState(defaultDirectoryRoomFilters);
   return <div className="catalog-recipe book-directory catalog-directory-filter-example">
     <BookDirectoryGames products={sampleDirectoryProducts} viewingProduct="" productFilters={selected} onProductFiltersChange={setSelected} onSelect={()=>setSelected([])} favoriteProducts={favorites} onFavoriteProductsChange={setFavorites}/>
     <DirectoryRoomFilters rooms={[]} value={roomFilter} onChange={setRoomFilter}/>

@@ -96,6 +96,9 @@ export interface GameSettingsModel {
   setMusic(value: MusicMode): void;
   setLanguage(value: string): void;
   setGameVersion(value: GameVersion): void;
+  getGameVersion(game: GameId): GameVersion;
+  getGameVersionsRevision(): number;
+  setGameVersions(games: readonly GameId[], value: GameVersion): GameId[];
   setShareSingleplayerSettings(enabled: boolean): void;
   setReplayAutoSave(enabled: boolean): void;
   setDisclosure(name: keyof SettingsDisclosureState, open: boolean): void;
@@ -111,17 +114,37 @@ export function createGameSettingsModel({storage, onChange}: {
   const multiplayerPreferences = createMultiplayerPreferenceStore({storage});
   let snapshot: SettingsSnapshot | null = null;
   let revision = 0;
+  let gameVersionsRevision = 0;
   const disclosures: Partial<Record<'singleplayer' | 'multiplayer', SettingsDisclosureState>> = {};
   const practicePreferences = new Map<string, boolean>();
+  const notify = () => {for (const listener of listeners) listener();};
   function publish(next: Omit<SettingsSnapshot, 'revision'>, reason: SettingsChange['reason']) {
     const previous = snapshot;
+    if (previous?.gameId === next.gameId && previous.gameVersion !== next.gameVersion) gameVersionsRevision++;
     snapshot = Object.freeze({...next, options: Object.freeze({...next.options}), revision: ++revision});
-    for (const listener of listeners) listener();
+    notify();
     onChange?.({previous, current: snapshot, reason});
   }
   function required() {
     if (!snapshot) throw new Error('Settings have not been hydrated');
     return snapshot;
+  }
+  function getGameVersion(game: GameId): GameVersion {
+    if (game === 'th075') return 'original';
+    return snapshot?.gameId === game ? snapshot.gameVersion : loadGameVersion(storage, game);
+  }
+  function setGameVersions(games: readonly GameId[], value: GameVersion): GameId[] {
+    const state = required();
+    if (!GAME_VERSIONS.includes(value)) return [];
+    const changed = [...new Set(games)].filter(game => getGameVersion(game) !== value &&
+      (value !== 'beauty' || game !== 'th075' && (game !== state.gameId || state.context.beautyInstalled !== false)));
+    if (!changed.length) return changed;
+    // Save the whole batch before notifying, so the selected game's regular
+    // version-change callback observes the same preferences as the library.
+    for (const game of changed) persistGameVersion(storage, game, value);
+    if (changed.includes(state.gameId)) publish({...state, gameVersion: value}, 'game-version');
+    else {gameVersionsRevision++; notify();}
+    return changed;
   }
   function commitPreferences() {
     const state = required();
@@ -263,13 +286,11 @@ export function createGameSettingsModel({storage, onChange}: {
       publish({...state, language: value}, 'language'); commitPreferences();
     },
     setGameVersion(value: GameVersion) {
-      const state = required();
-      if (value === 'beauty' && (state.gameId === 'th075' || state.context.beautyInstalled === false)) return;
-      if (!GAME_VERSIONS.includes(value) || state.gameVersion === value) return;
-      // Persist before publishing: metadata/import readers see the same selection.
-      persistGameVersion(storage, state.gameId, value);
-      publish({...state, gameVersion: value}, 'game-version');
+      setGameVersions([required().gameId], value);
     },
+    getGameVersion,
+    getGameVersionsRevision: () => gameVersionsRevision,
+    setGameVersions,
     setDisclosure(name: keyof SettingsDisclosureState, open: boolean) {
       const state = required();
       if (state.disclosure[name] === open) return;

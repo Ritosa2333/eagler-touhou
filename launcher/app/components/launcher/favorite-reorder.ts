@@ -1,4 +1,5 @@
 import {useLayoutEffect, useRef} from 'react';
+import {microArrivalFrames, microLayoutTiming, microReorderFrames, prefersStillMotion} from '../../ui/micro-motion';
 
 const FAVORITE_REORDER_EVENT = 'lobby-favorite-reorder';
 const FILTER_REORDER_EVENT = 'lobby-filter-reorder';
@@ -19,6 +20,7 @@ export function useFavoriteReorder(selector: string, favorites: readonly string[
   const listensForFilters = filterSignature !== undefined;
   useLayoutEffect(() => {
     const capture = (filter: boolean) => {
+      if (prefersStillMotion(document.body)) return;
       positions.current = {filter, signature, selector, items: new Map(Array.from(document.querySelectorAll<HTMLElement>(selector))
         .filter(element => element.getClientRects().length > 0)
         .map(element => [element, element.getBoundingClientRect()]))};
@@ -38,15 +40,13 @@ export function useFavoriteReorder(selector: string, favorites: readonly string[
       running.get(element)?.cancel();
       const after = element.getBoundingClientRect();
       const x = before.left - after.left, y = before.top - after.top;
-      if ((!x && !y) || element.closest('.less-motion') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) continue;
-      const animation = element.animate?.([{translate: `${x}px ${y}px`}, {translate: '0px 0px'}],
-        {duration: 500, easing: 'cubic-bezier(.22, .7, .2, 1)'});
+      if ((!x && !y) || prefersStillMotion(element)) continue;
+      const animation = element.animate?.(microReorderFrames(x, y), microLayoutTiming);
       if (animation) running.set(element, animation);
     }
     if (previous.filter) for (const element of document.querySelectorAll<HTMLElement>(selector)) {
-      if (previous.items.has(element) || !element.getClientRects().length || element.closest('.less-motion') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) continue;
-      const animation = element.animate?.([{opacity: 0, translate: '0px 8px'}, {opacity: 1, translate: '0px 0px'}],
-        {duration: 500, easing: 'cubic-bezier(.22, .7, .2, 1)'});
+      if (previous.items.has(element) || !element.getClientRects().length || prefersStillMotion(element)) continue;
+      const animation = element.animate?.(microArrivalFrames, microLayoutTiming);
       if (animation) running.set(element, animation);
     }
   }, [selector, signature]);

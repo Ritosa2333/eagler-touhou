@@ -2,21 +2,14 @@
 :root {--book-rail-width:clamp(248px,24vw,296px)}
 /* Page surfaces and typography; shared colors and controls live in the UI system. */
 body:not(.mp-room-active):has(.book-masthead) {
+  min-block-size:100dvh;
   background:var(--book-bg);color:var(--book-ink);
 }
 html[data-ui-app] .library-background {display:none}
 body:not(.mp-room-active):has(.book-masthead) :is(.sheet,.book-directory) {position:relative;z-index:1;background:transparent}
 /* The same route layer serves the library, multiplayer, and profile pages. */
-.launcher-page-surface {--launcher-content-height:calc(100dvh - var(--site-header-height,44px));position:relative;width:100%;max-width:var(--launcher-layout-width);margin-inline:auto;view-transition-name:launcher-page}
+.launcher-page-surface {--launcher-content-height:calc(100dvh - var(--site-header-height,44px));position:relative;width:100%;max-width:var(--launcher-layout-width);margin-inline:auto}
 html[data-ui-home] body:not(.mp-room-active) .launcher-page-surface[data-page="library"] {max-width:none;min-block-size:var(--launcher-content-height)}
-.book-masthead {view-transition-name:launcher-masthead}
-/* Keep the real masthead clickable while the content snapshots crossfade. */
-html[data-ui-route-transition],html[data-ui-route-transition] .book-masthead,
-html[data-ui-route-transition="inline"] .launcher-page-surface {view-transition-name:none}
-html[data-ui-route-transition]::view-transition {pointer-events:none}
-::view-transition-group(launcher-masthead) {animation:none}
-::view-transition-old(launcher-masthead) {animation:none;visibility:hidden}
-::view-transition-new(launcher-masthead) {animation:none;opacity:1}
 
 /* Alias the established settings vocabulary within the Launcher panels only.
    Existing settings models, focus handling and close transitions stay intact. */
@@ -48,9 +41,6 @@ body:not(.mp-room-active) .decision-mark {color:var(--book-accent);background:va
 body:not(.mp-room-active) :is(.decision-window footer,.replay-window footer) {border-color:var(--book-border);background:var(--book-bg)}
 body:not(.mp-room-active) .game-data-link-row a {color:var(--book-accent)}
 
-/* The Replay workspace is a Launcher surface; playback keeps its native frame. */
-
-/* The title was screen-reader-only in the former cover-driven header. */
 body:not(.mp-room-active) .startup-error :is(header,footer) {border-color:var(--book-border);background:transparent}
 body:not(.mp-room-active) .startup-error :is(small,.startup-error-detail) {color:var(--book-muted)}
 @media(max-width:780px),(hover:none),(pointer:coarse) {
@@ -58,7 +48,6 @@ body:not(.mp-room-active) .startup-error :is(small,.startup-error-detail) {color
   body:not(.mp-room-active) .tools[data-options-panel] {border-radius:12px 12px 0 0;max-width:100vw;box-sizing:border-box}
 }
 
-/* Download/import progress uses the Launcher material. */
 .lobby-room-list{list-style:none;margin:0;padding:0}
 body:not(.mp-room-active) .transfer {
   --paper:var(--book-ink);--muted:var(--book-muted);--line:var(--book-border);--red:var(--book-accent);

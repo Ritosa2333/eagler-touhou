@@ -1,0 +1,43 @@
+@layer components {
+  .launch-actions {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    flex: none;
+    margin: 0;
+    padding: 8px 16px max(8px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--kit-border);
+    background: var(--kit-card);
+  }
+  .launch-actions > .launch {
+    flex: 1;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    box-shadow: none;
+    letter-spacing: 0;
+  }
+  .launch-actions > .launch-secondary { flex: 0 0 auto; }
+  .launch-actions:has(> .launch-actions-status) { flex-wrap: wrap; }
+  .launch-actions-status { order: 1; flex: 0 0 100%; grid-column: 1 / -1; min-inline-size: 0; padding-block: 4px; }
+  .launch-actions-compact { padding: 12px 0 0; border: 0; background: transparent; }
+  @media (max-width: 780px) {
+    .launch-actions { padding-inline: 16px; }
+  }
+
+  .launch-action-label { display: grid; min-inline-size: 0; font-variant-numeric:tabular-nums; }
+  .launch-action-label > span { grid-area: 1 / 1; overflow: hidden; text-overflow: ellipsis; }
+  .launch-action-label > [data-measure-label] { visibility: hidden; }
+  .launch-action-label > [data-measure-label]::before { content: attr(data-measure-label); }
+  .launch[data-action-activity="active"] {position:relative;isolation:isolate;overflow:clip;}
+  .launch .launch-action-progress {
+    --ui-progress-fill:var(--launch-meter-fill, var(--kit-success));
+    position:absolute;inset:0;z-index:-1;block-size:auto;border-radius:inherit;pointer-events:none;
+    background:var(--launch-meter-track, color-mix(in srgb, var(--kit-primary) 88%, var(--kit-primary-foreground)));
+  }
+  .launch-action-progress .ui-progress-indicator {border-radius:0;}
+  .launch-action-progress[data-state="indeterminate"] {
+    --ui-progress-fill:linear-gradient(90deg, transparent, var(--launch-meter-fill, var(--kit-success)), transparent);
+  }
+}

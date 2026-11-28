@@ -48,10 +48,7 @@ try {
         }
       }, true);
     });
-    const click = async selector => {
-      await page.waitForSelector(selector, {visible:true});
-      await page.click(selector);
-    };
+    const click = selector => page.locator(selector).click();
     const settle = () => page.$eval(surface, async node => {
       await Promise.allSettled(node.getAnimations({subtree:true}).filter(animation => animation.effect?.target.matches('.book-content, .lobby-rooms-column, .book-sidebar nav')).map(animation => animation.finished));
     });
@@ -93,8 +90,7 @@ try {
         railFades:probe.railFades.map(({page, categories}) => ({page, populated:categories > 1})),
         snapshots:probe.snapshots,
       };
-    }), {fades:['lobby','library'].map(page => ({local:true, page, duration:180})),
-      railFades:compact ? [] : ['lobby','library'].map(page => ({page, populated:true})), snapshots:0});
+    }), {fades:[{local:true,page:'lobby',duration:240},{local:true,page:'library',duration:240}], railFades:[], snapshots:0});
 
     const beforeOptions = await counts();
     const shelf = await page.$('#bookGameGrid');
@@ -127,12 +123,18 @@ try {
 
     if (!compact) {
       await page.evaluate(() => {window.navigationProbe.clickedDuringFade.length = 0;});
-      await page.addStyleTag({content:'.launcher-page-surface {--ui-surface-duration: 2s}'});
+      await page.evaluate(() => {
+        const animate = Element.prototype.animate;
+        Element.prototype.animate = function (frames, timing) {
+          const animation = animate.call(this, frames, timing);
+          if (this.matches('.book-content, .lobby-rooms-column')) animation.effect.updateTiming({duration:2000});
+          return animation;
+        };
+      });
       for (const destination of ['lobby', 'library', 'lobby']) {
         const {fades} = await counts();
         await navigate(destination);
-        await page.waitForFunction((count, page) =>
-          window.navigationProbe.fades[count]?.page === page, {}, fades, destination);
+        await page.waitForFunction(count => window.navigationProbe.fades.length === count + 1, {}, fades);
       }
       await settle();
       assert.deepEqual(await page.evaluate(() => {
@@ -140,6 +142,13 @@ try {
         return {clickedDuringFade, snapshots, opacity:getComputedStyle(surface).opacity, remaining:surface.getAnimations().length};
       }), {clickedDuringFade:['library', 'lobby'], snapshots:0, opacity:'1', remaining:0});
     }
+    await page.evaluate(() => {document.startViewTransition = undefined;});
+    const fallbackStart = await counts();
+    const next = await page.$eval(surface, node => node.dataset.page === 'lobby' ? 'library' : 'lobby');
+    await navigate(next);
+    await settle();
+    assert.deepEqual(await counts(), {...fallbackStart,fades:fallbackStart.fades + 1},
+      'browsers without View Transitions keep the live content fade');
     assert.deepEqual(errors, []);
     await page.close();
     console.log('PASS ' + width + 'px: primary navigation and local settings returns');

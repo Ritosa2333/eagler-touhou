@@ -56,8 +56,8 @@ export const ActionMenuItem = forwardRef<HTMLDivElement, ComponentPropsWithoutRe
 export const ActionMenuRadioGroup=DropdownMenu.RadioGroup;
 export const ActionMenuGroup=DropdownMenu.Group;
 export const ActionMenuLabel=DropdownMenu.Label;
-export const ActionMenuRadioItem=forwardRef<HTMLDivElement,ComponentPropsWithoutRef<typeof DropdownMenu.RadioItem>>(function ActionMenuRadioItem({children,className,...props},ref){
-  return <DropdownMenu.RadioItem {...props} ref={ref} className={cn(listPopupItemClass,className)}>{children}<DropdownMenu.ItemIndicator className={listPopupIndicatorClass}><Check className="size-4"/></DropdownMenu.ItemIndicator></DropdownMenu.RadioItem>;
+export const ActionMenuRadioItem=forwardRef<HTMLDivElement,ComponentPropsWithoutRef<typeof DropdownMenu.RadioItem>&{showIndicator?:boolean}>(function ActionMenuRadioItem({children,className,showIndicator=true,...props},ref){
+  return <DropdownMenu.RadioItem {...props} ref={ref} className={cn(listPopupItemClass,className)}>{children}{showIndicator&&<DropdownMenu.ItemIndicator className={listPopupIndicatorClass}><Check className="size-4"/></DropdownMenu.ItemIndicator>}</DropdownMenu.RadioItem>;
 });
 export const ActionMenuCheckboxItem=forwardRef<HTMLDivElement,ComponentPropsWithoutRef<typeof DropdownMenu.CheckboxItem>&{showIndicator?:boolean}>(function ActionMenuCheckboxItem({children,className,showIndicator=true,...props},ref){
   return <DropdownMenu.CheckboxItem {...props} ref={ref} className={cn(listPopupItemClass,className)}>{children}{showIndicator&&<DropdownMenu.ItemIndicator className={listPopupIndicatorClass}><Check className="size-4"/></DropdownMenu.ItemIndicator>}</DropdownMenu.CheckboxItem>;

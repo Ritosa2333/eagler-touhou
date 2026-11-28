@@ -147,6 +147,7 @@ export async function installPublishedPackage(game, {
   expectedGenerationId = null,
   fetchImpl = globalThis.fetch,
   onProgress = null,
+  onTotals,
   signal = null,
   validatePublication,
 } = {}) {
@@ -183,13 +184,14 @@ export async function installPublishedPackage(game, {
     source: currentResult => preserveLocalSource && currentResult.installation?.source === "local" ? "local" : "remote",
     fetchImpl,
     onProgress,
+    onTotals,
     signal,
   });
   return { ...published, ...installed };
 }
 
 export async function repairInstalledPackage({generation, installation}, {
-  getPublication, fetchImpl = globalThis.fetch, signal, onProgress,
+  getPublication, fetchImpl = globalThis.fetch, signal, onProgress, onTotals,
 }) {
   const {descriptor} = generation;
   const ids = unique([...descriptor.base.files, ...Object.keys(generation.files)
@@ -211,6 +213,7 @@ export async function repairInstalledPackage({generation, installation}, {
     reuseCurrent: true,
     signal,
     onProgress,
+    onTotals,
     acquire: async (id, file) => {
       if (!published) {
         const {catalog, catalogUrl} = await getPublication();

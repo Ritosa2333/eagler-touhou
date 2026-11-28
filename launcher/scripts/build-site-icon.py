@@ -1,7 +1,9 @@
 """Build site icon derivatives and the standalone brand initializer."""
 
+from io import BytesIO
 from pathlib import Path
 import re
+import subprocess
 from PIL import Image
 
 
@@ -18,10 +20,12 @@ def main() -> None:
             raise ValueError(f"Expected one wordmark palette in {path.name}")
         if updated != source:
             path.write_text(updated, encoding="utf-8", newline="\n")
-    image = Image.open(root / "public/assets/brand/portrait.png").convert("RGBA")
-    image.resize((256, 256), Image.Resampling.LANCZOS).save(root / "public/assets/favicon.png")
-    image.save(root / "favicon.ico", format="ICO", sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])
-    image.save(root / "docs/assets/eagler-touhou-icon.png")
+    rendered = subprocess.check_output(["node", str(root / "scripts/render-site-favicon.mjs")])
+    favicon = Image.open(BytesIO(rendered)).convert("RGBA")
+    favicon.resize((256, 256), Image.Resampling.LANCZOS).save(root / "public/assets/favicon.png")
+    favicon.save(root / "favicon.ico", format="ICO", sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])
+    portrait = Image.open(root / "public/assets/brand/portrait.png").convert("RGBA")
+    portrait.save(root / "docs/assets/eagler-touhou-icon.png")
     (root / "docs/assets/eagler-touhou-wordmark.svg").write_bytes((root / "public/assets/brand/face-F02B.svg").read_bytes())
 
 

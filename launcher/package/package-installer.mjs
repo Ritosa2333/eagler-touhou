@@ -119,6 +119,7 @@ async function installPackageFromAcquisitionExclusive({
   reuseCurrent = source === "remote",
   expectedGenerationId,
   onProgress = null,
+  onTotals,
   signal = null,
 }, webLockHeld = false) {
   const gameVersion = descriptorGameVersion(descriptor);
@@ -165,6 +166,19 @@ async function installPackageFromAcquisitionExclusive({
   let generation = plan.generation;
   let completed = resolvedDesiredFileIds.length - plan.needs.length;
   try {
+    const sizes = onTotals && resolvedDesiredFileIds.map(id => descriptor.files[id].bytes);
+    const totalBytes = sizes && sizes.every(size => Number.isSafeInteger(size) && size >= 0)
+      ? sizes.reduce((sum, size) => sum + size, 0) : null;
+    let completedBytes = totalBytes === null ? 0 : totalBytes - plan.needs.reduce((sum, id) => sum + descriptor.files[id].bytes, 0);
+    function reportTotals() {
+      onTotals?.({completed, total: resolvedDesiredFileIds.length, completedBytes, totalBytes});
+    }
+    function markCompleted(fileId) {
+      completed++;
+      if (totalBytes !== null) completedBytes += descriptor.files[fileId].bytes;
+      reportTotals();
+    }
+    reportTotals();
     for (const fileId of plan.needs) {
       throwIfAborted(signal);
       const declaration = descriptor.files[fileId];
@@ -179,7 +193,7 @@ async function installPackageFromAcquisitionExclusive({
           verified.objectId,
           { ...storeOptions, operationId: owner },
         );
-        completed++;
+        markCompleted(fileId);
         onProgress?.({ completed, total: resolvedDesiredFileIds.length, fileId, found: true, reused: true });
         continue;
       }
@@ -216,7 +230,7 @@ async function installPackageFromAcquisitionExclusive({
         // update transaction and must be acquired before current may switch.
         throw new Error(`${fileId}: desired Package file is unavailable`);
       }
-      completed++;
+      markCompleted(fileId);
       onProgress?.({ completed, total: resolvedDesiredFileIds.length, fileId, found: acquiredBytes >= 0 });
       throwIfAborted(signal);
     }
@@ -284,6 +298,7 @@ export async function installPackageFromRemote(descriptor, {
   source = "remote",
   fetchImpl = globalThis.fetch,
   onProgress = null,
+  onTotals,
   signal = null,
   expectedGenerationId,
 } = {}) {
@@ -311,5 +326,6 @@ export async function installPackageFromRemote(descriptor, {
       }
     },
     onProgress,
+    onTotals,
   });
 }

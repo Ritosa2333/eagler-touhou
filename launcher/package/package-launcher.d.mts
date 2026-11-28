@@ -5,7 +5,7 @@ import type {
   PackageDescriptor,
   PackageInstallation,
 } from "../src/contracts/package-read-models.mjs";
-import type { PackageInstallProgress } from "./package-installer.mjs";
+import type { PackageInstallProgress, PackageInstallTotalsListener } from "./package-installer.mjs";
 
 export type { PackageInstallProgress } from "./package-installer.mjs";
 
@@ -26,6 +26,7 @@ export interface InstallPublishedPackageOptions extends Omit<PublishedPackageFil
   validatePublication?: (descriptor: PackageDescriptor) => void;
   fetchImpl?: typeof fetch;
   onProgress?: ((progress: PackageInstallProgress) => void) | null;
+  onTotals?: PackageInstallTotalsListener;
   signal?: AbortSignal | null;
 }
 
@@ -73,4 +74,5 @@ export function repairInstalledPackage(installed: CurrentPackageGeneration, opti
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
   onProgress?: (progress: PackageInstallProgress) => void;
+  onTotals?: PackageInstallTotalsListener;
 }): Promise<InstalledPackageGeneration>;

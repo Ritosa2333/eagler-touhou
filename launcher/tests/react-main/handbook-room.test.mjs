@@ -11,9 +11,10 @@ let env, React, createRoot, RoomExample, work, root, handbook, moveHistory;
 const act = async fn => React.act(async () => {await fn?.(); for (let i = 0; i < 12; i++) await Promise.resolve();});
 const n = selector => {const node = env.document.querySelector(selector); assert.ok(node, selector); return node;};
 const button = text => [...env.document.querySelectorAll('button')].find(node => node.textContent === text);
+const quickChat = '#mpRoomChat button[aria-keyshortcuts="Alt"]';
 beforeAll(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client'));
-  work = await mkdtemp(resolve('.cache/handbook-room-'));
+  work = await mkdtemp(resolve(process.env.EAGLER_TEST_OUTPUT_DIR || '.', '.cache/handbook-room-'));
   // Canvas pixels belong to the browser gate; mounted tests inspect ownership and navigation.
   const context=new Proxy({measureText:text=>({width:String(text).length*7})},{get:(target,key)=>target[key]??(()=>{})});
   env.window.HTMLCanvasElement.prototype.getContext=()=>context;
@@ -59,8 +60,8 @@ test('room handbook uses production seat states and local member transfer action
 
 test('quick chat posts to the local log and keeps a real SVG menu trigger', async () => {
   await mount();
-  const trigger = n('.room-quick-chat-trigger'); assert.ok(trigger.querySelector('svg.lucide-chevron-up'));
-  await open('.room-quick-chat-trigger');
+  const trigger = n(quickChat); assert.ok(trigger.querySelector('svg.lucide-chevron-up, svg.lucide-zap'));
+  await open(quickChat);
   await choose('[role=menuitem]');
   assert.equal(n('.mp-room-chat-log').children.length, 1);
   await act(() => button('重置房间示例').click());
@@ -89,7 +90,7 @@ test('room examples share role permissions, phase and readiness across all seven
   assert.equal(n('#mpRoomVisibility').disabled,true);
   await act(()=>button('观战').click());
   assert.equal(n('#page-room-session .mp-ready-button').disabled,true);
-  assert.equal(n('.room-quick-chat-trigger').disabled,false);
+  assert.equal(n(quickChat).disabled,false);
   await act(()=>button('房主').click());
   await act(()=>button('已准备').click());
   await act(()=>button('准备').click());

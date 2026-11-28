@@ -6,8 +6,8 @@ import { AccountAvatar } from '../components/launcher/AccountAvatar';
 import { PlayerAvatarCard } from '../components/launcher/PlayerProfileCard';
 import { BookThemeToggle } from '../components/launcher/BookThemeToggle';
 import { MainSelect, MainSelectPrefix } from '../components/launcher/MainSelect';
-import { Th09CharacterPortrait } from '../components/launcher/Th09CharacterPortrait';
-import th09Artwork from '../components/launcher/book-covers/th09.webp?url';
+import { RatingGamePicker } from '../components/launcher/RatingGamePicker';
+import { Th09CharacterAvatar } from '../components/launcher/Th09CharacterPortrait';
 import { useLocale, type UiMessageKey } from '../i18n';
 import { sitePageTitle } from '../navigation/document-locale';
 import {accountsEnabled} from '../release-features';
@@ -68,6 +68,7 @@ type Column = {
   title: UiMessageKey | '#';
   compact?: boolean;
   numeric?: boolean;
+  sortable?: false;
   value(row: RankedEntry): number | string;
   render?(row: RankedEntry): ReactNode;
 };
@@ -91,6 +92,10 @@ function useRatingColumns(characterBoard: boolean): Column[] {
     ...scoreColumns,
     { key: 'games', title: 'th09.boardGames', numeric: true, value: boardGames },
     { key: 'winRate', title: 'th09.winRate', numeric: true, value: winRate, render: row => percentages.format(winRate(row)) },
+    ...(!characterBoard ? [{
+      key: 'main-characters', title: 'th09.boardMainCharacter', sortable: false,
+      value: () => '', render: row => <MostPlayedCharacters row={row} />,
+    } satisfies Column] : []),
     { key: 'community', title: 'th09.boardGroup', value: row => row.connected_group,
       render: row => t('th09.boardGroupNumber', {number: row.connected_group}) },
     { key: 'last', title: 'th09.boardLastGame', numeric: true, value: row => row.last_at,
@@ -259,12 +264,13 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
   return <div className="rating-layout" data-character-board={characterBoard || undefined}>
     <div className="rating-heading">
       <div className="rating-heading-title">
-        <h1><img className="rating-heading-icon" src={th09Artwork} width={36} height={36} alt={boardTitle} /></h1>
+        <h1>{boardTitle}</h1>
         {characterBoard ? <FieldHelp id="character-rating-help" label={t('th09.boardCharacterHelp')}>
           {t('th09.boardCharacterHelpText')}
         </FieldHelp> : <FieldHelp id="rating-explanation" label={t('th09.boardHelp')}>
           {t('th09.boardHelpText')}
         </FieldHelp>}
+        <RatingGamePicker current="th09" />
       </div>
       <Button className="rating-distribution-trigger" variant="ghost" size="sm"
         aria-expanded={distributionOpen} aria-controls="rating-overview" disabled={!rows}
@@ -277,7 +283,7 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
     </aside>
     <fieldset className="rating-tools" aria-label={t('th09.boardTools')}>
       <div className="rating-character-select">
-        <MainSelectPrefix prefix={<RatingCharacterThumbnail character={character} />}>
+        <MainSelectPrefix prefix={<RatingBoardIcon character={character} />}>
           <MainSelect id="rating-board-scope" aria-label={t('th09.boardSelect')} value={scope} onChange={event => {
             const value = event.currentTarget.value;
             setContextScope(null);
@@ -285,7 +291,7 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
             setExpanded(null);
             onCharacterChange(value === 'overall' ? undefined : Number(value));
           }} renderOption={({value, label}) => <span className="rating-character-option">
-            <RatingCharacterThumbnail character={value === 'overall' ? undefined : Number(value)} />
+            <RatingBoardIcon character={value === 'overall' ? undefined : Number(value)} />
             <span>{label}</span>
           </span>}>
             <option value="overall">{t('th09.boardOverall')}</option>
@@ -339,12 +345,12 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
         <thead><tr>{columns.map(item => <th key={item.key} scope="col" data-column={item.key}
           data-compact={item.compact || undefined} data-numeric={item.numeric || undefined}
           aria-sort={item.key === sort.key ? sort.direction === 1 ? 'ascending' : 'descending' : undefined}>
-          <Button variant="ghost" size="sm" className="rating-sort" onClick={() => sortBy(item)}>
+          {item.sortable === false ? <span className="rating-column-label">{columnTitle(item)}</span> : <Button variant="ghost" size="sm" className="rating-sort" onClick={() => sortBy(item)}>
             {columnTitle(item)}{sortDirection(item)}
-          </Button>
+          </Button>}
         </th>)}<th className="rating-mobile-cell" scope="col">
           <ActionMenu label={t('th09.boardSort')} trigger={<Button variant="ghost" size="icon" aria-label={t('th09.boardSort')}><ArrowDownUp aria-hidden="true" /></Button>}>
-            {columns.map(item => <ActionMenuItem key={item.key} onSelect={() => sortBy(item)}>
+            {columns.filter(item => item.sortable !== false).map(item => <ActionMenuItem key={item.key} onSelect={() => sortBy(item)}>
               {item.key === 'position' ? t('th09.rank') : columnTitle(item)}{sortDirection(item)}
             </ActionMenuItem>)}
           </ActionMenu>
@@ -361,7 +367,9 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
               tabIndex={located === row.player ? -1 : undefined}>
               {columns.map(item => item.key === 'player'
                 ? <th key={item.key} scope="row" data-compact="true" title={t('th09.boardOpponentsCount', {count: numbers.format(row.opponents)})}>
-                    <PlayerIdentity row={row} /><span className="sr-only"> {t('th09.boardOpponentsCount', {count: numbers.format(row.opponents)})}</span>
+                    <PlayerIdentity row={row} />
+                    {!characterBoard && <MostPlayedCharacters row={row} compact />}
+                    <span className="sr-only"> {t('th09.boardOpponentsCount', {count: numbers.format(row.opponents)})}</span>
                   </th>
                 : <td key={item.key} data-column={item.key} data-compact={item.compact || undefined}
                     data-numeric={item.numeric || undefined}>{renderRatingCell(item, row)}</td>)}
@@ -392,9 +400,34 @@ function RatingBoard({rows, updatedAt, character, onCharacterChange, failed, ret
   </div>;
 }
 
-function RatingCharacterThumbnail({character}: {character?: number}) {
-  return <span className="rating-character-thumbnail" aria-hidden="true">
-    {character === undefined ? <ListOrdered /> : <Th09CharacterPortrait character={character} />}
+function RatingBoardIcon({character}: {character?: number}) {
+  return <span className="rating-board-icon" aria-hidden="true">
+    {character === undefined ? <ListOrdered /> : <Th09CharacterAvatar character={character} />}
+  </span>;
+}
+
+function MostPlayedCharacters({row, compact = false}: {row: Entry; compact?: boolean}) {
+  const {locale, t} = useLocale();
+  // Match the profile card's privacy rule: hidden versus data omits character ratings.
+  const characters = row.character_ratings?.length ? row.top_characters : undefined;
+  if (!characters?.length) return compact ? null : <span className="rating-main-characters-empty">—</span>;
+  const numbers = new Intl.NumberFormat(locale);
+  return <span className={compact ? 'rating-main-characters rating-main-characters-compact' : 'rating-main-characters'}>
+    {compact && <span className="sr-only">{t('th09.boardMainCharacter')}: </span>}
+    {characters.map(({character, games}) => {
+      const score = row.character_ratings?.find(item => item.character === character);
+      const uses = numbers.format(games);
+      const rating = score ? numbers.format(score.rating) : '—';
+      const label = `${th09CharacterName(character, t)} · ${t('th09.characterRating')}: ${rating} · ${t('th09.characterGames', {count: uses})}`;
+      return <span key={character} data-character={character} title={label}>
+        <Th09CharacterAvatar character={character} />
+        {!compact && <span className="rating-character-metrics" aria-hidden="true">
+          <strong className="rating-character-value">{rating}</strong>
+          <small className="rating-character-uses">({uses})</small>
+        </span>}
+        <span className="sr-only">{label}. </span>
+      </span>;
+    })}
   </span>;
 }
 

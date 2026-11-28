@@ -13,6 +13,15 @@ export interface PackageInstallProgress {
   found: boolean;
 }
 
+export interface PackageInstallTotals {
+  completed: number;
+  total: number;
+  completedBytes: number;
+  totalBytes: number | null;
+}
+
+export type PackageInstallTotalsListener = (totals: PackageInstallTotals) => void;
+
 export function installPackageFromAcquisition(options: {
   descriptor: PackageDescriptor;
   desiredFileIds: readonly string[];
@@ -22,6 +31,7 @@ export function installPackageFromAcquisition(options: {
   expectedGenerationId?: string | null;
   signal?: AbortSignal | null;
   onProgress?: ((progress: PackageInstallProgress) => void) | null;
+  onTotals?: PackageInstallTotalsListener;
 }): Promise<InstalledPackageResult>;
 
 export function installParsedPackageZip(
@@ -36,5 +46,6 @@ export function installPackageFromRemote(descriptor: PackageDescriptor, options:
   source?: "local" | "remote" | ((current: CurrentPackageGeneration) => "local" | "remote");
   fetchImpl?: typeof fetch;
   onProgress?: ((progress: PackageInstallProgress) => void) | null;
+  onTotals?: PackageInstallTotalsListener;
   signal?: AbortSignal | null;
 }): Promise<InstalledPackageResult>;

@@ -1,4 +1,4 @@
-import {bookGameKind, isPc98Product, type LibraryProduct} from './products';
+import {bookWorkCategories, type BookWorkCategory, type LibraryProduct} from './products';
 
 export const BOOK_PREFERENCES_EVENT = 'eagler-book-preferences';
 const prefix = 'eagler.book.';
@@ -46,14 +46,7 @@ export function bookLastPlayed(productId: string) {
   return readBookPreference('last-played', {}, lastPlayedDates)[productId];
 }
 
-export type BookCategory = 'all' | 'favorites' | 'pc98' | 'windows' | 'versus' | 'fighting' | 'spin-off' | 'doujin';
-export function bookCategory(product: LibraryProduct): BookCategory {
-  if (product.gameId === 'hsob' || /^th[a-z]/i.test(product.id)) return 'doujin';
-  if (isPc98Product(product)) return 'pc98';
-  const kind = bookGameKind(product.gameId);
-  if (kind !== 'original') return kind;
-  return Number.isInteger(Number(product.number)) ? 'windows' : 'spin-off';
-}
+export type BookCategory = 'all' | 'favorites' | BookWorkCategory;
 
 function compareBookNumbers(a: LibraryProduct, b: LibraryProduct, reverse: boolean) {
   const numeric = (product: LibraryProduct) => /^th\d+(?:\.\d+)?$/i.test(product.id) && /^\d+(?:\.\d+)?$/.test(product.number);
@@ -69,7 +62,7 @@ export function matchesBookQuery(product: LibraryProduct, query: string) {
 }
 export function filterBookProducts(products: readonly LibraryProduct[], category: BookCategory, favorites: readonly string[], query: string, sort: string) {
   return products.filter(product => !product.hidden && !product.multiplayer)
-    .filter(product => category === 'all' || (category === 'favorites' ? favorites.includes(product.id) : bookCategory(product) === category))
+    .filter(product => category === 'all' || (category === 'favorites' ? favorites.includes(product.id) : bookWorkCategories(product).includes(category)))
     .filter(product => matchesBookQuery(product, query))
     .sort((a, b) =>
       (category === 'all' ? Number(favorites.includes(b.id)) - Number(favorites.includes(a.id)) : 0) ||

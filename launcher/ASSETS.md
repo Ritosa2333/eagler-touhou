@@ -18,7 +18,7 @@ PWA 图标 `pwa/icon-192.png`、`icon-512.png`、`icon-maskable-512.png` 和 `ap
 
 站点界面使用自行托管的 Yatra One 拉丁子集和 ChillRoundGothic 界面子集：Medium 用于正文，Bold 用于标题，Heavy 用于两张主卡片标题。子集构建脚本为 `scripts/build-site-ui-fonts.mjs`；上游版本与 OFL 声明记在该脚本及生成字体旁。GNU Unifont 作为缺字时的最后回退字体。完整日文字体与 Runtime 游戏字体由本地 Host 输入或 Runtime 包提供。
 
-浏览器图标、README 标识和安装图标均从同一套徽标资源派生，默认图标使用莉莉白。`scripts/build-site-icon.py` 更新浏览器图标与文档预览。Host 将其复制为 `assets/favicon.ico`，并生成安装图标；运营者也可提供自定义 favicon。
+浏览器标签页图标来自项目提供的[莉莉白 SVG](scripts/assets/lily-white-favicon.svg)。`scripts/build-site-icon.py` 使用 Chromium 渲染 SVG，生成多尺寸 ICO 和 PNG；Host 将 ICO 发布为 `assets/favicon.ico`，运营者可提供自定义 favicon。README 标识和安装图标沿用站点徽标资源。
 
 游戏来源说明使用本地 Bilibili 和 GitHub SVG，来自 `@iconify-json/fa7-brands@1.2.4`（Font Awesome Brands 7.3.1）。
 

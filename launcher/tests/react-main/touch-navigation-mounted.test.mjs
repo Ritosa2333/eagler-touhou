@@ -185,8 +185,7 @@ async function openOptions(productId) {
 }
 async function openEditor() {
   const mp = mounted.host.settings.getSnapshot().multiplayer;
-  const disclosure = mp ? '#mpMobileOptionsToggle' : '#mobileOptionsToggle';
-  if (node(disclosure).getAttribute('aria-expanded') !== 'true') await click(disclosure);
+  if (mp && node('#mpMobileOptionsToggle').getAttribute('aria-expanded') !== 'true') await click('#mpMobileOptionsToggle');
   const parentUrl = url();
   await click(mp ? '#mpTouchLayoutEdit' : '#touchLayoutEdit');
   await until(hasEditor, 'actual touch editor and real draft have opened');
@@ -250,7 +249,7 @@ for (const {context, entry, product} of [
   test(`synthetic mounted ${context}: same-act double touch activation creates one child layer`, async () => {
     await mountEntry([entry]); await openOptions(product);
     const mp = mounted.host.settings.getSnapshot().multiplayer;
-    await click(mp ? '#mpMobileOptionsToggle' : '#mobileOptionsToggle');
+    if (mp) await click('#mpMobileOptionsToggle');
     const optionsUrl = url();
     await React.act(async () => {const edit = node(mp ? '#mpTouchLayoutEdit' : '#touchLayoutEdit'); edit.click(); edit.click();});
     await until(hasEditor, 'actual repeated touch action opens the editor');

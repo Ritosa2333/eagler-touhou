@@ -4,11 +4,12 @@ import {lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, u
 import {createPortal} from 'react-dom';
 import {useLocation} from 'react-router';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS, type ProductId} from '../src/contracts/product-catalog.mts';
+import {descriptorGameVersion} from '../package/game-version.mjs';
 import {multiplayerGuidePath} from '../lib/multiplayer-guide.mjs';
 import {buildMultiplayerDiagnosticRelayUrl} from '../src/launcher/multiplayer-relay-url.mts';
 import {generateMultiplayerRoomCode} from '../src/launcher/multiplayer-identity.mts';
 import {readReactAppShellDeployment} from './services/app-shell-deployment';
-import {requiresLocalGameData} from './services/metadata';
+import {canInstallGameData, hasBundledGameData, requiresLocalGameData} from './services/metadata';
 import {siteOriginMigrationAvailable} from '../src/contracts/site-manifest.mts';
 import {LauncherApplication, type LauncherHost} from './LauncherApplication';
 import {createBrowserSession, type BrowserSession, type BrowserSessionSnapshot} from './session/browser-session';
@@ -16,12 +17,16 @@ import {useStoreSelector, shallowEqual} from './shared/react-store';
 import {RoomComposition} from './session/RoomComposition';
 import {RoomSettingsDrawer, MultiplayerSettingsControls, MultiplayerDiagnostics, MultiplayerOnlineFold} from './components/room';
 import {LauncherMasthead, MainSelect, createLibraryProducts} from './components/launcher';
+import type {LibraryProduct} from './components/launcher/products';
 import {LobbyDirectoryView} from './components/directory/LobbyDirectoryView';
 import {NetworkDiagnosticsDialog, type NetworkDiagnosticsHandle} from './components/directory/NetworkDiagnosticsDialog';
 import {DirectoryRoomDialog} from './components/directory/DirectoryRoomDialog';
 import {FirstUseNotice, DonationDialog, AppleRefreshDialog,
   type FirstUseNoticeHandle} from './components/notices';
 import {GameDataImportWindows} from './components/player/GameDataImportWindows';
+import {LoadingActivity} from './ui/loading-activity';
+import {GameInstallPage, GameInstallShortcut, GameInstallSidebarProgress} from './components/launcher/GameInstallProgress';
+import {BeautyPackManager} from './components/launcher/BeautyPackManager';
 import {MultiplayerQuickChat} from './components/player/MultiplayerQuickChat';
 import {PlayerControls} from './components/player/PlayerControls';
 import {FullscreenTransient} from './components/FullscreenTransient';
@@ -31,6 +36,7 @@ import {Feedback} from './components/feedback/Feedback';
 import {useSurfaceNavigation} from './navigation/surface-navigation';
 import {isLauncherHomePath, launcherBaseUrl, routerDestination} from './navigation/addresses';
 import {useLocale} from './i18n';
+import {gameDownloadProgress} from './models/game-downloads';
 import {recordBookLaunch} from './components/launcher/book-preferences';
 import {testFeaturesEnabled, reloadTestFeatures} from '../src/launcher/test-features.mts';
 import type {LobbySurfaceProps} from './components/launcher/LobbySurface';
@@ -88,6 +94,10 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const host: LauncherHost = {
     desktopLibraryDetails: true,
     librarySearchTarget,
+    installsPage: <GameInstallPage downloads={session.downloads} assetUrl={assetUrl}>
+      <SessionBeautyPacks session={session} products={products}/>
+    </GameInstallPage>,
+    installProgress: <GameInstallSidebarProgress downloads={session.downloads}/>,
     locale: state.locale, lessMotion, products, catalogProducts, productAvailable: session.productAvailable, onProductSelected: session.reportProductSelection, onRouteSelection: session.selectRouteProduct, settings: session.settings, preferences: session.preferences, touchLayout: session.touchLayout,
     settingsContext: session.settingsContext, settingsActions: session.settingsActions, decisions: session.decisions, readLocalSaves:session.readLocalSaves, cloudSync:session.cloudSync,
     watchTh09Replay: session.accessTh09MatchReplay,
@@ -267,16 +277,59 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
     onReplay={() => {void session.openReplayViewer(directory.selectedProduct || directory.products[0] || 'th06mp').catch(session.reportError);}}
     onOpenForm={mode => {if (session.directory.prepareForm(mode)) navigation.openDirectoryForm(mode);}}/>;
 }
+function SessionBeautyPacks({session, products}: {session: BrowserSession; products: readonly LibraryProduct[]}) {
+  const installed = useStoreSelector(session.metadata, value => value.beautyInstalled);
+  const settings = session.settings;
+  useSyncExternalStore(settings.subscribe, settings.getGameVersionsRevision, settings.getGameVersionsRevision);
+  const works = products.filter(product => !product.multiplayer && !product.hidden &&
+    product.gameId !== 'th075' && installed.has(product.gameId));
+  return <BeautyPackManager works={works.map(work => ({...work, version: settings.getGameVersion(work.gameId)}))}
+    onSetVersions={(games, version) => {
+      const selected = settings.getSnapshot()?.gameId;
+      const changed = settings.setGameVersions(games.filter(game => installed.has(game)), version);
+      for (const game of changed) if (game !== selected) void session.metadata.refreshInstalled(game);
+    }}/>;
+}
+
 function SessionLaunchActions({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation(), {t} = useLocale();
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
-  if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
-  const importRequired = requiresLocalGameData(metadata, settings.gameId) && !metadata.installed.has(settings.gameId);
-  return <LaunchActions primary={{id: 'launch', textId: 'launchText',
-    label: t(importRequired ? 'action.importGameData' : 'action.start'),
-    onClick: () => {if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);}}}
-    secondary={{id: 'gamePackageImport', label: t('action.import'), onClick: () => navigation.openInfoDialog('gameDataImportDialog')}}/>;
+  const preview = session.installPreview;
+  const job = settings && {game: settings.gameId, version: settings.gameVersion};
+  const task = useStoreSelector(session.downloads, value => {
+    if (value.active && value.active.game === job?.game) return {state: 'active' as const, percent: gameDownloadProgress(value).percent, simulated: false};
+    return {state: value.pending.some(item => item.game === job?.game) ? 'queued' as const : null, percent: null,
+      simulated: !!(job && preview?.installed(job))};
+  }, shallowEqual);
+  const checking = useStoreSelector(session, value => value.soloResourceCheck === settings?.gameId);
+  if (!job || settings.multiplayer || navigation.context === 'lobby') return null;
+  const installed = metadata.installed.get(settings.gameId);
+  const ready = preview ? task.simulated : settings.gameVersion === 'beauty' ? metadata.beautyInstalled.has(settings.gameId)
+    : (!!installed && descriptorGameVersion(installed.descriptor) === 'original') || hasBundledGameData(metadata, settings.gameId);
+  const downloadable = canInstallGameData(metadata, settings.gameId);
+  const labels = {
+    active: t('downloadTasks.downloading'), queued: t('downloadTasks.queued'),
+    start: t('action.start'), install: t('downloadTasks.acquire'),
+  };
+  const label = labels[task.state ?? (ready ? 'start' : 'install')];
+  return <LaunchActions primaryStateLabels={[...Object.values(labels), `${labels.active} 100%`]}
+    loading={checking && <LoadingActivity assetUrl={path => new URL(path, session.baseUrl).href}
+      status={t('player.loading')} context="solo" compact/>} primary={{id: 'launch', textId: 'launchText',
+    label: task.percent === null ? label : `${label} ${task.percent}%`,
+    icon: task.state === 'queued' ? 'clock' : !ready || task.state ? 'download' : undefined,
+    activity: task.state ? {state: task.state, value: task.percent} : undefined,
+    disabled: preview ? ready || !!task.state : (metadata.phase !== 'ready' && !ready) || !!task.state,
+    onClick: () => {
+      if (preview) session.downloads.enqueue(job);
+      else if (ready) {
+        if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);
+      } else if (downloadable) session.downloads.enqueue(job);
+      else if (requiresLocalGameData(metadata, settings.gameId)) session.gameData.beginImportRequired();
+      else navigation.openInfoDialog('gameDataImportDialog');
+    }}}
+    secondary={preview && ready ? {id: 'installPreviewAgain', label: t('downloadTasks.previewAgain'), icon: 'repeat', onClick: () => session.downloads.enqueue(job)}
+      : {id: 'gamePackageImport', label: t('action.import'), onClick: () => navigation.openInfoDialog('gameDataImportDialog')}}/>;
 }
 function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, network, onNetworkRunning}: {
   session: BrowserSession; firstUse: React.RefObject<FirstUseNoticeHandle | null>;
@@ -315,8 +368,8 @@ function SessionOverlays({session, firstUse, assetUrl, onDonationUnavailable, ne
   useEffect(() => {void session.restoreRoomFromUrl(new URL(location.pathname+location.search+location.hash,session.baseUrl).href).catch(session.reportError);}, [session, location.pathname, location.search, location.hash]);
   useLayoutEffect(() => session.settleRoomReturnPresentation(navigation.surface, navigation.productId), [session, navigation.surface, navigation.productId]);
   useLayoutEffect(() => {if (navigation.directoryFormMode) session.directory.restoreFormMode(navigation.directoryFormMode);}, [session, navigation.directoryFormMode]);
-  return <><input id="fileInput" type="file" hidden/><FullscreenTransient><ServerStatusNote session={session}/><Feedback model={session.feedback}/><StartupError model={session.startupError}/>
-    <GameDataImportWindows model={session.gameData} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}
+  return <><input id="fileInput" type="file" hidden/>{!playerOpen && <GameInstallShortcut downloads={session.downloads} assetUrl={assetUrl}/>}<FullscreenTransient><ServerStatusNote session={session}/><Feedback model={session.feedback}/><StartupError model={session.startupError}/>
+    <GameDataImportWindows model={session.gameData} assetUrl={assetUrl} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}
       manualOpen={navigation.infoDialogOpen('gameDataImportDialog')} onManualClose={() => navigation.closeInfoDialog('gameDataImportDialog')}/></FullscreenTransient>
     {navigation.context === 'lobby' && <NetworkDiagnosticsDialog model={session.networkDiagnostics} ref={network} open={navigation.infoDialogOpen('lobbyNetworkDialog')} onCloseRequest={() => navigation.closeInfoDialog('lobbyNetworkDialog')}
       getRelayUrl={() => {const relay = session.directory.getSnapshot().siteManifest?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';}} onRunningChange={onNetworkRunning}/>}

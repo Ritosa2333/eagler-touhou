@@ -89,8 +89,26 @@ async function stableInputPanel(before){
   const after=await inputPanelOrigin();
   for(const axis of ['x','y'])assert.ok(Math.abs(after[axis]-before[axis])<=.5,'input panel moved on '+axis);
 }
+async function assertBookToolbar(){
+  await page.waitForSelector('.book-sort', {visible:true});
+  const result=await page.$eval('.book-tools',toolbar=>{
+    const narrow=innerWidth<=780;
+    const visible=[...toolbar.children].filter(element=>element.getClientRects().length);
+    return {narrow, height:narrow||matchMedia('(pointer: coarse)').matches?44:36,
+      fits:toolbar.scrollWidth<=toolbar.clientWidth+1,
+      controls:visible.map(element=>{
+        const {height,y}=element.getBoundingClientRect(),css=getComputedStyle(element);
+        return {height,y,background:css.backgroundColor,border:css.borderColor,radius:css.borderRadius,font:css.font};
+      })};
+  });
+  assert.equal(result.fits,true,'book toolbar stays in one row');
+  assert.equal(result.controls.length,2,'the toolbar only contains the view and sort controls');
+  assert.equal(result.controls[0].height,result.height);
+  assert.deepEqual(result.controls, Array(2).fill(result.controls[0]), 'book toolbar uses shared alignment and styling');
+}
 async function application(){
   await go('/');await page.waitForSelector('#mastheadMenuToggle:not(:disabled)');await page.waitForSelector('#eaglerPreload',{hidden:true});await closeNotice();
+  await assertBookToolbar();
   await assertNavigationTypeface();
   await click('[data-book-view=covers]');await shot('home');
   for(const label of ['编号倒序','按作品名称','按作品编号']){
@@ -110,7 +128,6 @@ async function application(){
   await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
   await click('.book-game-link[href*="game=th06"]');await page.waitForSelector('.tools.is-open',{visible:true});await shot('game-detail');
   await click('#gameSettingsOpen');await page.waitForSelector('.game-settings-page',{visible:true});await shot('options');
-  await click('.input-settings-heading[aria-expanded="false"]');
   for(const [name,module]of [['键盘改键','keyboard'],['手柄改键','gamepad']]){
     await page.$eval('.input-settings-entries',element=>element.scrollIntoView({block:'nearest',behavior:'instant'}));
     const before=await page.evaluate(readUiLayout);
@@ -140,8 +157,8 @@ async function application(){
     for(const property of ['x','y','width','height'])assert.ok(Math.abs(afterClose[property]-beforeClose[property])<=.5,'rotated input close shifted options '+property);
     await shot('keyboard-rotation-close');
   } finally {view=originalView;await page.setViewport(originalViewport);}
-  const advanced=await page.$('#advancedOptions [aria-expanded]');if(await advanced.evaluate(e=>e.getAttribute('aria-expanded'))!=='true')await advanced.click();await shot('advanced');
-  if(await page.$eval('#mobileOptionsToggle',e=>e.getAttribute('aria-expanded'))!=='true')await click('#mobileOptionsToggle');
+  await page.$eval('#advancedOptions .options-group-title', element => element.scrollIntoView({block:'nearest',behavior:'instant'}));
+  await shot('advanced');
   await click('#touchLayoutEdit');await page.waitForSelector('#touchLayoutEditor',{visible:true});await shot('touch');
   await click('#touchMovementMode-trigger');await page.waitForSelector('.ui-select-content',{visible:true});
   assert.equal(await page.$eval('.ui-select-content',e=>e.dataset.uiSurface),'application');await shot('touch-menu');await page.keyboard.press('Escape');
