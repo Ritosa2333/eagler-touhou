@@ -12,7 +12,7 @@ import { GamepadSettings } from './GamepadSettings';
 import type { Th09LocalInput } from '../../../src/launcher/th09-local-input.mts';
 import { Th09LocalInputSettings } from './Th09LocalInputSettings';
 import { MainSelect } from '../launcher/MainSelect';
-import { OptionsGroupHeading } from './OptionsGroup';
+import { OptionsGroup, OptionsGroupHeading } from './OptionsGroup';
 import { InputCapture } from './input-capture';
 
 /** Keep detailed capture in a bounded dialog, outside the options rail. */
@@ -22,12 +22,14 @@ export function InputSettings({
   th09Local,
   th19=false,
   th075=false,
+  collapsible=true,
 }: {
   keyboard?: KeyboardPreferences;
   gamepad?: GamepadMappingModel;
   th09Local?: Th09LocalInput;
   th19?:boolean;
   th075?:boolean;
+  collapsible?:boolean;
 }) {
   const { t } = useLocale(),
     id = useId(),
@@ -55,37 +57,38 @@ export function InputSettings({
   const choices = (['keyboard', 'gamepad'] as const).filter((value) => (value === 'keyboard' ? keyboard : gamepad));
   const label = (value: 'keyboard' | 'gamepad') =>
     value === 'keyboard' ? t('input.text.keyboard_51') : t('input.text.gamepad_52');
-  return (
-    <Collapsible.Root open={open} onOpenChange={setOpen} asChild>
+  const entries = <div className="input-settings-entries">
+    {choices.map((value) => (
+      <UiButton
+        variant="ghost"
+        size="row"
+        className="input-settings-entry settings-entry"
+        type="button"
+        key={value}
+        onClick={(event) => edit(value, event.currentTarget)}
+        aria-haspopup="dialog"
+      >
+        {value === 'keyboard' ? <Keyboard aria-hidden="true" /> : <Gamepad2 aria-hidden="true" />}
+        <span>{label(value)}</span>
+        <ChevronRight aria-hidden="true" />
+      </UiButton>
+    ))}
+  </div>;
+  return <>
+    {collapsible ? <Collapsible.Root open={open} onOpenChange={setOpen} asChild>
       <section className="options-group input-settings" data-open={open}>
         <Collapsible.Trigger asChild>
-          <OptionsGroupHeading icon={Keyboard} className="input-settings-heading" aria-controls={id}>
-            {title}
-          </OptionsGroupHeading>
+          <OptionsGroupHeading icon={Keyboard} className="input-settings-heading" aria-controls={id}>{title}</OptionsGroupHeading>
         </Collapsible.Trigger>
         <Collapsible.Content forceMount asChild>
           <div id={id} className="input-settings-collapse" inert={!open} aria-hidden={!open}>
-            <div className="input-settings-content">
-              <div className="input-settings-entries">
-                {choices.map((value) => (
-                  <UiButton
-                    variant="ghost"
-                    size="row"
-                    className="input-settings-entry settings-entry"
-                    type="button"
-                    key={value}
-                    onClick={(event) => edit(value, event.currentTarget)}
-                    aria-haspopup="dialog"
-                  >
-                    {value === 'keyboard' ? <Keyboard aria-hidden="true" /> : <Gamepad2 aria-hidden="true" />}
-                    <span>{label(value)}</span>
-                    <ChevronRight aria-hidden="true" />
-                  </UiButton>
-                ))}
-              </div>
-            </div>
+            <div className="input-settings-content">{entries}</div>
           </div>
         </Collapsible.Content>
+      </section>
+    </Collapsible.Root> : <OptionsGroup className="input-settings" title={title} icon={Keyboard} bodyClassName="input-settings-content">
+      {entries}
+    </OptionsGroup>}
         <Dialog open={editing} onOpenChange={setEditing}>
           <DialogContent
             className="input-settings-dialog settings-ui"
@@ -171,7 +174,5 @@ export function InputSettings({
             </InputCapture.Provider>
           </DialogContent>
         </Dialog>
-      </section>
-    </Collapsible.Root>
-  );
+  </>;
 }

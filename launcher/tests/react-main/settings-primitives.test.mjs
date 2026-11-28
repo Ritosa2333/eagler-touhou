@@ -233,6 +233,8 @@ test('TH05 MP display controls track EoSD/ring dependencies and stay hidden for 
   const actions = settingsActions();
   await render(React.createElement(owners.LocaleProvider, {locale: 'en'},
     React.createElement(owners.SettingsBody, {model, actions, onOpenTouchLayout: () => {}})));
+  const summary = n('#mpDisplayOptions .options-group-head');
+  assert.equal(n('#mpDisplayOptions .options-advanced-body').id, summary.getAttribute('aria-controls'));
   const bossBar = n('#mpTh05BossBarSelect');
   assert.deepEqual([...bossBar.options].map(option => option.value), ['native', 'eosd', 'ring']);
   assert.equal(n('#mpTh05PhaseMarkersToggle').disabled, false);

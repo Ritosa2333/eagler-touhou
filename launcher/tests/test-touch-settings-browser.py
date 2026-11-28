@@ -62,10 +62,7 @@ def main() -> int:
                 if page.locator("#firstUseNoticeDialog").get_attribute("open") is not None:
                     page.locator("#firstUseNoticeCloseHint").click()
                     page.wait_for_function("document.querySelector('#firstUseNoticeDialog')?.open === false")
-                page.wait_for_selector(".tools.is-open", timeout=15000)
-                touch_heading = page.locator("#mobileOptionsToggle")
-                if touch_heading.is_visible() and touch_heading.get_attribute("aria-expanded") != "true":
-                    click_real_pointer("#mobileOptionsToggle")
+                click_real_pointer("#gameSettingsOpen")
                 click_real_pointer("#touchLayoutEdit")
                 page.wait_for_selector("#touchLayoutEditor:not([hidden])")
                 # The editor requests browser fullscreen. Release it so
@@ -141,7 +138,7 @@ def main() -> int:
             return 0
 
         page.locator('.book-game-link[data-book-product="th06"]').click()
-        page.locator("#mobileOptionsToggle").click()
+        page.locator("#gameSettingsOpen").click()
         page.wait_for_function("document.querySelector('#mobileOptions').classList.contains('open')")
         assert page.locator("#touchHelpOpen").get_attribute("aria-label") in ("打开帮助", "Open help")
         assert page.locator("#touchHelpOpen svg").count() == 1
@@ -243,9 +240,7 @@ def main() -> int:
         assert not page.locator(".tools.is-open").count(), "Escape from the restored options focus must close options"
 
         page.locator('.book-game-link[data-book-product="th06"]').click()
-        page.wait_for_selector(".tools.is-open")
-        if not page.locator("#mobileOptions").evaluate("el => el.classList.contains('open')"):
-            click_real_pointer("#mobileOptionsToggle")
+        click_real_pointer("#gameSettingsOpen")
         page.evaluate("document.querySelector('#touchLayoutEdit').click()")
         page.wait_for_selector("#touchLayoutEditor:not([hidden])")
         editor_url = page.url
@@ -322,8 +317,7 @@ def main() -> int:
         page.wait_for_selector("#touchLayoutEditor", state="hidden")
         page.locator("#libraryBack").click()
         page.locator('.book-game-link[data-book-product="th07"]').click()
-        if not page.locator("#mobileOptions").evaluate("el => el.classList.contains('open')"):
-            page.locator("#mobileOptionsToggle").click()
+        page.locator("#gameSettingsOpen").click()
         page.wait_for_function("document.querySelector('#mobileOptions').classList.contains('open')")
         page.evaluate("document.querySelector('#touchLayoutEdit').click()")
         page.wait_for_timeout(1500)

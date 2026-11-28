@@ -609,7 +609,8 @@
     .book-view-covers .book-card .book-identity {
       min-height: 44px;
       justify-content: center;
-      padding: 4px 44px 4px 2px;
+      padding-block: 4px;
+      padding-inline: 10px 44px;
     }
     .book-view-covers .book-card .book-title-line {
       align-items: baseline;

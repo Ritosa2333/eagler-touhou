@@ -356,10 +356,6 @@ async function click(selector) {await React.act(async () => {
     element.dispatchEvent(new env.window.KeyboardEvent('keydown', {key: element.getAttribute('role') === 'tab' ? 'Enter' : 'ArrowDown', bubbles:true}));
   } else element.click();
 }); await tick();}
-async function openGameSettingsGroup(id) {
-  const trigger = '#' + id + ' .options-group-head';
-  if (node(trigger).getAttribute('aria-expanded') !== 'true') await click(trigger);
-}
 async function back() {await React.act(async () => {void mounted.router.navigate(-1);}); await tick();}
 async function browserBack() {
   const before = mounted.router.state.location.key;
@@ -412,7 +408,6 @@ for (const {game, touchDevice, rail} of [
 for (const exitScenario of ['success', 'error', 'error-on-exit', 'error-without-reason', 'success-with-error-code']) test(`actual BrowserLauncher: original warning, fullscreen, ready/configure/ACK launch and native ${exitScenario} Exit preserve one frame`, async () => {
   const exitStatus=exitScenario.startsWith('success')?'success':'error';
   const f = await mountBrowser({initial: '/?game=th06&keep=a%20b&lang=en'}), frame = node('#gameFrame'), before = currentUrl();
-  await openGameSettingsGroup('mobileOptions');
   await start(); await until(() => commands().includes('launch'), 'actual Runtime issues launch');
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame); assert.equal(env.document.querySelectorAll('iframe').length, 1);
   assert.equal(currentUrl(), before, 'Start reuses the selected product entry');
@@ -863,27 +858,25 @@ test('actual BrowserLauncher: mounted player input is gated by launch and remove
   assert.equal(f.outbound.filter(message => message.command === 'keyboard').length, count);
 });
 
-test('actual BrowserLauncher: same-card reopen preserves session-only settings and disclosure when durable storage is blocked', async () => {
+test('actual BrowserLauncher: same-card reopen preserves session-only settings when durable storage is blocked', async () => {
   const f = await mountBrowser({blockStorage: true});
-  await openGameSettingsGroup('displayOptions');
   assert.equal(node('#focusHitboxToggle').getAttribute('aria-checked'), 'false');
-  await click('#focusHitboxToggle'); await click('#mobileOptionsToggle');
+  await click('#focusHitboxToggle');
   assert.equal(node('#focusHitboxToggle').getAttribute('aria-checked'), 'true');
-  assert.equal(node('#mobileOptionsToggle').getAttribute('aria-expanded'), 'true');
+  assert.equal(node('#mobileOptionsBody').hidden, false);
   await click('[data-book-category="all"]'); await until(() => !visibleOptions(), 'options close');
   await click('.book-game-link[data-game="th06"]');
   await until(() => !!visibleOptions(), 'same selected product reopens');
-  assert.equal(node('#status').textContent, 'Selected 東方紅魔郷', 'main app1790/8652 uses the product title for selection status');
+  assert.ok(node('#status').textContent.endsWith(' 東方紅魔郷'), 'selection status uses the product title in the current locale');
   assert.equal(node('#toast').classList.contains('show'), false, 'status-only selection must not open an empty toast');
   assert.equal(node('#toastText').textContent, '');
   assert.equal(node('#focusHitboxToggle').getAttribute('aria-checked'), 'true', 'main same-product lifetime never rereads stale blocked storage');
-  assert.equal(node('#mobileOptionsToggle').getAttribute('aria-expanded'), 'true');
+  assert.equal(node('#mobileOptionsBody').hidden, false);
   assert.equal(JSON.parse(f.storage.getItem(api.gamePreferenceStorageKey('th06'))).options.focusHitboxEnabled, undefined);
 });
 
 test('actual BrowserLauncher: cold save export owns file-only preparation and retires its temporary native writer', async () => {
   const f = await mountBrowser(), frame = node('#gameFrame'), previous = currentUrl();
-  await openGameSettingsGroup('fileOptions');
   await click('[data-action="export-save"]');
   await until(() => f.downloads.length === 1 && f.navigations.at(-1) === 'about:blank', 'cold export downloaded and released prepared owner');
   assert.equal(f.downloads[0].name, 'score.dat');
@@ -905,7 +898,6 @@ async function runningStorageImport({kind, game}) {
   const f = await mountBrowser({initial: `/?game=${game}&keep=a%20b`, host: subsetHost([game], {multiplayer: false}), seedPackages: game === 'th10' ? [game] : [], seedStorage(storage) {
     storage.values.set(api.gamePreferenceStorageKey(game), JSON.stringify({music: 'none', options: {touchEnabled: false, thpracEnabled: false}}));
   }});
-  await openGameSettingsGroup('fileOptions');
   await start(); await until(() => commands().includes('launch'), 'real owner is running before import');
   return f;
 }
@@ -1638,10 +1630,9 @@ for (const editing of [false, true]) test(`actual BrowserLauncher: late Host fal
     storage.values.set(api.gamePreferenceStorageKey('th07'), JSON.stringify({music: 'none', options: {focusHitboxEnabled: true}}));
   }});
   const frame = node('#gameFrame');
-  await openGameSettingsGroup('displayOptions');
   let editor, image, bombStyle, fullscreen;
   if (editing) {
-    await click('#mobileOptionsToggle'); await click('#touchLayoutEdit');
+    await click('#touchLayoutEdit');
     await until(() => env.document.querySelector('#touchLayoutSave')?.disabled === false, 'actual editor draft initialized before Host');
     editor = node('#touchLayoutEditor'); image = node('#player').style.getPropertyValue('--touch-preview-image');
     const bomb = node('#touchBomb');
@@ -1724,7 +1715,6 @@ test('actual BrowserLauncher: canonical installed hint preserves session-only la
   const host = siteManifest(), language = {id: 'en', title: 'English', pack: {url: 'lang/en.zip', bytes: 3, sha256: 'c'.repeat(64), runtimeVersion: 'fixture', files: 1}};
   host.games.th06.languages.push(language); host.games.th06.languageOptions.push(language);
   const f = await mountBrowser({host, seedStorage(storage) {storage.values.set(api.languagePreferenceStorageKey('th06'), 'ja');}});
-  await openGameSettingsGroup('displayOptions');
   f.storage.blocked = true;
   await React.act(async () => {const language = node('#languageSelect'); language.value = 'en'; language.dispatchEvent(new env.window.Event('change', {bubbles: true}));});
   await click('#focusHitboxToggle');
@@ -1741,7 +1731,7 @@ test('actual BrowserLauncher: canonical installed hint preserves session-only la
 
 for (const close of ['Exit', 'Back']) test(`actual BrowserLauncher: original touch-settings144–151 hidden retained editor opens from home and ${close} returns home`, async () => {
   const f = await mountBrowser({host: subsetHost(['th06', 'th07'])}), frame = node('#gameFrame');
-  await click('#mobileOptionsToggle'); await click('#touchLayoutEdit');
+  await click('#touchLayoutEdit');
   await until(() => env.document.querySelector('#touchLayoutSave')?.disabled === false, 'first retained-product editor initialized');
   await click('#touchLayoutExit');
   if (node('#decisionDialog').open) await click('#decisionConfirm');
@@ -1754,7 +1744,6 @@ for (const close of ['Exit', 'Back']) test(`actual BrowserLauncher: original tou
   const home = currentUrl(), homeKey = f.router.state.location.key, retainedButton = node('#touchLayoutEdit');
   assert.equal(visibleOptions(), null); assert.equal(currentUrl(), home);
   assert.equal(node('#gameId').dataset.game, 'th06', 'the original sequence still owns the previously selected TH06 settings');
-  if (!node('#mobileOptions').classList.contains('open')) await click('#mobileOptionsToggle');
   assert.equal(node('#mobileOptions').classList.contains('open'), true);
   await React.act(async () => {node('#touchLayoutEdit').click();});
   await until(() => env.document.querySelector('#touchLayoutSave')?.disabled === false, 'original programmatic hidden-button click opens its retained editor');
@@ -2018,7 +2007,6 @@ test('actual BrowserLauncher: late Host fallback before Start uses the current m
       storage.values.set(api.gamePreferenceStorageKey('th06'), JSON.stringify({music: 'none', musicPreferenceExplicit: true, options: {touchEnabled: false}}));
     }});
     await click('#gameSettingsOpen');
-    await click('#advancedOptions .options-group-head');
     assert.equal(node('#musicSelect').value, 'midi');
     await acceptHeldHost(f);
     assert.equal(node('#musicSelect').value, 'none');
@@ -2791,7 +2779,7 @@ test('runtime reports do not rebuild unchanged launcher settings', async () => {
 
 test('touch coordinate changes do not rebuild unchanged launcher settings', async () => {
   await mountBrowser();
-  await click('#mobileOptionsToggle'); await click('#touchLayoutEdit');
+  await click('#touchLayoutEdit');
   const model = api.getTestSession().touchLayout;
   await until(() => model.getSnapshot().isEditing, 'the editor owns its measured draft');
   await React.act(() => model.updateControl('bomb', {x:.3}));

@@ -162,12 +162,11 @@ try {
         });
         const desktopViewport = page.viewport();
         await page.setViewport({...desktopViewport,height:930});
-        const collapsed = await measureRail();
-        assert.deepEqual([collapsed.maxScroll,collapsed.topGap,collapsed.bottomGap],[0,0,0],
-          'short settings fill the area below the masthead without making an empty scroll range');
-        assert.ok(collapsed.searchOffset > 0,'the masthead leaves the sidebar search visible');
+        const initial = await measureRail();
+        assert.deepEqual([initial.topGap,initial.bottomGap],[0,0], 'the sidebar fills the area below the masthead');
+        assert.ok(initial.searchOffset > 0,'the masthead leaves the sidebar search visible');
         await page.setViewport(desktopViewport);
-        await tap('#advancedOptions button.options-group-head');
+        await wait('#advancedOptions .options-group-title');
         const version = await wait('#gameVersionSelect-trigger');
         assert.equal(await version.evaluate(button => {
           const row = button.closest('.settings-choice-row');
@@ -180,8 +179,8 @@ try {
         const expanded = await measureRail();
         assert.ok(expanded.scroll > 0,'settings can scroll to the bottom in a short window');
         for (const key of ['topGap', 'bottomGap', 'searchOffset']) {
-          assert.ok(Math.abs(expanded[key] - collapsed[key]) < 1,
-            `the sidebar stays pinned when settings scroll (${key}: ${collapsed[key]} → ${expanded[key]})`);
+          assert.ok(Math.abs(expanded[key] - initial[key]) < 1,
+            `the sidebar stays pinned when settings scroll (${key}: ${initial[key]} → ${expanded[key]})`);
         }
         await page.setViewport(desktopViewport);
         await tap(settingsBack);
@@ -197,7 +196,6 @@ try {
         await wait(desktopSettings,true);
         await wait('#gameSettingsOpen');
         await tap('#gameSettingsOpen');
-        await tap('#fileOptions button.options-group-head');
         await tap('[data-action="manage-replay"]');
         await tap('#player .replay-back');
         await wait(desktopSettings);
@@ -350,7 +348,6 @@ try {
           range.selectNode(heading.lastChild);
           return Math.abs(range.getBoundingClientRect().left - label.getBoundingClientRect().left) < 1;
         }),true,'nested settings labels align with the section title');
-        await tap('#mobileOptionsToggle');
         await tap('#touchLayoutEdit');
         await tap('#touchLayoutExit');
         await wait(gameSettings);
@@ -360,12 +357,11 @@ try {
         await page.goBack();
         await wait('#touchLayoutEditor',true);
         await wait(gameSettings);
-        await tap('#fileOptions button.options-group-head');
         await tap('[data-action="manage-replay"]');
         await tap('#player .replay-back');
         await wait(gameSettings);
         await wait('#player .replay-back',true);
-        assert.equal(await page.$eval('#fileOptions button.options-group-head', button => button.getAttribute('aria-expanded')),'true');
+        await wait('#fileOptions [data-action="manage-replay"]');
         await tap('[data-action="manage-replay"]');
         await wait('#player .replay-back');
         await page.goBack();
@@ -377,8 +373,7 @@ try {
         await wait('.spell-map',true);
         await tap('#gameSettingsOpen');
         await wait(gameSettings);
-        assert.equal(await page.$eval('#fileOptions button.options-group-head', button => button.getAttribute('aria-expanded')),'true',
-          'the settings page restores the open save and replay section');
+        await wait('#fileOptions [data-action="manage-replay"]');
         await page.goBack();
         await wait(gameSettings,true);
         await wait('#gameSettingsOpen');

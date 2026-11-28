@@ -3,10 +3,6 @@
   .settings-disclosure-trigger > svg {color:var(--kit-muted-foreground)}
   .settings-disclosure-trigger > svg:last-child {transition:rotate var(--ui-surface-duration,180ms) var(--ui-surface-easing,ease)}
   .settings-disclosure-trigger[aria-expanded="true"] > svg:last-child {rotate:180deg}
-  .settings-disclosure-content {overflow:hidden}
-  .settings-disclosure-content[data-state="open"] {animation:settings-open var(--ui-window-enter-duration,245ms) var(--ui-window-enter-easing,ease-out)}
-  .settings-disclosure-content[data-state="closed"] {animation:settings-close var(--ui-window-exit-duration,150ms) var(--ui-window-exit-easing,ease-in);pointer-events:none}
-  .settings-disclosure-content[hidden] {display:none}
   .settings-disclosure-body {margin-inline:var(--settings-label-inset) var(--settings-row-inset)}
   .settings-disclosure-body .settings-disclosure-body {margin-inline:0}
   .settings-value-row {
@@ -16,11 +12,9 @@
   .settings-value-row > .ui-select {min-width:0;max-width:60%}
   .settings-group > .settings-value-row {padding-inline:var(--settings-row-inset)}
   .settings-group .settings-disclosure-trigger:focus-visible {outline:2px solid var(--kit-ring);outline-offset:-2px}
-  @keyframes settings-open {from {height:0} to {height:var(--radix-collapsible-content-height)}}
-  @keyframes settings-close {from {height:var(--radix-collapsible-content-height)} to {height:0}}
-  .less-motion :is(.options-group-chevron,.settings-disclosure-content) {animation:none!important;transition:none!important}
+  .less-motion .options-group-chevron {transition:none!important}
   @media(prefers-reduced-motion:reduce) {
-    :is(.options-group-chevron,.settings-disclosure-content) {animation:none!important;transition:none!important}
+    .options-group-chevron {transition:none!important}
   }
 }
 :is(.settings-group,.game-settings-page) {
@@ -62,14 +56,15 @@
   color:var(--kit-muted-foreground);font:400 13px/1.5 var(--kit-font)
 }
 .game-settings-page .options-settings .options-group-head {min-height:54px}
+.game-settings-page .options-group-title {display:flex;align-items:center;margin:0}
+.game-settings-page .options-group-title > span {display:inline-flex;align-items:center}
 .game-settings-page .options-settings {container:fields / inline-size}
-.game-settings-page .settings-disclosure-content > :is(.options-advanced-body,.file-tools-grid,.mobile-options-body),
-.game-settings-page .input-settings-content {
+.game-settings-page .options-group > .options-group-body {
   margin:0 var(--settings-row-inset) 8px var(--settings-label-inset);
   padding:0;
   border:0;
 }
-.game-settings-page .settings-disclosure-content > div > :not([hidden]) ~ :not([hidden]) {
+.game-settings-page .options-group-body > :not([hidden]) ~ :not([hidden]) {
   border-block-start:1px solid var(--kit-border)
 }
 .game-settings-page .options-settings .settings-field {padding-block:0;min-height:44px}

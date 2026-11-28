@@ -36,7 +36,7 @@ import { useLibraryOptionsPresence } from './components/launcher/use-library-opt
 import type { LibraryProduct } from './components/launcher/products';
 import { SettingsBody } from './components/settings/SettingsBody';
 import type { SettingsActions, TouchEditorNativePorts } from './components/settings/types';
-import type { GameSettingsModel, SettingsContext, SettingsDisclosureState } from './models/game-settings';
+import type { GameSettingsModel, SettingsContext } from './models/game-settings';
 import type { WatchTh09Replay } from './models/th09-replay-archive';
 import type { SitePreferencesModel } from './models/site-preferences';
 import type { DecisionStore } from './models/decisions';
@@ -184,7 +184,6 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const contextRevision = useRef<number | undefined>(undefined);
   const [playerElement, setPlayerElement] = useState<HTMLElement | null>(null);
   const touchReturn = useRef<HTMLElement | null>(null);
-  const [gamePageDisclosures, setGamePageDisclosures] = useState<Partial<SettingsDisclosureState>>({});
   const browseIssuedFor = useRef<string | null>(null);
   useLayoutEffect(() => {
     if (browseIssuedFor.current !== locationKey) browseIssuedFor.current = null;
@@ -311,16 +310,13 @@ function LauncherSurfaces({ host }: { host: LauncherHost }) {
   const settingsBody = useMemo(() => (
     <SettingsBody
       model={host.settings}
-      gamePage={gamePage ? {
-        disclosures: gamePageDisclosures,
-        setDisclosure: (name, open) => setGamePageDisclosures(previous => ({...previous, [name]: open})),
-      } : undefined}
+      gamePage={gamePage}
       actions={host.settingsActions}
       onOpenTouchLayout={openTouchLayout}
       multiplayerControls={multiplayerSettings}
       preferences={host.preferences}
     />
-  ), [gamePage, gamePageDisclosures, host.settings, host.settingsActions, host.preferences, multiplayerSettings, openTouchLayout]);
+  ), [gamePage, host.settings, host.settingsActions, host.preferences, multiplayerSettings, openTouchLayout]);
   const settingsPanel = !inlineProduct && presence.product && (
     <OptionsPanel
       product={presence.product}

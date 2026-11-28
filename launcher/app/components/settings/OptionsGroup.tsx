@@ -13,21 +13,26 @@ export const OptionsGroupHeading = forwardRef<HTMLButtonElement, ButtonProps & {
 });
 
 export interface OptionsGroupProps {
-  id: string;
+  id?: string;
   title: ReactNode;
   icon?: LucideIcon;
-  open: boolean;
-  onOpenChange(open: boolean): void;
-  animated?: boolean;
+  open?: boolean;
+  onOpenChange?(open: boolean): void;
+  className?: string;
+  triggerId?: string;
+  bodyId?: string;
   bodyClassName: string;
   children: ReactNode;
 }
-/** The settings model owns disclosure state; content stays mounted for refs. */
-export function OptionsGroup({id, title, icon, open, onOpenChange, animated = false, bodyClassName, children}: OptionsGroupProps) {
-  return <Collapsible.Root className="options-group" id={id} open={open} onOpenChange={onOpenChange}>
-    <Collapsible.Trigger asChild><OptionsGroupHeading icon={icon}>{title}</OptionsGroupHeading></Collapsible.Trigger>
-    {animated ? <Collapsible.Content className="settings-disclosure-content" inert={!open}>
-      <div className={bodyClassName}>{children}</div>
-    </Collapsible.Content> : <Collapsible.Content forceMount hidden={!open} className={bodyClassName}>{children}</Collapsible.Content>}
+/** Omit disclosure state for sections on a dedicated settings page. */
+export function OptionsGroup({id, title, icon: Icon, open, onOpenChange, className, triggerId, bodyId, bodyClassName, children}: OptionsGroupProps) {
+  const classes = className ? `options-group ${className}` : 'options-group';
+  if (open === undefined) return <section className={classes} id={id}>
+    <h3 className="options-group-head options-group-title"><span>{Icon && <Icon aria-hidden="true"/>}{title}</span></h3>
+    <div id={bodyId} className={`options-group-body ${bodyClassName}`}>{children}</div>
+  </section>;
+  return <Collapsible.Root className={classes} id={id} open={open} onOpenChange={onOpenChange}>
+    <Collapsible.Trigger asChild><OptionsGroupHeading id={triggerId} {...(bodyId && {'aria-controls':bodyId})} icon={Icon}>{title}</OptionsGroupHeading></Collapsible.Trigger>
+    <Collapsible.Content {...(bodyId && {id:bodyId})} forceMount hidden={!open} className={bodyClassName}>{children}</Collapsible.Content>
   </Collapsible.Root>;
 }

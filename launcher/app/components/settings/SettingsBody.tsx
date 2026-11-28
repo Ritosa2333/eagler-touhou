@@ -1,8 +1,7 @@
 import { Button as UiButton } from '../../ui/button';
 import { ButtonGroup } from '../../ui/button-group';
-import { Field, FieldContent, FieldGroup } from '../../ui/field';
+import { Field, FieldContent } from '../../ui/field';
 import { PopoverClose } from '../../ui/popover';
-import { Collapsible } from 'radix-ui';
 import { Download, Upload, FileText, FolderOpen, Trash2, ChevronRight, Hand, Monitor, SlidersHorizontal, Volume2 } from 'lucide-react';
 import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import { PRODUCT_GAMES, productFeatureAvailable } from '../../../src/contracts/product-catalog.mts';
@@ -10,8 +9,7 @@ import { isMusicMode } from '../../../src/launcher/game-preferences.mts';
 import { resolveMusicAvailability } from '../../../src/launcher/music-availability.mts';
 import type { GameSettingsModel, SettingsDisclosureState } from '../../models/game-settings';
 import { useLocale } from '../../i18n';
-import { useCompactNavigation } from '../../navigation/navigation-motion';
-import { OptionsGroup, OptionsGroupHeading } from './OptionsGroup';
+import { OptionsGroup } from './OptionsGroup';
 import { InputSettings } from './InputSettings';
 import { GameAudioFields, QuickChatVolumeField } from './GameAudioControls';
 import type { SitePreferencesModel } from '../../models/site-preferences';
@@ -29,17 +27,14 @@ export function SettingsBody({
   onOpenTouchLayout,
   multiplayerControls,
   preferences,
-  gamePage: gamePageOptions,
+  gamePage = false,
 }: {
   model: GameSettingsModel;
   actions: SettingsActions;
   onOpenTouchLayout(): void;
   multiplayerControls?: ReactNode;
   preferences?: SitePreferencesModel;
-  gamePage?: {
-    disclosures: Partial<SettingsDisclosureState>;
-    setDisclosure(name: keyof SettingsDisclosureState, open: boolean): void;
-  };
+  gamePage?: boolean;
 }) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const midi = useSyncExternalStore(
@@ -48,20 +43,16 @@ export function SettingsBody({
     actions.externalMidi.getSnapshot,
   );
   const { t } = useLocale();
-  const compact = useCompactNavigation();
   const midiVisible = !!state && PRODUCT_GAMES[state.gameId].musicCapabilities.midi && state.music === 'midi';
   useEffect(() => {
     if (!midiVisible && midi.enabled) void actions.externalMidi.setEnabled(false).catch(actions.reportError);
   }, [midiVisible, midi.enabled, actions]);
   if (!state) return null;
-  const gamePage = !!gamePageOptions;
-  const { context, options, multiplayer } = state,
-    disclosure = gamePageOptions ? {display: compact, touch: false, files: false, audio: false, advanced: false, ...gamePageOptions.disclosures} : state.disclosure,
-    mobileOpen = disclosure.touch,
+  const { context, options, multiplayer, disclosure } = state,
     product = PRODUCT_GAMES[state.gameId];
-  const setDisclosure = (name: keyof typeof disclosure, open: boolean) => {
-    if (gamePageOptions) gamePageOptions.setDisclosure(name, open);
-    else model.setDisclosure(name, open);
+  const groupMode = (name: keyof SettingsDisclosureState) => gamePage ? {} : {
+    open: disclosure[name],
+    onOpenChange: (open: boolean) => model.setDisclosure(name, open),
   };
   const availability = resolveMusicAvailability(context.musicAvailability);
   const id = (name: string) => (multiplayer ? `mp${name[0].toUpperCase()}${name.slice(1)}` : name);
@@ -121,21 +112,17 @@ export function SettingsBody({
   // Its stable sibling key lets React move the same controls across the file,
   // display and advanced groups while preserving focus and local owners.
   const touch = (
-    <Collapsible.Root key="touch-options" asChild open={mobileOpen} onOpenChange={open => setDisclosure('touch', open)}><section
-      className={`item mobile-options options-group${mobileOpen ? ' open' : ''}`}
+    <OptionsGroup
+      key="touch-options"
+      className={`item mobile-options${gamePage || disclosure.touch ? ' open' : ''}`}
       id={id('mobileOptions')}
+      triggerId={id('mobileOptionsToggle')}
+      bodyId={id('mobileOptionsBody')}
+      bodyClassName="ui-field-group mobile-options-body"
+      icon={Hand}
+      title={t('options.touch')}
+      {...groupMode('touch')}
     >
-      <Collapsible.Trigger asChild><OptionsGroupHeading icon={Hand}
-        className="mobile-options-head"
-        id={id('mobileOptionsToggle')}
-        aria-controls={id('mobileOptionsBody')}
-      >
-        {t('options.touch')}
-      </OptionsGroupHeading></Collapsible.Trigger>
-      <Collapsible.Content id={id('mobileOptionsBody')} inert={!mobileOpen}
-        className={gamePage ? 'settings-disclosure-content' : undefined}
-        {...(gamePage ? {} : {forceMount: true as const, hidden: !mobileOpen})}>
-      <FieldGroup className="mobile-options-body">
         <OptionRow
           className="mobile-option"
           label={t('settings.touchEnabled')}
@@ -188,18 +175,14 @@ export function SettingsBody({
           <span className="min-w-0 flex-1">{t('settings.touchLayout')}</span>
           <ChevronRight className="settings-row-chevron" aria-hidden="true" />
         </UiButton>
-      </FieldGroup>
-      </Collapsible.Content>
-    </section></Collapsible.Root>
+    </OptionsGroup>
   );
   const files = (
       <OptionsGroup
         id={id('fileOptions')}
-        animated={gamePage}
         icon={FileText}
         title={t('options.files')}
-        open={disclosure.files}
-        onOpenChange={(open) => setDisclosure('files', open)}
+        {...groupMode('files')}
         bodyClassName="file-tools-grid"
       >
         <Field className="file-tool-item" id={id('saveFileTool')} orientation="horizontal">
@@ -234,11 +217,9 @@ export function SettingsBody({
   const display = (
       <OptionsGroup
         id={id('displayOptions')}
-        animated={gamePage}
         icon={Monitor}
         title={t('options.display')}
-        open={disclosure.display}
-        onOpenChange={(open) => setDisclosure('display', open)}
+        {...groupMode('display')}
         bodyClassName="options-advanced-body"
       >
         {state.gameId === 'th03' && <OptionRow className={item('option-frame-limit')} label={t('settings.th02RapidFire')} control={<OptionSwitch id={id('th03RapidFireToggle')} label={t('settings.th02RapidFire')} checked={options.th03RapidFire} onChange={() => model.setOption('th03RapidFire', !options.th03RapidFire)}/>}/>}
@@ -392,6 +373,7 @@ export function SettingsBody({
       {display}
       {(actions.keyboard || actions.gamepad) && (
         <InputSettings
+          collapsible={!gamePage}
           keyboard={state.gameId === 'th075' ? actions.th075Keyboard : state.gameId === 'th19' ? actions.th19Keyboard : actions.keyboard}
           gamepad={state.gameId === 'th19' ? actions.th19Gamepad : actions.gamepad}
           th19={state.gameId === 'th19'}
@@ -402,11 +384,9 @@ export function SettingsBody({
       {gamePage && touch}
       <OptionsGroup
         id={id('audioOptions')}
-        animated={gamePage}
         icon={Volume2}
         title={t('options.volume')}
-        open={disclosure.audio}
-        onOpenChange={(open) => setDisclosure('audio', open)}
+        {...groupMode('audio')}
         bodyClassName="options-advanced-body"
       >
         <GameAudioFields model={model} />
@@ -415,11 +395,9 @@ export function SettingsBody({
       {gamePage && files}
       <OptionsGroup
         id={id('advancedOptions')}
-        animated={gamePage}
         icon={SlidersHorizontal}
         title={t('options.advanced')}
-        open={disclosure.advanced}
-        onOpenChange={(open) => setDisclosure('advanced', open)}
+        {...groupMode('advanced')}
         bodyClassName="options-advanced-body"
       >
         <div id={id('gameVersionOption')}>

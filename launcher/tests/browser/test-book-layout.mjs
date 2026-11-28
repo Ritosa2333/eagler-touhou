@@ -5,6 +5,18 @@ import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 const origin = process.argv[2] || process.env.LAUNCHER_URL || 'http://127.0.0.1:5173/';
 const pc98Cards = '#bookGameGrid :is([data-book-product="th01"],[data-book-product="th05"])';
 
+async function assertSettingsSections(page, selector) {
+  await page.waitForSelector(selector, {visible: true});
+  const sections = await page.$$eval(`${selector} .options-settings > .options-group`, groups => groups.map(group => [
+    group.querySelector(':scope > h3')?.tagName,
+    Boolean(group.querySelector(':scope > .options-group-body')?.getClientRects().length),
+    Boolean(group.querySelector(':scope > button[aria-expanded]')),
+  ]));
+  assert.equal(sections.length, 6);
+  assert.ok(sections.every(([heading, visible, collapsible]) => heading === 'H3' && visible && !collapsible),
+    'the dedicated settings page renders every group as a visible section');
+}
+
 async function assertMasthead(page, width) {
   await page.waitForSelector('#mastheadMenuToggle:not(:disabled)', {visible:true});
   const layout = await page.$eval('.book-masthead', header => {
@@ -299,6 +311,17 @@ try {
     }));
     assert.deepEqual(corners, [['6px', 'hidden'], ['6px', 'hidden']],
       `${width}px cover and card surface share rounded clipping with ${customBackground ? 'a custom' : 'the default'} background`);
+    const titleSpacing = await card.evaluate(link => {
+      const card = link.closest('.book-card');
+      const title = link.querySelector('.book-title-line');
+      const favorite = card.querySelector('.book-favorite');
+      return {
+        inset: title.getBoundingClientRect().left - card.getBoundingClientRect().left,
+        fits: title.getBoundingClientRect().right <= favorite.getBoundingClientRect().left,
+        favoriteWidth: favorite.getBoundingClientRect().width,
+      };
+    });
+    assert.deepEqual(titleSpacing, {inset:10, fits:true, favoriteWidth:44}, 'mobile cover titles have breathing room without shrinking the favorite target');
     await card.tap();
     const detail = '.tools[data-book-sheet][data-state="open"]';
     const settings = '.mobile-game-settings';
@@ -344,7 +367,7 @@ try {
       return fixed;
     }), true, 'Detail actions stay docked below the scroll region');
     await page.tap(settingsControl);
-    await page.waitForSelector(settings, {visible: true});
+    await assertSettingsSections(page, settings);
     assert.equal(await page.$eval(settings, node => node.scrollWidth <= node.clientWidth + 1), true);
     assert.equal(await page.$eval(detail + ' #launch', button => Boolean(button.closest('[hidden][inert]'))), true);
     await page.tap(back);
@@ -444,7 +467,7 @@ try {
   await resize.waitForSelector(`${detail} .clear-matrix[data-loadouts="true"] tbody [data-status="unread"]`, {visible: true});
   const selectedUrl = resize.url(), historyLength = await resize.evaluate(() => history.length);
   await resize.click('#gameSettingsOpen');
-  await resize.waitForSelector('.book-game-detail-settings', {visible: true});
+  await assertSettingsSections(resize, '.book-game-detail-settings');
   await resize.setViewport({width: 390, height: 540});
   await resize.waitForSelector('.mobile-game-settings', {visible: true});
   await resize.setViewport({width: 1440, height: 540});
