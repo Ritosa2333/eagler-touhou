@@ -1,0 +1,19 @@
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26300.
+Feeds used:
+  C:\Users\Ritosa\.nuget\packages\
+  https://api.nuget.org/v3/index.json
+
+Package "Microsoft.Windows.ImplementationLibrary.1.0.260126.7" is already installed.
+CMake Warning (dev) at flutter/ephemeral/.plugin_symlinks/flutter_inappwebview_windows/windows/CMakeLists.txt:32 (add_custom_command):
+  The following keywords are not supported when using
+  add_custom_command(TARGET): DEPENDS.
+
+  Policy CMP0175 is not set: add_custom_command() rejects invalid arguments.
+  Run "cmake --help-policy CMP0175" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Building with D3D texture support.
+-- Configuring done (1.4s)
+-- Generating done (0.3s)
+-- Build files have been written to: D:/workspace/eagler/artifacts/.native-room-client-win/build/windows/x64

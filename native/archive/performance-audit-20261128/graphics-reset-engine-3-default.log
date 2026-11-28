@@ -1,0 +1,5 @@
+[ERROR:flutter/shell/platform/windows/egl/egl.cc(57)] EGL Error: Context Lost (12302) in ../../../flutter/shell/platform/windows/egl/surface.cc:33
+[ERROR:flutter/shell/platform/windows/egl/egl.cc(57)] EGL Error: Context Lost (12302) in ../../../flutter/shell/platform/windows/egl/surface.cc:33
+[ERROR:flutter/shell/platform/windows/egl/egl.cc(57)] EGL Error: Context Lost (12302) in ../../../flutter/shell/platform/windows/egl/context.cc:33
+[ERROR:flutter/shell/platform/windows/egl/egl.cc(57)] EGL Error: Context Lost (12302) in ../../../flutter/shell/platform/windows/egl/context.cc:33
+[ERROR:flutter/shell/gpu/gpu_surface_gl_skia.cc(99)] Could not make the context current to destroy the GrDirectContext resources.

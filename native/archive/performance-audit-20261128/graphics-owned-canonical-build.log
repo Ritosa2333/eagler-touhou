@@ -1,0 +1,21 @@
+Building Windows application...                                 
+CMake Warning (dev) at flutter/ephemeral/.plugin_symlinks/flutter_inappwebview_windows/windows/CMakeLists.txt:32 (add_custom_command):
+  The following keywords are not supported when using
+  add_custom_command(TARGET): DEPENDS.
+
+  Policy CMP0175 is not set: add_custom_command() rejects invalid arguments.
+  Run "cmake --help-policy CMP0175" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\webview_renderer_adapter\in_app_webview\in_app_webview.cpp(2656,70): warning C4458: “id”的声明隐藏了类成员 [D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\plugins\flutter_inappwebview_windows\flutter_inappwebview_windows_plugin.vcxproj]
+D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\webview_renderer_adapter\in_app_webview\in_app_webview.cpp(2662,92): warning C4458: “id”的声明隐藏了类成员 [D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\plugins\flutter_inappwebview_windows\flutter_inappwebview_windows_plugin.vcxproj]
+D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\webview_renderer_adapter\in_app_webview\in_app_webview.cpp(2668,72): warning C4458: “id”的声明隐藏了类成员 [D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\plugins\flutter_inappwebview_windows\flutter_inappwebview_windows_plugin.vcxproj]
+D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\webview_renderer_adapter\in_app_webview\in_app_webview.cpp(2691,63): warning C4458: “id”的声明隐藏了类成员 [D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\plugins\flutter_inappwebview_windows\flutter_inappwebview_windows_plugin.vcxproj]
+D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\webview_renderer_adapter\in_app_webview\in_app_webview.cpp(2697,78): warning C4458: “id”的声明隐藏了类成员 [D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\plugins\flutter_inappwebview_windows\flutter_inappwebview_windows_plugin.vcxproj]
+D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\webview_renderer_adapter\in_app_webview\in_app_webview.cpp(2703,65): warning C4458: “id”的声明隐藏了类成员 [D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\plugins\flutter_inappwebview_windows\flutter_inappwebview_windows_plugin.vcxproj]
+D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\webview_renderer_adapter\in_app_webview\in_app_webview.cpp(2726,73): warning C4458: “settings”的声明隐藏了类成员 [D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\plugins\flutter_inappwebview_windows\flutter_inappwebview_windows_plugin.vcxproj]
+D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\webview_renderer_adapter\in_app_webview\in_app_webview.cpp(2855,66): warning C4458: “settings”的声明隐藏了类成员 [D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\plugins\flutter_inappwebview_windows\flutter_inappwebview_windows_plugin.vcxproj]
+D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\webview_renderer_adapter\in_app_webview\in_app_webview.cpp(4139,17): warning C4458: “id”的声明隐藏了类成员 [D:\workspace\eagler\artifacts\.native-room-client-win\build\windows\x64\plugins\flutter_inappwebview_windows\flutter_inappwebview_windows_plugin.vcxproj]
+Building Windows application...                                    73.4s
+√ Built build\windows\x64\runner\Release\touhouonline.exe

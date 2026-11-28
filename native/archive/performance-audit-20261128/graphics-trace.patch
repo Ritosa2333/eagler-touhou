@@ -1,0 +1,36 @@
+--- a/in_app_webview/in_app_webview.cpp
++++ b/in_app_webview/in_app_webview.cpp
+@@ -1,3 +1,4 @@
++#include <cstdio>
+ #include <cstring>
+ #include <filesystem>
+ #include <nlohmann/json.hpp>
+@@ -666,6 +667,8 @@
+ 
+           BOOL isSuccess;
+           args->get_IsSuccess(&isSuccess);
++          std::fprintf(stderr, "WEBVIEW_LIFETIME_NAVIGATION success=%d status=%d\n", isSuccess, static_cast<int>(webErrorType));
++          std::fflush(stderr);
+ 
+           if (channelDelegate) {
+             wil::unique_cotaskmem_string uri;
+--- a/custom_platform_view/texture_bridge_gpu.cc
++++ b/custom_platform_view/texture_bridge_gpu.cc
+@@ -1,3 +1,5 @@
++#include <cstdio>
++#include <atomic>
+ #include "texture_bridge_gpu.h"
+ 
+ #include <iostream>
+@@ -87,6 +89,11 @@
+ 
+     if (last_frame_) {
+       ProcessFrame(last_frame_);
++      static std::atomic<bool> logged{false};
++      if (surface_ && !logged.exchange(true)) {
++        std::fprintf(stderr, "WEBVIEW_LIFETIME_GPU_FRAME width=%zu height=%zu\n", surface_size_.width, surface_size_.height);
++        std::fflush(stderr);
++      }
+     }
+ 
+     if (surface_) {

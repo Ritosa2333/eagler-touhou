@@ -1,0 +1,19 @@
+{
+  "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+  "isolatedPluginSha256": "1a672cd8b849b4fd8fb0a1cc94c346f9cc90353ae16eceec5fee7853b3c24147",
+  "canonicalPluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373",
+  "canonicalTextMatchesIsolated": false,
+  "matchingSections": [
+    ".rsrc",
+    ".reloc"
+  ],
+  "canonicalSections": {
+    ".text": "a24bca390f094c345c059fc5a181cdec84a812d93d48033e90508e3d8021fba7",
+    ".rdata": "91def148424137659fa2af8124e6187f8e51b1a25e33b3aefb592ae8cf380075",
+    ".data": "6e2aa476822bc2e802a36eb25e803aee5078d21f512ec78b7031bf8d784e5804",
+    ".pdata": "9fa21150f2d7a50a42a537eccca35ebacf2d54889dfb1aac15af5ce35ec3a1ad",
+    ".rsrc": "823283eccc6a8a61cf0f0f13260d19f3a2b2207fa07d9e8feccadacf4eb88747",
+    ".reloc": "be0919c57477b63c32f33fa6574b6cd11f8229aeed2f2f0f7cd40ec94f3d0c8a"
+  },
+  "originalPreviewFilesUnchanged": 371
+}

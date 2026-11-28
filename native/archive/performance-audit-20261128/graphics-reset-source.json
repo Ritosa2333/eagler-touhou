@@ -1,0 +1,8 @@
+{
+  "scope": "Single-engine diagnostic only; resets static graphics context after view managers close. Does not establish multi-engine/reinitialization safety; not product code.",
+  "baselineAotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+  "changedSources": {
+    "in_app_webview\\in_app_webview_manager.cpp": "31fbdcaadaf2fb28ddcc10a3419ce6608839d5cee92c3f26a264ba73162b1564",
+    "flutter_inappwebview_windows_plugin.cpp": "04fe4649f3f16d8607cd45124c2da4f1d35b1e2c3d853e833261a23023883034"
+  }
+}

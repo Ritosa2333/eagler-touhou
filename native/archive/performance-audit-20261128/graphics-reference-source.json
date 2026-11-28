@@ -1,0 +1,18 @@
+[
+  {
+    "url": "https://raw.githubusercontent.com/jnschulze/flutter-webview-windows/main/windows/webview_windows_plugin.cc",
+    "sha256": "f4f04634b181d4494171f67b24fe5d5047ae29818083787d30f64a2340178895"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/jnschulze/flutter-webview-windows/main/windows/webview_platform.h",
+    "sha256": "6a0d11d33abeca2cf348c0af3820e568e7fdad958cf973631d85eaa464aad8ff"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/jnschulze/flutter-webview-windows/main/windows/webview_platform.cc",
+    "sha256": "9e2858b3e4380d988e3a364e9dc8e10fb2592c5815737301e1a1df61fad50219"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/jnschulze/flutter-webview-windows/main/windows/graphics_context.h",
+    "sha256": "530ef02940ddddd79ee02c68476307f274de76a7d347118472651e6cc282ea40"
+  }
+]

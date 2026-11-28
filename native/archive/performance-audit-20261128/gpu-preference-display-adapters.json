@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "GameViewer Virtual Display Adapter",
+    "DriverVersion": "15.6.5.199",
+    "PNPDeviceID": "ROOT\\DISPLAY\\0000"
+  },
+  {
+    "Name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "DriverVersion": "32.0.15.8129",
+    "PNPDeviceID": "PCI\\VEN_10DE&DEV_28A0&SUBSYS_139A1D05&REV_A1\\4&15FA1D26&0&0008"
+  },
+  {
+    "Name": "Intel(R) UHD Graphics",
+    "DriverVersion": "31.0.101.5445",
+    "PNPDeviceID": "PCI\\VEN_8086&DEV_A78B&SUBSYS_139A1D05&REV_04\\3&11583659&0&10"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "scope": "Isolated per-manager graphics ownership candidate; static COM bootstrap/compositor unchanged. Dependent view managers close first; all five transitive header consumers rebuilt. Not product code.",
+  "baselineAotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+  "changedSources": {
+    "in_app_webview\\in_app_webview_manager.cpp": "0124ad03a2c1ac8a4a7b874403145249037e8212ec09fcee0e53c4e23632575c",
+    "flutter_inappwebview_windows_plugin.cpp": "04fe4649f3f16d8607cd45124c2da4f1d35b1e2c3d853e833261a23023883034"
+  }
+}

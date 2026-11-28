@@ -1,0 +1,303 @@
+{
+  "pid": 15292,
+  "tid": 33204,
+  "exitCode": 0,
+  "waitResult": 258,
+  "created": 134403254735501806,
+  "exited": 0,
+  "kernel100ns": 8281250,
+  "user100ns": 108437500,
+  "stackFrames": [
+    {
+      "address": "7ffa6a5a88c8",
+      "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+      "offset": "1688c8",
+      "export": "OpenAdapter10_2",
+      "exportOffset": "ad38"
+    },
+    {
+      "address": "7ffa6a5a88c8",
+      "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+      "offset": "1688c8",
+      "export": "OpenAdapter10_2",
+      "exportOffset": "ad38"
+    },
+    {
+      "address": "7ffa6a45171b",
+      "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+      "offset": "1171b",
+      "export": "",
+      "exportOffset": "0"
+    },
+    {
+      "address": "7ffa6a450769",
+      "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+      "offset": "10769",
+      "export": "",
+      "exportOffset": "0"
+    },
+    {
+      "address": "7ffa6a581424",
+      "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+      "offset": "141424",
+      "export": "",
+      "exportOffset": "0"
+    },
+    {
+      "address": "7ffa6a82f504",
+      "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+      "offset": "3ef504",
+      "export": "OpenAdapter_D3D11On12",
+      "exportOffset": "c6364"
+    },
+    {
+      "address": "7ffa7e9b4c27",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "74c27",
+      "export": "D3DPerformance_GetStatus",
+      "exportOffset": "132b7"
+    },
+    {
+      "address": "7ffa7e9b4bc5",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "74bc5",
+      "export": "D3DPerformance_GetStatus",
+      "exportOffset": "13255"
+    },
+    {
+      "address": "7ffa7e9b4b7c",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "74b7c",
+      "export": "D3DPerformance_GetStatus",
+      "exportOffset": "1320c"
+    },
+    {
+      "address": "7ffa7e9b4b49",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "74b49",
+      "export": "D3DPerformance_GetStatus",
+      "exportOffset": "131d9"
+    },
+    {
+      "address": "7ffa7e99c100",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "5c100",
+      "export": "D3D11CoreCreateLayeredDevice",
+      "exportOffset": "4d960"
+    },
+    {
+      "address": "7ffa7e94ebfc",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "ebfc",
+      "export": "D3D11CoreCreateLayeredDevice",
+      "exportOffset": "45c"
+    },
+    {
+      "address": "7ffa7e9a1a5a",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "61a5a",
+      "export": "D3DPerformance_GetStatus",
+      "exportOffset": "ea"
+    },
+    {
+      "address": "7ffa7e960988",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "20988",
+      "export": "D3D11CoreCreateLayeredDevice",
+      "exportOffset": "121e8"
+    },
+    {
+      "address": "7ffa7e95217a",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "1217a",
+      "export": "D3D11CoreCreateLayeredDevice",
+      "exportOffset": "39da"
+    },
+    {
+      "address": "7ffa7e94d31d",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "d31d",
+      "export": "CreateDirect3D11DeviceFromDXGIDevice",
+      "exportOffset": "2d4d"
+    },
+    {
+      "address": "7ffa7e9c53c9",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "853c9",
+      "export": "D3D11CreateDevice",
+      "exportOffset": "2229"
+    },
+    {
+      "address": "7ffa7e9c536f",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "8536f",
+      "export": "D3D11CreateDevice",
+      "exportOffset": "21cf"
+    },
+    {
+      "address": "7ffa7e9c5324",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "85324",
+      "export": "D3D11CreateDevice",
+      "exportOffset": "2184"
+    },
+    {
+      "address": "7ffa7e94ed28",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "ed28",
+      "export": "D3D11CoreCreateLayeredDevice",
+      "exportOffset": "588"
+    },
+    {
+      "address": "7ffa7e9b0cc4",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "70cc4",
+      "export": "D3DPerformance_GetStatus",
+      "exportOffset": "f354"
+    },
+    {
+      "address": "7ffa7e94a2f0",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "a2f0",
+      "export": "CreateDirect3D11SurfaceFromDXGISurface",
+      "exportOffset": "270"
+    },
+    {
+      "address": "7ffa7e9ca99e",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "8a99e",
+      "export": "D3DKMTSetVidPnSourceOwner",
+      "exportOffset": "3bfe"
+    },
+    {
+      "address": "7ffa7e9ca964",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "8a964",
+      "export": "D3DKMTSetVidPnSourceOwner",
+      "exportOffset": "3bc4"
+    },
+    {
+      "address": "7ffa7e9c7891",
+      "module": "C:\\WINDOWS\\SYSTEM32\\d3d11.dll",
+      "offset": "87891",
+      "export": "D3DKMTSetVidPnSourceOwner",
+      "exportOffset": "af1"
+    },
+    {
+      "address": "7ff9bc37f747",
+      "module": "D:\\Temp\\native-performance-20261128\\gpu-preference\\preview\\flutter_inappwebview_windows_plugin.dll",
+      "offset": "1f747",
+      "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+      "exportOffset": "5317"
+    },
+    {
+      "address": "7ff9bc44e472",
+      "module": "D:\\Temp\\native-performance-20261128\\gpu-preference\\preview\\flutter_inappwebview_windows_plugin.dll",
+      "offset": "ee472",
+      "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+      "exportOffset": "d4042"
+    },
+    {
+      "address": "7ffa82cc9c85",
+      "module": "C:\\WINDOWS\\System32\\ucrtbase.dll",
+      "offset": "49c85",
+      "export": "bsearch_s",
+      "exportOffset": "255"
+    },
+    {
+      "address": "7ffa82cc98a7",
+      "module": "C:\\WINDOWS\\System32\\ucrtbase.dll",
+      "offset": "498a7",
+      "export": "execute_onexit_table",
+      "exportOffset": "87"
+    },
+    {
+      "address": "7ffa82cc985d",
+      "module": "C:\\WINDOWS\\System32\\ucrtbase.dll",
+      "offset": "4985d",
+      "export": "execute_onexit_table",
+      "exportOffset": "3d"
+    },
+    {
+      "address": "7ff9bc43dc2d",
+      "module": "D:\\Temp\\native-performance-20261128\\gpu-preference\\preview\\flutter_inappwebview_windows_plugin.dll",
+      "offset": "ddc2d",
+      "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+      "exportOffset": "c37fd"
+    },
+    {
+      "address": "7ff9bc43dd4d",
+      "module": "D:\\Temp\\native-performance-20261128\\gpu-preference\\preview\\flutter_inappwebview_windows_plugin.dll",
+      "offset": "ddd4d",
+      "export": "FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar",
+      "exportOffset": "c391d"
+    },
+    {
+      "address": "7ffa853a147a",
+      "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+      "offset": "12147a",
+      "export": "RtlWow64SuspendThread",
+      "exportOffset": "c50a"
+    },
+    {
+      "address": "7ffa8529b2e3",
+      "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+      "offset": "1b2e3",
+      "export": "RtlRaiseException",
+      "exportOffset": "1533"
+    },
+    {
+      "address": "7ffa8534b08f",
+      "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+      "offset": "cb08f",
+      "export": "LdrShutdownProcess",
+      "exportOffset": "17f"
+    },
+    {
+      "address": "7ffa85349d9e",
+      "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+      "offset": "c9d9e",
+      "export": "RtlExitUserProcess",
+      "exportOffset": "9e"
+    },
+    {
+      "address": "7ffa849817ab",
+      "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+      "offset": "417ab",
+      "export": "ExitProcess",
+      "exportOffset": "b"
+    },
+    {
+      "address": "7ffa82d20813",
+      "module": "C:\\WINDOWS\\System32\\ucrtbase.dll",
+      "offset": "a0813",
+      "export": "logbf",
+      "exportOffset": "2c3"
+    },
+    {
+      "address": "7ff716dd6a98",
+      "module": "D:\\Temp\\native-performance-20261128\\gpu-preference\\preview\\gpu-audit.exe",
+      "offset": "6a98",
+      "export": "",
+      "exportOffset": "0"
+    },
+    {
+      "address": "7ffa8496dda7",
+      "module": "C:\\WINDOWS\\System32\\KERNEL32.DLL",
+      "offset": "2dda7",
+      "export": "BaseThreadInitThunk",
+      "exportOffset": "17"
+    },
+    {
+      "address": "7ffa85349c5c",
+      "module": "C:\\WINDOWS\\SYSTEM32\\ntdll.dll",
+      "offset": "c9c5c",
+      "export": "RtlUserThreadStart",
+      "exportOffset": "2c"
+    }
+  ],
+  "modules": 102,
+  "rip": "7ffa6a5a88c8",
+  "module": "C:\\WINDOWS\\System32\\DriverStore\\FileRepository\\iigd_dch.inf_amd64_3b26fd055d3e2b36\\igd10um64xe.DLL",
+  "offset": "1688c8"
+}

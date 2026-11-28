@@ -1,0 +1,37 @@
+{
+  "scope": "Current plugin relinked from its94 existing object inputs with /MAP only; .text identical. Public map names are nearest labels, not private PDB or exact boundaries.",
+  "text": {
+    "bytes": 987648,
+    "sha256": "a811254bee087637c9cb93eaa5891b9643ccaddf094d7165ad43417185a524e4"
+  },
+  "resolved": [
+    {
+      "frame": 25,
+      "rva": "1f747",
+      "mapPublicSymbol": "?unconditional_release_ref@?$com_ptr@UIVisualCollection@Composition@UI@Windows@ABI@@@winrt@@AEAAXXZ",
+      "object": "f i IN_APP_WEBVIEW.OBJ",
+      "displacement": 23
+    },
+    {
+      "frame": 26,
+      "rva": "ee472",
+      "mapPublicSymbol": "??__F?graphics_context_@InAppWebViewManager@flutter_inappwebview_plugin@@0V?$unique_ptr@VGraphicsContext@flutter_inappwebview_plugin@@U?$default_delete@VGraphicsContext@flutter_inappwebview_plugin@@@std@@@std@@A@@YAXXZ",
+      "object": "f   FLUTTER_INAPPWEBVIEW_WINDOWS_PLUGIN.OBJ",
+      "displacement": 66
+    },
+    {
+      "frame": 30,
+      "rva": "ddc2d",
+      "mapPublicSymbol": "?dllmain_crt_process_detach@@YAH_N@Z",
+      "object": "f   MSVCRT:dll_dllmain.obj",
+      "displacement": 69
+    },
+    {
+      "frame": 31,
+      "rva": "ddd4d",
+      "mapPublicSymbol": "?dllmain_dispatch@@YAHQEAUHINSTANCE__@@KQEAX@Z",
+      "object": "f   MSVCRT:dll_dllmain.obj",
+      "displacement": 225
+    }
+  ]
+}

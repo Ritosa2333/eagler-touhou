@@ -1923,9 +1923,9 @@
   ],
   "capturedAtUtc": "2026-11-28T07:18:57.005290+00:00",
   "productionSourceMatchesWindowsPackage": {
-    "checkedAtUtc": "2026-11-28T07:26:39.266913+00:00",
+    "checkedAtUtc": "2026-11-28T08:13:27.349354+00:00",
     "package": "touhouonline-windows-preview.zip",
-    "sha256": "4d18753e44c82d7350fee86425779a118ef79eb3ea70f27b73a14d94feae7858",
+    "sha256": "c0f8ee25cca128b1e16e4231fa8fc473b8f8899e7f287e2823bdb864ff91c38d",
     "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
     "source": {
       "integration_test/desktop_window_test.dart": "4b1e1c0cefc4c3cf0f4d4f09ff71e8405327feba80530a33bbde710684be4bdc",
@@ -2022,8 +2022,8 @@
       "pubspec.yaml": "713fc4f5312c6a29c0f705f35225e5329bdfd9b5f8d6280b1510db4f49ac835f",
       "windows/runner/main.cpp": "76d4a5a86d03a8967c90c0fb4bd67ad32fa8c048d66825c4f4cf5c1a2efcd102",
       "windows/CMakeLists.txt": "c32db2d1e3d8935dd0ecd7b091e5b6df3aa98ded9ffa1fbef981af150d634fef",
-      "windows/webview_renderer_adapter.cmake": "2c433b7c858e4d83c8cf517de0a71da8fb3385f0a1ba58d3c1fc965a6a0707c6",
-      "windows/webview-renderer-adapter.patch": "0faf6f8af1a07b152aa4c4d5d945f977d6dd75a36dd161ee507ca4729b863e4a",
+      "windows/webview_renderer_adapter.cmake": "2e09ad833cbaef6514dde8e89acfb4c279faad7845a815bab1c55434c3c5bcb1",
+      "windows/webview-renderer-adapter.patch": "5b75f7264ae5ca7e1a4efe0b70f8c4f79bcbf7d4467f84b2694353a7e7e0f2ae",
       "windows/.gitignore": "955e3110cb16494ee76e1cd5df47e2c212309eb94a49a123fe87f718de413cb8",
       "windows/flutter/CMakeLists.txt": "bd05e3268b2f246bcbafdb778165fe67a7bafdba04eb73599502563a67b8ae7e",
       "windows/flutter/generated_plugin_registrant.cc": "dea3b03e61ab1c586f53cf0789ecdad48ea470d5ac663d7d7402c278f3036507",
@@ -2043,7 +2043,7 @@
       "test/account_web_page_test.dart": "30ac740bdec2aa7aefa1ba2bdb115782f302ef1fe0fee1fdf34d9df9c4ef2341"
     },
     "entry": "lib/main.dart",
-    "scope": "Canonical ordinary main.dart Windows Release | size-gated JSON worker | unchanged visual layout | pinned SDK/native compatibility guards | no deployment"
+    "scope": "Native-only D3D ownership fix. Same Dart AOT and recorded widget capture inputs; 210 image hashes rechecked, no recapture."
   },
   "recaptureScope": "Account JSON worker | 210 fresh widget captures, all byte-identical | not user visual approval"
 }

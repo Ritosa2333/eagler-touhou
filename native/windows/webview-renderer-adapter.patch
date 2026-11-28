@@ -53,14 +53,83 @@
      CreateD3DDevice(D3D_DRIVER_TYPE_WARP, device);
 --- a/in_app_webview/in_app_webview_manager.cpp
 +++ b/in_app_webview/in_app_webview_manager.cpp
-@@ -41,7 +41,9 @@
+@@ -23,33 +23,32 @@
+   {
+     if (!rohelper_) {
+       rohelper_ = std::make_unique<rx::RoHelper>(RO_INIT_SINGLETHREADED);
+-
+-      if (rohelper_->WinRtAvailable()) {
++    }
++    if (rohelper_->WinRtAvailable()) {
++      if (!dispatcher_queue_controller_) {
+         DispatcherQueueOptions options{ sizeof(DispatcherQueueOptions),
+                                        DQTYPE_THREAD_CURRENT, DQTAT_COM_STA };
+-
+         if (FAILED(rohelper_->CreateDispatcherQueueController(
+           options, dispatcher_queue_controller_.put()))) {
+           std::cerr << "Creating DispatcherQueueController failed." << std::endl;
            return;
          }
- 
+-
+-        if (!isGraphicsCaptureSessionSupported()) {
+-          std::cerr << "Windows::Graphics::Capture::GraphicsCaptureSession is not "
+-            "supported."
+-            << std::endl;
+-          return;
+-        }
+-
 -        graphics_context_ = std::make_unique<GraphicsContext>(rohelper_.get());
-+        winrt::com_ptr<IDXGIAdapter> rendering_adapter;
-+        plugin->registrar->GetGraphicsAdapter(rendering_adapter.put());
-+        graphics_context_ = std::make_unique<GraphicsContext>(rohelper_.get(), rendering_adapter.get());
++      }
++      if (!isGraphicsCaptureSessionSupported()) {
++        std::cerr << "Windows::Graphics::Capture::GraphicsCaptureSession is not supported." << std::endl;
++        return;
++      }
++      winrt::com_ptr<IDXGIAdapter> rendering_adapter;
++      plugin->registrar->GetGraphicsAdapter(rendering_adapter.put());
++      graphics_context_ = std::make_unique<GraphicsContext>(rohelper_.get(), rendering_adapter.get());
++      if (!compositor_) {
          compositor_ = graphics_context_->CreateCompositor();
          if (compositor_) {
-           // fix for KernelBase.dll RaiseFailFastException
+-          // fix for KernelBase.dll RaiseFailFastException
+-          // when app is closing 
++          // Preserve the upstream compositor shutdown workaround.
+           compositor_->AddRef();
+         }
+-        valid_ = graphics_context_->IsValid();
+-      }
++      }
++      valid_ = graphics_context_->IsValid();
+     }
+ 
+     windowClass_.lpszClassName = CustomPlatformView::CLASS_NAME;
+--- a/in_app_webview/in_app_webview_manager.h
++++ b/in_app_webview/in_app_webview_manager.h
+@@ -55,10 +55,10 @@
+     inline static std::shared_ptr<rx::RoHelper> rohelper_ = nullptr;
+     inline static winrt::com_ptr<ABI::Windows::System::IDispatcherQueueController>
+       dispatcher_queue_controller_;
+-    inline static std::unique_ptr<GraphicsContext> graphics_context_ = nullptr;
++    std::unique_ptr<GraphicsContext> graphics_context_ = nullptr;
+     inline static winrt::com_ptr<ABI::Windows::UI::Composition::ICompositor> compositor_;
+     WNDCLASS windowClass_ = {};
+-    inline static bool valid_ = false;
++    bool valid_ = false;
+   };
+ }
+ #endif //FLUTTER_INAPPWEBVIEW_PLUGIN_IN_APP_WEBVIEW_MANAGER_H_
+\ No newline at end of file
+--- a/flutter_inappwebview_windows_plugin.cpp
++++ b/flutter_inappwebview_windows_plugin.cpp
+@@ -48,10 +48,10 @@
+     if (registrar) {
+       registrar->UnregisterTopLevelWindowProcDelegate(window_proc_id);
+     }
+-    webViewEnvironmentManager = nullptr;
+-    inAppWebViewManager = nullptr;
+     inAppBrowserManager = nullptr;
+     headlessInAppWebViewManager = nullptr;
++    inAppWebViewManager = nullptr;
++    webViewEnvironmentManager = nullptr;
+     cookieManager = nullptr;
+     platformUtil = nullptr;
+   }

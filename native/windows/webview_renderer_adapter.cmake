@@ -14,7 +14,9 @@ function(launcher_align_webview_adapter)
     "custom_platform_view/graphics_context.h|4386aae0bd6c39e1e596162a1cf8af8cf3513e12abf3d740f5ee541f70e7f66b|413f931ebcda54889b0e4e68b25320e2d76430e4aef43a01d926df94e7ff092b"
     "custom_platform_view/graphics_context.cc|e1eba76fbfc804e1bf81fde0354f6ebd0be42ffbb423ef1ff3126be426765e3e|836ddcf95d748714e2f4c5fa324d446231b7bc6863f70174c15697f228b1df9a"
     "custom_platform_view/util/d3dutil.h|9ac80f75b468454a0f3436452243148c864559e41ee1dd9cd7e2cf4ea7fb2b56|cb160eaa9c0416edc2a4a3f659df22d1e9ab391e201af6142474b1b8dae3d0b0"
-    "in_app_webview/in_app_webview_manager.cpp|371661fcca87a233db55608f2f9f090fdfee0dff1dab2414f9067606eb19ba5a|1051d89944aa10e1bb29773b2d2b134aacb16431bc8abf857b7baed90a86e88c"
+    "in_app_webview/in_app_webview_manager.cpp|371661fcca87a233db55608f2f9f090fdfee0dff1dab2414f9067606eb19ba5a|0124ad03a2c1ac8a4a7b874403145249037e8212ec09fcee0e53c4e23632575c"
+    "in_app_webview/in_app_webview_manager.h|7fd060d7febc708da8b89cd84d47fae93a4c71591592282707661eacbbd2d444|029b426b7e6a91cf778ea408005b0f30f92f68968c8e508f5b5a247dd6498c36"
+    "flutter_inappwebview_windows_plugin.cpp|e8b0c1ebe4758e900fac91fbd2faaf6ce41a94c8fdf73c20e479874a74f91407|04fe4649f3f16d8607cd45124c2da4f1d35b1e2c3d853e833261a23023883034"
   )
   set(_work "${CMAKE_CURRENT_BINARY_DIR}/webview_adapter_input")
   set(_overlay "${CMAKE_CURRENT_BINARY_DIR}/webview_renderer_adapter")
@@ -62,6 +64,8 @@ function(launcher_align_webview_adapter)
     # COPYONLY avoids recompiling these files when their contents are unchanged.
     configure_file("${_work}/${_path}" "${_overlay}/${_path}" COPYONLY)
   endforeach()
+  # These sources inline manager accessors from the changed ownership header.
+  set(_header_consumers cookie_manager.cpp platform_util.cpp in_app_webview/in_app_webview.cpp)
   get_target_property(_sources ${_plugin} SOURCES)
   set(_aligned_sources)
   foreach(_source IN LISTS _sources)
@@ -69,7 +73,7 @@ function(launcher_align_webview_adapter)
       set(_source "${_upstream}/${_source}")
     endif()
     file(RELATIVE_PATH _relative "${_upstream}" "${_source}")
-    if(_relative IN_LIST _paths)
+    if(_relative IN_LIST _paths OR _relative IN_LIST _header_consumers)
       list(APPEND _aligned_sources "${_overlay}/${_relative}")
     else()
       list(APPEND _aligned_sources "${_source}")

@@ -1,0 +1,8 @@
+{
+  "aot": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+  "host": "777a8c20e06b1247381df97a6b2602be95ede17ef4bdf0e7babe116f198c154d",
+  "baselinePlugin": "83efe264fa64e41b294aaeb93cfa4c1597401031d75a6fb197558d891bfe1cb1",
+  "candidatePlugin": "22f7a5d2312e75f4cc87345c59632c7fd7a0627598b419d42950c33d8dd5a4a7",
+  "engine": "81d227453d4e34da29e399c62d615091ffc712e54fb2ec20010c1c95487e90b6",
+  "scope": "Same nonactivating host, current ordinary main.dart AOT and Skia. Candidate plugin only changes two destructors. Single engine with no actual webview creation; not multi-engine or account-page acceptance."
+}

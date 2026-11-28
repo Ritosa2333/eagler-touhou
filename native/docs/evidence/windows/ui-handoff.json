@@ -1,18 +1,12 @@
 {
-  "checkedAtUtc": "2026-11-28T07:26:39.266913+00:00",
-  "builtAtUtc": "2026-11-28T07:23:12.701656+00:00",
-  "stage": "Core UI candidate ready for user review; not user-approved or complete platform acceptance",
-  "scope": [
-    "Desktop and portrait library",
-    "Game details",
-    "Game settings",
-    "Multiplayer lobby",
-    "Existing in-app production account website"
-  ],
+  "checkedAtUtc": "2026-11-28T08:13:27.349354+00:00",
+  "builtAtUtc": "2026-11-28T08:13:27.349354+00:00",
+  "stage": "D:\\workspace\\eagler\\artifacts\\.native-room-client-win",
+  "scope": "Ordinary main.dart Windows Release | per-manager D3D ownership and dependent-manager destruction order | unchanged Dart AOT, SDK and UI | no deployment",
   "package": "touhouonline-windows-preview.zip",
-  "packageSha256": "4d18753e44c82d7350fee86425779a118ef79eb3ea70f27b73a14d94feae7858",
+  "packageSha256": "c0f8ee25cca128b1e16e4231fa8fc473b8f8899e7f287e2823bdb864ff91c38d",
   "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
-  "entry": "lib/main.dart",
+  "entry": "D:\\Temp\\native-performance-20261128\\shutdown-guard\\production\\touhouonline.exe",
   "source": {
     "integration_test/desktop_window_test.dart": "4b1e1c0cefc4c3cf0f4d4f09ff71e8405327feba80530a33bbde710684be4bdc",
     "lib/account.dart": "eccb15644d1f052d8c195fc98f10a6380c9e02cee3b0f64c48e5f11d4be3d889",
@@ -108,8 +102,8 @@
     "pubspec.yaml": "713fc4f5312c6a29c0f705f35225e5329bdfd9b5f8d6280b1510db4f49ac835f",
     "windows/runner/main.cpp": "76d4a5a86d03a8967c90c0fb4bd67ad32fa8c048d66825c4f4cf5c1a2efcd102",
     "windows/CMakeLists.txt": "c32db2d1e3d8935dd0ecd7b091e5b6df3aa98ded9ffa1fbef981af150d634fef",
-    "windows/webview_renderer_adapter.cmake": "2c433b7c858e4d83c8cf517de0a71da8fb3385f0a1ba58d3c1fc965a6a0707c6",
-    "windows/webview-renderer-adapter.patch": "0faf6f8af1a07b152aa4c4d5d945f977d6dd75a36dd161ee507ca4729b863e4a",
+    "windows/webview_renderer_adapter.cmake": "2e09ad833cbaef6514dde8e89acfb4c279faad7845a815bab1c55434c3c5bcb1",
+    "windows/webview-renderer-adapter.patch": "5b75f7264ae5ca7e1a4efe0b70f8c4f79bcbf7d4467f84b2694353a7e7e0f2ae",
     "windows/.gitignore": "955e3110cb16494ee76e1cd5df47e2c212309eb94a49a123fe87f718de413cb8",
     "windows/flutter/CMakeLists.txt": "bd05e3268b2f246bcbafdb778165fe67a7bafdba04eb73599502563a67b8ae7e",
     "windows/flutter/generated_plugin_registrant.cc": "dea3b03e61ab1c586f53cf0789ecdad48ea470d5ac663d7d7402c278f3036507",
@@ -128,44 +122,36 @@
     "windows/runner/win32_window.h": "d154cf89ba85f820631a9b5bedacbe64fc5815e428fe6bc5da579ce649f69841",
     "test/account_web_page_test.dart": "30ac740bdec2aa7aefa1ba2bdb115782f302ef1fe0fee1fdf34d9df9c4ef2341"
   },
-  "changes": "Account JSON >=64 KiB decodes in a short-lived worker. Smaller responses keep direct parsing. Full Windows Release rebuilt; 210 fresh control captures byte-identical.",
+  "changes": "网页管理器实例持有 D3D 图形对象，依赖视图先释放；完整 Windows Release 重建。Dart UI 和 AOT 未变。",
   "verification": {
-    "windowsReleaseBuild": "passed | canonical main.dart with default icon tree shaking",
-    "accountChecks": 93,
-    "actualPublicApiChecks": 1,
-    "staticAnalysis": "No issues",
-    "layoutLanguageNavigationCaptureChecks": 133,
-    "recapturedImages": 210,
-    "byteIdenticalImages": 210,
-    "currentAotGuestContainer": {
-      "nativeHostDiffersFromDistributedExe": true,
-      "exitCode": 0,
-      "closeToEngineDestroyedMs": 94,
-      "forcedTermination": false,
-      "readOnlyAccessibilityVerified": true,
-      "webContentPixelsNotCaptured": true
-    },
-    "zipCrcAndAllFileHashes": "passed",
-    "originalPreviewFilesUnchanged": 371
+    "windowsReleaseBuild": "passed | canonical Flutter CLI main.dart, default icon tree shaking",
+    "repeatCmakeConfigure": "passed",
+    "canonicalLibraryCloseTrials": 2,
+    "canonicalSequentialEngineRecreation": 1,
+    "canonicalAccountContainerClose": 1,
+    "allTrialExitCodes": 0,
+    "allProcessesKernelSignaled": true,
+    "unchangedDartAot": true,
+    "originalPreviewFilesUnchanged": 371,
+    "zipCrcAndAllFileHashes": "passed"
   },
   "performanceReport": "archive/performance-audit-20261128/report.md",
   "pending": [
-    "User visual acceptance",
-    "Authenticated account login/logout, upload and crop",
-    "OS pointer/window gestures with reliable surface binding",
-    "Other platform engine/device acceptance; Android runs excluded by current instructions",
     "High-frequency foreground UI Automation query client origin and CPU overhead",
     "Presented FPS and continuous 165 Hz in all scenarios",
     "Authenticated large payloads, live-room sustained voice/chat and long-duration memory/power",
     "Other OS and GPU devices",
-    "Intermittent native driver shutdown hang",
+    "User visual acceptance",
     "Final ordinary Release guest login manual cross-width check; existing user window was not interrupted",
-    "Current ordinary Release real-window resource import after checksum-worker change"
+    "Current ordinary Release real-window resource import after checksum-worker change",
+    "Graphics context loss, concurrent engines and other driver/device shutdown behavior"
   ],
   "inheritedVerification": {
-    "scope": "Earlier resource, native shutdown, same-window width and performance checks retain their original AOT and native-host scopes in the report.",
-    "previousPackageSha256": "7fdda3cdeeb4cea1a160e7412a6909b696cfe42a079cc3229184ce00c142e672",
-    "previousAotSha256": "93968c238086dfe40a6725bf2fe048bda672d15bfcd9293134e79986290c2e05",
-    "report": "archive/performance-audit-20261128/report.md"
+    "scope": "Previous Dart and widget verification, unchanged Dart/UI inputs. Not rerun after native-only lifetime change.",
+    "report": "archive/performance-audit-20261128/report.md",
+    "accountChecks": 93,
+    "publicApiChecks": 1,
+    "layoutNavigationCaptureChecks": 133,
+    "byteIdenticalRecapturedImages": 210
   }
 }

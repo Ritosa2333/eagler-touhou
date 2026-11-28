@@ -1,0 +1,7 @@
+{
+  "packageSha256": "4d18753e44c82d7350fee86425779a118ef79eb3ea70f27b73a14d94feae7858",
+  "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+  "pluginSha256": "83efe264fa64e41b294aaeb93cfa4c1597401031d75a6fb197558d891bfe1cb1",
+  "sourceCommit": "173cbeb4a2e4deb894c7989ddc4bb2980cb4d786",
+  "scope": "Current pre-fix release ZIP verified before package rotation. GPU diagnostic reused this AOT and DLL set; the timed native host is separate."
+}

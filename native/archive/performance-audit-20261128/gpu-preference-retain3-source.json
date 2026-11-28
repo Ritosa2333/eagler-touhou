@@ -1,0 +1,5 @@
+{
+  "scope": "Same diagnostic host and canonical main.dart AOT as stopped GPU matrix. Default preference retry retains a nonterminated process for bounded native stack collection. Native host self-closes, no activation or app input. Parent owns the kernel handle and terminates only its own retained child after explicit done marker or 90-second safety deadline.",
+  "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+  "hostSha256": "777a8c20e06b1247381df97a6b2602be95ede17ef4bdf0e7babe116f198c154d"
+}
