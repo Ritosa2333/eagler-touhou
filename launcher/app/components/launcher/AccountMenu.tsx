@@ -3,7 +3,7 @@ import {DropdownMenu} from 'radix-ui';
 import {Button} from '../../ui/button';
 import {AccountAvatar} from './AccountAvatar';
 import {NavigationIcon} from './NavigationIcon';
-import {MastheadTooltip} from './MastheadTooltip';
+import {MastheadActionLabel, MastheadTooltip} from './MastheadTooltip';
 import {ChevronDown, House, LogOut, Pencil, ShieldCheck} from 'lucide-react';
 import {AppLink} from './AppLink';
 import {accountRequest} from '../../services/account-client';
@@ -25,15 +25,16 @@ export function AccountMenu({interactive,assetUrl}:{interactive:boolean;assetUrl
     <Button variant="ghost" size="icon" className="masthead-action book-profile-trigger"
       onClick={retry} aria-label={`${t('nav.account')} | ${t('action.retry')}`}>
       <NavigationIcon name="profile"/>
+      <MastheadActionLabel>{t('nav.account')}</MastheadActionLabel>
     </Button>
   </MastheadTooltip>;
   if (!user) {
     const label=t('account.login');
-    return <MastheadTooltip label={label}>
-      <Button asChild variant="ghost" size="lg" className="masthead-action account-login-link gap-1.5 px-2">
+    return <MastheadTooltip label={label} iconOnly>
+      <Button asChild variant="ghost" size="icon" className="masthead-action account-login-link">
         <AppLink href={loginHref} rememberEntry aria-label={label}>
           <NavigationIcon name="profile"/>
-          <span>{label}</span>
+          <MastheadActionLabel>{label}</MastheadActionLabel>
         </AppLink>
       </Button>
     </MastheadTooltip>;

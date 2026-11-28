@@ -5,7 +5,7 @@ import {useSurfaceLayerState} from '../../navigation/surface-layer';
 import {BOOK_PREFERENCES_EVENT, readBookPreference, writeBookPreference} from './book-preferences';
 import {NavigationIcon} from './NavigationIcon';
 import {impressTheme} from './ink-feedback';
-import {MastheadTooltip} from './MastheadTooltip';
+import {MastheadActionLabel, MastheadTooltip} from './MastheadTooltip';
 import {BackgroundSettings, BaseThemeChoices, type BackgroundSurface} from './CustomBackground';
 import {SettingsRowContent} from '../settings/SettingsGroup';
 
@@ -75,10 +75,11 @@ export function BookThemeToggle({interactive = true, row = false, tooltip = fals
   const icon = <NavigationIcon name={dark ? 'moon' : 'sun'}/>;
   const button = <UiButton ref={trigger} type="button" variant="ghost" size={row ? "row" : "icon"} className={row ? "settings-navigation-row masthead-overview-theme" : "masthead-action book-theme-toggle [&_svg]:size-5"} disabled={!interactive || !ready}
     aria-label={label} aria-haspopup="dialog" onClick={() => setOpen(true)} title={tooltip ? undefined : label}>
-    {row ? <SettingsRowContent icon={inlineChoices ? undefined : icon}>{label}</SettingsRowContent> : icon}
+    {row ? <SettingsRowContent icon={inlineChoices ? undefined : icon}>{label}</SettingsRowContent> :
+      <>{icon}{tooltip && <MastheadActionLabel>{t('nav.theme')}</MastheadActionLabel>}</>}
   </UiButton>;
   return <>{inlineChoices && <BaseThemeChoices dark={dark} onThemeChange={changeTheme}/>}
-    {tooltip ? <MastheadTooltip label={label}>{button}</MastheadTooltip> : button}
+    {tooltip ? <MastheadTooltip label={label} iconOnly={!row}>{button}</MastheadTooltip> : button}
     <BackgroundSettings open={open} onOpenChange={setOpen} dark={dark} onThemeChange={changeTheme} surfaces={surfaces} showBase={!inlineChoices}/>
   </>;
 }

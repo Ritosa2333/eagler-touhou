@@ -33,7 +33,7 @@ import { isTh09RatingPage } from '../documents/catalog';
 import { MastheadOverview, type MastheadSiteLink } from './MastheadOverview';
 import { useLocation } from 'react-router';
 import { AccountMenu } from './AccountMenu';
-import { MastheadTooltip } from './MastheadTooltip';
+import { MastheadActionLabel, MastheadTooltip } from './MastheadTooltip';
 import { NavigationIcon } from './NavigationIcon';
 import {SiteBottomNavigation} from './SiteNavigation';
 import {LauncherWordmark} from './LauncherWordmark';
@@ -175,6 +175,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
   const menuTrigger = <Button ref={trigger} variant="ghost" size="icon" className="masthead-action masthead-menu-toggle"
     id="mastheadMenuToggle" aria-label={t('nav.more')} disabled={!interactive}>
     <NavigationIcon name="menu"/>
+    <MastheadActionLabel>{t('nav.more')}</MastheadActionLabel>
   </Button>;
   return <>
     <header
@@ -182,7 +183,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
       className={`masthead book-masthead${variant === 'lobby' ? ' lobby-masthead' : ''}`}
       data-mobile-header={mobileHeader}
     >
-      <Tooltip.Provider delayDuration={0} disableHoverableContent>
+      <Tooltip.Provider delayDuration={360} skipDelayDuration={0} disableHoverableContent>
       <div className="masthead-leading">
         <Link className="brand book-brand" id="launcherLink" href={props.launcherHref} aria-label="東方 Online">
           <LauncherWordmark/>
@@ -205,10 +206,9 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
         >
           {t('nav.oldSiteMigration')}
         </a>
-        <MastheadTooltip label={faqLink.label}>
+        <MastheadTooltip label={faqLink.label} iconOnly>
           <Button asChild variant="ghost" size="icon" className="masthead-action book-top-faq">
-            <a href={faqLink.href}>
-              <span className="sr-only">{faqLink.label}</span>
+            <a href={faqLink.href} aria-label={faqLink.label}>
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <g className="book-faq-question">
@@ -216,14 +216,16 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
                   <path d="M12 17h.01" />
                 </g>
               </svg>
+              <MastheadActionLabel>{t('nav.help')}</MastheadActionLabel>
             </a>
           </Button>
         </MastheadTooltip>
         {props.donationAvailable !== false && (
-          <MastheadTooltip label={t('nav.donate')}>
+          <MastheadTooltip label={t('nav.donate')} iconOnly>
             <Button variant="ghost" size="icon" className="masthead-action book-top-donation"
               aria-label={t('nav.donate')} onClick={props.onDonation} disabled={!interactive}>
               <HeartIcon aria-hidden="true"/>
+              <MastheadActionLabel>{t('nav.donate')}</MastheadActionLabel>
             </Button>
           </MastheadTooltip>
         )}
@@ -244,7 +246,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
             onMenuOpenChange(open);
           }}
         >
-          <MastheadTooltip label={t('nav.more')}><DropdownMenu.Trigger asChild>{menuTrigger}</DropdownMenu.Trigger></MastheadTooltip>
+          <MastheadTooltip label={t('nav.more')} iconOnly><DropdownMenu.Trigger asChild>{menuTrigger}</DropdownMenu.Trigger></MastheadTooltip>
           <DropdownMenu.Portal container={host}>
             <DropdownMenu.Content
               ref={content}

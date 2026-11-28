@@ -4,39 +4,6 @@
   .masthead-inbox-action > small {font-weight:700}
   .masthead-inbox-action[data-unread="true"]::after {content:"";position:absolute;inset:auto 10px 0;height:2px;border-radius:2px;background:var(--kit-brand)}
   .masthead-inbox-action[data-state="open"] {background:var(--kit-accent)}
-  @media (prefers-reduced-motion:no-preference) {
-    body:not(.less-motion) .masthead-inbox-action:is(:focus-visible,:active,[data-state="open"],:hover) {
-      &[data-inbox-section="announcements"] > svg {
-        transform-origin:45% 66%;
-        animation:masthead-megaphone-call var(--ui-micro-duration) var(--ui-micro-easing);
-      }
-      &[data-inbox-section="announcements"]::before {
-        content:"";position:absolute;inset:12px 6px auto auto;width:6px;height:11px;
-        border-inline-end:1.5px solid currentColor;border-radius:0 65% 65% 0;pointer-events:none;
-        animation:masthead-megaphone-wave var(--ui-micro-duration) var(--ui-micro-easing) both;
-      }
-      &[data-inbox-section="messages"] > svg {
-        animation:masthead-mail-lift var(--ui-micro-duration) var(--ui-micro-easing);
-      }
-      &[data-inbox-section="messages"] > svg > path {
-        transform-origin:50% 7px;
-        animation:masthead-mail-flap var(--ui-micro-duration) var(--ui-micro-easing);
-      }
-    }
-  }
-  @keyframes masthead-megaphone-call {
-    50% {rotate:calc(-1 * var(--ui-micro-tilt))}
-  }
-  @keyframes masthead-megaphone-wave {
-    from,to {opacity:0}
-    50% {opacity:.5}
-  }
-  @keyframes masthead-mail-lift {
-    50% {translate:0 calc(-1 * var(--ui-micro-nudge))}
-  }
-  @keyframes masthead-mail-flap {
-    50% {scale:1 .92}
-  }
   .masthead-inbox-panel {
     z-index:var(--ui-layer-popup);width:min(392px,calc(100vw - 24px));max-height:var(--radix-popover-content-available-height);
     overflow:auto;overscroll-behavior:contain;padding:12px 16px 16px;border:1px solid var(--kit-border);

@@ -10865,6 +10865,10 @@
     "id": "profile_clear_notAttempted",
     "params": []
   },
+  "nav.theme": {
+    "id": "nav_theme",
+    "params": []
+  },
   "nav.themeBackground": {
     "id": "nav_themeBackground",
     "params": []

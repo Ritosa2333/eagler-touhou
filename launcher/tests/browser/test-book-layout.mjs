@@ -11,8 +11,8 @@ async function assertMasthead(page, width) {
     const box = node => node.getBoundingClientRect();
     const visible = selector => [...header.querySelectorAll(selector)].filter(node => box(node).width > 0);
     const actions = visible('.masthead-action');
-    const icons = actions.filter(node => ![...node.children].some(child =>
-      child.tagName === 'SPAN' && child.classList.length === 0 && box(child).width > 0));
+    const icons = actions.filter(node => ![...node.querySelectorAll(':scope > .masthead-action-label, :scope.masthead-account-entry > span:not(.account-avatar)')]
+      .some(child => box(child).width > 0));
     const navigation = visible('.book-main-nav a');
     const groups = visible('.masthead-leading, .book-main-nav, .masthead-trailing, .masthead-library-search')
       .map(box).sort((left, right) => left.left - right.left);
@@ -22,6 +22,7 @@ async function assertMasthead(page, width) {
     const menu = header.querySelector('#mastheadMenuToggle');
     const trailing = header.querySelector('.masthead-trailing');
     const account = trailing.querySelector('.masthead-account-entry, .account-login-link, .account-loading, .book-profile-trigger');
+    const login = trailing.querySelector('.account-login-link');
     const wordmark = box(header.querySelector('.launcher-wordmark'));
     const center = node => box(node).top + box(node).height / 2;
     const glyphs = visible('.masthead-action:not(.masthead-account-entry) > svg')
@@ -32,6 +33,11 @@ async function assertMasthead(page, width) {
       height: headerBounds.height,
       controls: actions.map(node => [box(node).height, getComputedStyle(node).borderTopWidth]),
       icons: icons.map(node => box(node).width),
+      labels: visible('.masthead-action-label').map(label => label.textContent),
+      labelOffsets: visible('.masthead-action-label, .book-main-nav a > span').flatMap(label => {
+        const glyph = label.parentElement.querySelector(':scope > svg');
+        return glyph && box(glyph).width ? [center(label) - center(glyph)] : [];
+      }),
       centers: [...actions, ...navigation].map(center),
       nav: navigation.map(node => box(node).width),
       navHeight: navBounds.height,
@@ -44,7 +50,10 @@ async function assertMasthead(page, width) {
       menuGroup: menu.closest('.masthead-leading, .masthead-trailing').className,
       menuLast: menu === menu.parentElement.lastElementChild,
       accountLast: !account || account === trailing.lastElementChild,
+      login: login && [login.dataset.size, login.dataset.variant,
+        login.querySelector('svg').classList.contains('lucide-user-round')],
       glyphs, navGlyphs,
+      strokeWidths: visible('.masthead-action > svg').map(svg => getComputedStyle(svg).strokeWidth),
       navFonts:navigation.map(node => parseFloat(getComputedStyle(node).fontSize)),
       wordmarkWidth: wordmark.width,
       // Center of the l in the 480×140 source image.
@@ -61,6 +70,10 @@ async function assertMasthead(page, width) {
   assert.ok(layout.controls.every(([height,border]) => height === (width <= 780 ? 44 : 43) && border === '0px'),
     `${width}px masthead actions fit in the header row without borders`);
   assert.ok(layout.icons.every(size => size === 44), `${width}px icon actions have a common width`);
+  assert.ok(width < 1440 ? layout.labels.length === 0 : layout.labels.length >= 5 && layout.labels.every(Boolean),
+    `${width}px masthead shows action labels only on wide screens`);
+  assert.ok(layout.labelOffsets.every(offset => Math.abs(offset) < .5),
+    `${width}px masthead labels and icons share their optical alignment`);
   assert.ok(Math.max(...layout.centers) - Math.min(...layout.centers) <= 1, `${width}px masthead controls share a centerline`);
   assert.ok(layout.fits, `${width}px masthead groups fit without overlap`);
   assert.equal(layout.menuGroup, 'masthead-leading');
@@ -68,6 +81,8 @@ async function assertMasthead(page, width) {
     assert.deepEqual([layout.navHeight, layout.navBottom], [43,43], 'primary navigation fills the desktop row');
     assert.ok(layout.menuLast, 'More sits after the left-hand desktop actions');
     assert.ok(layout.accountLast, 'The account sits after announcements and messages');
+    if (layout.login) assert.deepEqual(layout.login, ['icon', 'ghost', true], 'The sign-in link matches the other masthead actions');
+    assert.equal(new Set(layout.strokeWidths).size, 1, 'Masthead actions use the same line weight');
     const expectedSize = layout.wordmarkWidth * .165;
     assert.ok(layout.glyphs.length >= 6);
     assert.ok(layout.glyphs.every(([w, h, center]) => Math.abs(w - expectedSize) < .25 &&
@@ -125,33 +140,61 @@ async function assertModeHover(page) {
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);
 }
 
-async function assertInboxMotion(page) {
+async function assertActionMotion(page) {
   const action = section => `.masthead-inbox-action[data-inbox-section="${section}"]`;
   const announcements = action('announcements');
   const messages = action('messages');
-  const animation = (selector, pseudo = null) => page.$eval(selector,
-    (node, pseudo) => getComputedStyle(node, pseudo).animationName, pseudo);
-  const pulse = (selector, property) => page.$eval(selector, (node, property) => {
-    const effect = node.getAnimations().find(item => item instanceof CSSAnimation);
-    const {duration} = effect.effect.getTiming();
-    effect.currentTime = duration / 2;
-    return [effect.animationName, getComputedStyle(node)[property], duration];
-  }, property);
+  const progress = (selector, component, samples) => page.$eval(selector, (node, component, samples) => {
+    getComputedStyle(node).transform;
+    const motion = node.getAnimations().find(item => item instanceof CSSTransition && item.transitionProperty === 'transform');
+    const {duration} = motion.effect.getTiming();
+    const values = samples.map(fraction => {
+      motion.currentTime = duration * fraction;
+      return new DOMMatrixReadOnly(getComputedStyle(node).transform)[component];
+    });
+    return {duration, values, opacity: getComputedStyle(node).opacity};
+  }, component, samples);
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);
-  await page.hover(announcements);
-  assert.equal(await animation(announcements, '::before'), 'masthead-megaphone-wave');
-  assert.deepEqual(await pulse(`${announcements} > svg`, 'rotate'), ['masthead-megaphone-call','-3deg',180]);
-  await page.hover(messages);
-  assert.deepEqual(await pulse(`${messages} > svg`, 'translate'), ['masthead-mail-lift','0px -0.75px',180]);
-  assert.deepEqual(await pulse(`${messages} > svg > path`, 'scale'), ['masthead-mail-flap','1 0.92',180]);
+  for (const [trigger, glyph, component, rest, pose] of [
+    [messages, `${messages} > svg`, 'f', 0, -1.3],
+    ['.book-top-faq', '.book-faq-question', 'f', 0, -1.25],
+    ['.book-top-donation', '.book-top-donation > svg', 'a', 1, 1.07],
+  ]) {
+    await page.hover(trigger);
+    const enter = await progress(glyph, component, [0, .12, .5, .88, 1]);
+    assert.equal(enter.duration, 520);
+    assert.equal(enter.opacity, '1');
+    const [start, early, mid, late, end] = enter.values.map(value => (value-rest)/(pose-rest));
+    assert.ok(Math.abs(start) < .001 && Math.abs(end-1) < .001);
+    assert.ok(early > 0 && early < .08 && mid > .4 && mid < .6 && late > .92 && late < 1,
+      'the icon eases in and out without a jump or overshoot');
+    assert.equal(await page.$eval(glyph, node => node.getAnimations().length), 0, 'the icon holds its pose without repeating');
+    await page.mouse.move(1, 100);
+    const exit = await progress(glyph, component, [0, .5, 1]);
+    assert.equal(exit.duration, enter.duration, 'the return uses the same pacing');
+    assert.ok(Math.abs(exit.values[0] - pose) < .001);
+    assert.ok(Math.abs(exit.values[1] - rest) < Math.abs(pose - rest));
+    assert.ok(Math.abs(exit.values[2] - rest) < .001);
+  }
+  assert.equal(await page.$eval(announcements, node => getComputedStyle(node, '::before').content), 'none');
+  const motionStyles = selector => page.$eval(`${selector} > svg`, node => {
+    const {transform, transitionProperty, animationName} = getComputedStyle(node);
+    return [transform, transitionProperty, animationName];
+  });
+  for (const trigger of [announcements, '.book-theme-toggle']) {
+    await page.hover(trigger);
+    assert.equal(await page.$eval(`${trigger} > svg`, node => node.getAnimations().length), 0,
+      'the theme and announcement icons stay still on hover');
+    assert.equal((await motionStyles(trigger))[0], 'none');
+  }
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
-  assert.equal(await animation(`${messages} > svg`), 'none');
+  await page.hover(messages);
+  assert.deepEqual(await motionStyles(messages), ['none', 'all', 'none']);
   await page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'no-preference'}]);
   const hadLessMotion = await page.evaluate(() => document.body.classList.contains('less-motion'));
   await page.evaluate(() => document.body.classList.add('less-motion'));
-  await page.hover(announcements);
-  assert.equal(await animation(`${announcements} > svg`), 'none');
-  assert.equal(await animation(announcements, '::before'), 'none');
+  await page.hover(messages);
+  assert.deepEqual(await motionStyles(messages), ['none', 'all', 'none']);
   await page.evaluate(hadLessMotion => document.body.classList.toggle('less-motion', hadLessMotion), hadLessMotion);
   await page.mouse.move(0, 0);
 }
@@ -322,7 +365,11 @@ try {
     console.log(`Cover grid at ${width}px: ${coverGrid.columns} covers per row, ${Math.round(coverGrid.coverWidth)}px per cover`);
   }
   await assertModeHover(resize);
-  await assertInboxMotion(resize);
+  await assertActionMotion(resize);
+  for (const width of [1439, 1280, 1024]) {
+    await resize.setViewport({width, height: 819});
+    await assertMasthead(resize, width);
+  }
   await resize.setViewport({width: 1440, height: 540});
   await resize.waitForSelector('#bookRecentTitle', {visible:true});
   assert.equal(await resize.evaluate(() => {

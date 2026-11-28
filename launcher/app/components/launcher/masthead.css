@@ -12,6 +12,8 @@
     /* Match the visible ink of Online's l in the 480px wordmark, not its image box. */
     --masthead-icon-size: calc(var(--masthead-wordmark-width) * .165);
     --masthead-icon-offset: calc(var(--masthead-wordmark-width) * .022);
+    --masthead-icon-duration: 520ms;
+    --masthead-icon-easing: cubic-bezier(.45, 0, .55, 1);
     position: sticky;
     top: 0;
     z-index: 20;
@@ -226,14 +228,22 @@
   border:0;
   box-shadow:none;
 }
-.book-masthead :is(.masthead-action,.book-main-nav a) > svg {width:var(--masthead-icon-size);height:var(--masthead-icon-size);translate:0 var(--masthead-icon-offset)}
-.book-masthead :is(.masthead-account-entry,.account-login-link) {gap:8px;width:auto;min-width:var(--masthead-control-size);padding:0 10px;max-width:144px}
+.book-masthead :is(.masthead-action,.book-main-nav a) > svg {width:var(--masthead-icon-size);height:var(--masthead-icon-size)}
+.book-masthead :is(.masthead-action,.book-main-nav a) > :is(svg,.masthead-action-label),
+.book-masthead .book-main-nav a > span {translate:0 var(--masthead-icon-offset)}
+.book-masthead .masthead-account-entry {gap:8px;width:auto;min-width:var(--masthead-control-size);padding:0 10px;max-width:144px}
+.masthead-action-label {display:none}
+@media (min-width: 1440px) {
+  .book-masthead .masthead-action:has(> .masthead-action-label) {width:auto;min-width:var(--masthead-control-size);padding-inline:9px;gap:6px}
+  .book-masthead .masthead-action-label {display:block;font:500 13px / 1.25 var(--kit-font);white-space:nowrap}
+  .masthead-tooltip[data-icon-only] {display:none}
+}
 .masthead-account-entry > span:not(.account-avatar) {min-width:0;overflow:hidden;text-overflow:ellipsis}
-.book-masthead .masthead-account-entry > svg {width:14px;height:14px}
+.book-masthead .masthead-account-entry > svg {width:14px;height:14px;translate:none}
 .masthead-account-entry .account-avatar {--account-avatar-size:28px}
 @media (780px < width <= 960px) {
-  .book-masthead :is(.masthead-account-entry,.account-login-link) {width:var(--masthead-control-size);padding:0}
-  .book-masthead :is(.masthead-account-entry > span:not(.account-avatar),.masthead-account-entry > svg,.account-login-link > span) {display:none}
+  .book-masthead .masthead-account-entry {width:var(--masthead-control-size);padding:0}
+  .book-masthead :is(.masthead-account-entry > span:not(.account-avatar),.masthead-account-entry > svg) {display:none}
 }
 @media (max-width: 780px) {
   .masthead-library-search > .book-compact-search {height:var(--masthead-control-size);padding-inline:10px 0;border:0;border-radius:8px;background:var(--kit-secondary)}
@@ -241,11 +251,6 @@
   .masthead-library-search .book-compact-search [data-size="icon-sm"] {width:var(--masthead-control-size);height:var(--masthead-control-size);border:0}
   .masthead-trailing > .masthead-action {display:none}
 }
-
-.book-masthead .book-theme-toggle svg {rotate:0deg;transition:rotate var(--ui-micro-duration) var(--ui-micro-easing)}
-@media (hover:hover) and (pointer:fine) {.book-masthead .book-theme-toggle:not(:disabled):hover svg {rotate:var(--ui-micro-tilt)}}
-@media (prefers-reduced-motion:reduce) {.book-masthead .book-theme-toggle svg {transition:none;rotate:none!important}}
-.less-motion .book-masthead .book-theme-toggle svg {transition:none;rotate:none!important}
 
 @media (hover:hover) and (pointer:fine) {
   .book-masthead .book-main-nav :is(a,button),
@@ -259,7 +264,7 @@
 }
 .less-motion .book-masthead .book-main-nav :is(a,button),.less-motion .book-masthead .book-main-nav :is(a,button)::after,.less-motion .book-masthead :is(.masthead-action,.masthead-link) {transition:none}
 
-.book-masthead .masthead-links > .masthead-action > svg {
+.book-masthead .masthead-action > svg {
   stroke-width: 1.8;
 }
 .masthead-tooltip {
@@ -276,7 +281,6 @@
   .book-masthead .masthead-links > :is(.book-top-faq, .book-top-donation, .book-theme-toggle) {
     display: none;
   }
-  .book-masthead .masthead-menu-toggle svg { transform: none; }
 }
 .ui-kit-dialog.masthead-overview {
   inset:0 auto 0 0;
@@ -341,28 +345,19 @@
 .account-menu-identity{display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:3px;border-bottom:1px solid var(--kit-border)}
 .account-menu-identity strong,.account-menu-identity small{display:block;overflow-wrap:anywhere}.account-menu-identity small{color:var(--kit-muted-foreground)}
 .profile-avatar>.account-avatar,.profile-draft-avatar>.account-avatar{width:100%;height:100%;border-radius:inherit}
-/* Subtle icon feedback on masthead actions. */
-.book-top-donation > svg {
-  transition: transform 300ms cubic-bezier(.22,.7,.2,1);
-  transform-origin: center;
+/* Hover poses reverse from their current position, even when the pointer moves on early. */
+@media (width > 780px) and (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+  .book-top-donation {--masthead-icon-pose:scale(1.07)}
+  .masthead-menu-toggle {--masthead-icon-pose:translateX(1.25px)}
+  .masthead-inbox-action[data-inbox-section="messages"] {--masthead-icon-pose:translateY(-1.3px)}
+  .account-login-link {--masthead-icon-pose:translateY(-1px)}
+  body:not(.less-motion) .book-masthead :is(.masthead-action > svg,.book-faq-question) {
+    transition:transform var(--masthead-icon-duration) var(--masthead-icon-easing);
+  }
+  body:not(.less-motion) .book-masthead .masthead-action:is(:hover,:focus-visible):not(:disabled) > svg {
+    transform:var(--masthead-icon-pose,none);
+  }
+  body:not(.less-motion) .book-masthead .book-top-faq:is(:hover,:focus-visible) .book-faq-question {
+    transform:translateY(-1.25px);
+  }
 }
-@media (hover:hover) and (pointer:fine) {
-  .book-masthead .book-top-donation:is(:hover,:focus-visible):not(:disabled) > svg {animation: masthead-heartbeat var(--ui-micro-duration) var(--ui-micro-easing)}
-}
-@keyframes masthead-heartbeat {50% {scale:1.035}}
-.book-top-faq .book-faq-question {
-  transform-box: fill-box;
-  transform-origin: center bottom;
-}
-.book-top-faq:focus-visible .book-faq-question {animation: masthead-faq-hop var(--ui-micro-duration) var(--ui-micro-easing)}
-@media (hover: hover) and (pointer: fine) {
-  .book-top-faq:hover .book-faq-question {animation: masthead-faq-hop var(--ui-micro-duration) var(--ui-micro-easing)}
-}
-@keyframes masthead-faq-hop {
-  50% {transform: translateY(calc(-1 * var(--ui-micro-nudge)))}
-}
-.book-masthead .book-top-donation:active:not(:disabled) > svg {animation:none;transform:scale(.98)}
-@media (prefers-reduced-motion:reduce) {
-  :is(.book-faq-question, .book-top-donation > svg) {animation:none!important;transition:none;transform:none!important}
-}
-.less-motion :is(.book-faq-question, .book-top-donation > svg) {animation:none!important;transition:none;transform:none!important}
