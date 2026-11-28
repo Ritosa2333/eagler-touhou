@@ -549,7 +549,7 @@ index c4e4893..ff1025c 100644
  	private void ToggleFullScreen()
  	{
  		fullWindow = !fullWindow;
-@@ -670,12 +762,85 @@ public class Game_Main
+@@ -670,12 +762,104 @@ public class Game_Main
  
  	private void Form_Main_Deactivate(object sender, EventArgs e)
  	{
@@ -560,6 +560,24 @@ index c4e4893..ff1025c 100644
  		}
  	}
  
++	private DifficultLevel practiceRank = DifficultLevel.Easy;
++
++	private void ApplyPracticeDifficulty(StageDataPackage stage, string warp)
++	{
++		if (warp == "StEx")
++		{
++			if (stage.Difficulty != DifficultLevel.Extra)
++			{
++				practiceRank = stage.Difficulty;
++			}
++			stage.Difficulty = DifficultLevel.Extra;
++		}
++		else if (stage.Difficulty == DifficultLevel.Extra)
++		{
++			stage.Difficulty = practiceRank;
++		}
++	}
++
 +	private void QueuePracticeWarp()
 +	{
 +		string warp = Thsss.Browser.PracticeSession.TakeWarp();
@@ -579,6 +597,7 @@ index c4e4893..ff1025c 100644
 +			{
 +				stage.Rep.CreatRpy();
 +			}
++			ApplyPracticeDifficulty(stage, warp);
 +			stage.Story = null;
 +			stage.VibrateCancel();
 +			stage.SetReplayInfo(warp);
