@@ -2260,6 +2260,7 @@
   "cloudSave_th06TimeHint": "红魔乡的时长位于 score06.dat，可与 score.dat 一起上传。",
   "cloudSave_th05ClearHint": "怪绮谈的通关记录位于 game.cfg，可与 score.dat 一起上传。",
   "cloudSave_backupUsed": "当前统计由备份存档恢复。",
+  "cloudSave_spellArchiveUnavailable": "符卡统计格式暂不支持。存档仍可下载和同步。",
   "game_name_th19": "東方獣王園",
   "game_title_th19mp": "東方獣王園 多人对战",
   "multiplayer_loadout_th19_0": "霊夢",

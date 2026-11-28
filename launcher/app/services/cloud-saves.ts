@@ -18,7 +18,8 @@ const spellArchive = z.object({
     total:spellTally.optional(),
     loadouts:z.array(spellTally.extend({
       character:identity.character,shot:identity.shot,
-      difficulty:z.enum(['easy','normal','hard','lunatic','extra','phantasm','overdrive']),
+      difficulty:z.enum(['easy','normal','hard','lunatic','extra','phantasm','overdrive','last-word']),
+      activity:z.enum(['story','practice']).optional(),
     })).max(128).optional(),
   })).max(512),
 });
@@ -27,8 +28,13 @@ const statistics=z.object({game:z.custom<GameId>(value=>typeof value==='string'&
   loadouts:z.array(z.object({...identity,playtimeSeconds:time,playCount:count})).max(128),
   progress:z.array(z.object({...identity,difficulty:z.enum(['easy','normal','hard','lunatic','extra','phantasm','overdrive']),cleared:z.boolean().nullable(),oneCreditClear:z.boolean().nullable(),clearCount:count,playCount:count,bestScore:count,playtimeSeconds:time})).max(1024),
   spellCards:z.array(spellCard).max(141).optional(),
-  spellArchive:spellArchive.optional(),
-  warnings:z.array(z.string()).max(6)});
+  spellArchive:z.unknown().optional(),
+  warnings:z.array(z.string()).max(6)}).transform(value=>{
+    // Optional display statistics must not block access to the save files.
+    const archive=spellArchive.optional().safeParse(value.spellArchive);
+    return {...value,spellArchive:archive.success?archive.data:undefined,
+      warnings:archive.success?value.warnings:[...new Set([...value.warnings,'spell-archive-unavailable'])]};
+  });
 const productId=z.custom<string>(value=>typeof value==='string'&&isProductId(value));
 const fileInfo=z.object({name:z.string(),bytes:z.number().int().positive(),sha256:z.string().regex(/^[a-f0-9]{64}$/)});
 const snapshot=z.object({product:productId,revision:z.number().int().positive(),uploadedAt:z.string().datetime(),files:z.array(fileInfo).max(6),statistics});

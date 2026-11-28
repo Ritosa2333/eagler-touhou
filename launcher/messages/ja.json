@@ -2260,6 +2260,7 @@
   "cloudSave_th06TimeHint": "th06のプレイ時間はscore06.datにあります。score.datと一緒に選択してください。",
   "cloudSave_th05ClearHint": "th05のクリア状況はgame.cfgにあります。score.datと一緒に選択してください。",
   "cloudSave_backupUsed": "バックアップから統計を復元しました。",
+  "cloudSave_spellArchiveUnavailable": "スペルカード統計の形式に対応していません。セーブのダウンロードと同期は引き続き利用できます。",
   "game_name_th19": "東方獣王園",
   "game_title_th19mp": "東方獣王園 マルチプレイ",
   "multiplayer_loadout_th19_0": "霊夢",

@@ -69,7 +69,11 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const metadataProducts = useStoreSelector(session.metadata, value => value.products);
   const lessMotion = useStoreSelector(session.preferences, value => value.lessMotion);
   const diagnostics = session.getDiagnostics();
-  const diagnosticState = useSyncExternalStore(diagnostics?.subscribe ?? emptySubscribe, diagnostics?.getSnapshot ?? noDiagnostics, noDiagnostics);
+  const diagnosticsEnabled = useSyncExternalStore(
+    diagnostics?.subscribe ?? emptySubscribe,
+    () => diagnostics?.getSnapshot().enabled ?? false,
+    diagnosticsDisabled,
+  );
   const beta = testFeaturesEnabled(window);
   const firstUse = useRef<FirstUseNoticeHandle>(null), network = useRef<NetworkDiagnosticsHandle>(null);
   const [networkRunning, setNetworkRunning] = useState(false);
@@ -92,7 +96,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     launcherPreferences: {
       languageControl: <LanguageControl session={session}/>,
       lessMotion, onToggleMotion: session.preferences.toggleMotion,
-      diagnosticsEnabled: diagnosticState?.enabled ?? false, onToggleDiagnostics: () => diagnostics?.toggle(),
+      diagnosticsEnabled, onToggleDiagnostics: () => diagnostics?.toggle(),
       testFeatures: beta, onToggleTestFeatures: () => reloadTestFeatures(window, !beta),
     },
     metadataRevision: state.metadataRevision,
@@ -124,6 +128,7 @@ function RecentLaunchRecorder({session, replayWorkspace}: {session: BrowserSessi
 }
 const emptySubscribe = () => () => {};
 const noDiagnostics = () => null;
+const diagnosticsDisabled = () => false;
 
 /** History stays active before the large replay view is requested or ready. */
 export function ReplayWorkspaceHost({session, products}: {session: BrowserSession; products?: readonly ProductId[]}) {
