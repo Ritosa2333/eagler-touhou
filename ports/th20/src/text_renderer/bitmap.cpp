@@ -66,20 +66,59 @@ void Bitmap::outline(std::int32_t rows,std::int32_t first_x,std::int32_t last_x,
     std::vector<std::uint8_t> original(pixels,pixels+pitch*rows);
     if(format!=21 && format!=26)return;
     const float radius_squared=_mm_cvtss_f32(_mm_mul_ss(_mm_set_ss(radius),_mm_set_ss(radius)));
-    const int bound=_mm_cvttss_si32(_mm_set_ss(radius_squared));std::pmr::vector<std::pair<int,int>> offsets;
-    for(int x=0;x<bound;++x)for(int y=0;y<bound;++y)if(static_cast<float>(x*x+y*y)<radius_squared && (x||y))offsets.emplace_back(x,y);
+    const int bound=_mm_cvttss_si32(_mm_set_ss(radius_squared));
     const std::uint32_t transformed=color^0xff000000u;
     const auto packed=static_cast<std::uint16_t>(((color>>16)&0xf0)<<4|((color>>8)&0xf0)|(color&0xf0)>>4|(((color>>28)^0xf)<<12));
-    for(int y=0;y<rows;++y)for(int x=first_x;x<last_x;++x){auto* destination=pixels+y*pitch+x*(format==21?4:2);
-        if(format==21 && destination[3]==0)continue;
-        bool edge=false;
-        for(auto [dx,dy]:offsets){
-            for(auto [nx,ny]:{std::pair{x-dx,y-dy},std::pair{x+dx,y-dy},std::pair{x-dx,y+dy},std::pair{x+dx,y+dy}}){
-                if(nx<0||nx>=width||ny<0||ny>=rows)continue;
-                const auto* neighbor=original.data()+ny*pitch+nx*(format==21?4:2);
-                if(format==21?neighbor[3]!=255:(load<std::uint16_t>(neighbor)>>12)!=15){edge=true;break;}
-            }if(edge)break;
+    // A pixel is an edge when one of the neighbours (x+-dx, y+-dy) inside the
+    // bitmap is not fully opaque, for each offset 0<=dx,dy<bound with
+    // dx*dx+dy*dy < radius^2 (compared as float), not (0,0). For one row
+    // offset those neighbours are a single run of columns -reach..reach
+    // (the pixel itself left out on its own row), so with counts of the
+    // non-opaque pixels per row each row offset is one subtraction per
+    // pixel, done a whole row at a time: the same edges as testing every
+    // neighbour, many times faster for the outlined text of a spell card.
+    if(rows<=0||width<=0||first_x>=last_x)return;
+    std::vector<int> reach(bound>0?2*bound-1:0,-1);   // index bound-1+dy
+    for(int x=0;x<bound;++x)for(int y=0;y<bound;++y)if(static_cast<float>(x*x+y*y)<radius_squared && (x||y)) {
+        if(reach[bound-1+y]<x)reach[bound-1+y]=x;
+        if(reach[bound-1-y]<x)reach[bound-1-y]=x;
+    }
+    const int bpp=format==21?4:2,stride=width+1,columns=last_x-first_x;
+    std::vector<std::uint8_t> clear(static_cast<std::size_t>(rows)*width);       // not fully opaque
+    std::vector<std::uint32_t> counts(static_cast<std::size_t>(rows)*stride,0); // row ny: counts[ny*stride+i] = clear pixels in columns [0,i)
+    for(int ny=0;ny<rows;++ny){
+        const auto* source=original.data()+ny*pitch;auto* mask=clear.data()+static_cast<std::size_t>(ny)*width;
+        auto* count=counts.data()+static_cast<std::size_t>(ny)*stride;
+        for(int nx=0;nx<width;++nx){mask[nx]=format==21?source[nx*4+3]!=255:(load<std::uint16_t>(source+nx*2)>>12)!=15;count[nx+1]=count[nx]+mask[nx];}
+    }
+    std::vector<std::uint8_t> edges(static_cast<std::size_t>(rows)*columns,0);
+    for(int index=0;index<static_cast<int>(reach.size());++index){
+        const int dy=index-(bound-1),span=reach[index];
+        if(span<0)continue;
+        for(int y=0;y<rows;++y){
+            const int ny=y+dy;if(ny<0||ny>=rows)continue;
+            const auto* count=counts.data()+static_cast<std::size_t>(ny)*stride;
+            const auto* mask=clear.data()+static_cast<std::size_t>(ny)*width;
+            auto* edge=edges.data()+static_cast<std::size_t>(y)*columns;   // edge[x-first_x]
+            const auto test=[&](int x){   // with clipping, any x
+                const int lo=x-span<0?0:x-span,hi=x+span>=width?width-1:x+span;
+                if(lo>hi)return;
+                std::uint32_t found=count[hi+1]-count[lo];
+                if(dy==0&&x>=lo&&x<=hi)found-=mask[x];
+                edge[x-first_x]|=found!=0;
+            };
+            // Columns whose run lies inside the bitmap need no clipping.
+            const int inner_first=first_x>span?first_x:span,inner_last=last_x<width-span?last_x:width-span;
+            if(inner_first>=inner_last){for(int x=first_x;x<last_x;++x)test(x);continue;}
+            for(int x=first_x;x<inner_first;++x)test(x);
+            if(dy==0)for(int x=inner_first;x<inner_last;++x)edge[x-first_x]|=(count[x+span+1]-count[x-span]-mask[x])!=0;
+            else for(int x=inner_first;x<inner_last;++x)edge[x-first_x]|=(count[x+span+1]-count[x-span])!=0;
+            for(int x=inner_last;x<last_x;++x)test(x);
         }
+    }
+    for(int y=0;y<rows;++y)for(int x=first_x;x<last_x;++x){auto* destination=pixels+y*pitch+x*bpp;
+        if(format==21 && destination[3]==0)continue;
+        const bool edge=edges[static_cast<std::size_t>(y)*columns+(x-first_x)]!=0;
         if(format==21){if(edge)store(destination,transformed);else store(destination,(load<std::uint32_t>(destination)&0xff000000u)|(transformed&0xffffffu));}
         else {if(edge)store(destination,packed);else store(destination,static_cast<std::uint16_t>((load<std::uint16_t>(destination)&0xf000u)|(packed&0xfffu)));}
     }

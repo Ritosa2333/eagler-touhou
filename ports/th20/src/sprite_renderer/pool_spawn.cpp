@@ -24,14 +24,14 @@ std::uint32_t register_spawn(Controller& controller,Animation& a,std::uint32_t o
 std::uint32_t spawn_child_animation(Controller& c,AnimationFile& file,Animation& parent,std::int32_t script,std::uint32_t flags) {
     std::lock_guard lock(runtime::shared_locks().slot(9));++file.fields_5c[3];
     auto& a=*allocate_animation(c);const auto owner=parent.field_4e8;
-    a.base.fields_10_28[1]=parent.base.fields_10_28[1];a.base.flags[1]|=0x200;
+    invalidate_layer_index();a.base.fields_10_28[1]=parent.base.fields_10_28[1];a.base.flags[1]|=0x200;
     a.vector_5bc={};a.field_4e8=owner;a.base.flags[1]=(a.base.flags[1]&~0x40000u)|((flags&4)<<16);
     bind_animation_script(file,a,script,&parent);const auto result=register_spawn(c,a,owner,flags);
     scheduler::insert_after(reinterpret_cast<scheduler::Link&>(parent.links[3]),reinterpret_cast<scheduler::Link&>(a.links[2]));return result;
 }
 std::uint32_t spawn_detached_animation(Controller& c,AnimationFile& file,Animation& parent,std::int32_t script,std::uint32_t flags) {
     std::lock_guard lock(runtime::shared_locks().slot(9));++file.fields_5c[3];auto& a=*allocate_animation(c);const auto owner=parent.field_4e8;
-    select_animation_template(file,a,script);a.field_4e8=owner;a.base.fields_10_28[1]=parent.base.fields_10_28[1];a.base.flags[1]|=0x200;
+    select_animation_template(file,a,script);a.field_4e8=owner;invalidate_layer_index();a.base.fields_10_28[1]=parent.base.fields_10_28[1];a.base.flags[1]|=0x200;
     a.base.flags[1]=(a.base.flags[1]&~0x1000000u)|(parent.base.flags[1]&0x1000000u);
     a.base.flags[1]=(a.base.flags[1]&~0x40000u)|((flags&4)<<16);a.vector_5bc=detached_animation_position(parent);
     a.base.vector_38=parent.base.vector_38;a.base.vector_484=parent.base.vector_2c;execute_animation(a);return register_spawn(c,a,owner,flags);

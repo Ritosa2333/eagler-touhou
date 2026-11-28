@@ -84,4 +84,7 @@ void construct_animation(Animation&) noexcept;              // 0x448b40
 void construct_pooled_animation(PooledAnimation&) noexcept; // 0x4489f0
 void reset_animation_state(Animation&) noexcept;             // 0x4299d0
 void clear_animation_suffix(Animation&) noexcept;            // 0x429e30 -> 0x438a50/0x438a30
+// SDL3 build: the per-layer index of the draw lists (dispatch.cpp) is
+// rebuilt after anything that changes list membership or an animation's layer.
+void invalidate_layer_index() noexcept;
 }
