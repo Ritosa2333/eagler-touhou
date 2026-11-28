@@ -2,7 +2,7 @@
   .masthead-inbox-action {position:relative}
   .masthead-inbox-action > small {position:absolute;inset:4px 3px auto auto;color:var(--kit-brand);font-size:10px;line-height:1}
   .masthead-inbox-action > small {font-weight:700}
-  .masthead-inbox-action[data-unread="true"]::after {content:"";position:absolute;inset:auto 10px 0;height:2px;border-radius:2px;background:var(--kit-brand)}
+  .masthead-inbox-action[data-unread="true"]::after {content:"";position:absolute;inset:auto 10px 3px;height:2px;border-radius:2px;background:var(--kit-brand)}
   .masthead-inbox-action[data-state="open"] {background:var(--kit-accent)}
   .masthead-inbox-panel {
     z-index:var(--ui-layer-popup);width:min(392px,calc(100vw - 24px));max-height:var(--radix-popover-content-available-height);

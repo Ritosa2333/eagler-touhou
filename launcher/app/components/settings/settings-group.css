@@ -82,7 +82,7 @@
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex:0 1 15rem;min-width:0;max-width:75%
 }
 .game-settings-page .settings-file-actions [data-slot="button"] {
-  min-width:0;height:auto;padding-inline:6px;white-space:normal;overflow-wrap:anywhere
+  min-width:0;min-height:36px;height:auto;padding:6px;white-space:normal;overflow-wrap:anywhere
 }
 @container fields (max-width:480px) {
   .game-settings-page .input-settings-content .input-settings-entries {grid-template-columns:minmax(0,1fr);gap:0}
@@ -107,4 +107,8 @@
 }
 :is(.settings-value-row,.game-settings-page .options-settings,.account-settings .settings-switch-row) .ui-switch[data-state="checked"] .ui-switch-thumb {
   transform:translateX(16px)
+}
+
+@media (max-width:780px),(pointer:coarse) {
+  .game-settings-page .settings-file-actions [data-slot="button"] {min-height:44px}
 }

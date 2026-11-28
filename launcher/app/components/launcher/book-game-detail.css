@@ -13,7 +13,7 @@
     --game-subtitle-size: 16px;
     --game-number-size: 13px;
     --game-cover-radius: 7px;
-    --game-hero-blur: 80px;
+    --game-hero-blur: 24px;
     padding: 40px var(--game-detail-inset) 18px;
   }
   .book-game-detail-hero h2:focus { outline: none; }

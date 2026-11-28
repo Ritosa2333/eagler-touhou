@@ -2033,7 +2033,7 @@ test('actual BrowserLauncher: late Host fallback before Start uses the current m
       storage.values.set(api.gamePreferenceStorageKey('th06'), JSON.stringify({music: 'none', musicPreferenceExplicit: true, options: {touchEnabled: false}}));
     }});
     await click('#gameSettingsOpen');
-    await click('#advancedOptions .options-group-head');
+    await openGameSettingsGroup('advancedOptions');
     assert.equal(node('#musicSelect').value, 'midi');
     await acceptHeldHost(f);
     assert.equal(node('#musicSelect').value, 'none');
@@ -4077,4 +4077,19 @@ test('actual BrowserLauncher: save choice runs after native preparation and befo
  await until(()=>api.getTestSession().getRuntime().getSnapshot().launched,'the browser save starts normally');
  const order=api.getCloudSaveEvents().map(event=>event.type);
  assert.ok(order.indexOf('beforeStart')<order.indexOf('started'));
+});
+
+
+test('game settings open all sections by default and remember manual collapse', async () => {
+  await mountBrowser({initial:'/?game=th06&lang=en'});
+  await click('#gameSettingsOpen');
+  const settings='.book-game-detail-settings';
+  for (const selector of ['#displayOptions .options-group-head','.input-settings-heading','#mobileOptionsToggle','#audioOptions .options-group-head','#fileOptions .options-group-head','#advancedOptions .options-group-head']) {
+    assert.equal(node(settings+' '+selector).getAttribute('aria-expanded'),'true',selector);
+  }
+  await click(settings+' #fileOptions .options-group-head');
+  assert.equal(node(settings+' #fileOptions .options-group-head').getAttribute('aria-expanded'),'false');
+  await click('.book-game-settings-back');
+  await click('#gameSettingsOpen');
+  assert.equal(node(settings+' #fileOptions .options-group-head').getAttribute('aria-expanded'),'false');
 });

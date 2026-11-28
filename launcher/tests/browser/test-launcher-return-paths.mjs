@@ -148,6 +148,10 @@ try {
         await tap('#gameSettingsOpen');
         await wait(desktopSettings);
         await wait('#launch',true);
+        const sectionHeads = desktopSettings + ' > .options-settings > .options-group > .options-group-head';
+        const initialGroups = await page.$$eval(sectionHeads, heads => heads.map(head => head.getAttribute('aria-expanded')));
+        assert.ok(initialGroups.length >= 5 && initialGroups.every(value => value === 'true'), 'game settings sections start expanded');
+        for (const head of await page.$$(sectionHeads)) await head.click();
         const measureRail = () => page.evaluate(() => {
           const rail = document.querySelector('.book-sidebar').getBoundingClientRect();
           const header = document.querySelector('.book-masthead').getBoundingClientRect();
@@ -167,7 +171,7 @@ try {
           'short settings fill the area below the masthead without making an empty scroll range');
         assert.ok(collapsed.searchOffset > 0,'the masthead leaves the sidebar search visible');
         await page.setViewport(desktopViewport);
-        await tap('#advancedOptions button.options-group-head');
+        if (await page.$eval('#advancedOptions button.options-group-head', button => button.getAttribute('aria-expanded')) !== 'true') await tap('#advancedOptions button.options-group-head');
         const version = await wait('#gameVersionSelect-trigger');
         assert.equal(await version.evaluate(button => {
           const row = button.closest('.settings-choice-row');
@@ -197,7 +201,7 @@ try {
         await wait(desktopSettings,true);
         await wait('#gameSettingsOpen');
         await tap('#gameSettingsOpen');
-        await tap('#fileOptions button.options-group-head');
+        if (await page.$eval('#fileOptions button.options-group-head', button => button.getAttribute('aria-expanded')) !== 'true') await tap('#fileOptions button.options-group-head');
         await tap('[data-action="manage-replay"]');
         await tap('#player .replay-back');
         await wait(desktopSettings);
@@ -349,7 +353,7 @@ try {
           range.selectNode(heading.lastChild);
           return Math.abs(range.getBoundingClientRect().left - label.getBoundingClientRect().left) < 1;
         }),true,'nested settings labels align with the section title');
-        await tap('#mobileOptionsToggle');
+        if (await page.$eval('#mobileOptionsToggle', button => button.getAttribute('aria-expanded')) !== 'true') await tap('#mobileOptionsToggle');
         await tap('#touchLayoutEdit');
         await tap('#touchLayoutExit');
         await wait(gameSettings);
@@ -359,7 +363,7 @@ try {
         await page.goBack();
         await wait('#touchLayoutEditor',true);
         await wait(gameSettings);
-        await tap('#fileOptions button.options-group-head');
+        if (await page.$eval('#fileOptions button.options-group-head', button => button.getAttribute('aria-expanded')) !== 'true') await tap('#fileOptions button.options-group-head');
         await tap('[data-action="manage-replay"]');
         await tap('#player .replay-back');
         await wait(gameSettings);
