@@ -257,6 +257,10 @@ void main() {
                 platform: accountView.webViewEnvironment!,
               ),
               initialSettings: accountView.initialSettings,
+              // The inherited settings enable navigation interception. This
+              // standalone document fixture has no native routes to intercept.
+              shouldOverrideUrlLoading: (_, _) async =>
+                  web.NavigationActionPolicy.ALLOW,
               initialUrlRequest: web.URLRequest(
                 url: web.WebUri(
                   'https://touhouonline.com/login.html?mode=register&lang=zh-CN',
@@ -318,6 +322,11 @@ void main() {
                 .map(field => field.name) : [];
               return {url: location.href, title: document.title,
                 ready: document.readyState, fonts: document.fonts.status,
+                bootReady: Array.from(document.querySelectorAll('#eaglerPreload, #lobbyPreload')).every(element => {
+                  const style = getComputedStyle(element);
+                  return style.display === 'none' || style.visibility === 'hidden' ||
+                    (Number(style.opacity) === 0 && style.pointerEvents === 'none');
+                }),
                 language: document.documentElement.lang, fields,
                 viewportWidth: innerWidth, viewportHeight: innerHeight,
                 contentWidth: document.documentElement.scrollWidth};
@@ -326,6 +335,7 @@ void main() {
             if (result is Map) document = Map<String, dynamic>.from(result);
             if (document['ready'] == 'complete' &&
                 document['fonts'] == 'loaded' &&
+                document['bootReady'] == true &&
                 expectedFields.every(
                   (name) => (document['fields'] as List? ?? []).contains(name),
                 )) {
@@ -342,6 +352,7 @@ void main() {
           expect(address.queryParameters['lang'], 'zh-CN');
           expect(document['ready'], 'complete');
           expect(document['fonts'], 'loaded');
+          expect(document['bootReady'], isTrue);
           expect(document['title'], isNotEmpty);
           expect(document['fields'], containsAll(expectedFields));
           expect(

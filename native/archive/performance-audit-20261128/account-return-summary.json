@@ -39,9 +39,10 @@
     "originalPreviewFilesUnchanged": 371
   },
   "documentCheck": {
-    "status": "not passed in separate earlier run",
+    "status": "Resolved by the subsequent controlled fixture check",
     "observed": "Public registration privacy anchor not present before the 30-second deadline; no credentials entered. Cause unconfirmed.",
-    "record": "account-return-evidence.zip | document-check/runtime.log"
+    "record": "account-return-evidence.zip | document-check/runtime.log",
+    "resolution": "account-document-summary.json"
   },
   "testAotSha256": "abb6a328042df506576618bfdf19a81c6f06bf95e484dfdbd19bc59e7f271ba3",
   "nativePluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373",

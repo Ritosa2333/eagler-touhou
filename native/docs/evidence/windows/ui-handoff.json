@@ -1,5 +1,5 @@
 {
-  "checkedAtUtc": "2026-11-28T09:50:50.551651+00:00",
+  "checkedAtUtc": "2026-11-28T10:43:08.057301+00:00",
   "builtAtUtc": "2026-11-28T09:34:38.573922+00:00",
   "stage": "D:\\workspace\\eagler\\artifacts\\.native-room-client-win",
   "scope": "Ordinary main.dart Release reassembly | stable independent-page subtree | unchanged native binaries and resources | test entry sources are inventory context, separate integration AOT | no deployment",
@@ -8,7 +8,7 @@
   "aotSha256": "7e58aabca9ef35fd1907fe0b7bfcbccd636d7ef1f97bd77de20e9b331fc3cf95",
   "entry": "D:\\Temp\\native-performance-20261128\\shutdown-guard\\production\\touhouonline.exe",
   "source": {
-    "integration_test/account_window_test.dart": "79f2e95a720ca66b8926a3e39c618c9108092091343f5e2970fa36704621f1c0",
+    "integration_test/account_window_test.dart": "9b8cf88be0848f5ea55fa23ae43bde540b2a1be50a5640468e99e6546fe9a37b",
     "integration_test/desktop_window_test.dart": "a99392f761212620a415652b41e2a04da7d12f90c2b2ba1e293e3fffc1b1d4dc",
     "lib/account.dart": "eccb15644d1f052d8c195fc98f10a6380c9e02cee3b0f64c48e5f11d4be3d889",
     "lib/account_api.dart": "07aa1931314e38bcdb44e3c5b290d9d4fd9f99645575d849c94d13a2391c3068",

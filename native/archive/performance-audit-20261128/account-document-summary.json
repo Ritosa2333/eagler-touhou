@@ -1,0 +1,143 @@
+{
+  "checkedAtUtc": "2026-11-28T10:43:08.057301+00:00",
+  "baselineCommit": "c81bdd3720e17a4e6ed2939f93e4a4d99e40d47c",
+  "scope": "Windows Release integration importing real main, canonical native DLLs, isolated guest. Own nonactivating diagnostic host. Native product source and ordinary main AOT unchanged. No credentials or global input.",
+  "cause": "Standalone document fixture inherited useShouldOverrideUrlLoading=true but omitted shouldOverrideUrlLoading. The pinned Windows decoder converts its null callback result to CANCEL, leaving about:blank with CONNECTION_ABORTED. Production AccountWebPage already supplies its routing callback.",
+  "controlledComparison": {
+    "absent": {
+      "passed": false,
+      "elapsedSeconds": 35.80893470000592,
+      "variant": "absent",
+      "probeSha256": "f014c00a017b588b6abbe46ee5924fec5cebfd3f768f65d90f2ea0b4f47705c0",
+      "testAotSha256": "6b80a267072d9cee3d92fa3a09f7d4ec5c133022f64fd0aba8e211460e842f51",
+      "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+      "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373"
+    },
+    "allow": {
+      "passed": true,
+      "elapsedSeconds": 17.318573399999877,
+      "variant": "allow",
+      "probeSha256": "f014c00a017b588b6abbe46ee5924fec5cebfd3f768f65d90f2ea0b4f47705c0",
+      "testAotSha256": "6b80a267072d9cee3d92fa3a09f7d4ec5c133022f64fd0aba8e211460e842f51",
+      "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+      "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373"
+    },
+    "absent-repeat": {
+      "passed": false,
+      "elapsedSeconds": 35.67892410000786,
+      "variant": "absent-repeat",
+      "probeSha256": "f014c00a017b588b6abbe46ee5924fec5cebfd3f768f65d90f2ea0b4f47705c0",
+      "testAotSha256": "6b80a267072d9cee3d92fa3a09f7d4ec5c133022f64fd0aba8e211460e842f51",
+      "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+      "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373"
+    }
+  },
+  "verification": {
+    "realIntegrationTestsPassed": 2,
+    "resizeCases": 8,
+    "exitModes": [
+      "back",
+      "close"
+    ],
+    "restoredGame": "th06",
+    "sameWidgetStateAndNativeTexture": true,
+    "headingRectangleUnchanged": true,
+    "publicDocumentCases": 6,
+    "widths": [
+      1280,
+      390,
+      320
+    ],
+    "language": "zh-CN",
+    "noHorizontalOverflow": true,
+    "bootOverlayGoneBeforeCapture": true,
+    "privacyPopupSameWebView": true,
+    "spaHistoryEvent": true,
+    "normalExitAllTrials": true,
+    "foregroundSamplesOutsideTest": {
+      "absent": 40,
+      "allow": 21,
+      "absent-repeat": 40,
+      "final": 31
+    },
+    "targetedAnalyzer": "passed"
+  },
+  "finalIntegration": {
+    "variant": "final",
+    "targetSha256": "9b8cf88be0848f5ea55fa23ae43bde540b2a1be50a5640468e99e6546fe9a37b",
+    "testAotSha256": "6287ec3f98191f68d3cf1d7d9e718d96a20016206e64cfb7c2fcb7c49020697d",
+    "hostSha256": "d16ac458b9a0a433bdde5f4ec364c22fbec50711ffe8a997a82fc9033aa33247",
+    "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373"
+  },
+  "ordinaryWindowsPackage": {
+    "sha256": "0bbac79a4805c02ec258e08d4a73ae52c58920808a82b157b9c9b16db6146e37",
+    "aotSha256": "7e58aabca9ef35fd1907fe0b7bfcbccd636d7ef1f97bd77de20e9b331fc3cf95",
+    "rebuilt": false
+  },
+  "pending": [
+    "Foreground ordinary EXE manual operation and performance",
+    "Credentialed login/logout, file upload and crop",
+    "Other OS and devices",
+    "User visual acceptance"
+  ],
+  "evidence": {
+    "file": "account-document-evidence.zip",
+    "sha256": "216d92cb4b17e89fb502bf1fc4579ca366c0ca82ee764737ee60977d38cdb6a5",
+    "entries": {
+      "previous/account-document.json": "6bdc7647115994f91a7cba4c495b2c61ac1d170016cfd35dd6f15462581f16e5",
+      "previous/webview-account-login-1280.png": "51e47e96a4702fb7d0960dd158a653d985adabe732c9df25c7075d1215bc11e9",
+      "previous/webview-account-login-320.png": "a5fa802122dd59bfdd534de36658834be7ef9e7ba004f7e0211176d434e0b556",
+      "previous/webview-account-login-390.png": "3133127ec1cb4dd9a64e3746cfc6dbef16a6598f94866e1271ec54b73f2da9cf",
+      "previous/webview-account-register-1280.png": "f4140595d2e0b3f358ede616d1629dffcefb5d50d2d6c7862368bd2327460e62",
+      "previous/webview-account-register-320.png": "c213bfa171dff508a866bc191ecad586b222d0bbec71fa35cb3e409fa565d817",
+      "previous/webview-account-register-390.png": "75f5fb5cb1aaff8bd8abf8e2a9027336d601e3848cc83f7caf7b43a0f94e70bf",
+      "host/account_document_probe.dart": "f014c00a017b588b6abbe46ee5924fec5cebfd3f768f65d90f2ea0b4f47705c0",
+      "host/compiled-final.dart": "9b8cf88be0848f5ea55fa23ae43bde540b2a1be50a5640468e99e6546fe9a37b",
+      "host/compiled-final-before-readiness.dart": "8dd0e50fb7e09c851544b3db965965e2f329204475e180149fdd06e27c760f16",
+      "host/run-variant.py": "8314de0e023905d9510dfd80759ab786f08b7704bf1fc42875e2bbdcadb38ce0",
+      "host/analyze.log": "7b2306fd833bb85fea51921cb9747862d0d8cd835ed3de19dfae0f57adb5e0fe",
+      "host/final-assemble.log": "12690b8d9f2f39547980df5c6103dc8cbf73e44fe73a04ca79cee78f92c9bd74",
+      "absent/capture/registration-observed.png": "403b449fbc0b4416d058b7308fb055e2f53347cc4510088c95d23d02384be9b6",
+      "absent/events.jsonl": "4e41b40aaf8b95e1664261ab9bbde12f06e384360f9193ed7c4ef810c303e2d7",
+      "absent/input.json": "948e4522fb3a34dba31f16384c2dad20198e41ff1b941d09d9103c32e4f0a545",
+      "absent/native-result.json": "e22659190b5c004e6ab4ea447b958e0173b294544a03d49641a004ff9f5699d9",
+      "absent/process-result.json": "2ed75581f655d446ee85dc2a52343c02fb896da8ae1fe1c74a08808fe2a13587",
+      "absent/runtime.log": "4f54794ffc403045e9a61c2eb7839d0ac159301244ec03c3ea89be360b942c44",
+      "allow/capture/account-documents.json": "5d2e27f3cbd7e2355989bdd4706ad9ce17aa918a5485daf55aa7583bfca38c1c",
+      "allow/capture/account-login-1280.png": "8e2f5f8ea682a62b27dca2204ac2089c77d8e391c8c42afefe0d3ecf12d3b46d",
+      "allow/capture/account-login-320.png": "a5fa802122dd59bfdd534de36658834be7ef9e7ba004f7e0211176d434e0b556",
+      "allow/capture/account-login-390.png": "3133127ec1cb4dd9a64e3746cfc6dbef16a6598f94866e1271ec54b73f2da9cf",
+      "allow/capture/account-register-1280.png": "f4140595d2e0b3f358ede616d1629dffcefb5d50d2d6c7862368bd2327460e62",
+      "allow/capture/account-register-320.png": "c213bfa171dff508a866bc191ecad586b222d0bbec71fa35cb3e409fa565d817",
+      "allow/capture/account-register-390.png": "75f5fb5cb1aaff8bd8abf8e2a9027336d601e3848cc83f7caf7b43a0f94e70bf",
+      "allow/capture/registration-observed.png": "6287acf6c4fddee90fc11b6f62973b1d7d761c01e5761344b1536088f49957f8",
+      "allow/events.jsonl": "5666f75bc8609593430e671de0c3bcdce3d1d2d44110bfbdf17eb3381f64dcae",
+      "allow/input.json": "4882f47f0bd60578491c250e882296ef20917016c0cde782f0df38c2b81d6eb8",
+      "allow/native-result.json": "61e574e8b5fba38eaf5d0730c70c6407655f6e6755837c3e13b05a891d7d8284",
+      "allow/process-result.json": "556b922cfca6f8a1ecebf0705dba852ce0f6d38d30e684b77dab8c489b105130",
+      "allow/runtime.log": "158534407259c44a162984147b8234d3c81ed373c39ce9b5a4739679a476f36f",
+      "absent-repeat/capture/registration-observed.png": "403b449fbc0b4416d058b7308fb055e2f53347cc4510088c95d23d02384be9b6",
+      "absent-repeat/events.jsonl": "95790021b9b2dfe53442dff61621f60f49161bfefaaf3827b2408b2e02f7ce64",
+      "absent-repeat/input.json": "5557f7df4f551b4d17d8a5667716bc1f5d381f37b54788d60babb53fb916e411",
+      "absent-repeat/native-result.json": "187c5b9968cef9b9de979a1e92f89bf7bc9e716e9d2c1df98a5abd6008a2da50",
+      "absent-repeat/process-result.json": "12449e104261b48dcc05e11f28deef15dc568014c08d23c25f4532fe29949ab9",
+      "absent-repeat/runtime.log": "99e1137c20b8a65d4245fedd09c582f1e931046a004aa1db1160799c83273b65",
+      "final/capture/account-documents.json": "ab3607d8b51b03627dbf0f5dbb2da8ba85e221b38b7c4c791112630eb6c117e5",
+      "final/capture/account-login-1280.png": "6c3e2212fcfd4ac457a0cea655a1b3e10ca2795825138ad2c1cf5e6baa081806",
+      "final/capture/account-login-320.png": "a5fa802122dd59bfdd534de36658834be7ef9e7ba004f7e0211176d434e0b556",
+      "final/capture/account-login-390.png": "3133127ec1cb4dd9a64e3746cfc6dbef16a6598f94866e1271ec54b73f2da9cf",
+      "final/capture/account-register-1280.png": "de6f4146430389b599fecd7cd47f1a63029c10ec346a67b5126f845febdb17c3",
+      "final/capture/account-register-320.png": "c213bfa171dff508a866bc191ecad586b222d0bbec71fa35cb3e409fa565d817",
+      "final/capture/account-register-390.png": "75f5fb5cb1aaff8bd8abf8e2a9027336d601e3848cc83f7caf7b43a0f94e70bf",
+      "final/events.jsonl": "0ef9b51d183bfa6af98b439448cbd4518394eb0efc74c45c902e7511d01b6097",
+      "final/input.json": "123e65f55dea7f2fa5784d17a6bbca2208572f5daff935a3cb6c11b627ec9f5d",
+      "final/native-result.json": "19fbf22d2cfe4ece3f52aca0d0073c93e5b5e84f7a4ce346399ee57562df1aed",
+      "final/process-result.json": "55b048595eebf746129024ccd0b13f27532fa35c34148488f51d189d55c9ab8f",
+      "final/runtime.log": "de3b8c749433b3ba393f2fa557933ebb933cda5405bce1c2783c492755b3a3d1",
+      "before-readiness/input.json": "37e64c757720ded4d6755e95bfb41c9a561ef78ac454ee7b4d20d38e07e2b926",
+      "before-readiness/process-result.json": "ee0d7ec2815475064b6ea7a153ba228a07c4cfa5d59e77540d587b10b4d18ac4",
+      "before-readiness/runtime.log": "d6ec4162f29799bb65aa7b03300437ce1f9e2e2081161ec863cdae04d9e972c6",
+      "before-readiness/capture/account-login-1280.png": "b74fa786d35ca72393b696a2235bdcb8b356a62b486109e61170c13fe13027da"
+    }
+  }
+}
