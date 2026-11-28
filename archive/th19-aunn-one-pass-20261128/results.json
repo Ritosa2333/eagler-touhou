@@ -1,0 +1,258 @@
+{
+  "wasmSha256": "421ca1a19d52bb3964331caa0cc7e0aa77f502a46b0b422468df1b04cedf69e6",
+  "characters": [
+    4,
+    4
+  ],
+  "referenceMode": "原版半径兼容采集；网页自然换轮，无波次表覆盖",
+  "historical": [
+    {
+      "seed": 3058262,
+      "secondary": 424182232,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 441760032,
+      "secondary": 690671774,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 1786620919,
+      "secondary": 1933749274,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 1151377229,
+      "secondary": 1997645379,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 717007632,
+      "secondary": 377911225,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "FAIL",
+      "firstSecondaryDifference": {
+        "frame": 13086,
+        "web": 1835988994,
+        "original": 570261617
+      },
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 835828333,
+      "secondary": 767083107,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 215448855,
+      "secondary": 100560077,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "FAIL",
+      "firstSecondaryDifference": {
+        "frame": 20291,
+        "web": 2012405208,
+        "original": 121374662
+      },
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 1693583541,
+      "secondary": 1248441593,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 545654480,
+      "secondary": 610807617,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 1386358785,
+      "secondary": 363386996,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 1078174012,
+      "secondary": 526923340,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 1525426105,
+      "secondary": 1550366999,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 205289461,
+      "secondary": 937173209,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 1890721845,
+      "secondary": 427712138,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 419637208,
+      "secondary": 1866657590,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "FAIL",
+      "firstSecondaryDifference": {
+        "frame": 12637,
+        "web": 1577292552,
+        "original": 1297616771
+      },
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 571509532,
+      "secondary": 714799476,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    }
+  ],
+  "alternateRoundLoading": [
+    {
+      "seed": 717007632,
+      "secondary": 377911225,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "FAIL",
+      "firstSecondaryDifference": {
+        "frame": 13086,
+        "web": 1835988994,
+        "original": 570261617
+      },
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    }
+  ],
+  "freshFirstRun": [
+    {
+      "seed": 478552233,
+      "secondary": 475537562,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "FAIL",
+      "firstSecondaryDifference": {
+        "frame": 8676,
+        "web": 328859205,
+        "original": 1945097336
+      },
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 124717819,
+      "secondary": 557224525,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "FAIL",
+      "firstSecondaryDifference": {
+        "frame": 25530,
+        "web": 1385128922,
+        "original": 1451481427
+      },
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 1246447431,
+      "secondary": 1856120609,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 911779983,
+      "secondary": 983039854,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    },
+    {
+      "seed": 893530616,
+      "secondary": 440899833,
+      "frames": 36000,
+      "gameplayPass": true,
+      "strictStatus": "PASS",
+      "firstSecondaryDifference": null,
+      "differentBulletFrames": 0,
+      "coverageOk": true
+    }
+  ]
+}

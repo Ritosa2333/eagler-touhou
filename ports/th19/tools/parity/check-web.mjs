@@ -55,15 +55,27 @@ const {rows: nativeRows, sha256: nativeTraceSha256, incompleteTail: incompleteNa
 // Loading advances presentation animations while the round battle clock stays zero.
 // Preserve that recorded cadence rather than injecting checkpoint RNG states.
 const roundLoadingTicks = {};
+const firstLoadingPresent = {};
+const roundStageDelays = {};
 for (const row of nativeRows) {
   if (!continuous || !Number.isInteger(row.segment) || row.segment < 1 || row.frame !== 0) continue;
   const key = row.segment + 1;
   const span = roundLoadingTicks[key] ?? {first:row.present,last:row.present};
+  firstLoadingPresent[key] = span.first;
   span.last = row.present;
   roundLoadingTicks[key] = span;
 }
 for (const [round, span] of Object.entries(roundLoadingTicks))
   roundLoadingTicks[round] = span.last - span.first;
+for (const row of nativeRows) {
+  const round = row.loadingStageObservation;
+  if (!continuous || !Number.isInteger(round) || roundStageDelays[round] !== undefined) continue;
+  if (!(row.stageReady ?? (row.waveState > 0))) continue;
+  const delay = row.present - firstLoadingPresent[round];
+  if (!Number.isInteger(delay) || delay < 0 || delay > roundLoadingTicks[round])
+    throw Error("Stage construction falls outside its recorded loading interval");
+  roundStageDelays[round] = delay;
+}
 const nativeFrames = new Map();
 const nativeFramesWithMultipleRngStates = new Set();
 let previousNativeFrame;
@@ -130,7 +142,7 @@ const browser = await puppeteer.launch({
   // Keep browser scratch files beside the selected capture output (D: on Server).
   userDataDir: resolve(directory, "browser-profile"),
   executablePath: process.env.TH19_CHROME || "C:/Program Files/Google/Chrome/Application/chrome.exe",
-  headless: true, protocolTimeout: continuous || through > 18000 ? 900000 : 180000,
+  headless: true, protocolTimeout: Number(process.env.TH19_CAPTURE_PROTOCOL_TIMEOUT_MS) || (continuous || through > 18000 ? 900000 : 180000),
   args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--autoplay-policy=no-user-gesture-required"]
 });
 
@@ -213,7 +225,7 @@ async function inGame(action, payload) {
   }
 }
 
-function runCapture({captureAttackRanks, roundLoadingTicks, diagnosticRoundSeed, seed, otherSeed, frames, visualFrames, fixture, rollbackWindow, traceWindow, cpuTraceWindow, fastCapture, bulletFrames, continuous, stopOnRngDifference, primaryRngOnly, expectedRng}) {
+function runCapture({captureAttackRanks, roundLoadingTicks, roundStageDelays, diagnosticRoundSeed, seed, otherSeed, frames, visualFrames, fixture, rollbackWindow, traceWindow, cpuTraceWindow, fastCapture, bulletFrames, continuous, stopOnRngDifference, primaryRngOnly, expectedRng}) {
   const win = window.__TH19_HARNESS.frame.contentWindow;
   const c = win.__th19Runtime.core;
   c._th19_loop_stop();
@@ -237,6 +249,12 @@ function runCapture({captureAttackRanks, roundLoadingTicks, diagnosticRoundSeed,
   };
   let continuousFrame = 0;
   let previousWebState = readState();
+  const scheduleNextStage = round => {
+    if (roundStageDelays[round] === undefined) return;
+    if (!c._th19_capture_next_stage_delay?.(roundStageDelays[round]))
+      throw Error("Native stage construction cadence rejected");
+  };
+  scheduleNextStage(previousWebState[1] + 1);
   const advanceToFrame = (frame, present, fast) => {
     let elapsed = continuous ? continuousFrame : readState()[29];
     let stalledTicks = 0;
@@ -247,6 +265,7 @@ function runCapture({captureAttackRanks, roundLoadingTicks, diagnosticRoundSeed,
       if(continuous&&state[1]>previousWebState[1]&&roundLoadingTicks[state[1]]!==undefined){
         if(!c._th19_capture_round_loading_ticks||!c._th19_capture_round_loading_ticks(roundLoadingTicks[state[1]]))
           throw Error("Native loading presentation cadence rejected");
+        scheduleNextStage(state[1] + 1);
       }
       if(diagnosticRoundSeed&&state[1]>previousWebState[1]){
         const suppliedRoundSeed=typeof diagnosticRoundSeed==="object"?diagnosticRoundSeed[state[1]]:diagnosticRoundSeed;
@@ -488,6 +507,7 @@ const report = {
   continuous,
   diagnosticRoundWaveSeed:diagnosticRoundSeed,
   nativeRoundLoadingTicks:roundLoadingTicks,
+  nativeRoundStageDelays:roundStageDelays,
   initialAnimationRng: [nativeRng[0], nativeRng[2]]
 };
 try {
@@ -496,7 +516,7 @@ try {
   await once(server, "listening");
   const {results: seeded, impactRollback} = await inGame(runCapture, {
     captureAttackRanks: process.env.TH19_CAPTURE_ATTACK_RANKS === "1",
-    roundLoadingTicks, diagnosticRoundSeed, fixture, seed: nativeRng[0], otherSeed: nativeRng[2], frames, traceWindow, cpuTraceWindow, continuous,
+    roundLoadingTicks, roundStageDelays, diagnosticRoundSeed, fixture, seed: nativeRng[0], otherSeed: nativeRng[2], frames, traceWindow, cpuTraceWindow, continuous,
     bulletFrames, stopOnRngDifference, primaryRngOnly: stopOnPrimaryRngDifference,
     expectedRng: stopOnRngDifference ? Object.fromEntries([...nativeFrames].map(([frame,row]) => [frame,[row.rng[0],row.rng[2]]])) : null,
     rollbackWindow: requestedRollback ?? (openingOnly ? null : [124, 128]), fastCapture: through !== null,

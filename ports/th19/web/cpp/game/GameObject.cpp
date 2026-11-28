@@ -1,6 +1,7 @@
 #include "EclVm.hpp"
 #include "GameWorld.hpp"
 #include "BossMovement.hpp"
+#include "BulletPattern.hpp"
 #include "EnemyOrbit.hpp"
 #include <cmath>
 #include <cstdio>
@@ -81,8 +82,8 @@ bool EclVm::game_object(const EclInstruction& ins){
                 case 602:s.type=param_i32(ins,1);s.color=param_i32(ins,2);break;
                 case 603:s.x=param_f32(ins,1);s.y=param_f32(ins,2);break;
                 case 604: // 0x5025c1 / 0x5025ec normalize both descriptor angles.
-                    s.angle=std::remainder(param_f32(ins,1),6.2831854820251465f);
-                    s.angle2=std::remainder(param_f32(ins,2),6.2831854820251465f);
+                    s.angle=nativeShooterAngle(param_f32(ins,1));
+                    s.angle2=nativeShooterAngle(param_f32(ins,2));
                     break;
                 case 605:s.speed=param_f32(ins,1);s.speed2=param_f32(ins,2);break;
                 // Native 0x502695 / 0x5026fc stores unsigned 16-bit fields.
@@ -193,7 +194,7 @@ bool EclVm::game_object(const EclInstruction& ins){
                 world_->cancel_bullets_circle(e.x,e.y,radius,99999,false);
                 const auto firstLaserCancel=world_->bullet_cancels.size();
                 const bool firstDischarge=e.age==1&&std::string(current_sub_name()).rfind("Ecl_EtBreakLv",0)==0;
-                world_->cancel_lasers_circle(e.x,e.y,radius,true,false,firstDischarge?host_id:0);
+                world_->cancel_lasers_circle(e.x,e.y,radius,true,false,firstDischarge?host_id:0,true);
                 // 503d9e -> 5303f0 initializes each clear ANM before ECL
                 // returns to the enemy and player animation callbacks.
                 if(world_->bullet_scripts)for(size_t i=firstLaserCancel;i<world_->bullet_cancels.size();++i){
@@ -361,8 +362,21 @@ bool EclVm::game_object(const EclInstruction& ins){
             auto& enemies=world_->enemies;
             // The protected constructor still consumes pellets and shortens beams
             // before an older actor can read those same registered damage areas.
-            if(world_->constructor_contacts&&*world_->constructor_contacts)
+            if(world_->constructor_contacts&&*world_->constructor_contacts){
+                const bool registeringVolley=world_->reward_mode==2 && name=="ExAttack2";
                 (*world_->constructor_contacts)(enemies[first]);
+                auto& registered=enemies[first];
+                if(registeringVolley && (registered.status_flags&0x04000000u) && registered.life>0){
+                    registered.active=true;
+                    registered.status_flags|=4u;
+                    // The first registered combined displacement is measured from the zeroed slot.
+                    registered.previous_x=registered.previous_y=0;
+                    registered.combined_dx=registered.x;registered.combined_dy=registered.y;
+                    if(registered.x+registered.body_half_width>=-148 && registered.x-registered.body_half_width<=148 &&
+                       registered.y+registered.body_half_height>=0 && registered.y-registered.body_half_height<=448)
+                        registered.status_flags|=1u;
+                }
+            }
             if(world_->reward_mode==2&&enemies.size()>first+1)
                 std::rotate(enemies.begin()+first,enemies.begin()+first+1,enemies.end());
             return true;

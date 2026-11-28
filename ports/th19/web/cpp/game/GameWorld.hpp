@@ -48,8 +48,7 @@ struct InfiniteLaser {
     std::vector<CurvePoint> contact_curve_nodes(int frame)const{
         if(curve_cut_contact_frame==frame)return curve_cut_contact_cache;
         auto result=curve.nodes;
-        if(!curve.dynamic)for(size_t i=0;i<result.size();++i)
-            result[i]=curve.at(float(curve.time)-float(i));
+        if(!curve.dynamic)curve.sample_nodes(curve.time,result);
         return result;
     }
     bool straight=false,aura_slowed=false;float straight_target=0;int offscreen_grace=30,straight_bounds_grace=3,change_sounds=0;StraightLaserChanges straight_changes;
@@ -274,6 +273,7 @@ struct Enemy {
     bool arrival_slow_motion=false,arrival_aura_registered=false;
     u8 spawn_hold=0;
     bool extra_birth_motion=false;
+    bool hold_after_birth_update=false;
     bool extra_birth_graze_visited=false;
     enum class AttackEntry : u8 { None, StepScript, RetireController };
     AttackEntry attack_entry=AttackEntry::None;
@@ -420,6 +420,9 @@ public:
     const std::unordered_map<i32,AnmScriptLoc>* effect_scripts=nullptr;
     const std::unordered_map<i32,std::array<float,2>>* bullet_sprite_sizes=nullptr;
     std::vector<InfiniteLaser> lasers;
+    // Static curve rectangles already registered with the CPU before a discharge cut.
+    std::vector<InfiniteLaser> cpu_discharge_curves;
+    std::vector<u32> cpu_discharge_fragments;
     std::vector<Spirit> spirits;
     std::vector<Pickup> pickups;
     std::vector<EnemyDeath> deaths;
@@ -457,15 +460,15 @@ public:
     void advance_enemy_protection(Enemy& enemy);
     int cancel_bullets_circle(float x,float y,float radius,int limit=99999,bool respect_lock=true,bool preserve_new_counters=false);
     int cancel_lasers_region(const std::function<bool(float,float)>& inside,bool respect_lock=true,
-        const std::function<bool(float,float,float)>& rectangleSample={},u32 laser_id=0,bool registered_only=false,bool global_clear=false,u32 before_owner=0);
+        const std::function<bool(float,float,float)>& rectangleSample={},u32 laser_id=0,bool registered_only=false,bool global_clear=false,u32 before_owner=0,bool ecl_clear=false);
     void cancel_enoko_trap(float x,float y,float angle);
     void cancel_all_bullets();
     void cancel_all_lasers();
-    int cancel_bullets_shape(const std::function<bool(float,float,float)>& contact);
+    int cancel_bullets_shape(const std::function<bool(float,float,float)>& contact,bool inlineAnimation=false);
     int cancel_bullets_polygon(float x,float y,float radius,float angle,int sides);
     int cancel_bullets_rect(float x,float y,float width,float height,float angle=0);
     int cancel_lasers_rect(float x,float y,float width,float height,float angle,u32 laser_id=0);
-    int cancel_lasers_circle(float x,float y,float radius,bool respect_lock=true,bool registered_only=false,u32 before_owner=0);
+    int cancel_lasers_circle(float x,float y,float radius,bool respect_lock=true,bool registered_only=false,u32 before_owner=0,bool ecl_clear=false);
     void tick_death_chains();
     void tick_vs_death_chain_cancels();
     void cancel_death_chain_bullets(const DeathChain& chain,float radius,int frame);
@@ -543,6 +546,7 @@ private:
     struct GrazeReward {float x,y;u32 color,laser_id;};
     std::vector<GrazeReward> laser_graze_rewards_;
     bool bullet_graze_pending_=false;
+    bool collecting_discharge_geometry_=false;
     bool curve_motion_pending_=false;
     void tick_bullet_graze(Bullet& bullet,float px,float py,float player_radius);
     void award_graze(float x,float y,u32 color);

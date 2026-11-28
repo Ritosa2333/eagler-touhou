@@ -37,7 +37,20 @@ struct ChargeRegion {
             if(ch!=5&&ch!=7){x=px;y=ch==1?0:ch==6?py-160:py;}
             if(ch==5&&age<=2){x=px;y=py;}
             if(ch==7){if(begin||y<-60){x=px;y=py;speed=1;age=1;angle=(dx<-.1f?-6:dx>.1f?6:0)*3.141592654f/180;}x+=std::sin(angle)*speed;y-=std::cos(angle)*speed;speed+=.1f;}
-            if(ch==4){if(age>30&&age<=40){radius=(32+32*nativeEase(5,float(age-30)/10))*power;minor=(32+160*nativeEase(5,float(age-30)/10))*power;}else if(age>40){radius=(64+16*nativeEase(2,float(age-40)/10))*power;minor=(192-176*nativeEase(2,float(age-40)/10))*power;}}
+            if(ch==4){
+                // The callback publishes both axes before switching interpolators
+                // at native ages 30 and 40. The next visit starts the new curve.
+                const int elapsed=age-1;
+                if(elapsed>30&&elapsed<=40){
+                    const float growth=nativeEase(5,float(elapsed-30)/10);
+                    radius=(32+32*growth)*power;
+                    minor=(32+160*growth)*power;
+                }else if(elapsed>40){
+                    const float growth=nativeEase(2,float(elapsed-40)/10);
+                    radius=(64+16*growth)*power;
+                    minor=(192-176*growth)*power;
+                }
+            }
             if(ch==11)minor=1+(32*power-1)*nativeEase(4,float(age)/10);
             if(ch==18)minor=1+(64*power-1)*nativeEase(4,float(age)/20);
             if(ch==17){auto p=rotated(0,48,px,py);x=p.x;y=p.y;}
@@ -50,6 +63,41 @@ struct ChargeRegion {
         else radius=0;
     }
     void seek(float tx,float ty){if(character!=5||!held||age<=2)return;float dx=tx-x,dy=ty-y,d=std::hypot(dx,dy);if(d>2){dx*=4/d;dy*=4/d;}x+=dx;y+=dy;centers[0]={x,y};}
+    bool overlaps_aunn_rectangle(float cx,float cy,float orientation,float width,float height)const{
+        if(radius<=0||minor<=0)return false;
+        // 0x41a90e passes the two axes and a fixed -pi/2 to 0x4d3c50.
+        // The native query rotates the dimension vector once and samples
+        // the resulting grid in ellipse space.
+        constexpr float pi=3.1415927410125732f;
+        const float c=std::cos(pi*.5f),sn=std::sin(pi*.5f);
+        const float dx=cx-x,dy=cy-y;
+        const float u=c*dx-sn*dy,v=sn*dx+c*dy;
+        const float rotation=std::remainder(orientation+pi*.5f,2*pi);
+        const float rc=std::cos(rotation),rs=std::sin(rotation);
+        const float du=rc*width-rs*height,dv=rs*width+rc*height;
+        const float extent=std::max(width,height);
+        if(extent>std::max(minor,radius)){
+            const int samples=std::max(8,int((minor+radius)*.25f));
+            const float step=2*pi/samples;
+            float phase=orientation;
+            for(int i=0;i<samples;++i,phase+=step){
+                const float ex=float(std::cos(double(phase))*minor);
+                const float ey=float(std::sin(double(phase))*radius);
+                if(std::abs(ex-u)<du*.5f&&std::abs(ey-v)<dv*.5f)return true;
+            }
+            return false;
+        }
+        const int samples=std::max(3,int(extent/8));
+        float oy=-dv*.5f;
+        for(int j=0;j<samples;++j,oy+=dv/(samples-1)){
+            float ox=-du*.5f;
+            for(int i=0;i<samples;++i,ox+=du/(samples-1)){
+                const float ex=u+ox,ey=v+oy;
+                if(ex*ex/(minor*minor)+ey*ey/(radius*radius)<=1.f)return true;
+            }
+        }
+        return false;
+    }
     bool contains(float px,float py,float object_radius=0)const{
         if(!held)return false;
         const float dx=px-x,dy=py-y;
@@ -64,7 +112,33 @@ struct ChargeRegion {
             const float by=std::max(std::abs(dy)-radius*3.5f,0.f);
             return ax*ax+ay*ay<=object_radius*object_radius||bx*bx+by*by<=object_radius*object_radius;
         }
-        if(character==4||character==11){float a=character==4?-1.570796327f:angle,c=std::cos(a),s=std::sin(a),u=dx*c+dy*s,v=-dx*s+dy*c;return u*u/((minor+object_radius)*(minor+object_radius))+v*v/((radius+object_radius)*(radius+object_radius))<=1;}
+        if(character==4){
+            // 0x4d4020 rotates into ellipse space and samples the smaller
+            // shape's perimeter, with fast acceptance for contained shapes.
+            constexpr float pi=3.14159265358979323846f;
+            const float c=std::cos(pi*.5f),s=std::sin(pi*.5f);
+            const float u=dx*c-dy*s,v=dx*s+dy*c;
+            const float r=object_radius,largest=std::max(minor,radius);
+            auto inside=[](float x,float y,float a,float b){
+                return x*x/(a*a)+y*y/(b*b)<=1.f;
+            };
+            if(r<std::min(minor,radius)&&inside(u,v,minor-r,radius-r))return true;
+            if(r>largest&&u*u+v*v<=(r-largest)*(r-largest))return true;
+            if(r<1||largest<1)return false;
+            const bool sampleEllipse=r>largest;
+            const int samples=std::max(8,int(sampleEllipse?(minor+radius)*.25f:r*.25f));
+            const float step=2*pi/samples;
+            float phase=-pi;
+            for(int i=0;i<samples;++i,phase+=step){
+                const float x=float(std::cos(double(phase))*(sampleEllipse?minor:r));
+                const float y=float(std::sin(double(phase))*(sampleEllipse?radius:r));
+                if(sampleEllipse){
+                    if((u-x)*(u-x)+(v-y)*(v-y)<=r*r)return true;
+                }else if(inside(u+x,v+y,minor,radius))return true;
+            }
+            return false;
+        }
+        if(character==11){float a=angle,c=std::cos(a),s=std::sin(a),u=dx*c+dy*s,v=-dx*s+dy*c;return u*u/((minor+object_radius)*(minor+object_radius))+v*v/((radius+object_radius)*(radius+object_radius))<=1;}
         // Orin's native 0x41ca40 explicitly passes angle 0 and dimensions
         // (2r,r) to 0x4d44e0, even though her visual follows movement angle.
         if(character==7||character==8){float a=character==7?0:angle,c=std::cos(a),s=std::sin(a),u=dx*c+dy*s,v=-dx*s+dy*c,w=radius*(character==7?2:4)*.5f,h=radius*.5f;float qx=std::max(std::abs(u)-w,0.f),qy=std::max(std::abs(v)-h,0.f);return qx*qx+qy*qy<=object_radius*object_radius;}

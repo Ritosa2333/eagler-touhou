@@ -11,23 +11,57 @@ struct CurvePoint {float x=0,y=0,angle=0,speed=0;};
 struct CurveLaserPath {
  struct Segment {float start=0,end=999999;CurvePoint origin;float acceleration=0,turn=0;bool iterative=false;};
  std::vector<Segment> segments;std::vector<CurvePoint> nodes;
- int time=0;bool body_additive=true;
+ int time=0,fragment_bounds_grace=0;bool body_additive=true;
  bool dynamic=false;int homing_duration=0,bounds_duration=0;
  float homing_speed=0,homing_offset=0,homing_response=0,head_vx=0,head_vy=0;
  // Verified525d50/5256e0/527ef0 sequence used by pl17 BossCard1_at.
  // Keep historical nodes: they must not be recomputed toward today's player position.
  static CurvePoint sample(const Segment&s,float t){
   t=std::max(0.f,t-s.start);auto p=s.origin;
-  if(!s.iterative&&s.acceleration==0&&s.turn==0){p.x+=std::cos(p.angle)*p.speed*t;p.y+=std::sin(p.angle)*p.speed*t;return p;}
+  if(!s.iterative&&s.acceleration==0&&s.turn==0){
+   // Native mode 0 scales the unit direction by time, then by speed (0x527969).
+   p.x+=(t*std::cos(p.angle))*p.speed;
+   p.y+=(t*std::sin(p.angle))*p.speed;
+   return p;
+  }
+  // 0x5275b4 multiplies the extended-precision sine/cosine by speed
+  // before storing each velocity component as a float.
+  const auto velocity=[](const CurvePoint& point){
+   return std::array<float,2>{float(std::cos(double(point.angle))*point.speed),
+                              float(std::sin(double(point.angle))*point.speed)};
+  };
   const int whole=int(t);
-  for(int i=0;i<whole;++i){p.x+=std::cos(p.angle)*p.speed;p.y+=std::sin(p.angle)*p.speed;
+  for(int i=0;i<whole;++i){const auto v=velocity(p);p.x+=v[0];p.y+=v[1];
    p.angle=std::remainder(p.angle+s.turn,6.283185307179586f);p.speed+=s.acceleration;}
-  p.x+=std::cos(p.angle)*p.speed*(t-whole);p.y+=std::sin(p.angle)*p.speed*(t-whole);return p;
+  const auto v=velocity(p);p.x+=v[0]*(t-whole);p.y+=v[1]*(t-whole);return p;
  }
  CurvePoint at(float t)const{
   if(t<0)return segments.front().origin;
   for(auto i=segments.rbegin();i!=segments.rend();++i)if(t>=i->start)return sample(*i,t);
   return segments.front().origin;
+ }
+ // 0x528130 samples the head directly, then walks backward from each newer node.
+ void sample_nodes(int clock,std::vector<CurvePoint>& out)const{
+  if(out.empty())return;
+  out.front()=at(float(clock));
+  for(size_t i=1;i<out.size();++i){
+   const int t=clock-int(i);
+   if(t<0){out[i]=segments.front().origin;continue;}
+   const auto segment=std::find_if(segments.rbegin(),segments.rend(),
+       [t](const Segment& s){return t>=s.start&&t<s.end;});
+   if(segment==segments.rend()){out[i]=at(float(t));continue;}
+   auto p=out[i-1];
+   if(segment->iterative){
+    p.speed-=segment->acceleration;
+    p.angle=std::remainder(p.angle-segment->turn,6.283185307179586f);
+    p.x-=float(std::cos(double(p.angle))*p.speed);
+    p.y-=float(std::sin(double(p.angle))*p.speed);
+   }else{
+    p.angle=segment->origin.angle;p.speed=segment->origin.speed;
+    p.x-=std::cos(p.angle)*p.speed;p.y-=std::sin(p.angle)*p.speed;
+   }
+   out[i]=p;
+  }
  }
  bool initialize(float x,float y,float angle,float speed,int count,const std::array<BulletChange,24>&changes){
   if(count<2||count>4096)return false;
@@ -91,12 +125,15 @@ struct CurveLaserPath {
    const bool preserved=bounds_duration>0 && time>=homing_duration && time-homing_duration+1<bounds_duration;
    ++time;return visible||time<=30||preserved;
   }
-  bool visible=false;for(size_t i=0;i<nodes.size();++i){nodes[i]=at(float(time)-i);
-   // 528330 culls using the current contact sample, one tick beyond this
-   // retained draw/cancellation cache (the contact pass uses time after ++).
-   const auto p=at(float(time)+1.f-float(i));
-   visible|=p.x+width>-148&&p.x-width<148&&p.y+width>0&&p.y-width<448;}
-  ++time;return visible||time<=30;
+  sample_nodes(time,nodes);
+  auto nextNodes=nodes;
+  sample_nodes(time+1,nextNodes);
+  const bool visible=std::any_of(nextNodes.begin(),nextNodes.end(),[width](const auto& p){
+   return p.x+width>-148&&p.x-width<148&&p.y+width>0&&p.y-width<448;
+  });
+  const bool fragmentProtected=fragment_bounds_grace>0;
+  if(fragmentProtected)--fragment_bounds_grace;
+  ++time;return visible||time<=30||fragmentProtected;
  }
 };
 }

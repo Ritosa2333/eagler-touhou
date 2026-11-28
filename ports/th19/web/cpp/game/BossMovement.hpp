@@ -17,6 +17,7 @@ inline float nativeBossMoveAngle(float x,float y,float playerX,float bx,float by
     else if(y>by+bh*.25f)angle=-std::abs(angle);
     if(std::abs(angle+pi*.5f)<.05f)angle=-pi*.5f+(angle<-pi*.5f?-.05f:.05f);
     else if(std::abs(angle-pi*.5f)<.05f)angle=pi*.5f+(angle<pi*.5f?-.05f:.05f);
-    return angle;
+    // The polar motion record keeps its heading within the signed turn.
+    return std::remainder(angle,2*pi);
 }
 }

@@ -38,10 +38,10 @@ struct ChargeAttack {
     // Sanae C2 also clears its busy flag at 0x4242ba..0x4242fd when
     // the updated timer exceeds 70, before the charge-input timer arms.
     bool busy_for_charge(bool versus)const{
-        return frame>=0&&!((delayed_versus_beam(versus)||(versus&&(character==2||character==3||(character==0&&group==10))))&&frame==end_frame());
+        return frame>=0&&!((delayed_versus_beam(versus)||(versus&&(character==2||character==3||character==4||(character==0&&group==10))))&&frame==end_frame());
     }
     // Sanae C1 and C2 publish idle after the final ordinary-shot check.
-    void tick(bool versus=false){if(frame>=0&&++frame>=end_frame()+int(delayed_versus_beam(versus)||(versus&&((character==0&&group==10)||character==2||character==3))))frame=-1;}
+    void tick(bool versus=false){if(frame>=0&&++frame>=end_frame()+int(delayed_versus_beam(versus)||(versus&&((character==0&&group==10)||character==2||character==3||character==4))))frame=-1;}
 };
 // Ran 0x419ae0 / 0x419c00: timed power state, independent of shot clock.
 struct RanSkill {
