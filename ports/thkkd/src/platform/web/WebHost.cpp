@@ -157,6 +157,7 @@ MenuScenePlatformResult WebHost::invoke(const MenuSceneRequest& r,MenuReplayForm
     case 0x697128:out.eax=next_allocation_;next_allocation_+=0x110000;break;
     case 0x69712c:out.eax=0;break;
     case 0x697044:{
+        if(arg(0)==0){out.eax=U(-1);break;}
         std::string name;try{name=memory_string(arg(0));}catch(const GameStartEntryAccessFault&){out.eax=U(-1);break;}
         if(!replay_override.empty()&&memory->word(0xb4310c)!=0&&arg(4)==3)name=replay_override;
         auto path=data_path(name);std::filesystem::create_directories(std::filesystem::path(path).parent_path());
