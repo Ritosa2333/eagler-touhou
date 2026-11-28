@@ -56,7 +56,7 @@ struct GameplayHostContext {
   bind_replay_gameplay_input(memory,refs.fire,refs.dialogue_context);
   move_player=[this,bits](){update_replay_gameplay_movement(gameplay_memory,physical,firing.replay_variant,bits);};
   present_fps=[this,bits](){gameplay_memory.reconcile();hud_outcome=present_gameplay_hud_tail(gameplay_memory,machine,platform.platform,bits);if(hud_outcome.kind!=GameplayHudTailKind::completed)throw GameplayHostHudTransfer{hud_outcome};presentation.ecx=machine.registers.ecx;presentation.known=(hud_outcome.exact_registers&2u)!=0;const auto average=menu.timing.data.quad(8);const auto ecx=present_menu_fps(menu.timing,menu.title,572,465,machine.registers.ecx,bits,graphics,firing.replay_variant);if((average&0x7fffffffffffffffull)!=0){presentation.ecx=ecx;presentation.known=true;}};
-  ex_boss_services.pixel=[this](U x,U y,U ink){platform.call(0x41e7b0,{x,y,ink});};
+  ex_boss_services.pixel=[this](U x,U y,U ink){platform.pixel_drawing(x,y,ink);};
   ex_middle_services.line=[this](U x1,U y1,U x2,U y2,U ink,U width){platform.call(0x42d190,{x1,y1,x2,y2,ink,width});};
   ex_control_services.circle=[this](U x,U y,U r,U ink,U fill){return platform.call(0x41e460,{x,y,r,ink,fill}).eax;};
   ex_heavy_services.circle=ex_control_services.circle;ex_heavy_services.line=[this](U x1,U y1,U x2,U y2,U ink,U width){return platform.call(0x42d190,{x1,y1,x2,y2,ink,width}).eax;};
