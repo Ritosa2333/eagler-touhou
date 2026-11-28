@@ -778,6 +778,21 @@ export declare const PRODUCT_GAMES: Readonly<{
             focusHitbox: false;
         }>;
     }>;
+    th128: Readonly<{
+        testOnly: true; buildOptIn: true; importOnly: true;
+        number: "12.8"; title: "妖精大戦争"; subtitle: "東方三月精"; cardArtwork: "th128.jpg";
+        storage: Readonly<{saveRoot: "/savesth128"; scoreFile: "scoreth128.dat"; scoreReadOnly: true; configFiles: readonly string[]}>;
+        runtime: "./runtime/th128/th128.html"; runtimeFileLayout: "directory"; runtimeFileTree: true; runtimeAssets: readonly string[];
+        requiredShared: readonly string[]; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
+        package: Readonly<{dataFileId: "game-data"; dataTarget: "/th128.dat"; musicSourceDirectories: Readonly<{ogg: "music/ogg"}>; musicMounts: Readonly<{ogg: "/music"}>}>;
+        musicCapabilities: Readonly<{midi: false}>;
+        musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"; requiresCompleteOgg: true}>;
+        localLanguageOptions: readonly Readonly<{id: "lang_zh-hans"; title: "简体中文"; pack: null}>[];
+        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
+        support: Readonly<{highRefreshRate: true}>;
+        replay: Readonly<{prefix: "th128"; slotPrefix: "th128_"; slots: 25; extensions: readonly ["rpy"]}>;
+        features: Readonly<{thprac: true; languages: false; focusHitbox: false}>;
+    }>;
     th13: Readonly<{
         testOnly: true;
         buildOptIn: true;

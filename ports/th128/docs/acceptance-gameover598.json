@@ -1,0 +1,60 @@
+{
+  "schema": "th128-acceptance-scope/1",
+  "date": "2026-11-16",
+  "case": 598,
+  "scope": "A1/rank0 natural GameOver -> one Continue -> natural GameOver -> Title menu action -> native failed-score ACK",
+  "privateCore": 100,
+  "sourceCandidate": 595,
+  "passed": true,
+  "Factories": 1,
+  "WorldStarts": 1,
+  "gameTicks": 2573,
+  "recordedFrames": 2571,
+  "naturalGameOvers": 2,
+  "continues": 1,
+  "menuTicks": 47,
+  "scoreProfileBytes": 52232,
+  "scoreProfileSHA256": "5bb810003e5e4747be0fc0a1649b0a7b7f7a9c1cbaf4ae7144cb162161404c64",
+  "inputSHA256": "9dbb1a63db4b8406db2d6415c773c05345d676a90d0affd4e2128d8078a8b6e3",
+  "finalGameRandom": {
+    "seed": 55661,
+    "calls": 9384
+  },
+  "verified": [
+    "real native negative-motivation GameOver twice",
+    "real OriginalPauseController Continue and Title actions",
+    "Continue restores score0/motivation20000/count1",
+    "native World frame and game RNG frozen during every menu tick",
+    "continued replay save rejected",
+    "actual native52232 failed-profile prepare and ACK after full receipt consumer",
+    "all35 route/rank clear counters stay0",
+    "no extra World tick after Title action"
+  ],
+  "assistance": {
+    "enabled": false,
+    "reason": "Deliberate failure branch; no clear/progression/dodging skill gate"
+  },
+  "real": {
+    "nativeWorld": true,
+    "originalAssets": true,
+    "productionPauseController": true,
+    "productionScoreReceiptConsumer": true
+  },
+  "synthetic": [
+    "WebAudio device output",
+    "score store and strict durability receipt"
+  ],
+  "notAccepted": [
+    "full native Title/Main preparation",
+    "browser/GPU/physicalAudio/durable IndexedDB",
+    "async owner replacement/cancellation",
+    "continued full terminal route or Ending"
+  ],
+  "oldSuccessfulRoutesRerun": false,
+  "nativeCoreRebuilt": false,
+  "publicRuntimeChanged": false,
+  "runtimeExit": 0,
+  "stderrBytes": 0,
+  "firstFailure": false,
+  "ROOTReleased": true
+}

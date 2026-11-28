@@ -602,6 +602,23 @@ export const PRODUCT_GAMES = Object.freeze({
         }),
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),
+    th128: Object.freeze({
+        testOnly: true, buildOptIn: true, importOnly: true,
+        number: "12.8", title: "妖精大戦争", subtitle: "東方三月精", cardArtwork: "th128.jpg",
+        storage: Object.freeze({saveRoot: "/savesth128", scoreFile: "scoreth128.dat", scoreReadOnly: true, configFiles: Object.freeze([])}),
+        runtime: "./runtime/th128/th128.html", runtimeFileLayout: "directory", runtimeFileTree: true,
+        runtimeAssets: Object.freeze(["th128.html", "manifest.json", "import-entry.mjs", "play.mjs", "play.css",
+            "runtime/build.json", "runtime/launcher-session.mjs", "runtime/managed-dat-owner.mjs", "runtime/dat-ogg-provider.mjs"]),
+        requiredShared: Object.freeze([]), dataProvider: "retail-memory", runtimeResourceTransport: "resources",
+        package: Object.freeze({dataFileId: "game-data", dataTarget: "/th128.dat",
+            musicSourceDirectories: Object.freeze({ogg: "music/ogg"}), musicMounts: Object.freeze({ogg: "/music"})}),
+        musicCapabilities: Object.freeze({midi: false}),
+        musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection", requiresCompleteOgg: true}),
+        localLanguageOptions: Object.freeze([Object.freeze({id: "lang_zh-hans", title: "简体中文", pack: null})]),
+        touchFire: TOGGLE_TOUCH_FIRE, support: Object.freeze({highRefreshRate: true}),
+        replay: Object.freeze({prefix: "th128", slotPrefix: "th128_", slots: 25, extensions: Object.freeze(["rpy"])}),
+        features: Object.freeze({thprac: true, languages: false, focusHitbox: false}),
+    }),
     th13: Object.freeze({
         testOnly: true,
         buildOptIn: true,
@@ -943,7 +960,8 @@ export function createLocalProductManifest() {
         games: Object.fromEntries(productGameEntries.map(([game, product]) => [game, {
                 ...product,
                 music: { midi: product.musicCapabilities.midi ? { files: [] } : { files: [], supported: false } },
-                languageOptions: [{ id: "ja", title: "日本語(原版)", pack: null }],
+                languageOptions: 'localLanguageOptions' in product ? product.localLanguageOptions.map(option => ({...option}))
+                    : [{ id: "ja", title: "日本語(原版)", pack: null }],
             }])),
     };
 }

@@ -16,6 +16,7 @@ import type {SiteManifest, SiteGameData} from '../../src/contracts/site-manifest
 import {RELEASE_CATALOG_FILE, type ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
 import type {CurrentPackageGeneration, InstalledPackageGeneration, PackageDescriptor, InstalledPackageResult} from '../../src/contracts/package-read-models.mts';
 import type {MusicMode} from '../../src/launcher/game-preferences.mts';
+import {th128MountedLanguage} from '../../src/launcher/th128-managed-package.mts';
 import type {TransferPresentation} from '../../src/launcher/app-types.mts';
 import {createRawDataImportPackageDescriptor, rawDataImportHashMatches, rawDataImportMatchesFileName, rawDataImportSizeMatches} from '../../src/launcher/raw-data-import.mts';
 import {retailRequiredFiles} from '../../src/launcher/retail-package.mjs';
@@ -135,6 +136,11 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     deps.readCurrent(game, {...options, gameVersion: options.gameVersion ?? getGameVersion(game as GameId)});
   const installPublished: typeof installPublishedPackage = (game, options) => {
     const gameVersion = options.gameVersion ?? getGameVersion(game as GameId);
+    if (game === 'th128') {
+      // The runtime mounts DAT, all ten OGG tracks and one edition from the same generation.
+      return deps.installPublished(game, {...options, gameVersion,
+        addComponents: [...new Set([...(options.addComponents ?? []), 'ogg'])]});
+    }
     if (gameVersion !== 'original' || !isPC98(game as GameId)) return deps.installPublished(game, {...options, gameVersion});
     const hosted = metadata.getSnapshot().siteManifest?.games[game as GameId]?.gameData;
     return deps.installPublished(game, {...options, gameVersion, validatePublication: descriptor => {
@@ -231,6 +237,20 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     if (metadataSnapshot.siteManifest?.profile === 'web-development') await installDevelopment(game, metadataSnapshot.siteManifest, request);
     let installed = await deps.readCurrent(game, {gameVersion: request.gameVersion ?? "original"}); checkPreparationAbort(request.signal);
     if (installed.generation) {
+      const th128Publication = game === 'th128' && metadataSnapshot.siteManifest?.shared.resourceMode !== 'import'
+        ? metadataSnapshot.releaseCatalog?.games.th128 : undefined;
+      if (th128Publication && Array.isArray(th128Publication.locales) && th128Publication.locales.includes(request.language) &&
+          th128MountedLanguage(installed.generation) !== request.language) {
+        try {
+          request.onAcquisitionActivity?.(true);
+          progress(request, 'package.installingResources');
+          const result = await installPublished(game, {catalog: metadataSnapshot.releaseCatalog!, catalogUrl, gameVersion,
+            expectedGenerationId: installed.generation.id, fetchImpl: getPackageFetch(game), preferredLanguage: request.language,
+            signal: request.signal, onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
+          checkPreparationAbort(request.signal); await installedChanged(game);
+          return {kind: 'managed', generation: result.generation, deferredUpdate: null};
+        } finally {request.onAcquisitionActivity?.(false);}
+      }
       const legacyTh03 = game === 'th03' && isLegacyTh03(installed.generation.descriptor);
       if (isPC98(game) && (!metadataSnapshot.releaseCatalog || !metadataSnapshot.siteManifest)) {
         try {await metadata.initialize();} catch {checkPreparationAbort(request.signal);}
@@ -304,6 +324,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
         request.onAcquisitionActivity?.(true);
         progress(request, 'package.installingResources');
         const result = await installPublished(game, {catalog, catalogUrl, gameVersion: request.gameVersion ?? "original", addComponents: [], fetchImpl: getPackageFetch(game), signal: request.signal,
+          ...(game === 'th128' ? {preferredLanguage: request.language} : {}),
           onProgress: value => progress(request, 'package.installingResourcesProgress', {...value})});
         checkPreparationAbort(request.signal); await installedChanged(game);
         return {kind: 'managed', generation: result.generation, deferredUpdate: null};

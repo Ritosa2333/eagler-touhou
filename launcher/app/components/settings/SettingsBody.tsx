@@ -68,6 +68,8 @@ export function SettingsBody({
   const item = (extra: string) => `item ${extra}`;
   const hasFaith = 'display' in product && product.display.faithBar;
   const hasHints = 'hintFiles' in product.storage && product.storage.hintFiles.length > 0;
+  const scoreReadOnly = 'scoreReadOnly' in product.storage && product.storage.scoreReadOnly;
+  const th128 = state.gameId === 'th128';
   const th05Display = options.th05MultiplayerDisplay;
   const setTh05Display = (patch: Partial<typeof th05Display>) =>
     model.setOption('th05MultiplayerDisplay', {...th05Display, ...patch});
@@ -151,6 +153,7 @@ export function SettingsBody({
         <OptionRow
           className="mobile-option"
           label={t('settings.alwaysHitbox')}
+          hidden={th128}
           control={
             <OptionSwitch
               id={id('alwaysHitboxToggle')}
@@ -208,7 +211,7 @@ export function SettingsBody({
           </FieldContent>
           <ButtonGroup className={gamePage ? 'settings-file-actions' : undefined} aria-label={t('settings.save')}>
             {actionButton('export-save', t('settings.download'))}
-            {actionButton('import-save', t('settings.import'))}
+            {!scoreReadOnly && actionButton('import-save', t('settings.import'))}
           </ButtonGroup>
         </Field>
         <Field className="file-tool-item" id={id('replayFileTool')} orientation="horizontal">
@@ -422,7 +425,7 @@ export function SettingsBody({
         onOpenChange={(open) => setDisclosure('advanced', open)}
         bodyClassName="options-advanced-body"
       >
-        <div id={id('gameVersionOption')}>
+        <div id={id('gameVersionOption')} hidden={th128}>
           <SettingsSelect
             id={id('gameVersionSelect')}
             label={t('settings.gameVersion')}
@@ -435,36 +438,36 @@ export function SettingsBody({
             }}
           >
             <option value="original">{t('settings.version.original')}</option>
-            {state.gameId !== 'th075' && (
+            {state.gameId !== 'th075' && !th128 && (
               <option value="beauty" disabled={context.beautyInstalled === false}>
                 {t('settings.version.beauty')}
               </option>
             )}
           </SettingsSelect>
         </div>
-        <div id={id('musicOption')} hidden={!multiplayer && !availability.ogg}>
+        <div id={id('musicOption')} hidden={!multiplayer && !th128 && !availability.ogg}>
           <SettingsSelect
             id={id('musicSelect')}
             label={t('settings.music')}
             aria-label={t('settings.music')}
             description={availability.audio ? undefined : t('settings.webAudioUnavailable')}
-            value={state.music}
+            value={th128 && availability.audio ? state.musicPreference : state.music}
             onChange={(event) => {
               if (isMusicMode(event.target.value)) model.setMusic(event.target.value);
             }}
           >
-            <option value="ogg-stream" disabled={!availability.ogg}>
+            {!th128 && <option value="ogg-stream" disabled={!availability.ogg}>
               {t('settings.music.oggStream')}
-            </option>
-            <option value="ogg-full" disabled={!availability.ogg}>
+            </option>}
+            <option value="ogg-full" disabled={th128 ? !availability.audio : !availability.ogg}>
               {t('settings.music.oggFull')}
             </option>
             {'sources' in product.musicRuntime && product.musicRuntime.sources.includes('akyu') && (
               <option value="ogg-akyu" disabled={!availability.ogg}>{t('settings.music.akyu')}</option>
             )}
-            <option value="midi" disabled={!availability.midi}>
+            {!th128 && <option value="midi" disabled={!availability.midi}>
               midi
-            </option>
+            </option>}
             <option value="none">{t('settings.music.none')}</option>
           </SettingsSelect>
         </div>

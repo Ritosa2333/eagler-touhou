@@ -70,6 +70,38 @@ function publication(value = descriptor(), replacement = data) {
     getPublication: async () => ({catalog, catalogUrl: baseUrl + 'release-catalog.json'}), fetchImpl,
   }};
 }
+
+test('split DATA is verified on install and repair without requesting the whole DATA URL', async () => {
+  const value = descriptor();
+  const segments = [data.slice(0, 2), data.slice(2)];
+  value.files.data.parts = await Promise.all(segments.map(async (piece, index) => ({
+    source: `objects/data-${index}.bin`, bytes: piece.length, sha256: await api.sha256Hex(piece),
+  })));
+  const published = publication(value);
+  let corrupt = false;
+  const fetchImpl = async input => {
+    const pathname = new URL(input).pathname;
+    const part = value.files.data.parts.findIndex(piece => pathname === '/' + piece.source);
+    if (part < 0) return published.fetchImpl(input);
+    published.requests.push(pathname);
+    return new Response(corrupt && part === 1 ? new Uint8Array(2) : segments[part]);
+  };
+  const options = {catalog: published.catalog, catalogUrl: baseUrl + 'release-catalog.json', fetchImpl};
+  await api.installPublishedPackage('th06', options);
+  const installed = await api.store.readCurrentPackageGeneration('th06');
+  const stored = await api.store.readPackageObject(installed.generation.files.data.objectId);
+  assert.deepEqual(new Uint8Array(await stored.blob.arrayBuffer()), data);
+  await damage(installed, 'data');
+  corrupt = true;
+  const repair = {...published.options, fetchImpl};
+  await assert.rejects(api.repairInstalledPackage(installed, repair), /Package part SHA-256 mismatch/);
+  assert.equal((await api.store.readCurrentPackageGeneration('th06')).generation.id, installed.generation.id);
+  corrupt = false;
+  const repaired = await api.repairInstalledPackage(installed, repair);
+  assert.notEqual(repaired.id, installed.generation.id);
+  assert.deepEqual(published.requests, Array.from({length: 3}, () =>
+    ['/th06.package.json', '/objects/data-0.bin', '/objects/data-1.bin']).flat());
+});
 function acquisition(published) {
   return api.createPackageAcquisition({baseUrl, translate: key => key,
     metadata: {getSnapshot: () => ({siteManifest: null, releaseCatalog: published.catalog}), initialize: async () => {}},

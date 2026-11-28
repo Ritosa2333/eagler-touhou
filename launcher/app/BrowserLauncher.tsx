@@ -270,11 +270,15 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
 function SessionLaunchActions({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation(), {t} = useLocale();
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
-  const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
+  const game = settings?.gameId;
+  const needsImport = useStoreSelector(session.metadata, metadata => {
+    if (!game || metadata.installed.has(game)) return false;
+    if (game === 'th128' && (!metadata.installedChecked.has(game) || !metadata.siteManifest && metadata.phase !== 'ready')) return false;
+    return requiresLocalGameData(metadata, game);
+  });
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
-  const importRequired = requiresLocalGameData(metadata, settings.gameId) && !metadata.installed.has(settings.gameId);
   return <LaunchActions primary={{id: 'launch', textId: 'launchText',
-    label: t(importRequired ? 'action.importGameData' : 'action.start'),
+    label: t(needsImport ? 'action.importGameData' : 'action.start'),
     onClick: () => {if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);}}}
     secondary={{id: 'gamePackageImport', label: t('action.import'), onClick: () => navigation.openInfoDialog('gameDataImportDialog')}}/>;
 }

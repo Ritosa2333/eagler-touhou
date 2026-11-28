@@ -47,7 +47,7 @@ th02–th05 的独立项目以 DOSBox-X PC-98 核心提供浏览器单机、合�
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th105.jpg" width="40" height="40" alt="东方绯想天"> | **[th105] 東方緋想天** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th123.jpg" width="40" height="40" alt="东方非想天则"> | **[th123] 東方非想天則** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th125.jpg" width="40" height="40" alt="东方文花帖DS"> | **[th125] ダブルスポイラー** | ![Unassigned][unassigned] | - | - | - |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th128.jpg" width="40" height="40" alt="妖精大战争"> | **[th128] 妖精大戦争** | ![Unassigned][unassigned] | - | - | - |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th128.jpg" width="40" height="40" alt="妖精大战争"> | **[th128] 妖精大戦争** | [momoiio224](https://github.com/momoiio224/th128)<br>![In Progress][in-progress] | [momoiio224](https://github.com/momoiio224/th128)<br>![In Progress][in-progress] | [momoiio224](../ports/th128/README.md)<br>[![In Progress][in-progress-detail]](../ports/th128/ADAPTATION.md) | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th135.jpg" width="40" height="40" alt="东方心绮楼"> | **[th135] 東方心綺楼** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th143.jpg" width="40" height="40" alt="弹幕天邪鬼"> | **[th143] 弾幕アマノジャク** | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th145.jpg" width="40" height="40" alt="东方深秘录"> | **[th145] 東方深秘録** | ![Unassigned][unassigned] | - | - | - |

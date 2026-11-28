@@ -11,12 +11,14 @@ import {componentFileIds} from '../../package/package-generation.mjs';
 import {buildLanguageCatalog} from '../../src/launcher/language-catalog.mts';
 import {loadOfflineLanguageIndex} from '../../src/launcher/offline-language-index.mts';
 import type {SettingsContext} from '../models/game-settings';
+import {th128MountedLanguage} from '../../src/launcher/th128-managed-package.mts';
 
 export interface MetadataSnapshot {
   phase: 'idle' | 'loading' | 'ready';
   siteManifest: SiteManifest | null;
   releaseCatalog: ReleaseCatalog | null;
   installed: ReadonlyMap<GameId, InstalledPackageGeneration>;
+  installedChecked: ReadonlySet<GameId>;
   beautyInstalled: ReadonlySet<GameId>;
   products: readonly ProductId[];
   metadataErrors: readonly unknown[];
@@ -24,9 +26,15 @@ export interface MetadataSnapshot {
   releaseCatalogError: unknown | null;
 }
 /** An import-only catalog entry can still have a package on an external host. */
-export function requiresLocalGameData(snapshot: Pick<MetadataSnapshot, 'siteManifest' | 'releaseCatalog'>, game: GameId): boolean {
-  return snapshot.siteManifest?.shared.resourceMode === 'import' ||
-    (productRequiresImport(game) && !snapshot.releaseCatalog?.games[game]);
+export function requiresLocalGameData({siteManifest, releaseCatalog}: Pick<MetadataSnapshot, 'siteManifest' | 'releaseCatalog'>, game: GameId): boolean {
+  if (siteManifest?.shared.resourceMode === 'import') return true;
+  if (!productRequiresImport(game)) return false;
+  const published = releaseCatalog?.games[game];
+  if (game !== 'th128') return !published;
+  // TH128 needs matching revisions from both halves of the host's metadata.
+  const pointer = siteManifest?.games.th128?.package;
+  return !published || !pointer || typeof pointer !== 'object' ||
+    !('revision' in pointer) || pointer.revision !== published.revision;
 }
 export interface MetadataServiceOptions {
   /** Deployment document/root URL, not a selected client route. */
@@ -55,7 +63,8 @@ export function createMetadataService(options: MetadataServiceOptions) {
   let disposed = false;
   let initialization: Promise<void> | null = null;
   let snapshot: MetadataSnapshot = Object.freeze({phase: 'idle', siteManifest: null,
-    releaseCatalog: null, installed: new Map(), beautyInstalled: new Set<GameId>(), products: availableProducts(null), metadataErrors: [], siteManifestError: null, releaseCatalogError: null});
+    releaseCatalog: null, installed: new Map(), installedChecked: new Set<GameId>(), beautyInstalled: new Set<GameId>(),
+    products: availableProducts(null), metadataErrors: [], siteManifestError: null, releaseCatalogError: null});
 
   function availableProducts(host: SiteManifest | null): readonly ProductId[] {
     return Object.freeze(PRODUCT_IDS.filter(product => {
@@ -85,7 +94,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
         const installed = new Map(snapshot.installed);
         if (result.generation) installed.set(id, result.generation);
         else installed.delete(id);
-        publish({installed});
+        publish({installed, installedChecked: new Set(snapshot.installedChecked).add(id)});
         // Optional availability must not hold up selected-package hydration.
         const beauty = gameVersion === 'beauty' ? Promise.resolve(result) : readCurrentPackageGeneration(id, {indexedDBFactory: options.indexedDBFactory, gameVersion: 'beauty'});
         void beauty.then(value => {
@@ -98,6 +107,8 @@ export function createMetadataService(options: MetadataServiceOptions) {
       } catch {
         // A failed hint read must not erase a usable previous snapshot. Launch
         // still reads the authoritative store again before using package data.
+        if (reads.get(id) === version && !snapshot.installedChecked.has(id))
+          publish({installedChecked: new Set(snapshot.installedChecked).add(id)});
       }
     }));
   }
@@ -143,14 +154,28 @@ export function createMetadataService(options: MetadataServiceOptions) {
   }
   function settingsContext(productId: ProductId, locale: string): SettingsContext {
     const gameId = gameIdForProduct(productId);
+    const product = PRODUCT_GAMES[gameId];
     const hostGame = snapshot.siteManifest?.games[gameId];
     const game = hostGame ?? local.games[gameId];
     const generation = snapshot.installed.get(gameId) ?? null;
     const music = hostGame?.music;
+    const importServer = productRequiresImport(gameId);
+    // A product with a fixed import catalog mounts its own game language.
+    const importLanguages = importServer && 'localLanguageOptions' in product ? product.localLanguageOptions : null;
+    const th128Language = gameId === 'th128' ? th128MountedLanguage(generation) : undefined;
+    const hasTh128OnlinePackage = gameId === 'th128' && !requiresLocalGameData(snapshot, gameId);
+    const publishedLocales = hasTh128OnlinePackage ? snapshot.releaseCatalog?.games.th128?.locales : undefined;
+    const japanese = {id: 'ja', title: '日本語', pack: null};
+    const english = {id: 'lang_en', title: 'English (thcrap)', pack: null};
+    const packagedLanguages = Array.isArray(publishedLocales) && publishedLocales.includes('lang_zh-hans') && publishedLocales.includes('ja')
+      ? [japanese, {id: 'lang_zh-hans', title: '简体中文（thcrap）', pack: null},
+        ...(publishedLocales.includes('lang_en') ? [english] : [])]
+      : th128Language === 'lang_en' ? [english]
+        : th128Language === 'ja' || (!th128Language && hasTh128OnlinePackage) ? [japanese] : importLanguages;
     return {
       productId, uiLocale: locale, hostFeatures: hostGame?.features,
       beautyInstalled: snapshot.beautyInstalled.has(gameId),
-      languages: buildLanguageCatalog({
+      languages: packagedLanguages?.map(entry => ({...entry})) ?? buildLanguageCatalog({
         languageOptions: game?.languageOptions, legacyLanguages: hostGame?.languages,
         offlineEntries: loadOfflineLanguageIndex(options.storage, gameId), generation,
         translate: key => options.translate(locale, key), priority: languagePriority,

@@ -312,7 +312,8 @@ function GameplayControls({ session, roomWorkspace, hideBomb }: { session: Brows
       player.classList.remove('pc98-room-touch-active'); for (const name of ['left','top','width','height']) player.style.removeProperty(`--pc98-touch-${name}`);};
   }, [roomWorkspace, settings.gameId, enabled, state.runtime?.launched]);
   useLayoutEffect(() => {if (roomWorkspace) input?.cancelPointers(); else input?.syncControls();}, [input, roomWorkspace]);
-  const browserPractice = !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
+  const th128Solo = !settings.multiplayer && settings.gameId === 'th128';
+  const browserPractice = th128Solo || !settings.multiplayer && 'practiceUI' in product && product.practiceUI === 'browser';
   const hostDirect = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches ||
     /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const pc98Direct = ['th01', 'th02', 'th03', 'th04'].includes(settings.gameId);
@@ -322,9 +323,11 @@ function GameplayControls({ session, roomWorkspace, hideBomb }: { session: Brows
     if (!runtime || !player) return;
     let nativeDocument: Document | null = null, observer: MutationObserver | null = null;
     const update = () => {
-      const open = runtime.getSnapshot().launched && nativeDocument?.documentElement.dataset.browserPracticeOpen === 'true';
+      const launched = runtime.getSnapshot().launched, flags = nativeDocument?.documentElement?.dataset;
+      const open = launched && flags?.browserPracticeOpen === 'true';
       if (open && !player.classList.contains('browser-practice-open')) input?.cancelPointers();
-      player.classList.toggle('browser-practice-open',open);
+      player.classList.toggle('browser-practice-open', open);
+      player.classList.toggle('th128-frame-touch', th128Solo && launched && flags?.th128FrameTouch === 'true');
     };
     const sync = () => {
       const next = runtime.getMidiEventContext()?.document as Document | null;
@@ -332,14 +335,14 @@ function GameplayControls({ session, roomWorkspace, hideBomb }: { session: Brows
         observer?.disconnect(); nativeDocument = next;
         if (next?.documentElement) {
           observer = new MutationObserver(update);
-          observer.observe(next.documentElement,{attributes:true,attributeFilter:['data-browser-practice-open']});
+          observer.observe(next.documentElement, {attributes: true, attributeFilter: ['data-browser-practice-open', 'data-th128-frame-touch']});
         }
       }
       update();
     };
     const unsubscribe = runtime.subscribe(sync); sync();
-    return () => {unsubscribe();observer?.disconnect();player.classList.remove('browser-practice-open');};
-  },[session,browserPractice,input]);
+    return () => {unsubscribe(); observer?.disconnect(); player.classList.remove('browser-practice-open', 'th128-frame-touch');};
+  }, [session, browserPractice, th128Solo, input]);
   useLayoutEffect(() => {
     const binding = bindPlayerInput({
       session,
@@ -417,6 +420,7 @@ function PlayerUtilities({
         nativeControls={'touchActions' in PRODUCT_GAMES[settings.gameId]}
         th19Charge={settings.gameId === 'th19'}
         th01={settings.gameId === 'th01'}
+        th128={settings.gameId === 'th128' && !settings.multiplayer}
         open={state.touchHelpOpen && !spectating && !roomWorkspace}
         onCloseRequest={session.closeTouchHelp}
         touchEnabled={settings.options.touchEnabled}

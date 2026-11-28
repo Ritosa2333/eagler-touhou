@@ -15,11 +15,12 @@ export interface TouchHelpProps {
   nativeControls?: boolean;
   th19Charge?: boolean;
   th01?: boolean;
+  th128?: boolean;
 }
 type HelpSection = 'controls' | 'touch' | 'orientation' | 'thprac';
 
 /** The Player owns seen gating and game refocus; help adds no history entry. */
-export const TouchHelp = memo(function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIosFullscreenHelp, nativeControls = false, th19Charge = false, th01 = false}: TouchHelpProps) {
+export const TouchHelp = memo(function TouchHelp({open, onCloseRequest, touchEnabled, focusMode, showIosFullscreenHelp, nativeControls = false, th19Charge = false, th01 = false, th128 = false}: TouchHelpProps) {
   const {t} = useLocale(), [expanded, setExpanded] = useState<HelpSection | null>(null);
   useLayoutEffect(() => {
     const player = document.getElementById('player');
@@ -58,7 +59,8 @@ export const TouchHelp = memo(function TouchHelp({open, onCloseRequest, touchEna
       </>)}
       {!nativeControls && group('thprac', 'thprac', <>
         <p>{t('help.thpracIntro')}</p>
-        {touchEnabled ? <><p><strong>{t('touch.cheatsAndSettings')}</strong> | {t('help.thpracMobilePanels')}</p><p>{t('help.thpracReplayMobile')}</p></> : <>
+        {touchEnabled ? th128 ? <p>{t('help.th128ThpracTouch')}</p> :
+          <><p><strong>{t('touch.cheatsAndSettings')}</strong> | {t('help.thpracMobilePanels')}</p><p>{t('help.thpracReplayMobile')}</p></> : <>
           {keys([['Backspace', 'touch.cheatMenu'], ['Tab', 'help.tracker'], ['F12', 'touch.advancedMenu'], ['F1', 'touch.invincible'], ['F2', 'touch.infiniteLives'], ['F3', 'touch.infiniteBombs'], ['F4', 'touch.infinitePower'], ['F5', 'touch.timeLock'], ['F6', 'touch.autoBomb'], ['F7', 'touch.enemyBgm']])}
           <p>{t('help.thpracReplayDesktop')}</p>
         </>}

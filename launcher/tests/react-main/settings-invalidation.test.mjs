@@ -326,3 +326,22 @@ test('TH01 defaults to joystick while preserving an existing movement choice', (
  model.setOption('touchMovementMode','touch');model.hydrate({...context,productId:'th01mp'});assert.equal(model.getSnapshot().options.touchMovementMode,'touch');
  const fresh=api.createGameSettingsModel({storage:null});fresh.hydrate({...context,productId:'th01mp'});assert.equal(fresh.getSnapshot().options.touchMovementMode,'joystick');
 });
+
+test('TH128 defaults to touch on mobile and respects a saved off switch', () => {
+  const key = 'eagler-touhou-game-options-v1-th128';
+  const values = new Map(), storage = {getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value)};
+  const {context} = fixture('th128');
+  const model = api.createGameSettingsModel({storage});
+  model.hydrate(context);
+  assert.equal(model.getSnapshot().options.touchEnabled, false);
+  const mobile = {...context, mobile: true};
+  model.hydrate(mobile);
+  assert.equal(model.getSnapshot().options.touchEnabled, true);
+  values.set(key, JSON.stringify({options: {touchSensitivity: 200}}));
+  model.restoreHostPreferences(mobile);
+  assert.equal(model.getSnapshot().options.touchEnabled, true);
+  model.setOption('touchEnabled', false);
+  const reopened = api.createGameSettingsModel({storage});
+  reopened.hydrate(mobile);
+  assert.equal(reopened.getSnapshot().options.touchEnabled, false);
+});

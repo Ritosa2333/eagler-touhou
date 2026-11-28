@@ -1,0 +1,226 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-16",
+  "coreOrdinal": 105,
+  "changes": [
+    "src/game/StageWorld.hpp",
+    "src/runtime/WorldExports.cpp"
+  ],
+  "candidate": "case643-spell-live-mode-green/candidate",
+  "candidateFiles": 47,
+  "fixtureFailures": [
+    640,
+    641
+  ],
+  "red": 642,
+  "componentGreen": 643,
+  "firstLink": 644,
+  "actualPositive": 645,
+  "sourceReview": {
+    "bytes": 12160,
+    "sha256": "59024967fb0896784bdcf4d94f6e80b39e9ad0959c0b3e018c9d601840220673",
+    "immutableBuildInput": true
+  },
+  "prebuild": {
+    "cases": {
+      "640": {
+        "result": {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case640-private104-spell-perfect-mode-red\\result.json",
+          "bytes": 574,
+          "sha256": "093c2a3aab4f89026385101ddb20e3a6d29c8e9c60fd3f4652bfa058364ec69d"
+        },
+        "inputPins": 28,
+        "passed": false
+      },
+      "641": {
+        "result": {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case641-private104-spell-perfect-mode-red\\result.json",
+          "bytes": 582,
+          "sha256": "618264a11641bbd549d5db5482ab5fef13a4defe87274135e318e8e501fe491a"
+        },
+        "inputPins": 30,
+        "passed": false
+      },
+      "642": {
+        "result": {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case642-private104-spell-perfect-mode-red\\result.json",
+          "bytes": 534,
+          "sha256": "d3e686fb7a7ca19f339c2a00ba0982c51346996faa1701a2f4ec2fe6bcdc8d4c"
+        },
+        "inputPins": 30,
+        "passed": false
+      },
+      "643": {
+        "result": {
+          "path": "D:\\Codex-th128-owned-20261108\\menu-lifecycle-fixes-20261113\\case643-spell-live-mode-green\\result.json",
+          "bytes": 696,
+          "sha256": "0570cab4c1885afe709874e36ade77b7c1871c553530a712329ace98ec34f184"
+        },
+        "inputPins": 226,
+        "passed": true
+      }
+    },
+    "redActual": {
+      "Factories": 1,
+      "WorldStarts": 2,
+      "ticks": 4,
+      "windowMode": 1,
+      "PerfectPhase": 1,
+      "spellID": 70,
+      "spellFlags": 7,
+      "normalRecord": false,
+      "syntheticECL": true
+    },
+    "greenComponent": {
+      "passed": true,
+      "checks": 42,
+      "WorldStarts": 6,
+      "ticks": 18,
+      "syntheticECL": true,
+      "syntheticEffectCallback": true,
+      "originalGameplay": false
+    },
+    "syntaxExit": 0,
+    "preparationFailurePreserved": true
+  },
+  "build": {
+    "authority": "MAIN",
+    "ordinal": 644,
+    "coreOrdinal": 105,
+    "passed": true,
+    "compilerCalls": 1,
+    "compiler": {
+      "status": 0,
+      "error": null,
+      "signal": null
+    },
+    "artifacts": {
+      "core.mjs": {
+        "bytes": 134120,
+        "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+      },
+      "core.wasm": {
+        "bytes": 2169773,
+        "sha256": "101f84c53431cb7d639882aac2181499332a7dde14495a936eec00b9142124eb"
+      }
+    },
+    "generation": "ca54de1bd68ec0b71cc9946bf0a107d89f2b74488886235dd7568633988f5886",
+    "sourceCount": 226,
+    "translationUnits": 83,
+    "exports": 205,
+    "changedSources": [
+      "src/game/StageWorld.hpp",
+      "src/runtime/WorldExports.cpp"
+    ],
+    "Factories": 0,
+    "Worlds": 0,
+    "browser": false,
+    "publication": false,
+    "at": "2026-11-16T00:27:08.475Z"
+  },
+  "actual645": {
+    "passed": true,
+    "Factories": 1,
+    "WorldStarts": 2,
+    "ticks": 183,
+    "rows": [
+      {
+        "useX": false,
+        "passed": true,
+        "frame": 2,
+        "mode": 0,
+        "flags": 7
+      },
+      {
+        "useX": true,
+        "passed": true,
+        "frame": 2,
+        "mode": 1,
+        "flags": 71
+      },
+      {
+        "phase180": true,
+        "passed": true,
+        "frame": 181,
+        "mode": 0,
+        "flags": 7
+      }
+    ],
+    "syntheticECL": true,
+    "actualPerfectXActivation": true,
+    "actualNativeWorldAndAssets": true,
+    "syntheticAudioReceipt": true,
+    "normalRecord": false,
+    "phase180ModeCleared": true,
+    "callableExports": 205,
+    "browser": 0,
+    "nativeCompiles": 0
+  },
+  "cases644645": {
+    "644": {
+      "inputs": 238,
+      "resultBytes": 24591,
+      "resultSHA256": "7a7b2afc668a8ff7f972956abc9f2897eeee44bd5e351435c24bb15c3579d889"
+    },
+    "645": {
+      "inputs": 32,
+      "resultBytes": 465,
+      "resultSHA256": "e42ebc6c140be0ca10750ff49530ecadebd3abfdaccc1df59605b90125c170d5",
+      "rawBytes": 12278,
+      "rawSHA256": "a986ebccf9a75c4e97b1f5c5454268a364a90276e0f0a517c4b65050a45636b2"
+    }
+  },
+  "boundaries": [
+    {
+      "frame": 120,
+      "phase": 119,
+      "mode": 1,
+      "active": true,
+      "flags": 71,
+      "random": {
+        "seed": 34772,
+        "calls": 0
+      }
+    },
+    {
+      "frame": 121,
+      "phase": 120,
+      "mode": 1,
+      "active": true,
+      "flags": 71,
+      "random": {
+        "seed": 34772,
+        "calls": 0
+      }
+    },
+    {
+      "frame": 180,
+      "phase": 179,
+      "mode": 1,
+      "active": true,
+      "flags": 71,
+      "random": {
+        "seed": 34772,
+        "calls": 0
+      }
+    },
+    {
+      "frame": 181,
+      "phase": 180,
+      "mode": 0,
+      "active": true,
+      "flags": 7,
+      "random": {
+        "seed": 34772,
+        "calls": 0
+      }
+    }
+  ],
+  "originalGameplay": false,
+  "originalReplay617Fixed": false,
+  "normalClearCreated": false,
+  "publicRuntimePublished": false,
+  "physicalAudioGPU": false,
+  "independentDeployment": false,
+  "fullRestorationOrPortComplete": false
+}

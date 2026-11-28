@@ -1,7 +1,7 @@
 import {normalizeGameVersion} from "./game-version.mjs";
 import { validatePackageDescriptor } from "./package-descriptor.mjs";
 import { componentFileIds } from "./package-generation.mjs";
-import { installPackageFromAcquisition, installPackageFromRemote } from "./package-installer.mjs";
+import { fetchPackageFile, installPackageFromAcquisition, installPackageFromRemote } from "./package-installer.mjs";
 import { packageObjectMatches, readCurrentPackageGeneration, readPackageObject } from "./package-store.mjs";
 import { sha256Hex } from "./package-integrity.mjs";
 import { releaseCatalogEntryUrl, validateReleaseCatalog } from "../release-catalog.mjs";
@@ -130,6 +130,10 @@ export function desiredFilesForPublishedPackage(descriptor, {
 
 export function publishedLanguageSelection(descriptor, preferredLanguage) {
   const entries = descriptor.components?.language?.entries;
+  if (descriptor.game === "th128" && Array.isArray(entries) && entries.length) {
+    const selected = entries.find(entry => entry.id === preferredLanguage) ?? entries[0];
+    return {language: [selected.id]};
+  }
   if (!Array.isArray(entries) || !preferredLanguage) return {};
   if (preferredLanguage === "ja") return { language: [] };
   return entries.some(entry => entry.id === preferredLanguage) ? { language: [preferredLanguage] } : {};
@@ -192,14 +196,20 @@ export async function repairInstalledPackage({generation, installation}, {
   getPublication, fetchImpl = globalThis.fetch, signal, onProgress,
 }) {
   const {descriptor} = generation;
-  const ids = unique([...descriptor.base.files, ...Object.keys(generation.files)
+  const required = new Set(descriptor.base.files);
+  if (descriptor.game === "th128") {
+    for (const id of componentFileIds(descriptor, "ogg")) required.add(id);
+    const languages = descriptor.components?.language?.entries ?? [];
+    const mounted = languages.filter(entry => generation.files[entry.file]?.objectId);
+    for (const entry of mounted.length ? mounted : languages.slice(0, 1)) required.add(entry.file);
+  }
+  const ids = unique([...required, ...Object.keys(generation.files)
     .filter(id => generation.files[id]?.objectId)]);
   const damaged = await damagedInstalledFileIds(generation, ids, signal);
   if (!damaged.size) return generation;
 
   // Required files must be restored. Missing optional files return to their
   // normal acquisition/fallback path instead of blocking an unrelated launch.
-  const required = new Set(descriptor.base.files);
   const desiredFileIds = ids.filter(id => required.has(id) || !damaged.has(id));
 
   let published;
@@ -224,9 +234,8 @@ export async function repairInstalledPackage({generation, installation}, {
         (file.sha256 ? candidate.sha256.toLowerCase() === file.sha256.toLowerCase()
           : candidate.revision === file.revision && file.revision.toLowerCase() === candidate.sha256.slice(0, 16).toLowerCase()));
       if (!replacement) throw new Error(`${id}: no matching cloud resource for repair`);
-      const response = await fetchImpl(new URL(replacement.source, published.descriptorUrl), {cache: "no-store", signal});
-      if (!response.ok) throw new Error(`${id}: resource repair failed (HTTP ${response.status})`);
-      const bytes = await response.arrayBuffer();
+      const bytes = await fetchPackageFile(replacement, published.descriptorUrl, {fetchImpl, signal});
+      if (bytes === null) throw new Error(`${id}: resource repair failed (resource unavailable)`);
       if (!file.sha256 && await sha256Hex(bytes) !== replacement.sha256.toLowerCase()) {
         throw new Error(`${id}: resource repair SHA-256 mismatch`);
       }

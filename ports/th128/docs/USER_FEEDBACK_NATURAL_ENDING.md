@@ -1,0 +1,19 @@
+# 普通触控自然三关与结局收尾
+
+完整thprac和第三步仍未完成。普通运行与原生播放锁是两个不同拥有者，本批已验收普通运行结局，完整普通回放的第三关拒绝已真实复现，未把二者合并宣称通过。没有新117、替换Runtime或公开部署。
+
+本批唯一产品改动位于WorldExports.cpp：完美冻结激活时激光为空，不代表120帧后仍为空。1107在原A1三面frame25075真实停止，报Perfect phase120要求静态Empty；既有固定471字节原指令记录的phase120路径没有该门。现在仍核实际激光管理器可用，移除后出生激光数量必须为零的断言，原冻结、保护、声音、激活Empty门与180帧收尾均未改。没有新读JA/EXE或运行原版注入，也未声称填完所有非空激光激活/冻结行为。
+
+1108完整80TU World组件编译通过；1110自然普通触控完成[1,2,3]三关和两次opaque carry，89799个实际World步对应89715个原6字节主输入帧，另84帧选路辅助输入。原MSG21/0、terminal380与三次音乐淡出实际WebAudio/原生ACK通过，终局原始分数795972。748291字节原RPY/TCH1经真实隔离IndexedDB完整读回，辅助运行原profile字节不变、真实成绩收据ACK，已进入原Ending15。1110整轮因120秒工作时限未完成退出，仍按失败保存，不能叫整轮通过。
+
+1112只读重开1110自有随机origin的slot13，完整文件及profile哈希一致，保存为owned证据，未重录已通过的三关。RPY SHA256为357b6ddf2949d1ee5b634ec8766c95db6ad1e547a5e496cde286b3fe336c0ab8。
+
+1114使用这份已记录的原按键、辅助输入和触控轨迹，经过真实普通NativeRecord/World重建自然流程，实际分数和89715帧历史完全相同；它明确不是native playLock。1Factory/3World/89799游戏步加206原结局步、207次真实2D像素呈现，14项/99.600秒通过，console0。结局音乐180帧淡出、真实source.stop、完整strict IDB收据及原生停止ACK后cleaned16；随后真实sealed普通结算已构造current4/pending4/mode3，普通成绩资格仍隔离。三个自有AudioContext均关闭，标签/服务器/ROOT释放。这里只证明普通结算构造，未完成交互姓名/录像保存/标题接管。
+
+1115是不同目的的真实native OwnedReplayPlayback：同文件前两段全部40360个World步/40276个主帧和84辅助帧播放完成，现场触控被playLock拒绝，第一段自然carry采用成功，第二次carry已捕获。第三个World启动后frame0，terminal资源配置被误要求普通NormalRecord而拒绝；实际回放没有NormalRecord，不能造一个普通记录或伪practice字段过关。这个首RED及9项前置通过保留，完整普通Replay终局仍待专属拥有者修复。
+
+设备入口是显式public World驱动，17份完整当前音频/成绩/Ending/profile函数逐字节固定；原DATOGG、ECL/ANM/SHT/MSG、全部当前弹型消费者和真实WebAudio/strict IDB/原Ending2D是实际数据。游戏GPU上传/绘制、Title采用与整个production checkWorld没有在这一场运行，截图不是原游戏GPU或完整清晰字体证明。没有物理触屏或实际听见声明。
+
+前面的失败全部保留：1102读初始空DOM；1103工作超限；1104未await的CUA工作流失去执行context，未创建自有页；1105合法GameOver；1106夹具漏生产入口已有9/32/33弹型且默认资源不同；1109无native错误但步数受限；1111仅BigInt元数据格式失败；1113错误读取native snapshot上的phase，在真实206结局步完成后多调用一次而拒绝。1114修正host.snapshot观察，产品没有为夹具松守卫。
+
+下一完成原生普通回放terminal专属归属和完整caller顺序，然后原移动浮动窗口/横竖位置/双指与iOS输入、魔理沙EX粉紫透明扭曲/纹理合成差异，最后一次117与真实生产页/Title/原游戏字体画面复验；全部反馈后才本地替换Runtime。原路线基线、个人数据设置服务和旧资源/包保持。详细证据见user-feedback-natural1102-1115.json。MAIN单独作者自审，不冒独立worker通过。

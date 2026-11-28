@@ -1,0 +1,57 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-17",
+  "scope": "Shared file-backed DAT resource consumer; not complete launcher adapter",
+  "sourceMode": "descriptor-byte-array plus exact file-ID Map",
+  "function": "createDatOggProviderFromFiles",
+  "sourceFiles": 12,
+  "actualRawDATBytes": 32336111,
+  "actualRawDATSHA256": "38be25a5f1b0bf5e88dd7f66e34e295338d6bb968794a1ff587337f46b3db045",
+  "cases": {
+    "806": {
+      "pass": 1,
+      "fail": 20,
+      "inputs": 13
+    },
+    "807": {
+      "pass": 21,
+      "fail": 0,
+      "inputs": 14
+    },
+    "808": {
+      "pass": 1,
+      "fail": 0,
+      "inputs": 27,
+      "targets": 771,
+      "rawOriginal": 113,
+      "patched": 70,
+      "music": 10,
+      "derived": 545,
+      "eclMetadata": 33,
+      "totalOutputBytes": 191923950
+    },
+    "809": {
+      "pass": 4,
+      "fail": 0,
+      "inputs": 15,
+      "storeSeam": "memory"
+    }
+  },
+  "actual808": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/case808-actual-file-source-dat-assets/run/file-source-assets.json",
+  "oldZIPAPIWorking": true,
+  "resourcePackageUnchanged": true,
+  "localRuntimeV7Unchanged": true,
+  "sourceOnlyReview": {
+    "worker": "th128-c1-verification",
+    "seq": 7840,
+    "sha256": "463dc0aa81b31d6a97008e60e16f975233e4f91701f872626994129077e275e1"
+  },
+  "externalManagedCaller": false,
+  "mutableFileBridge": false,
+  "completeStage3": false,
+  "Worlds": 0,
+  "Factories": 0,
+  "browser": 0,
+  "nativeCompiles": 0,
+  "GPU": false
+}

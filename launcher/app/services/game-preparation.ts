@@ -19,6 +19,8 @@ import {ensureOggStartup, ensurePC98Disks, ensureRequiredSharedResources, musicT
   remoteRuntimeResources, sharedResources} from './game-resources';
 import {startPreparedGameBackground} from './game-preparation-background';
 import {runtimeOggFileIds} from './game-music-selection';
+import {TH128_INSTALLED_LANGUAGE, th128InstalledConfigure, th128InstalledMusic, th128LanguageAvailable} from '../../src/launcher/th128-installed-config.mts';
+import {th128MountedLanguage} from '../../src/launcher/th128-managed-package.mts';
 import type {RuntimePlan, RuntimeService, RuntimeSnapshot} from './runtime';
 
 export type MultiplayerPreparation =
@@ -145,11 +147,13 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     ...(game === 'th03' ? {th03RapidFire: options.th03RapidFire} : {}),
     ...(game === 'th03' && !isMultiplayer ? {th03FocusEnabled: options.th03FocusEnabled} : {}),
     touchEnabled: options.touchEnabled, touchMovementMode: options.touchMovementMode, touchSensitivity: options.touchSensitivity,
-    touchFocusMode: options.touchFocusMode, doubleTapBombEnabled: options.doubleTapBombEnabled, alwaysHitbox: options.alwaysHitbox,
+    touchFocusMode: options.touchFocusMode, doubleTapBombEnabled: options.doubleTapBombEnabled,
+    ...(game !== 'th128' ? {alwaysHitbox: options.alwaysHitbox} : {}),
     oggDecodeMode: music === 'ogg-full' ? 'full' : 'stream',
     ...('sources' in product.musicRuntime ? {musicSource: (game === 'th03' ? settings.musicPreference === 'ogg-akyu' : music === 'ogg-akyu') ? 'akyu' as const : 'original' as const} : {}),
     ...(!isMultiplayer && productFeatureAvailable(game, 'thprac', features)
-      ? {thpracEnabled: options.thpracEnabled, thpracLocale: thpracLocaleForLanguage(language)} : {}),
+      ? {thpracEnabled: options.thpracEnabled, thpracLocale: game === 'th128' && language !== 'lang_en'
+        ? settings.context.uiLocale : thpracLocaleForLanguage(language)} : {}),
     ...(game === 'th03' ? {focusHitboxEnabled: options.th03FocusPointEnabled} : productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
     ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),
@@ -165,7 +169,23 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
 }
 async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, guard: () => void): Promise<PreparedGamePlan> {
   const {settings, acquisition, translate: t} = input, metadata = acquisition.getMetadata(), host = metadata.siteManifest;
-  let generation = initial.generation, music = effectiveMusic(input, generation, host, initial.th075SplitAssets), language = settings.language;
+  let generation = initial.generation, language = settings.language;
+  const launcherControls = () => ({restartButtonEnabled: settings.options.restartButtonEnabled,
+    thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
+    touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null});
+  if (String(initial.game) === 'th128') {
+    const music = th128InstalledMusic(generation, settings.musicPreference, settings.context.musicAvailability.audio);
+    const practiceLanguage = th128LanguageAvailable(language) ? TH128_INSTALLED_LANGUAGE : language;
+    const installedLanguage = th128MountedLanguage(generation);
+    const mounted = th128InstalledConfigure(language, music, gameRuntimeOptions(input, practiceLanguage, music, host), installedLanguage);
+    guard();
+    if (mounted.languageFallback) input.onWarning?.(t('language.launchFallback',
+      {language, reason: mounted.language === 'lang_en' ? 'English' : mounted.language === 'ja' ? '日本語' : '简体中文'}));
+    input.onStatus?.(t('runtime.preparingResources', {resource: musicModeLabel(mounted.music, t)}));
+    return {plan: {...initial, configure: mounted.configure, launcherControls: launcherControls()},
+      language: mounted.language, music: mounted.music};
+  }
+  let music = effectiveMusic(input, generation, host, initial.th075SplitAssets);
   const catalog = buildLanguageCatalog({languageOptions: host?.games[settings.gameId]?.languageOptions,
     legacyLanguages: host?.games[settings.gameId]?.languages, offlineEntries: settings.context.languages,
     generation, translate: t, priority: languagePriority});
@@ -211,9 +231,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
       runtimeResources: initial.th075SplitAssets ? [] : remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
     ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: PRODUCT_GAMES[settings.gameId].musicCapabilities?.midi === true}} : {}),
-    launcherControls: {restartButtonEnabled: settings.options.restartButtonEnabled,
-      thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
-      touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null}};
+    launcherControls: launcherControls()};
   const resource = runtimePack ? `${entry?.title || entry?.id || t('language.fallbackName')} ${t('settings.language')}`
     : `${musicModeLabel(music, t)} ${t('settings.music')}`;
   input.onStatus?.(t('runtime.preparingResources', {resource}));
@@ -302,6 +320,7 @@ export async function prepareGame(input: GamePreparationInput & {runtime: Runtim
     if (background) return background;
     const snapshot = input.runtime.getSnapshot();
     if (snapshot.epoch !== runtimeSnapshot.epoch || !snapshot.launched) return Promise.reject(new Error('Launch this prepared Runtime before starting background resources'));
+    if (String(result.plan.game) === 'th128') return Promise.resolve();
     const deferred = acquired?.kind === 'managed' && input.multiplayer?.kind !== 'room' && input.multiplayer?.kind !== 'room-preload' ? acquired.deferredUpdate : null;
     const deferredUpdate = deferred ? {...deferred, generation: result.plan.resourceGeneration ?? deferred.generation} : null;
     background = startPreparedGameBackground({input, prepared: result, epoch: runtimeSnapshot.epoch!, deferredUpdate});

@@ -44,6 +44,7 @@ import {relocateReplayPlayback} from '../services/replay-relocation';
 import {createMetadataService, requiresLocalGameData} from '../services/metadata';
 import {createPackageAcquisition} from '../services/package-acquisition';
 import {prepareFilePlan, prepareGame, prepareGameCheck, prepareRoomResourcePlan, type MultiplayerPreparation, type GamePreparationInput, type PreparedGame} from '../services/game-preparation';
+import {th128RequestedMusic} from '../../src/launcher/th128-installed-config.mts';
 import {musicModeLabel} from '../services/game-resources';
 import {createPreparationNetwork} from '../services/preparation-network';
 import {createRoomPreparation} from '../services/room-preparation';
@@ -813,7 +814,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   async function confirmMusicWarnings() {
     const state = settings.getSnapshot(); if (!state) return false;
-    const music = state.music;
+    let music = state.music;
+    if (state.gameId === 'th128') music = th128RequestedMusic(state.musicPreference, state.context.musicAvailability.audio);
     if (music === 'none' || music === 'midi') return decisions.askConfirmation({message: t(music === 'none' ? 'music.noneLaunchWarning' : 'music.midiLaunchWarning'), confirmText: t('music.startAnyway')});
     return true;
   }
@@ -1097,9 +1099,20 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       cloudSync?.prepareLocalLaunch();
       const game = gameIdForProduct(product);
       const resourceMetadata = metadata.getSnapshot();
-      if (productRequiresImport(game) && resourceMetadata.phase !== 'ready' &&
-          requiresLocalGameData(resourceMetadata, game)) await metadata.initialize();
-      if (requiresLocalGameData(metadata.getSnapshot(), game) && !(await acquisition.readCurrent(game)).generation) {
+      let requiresImport = requiresLocalGameData(resourceMetadata, game);
+      // TH128's installed package can start while the host is still loading.
+      let installed = requiresImport && game === 'th128' ? (await acquisition.readCurrent(game)).generation : null;
+      if (requiresImport && !installed && productRequiresImport(game) && resourceMetadata.phase !== 'ready' &&
+          (game !== 'th128' || !resourceMetadata.siteManifest)) {
+        await metadata.initialize();
+        requiresImport = requiresLocalGameData(metadata.getSnapshot(), game);
+        if (game === 'th128') {
+          if (disposed || settings.getSnapshot()?.context.productId !== product ||
+              navigation && (!navigation.hasSelection || navigation.context === 'lobby')) return;
+          if (requiresImport) installed = (await acquisition.readCurrent(game)).generation;
+        }
+      }
+      if (requiresImport && !(game === 'th128' ? installed : (await acquisition.readCurrent(game)).generation)) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
       if (!await confirmTouchInput('singleplayer') || !await confirmMusicWarnings()) return;

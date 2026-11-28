@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>妖精大战争 · 移植工作台</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.mjs"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/"><span class="brand-mark">❄</span><span>TH128<span class="brand-sub">RECONSTRUCTION LAB</span></span></a>
+    <div class="source-label">本地原版资源</div>
+    <label class="variant-label" for="variant">资源版本</label>
+    <select id="variant" disabled><option>载入中…</option></select>
+    <nav aria-label="资源分类">
+      <button data-view="textures" class="active"><span>▧　纹理图集</span><span data-count="textures">—</span></button>
+      <button data-view="sprites"><span>◇　精灵切片</span><span data-count="sprites">—</span></button>
+      <button data-view="anm"><span>≋　动画指令</span><span data-count="anmScripts">—</span></button>
+      <button data-view="ecl"><span>⌘　关卡脚本</span><span data-count="eclFiles">—</span></button>
+      <button data-view="music"><span>♫　原版音乐</span><span data-count="musicTracks">—</span></button>
+      <button data-view="sounds"><span>◖　音效</span><span data-count="soundEffects">—</span></button>
+      <button data-view="replays"><span>▷　原版回放数据</span><span id="replay-count">—</span></button>
+      <button data-view="status"><span>◎　还原状态</span><span id="status-version">v76</span></button>
+    </nav>
+    <a class="runtime-link" href="/play.html">进入原版标题 / 实时首段运行 ↗</a>
+    <div class="sidebar-note"><span class="dot"></span>仅在此电脑读取<br>原版目录不作修改</div>
+  </aside>
+  <main>
+    <header><div class="breadcrumb">移植研究 <span>/</span> TH12.8 <span>/</span> <span id="current-view">纹理图集</span></div><span class="phase" id="runtime-phase">公版80 · 菜单还原中</span></header>
+    <section class="intro"><div><div class="eyebrow">TOUHOU 12.8 · GREAT FAIRY WARS</div><h1>妖精大战争<span>移植工作台</span></h1><p>从真正的原版资源开始，一项一项还原。</p></div><span class="snowflake" aria-hidden="true">❄</span></section>
+    <div class="notice"><b id="runtime-change">公版80：录像选择／回放暂停／音乐与存档调试</b><span id="runtime-boundary">冻结已由真人确认；REPLAY确认已改为实际回放，下载仅独立导出；真实录像200帧状态和绘制一致。既有背景、暂停羽毛、P点和字体修复保持。整菜单与浏览器设备实景验收仍未完成；历史六线/EX 调试不代表当前核心全路线通过。</span></div>
+    <section class="metrics" aria-label="资源统计"><div><span>原版文件</span><strong id="metric-files">—</strong></div><div><span>纹理 / 精灵</span><strong id="metric-images">—</strong></div><div><span>脚本指令</span><strong id="metric-instructions">—</strong></div><div><span>路线脚本 / 曲目</span><strong id="metric-routes">—</strong></div></section>
+    <section class="metrics" aria-label="运行核心与验收统计"><div><span>已公开运行核心</span><strong id="metric-runtime">公版80</strong></div><div><span>原生源文件 / 生产编译单元</span><strong id="metric-native">213 / 83</strong></div><div><span>生产 API</span><strong id="metric-apis">172</strong></div><div><span>验收边界</span><strong id="metric-device">设备尚未验收</strong></div></section>
+    <section class="workspace">
+      <div class="toolbar"><h2 id="section-title">纹理图集</h2><div class="tools"><select id="archive" aria-label="选择资源文件"></select><input id="search" type="search" placeholder="筛选名称 / 编号…" aria-label="筛选资源"></div></div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="content-grid"><div id="library" class="library" aria-label="资源列表"></div><section id="detail" class="detail" aria-live="polite"><div class="empty">正在读取本地资源…</div></section></div>
+    </section>
+    <footer><span>TH128 → WEB · 独立行为还原路线</span><span>原作素材版权归原权利人 · 仅供自有游戏本地研究</span></footer>
+  </main>
+</body>
+</html>

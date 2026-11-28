@@ -1,5 +1,5 @@
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, type ProductId, type GameId} from '../../../src/contracts/product-catalog.mts';
-const shortTitles:Record<GameId,string>={hsob:'珠',th01:'灵',th02:'封',th03:'梦',th04:'幻',th05:'怪',th06:'红',th07:'妖',th075:'萃',th08:'永',th09:'花',th10:'风',th11:'地',th12:'星',th13:'神',th14:'针',th15:'绀',th17:'兽',th19:'园',th20:'锦'};
+const shortTitles:Record<GameId,string>={hsob:'珠',th01:'灵',th02:'封',th03:'梦',th04:'幻',th05:'怪',th06:'红',th07:'妖',th075:'萃',th08:'永',th09:'花',th10:'风',th11:'地',th12:'星',th128:'战',th13:'神',th14:'针',th15:'绀',th17:'兽',th19:'园',th20:'锦'};
 export const bookGameShortTitle=(game:GameId)=>shortTitles[game];
 
 /** Host/publication decides membership and URLs before constructing this view data. */
@@ -15,7 +15,7 @@ export interface LibraryProduct {
   href: string;
   hidden?: boolean;
   presentation?: {positionPercent: number; artBrightness: number; artSaturation: number; glowBrightness: number; glowSaturation: number};
-  sourceRepository: string;
+  sourceRepository?: string;
 }
 
 export function isPc98Product(product: Pick<LibraryProduct, 'number'>): boolean {
@@ -46,7 +46,7 @@ export function createLibraryProducts(ids: readonly ProductId[], assetUrl: (path
       artwork: 'cardArtwork' in game && game.cardArtwork ? assetUrl(`assets/${game.cardArtwork}`) : null,
       href: hrefForProduct(id),
       presentation: 'cardPresentation' in game ? game.cardPresentation : undefined,
-      sourceRepository: support.sourceRepository,
+      ...('sourceRepository' in support ? {sourceRepository: support.sourceRepository} : {}),
     };
   });
 }

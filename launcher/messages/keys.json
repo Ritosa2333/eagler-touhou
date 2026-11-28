@@ -3666,6 +3666,14 @@
     "id": "file_missingSavePrompt",
     "params": []
   },
+  "file.noScoreToExport": {
+    "id": "file_noScoreToExport",
+    "params": []
+  },
+  "file.scoreReadOnly": {
+    "id": "file_scoreReadOnly",
+    "params": []
+  },
   "file.missingReplayPrompt": {
     "id": "file_missingReplayPrompt",
     "params": []
@@ -5707,6 +5715,10 @@
   },
   "help.thpracMobilePanels": {
     "id": "help_thpracMobilePanels",
+    "params": []
+  },
+  "help.th128ThpracTouch": {
+    "id": "help_th128ThpracTouch",
     "params": []
   },
   "player.switchLandscape": {

@@ -278,6 +278,36 @@ export async function installParsedPackageZip(parsed, { onProgress = null } = {}
   });
 }
 
+/** Download the declared object, or verify the ordered transport parts before storage checks the full file. */
+export async function fetchPackageFile(declaration, descriptorUrl, {fetchImpl, signal}) {
+  const fetchSource = async (source, read) => {
+    const url = new URL(source, descriptorUrl);
+    throwIfAborted(signal);
+    try {
+      const response = await fetchImpl(url, { cache: "no-store", signal });
+      if (response.status === 404 || response.status === 410) return null;
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await read(response);
+    } catch (error) {
+      if (signal?.aborted || error?.name === "AbortError") throw abortedDownloadError();
+      throw new Error(`${url.pathname}: ${error?.message || error}`, {cause: error});
+    }
+  };
+  if (!declaration.parts) return fetchSource(declaration.source, response => response.arrayBuffer());
+  const pieces = [];
+  for (const part of declaration.parts) {
+    const piece = await fetchSource(part.source, async response => {
+      const body = await response.blob();
+      if (body.size !== part.bytes) throw new Error("Package part size mismatch");
+      if (await sha256Hex(body) !== part.sha256.toLowerCase()) throw new Error("Package part SHA-256 mismatch");
+      return body;
+    });
+    if (piece === null) throw new Error(`${part.source}: Package part is unavailable`);
+    pieces.push(piece);
+  }
+  return new Blob(pieces, {type: packageMimeType(declaration.source)});
+}
+
 export async function installPackageFromRemote(descriptor, {
   descriptorUrl,
   desiredFileIds,
@@ -297,19 +327,7 @@ export async function installPackageFromRemote(descriptor, {
     reuseCurrent: true,
     expectedGenerationId,
     signal,
-    acquire: async (_fileId, declaration) => {
-      const url = new URL(declaration.source, base);
-      if (signal?.aborted) throw abortedDownloadError();
-      try {
-        const response = await fetchImpl(url, { cache: "no-store", signal });
-        if (response.status === 404 || response.status === 410) return null;
-        if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
-        return response.arrayBuffer();
-      } catch (error) {
-        if (signal?.aborted || error?.name === "AbortError") throw abortedDownloadError();
-        throw new Error(`${url.pathname}: ${error?.message || error}`, {cause: error});
-      }
-    },
+    acquire: (_fileId, declaration) => fetchPackageFile(declaration, base, {fetchImpl, signal}),
     onProgress,
   });
 }

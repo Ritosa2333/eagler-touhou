@@ -1,0 +1,93 @@
+{
+  "authority": "MAIN",
+  "date": "2026-11-16",
+  "coreOrdinal": 106,
+  "candidate": "case648-player-window-held-sound-green/candidate",
+  "candidateFiles": 48,
+  "changedSources": [
+    "src/game/PlayerHitHost.cpp"
+  ],
+  "fixtureError": 646,
+  "red": 647,
+  "green": 648,
+  "regression": 649,
+  "firstLink": 650,
+  "actualABI": 651,
+  "checks": 39,
+  "redFailures": 17,
+  "componentHosts": 6,
+  "componentWindowCalls": 11,
+  "componentTUs": 9,
+  "componentIncludeEdges": 20,
+  "componentInputPins": {
+    "646": 28,
+    "647": 28,
+    "648": 28,
+    "649": 30
+  },
+  "legacyMainCompleted": true,
+  "legacyCheckCount": null,
+  "sourceReview": {
+    "path": "D:/Codex-th128-owned-20261108/menu-lifecycle-fixes-20261113/dsh-web-completion-20261115/timing-focus/held-sound647-review/REVIEW.md",
+    "bytes": 12777,
+    "sha256": "6ec6fca8e1cef9d49d2258017f5bc4151adf190fe32aa394e90235fc931a5a04"
+  },
+  "sourceIdentity": "MAIN-held-stop-identity-20261116.json",
+  "build": {
+    "authority": "MAIN",
+    "ordinal": 650,
+    "coreOrdinal": 106,
+    "passed": true,
+    "compilerCalls": 1,
+    "compiler": {
+      "status": 0,
+      "error": null,
+      "signal": null
+    },
+    "artifacts": {
+      "core.mjs": {
+        "bytes": 134120,
+        "sha256": "13bc9cb03fd4346692ef3baf47c4528afc946607d9730edda02e3271d53e4aca"
+      },
+      "core.wasm": {
+        "bytes": 2169994,
+        "sha256": "8c708e6a2daad3a04b7c2095e10f93a897b18f67b567cd79d27d225eef63c9f0"
+      }
+    },
+    "generation": "ff89526ed15293870bc33785b2522422443435c8beaa7215f3c44f60f51c5f90",
+    "sourceCount": 226,
+    "translationUnits": 83,
+    "exports": 205,
+    "changedSources": [
+      "src/game/PlayerHitHost.cpp"
+    ],
+    "Factories": 0,
+    "Worlds": 0,
+    "browser": false,
+    "publication": false,
+    "at": "2026-11-16T01:32:41.936Z"
+  },
+  "actual651": {
+    "passed": true,
+    "coreOrdinal": 106,
+    "generation": "ff89526ed15293870bc33785b2522422443435c8beaa7215f3c44f60f51c5f90",
+    "actualExports": 205,
+    "Factories": 1,
+    "WorldStarts": 0,
+    "unownedActionsRejected": 5,
+    "postrunOwnersMinted": 0,
+    "browser": 0,
+    "storageWrites": 0,
+    "sourceStarts": 0,
+    "scope": "actual produced106instantiate/export/memory and noownerrejection only;heldstop648andlegacy649 separatelytested,notoriginalgameplay"
+  },
+  "originalInstructionsExecuted": 0,
+  "originalGameplay": false,
+  "syntheticEffectAndAudioSinks": true,
+  "newNormalClear": false,
+  "deathbombImplemented": false,
+  "physicalAudioProven": false,
+  "fixes617Proven": false,
+  "publicRuntimePublished": false,
+  "fullRestorationOrPortComplete": false
+}

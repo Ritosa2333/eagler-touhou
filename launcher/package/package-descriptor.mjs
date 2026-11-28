@@ -7,6 +7,8 @@ const FILE_ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/i;
 const COMPONENT_ID = FILE_ID;
 const REVISION = /^[a-z0-9][a-z0-9._:-]{0,127}$/i;
 const RUNTIME_VARIANT = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
+const SHA256 = /^[a-f0-9]{64}$/i;
+const PACKAGE_PART_LIMIT = 15 * 1024 * 1024;
 
 function isPlainObject(value) {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -27,6 +29,28 @@ function assertTarget(value, label) {
   if (value.split("/").some((part, index) => index > 0 && (!part || part === "." || part === ".."))) {
     throw new Error(`${label}: unsafe target path`);
   }
+}
+
+function validateParts(file, id) {
+  const label = `file ${id}`;
+  if (!Array.isArray(file.parts) || file.parts.length < 2 || file.parts.length > 64 ||
+      !Number.isSafeInteger(file.bytes) || typeof file.sha256 !== "string" || !SHA256.test(file.sha256)) {
+    throw new Error(`${label}: invalid split file receipt`);
+  }
+  const sources = new Set();
+  let bytes = 0;
+  for (const part of file.parts) {
+    if (!isPlainObject(part) || !Number.isSafeInteger(part.bytes) || part.bytes < 1 || part.bytes > PACKAGE_PART_LIMIT ||
+        typeof part.sha256 !== "string" || !SHA256.test(part.sha256) ||
+        typeof part.source !== "string" || !/^[a-z0-9._/-]+$/i.test(part.source) ||
+        part.source === file.source || sources.has(part.source)) {
+      throw new Error(`${label}: invalid split part receipt`);
+    }
+    assertRelativeSource(part.source, label);
+    sources.add(part.source);
+    bytes += part.bytes;
+  }
+  if (bytes !== file.bytes) throw new Error(`${label}: split bytes do not match the file length`);
 }
 
 function assertFileRefs(refs, files, label) {
@@ -96,9 +120,10 @@ export function validatePackageDescriptor(descriptor, { supportedRuntimeTypes = 
     assertRelativeSource(file.source, `file ${id}`);
     assertTarget(file.target, `file ${id}`);
     if (file.bytes != null && (!Number.isInteger(file.bytes) || file.bytes < 0)) throw new Error(`file ${id}: invalid byte length`);
-    if (file.sha256 != null && (typeof file.sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(file.sha256))) {
+    if (file.sha256 != null && (typeof file.sha256 !== "string" || !SHA256.test(file.sha256))) {
       throw new Error(`file ${id}: invalid sha256`);
     }
+    if (file.parts !== undefined) validateParts(file, id);
   }
   if (descriptor.runtimeRequirement != null) validateRuntimeRequirement(descriptor.runtimeRequirement, descriptor.files);
   if (descriptor.runtimes != null) {
