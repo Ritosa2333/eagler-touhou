@@ -286,11 +286,12 @@
     min-inline-size: 0;
   }
   .book-grid {
+    --book-grid-column-gap: 16px;
     display: grid;
     align-content: start;
     overflow-anchor: none;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px 16px;
+    gap: 20px var(--book-grid-column-gap);
   }
   .book-card {
     position: relative;
@@ -496,8 +497,9 @@
   }
   @container (max-width: 560px) {
     .book-grid {
+      --book-grid-column-gap: 12px;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px 12px;
+      row-gap: 16px;
     }
     .book-view-list .book-grid {
       grid-template-columns: minmax(0, 1fr);
@@ -505,7 +507,9 @@
   }
   @media (width > 780px) {
     .book-view-covers .book-grid {
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 146px), 1fr));
+      --cover-max-columns: 7;
+      --cover-capped-track: calc((100% - (var(--cover-max-columns) - 1) * var(--book-grid-column-gap)) / var(--cover-max-columns));
+      grid-template-columns: repeat(auto-fill, minmax(clamp(154px, var(--cover-capped-track), 100%), 1fr));
     }
   }
   @media (max-width: 780px) {
@@ -594,7 +598,8 @@
       scrollbar-width: none;
     }
     .book-view-covers .book-grid {
-      gap: 16px 10px;
+      --book-grid-column-gap: 10px;
+      row-gap: 16px;
     }
     .book-view-covers .book-card {
       border: 0;
