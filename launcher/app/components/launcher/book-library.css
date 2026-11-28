@@ -643,7 +643,10 @@
   border: 0;
   border-radius: 0;
   color: var(--kit-foreground);
-  font: 550 14px / 1.25 var(--kit-font);
+  font: 400 14px / 1.25 var(--kit-font);
+}
+.book-sidebar-footer-link.ui-kit-button > span {
+  color: var(--kit-muted-foreground);
 }
 .book-sidebar-footer-link.ui-kit-button > svg {
   width: 26px;
