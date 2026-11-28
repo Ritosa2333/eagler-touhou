@@ -174,8 +174,8 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
     </a>
   </DropdownMenu.Item>);
   const menuTrigger = <Button ref={trigger} variant="ghost" size="icon" className="masthead-action masthead-text-action masthead-menu-toggle"
-    id="mastheadMenuToggle" aria-label={t('nav.more')} disabled={!interactive}>
-    <NavigationIcon name="menu"/><span className="masthead-action-label">{t('nav.more')}</span>
+    id="mastheadMenuToggle" aria-label={t('nav.settings')} disabled={!interactive}>
+    <NavigationIcon name="menu"/><span className="masthead-action-label">{t('nav.settings')}</span>
   </Button>;
   return <>
     <header
@@ -240,7 +240,7 @@ export function LauncherMasthead(props: LauncherMastheadProps) {
           <MastheadTooltip label={t('nav.donate')}>
             <Button variant="ghost" size="sm" className="masthead-action masthead-text-action book-top-donation"
               aria-label={t('nav.donate')} onClick={props.onDonation} disabled={!interactive}>
-              <span className="masthead-action-label">{t('nav.support')}</span>
+              <span className="masthead-action-label">{t('nav.donate')}</span>
             </Button>
           </MastheadTooltip>
         )}
