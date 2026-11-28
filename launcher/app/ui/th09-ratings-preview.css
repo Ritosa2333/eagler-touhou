@@ -124,7 +124,7 @@
   font-size: 12px;
 }
 .rating-table-wrap { overflow-x: auto; border: 1px solid var(--kit-border); border-radius: 6px; }
-html[data-custom-background] .th09-rating-page :is(.rating-table-wrap, .rating-overview) {
+.th09-rating-page :is(.rating-table-wrap, .rating-overview) {
   background-color: var(--book-panel-surface);
 }
 .rating-table-state { padding: 6px 8px; border-top: 1px solid var(--kit-border); }

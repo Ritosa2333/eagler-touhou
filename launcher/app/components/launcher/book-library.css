@@ -13,7 +13,7 @@
     min-height: 0;
     height: auto;
     padding: 0;
-    background: var(--kit-background);
+    background: transparent;
   }
   html[data-ui-home] .library-background {
     display: none;
@@ -49,7 +49,7 @@
     block-size: var(--launcher-content-height, calc(100dvh - var(--site-header-height, 44px)));
     padding: 18px 16px 12px;
     border-inline-end: 1px solid var(--kit-border);
-    background: var(--kit-card);
+    background: var(--book-category-surface);
   }
   .book-search-slot {
     margin-bottom: 12px;
@@ -84,7 +84,6 @@
   .book-category {
     overflow: clip;
     border-radius: 6px;
-    background-color: var(--book-category-surface, transparent);
   }
   .book-category-row {
     position: relative;
@@ -300,7 +299,7 @@
     overflow: hidden;
     border: 1px solid var(--kit-border);
     border-radius: var(--book-card-radius);
-    background: var(--kit-card);
+    background: var(--book-card-surface);
     transition:
       transform var(--ui-micro-duration) var(--ui-micro-easing),
       box-shadow var(--ui-micro-duration) var(--ui-micro-easing);
@@ -367,7 +366,6 @@
   }
   .book-view-covers .book-card .book-identity {
     overflow: hidden;
-    background: var(--kit-card);
   }
   .book-cover-fallback {
     display: flex;
@@ -458,7 +456,6 @@
     overflow: visible;
     border: 0;
     border-bottom: 1px solid var(--kit-border);
-    background: transparent;
     box-shadow: none;
   }
   .book-view-list .book-card:hover {
@@ -605,7 +602,6 @@
     .book-view-covers .book-card {
       --book-card-radius: 6px;
       border: 0;
-      background: transparent;
     }
     .book-view-covers .book-card .book-art {
       border-radius: var(--book-card-radius);
@@ -614,7 +610,6 @@
       min-height: 44px;
       justify-content: center;
       padding: 4px 44px 4px 2px;
-      background: transparent;
     }
     .book-view-covers .book-card .book-title-line {
       align-items: baseline;
@@ -681,6 +676,9 @@
 @media (max-width: 780px) {
   .book-compact-categories .book-categories > div {
     flex: none;
+  }
+  .book-compact-categories .book-category {
+    background-color: var(--book-category-surface);
   }
   .book-compact-categories .book-category-choice {
     width: auto;

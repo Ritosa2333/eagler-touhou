@@ -50,17 +50,15 @@ html[data-book-theme='light'] {
   --kit-seat-foreground:#fff;--kit-seat-watermark:#141413;
   --kit-seat-ring-ready:#b7e9a7;--kit-seat-ring-loading:#f0ca56;
   --book-bg:var(--kit-background);--book-surface:var(--kit-card);--book-raised:var(--kit-muted);
-  --book-panel-surface:var(--book-surface);
-  /* Flat reading sections only need a painted surface over wallpaper. */
-  --book-reading-surface:transparent;
+  --book-navigation-surface:color-mix(in srgb,var(--book-surface) var(--custom-navigation-opacity,100%),transparent);
+  --book-category-surface:color-mix(in srgb,var(--book-surface) var(--custom-category-opacity,100%),transparent);
+  --book-card-surface:color-mix(in srgb,var(--book-surface) var(--custom-card-opacity,100%),transparent);
+  --book-panel-surface:color-mix(in srgb,var(--book-surface) var(--custom-panel-opacity,100%),transparent);
+  --book-reading-surface:var(--book-panel-surface);
   --book-ink:var(--kit-foreground);--book-muted:var(--kit-muted-foreground);--book-border:var(--kit-border);
   --book-accent:var(--kit-primary);--book-accent-soft:var(--kit-accent);--book-on-accent:var(--kit-primary-foreground);
   --ui-font:var(--kit-font);
   --ui-layer-touch-editor:40;--ui-layer-floating:40;--ui-layer-overlay:100;--ui-layer-dialog:101;--ui-layer-popup:110;--ui-layer-transient:300;
   --book-overlay:color-mix(in srgb,var(--kit-background) 94%,transparent);
   --book-shadow:0 8px 28px #0002;
-}
-html[data-custom-background] {
-  --book-panel-surface:color-mix(in srgb,var(--book-surface) var(--custom-panel-opacity),transparent);
-  --book-reading-surface:var(--book-panel-surface);
 }

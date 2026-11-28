@@ -3,11 +3,13 @@ import {fileURLToPath} from 'node:url';
 import puppeteer from 'puppeteer-core';
 
 const image = fileURLToPath(new URL('../../public/assets/favicon.png', import.meta.url));
+const origin = new URL(process.argv[2] || 'http://127.0.0.1:5173/');
 const browser = await puppeteer.launch({executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true});
 try {
   const page = await browser.newPage();
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion', value:'reduce'}]);
-  await page.goto(new URL('lobby.html', process.argv[2] || 'http://127.0.0.1:5173/'), {waitUntil:'networkidle2'});
+  await page.evaluateOnNewDocument(() => localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'));
+  await page.goto(new URL('lobby.html', origin), {waitUntil:'networkidle2'});
   await page.click('.book-theme-toggle');
   await page.waitForSelector('.custom-background-dialog');
   const desktop = await page.evaluate(() => {
@@ -52,6 +54,8 @@ try {
   }
   await page.click('.background-preset[data-preset="plain"]');
   assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), false);
+  assert.deepEqual(await page.$$eval('.custom-background-dialog input[type=range]', sliders => sliders.map(slider => slider.name)),
+    ['navigation', 'category', 'card', 'panel'], 'surface opacity remains configurable without a background');
   await page.click('.background-preset[data-preset="image"]');
   assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-background-image')), imageUrl, 'presets preserve the selected image');
   await page.evaluate(() => {
@@ -71,7 +75,9 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--custom-category-opacity')), '90%');
   assert.equal(await page.evaluate(() => document.documentElement.dataset.bookTheme), 'dark');
   assert.equal(await page.evaluate(() => document.documentElement.dataset.backgroundMode), 'image');
+  const rankings = await page.$eval('body', body => body.querySelector('.lobby-support-links a[href*="ratings.html"]')?.href);
   await page.setViewport({width:390, height:844});
+  await page.goto(origin, {waitUntil:'networkidle2'});
   await page.click('#mastheadMenuToggle');
   await page.waitForSelector('.masthead-overview-theme', {visible:true});
   await page.click('.masthead-overview-theme');
@@ -87,7 +93,6 @@ try {
   await page.reload({waitUntil:'networkidle2'});
   await page.waitForFunction(() => document.documentElement.dataset.backgroundMode === 'seigaiha');
   assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), true, 'built-in background persists');
-  const rankings = await page.$eval('body', body => body.querySelector('.lobby-support-links a[href*="ratings.html"]')?.href);
   if (rankings) {
     await page.setViewport({width:1280, height:820});
     await page.goto(rankings, {waitUntil:'networkidle2'});
@@ -118,17 +123,8 @@ try {
     await page.select('.custom-background-dialog select[name="background-fit"]', 'contain');
     assert.match(await page.evaluate(() => getComputedStyle(document.body).backgroundSize), /contain/);
     await page.click('.background-preset[data-preset="plain"]');
-    assert.deepEqual(await sliderNames(), []);
+    assert.deepEqual(await sliderNames(), ['navigation', 'panel']);
     assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-custom-background')), false);
-    await page.click('.background-preset[data-preset="grid"]');
-    await page.keyboard.press('Escape');
-    await page.waitForSelector('.custom-background-dialog', {hidden:true});
-    await page.setViewport({width:390, height:844});
-    await page.click('#mastheadMenuToggle');
-    await page.waitForSelector('.masthead-overview-theme', {visible:true});
-    await page.click('.masthead-overview-theme');
-    await page.waitForSelector('.custom-background-dialog');
-    assert.deepEqual(await sliderNames(), ['shade', 'navigation', 'panel']);
   }
   console.log('PASS: continuous background adjustment and persistence');
 } finally {

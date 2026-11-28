@@ -25,6 +25,13 @@ try {
     context.fillRect(0, 0, 1, 1);
     return Array.from(context.getImageData(0, 0, 1, 1).data);
   }, property);
+  const slide = (name, value) => page.$eval(`.custom-background-dialog input[name="${name}"]`, (slider, value) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(slider, value);
+    slider.dispatchEvent(new Event('input', {bubbles:true}));
+  }, String(value));
+  await slide('category', 40);
+  assert.equal((await rgba('.book-sidebar', 'backgroundColor'))[3], 102, 'the category slider controls the sidebar without wallpaper');
+  assert.equal(await style('body', 'backgroundImage'), 'none');
   for (const [theme, neutral] of [['dark', 21], ['light', 246]]) {
     await page.click(`.custom-theme-switch [data-theme-value="${theme}"]`);
     await page.waitForFunction(theme => document.documentElement.dataset.bookTheme === theme, {}, theme);
@@ -53,12 +60,15 @@ try {
   });
   await page.waitForFunction(() => document.documentElement.hasAttribute('data-custom-background') &&
     document.documentElement.dataset.backgroundMode === 'image');
-  const slide = (name, value) => page.$eval(`.custom-background-dialog input[name="${name}"]`, (slider, value) => {
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(slider, value);
-    slider.dispatchEvent(new Event('input', {bubbles:true}));
-  }, String(value));
   await slide('shade', 0);
   assert.match(await style('body', 'backgroundImage'), /blob:/);
+  assert.equal((await rgba('.book-sidebar', 'backgroundColor'))[3], 102, 'changing background keeps the sidebar opacity');
+  assert.equal(await page.$eval('.book-sidebar', sidebar => {
+    for (let node = sidebar.parentElement; node !== document.body; node = node.parentElement) {
+      if (getComputedStyle(node).backgroundColor !== 'rgba(0, 0, 0, 0)') return false;
+    }
+    return true;
+  }), true, 'the sidebar has no opaque ancestor covering the shared wallpaper');
   for (const percent of [35, 100, 88]) {
     await slide('panel', percent);
     assert.equal((await rgba(desktopPanel, 'backgroundColor'))[3], 255, `desktop detail blocks the wallpaper at ${percent}% panel opacity`);
