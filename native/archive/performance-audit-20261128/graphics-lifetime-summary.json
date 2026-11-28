@@ -92,7 +92,6 @@
     "gpu-preference-resolved-stack.json": "82f7616721b300488cc7f6ca707bbc07eabda897db1f6d8f630b0d7011bbe699",
     "gpu-preference-map-prepare.py": "bb88619bc9f059d89b1d7924ef4f85a2606a12caec978dca91a6d41dddb5cdb2",
     "gpu-preference-map-link.rsp": "19dc500911496bfd5087daadde0adccd20a639399ac278f0ccad689e3c93fa85",
-    "gpu-preference-map-webview.map": "12d0a765b4761aa0747fa455edfad95e1cc81f77c7577c9d2568de37137badd3",
     "graphics-reset-source.json": "6677f7e0dba8c31c91e117f9311eb7cae8e088425b2bb36a10acce44b4b2f5f7",
     "graphics-reset-runtime-source.json": "4348a2b85f0b121acfafb92d1a6a37b5a7648dc53cc879fb5b3439218b7a0721",
     "graphics-reset-run.py": "d71dc74a93f607bdd886a88ebfe073f62ece08b07567dd8e048a0f98dceb89e8",
@@ -125,7 +124,8 @@
     "graphics-reference-source.json": "7c8f3dfea0a83e3ed7d8d906b012095cd88798ae139ed05441314bcb063fe6f8",
     "graphics-reference-webview_platform.h": "6a0d11d33abeca2cf348c0af3820e568e7fdad958cf973631d85eaa464aad8ff",
     "graphics-lifetime-trials.json": "76e6afb65e73e97fcc5a1d8e405bf6d7bf00af849e23025112a1046b52e73136",
-    "graphics-owned-canonical-repeat-configure.log": "29ede70b830b76fcfc772708d8143c8286bad36dcbb16ecc6d76c1f53365d608"
+    "graphics-owned-canonical-repeat-configure.log": "29ede70b830b76fcfc772708d8143c8286bad36dcbb16ecc6d76c1f53365d608",
+    "gpu-preference-map-webview.map.gz": "091165c9cb91df537026d1e535cbac7d48f785ec9844acce60f98b3d7d9740c4"
   },
   "nativeInputs": {
     "windows/runner/main.cpp": "76d4a5a86d03a8967c90c0fb4bd67ad32fa8c048d66825c4f4cf5c1a2efcd102",
@@ -155,5 +155,10 @@
     "platform_util.cpp",
     "in_app_webview/in_app_webview.cpp",
     "in_app_webview/in_app_webview_manager.cpp"
-  ]
+  ],
+  "symbolMapCompression": {
+    "file": "gpu-preference-map-webview.map.gz",
+    "rawSha256": "12d0a765b4761aa0747fa455edfad95e1cc81f77c7577c9d2568de37137badd3",
+    "rawBytes": 7761916
+  }
 }

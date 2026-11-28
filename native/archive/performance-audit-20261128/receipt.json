@@ -308,7 +308,6 @@
     "gpu-preference-resolved-stack.json": "82f7616721b300488cc7f6ca707bbc07eabda897db1f6d8f630b0d7011bbe699",
     "gpu-preference-map-prepare.py": "bb88619bc9f059d89b1d7924ef4f85a2606a12caec978dca91a6d41dddb5cdb2",
     "gpu-preference-map-link.rsp": "19dc500911496bfd5087daadde0adccd20a639399ac278f0ccad689e3c93fa85",
-    "gpu-preference-map-webview.map": "12d0a765b4761aa0747fa455edfad95e1cc81f77c7577c9d2568de37137badd3",
     "graphics-reset-source.json": "6677f7e0dba8c31c91e117f9311eb7cae8e088425b2bb36a10acce44b4b2f5f7",
     "graphics-reset-runtime-source.json": "4348a2b85f0b121acfafb92d1a6a37b5a7648dc53cc879fb5b3439218b7a0721",
     "graphics-reset-run.py": "d71dc74a93f607bdd886a88ebfe073f62ece08b07567dd8e048a0f98dceb89e8",
@@ -342,7 +341,11 @@
     "graphics-reference-webview_platform.h": "6a0d11d33abeca2cf348c0af3820e568e7fdad958cf973631d85eaa464aad8ff",
     "graphics-lifetime-trials.json": "76e6afb65e73e97fcc5a1d8e405bf6d7bf00af849e23025112a1046b52e73136",
     "graphics-owned-canonical-repeat-configure.log": "29ede70b830b76fcfc772708d8143c8286bad36dcbb16ecc6d76c1f53365d608",
-    "graphics-lifetime-summary.json": "5ed53764ecfeb2681cf9bdb0405d0ad5e82e06830b5bc6c636d40007085d07fc"
+    "graphics-lifetime-summary.json": "4432a0df99abb7558c12644af17221ff177a5f1d2933dbd77558c1a4be3ac93a",
+    "gpu-preference-map-webview.map.gz": "091165c9cb91df537026d1e535cbac7d48f785ec9844acce60f98b3d7d9740c4",
+    "uia-private-trials.json.gz": "8fd0db7e675e776d391a55a70dbbafc7bf30a46d910e1af074e2a254cc1c803f",
+    "uia-private-source.zip": "aeff020dfc2852bb5db444944eb2240801ba622c4d249d5cf10e86286a3bd3aa",
+    "uia-private-summary.json": "fd7cd1456a22a2a1f6379604a2f17393e63023979ef990c67884602833a0a5d3"
   },
   "tracing": "Profile trace was captured before PERF_TRACE became optional. Reproduction needs --profile --trace-skia --endless-trace-buffer --dart-define=PERF_TRACE=true. Never use the traced process working set as ordinary app memory. Release target defaults to no tracing.",
   "browser": "Original public-profile native adapter A/B retained. New isolated Windows Debug account integration passes two visits and eight width states with native return to th08. Progressive screenshots include a real 320 px guest login form; other widths captured during loading. No credentials entered.",
@@ -697,5 +700,9 @@
     "summary": "graphics-lifetime-summary.json",
     "currentPackageSha256": "c0f8ee25cca128b1e16e4231fa8fc473b8f8899e7f287e2823bdb864ff91c38d",
     "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022"
+  },
+  "privateUia": {
+    "summary": "uia-private-summary.json",
+    "scope": "Current ordinary main.dart AOT in nonactivating native diagnostic host. UIAutomationCore in-process ETW, no product/SDK/configuration changes; not a foreground or presented-FPS benchmark."
   }
 }

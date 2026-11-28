@@ -238,6 +238,21 @@ SDK 自带的 Release PDB 可用于解析此前保留的地址。当前 SDK、�
 
 本次只离线读取原地址和本地符号，没有挂起正在使用的窗口。既有栈记录没有独立保存当时的 DLL 摘要，身份核对以当前相同 SDK 及发布目录为依据。组件程序使用本机 MSVC 14.50 和静态运行库，官方引擎符号记录 MSVC 14.34；组件结果不代表替换引擎后的整页帧率，也不能由六个短栈样本计算 CPU 时间占比。查询发送方及持续前台相关性继续核对。产品 SDK、引擎、113 个交付源码和 Windows 程序包均未改变。
 
+## 进程内无障碍请求追踪
+
+当前普通 AOT 与网页插件沿用 `f2139dca1c` 的交付构建。独立、不激活的诊断窗口使用 Windows 进程内 ETW，仅记录本进程 UIAutomationCore 事件。后台轮不主动读取窗口，对照轮通过工具发出一次可访问性状态读取；前一轮已存在 55 次取对象消息及同一已连接客户端，未将它作为无客户端基线。
+
+| 已写入的 ETW 数据 | 无主动读取轮 | 主动读取轮 |
+| --- | --- | --- |
+| 记录窗口 | 31.993 秒 | 17.654 秒 |
+| 服务端收到的请求 | 39 | 199 |
+| MSAA 方法调用 | 165 | 6093 |
+| `get_accValue` 调用 | 0 | 399 |
+
+记录中的请求对端均为 PID 63816，进程创建时间早于两轮追踪，对应 `codex-computer-use.exe`。主动轮的 399 对 `get_accValue` 起止事件完整匹配，包围墙钟合计 11.181 ms，中位数 0.0192 ms。自建离线解析器选取的 389 条后台记录，与 Windows `tracerpt` 的事件、线程、方法、句柄及请求字段逐条一致。[统计与范围](uia-private-summary.json) | [脱敏方法记录](uia-private-trials.json.gz) | [诊断入口与解析源码](uia-private-source.zip)
+
+主动轮顺序日志达到 4 MiB 上限后提前结束，后半段不在 ETW 记录范围；零丢失计数不代表整轮覆盖。两轮各 30 个焦点采样均在后台，窗口正常退出。这里确认了工具读取会引入一批查询，历史前台持续开销仍需同条件追踪。未据此关闭无障碍、替换引擎或更改产品界面。Windows 支持普通用户为自己启动的进程创建私有跟踪，[进程内约束](https://learn.microsoft.com/en-us/windows/win32/etw/configuring-and-starting-a-private-logger-session)也限定了这组证据的范围。
+
 ## D3D 对象生命周期
 
 当前普通 `main.dart` AOT 的 Intel 样本在关闭后报告退出码 0，但进程句柄持续未终止。原生栈位于 `LdrShutdownProcess` 的 DLL 清理链，插件公共符号表将调用点定位到静态 `graphics_context_` 的退出析构，随后进入 D3D11 与 Intel 驱动。用于映射的 DLL 由同一批对象重新链接，`.text` 与现场版本一致；驱动内部只保留模块与偏移，不将最近的导出名当作精确函数。[调用栈](gpu-preference-default-close-stack.json) | [符号对应](gpu-preference-resolved-stack.json)

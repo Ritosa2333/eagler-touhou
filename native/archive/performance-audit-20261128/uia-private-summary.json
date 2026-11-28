@@ -1,0 +1,635 @@
+{
+  "checkedAtUtc": "2026-11-28T08:33:28.469758+00:00",
+  "scope": "Current ordinary main.dart AOT in nonactivating native diagnostic host. UIAutomationCore in-process ETW, no product/SDK/configuration changes; not a foreground or presented-FPS benchmark.",
+  "sourceCommit": "f2139dca1c4e3168771406bcffdf18429f451932",
+  "runtime": {
+    "scope": "In-process-only UIAutomationCore ETW on owned, nonactivating production-AOT diagnostic host. Keyword filter0x10000, 4MiB cap, 16KiB buffers2-4; event ID filtering rejected87 in probe, so no unsupported filter. No product/source/SDK changes.",
+    "aotSha256": "8761498cda511c7860eec8e90ff186bb3e93059887ffe1a79dc9c9d72b3df022",
+    "pluginSha256": "c722a27bd3f1c4e2ab3faea1318c8f5f5197da2ba6d1ff481631825319829373",
+    "sourceSha256": {
+      "main.cpp": "39e497644e1934732148f2312e5d20335483b5c25fa4935f7cea609a1a078310",
+      "window.cpp": "341baacfaf90897edf138dce647aff7ad68df1cf78329e1f8395e9acd7475555",
+      "private-uia.h": "ed8242560515d52bd054116279e3394d53ab7883434511f30cd8546018441501",
+      "client-info-declarations.h": "5fdb8dcc8020d65dd0e8e6f19558bd38490437e88c3de56c1faf698c66909654"
+    }
+  },
+  "windowsComponent": {
+    "sha256": "6889fcae6bae830366a16dd1bd710c6d0c125afe88a847e51c5dd6d0bd68ea23",
+    "fileVersion": "7.2.26100.9949 (WinBuild.160101.0800)",
+    "bytes": 4300800
+  },
+  "client": {
+    "fileVersion": null,
+    "sha256": "a1eb13f38dc0214ae56d5c8b676b3740054a0818ab2bb68801b7aedc85909ded",
+    "pid": 63816,
+    "processName": "codex-computer-use",
+    "imageFileName": "codex-computer-use.exe",
+    "createdFileTimeUtc": 134403242560676911
+  },
+  "knownRead": {
+    "operation": "One cua.getApp AX read of returned diagnostic window65342408, following inventory. No app input, activation or screenshot.",
+    "treeResult": "Library accessibility tree returned, including search, sidebar and game cards.",
+    "existingClientActivity": "The no-explicit-read trial already showed55 WM_GETOBJECT messages and the same client. No claim of an unconnected baseline."
+  },
+  "analyses": {
+    "passive": {
+      "providerDecode": {
+        "processStatus": 0,
+        "closeStatus": 0,
+        "events": 838,
+        "emitted": 389,
+        "readErrors": 0,
+        "eventsLost": 0,
+        "start100ns": 134403279111943514,
+        "end100ns": 134403279431874002,
+        "counts": {
+          "111": 19,
+          "112": 19,
+          "513": 1,
+          "514": 1,
+          "515": 1,
+          "517": 145,
+          "518": 145,
+          "519": 165,
+          "520": 165,
+          "523": 20,
+          "524": 20,
+          "525": 33,
+          "526": 33,
+          "529": 6,
+          "536": 1,
+          "537": 1,
+          "540": 1,
+          "541": 1,
+          "545": 39,
+          "546": 20
+        }
+      },
+      "methodWallTime": {
+        "IServiceProvider::QueryService": {
+          "count": 129,
+          "sumMs": 0.0474,
+          "p50Ms": 0.0002,
+          "maxMs": 0.0052
+        },
+        "IAccessible::get_accFocus": {
+          "count": 2,
+          "sumMs": 0.0212,
+          "p50Ms": 0.0106,
+          "maxMs": 0.015
+        },
+        "IAccIdentity::GetIdentityString": {
+          "count": 28,
+          "sumMs": 0.0218,
+          "p50Ms": 0.0008500000000000001,
+          "maxMs": 0.0017
+        },
+        "IAccessible::get_accState": {
+          "count": 2,
+          "sumMs": 0.0329,
+          "p50Ms": 0.01645,
+          "maxMs": 0.0275
+        },
+        "IAccessible::get_accRole": {
+          "count": 2,
+          "sumMs": 0.0049,
+          "p50Ms": 0.00245,
+          "maxMs": 0.0026
+        },
+        "IAccessible::get_accName": {
+          "count": 2,
+          "sumMs": 0.2062,
+          "p50Ms": 0.1031,
+          "maxMs": 0.1114
+        }
+      },
+      "unmatchedStops": 0,
+      "unfinishedStarts": 0,
+      "snapshots": 30,
+      "foregroundSamples": 0,
+      "cpuIntervals": [
+        {
+          "tick": 58177015,
+          "corePercent": 3.125,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58178015,
+          "corePercent": 6.25,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58179015,
+          "corePercent": 3.125,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58180015,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58181015,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58182015,
+          "corePercent": 6.25,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58183015,
+          "corePercent": 1.5625,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58184015,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58185015,
+          "corePercent": 1.5625,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58186015,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58187015,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58188015,
+          "corePercent": 0.0,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58189015,
+          "corePercent": 4.6875,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58190015,
+          "corePercent": 1.5625,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58191015,
+          "corePercent": 3.125,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58192015,
+          "corePercent": 0.0,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58193015,
+          "corePercent": 1.5625,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58194015,
+          "corePercent": 4.6875,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58195015,
+          "corePercent": 0.0,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58196015,
+          "corePercent": 1.5625,
+          "foregroundPid": 32304
+        },
+        {
+          "tick": 58197015,
+          "corePercent": 4.6875,
+          "foregroundPid": 32304
+        },
+        {
+          "tick": 58198015,
+          "corePercent": 1.5625,
+          "foregroundPid": 32304
+        },
+        {
+          "tick": 58199015,
+          "corePercent": 6.25,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58200015,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58201015,
+          "corePercent": 3.125,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58202015,
+          "corePercent": 0.0,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58203015,
+          "corePercent": 0.0,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58204015,
+          "corePercent": 0.0,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58205015,
+          "corePercent": 1.5625,
+          "foregroundPid": 49440
+        }
+      ]
+    },
+    "control": {
+      "providerDecode": {
+        "processStatus": 0,
+        "closeStatus": 0,
+        "events": 25755,
+        "emitted": 12439,
+        "readErrors": 0,
+        "eventsLost": 0,
+        "start100ns": 134403279808420790,
+        "end100ns": 134403279984956445,
+        "counts": {
+          "111": 181,
+          "112": 181,
+          "517": 6314,
+          "518": 6313,
+          "519": 6093,
+          "520": 6093,
+          "523": 54,
+          "524": 54,
+          "525": 92,
+          "526": 106,
+          "529": 15,
+          "536": 1,
+          "537": 1,
+          "540": 1,
+          "541": 1,
+          "545": 199,
+          "546": 54
+        }
+      },
+      "methodWallTime": {
+        "IServiceProvider::QueryService": {
+          "count": 3528,
+          "sumMs": 1.0505,
+          "p50Ms": 0.0002,
+          "maxMs": 0.0231
+        },
+        "IAccessible::get_accFocus": {
+          "count": 2,
+          "sumMs": 0.0224,
+          "p50Ms": 0.0112,
+          "maxMs": 0.0147
+        },
+        "IAccIdentity::GetIdentityString": {
+          "count": 248,
+          "sumMs": 0.1816,
+          "p50Ms": 0.0003,
+          "maxMs": 0.0191
+        },
+        "IAccessible::get_accState": {
+          "count": 540,
+          "sumMs": 0.6657,
+          "p50Ms": 0.0005,
+          "maxMs": 0.0464
+        },
+        "IAccessible::get_accRole": {
+          "count": 272,
+          "sumMs": 1.4933,
+          "p50Ms": 0.0007,
+          "maxMs": 0.1633
+        },
+        "IAccessible::get_accName": {
+          "count": 138,
+          "sumMs": 11.4142,
+          "p50Ms": 0.03805,
+          "maxMs": 4.6671
+        },
+        "IAccessible::get_accHelp": {
+          "count": 136,
+          "sumMs": 0.1057,
+          "p50Ms": 0.0003,
+          "maxMs": 0.0487
+        },
+        "IAccessible::get_accValue": {
+          "count": 399,
+          "sumMs": 11.181,
+          "p50Ms": 0.0192,
+          "maxMs": 0.1317
+        },
+        "IAccessible::get_accChild": {
+          "count": 454,
+          "sumMs": 0.407,
+          "p50Ms": 0.0003,
+          "maxMs": 0.0457
+        },
+        "IAccessible::get_accParent": {
+          "count": 241,
+          "sumMs": 0.2345,
+          "p50Ms": 0.0005,
+          "maxMs": 0.0111
+        },
+        "IAccessible::accLocation": {
+          "count": 132,
+          "sumMs": 1.5643,
+          "p50Ms": 0.0035,
+          "maxMs": 0.2719
+        },
+        "IEnumVARIANT::Clone": {
+          "count": 1,
+          "sumMs": 0.0165,
+          "p50Ms": 0.0165,
+          "maxMs": 0.0165
+        },
+        "IEnumVARIANT::Reset": {
+          "count": 1,
+          "sumMs": 0.0003,
+          "p50Ms": 0.0003,
+          "maxMs": 0.0003
+        },
+        "IEnumVARIANT::Next": {
+          "count": 1,
+          "sumMs": 0.0233,
+          "p50Ms": 0.0233,
+          "maxMs": 0.0233
+        }
+      },
+      "unmatchedStops": 0,
+      "unfinishedStarts": 0,
+      "snapshots": 30,
+      "foregroundSamples": 0,
+      "cpuIntervals": [
+        {
+          "tick": 58246515,
+          "corePercent": 0.0,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58247515,
+          "corePercent": 3.125,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58248515,
+          "corePercent": 3.125,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58249515,
+          "corePercent": 0.0,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58250515,
+          "corePercent": 1.5625,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58251515,
+          "corePercent": 0.0,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58252515,
+          "corePercent": 1.5625,
+          "foregroundPid": 9828
+        },
+        {
+          "tick": 58253515,
+          "corePercent": 4.6875,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58254515,
+          "corePercent": 6.25,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58255515,
+          "corePercent": 3.125,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58256515,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58257515,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58258515,
+          "corePercent": 1.5625,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58259515,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58260515,
+          "corePercent": 0.0,
+          "foregroundPid": 31456
+        },
+        {
+          "tick": 58261515,
+          "corePercent": 12.5,
+          "foregroundPid": 20772
+        },
+        {
+          "tick": 58262515,
+          "corePercent": 1.5625,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58263515,
+          "corePercent": 1.5625,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58264515,
+          "corePercent": 1.5625,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58265515,
+          "corePercent": 3.125,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58266515,
+          "corePercent": 3.125,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58267515,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58268531,
+          "corePercent": 1.5378937007874016,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58269515,
+          "corePercent": 1.5879065040650406,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58270531,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58271531,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58272531,
+          "corePercent": 0.0,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58273546,
+          "corePercent": 3.0788177339901477,
+          "foregroundPid": 49440
+        },
+        {
+          "tick": 58274546,
+          "corePercent": 3.125,
+          "foregroundPid": 49440
+        }
+      ]
+    }
+  },
+  "decoderVerification": {
+    "independentReference": "Windows tracerpt XML decode of passive.etl",
+    "records": 389,
+    "fieldComparison": "Exact event ID, process/thread ID, method, HWND, peer process, request ID; identical order",
+    "result": "passed",
+    "tracerptSchemaWarnings": "System PartitionInfoExtensionV2 schema warning; selected UIAutomationCore records decoded and matched; TDH property read errors0"
+  },
+  "selectedEventSchema": [
+    {
+      "Task": "ClientConnection_CallWithReturn",
+      "Version": 0,
+      "Opcode": "win:Start",
+      "Template": "<template xmlns=\"http://schemas.microsoft.com/win/2004/08/events\">\r\n  <data name=\"MethodName\" inType=\"win:UnicodeString\" outType=\"xs:string\"/>\r\n  <data name=\"IsCrossMachine\" inType=\"win:Boolean\" outType=\"xs:boolean\"/>\r\n  <data name=\"ProcessId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"ObjectReference\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"Duration\" inType=\"win:UInt64\" outType=\"xs:unsignedLong\"/>\r\n  <data name=\"RequestId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n</template>\r\n",
+      "Level": "win:Informational",
+      "Id": 509,
+      "keywordMask": "0x4000000000010000"
+    },
+    {
+      "Task": "ClientConnection_CallWithReturn",
+      "Version": 0,
+      "Opcode": "win:Stop",
+      "Template": "<template xmlns=\"http://schemas.microsoft.com/win/2004/08/events\">\r\n  <data name=\"MethodName\" inType=\"win:UnicodeString\" outType=\"xs:string\"/>\r\n  <data name=\"IsCrossMachine\" inType=\"win:Boolean\" outType=\"xs:boolean\"/>\r\n  <data name=\"ProcessId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"ObjectReference\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"Duration\" inType=\"win:UInt64\" outType=\"xs:unsignedLong\"/>\r\n  <data name=\"RequestId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n</template>\r\n",
+      "Level": "win:Informational",
+      "Id": 510,
+      "keywordMask": "0x4000000000010000"
+    },
+    {
+      "Task": "MsaaProviderCallout",
+      "Version": 0,
+      "Opcode": "win:Start",
+      "Template": "<template xmlns=\"http://schemas.microsoft.com/win/2004/08/events\">\r\n  <data name=\"MethodName\" inType=\"win:UnicodeString\" outType=\"xs:string\"/>\r\n  <data name=\"HWND\" inType=\"win:HexInt32\" outType=\"win:HexInt32\"/>\r\n</template>\r\n",
+      "Level": "win:Informational",
+      "Id": 519,
+      "keywordMask": "0x4000000000010000"
+    },
+    {
+      "Task": "MsaaProviderCallout",
+      "Version": 0,
+      "Opcode": "win:Stop",
+      "Template": "<template xmlns=\"http://schemas.microsoft.com/win/2004/08/events\">\r\n  <data name=\"MethodName\" inType=\"win:UnicodeString\" outType=\"xs:string\"/>\r\n  <data name=\"HWND\" inType=\"win:HexInt32\" outType=\"win:HexInt32\"/>\r\n</template>\r\n",
+      "Level": "win:Informational",
+      "Id": 520,
+      "keywordMask": "0x4000000000010000"
+    },
+    {
+      "Task": "ClientConnection_RequestWritten",
+      "Version": 0,
+      "Opcode": "win:Info",
+      "Template": "<template xmlns=\"http://schemas.microsoft.com/win/2004/08/events\">\r\n  <data name=\"RequestId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"PeerProcessId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"IsCrossMachine\" inType=\"win:Boolean\" outType=\"xs:boolean\"/>\r\n  <data name=\"BytesWritten\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"RequestTimeout\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"HRESULT\" inType=\"win:HexInt32\" outType=\"win:HexInt32\"/>\r\n</template>\r\n",
+      "Level": "win:Informational",
+      "Id": 544,
+      "keywordMask": "0x4000000000010000"
+    },
+    {
+      "Task": "ServerConnection_RequestReceived",
+      "Version": 0,
+      "Opcode": "win:Info",
+      "Template": "<template xmlns=\"http://schemas.microsoft.com/win/2004/08/events\">\r\n  <data name=\"RequestId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"PeerProcessId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"BytesReceived\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n</template>\r\n",
+      "Level": "win:Informational",
+      "Id": 545,
+      "keywordMask": "0x4000000000010000"
+    },
+    {
+      "Task": "ServerConnection_ResponseWritten",
+      "Version": 0,
+      "Opcode": "win:Info",
+      "Template": "<template xmlns=\"http://schemas.microsoft.com/win/2004/08/events\">\r\n  <data name=\"RequestId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"PeerProcessId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"BytesWritten\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"HRESULT\" inType=\"win:HexInt32\" outType=\"win:HexInt32\"/>\r\n</template>\r\n",
+      "Level": "win:Informational",
+      "Id": 546,
+      "keywordMask": "0x4000000000010000"
+    },
+    {
+      "Task": "ClientConnection_ResponseReceived",
+      "Version": 0,
+      "Opcode": "win:Info",
+      "Template": "<template xmlns=\"http://schemas.microsoft.com/win/2004/08/events\">\r\n  <data name=\"RequestId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"PeerProcessId\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n  <data name=\"IsCrossMachine\" inType=\"win:Boolean\" outType=\"xs:boolean\"/>\r\n  <data name=\"BytesReceived\" inType=\"win:UInt32\" outType=\"xs:unsignedInt\"/>\r\n</template>\r\n",
+      "Level": "win:Informational",
+      "Id": 547,
+      "keywordMask": "0x4000000000010000"
+    }
+  ],
+  "traceCapabilities": {
+    "crossProcessStartStatus": 5,
+    "inProcessStartAndEnableStatus": 0,
+    "privateEventIdFilterProbeStatus": 87,
+    "actualFilter": "Provider keyword0x10000, own process only",
+    "buffersKiB": 16,
+    "minimumBuffers": 2,
+    "maximumBuffers": 4,
+    "maximumFileMiB": 4,
+    "controlAutoStoppedAtCap": true,
+    "controlStopStatus": 4201
+  },
+  "limits": [
+    "Control trace covers17.6535655 seconds of a roughly32-second native lifetime because its4MiB sequential file cap was reached. Zero header-reported lost events does not extend this coverage.",
+    "Both runs remained background at all30 one-second samples. No foreground frame-rate comparison.",
+    "Method wall times are matched start/stop brackets under ETW instrumentation. They are not engine-only CPU attribution or sustained-user latency.",
+    "Historical foreground query sender and long present waits remain unverified."
+  ],
+  "references": [
+    "https://learn.microsoft.com/en-us/windows/win32/etw/configuring-and-starting-a-private-logger-session",
+    "https://learn.microsoft.com/en-us/windows/win32/api/evntrace/nf-evntrace-starttracea",
+    "https://learn.microsoft.com/en-us/windows/win32/api/tdh/nf-tdh-tdhgetproperty"
+  ],
+  "files": {
+    "uia-private-trials.json.gz": "8fd0db7e675e776d391a55a70dbbafc7bf30a46d910e1af074e2a254cc1c803f",
+    "uia-private-source.zip": "aeff020dfc2852bb5db444944eb2240801ba622c4d249d5cf10e86286a3bd3aa"
+  }
+}
