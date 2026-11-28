@@ -1,5 +1,4 @@
 @layer components {
-  .loading-activity[data-artwork] {inline-size:min(100%, 30rem);}
   .loading-scene {
     --scene-ink: #272132;
     --scene-land: #4c3a57;
@@ -77,6 +76,7 @@
     filter:drop-shadow(0 1px 1px rgb(0 0 0 / .42));
   }
   .loading-scene-stinger {
+    --stinger-delay:10s;
     --stinger-duration:1550ms;
     --stinger-face-size:max(124vw, 132svh);
     --stinger-offscreen:calc(54dvh + var(--stinger-face-size) / 2);
@@ -153,8 +153,9 @@
     33%, 47% {transform:translateY(var(--scene-lift));}
   }
   :is(.less-motion, [data-still]) .loading-scene [data-scene-motion] {animation:none}
-  .less-motion :is(.loading-scene-stinger,.loading-scene-stinger-face),
-  .less-motion .loading-scene-stinger::before, .less-motion .loading-scene-stinger::after {animation:none}
+  :is(.less-motion, [data-still], .is-done) :is(.loading-scene-stinger,.loading-scene-stinger-face),
+  :is(.less-motion, [data-still], .is-done) .loading-scene-stinger::before,
+  :is(.less-motion, [data-still], .is-done) .loading-scene-stinger::after {animation:none}
   @media (prefers-reduced-motion:reduce) {
     .loading-scene [data-scene-motion], .loading-scene-stinger, .loading-scene-stinger-face,
     .loading-scene-stinger::before, .loading-scene-stinger::after {animation:none}

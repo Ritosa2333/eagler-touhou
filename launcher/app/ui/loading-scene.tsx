@@ -1,4 +1,4 @@
-import {useState, type CSSProperties, type ReactNode} from 'react';
+import {useState, type AnimationEventHandler, type CSSProperties, type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {siteBrandPath} from '../../lib/site-brand.mjs';
 import {loadingVignettes} from './loading-vignettes';
@@ -169,31 +169,42 @@ const scenes = {
 export type LoadingSceneId = keyof typeof scenes;
 export const loadingSceneOptions = Object.entries(scenes).map(([id, {label}]) => ({id: id as LoadingSceneId, label}));
 
-const repeatStingerDelay = () => 20_000 + Math.floor(Math.random() * 10_001);
+export const repeatStingerDelay = () => 20_000 + Math.floor(Math.random() * 10_001);
+
+function StingerFrame({character, src, delay, onAnimationEnd, deferred}: {
+  character: Character; src: string; delay?: number; onAnimationEnd?: AnimationEventHandler<HTMLDivElement>; deferred?: boolean;
+}) {
+  return <div className="loading-scene-stinger" data-loading-stinger={character} aria-hidden="true"
+    style={delay === undefined ? undefined : {'--stinger-delay': `${delay}ms`} as CSSProperties}
+    onAnimationEnd={onAnimationEnd}>
+    <img className="loading-scene-stinger-face" src={deferred ? undefined : src}
+      data-loading-src={deferred ? src : undefined} alt="" draggable={false}/>
+  </div>;
+}
 
 function LoadingSceneStinger({character, src, host}: {character: Character; src: string; host: HTMLElement}) {
-  const [{delay, shot}, setStinger] = useState({delay:10_000, shot:0});
+  const [delays, setDelays] = useState({delay:undefined as number | undefined, shot:0});
   return createPortal(
-    <div key={shot} className="loading-scene-stinger" data-loading-stinger={character} aria-hidden="true"
-      style={{'--stinger-delay': `${delay}ms`} as CSSProperties}
+    <StingerFrame key={delays.shot} character={character} src={src} delay={delays.delay}
       onAnimationEnd={event => {
         if (event.animationName !== 'loading-stinger-window') return;
         const nextDelay = repeatStingerDelay();
-        setStinger(({shot}) => ({delay:nextDelay, shot:shot + 1}));
-      }}>
-      <img className="loading-scene-stinger-face" src={src} alt="" draggable={false}/>
-    </div>, host);
+        setDelays(({shot}) => ({delay:nextDelay, shot:shot + 1}));
+      }}/>, host);
 }
 
-export function LoadingScene({scene, assetUrl}: {scene: LoadingSceneId; assetUrl(path: string): string}) {
+export function LoadingScene({scene, assetUrl, deferred = false, compact = false}: {
+  scene: LoadingSceneId; assetUrl(path: string): string; deferred?: boolean; compact?: boolean;
+}) {
   const {cast, artwork, foreground, stinger}: LoadingSceneSpec = scenes[scene];
   const portraitUrl = (character: Character) => character === 'reimu' ? reimuPortrait : assetUrl(siteBrandPath(characterFaces[character]));
-  const host = stinger && uiPortalHost();
+  const host = stinger && !deferred && !compact && uiPortalHost();
   return <>
     <div className="loading-scene" data-loading-scene={scene} aria-hidden="true">
       <svg className="loading-scene-art" viewBox="0 0 480 226" aria-hidden="true" focusable="false">{artwork}</svg>
       {cast.map(({character, at:[x,y], size = 48, pivot, action}) => <img key={`${character}:${x}:${y}`} className="loading-scene-portrait"
-        data-character={character} data-scene-motion={action} alt="" draggable={false} src={portraitUrl(character)}
+        data-character={character} data-scene-motion={action} alt="" draggable={false}
+        src={deferred ? undefined : portraitUrl(character)} data-loading-src={deferred ? portraitUrl(character) : undefined}
         style={{
           left: `${x / 4.8}%`, top: `${y / 2.26}%`, inlineSize: `${size / 4.8}%`,
           transformOrigin: pivot && `${50 + (pivot[0] - x) / size * 100}% ${50 + (pivot[1] - y) / size * 100}%`,
@@ -201,6 +212,7 @@ export function LoadingScene({scene, assetUrl}: {scene: LoadingSceneId; assetUrl
       {foreground && <svg className="loading-scene-art loading-scene-foreground" viewBox="0 0 480 226"
         aria-hidden="true" focusable="false">{foreground}</svg>}
     </div>
+    {stinger && deferred && <StingerFrame character={stinger} src={portraitUrl(stinger)} deferred/>}
     {stinger && host && <LoadingSceneStinger character={stinger} src={portraitUrl(stinger)} host={host}/>}
   </>;
 }

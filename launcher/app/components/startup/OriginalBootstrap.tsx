@@ -5,14 +5,16 @@ import mediumFontUrl from '../../../public/assets/fonts/chill-round-gothic-site-
 import boldFontUrl from '../../../public/assets/fonts/chill-round-gothic-site-bold-critical.woff2?url';
 import {originalBootstrap as original} from 'virtual:original-bootstrap';
 import {useHref, useLocation} from 'react-router';
-import {SITE_BRAND_FACES, siteBrandPath} from '../../../lib/site-brand.mjs';
 import {UI_LOCALES} from '../../../src/launcher/i18n.mts';
 import {translate} from '../../i18n';
 import {LESS_MOTION_STORAGE_KEY} from '../../models/site-preferences';
 import {sitePageTitle, useDocumentUiLocale} from '../../navigation/document-locale';
 import {isLauncherHomePath} from '../../navigation/addresses';
-import {chooseLoadingActivity, LoadingActivityContent, loadingTips, startLoadingTipRotation} from '../../ui/loading-activity';
+import {chooseLoadingIndex, LoadingActivityContent, loadingTips, startLoadingTipRotation} from '../../ui/loading-activity';
+import {LoadingScene, loadingSceneOptions, repeatStingerDelay} from '../../ui/loading-scene';
 import loadingActivityCss from '../../ui/loading-activity.css?inline';
+import loadingSceneCss from '../../ui/loading-scene.css?inline';
+import loadingVignettesCss from '../../ui/loading-vignettes.css?inline';
 
 // ES5 dispatch only: the original compatibility gate must precede the modern
 // bundle. Static SPA fallback HTML serves both original document contexts.
@@ -32,34 +34,47 @@ const bootLoadingCopy = Object.fromEntries(UI_LOCALES.map(locale => [locale, {
   label: translate(locale, 'player.loading').replace(/(?:…|\.{3})$/, ''),
   tips: Object.fromEntries(bootLoadingContexts.map(context => [context, loadingTips[context].map(key => translate(locale, key))])),
 }]));
-function showBootstrapLoading(copy: typeof bootLoadingCopy, faces: readonly string[], assetFolder: string, motionKey: string,
-  choose: typeof chooseLoadingActivity, rotate: typeof startLoadingTipRotation) {
+function showBootstrapLoading(copy: typeof bootLoadingCopy, motionKey: string,
+  choose: typeof chooseLoadingIndex, rotate: typeof startLoadingTipRotation, nextStingerDelay: typeof repeatStingerDelay) {
   const lobby = document.documentElement.getAttribute('data-original-entry') === 'lobby';
   const context = lobby ? 'multiplayer' : 'solo';
   const prefix = lobby ? 'lobby' : 'eagler';
   const preload = document.getElementById(prefix + 'Preload')!;
   const slot = preload.querySelector('.' + prefix + '-preload-spinner')!;
-  const template = document.querySelector<HTMLElement>('[data-bootstrap-loading]')!;
+  const template = document.querySelector('[data-bootstrap-loading]')!;
   const loading = template.firstElementChild!.cloneNode(true) as HTMLElement;
+  const scenes = template.querySelector('[data-bootstrap-scenes]')!.children;
+  const artwork = scenes[choose(scenes.length)].cloneNode(true) as HTMLElement;
   const locale = new URLSearchParams(location.search).get('lang');
   const text = copy[locale && Object.hasOwn(copy, locale) ? locale : document.documentElement.lang];
   const tips = text.tips[context];
-  const selection = choose(faces, tips.length);
-  const base = new URL(template.getAttribute('data-bootstrap-loading')!, location.href);
+  const tipIndex = choose(tips.length);
   loading.setAttribute('data-loading-context', context);
-  loading.querySelectorAll('img').forEach((image, index) => {image.src = new URL(assetFolder + selection.faces[index] + '.svg', base).href;});
+  for (const image of artwork.querySelectorAll<HTMLImageElement>('img[data-loading-src]')) {
+    image.src = image.getAttribute('data-loading-src')!;
+    image.removeAttribute('data-loading-src');
+  }
+  loading.querySelector('[data-bootstrap-artwork]')!.replaceWith(...artwork.children);
   loading.querySelector('.loading-activity-status > span')!.textContent = text.label;
   const tip = loading.querySelector('.loading-activity-tip > span')!;
-  tip.textContent = tips[selection.tipIndex];
+  tip.textContent = tips[tipIndex];
   try {if (localStorage.getItem(motionKey) === '1') loading.setAttribute('data-still', '');} catch {}
   slot.replaceWith(loading);
-  rotate(tips.length, selection.tipIndex, index => {
-    if (!loading.isConnected || preload.classList.contains('is-done') ||
-      (lobby && document.documentElement.getAttribute('data-lobby-boot') === 'failed')) return false;
+  const isLoading = () => loading.isConnected && !preload.classList.contains('is-done') &&
+    !(lobby && document.documentElement.getAttribute('data-lobby-boot') === 'failed');
+  rotate(tips.length, tipIndex, index => {
+    if (!isLoading()) return false;
     tip.textContent = tips[index];
   });
+  loading.addEventListener('animationend', event => {
+    if (event.animationName !== 'loading-stinger-window' || !isLoading()) return;
+    const previous = event.target as HTMLElement;
+    const next = previous.cloneNode(true) as HTMLElement;
+    next.style.setProperty('--stinger-delay', nextStingerDelay() + 'ms');
+    previous.replaceWith(next);
+  });
 }
-const bootLoadingScript = `(${showBootstrapLoading.toString()})(${JSON.stringify(bootLoadingCopy)},${JSON.stringify(SITE_BRAND_FACES)},${JSON.stringify(siteBrandPath().replace(/[^/]+$/, ''))},${JSON.stringify(LESS_MOTION_STORAGE_KEY)},${chooseLoadingActivity.toString()},${startLoadingTipRotation.toString()});`;
+const bootLoadingScript = `(${showBootstrapLoading.toString()})(${JSON.stringify(bootLoadingCopy)},${JSON.stringify(LESS_MOTION_STORAGE_KEY)},${chooseLoadingIndex.toString()},${startLoadingTipRotation.toString()},${repeatStingerDelay.toString()});`;
 /** Source-extracted original pre-module safety gate and preload presentation. */
 export function OriginalBootstrapHead() {
   const {pathname, search} = useLocation();
@@ -77,7 +92,7 @@ export function OriginalBootstrapHead() {
     <script>{dispatch}</script>
     <style>{original.library.css + '\n' + original.lobby.css + '\n' + sharedLobbyPreloadCss +
       '\nhtml[data-original-entry="lobby"] #eaglerPreload,html:not([data-original-entry="lobby"]) #lobbyPreload{display:none}'}</style>
-    <style>{loadingActivityCss}</style>
+    <style>{loadingActivityCss + '\n' + loadingSceneCss + '\n' + loadingVignettesCss}</style>
     <style id="bookStartupTheme">{original.theme+`
       html{background:var(--kit-background)}
       body:not(.mp-room-active){background-color:var(--kit-background)}
@@ -85,7 +100,7 @@ export function OriginalBootstrapHead() {
       :is(#eaglerPreload,#lobbyPreload).is-done{pointer-events:none}
       :is(.eagler-preload-card,.lobby-preload-card){width:72px;height:72px;background:transparent;border:0;box-shadow:none}
       :is(.eagler-preload-spinner,.lobby-preload-spinner){border-color:var(--kit-border);border-top-color:var(--kit-brand)}
-      :is(.eagler-preload-card,.lobby-preload-card):has(>.loading-activity){width:min(370px,calc(100vw - 32px));height:auto;padding:24px;box-sizing:border-box;animation:none}
+      :is(.eagler-preload-card,.lobby-preload-card):has(>.loading-activity){width:min(510px,calc(100vw - 32px));height:auto;padding:12px;box-sizing:border-box;animation:none}
       html[data-lobby-boot="failed"] .lobby-preload-card{width:min(420px,calc(100vw - 48px));height:auto;min-height:132px;padding:24px;gap:18px;animation:none;border:1px solid var(--kit-border);border-radius:12px;background:var(--kit-card)}
       html[data-lobby-boot="failed"] .lobby-preload-card > .loading-activity{display:none}
       .lobby-preload-failure a{color:var(--kit-foreground)}
@@ -127,8 +142,11 @@ export function OriginalPreloads() {
   return <>
     {/* biome-ignore lint/security/noDangerouslySetInnerHtml: Build-extracted repository HTML, with no request or user data. */}
     <div style={{display: 'contents'}} data-surface-preload-host="" suppressHydrationWarning dangerouslySetInnerHTML={{__html: preload}}/>
-    <div hidden data-bootstrap-loading={base}>
-      <LoadingActivityContent faceSources={[undefined, undefined, undefined, undefined]} label="" tip="" dots/>
+    <div hidden data-bootstrap-loading="">
+      <LoadingActivityContent artwork={<span data-bootstrap-artwork=""/>} label="" tip="" dots/>
+      <div data-bootstrap-scenes="">
+        {loadingSceneOptions.map(({id}) => <div key={id}><LoadingScene scene={id} assetUrl={path => base + path} deferred/></div>)}
+      </div>
     </div>
     <script suppressHydrationWarning>{bootLoadingScript}</script>
   </>;

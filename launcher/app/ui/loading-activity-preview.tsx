@@ -5,14 +5,14 @@ import {BookThemeToggle} from '../components/launcher/BookThemeToggle';
 import {useLocale} from '../i18n';
 import {Button} from './button';
 import {LoadingActivity} from './loading-activity';
-import {LoadingScene, loadingSceneOptions, type LoadingSceneId} from './loading-scene';
+import {loadingSceneOptions, type LoadingSceneId} from './loading-scene';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from './select';
 
-const choices = [...loadingSceneOptions, {id:'classic', label:'原版'}] as const;
+const choices = [...loadingSceneOptions, {id:'random', label:'随机'}] as const;
 
 export default function LoadingActivityPreview() {
   const [attempt, setAttempt] = useState(0);
-  const [scene, setScene] = useState<LoadingSceneId | 'classic'>('shrine');
+  const [scene, setScene] = useState<LoadingSceneId | 'random'>('shrine');
   const {t} = useLocale(), base = useHref('/');
   const assetUrl = (path: string) => base + path;
   const step = (direction: -1 | 1) => {
@@ -44,8 +44,8 @@ export default function LoadingActivityPreview() {
         onClick={() => setAttempt(value => value + 1)}><RotateCcw aria-hidden="true"/></Button>
     </div>
     <div className="player-loading-cover" role="status">
-      {attempt !== 0 && <LoadingActivity key={attempt} assetUrl={assetUrl} status={t('player.loading')} context="multiplayer"
-        artwork={scene === 'classic' ? undefined : <LoadingScene key={scene} scene={scene} assetUrl={assetUrl}/>}/>}
+      {attempt !== 0 && <LoadingActivity key={scene === 'random' ? `random-${attempt}` : attempt} assetUrl={assetUrl}
+        status={t('player.loading')} context="multiplayer" scene={scene === 'random' ? undefined : scene}/>}
     </div>
   </main>;
 }

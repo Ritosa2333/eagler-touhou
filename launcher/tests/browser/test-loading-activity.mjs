@@ -22,10 +22,11 @@ async function controlTipClock(page) {
   });
 }
 
-async function verifyBootTips(path, preloadId) {
+async function verifyBootLoading(path, preloadId, draw, expected) {
   const page = await browser.newPage();
   try {
     await controlTipClock(page);
+    await page.evaluateOnNewDocument(draw => {Math.random = () => draw;}, draw);
     await page.setRequestInterception(true);
     page.on('request', request => {
       void (request.resourceType() === 'script'
@@ -37,13 +38,30 @@ async function verifyBootTips(path, preloadId) {
     const tip = `${activity} .loading-activity-tip span`;
     const read = () => page.$eval(tip, node => node.textContent);
     await page.waitForSelector(tip);
+    const scene = `${activity} [data-loading-scene="${expected}"]`;
+    await page.waitForSelector(scene,{visible:true});
+    await page.waitForFunction(selector => {
+      const faces = [...document.querySelectorAll(`${selector} img`)];
+      return faces.length > 0 && faces.every(face => face.complete && face.naturalWidth > 0);
+    },{},scene);
+    assert.equal(await page.$$eval('[data-bootstrap-scenes] img[src]', images => images.length),0,'unselected templates do not fetch portraits');
+    assert.equal(await page.$eval(scene, element => element.getAnimations({subtree:true}).length > 0),true);
     const initial = await read();
     assert.ok(initial);
     assert.equal(await page.evaluate(() => window.tipClock.active()),1,'boot starts its 5s clock before the app loads');
     await page.evaluate(() => window.tipClock.tick());
     const next = await read();
     assert.notEqual(next,initial);
+    const stinger = `${activity} [data-loading-stinger]`;
+    if (expected === 'umbrella') {
+      assert.equal(await page.$eval(stinger, node => getComputedStyle(node).animationDelay),'10s');
+      await page.$eval(stinger, node => node.getAnimations().find(animation => animation.animationName === 'loading-stinger-window').finish());
+      await page.waitForFunction(selector => getComputedStyle(document.querySelector(selector)).animationDelay === '27.900s' ||
+        getComputedStyle(document.querySelector(selector)).animationDelay === '27.9s',{},stinger);
+    }
     await page.$eval(`#${preloadId}`, node => node.classList.add('is-done'));
+    assert.ok(await page.$eval(scene, element => element.getAnimations({subtree:true}).every(animation => animation.playState === 'paused')));
+    if (expected === 'umbrella') assert.equal(await page.$eval(stinger, node => node.getAnimations({subtree:true}).length),0);
     await page.evaluate(() => window.tipClock.tick());
     assert.equal(await read(),next,'hidden startup tip no longer changes');
     assert.equal(await page.evaluate(() => window.tipClock.active()),0);
@@ -51,16 +69,16 @@ async function verifyBootTips(path, preloadId) {
 }
 
 try {
-  await Promise.all([verifyBootTips('./?lang=zh-CN','eaglerPreload'), verifyBootTips('lobby.html?lang=zh-CN','lobbyPreload')]);
+  await Promise.all([verifyBootLoading('./?lang=zh-CN','eaglerPreload',0,'shrine'), verifyBootLoading('lobby.html?lang=zh-CN','lobbyPreload',.79,'umbrella')]);
   const page = await browser.newPage();
   await controlTipClock(page);
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  const faces = '.loading-activity-faces img';
+  const faces = '.loading-scene-portrait';
   const selector = '.loading-activity';
   const waitForFaces = () => page.waitForFunction(selector => {
     const images = [...document.querySelectorAll(selector)];
-    return images.length === 4 && images.every(image => image.complete && image.naturalWidth > 0);
+    return images.length > 0 && images.every(image => image.complete && image.naturalWidth > 0);
   }, {}, faces);
   const snapshot = () => page.$eval(selector, (loader, faces) => {
     const images = [...loader.querySelectorAll(faces)];
@@ -68,11 +86,9 @@ try {
     const bounds = loader.getBoundingClientRect();
     return {
       images:images.map(image => image.src),
-      motion:images.map(image => getComputedStyle(image).animationName),
-      faceHop:getComputedStyle(images[0]).getPropertyValue('--loading-hop').trim(),
+      scene:loader.querySelector('[data-loading-scene]').getAttribute('data-loading-scene'),
       dotHop:getComputedStyle(dots[0]).getPropertyValue('--loading-hop').trim(),
       crops:images.map(image => [getComputedStyle(image).objectFit, getComputedStyle(image).objectPosition]),
-      delays:images.map(image => getComputedStyle(image).animationDelay),
       dots:dots.map(dot => [dot.textContent, getComputedStyle(dot).animationName, getComputedStyle(dot).animationDelay]),
       tip:loader.querySelector('.loading-activity-tip span').textContent,
       fits:bounds.left >= 0 && bounds.right <= innerWidth,
@@ -131,7 +147,7 @@ try {
   };
   await page.click(picker);
   await page.waitForSelector('[role=listbox]');
-  assert.deepEqual(await page.$$eval('[data-preview-scene]', options => options.map(option => option.dataset.previewScene)), [...Object.keys(casting),'classic']);
+  assert.deepEqual(await page.$$eval('[data-preview-scene]', options => options.map(option => option.dataset.previewScene)), [...Object.keys(casting),'random']);
   await page.keyboard.press('Escape');
   await waitForPickerClose();
   const actorMotions = {
@@ -309,12 +325,10 @@ try {
   await page.click(previousScene);
   await waitForFaces();
   const first = await snapshot();
-  assert.equal(new Set(first.images).size,4);
-  assert.deepEqual(first.motion,Array(4).fill('ui-loading-hop'));
-  assert.deepEqual([first.faceHop,first.dotHop],['-2px','-1px'],'loading faces and dots keep their stagger without a large jump');
-  assert.deepEqual(first.crops,Array(4).fill(['cover','0% 50%']),'the avatar is cropped out of its wordmark SVG');
-  assert.deepEqual(first.delays,['0s','0.3s','0.6s','0.9s']);
-  assert.deepEqual(first.dots,first.delays.slice(0,3).map(delay => ['.','ui-loading-hop',delay]));
+  assert.ok(Object.hasOwn(casting,first.scene));
+  assert.equal(first.dotHop,'-1px');
+  assert.deepEqual(first.crops,first.images.map(() => ['cover','0% 50%']));
+  assert.deepEqual(first.dots,['0s','0.3s','0.6s'].map(delay => ['.','ui-loading-hop',delay]));
   assert.ok(first.tip);
   assert.ok(first.fits);
   const seenTips = [first.tip];
@@ -323,6 +337,7 @@ try {
     await page.evaluate(() => window.tipClock.tick());
     await page.waitForFunction(previous => document.querySelector('.loading-activity-tip span').textContent !== previous, {}, seenTips.at(-1));
     const current = await snapshot();
+    assert.equal(current.scene,first.scene);
     assert.deepEqual(current.images,first.images,'rotating tips does not restart the artwork');
     seenTips.push(current.tip);
     if (current.tip === first.tip) break;
@@ -333,22 +348,17 @@ try {
   await page.setViewport({width:320,height:640});
   assert.ok((await snapshot()).fits);
   assert.deepEqual((await snapshot()).images,first.images,'resizing does not reroll the current load');
-  const draws = [first.images.join(',')];
-  for (let i = 0; i < 3; i++) {
+  for (const [draw,id] of [[0,'shrine'],[.999999,'sunflowers']]) {
+    await page.evaluate(draw => {Math.random = () => draw;},draw);
     await page.click('[data-preview-replay]');
+    await page.waitForSelector(sceneArtwork(id));
     await waitForFaces();
-    const current = await snapshot();
     assert.equal(await page.evaluate(() => window.tipClock.active()),1,'replaying replaces the previous tip clock');
-    assert.equal(new Set(current.images).size,4);
-    draws.push(current.images.join(','));
   }
-  assert.ok(new Set(draws).size > 1,'new loads draw new random lineups');
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);
-  assert.deepEqual((await snapshot()).motion,Array(4).fill('none'));
   assert.deepEqual((await snapshot()).dots.map(([dot,motion]) => [dot,motion]),Array(3).fill(['.','none']));
   await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);
   await page.evaluate(() => document.body.classList.add('less-motion'));
-  assert.deepEqual((await snapshot()).motion,Array(4).fill('none'));
   assert.deepEqual((await snapshot()).dots.map(([dot,motion]) => [dot,motion]),Array(3).fill(['.','none']));
   assert.deepEqual(errors,[]);
   console.log('PASS loading previews: casting, five-second tip rotation before and after hydration, narrow layout and reduced motion');

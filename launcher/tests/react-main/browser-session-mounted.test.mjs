@@ -3689,9 +3689,8 @@ test('ordinary game loading reports success only after its first frame',async()=
  assert.equal(session.getRuntime().getSnapshot().firstFrame,false);
  assert.notEqual(node('#playerStatus').textContent,ready);
  const cover = node('#player .player-loading-cover');
- const faces = [...cover.querySelectorAll('img')].map(image=>image.getAttribute('src'));
- assert.equal(faces.length,4);
- assert.equal(new Set(faces).size,4);
+ assert.ok(cover.querySelector('[data-loading-scene]'));
+ assert.ok([...cover.querySelectorAll('.loading-scene-portrait')].some(image=>image.getAttribute('src')));
  assert.ok(cover.querySelector('.loading-activity-tip span')?.textContent);
  await React.act(async()=>f.native.emit('first-frame'));
  assert.equal(session.getRuntime().getSnapshot().firstFrame,true);assert.equal(node('#playerStatus').textContent,ready);
@@ -3726,6 +3725,7 @@ test('TH09 native title room start keeps its loading cover until the gameplay pa
  assert.equal(session.getSnapshot().roomLaunchStage,'runtime');
  const cover=node('#player .player-loading-cover');
  assert.equal(cover.querySelector('.loading-activity').dataset.loadingContext,'multiplayer');
+ assert.ok(cover.querySelector('[data-loading-scene]'));
  await React.act(async()=>f.native.emit('first-frame'));
  await until(()=>session.getSnapshot().roomLaunchStage==='path','first frame still waits for gameplay transport');
  assert.equal(cover.isConnected,true);
@@ -3751,6 +3751,7 @@ test('room game check shows the shared activity until its first frame',async()=>
  await until(()=>session.getRuntime().getSnapshot().launched,'check game launched');
  const loader=node('.room-workspace-preparation .loading-activity');
  assert.equal(loader.dataset.loadingContext,'multiplayer');
+ assert.ok(loader.querySelector('[data-loading-scene]'));
  assert.ok(loader.querySelector('.loading-activity-status').textContent.startsWith(api.translate(session.getSnapshot().locale,'multiplayer.checkingGame').replace(/…$/, '')));
  await React.act(async()=>{f.native.emit('first-frame');await check;});
  assert.equal(loader.isConnected,false);
